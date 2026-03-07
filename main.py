@@ -11,9 +11,8 @@ from pydantic import BaseModel, Field, conint, confloat
 from openai import OpenAI
 import os
 
-# =========================
+
 # App & CORS
-# =========================
 
 app = FastAPI(
     title="Papachristou Ortho Osteoporosis Support",
@@ -38,9 +37,8 @@ app.add_middleware(
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 openai_client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
 
-# =========================
+
 # Enums & Schemas
-# =========================
 
 
 class Sex(str, Enum):
@@ -248,9 +246,7 @@ class ElaborationResponse(BaseModel):
     elaborated_text: str
 
 
-# =========================
 # Helper calculations
-# =========================
 
 
 def calculate_bmi(weight_kg: Optional[float], height_cm: Optional[float]) -> Optional[float]:
@@ -371,9 +367,7 @@ def calculate_calcium_intake(data: OsteoInput) -> Tuple[Optional[float], Optiona
     return total_mg, note
 
 
-# =========================
 # Hyperparathyroidism pattern helper
-# =========================
 
 
 def add_hyperparathyroid_suggestions(data: OsteoInput, suggestions: List[Suggestion]) -> None:
@@ -464,9 +458,7 @@ def add_hyperparathyroid_suggestions(data: OsteoInput, suggestions: List[Suggest
             )
 
 
-# =========================
 # Risk and suggestion logic
-# =========================
 
 
 def determine_risk_category(
@@ -1136,9 +1128,7 @@ def build_patient_summary(
     return "\n".join(lines)
 
 
-# =========================
 # API Endpoint
-# =========================
 
 
 @app.post("/osteoporosis/evaluate", response_model=OsteoAssessment)
@@ -1185,9 +1175,7 @@ def evaluate_osteoporosis(input_data: OsteoInput) -> OsteoAssessment:
         patient_summary=patient_summary,
     )
 
-# =========================
 # API LLM
-# =========================
 
 @app.post("/osteoporosis/elaborate", response_model=ElaborationResponse)
 def elaborate_osteoporosis(req: ElaborationRequest) -> ElaborationResponse:

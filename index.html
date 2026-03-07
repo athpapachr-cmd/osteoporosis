@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Papachristou Ortho – Osteoporosis Cockpit</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f5f5f7;
+      color: #111827;
+    }
+    header {
+      background: #111827;
+      color: white;
+      padding: 16px 24px;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 20px;
+    }
+    header p {
+      margin: 4px 0 0;
+      font-size: 13px;
+      opacity: 0.8;
+    }
+    main {
+      padding: 16px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 900px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    .card {
+      background: white;
+      border-radius: 10px;
+      padding: 16px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    h2 {
+      margin-top: 0;
+      font-size: 16px;
+    }
+    h3 {
+      margin-top: 16px;
+      font-size: 14px;
+      border-bottom: 1px solid #e5e7eb;
+      padding-bottom: 4px;
+    }
+    .field-group {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 8px 12px;
+      margin-bottom: 8px;
+    }
+    .field {
+      display: flex;
+      flex-direction: column;
+      font-size: 13px;
+    }
+    label {
+      margin-bottom: 2px;
+      color: #374151;
+    }
+    input, select {
+      border-radius: 6px;
+      border: 1px solid #d1d5db;
+      padding: 6px 8px;
+      font-size: 13px;
+      outline: none;
+    }
+    input:focus, select:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 1px rgba(59,130,246,0.2);
+    }
+    .button-row {
+      margin-top: 12px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    button {
+      border-radius: 999px;
+      border: none;
+      padding: 8px 16px;
+      font-size: 14px;
+      cursor: pointer;
+      background: #2563eb;
+      color: white;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    button.secondary {
+      background: #e5e7eb;
+      color: #111827;
+    }
+    button:disabled {
+      opacity: 0.6;
+      cursor: default;
+    }
+    .status {
+      font-size: 12px;
+      color: #6b7280;
+    }
+    .status.error {
+      color: #b91c1c;
+    }
+    textarea {
+      width: 100%;
+      min-height: 260px;
+      border-radius: 8px;
+      border: 1px solid #d1d5db;
+      padding: 8px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 12px;
+      resize: vertical;
+      white-space: pre-wrap;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      background: #e5e7eb;
+      margin-right: 6px;
+      margin-bottom: 4px;
+    }
+    .pill.high {
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+    .pill.moderate {
+      background: #fef3c7;
+      color: #92400e;
+    }
+    .pill.low {
+      background: #dcfce7;
+      color: #166534;
+    }
+    .pill.very_high {
+      background: #fecaca;
+      color: #7f1d1d;
+    }
+    .small {
+      font-size: 12px;
+      color: #6b7280;
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+    <header>
+        <h1>Papachristou Ortho – Osteoporosis Cockpit</h1>
+        <p>Local form → Remote Render API at <code>/osteoporosis/evaluate</code></p>
+    </header>
+    
+    <main>
+        <div class="grid">
+            <div class="card">
+                <h2>Input</h2>
+                
+                <h3>Core data</h3>
+                <div class="field-group">
+                    <div class="field">
+                        <label for="age">Age</label>
+                        <input id="age" type="number" min="18" max="110" value="72">
+                    </div>
+                    <div class="field">
+                        <label for="sex">Sex</label>
+                        <select id="sex">
+                            <option value="female">female</option>
+                            <option value="male">male</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="menopause_status">Menopause</label>
+                        <select id="menopause_status">
+                            <option value="unknown">unknown</option>
+                            <option value="pre">pre</option>
+                            <option value="peri">peri</option>
+                            <option value="post">post</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <h3>DEXA & fractures</h3>
+                <div class="field-group">
+                    <div class="field">
+                        <label for="spine_t_score">Spine T-score</label>
+                        <input id="spine_t_score" type="number" step="0.1">
+                    </div>
+                    <div class="field">
+                        <label for="total_hip_t_score">Total hip T-score</label>
+                        <input id="total_hip_t_score" type="number" step="0.1">
+                    </div>
+                    <div class="field">
+                        <label for="femoral_neck_t_score">Femoral neck T-score</label>
+                        <input id="femoral_neck_t_score" type="number" step="0.1">
+                    </div>
+                </div>
+                <div class="field-group">
+                    <div class="field">
+                        <label>Prior fragility fractures</label>
+                        <div>
+                            <label><input type="checkbox" id="fx_hip"> hip</label>
+                            <label><input type="checkbox" id="fx_vert"> vertebral</label>
+                            <label><input type="checkbox" id="fx_nonvert"> non-vertebral</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <h3>FRAX-style factors</h3>
+                <div class="field-group">
+                    <div class="field">
+                        <label for="weight_kg">Weight (kg)</label>
+                        <input id="weight_kg" type="number" step="0.1">
+                    </div>
+                    <div class="field">
+                        <label for="height_cm">Height (cm)</label>
+                        <input id="height_cm" type="number" step="0.1">
+                    </div>
+                    <div class="field">
+                        <label for="frax_major">FRAX major (%) (optional)</label>
+                        <input id="frax_major" type="number" step="0.1">
+                    </div>
+                    <div class="field">
+                        <label for="frax_hip">FRAX hip (%) (optional)</label>
+                        <input id="frax_hip" type="number" step="0.1">
+                    </div>
+                </div>
+                <div class="field-group">
+                    <div class="field">
+                        <label>Risk factors</label>
+                        <div>
+                            <label><input type="checkbox" id="parental_hip_fracture"> parental hip fracture</label><br>
+                            <label><input type="checkbox" id="current_smoker"> current smoker</label><br>
+                            <label><input type="checkbox" id="glucocorticoids"> glucocorticoids</label><br>
+                            <label><input type="checkbox" id="rheumatoid_arthritis"> rheumatoid arthritis</label><br>
+                            <label><input type="checkbox" id="secondary_osteoporosis"> secondary osteoporosis</label><br>
+                            <label><input type="checkbox" id="high_alcohol_intake"> high alcohol intake</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <h3>Labs (serum & urine)</h3>
+                <div class="field-group">
+                    <div class="field">
+                        <label for="vitamin_d_25oh_ng_ml">25-OH Vit D (ng/mL)</label>
+                        <input id="vitamin_d_25oh_ng_ml" type="number" step="0.1">
+                    </div>
+                    <div class="field">
+                        <label for="serum_calcium_mg_dl">Serum Ca (mg/dL)</label>
+                        <input id="serum_calcium_mg_dl" type="number" step="0.1">
+                    </div>
+                    <div class="field">
+                        <label for="serum_phosphorus_mg_dl">Serum P (mg/dL)</label>
+                        <input id="serum_phosphorus_mg_dl" type="number" step="0.1">
+                    </div>
+                    <div class="field">
+                        <label for="pth_pg_ml">PTH (pg/mL)</label>
+                        <input id="pth_pg_ml" type="number" step="0.1">
+                    </div>
+                </div>
+                <div class="field-group">
+                    <div class="field">
+                        <label for="serum_magnesium_mg_dl">Serum Mg (mg/dL)</label>
+                        <input id="serum_magnesium_mg_dl" type="number" step="0.1">
+                    </div>
+                    <div class="field">
+                        <label for="serum_zinc_ug_dl">Serum Zn (μg/dL)</label>
+                        <input id="serum_zinc_ug_dl" type="number" step="0.1">
+                    </div>
+                    <div class="field">
+                        <label for="urine_calcium_24h_mg">Urine Ca 24h (mg/24h)</label>
+                        <input id="urine_calcium_24h_mg" type="number" step="1">
+                    </div>
+                </div>
+                
+                <h3>Supplements & intake</h3>
+                <div class="field-group">
+                    <div class="field">
+                        <label for="calcium_supplement_mg_per_day">Calcium supplement (mg/day)</label>
+                        <input id="calcium_supplement_mg_per_day" type="number" min="0" value="0">
+                    </div>
+                    <div class="field">
+                        <label>Calcium supplement?</label>
+                        <input type="checkbox" id="calcium_supplement">
+                    </div>
+                    <div class="field">
+                        <label for="vitamin_d3_iu_per_day">Vit D3 (IU/day)</label>
+                        <input id="vitamin_d3_iu_per_day" type="number" min="0">
+                    </div>
+                    <div class="field">
+                        <label>Supplements</label>
+                        <div>
+                            <label><input type="checkbox" id="vitamin_d_supplement"> Vit D</label>
+                            <label><input type="checkbox" id="magnesium_supplement"> Mg</label>
+                            <label><input type="checkbox" id="zinc_supplement"> Zn</label>
+                            <label><input type="checkbox" id="boron_supplement"> B</label>
+                            <label><input type="checkbox" id="vitamin_k2_supplement"> Vit K2</label>
+                            <label><input type="checkbox" id="fortibone_supplement"> Fortibone</label>
+                            <label><input type="checkbox" id="colabone_supplement"> Colabone</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <h3>Calcium intake (food)</h3>
+                <div class="field-group">
+                    <div class="field">
+                        <label for="milk_portions">Milk portions/day</label>
+                        <input id="milk_portions" type="number" min="0" value="0">
+                    </div>
+                    <div class="field">
+                        <label for="yogurt_portions">Yogurt portions/day</label>
+                        <input id="yogurt_portions" type="number" min="0" value="0">
+                    </div>
+                    <div class="field">
+                        <label for="cheese_portions">Cheese portions/day</label>
+                        <input id="cheese_portions" type="number" min="0" value="0">
+                    </div>
+                    <div class="field">
+                        <label for="leafy_portions">Leafy greens portions/day</label>
+                        <input id="leafy_portions" type="number" min="0" value="0">
+                    </div>
+                    <div class="field">
+                        <label for="fortified_portions">Fortified food portions/day</label>
+                        <input id="fortified_portions" type="number" min="0" value="0">
+                    </div>
+                    <div class="field">
+                        <label for="other_dairy_portions">Other dairy portions/day</label>
+                        <input id="other_dairy_portions" type="number" min="0" value="0">
+                    </div>
+                </div>
+                
+                <h3>Function, falls & lifestyle</h3>
+                <div class="field-group">
+                    <div class="field">
+                        <label for="exercise_level">Exercise level</label>
+                        <select id="exercise_level">
+                            <option value="none">none</option>
+                            <option value="light">light</option>
+                            <option value="moderate">moderate</option>
+                            <option value="vigorous">vigorous</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="daily_walking">Daily walking</label>
+                        <select id="daily_walking">
+                            <option value="none">none</option>
+                            <option value="under_15_min">under 15 min</option>
+                            <option value="between_15_30_min">15–30 min</option>
+                            <option value="over_30_min">over 30 min</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>Modifiers</label>
+                        <div>
+                            <label><input type="checkbox" id="high_falls_risk"> high falls risk</label><br>
+                            <label><input type="checkbox" id="history_of_falls_last_year"> falls last year</label><br>
+                            <label><input type="checkbox" id="dementia_or_cognitive_impairment"> dementia / cognitive</label><br>
+                            <label><input type="checkbox" id="significant_immobility"> significant immobility</label><br>
+                            <label><input type="checkbox" id="dietician_follow_up"> dietician follow-up</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="button-row">
+                    <button id="evaluateBtn">Evaluate osteoporosis</button>
+                    <span id="status" class="status"></span>
+                </div>
+                <p class="small">
+                Data is sent to: <code>https://ortho-reception-backend.onrender.com/osteoporosis/evaluate</code>. No data is stored by this page itself.
+                </p>
+            </div>
+            
+            <div class="card">
+                <h2>Output</h2>
+                <div id="badges"></div>
+                <div class="small" id="metaInfo"></div>
+                <h3>Clinical note</h3>
+                <textarea id="clinical_note" readonly placeholder="Run an evaluation to see the generated note..."></textarea>
+                <h3 style="margin-top: 12px;">Patient summary (optional)</h3>
+                <textarea id="patient_summary" readonly style="min-height: 120px;"></textarea>
+            </div>
+        </div>
+    </main>
+    
+    <script>
+        const API_URL = "https://ortho-reception-backend.onrender.com/osteoporosis/evaluate";
+        
+        function val(id) {
+            const el = document.getElementById(id);
+            if (!el) return null;
+            if (el.type === "checkbox") return el.checked;
+            if (el.tagName === "SELECT") return el.value;
+            if (el.value === "") return null;
+            const numFields = [
+                               "age","spine_t_score","total_hip_t_score","femoral_neck_t_score",
+                               "frax_major","frax_hip","weight_kg","height_cm",
+                               "vitamin_d_25oh_ng_ml","serum_calcium_mg_dl","serum_phosphorus_mg_dl",
+                               "pth_pg_ml","serum_magnesium_mg_dl","serum_zinc_ug_dl",
+                               "urine_calcium_24h_mg",
+                               "milk_portions","yogurt_portions","cheese_portions","leafy_portions",
+                               "fortified_portions","other_dairy_portions",
+                               "calcium_supplement_mg_per_day","vitamin_d3_iu_per_day"
+                               ];
+                               if (numFields.includes(id)) return Number(el.value);
+                               return el.value;
+        }
+        
+        function buildPayload() {
+            const fractures = [];
+            if (document.getElementById("fx_hip").checked) fractures.push("hip");
+            if (document.getElementById("fx_vert").checked) fractures.push("vertebral");
+            if (document.getElementById("fx_nonvert").checked) fractures.push("non_vertebral");
+            
+            return {
+                age: val("age"),
+                sex: val("sex"),
+                menopause_status: val("menopause_status"),
+                
+                spine_t_score: val("spine_t_score"),
+                total_hip_t_score: val("total_hip_t_score"),
+                femoral_neck_t_score: val("femoral_neck_t_score"),
+                prior_fragility_fractures: fractures,
+                
+                frax_major_osteoporotic: val("frax_major"),
+                frax_hip: val("frax_hip"),
+                
+                weight_kg: val("weight_kg"),
+                height_cm: val("height_cm"),
+                parental_hip_fracture: val("parental_hip_fracture"),
+                current_smoker: val("current_smoker"),
+                glucocorticoids: val("glucocorticoids"),
+                rheumatoid_arthritis: val("rheumatoid_arthritis"),
+                secondary_osteoporosis: val("secondary_osteoporosis"),
+                high_alcohol_intake: val("high_alcohol_intake"),
+                
+                vitamin_d_25oh_ng_ml: val("vitamin_d_25oh_ng_ml"),
+                serum_calcium_mg_dl: val("serum_calcium_mg_dl"),
+                serum_phosphorus_mg_dl: val("serum_phosphorus_mg_dl"),
+                pth_pg_ml: val("pth_pg_ml"),
+                serum_magnesium_mg_dl: val("serum_magnesium_mg_dl"),
+                serum_zinc_ug_dl: val("serum_zinc_ug_dl"),
+                urine_calcium_24h_mg: val("urine_calcium_24h_mg"),
+                
+                calcium_supplement: val("calcium_supplement"),
+                calcium_supplement_mg_per_day: val("calcium_supplement_mg_per_day"),
+                vitamin_d_supplement: val("vitamin_d_supplement"),
+                vitamin_d3_iu_per_day: val("vitamin_d3_iu_per_day"),
+                magnesium_supplement: val("magnesium_supplement"),
+                zinc_supplement: val("zinc_supplement"),
+                boron_supplement: val("boron_supplement"),
+                vitamin_k2_supplement: val("vitamin_k2_supplement"),
+                fortibone_supplement: val("fortibone_supplement"),
+                colabone_supplement: val("colabone_supplement"),
+                
+                exercise_level: val("exercise_level"),
+                daily_walking: val("daily_walking"),
+                dietician_follow_up: val("dietician_follow_up"),
+                high_falls_risk: val("high_falls_risk"),
+                history_of_falls_last_year: val("history_of_falls_last_year"),
+                dementia_or_cognitive_impairment: val("dementia_or_cognitive_impairment"),
+                significant_immobility: val("significant_immobility"),
+                
+                milk_portions_per_day: val("milk_portions") ?? 0,
+                yogurt_portions_per_day: val("yogurt_portions") ?? 0,
+                cheese_portions_per_day: val("cheese_portions") ?? 0,
+                leafy_greens_portions_per_day: val("leafy_portions") ?? 0,
+                fortified_food_portions_per_day: val("fortified_portions") ?? 0,
+                other_dairy_portions_per_day: val("other_dairy_portions") ?? 0
+            };
+        }
+        
+        function setStatus(text, isError = false) {
+            const status = document.getElementById("status");
+            if (!status) return;
+            status.textContent = text;
+            status.className = "status" + (isError ? " error" : "");
+        }
+        
+        function renderBadges(resp) {
+            const badges = document.getElementById("badges");
+            const meta = document.getElementById("metaInfo");
+            if (!badges || !meta) return;
+            
+            badges.innerHTML = "";
+            meta.textContent = "";
+            
+            if (!resp) return;
+            
+            const risk = resp.risk_category;
+            if (risk) {
+                const pill = document.createElement("div");
+                pill.className = "pill " + risk;
+                pill.textContent = "Risk: " + risk.toUpperCase();
+                badges.appendChild(pill);
+            }
+            
+            if (resp.estimated_total_calcium_mg != null) {
+                const pill = document.createElement("div");
+                pill.className = "pill";
+                pill.textContent = "Calcium ≈ " + Math.round(resp.estimated_total_calcium_mg) + " mg/day";
+                badges.appendChild(pill);
+            }
+            
+            if (resp.internal_frax_like_index != null) {
+                const pill = document.createElement("div");
+                pill.className = "pill";
+                pill.textContent = "Internal FRAX-style index: " + resp.internal_frax_like_index.toFixed(1);
+                badges.appendChild(pill);
+            }
+            
+            if (resp.risk_reasons && resp.risk_reasons.length > 0) {
+                meta.textContent = "Key drivers: " + resp.risk_reasons.join("; ");
+            }
+        }
+        
+        async function evaluate() {
+            const btn = document.getElementById("evaluateBtn");
+            if (btn) btn.disabled = true;
+            setStatus("Evaluating…");
+            try {
+                const payload = buildPayload();
+                console.log("Payload:", payload);
+                
+                const res = await fetch(API_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", "Accept": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+                
+                console.log("HTTP status:", res.status);
+                
+                if (!res.ok) {
+                    const text = await res.text();
+                    setStatus("Error " + res.status + " – see console", true);
+                    console.error("Error response:", text);
+                    return;
+                }
+                
+                const data = await res.json();
+                document.getElementById("clinical_note").value = data.clinical_note || "";
+                document.getElementById("patient_summary").value = data.patient_summary || "";
+                renderBadges(data);
+                setStatus("OK – risk and notes updated.");
+            } catch (err) {
+                console.error(err);
+                setStatus("Network or JS error – see console", true);
+            } finally {
+                if (btn) btn.disabled = false;
+            }
+        }
+        
+        window.addEventListener("DOMContentLoaded", () => {
+            const btn = document.getElementById("evaluateBtn");
+            if (!btn) {
+                console.error("evaluateBtn not found in DOM");
+                return;
+            }
+            btn.addEventListener("click", (e) => {
+                e.preventDefault();
+                evaluate();
+            });
+            console.log("Osteoporosis cockpit JS initialized");
+        });
+    </script>
+    </body>
+    </html>
