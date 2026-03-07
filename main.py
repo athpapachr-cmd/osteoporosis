@@ -623,18 +623,18 @@ def build_suggestions(
                 Suggestion(
                     category="vitamin_d",
                     text=(
-                        f"25-OH Vitamin D ({vitd:.1f} ng/mL) appears adequate for most patients; "
+                        "25-OH Vitamin D ({vitd:.1f} ng/mL) appears adequate for most patients; "
                         "continue current approach unless other factors suggest otherwise."
                     ),
                 )
             )
     else:
-        suggestions.append(
-            Suggestion(
-                category="vitamin_d",
-                text=(
-                    "No 25-OH Vitamin D value provided. Consider checking vitamin D status "
-                    "if clinically indicated."
+            suggestions.append(
+                Suggestion(
+                    category="vitamin_d",
+                    text=(
+                        "No 25-OH Vitamin D value provided. Consider checking vitamin D status "
+                        "if clinically indicated."
                 ),
             )
         )
