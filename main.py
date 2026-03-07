@@ -3,12 +3,13 @@
 from enum import Enum
 from typing import List, Optional, Tuple
 
-import os
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from openai import OpenAI
 from pydantic import BaseModel, Field, conint, confloat
+
+# If you use OpenAI:
+from openai import OpenAI
+import os
 
 # =========================
 # App & CORS
