@@ -856,7 +856,7 @@ def build_suggestions(
             )
         )
 
-    # Nutrition / dietician
+       # Nutrition / dietician
     if data.dietician_follow_up:
         suggestions.append(
             Suggestion(
@@ -881,6 +881,10 @@ def build_suggestions(
         )
 
     # Hyperparathyroidism / 24h urine patterns
+    add_hyperparathyroid_suggestions(data, suggestions)
+
+    return suggestions
+
 
 def add_hyperparathyroid_suggestions(data: OsteoInput, suggestions: List[Suggestion]) -> None:
     ca = data.serum_calcium_mg_dl
@@ -914,10 +918,12 @@ def add_hyperparathyroid_suggestions(data: OsteoInput, suggestions: List[Suggest
                 f"Vitamin D is low ({vitd:.1f} ng/mL); correcting vitamin D while monitoring "
                 "calcium and PTH may be reasonable before final conclusions."
             )
-        suggestions.append(Suggestion(
-            category="labs_hyperparathyroidism",
-            text=text + "Correlate with repeat labs, renal function, and imaging as needed."
-        ))
+        suggestions.append(
+            Suggestion(
+                category="labs_hyperparathyroidism",
+                text=text + "Correlate with repeat labs, renal function, and imaging as needed.",
+            )
+        )
         return
 
     # Secondary hyperparathyroidism pattern (vitamin D deficiency / CKD, etc.)
@@ -929,46 +935,51 @@ def add_hyperparathyroid_suggestions(data: OsteoInput, suggestions: List[Suggest
         )
         if phos is not None:
             text += f"Phosphorus {phos:.2f} mg/dL; interpret with renal function and PTH trends. "
-        suggestions.append(Suggestion(
-            category="labs_hyperparathyroidism",
-            text=text + "Consider appropriate workup and vitamin D repletion according to guidelines."
-        ))
+        suggestions.append(
+            Suggestion(
+                category="labs_hyperparathyroidism",
+                text=text + "Consider appropriate workup and vitamin D repletion according to guidelines.",
+            )
+        )
         return
 
     # Hypocalcemia with low PTH (hypoparathyroidism pattern)
     if low_ca and low_pth:
-        suggestions.append(Suggestion(
-            category="labs_hyperparathyroidism",
-            text=(
-                f"Hypocalcemia ({ca:.2f} mg/dL) with low PTH ({pth:.1f} pg/mL). "
-                "This can be compatible with hypoparathyroidism. Correlate with "
-                "clinical picture, magnesium, phosphorus, and drug history."
-            ),
-        ))
+        suggestions.append(
+            Suggestion(
+                category="labs_hyperparathyroidism",
+                text=(
+                    f"Hypocalcemia ({ca:.2f} mg/dL) with low PTH ({pth:.1f} pg/mL). "
+                    "This can be compatible with hypoparathyroidism. Correlate with "
+                    "clinical picture, magnesium, phosphorus, and drug history."
+                ),
+            )
+        )
 
     # 24h urine calcium comments (e.g., low vs high)
     if uca is not None:
         if uca < 100:
-            suggestions.append(Suggestion(
-                category="urine_calcium",
-                text=(
-                    f"24-hour urine calcium is {uca:.0f} mg/24h, which is relatively low; "
-                    "interpret in context (dietary calcium, vitamin D, and possible familial "
-                    "hypocalciuric hypercalcemia if hypercalcemia is present)."
-                ),
-            ))
+            suggestions.append(
+                Suggestion(
+                    category="urine_calcium",
+                    text=(
+                        f"24-hour urine calcium is {uca:.0f} mg/24h, which is relatively low; "
+                        "interpret in context (dietary calcium, vitamin D, and possible familial "
+                        "hypocalciuric hypercalcemia if hypercalcemia is present)."
+                    ),
+                )
+            )
         elif uca > 300:
-            suggestions.append(Suggestion(
-                category="urine_calcium",
-                text=(
-                    f"24-hour urine calcium is {uca:.0f} mg/24h, on the higher side; "
-                    "this can contribute to nephrolithiasis risk and may be relevant in "
-                    "the context of hypercalcemia or high-dose calcium/vitamin D."
-                ),
-            ))   
-
-
-    return suggestions
+            suggestions.append(
+                Suggestion(
+                    category="urine_calcium",
+                    text=(
+                        f"24-hour urine calcium is {uca:.0f} mg/24h, on the higher side; "
+                        "this can contribute to nephrolithiasis risk and may be relevant in "
+                        "the context of hypercalcemia or high-dose calcium/vitamin D."
+                    ),
+                )
+            )
 
 
 def build_clinical_note(
