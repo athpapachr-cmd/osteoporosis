@@ -618,7 +618,7 @@ def build_suggestions(
                     ),
                 )
             )
-else:
+    else:
             suggestions.append(
                 Suggestion(
                     category="vitamin_d",
