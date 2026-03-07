@@ -1023,15 +1023,29 @@ def build_clinical_note(
         lines.append(internal_index_note)
 
     # Labs
+        # Labs summary (use new fields, but keep backward compatibility)
     lab_bits = []
-    if data.vitamin_d_25oh is not None:
-        lab_bits.append(f"25-OH Vit D {data.vitamin_d_25oh:.1f}")
-    if data.serum_calcium is not None:
-        lab_bits.append(f"serum Ca {data.serum_calcium:.2f}")
-    if data.magnesium is not None:
-        lab_bits.append(f"Mg {data.magnesium:.2f}")
-    if data.zinc is not None:
-        lab_bits.append(f"Zn {data.zinc:.2f}")
+
+    vitd = data.vitamin_d_25oh_ng_ml or data.vitamin_d_25oh
+    if vitd is not None:
+        lab_bits.append(f"25-OH Vit D {vitd:.1f} ng/mL")
+
+    ca_lab = data.serum_calcium_mg_dl or data.serum_calcium
+    if ca_lab is not None:
+        lab_bits.append(f"serum Ca {ca_lab:.2f} mg/dL")
+
+    if data.serum_phosphorus_mg_dl is not None:
+        lab_bits.append(f"serum P {data.serum_phosphorus_mg_dl:.2f} mg/dL")
+
+    if data.pth_pg_ml is not None:
+        lab_bits.append(f"PTH {data.pth_pg_ml:.1f} pg/mL")
+
+    if data.serum_magnesium_mg_dl is not None:
+        lab_bits.append(f"serum Mg {data.serum_magnesium_mg_dl:.2f} mg/dL")
+
+    if data.serum_zinc_ug_dl is not None:
+        lab_bits.append(f"serum Zn {data.serum_zinc_ug_dl:.0f} μg/dL")
+
     if lab_bits:
         lines.append("Labs: " + ", ".join(lab_bits) + ".")
 
