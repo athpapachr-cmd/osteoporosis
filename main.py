@@ -28,7 +28,7 @@ app = FastAPI(
 # Allow the local cockpit (localhost) and other origins (for now)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # you can restrict later if you want
+    allow_origins=["*"],      # allow localhost and others for now
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
