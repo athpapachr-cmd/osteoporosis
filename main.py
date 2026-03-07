@@ -4,6 +4,7 @@ from enum import Enum
 from typing import List, Optional, Tuple
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, conint, confloat
 
 app = FastAPI(
@@ -14,6 +15,13 @@ app = FastAPI(
         "For clinician use only."
     ),
     version="0.2.0",
+)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],        # for now allow all origins (localhost, Render, etc.)
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # =========================
