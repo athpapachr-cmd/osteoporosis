@@ -1,28 +1,41 @@
-# main.py
+# main.py# main.py
 
 from enum import Enum
 from typing import List, Optional, Tuple
 
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from openai import OpenAI
 from pydantic import BaseModel, Field, conint, confloat
+
+# =========================
+# App & CORS
+# =========================
 
 app = FastAPI(
     title="Papachristou Ortho Osteoporosis Support",
     description=(
         "Guideline-inspired decision support for osteoporosis risk stratification, "
-        "FRAX-style internal risk indexing, and calcium intake estimation. "
+        "FRAX-style internal risk indexing, calcium intake estimation, and lab pattern hints. "
         "For clinician use only."
     ),
-    version="0.2.0",
+    version="0.3.0",
 )
+
+# Allow the local cockpit (localhost) and other origins (for now)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],        # for now allow all origins (localhost, Render, etc.)
+    allow_origins=["*"],  # you can restrict later if you want
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# OpenAI client for elaboration endpoint
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+openai_client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
 
 # =========================
 # Enums & Schemas
@@ -58,7 +71,7 @@ class ExerciseLevel(str, Enum):
     none = "none"
     light = "light"        # occasional walking
     moderate = "moderate"  # regular walking ± some resistance work
-    vigorous = "vigorous"  # structured resistance, HIIT, etc.
+    vigorous = "vigorous"  # structured resistance, etc.
 
 
 class DailyWalking(str, Enum):
@@ -66,6 +79,11 @@ class DailyWalking(str, Enum):
     under_15_min = "under_15_min"
     between_15_30_min = "between_15_30_min"
     over_30_min = "over_30_min"
+
+
+class Suggestion(BaseModel):
+    category: str  # e.g. "pharmacologic", "vitamin_d", "calcium", "labs_hyperparathyroidism"
+    text: str
 
 
 class OsteoInput(BaseModel):
@@ -101,28 +119,94 @@ class OsteoInput(BaseModel):
     glucocorticoids: bool = False
     rheumatoid_arthritis: bool = False
     secondary_osteoporosis: bool = False
-    high_alcohol_intake: bool = False  # e.g. ≥3 units/day
+    high_alcohol_intake: bool = False  # ≥3 units/day
 
-    # Labs
-    vitamin_d_25oh: Optional[confloat(ge=0.0, le=200.0)] = Field(
-        default=None, description="25-OH Vitamin D level (ng/mL or nmol/L, as per local use)"
+    # Mineral metabolism & bone labs
+    # Keep old names for backwards compatibility, but prefer the *_mg_dl / *_ng_ml fields.
+    serum_calcium: Optional[float] = Field(
+        default=None, description="(Deprecated) Serum calcium, use serum_calcium_mg_dl"
     )
-    serum_calcium: Optional[confloat(ge=4.0, le=15.0)] = Field(
-        default=None, description="Serum calcium (mg/dL or mmol/L, interpret per units)"
+    vitamin_d_25oh: Optional[float] = Field(
+        default=None, description="(Deprecated) 25-OH Vit D, use vitamin_d_25oh_ng_ml"
     )
-    magnesium: Optional[confloat(ge=0.1, le=5.0)] = None
-    zinc: Optional[confloat(ge=0.1, le=10.0)] = None
-    boron: Optional[confloat(ge=0.0, le=10.0)] = None
-    vitamin_k2_supplement: bool = False
 
-    # Supplements / nutraceuticals
-    vitamin_d_supplement: bool = False
+    serum_calcium_mg_dl: Optional[float] = Field(
+        default=None, description="Serum calcium (mg/dL)"
+    )
+    serum_phosphorus_mg_dl: Optional[float] = Field(
+        default=None, description="Serum phosphorus (mg/dL)"
+    )
+    vitamin_d_25oh_ng_ml: Optional[float] = Field(
+        default=None, description="25-OH Vitamin D (ng/mL)"
+    )
+    pth_pg_ml: Optional[float] = Field(
+        default=None, description="Intact PTH (pg/mL)"
+    )
+
+    # 24h urine
+    urine_calcium_24h_mg: Optional[float] = Field(
+        default=None, description="24-hour urine calcium (mg/24h)"
+    )
+
+    # Bone turnover markers
+    osteocalcin_ng_ml: Optional[float] = Field(
+        default=None, description="Osteocalcin (ng/mL)"
+    )
+    bone_alk_phos_u_l: Optional[float] = Field(
+        default=None, description="Bone alkaline phosphatase (U/L)"
+    )
+    total_alk_phos_u_l: Optional[float] = Field(
+        default=None, description="Total alkaline phosphatase (U/L)"
+    )
+    ctx_ng_ml: Optional[float] = Field(
+        default=None, description="CTX (β-CrossLaps, ng/mL)"
+    )
+    p1np_ng_ml: Optional[float] = Field(
+        default=None, description="P1NP (ng/mL)"
+    )
+
+    # Other labs
+    serum_magnesium_mg_dl: Optional[float] = Field(
+        default=None, description="Serum magnesium (mg/dL)"
+    )
+    serum_zinc_ug_dl: Optional[float] = Field(
+        default=None, description="Serum zinc (μg/dL)"
+    )
+    serum_glucose_mg_dl: Optional[float] = Field(
+        default=None, description="Fasting glucose (mg/dL)"
+    )
+    tsh_u_iu_ml: Optional[float] = Field(
+        default=None, description="TSH (μIU/mL)"
+    )
+    free_t4_ng_dl: Optional[float] = Field(
+        default=None, description="Free T4 (ng/dL)"
+    )
+
+    # Supplements / intake
     calcium_supplement: bool = False
-    calcium_supplement_mg_per_day: Optional[confloat(ge=0.0, le=5000.0)] = None
+    calcium_supplement_mg_per_day: Optional[float] = Field(
+        default=None, description="Calcium supplement (mg/day)"
+    )
+
+    vitamin_d_supplement: bool = False
+    vitamin_d3_iu_per_day: Optional[float] = Field(
+        default=None, description="Vitamin D3 supplement (IU/day)"
+    )
+
     magnesium_supplement: bool = False
+    magnesium_supplement_mg_per_day: Optional[float] = None
+
     zinc_supplement: bool = False
+    zinc_supplement_mg_per_day: Optional[float] = None
+
     boron_supplement: bool = False
+    boron_supplement_mg_per_day: Optional[float] = None
+
+    vitamin_k2_supplement: bool = False
+    vitamin_k2_ug_per_day: Optional[float] = None
+
     fortibone_supplement: bool = False
+    colabone_supplement: bool = False
 
     # Lifestyle / functional status
     exercise_level: ExerciseLevel = ExerciseLevel.none
@@ -142,11 +226,6 @@ class OsteoInput(BaseModel):
     other_dairy_portions_per_day: conint(ge=0, le=20) = 0
 
 
-class Suggestion(BaseModel):
-    category: str  # e.g. "pharmacologic", "vitamin_d", "calcium", "lifestyle", "falls_risk", "nutrition"
-    text: str
-
-
 class OsteoAssessment(BaseModel):
     risk_category: RiskCategory
     risk_reasons: List[str]
@@ -157,6 +236,15 @@ class OsteoAssessment(BaseModel):
     suggestions: List[Suggestion]
     clinical_note: str
     patient_summary: str
+
+
+class ElaborationRequest(BaseModel):
+    assessment: OsteoAssessment
+    audience: str = Field(default="clinician", description="clinician or patient")
+
+
+class ElaborationResponse(BaseModel):
+    elaborated_text: str
 
 
 # =========================
@@ -239,13 +327,12 @@ def calculate_calcium_intake(data: OsteoInput) -> Tuple[Optional[float], Optiona
     Estimate daily calcium intake based on rough portion equivalents and supplement dose.
     Approximate only; for decision support, not precise nutrition prescription.
     """
-    # Rough mg per portion assumptions; adjust to your taste
-    MG_PER_PORTION_MILK = 300.0          # glass of milk
-    MG_PER_PORTION_YOGURT = 250.0        # pot of yogurt
-    MG_PER_PORTION_CHEESE = 200.0        # serving of hard cheese
-    MG_PER_PORTION_LEAFY = 100.0         # leafy greens / broccoli
-    MG_PER_PORTION_FORTIFIED = 150.0     # fortified juice/cereal
-    MG_PER_PORTION_OTHER_DAIRY = 150.0   # other dairy
+    MG_PER_PORTION_MILK = 300.0
+    MG_PER_PORTION_YOGURT = 250.0
+    MG_PER_PORTION_CHEESE = 200.0
+    MG_PER_PORTION_LEAFY = 100.0
+    MG_PER_PORTION_FORTIFIED = 150.0
+    MG_PER_PORTION_OTHER_DAIRY = 150.0
 
     dietary_mg = 0.0
     dietary_mg += data.milk_portions_per_day * MG_PER_PORTION_MILK
@@ -284,7 +371,100 @@ def calculate_calcium_intake(data: OsteoInput) -> Tuple[Optional[float], Optiona
 
 
 # =========================
-# Core logic
+# Hyperparathyroidism pattern helper
+# =========================
+
+
+def add_hyperparathyroid_suggestions(data: OsteoInput, suggestions: List[Suggestion]) -> None:
+    ca = data.serum_calcium_mg_dl or data.serum_calcium
+    pth = data.pth_pg_ml
+    vitd = data.vitamin_d_25oh_ng_ml or data.vitamin_d_25oh
+    phos = data.serum_phosphorus_mg_dl
+    uca = data.urine_calcium_24h_mg
+
+    if ca is None or pth is None:
+        return
+
+    high_ca = ca > 10.5
+    low_ca = ca < 8.5
+    high_pth = pth > 65
+    low_pth = pth < 15
+
+    # Primary hyperparathyroidism pattern
+    if high_ca and high_pth:
+        text = (
+            f"Serum calcium {ca:.2f} mg/dL with elevated PTH {pth:.1f} pg/mL. "
+            "This pattern can be seen in primary hyperparathyroidism or related disorders. "
+        )
+        if phos is not None and phos < 2.5:
+            text += f"Phosphorus is low ({phos:.2f} mg/dL), which may further support this pattern. "
+        if vitd is not None and vitd < 20:
+            text += (
+                f"Vitamin D is low ({vitd:.1f} ng/mL); correcting vitamin D while "
+                "monitoring calcium and PTH may be reasonable before final conclusions. "
+            )
+        suggestions.append(
+            Suggestion(
+                category="labs_hyperparathyroidism",
+                text=text + "Correlate with repeat labs, renal function, and imaging as needed.",
+            )
+        )
+    # Secondary hyperparathyroidism (vitamin D deficiency–type pattern)
+    elif not high_ca and high_pth and vitd is not None and vitd < 20:
+        text = (
+            f"PTH {pth:.1f} pg/mL with calcium {ca:.2f} mg/dL and low vitamin D "
+            f"{vitd:.1f} ng/mL. This combination can be compatible with secondary "
+            "hyperparathyroidism (e.g. vitamin D deficiency or CKD). "
+        )
+        if phos is not None:
+            text += f"Phosphorus {phos:.2f} mg/dL; interpret with renal function and PTH trends. "
+        suggestions.append(
+            Suggestion(
+                category="labs_hyperparathyroidism",
+                text=text + "Consider appropriate workup and vitamin D repletion according to guidelines.",
+            )
+        )
+    # Hypocalcemia with low PTH (hypoparathyroidism-type pattern)
+    elif low_ca and low_pth:
+        suggestions.append(
+            Suggestion(
+                category="labs_hyperparathyroidism",
+                text=(
+                    f"Hypocalcemia ({ca:.2f} mg/dL) with low PTH ({pth:.1f} pg/mL). "
+                    "This can be compatible with hypoparathyroidism. Correlate with "
+                    "clinical picture, magnesium, phosphorus, and drug history."
+                ),
+            )
+        )
+
+    # 24h urine calcium commentary
+    if uca is not None:
+        if uca < 100:
+            suggestions.append(
+                Suggestion(
+                    category="urine_calcium",
+                    text=(
+                        f"24-hour urine calcium is {uca:.0f} mg/24h, which is relatively low; "
+                        "interpret in context (dietary calcium, vitamin D, and possible familial "
+                        "hypocalciuric hypercalcemia if hypercalcemia is present)."
+                    ),
+                )
+            )
+        elif uca > 300:
+            suggestions.append(
+                Suggestion(
+                    category="urine_calcium",
+                    text=(
+                        f"24-hour urine calcium is {uca:.0f} mg/24h, on the higher side; "
+                        "this can contribute to nephrolithiasis risk and may be relevant in "
+                        "the context of hypercalcemia or high-dose calcium/vitamin D."
+                    ),
+                )
+            )
+
+
+# =========================
+# Risk and suggestion logic
 # =========================
 
 
@@ -294,7 +474,6 @@ def determine_risk_category(
 ) -> Tuple[RiskCategory, List[str]]:
     reasons: List[str] = []
 
-    # 1. Very high risk: prior hip or vertebral fracture, or multiple fractures
     has_hip = FractureType.hip in data.prior_fragility_fractures
     has_vertebral = FractureType.vertebral in data.prior_fragility_fractures
 
@@ -306,12 +485,10 @@ def determine_risk_category(
         reasons.append("Multiple prior fragility fractures.")
         return RiskCategory.very_high, reasons
 
-    # 2. Very high risk: overwhelming frailty / falls risk
     if data.high_falls_risk and (data.dementia_or_cognitive_impairment or data.significant_immobility):
         reasons.append("High falls risk combined with dementia or significant immobility.")
         return RiskCategory.very_high, reasons
 
-    # Helper: minimum T-score across measured sites
     t_scores = [
         ts
         for ts in [
@@ -323,7 +500,6 @@ def determine_risk_category(
     ]
     min_t = min(t_scores) if t_scores else None
 
-    # External FRAX (if provided)
     frax_major = data.frax_major_osteoporotic or 0.0
     frax_hip = data.frax_hip or 0.0
     frax_major_high = frax_major >= 20.0
@@ -331,7 +507,6 @@ def determine_risk_category(
 
     internal_index_high = internal_index is not None and internal_index >= 6.0
 
-    # 3. High risk
     if min_t is not None and min_t <= -2.5:
         reasons.append(f"Osteoporosis-range T-score (≤ -2.5); minimum T-score {min_t:.2f}.")
         return RiskCategory.high, reasons
@@ -348,7 +523,6 @@ def determine_risk_category(
         )
         return RiskCategory.high, reasons
 
-    # 4. Moderate risk
     internal_index_moderate = internal_index is not None and 3.0 <= internal_index < 6.0
 
     if min_t is not None and -2.5 < min_t <= -1.0:
@@ -369,7 +543,6 @@ def determine_risk_category(
         )
         return RiskCategory.moderate, reasons
 
-    # 5. Low risk
     reasons.append(
         "No major risk features identified (no prior major fragility fracture, no "
         "osteoporosis-range T-score, and no strong accumulation of FRAX-style clinical "
@@ -386,7 +559,7 @@ def build_suggestions(
 ) -> List[Suggestion]:
     suggestions: List[Suggestion] = []
 
-    # Pharmacologic / fracture risk management
+    # Pharmacologic / fracture risk
     if risk in [RiskCategory.high, RiskCategory.very_high]:
         suggestions.append(
             Suggestion(
@@ -421,15 +594,15 @@ def build_suggestions(
             )
         )
 
-    # Vitamin D
-    if data.vitamin_d_25oh is not None:
-        vitd = data.vitamin_d_25oh
+    # Vitamin D (lab-based, with backward compatibility)
+    vitd = data.vitamin_d_25oh_ng_ml or data.vitamin_d_25oh
+    if vitd is not None:
         if vitd < 20:
             suggestions.append(
                 Suggestion(
                     category="vitamin_d",
                     text=(
-                        f"25-OH Vitamin D is low ({vitd:.1f}). Consider correcting vitamin D "
+                        f"25-OH Vitamin D is low ({vitd:.1f} ng/mL). Consider correcting vitamin D "
                         "to at least the lower end of your target range before or alongside "
                         "pharmacologic osteoporosis therapy."
                     ),
@@ -440,17 +613,17 @@ def build_suggestions(
                 Suggestion(
                     category="vitamin_d",
                     text=(
-                        f"25-OH Vitamin D is borderline ({vitd:.1f}). Mild optimization may "
+                        f"25-OH Vitamin D is borderline ({vitd:.1f} ng/mL). Mild optimization may "
                         "be beneficial in the context of bone health."
                     ),
                 )
             )
-        else:
+else:
             suggestions.append(
                 Suggestion(
                     category="vitamin_d",
                     text=(
-                        f"25-OH Vitamin D ({vitd:.1f}) appears adequate for most patients; "
+                        f"25-OH Vitamin D ({vitd:.1f} ng/mL) appears adequate for most patients; "
                         "continue current approach unless other factors suggest otherwise."
                     ),
                 )
@@ -467,6 +640,7 @@ def build_suggestions(
         )
 
     # Calcium: intake-focused if we have calculator output
+    ca_lab = data.serum_calcium_mg_dl or data.serum_calcium
     if calcium_total_mg is not None and calcium_note is not None:
         suggestions.append(
             Suggestion(
@@ -475,26 +649,24 @@ def build_suggestions(
             )
         )
     else:
-        # fallback to serum calcium
-        if data.serum_calcium is not None:
-            ca = data.serum_calcium
-            if ca < 8.5:
+        if ca_lab is not None:
+            if ca_lab < 8.5:
                 suggestions.append(
                     Suggestion(
                         category="calcium",
                         text=(
-                            f"Serum calcium appears low ({ca:.2f}). Investigate and correct "
+                            f"Serum calcium appears low ({ca_lab:.2f} mg/dL). Investigate and correct "
                             "hypocalcemia before initiating or continuing certain osteoporosis "
                             "therapies."
                         ),
                     )
                 )
-            elif ca > 10.5:
+            elif ca_lab > 10.5:
                 suggestions.append(
                     Suggestion(
                         category="calcium",
                         text=(
-                            f"Serum calcium appears elevated ({ca:.2f}). Consider evaluating for "
+                            f"Serum calcium appears elevated ({ca_lab:.2f} mg/dL). Consider evaluating for "
                             "hypercalcemia and adjusting calcium/vitamin D intake accordingly."
                         ),
                     )
@@ -504,7 +676,7 @@ def build_suggestions(
                     Suggestion(
                         category="calcium",
                         text=(
-                            f"Serum calcium ({ca:.2f}) is within a typical reference range. "
+                            f"Serum calcium ({ca_lab:.2f} mg/dL) is within a typical reference range. "
                             "Ensure total calcium intake (diet + supplementation) is appropriate "
                             "for age and risk profile."
                         ),
@@ -521,26 +693,30 @@ def build_suggestions(
                     ),
                 )
             )
-
-    # Magnesium, zinc, boron, vitamin K2, Fortibone – supportive
+            
+    # Micronutrients & collagen supplements
     if data.magnesium_supplement or data.zinc_supplement or data.boron_supplement or data.vitamin_k2_supplement:
-        text_parts = []
+        parts = []
         if data.magnesium_supplement:
-            text_parts.append("magnesium")
+            dose = f" (~{data.magnesium_supplement_mg_per_day:.0f} mg/day)" if data.magnesium_supplement_mg_per_day else ""
+            parts.append(f"magnesium{dose}")
         if data.zinc_supplement:
-            text_parts.append("zinc")
+            dose = f" (~{data.zinc_supplement_mg_per_day:.0f} mg/day)" if data.zinc_supplement_mg_per_day else ""
+            parts.append(f"zinc{dose}")
         if data.boron_supplement:
-            text_parts.append("boron")
+            dose = f" (~{data.boron_supplement_mg_per_day:.1f} mg/day)" if data.boron_supplement_mg_per_day else ""
+            parts.append(f"boron{dose}")
         if data.vitamin_k2_supplement:
-            text_parts.append("vitamin K2")
-        combo = ", ".join(text_parts)
+            dose = f" (~{data.vitamin_k2_ug_per_day:.0f} μg/day)" if data.vitamin_k2_ug_per_day else ""
+            parts.append(f"vitamin K2{dose}")
+        combo = ", ".join(parts)
         suggestions.append(
             Suggestion(
                 category="micronutrients",
                 text=(
-                    f"Patient is using supportive micronutrient supplementation ({combo}). "
-                    "These may support general bone and metabolic health, but they do not "
-                    "replace guideline-directed osteoporosis pharmacotherapy when indicated."
+                    f"Supportive micronutrient supplementation reported ({combo}). These may support "
+                    "general bone and metabolic health but do not replace guideline-directed "
+                    "osteoporosis pharmacotherapy when indicated."
                 ),
             )
         )
@@ -556,17 +732,54 @@ def build_suggestions(
             )
         )
 
-    if data.fortibone_supplement:
+    if data.fortibone_supplement or data.colabone_supplement:
+        which = []
+        if data.fortibone_supplement:
+            which.append("Fortibone")
+        if data.colabone_supplement:
+            which.append("Colabone")
+        label = ", ".join(which)
         suggestions.append(
             Suggestion(
-                category="fortibone",
+                category="collagen",
                 text=(
-                    "Fortibone or similar collagen-based supplementation reported. You may "
-                    "frame this as an adjunct to, not a substitute for, established "
-                    "anti-fracture pharmacotherapy and lifestyle measures."
+                    f"Collagen-based supplementation reported ({label}). Frame this as an adjunct to, "
+                    "not a substitute for, established anti-fracture pharmacotherapy and lifestyle measures."
                 ),
             )
         )
+
+        # Phosphorus
+    if data.serum_phosphorus_mg_dl is not None:
+        p = data.serum_phosphorus_mg_dl
+        if p < 2.5:
+            suggestions.append(Suggestion(
+                category="labs_phosphorus",
+                text=(
+                    f"Serum phosphorus ({p:.2f} mg/dL) appears low. Consider integrating this "
+                    "with calcium, PTH, and vitamin D to evaluate for possible secondary "
+                    "mineral metabolism disturbances."
+                ),
+            ))
+        elif p > 4.5:
+            suggestions.append(Suggestion(
+                category="labs_phosphorus",
+                text=(
+                    f"Serum phosphorus ({p:.2f} mg/dL) appears elevated. Correlate with renal "
+                    "function, PTH, and other labs."
+                ),
+            ))
+
+    # Bone turnover markers (very high-level commentary only)
+    if data.ctx_ng_ml is not None:
+        ctx = data.ctx_ng_ml
+        suggestions.append(Suggestion(
+            category="bone_turnover",
+            text=(
+                f"CTX measured at {ctx:.2f} ng/mL. Interpret in context of lab reference "
+                "ranges, time since last dose of any anti-resorptive, and circadian variation."
+            ),
+        ))
 
     # Lifestyle / exercise
     if data.exercise_level in [ExerciseLevel.none, ExerciseLevel.light]:
@@ -650,7 +863,7 @@ def build_suggestions(
             )
         )
 
-    # Dietician
+    # Nutrition / dietician
     if data.dietician_follow_up:
         suggestions.append(
             Suggestion(
@@ -673,6 +886,94 @@ def build_suggestions(
                 ),
             )
         )
+
+    # Hyperparathyroidism / 24h urine patterns
+
+def add_hyperparathyroid_suggestions(data: OsteoInput, suggestions: List[Suggestion]) -> None:
+    ca = data.serum_calcium_mg_dl
+    pth = data.pth_pg_ml
+    vitd = data.vitamin_d_25oh_ng_ml
+    phos = data.serum_phosphorus_mg_dl
+    uca = data.urine_calcium_24h_mg
+
+    # Only proceed if we have at least calcium and PTH
+    if ca is None or pth is None:
+        return
+
+    # Very rough working ranges; you will interpret them clinically
+    high_ca = ca > 10.5
+    low_ca = ca < 8.5
+    high_pth = pth > 65     # depends on lab
+    low_pth = pth < 15
+
+    # Primary hyperparathyroidism pattern (classic)
+    if high_ca and high_pth:
+        text = (
+            f"Serum calcium {ca:.2f} mg/dL with elevated PTH {pth:.1f} pg/mL. "
+            "This pattern can be seen in primary hyperparathyroidism or related disorders. "
+        )
+        if phos is not None and phos < 2.5:
+            text += (
+                f"Phosphorus is low ({phos:.2f} mg/dL), which may further support this pattern. "
+            )
+        if vitd is not None and vitd < 20:
+            text += (
+                f"Vitamin D is low ({vitd:.1f} ng/mL); correcting vitamin D while monitoring "
+                "calcium and PTH may be reasonable before final conclusions."
+            )
+        suggestions.append(Suggestion(
+            category="labs_hyperparathyroidism",
+            text=text + "Correlate with repeat labs, renal function, and imaging as needed."
+        ))
+        return
+
+    # Secondary hyperparathyroidism pattern (vitamin D deficiency / CKD, etc.)
+    if not high_ca and high_pth and vitd is not None and vitd < 20:
+        text = (
+            f"PTH {pth:.1f} pg/mL with calcium {ca:.2f} mg/dL and low vitamin D "
+            f"{vitd:.1f} ng/mL. This combination can be compatible with secondary "
+            "hyperparathyroidism (e.g. vitamin D deficiency or CKD). "
+        )
+        if phos is not None:
+            text += f"Phosphorus {phos:.2f} mg/dL; interpret with renal function and PTH trends. "
+        suggestions.append(Suggestion(
+            category="labs_hyperparathyroidism",
+            text=text + "Consider appropriate workup and vitamin D repletion according to guidelines."
+        ))
+        return
+
+    # Hypocalcemia with low PTH (hypoparathyroidism pattern)
+    if low_ca and low_pth:
+        suggestions.append(Suggestion(
+            category="labs_hyperparathyroidism",
+            text=(
+                f"Hypocalcemia ({ca:.2f} mg/dL) with low PTH ({pth:.1f} pg/mL). "
+                "This can be compatible with hypoparathyroidism. Correlate with "
+                "clinical picture, magnesium, phosphorus, and drug history."
+            ),
+        ))
+
+    # 24h urine calcium comments (e.g., low vs high)
+    if uca is not None:
+        if uca < 100:
+            suggestions.append(Suggestion(
+                category="urine_calcium",
+                text=(
+                    f"24-hour urine calcium is {uca:.0f} mg/24h, which is relatively low; "
+                    "interpret in context (dietary calcium, vitamin D, and possible familial "
+                    "hypocalciuric hypercalcemia if hypercalcemia is present)."
+                ),
+            ))
+        elif uca > 300:
+            suggestions.append(Suggestion(
+                category="urine_calcium",
+                text=(
+                    f"24-hour urine calcium is {uca:.0f} mg/24h, on the higher side; "
+                    "this can contribute to nephrolithiasis risk and may be relevant in "
+                    "the context of hypercalcemia or high-dose calcium/vitamin D."
+                ),
+            ))   
+
 
     return suggestions
 
@@ -882,4 +1183,75 @@ def evaluate_osteoporosis(input_data: OsteoInput) -> OsteoAssessment:
         clinical_note=clinical_note,
         patient_summary=patient_summary,
     )
+
+# =========================
+# API LLM
+# =========================
+
+@app.post("/osteoporosis/elaborate", response_model=ElaborationResponse)
+def elaborate_osteoporosis(req: ElaborationRequest) -> ElaborationResponse:
+    """
+    Use an LLM to elaborate on an existing osteoporosis assessment
+    WITHOUT changing its medical content.
+    """
+    a = req.assessment
+
+    if req.audience == "clinician":
+        style_instruction = (
+            "Write 1–2 concise paragraphs as a short clinical impression for an "
+            "orthopaedic specialist. Summarise the risk category, key drivers, relevant "
+            "labs and calcium intake, and the main suggestions. DO NOT introduce new "
+            "diagnoses, new treatments, or drug brand names. Stay neutral and guideline-aligned."
+        )
+    else:
+        style_instruction = (
+            "Write 1–2 short, simple paragraphs addressed to a patient. Explain their "
+            "bone health situation, their approximate fracture risk, and the main areas "
+            "you and their doctor may focus on (e.g. vitamin D, calcium, exercise, "
+            "falls prevention). Avoid specific drug names, numbers, or lab ranges. "
+            "Encourage them to discuss details with their doctor."
+        )
+
+    system_prompt = (
+        "You are a careful medical documentation assistant. You NEVER introduce new "
+        "diagnoses, treatments, dose changes, or lab interpretations beyond what you "
+        "are explicitly given. You only rephrase and organise the input content. "
+        "If something is not mentioned in the input, you do not speculate about it."
+    )
+
+    # Feed the structured assessment, not raw patient identifiers
+    user_payload = {
+        "risk_category": a.risk_category,
+        "risk_reasons": a.risk_reasons,
+        "internal_frax_like_index": a.internal_frax_like_index,
+        "calcium_intake_note": a.calcium_intake_note,
+        "suggestions": [s.text for s in a.suggestions],
+        "clinical_note": a.clinical_note,
+        "patient_summary": a.patient_summary,
+    }
+
+    # Call OpenAI Chat Completions (modern API)
+    try:
+        completion = openai_client.chat.completions.create(
+            model="gpt-4.1-mini",  # good balance of cost/quality for note generation
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {
+                    "role": "user",
+                    "content": style_instruction + "\n\n" + str(user_payload),
+                },
+            ],
+            temperature=0.2,
+            max_tokens=400,
+        )
+        text = completion.choices[0].message.content.strip()
+    except Exception as e:
+        # Fail safely: return a clear message instead of crashing
+        text = (
+            "LLM elaboration is temporarily unavailable. "
+            f"(Technical error: {e})"
+        )
+
+    return ElaborationResponse(elaborated_text=text)
+
 
