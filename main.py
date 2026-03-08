@@ -140,6 +140,21 @@ class CurrentTherapyType(str, Enum):
     raloxifene = "raloxifene"
     other = "other"
 
+class TherapyEpisode(BaseModel):
+    therapy_type: CurrentTherapyType
+    duration_years: Optional[float] = Field(
+        default=None,
+        description="Approximate duration of this episode in years",
+    )
+    is_holiday: bool = Field(
+        default=False,
+        description="True if this episode represents a drug holiday / no pharmacologic treatment",
+    )
+    notes: Optional[str] = Field(
+        default=None,
+        description="Optional notes (e.g. reason for switch, holiday, adverse effect)",
+    )
+
 class Suggestion(BaseModel):
     category: str
     text: str
@@ -254,6 +269,16 @@ class OsteoInput(BaseModel):
         default=False,
         description="Any clinically significant adverse effects related to current therapy?",
     )
+
+    # Past osteoporosis treatment episodes (including holidays)
+    therapy_history: List[TherapyEpisode] = Field(
+        default_factory=list,
+        description=(
+            "Chronological list of past therapy episodes for this patient, "
+            "including drug holidays. The last ongoing episode should match current_therapy_type."
+        ),
+    )
+
 
     # Lifestyle / functional status
     exercise_level: ExerciseLevel = ExerciseLevel.none
@@ -795,6 +820,85 @@ def add_current_therapy_suggestions(
                 ),
             )
         )
+def add_therapy_history_suggestions(
+    data: OsteoInput,
+    suggestions: List[Suggestion],
+) -> None:
+    history = data.therapy_history
+    if not history:
+        return
+
+    # Summarise total exposure per therapy class
+    totals: Dict[CurrentTherapyType, float] = {}
+    for ep in history:
+        if ep.duration_years is not None:
+            totals[ep.therapy_type] = totals.get(ep.therapy_type, 0.0) + ep.duration_years
+
+    parts = []
+    for ttype, years in totals.items():
+        if ttype == CurrentTherapyType.none:
+            continue
+        if years >= 1.0:
+            parts.append(f"{ttype.value.replace('_', ' ')} ~{years:.1f} years")
+
+    if parts:
+        suggestions.append(
+            Suggestion(
+                category="therapy_history",
+                text=(
+                    "Cumulative osteoporosis pharmacotherapy history includes: "
+                    + "; ".join(parts)
+                    + ". This overall exposure may influence decisions about future "
+                    "drug choice, duration, and treatment holidays."
+                ),
+            )
+        )
+
+    # Denosumab episodes: warn about rebound if any
+    had_denosumab = any(ep.therapy_type == CurrentTherapyType.denosumab for ep in history)
+    if had_denosumab:
+        suggestions.append(
+            Suggestion(
+                category="therapy_history",
+                text=(
+                    "Patient has previously been on denosumab. Past or future interruptions "
+                    "in denosumab require careful planning of subsequent anti-resorptive "
+                    "therapy to mitigate rebound bone turnover and vertebral fracture risk."
+                ),
+            )
+        )
+
+    # Anabolic episodes (teriparatide/romosozumab): consolidation after course
+    had_anabolic = any(
+        ep.therapy_type in [CurrentTherapyType.teriparatide, CurrentTherapyType.romosozumab]
+        for ep in history
+    )
+    if had_anabolic:
+        suggestions.append(
+            Suggestion(
+                category="therapy_history",
+                text=(
+                    "History of anabolic therapy (e.g. teriparatide/romosozumab). "
+                    "Ensuring adequate consolidation with an anti-resorptive agent "
+                    "after completion of anabolic courses is important for maintaining BMD gains."
+                ),
+            )
+        )
+
+    # Recognise holidays
+    had_holiday = any(ep.is_holiday for ep in history)
+    if had_holiday:
+        suggestions.append(
+            Suggestion(
+                category="therapy_history",
+                text=(
+                    "At least one treatment holiday is recorded. The timing and duration "
+                    "of holidays in relation to overall fracture risk and BMD trends should "
+                    "be periodically re-evaluated."
+                ),
+            )
+        )
+
 
 # =========================
 # Risk and suggestions
@@ -1209,6 +1313,8 @@ def build_suggestions(
 
     # Current pharmacologic therapy continuation/change framing
     add_current_therapy_suggestions(data, risk, suggestions)
+
+    add_therapy_history_suggestions(data, suggestions)
 
     return suggestions
 

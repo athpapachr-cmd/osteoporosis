@@ -400,6 +400,15 @@
                </div>
              </div>
 
+             <h3>Past therapy (episodes)</h3>
+             <div class="field-group">
+               <div class="field">
+                 <label for="therapy_history_json">Therapy history JSON</label>
+                 <textarea id="therapy_history_json" placeholder='[{"therapy_type":"oral_bisphosphonate","duration_years":5,"is_holiday":false},{"therapy_type":"none","duration_years":2,"is_holiday":true},{"therapy_type":"denosumab","duration_years":3,"is_holiday":false}]' style="min-height: 80px;"></textarea>
+                 <span class="small">Optional: simple JSON list of episodes; leave empty if not needed.</span>
+               </div>
+             </div>
+
              
                 <h3>Function, falls & lifestyle</h3>
                 <div class="field-group">
@@ -576,6 +585,20 @@
           current_therapy_duration_years: val("current_therapy_duration_years"),
           fractures_during_current_therapy: val("fractures_during_current_therapy"),
           significant_therapy_adverse_effects: val("significant_therapy_adverse_effects"),
+
+          // Therapy history JSON (optional)
+          therapy_history: (() => {
+            const txt = document.getElementById("therapy_history_json").value.trim();
+            if (!txt) return [];
+            try {
+              const parsed = JSON.parse(txt);
+              if (Array.isArray(parsed)) return parsed;
+            } catch (e) {
+              console.error("Invalid therapy_history JSON:", e);
+            }
+            return [];
+          })(),
+
           
           exercise_level: val("exercise_level"),
           daily_walking: val("daily_walking"),
