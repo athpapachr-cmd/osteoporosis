@@ -12,6 +12,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from openai import OpenAI
 from pydantic import BaseModel, Field, conint, confloat
 
+from typing import Dict, Any
+
 from sqlalchemy import (
     Column,
     DateTime,
@@ -138,11 +140,9 @@ class CurrentTherapyType(str, Enum):
     raloxifene = "raloxifene"
     other = "other"
 
-
 class Suggestion(BaseModel):
     category: str
     text: str
-
 
 class OsteoInput(BaseModel):
     # Demographics / context
@@ -308,6 +308,19 @@ class ElaborationRequest(BaseModel):
 class ElaborationResponse(BaseModel):
     elaborated_text: str
 
+class OsteoHistoryEntry(BaseModel):
+    assessment_id: str
+    created_at: datetime
+    input_data: OsteoInput
+    assessment: OsteoAssessment
+
+
+class TrendSummary(BaseModel):
+    bmd_trend_text: Optional[str]
+    ctx_trend_text: Optional[str]
+    p1np_trend_text: Optional[str]
+    # add p1np_trend_text, etc. as needed
+
 # =========================
 # Helper calculations
 # =========================
@@ -421,6 +434,176 @@ def calculate_calcium_intake(data: OsteoInput) -> Tuple[Optional[float], Optiona
 
     note = detail + " This is a rough estimate based on reported portions and supplement dose."
     return total_mg, note
+
+def bmd_trend_from_history(history: List[OsteoHistoryEntry]) -> Optional[str]:
+    """
+    Simple BMD trend description based on first vs last visit.
+    """
+    if len(history) < 2:
+        return None
+
+    first = history[0].input_data
+    last = history[-1].input_data
+
+    parts = []
+
+    if first.spine_t_score is not None and last.spine_t_score is not None:
+        delta = last.spine_t_score - first.spine_t_score
+        if abs(delta) >= 0.3:
+            direction = "improved" if delta > 0 else "worsened"
+            parts.append(
+                f"Lumbar spine T-score has {direction} from {first.spine_t_score:.2f} "
+                f"to {last.spine_t_score:.2f} over the recorded interval."
+            )
+
+    if first.total_hip_t_score is not None and last.total_hip_t_score is not None:
+        delta = last.total_hip_t_score - first.total_hip_t_score
+        if abs(delta) >= 0.3:
+            direction = "improved" if delta > 0 else "worsened"
+            parts.append(
+                f"Total hip T-score has {direction} from {first.total_hip_t_score:.2f} "
+                f"to {last.total_hip_t_score:.2f}."
+            )
+
+    if not parts:
+        return None
+    return " ".join(parts)
+
+def ctx_trend_from_history(history: List[OsteoHistoryEntry]) -> Optional[str]:
+    values = [
+        (h.created_at, h.input_data.ctx_ng_ml)
+        for h in history
+        if h.input_data.ctx_ng_ml is not None
+    ]
+    if len(values) < 2:
+        return None
+    values.sort(key=lambda x: x[0])
+    t0, v0 = values[0]
+    t1, v1 = values[-1]
+    if v0 <= 0:
+        return None
+    change = (v1 - v0) / v0 * 100.0
+    if change <= -50:
+        return (
+            f"CTX has fallen from ~{v0:.2f} to ~{v1:.2f} ng/mL (~{change:.0f}% change) "
+            "across recorded measurements, compatible with strong anti-resorptive effect "
+            "when interpreted with lab-specific reference ranges."
+        )
+    if change >= 50:
+        return (
+            f"CTX has risen from ~{v0:.2f} to ~{v1:.2f} ng/mL (~+{change:.0f}% change); "
+            "this may reflect reduced effect or treatment interruption and should be "
+            "interpreted in the context of dosing, timing and adherence."
+        )
+    return None
+
+def bmd_trend_from_history(history: List["OsteoHistoryEntry"]) -> Optional[str]:
+    """
+    Simple BMD trend description based on first vs last visit.
+    """
+    if len(history) < 2:
+        return None
+
+    first = history[0].input_data
+    last = history[-1].input_data
+
+    parts = []
+
+    if first.spine_t_score is not None and last.spine_t_score is not None:
+        delta = last.spine_t_score - first.spine_t_score
+        if abs(delta) >= 0.3:
+            direction = "improved" if delta > 0 else "worsened"
+            parts.append(
+                f"Lumbar spine T-score has {direction} from {first.spine_t_score:.2f} "
+                f"to {last.spine_t_score:.2f} over the recorded interval."
+            )
+
+    if first.total_hip_t_score is not None and last.total_hip_t_score is not None:
+        delta = last.total_hip_t_score - first.total_hip_t_score
+        if abs(delta) >= 0.3:
+            direction = "improved" if delta > 0 else "worsened"
+            parts.append(
+                f"Total hip T-score has {direction} from {first.total_hip_t_score:.2f} "
+                f"to {last.total_hip_t_score:.2f}."
+            )
+
+    if first.femoral_neck_t_score is not None and last.femoral_neck_t_score is not None:
+        delta = last.femoral_neck_t_score - first.femoral_neck_t_score
+        if abs(delta) >= 0.3:
+            direction = "improved" if delta > 0 else "worsened"
+            parts.append(
+                f"Femoral neck T-score has {direction} from {first.femoral_neck_t_score:.2f} "
+                f"to {last.femoral_neck_t_score:.2f}."
+            )
+
+    if not parts:
+        return None
+    return " ".join(parts)
+
+
+def ctx_trend_from_history(history: List["OsteoHistoryEntry"]) -> Optional[str]:
+    """
+    CTX trend based on first vs last available CTX values.
+    """
+    values = [
+        (h.created_at, h.input_data.ctx_ng_ml)
+        for h in history
+        if h.input_data.ctx_ng_ml is not None
+    ]
+    if len(values) < 2:
+        return None
+    values.sort(key=lambda x: x[0])
+    t0, v0 = values[0]
+    t1, v1 = values[-1]
+    if v0 is None or v0 <= 0:
+        return None
+    change = (v1 - v0) / v0 * 100.0
+    if change <= -50:
+        return (
+            f"CTX has fallen from ~{v0:.2f} to ~{v1:.2f} ng/mL (~{change:.0f}% change) across "
+            "recorded measurements, compatible with strong anti-resorptive effect when "
+            "interpreted with lab-specific reference ranges."
+        )
+    if change >= 50:
+        return (
+            f"CTX has risen from ~{v0:.2f} to ~{v1:.2f} ng/mL (~+{change:.0f}% change); this may "
+            "reflect reduced effect or treatment interruption and should be interpreted in the "
+            "context of dosing, timing and adherence."
+        )
+    return None
+
+
+def p1np_trend_from_history(history: List["OsteoHistoryEntry"]) -> Optional[str]:
+    """
+    P1NP trend for anabolic therapy monitoring.
+    """
+    values = [
+        (h.created_at, h.input_data.p1np_ng_ml)
+        for h in history
+        if h.input_data.p1np_ng_ml is not None
+    ]
+    if len(values) < 2:
+        return None
+    values.sort(key=lambda x: x[0])
+    t0, v0 = values[0]
+    t1, v1 = values[-1]
+    if v0 is None or v0 <= 0:
+        return None
+    change = (v1 - v0) / v0 * 100.0
+    if change >= 50:
+        return (
+            f"P1NP has risen from ~{v0:.1f} to ~{v1:.1f} ng/mL (~+{change:.0f}% change). "
+            "In the context of anabolic therapy, such an increase is often compatible "
+            "with the expected pharmacodynamic response, subject to lab reference ranges "
+            "and clinical judgement."
+        )
+    if change < 20:
+        return (
+            f"P1NP change from ~{v0:.1f} to ~{v1:.1f} ng/mL appears modest. If this reflects "
+            "true low change and not lab variation, it may suggest a blunted anabolic response "
+            "and could prompt closer review of dosing, adherence, and secondary factors."
+        )
+    return None
 
 # =========================
 # Hyperparathyroidism helper
@@ -1350,6 +1533,73 @@ def get_latest_assessment(patient_id: str) -> OsteoStoredAssessment:
             assessment=assessment,
         )
 
+@app.get(
+    "/osteoporosis/patient/{patient_id}/history",
+    response_model=List[OsteoHistoryEntry],
+)
+def get_history(patient_id: str) -> List[OsteoHistoryEntry]:
+    """
+    Return all stored assessments for a given patient, oldest first.
+    Useful for reviewing past visits and building trends.
+    """
+    with Session(engine) as session:
+        stmt = (
+            select(AssessmentORM)
+            .where(AssessmentORM.patient_id == patient_id)
+            .order_by(AssessmentORM.created_at.asc())
+        )
+        rows = session.execute(stmt).scalars().all()
+
+    history: List[OsteoHistoryEntry] = []
+    for row in rows:
+        input_data = OsteoInput.model_validate(row.input_json)
+        assessment = OsteoAssessment.model_validate(row.output_json)
+        history.append(
+            OsteoHistoryEntry(
+                assessment_id=row.id,
+                created_at=row.created_at,
+                input_data=input_data,
+                assessment=assessment,
+            )
+        )
+    return history
+
+@app.get(
+    "/osteoporosis/patient/{patient_id}/trend",
+    response_model=TrendSummary,
+)
+def get_trend_summary(patient_id: str) -> TrendSummary:
+    """
+    Compute simple BMD and marker trends across all stored assessments
+    for a patient.
+    """
+    with Session(engine) as session:
+        stmt = (
+            select(AssessmentORM)
+            .where(AssessmentORM.patient_id == patient_id)
+            .order_by(AssessmentORM.created_at.asc())
+        )
+        rows = session.execute(stmt).scalars().all()
+
+    history = [
+        OsteoHistoryEntry(
+            assessment_id=r.id,
+            created_at=r.created_at,
+            input_data=OsteoInput.model_validate(r.input_json),
+            assessment=OsteoAssessment.model_validate(r.output_json),
+        )
+        for r in rows
+    ]
+
+    bmd_text = bmd_trend_from_history(history) if history else None
+    ctx_text = ctx_trend_from_history(history) if history else None
+    p1np_text = p1np_trend_from_history(history) if history else None
+
+    return TrendSummary(
+        bmd_trend_text=bmd_text,
+        ctx_trend_text=ctx_text,
+        p1np_trend_text=p1np_text,
+    )
 
 @app.post("/osteoporosis/elaborate", response_model=ElaborationResponse)
 def elaborate_osteoporosis(req: ElaborationRequest) -> ElaborationResponse:
