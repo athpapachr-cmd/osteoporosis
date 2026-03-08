@@ -1,3 +1,4 @@
 fastapi[standard]
 uvicorn[standard]
 openai>=1.6.0
+sqlalchemy>=2.0
