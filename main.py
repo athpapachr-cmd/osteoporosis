@@ -79,6 +79,16 @@ class DailyWalking(str, Enum):
     between_15_30_min = "between_15_30_min"
     over_30_min = "over_30_min"
 
+class CurrentTherapyType(str, Enum):
+    none = "none"
+    oral_bisphosphonate = "oral_bisphosphonate"
+    iv_bisphosphonate = "iv_bisphosphonate"
+    denosumab = "denosumab"
+    teriparatide = "teriparatide"      # Forsteo / other PTH analogues
+    romosozumab = "romosozumab"        # Evenity
+    raloxifene = "raloxifene"
+    other = "other"
+
 
 class Suggestion(BaseModel):
     category: str  # e.g. "pharmacologic", "vitamin_d", "calcium", "labs_hyperparathyroidism"
@@ -223,6 +233,20 @@ class OsteoInput(BaseModel):
     leafy_greens_portions_per_day: conint(ge=0, le=20) = 0
     fortified_food_portions_per_day: conint(ge=0, le=20) = 0
     other_dairy_portions_per_day: conint(ge=0, le=20) = 0
+
+    # Current pharmacologic osteoporosis therapy
+    current_therapy_type: CurrentTherapyType = CurrentTherapyType.none
+    current_therapy_duration_years: Optional[float] = Field(
+        default=None, description="Approximate duration on current therapy (years)"
+    )
+    fractures_during_current_therapy: bool = Field(
+        default=False,
+        description="Any new fragility fracture while on current therapy?",
+    )
+    significant_therapy_adverse_effects: bool = Field(
+        default=False,
+        description="Any clinically significant adverse effects related to current therapy?",
+    )
 
 
 class OsteoAssessment(BaseModel):
@@ -880,10 +904,167 @@ def build_suggestions(
             )
         )
 
-    # Hyperparathyroidism / 24h urine patterns
+       # Hyperparathyroidism / 24h urine patterns
     add_hyperparathyroid_suggestions(data, suggestions)
 
+    # Current pharmacologic therapy continuation/change framing
+    add_current_therapy_suggestions(data, risk, suggestions)
+
     return suggestions
+
+
+def add_current_therapy_suggestions(
+    data: OsteoInput,
+    risk: RiskCategory,
+    suggestions: List[Suggestion],
+) -> None:
+    ttype = data.current_therapy_type
+    dur = data.current_therapy_duration_years
+    fx_on_tx = data.fractures_during_current_therapy
+    adr = data.significant_therapy_adverse_effects
+
+    if ttype == CurrentTherapyType.none:
+        # No current pharmacologic therapy to comment on
+        return
+
+    # Generic framing based on fractures and adverse events
+    if fx_on_tx:
+        suggestions.append(
+            Suggestion(
+                category="current_therapy",
+                text=(
+                    "A new fragility fracture has occurred while on the current osteoporosis "
+                    "therapy. This may represent suboptimal response, adherence issues, or "
+                    "evolving risk profile and generally warrants review of the treatment "
+                    "strategy, including verifying adherence, secondary causes, and "
+                    "considering alternative or intensified therapy according to guidelines."
+                ),
+            )
+        )
+
+    if adr:
+        suggestions.append(
+            Suggestion(
+                category="current_therapy",
+                text=(
+                    "Clinically significant adverse effects related to the current therapy "
+                    "have been reported. Balancing fracture risk reduction against adverse "
+                    "effects may justify discussion of dose adjustment, switching drug "
+                    "class, or discontinuation according to guidelines and patient preference."
+                ),
+            )
+        )
+
+    # Per-class, duration-aware comments
+    if ttype in [CurrentTherapyType.oral_bisphosphonate, CurrentTherapyType.iv_bisphosphonate]:
+        if dur is not None:
+            if dur < 3:
+                suggestions.append(
+                    Suggestion(
+                        category="current_therapy",
+                        text=(
+                            f"Currently on bisphosphonate therapy for ~{dur:.1f} years. For many "
+                            "patients, a 3–5 year course is typical, with longer durations considered "
+                            "in very-high-risk cases. Ongoing need should be reassessed periodically."
+                        ),
+                    )
+                )
+            elif 3 <= dur <= 5:
+                suggestions.append(
+                    Suggestion(
+                        category="current_therapy",
+                        text=(
+                            f"Bisphosphonate therapy duration is ~{dur:.1f} years. For patients at "
+                            "lower risk, a treatment holiday may be considered after 3–5 years, "
+                            "whereas in high or very-high-risk cases, continuation or a change "
+                            "of agent may be appropriate. Decisions should be individualized."
+                        ),
+                    )
+                )
+            else:  # > 5 years
+                suggestions.append(
+                    Suggestion(
+                        category="current_therapy",
+                        text=(
+                            f"Bisphosphonate therapy duration exceeds 5 years (~{dur:.1f} years). "
+                            "This is often a point where treatment holiday, continuation, or "
+                            "alternative therapy is actively reconsidered in light of current "
+                            "fracture risk, BMD trends, and any adverse events."
+                        ),
+                    )
+                )
+        else:
+            suggestions.append(
+                Suggestion(
+                    category="current_therapy",
+                    text=(
+                        "Bisphosphonate therapy is ongoing; document approximate duration to "
+                        "better frame decisions around continuation versus holiday."
+                    ),
+                )
+            )
+
+    elif ttype == CurrentTherapyType.denosumab:
+        suggestions.append(
+            Suggestion(
+                category="current_therapy",
+                text=(
+                    "Patient is currently on denosumab. Abrupt discontinuation is associated "
+                    "with rebound bone turnover and increased vertebral fracture risk; any "
+                    "decision to stop or switch therapy should include a plan for subsequent "
+                    "anti-resorptive coverage according to current guidelines."
+                ),
+            )
+        )
+
+    elif ttype == CurrentTherapyType.teriparatide:
+        suggestions.append(
+            Suggestion(
+                category="current_therapy",
+                text=(
+                    "Patient is on or has been on anabolic therapy (e.g. teriparatide). "
+                    "Course duration is typically limited (often up to 18–24 months) and is "
+                    "usually followed by an anti-resorptive agent to consolidate gains in BMD."
+                ),
+            )
+        )
+
+    elif ttype == CurrentTherapyType.romosozumab:
+        suggestions.append(
+            Suggestion(
+                category="current_therapy",
+                text=(
+                    "Patient is on or has been on romosozumab. Treatment duration is usually "
+                    "limited (e.g. 12 months) and is typically followed by an anti-resorptive "
+                    "agent to maintain BMD improvements."
+                ),
+            )
+        )
+
+    elif ttype == CurrentTherapyType.raloxifene:
+        suggestions.append(
+            Suggestion(
+                category="current_therapy",
+                text=(
+                    "Patient is on raloxifene. This agent primarily reduces vertebral fracture "
+                    "risk and may be best suited to specific risk profiles; reassess whether "
+                    "it remains the most appropriate choice given current fracture risk and "
+                    "co-morbidities."
+                ),
+            )
+        )
+
+    elif ttype == CurrentTherapyType.other:
+        suggestions.append(
+            Suggestion(
+                category="current_therapy",
+                text=(
+                    "Current osteoporosis therapy is recorded as 'other'. Ensure that the "
+                    "specific agent, dose, and duration are documented to support decisions "
+                    "about continuation or modification of therapy."
+                ),
+            )
+        )
 
 
 def add_hyperparathyroid_suggestions(data: OsteoInput, suggestions: List[Suggestion]) -> None:

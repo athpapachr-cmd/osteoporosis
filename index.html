@@ -344,7 +344,36 @@
                         <input id="other_dairy_portions" type="number" min="0" value="0">
                     </div>
                 </div>
-                
+             
+             <h3>Current pharmacologic therapy</h3>
+             <div class="field-group">
+               <div class="field">
+                 <label for="current_therapy_type">Current therapy</label>
+                 <select id="current_therapy_type">
+                   <option value="none">none</option>
+                   <option value="oral_bisphosphonate">oral bisphosphonate</option>
+                   <option value="iv_bisphosphonate">IV bisphosphonate</option>
+                   <option value="denosumab">denosumab (Prolia)</option>
+                   <option value="teriparatide">teriparatide (Forsteo)</option>
+                   <option value="romosozumab">romosozumab (Evenity)</option>
+                   <option value="raloxifene">raloxifene</option>
+                   <option value="other">other</option>
+                 </select>
+               </div>
+               <div class="field">
+                 <label for="current_therapy_duration_years">Duration on current therapy (years)</label>
+                 <input id="current_therapy_duration_years" type="number" min="0" step="0.1">
+               </div>
+               <div class="field">
+                 <label>On-therapy events</label>
+                 <div>
+                   <label><input type="checkbox" id="fractures_during_current_therapy"> fracture during therapy</label><br>
+                   <label><input type="checkbox" id="significant_therapy_adverse_effects"> significant adverse effects</label>
+                 </div>
+               </div>
+             </div>
+
+             
                 <h3>Function, falls & lifestyle</h3>
                 <div class="field-group">
                     <div class="field">
@@ -387,196 +416,270 @@
             </div>
             
             <div class="card">
-                <h2>Output</h2>
-                <div id="badges"></div>
-                <div class="small" id="metaInfo"></div>
-                <h3>Clinical note</h3>
-                <textarea id="clinical_note" readonly placeholder="Run an evaluation to see the generated note..."></textarea>
-                <h3 style="margin-top: 12px;">Patient summary (optional)</h3>
-                <textarea id="patient_summary" readonly style="min-height: 120px;"></textarea>
+              <h2>Output</h2>
+              <div id="badges"></div>
+              <div class="small" id="metaInfo"></div>
+
+              <h3>Clinical note</h3>
+              <textarea id="clinical_note" readonly placeholder="Run an evaluation to see the generated note..."></textarea>
+
+              <h3 style="margin-top: 12px;">Patient summary (optional)</h3>
+              <textarea id="patient_summary" readonly style="min-height: 120px;"></textarea>
+
+              <h3 style="margin-top: 12px;">AI elaboration (optional)</h3>
+              <textarea id="ai_elaboration" readonly style="min-height: 120px;"></textarea>
+              <div class="button-row" style="margin-top: 8px;">
+                <button id="elabClinicianBtn" class="secondary">AI elaboration – clinician</button>
+                <button id="elabPatientBtn" class="secondary">AI elaboration – patient</button>
+              </div>
             </div>
+
         </div>
     </main>
     
     <script>
-        const API_URL = "https://ortho-reception-backend.onrender.com/osteoporosis/evaluate";
-        
-        function val(id) {
-            const el = document.getElementById(id);
-            if (!el) return null;
-            if (el.type === "checkbox") return el.checked;
-            if (el.tagName === "SELECT") return el.value;
-            if (el.value === "") return null;
-            const numFields = [
-                               "age","spine_t_score","total_hip_t_score","femoral_neck_t_score",
-                               "frax_major","frax_hip","weight_kg","height_cm",
-                               "vitamin_d_25oh_ng_ml","serum_calcium_mg_dl","serum_phosphorus_mg_dl",
-                               "pth_pg_ml","serum_magnesium_mg_dl","serum_zinc_ug_dl",
-                               "urine_calcium_24h_mg",
-                               "milk_portions","yogurt_portions","cheese_portions","leafy_portions",
-                               "fortified_portions","other_dairy_portions",
-                               "calcium_supplement_mg_per_day","vitamin_d3_iu_per_day"
-                               ];
-                               if (numFields.includes(id)) return Number(el.value);
-                               return el.value;
+      const API_URL = "https://ortho-reception-backend.onrender.com/osteoporosis/evaluate";
+      const ELAB_URL = "https://ortho-reception-backend.onrender.com/osteoporosis/elaborate";
+
+      let lastAssessment = null;
+
+      function val(id) {
+        const el = document.getElementById(id);
+        if (!el) return null;
+        if (el.type === "checkbox") return el.checked;
+        if (el.tagName === "SELECT") return el.value;
+        if (el.value === "") return null;
+        const numFields = [
+          "age","spine_t_score","total_hip_t_score","femoral_neck_t_score",
+          "frax_major","frax_hip","weight_kg","height_cm",
+          "vitamin_d_25oh_ng_ml","serum_calcium_mg_dl","serum_phosphorus_mg_dl",
+          "pth_pg_ml","serum_magnesium_mg_dl","serum_zinc_ug_dl",
+          "urine_calcium_24h_mg",
+          "milk_portions","yogurt_portions","cheese_portions","leafy_portions",
+          "fortified_portions","other_dairy_portions",
+          "calcium_supplement_mg_per_day","vitamin_d3_iu_per_day",
+          "current_therapy_duration_years"
+        ];
+        if (numFields.includes(id)) return Number(el.value);
+        return el.value;
+      }
+
+      function buildPayload() {
+        const fractures = [];
+        if (document.getElementById("fx_hip").checked) fractures.push("hip");
+        if (document.getElementById("fx_vert").checked) fractures.push("vertebral");
+        if (document.getElementById("fx_nonvert").checked) fractures.push("non_vertebral");
+
+        return {
+          age: val("age"),
+          sex: val("sex"),
+          menopause_status: val("menopause_status"),
+
+          spine_t_score: val("spine_t_score"),
+          total_hip_t_score: val("total_hip_t_score"),
+          femoral_neck_t_score: val("femoral_neck_t_score"),
+          prior_fragility_fractures: fractures,
+
+          frax_major_osteoporotic: val("frax_major"),
+          frax_hip: val("frax_hip"),
+
+          weight_kg: val("weight_kg"),
+          height_cm: val("height_cm"),
+          parental_hip_fracture: val("parental_hip_fracture"),
+          current_smoker: val("current_smoker"),
+          glucocorticoids: val("glucocorticoids"),
+          rheumatoid_arthritis: val("rheumatoid_arthritis"),
+          secondary_osteoporosis: val("secondary_osteoporosis"),
+          high_alcohol_intake: val("high_alcohol_intake"),
+
+          vitamin_d_25oh_ng_ml: val("vitamin_d_25oh_ng_ml"),
+          serum_calcium_mg_dl: val("serum_calcium_mg_dl"),
+          serum_phosphorus_mg_dl: val("serum_phosphorus_mg_dl"),
+          pth_pg_ml: val("pth_pg_ml"),
+          serum_magnesium_mg_dl: val("serum_magnesium_mg_dl"),
+          serum_zinc_ug_dl: val("serum_zinc_ug_dl"),
+          urine_calcium_24h_mg: val("urine_calcium_24h_mg"),
+
+          calcium_supplement: val("calcium_supplement"),
+          calcium_supplement_mg_per_day: val("calcium_supplement_mg_per_day"),
+          vitamin_d_supplement: val("vitamin_d_supplement"),
+          vitamin_d3_iu_per_day: val("vitamin_d3_iu_per_day"),
+          magnesium_supplement: val("magnesium_supplement"),
+          zinc_supplement: val("zinc_supplement"),
+          boron_supplement: val("boron_supplement"),
+          vitamin_k2_supplement: val("vitamin_k2_supplement"),
+          fortibone_supplement: val("fortibone_supplement"),
+          colabone_supplement: val("colabone_supplement"),
+
+          current_therapy_type: val("current_therapy_type"),
+          current_therapy_duration_years: val("current_therapy_duration_years"),
+          fractures_during_current_therapy: val("fractures_during_current_therapy"),
+          significant_therapy_adverse_effects: val("significant_therapy_adverse_effects"),
+          
+          exercise_level: val("exercise_level"),
+          daily_walking: val("daily_walking"),
+          dietician_follow_up: val("dietician_follow_up"),
+          high_falls_risk: val("high_falls_risk"),
+          history_of_falls_last_year: val("history_of_falls_last_year"),
+          dementia_or_cognitive_impairment: val("dementia_or_cognitive_impairment"),
+          significant_immobility: val("significant_immobility"),
+
+          milk_portions_per_day: val("milk_portions") ?? 0,
+          yogurt_portions_per_day: val("yogurt_portions") ?? 0,
+          cheese_portions_per_day: val("cheese_portions") ?? 0,
+          leafy_greens_portions_per_day: val("leafy_portions") ?? 0,
+          fortified_food_portions_per_day: val("fortified_portions") ?? 0,
+          other_dairy_portions_per_day: val("other_dairy_portions") ?? 0
+        };
+      }
+
+      function setStatus(text, isError = false) {
+        const status = document.getElementById("status");
+        if (!status) return;
+        status.textContent = text;
+        status.className = "status" + (isError ? " error" : "");
+      }
+
+      function renderBadges(resp) {
+        const badges = document.getElementById("badges");
+        const meta = document.getElementById("metaInfo");
+        if (!badges || !meta) return;
+
+        badges.innerHTML = "";
+        meta.textContent = "";
+
+        if (!resp) return;
+
+        const risk = resp.risk_category;
+        if (risk) {
+          const pill = document.createElement("div");
+          pill.className = "pill " + risk;
+          pill.textContent = "Risk: " + risk.toUpperCase();
+          badges.appendChild(pill);
         }
-        
-        function buildPayload() {
-            const fractures = [];
-            if (document.getElementById("fx_hip").checked) fractures.push("hip");
-            if (document.getElementById("fx_vert").checked) fractures.push("vertebral");
-            if (document.getElementById("fx_nonvert").checked) fractures.push("non_vertebral");
-            
-            return {
-                age: val("age"),
-                sex: val("sex"),
-                menopause_status: val("menopause_status"),
-                
-                spine_t_score: val("spine_t_score"),
-                total_hip_t_score: val("total_hip_t_score"),
-                femoral_neck_t_score: val("femoral_neck_t_score"),
-                prior_fragility_fractures: fractures,
-                
-                frax_major_osteoporotic: val("frax_major"),
-                frax_hip: val("frax_hip"),
-                
-                weight_kg: val("weight_kg"),
-                height_cm: val("height_cm"),
-                parental_hip_fracture: val("parental_hip_fracture"),
-                current_smoker: val("current_smoker"),
-                glucocorticoids: val("glucocorticoids"),
-                rheumatoid_arthritis: val("rheumatoid_arthritis"),
-                secondary_osteoporosis: val("secondary_osteoporosis"),
-                high_alcohol_intake: val("high_alcohol_intake"),
-                
-                vitamin_d_25oh_ng_ml: val("vitamin_d_25oh_ng_ml"),
-                serum_calcium_mg_dl: val("serum_calcium_mg_dl"),
-                serum_phosphorus_mg_dl: val("serum_phosphorus_mg_dl"),
-                pth_pg_ml: val("pth_pg_ml"),
-                serum_magnesium_mg_dl: val("serum_magnesium_mg_dl"),
-                serum_zinc_ug_dl: val("serum_zinc_ug_dl"),
-                urine_calcium_24h_mg: val("urine_calcium_24h_mg"),
-                
-                calcium_supplement: val("calcium_supplement"),
-                calcium_supplement_mg_per_day: val("calcium_supplement_mg_per_day"),
-                vitamin_d_supplement: val("vitamin_d_supplement"),
-                vitamin_d3_iu_per_day: val("vitamin_d3_iu_per_day"),
-                magnesium_supplement: val("magnesium_supplement"),
-                zinc_supplement: val("zinc_supplement"),
-                boron_supplement: val("boron_supplement"),
-                vitamin_k2_supplement: val("vitamin_k2_supplement"),
-                fortibone_supplement: val("fortibone_supplement"),
-                colabone_supplement: val("colabone_supplement"),
-                
-                exercise_level: val("exercise_level"),
-                daily_walking: val("daily_walking"),
-                dietician_follow_up: val("dietician_follow_up"),
-                high_falls_risk: val("high_falls_risk"),
-                history_of_falls_last_year: val("history_of_falls_last_year"),
-                dementia_or_cognitive_impairment: val("dementia_or_cognitive_impairment"),
-                significant_immobility: val("significant_immobility"),
-                
-                milk_portions_per_day: val("milk_portions") ?? 0,
-                yogurt_portions_per_day: val("yogurt_portions") ?? 0,
-                cheese_portions_per_day: val("cheese_portions") ?? 0,
-                leafy_greens_portions_per_day: val("leafy_portions") ?? 0,
-                fortified_food_portions_per_day: val("fortified_portions") ?? 0,
-                other_dairy_portions_per_day: val("other_dairy_portions") ?? 0
-            };
+
+        if (resp.estimated_total_calcium_mg != null) {
+          const pill = document.createElement("div");
+          pill.className = "pill";
+          pill.textContent = "Calcium ≈ " + Math.round(resp.estimated_total_calcium_mg) + " mg/day";
+          badges.appendChild(pill);
         }
-        
-        function setStatus(text, isError = false) {
-            const status = document.getElementById("status");
-            if (!status) return;
-            status.textContent = text;
-            status.className = "status" + (isError ? " error" : "");
+
+        if (resp.internal_frax_like_index != null) {
+          const pill = document.createElement("div");
+          pill.className = "pill";
+          pill.textContent = "Internal FRAX-style index: " + resp.internal_frax_like_index.toFixed(1);
+          badges.appendChild(pill);
         }
-        
-        function renderBadges(resp) {
-            const badges = document.getElementById("badges");
-            const meta = document.getElementById("metaInfo");
-            if (!badges || !meta) return;
-            
-            badges.innerHTML = "";
-            meta.textContent = "";
-            
-            if (!resp) return;
-            
-            const risk = resp.risk_category;
-            if (risk) {
-                const pill = document.createElement("div");
-                pill.className = "pill " + risk;
-                pill.textContent = "Risk: " + risk.toUpperCase();
-                badges.appendChild(pill);
-            }
-            
-            if (resp.estimated_total_calcium_mg != null) {
-                const pill = document.createElement("div");
-                pill.className = "pill";
-                pill.textContent = "Calcium ≈ " + Math.round(resp.estimated_total_calcium_mg) + " mg/day";
-                badges.appendChild(pill);
-            }
-            
-            if (resp.internal_frax_like_index != null) {
-                const pill = document.createElement("div");
-                pill.className = "pill";
-                pill.textContent = "Internal FRAX-style index: " + resp.internal_frax_like_index.toFixed(1);
-                badges.appendChild(pill);
-            }
-            
-            if (resp.risk_reasons && resp.risk_reasons.length > 0) {
-                meta.textContent = "Key drivers: " + resp.risk_reasons.join("; ");
-            }
+
+        if (resp.risk_reasons && resp.risk_reasons.length > 0) {
+          meta.textContent = "Key drivers: " + resp.risk_reasons.join("; ");
         }
-        
-        async function evaluate() {
-            const btn = document.getElementById("evaluateBtn");
-            if (btn) btn.disabled = true;
-            setStatus("Evaluating…");
-            try {
-                const payload = buildPayload();
-                console.log("Payload:", payload);
-                
-                const res = await fetch(API_URL, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json", "Accept": "application/json" },
-                    body: JSON.stringify(payload)
-                });
-                
-                console.log("HTTP status:", res.status);
-                
-                if (!res.ok) {
-                    const text = await res.text();
-                    setStatus("Error " + res.status + " – see console", true);
-                    console.error("Error response:", text);
-                    return;
-                }
-                
-                const data = await res.json();
-                document.getElementById("clinical_note").value = data.clinical_note || "";
-                document.getElementById("patient_summary").value = data.patient_summary || "";
-                renderBadges(data);
-                setStatus("OK – risk and notes updated.");
-            } catch (err) {
-                console.error(err);
-                setStatus("Network or JS error – see console", true);
-            } finally {
-                if (btn) btn.disabled = false;
-            }
+      }
+
+      async function evaluate() {
+        const btn = document.getElementById("evaluateBtn");
+        if (btn) btn.disabled = true;
+        setStatus("Evaluating…");
+        try {
+          const payload = buildPayload();
+          console.log("Payload:", payload);
+
+          const res = await fetch(API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Accept": "application/json" },
+            body: JSON.stringify(payload)
+          });
+
+          console.log("HTTP status:", res.status);
+
+          if (!res.ok) {
+            const text = await res.text();
+            setStatus("Error " + res.status + " – see console", true);
+            console.error("Error response:", text);
+            return;
+          }
+
+          const data = await res.json();
+          lastAssessment = data;
+
+          document.getElementById("clinical_note").value = data.clinical_note || "";
+          document.getElementById("patient_summary").value = data.patient_summary || "";
+          renderBadges(data);
+          setStatus("OK – risk and notes updated.");
+        } catch (err) {
+          console.error(err);
+          setStatus("Network or JS error – see console", true);
+        } finally {
+          if (btn) btn.disabled = false;
         }
-        
-        window.addEventListener("DOMContentLoaded", () => {
-            const btn = document.getElementById("evaluateBtn");
-            if (!btn) {
-                console.error("evaluateBtn not found in DOM");
-                return;
-            }
-            btn.addEventListener("click", (e) => {
-                e.preventDefault();
-                evaluate();
-            });
-            console.log("Osteoporosis cockpit JS initialized");
+      }
+
+      async function elaborate(audience) {
+        if (!lastAssessment) {
+          setStatus("Run an evaluation first, then ask for AI elaboration.", true);
+          return;
+        }
+        setStatus("Requesting AI elaboration…");
+        const elabBox = document.getElementById("ai_elaboration");
+        if (elabBox) elabBox.value = "";
+
+        try {
+          const res = await fetch(ELAB_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Accept": "application/json" },
+            body: JSON.stringify({
+              assessment: lastAssessment,
+              audience: audience
+            })
+          });
+
+          console.log("Elaboration HTTP status:", res.status);
+
+          if (!res.ok) {
+            const text = await res.text();
+            setStatus("Elaboration error " + res.status + " – see console", true);
+            console.error("Elaboration error:", text);
+            return;
+          }
+
+          const data = await res.json();
+          if (elabBox) elabBox.value = data.elaborated_text || "";
+          setStatus("AI elaboration updated.");
+        } catch (err) {
+          console.error(err);
+          setStatus("Network or JS error during elaboration – see console", true);
+        }
+      }
+
+      window.addEventListener("DOMContentLoaded", () => {
+        const btn = document.getElementById("evaluateBtn");
+        if (!btn) {
+          console.error("evaluateBtn not found in DOM");
+          return;
+        }
+        btn.addEventListener("click", (e) => {
+          e.preventDefault();
+          evaluate();
         });
+
+        const elabClin = document.getElementById("elabClinicianBtn");
+        const elabPat = document.getElementById("elabPatientBtn");
+        if (elabClin) {
+          elabClin.addEventListener("click", (e) => {
+            e.preventDefault();
+            elaborate("clinician");
+          });
+        }
+        if (elabPat) {
+          elabPat.addEventListener("click", (e) => {
+            e.preventDefault();
+            elaborate("patient");
+          });
+        }
+
+        console.log("Osteoporosis cockpit JS initialized");
+      });
     </script>
     </body>
     </html>
