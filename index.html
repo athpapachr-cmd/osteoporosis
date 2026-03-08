@@ -454,6 +454,26 @@
               <h3 style="margin-top: 12px;">Patient summary (optional)</h3>
               <textarea id="patient_summary" readonly style="min-height: 120px;"></textarea>
 
+              <h3 style="margin-top: 16px;">History (per patient)</h3>
+              <div class="button-row" style="margin-top: 4px;">
+                <button id="loadHistoryBtn" class="secondary">Load history</button>
+                <button id="loadTrendBtn" class="secondary">Load trends</button>
+              </div>
+              <table id="historyTable" style="width: 100%; margin-top: 8px; border-collapse: collapse; font-size: 11px;">
+                <thead>
+                  <tr>
+                    <th style="border-bottom: 1px solid #e5e7eb; text-align:left;">Date</th>
+                    <th style="border-bottom: 1px solid #e5e7eb; text-align:left;">Risk</th>
+                    <th style="border-bottom: 1px solid #e5e7eb; text-align:left;">Therapy</th>
+                    <th style="border-bottom: 1px solid #e5e7eb; text-align:left;">Spine T</th>
+                    <th style="border-bottom: 1px solid #e5e7eb; text-align:left;">Hip T</th>
+                    <th style="border-bottom: 1px solid #e5e7eb; text-align:left;">CTX</th>
+                    <th style="border-bottom: 1px solid #e5e7eb; text-align:left;">P1NP</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+
               <h3 style="margin-top: 12px;">AI elaboration (optional)</h3>
               <textarea id="ai_elaboration" readonly style="min-height: 120px;"></textarea>
               <div class="button-row" style="margin-top: 8px;">
@@ -462,12 +482,18 @@
               </div>
             </div>
 
+            <h3 style="margin-top: 16px;">Trend summary</h3>
+            <div id="trendSummary" class="small"></div>
+
         </div>
     </main>
     
     <script>
       const API_URL = "https://ortho-reception-backend.onrender.com/osteoporosis/evaluate";
       const ELAB_URL = "https://ortho-reception-backend.onrender.com/osteoporosis/elaborate";
+
+      const HISTORY_URL = "https://ortho-reception-backend.onrender.com/osteoporosis/patient";
+      const TREND_URL = "https://ortho-reception-backend.onrender.com/osteoporosis/patient";
 
       let lastAssessment = null;
 
@@ -612,6 +638,73 @@
         }
       }
 
+        function renderHistoryTable(history) {
+          const table = document.getElementById("historyTable");
+          if (!table) return;
+          const tbody = table.querySelector("tbody");
+          tbody.innerHTML = "";
+
+          history.forEach((entry) => {
+            const row = document.createElement("tr");
+
+            const created = new Date(entry.created_at);
+            const dateStr = created.toLocaleDateString(undefined, {
+              year: "numeric",
+              month: "short",
+              day: "numeric"
+            });
+
+            const input = entry.input_data;
+            const assess = entry.assessment;
+
+            function td(text) {
+              const cell = document.createElement("td");
+              cell.style.borderBottom = "1px solid #f3f4f6";
+              cell.style.padding = "2px 4px";
+              cell.textContent = text;
+              return cell;
+            }
+
+            row.appendChild(td(dateStr));
+            row.appendChild(td(assess.risk_category.toUpperCase()));
+            row.appendChild(td(input.current_therapy_type || "none"));
+            row.appendChild(td(input.spine_t_score != null ? input.spine_t_score.toFixed(2) : ""));
+            row.appendChild(td(input.total_hip_t_score != null ? input.total_hip_t_score.toFixed(2) : ""));
+            row.appendChild(td(input.ctx_ng_ml != null ? input.ctx_ng_ml.toFixed(2) : ""));
+            row.appendChild(td(input.p1np_ng_ml != null ? input.p1np_ng_ml.toFixed(1) : ""));
+
+            tbody.appendChild(row);
+          });
+        }
+
+        async function loadHistory() {
+          const pid = document.getElementById("patient_id").value;
+          if (!pid) {
+            setStatus("Enter a patient ID to load history.", true);
+            return;
+          }
+          setStatus("Loading history…");
+          try {
+            const res = await fetch(`${HISTORY_URL}/${encodeURIComponent(pid)}/history`, {
+              method: "GET",
+              headers: { "Accept": "application/json" }
+            });
+            console.log("History HTTP status:", res.status);
+            if (!res.ok) {
+              const text = await res.text();
+              setStatus("History error " + res.status + " – see console", true);
+              console.error("History error:", text);
+              return;
+            }
+            const data = await res.json(); // array of OsteoHistoryEntry
+            renderHistoryTable(data);
+            setStatus("History loaded (" + data.length + " assessments).");
+          } catch (err) {
+            console.error(err);
+            setStatus("Network or JS error during history load – see console", true);
+          }
+        }
+
         async function evaluate() {
           const btn = document.getElementById("evaluateBtn");
           if (btn) btn.disabled = true;
@@ -702,6 +795,13 @@
         }
 
         window.addEventListener("DOMContentLoaded", () => {
+            const trendBtn = document.getElementById("loadTrendBtn");
+            if (trendBtn) {
+              trendBtn.addEventListener("click", (e) => {
+                e.preventDefault();
+                loadTrend();
+              });
+            }
           const evalBtn = document.getElementById("evaluateBtn");
           if (evalBtn) {
             evalBtn.addEventListener("click", (e) => {
@@ -715,6 +815,14 @@
             loadBtn.addEventListener("click", (e) => {
               e.preventDefault();
               loadLatest();
+            });
+          }
+
+          const historyBtn = document.getElementById("loadHistoryBtn");
+          if (historyBtn) {
+            historyBtn.addEventListener("click", (e) => {
+              e.preventDefault();
+              loadHistory();
             });
           }
 
@@ -735,6 +843,40 @@
 
           console.log("Osteoporosis cockpit JS initialized");
         });
+
+        async function loadTrend() {
+          const pid = document.getElementById("patient_id").value;
+          if (!pid) {
+            setStatus("Enter a patient ID to load trends.", true);
+            return;
+          }
+          setStatus("Loading trends…");
+          const box = document.getElementById("trendSummary");
+          if (box) box.textContent = "";
+          try {
+            const res = await fetch(`${TREND_URL}/${encodeURIComponent(pid)}/trend`, {
+              method: "GET",
+              headers: { "Accept": "application/json" }
+            });
+            console.log("Trend HTTP status:", res.status);
+            if (!res.ok) {
+              const text = await res.text();
+              setStatus("Trend error " + res.status + " – see console", true);
+              console.error("Trend error:", text);
+              return;
+            }
+            const data = await res.json();
+            const lines = [];
+            if (data.bmd_trend_text) lines.push(data.bmd_trend_text);
+            if (data.ctx_trend_text) lines.push(data.ctx_trend_text);
+            if (data.p1np_trend_text) lines.push(data.p1np_trend_text);
+            if (box) box.textContent = lines.length ? lines.join(" ") : "Not enough data yet to summarise trends.";
+            setStatus("Trends loaded.");
+          } catch (err) {
+            console.error(err);
+            setStatus("Network or JS error during trend load – see console", true);
+          }
+        }
 
 
       async function elaborate(audience) {
