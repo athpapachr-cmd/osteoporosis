@@ -296,6 +296,25 @@
                         <input id="urine_calcium_24h_mg" type="number" step="1">
                     </div>
                 </div>
+                <div class="field-group">
+                  <div class="field">
+                    <label for="osteocalcin_ng_ml">Osteocalcin (ng/mL)</label>
+                    <input id="osteocalcin_ng_ml" type="number" step="0.1">
+                  </div>
+                  <div class="field">
+                    <label for="bone_alk_phos_u_l">Bone ALP (U/L)</label>
+                    <input id="bone_alk_phos_u_l" type="number" step="0.1">
+                  </div>
+                  <div class="field">
+                    <label for="ctx_ng_ml">CTX (ng/mL)</label>
+                    <input id="ctx_ng_ml" type="number" step="0.01">
+                  </div>
+                  <div class="field">
+                    <label for="p1np_ng_ml">P1NP (ng/mL)</label>
+                    <input id="p1np_ng_ml" type="number" step="0.1">
+                  </div>
+                </div>
+
                 
                 <h3>Supplements & intake</h3>
                 <div class="field-group">
@@ -464,11 +483,13 @@
           "vitamin_d_25oh_ng_ml","serum_calcium_mg_dl","serum_phosphorus_mg_dl",
           "pth_pg_ml","serum_magnesium_mg_dl","serum_zinc_ug_dl",
           "urine_calcium_24h_mg",
+          "osteocalcin_ng_ml","bone_alk_phos_u_l","ctx_ng_ml","p1np_ng_ml",
           "milk_portions","yogurt_portions","cheese_portions","leafy_portions",
           "fortified_portions","other_dairy_portions",
           "calcium_supplement_mg_per_day","vitamin_d3_iu_per_day",
           "current_therapy_duration_years"
         ];
+
         if (numFields.includes(id)) return Number(el.value);
         return el.value;
       }
@@ -508,6 +529,11 @@
           serum_magnesium_mg_dl: val("serum_magnesium_mg_dl"),
           serum_zinc_ug_dl: val("serum_zinc_ug_dl"),
           urine_calcium_24h_mg: val("urine_calcium_24h_mg"),
+
+          osteocalcin_ng_ml: val("osteocalcin_ng_ml"),
+          bone_alk_phos_u_l: val("bone_alk_phos_u_l"),
+          ctx_ng_ml: val("ctx_ng_ml"),
+          p1np_ng_ml: val("p1np_ng_ml"),
 
           calcium_supplement: val("calcium_supplement"),
           calcium_supplement_mg_per_day: val("calcium_supplement_mg_per_day"),
