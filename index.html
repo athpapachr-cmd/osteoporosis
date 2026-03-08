@@ -172,6 +172,14 @@
             <div class="card">
                 <h2>Input</h2>
                 
+                <h3>Patient</h3>
+                <div class="field-group">
+                  <div class="field">
+                    <label for="patient_id">Patient ID</label>
+                    <input id="patient_id" type="text" placeholder="e.g. EMR / GeSY ID">
+                  </div>
+                </div>
+
                 <h3>Core data</h3>
                 <div class="field-group">
                     <div class="field">
@@ -407,8 +415,9 @@
                 </div>
                 
                 <div class="button-row">
-                    <button id="evaluateBtn">Evaluate osteoporosis</button>
-                    <span id="status" class="status"></span>
+                  <button id="evaluateBtn">Evaluate osteoporosis</button>
+                  <button id="loadLatestBtn" class="secondary">Load latest for patient</button>
+                  <span id="status" class="status"></span>
                 </div>
                 <p class="small">
                 Data is sent to: <code>https://ortho-reception-backend.onrender.com/osteoporosis/evaluate</code>. No data is stored by this page itself.
@@ -577,43 +586,130 @@
         }
       }
 
-      async function evaluate() {
-        const btn = document.getElementById("evaluateBtn");
-        if (btn) btn.disabled = true;
-        setStatus("Evaluating…");
-        try {
-          const payload = buildPayload();
-          console.log("Payload:", payload);
+        async function evaluate() {
+          const btn = document.getElementById("evaluateBtn");
+          if (btn) btn.disabled = true;
+          setStatus("Evaluating…");
+          try {
+            const payloadInner = buildPayload();
+            const pid = document.getElementById("patient_id").value || "test-patient";
 
-          const res = await fetch(API_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json", "Accept": "application/json" },
-            body: JSON.stringify(payload)
-          });
+            const payload = {
+              patient_id: pid,
+              input_data: payloadInner
+            };
 
-          console.log("HTTP status:", res.status);
+            console.log("Payload:", payload);
 
-          if (!res.ok) {
-            const text = await res.text();
-            setStatus("Error " + res.status + " – see console", true);
-            console.error("Error response:", text);
+            const res = await fetch(API_URL, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "Accept": "application/json" },
+              body: JSON.stringify(payload)
+            });
+
+            console.log("HTTP status:", res.status);
+
+            if (!res.ok) {
+              const text = await res.text();
+              setStatus("Error " + res.status + " – see console", true);
+              console.error("Error response:", text);
+              return;
+            }
+
+            const data = await res.json();
+            // data is OsteoStoredAssessment
+            const assessment = data.assessment;
+            lastAssessment = assessment;
+
+            document.getElementById("clinical_note").value = assessment.clinical_note || "";
+            document.getElementById("patient_summary").value = assessment.patient_summary || "";
+            renderBadges(assessment);
+            setStatus("OK – risk and notes updated (stored as " + data.assessment_id + ").");
+          } catch (err) {
+            console.error(err);
+            setStatus("Network or JS error – see console", true);
+          } finally {
+            if (btn) btn.disabled = false;
+          }
+        }
+
+        async function loadLatest() {
+          const pid = document.getElementById("patient_id").value;
+          if (!pid) {
+            setStatus("Enter a patient ID to load.", true);
             return;
           }
+          setStatus("Loading latest assessment…");
+          try {
+            const res = await fetch(
+              `https://ortho-reception-backend.onrender.com/osteoporosis/patient/${encodeURIComponent(pid)}/latest`,
+              { method: "GET", headers: { "Accept": "application/json" } }
+            );
+            console.log("Load latest HTTP status:", res.status);
+            if (!res.ok) {
+              const text = await res.text();
+              setStatus("Load error " + res.status + " – see console", true);
+              console.error("Load error:", text);
+              return;
+            }
+            const stored = await res.json();
+            const inp = stored.input_data;
+            const assessment = stored.assessment;
+            lastAssessment = assessment;
 
-          const data = await res.json();
-          lastAssessment = data;
+            // Pre-fill a few key fields (you can extend this mapping as you like)
+            document.getElementById("age").value = inp.age;
+            document.getElementById("sex").value = inp.sex;
+            document.getElementById("menopause_status").value = inp.menopause_status;
+            if (inp.spine_t_score != null) document.getElementById("spine_t_score").value = inp.spine_t_score;
+            if (inp.total_hip_t_score != null) document.getElementById("total_hip_t_score").value = inp.total_hip_t_score;
+            // ...same for labs, therapy, etc, if you want...
 
-          document.getElementById("clinical_note").value = data.clinical_note || "";
-          document.getElementById("patient_summary").value = data.patient_summary || "";
-          renderBadges(data);
-          setStatus("OK – risk and notes updated.");
-        } catch (err) {
-          console.error(err);
-          setStatus("Network or JS error – see console", true);
-        } finally {
-          if (btn) btn.disabled = false;
+            document.getElementById("clinical_note").value = assessment.clinical_note || "";
+            document.getElementById("patient_summary").value = assessment.patient_summary || "";
+            renderBadges(assessment);
+            setStatus("Loaded latest assessment " + stored.assessment_id + ".");
+          } catch (err) {
+            console.error(err);
+            setStatus("Network or JS error during load – see console", true);
+          }
         }
-      }
+
+        window.addEventListener("DOMContentLoaded", () => {
+          const evalBtn = document.getElementById("evaluateBtn");
+          if (evalBtn) {
+            evalBtn.addEventListener("click", (e) => {
+              e.preventDefault();
+              evaluate();
+            });
+          }
+
+          const loadBtn = document.getElementById("loadLatestBtn");
+          if (loadBtn) {
+            loadBtn.addEventListener("click", (e) => {
+              e.preventDefault();
+              loadLatest();
+            });
+          }
+
+          const elabClin = document.getElementById("elabClinicianBtn");
+          const elabPat = document.getElementById("elabPatientBtn");
+          if (elabClin) {
+            elabClin.addEventListener("click", (e) => {
+              e.preventDefault();
+              elaborate("clinician");
+            });
+          }
+          if (elabPat) {
+            elabPat.addEventListener("click", (e) => {
+              e.preventDefault();
+              elaborate("patient");
+            });
+          }
+
+          console.log("Osteoporosis cockpit JS initialized");
+        });
+
 
       async function elaborate(audience) {
         if (!lastAssessment) {

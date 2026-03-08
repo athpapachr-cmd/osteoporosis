@@ -1,44 +1,92 @@
-# main.py# main.py
+# main.py
 
 from enum import Enum
 from typing import List, Optional, Tuple
+import json
+import os
+from datetime import datetime
+from uuid import uuid4
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from openai import OpenAI
 from pydantic import BaseModel, Field, conint, confloat
 
-# If you use OpenAI:
-from openai import OpenAI
-import os
+from sqlalchemy import (
+    Column,
+    DateTime,
+    JSON,
+    String,
+    create_engine,
+    select,
+)
+from sqlalchemy.orm import DeclarativeBase, Session
 
-
+# =========================
 # App & CORS
+# =========================
 
 app = FastAPI(
     title="Papachristou Ortho Osteoporosis Support",
     description=(
         "Guideline-inspired decision support for osteoporosis risk stratification, "
-        "FRAX-style internal risk indexing, calcium intake estimation, and lab pattern hints. "
-        "For clinician use only."
+        "FRAX-style internal risk indexing, calcium intake estimation, lab pattern hints, "
+        "and treatment context. For clinician use only."
     ),
     version="0.3.0",
 )
 
-# Allow the local cockpit (localhost) and other origins (for now)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],      # allow localhost and others for now
+    allow_origins=["*"],  # relax for now; you can restrict later
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# OpenAI client for elaboration endpoint
+# =========================
+# OpenAI client
+# =========================
+
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 openai_client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
 
+# =========================
+# Database (SQLite minimal)
+# =========================
 
+
+class Base(DeclarativeBase):
+    pass
+
+
+class AssessmentORM(Base):
+    __tablename__ = "assessments"
+
+    id = Column(String, primary_key=True)  # assessment_id
+    patient_id = Column(String, index=True)
+    created_at = Column(DateTime, index=True)
+
+    input_json = Column(JSON)
+    output_json = Column(JSON)
+
+    risk_category = Column(String, index=True)
+    current_therapy_type = Column(String, index=True)
+
+
+DATABASE_URL = "sqlite:///./osteoporosis.db"
+
+engine = create_engine(
+    DATABASE_URL,
+    connect_args={"check_same_thread": False},
+    future=True,
+)
+
+Base.metadata.create_all(bind=engine)
+
+# =========================
 # Enums & Schemas
+# =========================
 
 
 class Sex(str, Enum):
@@ -68,9 +116,9 @@ class RiskCategory(str, Enum):
 
 class ExerciseLevel(str, Enum):
     none = "none"
-    light = "light"        # occasional walking
-    moderate = "moderate"  # regular walking ± some resistance work
-    vigorous = "vigorous"  # structured resistance, etc.
+    light = "light"
+    moderate = "moderate"
+    vigorous = "vigorous"
 
 
 class DailyWalking(str, Enum):
@@ -79,19 +127,20 @@ class DailyWalking(str, Enum):
     between_15_30_min = "between_15_30_min"
     over_30_min = "over_30_min"
 
+
 class CurrentTherapyType(str, Enum):
     none = "none"
     oral_bisphosphonate = "oral_bisphosphonate"
     iv_bisphosphonate = "iv_bisphosphonate"
     denosumab = "denosumab"
-    teriparatide = "teriparatide"      # Forsteo / other PTH analogues
-    romosozumab = "romosozumab"        # Evenity
+    teriparatide = "teriparatide"
+    romosozumab = "romosozumab"
     raloxifene = "raloxifene"
     other = "other"
 
 
 class Suggestion(BaseModel):
-    category: str  # e.g. "pharmacologic", "vitamin_d", "calcium", "labs_hyperparathyroidism"
+    category: str
     text: str
 
 
@@ -128,10 +177,9 @@ class OsteoInput(BaseModel):
     glucocorticoids: bool = False
     rheumatoid_arthritis: bool = False
     secondary_osteoporosis: bool = False
-    high_alcohol_intake: bool = False  # ≥3 units/day
+    high_alcohol_intake: bool = False
 
-    # Mineral metabolism & bone labs
-    # Keep old names for backwards compatibility, but prefer the *_mg_dl / *_ng_ml fields.
+    # Mineral metabolism & bone labs (old names kept for backwards compatibility)
     serum_calcium: Optional[float] = Field(
         default=None, description="(Deprecated) Serum calcium, use serum_calcium_mg_dl"
     )
@@ -157,50 +205,26 @@ class OsteoInput(BaseModel):
         default=None, description="24-hour urine calcium (mg/24h)"
     )
 
-    # Bone turnover markers
-    osteocalcin_ng_ml: Optional[float] = Field(
-        default=None, description="Osteocalcin (ng/mL)"
-    )
-    bone_alk_phos_u_l: Optional[float] = Field(
-        default=None, description="Bone alkaline phosphatase (U/L)"
-    )
-    total_alk_phos_u_l: Optional[float] = Field(
-        default=None, description="Total alkaline phosphatase (U/L)"
-    )
-    ctx_ng_ml: Optional[float] = Field(
-        default=None, description="CTX (β-CrossLaps, ng/mL)"
-    )
-    p1np_ng_ml: Optional[float] = Field(
-        default=None, description="P1NP (ng/mL)"
-    )
+    # Bone turnover markers (single timepoint)
+    osteocalcin_ng_ml: Optional[float] = None
+    bone_alk_phos_u_l: Optional[float] = None
+    total_alk_phos_u_l: Optional[float] = None
+    ctx_ng_ml: Optional[float] = None
+    p1np_ng_ml: Optional[float] = None
 
     # Other labs
-    serum_magnesium_mg_dl: Optional[float] = Field(
-        default=None, description="Serum magnesium (mg/dL)"
-    )
-    serum_zinc_ug_dl: Optional[float] = Field(
-        default=None, description="Serum zinc (μg/dL)"
-    )
-    serum_glucose_mg_dl: Optional[float] = Field(
-        default=None, description="Fasting glucose (mg/dL)"
-    )
-    tsh_u_iu_ml: Optional[float] = Field(
-        default=None, description="TSH (μIU/mL)"
-    )
-    free_t4_ng_dl: Optional[float] = Field(
-        default=None, description="Free T4 (ng/dL)"
-    )
+    serum_magnesium_mg_dl: Optional[float] = None
+    serum_zinc_ug_dl: Optional[float] = None
+    serum_glucose_mg_dl: Optional[float] = None
+    tsh_u_iu_ml: Optional[float] = None
+    free_t4_ng_dl: Optional[float] = None
 
     # Supplements / intake
     calcium_supplement: bool = False
-    calcium_supplement_mg_per_day: Optional[float] = Field(
-        default=None, description="Calcium supplement (mg/day)"
-    )
+    calcium_supplement_mg_per_day: Optional[float] = None
 
     vitamin_d_supplement: bool = False
-    vitamin_d3_iu_per_day: Optional[float] = Field(
-        default=None, description="Vitamin D3 supplement (IU/day)"
-    )
+    vitamin_d3_iu_per_day: Optional[float] = None
 
     magnesium_supplement: bool = False
     magnesium_supplement_mg_per_day: Optional[float] = None
@@ -217,23 +241,6 @@ class OsteoInput(BaseModel):
     fortibone_supplement: bool = False
     colabone_supplement: bool = False
 
-    # Lifestyle / functional status
-    exercise_level: ExerciseLevel = ExerciseLevel.none
-    daily_walking: DailyWalking = DailyWalking.none
-    dietician_follow_up: bool = False
-    high_falls_risk: bool = False
-    history_of_falls_last_year: bool = False
-    dementia_or_cognitive_impairment: bool = False
-    significant_immobility: bool = False
-
-    # Calcium intake fields (IOF-style paradigm, "portions per day")
-    milk_portions_per_day: conint(ge=0, le=20) = 0
-    yogurt_portions_per_day: conint(ge=0, le=20) = 0
-    cheese_portions_per_day: conint(ge=0, le=20) = 0
-    leafy_greens_portions_per_day: conint(ge=0, le=20) = 0
-    fortified_food_portions_per_day: conint(ge=0, le=20) = 0
-    other_dairy_portions_per_day: conint(ge=0, le=20) = 0
-
     # Current pharmacologic osteoporosis therapy
     current_therapy_type: CurrentTherapyType = CurrentTherapyType.none
     current_therapy_duration_years: Optional[float] = Field(
@@ -248,6 +255,23 @@ class OsteoInput(BaseModel):
         description="Any clinically significant adverse effects related to current therapy?",
     )
 
+    # Lifestyle / functional status
+    exercise_level: ExerciseLevel = ExerciseLevel.none
+    daily_walking: DailyWalking = DailyWalking.none
+    dietician_follow_up: bool = False
+    high_falls_risk: bool = False
+    history_of_falls_last_year: bool = False
+    dementia_or_cognitive_impairment: bool = False
+    significant_immobility: bool = False
+
+    # Calcium intake fields (food)
+    milk_portions_per_day: conint(ge=0, le=20) = 0
+    yogurt_portions_per_day: conint(ge=0, le=20) = 0
+    cheese_portions_per_day: conint(ge=0, le=20) = 0
+    leafy_greens_portions_per_day: conint(ge=0, le=20) = 0
+    fortified_food_portions_per_day: conint(ge=0, le=20) = 0
+    other_dairy_portions_per_day: conint(ge=0, le=20) = 0
+
 
 class OsteoAssessment(BaseModel):
     risk_category: RiskCategory
@@ -261,6 +285,21 @@ class OsteoAssessment(BaseModel):
     patient_summary: str
 
 
+class OsteoEvaluationRequest(BaseModel):
+    patient_id: str = Field(
+        description="Your internal patient ID or EMR ID for this patient."
+    )
+    input_data: OsteoInput
+
+
+class OsteoStoredAssessment(BaseModel):
+    assessment_id: str
+    patient_id: str
+    created_at: datetime
+    input_data: OsteoInput
+    assessment: OsteoAssessment
+
+
 class ElaborationRequest(BaseModel):
     assessment: OsteoAssessment
     audience: str = Field(default="clinician", description="clinician or patient")
@@ -269,8 +308,9 @@ class ElaborationRequest(BaseModel):
 class ElaborationResponse(BaseModel):
     elaborated_text: str
 
-
+# =========================
 # Helper calculations
+# =========================
 
 
 def calculate_bmi(weight_kg: Optional[float], height_cm: Optional[float]) -> Optional[float]:
@@ -281,14 +321,10 @@ def calculate_bmi(weight_kg: Optional[float], height_cm: Optional[float]) -> Opt
 
 
 def compute_internal_frax_like_index(data: OsteoInput) -> Tuple[Optional[float], Optional[str]]:
-    """
-    Simple internal fracture risk index based on FRAX-style variables.
-    This is *not* the official FRAX algorithm.
-    """
     score = 0.0
     reasons: List[str] = []
 
-    # Age contribution
+    # Age
     if data.age >= 80:
         score += 4
         reasons.append("age ≥80")
@@ -302,7 +338,7 @@ def compute_internal_frax_like_index(data: OsteoInput) -> Tuple[Optional[float],
         score += 1
         reasons.append("age 50–59")
 
-    # BMI contribution
+    # BMI
     bmi = calculate_bmi(data.weight_kg, data.height_cm)
     if bmi is not None:
         if bmi < 18.5:
@@ -344,10 +380,6 @@ def compute_internal_frax_like_index(data: OsteoInput) -> Tuple[Optional[float],
 
 
 def calculate_calcium_intake(data: OsteoInput) -> Tuple[Optional[float], Optional[str]]:
-    """
-    Estimate daily calcium intake based on rough portion equivalents and supplement dose.
-    Approximate only; for decision support, not precise nutrition prescription.
-    """
     MG_PER_PORTION_MILK = 300.0
     MG_PER_PORTION_YOGURT = 250.0
     MG_PER_PORTION_CHEESE = 200.0
@@ -390,8 +422,9 @@ def calculate_calcium_intake(data: OsteoInput) -> Tuple[Optional[float], Optiona
     note = detail + " This is a rough estimate based on reported portions and supplement dose."
     return total_mg, note
 
-
-# Hyperparathyroidism pattern helper
+# =========================
+# Hyperparathyroidism helper
+# =========================
 
 
 def add_hyperparathyroid_suggestions(data: OsteoInput, suggestions: List[Suggestion]) -> None:
@@ -420,7 +453,8 @@ def add_hyperparathyroid_suggestions(data: OsteoInput, suggestions: List[Suggest
         if vitd is not None and vitd < 20:
             text += (
                 f"Vitamin D is low ({vitd:.1f} ng/mL); correcting vitamin D while "
-                "monitoring calcium and PTH may be reasonable before final conclusions. "
+                "monitoring calcium and PTH may be reasonable before final "
+                "conclusions. "
             )
         suggestions.append(
             Suggestion(
@@ -428,8 +462,10 @@ def add_hyperparathyroid_suggestions(data: OsteoInput, suggestions: List[Suggest
                 text=text + "Correlate with repeat labs, renal function, and imaging as needed.",
             )
         )
-    # Secondary hyperparathyroidism (vitamin D deficiency–type pattern)
-    elif not high_ca and high_pth and vitd is not None and vitd < 20:
+        return
+
+    # Secondary hyperparathyroidism (e.g. Vit D deficiency)
+    if not high_ca and high_pth and vitd is not None and vitd < 20:
         text = (
             f"PTH {pth:.1f} pg/mL with calcium {ca:.2f} mg/dL and low vitamin D "
             f"{vitd:.1f} ng/mL. This combination can be compatible with secondary "
@@ -443,8 +479,10 @@ def add_hyperparathyroid_suggestions(data: OsteoInput, suggestions: List[Suggest
                 text=text + "Consider appropriate workup and vitamin D repletion according to guidelines.",
             )
         )
-    # Hypocalcemia with low PTH (hypoparathyroidism-type pattern)
-    elif low_ca and low_pth:
+        return
+
+    # Hypocalcemia with low PTH
+    if low_ca and low_pth:
         suggestions.append(
             Suggestion(
                 category="labs_hyperparathyroidism",
@@ -481,8 +519,164 @@ def add_hyperparathyroid_suggestions(data: OsteoInput, suggestions: List[Suggest
                 )
             )
 
+# =========================
+# Current therapy helper
+# =========================
 
-# Risk and suggestion logic
+
+def add_current_therapy_suggestions(
+    data: OsteoInput,
+    risk: RiskCategory,
+    suggestions: List[Suggestion],
+) -> None:
+    ttype = data.current_therapy_type
+    dur = data.current_therapy_duration_years
+    fx_on_tx = data.fractures_during_current_therapy
+    adr = data.significant_therapy_adverse_effects
+
+    if ttype == CurrentTherapyType.none:
+        return
+
+    if fx_on_tx:
+        suggestions.append(
+            Suggestion(
+                category="current_therapy",
+                text=(
+                    "A new fragility fracture has occurred while on the current osteoporosis "
+                    "therapy. This may represent suboptimal response, adherence issues, or "
+                    "evolving risk profile and generally warrants review of the treatment "
+                    "strategy, including verifying adherence, secondary causes, and "
+                    "considering alternative or intensified therapy according to guidelines."
+                ),
+            )
+        )
+
+    if adr:
+        suggestions.append(
+            Suggestion(
+                category="current_therapy",
+                text=(
+                    "Clinically significant adverse effects related to the current therapy "
+                    "have been reported. Balancing fracture risk reduction against adverse "
+                    "effects may justify discussion of dose adjustment, switching drug "
+                    "class, or discontinuation according to guidelines and patient preference."
+                ),
+            )
+        )
+
+    if ttype in [CurrentTherapyType.oral_bisphosphonate, CurrentTherapyType.iv_bisphosphonate]:
+        if dur is not None:
+            if dur < 3:
+                suggestions.append(
+                    Suggestion(
+                        category="current_therapy",
+                        text=(
+                            f"Currently on bisphosphonate therapy for ~{dur:.1f} years. For many "
+                            "patients, a 3–5 year course is typical, with longer durations considered "
+                            "in very-high-risk cases. Ongoing need should be reassessed periodically."
+                        ),
+                    )
+                )
+            elif 3 <= dur <= 5:
+                suggestions.append(
+                    Suggestion(
+                        category="current_therapy",
+                        text=(
+                            f"Bisphosphonate therapy duration is ~{dur:.1f} years. For patients at "
+                            "lower risk, a treatment holiday may be considered after 3–5 years, "
+                            "whereas in high or very-high-risk cases, continuation or a change "
+                            "of agent may be appropriate. Decisions should be individualized."
+                        ),
+                    )
+                )
+            else:
+                suggestions.append(
+                    Suggestion(
+                        category="current_therapy",
+                        text=(
+                            f"Bisphosphonate therapy duration exceeds 5 years (~{dur:.1f} years). "
+                            "This is often a point where treatment holiday, continuation, or "
+                            "alternative therapy is actively reconsidered in light of current "
+                            "fracture risk, BMD trends, and any adverse events."
+                        ),
+                    )
+                )
+        else:
+            suggestions.append(
+                Suggestion(
+                    category="current_therapy",
+                    text=(
+                        "Bisphosphonate therapy is ongoing; document approximate duration to "
+                        "better frame decisions around continuation versus holiday."
+                    ),
+                )
+            )
+
+    elif ttype == CurrentTherapyType.denosumab:
+        suggestions.append(
+            Suggestion(
+                category="current_therapy",
+                text=(
+                    "Patient is currently on denosumab. Abrupt discontinuation is associated "
+                    "with rebound bone turnover and increased vertebral fracture risk; any "
+                    "decision to stop or switch therapy should include a plan for subsequent "
+                    "anti-resorptive coverage according to current guidelines."
+                ),
+            )
+        )
+
+    elif ttype == CurrentTherapyType.teriparatide:
+        suggestions.append(
+            Suggestion(
+                category="current_therapy",
+                text=(
+                    "Patient is on or has been on anabolic therapy (e.g. teriparatide). "
+                    "Course duration is typically limited (often up to 18–24 months) and is "
+                    "usually followed by an anti-resorptive agent to consolidate gains in BMD."
+                ),
+            )
+        )
+
+    elif ttype == CurrentTherapyType.romosozumab:
+        suggestions.append(
+            Suggestion(
+                category="current_therapy",
+                text=(
+                    "Patient is on or has been on romosozumab. Treatment duration is usually "
+                    "limited (e.g. 12 months) and is typically followed by an anti-resorptive "
+                    "agent to maintain BMD improvements."
+                ),
+            )
+        )
+
+    elif ttype == CurrentTherapyType.raloxifene:
+        suggestions.append(
+            Suggestion(
+                category="current_therapy",
+                text=(
+                    "Patient is on raloxifene. This agent primarily reduces vertebral fracture "
+                    "risk and may be best suited to specific risk profiles; reassess whether "
+                    "it remains the most appropriate choice given current fracture risk and "
+                    "co-morbidities."
+                ),
+            )
+        )
+
+    elif ttype == CurrentTherapyType.other:
+        suggestions.append(
+            Suggestion(
+                category="current_therapy",
+                text=(
+                    "Current osteoporosis therapy is recorded as 'other'. Ensure that the "
+                    "specific agent, dose, and duration are documented to support decisions "
+                    "about continuation or modification of therapy."
+                ),
+            )
+        )
+
+# =========================
+# Risk and suggestions
+# =========================
 
 
 def determine_risk_category(
@@ -611,7 +805,7 @@ def build_suggestions(
             )
         )
 
-    # Vitamin D (lab-based, with backward compatibility)
+    # Vitamin D
     vitd = data.vitamin_d_25oh_ng_ml or data.vitamin_d_25oh
     if vitd is not None:
         if vitd < 20:
@@ -656,7 +850,7 @@ def build_suggestions(
             )
         )
 
-    # Calcium: intake-focused if we have calculator output
+    # Calcium – intake-based if available
     ca_lab = data.serum_calcium_mg_dl or data.serum_calcium
     if calcium_total_mg is not None and calcium_note is not None:
         suggestions.append(
@@ -710,21 +904,37 @@ def build_suggestions(
                     ),
                 )
             )
-            
+
     # Micronutrients & collagen supplements
     if data.magnesium_supplement or data.zinc_supplement or data.boron_supplement or data.vitamin_k2_supplement:
         parts = []
         if data.magnesium_supplement:
-            dose = f" (~{data.magnesium_supplement_mg_per_day:.0f} mg/day)" if data.magnesium_supplement_mg_per_day else ""
+            dose = (
+                f" (~{data.magnesium_supplement_mg_per_day:.0f} mg/day)"
+                if data.magnesium_supplement_mg_per_day
+                else ""
+            )
             parts.append(f"magnesium{dose}")
         if data.zinc_supplement:
-            dose = f" (~{data.zinc_supplement_mg_per_day:.0f} mg/day)" if data.zinc_supplement_mg_per_day else ""
+            dose = (
+                f" (~{data.zinc_supplement_mg_per_day:.0f} mg/day)"
+                if data.zinc_supplement_mg_per_day
+                else ""
+            )
             parts.append(f"zinc{dose}")
         if data.boron_supplement:
-            dose = f" (~{data.boron_supplement_mg_per_day:.1f} mg/day)" if data.boron_supplement_mg_per_day else ""
+            dose = (
+                f" (~{data.boron_supplement_mg_per_day:.1f} mg/day)"
+                if data.boron_supplement_mg_per_day
+                else ""
+            )
             parts.append(f"boron{dose}")
         if data.vitamin_k2_supplement:
-            dose = f" (~{data.vitamin_k2_ug_per_day:.0f} μg/day)" if data.vitamin_k2_ug_per_day else ""
+            dose = (
+                f" (~{data.vitamin_k2_ug_per_day:.0f} μg/day)"
+                if data.vitamin_k2_ug_per_day
+                else ""
+            )
             parts.append(f"vitamin K2{dose}")
         combo = ", ".join(parts)
         suggestions.append(
@@ -765,38 +975,6 @@ def build_suggestions(
                 ),
             )
         )
-
-        # Phosphorus
-    if data.serum_phosphorus_mg_dl is not None:
-        p = data.serum_phosphorus_mg_dl
-        if p < 2.5:
-            suggestions.append(Suggestion(
-                category="labs_phosphorus",
-                text=(
-                    f"Serum phosphorus ({p:.2f} mg/dL) appears low. Consider integrating this "
-                    "with calcium, PTH, and vitamin D to evaluate for possible secondary "
-                    "mineral metabolism disturbances."
-                ),
-            ))
-        elif p > 4.5:
-            suggestions.append(Suggestion(
-                category="labs_phosphorus",
-                text=(
-                    f"Serum phosphorus ({p:.2f} mg/dL) appears elevated. Correlate with renal "
-                    "function, PTH, and other labs."
-                ),
-            ))
-
-    # Bone turnover markers (very high-level commentary only)
-    if data.ctx_ng_ml is not None:
-        ctx = data.ctx_ng_ml
-        suggestions.append(Suggestion(
-            category="bone_turnover",
-            text=(
-                f"CTX measured at {ctx:.2f} ng/mL. Interpret in context of lab reference "
-                "ranges, time since last dose of any anti-resorptive, and circadian variation."
-            ),
-        ))
 
     # Lifestyle / exercise
     if data.exercise_level in [ExerciseLevel.none, ExerciseLevel.light]:
@@ -880,7 +1058,7 @@ def build_suggestions(
             )
         )
 
-       # Nutrition / dietician
+    # Nutrition / dietician
     if data.dietician_follow_up:
         suggestions.append(
             Suggestion(
@@ -904,263 +1082,13 @@ def build_suggestions(
             )
         )
 
-       # Hyperparathyroidism / 24h urine patterns
+    # Hyperparathyroidism / 24h urine patterns
     add_hyperparathyroid_suggestions(data, suggestions)
 
     # Current pharmacologic therapy continuation/change framing
     add_current_therapy_suggestions(data, risk, suggestions)
 
     return suggestions
-
-
-def add_current_therapy_suggestions(
-    data: OsteoInput,
-    risk: RiskCategory,
-    suggestions: List[Suggestion],
-) -> None:
-    ttype = data.current_therapy_type
-    dur = data.current_therapy_duration_years
-    fx_on_tx = data.fractures_during_current_therapy
-    adr = data.significant_therapy_adverse_effects
-
-    if ttype == CurrentTherapyType.none:
-        # No current pharmacologic therapy to comment on
-        return
-
-    # Generic framing based on fractures and adverse events
-    if fx_on_tx:
-        suggestions.append(
-            Suggestion(
-                category="current_therapy",
-                text=(
-                    "A new fragility fracture has occurred while on the current osteoporosis "
-                    "therapy. This may represent suboptimal response, adherence issues, or "
-                    "evolving risk profile and generally warrants review of the treatment "
-                    "strategy, including verifying adherence, secondary causes, and "
-                    "considering alternative or intensified therapy according to guidelines."
-                ),
-            )
-        )
-
-    if adr:
-        suggestions.append(
-            Suggestion(
-                category="current_therapy",
-                text=(
-                    "Clinically significant adverse effects related to the current therapy "
-                    "have been reported. Balancing fracture risk reduction against adverse "
-                    "effects may justify discussion of dose adjustment, switching drug "
-                    "class, or discontinuation according to guidelines and patient preference."
-                ),
-            )
-        )
-
-    # Per-class, duration-aware comments
-    if ttype in [CurrentTherapyType.oral_bisphosphonate, CurrentTherapyType.iv_bisphosphonate]:
-        if dur is not None:
-            if dur < 3:
-                suggestions.append(
-                    Suggestion(
-                        category="current_therapy",
-                        text=(
-                            f"Currently on bisphosphonate therapy for ~{dur:.1f} years. For many "
-                            "patients, a 3–5 year course is typical, with longer durations considered "
-                            "in very-high-risk cases. Ongoing need should be reassessed periodically."
-                        ),
-                    )
-                )
-            elif 3 <= dur <= 5:
-                suggestions.append(
-                    Suggestion(
-                        category="current_therapy",
-                        text=(
-                            f"Bisphosphonate therapy duration is ~{dur:.1f} years. For patients at "
-                            "lower risk, a treatment holiday may be considered after 3–5 years, "
-                            "whereas in high or very-high-risk cases, continuation or a change "
-                            "of agent may be appropriate. Decisions should be individualized."
-                        ),
-                    )
-                )
-            else:  # > 5 years
-                suggestions.append(
-                    Suggestion(
-                        category="current_therapy",
-                        text=(
-                            f"Bisphosphonate therapy duration exceeds 5 years (~{dur:.1f} years). "
-                            "This is often a point where treatment holiday, continuation, or "
-                            "alternative therapy is actively reconsidered in light of current "
-                            "fracture risk, BMD trends, and any adverse events."
-                        ),
-                    )
-                )
-        else:
-            suggestions.append(
-                Suggestion(
-                    category="current_therapy",
-                    text=(
-                        "Bisphosphonate therapy is ongoing; document approximate duration to "
-                        "better frame decisions around continuation versus holiday."
-                    ),
-                )
-            )
-
-    elif ttype == CurrentTherapyType.denosumab:
-        suggestions.append(
-            Suggestion(
-                category="current_therapy",
-                text=(
-                    "Patient is currently on denosumab. Abrupt discontinuation is associated "
-                    "with rebound bone turnover and increased vertebral fracture risk; any "
-                    "decision to stop or switch therapy should include a plan for subsequent "
-                    "anti-resorptive coverage according to current guidelines."
-                ),
-            )
-        )
-
-    elif ttype == CurrentTherapyType.teriparatide:
-        suggestions.append(
-            Suggestion(
-                category="current_therapy",
-                text=(
-                    "Patient is on or has been on anabolic therapy (e.g. teriparatide). "
-                    "Course duration is typically limited (often up to 18–24 months) and is "
-                    "usually followed by an anti-resorptive agent to consolidate gains in BMD."
-                ),
-            )
-        )
-
-    elif ttype == CurrentTherapyType.romosozumab:
-        suggestions.append(
-            Suggestion(
-                category="current_therapy",
-                text=(
-                    "Patient is on or has been on romosozumab. Treatment duration is usually "
-                    "limited (e.g. 12 months) and is typically followed by an anti-resorptive "
-                    "agent to maintain BMD improvements."
-                ),
-            )
-        )
-
-    elif ttype == CurrentTherapyType.raloxifene:
-        suggestions.append(
-            Suggestion(
-                category="current_therapy",
-                text=(
-                    "Patient is on raloxifene. This agent primarily reduces vertebral fracture "
-                    "risk and may be best suited to specific risk profiles; reassess whether "
-                    "it remains the most appropriate choice given current fracture risk and "
-                    "co-morbidities."
-                ),
-            )
-        )
-
-    elif ttype == CurrentTherapyType.other:
-        suggestions.append(
-            Suggestion(
-                category="current_therapy",
-                text=(
-                    "Current osteoporosis therapy is recorded as 'other'. Ensure that the "
-                    "specific agent, dose, and duration are documented to support decisions "
-                    "about continuation or modification of therapy."
-                ),
-            )
-        )
-
-
-def add_hyperparathyroid_suggestions(data: OsteoInput, suggestions: List[Suggestion]) -> None:
-    ca = data.serum_calcium_mg_dl
-    pth = data.pth_pg_ml
-    vitd = data.vitamin_d_25oh_ng_ml
-    phos = data.serum_phosphorus_mg_dl
-    uca = data.urine_calcium_24h_mg
-
-    # Only proceed if we have at least calcium and PTH
-    if ca is None or pth is None:
-        return
-
-    # Very rough working ranges; you will interpret them clinically
-    high_ca = ca > 10.5
-    low_ca = ca < 8.5
-    high_pth = pth > 65     # depends on lab
-    low_pth = pth < 15
-
-    # Primary hyperparathyroidism pattern (classic)
-    if high_ca and high_pth:
-        text = (
-            f"Serum calcium {ca:.2f} mg/dL with elevated PTH {pth:.1f} pg/mL. "
-            "This pattern can be seen in primary hyperparathyroidism or related disorders. "
-        )
-        if phos is not None and phos < 2.5:
-            text += (
-                f"Phosphorus is low ({phos:.2f} mg/dL), which may further support this pattern. "
-            )
-        if vitd is not None and vitd < 20:
-            text += (
-                f"Vitamin D is low ({vitd:.1f} ng/mL); correcting vitamin D while monitoring "
-                "calcium and PTH may be reasonable before final conclusions."
-            )
-        suggestions.append(
-            Suggestion(
-                category="labs_hyperparathyroidism",
-                text=text + "Correlate with repeat labs, renal function, and imaging as needed.",
-            )
-        )
-        return
-
-    # Secondary hyperparathyroidism pattern (vitamin D deficiency / CKD, etc.)
-    if not high_ca and high_pth and vitd is not None and vitd < 20:
-        text = (
-            f"PTH {pth:.1f} pg/mL with calcium {ca:.2f} mg/dL and low vitamin D "
-            f"{vitd:.1f} ng/mL. This combination can be compatible with secondary "
-            "hyperparathyroidism (e.g. vitamin D deficiency or CKD). "
-        )
-        if phos is not None:
-            text += f"Phosphorus {phos:.2f} mg/dL; interpret with renal function and PTH trends. "
-        suggestions.append(
-            Suggestion(
-                category="labs_hyperparathyroidism",
-                text=text + "Consider appropriate workup and vitamin D repletion according to guidelines.",
-            )
-        )
-        return
-
-    # Hypocalcemia with low PTH (hypoparathyroidism pattern)
-    if low_ca and low_pth:
-        suggestions.append(
-            Suggestion(
-                category="labs_hyperparathyroidism",
-                text=(
-                    f"Hypocalcemia ({ca:.2f} mg/dL) with low PTH ({pth:.1f} pg/mL). "
-                    "This can be compatible with hypoparathyroidism. Correlate with "
-                    "clinical picture, magnesium, phosphorus, and drug history."
-                ),
-            )
-        )
-
-    # 24h urine calcium comments (e.g., low vs high)
-    if uca is not None:
-        if uca < 100:
-            suggestions.append(
-                Suggestion(
-                    category="urine_calcium",
-                    text=(
-                        f"24-hour urine calcium is {uca:.0f} mg/24h, which is relatively low; "
-                        "interpret in context (dietary calcium, vitamin D, and possible familial "
-                        "hypocalciuric hypercalcemia if hypercalcemia is present)."
-                    ),
-                )
-            )
-        elif uca > 300:
-            suggestions.append(
-                Suggestion(
-                    category="urine_calcium",
-                    text=(
-                        f"24-hour urine calcium is {uca:.0f} mg/24h, on the higher side; "
-                        "this can contribute to nephrolithiasis risk and may be relevant in "
-                        "the context of hypercalcemia or high-dose calcium/vitamin D."
-                    ),
-                )
-            )
 
 
 def build_clinical_note(
@@ -1214,8 +1142,7 @@ def build_clinical_note(
         )
         lines.append(internal_index_note)
 
-    # Labs
-        # Labs summary (use new fields, but keep backward compatibility)
+    # Labs summary (new fields + backward compat)
     lab_bits = []
 
     vitd = data.vitamin_d_25oh_ng_ml or data.vitamin_d_25oh
@@ -1228,13 +1155,10 @@ def build_clinical_note(
 
     if data.serum_phosphorus_mg_dl is not None:
         lab_bits.append(f"serum P {data.serum_phosphorus_mg_dl:.2f} mg/dL")
-
     if data.pth_pg_ml is not None:
         lab_bits.append(f"PTH {data.pth_pg_ml:.1f} pg/mL")
-
     if data.serum_magnesium_mg_dl is not None:
         lab_bits.append(f"serum Mg {data.serum_magnesium_mg_dl:.2f} mg/dL")
-
     if data.serum_zinc_ug_dl is not None:
         lab_bits.append(f"serum Zn {data.serum_zinc_ug_dl:.0f} μg/dL")
 
@@ -1258,7 +1182,6 @@ def build_clinical_note(
         fragility_modifiers.append("cognitive impairment")
     if data.significant_immobility:
         fragility_modifiers.append("immobility")
-
     if fragility_modifiers:
         lines.append("Functional/fragility modifiers: " + ", ".join(fragility_modifiers) + ".")
 
@@ -1293,7 +1216,6 @@ def build_patient_summary(
     risk: RiskCategory,
     suggestions: List[Suggestion],
 ) -> str:
-    # Short, gentle, non-prescriptive patient-style text
     risk_text_map = {
         RiskCategory.low: "Your current risk of bone fracture appears low.",
         RiskCategory.moderate: "Your current risk of bone fracture appears moderate.",
@@ -1308,7 +1230,6 @@ def build_patient_summary(
         "health and lifestyle factors."
     )
 
-    # Pull a few key themes from suggestions
     important_categories = {
         "vitamin_d",
         "calcium",
@@ -1333,30 +1254,24 @@ def build_patient_summary(
 
     return "\n".join(lines)
 
+# =========================
+# API endpoints
+# =========================
 
-# API Endpoint
 
-
-@app.post("/osteoporosis/evaluate", response_model=OsteoAssessment)
-def evaluate_osteoporosis(input_data: OsteoInput) -> OsteoAssessment:
+@app.post("/osteoporosis/evaluate", response_model=OsteoStoredAssessment)
+def evaluate_osteoporosis(req: OsteoEvaluationRequest) -> OsteoStoredAssessment:
     """
     Evaluate osteoporosis fracture risk and generate written suggestions.
-    This is a clinician-facing decision-support tool, not an autonomous prescriber.
+    Also persist the assessment per patient in SQLite.
     """
+    input_data = req.input_data
 
-    # Internal FRAX-style index
     internal_index, internal_index_note = compute_internal_frax_like_index(input_data)
-
-    # Calcium intake
     calcium_total_mg, calcium_note = calculate_calcium_intake(input_data)
-
-    # Risk stratification
     risk, reasons = determine_risk_category(input_data, internal_index)
-
-    # Suggestions
     suggestions = build_suggestions(input_data, risk, calcium_total_mg, calcium_note)
 
-    # Notes
     clinical_note = build_clinical_note(
         input_data,
         risk,
@@ -1369,7 +1284,7 @@ def evaluate_osteoporosis(input_data: OsteoInput) -> OsteoAssessment:
     )
     patient_summary = build_patient_summary(risk, suggestions)
 
-    return OsteoAssessment(
+    assessment = OsteoAssessment(
         risk_category=risk,
         risk_reasons=reasons,
         internal_frax_like_index=internal_index,
@@ -1381,40 +1296,102 @@ def evaluate_osteoporosis(input_data: OsteoInput) -> OsteoAssessment:
         patient_summary=patient_summary,
     )
 
-# API LLM
+    stored = OsteoStoredAssessment(
+        assessment_id=str(uuid4()),
+        patient_id=req.patient_id,
+        created_at=datetime.utcnow(),
+        input_data=input_data,
+        assessment=assessment,
+    )
+
+    with Session(engine) as session:
+        row = AssessmentORM(
+            id=stored.assessment_id,
+            patient_id=stored.patient_id,
+            created_at=stored.created_at,
+            input_json=json.loads(stored.input_data.model_dump_json()),
+            output_json=json.loads(stored.assessment.model_dump_json()),
+            risk_category=stored.assessment.risk_category.value,
+            current_therapy_type=stored.input_data.current_therapy_type.value,
+        )
+        session.add(row)
+        session.commit()
+
+    return stored
+
+
+@app.get(
+    "/osteoporosis/patient/{patient_id}/latest",
+    response_model=OsteoStoredAssessment,
+)
+def get_latest_assessment(patient_id: str) -> OsteoStoredAssessment:
+    """
+    Fetch the most recent stored assessment for a given patient.
+    """
+    with Session(engine) as session:
+        stmt = (
+            select(AssessmentORM)
+            .where(AssessmentORM.patient_id == patient_id)
+            .order_by(AssessmentORM.created_at.desc())
+        )
+        row = session.execute(stmt).scalars().first()
+
+        if row is None:
+            raise HTTPException(status_code=404, detail="No assessments for this patient")
+
+        input_data = OsteoInput.model_validate(row.input_json)
+        assessment = OsteoAssessment.model_validate(row.output_json)
+
+        return OsteoStoredAssessment(
+            assessment_id=row.id,
+            patient_id=row.patient_id,
+            created_at=row.created_at,
+            input_data=input_data,
+            assessment=assessment,
+        )
+
 
 @app.post("/osteoporosis/elaborate", response_model=ElaborationResponse)
 def elaborate_osteoporosis(req: ElaborationRequest) -> ElaborationResponse:
     """
-    Use an LLM to elaborate on an existing osteoporosis assessment
+    Use an LLM (OpenAI) to elaborate on an existing osteoporosis assessment
     WITHOUT changing its medical content.
     """
+    if openai_client is None:
+        return ElaborationResponse(
+            elaborated_text=(
+                "LLM elaboration is not available because OPENAI_API_KEY is not configured "
+                "on the server."
+            )
+        )
+
     a = req.assessment
 
     if req.audience == "clinician":
         style_instruction = (
             "Write 1–2 concise paragraphs as a short clinical impression for an "
-            "orthopaedic specialist. Summarise the risk category, key drivers, relevant "
-            "labs and calcium intake, and the main suggestions. DO NOT introduce new "
-            "diagnoses, new treatments, or drug brand names. Stay neutral and guideline-aligned."
+            "orthopaedic specialist. Summarise the fracture risk category, key drivers, "
+            "notable lab and calcium intake remarks, current therapy context, and the "
+            "main suggestion themes. DO NOT introduce new diagnoses, DO NOT add new "
+            "treatments, DO NOT mention drug brand names or specific doses. You are only "
+            "rephrasing the input."
         )
     else:
         style_instruction = (
             "Write 1–2 short, simple paragraphs addressed to a patient. Explain their "
             "bone health situation, their approximate fracture risk, and the main areas "
-            "you and their doctor may focus on (e.g. vitamin D, calcium, exercise, "
-            "falls prevention). Avoid specific drug names, numbers, or lab ranges. "
-            "Encourage them to discuss details with their doctor."
+            "their doctor may focus on (for example vitamin D, calcium, exercise, and "
+            "falls prevention). Avoid drug names, exact numbers, or lab ranges. Encourage "
+            "them to discuss all details with their doctor."
         )
 
     system_prompt = (
-        "You are a careful medical documentation assistant. You NEVER introduce new "
+        "You are a cautious medical documentation assistant. You NEVER introduce new "
         "diagnoses, treatments, dose changes, or lab interpretations beyond what you "
-        "are explicitly given. You only rephrase and organise the input content. "
-        "If something is not mentioned in the input, you do not speculate about it."
+        "are explicitly given. You only rephrase and organise the content provided. "
+        "If something is not mentioned in the input, do not speculate about it."
     )
 
-    # Feed the structured assessment, not raw patient identifiers
     user_payload = {
         "risk_category": a.risk_category,
         "risk_reasons": a.risk_reasons,
@@ -1425,10 +1402,9 @@ def elaborate_osteoporosis(req: ElaborationRequest) -> ElaborationResponse:
         "patient_summary": a.patient_summary,
     }
 
-    # Call OpenAI Chat Completions (modern API)
     try:
         completion = openai_client.chat.completions.create(
-            model="gpt-4.1-mini",  # good balance of cost/quality for note generation
+            model="gpt-4.1-mini",
             messages=[
                 {"role": "system", "content": system_prompt},
                 {
@@ -1441,12 +1417,9 @@ def elaborate_osteoporosis(req: ElaborationRequest) -> ElaborationResponse:
         )
         text = completion.choices[0].message.content.strip()
     except Exception as e:
-        # Fail safely: return a clear message instead of crashing
         text = (
             "LLM elaboration is temporarily unavailable. "
             f"(Technical error: {e})"
         )
 
     return ElaborationResponse(elaborated_text=text)
-
-
