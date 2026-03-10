@@ -1879,30 +1879,32 @@ def elaborate_osteoporosis(req: ElaborationRequest) -> ElaborationResponse:
 
     a = req.assessment
 
-    if req.audience == "clinician":
-        style_instruction = (
-            "Write 1–2 concise paragraphs as a short clinical impression for an "
-            "orthopaedic specialist. Summarise the fracture risk category, key drivers, "
-            "notable lab and calcium intake remarks, current therapy context, and the "
-            "main suggestion themes. DO NOT introduce new diagnoses, DO NOT add new "
-            "treatments, DO NOT mention drug brand names or specific doses. You are only "
-            "rephrasing the input."
-        )
-    else:
-        style_instruction = (
-            "Write 1–2 short, simple paragraphs addressed to a patient. Explain their "
-            "bone health situation, their approximate fracture risk, and the main areas "
-            "their doctor may focus on (for example vitamin D, calcium, exercise, and "
-            "falls prevention). Avoid drug names, exact numbers, or lab ranges. Encourage "
-            "them to discuss all details with their doctor."
-        )
-
-    system_prompt = (
-        "You are a cautious medical documentation assistant. You NEVER introduce new "
-        "diagnoses, treatments, dose changes, or lab interpretations beyond what you "
-        "are explicitly given. You only rephrase and organise the content provided. "
-        "If something is not mentioned in the input, do not speculate about it."
+if req.audience == "clinician":
+    style_instruction = (
+        "Γράψε 1–2 σύντομες παραγράφους (στα ελληνικά) ως κλινική εντύπωση/σχέδιο για "
+        "ορθοπαιδικό ιατρό. Σύνοψέ την κατηγορία κινδύνου κατάγματος, τους βασικούς "
+        "παράγοντες που την καθορίζουν, σημαντικά εργαστηριακά και την πρόσληψη ασβεστίου, "
+        "καθώς και τα βασικά σημεία των προτάσεων. ΜΗΝ εισάγεις νέες διαγνώσεις, ΜΗΝ "
+        "προσθέτεις νέα σχήματα ή φάρμακα, και ΜΗΝ αναφέρεις εμπορικές ονομασίες ή "
+        "συγκεκριμένες δοσολογίες. Απλώς αναδιατύπωσε τα δεδομένα που σου δίνονται."
     )
+else:
+    style_instruction = (
+        "Γράψε 1–2 σύντομες παραγράφους (στα ελληνικά) απευθυνόμενος στον ασθενή. "
+        "Εξήγησε με απλά λόγια την κατάσταση της οστικής υγείας, τον περίπου κίνδυνο "
+        "κατάγματος και τα κύρια σημεία στα οποία μπορεί να εστιάσει ο γιατρός "
+        "(π.χ. βιταμίνη D, ασβέστιο, άσκηση, πρόληψη πτώσεων). Μην αναφέρεις συγκεκριμένα "
+        "ονόματα φαρμάκων ή δοσολογίες. Ενθάρρυνε τον ασθενή να συζητήσει όλες τις λεπτομέρειες "
+        "με τον γιατρό του."
+    )
+
+system_prompt = (
+    "Είσαι ένας ιδιαίτερα προσεκτικός βοηθός ιατρικής τεκμηρίωσης. ΔΕΝ εισάγεις ποτέ νέες "
+    "διαγνώσεις, θεραπείες, αλλαγές δοσολογίας ή ερμηνείες εργαστηριακών εξετάσεων πέρα από "
+    "ό,τι σου δίνεται ρητά. Απλώς αναδιατάσσεις και διατυπώνεις με σαφήνεια το υπάρχον κείμενο. "
+    "Αν κάτι δεν αναφέρεται στα δεδομένα εισόδου, δεν το εφευρίσκεις."
+)
+
 
     user_payload = {
         "risk_category": a.risk_category,
