@@ -1938,11 +1938,6 @@ def elaborate_osteoporosis(req: ElaborationRequest) -> ElaborationResponse:
     return ElaborationResponse(elaborated_text=text)
 
 
-from fastapi import FastAPI
-
-app = FastAPI()
-
 @app.get("/")
 def read_root():
     return {"status": "ok", "app": "osteoporosis backend is running"}
-
