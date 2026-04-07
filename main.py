@@ -11,6 +11,7 @@ import shutil
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from openai import OpenAI
 from pydantic import BaseModel, Field, conint, confloat
@@ -49,7 +50,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.mount("/", StaticFiles(directory=STATIC_DIR, html=True), name="static-root")
+app.mount("/static", StaticFiles(directory=STATIC_DIR, html=True), name="static-root")
+
+
+@app.get("/", include_in_schema=False)
+def serve_index() -> FileResponse:
+    if SOURCE_INDEX.exists():
+        return FileResponse(SOURCE_INDEX, media_type="text/html")
+    raise HTTPException(status_code=404, detail="Index file not available")
 
 # =========================
 # OpenAI client
