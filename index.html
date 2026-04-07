@@ -296,6 +296,41 @@
       font-size: 13px;
       line-height: 1.4;
     }
+    .therapy-history {
+      margin-top: 18px;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      border-radius: 12px;
+      padding: 12px 14px;
+      background: #fafafa;
+    }
+    .therapy-editor-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .therapy-entries-list {
+      margin-top: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .therapy-entry-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 8px 12px;
+      border-radius: 10px;
+      background: white;
+      border: 1px solid rgba(15, 23, 42, 0.1);
+      font-size: 13px;
+    }
+    .therapy-entry-card button {
+      border-radius: 8px;
+      padding: 4px 8px;
+      font-size: 11px;
+    }
     .therapy-highlights ul {
       margin: 0;
       padding-left: 18px;
@@ -586,10 +621,45 @@
               </div>
             </div>
           </div>
-          <div class="field">
-            <label for="therapy_history_json">Therapy history (JSON)</label>
-            <textarea id="therapy_history_json" placeholder='[{"therapy_type":"oral_bisphosphonate","duration_years":5,"is_holiday":false}]'></textarea>
-            <p class="muted" style="margin:4px 0 0;">Optional chronological episodes; leave empty to skip.</p>
+          <div class="therapy-history">
+            <div class="panel-header" style="margin:0 0 8px;">
+              <div>
+                <h3 style="margin:0;">Therapy history</h3>
+                <p class="muted" style="margin:2px 0 0;">Add episodes chronologically (most recent last).</p>
+              </div>
+            </div>
+            <div class="therapy-editor-grid">
+              <div class="field">
+                <label for="therapy_entry_type">Therapy</label>
+                <select id="therapy_entry_type">
+                  <option value="oral_bisphosphonate">oral bisphosphonate</option>
+                  <option value="iv_bisphosphonate">IV bisphosphonate</option>
+                  <option value="denosumab">denosumab</option>
+                  <option value="teriparatide">teriparatide</option>
+                  <option value="romosozumab">romosozumab</option>
+                  <option value="raloxifene">raloxifene</option>
+                  <option value="other">other</option>
+                  <option value="none">holiday / no therapy</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="therapy_entry_duration">Duration (yrs)</label>
+                <input id="therapy_entry_duration" type="number" step="0.1" min="0" />
+              </div>
+              <div class="field">
+                <label><input id="therapy_entry_is_holiday" type="checkbox" /> holiday / drug-free</label>
+              </div>
+              <div class="field">
+                <label for="therapy_entry_notes">Notes (reason, switches)</label>
+                <input id="therapy_entry_notes" type="text" />
+              </div>
+            </div>
+            <div class="actions" style="padding:0;">
+              <button id="addTherapyEntryBtn" class="button ghost">Add episode</button>
+            </div>
+            <div id="therapyEntriesList" class="therapy-entries-list">
+              <p class="muted">No episodes added yet.</p>
+            </div>
           </div>
           <div class="field-grid">
             <div class="field">
@@ -732,6 +802,7 @@
       lastAssessment: null,
       lastStored: null,
     };
+    const therapyEntries = [];
     const statusMessage = document.getElementById("statusMessage");
     const formNote = document.getElementById("formNote");
     const riskLevelBadge = document.getElementById("riskLevelBadge");
@@ -782,6 +853,73 @@
         statusMessage.textContent = message;
         statusMessage.dataset.state = variant;
       }
+    }
+    function renderTherapyHistoryList() {
+      const container = document.getElementById("therapyEntriesList");
+      if (!container) return;
+      container.innerHTML = "";
+      if (!therapyEntries.length) {
+        container.innerHTML = '<p class="muted">No episodes added yet.</p>';
+        return;
+      }
+      therapyEntries.forEach((entry, idx) => {
+        const card = document.createElement("div");
+        card.className = "therapy-entry-card";
+        const text = document.createElement("div");
+        text.innerHTML = `
+          <strong>${entry.therapy_type.replace(/_/g, " ")}</strong><br>
+          ${entry.duration_years != null ? `${entry.duration_years.toFixed(1)} yrs` : "duration unknown"}
+          ${entry.is_holiday ? "(holiday)" : ""}${entry.notes ? " · " + entry.notes : ""}
+        `;
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.textContent = "Remove";
+        btn.className = "button ghost";
+        btn.style.padding = "4px 10px";
+        btn.addEventListener("click", () => {
+          therapyEntries.splice(idx, 1);
+          renderTherapyHistoryList();
+        });
+        card.appendChild(text);
+        card.appendChild(btn);
+        container.appendChild(card);
+      });
+    }
+
+    function addTherapyEntry() {
+      const typeEl = document.getElementById("therapy_entry_type");
+      const durationEl = document.getElementById("therapy_entry_duration");
+      const holidayEl = document.getElementById("therapy_entry_is_holiday");
+      const notesEl = document.getElementById("therapy_entry_notes");
+      if (!typeEl || !durationEl || !holidayEl || !notesEl) return;
+      const type = typeEl.value;
+      if (!type) return;
+      const duration = durationEl.value ? Number(durationEl.value) : null;
+      therapyEntries.push({
+        therapy_type: type,
+        duration_years: isNaN(duration) ? null : duration,
+        is_holiday: holidayEl.checked,
+        notes: notesEl.value.trim() || undefined,
+      });
+      durationEl.value = "";
+      holidayEl.checked = false;
+      notesEl.value = "";
+      renderTherapyHistoryList();
+    }
+
+    function setTherapyHistoryEntries(entries) {
+      therapyEntries.length = 0;
+      if (Array.isArray(entries)) {
+        entries.forEach((entry) => {
+          therapyEntries.push({
+            therapy_type: entry.therapy_type,
+            duration_years: entry.duration_years ?? null,
+            is_holiday: entry.is_holiday ?? false,
+            notes: entry.notes,
+          });
+        });
+      }
+      renderTherapyHistoryList();
     }
     function val(id) {
       const el = document.getElementById(id);
@@ -840,17 +978,7 @@
         current_therapy_duration_years: val("current_therapy_duration_years"),
         fractures_during_current_therapy: val("fractures_during_current_therapy"),
         significant_therapy_adverse_effects: val("significant_therapy_adverse_effects"),
-        therapy_history: (() => {
-          const txt = document.getElementById("therapy_history_json").value.trim();
-          if (!txt) return [];
-          try {
-            const parsed = JSON.parse(txt);
-            if (Array.isArray(parsed)) return parsed;
-          } catch (err) {
-            console.error("Invalid therapy history JSON", err);
-          }
-          return [];
-        })(),
+        therapy_history: therapyEntries.slice(),
         exercise_level: val("exercise_level"),
         daily_walking: val("daily_walking"),
         dietician_follow_up: val("dietician_follow_up"),
@@ -1083,6 +1211,7 @@
         if (data.input_data?.spine_t_score != null) document.getElementById("spine_t_score").value = data.input_data.spine_t_score;
         if (data.input_data?.total_hip_t_score != null) document.getElementById("total_hip_t_score").value = data.input_data.total_hip_t_score;
         renderBackbone(data.assessment);
+        setTherapyHistoryEntries(data.input_data?.therapy_history || []);
         setStatus("Latest assessment loaded.", "success");
       } catch (err) {
         console.error(err);
@@ -1173,6 +1302,14 @@
       event.preventDefault();
       requestTreatmentRecommendation();
     });
+    const addTherapyEntryBtn = document.getElementById("addTherapyEntryBtn");
+    if (addTherapyEntryBtn) {
+      addTherapyEntryBtn.addEventListener("click", (event) => {
+        event.preventDefault();
+        addTherapyEntry();
+      });
+    }
+    renderTherapyHistoryList();
   </script>
 </body>
 </html>

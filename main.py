@@ -5,10 +5,13 @@ from typing import List, Optional, Tuple
 import json
 import os
 from datetime import datetime
+from pathlib import Path
 from uuid import uuid4
+import shutil
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from openai import OpenAI
 from pydantic import BaseModel, Field, conint, confloat
 
@@ -45,6 +48,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.mount("/", StaticFiles(directory=STATIC_DIR, html=True), name="static-root")
 
 # =========================
 # OpenAI client
@@ -85,6 +90,19 @@ engine = create_engine(
 )
 
 Base.metadata.create_all(bind=engine)
+
+ROOT_DIR = Path(__file__).resolve().parent
+STATIC_DIR = ROOT_DIR / "static"
+SOURCE_INDEX = ROOT_DIR / "index.html"
+TARGET_INDEX = STATIC_DIR / "index.html"
+
+try:
+    STATIC_DIR.mkdir(parents=True, exist_ok=True)
+    if SOURCE_INDEX.exists():
+        shutil.copyfile(SOURCE_INDEX, TARGET_INDEX)
+except OSError:
+    # Some environments (like this sandbox) may not allow mkdir; ignore and proceed.
+    pass
 
 # =========================
 # Enums & Schemas
@@ -1988,6 +2006,21 @@ def build_treatment_recommendation_context(stored: OsteoStoredAssessment) -> str
         first_line = assessment.clinical_note.splitlines()[0]
         lines.append("Clinical note begins: " + first_line)
 
+    lab_notes = []
+    vitd = input_data.vitamin_d_25oh_ng_ml or input_data.vitamin_d_25oh
+    ca = input_data.serum_calcium_mg_dl or input_data.serum_calcium
+    phos = input_data.serum_phosphorus_mg_dl
+    if vitd is not None:
+        lab_notes.append(f"25-OH Vit D {vitd:.1f} ng/mL")
+    if ca is not None:
+        lab_notes.append(f"calcium {ca:.2f} mg/dL")
+    if phos is not None:
+        lab_notes.append(f"phosphorus {phos:.2f} mg/dL")
+    if input_data.pth_pg_ml is not None:
+        lab_notes.append(f"PTH {input_data.pth_pg_ml:.1f} pg/mL")
+    if laboratory := ", ".join(lab_notes):
+        lines.append("Recent labs: " + laboratory + ".")
+
     return "\n".join(lines)
 
 
@@ -2015,9 +2048,17 @@ def recommend_treatment_change(
     user_prompt = (
         "Patient context:\n"
         f"{context}\n\n"
-        "Respond with up to three clear, clinician-facing recommendations that focus on whether to "
-        "reassess, intensify, switch, or pause the current therapy, plus any monitoring steps. "
-        "Keep it high level, reference the risk drivers above, and avoid brand names, doses, or new diagnoses."
+        "Respond with up to three clear, clinician-facing recommendations that name a specific "
+        "anti-fracture class (e.g. bisphosphonate, denosumab, osteoanabolic) or, when justified, "
+        "a therapeutic pause/deprescribing move. Base your reasoning on the shown risk drivers, "
+        "BMD, and treatment history, referencing typical guidance (e.g. NOGG/Endocrine Society/ACP) "
+        "about 3–5 year reassessment for bisphosphonates, rebound risk with denosumab, or anabolic "
+        "sequence planning. "
+        "For each recommendation include a rationale, any additional pre-therapy labs (renal creatinine, "
+        "Calcium, 25-OH D, PTH, vitamin D) or imaging (femur X-ray if thigh pain suggests AFF) that "
+        "should be checked, and a concrete monitoring plan (labs or DEXA timing within the next 6–12 months). "
+        "If data is missing, explicitly request it (e.g. confirm renal function or vitamin D before choosing). "
+        "Avoid brand names, doses, and new diagnoses, and keep the tone clinician-focused."
     )
 
     try:
@@ -2040,6 +2081,6 @@ def recommend_treatment_change(
     return TreatmentRecommendationResponse(treatment_recommendation=text)
 
 
-@app.get("/")
+@app.get("/health")
 def read_root():
     return {"status": "ok", "app": "osteoporosis backend is running"}
