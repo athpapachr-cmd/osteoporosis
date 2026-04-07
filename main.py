@@ -333,6 +333,13 @@ class ElaborationRequest(BaseModel):
 class ElaborationResponse(BaseModel):
     elaborated_text: str
 
+class TreatmentRecommendationRequest(BaseModel):
+    assessment: OsteoStoredAssessment
+
+
+class TreatmentRecommendationResponse(BaseModel):
+    treatment_recommendation: str
+
 class OsteoHistoryEntry(BaseModel):
     assessment_id: str
     created_at: datetime
@@ -1936,6 +1943,99 @@ def elaborate_osteoporosis(req: ElaborationRequest) -> ElaborationResponse:
         )
 
     return ElaborationResponse(elaborated_text=text)
+
+
+def build_treatment_recommendation_context(stored: OsteoStoredAssessment) -> str:
+    lines: List[str] = []
+    input_data = stored.input_data
+    assessment = stored.assessment
+
+    lines.append(f"Risk category: {assessment.risk_category.value.upper()} fracture risk.")
+    if assessment.risk_reasons:
+        lines.append("Key risk drivers: " + "; ".join(assessment.risk_reasons) + ".")
+    if assessment.internal_frax_like_index is not None:
+        lines.append(
+            f"Internal FRAX-style index {assessment.internal_frax_like_index:.1f}."
+        )
+
+    lines.append(f"Current therapy: {input_data.current_therapy_type.value}.")
+    if input_data.current_therapy_duration_years is not None:
+        lines.append(
+            f"Duration on current therapy: {input_data.current_therapy_duration_years:.1f} years."
+        )
+    if input_data.fractures_during_current_therapy:
+        lines.append("New fragility fracture occurred while on therapy.")
+    if input_data.significant_therapy_adverse_effects:
+        lines.append("Patient reported significant adverse effects during therapy.")
+
+    if input_data.therapy_history:
+        recent = input_data.therapy_history[-3:]
+        episodes = []
+        for ep in recent:
+            duration = (
+                f"{ep.duration_years:.1f} yrs" if ep.duration_years is not None else "unknown duration"
+            )
+            episodes.append(f"{ep.therapy_type.value} ({duration}, holiday={ep.is_holiday})")
+        lines.append("Recent therapy episodes: " + "; ".join(episodes) + ".")
+
+    if assessment.suggestions:
+        snippets = [s.text for s in assessment.suggestions[:4]]
+        lines.append("Top suggestions: " + "; ".join(snippets) + ".")
+
+    if assessment.clinical_note:
+        first_line = assessment.clinical_note.splitlines()[0]
+        lines.append("Clinical note begins: " + first_line)
+
+    return "\n".join(lines)
+
+
+@app.post(
+    "/osteoporosis/treatment-recommendation",
+    response_model=TreatmentRecommendationResponse,
+)
+def recommend_treatment_change(
+    req: TreatmentRecommendationRequest,
+) -> TreatmentRecommendationResponse:
+    if openai_client is None:
+        return TreatmentRecommendationResponse(
+            treatment_recommendation=(
+                "AI treatment guidance is unavailable because OPENAI_API_KEY is not configured on the server."
+            )
+        )
+
+    system_prompt = (
+        "You are a cautious osteoporosis treatment adviser. Do NOT invent new diagnoses, "
+        "medications, or dosing. Focus only on suggesting how to adapt or review the current "
+        "pharmacologic strategy based on fracture risk, lab cues, and tolerance."
+    )
+
+    context = build_treatment_recommendation_context(req.assessment)
+    user_prompt = (
+        "Patient context:\n"
+        f"{context}\n\n"
+        "Respond with up to three clear, clinician-facing recommendations that focus on whether to "
+        "reassess, intensify, switch, or pause the current therapy, plus any monitoring steps. "
+        "Keep it high level, reference the risk drivers above, and avoid brand names, doses, or new diagnoses."
+    )
+
+    try:
+        completion = openai_client.chat.completions.create(
+            model="gpt-4.1-mini",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            temperature=0.2,
+            max_tokens=400,
+        )
+        text = completion.choices[0].message.content.strip()
+    except Exception as exc:
+        text = (
+            "AI treatment guidance is temporarily unavailable. "
+            f"(Technical error: {exc})"
+        )
+
+    return TreatmentRecommendationResponse(treatment_recommendation=text)
 
 
 @app.get("/")

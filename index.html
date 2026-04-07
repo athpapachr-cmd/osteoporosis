@@ -5,968 +5,1169 @@
   <title>Papachristou Ortho – Osteoporosis Cockpit</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
+    :root {
+      --bg: #f8fafc;
+      --panel: #ffffff;
+      --border: rgba(15, 23, 42, 0.08);
+      --text: #0f172a;
+      --muted: #475569;
+      --accent: #2563eb;
+      --accent-2: #14b8a6;
+      --danger: #dc2626;
+      --radius: 16px;
+      --shadow: 0 20px 45px rgba(15, 23, 42, 0.08);
+      font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+    }
+    * {
+      box-sizing: border-box;
+    }
     body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       margin: 0;
-      padding: 0;
-      background: #f5f5f7;
-      color: #111827;
+      min-height: 100vh;
+      background: radial-gradient(circle at top right, rgba(37, 99, 235, 0.2), transparent 40%), var(--bg);
+      color: var(--text);
     }
-    header {
-      background: #111827;
-      color: white;
-      padding: 16px 24px;
+    .hero {
+      padding: 32px clamp(20px, 3vw, 64px) 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      border-bottom: 1px solid var(--border);
+      gap: 24px;
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(20, 184, 166, 0.08));
     }
-    header h1 {
+    .hero h1 {
+      margin: 0;
+      font-size: clamp(26px, 3vw, 32px);
+      letter-spacing: -0.02em;
+    }
+    .hero p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .hero .status-line span {
+      font-size: 13px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--muted);
+    }
+    main {
+      padding: 24px clamp(16px, 4vw, 48px) 48px;
+    }
+    .app-shell {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 24px;
+    }
+    .panel {
+      background: var(--panel);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+    }
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 18px;
+      gap: 16px;
+    }
+    .panel-header h2 {
       margin: 0;
       font-size: 20px;
     }
-    header p {
+    .panel-header p {
       margin: 4px 0 0;
-      font-size: 13px;
-      opacity: 0.8;
-    }
-    main {
-      padding: 16px;
-      max-width: 1100px;
-      margin: 0 auto;
-    }
-    .grid {
-      display: grid;
-      grid-template-columns: 1.4fr 1fr;
-      gap: 16px;
-    }
-    @media (max-width: 900px) {
-      .grid {
-        grid-template-columns: 1fr;
-      }
-    }
-    .card {
-      background: white;
-      border-radius: 10px;
-      padding: 16px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-    }
-    h2 {
-      margin-top: 0;
-      font-size: 16px;
-    }
-    h3 {
-      margin-top: 16px;
+      color: var(--muted);
       font-size: 14px;
-      border-bottom: 1px solid #e5e7eb;
-      padding-bottom: 4px;
     }
-    .field-group {
+    .status-line {
+      margin-top: 16px;
+    }
+    .status-line span {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .status-line span[data-state="pending"] {
+      color: var(--accent);
+    }
+    .status-line span[data-state="error"] {
+      color: var(--danger);
+    }
+    .status-line span[data-state="success"] {
+      color: var(--accent-2);
+    }
+    .field-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-      gap: 8px 12px;
-      margin-bottom: 8px;
+      gap: 12px;
+      margin-bottom: 16px;
     }
     .field {
       display: flex;
       flex-direction: column;
+      gap: 6px;
       font-size: 13px;
     }
     label {
-      margin-bottom: 2px;
-      color: #374151;
-    }
-    input, select {
-      border-radius: 6px;
-      border: 1px solid #d1d5db;
-      padding: 6px 8px;
-      font-size: 13px;
-      outline: none;
-    }
-    input:focus, select:focus {
-      border-color: #3b82f6;
-      box-shadow: 0 0 0 1px rgba(59,130,246,0.2);
-    }
-    .button-row {
-      margin-top: 12px;
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-    button {
-      border-radius: 999px;
-      border: none;
-      padding: 8px 16px;
-      font-size: 14px;
-      cursor: pointer;
-      background: #2563eb;
-      color: white;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }
-    button.secondary {
-      background: #e5e7eb;
-      color: #111827;
-    }
-    button:disabled {
-      opacity: 0.6;
-      cursor: default;
-    }
-    .status {
+      font-weight: 600;
+      color: var(--muted);
       font-size: 12px;
-      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
     }
-    .status.error {
-      color: #b91c1c;
+    input,
+    select,
+    textarea {
+      border-radius: 8px;
+      border: 1px solid rgba(15, 23, 42, 0.15);
+      padding: 10px 12px;
+      font-size: 14px;
+      font-family: inherit;
+      color: var(--text);
     }
     textarea {
-      width: 100%;
-      min-height: 260px;
-      border-radius: 8px;
-      border: 1px solid #d1d5db;
-      padding: 8px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-      font-size: 12px;
+      min-height: 120px;
       resize: vertical;
-      white-space: pre-wrap;
+    }
+    input:focus,
+    select:focus,
+    textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+    }
+    .checkbox-group {
+      display: grid;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--text);
+    }
+    .checkbox-group label {
+      text-transform: none;
+      letter-spacing: normal;
+      font-weight: 500;
+    }
+    .checkbox-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 10px;
+    }
+    .actions {
+      margin-top: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .button {
+      border: none;
+      border-radius: 999px;
+      padding: 10px 18px;
+      font-size: 14px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      background: var(--accent);
+      color: white;
+      box-shadow: 0 10px 20px rgba(37, 99, 235, 0.2);
+    }
+    .button:hover {
+      transform: translateY(-1px);
+    }
+    .button.secondary {
+      background: #e5e7eb;
+      color: var(--text);
+      box-shadow: none;
+    }
+    .button.ghost {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid rgba(15, 23, 42, 0.2);
+      box-shadow: none;
     }
     .pill {
       display: inline-flex;
       align-items: center;
-      padding: 4px 10px;
+      justify-content: center;
+      padding: 6px 14px;
       border-radius: 999px;
       font-size: 12px;
-      background: #e5e7eb;
-      margin-right: 6px;
-      margin-bottom: 4px;
-    }
-    .pill.high {
-      background: #fee2e2;
-      color: #b91c1c;
-    }
-    .pill.moderate {
-      background: #fef3c7;
-      color: #92400e;
+      font-weight: 700;
+      letter-spacing: 0.03em;
     }
     .pill.low {
       background: #dcfce7;
       color: #166534;
     }
+    .pill.moderate {
+      background: #fef3c7;
+      color: #92400e;
+    }
+    .pill.high {
+      background: #fee2e2;
+      color: #b91c1c;
+    }
     .pill.very_high {
       background: #fecaca;
       color: #7f1d1d;
     }
-    .small {
+    .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .chip {
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.06);
       font-size: 12px;
-      color: #6b7280;
-      margin-top: 4px;
+    }
+    .risk-metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .metric-card {
+      padding: 12px;
+      border-radius: 12px;
+      background: #f8fafc;
+      border: 1px solid rgba(15, 23, 42, 0.05);
+    }
+    .metric-card span {
+      display: block;
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .metric-card strong {
+      font-size: 20px;
+      display: block;
+      margin-top: 6px;
+    }
+    .muted {
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .note-block {
+      background: #0f172a;
+      color: white;
+      border-radius: 12px;
+      padding: 16px;
+      font-size: 14px;
+      line-height: 1.5;
+      min-height: 140px;
+      white-space: pre-wrap;
+      font-family: "Roboto Mono", "SFMono-Regular", Menlo, Monaco, monospace;
+      margin-bottom: 16px;
+    }
+    .note-block.empty {
+      opacity: 0.7;
+    }
+    .suggestion-grid {
+      display: grid;
+      gap: 12px;
+    }
+    .suggestion-bucket {
+      border: 1px dashed rgba(15, 23, 42, 0.2);
+      border-radius: 12px;
+      padding: 12px 14px;
+    }
+    .suggestion-bucket h4 {
+      margin: 0 0 8px;
+      font-size: 14px;
+    }
+    .suggestion-bucket ul {
+      margin: 0;
+      padding-left: 18px;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+    .therapy-highlights ul {
+      margin: 0;
+      padding-left: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--text);
+    }
+    .history-table table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    .history-table th,
+    .history-table td {
+      text-align: left;
+      padding: 6px 8px;
+      border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+    }
+    .history-table th {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+    }
+    .grid-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 20px 0;
+    }
+    .ai-tools {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    .ai-tools button {
+      font-size: 12px;
+      padding: 8px 14px;
+    }
+    .ai-panel .ai-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+    @media (max-width: 1024px) {
+      .app-shell {
+        grid-template-columns: 1fr;
+      }
+      .hero {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .panel {
+        padding: 18px;
+      }
     }
   </style>
 </head>
 <body>
-    <header>
-        <h1>Papachristou Ortho – Osteoporosis Cockpit</h1>
-        <p>Local form → Remote Render API at <code>/osteoporosis/evaluate</code></p>
-    </header>
-    
-    <main>
-        <div class="grid">
-            <div class="card">
-                <h2>Input</h2>
-                
-                <h3>Patient</h3>
-                <div class="field-group">
-                  <div class="field">
-                    <label for="patient_id">Patient ID</label>
-                    <input id="patient_id" type="text" placeholder="e.g. EMR / GeSY ID">
-                  </div>
-                </div>
-
-                <h3>Core data</h3>
-                <div class="field-group">
-                    <div class="field">
-                        <label for="age">Age</label>
-                        <input id="age" type="number" min="18" max="110" value="72">
-                    </div>
-                    <div class="field">
-                        <label for="sex">Sex</label>
-                        <select id="sex">
-                            <option value="female">female</option>
-                            <option value="male">male</option>
-                        </select>
-                    </div>
-                    <div class="field">
-                        <label for="menopause_status">Menopause</label>
-                        <select id="menopause_status">
-                            <option value="unknown">unknown</option>
-                            <option value="pre">pre</option>
-                            <option value="peri">peri</option>
-                            <option value="post">post</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <h3>DEXA & fractures</h3>
-                <div class="field-group">
-                    <div class="field">
-                        <label for="spine_t_score">Spine T-score</label>
-                        <input id="spine_t_score" type="number" step="0.1">
-                    </div>
-                    <div class="field">
-                        <label for="total_hip_t_score">Total hip T-score</label>
-                        <input id="total_hip_t_score" type="number" step="0.1">
-                    </div>
-                    <div class="field">
-                        <label for="femoral_neck_t_score">Femoral neck T-score</label>
-                        <input id="femoral_neck_t_score" type="number" step="0.1">
-                    </div>
-                </div>
-                <div class="field-group">
-                    <div class="field">
-                        <label>Prior fragility fractures</label>
-                        <div>
-                            <label><input type="checkbox" id="fx_hip"> hip</label>
-                            <label><input type="checkbox" id="fx_vert"> vertebral</label>
-                            <label><input type="checkbox" id="fx_nonvert"> non-vertebral</label>
-                        </div>
-                    </div>
-                </div>
-                
-                <h3>FRAX-style factors</h3>
-                <div class="field-group">
-                    <div class="field">
-                        <label for="weight_kg">Weight (kg)</label>
-                        <input id="weight_kg" type="number" step="0.1">
-                    </div>
-                    <div class="field">
-                        <label for="height_cm">Height (cm)</label>
-                        <input id="height_cm" type="number" step="0.1">
-                    </div>
-                    <div class="field">
-                        <label for="frax_major">FRAX major (%) (optional)</label>
-                        <input id="frax_major" type="number" step="0.1">
-                    </div>
-                    <div class="field">
-                        <label for="frax_hip">FRAX hip (%) (optional)</label>
-                        <input id="frax_hip" type="number" step="0.1">
-                    </div>
-                </div>
-                <div class="field-group">
-                    <div class="field">
-                        <label>Risk factors</label>
-                        <div>
-                            <label><input type="checkbox" id="parental_hip_fracture"> parental hip fracture</label><br>
-                            <label><input type="checkbox" id="current_smoker"> current smoker</label><br>
-                            <label><input type="checkbox" id="glucocorticoids"> glucocorticoids</label><br>
-                            <label><input type="checkbox" id="rheumatoid_arthritis"> rheumatoid arthritis</label><br>
-                            <label><input type="checkbox" id="secondary_osteoporosis"> secondary osteoporosis</label><br>
-                            <label><input type="checkbox" id="high_alcohol_intake"> high alcohol intake</label>
-                        </div>
-                    </div>
-                </div>
-                
-                <h3>Labs (serum & urine)</h3>
-                <div class="field-group">
-                    <div class="field">
-                        <label for="vitamin_d_25oh_ng_ml">25-OH Vit D (ng/mL)</label>
-                        <input id="vitamin_d_25oh_ng_ml" type="number" step="0.1">
-                    </div>
-                    <div class="field">
-                        <label for="serum_calcium_mg_dl">Serum Ca (mg/dL)</label>
-                        <input id="serum_calcium_mg_dl" type="number" step="0.1">
-                    </div>
-                    <div class="field">
-                        <label for="serum_phosphorus_mg_dl">Serum P (mg/dL)</label>
-                        <input id="serum_phosphorus_mg_dl" type="number" step="0.1">
-                    </div>
-                    <div class="field">
-                        <label for="pth_pg_ml">PTH (pg/mL)</label>
-                        <input id="pth_pg_ml" type="number" step="0.1">
-                    </div>
-                </div>
-                <div class="field-group">
-                    <div class="field">
-                        <label for="serum_magnesium_mg_dl">Serum Mg (mg/dL)</label>
-                        <input id="serum_magnesium_mg_dl" type="number" step="0.1">
-                    </div>
-                    <div class="field">
-                        <label for="serum_zinc_ug_dl">Serum Zn (μg/dL)</label>
-                        <input id="serum_zinc_ug_dl" type="number" step="0.1">
-                    </div>
-                    <div class="field">
-                        <label for="urine_calcium_24h_mg">Urine Ca 24h (mg/24h)</label>
-                        <input id="urine_calcium_24h_mg" type="number" step="1">
-                    </div>
-                </div>
-                <div class="field-group">
-                  <div class="field">
-                    <label for="osteocalcin_ng_ml">Osteocalcin (ng/mL)</label>
-                    <input id="osteocalcin_ng_ml" type="number" step="0.1">
-                  </div>
-                  <div class="field">
-                    <label for="bone_alk_phos_u_l">Bone ALP (U/L)</label>
-                    <input id="bone_alk_phos_u_l" type="number" step="0.1">
-                  </div>
-                  <div class="field">
-                    <label for="ctx_ng_ml">CTX (ng/mL)</label>
-                    <input id="ctx_ng_ml" type="number" step="0.01">
-                  </div>
-                  <div class="field">
-                    <label for="p1np_ng_ml">P1NP (ng/mL)</label>
-                    <input id="p1np_ng_ml" type="number" step="0.1">
-                  </div>
-                </div>
-
-                
-                <h3>Supplements & intake</h3>
-                <div class="field-group">
-                    <div class="field">
-                        <label for="calcium_supplement_mg_per_day">Calcium supplement (mg/day)</label>
-                        <input id="calcium_supplement_mg_per_day" type="number" min="0" value="0">
-                    </div>
-                    <div class="field">
-                        <label>Calcium supplement?</label>
-                        <input type="checkbox" id="calcium_supplement">
-                    </div>
-                    <div class="field">
-                        <label for="vitamin_d3_iu_per_day">Vit D3 (IU/day)</label>
-                        <input id="vitamin_d3_iu_per_day" type="number" min="0">
-                    </div>
-                    <div class="field">
-                        <label>Supplements</label>
-                        <div>
-                            <label><input type="checkbox" id="vitamin_d_supplement"> Vit D</label>
-                            <label><input type="checkbox" id="magnesium_supplement"> Mg</label>
-                            <label><input type="checkbox" id="zinc_supplement"> Zn</label>
-                            <label><input type="checkbox" id="boron_supplement"> B</label>
-                            <label><input type="checkbox" id="vitamin_k2_supplement"> Vit K2</label>
-                            <label><input type="checkbox" id="fortibone_supplement"> Fortibone</label>
-                            <label><input type="checkbox" id="colabone_supplement"> Colabone</label>
-                        </div>
-                    </div>
-                </div>
-                
-                <h3>Calcium intake (food)</h3>
-                <div class="field-group">
-                    <div class="field">
-                        <label for="milk_portions">Milk portions/day</label>
-                        <input id="milk_portions" type="number" min="0" value="0">
-                    </div>
-                    <div class="field">
-                        <label for="yogurt_portions">Yogurt portions/day</label>
-                        <input id="yogurt_portions" type="number" min="0" value="0">
-                    </div>
-                    <div class="field">
-                        <label for="cheese_portions">Cheese portions/day</label>
-                        <input id="cheese_portions" type="number" min="0" value="0">
-                    </div>
-                    <div class="field">
-                        <label for="leafy_portions">Leafy greens portions/day</label>
-                        <input id="leafy_portions" type="number" min="0" value="0">
-                    </div>
-                    <div class="field">
-                        <label for="fortified_portions">Fortified food portions/day</label>
-                        <input id="fortified_portions" type="number" min="0" value="0">
-                    </div>
-                    <div class="field">
-                        <label for="other_dairy_portions">Other dairy portions/day</label>
-                        <input id="other_dairy_portions" type="number" min="0" value="0">
-                    </div>
-                </div>
-             
-             <h3>Current pharmacologic therapy</h3>
-             <div class="field-group">
-               <div class="field">
-                 <label for="current_therapy_type">Current therapy</label>
-                 <select id="current_therapy_type">
-                   <option value="none">none</option>
-                   <option value="oral_bisphosphonate">oral bisphosphonate</option>
-                   <option value="iv_bisphosphonate">IV bisphosphonate</option>
-                   <option value="denosumab">denosumab (Prolia)</option>
-                   <option value="teriparatide">teriparatide (Forsteo)</option>
-                   <option value="romosozumab">romosozumab (Evenity)</option>
-                   <option value="raloxifene">raloxifene</option>
-                   <option value="other">other</option>
-                 </select>
-               </div>
-               <div class="field">
-                 <label for="current_therapy_duration_years">Duration on current therapy (years)</label>
-                 <input id="current_therapy_duration_years" type="number" min="0" step="0.1">
-               </div>
-               <div class="field">
-                 <label>On-therapy events</label>
-                 <div>
-                   <label><input type="checkbox" id="fractures_during_current_therapy"> fracture during therapy</label><br>
-                   <label><input type="checkbox" id="significant_therapy_adverse_effects"> significant adverse effects</label>
-                 </div>
-               </div>
-             </div>
-
-             <h3>Past therapy (episodes)</h3>
-             <div class="field-group">
-               <div class="field">
-                 <label for="therapy_history_json">Therapy history JSON</label>
-                 <textarea id="therapy_history_json" placeholder='[{"therapy_type":"oral_bisphosphonate","duration_years":5,"is_holiday":false},{"therapy_type":"none","duration_years":2,"is_holiday":true},{"therapy_type":"denosumab","duration_years":3,"is_holiday":false}]' style="min-height: 80px;"></textarea>
-                 <span class="small">Optional: simple JSON list of episodes; leave empty if not needed.</span>
-               </div>
-             </div>
-
-             
-                <h3>Function, falls & lifestyle</h3>
-                <div class="field-group">
-                    <div class="field">
-                        <label for="exercise_level">Exercise level</label>
-                        <select id="exercise_level">
-                            <option value="none">none</option>
-                            <option value="light">light</option>
-                            <option value="moderate">moderate</option>
-                            <option value="vigorous">vigorous</option>
-                        </select>
-                    </div>
-                    <div class="field">
-                        <label for="daily_walking">Daily walking</label>
-                        <select id="daily_walking">
-                            <option value="none">none</option>
-                            <option value="under_15_min">under 15 min</option>
-                            <option value="between_15_30_min">15–30 min</option>
-                            <option value="over_30_min">over 30 min</option>
-                        </select>
-                    </div>
-                    <div class="field">
-                        <label>Modifiers</label>
-                        <div>
-                            <label><input type="checkbox" id="high_falls_risk"> high falls risk</label><br>
-                            <label><input type="checkbox" id="history_of_falls_last_year"> falls last year</label><br>
-                            <label><input type="checkbox" id="dementia_or_cognitive_impairment"> dementia / cognitive</label><br>
-                            <label><input type="checkbox" id="significant_immobility"> significant immobility</label><br>
-                            <label><input type="checkbox" id="dietician_follow_up"> dietician follow-up</label>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="button-row">
-                  <button id="evaluateBtn">Evaluate osteoporosis</button>
-                  <button id="loadLatestBtn" class="secondary">Load latest for patient</button>
-                  <span id="status" class="status"></span>
-                </div>
-                <p class="small">
-                Data is sent to: <code>https://ortho-reception-backend.onrender.com/osteoporosis/evaluate</code>. No data is stored by this page itself.
-                </p>
-            </div>
-            
-            <div class="card">
-              <h2>Output</h2>
-              <div id="badges"></div>
-              <div class="small" id="metaInfo"></div>
-
-              <h3>Clinical note</h3>
-              <textarea id="clinical_note" readonly placeholder="Run an evaluation to see the generated note..."></textarea>
-
-              <h3 style="margin-top: 12px;">Patient summary (optional)</h3>
-              <textarea id="patient_summary" readonly style="min-height: 120px;"></textarea>
-
-              <h3 style="margin-top: 16px;">History (per patient)</h3>
-              <div class="button-row" style="margin-top: 4px;">
-                <button id="loadHistoryBtn" class="secondary">Load history</button>
-                <button id="loadTrendBtn" class="secondary">Load trends</button>
-              </div>
-              <table id="historyTable" style="width: 100%; margin-top: 8px; border-collapse: collapse; font-size: 11px;">
-                <thead>
-                  <tr>
-                    <th style="border-bottom: 1px solid #e5e7eb; text-align:left;">Date</th>
-                    <th style="border-bottom: 1px solid #e5e7eb; text-align:left;">Risk</th>
-                    <th style="border-bottom: 1px solid #e5e7eb; text-align:left;">Therapy</th>
-                    <th style="border-bottom: 1px solid #e5e7eb; text-align:left;">Spine T</th>
-                    <th style="border-bottom: 1px solid #e5e7eb; text-align:left;">Hip T</th>
-                    <th style="border-bottom: 1px solid #e5e7eb; text-align:left;">CTX</th>
-                    <th style="border-bottom: 1px solid #e5e7eb; text-align:left;">P1NP</th>
-                  </tr>
-                </thead>
-                <tbody></tbody>
-              </table>
-
-              <h3 style="margin-top: 12px;">AI elaboration (optional)</h3>
-              <textarea id="ai_elaboration" readonly style="min-height: 120px;"></textarea>
-              <div class="button-row" style="margin-top: 8px;">
-                <button id="elabClinicianBtn" class="secondary">AI elaboration – clinician</button>
-                <button id="elabPatientBtn" class="secondary">AI elaboration – patient</button>
-              </div>
-            </div>
-
-            <h3 style="margin-top: 16px;">Trend summary</h3>
-            <div id="trendSummary" class="small"></div>
-
+  <header class="hero">
+    <div>
+      <p class="eyebrow">Papachristou Ortho</p>
+      <h1>Osteoporosis cockpit</h1>
+      <p>Risk stratification, treatment context, and AI-assisted therapy reflection.</p>
+    </div>
+    <div class="status-line">
+      <span id="statusMessage" data-state="neutral">Awaiting data entry.</span>
+    </div>
+  </header>
+  <main>
+    <div class="app-shell">
+      <section class="panel form-panel">
+        <div class="panel-header">
+          <div>
+            <h2>Input snapshot</h2>
+            <p>Populate the relevant clinical, biochemical, and lifestyle data.</p>
+          </div>
         </div>
-    </main>
-    
-    <script>
-      const API_URL = "https://ortho-reception-backend.onrender.com/osteoporosis/evaluate";
-      const ELAB_URL = "https://ortho-reception-backend.onrender.com/osteoporosis/elaborate";
-
-      const HISTORY_URL = "https://ortho-reception-backend.onrender.com/osteoporosis/patient";
-      const TREND_URL = "https://ortho-reception-backend.onrender.com/osteoporosis/patient";
-
-      let lastAssessment = null;
-
-      function val(id) {
-        const el = document.getElementById(id);
-        if (!el) return null;
-        if (el.type === "checkbox") return el.checked;
-        if (el.tagName === "SELECT") return el.value;
-        if (el.value === "") return null;
-        const numFields = [
-          "age","spine_t_score","total_hip_t_score","femoral_neck_t_score",
-          "frax_major","frax_hip","weight_kg","height_cm",
-          "vitamin_d_25oh_ng_ml","serum_calcium_mg_dl","serum_phosphorus_mg_dl",
-          "pth_pg_ml","serum_magnesium_mg_dl","serum_zinc_ug_dl",
-          "urine_calcium_24h_mg",
-          "osteocalcin_ng_ml","bone_alk_phos_u_l","ctx_ng_ml","p1np_ng_ml",
-          "milk_portions","yogurt_portions","cheese_portions","leafy_portions",
-          "fortified_portions","other_dairy_portions",
-          "calcium_supplement_mg_per_day","vitamin_d3_iu_per_day",
-          "current_therapy_duration_years"
-        ];
-
-        if (numFields.includes(id)) return Number(el.value);
-        return el.value;
+        <form id="inputForm">
+          <div class="field-grid">
+            <div class="field">
+              <label for="patient_id">Patient ID</label>
+              <input id="patient_id" type="text" placeholder="EMR / GeSY ID" />
+            </div>
+            <div class="field">
+              <label for="age">Age</label>
+              <input id="age" type="number" min="18" max="110" />
+            </div>
+            <div class="field">
+              <label for="sex">Sex</label>
+              <select id="sex">
+                <option value="female">female</option>
+                <option value="male">male</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="menopause_status">Menopause status</label>
+              <select id="menopause_status">
+                <option value="unknown">unknown</option>
+                <option value="pre">pre</option>
+                <option value="peri">peri</option>
+                <option value="post">post</option>
+              </select>
+            </div>
+          </div>
+          <div class="field-grid">
+            <div class="field">
+              <label for="spine_t_score">Spine T-score</label>
+              <input id="spine_t_score" type="number" step="0.1" />
+            </div>
+            <div class="field">
+              <label for="total_hip_t_score">Total hip T-score</label>
+              <input id="total_hip_t_score" type="number" step="0.1" />
+            </div>
+            <div class="field">
+              <label for="femoral_neck_t_score">Femoral neck T-score</label>
+              <input id="femoral_neck_t_score" type="number" step="0.1" />
+            </div>
+          </div>
+          <div class="checkbox-grid">
+            <div class="checkbox-group">
+              <label>Fragility fractures</label>
+              <label><input type="checkbox" id="fx_hip" /> hip</label>
+              <label><input type="checkbox" id="fx_vert" /> vertebral</label>
+              <label><input type="checkbox" id="fx_nonvert" /> non-vertebral</label>
+            </div>
+          </div>
+          <div class="field-grid">
+            <div class="field">
+              <label for="weight_kg">Weight (kg)</label>
+              <input id="weight_kg" type="number" step="0.1" />
+            </div>
+            <div class="field">
+              <label for="height_cm">Height (cm)</label>
+              <input id="height_cm" type="number" step="0.1" />
+            </div>
+            <div class="field">
+              <label for="frax_major">FRAX major % (optional)</label>
+              <input id="frax_major" type="number" step="0.1" />
+            </div>
+            <div class="field">
+              <label for="frax_hip">FRAX hip % (optional)</label>
+              <input id="frax_hip" type="number" step="0.1" />
+            </div>
+          </div>
+          <div class="checkbox-grid">
+            <div class="checkbox-group">
+              <label>Clinical risk factors</label>
+              <label><input type="checkbox" id="parental_hip_fracture" /> parental hip fracture</label>
+              <label><input type="checkbox" id="current_smoker" /> current smoker</label>
+              <label><input type="checkbox" id="glucocorticoids" /> glucocorticoids</label>
+              <label><input type="checkbox" id="rheumatoid_arthritis" /> rheumatoid arthritis</label>
+              <label><input type="checkbox" id="secondary_osteoporosis" /> secondary osteoporosis</label>
+              <label><input type="checkbox" id="high_alcohol_intake" /> high alcohol intake</label>
+            </div>
+          </div>
+          <div class="field-grid">
+            <div class="field">
+              <label for="vitamin_d_25oh_ng_ml">25-OH Vit D (ng/mL)</label>
+              <input id="vitamin_d_25oh_ng_ml" type="number" step="0.1" />
+            </div>
+            <div class="field">
+              <label for="serum_calcium_mg_dl">Serum Ca (mg/dL)</label>
+              <input id="serum_calcium_mg_dl" type="number" step="0.1" />
+            </div>
+            <div class="field">
+              <label for="serum_phosphorus_mg_dl">Serum P (mg/dL)</label>
+              <input id="serum_phosphorus_mg_dl" type="number" step="0.1" />
+            </div>
+            <div class="field">
+              <label for="pth_pg_ml">PTH (pg/mL)</label>
+              <input id="pth_pg_ml" type="number" step="0.1" />
+            </div>
+          </div>
+          <div class="field-grid">
+            <div class="field">
+              <label for="serum_magnesium_mg_dl">Serum Mg (mg/dL)</label>
+              <input id="serum_magnesium_mg_dl" type="number" step="0.1" />
+            </div>
+            <div class="field">
+              <label for="serum_zinc_ug_dl">Serum Zn (μg/dL)</label>
+              <input id="serum_zinc_ug_dl" type="number" step="0.1" />
+            </div>
+            <div class="field">
+              <label for="urine_calcium_24h_mg">Urine Ca 24h (mg)</label>
+              <input id="urine_calcium_24h_mg" type="number" step="1" />
+            </div>
+          </div>
+          <div class="field-grid">
+            <div class="field">
+              <label for="osteocalcin_ng_ml">Osteocalcin (ng/mL)</label>
+              <input id="osteocalcin_ng_ml" type="number" step="0.1" />
+            </div>
+            <div class="field">
+              <label for="bone_alk_phos_u_l">Bone ALP (U/L)</label>
+              <input id="bone_alk_phos_u_l" type="number" step="0.1" />
+            </div>
+            <div class="field">
+              <label for="ctx_ng_ml">CTX (ng/mL)</label>
+              <input id="ctx_ng_ml" type="number" step="0.01" />
+            </div>
+            <div class="field">
+              <label for="p1np_ng_ml">P1NP (ng/mL)</label>
+              <input id="p1np_ng_ml" type="number" step="0.1" />
+            </div>
+          </div>
+          <div class="field-grid">
+            <div class="field">
+              <label for="calcium_supplement">Calcium supplement?</label>
+              <input id="calcium_supplement" type="checkbox" />
+            </div>
+            <div class="field">
+              <label for="calcium_supplement_mg_per_day">Calcium supplement (mg/day)</label>
+              <input id="calcium_supplement_mg_per_day" type="number" min="0" />
+            </div>
+            <div class="field">
+              <label for="vitamin_d_supplement">Vitamin D supplement?</label>
+              <input id="vitamin_d_supplement" type="checkbox" />
+            </div>
+            <div class="field">
+              <label for="vitamin_d3_iu_per_day">Vit D3 (IU/day)</label>
+              <input id="vitamin_d3_iu_per_day" type="number" min="0" />
+            </div>
+          </div>
+          <div class="checkbox-grid">
+            <div class="checkbox-group">
+              <label>Mineral supplements</label>
+              <label><input type="checkbox" id="magnesium_supplement" /> magnesium</label>
+              <label><input type="checkbox" id="zinc_supplement" /> zinc</label>
+              <label><input type="checkbox" id="boron_supplement" /> boron</label>
+              <label><input type="checkbox" id="vitamin_k2_supplement" /> vitamin K2</label>
+              <label><input type="checkbox" id="fortibone_supplement" /> Fortibone</label>
+              <label><input type="checkbox" id="colabone_supplement" /> Colabone</label>
+            </div>
+          </div>
+          <div class="field-grid">
+            <div class="field">
+              <label for="milk_portions">Milk portions/day</label>
+              <input id="milk_portions" type="number" min="0" value="0" />
+            </div>
+            <div class="field">
+              <label for="yogurt_portions">Yogurt portions/day</label>
+              <input id="yogurt_portions" type="number" min="0" value="0" />
+            </div>
+            <div class="field">
+              <label for="cheese_portions">Cheese portions/day</label>
+              <input id="cheese_portions" type="number" min="0" value="0" />
+            </div>
+            <div class="field">
+              <label for="leafy_portions">Leafy greens portions/day</label>
+              <input id="leafy_portions" type="number" min="0" value="0" />
+            </div>
+            <div class="field">
+              <label for="fortified_portions">Fortified food portions/day</label>
+              <input id="fortified_portions" type="number" min="0" value="0" />
+            </div>
+            <div class="field">
+              <label for="other_dairy_portions">Other dairy portions/day</label>
+              <input id="other_dairy_portions" type="number" min="0" value="0" />
+            </div>
+          </div>
+          <div class="field-grid">
+            <div class="field">
+              <label for="current_therapy_type">Current therapy</label>
+              <select id="current_therapy_type">
+                <option value="none">none</option>
+                <option value="oral_bisphosphonate">oral bisphosphonate</option>
+                <option value="iv_bisphosphonate">IV bisphosphonate</option>
+                <option value="denosumab">denosumab</option>
+                <option value="teriparatide">teriparatide</option>
+                <option value="romosozumab">romosozumab</option>
+                <option value="raloxifene">raloxifene</option>
+                <option value="other">other</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="current_therapy_duration_years">Duration (yrs)</label>
+              <input id="current_therapy_duration_years" type="number" min="0" step="0.1" />
+            </div>
+            <div class="field">
+              <label>On-therapy events</label>
+              <div class="checkbox-group">
+                <label><input type="checkbox" id="fractures_during_current_therapy" /> fracture during therapy</label>
+                <label><input type="checkbox" id="significant_therapy_adverse_effects" /> significant adverse effects</label>
+              </div>
+            </div>
+          </div>
+          <div class="field">
+            <label for="therapy_history_json">Therapy history (JSON)</label>
+            <textarea id="therapy_history_json" placeholder='[{"therapy_type":"oral_bisphosphonate","duration_years":5,"is_holiday":false}]'></textarea>
+            <p class="muted" style="margin:4px 0 0;">Optional chronological episodes; leave empty to skip.</p>
+          </div>
+          <div class="field-grid">
+            <div class="field">
+              <label for="exercise_level">Exercise level</label>
+              <select id="exercise_level">
+                <option value="none">none</option>
+                <option value="light">light</option>
+                <option value="moderate">moderate</option>
+                <option value="vigorous">vigorous</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="daily_walking">Daily walking</label>
+              <select id="daily_walking">
+                <option value="none">none</option>
+                <option value="under_15_min">under 15 min</option>
+                <option value="between_15_30_min">15–30 min</option>
+                <option value="over_30_min">over 30 min</option>
+              </select>
+            </div>
+          </div>
+          <div class="checkbox-grid">
+            <div class="checkbox-group">
+              <label>Function & falls</label>
+              <label><input type="checkbox" id="high_falls_risk" /> high falls risk</label>
+              <label><input type="checkbox" id="history_of_falls_last_year" /> falls last year</label>
+              <label><input type="checkbox" id="dementia_or_cognitive_impairment" /> dementia / cognitive</label>
+              <label><input type="checkbox" id="significant_immobility" /> significant immobility</label>
+              <label><input type="checkbox" id="dietician_follow_up" /> dietician follow-up</label>
+            </div>
+          </div>
+        </form>
+        <div class="actions">
+          <button id="evaluateBtn" class="button">Evaluate osteoporosis</button>
+          <button id="loadLatestBtn" class="button secondary">Load latest assessment</button>
+          <button id="loadHistoryBtn" class="button ghost">History</button>
+          <button id="loadTrendBtn" class="button ghost">Trends</button>
+        </div>
+        <div class="status-line">
+          <span id="formNote" data-state="neutral">Data is sent to the configured evaluation endpoint.</span>
+        </div>
+      </section>
+      <section class="panel result-panel">
+        <div class="panel-header">
+          <div>
+            <h2>Insights & stories</h2>
+            <p>Risk, suggestions, and treatment intelligence for documentation.</p>
+          </div>
+        </div>
+        <div class="risk-metrics" id="riskOverview">
+          <div>
+            <span class="pill" id="riskLevelBadge">—</span>
+          </div>
+          <div class="chip-row" id="riskDrivers"></div>
+          <div class="risk-metrics">
+            <div class="metric-card">
+              <span>Calcium intake</span>
+              <strong id="calciumTotal">—</strong>
+            </div>
+            <div class="metric-card">
+              <span>Internal FRAX index</span>
+              <strong id="internalIndex">—</strong>
+            </div>
+          </div>
+          <p id="calciumNote" class="muted" style="margin-top:4px;"></p>
+        </div>
+        <div class="suggestion-grid" id="suggestionBuckets"></div>
+        <div class="therapy-highlights" id="therapyHighlights"></div>
+        <div class="note-block" id="clinicalNote" aria-live="polite">Run an evaluation to see the generated clinical note.</div>
+        <div class="note-block" id="patientSummary" aria-live="polite" style="background:#111827;">
+          Run an evaluation to see the patient-friendly summary.
+        </div>
+        <div class="ai-panel" style="margin-top: 12px;">
+          <div class="ai-header">
+            <div>
+              <h3 style="margin:0;">AI elaborations</h3>
+              <p class="muted">Ask the LLM to rephrase for clinicians or patients.</p>
+            </div>
+            <div class="ai-tools">
+              <button id="elabClinicianBtn" class="button secondary">For clinician</button>
+              <button id="elabPatientBtn" class="button secondary">For patient</button>
+            </div>
+          </div>
+          <div class="note-block" id="aiElaboration" aria-live="polite">Select an audience and run an AI elaboration after evaluation.</div>
+        </div>
+        <div class="ai-panel" style="margin-top: 12px;">
+          <div class="ai-header">
+            <div>
+              <h3 style="margin:0;">AI treatment guidance</h3>
+              <p class="muted">High-level safety net for current therapy adjustments.</p>
+            </div>
+            <button id="treatmentRecBtn" class="button secondary">Summarize treatment</button>
+          </div>
+          <div class="note-block" id="treatmentRecommendation" aria-live="polite">
+            Run an evaluation before requesting treatment recommendations.
+          </div>
+        </div>
+        <div class="grid-divider"></div>
+        <div class="panel-header">
+          <div>
+            <h3 style="margin:0;">History</h3>
+            <p class="muted">Most recent stored assessments per patient.</p>
+          </div>
+        </div>
+        <div class="history-table">
+          <table id="historyTable">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Risk</th>
+                <th>Therapy</th>
+                <th>Spine T</th>
+                <th>Hip T</th>
+                <th>CTX</th>
+                <th>P1NP</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="grid-divider"></div>
+        <div>
+          <h3 style="margin-top:0;">Trend summary</h3>
+          <p id="trendSummary" class="muted">Load trends after populating a patient ID with at least two assessments.</p>
+        </div>
+      </section>
+    </div>
+  </main>
+  <script>
+    const API_BASE = "https://ortho-reception-backend.onrender.com";
+    const endpoints = {
+      evaluate: `${API_BASE}/osteoporosis/evaluate`,
+      latest: `${API_BASE}/osteoporosis/patient`,
+      trend: `${API_BASE}/osteoporosis/patient`,
+      history: `${API_BASE}/osteoporosis/patient`,
+      elaborate: `${API_BASE}/osteoporosis/elaborate`,
+      treatment: `${API_BASE}/osteoporosis/treatment-recommendation`,
+    };
+    const state = {
+      lastAssessment: null,
+    };
+    const statusMessage = document.getElementById("statusMessage");
+    const formNote = document.getElementById("formNote");
+    const riskLevelBadge = document.getElementById("riskLevelBadge");
+    const riskDrivers = document.getElementById("riskDrivers");
+    const calciumTotal = document.getElementById("calciumTotal");
+    const internalIndex = document.getElementById("internalIndex");
+    const calciumNote = document.getElementById("calciumNote");
+    const suggestionBuckets = document.getElementById("suggestionBuckets");
+    const therapyHighlights = document.getElementById("therapyHighlights");
+    const clinicalNote = document.getElementById("clinicalNote");
+    const patientSummary = document.getElementById("patientSummary");
+    const aiElaboration = document.getElementById("aiElaboration");
+    const treatmentRecommendationElm = document.getElementById("treatmentRecommendation");
+    const historyTableBody = document.querySelector("#historyTable tbody");
+    const trendSummary = document.getElementById("trendSummary");
+    const numFields = [
+      "age",
+      "spine_t_score",
+      "total_hip_t_score",
+      "femoral_neck_t_score",
+      "frax_major",
+      "frax_hip",
+      "weight_kg",
+      "height_cm",
+      "vitamin_d_25oh_ng_ml",
+      "serum_calcium_mg_dl",
+      "serum_phosphorus_mg_dl",
+      "pth_pg_ml",
+      "serum_magnesium_mg_dl",
+      "serum_zinc_ug_dl",
+      "urine_calcium_24h_mg",
+      "osteocalcin_ng_ml",
+      "bone_alk_phos_u_l",
+      "ctx_ng_ml",
+      "p1np_ng_ml",
+      "milk_portions",
+      "yogurt_portions",
+      "cheese_portions",
+      "leafy_portions",
+      "fortified_portions",
+      "other_dairy_portions",
+      "calcium_supplement_mg_per_day",
+      "vitamin_d3_iu_per_day",
+      "current_therapy_duration_years",
+    ];
+    function setStatus(message, variant = "neutral") {
+      if (statusMessage) {
+        statusMessage.textContent = message;
+        statusMessage.dataset.state = variant;
       }
-
-      function buildPayload() {
-        const fractures = [];
-        if (document.getElementById("fx_hip").checked) fractures.push("hip");
-        if (document.getElementById("fx_vert").checked) fractures.push("vertebral");
-        if (document.getElementById("fx_nonvert").checked) fractures.push("non_vertebral");
-
-        return {
-          age: val("age"),
-          sex: val("sex"),
-          menopause_status: val("menopause_status"),
-
-          spine_t_score: val("spine_t_score"),
-          total_hip_t_score: val("total_hip_t_score"),
-          femoral_neck_t_score: val("femoral_neck_t_score"),
-          prior_fragility_fractures: fractures,
-
-          frax_major_osteoporotic: val("frax_major"),
-          frax_hip: val("frax_hip"),
-
-          weight_kg: val("weight_kg"),
-          height_cm: val("height_cm"),
-          parental_hip_fracture: val("parental_hip_fracture"),
-          current_smoker: val("current_smoker"),
-          glucocorticoids: val("glucocorticoids"),
-          rheumatoid_arthritis: val("rheumatoid_arthritis"),
-          secondary_osteoporosis: val("secondary_osteoporosis"),
-          high_alcohol_intake: val("high_alcohol_intake"),
-
-          vitamin_d_25oh_ng_ml: val("vitamin_d_25oh_ng_ml"),
-          serum_calcium_mg_dl: val("serum_calcium_mg_dl"),
-          serum_phosphorus_mg_dl: val("serum_phosphorus_mg_dl"),
-          pth_pg_ml: val("pth_pg_ml"),
-          serum_magnesium_mg_dl: val("serum_magnesium_mg_dl"),
-          serum_zinc_ug_dl: val("serum_zinc_ug_dl"),
-          urine_calcium_24h_mg: val("urine_calcium_24h_mg"),
-
-          osteocalcin_ng_ml: val("osteocalcin_ng_ml"),
-          bone_alk_phos_u_l: val("bone_alk_phos_u_l"),
-          ctx_ng_ml: val("ctx_ng_ml"),
-          p1np_ng_ml: val("p1np_ng_ml"),
-
-          calcium_supplement: val("calcium_supplement"),
-          calcium_supplement_mg_per_day: val("calcium_supplement_mg_per_day"),
-          vitamin_d_supplement: val("vitamin_d_supplement"),
-          vitamin_d3_iu_per_day: val("vitamin_d3_iu_per_day"),
-          magnesium_supplement: val("magnesium_supplement"),
-          zinc_supplement: val("zinc_supplement"),
-          boron_supplement: val("boron_supplement"),
-          vitamin_k2_supplement: val("vitamin_k2_supplement"),
-          fortibone_supplement: val("fortibone_supplement"),
-          colabone_supplement: val("colabone_supplement"),
-
-          current_therapy_type: val("current_therapy_type"),
-          current_therapy_duration_years: val("current_therapy_duration_years"),
-          fractures_during_current_therapy: val("fractures_during_current_therapy"),
-          significant_therapy_adverse_effects: val("significant_therapy_adverse_effects"),
-
-          // Therapy history JSON (optional)
-          therapy_history: (() => {
-            const txt = document.getElementById("therapy_history_json").value.trim();
-            if (!txt) return [];
-            try {
-              const parsed = JSON.parse(txt);
-              if (Array.isArray(parsed)) return parsed;
-            } catch (e) {
-              console.error("Invalid therapy_history JSON:", e);
-            }
-            return [];
-          })(),
-
-          
-          exercise_level: val("exercise_level"),
-          daily_walking: val("daily_walking"),
-          dietician_follow_up: val("dietician_follow_up"),
-          high_falls_risk: val("high_falls_risk"),
-          history_of_falls_last_year: val("history_of_falls_last_year"),
-          dementia_or_cognitive_impairment: val("dementia_or_cognitive_impairment"),
-          significant_immobility: val("significant_immobility"),
-
-          milk_portions_per_day: val("milk_portions") ?? 0,
-          yogurt_portions_per_day: val("yogurt_portions") ?? 0,
-          cheese_portions_per_day: val("cheese_portions") ?? 0,
-          leafy_greens_portions_per_day: val("leafy_portions") ?? 0,
-          fortified_food_portions_per_day: val("fortified_portions") ?? 0,
-          other_dairy_portions_per_day: val("other_dairy_portions") ?? 0
-        };
-      }
-
-      function setStatus(text, isError = false) {
-        const status = document.getElementById("status");
-        if (!status) return;
-        status.textContent = text;
-        status.className = "status" + (isError ? " error" : "");
-      }
-
-      function renderBadges(resp) {
-        const badges = document.getElementById("badges");
-        const meta = document.getElementById("metaInfo");
-        if (!badges || !meta) return;
-
-        badges.innerHTML = "";
-        meta.textContent = "";
-
-        if (!resp) return;
-
-        const risk = resp.risk_category;
-        if (risk) {
-          const pill = document.createElement("div");
-          pill.className = "pill " + risk;
-          pill.textContent = "Risk: " + risk.toUpperCase();
-          badges.appendChild(pill);
-        }
-
-        if (resp.estimated_total_calcium_mg != null) {
-          const pill = document.createElement("div");
-          pill.className = "pill";
-          pill.textContent = "Calcium ≈ " + Math.round(resp.estimated_total_calcium_mg) + " mg/day";
-          badges.appendChild(pill);
-        }
-
-        if (resp.internal_frax_like_index != null) {
-          const pill = document.createElement("div");
-          pill.className = "pill";
-          pill.textContent = "Internal FRAX-style index: " + resp.internal_frax_like_index.toFixed(1);
-          badges.appendChild(pill);
-        }
-
-        if (resp.risk_reasons && resp.risk_reasons.length > 0) {
-          meta.textContent = "Key drivers: " + resp.risk_reasons.join("; ");
-        }
-      }
-
-        function renderHistoryTable(history) {
-          const table = document.getElementById("historyTable");
-          if (!table) return;
-          const tbody = table.querySelector("tbody");
-          tbody.innerHTML = "";
-
-          history.forEach((entry) => {
-            const row = document.createElement("tr");
-
-            const created = new Date(entry.created_at);
-            const dateStr = created.toLocaleDateString(undefined, {
-              year: "numeric",
-              month: "short",
-              day: "numeric"
-            });
-
-            const input = entry.input_data;
-            const assess = entry.assessment;
-
-            function td(text) {
-              const cell = document.createElement("td");
-              cell.style.borderBottom = "1px solid #f3f4f6";
-              cell.style.padding = "2px 4px";
-              cell.textContent = text;
-              return cell;
-            }
-
-            row.appendChild(td(dateStr));
-            row.appendChild(td(assess.risk_category.toUpperCase()));
-            row.appendChild(td(input.current_therapy_type || "none"));
-            row.appendChild(td(input.spine_t_score != null ? input.spine_t_score.toFixed(2) : ""));
-            row.appendChild(td(input.total_hip_t_score != null ? input.total_hip_t_score.toFixed(2) : ""));
-            row.appendChild(td(input.ctx_ng_ml != null ? input.ctx_ng_ml.toFixed(2) : ""));
-            row.appendChild(td(input.p1np_ng_ml != null ? input.p1np_ng_ml.toFixed(1) : ""));
-
-            tbody.appendChild(row);
-          });
-        }
-
-        async function loadHistory() {
-          const pid = document.getElementById("patient_id").value;
-          if (!pid) {
-            setStatus("Enter a patient ID to load history.", true);
-            return;
-          }
-          setStatus("Loading history…");
+    }
+    function val(id) {
+      const el = document.getElementById(id);
+      if (!el) return null;
+      if (el.type === "checkbox") return el.checked;
+      if (el.tagName === "SELECT") return el.value;
+      if (el.value === "") return null;
+      if (numFields.includes(id)) return Number(el.value);
+      return el.value;
+    }
+    function buildPayload() {
+      const fractures = [];
+      if (document.getElementById("fx_hip").checked) fractures.push("hip");
+      if (document.getElementById("fx_vert").checked) fractures.push("vertebral");
+      if (document.getElementById("fx_nonvert").checked) fractures.push("non_vertebral");
+      return {
+        age: val("age"),
+        sex: val("sex"),
+        menopause_status: val("menopause_status"),
+        spine_t_score: val("spine_t_score"),
+        total_hip_t_score: val("total_hip_t_score"),
+        femoral_neck_t_score: val("femoral_neck_t_score"),
+        prior_fragility_fractures: fractures,
+        frax_major_osteoporotic: val("frax_major"),
+        frax_hip: val("frax_hip"),
+        weight_kg: val("weight_kg"),
+        height_cm: val("height_cm"),
+        parental_hip_fracture: val("parental_hip_fracture"),
+        current_smoker: val("current_smoker"),
+        glucocorticoids: val("glucocorticoids"),
+        rheumatoid_arthritis: val("rheumatoid_arthritis"),
+        secondary_osteoporosis: val("secondary_osteoporosis"),
+        high_alcohol_intake: val("high_alcohol_intake"),
+        vitamin_d_25oh_ng_ml: val("vitamin_d_25oh_ng_ml"),
+        serum_calcium_mg_dl: val("serum_calcium_mg_dl"),
+        serum_phosphorus_mg_dl: val("serum_phosphorus_mg_dl"),
+        pth_pg_ml: val("pth_pg_ml"),
+        serum_magnesium_mg_dl: val("serum_magnesium_mg_dl"),
+        serum_zinc_ug_dl: val("serum_zinc_ug_dl"),
+        urine_calcium_24h_mg: val("urine_calcium_24h_mg"),
+        osteocalcin_ng_ml: val("osteocalcin_ng_ml"),
+        bone_alk_phos_u_l: val("bone_alk_phos_u_l"),
+        ctx_ng_ml: val("ctx_ng_ml"),
+        p1np_ng_ml: val("p1np_ng_ml"),
+        calcium_supplement: val("calcium_supplement"),
+        calcium_supplement_mg_per_day: val("calcium_supplement_mg_per_day"),
+        vitamin_d_supplement: val("vitamin_d_supplement"),
+        vitamin_d3_iu_per_day: val("vitamin_d3_iu_per_day"),
+        magnesium_supplement: val("magnesium_supplement"),
+        zinc_supplement: val("zinc_supplement"),
+        boron_supplement: val("boron_supplement"),
+        vitamin_k2_supplement: val("vitamin_k2_supplement"),
+        fortibone_supplement: val("fortibone_supplement"),
+        colabone_supplement: val("colabone_supplement"),
+        current_therapy_type: val("current_therapy_type"),
+        current_therapy_duration_years: val("current_therapy_duration_years"),
+        fractures_during_current_therapy: val("fractures_during_current_therapy"),
+        significant_therapy_adverse_effects: val("significant_therapy_adverse_effects"),
+        therapy_history: (() => {
+          const txt = document.getElementById("therapy_history_json").value.trim();
+          if (!txt) return [];
           try {
-            const res = await fetch(`${HISTORY_URL}/${encodeURIComponent(pid)}/history`, {
-              method: "GET",
-              headers: { "Accept": "application/json" }
-            });
-            console.log("History HTTP status:", res.status);
-            if (!res.ok) {
-              const text = await res.text();
-              setStatus("History error " + res.status + " – see console", true);
-              console.error("History error:", text);
-              return;
-            }
-            const data = await res.json(); // array of OsteoHistoryEntry
-            renderHistoryTable(data);
-            setStatus("History loaded (" + data.length + " assessments).");
+            const parsed = JSON.parse(txt);
+            if (Array.isArray(parsed)) return parsed;
           } catch (err) {
-            console.error(err);
-            setStatus("Network or JS error during history load – see console", true);
+            console.error("Invalid therapy history JSON", err);
           }
-        }
-
-        async function evaluate() {
-          const btn = document.getElementById("evaluateBtn");
-          if (btn) btn.disabled = true;
-          setStatus("Evaluating…");
-          try {
-            const payloadInner = buildPayload();
-            const pid = document.getElementById("patient_id").value || "test-patient";
-
-            const payload = {
-              patient_id: pid,
-              input_data: payloadInner
-            };
-
-            console.log("Payload:", payload);
-
-            const res = await fetch(API_URL, {
-              method: "POST",
-              headers: { "Content-Type": "application/json", "Accept": "application/json" },
-              body: JSON.stringify(payload)
-            });
-
-            console.log("HTTP status:", res.status);
-
-            if (!res.ok) {
-              const text = await res.text();
-              setStatus("Error " + res.status + " – see console", true);
-              console.error("Error response:", text);
-              return;
-            }
-
-            const data = await res.json();
-            // data is OsteoStoredAssessment
-            const assessment = data.assessment;
-            lastAssessment = assessment;
-
-            document.getElementById("clinical_note").value = assessment.clinical_note || "";
-            document.getElementById("patient_summary").value = assessment.patient_summary || "";
-            renderBadges(assessment);
-            setStatus("OK – risk and notes updated (stored as " + data.assessment_id + ").");
-          } catch (err) {
-            console.error(err);
-            setStatus("Network or JS error – see console", true);
-          } finally {
-            if (btn) btn.disabled = false;
-          }
-        }
-
-        async function loadLatest() {
-          const pid = document.getElementById("patient_id").value;
-          if (!pid) {
-            setStatus("Enter a patient ID to load.", true);
-            return;
-          }
-          setStatus("Loading latest assessment…");
-          try {
-            const res = await fetch(
-              `https://ortho-reception-backend.onrender.com/osteoporosis/patient/${encodeURIComponent(pid)}/latest`,
-              { method: "GET", headers: { "Accept": "application/json" } }
-            );
-            console.log("Load latest HTTP status:", res.status);
-            if (!res.ok) {
-              const text = await res.text();
-              setStatus("Load error " + res.status + " – see console", true);
-              console.error("Load error:", text);
-              return;
-            }
-            const stored = await res.json();
-            const inp = stored.input_data;
-            const assessment = stored.assessment;
-            lastAssessment = assessment;
-
-            // Pre-fill a few key fields (you can extend this mapping as you like)
-            document.getElementById("age").value = inp.age;
-            document.getElementById("sex").value = inp.sex;
-            document.getElementById("menopause_status").value = inp.menopause_status;
-            if (inp.spine_t_score != null) document.getElementById("spine_t_score").value = inp.spine_t_score;
-            if (inp.total_hip_t_score != null) document.getElementById("total_hip_t_score").value = inp.total_hip_t_score;
-            // ...same for labs, therapy, etc, if you want...
-
-            document.getElementById("clinical_note").value = assessment.clinical_note || "";
-            document.getElementById("patient_summary").value = assessment.patient_summary || "";
-            renderBadges(assessment);
-            setStatus("Loaded latest assessment " + stored.assessment_id + ".");
-          } catch (err) {
-            console.error(err);
-            setStatus("Network or JS error during load – see console", true);
-          }
-        }
-
-        window.addEventListener("DOMContentLoaded", () => {
-            const trendBtn = document.getElementById("loadTrendBtn");
-            if (trendBtn) {
-              trendBtn.addEventListener("click", (e) => {
-                e.preventDefault();
-                loadTrend();
-              });
-            }
-          const evalBtn = document.getElementById("evaluateBtn");
-          if (evalBtn) {
-            evalBtn.addEventListener("click", (e) => {
-              e.preventDefault();
-              evaluate();
-            });
-          }
-
-          const loadBtn = document.getElementById("loadLatestBtn");
-          if (loadBtn) {
-            loadBtn.addEventListener("click", (e) => {
-              e.preventDefault();
-              loadLatest();
-            });
-          }
-
-          const historyBtn = document.getElementById("loadHistoryBtn");
-          if (historyBtn) {
-            historyBtn.addEventListener("click", (e) => {
-              e.preventDefault();
-              loadHistory();
-            });
-          }
-
-          const elabClin = document.getElementById("elabClinicianBtn");
-          const elabPat = document.getElementById("elabPatientBtn");
-          if (elabClin) {
-            elabClin.addEventListener("click", (e) => {
-              e.preventDefault();
-              elaborate("clinician");
-            });
-          }
-          if (elabPat) {
-            elabPat.addEventListener("click", (e) => {
-              e.preventDefault();
-              elaborate("patient");
-            });
-          }
-
-          console.log("Osteoporosis cockpit JS initialized");
+          return [];
+        })(),
+        exercise_level: val("exercise_level"),
+        daily_walking: val("daily_walking"),
+        dietician_follow_up: val("dietician_follow_up"),
+        high_falls_risk: val("high_falls_risk"),
+        history_of_falls_last_year: val("history_of_falls_last_year"),
+        dementia_or_cognitive_impairment: val("dementia_or_cognitive_impairment"),
+        significant_immobility: val("significant_immobility"),
+        milk_portions_per_day: val("milk_portions") ?? 0,
+        yogurt_portions_per_day: val("yogurt_portions") ?? 0,
+        cheese_portions_per_day: val("cheese_portions") ?? 0,
+        leafy_greens_portions_per_day: val("leafy_portions") ?? 0,
+        fortified_food_portions_per_day: val("fortified_portions") ?? 0,
+        other_dairy_portions_per_day: val("other_dairy_portions") ?? 0,
+      };
+    }
+    function updateRiskPanel(assessment) {
+      const risk = assessment?.risk_category?.toLowerCase?.() ?? "low";
+      const badgeClass = ["low", "moderate", "high", "very_high"].includes(risk) ? risk : "low";
+      riskLevelBadge.textContent = risk ? risk.toUpperCase() : "N/A";
+      riskLevelBadge.className = `pill ${badgeClass}`;
+      riskDrivers.innerHTML = "";
+      const reasons = assessment?.risk_reasons || [];
+      if (reasons.length) {
+        reasons.forEach((reason) => {
+          const node = document.createElement("span");
+          node.className = "chip";
+          node.textContent = reason;
+          riskDrivers.appendChild(node);
         });
-
-        async function loadTrend() {
-          const pid = document.getElementById("patient_id").value;
-          if (!pid) {
-            setStatus("Enter a patient ID to load trends.", true);
-            return;
-          }
-          setStatus("Loading trends…");
-          const box = document.getElementById("trendSummary");
-          if (box) box.textContent = "";
-          try {
-            const res = await fetch(`${TREND_URL}/${encodeURIComponent(pid)}/trend`, {
-              method: "GET",
-              headers: { "Accept": "application/json" }
-            });
-            console.log("Trend HTTP status:", res.status);
-            if (!res.ok) {
-              const text = await res.text();
-              setStatus("Trend error " + res.status + " – see console", true);
-              console.error("Trend error:", text);
-              return;
-            }
-            const data = await res.json();
-            const lines = [];
-            if (data.bmd_trend_text) lines.push(data.bmd_trend_text);
-            if (data.ctx_trend_text) lines.push(data.ctx_trend_text);
-            if (data.p1np_trend_text) lines.push(data.p1np_trend_text);
-            if (box) box.textContent = lines.length ? lines.join(" ") : "Not enough data yet to summarise trends.";
-            setStatus("Trends loaded.");
-          } catch (err) {
-            console.error(err);
-            setStatus("Network or JS error during trend load – see console", true);
-          }
-        }
-
-
-      async function elaborate(audience) {
-        if (!lastAssessment) {
-          setStatus("Run an evaluation first, then ask for AI elaboration.", true);
-          return;
-        }
-        setStatus("Requesting AI elaboration…");
-        const elabBox = document.getElementById("ai_elaboration");
-        if (elabBox) elabBox.value = "";
-
-        try {
-          const res = await fetch(ELAB_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json", "Accept": "application/json" },
-            body: JSON.stringify({
-              assessment: lastAssessment,
-              audience: audience
-            })
-          });
-
-          console.log("Elaboration HTTP status:", res.status);
-
-          if (!res.ok) {
-            const text = await res.text();
-            setStatus("Elaboration error " + res.status + " – see console", true);
-            console.error("Elaboration error:", text);
-            return;
-          }
-
-          const data = await res.json();
-          if (elabBox) elabBox.value = data.elaborated_text || "";
-          setStatus("AI elaboration updated.");
-        } catch (err) {
-          console.error(err);
-          setStatus("Network or JS error during elaboration – see console", true);
-        }
+      } else {
+        const node = document.createElement("span");
+        node.className = "chip";
+        node.textContent = "No dominant risk drivers yet. Consider more data.";
+        riskDrivers.appendChild(node);
       }
-
-      window.addEventListener("DOMContentLoaded", () => {
-        const btn = document.getElementById("evaluateBtn");
-        if (!btn) {
-          console.error("evaluateBtn not found in DOM");
-          return;
-        }
-        btn.addEventListener("click", (e) => {
-          e.preventDefault();
-          evaluate();
+      if (assessment?.estimated_total_calcium_mg != null) {
+        calciumTotal.textContent = `${Math.round(assessment.estimated_total_calcium_mg)} mg`;
+      } else {
+        calciumTotal.textContent = "—";
+      }
+      if (assessment?.internal_frax_like_index != null) {
+        internalIndex.textContent = assessment.internal_frax_like_index.toFixed(1);
+      } else {
+        internalIndex.textContent = "—";
+      }
+      calciumNote.textContent = assessment?.calcium_intake_note || "";
+    }
+    function renderSuggestionBuckets(suggestions) {
+      suggestionBuckets.innerHTML = "";
+      if (!suggestions?.length) {
+        suggestionBuckets.innerHTML = '<p class="muted">Suggestions will appear after evaluation.</p>';
+        return;
+      }
+      const grouped = suggestions.reduce((acc, suggestion) => {
+        acc[suggestion.category] = acc[suggestion.category] || [];
+        acc[suggestion.category].push(suggestion.text);
+        return acc;
+      }, {});
+      Object.entries(grouped).forEach(([category, texts]) => {
+        const article = document.createElement("article");
+        article.className = "suggestion-bucket";
+        const title = document.createElement("h4");
+        title.textContent = category.replace(/_/g, " ");
+        article.appendChild(title);
+        const list = document.createElement("ul");
+        texts.forEach((text) => {
+          const item = document.createElement("li");
+          item.textContent = text;
+          list.appendChild(item);
         });
-
-        const elabClin = document.getElementById("elabClinicianBtn");
-        const elabPat = document.getElementById("elabPatientBtn");
-        if (elabClin) {
-          elabClin.addEventListener("click", (e) => {
-            e.preventDefault();
-            elaborate("clinician");
-          });
-        }
-        if (elabPat) {
-          elabPat.addEventListener("click", (e) => {
-            e.preventDefault();
-            elaborate("patient");
-          });
-        }
-
-        console.log("Osteoporosis cockpit JS initialized");
+        article.appendChild(list);
+        suggestionBuckets.appendChild(article);
       });
-    </script>
-    </body>
-    </html>
+    }
+    function renderTherapyHighlights(suggestions) {
+      therapyHighlights.innerHTML = "";
+      const therapyRelated = (suggestions || []).filter((s) => s.category.includes("therapy"));
+      if (!therapyRelated.length) {
+        therapyHighlights.innerHTML = '<p class="muted">Therapy-specific cues will show here.</p>';
+        return;
+      }
+      const wrapper = document.createElement("div");
+      wrapper.innerHTML = '<h4 style="margin:0 0 6px;">Therapy highlights</h4>';
+      const list = document.createElement("ul");
+      therapyRelated.forEach((entry) => {
+        const li = document.createElement("li");
+        li.textContent = entry.text;
+        list.appendChild(li);
+      });
+      wrapper.appendChild(list);
+      therapyHighlights.appendChild(wrapper);
+    }
+    function writeNotes(assessment) {
+      clinicalNote.textContent = assessment?.clinical_note || "Run an evaluation to see the generated clinical note.";
+      patientSummary.textContent = assessment?.patient_summary || "Run an evaluation to see the patient-friendly summary.";
+    }
+    function renderHistoryTable(history) {
+      historyTableBody.innerHTML = "";
+      history.forEach((entry) => {
+        const row = document.createElement("tr");
+        const created = new Date(entry.created_at);
+        const dateTd = document.createElement("td");
+        dateTd.textContent = created.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+        row.appendChild(dateTd);
+        const riskTd = document.createElement("td");
+        riskTd.textContent = entry.assessment.risk_category?.toUpperCase() || "";
+        row.appendChild(riskTd);
+        const therapyTd = document.createElement("td");
+        therapyTd.textContent = entry.input_data.current_therapy_type || "none";
+        row.appendChild(therapyTd);
+        const spineTd = document.createElement("td");
+        spineTd.textContent = entry.input_data.spine_t_score != null ? entry.input_data.spine_t_score.toFixed(2) : "";
+        row.appendChild(spineTd);
+        const hipTd = document.createElement("td");
+        hipTd.textContent = entry.input_data.total_hip_t_score != null ? entry.input_data.total_hip_t_score.toFixed(2) : "";
+        row.appendChild(hipTd);
+        const ctxTd = document.createElement("td");
+        ctxTd.textContent = entry.input_data.ctx_ng_ml != null ? entry.input_data.ctx_ng_ml.toFixed(2) : "";
+        row.appendChild(ctxTd);
+        const p1npTd = document.createElement("td");
+        p1npTd.textContent = entry.input_data.p1np_ng_ml != null ? entry.input_data.p1np_ng_ml.toFixed(1) : "";
+        row.appendChild(p1npTd);
+        historyTableBody.appendChild(row);
+      });
+    }
+    async function evaluate() {
+      const patientId = document.getElementById("patient_id").value.trim() || "demo-patient";
+      const payload = { patient_id: patientId, input_data: buildPayload() };
+      const button = document.getElementById("evaluateBtn");
+      if (button) button.disabled = true;
+      setStatus("Evaluating fracture risk…", "pending");
+      formNote.textContent = "Sending data to the evaluation endpoint…";
+      try {
+        const response = await fetch(endpoints.evaluate, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (!response.ok) {
+          const text = await response.text();
+          console.error("Evaluation error", text);
+          setStatus(`Evaluation failed (${response.status})`, "error");
+          return;
+        }
+        const data = await response.json();
+        state.lastAssessment = data.assessment;
+        renderBackbone(data.assessment);
+        setStatus("Assessment stored and updated.", "success");
+        formNote.textContent = `Stored as ${data.assessment_id}`;
+      } catch (error) {
+        console.error("Evaluation exception", error);
+        setStatus("Network error while evaluating", "error");
+      } finally {
+        if (button) button.disabled = false;
+      }
+    }
+    async function loadHistory() {
+      const patientId = document.getElementById("patient_id").value.trim();
+      if (!patientId) {
+        setStatus("Enter a patient ID to load history.", "error");
+        return;
+      }
+      setStatus("Loading history…", "pending");
+      try {
+        const res = await fetch(`${endpoints.history}/${encodeURIComponent(patientId)}/history`, {
+          headers: { Accept: "application/json" },
+        });
+        if (!res.ok) {
+          setStatus(`History load failed (${res.status})`, "error");
+          return;
+        }
+        const history = await res.json();
+        renderHistoryTable(history);
+        setStatus("History refreshed.", "success");
+      } catch (err) {
+        console.error(err);
+        setStatus("Unable to load history.", "error");
+      }
+    }
+    async function loadTrend() {
+      const patientId = document.getElementById("patient_id").value.trim();
+      if (!patientId) {
+        setStatus("Enter a patient ID to load trends.", "error");
+        return;
+      }
+      setStatus("Loading trends…", "pending");
+      trendSummary.textContent = "";
+      try {
+        const res = await fetch(`${endpoints.trend}/${encodeURIComponent(patientId)}/trend`, {
+          headers: { Accept: "application/json" },
+        });
+        if (!res.ok) {
+          setStatus(`Trend load failed (${res.status})`, "error");
+          return;
+        }
+        const data = await res.json();
+        const lines = [];
+        if (data.bmd_trend_text) lines.push(data.bmd_trend_text);
+        if (data.ctx_trend_text) lines.push(data.ctx_trend_text);
+        if (data.p1np_trend_text) lines.push(data.p1np_trend_text);
+        trendSummary.textContent = lines.length ? lines.join(" ") : "Not enough data yet for trends.";
+        setStatus("Trend summary updated.", "success");
+      } catch (err) {
+        console.error(err);
+        setStatus("Unable to load trends.", "error");
+      }
+    }
+    async function loadLatest() {
+      const patientId = document.getElementById("patient_id").value.trim();
+      if (!patientId) {
+        setStatus("Enter a patient ID to load latest assessment.", "error");
+        return;
+      }
+      setStatus("Loading latest assessment…", "pending");
+      try {
+        const res = await fetch(`${endpoints.latest}/${encodeURIComponent(patientId)}/latest`, {
+          headers: { Accept: "application/json" },
+        });
+        if (!res.ok) {
+          setStatus(`Load failed (${res.status})`, "error");
+          return;
+        }
+        const data = await res.json();
+        state.lastAssessment = data.assessment;
+        if (data.input_data?.age != null) document.getElementById("age").value = data.input_data.age;
+        if (data.input_data?.sex) document.getElementById("sex").value = data.input_data.sex;
+        if (data.input_data?.menopause_status) document.getElementById("menopause_status").value = data.input_data.menopause_status;
+        if (data.input_data?.spine_t_score != null) document.getElementById("spine_t_score").value = data.input_data.spine_t_score;
+        if (data.input_data?.total_hip_t_score != null) document.getElementById("total_hip_t_score").value = data.input_data.total_hip_t_score;
+        renderBackbone(data.assessment);
+        setStatus("Latest assessment loaded.", "success");
+      } catch (err) {
+        console.error(err);
+        setStatus("Unable to load latest assessment.", "error");
+      }
+    }
+    async function elaborate(audience) {
+      if (!state.lastAssessment) {
+        setStatus("Run an assessment before requesting an elaboration.", "error");
+        return;
+      }
+      setStatus("Requesting AI elaboration…", "pending");
+      try {
+        const res = await fetch(endpoints.elaborate, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ assessment: state.lastAssessment, audience }),
+        });
+        if (!res.ok) {
+          setStatus(`AI elaboration failed (${res.status})`, "error");
+          return;
+        }
+        const data = await res.json();
+        aiElaboration.textContent = data.elaborated_text || "No elaboration returned.";
+        setStatus("AI elaboration ready.", "success");
+      } catch (err) {
+        console.error(err);
+        setStatus("AI elaboration error.", "error");
+      }
+    }
+    async function requestTreatmentRecommendation() {
+      if (!state.lastAssessment) {
+        setStatus("Run an assessment before requesting treatment guidance.", "error");
+        return;
+      }
+      setStatus("Requesting treatment guidance from AI…", "pending");
+      try {
+        const res = await fetch(endpoints.treatment, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ assessment: state.lastAssessment }),
+        });
+        if (!res.ok) {
+          setStatus(`Treatment guidance failed (${res.status})`, "error");
+          return;
+        }
+        const data = await res.json();
+        treatmentRecommendationElm.textContent = data.treatment_recommendation || "No recommendation returned.";
+        setStatus("Treatment guidance updated.", "success");
+      } catch (err) {
+        console.error(err);
+        setStatus("AI treatment guidance error.", "error");
+      }
+    }
+    function renderBackbone(assessment) {
+      updateRiskPanel(assessment);
+      renderSuggestionBuckets(assessment.suggestions);
+      renderTherapyHighlights(assessment.suggestions);
+      writeNotes(assessment);
+      aiElaboration.textContent = "Run an AI elaboration to adapt this narrative.";
+      treatmentRecommendationElm.textContent = "Request AI treatment guidance when ready.";
+    }
+    document.getElementById("evaluateBtn").addEventListener("click", (event) => {
+      event.preventDefault();
+      evaluate();
+    });
+    document.getElementById("loadHistoryBtn").addEventListener("click", (event) => {
+      event.preventDefault();
+      loadHistory();
+    });
+    document.getElementById("loadTrendBtn").addEventListener("click", (event) => {
+      event.preventDefault();
+      loadTrend();
+    });
+    document.getElementById("loadLatestBtn").addEventListener("click", (event) => {
+      event.preventDefault();
+      loadLatest();
+    });
+    document.getElementById("elabClinicianBtn").addEventListener("click", (event) => {
+      event.preventDefault();
+      elaborate("clinician");
+    });
+    document.getElementById("elabPatientBtn").addEventListener("click", (event) => {
+      event.preventDefault();
+      elaborate("patient");
+    });
+    document.getElementById("treatmentRecBtn").addEventListener("click", (event) => {
+      event.preventDefault();
+      requestTreatmentRecommendation();
+    });
+  </script>
+</body>
+</html>
