@@ -267,7 +267,9 @@
       padding: 16px;
       font-size: 14px;
       line-height: 1.5;
-      min-height: 140px;
+      min-height: 180px;
+      max-height: 320px;
+      overflow-y: auto;
       white-space: pre-wrap;
       font-family: "Roboto Mono", "SFMono-Regular", Menlo, Monaco, monospace;
       margin-bottom: 16px;
@@ -728,6 +730,7 @@
     };
     const state = {
       lastAssessment: null,
+      lastStored: null,
     };
     const statusMessage = document.getElementById("statusMessage");
     const formNote = document.getElementById("formNote");
@@ -994,6 +997,7 @@
         }
         const data = await response.json();
         state.lastAssessment = data.assessment;
+        state.lastStored = data;
         renderBackbone(data.assessment);
         setStatus("Assessment stored and updated.", "success");
         formNote.textContent = `Stored as ${data.assessment_id}`;
@@ -1072,6 +1076,7 @@
         }
         const data = await res.json();
         state.lastAssessment = data.assessment;
+        state.lastStored = data;
         if (data.input_data?.age != null) document.getElementById("age").value = data.input_data.age;
         if (data.input_data?.sex) document.getElementById("sex").value = data.input_data.sex;
         if (data.input_data?.menopause_status) document.getElementById("menopause_status").value = data.input_data.menopause_status;
@@ -1109,7 +1114,7 @@
       }
     }
     async function requestTreatmentRecommendation() {
-      if (!state.lastAssessment) {
+      if (!state.lastStored) {
         setStatus("Run an assessment before requesting treatment guidance.", "error");
         return;
       }
@@ -1118,7 +1123,7 @@
         const res = await fetch(endpoints.treatment, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ assessment: state.lastAssessment }),
+          body: JSON.stringify({ assessment: state.lastStored }),
         });
         if (!res.ok) {
           setStatus(`Treatment guidance failed (${res.status})`, "error");
