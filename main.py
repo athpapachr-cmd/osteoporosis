@@ -28,6 +28,18 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import DeclarativeBase, Session
 
+ROOT_DIR = Path(__file__).resolve().parent
+STATIC_DIR = ROOT_DIR / "static"
+SOURCE_INDEX = ROOT_DIR / "index.html"
+TARGET_INDEX = STATIC_DIR / "index.html"
+
+try:
+    STATIC_DIR.mkdir(parents=True, exist_ok=True)
+    if SOURCE_INDEX.exists():
+        shutil.copyfile(SOURCE_INDEX, TARGET_INDEX)
+except OSError:
+    pass
+
 # =========================
 # App & CORS
 # =========================
@@ -98,19 +110,6 @@ engine = create_engine(
 )
 
 Base.metadata.create_all(bind=engine)
-
-ROOT_DIR = Path(__file__).resolve().parent
-STATIC_DIR = ROOT_DIR / "static"
-SOURCE_INDEX = ROOT_DIR / "index.html"
-TARGET_INDEX = STATIC_DIR / "index.html"
-
-try:
-    STATIC_DIR.mkdir(parents=True, exist_ok=True)
-    if SOURCE_INDEX.exists():
-        shutil.copyfile(SOURCE_INDEX, TARGET_INDEX)
-except OSError:
-    # Some environments (like this sandbox) may not allow mkdir; ignore and proceed.
-    pass
 
 # =========================
 # Enums & Schemas
@@ -259,6 +258,9 @@ class OsteoInput(BaseModel):
     serum_glucose_mg_dl: Optional[float] = None
     tsh_u_iu_ml: Optional[float] = None
     free_t4_ng_dl: Optional[float] = None
+
+    serum_urea_mg_dl: Optional[float] = None
+    serum_creatinine_mg_dl: Optional[float] = None
 
     # Supplements / intake
     calcium_supplement: bool = False
@@ -1422,6 +1424,10 @@ def build_clinical_note(
         lab_bits.append(f"serum Mg {data.serum_magnesium_mg_dl:.2f} mg/dL")
     if data.serum_zinc_ug_dl is not None:
         lab_bits.append(f"serum Zn {data.serum_zinc_ug_dl:.0f} μg/dL")
+    if data.serum_urea_mg_dl is not None:
+        lab_bits.append(f"serum urea {data.serum_urea_mg_dl:.2f} mg/dL")
+    if data.serum_creatinine_mg_dl is not None:
+        lab_bits.append(f"serum creatinine {data.serum_creatinine_mg_dl:.3f} mg/dL")
 
     if lab_bits:
         lines.append("Labs: " + ", ".join(lab_bits) + ".")
