@@ -326,6 +326,11 @@ class OsteoInput(BaseModel):
     other_dairy_portions_per_day: conint(ge=0, le=20) = 0
 
 
+class FollowUpStep(BaseModel):
+    text: str
+    timeframe: str
+
+
 class OsteoAssessment(BaseModel):
     risk_category: RiskCategory
     risk_reasons: List[str]
@@ -336,6 +341,7 @@ class OsteoAssessment(BaseModel):
     suggestions: List[Suggestion]
     clinical_note: str
     patient_summary: str
+    follow_up_steps: List[FollowUpStep]
 
 
 class OsteoEvaluationRequest(BaseModel):
@@ -352,6 +358,89 @@ class OsteoStoredAssessment(BaseModel):
     input_data: OsteoInput
     assessment: OsteoAssessment
 
+class PatientHandoutRequest(BaseModel):
+    assessment: OsteoAssessment
+
+
+class PatientHandoutResponse(BaseModel):
+    handout_html: str
+
+
+def build_patient_handout_html(assessment: OsteoAssessment) -> str:
+    suggestions_html = "".join(
+        f"<li>{s.text}</li>" for s in assessment.suggestions[:6]
+    )
+    follow_up_html = "".join(
+        f"<li><strong>{step.timeframe}</strong>: {step.text}</li>"
+        for step in assessment.follow_up_steps
+    )
+    html = f"""
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8" />
+      <title>Osteoporosis handout</title>
+      <style>
+        body {{
+          font-family: 'Helvetica Neue', system-ui, sans-serif;
+          padding: 32px;
+          color: #0f172a;
+          line-height: 1.5;
+        }}
+        h1 {{
+          margin-bottom: 4px;
+          font-size: 24px;
+        }}
+        h2 {{
+          margin-top: 24px;
+          font-size: 16px;
+          letter-spacing: 0.05em;
+          color: #475569;
+        }}
+        p {{
+          margin: 6px 0;
+        }}
+        ul {{
+          padding-left: 18px;
+        }}
+        .section {{
+          margin-bottom: 18px;
+        }}
+        .chip {{
+          display: inline-flex;
+          padding: 4px 10px;
+          background: #e0f2fe;
+          border-radius: 999px;
+          font-size: 12px;
+          color: #0c4a6e;
+          margin-right: 6px;
+        }}
+      </style>
+    </head>
+    <body>
+      <h1>Osteoporosis handout</h1>
+      <p>This summary is meant for discussion and not as a prescription.</p>
+      <div class="section">
+        <h2>Risk snapshot</h2>
+        <div class="chip">{assessment.risk_category.value.upper()} risk</div>
+        {"".join(f'<div class="chip">{reason}</div>' for reason in assessment.risk_reasons[:3])}
+      </div>
+      <div class="section">
+        <h2>Key guidance</h2>
+        <ul>{suggestions_html or "<li>No suggestions recorded.</li>"}</ul>
+      </div>
+      <div class="section">
+        <h2>Follow-up plan</h2>
+        <ul>{follow_up_html or "<li>No specific follow-up steps yet.</li>"}</ul>
+      </div>
+      <div class="section">
+        <h2>What to share with your doctor</h2>
+        <p>Bring lab results (calcium, vitamin D, renal function) and any notes about symptoms/falls.</p>
+      </div>
+    </body>
+    </html>
+    """
+    return html.strip()
 
 class ElaborationRequest(BaseModel):
     assessment: OsteoAssessment
@@ -1354,6 +1443,51 @@ def build_suggestions(
     return suggestions
 
 
+def determine_follow_up_steps(data: OsteoInput, risk: RiskCategory) -> List[FollowUpStep]:
+    steps: List[FollowUpStep] = []
+
+    def add_step(text: str, timeframe: str):
+        steps.append(FollowUpStep(text=text, timeframe=timeframe))
+
+    if risk in [RiskCategory.high, RiskCategory.very_high]:
+        add_step(
+            "Repeat DEXA (lumbar spine + hip) in ~12 months after treatment start/change.",
+            "6-12 months",
+        )
+    elif risk == RiskCategory.moderate:
+        add_step(
+            "Consider follow-up DEXA in 18–36 months unless therapy changes.",
+            "12+ months",
+        )
+    else:
+        add_step(
+            "Reassess BMD in 2–3 years unless events occur.",
+            "12+ months",
+        )
+
+    labs = ["25-OH Vitamin D", "serum calcium"]
+    if data.current_therapy_type in [CurrentTherapyType.denosumab, CurrentTherapyType.romosozumab]:
+        labs.append("renal function/serum creatinine")
+    add_step(
+        f"Monitor labs ({', '.join(labs)}) every ~6–12 months or as clinically indicated.",
+        "0-6 months",
+    )
+
+    if data.fractures_during_current_therapy:
+        add_step(
+            "If fracture on therapy, consider imaging (vertebral X-ray or targeted MRI/CT).",
+            "0-6 months",
+        )
+
+    if data.significant_therapy_adverse_effects:
+        add_step(
+            "Track adverse effect symptoms and reassess tolerance within 3 months.",
+            "0-6 months",
+        )
+
+    return steps
+
+
 def build_clinical_note(
     data: OsteoInput,
     risk: RiskCategory,
@@ -1538,6 +1672,7 @@ def evaluate_osteoporosis(req: OsteoEvaluationRequest) -> OsteoStoredAssessment:
     calcium_total_mg, calcium_note = calculate_calcium_intake(input_data)
     risk, reasons = determine_risk_category(input_data, internal_index)
     suggestions = build_suggestions(input_data, risk, calcium_total_mg, calcium_note)
+    follow_up_steps = determine_follow_up_steps(input_data, risk)
 
     clinical_note = build_clinical_note(
         input_data,
@@ -1561,6 +1696,7 @@ def evaluate_osteoporosis(req: OsteoEvaluationRequest) -> OsteoStoredAssessment:
         suggestions=suggestions,
         clinical_note=clinical_note,
         patient_summary=patient_summary,
+        follow_up_steps=follow_up_steps,
     )
 
     stored = OsteoStoredAssessment(
@@ -1977,6 +2113,12 @@ def elaborate_osteoporosis(req: ElaborationRequest) -> ElaborationResponse:
         )
 
     return ElaborationResponse(elaborated_text=text)
+
+
+@app.post("/osteoporosis/patient-handout", response_model=PatientHandoutResponse)
+def create_patient_handout(req: PatientHandoutRequest) -> PatientHandoutResponse:
+    html = build_patient_handout_html(req.assessment)
+    return PatientHandoutResponse(handout_html=html)
 
 
 def build_treatment_recommendation_context(stored: OsteoStoredAssessment) -> str:

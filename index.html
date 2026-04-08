@@ -340,6 +340,57 @@
       font-size: 13px;
       color: var(--text);
     }
+    .therapy-summary-panel {
+      margin-top: 12px;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      border-radius: 12px;
+      padding: 12px 14px;
+      background: rgba(37, 99, 235, 0.04);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+    .therapy-summary-panel ul {
+      margin: 0;
+      padding-left: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .follow-up-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .follow-up-timeline {
+      margin-top: 12px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+    }
+    .timeline-column {
+      background: white;
+      border-radius: 12px;
+      padding: 10px;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      min-height: 120px;
+    }
+    .timeline-column h5 {
+      margin: 0 0 6px;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+    }
+    .timeline-column ul {
+      margin: 0;
+      padding-left: 16px;
+      font-size: 13px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-height: 80px;
+    }
     .history-table table {
       width: 100%;
       border-collapse: collapse;
@@ -736,6 +787,35 @@
         </div>
         <div class="suggestion-grid" id="suggestionBuckets"></div>
         <div class="therapy-highlights" id="therapyHighlights"></div>
+        <div class="therapy-summary-panel" id="therapySnapshot">
+          <p class="muted">Therapy and supplement summary will appear here.</p>
+        </div>
+        <div class="therapy-summary-panel" id="followUpPanel">
+          <div class="follow-up-header">
+            <div>
+              <p class="muted" style="margin:0;">Suggested follow-up (DEXA/labs) will appear here.</p>
+            </div>
+            <div style="display:flex;gap:6px;">
+              <button id="copyFollowUpBtn" class="button secondary" style="font-size:12px;padding:6px 10px;">Copy follow-up</button>
+              <button id="handoutBtn" class="button secondary" style="font-size:12px;padding:6px 10px;">Patient handout</button>
+              <button id="printHandoutBtn" class="button secondary" style="font-size:12px;padding:6px 10px;">Download/print</button>
+            </div>
+          </div>
+        </div>
+        <div class="follow-up-timeline" id="followUpTimeline">
+          <div class="timeline-column">
+            <h5>0-6 months</h5>
+            <ul data-timeframe="0-6 months"></ul>
+          </div>
+          <div class="timeline-column">
+            <h5>6-12 months</h5>
+            <ul data-timeframe="6-12 months"></ul>
+          </div>
+          <div class="timeline-column">
+            <h5>12+ months</h5>
+            <ul data-timeframe="12+ months"></ul>
+          </div>
+        </div>
         <div class="note-block" id="clinicalNote" aria-live="polite">Run an evaluation to see the generated clinical note.</div>
         <div class="note-block" id="patientSummary" aria-live="polite" style="background:#111827;">
           Run an evaluation to see the patient-friendly summary.
@@ -756,13 +836,13 @@
         <div class="ai-panel" style="margin-top: 12px;">
           <div class="ai-header">
             <div>
-              <h3 style="margin:0;">AI treatment guidance</h3>
-              <p class="muted">High-level safety net for current therapy adjustments.</p>
+              <h3 style="margin:0;">Καθοδήγηση θεραπείας</h3>
+              <p class="muted">Αναλυτικές συστάσεις για την τρέχουσα θεραπεία.</p>
             </div>
-            <button id="treatmentRecBtn" class="button secondary">Summarize treatment</button>
+            <button id="treatmentRecBtn" class="button secondary">Ανακεφαλαίωση θεραπείας</button>
           </div>
           <div class="note-block" id="treatmentRecommendation" aria-live="polite">
-            Run an evaluation before requesting treatment recommendations.
+            Τρέξε αξιολόγηση για να λάβεις τις προτεινόμενες κινήσεις.
           </div>
         </div>
         <div class="grid-divider"></div>
@@ -805,11 +885,13 @@
       history: `${API_BASE}/osteoporosis/patient`,
       elaborate: `${API_BASE}/osteoporosis/elaborate`,
       treatment: `${API_BASE}/osteoporosis/treatment-recommendation`,
+      handout: `${API_BASE}/osteoporosis/patient-handout`,
     };
     const state = {
       lastAssessment: null,
       lastStored: null,
     };
+    let lastFollowUpSteps = [];
     const therapyEntries = [];
     const statusMessage = document.getElementById("statusMessage");
     const formNote = document.getElementById("formNote");
@@ -1083,9 +1165,216 @@
       wrapper.appendChild(list);
       therapyHighlights.appendChild(wrapper);
     }
+
+    function updateTherapySnapshot(input) {
+      const container = document.getElementById("therapySnapshot");
+      if (!container) return;
+      container.innerHTML = "";
+      if (!input) {
+        container.innerHTML = '<p class="muted">Therapy and supplement summary will appear here.</p>';
+        return;
+      }
+      const lines = [];
+      const therapy = input.current_therapy_type || "none";
+      let current = `Current therapy: ${therapy.replace(/_/g, " ")}`;
+      if (input.current_therapy_duration_years != null) {
+        current += ` (~${input.current_therapy_duration_years.toFixed(1)} yrs)`;
+      }
+      if (input.fractures_during_current_therapy) {
+        current += " · fracture on therapy";
+      }
+      lines.push(current);
+      const history = input.therapy_history || [];
+      if (history.length) {
+        const recent = history.slice(-3).map((entry) => {
+          const type = (entry.therapy_type || "unknown").replace(/_/g, " ");
+          const duration =
+            entry.duration_years != null ? `${entry.duration_years.toFixed(1)} yrs` : "duration n/a";
+          const holiday = entry.is_holiday ? ", holiday" : "";
+          const notes = entry.notes ? ` · ${entry.notes}` : "";
+          return `${type} (${duration}${holiday})${notes}`;
+        });
+        lines.push("Recent episodes: " + recent.join("; "));
+      }
+      const supplements = [];
+      if (input.calcium_supplement) {
+        supplements.push(
+          `Calcium${input.calcium_supplement_mg_per_day ? ` ~${Math.round(input.calcium_supplement_mg_per_day)} mg/day` : ""}`
+        );
+      }
+      if (input.vitamin_d_supplement) {
+        supplements.push(
+          `Vitamin D${input.vitamin_d3_iu_per_day ? ` ~${Math.round(input.vitamin_d3_iu_per_day)} IU/day` : ""}`
+        );
+      }
+      if (input.magnesium_supplement) {
+        supplements.push(
+          `Magnesium${input.magnesium_supplement_mg_per_day ? ` ~${Math.round(input.magnesium_supplement_mg_per_day)} mg/day` : ""}`
+        );
+      }
+      if (input.zinc_supplement) {
+        supplements.push(
+          `Zinc${input.zinc_supplement_mg_per_day ? ` ~${Math.round(input.zinc_supplement_mg_per_day)} mg/day` : ""}`
+        );
+      }
+      if (input.boron_supplement) {
+        supplements.push(
+          `Boron${input.boron_supplement_mg_per_day ? ` ~${input.boron_supplement_mg_per_day.toFixed(1)} mg/day` : ""}`
+        );
+      }
+      if (input.vitamin_k2_supplement) {
+        supplements.push(
+          `Vitamin K2${input.vitamin_k2_ug_per_day ? ` ~${Math.round(input.vitamin_k2_ug_per_day)} μg/day` : ""}`
+        );
+      }
+      if (input.fortibone_supplement) {
+        supplements.push("Fortibone");
+      }
+      if (input.colabone_supplement) {
+        supplements.push("Colabone");
+      }
+      if (supplements.length) {
+        lines.push("Supplements: " + supplements.join(", "));
+      } else {
+        lines.push("Supplements: none recorded.");
+      }
+      const list = document.createElement("ul");
+      lines.forEach((line) => {
+        const item = document.createElement("li");
+        item.textContent = line;
+        list.appendChild(item);
+      });
+      container.appendChild(list);
+    }
+
+    function renderFollowUpTimeline(steps) {
+      const timeline = document.getElementById("followUpTimeline");
+      if (!timeline) return;
+      const buckets = {
+        "0-6 months": [],
+        "6-12 months": [],
+        "12+ months": [],
+      };
+      steps.forEach((step) => {
+        const key = buckets[step.timeframe] ? step.timeframe : "12+ months";
+        buckets[key].push(step.text);
+      });
+      Object.entries(buckets).forEach(([timeframe, entries]) => {
+        const ul = timeline.querySelector(`ul[data-timeframe="${timeframe}"]`);
+        if (!ul) return;
+        ul.innerHTML = "";
+        if (!entries.length) {
+          ul.innerHTML = `<li class="muted">No steps yet.</li>`;
+          return;
+        }
+        entries.forEach((text) => {
+          const li = document.createElement("li");
+          li.textContent = text;
+          ul.appendChild(li);
+        });
+      });
+    }
+
+    function updateFollowUpPanel(assessment) {
+      const container = document.getElementById("followUpPanel");
+      if (!container) return;
+      container.innerHTML = "";
+      const steps = assessment?.follow_up_steps || [];
+      lastFollowUpSteps = steps;
+      if (!steps.length) {
+        container.innerHTML = '<p class="muted">Suggested follow-up (DEXA/labs) will appear here.</p>';
+        renderFollowUpTimeline([]);
+        return;
+      }
+      const list = document.createElement("ul");
+      steps.forEach((step) => {
+        const item = document.createElement("li");
+        item.textContent = `${step.timeframe}: ${step.text}`;
+        list.appendChild(item);
+      });
+      container.appendChild(list);
+      renderFollowUpTimeline(steps);
+    }
     function writeNotes(assessment) {
       clinicalNote.textContent = assessment?.clinical_note || "Run an evaluation to see the generated clinical note.";
       patientSummary.textContent = assessment?.patient_summary || "Run an evaluation to see the patient-friendly summary.";
+    }
+
+    function copyFollowUpSummary() {
+      if (!lastFollowUpSteps.length) return;
+      const lines = lastFollowUpSteps.map((step) => `${step.timeframe}: ${step.text}`);
+      const text = lines.join("\n");
+      if (navigator.clipboard?.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          setStatus("Follow-up copied to clipboard.", "success");
+        });
+      } else {
+        setStatus("Clipboard access unavailable.", "error");
+      }
+    }
+
+    async function openPatientHandout() {
+      if (!state.lastAssessment) {
+        setStatus("Run an assessment before generating a handout.", "error");
+        return;
+      }
+      setStatus("Generating patient handout…", "pending");
+      try {
+        const res = await fetch(endpoints.handout, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ assessment: state.lastAssessment }),
+        });
+        if (!res.ok) {
+          setStatus(`Handout generation failed (${res.status})`, "error");
+          return;
+        }
+        const data = await res.json();
+        const win = window.open("", "_blank");
+        if (!win) {
+          setStatus("Unable to open new window for handout.", "error");
+          return;
+        }
+        win.document.write(data.handout_html);
+        win.document.close();
+        setStatus("Patient handout ready.", "success");
+      } catch (err) {
+        console.error(err);
+        setStatus("AI treatment guidance error.", "error");
+      }
+    }
+
+    async function printPatientHandout() {
+      if (!state.lastAssessment) {
+        setStatus("Run an assessment before printing the handout.", "error");
+        return;
+      }
+      setStatus("Preparing handout for print…", "pending");
+      try {
+        const res = await fetch(endpoints.handout, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ assessment: state.lastAssessment }),
+        });
+        if (!res.ok) {
+          setStatus(`Handout generation failed (${res.status})`, "error");
+          return;
+        }
+        const data = await res.json();
+        const win = window.open("", "_blank");
+        if (!win) {
+          setStatus("Unable to open print window.", "error");
+          return;
+        }
+        win.document.write(data.handout_html);
+        win.document.close();
+        win.focus();
+        win.print();
+        setStatus("Print dialog opened.", "success");
+      } catch (err) {
+        console.error(err);
+        setStatus("Unable to print handout.", "error");
+      }
     }
     function renderHistoryTable(history) {
       historyTableBody.innerHTML = "";
@@ -1138,7 +1427,7 @@
         const data = await response.json();
         state.lastAssessment = data.assessment;
         state.lastStored = data;
-        renderBackbone(data.assessment);
+        renderBackbone(data.assessment, data.input_data);
         setStatus("Assessment stored and updated.", "success");
         formNote.textContent = `Stored as ${data.assessment_id}`;
       } catch (error) {
@@ -1222,7 +1511,7 @@
         if (data.input_data?.menopause_status) document.getElementById("menopause_status").value = data.input_data.menopause_status;
         if (data.input_data?.spine_t_score != null) document.getElementById("spine_t_score").value = data.input_data.spine_t_score;
         if (data.input_data?.total_hip_t_score != null) document.getElementById("total_hip_t_score").value = data.input_data.total_hip_t_score;
-        renderBackbone(data.assessment);
+        renderBackbone(data.assessment, data.input_data);
         setTherapyHistoryEntries(data.input_data?.therapy_history || []);
         setStatus("Latest assessment loaded.", "success");
       } catch (err) {
@@ -1278,11 +1567,13 @@
         setStatus("AI treatment guidance error.", "error");
       }
     }
-    function renderBackbone(assessment) {
+    function renderBackbone(assessment, inputData) {
       updateRiskPanel(assessment);
       renderSuggestionBuckets(assessment.suggestions);
       renderTherapyHighlights(assessment.suggestions);
       writeNotes(assessment);
+      updateTherapySnapshot(inputData);
+      updateFollowUpPanel(assessment);
       aiElaboration.textContent = "Run an AI elaboration to adapt this narrative.";
       treatmentRecommendationElm.textContent = "Request AI treatment guidance when ready.";
     }
@@ -1314,6 +1605,34 @@
       event.preventDefault();
       requestTreatmentRecommendation();
     });
+    const copyFollowUpBtn = document.getElementById("copyFollowUpBtn");
+    if (copyFollowUpBtn) {
+      copyFollowUpBtn.addEventListener("click", (event) => {
+        event.preventDefault();
+        copyFollowUpSummary();
+      });
+    }
+    const handoutBtn = document.getElementById("handoutBtn");
+    if (handoutBtn) {
+      handoutBtn.addEventListener("click", (event) => {
+        event.preventDefault();
+        openPatientHandout();
+      });
+    }
+    const printHandoutBtn = document.getElementById("printHandoutBtn");
+    if (printHandoutBtn) {
+      printHandoutBtn.addEventListener("click", (event) => {
+        event.preventDefault();
+        printPatientHandout();
+      });
+    }
+    const handoutBtn = document.getElementById("handoutBtn");
+    if (handoutBtn) {
+      handoutBtn.addEventListener("click", (event) => {
+        event.preventDefault();
+        openPatientHandout();
+      });
+    }
     const addTherapyEntryBtn = document.getElementById("addTherapyEntryBtn");
     if (addTherapyEntryBtn) {
       addTherapyEntryBtn.addEventListener("click", (event) => {
@@ -1322,6 +1641,7 @@
       });
     }
     renderTherapyHistoryList();
+    renderFollowUpTimeline([]);
   </script>
 </body>
 </html>
