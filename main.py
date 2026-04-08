@@ -479,6 +479,12 @@ class TreatmentRecommendationRequest(BaseModel):
 class TreatmentRecommendationResponse(BaseModel):
     treatment_recommendation: str
 
+class LiteratureQuestionRequest(BaseModel):
+    assessment: OsteoStoredAssessment
+    question: str
+
+class LiteratureQuestionResponse(BaseModel):
+    answer: str
 class OsteoHistoryEntry(BaseModel):
     assessment_id: str
     created_at: datetime
@@ -2226,6 +2232,25 @@ def build_treatment_recommendation_context(stored: OsteoStoredAssessment) -> str
     return "\n".join(lines)
 
 
+def build_question_context(stored: OsteoStoredAssessment) -> str:
+    ctx_lines = [build_treatment_recommendation_context(stored)]
+    t_scores = stored.input_data.t_score_history
+    if t_scores:
+        latest = t_scores[-1]
+        parts = []
+        if latest.spine_total is not None:
+            parts.append(f"spine total {latest.spine_total:.2f}")
+        if latest.total_hip is not None:
+            parts.append(f"hip total {latest.total_hip:.2f}")
+        if latest.femoral_neck is not None:
+            parts.append(f"femoral neck {latest.femoral_neck:.2f}")
+        if parts:
+            ctx_lines.append(f"Latest T-score ({latest.date or 'latest'}): " + ", ".join(parts))
+    if t_scores:
+        ctx_lines.append(f"T-score history entries: {len(t_scores)}.")
+    return "\n".join(ctx_lines)
+
+
 @app.post(
     "/osteoporosis/treatment-recommendation",
     response_model=TreatmentRecommendationResponse,
@@ -2281,6 +2306,46 @@ def recommend_treatment_change(
         )
 
     return TreatmentRecommendationResponse(treatment_recommendation=text)
+
+
+@app.post("/osteoporosis/question", response_model=LiteratureQuestionResponse)
+def ask_literature_question(req: LiteratureQuestionRequest) -> LiteratureQuestionResponse:
+    if openai_client is None:
+        return LiteratureQuestionResponse(
+            answer="LLM assistance is unavailable because OPENAI_API_KEY is not configured."
+        )
+
+    system_prompt = (
+        "Είσαι ένας ενημερωμένος σύμβουλος οστεοπόρωσης. Απαντάς στα ελληνικά, "
+        "αναφερόμενος σε ευρέως αποδεκτές κατευθυντήριες οδηγίες (π.χ. NOGG, Endocrine Society, "
+        "ACP, IOF). Δεν εισάγεις νέες διαγνώσεις, αλλά ερμηνεύεις δεδομένα και παρέχεις αξιόπιστη επεξήγηση."
+    )
+
+    context = build_question_context(req.assessment)
+    user_prompt = (
+        "Κλινικό πλαίσιο:\n"
+        f"{context}\n\n"
+        "Ερώτηση:\n"
+        f"{req.question}\n\n"
+        "Απάντησε οργανομετρικά με 2-3 παραγράφους: (1) σύντομη πηγή/αιτιολόγηση από τη βιβλιογραφία, "
+        "(2) πρακτική απάντηση, (3) αν χρειάζονται επιπλέον εξετάσεις ή δεδομένα, σημείωσε τα."
+    )
+
+    try:
+        completion = openai_client.chat.completions.create(
+            model="gpt-4.1-mini",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            temperature=0.2,
+            max_tokens=400,
+        )
+        answer = completion.choices[0].message.content.strip()
+    except Exception as exc:
+        answer = f"Η έρευνα είναι προσωρινά ανέφικτη. (Σφάλμα: {exc})"
+
+    return LiteratureQuestionResponse(answer=answer)
 
 
 @app.get("/health")

@@ -414,6 +414,10 @@
       border: 1px solid rgba(15, 23, 42, 0.15);
       padding: 10px;
     }
+    .field textarea {
+      min-height: 110px;
+      resize: vertical;
+    }
     .json-editor-hidden {
       display: none;
     }
@@ -950,6 +954,24 @@
             Τρέξε αξιολόγηση για να λάβεις τις προτεινόμενες κινήσεις.
           </div>
         </div>
+        <div class="ai-panel" style="margin-top: 12px;">
+          <div class="ai-header">
+            <div>
+              <h3 style="margin:0;">Ερώτηση στη βιβλιογραφία</h3>
+              <p class="muted">Ζήτησε ένα σύντομο response βασισμένο σε οδηγίες και δεδομένα.</p>
+            </div>
+          </div>
+          <div class="field">
+            <label for="openai_question_input" class="muted" style="margin-bottom:4px;">Τοποθέτησε την ερώτηση για το OpenAI (κλινικά, βιβλιογραφικά)</label>
+            <textarea id="openai_question_input" placeholder="Για παράδειγμα: Θεωρείται απαραίτητη η αντιοστεοπορωτική θεραπεία μετά από νέο κάταγμα;" rows="3"></textarea>
+          </div>
+          <div class="actions" style="padding:0;margin-top:4px;">
+            <button id="openaiQuestionBtn" class="button ghost">Ρώτησε την βιβλιογραφία</button>
+          </div>
+          <div class="note-block" id="openaiQuestionResponse" aria-live="polite">
+            Κείμενο απάντησης θα εμφανιστεί εδώ μόλις γίνει ερώτηση.
+          </div>
+        </div>
         <div class="grid-divider"></div>
         <div class="panel-header">
           <div>
@@ -996,6 +1018,7 @@
       history: `${API_BASE}/osteoporosis/patient`,
       elaborate: `${API_BASE}/osteoporosis/elaborate`,
       treatment: `${API_BASE}/osteoporosis/treatment-recommendation`,
+      openaiQuestion: `${API_BASE}/osteoporosis/question`,
       handout: `${API_BASE}/osteoporosis/patient-handout`,
     };
     const state = {
@@ -1024,6 +1047,8 @@
     const therapyJsonInput = document.getElementById("therapy_history_json");
     const tScoreJsonInput = document.getElementById("t_score_history_json");
     const trendSummary = document.getElementById("trendSummary");
+    const openaiQuestionInput = document.getElementById("openai_question_input");
+    const openaiQuestionResponse = document.getElementById("openaiQuestionResponse");
     const numFields = [
       "age",
       "spine_t_score",
@@ -1960,11 +1985,11 @@
         setStatus("AI elaboration error.", "error");
       }
     }
-    async function requestTreatmentRecommendation() {
-      if (!state.lastStored) {
-        setStatus("Run an assessment before requesting treatment guidance.", "error");
-        return;
-      }
+   async function requestTreatmentRecommendation() {
+     if (!state.lastStored) {
+       setStatus("Run an assessment before requesting treatment guidance.", "error");
+       return;
+     }
       setStatus("Requesting treatment guidance from AI…", "pending");
       try {
         const res = await fetch(endpoints.treatment, {
@@ -1977,11 +2002,45 @@
           return;
         }
         const data = await res.json();
-        treatmentRecommendationElm.textContent = data.treatment_recommendation || "No recommendation returned.";
-        setStatus("Treatment guidance updated.", "success");
+       treatmentRecommendationElm.textContent = data.treatment_recommendation || "No recommendation returned.";
+       setStatus("Treatment guidance updated.", "success");
+     } catch (err) {
+       console.error(err);
+       setStatus("AI treatment guidance error.", "error");
+     }
+   }
+    async function askLiteratureQuestion() {
+      if (!state.lastStored) {
+        setStatus("Run an assessment before asking the AI.", "error");
+        return;
+      }
+      const question = openaiQuestionInput?.value.trim();
+      if (!question) {
+        setStatus("Write a question before querying the AI.", "error");
+        return;
+      }
+      setStatus("Querying OpenAI for a literature-backed answer…", "pending");
+      try {
+        const res = await fetch(endpoints.openaiQuestion, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            assessment: state.lastStored,
+            question,
+          }),
+        });
+        if (!res.ok) {
+          setStatus(`Literature question failed (${res.status})`, "error");
+          return;
+        }
+        const data = await res.json();
+        if (openaiQuestionResponse) {
+          openaiQuestionResponse.textContent = data.answer || "No answer returned.";
+        }
+        setStatus("Literature question answered.", "success");
       } catch (err) {
         console.error(err);
-        setStatus("AI treatment guidance error.", "error");
+        setStatus("Error while querying literature.", "error");
       }
     }
     function renderBackbone(assessment, inputData) {
@@ -2023,6 +2082,13 @@
       event.preventDefault();
       requestTreatmentRecommendation();
     });
+    const openaiQuestionBtn = document.getElementById("openaiQuestionBtn");
+    if (openaiQuestionBtn) {
+      openaiQuestionBtn.addEventListener("click", (event) => {
+        event.preventDefault();
+        askLiteratureQuestion();
+      });
+    }
     const copyFollowUpBtn = document.getElementById("copyFollowUpBtn");
     if (copyFollowUpBtn) {
       copyFollowUpBtn.addEventListener("click", (event) => {
