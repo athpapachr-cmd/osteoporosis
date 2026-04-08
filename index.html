@@ -1890,6 +1890,11 @@
           headers: { Accept: "application/json" },
         });
         if (!res.ok) {
+          if (res.status === 404) {
+            setStatus("Δεν βρέθηκαν προηγούμενες αξιολογήσεις για τον ασθενή.", "neutral");
+            renderHistoryTable([]);
+            return;
+          }
           setStatus(`History load failed (${res.status})`, "error");
           return;
         }
@@ -1941,6 +1946,10 @@
           headers: { Accept: "application/json" },
         });
         if (!res.ok) {
+          if (res.status === 404) {
+            setStatus("Καμία αποθηκευμένη αξιολόγηση για αυτόν τον ασθενή. Κάνε πρώτα αξιολόγηση.", "neutral");
+            return;
+          }
           setStatus(`Load failed (${res.status})`, "error");
           return;
         }
