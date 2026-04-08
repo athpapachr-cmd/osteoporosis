@@ -2057,22 +2057,18 @@ def elaborate_osteoporosis(req: ElaborationRequest) -> ElaborationResponse:
     if req.audience == "clinician":
         style_instruction = (
             "Γράψε 1–2 σύντομες παραγράφους (στα ελληνικά) ως κλινική εντύπωση/σχέδιο για "
-            "ορθοπαιδικό ιατρό. Σύνοψέ την κατηγορία κινδύνου κατάγματος, τους βασικούς "
-            "παράγοντες που την καθορίζουν, τα κύρια εργαστηριακά, την πρόσληψη ασβεστίου "
-            "και τις προτάσεις που ήδη υπάρχουν στο assessment. ΜΗΝ εισάγεις νέες διαγνώσεις, "
-            "θεραπείες ή δοσολογίες ούτε προσθέτεις φαρμακευτικά σχήματα. Στο τέλος, γράψε "
-            "μία σύντομη φράση που επαναλαμβάνει τις κορυφαίες συστάσεις που παρέχονται στο "
-            "υλικό εισόδου."
+            "ορθοπαιδικό ιατρό. Σύνοψέ την κατηγορία κινδύνου κατάγματος, τους βασικούς παράγοντες, τα κύρια "
+            "εργαστηριακά και την πρόσληψη ασβεστίου. Παρουσίασε με σαφήνεια τη θεραπευτική κατάσταση χωρίς "
+            "να εισάγεις νέες διαγνώσεις ή δοσολογίες. Στο τέλος πρόσθεσε μια σύντομη ενότητα «Προτεινόμενες "
+            "ενέργειες» με δύο bullet points που βασίζονται στις ήδη υπάρχουσες suggestions."
         )
     else:
         style_instruction = (
             "Γράψε 1–2 σύντομες παραγράφους (στα ελληνικά) απευθυνόμενος στον ασθενή. "
-            "Χρησιμοποίησε απλή γλώσσα, διατήρησε έναν γλυκό αλλά ξεκάθαρο τόνο και παρείχε τουλάχιστον "
-            "δύο bullet points (ξεχωριστές γραμμές με κουκκίδες) που συνοψίζουν βασικές πρακτικές προτάσεις "
-            "π.χ. για διατροφή, άσκηση, συμπληρώματα ή πρόληψη πτώσεων. Μην αναφέρεις συγκεκριμένα "
-            "ονόματα φαρμάκων ή δοσολογίες. Ενθάρρυνε τον ασθενή να συζητήσει όλες τις λεπτομέρειες "
-            "με τον γιατρό του και, στο τέλος, αναφέρσου σύντομα στις βασικές συστάσεις που υπάρχουν ήδη "
-            "στις suggestions."
+            "Χρησιμοποίησε απλή, ζεστή γλώσσα και συμπλήρωσε το κείμενο με τουλάχιστον δύο bullet "
+            "points που συνοψίζουν πρακτικές ενέργειες (π.χ. διατροφή, άσκηση, συμπληρώματα, ασφάλεια "
+            "πτώσεων). Μην αναφέρεις ονόματα φαρμάκων ή δοσολογίες. Πρόσθεσε μια μικρή φράση στο τέλος που "
+            "επισημαίνει τις βασικές συστάσεις που ήδη υπάρχουν στη λίστα."
         )
 
     system_prompt = (
@@ -2174,6 +2170,10 @@ def build_treatment_recommendation_context(stored: OsteoStoredAssessment) -> str
         lab_notes.append(f"phosphorus {phos:.2f} mg/dL")
     if input_data.pth_pg_ml is not None:
         lab_notes.append(f"PTH {input_data.pth_pg_ml:.1f} pg/mL")
+    if input_data.serum_urea_mg_dl is not None:
+        lab_notes.append(f"urea {input_data.serum_urea_mg_dl:.2f} mg/dL")
+    if input_data.serum_creatinine_mg_dl is not None:
+        lab_notes.append(f"creatinine {input_data.serum_creatinine_mg_dl:.3f} mg/dL")
     if laboratory := ", ".join(lab_notes):
         lines.append("Recent labs: " + laboratory + ".")
 
@@ -2195,26 +2195,26 @@ def recommend_treatment_change(
         )
 
     system_prompt = (
-        "You are a cautious osteoporosis treatment adviser. Do NOT invent new diagnoses, "
-        "medications, or dosing. Focus only on suggesting how to adapt or review the current "
-        "pharmacologic strategy based on fracture risk, lab cues, and tolerance."
+        "Είσαι ένας προσεκτικός σύμβουλος θεραπείας οστεοπόρωσης. Μην εισάγεις νέες "
+        "διαγνώσεις ή δοσολογίες. Εστίασε στη προσαρμογή ή την επανεξέταση της τρέχουσας "
+        "φαρμακευτικής στρατηγικής βάσει κινδύνου, εργαστηριακών και ανοχής."
     )
 
     context = build_treatment_recommendation_context(req.assessment)
     user_prompt = (
         "Patient context:\n"
         f"{context}\n\n"
-        "Respond with up to three clear, clinician-facing recommendations that name a specific "
-        "anti-fracture class (e.g. bisphosphonate, denosumab, osteoanabolic) or, when justified, "
-        "a therapeutic pause/deprescribing move. Base your reasoning on the shown risk drivers, "
-        "BMD, and treatment history, referencing typical guidance (e.g. NOGG/Endocrine Society/ACP) "
-        "about 3–5 year reassessment for bisphosphonates, rebound risk with denosumab, or anabolic "
-        "sequence planning. "
-        "For each recommendation include a rationale, any additional pre-therapy labs (renal creatinine, "
-        "Calcium, 25-OH D, PTH, vitamin D) or imaging (femur X-ray if thigh pain suggests AFF) that "
-        "should be checked, and a concrete monitoring plan (labs or DEXA timing within the next 6–12 months). "
-        "If data is missing, explicitly request it (e.g. confirm renal function or vitamin D before choosing). "
-        "Avoid brand names, doses, and new diagnoses, and keep the tone clinician-focused."
+        "Απάντησε στα ελληνικά με έως τρεις αριθμημένες προτάσεις (1., 2., 3.). "
+        "Κάθε πρόταση να περιλαμβάνει: "
+        "(α) τη συγκεκριμένη τάξη φαρμάκου ή τη στρατηγική διαχείρισης (π.χ. διφωσφονικά, denosumab, "
+        "οστεοαναβολικό, διακοπή/συνδυασμός), "
+        "(β) αιτιολόγηση με βάση τον κίνδυνο και τα δεδομένα, "
+        "(γ) τις επιπλέον εργαστηριακές/απεικονιστικές εξετάσεις που απαιτούνται (π.χ. νεφρική λειτουργία, 25-OH D, PTH, οστικά σπινθηρογραφήματα/αξονική), "
+        "και (δ) πλάνο παρακολούθησης (labs ή DEXA) για τους επόμενους 6–12 μήνες. "
+        "Αναφέρσου σε καθιερωμένους οδηγούς (π.χ. NOGG, Endocrine Society, ACP) όταν δικαιολογείται. "
+        "Είσαι συγκεκριμένος χωρίς να εισάγεις νέα φάρμακα ή δοσολογίες. "
+        "Αν λείπουν στοιχεία (όπως νεφρική λειτουργία ή τιμή βιταμίνης D), το σημειώνεις και ζητάς συμπλήρωση. "
+        "Κλείσε με ένα σύντομο bullet που επισημαίνει τα κύρια βήματα παρακολούθησης."
     )
 
     try:

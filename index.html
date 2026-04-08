@@ -274,6 +274,11 @@
       font-family: "Roboto Mono", "SFMono-Regular", Menlo, Monaco, monospace;
       margin-bottom: 16px;
     }
+    .note-block.ai-elab {
+      min-height: 240px;
+      max-height: 360px;
+      background: #0a0d1d;
+    }
     .note-block.empty {
       opacity: 0.7;
     }
@@ -390,6 +395,32 @@
       flex-direction: column;
       gap: 4px;
       min-height: 80px;
+    }
+    .therapy-json-area {
+      margin-top: 12px;
+    }
+    .therapy-json-area textarea {
+      min-height: 120px;
+      font-family: "JetBrains Mono", "Roboto Mono", Menlo, monospace;
+      background: #f8fafc;
+      border-radius: 10px;
+      border: 1px solid rgba(15, 23, 42, 0.15);
+      padding: 10px;
+    }
+    .history-table tbody tr {
+      cursor: pointer;
+      transition: transform 0.15s ease, background 0.15s ease;
+    }
+    .history-table tbody tr:hover {
+      transform: translateX(2px);
+      background: rgba(37, 99, 235, 0.05);
+    }
+    .history-detail {
+      margin-top: 12px;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      border-radius: 12px;
+      padding: 12px 14px;
+      background: #fafafa;
     }
     .history-table table {
       width: 100%;
@@ -719,6 +750,11 @@
             <div id="therapyEntriesList" class="therapy-entries-list">
               <p class="muted">No episodes added yet.</p>
             </div>
+            <div class="therapy-json-area">
+              <label for="therapy_history_json">Therapy history JSON (editable)</label>
+              <textarea id="therapy_history_json" placeholder='[{"therapy_type":"denosumab","duration_years":2,"notes":"holiday prep"}]'></textarea>
+              <p class="muted" style="margin:4px 0 0;">Paste a JSON array to load episodes or copy the current list for sharing.</p>
+            </div>
           </div>
           <div class="field-grid">
             <div class="field">
@@ -831,7 +867,7 @@
               <button id="elabPatientBtn" class="button secondary">For patient</button>
             </div>
           </div>
-          <div class="note-block" id="aiElaboration" aria-live="polite">Select an audience and run an AI elaboration after evaluation.</div>
+        <div class="note-block ai-elab" id="aiElaboration" aria-live="polite">Select an audience and run an AI elaboration after evaluation.</div>
         </div>
         <div class="ai-panel" style="margin-top: 12px;">
           <div class="ai-header">
@@ -868,6 +904,12 @@
             <tbody></tbody>
           </table>
         </div>
+        <div class="history-detail" id="historyDetailPanel">
+          <strong>Selected assessment snapshot</strong>
+          <p id="historyDetailContent" class="muted" style="margin:6px 0 0;">
+            Click a row to preview its key metrics, therapies, and labs.
+          </p>
+        </div>
         <div class="grid-divider"></div>
         <div>
           <h3 style="margin-top:0;">Trend summary</h3>
@@ -890,6 +932,7 @@
     const state = {
       lastAssessment: null,
       lastStored: null,
+      history: [],
     };
     let lastFollowUpSteps = [];
     const therapyEntries = [];
@@ -907,6 +950,8 @@
     const aiElaboration = document.getElementById("aiElaboration");
     const treatmentRecommendationElm = document.getElementById("treatmentRecommendation");
     const historyTableBody = document.querySelector("#historyTable tbody");
+    const historyDetailContent = document.getElementById("historyDetailContent");
+    const therapyJsonInput = document.getElementById("therapy_history_json");
     const trendSummary = document.getElementById("trendSummary");
     const numFields = [
       "age",
@@ -940,6 +985,154 @@
       "vitamin_d3_iu_per_day",
       "current_therapy_duration_years",
     ];
+    function setInputValue(id, value) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (el.type === "checkbox") {
+        el.checked = !!value;
+        return;
+      }
+      el.value = value != null ? value : "";
+    }
+    function setCheckboxValue(id, value) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.checked = !!value;
+    }
+    function populateFormWithInput(input) {
+      if (!input) return;
+      setInputValue("age", input.age);
+      setInputValue("sex", input.sex);
+      setInputValue("menopause_status", input.menopause_status);
+      setInputValue("weight_kg", input.weight_kg);
+      setInputValue("height_cm", input.height_cm);
+      setInputValue("spine_t_score", input.spine_t_score);
+      setInputValue("total_hip_t_score", input.total_hip_t_score);
+      setInputValue("femoral_neck_t_score", input.femoral_neck_t_score);
+      setInputValue("frax_major", input.frax_major_osteoporotic);
+      setInputValue("frax_hip", input.frax_hip);
+      setCheckboxValue("fx_hip", input.prior_fragility_fractures?.includes("hip"));
+      setCheckboxValue("fx_vert", input.prior_fragility_fractures?.includes("vertebral"));
+      setCheckboxValue("fx_nonvert", input.prior_fragility_fractures?.includes("non_vertebral"));
+      setCheckboxValue("parental_hip_fracture", input.parental_hip_fracture);
+      setCheckboxValue("current_smoker", input.current_smoker);
+      setCheckboxValue("glucocorticoids", input.glucocorticoids);
+      setCheckboxValue("rheumatoid_arthritis", input.rheumatoid_arthritis);
+      setCheckboxValue("secondary_osteoporosis", input.secondary_osteoporosis);
+      setCheckboxValue("high_alcohol_intake", input.high_alcohol_intake);
+      setInputValue("vitamin_d_25oh_ng_ml", input.vitamin_d_25oh_ng_ml);
+      setInputValue("serum_calcium_mg_dl", input.serum_calcium_mg_dl);
+      setInputValue("serum_phosphorus_mg_dl", input.serum_phosphorus_mg_dl);
+      setInputValue("pth_pg_ml", input.pth_pg_ml);
+      setInputValue("serum_magnesium_mg_dl", input.serum_magnesium_mg_dl);
+      setInputValue("serum_zinc_ug_dl", input.serum_zinc_ug_dl);
+      setInputValue("urine_calcium_24h_mg", input.urine_calcium_24h_mg);
+      setInputValue("serum_urea_mg_dl", input.serum_urea_mg_dl);
+      setInputValue("serum_creatinine_mg_dl", input.serum_creatinine_mg_dl);
+      setInputValue("osteocalcin_ng_ml", input.osteocalcin_ng_ml);
+      setInputValue("bone_alk_phos_u_l", input.bone_alk_phos_u_l);
+      setInputValue("ctx_ng_ml", input.ctx_ng_ml);
+      setInputValue("p1np_ng_ml", input.p1np_ng_ml);
+      setCheckboxValue("calcium_supplement", input.calcium_supplement);
+      setInputValue("calcium_supplement_mg_per_day", input.calcium_supplement_mg_per_day);
+      setCheckboxValue("vitamin_d_supplement", input.vitamin_d_supplement);
+      setInputValue("vitamin_d3_iu_per_day", input.vitamin_d3_iu_per_day);
+      setCheckboxValue("magnesium_supplement", input.magnesium_supplement);
+      setInputValue("magnesium_supplement_mg_per_day", input.magnesium_supplement_mg_per_day);
+      setCheckboxValue("zinc_supplement", input.zinc_supplement);
+      setInputValue("zinc_supplement_mg_per_day", input.zinc_supplement_mg_per_day);
+      setCheckboxValue("boron_supplement", input.boron_supplement);
+      setInputValue("boron_supplement_mg_per_day", input.boron_supplement_mg_per_day);
+      setCheckboxValue("vitamin_k2_supplement", input.vitamin_k2_supplement);
+      setInputValue("vitamin_k2_ug_per_day", input.vitamin_k2_ug_per_day);
+      setCheckboxValue("fortibone_supplement", input.fortibone_supplement);
+      setCheckboxValue("colabone_supplement", input.colabone_supplement);
+      setInputValue("milk_portions", input.milk_portions_per_day ?? 0);
+      setInputValue("yogurt_portions", input.yogurt_portions_per_day ?? 0);
+      setInputValue("cheese_portions", input.cheese_portions_per_day ?? 0);
+      setInputValue("leafy_portions", input.leafy_greens_portions_per_day ?? 0);
+      setInputValue("fortified_portions", input.fortified_food_portions_per_day ?? 0);
+      setInputValue("other_dairy_portions", input.other_dairy_portions_per_day ?? 0);
+      setInputValue("current_therapy_type", input.current_therapy_type);
+      setInputValue("current_therapy_duration_years", input.current_therapy_duration_years);
+      setCheckboxValue("fractures_during_current_therapy", input.fractures_during_current_therapy);
+      setCheckboxValue("significant_therapy_adverse_effects", input.significant_therapy_adverse_effects);
+      setInputValue("exercise_level", input.exercise_level);
+      setInputValue("daily_walking", input.daily_walking);
+      setCheckboxValue("dietician_follow_up", input.dietician_follow_up);
+      setCheckboxValue("high_falls_risk", input.high_falls_risk);
+      setCheckboxValue("history_of_falls_last_year", input.history_of_falls_last_year);
+      setCheckboxValue("dementia_or_cognitive_impairment", input.dementia_or_cognitive_impairment);
+      setCheckboxValue("significant_immobility", input.significant_immobility);
+    }
+    function syncTherapyJson() {
+      if (!therapyJsonInput) return;
+      const sanitized = therapyEntries.map((entry) => ({
+        therapy_type: entry.therapy_type,
+        duration_years: entry.duration_years,
+        is_holiday: entry.is_holiday,
+        notes: entry.notes,
+      }));
+      therapyJsonInput.value = JSON.stringify(sanitized, null, 2);
+    }
+    function applyTherapyJson(value) {
+      if (!therapyJsonInput) return;
+      const trimmed = value?.trim();
+      if (!trimmed) {
+        setTherapyHistoryEntries([]);
+        return;
+      }
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) {
+          setTherapyHistoryEntries(parsed);
+        }
+      } catch (err) {
+        console.error("Invalid therapy JSON", err);
+        setStatus("Therapy JSON parsing failed.", "error");
+      }
+    }
+    function renderHistoryDetail(entry) {
+      if (!historyDetailContent) return;
+      if (!entry) {
+        historyDetailContent.innerHTML = '<em>Click a row to preview its stored values.</em>';
+        return;
+      }
+      const created = new Date(entry.created_at);
+      const lines = [];
+      lines.push(`<strong>${created.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}</strong> · risk ${entry.assessment.risk_category?.toUpperCase() || "—"}`);
+      const therapy = entry.input_data.current_therapy_type || "none";
+      const therapyLines = [
+        `Τρέχουσα θεραπεία: ${therapy.replace(/_/g, " ")}`,
+      ];
+      if (entry.input_data.current_therapy_duration_years != null) {
+        therapyLines.push(`Διάρκεια: ${entry.input_data.current_therapy_duration_years.toFixed(1)} έτη`);
+      }
+      if (entry.input_data.fractures_during_current_therapy) {
+        therapyLines.push("Κατάγματα σε θεραπεία");
+      }
+      if (entry.input_data.significant_therapy_adverse_effects) {
+        therapyLines.push("Ανεπιθύμητα συμβάματα στην τρέχουσα θεραπεία");
+      }
+      lines.push(therapyLines.join(" · "));
+      const labs = [];
+      if (entry.input_data.vitamin_d_25oh_ng_ml != null) labs.push(`25-OH Vit D ${entry.input_data.vitamin_d_25oh_ng_ml.toFixed(1)} ng/mL`);
+      if (entry.input_data.serum_calcium_mg_dl != null) labs.push(`Ca ${entry.input_data.serum_calcium_mg_dl.toFixed(2)} mg/dL`);
+      if (entry.input_data.serum_phosphorus_mg_dl != null) labs.push(`P ${entry.input_data.serum_phosphorus_mg_dl.toFixed(2)} mg/dL`);
+      if (entry.input_data.pth_pg_ml != null) labs.push(`PTH ${entry.input_data.pth_pg_ml.toFixed(1)} pg/mL`);
+      if (entry.input_data.serum_urea_mg_dl != null) labs.push(`urea ${entry.input_data.serum_urea_mg_dl.toFixed(2)} mg/dL`);
+      if (entry.input_data.serum_creatinine_mg_dl != null) labs.push(`creatinine ${entry.input_data.serum_creatinine_mg_dl.toFixed(3)} mg/dL`);
+      if (entry.input_data.ctx_ng_ml != null) labs.push(`CTX ${entry.input_data.ctx_ng_ml.toFixed(2)} ng/mL`);
+      if (entry.input_data.p1np_ng_ml != null) labs.push(`P1NP ${entry.input_data.p1np_ng_ml.toFixed(1)} ng/mL`);
+      if (labs.length) {
+        lines.push("Labs: " + labs.join(", "));
+      }
+      const followUp = entry.assessment.follow_up_steps || [];
+      if (followUp.length) {
+        lines.push(`Παρακολούθηση: ${followUp.slice(0, 2).map((step) => `${step.timeframe} ${step.text}`).join(" · ")}`);
+      }
+      historyDetailContent.innerHTML = lines.map((line) => `<div>${line}</div>`).join("");
+    }
     function setStatus(message, variant = "neutral") {
       if (statusMessage) {
         statusMessage.textContent = message;
@@ -976,6 +1169,7 @@
         card.appendChild(btn);
         container.appendChild(card);
       });
+      syncTherapyJson();
     }
 
     function addTherapyEntry() {
@@ -1012,6 +1206,7 @@
         });
       }
       renderTherapyHistoryList();
+      syncTherapyJson();
     }
     function val(id) {
       const el = document.getElementById(id);
@@ -1402,8 +1597,28 @@
         const p1npTd = document.createElement("td");
         p1npTd.textContent = entry.input_data.p1np_ng_ml != null ? entry.input_data.p1np_ng_ml.toFixed(1) : "";
         row.appendChild(p1npTd);
+        row.addEventListener("click", () => {
+          preloadAssessment(entry);
+          setStatus(`Loaded historical assessment (${created.toLocaleDateString()}).`, "neutral");
+        });
         historyTableBody.appendChild(row);
       });
+      state.history = history;
+      if (!history.length) {
+        renderHistoryDetail(null);
+        return;
+      }
+      renderHistoryDetail(history[history.length - 1]);
+    }
+
+    function preloadAssessment(entry) {
+      if (!entry) return;
+      document.getElementById("patient_id").value = entry.patient_id;
+      populateFormWithInput(entry.input_data);
+      setTherapyHistoryEntries(entry.input_data?.therapy_history || []);
+      renderHistoryDetail(entry);
+      updateTherapySnapshot(entry.input_data);
+      updateFollowUpPanel(entry.assessment);
     }
     async function evaluate() {
       const patientId = document.getElementById("patient_id").value.trim() || "demo-patient";
@@ -1506,14 +1721,15 @@
         const data = await res.json();
         state.lastAssessment = data.assessment;
         state.lastStored = data;
-        if (data.input_data?.age != null) document.getElementById("age").value = data.input_data.age;
-        if (data.input_data?.sex) document.getElementById("sex").value = data.input_data.sex;
-        if (data.input_data?.menopause_status) document.getElementById("menopause_status").value = data.input_data.menopause_status;
-        if (data.input_data?.spine_t_score != null) document.getElementById("spine_t_score").value = data.input_data.spine_t_score;
-        if (data.input_data?.total_hip_t_score != null) document.getElementById("total_hip_t_score").value = data.input_data.total_hip_t_score;
-        renderBackbone(data.assessment, data.input_data);
+        populateFormWithInput(data.input_data);
         setTherapyHistoryEntries(data.input_data?.therapy_history || []);
+        renderBackbone(data.assessment, data.input_data);
         setStatus("Latest assessment loaded.", "success");
+        renderHistoryDetail({
+          assessment: data.assessment,
+          input_data: data.input_data,
+          created_at: data.created_at,
+        });
       } catch (err) {
         console.error(err);
         setStatus("Unable to load latest assessment.", "error");
@@ -1626,13 +1842,6 @@
         printPatientHandout();
       });
     }
-    const handoutBtn = document.getElementById("handoutBtn");
-    if (handoutBtn) {
-      handoutBtn.addEventListener("click", (event) => {
-        event.preventDefault();
-        openPatientHandout();
-      });
-    }
     const addTherapyEntryBtn = document.getElementById("addTherapyEntryBtn");
     if (addTherapyEntryBtn) {
       addTherapyEntryBtn.addEventListener("click", (event) => {
@@ -1640,8 +1849,13 @@
         addTherapyEntry();
       });
     }
+    if (therapyJsonInput) {
+      therapyJsonInput.addEventListener("blur", () => applyTherapyJson(therapyJsonInput.value));
+      therapyJsonInput.addEventListener("change", () => applyTherapyJson(therapyJsonInput.value));
+    }
     renderTherapyHistoryList();
     renderFollowUpTimeline([]);
+    renderHistoryDetail(null);
   </script>
 </body>
 </html>
