@@ -180,6 +180,22 @@ class TherapyEpisode(BaseModel):
         description="Optional notes (e.g. reason for switch, holiday, adverse effect)",
     )
 
+
+
+class TScoreSnapshot(BaseModel):
+    date: Optional[str] = Field(
+        default=None,
+        description="Date of the DEXA scan (YYYY-MM-DD).",
+    )
+    spine_total: Optional[float] = None
+    spine_l1: Optional[float] = None
+    spine_l2: Optional[float] = None
+    spine_l3: Optional[float] = None
+    spine_l4: Optional[float] = None
+    total_hip: Optional[float] = None
+    femoral_neck: Optional[float] = None
+
+
 class Suggestion(BaseModel):
     category: str
     text: str
@@ -305,6 +321,12 @@ class OsteoInput(BaseModel):
             "Chronological list of past therapy episodes for this patient, "
             "including drug holidays. The last ongoing episode should match current_therapy_type."
         ),
+    )
+
+    # Historical T-score panels
+    t_score_history: List[TScoreSnapshot] = Field(
+        default_factory=list,
+        description="Chronological list of T-score panels with scan dates.",
     )
 
 
@@ -1565,6 +1587,18 @@ def build_clinical_note(
 
     if lab_bits:
         lines.append("Labs: " + ", ".join(lab_bits) + ".")
+    if data.t_score_history:
+        latest = data.t_score_history[-1]
+        parts = []
+        if latest.spine_total is not None:
+            parts.append(f"spine total {latest.spine_total:.2f}")
+        if latest.total_hip is not None:
+            parts.append(f"hip total {latest.total_hip:.2f}")
+        if latest.femoral_neck is not None:
+            parts.append(f"femoral neck {latest.femoral_neck:.2f}")
+        if parts:
+            date_label = latest.date or "latest"
+            lines.append(f"T-score ({date_label}): " + ", ".join(parts) + ".")
 
     # Calcium intake
     if calcium_total_mg is not None and calcium_note is not None:
@@ -2176,6 +2210,18 @@ def build_treatment_recommendation_context(stored: OsteoStoredAssessment) -> str
         lab_notes.append(f"creatinine {input_data.serum_creatinine_mg_dl:.3f} mg/dL")
     if laboratory := ", ".join(lab_notes):
         lines.append("Recent labs: " + laboratory + ".")
+    if input_data.t_score_history:
+        latest = input_data.t_score_history[-1]
+        if latest.spine_total is not None or latest.total_hip is not None:
+            spine_text = (
+                f"spine {latest.spine_total:.2f}" if latest.spine_total is not None else ""
+            )
+            hip_text = (
+                f"hip {latest.total_hip:.2f}" if latest.total_hip is not None else ""
+            )
+            entries = "; ".join(filter(None, [spine_text, hip_text]))
+            date_info = f" ({latest.date})" if latest.date else ""
+            lines.append(f"Latest T-score{date_info}: {entries}.")
 
     return "\n".join(lines)
 

@@ -308,6 +308,13 @@
       padding: 12px 14px;
       background: #fafafa;
     }
+    .t-score-history {
+      margin-top: 18px;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      border-radius: 12px;
+      padding: 12px 14px;
+      background: #fdf2f8;
+    }
     .therapy-editor-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -406,6 +413,9 @@
       border-radius: 10px;
       border: 1px solid rgba(15, 23, 42, 0.15);
       padding: 10px;
+    }
+    .json-editor-hidden {
+      display: none;
     }
     .history-table tbody tr {
       cursor: pointer;
@@ -750,10 +760,69 @@
             <div id="therapyEntriesList" class="therapy-entries-list">
               <p class="muted">No episodes added yet.</p>
             </div>
-            <div class="therapy-json-area">
+            <div class="therapy-json-toggle">
+              <button id="therapyToggleJsonBtn" type="button" class="button ghost toggle-json-btn" data-target="therapyJsonEditor">Show JSON editor</button>
+            </div>
+            <div id="therapyJsonEditor" class="therapy-json-area json-editor-hidden">
               <label for="therapy_history_json">Therapy history JSON (editable)</label>
               <textarea id="therapy_history_json" placeholder='[{"therapy_type":"denosumab","duration_years":2,"notes":"holiday prep"}]'></textarea>
               <p class="muted" style="margin:4px 0 0;">Paste a JSON array to load episodes or copy the current list for sharing.</p>
+            </div>
+          </div>
+          <div class="t-score-history">
+            <div class="panel-header" style="margin:0 0 8px;">
+              <div>
+                <h3 style="margin:0;">T-score history</h3>
+                <p class="muted" style="margin:2px 0 0;">Record dated DEXA snapshots (oldest first).</p>
+              </div>
+            </div>
+            <div class="therapy-editor-grid">
+              <div class="field">
+                <label for="t_score_date">Scan date</label>
+                <input id="t_score_date" type="date" />
+              </div>
+              <div class="field">
+                <label for="t_score_spine_total">Lumbar spine total</label>
+                <input id="t_score_spine_total" type="number" step="0.1" />
+              </div>
+              <div class="field">
+                <label for="t_score_spine_l1">L1</label>
+                <input id="t_score_spine_l1" type="number" step="0.1" />
+              </div>
+              <div class="field">
+                <label for="t_score_spine_l2">L2</label>
+                <input id="t_score_spine_l2" type="number" step="0.1" />
+              </div>
+              <div class="field">
+                <label for="t_score_spine_l3">L3</label>
+                <input id="t_score_spine_l3" type="number" step="0.1" />
+              </div>
+              <div class="field">
+                <label for="t_score_spine_l4">L4</label>
+                <input id="t_score_spine_l4" type="number" step="0.1" />
+              </div>
+              <div class="field">
+                <label for="t_score_total_hip">Total hip</label>
+                <input id="t_score_total_hip" type="number" step="0.1" />
+              </div>
+              <div class="field">
+                <label for="t_score_femoral_neck">Femoral neck</label>
+                <input id="t_score_femoral_neck" type="number" step="0.1" />
+              </div>
+            </div>
+            <div class="actions" style="padding:0;margin-top:4px;">
+              <button id="addTScoreEntryBtn" class="button ghost">Add T-score</button>
+            </div>
+            <div id="tScoreEntriesList" class="therapy-entries-list">
+              <p class="muted">No T-score snapshots yet.</p>
+            </div>
+            <div class="therapy-json-toggle">
+              <button id="tScoreToggleJsonBtn" type="button" class="button ghost toggle-json-btn" data-target="tScoreJsonEditor">Show JSON editor</button>
+            </div>
+            <div id="tScoreJsonEditor" class="therapy-json-area json-editor-hidden">
+              <label for="t_score_history_json">T-score history JSON</label>
+              <textarea id="t_score_history_json" placeholder='[{"date":"2022-06-01","spine_total":-2,"total_hip":-3}]'></textarea>
+              <p class="muted" style="margin:4px 0 0;">Paste or edit JSON to bulk load historical snapshots.</p>
             </div>
           </div>
           <div class="field-grid">
@@ -936,6 +1005,7 @@
     };
     let lastFollowUpSteps = [];
     const therapyEntries = [];
+    const tScoreEntries = [];
     const statusMessage = document.getElementById("statusMessage");
     const formNote = document.getElementById("formNote");
     const riskLevelBadge = document.getElementById("riskLevelBadge");
@@ -952,6 +1022,7 @@
     const historyTableBody = document.querySelector("#historyTable tbody");
     const historyDetailContent = document.getElementById("historyDetailContent");
     const therapyJsonInput = document.getElementById("therapy_history_json");
+    const tScoreJsonInput = document.getElementById("t_score_history_json");
     const trendSummary = document.getElementById("trendSummary");
     const numFields = [
       "age",
@@ -1064,6 +1135,7 @@
       setCheckboxValue("history_of_falls_last_year", input.history_of_falls_last_year);
       setCheckboxValue("dementia_or_cognitive_impairment", input.dementia_or_cognitive_impairment);
       setCheckboxValue("significant_immobility", input.significant_immobility);
+      setTScoreHistoryEntries(input.t_score_history || []);
     }
     function syncTherapyJson() {
       if (!therapyJsonInput) return;
@@ -1126,6 +1198,17 @@
       if (entry.input_data.p1np_ng_ml != null) labs.push(`P1NP ${entry.input_data.p1np_ng_ml.toFixed(1)} ng/mL`);
       if (labs.length) {
         lines.push("Labs: " + labs.join(", "));
+      }
+      const tHist = entry.input_data.t_score_history || [];
+      if (tHist.length) {
+        const latest = tHist[tHist.length - 1];
+        const comps = [];
+        if (latest.spine_total != null) comps.push(`spine ${latest.spine_total.toFixed(2)}`);
+        if (latest.total_hip != null) comps.push(`hip ${latest.total_hip.toFixed(2)}`);
+        if (latest.femoral_neck != null) comps.push(`neck ${latest.femoral_neck.toFixed(2)}`);
+        if (comps.length) {
+          lines.push(`T-score (${latest.date || "latest"}): ${comps.join(" · ")}`);
+        }
       }
       const followUp = entry.assessment.follow_up_steps || [];
       if (followUp.length) {
@@ -1208,6 +1291,123 @@
       renderTherapyHistoryList();
       syncTherapyJson();
     }
+    function renderTScoreHistoryList() {
+      const container = document.getElementById("tScoreEntriesList");
+      if (!container) return;
+      container.innerHTML = "";
+      if (!tScoreEntries.length) {
+        container.innerHTML = '<p class="muted">No T-score snapshots yet.</p>';
+        return;
+      }
+      tScoreEntries.forEach((entry, idx) => {
+        const card = document.createElement("div");
+        card.className = "therapy-entry-card";
+        const dateLabel = entry.date || "unspecified date";
+        const parts = [];
+        if (entry.spine_total != null) parts.push(`spine ${entry.spine_total.toFixed(2)}`);
+        if (entry.total_hip != null) parts.push(`hip ${entry.total_hip.toFixed(2)}`);
+        if (entry.femoral_neck != null) parts.push(`neck ${entry.femoral_neck.toFixed(2)}`);
+        const text = document.createElement("div");
+        text.innerHTML = `<strong>${dateLabel}</strong><br>${parts.length ? parts.join(" · ") : "no values entered"}`;
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.textContent = "Remove";
+        btn.className = "button ghost";
+        btn.style.padding = "4px 10px";
+        btn.addEventListener("click", () => {
+          tScoreEntries.splice(idx, 1);
+          renderTScoreHistoryList();
+        });
+        card.appendChild(text);
+        card.appendChild(btn);
+        container.appendChild(card);
+      });
+      syncTScoreJson();
+    }
+    function setTScoreHistoryEntries(entries) {
+      tScoreEntries.length = 0;
+      if (Array.isArray(entries)) {
+        entries.forEach((entry) => {
+          tScoreEntries.push({
+            date: entry.date,
+            spine_total: entry.spine_total ?? null,
+            spine_l1: entry.spine_l1 ?? null,
+            spine_l2: entry.spine_l2 ?? null,
+            spine_l3: entry.spine_l3 ?? null,
+            spine_l4: entry.spine_l4 ?? null,
+            total_hip: entry.total_hip ?? null,
+            femoral_neck: entry.femoral_neck ?? null,
+          });
+        });
+      }
+      renderTScoreHistoryList();
+    }
+    function syncTScoreJson() {
+      if (!tScoreJsonInput) return;
+      const payload = tScoreEntries.map((entry) => ({
+        date: entry.date,
+        spine_total: entry.spine_total,
+        spine_l1: entry.spine_l1,
+        spine_l2: entry.spine_l2,
+        spine_l3: entry.spine_l3,
+        spine_l4: entry.spine_l4,
+        total_hip: entry.total_hip,
+        femoral_neck: entry.femoral_neck,
+      }));
+      tScoreJsonInput.value = JSON.stringify(payload, null, 2);
+    }
+    function applyTScoreJson(value) {
+      if (!tScoreJsonInput) return;
+      const trimmed = value?.trim();
+      if (!trimmed) {
+        setTScoreHistoryEntries([]);
+        return;
+      }
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) {
+          setTScoreHistoryEntries(parsed);
+        }
+      } catch (err) {
+        console.error("Invalid T-score JSON", err);
+        setStatus("T-score JSON parsing failed.", "error");
+      }
+    }
+    function readTScoreValue(id) {
+      const el = document.getElementById(id);
+      if (!el || el.value === "") return null;
+      const num = Number(el.value);
+      return isNaN(num) ? null : num;
+    }
+    function addTScoreEntry() {
+      const dateEl = document.getElementById("t_score_date");
+      const entry = {
+        date: dateEl?.value || undefined,
+        spine_total: readTScoreValue("t_score_spine_total"),
+        spine_l1: readTScoreValue("t_score_spine_l1"),
+        spine_l2: readTScoreValue("t_score_spine_l2"),
+        spine_l3: readTScoreValue("t_score_spine_l3"),
+        spine_l4: readTScoreValue("t_score_spine_l4"),
+        total_hip: readTScoreValue("t_score_total_hip"),
+        femoral_neck: readTScoreValue("t_score_femoral_neck"),
+      };
+      tScoreEntries.push(entry);
+      if (dateEl) dateEl.value = "";
+      ["t_score_spine_total","t_score_spine_l1","t_score_spine_l2","t_score_spine_l3","t_score_spine_l4","t_score_total_hip","t_score_femoral_neck"].forEach((id) => {
+        const field = document.getElementById(id);
+        if (field) field.value = "";
+      });
+      renderTScoreHistoryList();
+    }
+    function toggleJsonEditor(button) {
+      if (!button) return;
+      const target = button.dataset.target;
+      if (!target) return;
+      const panel = document.getElementById(target);
+      if (!panel) return;
+      const isHidden = panel.classList.toggle("json-editor-hidden");
+      button.textContent = isHidden ? "Show JSON editor" : "Hide JSON editor";
+    }
     function val(id) {
       const el = document.getElementById(id);
       if (!el) return null;
@@ -1268,6 +1468,7 @@
         fractures_during_current_therapy: val("fractures_during_current_therapy"),
         significant_therapy_adverse_effects: val("significant_therapy_adverse_effects"),
         therapy_history: therapyEntries.slice(),
+        t_score_history: tScoreEntries.slice(),
         exercise_level: val("exercise_level"),
         daily_walking: val("daily_walking"),
         dietician_follow_up: val("dietician_follow_up"),
@@ -1789,6 +1990,7 @@
       renderTherapyHighlights(assessment.suggestions);
       writeNotes(assessment);
       updateTherapySnapshot(inputData);
+      renderTScoreHistoryList();
       updateFollowUpPanel(assessment);
       aiElaboration.textContent = "Run an AI elaboration to adapt this narrative.";
       treatmentRecommendationElm.textContent = "Request AI treatment guidance when ready.";
@@ -1849,11 +2051,29 @@
         addTherapyEntry();
       });
     }
+    const addTScoreEntryBtn = document.getElementById("addTScoreEntryBtn");
+    if (addTScoreEntryBtn) {
+      addTScoreEntryBtn.addEventListener("click", (event) => {
+        event.preventDefault();
+        addTScoreEntry();
+      });
+    }
     if (therapyJsonInput) {
       therapyJsonInput.addEventListener("blur", () => applyTherapyJson(therapyJsonInput.value));
       therapyJsonInput.addEventListener("change", () => applyTherapyJson(therapyJsonInput.value));
     }
+    if (tScoreJsonInput) {
+      tScoreJsonInput.addEventListener("blur", () => applyTScoreJson(tScoreJsonInput.value));
+      tScoreJsonInput.addEventListener("change", () => applyTScoreJson(tScoreJsonInput.value));
+    }
+    document.querySelectorAll(".toggle-json-btn").forEach((btn) => {
+      btn.addEventListener("click", (event) => {
+        event.preventDefault();
+        toggleJsonEditor(btn);
+      });
+    });
     renderTherapyHistoryList();
+    renderTScoreHistoryList();
     renderFollowUpTimeline([]);
     renderHistoryDetail(null);
   </script>
