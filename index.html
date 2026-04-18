@@ -862,9 +862,11 @@
         </form>
         <div class="actions">
           <button id="evaluateBtn" class="button">Evaluate osteoporosis</button>
+          <button id="updateLoadedBtn" class="button secondary">Update loaded assessment</button>
           <button id="loadLatestBtn" class="button secondary">Load latest assessment</button>
           <button id="loadHistoryBtn" class="button ghost">History</button>
           <button id="loadTrendBtn" class="button ghost">Trends</button>
+          <button id="compareTherapiesBtn" class="button ghost">Compare therapies</button>
         </div>
         <div class="status-line">
           <span id="formNote" data-state="neutral">Data is sent to the configured evaluation endpoint.</span>
@@ -1005,6 +1007,9 @@
         <div>
           <h3 style="margin-top:0;">Trend summary</h3>
           <p id="trendSummary" class="muted">Load trends after populating a patient ID with at least two assessments.</p>
+          <div class="note-block" id="cohortComparison" style="min-height:120px;background:#0b1324;margin-top:10px;">
+            Therapy comparison output will appear here.
+          </div>
         </div>
       </section>
     </div>
@@ -1016,6 +1021,8 @@
       latest: `${API_BASE}/osteoporosis/patient`,
       trend: `${API_BASE}/osteoporosis/patient`,
       history: `${API_BASE}/osteoporosis/patient`,
+      updateAssessment: `${API_BASE}/osteoporosis/assessment`,
+      compareTherapy: `${API_BASE}/osteoporosis/analytics/therapy-comparison`,
       elaborate: `${API_BASE}/osteoporosis/elaborate`,
       treatment: `${API_BASE}/osteoporosis/treatment-recommendation`,
       openaiQuestion: `${API_BASE}/osteoporosis/question`,
@@ -1047,6 +1054,7 @@
     const therapyJsonInput = document.getElementById("therapy_history_json");
     const tScoreJsonInput = document.getElementById("t_score_history_json");
     const trendSummary = document.getElementById("trendSummary");
+    const cohortComparison = document.getElementById("cohortComparison");
     const openaiQuestionInput = document.getElementById("openai_question_input");
     const openaiQuestionResponse = document.getElementById("openaiQuestionResponse");
     const numFields = [
@@ -1839,6 +1847,14 @@
 
     function preloadAssessment(entry) {
       if (!entry) return;
+      state.lastAssessment = entry.assessment;
+      state.lastStored = {
+        assessment_id: entry.assessment_id,
+        patient_id: entry.patient_id || document.getElementById("patient_id").value.trim(),
+        created_at: entry.created_at,
+        input_data: entry.input_data,
+        assessment: entry.assessment,
+      };
       document.getElementById("patient_id").value = entry.patient_id;
       populateFormWithInput(entry.input_data);
       setTherapyHistoryEntries(entry.input_data?.therapy_history || []);
@@ -1876,6 +1892,83 @@
         setStatus("Network error while evaluating", "error");
       } finally {
         if (button) button.disabled = false;
+      }
+    }
+    async function updateLoadedAssessment() {
+      if (!state.lastStored?.assessment_id) {
+        setStatus("Load latest assessment first, then update.", "error");
+        return;
+      }
+      const patientId = document.getElementById("patient_id").value.trim() || state.lastStored.patient_id;
+      const payload = { patient_id: patientId, input_data: buildPayload() };
+      setStatus("Updating loaded assessment…", "pending");
+      try {
+        const res = await fetch(`${endpoints.updateAssessment}/${encodeURIComponent(state.lastStored.assessment_id)}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) {
+          setStatus(`Update failed (${res.status})`, "error");
+          return;
+        }
+        const data = await res.json();
+        state.lastAssessment = data.assessment;
+        state.lastStored = data;
+        renderBackbone(data.assessment, data.input_data);
+        setStatus("Loaded assessment updated in place.", "success");
+      } catch (err) {
+        console.error(err);
+        setStatus("Unable to update loaded assessment.", "error");
+      }
+    }
+    async function compareTherapies() {
+      const current = prompt("Current therapy filter (optional)\nExamples: denosumab, oral_bisphosphonate, iv_bisphosphonate, teriparatide, romosozumab", "");
+      if (current === null) return;
+      const fromTherapy = prompt("Transition FROM therapy (optional)\nExamples: oral_bisphosphonate, denosumab", "");
+      if (fromTherapy === null) return;
+      const toTherapy = prompt("Transition TO/current therapy (optional)\nExamples: denosumab, zoledronate=iv_bisphosphonate", "");
+      if (toTherapy === null) return;
+      setStatus("Comparing therapy patterns…", "pending");
+      if (cohortComparison) cohortComparison.textContent = "Loading therapy comparison…";
+      try {
+        const res = await fetch(endpoints.compareTherapy, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            current_therapy: current.trim() || null,
+            from_therapy: fromTherapy.trim() || null,
+            to_therapy: toTherapy.trim() || null,
+            limit: 1000,
+          }),
+        });
+        if (!res.ok) {
+          setStatus(`Compare failed (${res.status})`, "error");
+          return;
+        }
+        const data = await res.json();
+        const lines = [];
+        lines.push(`Latest patients scanned: ${data.total_latest_patients}`);
+        lines.push(`Matched patients: ${data.matched_patients}`);
+        lines.push(`Filters: current=${data.filters.current_therapy || "-"}, from=${data.filters.from_therapy || "-"}, to=${data.filters.to_therapy || "-"}`);
+        lines.push("");
+        lines.push("By risk:");
+        Object.entries(data.by_risk || {}).forEach(([k, v]) => lines.push(`- ${k}: ${v}`));
+        lines.push("");
+        lines.push("Top transitions:");
+        const topTransitions = Object.entries(data.transitions || {}).sort((a, b) => b[1] - a[1]).slice(0, 10);
+        if (!topTransitions.length) lines.push("- none");
+        topTransitions.forEach(([k, v]) => lines.push(`- ${k}: ${v}`));
+        lines.push("");
+        lines.push("Recent matched rows:");
+        (data.rows || []).slice(0, 15).forEach((r) => {
+          lines.push(`- ${r.patient_id} | ${r.risk_category} | ${r.transition || r.current_therapy} | ${new Date(r.created_at).toLocaleDateString()}`);
+        });
+        if (cohortComparison) cohortComparison.textContent = lines.join("\n");
+        setStatus("Therapy comparison ready.", "success");
+      } catch (err) {
+        console.error(err);
+        setStatus("Unable to compare therapies.", "error");
       }
     }
     async function loadHistory() {
@@ -2078,6 +2171,14 @@
     document.getElementById("loadLatestBtn").addEventListener("click", (event) => {
       event.preventDefault();
       loadLatest();
+    });
+    document.getElementById("updateLoadedBtn").addEventListener("click", (event) => {
+      event.preventDefault();
+      updateLoadedAssessment();
+    });
+    document.getElementById("compareTherapiesBtn").addEventListener("click", (event) => {
+      event.preventDefault();
+      compareTherapies();
     });
     document.getElementById("elabClinicianBtn").addEventListener("click", (event) => {
       event.preventDefault();

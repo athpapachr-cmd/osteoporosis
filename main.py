@@ -26,6 +26,7 @@ from sqlalchemy import (
     String,
     create_engine,
     select,
+    func,
 )
 from sqlalchemy.orm import DeclarativeBase, Session
 
@@ -504,6 +505,7 @@ class LiteratureQuestionResponse(BaseModel):
     answer: str
 class OsteoHistoryEntry(BaseModel):
     assessment_id: str
+    patient_id: str
     created_at: datetime
     input_data: OsteoInput
     assessment: OsteoAssessment
@@ -514,6 +516,38 @@ class TrendSummary(BaseModel):
     ctx_trend_text: Optional[str]
     p1np_trend_text: Optional[str]
     # add p1np_trend_text, etc. as needed
+
+
+class UpdateAssessmentRequest(BaseModel):
+    patient_id: Optional[str] = None
+    input_data: OsteoInput
+
+
+class TherapyComparisonRequest(BaseModel):
+    current_therapy: Optional[CurrentTherapyType] = None
+    from_therapy: Optional[CurrentTherapyType] = None
+    to_therapy: Optional[CurrentTherapyType] = None
+    limit: int = Field(default=200, ge=10, le=2000)
+
+
+class TherapyComparisonRow(BaseModel):
+    patient_id: str
+    assessment_id: str
+    created_at: datetime
+    risk_category: str
+    current_therapy: str
+    previous_therapy: Optional[str] = None
+    transition: Optional[str] = None
+
+
+class TherapyComparisonResponse(BaseModel):
+    total_latest_patients: int
+    matched_patients: int
+    filters: Dict[str, Optional[str]]
+    by_risk: Dict[str, int]
+    by_current_therapy: Dict[str, int]
+    transitions: Dict[str, int]
+    rows: List[TherapyComparisonRow]
 
 # =========================
 # Helper calculations
@@ -1956,19 +1990,8 @@ def build_patient_summary(
 
     return "\n".join(lines)
 
-# =========================
-# API endpoints
-# =========================
 
-
-@app.post("/osteoporosis/evaluate", response_model=OsteoStoredAssessment)
-def evaluate_osteoporosis(req: OsteoEvaluationRequest) -> OsteoStoredAssessment:
-    """
-    Evaluate osteoporosis fracture risk and generate written suggestions.
-    Also persist the assessment per patient in SQLite.
-    """
-    input_data = req.input_data
-
+def compute_assessment_from_input(input_data: OsteoInput) -> OsteoAssessment:
     internal_index, internal_index_note = compute_internal_frax_like_index(input_data)
     calcium_total_mg, calcium_note = calculate_calcium_intake(input_data)
     risk, reasons = determine_risk_category(input_data, internal_index)
@@ -1987,7 +2010,7 @@ def evaluate_osteoporosis(req: OsteoEvaluationRequest) -> OsteoStoredAssessment:
     )
     patient_summary = build_patient_summary(risk, suggestions)
 
-    assessment = OsteoAssessment(
+    return OsteoAssessment(
         risk_category=risk,
         risk_reasons=reasons,
         internal_frax_like_index=internal_index,
@@ -1999,6 +2022,20 @@ def evaluate_osteoporosis(req: OsteoEvaluationRequest) -> OsteoStoredAssessment:
         patient_summary=patient_summary,
         follow_up_steps=follow_up_steps,
     )
+
+# =========================
+# API endpoints
+# =========================
+
+
+@app.post("/osteoporosis/evaluate", response_model=OsteoStoredAssessment)
+def evaluate_osteoporosis(req: OsteoEvaluationRequest) -> OsteoStoredAssessment:
+    """
+    Evaluate osteoporosis fracture risk and generate written suggestions.
+    Also persist the assessment per patient in SQLite.
+    """
+    input_data = req.input_data
+    assessment = compute_assessment_from_input(input_data)
 
     stored = OsteoStoredAssessment(
         assessment_id=str(uuid4()),
@@ -2022,6 +2059,41 @@ def evaluate_osteoporosis(req: OsteoEvaluationRequest) -> OsteoStoredAssessment:
         session.commit()
 
     return stored
+
+
+@app.put(
+    "/osteoporosis/assessment/{assessment_id}",
+    response_model=OsteoStoredAssessment,
+)
+def update_assessment(assessment_id: str, req: UpdateAssessmentRequest) -> OsteoStoredAssessment:
+    """
+    Update an existing assessment in place (same assessment_id), useful when
+    latest visit data become available later and user does not want a new visit row.
+    """
+    with Session(engine) as session:
+        row = session.get(AssessmentORM, assessment_id)
+        if row is None:
+            raise HTTPException(status_code=404, detail="Assessment not found")
+
+        input_data = req.input_data
+        assessment = compute_assessment_from_input(input_data)
+
+        row.patient_id = req.patient_id or row.patient_id
+        row.input_json = json.loads(input_data.model_dump_json())
+        row.output_json = json.loads(assessment.model_dump_json())
+        row.risk_category = assessment.risk_category.value
+        row.current_therapy_type = input_data.current_therapy_type.value
+        session.add(row)
+        session.commit()
+        session.refresh(row)
+
+    return OsteoStoredAssessment(
+        assessment_id=row.id,
+        patient_id=row.patient_id,
+        created_at=row.created_at,
+        input_data=OsteoInput.model_validate(row.input_json),
+        assessment=OsteoAssessment.model_validate(row.output_json),
+    )
 
 
 @app.get(
@@ -2078,12 +2150,100 @@ def get_history(patient_id: str) -> List[OsteoHistoryEntry]:
         history.append(
             OsteoHistoryEntry(
                 assessment_id=row.id,
+                patient_id=row.patient_id,
                 created_at=row.created_at,
                 input_data=input_data,
                 assessment=assessment,
             )
         )
     return history
+
+
+@app.post(
+    "/osteoporosis/analytics/therapy-comparison",
+    response_model=TherapyComparisonResponse,
+)
+def compare_therapy_patterns(req: TherapyComparisonRequest) -> TherapyComparisonResponse:
+    """
+    Cohort comparison on latest assessment per patient:
+    - filter by current therapy
+    - filter by transition (from_therapy -> to_therapy/current)
+    """
+    with Session(engine) as session:
+        subq = (
+            select(
+                AssessmentORM.patient_id.label("pid"),
+                func.max(AssessmentORM.created_at).label("max_created"),
+            )
+            .group_by(AssessmentORM.patient_id)
+            .subquery()
+        )
+        stmt = (
+            select(AssessmentORM)
+            .join(
+                subq,
+                (AssessmentORM.patient_id == subq.c.pid)
+                & (AssessmentORM.created_at == subq.c.max_created),
+            )
+            .limit(req.limit)
+        )
+        rows = session.execute(stmt).scalars().all()
+
+    parsed_rows: List[TherapyComparisonRow] = []
+    by_risk: Dict[str, int] = {}
+    by_current_therapy: Dict[str, int] = {}
+    transitions: Dict[str, int] = {}
+
+    for row in rows:
+        input_data = OsteoInput.model_validate(row.input_json)
+        assessment = OsteoAssessment.model_validate(row.output_json)
+
+        previous = None
+        if input_data.therapy_history and len(input_data.therapy_history) >= 2:
+            previous = input_data.therapy_history[-2].therapy_type.value
+
+        current = input_data.current_therapy_type.value
+        transition = f"{previous}->{current}" if previous else None
+
+        if req.current_therapy and current != req.current_therapy.value:
+            continue
+        if req.to_therapy and current != req.to_therapy.value:
+            continue
+        if req.from_therapy and previous != req.from_therapy.value:
+            continue
+
+        parsed_rows.append(
+            TherapyComparisonRow(
+                patient_id=row.patient_id,
+                assessment_id=row.id,
+                created_at=row.created_at,
+                risk_category=assessment.risk_category.value,
+                current_therapy=current,
+                previous_therapy=previous,
+                transition=transition,
+            )
+        )
+
+        by_risk[assessment.risk_category.value] = by_risk.get(assessment.risk_category.value, 0) + 1
+        by_current_therapy[current] = by_current_therapy.get(current, 0) + 1
+        if transition:
+            transitions[transition] = transitions.get(transition, 0) + 1
+
+    parsed_rows.sort(key=lambda r: r.created_at, reverse=True)
+
+    return TherapyComparisonResponse(
+        total_latest_patients=len(rows),
+        matched_patients=len(parsed_rows),
+        filters={
+            "current_therapy": req.current_therapy.value if req.current_therapy else None,
+            "from_therapy": req.from_therapy.value if req.from_therapy else None,
+            "to_therapy": req.to_therapy.value if req.to_therapy else None,
+        },
+        by_risk=by_risk,
+        by_current_therapy=by_current_therapy,
+        transitions=transitions,
+        rows=parsed_rows,
+    )
 
 def bmd_trend_from_history(history: List[OsteoHistoryEntry]) -> Optional[str]:
     """
@@ -2322,6 +2482,7 @@ def get_trend_summary(patient_id: str) -> TrendSummary:
     history = [
         OsteoHistoryEntry(
             assessment_id=r.id,
+            patient_id=r.patient_id,
             created_at=r.created_at,
             input_data=OsteoInput.model_validate(r.input_json),
             assessment=OsteoAssessment.model_validate(r.output_json),
