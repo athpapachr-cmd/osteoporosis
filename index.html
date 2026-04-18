@@ -203,6 +203,8 @@
       font-size: 12px;
       font-weight: 700;
       letter-spacing: 0.03em;
+      text-align: center;
+      line-height: 1.1;
     }
     .pill.low {
       background: #dcfce7;
@@ -234,6 +236,8 @@
       border: 1px solid rgba(153, 27, 27, 0.25);
       margin-left: 8px;
       vertical-align: middle;
+      text-align: center;
+      line-height: 1.1;
     }
     .chip-row {
       display: flex;
@@ -248,11 +252,12 @@
       font-size: 12px;
     }
     .criteria-panel {
-      margin-top: 14px;
+      margin-top: 6px;
       border: 1px solid rgba(15, 23, 42, 0.1);
       border-radius: 12px;
       padding: 12px;
       background: #f8fafc;
+      width: 100%;
     }
     .criteria-title {
       margin: 0 0 8px;
@@ -289,6 +294,62 @@
       font-size: 12px;
       color: #64748b;
       font-weight: 500;
+    }
+    #riskOverview {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(260px, 360px);
+      grid-template-areas:
+        "badges metrics"
+        "drivers calcium"
+        "criteria criteria";
+      gap: 10px 16px;
+      margin-top: 10px;
+    }
+    #riskBadgeWrap {
+      grid-area: badges;
+    }
+    #riskDrivers {
+      grid-area: drivers;
+      margin-top: 0;
+    }
+    #riskMetricCards {
+      grid-area: metrics;
+      margin-top: 0;
+      grid-template-columns: 1fr;
+      width: 100%;
+      max-width: 360px;
+      justify-self: end;
+    }
+    #calciumNote {
+      grid-area: calcium;
+      margin-top: 0 !important;
+      width: 100%;
+      max-width: 360px;
+      justify-self: end;
+    }
+    #veryHighCriteriaPanel {
+      grid-area: criteria;
+      display: none;
+    }
+    @media (max-width: 900px) {
+      #riskOverview {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+          "badges"
+          "drivers"
+          "metrics"
+          "calcium"
+          "criteria";
+      }
+      #riskMetricCards,
+      #calciumNote {
+        max-width: none;
+        justify-self: stretch;
+      }
+      .sub-pill {
+        margin-left: 0;
+        margin-top: 8px;
+      }
     }
     .risk-metrics {
       display: grid;
@@ -623,10 +684,6 @@
             <div class="field">
               <label for="hip_fracture_count">Hip fractures (count)</label>
               <input id="hip_fracture_count" type="number" min="0" step="1" />
-            </div>
-            <div class="field">
-              <label for="dvo_3y_risk_percent">DVO 3-year risk % (optional)</label>
-              <input id="dvo_3y_risk_percent" type="number" step="0.1" />
             </div>
             <div class="checkbox-group">
               <label>Imminent pattern</label>
@@ -993,13 +1050,13 @@
             <p>Risk, suggestions, and treatment intelligence for documentation.</p>
           </div>
         </div>
-        <div class="risk-metrics" id="riskOverview">
-          <div>
+        <div id="riskOverview">
+          <div id="riskBadgeWrap">
             <span class="pill" id="riskLevelBadge">—</span>
             <span class="sub-pill" id="veryHighCountBadge">Very high: —</span>
           </div>
           <div class="chip-row" id="riskDrivers"></div>
-          <div class="risk-metrics">
+          <div class="risk-metrics" id="riskMetricCards">
             <div class="metric-card">
               <span>Calcium intake</span>
               <strong id="calciumTotal">—</strong>
@@ -1166,6 +1223,7 @@
     const internalIndex = document.getElementById("internalIndex");
     const calciumNote = document.getElementById("calciumNote");
     const veryHighCriteriaList = document.getElementById("veryHighCriteriaList");
+    const veryHighCriteriaPanel = document.getElementById("veryHighCriteriaPanel");
     const suggestionBuckets = document.getElementById("suggestionBuckets");
     const therapyHighlights = document.getElementById("therapyHighlights");
     const clinicalNote = document.getElementById("clinicalNote");
@@ -1189,7 +1247,6 @@
       "hip_fracture_count",
       "frax_major",
       "frax_hip",
-      "dvo_3y_risk_percent",
       "weight_kg",
       "height_cm",
       "vitamin_d_25oh_ng_ml",
@@ -1245,7 +1302,6 @@
       setCheckboxValue("recent_fragility_fracture", input.recent_fragility_fracture);
       setInputValue("frax_major", input.frax_major_osteoporotic);
       setInputValue("frax_hip", input.frax_hip);
-      setInputValue("dvo_3y_risk_percent", input.dvo_3y_risk_percent);
       setCheckboxValue("fx_hip", input.prior_fragility_fractures?.includes("hip"));
       setCheckboxValue("fx_vert", input.prior_fragility_fractures?.includes("vertebral"));
       setCheckboxValue("fx_nonvert", input.prior_fragility_fractures?.includes("non_vertebral"));
@@ -1621,7 +1677,6 @@
         recent_fragility_fracture: val("recent_fragility_fracture"),
         frax_major_osteoporotic: val("frax_major"),
         frax_hip: val("frax_hip"),
-        dvo_3y_risk_percent: val("dvo_3y_risk_percent"),
         weight_kg: val("weight_kg"),
         height_cm: val("height_cm"),
         parental_hip_fracture: val("parental_hip_fracture"),
@@ -1717,6 +1772,7 @@
     }
     function renderVeryHighCriteria(assessment) {
       if (!veryHighCriteriaList) return;
+      const isVeryHigh = (assessment?.risk_category || "").toLowerCase() === "very_high";
       const criteria = assessment?.very_high_criteria || [];
       if (veryHighCountBadge) {
         if (!criteria.length) {
@@ -1725,6 +1781,12 @@
           const metCount = criteria.filter((criterion) => !!criterion.met).length;
           veryHighCountBadge.textContent = `Very high: ${metCount}/${criteria.length} met`;
         }
+      }
+      if (veryHighCriteriaPanel) {
+        veryHighCriteriaPanel.style.display = isVeryHigh ? "block" : "none";
+      }
+      if (!isVeryHigh) {
+        return;
       }
       if (!criteria.length) {
         veryHighCriteriaList.innerHTML = '<li class="criteria-item">No explicit very-high criteria available for this record.</li>';

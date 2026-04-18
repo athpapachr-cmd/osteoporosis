@@ -276,6 +276,7 @@ class OsteoInput(BaseModel):
     # FRAX (if already calculated externally; optional)
     frax_major_osteoporotic: Optional[confloat(ge=0.0, le=100.0)] = None
     frax_hip: Optional[confloat(ge=0.0, le=100.0)] = None
+    # Kept only for backwards compatibility with older stored records.
     dvo_3y_risk_percent: Optional[confloat(ge=0.0, le=100.0)] = None
 
     # FRAX-style clinical risk factors for internal risk index (NOT official FRAX)
@@ -1270,7 +1271,6 @@ def determine_conference_risk_tier(data: OsteoInput) -> str:
         or data.fractures_during_current_therapy
         or (min_t is not None and min_t <= -3.0)
         or very_high_frax
-        or ((data.dvo_3y_risk_percent or 0.0) >= 10.0)
         or low_bmd_high_burden
         or (effective_high_falls_risk and (data.dementia_or_cognitive_impairment or data.significant_immobility))
     ):
@@ -1420,7 +1420,6 @@ def determine_risk_category(
 
     internal_index_high = internal_index is not None and internal_index >= 6.0
     very_high_frax = frax_major >= 30.0 or frax_hip >= 4.5
-    dvo_3y_very_high = (data.dvo_3y_risk_percent or 0.0) >= 10.0
     low_bmd_plus_clinical_burden = (
         min_t is not None
         and min_t <= -2.5
@@ -1465,12 +1464,6 @@ def determine_risk_category(
     if very_high_frax:
         reasons.append(
             f"Very high external FRAX pattern: major={frax_major:.1f}%, hip={frax_hip:.1f}%."
-        )
-        return RiskCategory.very_high, reasons
-
-    if dvo_3y_very_high:
-        reasons.append(
-            f"DVO 3-year fracture risk is high ({data.dvo_3y_risk_percent:.1f}% ≥ 10%)."
         )
         return RiskCategory.very_high, reasons
 
@@ -1593,14 +1586,6 @@ def build_very_high_criteria_status(data: OsteoInput) -> List[VeryHighCriterionS
             label="FRAX 10-year above very-high thresholds",
             met=frax_major >= 30.0 or frax_hip >= 4.5,
             detail=f"major={frax_major:.1f}% (>=30), hip={frax_hip:.1f}% (>=4.5)",
-        )
-    )
-    status.append(
-        VeryHighCriterionStatus(
-            key="dvo_3y_high",
-            label="DVO 3-year risk >= 10%",
-            met=(data.dvo_3y_risk_percent or 0.0) >= 10.0,
-            detail=f"dvo_3y={data.dvo_3y_risk_percent if data.dvo_3y_risk_percent is not None else 'n/a'}%",
         )
     )
     status.append(
@@ -2161,8 +2146,6 @@ def build_clinical_note(
         )
         if (data.frax_major_osteoporotic or 0.0) >= 30.0 or (data.frax_hip or 0.0) >= 4.5:
             lines.append("FRAX is above the very-high-risk thresholds (major >=30% and/or hip >=4.5%).")
-    if data.dvo_3y_risk_percent is not None:
-        lines.append(f"DVO 3-year risk: {data.dvo_3y_risk_percent:.1f}%.")
 
     # Internal index
     if internal_index is not None and internal_index_note is not None:
