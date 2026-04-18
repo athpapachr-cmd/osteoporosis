@@ -173,6 +173,23 @@ class DailyWalking(str, Enum):
     over_30_min = "over_30_min"
 
 
+class MorseAmbulatoryAid(str, Enum):
+    none_bedrest_assist = "none_bedrest_assist"
+    cane_walker_crutches = "cane_walker_crutches"
+    furniture = "furniture"
+
+
+class MorseGait(str, Enum):
+    normal_bedrest_wheelchair = "normal_bedrest_wheelchair"
+    weak = "weak"
+    impaired = "impaired"
+
+
+class MorseMentalStatus(str, Enum):
+    aware_of_limitations = "aware_of_limitations"
+    overestimates_or_forgets_limitations = "overestimates_or_forgets_limitations"
+
+
 class CurrentTherapyType(str, Enum):
     none = "none"
     oral_bisphosphonate = "oral_bisphosphonate"
@@ -218,6 +235,14 @@ class Suggestion(BaseModel):
     category: str
     text: str
 
+
+class VeryHighCriterionStatus(BaseModel):
+    key: str
+    label: str
+    met: bool
+    detail: Optional[str] = None
+
+
 class OsteoInput(BaseModel):
     # Demographics / context
     age: conint(ge=18, le=110)
@@ -238,10 +263,20 @@ class OsteoInput(BaseModel):
         default_factory=list,
         description="List of prior low-trauma fractures",
     )
+    vertebral_fracture_count: conint(ge=0, le=20) = Field(
+        default=0, description="Number of vertebral fragility fractures"
+    )
+    hip_fracture_count: conint(ge=0, le=4) = Field(
+        default=0, description="Number of hip fragility fractures"
+    )
+    recent_fragility_fracture: bool = Field(
+        default=False, description="Any recent/imminent fragility fracture pattern"
+    )
 
     # FRAX (if already calculated externally; optional)
     frax_major_osteoporotic: Optional[confloat(ge=0.0, le=100.0)] = None
     frax_hip: Optional[confloat(ge=0.0, le=100.0)] = None
+    dvo_3y_risk_percent: Optional[confloat(ge=0.0, le=100.0)] = None
 
     # FRAX-style clinical risk factors for internal risk index (NOT official FRAX)
     weight_kg: Optional[confloat(gt=0.0, le=300.0)] = None
@@ -352,10 +387,21 @@ class OsteoInput(BaseModel):
     exercise_level: ExerciseLevel = ExerciseLevel.none
     daily_walking: DailyWalking = DailyWalking.none
     dietician_follow_up: bool = False
+    frailty: bool = False
+    cfs_score: Optional[conint(ge=1, le=9)] = Field(
+        default=None,
+        description="Clinical Frailty Scale (CFS), 1-9.",
+    )
     high_falls_risk: bool = False
     history_of_falls_last_year: bool = False
     dementia_or_cognitive_impairment: bool = False
     significant_immobility: bool = False
+    morse_history_of_falling_3m: bool = False
+    morse_secondary_diagnosis: bool = False
+    morse_ambulatory_aid: MorseAmbulatoryAid = MorseAmbulatoryAid.none_bedrest_assist
+    morse_iv_or_heparin_lock: bool = False
+    morse_gait: MorseGait = MorseGait.normal_bedrest_wheelchair
+    morse_mental_status: MorseMentalStatus = MorseMentalStatus.aware_of_limitations
 
     # Calcium intake fields (food)
     milk_portions_per_day: conint(ge=0, le=20) = 0
@@ -382,6 +428,7 @@ class OsteoAssessment(BaseModel):
     clinical_note: str
     patient_summary: str
     follow_up_steps: List[FollowUpStep]
+    very_high_criteria: List[VeryHighCriterionStatus] = Field(default_factory=list)
 
 
 class OsteoEvaluationRequest(BaseModel):
@@ -618,6 +665,64 @@ def compute_internal_frax_like_index(data: OsteoInput) -> Tuple[Optional[float],
         + ". Higher score indicates more clinical risk factors."
     )
     return score, note
+
+
+def compute_morse_fall_risk(data: OsteoInput) -> Tuple[Optional[int], Optional[str], bool]:
+    """
+    Morse Fall Scale approximation:
+      history of falling (25), secondary diagnosis (15), ambulatory aid (0/15/30),
+      IV/heparin lock (20), gait (0/10/20), mental status (0/15)
+    """
+    has_non_default_component = (
+        data.morse_history_of_falling_3m
+        or data.morse_secondary_diagnosis
+        or data.morse_iv_or_heparin_lock
+        or data.morse_ambulatory_aid != MorseAmbulatoryAid.none_bedrest_assist
+        or data.morse_gait != MorseGait.normal_bedrest_wheelchair
+        or data.morse_mental_status != MorseMentalStatus.aware_of_limitations
+    )
+    if not has_non_default_component:
+        return None, None, False
+
+    score = 0
+    if data.morse_history_of_falling_3m:
+        score += 25
+    if data.morse_secondary_diagnosis:
+        score += 15
+    if data.morse_ambulatory_aid == MorseAmbulatoryAid.cane_walker_crutches:
+        score += 15
+    elif data.morse_ambulatory_aid == MorseAmbulatoryAid.furniture:
+        score += 30
+    if data.morse_iv_or_heparin_lock:
+        score += 20
+    if data.morse_gait == MorseGait.weak:
+        score += 10
+    elif data.morse_gait == MorseGait.impaired:
+        score += 20
+    if data.morse_mental_status == MorseMentalStatus.overestimates_or_forgets_limitations:
+        score += 15
+
+    if score >= 45:
+        band = "high"
+        high_flag = True
+    elif score >= 25:
+        band = "moderate"
+        high_flag = False
+    else:
+        band = "low"
+        high_flag = False
+
+    note = f"Morse fall risk score {score} ({band} risk)."
+    return score, note, high_flag
+
+
+def has_effective_high_falls_risk(data: OsteoInput) -> bool:
+    _, _, morse_high = compute_morse_fall_risk(data)
+    return data.high_falls_risk or morse_high
+
+
+def has_effective_frailty(data: OsteoInput) -> bool:
+    return data.frailty or ((data.cfs_score or 0) >= 5)
 
 
 def calculate_calcium_intake(data: OsteoInput) -> Tuple[Optional[float], Optional[str]]:
@@ -1133,18 +1238,41 @@ def determine_conference_risk_tier(data: OsteoInput) -> str:
         FractureType.hip in data.prior_fragility_fractures
         or FractureType.vertebral in data.prior_fragility_fractures
     )
-    multiple_fx = len(data.prior_fragility_fractures) >= 2
+    vertebral_count = max(
+        data.vertebral_fracture_count,
+        1 if FractureType.vertebral in data.prior_fragility_fractures else 0,
+    )
+    hip_count = max(
+        data.hip_fracture_count,
+        1 if FractureType.hip in data.prior_fragility_fractures else 0,
+    )
+    multiple_fx = (
+        len(data.prior_fragility_fractures) >= 2
+        or vertebral_count >= 2
+        or hip_count >= 2
+    )
     frax_major = data.frax_major_osteoporotic or 0.0
     frax_hip = data.frax_hip or 0.0
+    very_high_frax = frax_major >= 30.0 or frax_hip >= 4.5
+    effective_high_falls_risk = has_effective_high_falls_risk(data)
+    effective_frailty = has_effective_frailty(data)
+    low_bmd_high_burden = (
+        min_t is not None
+        and min_t <= -2.5
+        and data.age >= 75
+        and (effective_frailty or data.glucocorticoids or effective_high_falls_risk)
+    )
 
     if (
         has_major_fx
         or multiple_fx
+        or (data.recent_fragility_fracture and min_t is not None and min_t <= -2.5)
         or data.fractures_during_current_therapy
         or (min_t is not None and min_t <= -3.0)
-        or frax_major >= 30.0
-        or frax_hip >= 4.5
-        or (data.high_falls_risk and (data.dementia_or_cognitive_impairment or data.significant_immobility))
+        or very_high_frax
+        or ((data.dvo_3y_risk_percent or 0.0) >= 10.0)
+        or low_bmd_high_burden
+        or (effective_high_falls_risk and (data.dementia_or_cognitive_impairment or data.significant_immobility))
     ):
         return "very_high"
 
@@ -1266,21 +1394,13 @@ def determine_risk_category(
     internal_index: Optional[float],
 ) -> Tuple[RiskCategory, List[str]]:
     reasons: List[str] = []
+    effective_high_falls_risk = has_effective_high_falls_risk(data)
+    effective_frailty = has_effective_frailty(data)
 
     has_hip = FractureType.hip in data.prior_fragility_fractures
     has_vertebral = FractureType.vertebral in data.prior_fragility_fractures
-
-    if has_hip or has_vertebral:
-        reasons.append("History of hip or vertebral fragility fracture.")
-        return RiskCategory.very_high, reasons
-
-    if len(data.prior_fragility_fractures) >= 2:
-        reasons.append("Multiple prior fragility fractures.")
-        return RiskCategory.very_high, reasons
-
-    if data.high_falls_risk and (data.dementia_or_cognitive_impairment or data.significant_immobility):
-        reasons.append("High falls risk combined with dementia or significant immobility.")
-        return RiskCategory.very_high, reasons
+    vertebral_count = max(data.vertebral_fracture_count, 1 if has_vertebral else 0)
+    hip_count = max(data.hip_fracture_count, 1 if has_hip else 0)
 
     t_scores = [
         ts
@@ -1300,10 +1420,43 @@ def determine_risk_category(
 
     internal_index_high = internal_index is not None and internal_index >= 6.0
     very_high_frax = frax_major >= 30.0 or frax_hip >= 4.5
+    dvo_3y_very_high = (data.dvo_3y_risk_percent or 0.0) >= 10.0
+    low_bmd_plus_clinical_burden = (
+        min_t is not None
+        and min_t <= -2.5
+        and data.age >= 75
+        and (effective_frailty or data.glucocorticoids or effective_high_falls_risk)
+    )
     imminent_clinical_pattern = (
         data.fractures_during_current_therapy
-        or (data.history_of_falls_last_year and data.high_falls_risk)
+        or (data.history_of_falls_last_year and effective_high_falls_risk)
     )
+
+    if has_hip or has_vertebral:
+        reasons.append("History of hip or vertebral fragility fracture.")
+        return RiskCategory.very_high, reasons
+
+    if vertebral_count >= 2:
+        reasons.append(f"Multiple vertebral fragility fractures reported (n={vertebral_count}).")
+        return RiskCategory.very_high, reasons
+
+    if hip_count >= 2:
+        reasons.append(f"Multiple hip fragility fractures reported (n={hip_count}).")
+        return RiskCategory.very_high, reasons
+
+    if len(data.prior_fragility_fractures) >= 2:
+        reasons.append("Multiple prior fragility fractures.")
+        return RiskCategory.very_high, reasons
+
+    if data.recent_fragility_fracture and min_t is not None and min_t <= -2.5:
+        reasons.append(
+            f"Recent fragility fracture pattern with low BMD (minimum T-score {min_t:.2f})."
+        )
+        return RiskCategory.very_high, reasons
+
+    if effective_high_falls_risk and (data.dementia_or_cognitive_impairment or data.significant_immobility):
+        reasons.append("High falls risk combined with dementia or significant immobility.")
+        return RiskCategory.very_high, reasons
 
     if min_t is not None and min_t <= -3.0:
         reasons.append(f"Very low T-score (≤ -3.0); minimum T-score {min_t:.2f}.")
@@ -1312,6 +1465,18 @@ def determine_risk_category(
     if very_high_frax:
         reasons.append(
             f"Very high external FRAX pattern: major={frax_major:.1f}%, hip={frax_hip:.1f}%."
+        )
+        return RiskCategory.very_high, reasons
+
+    if dvo_3y_very_high:
+        reasons.append(
+            f"DVO 3-year fracture risk is high ({data.dvo_3y_risk_percent:.1f}% ≥ 10%)."
+        )
+        return RiskCategory.very_high, reasons
+
+    if low_bmd_plus_clinical_burden:
+        reasons.append(
+            "Low BMD with advanced age and frailty/GC/falls burden (very-high-risk pattern)."
         )
         return RiskCategory.very_high, reasons
 
@@ -1365,6 +1530,107 @@ def determine_risk_category(
     return RiskCategory.low, reasons
 
 
+def build_very_high_criteria_status(data: OsteoInput) -> List[VeryHighCriterionStatus]:
+    t_scores = [
+        ts
+        for ts in [
+            data.spine_t_score,
+            data.total_hip_t_score,
+            data.femoral_neck_t_score,
+        ]
+        if ts is not None
+    ]
+    min_t = min(t_scores) if t_scores else None
+    effective_high_falls_risk = has_effective_high_falls_risk(data)
+    effective_frailty = has_effective_frailty(data)
+    frax_major = data.frax_major_osteoporotic or 0.0
+    frax_hip = data.frax_hip or 0.0
+    vertebral_count = max(
+        data.vertebral_fracture_count,
+        1 if FractureType.vertebral in data.prior_fragility_fractures else 0,
+    )
+    hip_count = max(
+        data.hip_fracture_count,
+        1 if FractureType.hip in data.prior_fragility_fractures else 0,
+    )
+
+    status: List[VeryHighCriterionStatus] = []
+    status.append(
+        VeryHighCriterionStatus(
+            key="multiple_vertebral_fractures",
+            label="Multiple vertebral fractures",
+            met=vertebral_count >= 2,
+            detail=f"vertebral fractures: n={vertebral_count}",
+        )
+    )
+    status.append(
+        VeryHighCriterionStatus(
+            key="multiple_hip_fractures",
+            label="Multiple hip fractures (including bilateral pattern)",
+            met=hip_count >= 2,
+            detail=f"hip fractures: n={hip_count}",
+        )
+    )
+    status.append(
+        VeryHighCriterionStatus(
+            key="recent_fracture_with_low_bmd",
+            label="Recent fragility fracture + low BMD (T-score <= -2.5)",
+            met=data.recent_fragility_fracture and min_t is not None and min_t <= -2.5,
+            detail=f"recent fracture={data.recent_fragility_fracture}, min T-score={min_t if min_t is not None else 'n/a'}",
+        )
+    )
+    status.append(
+        VeryHighCriterionStatus(
+            key="very_low_bmd",
+            label="Very low BMD (T-score <= -3.0)",
+            met=min_t is not None and min_t <= -3.0,
+            detail=f"min T-score={min_t if min_t is not None else 'n/a'}",
+        )
+    )
+    status.append(
+        VeryHighCriterionStatus(
+            key="frax_above_very_high_threshold",
+            label="FRAX 10-year above very-high thresholds",
+            met=frax_major >= 30.0 or frax_hip >= 4.5,
+            detail=f"major={frax_major:.1f}% (>=30), hip={frax_hip:.1f}% (>=4.5)",
+        )
+    )
+    status.append(
+        VeryHighCriterionStatus(
+            key="dvo_3y_high",
+            label="DVO 3-year risk >= 10%",
+            met=(data.dvo_3y_risk_percent or 0.0) >= 10.0,
+            detail=f"dvo_3y={data.dvo_3y_risk_percent if data.dvo_3y_risk_percent is not None else 'n/a'}%",
+        )
+    )
+    status.append(
+        VeryHighCriterionStatus(
+            key="low_bmd_age_frailty_gc_falls",
+            label="Low BMD + advanced age + frailty/GC/falls risk",
+            met=(
+                min_t is not None
+                and min_t <= -2.5
+                and data.age >= 75
+                and (effective_frailty or data.glucocorticoids or effective_high_falls_risk)
+            ),
+            detail=(
+                f"min T-score={min_t if min_t is not None else 'n/a'}, age={data.age}, "
+                f"frailty={effective_frailty}, glucocorticoids={data.glucocorticoids}, "
+                f"high falls risk={effective_high_falls_risk}"
+            ),
+        )
+    )
+    status.append(
+        VeryHighCriterionStatus(
+            key="fracture_on_therapy",
+            label="Fracture while on active therapy",
+            met=data.fractures_during_current_therapy,
+            detail=f"fracture_on_therapy={data.fractures_during_current_therapy}",
+        )
+    )
+    return status
+
+
 def build_suggestions(
     data: OsteoInput,
     risk: RiskCategory,
@@ -1372,6 +1638,8 @@ def build_suggestions(
     calcium_note: Optional[str],
 ) -> List[Suggestion]:
     suggestions: List[Suggestion] = []
+    _, morse_note, morse_high = compute_morse_fall_risk(data)
+    effective_high_falls_risk = data.high_falls_risk or morse_high
     creat = data.serum_creatinine_mg_dl
     urea = data.serum_urea_mg_dl
 
@@ -1648,7 +1916,7 @@ def build_suggestions(
         )
 
     # Falls risk / cognition / immobility
-    if data.high_falls_risk or data.history_of_falls_last_year:
+    if effective_high_falls_risk or data.history_of_falls_last_year:
         suggestions.append(
             Suggestion(
                 category="falls_risk",
@@ -1659,6 +1927,13 @@ def build_suggestions(
                 ),
             )
         )
+        if morse_note is not None:
+            suggestions.append(
+                Suggestion(
+                    category="falls_risk",
+                    text=f"{morse_note} Use this together with clinical judgment and observed mobility.",
+                )
+            )
 
     if data.dementia_or_cognitive_impairment:
         suggestions.append(
@@ -1683,6 +1958,27 @@ def build_suggestions(
                 ),
             )
         )
+    if data.cfs_score is not None:
+        if data.cfs_score >= 5:
+            suggestions.append(
+                Suggestion(
+                    category="frailty",
+                    text=(
+                        f"CFS score is {data.cfs_score}/9 (frailty range). Consider geriatric-oriented "
+                        "falls prevention, strength/balance rehabilitation, and simplified medication pathways."
+                    ),
+                )
+            )
+        else:
+            suggestions.append(
+                Suggestion(
+                    category="frailty",
+                    text=(
+                        f"CFS score is {data.cfs_score}/9 (not in frailty range). Continue prevention measures "
+                        "and monitor function over time."
+                    ),
+                )
+            )
 
     # Nutrition / dietician
     if data.dietician_follow_up:
@@ -1822,6 +2118,9 @@ def build_clinical_note(
     calcium_note: Optional[str],
 ) -> str:
     lines: List[str] = []
+    morse_score, morse_note, morse_high = compute_morse_fall_risk(data)
+    effective_high_falls_risk = data.high_falls_risk or morse_high
+    effective_frailty = has_effective_frailty(data)
 
     lines.append("Osteoporosis decision-support summary (for clinician use only).")
     lines.append("")
@@ -1847,6 +2146,12 @@ def build_clinical_note(
         lines.append(f"Prior fragility fractures: {frx_types}.")
     else:
         lines.append("Prior fragility fractures: none reported.")
+    if data.vertebral_fracture_count:
+        lines.append(f"Reported vertebral fracture count: {data.vertebral_fracture_count}.")
+    if data.hip_fracture_count:
+        lines.append(f"Reported hip fracture count: {data.hip_fracture_count}.")
+    if data.recent_fragility_fracture:
+        lines.append("Recent fragility fracture pattern: yes (imminent-risk marker).")
 
     if data.frax_major_osteoporotic is not None or data.frax_hip is not None:
         lines.append(
@@ -1854,6 +2159,10 @@ def build_clinical_note(
             f"major osteoporotic {data.frax_major_osteoporotic or 0:.1f}%, "
             f"hip {data.frax_hip or 0:.1f}%."
         )
+        if (data.frax_major_osteoporotic or 0.0) >= 30.0 or (data.frax_hip or 0.0) >= 4.5:
+            lines.append("FRAX is above the very-high-risk thresholds (major >=30% and/or hip >=4.5%).")
+    if data.dvo_3y_risk_percent is not None:
+        lines.append(f"DVO 3-year risk: {data.dvo_3y_risk_percent:.1f}%.")
 
     # Internal index
     if internal_index is not None and internal_index_note is not None:
@@ -1910,16 +2219,26 @@ def build_clinical_note(
         f"Exercise level: {data.exercise_level.value}, daily walking: {data.daily_walking.value}."
     )
     fragility_modifiers = []
-    if data.high_falls_risk:
+    if effective_high_falls_risk:
         fragility_modifiers.append("high falls risk")
     if data.history_of_falls_last_year:
         fragility_modifiers.append("falls in last year")
+    if data.frailty:
+        fragility_modifiers.append("frailty")
+    if data.cfs_score is not None:
+        fragility_modifiers.append(f"CFS {data.cfs_score}/9")
+    if data.glucocorticoids:
+        fragility_modifiers.append("glucocorticoid exposure")
     if data.dementia_or_cognitive_impairment:
         fragility_modifiers.append("cognitive impairment")
     if data.significant_immobility:
         fragility_modifiers.append("immobility")
     if fragility_modifiers:
         lines.append("Functional/fragility modifiers: " + ", ".join(fragility_modifiers) + ".")
+    if effective_frailty and not data.frailty and data.cfs_score is not None:
+        lines.append("Frailty signal derived from CFS score (>=5).")
+    if morse_score is not None and morse_note is not None:
+        lines.append(morse_note)
 
     # Risk category
     lines.append("")
@@ -1997,6 +2316,7 @@ def compute_assessment_from_input(input_data: OsteoInput) -> OsteoAssessment:
     risk, reasons = determine_risk_category(input_data, internal_index)
     suggestions = build_suggestions(input_data, risk, calcium_total_mg, calcium_note)
     follow_up_steps = determine_follow_up_steps(input_data, risk)
+    very_high_criteria = build_very_high_criteria_status(input_data)
 
     clinical_note = build_clinical_note(
         input_data,
@@ -2021,6 +2341,7 @@ def compute_assessment_from_input(input_data: OsteoInput) -> OsteoAssessment:
         clinical_note=clinical_note,
         patient_summary=patient_summary,
         follow_up_steps=follow_up_steps,
+        very_high_criteria=very_high_criteria,
     )
 
 # =========================
@@ -2544,6 +2865,7 @@ def elaborate_osteoporosis(req: ElaborationRequest) -> ElaborationResponse:
     user_payload = {
         "risk_category": a.risk_category,
         "risk_reasons": a.risk_reasons,
+        "very_high_criteria_met": [c.label for c in a.very_high_criteria if c.met],
         "internal_frax_like_index": a.internal_frax_like_index,
         "calcium_intake_note": a.calcium_intake_note,
         "suggestions": [s.text for s in a.suggestions],

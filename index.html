@@ -220,6 +220,21 @@
       background: #fecaca;
       color: #7f1d1d;
     }
+    .sub-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid rgba(153, 27, 27, 0.25);
+      margin-left: 8px;
+      vertical-align: middle;
+    }
     .chip-row {
       display: flex;
       flex-wrap: wrap;
@@ -231,6 +246,49 @@
       border-radius: 999px;
       background: rgba(15, 23, 42, 0.06);
       font-size: 12px;
+    }
+    .criteria-panel {
+      margin-top: 14px;
+      border: 1px solid rgba(15, 23, 42, 0.1);
+      border-radius: 12px;
+      padding: 12px;
+      background: #f8fafc;
+    }
+    .criteria-title {
+      margin: 0 0 8px;
+      font-size: 13px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-weight: 700;
+    }
+    .criteria-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 8px;
+    }
+    .criteria-item {
+      border-radius: 10px;
+      padding: 8px 10px;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      background: #fff;
+      font-size: 13px;
+      color: #1e293b;
+    }
+    .criteria-item.met {
+      border-color: rgba(185, 28, 28, 0.35);
+      background: #fee2e2;
+      color: #7f1d1d;
+      font-weight: 600;
+    }
+    .criteria-item .criteria-detail {
+      display: block;
+      margin-top: 4px;
+      font-size: 12px;
+      color: #64748b;
+      font-weight: 500;
     }
     .risk-metrics {
       display: grid;
@@ -559,6 +617,24 @@
           </div>
           <div class="field-grid">
             <div class="field">
+              <label for="vertebral_fracture_count">Vertebral fractures (count)</label>
+              <input id="vertebral_fracture_count" type="number" min="0" step="1" />
+            </div>
+            <div class="field">
+              <label for="hip_fracture_count">Hip fractures (count)</label>
+              <input id="hip_fracture_count" type="number" min="0" step="1" />
+            </div>
+            <div class="field">
+              <label for="dvo_3y_risk_percent">DVO 3-year risk % (optional)</label>
+              <input id="dvo_3y_risk_percent" type="number" step="0.1" />
+            </div>
+            <div class="checkbox-group">
+              <label>Imminent pattern</label>
+              <label><input type="checkbox" id="recent_fragility_fracture" /> recent fragility fracture</label>
+            </div>
+          </div>
+          <div class="field-grid">
+            <div class="field">
               <label for="weight_kg">Weight (kg)</label>
               <input id="weight_kg" type="number" step="0.1" />
             </div>
@@ -584,6 +660,7 @@
               <label><input type="checkbox" id="rheumatoid_arthritis" /> rheumatoid arthritis</label>
               <label><input type="checkbox" id="secondary_osteoporosis" /> secondary osteoporosis</label>
               <label><input type="checkbox" id="high_alcohol_intake" /> high alcohol intake</label>
+              <label><input type="checkbox" id="frailty" /> frailty</label>
             </div>
           </div>
           <div class="field-grid">
@@ -848,6 +925,10 @@
                 <option value="over_30_min">over 30 min</option>
               </select>
             </div>
+            <div class="field">
+              <label for="cfs_score">Clinical Frailty Scale (1-9)</label>
+              <input id="cfs_score" type="number" min="1" max="9" step="1" />
+            </div>
           </div>
           <div class="checkbox-grid">
             <div class="checkbox-group">
@@ -857,6 +938,39 @@
               <label><input type="checkbox" id="dementia_or_cognitive_impairment" /> dementia / cognitive</label>
               <label><input type="checkbox" id="significant_immobility" /> significant immobility</label>
               <label><input type="checkbox" id="dietician_follow_up" /> dietician follow-up</label>
+            </div>
+          </div>
+          <div class="field-grid">
+            <div class="field">
+              <label for="morse_ambulatory_aid">Morse: ambulatory aid</label>
+              <select id="morse_ambulatory_aid">
+                <option value="none_bedrest_assist">none / bedrest / nurse assist</option>
+                <option value="cane_walker_crutches">cane / walker / crutches</option>
+                <option value="furniture">furniture</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="morse_gait">Morse: gait / transferring</label>
+              <select id="morse_gait">
+                <option value="normal_bedrest_wheelchair">normal / bedrest / wheelchair</option>
+                <option value="weak">weak</option>
+                <option value="impaired">impaired / hazardous</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="morse_mental_status">Morse: mental status</label>
+              <select id="morse_mental_status">
+                <option value="aware_of_limitations">aware of limitations</option>
+                <option value="overestimates_or_forgets_limitations">overestimates / forgets limits</option>
+              </select>
+            </div>
+          </div>
+          <div class="checkbox-grid">
+            <div class="checkbox-group">
+              <label>Morse: binary components</label>
+              <label><input type="checkbox" id="morse_history_of_falling_3m" /> history of falling (now/last 3 months)</label>
+              <label><input type="checkbox" id="morse_secondary_diagnosis" /> secondary diagnosis (&gt;1 diagnosis)</label>
+              <label><input type="checkbox" id="morse_iv_or_heparin_lock" /> IV therapy / heparin lock</label>
             </div>
           </div>
         </form>
@@ -882,6 +996,7 @@
         <div class="risk-metrics" id="riskOverview">
           <div>
             <span class="pill" id="riskLevelBadge">—</span>
+            <span class="sub-pill" id="veryHighCountBadge">Very high: —</span>
           </div>
           <div class="chip-row" id="riskDrivers"></div>
           <div class="risk-metrics">
@@ -895,6 +1010,12 @@
             </div>
           </div>
           <p id="calciumNote" class="muted" style="margin-top:4px;"></p>
+          <div class="criteria-panel" id="veryHighCriteriaPanel">
+            <p class="criteria-title">Very high risk criteria (highlighted when active)</p>
+            <ul class="criteria-list" id="veryHighCriteriaList">
+              <li class="criteria-item">Run an evaluation to see which criteria are met.</li>
+            </ul>
+          </div>
         </div>
         <div class="suggestion-grid" id="suggestionBuckets"></div>
         <div class="therapy-highlights" id="therapyHighlights"></div>
@@ -1039,10 +1160,12 @@
     const statusMessage = document.getElementById("statusMessage");
     const formNote = document.getElementById("formNote");
     const riskLevelBadge = document.getElementById("riskLevelBadge");
+    const veryHighCountBadge = document.getElementById("veryHighCountBadge");
     const riskDrivers = document.getElementById("riskDrivers");
     const calciumTotal = document.getElementById("calciumTotal");
     const internalIndex = document.getElementById("internalIndex");
     const calciumNote = document.getElementById("calciumNote");
+    const veryHighCriteriaList = document.getElementById("veryHighCriteriaList");
     const suggestionBuckets = document.getElementById("suggestionBuckets");
     const therapyHighlights = document.getElementById("therapyHighlights");
     const clinicalNote = document.getElementById("clinicalNote");
@@ -1062,8 +1185,11 @@
       "spine_t_score",
       "total_hip_t_score",
       "femoral_neck_t_score",
+      "vertebral_fracture_count",
+      "hip_fracture_count",
       "frax_major",
       "frax_hip",
+      "dvo_3y_risk_percent",
       "weight_kg",
       "height_cm",
       "vitamin_d_25oh_ng_ml",
@@ -1088,6 +1214,7 @@
       "calcium_supplement_mg_per_day",
       "vitamin_d3_iu_per_day",
       "current_therapy_duration_years",
+      "cfs_score",
     ];
     function setInputValue(id, value) {
       const el = document.getElementById(id);
@@ -1113,8 +1240,12 @@
       setInputValue("spine_t_score", input.spine_t_score);
       setInputValue("total_hip_t_score", input.total_hip_t_score);
       setInputValue("femoral_neck_t_score", input.femoral_neck_t_score);
+      setInputValue("vertebral_fracture_count", input.vertebral_fracture_count);
+      setInputValue("hip_fracture_count", input.hip_fracture_count);
+      setCheckboxValue("recent_fragility_fracture", input.recent_fragility_fracture);
       setInputValue("frax_major", input.frax_major_osteoporotic);
       setInputValue("frax_hip", input.frax_hip);
+      setInputValue("dvo_3y_risk_percent", input.dvo_3y_risk_percent);
       setCheckboxValue("fx_hip", input.prior_fragility_fractures?.includes("hip"));
       setCheckboxValue("fx_vert", input.prior_fragility_fractures?.includes("vertebral"));
       setCheckboxValue("fx_nonvert", input.prior_fragility_fractures?.includes("non_vertebral"));
@@ -1124,6 +1255,7 @@
       setCheckboxValue("rheumatoid_arthritis", input.rheumatoid_arthritis);
       setCheckboxValue("secondary_osteoporosis", input.secondary_osteoporosis);
       setCheckboxValue("high_alcohol_intake", input.high_alcohol_intake);
+      setCheckboxValue("frailty", input.frailty);
       setInputValue("vitamin_d_25oh_ng_ml", input.vitamin_d_25oh_ng_ml);
       setInputValue("serum_calcium_mg_dl", input.serum_calcium_mg_dl);
       setInputValue("serum_phosphorus_mg_dl", input.serum_phosphorus_mg_dl);
@@ -1163,11 +1295,18 @@
       setCheckboxValue("significant_therapy_adverse_effects", input.significant_therapy_adverse_effects);
       setInputValue("exercise_level", input.exercise_level);
       setInputValue("daily_walking", input.daily_walking);
+      setInputValue("cfs_score", input.cfs_score);
       setCheckboxValue("dietician_follow_up", input.dietician_follow_up);
       setCheckboxValue("high_falls_risk", input.high_falls_risk);
       setCheckboxValue("history_of_falls_last_year", input.history_of_falls_last_year);
       setCheckboxValue("dementia_or_cognitive_impairment", input.dementia_or_cognitive_impairment);
       setCheckboxValue("significant_immobility", input.significant_immobility);
+      setCheckboxValue("morse_history_of_falling_3m", input.morse_history_of_falling_3m);
+      setCheckboxValue("morse_secondary_diagnosis", input.morse_secondary_diagnosis);
+      setInputValue("morse_ambulatory_aid", input.morse_ambulatory_aid || "none_bedrest_assist");
+      setCheckboxValue("morse_iv_or_heparin_lock", input.morse_iv_or_heparin_lock);
+      setInputValue("morse_gait", input.morse_gait || "normal_bedrest_wheelchair");
+      setInputValue("morse_mental_status", input.morse_mental_status || "aware_of_limitations");
       setTScoreHistoryEntries(input.t_score_history || []);
     }
     function syncTherapyJson() {
@@ -1220,6 +1359,20 @@
         therapyLines.push("Ανεπιθύμητα συμβάματα στην τρέχουσα θεραπεία");
       }
       lines.push(therapyLines.join(" · "));
+      const fractureBits = [];
+      if (entry.input_data.vertebral_fracture_count) fractureBits.push(`vertebral fractures n=${entry.input_data.vertebral_fracture_count}`);
+      if (entry.input_data.hip_fracture_count) fractureBits.push(`hip fractures n=${entry.input_data.hip_fracture_count}`);
+      if (entry.input_data.recent_fragility_fracture) fractureBits.push("recent fragility fracture");
+      if (fractureBits.length) lines.push("Fracture burden: " + fractureBits.join(" · "));
+      const morseBits = [];
+      if (entry.input_data.morse_history_of_falling_3m) morseBits.push("falling history");
+      if (entry.input_data.morse_secondary_diagnosis) morseBits.push("secondary diagnosis");
+      if (entry.input_data.morse_iv_or_heparin_lock) morseBits.push("IV/heparin");
+      if (entry.input_data.morse_ambulatory_aid && entry.input_data.morse_ambulatory_aid !== "none_bedrest_assist") morseBits.push(`aid=${entry.input_data.morse_ambulatory_aid}`);
+      if (entry.input_data.morse_gait && entry.input_data.morse_gait !== "normal_bedrest_wheelchair") morseBits.push(`gait=${entry.input_data.morse_gait}`);
+      if (entry.input_data.morse_mental_status && entry.input_data.morse_mental_status !== "aware_of_limitations") morseBits.push("mental status risk");
+      if (morseBits.length) lines.push("Morse factors: " + morseBits.join(" · "));
+      if (entry.input_data.cfs_score != null) lines.push(`CFS: ${entry.input_data.cfs_score}/9`);
       const labs = [];
       if (entry.input_data.vitamin_d_25oh_ng_ml != null) labs.push(`25-OH Vit D ${entry.input_data.vitamin_d_25oh_ng_ml.toFixed(1)} ng/mL`);
       if (entry.input_data.serum_calcium_mg_dl != null) labs.push(`Ca ${entry.input_data.serum_calcium_mg_dl.toFixed(2)} mg/dL`);
@@ -1463,8 +1616,12 @@
         total_hip_t_score: val("total_hip_t_score"),
         femoral_neck_t_score: val("femoral_neck_t_score"),
         prior_fragility_fractures: fractures,
+        vertebral_fracture_count: val("vertebral_fracture_count") ?? 0,
+        hip_fracture_count: val("hip_fracture_count") ?? 0,
+        recent_fragility_fracture: val("recent_fragility_fracture"),
         frax_major_osteoporotic: val("frax_major"),
         frax_hip: val("frax_hip"),
+        dvo_3y_risk_percent: val("dvo_3y_risk_percent"),
         weight_kg: val("weight_kg"),
         height_cm: val("height_cm"),
         parental_hip_fracture: val("parental_hip_fracture"),
@@ -1473,6 +1630,7 @@
         rheumatoid_arthritis: val("rheumatoid_arthritis"),
         secondary_osteoporosis: val("secondary_osteoporosis"),
         high_alcohol_intake: val("high_alcohol_intake"),
+        frailty: val("frailty"),
         vitamin_d_25oh_ng_ml: val("vitamin_d_25oh_ng_ml"),
         serum_calcium_mg_dl: val("serum_calcium_mg_dl"),
         serum_phosphorus_mg_dl: val("serum_phosphorus_mg_dl"),
@@ -1504,11 +1662,18 @@
         t_score_history: tScoreEntries.slice(),
         exercise_level: val("exercise_level"),
         daily_walking: val("daily_walking"),
+        cfs_score: val("cfs_score"),
         dietician_follow_up: val("dietician_follow_up"),
         high_falls_risk: val("high_falls_risk"),
         history_of_falls_last_year: val("history_of_falls_last_year"),
         dementia_or_cognitive_impairment: val("dementia_or_cognitive_impairment"),
         significant_immobility: val("significant_immobility"),
+        morse_history_of_falling_3m: val("morse_history_of_falling_3m"),
+        morse_secondary_diagnosis: val("morse_secondary_diagnosis"),
+        morse_ambulatory_aid: val("morse_ambulatory_aid"),
+        morse_iv_or_heparin_lock: val("morse_iv_or_heparin_lock"),
+        morse_gait: val("morse_gait"),
+        morse_mental_status: val("morse_mental_status"),
         milk_portions_per_day: val("milk_portions") ?? 0,
         yogurt_portions_per_day: val("yogurt_portions") ?? 0,
         cheese_portions_per_day: val("cheese_portions") ?? 0,
@@ -1548,6 +1713,38 @@
         internalIndex.textContent = "—";
       }
       calciumNote.textContent = assessment?.calcium_intake_note || "";
+      renderVeryHighCriteria(assessment);
+    }
+    function renderVeryHighCriteria(assessment) {
+      if (!veryHighCriteriaList) return;
+      const criteria = assessment?.very_high_criteria || [];
+      if (veryHighCountBadge) {
+        if (!criteria.length) {
+          veryHighCountBadge.textContent = "Very high: —";
+        } else {
+          const metCount = criteria.filter((criterion) => !!criterion.met).length;
+          veryHighCountBadge.textContent = `Very high: ${metCount}/${criteria.length} met`;
+        }
+      }
+      if (!criteria.length) {
+        veryHighCriteriaList.innerHTML = '<li class="criteria-item">No explicit very-high criteria available for this record.</li>';
+        return;
+      }
+      veryHighCriteriaList.innerHTML = "";
+      criteria.forEach((criterion) => {
+        const li = document.createElement("li");
+        li.className = `criteria-item ${criterion.met ? "met" : ""}`;
+        const title = document.createElement("div");
+        title.textContent = `${criterion.met ? "✓" : "○"} ${criterion.label}`;
+        li.appendChild(title);
+        if (criterion.detail) {
+          const detail = document.createElement("span");
+          detail.className = "criteria-detail";
+          detail.textContent = criterion.detail;
+          li.appendChild(detail);
+        }
+        veryHighCriteriaList.appendChild(li);
+      });
     }
     function renderSuggestionBuckets(suggestions) {
       suggestionBuckets.innerHTML = "";
