@@ -493,9 +493,15 @@
     }
     .follow-up-header {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
+      flex-direction: column;
+      align-items: flex-start;
       margin-bottom: 8px;
+      gap: 8px;
+    }
+    .follow-up-actions {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
     }
     .follow-up-timeline {
       margin-top: 12px;
@@ -561,6 +567,12 @@
       flex-direction: column;
       gap: 4px;
     }
+    .agreed-plan-extra {
+      margin-top: 10px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 10px 12px;
+    }
     .therapy-json-area {
       margin-top: 12px;
     }
@@ -593,6 +605,15 @@
       border-radius: 12px;
       padding: 12px 14px;
       background: #fafafa;
+    }
+    .history-actions {
+      margin-top: 10px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .history-table tbody tr.selected {
+      background: rgba(37, 99, 235, 0.12);
     }
     .history-table table {
       width: 100%;
@@ -1123,11 +1144,14 @@
             <div>
               <p class="muted" style="margin:0;">Suggested follow-up (DEXA/labs) will appear here.</p>
             </div>
-            <div style="display:flex;gap:6px;">
+            <div class="follow-up-actions">
               <button id="copyFollowUpBtn" class="button secondary" style="font-size:12px;padding:6px 10px;">Copy follow-up</button>
               <button id="handoutBtn" class="button secondary" style="font-size:12px;padding:6px 10px;">Patient handout</button>
               <button id="printHandoutBtn" class="button secondary" style="font-size:12px;padding:6px 10px;">Export/print</button>
             </div>
+          </div>
+          <div id="followUpPlanList">
+            <p class="muted">Suggested follow-up (DEXA/labs) will appear here.</p>
           </div>
         </div>
         <div class="follow-up-timeline" id="followUpTimeline">
@@ -1160,6 +1184,24 @@
             <label><input type="checkbox" class="agreed-plan-option" value="Δομημένη άσκηση (ενδυνάμωση + ισορροπία)" /> Άσκηση</label>
             <label><input type="checkbox" class="agreed-plan-option" value="Παραπομπή/παρακολούθηση από διατροφολόγο" /> Διατροφολόγος</label>
             <label><input type="checkbox" class="agreed-plan-option" value="Πρόγραμμα πρόληψης πτώσεων και παρεμβάσεις ασφάλειας στο σπίτι" /> Fall prevention</label>
+          </div>
+          <div class="agreed-plan-extra">
+            <div class="field">
+              <label for="agreed_plan_therapy_transition">Επιλογή αλλαγής αγωγής (αν επιλεγεί)</label>
+              <select id="agreed_plan_therapy_transition">
+                <option value="">-- επίλεξε στρατηγική --</option>
+                <option value="Oral bisphosphonate → Denosumab">Oral bisphosphonate → Denosumab</option>
+                <option value="Oral bisphosphonate → Zoledronate">Oral bisphosphonate → Zoledronate</option>
+                <option value="Denosumab → Oral/IV bisphosphonate (consolidation)">Denosumab → Oral/IV bisphosphonate (consolidation)</option>
+                <option value="Anabolic (Teriparatide/Romosozumab) → Denosumab">Anabolic (Teriparatide/Romosozumab) → Denosumab</option>
+                <option value="Anabolic (Teriparatide/Romosozumab) → Bisphosphonate">Anabolic (Teriparatide/Romosozumab) → Bisphosphonate</option>
+                <option value="Άλλο (γράφεται στις επιπλέον οδηγίες)">Άλλο (γράφεται στις επιπλέον οδηγίες)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="agreed_plan_supplements">Οδηγίες συμπληρωμάτων (προαιρετικά)</label>
+              <textarea id="agreed_plan_supplements" rows="3" placeholder="π.χ. Calcium στόχος 1000-1200 mg/day, Vitamin D διατήρηση επάρκειας, Mg αν ενδείκνυται"></textarea>
+            </div>
           </div>
           <div class="field" style="margin-top:10px;">
             <label for="agreed_plan_custom">Επιπλέον οδηγίες (μία ανά γραμμή)</label>
@@ -1244,6 +1286,10 @@
           <p id="historyDetailContent" class="muted" style="margin:6px 0 0;">
             Click a row to preview its key metrics, therapies, and labs.
           </p>
+          <div class="history-actions">
+            <button id="loadSelectedHistoryBtn" class="button secondary" style="font-size:12px;padding:6px 10px;">Load selected visit</button>
+            <button id="deleteSelectedHistoryBtn" class="button ghost" style="font-size:12px;padding:6px 10px;">Delete selected visit</button>
+          </div>
         </div>
         <div class="grid-divider"></div>
         <div>
@@ -1264,6 +1310,7 @@
       trend: `${API_BASE}/osteoporosis/patient`,
       history: `${API_BASE}/osteoporosis/patient`,
       updateAssessment: `${API_BASE}/osteoporosis/assessment`,
+      deleteAssessment: `${API_BASE}/osteoporosis/assessment`,
       compareTherapy: `${API_BASE}/osteoporosis/analytics/therapy-comparison`,
       elaborate: `${API_BASE}/osteoporosis/elaborate`,
       treatment: `${API_BASE}/osteoporosis/treatment-recommendation`,
@@ -1274,6 +1321,7 @@
       lastAssessment: null,
       lastStored: null,
       history: [],
+      selectedHistoryEntry: null,
     };
     let lastFollowUpSteps = [];
     const therapyEntries = [];
@@ -1296,12 +1344,16 @@
     const treatmentRecommendationElm = document.getElementById("treatmentRecommendation");
     const historyTableBody = document.querySelector("#historyTable tbody");
     const historyDetailContent = document.getElementById("historyDetailContent");
+    const loadSelectedHistoryBtn = document.getElementById("loadSelectedHistoryBtn");
+    const deleteSelectedHistoryBtn = document.getElementById("deleteSelectedHistoryBtn");
     const therapyJsonInput = document.getElementById("therapy_history_json");
     const tScoreJsonInput = document.getElementById("t_score_history_json");
     const trendSummary = document.getElementById("trendSummary");
     const cohortComparison = document.getElementById("cohortComparison");
     const openaiQuestionInput = document.getElementById("openai_question_input");
     const openaiQuestionResponse = document.getElementById("openaiQuestionResponse");
+    const agreedPlanTherapyTransition = document.getElementById("agreed_plan_therapy_transition");
+    const agreedPlanSupplementsInput = document.getElementById("agreed_plan_supplements");
     const agreedPlanCustomInput = document.getElementById("agreed_plan_custom");
     const agreedPlanSummary = document.getElementById("agreedPlanSummary");
     const agreedPlanOptionInputs = Array.from(document.querySelectorAll(".agreed-plan-option"));
@@ -2042,7 +2094,7 @@
     }
 
     function updateFollowUpPanel(assessment) {
-      const container = document.getElementById("followUpPanel");
+      const container = document.getElementById("followUpPlanList");
       if (!container) return;
       container.innerHTML = "";
       const steps = assessment?.follow_up_steps || [];
@@ -2083,6 +2135,19 @@
       const selected = agreedPlanOptionInputs
         .filter((input) => input.checked)
         .map((input) => input.value);
+      const hasTherapyChange = agreedPlanOptionInputs.some(
+        (input) => input.checked && input.value.includes("Αλλαγή")
+      );
+      if (hasTherapyChange && agreedPlanTherapyTransition?.value) {
+        selected.push(`Στρατηγική αλλαγής αγωγής: ${agreedPlanTherapyTransition.value}`);
+      }
+      const hasSupplementsPlan = agreedPlanOptionInputs.some(
+        (input) => input.checked && input.value.includes("συμπληρωμάτων")
+      );
+      const supplementsText = (agreedPlanSupplementsInput?.value || "").trim();
+      if (hasSupplementsPlan && supplementsText) {
+        selected.push(`Οδηγίες συμπληρωμάτων: ${supplementsText}`);
+      }
       const custom = (agreedPlanCustomInput?.value || "")
         .split("\n")
         .map((line) => line.trim())
@@ -2206,7 +2271,13 @@
         const p1npTd = document.createElement("td");
         p1npTd.textContent = entry.input_data.p1np_ng_ml != null ? entry.input_data.p1np_ng_ml.toFixed(1) : "";
         row.appendChild(p1npTd);
+        if (state.selectedHistoryEntry?.assessment_id === entry.assessment_id) {
+          row.classList.add("selected");
+        }
         row.addEventListener("click", () => {
+          state.selectedHistoryEntry = entry;
+          historyTableBody.querySelectorAll("tr").forEach((r) => r.classList.remove("selected"));
+          row.classList.add("selected");
           preloadAssessment(entry);
           setStatus(`Loaded historical assessment (${created.toLocaleDateString()}).`, "neutral");
         });
@@ -2214,14 +2285,19 @@
       });
       state.history = history;
       if (!history.length) {
+        state.selectedHistoryEntry = null;
         renderHistoryDetail(null);
         return;
       }
-      renderHistoryDetail(history[history.length - 1]);
+      if (!state.selectedHistoryEntry) {
+        state.selectedHistoryEntry = history[history.length - 1];
+      }
+      renderHistoryDetail(state.selectedHistoryEntry);
     }
 
     function preloadAssessment(entry) {
       if (!entry) return;
+      state.selectedHistoryEntry = entry;
       state.lastAssessment = entry.assessment;
       state.lastStored = {
         assessment_id: entry.assessment_id,
@@ -2352,6 +2428,7 @@
         setStatus("Enter a patient ID to load history.", "error");
         return;
       }
+      state.selectedHistoryEntry = null;
       setStatus("Loading history…", "pending");
       try {
         const res = await fetch(`${endpoints.history}/${encodeURIComponent(patientId)}/history`, {
@@ -2520,6 +2597,48 @@
         setStatus("Error while querying literature.", "error");
       }
     }
+    function loadSelectedHistoryVisit() {
+      if (!state.selectedHistoryEntry) {
+        setStatus("Select a visit from history first.", "error");
+        return;
+      }
+      preloadAssessment(state.selectedHistoryEntry);
+      const created = new Date(state.selectedHistoryEntry.created_at);
+      setStatus(`Loaded selected visit (${created.toLocaleDateString()}).`, "success");
+    }
+    async function deleteSelectedHistoryVisit() {
+      const entry = state.selectedHistoryEntry;
+      if (!entry?.assessment_id) {
+        setStatus("Select a visit before deleting.", "error");
+        return;
+      }
+      const confirmDelete = window.confirm(
+        "Delete this selected visit? This cannot be undone."
+      );
+      if (!confirmDelete) return;
+      setStatus("Deleting selected visit…", "pending");
+      try {
+        const res = await fetch(
+          `${endpoints.deleteAssessment}/${encodeURIComponent(entry.assessment_id)}`,
+          { method: "DELETE" }
+        );
+        if (!res.ok) {
+          setStatus(`Delete failed (${res.status})`, "error");
+          return;
+        }
+        const patientId = document.getElementById("patient_id").value.trim();
+        state.selectedHistoryEntry = null;
+        if (patientId) {
+          await loadHistory();
+        } else {
+          renderHistoryTable([]);
+        }
+        setStatus("Selected visit deleted.", "success");
+      } catch (err) {
+        console.error(err);
+        setStatus("Error deleting selected visit.", "error");
+      }
+    }
     function renderBackbone(assessment, inputData) {
       updateRiskPanel(assessment);
       renderSuggestionBuckets(assessment.suggestions);
@@ -2581,6 +2700,18 @@
         copyFollowUpSummary();
       });
     }
+    if (loadSelectedHistoryBtn) {
+      loadSelectedHistoryBtn.addEventListener("click", (event) => {
+        event.preventDefault();
+        loadSelectedHistoryVisit();
+      });
+    }
+    if (deleteSelectedHistoryBtn) {
+      deleteSelectedHistoryBtn.addEventListener("click", (event) => {
+        event.preventDefault();
+        deleteSelectedHistoryVisit();
+      });
+    }
     const handoutBtn = document.getElementById("handoutBtn");
     if (handoutBtn) {
       handoutBtn.addEventListener("click", (event) => {
@@ -2623,6 +2754,13 @@
     if (agreedPlanCustomInput) {
       agreedPlanCustomInput.addEventListener("input", renderAgreedPlanSummary);
       agreedPlanCustomInput.addEventListener("change", renderAgreedPlanSummary);
+    }
+    if (agreedPlanTherapyTransition) {
+      agreedPlanTherapyTransition.addEventListener("change", renderAgreedPlanSummary);
+    }
+    if (agreedPlanSupplementsInput) {
+      agreedPlanSupplementsInput.addEventListener("input", renderAgreedPlanSummary);
+      agreedPlanSupplementsInput.addEventListener("change", renderAgreedPlanSummary);
     }
     document.querySelectorAll(".toggle-json-btn").forEach((btn) => {
       btn.addEventListener("click", (event) => {

@@ -626,6 +626,12 @@ class TherapyComparisonResponse(BaseModel):
     transitions: Dict[str, int]
     rows: List[TherapyComparisonRow]
 
+
+class DeleteAssessmentResponse(BaseModel):
+    deleted: bool
+    assessment_id: str
+    message: str
+
 # =========================
 # Helper calculations
 # =========================
@@ -2426,6 +2432,27 @@ def update_assessment(assessment_id: str, req: UpdateAssessmentRequest) -> Osteo
         created_at=row.created_at,
         input_data=OsteoInput.model_validate(row.input_json),
         assessment=OsteoAssessment.model_validate(row.output_json),
+    )
+
+
+@app.delete(
+    "/osteoporosis/assessment/{assessment_id}",
+    response_model=DeleteAssessmentResponse,
+)
+def delete_assessment(assessment_id: str) -> DeleteAssessmentResponse:
+    """
+    Delete a stored assessment (useful for duplicate/invalid entries).
+    """
+    with Session(engine) as session:
+        row = session.get(AssessmentORM, assessment_id)
+        if row is None:
+            raise HTTPException(status_code=404, detail="Assessment not found")
+        session.delete(row)
+        session.commit()
+    return DeleteAssessmentResponse(
+        deleted=True,
+        assessment_id=assessment_id,
+        message="Assessment deleted.",
     )
 
 
