@@ -1,4 +1,7 @@
 fastapi[standard]
 uvicorn[standard]
+pydantic
 openai>=1.6.0
 sqlalchemy>=2.0
+psycopg[binary]
+psycopg2-binary

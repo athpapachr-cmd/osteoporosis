@@ -4,6 +4,7 @@ from enum import Enum
 from typing import List, Optional, Tuple
 import json
 import os
+import importlib.util
 from datetime import datetime
 from pathlib import Path
 from uuid import uuid4
@@ -102,12 +103,18 @@ class AssessmentORM(Base):
 
 
 DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///./osteoporosis.db")
-# Normalize Render/Postgres URL and force SQLAlchemy to use psycopg (v3),
-# avoiding implicit fallback to psycopg2.
+
+# Normalize Render/Postgres URL and choose an installed SQLAlchemy driver.
 if DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+psycopg://", 1)
-elif DATABASE_URL.startswith("postgresql://"):
-    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg://", 1)
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
+if DATABASE_URL.startswith("postgresql://") and "+psycopg" not in DATABASE_URL and "+psycopg2" not in DATABASE_URL:
+    has_psycopg = importlib.util.find_spec("psycopg") is not None
+    has_psycopg2 = importlib.util.find_spec("psycopg2") is not None
+    if has_psycopg:
+        DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg://", 1)
+    elif has_psycopg2:
+        DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg2://", 1)
 
 connect_args = {}
 if DATABASE_URL.startswith("sqlite"):
