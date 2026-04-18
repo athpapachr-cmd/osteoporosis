@@ -101,11 +101,14 @@ class AssessmentORM(Base):
     current_therapy_type = Column(String, index=True)
 
 
-DATABASE_URL = "sqlite:///./osteoporosis.db"
+DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///./osteoporosis.db")
+connect_args = {}
+if DATABASE_URL.startswith("sqlite"):
+    connect_args["check_same_thread"] = False
 
 engine = create_engine(
     DATABASE_URL,
-    connect_args={"check_same_thread": False},
+    connect_args=connect_args,
     future=True,
 )
 
@@ -849,6 +852,16 @@ def add_current_therapy_suggestions(
                 ),
             )
         )
+        suggestions.append(
+            Suggestion(
+                category="current_therapy",
+                text=(
+                    "Pragmatic treatment-failure framing: >=2 fragility fractures after >=1 year "
+                    "on therapy, or 1 fracture with poor BMD/marker response, is commonly treated as "
+                    "clear inadequate response and usually prompts escalation/switch."
+                ),
+            )
+        )
 
     if adr:
         suggestions.append(
@@ -1052,6 +1065,149 @@ def add_therapy_history_suggestions(
         )
 
 
+def determine_conference_risk_tier(data: OsteoInput) -> str:
+    """
+    Conference-inspired 3-tier framing used for sequential-therapy suggestions:
+    low / high / very_high.
+    """
+    t_scores = [
+        ts
+        for ts in [
+            data.spine_t_score,
+            data.total_hip_t_score,
+            data.femoral_neck_t_score,
+        ]
+        if ts is not None
+    ]
+    min_t = min(t_scores) if t_scores else None
+
+    has_major_fx = (
+        FractureType.hip in data.prior_fragility_fractures
+        or FractureType.vertebral in data.prior_fragility_fractures
+    )
+    multiple_fx = len(data.prior_fragility_fractures) >= 2
+    frax_major = data.frax_major_osteoporotic or 0.0
+    frax_hip = data.frax_hip or 0.0
+
+    if (
+        has_major_fx
+        or multiple_fx
+        or data.fractures_during_current_therapy
+        or (min_t is not None and min_t <= -3.0)
+        or frax_major >= 30.0
+        or frax_hip >= 4.5
+        or (data.high_falls_risk and (data.dementia_or_cognitive_impairment or data.significant_immobility))
+    ):
+        return "very_high"
+
+    if (min_t is not None and min_t <= -2.5) or frax_major >= 20.0 or frax_hip >= 3.0:
+        return "high"
+
+    return "low"
+
+
+def add_conference_protocol_suggestions(data: OsteoInput, suggestions: List[Suggestion]) -> None:
+    """
+    Add explicit conference-derived treatment/sequencing guidance.
+    """
+    tier = determine_conference_risk_tier(data)
+
+    suggestions.append(
+        Suggestion(
+            category="conference_protocol",
+            text=(
+                "Conference protocol tier (sequential-therapy framework): "
+                f"{tier.replace('_', ' ').upper()}."
+            ),
+        )
+    )
+
+    if tier == "low":
+        suggestions.append(
+            Suggestion(
+                category="conference_protocol",
+                text=(
+                    "Low-risk pathway: optimize calcium/vitamin D, prescribe risk-appropriate exercise "
+                    "and falls prevention, lifestyle reassurance; SERM/MHT may be considered in selected cases."
+                ),
+            )
+        )
+    elif tier == "high":
+        suggestions.append(
+            Suggestion(
+                category="conference_protocol",
+                text=(
+                    "High-risk pathway: anti-resorptive-first strategy is commonly favored "
+                    "(e.g. denosumab or zoledronate, or oral bisphosphonate depending context)."
+                ),
+            )
+        )
+    else:
+        suggestions.append(
+            Suggestion(
+                category="conference_protocol",
+                text=(
+                    "Very-high-risk pathway: anabolic-first strategy (e.g. teriparatide or "
+                    "romosozumab/Evenity) followed by anti-resorptive consolidation."
+                ),
+            )
+        )
+
+    # Treatment-failure framing from IOF-style definitions in the slides.
+    if data.fractures_during_current_therapy:
+        suggestions.append(
+            Suggestion(
+                category="conference_protocol",
+                text=(
+                    "Fracture on therapy indicates at least inadequate clinical response and requires "
+                    "secondary-cause/adherence reassessment. Pragmatic failure definition often used: "
+                    ">=2 fractures after >=1 year on therapy, or 1 fracture plus insufficient BMD/BTM response."
+                ),
+            )
+        )
+
+    # Transition rules emphasized in the slide set.
+    suggestions.append(
+        Suggestion(
+            category="conference_protocol",
+            text=(
+                "Sequential transition notes for BMD trajectory: BP->denosumab usually yields further BMD gains; "
+                "alendronate->zoledronate alone often gives limited additional BMD gain; "
+                "BP->anabolic may show some blunting of anabolic gains."
+            ),
+        )
+    )
+    suggestions.append(
+        Suggestion(
+            category="conference_protocol",
+            text=(
+                "After teriparatide/anabolic course, transition to denosumab or bisphosphonate is associated "
+                "with additional BMD gain and lower fracture risk versus stopping therapy."
+            ),
+        )
+    )
+    suggestions.append(
+        Suggestion(
+            category="conference_protocol",
+            text=(
+                "After denosumab, transition to bisphosphonate (oral or IV such as zoledronate) helps partially "
+                "or fully protect against rebound bone loss; direct denosumab->teriparatide sequence may trigger "
+                "accelerated turnover and transient BMD loss."
+            ),
+        )
+    )
+    suggestions.append(
+        Suggestion(
+            category="conference_protocol",
+            text=(
+                "Maintenance concept after initial sequence: intermittent bisphosphonate strategy "
+                "(e.g. time-limited oral BP blocks and/or single zoledronate doses spaced over years) "
+                "with periodic reassessment of risk, BMD and fracture events."
+            ),
+        )
+    )
+
+
 # =========================
 # Risk and suggestions
 # =========================
@@ -1095,6 +1251,27 @@ def determine_risk_category(
     frax_hip_high = frax_hip >= 3.0
 
     internal_index_high = internal_index is not None and internal_index >= 6.0
+    very_high_frax = frax_major >= 30.0 or frax_hip >= 4.5
+    imminent_clinical_pattern = (
+        data.fractures_during_current_therapy
+        or (data.history_of_falls_last_year and data.high_falls_risk)
+    )
+
+    if min_t is not None and min_t <= -3.0:
+        reasons.append(f"Very low T-score (≤ -3.0); minimum T-score {min_t:.2f}.")
+        return RiskCategory.very_high, reasons
+
+    if very_high_frax:
+        reasons.append(
+            f"Very high external FRAX pattern: major={frax_major:.1f}%, hip={frax_hip:.1f}%."
+        )
+        return RiskCategory.very_high, reasons
+
+    if imminent_clinical_pattern:
+        reasons.append(
+            "Imminent-risk clinical pattern (fracture on therapy and/or recurrent falls risk)."
+        )
+        return RiskCategory.very_high, reasons
 
     if min_t is not None and min_t <= -2.5:
         reasons.append(f"Osteoporosis-range T-score (≤ -2.5); minimum T-score {min_t:.2f}.")
@@ -1147,17 +1324,40 @@ def build_suggestions(
     calcium_note: Optional[str],
 ) -> List[Suggestion]:
     suggestions: List[Suggestion] = []
+    creat = data.serum_creatinine_mg_dl
+    urea = data.serum_urea_mg_dl
 
     # Pharmacologic / fracture risk
-    if risk in [RiskCategory.high, RiskCategory.very_high]:
+    if risk == RiskCategory.very_high:
         suggestions.append(
             Suggestion(
                 category="pharmacologic",
                 text=(
-                    "Risk category is high/very high. According to typical osteoporosis "
-                    "guidelines, pharmacologic anti-fracture therapy is generally indicated. "
-                    "Choice of specific agent and regimen should follow formal guidelines "
-                    "and your clinical judgment."
+                    "Very-high fracture risk profile. In many modern guideline pathways "
+                    "(IOF/ESCEO-aligned, Endocrine practice patterns), an anabolic-first "
+                    "strategy is often considered (e.g. teriparatide or romosozumab when "
+                    "appropriate), followed by anti-resorptive consolidation to preserve gains."
+                ),
+            )
+        )
+        suggestions.append(
+            Suggestion(
+                category="pharmacologic",
+                text=(
+                    "If fracture occurred during current therapy, reassess for treatment failure: "
+                    "check adherence/administration, secondary causes (vitamin D, calcium/PTH, renal "
+                    "function, malabsorption), and consider escalation/switch rather than simple continuation."
+                ),
+            )
+        )
+    elif risk == RiskCategory.high:
+        suggestions.append(
+            Suggestion(
+                category="pharmacologic",
+                text=(
+                    "High fracture risk profile. Guideline-based anti-fracture therapy is usually "
+                    "indicated, commonly with anti-resorptive options (oral/IV bisphosphonate or "
+                    "denosumab depending renal profile, adherence feasibility, and patient factors)."
                 ),
             )
         )
@@ -1463,10 +1663,37 @@ def build_suggestions(
     # Hyperparathyroidism / 24h urine patterns
     add_hyperparathyroid_suggestions(data, suggestions)
 
+    # Renal status framing for treatment selection
+    if creat is None:
+        suggestions.append(
+            Suggestion(
+                category="renal_precheck",
+                text=(
+                    "Renal function data are incomplete (no serum creatinine provided). Add "
+                    "creatinine/eGFR before finalizing anti-osteoporotic drug selection, especially "
+                    "when considering IV bisphosphonate pathways."
+                ),
+            )
+        )
+    else:
+        kidney_bits = [f"Serum creatinine {creat:.3f} mg/dL"]
+        if urea is not None:
+            kidney_bits.append(f"urea {urea:.1f} mg/dL")
+        suggestions.append(
+            Suggestion(
+                category="renal_precheck",
+                text=(
+                    ", ".join(kidney_bits)
+                    + ". Interpret with eGFR and comorbidity profile when choosing anti-resorptive regimen."
+                ),
+            )
+        )
+
     # Current pharmacologic therapy continuation/change framing
     add_current_therapy_suggestions(data, risk, suggestions)
 
     add_therapy_history_suggestions(data, suggestions)
+    add_conference_protocol_suggestions(data, suggestions)
 
     return suggestions
 
@@ -1479,7 +1706,7 @@ def determine_follow_up_steps(data: OsteoInput, risk: RiskCategory) -> List[Foll
 
     if risk in [RiskCategory.high, RiskCategory.very_high]:
         add_step(
-            "Repeat DEXA (lumbar spine + hip) in ~12 months after treatment start/change.",
+            "Repeat DEXA (lumbar spine + hip) at ~12 months after treatment start/change, then interval by risk trajectory.",
             "6-12 months",
         )
     elif risk == RiskCategory.moderate:
@@ -1493,17 +1720,37 @@ def determine_follow_up_steps(data: OsteoInput, risk: RiskCategory) -> List[Foll
             "12+ months",
         )
 
-    labs = ["25-OH Vitamin D", "serum calcium"]
-    if data.current_therapy_type in [CurrentTherapyType.denosumab, CurrentTherapyType.romosozumab]:
-        labs.append("renal function/serum creatinine")
+    baseline_labs = ["25-OH Vitamin D", "serum calcium", "phosphorus", "creatinine/eGFR"]
+    if data.pth_pg_ml is None:
+        baseline_labs.append("PTH")
     add_step(
-        f"Monitor labs ({', '.join(labs)}) every ~6–12 months or as clinically indicated.",
+        f"Before initiating/changing therapy, complete baseline labs ({', '.join(baseline_labs)}).",
+        "0-1 month",
+    )
+
+    labs = ["25-OH Vitamin D", "serum calcium", "creatinine/eGFR"]
+    if data.current_therapy_type in [CurrentTherapyType.denosumab, CurrentTherapyType.romosozumab, CurrentTherapyType.iv_bisphosphonate]:
+        labs.append("phosphorus/magnesium as needed")
+    add_step(
+        f"Monitor labs ({', '.join(labs)}) every ~6 months in active treatment phases.",
         "0-6 months",
     )
 
+    if data.current_therapy_type in [CurrentTherapyType.teriparatide, CurrentTherapyType.romosozumab]:
+        add_step(
+            "Consider bone-turnover marker follow-up (P1NP +/- CTX) at ~3–6 months to support pharmacodynamic monitoring.",
+            "3-6 months",
+        )
+
+    if data.current_therapy_type == CurrentTherapyType.denosumab:
+        add_step(
+            "Ensure on-time denosumab interval and document a transition plan before any interruption to reduce rebound vertebral fracture risk.",
+            "0-6 months",
+        )
+
     if data.fractures_during_current_therapy:
         add_step(
-            "If fracture on therapy, consider imaging (vertebral X-ray or targeted MRI/CT).",
+            "If fracture on therapy, reassess rapidly (adherence, secondary causes, vertebral imaging when indicated) and consider treatment escalation/switch.",
             "0-6 months",
         )
 
@@ -2096,19 +2343,20 @@ def elaborate_osteoporosis(req: ElaborationRequest) -> ElaborationResponse:
 
     if req.audience == "clinician":
         style_instruction = (
-            "Γράψε 1–2 σύντομες παραγράφους (στα ελληνικά) ως κλινική εντύπωση/σχέδιο για "
-            "ορθοπαιδικό ιατρό. Σύνοψέ την κατηγορία κινδύνου κατάγματος, τους βασικούς παράγοντες, τα κύρια "
-            "εργαστηριακά και την πρόσληψη ασβεστίου. Παρουσίασε με σαφήνεια τη θεραπευτική κατάσταση χωρίς "
-            "να εισάγεις νέες διαγνώσεις ή δοσολογίες. Στο τέλος πρόσθεσε μια σύντομη ενότητα «Προτεινόμενες "
-            "ενέργειες» με δύο bullet points που βασίζονται στις ήδη υπάρχουσες suggestions."
+            "Γράψε στα ελληνικά, με καθαρή δομή για κλινικό: "
+            "1) σύντομη περίληψη κινδύνου, "
+            "2) κρίσιμα ευρήματα (T-scores, κατάγματα, labs), "
+            "3) ενότητα «Προτεινόμενες ενέργειες» με 3-5 bullets. "
+            "Οι προτεινόμενες ενέργειες να βασίζονται στα δεδομένα εισόδου/suggestions "
+            "και να είναι συγκεκριμένες για παρακολούθηση 6-12 μηνών, χωρίς δοσολογίες."
         )
     else:
         style_instruction = (
-            "Γράψε 1–2 σύντομες παραγράφους (στα ελληνικά) απευθυνόμενος στον ασθενή. "
-            "Χρησιμοποίησε απλή, ζεστή γλώσσα και συμπλήρωσε το κείμενο με τουλάχιστον δύο bullet "
-            "points που συνοψίζουν πρακτικές ενέργειες (π.χ. διατροφή, άσκηση, συμπληρώματα, ασφάλεια "
-            "πτώσεων). Μην αναφέρεις ονόματα φαρμάκων ή δοσολογίες. Πρόσθεσε μια μικρή φράση στο τέλος που "
-            "επισημαίνει τις βασικές συστάσεις που ήδη υπάρχουν στη λίστα."
+            "Γράψε στα ελληνικά για ασθενή, απλά και ευανάγνωστα: "
+            "1) σύντομη εξήγηση της κατάστασης σε 3-4 προτάσεις, "
+            "2) ενότητα «Τι να κάνω τώρα» με 4-6 bullets, "
+            "3) ενότητα «Τι να συζητήσω στο επόμενο ραντεβού» με 2-3 bullets. "
+            "Μην δίνεις δοσολογίες ή νέα φάρμακα."
         )
 
     system_prompt = (
@@ -2139,7 +2387,7 @@ def elaborate_osteoporosis(req: ElaborationRequest) -> ElaborationResponse:
                 },
             ],
             temperature=0.2,
-            max_tokens=400,
+            max_tokens=700,
         )
         text = completion.choices[0].message.content.strip()
     except Exception as e:
@@ -2229,6 +2477,18 @@ def build_treatment_recommendation_context(stored: OsteoStoredAssessment) -> str
             date_info = f" ({latest.date})" if latest.date else ""
             lines.append(f"Latest T-score{date_info}: {entries}.")
 
+    conference_tier = determine_conference_risk_tier(input_data)
+    lines.append(
+        "Conference-derived sequential-therapy tier: "
+        f"{conference_tier.replace('_', ' ').upper()}."
+    )
+    lines.append(
+        "Conference transition rules to preserve BMD: "
+        "BP->denosumab tends to increase BMD; alendronate->zoledronate often has limited extra BMD gain; "
+        "BP->anabolic may blunt gains; teriparatide/anabolic->denosumab or BP improves consolidation; "
+        "denosumab->BP helps protect from rebound loss; avoid denosumab->teriparatide direct sequence when possible."
+    )
+
     return "\n".join(lines)
 
 
@@ -2266,26 +2526,23 @@ def recommend_treatment_change(
         )
 
     system_prompt = (
-        "Είσαι ένας προσεκτικός σύμβουλος θεραπείας οστεοπόρωσης. Μην εισάγεις νέες "
-        "διαγνώσεις ή δοσολογίες. Εστίασε στη προσαρμογή ή την επανεξέταση της τρέχουσας "
-        "φαρμακευτικής στρατηγικής βάσει κινδύνου, εργαστηριακών και ανοχής."
+        "Είσαι σύμβουλος οστεοπόρωσης για κλινικούς. Γράφεις στα ελληνικά, συγκεκριμένα και "
+        "πρακτικά, ευθυγραμμισμένα με guideline λογική (NOGG/ESCEO/Endocrine). "
+        "Επιτρέπεται να αναφέρεις κατηγορίες φαρμάκων και λογική ακολουθίας (anabolic-first σε very high risk, "
+        "έπειτα anti-resorptive consolidation), χωρίς δοσολογίες και χωρίς να αντικαθιστάς την κλινική κρίση. "
+        "Δώσε προτεραιότητα στους conference-derived κανόνες ακολουθιών όταν υπάρχουν."
     )
 
     context = build_treatment_recommendation_context(req.assessment)
     user_prompt = (
         "Patient context:\n"
         f"{context}\n\n"
-        "Απάντησε στα ελληνικά με έως τρεις αριθμημένες προτάσεις (1., 2., 3.). "
-        "Κάθε πρόταση να περιλαμβάνει: "
-        "(α) τη συγκεκριμένη τάξη φαρμάκου ή τη στρατηγική διαχείρισης (π.χ. διφωσφονικά, denosumab, "
-        "οστεοαναβολικό, διακοπή/συνδυασμός), "
-        "(β) αιτιολόγηση με βάση τον κίνδυνο και τα δεδομένα, "
-        "(γ) τις επιπλέον εργαστηριακές/απεικονιστικές εξετάσεις που απαιτούνται (π.χ. νεφρική λειτουργία, 25-OH D, PTH, οστικά σπινθηρογραφήματα/αξονική), "
-        "και (δ) πλάνο παρακολούθησης (labs ή DEXA) για τους επόμενους 6–12 μήνες. "
-        "Αναφέρσου σε καθιερωμένους οδηγούς (π.χ. NOGG, Endocrine Society, ACP) όταν δικαιολογείται. "
-        "Είσαι συγκεκριμένος χωρίς να εισάγεις νέα φάρμακα ή δοσολογίες. "
-        "Αν λείπουν στοιχεία (όπως νεφρική λειτουργία ή τιμή βιταμίνης D), το σημειώνεις και ζητάς συμπλήρωση. "
-        "Κλείσε με ένα σύντομο bullet που επισημαίνει τα κύρια βήματα παρακολούθησης."
+        "Με βάση τα παραπάνω, δώσε θεραπευτική καθοδήγηση σε 4 ενότητες:\n"
+        "1) «Προτεινόμενη στρατηγική τώρα» (2-3 bullets με συγκεκριμένες classes: διφωσφονικά/denosumab/οστεοαναβολικό όπου ταιριάζει).\n"
+        "2) «Τι λείπει πριν την τελική επιλογή» (εργαστηριακά/κλινικά δεδομένα που απαιτούνται).\n"
+        "3) «Παρακολούθηση 6-12 μηνών» (συγκεκριμένα χρονικά checkpoints για labs και DEXA).\n"
+        "4) «Safety net» (2 σύντομα bullets για fracture-on-therapy, denosumab interruption ή adverse effects).\n"
+        "Μην δίνεις δοσολογίες. Να είσαι συγκεκριμένος και όχι γενικός."
     )
 
     try:
@@ -2296,7 +2553,7 @@ def recommend_treatment_change(
                 {"role": "user", "content": user_prompt},
             ],
             temperature=0.2,
-            max_tokens=400,
+            max_tokens=700,
         )
         text = completion.choices[0].message.content.strip()
     except Exception as exc:
