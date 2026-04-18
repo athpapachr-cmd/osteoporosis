@@ -5,6 +5,7 @@ from typing import List, Optional, Tuple
 import json
 import os
 import importlib.util
+from html import escape
 from datetime import datetime
 from pathlib import Path
 from uuid import uuid4
@@ -448,20 +449,36 @@ class OsteoStoredAssessment(BaseModel):
 
 class PatientHandoutRequest(BaseModel):
     assessment: OsteoAssessment
+    agreed_plan: List[str] = Field(default_factory=list)
+    patient_elaboration: Optional[str] = None
 
 
 class PatientHandoutResponse(BaseModel):
     handout_html: str
 
 
-def build_patient_handout_html(assessment: OsteoAssessment) -> str:
+def build_patient_handout_html(
+    assessment: OsteoAssessment,
+    agreed_plan: Optional[List[str]] = None,
+    patient_elaboration: Optional[str] = None,
+) -> str:
     suggestions_html = "".join(
-        f"<li>{s.text}</li>" for s in assessment.suggestions[:6]
+        f"<li>{escape(s.text)}</li>" for s in assessment.suggestions[:6]
     )
     follow_up_html = "".join(
-        f"<li><strong>{step.timeframe}</strong>: {step.text}</li>"
+        f"<li><strong>{escape(step.timeframe)}</strong>: {escape(step.text)}</li>"
         for step in assessment.follow_up_steps
     )
+    agreed_plan_items = [p.strip() for p in (agreed_plan or []) if p and p.strip()]
+    agreed_plan_html = "".join(f"<li>{escape(item)}</li>" for item in agreed_plan_items)
+    patient_elab_html = ""
+    if patient_elaboration and patient_elaboration.strip():
+        patient_elab_html = f"""
+      <div class="section">
+        <h2>Patient explanation</h2>
+        <div class="narrative">{escape(patient_elaboration.strip())}</div>
+      </div>
+        """
     html = f"""
     <!DOCTYPE html>
     <html lang="en">
@@ -503,6 +520,13 @@ def build_patient_handout_html(assessment: OsteoAssessment) -> str:
           color: #0c4a6e;
           margin-right: 6px;
         }}
+        .narrative {{
+          white-space: pre-wrap;
+          background: #f8fafc;
+          border: 1px solid #e2e8f0;
+          border-radius: 10px;
+          padding: 12px;
+        }}
       </style>
     </head>
     <body>
@@ -511,8 +535,9 @@ def build_patient_handout_html(assessment: OsteoAssessment) -> str:
       <div class="section">
         <h2>Risk snapshot</h2>
         <div class="chip">{assessment.risk_category.value.upper()} risk</div>
-        {"".join(f'<div class="chip">{reason}</div>' for reason in assessment.risk_reasons[:3])}
+        {"".join(f'<div class="chip">{escape(reason)}</div>' for reason in assessment.risk_reasons[:3])}
       </div>
+      {patient_elab_html}
       <div class="section">
         <h2>Key guidance</h2>
         <ul>{suggestions_html or "<li>No suggestions recorded.</li>"}</ul>
@@ -520,6 +545,10 @@ def build_patient_handout_html(assessment: OsteoAssessment) -> str:
       <div class="section">
         <h2>Follow-up plan</h2>
         <ul>{follow_up_html or "<li>No specific follow-up steps yet.</li>"}</ul>
+      </div>
+      <div class="section">
+        <h2>Agreed plan</h2>
+        <ul>{agreed_plan_html or "<li>No agreed plan items selected yet.</li>"}</ul>
       </div>
       <div class="section">
         <h2>What to share with your doctor</h2>
@@ -2837,6 +2866,7 @@ def elaborate_osteoporosis(req: ElaborationRequest) -> ElaborationResponse:
             "3) ενότητα «Τι να συζητήσω στο επόμενο ραντεβού» με 2-3 bullets. "
             "Μην δίνεις δοσολογίες ή νέα φάρμακα."
         )
+    style_instruction += " Να ολοκληρώνεις πλήρως την τελευταία πρόταση (όχι κομμένη κατάληξη)."
 
     system_prompt = (
         "Είσαι ένας ιδιαίτερα προσεκτικός βοηθός ιατρικής τεκμηρίωσης. ΔΕΝ εισάγεις ποτέ νέες "
@@ -2867,7 +2897,7 @@ def elaborate_osteoporosis(req: ElaborationRequest) -> ElaborationResponse:
                 },
             ],
             temperature=0.2,
-            max_tokens=700,
+            max_tokens=1400,
         )
         text = completion.choices[0].message.content.strip()
     except Exception as e:
@@ -2881,7 +2911,11 @@ def elaborate_osteoporosis(req: ElaborationRequest) -> ElaborationResponse:
 
 @app.post("/osteoporosis/patient-handout", response_model=PatientHandoutResponse)
 def create_patient_handout(req: PatientHandoutRequest) -> PatientHandoutResponse:
-    html = build_patient_handout_html(req.assessment)
+    html = build_patient_handout_html(
+        req.assessment,
+        agreed_plan=req.agreed_plan,
+        patient_elaboration=req.patient_elaboration,
+    )
     return PatientHandoutResponse(handout_html=html)
 
 
@@ -3033,7 +3067,7 @@ def recommend_treatment_change(
                 {"role": "user", "content": user_prompt},
             ],
             temperature=0.2,
-            max_tokens=700,
+            max_tokens=1400,
         )
         text = completion.choices[0].message.content.strip()
     except Exception as exc:
@@ -3064,8 +3098,9 @@ def ask_literature_question(req: LiteratureQuestionRequest) -> LiteratureQuestio
         f"{context}\n\n"
         "Ερώτηση:\n"
         f"{req.question}\n\n"
-        "Απάντησε οργανομετρικά με 2-3 παραγράφους: (1) σύντομη πηγή/αιτιολόγηση από τη βιβλιογραφία, "
-        "(2) πρακτική απάντηση, (3) αν χρειάζονται επιπλέον εξετάσεις ή δεδομένα, σημείωσε τα."
+            "Απάντησε οργανομετρικά με 2-3 παραγράφους: (1) σύντομη πηγή/αιτιολόγηση από τη βιβλιογραφία, "
+            "(2) πρακτική απάντηση, (3) αν χρειάζονται επιπλέον εξετάσεις ή δεδομένα, σημείωσε τα."
+            " Να ολοκληρώνεις πλήρως την τελευταία πρόταση (όχι κομμένη κατάληξη)."
     )
 
     try:
@@ -3076,7 +3111,7 @@ def ask_literature_question(req: LiteratureQuestionRequest) -> LiteratureQuestio
                 {"role": "user", "content": user_prompt},
             ],
             temperature=0.2,
-            max_tokens=400,
+            max_tokens=1200,
         )
         answer = completion.choices[0].message.content.strip()
     except Exception as exc:

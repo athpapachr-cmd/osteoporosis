@@ -526,6 +526,41 @@
       gap: 4px;
       min-height: 80px;
     }
+    .agreed-plan-panel {
+      margin-top: 12px;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      border-radius: 12px;
+      padding: 12px 14px;
+      background: #fff;
+    }
+    .agreed-plan-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 8px 12px;
+      margin-top: 8px;
+    }
+    .agreed-plan-grid label {
+      text-transform: none;
+      letter-spacing: normal;
+      font-size: 13px;
+      font-weight: 500;
+      color: #1e293b;
+    }
+    .agreed-plan-summary {
+      margin-top: 10px;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      border-radius: 10px;
+      background: #f8fafc;
+      padding: 10px 12px;
+      font-size: 13px;
+    }
+    .agreed-plan-summary ul {
+      margin: 0;
+      padding-left: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
     .therapy-json-area {
       margin-top: 12px;
     }
@@ -1109,6 +1144,31 @@
             <ul data-timeframe="12+ months"></ul>
           </div>
         </div>
+        <div class="agreed-plan-panel">
+          <div class="follow-up-header" style="margin-bottom:0;">
+            <div>
+              <p class="muted" style="margin:0;">Συμφωνημένο πλάνο (επιλογή από εσένα)</p>
+            </div>
+          </div>
+          <div class="agreed-plan-grid">
+            <label><input type="checkbox" class="agreed-plan-option" value="Συνέχιση τρέχουσας αγωγής" /> Συνέχιση αγωγής</label>
+            <label><input type="checkbox" class="agreed-plan-option" value="Διακοπή τρέχουσας αγωγής" /> Διακοπή αγωγής</label>
+            <label><input type="checkbox" class="agreed-plan-option" value="Αλλαγή σε διαφορετική κατηγορία αγωγής" /> Αλλαγή αγωγής</label>
+            <label><input type="checkbox" class="agreed-plan-option" value="Προσθήκη ή αναπροσαρμογή συμπληρωμάτων" /> Προσθήκη/ρύθμιση συμπληρωμάτων</label>
+            <label><input type="checkbox" class="agreed-plan-option" value="Εργαστηριακός έλεγχος σε 6 μήνες (Vit D, Ca, νεφρική λειτουργία ± δείκτες)" /> Αναλύσεις σε 6 μήνες</label>
+            <label><input type="checkbox" class="agreed-plan-option" value="Νέο DXA σε 12-24 μήνες" /> Νέο DXA σε 1-2 χρόνια</label>
+            <label><input type="checkbox" class="agreed-plan-option" value="Δομημένη άσκηση (ενδυνάμωση + ισορροπία)" /> Άσκηση</label>
+            <label><input type="checkbox" class="agreed-plan-option" value="Παραπομπή/παρακολούθηση από διατροφολόγο" /> Διατροφολόγος</label>
+            <label><input type="checkbox" class="agreed-plan-option" value="Πρόγραμμα πρόληψης πτώσεων και παρεμβάσεις ασφάλειας στο σπίτι" /> Fall prevention</label>
+          </div>
+          <div class="field" style="margin-top:10px;">
+            <label for="agreed_plan_custom">Επιπλέον οδηγίες (μία ανά γραμμή)</label>
+            <textarea id="agreed_plan_custom" rows="3" placeholder="π.χ. Τηλεφωνική επανεκτίμηση σε 3 μήνες"></textarea>
+          </div>
+          <div class="agreed-plan-summary" id="agreedPlanSummary">
+            <p class="muted" style="margin:0;">Δεν έχουν επιλεγεί ακόμα στοιχεία πλάνου.</p>
+          </div>
+        </div>
         <div class="note-block" id="clinicalNote" aria-live="polite">Run an evaluation to see the generated clinical note.</div>
         <div class="note-block" id="patientSummary" aria-live="polite" style="background:#111827;">
           Run an evaluation to see the patient-friendly summary.
@@ -1242,6 +1302,9 @@
     const cohortComparison = document.getElementById("cohortComparison");
     const openaiQuestionInput = document.getElementById("openai_question_input");
     const openaiQuestionResponse = document.getElementById("openaiQuestionResponse");
+    const agreedPlanCustomInput = document.getElementById("agreed_plan_custom");
+    const agreedPlanSummary = document.getElementById("agreedPlanSummary");
+    const agreedPlanOptionInputs = Array.from(document.querySelectorAll(".agreed-plan-option"));
     const numFields = [
       "age",
       "spine_t_score",
@@ -1663,6 +1726,14 @@
       if (numFields.includes(id)) return Number(el.value);
       return el.value;
     }
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
     function buildPayload() {
       const fractures = [];
       if (document.getElementById("fx_hip").checked) fractures.push("hip");
@@ -2008,6 +2079,36 @@
       }
     }
 
+    function getAgreedPlanItems() {
+      const selected = agreedPlanOptionInputs
+        .filter((input) => input.checked)
+        .map((input) => input.value);
+      const custom = (agreedPlanCustomInput?.value || "")
+        .split("\n")
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0);
+      return [...selected, ...custom];
+    }
+
+    function renderAgreedPlanSummary() {
+      if (!agreedPlanSummary) return;
+      const items = getAgreedPlanItems();
+      if (!items.length) {
+        agreedPlanSummary.innerHTML =
+          '<p class="muted" style="margin:0;">Δεν έχουν επιλεγεί ακόμα στοιχεία πλάνου.</p>';
+        return;
+      }
+      const list = items.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
+      agreedPlanSummary.innerHTML = `<ul>${list}</ul>`;
+    }
+
+    function getPatientElaborationForExport() {
+      const text = aiElaboration?.textContent?.trim() || "";
+      if (!text) return null;
+      if (text.startsWith("Select an audience and run an AI elaboration")) return null;
+      return text;
+    }
+
     async function openPatientHandout() {
       if (!state.lastAssessment) {
         setStatus("Run an assessment before generating a handout.", "error");
@@ -2018,7 +2119,11 @@
         const res = await fetch(endpoints.handout, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ assessment: state.lastAssessment }),
+          body: JSON.stringify({
+            assessment: state.lastAssessment,
+            agreed_plan: getAgreedPlanItems(),
+            patient_elaboration: getPatientElaborationForExport(),
+          }),
         });
         if (!res.ok) {
           setStatus(`Handout generation failed (${res.status})`, "error");
@@ -2049,7 +2154,11 @@
         const res = await fetch(endpoints.handout, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ assessment: state.lastAssessment }),
+          body: JSON.stringify({
+            assessment: state.lastAssessment,
+            agreed_plan: getAgreedPlanItems(),
+            patient_elaboration: getPatientElaborationForExport(),
+          }),
         });
         if (!res.ok) {
           setStatus(`Handout generation failed (${res.status})`, "error");
@@ -2508,6 +2617,13 @@
       tScoreJsonInput.addEventListener("blur", () => applyTScoreJson(tScoreJsonInput.value));
       tScoreJsonInput.addEventListener("change", () => applyTScoreJson(tScoreJsonInput.value));
     }
+    agreedPlanOptionInputs.forEach((input) => {
+      input.addEventListener("change", renderAgreedPlanSummary);
+    });
+    if (agreedPlanCustomInput) {
+      agreedPlanCustomInput.addEventListener("input", renderAgreedPlanSummary);
+      agreedPlanCustomInput.addEventListener("change", renderAgreedPlanSummary);
+    }
     document.querySelectorAll(".toggle-json-btn").forEach((btn) => {
       btn.addEventListener("click", (event) => {
         event.preventDefault();
@@ -2517,6 +2633,7 @@
     renderTherapyHistoryList();
     renderTScoreHistoryList();
     renderFollowUpTimeline([]);
+    renderAgreedPlanSummary();
     renderHistoryDetail(null);
   </script>
 </body>
