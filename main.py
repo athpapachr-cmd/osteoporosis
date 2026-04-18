@@ -102,10 +102,12 @@ class AssessmentORM(Base):
 
 
 DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///./osteoporosis.db")
-# Render often exposes Postgres URLs as `postgres://...`, while SQLAlchemy expects
-# the `postgresql://...` dialect name.
+# Normalize Render/Postgres URL and force SQLAlchemy to use psycopg (v3),
+# avoiding implicit fallback to psycopg2.
 if DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+psycopg://", 1)
+elif DATABASE_URL.startswith("postgresql://"):
+    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg://", 1)
 
 connect_args = {}
 if DATABASE_URL.startswith("sqlite"):
