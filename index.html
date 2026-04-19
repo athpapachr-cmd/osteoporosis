@@ -969,7 +969,7 @@
               </div>
               <div class="field">
                 <label for="therapy_entry_notes">Notes (reason, switches)</label>
-                <input id="therapy_entry_notes" type="text" />
+                <input id="therapy_entry_notes" type="text" placeholder="e.g. alendronate weekly, switch due to GI symptoms" />
               </div>
             </div>
             <div class="actions" style="padding:0;">
@@ -1216,10 +1216,14 @@
               <label for="agreed_plan_start_therapy_choice">Επιλογή έναρξης αγωγής (αν επιλεγεί)</label>
               <select id="agreed_plan_start_therapy_choice">
                 <option value="">-- επίλεξε έναρξη --</option>
-                <option value="Έναρξη oral bisphosphonate">Έναρξη oral bisphosphonate</option>
-                <option value="Έναρξη IV zoledronate">Έναρξη IV zoledronate</option>
+                <option value="Έναρξη alendronate">Έναρξη alendronate</option>
+                <option value="Έναρξη risedronate">Έναρξη risedronate</option>
+                <option value="Έναρξη ibandronate">Έναρξη ibandronate</option>
+                <option value="Έναρξη zoledronate (IV)">Έναρξη zoledronate (IV)</option>
                 <option value="Έναρξη denosumab">Έναρξη denosumab</option>
-                <option value="Έναρξη οστεοαναβολικής θεραπείας (teriparatide/romosozumab)">Έναρξη οστεοαναβολικής θεραπείας</option>
+                <option value="Έναρξη teriparatide">Έναρξη teriparatide</option>
+                <option value="Έναρξη romosozumab">Έναρξη romosozumab</option>
+                <option value="Έναρξη raloxifene (SERM)">Έναρξη raloxifene (SERM)</option>
                 <option value="Άλλο (γράφεται στις επιπλέον οδηγίες)">Άλλο (γράφεται στις επιπλέον οδηγίες)</option>
               </select>
             </div>
@@ -1227,10 +1231,23 @@
               <label for="agreed_plan_therapy_transition">Επιλογή αλλαγής αγωγής (αν επιλεγεί)</label>
               <select id="agreed_plan_therapy_transition">
                 <option value="">-- επίλεξε στρατηγική --</option>
-                <option value="Oral bisphosphonate → Denosumab">Oral bisphosphonate → Denosumab</option>
-                <option value="Oral bisphosphonate → Zoledronate">Oral bisphosphonate → Zoledronate</option>
-                <option value="Denosumab → Oral/IV bisphosphonate (consolidation)">Denosumab → Oral/IV bisphosphonate (consolidation)</option>
-                <option value="Anabolic (Teriparatide/Romosozumab) → Denosumab">Anabolic (Teriparatide/Romosozumab) → Denosumab</option>
+                <option value="Alendronate → Denosumab">Alendronate → Denosumab</option>
+                <option value="Alendronate → Zoledronate">Alendronate → Zoledronate</option>
+                <option value="Risedronate → Denosumab">Risedronate → Denosumab</option>
+                <option value="Risedronate → Zoledronate">Risedronate → Zoledronate</option>
+                <option value="Ibandronate → Denosumab">Ibandronate → Denosumab</option>
+                <option value="Ibandronate → Zoledronate">Ibandronate → Zoledronate</option>
+                <option value="Oral bisphosphonate → Romosozumab">Oral bisphosphonate → Romosozumab</option>
+                <option value="Oral bisphosphonate → Teriparatide">Oral bisphosphonate → Teriparatide</option>
+                <option value="Denosumab → Zoledronate">Denosumab → Zoledronate</option>
+                <option value="Denosumab → Alendronate">Denosumab → Alendronate</option>
+                <option value="Denosumab → Risedronate">Denosumab → Risedronate</option>
+                <option value="Denosumab → Ibandronate">Denosumab → Ibandronate</option>
+                <option value="Teriparatide → Denosumab">Teriparatide → Denosumab</option>
+                <option value="Teriparatide → Zoledronate">Teriparatide → Zoledronate</option>
+                <option value="Romosozumab → Denosumab">Romosozumab → Denosumab</option>
+                <option value="Romosozumab → Zoledronate">Romosozumab → Zoledronate</option>
+                <option value="Romosozumab → Alendronate">Romosozumab → Alendronate</option>
                 <option value="Anabolic (Teriparatide/Romosozumab) → Bisphosphonate">Anabolic (Teriparatide/Romosozumab) → Bisphosphonate</option>
                 <option value="Άλλο (γράφεται στις επιπλέον οδηγίες)">Άλλο (γράφεται στις επιπλέον οδηγίες)</option>
               </select>

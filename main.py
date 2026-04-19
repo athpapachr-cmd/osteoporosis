@@ -467,6 +467,7 @@ THERAPY_PROFILE_LABELS: Dict[str, str] = {
     "none": "No active osteoporosis drug",
     "alendronate": "Alendronate (oral bisphosphonate)",
     "risedronate": "Risedronate (oral bisphosphonate)",
+    "ibandronate": "Ibandronate (oral bisphosphonate)",
     "oral_bp": "Oral bisphosphonate (class)",
     "zoledronate": "Zoledronate (IV bisphosphonate)",
     "denosumab": "Denosumab",
@@ -487,12 +488,14 @@ def therapy_profile_from_text(text: str) -> Optional[str]:
         return None
     if "denosumab" in t or "dmab" in t:
         return "denosumab"
-    if "zoledronate" in t or "zol" in t:
+    if "zoledronate" in t or "zoledronic" in t or "zolendronic" in t or "zol" in t:
         return "zoledronate"
     if "alendronate" in t or "aln" in t:
         return "alendronate"
-    if "risedronate" in t or "ris" in t:
+    if "risedronate" in t or "risendronate" in t or "ris" in t:
         return "risedronate"
+    if "ibandronate" in t or "ibn" in t:
+        return "ibandronate"
     if "oral" in t and "bisphosph" in t:
         return "oral_bp"
     if "bisphosph" in t or "διφωσφ" in t:
@@ -579,99 +582,227 @@ def _trajectory_values(
     current_profile: str,
     action: str,
     target_profile: Optional[str],
-) -> Tuple[List[float], str]:
-    bp_profiles = {"alendronate", "risedronate", "oral_bp", "zoledronate"}
+) -> Tuple[List[float], List[float], str]:
+    bp_profiles = {"alendronate", "risedronate", "ibandronate", "oral_bp", "zoledronate"}
+
+    def hip_from_spine(
+        spine: List[float],
+        gain_factor: float = 0.72,
+        loss_factor: float = 0.82,
+    ) -> List[float]:
+        hip: List[float] = []
+        for v in spine:
+            delta = v - 100.0
+            factor = gain_factor if delta >= 0 else loss_factor
+            hip.append(round(100.0 + delta * factor, 1))
+        if hip:
+            hip[0] = 100.0
+        return hip
 
     if action == "stop":
         if current_profile == "denosumab":
-            return [100.0, 98.4, 96.6, 93.5, 91.6, 90.0], "Class-specific (denosumab): stopping without consolidation may cause rapid loss."
+            spine = [100.0, 98.4, 96.6, 93.5, 91.6, 90.0]
+            hip = hip_from_spine(spine, gain_factor=0.7, loss_factor=0.76)
+            return spine, hip, "Class-specific (denosumab): stopping without consolidation may cause rapid loss."
         if current_profile == "romosozumab":
-            return [100.0, 99.1, 98.4, 97.4, 96.8, 96.2], "Class-specific (romosozumab): follow with anti-resorptive to preserve gains."
+            spine = [100.0, 99.1, 98.4, 97.4, 96.8, 96.2]
+            hip = hip_from_spine(spine, gain_factor=0.64, loss_factor=0.8)
+            return spine, hip, "Class-specific (romosozumab): follow with anti-resorptive to preserve gains."
         if current_profile == "teriparatide":
-            return [100.0, 99.3, 98.6, 97.5, 96.9, 96.3], "Class-specific (teriparatide): consolidation therapy helps maintain BMD gains."
+            spine = [100.0, 99.3, 98.6, 97.5, 96.9, 96.3]
+            hip = hip_from_spine(spine, gain_factor=0.6, loss_factor=0.82)
+            return spine, hip, "Class-specific (teriparatide): consolidation therapy helps maintain BMD gains."
         if current_profile == "zoledronate":
-            return [100.0, 100.0, 99.9, 99.6, 99.2, 98.9], "Class-specific (zoledronate): slower offset, with gradual decline over time."
+            spine = [100.0, 100.0, 99.9, 99.6, 99.2, 98.9]
+            hip = hip_from_spine(spine, gain_factor=0.74, loss_factor=0.86)
+            return spine, hip, "Class-specific (zoledronate): slower offset, with gradual decline over time."
         if current_profile == "alendronate":
-            return [100.0, 99.9, 99.6, 99.2, 98.8, 98.4], "Class-specific (alendronate): offset is gradual; monitor for drift."
+            spine = [100.0, 99.9, 99.6, 99.2, 98.8, 98.4]
+            hip = hip_from_spine(spine, gain_factor=0.74, loss_factor=0.86)
+            return spine, hip, "Class-specific (alendronate): offset is gradual; monitor for drift."
         if current_profile == "risedronate":
-            return [100.0, 99.8, 99.4, 98.9, 98.4, 98.0], "Class-specific (risedronate): offset may appear earlier than stronger-retention BPs."
+            spine = [100.0, 99.8, 99.4, 98.9, 98.4, 98.0]
+            hip = hip_from_spine(spine, gain_factor=0.72, loss_factor=0.88)
+            return spine, hip, "Class-specific (risedronate): offset may appear earlier than stronger-retention BPs."
+        if current_profile == "ibandronate":
+            spine = [100.0, 99.8, 99.3, 98.8, 98.3, 97.8]
+            hip = hip_from_spine(spine, gain_factor=0.7, loss_factor=0.88)
+            return spine, hip, "Class-specific (ibandronate): offset pattern is usually gradual but can appear earlier."
         if current_profile == "oral_bp":
-            return [100.0, 99.9, 99.5, 99.1, 98.7, 98.3], "Class-specific (oral BP): gradual decline after stop."
+            spine = [100.0, 99.9, 99.5, 99.1, 98.7, 98.3]
+            hip = hip_from_spine(spine, gain_factor=0.72, loss_factor=0.87)
+            return spine, hip, "Class-specific (oral BP): gradual decline after stop."
         if current_profile == "raloxifene":
-            return [100.0, 99.8, 99.4, 98.9, 98.5, 98.1], "Class-specific (SERM): modest decline expected after discontinuation."
-        return [100.0, 99.7, 99.0, 98.2, 97.6, 97.0], "No active therapy pattern shown; individual trend can differ."
+            spine = [100.0, 99.8, 99.4, 98.9, 98.5, 98.1]
+            hip = hip_from_spine(spine, gain_factor=0.65, loss_factor=0.86)
+            return spine, hip, "Class-specific (SERM): modest decline expected after discontinuation."
+        spine = [100.0, 99.7, 99.0, 98.2, 97.6, 97.0]
+        hip = hip_from_spine(spine, gain_factor=0.62, loss_factor=0.84)
+        return spine, hip, "No active therapy pattern shown; individual trend can differ."
 
     if action == "continue":
         if current_profile == "denosumab":
-            return [100.0, 101.3, 102.7, 104.8, 106.4, 107.6], "Class-specific (denosumab): larger anti-resorptive gains with on-time dosing."
+            spine = [100.0, 101.3, 102.7, 104.8, 106.4, 107.6]
+            hip = hip_from_spine(spine, gain_factor=0.74, loss_factor=0.8)
+            return spine, hip, "Class-specific (denosumab): larger anti-resorptive gains with on-time dosing."
         if current_profile == "zoledronate":
-            return [100.0, 100.5, 101.0, 101.8, 102.3, 102.8], "Class-specific (zoledronate): stabilization with modest incremental gains."
+            spine = [100.0, 100.5, 101.0, 101.8, 102.3, 102.8]
+            hip = hip_from_spine(spine, gain_factor=0.78, loss_factor=0.82)
+            return spine, hip, "Class-specific (zoledronate): stabilization with modest incremental gains."
         if current_profile == "alendronate":
-            return [100.0, 100.4, 100.9, 101.6, 102.1, 102.6], "Class-specific (alendronate): gradual gains over time."
+            spine = [100.0, 100.4, 100.9, 101.6, 102.1, 102.6]
+            hip = hip_from_spine(spine, gain_factor=0.8, loss_factor=0.82)
+            return spine, hip, "Class-specific (alendronate): gradual gains over time."
         if current_profile == "risedronate":
-            return [100.0, 100.3, 100.7, 101.3, 101.8, 102.2], "Class-specific (risedronate): modest but positive BMD trajectory."
+            spine = [100.0, 100.3, 100.7, 101.3, 101.8, 102.2]
+            hip = hip_from_spine(spine, gain_factor=0.78, loss_factor=0.82)
+            return spine, hip, "Class-specific (risedronate): modest but positive BMD trajectory."
+        if current_profile == "ibandronate":
+            spine = [100.0, 100.3, 100.6, 101.1, 101.6, 101.9]
+            hip = hip_from_spine(spine, gain_factor=0.72, loss_factor=0.82)
+            return spine, hip, "Class-specific (ibandronate): moderate gain profile."
         if current_profile == "oral_bp":
-            return [100.0, 100.4, 100.8, 101.5, 102.0, 102.4], "Class-specific (oral BP): expected gradual improvement."
+            spine = [100.0, 100.4, 100.8, 101.5, 102.0, 102.4]
+            hip = hip_from_spine(spine, gain_factor=0.78, loss_factor=0.82)
+            return spine, hip, "Class-specific (oral BP): expected gradual improvement."
         if current_profile == "teriparatide":
-            return [100.0, 101.9, 103.7, 106.0, 107.4, 108.2], "Class-specific (teriparatide): early anabolic gain then consolidation is needed."
+            spine = [100.0, 101.9, 103.7, 106.0, 107.4, 108.2]
+            hip = hip_from_spine(spine, gain_factor=0.62, loss_factor=0.8)
+            return spine, hip, "Class-specific (teriparatide): early anabolic gain then consolidation is needed."
         if current_profile == "romosozumab":
-            return [100.0, 102.6, 105.1, 107.5, 108.1, 108.3], "Class-specific (romosozumab): larger early gains, then transition planning."
+            spine = [100.0, 102.6, 105.1, 107.5, 108.1, 108.3]
+            hip = hip_from_spine(spine, gain_factor=0.68, loss_factor=0.8)
+            return spine, hip, "Class-specific (romosozumab): larger early spine gains with hip improvement."
         if current_profile == "raloxifene":
-            return [100.0, 100.2, 100.5, 100.9, 101.2, 101.4], "Class-specific (SERM): modest anti-fracture support with small BMD increase."
+            spine = [100.0, 100.2, 100.5, 100.9, 101.2, 101.4]
+            hip = hip_from_spine(spine, gain_factor=0.58, loss_factor=0.82)
+            return spine, hip, "Class-specific (SERM): modest anti-fracture support with small BMD increase."
         if current_profile == "other":
-            return [100.0, 100.2, 100.6, 101.0, 101.4, 101.8], "Class-specific (other): trajectory shown as moderate improvement pattern."
-        return [100.0, 99.8, 99.5, 99.0, 98.6, 98.2], "No active drug is recorded; this line reflects background decline risk."
+            spine = [100.0, 100.2, 100.6, 101.0, 101.4, 101.8]
+            hip = hip_from_spine(spine, gain_factor=0.68, loss_factor=0.82)
+            return spine, hip, "Class-specific (other): trajectory shown as moderate improvement pattern."
+        spine = [100.0, 99.8, 99.5, 99.0, 98.6, 98.2]
+        hip = hip_from_spine(spine, gain_factor=0.62, loss_factor=0.82)
+        return spine, hip, "No active drug is recorded; this line reflects background decline risk."
 
     if action == "start":
         chosen = target_profile or "oral_bp"
         if chosen == "denosumab":
-            return [100.0, 101.4, 102.9, 105.0, 106.6, 107.8], "Class-specific start (denosumab): robust anti-resorptive trajectory."
+            spine = [100.0, 101.4, 102.9, 105.0, 106.6, 107.8]
+            hip = hip_from_spine(spine, gain_factor=0.74, loss_factor=0.82)
+            return spine, hip, "Class-specific start (denosumab): robust anti-resorptive trajectory."
         if chosen == "zoledronate":
-            return [100.0, 100.6, 101.2, 102.0, 102.5, 103.0], "Class-specific start (zoledronate): steady gains with annual/parenteral schedule."
+            spine = [100.0, 100.6, 101.2, 102.0, 102.5, 103.0]
+            hip = hip_from_spine(spine, gain_factor=0.78, loss_factor=0.82)
+            return spine, hip, "Class-specific start (zoledronate): steady gains with annual/parenteral schedule."
         if chosen == "alendronate":
-            return [100.0, 100.5, 101.0, 101.8, 102.3, 102.8], "Class-specific start (alendronate): gradual oral BP response."
+            spine = [100.0, 100.5, 101.0, 101.8, 102.3, 102.8]
+            hip = hip_from_spine(spine, gain_factor=0.8, loss_factor=0.82)
+            return spine, hip, "Class-specific start (alendronate): gradual oral BP response."
         if chosen == "risedronate":
-            return [100.0, 100.4, 100.9, 101.5, 102.0, 102.4], "Class-specific start (risedronate): moderate expected gains."
+            spine = [100.0, 100.4, 100.9, 101.5, 102.0, 102.4]
+            hip = hip_from_spine(spine, gain_factor=0.78, loss_factor=0.82)
+            return spine, hip, "Class-specific start (risedronate): moderate expected gains."
+        if chosen == "ibandronate":
+            spine = [100.0, 100.3, 100.8, 101.3, 101.8, 102.1]
+            hip = hip_from_spine(spine, gain_factor=0.72, loss_factor=0.82)
+            return spine, hip, "Class-specific start (ibandronate): moderate gains, often less at total hip."
         if chosen == "oral_bp":
-            return [100.0, 100.5, 101.0, 101.7, 102.2, 102.7], "Class-specific start (oral BP class): progressive BMD improvement."
+            spine = [100.0, 100.5, 101.0, 101.7, 102.2, 102.7]
+            hip = hip_from_spine(spine, gain_factor=0.78, loss_factor=0.82)
+            return spine, hip, "Class-specific start (oral BP class): progressive BMD improvement."
         if chosen == "teriparatide":
-            return [100.0, 102.0, 104.2, 107.0, 108.8, 109.8], "Class-specific start (teriparatide): anabolic-first rapid gain profile."
+            spine = [100.0, 102.0, 104.2, 107.0, 108.8, 109.8]
+            hip = hip_from_spine(spine, gain_factor=0.62, loss_factor=0.82)
+            return spine, hip, "Class-specific start (teriparatide): anabolic-first rapid gain profile."
         if chosen == "romosozumab":
-            return [100.0, 102.8, 105.5, 108.0, 108.7, 109.0], "Class-specific start (romosozumab): strong early gain with planned follow-on."
+            spine = [100.0, 102.8, 105.5, 108.0, 108.7, 109.0]
+            hip = hip_from_spine(spine, gain_factor=0.68, loss_factor=0.82)
+            return spine, hip, "Class-specific start (romosozumab): strong early gain with planned follow-on."
         if chosen == "raloxifene":
-            return [100.0, 100.3, 100.6, 101.0, 101.3, 101.5], "Class-specific start (raloxifene): mild BMD increase pattern."
-        return [100.0, 100.5, 101.0, 101.8, 102.4, 103.0], "Projected trend after treatment start."
+            spine = [100.0, 100.3, 100.6, 101.0, 101.3, 101.5]
+            hip = hip_from_spine(spine, gain_factor=0.58, loss_factor=0.82)
+            return spine, hip, "Class-specific start (raloxifene): mild BMD increase pattern."
+        spine = [100.0, 100.5, 101.0, 101.8, 102.4, 103.0]
+        hip = hip_from_spine(spine, gain_factor=0.72, loss_factor=0.82)
+        return spine, hip, "Projected trend after treatment start."
 
     # switch
     chosen = target_profile or "denosumab"
     if current_profile in bp_profiles and chosen == "denosumab":
-        return [100.0, 101.4, 103.0, 105.0, 106.6, 107.8], "Class-specific switch (BP -> denosumab): typically additional BMD gain."
+        spine = [100.0, 101.4, 103.0, 105.0, 106.6, 107.8]
+        hip = hip_from_spine(spine, gain_factor=0.74, loss_factor=0.82)
+        return spine, hip, "Class-specific switch (BP -> denosumab): typically additional BMD gain."
     if current_profile == "alendronate" and chosen == "zoledronate":
-        return [100.0, 100.1, 100.3, 100.6, 100.8, 101.0], "Class-specific switch (alendronate -> zoledronate): often limited additional BMD gain."
+        spine = [100.0, 100.1, 100.3, 100.6, 100.8, 101.0]
+        hip = hip_from_spine(spine, gain_factor=0.78, loss_factor=0.82)
+        return spine, hip, "Class-specific switch (alendronate -> zoledronate): often limited additional BMD gain."
     if current_profile == "risedronate" and chosen == "zoledronate":
-        return [100.0, 100.2, 100.4, 100.8, 101.0, 101.2], "Class-specific switch (risedronate -> zoledronate): modest additional gain."
+        spine = [100.0, 100.2, 100.4, 100.8, 101.0, 101.2]
+        hip = hip_from_spine(spine, gain_factor=0.78, loss_factor=0.82)
+        return spine, hip, "Class-specific switch (risedronate -> zoledronate): modest additional gain."
+    if current_profile == "ibandronate" and chosen == "zoledronate":
+        spine = [100.0, 100.2, 100.5, 100.9, 101.2, 101.4]
+        hip = hip_from_spine(spine, gain_factor=0.76, loss_factor=0.82)
+        return spine, hip, "Class-specific switch (ibandronate -> zoledronate): modest additional gain."
     if current_profile in bp_profiles and chosen == "romosozumab":
-        return [100.0, 101.2, 102.6, 104.5, 106.0, 106.8], "Class-specific switch (BP -> romosozumab): gains occur, potentially blunted vs treatment-naive."
+        spine = [100.0, 101.2, 102.6, 104.5, 106.0, 106.8]
+        hip = hip_from_spine(spine, gain_factor=0.67, loss_factor=0.82)
+        return spine, hip, "Class-specific switch (BP -> romosozumab): gains occur, potentially blunted vs treatment-naive."
     if current_profile in bp_profiles and chosen == "teriparatide":
-        return [100.0, 101.0, 102.2, 103.8, 105.0, 105.8], "Class-specific switch (BP -> teriparatide): gains expected, with possible blunting."
+        spine = [100.0, 101.0, 102.2, 103.8, 105.0, 105.8]
+        hip = hip_from_spine(spine, gain_factor=0.62, loss_factor=0.82)
+        return spine, hip, "Class-specific switch (BP -> teriparatide): gains expected, with possible blunting."
     if current_profile == "denosumab" and chosen == "zoledronate":
-        return [100.0, 99.9, 99.7, 99.4, 99.2, 99.1], "Class-specific switch (denosumab -> zoledronate): helps protect against rebound bone loss."
+        spine = [100.0, 99.9, 99.7, 99.4, 99.2, 99.1]
+        hip = hip_from_spine(spine, gain_factor=0.78, loss_factor=0.8)
+        return spine, hip, "Class-specific switch (denosumab -> zoledronate): helps protect against rebound bone loss."
     if current_profile == "denosumab" and chosen in {"alendronate", "risedronate", "oral_bp"}:
-        return [100.0, 99.8, 99.5, 99.1, 98.9, 98.7], "Class-specific switch (denosumab -> oral BP): partial protection from rebound loss."
+        spine = [100.0, 99.8, 99.5, 99.1, 98.9, 98.7]
+        hip = hip_from_spine(spine, gain_factor=0.78, loss_factor=0.8)
+        return spine, hip, "Class-specific switch (denosumab -> oral BP): partial protection from rebound loss."
+    if current_profile == "denosumab" and chosen == "ibandronate":
+        spine = [100.0, 99.7, 99.3, 98.9, 98.6, 98.4]
+        hip = hip_from_spine(spine, gain_factor=0.74, loss_factor=0.8)
+        return spine, hip, "Class-specific switch (denosumab -> ibandronate): partial protection, monitor closely."
     if current_profile == "denosumab" and chosen in {"teriparatide", "romosozumab"}:
-        return [100.0, 98.9, 97.7, 97.1, 96.7, 96.3], "Class-specific caution (denosumab -> anabolic): transient bone loss can occur."
+        spine = [100.0, 98.9, 97.7, 97.1, 96.7, 96.3]
+        hip = hip_from_spine(spine, gain_factor=0.68, loss_factor=0.78)
+        return spine, hip, "Class-specific caution (denosumab -> anabolic): transient bone loss can occur."
     if current_profile == "teriparatide" and chosen == "denosumab":
-        return [100.0, 101.2, 102.4, 104.0, 105.1, 106.0], "Class-specific switch (teriparatide -> denosumab): consolidates and extends gains."
+        spine = [100.0, 101.2, 102.4, 104.0, 105.1, 106.0]
+        hip = hip_from_spine(spine, gain_factor=0.72, loss_factor=0.82)
+        return spine, hip, "Class-specific switch (teriparatide -> denosumab): consolidates and extends gains."
     if current_profile == "teriparatide" and chosen in {"zoledronate", "alendronate", "risedronate", "oral_bp"}:
-        return [100.0, 100.8, 101.7, 103.0, 104.0, 104.7], "Class-specific switch (teriparatide -> BP): consolidation strategy for maintenance."
+        spine = [100.0, 100.8, 101.7, 103.0, 104.0, 104.7]
+        hip = hip_from_spine(spine, gain_factor=0.72, loss_factor=0.82)
+        return spine, hip, "Class-specific switch (teriparatide -> BP): consolidation strategy for maintenance."
+    if current_profile == "teriparatide" and chosen == "ibandronate":
+        spine = [100.0, 100.6, 101.4, 102.6, 103.4, 104.0]
+        hip = hip_from_spine(spine, gain_factor=0.68, loss_factor=0.82)
+        return spine, hip, "Class-specific switch (teriparatide -> ibandronate): consolidation, usually weaker than denosumab."
     if current_profile == "romosozumab" and chosen == "denosumab":
-        return [100.0, 101.3, 102.6, 104.3, 105.5, 106.3], "Class-specific switch (romosozumab -> denosumab): maintains gains and lowers fracture risk."
+        spine = [100.0, 101.3, 102.6, 104.3, 105.5, 106.3]
+        hip = hip_from_spine(spine, gain_factor=0.72, loss_factor=0.82)
+        return spine, hip, "Class-specific switch (romosozumab -> denosumab): maintains gains and lowers fracture risk."
     if current_profile == "romosozumab" and chosen in {"zoledronate", "alendronate", "risedronate", "oral_bp"}:
-        return [100.0, 100.9, 101.8, 103.1, 104.0, 104.7], "Class-specific switch (romosozumab -> BP): standard anti-resorptive consolidation."
-    return [100.0, 100.5, 101.2, 102.1, 102.8, 103.4], "Projected trend after treatment switch."
+        spine = [100.0, 100.9, 101.8, 103.1, 104.0, 104.7]
+        hip = hip_from_spine(spine, gain_factor=0.72, loss_factor=0.82)
+        return spine, hip, "Class-specific switch (romosozumab -> BP): standard anti-resorptive consolidation."
+    if current_profile == "romosozumab" and chosen == "ibandronate":
+        spine = [100.0, 100.7, 101.5, 102.7, 103.5, 104.0]
+        hip = hip_from_spine(spine, gain_factor=0.68, loss_factor=0.82)
+        return spine, hip, "Class-specific switch (romosozumab -> ibandronate): consolidation strategy with modest maintenance."
+    spine = [100.0, 100.5, 101.2, 102.1, 102.8, 103.4]
+    hip = hip_from_spine(spine, gain_factor=0.72, loss_factor=0.82)
+    return spine, hip, "Projected trend after treatment switch."
 
 
-def build_svg_trajectory_chart(months: List[int], values: List[float], color: str) -> str:
+def build_svg_trajectory_chart(
+    months: List[int],
+    spine_values: List[float],
+    hip_values: List[float],
+) -> str:
     width = 460
     height = 190
     left = 42
@@ -680,8 +811,9 @@ def build_svg_trajectory_chart(months: List[int], values: List[float], color: st
     bottom = 30
     x_span = width - left - right
     y_span = height - top - bottom
-    y_min = min(min(values), 98.0) - 0.5
-    y_max = max(max(values), 102.0) + 0.5
+    combined = list(spine_values) + list(hip_values)
+    y_min = min(min(combined), 98.0) - 0.5
+    y_max = max(max(combined), 102.0) + 0.5
     if y_max <= y_min:
         y_max = y_min + 1.0
 
@@ -691,7 +823,8 @@ def build_svg_trajectory_chart(months: List[int], values: List[float], color: st
     def y_pos(val: float) -> float:
         return top + ((y_max - val) / (y_max - y_min)) * y_span
 
-    pts = " ".join(f"{x_pos(m):.2f},{y_pos(v):.2f}" for m, v in zip(months, values))
+    spine_pts = " ".join(f"{x_pos(m):.2f},{y_pos(v):.2f}" for m, v in zip(months, spine_values))
+    hip_pts = " ".join(f"{x_pos(m):.2f},{y_pos(v):.2f}" for m, v in zip(months, hip_values))
     baseline_y = y_pos(100.0)
     y_ticks = [round(y_min, 1), 100.0, round(y_max, 1)]
     y_grid = "".join(
@@ -707,13 +840,18 @@ def build_svg_trajectory_chart(months: List[int], values: List[float], color: st
         for m in months
     )
     return (
-        f'<svg viewBox="0 0 {width} {height}" width="100%" height="190" role="img" aria-label="Projected BMD trajectory">'
+        f'<svg viewBox="0 0 {width} {height}" width="100%" height="190" role="img" aria-label="Projected spine and hip BMD trajectory">'
         f'{y_grid}'
         f'<line x1="{left}" y1="{baseline_y:.2f}" x2="{width-right}" y2="{baseline_y:.2f}" stroke="#94a3b8" stroke-dasharray="4 3" />'
-        f'<polyline fill="none" stroke="{color}" stroke-width="3" points="{pts}" />'
+        f'<polyline fill="none" stroke="#2563eb" stroke-width="3" points="{spine_pts}" />'
+        f'<polyline fill="none" stroke="#0f766e" stroke-width="3" points="{hip_pts}" />'
         f"{y_labels}{x_labels}"
         f'<text x="{width-6}" y="{height-8}" text-anchor="end" font-size="10" fill="#64748b">Months</text>'
         f'<text x="{left}" y="{top-4}" text-anchor="start" font-size="10" fill="#64748b">Relative BMD index (baseline=100)</text>'
+        f'<line x1="{width-145}" y1="{top+5}" x2="{width-128}" y2="{top+5}" stroke="#2563eb" stroke-width="3" />'
+        f'<text x="{width-122}" y="{top+8}" font-size="10" fill="#334155">Spine</text>'
+        f'<line x1="{width-80}" y1="{top+5}" x2="{width-63}" y2="{top+5}" stroke="#0f766e" stroke-width="3" />'
+        f'<text x="{width-57}" y="{top+8}" font-size="10" fill="#334155">Hip</text>'
         "</svg>"
     )
 
@@ -729,18 +867,13 @@ def build_trajectory_cards(
     current_profile = infer_current_therapy_profile(input_data)
     target_profile = infer_target_therapy_profile(assessment, input_data, agreed_plan)
 
-    scenarios = [
-        ("start", "#2563eb"),
-        ("continue", "#0f766e"),
-        ("switch", "#7c3aed"),
-        ("stop", "#b91c1c"),
-    ]
+    scenarios = ["start", "continue", "switch", "stop"]
     cards: List[Dict[str, str]] = []
-    for action, color in scenarios:
+    for action in scenarios:
         action_target_profile: Optional[str] = None
         if action in ["start", "switch"]:
             action_target_profile = target_profile
-        values, note = _trajectory_values(current_profile, action, action_target_profile)
+        spine_values, hip_values, note = _trajectory_values(current_profile, action, action_target_profile)
 
         if action == "start":
             title = f"After starting therapy ({therapy_profile_label(action_target_profile or target_profile)})"
@@ -758,7 +891,7 @@ def build_trajectory_cards(
             {
                 "title": title,
                 "note": note,
-                "svg": build_svg_trajectory_chart(HANDOUT_MONTHS, values, color),
+                "svg": build_svg_trajectory_chart(HANDOUT_MONTHS, spine_values, hip_values),
                 "active": "true" if action in selected_actions else "false",
             }
         )
@@ -906,7 +1039,7 @@ def build_patient_handout_html(
           {trajectory_html or '<p>No treatment trajectory available yet (load/update patient treatment data first).</p>'}
         </div>
         <p class="trajectory-footnote">
-          These curves are educational, not patient-specific predictions. They summarize typical directional patterns from sequential-therapy literature and should be interpreted by the treating clinician.
+          These class-specific curves are educational, not patient-specific predictions. Blue=spine and green=hip, summarizing typical directional patterns from sequential-therapy literature.
         </p>
       </div>
       <div class="section">
