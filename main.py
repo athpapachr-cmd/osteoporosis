@@ -761,6 +761,33 @@ def has_effective_frailty(data: OsteoInput) -> bool:
     return data.frailty or ((data.cfs_score or 0) >= 5)
 
 
+def get_kanis_major_thresholds_by_age(age: int) -> Tuple[float, float]:
+    """
+    Kanis et al. Osteoporos Int 2020;31:1-12 (UK FRAX appendix):
+    intervention threshold (IT) for major osteoporotic fracture by age band,
+    and upper assessment threshold (UAT) ~= 1.2 * IT.
+    """
+    # Age band cutoffs from the appendix table in the position paper.
+    if age <= 54:
+        it = 7.8
+    elif age <= 59:
+        it = 11.0
+    elif age <= 64:
+        it = 14.0
+    elif age <= 69:
+        it = 19.0
+    elif age <= 74:
+        it = 22.0
+    elif age <= 79:
+        it = 26.0
+    elif age <= 84:
+        it = 31.0
+    else:
+        it = 33.0
+    uat = round(it * 1.2, 1)
+    return it, uat
+
+
 def calculate_calcium_intake(data: OsteoInput) -> Tuple[Optional[float], Optional[str]]:
     MG_PER_PORTION_MILK = 300.0
     MG_PER_PORTION_YOGURT = 250.0
@@ -1066,6 +1093,16 @@ def add_current_therapy_suggestions(
         )
 
     if ttype in [CurrentTherapyType.oral_bisphosphonate, CurrentTherapyType.iv_bisphosphonate]:
+        suggestions.append(
+            Suggestion(
+                category="current_therapy",
+                text=(
+                    "Drug-holiday reference: Diab & Watts, Ther Adv Musculoskelet Dis 2013 "
+                    "(DOI: 10.1177/1759720X13477714). Suggested holiday strategy is risk-tailored, "
+                    "with periodic reassessment using BMD/fracture events."
+                ),
+            )
+        )
         if dur is not None:
             if dur < 3:
                 suggestions.append(
@@ -1090,6 +1127,17 @@ def add_current_therapy_suggestions(
                         ),
                     )
                 )
+                if risk in [RiskCategory.low, RiskCategory.moderate]:
+                    suggestions.append(
+                        Suggestion(
+                            category="current_therapy",
+                            text=(
+                                "Practical holiday option for lower-to-moderate risk: consider pause "
+                                "after ~3–5 years and monitor until significant BMD loss (beyond LSC) "
+                                "or a new fragility fracture."
+                            ),
+                        )
+                    )
             else:
                 suggestions.append(
                     Suggestion(
@@ -1102,6 +1150,28 @@ def add_current_therapy_suggestions(
                         ),
                     )
                 )
+                if risk == RiskCategory.moderate:
+                    suggestions.append(
+                        Suggestion(
+                            category="current_therapy",
+                            text=(
+                                "For moderate-risk profiles after longer exposure, Diab & Watts suggest "
+                                "a potential holiday window around 3–5 years, with restart if BMD declines "
+                                "significantly or fracture occurs."
+                            ),
+                        )
+                    )
+                if risk in [RiskCategory.high, RiskCategory.very_high]:
+                    suggestions.append(
+                        Suggestion(
+                            category="current_therapy",
+                            text=(
+                                "For high/very-high-risk profiles, prolonged treatment (often up to ~10 years) "
+                                "is commonly favored; if a holiday is considered, keep it short (about 1–2 years) "
+                                "with close follow-up and consideration of non-bisphosphonate bridging."
+                            ),
+                        )
+                    )
         else:
             suggestions.append(
                 Suggestion(
@@ -1290,6 +1360,9 @@ def determine_conference_risk_tier(data: OsteoInput) -> str:
     frax_major = data.frax_major_osteoporotic or 0.0
     frax_hip = data.frax_hip or 0.0
     very_high_frax = frax_major >= 30.0 or frax_hip >= 4.5
+    kanis_it, kanis_uat = get_kanis_major_thresholds_by_age(data.age)
+    kanis_very_high = data.frax_major_osteoporotic is not None and frax_major >= kanis_uat
+    kanis_high = data.frax_major_osteoporotic is not None and frax_major >= kanis_it
     effective_high_falls_risk = has_effective_high_falls_risk(data)
     effective_frailty = has_effective_frailty(data)
     low_bmd_high_burden = (
@@ -1306,12 +1379,13 @@ def determine_conference_risk_tier(data: OsteoInput) -> str:
         or data.fractures_during_current_therapy
         or (min_t is not None and min_t <= -3.0)
         or very_high_frax
+        or kanis_very_high
         or low_bmd_high_burden
         or (effective_high_falls_risk and (data.dementia_or_cognitive_impairment or data.significant_immobility))
     ):
         return "very_high"
 
-    if (min_t is not None and min_t <= -2.5) or frax_major >= 20.0 or frax_hip >= 3.0:
+    if (min_t is not None and min_t <= -2.5) or frax_major >= 20.0 or frax_hip >= 3.0 or kanis_high:
         return "high"
 
     return "low"
@@ -1322,6 +1396,7 @@ def add_conference_protocol_suggestions(data: OsteoInput, suggestions: List[Sugg
     Add explicit conference-derived treatment/sequencing guidance.
     """
     tier = determine_conference_risk_tier(data)
+    kanis_it, kanis_uat = get_kanis_major_thresholds_by_age(data.age)
 
     suggestions.append(
         Suggestion(
@@ -1329,6 +1404,17 @@ def add_conference_protocol_suggestions(data: OsteoInput, suggestions: List[Sugg
             text=(
                 "Conference protocol tier (sequential-therapy framework): "
                 f"{tier.replace('_', ' ').upper()}."
+            ),
+        )
+    )
+    suggestions.append(
+        Suggestion(
+            category="conference_protocol",
+            text=(
+                "Algorithm anchor: Kanis et al, Osteoporos Int 2020;31:1-12 "
+                "(IOF/ESCEO position paper). For age "
+                f"{data.age}, FRAX major IT ~{kanis_it:.1f}% and UAT ~{kanis_uat:.1f}% "
+                "(country calibration may differ)."
             ),
         )
     )
@@ -1360,6 +1446,16 @@ def add_conference_protocol_suggestions(data: OsteoInput, suggestions: List[Sugg
                 text=(
                     "Very-high-risk pathway: anabolic-first strategy (e.g. teriparatide or "
                     "romosozumab/Evenity) followed by anti-resorptive consolidation."
+                ),
+            )
+        )
+    if data.recent_fragility_fracture:
+        suggestions.append(
+            Suggestion(
+                category="conference_protocol",
+                text=(
+                    "Recent fracture supports an imminent-risk framing; early treatment action is emphasized "
+                    "in the IOF/ESCEO algorithmic approach."
                 ),
             )
         )
@@ -1455,6 +1551,9 @@ def determine_risk_category(
 
     internal_index_high = internal_index is not None and internal_index >= 6.0
     very_high_frax = frax_major >= 30.0 or frax_hip >= 4.5
+    kanis_it, kanis_uat = get_kanis_major_thresholds_by_age(data.age)
+    kanis_very_high_frax = data.frax_major_osteoporotic is not None and frax_major >= kanis_uat
+    kanis_high_frax = data.frax_major_osteoporotic is not None and frax_major >= kanis_it
     low_bmd_plus_clinical_burden = (
         min_t is not None
         and min_t <= -2.5
@@ -1502,6 +1601,13 @@ def determine_risk_category(
         )
         return RiskCategory.very_high, reasons
 
+    if kanis_very_high_frax:
+        reasons.append(
+            f"FRAX major probability exceeds age-specific upper assessment threshold "
+            f"(major={frax_major:.1f}% >= UAT {kanis_uat:.1f}% at age {data.age})."
+        )
+        return RiskCategory.very_high, reasons
+
     if low_bmd_plus_clinical_burden:
         reasons.append(
             "Low BMD with advanced age and frailty/GC/falls burden (very-high-risk pattern)."
@@ -1521,6 +1627,13 @@ def determine_risk_category(
     if frax_major_high or frax_hip_high:
         reasons.append(
             f"Elevated external FRAX risk: major={frax_major:.1f}%, hip={frax_hip:.1f}%."
+        )
+        return RiskCategory.high, reasons
+
+    if kanis_high_frax:
+        reasons.append(
+            f"FRAX major probability exceeds age-specific intervention threshold "
+            f"(major={frax_major:.1f}% >= IT {kanis_it:.1f}% at age {data.age})."
         )
         return RiskCategory.high, reasons
 
@@ -2141,11 +2254,16 @@ def build_clinical_note(
     morse_score, morse_note, morse_high = compute_morse_fall_risk(data)
     effective_high_falls_risk = data.high_falls_risk or morse_high
     effective_frailty = has_effective_frailty(data)
+    kanis_it, kanis_uat = get_kanis_major_thresholds_by_age(data.age)
 
     lines.append("Osteoporosis decision-support summary (for clinician use only).")
     lines.append("")
     lines.append(
         f"Patient profile: age {data.age}, sex {data.sex.value}, menopause status {data.menopause_status.value}."
+    )
+    lines.append(
+        "Algorithmic reference framework: IOF/ESCEO position paper (Kanis et al, Osteoporos Int 2020;31:1-12). "
+        f"Age-specific FRAX major IT/UAT at this age: ~{kanis_it:.1f}% / ~{kanis_uat:.1f}%."
     )
 
     # BMD summary
@@ -2950,6 +3068,7 @@ def build_treatment_recommendation_context(stored: OsteoStoredAssessment) -> str
     lines: List[str] = []
     input_data = stored.input_data
     assessment = stored.assessment
+    kanis_it, kanis_uat = get_kanis_major_thresholds_by_age(input_data.age)
 
     lines.append(f"Risk category: {assessment.risk_category.value.upper()} fracture risk.")
     if assessment.risk_reasons:
@@ -3022,6 +3141,18 @@ def build_treatment_recommendation_context(stored: OsteoStoredAssessment) -> str
     lines.append(
         "Conference-derived sequential-therapy tier: "
         f"{conference_tier.replace('_', ' ').upper()}."
+    )
+    lines.append(
+        "Evidence anchor: Kanis et al (Osteoporos Int 2020;31:1-12). "
+        f"At age {input_data.age}, FRAX major IT ~{kanis_it:.1f}% and UAT ~{kanis_uat:.1f}% "
+        "(country-calibrated FRAX thresholds may vary)."
+    )
+    lines.append(
+        "Discontinuation/holiday anchor for bisphosphonates: Diab & Watts "
+        "(Ther Adv Musculoskelet Dis 2013, DOI: 10.1177/1759720X13477714): "
+        "lower risk often reassess holiday after 3-5 years exposure; moderate risk often after 5-10 years "
+        "with holiday ~3-5 years; high risk usually continue longer (~10 years) and, if holiday is needed, "
+        "keep short (~1-2 years) with close monitoring."
     )
     lines.append(
         "Conference transition rules to preserve BMD: "

@@ -2181,13 +2181,14 @@
     function syncAgreedPlanTherapyControls() {
       const currentTherapy = document.getElementById("current_therapy_type")?.value || "none";
       const canStartTherapy = currentTherapy === "none";
+      const wantsStartTherapy = !!agreedPlanStartTherapyOption?.checked;
       if (agreedPlanStartTherapyOption) {
         agreedPlanStartTherapyOption.disabled = !canStartTherapy;
         if (!canStartTherapy) agreedPlanStartTherapyOption.checked = false;
       }
       if (agreedPlanStartTherapyChoice) {
-        agreedPlanStartTherapyChoice.disabled = !canStartTherapy;
-        if (!canStartTherapy) {
+        agreedPlanStartTherapyChoice.disabled = !canStartTherapy || !wantsStartTherapy;
+        if (!canStartTherapy || !wantsStartTherapy) {
           agreedPlanStartTherapyChoice.value = "";
         }
       }
@@ -2347,6 +2348,7 @@
       document.getElementById("patient_id").value = entry.patient_id;
       populateFormWithInput(entry.input_data);
       setTherapyHistoryEntries(entry.input_data?.therapy_history || []);
+      renderAgreedPlanSummary();
       renderHistoryDetail(entry);
       updateTherapySnapshot(entry.input_data);
       updateFollowUpPanel(entry.assessment);
@@ -2790,7 +2792,10 @@
       input.addEventListener("change", renderAgreedPlanSummary);
     });
     if (agreedPlanStartTherapyOption) {
-      agreedPlanStartTherapyOption.addEventListener("change", renderAgreedPlanSummary);
+      agreedPlanStartTherapyOption.addEventListener("change", () => {
+        syncAgreedPlanTherapyControls();
+        renderAgreedPlanSummary();
+      });
     }
     if (agreedPlanStartTherapyChoice) {
       agreedPlanStartTherapyChoice.addEventListener("change", renderAgreedPlanSummary);
