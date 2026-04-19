@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="el">
 <head>
   <meta charset="UTF-8">
   <title>Papachristou Ortho – Osteoporosis Cockpit</title>
@@ -1265,22 +1265,23 @@
             <p class="muted" style="margin:0;">Δεν έχουν επιλεγεί ακόμα στοιχεία πλάνου.</p>
           </div>
         </div>
-        <div class="note-block" id="clinicalNote" aria-live="polite">Run an evaluation to see the generated clinical note.</div>
+        <div class="note-block" id="clinicalNote" aria-live="polite">Τρέξε αξιολόγηση για να εμφανιστεί η κλινική σημείωση.</div>
         <div class="note-block" id="patientSummary" aria-live="polite" style="background:#111827;">
-          Run an evaluation to see the patient-friendly summary.
+          Τρέξε αξιολόγηση για να εμφανιστεί η σύνοψη για ασθενή.
         </div>
         <div class="ai-panel" style="margin-top: 12px;">
           <div class="ai-header">
             <div>
               <h3 style="margin:0;">AI elaborations</h3>
-              <p class="muted">Ask the LLM to rephrase for clinicians or patients.</p>
+              <p class="muted">Αναδιατύπωση για κλινικό ή για ασθενή.</p>
             </div>
             <div class="ai-tools">
-              <button id="elabClinicianBtn" class="button secondary">For clinician</button>
-              <button id="elabPatientBtn" class="button secondary">For patient</button>
+              <button id="outputLanguageBtn" class="button secondary">Γλώσσα εξόδου: Ελληνικά</button>
+              <button id="elabClinicianBtn" class="button secondary">Για κλινικό</button>
+              <button id="elabPatientBtn" class="button secondary">Για ασθενή</button>
             </div>
           </div>
-        <div class="note-block ai-elab" id="aiElaboration" aria-live="polite">Select an audience and run an AI elaboration after evaluation.</div>
+        <div class="note-block ai-elab" id="aiElaboration" aria-live="polite">Επίλεξε κοινό και τρέξε AI elaboration μετά την αξιολόγηση.</div>
         </div>
         <div class="ai-panel" style="margin-top: 12px;">
           <div class="ai-header">
@@ -1377,6 +1378,7 @@
       history: [],
       selectedHistoryEntry: null,
       suggestionView: "full",
+      outputLanguage: "el",
     };
     let lastFollowUpSteps = [];
     const therapyEntries = [];
@@ -1399,6 +1401,7 @@
     const clinicalNote = document.getElementById("clinicalNote");
     const patientSummary = document.getElementById("patientSummary");
     const aiElaboration = document.getElementById("aiElaboration");
+    const outputLanguageBtn = document.getElementById("outputLanguageBtn");
     const treatmentRecommendationElm = document.getElementById("treatmentRecommendation");
     const historyTableBody = document.querySelector("#historyTable tbody");
     const historyDetailContent = document.getElementById("historyDetailContent");
@@ -2013,6 +2016,59 @@
       }
       renderSuggestionBuckets(state.lastAssessment?.suggestions || []);
     }
+    function languageButtonText(lang) {
+      return lang === "en" ? "Output language: English" : "Γλώσσα εξόδου: Ελληνικά";
+    }
+    function setOutputLanguage(lang) {
+      state.outputLanguage = lang === "en" ? "en" : "el";
+      const isEn = state.outputLanguage === "en";
+      if (outputLanguageBtn) {
+        outputLanguageBtn.textContent = languageButtonText(state.outputLanguage);
+      }
+      const clinicianBtn = document.getElementById("elabClinicianBtn");
+      const patientBtn = document.getElementById("elabPatientBtn");
+      const questionBtn = document.getElementById("openaiQuestionBtn");
+      if (clinicianBtn) clinicianBtn.textContent = isEn ? "For clinician" : "Για κλινικό";
+      if (patientBtn) patientBtn.textContent = isEn ? "For patient" : "Για ασθενή";
+      if (questionBtn) questionBtn.textContent = isEn ? "Ask literature" : "Ρώτησε την βιβλιογραφία";
+
+      const defaultElabTexts = [
+        "Select an audience and run an AI elaboration after evaluation.",
+        "Επίλεξε κοινό και τρέξε AI elaboration μετά την αξιολόγηση.",
+      ];
+      if (aiElaboration && defaultElabTexts.includes(aiElaboration.textContent.trim())) {
+        aiElaboration.textContent = isEn
+          ? "Select an audience and run an AI elaboration after evaluation."
+          : "Επίλεξε κοινό και τρέξε AI elaboration μετά την αξιολόγηση.";
+      }
+
+      const defaultTreatmentTexts = [
+        "Request AI treatment guidance when ready.",
+        "Τρέξε αξιολόγηση για να λάβεις τις προτεινόμενες κινήσεις.",
+      ];
+      if (treatmentRecommendationElm && defaultTreatmentTexts.includes(treatmentRecommendationElm.textContent.trim())) {
+        treatmentRecommendationElm.textContent = isEn
+          ? "Run an assessment to get treatment guidance."
+          : "Τρέξε αξιολόγηση για να λάβεις τις προτεινόμενες κινήσεις.";
+      }
+
+      const defaultQuestionTexts = [
+        "Κείμενο απάντησης θα εμφανιστεί εδώ μόλις γίνει ερώτηση.",
+        "Answer text will appear here after you submit a question.",
+      ];
+      if (openaiQuestionResponse && defaultQuestionTexts.includes(openaiQuestionResponse.textContent.trim())) {
+        openaiQuestionResponse.textContent = isEn
+          ? "Answer text will appear here after you submit a question."
+          : "Κείμενο απάντησης θα εμφανιστεί εδώ μόλις γίνει ερώτηση.";
+      }
+      setStatus(
+        isEn ? "Output language set to English." : "Η γλώσσα εξόδου ορίστηκε στα ελληνικά.",
+        "neutral"
+      );
+    }
+    function toggleOutputLanguage() {
+      setOutputLanguage(state.outputLanguage === "el" ? "en" : "el");
+    }
     function renderSuggestionBuckets(suggestions) {
       suggestionBuckets.innerHTML = "";
       const evidenceOnly = state.suggestionView === "evidence";
@@ -2316,6 +2372,7 @@
       const text = aiElaboration?.textContent?.trim() || "";
       if (!text) return null;
       if (text.startsWith("Select an audience and run an AI elaboration")) return null;
+      if (text.startsWith("Επίλεξε κοινό και τρέξε AI elaboration")) return null;
       return text;
     }
 
@@ -2344,6 +2401,7 @@
             input_data: getInputDataForHandout(),
             agreed_plan: getAgreedPlanItems(),
             patient_elaboration: getPatientElaborationForExport(),
+            language: state.outputLanguage,
           }),
         });
         if (!res.ok) {
@@ -2380,6 +2438,7 @@
             input_data: getInputDataForHandout(),
             agreed_plan: getAgreedPlanItems(),
             patient_elaboration: getPatientElaborationForExport(),
+            language: state.outputLanguage,
           }),
         });
         if (!res.ok) {
@@ -2683,7 +2742,11 @@
         const res = await fetch(endpoints.elaborate, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ assessment: state.lastAssessment, audience }),
+          body: JSON.stringify({
+            assessment: state.lastAssessment,
+            audience,
+            language: state.outputLanguage,
+          }),
         });
         if (!res.ok) {
           setStatus(`AI elaboration failed (${res.status})`, "error");
@@ -2707,7 +2770,10 @@
         const res = await fetch(endpoints.treatment, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ assessment: state.lastStored }),
+          body: JSON.stringify({
+            assessment: state.lastStored,
+            language: state.outputLanguage,
+          }),
         });
         if (!res.ok) {
           setStatus(`Treatment guidance failed (${res.status})`, "error");
@@ -2739,6 +2805,7 @@
           body: JSON.stringify({
             assessment: state.lastStored,
             question,
+            language: state.outputLanguage,
           }),
         });
         if (!res.ok) {
@@ -2805,8 +2872,14 @@
       updateTherapySnapshot(inputData);
       renderTScoreHistoryList();
       updateFollowUpPanel(assessment);
-      aiElaboration.textContent = "Run an AI elaboration to adapt this narrative.";
-      treatmentRecommendationElm.textContent = "Request AI treatment guidance when ready.";
+      aiElaboration.textContent =
+        state.outputLanguage === "en"
+          ? "Select an audience and run an AI elaboration after evaluation."
+          : "Επίλεξε κοινό και τρέξε AI elaboration μετά την αξιολόγηση.";
+      treatmentRecommendationElm.textContent =
+        state.outputLanguage === "en"
+          ? "Run an assessment to get treatment guidance."
+          : "Τρέξε αξιολόγηση για να λάβεις τις προτεινόμενες κινήσεις.";
     }
     document.getElementById("evaluateBtn").addEventListener("click", (event) => {
       event.preventDefault();
@@ -2860,6 +2933,12 @@
       showEvidenceYearBtn.addEventListener("click", (event) => {
         event.preventDefault();
         setSuggestionView("evidence_year");
+      });
+    }
+    if (outputLanguageBtn) {
+      outputLanguageBtn.addEventListener("click", (event) => {
+        event.preventDefault();
+        toggleOutputLanguage();
       });
     }
     const openaiQuestionBtn = document.getElementById("openaiQuestionBtn");
@@ -2966,6 +3045,7 @@
     syncAgreedPlanTherapyControls();
     renderAgreedPlanSummary();
     renderHistoryDetail(null);
+    setOutputLanguage("el");
     setSuggestionView("full");
   </script>
 </body>

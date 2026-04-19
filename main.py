@@ -160,6 +160,11 @@ class RiskCategory(str, Enum):
     very_high = "very_high"
 
 
+class OutputLanguage(str, Enum):
+    el = "el"
+    en = "en"
+
+
 class ExerciseLevel(str, Enum):
     none = "none"
     light = "light"
@@ -454,6 +459,7 @@ class PatientHandoutRequest(BaseModel):
     input_data: Optional[OsteoInput] = None
     agreed_plan: List[str] = Field(default_factory=list)
     patient_elaboration: Optional[str] = None
+    language: OutputLanguage = OutputLanguage.el
 
 
 class PatientHandoutResponse(BaseModel):
@@ -476,10 +482,24 @@ THERAPY_PROFILE_LABELS: Dict[str, str] = {
     "raloxifene": "Raloxifene (SERM)",
     "other": "Other therapy class",
 }
+THERAPY_PROFILE_LABELS_EL: Dict[str, str] = {
+    "none": "Χωρίς ενεργή αντιοστεοπορωτική αγωγή",
+    "alendronate": "Alendronate (από του στόματος διφωσφονικό)",
+    "risedronate": "Risedronate (από του στόματος διφωσφονικό)",
+    "ibandronate": "Ibandronate (από του στόματος διφωσφονικό)",
+    "oral_bp": "Από του στόματος διφωσφονικό (κλάση)",
+    "zoledronate": "Zoledronate (ενδοφλέβιο διφωσφονικό)",
+    "denosumab": "Denosumab",
+    "teriparatide": "Teriparatide",
+    "romosozumab": "Romosozumab",
+    "raloxifene": "Raloxifene (SERM)",
+    "other": "Άλλη κατηγορία αγωγής",
+}
 
 
-def therapy_profile_label(profile: str) -> str:
-    return THERAPY_PROFILE_LABELS.get(profile, profile.replace("_", " "))
+def therapy_profile_label(profile: str, language: OutputLanguage = OutputLanguage.en) -> str:
+    labels = THERAPY_PROFILE_LABELS_EL if language == OutputLanguage.el else THERAPY_PROFILE_LABELS
+    return labels.get(profile, profile.replace("_", " "))
 
 
 def therapy_profile_from_text(text: str) -> Optional[str]:
@@ -802,6 +822,7 @@ def build_svg_trajectory_chart(
     months: List[int],
     spine_values: List[float],
     hip_values: List[float],
+    language: OutputLanguage = OutputLanguage.el,
 ) -> str:
     width = 460
     height = 190
@@ -839,6 +860,15 @@ def build_svg_trajectory_chart(
         f'<text x="{x_pos(m):.2f}" y="{height-8}" text-anchor="middle" font-size="10" fill="#64748b">{m}m</text>'
         for m in months
     )
+    is_en = language == OutputLanguage.en
+    months_label = "Months" if is_en else "Μήνες"
+    axis_label = (
+        "Relative BMD index (baseline=100)"
+        if is_en
+        else "Σχετικός δείκτης BMD (baseline=100)"
+    )
+    spine_label = "Spine" if is_en else "Σπονδυλική στήλη"
+    hip_label = "Hip" if is_en else "Ισχίο"
     return (
         f'<svg viewBox="0 0 {width} {height}" width="100%" height="190" role="img" aria-label="Projected spine and hip BMD trajectory">'
         f'{y_grid}'
@@ -846,12 +876,12 @@ def build_svg_trajectory_chart(
         f'<polyline fill="none" stroke="#2563eb" stroke-width="3" points="{spine_pts}" />'
         f'<polyline fill="none" stroke="#0f766e" stroke-width="3" points="{hip_pts}" />'
         f"{y_labels}{x_labels}"
-        f'<text x="{width-6}" y="{height-8}" text-anchor="end" font-size="10" fill="#64748b">Months</text>'
-        f'<text x="{left}" y="{top-4}" text-anchor="start" font-size="10" fill="#64748b">Relative BMD index (baseline=100)</text>'
+        f'<text x="{width-6}" y="{height-8}" text-anchor="end" font-size="10" fill="#64748b">{months_label}</text>'
+        f'<text x="{left}" y="{top-4}" text-anchor="start" font-size="10" fill="#64748b">{axis_label}</text>'
         f'<line x1="{width-145}" y1="{top+5}" x2="{width-128}" y2="{top+5}" stroke="#2563eb" stroke-width="3" />'
-        f'<text x="{width-122}" y="{top+8}" font-size="10" fill="#334155">Spine</text>'
+        f'<text x="{width-122}" y="{top+8}" font-size="10" fill="#334155">{spine_label}</text>'
         f'<line x1="{width-80}" y1="{top+5}" x2="{width-63}" y2="{top+5}" stroke="#0f766e" stroke-width="3" />'
-        f'<text x="{width-57}" y="{top+8}" font-size="10" fill="#334155">Hip</text>'
+        f'<text x="{width-57}" y="{top+8}" font-size="10" fill="#334155">{hip_label}</text>'
         "</svg>"
     )
 
@@ -860,6 +890,7 @@ def build_trajectory_cards(
     assessment: OsteoAssessment,
     input_data: Optional[OsteoInput],
     agreed_plan: List[str],
+    language: OutputLanguage = OutputLanguage.el,
 ) -> List[Dict[str, str]]:
     if input_data is None:
         return []
@@ -874,24 +905,53 @@ def build_trajectory_cards(
         if action in ["start", "switch"]:
             action_target_profile = target_profile
         spine_values, hip_values, note = _trajectory_values(current_profile, action, action_target_profile)
+        if language == OutputLanguage.el:
+            action_notes_el = {
+                "start": "Εκπαιδευτική καμπύλη μετά από έναρξη της επιλεγμένης αγωγής.",
+                "continue": "Εκπαιδευτική καμπύλη με συνέχιση της τρέχουσας αγωγής.",
+                "switch": "Εκπαιδευτική καμπύλη μετά από μετάβαση στην επιλεγμένη νέα αγωγή.",
+                "stop": "Εκπαιδευτική καμπύλη μετά από διακοπή αγωγής (συνήθως απαιτείται στενή παρακολούθηση).",
+            }
+            note = action_notes_el.get(action, note)
 
         if action == "start":
-            title = f"After starting therapy ({therapy_profile_label(action_target_profile or target_profile)})"
+            title = (
+                f"After starting therapy ({therapy_profile_label(action_target_profile or target_profile, language)})"
+                if language == OutputLanguage.en
+                else f"Με έναρξη αγωγής ({therapy_profile_label(action_target_profile or target_profile, language)})"
+            )
         elif action == "continue":
-            title = f"With continuation ({therapy_profile_label(current_profile)})"
+            title = (
+                f"With continuation ({therapy_profile_label(current_profile, language)})"
+                if language == OutputLanguage.en
+                else f"Με συνέχιση ({therapy_profile_label(current_profile, language)})"
+            )
         elif action == "switch":
             title = (
-                f"After switch ({therapy_profile_label(current_profile)} -> "
-                f"{therapy_profile_label(action_target_profile or target_profile)})"
+                f"After switch ({therapy_profile_label(current_profile, language)} -> "
+                f"{therapy_profile_label(action_target_profile or target_profile, language)})"
+                if language == OutputLanguage.en
+                else
+                f"Με αλλαγή ({therapy_profile_label(current_profile, language)} -> "
+                f"{therapy_profile_label(action_target_profile or target_profile, language)})"
             )
         else:
-            title = f"After stopping therapy ({therapy_profile_label(current_profile)})"
+            title = (
+                f"After stopping therapy ({therapy_profile_label(current_profile, language)})"
+                if language == OutputLanguage.en
+                else f"Με διακοπή αγωγής ({therapy_profile_label(current_profile, language)})"
+            )
 
         cards.append(
             {
                 "title": title,
                 "note": note,
-                "svg": build_svg_trajectory_chart(HANDOUT_MONTHS, spine_values, hip_values),
+                "svg": build_svg_trajectory_chart(
+                    HANDOUT_MONTHS,
+                    spine_values,
+                    hip_values,
+                    language=language,
+                ),
                 "active": "true" if action in selected_actions else "false",
             }
         )
@@ -903,17 +963,98 @@ def build_patient_handout_html(
     input_data: Optional[OsteoInput] = None,
     agreed_plan: Optional[List[str]] = None,
     patient_elaboration: Optional[str] = None,
+    language: OutputLanguage = OutputLanguage.el,
 ) -> str:
-    suggestions_html = "".join(
-        f"<li>{escape(s.text)}</li>" for s in assessment.suggestions[:6]
-    )
-    follow_up_html = "".join(
-        f"<li><strong>{escape(step.timeframe)}</strong>: {escape(step.text)}</li>"
-        for step in assessment.follow_up_steps
-    )
+    is_en = language == OutputLanguage.en
+    texts = {
+        "lang": "en" if is_en else "el",
+        "title": "Osteoporosis handout" if is_en else "Ενημερωτικό οστεοπόρωσης",
+        "subtitle": (
+            "This summary is meant for discussion and not as a prescription."
+            if is_en
+            else "Το παρόν είναι ενημερωτικό και δεν υποκαθιστά ιατρική συνταγογράφηση."
+        ),
+        "risk_snapshot": "Risk snapshot" if is_en else "Σύνοψη κινδύνου",
+        "risk_word": "risk" if is_en else "κίνδυνος",
+        "patient_explanation": "Patient explanation" if is_en else "Επεξήγηση για ασθενή",
+        "key_guidance": "Key guidance" if is_en else "Κύριες οδηγίες",
+        "no_suggestions": "No suggestions recorded." if is_en else "Δεν υπάρχουν καταγεγραμμένες προτάσεις.",
+        "follow_up_plan": "Follow-up plan" if is_en else "Πλάνο παρακολούθησης",
+        "no_follow_up": (
+            "No specific follow-up steps yet."
+            if is_en
+            else "Δεν έχουν καταγραφεί ακόμη συγκεκριμένα βήματα παρακολούθησης."
+        ),
+        "trend_title": (
+            "Bone mass trend (next 24 months)"
+            if is_en
+            else "Τάση οστικής μάζας (επόμενοι 24 μήνες)"
+        ),
+        "no_trend": (
+            "No treatment trajectory available yet (load/update patient treatment data first)."
+            if is_en
+            else "Δεν υπάρχει ακόμη διαθέσιμη καμπύλη θεραπείας (φόρτωσε/ενημέρωσε πρώτα τα θεραπευτικά δεδομένα)."
+        ),
+        "trend_note": (
+            "These class-specific curves are educational, not patient-specific predictions. Blue=spine and green=hip, summarizing typical directional patterns from sequential-therapy literature."
+            if is_en
+            else "Οι καμπύλες ανά class είναι εκπαιδευτικές και όχι εξατομικευμένες προβλέψεις. Μπλε=σπονδυλική στήλη, πράσινο=ισχίο, με βάση τυπικά μοτίβα από τη βιβλιογραφία σειριακών θεραπειών."
+        ),
+        "agreed_plan": "Agreed plan" if is_en else "Συμφωνημένο πλάνο",
+        "no_agreed_plan": (
+            "No agreed plan items selected yet."
+            if is_en
+            else "Δεν έχουν επιλεγεί ακόμη στοιχεία συμφωνημένου πλάνου."
+        ),
+        "share_title": "What to share with your doctor" if is_en else "Τι να μοιραστείς με τον/την γιατρό σου",
+        "share_text": (
+            "Bring lab results (calcium, vitamin D, renal function) and any notes about symptoms/falls."
+            if is_en
+            else "Έχε μαζί σου πρόσφατες εξετάσεις (ασβέστιο, βιταμίνη D, νεφρική λειτουργία) και σημειώσεις για συμπτώματα/πτώσεις."
+        ),
+    }
     agreed_plan_items = [p.strip() for p in (agreed_plan or []) if p and p.strip()]
     agreed_plan_html = "".join(f"<li>{escape(item)}</li>" for item in agreed_plan_items)
-    trajectory_cards = build_trajectory_cards(assessment, input_data, agreed_plan_items)
+    risk_label_map = {
+        "low": "χαμηλός",
+        "moderate": "μέτριος",
+        "high": "υψηλός",
+        "very_high": "πολύ υψηλός",
+    }
+    risk_word = (
+        f"{risk_label_map.get(assessment.risk_category.value, assessment.risk_category.value)} κίνδυνος"
+        if not is_en
+        else f"{assessment.risk_category.value.upper()} {texts['risk_word']}"
+    )
+
+    if is_en:
+        suggestions_html = "".join(
+            f"<li>{escape(s.text)}</li>" for s in assessment.suggestions[:6]
+        )
+        follow_up_html = "".join(
+            f"<li><strong>{escape(step.timeframe)}</strong>: {escape(step.text)}</li>"
+            for step in assessment.follow_up_steps
+        )
+        risk_reason_chips = "".join(
+            f'<div class="chip">{escape(reason)}</div>' for reason in assessment.risk_reasons[:3]
+        )
+    else:
+        greek_guidance = agreed_plan_items[:6]
+        suggestions_html = "".join(f"<li>{escape(item)}</li>" for item in greek_guidance)
+        greek_follow_up = [
+            item
+            for item in agreed_plan_items
+            if "μήν" in item.lower() or "dxa" in item.lower() or "αναλύσ" in item.lower()
+        ]
+        follow_up_html = "".join(f"<li>{escape(item)}</li>" for item in greek_follow_up)
+        risk_reason_chips = ""
+
+    trajectory_cards = build_trajectory_cards(
+        assessment,
+        input_data,
+        agreed_plan_items,
+        language=language,
+    )
     trajectory_html = ""
     if trajectory_cards:
         trajectory_html = "".join(
@@ -931,16 +1072,16 @@ def build_patient_handout_html(
     if patient_elaboration and patient_elaboration.strip():
         patient_elab_html = f"""
       <div class="section">
-        <h2>Patient explanation</h2>
+        <h2>{texts["patient_explanation"]}</h2>
         <div class="narrative">{escape(patient_elaboration.strip())}</div>
       </div>
         """
     html = f"""
     <!DOCTYPE html>
-    <html lang="en">
+    <html lang="{texts["lang"]}">
     <head>
       <meta charset="UTF-8" />
-      <title>Osteoporosis handout</title>
+      <title>{texts["title"]}</title>
       <style>
         body {{
           font-family: 'Helvetica Neue', system-ui, sans-serif;
@@ -1017,38 +1158,38 @@ def build_patient_handout_html(
       </style>
     </head>
     <body>
-      <h1>Osteoporosis handout</h1>
-      <p>This summary is meant for discussion and not as a prescription.</p>
+      <h1>{texts["title"]}</h1>
+      <p>{texts["subtitle"]}</p>
       <div class="section">
-        <h2>Risk snapshot</h2>
-        <div class="chip">{assessment.risk_category.value.upper()} risk</div>
-        {"".join(f'<div class="chip">{escape(reason)}</div>' for reason in assessment.risk_reasons[:3])}
+        <h2>{texts["risk_snapshot"]}</h2>
+        <div class="chip">{risk_word}</div>
+        {risk_reason_chips}
       </div>
       {patient_elab_html}
       <div class="section">
-        <h2>Key guidance</h2>
-        <ul>{suggestions_html or "<li>No suggestions recorded.</li>"}</ul>
+        <h2>{texts["key_guidance"]}</h2>
+        <ul>{suggestions_html or f"<li>{texts['no_suggestions']}</li>"}</ul>
       </div>
       <div class="section">
-        <h2>Follow-up plan</h2>
-        <ul>{follow_up_html or "<li>No specific follow-up steps yet.</li>"}</ul>
+        <h2>{texts["follow_up_plan"]}</h2>
+        <ul>{follow_up_html or f"<li>{texts['no_follow_up']}</li>"}</ul>
       </div>
       <div class="section">
-        <h2>Bone mass trend (next 24 months)</h2>
+        <h2>{texts["trend_title"]}</h2>
         <div class="trajectory-grid">
-          {trajectory_html or '<p>No treatment trajectory available yet (load/update patient treatment data first).</p>'}
+          {trajectory_html or f'<p>{texts["no_trend"]}</p>'}
         </div>
         <p class="trajectory-footnote">
-          These class-specific curves are educational, not patient-specific predictions. Blue=spine and green=hip, summarizing typical directional patterns from sequential-therapy literature.
+          {texts["trend_note"]}
         </p>
       </div>
       <div class="section">
-        <h2>Agreed plan</h2>
-        <ul>{agreed_plan_html or "<li>No agreed plan items selected yet.</li>"}</ul>
+        <h2>{texts["agreed_plan"]}</h2>
+        <ul>{agreed_plan_html or f"<li>{texts['no_agreed_plan']}</li>"}</ul>
       </div>
       <div class="section">
-        <h2>What to share with your doctor</h2>
-        <p>Bring lab results (calcium, vitamin D, renal function) and any notes about symptoms/falls.</p>
+        <h2>{texts["share_title"]}</h2>
+        <p>{texts["share_text"]}</p>
       </div>
     </body>
     </html>
@@ -1058,6 +1199,7 @@ def build_patient_handout_html(
 class ElaborationRequest(BaseModel):
     assessment: OsteoAssessment
     audience: str = Field(default="clinician", description="clinician or patient")
+    language: OutputLanguage = OutputLanguage.el
 
 
 class ElaborationResponse(BaseModel):
@@ -1065,6 +1207,7 @@ class ElaborationResponse(BaseModel):
 
 class TreatmentRecommendationRequest(BaseModel):
     assessment: OsteoStoredAssessment
+    language: OutputLanguage = OutputLanguage.el
 
 
 class TreatmentRecommendationResponse(BaseModel):
@@ -1073,6 +1216,7 @@ class TreatmentRecommendationResponse(BaseModel):
 class LiteratureQuestionRequest(BaseModel):
     assessment: OsteoStoredAssessment
     question: str
+    language: OutputLanguage = OutputLanguage.el
 
 class LiteratureQuestionResponse(BaseModel):
     answer: str
@@ -3522,11 +3666,13 @@ def elaborate_osteoporosis(req: ElaborationRequest) -> ElaborationResponse:
     Use an LLM (OpenAI) to elaborate on an existing osteoporosis assessment
     WITHOUT changing its medical content.
     """
+    is_en = req.language == OutputLanguage.en
     if openai_client is None:
         return ElaborationResponse(
             elaborated_text=(
-                "LLM elaboration is not available because OPENAI_API_KEY is not configured "
-                "on the server."
+                "LLM elaboration is not available because OPENAI_API_KEY is not configured on the server."
+                if is_en
+                else "Η λειτουργία AI elaboration δεν είναι διαθέσιμη γιατί δεν έχει οριστεί OPENAI_API_KEY στον server."
             )
         )
 
@@ -3534,7 +3680,13 @@ def elaborate_osteoporosis(req: ElaborationRequest) -> ElaborationResponse:
 
     if req.audience == "clinician":
         style_instruction = (
-            "Γράψε στα ελληνικά, με καθαρή δομή για κλινικό: "
+            "Write in English for a clinician with clear structure: "
+            "1) brief risk summary, "
+            "2) critical findings (T-scores, fractures, labs), "
+            "3) section 'Suggested actions' with 3-5 bullets. "
+            "Actions must remain grounded in input/suggestions and be specific for 6-12 month follow-up, without dosages."
+            if is_en
+            else "Γράψε στα ελληνικά, με καθαρή δομή για κλινικό: "
             "1) σύντομη περίληψη κινδύνου, "
             "2) κρίσιμα ευρήματα (T-scores, κατάγματα, labs), "
             "3) ενότητα «Προτεινόμενες ενέργειες» με 3-5 bullets. "
@@ -3543,16 +3695,29 @@ def elaborate_osteoporosis(req: ElaborationRequest) -> ElaborationResponse:
         )
     else:
         style_instruction = (
-            "Γράψε στα ελληνικά για ασθενή, απλά και ευανάγνωστα: "
+            "Write in English for a patient, simple and easy to read: "
+            "1) short explanation of the condition in 3-4 sentences, "
+            "2) section 'What I should do now' with 4-6 bullets, "
+            "3) section 'What to discuss at the next appointment' with 2-3 bullets. "
+            "Do not introduce dosages or new medications."
+            if is_en
+            else "Γράψε στα ελληνικά για ασθενή, απλά και ευανάγνωστα: "
             "1) σύντομη εξήγηση της κατάστασης σε 3-4 προτάσεις, "
             "2) ενότητα «Τι να κάνω τώρα» με 4-6 bullets, "
             "3) ενότητα «Τι να συζητήσω στο επόμενο ραντεβού» με 2-3 bullets. "
             "Μην δίνεις δοσολογίες ή νέα φάρμακα."
         )
-    style_instruction += " Να ολοκληρώνεις πλήρως την τελευταία πρόταση (όχι κομμένη κατάληξη)."
+    style_instruction += (
+        " Ensure the final sentence is complete (not cut off)."
+        if is_en
+        else " Να ολοκληρώνεις πλήρως την τελευταία πρόταση (όχι κομμένη κατάληξη)."
+    )
 
     system_prompt = (
-        "Είσαι ένας ιδιαίτερα προσεκτικός βοηθός ιατρικής τεκμηρίωσης. ΔΕΝ εισάγεις ποτέ νέες "
+        "You are a careful medical documentation assistant. NEVER introduce new diagnoses, therapies, dosage changes, "
+        "or lab interpretations beyond the provided data. Reorganize and clarify only the existing content."
+        if is_en
+        else "Είσαι ένας ιδιαίτερα προσεκτικός βοηθός ιατρικής τεκμηρίωσης. ΔΕΝ εισάγεις ποτέ νέες "
         "διαγνώσεις, θεραπείες, αλλαγές δοσολογίας ή ερμηνείες εργαστηριακών εξετάσεων πέρα από "
         "ό,τι σου δίνεται ρητά. Απλώς αναδιατάσσεις και διατυπώνεις με σαφήνεια το υπάρχον κείμενο. "
         "Αν κάτι δεν αναφέρεται στα δεδομένα εισόδου, δεν το εφευρίσκεις."
@@ -3585,8 +3750,9 @@ def elaborate_osteoporosis(req: ElaborationRequest) -> ElaborationResponse:
         text = completion.choices[0].message.content.strip()
     except Exception as e:
         text = (
-            "LLM elaboration is temporarily unavailable. "
-            f"(Technical error: {e})"
+            f"LLM elaboration is temporarily unavailable. (Technical error: {e})"
+            if is_en
+            else f"Το LLM elaboration είναι προσωρινά μη διαθέσιμο. (Τεχνικό σφάλμα: {e})"
         )
 
     return ElaborationResponse(elaborated_text=text)
@@ -3599,6 +3765,7 @@ def create_patient_handout(req: PatientHandoutRequest) -> PatientHandoutResponse
         input_data=req.input_data,
         agreed_plan=req.agreed_plan,
         patient_elaboration=req.patient_elaboration,
+        language=req.language,
     )
     return PatientHandoutResponse(handout_html=html)
 
@@ -3729,15 +3896,23 @@ def build_question_context(stored: OsteoStoredAssessment) -> str:
 def recommend_treatment_change(
     req: TreatmentRecommendationRequest,
 ) -> TreatmentRecommendationResponse:
+    is_en = req.language == OutputLanguage.en
     if openai_client is None:
         return TreatmentRecommendationResponse(
             treatment_recommendation=(
                 "AI treatment guidance is unavailable because OPENAI_API_KEY is not configured on the server."
+                if is_en
+                else "Η καθοδήγηση θεραπείας AI δεν είναι διαθέσιμη γιατί δεν έχει οριστεί OPENAI_API_KEY στον server."
             )
         )
 
     system_prompt = (
-        "Είσαι σύμβουλος οστεοπόρωσης για κλινικούς. Γράφεις στα ελληνικά, συγκεκριμένα και "
+        "You are an osteoporosis clinical advisor. Write in English with concrete, practical recommendations aligned "
+        "with guideline logic (NOGG/ESCEO/Endocrine). You may mention drug classes and sequencing logic (anabolic-first "
+        "in very high risk, followed by anti-resorptive consolidation), without dosages and without replacing clinical judgment. "
+        "Prioritize conference-derived sequential-treatment rules when present."
+        if is_en
+        else "Είσαι σύμβουλος οστεοπόρωσης για κλινικούς. Γράφεις στα ελληνικά, συγκεκριμένα και "
         "πρακτικά, ευθυγραμμισμένα με guideline λογική (NOGG/ESCEO/Endocrine). "
         "Επιτρέπεται να αναφέρεις κατηγορίες φαρμάκων και λογική ακολουθίας (anabolic-first σε very high risk, "
         "έπειτα anti-resorptive consolidation), χωρίς δοσολογίες και χωρίς να αντικαθιστάς την κλινική κρίση. "
@@ -3746,14 +3921,28 @@ def recommend_treatment_change(
 
     context = build_treatment_recommendation_context(req.assessment)
     user_prompt = (
-        "Patient context:\n"
-        f"{context}\n\n"
-        "Με βάση τα παραπάνω, δώσε θεραπευτική καθοδήγηση σε 4 ενότητες:\n"
-        "1) «Προτεινόμενη στρατηγική τώρα» (2-3 bullets με συγκεκριμένες classes: διφωσφονικά/denosumab/οστεοαναβολικό όπου ταιριάζει).\n"
-        "2) «Τι λείπει πριν την τελική επιλογή» (εργαστηριακά/κλινικά δεδομένα που απαιτούνται).\n"
-        "3) «Παρακολούθηση 6-12 μηνών» (συγκεκριμένα χρονικά checkpoints για labs και DEXA).\n"
-        "4) «Safety net» (2 σύντομα bullets για fracture-on-therapy, denosumab interruption ή adverse effects).\n"
-        "Μην δίνεις δοσολογίες. Να είσαι συγκεκριμένος και όχι γενικός."
+        (
+            "Patient context:\n"
+            f"{context}\n\n"
+            "Based on the above, provide treatment guidance in 4 sections:\n"
+            "1) 'Recommended strategy now' (2-3 bullets with explicit classes: bisphosphonates/denosumab/anabolic where appropriate).\n"
+            "2) 'What is missing before final selection' (required lab/clinical data).\n"
+            "3) '6-12 month follow-up' (specific checkpoints for labs and DEXA).\n"
+            "4) 'Safety net' (2 short bullets for fracture-on-therapy, denosumab interruption, or adverse effects).\n"
+            "Do not provide dosages. Be specific rather than generic."
+        )
+        if is_en
+        else
+        (
+            "Patient context:\n"
+            f"{context}\n\n"
+            "Με βάση τα παραπάνω, δώσε θεραπευτική καθοδήγηση σε 4 ενότητες:\n"
+            "1) «Προτεινόμενη στρατηγική τώρα» (2-3 bullets με συγκεκριμένες classes: διφωσφονικά/denosumab/οστεοαναβολικό όπου ταιριάζει).\n"
+            "2) «Τι λείπει πριν την τελική επιλογή» (εργαστηριακά/κλινικά δεδομένα που απαιτούνται).\n"
+            "3) «Παρακολούθηση 6-12 μηνών» (συγκεκριμένα χρονικά checkpoints για labs και DEXA).\n"
+            "4) «Safety net» (2 σύντομα bullets για fracture-on-therapy, denosumab interruption ή adverse effects).\n"
+            "Μην δίνεις δοσολογίες. Να είσαι συγκεκριμένος και όχι γενικός."
+        )
     )
 
     try:
@@ -3769,8 +3958,9 @@ def recommend_treatment_change(
         text = completion.choices[0].message.content.strip()
     except Exception as exc:
         text = (
-            "AI treatment guidance is temporarily unavailable. "
-            f"(Technical error: {exc})"
+            f"AI treatment guidance is temporarily unavailable. (Technical error: {exc})"
+            if is_en
+            else f"Η καθοδήγηση θεραπείας AI είναι προσωρινά μη διαθέσιμη. (Τεχνικό σφάλμα: {exc})"
         )
 
     return TreatmentRecommendationResponse(treatment_recommendation=text)
@@ -3778,26 +3968,42 @@ def recommend_treatment_change(
 
 @app.post("/osteoporosis/question", response_model=LiteratureQuestionResponse)
 def ask_literature_question(req: LiteratureQuestionRequest) -> LiteratureQuestionResponse:
+    is_en = req.language == OutputLanguage.en
     if openai_client is None:
         return LiteratureQuestionResponse(
-            answer="LLM assistance is unavailable because OPENAI_API_KEY is not configured."
+            answer=(
+                "LLM assistance is unavailable because OPENAI_API_KEY is not configured."
+                if is_en
+                else "Η βοήθεια LLM δεν είναι διαθέσιμη γιατί δεν έχει οριστεί OPENAI_API_KEY."
+            )
         )
 
     system_prompt = (
-        "Είσαι ένας ενημερωμένος σύμβουλος οστεοπόρωσης. Απαντάς στα ελληνικά, "
+        "You are an up-to-date osteoporosis advisor. Reply in English and reference widely accepted guidelines "
+        "(e.g., NOGG, Endocrine Society, ACP, IOF). Do not invent new diagnoses; interpret the provided data and "
+        "offer reliable guidance."
+        if is_en
+        else "Είσαι ένας ενημερωμένος σύμβουλος οστεοπόρωσης. Απαντάς στα ελληνικά, "
         "αναφερόμενος σε ευρέως αποδεκτές κατευθυντήριες οδηγίες (π.χ. NOGG, Endocrine Society, "
         "ACP, IOF). Δεν εισάγεις νέες διαγνώσεις, αλλά ερμηνεύεις δεδομένα και παρέχεις αξιόπιστη επεξήγηση."
     )
 
     context = build_question_context(req.assessment)
     user_prompt = (
-        "Κλινικό πλαίσιο:\n"
-        f"{context}\n\n"
-        "Ερώτηση:\n"
-        f"{req.question}\n\n"
+        ("Clinical context:\n" if is_en else "Κλινικό πλαίσιο:\n")
+        + f"{context}\n\n"
+        + ("Question:\n" if is_en else "Ερώτηση:\n")
+        + f"{req.question}\n\n"
+        + (
+            "Answer in 2-3 paragraphs: (1) brief literature/guideline rationale, "
+            "(2) practical answer, (3) if more tests or data are needed, list them clearly. "
+            "Ensure the final sentence is complete."
+            if is_en
+            else
             "Απάντησε οργανομετρικά με 2-3 παραγράφους: (1) σύντομη πηγή/αιτιολόγηση από τη βιβλιογραφία, "
             "(2) πρακτική απάντηση, (3) αν χρειάζονται επιπλέον εξετάσεις ή δεδομένα, σημείωσε τα."
             " Να ολοκληρώνεις πλήρως την τελευταία πρόταση (όχι κομμένη κατάληξη)."
+        )
     )
 
     try:
@@ -3812,7 +4018,11 @@ def ask_literature_question(req: LiteratureQuestionRequest) -> LiteratureQuestio
         )
         answer = completion.choices[0].message.content.strip()
     except Exception as exc:
-        answer = f"Η έρευνα είναι προσωρινά ανέφικτη. (Σφάλμα: {exc})"
+        answer = (
+            f"Literature assistance is temporarily unavailable. (Error: {exc})"
+            if is_en
+            else f"Η έρευνα είναι προσωρινά ανέφικτη. (Σφάλμα: {exc})"
+        )
 
     return LiteratureQuestionResponse(answer=answer)
 
