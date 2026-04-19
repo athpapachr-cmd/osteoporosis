@@ -409,6 +409,19 @@
       display: grid;
       gap: 12px;
     }
+    .suggestion-toolbar {
+      margin-top: 10px;
+      margin-bottom: 8px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .suggestion-toolbar .button.active {
+      background: #1d4ed8;
+      color: #fff;
+      border-color: #1d4ed8;
+    }
     .suggestion-bucket {
       border: 1px dashed rgba(15, 23, 42, 0.2);
       border-radius: 12px;
@@ -423,6 +436,13 @@
       padding-left: 18px;
       font-size: 13px;
       line-height: 1.4;
+    }
+    .suggestion-evidence {
+      margin-top: 4px;
+      font-size: 11px;
+      color: #64748b;
+      line-height: 1.35;
+      white-space: normal;
     }
     .therapy-history {
       margin-top: 18px;
@@ -1134,6 +1154,11 @@
             </ul>
           </div>
         </div>
+        <div class="suggestion-toolbar">
+          <button id="showFullSuggestionsBtn" type="button" class="button secondary active">Full suggestions</button>
+          <button id="showEvidenceOnlyBtn" type="button" class="button secondary">Show evidence only</button>
+          <button id="showEvidenceYearBtn" type="button" class="button secondary">Evidence + year</button>
+        </div>
         <div class="suggestion-grid" id="suggestionBuckets"></div>
         <div class="therapy-highlights" id="therapyHighlights"></div>
         <div class="therapy-summary-panel" id="therapySnapshot">
@@ -1334,6 +1359,7 @@
       lastStored: null,
       history: [],
       selectedHistoryEntry: null,
+      suggestionView: "full",
     };
     let lastFollowUpSteps = [];
     const therapyEntries = [];
@@ -1348,6 +1374,9 @@
     const calciumNote = document.getElementById("calciumNote");
     const veryHighCriteriaList = document.getElementById("veryHighCriteriaList");
     const veryHighCriteriaPanel = document.getElementById("veryHighCriteriaPanel");
+    const showFullSuggestionsBtn = document.getElementById("showFullSuggestionsBtn");
+    const showEvidenceOnlyBtn = document.getElementById("showEvidenceOnlyBtn");
+    const showEvidenceYearBtn = document.getElementById("showEvidenceYearBtn");
     const suggestionBuckets = document.getElementById("suggestionBuckets");
     const therapyHighlights = document.getElementById("therapyHighlights");
     const clinicalNote = document.getElementById("clinicalNote");
@@ -1953,30 +1982,90 @@
         veryHighCriteriaList.appendChild(li);
       });
     }
+    function setSuggestionView(mode) {
+      const normalizedMode = mode === "evidence" || mode === "evidence_year" ? mode : "full";
+      state.suggestionView = normalizedMode;
+      if (showFullSuggestionsBtn) {
+        showFullSuggestionsBtn.classList.toggle("active", state.suggestionView === "full");
+      }
+      if (showEvidenceOnlyBtn) {
+        showEvidenceOnlyBtn.classList.toggle("active", state.suggestionView === "evidence");
+      }
+      if (showEvidenceYearBtn) {
+        showEvidenceYearBtn.classList.toggle("active", state.suggestionView === "evidence_year");
+      }
+      renderSuggestionBuckets(state.lastAssessment?.suggestions || []);
+    }
     function renderSuggestionBuckets(suggestions) {
       suggestionBuckets.innerHTML = "";
+      const evidenceOnly = state.suggestionView === "evidence";
+      const evidenceWithYear = state.suggestionView === "evidence_year";
+      const evidenceMode = evidenceOnly || evidenceWithYear;
       if (!suggestions?.length) {
-        suggestionBuckets.innerHTML = '<p class="muted">Suggestions will appear after evaluation.</p>';
+        suggestionBuckets.innerHTML = evidenceMode
+          ? '<p class="muted">Evidence mapping will appear after evaluation.</p>'
+          : '<p class="muted">Suggestions will appear after evaluation.</p>';
         return;
       }
       const grouped = suggestions.reduce((acc, suggestion) => {
         acc[suggestion.category] = acc[suggestion.category] || [];
-        acc[suggestion.category].push(suggestion.text);
+        acc[suggestion.category].push(suggestion);
         return acc;
       }, {});
-      Object.entries(grouped).forEach(([category, texts]) => {
+      Object.entries(grouped).forEach(([category, entries]) => {
         const article = document.createElement("article");
         article.className = "suggestion-bucket";
         const title = document.createElement("h4");
         title.textContent = category.replace(/_/g, " ");
         article.appendChild(title);
-        const list = document.createElement("ul");
-        texts.forEach((text) => {
-          const item = document.createElement("li");
-          item.textContent = text;
-          list.appendChild(item);
-        });
-        article.appendChild(list);
+        if (evidenceMode) {
+          const refsSet = new Set();
+          entries.forEach((entry) => {
+            (entry.evidence_refs || []).forEach((ref) => refsSet.add(ref));
+          });
+          if (!refsSet.size) {
+            const empty = document.createElement("p");
+            empty.className = "muted";
+            empty.textContent = "No mapped evidence for this category yet.";
+            article.appendChild(empty);
+          } else {
+            const list = document.createElement("ul");
+            const refs = Array.from(refsSet).map((ref) => {
+              const yearMatch = ref.match(/(19|20)\d{2}/);
+              return { ref, year: yearMatch ? Number(yearMatch[0]) : null };
+            });
+            if (evidenceWithYear) {
+              refs.sort((a, b) => {
+                const ay = a.year ?? -1;
+                const by = b.year ?? -1;
+                if (ay !== by) return by - ay;
+                return a.ref.localeCompare(b.ref);
+              });
+            } else {
+              refs.sort((a, b) => a.ref.localeCompare(b.ref));
+            }
+            refs.forEach(({ ref, year }) => {
+              const item = document.createElement("li");
+              item.textContent = evidenceWithYear && year ? `[${year}] ${ref}` : ref;
+              list.appendChild(item);
+            });
+            article.appendChild(list);
+          }
+        } else {
+          const list = document.createElement("ul");
+          entries.forEach((entry) => {
+            const item = document.createElement("li");
+            item.textContent = entry.text;
+            if (entry.evidence_refs?.length) {
+              const refs = document.createElement("div");
+              refs.className = "suggestion-evidence";
+              refs.textContent = "Evidence: " + entry.evidence_refs.join(" | ");
+              item.appendChild(refs);
+            }
+            list.appendChild(item);
+          });
+          article.appendChild(list);
+        }
         suggestionBuckets.appendChild(article);
       });
     }
@@ -2213,6 +2302,16 @@
       return text;
     }
 
+    function getInputDataForHandout() {
+      if (state.lastStored?.input_data) return state.lastStored.input_data;
+      try {
+        return buildPayload();
+      } catch (err) {
+        console.warn("Could not build payload for handout", err);
+        return null;
+      }
+    }
+
     async function openPatientHandout() {
       if (!state.lastAssessment) {
         setStatus("Run an assessment before generating a handout.", "error");
@@ -2225,6 +2324,7 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             assessment: state.lastAssessment,
+            input_data: getInputDataForHandout(),
             agreed_plan: getAgreedPlanItems(),
             patient_elaboration: getPatientElaborationForExport(),
           }),
@@ -2260,6 +2360,7 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             assessment: state.lastAssessment,
+            input_data: getInputDataForHandout(),
             agreed_plan: getAgreedPlanItems(),
             patient_elaboration: getPatientElaborationForExport(),
           }),
@@ -2726,6 +2827,24 @@
       event.preventDefault();
       requestTreatmentRecommendation();
     });
+    if (showFullSuggestionsBtn) {
+      showFullSuggestionsBtn.addEventListener("click", (event) => {
+        event.preventDefault();
+        setSuggestionView("full");
+      });
+    }
+    if (showEvidenceOnlyBtn) {
+      showEvidenceOnlyBtn.addEventListener("click", (event) => {
+        event.preventDefault();
+        setSuggestionView("evidence");
+      });
+    }
+    if (showEvidenceYearBtn) {
+      showEvidenceYearBtn.addEventListener("click", (event) => {
+        event.preventDefault();
+        setSuggestionView("evidence_year");
+      });
+    }
     const openaiQuestionBtn = document.getElementById("openaiQuestionBtn");
     if (openaiQuestionBtn) {
       openaiQuestionBtn.addEventListener("click", (event) => {
@@ -2830,6 +2949,7 @@
     syncAgreedPlanTherapyControls();
     renderAgreedPlanSummary();
     renderHistoryDetail(null);
+    setSuggestionView("full");
   </script>
 </body>
 </html>

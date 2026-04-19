@@ -235,6 +235,8 @@ class TScoreSnapshot(BaseModel):
 class Suggestion(BaseModel):
     category: str
     text: str
+    evidence_ids: List[str] = Field(default_factory=list)
+    evidence_refs: List[str] = Field(default_factory=list)
 
 
 class VeryHighCriterionStatus(BaseModel):
@@ -449,6 +451,7 @@ class OsteoStoredAssessment(BaseModel):
 
 class PatientHandoutRequest(BaseModel):
     assessment: OsteoAssessment
+    input_data: Optional[OsteoInput] = None
     agreed_plan: List[str] = Field(default_factory=list)
     patient_elaboration: Optional[str] = None
 
@@ -457,8 +460,314 @@ class PatientHandoutResponse(BaseModel):
     handout_html: str
 
 
+HANDOUT_MONTHS = [0, 3, 6, 12, 18, 24]
+
+
+THERAPY_PROFILE_LABELS: Dict[str, str] = {
+    "none": "No active osteoporosis drug",
+    "alendronate": "Alendronate (oral bisphosphonate)",
+    "risedronate": "Risedronate (oral bisphosphonate)",
+    "oral_bp": "Oral bisphosphonate (class)",
+    "zoledronate": "Zoledronate (IV bisphosphonate)",
+    "denosumab": "Denosumab",
+    "teriparatide": "Teriparatide",
+    "romosozumab": "Romosozumab",
+    "raloxifene": "Raloxifene (SERM)",
+    "other": "Other therapy class",
+}
+
+
+def therapy_profile_label(profile: str) -> str:
+    return THERAPY_PROFILE_LABELS.get(profile, profile.replace("_", " "))
+
+
+def therapy_profile_from_text(text: str) -> Optional[str]:
+    t = (text or "").lower()
+    if not t:
+        return None
+    if "denosumab" in t or "dmab" in t:
+        return "denosumab"
+    if "zoledronate" in t or "zol" in t:
+        return "zoledronate"
+    if "alendronate" in t or "aln" in t:
+        return "alendronate"
+    if "risedronate" in t or "ris" in t:
+        return "risedronate"
+    if "oral" in t and "bisphosph" in t:
+        return "oral_bp"
+    if "bisphosph" in t or "διφωσφ" in t:
+        return "oral_bp"
+    if "romosozumab" in t or "evenity" in t:
+        return "romosozumab"
+    if "teriparatide" in t or "αναβολ" in t:
+        return "teriparatide"
+    if "raloxifene" in t or "serm" in t:
+        return "raloxifene"
+    return None
+
+
+def therapy_profile_from_enum(therapy: CurrentTherapyType) -> str:
+    if therapy == CurrentTherapyType.none:
+        return "none"
+    if therapy == CurrentTherapyType.oral_bisphosphonate:
+        return "oral_bp"
+    if therapy == CurrentTherapyType.iv_bisphosphonate:
+        return "zoledronate"
+    if therapy == CurrentTherapyType.denosumab:
+        return "denosumab"
+    if therapy == CurrentTherapyType.teriparatide:
+        return "teriparatide"
+    if therapy == CurrentTherapyType.romosozumab:
+        return "romosozumab"
+    if therapy == CurrentTherapyType.raloxifene:
+        return "raloxifene"
+    return "other"
+
+
+def infer_current_therapy_profile(input_data: OsteoInput) -> str:
+    current = input_data.current_therapy_type
+    default_profile = therapy_profile_from_enum(current)
+    for episode in reversed(input_data.therapy_history):
+        if episode.therapy_type != current:
+            continue
+        parsed = therapy_profile_from_text(episode.notes or "")
+        if parsed:
+            return parsed
+    return default_profile
+
+
+def extract_agreed_actions(agreed_plan: List[str]) -> set[str]:
+    actions: set[str] = set()
+    for item in agreed_plan:
+        t = item.lower()
+        if "έναρξη" in t or "start" in t:
+            actions.add("start")
+        if "συνέχιση" in t or "continue" in t:
+            actions.add("continue")
+        if "διακοπή" in t or "stop" in t or "holiday" in t:
+            actions.add("stop")
+        if "αλλαγή" in t or "switch" in t or "transition" in t or "->" in t:
+            actions.add("switch")
+    return actions
+
+
+def infer_target_therapy_profile(
+    assessment: OsteoAssessment,
+    _input_data: OsteoInput,
+    agreed_plan: List[str],
+) -> str:
+    for item in agreed_plan:
+        if "->" in item:
+            rhs = item.split("->", 1)[1]
+            parsed_rhs = therapy_profile_from_text(rhs)
+            if parsed_rhs is not None:
+                return parsed_rhs
+        if "→" in item:
+            rhs = item.split("→", 1)[1]
+            parsed_rhs = therapy_profile_from_text(rhs)
+            if parsed_rhs is not None:
+                return parsed_rhs
+        parsed = therapy_profile_from_text(item)
+        if parsed is not None:
+            return parsed
+    if assessment.risk_category in [RiskCategory.very_high, RiskCategory.high]:
+        return "denosumab"
+    return "oral_bp"
+
+
+def _trajectory_values(
+    current_profile: str,
+    action: str,
+    target_profile: Optional[str],
+) -> Tuple[List[float], str]:
+    bp_profiles = {"alendronate", "risedronate", "oral_bp", "zoledronate"}
+
+    if action == "stop":
+        if current_profile == "denosumab":
+            return [100.0, 98.4, 96.6, 93.5, 91.6, 90.0], "Class-specific (denosumab): stopping without consolidation may cause rapid loss."
+        if current_profile == "romosozumab":
+            return [100.0, 99.1, 98.4, 97.4, 96.8, 96.2], "Class-specific (romosozumab): follow with anti-resorptive to preserve gains."
+        if current_profile == "teriparatide":
+            return [100.0, 99.3, 98.6, 97.5, 96.9, 96.3], "Class-specific (teriparatide): consolidation therapy helps maintain BMD gains."
+        if current_profile == "zoledronate":
+            return [100.0, 100.0, 99.9, 99.6, 99.2, 98.9], "Class-specific (zoledronate): slower offset, with gradual decline over time."
+        if current_profile == "alendronate":
+            return [100.0, 99.9, 99.6, 99.2, 98.8, 98.4], "Class-specific (alendronate): offset is gradual; monitor for drift."
+        if current_profile == "risedronate":
+            return [100.0, 99.8, 99.4, 98.9, 98.4, 98.0], "Class-specific (risedronate): offset may appear earlier than stronger-retention BPs."
+        if current_profile == "oral_bp":
+            return [100.0, 99.9, 99.5, 99.1, 98.7, 98.3], "Class-specific (oral BP): gradual decline after stop."
+        if current_profile == "raloxifene":
+            return [100.0, 99.8, 99.4, 98.9, 98.5, 98.1], "Class-specific (SERM): modest decline expected after discontinuation."
+        return [100.0, 99.7, 99.0, 98.2, 97.6, 97.0], "No active therapy pattern shown; individual trend can differ."
+
+    if action == "continue":
+        if current_profile == "denosumab":
+            return [100.0, 101.3, 102.7, 104.8, 106.4, 107.6], "Class-specific (denosumab): larger anti-resorptive gains with on-time dosing."
+        if current_profile == "zoledronate":
+            return [100.0, 100.5, 101.0, 101.8, 102.3, 102.8], "Class-specific (zoledronate): stabilization with modest incremental gains."
+        if current_profile == "alendronate":
+            return [100.0, 100.4, 100.9, 101.6, 102.1, 102.6], "Class-specific (alendronate): gradual gains over time."
+        if current_profile == "risedronate":
+            return [100.0, 100.3, 100.7, 101.3, 101.8, 102.2], "Class-specific (risedronate): modest but positive BMD trajectory."
+        if current_profile == "oral_bp":
+            return [100.0, 100.4, 100.8, 101.5, 102.0, 102.4], "Class-specific (oral BP): expected gradual improvement."
+        if current_profile == "teriparatide":
+            return [100.0, 101.9, 103.7, 106.0, 107.4, 108.2], "Class-specific (teriparatide): early anabolic gain then consolidation is needed."
+        if current_profile == "romosozumab":
+            return [100.0, 102.6, 105.1, 107.5, 108.1, 108.3], "Class-specific (romosozumab): larger early gains, then transition planning."
+        if current_profile == "raloxifene":
+            return [100.0, 100.2, 100.5, 100.9, 101.2, 101.4], "Class-specific (SERM): modest anti-fracture support with small BMD increase."
+        if current_profile == "other":
+            return [100.0, 100.2, 100.6, 101.0, 101.4, 101.8], "Class-specific (other): trajectory shown as moderate improvement pattern."
+        return [100.0, 99.8, 99.5, 99.0, 98.6, 98.2], "No active drug is recorded; this line reflects background decline risk."
+
+    if action == "start":
+        chosen = target_profile or "oral_bp"
+        if chosen == "denosumab":
+            return [100.0, 101.4, 102.9, 105.0, 106.6, 107.8], "Class-specific start (denosumab): robust anti-resorptive trajectory."
+        if chosen == "zoledronate":
+            return [100.0, 100.6, 101.2, 102.0, 102.5, 103.0], "Class-specific start (zoledronate): steady gains with annual/parenteral schedule."
+        if chosen == "alendronate":
+            return [100.0, 100.5, 101.0, 101.8, 102.3, 102.8], "Class-specific start (alendronate): gradual oral BP response."
+        if chosen == "risedronate":
+            return [100.0, 100.4, 100.9, 101.5, 102.0, 102.4], "Class-specific start (risedronate): moderate expected gains."
+        if chosen == "oral_bp":
+            return [100.0, 100.5, 101.0, 101.7, 102.2, 102.7], "Class-specific start (oral BP class): progressive BMD improvement."
+        if chosen == "teriparatide":
+            return [100.0, 102.0, 104.2, 107.0, 108.8, 109.8], "Class-specific start (teriparatide): anabolic-first rapid gain profile."
+        if chosen == "romosozumab":
+            return [100.0, 102.8, 105.5, 108.0, 108.7, 109.0], "Class-specific start (romosozumab): strong early gain with planned follow-on."
+        if chosen == "raloxifene":
+            return [100.0, 100.3, 100.6, 101.0, 101.3, 101.5], "Class-specific start (raloxifene): mild BMD increase pattern."
+        return [100.0, 100.5, 101.0, 101.8, 102.4, 103.0], "Projected trend after treatment start."
+
+    # switch
+    chosen = target_profile or "denosumab"
+    if current_profile in bp_profiles and chosen == "denosumab":
+        return [100.0, 101.4, 103.0, 105.0, 106.6, 107.8], "Class-specific switch (BP -> denosumab): typically additional BMD gain."
+    if current_profile == "alendronate" and chosen == "zoledronate":
+        return [100.0, 100.1, 100.3, 100.6, 100.8, 101.0], "Class-specific switch (alendronate -> zoledronate): often limited additional BMD gain."
+    if current_profile == "risedronate" and chosen == "zoledronate":
+        return [100.0, 100.2, 100.4, 100.8, 101.0, 101.2], "Class-specific switch (risedronate -> zoledronate): modest additional gain."
+    if current_profile in bp_profiles and chosen == "romosozumab":
+        return [100.0, 101.2, 102.6, 104.5, 106.0, 106.8], "Class-specific switch (BP -> romosozumab): gains occur, potentially blunted vs treatment-naive."
+    if current_profile in bp_profiles and chosen == "teriparatide":
+        return [100.0, 101.0, 102.2, 103.8, 105.0, 105.8], "Class-specific switch (BP -> teriparatide): gains expected, with possible blunting."
+    if current_profile == "denosumab" and chosen == "zoledronate":
+        return [100.0, 99.9, 99.7, 99.4, 99.2, 99.1], "Class-specific switch (denosumab -> zoledronate): helps protect against rebound bone loss."
+    if current_profile == "denosumab" and chosen in {"alendronate", "risedronate", "oral_bp"}:
+        return [100.0, 99.8, 99.5, 99.1, 98.9, 98.7], "Class-specific switch (denosumab -> oral BP): partial protection from rebound loss."
+    if current_profile == "denosumab" and chosen in {"teriparatide", "romosozumab"}:
+        return [100.0, 98.9, 97.7, 97.1, 96.7, 96.3], "Class-specific caution (denosumab -> anabolic): transient bone loss can occur."
+    if current_profile == "teriparatide" and chosen == "denosumab":
+        return [100.0, 101.2, 102.4, 104.0, 105.1, 106.0], "Class-specific switch (teriparatide -> denosumab): consolidates and extends gains."
+    if current_profile == "teriparatide" and chosen in {"zoledronate", "alendronate", "risedronate", "oral_bp"}:
+        return [100.0, 100.8, 101.7, 103.0, 104.0, 104.7], "Class-specific switch (teriparatide -> BP): consolidation strategy for maintenance."
+    if current_profile == "romosozumab" and chosen == "denosumab":
+        return [100.0, 101.3, 102.6, 104.3, 105.5, 106.3], "Class-specific switch (romosozumab -> denosumab): maintains gains and lowers fracture risk."
+    if current_profile == "romosozumab" and chosen in {"zoledronate", "alendronate", "risedronate", "oral_bp"}:
+        return [100.0, 100.9, 101.8, 103.1, 104.0, 104.7], "Class-specific switch (romosozumab -> BP): standard anti-resorptive consolidation."
+    return [100.0, 100.5, 101.2, 102.1, 102.8, 103.4], "Projected trend after treatment switch."
+
+
+def build_svg_trajectory_chart(months: List[int], values: List[float], color: str) -> str:
+    width = 460
+    height = 190
+    left = 42
+    right = 12
+    top = 16
+    bottom = 30
+    x_span = width - left - right
+    y_span = height - top - bottom
+    y_min = min(min(values), 98.0) - 0.5
+    y_max = max(max(values), 102.0) + 0.5
+    if y_max <= y_min:
+        y_max = y_min + 1.0
+
+    def x_pos(month: int) -> float:
+        return left + (month / 24.0) * x_span
+
+    def y_pos(val: float) -> float:
+        return top + ((y_max - val) / (y_max - y_min)) * y_span
+
+    pts = " ".join(f"{x_pos(m):.2f},{y_pos(v):.2f}" for m, v in zip(months, values))
+    baseline_y = y_pos(100.0)
+    y_ticks = [round(y_min, 1), 100.0, round(y_max, 1)]
+    y_grid = "".join(
+        f'<line x1="{left}" y1="{y_pos(t):.2f}" x2="{width-right}" y2="{y_pos(t):.2f}" stroke="#e2e8f0" stroke-width="1" />'
+        for t in y_ticks
+    )
+    y_labels = "".join(
+        f'<text x="{left-6}" y="{y_pos(t)+4:.2f}" text-anchor="end" font-size="10" fill="#64748b">{t:.1f}</text>'
+        for t in y_ticks
+    )
+    x_labels = "".join(
+        f'<text x="{x_pos(m):.2f}" y="{height-8}" text-anchor="middle" font-size="10" fill="#64748b">{m}m</text>'
+        for m in months
+    )
+    return (
+        f'<svg viewBox="0 0 {width} {height}" width="100%" height="190" role="img" aria-label="Projected BMD trajectory">'
+        f'{y_grid}'
+        f'<line x1="{left}" y1="{baseline_y:.2f}" x2="{width-right}" y2="{baseline_y:.2f}" stroke="#94a3b8" stroke-dasharray="4 3" />'
+        f'<polyline fill="none" stroke="{color}" stroke-width="3" points="{pts}" />'
+        f"{y_labels}{x_labels}"
+        f'<text x="{width-6}" y="{height-8}" text-anchor="end" font-size="10" fill="#64748b">Months</text>'
+        f'<text x="{left}" y="{top-4}" text-anchor="start" font-size="10" fill="#64748b">Relative BMD index (baseline=100)</text>'
+        "</svg>"
+    )
+
+
+def build_trajectory_cards(
+    assessment: OsteoAssessment,
+    input_data: Optional[OsteoInput],
+    agreed_plan: List[str],
+) -> List[Dict[str, str]]:
+    if input_data is None:
+        return []
+    selected_actions = extract_agreed_actions(agreed_plan)
+    current_profile = infer_current_therapy_profile(input_data)
+    target_profile = infer_target_therapy_profile(assessment, input_data, agreed_plan)
+
+    scenarios = [
+        ("start", "#2563eb"),
+        ("continue", "#0f766e"),
+        ("switch", "#7c3aed"),
+        ("stop", "#b91c1c"),
+    ]
+    cards: List[Dict[str, str]] = []
+    for action, color in scenarios:
+        action_target_profile: Optional[str] = None
+        if action in ["start", "switch"]:
+            action_target_profile = target_profile
+        values, note = _trajectory_values(current_profile, action, action_target_profile)
+
+        if action == "start":
+            title = f"After starting therapy ({therapy_profile_label(action_target_profile or target_profile)})"
+        elif action == "continue":
+            title = f"With continuation ({therapy_profile_label(current_profile)})"
+        elif action == "switch":
+            title = (
+                f"After switch ({therapy_profile_label(current_profile)} -> "
+                f"{therapy_profile_label(action_target_profile or target_profile)})"
+            )
+        else:
+            title = f"After stopping therapy ({therapy_profile_label(current_profile)})"
+
+        cards.append(
+            {
+                "title": title,
+                "note": note,
+                "svg": build_svg_trajectory_chart(HANDOUT_MONTHS, values, color),
+                "active": "true" if action in selected_actions else "false",
+            }
+        )
+    return cards
+
+
 def build_patient_handout_html(
     assessment: OsteoAssessment,
+    input_data: Optional[OsteoInput] = None,
     agreed_plan: Optional[List[str]] = None,
     patient_elaboration: Optional[str] = None,
 ) -> str:
@@ -471,6 +780,20 @@ def build_patient_handout_html(
     )
     agreed_plan_items = [p.strip() for p in (agreed_plan or []) if p and p.strip()]
     agreed_plan_html = "".join(f"<li>{escape(item)}</li>" for item in agreed_plan_items)
+    trajectory_cards = build_trajectory_cards(assessment, input_data, agreed_plan_items)
+    trajectory_html = ""
+    if trajectory_cards:
+        trajectory_html = "".join(
+            (
+                f'<div class="trajectory-card{" active" if c["active"] == "true" else ""}">'
+                f'<h3>{escape(c["title"])}</h3>'
+                f'{c["svg"]}'
+                f'<p class="trajectory-note">{escape(c["note"])}</p>'
+                "</div>"
+            )
+            for c in trajectory_cards
+        )
+
     patient_elab_html = ""
     if patient_elaboration and patient_elaboration.strip():
         patient_elab_html = f"""
@@ -527,6 +850,37 @@ def build_patient_handout_html(
           border-radius: 10px;
           padding: 12px;
         }}
+        .trajectory-grid {{
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 14px;
+        }}
+        .trajectory-card {{
+          border: 1px solid #e2e8f0;
+          border-radius: 12px;
+          padding: 10px 12px;
+          background: #ffffff;
+        }}
+        .trajectory-card.active {{
+          border-color: #2563eb;
+          box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+          background: #f8fbff;
+        }}
+        .trajectory-card h3 {{
+          margin: 0 0 8px 0;
+          font-size: 14px;
+          color: #0f172a;
+        }}
+        .trajectory-note {{
+          margin: 8px 0 0 0;
+          color: #475569;
+          font-size: 12px;
+        }}
+        .trajectory-footnote {{
+          margin-top: 8px;
+          color: #64748b;
+          font-size: 12px;
+        }}
       </style>
     </head>
     <body>
@@ -545,6 +899,15 @@ def build_patient_handout_html(
       <div class="section">
         <h2>Follow-up plan</h2>
         <ul>{follow_up_html or "<li>No specific follow-up steps yet.</li>"}</ul>
+      </div>
+      <div class="section">
+        <h2>Bone mass trend (next 24 months)</h2>
+        <div class="trajectory-grid">
+          {trajectory_html or '<p>No treatment trajectory available yet (load/update patient treatment data first).</p>'}
+        </div>
+        <p class="trajectory-footnote">
+          These curves are educational, not patient-specific predictions. They summarize typical directional patterns from sequential-therapy literature and should be interpreted by the treating clinician.
+        </p>
       </div>
       <div class="section">
         <h2>Agreed plan</h2>
@@ -759,6 +1122,47 @@ def has_effective_high_falls_risk(data: OsteoInput) -> bool:
 
 def has_effective_frailty(data: OsteoInput) -> bool:
     return data.frailty or ((data.cfs_score or 0) >= 5)
+
+
+EVIDENCE_REGISTRY: Dict[str, str] = {
+    "KANIS_2020": "Kanis et al. Osteoporos Int 2020;31:1-12 (IOF/ESCEO algorithm and risk stratification).",
+    "DIAB_WATTS_2013": "Diab & Watts. Ther Adv Musculoskelet Dis 2013;5:107-111 (DOI: 10.1177/1759720X13477714).",
+    "FLEX_2006": "Black et al. JAMA 2006;296:2927-2938 (FLEX alendronate extension).",
+    "VERT_NA_2008": "Watts et al. Osteoporos Int 2008;19:365-372 (VERT-NA extension, risedronate off-treatment).",
+    "HORIZON_EXT_2012": "Black et al. J Bone Miner Res 2012;27:243-254 (HORIZON extension, 3 vs 6 years zoledronate).",
+    "FREEDOM_2017": "Bone et al. Lancet Diabetes Endocrinol 2017;5:513-523 (FREEDOM extension long-term denosumab).",
+    "ARCH_2017": "Saag et al. N Engl J Med 2017;377:1417-1427 (romosozumab-to-alendronate vs alendronate).",
+    "VERO_2018": "Kendler et al. Lancet 2018;391:230-240 (teriparatide vs risedronate in severe osteoporosis).",
+    "FRAME_2016": "Cosman et al. N Engl J Med 2016;375:1532-1543 (romosozumab then denosumab).",
+    "DATA_SWITCH_2015": "Leder et al. Lancet 2015;386:1147-1155 (teriparatide/denosumab sequencing and BMD).",
+}
+
+
+def attach_evidence_to_suggestions(suggestions: List[Suggestion]) -> None:
+    """
+    Attach evidence IDs/references to suggestions so each decision can be
+    traced to major studies/guidelines in UI output.
+    """
+    for s in suggestions:
+        ids = set(s.evidence_ids or [])
+        t = s.text.lower()
+
+        if s.category == "conference_protocol" or "iof/esceo" in t or "kanis" in t:
+            ids.add("KANIS_2020")
+        if "holiday" in t or "discontinu" in t:
+            ids.update({"DIAB_WATTS_2013", "FLEX_2006", "VERT_NA_2008", "HORIZON_EXT_2012"})
+        if "denosumab" in t and ("interruption" in t or "rebound" in t or "stop" in t):
+            ids.add("FREEDOM_2017")
+        if "anabolic-first" in t or "very-high-risk pathway" in t:
+            ids.update({"ARCH_2017", "VERO_2018"})
+        if "romosozumab" in t and "denosumab" in t:
+            ids.add("FRAME_2016")
+        if "transition" in t or "sequential" in t:
+            ids.add("DATA_SWITCH_2015")
+
+        ordered_ids = [eid for eid in EVIDENCE_REGISTRY.keys() if eid in ids]
+        s.evidence_ids = ordered_ids
+        s.evidence_refs = [EVIDENCE_REGISTRY[eid] for eid in ordered_ids]
 
 
 def get_kanis_major_thresholds_by_age(age: int) -> Tuple[float, float]:
@@ -2451,6 +2855,7 @@ def compute_assessment_from_input(input_data: OsteoInput) -> OsteoAssessment:
     calcium_total_mg, calcium_note = calculate_calcium_intake(input_data)
     risk, reasons = determine_risk_category(input_data, internal_index)
     suggestions = build_suggestions(input_data, risk, calcium_total_mg, calcium_note)
+    attach_evidence_to_suggestions(suggestions)
     follow_up_steps = determine_follow_up_steps(input_data, risk)
     very_high_criteria = build_very_high_criteria_status(input_data)
 
@@ -3058,6 +3463,7 @@ def elaborate_osteoporosis(req: ElaborationRequest) -> ElaborationResponse:
 def create_patient_handout(req: PatientHandoutRequest) -> PatientHandoutResponse:
     html = build_patient_handout_html(
         req.assessment,
+        input_data=req.input_data,
         agreed_plan=req.agreed_plan,
         patient_elaboration=req.patient_elaboration,
     )
