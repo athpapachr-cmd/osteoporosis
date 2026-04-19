@@ -1175,6 +1175,7 @@
             </div>
           </div>
           <div class="agreed-plan-grid">
+            <label><input type="checkbox" class="agreed-plan-option" id="agreed_plan_start_therapy" value="Έναρξη αντιοστεοπορωτικής αγωγής" /> Έναρξη αγωγής</label>
             <label><input type="checkbox" class="agreed-plan-option" value="Συνέχιση τρέχουσας αγωγής" /> Συνέχιση αγωγής</label>
             <label><input type="checkbox" class="agreed-plan-option" value="Διακοπή τρέχουσας αγωγής" /> Διακοπή αγωγής</label>
             <label><input type="checkbox" class="agreed-plan-option" value="Αλλαγή σε διαφορετική κατηγορία αγωγής" /> Αλλαγή αγωγής</label>
@@ -1186,6 +1187,17 @@
             <label><input type="checkbox" class="agreed-plan-option" value="Πρόγραμμα πρόληψης πτώσεων και παρεμβάσεις ασφάλειας στο σπίτι" /> Fall prevention</label>
           </div>
           <div class="agreed-plan-extra">
+            <div class="field">
+              <label for="agreed_plan_start_therapy_choice">Επιλογή έναρξης αγωγής (αν επιλεγεί)</label>
+              <select id="agreed_plan_start_therapy_choice">
+                <option value="">-- επίλεξε έναρξη --</option>
+                <option value="Έναρξη oral bisphosphonate">Έναρξη oral bisphosphonate</option>
+                <option value="Έναρξη IV zoledronate">Έναρξη IV zoledronate</option>
+                <option value="Έναρξη denosumab">Έναρξη denosumab</option>
+                <option value="Έναρξη οστεοαναβολικής θεραπείας (teriparatide/romosozumab)">Έναρξη οστεοαναβολικής θεραπείας</option>
+                <option value="Άλλο (γράφεται στις επιπλέον οδηγίες)">Άλλο (γράφεται στις επιπλέον οδηγίες)</option>
+              </select>
+            </div>
             <div class="field">
               <label for="agreed_plan_therapy_transition">Επιλογή αλλαγής αγωγής (αν επιλεγεί)</label>
               <select id="agreed_plan_therapy_transition">
@@ -1352,6 +1364,8 @@
     const cohortComparison = document.getElementById("cohortComparison");
     const openaiQuestionInput = document.getElementById("openai_question_input");
     const openaiQuestionResponse = document.getElementById("openaiQuestionResponse");
+    const agreedPlanStartTherapyOption = document.getElementById("agreed_plan_start_therapy");
+    const agreedPlanStartTherapyChoice = document.getElementById("agreed_plan_start_therapy_choice");
     const agreedPlanTherapyTransition = document.getElementById("agreed_plan_therapy_transition");
     const agreedPlanSupplementsInput = document.getElementById("agreed_plan_supplements");
     const agreedPlanCustomInput = document.getElementById("agreed_plan_custom");
@@ -1465,6 +1479,7 @@
       setInputValue("fortified_portions", input.fortified_food_portions_per_day ?? 0);
       setInputValue("other_dairy_portions", input.other_dairy_portions_per_day ?? 0);
       setInputValue("current_therapy_type", input.current_therapy_type);
+      syncAgreedPlanTherapyControls();
       setInputValue("current_therapy_duration_years", input.current_therapy_duration_years);
       setCheckboxValue("fractures_during_current_therapy", input.fractures_during_current_therapy);
       setCheckboxValue("significant_therapy_adverse_effects", input.significant_therapy_adverse_effects);
@@ -2135,6 +2150,14 @@
       const selected = agreedPlanOptionInputs
         .filter((input) => input.checked)
         .map((input) => input.value);
+      const hasTherapyStart = agreedPlanStartTherapyOption?.checked;
+      if (hasTherapyStart) {
+        if (agreedPlanStartTherapyChoice?.value) {
+          selected.push(`Στρατηγική έναρξης αγωγής: ${agreedPlanStartTherapyChoice.value}`);
+        } else {
+          selected.push("Στρατηγική έναρξης αγωγής: εκκρεμεί επιλογή");
+        }
+      }
       const hasTherapyChange = agreedPlanOptionInputs.some(
         (input) => input.checked && input.value.includes("Αλλαγή")
       );
@@ -2153,6 +2176,21 @@
         .map((line) => line.trim())
         .filter((line) => line.length > 0);
       return [...selected, ...custom];
+    }
+
+    function syncAgreedPlanTherapyControls() {
+      const currentTherapy = document.getElementById("current_therapy_type")?.value || "none";
+      const canStartTherapy = currentTherapy === "none";
+      if (agreedPlanStartTherapyOption) {
+        agreedPlanStartTherapyOption.disabled = !canStartTherapy;
+        if (!canStartTherapy) agreedPlanStartTherapyOption.checked = false;
+      }
+      if (agreedPlanStartTherapyChoice) {
+        agreedPlanStartTherapyChoice.disabled = !canStartTherapy;
+        if (!canStartTherapy) {
+          agreedPlanStartTherapyChoice.value = "";
+        }
+      }
     }
 
     function renderAgreedPlanSummary() {
@@ -2751,6 +2789,19 @@
     agreedPlanOptionInputs.forEach((input) => {
       input.addEventListener("change", renderAgreedPlanSummary);
     });
+    if (agreedPlanStartTherapyOption) {
+      agreedPlanStartTherapyOption.addEventListener("change", renderAgreedPlanSummary);
+    }
+    if (agreedPlanStartTherapyChoice) {
+      agreedPlanStartTherapyChoice.addEventListener("change", renderAgreedPlanSummary);
+    }
+    const currentTherapyTypeInput = document.getElementById("current_therapy_type");
+    if (currentTherapyTypeInput) {
+      currentTherapyTypeInput.addEventListener("change", () => {
+        syncAgreedPlanTherapyControls();
+        renderAgreedPlanSummary();
+      });
+    }
     if (agreedPlanCustomInput) {
       agreedPlanCustomInput.addEventListener("input", renderAgreedPlanSummary);
       agreedPlanCustomInput.addEventListener("change", renderAgreedPlanSummary);
@@ -2771,6 +2822,7 @@
     renderTherapyHistoryList();
     renderTScoreHistoryList();
     renderFollowUpTimeline([]);
+    syncAgreedPlanTherapyControls();
     renderAgreedPlanSummary();
     renderHistoryDetail(null);
   </script>
