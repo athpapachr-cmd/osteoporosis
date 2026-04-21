@@ -802,6 +802,16 @@
           </div>
           <div class="field-grid">
             <div class="field">
+              <label for="glucocorticoid_prednisolone_mg_day">Pred-equivalent GC dose (mg/day)</label>
+              <input id="glucocorticoid_prednisolone_mg_day" type="number" step="0.1" min="0" />
+            </div>
+            <div class="field">
+              <label for="glucocorticoid_duration_months">GC duration (months)</label>
+              <input id="glucocorticoid_duration_months" type="number" step="0.1" min="0" />
+            </div>
+          </div>
+          <div class="field-grid">
+            <div class="field">
               <label for="vitamin_d_25oh_ng_ml">25-OH Vit D (ng/mL)</label>
               <input id="vitamin_d_25oh_ng_ml" type="number" step="0.1" />
             </div>
@@ -1431,6 +1441,8 @@
       "frax_hip",
       "weight_kg",
       "height_cm",
+      "glucocorticoid_prednisolone_mg_day",
+      "glucocorticoid_duration_months",
       "vitamin_d_25oh_ng_ml",
       "serum_calcium_mg_dl",
       "serum_phosphorus_mg_dl",
@@ -1490,6 +1502,8 @@
       setCheckboxValue("parental_hip_fracture", input.parental_hip_fracture);
       setCheckboxValue("current_smoker", input.current_smoker);
       setCheckboxValue("glucocorticoids", input.glucocorticoids);
+      setInputValue("glucocorticoid_prednisolone_mg_day", input.glucocorticoid_prednisolone_mg_day);
+      setInputValue("glucocorticoid_duration_months", input.glucocorticoid_duration_months);
       setCheckboxValue("rheumatoid_arthritis", input.rheumatoid_arthritis);
       setCheckboxValue("secondary_osteoporosis", input.secondary_osteoporosis);
       setCheckboxValue("high_alcohol_intake", input.high_alcohol_intake);
@@ -1603,6 +1617,18 @@
       if (entry.input_data.hip_fracture_count) fractureBits.push(`hip fractures n=${entry.input_data.hip_fracture_count}`);
       if (entry.input_data.recent_fragility_fracture) fractureBits.push("recent fragility fracture");
       if (fractureBits.length) lines.push("Fracture burden: " + fractureBits.join(" · "));
+      if (
+        entry.input_data.glucocorticoid_prednisolone_mg_day != null ||
+        entry.input_data.glucocorticoid_duration_months != null
+      ) {
+        const gcDose = entry.input_data.glucocorticoid_prednisolone_mg_day != null
+          ? `${entry.input_data.glucocorticoid_prednisolone_mg_day.toFixed(1)} mg/day`
+          : "dose n/a";
+        const gcDuration = entry.input_data.glucocorticoid_duration_months != null
+          ? `${entry.input_data.glucocorticoid_duration_months.toFixed(1)} months`
+          : "duration n/a";
+        lines.push(`GC exposure: ${gcDose} · ${gcDuration}`);
+      }
       const morseBits = [];
       if (entry.input_data.morse_history_of_falling_3m) morseBits.push("falling history");
       if (entry.input_data.morse_secondary_diagnosis) morseBits.push("secondary diagnosis");
@@ -1873,6 +1899,8 @@
         parental_hip_fracture: val("parental_hip_fracture"),
         current_smoker: val("current_smoker"),
         glucocorticoids: val("glucocorticoids"),
+        glucocorticoid_prednisolone_mg_day: val("glucocorticoid_prednisolone_mg_day"),
+        glucocorticoid_duration_months: val("glucocorticoid_duration_months"),
         rheumatoid_arthritis: val("rheumatoid_arthritis"),
         secondary_osteoporosis: val("secondary_osteoporosis"),
         high_alcohol_intake: val("high_alcohol_intake"),

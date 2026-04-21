@@ -293,6 +293,14 @@ class OsteoInput(BaseModel):
     parental_hip_fracture: bool = False
     current_smoker: bool = False
     glucocorticoids: bool = False
+    glucocorticoid_prednisolone_mg_day: Optional[confloat(ge=0.0, le=200.0)] = Field(
+        default=None,
+        description="Prednisolone-equivalent daily oral glucocorticoid dose (mg/day).",
+    )
+    glucocorticoid_duration_months: Optional[confloat(ge=0.0, le=600.0)] = Field(
+        default=None,
+        description="Approximate oral glucocorticoid exposure duration (months).",
+    )
     rheumatoid_arthritis: bool = False
     secondary_osteoporosis: bool = False
     high_alcohol_intake: bool = False
@@ -1319,9 +1327,12 @@ def compute_internal_frax_like_index(data: OsteoInput) -> Tuple[Optional[float],
     if data.current_smoker:
         score += 1
         reasons.append("current smoking")
-    if data.glucocorticoids:
+    if has_glucocorticoid_exposure(data):
         score += 1
         reasons.append("glucocorticoid use")
+    if has_high_dose_glucocorticoid_pattern(data):
+        score += 1
+        reasons.append("high-dose glucocorticoid pattern (>=7.5 mg/day for >=3 months)")
     if data.rheumatoid_arthritis:
         score += 1
         reasons.append("rheumatoid arthritis")
@@ -1401,7 +1412,22 @@ def has_effective_frailty(data: OsteoInput) -> bool:
     return data.frailty or ((data.cfs_score or 0) >= 5)
 
 
+def has_glucocorticoid_exposure(data: OsteoInput) -> bool:
+    dose = data.glucocorticoid_prednisolone_mg_day or 0.0
+    duration = data.glucocorticoid_duration_months or 0.0
+    return data.glucocorticoids or dose > 0 or duration > 0
+
+
+def has_high_dose_glucocorticoid_pattern(data: OsteoInput) -> bool:
+    dose = data.glucocorticoid_prednisolone_mg_day
+    duration = data.glucocorticoid_duration_months
+    if dose is None or duration is None:
+        return False
+    return dose >= 7.5 and duration >= 3.0
+
+
 EVIDENCE_REGISTRY: Dict[str, str] = {
+    "NOGG_2024": "NOGG Clinical Guideline 2024 (FRAX-first stratification, very-high-risk indicators, sequential therapy and duration guidance).",
     "KANIS_2020": "Kanis et al. Osteoporos Int 2020;31:1-12 (IOF/ESCEO algorithm and risk stratification).",
     "DIAB_WATTS_2013": "Diab & Watts. Ther Adv Musculoskelet Dis 2013;5:107-111 (DOI: 10.1177/1759720X13477714).",
     "FLEX_2006": "Black et al. JAMA 2006;296:2927-2938 (FLEX alendronate extension).",
@@ -1424,12 +1450,21 @@ def attach_evidence_to_suggestions(suggestions: List[Suggestion]) -> None:
         ids = set(s.evidence_ids or [])
         t = s.text.lower()
 
+        if "nogg" in t:
+            ids.add("NOGG_2024")
         if s.category == "conference_protocol" or "iof/esceo" in t or "kanis" in t:
             ids.add("KANIS_2020")
         if "holiday" in t or "discontinu" in t:
             ids.update({"DIAB_WATTS_2013", "FLEX_2006", "VERT_NA_2008", "HORIZON_EXT_2012"})
         if "denosumab" in t and ("interruption" in t or "rebound" in t or "stop" in t):
             ids.add("FREEDOM_2017")
+            ids.add("NOGG_2024")
+        if "zoledronate" in t and "6 months" in t:
+            ids.add("NOGG_2024")
+        if "at least 5 years" in t or "at least 3 years" in t:
+            ids.add("NOGG_2024")
+        if "very-high fracture risk" in t or "very high fracture risk" in t:
+            ids.add("NOGG_2024")
         if "anabolic-first" in t or "very-high-risk pathway" in t:
             ids.update({"ARCH_2017", "VERO_2018"})
         if "romosozumab" in t and "denosumab" in t:
@@ -1467,6 +1502,16 @@ def get_kanis_major_thresholds_by_age(age: int) -> Tuple[float, float]:
         it = 33.0
     uat = round(it * 1.2, 1)
     return it, uat
+
+
+def get_nogg_vhrt_major_by_age(age: int) -> float:
+    """
+    NOGG 2024 framing:
+    very-high-risk threshold (VHRT) for major fracture is approximately
+    1.6 x the age-specific intervention threshold.
+    """
+    it, _ = get_kanis_major_thresholds_by_age(age)
+    return round(it * 1.6, 1)
 
 
 def calculate_calcium_intake(data: OsteoInput) -> Tuple[Optional[float], Optional[str]]:
@@ -1732,6 +1777,16 @@ def add_current_therapy_suggestions(
     dur = data.current_therapy_duration_years
     fx_on_tx = data.fractures_during_current_therapy
     adr = data.significant_therapy_adverse_effects
+    has_major_prior_fracture = (
+        FractureType.hip in data.prior_fragility_fractures
+        or FractureType.vertebral in data.prior_fragility_fractures
+        or data.vertebral_fracture_count >= 1
+        or data.hip_fracture_count >= 1
+    )
+    high_dose_gc = has_high_dose_glucocorticoid_pattern(data)
+    prolonged_bp_indicators = (
+        data.age >= 70 or has_major_prior_fracture or high_dose_gc or fx_on_tx
+    )
 
     if ttype == CurrentTherapyType.none:
         return
@@ -1778,6 +1833,17 @@ def add_current_therapy_suggestions(
             Suggestion(
                 category="current_therapy",
                 text=(
+                    "NOGG 2024 duration anchor for bisphosphonates: plan oral bisphosphonate "
+                    "for at least 5 years (often 10 years when risk remains high) or IV "
+                    "zoledronate for at least 3 years (often 6 years when risk remains high), "
+                    "then reassess fracture risk before considering a holiday."
+                ),
+            )
+        )
+        suggestions.append(
+            Suggestion(
+                category="current_therapy",
+                text=(
                     "Drug-holiday reference: Diab & Watts, Ther Adv Musculoskelet Dis 2013 "
                     "(DOI: 10.1177/1759720X13477714). Suggested holiday strategy is risk-tailored, "
                     "with periodic reassessment using BMD/fracture events."
@@ -1785,81 +1851,123 @@ def add_current_therapy_suggestions(
             )
         )
         if dur is not None:
-            if dur < 3:
-                suggestions.append(
-                    Suggestion(
-                        category="current_therapy",
-                        text=(
-                            f"Currently on bisphosphonate therapy for ~{dur:.1f} years. For many "
-                            "patients, a 3–5 year course is typical, with longer durations considered "
-                            "in very-high-risk cases. Ongoing need should be reassessed periodically."
-                        ),
-                    )
-                )
-            elif 3 <= dur <= 5:
-                suggestions.append(
-                    Suggestion(
-                        category="current_therapy",
-                        text=(
-                            f"Bisphosphonate therapy duration is ~{dur:.1f} years. For patients at "
-                            "lower risk, a treatment holiday may be considered after 3–5 years, "
-                            "whereas in high or very-high-risk cases, continuation or a change "
-                            "of agent may be appropriate. Decisions should be individualized."
-                        ),
-                    )
-                )
-                if risk in [RiskCategory.low, RiskCategory.moderate]:
+            if ttype == CurrentTherapyType.oral_bisphosphonate:
+                if dur < 5:
                     suggestions.append(
                         Suggestion(
                             category="current_therapy",
                             text=(
-                                "Practical holiday option for lower-to-moderate risk: consider pause "
-                                "after ~3–5 years and monitor until significant BMD loss (beyond LSC) "
-                                "or a new fragility fracture."
+                                f"Current oral bisphosphonate exposure is ~{dur:.1f} years. "
+                                "NOGG 2024 generally supports continuing to at least 5 years before "
+                                "holiday decisions, unless there is intolerance or clear treatment failure."
                             ),
                         )
                     )
+                elif 5 <= dur < 10:
+                    if prolonged_bp_indicators:
+                        suggestions.append(
+                            Suggestion(
+                                category="current_therapy",
+                                text=(
+                                    f"Oral bisphosphonate exposure is ~{dur:.1f} years and prolonged-treatment "
+                                    "features are present (age >=70, major fracture history, high-dose GC, or fracture on treatment). "
+                                    "NOGG 2024 supports extending toward ~10 years before a holiday."
+                                ),
+                            )
+                        )
+                    else:
+                        suggestions.append(
+                            Suggestion(
+                                category="current_therapy",
+                                text=(
+                                    f"Oral bisphosphonate exposure is ~{dur:.1f} years. If risk is now lower "
+                                    "and BMD is stable, a monitored treatment pause can be discussed."
+                                ),
+                            )
+                        )
+                else:
+                    suggestions.append(
+                        Suggestion(
+                            category="current_therapy",
+                            text=(
+                                f"Oral bisphosphonate exposure is prolonged (~{dur:.1f} years). "
+                                "Reassess current fracture risk, BMD trend and adverse effects to decide "
+                                "between continuation, class switch, or a closely monitored holiday."
+                            ),
+                        )
+                    )
+            else:
+                if dur < 3:
+                    suggestions.append(
+                        Suggestion(
+                            category="current_therapy",
+                            text=(
+                                f"Current IV bisphosphonate exposure is ~{dur:.1f} years. "
+                                "NOGG 2024 generally supports continuing to at least 3 years before "
+                                "holiday decisions, unless intolerance or treatment failure occurs."
+                            ),
+                        )
+                    )
+                elif 3 <= dur < 6:
+                    if prolonged_bp_indicators:
+                        suggestions.append(
+                            Suggestion(
+                                category="current_therapy",
+                                text=(
+                                    f"IV bisphosphonate exposure is ~{dur:.1f} years with high-risk persistence "
+                                    "features; extending toward ~6 years is often appropriate before holiday discussion."
+                                ),
+                            )
+                        )
+                    else:
+                        suggestions.append(
+                            Suggestion(
+                                category="current_therapy",
+                                text=(
+                                    f"IV bisphosphonate exposure is ~{dur:.1f} years. If risk has shifted lower, "
+                                    "consider monitored pause versus continuation based on BMD/fracture trajectory."
+                                ),
+                            )
+                        )
+                else:
+                    suggestions.append(
+                        Suggestion(
+                            category="current_therapy",
+                            text=(
+                                f"IV bisphosphonate exposure is prolonged (~{dur:.1f} years). "
+                                "Use individualized risk reassessment to decide continuation, switch, or holiday."
+                            ),
+                        )
+                    )
+
+            if risk in [RiskCategory.low, RiskCategory.moderate]:
+                suggestions.append(
+                    Suggestion(
+                        category="current_therapy",
+                        text=(
+                            "If a bisphosphonate holiday is chosen, plan reassessment by drug type "
+                            "(about 18 months after risedronate/ibandronate, 2 years after alendronate, "
+                            "and 3 years after zoledronate), or earlier if a new fracture occurs."
+                        ),
+                    )
+                )
             else:
                 suggestions.append(
                     Suggestion(
                         category="current_therapy",
                         text=(
-                            f"Bisphosphonate therapy duration exceeds 5 years (~{dur:.1f} years). "
-                            "This is often a point where treatment holiday, continuation, or "
-                            "alternative therapy is actively reconsidered in light of current "
-                            "fracture risk, BMD trends, and any adverse events."
+                            "In persistent high/very-high-risk profiles, keep any holiday short and "
+                            "reassess quickly; prolonged untreated intervals are usually avoided."
                         ),
                     )
                 )
-                if risk == RiskCategory.moderate:
-                    suggestions.append(
-                        Suggestion(
-                            category="current_therapy",
-                            text=(
-                                "For moderate-risk profiles after longer exposure, Diab & Watts suggest "
-                                "a potential holiday window around 3–5 years, with restart if BMD declines "
-                                "significantly or fracture occurs."
-                            ),
-                        )
-                    )
-                if risk in [RiskCategory.high, RiskCategory.very_high]:
-                    suggestions.append(
-                        Suggestion(
-                            category="current_therapy",
-                            text=(
-                                "For high/very-high-risk profiles, prolonged treatment (often up to ~10 years) "
-                                "is commonly favored; if a holiday is considered, keep it short (about 1–2 years) "
-                                "with close follow-up and consideration of non-bisphosphonate bridging."
-                            ),
-                        )
-                    )
         else:
             suggestions.append(
                 Suggestion(
                     category="current_therapy",
                     text=(
-                        "Bisphosphonate therapy is ongoing; document approximate duration to "
-                        "better frame decisions around continuation versus holiday."
+                        "Bisphosphonate therapy is ongoing; document approximate duration to align "
+                        "decisions with NOGG timing anchors (oral 5/10 years, IV 3/6 years)."
                     ),
                 )
             )
@@ -1876,6 +1984,17 @@ def add_current_therapy_suggestions(
                 ),
             )
         )
+        suggestions.append(
+            Suggestion(
+                category="current_therapy",
+                text=(
+                    "NOGG 2024 stop-plan anchor: if denosumab must be stopped, plan IV zoledronate "
+                    "around 6 months after the last denosumab dose, with follow-up bone turnover "
+                    "markers (e.g., CTX at ~3 and ~6 months after zoledronate) to guide whether/when "
+                    "additional anti-resorptive treatment is needed."
+                ),
+            )
+        )
 
     elif ttype == CurrentTherapyType.teriparatide:
         suggestions.append(
@@ -1888,6 +2007,16 @@ def add_current_therapy_suggestions(
                 ),
             )
         )
+        suggestions.append(
+            Suggestion(
+                category="current_therapy",
+                text=(
+                    "NOGG 2024 sequencing anchor: after completing teriparatide, start anti-resorptive "
+                    "therapy without delay (alendronate/zoledronate/denosumab according to patient profile) "
+                    "to preserve gains."
+                ),
+            )
+        )
 
     elif ttype == CurrentTherapyType.romosozumab:
         suggestions.append(
@@ -1897,6 +2026,15 @@ def add_current_therapy_suggestions(
                     "Patient is on or has been on romosozumab. Treatment duration is usually "
                     "limited (e.g. 12 months) and is typically followed by an anti-resorptive "
                     "agent to maintain BMD improvements."
+                ),
+            )
+        )
+        suggestions.append(
+            Suggestion(
+                category="current_therapy",
+                text=(
+                    "NOGG 2024 sequencing anchor: after romosozumab, transition promptly to an "
+                    "anti-resorptive drug to maintain anti-fracture benefit and BMD gains."
                 ),
             )
         )
@@ -1968,7 +2106,9 @@ def add_therapy_history_suggestions(
                 text=(
                     "Patient has previously been on denosumab. Past or future interruptions "
                     "in denosumab require careful planning of subsequent anti-resorptive "
-                    "therapy to mitigate rebound bone turnover and vertebral fracture risk."
+                    "therapy to mitigate rebound bone turnover and vertebral fracture risk "
+                    "(NOGG 2024: typically plan zoledronate around 6 months after last dose "
+                    "if discontinuation is required)."
                 ),
             )
         )
@@ -2041,21 +2181,25 @@ def determine_conference_risk_tier(data: OsteoInput) -> str:
     frax_major = data.frax_major_osteoporotic or 0.0
     frax_hip = data.frax_hip or 0.0
     very_high_frax = frax_major >= 30.0 or frax_hip >= 4.5
-    kanis_it, kanis_uat = get_kanis_major_thresholds_by_age(data.age)
-    kanis_very_high = data.frax_major_osteoporotic is not None and frax_major >= kanis_uat
+    kanis_it, _ = get_kanis_major_thresholds_by_age(data.age)
+    nogg_vhrt = get_nogg_vhrt_major_by_age(data.age)
+    kanis_very_high = data.frax_major_osteoporotic is not None and frax_major >= nogg_vhrt
     kanis_high = data.frax_major_osteoporotic is not None and frax_major >= kanis_it
     effective_high_falls_risk = has_effective_high_falls_risk(data)
     effective_frailty = has_effective_frailty(data)
+    gc_exposure = has_glucocorticoid_exposure(data)
+    high_dose_gc = has_high_dose_glucocorticoid_pattern(data)
     low_bmd_high_burden = (
         min_t is not None
         and min_t <= -2.5
         and data.age >= 75
-        and (effective_frailty or data.glucocorticoids or effective_high_falls_risk)
+        and (effective_frailty or gc_exposure or effective_high_falls_risk)
     )
 
     if (
         has_major_fx
         or multiple_fx
+        or high_dose_gc
         or (data.recent_fragility_fracture and min_t is not None and min_t <= -2.5)
         or data.fractures_during_current_therapy
         or (min_t is not None and min_t <= -3.0)
@@ -2078,6 +2222,7 @@ def add_conference_protocol_suggestions(data: OsteoInput, suggestions: List[Sugg
     """
     tier = determine_conference_risk_tier(data)
     kanis_it, kanis_uat = get_kanis_major_thresholds_by_age(data.age)
+    nogg_vhrt = get_nogg_vhrt_major_by_age(data.age)
 
     suggestions.append(
         Suggestion(
@@ -2092,10 +2237,10 @@ def add_conference_protocol_suggestions(data: OsteoInput, suggestions: List[Sugg
         Suggestion(
             category="conference_protocol",
             text=(
-                "Algorithm anchor: Kanis et al, Osteoporos Int 2020;31:1-12 "
+                "Algorithm anchor: NOGG 2024 + Kanis et al, Osteoporos Int 2020;31:1-12 "
                 "(IOF/ESCEO position paper). For age "
-                f"{data.age}, FRAX major IT ~{kanis_it:.1f}% and UAT ~{kanis_uat:.1f}% "
-                "(country calibration may differ)."
+                f"{data.age}, FRAX major IT ~{kanis_it:.1f}%, UAT ~{kanis_uat:.1f}%, "
+                f"and NOGG very-high threshold ~{nogg_vhrt:.1f}% (country calibration may differ)."
             ),
         )
     )
@@ -2231,15 +2376,18 @@ def determine_risk_category(
     frax_hip_high = frax_hip >= 3.0
 
     internal_index_high = internal_index is not None and internal_index >= 6.0
+    gc_exposure = has_glucocorticoid_exposure(data)
+    high_dose_gc = has_high_dose_glucocorticoid_pattern(data)
     very_high_frax = frax_major >= 30.0 or frax_hip >= 4.5
     kanis_it, kanis_uat = get_kanis_major_thresholds_by_age(data.age)
-    kanis_very_high_frax = data.frax_major_osteoporotic is not None and frax_major >= kanis_uat
+    nogg_vhrt = get_nogg_vhrt_major_by_age(data.age)
+    kanis_very_high_frax = data.frax_major_osteoporotic is not None and frax_major >= nogg_vhrt
     kanis_high_frax = data.frax_major_osteoporotic is not None and frax_major >= kanis_it
     low_bmd_plus_clinical_burden = (
         min_t is not None
         and min_t <= -2.5
         and data.age >= 75
-        and (effective_frailty or data.glucocorticoids or effective_high_falls_risk)
+        and (effective_frailty or gc_exposure or effective_high_falls_risk)
     )
     imminent_clinical_pattern = (
         data.fractures_during_current_therapy
@@ -2260,6 +2408,12 @@ def determine_risk_category(
 
     if len(data.prior_fragility_fractures) >= 2:
         reasons.append("Multiple prior fragility fractures.")
+        return RiskCategory.very_high, reasons
+
+    if high_dose_gc:
+        reasons.append(
+            "High-dose oral glucocorticoid pattern (prednisolone-equivalent >=7.5 mg/day for >=3 months)."
+        )
         return RiskCategory.very_high, reasons
 
     if data.recent_fragility_fracture and min_t is not None and min_t <= -2.5:
@@ -2284,8 +2438,8 @@ def determine_risk_category(
 
     if kanis_very_high_frax:
         reasons.append(
-            f"FRAX major probability exceeds age-specific upper assessment threshold "
-            f"(major={frax_major:.1f}% >= UAT {kanis_uat:.1f}% at age {data.age})."
+            f"FRAX major probability exceeds age-specific NOGG very-high threshold "
+            f"(major={frax_major:.1f}% >= VHRT {nogg_vhrt:.1f}% at age {data.age})."
         )
         return RiskCategory.very_high, reasons
 
@@ -2365,8 +2519,11 @@ def build_very_high_criteria_status(data: OsteoInput) -> List[VeryHighCriterionS
     min_t = min(t_scores) if t_scores else None
     effective_high_falls_risk = has_effective_high_falls_risk(data)
     effective_frailty = has_effective_frailty(data)
+    gc_exposure = has_glucocorticoid_exposure(data)
+    high_dose_gc = has_high_dose_glucocorticoid_pattern(data)
     frax_major = data.frax_major_osteoporotic or 0.0
     frax_hip = data.frax_hip or 0.0
+    nogg_vhrt = get_nogg_vhrt_major_by_age(data.age)
     vertebral_count = max(
         data.vertebral_fracture_count,
         1 if FractureType.vertebral in data.prior_fragility_fractures else 0,
@@ -2404,7 +2561,7 @@ def build_very_high_criteria_status(data: OsteoInput) -> List[VeryHighCriterionS
     status.append(
         VeryHighCriterionStatus(
             key="very_low_bmd",
-            label="Very low BMD (T-score <= -3.0)",
+            label="Very low BMD (T-score <= -3.0; NOGG very-high marker <= -3.5)",
             met=min_t is not None and min_t <= -3.0,
             detail=f"min T-score={min_t if min_t is not None else 'n/a'}",
         )
@@ -2413,8 +2570,31 @@ def build_very_high_criteria_status(data: OsteoInput) -> List[VeryHighCriterionS
         VeryHighCriterionStatus(
             key="frax_above_very_high_threshold",
             label="FRAX 10-year above very-high thresholds",
-            met=frax_major >= 30.0 or frax_hip >= 4.5,
-            detail=f"major={frax_major:.1f}% (>=30), hip={frax_hip:.1f}% (>=4.5)",
+            met=(
+                frax_major >= 30.0
+                or frax_hip >= 4.5
+                or (
+                    data.frax_major_osteoporotic is not None
+                    and frax_major >= nogg_vhrt
+                )
+            ),
+            detail=(
+                f"major={frax_major:.1f}% (>=30 or >=NOGG VHRT {nogg_vhrt:.1f}), "
+                f"hip={frax_hip:.1f}% (>=4.5)"
+            ),
+        )
+    )
+    status.append(
+        VeryHighCriterionStatus(
+            key="high_dose_glucocorticoids",
+            label="High-dose oral glucocorticoids (>=7.5 mg/day for >=3 months)",
+            met=high_dose_gc,
+            detail=(
+                "pred dose="
+                f"{data.glucocorticoid_prednisolone_mg_day if data.glucocorticoid_prednisolone_mg_day is not None else 'n/a'} mg/day, "
+                "duration="
+                f"{data.glucocorticoid_duration_months if data.glucocorticoid_duration_months is not None else 'n/a'} months"
+            ),
         )
     )
     status.append(
@@ -2425,11 +2605,11 @@ def build_very_high_criteria_status(data: OsteoInput) -> List[VeryHighCriterionS
                 min_t is not None
                 and min_t <= -2.5
                 and data.age >= 75
-                and (effective_frailty or data.glucocorticoids or effective_high_falls_risk)
+                and (effective_frailty or gc_exposure or effective_high_falls_risk)
             ),
             detail=(
                 f"min T-score={min_t if min_t is not None else 'n/a'}, age={data.age}, "
-                f"frailty={effective_frailty}, glucocorticoids={data.glucocorticoids}, "
+                f"frailty={effective_frailty}, glucocorticoids={gc_exposure}, "
                 f"high falls risk={effective_high_falls_risk}"
             ),
         )
@@ -2509,6 +2689,18 @@ def build_suggestions(
                 text=(
                     "Risk category is low. Pharmacologic therapy may not be necessary, "
                     "but lifestyle optimization and periodic reassessment remain important."
+                ),
+            )
+        )
+
+    if has_high_dose_glucocorticoid_pattern(data):
+        suggestions.append(
+            Suggestion(
+                category="pharmacologic",
+                text=(
+                    "High-dose oral glucocorticoid pattern detected (>=7.5 mg/day prednisolone-equivalent "
+                    "for >=3 months). NOGG 2024 treats this as a very-high-risk signal and supports urgent "
+                    "bone-protective therapy planning."
                 ),
             )
         )
@@ -2858,6 +3050,7 @@ def build_suggestions(
 
 def determine_follow_up_steps(data: OsteoInput, risk: RiskCategory) -> List[FollowUpStep]:
     steps: List[FollowUpStep] = []
+    high_dose_gc = has_high_dose_glucocorticoid_pattern(data)
 
     def add_step(text: str, timeframe: str):
         steps.append(FollowUpStep(text=text, timeframe=timeframe))
@@ -2893,11 +3086,20 @@ def determine_follow_up_steps(data: OsteoInput, risk: RiskCategory) -> List[Foll
         f"Monitor labs ({', '.join(labs)}) every ~6 months in active treatment phases.",
         "0-6 months",
     )
+    if high_dose_gc:
+        add_step(
+            "High-dose glucocorticoid exposure pattern present; prioritize early reassessment of fracture risk and bone-protective plan.",
+            "0-3 months",
+        )
 
     if data.current_therapy_type in [CurrentTherapyType.teriparatide, CurrentTherapyType.romosozumab]:
         add_step(
             "Consider bone-turnover marker follow-up (P1NP +/- CTX) at ~3–6 months to support pharmacodynamic monitoring.",
             "3-6 months",
+        )
+        add_step(
+            "Plan anti-resorptive consolidation immediately after the anabolic course ends (no unplanned gap).",
+            "12-24 months",
         )
 
     if data.current_therapy_type == CurrentTherapyType.denosumab:
@@ -2905,6 +3107,34 @@ def determine_follow_up_steps(data: OsteoInput, risk: RiskCategory) -> List[Foll
             "Ensure on-time denosumab interval and document a transition plan before any interruption to reduce rebound vertebral fracture risk.",
             "0-6 months",
         )
+        add_step(
+            "If denosumab must be stopped, schedule IV zoledronate around 6 months after last denosumab dose and monitor CTX at ~3 and ~6 months after zoledronate.",
+            "6-12 months",
+        )
+
+    if data.current_therapy_type == CurrentTherapyType.oral_bisphosphonate:
+        if (data.current_therapy_duration_years or 0) >= 5 and risk in [RiskCategory.low, RiskCategory.moderate]:
+            add_step(
+                "If holiday is selected after oral bisphosphonate, reassess by agent timing (about 18 months for risedronate/ibandronate, 2 years for alendronate), or earlier if fracture occurs.",
+                "12-36 months",
+            )
+        elif risk in [RiskCategory.high, RiskCategory.very_high]:
+            add_step(
+                "Persistent high risk on oral bisphosphonate: consider extended treatment toward 10 years before long holiday periods.",
+                "12-24 months",
+            )
+
+    if data.current_therapy_type == CurrentTherapyType.iv_bisphosphonate:
+        if (data.current_therapy_duration_years or 0) >= 3 and risk in [RiskCategory.low, RiskCategory.moderate]:
+            add_step(
+                "If holiday is selected after IV zoledronate, reassess fracture risk and BMD at ~3 years, or sooner if new fracture occurs.",
+                "12-36 months",
+            )
+        elif risk in [RiskCategory.high, RiskCategory.very_high]:
+            add_step(
+                "Persistent high risk on IV bisphosphonate: consider extending treatment toward 6 years before prolonged holiday.",
+                "12-24 months",
+            )
 
     if data.fractures_during_current_therapy:
         add_step(
@@ -2935,7 +3165,10 @@ def build_clinical_note(
     morse_score, morse_note, morse_high = compute_morse_fall_risk(data)
     effective_high_falls_risk = data.high_falls_risk or morse_high
     effective_frailty = has_effective_frailty(data)
+    gc_exposure = has_glucocorticoid_exposure(data)
+    high_dose_gc = has_high_dose_glucocorticoid_pattern(data)
     kanis_it, kanis_uat = get_kanis_major_thresholds_by_age(data.age)
+    nogg_vhrt = get_nogg_vhrt_major_by_age(data.age)
 
     lines.append("Osteoporosis decision-support summary (for clinician use only).")
     lines.append("")
@@ -2943,8 +3176,8 @@ def build_clinical_note(
         f"Patient profile: age {data.age}, sex {data.sex.value}, menopause status {data.menopause_status.value}."
     )
     lines.append(
-        "Algorithmic reference framework: IOF/ESCEO position paper (Kanis et al, Osteoporos Int 2020;31:1-12). "
-        f"Age-specific FRAX major IT/UAT at this age: ~{kanis_it:.1f}% / ~{kanis_uat:.1f}%."
+        "Algorithmic reference framework: IOF/ESCEO (Kanis 2020) + NOGG 2024. "
+        f"Age-specific FRAX major IT/UAT/VHRT at this age: ~{kanis_it:.1f}% / ~{kanis_uat:.1f}% / ~{nogg_vhrt:.1f}%."
     )
 
     # BMD summary
@@ -2971,6 +3204,21 @@ def build_clinical_note(
         lines.append(f"Reported hip fracture count: {data.hip_fracture_count}.")
     if data.recent_fragility_fracture:
         lines.append("Recent fragility fracture pattern: yes (imminent-risk marker).")
+    if (
+        data.glucocorticoid_prednisolone_mg_day is not None
+        or data.glucocorticoid_duration_months is not None
+    ):
+        dose_text = (
+            f"{data.glucocorticoid_prednisolone_mg_day:.1f} mg/day"
+            if data.glucocorticoid_prednisolone_mg_day is not None
+            else "n/a"
+        )
+        duration_text = (
+            f"{data.glucocorticoid_duration_months:.1f} months"
+            if data.glucocorticoid_duration_months is not None
+            else "n/a"
+        )
+        lines.append(f"Oral glucocorticoid exposure entered: dose {dose_text}, duration {duration_text}.")
 
     if data.frax_major_osteoporotic is not None or data.frax_hip is not None:
         lines.append(
@@ -2978,8 +3226,18 @@ def build_clinical_note(
             f"major osteoporotic {data.frax_major_osteoporotic or 0:.1f}%, "
             f"hip {data.frax_hip or 0:.1f}%."
         )
-        if (data.frax_major_osteoporotic or 0.0) >= 30.0 or (data.frax_hip or 0.0) >= 4.5:
-            lines.append("FRAX is above the very-high-risk thresholds (major >=30% and/or hip >=4.5%).")
+        if (
+            (data.frax_major_osteoporotic or 0.0) >= 30.0
+            or (data.frax_hip or 0.0) >= 4.5
+            or (
+                data.frax_major_osteoporotic is not None
+                and (data.frax_major_osteoporotic or 0.0) >= nogg_vhrt
+            )
+        ):
+            lines.append(
+                "FRAX is above very-high-risk thresholds "
+                f"(major >=30% and/or hip >=4.5%, NOGG major VHRT ~{nogg_vhrt:.1f}% at this age)."
+            )
 
     # Internal index
     if internal_index is not None and internal_index_note is not None:
@@ -3044,8 +3302,10 @@ def build_clinical_note(
         fragility_modifiers.append("frailty")
     if data.cfs_score is not None:
         fragility_modifiers.append(f"CFS {data.cfs_score}/9")
-    if data.glucocorticoids:
+    if gc_exposure:
         fragility_modifiers.append("glucocorticoid exposure")
+    if high_dose_gc:
+        fragility_modifiers.append("high-dose glucocorticoid pattern (>=7.5 mg/day for >=3 months)")
     if data.dementia_or_cognitive_impairment:
         fragility_modifiers.append("cognitive impairment")
     if data.significant_immobility:
@@ -3775,6 +4035,7 @@ def build_treatment_recommendation_context(stored: OsteoStoredAssessment) -> str
     input_data = stored.input_data
     assessment = stored.assessment
     kanis_it, kanis_uat = get_kanis_major_thresholds_by_age(input_data.age)
+    nogg_vhrt = get_nogg_vhrt_major_by_age(input_data.age)
 
     lines.append(f"Risk category: {assessment.risk_category.value.upper()} fracture risk.")
     if assessment.risk_reasons:
@@ -3788,6 +4049,24 @@ def build_treatment_recommendation_context(stored: OsteoStoredAssessment) -> str
     if input_data.current_therapy_duration_years is not None:
         lines.append(
             f"Duration on current therapy: {input_data.current_therapy_duration_years:.1f} years."
+        )
+    if (
+        input_data.glucocorticoid_prednisolone_mg_day is not None
+        or input_data.glucocorticoid_duration_months is not None
+    ):
+        dose_text = (
+            f"{input_data.glucocorticoid_prednisolone_mg_day:.1f} mg/day"
+            if input_data.glucocorticoid_prednisolone_mg_day is not None
+            else "n/a"
+        )
+        duration_text = (
+            f"{input_data.glucocorticoid_duration_months:.1f} months"
+            if input_data.glucocorticoid_duration_months is not None
+            else "n/a"
+        )
+        lines.append(
+            "Glucocorticoid exposure detail: "
+            f"{dose_text} for {duration_text} (prednisolone equivalent)."
         )
     if input_data.fractures_during_current_therapy:
         lines.append("New fragility fracture occurred while on therapy.")
@@ -3849,16 +4128,20 @@ def build_treatment_recommendation_context(stored: OsteoStoredAssessment) -> str
         f"{conference_tier.replace('_', ' ').upper()}."
     )
     lines.append(
-        "Evidence anchor: Kanis et al (Osteoporos Int 2020;31:1-12). "
-        f"At age {input_data.age}, FRAX major IT ~{kanis_it:.1f}% and UAT ~{kanis_uat:.1f}% "
-        "(country-calibrated FRAX thresholds may vary)."
+        "Evidence anchors: NOGG 2024 + Kanis et al (Osteoporos Int 2020;31:1-12). "
+        f"At age {input_data.age}, FRAX major IT ~{kanis_it:.1f}%, UAT ~{kanis_uat:.1f}%, "
+        f"NOGG very-high threshold ~{nogg_vhrt:.1f}% (country calibration may vary)."
     )
     lines.append(
-        "Discontinuation/holiday anchor for bisphosphonates: Diab & Watts "
-        "(Ther Adv Musculoskelet Dis 2013, DOI: 10.1177/1759720X13477714): "
-        "lower risk often reassess holiday after 3-5 years exposure; moderate risk often after 5-10 years "
-        "with holiday ~3-5 years; high risk usually continue longer (~10 years) and, if holiday is needed, "
-        "keep short (~1-2 years) with close monitoring."
+        "NOGG 2024 sequencing/duration anchor: oral bisphosphonates usually at least 5 years "
+        "(often 10 years if age >=70, major prior fracture, high-dose glucocorticoids, or fracture on treatment); "
+        "IV zoledronate usually at least 3 years (often 6 years with persistent high risk). "
+        "If denosumab is stopped, plan anti-resorptive cover (typically zoledronate at ~6 months) rather than abrupt cessation."
+    )
+    lines.append(
+        "Discontinuation/holiday evidence anchor: Diab & Watts "
+        "(Ther Adv Musculoskelet Dis 2013, DOI: 10.1177/1759720X13477714), "
+        "plus extension trials FLEX, VERT-NA and HORIZON for residual effect/holiday timing."
     )
     lines.append(
         "Conference transition rules to preserve BMD: "
@@ -3908,15 +4191,15 @@ def recommend_treatment_change(
 
     system_prompt = (
         "You are an osteoporosis clinical advisor. Write in English with concrete, practical recommendations aligned "
-        "with guideline logic (NOGG/ESCEO/Endocrine). You may mention drug classes and sequencing logic (anabolic-first "
+        "with guideline logic (NOGG 2024/ESCEO/Endocrine). You may mention drug classes and sequencing logic (anabolic-first "
         "in very high risk, followed by anti-resorptive consolidation), without dosages and without replacing clinical judgment. "
-        "Prioritize conference-derived sequential-treatment rules when present."
+        "Prioritize NOGG 2024 thresholds/sequencing and conference-derived sequential-treatment rules when present."
         if is_en
         else "Είσαι σύμβουλος οστεοπόρωσης για κλινικούς. Γράφεις στα ελληνικά, συγκεκριμένα και "
-        "πρακτικά, ευθυγραμμισμένα με guideline λογική (NOGG/ESCEO/Endocrine). "
+        "πρακτικά, ευθυγραμμισμένα με guideline λογική (NOGG 2024/ESCEO/Endocrine). "
         "Επιτρέπεται να αναφέρεις κατηγορίες φαρμάκων και λογική ακολουθίας (anabolic-first σε very high risk, "
         "έπειτα anti-resorptive consolidation), χωρίς δοσολογίες και χωρίς να αντικαθιστάς την κλινική κρίση. "
-        "Δώσε προτεραιότητα στους conference-derived κανόνες ακολουθιών όταν υπάρχουν."
+        "Δώσε προτεραιότητα στα thresholds/σειρές θεραπείας του NOGG 2024 και στους conference-derived κανόνες όταν υπάρχουν."
     )
 
     context = build_treatment_recommendation_context(req.assessment)
