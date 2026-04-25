@@ -405,6 +405,69 @@
     .note-block.empty {
       opacity: 0.7;
     }
+    .collapsible-note {
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      border-radius: 12px;
+      background: #f8fafc;
+      margin-bottom: 12px;
+      overflow: hidden;
+    }
+    .collapsible-note summary {
+      cursor: pointer;
+      padding: 10px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #1e293b;
+      list-style: none;
+      user-select: none;
+    }
+    .collapsible-note summary::-webkit-details-marker {
+      display: none;
+    }
+    .collapsible-note summary::before {
+      content: "▸";
+      display: inline-block;
+      margin-right: 8px;
+      transition: transform 0.15s ease;
+    }
+    .collapsible-note[open] summary::before {
+      transform: rotate(90deg);
+    }
+    .collapsible-note .note-block {
+      margin: 0;
+      border-radius: 0;
+      border-top: 1px solid rgba(15, 23, 42, 0.08);
+    }
+    .evidence-panel {
+      margin-top: 10px;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      border-radius: 12px;
+      background: #f8fafc;
+      padding: 12px;
+    }
+    .evidence-panel h4 {
+      margin: 0 0 6px;
+      font-size: 14px;
+    }
+    .evidence-table table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    .evidence-table th,
+    .evidence-table td {
+      text-align: left;
+      vertical-align: top;
+      padding: 6px 8px;
+      border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+    }
+    .evidence-table th {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      font-weight: 700;
+    }
     .suggestion-grid {
       display: grid;
       gap: 12px;
@@ -611,6 +674,114 @@
     .json-editor-hidden {
       display: none;
     }
+    .trials-panel {
+      margin-top: 12px;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      border-radius: 12px;
+      background: #f8fafc;
+      padding: 12px;
+    }
+    .trials-panel h3 {
+      margin: 0 0 4px;
+      font-size: 14px;
+      border: none;
+      padding: 0;
+    }
+    .trials-panel .muted {
+      margin: 0 0 8px;
+      font-size: 12px;
+    }
+    .trials-table {
+      overflow-x: auto;
+    }
+    .trials-table table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      min-width: 720px;
+    }
+    .trials-table th,
+    .trials-table td {
+      text-align: left;
+      padding: 7px 8px;
+      border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+      vertical-align: top;
+    }
+    .trials-table th {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      font-weight: 700;
+    }
+    .trial-row.active {
+      background: rgba(34, 197, 94, 0.12);
+    }
+    .trial-row.active td:first-child {
+      font-weight: 700;
+      color: #14532d;
+    }
+    .recommended-labs-panel {
+      margin: 14px 0 12px;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      border-radius: 12px;
+      background: #f8fafc;
+      padding: 12px;
+    }
+    .recommended-labs-panel h3 {
+      margin: 0 0 4px;
+      font-size: 14px;
+      border: none;
+      padding: 0;
+    }
+    .recommended-labs-panel .muted {
+      margin: 0 0 8px;
+      font-size: 12px;
+    }
+    .recommended-labs-table {
+      overflow-x: auto;
+    }
+    .recommended-labs-table table {
+      width: 100%;
+      min-width: 720px;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    .recommended-labs-table th,
+    .recommended-labs-table td {
+      text-align: left;
+      vertical-align: top;
+      padding: 7px 8px;
+      border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+    }
+    .recommended-labs-table th {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      font-weight: 700;
+    }
+    .lab-priority {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 3px 8px;
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .lab-priority.core {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+    .lab-priority.conditional {
+      background: #fef3c7;
+      color: #92400e;
+    }
+    .lab-priority.monitoring {
+      background: #dcfce7;
+      color: #166534;
+    }
     .history-table tbody tr {
       cursor: pointer;
       transition: transform 0.15s ease, background 0.15s ease;
@@ -810,6 +981,22 @@
               <input id="glucocorticoid_duration_months" type="number" step="0.1" min="0" />
             </div>
           </div>
+          <div class="recommended-labs-panel" id="recommendedLabsPanel">
+            <h3>Recommended lab checklist</h3>
+            <p class="muted" id="recommendedLabsContext">Based on age, sex, risk and therapy context.</p>
+            <div class="recommended-labs-table">
+              <table id="recommendedLabsTable">
+                <thead>
+                  <tr>
+                    <th>Priority</th>
+                    <th>Labs to request</th>
+                    <th>Why / when</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
           <div class="field-grid">
             <div class="field">
               <label for="vitamin_d_25oh_ng_ml">25-OH Vit D (ng/mL)</label>
@@ -848,6 +1035,10 @@
             <div class="field">
               <label for="serum_creatinine_mg_dl">Serum Creatinine (mg/dL)</label>
               <input id="serum_creatinine_mg_dl" type="number" step="0.001" />
+            </div>
+            <div class="field">
+              <label for="serum_testosterone_ng_dl">Morning total testosterone (ng/dL)</label>
+              <input id="serum_testosterone_ng_dl" type="number" step="1" />
             </div>
           </div>
           <div class="field-grid">
@@ -1129,6 +1320,26 @@
           <button id="loadTrendBtn" class="button ghost">Trends</button>
           <button id="compareTherapiesBtn" class="button ghost">Compare therapies</button>
         </div>
+        <div class="trials-panel" id="keyTrialsPanel">
+          <h3>Key Osteoporosis Trials</h3>
+          <p class="muted" id="keyTrialsContext">Highlighted rows will follow the active therapy and risk profile.</p>
+          <div class="suggestion-toolbar" style="margin-top:6px;">
+            <button id="trialsAllBtn" type="button" class="button secondary active" style="font-size:12px;padding:6px 10px;">All</button>
+            <button id="trialsActiveOnlyBtn" type="button" class="button secondary" style="font-size:12px;padding:6px 10px;">Active only</button>
+          </div>
+          <div class="trials-table">
+            <table id="keyTrialsTable">
+              <thead>
+                <tr>
+                  <th>Study</th>
+                  <th>Therapy focus</th>
+                  <th>Short take-home</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
         <div class="status-line">
           <span id="formNote" data-state="neutral">Data is sent to the configured evaluation endpoint.</span>
         </div>
@@ -1170,6 +1381,21 @@
           <button id="showEvidenceYearBtn" type="button" class="button secondary">Evidence + year</button>
         </div>
         <div class="suggestion-grid" id="suggestionBuckets"></div>
+        <div class="evidence-panel" id="evidenceUsedPanel">
+          <h4>Evidence used in this plan</h4>
+          <p class="muted" id="evidenceUsedContext">Evidence links per suggestion will appear after evaluation.</p>
+          <div class="evidence-table">
+            <table id="evidenceUsedTable">
+              <thead>
+                <tr>
+                  <th>Evidence source</th>
+                  <th>Supports suggestions</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
         <div class="therapy-highlights" id="therapyHighlights"></div>
         <div class="therapy-summary-panel" id="therapySnapshot">
           <p class="muted">Therapy and supplement summary will appear here.</p>
@@ -1275,10 +1501,16 @@
             <p class="muted" style="margin:0;">Δεν έχουν επιλεγεί ακόμα στοιχεία πλάνου.</p>
           </div>
         </div>
-        <div class="note-block" id="clinicalNote" aria-live="polite">Τρέξε αξιολόγηση για να εμφανιστεί η κλινική σημείωση.</div>
-        <div class="note-block" id="patientSummary" aria-live="polite" style="background:#111827;">
-          Τρέξε αξιολόγηση για να εμφανιστεί η σύνοψη για ασθενή.
-        </div>
+        <details class="collapsible-note" id="clinicalNoteDetails">
+          <summary>Εμφάνιση rules-based clinician summary</summary>
+          <div class="note-block" id="clinicalNote" aria-live="polite">Τρέξε αξιολόγηση για να εμφανιστεί η κλινική σημείωση.</div>
+        </details>
+        <details class="collapsible-note" id="patientSummaryDetails">
+          <summary>Εμφάνιση rules-based patient summary</summary>
+          <div class="note-block" id="patientSummary" aria-live="polite" style="background:#111827;">
+            Τρέξε αξιολόγηση για να εμφανιστεί η σύνοψη για ασθενή.
+          </div>
+        </details>
         <div class="ai-panel" style="margin-top: 12px;">
           <div class="ai-header">
             <div>
@@ -1313,11 +1545,12 @@
             </div>
           </div>
           <div class="field">
-            <label for="openai_question_input" class="muted" style="margin-bottom:4px;">Τοποθέτησε την ερώτηση για το OpenAI (κλινικά, βιβλιογραφικά)</label>
+            <label for="openai_question_input" class="muted" style="margin-bottom:4px;">Τοποθέτησε την ερώτηση για το evidence engine (κλινικά, βιβλιογραφικά)</label>
             <textarea id="openai_question_input" placeholder="Για παράδειγμα: Θεωρείται απαραίτητη η αντιοστεοπορωτική θεραπεία μετά από νέο κάταγμα;" rows="3"></textarea>
           </div>
           <div class="actions" style="padding:0;margin-top:4px;">
             <button id="openaiQuestionBtn" class="button ghost">Ρώτησε την βιβλιογραφία</button>
+            <a class="button secondary" href="https://scribe.heidihealth.com" target="_blank" rel="noopener noreferrer">Άνοιγμα Heidi AI</a>
           </div>
           <div class="note-block" id="openaiQuestionResponse" aria-live="polite">
             Κείμενο απάντησης θα εμφανιστεί εδώ μόλις γίνει ερώτηση.
@@ -1389,6 +1622,7 @@
       selectedHistoryEntry: null,
       suggestionView: "full",
       outputLanguage: "el",
+      trialsFilter: "all",
     };
     let lastFollowUpSteps = [];
     const therapyEntries = [];
@@ -1407,6 +1641,8 @@
     const showEvidenceOnlyBtn = document.getElementById("showEvidenceOnlyBtn");
     const showEvidenceYearBtn = document.getElementById("showEvidenceYearBtn");
     const suggestionBuckets = document.getElementById("suggestionBuckets");
+    const evidenceUsedContext = document.getElementById("evidenceUsedContext");
+    const evidenceUsedTableBody = document.querySelector("#evidenceUsedTable tbody");
     const therapyHighlights = document.getElementById("therapyHighlights");
     const clinicalNote = document.getElementById("clinicalNote");
     const patientSummary = document.getElementById("patientSummary");
@@ -1430,6 +1666,119 @@
     const agreedPlanCustomInput = document.getElementById("agreed_plan_custom");
     const agreedPlanSummary = document.getElementById("agreedPlanSummary");
     const agreedPlanOptionInputs = Array.from(document.querySelectorAll(".agreed-plan-option"));
+    const keyTrialsContext = document.getElementById("keyTrialsContext");
+    const keyTrialsTableBody = document.querySelector("#keyTrialsTable tbody");
+    const trialsAllBtn = document.getElementById("trialsAllBtn");
+    const trialsActiveOnlyBtn = document.getElementById("trialsActiveOnlyBtn");
+    const recommendedLabsContext = document.getElementById("recommendedLabsContext");
+    const recommendedLabsTableBody = document.querySelector("#recommendedLabsTable tbody");
+    const KEY_TRIALS = [
+      {
+        id: "NOGG_2024",
+        study: "NOGG Guideline 2024",
+        focus: "All therapies / sequencing",
+        summary: "FRAX-first risk stratification with high/very-high pathways and explicit sequencing/stop-plan logic.",
+        tags: ["all"],
+      },
+      {
+        id: "KANIS_2020",
+        study: "Kanis et al. 2020",
+        focus: "Risk thresholds",
+        summary: "IOF/ESCEO thresholds and intervention logic used for risk-tiered management decisions.",
+        tags: ["all"],
+      },
+      {
+        id: "MCCLUNG_HIP_2001",
+        study: "HIP trial (NEJM 2001)",
+        focus: "Oral bisphosphonate",
+        summary: "Risedronate reduced hip-fracture risk in elderly women with confirmed osteoporosis.",
+        tags: ["oral_bisphosphonate", "high_or_more"],
+      },
+      {
+        id: "FIT_COST_2001",
+        study: "FIT VFA cost analysis (2001)",
+        focus: "Oral bisphosphonate",
+        summary: "Alendronate reduced fracture-related healthcare utilization and hip-fracture care costs.",
+        tags: ["oral_bisphosphonate", "high_or_more"],
+      },
+      {
+        id: "FLEX_2006",
+        study: "FLEX extension (2006)",
+        focus: "Oral bisphosphonate duration",
+        summary: "Supports reassessment strategy after prolonged alendronate use and holiday planning.",
+        tags: ["oral_bisphosphonate", "high_or_more"],
+      },
+      {
+        id: "HORIZON_EXT_2012",
+        study: "HORIZON extension (2012)",
+        focus: "IV bisphosphonate duration",
+        summary: "Informative for zoledronate duration and continuation vs reassessment timing.",
+        tags: ["iv_bisphosphonate", "high_or_more"],
+      },
+      {
+        id: "FREEDOM_2017",
+        study: "FREEDOM extension (2017)",
+        focus: "Denosumab long-term",
+        summary: "Long-term denosumab efficacy/safety with sustained BMD and fracture benefit.",
+        tags: ["denosumab", "high_or_more"],
+      },
+      {
+        id: "JBMR_DENO_STOP_2025",
+        study: "JBMR perspective (2025)",
+        focus: "Denosumab discontinuation",
+        summary: "Highlights rebound turnover/vertebral-risk after stopping denosumab and need for planned transition.",
+        tags: ["denosumab", "high_or_more", "very_high"],
+      },
+      {
+        id: "VERO_2018",
+        study: "VERO (2018)",
+        focus: "Teriparatide vs antiresorptive",
+        summary: "Supports anabolic strategy in severe/very-high-risk fracture populations.",
+        tags: ["teriparatide", "very_high"],
+      },
+      {
+        id: "ARCH_2017",
+        study: "ARCH (2017)",
+        focus: "Romosozumab sequence",
+        summary: "Romosozumab followed by alendronate improved fracture outcomes vs alendronate alone.",
+        tags: ["romosozumab", "very_high"],
+      },
+      {
+        id: "FRAME_2016",
+        study: "FRAME (2016)",
+        focus: "Romosozumab -> denosumab",
+        summary: "Sequential anabolic-to-antiresorptive pathway with sustained BMD/fracture benefit.",
+        tags: ["romosozumab", "denosumab", "very_high"],
+      },
+      {
+        id: "DATA_SWITCH_2015",
+        study: "DATA-Switch (2015)",
+        focus: "Teriparatide/denosumab sequencing",
+        summary: "Sequence order influences BMD response; supports careful transition planning.",
+        tags: ["teriparatide", "denosumab", "very_high"],
+      },
+      {
+        id: "JCM_SEQ_TPTD_2025",
+        study: "J Clin Med real-life (2025)",
+        focus: "After teriparatide",
+        summary: "After teriparatide, both zoledronate and denosumab preserved hip BMD; denosumab may favor lumbar-spine gain.",
+        tags: ["teriparatide", "denosumab", "iv_bisphosphonate", "high_or_more"],
+      },
+      {
+        id: "SIOMMMS_VITD_2022",
+        study: "SIOMMMS vitamin D (2022)",
+        focus: "Supportive care",
+        summary: "Targeted 25-OH vitamin D assessment/correction integrated with osteoporosis therapy.",
+        tags: ["all"],
+      },
+      {
+        id: "DRUGSAGING_SEVERE_2025",
+        study: "Drugs & Aging severe OP (2025)",
+        focus: "Older adults / severe osteoporosis",
+        summary: "Recommends combining drug treatment with frailty, falls, cognition and nutrition-focused geriatric assessment.",
+        tags: ["all", "very_high", "high_or_more"],
+      },
+    ];
     const numFields = [
       "age",
       "spine_t_score",
@@ -1452,6 +1801,7 @@
       "urine_calcium_24h_mg",
       "serum_urea_mg_dl",
       "serum_creatinine_mg_dl",
+      "serum_testosterone_ng_dl",
       "osteocalcin_ng_ml",
       "bone_alk_phos_u_l",
       "ctx_ng_ml",
@@ -1517,6 +1867,7 @@
       setInputValue("urine_calcium_24h_mg", input.urine_calcium_24h_mg);
       setInputValue("serum_urea_mg_dl", input.serum_urea_mg_dl);
       setInputValue("serum_creatinine_mg_dl", input.serum_creatinine_mg_dl);
+      setInputValue("serum_testosterone_ng_dl", input.serum_testosterone_ng_dl);
       setInputValue("osteocalcin_ng_ml", input.osteocalcin_ng_ml);
       setInputValue("bone_alk_phos_u_l", input.bone_alk_phos_u_l);
       setInputValue("ctx_ng_ml", input.ctx_ng_ml);
@@ -1645,6 +1996,7 @@
       if (entry.input_data.pth_pg_ml != null) labs.push(`PTH ${entry.input_data.pth_pg_ml.toFixed(1)} pg/mL`);
       if (entry.input_data.serum_urea_mg_dl != null) labs.push(`urea ${entry.input_data.serum_urea_mg_dl.toFixed(2)} mg/dL`);
       if (entry.input_data.serum_creatinine_mg_dl != null) labs.push(`creatinine ${entry.input_data.serum_creatinine_mg_dl.toFixed(3)} mg/dL`);
+      if (entry.input_data.serum_testosterone_ng_dl != null) labs.push(`testosterone ${entry.input_data.serum_testosterone_ng_dl.toFixed(0)} ng/dL`);
       if (entry.input_data.ctx_ng_ml != null) labs.push(`CTX ${entry.input_data.ctx_ng_ml.toFixed(2)} ng/mL`);
       if (entry.input_data.p1np_ng_ml != null) labs.push(`P1NP ${entry.input_data.p1np_ng_ml.toFixed(1)} ng/mL`);
       if (labs.length) {
@@ -1671,6 +2023,241 @@
       if (statusMessage) {
         statusMessage.textContent = message;
         statusMessage.dataset.state = variant;
+      }
+    }
+    function readCurrentRisk() {
+      return (state.lastAssessment?.risk_category || "").toLowerCase();
+    }
+    function renderRecommendedLabsTable(assessment = state.lastAssessment, inputData = null) {
+      if (!recommendedLabsTableBody) return;
+      const formInput = inputData || {
+        age: val("age"),
+        sex: val("sex"),
+        current_therapy_type: val("current_therapy_type"),
+        glucocorticoids: val("glucocorticoids"),
+        glucocorticoid_prednisolone_mg_day: val("glucocorticoid_prednisolone_mg_day"),
+        glucocorticoid_duration_months: val("glucocorticoid_duration_months"),
+        secondary_osteoporosis: val("secondary_osteoporosis"),
+        rheumatoid_arthritis: val("rheumatoid_arthritis"),
+        fractures_during_current_therapy: val("fractures_during_current_therapy"),
+      };
+      const age = Number(formInput.age) || null;
+      const sex = formInput.sex || "unknown";
+      const risk = (assessment?.risk_category || readCurrentRisk() || "pending").toLowerCase();
+      const therapy = formInput.current_therapy_type || "none";
+      const highOrMore = risk === "high" || risk === "very_high";
+      const activeTreatment = therapy && therapy !== "none";
+      const onDenosumabOrIv = therapy === "denosumab" || therapy === "iv_bisphosphonate" || therapy === "romosozumab";
+      const gcDose = Number(formInput.glucocorticoid_prednisolone_mg_day) || 0;
+      const gcDuration = Number(formInput.glucocorticoid_duration_months) || 0;
+      const glucocorticoidSignal = !!formInput.glucocorticoids || gcDose > 0 || gcDuration > 0;
+
+      const rows = [
+        {
+          priority: "Core",
+          labs: "25-OH vitamin D, serum Ca, phosphate, creatinine/eGFR, ALP",
+          why: "Baseline metabolic bone and renal screen before starting or changing anti-osteoporotic therapy.",
+        },
+        {
+          priority: "Core",
+          labs: "PTH",
+          why: "Add when Ca/Vit D are abnormal, osteoporosis is severe, or secondary hyperparathyroidism is possible.",
+        },
+        {
+          priority: "Conditional",
+          labs: "TSH ± free T4, CBC/ESR/CRP, liver profile, protein electrophoresis as clinically indicated",
+          why: "Secondary-cause screen when risk is high, fracture pattern is atypical, or clinical context suggests systemic disease.",
+        },
+      ];
+
+      if (sex === "male") {
+        rows.push({
+          priority: "Conditional",
+          labs: "Morning total testosterone ± SHBG/LH/FSH",
+          why: "Men with osteoporosis should be screened for hypogonadism, especially with fragility fracture or low BMD.",
+        });
+      }
+
+      if (highOrMore || activeTreatment || formInput.fractures_during_current_therapy) {
+        rows.push({
+          priority: "Monitoring",
+          labs: "CTX and P1NP",
+          why: "Baseline and 3-6 month follow-up markers can help assess adherence/response after therapy start, switch, or fracture on treatment.",
+        });
+      }
+
+      if (onDenosumabOrIv) {
+        rows.push({
+          priority: "Monitoring",
+          labs: "Ca, phosphate, Mg, creatinine/eGFR before each injection/infusion",
+          why: "Important for denosumab, IV bisphosphonate and romosozumab pathways; correct hypocalcemia before treatment.",
+        });
+      }
+
+      if (therapy === "denosumab") {
+        rows.push({
+          priority: "Monitoring",
+          labs: "CTX after transition planning if denosumab is stopped",
+          why: "Use around post-denosumab antiresorptive cover to detect persistent rebound turnover.",
+        });
+      }
+
+      if (glucocorticoidSignal || formInput.secondary_osteoporosis || formInput.rheumatoid_arthritis) {
+        rows.push({
+          priority: "Conditional",
+          labs: "HbA1c/glucose, renal profile, vitamin D/Ca/PTH, disease-specific secondary-cause tests",
+          why: "Glucocorticoids and inflammatory/secondary osteoporosis contexts raise risk and can alter treatment choice.",
+        });
+      }
+
+      if (age && age >= 75) {
+        rows.push({
+          priority: "Conditional",
+          labs: "Albumin, renal profile, nutrition markers as clinically indicated",
+          why: "Older adults benefit from broader frailty/nutrition/renal review alongside fracture prevention.",
+        });
+      }
+
+      rows.push({
+        priority: "Conditional",
+        labs: "24h urine calcium",
+        why: "Useful when calcium balance, hypercalciuria, stones, malabsorption or PTH/Ca mismatch is suspected.",
+      });
+
+      recommendedLabsTableBody.innerHTML = "";
+      rows.forEach((row) => {
+        const tr = document.createElement("tr");
+        const priorityTd = document.createElement("td");
+        const badge = document.createElement("span");
+        const priorityClass = row.priority.toLowerCase();
+        badge.className = `lab-priority ${priorityClass}`;
+        badge.textContent = row.priority;
+        priorityTd.appendChild(badge);
+        const labsTd = document.createElement("td");
+        labsTd.textContent = row.labs;
+        const whyTd = document.createElement("td");
+        whyTd.textContent = row.why;
+        tr.appendChild(priorityTd);
+        tr.appendChild(labsTd);
+        tr.appendChild(whyTd);
+        recommendedLabsTableBody.appendChild(tr);
+      });
+
+      if (recommendedLabsContext) {
+        const therapyLabel = therapy ? therapy.replace(/_/g, " ") : "none";
+        const riskLabel = risk === "pending" ? "pending evaluation" : risk.toUpperCase();
+        recommendedLabsContext.textContent = `Age: ${age || "-"} | sex: ${sex} | risk: ${riskLabel} | therapy: ${therapyLabel}.`;
+      }
+    }
+    function prettySuggestionCategory(category) {
+      if (!category) return "general";
+      return category.replace(/_/g, " ");
+    }
+    function renderEvidenceUsedPanel(assessment) {
+      if (!evidenceUsedTableBody) return;
+      const suggestions = assessment?.suggestions || [];
+      const byRef = new Map();
+
+      suggestions.forEach((suggestion) => {
+        const refs = Array.isArray(suggestion.evidence_refs) ? suggestion.evidence_refs : [];
+        if (!refs.length) return;
+        refs.forEach((refText) => {
+          if (!byRef.has(refText)) {
+            byRef.set(refText, {
+              categories: new Set(),
+              examples: [],
+            });
+          }
+          const entry = byRef.get(refText);
+          entry.categories.add(prettySuggestionCategory(suggestion.category));
+          if (suggestion.text && entry.examples.length < 2) {
+            entry.examples.push(suggestion.text);
+          }
+        });
+      });
+
+      evidenceUsedTableBody.innerHTML = "";
+      if (!byRef.size) {
+        evidenceUsedTableBody.innerHTML = '<tr><td colspan="2" class="muted">No evidence links attached yet.</td></tr>';
+        if (evidenceUsedContext) {
+          evidenceUsedContext.textContent = "Evidence links per suggestion will appear after evaluation.";
+        }
+        return;
+      }
+
+      const rows = Array.from(byRef.entries())
+        .map(([refText, payload]) => ({ refText, ...payload }))
+        .sort((a, b) => b.categories.size - a.categories.size);
+
+      rows.forEach((row) => {
+        const tr = document.createElement("tr");
+        const sourceTd = document.createElement("td");
+        sourceTd.textContent = row.refText;
+        const supportTd = document.createElement("td");
+        const categoryText = Array.from(row.categories).sort().join(", ");
+        const exampleText = row.examples.length ? ` · e.g. ${row.examples[0]}` : "";
+        supportTd.textContent = `${categoryText}${exampleText}`;
+        tr.appendChild(sourceTd);
+        tr.appendChild(supportTd);
+        evidenceUsedTableBody.appendChild(tr);
+      });
+
+      if (evidenceUsedContext) {
+        evidenceUsedContext.textContent = `Showing ${rows.length} evidence sources linked to current suggestions.`;
+      }
+    }
+    function renderKeyTrialsTable(assessment = state.lastAssessment, inputData = state.lastStored?.input_data || null) {
+      if (!keyTrialsTableBody) return;
+      const therapy =
+        inputData?.current_therapy_type ||
+        document.getElementById("current_therapy_type")?.value ||
+        "none";
+      const risk = (assessment?.risk_category || "").toLowerCase();
+      const activeTags = new Set();
+      if (therapy && therapy !== "none") activeTags.add(therapy);
+      if (risk === "high" || risk === "very_high") activeTags.add("high_or_more");
+      if (risk === "very_high") activeTags.add("very_high");
+
+      const rows = KEY_TRIALS.map((trial) => {
+        const active = trial.tags.some((tag) => activeTags.has(tag));
+        return { ...trial, active };
+      })
+        .filter((trial) => state.trialsFilter !== "active" || trial.active)
+        .sort((a, b) => Number(b.active) - Number(a.active));
+
+      if (trialsAllBtn) {
+        trialsAllBtn.classList.toggle("active", state.trialsFilter === "all");
+      }
+      if (trialsActiveOnlyBtn) {
+        trialsActiveOnlyBtn.classList.toggle("active", state.trialsFilter === "active");
+      }
+
+      keyTrialsTableBody.innerHTML = "";
+      if (!rows.length) {
+        keyTrialsTableBody.innerHTML = '<tr><td colspan="3" class="muted">No active trial links for the current therapy/risk yet.</td></tr>';
+      }
+      rows.forEach((trial) => {
+        const tr = document.createElement("tr");
+        tr.className = `trial-row ${trial.active ? "active" : ""}`;
+
+        const studyTd = document.createElement("td");
+        studyTd.textContent = `${trial.study}${trial.active ? " • active" : ""}`;
+        const focusTd = document.createElement("td");
+        focusTd.textContent = trial.focus;
+        const summaryTd = document.createElement("td");
+        summaryTd.textContent = trial.summary;
+
+        tr.appendChild(studyTd);
+        tr.appendChild(focusTd);
+        tr.appendChild(summaryTd);
+        keyTrialsTableBody.appendChild(tr);
+      });
+
+      if (keyTrialsContext) {
+        const therapyLabel = therapy && therapy !== "none" ? therapy.replace(/_/g, " ") : "none selected";
+        const riskLabel = risk ? risk.toUpperCase() : "N/A";
+        const mode = state.trialsFilter === "active" ? "Active only" : "All";
+        keyTrialsContext.textContent = `${mode} | therapy: ${therapyLabel} | risk: ${riskLabel}.`;
       }
     }
     function renderTherapyHistoryList() {
@@ -1914,6 +2501,7 @@
         urine_calcium_24h_mg: val("urine_calcium_24h_mg"),
         serum_urea_mg_dl: val("serum_urea_mg_dl"),
         serum_creatinine_mg_dl: val("serum_creatinine_mg_dl"),
+        serum_testosterone_ng_dl: val("serum_testosterone_ng_dl"),
         osteocalcin_ng_ml: val("osteocalcin_ng_ml"),
         bone_alk_phos_u_l: val("bone_alk_phos_u_l"),
         ctx_ng_ml: val("ctx_ng_ml"),
@@ -2557,6 +3145,9 @@
       renderHistoryDetail(entry);
       updateTherapySnapshot(entry.input_data);
       updateFollowUpPanel(entry.assessment);
+      renderRecommendedLabsTable(entry.assessment, entry.input_data);
+      renderEvidenceUsedPanel(entry.assessment);
+      renderKeyTrialsTable(entry.assessment, entry.input_data);
     }
     async function evaluate() {
       const patientId = document.getElementById("patient_id").value.trim() || "demo-patient";
@@ -2825,7 +3416,7 @@
         setStatus("Write a question before querying the AI.", "error");
         return;
       }
-      setStatus("Querying OpenAI for a literature-backed answer…", "pending");
+      setStatus("Querying the local evidence engine…", "pending");
       try {
         const res = await fetch(endpoints.openaiQuestion, {
           method: "POST",
@@ -2895,9 +3486,12 @@
     function renderBackbone(assessment, inputData) {
       updateRiskPanel(assessment);
       renderSuggestionBuckets(assessment.suggestions);
+      renderEvidenceUsedPanel(assessment);
       renderTherapyHighlights(assessment.suggestions);
       writeNotes(assessment);
       updateTherapySnapshot(inputData);
+      renderRecommendedLabsTable(assessment, inputData);
+      renderKeyTrialsTable(assessment, inputData);
       renderTScoreHistoryList();
       updateFollowUpPanel(assessment);
       aiElaboration.textContent =
@@ -2995,6 +3589,20 @@
         deleteSelectedHistoryVisit();
       });
     }
+    if (trialsAllBtn) {
+      trialsAllBtn.addEventListener("click", (event) => {
+        event.preventDefault();
+        state.trialsFilter = "all";
+        renderKeyTrialsTable();
+      });
+    }
+    if (trialsActiveOnlyBtn) {
+      trialsActiveOnlyBtn.addEventListener("click", (event) => {
+        event.preventDefault();
+        state.trialsFilter = "active";
+        renderKeyTrialsTable();
+      });
+    }
     const handoutBtn = document.getElementById("handoutBtn");
     if (handoutBtn) {
       handoutBtn.addEventListener("click", (event) => {
@@ -3048,8 +3656,26 @@
       currentTherapyTypeInput.addEventListener("change", () => {
         syncAgreedPlanTherapyControls();
         renderAgreedPlanSummary();
+        const partialInput = { current_therapy_type: currentTherapyTypeInput.value };
+        renderRecommendedLabsTable(state.lastAssessment);
+        renderKeyTrialsTable(state.lastAssessment, partialInput);
       });
     }
+    [
+      "age",
+      "sex",
+      "glucocorticoids",
+      "glucocorticoid_prednisolone_mg_day",
+      "glucocorticoid_duration_months",
+      "secondary_osteoporosis",
+      "rheumatoid_arthritis",
+      "fractures_during_current_therapy",
+    ].forEach((id) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const eventName = el.type === "checkbox" || el.tagName === "SELECT" ? "change" : "input";
+      el.addEventListener(eventName, () => renderRecommendedLabsTable(state.lastAssessment));
+    });
     if (agreedPlanCustomInput) {
       agreedPlanCustomInput.addEventListener("input", renderAgreedPlanSummary);
       agreedPlanCustomInput.addEventListener("change", renderAgreedPlanSummary);
@@ -3073,6 +3699,9 @@
     syncAgreedPlanTherapyControls();
     renderAgreedPlanSummary();
     renderHistoryDetail(null);
+    renderRecommendedLabsTable();
+    renderEvidenceUsedPanel();
+    renderKeyTrialsTable();
     setOutputLanguage("el");
     setSuggestionView("full");
   </script>

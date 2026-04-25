@@ -35,7 +35,6 @@ ROOT_DIR = Path(__file__).resolve().parent
 STATIC_DIR = ROOT_DIR / "static"
 SOURCE_INDEX = ROOT_DIR / "index.html"
 TARGET_INDEX = STATIC_DIR / "index.html"
-
 try:
     STATIC_DIR.mkdir(parents=True, exist_ok=True)
     if SOURCE_INDEX.exists():
@@ -347,6 +346,9 @@ class OsteoInput(BaseModel):
 
     serum_urea_mg_dl: Optional[float] = None
     serum_creatinine_mg_dl: Optional[float] = None
+    serum_testosterone_ng_dl: Optional[float] = Field(
+        default=None, description="Morning total testosterone (ng/dL), mainly for men."
+    )
 
     # Supplements / intake
     calcium_supplement: bool = False
@@ -1430,6 +1432,12 @@ EVIDENCE_REGISTRY: Dict[str, str] = {
     "NOGG_2024": "NOGG Clinical Guideline 2024 (FRAX-first stratification, very-high-risk indicators, sequential therapy and duration guidance).",
     "KANIS_2020": "Kanis et al. Osteoporos Int 2020;31:1-12 (IOF/ESCEO algorithm and risk stratification).",
     "DIAB_WATTS_2013": "Diab & Watts. Ther Adv Musculoskelet Dis 2013;5:107-111 (DOI: 10.1177/1759720X13477714).",
+    "MCCLUNG_HIP_2001": "McClung et al. N Engl J Med 2001;344:333-340 (HIP trial: risedronate reduced hip fractures in elderly women with confirmed osteoporosis).",
+    "FIT_COST_2001": "Chrischilles et al. Osteoporos Int 2001;12:429-436 (FIT VFA economic analysis: alendronate reduced fracture-related healthcare utilization and hip-fracture care costs).",
+    "SIOMMMS_VITD_2022": "Bertoldo et al. Nutrients 2022;14:4148 (SIOMMMS recommendations on vitamin D inadequacy: definition, testing and management).",
+    "JCM_SEQ_TPTD_2025": "Ghielmetti et al. J Clin Med 2025;14:6360 (real-life sequential treatment after teriparatide: zoledronate vs denosumab).",
+    "DRUGSAGING_SEVERE_2025": "See et al. Drugs Aging 2025;42:395-412 (severe osteoporosis in older adults: geriatric assessment and treatment considerations).",
+    "JBMR_DENO_STOP_2025": "Kumar et al. J Bone Miner Res 2025;40:1017-1034 (denosumab discontinuation, rebound turnover and mitigation strategies).",
     "FLEX_2006": "Black et al. JAMA 2006;296:2927-2938 (FLEX alendronate extension).",
     "VERT_NA_2008": "Watts et al. Osteoporos Int 2008;19:365-372 (VERT-NA extension, risedronate off-treatment).",
     "HORIZON_EXT_2012": "Black et al. J Bone Miner Res 2012;27:243-254 (HORIZON extension, 3 vs 6 years zoledronate).",
@@ -1459,12 +1467,26 @@ def attach_evidence_to_suggestions(suggestions: List[Suggestion]) -> None:
         if "denosumab" in t and ("interruption" in t or "rebound" in t or "stop" in t):
             ids.add("FREEDOM_2017")
             ids.add("NOGG_2024")
+        if "risedronate" in t and ("hip fracture" in t or "elderly women" in t):
+            ids.add("MCCLUNG_HIP_2001")
+        if "alendronate" in t and ("healthcare utilization" in t or "cost" in t or "fit" in t):
+            ids.add("FIT_COST_2001")
+        if "vitamin d" in t and ("inadequacy" in t or "deficiency" in t or "25-oh" in t):
+            ids.add("SIOMMMS_VITD_2022")
+        if "teriparatide" in t and ("zoledronate" in t or "denosumab" in t):
+            ids.add("JCM_SEQ_TPTD_2025")
+        if "older adults" in t or "geriatric" in t or "comprehensive assessment" in t:
+            ids.add("DRUGSAGING_SEVERE_2025")
+        if "denosumab" in t and ("rebound" in t or "bone turnover" in t or "post-denosumab" in t):
+            ids.add("JBMR_DENO_STOP_2025")
         if "zoledronate" in t and "6 months" in t:
             ids.add("NOGG_2024")
         if "at least 5 years" in t or "at least 3 years" in t:
             ids.add("NOGG_2024")
         if "very-high fracture risk" in t or "very high fracture risk" in t:
             ids.add("NOGG_2024")
+        if "oral bisphosphonate" in t and ("high fracture risk" in t or "high-risk" in t):
+            ids.update({"MCCLUNG_HIP_2001", "FIT_COST_2001"})
         if "anabolic-first" in t or "very-high-risk pathway" in t:
             ids.update({"ARCH_2017", "VERO_2018"})
         if "romosozumab" in t and "denosumab" in t:
@@ -1988,6 +2010,16 @@ def add_current_therapy_suggestions(
             Suggestion(
                 category="current_therapy",
                 text=(
+                    "Recent JBMR perspective (2025) reinforces that post-denosumab rebound can be clinically severe "
+                    "in selected patients; anti-resorptive follow-on may not fully prevent bone loss in all cases, "
+                    "so individualized monitoring of BMD/turnover markers and vertebral-fracture surveillance is important."
+                ),
+            )
+        )
+        suggestions.append(
+            Suggestion(
+                category="current_therapy",
+                text=(
                     "NOGG 2024 stop-plan anchor: if denosumab must be stopped, plan IV zoledronate "
                     "around 6 months after the last denosumab dose, with follow-up bone turnover "
                     "markers (e.g., CTX at ~3 and ~6 months after zoledronate) to guide whether/when "
@@ -2004,6 +2036,16 @@ def add_current_therapy_suggestions(
                     "Patient is on or has been on anabolic therapy (e.g. teriparatide). "
                     "Course duration is typically limited (often up to 18–24 months) and is "
                     "usually followed by an anti-resorptive agent to consolidate gains in BMD."
+                ),
+            )
+        )
+        suggestions.append(
+            Suggestion(
+                category="current_therapy",
+                text=(
+                    "Real-life long-term data (J Clin Med 2025) after teriparatide suggest both "
+                    "zoledronate and denosumab can maintain/improve hip BMD; denosumab may provide "
+                    "greater lumbar-spine gain at longer follow-up in some cohorts."
                 ),
             )
         )
@@ -2035,6 +2077,15 @@ def add_current_therapy_suggestions(
                 text=(
                     "NOGG 2024 sequencing anchor: after romosozumab, transition promptly to an "
                     "anti-resorptive drug to maintain anti-fracture benefit and BMD gains."
+                ),
+            )
+        )
+        suggestions.append(
+            Suggestion(
+                category="current_therapy",
+                text=(
+                    "Post-anabolic maintenance principle is consistent across newer data: avoid a therapy gap "
+                    "after anabolic completion and anchor long-term control with anti-resorptive consolidation."
                 ),
             )
         )
@@ -2241,6 +2292,17 @@ def add_conference_protocol_suggestions(data: OsteoInput, suggestions: List[Sugg
                 "(IOF/ESCEO position paper). For age "
                 f"{data.age}, FRAX major IT ~{kanis_it:.1f}%, UAT ~{kanis_uat:.1f}%, "
                 f"and NOGG very-high threshold ~{nogg_vhrt:.1f}% (country calibration may differ)."
+            ),
+        )
+    )
+    suggestions.append(
+        Suggestion(
+            category="conference_protocol",
+            text=(
+                "Additional guideline/evidence anchors integrated in planning: SIOMMMS 2022 (vitamin D "
+                "inadequacy), J Clin Med 2025 (post-teriparatide zoledronate vs denosumab sequencing), "
+                "JBMR 2025 (denosumab discontinuation rebound risk), and Drugs & Aging 2025 "
+                "(severe osteoporosis management in older adults)."
             ),
         )
     )
@@ -2693,6 +2755,27 @@ def build_suggestions(
             )
         )
 
+    if risk in [RiskCategory.high, RiskCategory.very_high]:
+        suggestions.append(
+            Suggestion(
+                category="evidence_anchor",
+                text=(
+                    "Oral bisphosphonate efficacy anchor: in the HIP trial (McClung et al, NEJM 2001), "
+                    "risedronate reduced hip fracture risk in elderly women with confirmed osteoporosis."
+                ),
+            )
+        )
+        suggestions.append(
+            Suggestion(
+                category="evidence_anchor",
+                text=(
+                    "Health-system impact anchor: FIT economic analysis (Chrischilles et al, Osteoporos Int 2001) "
+                    "showed alendronate reduced fracture-related healthcare utilization and lowered hip-fracture "
+                    "care costs versus placebo."
+                ),
+            )
+        )
+
     if has_high_dose_glucocorticoid_pattern(data):
         suggestions.append(
             Suggestion(
@@ -2749,6 +2832,16 @@ def build_suggestions(
                 ),
             )
         )
+    suggestions.append(
+        Suggestion(
+            category="vitamin_d",
+            text=(
+                "Vitamin D management anchor (SIOMMMS 2022): use clinically targeted 25-OH vitamin D testing, "
+                "correct confirmed inadequacy before/alongside anti-osteoporotic therapy, and avoid relying on "
+                "vitamin D alone as fracture-prevention treatment in high-risk osteoporosis."
+            ),
+        )
+    )
 
     # Calcium – intake-based if available
     ca_lab = data.serum_calcium_mg_dl or data.serum_calcium
@@ -2941,6 +3034,18 @@ def build_suggestions(
                 )
             )
 
+    if data.age >= 75:
+        suggestions.append(
+            Suggestion(
+                category="older_adult_framework",
+                text=(
+                    "Older-adult severe osteoporosis framework (Drugs & Aging 2025): combine pharmacologic "
+                    "fracture prevention with comprehensive geriatric assessment (frailty, falls, cognition, "
+                    "mobility, nutrition, polypharmacy, and home-safety risk)."
+                ),
+            )
+        )
+
     if data.dementia_or_cognitive_impairment:
         suggestions.append(
             Suggestion(
@@ -3111,6 +3216,10 @@ def determine_follow_up_steps(data: OsteoInput, risk: RiskCategory) -> List[Foll
             "If denosumab must be stopped, schedule IV zoledronate around 6 months after last denosumab dose and monitor CTX at ~3 and ~6 months after zoledronate.",
             "6-12 months",
         )
+        add_step(
+            "Post-denosumab transition should be individualized; if turnover remains high or BMD declines, reassess need for additional anti-resorptive cover and vertebral imaging as clinically indicated.",
+            "6-18 months",
+        )
 
     if data.current_therapy_type == CurrentTherapyType.oral_bisphosphonate:
         if (data.current_therapy_duration_years or 0) >= 5 and risk in [RiskCategory.low, RiskCategory.moderate]:
@@ -3145,6 +3254,12 @@ def determine_follow_up_steps(data: OsteoInput, risk: RiskCategory) -> List[Foll
     if data.significant_therapy_adverse_effects:
         add_step(
             "Track adverse effect symptoms and reassess tolerance within 3 months.",
+            "0-6 months",
+        )
+
+    if data.age >= 75:
+        add_step(
+            "Include comprehensive geriatric review (frailty, cognition, falls, nutrition, polypharmacy, home hazards) in follow-up planning.",
             "0-6 months",
         )
 
@@ -3269,6 +3384,8 @@ def build_clinical_note(
         lab_bits.append(f"serum urea {data.serum_urea_mg_dl:.2f} mg/dL")
     if data.serum_creatinine_mg_dl is not None:
         lab_bits.append(f"serum creatinine {data.serum_creatinine_mg_dl:.3f} mg/dL")
+    if data.serum_testosterone_ng_dl is not None:
+        lab_bits.append(f"morning total testosterone {data.serum_testosterone_ng_dl:.0f} ng/dL")
 
     if lab_bits:
         lines.append("Labs: " + ", ".join(lab_bits) + ".")
@@ -4107,6 +4224,8 @@ def build_treatment_recommendation_context(stored: OsteoStoredAssessment) -> str
         lab_notes.append(f"urea {input_data.serum_urea_mg_dl:.2f} mg/dL")
     if input_data.serum_creatinine_mg_dl is not None:
         lab_notes.append(f"creatinine {input_data.serum_creatinine_mg_dl:.3f} mg/dL")
+    if input_data.serum_testosterone_ng_dl is not None:
+        lab_notes.append(f"morning total testosterone {input_data.serum_testosterone_ng_dl:.0f} ng/dL")
     if laboratory := ", ".join(lab_notes):
         lines.append("Recent labs: " + laboratory + ".")
     if input_data.t_score_history:
@@ -4144,6 +4263,26 @@ def build_treatment_recommendation_context(stored: OsteoStoredAssessment) -> str
         "plus extension trials FLEX, VERT-NA and HORIZON for residual effect/holiday timing."
     )
     lines.append(
+        "Additional oral-bisphosphonate anchors: McClung et al NEJM 2001 HIP trial "
+        "(risedronate lowered hip fractures in women with confirmed osteoporosis) and "
+        "Chrischilles et al Osteoporos Int 2001 FIT VFA economic analysis "
+        "(alendronate lowered fracture-related healthcare utilization/cost burden)."
+    )
+    lines.append(
+        "Sequential-treatment anchor after teriparatide: real-life J Clin Med 2025 data suggest "
+        "both zoledronate and denosumab can preserve/improve hip BMD post-teriparatide, with "
+        "denosumab showing stronger lumbar-spine gain in longer follow-up cohorts."
+    )
+    lines.append(
+        "Denosumab-discontinuation anchor: JBMR 2025 perspective emphasizes rebound turnover/multiple "
+        "vertebral-fracture risk and supports proactive transition planning with close BMD/CTX follow-up."
+    )
+    lines.append(
+        "Supportive-care anchors: SIOMMMS 2022 (targeted vitamin D assessment/correction) and "
+        "Drugs & Aging 2025 (integrated geriatric assessment in severe osteoporosis) should be "
+        "incorporated into the therapeutic plan."
+    )
+    lines.append(
         "Conference transition rules to preserve BMD: "
         "BP->denosumab tends to increase BMD; alendronate->zoledronate often has limited extra BMD gain; "
         "BP->anabolic may blunt gains; teriparatide/anabolic->denosumab or BP improves consolidation; "
@@ -4170,6 +4309,47 @@ def build_question_context(stored: OsteoStoredAssessment) -> str:
     if t_scores:
         ctx_lines.append(f"T-score history entries: {len(t_scores)}.")
     return "\n".join(ctx_lines)
+
+
+def build_evidence_grounding_context(stored: OsteoStoredAssessment) -> str:
+    """
+    Build compact evidence context for Q&A so the LLM can ground answers and cite
+    only sources already attached to the current assessment suggestions.
+    """
+    refs_by_id: Dict[str, str] = {}
+    for suggestion in stored.assessment.suggestions:
+        ids = suggestion.evidence_ids or []
+        refs = suggestion.evidence_refs or []
+        for idx, ref in enumerate(refs):
+            eid = ids[idx] if idx < len(ids) else ""
+            if not eid and ref in EVIDENCE_REGISTRY.values():
+                for key, value in EVIDENCE_REGISTRY.items():
+                    if value == ref:
+                        eid = key
+                        break
+            refs_by_id[eid or ref] = ref
+
+    if not refs_by_id:
+        # Fallback to a minimal core set when explicit links are missing.
+        fallback_ids = [
+            "NOGG_2024",
+            "KANIS_2020",
+            "MCCLUNG_HIP_2001",
+            "FIT_COST_2001",
+            "JBMR_DENO_STOP_2025",
+            "SIOMMMS_VITD_2022",
+        ]
+        refs_by_id = {eid: EVIDENCE_REGISTRY[eid] for eid in fallback_ids if eid in EVIDENCE_REGISTRY}
+
+    lines = ["Allowed evidence sources for this answer:"]
+    for eid, ref in refs_by_id.items():
+        lines.append(f"- [{eid}] {ref}")
+    lines.append(
+        "If the answer cannot be supported by the above sources + provided patient context, "
+        "state uncertainty explicitly and request the missing data."
+    )
+    return "\n".join(lines)
+
 
 
 @app.post(
@@ -4252,59 +4432,72 @@ def recommend_treatment_change(
 @app.post("/osteoporosis/question", response_model=LiteratureQuestionResponse)
 def ask_literature_question(req: LiteratureQuestionRequest) -> LiteratureQuestionResponse:
     is_en = req.language == OutputLanguage.en
+    fallback_prefix = ""
+
     if openai_client is None:
         return LiteratureQuestionResponse(
             answer=(
-                "LLM assistance is unavailable because OPENAI_API_KEY is not configured."
+                fallback_prefix + "LLM assistance is unavailable because OPENAI_API_KEY is not configured."
                 if is_en
-                else "Η βοήθεια LLM δεν είναι διαθέσιμη γιατί δεν έχει οριστεί OPENAI_API_KEY."
+                else fallback_prefix + "Η βοήθεια LLM δεν είναι διαθέσιμη γιατί δεν έχει οριστεί OPENAI_API_KEY."
             )
         )
 
     system_prompt = (
-        "You are an up-to-date osteoporosis advisor. Reply in English and reference widely accepted guidelines "
-        "(e.g., NOGG, Endocrine Society, ACP, IOF). Do not invent new diagnoses; interpret the provided data and "
-        "offer reliable guidance."
+        "You are an osteoporosis evidence assistant for clinicians. Use ONLY the supplied patient context and "
+        "the provided allowed evidence list. Do not introduce unsupported claims. If uncertain, say exactly what is "
+        "missing. Every clinical claim must be tied to source IDs like [NOGG_2024]."
         if is_en
-        else "Είσαι ένας ενημερωμένος σύμβουλος οστεοπόρωσης. Απαντάς στα ελληνικά, "
-        "αναφερόμενος σε ευρέως αποδεκτές κατευθυντήριες οδηγίες (π.χ. NOGG, Endocrine Society, "
-        "ACP, IOF). Δεν εισάγεις νέες διαγνώσεις, αλλά ερμηνεύεις δεδομένα και παρέχεις αξιόπιστη επεξήγηση."
+        else "Είσαι βοηθός βιβλιογραφικής τεκμηρίωσης για οστεοπόρωση. Χρησιμοποιείς ΜΟΝΟ το παρεχόμενο κλινικό "
+        "πλαίσιο και τη λίστα επιτρεπόμενων πηγών. Δεν εισάγεις μη τεκμηριωμένους ισχυρισμούς. Αν υπάρχει αβεβαιότητα, "
+        "το δηλώνεις ρητά και ζητάς συγκεκριμένα δεδομένα. Κάθε κλινικός ισχυρισμός να έχει citation με IDs πηγών "
+        "π.χ. [NOGG_2024]."
     )
 
     context = build_question_context(req.assessment)
+    evidence_context = build_evidence_grounding_context(req.assessment)
     user_prompt = (
         ("Clinical context:\n" if is_en else "Κλινικό πλαίσιο:\n")
         + f"{context}\n\n"
+        + ("Evidence context:\n" if is_en else "Πλαίσιο βιβλιογραφίας:\n")
+        + f"{evidence_context}\n\n"
         + ("Question:\n" if is_en else "Ερώτηση:\n")
         + f"{req.question}\n\n"
         + (
-            "Answer in 2-3 paragraphs: (1) brief literature/guideline rationale, "
-            "(2) practical answer, (3) if more tests or data are needed, list them clearly. "
-            "Ensure the final sentence is complete."
+            "Return exactly 4 sections:\n"
+            "1) Direct answer (2-4 bullets)\n"
+            "2) Why (evidence-linked bullets with source IDs)\n"
+            "3) Patient-specific application now\n"
+            "4) What is missing / uncertainty\n"
+            "Do not provide dosing. Do not cite sources that are not in the allowed evidence list."
             if is_en
             else
-            "Απάντησε οργανομετρικά με 2-3 παραγράφους: (1) σύντομη πηγή/αιτιολόγηση από τη βιβλιογραφία, "
-            "(2) πρακτική απάντηση, (3) αν χρειάζονται επιπλέον εξετάσεις ή δεδομένα, σημείωσε τα."
-            " Να ολοκληρώνεις πλήρως την τελευταία πρόταση (όχι κομμένη κατάληξη)."
+            "Επέστρεψε ακριβώς 4 ενότητες:\n"
+            "1) Άμεση απάντηση (2-4 bullets)\n"
+            "2) Γιατί (bullets με τεκμηρίωση και IDs πηγών)\n"
+            "3) Εφαρμογή στον συγκεκριμένο ασθενή τώρα\n"
+            "4) Τι λείπει / αβεβαιότητα\n"
+            "Μην δίνεις δοσολογίες. Μην αναφέρεις πηγές εκτός της επιτρεπόμενης λίστας."
         )
     )
 
     try:
         completion = openai_client.chat.completions.create(
-            model="gpt-4.1-mini",
+            model="gpt-4.1",
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},
             ],
-            temperature=0.2,
+            temperature=0.0,
             max_tokens=1200,
         )
         answer = completion.choices[0].message.content.strip()
+        answer = fallback_prefix + answer
     except Exception as exc:
         answer = (
-            f"Literature assistance is temporarily unavailable. (Error: {exc})"
+            fallback_prefix + f"Literature assistance is temporarily unavailable. (Error: {exc})"
             if is_en
-            else f"Η έρευνα είναι προσωρινά ανέφικτη. (Σφάλμα: {exc})"
+            else fallback_prefix + f"Η έρευνα είναι προσωρινά ανέφικτη. (Σφάλμα: {exc})"
         )
 
     return LiteratureQuestionResponse(answer=answer)
