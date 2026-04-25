@@ -343,6 +343,13 @@ class OsteoInput(BaseModel):
     serum_glucose_mg_dl: Optional[float] = None
     tsh_u_iu_ml: Optional[float] = None
     free_t4_ng_dl: Optional[float] = None
+    morning_cortisol_ug_dl: Optional[float] = None
+    lh_iu_l: Optional[float] = None
+    fsh_iu_l: Optional[float] = None
+    estradiol_pg_ml: Optional[float] = None
+    prolactin_ng_ml: Optional[float] = None
+    esr_mm_hr: Optional[float] = None
+    crp_mg_l: Optional[float] = None
 
     serum_urea_mg_dl: Optional[float] = None
     serum_creatinine_mg_dl: Optional[float] = None
@@ -3386,6 +3393,24 @@ def build_clinical_note(
         lab_bits.append(f"serum creatinine {data.serum_creatinine_mg_dl:.3f} mg/dL")
     if data.serum_testosterone_ng_dl is not None:
         lab_bits.append(f"morning total testosterone {data.serum_testosterone_ng_dl:.0f} ng/dL")
+    if data.tsh_u_iu_ml is not None:
+        lab_bits.append(f"TSH {data.tsh_u_iu_ml:.2f} μIU/mL")
+    if data.free_t4_ng_dl is not None:
+        lab_bits.append(f"free T4 {data.free_t4_ng_dl:.2f} ng/dL")
+    if data.morning_cortisol_ug_dl is not None:
+        lab_bits.append(f"morning cortisol {data.morning_cortisol_ug_dl:.1f} μg/dL")
+    if data.lh_iu_l is not None:
+        lab_bits.append(f"LH {data.lh_iu_l:.1f} IU/L")
+    if data.fsh_iu_l is not None:
+        lab_bits.append(f"FSH {data.fsh_iu_l:.1f} IU/L")
+    if data.estradiol_pg_ml is not None:
+        lab_bits.append(f"estradiol {data.estradiol_pg_ml:.1f} pg/mL")
+    if data.prolactin_ng_ml is not None:
+        lab_bits.append(f"prolactin {data.prolactin_ng_ml:.1f} ng/mL")
+    if data.esr_mm_hr is not None:
+        lab_bits.append(f"ESR {data.esr_mm_hr:.0f} mm/hr")
+    if data.crp_mg_l is not None:
+        lab_bits.append(f"CRP {data.crp_mg_l:.1f} mg/L")
 
     if lab_bits:
         lines.append("Labs: " + ", ".join(lab_bits) + ".")
@@ -4226,6 +4251,22 @@ def build_treatment_recommendation_context(stored: OsteoStoredAssessment) -> str
         lab_notes.append(f"creatinine {input_data.serum_creatinine_mg_dl:.3f} mg/dL")
     if input_data.serum_testosterone_ng_dl is not None:
         lab_notes.append(f"morning total testosterone {input_data.serum_testosterone_ng_dl:.0f} ng/dL")
+    if input_data.tsh_u_iu_ml is not None:
+        lab_notes.append(f"TSH {input_data.tsh_u_iu_ml:.2f} μIU/mL")
+    if input_data.morning_cortisol_ug_dl is not None:
+        lab_notes.append(f"morning cortisol {input_data.morning_cortisol_ug_dl:.1f} μg/dL")
+    if input_data.lh_iu_l is not None:
+        lab_notes.append(f"LH {input_data.lh_iu_l:.1f} IU/L")
+    if input_data.fsh_iu_l is not None:
+        lab_notes.append(f"FSH {input_data.fsh_iu_l:.1f} IU/L")
+    if input_data.estradiol_pg_ml is not None:
+        lab_notes.append(f"estradiol {input_data.estradiol_pg_ml:.1f} pg/mL")
+    if input_data.prolactin_ng_ml is not None:
+        lab_notes.append(f"prolactin {input_data.prolactin_ng_ml:.1f} ng/mL")
+    if input_data.esr_mm_hr is not None:
+        lab_notes.append(f"ESR {input_data.esr_mm_hr:.0f} mm/hr")
+    if input_data.crp_mg_l is not None:
+        lab_notes.append(f"CRP {input_data.crp_mg_l:.1f} mg/L")
     if laboratory := ", ".join(lab_notes):
         lines.append("Recent labs: " + laboratory + ".")
     if input_data.t_score_history:

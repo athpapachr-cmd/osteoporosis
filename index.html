@@ -1061,6 +1061,54 @@
           </div>
           <div class="field-grid">
             <div class="field">
+              <label for="total_alk_phos_u_l">Total ALP (U/L)</label>
+              <input id="total_alk_phos_u_l" type="number" step="0.1" />
+            </div>
+            <div class="field">
+              <label for="tsh_u_iu_ml">TSH (μIU/mL)</label>
+              <input id="tsh_u_iu_ml" type="number" step="0.01" />
+            </div>
+            <div class="field">
+              <label for="free_t4_ng_dl">Free T4 (ng/dL)</label>
+              <input id="free_t4_ng_dl" type="number" step="0.01" />
+            </div>
+            <div class="field">
+              <label for="serum_glucose_mg_dl">Glucose (mg/dL)</label>
+              <input id="serum_glucose_mg_dl" type="number" step="0.1" />
+            </div>
+          </div>
+          <div class="field-grid">
+            <div class="field">
+              <label for="morning_cortisol_ug_dl">Morning cortisol (μg/dL)</label>
+              <input id="morning_cortisol_ug_dl" type="number" step="0.1" />
+            </div>
+            <div class="field">
+              <label for="lh_iu_l">LH (IU/L)</label>
+              <input id="lh_iu_l" type="number" step="0.1" />
+            </div>
+            <div class="field">
+              <label for="fsh_iu_l">FSH (IU/L)</label>
+              <input id="fsh_iu_l" type="number" step="0.1" />
+            </div>
+            <div class="field">
+              <label for="estradiol_pg_ml">Estradiol / E2 (pg/mL)</label>
+              <input id="estradiol_pg_ml" type="number" step="0.1" />
+            </div>
+            <div class="field">
+              <label for="prolactin_ng_ml">Prolactin (ng/mL)</label>
+              <input id="prolactin_ng_ml" type="number" step="0.1" />
+            </div>
+            <div class="field">
+              <label for="esr_mm_hr">ESR (mm/hr)</label>
+              <input id="esr_mm_hr" type="number" step="1" />
+            </div>
+            <div class="field">
+              <label for="crp_mg_l">CRP (mg/L)</label>
+              <input id="crp_mg_l" type="number" step="0.1" />
+            </div>
+          </div>
+          <div class="field-grid">
+            <div class="field">
               <label for="calcium_supplement">Calcium supplement?</label>
               <input id="calcium_supplement" type="checkbox" />
             </div>
@@ -1804,8 +1852,19 @@
       "serum_testosterone_ng_dl",
       "osteocalcin_ng_ml",
       "bone_alk_phos_u_l",
+      "total_alk_phos_u_l",
       "ctx_ng_ml",
       "p1np_ng_ml",
+      "tsh_u_iu_ml",
+      "free_t4_ng_dl",
+      "serum_glucose_mg_dl",
+      "morning_cortisol_ug_dl",
+      "lh_iu_l",
+      "fsh_iu_l",
+      "estradiol_pg_ml",
+      "prolactin_ng_ml",
+      "esr_mm_hr",
+      "crp_mg_l",
       "milk_portions",
       "yogurt_portions",
       "cheese_portions",
@@ -1870,8 +1929,19 @@
       setInputValue("serum_testosterone_ng_dl", input.serum_testosterone_ng_dl);
       setInputValue("osteocalcin_ng_ml", input.osteocalcin_ng_ml);
       setInputValue("bone_alk_phos_u_l", input.bone_alk_phos_u_l);
+      setInputValue("total_alk_phos_u_l", input.total_alk_phos_u_l);
       setInputValue("ctx_ng_ml", input.ctx_ng_ml);
       setInputValue("p1np_ng_ml", input.p1np_ng_ml);
+      setInputValue("tsh_u_iu_ml", input.tsh_u_iu_ml);
+      setInputValue("free_t4_ng_dl", input.free_t4_ng_dl);
+      setInputValue("serum_glucose_mg_dl", input.serum_glucose_mg_dl);
+      setInputValue("morning_cortisol_ug_dl", input.morning_cortisol_ug_dl);
+      setInputValue("lh_iu_l", input.lh_iu_l);
+      setInputValue("fsh_iu_l", input.fsh_iu_l);
+      setInputValue("estradiol_pg_ml", input.estradiol_pg_ml);
+      setInputValue("prolactin_ng_ml", input.prolactin_ng_ml);
+      setInputValue("esr_mm_hr", input.esr_mm_hr);
+      setInputValue("crp_mg_l", input.crp_mg_l);
       setCheckboxValue("calcium_supplement", input.calcium_supplement);
       setInputValue("calcium_supplement_mg_per_day", input.calcium_supplement_mg_per_day);
       setCheckboxValue("vitamin_d_supplement", input.vitamin_d_supplement);
@@ -2055,8 +2125,8 @@
       const rows = [
         {
           priority: "Core",
-          labs: "25-OH vitamin D, serum Ca, phosphate, creatinine/eGFR, ALP",
-          why: "Baseline metabolic bone and renal screen before starting or changing anti-osteoporotic therapy.",
+          labs: "25-OH vitamin D, serum Ca, phosphate, Mg, creatinine/eGFR, urea, total ALP",
+          why: "Baseline mineral-bone and renal screen before starting or changing anti-osteoporotic therapy.",
         },
         {
           priority: "Core",
@@ -2064,25 +2134,38 @@
           why: "Add when Ca/Vit D are abnormal, osteoporosis is severe, or secondary hyperparathyroidism is possible.",
         },
         {
+          priority: "Core",
+          labs: "Bone turnover markers: CTX and P1NP (± bone ALP / osteocalcin depending on lab availability)",
+          why: "Useful baseline before therapy and repeat at ~3-6 months to support adherence/response; especially helpful after switch, fracture on therapy, or denosumab transition.",
+        },
+        {
           priority: "Conditional",
-          labs: "TSH ± free T4, CBC/ESR/CRP, liver profile, protein electrophoresis as clinically indicated",
-          why: "Secondary-cause screen when risk is high, fracture pattern is atypical, or clinical context suggests systemic disease.",
+          labs: "Secondary-cause screen: CBC, ESR/CRP, liver profile, TSH ± free T4, glucose/HbA1c, SPEP ± serum free light chains, celiac screen, 24h urine calcium",
+          why: "Consider when osteoporosis is severe/early, fractures are multiple or atypical, BMD is discordant, or clinical context suggests systemic disease/malabsorption/myeloma.",
         },
       ];
 
       if (sex === "male") {
         rows.push({
           priority: "Conditional",
-          labs: "Morning total testosterone ± SHBG/LH/FSH",
-          why: "Men with osteoporosis should be screened for hypogonadism, especially with fragility fracture or low BMD.",
+          labs: "Morning total testosterone ± SHBG, LH, FSH, prolactin",
+          why: "Men with osteoporosis should be screened for hypogonadism; LH/FSH help distinguish primary vs secondary hypogonadism.",
+        });
+      }
+
+      if (sex === "female") {
+        rows.push({
+          priority: "Conditional",
+          labs: "Estradiol (E2), FSH/LH when menopausal status is unclear or premature ovarian insufficiency is possible",
+          why: "Useful in younger/perimenopausal women, amenorrhea, early menopause, or unexplained low BMD.",
         });
       }
 
       if (highOrMore || activeTreatment || formInput.fractures_during_current_therapy) {
         rows.push({
           priority: "Monitoring",
-          labs: "CTX and P1NP",
-          why: "Baseline and 3-6 month follow-up markers can help assess adherence/response after therapy start, switch, or fracture on treatment.",
+          labs: "Repeat CTX/P1NP at ~3 months after oral bisphosphonate or anabolic start; ~3-6 months after IV/denosumab/transition depending on plan",
+          why: "Response pattern helps detect non-adherence, poor absorption, inadequate anabolic response, or rebound turnover.",
         });
       }
 
@@ -2105,8 +2188,8 @@
       if (glucocorticoidSignal || formInput.secondary_osteoporosis || formInput.rheumatoid_arthritis) {
         rows.push({
           priority: "Conditional",
-          labs: "HbA1c/glucose, renal profile, vitamin D/Ca/PTH, disease-specific secondary-cause tests",
-          why: "Glucocorticoids and inflammatory/secondary osteoporosis contexts raise risk and can alter treatment choice.",
+          labs: "Cortisol testing if endogenous Cushing's is suspected; renal profile, vitamin D/Ca/PTH, HbA1c/glucose, inflammatory markers and disease-specific tests",
+          why: "Glucocorticoid exposure, inflammatory disease and secondary osteoporosis contexts raise risk and can alter treatment choice.",
         });
       }
 
@@ -2504,8 +2587,19 @@
         serum_testosterone_ng_dl: val("serum_testosterone_ng_dl"),
         osteocalcin_ng_ml: val("osteocalcin_ng_ml"),
         bone_alk_phos_u_l: val("bone_alk_phos_u_l"),
+        total_alk_phos_u_l: val("total_alk_phos_u_l"),
         ctx_ng_ml: val("ctx_ng_ml"),
         p1np_ng_ml: val("p1np_ng_ml"),
+        tsh_u_iu_ml: val("tsh_u_iu_ml"),
+        free_t4_ng_dl: val("free_t4_ng_dl"),
+        serum_glucose_mg_dl: val("serum_glucose_mg_dl"),
+        morning_cortisol_ug_dl: val("morning_cortisol_ug_dl"),
+        lh_iu_l: val("lh_iu_l"),
+        fsh_iu_l: val("fsh_iu_l"),
+        estradiol_pg_ml: val("estradiol_pg_ml"),
+        prolactin_ng_ml: val("prolactin_ng_ml"),
+        esr_mm_hr: val("esr_mm_hr"),
+        crp_mg_l: val("crp_mg_l"),
         calcium_supplement: val("calcium_supplement"),
         calcium_supplement_mg_per_day: val("calcium_supplement_mg_per_day"),
         vitamin_d_supplement: val("vitamin_d_supplement"),
