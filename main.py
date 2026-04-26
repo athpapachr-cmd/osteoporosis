@@ -35,10 +35,18 @@ ROOT_DIR = Path(__file__).resolve().parent
 STATIC_DIR = ROOT_DIR / "static"
 SOURCE_INDEX = ROOT_DIR / "index.html"
 TARGET_INDEX = STATIC_DIR / "index.html"
+SOURCE_QA_HANDOUT = ROOT_DIR / "osteoporosis-qa-handout.html"
+TARGET_QA_HANDOUT = STATIC_DIR / "osteoporosis-qa-handout.html"
+SOURCE_HANDOUT_ASSETS = ROOT_DIR / "handout-assets"
+TARGET_HANDOUT_ASSETS = STATIC_DIR / "handout-assets"
 try:
     STATIC_DIR.mkdir(parents=True, exist_ok=True)
     if SOURCE_INDEX.exists():
         shutil.copyfile(SOURCE_INDEX, TARGET_INDEX)
+    if SOURCE_QA_HANDOUT.exists():
+        shutil.copyfile(SOURCE_QA_HANDOUT, TARGET_QA_HANDOUT)
+    if SOURCE_HANDOUT_ASSETS.exists():
+        shutil.copytree(SOURCE_HANDOUT_ASSETS, TARGET_HANDOUT_ASSETS, dirs_exist_ok=True)
 except OSError:
     pass
 
@@ -303,6 +311,9 @@ class OsteoInput(BaseModel):
     rheumatoid_arthritis: bool = False
     secondary_osteoporosis: bool = False
     high_alcohol_intake: bool = False
+    prior_vte_or_thrombophilia: bool = False
+    high_breast_cancer_risk: bool = False
+    mht_contraindication: bool = False
 
     # Mineral metabolism & bone labs (old names kept for backwards compatibility)
     serum_calcium: Optional[float] = Field(
@@ -375,6 +386,8 @@ class OsteoInput(BaseModel):
 
     vitamin_k2_supplement: bool = False
     vitamin_k2_ug_per_day: Optional[float] = None
+    omega3_supplement: bool = False
+    omega3_epa_dha_g_per_day: Optional[float] = None
 
     fortibone_supplement: bool = False
     colabone_supplement: bool = False
@@ -995,6 +1008,31 @@ def build_patient_handout_html(
         "risk_word": "risk" if is_en else "κίνδυνος",
         "patient_explanation": "Patient explanation" if is_en else "Επεξήγηση για ασθενή",
         "key_guidance": "Key guidance" if is_en else "Κύριες οδηγίες",
+        "bone_building_title": (
+            "How lifestyle support may help bone"
+            if is_en
+            else "Πώς βοηθούν άσκηση και συμπληρώματα"
+        ),
+        "bone_building_intro": (
+            "Bone is living tissue. Exercise, nutrition and supplements can help when they correct deficits and provide safe mechanical stimulus, but they do not replace medication when fracture risk is high."
+            if is_en
+            else "Το οστό είναι ζωντανός ιστός. Η άσκηση, η διατροφή και τα συμπληρώματα μπορούν να βοηθήσουν όταν διορθώνουν ελλείψεις και δίνουν ασφαλές μηχανικό ερέθισμα, αλλά δεν αντικαθιστούν τη φαρμακευτική αγωγή όταν ο κίνδυνος κατάγματος είναι υψηλός."
+        ),
+        "bone_building_items": (
+            [
+                "Resistance + balance work: tells bone and muscle where strength is needed.",
+                "Vitamin D3: supports calcium absorption and vitamin D sufficiency.",
+                "Vitamin K2: adjunctive support for osteocalcin/mineralization biology.",
+                "Collagen peptides/protein: support the organic bone matrix when nutrition is inadequate.",
+            ]
+            if is_en
+            else [
+                "Άσκηση με αντίσταση + ισορροπία: δίνει σήμα σε μύες και οστά ότι χρειάζεται ενίσχυση.",
+                "Βιταμίνη D3: βοηθά την απορρόφηση ασβεστίου και τη διατήρηση επάρκειας βιταμίνης D.",
+                "Βιταμίνη K2: υποστηρικτικά, βοηθά τη βιολογία της οστεοκαλσίνης και της οστικής μήτρας.",
+                "Κολλαγόνο πεπτίδια/πρωτεΐνη: υποστηρίζουν τον οργανικό «οπλισμό» του οστού όταν η διατροφή δεν επαρκεί.",
+            ]
+        ),
         "no_suggestions": "No suggestions recorded." if is_en else "Δεν υπάρχουν καταγεγραμμένες προτάσεις.",
         "follow_up_plan": "Follow-up plan" if is_en else "Πλάνο παρακολούθησης",
         "no_follow_up": (
@@ -1093,6 +1131,7 @@ def build_patient_handout_html(
         <div class="narrative">{escape(patient_elaboration.strip())}</div>
       </div>
         """
+    bone_building_html = "".join(f"<li>{escape(item)}</li>" for item in texts["bone_building_items"])
     html = f"""
     <!DOCTYPE html>
     <html lang="{texts["lang"]}">
@@ -1186,6 +1225,11 @@ def build_patient_handout_html(
       <div class="section">
         <h2>{texts["key_guidance"]}</h2>
         <ul>{suggestions_html or f"<li>{texts['no_suggestions']}</li>"}</ul>
+      </div>
+      <div class="section">
+        <h2>{texts["bone_building_title"]}</h2>
+        <p>{texts["bone_building_intro"]}</p>
+        <ul>{bone_building_html}</ul>
       </div>
       <div class="section">
         <h2>{texts["follow_up_plan"]}</h2>
@@ -1453,6 +1497,17 @@ EVIDENCE_REGISTRY: Dict[str, str] = {
     "VERO_2018": "Kendler et al. Lancet 2018;391:230-240 (teriparatide vs risedronate in severe osteoporosis).",
     "FRAME_2016": "Cosman et al. N Engl J Med 2016;375:1532-1543 (romosozumab then denosumab).",
     "DATA_SWITCH_2015": "Leder et al. Lancet 2015;386:1147-1155 (teriparatide/denosumab sequencing and BMD).",
+    "BHOF_CLIN_GUIDE_2022": "LeBoff et al. Osteoporos Int 2022;33:2049-2102 (BHOF Clinician's Guide: treatment thresholds, monitoring, medication selection and holidays).",
+    "CCJM_BTM_BP_2023": "Ashcherkin et al. Cleve Clin J Med 2023;90:26-32 (bone turnover markers to monitor oral bisphosphonate response/adherence; DOI: 10.3949/ccjm.90a.22002).",
+    "JOS_BTM_GUIDE_2019": "Nishizawa et al. Clin Chim Acta 2019;498:101-107 (Japan Osteoporosis Society BTM guide: BTM selection and short-term response monitoring; DOI: 10.1016/j.cca.2019.08.012).",
+    "MORE_RALOXIFENE_1999": "Ettinger et al. JAMA 1999;282:637-645 (MORE trial: raloxifene reduced vertebral fractures in postmenopausal osteoporosis; no clear hip/nonvertebral fracture benefit).",
+    "LIFTMOR_2018": "Watson et al. J Bone Miner Res 2018;33:211-220 (LIFTMOR trial: supervised high-intensity resistance and impact training improved BMD/function in postmenopausal low bone mass).",
+    "K2_META_2022": "Ma et al. Front Public Health 2022 / meta-analysis of vitamin K2 RCTs in postmenopausal osteoporosis (supportive adjunct; heterogeneous evidence).",
+    "COLLAGEN_RCT_2018": "Koenig et al. Nutrients 2018;10:97 and follow-up data (specific collagen peptides improved BMD/BTMs as adjunctive nutritional support).",
+    "STEADI_2023": "CDC STEADI Compendium 2023 (falls-risk screening, multifactorial fall prevention and exercise resources for older adults).",
+    "EXERCISE_META_2020": "Front Physiol 2020 systematic review/meta-analysis (exercise training and BMD in postmenopausal women; resistance/impact/balance components).",
+    "WALKING_SUN_BONE_2025": "Recent 2025 public-health/osteoporosis literature on walking, sunlight exposure and lifestyle bone-health interventions (supportive, not medication-replacement evidence).",
+    "OMEGA3_BONE_REVIEW_2025": "Recent 2025 review evidence on omega-3 and bone metabolism (anti-inflammatory adjunct; clinical fracture data remain limited).",
 }
 
 
@@ -1494,7 +1549,31 @@ def attach_evidence_to_suggestions(suggestions: List[Suggestion]) -> None:
             ids.add("NOGG_2024")
         if "oral bisphosphonate" in t and ("high fracture risk" in t or "high-risk" in t):
             ids.update({"MCCLUNG_HIP_2001", "FIT_COST_2001"})
-        if "anabolic-first" in t or "very-high-risk pathway" in t:
+        if "bhof" in t or "clinician's guide" in t or "clinician guide" in t:
+            ids.add("BHOF_CLIN_GUIDE_2022")
+        if "bone turnover marker" in t or "btm" in t or "ctx" in t or "p1np" in t or "pinp" in t:
+            ids.update({"CCJM_BTM_BP_2023", "JOS_BTM_GUIDE_2019"})
+        if "oral bisphosphonate" in t and ("adherence" in t or "response" in t):
+            ids.add("CCJM_BTM_BP_2023")
+        if "raloxifene" in t or "serm" in t:
+            ids.add("MORE_RALOXIFENE_1999")
+        if "fracture-liaison" in t or "secondary prevention" in t:
+            ids.add("BHOF_CLIN_GUIDE_2022")
+        if "specialist" in t or "advanced osteoporosis review" in t:
+            ids.add("NOGG_2024")
+        if "exercise" in t or "άσκηση" in t or "resistance" in t or "balance" in t:
+            ids.add("LIFTMOR_2018")
+        if "vitamin k2" in t or "k2" in t:
+            ids.add("K2_META_2022")
+        if "collagen" in t or "κολλαγ" in t:
+            ids.add("COLLAGEN_RCT_2018")
+        if "falls" in t or "πτώσ" in t:
+            ids.add("STEADI_2023")
+        if "walking" in t or "περπάτη" in t or "sun" in t or "ήλιο" in t:
+            ids.add("WALKING_SUN_BONE_2025")
+        if "omega-3" in t or "omega 3" in t or "ωμέγα" in t:
+            ids.add("OMEGA3_BONE_REVIEW_2025")
+        if "anabolic-first" in t or "very-high-risk pathway" in t or "anabolic option" in t:
             ids.update({"ARCH_2017", "VERO_2018"})
         if "romosozumab" in t and "denosumab" in t:
             ids.add("FRAME_2016")
@@ -1869,6 +1948,18 @@ def add_current_therapy_suggestions(
                 ),
             )
         )
+        if ttype == CurrentTherapyType.oral_bisphosphonate:
+            suggestions.append(
+                Suggestion(
+                    category="current_therapy",
+                    text=(
+                        "Oral bisphosphonate monitoring: consider baseline CTX/P1NP and repeat at "
+                        "~3-6 months. A meaningful fall in resorption/formation markers can support "
+                        "adherence and pharmacodynamic response; absent change should trigger review "
+                        "of administration technique, adherence, absorption and secondary causes."
+                    ),
+                )
+            )
         suggestions.append(
             Suggestion(
                 category="current_therapy",
@@ -2705,6 +2796,16 @@ def build_suggestions(
     effective_high_falls_risk = data.high_falls_risk or morse_high
     creat = data.serum_creatinine_mg_dl
     urea = data.serum_urea_mg_dl
+    t_scores = [
+        v
+        for v in [
+            data.spine_t_score,
+            data.total_hip_t_score,
+            data.femoral_neck_t_score,
+        ]
+        if v is not None
+    ]
+    min_t = min(t_scores) if t_scores else None
 
     # Pharmacologic / fracture risk
     if risk == RiskCategory.very_high:
@@ -2776,9 +2877,117 @@ def build_suggestions(
             Suggestion(
                 category="evidence_anchor",
                 text=(
+                    "BHOF Clinician's Guide anchor: pharmacologic treatment is supported for "
+                    "osteoporosis-range T-score, hip/vertebral fracture, and osteopenia with high "
+                    "FRAX probability; monitoring should reassess fracture risk, BMD and treatment "
+                    "tolerability after initiation or therapy change."
+                ),
+            )
+        )
+        suggestions.append(
+            Suggestion(
+                category="evidence_anchor",
+                text=(
                     "Health-system impact anchor: FIT economic analysis (Chrischilles et al, Osteoporos Int 2001) "
                     "showed alendronate reduced fracture-related healthcare utilization and lowered hip-fracture "
                     "care costs versus placebo."
+                ),
+            )
+        )
+
+    if data.prior_fragility_fractures or data.vertebral_fracture_count or data.hip_fracture_count:
+        suggestions.append(
+            Suggestion(
+                category="secondary_prevention",
+                text=(
+                    "Fragility fracture history should trigger secondary prevention: confirm vertebral/hip "
+                    "fracture details, address falls and nutrition, and use a fracture-liaison-service style "
+                    "workflow so osteoporosis assessment, treatment and follow-up are not missed."
+                ),
+            )
+        )
+
+    if (
+        min_t is not None
+        and min_t <= -3.5
+        or data.vertebral_fracture_count >= 2
+        or data.hip_fracture_count >= 1
+        or risk == RiskCategory.very_high
+    ):
+        suggestions.append(
+            Suggestion(
+                category="specialist_referral",
+                text=(
+                    "Specialist/advanced osteoporosis review is reasonable because of very-low BMD, "
+                    "hip/multiple vertebral fracture pattern, very-high-risk classification, or possible "
+                    "need for anabolic/sequential therapy."
+                ),
+            )
+        )
+
+    # BTM-informed nuance: useful for clinician discussion, not a formal FRAX/guideline criterion.
+    low_ctx_pattern = data.ctx_ng_ml is not None and data.ctx_ng_ml <= 0.25
+    low_balp_pattern = data.bone_alk_phos_u_l is not None and data.bone_alk_phos_u_l <= 15
+    spine_dominant_pattern = (
+        (data.spine_t_score is not None and data.spine_t_score <= -2.5)
+        or FractureType.vertebral in data.prior_fragility_fractures
+        or data.vertebral_fracture_count >= 1
+    )
+    hip_dominant_pattern = (
+        FractureType.hip in data.prior_fragility_fractures
+        or data.hip_fracture_count >= 1
+        or (data.frax_hip is not None and data.frax_hip >= 4.5)
+        or (data.total_hip_t_score is not None and data.total_hip_t_score <= -2.5)
+    )
+    btm_low_turnover_candidate = (
+        data.sex == Sex.female
+        and data.age < 70
+        and low_ctx_pattern
+        and low_balp_pattern
+        and spine_dominant_pattern
+        and not hip_dominant_pattern
+    )
+    if btm_low_turnover_candidate:
+        if data.prior_vte_or_thrombophilia:
+            suggestions.append(
+                Suggestion(
+                    category="btm_guided",
+                    text=(
+                        "BTM-informed nuance: CTX and bone ALP appear low/low-normal in a younger "
+                        "postmenopausal, spine-dominant pattern, but prior VTE/thrombophilia makes "
+                        "raloxifene/SERM unattractive. If fracture risk is high/very high, discuss "
+                        "an anabolic option; if close to menopause and no MHT contraindication, MHT may "
+                        "be a specialist/shared-decision alternative. This is not a formal FRAX criterion."
+                    ),
+                )
+            )
+        else:
+            breast_clause = (
+                " The reported high breast-cancer-risk context may further support discussing a SERM profile."
+                if data.high_breast_cancer_risk
+                else ""
+            )
+            suggestions.append(
+                Suggestion(
+                    category="btm_guided",
+                    text=(
+                        "BTM-informed nuance: CTX and bone ALP appear low/low-normal with a "
+                        "spine-dominant, not hip-dominant risk pattern in a younger postmenopausal "
+                        "woman. Raloxifene/SERM may be a reasonable discussion option when VTE risk "
+                        "is absent, because its strongest fracture evidence is vertebral rather than hip."
+                        f"{breast_clause} Confirm fasting/timing and local lab reference ranges; BTMs "
+                        "support decision-making but are not yet formal guideline criteria for initial drug selection."
+                    ),
+                )
+            )
+    elif data.current_therapy_type == CurrentTherapyType.raloxifene or data.high_breast_cancer_risk:
+        suggestions.append(
+            Suggestion(
+                category="pharmacologic",
+                text=(
+                    "Raloxifene/SERM role: mainly vertebral-fracture risk reduction in selected "
+                    "postmenopausal women, especially when hip-fracture risk is not dominant and "
+                    "VTE risk is absent. It is not preferred for high hip-fracture risk."
                 ),
             )
         )
@@ -2906,7 +3115,13 @@ def build_suggestions(
             )
 
     # Micronutrients & collagen supplements
-    if data.magnesium_supplement or data.zinc_supplement or data.boron_supplement or data.vitamin_k2_supplement:
+    if (
+        data.magnesium_supplement
+        or data.zinc_supplement
+        or data.boron_supplement
+        or data.vitamin_k2_supplement
+        or data.omega3_supplement
+    ):
         parts = []
         if data.magnesium_supplement:
             dose = (
@@ -2936,14 +3151,22 @@ def build_suggestions(
                 else ""
             )
             parts.append(f"vitamin K2{dose}")
+        if data.omega3_supplement:
+            dose = (
+                f" (~{data.omega3_epa_dha_g_per_day:.1f} g EPA/DHA/day)"
+                if data.omega3_epa_dha_g_per_day
+                else ""
+            )
+            parts.append(f"omega-3{dose}")
         combo = ", ".join(parts)
         suggestions.append(
             Suggestion(
                 category="micronutrients",
                 text=(
                     f"Supportive micronutrient supplementation reported ({combo}). These may support "
-                    "general bone and metabolic health but do not replace guideline-directed "
-                    "osteoporosis pharmacotherapy when indicated."
+                    "general bone and metabolic health. Magnesium, zinc and boron are best framed as "
+                    "deficiency/nutrition optimization; K2 and omega-3 remain adjunctive support rather than "
+                    "a substitute for guideline-directed osteoporosis pharmacotherapy when indicated."
                 ),
             )
         )
@@ -2971,7 +3194,8 @@ def build_suggestions(
                 category="collagen",
                 text=(
                     f"Collagen-based supplementation reported ({label}). Frame this as an adjunct to, "
-                    "not a substitute for, established anti-fracture pharmacotherapy and lifestyle measures."
+                    "not a substitute for, established anti-fracture pharmacotherapy and lifestyle measures; "
+                    "small RCT/follow-up data support possible BMD/BTM benefit with specific collagen peptides."
                 ),
             )
         )
@@ -2982,8 +3206,9 @@ def build_suggestions(
             Suggestion(
                 category="lifestyle",
                 text=(
-                    "Encourage structured, safe exercise including resistance training and "
-                    "balance work, tailored to the patient's capacity and comorbidities."
+                    "Encourage structured, safe exercise: progressive resistance (sit-to-stand/squat, "
+                    "hip hinge/deadlift pattern, rows/push work), balance training, and carefully selected "
+                    "impact/heel-drop work only when fracture/fall risk and technique allow."
                 ),
             )
         )
@@ -2993,8 +3218,8 @@ def build_suggestions(
                 category="lifestyle",
                 text=(
                     "Current exercise level is at least moderate. Maintain or refine the "
-                    "program with emphasis on resistance and balance training for "
-                    "fracture prevention."
+                    "program with progressive resistance, posture/extensor work, balance drills, "
+                    "and supervised impact loading when appropriate for fracture prevention."
                 ),
             )
         )
@@ -3198,6 +3423,11 @@ def determine_follow_up_steps(data: OsteoInput, risk: RiskCategory) -> List[Foll
         f"Monitor labs ({', '.join(labs)}) every ~6 months in active treatment phases.",
         "0-6 months",
     )
+    if data.current_therapy_type in [CurrentTherapyType.oral_bisphosphonate, CurrentTherapyType.iv_bisphosphonate]:
+        add_step(
+            "For bisphosphonate response/adherence, consider CTX and/or P1NP at baseline and ~3-6 months; use the same lab/assay and similar morning fasting conditions when possible.",
+            "3-6 months",
+        )
     if high_dose_gc:
         add_step(
             "High-dose glucocorticoid exposure pattern present; prioritize early reassessment of fracture risk and bone-protective plan.",
@@ -4269,6 +4499,12 @@ def build_treatment_recommendation_context(stored: OsteoStoredAssessment) -> str
         lab_notes.append(f"CRP {input_data.crp_mg_l:.1f} mg/L")
     if laboratory := ", ".join(lab_notes):
         lines.append("Recent labs: " + laboratory + ".")
+    if input_data.prior_vte_or_thrombophilia:
+        lines.append("SERM safety context: prior VTE/thrombophilia reported.")
+    if input_data.high_breast_cancer_risk:
+        lines.append("SERM context: high breast cancer risk reported.")
+    if input_data.mht_contraindication:
+        lines.append("MHT context: contraindication to menopausal hormone therapy reported.")
     if input_data.t_score_history:
         latest = input_data.t_score_history[-1]
         if latest.spine_total is not None or latest.total_hip is not None:
@@ -4308,6 +4544,16 @@ def build_treatment_recommendation_context(stored: OsteoStoredAssessment) -> str
         "(risedronate lowered hip fractures in women with confirmed osteoporosis) and "
         "Chrischilles et al Osteoporos Int 2001 FIT VFA economic analysis "
         "(alendronate lowered fracture-related healthcare utilization/cost burden)."
+    )
+    lines.append(
+        "BHOF Clinician's Guide 2022 anchor: treat osteoporosis-range T-score, hip/vertebral fracture, "
+        "or osteopenia with high FRAX probability; perform BMD monitoring about 1-2 years after "
+        "starting/changing therapy, with more frequent review for multiple fractures, older age or very low BMD."
+    )
+    lines.append(
+        "Bone-turnover-marker anchors: Cleveland Clinic Journal of Medicine 2023 and Japan Osteoporosis "
+        "Society 2019 support CTX/P1NP (same assay, similar timing; morning fasting especially for CTX) "
+        "for short-term monitoring of oral bisphosphonate adherence/response and treatment changes."
     )
     lines.append(
         "Sequential-treatment anchor after teriparatide: real-life J Clin Med 2025 data suggest "

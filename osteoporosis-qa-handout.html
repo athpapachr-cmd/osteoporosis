@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Δυνατά Οστά Φυσικά - Οδηγός Ασθενούς</title>
+  <style>
+    :root {
+      --ink:#102033; --muted:#50627a; --line:#dbe7f3; --paper:#fff; --soft:#f6f9fc;
+      --blue:#2563eb; --teal:#0f766e; --green:#15803d; --orange:#ea580c; --violet:#7c3aed;
+    }
+    * { box-sizing:border-box; }
+    body { margin:0; background:linear-gradient(135deg,#eef6ff,#f8fafc 45%,#ecfeff); color:var(--ink); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; line-height:1.55; }
+    .page { max-width:1080px; margin:24px auto; background:var(--paper); border-radius:28px; box-shadow:0 24px 70px rgba(15,23,42,.16); overflow:hidden; }
+    header { padding:38px clamp(24px,4vw,48px); background:radial-gradient(circle at 88% 20%,rgba(20,184,166,.28),transparent 30%),linear-gradient(135deg,#0f172a,#1d4ed8 62%,#0f766e); color:#fff; display:grid; grid-template-columns:minmax(0,1fr) minmax(260px,.9fr); gap:28px; align-items:center; }
+    header h1 { margin:0 0 10px; font-size:clamp(32px,5vw,54px); line-height:1.02; letter-spacing:-.05em; }
+    header p { margin:0; color:#dbeafe; font-size:18px; }
+    .hero-card { background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.22); border-radius:24px; padding:18px; }
+    .toolbar { display:flex; gap:10px; flex-wrap:wrap; padding:16px clamp(24px,4vw,48px); border-bottom:1px solid var(--line); background:rgba(255,255,255,.95); position:sticky; top:0; z-index:2; }
+    button,.button { border:0; border-radius:999px; padding:10px 16px; background:var(--blue); color:#fff; font-weight:800; cursor:pointer; text-decoration:none; font-size:14px; }
+    .button.secondary { background:#e2e8f0; color:var(--ink); }
+    main { padding:30px clamp(24px,4vw,48px) 46px; }
+    h2 { margin:36px 0 14px; font-size:clamp(24px,3vw,32px); letter-spacing:-.04em; }
+    h3 { margin:0 0 10px; font-size:18px; }
+    p { margin:8px 0; }
+    a { color:#1d4ed8; font-weight:800; }
+    .notice { border:1px solid #bfdbfe; background:#eff6ff; border-radius:18px; padding:16px 18px; color:#1e3a8a; margin-bottom:24px; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(245px,1fr)); gap:16px; }
+    .card { border:1px solid var(--line); border-radius:22px; padding:18px; background:var(--soft); min-height:100%; }
+    .card.white { background:#fff; }
+    .card p { color:var(--muted); }
+    .icon-title { display:flex; align-items:center; gap:10px; }
+    .badge { display:inline-flex; align-items:center; justify-content:center; min-width:34px; height:34px; border-radius:12px; color:#fff; font-weight:900; background:var(--blue); }
+    .badge.green{background:var(--green)} .badge.orange{background:var(--orange)} .badge.violet{background:var(--violet)} .badge.teal{background:var(--teal)}
+    .visual { border:1px solid var(--line); background:linear-gradient(180deg,#fff,#f8fbff); border-radius:24px; padding:16px; margin:16px 0; overflow:hidden; }
+    .visual img { width:100%; max-height:360px; object-fit:contain; display:block; border-radius:18px; background:#fff; }
+    .wide-img img { max-height:300px; object-fit:cover; }
+    svg { max-width:100%; height:auto; display:block; }
+    .warning { border-left:5px solid var(--orange); background:#fff7ed; padding:14px 16px; border-radius:16px; color:#7c2d12; }
+    .quote { border-left:5px solid var(--teal); background:#ecfeff; padding:16px 18px; border-radius:16px; font-size:18px; }
+    table { width:100%; border-collapse:collapse; margin:14px 0; font-size:14px; }
+    th,td { text-align:left; vertical-align:top; padding:10px 12px; border-bottom:1px solid var(--line); }
+    th { background:#f1f5f9; font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); }
+    .exercise-grid,.image-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:16px; margin:14px 0; }
+    .exercise-card,.image-card { border:1px solid var(--line); border-radius:20px; background:#fff; overflow:hidden; }
+    .exercise-card img { width:100%; height:160px; object-fit:cover; background:#f8fafc; }
+    .image-card img { width:100%; height:220px; object-fit:contain; background:#fff; }
+    .exercise-card div,.image-card div { padding:12px; }
+    .exercise-card p,.image-card p { font-size:13px; color:var(--muted); }
+    .timeline { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:16px 0; }
+    .time { border-radius:20px; padding:16px; background:#f8fafc; border:1px solid var(--line); }
+    .time b { font-size:24px; color:var(--blue); display:block; }
+    .pill { display:inline-block; padding:4px 9px; border-radius:999px; background:#e0f2fe; color:#075985; font-weight:800; font-size:12px; }
+    .refs { margin-top:36px; padding-top:18px; border-top:1px solid var(--line); font-size:10.5px; color:#475569; columns:2; column-gap:24px; }
+    .refs p { break-inside:avoid; margin:0 0 5px; }
+    .footer-note { margin-top:16px; color:var(--muted); font-size:12px; }
+    @media(max-width:760px){ header{grid-template-columns:1fr}.timeline{grid-template-columns:1fr}.refs{columns:1} }
+    @media print { body{background:#fff}.page{margin:0;border-radius:0;box-shadow:none;max-width:none}.toolbar{display:none}header{padding:24px 30px}main{padding:22px 30px}h2{page-break-after:avoid}.card,.visual,.warning,table,.exercise-card,.image-card{break-inside:avoid}.refs{font-size:8.5px;columns:2}.exercise-card img{height:120px}.image-card img{height:150px} }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <div>
+        <h1>Δυνατά Οστά Φυσικά</h1>
+        <p>Οδηγός ασθενούς για άσκηση, διατροφή, συμπληρώματα και ασφαλή παρακολούθηση στην οστεοπόρωση.</p>
+      </div>
+      <div class="hero-card">
+        <svg viewBox="0 0 420 250" role="img" aria-label="Το οστό ως ζωντανό κτίριο">
+          <rect x="20" y="170" width="380" height="36" rx="18" fill="#dbeafe"/>
+          <path d="M95 176 L95 90 L210 40 L325 90 L325 176" fill="#eff6ff" stroke="#bfdbfe" stroke-width="5"/>
+          <rect x="128" y="112" width="48" height="64" rx="6" fill="#93c5fd"/>
+          <rect x="196" y="112" width="48" height="64" rx="6" fill="#5eead4"/>
+          <rect x="264" y="112" width="28" height="64" rx="6" fill="#fcd34d"/>
+          <circle cx="128" cy="68" r="22" fill="#22c55e"/><text x="128" y="74" font-size="24" text-anchor="middle" fill="white" font-weight="800">+</text>
+          <circle cx="292" cy="68" r="22" fill="#ef4444"/><text x="292" y="75" font-size="24" text-anchor="middle" fill="white" font-weight="800">−</text>
+          <text x="210" y="226" font-size="20" text-anchor="middle" fill="#dbeafe" font-weight="800">Το οστό ανακατασκευάζεται κάθε μέρα</text>
+        </svg>
+      </div>
+    </header>
+    <div class="toolbar">
+      <button onclick="window.print()">Εκτύπωση / αποθήκευση ως PDF</button>
+      <a class="button secondary" href="/">Επιστροφή στο Osteoporosis Cockpit</a>
+      <a class="button secondary" href="https://www.osteoporosis.foundation/educational-hub/topic/calcium-calculator" target="_blank" rel="noopener noreferrer">IOF Calcium Calculator</a>
+    </div>
+    <main>
+      <div class="notice"><strong>Σημαντικό:</strong> Ο οδηγός είναι ενημερωτικός. Δεν αντικαθιστά ιατρική εκτίμηση, DXA/εργαστηριακό έλεγχο ή φαρμακευτική αγωγή όταν ο κίνδυνος κατάγματος είναι υψηλός.</div>
+
+      <h2>1. Η βασική ιδέα: το οστό είναι ζωντανό κτίριο</h2>
+      <div class="visual"><img src="handout-assets/bone-remodeling.jpg" alt="Bone remodeling with osteoclasts and osteoblasts" /></div>
+      <div class="grid">
+        <div class="card"><div class="icon-title"><span class="badge orange">−</span><h3>Οστεοκλάστες</h3></div><p>Αφαιρούν παλιό ή φθαρμένο οστό. Είναι οι «εργάτες κατεδάφισης».</p></div>
+        <div class="card"><div class="icon-title"><span class="badge green">+</span><h3>Οστεοβλάστες</h3></div><p>Χτίζουν νέο οστό και οργανική μήτρα. Είναι οι «εργάτες οικοδομής».</p></div>
+        <div class="card"><div class="icon-title"><span class="badge violet">=</span><h3>Ισορροπία</h3></div><p>Στόχος μας είναι να υποστηρίζουμε τους «χτίστες», να αποφεύγουμε πτώσεις και να κρατάμε το οστό λειτουργικά δυνατό.</p></div>
+      </div>
+
+      <h2>2. Τα 4 κλειδιά για δυνατά οστά</h2>
+      <div class="grid">
+        <div class="card white"><h3>Άσκηση με αντίσταση και ασφαλή φόρτιση</h3><p>Δίνει μηχανικό σήμα στο οστό: «εδώ χρειάζεται ενίσχυση». Το περπάτημα βοηθά, αλλά συνήθως χρειάζεται και προοδευτική αντίσταση.</p></div>
+        <div class="card white"><h3>Ασβέστιο + D3 + K2 + ιχνοστοιχεία</h3><p>Το ασβέστιο είναι δομικό υλικό. Η D3 βοηθά την απορρόφηση και η K2 υποστηρίζει πρωτεΐνες της οστικής μήτρας. Η διατύπωση είναι υποστηρικτική, όχι υπόσχεση θεραπείας.</p></div>
+        <div class="card white"><h3>Πρωτεΐνη, φυτικές ίνες και κολλαγόνο</h3><p>Το οστό δεν είναι μόνο ασβέστιο. Χρειάζεται οργανική μήτρα, επαρκή πρωτεΐνη και καλό διατροφικό υπόβαθρο.</p></div>
+        <div class="card white"><h3>Πρόληψη πτώσεων</h3><p>Ισορροπία, όραση, παπούτσια, φωτισμός, φάρμακα και ασφάλεια στο σπίτι μειώνουν άμεσα τον κίνδυνο κατάγματος.</p></div>
+      </div>
+      <div class="visual wide-img"><img src="handout-assets/trabecular-bone.jpg" alt="Trabecular bone density comparison" /></div>
+
+      <h2>3. Πώς η άσκηση «μιλάει» στο οστό</h2>
+      <div class="visual"><svg viewBox="0 0 920 300" role="img" aria-label="Μηχανισμός άσκησης και οστού"><rect x="30" y="42" width="170" height="210" rx="24" fill="#dbeafe"/><text x="115" y="95" text-anchor="middle" font-size="40">🏋️</text><text x="115" y="132" text-anchor="middle" font-size="18" font-weight="800" fill="#1e40af">Φόρτιση</text><text x="115" y="160" text-anchor="middle" font-size="13" fill="#1e3a8a">squat, hinge, step-up</text><rect x="290" y="42" width="170" height="210" rx="24" fill="#ccfbf1"/><text x="375" y="95" text-anchor="middle" font-size="40">📡</text><text x="375" y="132" text-anchor="middle" font-size="18" font-weight="800" fill="#0f766e">Σήμα</text><text x="375" y="160" text-anchor="middle" font-size="13" fill="#115e59">οστεοκύτταρα</text><rect x="550" y="42" width="170" height="210" rx="24" fill="#dcfce7"/><text x="635" y="95" text-anchor="middle" font-size="40">🧱</text><text x="635" y="132" text-anchor="middle" font-size="18" font-weight="800" fill="#166534">Χτίσιμο</text><text x="635" y="160" text-anchor="middle" font-size="13" fill="#14532d">οστεοβλάστες</text><rect x="810" y="42" width="80" height="210" rx="24" fill="#fef3c7"/><text x="850" y="105" text-anchor="middle" font-size="36">🦴</text><text x="850" y="142" text-anchor="middle" font-size="15" font-weight="800" fill="#92400e">BMD</text><text x="850" y="166" text-anchor="middle" font-size="12" fill="#92400e">με χρόνο</text></svg></div>
+      <div class="warning"><strong>Ασφάλεια:</strong> σε πρόσφατο κάταγμα, έντονο πόνο, πολύ χαμηλό T-score, ζάλη ή υψηλό κίνδυνο πτώσης, η έντονη άσκηση ξεκινά μόνο με επίβλεψη. Αποφεύγονται απότομες κάμψεις/στροφές κορμού με φορτίο.</div>
+
+      <h2>4. Ασκήσεις με εικόνες για συζήτηση με φυσικοθεραπευτή</h2>
+      <div class="exercise-grid">
+        <article class="exercise-card"><img src="handout-assets/chair-squat.jpg" alt="Chair squat"><div><h3>Chair squat / sit-to-stand</h3><p>Λειτουργική δύναμη ισχίου και μηρών. Ξεκινήστε από καρέκλα, 2 σετ x 8-12.</p></div></article>
+        <article class="exercise-card"><img src="handout-assets/step-up.jpg" alt="Step-up"><div><h3>Step-up σε χαμηλό σκαλί</h3><p>Ισχίο, γλουτοί και ισορροπία. Κρατηθείτε αν χρειάζεται.</p></div></article>
+        <article class="exercise-card"><img src="handout-assets/leg-swings-balance.jpg" alt="Leg swings balance"><div><h3>Leg swings / ισορροπία</h3><p>Έλεγχος λεκάνης και πρόληψη πτώσεων. Μικρό εύρος στην αρχή.</p></div></article>
+        <article class="exercise-card"><img src="handout-assets/hamstring-curl-photo.jpg" alt="Hamstring curl with support"><div><h3>Hamstring curl με στήριξη</h3><p>Οπίσθιοι μηριαίοι και ισορροπία. Κρατηθείτε από καρέκλα/πάγκο.</p></div></article>
+        <article class="exercise-card"><img src="handout-assets/heel-raises-chair.jpg" alt="Chair heel raises"><div><h3>Heel / calf raises</h3><p>Γάμπες, αστράγαλοι και σταθερότητα. Αργή άνοδος, ελεγχόμενη κάθοδος.</p></div></article>
+        <article class="exercise-card"><img src="handout-assets/band-overhead.png" alt="Band overhead press"><div><h3>Λάστιχο αντίστασης</h3><p>Ώμοι και στάση σώματος. Μόνο χωρίς πόνο και χωρίς υπερέκταση μέσης.</p></div></article>
+      </div>
+      <table><thead><tr><th>Άσκηση</th><th>Στόχος</th><th>Συντηρητική εκκίνηση</th></tr></thead><tbody><tr><td><b>Sit-to-stand / squat σε καρέκλα</b></td><td>Ισχίο, μηροί, λειτουργική δύναμη</td><td>2-3 σετ x 8-12, 2-3 φορές/εβδομάδα.</td></tr><tr><td><b>Step-ups σε χαμηλό σκαλί</b></td><td>Ισχίο, γλουτοί, ισορροπία</td><td>2 σετ x 8 ανά πόδι, με στήριξη.</td></tr><tr><td><b>Hip hinge / deadlift pattern</b></td><td>Οπίσθια αλυσίδα, σπονδυλική στήλη</td><td>Πρώτα τεχνική με λάστιχο/μικρό βάρος, ουδέτερη μέση.</td></tr><tr><td><b>Heel drops</b></td><td>Ήπιο ερέθισμα στο ισχίο/κάτω άκρα</td><td>10-20/ημέρα στην αρχή, κοντά σε πάγκο/τοίχο.</td></tr><tr><td><b>Άλματα / drop landings</b></td><td>Ισχυρότερο ερέθισμα ισχίου</td><td>Μόνο αν επιτρέπεται από γιατρό/φυσικοθεραπευτή.</td></tr></tbody></table>
+
+      <h2>5. Ασβέστιο και διατροφικές πηγές</h2>
+      <div class="notice"><strong>Πρακτικό:</strong> Για πιο αναλυτική εκτίμηση πρόσληψης ασβεστίου, μπορείτε να χρησιμοποιήσετε τον <a href="https://www.osteoporosis.foundation/educational-hub/topic/calcium-calculator" target="_blank" rel="noopener noreferrer">IOF Calcium Calculator</a>. Ο στόχος συνήθως μπαίνει εξατομικευμένα από τον/την γιατρό.</div>
+      <div class="image-grid">
+        <article class="image-card"><img src="handout-assets/calcium-foods.jpg" alt="Calcium rich foods"><div><h3>Ασβέστιο</h3><p>Γαλακτοκομικά, εμπλουτισμένα τρόφιμα, σαρδέλες, tofu, ταχίνι και ορισμένα πράσινα λαχανικά.</p></div></article>
+        <article class="image-card"><img src="handout-assets/vitamin-d-foods.jpg" alt="Vitamin D foods"><div><h3>Βιταμίνη D</h3><p>Λιπαρά ψάρια, εμπλουτισμένα τρόφιμα και αυγά. Συχνά χρειάζεται έλεγχος 25-OH D.</p></div></article>
+        <article class="image-card"><img src="handout-assets/vitamin-k2-foods.jpg" alt="Vitamin K2 foods"><div><h3>Βιταμίνη K2</h3><p>Ορισμένα ζυμωμένα τρόφιμα και ζωικές πηγές. Προσοχή αν λαμβάνετε αντιπηκτικά.</p></div></article>
+        <article class="image-card"><img src="handout-assets/magnesium-foods.jpg" alt="Magnesium rich foods"><div><h3>Μαγνήσιο</h3><p>Ξηροί καρποί, σπόροι, όσπρια, πράσινα λαχανικά και δημητριακά ολικής.</p></div></article>
+        <article class="image-card"><img src="handout-assets/boron-foods.jpg" alt="Boron rich foods"><div><h3>Βόριο</h3><p>Φρούτα, όσπρια, αβοκάντο και ξηροί καρποί. Υποστηρικτικό ιχνοστοιχείο, όχι θεραπεία.</p></div></article>
+      </div>
+
+      <h2>6. Συμπληρώματα: πού βοηθούν πραγματικά;</h2>
+      <div class="grid"><div class="card"><h3>Βιταμίνη D3</h3><p>Στόχος είναι επάρκεια, όχι υπερβολή. Βοηθά την απορρόφηση ασβεστίου και τη μυϊκή λειτουργία.</p></div><div class="card"><h3>Βιταμίνη K2</h3><p>Υποστηρίζει την ενεργοποίηση πρωτεϊνών της οστικής μήτρας. Αν παίρνετε αντιπηκτικά, ρωτήστε πριν τη χρήση.</p></div><div class="card"><h3>Πρωτεΐνη / κολλαγόνο</h3><p>Μπορεί να στηρίξει την οργανική μήτρα του οστού, ειδικά όταν η πρόσληψη πρωτεΐνης είναι χαμηλή.</p></div><div class="card"><h3>Μαγνήσιο & ιχνοστοιχεία</h3><p>Χρήσιμα όταν υπάρχει ανεπάρκεια ή χαμηλή πρόσληψη. Δεν χρειάζονται όλοι πολλά συμπληρώματα.</p></div></div>
+      <table><thead><tr><th>Συμπλήρωμα</th><th>Πιθανός ρόλος</th><th>Πρακτική προσοχή</th></tr></thead><tbody><tr><td><b>Μαγνήσιο</b></td><td>Συμμετέχει στη μυϊκή λειτουργία, στον μεταβολισμό βιταμίνης D και στην οστική μεταλλοποίηση.</td><td>Προσοχή σε νεφρική ανεπάρκεια ή γαστρεντερική δυσανεξία.</td></tr><tr><td><b>Ψευδάργυρος</b></td><td>Υποστηρίζει σύνθεση κολλαγόνου και κυτταρικές λειτουργίες οστού όταν υπάρχει χαμηλή πρόσληψη.</td><td>Η υπερβολική λήψη μπορεί να επηρεάσει τον χαλκό.</td></tr><tr><td><b>Βόριο</b></td><td>Πιθανή υποστήριξη μεταβολισμού βιταμίνης D, μαγνησίου και ορμονικού περιβάλλοντος.</td><td>Υποστηρικτικό/διατροφικό evidence, όχι θεραπεία οστεοπόρωσης.</td></tr><tr><td><b>Ωμέγα-3</b></td><td>Αντιφλεγμονώδης διατροφική υποστήριξη.</td><td>Προσοχή με αντιπηκτικά ή επεμβάσεις.</td></tr></tbody></table>
+
+      <h2>7. Περπάτημα, ήλιος και τρόπος ζωής</h2>
+      <div class="grid"><div class="card white"><h3>🚶 Περπάτημα</h3><p>Βοηθά καρδιά, μυϊκή αντοχή, ισορροπία και μείωση πτώσεων. Συνδυάζεται καλύτερα με αντιστάσεις και ελεγχόμενη φόρτιση.</p></div><div class="card white"><h3>☀️ Ήλιος</h3><p>Μικρή, ασφαλής έκθεση μπορεί να βοηθήσει τη βιταμίνη D. Η διάρκεια εξατομικεύεται ανά δέρμα, εποχή, φάρμακα και ιστορικό δερματολογικών προβλημάτων.</p></div><div class="card white"><h3>🚭 Κάπνισμα</h3><p>Συνδέεται με χειρότερη οστική υγεία και επούλωση. Η διακοπή είναι παρέμβαση υψηλής αξίας.</p></div><div class="card white"><h3>🍷 Αλκοόλ</h3><p>Η υπερβολική κατανάλωση αυξάνει πτώσεις και επηρεάζει μεταβολισμό/θρέψη.</p></div></div>
+      <h2>8. Τι να περιμένετε και πότε</h2>
+      <div class="timeline"><div class="time"><b>3-6</b><span class="pill">μήνες</span><p>Πρώτα φαίνεται συνήθως βελτίωση δύναμης, ισορροπίας και πιθανή αλλαγή σε δείκτες όπως P1NP/CTX.</p></div><div class="time"><b>6-12</b><span class="pill">μήνες</span><p>Μπορεί να αρχίσει να φαίνεται τάση στη DXA, ειδικά στη σπονδυλική στήλη, αν υπάρχει συνέπεια.</p></div><div class="time"><b>12-24</b><span class="pill">μήνες</span><p>Πιο αξιόπιστη επανεκτίμηση BMD και συνολικού κινδύνου με γιατρό.</p></div></div>
+      <div class="warning"><strong>Μην σταματάτε φάρμακα μόνοι σας.</strong> Οι φυσικές παρεμβάσεις συμπληρώνουν τη θεραπεία. Σε denosumab ειδικά, η απότομη διακοπή χωρίς σχέδιο μετάβασης μπορεί να αυξήσει τον κίνδυνο σπονδυλικών καταγμάτων.</div>
+      <h2>9. Συχνές ερωτήσεις</h2><div class="grid"><div class="card white"><h3>Αρκεί μόνο το περπάτημα;</h3><p>Όχι συνήθως. Είναι εξαιρετικό για υγεία και πτώσεις, αλλά για BMD χρειάζεται και προοδευτική αντίσταση/ασφαλής φόρτιση.</p></div><div class="card white"><h3>Πότε παίρνω D3/K2;</h3><p>Συνήθως με γεύμα που περιέχει λίπος. Αν παίρνετε αντιπηκτικά, ρωτήστε πριν πάρετε K2.</p></div><div class="card white"><h3>Θα δω αποτέλεσμα στη DXA;</h3><p>Μερικοί βλέπουν βελτίωση σε 12-24 μήνες, άλλοι σταθεροποίηση. Το σημαντικό είναι και η μείωση πτώσεων/καταγμάτων.</p></div><div class="card white"><h3>Μπορώ να σταματήσω φάρμακο;</h3><p>Μόνο με οδηγία γιατρού. Ειδικά ορισμένες θεραπείες χρειάζονται σχέδιο μετάβασης.</p></div></div>
+      <h2>10. Μια απλή εξήγηση</h2><div class="quote">«Τα οστά σας δεν είναι πέτρα· είναι ζωντανό κτίριο. Η άσκηση λέει στους χτίστες πού χρειάζεται ενίσχυση. Η D3 βοηθά να υπάρχει διαθέσιμο ασβέστιο. Η K2 και η πρωτεΐνη βοηθούν την οστική μήτρα. Όμως αν ο κίνδυνος κατάγματος είναι υψηλός, μπορεί να χρειάζεται και φάρμακο για να μειώσουμε γρήγορα τον κίνδυνο.»</div>
+      <h2>11. Τι να ρωτήσω τον/την γιατρό μου;</h2><ul><li>Ποιος είναι ο κίνδυνος μου για σπονδυλικό κάταγμα και ποιος για κάταγμα ισχίου;</li><li>Χρειάζομαι φαρμακευτική αγωγή τώρα ή στενή παρακολούθηση;</li><li>Υπάρχουν δευτεροπαθείς αιτίες που πρέπει να ελεγχθούν;</li><li>Ποιες ασκήσεις είναι ασφαλείς για τη δική μου σπονδυλική στήλη;</li><li>Πότε πρέπει να επαναλάβω DXA και ποιες αναλύσεις χρειάζονται;</li></ul>
+      <section class="refs"><p><b>Ενδεικτικές πηγές:</b> NOGG Clinical Guideline 2024; Royal Osteoporosis Society Strong, Steady and Straight quick guide; IOF Calcium Calculator; LeBoff et al. Osteoporos Int 2022; Kanis et al. Osteoporos Int 2020; Ettinger et al. MORE trial, JAMA 1999.</p><p>Watson et al. LIFTMOR trial, JBMR 2018; CDC STEADI 2023; exercise/walking/sunlight systematic reviews; vitamin K2 RCT meta-analyses; omega-3 bone-metabolism reviews; Koenig et al. collagen peptides RCT/follow-up. Οι πηγές είναι για εκπαίδευση και όχι εξατομικευμένη συνταγογράφηση.</p></section>
+      <p class="footer-note">Papachristou Ortho - Osteoporosis Cockpit. Έκδοση για ασθενείς. Εκτυπώστε από τον browser ως PDF.</p>
+    </main>
+  </div>
+</body>
+</html>

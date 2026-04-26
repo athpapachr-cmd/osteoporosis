@@ -969,6 +969,9 @@
               <label><input type="checkbox" id="secondary_osteoporosis" /> secondary osteoporosis</label>
               <label><input type="checkbox" id="high_alcohol_intake" /> high alcohol intake</label>
               <label><input type="checkbox" id="frailty" /> frailty</label>
+              <label><input type="checkbox" id="prior_vte_or_thrombophilia" /> prior VTE / thrombophilia</label>
+              <label><input type="checkbox" id="high_breast_cancer_risk" /> high breast cancer risk</label>
+              <label><input type="checkbox" id="mht_contraindication" /> MHT contraindication</label>
             </div>
           </div>
           <div class="field-grid">
@@ -1132,6 +1135,7 @@
               <label><input type="checkbox" id="zinc_supplement" /> zinc</label>
               <label><input type="checkbox" id="boron_supplement" /> boron</label>
               <label><input type="checkbox" id="vitamin_k2_supplement" /> vitamin K2</label>
+              <label><input type="checkbox" id="omega3_supplement" /> omega-3 (EPA/DHA)</label>
               <label><input type="checkbox" id="fortibone_supplement" /> Fortibone</label>
               <label><input type="checkbox" id="colabone_supplement" /> Colabone</label>
             </div>
@@ -1162,6 +1166,10 @@
               <input id="other_dairy_portions" type="number" min="0" value="0" />
             </div>
           </div>
+          <p class="muted" style="margin-top:8px;">
+            For a more detailed dietary estimate, open the
+            <a id="iofCalciumInputLink" href="https://www.osteoporosis.foundation/educational-hub/topic/calcium-calculator" target="_blank" rel="noopener noreferrer">IOF Calcium Calculator</a>.
+          </p>
           <div class="field-grid">
             <div class="field">
               <label for="current_therapy_type">Current therapy</label>
@@ -1416,6 +1424,10 @@
             </div>
           </div>
           <p id="calciumNote" class="muted" style="margin-top:4px;"></p>
+          <p class="muted" style="margin-top:6px;">
+            <a id="iofCalciumResultLink" href="https://www.osteoporosis.foundation/educational-hub/topic/calcium-calculator" target="_blank" rel="noopener noreferrer">Open IOF Calcium Calculator</a>
+            for a fuller food-by-food estimate.
+          </p>
           <div class="criteria-panel" id="veryHighCriteriaPanel">
             <p class="criteria-title">Very high risk criteria (highlighted when active)</p>
             <ul class="criteria-list" id="veryHighCriteriaList">
@@ -1457,6 +1469,7 @@
               <button id="copyFollowUpBtn" class="button secondary" style="font-size:12px;padding:6px 10px;">Copy follow-up</button>
               <button id="handoutBtn" class="button secondary" style="font-size:12px;padding:6px 10px;">Patient handout</button>
               <button id="printHandoutBtn" class="button secondary" style="font-size:12px;padding:6px 10px;">Export/print</button>
+              <a class="button secondary" href="/static/osteoporosis-qa-handout.html" target="_blank" rel="noopener noreferrer" style="font-size:12px;padding:6px 10px;">Q&A handout</a>
             </div>
           </div>
           <div id="followUpPlanList">
@@ -1491,7 +1504,7 @@
             <label><input type="checkbox" class="agreed-plan-option" value="Προσθήκη ή αναπροσαρμογή συμπληρωμάτων" /> Προσθήκη/ρύθμιση συμπληρωμάτων</label>
             <label><input type="checkbox" class="agreed-plan-option" value="Εργαστηριακός έλεγχος σε 6 μήνες (Vit D, Ca, νεφρική λειτουργία ± δείκτες)" /> Αναλύσεις σε 6 μήνες</label>
             <label><input type="checkbox" class="agreed-plan-option" value="Νέο DXA σε 12-24 μήνες" /> Νέο DXA σε 1-2 χρόνια</label>
-            <label><input type="checkbox" class="agreed-plan-option" value="Δομημένη άσκηση (ενδυνάμωση + ισορροπία)" /> Άσκηση</label>
+            <label><input type="checkbox" class="agreed-plan-option" value="Δομημένη άσκηση: προοδευτική αντίσταση, ισορροπία, στάση/εκτείνοντες και επιλεγμένη κρούση μόνο με ασφάλεια" /> Άσκηση</label>
             <label><input type="checkbox" class="agreed-plan-option" value="Παραπομπή/παρακολούθηση από διατροφολόγο" /> Διατροφολόγος</label>
             <label><input type="checkbox" class="agreed-plan-option" value="Πρόγραμμα πρόληψης πτώσεων και παρεμβάσεις ασφάλειας στο σπίτι" /> Fall prevention</label>
           </div>
@@ -1736,6 +1749,13 @@
         tags: ["all"],
       },
       {
+        id: "BHOF_CLIN_GUIDE_2022",
+        study: "BHOF Clinician's Guide (2022)",
+        focus: "Treatment thresholds / monitoring",
+        summary: "Treatment thresholds for T-score, hip/vertebral fracture and high-FRAX osteopenia; BMD monitoring after therapy start/change.",
+        tags: ["all", "high_or_more"],
+      },
+      {
         id: "MCCLUNG_HIP_2001",
         study: "HIP trial (NEJM 2001)",
         focus: "Oral bisphosphonate",
@@ -1762,6 +1782,27 @@
         focus: "IV bisphosphonate duration",
         summary: "Informative for zoledronate duration and continuation vs reassessment timing.",
         tags: ["iv_bisphosphonate", "high_or_more"],
+      },
+      {
+        id: "CCJM_BTM_BP_2023",
+        study: "CCJM BTM review (2023)",
+        focus: "Oral bisphosphonate monitoring",
+        summary: "CTX/P1NP changes can give early adherence/response feedback before DXA changes are visible.",
+        tags: ["oral_bisphosphonate", "high_or_more"],
+      },
+      {
+        id: "JOS_BTM_GUIDE_2019",
+        study: "Japan BTM guide (2019)",
+        focus: "BTM selection / timing",
+        summary: "BTMs support treatment selection and short-term response monitoring; use consistent assay/timing.",
+        tags: ["all", "oral_bisphosphonate", "iv_bisphosphonate", "denosumab", "teriparatide", "romosozumab"],
+      },
+      {
+        id: "MORE_RALOXIFENE_1999",
+        study: "MORE raloxifene trial (1999)",
+        focus: "SERM / vertebral risk",
+        summary: "Raloxifene reduced vertebral fractures in postmenopausal osteoporosis; hip/nonvertebral protection is limited.",
+        tags: ["raloxifene"],
       },
       {
         id: "FREEDOM_2017",
@@ -1826,6 +1867,27 @@
         summary: "Recommends combining drug treatment with frailty, falls, cognition and nutrition-focused geriatric assessment.",
         tags: ["all", "very_high", "high_or_more"],
       },
+      {
+        id: "LIFTMOR_2018",
+        study: "LIFTMOR exercise RCT (2018)",
+        focus: "Exercise / BMD",
+        summary: "Supervised high-intensity resistance and impact training improved BMD/function in postmenopausal women with low bone mass.",
+        tags: ["all"],
+      },
+      {
+        id: "K2_META_2022",
+        study: "Vitamin K2 meta-analysis (2022)",
+        focus: "Adjunctive supplements",
+        summary: "K2 may support BMD/BTM outcomes in postmenopausal osteoporosis; evidence is adjunctive and heterogeneous.",
+        tags: ["all"],
+      },
+      {
+        id: "COLLAGEN_RCT_2018",
+        study: "Collagen peptide RCT (2018)",
+        focus: "Adjunctive supplements",
+        summary: "Specific collagen peptides showed BMD/BTM benefit as adjunctive nutritional support in postmenopausal women.",
+        tags: ["all"],
+      },
     ];
     const numFields = [
       "age",
@@ -1858,6 +1920,7 @@
       "tsh_u_iu_ml",
       "free_t4_ng_dl",
       "serum_glucose_mg_dl",
+      "omega3_epa_dha_g_per_day",
       "morning_cortisol_ug_dl",
       "lh_iu_l",
       "fsh_iu_l",
@@ -1917,6 +1980,9 @@
       setCheckboxValue("secondary_osteoporosis", input.secondary_osteoporosis);
       setCheckboxValue("high_alcohol_intake", input.high_alcohol_intake);
       setCheckboxValue("frailty", input.frailty);
+      setCheckboxValue("prior_vte_or_thrombophilia", input.prior_vte_or_thrombophilia);
+      setCheckboxValue("high_breast_cancer_risk", input.high_breast_cancer_risk);
+      setCheckboxValue("mht_contraindication", input.mht_contraindication);
       setInputValue("vitamin_d_25oh_ng_ml", input.vitamin_d_25oh_ng_ml);
       setInputValue("serum_calcium_mg_dl", input.serum_calcium_mg_dl);
       setInputValue("serum_phosphorus_mg_dl", input.serum_phosphorus_mg_dl);
@@ -1954,6 +2020,8 @@
       setInputValue("boron_supplement_mg_per_day", input.boron_supplement_mg_per_day);
       setCheckboxValue("vitamin_k2_supplement", input.vitamin_k2_supplement);
       setInputValue("vitamin_k2_ug_per_day", input.vitamin_k2_ug_per_day);
+      setCheckboxValue("omega3_supplement", input.omega3_supplement);
+      setInputValue("omega3_epa_dha_g_per_day", input.omega3_epa_dha_g_per_day);
       setCheckboxValue("fortibone_supplement", input.fortibone_supplement);
       setCheckboxValue("colabone_supplement", input.colabone_supplement);
       setInputValue("milk_portions", input.milk_portions_per_day ?? 0);
@@ -2575,6 +2643,9 @@
         secondary_osteoporosis: val("secondary_osteoporosis"),
         high_alcohol_intake: val("high_alcohol_intake"),
         frailty: val("frailty"),
+        prior_vte_or_thrombophilia: val("prior_vte_or_thrombophilia"),
+        high_breast_cancer_risk: val("high_breast_cancer_risk"),
+        mht_contraindication: val("mht_contraindication"),
         vitamin_d_25oh_ng_ml: val("vitamin_d_25oh_ng_ml"),
         serum_calcium_mg_dl: val("serum_calcium_mg_dl"),
         serum_phosphorus_mg_dl: val("serum_phosphorus_mg_dl"),
@@ -2608,6 +2679,8 @@
         zinc_supplement: val("zinc_supplement"),
         boron_supplement: val("boron_supplement"),
         vitamin_k2_supplement: val("vitamin_k2_supplement"),
+        omega3_supplement: val("omega3_supplement"),
+        omega3_epa_dha_g_per_day: val("omega3_epa_dha_g_per_day"),
         fortibone_supplement: val("fortibone_supplement"),
         colabone_supplement: val("colabone_supplement"),
         current_therapy_type: val("current_therapy_type"),
@@ -2930,6 +3003,11 @@
       if (input.vitamin_k2_supplement) {
         supplements.push(
           `Vitamin K2${input.vitamin_k2_ug_per_day ? ` ~${Math.round(input.vitamin_k2_ug_per_day)} μg/day` : ""}`
+        );
+      }
+      if (input.omega3_supplement) {
+        supplements.push(
+          `Omega-3${input.omega3_epa_dha_g_per_day ? ` ~${input.omega3_epa_dha_g_per_day.toFixed(1)} g EPA/DHA/day` : ""}`
         );
       }
       if (input.fortibone_supplement) {
