@@ -1,8 +1,8 @@
 # HANDOFF_CURRENT.md — current operational handoff
 
-> **Updated:** 2026-08-22 19:03 Asia/Nicosia
+> **Updated:** 2026-08-22 19:59 Asia/Nicosia
 > **Canonical repository:** `athpapachr-cmd/osteoporosis`
-> **Current major phase:** prospective Osteoporosis Baseline/Audit pilot
+> **Current major phase:** prospective Osteoporosis Baseline/Audit pre-pilot hardening
 > **Current module:** Module 01 — Osteoporosis
 
 This file contains current operational truth only. Permanent rules belong in `AGENTS.md`; roadmap in `TODO.md`; completed history in `osteoporosis-change-log.md`.
@@ -16,7 +16,8 @@ The project is a **Personal Clinical Excellence System** with a reusable Core En
 Prospective baseline sequence:
 
 ```text
-5 consecutive pilot encounters
+pre-pilot data-integrity / applicability hardening
+→ 5 consecutive pilot encounters
 → one usability/branching/calculation-contract refinement
 → freeze form + KPI applicability
 → 30 consecutive unique scored baseline patients
@@ -82,34 +83,45 @@ Rules:
 - no KPI result is shown in the baseline UI before baseline lock except future safety-critical alert logic;
 - pilot calculations are for mapping validation, not clinician feedback.
 
-A runtime pilot-completion safeguard is also added in:
+---
+
+## 4. Pre-pilot hardening status
+
+An external code review identified several issues that should be resolved before Pilot Case 1.
+
+### Patch 2 — core save overwrite bug
+Implemented on branch `fix/pilot-save-merge`.
+
+Root fix in `static/baseline-audit/app-core.js`:
 
 ```text
-static/baseline-audit/pilot-completion.js
+existing stored case + current Steps 1–2 state
+→ shallow merge by internal_uuid
+→ preserve step3 / step4 / longitudinal_review / step5 / step6 / audit_evaluation_v1
 ```
 
-It allows Steps 1–6 pilot cases to be marked complete and preserves Step 3–6/longitudinal module data around the legacy Step 1–2 save handler, avoiding accidental overwrite during the pilot.
+The previous `pilot-completion.js` capture/restore workaround and its `setTimeout(0)` preservation path were removed. Pilot completion behavior remains, but storage integrity no longer depends on post-save restoration.
+
+This replaces the previous handoff statement that `pilot-completion.js` itself preserves module slices around the legacy save handler.
 
 ---
 
-## 4. Current exact next action
+## 5. Current exact next action
 
-**NEXT: clinician runs 5 consecutive real pilot encounters.**
+**NEXT: continue pre-pilot hardening before the 5 real pilot encounters.**
 
-For each pilot case, observe without changing the form mid-series:
+Highest-priority remaining items from the external review:
 
 ```text
-completion time
-fields that feel duplicated
-fields that are unclear
-fields that are repeatedly N/A
-missing clinically important fields
-branching that feels wrong for the encounter archetype
-whether required KPI evidence can be classified from the captured fields
-any data-loss/save/resume problem
+Patch 1 — clear hidden/stale dependent values
+Patch 4 — remove Step 1 ↔ Step 3 duplicate sources of truth
+Patch 5 — make DXA machine a native persistent select
+Patch 7 — implement real archetype-driven applicability
 ```
 
-After Case 5:
+Then address the remaining usability/correctness items (progress calculation, longitudinal prior-DXA entry/escaping, BMI override behavior), perform a save/reload/complete smoke test, and only then start Pilot Case 1/5.
+
+After the 5 pilot cases:
 
 ```text
 review pilot evidence once
@@ -122,7 +134,7 @@ Do not start the 30-case scored baseline before that freeze.
 
 ---
 
-## 5. Separate later instruments
+## 6. Separate later instruments
 
 Still separate from the 5-case form pilot:
 
@@ -131,7 +143,7 @@ Still separate from the 5-case form pilot:
 
 ---
 
-## 6. Stop boundary
+## 7. Stop boundary
 
 Do not yet:
 - major-rewrite legacy `main.py` / `index.html`;
@@ -141,4 +153,4 @@ Do not yet:
 - make Heidi mandatory before baseline;
 - commit identifiable patient data, GeSY content or Heidi transcripts to the public repo;
 - treat browser `localStorage` as production clinical-data storage;
-- revise the pilot form after every single case unless there is a patient-safety or data-loss defect.
+- start the real pilot until the identified pre-pilot data-integrity/applicability blockers are closed and smoke-tested.
