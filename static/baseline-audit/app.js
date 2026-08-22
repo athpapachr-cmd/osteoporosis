@@ -14,6 +14,7 @@
 
   loadScript("./app-core.js")
     .then(() => loadScript("./step3.js"))
+    .then(() => loadScript("./dxa-machine-select.js"))
     .then(() => loadScript("./shared-risk-source.js"))
     .then(() => loadScript("./step4.js"))
     .then(() => loadScript("./longitudinal.js"))
