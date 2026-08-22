@@ -85,13 +85,13 @@ Patient feedback was defined as more than satisfaction measurement.
 
 Initial feedback dimensions include:
 
-- understanding of the condition;
-- understanding of the plan;
-- understanding of treatment rationale/duration/risks;
-- whether questions and preferences were addressed;
+- understanding the condition;
+- understanding the plan;
+- understanding treatment rationale/duration/risks;
+- whether questions/preferences were addressed;
 - free-text confusion, concern, praise or suggestion.
 
-Repeated feedback patterns can create Signals and Improvement Projects.
+Repeated patient-feedback patterns may generate Signals, trigger improvement projects and require later re-measurement after communication/workflow changes.
 
 ---
 
@@ -149,7 +149,7 @@ Approved personalized principles include:
 
 The public repository `athpapachr-cmd/osteoporosis` was designated as the canonical project home for Module 01 and the reusable Clinical Excellence architecture being developed through it.
 
-A five-file active canonical set was created:
+A five-file active canonical set was created, following the same control-plane discipline used in the digital-secretary project:
 
 ```text
 AGENTS.md
@@ -161,17 +161,29 @@ osteoporosis-change-log.md
 
 `README.md` remains navigation only and is not a sixth source of architecture truth.
 
+The permanent repository rule is one canonical project truth; chat history must not be the only place where durable decisions live.
+
+No runtime code change was part of this control-plane bootstrap.
+
 ---
 
 ## 2026-08-22 — Next major design milestone selected
 
-The next major design task was selected as Baseline Osteoporosis Audit v1 + KPI Dictionary v1, because the baseline must be defined before any dashboard progress score is considered valid.
+The next major design task is:
+
+> **Baseline Osteoporosis Audit v1 + KPI Dictionary v1**
+
+The baseline must be defined before any dashboard progress score is considered valid.
+
+The audit design will specify sampling, inclusion/exclusion criteria, numerators, denominators, targets, data completeness, `not applicable` handling, reliability/sample-size rules, baseline lock criteria and re-audit timing.
 
 ---
 
 ## 2026-08-22 — Prospective baseline strategy adopted
 
-The baseline strategy was changed from a primarily retrospective chart audit to a prospective post-visit encounter-capture baseline.
+A key operational constraint was identified: there is no reliable pre-existing osteoporosis patient registry or dedicated osteoporosis folder, and GeSY visit records may be incomplete relative to what actually occurred during a consultation.
+
+The baseline strategy was therefore changed from a primarily retrospective chart audit to a **prospective post-visit encounter-capture baseline**.
 
 Approved sequence:
 
@@ -184,101 +196,189 @@ Approved sequence:
 → interventions / re-audit
 ```
 
-Heidi AI is recorded only as an exposure/capture source during baseline; its use is not scored as good practice and is not forced before baseline lock.
+Heidi AI is currently recent and non-systematic. During baseline it is recorded only as an exposure/capture source; its use is not scored as good practice and is not forced before baseline lock.
 
-The audit explicitly separates clinical process, formal GeSY/documentation trace, and capture quality.
+The audit now explicitly separates:
+
+```text
+clinical process
+formal GeSY/documentation trace
+capture quality
+```
 
 ---
 
 ## 2026-08-22 — Baseline audit / KPI / case-form schemas created
 
-Machine-readable draft schemas were added for the baseline audit, KPI dictionary, and neutral prospective case form.
+Machine-readable draft schemas were added:
+
+```text
+schemas/baseline_osteoporosis_audit_v1.yaml
+schemas/kpi_dictionary_v1.yaml
+schemas/baseline_case_form_v1.yaml
+```
+
+The baseline schema defines pilot/scored cohorts, reliability display, safety exceptions, baseline lock and re-audit rules.
+
+The KPI dictionary defines the first 16 provisional osteoporosis KPIs, including data completeness, fracture history, risk assessment, DXA/VFA, secondary causes, falls/frailty, treatment history, decision documentation, continuity, denosumab timeliness, transition safety, fracture-on-treatment review and Patient Voice measures.
+
+The case-form schema defines neutral prospective encounter capture with explicit separation between what occurred clinically and what is traceable in formal documentation.
 
 ---
 
 ## 2026-08-22 — Baseline Audit pilot UI Step 1 implemented in PR #1
 
-The first code implementation slice added the baseline-audit pilot UI, including encounter metadata, adaptive context, structured Heidi metadata, quick applicability signals, privacy warnings, and local draft save/resume.
+The first code implementation slice was created on branch `feat/baseline-audit-pilot-v1` and opened as PR #1.
+
+Added:
+
+```text
+static/baseline-audit/index.html
+static/baseline-audit/styles.css
+static/baseline-audit/app.js
+```
+
+The implemented first screen includes pilot case identity/progress, encounter metadata, visit reason/status, adaptive context, structured Heidi metadata, quick applicability signals, privacy warnings, and local draft save/resume. No server-side patient-data API or production clinical storage was introduced.
 
 ---
 
 ## 2026-08-22 — Step 1 refined into adaptive encounter context
 
-Step 1 was reworked to separate patient relationship from encounter archetype and added anthropometrics/BMI/height loss, fracture recency, glucocorticoid dose/duration, falls count, structured secondary conditions, frailty/immobility, and conditional sarcopenia case-finding.
+Step 1 was reworked to separate patient relationship from encounter archetype and added anthropometrics/BMI/height loss, fracture recency, glucocorticoid dose/duration, falls count, structured secondary conditions, frailty/immobility and conditional sarcopenia case-finding. Heidi capture was simplified to exposure/review/material-correction metadata without transcript or manual diff.
 
 ---
 
 ## 2026-08-22 — Baseline Audit Step 2 implemented
 
-Step 2 added structured fracture events and formal fracture-risk capture, including FRAX/FRAXplus, country/surrogate model, MOF/hip probabilities, FN-BMD use, explicit framework, resulting risk category, and contextual adjustment/override.
+Step 2 added structured fracture events and formal fracture-risk capture: FRAX/FRAXplus, country/surrogate model, MOF/hip probabilities, FN-BMD use, explicit framework, resulting risk category and contextual adjustment/override. Internal FRAX-like surrogate scoring and silent guideline hybridization are avoided.
 
 ---
 
 ## 2026-08-22 — Selective migration principle adopted for legacy Cockpit data
 
-Useful legacy data are preserved and normalized with provenance/timing/applicability before being linked to KPI, audit, learning, and improvement loops; the old Cockpit is not copied field-for-field.
+The new Clinical Excellence dashboard does not copy the legacy Cockpit field-for-field. Useful data are preserved and normalized with provenance/timing/applicability before being linked to KPI, audit, learning and improvement loops.
 
 ---
 
 ## 2026-08-22 — Baseline Audit Step 3 implemented
 
-Step 3 added DXA BMD/T-scores, ROI/artifact review, longitudinal comparability/LSC, VFA/vertebral-imaging indication/action/result, secondary-cause process, optional labs/BTMs, falls/frailty/function assessment, and conditional sarcopenia testing.
+Step 3 added DXA BMD/T-scores, ROI/artifact review, longitudinal comparability/LSC, VFA/vertebral-imaging indication/action/result, secondary-cause process, optional labs/BTMs, falls/frailty/function assessment and conditional sarcopenia testing.
 
 ---
 
 ## 2026-08-22 — Baseline Audit Step 4 implemented
 
-Step 4 added date-aware treatment episodes and administration events, adherence/tolerance/response context, current clinical decision/rationale, patient preference, transition/sequencing capture, follow-up tasks, and unresolved critical-item close.
+Step 4 upgraded treatment/plan concepts into date-aware treatment episodes and administration events, with adherence/tolerance/response context, current clinical decision/rationale, patient preference, transition/sequencing capture, follow-up tasks and unresolved critical-item close.
 
 ---
 
 ## 2026-08-22 — Baseline Audit Step 5 implemented
 
-Step 5 added encounter-specific communication capture and compact immediate post-visit reflection while keeping clinician-estimated understanding separate from future Patient Voice.
+Step 5 added encounter-specific communication capture and compact immediate post-visit reflection. It records condition/risk explanation, results/status discussion, exercise, nutrition, calcium/vitamin D/other supplements, medication/no-drug plan, rationale, alternatives/trade-offs, timing/review point, safety and sequencing communication, questions and patient preferences.
+
+Clinician impression of patient understanding is recorded separately from the later Patient Voice instrument. Post-visit reflection remains low burden and can flag potential case-review, learning, communication/system or safety Signals without displaying a live baseline score.
 
 ---
 
 ## 2026-08-22 — Baseline Audit Step 6 implemented
 
-Step 6 completed prospective capture with documentation provenance, formal GeSY versus Heidi trace, material discrepancies, final clinician-reviewed Heidi summary, capture reliability, remaining information gaps, optional completion time, and readiness for later audit calculation.
+Step 6 completed the prospective baseline capture flow by adding documentation provenance and capture-quality review.
 
-PR #8 was merged as `a14be3b9bfd393ccc245665c79bf700cf5eaff55`.
+It records capture sources, a domain-level matrix for formal GeSY trace versus Heidi trace, material discrepancies, formal-record completeness and missing-content domains, and a final clinician-reviewed Heidi summary seeded from Step 1 without requiring raw/corrected transcripts or manual diffs.
+
+Capture reliability, remaining major information gaps, reasons for limited capture, optional completion time and readiness for later audit calculation are also recorded.
+
+The key interpretation rule was frozen: clinical process is represented by Steps 1–5; formal documentation is a separate evidence axis; Heidi is a supplementary clinician-reviewed capture source and its use is not a quality-success metric. Missing formal documentation must not be silently converted into a clinical omission.
+
+PR #8 was merged into `main` as commit `a14be3b9bfd393ccc245665c79bf700cf5eaff55`.
 
 ---
 
 ## 2026-08-22 — Pre-pilot Patch 2 fixes core save data integrity
 
-The legacy Steps 1–2 save path was changed from full-object replacement to merge behavior, and the temporary pilot-completion snapshot/restore workaround was removed.
+External review identified that the legacy Steps 1–2 `saveDraft()` replaced the whole stored case object. Because Steps 3–6 and longitudinal review persist as additional top-level slices, a later core save could therefore remove those slices.
+
+The root save behavior was changed from full replacement to merge-by-`internal_uuid`:
+
+```text
+stored case + current core state → merged stored case
+```
+
+The temporary `pilot-completion.js` snapshot/restore workaround was removed, including its asynchronous `setTimeout(0)` restoration path. Pilot completion remains intact but no longer carries responsibility for preserving module slices during ordinary saves.
+
+This change is a pre-pilot data-integrity fix and should be retained before any real pilot case is collected.
 
 ---
 
 ## 2026-08-22 — Pre-pilot Patch 1 prevents hidden stale dependent data
 
-A central `data-hygiene.js` guard was added to clear hidden dependent values before persistence, including DXA detail/longitudinal fields, Step 4 transition fields, and Step 5 information/misunderstanding state.
+External review identified that child fields hidden by parent toggles could retain and re-persist stale values. This was particularly dangerous for DXA because prior BMD/T-score values could remain available to longitudinal trends after `DXA used` was changed to `No`.
+
+A central pilot data-hygiene guard was added at:
+
+```text
+static/baseline-audit/data-hygiene.js
+```
+
+It clears dependent DOM values before the step modules collect/persist state and sanitizes legacy stale values already present in the active localStorage case. Covered dependencies include DXA detail/longitudinal fields, Step 4 transition fields, Step 5 information-type selections and misunderstanding-correction state.
+
+The guard is loaded by the baseline bootstrap before Step 6/pilot completion. This is a pre-pilot data-integrity measure so hidden/non-applicable child values cannot silently contaminate longitudinal review or later audit calculation.
 
 ---
 
 ## 2026-08-22 — Pre-pilot Patch 4 establishes one source of truth for shared Step 1/3 risk fields
 
-Step 1 `risk_context` became canonical for shared falls/frailty/sarcopenia screening fields; Step 3 became a read-only projection plus Step-3-specific detailed assessment.
+External review identified that falls count, CFS, cognitive impairment, immobility and basic sarcopenia screening were persisted independently in Step 1 and Step 3, allowing the two values to diverge.
+
+The canonical rule is now:
+
+```text
+Step 1 risk_context = source of truth
+Step 3 = read-only projection + additional detailed functional assessment
+```
+
+A runtime module `static/baseline-audit/shared-risk-source.js` synchronizes the Step 3 projection from Step 1, disables editing of the shared controls in Step 3, and removes duplicate copies of those shared fields from persisted `step3` state. Detailed Step 3-only fields such as falls/function review, fall injury, ambulatory aid, gait/balance concern, TUG, chair stand, grip strength, gait speed, SPPB and actions remain independently editable.
+
+This removes ambiguity for later derived signals/KPI logic and prevents one encounter from carrying two competing versions of the same clinical fact.
 
 ---
 
 ## 2026-08-22 — Pre-pilot Patch 5 normalizes and persists DXA machine identity
 
-`dxa-machine-select.js` normalized current DXA machine identity, preserved optional `machine_label`, and retained unrecognized legacy free text under `other_unknown`.
+The DXA machine field was normalized before the longitudinal layer initializes. `static/baseline-audit/dxa-machine-select.js` converts the Step 3 control to a fixed machine select, preserves optional local machine identity in `machine_label`, maps recognized legacy labels to normalized keys and preserves unrecognized legacy free text under `other_unknown` rather than dropping it.
+
+This removed the practical text→select race and made machine identity persistent across save/reload while keeping the current pilot data model backward-compatible.
 
 ---
 
 ## 2026-08-22 — Second review hardens P1/P2 and verifies P4/P5
 
-A second review identified a residual module-ownership bug in core saves. The core save payload was changed to exclude module-owned slices, and the current-DXA trend path gained an independent `DXA used == yes` guard.
+A second independent code review correctly identified a residual P2 ownership bug: `currentCase` could contain stale module slices from load time, and a core merge could therefore overwrite fresher `longitudinal_review` state.
+
+The root rule was tightened so `app-core` now excludes module-owned slices from its save payload:
+
+```text
+step3 / step4 / step5 / step6 / longitudinal_review / pilot_completion / audit_evaluation_v1
+```
+
+The P1 path was also hardened: `data-hygiene.js` now loads before `longitudinal.js`, and `currentDxaPoint()` independently refuses to expose a current DXA point unless `DXA used == yes`. Thus chart correctness no longer depends only on sanitizer timing.
+
+The same review re-verified that P4 and P5 were already active through their dedicated runtime modules. They were not rewritten again during this hardening pass because there was no remaining pilot data-integrity defect demonstrated in those paths; unnecessary ownership refactoring was deferred until after smoke testing or pilot evidence if still warranted.
 
 ---
 
 ## 2026-08-22 — Final applicability ownership fix before smoke test
 
-`applicability_review` was added to the app-core module exclusion list and the adaptive module's post-save repair shim was removed. Applicability state is now preserved through correct ownership rather than asynchronous repair.
+A later independent review found that Patch 7 introduced a new top-level `applicability_review` slice but the core save exclusion list had not been extended to include it. The adaptive module therefore relied on a capture-phase Save/Finish snapshot plus `setTimeout(persistReview)` repair shim to restore fresh applicability state after a core save.
+
+The ownership rule was corrected at the source:
+
+```text
+applicability_review = module-owned
+app-core must not write it
+```
+
+`applicability_review` was added to the `app-core` module exclusion list and the post-save repair shim was removed from `adaptive-applicability.js`. The smoke test now explicitly requires an applicability override to survive a Step 1/2 Save and reload without any repair listener.
 
 ---
 
