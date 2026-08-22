@@ -1,0 +1,321 @@
+schema: baseline_kpi_calculation_contract_v1
+status: draft_for_5_case_pilot
+module: osteoporosis
+purpose: >-
+  Deterministic field-to-KPI contract for the prospective Baseline Osteoporosis Audit.
+  It converts the structured Steps 1-6 case object into applicability and KPI status without
+  displaying live coaching during the baseline. The 5-case pilot may reveal usability or
+  mapping defects; revise once before freezing for the 30-case scored baseline.
+
+status_model:
+  applicability: [applicable, not_applicable, uncertain]
+  status: [met, not_met, indeterminate, manual_review_required, external_pending, not_applicable]
+  missing_rule: >-
+    Missing or uncertain required evidence never counts as met. It becomes indeterminate unless
+    the KPI specifically requires manual review. A valid explicit N/A counts only when the
+    applicability rule supports N/A.
+  clinical_vs_documentation_rule: >-
+    Clinical-process KPIs use Steps 1-5. Step 6 documentation trace is a separate axis and must
+    not convert an absent GeSY trace into a clinical omission.
+  baseline_visibility: hidden_until_baseline_lock_except_safety_critical_alert_path
+  pilot_behavior: calculate_in_background_for_mapping_validation_only
+
+archetype_groups:
+  initial:
+    - initial_assessment_new_or_uncertain_diagnosis
+    - initial_assessment_known_osteoporosis_or_osteopenia
+  ongoing_followup:
+    - routine_followup_stable
+    - treatment_start
+    - treatment_continuation_or_due_monitoring
+    - treatment_change_or_transition
+    - post_fragility_fracture
+    - fracture_on_treatment
+    - adverse_effect_or_intolerance
+    - treatment_completion_or_consolidation
+
+kpis:
+  OST-KPI-00:
+    title: Data completeness and auditability
+    applicability: all_cases
+    calculation: >-
+      Determine the applicable KPI set first. Count the required calculation fields for those KPIs
+      plus Step 6 capture-quality fields. Explicit yes/no/value/valid N/A are complete; blank,
+      unknown or uncertain are incomplete unless the field contract explicitly allows uncertainty.
+    required_paths:
+      - encounter_archetype
+      - step6.sources.primary
+      - step6.capture_quality.reliability
+      - step6.capture_quality.major_gap
+      - step6.capture_quality.ready_for_audit
+    status_rule:
+      met: all_required_applicable_calculation_fields_complete
+      not_met: one_or_more_required_applicable_calculation_fields_missing
+    output_extra: [required_count, complete_count, completeness_percent]
+
+  OST-KPI-01:
+    title: Fragility-fracture history and characterization
+    applicability: all_cases
+    evidence_paths: [fracture_history.reviewed, fracture_history.events]
+    status_rule:
+      met_when:
+        - fracture_history.reviewed == yes
+        - if_no_fragility_fracture_then_explicit_negative_is_present
+        - if_positive_then_each_clinically_relevant_event_has_site_and_approximate_date_and_fragility_classification
+      not_met_when:
+        - fracture_history.reviewed == no
+        - positive_history_but_required_event_characterization_missing
+      indeterminate_when:
+        - fracture_history.reviewed in [blank, unknown]
+        - fracture_status_or_required_event_detail_uncertain
+
+  OST-KPI-02:
+    title: Formal fracture-risk assessment when indicated
+    applicability_rule:
+      applicable_when: risk_assessment.formal_indicated == yes
+      not_applicable_when: risk_assessment.formal_indicated == no
+      uncertain_when: risk_assessment.formal_indicated in [blank, uncertain]
+    evidence_paths:
+      - risk_assessment.formal_done
+      - risk_assessment.tool_name
+      - risk_assessment.declared_framework
+      - risk_assessment.country_or_surrogate_model
+      - risk_assessment.frax_mof_percent
+      - risk_assessment.frax_hip_percent
+      - risk_assessment.femoral_neck_bmd_used
+    status_rule:
+      met_when:
+        - formal_done == yes
+        - tool_name is_present
+        - declared_framework is_present
+        - frax_mof_percent is_present
+        - frax_hip_percent is_present
+        - femoral_neck_bmd_used is_explicit
+        - if_tool_is_frax_or_fraxplus_then_country_or_surrogate_model_is_present
+      not_met_when:
+        - applicable_and_formal_done == no
+        - applicable_and_required_formal_result_component_missing
+      indeterminate_when: applicable_but_required_component_unknown_or_uncertain
+
+  OST-KPI-03:
+    title: DXA data and interpretation adequacy
+    applicability_rule:
+      applicable_when: step3.dxa.used == yes
+      not_applicable_when: step3.dxa.used == no
+      uncertain_when: step3.dxa.used is_blank
+    evidence_paths:
+      - step3.dxa.date
+      - step3.dxa.spine_bmd
+      - step3.dxa.total_hip_bmd
+      - step3.dxa.femoral_neck_bmd
+      - step3.dxa.spine_t
+      - step3.dxa.total_hip_t
+      - step3.dxa.femoral_neck_t
+      - step3.dxa.roi_issue
+      - step3.dxa.artifact
+      - step3.dxa.z_score_used
+    status_rule:
+      met_when:
+        - date is_present
+        - at_least_one_valid_site_has_bmd
+        - at_least_one_corresponding_t_score_or_relevant_z_score_status_is_explicit
+        - roi_issue is_explicit_and_not_not_reviewed
+        - artifact is_explicit_and_not_not_reviewed
+      not_met_when: applicable_and_one_or_more_required_elements_explicitly_not_reviewed_or_absent
+      indeterminate_when: applicable_and_required_element_blank_or_uncertain
+
+  OST-KPI-04:
+    title: Valid longitudinal DXA comparison
+    applicability_rule:
+      applicable_when: step3.dxa.longitudinal == yes
+      not_applicable_when: step3.dxa.longitudinal in [no, not_applicable]
+      uncertain_when: step3.dxa.longitudinal is_blank
+    evidence_paths: [step3.dxa.comparison_date, step3.dxa.comparable_machine, step3.dxa.lsc_known, step3.dxa.change_valid]
+    status_rule:
+      met_when:
+        - comparison_date is_present
+        - change_valid == yes
+      not_met_when: change_valid == no
+      indeterminate_when:
+        - applicable_and_change_valid is_blank
+        - applicable_and_comparability_or_LSC_information_is_unresolved_without_explicit_noncomparability_handling
+
+  OST-KPI-05:
+    title: Vertebral-fracture/VFA consideration when indicated
+    applicability_rule:
+      applicable_when: step3.vfa.indicated == yes
+      not_applicable_when: step3.vfa.indicated == no
+      uncertain_when: step3.vfa.indicated in [blank, uncertain]
+    evidence_paths: [step3.vfa.action]
+    status_rule:
+      met_when: action in [performed, already_available_reviewed, arranged, reasoned_not_done]
+      not_met_when: action == missed
+      indeterminate_when: applicable_and_action is_blank
+
+  OST-KPI-06:
+    title: Secondary-cause evaluation
+    applicability_rule:
+      applicable_when: step3.secondary.indicated == yes
+      not_applicable_when: step3.secondary.indicated == no
+      uncertain_when: step3.secondary.indicated in [blank, uncertain]
+    evidence_paths: [step3.secondary.history_reviewed, step3.secondary.prior_workup_adequate, step3.secondary.labs_reviewed, step3.secondary.unresolved]
+    status_rule:
+      met_when:
+        - history_reviewed == yes
+        - one_of: [labs_reviewed == yes, prior_workup_adequate == yes]
+      not_met_when:
+        - history_reviewed == no
+        - labs_reviewed == no and prior_workup_adequate != yes
+      indeterminate_when: applicable_and_required_process_field_blank_or_uncertain
+
+  OST-KPI-07:
+    title: Falls and frailty assessment when relevant
+    applicability_rule:
+      applicable_when_any:
+        - age_years >= 65
+        - risk_context.falls_last_12_months > 0
+        - risk_context.frailty_or_immobility == true
+        - step3.function.gait_balance_concern == yes
+      not_applicable_when: age_years < 65 and no_falls_frailty_immobility_signal
+      uncertain_when: age_missing_and_no_clear_signal
+    evidence_paths: [step3.function.falls_reviewed, step3.function.function_reviewed, step3.function.action]
+    status_rule:
+      met_when:
+        - falls_reviewed == yes
+        - function_reviewed == yes
+        - if_material_risk_present_then_action_is_present_and_not_none
+      not_met_when:
+        - falls_reviewed == no
+        - function_reviewed == no
+        - material_risk_present_and_no_action
+      indeterminate_when: applicable_and_required_field_blank_or_uncertain
+
+  OST-KPI-08:
+    title: Treatment history, adherence and adverse-effect review
+    applicability_rule:
+      applicable_when: step4.treatment_episodes has_any_episode_or_current_or_prior_pharmacotherapy
+      not_applicable_when: explicitly_treatment_naive
+      uncertain_when: treatment_exposure_status_unknown
+    evidence_paths: [step4.treatment_episodes, step4.administrations]
+    status_rule:
+      met_when:
+        - each_relevant_episode_has_agent_and_status
+        - current_or_recent_episode_has_adherence_explicit
+        - current_or_recent_episode_has_tolerance_explicit
+        - stopped_or_switched_episode_has_reason_when_relevant
+        - time_critical_therapy_has_actual_last_administration_and_next_due_or_explicit_not_applicable
+      not_met_when: applicable_and_required_treatment_history_or_safety_component_explicitly_missing
+      indeterminate_when: applicable_and_required_component_unknown_or_blank
+
+  OST-KPI-09:
+    title: Treatment decision, rationale and patient preference documented
+    applicability_rule:
+      applicable_when: step4.decision.type in [start, continue, stop, switch, defer, no_drug_treatment, complete_course, consolidate, refer]
+      not_applicable_when: no_material_treatment_decision
+      uncertain_when: decision.type in [blank, uncertain]
+    evidence_paths: [step4.decision.type, step4.decision.reasons, step4.decision.safety_review, step4.decision.rationale, step4.decision.preference_documented, step4.decision.patient_accepted]
+    status_rule:
+      met_when:
+        - decision.type is_material_decision
+        - reasons has_at_least_one
+        - rationale is_present
+        - safety_review in [done, not_applicable]
+        - preference_documented in [yes, not_applicable]
+        - patient_accepted is_explicit
+      not_met_when: applicable_and_required_decision_component_explicitly_not_done_or_absent
+      indeterminate_when: applicable_and_required_component_unknown_or_blank
+
+  OST-KPI-10:
+    title: Explicit follow-up and monitoring plan
+    applicability_rule:
+      applicable_when: encounter_archetype in archetype_groups.ongoing_followup or step4.tasks has_any
+      not_applicable_when: genuinely_one_off_or_discharged_and_no_followup_need
+      uncertain_when: followup_need_not_resolved
+    evidence_paths: [step4.tasks, step4.close.plan_complete, step4.close.unresolved_critical]
+    status_rule:
+      met_when:
+        - at_least_one_applicable_task_has_due_date_or_timeframe
+        - close.plan_complete == yes
+        - close.unresolved_critical == no
+      not_met_when:
+        - applicable_and_no_followup_task
+        - applicable_task_without_due_date_or_timeframe
+        - close.plan_complete == no
+      indeterminate_when: applicable_and_close_or_task_timing_unknown
+
+  OST-KPI-11:
+    title: Denosumab dose timeliness
+    applicability_rule:
+      applicable_when: step4.administrations contains_denosumab_due_or_completed_event
+      not_applicable_when: no_denosumab_dose_due_in_audit_window
+      uncertain_when: denosumab_exposure_known_but_due_timeline_incomplete
+    evidence_paths: [step4.administrations]
+    calculation: >-
+      For each due denosumab event, due_date is the scheduled date or a due date derived from the
+      previous actual administration according to the treatment schedule. Met if actual administration
+      is on or before due_date + 28 days. If treatment was formally stopped before the due date, the case
+      exits this KPI only when a documented transition strategy exists.
+    status_rule:
+      met_when: all_applicable_due_events_within_28_days
+      not_met_when: any_applicable_due_event_more_than_28_days_late_or_missed_without_valid_transition_exclusion
+      indeterminate_when: due_or_actual_date_missing
+    safety: true
+
+  OST-KPI-12:
+    title: Sequential-therapy transition safety
+    applicability_rule:
+      applicable_when: step4.transition.relevant == yes
+      not_applicable_when: step4.transition.relevant == no
+      uncertain_when: step4.transition.relevant in [blank, uncertain]
+    evidence_paths: [step4.transition.type, step4.transition.prior_end_date, step4.transition.next_agent, step4.transition.next_agent_date, step4.transition.explicit_plan, step4.transition.unresolved_safety, step4.tasks]
+    status_rule:
+      manual_review_required_when: applicable
+      not_applicable_when: not_applicable
+    manual_review_questions:
+      - Is the next-treatment strategy clinically appropriate for this transition?
+      - Is timing explicit and safe for the specific prior agent/course?
+      - Is active tracking present?
+      - Is any unresolved safety issue adequately addressed?
+    safety: true
+
+  OST-KPI-13:
+    title: Incident fragility fracture during therapy appropriately reviewed
+    applicability_rule:
+      applicable_when_any:
+        - encounter_archetype == fracture_on_treatment
+        - fracture_history.events contains_event_on_active_treatment
+      not_applicable_when: no_incident_fragility_fracture_during_active_therapy
+      uncertain_when: fracture_or_treatment_temporality_uncertain
+    evidence_paths: [fracture_history.events, step4.treatment_episodes, step3.secondary, risk_assessment, step4.decision]
+    status_rule:
+      manual_review_required_when: applicable
+    manual_review_questions:
+      - Was the fracture confirmed and contextualized?
+      - Were adherence and actual treatment exposure reviewed?
+      - Were secondary causes and fracture risk reassessed as appropriate?
+      - Was an explicit management decision documented?
+    safety: true
+
+  OST-KPI-14:
+    title: Patient understanding of condition, plan and rationale
+    applicability: external_patient_voice_only
+    status_rule:
+      external_pending_until_patient_voice_active: true
+
+  OST-KPI-15:
+    title: Patient concerns and preferences addressed
+    applicability: external_patient_voice_only
+    status_rule:
+      external_pending_until_patient_voice_active: true
+
+pilot_validation_checks:
+  - No KPI status is shown in the baseline UI.
+  - Review whether every applicable KPI can be classified without clinician interpretation except KPI-12 and KPI-13.
+  - Record fields that are repeatedly missing because the form lacks a sensible input versus because the process did not occur.
+  - Record whether N/A choices are clinically valid for each archetype.
+  - Measure total post-visit completion time and identify duplicate entry.
+  - Confirm safety-event denominators before the scored baseline.
+
+freeze_rule: >-
+  After 5 pilot cases, make one deliberate revision to wording, branching, applicability and calculation
+  mapping. Then freeze this contract and the form together before enrolling the 30 scored baseline cases.
