@@ -1,0 +1,72 @@
+schema: baseline_applicability_review_v1
+status: draft_v1
+module: osteoporosis
+purpose: >-
+  Persist encounter-archetype-driven domain applicability for the prospective baseline UI.
+  Applicability is not a performance score. It determines which domain cards are expected,
+  conditional, or normally not applicable for the selected encounter archetype while allowing
+  a clinician to explicitly reopen a domain when it is relevant to the individual encounter.
+
+source_of_truth:
+  archetype_schema: schemas/encounter_archetypes_v1.yaml
+  principle: >-
+    Encounter archetype defines the default applicability state. A clinician may override a
+    collapsed conditional/not-routine domain to applicable for the current encounter. Such an
+    override is captured explicitly rather than silently changing the archetype.
+
+status_model:
+  default_status:
+    - applicable
+    - uncertain
+    - not_applicable
+  override_status:
+    - ""
+    - applicable
+  resolved_status:
+    - applicable
+    - uncertain
+    - not_applicable
+
+storage:
+  top_level_key: applicability_review
+  fields:
+    version: applicability-v1
+    archetype: string
+    domains:
+      domain_key:
+        default_status: string
+        override_status: string
+        resolved_status: string
+    updated_at: datetime
+
+ui_rules:
+  - applicable domains remain expanded by default
+  - uncertain domains are collapsed by default but can be opened for this encounter
+  - not_applicable domains are grey/collapsed by default but can be reopened explicitly
+  - reopening a conditional or not-applicable domain records override_status=applicable
+  - changing encounter archetype recomputes defaults and clears prior overrides
+  - no KPI score, red-green feedback, omission warning, or treatment coaching is shown
+  - clinical values are not erased merely because a domain is collapsed by archetype applicability
+
+core_domains:
+  - fracture_history
+  - formal_risk
+  - dxa
+  - vfa
+  - secondary_causes
+  - laboratory_monitoring
+  - falls_function
+  - sarcopenia
+  - treatment_history
+  - administrations
+  - treatment_decision
+  - transition_safety
+  - followup_tasks
+  - communication
+  - understanding
+  - reflection
+  - documentation_capture
+
+notes:
+  - Step 6 documentation/capture remains applicable to all pilot encounters because it describes audit provenance rather than a clinical checklist requirement.
+  - Applicability must be consulted before later KPI calculation so values retained in a collapsed domain cannot create a denominator or penalty when the domain is not applicable.
