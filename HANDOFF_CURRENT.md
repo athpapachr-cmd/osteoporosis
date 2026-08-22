@@ -1,6 +1,6 @@
 # HANDOFF_CURRENT.md — current operational handoff
 
-> **Updated:** 2026-08-22 19:59 Asia/Nicosia
+> **Updated:** 2026-08-22 20:08 Asia/Nicosia
 > **Canonical repository:** `athpapachr-cmd/osteoporosis`
 > **Current major phase:** prospective Osteoporosis Baseline/Audit pre-pilot hardening
 > **Current module:** Module 01 — Osteoporosis
@@ -90,19 +90,41 @@ Rules:
 An external code review identified several issues that should be resolved before Pilot Case 1.
 
 ### Patch 2 — core save overwrite bug
-Implemented on branch `fix/pilot-save-merge`.
+Closed and merged.
 
-Root fix in `static/baseline-audit/app-core.js`:
+`app-core.js` now merges current Steps 1–2 state into the existing stored case by `internal_uuid` rather than replacing the complete object. The former asynchronous capture/restore workaround in `pilot-completion.js` was removed.
+
+### Patch 1 — hidden dependent values / stale data
+Implemented on branch `fix/pilot-hidden-field-hygiene`.
+
+A central runtime guard in:
 
 ```text
-existing stored case + current Steps 1–2 state
-→ shallow merge by internal_uuid
-→ preserve step3 / step4 / longitudinal_review / step5 / step6 / audit_evaluation_v1
+static/baseline-audit/data-hygiene.js
 ```
 
-The previous `pilot-completion.js` capture/restore workaround and its `setTimeout(0)` preservation path were removed. Pilot completion behavior remains, but storage integrity no longer depends on post-save restoration.
+clears dependent values whenever their parent context is no longer active, before the individual step modules persist state.
 
-This replaces the previous handoff statement that `pilot-completion.js` itself preserves module slices around the legacy save handler.
+Covered dependencies:
+
+```text
+DXA used != yes
+→ clear BMD/T-score, ROI/artifact/Z-score and longitudinal-dependent values
+
+DXA longitudinal comparison != yes
+→ clear comparison date, machine comparability and LSC/change-validity values
+
+transition relevant != yes
+→ clear transition type/dates/next-agent/plan/safety/note
+
+information given != yes
+→ clear information-type checkboxes
+
+misunderstanding detected != yes
+→ clear misunderstanding-corrected value
+```
+
+The guard also sanitizes legacy stale values already present in the active localStorage case and runs before Save/Finish persistence. This prevents hidden values from feeding DXA longitudinal charts or later audit/KPI calculations.
 
 ---
 
@@ -113,7 +135,6 @@ This replaces the previous handoff statement that `pilot-completion.js` itself p
 Highest-priority remaining items from the external review:
 
 ```text
-Patch 1 — clear hidden/stale dependent values
 Patch 4 — remove Step 1 ↔ Step 3 duplicate sources of truth
 Patch 5 — make DXA machine a native persistent select
 Patch 7 — implement real archetype-driven applicability
