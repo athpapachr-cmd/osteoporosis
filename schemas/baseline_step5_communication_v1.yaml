@@ -1,0 +1,150 @@
+schema: baseline_step5_communication_v1
+status: draft_for_implementation
+module: osteoporosis
+purpose: >-
+  Define Step 5 of the prospective Baseline Osteoporosis Audit: encounter-specific communication,
+  patient understanding, shared-decision process, lifestyle counselling, and immediate clinician
+  post-visit reflection. The form records what was addressed without turning the scored baseline
+  into a live coaching checklist.
+
+principles:
+  - communication_expectations_are_archetype_specific
+  - new_patients_are_not_scored_like_stable_followups
+  - treatment_change_visits_require_different_explanations_from_routine_continuation
+  - patient_understanding_is_distinct_from_information_delivered
+  - clinician_impression_of_understanding_is_not_a_substitute_for_patient_voice
+  - no_live_KPI_feedback_during_scored_baseline
+  - free_text_is_optional_and_must_remain_non_identifiable
+
+archetype_applicability:
+  initial_assessment_new_or_uncertain_diagnosis:
+    expected:
+      - condition_and_fracture_risk_explained
+      - investigation_or_risk_findings_explained
+      - exercise_review
+      - nutrition_calcium_vitamin_d_review
+      - medication_or_no_medication_plan_explained_when_relevant
+      - questions_and_preferences_addressed
+      - next_steps_understood
+  initial_assessment_known_osteoporosis_or_osteopenia:
+    expected:
+      - current_status_and_risk_explained
+      - existing_or_new_plan_explained
+      - exercise_nutrition_reinforcement_when_relevant
+      - questions_and_preferences_addressed
+  routine_followup_stable:
+    expected:
+      - interval_results_or_status_explained
+      - adherence_tolerance_and_next_steps_discussed
+      - reinforcement_of_lifestyle_domains_when_relevant
+    not_routinely_required:
+      - repeat_full_condition_education_if_prior_understanding_is_adequate
+  treatment_start:
+    expected:
+      - why_treatment_is_recommended
+      - alternatives_and_major_tradeoffs
+      - route_frequency_duration_or_review_point
+      - common_or_material_safety_points
+      - adherence_and_missed_dose_or_timing_message_when_relevant
+      - patient_preference_and_acceptance
+  treatment_continuation_or_due_monitoring:
+    expected:
+      - current_treatment_status
+      - adherence_tolerance
+      - next_due_date_or_monitoring
+      - any_relevant_safety_message
+  treatment_change_or_transition:
+    expected:
+      - why_change_is_being_made
+      - prior_treatment_response_or_problem
+      - new_agent_or_next_step
+      - sequencing_timing_and_safety
+      - alternatives_and_patient_preference
+  post_fragility_fracture:
+    expected:
+      - meaning_of_fracture_for_future_risk
+      - treatment_or_intensification_plan
+      - falls_function_exercise_messages_when_relevant
+  fracture_on_treatment:
+    expected:
+      - what_the_event_means_and_does_not_automatically_mean
+      - adherence_or_exposure_review
+      - reassessment_or_change_plan
+      - uncertainty_and_next_steps
+  adverse_effect_or_intolerance:
+    expected:
+      - suspected_problem
+      - action_taken
+      - alternatives
+      - safety_net_or_followup
+  treatment_completion_or_consolidation:
+    expected:
+      - course_completion
+      - why_follow_on_or_consolidation_is_needed_when_relevant
+      - exact_next_step_and_timing
+
+communication_domains:
+  fields:
+    - condition_or_fracture_risk_explained: [yes, no, not_applicable, uncertain]
+    - results_or_current_status_explained: [yes, no, not_applicable, uncertain]
+    - exercise_discussed: [yes, no, not_applicable, uncertain]
+    - nutrition_discussed: [yes, no, not_applicable, uncertain]
+    - calcium_discussed: [yes, no, not_applicable, uncertain]
+    - vitamin_d_discussed: [yes, no, not_applicable, uncertain]
+    - other_supplements_discussed: [yes, no, not_applicable, uncertain]
+    - medication_or_no_medication_plan_explained: [yes, no, not_applicable, uncertain]
+    - treatment_reason_explained: [yes, no, not_applicable, uncertain]
+    - alternatives_or_tradeoffs_discussed: [yes, no, not_applicable, uncertain]
+    - duration_timing_or_review_point_explained: [yes, no, not_applicable, uncertain]
+    - material_safety_points_explained: [yes, no, not_applicable, uncertain]
+    - missed_dose_or_timing_message_when_relevant: [yes, no, not_applicable, uncertain]
+    - sequencing_or_transition_message_when_relevant: [yes, no, not_applicable, uncertain]
+    - patient_questions_addressed: [yes, no, not_applicable, uncertain]
+    - patient_preferences_elicited: [yes, no, not_applicable, uncertain]
+    - patient_preferences_influenced_plan: [yes, no, not_applicable, uncertain]
+
+understanding_and_teachback:
+  fields:
+    - clinician_impression_condition_understood: [yes, partly, no, uncertain, not_applicable]
+    - clinician_impression_plan_understood: [yes, partly, no, uncertain, not_applicable]
+    - clinician_impression_rationale_understood: [yes, partly, no, uncertain, not_applicable]
+    - teach_back_used: [yes, no, not_applicable]
+    - misunderstanding_detected: [yes, no, uncertain]
+    - misunderstanding_corrected: [yes, partly, no, not_applicable]
+    - written_or_digital_information_given: [yes, no, not_applicable]
+    - information_type_optional_multi_select: [condition, exercise, nutrition, supplements, medication, administration_timing, other]
+  rule: >-
+    These are clinician-captured communication process variables. They remain distinct from the
+    later Patient Voice instrument, which measures the patient's own report of understanding.
+
+postvisit_reflection:
+  fields:
+    - what_went_well_optional
+    - missed_or_uncertain_item: [yes, no, uncertain]
+    - missed_or_uncertain_domain_optional: [knowledge, reasoning, execution, communication_system, documentation, safety, other]
+    - short_reflection_optional
+    - case_review_signal: [yes, no]
+    - learning_signal: [yes, no]
+    - communication_signal: [yes, no]
+    - safety_signal: [yes, no]
+    - confidence_in_overall_visit_optional_percent
+  rule: >-
+    Reflection is deliberately compact. It should capture potential Signals without requiring an essay.
+
+baseline_behavior:
+  - no_live_score
+  - no_red_green_completion_feedback
+  - do_not_display_missing_items_as_prompts_during_scored_baseline
+  - patient_voice_remains_separate
+  - save_to_browser_localStorage_only_during_prototype
+
+kpi_mapping:
+  OST-KPI-09:
+    source: patient_preferences_and_shared_decision_process
+  OST-KPI-14:
+    source: future_patient_voice_not_clinician_impression
+  OST-KPI-15:
+    source: future_patient_voice_not_clinician_impression
+  future_communication_process_metrics:
+    source: communication_domains_and_teachback
+    status: candidate_after_pilot
