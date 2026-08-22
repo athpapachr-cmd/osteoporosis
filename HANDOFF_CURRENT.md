@@ -1,6 +1,6 @@
 # HANDOFF_CURRENT.md — current operational handoff
 
-> **Updated:** 2026-08-22 14:38 Asia/Nicosia
+> **Updated:** 2026-08-22 15:02 Asia/Nicosia
 > **Canonical repository:** `athpapachr-cmd/osteoporosis`
 > **Current major phase:** Clinical Excellence Blueprint + Baseline/Audit foundation
 > **Active detailed plan:** `CLINICAL_EXCELLENCE_PLAN.md`
@@ -12,9 +12,7 @@ This file contains only current operational truth. Permanent rules belong in `AG
 
 ## 1. Current project definition
 
-The project is now defined as a **Personal Clinical Excellence System** with a reusable Core Engine.
-
-The existing Osteoporosis Cockpit is one component of Module 01, specifically the point-of-care Clinical Practice / Encounter Execution layer. It is not the whole improvement system.
+The project is a **Personal Clinical Excellence System** with a reusable Core Engine. The existing Osteoporosis Cockpit is the point-of-care Clinical Practice / Encounter Execution layer of Module 01, not the whole improvement system.
 
 Core loop:
 
@@ -31,13 +29,11 @@ STANDARD
 → SYSTEM LEARNS
 ```
 
-Future clinical modules may include low-back pain, neck pain, knee pain, hip pain and shoulder pain, but they are intentionally deferred until the reusable engine is proven with Osteoporosis.
+Future clinical modules remain deferred until the reusable engine is proven with Osteoporosis.
 
 ---
 
 ## 2. Canonical project control plane
-
-The Osteoporosis repository now uses the same canonical-document discipline as the digital-secretary project.
 
 Active canonical set:
 
@@ -49,193 +45,168 @@ HANDOFF_CURRENT.md
 osteoporosis-change-log.md
 ```
 
-`README.md` is navigation only.
+`README.md` is navigation only. Durable decisions must not live only in chat.
 
-No chat thread is allowed to become the only place where a durable architectural decision lives.
-
----
-
-## 3. Existing repository/runtime truth
-
-Current root application assets present before this control-plane bootstrap:
+Supporting machine-readable design schemas now include:
 
 ```text
-Dockerfile
-README.md
-index.html
-main.py
-osteoporosis-qa-handout.html
-requirements.txt
+schemas/baseline_osteoporosis_audit_v1.yaml
+schemas/kpi_dictionary_v1.yaml
+schemas/baseline_case_form_v1.yaml
 ```
-
-The existing Cockpit already contains structured osteoporosis inputs, risk logic, evidence-assisted suggestions, AI elaboration, follow-up, agreed-plan controls and longitudinal history/trend functionality.
-
-Known architectural limitations to address in later implementation slices include:
-
-- guideline frameworks are partly hybridized;
-- a custom internal risk index should not carry treatment-decision authority;
-- DXA longitudinal analysis is T-score-centric rather than BMD/LSC/scanner-centric;
-- fracture and treatment history need more structured event/timeline objects;
-- follow-up needs task/due-date lifecycle;
-- post-visit audit is not yet a dedicated object;
-- evidence linking is partly keyword/string driven;
-- identifiable-patient production use needs stronger privacy/security architecture.
-
-No runtime code was changed during the current documentation/bootstrap step.
 
 ---
 
-## 4. Current architecture — preserve
+## 3. Critical baseline constraint discovered
 
-Reusable Core Engine:
+There is currently **no reliable pre-existing osteoporosis patient registry or dedicated osteoporosis folder** from which a representative retrospective baseline can be sampled.
+
+GeSY visit records may be incomplete and may not reflect everything discussed, assessed or decided during the real consultation. Therefore GeSY alone must not be treated as complete clinical truth for baseline measurement.
+
+Heidi AI has only recently started to be used and is **not yet used systematically**. It may improve encounter capture, but current use is an exposure variable, not a quality metric and not a reliable historical source.
+
+This invalidates the original preference for a purely retrospective 30-case baseline as the main design.
+
+---
+
+## 4. Revised baseline strategy — prospective measured baseline
+
+The baseline now uses a neutral **prospective post-visit capture form**.
+
+### Pilot
 
 ```text
-Standards
-Evidence / Guidelines
-Learning
-Testing / Mastery / Calibration
-Clinical Practice
-Patient Voice
-Audit / Measurement
-Safety
-Benchmarking
-Improvement
-Signal Engine
-Personal Adaptation
+5 consecutive eligible osteoporosis encounters
+→ test form usability/branching/time burden
+→ revise if needed
+→ freeze form + KPI applicability rules
 ```
 
-Module 01 — Osteoporosis supplies domain-specific content.
+Pilot cases are not included in the locked baseline.
 
-The central adaptive object is `Signal`.
-
-Signal sources include:
-
-- clinical practice;
-- patient feedback;
-- audit;
-- learning/testing;
-- evidence;
-- safety;
-- benchmarks;
-- sustained strengths.
-
-Negative signals must be root-cause classified before intervention:
+### Scored baseline
 
 ```text
-KNOWLEDGE GAP
-REASONING GAP
-EXECUTION GAP
-COMMUNICATION / SYSTEM GAP
+30 consecutive unique eligible osteoporosis patients
+→ one index encounter per patient for core baseline
+→ post-visit capture
+→ no KPI coaching / red-green performance feedback during collection
+→ safety-critical alerts remain active
+→ lock baseline after case 30
 ```
 
-Positive signals can mature into `SUSTAINED STRENGTH` and should reduce unnecessary basic repetition while increasing advanced challenge and benchmarking.
+This is explicitly an **observed prospective baseline**; it does not claim to reconstruct completely unobserved historical practice.
 
 ---
 
-## 5. Personalization principles currently approved
+## 5. Separate clinical care from documentation quality
 
-The system should be demanding but not mechanically adversarial.
-
-Approved modes:
+Every important audit domain must distinguish:
 
 ```text
-STANDARD
-CHALLENGE
-RED TEAM
-LEARNING
+A. CLINICAL PROCESS
+What was actually assessed / discussed / decided / arranged?
+
+B. FORMAL DOCUMENTATION
+What is traceably present in GeSY or another formal clinical record?
+
+C. CAPTURE QUALITY
+How complete/reliable is our evidence about the encounter?
 ```
 
-Approved personalized behaviors:
-
-- expose reasoning and source/framework rather than only `correct/incorrect`;
-- allow clinician ACCEPT / MODIFY / REJECT with reason;
-- prioritize high-confidence errors;
-- track calibration where useful;
-- compare strengths and gaps externally when methodologically valid;
-- distinguish critical defect from meaningful improvement from cosmetic refinement;
-- stop expanding scope when the approved objective has sufficient evidence of completion.
-
----
-
-## 6. Patient Voice — current approved role
-
-Patient feedback is a clinical-learning input, not merely satisfaction data.
-
-Initial concepts to preserve:
+Primary baseline source for clinical-process measurement:
 
 ```text
-understanding of condition
-understanding of plan
-understanding of rationale/duration/risks
-whether questions/preferences were addressed
-free-text confusion/praise/suggestion
+clinician-validated post-visit form
 ```
 
-Repeated feedback can generate Signals, trigger learning/workflow change and require re-measurement.
-
----
-
-## 7. Measurement principles currently approved
-
-Progress bars alone are insufficient.
-
-For important metrics preserve:
+Supplementary sources:
 
 ```text
-Current
-Baseline
-Change
-Trend
-Sample size / denominator
-Reliability
-Target / standard
-External benchmark + comparability
-Data completeness
+clinician-reviewed Heidi output when used
+GeSY note
+other declared formal record
 ```
 
-Progress bar = current state.
-Run chart = trajectory.
-
-No overall Clinical Excellence score should be shown as meaningful until a real baseline is established.
+A missing GeSY entry can therefore identify a **documentation/system gap** without falsely implying that the clinical action definitely did not occur.
 
 ---
 
-## 8. Current priority
+## 6. Heidi AI — current role
 
-**NEXT DESIGN ACTION:** create **Baseline Osteoporosis Audit v1 + KPI Dictionary v1**.
+During pilot/baseline, record:
 
-This should define:
+```text
+Heidi used? yes/no
+output available? yes/no
+clinician reviewed? yes/no
+material correction required? yes/no/unknown
+```
 
-- case sampling method;
-- inclusion/exclusion rules;
-- first audit domains;
-- exact KPI numerators/denominators/exclusions;
-- data-completeness rules;
-- `not applicable` handling;
-- minimum sample/reliability display rules;
-- baseline lock criteria;
-- re-audit timing;
-- mapping from each KPI to competency/standard/signal/intervention.
+Rules:
 
-The audit should be designed before any dashboard score is treated as real.
+- Heidi use itself is not scored as good practice.
+- AI output never overrides clinician validation.
+- Do not force systematic Heidi use during the scored baseline merely to make the baseline look better.
+- Later comparison of cases with versus without Heidi is observational only and does not prove causality.
+- Raw transcripts or identifiable Heidi clinical content must never be committed to this public repository.
+
+After baseline, systematic Heidi use may become an explicit Improvement Project if evidence from workflow/capture quality supports testing it.
 
 ---
 
-## 9. Current stop boundary
+## 7. Baseline/KPI design status
+
+`schemas/baseline_osteoporosis_audit_v1.yaml` now defines:
+
+- 5-case pilot;
+- 30-case prospective baseline;
+- one index encounter per unique patient;
+- safety/continuity census from activation;
+- 10-case decision-quality sub-audit;
+- later 20-patient Patient Voice baseline;
+- reliability tiers;
+- baseline lock and re-audit logic;
+- separate clinical/documentation measurement axes.
+
+`schemas/kpi_dictionary_v1.yaml` contains the first 16 provisional KPIs.
+
+`schemas/baseline_case_form_v1.yaml` defines the neutral post-visit data capture needed to calculate them while preserving clinical-process versus documentation distinctions.
+
+---
+
+## 8. Current next design action
+
+**NEXT:** convert `baseline_case_form_v1.yaml` into the first usable compact adaptive form specification/UI, then create:
+
+1. `Patient Voice` 4-question instrument;
+2. `Decision Quality` 10-case review form;
+3. exact KPI calculation contract mapping form fields → KPI status.
+
+The first runtime/data-capture implementation should remain narrow: collect baseline data reliably before building the full Clinical Excellence dashboard.
+
+---
+
+## 9. Stop boundary
 
 Do not yet:
 
-- perform a major rewrite of `main.py` / `index.html`;
-- create a composite excellence score from invented data;
+- major-rewrite `main.py` / `index.html`;
+- create a composite Clinical Excellence score from invented data;
+- display live coaching during scored baseline collection except safety-critical alerts;
+- treat GeSY as a complete record of the consultation;
+- make Heidi mandatory before baseline is established;
 - expand into the next musculoskeletal module;
-- prioritize patient leaflets over the current system architecture;
-- commit identifiable patient information to this public repository.
+- commit identifiable patient information, GeSY content or Heidi transcripts to the public repository.
 
-The next conversation/session can bootstrap by reading, in order:
+Bootstrap order for the next session:
 
 ```text
 AGENTS.md
 HANDOFF_CURRENT.md
 TODO.md — section 0/1
 CLINICAL_EXCELLENCE_PLAN.md
+schemas/baseline_osteoporosis_audit_v1.yaml
+schemas/baseline_case_form_v1.yaml
+schemas/kpi_dictionary_v1.yaml
 ```
