@@ -176,3 +176,80 @@ The next major design task is:
 The baseline must be defined before any dashboard progress score is considered valid.
 
 The audit design will specify sampling, inclusion/exclusion criteria, numerators, denominators, targets, data completeness, `not applicable` handling, reliability/sample-size rules, baseline lock criteria and re-audit timing.
+
+---
+
+## 2026-08-22 — Prospective baseline strategy adopted
+
+A key operational constraint was identified: there is no reliable pre-existing osteoporosis patient registry or dedicated osteoporosis folder, and GeSY visit records may be incomplete relative to what actually occurred during a consultation.
+
+The baseline strategy was therefore changed from a primarily retrospective chart audit to a **prospective post-visit encounter-capture baseline**.
+
+Approved sequence:
+
+```text
+5 pilot cases
+→ refine usability/branching
+→ freeze form + KPI applicability rules
+→ 30 consecutive unique scored baseline cases
+→ lock baseline
+→ interventions / re-audit
+```
+
+Heidi AI is currently recent and non-systematic. During baseline it is recorded only as an exposure/capture source; its use is not scored as good practice and is not forced before baseline lock.
+
+The audit now explicitly separates:
+
+```text
+clinical process
+formal GeSY/documentation trace
+capture quality
+```
+
+---
+
+## 2026-08-22 — Baseline audit / KPI / case-form schemas created
+
+Machine-readable draft schemas were added:
+
+```text
+schemas/baseline_osteoporosis_audit_v1.yaml
+schemas/kpi_dictionary_v1.yaml
+schemas/baseline_case_form_v1.yaml
+```
+
+The baseline schema defines pilot/scored cohorts, reliability display, safety exceptions, baseline lock and re-audit rules.
+
+The KPI dictionary defines the first 16 provisional osteoporosis KPIs, including data completeness, fracture history, risk assessment, DXA/VFA, secondary causes, falls/frailty, treatment history, decision documentation, continuity, denosumab timeliness, transition safety, fracture-on-treatment review and Patient Voice measures.
+
+The case-form schema defines neutral prospective encounter capture with explicit separation between what occurred clinically and what is traceable in formal documentation.
+
+---
+
+## 2026-08-22 — Baseline Audit pilot UI Step 1 implemented in PR #1
+
+The first code implementation slice was created on branch `feat/baseline-audit-pilot-v1` and opened as PR #1.
+
+Added:
+
+```text
+static/baseline-audit/index.html
+static/baseline-audit/styles.css
+static/baseline-audit/app.js
+```
+
+The implemented first screen includes:
+
+- pilot case identity/progress;
+- encounter metadata;
+- visit reason and osteoporosis status;
+- adaptive sex/menopause context;
+- structured Heidi exposure/output/review/correction capture;
+- quick applicability signals;
+- privacy warnings;
+- local draft save/resume and case list using browser `localStorage` only;
+- no live KPI coaching or red/green baseline performance feedback.
+
+Steps 2–6 are intentionally placeholders. No server-side patient-data API, `main.py` rewrite or new production clinical-data storage was introduced.
+
+The existing FastAPI static mount can serve the page at `/static/baseline-audit/` after merge/deploy.
