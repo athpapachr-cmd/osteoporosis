@@ -1,6 +1,6 @@
 # HANDOFF_CURRENT.md — current operational handoff
 
-> **Updated:** 2026-08-22 21:20 Asia/Nicosia
+> **Updated:** 2026-08-22 21:37 Asia/Nicosia
 > **Canonical repository:** `athpapachr-cmd/osteoporosis`
 > **Current major phase:** prospective Osteoporosis Baseline/Audit pre-pilot hardening
 > **Current module:** Module 01 — Osteoporosis
@@ -149,15 +149,15 @@ other_unknown
 Legacy free-text machine values are migrated without silent loss: recognized labels map to normalized values; unrecognized text maps to `other_unknown` and is preserved in `machine_label`.
 
 ### Patch 7 — archetype-driven adaptive applicability
-Implemented on branch `fix/patch7-archetype-applicability`.
+Closed and merged via PR #15.
 
-New schema:
+Schema:
 
 ```text
 schemas/baseline_applicability_review_v1.yaml
 ```
 
-New runtime layer:
+Runtime:
 
 ```text
 static/baseline-audit/adaptive-applicability.js
@@ -176,7 +176,28 @@ Behavior:
 - no KPI score, red/green feedback, omission warning, or treatment coaching is displayed;
 - collapsing a domain does not erase clinical values; later KPI calculation must consult resolved applicability before using retained values.
 
-The `applicability_review` slice is persisted in localStorage with archetype, defaults, overrides and resolved statuses. The module preserves its live review state across Save/Finish so core save behavior cannot silently drop an applicability override.
+### Patch 3 — whole-form progress
+Implemented on branch `fix/patch3-whole-form-progress`.
+
+New runtime:
+
+```text
+static/baseline-audit/whole-form-progress.js
+```
+
+The header progress is now a **capture-completion indicator across Steps 1–6**, not a Step-1-only percentage and not a KPI/performance score.
+
+Rules:
+
+- Step 1 invariant metadata always enters the denominator;
+- Steps 2–5 use basic completion markers only for domains currently active under Patch 7 applicability;
+- collapsed conditional/usual-N/A cards are excluded until explicitly reopened;
+- valid explicit N/A values count as completed capture where the underlying field allows them;
+- Step 6 provenance/capture-quality markers remain part of the denominator;
+- progress updates after input/change/navigation/applicability override/save/finish;
+- the legacy static label is replaced at runtime with `Συνολική συμπλήρωση` and a tooltip clarifying `Capture completion only — όχι KPI/performance score`.
+
+The legacy `app-core.calculateProgress()` remains as bootstrap fallback before the final progress module loads; the user-visible percentage is owned by `whole-form-progress.js` after bootstrap completion.
 
 ---
 
@@ -185,7 +206,6 @@ The `applicability_review` slice is persisted in localStorage with archetype, de
 **NEXT: finish the remaining pre-pilot usability/correctness items.**
 
 ```text
-Patch 3 — whole-form progress calculation
 Patch 6 — inline prior-DXA entry + escaping
 Patch 8 — BMI derived/manual behavior
 ```
@@ -199,6 +219,7 @@ Step 1 shared risk values → Step 3 mirror → no divergence
 DXA machine + machine_label → Save/reload → retained
 archetype change → expected/conditional/N/A card state updates correctly
 collapsed domain → Χρήση σήμερα → override persists after Save/reload
+whole-form progress changes across Steps 1–6 and excludes collapsed domains
 Finish Visit → all module slices retained
 ```
 
