@@ -91,7 +91,7 @@ Initial feedback dimensions include:
 - whether questions/preferences were addressed;
 - free-text confusion, concern, praise or suggestion.
 
-Repeated patient-feedback patterns may generate Signals, trigger improvement projects and require later re-measurement after communication/workflow changes.
+Repeated feedback patterns may generate Signals, trigger improvement projects and require later re-measurement after communication/workflow changes.
 
 ---
 
@@ -159,7 +159,7 @@ HANDOFF_CURRENT.md
 osteoporosis-change-log.md
 ```
 
-`README.md` remains navigation only.
+`README.md` remains navigation only and is not a sixth source of architecture truth.
 
 The permanent repository rule is one canonical project truth; chat history must not be the only place where durable decisions live.
 
@@ -291,3 +291,19 @@ Capture reliability, remaining major information gaps, reasons for limited captu
 The key interpretation rule was frozen: clinical process is represented by Steps 1–5; formal documentation is a separate evidence axis; Heidi is a supplementary clinician-reviewed capture source and its use is not a quality-success metric. Missing formal documentation must not be silently converted into a clinical omission.
 
 PR #8 was merged into `main` as commit `a14be3b9bfd393ccc245665c79bf700cf5eaff55`.
+
+---
+
+## 2026-08-22 — Pre-pilot Patch 2 fixes core save data integrity
+
+External review identified that the legacy Steps 1–2 `saveDraft()` replaced the whole stored case object. Because Steps 3–6 and longitudinal review persist as additional top-level slices, a later core save could therefore remove those slices.
+
+The root save behavior was changed from full replacement to merge-by-`internal_uuid`:
+
+```text
+stored case + current core state → merged stored case
+```
+
+The temporary `pilot-completion.js` snapshot/restore workaround was removed, including its asynchronous `setTimeout(0)` restoration path. Pilot completion remains intact but no longer carries responsibility for preserving module slices during ordinary saves.
+
+This change is a pre-pilot data-integrity fix and should be retained before any real pilot case is collected.
