@@ -9,7 +9,7 @@ This file answers **where the project is going and in what order**. Detailed cur
 
 ---
 
-# 0. CURRENT — CONTROL PLANE + BLUEPRINT
+# 0. CURRENT — BLUEPRINT → BASELINE PILOT IMPLEMENTATION
 
 - [x] Establish canonical five-file control plane:
   - `AGENTS.md`
@@ -23,27 +23,42 @@ This file answers **where the project is going and in what order**. Detailed cur
 - [x] Define initial Core objects.
 - [x] Define initial Osteoporosis competency taxonomy.
 - [x] Define first Home Dashboard wireframe and progress-bar principles.
-- [ ] Review/freeze Core object schema v1 sufficiently for first implementation.
+- [ ] Review/freeze Core object schema v1 sufficiently for broader Core implementation.
 - [ ] Expand Osteoporosis competency map into explicit standards and measurable competencies.
-- [ ] Create Baseline Osteoporosis Audit v1 specification.
-- [ ] Create KPI Dictionary v1 with exact numerators/denominators/exclusions/targets/sources.
-- [ ] Define first Dashboard Data Contract.
-- [ ] Approve implementation order for the first runtime slice.
+- [x] Create Baseline Osteoporosis Audit **draft v1** specification.
+- [x] Create KPI Dictionary **draft v1** with explicit numerators/denominators/exclusions/targets/sources.
+- [x] Create neutral prospective `baseline_case_form_v1` schema.
+- [x] Approve first narrow runtime slice: prospective baseline capture before full dashboard work.
+- [x] Implement Baseline Audit pilot UI Step 1 in PR #1.
+- [ ] Implement pilot UI Step 2 — fracture history + fracture-risk assessment.
+- [ ] Implement pilot UI Step 3 — DXA/VFA + secondary causes + falls/frailty.
+- [ ] Implement pilot UI Step 4 — treatment history/safety + decision + monitoring/follow-up.
+- [ ] Implement pilot UI Step 5 — communication + immediate post-visit reflection.
+- [ ] Implement pilot UI Step 6 — documentation trace + final Heidi/capture-source review.
+- [ ] Define exact form-field → KPI status calculation contract.
+- [ ] Run 5 pilot encounters and measure completion time/friction/missing fields.
+- [ ] Revise the form once after pilot evidence.
+- [ ] Freeze Baseline Form v1 + KPI applicability rules before scored baseline.
+- [ ] Define first Dashboard Data Contract after baseline capture contract is frozen.
 
-**CURRENT NEXT DESIGN ACTION:** Baseline Osteoporosis Audit v1 + KPI Dictionary v1.
+**CURRENT NEXT IMPLEMENTATION ACTION:** complete the remaining schema-driven pilot-form steps, then run the 5-case pilot before starting the 30-case scored baseline.
 
 ---
 
 # 1. BASELINE / MEASUREMENT FOUNDATION
 
-- [ ] Define baseline sampling strategy using consecutive or otherwise explicitly sampled cases.
-- [ ] Define minimum sample-size/reliability display rules.
-- [ ] Define data-completeness KPI as foundational metric.
-- [ ] Define treatment of `not applicable`, missing and unknown values.
-- [ ] Establish baseline lock date once enough cases are reviewed.
-- [ ] Create run-chart conventions for longitudinal KPI display.
-- [ ] Define overall-score policy; do not display a composite score before sufficient baseline data.
+- [x] Replace unreliable retrospective-only baseline with prospective consecutive encounter capture.
+- [x] Define 5-case usability pilot followed by 30 consecutive unique scored baseline cases.
+- [x] Define minimum sample-size/reliability display rules.
+- [x] Define data-completeness KPI as foundational metric.
+- [x] Define treatment of `not applicable`, missing, undocumented and not-assessable values.
+- [x] Separate clinical process from formal GeSY/documentation trace and capture quality.
+- [x] Define Heidi as observational capture exposure during baseline; do not score or mandate its use.
+- [ ] Establish baseline lock date after form/KPI freeze and 30 scored cases.
+- [ ] Finalize run-chart conventions for longitudinal KPI display.
+- [x] Define overall-score policy: no composite score before sufficient baseline data.
 - [ ] Define Improvement Velocity cautiously and distinguish plateau-at-high-performance from unresolved stagnation.
+- [ ] Define secure/private production data-store architecture before any identifiable patient-data persistence.
 
 ---
 
@@ -193,8 +208,8 @@ For each domain:
 
 The GitHub repository is public.
 
-- [ ] Keep all repository examples synthetic/anonymized.
-- [ ] Remove/avoid UI prompts encouraging public persistence of identifiable GeSY/EMR identifiers.
+- [x] Keep current repository schemas/UI examples synthetic and prohibit identifiable inputs in the pilot UI.
+- [x] Avoid public/server persistence in the first pilot slice; browser `localStorage` is prototype-only and explicitly unencrypted.
 - [ ] Before identifiable production use: authentication and access control.
 - [ ] Secure secrets and environment configuration.
 - [ ] Add audit trail for sensitive clinical actions/data access.
