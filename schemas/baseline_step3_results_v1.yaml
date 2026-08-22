@@ -1,0 +1,234 @@
+schema: baseline_step3_results_v1
+status: draft_for_implementation
+module: osteoporosis
+purpose: >-
+  Define Step 3 of the prospective Baseline Osteoporosis Audit: DXA/VFA, laboratory and
+  secondary-cause evaluation, falls/frailty/function, and conditional sarcopenia case-finding.
+  The design reuses clinically useful data already present in the legacy Osteoporosis Cockpit,
+  but restructures them for auditability and encounter-specific applicability rather than
+  copying the old dashboard field-for-field.
+
+migration_principle:
+  preserve:
+    - DXA T-scores and longitudinal history concepts
+    - calcium_phosphate_vitamin_D_PTH_and_renal_labs
+    - bone_turnover_markers_CTX_P1NP_and_optional_bone_ALP_osteocalcin
+    - thyroid_glucose_inflammatory_and_sex_hormone_context_when_relevant
+    - CFS_falls_cognition_immobility_and_mobility_context
+  improve:
+    - add_BMD_g_cm2_and_DXA_quality_metadata
+    - add_same_machine_cross_calibration_and_LSC_context
+    - separate_VFA_indication_from_VFA_action
+    - separate_secondary_cause_review_from_numeric_lab_entry
+    - use_falls_count_last_12_months_not_only_boolean_history
+    - add_outpatient_function_and_sarcopenia_case_finding
+  do_not_copy_by_default:
+    - inpatient_specific_Morse_items_that_do_not_materially_improve_outpatient_osteoporosis_audit
+    - duplicated_boolean_risk_flags_when_a_numeric_or_structured_source_field_exists
+
+archetype_applicability:
+  initial_assessment_new_or_uncertain_diagnosis:
+    expected:
+      - DXA_review_when_available_or_indicated
+      - height_loss_and_vertebral_case_finding
+      - secondary_cause_review
+      - relevant_baseline_labs_reviewed_or_arranged
+      - falls_frailty_function_review
+      - sarcopenia_case_finding_when_triggered
+  initial_assessment_known_osteoporosis_or_osteopenia:
+    expected:
+      - DXA_quality_and_longitudinal_review
+      - prior_secondary_workup_adequacy
+      - current_relevant_labs
+      - falls_frailty_function_review
+      - sarcopenia_case_finding_when_triggered
+  routine_followup_stable:
+    expected_when_due_or_changed:
+      - interval_DXA_or_monitoring_status
+      - relevant_labs_due_status
+      - interval_falls_function_or_frailty_change
+    not_routinely_required:
+      - repeat_full_secondary_cause_workup_without_new_signal
+      - full_sarcopenia_workup_without_case_finding_trigger
+  treatment_start:
+    expected:
+      - DXA_and_risk_source_data_sufficient_for_decision
+      - medication_specific_safety_labs_reviewed_or_arranged
+      - secondary_causes_addressed_when_indicated
+  treatment_continuation_or_due_monitoring:
+    expected_when_relevant:
+      - due_monitoring_labs
+      - DXA_due_status
+      - interval_falls_function_change
+  treatment_change_or_transition:
+    expected:
+      - current_DXA_or_response_context_when_relevant
+      - renal_mineral_and_other_medication_specific_safety_labs
+      - CTX_P1NP_or_other_BTM_when_clinically_used
+      - secondary_cause_reassessment_if_failure_or_unexpected_response
+  post_fragility_fracture:
+    expected:
+      - vertebral_burden_or_imaging_when_relevant
+      - falls_function_and_frailty_review
+      - secondary_cause_review_when_indicated
+      - treatment_safety_labs_when_treatment_is_planned
+  fracture_on_treatment:
+    expected:
+      - DXA_response_context_when_available
+      - secondary_cause_reassessment
+      - CTX_P1NP_or_other_BTM_when_clinically_used
+      - falls_function_and_frailty_review
+  adverse_effect_or_intolerance:
+    expected_when_relevant:
+      - targeted_safety_labs_or_other_investigation
+  treatment_completion_or_consolidation:
+    expected:
+      - treatment_response_DXA_context_when_relevant
+      - safety_labs_for_next_agent
+      - BTM_when_used_for_transition_monitoring
+
+dxa:
+  fields:
+    - dxa_used_in_current_management: [yes, no]
+    - latest_dxa_date
+    - facility_optional
+    - manufacturer_or_model_optional
+    - machine_id_optional
+    - spine_bmd_g_cm2
+    - spine_t_score
+    - total_hip_bmd_g_cm2
+    - total_hip_t_score
+    - femoral_neck_bmd_g_cm2
+    - femoral_neck_t_score
+    - z_score_used_when_relevant: [yes, no, not_applicable]
+    - roi_or_excluded_vertebrae_issue: [none_known, present, uncertain, not_reviewed]
+    - artifact_or_technical_limitation: [none_known, present, uncertain, not_reviewed]
+    - longitudinal_comparison_made: [yes, no, not_applicable]
+    - comparison_scan_date
+    - same_machine_or_cross_calibrated: [yes, no, unknown, not_applicable]
+    - facility_lsc_known: [yes, no, not_applicable]
+    - spine_lsc_percent_optional
+    - total_hip_lsc_percent_optional
+    - change_interpreted_using_BMD_and_LSC_or_declared_noncomparable: [yes, no, not_applicable]
+  baseline_audit_intent: >-
+    Preserve T-scores from the legacy Cockpit but make BMD g/cm2, machine comparability and LSC
+    available so longitudinal interpretation can later be audited according to ISCD-style
+    precision/comparability principles.
+
+vfa_or_vertebral_imaging:
+  fields:
+    - vertebral_imaging_or_vfa_indicated: [yes, no, uncertain]
+    - indication_reasons_optional_multi_select:
+        - height_loss_ge_4_cm
+        - kyphosis
+        - acute_back_pain_with_osteoporosis_risk
+        - long_term_glucocorticoids
+        - t_score_le_minus_2_5
+        - prior_or_suspected_vertebral_fracture
+        - other
+    - action: [performed, already_available_reviewed, arranged, reasoned_not_done, missed, not_applicable]
+    - modality_optional: [VFA, spine_xray, CT, MRI, other]
+    - vertebral_fracture_found: [yes, no, uncertain, not_applicable]
+    - genant_or_grade_recorded_when_available: [yes, no, not_applicable]
+
+secondary_causes_and_labs:
+  process_fields:
+    - secondary_cause_review_indicated: [yes, no, uncertain]
+    - secondary_history_reviewed: [yes, no, not_applicable]
+    - prior_workup_accepted_as_still_adequate: [yes, no, not_applicable]
+    - relevant_labs_reviewed_or_arranged: [yes, no, not_applicable]
+    - unresolved_secondary_cause_question: [yes, no]
+  core_numeric_fields_optional:
+    - serum_calcium_mg_dl
+    - serum_phosphorus_mg_dl
+    - vitamin_d_25oh_ng_ml
+    - pth_pg_ml
+    - serum_creatinine_mg_dl
+    - egfr_ml_min_1_73m2
+    - serum_urea_mg_dl
+    - total_alk_phos_u_l
+    - serum_magnesium_mg_dl
+  bone_turnover_markers_optional:
+    - ctx_ng_ml
+    - p1np_ng_ml
+    - bone_alk_phos_u_l
+    - osteocalcin_ng_ml
+    - btm_context: [baseline, adherence_response, treatment_failure, transition, other, not_applicable]
+  conditional_numeric_fields_optional:
+    - serum_glucose_mg_dl
+    - hba1c_percent
+    - tsh_u_iu_ml
+    - free_t4_ng_dl
+    - esr_mm_hr
+    - crp_mg_l
+    - serum_testosterone_ng_dl
+    - fsh_iu_l
+    - estradiol_pg_ml
+    - morning_cortisol_ug_dl
+    - urine_calcium_24h_mg
+  conditional_tests_status_optional:
+    - cbc_reviewed_or_arranged
+    - liver_profile_reviewed_or_arranged
+    - celiac_screen_reviewed_or_arranged
+    - spep_or_light_chains_reviewed_or_arranged
+  rule: >-
+    Numeric entry is optional. The audit must distinguish 'reviewed/arranged' from 'value entered'.
+    A clinician should not be penalized simply because a result is stored elsewhere and not manually
+    copied into the pilot form.
+
+falls_frailty_function:
+  fields:
+    - falls_history_reviewed: [yes, no, not_applicable]
+    - falls_count_last_12_months
+    - fall_injury_or_fragility_fracture_related: [yes, no, unknown, not_applicable]
+    - frailty_function_reviewed: [yes, no, not_applicable]
+    - clinical_frailty_scale_1_9
+    - cognitive_impairment: [yes, no, unknown]
+    - significant_immobility: [yes, no, unknown]
+    - ambulatory_aid: [none, cane, crutches, walker, wheelchair, other, unknown]
+    - gait_or_balance_concern: [yes, no, uncertain, not_assessed]
+    - timed_up_and_go_seconds_optional
+    - action_if_material_risk_identified: [addressed, referral_or_plan, no_action, not_applicable]
+  migration_note: >-
+    CFS, cognition, immobility and fall history are retained from the old Cockpit. The default
+    outpatient baseline does not copy every Morse item because several are hospital-context specific.
+
+sarcopenia:
+  fields:
+    - case_finding_applicable: [yes, no, uncertain]
+    - screen_method: [SARC_F, clinical_suspicion, not_done, not_applicable]
+    - sarc_f_score_optional
+    - five_chair_stand_seconds_optional
+    - grip_strength_kg_optional
+    - gait_speed_m_s_optional
+    - sppb_score_optional
+    - tug_seconds_optional
+    - probable_sarcopenia_signal: [yes, no, uncertain, not_assessed]
+    - action_if_positive_optional
+  derived_logic_without_live_coaching:
+    - sarc_f_positive_when_score_ge_4
+  rule: >-
+    Sarcopenia case-finding is conditional, not mandatory for every osteoporosis encounter.
+    During baseline, derived signals are stored silently and do not produce red/green coaching.
+
+baseline_behavior:
+  - no_live_KPI_score_or_treatment_recommendation
+  - show_applicability_context_but_not_performance_verdict
+  - allow_not_applicable_and_not_reviewed_to_remain_distinct
+  - retain_legacy_values_when_useful_but_do_not_force_duplicate_manual_entry
+  - save_in_browser_localStorage_only_during_prototype
+
+kpi_mapping:
+  OST-KPI-03:
+    source: dxa
+  OST-KPI-04:
+    source: dxa
+  OST-KPI-05:
+    source: vfa_or_vertebral_imaging
+  OST-KPI-06:
+    source: secondary_causes_and_labs
+  OST-KPI-07:
+    source: falls_frailty_function
+  future_sarcopenia_metric:
+    source: sarcopenia
+    status: candidate_after_pilot_not_yet_scored

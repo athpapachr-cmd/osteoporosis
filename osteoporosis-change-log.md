@@ -253,3 +253,46 @@ The implemented first screen includes:
 Steps 2–6 are intentionally placeholders. No server-side patient-data API, `main.py` rewrite or new production clinical-data storage was introduced.
 
 The existing FastAPI static mount can serve the page at `/static/baseline-audit/` after merge/deploy.
+
+---
+
+## 2026-08-22 — Step 1 refined into adaptive encounter context
+
+After clinical review, Step 1 was reworked to separate patient relationship (`new_to_service` vs `established_patient`) from encounter archetype. It added measured/source height, weight/BMI, derived height loss, fracture recency, glucocorticoid dose/duration, falls count, structured secondary conditions, frailty/immobility and conditional sarcopenia case-finding.
+
+Heidi capture was simplified: no raw/corrected transcript and no manual diff; only exposure/review/material-correction metadata with optional one-click correction categories.
+
+A formal encounter-archetype schema was added so the audit no longer applies one checklist to every visit.
+
+---
+
+## 2026-08-22 — Baseline Audit Step 2 implemented
+
+Step 2 added structured fracture events and formal fracture-risk capture. It records review scope, interval fractures, event site/date/fragility/on-treatment status, FRAX/FRAXplus use, country/surrogate model, MOF/hip probability, FN BMD use, explicit risk framework, resulting category and contextual adjustment/override.
+
+The system explicitly avoids internal FRAX-like surrogate scoring and silent hybridization of guideline thresholds.
+
+---
+
+## 2026-08-22 — Selective migration principle adopted for legacy Cockpit data
+
+The new Clinical Excellence dashboard will not copy the legacy Cockpit field-for-field. Existing data are classified as useful, duplicate, outdated or context-specific. Useful fields are preserved and normalized with provenance/timing/applicability before being linked to KPI, audit, learning and improvement loops.
+
+Examples: T-scores are retained but longitudinal DXA gains BMD/LSC/machine comparability; falls/frailty fields are retained but outpatient function and 12-month fall counts are prioritized; numeric labs remain optional while the audit measures whether relevant evaluation occurred; hospital-specific Morse fields are not automatically promoted into the outpatient osteoporosis baseline.
+
+---
+
+## 2026-08-22 — Baseline Audit Step 3 implemented
+
+Step 3 added:
+
+- DXA current-use context, BMD g/cm², T-scores, ROI/artifact review, Z-score relevance;
+- longitudinal DXA comparability, machine/cross-calibration, facility LSC and BMD/LSC interpretation status;
+- VFA/vertebral-imaging indication separated from action/result;
+- secondary-cause process capture separate from optional numeric lab entry;
+- legacy mineral/renal labs and bone-turnover markers as optional values;
+- conditional secondary-cause lab fields/status;
+- outpatient falls/frailty/function assessment with CFS, cognition, immobility, aid, gait/balance and optional TUG;
+- conditional sarcopenia case-finding with SARC-F, chair stand, grip strength, gait speed, SPPB and TUG.
+
+Step 3 seeds relevant values from Step 1 to reduce duplicate entry and preserves the baseline rule of no live KPI coaching.

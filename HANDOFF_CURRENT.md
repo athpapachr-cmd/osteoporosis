@@ -1,11 +1,11 @@
 # HANDOFF_CURRENT.md — current operational handoff
 
-> **Updated:** 2026-08-22 16:23 Asia/Nicosia
+> **Updated:** 2026-08-22 16:50 Asia/Nicosia
 > **Canonical repository:** `athpapachr-cmd/osteoporosis`
 > **Current major phase:** prospective Osteoporosis Baseline/Audit implementation
 > **Current module:** Module 01 — Osteoporosis
 
-This file contains only current operational truth. Permanent rules belong in `AGENTS.md`; roadmap in `TODO.md`; completed history in `osteoporosis-change-log.md`.
+This file contains current operational truth only. Permanent rules belong in `AGENTS.md`; roadmap in `TODO.md`; completed history in `osteoporosis-change-log.md`.
 
 ---
 
@@ -20,7 +20,7 @@ STANDARD → LEARN → TEST/MASTER → APPLY → MEASURE → AUDIT
 → GAP OR STRENGTH → INTERVENE/REINFORCE → RE-MEASURE → SYSTEM LEARNS
 ```
 
-Future musculoskeletal modules remain deferred until the reusable engine is proven with Osteoporosis.
+Osteoporosis is the proving module. Future musculoskeletal modules remain deferred until the reusable engine is stable.
 
 ---
 
@@ -44,6 +44,7 @@ schemas/baseline_step1_risk_refinement_v1.yaml
 schemas/encounter_archetypes_v1.yaml
 schemas/baseline_step1_capture_v1.yaml
 schemas/baseline_step2_risk_v1.yaml
+schemas/baseline_step3_results_v1.yaml
 ```
 
 `README.md` is navigation only. Durable decisions must not live only in chat.
@@ -52,7 +53,7 @@ schemas/baseline_step2_risk_v1.yaml
 
 ## 3. Baseline strategy
 
-There is no reliable historical osteoporosis registry/dedicated folder, and GeSY notes may not reflect the entire consultation. Main baseline design is therefore **prospective post-visit capture**:
+There is no reliable historical osteoporosis registry/dedicated folder, and GeSY notes may not reflect the entire consultation. The main baseline is therefore **prospective post-visit capture**:
 
 ```text
 5 consecutive pilot encounters
@@ -93,24 +94,21 @@ treatment completion / consolidation
 other
 ```
 
-A patient can be new to the service but already diagnosed/treated. Disease status is therefore separate again.
-
-KPI denominators will later be archetype-specific.
+Disease status is separate again. KPI denominators will be archetype-specific.
 
 ---
 
 ## 5. Step 1 — implemented, merged and live
 
-Step 1 captures:
+Captures:
 
 - patient relationship + encounter archetype;
 - age/sex/menopause;
 - weight/current height/height source/reference height;
-- automatic BMI when weight + height are present;
-- derived height loss;
-- prior fragility fracture with most recent site + month/year;
+- automatic BMI and derived height loss;
+- prior fragility fracture with site + month/year;
 - parental hip fracture;
-- frailty/immobility trigger with optional CFS/cognition/immobility;
+- frailty/immobility trigger with CFS/cognition/immobility;
 - systemic glucocorticoid dose + duration;
 - falls count over 12 months;
 - structured secondary/associated conditions;
@@ -118,106 +116,149 @@ Step 1 captures:
 - osteoporosis status and baseline sampling flag;
 - low-burden Heidi exposure/review/correction metadata.
 
-Background-only derived context includes low-BMI workflow flag, height loss >=4 cm, fracture recency, recurrent falls >=2/year, GC dose bands/exposure duration and SARC-F >=4. These are not shown as baseline performance coaching.
+Background-only derived context includes low-BMI workflow flag, height loss >=4 cm, fracture recency, recurrent falls >=2/year, GC dose bands/exposure duration and SARC-F >=4. These are not shown as performance coaching.
 
-Heidi rule: do not paste raw or corrected transcripts; no manual diff required. Optional one-click correction categories only.
+Heidi rule: do not paste raw or corrected transcripts; no manual diff required.
 
 ---
 
 ## 6. Step 2 — implemented, merged and live
 
-Merged commit:
-
-```text
-62a789a69890f6a17e290acb6b5d208dc7e406e3
-```
-
-Render deploy:
-
-```text
-dep-da4q43ojo6nc73eggicg — live
-```
-
-Step 2 now captures:
+Captures:
 
 ### Fracture history
-
-- whether fracture history was reviewed;
-- review scope: full / interval / focused / not reviewed;
+- review status and scope;
 - interval fracture status;
-- repeated structured fracture events with site, month/year, low-trauma classification, on-treatment status and vertebral level/type;
-- Step 1 last-fracture context can seed the first event;
-- most recent event synchronizes back to Step 1 context.
+- repeated structured fracture events with site, month/year, fragility classification, treatment-at-event status and vertebral detail.
 
 ### Formal fracture-risk assessment
-
-- whether formal risk assessment was indicated;
-- whether it was actually performed;
-- tool: FRAX / FRAXplus / other;
-- exact country or surrogate model used;
+- indicated vs performed;
+- FRAX / FRAXplus / other;
+- country or surrogate model;
 - MOF and hip 10-year probabilities;
-- whether femoral-neck BMD was used;
-- current smoking, alcohol >=3 units/day and RA context;
-- explicitly declared risk framework;
-- resulting risk category;
-- contextual adjustment / override and structured reasons.
+- femoral-neck BMD use;
+- smoking, alcohol and RA context;
+- declared risk framework and resulting category;
+- contextual adjustment / clinician override and structured reasons.
 
 Rules:
-
 - no internal FRAX-like surrogate score;
-- no silent hybridization of guideline thresholds;
-- stable follow-up can explicitly record interval-only review / formal assessment not applicable;
+- no silent guideline hybridization;
+- stable follow-up can explicitly record interval-only review / formal assessment N/A;
 - no live therapeutic coaching during baseline.
 
-Static pilot route remains:
+---
+
+## 7. Step 3 — implemented on active branch
+
+Schema:
 
 ```text
-/static/baseline-audit/
+schemas/baseline_step3_results_v1.yaml
 ```
 
-Prototype storage remains browser `localStorage` only and is not production clinical storage.
+Implementation files:
+
+```text
+static/baseline-audit/app.js       # lightweight bootstrap loader
+static/baseline-audit/app-core.js  # preserved Step 1 + Step 2 application core
+static/baseline-audit/step3.js
+static/baseline-audit/step3.css
+```
+
+Step 3 uses a **selective migration** principle from the old Cockpit: clinically useful data are retained, but not copied field-for-field.
+
+### DXA
+- current-use status;
+- scan date/facility/machine metadata;
+- spine / total hip / femoral neck BMD g/cm² + T-score;
+- ROI/excluded-vertebra and artifact review;
+- Z-score relevance;
+- longitudinal comparison;
+- same-machine/cross-calibration status;
+- facility LSC and optional site-specific LSC;
+- whether change was interpreted using BMD/LSC or explicitly declared non-comparable.
+
+### VFA / vertebral imaging
+- indication yes/no/uncertain;
+- structured indication reasons;
+- performed/reviewed/arranged/reasoned-not-done/missed/N/A;
+- modality;
+- vertebral fracture result and Genant/grade traceability.
+
+### Secondary causes and laboratory evaluation
+- separates indication/process from numeric value entry;
+- numeric labs remain optional so the pilot form is not a duplicate laboratory record;
+- preserves useful legacy mineral/renal labs and BTMs;
+- adds optional conditional secondary-cause labs/status fields.
+
+### Falls / frailty / function
+- falls review + 12-month count;
+- injury/fracture relation;
+- CFS;
+- cognition and immobility;
+- ambulatory aid;
+- gait/balance concern;
+- optional TUG;
+- action if material risk identified.
+
+Default outpatient baseline does **not** copy every Morse item from the legacy Cockpit because several are hospital-context specific.
+
+### Sarcopenia
+- conditional case-finding applicability;
+- SARC-F or clinical suspicion;
+- optional chair stand, grip strength, gait speed, SPPB and TUG;
+- probable-sarcopenia signal and optional action;
+- derived SARC-F >=4 stored silently, without baseline coaching.
+
+Step 3 seeds falls/CFS/cognition/immobility/sarcopenia fields from Step 1 where available instead of asking for duplicate entry.
+
+Prototype storage remains browser `localStorage`; no production patient-data persistence is introduced.
 
 ---
 
-## 7. Heidi AI — current role
+## 8. Migration principle from legacy Cockpit
 
-Heidi is recent and not systematic. During pilot/baseline it is an exposure/capture variable, not a quality metric.
-
-Capture:
+The new Clinical Excellence interface is **not a replacement-by-copy**. It is a migration and normalization layer:
 
 ```text
-used?
-output available?
-clinician reviewed?
-material correction required?
-optional one-click correction category
+OLD COCKPIT DATA
+→ classify as useful / duplicate / outdated / context-specific
+→ preserve useful structured data
+→ add missing provenance, timing and applicability
+→ connect to encounter archetype
+→ map to KPI / audit / learning / improvement loops
 ```
 
-Never commit raw/identifiable Heidi content to the public repository.
+Examples:
+
+- T-scores are retained, but longitudinal DXA gains BMD/LSC/machine comparability.
+- falls/frailty fields are retained, but 12-month fall counts and outpatient function are emphasized.
+- numeric labs are retained as optional values, while audit scoring focuses on whether relevant evaluation occurred.
+- hospital-specific Morse items are not automatically promoted into the outpatient osteoporosis baseline.
 
 ---
 
-## 8. Current next action
+## 9. Current next action
 
-**NEXT: Step 3 — Εξετάσεις & Αποτελέσματα.**
+**NEXT: Step 4 — Απόφαση & Πλάνο.**
 
-Step 3 should implement:
+Implement:
 
-1. DXA study capture and interpretation quality;
-2. BMD g/cm² + T/Z scores where relevant;
-3. longitudinal DXA comparability: machine/cross-calibration, percent change, facility LSC, excluded vertebrae/artifact;
-4. VFA/vertebral-imaging indication and action;
-5. secondary osteoporosis history/laboratory evaluation status;
-6. falls/frailty detailed review;
-7. conditional sarcopenia pathway: SARC-F/clinical suspicion → grip/chair stand → DXA/BIA → gait/SPPB/TUG when clinically relevant;
-8. exercise, physical activity and nutrition/supplement review when applicable;
-9. archetype-specific applicability with explicit N/A;
-10. no live KPI coaching during baseline.
+1. exact current/past treatment timeline;
+2. actual administrations and due dates where time-critical;
+3. adherence/tolerance and treatment response context;
+4. reason for start/continue/stop/switch/defer;
+5. contraindications/options considered;
+6. sequencing / exit / consolidation safety;
+7. clinician rationale and patient preference;
+8. monitoring plan: labs, DXA, administration, visit/referral due dates;
+9. unresolved critical item at encounter close;
+10. archetype-specific applicability and N/A handling.
 
 Then:
 
 ```text
-Step 4 — treatment history/safety + decision + monitoring/follow-up
 Step 5 — communication + post-visit reflection
 Step 6 — documentation trace + final Heidi/capture-source review
 → exact field→KPI calculation contract
@@ -231,11 +272,11 @@ Separate later instruments: Patient Voice 4-question instrument and Decision Qua
 
 ---
 
-## 9. Stop boundary
+## 10. Stop boundary
 
 Do not yet:
 
-- major-rewrite `main.py` / existing Cockpit `index.html`;
+- major-rewrite `main.py` / legacy Cockpit `index.html`;
 - create a composite Clinical Excellence score from invented data;
 - display live coaching during scored baseline except safety-critical alerts;
 - treat GeSY as complete clinical truth;
@@ -243,17 +284,3 @@ Do not yet:
 - expand into another musculoskeletal module;
 - commit identifiable patient information, GeSY content or Heidi transcripts to the public repository;
 - treat browser `localStorage` as production clinical-data storage.
-
-Bootstrap order:
-
-```text
-AGENTS.md
-HANDOFF_CURRENT.md
-TODO.md — section 0/1
-CLINICAL_EXCELLENCE_PLAN.md
-schemas/baseline_osteoporosis_audit_v1.yaml
-schemas/encounter_archetypes_v1.yaml
-schemas/baseline_step1_capture_v1.yaml
-schemas/baseline_step2_risk_v1.yaml
-schemas/kpi_dictionary_v1.yaml
-```
