@@ -1,0 +1,130 @@
+schema: baseline_step2_risk_v1
+status: implemented_pilot_v1
+module: osteoporosis
+step: 2
+name: fracture_history_and_formal_risk
+purpose: >-
+  Capture what fracture history was reviewed and how formal fracture risk was assessed
+  during the actual encounter. Preserve the declared framework and avoid silent mixing
+  of incompatible thresholds.
+
+principles:
+  - applicability depends on patient_relationship_status and encounter_archetype
+  - a stable follow-up can record interval_update and formal reassessment as not applicable
+  - a new/post-fracture/treatment-change encounter can capture a fuller reconstruction
+  - no internal FRAX-like surrogate score is generated here
+  - no live KPI score or therapeutic coaching during baseline
+
+fracture_history:
+  fields:
+    reviewed: [yes, no, unknown]
+    review_scope:
+      - full_history
+      - interval_update
+      - focused_current_fracture
+      - not_reviewed
+    interval_fracture_status: [yes, no, unknown, not_applicable]
+    events:
+      repeated_object:
+        fields:
+          - site: [vertebral, hip, distal_radius, proximal_humerus, pelvis, other]
+          - month
+          - low_trauma: [yes, no, uncertain]
+          - occurred_on_treatment: [yes, no, unknown, not_applicable]
+          - vertebral_level_or_type
+  synchronization:
+    - Step_1_last_fracture_can_seed_first_event
+    - most_recent_dated_event_updates_step_1_last_fracture_context
+
+formal_risk_assessment:
+  fields:
+    formal_indicated: [yes, no, uncertain]
+    formal_done: [yes, no, not_applicable]
+    tool_name: [frax, fraxplus, other]
+    country_or_surrogate_model: free_text
+    femoral_neck_bmd_used: [yes, no, unknown, not_applicable]
+    frax_mof_percent: 0_to_100
+    frax_hip_percent: 0_to_100
+  note: >-
+    Cyprus may require a surrogate/country model depending on the official FRAX
+    implementation available to the clinician; store exactly which model was used rather
+    than assuming UK/NOGG silently.
+
+frax_input_context:
+  additional_fields:
+    - current_smoking: [yes, no, unknown]
+    - high_alcohol_3_units_day: [yes, no, unknown]
+    - rheumatoid_arthritis: [yes, no, unknown]
+  inherited_from_step_1:
+    - age
+    - sex
+    - weight
+    - height
+    - bmi
+    - prior_fragility_fracture
+    - parental_hip_fracture
+    - glucocorticoid_exposure_and_dose_duration
+    - secondary_or_associated_conditions
+    - falls_count
+    - frailty_context
+
+framework_and_interpretation:
+  fields:
+    declared_framework:
+      - nogg_2024
+      - aace_2020
+      - iof_esceo
+      - local_cy
+      - other
+      - none_declared
+    resulting_risk_category:
+      - low
+      - intermediate
+      - high
+      - very_high
+      - uncertain
+      - not_applicable
+    contextual_adjustment: [yes, no, uncertain]
+    adjustment_reasons:
+      - recent_fracture
+      - recurrent_falls
+      - glucocorticoid_dose
+      - type2_diabetes
+      - spine_hip_discordance
+      - tbs_or_other_bone_quality
+      - frailty_or_clinical_context
+      - other
+    override_reason: optional_free_text
+
+archetype_behavior:
+  initial_assessment_new_or_uncertain_diagnosis:
+    typical_scope: full_history_plus_formal_risk_when_indicated
+  initial_assessment_known_osteoporosis_or_osteopenia:
+    typical_scope: full_or_reconstructed_history_plus_current_risk_interpretation
+  routine_followup_stable:
+    typical_scope: interval_update_formal_reassessment_may_be_not_applicable
+  treatment_start:
+    typical_scope: risk_framework_supporting_start_decision
+  treatment_continuation_or_due_monitoring:
+    typical_scope: targeted_update_formal_reassessment_only_if_done_or_due
+  treatment_change_or_transition:
+    typical_scope: current_risk_context_before_sequencing_decision
+  post_fragility_fracture:
+    typical_scope: precise_event_recency_plus_risk_reassessment
+  fracture_on_treatment:
+    typical_scope: precise_event_treatment_exposure_plus_risk_reassessment
+  adverse_effect_or_intolerance:
+    typical_scope: targeted_risk_context_if_relevant_to_stop_switch_decision
+  treatment_completion_or_consolidation:
+    typical_scope: risk_context_for_exit_or_consolidation
+
+kpi_targets_supported:
+  - OST-KPI-01_fracture_history
+  - OST-KPI-02_formal_fracture_risk_assessment
+  - later_decision_quality_subaudit
+
+baseline_display_rules:
+  - no_red_green_performance_feedback
+  - no_automatic_treatment_recommendation
+  - no_hybrid_risk_classifier
+  - explicit_not_applicable_allowed
