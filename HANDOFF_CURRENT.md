@@ -1,6 +1,6 @@
 # HANDOFF_CURRENT.md — current operational handoff
 
-> **Updated:** 2026-08-22 21:37 Asia/Nicosia
+> **Updated:** 2026-08-22 21:46 Asia/Nicosia
 > **Canonical repository:** `athpapachr-cmd/osteoporosis`
 > **Current major phase:** prospective Osteoporosis Baseline/Audit pre-pilot hardening
 > **Current module:** Module 01 — Osteoporosis
@@ -90,123 +90,69 @@ Rules:
 ### Patch 2 — core save overwrite / stale-module bug
 Closed after second review.
 
-The first fix changed full replacement to merge-by-`internal_uuid`, but a second review correctly identified that `currentCase` could still carry stale module slices loaded earlier. Those stale slices could overwrite fresher `longitudinal_review` data during a core Save/Finish.
-
-Root rule is now:
+Root rule:
 
 ```text
 app-core owns Steps 1–2 fields only
 module-owned slices are excluded from the core save payload
 ```
 
-Excluded keys:
-
-```text
-step3
-step4
-step5
-step6
-longitudinal_review
-pilot_completion
-audit_evaluation_v1
-```
-
-Therefore a Steps 1–2 save can no longer overwrite fresher module-owned state.
+Excluded keys: `step3`, `step4`, `step5`, `step6`, `longitudinal_review`, `pilot_completion`, `audit_evaluation_v1`.
 
 ### Patch 1 — hidden dependent values / stale data
-Closed and additionally hardened after second review.
+Closed and hardened.
 
-`static/baseline-audit/data-hygiene.js` clears hidden dependent values before persistence and sanitizes legacy stale localStorage data.
-
-Additional hardening:
-
-- `data-hygiene.js` loads before `longitudinal.js`, so initial longitudinal render sees sanitized stored state;
-- `longitudinal.currentDxaPoint()` explicitly checks `DXA used`; when it is not `yes`, the current DXA point is empty and cannot enter charts/tables even if stale values somehow exist.
+`data-hygiene.js` clears hidden dependent values before persistence and sanitizes legacy stale localStorage data. `longitudinal.currentDxaPoint()` independently refuses to expose a current DXA point unless `DXA used == yes`.
 
 ### Patch 4 — Step 1 ↔ Step 3 duplicate source of truth
-Closed and verified after second review.
+Closed.
 
-Canonical source remains Step 1 `risk_context` for falls count, CFS, cognition, immobility and basic sarcopenia screening; Step 3 displays those shared values as read-only projections while retaining Step-3-only functional detail.
-
-Current implementation remains in `static/baseline-audit/shared-risk-source.js`. It is functionally correct; do not introduce a second writer.
+Step 1 `risk_context` remains canonical for falls count, CFS, cognition, immobility and basic sarcopenia screening. Step 3 displays those values as read-only projections and keeps only Step-3-specific detail editable.
 
 ### Patch 5 — DXA machine field persistence / normalization
-Closed and merged.
+Closed.
 
-`static/baseline-audit/dxa-machine-select.js` normalizes `#s3DxaMachine` to a select before the longitudinal layer initializes and persists optional `machine_label`.
-
-Supported normalized values:
-
-```text
-hologic_horizon
-hologic_discovery
-ge_lunar_idxa
-ge_lunar_prodigy
-norland
-other_unknown
-```
-
-Legacy free-text machine values are migrated without silent loss: recognized labels map to normalized values; unrecognized text maps to `other_unknown` and is preserved in `machine_label`.
+`dxa-machine-select.js` normalizes the current DXA machine field and persists optional `machine_label`; legacy free-text values are preserved under `other_unknown` rather than silently lost.
 
 ### Patch 7 — archetype-driven adaptive applicability
 Closed and merged via PR #15.
 
-Schema:
-
-```text
-schemas/baseline_applicability_review_v1.yaml
-```
-
-Runtime:
-
-```text
-static/baseline-audit/adaptive-applicability.js
-static/baseline-audit/adaptive-applicability.css
-```
-
-Behavior:
-
-- maps each encounter archetype to domain-level `applicable`, `uncertain`, or `not_applicable` defaults;
-- leaves applicable cards expanded;
-- collapses conditional / normally-N/A cards with neutral grey styling;
-- provides `Χρήση σήμερα` to reopen a collapsed domain when it is clinically relevant;
-- records that action as an explicit applicability override rather than silently changing the encounter archetype;
-- `Other` and no-archetype states remain case-by-case and open rather than guessing applicability;
-- Step 6 documentation/capture remains applicable for all pilot encounters;
-- no KPI score, red/green feedback, omission warning, or treatment coaching is displayed;
-- collapsing a domain does not erase clinical values; later KPI calculation must consult resolved applicability before using retained values.
+`adaptive-applicability.js` maps encounter archetypes to `applicable`, `uncertain`, or `not_applicable` domain defaults, collapses conditional/usual-N/A cards, supports explicit `Χρήση σήμερα` override, and keeps Step 6 applicable for all pilot encounters. No KPI/performance coaching is displayed.
 
 ### Patch 3 — whole-form progress
-Implemented on branch `fix/patch3-whole-form-progress`.
+Closed and merged via PR #16.
+
+`whole-form-progress.js` owns the user-visible **capture-completion** percentage across Steps 1–6 after bootstrap. It excludes Patch-7-collapsed domains from the denominator until reopened and is explicitly not a KPI/performance score.
+
+### Patch 6 — prior DXA inline entry / longitudinal safety
+Implemented on branch `fix/patch6-inline-prior-dxa`.
 
 New runtime:
 
 ```text
-static/baseline-audit/whole-form-progress.js
+static/baseline-audit/prior-dxa-inline.js
 ```
 
-The header progress is now a **capture-completion indicator across Steps 1–6**, not a Step-1-only percentage and not a KPI/performance score.
+Behavior:
 
-Rules:
+- intercepts the legacy `＋ Prior DXA` action before the old prompt chain can run;
+- replaces seven sequential browser prompts with one inline editor for date, machine/local label, BMD and T-scores;
+- uses typed `date` / numeric inputs and a machine whitelist;
+- normalizes legacy DXA-history dates to strict `YYYY-MM-DD` before the longitudinal renderer runs, preventing raw historical date strings from entering the old unescaped table path;
+- normalizes unknown historical machine values to `other_unknown` while preserving the original text as `machine_label`;
+- assigns stable `_id` values to historical DXA rows;
+- captures removal by stable `_id`, fixing the prior sorted-display-index versus source-array-index deletion risk;
+- forces the longitudinal module to reload from localStorage after add/remove so its private state cannot overwrite the fresh history.
 
-- Step 1 invariant metadata always enters the denominator;
-- Steps 2–5 use basic completion markers only for domains currently active under Patch 7 applicability;
-- collapsed conditional/usual-N/A cards are excluded until explicitly reopened;
-- valid explicit N/A values count as completed capture where the underlying field allows them;
-- Step 6 provenance/capture-quality markers remain part of the denominator;
-- progress updates after input/change/navigation/applicability override/save/finish;
-- the legacy static label is replaced at runtime with `Συνολική συμπλήρωση` and a tooltip clarifying `Capture completion only — όχι KPI/performance score`.
-
-The legacy `app-core.calculateProgress()` remains as bootstrap fallback before the final progress module loads; the user-visible percentage is owned by `whole-form-progress.js` after bootstrap completion.
+The module is loaded before `longitudinal.js`, so legacy history is normalized before the first table/chart render.
 
 ---
 
 ## 5. Current exact next action
 
-**NEXT: finish the remaining pre-pilot usability/correctness items.**
+**NEXT: finish the last pre-pilot usability/correctness item.**
 
 ```text
-Patch 6 — inline prior-DXA entry + escaping
 Patch 8 — BMI derived/manual behavior
 ```
 
@@ -220,6 +166,8 @@ DXA machine + machine_label → Save/reload → retained
 archetype change → expected/conditional/N/A card state updates correctly
 collapsed domain → Χρήση σήμερα → override persists after Save/reload
 whole-form progress changes across Steps 1–6 and excludes collapsed domains
+Prior DXA → inline add → Save/reload → retained
+historical DXA delete after date sorting → correct row removed
 Finish Visit → all module slices retained
 ```
 
