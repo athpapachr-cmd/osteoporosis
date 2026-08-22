@@ -1,6 +1,6 @@
 # HANDOFF_CURRENT.md — current operational handoff
 
-> **Updated:** 2026-08-22 20:31 Asia/Nicosia
+> **Updated:** 2026-08-22 20:56 Asia/Nicosia
 > **Canonical repository:** `athpapachr-cmd/osteoporosis`
 > **Current major phase:** prospective Osteoporosis Baseline/Audit pre-pilot hardening
 > **Current module:** Module 01 — Osteoporosis
@@ -87,29 +87,55 @@ Rules:
 
 ## 4. Pre-pilot hardening status
 
-### Patch 2 — core save overwrite bug
-Closed and merged.
+### Patch 2 — core save overwrite / stale-module bug
+Closed after second review.
+
+The first fix changed full replacement to merge-by-`internal_uuid`, but a second review correctly identified that `currentCase` could still carry stale module slices loaded earlier. Those stale slices could overwrite fresher `longitudinal_review` data during a core Save/Finish.
+
+Root rule is now:
+
+```text
+app-core owns Steps 1–2 fields only
+module-owned slices are excluded from the core save payload
+```
+
+Excluded keys:
+
+```text
+step3
+step4
+step5
+step6
+longitudinal_review
+pilot_completion
+audit_evaluation_v1
+```
+
+Therefore a Steps 1–2 save can no longer overwrite fresher module-owned state.
 
 ### Patch 1 — hidden dependent values / stale data
-Closed and merged.
+Closed and additionally hardened after second review.
+
+`static/baseline-audit/data-hygiene.js` still clears hidden dependent values before persistence and sanitizes legacy stale localStorage data.
+
+Additional hardening:
+
+- `data-hygiene.js` now loads before `longitudinal.js`, so initial longitudinal render sees sanitized stored state;
+- `longitudinal.currentDxaPoint()` now explicitly checks `DXA used`; when it is not `yes`, the current DXA point is empty and cannot enter charts/tables even if stale values somehow exist.
 
 ### Patch 4 — Step 1 ↔ Step 3 duplicate source of truth
-Closed and merged.
+Closed and verified after second review.
 
 Canonical source remains Step 1 `risk_context` for falls count, CFS, cognition, immobility and basic sarcopenia screening; Step 3 displays those shared values as read-only projections while retaining Step-3-only functional detail.
 
+Current implementation remains in `static/baseline-audit/shared-risk-source.js`. It is functionally correct; do not introduce a second writer. A later cleanup may move this ownership directly into Step 3, but that refactor is not required for pilot correctness unless smoke testing identifies a regression.
+
 ### Patch 5 — DXA machine field persistence / normalization
-Implemented on branch `fix/pilot-dxa-machine-select`.
+Closed and merged.
 
-A runtime normalization layer in:
+`static/baseline-audit/dxa-machine-select.js` normalizes `#s3DxaMachine` to a select before the longitudinal layer initializes and persists optional `machine_label`.
 
-```text
-static/baseline-audit/dxa-machine-select.js
-```
-
-ensures `#s3DxaMachine` is a normalized select before the longitudinal layer initializes.
-
-Supported normalized machine values:
+Supported normalized values:
 
 ```text
 hologic_horizon
@@ -120,9 +146,9 @@ norland
 other_unknown
 ```
 
-A separate persistent `machine_label` stores optional local machine identity / legacy free-text detail. Legacy free-text machine values are migrated without silent loss: recognized labels map to normalized values; unrecognized text maps to `other_unknown` and is preserved in `machine_label`.
+Legacy free-text machine values are migrated without silent loss: recognized labels map to normalized values; unrecognized text maps to `other_unknown` and is preserved in `machine_label`.
 
-The module loads immediately after Step 3 and before `longitudinal.js`, eliminating the previous text→select race. Step 3's own spread-based DXA persistence preserves `machine_label`, while the normalization layer writes it explicitly on machine/local-label changes and Save/Finish actions.
+The second review confirmed this runtime implementation is active. A future owner-module cleanup may move the select directly into `step3.js`, but this is technical cleanup rather than an unresolved pilot data-integrity defect.
 
 ---
 
@@ -144,7 +170,17 @@ Patch 6 — inline prior-DXA entry + escaping
 Patch 8 — BMI derived/manual behavior
 ```
 
-After those, perform a save/reload/complete smoke test and only then start Pilot Case 1/5.
+After those, perform an explicit save/reload/complete smoke test including:
+
+```text
+FRAX/FRAXplus edit → Save → reload → values retained
+DXA yes + values → DXA no → Save → no current DXA in trends
+Step 1 shared risk values → Step 3 mirror → no divergence
+DXA machine + machine_label → Save/reload → retained
+Finish Visit → all module slices retained
+```
+
+Only then start Pilot Case 1/5.
 
 After the 5 pilot cases:
 
