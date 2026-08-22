@@ -284,19 +284,6 @@
 
   $$(".step-tab").forEach(button => button.addEventListener("click", () => setTimeout(apply, 0)));
 
-  // Keep the live applicability review in module memory and re-persist it after core Save/Finish.
-  ["#saveTopBtn", "#saveDraftBtn", "#finishVisitBtn"].forEach(selector => {
-    const node = $(selector);
-    if (!node) return;
-    node.addEventListener("click", () => {
-      const snapshot = reviewState ? JSON.parse(JSON.stringify(reviewState)) : null;
-      setTimeout(() => {
-        if (snapshot) persistReview(snapshot);
-        apply();
-      }, 0);
-    }, true);
-  });
-
   if (!document.querySelector('link[data-adaptive-applicability-style]')) {
     const link = document.createElement("link");
     link.rel = "stylesheet";

@@ -1,6 +1,6 @@
 # HANDOFF_CURRENT.md — current operational handoff
 
-> **Updated:** 2026-08-22 21:58 Asia/Nicosia
+> **Updated:** 2026-08-22 22:20 Asia/Nicosia
 > **Canonical repository:** `athpapachr-cmd/osteoporosis`
 > **Current major phase:** prospective Osteoporosis Baseline/Audit pre-pilot hardening
 > **Current module:** Module 01 — Osteoporosis
@@ -92,7 +92,20 @@ Rules:
 Closed and hardened. `data-hygiene.js` clears hidden dependent values before persistence; `longitudinal.currentDxaPoint()` independently refuses to expose a current DXA point unless `DXA used == yes`.
 
 ### Patch 2 — core save overwrite / stale-module bug
-Closed after second review. `app-core` excludes module-owned slices from its save payload: `step3`, `step4`, `step5`, `step6`, `longitudinal_review`, `pilot_completion`, `audit_evaluation_v1`.
+Closed after second review and extended after the final applicability review. `app-core` now excludes all currently module-owned slices from its save payload:
+
+```text
+step3
+step4
+step5
+step6
+longitudinal_review
+applicability_review
+pilot_completion
+audit_evaluation_v1
+```
+
+The core therefore cannot overwrite fresher module-owned state with stale copies carried in `currentCase`.
 
 ### Patch 3 — whole-form progress
 Closed and merged via PR #16. `whole-form-progress.js` owns the user-visible capture-completion percentage across Steps 1–6 and excludes Patch-7-collapsed domains from the denominator until reopened. It is not a KPI/performance score.
@@ -116,12 +129,21 @@ Closed and merged via PR #17.
 - reloads longitudinal private state after add/remove so fresh history cannot be overwritten.
 
 ### Patch 7 — archetype-driven adaptive applicability
-Closed and merged via PR #15. `adaptive-applicability.js` maps encounter archetypes to applicable/conditional/usual-N/A domain defaults, supports explicit `Χρήση σήμερα` override, and keeps Step 6 applicable for all pilot encounters without KPI coaching.
+Closed and ownership-hardened.
+
+`adaptive-applicability.js` maps encounter archetypes to applicable/conditional/usual-N/A domain defaults, supports explicit `Χρήση σήμερα` override, and keeps Step 6 applicable for all pilot encounters without KPI coaching.
+
+Final persistence hardening:
+- `applicability_review` is now explicitly module-owned and excluded from `app-core` save payloads;
+- the previous Save/Finish snapshot + `setTimeout(persistReview)` repair shim was removed;
+- applicability overrides must now survive core Save/Finish because of correct ownership, not post-save repair.
+
+Conditional (`uncertain`) domains remain collapsed by default for the pilot and can be reopened with `Χρήση σήμερα`. Revisit only if pilot usability evidence shows this causes missed clinically relevant domains.
 
 ### Patch 8 — BMI derived/manual behavior
-Implemented on branch `fix/patch8-bmi-derived-behavior`.
+Closed and merged via PR #18.
 
-New runtime:
+Runtime:
 
 ```text
 static/baseline-audit/bmi-behavior.js
@@ -155,12 +177,12 @@ Run one synthetic/non-identifiable test case through:
 3. Step 1 shared risk values → Step 3 mirror → no divergence
 4. DXA machine + machine_label → Save/reload → retained
 5. archetype change → expected/conditional/N/A card state updates correctly
-6. collapsed domain → Χρήση σήμερα → override persists after Save/reload
+6. collapsed domain → Χρήση σήμερα → Save from Step 1/2 → reload → override retained without repair shim
 7. whole-form progress changes across Steps 1–6 and excludes collapsed domains
 8. Prior DXA → inline add → Save/reload → retained
 9. historical DXA delete after date sorting → correct row removed
 10. BMI with weight+height → read-only calculated; remove one source → derived BMI clears and manual mode returns
-11. Finish Visit → all module slices retained
+11. Finish Visit → all module slices retained, including `applicability_review`
 ```
 
 If the smoke test passes, start **Pilot Case 1/5**. Do not revise the form after each pilot case unless there is a safety-critical or data-loss defect.
