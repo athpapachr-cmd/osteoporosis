@@ -83,7 +83,12 @@
   function render() {
     const fill = $("#progressFill");
     const text = $("#progressText");
+    const label = $(".meta-progress .meta-label");
     if (!fill || !text) return;
+    if (label) {
+      label.textContent = "Συνολική συμπλήρωση";
+      label.title = "Capture completion only — όχι KPI/performance score";
+    }
     const progress = calculateWholeFormProgress();
     fill.style.width = `${progress}%`;
     text.textContent = `${progress}%`;
