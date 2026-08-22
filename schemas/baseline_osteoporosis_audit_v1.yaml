@@ -1,0 +1,153 @@
+schema: baseline_osteoporosis_audit_v1
+status: draft_v1
+module: osteoporosis
+purpose: >-
+  Establish a reproducible baseline of documented clinical practice before
+  workflow, Cockpit, learning or audit interventions are allowed to claim improvement.
+principles:
+  - baseline_before_improvement_claims
+  - consecutive_sampling_preferred
+  - not_documented_is_not_assumed_done
+  - not_applicable_requires_explicit_rule
+  - safety_signals_act_even_with_small_denominators
+  - documentation_quality_and_clinical_quality_are_related_but_not_identical
+  - no_identifiable_patient_data_in_public_github
+cohorts:
+  core_clinical:
+    design: retrospective_consecutive_unique_patients
+    target_n: 30
+    sampling: >-
+      Take the 30 most recent consecutive unique eligible osteoporosis-related
+      clinical encounters immediately preceding the baseline cut date. Start with
+      the preceding 90 days; if fewer than 30 are available, extend backward to
+      180 days and, only if needed, up to 12 months. Use one index encounter per
+      patient in this core cohort to avoid overweighting frequent attenders.
+    inclusion:
+      - adult encounter in which osteoporosis, osteopenia, fragility-fracture risk, or osteoporosis treatment was materially assessed or managed
+      - new assessment, follow-up, post-fracture review, treatment review, or treatment transition
+    exclusion:
+      - purely administrative contact with no clinical osteoporosis assessment or decision
+      - duplicate patient already represented in the core cohort
+      - encounter outside the intended osteoporosis clinical scope
+    special_populations: >-
+      Include but flag patients outside a guideline framework's normal population;
+      framework-specific KPIs are marked not applicable unless the declared framework applies.
+  safety_continuity:
+    design: census_not_sample
+    window_months: 12
+    include:
+      - all denosumab doses due in the audit window
+      - all denosumab discontinuations or clinically important delays in the audit window
+      - all anabolic or romosozumab course completions/transitions in the audit window
+      - all incident fragility fractures during active osteoporosis therapy in the audit window
+    rationale: >-
+      Rare safety-critical events should not wait for a 30-case sample.
+  decision_quality:
+    design: stratified_subaudit
+    target_n: 10
+    source: core_clinical
+    selection: >-
+      Select cases spanning new assessment, follow-up, high/very-high risk,
+      fracture-on-treatment and treatment-transition scenarios where available.
+    review_axes:
+      - data_sufficiency
+      - declared_framework_concordance
+      - rationale_quality
+      - uncertainty_and_override_documentation
+    categories:
+      - concordant
+      - reasoned_override
+      - potentially_improvable
+      - unsafe_or_requires_review
+  patient_voice:
+    design: prospective_consecutive
+    target_n: 20
+    start: after_patient_feedback_instrument_is_activated
+    domains:
+      - understanding_condition
+      - understanding_plan
+      - understanding_rationale
+      - concerns_and_preferences_addressed
+      - free_text
+case_classification:
+  encounter_type:
+    - new_assessment
+    - routine_follow_up
+    - post_fragility_fracture
+    - treatment_start
+    - treatment_continuation
+    - treatment_transition
+    - adverse_effect_or_intolerance
+    - fracture_on_treatment
+    - other
+kpi_case_status:
+  allowed:
+    - met
+    - not_met
+    - not_applicable
+    - not_assessable
+  rules:
+    not_applicable: >-
+      Exclude from the KPI denominator only when a predefined applicability rule
+      shows that the KPI genuinely does not apply.
+    not_documented: >-
+      If documentation is required by the KPI and the action cannot be demonstrated,
+      classify as not_met; do not infer undocumented care.
+    not_assessable: >-
+      Use only when the relevant information is genuinely inaccessible or cannot be
+      verified. Keep it visible as a data-quality/system signal and never count it as met.
+target_tiers:
+  S:
+    label: safety_critical
+    provisional_local_target_percent: 100
+  A:
+    label: essential_core_process
+    provisional_local_target_percent: 95
+  B:
+    label: quality_process
+    provisional_local_target_percent: 90
+  P:
+    label: patient_reported
+    provisional_local_target_percent: 85
+  note: >-
+    These are internal quality targets for this system, not claims that professional
+    guidelines mandate these exact percentage thresholds.
+reliability_display:
+  - denominator: '<5'
+    label: descriptive_only
+    rule: no_stable_percentage_or_colour_claim
+  - denominator: '5-9'
+    label: low
+  - denominator: '10-19'
+    label: provisional
+  - denominator: '20-29'
+    label: moderate
+  - denominator: '>=30'
+    label: stronger_baseline_estimate
+  safety_exception: >-
+    A single safety-critical failure can generate an immediate signal regardless of denominator.
+baseline_lock:
+  core_requirement: 30 consecutive unique eligible cases or all available if a full 12-month window still yields fewer
+  rule_freeze: KPI definitions and sampling logic must be version-frozen before locking
+  no_rewriting_history: >-
+    Do not recalculate a historical baseline after an intervention merely because a later KPI definition changed;
+    version the KPI and preserve the original baseline.
+  composite_score: disabled_in_v1
+reaudit:
+  core: >-
+    Re-audit after a material intervention when at least 20 new eligible cases are available,
+    aiming for approximately 8-12 weeks; if volume is lower, continue accrual and show denominator.
+  safety: continuous
+  patient_voice: rolling_blocks_of_20_or_monthly_when_volume_allows
+  annual: full_review_of_kpi_dictionary_sources_and_targets
+run_chart:
+  preferred_unit: monthly_or_rolling_20_eligible_cases
+  annotate:
+    - intervention_dates
+    - guideline_or_kpi_definition_changes
+    - major_workflow_changes
+privacy:
+  repository: public
+  rule: >-
+    Commit only schemas, synthetic examples and aggregate/anonymized outputs.
+    Real audit-level patient data must remain in a private/local clinical data store.
