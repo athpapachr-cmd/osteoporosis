@@ -1,0 +1,253 @@
+schema: baseline_osteoporosis_case_form_v1
+status: draft_v1
+module: osteoporosis
+purpose: >-
+  Neutral post-visit capture form for the pilot and scored prospective baseline.
+  It records what occurred in the encounter separately from what is present in the
+  formal record. It is not a pre-visit checklist and must not display KPI coaching
+  during the scored baseline period.
+mode:
+  pilot_cases: 5
+  scored_baseline_cases: 30
+  preferred_completion_timing: immediately_after_encounter
+  baseline_feedback: hidden_until_baseline_lock_except_safety_critical_alerts
+privacy:
+  storage: private_or_local_clinical_store_only
+  public_repo: schema_and_synthetic_examples_only
+  prohibited_in_public_repo:
+    - patient_name
+    - gesy_id
+    - date_of_birth
+    - phone_or_email
+    - raw_heidi_transcript
+    - identifiable_clinical_note
+sections:
+  audit_metadata:
+    fields:
+      - case_sequence_number
+      - baseline_phase: [pilot, scored_baseline, later_reaudit]
+      - local_patient_token
+      - encounter_date
+      - encounter_type:
+          values:
+            - new_assessment
+            - routine_follow_up
+            - post_fragility_fracture
+            - treatment_start
+            - treatment_continuation
+            - treatment_transition
+            - adverse_effect_or_intolerance
+            - fracture_on_treatment
+            - other
+      - first_core_baseline_encounter_for_patient: [yes, no, unknown]
+      - minutes_from_encounter_end_to_form_completion
+
+  capture_sources:
+    fields:
+      - clinician_postvisit_form_completed: [yes, no]
+      - gesy_note_status: [not_checked, absent, minimal, partial, clinically_substantial]
+      - heidi_used_during_or_for_encounter: [yes, no]
+      - heidi_output_available: [yes, no, not_applicable]
+      - heidi_output_reviewed_by_clinician: [yes, no, not_applicable]
+      - heidi_material_correction_required: [yes, no, unknown, not_applicable]
+      - other_capture_source
+    interpretation:
+      heidi_use: >-
+        Record exposure only. Do not score Heidi use itself as good practice. Later
+        comparisons with versus without Heidi are observational and cannot establish causality.
+
+  patient_context_for_applicability:
+    fields:
+      - age_years
+      - sex
+      - menopause_status: [not_applicable, premenopausal, postmenopausal, unknown]
+      - special_population_flags:
+          multi_select:
+            - glucocorticoid_exposure
+            - male_osteoporosis
+            - younger_adult
+            - frailty_or_immobility
+            - renal_impairment
+            - cancer_or_other_secondary_context
+            - none_known
+      - visit_reason_summary
+
+  fracture_history:
+    fields:
+      - fracture_history_explicitly_asked_or_reviewed: [yes, no, unknown]
+      - prior_fragility_fracture_status: [yes, no, unknown]
+      - fracture_events_structured_if_positive: [yes, no, not_applicable]
+      - clinically_relevant_sites
+      - approximate_dates_known: [all, some, none, not_applicable]
+      - low_trauma_or_fragility_classification_documented: [all, some, none, not_applicable]
+      - vertebral_fracture_level_or_type_when_known: [yes, no, unknown, not_applicable]
+
+  fracture_risk:
+    fields:
+      - declared_risk_framework
+      - formal_risk_assessment_indicated: [yes, no, uncertain]
+      - formal_risk_assessment_done: [yes, no, not_applicable]
+      - tool_name
+      - frax_country_or_surrogate_model
+      - frax_mof_percent
+      - frax_hip_percent
+      - femoral_neck_bmd_used: [yes, no, unknown, not_applicable]
+      - resulting_risk_category
+      - clinician_override_or_contextual_adjustment: [yes, no]
+      - override_reason
+
+  dxa_vfa_imaging:
+    fields:
+      - dxa_used_in_current_management: [yes, no]
+      - latest_dxa_date
+      - bmd_g_cm2_available_from_report: [yes, partial, no, not_applicable]
+      - t_scores_available: [yes, partial, no, not_applicable]
+      - z_scores_used_when_relevant: [yes, no, not_applicable]
+      - skeletal_sites_and_roi_validity_reviewed: [yes, no, unknown, not_applicable]
+      - artifact_or_technical_limitation_considered: [yes, no, not_applicable]
+      - longitudinal_change_interpreted: [yes, no]
+      - same_machine_or_cross_calibration_known: [yes, no, not_applicable]
+      - facility_lsc_available_or_checked: [yes, no, not_applicable]
+      - change_interpreted_using_bmd_percent_and_lsc_or_explicitly_declared_noncomparable: [yes, no, not_applicable]
+      - vertebral_imaging_or_vfa_indicated: [yes, no, uncertain]
+      - vertebral_imaging_action: [performed, arranged, reasoned_not_done, missed, not_applicable]
+
+  secondary_osteoporosis:
+    fields:
+      - secondary_cause_review_indicated: [yes, no, uncertain]
+      - secondary_cause_history_reviewed: [yes, no, not_applicable]
+      - relevant_laboratory_evaluation_reviewed_or_arranged: [yes, no, not_applicable]
+      - prior_workup_explicitly_accepted_as_still_adequate: [yes, no, not_applicable]
+      - unresolved_secondary_cause_question: [yes, no]
+      - unresolved_question_summary
+
+  falls_frailty_exercise_nutrition:
+    fields:
+      - falls_frailty_assessment_applicable: [yes, no, uncertain]
+      - falls_history_reviewed: [yes, no, not_applicable]
+      - frailty_mobility_balance_reviewed: [yes, no, not_applicable]
+      - material_risk_identified: [yes, no, not_applicable]
+      - action_or_referral_if_risk_identified: [yes, no, not_applicable]
+      - exercise_or_physical_activity_discussed_when_relevant: [yes, no, not_applicable]
+      - calcium_vitamin_d_nutrition_reviewed_when_relevant: [yes, no, not_applicable]
+
+  treatment_history_and_safety:
+    fields:
+      - current_or_prior_osteoporosis_pharmacotherapy: [yes, no, unknown]
+      - treatment_history_traceable: [yes, partial, no, not_applicable]
+      - current_drug
+      - prior_drugs
+      - approximate_exposure_periods_known: [all, some, none, not_applicable]
+      - adherence_reviewed: [yes, no, not_applicable]
+      - significant_adverse_effects_reviewed: [yes, no, not_applicable]
+      - stop_or_switch_reason_traceable: [yes, no, not_applicable]
+      - time_critical_parenteral_or_monthly_therapy: [yes, no]
+      - last_actual_administration_date_known: [yes, no, not_applicable]
+      - next_due_date_known: [yes, no, not_applicable]
+      - safety_transition_needed: [yes, no, uncertain]
+      - safety_transition_plan_documented_and_tracked: [yes, no, not_applicable]
+
+  clinical_decision:
+    fields:
+      - material_treatment_decision_made: [yes, no]
+      - decision_type: [start, continue, stop, switch, defer, no_drug_treatment, other, not_applicable]
+      - decision_rationale_explicit: [yes, partial, no, not_applicable]
+      - relevant_options_or_contraindications_considered: [yes, no, unknown, not_applicable]
+      - patient_preference_or_acceptance_discussed: [yes, no, not_applicable]
+      - guideline_or_framework_concordance_known: [yes, no, uncertain, not_reviewed]
+      - clinician_override: [yes, no, not_applicable]
+      - override_reason
+      - clinician_confidence_0_100
+      - what_would_change_this_decision
+
+  monitoring_and_followup:
+    fields:
+      - ongoing_followup_required: [yes, no]
+      - next_clinical_action_explicit: [yes, no, not_applicable]
+      - followup_timing_or_due_date_explicit: [yes, no, not_applicable]
+      - labs_due
+      - dxa_due
+      - treatment_administration_due
+      - next_visit_due
+      - referral_or_other_task_due
+      - unresolved_critical_item_at_visit_close: [yes, no]
+      - unresolved_item_summary
+
+  patient_communication:
+    fields:
+      - condition_explained: [yes, no, not_applicable]
+      - plan_explained: [yes, no, not_applicable]
+      - rationale_duration_or_key_risks_explained_when_relevant: [yes, no, not_applicable]
+      - teach_back_or_active_understanding_check_used: [yes, no, not_applicable]
+      - patient_questions_or_preferences_addressed: [yes, no, unknown]
+      - patient_feedback_instrument_offered: [yes, no, not_yet_active]
+
+  documentation_trace:
+    purpose: >-
+      Separate the clinical process from the formal GeSY/record trace. This is essential
+      because the formal note may not reflect everything that happened in the consultation.
+    fields:
+      - fracture_history_traceable_in_formal_record: [yes, partial, no, not_checked]
+      - risk_assessment_traceable_in_formal_record: [yes, partial, no, not_applicable, not_checked]
+      - dxa_interpretation_traceable_in_formal_record: [yes, partial, no, not_applicable, not_checked]
+      - secondary_cause_review_traceable_in_formal_record: [yes, partial, no, not_applicable, not_checked]
+      - falls_frailty_traceable_in_formal_record: [yes, partial, no, not_applicable, not_checked]
+      - treatment_decision_and_rationale_traceable_in_formal_record: [yes, partial, no, not_applicable, not_checked]
+      - followup_plan_traceable_in_formal_record: [yes, partial, no, not_applicable, not_checked]
+
+  immediate_postvisit_reflection:
+    fields:
+      - what_went_well
+      - anything_missed_or_uncertain
+      - case_should_enter_decision_quality_review: [yes, no]
+      - learning_signal_present: [yes, no]
+      - safety_signal_present: [yes, no]
+      - patient_communication_signal_present: [yes, no]
+    baseline_rule: >-
+      Free-text reflection is captured but must not trigger non-safety coaching until the
+      scored baseline is locked.
+
+kpi_mapping:
+  OST-KPI-00:
+    primary_sections: [capture_sources, documentation_trace]
+  OST-KPI-01:
+    primary_sections: [fracture_history]
+  OST-KPI-02:
+    primary_sections: [fracture_risk]
+  OST-KPI-03:
+    primary_sections: [dxa_vfa_imaging]
+  OST-KPI-04:
+    primary_sections: [dxa_vfa_imaging]
+  OST-KPI-05:
+    primary_sections: [dxa_vfa_imaging]
+  OST-KPI-06:
+    primary_sections: [secondary_osteoporosis]
+  OST-KPI-07:
+    primary_sections: [falls_frailty_exercise_nutrition]
+  OST-KPI-08:
+    primary_sections: [treatment_history_and_safety]
+  OST-KPI-09:
+    primary_sections: [clinical_decision, patient_communication]
+  OST-KPI-10:
+    primary_sections: [monitoring_and_followup]
+  OST-KPI-11:
+    primary_sections: [treatment_history_and_safety]
+  OST-KPI-12:
+    primary_sections: [treatment_history_and_safety, clinical_decision, monitoring_and_followup]
+  OST-KPI-13:
+    primary_sections: [fracture_history, treatment_history_and_safety, clinical_decision]
+  OST-KPI-14:
+    primary_sections: [patient_communication]
+    external_patient_form_required: true
+  OST-KPI-15:
+    primary_sections: [patient_communication]
+    external_patient_form_required: true
+ui_intent:
+  first_version: compact_adaptive_form
+  behavior:
+    - show_only_applicable_followup_fields_when_possible
+    - no_kpi_scores_during_scored_baseline
+    - no_red_green_performance_colours_during_scored_baseline
+    - allow_save_and_resume
+    - calculate_kpis_in_background_after_baseline_lock
+    - keep_safety_critical_alert_path_active
