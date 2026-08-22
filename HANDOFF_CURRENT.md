@@ -1,6 +1,6 @@
 # HANDOFF_CURRENT.md — current operational handoff
 
-> **Updated:** 2026-08-22 15:02 Asia/Nicosia
+> **Updated:** 2026-08-22 15:23 Asia/Nicosia
 > **Canonical repository:** `athpapachr-cmd/osteoporosis`
 > **Current major phase:** Clinical Excellence Blueprint + Baseline/Audit foundation
 > **Active detailed plan:** `CLINICAL_EXCELLENCE_PLAN.md`
@@ -47,7 +47,7 @@ osteoporosis-change-log.md
 
 `README.md` is navigation only. Durable decisions must not live only in chat.
 
-Supporting machine-readable design schemas now include:
+Supporting machine-readable design schemas include:
 
 ```text
 schemas/baseline_osteoporosis_audit_v1.yaml
@@ -57,7 +57,7 @@ schemas/baseline_case_form_v1.yaml
 
 ---
 
-## 3. Critical baseline constraint discovered
+## 3. Critical baseline constraint
 
 There is currently **no reliable pre-existing osteoporosis patient registry or dedicated osteoporosis folder** from which a representative retrospective baseline can be sampled.
 
@@ -65,13 +65,13 @@ GeSY visit records may be incomplete and may not reflect everything discussed, a
 
 Heidi AI has only recently started to be used and is **not yet used systematically**. It may improve encounter capture, but current use is an exposure variable, not a quality metric and not a reliable historical source.
 
-This invalidates the original preference for a purely retrospective 30-case baseline as the main design.
+This invalidates a purely retrospective 30-case baseline as the main design.
 
 ---
 
 ## 4. Revised baseline strategy — prospective measured baseline
 
-The baseline now uses a neutral **prospective post-visit capture form**.
+The baseline uses a neutral **prospective post-visit capture form**.
 
 ### Pilot
 
@@ -128,7 +128,7 @@ GeSY note
 other declared formal record
 ```
 
-A missing GeSY entry can therefore identify a **documentation/system gap** without falsely implying that the clinical action definitely did not occur.
+A missing GeSY entry can identify a **documentation/system gap** without falsely implying that the clinical action definitely did not occur.
 
 ---
 
@@ -147,57 +147,95 @@ Rules:
 
 - Heidi use itself is not scored as good practice.
 - AI output never overrides clinician validation.
-- Do not force systematic Heidi use during the scored baseline merely to make the baseline look better.
+- Do not force systematic Heidi use during the scored baseline merely to improve the baseline.
 - Later comparison of cases with versus without Heidi is observational only and does not prove causality.
 - Raw transcripts or identifiable Heidi clinical content must never be committed to this public repository.
 
-After baseline, systematic Heidi use may become an explicit Improvement Project if evidence from workflow/capture quality supports testing it.
+After baseline, systematic Heidi use may become an explicit Improvement Project if workflow/capture evidence supports testing it.
 
 ---
 
 ## 7. Baseline/KPI design status
 
-`schemas/baseline_osteoporosis_audit_v1.yaml` now defines:
-
-- 5-case pilot;
-- 30-case prospective baseline;
-- one index encounter per unique patient;
-- safety/continuity census from activation;
-- 10-case decision-quality sub-audit;
-- later 20-patient Patient Voice baseline;
-- reliability tiers;
-- baseline lock and re-audit logic;
-- separate clinical/documentation measurement axes.
+`schemas/baseline_osteoporosis_audit_v1.yaml` defines the pilot/baseline sampling and measurement rules.
 
 `schemas/kpi_dictionary_v1.yaml` contains the first 16 provisional KPIs.
 
-`schemas/baseline_case_form_v1.yaml` defines the neutral post-visit data capture needed to calculate them while preserving clinical-process versus documentation distinctions.
+`schemas/baseline_case_form_v1.yaml` defines the neutral post-visit data capture required to calculate them while preserving clinical-process versus documentation distinctions.
 
 ---
 
-## 8. Current next design action
+## 8. Current implementation slice
 
-**NEXT:** convert `baseline_case_form_v1.yaml` into the first usable compact adaptive form specification/UI, then create:
+PR **#1 — `feat: Baseline Audit pilot UI — Step 1`** is open from branch:
 
-1. `Patient Voice` 4-question instrument;
-2. `Decision Quality` 10-case review form;
-3. exact KPI calculation contract mapping form fields → KPI status.
+```text
+feat/baseline-audit-pilot-v1
+```
 
-The first runtime/data-capture implementation should remain narrow: collect baseline data reliably before building the full Clinical Excellence dashboard.
+Implemented files:
+
+```text
+static/baseline-audit/index.html
+static/baseline-audit/styles.css
+static/baseline-audit/app.js
+```
+
+Implemented behavior:
+
+- first-screen UI based on the approved wireframe;
+- pilot case identity and progress;
+- encounter type / age / sex / first-baseline-encounter capture;
+- visit reason and osteoporosis status;
+- Heidi use/output/review/correction exposure capture;
+- basic applicability signals;
+- local draft save/resume and local case list;
+- privacy warnings and explicit prohibition of identifiable patient data;
+- no KPI coaching or red/green performance scores during capture;
+- Steps 2–6 present only as placeholders.
+
+Technical boundary:
+
+- no `main.py` rewrite;
+- no new server-side patient-data API;
+- no public/server persistence of case data;
+- prototype drafts use browser `localStorage` only and are explicitly marked unencrypted;
+- existing FastAPI `/static` mount can serve the pilot at `/static/baseline-audit/` after merge/deploy.
 
 ---
 
-## 9. Stop boundary
+## 9. Current next action
+
+**NEXT:** complete the schema-driven pilot form in narrow slices:
+
+1. Step 2 — Fracture history + fracture-risk assessment;
+2. Step 3 — DXA/VFA + secondary causes + falls/frailty;
+3. Step 4 — treatment history/safety + decision + monitoring/follow-up;
+4. Step 5 — communication + immediate post-visit reflection;
+5. Step 6 — documentation trace + final Heidi/capture-source review;
+6. exact form-field → KPI status calculation contract;
+7. use the completed form for the first 5 pilot encounters;
+8. revise once, freeze, then start the 30-case scored baseline.
+
+Separate but still required after the pilot-form core:
+
+- Patient Voice 4-question instrument;
+- Decision Quality 10-case review form.
+
+---
+
+## 10. Stop boundary
 
 Do not yet:
 
-- major-rewrite `main.py` / `index.html`;
+- major-rewrite `main.py` / existing `index.html`;
 - create a composite Clinical Excellence score from invented data;
 - display live coaching during scored baseline collection except safety-critical alerts;
 - treat GeSY as a complete record of the consultation;
 - make Heidi mandatory before baseline is established;
 - expand into the next musculoskeletal module;
-- commit identifiable patient information, GeSY content or Heidi transcripts to the public repository.
+- commit identifiable patient information, GeSY content or Heidi transcripts to the public repository;
+- treat browser `localStorage` as a production clinical-data store.
 
 Bootstrap order for the next session:
 

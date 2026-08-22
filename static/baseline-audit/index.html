@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="el">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Osteoporosis Cockpit — Baseline Audit v1</title>
+  <meta name="description" content="Prospective baseline audit pilot form for Module 01 — Osteoporosis." />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Κύρια πλοήγηση">
+      <div class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 48 72" role="img">
+          <path d="M20 5c-7 0-10 6-8 12 2 5 6 7 6 13v12c0 6-4 8-6 13-2 6 1 12 8 12 5 0 8-3 9-7 1 4 4 7 9 7 7 0 10-6 8-12-2-5-6-7-6-13V30c0-6 4-8 6-13 2-6-1-12-8-12-5 0-8 3-9 7-1-4-4-7-9-7Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+        </svg>
+      </div>
+
+      <nav class="side-nav">
+        <a class="side-item" href="/" title="Cockpit">
+          <span class="side-icon">⌂</span>
+          <span>Αρχική</span>
+        </a>
+        <button class="side-item active" type="button" data-nav-action="new-case">
+          <span class="side-icon">＋</span>
+          <span>Νέο Case</span>
+        </button>
+        <button class="side-item" type="button" data-nav-action="cases">
+          <span class="side-icon">▣</span>
+          <span>Cases</span>
+        </button>
+        <button class="side-item" type="button" disabled>
+          <span class="side-icon">▥</span>
+          <span>KPI Overview</span>
+        </button>
+        <button class="side-item" type="button" data-nav-action="heidi">
+          <span class="side-icon">✦</span>
+          <span>Heidi AI</span>
+        </button>
+        <button class="side-item" type="button" disabled>
+          <span class="side-icon">▤</span>
+          <span>Βιβλιοθήκη</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-foot">
+        <button class="side-item" type="button" data-nav-action="privacy">
+          <span class="side-icon">ⓘ</span>
+          <span>Privacy</span>
+        </button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <div class="title-block">
+          <div class="title-row">
+            <h1>Osteoporosis Cockpit</h1>
+            <span class="pilot-pill" id="pilotPill">PILOT CASE 1/5</span>
+          </div>
+          <p>Baseline Audit v1 · prospective encounter capture</p>
+        </div>
+
+        <div class="baseline-banner" role="status">
+          <span class="info-dot">i</span>
+          <div>
+            <strong>Πρόοδος Baseline χωρίς feedback</strong>
+            <span>Τα scores και η αξιολόγηση εμφανίζονται μετά το κλείδωμα του baseline.</span>
+          </div>
+        </div>
+
+        <div class="top-actions">
+          <button class="btn secondary" type="button" id="saveTopBtn">Αποθήκευση</button>
+          <button class="btn dark" type="button" id="finishVisitBtn">✓ Τέλος επίσκεψης</button>
+        </div>
+      </header>
+
+      <section class="privacy-strip" id="privacyStrip">
+        <strong>Πιλοτική χρήση:</strong>
+        Το draft αποθηκεύεται μόνο σε αυτόν τον browser. Μην εισάγεις όνομα, αριθμό ΓεΣΥ, ημερομηνία γέννησης ή άλλο αναγνωριστικό στοιχείο.
+        <button type="button" class="text-btn" id="dismissPrivacyBtn">Κατάλαβα</button>
+      </section>
+
+      <section class="case-meta" aria-label="Μεταδεδομένα case">
+        <div class="meta-item case-code">
+          <span class="meta-label">Case ID</span>
+          <strong id="caseIdDisplay">PILOT-001</strong>
+        </div>
+
+        <label class="meta-item">
+          <span class="meta-label">Ημερομηνία επίσκεψης</span>
+          <input id="encounterDate" type="date" />
+        </label>
+
+        <label class="meta-item wide">
+          <span class="meta-label">Τύπος επίσκεψης</span>
+          <select id="encounterType">
+            <option value="">Επίλεξε…</option>
+            <option value="new_assessment">Νέα αξιολόγηση</option>
+            <option value="routine_follow_up">Follow-up</option>
+            <option value="post_fragility_fracture">Μετά από κάταγμα ευθραυστότητας</option>
+            <option value="treatment_start">Έναρξη θεραπείας</option>
+            <option value="treatment_continuation">Συνέχιση θεραπείας</option>
+            <option value="treatment_transition">Αλλαγή / μετάβαση θεραπείας</option>
+            <option value="adverse_effect_or_intolerance">Ανεπιθύμητη ενέργεια / δυσανεξία</option>
+            <option value="fracture_on_treatment">Κάταγμα υπό θεραπεία</option>
+            <option value="other">Άλλο</option>
+          </select>
+        </label>
+
+        <label class="meta-item compact">
+          <span class="meta-label">Ηλικία</span>
+          <input id="ageYears" type="number" min="18" max="120" inputmode="numeric" placeholder="—" />
+        </label>
+
+        <div class="meta-item sex-meta">
+          <span class="meta-label">Φύλο</span>
+          <div class="segmented compact-segments" role="group" aria-label="Φύλο">
+            <button type="button" data-field="sex" data-value="female">Γυναίκα</button>
+            <button type="button" data-field="sex" data-value="male">Άνδρας</button>
+          </div>
+        </div>
+
+        <div class="meta-item first-visit-meta">
+          <span class="meta-label">Πρώτη baseline επίσκεψη ασθενούς;</span>
+          <div class="segmented compact-segments" role="group">
+            <button type="button" data-field="first_core_baseline_encounter_for_patient" data-value="yes">Ναι</button>
+            <button type="button" data-field="first_core_baseline_encounter_for_patient" data-value="no">Όχι</button>
+            <button type="button" data-field="first_core_baseline_encounter_for_patient" data-value="unknown">Άγνωστο</button>
+          </div>
+        </div>
+
+        <div class="meta-progress">
+          <span class="meta-label">Πρόοδος φόρμας</span>
+          <div class="progress-line"><span id="progressFill"></span></div>
+          <strong id="progressText">0%</strong>
+        </div>
+      </section>
+
+      <nav class="step-tabs" aria-label="Βήματα φόρμας">
+        <button class="step-tab active" type="button" data-step="1"><span>1.</span> Σύνοψη Επίσκεψης</button>
+        <button class="step-tab" type="button" data-step="2"><span>2.</span> Ιστορικό & Κίνδυνος</button>
+        <button class="step-tab" type="button" data-step="3"><span>3.</span> Εξετάσεις & Αποτελέσματα</button>
+        <button class="step-tab" type="button" data-step="4"><span>4.</span> Απόφαση & Πλάνο</button>
+        <button class="step-tab" type="button" data-step="5"><span>5.</span> Επικοινωνία</button>
+        <button class="step-tab" type="button" data-step="6"><span>6.</span> Τεκμηρίωση & Heidi</button>
+      </nav>
+
+      <section class="step-panel active" data-step-panel="1">
+        <div class="card-grid">
+          <article class="card">
+            <div class="card-heading">
+              <div>
+                <h2>Κύριος Λόγος Επίσκεψης</h2>
+                <p>Τι συζητήθηκε κυρίως σήμερα;</p>
+              </div>
+            </div>
+            <div class="choice-list" id="visitReasonChoices">
+              <button type="button" class="choice" data-field="visit_reason" data-value="new_diagnosis"><span class="radio-dot"></span>Αξιολόγηση / Νέα διάγνωση</button>
+              <button type="button" class="choice" data-field="visit_reason" data-value="follow_up"><span class="radio-dot"></span>Follow-up / Παρακολούθηση</button>
+              <button type="button" class="choice" data-field="visit_reason" data-value="treatment_change"><span class="radio-dot"></span>Θεραπεία — έναρξη / αλλαγή</button>
+              <button type="button" class="choice" data-field="visit_reason" data-value="adverse_effect"><span class="radio-dot"></span>Ανεπιθύμητη ενέργεια / πρόβλημα θεραπείας</button>
+              <button type="button" class="choice" data-field="visit_reason" data-value="fracture"><span class="radio-dot"></span>Κάταγμα</button>
+              <button type="button" class="choice" data-field="visit_reason" data-value="other"><span class="radio-dot"></span>Άλλο</button>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="card-heading">
+              <div>
+                <h2>Στάδιο Οστεοπόρωσης</h2>
+                <p>Επίλεξε το κύριο status για το σημερινό case.</p>
+              </div>
+            </div>
+            <div class="choice-list">
+              <button type="button" class="choice" data-field="osteoporosis_status" data-value="not_diagnosed"><span class="radio-dot"></span>Δεν έχει τεθεί διάγνωση</button>
+              <button type="button" class="choice" data-field="osteoporosis_status" data-value="osteopenia"><span class="radio-dot"></span>Οστεοπενία</button>
+              <button type="button" class="choice" data-field="osteoporosis_status" data-value="osteoporosis"><span class="radio-dot"></span>Οστεοπόρωση</button>
+              <button type="button" class="choice" data-field="osteoporosis_status" data-value="fragility_fracture"><span class="radio-dot"></span>Κάταγμα ευθραυστότητας</button>
+              <button type="button" class="choice" data-field="osteoporosis_status" data-value="on_treatment"><span class="radio-dot"></span>Σε θεραπεία για οστεοπόρωση</button>
+            </div>
+          </article>
+
+          <article class="card heidi-card">
+            <div class="card-heading">
+              <div>
+                <h2>Χρήση Heidi AI σήμερα</h2>
+                <p>Καταγράφεται ως exposure· δεν βαθμολογείται ως καλή ή κακή πρακτική.</p>
+              </div>
+            </div>
+
+            <div class="field-row horizontal">
+              <span class="field-label">Χρησιμοποιήθηκε;</span>
+              <div class="segmented" role="group">
+                <button type="button" data-field="heidi_used" data-value="yes">Ναι</button>
+                <button type="button" data-field="heidi_used" data-value="no">Όχι</button>
+              </div>
+            </div>
+
+            <label class="field-row">
+              <span class="field-label">Υπήρχε output / σύνοψη;</span>
+              <select id="heidiOutput" data-heidi-dependent>
+                <option value="">—</option>
+                <option value="yes">Ναι</option>
+                <option value="no">Όχι</option>
+              </select>
+            </label>
+
+            <label class="field-row">
+              <span class="field-label">Το έλεγξες;</span>
+              <select id="heidiReviewed" data-heidi-dependent>
+                <option value="">—</option>
+                <option value="yes">Ναι</option>
+                <option value="no">Όχι</option>
+              </select>
+            </label>
+
+            <label class="field-row">
+              <span class="field-label">Χρειάστηκε ουσιαστική διόρθωση;</span>
+              <select id="heidiCorrection" data-heidi-dependent>
+                <option value="">—</option>
+                <option value="yes">Ναι</option>
+                <option value="no">Όχι</option>
+                <option value="unknown">Δεν είμαι βέβαιος</option>
+              </select>
+            </label>
+
+            <label class="field-row stacked">
+              <span class="field-label">Σχόλιο για το Heidi <span class="muted">(προαιρετικό)</span></span>
+              <textarea id="heidiComment" rows="2" maxlength="500" data-heidi-dependent placeholder="π.χ. τι βοήθησε ή τι χρειάστηκε διόρθωση — χωρίς αναγνωριστικά στοιχεία"></textarea>
+            </label>
+
+            <div class="lock-note">🔒 Raw transcripts δεν αποθηκεύονται στη φόρμα.</div>
+          </article>
+
+          <article class="card">
+            <div class="card-heading">
+              <div>
+                <h2>Βασικό Κλινικό Πλαίσιο</h2>
+                <p>Μόνο ό,τι χρειάζεται για applicability των επόμενων βημάτων.</p>
+              </div>
+            </div>
+
+            <div class="mini-grid">
+              <label>
+                <span>Ηλικία</span>
+                <input id="ageMirror" type="number" min="18" max="120" placeholder="π.χ. 68" />
+              </label>
+              <div>
+                <span class="mini-label">Φύλο</span>
+                <div class="segmented compact-segments">
+                  <button type="button" data-field="sex" data-value="female">Γυναίκα</button>
+                  <button type="button" data-field="sex" data-value="male">Άνδρας</button>
+                </div>
+              </div>
+              <label>
+                <span>BMI <small>(kg/m²)</small></span>
+                <input id="bmi" type="number" step="0.1" min="10" max="80" placeholder="π.χ. 24.5" />
+              </label>
+            </div>
+
+            <div class="menopause-block" id="menopauseBlock" hidden>
+              <span class="mini-label">Εμμηνοπαυσιακή κατάσταση</span>
+              <div class="segmented wrap-segments">
+                <button type="button" data-field="menopause_status" data-value="premenopausal">Προεμμηνοπαυσιακή</button>
+                <button type="button" data-field="menopause_status" data-value="postmenopausal">Μετεμμηνοπαυσιακή</button>
+                <button type="button" data-field="menopause_status" data-value="unknown">Άγνωστο</button>
+              </div>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="card-heading">
+              <div>
+                <h2>Σημαντικά Στοιχεία που Υπήρχαν</h2>
+                <p>Γρήγορα applicability signals· οι λεπτομέρειες ακολουθούν στα επόμενα βήματα.</p>
+              </div>
+            </div>
+            <div class="chip-checks" id="signalChecks">
+              <label><input type="checkbox" value="prior_fragility_fracture" />Κάταγμα ευθραυστότητας στο παρελθόν</label>
+              <label><input type="checkbox" value="parental_hip_fracture" />Κάταγμα ισχίου σε γονέα</label>
+              <label><input type="checkbox" value="frailty" />Ευπάθεια / ακινησία</label>
+              <label><input type="checkbox" value="glucocorticoids" />Χρόνια λήψη κορτικοστεροειδών</label>
+              <label><input type="checkbox" value="low_bmi" />Χαμηλό BMI</label>
+              <label><input type="checkbox" value="falls" />Συχνές πτώσεις</label>
+              <label><input type="checkbox" value="secondary_context" />Άλλη πάθηση που αυξάνει τον κίνδυνο</label>
+              <label><input type="checkbox" value="none_known" />Κανένα από τα παραπάνω</label>
+            </div>
+          </article>
+
+          <article class="card notes-card">
+            <div class="card-heading">
+              <div>
+                <h2>Quick Notes <span class="muted">(προσωπικό)</span></h2>
+                <p>Τι αξίζει να θυμάσαι από τη σημερινή επίσκεψη;</p>
+              </div>
+            </div>
+            <textarea id="quickNotes" rows="9" maxlength="1200" placeholder="Σύντομη σημείωση χωρίς όνομα, ΓεΣΥ ID ή άλλο αναγνωριστικό…"></textarea>
+            <div class="safe-note">◇ Το πεδίο δεν συμμετέχει σε scoring. Μην καταγράφεις αναγνωριστικά στοιχεία.</div>
+          </article>
+        </div>
+      </section>
+
+      <section class="step-panel placeholder-panel" data-step-panel="2">
+        <div class="placeholder-card"><h2>Ιστορικό & Κίνδυνος</h2><p>Η δομή του βήματος έχει δεσμευτεί από το Baseline Case Form v1 και θα υλοποιηθεί στο επόμενο slice.</p></div>
+      </section>
+      <section class="step-panel placeholder-panel" data-step-panel="3">
+        <div class="placeholder-card"><h2>Εξετάσεις & Αποτελέσματα</h2><p>DXA / VFA / εργαστηριακός έλεγχος — επόμενο implementation slice.</p></div>
+      </section>
+      <section class="step-panel placeholder-panel" data-step-panel="4">
+        <div class="placeholder-card"><h2>Απόφαση & Πλάνο</h2><p>Clinical decision, rationale, treatment transition και follow-up — επόμενο implementation slice.</p></div>
+      </section>
+      <section class="step-panel placeholder-panel" data-step-panel="5">
+        <div class="placeholder-card"><h2>Επικοινωνία</h2><p>Patient understanding, preferences και post-visit reflection — επόμενο implementation slice.</p></div>
+      </section>
+      <section class="step-panel placeholder-panel" data-step-panel="6">
+        <div class="placeholder-card"><h2>Τεκμηρίωση & Heidi</h2><p>Σύγκριση encounter capture με επίσημη καταγραφή και structured Heidi exposure — επόμενο implementation slice.</p></div>
+      </section>
+
+      <footer class="form-footer">
+        <button class="btn danger-outline" type="button" id="cancelCaseBtn">Ακύρωση Case</button>
+        <div class="draft-status" id="draftStatus">Δεν έχει αποθηκευτεί ακόμη</div>
+        <div class="footer-actions">
+          <button class="btn secondary" type="button" id="saveDraftBtn">Αποθήκευση draft</button>
+          <button class="btn primary" type="button" id="nextBtn">Επόμενο →</button>
+        </div>
+      </footer>
+    </main>
+  </div>
+
+  <dialog id="casesDialog" class="modal">
+    <form method="dialog" class="modal-card">
+      <div class="modal-head">
+        <div>
+          <h2>Τοπικά drafts</h2>
+          <p>Αποθηκεύονται μόνο στον συγκεκριμένο browser.</p>
+        </div>
+        <button class="icon-btn" value="cancel" aria-label="Κλείσιμο">×</button>
+      </div>
+      <div id="caseList" class="case-list"></div>
+      <div class="modal-actions"><button class="btn secondary" value="cancel">Κλείσιμο</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="privacyDialog" class="modal">
+    <form method="dialog" class="modal-card small-modal">
+      <div class="modal-head">
+        <div><h2>Privacy στο pilot</h2><p>Το GitHub repository είναι public. Η φόρμα δεν στέλνει δεδομένα στο GitHub.</p></div>
+        <button class="icon-btn" value="cancel" aria-label="Κλείσιμο">×</button>
+      </div>
+      <ul class="privacy-list">
+        <li>Μην εισάγεις όνομα, ΓεΣΥ/EMR ID, DOB, τηλέφωνο ή email.</li>
+        <li>Μην επικολλάς raw Heidi transcript ή αναγνωρίσιμη κλινική σημείωση.</li>
+        <li>Τα drafts του prototype μένουν στο localStorage του browser και δεν είναι κρυπτογραφημένα.</li>
+        <li>Για πραγματική production χρήση με αναγνωρίσιμα δεδομένα απαιτείται ξεχωριστό secure/private storage και access control.</li>
+      </ul>
+      <div class="modal-actions"><button class="btn dark" value="cancel">Κατάλαβα</button></div>
+    </form>
+  </dialog>
+
+  <script src="./app.js" defer></script>
+</body>
+</html>
