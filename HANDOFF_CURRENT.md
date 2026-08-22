@@ -1,6 +1,6 @@
 # HANDOFF_CURRENT.md — current operational handoff
 
-> **Updated:** 2026-08-22 20:13 Asia/Nicosia
+> **Updated:** 2026-08-22 20:31 Asia/Nicosia
 > **Canonical repository:** `athpapachr-cmd/osteoporosis`
 > **Current major phase:** prospective Osteoporosis Baseline/Audit pre-pilot hardening
 > **Current module:** Module 01 — Osteoporosis
@@ -90,33 +90,39 @@ Rules:
 ### Patch 2 — core save overwrite bug
 Closed and merged.
 
-`app-core.js` now merges current Steps 1–2 state into the existing stored case by `internal_uuid` rather than replacing the complete object. The former asynchronous capture/restore workaround in `pilot-completion.js` was removed.
-
 ### Patch 1 — hidden dependent values / stale data
 Closed and merged.
 
-`static/baseline-audit/data-hygiene.js` clears hidden dependent values before persistence and sanitizes legacy stale localStorage data.
-
 ### Patch 4 — Step 1 ↔ Step 3 duplicate source of truth
-Implemented on branch `fix/pilot-shared-risk-source`.
+Closed and merged.
 
-Canonical source rule:
+Canonical source remains Step 1 `risk_context` for falls count, CFS, cognition, immobility and basic sarcopenia screening; Step 3 displays those shared values as read-only projections while retaining Step-3-only functional detail.
+
+### Patch 5 — DXA machine field persistence / normalization
+Implemented on branch `fix/pilot-dxa-machine-select`.
+
+A runtime normalization layer in:
 
 ```text
-Step 1 risk_context
-= source of truth for
-falls count (12m)
-CFS
-cognitive impairment
-significant immobility
-sarcopenia case-finding relevance
-sarcopenia screening method
-SARC-F score
+static/baseline-audit/dxa-machine-select.js
 ```
 
-Step 3 now treats these values as a read-only projection. Its additional functional/sarcopenia fields remain editable (falls/function review, injury, aid, gait/balance, TUG, chair stand, grip, gait speed, SPPB, action, etc.).
+ensures `#s3DxaMachine` is a normalized select before the longitudinal layer initializes.
 
-`static/baseline-audit/shared-risk-source.js` synchronizes the Step 3 projection from Step 1 and removes duplicate copies of the shared fields from persisted `step3` storage, so later audit logic has one canonical clinical value.
+Supported normalized machine values:
+
+```text
+hologic_horizon
+hologic_discovery
+ge_lunar_idxa
+ge_lunar_prodigy
+norland
+other_unknown
+```
+
+A separate persistent `machine_label` stores optional local machine identity / legacy free-text detail. Legacy free-text machine values are migrated without silent loss: recognized labels map to normalized values; unrecognized text maps to `other_unknown` and is preserved in `machine_label`.
+
+The module loads immediately after Step 3 and before `longitudinal.js`, eliminating the previous text→select race. Step 3's own spread-based DXA persistence preserves `machine_label`, while the normalization layer writes it explicitly on machine/local-label changes and Save/Finish actions.
 
 ---
 
@@ -124,14 +130,21 @@ Step 3 now treats these values as a read-only projection. Its additional functio
 
 **NEXT: continue pre-pilot hardening before the 5 real pilot encounters.**
 
-Highest-priority remaining items:
+Highest-priority remaining item:
 
 ```text
-Patch 5 — make DXA machine a native persistent select
 Patch 7 — implement real archetype-driven applicability
 ```
 
-Then address the remaining usability/correctness items (progress calculation, longitudinal prior-DXA entry/escaping, BMI override behavior), perform a save/reload/complete smoke test, and only then start Pilot Case 1/5.
+Then address the remaining usability/correctness items:
+
+```text
+Patch 3 — whole-form progress calculation
+Patch 6 — inline prior-DXA entry + escaping
+Patch 8 — BMI derived/manual behavior
+```
+
+After those, perform a save/reload/complete smoke test and only then start Pilot Case 1/5.
 
 After the 5 pilot cases:
 
