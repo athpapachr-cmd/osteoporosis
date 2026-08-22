@@ -269,7 +269,7 @@
     currentCase.updated_at = new Date().toISOString();
     const cases = getStore();
     const idx = cases.findIndex(i => i.internal_uuid === currentCase.internal_uuid);
-    const moduleKeys = ["step3", "step4", "step5", "step6", "longitudinal_review", "pilot_completion", "audit_evaluation_v1"];
+    const moduleKeys = ["step3", "step4", "step5", "step6", "longitudinal_review", "applicability_review", "pilot_completion", "audit_evaluation_v1"];
     const payload = { ...currentCase };
     moduleKeys.forEach((key) => delete payload[key]);
     if (idx >= 0) cases[idx] = { ...cases[idx], ...payload };
