@@ -37,13 +37,31 @@ This file answers **where the project is going and in what order**. Detailed cur
 - [x] Implement pilot UI Step 6 — documentation trace + final Heidi/capture-source review.
 - [x] Define exact form-field → KPI status calculation contract.
 - [x] Complete identified pre-pilot hardening patches P1/P2/P3/P4/P5/P6/P7/P8.
-- [ ] Run explicit pre-pilot synthetic smoke test for save/reload/applicability/longitudinal/BMI/completion behavior.
+- [ ] Add final pre-pilot data-quality refinements:
+  - [ ] Step 3 `labs_date` via native calendar/date input.
+  - [ ] Step 6 conflict resolution/note conditional display + clear-on-collapse.
+- [ ] Deploy and run explicit pre-pilot synthetic smoke test for save/reload/applicability/longitudinal/labs-date/Step6-conflict/BMI/completion behavior.
 - [ ] Run 5 pilot encounters and measure completion time/friction/missing fields.
-- [ ] Revise the form once after pilot evidence.
-- [ ] Freeze Baseline Form v1 + KPI applicability rules before scored baseline.
+- [ ] Review pilot evidence once and make one deliberate refinement.
+- [ ] Freeze Baseline Form v1 + KPI applicability/calculation rules before scored baseline.
 - [ ] Define first Dashboard Data Contract after baseline capture contract is frozen.
 
-**CURRENT NEXT IMPLEMENTATION ACTION:** run the explicit pre-pilot smoke test. If it passes, run the 5-case pilot before starting the 30-case scored baseline.
+**CURRENT NEXT IMPLEMENTATION ACTION:** finish `labs_date` + Step 6 conflict clear-on-collapse, deploy, run the smoke test, then start the 5-case pilot on the next clinical workday if the test passes.
+
+## 0.1 External-review backlog now incorporated into the active plan
+
+The detailed backlog is canonical in `CLINICAL_EXCELLENCE_PLAN.md §20`. High-priority candidates for the one post-pilot refinement include:
+
+- lab status/tri-state ambiguity and units discipline;
+- shared archetype registry and selective required-field gating;
+- FRAX reproducibility/derived context;
+- lowest-T / discordance / VFA and renal-mineral derived context;
+- Step 4 safety/coherence derivations including denosumab exit and treatment-failure distinction;
+- Step 5 agent-specific communication applicability and structured Signal preparation;
+- Step 6 clinical-process-present/provenance/coherence support;
+- central persistence helper/shared registries only when pilot evidence justifies refactoring.
+
+Do not implement the full backlog before the 5-case pilot.
 
 ---
 
