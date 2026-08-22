@@ -340,3 +340,27 @@ Step 3 = read-only projection + additional detailed functional assessment
 A runtime module `static/baseline-audit/shared-risk-source.js` synchronizes the Step 3 projection from Step 1, disables editing of the shared controls in Step 3, and removes duplicate copies of those shared fields from persisted `step3` state. Detailed Step 3-only fields such as falls/function review, fall injury, ambulatory aid, gait/balance concern, TUG, chair stand, grip strength, gait speed, SPPB and actions remain independently editable.
 
 This removes ambiguity for later derived signals/KPI logic and prevents one encounter from carrying two competing versions of the same clinical fact.
+
+---
+
+## 2026-08-22 — Pre-pilot Patch 5 normalizes and persists DXA machine identity
+
+The DXA machine field was normalized before the longitudinal layer initializes. `static/baseline-audit/dxa-machine-select.js` converts the Step 3 control to a fixed machine select, preserves optional local machine identity in `machine_label`, maps recognized legacy labels to normalized keys and preserves unrecognized legacy free text under `other_unknown` rather than dropping it.
+
+This removed the practical text→select race and made machine identity persistent across save/reload while keeping the current pilot data model backward-compatible.
+
+---
+
+## 2026-08-22 — Second review hardens P1/P2 and verifies P4/P5
+
+A second independent code review correctly identified a residual P2 ownership bug: `currentCase` could contain stale module slices from load time, and a core merge could therefore overwrite fresher `longitudinal_review` state.
+
+The root rule was tightened so `app-core` now excludes module-owned slices from its save payload:
+
+```text
+step3 / step4 / step5 / step6 / longitudinal_review / pilot_completion / audit_evaluation_v1
+```
+
+The P1 path was also hardened: `data-hygiene.js` now loads before `longitudinal.js`, and `currentDxaPoint()` independently refuses to expose a current DXA point unless `DXA used == yes`. Thus chart correctness no longer depends only on sanitizer timing.
+
+The same review re-verified that P4 and P5 were already active through their dedicated runtime modules. They were not rewritten again during this hardening pass because there was no remaining pilot data-integrity defect demonstrated in those paths; unnecessary ownership refactoring was deferred until after smoke testing or pilot evidence if still warranted.

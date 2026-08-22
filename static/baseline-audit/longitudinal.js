@@ -127,7 +127,9 @@
   }
   function currentDxaPoint(){
     const c=activeCase();
-    return {date:$("#s3DxaDate")?.value||c?.step3?.dxa?.date||"", machine:$("#s3DxaMachine")?.value||c?.step3?.dxa?.machine||"", machine_label:$("#s3MachineLocalLabel")?.value||"", spine_bmd:num($("#s3SpineBmd")?.value), spine_t:num($("#s3SpineT")?.value), total_hip_bmd:num($("#s3TotalHipBmd")?.value), total_hip_t:num($("#s3TotalHipT")?.value), fn_bmd:num($("#s3FnBmd")?.value), fn_t:num($("#s3FnT")?.value), current:true};
+    const used=$("#s3DxaUsed")?.value || c?.step3?.dxa?.used || "";
+    if(used!=="yes") return {date:"",machine:"",machine_label:"",spine_bmd:null,spine_t:null,total_hip_bmd:null,total_hip_t:null,fn_bmd:null,fn_t:null,current:true};
+    return {date:$("#s3DxaDate")?.value||c?.step3?.dxa?.date||"", machine:$("#s3DxaMachine")?.value||c?.step3?.dxa?.machine||"", machine_label:$("#s3MachineLocalLabel")?.value||c?.step3?.dxa?.machine_label||"", spine_bmd:num($("#s3SpineBmd")?.value), spine_t:num($("#s3SpineT")?.value), total_hip_bmd:num($("#s3TotalHipBmd")?.value), total_hip_t:num($("#s3TotalHipT")?.value), fn_bmd:num($("#s3FnBmd")?.value), fn_t:num($("#s3FnT")?.value), current:true};
   }
 
   function table(rows, columns, removeKind){
@@ -156,7 +158,7 @@
   function allDxaRows(){const rows=[...state.dxa_history];const cur=currentDxaPoint();if(cur.date && [cur.spine_bmd,cur.total_hip_bmd,cur.fn_bmd,cur.spine_t,cur.total_hip_t,cur.fn_t].some(v=>v!==null)) rows.push(cur);return rows.sort((a,b)=>(a.date||"").localeCompare(b.date||""));}
 
   function renderFrax(){
-    const rows=allFraxRows(); const historical=state.frax_history;
+    const rows=allFraxRows();
     const host=$("#lrFraxTable"); if(host) host.innerHTML=table(rows,[["date","Date"],["raw_mof","MOF %",v=>fmt(v)],["raw_hip","Hip %",v=>fmt(v)],["adjusted_mof","Adj MOF %",v=>fmt(v)],["adjusted_hip","Adj Hip %",v=>fmt(v)]],"frax");
     const s=$("#lrFraxSummary"); if(s){const e=rows[0],l=rows[rows.length-1];s.innerHTML=rows.length>=2?`<div><span>MOF change</span><strong>${fmt((l.raw_mof??0)-(e.raw_mof??0))} pp</strong></div><div><span>Hip change</span><strong>${fmt((l.raw_hip??0)-(e.raw_hip??0))} pp</strong></div><div><span>Assessments</span><strong>${rows.length}</strong></div>`:'<div><span>Trend</span><strong>Χρειάζεται δεύτερο σημείο</strong></div>';}
     svgLineChart("#lrMofChart",rows,[{key:"raw_mof",label:"Raw MOF"},{key:"adjusted_mof",label:"FRAXplus MOF"}]);

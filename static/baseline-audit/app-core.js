@@ -264,7 +264,25 @@
   }
   function updateProgress() { const p = calculateProgress(); el.progressFill.style.width = `${p}%`; el.progressText.textContent = `${p}%`; }
 
-  function saveDraft(showStatus = true) { snapshotAll(); currentCase.updated_at = new Date().toISOString(); const cases = getStore(); const idx = cases.findIndex(i => i.internal_uuid === currentCase.internal_uuid); if (idx >= 0) cases[idx] = { ...cases[idx], ...currentCase }; else cases.push(currentCase); setStore(cases); localStorage.setItem(ACTIVE_KEY, currentCase.internal_uuid); dirty = false; if (showStatus) { const time = new Intl.DateTimeFormat("el-GR", { hour: "2-digit", minute: "2-digit" }).format(new Date()); el.draftStatus.textContent = `Draft αποθηκεύτηκε τοπικά στις ${time}`; } renderCaseList(); }
+  function saveDraft(showStatus = true) {
+    snapshotAll();
+    currentCase.updated_at = new Date().toISOString();
+    const cases = getStore();
+    const idx = cases.findIndex(i => i.internal_uuid === currentCase.internal_uuid);
+    const moduleKeys = ["step3", "step4", "step5", "step6", "longitudinal_review", "pilot_completion", "audit_evaluation_v1"];
+    const payload = { ...currentCase };
+    moduleKeys.forEach((key) => delete payload[key]);
+    if (idx >= 0) cases[idx] = { ...cases[idx], ...payload };
+    else cases.push(payload);
+    setStore(cases);
+    localStorage.setItem(ACTIVE_KEY, currentCase.internal_uuid);
+    dirty = false;
+    if (showStatus) {
+      const time = new Intl.DateTimeFormat("el-GR", { hour: "2-digit", minute: "2-digit" }).format(new Date());
+      el.draftStatus.textContent = `Draft αποθηκεύτηκε τοπικά στις ${time}`;
+    }
+    renderCaseList();
+  }
 
   function syncUiFromState() {
     el.caseIdDisplay.textContent = currentCase.case_id; el.encounterDate.value = currentCase.encounter_date || isoToday(); el.ageYears.value = currentCase.age_years ?? ""; el.encounterArchetype.value = currentCase.encounter_archetype || "";
