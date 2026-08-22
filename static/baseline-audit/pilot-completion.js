@@ -3,7 +3,6 @@
 
   const STORAGE_KEY = "osteoporosis.baselineAuditPilot.v1_1";
   const ACTIVE_KEY = "osteoporosis.baselineAuditPilot.activeCase.v1_1";
-  const MODULE_KEYS = ["step3", "step4", "longitudinal_review", "step5", "step6", "audit_evaluation_v1"];
 
   function getCases() {
     try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); }
@@ -16,33 +15,6 @@
 
   function activeId() {
     return localStorage.getItem(ACTIVE_KEY) || "";
-  }
-
-  function captureModuleState() {
-    const id = activeId();
-    const current = getCases().find((c) => c.internal_uuid === id);
-    if (!current) return null;
-    const preserved = {};
-    MODULE_KEYS.forEach((key) => {
-      if (Object.prototype.hasOwnProperty.call(current, key)) preserved[key] = current[key];
-    });
-    return { id, preserved };
-  }
-
-  function restoreModuleState(snapshot) {
-    if (!snapshot?.id) return;
-    const cases = getCases();
-    const index = cases.findIndex((c) => c.internal_uuid === snapshot.id);
-    if (index < 0) return;
-    cases[index] = { ...cases[index], ...snapshot.preserved };
-    setCases(cases);
-  }
-
-  function preserveAroundLegacySave(button) {
-    button.addEventListener("click", () => {
-      const snapshot = captureModuleState();
-      setTimeout(() => restoreModuleState(snapshot), 0);
-    }, true);
   }
 
   function markPilotComplete() {
@@ -76,8 +48,6 @@
 
   const saveTop = document.querySelector("#saveTopBtn");
   const saveDraft = document.querySelector("#saveDraftBtn");
-  if (saveTop) preserveAroundLegacySave(saveTop);
-  if (saveDraft) preserveAroundLegacySave(saveDraft);
 
   const finish = document.querySelector("#finishVisitBtn");
   if (finish) {
