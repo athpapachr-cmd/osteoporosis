@@ -32,7 +32,7 @@ This file answers **where the project is going and in what order**. Detailed cur
 - [x] Implement Baseline Audit pilot UI Step 1 in PR #1.
 - [x] Implement pilot UI Step 2 — fracture history + fracture-risk assessment.
 - [x] Implement pilot UI Step 3 — DXA/VFA + secondary causes + falls/frailty/sarcopenia.
-- [ ] Implement pilot UI Step 4 — treatment history/safety + decision + monitoring/follow-up.
+- [x] Implement pilot UI Step 4 — treatment history/safety + decision + monitoring/follow-up.
 - [ ] Implement pilot UI Step 5 — communication + immediate post-visit reflection.
 - [ ] Implement pilot UI Step 6 — documentation trace + final Heidi/capture-source review.
 - [ ] Define exact form-field → KPI status calculation contract.
@@ -41,7 +41,7 @@ This file answers **where the project is going and in what order**. Detailed cur
 - [ ] Freeze Baseline Form v1 + KPI applicability rules before scored baseline.
 - [ ] Define first Dashboard Data Contract after baseline capture contract is frozen.
 
-**CURRENT NEXT IMPLEMENTATION ACTION:** implement Step 4 (treatment history/safety + decision + monitoring/follow-up), then Steps 5–6 and run the 5-case pilot.
+**CURRENT NEXT IMPLEMENTATION ACTION:** implement Steps 5–6, define the exact field→KPI contract, then run the 5-case pilot before starting the 30-case scored baseline.
 
 ---
 

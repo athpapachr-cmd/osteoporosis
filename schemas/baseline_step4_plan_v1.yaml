@@ -1,0 +1,205 @@
+schema: baseline_step4_plan_v1
+status: draft_for_implementation
+module: osteoporosis
+purpose: >-
+  Define Step 4 of the prospective Baseline Osteoporosis Audit: treatment history and exact
+  timeline, adherence/tolerance/response, clinical decision and rationale, sequencing safety,
+  and concrete monitoring/follow-up tasks. Reuse useful legacy Cockpit treatment concepts but
+  replace approximate-duration-only history with date-aware, auditable objects.
+
+migration_principle:
+  preserve:
+    - current_therapy_type
+    - approximate_duration_context_when_exact_dates_unknown
+    - fractures_during_current_therapy
+    - significant_therapy_adverse_effects
+    - therapy_history_concept
+    - agreed_plan_concept
+  improve:
+    - exact_start_end_dates_when_known
+    - scheduled_and_actual_administration_dates
+    - next_due_date_and_status
+    - adherence_and_tolerance_as_separate_dimensions
+    - reason_for_start_continue_stop_switch_defer
+    - options_considered_and_contraindication_screen
+    - sequencing_exit_consolidation_safety
+    - clinician_rationale_and_patient_preference
+    - explicit_followup_tasks_with_due_dates
+  do_not_copy_by_default:
+    - unvalidated treatment recommendation logic
+    - silent guideline hybridization
+    - treatment suggestions presented as if they were clinician decisions
+
+archetype_applicability:
+  initial_assessment_new_or_uncertain_diagnosis:
+    expected_when_treatment_is_relevant:
+      - prior_treatment_history
+      - current_status
+      - treatment_decision
+      - rationale_and_patient_preference
+      - followup_plan
+  initial_assessment_known_osteoporosis_or_osteopenia:
+    expected:
+      - prior_and_current_treatment_history
+      - adherence_tolerance_response
+      - current_decision
+      - monitoring_plan
+  routine_followup_stable:
+    expected:
+      - current_agent_status
+      - adherence_and_tolerance
+      - interval_fracture_or_response_context
+      - due_monitoring_and_next_followup
+  treatment_start:
+    expected:
+      - selected_agent
+      - reason_for_selection
+      - contraindication_safety_review
+      - patient_preference
+      - start_or_administration_date
+      - monitoring_plan
+  treatment_continuation_or_due_monitoring:
+    expected:
+      - administration_or_supply_status
+      - adherence_tolerance
+      - next_due_date
+      - due_labs_or_DXA
+  treatment_change_or_transition:
+    expected:
+      - reason_for_change
+      - prior_agent_end_or_last_administration
+      - next_agent_and_planned_start
+      - sequencing_safety_review
+      - monitoring_tasks
+  post_fragility_fracture:
+    expected:
+      - current_treatment_status
+      - treatment_intensification_or_start_decision
+      - rationale
+      - monitoring_and_followup
+  fracture_on_treatment:
+    expected:
+      - adherence_and_actual_administration_review
+      - response_and_secondary_cause_context
+      - decision_to_continue_switch_or_escalate
+      - rationale_and_followup
+  adverse_effect_or_intolerance:
+    expected:
+      - adverse_effect_details
+      - severity_and_action
+      - alternative_options_considered
+      - revised_plan
+  treatment_completion_or_consolidation:
+    expected:
+      - completed_course_or_last_dose
+      - planned_consolidation_or_exit
+      - exact_next_agent_timing
+      - monitoring_plan
+
+treatment_episode:
+  repeated_fields:
+    - agent
+    - route_optional
+    - start_date_optional
+    - end_date_optional
+    - status: [planned, active, completed, stopped, holiday, unknown]
+    - duration_years_if_dates_unknown_optional
+    - reason_started_optional
+    - reason_stopped_or_switched_optional
+    - adherence: [good, partial, poor, unknown, not_applicable]
+    - tolerance: [good, minor_adverse_effects, significant_adverse_effects, unknown, not_applicable]
+    - fractures_on_episode: [yes, no, unknown]
+    - response_context: [appropriate, suboptimal, uncertain, not_assessed]
+
+administration_event:
+  repeated_fields:
+    - agent
+    - scheduled_date_optional
+    - actual_date_optional
+    - status: [done, due, overdue, missed, planned, not_applicable]
+    - next_due_date_optional
+    - note_optional
+  use_cases:
+    - denosumab
+    - zoledronate_or_other_iv_bisphosphonate
+    - romosozumab_monthly_course
+    - other_time_critical_administration
+
+current_decision:
+  fields:
+    - decision_type: [start, continue, stop, switch, defer, no_drug_treatment, complete_course, consolidate, refer, uncertain]
+    - selected_agent_optional
+    - reason_codes_multi_select:
+        - fracture_risk
+        - very_high_risk
+        - new_fragility_fracture
+        - fracture_on_treatment
+        - inadequate_response
+        - adherence_problem
+        - adverse_effect_or_intolerance
+        - contraindication
+        - treatment_duration_or_review_point
+        - denosumab_exit_or_delay_risk
+        - anabolic_or_romosozumab_completion
+        - patient_preference
+        - cost_or_access
+        - other
+    - alternatives_considered_optional_multi_select
+    - safety_contraindication_review: [done, not_done, not_applicable, uncertain]
+    - sequencing_review: [done, not_done, not_applicable, uncertain]
+    - clinician_rationale_optional
+    - patient_preference_documented: [yes, no, not_applicable, uncertain]
+    - patient_accepted_plan: [yes, no, undecided, not_applicable, unknown]
+    - clinician_confidence_optional_percent
+
+sequencing_safety:
+  fields:
+    - transition_relevant: [yes, no, uncertain]
+    - transition_type_optional: [denosumab_exit, post_teriparatide, post_romosozumab, bisphosphonate_holiday_or_restart, other]
+    - prior_agent_last_dose_or_end_date_optional
+    - next_agent_planned_optional
+    - next_agent_date_optional
+    - transition_plan_explicit: [yes, no, not_applicable]
+    - unresolved_safety_issue: [yes, no]
+    - unresolved_safety_note_optional
+  baseline_rule: >-
+    Capture whether an explicit safe transition plan existed. Do not generate a treatment
+    recommendation during the scored baseline except for future safety-critical alert logic.
+
+followup_tasks:
+  repeated_fields:
+    - task_type: [lab, DXA, administration, followup_visit, referral, VFA_or_imaging, adherence_check, exercise_or_falls, nutrition, other]
+    - due_date_optional
+    - timeframe_text_optional
+    - status: [planned, already_done, not_applicable]
+    - note_optional
+  rule: >-
+    Prefer concrete due dates when known. Timeframe text is allowed when exact date is not yet
+    available. These objects will later become reusable CareTask objects.
+
+close_encounter:
+  fields:
+    - plan_complete: [yes, no, uncertain]
+    - unresolved_critical_item: [yes, no]
+    - unresolved_item_note_optional
+
+baseline_behavior:
+  - no_live_KPI_score_or_guideline_concordance_verdict
+  - no_auto_treatment_recommendation
+  - preserve_reasoned_override_without_labeling_it_error
+  - allow_unknown_and_not_applicable_as_distinct_states
+  - localStorage_only_during_prototype
+
+kpi_mapping:
+  OST-KPI-08:
+    source: treatment_episode_and_adherence_tolerance
+  OST-KPI-09:
+    source: current_decision_and_rationale_patient_preference
+  OST-KPI-10:
+    source: followup_tasks_and_close_encounter
+  OST-KPI-11:
+    source: administration_event_for_denosumab
+  OST-KPI-12:
+    source: sequencing_safety
+  OST-KPI-13:
+    source: fracture_on_treatment_archetype_plus_treatment_review

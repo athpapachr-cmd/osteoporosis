@@ -1,6 +1,6 @@
 # HANDOFF_CURRENT.md — current operational handoff
 
-> **Updated:** 2026-08-22 16:53 Asia/Nicosia
+> **Updated:** 2026-08-22 17:34 Asia/Nicosia
 > **Canonical repository:** `athpapachr-cmd/osteoporosis`
 > **Current major phase:** prospective Osteoporosis Baseline/Audit implementation
 > **Current module:** Module 01 — Osteoporosis
@@ -34,7 +34,7 @@ HANDOFF_CURRENT.md
 osteoporosis-change-log.md
 ```
 
-Supporting schemas/contracts:
+Supporting schemas/contracts now include:
 
 ```text
 schemas/baseline_osteoporosis_audit_v1.yaml
@@ -45,6 +45,7 @@ schemas/encounter_archetypes_v1.yaml
 schemas/baseline_step1_capture_v1.yaml
 schemas/baseline_step2_risk_v1.yaml
 schemas/baseline_step3_results_v1.yaml
+schemas/baseline_step4_plan_v1.yaml
 ```
 
 `README.md` is navigation only. Durable decisions must not live only in chat.
@@ -98,60 +99,18 @@ Disease status is separate again. KPI denominators will be archetype-specific.
 
 ---
 
-## 5. Step 1 — implemented, merged and live
+## 5. Steps 1–3 — implemented, merged and live
 
-Captures:
+### Step 1 — encounter context
+Captures patient relationship/archetype, age/sex/menopause, anthropometrics/BMI/height loss, prior fracture timing, parental hip fracture, GC dose/duration, falls count, secondary conditions, frailty/immobility, sarcopenia trigger and low-burden Heidi exposure metadata.
 
-- patient relationship + encounter archetype;
-- age/sex/menopause;
-- weight/current height/height source/reference height;
-- automatic BMI and derived height loss;
-- prior fragility fracture with site + month/year;
-- parental hip fracture;
-- frailty/immobility trigger with CFS/cognition/immobility;
-- systemic glucocorticoid dose + duration;
-- falls count over 12 months;
-- structured secondary/associated conditions;
-- sarcopenia case-finding relevance + SARC-F/clinical suspicion;
-- osteoporosis status and baseline sampling flag;
-- low-burden Heidi exposure/review/correction metadata.
+### Step 2 — fracture history and formal risk
+Captures structured fracture events, full/interval/focused fracture review, FRAX/FRAXplus/other formal assessment, country/surrogate model, MOF/hip probabilities, FN-BMD use, FRAX context, declared framework, resulting risk category and reasoned adjustment/override.
 
-Background-only derived context includes low-BMI workflow flag, height loss >=4 cm, fracture recency, recurrent falls >=2/year, GC dose bands/exposure duration and SARC-F >=4. These are not shown as performance coaching.
+### Step 3 — examinations/results
+Captures DXA with BMD + T-score + longitudinal comparability/LSC, VFA/vertebral-imaging indication/action/result, secondary-cause process, optional mineral/renal/BTM/conditional labs, falls/frailty/function and conditional sarcopenia testing.
 
-Heidi rule: do not paste raw or corrected transcripts; no manual diff required.
-
----
-
-## 6. Step 2 — implemented, merged and live
-
-Captures:
-
-### Fracture history
-- review status and scope;
-- interval fracture status;
-- repeated structured fracture events with site, month/year, fragility classification, treatment-at-event status and vertebral detail.
-
-### Formal fracture-risk assessment
-- indicated vs performed;
-- FRAX / FRAXplus / other;
-- country or surrogate model;
-- MOF and hip 10-year probabilities;
-- femoral-neck BMD use;
-- smoking, alcohol and RA context;
-- declared risk framework and resulting category;
-- contextual adjustment / clinician override and structured reasons.
-
-Rules:
-- no internal FRAX-like surrogate score;
-- no silent guideline hybridization;
-- stable follow-up can explicitly record interval-only review / formal assessment N/A;
-- no live therapeutic coaching during baseline.
-
----
-
-## 7. Step 3 — implemented, merged and live
-
-Merged commit:
+Step 3 merged commit:
 
 ```text
 b8d2f44c0aeb118f6a4b4558ed7ffe882216eec2
@@ -163,73 +122,87 @@ Render deploy:
 dep-da4qgubl550s73d6ogj0 — live
 ```
 
+Prototype storage remains browser `localStorage`; no production patient-data persistence is introduced.
+
+---
+
+## 6. Step 4 — implemented on active branch
+
+Active branch:
+
+```text
+feat/baseline-step4-plan
+```
+
 Schema:
 
 ```text
-schemas/baseline_step3_results_v1.yaml
+schemas/baseline_step4_plan_v1.yaml
 ```
 
 Implementation files:
 
 ```text
-static/baseline-audit/app.js       # lightweight bootstrap loader
-static/baseline-audit/app-core.js  # preserved Step 1 + Step 2 application core
-static/baseline-audit/step3.js
-static/baseline-audit/step3.css
+static/baseline-audit/step4.js
+static/baseline-audit/step4.css
+static/baseline-audit/app.js   # now loads Step 4 after Step 3
 ```
 
-Step 3 uses a **selective migration** principle from the old Cockpit: clinically useful data are retained, but not copied field-for-field.
+### Treatment timeline
+- repeated treatment episodes;
+- exact start/end dates when known;
+- approximate duration only when exact dates are unknown;
+- active/completed/stopped/holiday/planned status;
+- adherence and tolerance separately;
+- fracture-on-episode and response context;
+- reason started and reason stopped/switched.
 
-### DXA
-- current-use status;
-- scan date/facility/machine metadata;
-- spine / total hip / femoral neck BMD g/cm² + T-score;
-- ROI/excluded-vertebra and artifact review;
-- Z-score relevance;
-- longitudinal comparison;
-- same-machine/cross-calibration status;
-- facility LSC and optional site-specific LSC;
-- whether change was interpreted using BMD/LSC or explicitly declared non-comparable.
+### Administration timeline
+- repeated administration events;
+- scheduled date;
+- actual date;
+- done/due/overdue/missed/planned status;
+- next due date;
+- intended for denosumab, IV bisphosphonates, romosozumab and other time-critical administrations.
 
-### VFA / vertebral imaging
-- indication yes/no/uncertain;
-- structured indication reasons;
-- performed/reviewed/arranged/reasoned-not-done/missed/N/A;
-- modality;
-- vertebral fracture result and Genant/grade traceability.
+### Current clinical decision
+- start / continue / stop / switch / defer / no-drug-treatment / complete / consolidate / refer / uncertain;
+- selected agent;
+- structured reasons for the decision;
+- safety/contraindication review;
+- sequencing review;
+- patient preference documented;
+- patient accepted/declined/undecided;
+- optional clinician confidence and short rationale.
 
-### Secondary causes and laboratory evaluation
-- separates indication/process from numeric value entry;
-- numeric labs remain optional so the pilot form is not a duplicate laboratory record;
-- preserves useful legacy mineral/renal labs and BTMs;
-- adds optional conditional secondary-cause labs/status fields.
+### Transition / sequencing safety
+- whether transition is relevant;
+- denosumab exit, post-teriparatide, post-romosozumab, bisphosphonate holiday/restart or other;
+- prior last-dose/end date;
+- next agent and planned date;
+- whether explicit transition plan exists;
+- unresolved safety issue and optional note.
 
-### Falls / frailty / function
-- falls review + 12-month count;
-- injury/fracture relation;
-- CFS;
-- cognition and immobility;
-- ambulatory aid;
-- gait/balance concern;
-- optional TUG;
-- action if material risk identified.
+### Follow-up / CareTask precursor
+- repeated task objects for labs, DXA, administration, visit, referral, imaging, adherence, exercise/falls, nutrition or other;
+- due date or timeframe text;
+- planned/already-done/N/A status.
 
-Default outpatient baseline does **not** copy every Morse item from the legacy Cockpit because several are hospital-context specific.
+### Encounter close
+- whether plan is complete;
+- whether an unresolved critical item remains;
+- optional short note.
 
-### Sarcopenia
-- conditional case-finding applicability;
-- SARC-F or clinical suspicion;
-- optional chair stand, grip strength, gait speed, SPPB and TUG;
-- probable-sarcopenia signal and optional action;
-- derived SARC-F >=4 stored silently, without baseline coaching.
-
-Step 3 seeds falls/CFS/cognition/immobility/sarcopenia fields from Step 1 where available instead of asking for duplicate entry.
-
-Prototype storage remains browser `localStorage`; no production patient-data persistence is introduced.
+Rules remain:
+- no live treatment recommendation during baseline;
+- no live KPI/guideline-concordance verdict;
+- reasoned clinician override is not automatically an error;
+- unknown and N/A remain distinct;
+- no identifiable patient data or raw Heidi transcript in the public repo.
 
 ---
 
-## 8. Migration principle from legacy Cockpit
+## 7. Migration principle from legacy Cockpit
 
 The new Clinical Excellence interface is **not a replacement-by-copy**. It is a migration and normalization layer:
 
@@ -243,35 +216,21 @@ OLD COCKPIT DATA
 ```
 
 Examples:
-
 - T-scores are retained, but longitudinal DXA gains BMD/LSC/machine comparability.
-- falls/frailty fields are retained, but 12-month fall counts and outpatient function are emphasized.
-- numeric labs are retained as optional values, while audit scoring focuses on whether relevant evaluation occurred.
+- falls/frailty fields are retained, but 12-month counts and outpatient function are emphasized.
+- numeric labs are optional while audit scoring focuses on whether relevant evaluation occurred.
+- treatment type/duration is retained but upgraded to exact episodes, administration dates and future CareTasks.
 - hospital-specific Morse items are not automatically promoted into the outpatient osteoporosis baseline.
 
 ---
 
-## 9. Current next action
+## 8. Current next action
 
-**NEXT: Step 4 — Απόφαση & Πλάνο.**
-
-Implement:
-
-1. exact current/past treatment timeline;
-2. actual administrations and due dates where time-critical;
-3. adherence/tolerance and treatment response context;
-4. reason for start/continue/stop/switch/defer;
-5. contraindications/options considered;
-6. sequencing / exit / consolidation safety;
-7. clinician rationale and patient preference;
-8. monitoring plan: labs, DXA, administration, visit/referral due dates;
-9. unresolved critical item at encounter close;
-10. archetype-specific applicability and N/A handling.
+**NEXT: Step 5 — Επικοινωνία + immediate post-visit reflection.**
 
 Then:
 
 ```text
-Step 5 — communication + post-visit reflection
 Step 6 — documentation trace + final Heidi/capture-source review
 → exact field→KPI calculation contract
 → 5-case pilot
@@ -284,7 +243,7 @@ Separate later instruments: Patient Voice 4-question instrument and Decision Qua
 
 ---
 
-## 10. Stop boundary
+## 9. Stop boundary
 
 Do not yet:
 

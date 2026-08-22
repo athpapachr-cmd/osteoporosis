@@ -296,3 +296,13 @@ Step 3 added:
 - conditional sarcopenia case-finding with SARC-F, chair stand, grip strength, gait speed, SPPB and TUG.
 
 Step 3 seeds relevant values from Step 1 to reduce duplicate entry and preserves the baseline rule of no live KPI coaching.
+
+---
+
+## 2026-08-22 — Baseline Audit Step 4 implemented
+
+Step 4 upgraded the legacy treatment/plan concepts into date-aware, auditable objects. It added repeated treatment episodes with exact start/end dates when known, adherence/tolerance/response context, repeated administration events with scheduled/actual/next-due dates, and a structured current clinical decision with rationale, patient preference and optional confidence.
+
+It also added explicit transition/sequencing capture for denosumab exit, post-teriparatide, post-romosozumab and bisphosphonate holiday/restart scenarios, plus repeated follow-up tasks that are intended to become reusable `CareTask` objects later. Encounter close now records whether the plan was complete and whether an unresolved critical item remained.
+
+The Step 4 baseline UI deliberately does not generate treatment recommendations or live guideline-concordance verdicts. Reasoned clinician overrides remain distinguishable from errors, and exact dates are preferred over approximate durations without forcing invented historical dates.
