@@ -53,16 +53,7 @@ The project decision was not to clone any one external platform. Instead, the Cl
 
 `Signal` was selected as the central adaptive object linking otherwise separate parts of the system.
 
-Signal sources include:
-
-- clinical encounters;
-- patient feedback;
-- audits;
-- learning/tests;
-- new evidence/guidelines;
-- safety events/near misses;
-- benchmarks;
-- sustained good performance.
+Signal sources include clinical encounters, patient feedback, audits, learning/tests, new evidence/guidelines, safety events/near misses, benchmarks and sustained good performance.
 
 Negative signals must be classified before intervention as one or more of:
 
@@ -73,33 +64,21 @@ EXECUTION GAP
 COMMUNICATION / SYSTEM GAP
 ```
 
-This prevents the system from treating every poor result as an educational deficit.
-
 Positive repeated signals can mature into `SUSTAINED STRENGTH` and should trigger reinforcement, advanced challenge and appropriate external comparison rather than endless basic repetition.
 
 ---
 
 ## 2026-08-22 — Patient Voice elevated to system-learning input
 
-Patient feedback was defined as more than satisfaction measurement.
+Patient feedback was defined as more than satisfaction measurement. Initial dimensions include understanding the condition, understanding the plan, understanding treatment rationale/duration/risks, whether questions/preferences were addressed, and free-text confusion/concern/praise/suggestion.
 
-Initial feedback dimensions include:
-
-- understanding the condition;
-- understanding the plan;
-- understanding treatment rationale/duration/risks;
-- whether questions/preferences were addressed;
-- free-text confusion, concern, praise or suggestion.
-
-Repeated patient-feedback patterns may generate Signals, trigger improvement projects and require later re-measurement after communication/workflow changes.
+Repeated patient-feedback patterns may generate Signals, trigger improvement projects and require later re-measurement.
 
 ---
 
 ## 2026-08-22 — Progress measurement principles approved
 
-The dashboard should eventually show multiple progress bars but must also preserve longitudinal context.
-
-For meaningful metrics, the design should carry:
+Meaningful dashboard metrics should carry:
 
 ```text
 Current
@@ -113,15 +92,11 @@ External benchmark + comparability
 Data completeness
 ```
 
-Progress bars represent current state; run charts represent trajectory.
-
-No composite Clinical Excellence score should be treated as real before an adequate baseline audit exists.
+Progress bars represent current state; run charts represent trajectory. No composite Clinical Excellence score should be treated as real before an adequate baseline audit exists.
 
 ---
 
 ## 2026-08-22 — Personalized operating style approved
-
-The system should adapt to the clinician rather than behaving as a generic CME tracker.
 
 Approved interaction modes:
 
@@ -132,24 +107,15 @@ RED TEAM
 LEARNING
 ```
 
-Approved personalized principles include:
-
-- explain reasoning/source rather than giving only a verdict;
-- allow clinician accept/modify/reject with rationale;
-- prioritize high-confidence errors;
-- measure calibration where useful;
-- challenge confirmation bias;
-- compare sustained strengths as well as gaps with external standards where methodologically valid;
-- distinguish critical flaw from clinically meaningful improvement and cosmetic refinement;
-- avoid endless refinement once the approved objective has sufficient evidence of completion.
+Approved principles include explaining reasoning/source, allowing clinician accept/modify/reject with rationale, prioritizing high-confidence errors, measuring calibration where useful, challenging confirmation bias, comparing strengths as well as gaps with external standards, distinguishing critical flaws from cosmetic refinement, and stopping refinement when marginal value is low.
 
 ---
 
 ## 2026-08-22 — Canonical GitHub control plane created
 
-The public repository `athpapachr-cmd/osteoporosis` was designated as the canonical project home for Module 01 and the reusable Clinical Excellence architecture being developed through it.
+The public repository `athpapachr-cmd/osteoporosis` was designated as canonical project home.
 
-A five-file active canonical set was created, following the same control-plane discipline used in the digital-secretary project:
+Canonical set:
 
 ```text
 AGENTS.md
@@ -159,58 +125,36 @@ HANDOFF_CURRENT.md
 osteoporosis-change-log.md
 ```
 
-`README.md` remains navigation only.
-
-The permanent repository rule is one canonical project truth; chat history must not be the only place where durable decisions live.
-
-No runtime code change was part of this control-plane bootstrap.
+`README.md` remains navigation only. Durable decisions must not live only in chat.
 
 ---
 
-## 2026-08-22 — Next major design milestone selected
+## 2026-08-22 — Baseline Osteoporosis Audit selected as first implementation milestone
 
-The next major design task is:
-
-> **Baseline Osteoporosis Audit v1 + KPI Dictionary v1**
-
-The baseline must be defined before any dashboard progress score is considered valid.
-
-The audit design will specify sampling, inclusion/exclusion criteria, numerators, denominators, targets, data completeness, `not applicable` handling, reliability/sample-size rules, baseline lock criteria and re-audit timing.
+The baseline must be defined before any dashboard progress score is considered valid. The audit design covers sampling, inclusion/exclusion criteria, numerator/denominator, targets, data completeness, N/A handling, reliability/sample-size, baseline lock and re-audit timing.
 
 ---
 
 ## 2026-08-22 — Prospective baseline strategy adopted
 
-A key operational constraint was identified: there is no reliable pre-existing osteoporosis patient registry or dedicated osteoporosis folder, and GeSY visit records may be incomplete relative to what actually occurred during a consultation.
-
-The baseline strategy was therefore changed from a primarily retrospective chart audit to a **prospective post-visit encounter-capture baseline**.
-
-Approved sequence:
+There is no reliable pre-existing osteoporosis registry/dedicated folder and GeSY notes may be incomplete relative to what occurred in consultation. The baseline therefore uses prospective post-visit capture:
 
 ```text
 5 pilot cases
 → refine usability/branching
-→ freeze form + KPI applicability rules
+→ freeze form + KPI applicability
 → 30 consecutive unique scored baseline cases
 → lock baseline
 → interventions / re-audit
 ```
 
-Heidi AI is currently recent and non-systematic. During baseline it is recorded only as an exposure/capture source; its use is not scored as good practice and is not forced before baseline lock.
-
-The audit now explicitly separates:
-
-```text
-clinical process
-formal GeSY/documentation trace
-capture quality
-```
+Heidi is recent/non-systematic and is treated as an exposure/capture source, not a quality metric. Clinical process, formal documentation and capture quality remain separate axes.
 
 ---
 
 ## 2026-08-22 — Baseline audit / KPI / case-form schemas created
 
-Machine-readable draft schemas were added:
+Created:
 
 ```text
 schemas/baseline_osteoporosis_audit_v1.yaml
@@ -218,38 +162,53 @@ schemas/kpi_dictionary_v1.yaml
 schemas/baseline_case_form_v1.yaml
 ```
 
-The baseline schema defines pilot/scored cohorts, reliability display, safety exceptions, baseline lock and re-audit rules.
-
-The KPI dictionary defines the first 16 provisional osteoporosis KPIs, including data completeness, fracture history, risk assessment, DXA/VFA, secondary causes, falls/frailty, treatment history, decision documentation, continuity, denosumab timeliness, transition safety, fracture-on-treatment review and Patient Voice measures.
-
-The case-form schema defines neutral prospective encounter capture with explicit separation between what occurred clinically and what is traceable in formal documentation.
+The KPI dictionary defines the first provisional osteoporosis KPIs; the case form separates actual clinical process from formal documentation trace.
 
 ---
 
 ## 2026-08-22 — Baseline Audit pilot UI Step 1 implemented in PR #1
 
-The first code implementation slice was created on branch `feat/baseline-audit-pilot-v1` and opened as PR #1.
+Implemented the first prospective encounter-capture screen with local browser save/resume, privacy guardrails, encounter metadata, osteoporosis status and initial Heidi/risk context capture. No server-side patient-data storage was introduced.
 
-Added:
+---
 
-```text
-static/baseline-audit/index.html
-static/baseline-audit/styles.css
-static/baseline-audit/app.js
-```
+## 2026-08-22 — Step 1 refined into adaptive encounter context
 
-The implemented first screen includes:
+After clinical review, Step 1 was reworked to separate patient relationship (`new_to_service` vs `established_patient`) from encounter archetype. It added measured/source height, weight/BMI, derived height loss, fracture recency, glucocorticoid dose/duration, falls count, structured secondary conditions, frailty/immobility and conditional sarcopenia case-finding.
 
-- pilot case identity/progress;
-- encounter metadata;
-- visit reason and osteoporosis status;
-- adaptive sex/menopause context;
-- structured Heidi exposure/output/review/correction capture;
-- quick applicability signals;
-- privacy warnings;
-- local draft save/resume and case list using browser `localStorage` only;
-- no live KPI coaching or red/green baseline performance feedback.
+Heidi capture was simplified: no raw/corrected transcript and no manual diff; only exposure/review/material-correction metadata with optional one-click correction categories.
 
-Steps 2–6 are intentionally placeholders. No server-side patient-data API, `main.py` rewrite or new production clinical-data storage was introduced.
+A formal encounter-archetype schema was added so the audit no longer applies one checklist to every visit.
 
-The existing FastAPI static mount can serve the page at `/static/baseline-audit/` after merge/deploy.
+---
+
+## 2026-08-22 — Baseline Audit Step 2 implemented
+
+Step 2 added structured fracture events and formal fracture-risk capture. It records review scope, interval fractures, event site/date/fragility/on-treatment status, FRAX/FRAXplus use, country/surrogate model, MOF/hip probability, FN BMD use, explicit risk framework, resulting category and contextual adjustment/override.
+
+The system explicitly avoids internal FRAX-like surrogate scoring and silent hybridization of guideline thresholds.
+
+---
+
+## 2026-08-22 — Selective migration principle adopted for legacy Cockpit data
+
+The new Clinical Excellence dashboard will not copy the legacy Cockpit field-for-field. Existing data are classified as useful, duplicate, outdated or context-specific. Useful fields are preserved and normalized with provenance/timing/applicability before being linked to KPI, audit, learning and improvement loops.
+
+Examples: T-scores are retained but longitudinal DXA gains BMD/LSC/machine comparability; falls/frailty fields are retained but outpatient function and 12-month fall counts are prioritized; numeric labs remain optional while the audit measures whether relevant evaluation occurred; hospital-specific Morse fields are not automatically promoted into the outpatient osteoporosis baseline.
+
+---
+
+## 2026-08-22 — Baseline Audit Step 3 implemented
+
+Step 3 added:
+
+- DXA current-use context, BMD g/cm², T-scores, ROI/artifact review, Z-score relevance;
+- longitudinal DXA comparability, machine/cross-calibration, facility LSC and BMD/LSC interpretation status;
+- VFA/vertebral-imaging indication separated from action/result;
+- secondary-cause process capture separate from optional numeric lab entry;
+- legacy mineral/renal labs and bone-turnover markers as optional values;
+- conditional secondary-cause lab fields/status;
+- outpatient falls/frailty/function assessment with CFS, cognition, immobility, aid, gait/balance and optional TUG;
+- conditional sarcopenia case-finding with SARC-F, chair stand, grip strength, gait speed, SPPB and TUG.
+
+Step 3 seeds relevant values from Step 1 to reduce duplicate entry and preserves the baseline rule of no live KPI coaching.
