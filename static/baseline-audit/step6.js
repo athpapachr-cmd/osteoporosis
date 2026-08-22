@@ -96,9 +96,9 @@
           <div class="s6-grid three" style="margin-top:12px">
             <label><span>Primary source</span><select id="s6PrimarySource"><option value="">—</option>${optionHtml(SOURCES)}</select></label>
             <label><span>Υπήρχε conflict μεταξύ πηγών;</span><select id="s6SourceConflict">${optionHtml(YESNO)}</select></label>
-            <label><span>Resolution</span><select id="s6ConflictResolution"><option value="">—</option><option value="resolved_by_clinician_review">Resolved by clinician review</option><option value="unresolved">Unresolved</option><option value="not_applicable">N/A</option></select></label>
+            <label data-s6-conflict-dependent hidden><span>Resolution</span><select id="s6ConflictResolution"><option value="">—</option><option value="resolved_by_clinician_review">Resolved by clinician review</option><option value="unresolved">Unresolved</option><option value="not_applicable">N/A</option></select></label>
           </div>
-          <label><span>Conflict note <small>(προαιρετικό)</small></span><input id="s6ConflictNote" maxlength="400" /></label>
+          <label data-s6-conflict-dependent hidden><span>Conflict note <small>(προαιρετικό, χωρίς αναγνωριστικά)</small></span><input id="s6ConflictNote" maxlength="400" /></label>
         </article>
 
         <article class="card step6-card span-2">
@@ -177,13 +177,25 @@
     hydrate();
   }
 
+  function syncConflictVisibility(clearWhenHidden = false) {
+    const hasConflict = $('#s6SourceConflict')?.value === "yes";
+    $$('[data-s6-conflict-dependent]').forEach(node => node.hidden = !hasConflict);
+    if (!hasConflict && clearWhenHidden) {
+      setValue('#s6ConflictResolution', '');
+      setValue('#s6ConflictNote', '');
+      state.sources.conflict_resolution = "";
+      state.sources.conflict_note = "";
+    }
+  }
+
   function collect() {
+    const conflictPresent = $('#s6SourceConflict')?.value || "";
     state.sources = {
       used: $$('#s6Sources input:checked').map(x=>x.value),
       primary: $('#s6PrimarySource')?.value || "",
-      conflict_present: $('#s6SourceConflict')?.value || "",
-      conflict_resolution: $('#s6ConflictResolution')?.value || "",
-      conflict_note: $('#s6ConflictNote')?.value.trim() || ""
+      conflict_present: conflictPresent,
+      conflict_resolution: conflictPresent === "yes" ? ($('#s6ConflictResolution')?.value || "") : "",
+      conflict_note: conflictPresent === "yes" ? ($('#s6ConflictNote')?.value.trim() || "") : ""
     };
     DOMAINS.forEach(([key]) => {
       const row = $(`[data-s6-domain="${key}"]`);
@@ -233,6 +245,7 @@
 
   function hydrate() {
     setChecks('#s6Sources input', state.sources.used); setValue('#s6PrimarySource', state.sources.primary); setValue('#s6SourceConflict', state.sources.conflict_present); setValue('#s6ConflictResolution', state.sources.conflict_resolution); setValue('#s6ConflictNote', state.sources.conflict_note);
+    syncConflictVisibility(true);
     DOMAINS.forEach(([key])=>{
       const row=$(`[data-s6-domain="${key}"]`); if(!row)return; const t=state.trace[key]||{};
       const a=$('[data-field="formal_record_trace"]',row), b=$('[data-field="heidi_trace"]',row), c=$('[data-field="material_discrepancy"]',row);
@@ -246,7 +259,11 @@
 
   function bind() {
     const panel = $('[data-step-panel="6"]'); if (!panel) return;
-    panel.addEventListener('input', persist); panel.addEventListener('change', persist);
+    panel.addEventListener('input', persist);
+    panel.addEventListener('change', (event) => {
+      if (event.target?.id === 's6SourceConflict') syncConflictVisibility(true);
+      persist();
+    });
     $$('.step-tab').forEach(btn=>btn.addEventListener('click',()=>{if(btn.dataset.step==='6') setTimeout(loadState,0);}));
     document.addEventListener('click',(e)=>{if(e.target.closest('[data-load-case]')||e.target.closest('[data-nav-action="new-case"]')) setTimeout(loadState,0);});
     ['#saveTopBtn','#saveDraftBtn','#finishVisitBtn'].forEach(s=>{const n=$(s); if(n)n.addEventListener('click',()=>setTimeout(persist,0));});
