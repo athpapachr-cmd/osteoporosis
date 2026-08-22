@@ -16,5 +16,6 @@
     .then(() => loadScript("./step3.js"))
     .then(() => loadScript("./step4.js"))
     .then(() => loadScript("./longitudinal.js"))
+    .then(() => loadScript("./step5.js"))
     .catch((error) => console.error("Baseline Audit bootstrap failed", error));
 })();
