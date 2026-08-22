@@ -20,6 +20,7 @@ migration_principle:
     - add_same_machine_cross_calibration_and_LSC_context
     - separate_VFA_indication_from_VFA_action
     - separate_secondary_cause_review_from_numeric_lab_entry
+    - add_laboratory_date_to_distinguish_current_from_historical_results
     - use_falls_count_last_12_months_not_only_boolean_history
     - add_outpatient_function_and_sarcopenia_case_finding
   do_not_copy_by_default:
@@ -138,6 +139,8 @@ secondary_causes_and_labs:
     - prior_workup_accepted_as_still_adequate: [yes, no, not_applicable]
     - relevant_labs_reviewed_or_arranged: [yes, no, not_applicable]
     - unresolved_secondary_cause_question: [yes, no]
+  lab_snapshot_metadata:
+    - labs_date_optional
   core_numeric_fields_optional:
     - serum_calcium_mg_dl
     - serum_phosphorus_mg_dl
@@ -173,6 +176,7 @@ secondary_causes_and_labs:
     - spep_or_light_chains_reviewed_or_arranged
   rule: >-
     Numeric entry is optional. The audit must distinguish 'reviewed/arranged' from 'value entered'.
+    The optional laboratory date identifies whether entered values are current or historical.
     A clinician should not be penalized simply because a result is stored elsewhere and not manually
     copied into the pilot form.
 

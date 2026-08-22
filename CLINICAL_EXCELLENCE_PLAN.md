@@ -605,37 +605,22 @@ Do not interpret plateau mechanically; distinguish a stable high-performing doma
 
 ---
 
-# 12. Baseline Osteoporosis Audit v1 — required next design artifact
+# 12. Baseline Osteoporosis Audit v1 — active implementation state
 
-Before claiming improvement, define and perform an initial audit over an appropriate sample of consecutive or clearly sampled cases.
+The Baseline Audit design and KPI dictionary now exist and the Steps 1–6 prospective capture flow is implemented. The approved sequence is:
 
-The audit specification must include:
+```text
+pre-pilot hardening + smoke test
+→ 5 consecutive pilot encounters
+→ one deliberate usability/branching/calculation-contract refinement
+→ freeze form + KPI applicability
+→ 30 consecutive unique scored baseline cases
+→ baseline lock
+```
 
-- sampling method;
-- inclusion/exclusion criteria;
-- exact KPI dictionary;
-- numerator/denominator for each metric;
-- data-completeness rules;
-- treatment of `not applicable`;
-- minimum sample-size / reliability display rules;
-- baseline lock date;
-- re-audit interval.
+The audit specification includes sampling, inclusion/exclusion rules, KPI definitions, denominator/applicability rules, data completeness, reliability/sample-size conventions and separation of clinical process from formal documentation/capture quality.
 
-Initial candidate audit domains:
-
-- fracture history/documentation;
-- DXA interpretation completeness;
-- vertebral-fracture/VFA consideration when indicated;
-- fracture-risk assessment framework/documentation;
-- secondary-cause evaluation;
-- treatment-history completeness;
-- treatment decision/rationale;
-- adherence/adverse-effect assessment;
-- falls/frailty assessment;
-- follow-up plan and due tasks;
-- patient understanding/communication where data are available.
-
-The final Baseline Audit v1 specification is the next major design task after review of this blueprint.
+During the 5-case usability pilot, the objective is not performance scoring. It is to verify capture completeness, branching, persistence, friction, timing and whether the field→KPI contract can classify cases without hidden clinician interpretation except where explicitly manual.
 
 ---
 
@@ -798,11 +783,134 @@ This phase exits only when the following are reviewed/approved:
 - [x] first Osteoporosis competency taxonomy documented;
 - [x] Home Dashboard wireframe documented;
 - [x] transparent score/run-chart principles documented;
-- [ ] Core object schema v1 reviewed and frozen enough for implementation;
-- [ ] Osteoporosis competency map expanded into standards/competencies;
-- [ ] Baseline Osteoporosis Audit v1 specification completed;
-- [ ] KPI dictionary v1 completed;
-- [ ] first dashboard data contract defined;
-- [ ] implementation sequence approved.
+- [x] Baseline Osteoporosis Audit draft v1 + KPI Dictionary draft v1 defined;
+- [x] field→KPI calculation contract defined for the pilot;
+- [x] Steps 1–6 implemented;
+- [x] pre-pilot hardening P1–P8 completed;
+- [ ] final pre-pilot data-quality additions (`labs_date`, Step 6 conflict clear-on-collapse) deployed and smoke-tested;
+- [ ] 5-case usability pilot completed;
+- [ ] one deliberate post-pilot refinement completed;
+- [ ] Baseline Form v1 + KPI applicability/calculation contract frozen;
+- [ ] 30-case scored baseline completed and locked;
+- [ ] Core object schema v1 reviewed and frozen enough for broader implementation;
+- [ ] Osteoporosis competency map expanded into explicit standards/competencies;
+- [ ] first dashboard data contract defined.
 
-**Next major design action:** create **Baseline Osteoporosis Audit v1 + KPI Dictionary v1** while refining the Core object schema only where the audit requires it.
+**Current next action:** complete `labs_date` + Step 6 conflict clear-on-collapse, deploy, run the explicit synthetic smoke test, then begin Pilot Case 1/5 on the next clinical workday if the smoke test passes.
+
+---
+
+# 20. Baseline Audit improvement backlog from external review
+
+This section consolidates the complete external code/design review into one ordered backlog. It does **not** mean every item should be implemented before the 5-case pilot. The pilot remains the evidence gate for form burden and usability.
+
+## 20.1 Pre-pilot data quality / integrity
+
+Implement before the real pilot when small and low-risk:
+
+- `labs_date` in Step 3 as a native calendar/date input so entered laboratory values can be distinguished as current vs historical;
+- Step 6 source-conflict dependent fields (`conflict_resolution`, `conflict_note`) visible only when conflict is `yes`, with clear-on-collapse before persistence;
+- preserve the completed P1–P8 regression protections: hidden-data hygiene, module ownership on save, whole-form progress, Step1→Step3 single source of truth, DXA machine normalization, inline Prior DXA/stable deletion, archetype applicability, BMI source behavior.
+
+The smoke test is the stop/go gate. No additional feature should delay the pilot unless it reveals a safety, data-loss or material data-quality defect.
+
+## 20.2 First deliberate post-pilot refinement — highest-priority candidates
+
+Use the 5 pilot encounters to decide which of these are justified by observed friction or ambiguity:
+
+### Encounter/adaptive architecture
+- shared archetype registry: one canonical object for labels, context text, applicability, required fields and later consistency rules;
+- archetype-specific required-field gating only where needed for capture completeness;
+- background consistency flags for impossible/suspicious combinations;
+- free-text specifier for `other` archetype;
+- clarify `sample-first` versus `new patient` semantics.
+
+### Step 2 — fracture risk / FRAX reproducibility
+- FRAX input-completeness derived state;
+- derive number/recency of prior fractures from structured events;
+- derive secondary-osteoporosis context where appropriate, including later early-menopause detail;
+- prefill contextual-adjustment reasons from existing structured/derived inputs while preserving clinician control;
+- optional TBS field/context when actually used;
+- explicitly distinguish framework output from overall management risk category;
+- alcohol-unit definition/tooltip;
+- neutral framework/category coherence checks only after denominator semantics are frozen.
+
+### Step 3 — results/data quality
+- tri-state/status model for laboratory panels so blank does not ambiguously mean not done/not available/not entered;
+- units discipline, especially 25-OH vitamin D (`ng/mL` vs `nmol/L`) and CTX units;
+- lowest T-score + diagnostic-category derived context;
+- spine–hip discordance derived flag;
+- VFA indication reasons derived/prefilled from existing height-loss, GC, T-score and vertebral-fracture context;
+- renal/calcium/Vit-D safety background context;
+- optional albumin/corrected-calcium support if justified;
+- LSC-aware neutral trend descriptor;
+- BTM timing/months-on-treatment context;
+- VFA-positive result reconciliation with structured fracture events;
+- provenance hints from Step 3 to Step 6;
+- later EWGSOP2 staging only if the pilot shows sarcopenia depth is useful and muscle-mass data are available.
+
+### Step 4 — treatment, sequencing and safety
+- denosumab exit/delay safety derivation;
+- administration next-due-date and overdue derivation;
+- cross-step renal/calcium/Vit-D safety gates;
+- post-anabolic consolidation signal;
+- bisphosphonate duration/holiday review points;
+- on-treatment fracture with adequate adherence → reassessment/failure candidate signal;
+- distinguish adherence-limited apparent failure from true treatment failure;
+- holiday review/restart trigger;
+- anabolic duration limits;
+- decision→episode linking and decision→task expectations where this reduces duplicate entry;
+- reason↔decision coherence checks;
+- `plan_complete` vs `unresolved_critical` contradiction flag;
+- date reconciliation/validation across episodes, administrations and transitions;
+- explicitly distinguish decision confidence from overall-visit confidence;
+- keep ONJ/atypical-femur counseling in communication rather than duplicating it as Step-4 treatment state.
+
+### Step 5 — communication / early Signal wiring
+- medication/agent-specific applicability for medication plan, reason, alternatives, duration/timing, safety, missed dose and sequencing communication;
+- communication completeness only over applicable items;
+- preserve teach-back as a distinct evidence marker;
+- preference-chain coherence and conditional `preferences_influenced_plan`;
+- neutral teach-back/understanding coherence signal;
+- unresolved misunderstanding → communication-signal candidate;
+- information-given without information-type → capture-completeness flag;
+- structured Step-5 Signal object compatible with the future Signal Engine;
+- archetype-specific communication emphasis;
+- privacy reminder consistency on free-text fields;
+- explicit distinction between decision confidence and visit confidence.
+
+### Step 6 — provenance/documentation axis
+- read-only `clinical process present` column derived from Steps 1–5 beside manual GeSY/Heidi trace;
+- candidate material-discrepancy hint when clinical process is present but formal trace is absent;
+- derive/reconcile `missing_domains` from the trace matrix rather than duplicate manual state;
+- coherence gates for reliability, major gaps, unresolved conflicts and `ready_for_audit`;
+- Step1↔Step6 Heidi coherence checks;
+- provenance auto-feed/hints from reviewed DXA/labs/imaging;
+- objective completion-time fallback from timestamps, while retaining clinician-entered timing during pilot if useful;
+- mapping between Step-5 signal taxonomy and Step-6 clinical-domain taxonomy;
+- PII reminder consistency on conflict/formal-record notes.
+
+## 20.3 Cross-cutting architecture after pilot evidence
+
+- central store helper so module slices use one explicit merge/persistence contract rather than multiple ad-hoc localStorage writers;
+- shared registries for archetypes, machines, risk options and clinical domains to prevent drift;
+- clear-on-collapse as a general invariant for dependent fields;
+- accessibility roles for segmented/radio-style choice lists;
+- unit metadata as first-class data-quality information;
+- preserve localStorage as prototype-only and move to authenticated/private production storage before identifiable use.
+
+## 20.4 Implementation discipline
+
+Prioritization order remains:
+
+```text
+safety / data loss
+→ data interpretability
+→ pilot usability and friction
+→ clinical safety derivations
+→ reproducibility / provenance automation
+→ structured Signals / broader intelligence
+→ polish
+```
+
+Do not implement the entire backlog before the pilot. The 5 real pilot encounters should determine which refinements materially improve capture and which are unnecessary complexity.

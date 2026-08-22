@@ -1,6 +1,6 @@
 # HANDOFF_CURRENT.md — current operational handoff
 
-> **Updated:** 2026-08-22 22:20 Asia/Nicosia
+> **Updated:** 2026-08-22 23:00 Asia/Nicosia
 > **Canonical repository:** `athpapachr-cmd/osteoporosis`
 > **Current major phase:** prospective Osteoporosis Baseline/Audit pre-pilot hardening
 > **Current module:** Module 01 — Osteoporosis
@@ -17,6 +17,7 @@ Prospective baseline sequence:
 
 ```text
 pre-pilot data-integrity / applicability hardening
+→ final data-quality additions
 → explicit smoke test
 → 5 consecutive pilot encounters
 → one usability/branching/calculation-contract refinement
@@ -53,7 +54,7 @@ formal documentation = separate evidence axis
 Heidi = supplementary clinician-reviewed capture source
 ```
 
-Absent/partial GeSY documentation must not be silently converted into a clinical omission. Heidi use itself is not a quality-success metric.
+Absent/partial GeSY documentation must not be silently converted to clinical omission. Heidi use itself is not a quality-success metric.
 
 Prototype persistence remains browser `localStorage`; no identifiable clinical data belong in the public repo.
 
@@ -88,88 +89,43 @@ Rules:
 
 ## 4. Pre-pilot hardening status
 
-### Patch 1 — hidden dependent values / stale data
-Closed and hardened. `data-hygiene.js` clears hidden dependent values before persistence; `longitudinal.currentDxaPoint()` independently refuses to expose a current DXA point unless `DXA used == yes`.
+### P1–P8
+All previously identified hardening patches are closed: hidden-value hygiene; module-safe core save; whole-form progress; Step1→Step3 source-of-truth projection; DXA machine persistence; inline prior-DXA/stable deletion; archetype-driven applicability with module-owned persistence; and BMI derived/manual behavior.
 
-### Patch 2 — core save overwrite / stale-module bug
-Closed after second review and extended after the final applicability review. `app-core` now excludes all currently module-owned slices from its save payload:
+### Final data-quality additions before smoke test
+Implemented on branch `feat/prepilot-labs-date-step6-conflict`:
 
-```text
-step3
-step4
-step5
-step6
-longitudinal_review
-applicability_review
-pilot_completion
-audit_evaluation_v1
-```
+1. **Step 3 `labs_date`**
+   - native HTML `type=date` calendar control;
+   - stored as `step3.labs.labs_date`;
+   - optional, because numeric lab entry remains optional;
+   - purpose: distinguish current from historical laboratory snapshots, especially for monitoring encounters.
 
-The core therefore cannot overwrite fresher module-owned state with stale copies carried in `currentCase`.
+2. **Step 6 source-conflict clear-on-collapse**
+   - `conflict_resolution` and `conflict_note` are shown only when `source_conflict_present=yes`;
+   - when conflict changes away from `yes`, both dependent DOM values and persisted values are cleared;
+   - `collect()` independently persists blank dependent values unless conflict is `yes`;
+   - conflict note now carries a no-identifiers reminder.
 
-### Patch 3 — whole-form progress
-Closed and merged via PR #16. `whole-form-progress.js` owns the user-visible capture-completion percentage across Steps 1–6 and excludes Patch-7-collapsed domains from the denominator until reopened. It is not a KPI/performance score.
-
-### Patch 4 — Step 1 ↔ Step 3 duplicate source of truth
-Closed. Step 1 `risk_context` remains canonical for falls count, CFS, cognition, immobility and basic sarcopenia screening. Step 3 is a read-only projection for those shared fields plus Step-3-specific detail.
-
-### Patch 5 — DXA machine persistence / normalization
-Closed. `dxa-machine-select.js` normalizes the current DXA machine field and persists optional `machine_label`; legacy free text is preserved under `other_unknown` rather than silently lost.
-
-### Patch 6 — prior DXA inline entry / longitudinal safety
-Closed and merged via PR #17.
-
-`prior-dxa-inline.js`:
-- replaces the seven-prompt Prior DXA flow with one inline editor;
-- uses typed date/numeric inputs and a machine whitelist;
-- normalizes legacy historical DXA dates before longitudinal rendering;
-- preserves unknown legacy machine text in `machine_label`;
-- assigns stable `_id` values to historical DXA rows;
-- deletes historical DXA rows by stable `_id` rather than sorted display index;
-- reloads longitudinal private state after add/remove so fresh history cannot be overwritten.
-
-### Patch 7 — archetype-driven adaptive applicability
-Closed and ownership-hardened.
-
-`adaptive-applicability.js` maps encounter archetypes to applicable/conditional/usual-N/A domain defaults, supports explicit `Χρήση σήμερα` override, and keeps Step 6 applicable for all pilot encounters without KPI coaching.
-
-Final persistence hardening:
-- `applicability_review` is now explicitly module-owned and excluded from `app-core` save payloads;
-- the previous Save/Finish snapshot + `setTimeout(persistReview)` repair shim was removed;
-- applicability overrides must now survive core Save/Finish because of correct ownership, not post-save repair.
-
-Conditional (`uncertain`) domains remain collapsed by default for the pilot and can be reopened with `Χρήση σήμερα`. Revisit only if pilot usability evidence shows this causes missed clinically relevant domains.
-
-### Patch 8 — BMI derived/manual behavior
-Closed and merged via PR #18.
-
-Runtime:
+Schemas updated:
 
 ```text
-static/baseline-audit/bmi-behavior.js
+schemas/baseline_step3_results_v1.yaml
+schemas/baseline_step6_documentation_v1.yaml
 ```
 
-Rule:
+### External-review backlog
+The full enhancement backlog from the latest Dia review is now incorporated into `CLINICAL_EXCELLENCE_PLAN.md §20`. It includes shared registries, laboratory tri-state/units discipline, FRAX reproducibility, Step-3 derived context, Step-4 safety/coherence derivations, Step-5 structured communication/Signals, Step-6 provenance/clinical-process-present logic, and cross-cutting store/accessibility work.
 
-```text
-valid weight + valid current height → BMI is derived and read-only
-otherwise → BMI is editable as manual/external input
-```
-
-Behavior:
-- prevents a manual BMI entry from being silently overwritten while the field still appears editable;
-- marks the field `readOnly` whenever both weight and height are available, matching `app-core`'s existing calculated BMI source;
-- shows a compact source note (`Αυτόματο από βάρος + ύψος` vs `Χειροκίνητο / external BMI`);
-- when a previously derived BMI loses one of its source measurements, clears the stale derived value before returning the field to manual/external mode;
-- preserves manual/external BMI when no valid weight-height pair exists.
+Do **not** implement the full backlog before the 5-case pilot. The pilot is the evidence gate for form burden and which refinements deserve the one deliberate post-pilot revision.
 
 ---
 
 ## 5. Current exact next action
 
-**NEXT: explicit pre-pilot smoke test. Do not add new functionality unless the smoke test identifies a defect.**
+**NEXT: merge/deploy the final data-quality branch and run the explicit synthetic smoke test.**
 
-Run one synthetic/non-identifiable test case through:
+Required synthetic/non-identifiable checks:
 
 ```text
 1. FRAX/FRAXplus edit → Save → reload → values retained
@@ -182,15 +138,19 @@ Run one synthetic/non-identifiable test case through:
 8. Prior DXA → inline add → Save/reload → retained
 9. historical DXA delete after date sorting → correct row removed
 10. BMI with weight+height → read-only calculated; remove one source → derived BMI clears and manual mode returns
-11. Finish Visit → all module slices retained, including `applicability_review`
+11. Step 3 labs_date → calendar entry → Save/reload → retained
+12. Step 6 conflict=yes → resolution/note visible and retained
+13. Step 6 conflict yes→no/uncertain/blank → resolution/note collapse + clear → Save/reload remains clear
+14. Finish Visit → all module slices retained, including applicability_review, labs_date and Step6 conflict state
 ```
 
-If the smoke test passes, start **Pilot Case 1/5**. Do not revise the form after each pilot case unless there is a safety-critical or data-loss defect.
+If all checks pass, the form is cleared for **Pilot Case 1/5**. Operational target: begin real pilot encounters from Monday 2026-08-24 rather than adding more pre-pilot functionality over the weekend.
 
 After the 5 pilot cases:
 
 ```text
 review pilot evidence once
+→ select material items from Plan §20
 → make one deliberate refinement
 → freeze Baseline Form v1 + KPI calculation/applicability contract
 → start 30-case scored baseline
@@ -211,6 +171,7 @@ Still separate from the 5-case form pilot:
 ## 7. Stop boundary
 
 Do not yet:
+- implement the whole external-review enhancement backlog before the 5-case pilot;
 - major-rewrite legacy `main.py` / `index.html`;
 - create a composite Clinical Excellence score from invented data;
 - display live KPI coaching during scored baseline except safety-critical alerts;

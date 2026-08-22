@@ -105,6 +105,9 @@
 
         <article class="card step3-card span-2">
           <div class="card-heading"><div><h2>Εργαστηριακά</h2><p>Προαιρετική καταχώρηση τιμών. Μεταφέρουμε τα χρήσιμα fields του παλιού Cockpit χωρίς να κάνουμε τη φόρμα υποχρεωτικό δεύτερο εργαστηριακό αρχείο.</p></div></div>
+          <div class="step3-top-grid compact-three">
+            <label><span>Ημερομηνία εργαστηριακών <small>(προαιρετικό)</small></span><input id="s3LabsDate" type="date" /></label>
+          </div>
           <details class="lab-section" open>
             <summary>Core mineral / renal labs</summary>
             <div class="lab-grid">
@@ -211,7 +214,7 @@
       vfa: { indicated: "", reasons: [], action: "", modality: "", vertebral_found: "", genant_recorded: "" },
       secondary: { indicated: "", history_reviewed: "", prior_workup_adequate: "", labs_reviewed: "", unresolved: "" },
       labs: {
-        ca: null, phosphate: null, vitamin_d: null, pth: null, creatinine: null, egfr: null, urea: null, total_alp: null, magnesium: null,
+        labs_date: "", ca: null, phosphate: null, vitamin_d: null, pth: null, creatinine: null, egfr: null, urea: null, total_alp: null, magnesium: null,
         ctx: null, p1np: null, bone_alp: null, osteocalcin: null, btm_context: "", glucose: null, hba1c: null,
         tsh: null, ft4: null, esr: null, crp: null, testosterone: null, fsh: null, estradiol: null, cortisol: null, urine_ca_24h: null,
         cbc_reviewed: false, liver_profile_reviewed: false, celiac_screen_reviewed: false, spep_light_chains_reviewed: false
@@ -349,7 +352,7 @@
       labs_reviewed: v("#s3LabsReviewed"), unresolved: v("#s3SecondaryUnresolved")
     };
     state.labs = {
-      ca: num(v("#s3Ca")), phosphate: num(v("#s3Phos")), vitamin_d: num(v("#s3VitD")), pth: num(v("#s3Pth")), creatinine: num(v("#s3Creat")), egfr: num(v("#s3Egfr")),
+      labs_date: v("#s3LabsDate"), ca: num(v("#s3Ca")), phosphate: num(v("#s3Phos")), vitamin_d: num(v("#s3VitD")), pth: num(v("#s3Pth")), creatinine: num(v("#s3Creat")), egfr: num(v("#s3Egfr")),
       urea: num(v("#s3Urea")), total_alp: num(v("#s3Alp")), magnesium: num(v("#s3Mg")), ctx: num(v("#s3Ctx")), p1np: num(v("#s3P1np")), bone_alp: num(v("#s3BoneAlp")), osteocalcin: num(v("#s3Osteocalcin")),
       btm_context: v("#s3BtmContext"), glucose: num(v("#s3Glucose")), hba1c: num(v("#s3Hba1c")), tsh: num(v("#s3Tsh")), ft4: num(v("#s3Ft4")), esr: num(v("#s3Esr")), crp: num(v("#s3Crp")),
       testosterone: num(v("#s3Testosterone")), fsh: num(v("#s3Fsh")), estradiol: num(v("#s3Estradiol")), cortisol: num(v("#s3Cortisol")), urine_ca_24h: num(v("#s3UrineCa")),
@@ -386,6 +389,7 @@
     setValue("#s3SecondaryIndicated", state.secondary.indicated); setValue("#s3SecondaryHistory", state.secondary.history_reviewed); setValue("#s3PriorWorkupAdequate", state.secondary.prior_workup_adequate); setValue("#s3LabsReviewed", state.secondary.labs_reviewed); setValue("#s3SecondaryUnresolved", state.secondary.unresolved);
 
     const l = state.labs;
+    setValue("#s3LabsDate", l.labs_date);
     [["#s3Ca",l.ca],["#s3Phos",l.phosphate],["#s3VitD",l.vitamin_d],["#s3Pth",l.pth],["#s3Creat",l.creatinine],["#s3Egfr",l.egfr],["#s3Urea",l.urea],["#s3Alp",l.total_alp],["#s3Mg",l.magnesium],["#s3Ctx",l.ctx],["#s3P1np",l.p1np],["#s3BoneAlp",l.bone_alp],["#s3Osteocalcin",l.osteocalcin],["#s3Glucose",l.glucose],["#s3Hba1c",l.hba1c],["#s3Tsh",l.tsh],["#s3Ft4",l.ft4],["#s3Esr",l.esr],["#s3Crp",l.crp],["#s3Testosterone",l.testosterone],["#s3Fsh",l.fsh],["#s3Estradiol",l.estradiol],["#s3Cortisol",l.cortisol],["#s3UrineCa",l.urine_ca_24h]].forEach(([id,val]) => setValue(id,val));
     setValue("#s3BtmContext", l.btm_context); setCheck("#s3Cbc", l.cbc_reviewed); setCheck("#s3Liver", l.liver_profile_reviewed); setCheck("#s3Celiac", l.celiac_screen_reviewed); setCheck("#s3Spep", l.spep_light_chains_reviewed);
 
