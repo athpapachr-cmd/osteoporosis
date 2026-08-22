@@ -1,51 +1,85 @@
 schema: baseline_osteoporosis_audit_v1
-status: draft_v1
+status: draft_v1_1
 module: osteoporosis
 purpose: >-
-  Establish a reproducible baseline of documented clinical practice before
-  workflow, Cockpit, learning or audit interventions are allowed to claim improvement.
+  Establish a reproducible prospective baseline of real osteoporosis clinical practice
+  when no reliable historical osteoporosis registry or complete visit record exists.
+  The baseline must distinguish what actually happened in the consultation from what
+  was documented in GeSY or captured by an AI documentation tool.
 principles:
   - baseline_before_improvement_claims
-  - consecutive_sampling_preferred
-  - not_documented_is_not_assumed_done
+  - prospective_consecutive_capture_preferred_when_historical_records_are_incomplete
+  - clinical_action_and_documentation_are_separate_measurement_axes
+  - clinician_validated_postvisit_capture_is_primary_baseline_source
+  - gesy_is_supplementary_documentation_evidence_not_assumed_complete_clinical_truth
+  - heidi_or_other_ai_capture_is_supplementary_and_must_be_clinician_reviewed
+  - no_performance_feedback_during_locked_baseline_collection_except_safety_critical_signals
   - not_applicable_requires_explicit_rule
   - safety_signals_act_even_with_small_denominators
-  - documentation_quality_and_clinical_quality_are_related_but_not_identical
   - no_identifiable_patient_data_in_public_github
+baseline_phases:
+  pilot:
+    target_n: 5
+    design: prospective_consecutive_eligible_encounters
+    purpose: >-
+      Test form usability, branching, missing fields and time burden. Pilot cases are
+      not included in the locked baseline because the form may still change.
+    allowed_changes:
+      - wording
+      - field order
+      - branching
+      - missing required fields
+    exit_gate: >-
+      Freeze the case form and KPI applicability rules before starting the scored baseline.
+  scored_baseline:
+    target_n: 30
+    design: prospective_consecutive_unique_patients
+    start: after_form_freeze
+    feedback_rule: >-
+      Do not show KPI scores, gap coaching, targeted learning or workflow prompts until
+      the baseline is locked. A safety-critical finding may still trigger immediate action.
+    hawthorne_note: >-
+      This is an observed prospective baseline, not a claim about completely unobserved
+      historical practice. The no-feedback period reduces but cannot eliminate measurement effects.
 cohorts:
   core_clinical:
-    design: retrospective_consecutive_unique_patients
+    design: prospective_consecutive_unique_patients
     target_n: 30
     sampling: >-
-      Take the 30 most recent consecutive unique eligible osteoporosis-related
-      clinical encounters immediately preceding the baseline cut date. Start with
-      the preceding 90 days; if fewer than 30 are available, extend backward to
-      180 days and, only if needed, up to 12 months. Use one index encounter per
-      patient in this core cohort to avoid overweighting frequent attenders.
+      Starting on the declared baseline start date, capture every consecutive eligible
+      osteoporosis-related encounter using the post-visit form until 30 unique patients
+      are accrued. Use one index encounter per patient for the core baseline; subsequent
+      encounters may contribute to continuity/safety analyses but do not duplicate the
+      patient in the core denominator.
     inclusion:
       - adult encounter in which osteoporosis, osteopenia, fragility-fracture risk, or osteoporosis treatment was materially assessed or managed
       - new assessment, follow-up, post-fracture review, treatment review, or treatment transition
     exclusion:
       - purely administrative contact with no clinical osteoporosis assessment or decision
-      - duplicate patient already represented in the core cohort
+      - duplicate patient already represented in the core baseline
       - encounter outside the intended osteoporosis clinical scope
+    patient_identity: >-
+      Use only a local/private pseudonymous token sufficient to recognize duplicate baseline
+      patients. Never commit identifiers, GeSY IDs, names or dates of birth to the public repo.
     special_populations: >-
       Include but flag patients outside a guideline framework's normal population;
       framework-specific KPIs are marked not applicable unless the declared framework applies.
   safety_continuity:
-    design: census_not_sample
-    window_months: 12
+    design: prospective_census_from_activation
     include:
-      - all denosumab doses due in the audit window
-      - all denosumab discontinuations or clinically important delays in the audit window
-      - all anabolic or romosozumab course completions/transitions in the audit window
-      - all incident fragility fractures during active osteoporosis therapy in the audit window
+      - every denosumab dose due after baseline capture activation
+      - every denosumab discontinuation or clinically important delay identified after activation
+      - every anabolic or romosozumab completion/transition identified after activation
+      - every incident fragility fracture during active osteoporosis therapy identified after activation
+    optional_historical_lookback: >-
+      Historical GeSY or Heidi material may be used to identify additional safety cases when
+      found, but absence from those sources must not be interpreted as proof that no event occurred.
     rationale: >-
       Rare safety-critical events should not wait for a 30-case sample.
   decision_quality:
     design: stratified_subaudit
     target_n: 10
-    source: core_clinical
+    source: scored_baseline
     selection: >-
       Select cases spanning new assessment, follow-up, high/very-high risk,
       fracture-on-treatment and treatment-transition scenarios where available.
@@ -69,6 +103,44 @@ cohorts:
       - understanding_rationale
       - concerns_and_preferences_addressed
       - free_text
+capture_sources:
+  primary:
+    clinician_postvisit_form:
+      role: clinician_validated_account_of_what_occurred
+      timing: immediately_after_encounter_preferred
+  supplementary:
+    gesy_note:
+      role: formal_record_documentation_evidence
+      caveat: may_be_incomplete_and_must_not_be_treated_as_full_consultation_truth
+    heidi_ai:
+      role: optional_documentation_capture_assist
+      fields_to_track:
+        - used_yes_no
+        - output_available_yes_no
+        - clinician_reviewed_yes_no
+        - material_correction_required_yes_no_unknown
+      caveats:
+        - ai_output_never_overrides_clinician_validation
+        - ai_use_itself_is_not_a_quality_success_metric
+        - baseline_comparisons_with_vs_without_ai_are_observational_not_causal
+      privacy: >-
+        Do not place transcript, patient-identifiable Heidi content or exported clinical notes
+        in the public repository. Any clinical use must follow the applicable privacy/consent
+        and data-processing requirements.
+measurement_axes:
+  clinical_process:
+    question: what_was_actually_assessed_discussed_decided_or_arranged
+    source_priority:
+      - clinician_validated_postvisit_form
+      - clinician_reviewed_heidi_capture_when_used
+      - gesy_note
+  documentation_process:
+    question: what_is_traceably_present_in_the_formal_clinical_record
+    source_priority:
+      - gesy_note
+      - other_declared_formal_record
+  capture_quality:
+    question: how_complete_and_reliable_is_the_available_evidence_about_the_encounter
 case_classification:
   encounter_type:
     - new_assessment
@@ -91,8 +163,9 @@ kpi_case_status:
       Exclude from the KPI denominator only when a predefined applicability rule
       shows that the KPI genuinely does not apply.
     not_documented: >-
-      If documentation is required by the KPI and the action cannot be demonstrated,
-      classify as not_met; do not infer undocumented care.
+      For a documentation KPI, if the required item cannot be demonstrated in the formal
+      record, classify as not_met. For a clinical-process KPI, a clinician-validated
+      post-visit entry may establish that the action occurred even if GeSY documentation is absent.
     not_assessable: >-
       Use only when the relevant information is genuinely inaccessible or cannot be
       verified. Keep it visible as a data-quality/system signal and never count it as met.
@@ -127,8 +200,8 @@ reliability_display:
   safety_exception: >-
     A single safety-critical failure can generate an immediate signal regardless of denominator.
 baseline_lock:
-  core_requirement: 30 consecutive unique eligible cases or all available if a full 12-month window still yields fewer
-  rule_freeze: KPI definitions and sampling logic must be version-frozen before locking
+  core_requirement: 30 consecutive unique eligible prospectively captured cases after form freeze
+  rule_freeze: KPI definitions, form version and sampling logic must be version-frozen before locking
   no_rewriting_history: >-
     Do not recalculate a historical baseline after an intervention merely because a later KPI definition changed;
     version the KPI and preserve the original baseline.
@@ -146,8 +219,10 @@ run_chart:
     - intervention_dates
     - guideline_or_kpi_definition_changes
     - major_workflow_changes
+    - systematic_ai_documentation_adoption_if_later_introduced
 privacy:
   repository: public
   rule: >-
     Commit only schemas, synthetic examples and aggregate/anonymized outputs.
-    Real audit-level patient data must remain in a private/local clinical data store.
+    Real case-level audit data, GeSY content and Heidi outputs must remain in an appropriate
+    private/local clinical data store and must not be committed to the public repository.
