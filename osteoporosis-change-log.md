@@ -306,3 +306,13 @@ Step 4 upgraded the legacy treatment/plan concepts into date-aware, auditable ob
 It also added explicit transition/sequencing capture for denosumab exit, post-teriparatide, post-romosozumab and bisphosphonate holiday/restart scenarios, plus repeated follow-up tasks that are intended to become reusable `CareTask` objects later. Encounter close now records whether the plan was complete and whether an unresolved critical item remained.
 
 The Step 4 baseline UI deliberately does not generate treatment recommendations or live guideline-concordance verdicts. Reasoned clinician overrides remain distinguishable from errors, and exact dates are preferred over approximate durations without forcing invented historical dates.
+
+---
+
+## 2026-08-22 — Baseline Audit Step 5 implemented
+
+Step 5 added encounter-specific communication capture and compact immediate post-visit reflection. It records condition/risk explanation, results/status discussion, exercise, nutrition, calcium/vitamin D/other supplements, medication or no-drug plan, treatment rationale, alternatives/trade-offs, duration/timing/review point, material safety messages, missed-dose/timing messages, sequencing/transition communication, questions and patient preferences.
+
+Clinician impression of patient understanding is recorded separately for condition, plan and rationale, with optional teach-back, detected/corrected misunderstanding and written/digital information provided. This clinician-side impression is explicitly kept separate from the later Patient Voice instrument so it does not substitute for the patient's own report.
+
+The post-visit reflection remains deliberately low burden: optional what-went-well and short reflection, whether something may have been missed/uncertain, root-domain classification, potential case-review/learning/communication/safety signals, and optional overall confidence. No live performance score or missing-item prompt is displayed during the baseline.
