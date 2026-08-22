@@ -1,8 +1,8 @@
 # HANDOFF_CURRENT.md — current operational handoff
 
-> **Updated:** 2026-08-22 18:47 Asia/Nicosia
+> **Updated:** 2026-08-22 19:03 Asia/Nicosia
 > **Canonical repository:** `athpapachr-cmd/osteoporosis`
-> **Current major phase:** prospective Osteoporosis Baseline/Audit implementation
+> **Current major phase:** prospective Osteoporosis Baseline/Audit pilot
 > **Current module:** Module 01 — Osteoporosis
 
 This file contains current operational truth only. Permanent rules belong in `AGENTS.md`; roadmap in `TODO.md`; completed history in `osteoporosis-change-log.md`.
@@ -13,11 +13,11 @@ This file contains current operational truth only. Permanent rules belong in `AG
 
 The project is a **Personal Clinical Excellence System** with a reusable Core Engine. Osteoporosis is Module 01 and the proving module.
 
-Prospective baseline sequence remains:
+Prospective baseline sequence:
 
 ```text
 5 consecutive pilot encounters
-→ one usability/branching refinement
+→ one usability/branching/calculation-contract refinement
 → freeze form + KPI applicability
 → 30 consecutive unique scored baseline patients
 → baseline lock
@@ -32,53 +32,16 @@ Encounter applicability remains driven by patient relationship plus encounter ar
 
 ## 2. Baseline UI status
 
-### Step 1 — encounter context
-Implemented, merged and live.
+Steps 1–6 are implemented and merged:
 
-### Step 2 — fracture history + formal risk
-Implemented, merged and live. Includes FRAX/FRAXplus context, MOF/hip probabilities and explicit framework.
+1. Encounter context.
+2. Fracture history + formal risk, including FRAX/FRAXplus and separate MOF/hip risk.
+3. DXA/VFA, secondary causes/labs, falls/frailty/function and sarcopenia.
+4. Treatment episodes, administrations, clinical decision, sequencing safety and follow-up tasks.
+5. Encounter-specific communication, understanding/teach-back and immediate reflection.
+6. Documentation trace, final Heidi review, capture sources and capture quality.
 
-### Step 3 — examinations/results
-Implemented, merged and live. Includes DXA BMD/T-scores, machine/comparability/LSC, VFA, secondary causes/labs, falls/frailty/function and sarcopenia.
-
-### Step 4 — treatment, decision and follow-up
-Implemented, merged and deployed. Includes treatment episodes, administrations/due dates, adherence/tolerance/response, current decision/rationale, sequencing safety, CareTask precursors and unresolved critical items.
-
-### Longitudinal review
-Implemented and merged. Includes separate MOF/hip risk categories, FRAXplus adjusted outputs/modifier context, FRAX trend tables/charts, DXA machine dropdown, historical DXA snapshots and BMD/T-score trend tables/charts.
-
-### Step 5 — communication + immediate post-visit reflection
-Implemented, merged and deployed. Captures encounter-specific communication, clinician-side understanding/teach-back, patient questions/preferences and compact reflection/potential Signals. Clinician impression remains separate from future Patient Voice.
-
-### Step 6 — documentation trace + final Heidi/capture-source review
-Implemented and merged via PR #8.
-
-Schema:
-
-```text
-schemas/baseline_step6_documentation_v1.yaml
-```
-
-Runtime:
-
-```text
-static/baseline-audit/step6.js
-static/baseline-audit/step6.css
-static/baseline-audit/app.js
-```
-
-Step 6 captures:
-
-- capture-source provenance;
-- domain-level formal GeSY trace;
-- domain-level Heidi trace;
-- material discrepancies between evidence sources;
-- formal-record completeness/missing-content domains;
-- final Heidi review seeded from Step 1 without raw/corrected transcript or manual diff;
-- whether a clinician-approved Heidi note exists and whether Heidi content entered the formal record;
-- capture reliability, major information gaps and reasons for limited capture;
-- optional completion time;
-- readiness for later audit calculation.
+Longitudinal FRAX/DXA tables and charts are also implemented.
 
 Frozen interpretation rule:
 
@@ -94,42 +57,81 @@ Prototype persistence remains browser `localStorage`; no identifiable clinical d
 
 ---
 
-## 3. Migration principle
+## 3. KPI calculation contract — defined for pilot
 
-The new interface is not a field-for-field copy of the legacy Cockpit:
+Schema:
 
 ```text
-OLD COCKPIT DATA
-→ classify useful / duplicate / outdated / context-specific
-→ preserve useful structured data
-→ add provenance, timing and applicability
-→ connect to encounter archetype
-→ map to KPI / audit / learning / improvement loops
+schemas/baseline_kpi_calculation_contract_v1.yaml
 ```
 
-Current encounter values remain the source of truth; longitudinal and audit layers supplement rather than create competing records.
+Status model:
+
+```text
+applicability = applicable | not_applicable | uncertain
+status = met | not_met | indeterminate | manual_review_required | external_pending | not_applicable
+```
+
+Rules:
+
+- clinical-process KPIs use Steps 1–5;
+- Step 6 documentation remains a separate evidence/capture axis;
+- missing/uncertain required evidence never counts as met;
+- KPI-12 transition safety and KPI-13 fracture-on-treatment require manual clinical review when applicable;
+- KPI-14/15 remain external-pending until Patient Voice is activated;
+- no KPI result is shown in the baseline UI before baseline lock except future safety-critical alert logic;
+- pilot calculations are for mapping validation, not clinician feedback.
+
+A runtime pilot-completion safeguard is also added in:
+
+```text
+static/baseline-audit/pilot-completion.js
+```
+
+It allows Steps 1–6 pilot cases to be marked complete and preserves Step 3–6/longitudinal module data around the legacy Step 1–2 save handler, avoiding accidental overwrite during the pilot.
 
 ---
 
-## 4. Current next action
+## 4. Current exact next action
 
-**NEXT: define the exact form-field → KPI status calculation contract.**
+**NEXT: clinician runs 5 consecutive real pilot encounters.**
 
-Then:
+For each pilot case, observe without changing the form mid-series:
 
 ```text
-run 5-case pilot
-→ measure completion time / friction / missing fields
-→ one refinement
-→ freeze Baseline Form v1 + KPI applicability
+completion time
+fields that feel duplicated
+fields that are unclear
+fields that are repeatedly N/A
+missing clinically important fields
+branching that feels wrong for the encounter archetype
+whether required KPI evidence can be classified from the captured fields
+any data-loss/save/resume problem
+```
+
+After Case 5:
+
+```text
+review pilot evidence once
+→ make one deliberate refinement
+→ freeze Baseline Form v1 + KPI calculation/applicability contract
 → start 30-case scored baseline
 ```
 
-Separate later instruments remain: Patient Voice 4-question instrument and Decision Quality 10-case review form.
+Do not start the 30-case scored baseline before that freeze.
 
 ---
 
-## 5. Stop boundary
+## 5. Separate later instruments
+
+Still separate from the 5-case form pilot:
+
+- Patient Voice 4-question instrument.
+- Decision Quality 10-case review form.
+
+---
+
+## 6. Stop boundary
 
 Do not yet:
 - major-rewrite legacy `main.py` / `index.html`;
@@ -138,4 +140,5 @@ Do not yet:
 - treat GeSY as complete clinical truth;
 - make Heidi mandatory before baseline;
 - commit identifiable patient data, GeSY content or Heidi transcripts to the public repo;
-- treat browser `localStorage` as production clinical-data storage.
+- treat browser `localStorage` as production clinical-data storage;
+- revise the pilot form after every single case unless there is a patient-safety or data-loss defect.
