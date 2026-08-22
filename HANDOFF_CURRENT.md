@@ -1,6 +1,6 @@
 # HANDOFF_CURRENT.md — current operational handoff
 
-> **Updated:** 2026-08-22 20:08 Asia/Nicosia
+> **Updated:** 2026-08-22 20:13 Asia/Nicosia
 > **Canonical repository:** `athpapachr-cmd/osteoporosis`
 > **Current major phase:** prospective Osteoporosis Baseline/Audit pre-pilot hardening
 > **Current module:** Module 01 — Osteoporosis
@@ -87,44 +87,36 @@ Rules:
 
 ## 4. Pre-pilot hardening status
 
-An external code review identified several issues that should be resolved before Pilot Case 1.
-
 ### Patch 2 — core save overwrite bug
 Closed and merged.
 
 `app-core.js` now merges current Steps 1–2 state into the existing stored case by `internal_uuid` rather than replacing the complete object. The former asynchronous capture/restore workaround in `pilot-completion.js` was removed.
 
 ### Patch 1 — hidden dependent values / stale data
-Implemented on branch `fix/pilot-hidden-field-hygiene`.
+Closed and merged.
 
-A central runtime guard in:
+`static/baseline-audit/data-hygiene.js` clears hidden dependent values before persistence and sanitizes legacy stale localStorage data.
 
-```text
-static/baseline-audit/data-hygiene.js
-```
+### Patch 4 — Step 1 ↔ Step 3 duplicate source of truth
+Implemented on branch `fix/pilot-shared-risk-source`.
 
-clears dependent values whenever their parent context is no longer active, before the individual step modules persist state.
-
-Covered dependencies:
+Canonical source rule:
 
 ```text
-DXA used != yes
-→ clear BMD/T-score, ROI/artifact/Z-score and longitudinal-dependent values
-
-DXA longitudinal comparison != yes
-→ clear comparison date, machine comparability and LSC/change-validity values
-
-transition relevant != yes
-→ clear transition type/dates/next-agent/plan/safety/note
-
-information given != yes
-→ clear information-type checkboxes
-
-misunderstanding detected != yes
-→ clear misunderstanding-corrected value
+Step 1 risk_context
+= source of truth for
+falls count (12m)
+CFS
+cognitive impairment
+significant immobility
+sarcopenia case-finding relevance
+sarcopenia screening method
+SARC-F score
 ```
 
-The guard also sanitizes legacy stale values already present in the active localStorage case and runs before Save/Finish persistence. This prevents hidden values from feeding DXA longitudinal charts or later audit/KPI calculations.
+Step 3 now treats these values as a read-only projection. Its additional functional/sarcopenia fields remain editable (falls/function review, injury, aid, gait/balance, TUG, chair stand, grip, gait speed, SPPB, action, etc.).
+
+`static/baseline-audit/shared-risk-source.js` synchronizes the Step 3 projection from Step 1 and removes duplicate copies of the shared fields from persisted `step3` storage, so later audit logic has one canonical clinical value.
 
 ---
 
@@ -132,10 +124,9 @@ The guard also sanitizes legacy stale values already present in the active local
 
 **NEXT: continue pre-pilot hardening before the 5 real pilot encounters.**
 
-Highest-priority remaining items from the external review:
+Highest-priority remaining items:
 
 ```text
-Patch 4 — remove Step 1 ↔ Step 3 duplicate sources of truth
 Patch 5 — make DXA machine a native persistent select
 Patch 7 — implement real archetype-driven applicability
 ```

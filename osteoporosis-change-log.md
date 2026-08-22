@@ -323,3 +323,20 @@ static/baseline-audit/data-hygiene.js
 It clears dependent DOM values before the step modules collect/persist state and sanitizes legacy stale values already present in the active localStorage case. Covered dependencies include DXA detail/longitudinal fields, Step 4 transition fields, Step 5 information-type selections and misunderstanding-correction state.
 
 The guard is loaded by the baseline bootstrap before Step 6/pilot completion. This is a pre-pilot data-integrity measure so hidden/non-applicable child values cannot silently contaminate longitudinal review or later audit calculation.
+
+---
+
+## 2026-08-22 — Pre-pilot Patch 4 establishes one source of truth for shared Step 1/3 risk fields
+
+External review identified that falls count, CFS, cognitive impairment, immobility and basic sarcopenia screening were persisted independently in Step 1 and Step 3, allowing the two values to diverge.
+
+The canonical rule is now:
+
+```text
+Step 1 risk_context = source of truth
+Step 3 = read-only projection + additional detailed functional assessment
+```
+
+A runtime module `static/baseline-audit/shared-risk-source.js` synchronizes the Step 3 projection from Step 1, disables editing of the shared controls in Step 3, and removes duplicate copies of those shared fields from persisted `step3` state. Detailed Step 3-only fields such as falls/function review, fall injury, ambulatory aid, gait/balance concern, TUG, chair stand, grip strength, gait speed, SPPB and actions remain independently editable.
+
+This removes ambiguity for later derived signals/KPI logic and prevents one encounter from carrying two competing versions of the same clinical fact.
