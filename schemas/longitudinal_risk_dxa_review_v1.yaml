@@ -1,0 +1,108 @@
+schema: longitudinal_risk_dxa_review_v1
+status: draft_for_pilot
+module: osteoporosis
+purpose: >-
+  Add longitudinal review to the prospective baseline workflow without duplicating data entry.
+  The user can review DXA and FRAX over time as tables and charts, while keeping current-step
+  data as the source of truth for the present encounter.
+
+principles:
+  - current encounter values remain primary; longitudinal history supplements them
+  - DXA longitudinal interpretation prioritizes BMD g/cm2, machine comparability and LSC
+  - FRAX stores MOF and hip probabilities separately
+  - MOF and hip risk categories are stored separately; an overall management category is distinct
+  - FRAXplus adjusted outputs are captured as externally calculated results; this app does not reproduce proprietary adjustment algorithms
+  - multiple FRAXplus adjustments are not arithmetically stacked by this prototype
+  - charts are descriptive and do not generate treatment recommendations during baseline
+
+frax_current:
+  fields:
+    - raw_mof_10y_percent
+    - raw_hip_10y_percent
+    - mof_risk_category: [low, intermediate, high, very_high, uncertain, not_applicable]
+    - hip_risk_category: [low, intermediate, high, very_high, uncertain, not_applicable]
+    - overall_management_category: [low, intermediate, high, very_high, uncertain, not_applicable]
+    - declared_framework
+    - frax_country_model
+
+fraxplus:
+  fields:
+    - used: [yes, no, not_applicable]
+    - adjusted_mof_10y_percent_optional
+    - adjusted_hip_10y_percent_optional
+    - dominant_adjustment_optional:
+        - fracture_recency
+        - oral_glucocorticoid_exposure
+        - trabecular_bone_score
+        - falls_previous_year
+        - type2_diabetes_duration
+        - lumbar_spine_bmd
+        - hip_axis_length
+        - primary_hyperparathyroidism
+        - number_of_prior_fractures
+        - other
+    - other_adjustments_considered_optional_multi_select
+    - note_optional
+  rule: >-
+    Store the result returned by FRAXplus when used. Do not independently calculate or stack
+    FRAXplus modifiers in the baseline app.
+
+frax_history:
+  repeated_fields:
+    - date
+    - raw_mof_10y_percent
+    - raw_hip_10y_percent
+    - adjusted_mof_10y_percent_optional
+    - adjusted_hip_10y_percent_optional
+    - country_model_optional
+    - framework_optional
+  views:
+    - chronological_table
+    - MOF_line_chart_raw_vs_adjusted
+    - hip_line_chart_raw_vs_adjusted
+    - earliest_to_latest_absolute_change
+
+dxa_machine_registry:
+  initial_options:
+    - Hologic Horizon
+    - Hologic Discovery
+    - GE Lunar iDXA
+    - GE Lunar Prodigy
+    - Norland
+    - Other / unknown
+  rule: >-
+    Use a dropdown for manufacturer/model plus an optional local machine label when exact machine identity matters.
+    A future private registry may replace this static list.
+
+dxa_history:
+  repeated_fields:
+    - date
+    - machine
+    - machine_label_optional
+    - spine_bmd_g_cm2_optional
+    - spine_t_score_optional
+    - total_hip_bmd_g_cm2_optional
+    - total_hip_t_score_optional
+    - femoral_neck_bmd_g_cm2_optional
+    - femoral_neck_t_score_optional
+    - comparable_to_previous: [yes, no, unknown, not_applicable]
+    - lsc_known: [yes, no, not_applicable]
+  views:
+    - chronological_table
+    - BMD_line_chart_by_site
+    - T_score_line_chart_by_site
+    - earliest_to_latest_BMD_percent_change_by_site
+  interpretation_rule: >-
+    Descriptive percent change may be shown, but statistical/clinical significance must not be asserted
+    unless machine comparability and appropriate facility LSC are available.
+
+placement:
+  step2:
+    - separate MOF and hip risk categories
+    - FRAXplus current-result capture
+    - longitudinal FRAX table/charts
+    - read-only DXA longitudinal overview
+  step3:
+    - machine dropdown
+    - editable historical DXA snapshots
+    - DXA table/charts and descriptive change analysis
