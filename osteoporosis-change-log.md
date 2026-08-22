@@ -91,7 +91,7 @@ Initial feedback dimensions include:
 - whether questions/preferences were addressed;
 - free-text confusion, concern, praise or suggestion.
 
-Repeated feedback patterns may generate Signals, trigger improvement projects and require later re-measurement after communication/workflow changes.
+Repeated patient-feedback patterns may generate Signals, trigger improvement projects and require later re-measurement after communication/workflow changes.
 
 ---
 
@@ -307,3 +307,19 @@ stored case + current core state → merged stored case
 The temporary `pilot-completion.js` snapshot/restore workaround was removed, including its asynchronous `setTimeout(0)` restoration path. Pilot completion remains intact but no longer carries responsibility for preserving module slices during ordinary saves.
 
 This change is a pre-pilot data-integrity fix and should be retained before any real pilot case is collected.
+
+---
+
+## 2026-08-22 — Pre-pilot Patch 1 prevents hidden stale dependent data
+
+External review identified that child fields hidden by parent toggles could retain and re-persist stale values. This was particularly dangerous for DXA because prior BMD/T-score values could remain available to longitudinal trends after `DXA used` was changed to `No`.
+
+A central pilot data-hygiene guard was added at:
+
+```text
+static/baseline-audit/data-hygiene.js
+```
+
+It clears dependent DOM values before the step modules collect/persist state and sanitizes legacy stale values already present in the active localStorage case. Covered dependencies include DXA detail/longitudinal fields, Step 4 transition fields, Step 5 information-type selections and misunderstanding-correction state.
+
+The guard is loaded by the baseline bootstrap before Step 6/pilot completion. This is a pre-pilot data-integrity measure so hidden/non-applicable child values cannot silently contaminate longitudinal review or later audit calculation.
