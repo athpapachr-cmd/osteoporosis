@@ -1,0 +1,171 @@
+.step3-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 18px;
+}
+
+.step3-card.span-2 {
+  grid-column: 1 / -1;
+}
+
+.step3-context {
+  margin-bottom: 18px;
+}
+
+.step3-top-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.step3-top-grid.four-cols {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.step3-top-grid.compact-three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 12px;
+}
+
+.step3-top-grid label,
+.field-stack label,
+.lab-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.step3-top-grid label > span,
+.field-stack label > span,
+.lab-grid label > span,
+.override-note > span {
+  color: var(--muted, #64748b);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.field-stack {
+  display: grid;
+  gap: 10px;
+}
+
+.s3-collapsible {
+  margin-top: 14px;
+  display: grid;
+  gap: 14px;
+}
+
+.dxa-table-wrap {
+  overflow-x: auto;
+}
+
+.dxa-entry-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.dxa-entry-table th,
+.dxa-entry-table td {
+  padding: 9px 10px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.07);
+  text-align: left;
+  vertical-align: middle;
+  font-size: 13px;
+}
+
+.dxa-entry-table th {
+  background: #f8fafc;
+  color: #475569;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+.dxa-entry-table input {
+  min-width: 110px;
+  width: 100%;
+}
+
+.longitudinal-box {
+  padding: 14px;
+  border: 1px dashed rgba(37, 99, 235, .3);
+  background: rgba(37, 99, 235, .035);
+  border-radius: 12px;
+}
+
+.s3-reasons,
+.s3-status-checks {
+  margin: 12px 0;
+}
+
+.lab-section {
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 12px;
+  margin-top: 10px;
+  overflow: hidden;
+  background: #fbfdff;
+}
+
+.lab-section summary {
+  cursor: pointer;
+  padding: 12px 14px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #1e293b;
+  background: #f8fafc;
+  user-select: none;
+}
+
+.lab-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  padding: 14px;
+}
+
+.lab-grid input,
+.lab-grid select {
+  width: 100%;
+}
+
+.step3-card .derived-note {
+  margin-top: 12px;
+}
+
+@media (max-width: 1180px) {
+  .step3-top-grid.four-cols,
+  .lab-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .step3-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .step3-card.span-2 {
+    grid-column: auto;
+  }
+
+  .step3-top-grid,
+  .step3-top-grid.four-cols,
+  .step3-top-grid.compact-three,
+  .lab-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  .step3-top-grid,
+  .step3-top-grid.four-cols,
+  .step3-top-grid.compact-three,
+  .lab-grid {
+    grid-template-columns: 1fr;
+  }
+}
