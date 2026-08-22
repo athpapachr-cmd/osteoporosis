@@ -1,0 +1,129 @@
+schema: baseline_step1_risk_refinement_v1
+status: draft_for_implementation
+module: osteoporosis
+purpose: >-
+  Refine the first baseline-audit screen after live review. Keep Step 1 fast and neutral,
+  capture clinically important applicability signals in structured form, and avoid manual
+  transcription/diff work for Heidi AI.
+
+heidi_capture:
+  principle: >-
+    Do not ask the clinician to paste either the raw transcript or the corrected transcript
+    into the baseline form. Do not require manual description of every correction.
+  capture_fields:
+    - heidi_used: [yes, no]
+    - heidi_output_available: [yes, no, not_applicable]
+    - heidi_output_reviewed_by_clinician: [yes, no, not_applicable]
+    - heidi_material_correction_required: [yes, no, unknown, not_applicable]
+    - heidi_correction_categories:
+        optional_multi_select:
+          - clinically_relevant_omission
+          - factual_error
+          - medication_or_dose_error
+          - assessment_or_plan_error
+          - speaker_or_context_error
+          - other
+    - heidi_quality_note_optional
+  rule: >-
+    Correction categories are optional one-click metadata only. No manual diff is required.
+    If text-level analysis is introduced later, prefer a clinician-approved final note and
+    keep it in a secure/private clinical store; never commit raw Heidi transcripts to GitHub.
+
+risk_signal_summary:
+  prior_fragility_fracture:
+    capture:
+      - status: [yes, no, unknown]
+      - most_recent_site: [vertebral, hip, distal_radius, proximal_humerus, pelvis, other, unknown]
+      - most_recent_month_year
+      - approximate_recency_if_date_unknown: [under_24_months, 24_months_or_more, unknown]
+    derived:
+      - recent_any_fragility_fracture_under_24_months
+      - recent_vertebral_fracture_under_24_months
+    note: >-
+      Preserve exact/approximate timing rather than a single 'recent fracture' checkbox.
+      NOGG 2024 treats recent vertebral fracture within 2 years as a very-high-risk indicator
+      and describes imminent re-fracture risk as highest immediately after fracture and waning
+      over roughly the next 2 years.
+
+  parental_hip_fracture:
+    capture: [yes, no, unknown]
+
+  frailty_immobility:
+    capture: [yes, no, uncertain]
+    step1_role: quick_trigger_only
+    detailed_followup_in_step3:
+      - clinical_frailty_scale_1_9
+      - falls_risk
+      - cognition_or_dementia
+      - significant_immobility
+      - mobility_gait_or_aid_fields
+      - existing_Morse_fields_if_retained
+
+  oral_glucocorticoids:
+    capture:
+      - exposure_status: [yes, no, unknown]
+      - prednisolone_equivalent_mg_day
+      - duration_months
+    derived_without_live_coaching:
+      - exposure_at_least_3_months
+      - dose_band:
+          low: '<2.5 mg/day'
+          medium: '2.5 to <7.5 mg/day'
+          high: '>=7.5 mg/day'
+          very_high_dose_attention: '>20 mg/day'
+    note: >-
+      NOGG/FRAX treat oral glucocorticoid exposure for 3 months or more as a risk factor;
+      NOGG uses dose-adjustment bands and >=7.5 mg/day over 3 months as an important
+      very-high-risk/specialist-referral indicator.
+
+  bmi:
+    capture: bmi_kg_m2
+    behavior: >-
+      No separate manual low-BMI checkbox. Derive any local attention flag automatically
+      from entered BMI. Do not double-count BMI as an independent risk criterion when the
+      selected risk model already uses BMI continuously. Any local low-BMI threshold must be
+      labelled as local/configurable rather than a NOGG-mandated cutoff.
+
+  falls:
+    capture:
+      - falls_count_last_12_months
+    derived:
+      - recurrent_falls_last_year: 'true when count >=2'
+    note: >-
+      NOGG 2024 provides a FRAX probability adjustment for recurrent falls defined as
+      >=2 falls in the last year. A separate 3-month history may still be retained later
+      if the existing Morse workflow remains clinically useful, but it is not the primary
+      Step 1 osteoporosis risk field.
+
+  secondary_or_associated_conditions:
+    capture: multi_select
+    initial_options:
+      - type_1_diabetes
+      - type_2_diabetes
+      - hyperparathyroidism
+      - hyperthyroidism
+      - hypogonadism_or_premature_menopause
+      - cushing_syndrome
+      - chronic_kidney_disease_stage_3a_to_5
+      - chronic_liver_disease
+      - malabsorption_celiac_ibd_or_bariatric_surgery
+      - rheumatoid_or_other_inflammatory_disease
+      - multiple_myeloma_or_other_relevant_hematologic_disorder
+      - neurologic_or_cognitive_disease
+      - other
+    rule: >-
+      Keep conditions structured because some are direct FRAX inputs/proxies while others
+      are extra-FRAX risk modifiers or case-finding triggers. Do not flatten all conditions
+      into one undifferentiated 'secondary osteoporosis' boolean.
+
+baseline_behavior:
+  - no KPI score or red_green coaching during scored baseline
+  - derived fields may be stored silently for later audit calculation
+  - Step 1 remains a quick summary; detailed fracture, falls/frailty and secondary-cause data belong in later steps
+  - preserve completion-time goal of roughly 2_to_4_minutes_for_the_full_postvisit_capture_after_pilot_refinement
+
+source_anchors:
+  - NOGG_2024_section_3_fracture_risk_assessment_and_case_finding
+  - NOGG_2024_section_4_intervention_thresholds_and_strategy
+  - NOGG_2024_section_7_glucocorticoid_induced_osteoporosis
+  - existing_OsteoInput_fields_in_main_py_for_frailty_falls_cognition_immobility_and_glucocorticoid_dose_duration
