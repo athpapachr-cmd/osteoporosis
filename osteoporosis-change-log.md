@@ -238,81 +238,56 @@ static/baseline-audit/styles.css
 static/baseline-audit/app.js
 ```
 
-The implemented first screen includes:
-
-- pilot case identity/progress;
-- encounter metadata;
-- visit reason and osteoporosis status;
-- adaptive sex/menopause context;
-- structured Heidi exposure/output/review/correction capture;
-- quick applicability signals;
-- privacy warnings;
-- local draft save/resume and case list using browser `localStorage` only;
-- no live KPI coaching or red/green baseline performance feedback.
-
-Steps 2–6 are intentionally placeholders. No server-side patient-data API, `main.py` rewrite or new production clinical-data storage was introduced.
-
-The existing FastAPI static mount can serve the page at `/static/baseline-audit/` after merge/deploy.
+The implemented first screen includes pilot case identity/progress, encounter metadata, visit reason/status, adaptive context, structured Heidi metadata, quick applicability signals, privacy warnings, and local draft save/resume. No server-side patient-data API or production clinical storage was introduced.
 
 ---
 
 ## 2026-08-22 — Step 1 refined into adaptive encounter context
 
-After clinical review, Step 1 was reworked to separate patient relationship (`new_to_service` vs `established_patient`) from encounter archetype. It added measured/source height, weight/BMI, derived height loss, fracture recency, glucocorticoid dose/duration, falls count, structured secondary conditions, frailty/immobility and conditional sarcopenia case-finding.
-
-Heidi capture was simplified: no raw/corrected transcript and no manual diff; only exposure/review/material-correction metadata with optional one-click correction categories.
-
-A formal encounter-archetype schema was added so the audit no longer applies one checklist to every visit.
+Step 1 was reworked to separate patient relationship from encounter archetype and added anthropometrics/BMI/height loss, fracture recency, glucocorticoid dose/duration, falls count, structured secondary conditions, frailty/immobility and conditional sarcopenia case-finding. Heidi capture was simplified to exposure/review/material-correction metadata without transcript or manual diff.
 
 ---
 
 ## 2026-08-22 — Baseline Audit Step 2 implemented
 
-Step 2 added structured fracture events and formal fracture-risk capture. It records review scope, interval fractures, event site/date/fragility/on-treatment status, FRAX/FRAXplus use, country/surrogate model, MOF/hip probability, FN BMD use, explicit risk framework, resulting category and contextual adjustment/override.
-
-The system explicitly avoids internal FRAX-like surrogate scoring and silent hybridization of guideline thresholds.
+Step 2 added structured fracture events and formal fracture-risk capture: FRAX/FRAXplus, country/surrogate model, MOF/hip probabilities, FN-BMD use, explicit framework, resulting risk category and contextual adjustment/override. Internal FRAX-like surrogate scoring and silent guideline hybridization are avoided.
 
 ---
 
 ## 2026-08-22 — Selective migration principle adopted for legacy Cockpit data
 
-The new Clinical Excellence dashboard will not copy the legacy Cockpit field-for-field. Existing data are classified as useful, duplicate, outdated or context-specific. Useful fields are preserved and normalized with provenance/timing/applicability before being linked to KPI, audit, learning and improvement loops.
-
-Examples: T-scores are retained but longitudinal DXA gains BMD/LSC/machine comparability; falls/frailty fields are retained but outpatient function and 12-month fall counts are prioritized; numeric labs remain optional while the audit measures whether relevant evaluation occurred; hospital-specific Morse fields are not automatically promoted into the outpatient osteoporosis baseline.
+The new Clinical Excellence dashboard does not copy the legacy Cockpit field-for-field. Useful data are preserved and normalized with provenance/timing/applicability before being linked to KPI, audit, learning and improvement loops.
 
 ---
 
 ## 2026-08-22 — Baseline Audit Step 3 implemented
 
-Step 3 added:
-
-- DXA current-use context, BMD g/cm², T-scores, ROI/artifact review, Z-score relevance;
-- longitudinal DXA comparability, machine/cross-calibration, facility LSC and BMD/LSC interpretation status;
-- VFA/vertebral-imaging indication separated from action/result;
-- secondary-cause process capture separate from optional numeric lab entry;
-- legacy mineral/renal labs and bone-turnover markers as optional values;
-- conditional secondary-cause lab fields/status;
-- outpatient falls/frailty/function assessment with CFS, cognition, immobility, aid, gait/balance and optional TUG;
-- conditional sarcopenia case-finding with SARC-F, chair stand, grip strength, gait speed, SPPB and TUG.
-
-Step 3 seeds relevant values from Step 1 to reduce duplicate entry and preserves the baseline rule of no live KPI coaching.
+Step 3 added DXA BMD/T-scores, ROI/artifact review, longitudinal comparability/LSC, VFA/vertebral-imaging indication/action/result, secondary-cause process, optional labs/BTMs, falls/frailty/function assessment and conditional sarcopenia testing.
 
 ---
 
 ## 2026-08-22 — Baseline Audit Step 4 implemented
 
-Step 4 upgraded the legacy treatment/plan concepts into date-aware, auditable objects. It added repeated treatment episodes with exact start/end dates when known, adherence/tolerance/response context, repeated administration events with scheduled/actual/next-due dates, and a structured current clinical decision with rationale, patient preference and optional confidence.
-
-It also added explicit transition/sequencing capture for denosumab exit, post-teriparatide, post-romosozumab and bisphosphonate holiday/restart scenarios, plus repeated follow-up tasks that are intended to become reusable `CareTask` objects later. Encounter close now records whether the plan was complete and whether an unresolved critical item remained.
-
-The Step 4 baseline UI deliberately does not generate treatment recommendations or live guideline-concordance verdicts. Reasoned clinician overrides remain distinguishable from errors, and exact dates are preferred over approximate durations without forcing invented historical dates.
+Step 4 upgraded treatment/plan concepts into date-aware treatment episodes and administration events, with adherence/tolerance/response context, current clinical decision/rationale, patient preference, transition/sequencing capture, follow-up tasks and unresolved critical-item close.
 
 ---
 
 ## 2026-08-22 — Baseline Audit Step 5 implemented
 
-Step 5 added encounter-specific communication capture and compact immediate post-visit reflection. It records condition/risk explanation, results/status discussion, exercise, nutrition, calcium/vitamin D/other supplements, medication or no-drug plan, treatment rationale, alternatives/trade-offs, duration/timing/review point, material safety messages, missed-dose/timing messages, sequencing/transition communication, questions and patient preferences.
+Step 5 added encounter-specific communication capture and compact immediate post-visit reflection. It records condition/risk explanation, results/status discussion, exercise, nutrition, calcium/vitamin D/other supplements, medication/no-drug plan, rationale, alternatives/trade-offs, timing/review point, safety and sequencing communication, questions and patient preferences.
 
-Clinician impression of patient understanding is recorded separately for condition, plan and rationale, with optional teach-back, detected/corrected misunderstanding and written/digital information provided. This clinician-side impression is explicitly kept separate from the later Patient Voice instrument so it does not substitute for the patient's own report.
+Clinician impression of patient understanding is recorded separately from the later Patient Voice instrument. Post-visit reflection remains low burden and can flag potential case-review, learning, communication/system or safety Signals without displaying a live baseline score.
 
-The post-visit reflection remains deliberately low burden: optional what-went-well and short reflection, whether something may have been missed/uncertain, root-domain classification, potential case-review/learning/communication/safety signals, and optional overall confidence. No live performance score or missing-item prompt is displayed during the baseline.
+---
+
+## 2026-08-22 — Baseline Audit Step 6 implemented
+
+Step 6 completed the prospective baseline capture flow by adding documentation provenance and capture-quality review.
+
+It records capture sources, a domain-level matrix for formal GeSY trace versus Heidi trace, material discrepancies, formal-record completeness and missing-content domains, and a final clinician-reviewed Heidi summary seeded from Step 1 without requiring raw/corrected transcripts or manual diffs.
+
+Capture reliability, remaining major information gaps, reasons for limited capture, optional completion time and readiness for later audit calculation are also recorded.
+
+The key interpretation rule was frozen: clinical process is represented by Steps 1–5; formal documentation is a separate evidence axis; Heidi is a supplementary clinician-reviewed capture source and its use is not a quality-success metric. Missing formal documentation must not be silently converted into a clinical omission.
+
+PR #8 was merged into `main` as commit `a14be3b9bfd393ccc245665c79bf700cf5eaff55`.
