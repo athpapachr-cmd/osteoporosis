@@ -35,13 +35,15 @@ This file answers **where the project is going and in what order**. Detailed cur
 - [x] Implement pilot UI Step 4 — treatment history/safety + decision + monitoring/follow-up.
 - [x] Implement pilot UI Step 5 — communication + immediate post-visit reflection.
 - [x] Implement pilot UI Step 6 — documentation trace + final Heidi/capture-source review.
-- [ ] Define exact form-field → KPI status calculation contract.
+- [x] Define exact form-field → KPI status calculation contract.
+- [x] Complete identified pre-pilot hardening patches P1/P2/P3/P4/P5/P6/P7/P8.
+- [ ] Run explicit pre-pilot synthetic smoke test for save/reload/applicability/longitudinal/BMI/completion behavior.
 - [ ] Run 5 pilot encounters and measure completion time/friction/missing fields.
 - [ ] Revise the form once after pilot evidence.
 - [ ] Freeze Baseline Form v1 + KPI applicability rules before scored baseline.
 - [ ] Define first Dashboard Data Contract after baseline capture contract is frozen.
 
-**CURRENT NEXT IMPLEMENTATION ACTION:** define the exact field→KPI contract, then run the 5-case pilot before starting the 30-case scored baseline.
+**CURRENT NEXT IMPLEMENTATION ACTION:** run the explicit pre-pilot smoke test. If it passes, run the 5-case pilot before starting the 30-case scored baseline.
 
 ---
 

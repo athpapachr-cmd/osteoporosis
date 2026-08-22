@@ -1,6 +1,6 @@
 # HANDOFF_CURRENT.md — current operational handoff
 
-> **Updated:** 2026-08-22 21:46 Asia/Nicosia
+> **Updated:** 2026-08-22 21:58 Asia/Nicosia
 > **Canonical repository:** `athpapachr-cmd/osteoporosis`
 > **Current major phase:** prospective Osteoporosis Baseline/Audit pre-pilot hardening
 > **Current module:** Module 01 — Osteoporosis
@@ -17,6 +17,7 @@ Prospective baseline sequence:
 
 ```text
 pre-pilot data-integrity / applicability hardening
+→ explicit smoke test
 → 5 consecutive pilot encounters
 → one usability/branching/calculation-contract refinement
 → freeze form + KPI applicability
@@ -87,91 +88,82 @@ Rules:
 
 ## 4. Pre-pilot hardening status
 
-### Patch 2 — core save overwrite / stale-module bug
-Closed after second review.
-
-Root rule:
-
-```text
-app-core owns Steps 1–2 fields only
-module-owned slices are excluded from the core save payload
-```
-
-Excluded keys: `step3`, `step4`, `step5`, `step6`, `longitudinal_review`, `pilot_completion`, `audit_evaluation_v1`.
-
 ### Patch 1 — hidden dependent values / stale data
-Closed and hardened.
+Closed and hardened. `data-hygiene.js` clears hidden dependent values before persistence; `longitudinal.currentDxaPoint()` independently refuses to expose a current DXA point unless `DXA used == yes`.
 
-`data-hygiene.js` clears hidden dependent values before persistence and sanitizes legacy stale localStorage data. `longitudinal.currentDxaPoint()` independently refuses to expose a current DXA point unless `DXA used == yes`.
-
-### Patch 4 — Step 1 ↔ Step 3 duplicate source of truth
-Closed.
-
-Step 1 `risk_context` remains canonical for falls count, CFS, cognition, immobility and basic sarcopenia screening. Step 3 displays those values as read-only projections and keeps only Step-3-specific detail editable.
-
-### Patch 5 — DXA machine field persistence / normalization
-Closed.
-
-`dxa-machine-select.js` normalizes the current DXA machine field and persists optional `machine_label`; legacy free-text values are preserved under `other_unknown` rather than silently lost.
-
-### Patch 7 — archetype-driven adaptive applicability
-Closed and merged via PR #15.
-
-`adaptive-applicability.js` maps encounter archetypes to `applicable`, `uncertain`, or `not_applicable` domain defaults, collapses conditional/usual-N/A cards, supports explicit `Χρήση σήμερα` override, and keeps Step 6 applicable for all pilot encounters. No KPI/performance coaching is displayed.
+### Patch 2 — core save overwrite / stale-module bug
+Closed after second review. `app-core` excludes module-owned slices from its save payload: `step3`, `step4`, `step5`, `step6`, `longitudinal_review`, `pilot_completion`, `audit_evaluation_v1`.
 
 ### Patch 3 — whole-form progress
-Closed and merged via PR #16.
+Closed and merged via PR #16. `whole-form-progress.js` owns the user-visible capture-completion percentage across Steps 1–6 and excludes Patch-7-collapsed domains from the denominator until reopened. It is not a KPI/performance score.
 
-`whole-form-progress.js` owns the user-visible **capture-completion** percentage across Steps 1–6 after bootstrap. It excludes Patch-7-collapsed domains from the denominator until reopened and is explicitly not a KPI/performance score.
+### Patch 4 — Step 1 ↔ Step 3 duplicate source of truth
+Closed. Step 1 `risk_context` remains canonical for falls count, CFS, cognition, immobility and basic sarcopenia screening. Step 3 is a read-only projection for those shared fields plus Step-3-specific detail.
+
+### Patch 5 — DXA machine persistence / normalization
+Closed. `dxa-machine-select.js` normalizes the current DXA machine field and persists optional `machine_label`; legacy free text is preserved under `other_unknown` rather than silently lost.
 
 ### Patch 6 — prior DXA inline entry / longitudinal safety
-Implemented on branch `fix/patch6-inline-prior-dxa`.
+Closed and merged via PR #17.
+
+`prior-dxa-inline.js`:
+- replaces the seven-prompt Prior DXA flow with one inline editor;
+- uses typed date/numeric inputs and a machine whitelist;
+- normalizes legacy historical DXA dates before longitudinal rendering;
+- preserves unknown legacy machine text in `machine_label`;
+- assigns stable `_id` values to historical DXA rows;
+- deletes historical DXA rows by stable `_id` rather than sorted display index;
+- reloads longitudinal private state after add/remove so fresh history cannot be overwritten.
+
+### Patch 7 — archetype-driven adaptive applicability
+Closed and merged via PR #15. `adaptive-applicability.js` maps encounter archetypes to applicable/conditional/usual-N/A domain defaults, supports explicit `Χρήση σήμερα` override, and keeps Step 6 applicable for all pilot encounters without KPI coaching.
+
+### Patch 8 — BMI derived/manual behavior
+Implemented on branch `fix/patch8-bmi-derived-behavior`.
 
 New runtime:
 
 ```text
-static/baseline-audit/prior-dxa-inline.js
+static/baseline-audit/bmi-behavior.js
+```
+
+Rule:
+
+```text
+valid weight + valid current height → BMI is derived and read-only
+otherwise → BMI is editable as manual/external input
 ```
 
 Behavior:
-
-- intercepts the legacy `＋ Prior DXA` action before the old prompt chain can run;
-- replaces seven sequential browser prompts with one inline editor for date, machine/local label, BMD and T-scores;
-- uses typed `date` / numeric inputs and a machine whitelist;
-- normalizes legacy DXA-history dates to strict `YYYY-MM-DD` before the longitudinal renderer runs, preventing raw historical date strings from entering the old unescaped table path;
-- normalizes unknown historical machine values to `other_unknown` while preserving the original text as `machine_label`;
-- assigns stable `_id` values to historical DXA rows;
-- captures removal by stable `_id`, fixing the prior sorted-display-index versus source-array-index deletion risk;
-- forces the longitudinal module to reload from localStorage after add/remove so its private state cannot overwrite the fresh history.
-
-The module is loaded before `longitudinal.js`, so legacy history is normalized before the first table/chart render.
+- prevents a manual BMI entry from being silently overwritten while the field still appears editable;
+- marks the field `readOnly` whenever both weight and height are available, matching `app-core`'s existing calculated BMI source;
+- shows a compact source note (`Αυτόματο από βάρος + ύψος` vs `Χειροκίνητο / external BMI`);
+- when a previously derived BMI loses one of its source measurements, clears the stale derived value before returning the field to manual/external mode;
+- preserves manual/external BMI when no valid weight-height pair exists.
 
 ---
 
 ## 5. Current exact next action
 
-**NEXT: finish the last pre-pilot usability/correctness item.**
+**NEXT: explicit pre-pilot smoke test. Do not add new functionality unless the smoke test identifies a defect.**
+
+Run one synthetic/non-identifiable test case through:
 
 ```text
-Patch 8 — BMI derived/manual behavior
+1. FRAX/FRAXplus edit → Save → reload → values retained
+2. DXA yes + values → DXA no → Save → no current DXA in trends
+3. Step 1 shared risk values → Step 3 mirror → no divergence
+4. DXA machine + machine_label → Save/reload → retained
+5. archetype change → expected/conditional/N/A card state updates correctly
+6. collapsed domain → Χρήση σήμερα → override persists after Save/reload
+7. whole-form progress changes across Steps 1–6 and excludes collapsed domains
+8. Prior DXA → inline add → Save/reload → retained
+9. historical DXA delete after date sorting → correct row removed
+10. BMI with weight+height → read-only calculated; remove one source → derived BMI clears and manual mode returns
+11. Finish Visit → all module slices retained
 ```
 
-Then perform an explicit save/reload/complete smoke test including:
-
-```text
-FRAX/FRAXplus edit → Save → reload → values retained
-DXA yes + values → DXA no → Save → no current DXA in trends
-Step 1 shared risk values → Step 3 mirror → no divergence
-DXA machine + machine_label → Save/reload → retained
-archetype change → expected/conditional/N/A card state updates correctly
-collapsed domain → Χρήση σήμερα → override persists after Save/reload
-whole-form progress changes across Steps 1–6 and excludes collapsed domains
-Prior DXA → inline add → Save/reload → retained
-historical DXA delete after date sorting → correct row removed
-Finish Visit → all module slices retained
-```
-
-Only then start Pilot Case 1/5.
+If the smoke test passes, start **Pilot Case 1/5**. Do not revise the form after each pilot case unless there is a safety-critical or data-loss defect.
 
 After the 5 pilot cases:
 
@@ -189,7 +181,6 @@ Do not start the 30-case scored baseline before that freeze.
 ## 6. Separate later instruments
 
 Still separate from the 5-case form pilot:
-
 - Patient Voice 4-question instrument.
 - Decision Quality 10-case review form.
 
@@ -205,4 +196,4 @@ Do not yet:
 - make Heidi mandatory before baseline;
 - commit identifiable patient data, GeSY content or Heidi transcripts to the public repo;
 - treat browser `localStorage` as production clinical-data storage;
-- start the real pilot until the identified pre-pilot data-integrity/applicability blockers are closed and smoke-tested.
+- start the real pilot until the explicit smoke test passes.
