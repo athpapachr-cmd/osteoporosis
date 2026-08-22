@@ -1,0 +1,116 @@
+.adaptive-applicability-banner {
+  margin: 10px 0 14px;
+  padding: 10px 12px;
+  border: 1px solid #dbe3ec;
+  border-radius: 10px;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.adaptive-applicability-control {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.adaptive-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .01em;
+  white-space: nowrap;
+}
+
+.adaptive-badge.applicable {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #334155;
+}
+
+.adaptive-badge.uncertain {
+  background: #fffdf5;
+  border-color: #e7d9a8;
+  color: #755f20;
+}
+
+.adaptive-badge.na {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #64748b;
+}
+
+.adaptive-badge.override {
+  background: #f8fafc;
+  border-color: #94a3b8;
+  color: #334155;
+}
+
+.adaptive-use-domain,
+.adaptive-reset-domain {
+  appearance: none;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+  color: #334155;
+  padding: 5px 8px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.adaptive-use-domain:hover,
+.adaptive-reset-domain:hover {
+  background: #f8fafc;
+}
+
+article.card.adaptive-collapsed {
+  background: #f8fafc;
+  border-color: #dbe3ec;
+  box-shadow: none;
+  opacity: .88;
+}
+
+article.card.adaptive-collapsed > :not(.card-heading):not(.adaptive-applicability-control) {
+  display: none !important;
+}
+
+article.card.adaptive-collapsed .card-heading {
+  margin-bottom: 0;
+}
+
+article.card.adaptive-collapsed .card-heading p {
+  margin-bottom: 0;
+}
+
+article.card.adaptive-not-applicable .card-heading h2,
+article.card.adaptive-not-applicable .card-heading p,
+article.card.adaptive-uncertain .card-heading h2,
+article.card.adaptive-uncertain .card-heading p {
+  color: #64748b;
+}
+
+article.card.adaptive-overridden {
+  border-style: solid;
+}
+
+@media (max-width: 720px) {
+  .adaptive-applicability-control {
+    width: 100%;
+    justify-content: flex-start;
+    margin-left: 0;
+    margin-top: 6px;
+  }
+}

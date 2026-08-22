@@ -1,6 +1,6 @@
 # HANDOFF_CURRENT.md — current operational handoff
 
-> **Updated:** 2026-08-22 20:56 Asia/Nicosia
+> **Updated:** 2026-08-22 21:20 Asia/Nicosia
 > **Canonical repository:** `athpapachr-cmd/osteoporosis`
 > **Current major phase:** prospective Osteoporosis Baseline/Audit pre-pilot hardening
 > **Current module:** Module 01 — Osteoporosis
@@ -27,7 +27,7 @@ pre-pilot data-integrity / applicability hardening
 
 During scored baseline: no KPI coaching/red-green performance feedback; safety-critical alerts may remain active. Clinical process, formal documentation and capture quality are separate measurement axes.
 
-Encounter applicability remains driven by patient relationship plus encounter archetype.
+Encounter applicability is driven primarily by encounter archetype, with explicit clinician override when a normally collapsed domain is relevant to the individual encounter.
 
 ---
 
@@ -116,19 +116,19 @@ Therefore a Steps 1–2 save can no longer overwrite fresher module-owned state.
 ### Patch 1 — hidden dependent values / stale data
 Closed and additionally hardened after second review.
 
-`static/baseline-audit/data-hygiene.js` still clears hidden dependent values before persistence and sanitizes legacy stale localStorage data.
+`static/baseline-audit/data-hygiene.js` clears hidden dependent values before persistence and sanitizes legacy stale localStorage data.
 
 Additional hardening:
 
-- `data-hygiene.js` now loads before `longitudinal.js`, so initial longitudinal render sees sanitized stored state;
-- `longitudinal.currentDxaPoint()` now explicitly checks `DXA used`; when it is not `yes`, the current DXA point is empty and cannot enter charts/tables even if stale values somehow exist.
+- `data-hygiene.js` loads before `longitudinal.js`, so initial longitudinal render sees sanitized stored state;
+- `longitudinal.currentDxaPoint()` explicitly checks `DXA used`; when it is not `yes`, the current DXA point is empty and cannot enter charts/tables even if stale values somehow exist.
 
 ### Patch 4 — Step 1 ↔ Step 3 duplicate source of truth
 Closed and verified after second review.
 
 Canonical source remains Step 1 `risk_context` for falls count, CFS, cognition, immobility and basic sarcopenia screening; Step 3 displays those shared values as read-only projections while retaining Step-3-only functional detail.
 
-Current implementation remains in `static/baseline-audit/shared-risk-source.js`. It is functionally correct; do not introduce a second writer. A later cleanup may move this ownership directly into Step 3, but that refactor is not required for pilot correctness unless smoke testing identifies a regression.
+Current implementation remains in `static/baseline-audit/shared-risk-source.js`. It is functionally correct; do not introduce a second writer.
 
 ### Patch 5 — DXA machine field persistence / normalization
 Closed and merged.
@@ -148,21 +148,41 @@ other_unknown
 
 Legacy free-text machine values are migrated without silent loss: recognized labels map to normalized values; unrecognized text maps to `other_unknown` and is preserved in `machine_label`.
 
-The second review confirmed this runtime implementation is active. A future owner-module cleanup may move the select directly into `step3.js`, but this is technical cleanup rather than an unresolved pilot data-integrity defect.
+### Patch 7 — archetype-driven adaptive applicability
+Implemented on branch `fix/patch7-archetype-applicability`.
+
+New schema:
+
+```text
+schemas/baseline_applicability_review_v1.yaml
+```
+
+New runtime layer:
+
+```text
+static/baseline-audit/adaptive-applicability.js
+static/baseline-audit/adaptive-applicability.css
+```
+
+Behavior:
+
+- maps each encounter archetype to domain-level `applicable`, `uncertain`, or `not_applicable` defaults;
+- leaves applicable cards expanded;
+- collapses conditional / normally-N/A cards with neutral grey styling;
+- provides `Χρήση σήμερα` to reopen a collapsed domain when it is clinically relevant;
+- records that action as an explicit applicability override rather than silently changing the encounter archetype;
+- `Other` and no-archetype states remain case-by-case and open rather than guessing applicability;
+- Step 6 documentation/capture remains applicable for all pilot encounters;
+- no KPI score, red/green feedback, omission warning, or treatment coaching is displayed;
+- collapsing a domain does not erase clinical values; later KPI calculation must consult resolved applicability before using retained values.
+
+The `applicability_review` slice is persisted in localStorage with archetype, defaults, overrides and resolved statuses. The module preserves its live review state across Save/Finish so core save behavior cannot silently drop an applicability override.
 
 ---
 
 ## 5. Current exact next action
 
-**NEXT: continue pre-pilot hardening before the 5 real pilot encounters.**
-
-Highest-priority remaining item:
-
-```text
-Patch 7 — implement real archetype-driven applicability
-```
-
-Then address the remaining usability/correctness items:
+**NEXT: finish the remaining pre-pilot usability/correctness items.**
 
 ```text
 Patch 3 — whole-form progress calculation
@@ -170,13 +190,15 @@ Patch 6 — inline prior-DXA entry + escaping
 Patch 8 — BMI derived/manual behavior
 ```
 
-After those, perform an explicit save/reload/complete smoke test including:
+Then perform an explicit save/reload/complete smoke test including:
 
 ```text
 FRAX/FRAXplus edit → Save → reload → values retained
 DXA yes + values → DXA no → Save → no current DXA in trends
 Step 1 shared risk values → Step 3 mirror → no divergence
 DXA machine + machine_label → Save/reload → retained
+archetype change → expected/conditional/N/A card state updates correctly
+collapsed domain → Χρήση σήμερα → override persists after Save/reload
 Finish Visit → all module slices retained
 ```
 
