@@ -32,6 +32,10 @@ capture_sources:
     - source_conflict_present: [yes, no, uncertain]
     - source_conflict_resolution: [resolved_by_clinician_review, unresolved, not_applicable]
     - source_conflict_note_optional
+  dependency_rule: >-
+    source_conflict_resolution and source_conflict_note are applicable only when
+    source_conflict_present is yes. If the conflict field changes away from yes, both dependent
+    values must be cleared before persistence rather than retained as hidden stale data.
 
 documentation_trace_matrix:
   domains:
@@ -105,6 +109,7 @@ baseline_behavior:
   - no_treating_GeSY_as_complete_clinical_truth
   - no_treating_Heidi_use_as_quality_metric
   - preserve_unknown_partial_absent_and_not_applicable_as_distinct_states
+  - clear_hidden_dependent_values_before_persistence
   - localStorage_only_during_prototype
 
 kpi_mapping:
