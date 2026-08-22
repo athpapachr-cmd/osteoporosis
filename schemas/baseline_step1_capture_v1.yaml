@@ -1,0 +1,167 @@
+schema: baseline_step1_capture_v1
+status: implemented_pilot_v1
+module: osteoporosis
+ui_path: /static/baseline-audit/
+purpose: >-
+  Contract for Step 1 of the prospective osteoporosis baseline pilot. Step 1 captures
+  encounter classification and only the minimum clinical context needed to drive later
+  archetype-specific applicability. It is not itself a full fracture-risk assessment.
+
+principles:
+  - patient_relationship_status and encounter_archetype are independent axes
+  - the same audit checklist must not be applied to every encounter
+  - derived clinical context is stored silently during baseline; no KPI coaching is displayed
+  - Heidi is captured as an exposure/capture source, not scored as good practice
+  - raw Heidi transcripts and identifiable clinical notes are prohibited in this public prototype
+  - low BMI binary flag is a local workflow flag only; FRAX uses BMI as a continuous input
+
+required_core_fields:
+  - encounter_date
+  - age_years
+  - sex
+  - patient_relationship_status
+  - encounter_archetype
+  - first_core_baseline_encounter_for_patient
+  - osteoporosis_status
+  - heidi.used
+
+patient_relationship_status:
+  values:
+    - new_to_service
+    - established_patient
+
+encounter_archetype:
+  source: schemas/encounter_archetypes_v1.yaml
+  values:
+    - initial_assessment_new_or_uncertain_diagnosis
+    - initial_assessment_known_osteoporosis_or_osteopenia
+    - routine_followup_stable
+    - treatment_start
+    - treatment_continuation_or_due_monitoring
+    - treatment_change_or_transition
+    - post_fragility_fracture
+    - fracture_on_treatment
+    - adverse_effect_or_intolerance
+    - treatment_completion_or_consolidation
+    - other
+
+anthropometrics:
+  fields:
+    - weight_kg
+    - current_height_cm
+    - height_source: [measured_in_clinic, dxa_report, patient_report, other, unavailable]
+    - reference_height_cm
+    - bmi
+    - bmi_source: [calculated_weight_height, manual_or_external, empty]
+    - derived_height_loss_cm
+  derived_rules:
+    bmi:
+      formula: weight_kg / (current_height_m ** 2)
+      note: calculated automatically when current weight and height are present
+    low_bmi_workflow_flag:
+      threshold: 20
+      status: local_configurable_workflow_flag
+      warning: not_a_frax_or_nogg_binary_threshold
+    height_loss_ge_4_cm:
+      formula: reference_height_cm - current_height_cm >= 4
+      purpose: later vertebral imaging/VFA applicability
+
+risk_context:
+  prior_fragility_fracture:
+    fields:
+      - present
+      - last_fracture_site
+      - last_fracture_month
+    derived:
+      - months_since_last_fragility_fracture
+      - fracture_within_24_months
+      - recent_vertebral_fracture_within_24_months
+  parental_hip_fracture:
+    fields: [present]
+  frailty_or_immobility:
+    fields:
+      - present
+      - cfs_score
+      - cognitive_impairment
+      - significant_immobility
+    note: fuller functional assessment belongs in Step 3
+  glucocorticoids:
+    fields:
+      - present
+      - prednisolone_equivalent_mg_day
+      - duration_months
+    derived:
+      dose_band: [lt_2_5, 2_5_to_lt_7_5, gte_7_5]
+      exposure_3m_or_more: true_false
+      gt_20_mg_day: true_false
+  falls:
+    fields:
+      - falls_last_12_months
+    derived:
+      recurrent_falls_2_or_more_last_12m: true_false
+  secondary_context:
+    fields:
+      - present
+      - secondary_conditions
+    values:
+      - type1_diabetes
+      - type2_diabetes
+      - hyperparathyroidism
+      - hyperthyroidism
+      - hypogonadism_early_menopause
+      - cushing
+      - ckd
+      - chronic_liver_disease
+      - malabsorption_celiac_ibd_bariatric
+      - rheumatoid_or_inflammatory
+      - myeloma_hematologic
+      - neurologic
+      - other
+    note: >-
+      Conditions are preserved individually because they are not interchangeable FRAX inputs
+      and must not be collapsed blindly into one secondary-osteoporosis boolean.
+
+sarcopenia_case_finding:
+  fields:
+    - relevant_today
+    - screen_method: [sarc_f, clinical_suspicion, not_done]
+    - sarc_f_score
+  derived:
+    sarc_f_positive_ge_4: true_false
+  note: fuller Find-Assess-Confirm-Severity workflow belongs in Step 3 when applicable
+
+heidi:
+  fields:
+    - used
+    - output_available
+    - reviewed_by_clinician
+    - material_correction_required
+    - correction_categories
+  correction_categories:
+    - omission
+    - factual_error
+    - medication_or_dose
+    - assessment_plan
+    - context_or_speaker
+    - other
+  workflow_rule: >-
+    The clinician is never required to paste a transcript, paste a corrected note, or describe
+    each correction. Categories are optional one-click metadata only.
+
+baseline_display_rules:
+  - do_not_display_kpi_score
+  - do_not_display_red_green_performance_feedback
+  - do_not_label_derived_flags_as_clinician_error
+  - keep_safety_critical_alert_path_available_for_later_steps
+
+storage:
+  pilot: browser_localStorage_only
+  production_status: not_approved
+  prohibited_public_inputs:
+    - patient_name
+    - gesy_or_emr_id
+    - date_of_birth
+    - phone
+    - email
+    - raw_heidi_transcript
+    - identifiable_clinical_note
