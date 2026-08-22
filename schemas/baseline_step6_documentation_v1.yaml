@@ -1,0 +1,123 @@
+schema: baseline_step6_documentation_v1
+status: draft_for_implementation
+module: osteoporosis
+purpose: >-
+  Define Step 6 of the prospective Baseline Osteoporosis Audit: documentation trace,
+  final capture-source review, Heidi review provenance, and evidence-trail completeness.
+  This step must keep clinical process separate from what is traceable in the formal record.
+
+core_principle:
+  clinical_process_source_of_truth: prior_steps_and_clinician_validated_postvisit_capture
+  formal_documentation_is_separate_axis: true
+  heidi_is_supplementary_capture_source: true
+  heidi_use_is_not_quality_success_metric: true
+  raw_or_corrected_transcript_required: false
+  no_patient_identifiable_text_in_public_repo: true
+
+capture_sources:
+  selectable:
+    - clinician_postvisit_recall
+    - formal_GeSY_note
+    - clinician_reviewed_Heidi_output
+    - DXA_report
+    - laboratory_results
+    - imaging_report
+    - medication_or_administration_record
+    - patient_provided_information
+    - referral_or_external_note
+    - other
+  fields:
+    - sources_used_multi_select
+    - primary_capture_source
+    - source_conflict_present: [yes, no, uncertain]
+    - source_conflict_resolution: [resolved_by_clinician_review, unresolved, not_applicable]
+    - source_conflict_note_optional
+
+documentation_trace_matrix:
+  domains:
+    - fracture_history
+    - formal_risk_assessment
+    - DXA_VFA_imaging
+    - secondary_causes_and_labs
+    - falls_frailty_function_sarcopenia
+    - treatment_history_adherence_tolerance
+    - treatment_decision_and_rationale
+    - sequencing_and_safety
+    - monitoring_and_followup_plan
+    - communication_and_patient_preference
+  each_domain_fields:
+    formal_record_trace: [complete, partial, absent, not_applicable, unknown]
+    heidi_trace: [complete, partial, absent, not_used, not_applicable, unknown]
+    material_discrepancy: [yes, no, uncertain, not_applicable]
+  rule: >-
+    A clinical process may have occurred even if the formal record trace is partial or absent.
+    Missing documentation must not be silently converted into a clinical omission.
+
+formal_record_summary:
+  fields:
+    - gesy_note_available: [yes, no, uncertain]
+    - gesy_note_status: [absent, minimal, partial, clinically_substantial, not_assessed]
+    - note_finalized_or_saved: [yes, no, uncertain, not_applicable]
+    - important_clinical_content_missing_from_formal_record: [yes, no, uncertain]
+    - missing_content_domains_multi_select
+    - formal_record_comment_optional
+
+heidi_final_review:
+  fields:
+    - used: [yes, no]
+    - output_available: [yes, no, unknown]
+    - clinician_reviewed: [yes, no, not_applicable]
+    - material_correction_required: [yes, no, unknown, not_applicable]
+    - correction_categories_multi_select_optional:
+        - omission
+        - factual_error
+        - medication_or_dose
+        - assessment_or_plan
+        - speaker_or_context
+        - other
+    - final_clinician_approved_note_exists: [yes, no, unknown, not_applicable]
+    - heidi_content_used_in_formal_record: [yes, partial, no, unknown, not_applicable]
+    - clinically_material_information_present_in_Heidi_but_not_formal_record: [yes, no, uncertain, not_applicable]
+  rule: >-
+    Do not ask the clinician to paste raw transcripts, corrected transcripts, or a manual diff.
+    Heidi output never overrides clinician validation.
+
+capture_quality:
+  fields:
+    - overall_capture_reliability: [strong, adequate, limited, unreliable, uncertain]
+    - major_information_gap_remaining: [yes, no, uncertain]
+    - gap_domains_multi_select
+    - reason_for_limited_capture_multi_select:
+        - rushed_postvisit_capture
+        - incomplete_formal_record
+        - unavailable_external_report
+        - uncertain_patient_history
+        - heidi_not_reviewed
+        - conflicting_sources
+        - other
+    - completion_time_minutes_optional
+    - ready_for_audit_calculation: [yes, no, uncertain]
+    - short_capture_comment_optional
+
+baseline_behavior:
+  - no_live_KPI_score
+  - no_red_green_documentation_verdict
+  - no_treating_GeSY_as_complete_clinical_truth
+  - no_treating_Heidi_use_as_quality_metric
+  - preserve_unknown_partial_absent_and_not_applicable_as_distinct_states
+  - localStorage_only_during_prototype
+
+kpi_mapping:
+  OST-KPI-00:
+    source: capture_quality_plus_documentation_trace_matrix
+  documentation_axis:
+    source: formal_record_trace_matrix
+  capture_quality_axis:
+    source: capture_sources_plus_heidi_final_review_plus_capture_quality
+
+next_after_step6:
+  - define_exact_field_to_KPI_status_calculation_contract
+  - run_5_case_pilot
+  - one_refinement
+  - freeze_form_and_applicability
+  - start_30_case_scored_baseline
