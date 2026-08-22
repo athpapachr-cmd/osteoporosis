@@ -104,6 +104,9 @@
   };
 
   const ALL_DOMAINS = Object.keys(DOMAIN_LABELS);
+  let reviewState = null;
+  let reviewUuid = "";
+  let reviewArchetype = "";
 
   function getCases() {
     try {
@@ -135,9 +138,22 @@
     return { version: "applicability-v1", archetype, domains, updated_at: new Date().toISOString() };
   }
 
-  function persistReview(review) {
+  function getReview(c, archetype) {
+    const id = c?.internal_uuid || activeUuid();
+    if (reviewState && reviewUuid === id && reviewArchetype === archetype) return reviewState;
+    reviewState = normalizeReview(c?.applicability_review, archetype);
+    reviewUuid = id;
+    reviewArchetype = archetype;
+    return reviewState;
+  }
+
+  function persistReview(review = reviewState) {
     const id = activeUuid();
-    if (!id) return;
+    if (!id || !review) return;
+    review.updated_at = new Date().toISOString();
+    reviewState = review;
+    reviewUuid = id;
+    reviewArchetype = review.archetype || "";
     const cases = getCases();
     const i = cases.findIndex(c => c.internal_uuid === id);
     if (i < 0) return;
@@ -219,7 +235,7 @@
     const c = activeCase();
     if (!c) return;
     const archetype = $("#encounterArchetype")?.value || c.encounter_archetype || "";
-    const review = normalizeReview(c.applicability_review, archetype);
+    const review = getReview(c, archetype);
 
     ALL_DOMAINS.forEach(domain => {
       cardsForDomain(domain).forEach(card => setCardState(card, domain, review.domains[domain], archetype));
@@ -232,12 +248,17 @@
     const c = activeCase();
     if (!c || !ALL_DOMAINS.includes(domain)) return;
     const archetype = $("#encounterArchetype")?.value || c.encounter_archetype || "";
-    const review = normalizeReview(c.applicability_review, archetype);
+    const review = getReview(c, archetype);
     review.domains[domain].override_status = enabled ? A : "";
     review.domains[domain].resolved_status = enabled ? A : review.domains[domain].default_status;
-    review.updated_at = new Date().toISOString();
     persistReview(review);
     apply();
+  }
+
+  function resetReviewMemory() {
+    reviewState = null;
+    reviewUuid = "";
+    reviewArchetype = "";
   }
 
   document.addEventListener("click", event => {
@@ -245,24 +266,32 @@
     const reset = event.target.closest(".adaptive-reset-domain");
     if (use) overrideDomain(use.dataset.domain, true);
     if (reset) overrideDomain(reset.dataset.domain, false);
-    if (event.target.closest("[data-load-case]") || event.target.closest('[data-nav-action="new-case"]')) setTimeout(apply, 30);
+    if (event.target.closest("[data-load-case]") || event.target.closest('[data-nav-action="new-case"]')) {
+      resetReviewMemory();
+      setTimeout(apply, 30);
+    }
   });
 
   $("#encounterArchetype")?.addEventListener("change", () => {
-    const id = activeUuid();
-    if (id) {
-      const cases = getCases();
-      const i = cases.findIndex(c => c.internal_uuid === id);
-      if (i >= 0 && cases[i].applicability_review) {
-        cases[i] = { ...cases[i], applicability_review: { ...cases[i].applicability_review, archetype: "", domains: {} } };
-        setCases(cases);
-      }
-    }
+    resetReviewMemory();
     setTimeout(apply, 0);
   });
 
   $$(".step-tab").forEach(button => button.addEventListener("click", () => setTimeout(apply, 0)));
-  ["#saveTopBtn", "#saveDraftBtn", "#finishVisitBtn"].forEach(selector => $(selector)?.addEventListener("click", () => setTimeout(apply, 0)));
+
+  // Core save owns Steps 1–2 and can carry a stale copy of module slices loaded earlier.
+  // Keep the live applicability review in module memory and re-persist it after core save/finish.
+  ["#saveTopBtn", "#saveDraftBtn", "#finishVisitBtn"].forEach(selector => {
+    const node = $(selector);
+    if (!node) return;
+    node.addEventListener("click", () => {
+      const snapshot = reviewState ? JSON.parse(JSON.stringify(reviewState)) : null;
+      setTimeout(() => {
+        if (snapshot) persistReview(snapshot);
+        apply();
+      }, 0);
+    }, true);
+  });
 
   if (!document.querySelector('link[data-adaptive-applicability-style]')) {
     const link = document.createElement("link");
