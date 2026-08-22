@@ -1,0 +1,227 @@
+schema: osteoporosis_encounter_archetypes_v1
+status: draft_v1
+module: osteoporosis
+purpose: >-
+  Define encounter-specific audit applicability. The same checklist must not be applied
+  to every osteoporosis visit. Audit requirements depend on both the patient's relationship
+  to the service and the clinical purpose of the encounter.
+
+classification_axes:
+  patient_relationship_status:
+    values:
+      - new_to_service
+      - established_patient
+    note: >-
+      This axis is independent of whether osteoporosis is newly diagnosed. A patient may be
+      new to the service but already diagnosed and already receiving treatment.
+
+  encounter_archetype:
+    values:
+      - initial_assessment_new_or_uncertain_diagnosis
+      - initial_assessment_known_osteoporosis_or_osteopenia
+      - routine_followup_stable
+      - treatment_start
+      - treatment_continuation_or_due_monitoring
+      - treatment_change_or_transition
+      - post_fragility_fracture
+      - fracture_on_treatment
+      - adverse_effect_or_intolerance
+      - treatment_completion_or_consolidation
+      - other
+
+core_for_all_encounters:
+  principle: >-
+    Keep a small invariant safety core, then add archetype-specific requirements.
+    Do not penalize a follow-up visit for omitting education or investigations that are not
+    clinically applicable at that encounter.
+  items:
+    - encounter_purpose_clear
+    - interval_fragility_fracture_status_reviewed_when_relevant
+    - current_treatment_status_known_when_relevant
+    - new_safety_or_adverse_effect_issue_checked_when_relevant
+    - next_action_or_followup_clear_when_needed
+    - unresolved_critical_item_identified_before_close
+
+archetypes:
+  initial_assessment_new_or_uncertain_diagnosis:
+    expected_domains:
+      - focused_history_and_fragility_fracture_history
+      - formal_fracture_risk_assessment_frax_when_indicated
+      - dxa_review_and_interpretation
+      - height_and_height_loss_assessment
+      - vertebral_fracture_case_finding_or_vfa_consideration
+      - secondary_osteoporosis_review
+      - falls_frailty_and_function
+      - sarcopenia_case_finding_when_applicable
+      - exercise_and_physical_activity
+      - nutrition_calcium_vitamin_d_and_supplements
+      - condition_explanation
+      - pharmacologic_options_if_treatment_indicated
+      - shared_decision_and_followup
+    communication_expectation:
+      condition_explained: expected
+      exercise_nutrition_explained: expected
+      medication_rationale_if_applicable: expected
+
+  initial_assessment_known_osteoporosis_or_osteopenia:
+    expected_domains:
+      - prior_diagnosis_and_source_data_verified
+      - prior_fracture_history_reconstructed
+      - current_or_prior_treatment_timeline_reconstructed
+      - current_fracture_risk_reassessed_when_needed
+      - dxa_quality_and_longitudinal_interpretation
+      - secondary_cause_workup_adequacy_checked
+      - falls_frailty_function_and_sarcopenia_case_finding_when_applicable
+      - exercise_nutrition_and_supplement_plan_reviewed
+      - patient_understanding_checked
+      - current_plan_and_followup_defined
+
+  routine_followup_stable:
+    expected_domains:
+      - interval_fragility_fracture_check
+      - interval_falls_or_function_change_check
+      - adherence_and_tolerance_if_on_treatment
+      - treatment_due_dates_if_applicable
+      - relevant_labs_or_dxa_due_status
+      - exercise_nutrition_reinforcement_when_needed
+      - next_followup_plan
+    not_routinely_required:
+      - full_reexplanation_of_osteoporosis_if_understanding_is_stable
+      - complete_secondary_cause_workup_repetition_without_new_indication
+      - full_new_patient_counselling
+
+  treatment_start:
+    expected_domains:
+      - indication_and_rationale
+      - relevant_alternatives_and_contraindications
+      - patient_preference_or_acceptance
+      - medication_specific_safety_requirements
+      - administration_or_adherence_instructions
+      - important_expected_adverse_effects_and_red_flags
+      - duration_or_treatment_horizon_when_relevant
+      - monitoring_plan
+      - next_due_date_or_followup
+
+  treatment_continuation_or_due_monitoring:
+    expected_domains:
+      - adherence_or_administration_timeliness
+      - adverse_effects
+      - interval_fractures
+      - monitoring_due_status
+      - duration_of_therapy_and_reassessment_milestone
+      - continuation_rationale_when_material
+      - next_due_date_or_followup
+
+  treatment_change_or_transition:
+    expected_domains:
+      - reason_for_change
+      - prior_treatment_exposure_and_response
+      - adherence_and_adverse_effect_review
+      - fracture_on_treatment_status
+      - alternatives_and_contraindications
+      - sequencing_or_transition_safety
+      - patient_preference
+      - explicit_transition_dates_and_next_due_action
+      - monitoring_and_consolidation_plan
+
+  post_fragility_fracture:
+    expected_domains:
+      - fracture_site_date_and_low_trauma_characterization
+      - recency_and_imminent_risk_context
+      - vertebral_fracture_burden_when_relevant
+      - formal_risk_assessment_or_direct_high_risk_pathway_as_framework_requires
+      - treatment_status_at_fracture
+      - falls_and_function_review
+      - secondary_causes_when_indicated
+      - prompt_treatment_or_specialist_pathway
+      - rehabilitation_exercise_and_falls_plan
+
+  fracture_on_treatment:
+    expected_domains:
+      - fracture_event_characterization
+      - exact_treatment_and_duration_at_fracture
+      - adherence_or_actual_administration_timing
+      - secondary_cause_reassessment
+      - dxa_and_bone_turnover_context_when_relevant
+      - treatment_failure_or_very_high_risk_review
+      - sequencing_or_escalation_options
+      - rationale_and_followup
+
+  adverse_effect_or_intolerance:
+    expected_domains:
+      - adverse_effect_characterization_and_severity
+      - temporal_relationship_to_therapy
+      - immediate_safety_issue
+      - continuation_stop_or_switch_decision
+      - alternatives_and_rationale
+      - transition_safety_if_stopping_time_critical_therapy
+      - patient_preference
+      - followup
+
+  treatment_completion_or_consolidation:
+    expected_domains:
+      - therapy_course_completion_confirmed
+      - treatment_response_and_incident_fractures
+      - planned_consolidation_or_exit_strategy
+      - timing_of_next_agent_when_required
+      - monitoring_plan
+      - followup
+
+height_and_vertebral_case_finding:
+  capture_fields:
+    - measured_height_cm_current
+    - height_source: [measured_in_clinic, dxa_report, patient_report, other, unavailable]
+    - recalled_young_adult_height_cm
+    - prior_documented_height_cm
+    - derived_height_loss_cm
+    - kyphosis_present_or_suspected: [yes, no, uncertain]
+  interpretation: >-
+    Height loss should be derived when source data permit. NOGG 2024 uses >=4 cm height loss
+    as one indication for vertebral imaging/VFA consideration. The system should preserve the
+    source of each height value rather than treating DXA-reported height as equivalent to a
+    contemporaneous clinic measurement.
+
+sarcopenia_case_finding:
+  principle: >-
+    Add sarcopenia as a functional-risk domain, but do not make a full diagnostic workup
+    mandatory for every osteoporosis visit. Use case-finding when age, frailty, falls,
+    immobility, low BMI/weight loss, functional decline or clinical suspicion make it relevant.
+  find_cases:
+    preferred_tools:
+      - SARC_F
+      - clinical_suspicion
+  assess_probable_sarcopenia:
+    options:
+      - grip_strength
+      - five_times_chair_stand
+  confirm_if_clinically_needed:
+    options:
+      - dxa_appendicular_lean_mass
+      - bioimpedance
+  severity_if_needed:
+    options:
+      - gait_speed
+      - SPPB
+      - timed_up_and_go
+  suggested_capture_fields:
+    - sarcopenia_case_finding_applicable: [yes, no, uncertain]
+    - sarcopenia_screen_method: [SARC_F, clinical_suspicion, not_done, not_applicable]
+    - sarc_f_score
+    - five_chair_stand_seconds
+    - grip_strength_kg
+    - gait_speed_m_s
+    - sppb_score
+    - tug_seconds
+    - probable_sarcopenia_signal: [yes, no, uncertain, not_assessed]
+    - action_if_positive
+  evidence_note: >-
+    EWGSOP2 recommends Find-Assess-Confirm-Severity: SARC-F or clinical suspicion for case
+    finding, grip strength or chair stand for low strength, DXA/BIA for low muscle quantity,
+    and physical-performance measures for severity.
+
+baseline_scoring_rule:
+  - determine_patient_relationship_status_first
+  - determine_encounter_archetype_second
+  - instantiate_only_applicable_audit_items
+  - mark_other_items_not_applicable_without_penalty
+  - do_not_show_performance_feedback_until_baseline_lock_except_safety_critical_alerts
