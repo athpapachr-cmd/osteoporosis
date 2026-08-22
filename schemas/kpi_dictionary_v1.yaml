@@ -1,0 +1,224 @@
+schema: osteoporosis_kpi_dictionary_v1
+status: draft_v1
+module: osteoporosis
+scoring_basis: documented_clinical_process_unless_explicitly_patient_reported_or_safety_event
+source_registry_pending: true
+sources_used_for_v1_design:
+  - id: NOGG_2024_S3
+    title: NOGG 2024 Section 3 - Fracture risk assessment and case finding
+  - id: NOGG_2024_S4
+    title: NOGG 2024 Section 4 - Intervention thresholds and strategy
+  - id: NOGG_2024_S12
+    title: NOGG 2024 Section 12 - Review criteria for audit and quality improvement
+  - id: ISCD_2023
+    title: ISCD 2023 Adult Official Positions
+  - id: NICE_QS149
+    title: NICE Quality Standard QS149 - Osteoporosis
+  - id: RCP_FLSDB_2026
+    title: RCP FLS-DB Annual Report 2026
+  - id: IOF_CTF_BPF
+    title: IOF Capture the Fracture Best Practice Framework
+notes:
+  - RCP_FLSDB_2026 and IOF_CTF_BPF are mainly FLS/secondary-fracture benchmarks; use contextually unless populations and denominators are comparable.
+  - UK guideline thresholds must not be silently treated as Cyprus-specific local policy; record the declared framework and FRAX country/surrogate model.
+  - Exact percentage targets below are provisional internal quality targets, not external guideline mandates.
+kpis:
+  - id: OST-KPI-00
+    title: Data completeness and auditability
+    domain: foundation
+    definition: Proportion of required applicable audit fields with an explicit documented value, explicit negative, or valid not-applicable status.
+    numerator: required_applicable_fields_documented_or_explicitly_negative_or_valid_na
+    denominator: all_required_applicable_audit_fields
+    exclusions: none
+    target_tier: A
+    source_ids: [RCP_FLSDB_2026]
+    interpretation: Foundational metric; low completeness lowers confidence in every downstream KPI.
+    signal_if_below_target: data_quality_or_workflow_gap
+
+  - id: OST-KPI-01
+    title: Fragility-fracture history and characterization
+    domain: diagnosis_case_finding
+    definition: Explicit fracture-history status; if positive, clinically relevant site, approximate date, and low-trauma/fragility classification are documented, with vertebral level/type when known.
+    numerator: eligible_cases_meeting_full_fracture_history_definition
+    denominator: all_core_clinical_cases
+    exclusions: none
+    target_tier: A
+    source_ids: [NOGG_2024_S3, NOGG_2024_S12]
+    signal_if_below_target: knowledge_or_execution_or_documentation_gap
+
+  - id: OST-KPI-02
+    title: Formal fracture-risk assessment when indicated
+    domain: fracture_risk_assessment
+    definition: A formal risk assessment is documented when indicated under the declared clinical framework, including tool/framework, result, BMD-use status and relevant model/country context.
+    numerator: applicable_cases_with_complete_formal_risk_assessment
+    denominator: cases_where_declared_framework_indicates_formal_risk_assessment
+    exclusions: cases_where_formal_risk_assessment_is_not_applicable_under_declared_framework
+    target_tier: A
+    source_ids: [NOGG_2024_S3, NOGG_2024_S4, NICE_QS149, NOGG_2024_S12]
+    signal_if_below_target: knowledge_or_execution_gap
+
+  - id: OST-KPI-03
+    title: DXA data and interpretation adequacy
+    domain: dxa_vfa_imaging
+    definition: When DXA informs diagnosis or management, the record contains the study date, valid skeletal site/ROI, BMD in g/cm2 where available from the report, appropriate T-score/Z-score, and relevant technical limitations or artifacts.
+    numerator: applicable_dxa_cases_meeting_minimum_data_and_interpretation_definition
+    denominator: cases_where_dxa_is_used_for_diagnosis_risk_or_management
+    exclusions: cases_where_dxa_is_not_used_or_not_clinically_relevant
+    target_tier: B
+    source_ids: [ISCD_2023, NOGG_2024_S3]
+    signal_if_below_target: dxa_competency_or_data_capture_gap
+
+  - id: OST-KPI-04
+    title: Valid longitudinal DXA comparison
+    domain: dxa_vfa_imaging
+    definition: When change over time is interpreted, comparability is established and change is based on BMD/percent change and facility LSC where available; if valid comparison is impossible, this is explicitly documented rather than inferring change from T-score alone.
+    numerator: longitudinal_dxa_cases_with_valid_comparison_or_explicit_noncomparability
+    denominator: cases_where_longitudinal_dxa_change_is_interpreted
+    exclusions: single_dxa_cases_without_longitudinal_interpretation
+    target_tier: A
+    source_ids: [ISCD_2023]
+    signal_if_below_target: dxa_reasoning_or_system_gap
+
+  - id: OST-KPI-05
+    title: Vertebral-fracture/VFA consideration when indicated
+    domain: dxa_vfa_imaging
+    definition: In patients meeting the declared VFA/lateral-spine imaging criteria, imaging is performed, arranged, or a reasoned decision not to proceed is documented.
+    numerator: applicable_cases_with_vfa_or_lateral_imaging_action_or_reasoned_override
+    denominator: cases_meeting_declared_vfa_or_vertebral_imaging_indications
+    exclusions: cases_not_meeting_indications
+    target_tier: A
+    source_ids: [NOGG_2024_S3, ISCD_2023]
+    signal_if_below_target: case_finding_or_execution_gap
+
+  - id: OST-KPI-06
+    title: Secondary-cause evaluation
+    domain: secondary_osteoporosis_laboratory
+    definition: Appropriate evaluation for secondary osteoporosis or mimics is documented, either newly performed or explicitly reviewed as previously completed and still adequate for the current clinical scenario.
+    numerator: applicable_cases_with_appropriate_secondary_cause_evaluation_documented
+    denominator: cases_with_osteoporosis_fragility_fracture_or_other_indication_for_secondary_cause_review
+    exclusions: none_when_indicated
+    target_tier: A
+    source_ids: [NOGG_2024_S3]
+    signal_if_below_target: knowledge_or_execution_gap
+
+  - id: OST-KPI-07
+    title: Falls and frailty assessment when relevant
+    domain: falls_frailty_exercise_nutrition
+    definition: Falls history and clinically relevant frailty/mobility risk are documented in older or otherwise fall-prone patients, with an action or referral when a material risk is identified.
+    numerator: applicable_cases_with_falls_frailty_assessment_and_action_if_positive
+    denominator: patients_age_65_or_more_or_any_falls_frailty_immobility_signal
+    exclusions: younger_patients_without_any_falls_or_frailty_signal
+    target_tier: B
+    source_ids: [NICE_QS149, NOGG_2024_S3]
+    local_applicability_rule: true
+    signal_if_below_target: execution_or_workflow_gap
+
+  - id: OST-KPI-08
+    title: Treatment history, adherence and adverse-effect review
+    domain: monitoring_treatment_response_adherence
+    definition: Current/prior osteoporosis therapy is traceable, including drug, exposure period, adherence, significant adverse effects and reason for stopping/switching; scheduled parenteral therapy includes last actual administration and next due date when relevant.
+    numerator: treated_cases_with_complete_treatment_history_and_current_adherence_safety_review
+    denominator: cases_with_current_or_prior_osteoporosis_pharmacotherapy
+    exclusions: treatment_naive_cases
+    target_tier: A
+    source_ids: [NOGG_2024_S12]
+    submetrics:
+      - adherence_confirmed_within_last_12_months
+      - exact_last_administration_documented_when_time_critical
+    signal_if_below_target: execution_or_documentation_gap
+
+  - id: OST-KPI-09
+    title: Treatment decision, rationale and patient preference documented
+    domain: pharmacologic_treatment_selection
+    definition: When a start/continue/stop/switch/no-treatment decision is made, the decision is traceable to risk/context, relevant contraindications/options, rationale and patient preference/acceptance; guideline or clinician override is documented when material.
+    numerator: decision_encounters_meeting_decision_rationale_shared_decision_definition
+    denominator: encounters_with_material_osteoporosis_treatment_decision
+    exclusions: encounters_without_a_treatment_decision
+    target_tier: B
+    source_ids: [NOGG_2024_S4, NOGG_2024_S12]
+    signal_if_below_target: reasoning_or_communication_or_documentation_gap
+
+  - id: OST-KPI-10
+    title: Explicit follow-up and monitoring plan
+    domain: monitoring_treatment_response_adherence
+    definition: Ongoing-care encounters end with explicit next clinical actions and timing/due date or interval, including required labs, DXA, treatment administration, follow-up visit or other monitoring as applicable.
+    numerator: applicable_encounters_with_complete_followup_and_monitoring_plan
+    denominator: encounters_requiring_ongoing_followup_or_monitoring
+    exclusions: genuinely_discharged_or_one_off_cases_with_no_followup_need
+    target_tier: A
+    source_ids: [NOGG_2024_S12, RCP_FLSDB_2026]
+    signal_if_below_target: continuity_or_system_gap
+
+  - id: OST-KPI-11
+    title: Denosumab dose timeliness
+    domain: sequential_therapy_treatment_transitions
+    definition: Denosumab follow-up injection is administered within 4 weeks of its due date, using the previous actual administration to establish the due timeline.
+    numerator: denosumab_doses_administered_within_4_weeks_of_due_date
+    denominator: all_denosumab_doses_due_in_safety_audit_window
+    exclusions: none_unless_treatment_was_formally_stopped_with_documented_transition_strategy_before_due_date
+    target_tier: S
+    source_ids: [NOGG_2024_S12]
+    signal_if_not_met: immediate_safety_signal
+
+  - id: OST-KPI-12
+    title: Sequential-therapy transition safety
+    domain: sequential_therapy_treatment_transitions
+    definition: A clinically important therapy transition has an explicit next-treatment strategy, timing, rationale and active tracking, especially after denosumab discontinuation/delay or completion of anabolic/romosozumab therapy.
+    numerator: applicable_transitions_with_documented_and_tracked_safe_transition_plan
+    denominator: all_defined_high_risk_treatment_transitions_in_safety_window
+    exclusions: none_when_transition_occurs
+    target_tier: S
+    source_ids: [NOGG_2024_S4]
+    manual_case_review_required: true
+    signal_if_not_met: immediate_safety_signal
+
+  - id: OST-KPI-13
+    title: Incident fragility fracture during therapy appropriately reviewed
+    domain: monitoring_treatment_response_adherence
+    definition: An incident fragility fracture during active therapy triggers documented confirmation/context, adherence and exposure review, secondary-cause/risk reassessment and an explicit management decision.
+    numerator: fracture_on_treatment_cases_with_complete_reassessment
+    denominator: all_incident_fragility_fractures_during_active_therapy_in_audit_window
+    exclusions: none
+    target_tier: S
+    source_ids: [NOGG_2024_S4]
+    signal_if_not_met: immediate_clinical_review_signal
+
+  - id: OST-KPI-14
+    title: Patient understanding of condition, plan and rationale
+    domain: communication_shared_decision_continuity
+    definition: Patient-reported understanding is measured prospectively for condition, plan and treatment rationale; the composite does not hide individual item results.
+    numerator: respondents_scoring_at_least_4_of_5_on_all_three_understanding_items
+    denominator: all_eligible_patient_voice_respondents
+    exclusions: patient_unable_or_unwilling_to_complete_feedback
+    target_tier: P
+    source_ids: [NOGG_2024_S4]
+    local_measure: true
+    signal_if_below_target: communication_gap
+
+  - id: OST-KPI-15
+    title: Patient concerns and preferences addressed
+    domain: communication_shared_decision_continuity
+    definition: Patient reports that relevant questions, concerns and preferences were addressed during the encounter.
+    numerator: respondents_scoring_at_least_4_of_5_on_preferences_addressed_item
+    denominator: all_eligible_patient_voice_respondents
+    exclusions: patient_unable_or_unwilling_to_complete_feedback
+    target_tier: P
+    source_ids: [NOGG_2024_S4]
+    local_measure: true
+    signal_if_below_target: communication_or_shared_decision_gap
+strength_rule:
+  candidate_when:
+    - kpi_at_or_above_target_for_three_consecutive_measurement_periods
+    - no_safety_critical_failure_in_same_domain
+    - adequate_denominator_or_cumulative_evidence
+  then:
+    - validate_workflow_that_produces_strength
+    - compare_external_benchmark_if_methodologically_compatible
+    - reduce_basic_learning_repetition
+    - increase_advanced_case_difficulty
+    - continue_periodic_surveillance
+gap_to_intervention_rule:
+  knowledge_gap: targeted_learning_then_test_then_retention_check
+  reasoning_gap: case_review_challenge_red_team_framework_comparison
+  execution_gap: workflow_cockpit_checklist_task_change
+  communication_system_gap: teach_back_handoff_template_patient_feedback_remeasure
