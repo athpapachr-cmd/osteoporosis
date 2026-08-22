@@ -1,6 +1,6 @@
 # HANDOFF_CURRENT.md — current operational handoff
 
-> **Updated:** 2026-08-22 16:50 Asia/Nicosia
+> **Updated:** 2026-08-22 16:53 Asia/Nicosia
 > **Canonical repository:** `athpapachr-cmd/osteoporosis`
 > **Current major phase:** prospective Osteoporosis Baseline/Audit implementation
 > **Current module:** Module 01 — Osteoporosis
@@ -149,7 +149,19 @@ Rules:
 
 ---
 
-## 7. Step 3 — implemented on active branch
+## 7. Step 3 — implemented, merged and live
+
+Merged commit:
+
+```text
+b8d2f44c0aeb118f6a4b4558ed7ffe882216eec2
+```
+
+Render deploy:
+
+```text
+dep-da4qgubl550s73d6ogj0 — live
+```
 
 Schema:
 
