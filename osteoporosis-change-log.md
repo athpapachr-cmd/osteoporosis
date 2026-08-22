@@ -364,3 +364,18 @@ step3 / step4 / step5 / step6 / longitudinal_review / pilot_completion / audit_e
 The P1 path was also hardened: `data-hygiene.js` now loads before `longitudinal.js`, and `currentDxaPoint()` independently refuses to expose a current DXA point unless `DXA used == yes`. Thus chart correctness no longer depends only on sanitizer timing.
 
 The same review re-verified that P4 and P5 were already active through their dedicated runtime modules. They were not rewritten again during this hardening pass because there was no remaining pilot data-integrity defect demonstrated in those paths; unnecessary ownership refactoring was deferred until after smoke testing or pilot evidence if still warranted.
+
+---
+
+## 2026-08-22 — Final applicability ownership fix before smoke test
+
+A later independent review found that Patch 7 introduced a new top-level `applicability_review` slice but the core save exclusion list had not been extended to include it. The adaptive module therefore relied on a capture-phase Save/Finish snapshot plus `setTimeout(persistReview)` repair shim to restore fresh applicability state after a core save.
+
+The ownership rule was corrected at the source:
+
+```text
+applicability_review = module-owned
+app-core must not write it
+```
+
+`applicability_review` was added to the `app-core` module exclusion list and the post-save repair shim was removed from `adaptive-applicability.js`. The smoke test now explicitly requires an applicability override to survive a Step 1/2 Save and reload without any repair listener.
