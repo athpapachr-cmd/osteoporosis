@@ -117,6 +117,11 @@
   function setCases(cases) { localStorage.setItem(STORAGE_KEY, JSON.stringify(cases)); }
   function activeUuid() { return localStorage.getItem(ACTIVE_KEY) || ""; }
   function activeCase() { const id = activeUuid(); return getCases().find(c => c.internal_uuid === id) || null; }
+  function activeCaseOrDraft() {
+    const id = activeUuid();
+    if (!id) return null;
+    return activeCase() || { internal_uuid: id, encounter_archetype: $("#encounterArchetype")?.value || "", applicability_review: null };
+  }
 
   function defaultStatus(archetype, domain) {
     if (!archetype || archetype === "other") return U;
@@ -232,7 +237,7 @@
   }
 
   function apply() {
-    const c = activeCase();
+    const c = activeCaseOrDraft();
     if (!c) return;
     const archetype = $("#encounterArchetype")?.value || c.encounter_archetype || "";
     const review = getReview(c, archetype);
@@ -245,7 +250,7 @@
   }
 
   function overrideDomain(domain, enabled) {
-    const c = activeCase();
+    const c = activeCaseOrDraft();
     if (!c || !ALL_DOMAINS.includes(domain)) return;
     const archetype = $("#encounterArchetype")?.value || c.encounter_archetype || "";
     const review = getReview(c, archetype);
@@ -279,8 +284,7 @@
 
   $$(".step-tab").forEach(button => button.addEventListener("click", () => setTimeout(apply, 0)));
 
-  // Core save owns Steps 1–2 and can carry a stale copy of module slices loaded earlier.
-  // Keep the live applicability review in module memory and re-persist it after core save/finish.
+  // Keep the live applicability review in module memory and re-persist it after core Save/Finish.
   ["#saveTopBtn", "#saveDraftBtn", "#finishVisitBtn"].forEach(selector => {
     const node = $(selector);
     if (!node) return;
