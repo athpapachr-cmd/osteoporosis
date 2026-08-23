@@ -111,6 +111,34 @@ def utcnow() -> datetime:
     return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
+def resolve_encounter_status(
+    current_status: str,
+    requested_status: Optional[str],
+    *,
+    content_changed: bool,
+) -> str:
+    """Preserve finalization semantics for server-persisted encounters.
+
+    Draft encounters may move freely to draft/completed/amended. Once an
+    encounter has been completed, later content changes are amendments and the
+    record must never silently regress to draft. An already-amended encounter
+    remains amended on subsequent saves so that the history is not made to look
+    like an untouched original completion.
+    """
+    requested = requested_status or current_status
+
+    if current_status == "draft":
+        return requested
+
+    if current_status == "amended":
+        return "amended"
+
+    # current_status == "completed"
+    if content_changed or requested == "amended":
+        return "amended"
+    return "completed"
+
+
 def build_clinical_router(engine: Engine) -> APIRouter:
     ClinicalBase.metadata.create_all(bind=engine)
 
@@ -273,12 +301,22 @@ def build_clinical_router(engine: Engine) -> APIRouter:
             row = session.get(EncounterORM, encounter_id)
             if row is None:
                 raise HTTPException(status_code=404, detail="Encounter not found")
-            if req.encounter_date is not None:
+
+            current_status = row.status or "draft"
+            content_changed = False
+
+            if req.encounter_date is not None and req.encounter_date != row.encounter_date:
+                content_changed = True
                 row.encounter_date = req.encounter_date
-            if req.status is not None:
-                row.status = req.status
-            if req.payload is not None:
+            if req.payload is not None and req.payload != (row.payload_json or {}):
+                content_changed = True
                 row.payload_json = req.payload
+
+            row.status = resolve_encounter_status(
+                current_status,
+                req.status,
+                content_changed=content_changed,
+            )
             row.updated_at = utcnow()
             patient = session.get(PatientORM, row.patient_id)
             if patient is not None:
