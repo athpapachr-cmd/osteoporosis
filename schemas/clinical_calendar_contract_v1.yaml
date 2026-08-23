@@ -1,0 +1,76 @@
+version: clinical-calendar-v1
+status: implementation_slice
+purpose: >-
+  Normalize external appointment sources into the Clinical Excellence system
+  without mixing appointment scheduling with clinical CareTasks/reminders.
+
+source_of_truth:
+  booking_system: Setmore
+  availability_system: Cal.com
+  integration_owner: Digital Secretary backend
+  clinical_calendar_owner: Osteoporosis Clinical Excellence system
+
+appointment_categories:
+  - osteoporosis_first
+  - osteoporosis_review
+  - osteoporosis_unspecified
+  - prolia
+  - aclasta
+  - other
+
+duration_expectations_minutes:
+  osteoporosis_first: 60
+  osteoporosis_review: 60
+  aclasta: 60
+  prolia: 10
+
+appointment_object:
+  required:
+    - source
+    - source_appointment_id
+    - start_at
+    - end_at
+  optional:
+    - clinic
+    - category
+    - patient_display_name
+    - phone_e164
+    - linked_patient_id
+    - label
+    - comment
+    - status
+
+classification_rules:
+  - explicit medication/service text outranks duration
+  - explicit first/review wording outranks duration
+  - duration alone must not distinguish first from review because both are 60 minutes
+  - ambiguous osteoporosis appointments remain osteoporosis_unspecified
+  - unknown appointments remain other and are excluded from the default clinical view
+
+separation_of_concerns:
+  appointment:
+    meaning: a scheduled visit or treatment attendance
+    examples:
+      - osteoporosis consultation
+      - Prolia administration appointment
+      - Aclasta infusion appointment
+  care_task:
+    meaning: a clinical action that may exist without an appointment
+    examples:
+      - pre-treatment laboratory tests due
+      - post-treatment monitoring due
+      - results review
+      - patient notification
+      - treatment due/overdue follow-up
+
+security:
+  clinician_read_access: CLINICAL_DATA_KEY browser-session authentication
+  external_ingest: CLINICAL_INGEST_KEY server-to-server header
+  public_repo_rule: never commit appointment/patient data or secret values
+
+next_integration_slice:
+  - expose normalized Setmore appointment feed from the Digital Secretary backend
+  - send/pull that feed server-to-server using CLINICAL_INGEST_KEY
+  - reconcile source appointment IDs by upsert, never duplicate on refresh
+  - add optional patient linking by stable identifier/phone matching with clinician review
+  - add CareTask engine separately after appointment feed is live
