@@ -47,6 +47,14 @@ CATEGORY_VALUES = {
     "other",
 }
 
+RELEVANT_CATEGORIES = {
+    "osteoporosis_first",
+    "osteoporosis_review",
+    "osteoporosis_unspecified",
+    "prolia",
+    "aclasta",
+}
+
 
 class AppointmentImport(BaseModel):
     source: str = Field(default="setmore", max_length=40)
@@ -77,14 +85,19 @@ class AppointmentRecord(BaseModel):
     linked_patient_id: Optional[str]
     label: str
     comment: str
+    reason: str
     status: str
     updated_at: datetime
 
 
 class AppointmentImportResult(BaseModel):
+    received: int
     imported: int
     inserted: int
     updated: int
+    skipped_unrelated: int
+    removed_unrelated: int
+    skipped_invalid: int
 
 
 def utcnow() -> datetime:
@@ -104,11 +117,45 @@ def _normalize(value: str) -> str:
     return re.sub(r"\s+", " ", text).strip()
 
 
+def _clinical_reason(comment: str) -> str:
+    """Return the human visit reason from a Setmore-style comment.
+
+    The Digital Secretary stores integration metadata and the visit notes in the
+    same comment, e.g. ``clinic=... | source=... | cal_uid=... | <reason>``.
+    Hide transport metadata from the clinician-facing calendar.
+    """
+    parts = [part.strip() for part in (comment or "").split("|") if part.strip()]
+    visible = []
+    for part in parts:
+        if re.match(r"^(?:clinic|source|cal_uid)\s*=", part, flags=re.IGNORECASE):
+            continue
+        visible.append(part)
+    return " | ".join(visible)
+
+
 def classify_appointment(label: str, comment: str, duration_minutes: int) -> str:
+    """Classify only osteoporosis-related appointments.
+
+    Current Digital Secretary duration behavior is deliberately mirrored here:
+    osteoporosis first visit 60', osteoporosis follow-up 40', Aclasta 60',
+    Prolia/injection 10'. Duration may refine an already-established
+    osteoporosis context, but duration alone never establishes the diagnosis.
+    """
     token = _normalize(f"{label} {comment}")
-    if any(x in token for x in ("prolia", "denosumab", "δενοσουμαμπ")):
+
+    if any(x in token for x in ("prolia", "προλια", "denosumab", "δενοσουμαμπ")):
         return "prolia"
-    if any(x in token for x in ("aclasta", "zoledronic", "zoledron", "ζολεδρον", "ζολεδρονικο")):
+    if any(
+        x in token
+        for x in (
+            "aclasta",
+            "ακλαστα",
+            "zoledronic",
+            "zoledron",
+            "ζολεδρον",
+            "ζολεδρονικο",
+        )
+    ):
         return "aclasta"
 
     osteo = any(
@@ -121,17 +168,45 @@ def classify_appointment(label: str, comment: str, duration_minutes: int) -> str
             "dxa",
             "dexa",
             "οστικη πυκνοτητα",
+            "bone density",
         )
     )
     if not osteo:
         return "other"
 
-    if any(x in token for x in ("πρωτη επισκεψη", "πρωτη φορα", "first visit", "new patient", "initial")):
+    if any(
+        x in token
+        for x in (
+            "πρωτη επισκεψη",
+            "πρωτη φορα",
+            "first visit",
+            "new patient",
+            "initial",
+        )
+    ):
         return "osteoporosis_first"
-    if any(x in token for x in ("review", "follow up", "followup", "reassessment", "επαναξιολογηση", "επανελεγχ", "παρακολουθηση")):
+    if any(
+        x in token
+        for x in (
+            "review",
+            "follow up",
+            "followup",
+            "follow-up",
+            "reassessment",
+            "επαναξιολογηση",
+            "επανελεγχ",
+            "παρακολουθηση",
+        )
+    ):
         return "osteoporosis_review"
 
-    # Duration alone must not invent first-vs-review semantics. Both may be 60'.
+    # Current Secretary allocation can refine an already-confirmed osteoporosis
+    # reason. It must never turn an unrelated 40' or 60' visit into osteoporosis.
+    if duration_minutes == 40:
+        return "osteoporosis_review"
+    if duration_minutes == 60:
+        return "osteoporosis_first"
+
     return "osteoporosis_unspecified"
 
 
@@ -150,6 +225,7 @@ def _record(row: ClinicalAppointmentORM) -> AppointmentRecord:
         linked_patient_id=row.linked_patient_id,
         label=row.label or "",
         comment=row.comment or "",
+        reason=_clinical_reason(row.comment or ""),
         status=row.status or "scheduled",
         updated_at=row.updated_at,
     )
@@ -184,7 +260,6 @@ def build_clinical_calendar_router(engine: Engine) -> APIRouter:
     def list_appointments(
         start: datetime = Query(...),
         end: datetime = Query(...),
-        include_other: bool = Query(default=False),
     ) -> List[AppointmentRecord]:
         start_utc = _naive_utc(start)
         end_utc = _naive_utc(end)
@@ -198,10 +273,9 @@ def build_clinical_calendar_router(engine: Engine) -> APIRouter:
                 select(ClinicalAppointmentORM)
                 .where(ClinicalAppointmentORM.start_at >= start_utc)
                 .where(ClinicalAppointmentORM.start_at < end_utc)
+                .where(ClinicalAppointmentORM.category.in_(RELEVANT_CATEGORIES))
                 .order_by(ClinicalAppointmentORM.start_at.asc())
             )
-            if not include_other:
-                stmt = stmt.where(ClinicalAppointmentORM.category != "other")
             rows = session.execute(stmt).scalars().all()
             return [_record(row) for row in rows]
 
@@ -209,8 +283,12 @@ def build_clinical_calendar_router(engine: Engine) -> APIRouter:
     def import_appointments(rows: List[AppointmentImport]) -> AppointmentImportResult:
         if len(rows) > 500:
             raise HTTPException(status_code=422, detail="maximum 500 appointments per import")
+
         inserted = 0
         updated = 0
+        skipped_unrelated = 0
+        removed_unrelated = 0
+        skipped_invalid = 0
         now = utcnow()
 
         with Session(engine) as session:
@@ -218,17 +296,37 @@ def build_clinical_calendar_router(engine: Engine) -> APIRouter:
                 start_at = _naive_utc(item.start_at)
                 end_at = _naive_utc(item.end_at)
                 if end_at <= start_at:
+                    skipped_invalid += 1
                     continue
+
                 duration_minutes = max(int((end_at - start_at).total_seconds() // 60), 0)
-                category = item.category if item.category in CATEGORY_VALUES else classify_appointment(
-                    item.label,
-                    item.comment,
-                    duration_minutes,
-                )
+                if item.category in RELEVANT_CATEGORIES:
+                    category = item.category
+                else:
+                    category = classify_appointment(
+                        item.label,
+                        item.comment,
+                        duration_minutes,
+                    )
+
                 record_id = f"{item.source}:{item.source_appointment_id}"
                 row = session.get(ClinicalAppointmentORM, record_id)
+
+                if category not in RELEVANT_CATEGORIES:
+                    skipped_unrelated += 1
+                    # If a previously relevant source appointment is later
+                    # reclassified as unrelated, remove the stale clinical copy.
+                    if row is not None:
+                        session.delete(row)
+                        removed_unrelated += 1
+                    continue
+
                 if row is None:
-                    row = ClinicalAppointmentORM(id=record_id, source=item.source, source_appointment_id=item.source_appointment_id)
+                    row = ClinicalAppointmentORM(
+                        id=record_id,
+                        source=item.source,
+                        source_appointment_id=item.source_appointment_id,
+                    )
                     session.add(row)
                     inserted += 1
                 else:
@@ -249,6 +347,14 @@ def build_clinical_calendar_router(engine: Engine) -> APIRouter:
 
             session.commit()
 
-        return AppointmentImportResult(imported=inserted + updated, inserted=inserted, updated=updated)
+        return AppointmentImportResult(
+            received=len(rows),
+            imported=inserted + updated,
+            inserted=inserted,
+            updated=updated,
+            skipped_unrelated=skipped_unrelated,
+            removed_unrelated=removed_unrelated,
+            skipped_invalid=skipped_invalid,
+        )
 
     return router

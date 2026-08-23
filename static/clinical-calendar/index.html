@@ -12,7 +12,7 @@
       <div>
         <p class="eyebrow">Module 01 · Osteoporosis</p>
         <h1>Clinical Calendar</h1>
-        <p class="subtitle">Εβδομαδιαία κλινική εικόνα ραντεβού. Οι υπενθυμίσεις και τα CareTasks παραμένουν ξεχωριστά από τα ραντεβού.</p>
+        <p class="subtitle">Εμφανίζονται μόνο ραντεβού που σχετίζονται με οστεοπόρωση, Prolia ή Aclasta. Οι υπενθυμίσεις και τα CareTasks παραμένουν ξεχωριστά.</p>
       </div>
       <a class="button ghost" href="../baseline-audit/">Baseline Audit</a>
     </header>
@@ -49,8 +49,8 @@
       <section id="weekGrid" class="week-grid" aria-live="polite"></section>
 
       <section class="panel integration-note">
-        <strong>Source contract</strong>
-        <p>Το ημερολόγιο διαβάζει από το protected clinical appointment store. Το επόμενο integration slice θα τροφοδοτεί αυτό το store από Setmore μέσω της υπάρχουσας Digital Secretary υποδομής. Δεν χρησιμοποιούμε τα appointment reminders ως CareTasks.</p>
+        <strong>Τι χρησιμοποιούμε για την ταξινόμηση</strong>
+        <p>Προτεραιότητα έχει ο λόγος επίσκεψης/σχόλιο του ραντεβού. Η τρέχουσα διάρκεια της γραμματείας χρησιμοποιείται μόνο όταν έχει ήδη αναγνωριστεί ότι πρόκειται για οστεοπόρωση: 60′ πρώτη επίσκεψη, 40′ επανέλεγχος, 60′ Aclasta και 10′ Prolia. Άλλα ραντεβού δεν εμφανίζονται στο Clinical Calendar.</p>
       </section>
     </section>
   </main>
