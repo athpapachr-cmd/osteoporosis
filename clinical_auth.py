@@ -3,7 +3,6 @@ from __future__ import annotations
 import hashlib
 import os
 import secrets
-from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Response
 from pydantic import BaseModel, Field
@@ -56,10 +55,9 @@ def build_auth_router() -> APIRouter:
             httponly=True,
             secure=True,
             samesite="strict",
-            max_age=60 * 60 * 12,
             path="/",
         )
-        return {"authenticated": True}
+        return {"authenticated": True, "session": "browser"}
 
     @router.post("/logout")
     def logout(response: Response):
