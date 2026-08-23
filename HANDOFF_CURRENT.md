@@ -1,182 +1,172 @@
 # HANDOFF_CURRENT.md — current operational handoff
 
-> **Updated:** 2026-08-22 23:00 Asia/Nicosia
+> **Updated:** 2026-08-23 08:55 Asia/Nicosia
 > **Canonical repository:** `athpapachr-cmd/osteoporosis`
-> **Current major phase:** prospective Osteoporosis Baseline/Audit pre-pilot hardening
+> **Current major phase:** patient-centric persistence before real 5-case pilot
 > **Current module:** Module 01 — Osteoporosis
 
 This file contains current operational truth only. Permanent rules belong in `AGENTS.md`; roadmap in `TODO.md`; completed history in `osteoporosis-change-log.md`.
 
 ---
 
-## 1. Project / baseline strategy
+## 1. Current baseline status
 
-The project is a **Personal Clinical Excellence System** with a reusable Core Engine. Osteoporosis is Module 01 and the proving module.
+The prospective Baseline Audit Steps 1–6 are implemented. P1–P8, `labs_date`, Step-6 conflict clear-on-collapse, and the explicit 14-scenario browser smoke test have passed.
 
-Prospective baseline sequence:
+The baseline form itself is therefore functionally ready. The remaining blocker before real pilot use is no longer form correctness; it is **patient-centric durable persistence** so real pilot data are not entered twice or stranded in browser-only encounter storage.
+
+Approved sequence:
 
 ```text
-pre-pilot data-integrity / applicability hardening
-→ final data-quality additions
-→ explicit smoke test
-→ 5 consecutive pilot encounters
-→ one usability/branching/calculation-contract refinement
-→ freeze form + KPI applicability
-→ 30 consecutive unique scored baseline patients
-→ baseline lock
-→ interventions / re-audit
+patient registry + protected DB persistence
+→ patient encounter timeline + lab snapshots/history
+→ persistence smoke test
+→ 5 real pilot encounters
+→ one deliberate post-pilot refinement
+→ freeze Baseline Form v1 + KPI applicability/calculation contract
+→ 30 consecutive scored baseline cases
 ```
-
-During scored baseline: no KPI coaching/red-green performance feedback; safety-critical alerts may remain active. Clinical process, formal documentation and capture quality are separate measurement axes.
-
-Encounter applicability is driven primarily by encounter archetype, with explicit clinician override when a normally collapsed domain is relevant to the individual encounter.
 
 ---
 
-## 2. Baseline UI status
+## 2. Existing backend truth verified from current code
 
-Steps 1–6 are implemented and merged:
-
-1. Encounter context.
-2. Fracture history + formal risk, including FRAX/FRAXplus and separate MOF/hip risk.
-3. DXA/VFA, secondary causes/labs, falls/frailty/function and sarcopenia.
-4. Treatment episodes, administrations, clinical decision, sequencing safety and follow-up tasks.
-5. Encounter-specific communication, understanding/teach-back and immediate reflection.
-6. Documentation trace, final Heidi review, capture sources and capture quality.
-
-Longitudinal FRAX/DXA tables and charts are also implemented.
-
-Frozen interpretation rule:
+The existing application already has a SQLAlchemy persistence layer in the legacy backend:
 
 ```text
-clinical process = Steps 1–5
-formal documentation = separate evidence axis
-Heidi = supplementary clinician-reviewed capture source
+DATABASE_URL env when configured
+fallback: sqlite:///./osteoporosis.db
+AssessmentORM(patient_id, created_at, input_json, output_json, ...)
 ```
 
-Absent/partial GeSY documentation must not be silently converted to clinical omission. Heidi use itself is not a quality-success metric.
+Existing legacy endpoints already support patient-based persistence/history:
 
-Prototype persistence remains browser `localStorage`; no identifiable clinical data belong in the public repo.
+```text
+POST /osteoporosis/evaluate
+PUT  /osteoporosis/assessment/{assessment_id}
+GET  /osteoporosis/patient/{patient_id}/latest
+GET  /osteoporosis/patient/{patient_id}/history
+```
+
+The legacy Cockpit UI already has `patient_id`, load-latest and load-history behavior.
+
+Important clarification: the **new Baseline Audit UI** was still using localStorage only and was not connected to that database layer. The current implementation slice closes that gap without discarding the legacy backend.
+
+Render workspace currently exposes no Render-managed Postgres instance through the connector. Therefore the deployed database target is determined by the service's `DATABASE_URL` environment setting; if absent, SQLAlchemy falls back to local SQLite. Do not assume a Render-managed Postgres database merely from the existence of SQLAlchemy code.
 
 ---
 
-## 3. KPI calculation contract — defined for pilot
+## 3. Patient-centric persistence implementation in progress
 
-Schema:
-
-```text
-schemas/baseline_kpi_calculation_contract_v1.yaml
-```
-
-Status model:
+Branch:
 
 ```text
-applicability = applicable | not_applicable | uncertain
-status = met | not_met | indeterminate | manual_review_required | external_pending | not_applicable
+feat/patient-registry-backend
 ```
 
-Rules:
+New protected clinical-data layer:
 
-- clinical-process KPIs use Steps 1–5;
-- Step 6 documentation remains a separate evidence/capture axis;
-- missing/uncertain required evidence never counts as met;
-- KPI-12 transition safety and KPI-13 fracture-on-treatment require manual clinical review when applicable;
-- KPI-14/15 remain external-pending until Patient Voice is activated;
-- no KPI result is shown in the baseline UI before baseline lock except future safety-critical alert logic;
-- pilot calculations are for mapping validation, not clinician feedback.
+```text
+clinical_patients
+clinical_encounters
+clinical_lab_snapshots
+```
+
+Model direction:
+
+```text
+Patient
+├── Encounters[]
+├── LabSnapshots[]
+├── existing/legacy Assessments[]
+└── later normalized DXA / Risk / Treatment objects
+```
+
+The existing large `main.py` implementation has been preserved byte-for-byte as `legacy_main.py`. A thin new `main.py` entrypoint imports the existing FastAPI `app` and `engine`, then composes the new routers. This is composition, not a rewrite of the legacy Cockpit.
+
+New API surface:
+
+```text
+POST /clinical/login
+POST /clinical/logout
+GET  /clinical/status
+POST /clinical/patients
+GET  /clinical/patients?query=...
+GET  /clinical/patient/{patient_id}
+POST /clinical/patient/{patient_id}/encounters
+GET  /clinical/patient/{patient_id}/encounters
+GET  /clinical/encounter/{encounter_id}
+PUT  /clinical/encounter/{encounter_id}
+POST /clinical/patient/{patient_id}/labs
+GET  /clinical/patient/{patient_id}/labs
+PUT  /clinical/lab/{lab_snapshot_id}
+```
+
+Protection uses `CLINICAL_DATA_KEY` from Render environment. Login exchanges the key for a Secure/HttpOnly/SameSite=Strict cookie; the static client never embeds the env secret in source code.
+
+`CLINICAL_DATA_KEY` has been configured on the Render service. Never commit or print its value in the public repository.
 
 ---
 
-## 4. Pre-pilot hardening status
+## 4. Baseline Audit patient-registry client
 
-### P1–P8
-All previously identified hardening patches are closed: hidden-value hygiene; module-safe core save; whole-form progress; Step1→Step3 source-of-truth projection; DXA machine persistence; inline prior-DXA/stable deletion; archetype-driven applicability with module-owned persistence; and BMI derived/manual behavior.
-
-### Final data-quality additions before smoke test
-Implemented on branch `feat/prepilot-labs-date-step6-conflict`:
-
-1. **Step 3 `labs_date`**
-   - native HTML `type=date` calendar control;
-   - stored as `step3.labs.labs_date`;
-   - optional, because numeric lab entry remains optional;
-   - purpose: distinguish current from historical laboratory snapshots, especially for monitoring encounters.
-
-2. **Step 6 source-conflict clear-on-collapse**
-   - `conflict_resolution` and `conflict_note` are shown only when `source_conflict_present=yes`;
-   - when conflict changes away from `yes`, both dependent DOM values and persisted values are cleared;
-   - `collect()` independently persists blank dependent values unless conflict is `yes`;
-   - conflict note now carries a no-identifiers reminder.
-
-Schemas updated:
+New runtime module:
 
 ```text
-schemas/baseline_step3_results_v1.yaml
-schemas/baseline_step6_documentation_v1.yaml
+static/baseline-audit/patient-registry.js
 ```
 
-### External-review backlog
-The full enhancement backlog from the latest Dia review is now incorporated into `CLINICAL_EXCELLENCE_PLAN.md §20`. It includes shared registries, laboratory tri-state/units discipline, FRAX reproducibility, Step-3 derived context, Step-4 safety/coherence derivations, Step-5 structured communication/Signals, Step-6 provenance/clinical-process-present logic, and cross-cutting store/accessibility work.
+It adds:
 
-Do **not** implement the full backlog before the 5-case pilot. The pilot is the evidence gate for form burden and which refinements deserve the one deliberate post-pilot revision.
+- protected login state;
+- Patient ID search;
+- creation/opening of a patient record;
+- per-patient encounter timeline;
+- load of a stored encounter back into the Baseline Audit UI;
+- server sync of the complete Baseline Audit encounter payload on Save/Finish;
+- patient-level laboratory snapshots keyed by actual laboratory date;
+- comparative laboratory table across dates;
+- update of an existing same-date/source-encounter lab snapshot instead of creating duplicates;
+- localStorage retained only as a working/offline cache, not the durable source of truth.
+
+The active patient is session-scoped in the browser. Server encounter linkage is cached locally only to support editing; the durable encounter remains in the database.
 
 ---
 
-## 5. Current exact next action
+## 5. Immediate next action before merge
 
-**NEXT: merge/deploy the final data-quality branch and run the explicit synthetic smoke test.**
-
-Required synthetic/non-identifiable checks:
-
-```text
-1. FRAX/FRAXplus edit → Save → reload → values retained
-2. DXA yes + values → DXA no → Save → no current DXA in trends
-3. Step 1 shared risk values → Step 3 mirror → no divergence
-4. DXA machine + machine_label → Save/reload → retained
-5. archetype change → expected/conditional/N/A card state updates correctly
-6. collapsed domain → Χρήση σήμερα → Save from Step 1/2 → reload → override retained without repair shim
-7. whole-form progress changes across Steps 1–6 and excludes collapsed domains
-8. Prior DXA → inline add → Save/reload → retained
-9. historical DXA delete after date sorting → correct row removed
-10. BMI with weight+height → read-only calculated; remove one source → derived BMI clears and manual mode returns
-11. Step 3 labs_date → calendar entry → Save/reload → retained
-12. Step 6 conflict=yes → resolution/note visible and retained
-13. Step 6 conflict yes→no/uncertain/blank → resolution/note collapse + clear → Save/reload remains clear
-14. Finish Visit → all module slices retained, including applicability_review, labs_date and Step6 conflict state
-```
-
-If all checks pass, the form is cleared for **Pilot Case 1/5**. Operational target: begin real pilot encounters from Monday 2026-08-24 rather than adding more pre-pilot functionality over the weekend.
-
-After the 5 pilot cases:
+1. Review branch diff and import/startup behavior.
+2. Open PR and merge if clean.
+3. Let Render auto-deploy; do not manually trigger after merge.
+4. Verify `/clinical/login` + `/clinical/status` on the live service.
+5. Run a **patient-persistence smoke test** with synthetic/non-identifiable data:
 
 ```text
-review pilot evidence once
-→ select material items from Plan §20
-→ make one deliberate refinement
-→ freeze Baseline Form v1 + KPI calculation/applicability contract
-→ start 30-case scored baseline
+A. authenticate with clinical key
+B. create/search Patient ID
+C. create encounter → Save → server sync
+D. reload page → search patient → load encounter → values restored
+E. enter labs date 1 → Save
+F. enter labs date 2 → Save
+G. comparative lab table shows both dates
+H. edit date-2 values → Save → same snapshot updates, no duplicate
+I. Finish Visit → encounter status completed
+J. reopen patient → completed encounter remains loadable
 ```
 
-Do not start the 30-case scored baseline before that freeze.
+Only after this persistence smoke passes should real pilot data be entered.
 
 ---
 
-## 6. Separate later instruments
+## 6. Pilot rules unchanged
 
-Still separate from the 5-case form pilot:
-- Patient Voice 4-question instrument.
-- Decision Quality 10-case review form.
+The 5-case pilot uses real clinical encounters but remains a **usability/capture pilot**, not a scored performance phase.
 
----
+During the 5 pilot cases:
+- no live KPI coaching/red-green performance feedback;
+- safety-critical behavior may remain active;
+- do not revise the form after each case unless there is a safety, data-loss or persistence defect;
+- after all 5, perform one deliberate refinement;
+- then freeze form + KPI applicability/calculation rules before the 30-case scored baseline.
 
-## 7. Stop boundary
-
-Do not yet:
-- implement the whole external-review enhancement backlog before the 5-case pilot;
-- major-rewrite legacy `main.py` / `index.html`;
-- create a composite Clinical Excellence score from invented data;
-- display live KPI coaching during scored baseline except safety-critical alerts;
-- treat GeSY as complete clinical truth;
-- make Heidi mandatory before baseline;
-- commit identifiable patient data, GeSY content or Heidi transcripts to the public repo;
-- treat browser `localStorage` as production clinical-data storage;
-- start the real pilot until the explicit smoke test passes.
+Public GitHub rule remains absolute: no identifiable patient data, clinical exports or secrets are committed to the repository.
