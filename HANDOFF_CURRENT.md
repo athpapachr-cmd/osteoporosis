@@ -1,6 +1,6 @@
 # HANDOFF_CURRENT.md — current operational handoff
 
-> **Updated:** 2026-08-23 10:46 Asia/Nicosia
+> **Updated:** 2026-08-23 11:20 Asia/Nicosia
 > **Canonical repository:** `athpapachr-cmd/osteoporosis`
 > **Current major phase:** patient-centric production persistence + Clinical Calendar integration before real 5-case pilot
 > **Current module:** Module 01 — Osteoporosis
@@ -22,28 +22,9 @@ storage_mode=online_database
 clinical_key_configured=True
 ```
 
-Clinical authentication now uses a Secure/HttpOnly/SameSite=Strict **browser-session cookie**; there is no fixed 12-hour Max-Age.
+Clinical authentication uses a Secure/HttpOnly/SameSite=Strict browser-session cookie. The patient-centric production layer supports Patient → Encounters[] and LabSnapshots[] with PostgreSQL as durable source of truth; localStorage remains only a working cache.
 
-The patient-centric production layer now supports:
-
-```text
-Patient
-├── Encounters[]
-├── LabSnapshots[]
-├── existing/legacy Assessments[]
-└── later normalized DXA / Risk / Treatment objects
-```
-
-Verified by browser smoke testing:
-
-- login with `CLINICAL_DATA_KEY`;
-- create/search Patient ID;
-- Save encounter to PostgreSQL;
-- reload/search/load and restore values;
-- save multiple dated laboratory snapshots;
-- comparative laboratory table displays historical dates;
-- `Νέες αναλύσεις` clears only current lab-entry fields and leaves historical snapshots intact;
-- duplicate laboratory table was removed from Patient Registry and remains only in Step 3.
+Verified browser behavior includes patient search/load, encounter Save/reload, multiple dated laboratory snapshots, comparative lab history in Step 3, and `Νέες αναλύσεις` without loss of historical snapshots.
 
 Public repository rule remains absolute: no identifiable patient data, clinical exports or secret values may be committed.
 
@@ -62,7 +43,7 @@ Verified existing infrastructure:
 - Zadarma API integration, including SMS send support;
 - `SYNC_ADMIN_TOKEN`-protected synchronization workflow.
 
-Canonical ownership decision:
+Canonical ownership:
 
 ```text
 Setmore / Cal.com / Zadarma
@@ -72,9 +53,9 @@ Digital Secretary backend = external integration owner
 Clinical Excellence / Osteoporosis = clinical meaning, appointment classification, CareTasks, reminders
 ```
 
-Setmore is the booking source of truth for the Clinical Calendar. Cal.com remains the availability/scheduling-support source and must not become the clinical appointment store.
+Setmore is the booking source of truth for the Clinical Calendar. Cal.com remains availability/scheduling support and must not become the clinical appointment store.
 
-Known duration contract from the product owner:
+Product-owner duration contract:
 
 ```text
 osteoporosis_first      60 min
@@ -83,33 +64,27 @@ Aclasta                 60 min
 Prolia                  10 min
 ```
 
-The Digital Secretary currently has a legacy 40-minute osteoporosis-follow-up duration in its appointment-category map. Correct this in the integration slice before relying on category-duration consistency.
+The Digital Secretary still contains a legacy 40-minute `osteoporosis_followup` mapping and must be corrected to 60 minutes in the feed integration slice.
+
+`CLINICAL_INGEST_KEY` has been configured by the product owner for server-to-server calendar ingestion; never commit or print its value.
 
 ---
 
-## 3. Clinical Calendar v1 — active implementation
+## 3. Clinical Calendar v1 — merged and live
 
-Active branch:
+PR #25 (`feat: clinical calendar v1 foundation`) is merged on `main` at commit:
 
 ```text
-feat/clinical-calendar-v1
+3f8a5b87e2120e8cb88cae4513359237f8ad97e5
 ```
 
-New schema/data contract:
+The Render deployment is live.
+
+New contract/module/table:
 
 ```text
 schemas/clinical_calendar_contract_v1.yaml
-```
-
-New server module:
-
-```text
 clinical_calendar.py
-```
-
-New database table:
-
-```text
 clinical_appointments
 ```
 
@@ -124,38 +99,61 @@ aclasta
 other
 ```
 
-Important classification rule: duration alone must **not** distinguish first from review because both are 60 minutes. Explicit service/label/comment semantics outrank duration; ambiguous osteoporosis visits stay `osteoporosis_unspecified`.
+Important classification rule: duration alone must not distinguish first from review because both are 60 minutes. Explicit service/label/comment semantics outrank duration; ambiguous osteoporosis visits stay `osteoporosis_unspecified`.
 
-New protected API surface:
+Protected API surface:
 
 ```text
 GET  /clinical/calendar/appointments?start=...&end=...
 POST /clinical/calendar/appointments/import
 ```
 
-Clinician reads use the existing browser-session clinical authentication. External server-to-server appointment ingest is separately protected by `CLINICAL_INGEST_KEY`; its value must exist only in environment configuration, never in source.
+Clinician reads use the existing browser-session clinical authentication. External server-to-server ingest uses `CLINICAL_INGEST_KEY`.
 
-New UI:
+Calendar UI:
 
 ```text
 /static/clinical-calendar/
 ```
 
-The first UI slice provides:
+It provides previous/current/next week navigation, daily appointment columns, osteoporosis/Prolia/Aclasta categories and weekly counts.
 
-- previous/current/next week navigation;
-- daily appointment columns;
-- categories for osteoporosis / Prolia / Aclasta;
-- weekly counts;
-- explicit `osteoporosis_unspecified` count for appointments needing classification;
-- link back to Baseline Audit;
-- Calendar link from Patient Registry.
-
-The Calendar deliberately does **not** represent laboratory reminders or treatment follow-up tasks as appointments.
+Appointments remain distinct from CareTasks. Lab reminders, treatment due dates, results review and patient notifications must not become fake appointments.
 
 ---
 
-## 4. Appointment vs CareTask — frozen separation
+## 4. Navigation decision
+
+Current implementation branch:
+
+```text
+fix/clinical-navigation
+```
+
+Approved navigation behavior:
+
+- Baseline Audit sidebar contains a dedicated `Ημερολόγιο` item opening `/static/clinical-calendar/`;
+- the Calendar remains a sibling clinical workspace, not a card embedded inside an encounter;
+- the service root `/` must no longer open the legacy Cockpit page;
+- until the true Clinical Excellence Home is designed, `/` temporarily redirects to `/static/baseline-audit/`;
+- the old Cockpit remains available at `/static/index.html` for legacy/reference use;
+- later `/` will become the actual Clinical Excellence Home/Dashboard, with Baseline Audit, Clinical Calendar, CareTasks, safety/attention queue and learning/audit surfaces behind it.
+
+---
+
+## 5. Exact next implementation actions
+
+1. Merge/deploy `fix/clinical-navigation` and smoke sidebar Calendar access + root redirect.
+2. Build the Digital Secretary → Clinical Calendar feed adapter from Setmore appointments.
+3. Use stable Setmore appointment IDs for idempotent upsert into `clinical_appointments`.
+4. Correct Digital Secretary `osteoporosis_followup` duration from 40 to 60 minutes.
+5. Preserve explicit first/review semantics; do not infer them from 60-minute duration alone.
+6. Smoke previous/current/next week with live Setmore feed.
+7. Only after the feed is stable, implement CareTasks and Zadarma reminder workflow.
+
+---
+
+## 6. Appointment vs CareTask — frozen separation
 
 ```text
 Appointment
@@ -165,34 +163,11 @@ CareTask
 = clinical action that can exist with or without an appointment
 ```
 
-Examples of future CareTasks:
-
-- pre-Prolia / pre-Aclasta laboratory tests due;
-- post-treatment monitoring due;
-- results review;
-- patient notification;
-- Prolia/Aclasta administration due or overdue;
-- next clinical review required.
-
-CareTasks will later drive reminder logic and Zadarma SMS; they must not be inserted as fake calendar appointments.
+Future CareTasks include pre-Prolia/pre-Aclasta labs, post-treatment monitoring, results review, patient notification, treatment administration due/overdue and next clinical review required. CareTasks will later drive reminder logic and Zadarma SMS.
 
 ---
 
-## 5. Exact next implementation action
-
-1. Review and merge Clinical Calendar v1 if clean.
-2. Let Render auto-deploy; do not manually trigger.
-3. Smoke the empty/normalized calendar UI and protected endpoints.
-4. Build the **Digital Secretary → Clinical Calendar feed adapter** from Setmore appointments.
-5. Use stable Setmore appointment IDs for idempotent upsert into `clinical_appointments`.
-6. Correct Digital Secretary osteoporosis-review duration from 40 to 60 minutes.
-7. Configure the same `CLINICAL_INGEST_KEY` on the Digital Secretary and Osteoporosis Render services.
-8. Smoke previous/current/next week with synthetic/non-identifiable appointment fixtures, then with live Setmore feed.
-9. Only after the feed is stable, implement CareTasks and Zadarma reminder workflow.
-
----
-
-## 6. Pilot rules
+## 7. Pilot rules
 
 The 5-case pilot uses real clinical encounters but remains a usability/capture pilot, not a scored performance phase.
 
