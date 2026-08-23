@@ -10,7 +10,6 @@
     osteoporosis_unspecified: "Οστεοπόρωση · ταξινόμηση",
     prolia: "Prolia",
     aclasta: "Aclasta",
-    other: "Άλλο",
   };
 
   async function api(path, options = {}) {
@@ -106,17 +105,17 @@
 
   function appointmentHtml(row) {
     const start = parseServerDate(row.start_at);
-    const category = row.category || "other";
-    const label = CATEGORY_LABELS[category] || category;
+    const category = row.category || "osteoporosis_unspecified";
+    const label = CATEGORY_LABELS[category] || "Οστεοπόρωση";
     const patient = row.patient_display_name || row.linked_patient_id || "Χωρίς αντιστοίχιση ασθενούς";
-    const detail = row.label || row.comment || "";
+    const reason = row.reason || "";
     const clinic = row.clinic ? ` · ${row.clinic}` : "";
     return `<article class="appt">
       <div class="appt-time"><strong>${start ? fmtTime.format(start) : "—"}</strong><span class="appt-duration">${row.duration_minutes || 0}'</span></div>
       <span class="badge ${esc(category)}">${esc(label)}</span>
       <div class="appt-name">${esc(patient)}</div>
       <div class="appt-meta">${esc(row.status || "scheduled")}${esc(clinic)}</div>
-      ${detail ? `<div class="appt-label">${esc(detail)}</div>` : ""}
+      ${reason ? `<div class="appt-label">${esc(reason)}</div>` : ""}
     </article>`;
   }
 
@@ -138,7 +137,7 @@
       const items = grouped.get(key) || [];
       const col = document.createElement("section");
       col.className = "day-column";
-      col.innerHTML = `<div class="day-head"><strong>${esc(fmtDay.format(day))}</strong><span>${esc(fmtDate.format(day))}</span></div><div class="day-body">${items.length ? items.map(appointmentHtml).join("") : '<div class="empty-day">Δεν υπάρχουν σχετικά ραντεβού.</div>'}</div>`;
+      col.innerHTML = `<div class="day-head"><strong>${esc(fmtDay.format(day))}</strong><span>${esc(fmtDate.format(day))}</span></div><div class="day-body">${items.length ? items.map(appointmentHtml).join("") : '<div class="empty-day">Δεν υπάρχουν ραντεβού οστεοπόρωσης.</div>'}</div>`;
       grid.appendChild(col);
     }
 
@@ -157,7 +156,7 @@
     try {
       const rows = await api(`/clinical/calendar/appointments?start=${encodeURIComponent(monday.toISOString())}&end=${encodeURIComponent(end.toISOString())}`);
       renderWeek(rows, monday);
-      setStatus(`${rows.length} σχετικά ραντεβού`, "ok");
+      setStatus(`${rows.length} σχετικά με οστεοπόρωση`, "ok");
     } catch (err) {
       setStatus(err.message, "err");
       renderWeek([], monday);
