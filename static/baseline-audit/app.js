@@ -27,5 +27,6 @@
     .then(() => loadScript("./pilot-completion.js"))
     .then(() => loadScript("./whole-form-progress.js"))
     .then(() => loadScript("./patient-registry.js"))
+    .then(() => loadScript("./lab-history-ui.js"))
     .catch((error) => console.error("Baseline Audit bootstrap failed", error));
 })();
