@@ -7,6 +7,7 @@ patient-centric clinical-data routers used by the Clinical Excellence baseline U
 
 from legacy_main import app, engine
 from clinical_auth import ClinicalCookieMiddleware, build_auth_router
+from clinical_calendar import build_clinical_calendar_router
 from clinical_data import build_clinical_router
 from clinical_data_ext import build_clinical_ext_router
 from clinical_status import build_clinical_status_router
@@ -16,5 +17,6 @@ app.include_router(build_auth_router())
 app.include_router(build_clinical_status_router(engine))
 app.include_router(build_clinical_router(engine))
 app.include_router(build_clinical_ext_router(engine))
+app.include_router(build_clinical_calendar_router(engine))
 
 __all__ = ["app", "engine"]
