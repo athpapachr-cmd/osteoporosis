@@ -2,16 +2,27 @@
   "use strict";
 
   function injectCalendarLink() {
-    const head = document.querySelector(".clinical-registry-head");
-    if (!head || document.querySelector("#clinicalCalendarLink")) return;
+    const nav = document.querySelector(".side-nav");
+    if (!nav || document.querySelector("#clinicalCalendarNavLink")) return;
+
     const link = document.createElement("a");
-    link.id = "clinicalCalendarLink";
+    link.id = "clinicalCalendarNavLink";
     link.href = "../clinical-calendar/";
-    link.className = "btn secondary";
-    link.textContent = "Clinical Calendar";
-    const status = document.querySelector("#clinicalStatus");
-    if (status) head.insertBefore(link, status);
-    else head.appendChild(link);
+    link.className = "side-item";
+    link.title = "Clinical Calendar";
+
+    const icon = document.createElement("span");
+    icon.className = "side-icon";
+    icon.textContent = "▦";
+
+    const label = document.createElement("span");
+    label.textContent = "Ημερολόγιο";
+
+    link.append(icon, label);
+
+    const cases = nav.querySelector("[data-nav-action='cases']");
+    if (cases) cases.insertAdjacentElement("afterend", link);
+    else nav.appendChild(link);
   }
 
   injectCalendarLink();
