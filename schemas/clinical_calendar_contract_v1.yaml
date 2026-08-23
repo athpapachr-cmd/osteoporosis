@@ -18,9 +18,17 @@ appointment_categories:
   - aclasta
   - other
 
+relevant_calendar_categories:
+  - osteoporosis_first
+  - osteoporosis_review
+  - osteoporosis_unspecified
+  - prolia
+  - aclasta
+
 duration_expectations_minutes:
+  note: current Digital Secretary behavior; review may be changed later by product owner
   osteoporosis_first: 60
-  osteoporosis_review: 60
+  osteoporosis_review: 40
   aclasta: 60
   prolia: 10
 
@@ -39,13 +47,24 @@ appointment_object:
     - label
     - comment
     - status
+  derived_output:
+    - reason
 
 classification_rules:
   - explicit medication/service text outranks duration
   - explicit first/review wording outranks duration
-  - duration alone must not distinguish first from review because both are 60 minutes
+  - the visit reason may be recovered from the source comment/notes field
+  - duration may refine an already established osteoporosis context only
+  - current Secretary mapping: osteoporosis first 60 minutes; osteoporosis review 40 minutes
+  - duration alone never establishes osteoporosis because other visit types can share the same duration
   - ambiguous osteoporosis appointments remain osteoporosis_unspecified
-  - unknown appointments remain other and are excluded from the default clinical view
+  - unknown/unrelated appointments remain other
+
+data_minimization:
+  - clinician-facing Calendar returns only relevant_calendar_categories
+  - new unrelated appointments are not persisted in the clinical appointment store
+  - if a previously relevant source appointment is later classified as unrelated, its stale clinical copy is removed on ingest
+  - transport metadata such as clinic/source/cal_uid is not shown as the human visit reason
 
 separation_of_concerns:
   appointment:
@@ -69,8 +88,8 @@ security:
   public_repo_rule: never commit appointment/patient data or secret values
 
 next_integration_slice:
-  - expose normalized Setmore appointment feed from the Digital Secretary backend
-  - send/pull that feed server-to-server using CLINICAL_INGEST_KEY
+  - do not modify the Digital Secretary while its current active work is in progress
+  - later expose/send a normalized Setmore appointment feed from the Digital Secretary backend
   - reconcile source appointment IDs by upsert, never duplicate on refresh
   - add optional patient linking by stable identifier/phone matching with clinician review
   - add CareTask engine separately after appointment feed is live
