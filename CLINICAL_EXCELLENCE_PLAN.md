@@ -1,24 +1,31 @@
-# CLINICAL_EXCELLENCE_PLAN.md — Blueprint v1
+# CLINICAL_EXCELLENCE_PLAN.md — Clinical Excellence architecture v2
 
 > **STATUS:** ACTIVE detailed phase plan.
-> **PHASE:** Clinical Excellence Core architecture + Module 01 Osteoporosis blueprint.
+> **PHASE:** Baseline measurement foundation → Clinical Practice Review / learning-health loop.
 > **CANONICAL HOME:** `athpapachr-cmd/osteoporosis`.
-> **UPDATED:** 2026-08-22 Asia/Nicosia.
+> **MODULE 01:** Osteoporosis.
+> **UPDATED:** 2026-08-25 Asia/Nicosia.
+
+This document owns the **detailed phase architecture and stage sequence**. Operational PR/branch/deploy state belongs in `CURRENT_OPERATIONAL.md`; exact current-slice design belongs in `SLICE_PLAN_CURRENT.md`.
 
 ---
 
 # 1. Purpose
 
-Build a reusable **Personal Clinical Excellence System** in which the existing Osteoporosis Cockpit becomes the point-of-care execution component of a larger continuous-improvement loop.
+Build a reusable **Personal Clinical Excellence System** whose central outcome is not merely better documentation or higher audit scores, but measurable improvement in the clinician’s real practice:
 
-Module 01 is **Osteoporosis**. The reusable Core Engine must later support additional domains such as low-back pain, neck pain, knee pain, hip pain and shoulder pain without duplicating the architecture.
+- what is asked;
+- what is noticed;
+- how evidence is interpreted;
+- how clinical decisions are made;
+- how uncertainty is handled;
+- what is explained to the patient;
+- how preferences alter the plan;
+- how follow-up is closed;
+- what is learned from each encounter;
+- whether the change persists in later practice.
 
-The system is designed to answer four questions continuously:
-
-1. **Where is current performance strong or weak?**
-2. **Why is it strong or weak?**
-3. **What action should follow?**
-4. **Did the action actually improve practice?**
+Module 01 — Osteoporosis is the proving ground for a Core Engine that can later generalize to other clinical domains.
 
 Canonical loop:
 
@@ -29,69 +36,100 @@ STANDARD
 → APPLY
 → MEASURE
 → AUDIT
+→ CLINICAL PRACTICE REVIEW
 → GAP OR STRENGTH
 → INTERVENE / REINFORCE
 → RE-MEASURE
 → SYSTEM LEARNS
 ```
 
----
+The system should continuously answer:
 
-# 2. Current phase non-goals
-
-This phase does **not** yet aim to:
-
-- rewrite the existing Cockpit;
-- finalize patient leaflets;
-- build all future musculoskeletal modules;
-- create a production patient-data platform;
-- generate a fake overall excellence score before baseline data exists;
-- automate clinical decisions without transparent rules and clinician review.
-
-The output of this phase is an approved architecture and measurement foundation that can safely drive implementation.
+1. Where is performance strong or weak?
+2. Why?
+3. What should change next?
+4. Did the change actually improve future encounters?
 
 ---
 
-# 3. System architecture
+# 2. Core architectural distinction — measurement, review and intervention
+
+Three instruments must remain distinct.
+
+## 2.1 Audit
+
+Purpose:
+
+> Determine whether an applicable defined process/standard was met.
+
+Properties:
+
+- deterministic where possible;
+- explicit numerator/denominator/applicability;
+- transparent missing/N/A handling;
+- no black-box score;
+- neutral during baseline collection;
+- suitable for longitudinal measurement and re-audit.
+
+## 2.2 Clinical Practice Review
+
+Purpose:
+
+> Critically review how the consultation was actually conducted and identify the highest-value improvement opportunities and strengths.
+
+It can evaluate dimensions not captured well by a binary KPI, including reasoning sequence, communication accuracy, option framing, consultation flow, information overload, uncertainty and whether the final plan logically follows the available evidence.
+
+## 2.3 Learning / Improvement
+
+Purpose:
+
+> Convert accepted review/audit Signals into the correct intervention and later test whether it worked.
+
+The intervention depends on root cause rather than on the surface finding.
+
+```text
+knowledge gap → targeted learning/testing
+reasoning gap → case challenge/red team/deliberate practice
+execution gap → workflow/interface/task change
+communication/system gap → communication/process redesign
+strength → preserve/reinforce/advance
+```
+
+---
+
+# 3. Reusable Core architecture
 
 ```text
 PERSONAL CLINICAL EXCELLENCE SYSTEM
 │
-├── CORE ENGINE
-│   ├── Standards
-│   ├── Evidence / Guidelines
-│   ├── Learning
-│   ├── Testing / Mastery / Calibration
-│   ├── Clinical Practice
-│   ├── Patient Voice
-│   ├── Audit / Measurement
-│   ├── Safety
-│   ├── Benchmarking
-│   ├── Improvement
-│   ├── Signal Engine
-│   └── Personal Adaptation
-│
-├── MODULE 01 — OSTEOPOROSIS
-│   └── existing Osteoporosis Cockpit + new domain content
-│
-├── MODULE 02 — future
-├── MODULE 03 — future
-└── ...
+├── Standards / Competencies
+├── Evidence / Guidelines
+├── Learning / Mastery / Calibration
+├── Clinical Practice / Encounters
+├── Transcript-assisted Capture
+├── Clinical Practice Review
+├── Audit / Measurement
+├── Signal Engine
+├── Patient Voice
+├── Safety
+├── Benchmarking
+├── Improvement Projects
+├── CareTasks / Continuity
+└── Clinical Excellence Home
+
+MODULE 01 — OSTEOPOROSIS
+└── domain standards, schemas, workflows, cases, metrics, evidence
 ```
 
-Core owns the reusable mechanics. Clinical modules own domain-specific standards, rules, evidence, competencies, cases, KPIs and workflows.
+Core owns reusable mechanics. Module 01 owns osteoporosis-specific content.
 
 ---
 
 # 4. Core domain objects
 
-The first implementation should be built around explicit objects rather than ad-hoc fields.
+Existing architectural objects remain valid and are extended rather than replaced.
 
 ## 4.1 `Signal`
-
-The central event object that connects the system.
-
-Suggested fields:
 
 ```text
 id
@@ -110,11 +148,9 @@ status: new / reviewed / actioned / reassessed / closed
 resolution
 ```
 
-Sources may include Clinical Encounter, Patient Feedback, Audit, Learning/Test, Evidence, Safety or Benchmark.
+Signal sources include encounter, audit, Practice Review, patient feedback, learning/test, evidence, safety and benchmark.
 
 ## 4.2 `ClinicalStandard`
-
-Defines what good practice means.
 
 ```text
 standard_id
@@ -124,15 +160,12 @@ statement
 applicability
 source_framework
 source_version
-strength / certainty if available
-effective_from
+strength_or_certainty
 reviewed_on
 status
 ```
 
 ## 4.3 `Competency`
-
-Defines what the clinician should know or be able to do.
 
 ```text
 competency_id
@@ -148,161 +181,84 @@ linked_assessment_ids
 
 ## 4.4 `EvidenceItem`
 
-May represent a guideline, consensus, article, book chapter, lecture, course or authoritative resource.
-
 ```text
 evidence_id
 type
 title
 source/authors/provider
 year/version
-url/reference
+reference
 module/domain
 priority
-status
 impact_classification
 key_messages
 practice_implications
 reviewed_on
 next_review_due
+status
 ```
 
 ## 4.5 `LearningItem`
 
-Tracks the educational object and learning state.
-
 ```text
 learning_id
-type: paper / chapter / guideline / course / seminar / case / video / podcast
+type
 linked_evidence_id
-priority
 assigned_reason
-status: unread / studied / tested / mastered
-started_at
-completed_at
+priority
+status: unread / studied / tested / mastered / retention_due
 mastery_score
 next_review_due
-linked_gap_or_project
+linked_signal_or_project
 ```
 
-## 4.6 `AssessmentItem` / `AssessmentAttempt`
-
-Supports MCQs, clinical cases, open questions and image interpretation.
-
-Attempt data should include:
+## 4.6 `AssessmentAttempt`
 
 ```text
-correctness / score
+assessment_id
+attempt_id
+score/correctness
 confidence_before_answer
-response_time if useful
+response_time_optional
 error_type
 linked_competency
-linked_case/signal
+linked_signal
 ```
 
-High-confidence errors become high-priority signals.
+High-confidence errors are high-priority learning Signals.
 
 ## 4.7 `ClinicalEncounter`
 
-Represents a real clinical episode at a structured, privacy-safe application layer.
-
-It should link to:
-
-- applicable standards;
-- completed/omitted/overridden items;
-- clinical decisions;
-- tasks/follow-up;
-- patient feedback;
-- generated signals.
+Represents a real consultation and links structured clinical data, decisions, tasks, audit state, Practice Review, patient feedback and Signals.
 
 ## 4.8 `ClinicalDecision`
 
 ```text
 decision_id
 encounter_id
-question / decision point
-options considered
-decision
+decision_question
+options_considered
+clinician_recommendation
+final_decision
+patient_acceptance
 rationale
-framework(s) considered
-recommendation_concordance
-override: yes/no
-override_reason
+frameworks_considered
 uncertainty/confidence
-follow-up criterion that could change the decision
+override_yes_no
+override_reason
+future_criterion_that_could_change_decision
 ```
 
-## 4.9 `PatientFeedback`
+## 4.9 `AuditMetric`
 
-Core categories:
+Formal KPI object preserving numerator, denominator, exclusions, target, baseline, current result, trend, sample size, reliability and completeness.
 
-```text
-understanding_condition
-understanding_plan
-understanding_rationale
-questions/preferences_addressed
-free_text
-linked_encounter
-```
-
-Repeated patterns can generate system-level Signals.
-
-## 4.10 `AuditMetric`
-
-Every KPI must have a formal definition.
-
-```text
-metric_id
-title
-domain
-definition
-numerator
-denominator
-exclusions
-target
-source / standard
-measurement_period
-sample_size
-current_value
-baseline_value
-trend
-reliability
-data_completeness
-```
-
-## 4.11 `Benchmark`
-
-```text
-benchmark_id
-metric_id
-source
-country
-population
-setting
-year
-definition
-value
-comparability: high / moderate / low / context_only
-notes
-```
-
-## 4.12 `SafetyEvent`
-
-Types:
-
-- error;
-- near miss;
-- unsafe omission;
-- potential failure mode / FMEA item.
-
-Should preserve root cause, action and reassessment.
-
-## 4.13 `ImprovementProject`
+## 4.10 `ImprovementProject`
 
 ```text
 project_id
 problem
-signal_source
+signal_sources
 baseline
 target
 root_cause_class
@@ -314,321 +270,817 @@ next_action
 status
 ```
 
-## 4.14 `ActionTask`
+## 4.11 `ActionTask` / later `CareTask`
 
-A generic actionable unit linking learning and clinical operations.
-
-```text
-task_id
-type
-source
-priority
-due_date
-owner
-status
-completed_at
-result
-linked_signal/project/encounter
-```
+Generic due-date action object. Clinical tasks remain conceptually separate from scheduled appointments.
 
 ---
 
-# 5. Signal Engine
+# 5. New Core object — `PracticeReview`
 
-The Signal Engine is the primary adaptive mechanism.
+A Practice Review is an AI-assisted but clinician-governed critical review of one encounter.
+
+Suggested v1 contract:
 
 ```text
-EVENT
-  ↓
-SIGNAL CREATED
-  ↓
-CLASSIFY SOURCE / DOMAIN / DIRECTION
-  ↓
-ASSESS IMPORTANCE + RELIABILITY
-  ↓
-LINK TO STANDARD / COMPETENCY / KPI / PROJECT
-  ↓
-ACTION NEEDED?
-  ├─ no → retain for trend/strength evidence
-  └─ yes
-       ↓
-     ROOT-CAUSE CLASSIFICATION
-       ↓
-     INTERVENTION
-       ↓
-     REASSESSMENT / RE-AUDIT
-       ↓
-     CLOSE OR ITERATE
+review_id
+encounter_id
+module
+review_mode: quick / deep / red_team / learning
+source_set
+created_at
+review_status: generated / clinician_reviewed / finalized
+baseline_exposure_state
+summary
+strength_observation_ids
+gap_observation_ids
+safety_observation_ids
+uncertainty_observation_ids
+decision_reconstruction_id
+communication_review_id
+workflow_review_id
+linked_signal_ids
+clinician_overall_response
 ```
 
-Important patterns to detect:
+`source_set` may include:
 
-- repeated omissions;
-- high-confidence learning errors;
-- patient-feedback clusters;
-- sustained strengths;
-- declining performance after previous mastery;
-- new evidence affecting active standards;
-- overdue follow-up/safety tasks;
-- conflict between clinical decision and framework;
-- apparent score improvement caused by denominator/data-definition changes.
+```text
+structured encounter data
+Heidi transcript (ephemeral source)
+audit/KPI calculation
+evidence/standards
+patient feedback later
+follow-up outcome later
+```
+
+Practice Review is not itself a KPI score.
 
 ---
 
-# 6. Gap classification algorithm
+# 6. New Core object — `PracticeObservation`
 
-Every important negative signal should be classified into one or more root-cause families before recommending an intervention.
-
-## 6.1 Knowledge gap
-
-The clinician does not know or retain the required information.
-
-Preferred response:
+Each important review statement becomes an explicit observation rather than untraceable prose.
 
 ```text
-short targeted reading/course
-→ test
+observation_id
+review_id
+dimension
+direction: strength / gap / safety / uncertainty
+root_cause_class_optional
+importance: low / moderate / high / critical
+confidence
+statement
+why_it_matters
+encounter_provenance
+linked_standard_ids
+linked_evidence_ids
+suggested_change
+suggested_intervention_type
+clinician_disposition: pending / accepted / modified / dismissed
+clinician_note_optional
+linked_signal_id_optional
+```
+
+Important rule:
+
+> A Practice Review observation should never present model opinion as established clinical truth merely because the model is confident.
+
+For material claims, preserve encounter evidence/provenance and relevant external standard/evidence where available.
+
+---
+
+# 7. Practice Review dimensions
+
+The first review engine should reason across at least nine dimensions.
+
+## 7.1 Clinical completeness
+
+Was clinically important history/examination/investigation/monitoring omitted or left unresolved for this archetype?
+
+## 7.2 Clinical reasoning
+
+Did the sequence of inference make sense? Were downstream calculations/decisions made before prerequisite facts were adequately characterized?
+
+## 7.3 Decision quality
+
+Were reasonable options considered, contraindications/safety reviewed, uncertainty acknowledged and the final choice supported by the available evidence?
+
+## 7.4 Risk interpretation
+
+Were DXA, fracture classification, FRAX/FRAXplus, VFA, treatment-response or other risk data interpreted correctly and reproducibly?
+
+## 7.5 Safety
+
+Did the consultation contain an unsafe omission, inaccurate high-consequence statement, medication timing risk or unresolved critical issue?
+
+## 7.6 Communication accuracy
+
+Were patient-facing statements scientifically accurate, proportionate and understandable? Detect overstatement, understatement and misleading certainty.
+
+## 7.7 Shared decision making
+
+Were patient priorities/preferences elicited? Did they materially influence the plan? Was “discussed option” kept distinct from final accepted decision?
+
+## 7.8 Consultation flow / efficiency
+
+Was the encounter coherent or repeatedly cycling between risk/results/treatment? Was information density excessive? Could the same clinical work be performed with less cognitive burden?
+
+## 7.9 Follow-up execution
+
+Did the consultation close with explicit prerequisites, actions, owner, timing, communication plan and unresolved items?
+
+---
+
+# 8. Review modes
+
+## 8.1 Quick Post-Visit Review
+
+Target reading time: approximately 2–3 minutes.
+
+Default output:
+
+```text
+3 strengths
+3 highest-value improvements
+safety concern if present
+1 reasoning issue
+1 communication issue
+1 concrete change for the next similar encounter
+```
+
+The goal is behavior change, not exhaustive commentary.
+
+User actions:
+
+```text
+Accept Signal
+Modify
+Dismiss
+Challenge me
+Create Learning
+```
+
+## 8.2 Deep Review
+
+Reconstruct the encounter in more detail, identify decision points and compare reasoning with standards/evidence.
+
+## 8.3 RED TEAM
+
+Assume the current clinical decision may be wrong and build the strongest evidence-based counter-case, then compare the counter-case with the actual decision.
+
+## 8.4 LEARNING
+
+Turn the encounter into a structured educational exercise: questions, uncertainty points, targeted reading, case challenge and retention plan.
+
+---
+
+# 9. Decision Reconstruction — anti-hindsight architecture
+
+The review engine should reconstruct the actual decision path:
+
+```text
+DATA AVAILABLE AT TIME T
+↓
+INTERPRETATION
+↓
+OPTIONS CONSIDERED
+↓
+NEW INFORMATION
+↓
+OPTION ACCEPTED / REJECTED / DEFERRED
+↓
+PATIENT PREFERENCE
+↓
+FINAL DECISION
+```
+
+The critical question is:
+
+> Given only the information available at that point, what decision was reasonable?
+
+This reduces hindsight bias and prevents later results from making an earlier reasonable decision look retrospectively irrational.
+
+---
+
+# 10. Communication Review architecture
+
+Communication review should assess:
+
+```text
+scientific accuracy
+clarity
+risk framing
+overstatement / understatement
+terminology
+certainty vs uncertainty
+information density
+unnecessary repetition
+patient questions
+preference elicitation
+teach-back
+written information
+```
+
+The engine should be capable of distinguishing:
+
+- “information was provided”;
+- “information was accurate”;
+- “information was understood”;
+- “patient preference influenced the decision”.
+
+These are not interchangeable.
+
+---
+
+# 11. Longitudinal Practice Review
+
+Single-case criticism is insufficient. The system should aggregate reviewed observations across encounters.
+
+Example output only after adequate denominators:
+
+```text
+fracture characterization incomplete: 5/15
+VFA consideration missed when applicable: 3/8
+explicit treatment rationale: 14/15
+patient preference elicited: 13/15
+explicit follow-up timing: 9/15
+teach-back used: 1/15
+```
+
+The engine then asks whether the pattern is:
+
+```text
+isolated event
+recurrent gap
+improving trend
+stable weakness
+sustained strength
+```
+
+No stable pattern should be declared from inadequate sample size without a reliability warning.
+
+---
+
+# 12. Gap classification and intervention
+
+Every important accepted negative observation should be mapped to the existing four-class root-cause model.
+
+## Knowledge gap
+
+```text
+targeted source
+→ short test
 → spaced repetition
 → clinical case
 → re-measure
 ```
 
-## 6.2 Reasoning gap
-
-Information is available, but interpretation/decision quality is weak.
-
-Preferred response:
+## Reasoning gap
 
 ```text
 case review
-→ challenge / red-team analysis
-→ compare frameworks / expert reasoning
+→ challenge / red team
+→ alternative framework/expert reasoning
 → deliberate practice
-→ blinded re-review when useful
+→ future blinded re-review when useful
 ```
 
-## 6.3 Execution gap
-
-The clinician knows what should happen but does not execute it reliably.
-
-Preferred response:
+## Execution gap
 
 ```text
 workflow analysis
-→ Cockpit/checklist/task change
 → reduce friction
-→ measure compliance
+→ Cockpit/consultation-flow/task change
+→ re-measure execution
 ```
 
-## 6.4 Communication/system gap
-
-Correct clinical thinking does not reliably reach the patient, record, follow-up chain or next professional.
-
-Preferred response:
+## Communication/system gap
 
 ```text
-teach-back / handoff redesign / documentation support
-→ patient feedback
-→ process audit
+wording / teach-back / handoff / documentation / process redesign
+→ patient feedback or process audit
+→ re-measure
+```
+
+Positive observations can become sustained-strength Signals after repeated evidence.
+
+---
+
+# 13. Transcript-assisted capture — purpose and boundary
+
+Heidi transcript paste can reduce manual data entry and supply richer review evidence, but transcript text must not become unreviewed patient truth.
+
+Canonical flow:
+
+```text
+PASTE HEIDI TRANSCRIPT
+        ↓
+EPHEMERAL PROCESSING
+        ↓
+STRUCTURED EXTRACTION CANDIDATES
+        ↓
+CLINICIAN REVIEW / EDIT / ACCEPT / REJECT
+        ↓
+ACCEPTED NORMALIZED ENCOUNTER DATA
+        ↓
+AUDIT + PRACTICE REVIEW
+```
+
+Raw transcript is not persisted by default.
+
+---
+
+# 14. Transcript extraction semantic categories
+
+The extractor must preserve the distinction between:
+
+```text
+PATIENT / HISTORY FACT
+OBJECTIVE RESULT
+CLINICIAN INTERPRETATION
+OPTION DISCUSSED
+CLINICIAN RECOMMENDATION
+PATIENT PREFERENCE
+FINAL DECISION
+PATIENT ACCEPTED
+PATIENT DECLINED
+PATIENT UNDECIDED
+FOLLOW-UP TASK
+UNCERTAIN / NEEDS REVIEW
+```
+
+This directly addresses a known failure mode of generic summaries: collapsing every discussed treatment into the final plan or converting a negative history statement into a negative laboratory result.
+
+Extraction guardrails:
+
+- preserve negation;
+- preserve temporality;
+- preserve speaker/source;
+- preserve uncertainty;
+- do not infer exact dates from vague timing;
+- do not invent diagnosis/treatment/history/preferences;
+- do not merge original FRAX with adjusted FRAXplus outputs;
+- do not infer treatment acceptance from discussion alone.
+
+---
+
+# 15. Transcript review UX
+
+Each candidate may show temporarily:
+
+```text
+field / object
+candidate value
+confidence
+short source snippet
+Accept
+Reject
+Edit
+```
+
+The evidence snippet is for the clinician review session and should not be stored by default after the raw transcript is discarded.
+
+Accepted structured values retain provenance such as:
+
+```text
+source = heidi_transcript
+clinician_reviewed = true
+extraction_confidence = ...
+```
+
+An `Accept all high-confidence safe candidates` action is optional later and requires field-class safety thresholds; it is not the default first implementation.
+
+---
+
+# 16. Initial extraction scope
+
+Start with more objective/high-yield information:
+
+1. encounter reason/context;
+2. anthropometrics;
+3. fracture history/events;
+4. falls/risk factors;
+5. DXA/VFA/imaging;
+6. laboratory values/dates/units where explicit;
+7. treatment episodes/administrations;
+8. treatment decision components;
+9. follow-up tasks.
+
+Only after reliable extraction is demonstrated add more interpretive domains such as patient understanding, communication quality and Practice Review inference.
+
+---
+
+# 17. Adaptive consultation-flow architecture
+
+The existing Steps 1–6 are useful **storage/audit structure** but should not necessarily remain the visible clinical consultation sequence.
+
+Permanent principle:
+
+```text
+CLINICAL WORKFLOW PRESENTATION
+!=
+STORAGE / AUDIT SCHEMA
+```
+
+The UI may present the same canonical data in the order that supports good clinical reasoning. Data should still be entered once and reused everywhere.
+
+---
+
+# 18. Candidate normalized osteoporosis consultation flow
+
+For a broad assessment/review encounter:
+
+```text
+1. WHY TODAY / WHAT CHANGED?
+
+2. FRACTURE + FALLS + FUNCTION
+   new fractures?
+   fracture mechanism/fragility classification
+   falls / balance / frailty / functional change
+
+3. DXA / VFA / IMAGING
+   current DXA
+   technical validity / longitudinal comparability
+   vertebral-fracture/VFA consideration
+
+4. SECONDARY CAUSES + LABS
+   targeted history
+   prior work-up adequacy
+   current relevant labs
+   unresolved causes/safety prerequisites
+
+5. FRACTURE-RISK SYNTHESIS
+   formal risk assessment
+   framework/country model
+   unadjusted vs adjusted outputs
+   overall clinical risk/problem list
+
+6. TREATMENT HISTORY / RESPONSE
+   current/prior agent
+   adherence/tolerance
+   administration dates
+   fracture on therapy / response
+
+7. OPTIONS → RECOMMENDATION → PREFERENCE → DECISION
+   options discussed
+   safety/contraindications
+   clinician recommendation
+   patient preference
+   final accepted/deferred decision
+
+8. LIFESTYLE / COMMUNICATION
+   exercise
+   calcium/vitamin D/nutrition
+   targeted additional counselling
+   written information
+
+9. CLOSE
+   decision
+   prerequisites
+   patient tasks
+   clinician tasks
+   communication/results plan
+   timing / next review
+   unresolved critical item
+   teach-back when appropriate
+```
+
+The purpose is not to force a rigid questionnaire; it is to reduce circular consultation flow and ensure reasoning prerequisites are resolved before downstream decisions.
+
+---
+
+# 19. Archetype-adaptive consultation flows
+
+The visible flow should change according to the existing encounter archetype rather than forcing a new patient workflow onto stable follow-up.
+
+## New / uncertain diagnosis
+
+Emphasis:
+
+```text
+fracture characterization
+DXA/VFA
+aetiology/secondary causes
+risk synthesis
+treatment decision
+education/close
+```
+
+## Known osteoporosis/osteopenia initial-to-service
+
+Emphasis on verifying prior diagnosis/work-up, longitudinal DXA, treatment history and current management decision.
+
+## Routine stable follow-up
+
+Start with:
+
+```text
+interval fracture/falls/function
+adherence/tolerance
+administration/treatment status
+due labs/DXA
+response
+next plan/close
+```
+
+Do not repeat full secondary-cause or condition education without a reason.
+
+## Treatment start
+
+Emphasize decision rationale, medication-specific safety/prerequisites, acceptance, administration instructions and monitoring.
+
+## Treatment continuation/due monitoring
+
+Emphasize adherence/tolerance, exact administration/timing, due monitoring and next due date.
+
+## Treatment change/transition
+
+Emphasize why change, prior last dose/end, sequencing safety, next agent/timing and tracking.
+
+## Post-fragility fracture / fracture on treatment
+
+Emphasize fracture verification/context, adherence/exposure, risk reassessment, secondary causes, treatment escalation/change and falls/function.
+
+## Adverse effect/intolerance
+
+Emphasize suspected relationship, severity, safety, alternative options and revised plan.
+
+## Completion/consolidation
+
+Emphasize response, course completion, consolidation/exit strategy and exact next timing.
+
+---
+
+# 20. Risk-synthesis gate
+
+A major consultation-flow objective is to prevent downstream treatment reasoning from outrunning unresolved source facts.
+
+Before final treatment selection, the interface should make the following synthesis visible:
+
+```text
+FRACTURE CHARACTERIZATION
++ DXA / VFA / IMAGING
++ SECONDARY CAUSES / LABS
++ FALLS / FUNCTION
++ FORMAL RISK ASSESSMENT
+= CURRENT RISK / PROBLEM SYNTHESIS
+```
+
+Examples of issues the Practice Review engine should detect:
+
+- fracture used as a risk modifier before fragility mechanism resolved;
+- unclear femoral-neck vs total-hip BMD/T-score provenance;
+- FRAX country/surrogate rationale unclear;
+- adjusted FRAXplus output replacing rather than supplementing original FRAX;
+- VFA indication not considered when relevant;
+- medication decision made before a necessary safety prerequisite is resolved.
+
+These observations may become learning or execution Signals; the workflow itself should not silently make the clinical decision.
+
+---
+
+# 21. Close card architecture
+
+The encounter should end with a concise, explicit close rather than scattered plans across the transcript.
+
+Suggested UI:
+
+```text
+Σήμερα αποφασίσαμε:
+...
+
+Πριν ξεκινήσει / prerequisites:
+...
+
+Εκκρεμεί:
+...
+
+Ο ασθενής πρέπει να κάνει:
+...
+
+Εμείς πρέπει να κάνουμε:
+...
+
+Αποτελέσματα / επικοινωνία:
+...
+
+Επόμενος επανέλεγχος:
+...
+
+Unresolved critical item: Yes / No
+```
+
+Optional final teach-back:
+
+> “Πείτε μου με δικά σας λόγια τι θα κάνετε από εδώ και πέρα.”
+
+This Close card should generate/normalize follow-up tasks rather than create duplicate free-text plans.
+
+---
+
+# 22. Baseline methodology and Practice Review exposure
+
+Approved Baseline Audit sequence remains:
+
+```text
+5 usability/capture pilot encounters
+→ one deliberate refinement
+→ freeze form + KPI contract
+→ 30 scored consecutive unique encounters
+→ baseline lock
+→ systematic intervention/re-audit
+```
+
+## 22.1 During 5-case pilot
+
+Primary objective: capture usability, branching, persistence, timing and data interpretation.
+
+Practice Review/transcript infrastructure may be tested for **engineering/design purposes**, but the pilot should record whether coaching was shown because that changes clinician exposure.
+
+## 22.2 During 30-case scored baseline
+
+Default policy:
+
+- audit calculations may run in background;
+- routine Practice Review coaching remains hidden;
+- no red/green KPI prompts;
+- safety-critical alert path may remain active;
+- any unavoidable intervention exposure is recorded.
+
+If the product owner intentionally activates systematic coaching before the 30-case baseline, the methodological baseline definition must be explicitly revised rather than pretending the cohort is an untouched pre-intervention baseline.
+
+---
+
+# 23. Existing Baseline Audit / KPI architecture remains authoritative
+
+Steps 1–6 and the calculation contract remain the current measurement foundation.
+
+Key rules retained:
+
+- clinical process = Steps 1–5;
+- formal documentation/capture trace = Step 6 separate axis;
+- Heidi use itself is not a quality-success metric;
+- missing formal documentation is not automatically a clinical omission;
+- KPI 12/13 remain manual review where defined;
+- Patient Voice remains the future source for KPIs 14/15;
+- no live baseline score.
+
+Reliability context remains denominator-aware; one safety failure may still generate a Signal even when sample size is small.
+
+---
+
+# 24. Existing post-pilot refinement backlog — preserved
+
+The external review backlog remains candidate work **after pilot evidence**, not a mandate to expand the form before the five cases.
+
+## 24.1 Encounter/adaptive architecture
+
+- shared archetype registry;
+- archetype-specific required-field gating where justified;
+- background consistency flags;
+- `other` archetype specifier;
+- clarify new-patient vs sample semantics.
+
+## 24.2 Fracture risk / FRAX
+
+- completeness state;
+- derive fracture number/recency from events;
+- secondary-osteoporosis context;
+- contextual adjustment reasons;
+- optional TBS when actually used;
+- distinguish framework output from management category;
+- alcohol-unit definition;
+- neutral framework/category coherence checks.
+
+## 24.3 DXA / VFA / labs / function
+
+- laboratory status/tri-state so blank is not ambiguous;
+- units discipline including vitamin D and CTX;
+- lowest T-score/diagnostic category;
+- spine–hip discordance;
+- derived VFA indication reasons;
+- renal/mineral safety context;
+- optional corrected calcium when justified;
+- LSC-aware neutral trend descriptor;
+- BTM timing/context;
+- VFA-positive → fracture-event reconciliation;
+- provenance hints;
+- later sarcopenia depth only if useful.
+
+## 24.4 Treatment / sequencing
+
+- denosumab exit/delay safety derivation;
+- next-due/overdue administration logic;
+- renal/calcium/vitamin-D safety gates;
+- post-anabolic consolidation;
+- bisphosphonate duration/holiday review;
+- treatment failure vs adherence-limited apparent failure;
+- holiday restart trigger;
+- anabolic duration limits;
+- decision→episode/task linking;
+- plan-complete vs unresolved-critical coherence;
+- date reconciliation;
+- decision confidence distinct from visit confidence.
+
+## 24.5 Communication
+
+- medication-specific applicability;
+- completeness over applicable domains only;
+- preserve teach-back as distinct evidence;
+- preference-chain coherence;
+- misunderstanding → communication Signal;
+- information-type completeness;
+- structured Step-5 Signal preparation;
+- archetype-specific emphasis;
+- free-text privacy reminders.
+
+## 24.6 Documentation/provenance
+
+- clinical-process-present read-only column;
+- discrepancy hint when clinical process occurred but formal trace absent;
+- missing-domain derivation;
+- readiness/coherence gates;
+- Heidi coherence;
+- provenance auto-feed;
+- objective completion-time fallback;
+- taxonomy mapping;
+- PII reminder consistency.
+
+## 24.7 Cross-cutting
+
+- central store helper when pilot evidence justifies refactor;
+- shared registries;
+- clear-on-collapse invariant;
+- accessibility roles;
+- unit metadata as first-class information.
+
+Prioritization:
+
+```text
+safety/data loss
+→ data interpretability
+→ pilot usability
+→ clinical safety derivations
+→ provenance/reproducibility
+→ structured Signals / Practice Review intelligence
+→ polish
 ```
 
 ---
 
-# 7. Strength loop
+# 25. Evidence / standards / competency architecture
 
-Positive performance is not simply marked green.
+Osteoporosis domains remain:
 
-```text
-POSITIVE SIGNAL
-→ repeated?
-→ stable over time?
-→ adequate sample/data completeness?
-→ audit confirmation?
-→ external comparison if valid?
-→ SUSTAINED STRENGTH
-```
+1. Diagnosis & case finding
+2. DXA / VFA / imaging
+3. Fracture-risk assessment
+4. Secondary osteoporosis & laboratory evaluation
+5. Pharmacologic treatment selection
+6. Sequential therapy / treatment transitions
+7. Monitoring / treatment response / adherence
+8. Falls, frailty, exercise & nutrition
+9. Communication / shared decision making / continuity
 
-Actions for a sustained strength:
-
-- preserve the successful process;
-- decrease basic repetition;
-- increase case difficulty;
-- benchmark externally where meaningful;
-- periodic surveillance;
-- consider translating the pattern into a reusable best-practice protocol.
-
----
-
-# 8. Module 01 — Osteoporosis competency map v0.1
-
-Initial domains:
-
-1. **Diagnosis & case finding**
-2. **DXA / VFA / imaging**
-3. **Fracture-risk assessment**
-4. **Secondary osteoporosis & laboratory evaluation**
-5. **Pharmacologic treatment selection**
-6. **Sequential therapy / treatment transitions**
-7. **Monitoring / treatment response / adherence**
-8. **Falls, frailty, exercise & nutrition**
-9. **Communication / shared decision making / continuity**
-
-Each domain must eventually connect:
+Each domain eventually links:
 
 ```text
 Standards
 ↔ Evidence
+↔ Competencies
 ↔ Learning
-↔ Tests/Cases
+↔ Assessment
 ↔ Clinical encounters
-↔ Patient feedback
-↔ KPIs/Audit
-↔ Benchmarks
-↔ Improvement projects
+↔ Audit
+↔ Practice Review
+↔ Patient Voice
+↔ Signals
+↔ Improvement
 ```
 
-This taxonomy is provisional and should be revised when the first complete standards/competency inventory is built.
-
 ---
 
-# 9. Existing Cockpit position inside Module 01
-
-The current `index.html` + `main.py` Cockpit provides substantial point-of-care structure. It is not discarded.
-
-It becomes the **Clinical Practice / Encounter Execution layer** of Module 01.
-
-Planned architectural corrections before deeper integration include:
-
-- separate guideline frameworks rather than a hybrid risk engine;
-- remove unvalidated custom risk scores from treatment-decision authority;
-- rebuild longitudinal DXA around BMD/LSC/scanner comparability rather than arbitrary T-score deltas;
-- structure fractures as events;
-- structure treatment episodes and administrations with exact dates;
-- convert follow-up into due-date tasks;
-- add visit audit/coverage logic;
-- replace brittle evidence string matching with rule-level evidence metadata;
-- add privacy/authentication controls before identifiable patient use.
-
-These corrections belong to later implementation slices after the current blueprint/baseline design is approved.
-
----
-
-# 10. Clinical Excellence Home — wireframe v0.1
-
-The Home screen should answer within roughly 20–30 seconds:
-
-- Where am I now?
-- What improved?
-- What is the biggest current gap?
-- What needs action today?
-
-Suggested top-level structure:
+# 26. Evidence-to-practice lifecycle
 
 ```text
-CLINICAL EXCELLENCE
-
-Overall state: Baseline / Improving / Stable / Needs attention
-Overall score: unavailable until baseline is adequate
-Improvement velocity
-Current strongest domain
-Current priority gap
-Evidence freshness
-
-WHAT NEEDS MY ATTENTION?        MY DEVELOPMENT
-Clinical safety                 Knowledge Mastery
-Overdue clinical tasks          Guideline Mastery
-Practice gaps                   Clinical Execution
-Learning due                    Decision Quality
-Evidence updates                Continuity
-Re-audits due                   Patient Communication
-                                Safety
-                                Evidence → Practice
-                                Calibration
-
-TODAY'S LEARNING                CLINICAL PRACTICE
-Adaptive questions              Encounter performance
-Case linked to recent gap       Key KPI gaps
-Article/course linked to gap    Data completeness
-Estimated time                  Current run-chart movement
-
-ACTIVE IMPROVEMENT PROJECTS     AUDIT & SAFETY
-Baseline → current → target     Last audit
-Interventions                   Omissions / near misses
-Next re-audit                   Safety actions
-
-KNOWLEDGE & EVIDENCE            COURSES & EVENTS
-Guidelines current/review due   Online + in-person
-Articles pending appraisal      Relevance to active gaps
-Knowledge debt                  Registration/deadline
+NEW EVIDENCE
+→ relevance/authority/quality
+→ impact classification
+→ affected standard/rule?
+→ clinician/system review
+→ approved change
+→ implementation in workflow/learning/communication/KPI
+→ re-measure practice
 ```
+
+Never silently hybridize incompatible guideline thresholds.
 
 ---
 
-# 11. Progress bars and measurement model
+# 27. Learning / mastery engine
 
-The dashboard should show multiple domain bars plus an eventual overall summary.
-
-Candidate domains:
-
-- Knowledge Mastery
-- Guideline Mastery
-- Clinical Practice / Execution
-- Decision Quality
-- Continuity of Care
-- Audit & Safety
-- Evidence → Practice Translation
-- Patient Understanding / Communication
-- Calibration
-
-For each score preserve:
-
-```text
-current
-baseline
-change
-trend
-sample size / denominator
-reliability
-standard / target
-benchmark + comparability when available
-```
-
-Progress bars show **current state**. Run charts show **trajectory**.
-
-Potential later metric:
-
-```text
-Improvement velocity = longitudinal rate of improvement
-```
-
-Do not interpret plateau mechanically; distinguish a stable high-performing domain from an unresolved stagnant gap.
-
----
-
-# 12. Baseline Osteoporosis Audit v1 — active implementation state
-
-The Baseline Audit design and KPI dictionary now exist and the Steps 1–6 prospective capture flow is implemented. The approved sequence is:
-
-```text
-pre-pilot hardening + smoke test
-→ 5 consecutive pilot encounters
-→ one deliberate usability/branching/calculation-contract refinement
-→ freeze form + KPI applicability
-→ 30 consecutive unique scored baseline cases
-→ baseline lock
-```
-
-The audit specification includes sampling, inclusion/exclusion rules, KPI definitions, denominator/applicability rules, data completeness, reliability/sample-size conventions and separation of clinical process from formal documentation/capture quality.
-
-During the 5-case usability pilot, the objective is not performance scoring. It is to verify capture completeness, branching, persistence, friction, timing and whether the field→KPI contract can classify cases without hidden clinician interpretation except where explicitly manual.
-
----
-
-# 13. Learning engine
-
-Learning state is not a binary completed checkbox.
-
-Canonical progression:
+Canonical learning progression:
 
 ```text
 UNREAD
@@ -638,279 +1090,187 @@ UNREAD
 → RETENTION CHECK
 ```
 
-Adaptive learning should use:
+Adaptive priority should use:
 
-- spaced repetition;
-- recent clinical signals;
+- accepted Practice Review Signals;
+- audit gaps;
 - high-confidence errors;
-- active improvement projects;
-- new evidence affecting practice;
+- active Improvement Projects;
+- new evidence;
 - weak domains;
-- advanced cases for sustained strengths.
-
-Suggested cadence remains configurable, but the engine should support:
-
-- brief weekly question sets;
-- monthly case-based assessment;
-- periodic larger milestone assessment;
-- complex open clinical cases;
-- case-triggered learning after real encounters.
+- advanced challenge for sustained strengths.
 
 ---
 
-# 14. Evidence-to-practice lifecycle
+# 28. Patient Voice
+
+Patient feedback should capture the patient’s own report of:
+
+- understanding condition;
+- understanding plan;
+- understanding treatment rationale/duration/risks;
+- whether questions/preferences were addressed;
+- free-text confusion/concern/praise/suggestion.
+
+Repeated themes can become Signals and Improvement Projects and should be re-measured after intervention.
+
+---
+
+# 29. Safety and privacy
+
+The public repository must never contain identifiable patient data or raw real transcripts.
+
+Production transcript handling must be designed so:
+
+- raw transcript is transient by default;
+- logs do not emit transcript text;
+- accepted structured data enters protected clinical storage only after review;
+- secret/API/provider configuration stays out of source;
+- access, audit trail, retention and GDPR/privacy controls are treated explicitly.
+
+Legacy public patient routes/CORS exposure remains a separate security-hardening concern; protection of `/clinical/*` alone is not whole-service compliance.
+
+---
+
+# 30. Clinical Calendar / CareTasks — independent deferred track
+
+Calendar foundation exists, but live Digital Secretary/Setmore feed is paused.
+
+Permanent architecture remains:
 
 ```text
-NEW EVIDENCE
-→ relevance
-→ authority/quality
-→ impact classification
-→ does it change a standard/rule?
-  ├─ no → supportive/archive/current evidence base
-  └─ yes
-      ↓
-    identify affected objects
-      ↓
-    review/approve change
-      ↓
-    implement in Cockpit/curriculum/patient communication/KPI
-      ↓
-    re-measure practice
+Appointment = scheduled attendance
+CareTask = clinical action that may exist without an appointment
 ```
 
-The system should track **Evidence Responsiveness** without rewarding reflexive adoption of every new publication.
+Paused Calendar integration must not block transcript capture, Practice Review, audit, standards or learning work.
 
 ---
 
-# 15. Patient Voice loop
+# 31. Clinical Excellence Home
 
-Patient feedback should be capable of producing system change.
+The eventual Home should answer quickly:
 
-Example:
+1. Where am I?
+2. What improved?
+3. Biggest current gap?
+4. What needs action today?
+
+Candidate sections:
 
 ```text
-patient reports treatment rationale unclear
-→ PatientFeedback
-→ Signal
-→ look for repeated pattern
-→ communication gap confirmed
-→ targeted evidence/learning + handoff/teach-back change
-→ measure next cohort
-→ retain or revise intervention
+Attention / safety / overdue care
+Clinical Practice Review signals
+Audit / run charts
+Strengths and gaps
+Learning due
+Evidence freshness
+Active Improvement Projects
+Patient Voice themes
+What the system learned this month
 ```
 
-A single comment may remain an individual signal; repeated similar feedback may become a system-level Improvement Project.
+Do not build polished summary scores before the data contracts and baseline are sufficient.
 
 ---
 
-# 16. Personal adaptation
+# 32. Stage sequence for the new Practice Review program
 
-The system should fit the working style of a clinician who values precision, challenge, explicit reasoning and continuous refinement.
+## Stage PR-0 — Governance and data-contract design
 
-Supported modes:
+Deliverables:
 
-- **STANDARD** — routine support;
-- **CHALLENGE** — identify omissions/alternatives;
-- **RED TEAM** — strongest evidence-based counter-case;
-- **LEARNING** — convert encounter into deliberate practice.
+- six-canonical control-plane upgrade;
+- `PracticeReview`, `PracticeObservation`, `DecisionReconstruction`, `CommunicationReview`, `WorkflowReview` contracts;
+- transcript privacy/provenance contract;
+- baseline exposure policy.
 
-Design safeguards:
+## Stage PR-1 — Transcript paste + structured candidate extraction
 
-- high-confidence errors receive priority;
-- reasoned overrides are recorded, not automatically punished;
-- improvements are ranked by clinical importance;
-- distinguish critical defect from optional refinement;
-- stop expanding validation/scope once evidence is sufficient for the approved objective.
+Deliverables:
 
----
+- paste UI;
+- ephemeral transcript endpoint;
+- structured JSON extraction;
+- no raw persistence/logging;
+- objective-domain candidates first;
+- validation against existing schemas.
 
-# 17. Repository structure direction
+## Stage PR-2 — Clinician review/acceptance workflow
 
-Current root files remain:
+Deliverables:
 
-```text
-index.html
-main.py
-osteoporosis-qa-handout.html
-Dockerfile
-requirements.txt
-```
+- candidate review screen;
+- Accept/Reject/Edit;
+- authoritative field merge;
+- provenance and clinician-review state;
+- conflict handling against existing values.
 
-Canonical control files are now root-level by design.
+## Stage PR-3 — Quick Practice Review in shadow mode
 
-As implementation expands, prefer organized directories rather than root-file sprawl. Candidate future structure:
+Deliverables:
 
-```text
-core/
-modules/osteoporosis/
-docs/evidence/
-docs/audits/
-docs/benchmarks/
-docs/learning/
-archive/
-tests/
-```
+- review engine consuming structured encounter + transcript + audit + evidence;
+- structured PracticeObservations;
+- concise strengths/improvements/safety/reasoning/communication output;
+- not shown routinely during scored baseline.
 
-Do not move current runtime files merely for aesthetics during the Blueprint phase. Repository reorganization should be a deliberate implementation step with working deployment preserved.
+## Stage PR-4 — Deep Review / Red Team / Decision Reconstruction
 
----
+Deliverables:
 
-# 18. Privacy/security boundary
+- chronological decision reconstruction;
+- counter-case generation;
+- evidence-linked critique;
+- uncertainty/override handling.
 
-The GitHub repository is public and therefore must contain no identifiable patient data.
+## Stage PR-5 — Longitudinal pattern and Signal engine integration
 
-Before any production persistence of identifiable clinical information, the implementation plan must explicitly cover:
+Deliverables:
 
-- authentication;
-- authorization / access control;
-- encrypted transport/storage as applicable;
-- audit logging;
-- secrets management;
-- data minimization;
-- GDPR/privacy requirements;
-- retention/deletion policy;
-- separation of public code from private clinical data.
+- aggregate reviewed observations;
+- recurrence/reliability logic;
+- gap-class assignment;
+- sustained-strength detection;
+- Signal promotion.
 
----
+## Stage PR-6 — Intervention / Learning linkage
 
-# 19. Current phase deliverables
+Deliverables:
 
-This phase exits only when the following are reviewed/approved:
+- Signal → LearningItem / Challenge / workflow change / ImprovementProject;
+- re-measurement due state;
+- calibration where useful.
 
-- [x] canonical five-file control plane created in the Osteoporosis repository;
-- [x] Core Engine architecture documented;
-- [x] Signal-first feedback model documented;
-- [x] first Osteoporosis competency taxonomy documented;
-- [x] Home Dashboard wireframe documented;
-- [x] transparent score/run-chart principles documented;
-- [x] Baseline Osteoporosis Audit draft v1 + KPI Dictionary draft v1 defined;
-- [x] field→KPI calculation contract defined for the pilot;
-- [x] Steps 1–6 implemented;
-- [x] pre-pilot hardening P1–P8 completed;
-- [ ] final pre-pilot data-quality additions (`labs_date`, Step 6 conflict clear-on-collapse) deployed and smoke-tested;
-- [ ] 5-case usability pilot completed;
-- [ ] one deliberate post-pilot refinement completed;
-- [ ] Baseline Form v1 + KPI applicability/calculation contract frozen;
-- [ ] 30-case scored baseline completed and locked;
-- [ ] Core object schema v1 reviewed and frozen enough for broader implementation;
-- [ ] Osteoporosis competency map expanded into explicit standards/competencies;
-- [ ] first dashboard data contract defined.
+## Stage PR-7 — Adaptive consultation-flow presentation layer
 
-**Current next action:** complete `labs_date` + Step 6 conflict clear-on-collapse, deploy, run the explicit synthetic smoke test, then begin Pilot Case 1/5 on the next clinical workday if the smoke test passes.
+Deliverables:
+
+- archetype-specific visible workflow;
+- same underlying canonical schema;
+- risk-synthesis gate;
+- explicit Close card;
+- reduced duplicate entry.
+
+Implement after pilot/review evidence identifies the highest-value workflow changes rather than redesigning the form from one transcript alone.
+
+## Stage PR-8 — Patient Voice / outcome enrichment
+
+Use patient feedback and follow-up outcome as additional Practice Review/Signal inputs without converting raw outcomes into simplistic competence penalties.
 
 ---
 
-# 20. Baseline Audit improvement backlog from external review
+# 33. Phase exit criteria
 
-This section consolidates the complete external code/design review into one ordered backlog. It does **not** mean every item should be implemented before the 5-case pilot. The pilot remains the evidence gate for form burden and usability.
+This phase is sufficiently complete when:
 
-## 20.1 Pre-pilot data quality / integrity
-
-Implement before the real pilot when small and low-risk:
-
-- `labs_date` in Step 3 as a native calendar/date input so entered laboratory values can be distinguished as current vs historical;
-- Step 6 source-conflict dependent fields (`conflict_resolution`, `conflict_note`) visible only when conflict is `yes`, with clear-on-collapse before persistence;
-- preserve the completed P1–P8 regression protections: hidden-data hygiene, module ownership on save, whole-form progress, Step1→Step3 single source of truth, DXA machine normalization, inline Prior DXA/stable deletion, archetype applicability, BMI source behavior.
-
-The smoke test is the stop/go gate. No additional feature should delay the pilot unless it reveals a safety, data-loss or material data-quality defect.
-
-## 20.2 First deliberate post-pilot refinement — highest-priority candidates
-
-Use the 5 pilot encounters to decide which of these are justified by observed friction or ambiguity:
-
-### Encounter/adaptive architecture
-- shared archetype registry: one canonical object for labels, context text, applicability, required fields and later consistency rules;
-- archetype-specific required-field gating only where needed for capture completeness;
-- background consistency flags for impossible/suspicious combinations;
-- free-text specifier for `other` archetype;
-- clarify `sample-first` versus `new patient` semantics.
-
-### Step 2 — fracture risk / FRAX reproducibility
-- FRAX input-completeness derived state;
-- derive number/recency of prior fractures from structured events;
-- derive secondary-osteoporosis context where appropriate, including later early-menopause detail;
-- prefill contextual-adjustment reasons from existing structured/derived inputs while preserving clinician control;
-- optional TBS field/context when actually used;
-- explicitly distinguish framework output from overall management risk category;
-- alcohol-unit definition/tooltip;
-- neutral framework/category coherence checks only after denominator semantics are frozen.
-
-### Step 3 — results/data quality
-- tri-state/status model for laboratory panels so blank does not ambiguously mean not done/not available/not entered;
-- units discipline, especially 25-OH vitamin D (`ng/mL` vs `nmol/L`) and CTX units;
-- lowest T-score + diagnostic-category derived context;
-- spine–hip discordance derived flag;
-- VFA indication reasons derived/prefilled from existing height-loss, GC, T-score and vertebral-fracture context;
-- renal/calcium/Vit-D safety background context;
-- optional albumin/corrected-calcium support if justified;
-- LSC-aware neutral trend descriptor;
-- BTM timing/months-on-treatment context;
-- VFA-positive result reconciliation with structured fracture events;
-- provenance hints from Step 3 to Step 6;
-- later EWGSOP2 staging only if the pilot shows sarcopenia depth is useful and muscle-mass data are available.
-
-### Step 4 — treatment, sequencing and safety
-- denosumab exit/delay safety derivation;
-- administration next-due-date and overdue derivation;
-- cross-step renal/calcium/Vit-D safety gates;
-- post-anabolic consolidation signal;
-- bisphosphonate duration/holiday review points;
-- on-treatment fracture with adequate adherence → reassessment/failure candidate signal;
-- distinguish adherence-limited apparent failure from true treatment failure;
-- holiday review/restart trigger;
-- anabolic duration limits;
-- decision→episode linking and decision→task expectations where this reduces duplicate entry;
-- reason↔decision coherence checks;
-- `plan_complete` vs `unresolved_critical` contradiction flag;
-- date reconciliation/validation across episodes, administrations and transitions;
-- explicitly distinguish decision confidence from overall-visit confidence;
-- keep ONJ/atypical-femur counseling in communication rather than duplicating it as Step-4 treatment state.
-
-### Step 5 — communication / early Signal wiring
-- medication/agent-specific applicability for medication plan, reason, alternatives, duration/timing, safety, missed dose and sequencing communication;
-- communication completeness only over applicable items;
-- preserve teach-back as a distinct evidence marker;
-- preference-chain coherence and conditional `preferences_influenced_plan`;
-- neutral teach-back/understanding coherence signal;
-- unresolved misunderstanding → communication-signal candidate;
-- information-given without information-type → capture-completeness flag;
-- structured Step-5 Signal object compatible with the future Signal Engine;
-- archetype-specific communication emphasis;
-- privacy reminder consistency on free-text fields;
-- explicit distinction between decision confidence and visit confidence.
-
-### Step 6 — provenance/documentation axis
-- read-only `clinical process present` column derived from Steps 1–5 beside manual GeSY/Heidi trace;
-- candidate material-discrepancy hint when clinical process is present but formal trace is absent;
-- derive/reconcile `missing_domains` from the trace matrix rather than duplicate manual state;
-- coherence gates for reliability, major gaps, unresolved conflicts and `ready_for_audit`;
-- Step1↔Step6 Heidi coherence checks;
-- provenance auto-feed/hints from reviewed DXA/labs/imaging;
-- objective completion-time fallback from timestamps, while retaining clinician-entered timing during pilot if useful;
-- mapping between Step-5 signal taxonomy and Step-6 clinical-domain taxonomy;
-- PII reminder consistency on conflict/formal-record notes.
-
-## 20.3 Cross-cutting architecture after pilot evidence
-
-- central store helper so module slices use one explicit merge/persistence contract rather than multiple ad-hoc localStorage writers;
-- shared registries for archetypes, machines, risk options and clinical domains to prevent drift;
-- clear-on-collapse as a general invariant for dependent fields;
-- accessibility roles for segmented/radio-style choice lists;
-- unit metadata as first-class data-quality information;
-- preserve localStorage as prototype-only and move to authenticated/private production storage before identifiable use.
-
-## 20.4 Implementation discipline
-
-Prioritization order remains:
-
-```text
-safety / data loss
-→ data interpretability
-→ pilot usability and friction
-→ clinical safety derivations
-→ reproducibility / provenance automation
-→ structured Signals / broader intelligence
-→ polish
-```
-
-Do not implement the entire backlog before the pilot. The 5 real pilot encounters should determine which refinements materially improve capture and which are unnecessary complexity.
+- Baseline Form/KPI contract is frozen after pilot;
+- 30-case scored baseline is locked or the methodology is explicitly revised;
+- transcript extraction safely reduces duplicate entry;
+- Practice Review can produce structured, evidence-traceable observations;
+- clinician can accept/modify/dismiss them;
+- repeated observations become denominator-aware Signals;
+- Signals trigger root-cause-appropriate interventions;
+- later encounters can show whether improvement persisted;
+- adaptive osteoporosis workflow is informed by real evidence rather than one-off preference;
+- a fresh conversation can reconstruct current project truth entirely from the six canonicals without chat history.

@@ -2,333 +2,412 @@
 
 > **STATUS:** permanent project operating authority.
 > **CANONICAL HOME:** `athpapachr-cmd/osteoporosis`.
-> **SCOPE:** the reusable Clinical Excellence Core Engine and Module 01 — Osteoporosis, including the existing Osteoporosis Cockpit, future learning/audit layers, and every AI/Codex/ChatGPT session working on this repository.
+> **SCOPE:** reusable Clinical Excellence Core Engine + Module 01 Osteoporosis + every AI/Codex/ChatGPT session working on this repository.
 > **PRODUCT OWNER:** the clinician using the system.
 
 ---
 
-## 1. Canonical documentation architecture — CLOSED ACTIVE SET
+# 1. Mandatory bootstrap — SIX CANONICALS before project work
 
-The active canonical project set contains exactly five documents:
+A fresh conversation must not reconstruct the project from chat memory, a prior assistant summary, README, an old PR body or a remembered implementation.
 
-1. `AGENTS.md` — permanent operating rules.
-2. `TODO.md` — long-range compass across phases.
-3. `CLINICAL_EXCELLENCE_PLAN.md` — the one active detailed phase/architecture plan.
-4. `HANDOFF_CURRENT.md` — exact current operational handoff.
-5. `osteoporosis-change-log.md` — append-only historical logbook.
+Before substantial planning, implementation, review, branch/PR creation, merge, deploy, smoke or canonical mutation:
 
-`README.md` is navigation only and is not a sixth source of architecture truth.
+1. verify the fresh remote GitHub SHA of `athpapachr-cmd/osteoporosis/main`;
+2. read the six active canonical authorities in this order:
+   1. `AGENTS.md`;
+   2. `TODO.md`;
+   3. `CLINICAL_EXCELLENCE_PLAN.md`;
+   4. `SLICE_PLAN_CURRENT.md`;
+   5. `CURRENT_OPERATIONAL.md`;
+   6. `osteoporosis-change-log.md`;
+3. build an internal **Canonical Bootstrap Manifest** containing at minimum:
+   - verified `main` SHA;
+   - current major phase;
+   - active slice and its design status;
+   - active writer/lock and allowed mutation scope;
+   - current branch/PR/deploy/smoke state when applicable;
+   - permanent safety/privacy/baseline invariants relevant to the work;
+   - exact next authorized action;
+   - explicit deferred/forbidden actions;
+4. inspect the exact runtime/schema/evidence needed for the requested task only after the bootstrap.
 
-Permanent rule:
+Hard rules:
 
-> **ONE CANONICAL PROJECT TRUTH.**
+```text
+CHAT MEMORY != CANONICAL TRUTH
+OLD HANDOFF != CURRENT STATE
+PARTIAL CANONICAL READING != BOOTSTRAP
+FRESH CONVERSATION != NEW MUTATION AUTHORITY
+```
 
-Do not create a second active roadmap, TODO, handoff, architecture contract or overlapping plan for a subject already governed by these files. If a future major phase needs a new detailed plan, archive the completed active plan unchanged and replace it with one new active phase plan only after explicit product-owner approval.
-
-Historical material is preserved, not silently rewritten. Superseded plans belong under `archive/` with provenance.
+If current truth, writer scope or next action cannot be determined, stop mutation and reconcile the canonicals first.
 
 ---
 
-## 2. Product purpose
+# 2. Canonical architecture — progressive refinement
 
-This repository is no longer only an Osteoporosis Cockpit. The Cockpit is one point-of-care component of a broader **Personal Clinical Excellence System**.
+There are exactly six active canonical authorities:
 
-The reusable system must connect:
+```text
+AGENTS.md
+→ TODO.md
+→ CLINICAL_EXCELLENCE_PLAN.md
+→ SLICE_PLAN_CURRENT.md
+→ CURRENT_OPERATIONAL.md
+→ runtime/code execution
+
+osteoporosis-change-log.md = durable history
+```
+
+Their roles are deliberately different.
+
+### `AGENTS.md`
+Permanent operating rules: how all sessions must work.
+
+### `TODO.md`
+Long-range product roadmap/checklist: where the system is going and broad completion state.
+
+### `CLINICAL_EXCELLENCE_PLAN.md`
+Active detailed phase architecture: system design, object model, major implementation stages, dependencies, methodological constraints and phase exit criteria.
+
+### `SLICE_PLAN_CURRENT.md`
+One approved current slice: exact problem, scope/out-of-scope, design, object/data contract, implementation seams, acceptance evidence, rollback and REPLAN triggers.
+
+### `CURRENT_OPERATIONAL.md`
+The sole operational **NOW** and active-work lock: current source identity, writer, branch/PR, status, blockers, deploy/smoke state and exact next action.
+
+### `osteoporosis-change-log.md`
+Append-only durable history of completed decisions, releases and validated milestones. Historical NEXT/HOLD language has no operational authority.
+
+`HANDOFF_CURRENT.md` is retained only as a compatibility redirect and is not an active canonical authority.
+
+`README.md` is navigation only.
+
+## 2.1 Contradiction rule
+
+A new accepted rule must not coexist with an older active instruction that directs materially incompatible behavior.
+
+```text
+identify contradiction
+→ determine correct canonical owner
+→ replace/remove/supersede stale active instruction
+→ preserve historical fact in changelog/archive if useful
+→ scan remaining canonicals for drift
+```
+
+Do not duplicate the same rule into every file merely to make it visible.
+
+---
+
+# 3. One active writer for overlapping mutation scope
+
+`CURRENT_OPERATIONAL.md` is the sole writer lock.
+
+Before modifying runtime or canonicals, determine:
+
+- active task;
+- active writer/branch/scope;
+- HOLD/review/merge/deploy authority;
+- exact next action.
+
+Rules:
+
+```text
+active overlapping writer exists
+→ other sessions may inspect/review
+→ other sessions MUST NOT mutate overlapping scope
+
+review-only state
+→ inspection allowed
+→ mutation not implied
+
+new conversation
+→ does not override an existing lock
+```
+
+A meaningful implementation session should claim its scope in `CURRENT_OPERATIONAL.md` before overlapping mutation and release/update that lock when the slice closes or pauses.
+
+---
+
+# 4. Canonical update protocol — continuity after every meaningful step
+
+The documentation system exists so a conversation can end at any point and the next fresh conversation can resume without reconstructing hidden context.
+
+After every material state transition, update the correct canonical owner before moving on.
+
+### Operational state changes → `CURRENT_OPERATIONAL.md`
+Update when any of these change:
+
+- active writer/scope;
+- branch/PR/head/base;
+- implementation started/completed;
+- test/smoke evidence;
+- blocker/HOLD;
+- merge/deploy state;
+- exact next action.
+
+It must always distinguish:
+
+```text
+DESIGNED
+!= IMPLEMENTED
+!= TESTED
+!= MERGED
+!= DEPLOYED
+!= PRODUCTION-SMOKE-VERIFIED
+!= PILOT-VALIDATED
+```
+
+### Active design changes → `SLICE_PLAN_CURRENT.md`
+Update only when the design of the active slice changes materially. A discovery that invalidates an owner, data contract, safety assumption, workflow state or implementation boundary is a **REPLAN trigger**, not permission to patch around the plan.
+
+### Roadmap/completion changes → `TODO.md`
+Update when a durable roadmap item changes status, priority or sequence.
+
+### Phase architecture changes → `CLINICAL_EXCELLENCE_PLAN.md`
+Update when object architecture, methodological rules, major stage sequence or system boundaries change. Do not use it as a PR log.
+
+### Completed historical event → `osteoporosis-change-log.md`
+Append after meaningful completion/merge/deploy/validated decision. Do not rewrite old entries to match new terminology.
+
+At the end of a substantial session, `CURRENT_OPERATIONAL.md` must be sufficient for a new session to answer:
+
+1. Where are we?
+2. What is already proven?
+3. What is not yet proven?
+4. What is actively being changed?
+5. What is deferred?
+6. What exactly happens next?
+
+---
+
+# 5. Product purpose
+
+This repository is not only an Osteoporosis Cockpit. It is the proving ground for a reusable **Personal Clinical Excellence System** whose purpose is to improve the clinician's real practice over time.
+
+Canonical learning-health loop:
 
 ```text
 STANDARD
 → LEARN
 → TEST / MASTER
-→ APPLY IN REAL CLINICAL PRACTICE
+→ APPLY IN REAL PRACTICE
 → MEASURE
 → AUDIT
-→ IDENTIFY GAP OR STRENGTH
-→ TARGETED CHANGE / REINFORCEMENT
+→ PRACTICE REVIEW
+→ GAP OR STRENGTH
+→ INTERVENE / REINFORCE
 → RE-MEASURE
 → SYSTEM LEARNS
 ```
 
-Module 01 is **Osteoporosis**. The architecture must be reusable later for other clinical domains such as low-back pain, neck pain, knee pain, hip pain and shoulder pain without rebuilding the Core Engine from scratch.
+Module 01 is Osteoporosis. Reusable Core mechanics must later support other clinical domains without rebuilding the engine.
 
-Every substantial design decision must ask:
+Every substantial design decision asks:
 
-> **Is this reusable Core Engine behavior, or Osteoporosis-specific domain content?**
+> Is this reusable Core behavior, or Osteoporosis-specific clinical content?
 
 ---
 
-## 3. The system is a Learning Health System, not a static dashboard
+# 6. Audit and Practice Review are different instruments
 
-The system must behave as a dynamic feedback organism.
+The system must not collapse measurement and coaching into one black box.
 
-Signals may originate from:
+### Audit
+Answers primarily:
 
-- real clinical encounters;
-- patient feedback;
-- audit findings;
-- tests and learning performance;
-- errors and near misses;
-- new guidelines or evidence;
-- courses, seminars and congresses;
-- external benchmarks;
-- sustained strengths;
-- clinical outcomes and follow-up failures.
+> Did the applicable clinical process occur according to the defined metric/standard?
 
-Canonical signal lifecycle:
+Audit should be deterministic where possible, denominator-aware, transparent and neutral during baseline collection.
+
+### Clinical Practice Review
+Answers primarily:
+
+> How well was the consultation conducted, reasoned, communicated and closed, and what should change next time?
+
+Practice Review may use AI-assisted interpretation but every important observation must preserve:
+
+- encounter evidence/provenance;
+- linked standard/evidence when applicable;
+- confidence;
+- clinical importance;
+- whether it is a strength, gap, safety concern or uncertainty;
+- proposed action;
+- clinician accept/modify/dismiss state.
+
+Practice Review never silently rewrites clinical truth or substitutes for clinician judgment.
+
+---
+
+# 7. Four gap classes — prescribe the right intervention
+
+Negative Signals must be classified before intervention:
+
+1. **Knowledge gap** — relevant knowledge missing/not retained.
+2. **Reasoning gap** — facts known but interpretation/decision process weak.
+3. **Execution gap** — clinician knows what should happen but action is unreliable.
+4. **Communication/system gap** — reasoning may be sound but communication, workflow, documentation or continuity fails.
+
+Typical response:
 
 ```text
-DETECT
-→ CLASSIFY
-→ ASSESS IMPORTANCE / RELIABILITY
-→ LINK TO DOMAIN / STANDARD / COMPETENCY
-→ DECIDE ACTION
-→ IMPLEMENT
-→ REASSESS
-→ CLOSE OR CONTINUE
+knowledge → targeted reading/testing/spaced repetition
+reasoning → cases/challenge/red-team/deliberate practice
+execution → workflow/checklist/task redesign
+communication/system → teach-back/template/handoff/process redesign
 ```
 
-Nothing important should end as a passive note if it implies a reasonable action, learning need, safety intervention, benchmark comparison or re-audit.
+Do not answer every gap with more reading.
 
 ---
 
-## 4. Four gap classes — do not prescribe the wrong remedy
+# 8. Strengths are active Signals
 
-When performance is suboptimal, classify the cause before acting:
+Repeated good performance may mature into `SUSTAINED_STRENGTH` only after adequate evidence and stability over time.
 
-1. **Knowledge gap** — the relevant knowledge is missing or not retained.
-2. **Reasoning gap** — the facts are known but the clinical decision process is weak or inconsistent.
-3. **Execution gap** — the clinician knows what should happen, but the action did not reliably occur.
-4. **Communication / system gap** — clinical reasoning may be sound, but workflow, documentation, handoff or patient understanding failed.
-
-Do not respond to every gap with more reading or more courses.
-
-Typical interventions:
-
-- knowledge gap → targeted articles/courses/testing/spaced repetition;
-- reasoning gap → cases, challenge mode, red-team review, peer/guideline comparison;
-- execution gap → Cockpit/workflow/checklist/task changes;
-- communication/system gap → teach-back, template/handoff changes, patient-feedback loop, workflow redesign.
+A sustained strength should trigger preservation of the successful workflow, less basic repetition, more advanced challenge and periodic surveillance rather than endless drilling.
 
 ---
 
-## 5. Strengths are active signals too
+# 9. Transparent measurement — no black-box scores
 
-The system must identify, validate and reinforce sustained strengths.
+For meaningful metrics preserve where applicable:
 
-A positive result becomes a **SUSTAINED STRENGTH** only after sufficient repeated evidence, stable performance over time and appropriate audit/sample-size context.
+```text
+current
+baseline
+change
+trend
+denominator/sample size
+reliability
+target/standard
+benchmark + comparability
+data completeness
+```
 
-A sustained strength should trigger:
-
-- less basic repetition;
-- more advanced cases;
-- external comparison where valid;
-- preservation of the workflow that produces the result;
-- periodic surveillance rather than abandonment.
-
-Do not waste learning time repeatedly drilling a domain already demonstrated to be stable and strong.
-
----
-
-## 6. Transparent measurement — no black-box scores
-
-Every progress bar or Clinical Excellence score must be explainable.
-
-For each metric display or preserve, where applicable:
-
-- current performance;
-- baseline;
-- absolute change / percentage-point change;
-- trend over time;
-- denominator and sample size;
-- reliability/confidence of the estimate;
-- target/standard;
-- external benchmark if available;
-- comparability of the benchmark;
-- data completeness.
-
-Never display a stable-looking percentage from an inadequate sample without a warning.
-
-An overall score may summarize the system, but it must never hide constituent domain scores or safety-critical deficits.
-
-Clinical outcomes such as fracture occurrence must not be naively converted into a clinician-competence penalty without appropriate risk/context adjustment.
+No stable-looking composite Clinical Excellence score before an adequate baseline exists. Outcomes such as fractures must not be naively converted into clinician-competence penalties without context/risk adjustment.
 
 ---
 
-## 7. Baseline before claims of improvement
+# 10. Baseline integrity and intervention exposure
 
-Improvement must be measured against a real baseline, not an arbitrary starting score.
+The approved osteoporosis baseline sequence remains:
 
-Until an adequate baseline audit is complete, the dashboard should state that baseline assessment is in progress rather than inventing a score.
+```text
+5-case usability/capture pilot
+→ one deliberate refinement
+→ freeze Baseline Form + KPI applicability/calculation contract
+→ 30 consecutive unique scored baseline cases
+→ baseline lock
+→ systematic improvement interventions + re-audit
+```
 
-The first formal Osteoporosis baseline audit will define initial practice measurements and later re-audit comparators.
+During the scored baseline, no live KPI coaching/red-green feedback or routine Practice Review intervention should alter behavior. Safety-critical alerts remain an exception.
+
+Clinical Practice Review infrastructure may be developed and validated in **shadow mode** before baseline lock. If the product owner chooses to expose systematic coaching before the scored baseline, that is a methodological change and must be explicitly recorded; the resulting cohort must not be mislabeled as an untouched pre-intervention baseline.
 
 ---
 
-## 8. Evidence governance — explicit, versioned, non-hybrid
+# 11. AI/transcript governance
 
-Clinical rules must not silently blend incompatible guideline frameworks.
+Heidi or other transcripts are supplementary sources, not unreviewed clinical truth.
 
-Every important rule should eventually carry explicit metadata:
+For transcript-assisted capture/review:
+
+```text
+raw transcript
+→ structured candidate extraction
+→ clinician review/edit/accept/reject
+→ accepted structured data
+```
+
+Default rules:
+
+- raw transcript is ephemeral and is not persisted in PostgreSQL/localStorage/logs by default;
+- do not commit transcript content or identifiable patient information to the public repository;
+- do not invent absent values, dates, diagnoses, treatment exposure or patient preferences;
+- preserve negation, temporality, speaker/source and uncertainty;
+- distinguish patient statement, objective result, clinician interpretation, option discussed, recommendation, preference, final decision and follow-up task;
+- accepted data retains provenance such as `source=heidi_transcript` and clinician-review state;
+- AI suggestions require clinician review before becoming authoritative patient data.
+
+---
+
+# 12. Evidence governance
+
+Clinical standards/rules must be explicit, versioned and non-hybrid. Important rules should eventually carry:
 
 ```text
 rule_id
-clinical_domain
-framework / guideline
-version / year
-recommendation or criterion
-strength / certainty when available
-linked evidence IDs
+module/domain
+framework/guideline
+version/year
+recommendation/criterion
+strength/certainty when available
 reviewed_on
-status: current / review_due / superseded
+status
 ```
 
-If multiple frameworks differ, show them separately and explain the difference. Do not manufacture a synthetic threshold without explicit product-owner approval and clear labeling.
+If frameworks differ, show them separately rather than manufacturing a silent hybrid threshold.
 
-A new paper or conference item does not automatically change practice. Classify evidence impact as one of:
-
-- practice confirming;
-- interesting / no change;
-- potentially practice changing;
-- practice changing;
-- insufficient / conflicting evidence.
-
-Then identify which standards, Cockpit rules, learning material, patient information or audit KPIs are actually affected.
+New evidence should be classified as confirming, interesting/no change, potentially practice-changing, practice-changing or conflicting/insufficient before changing workflow or standards.
 
 ---
 
-## 9. AI is support, not an untraceable clinical authority
+# 13. Patient Voice
 
-AI-generated clinical support must distinguish:
+Patient feedback is a learning input, not merely satisfaction scoring. It should be capable of generating Signals and later re-measurement around understanding, plan/rationale, questions/preferences and communication failures.
 
-- structured source data;
-- deterministic rules;
-- external evidence;
-- inference;
-- uncertainty;
-- clinician override.
-
-AI must not invent missing diagnoses, medication history, fracture history, patient preferences, laboratory values or treatment decisions.
-
-Where a clinician accepts, modifies or rejects a recommendation, preserve the decision and rationale when clinically useful.
-
-The clinician must always remain able to disagree with a guideline or AI recommendation. A reasoned override is not automatically an error.
+Clinician impression of understanding remains distinct from the patient's own report.
 
 ---
 
-## 10. Personalized challenge behavior
+# 14. Privacy and production safety
 
-The system should support four explicit working modes:
+The repository is public.
 
-1. **STANDARD** — ordinary clinical support.
-2. **CHALLENGE** — identify important alternatives, omissions and weak assumptions.
-3. **RED TEAM** — assume the current decision may be wrong and construct the strongest evidence-based counter-case.
-4. **LEARNING** — convert the current case into a structured educational exercise.
+**Never commit identifiable patient data, transcripts, clinical exports, names, patient identifiers, phone/email/address, unredacted documents or secrets.**
 
-High-confidence errors are higher-priority learning signals than low-confidence errors.
+Production clinical data belongs only in authenticated/private storage. Authentication, authorization, audit logging, retention/data-minimization and GDPR/privacy requirements remain explicit production-readiness concerns.
 
-Track calibration where useful:
+Do not claim whole-service privacy/GDPR compliance merely because one clinical route is protected.
+
+---
+
+# 15. Repository/release discipline
+
+Prefer feature branch → PR → focused review/evidence → squash merge.
+
+For the current Render service, auto-deploy follows `main`; do not manually trigger a second deploy after a normal merged code/doc commit unless auto-deploy actually failed or an explicit redeploy is required.
+
+Do not expand scope for cosmetic cleanup while a safety/data-integrity objective is unresolved.
+
+Public fixtures/tests must be synthetic or fully anonymized.
+
+---
+
+# 16. Current product boundary
+
+The legacy `index.html`/legacy Cockpit remains historical point-of-care material, not the final Clinical Excellence Home.
+
+The Baseline Audit/patient-centric clinical layer is the current production proving ground. Calendar/Setmore/Zadarma integration can be paused independently and must not block Clinical Practice Review, Core Engine, standards, audit or learning work.
+
+Patient leaflets/posters remain downstream unless the product owner explicitly changes priority.
+
+---
+
+# 17. Stop rule
+
+The system exists to improve real clinical practice, not to maximize documentation volume or engineering polish.
+
+Every change should be classified as:
 
 ```text
-accuracy vs stated confidence
+critical safety/data-integrity defect
+clinically meaningful improvement
+useful operational refinement
+optional/cosmetic refinement
 ```
 
-The system should also protect against perfectionism-driven overwork by distinguishing:
-
-- critical flaw;
-- clinically meaningful improvement;
-- optional refinement;
-- cosmetic change.
-
-When evidence is sufficient and the current objective is met, stop expanding scope without a new reason.
-
----
-
-## 11. Patient Voice is part of the learning loop
-
-Patient feedback is not only a satisfaction survey.
-
-It should capture, where useful:
-
-- understanding of the condition;
-- understanding of the plan;
-- understanding of treatment rationale/duration/risks;
-- whether questions and preferences were addressed;
-- free-text confusion, concern, praise or suggestion.
-
-Repeated feedback patterns can create Signals and Improvement Projects.
-
-A patient statement that reveals systematic misunderstanding must be capable of changing communication, handoff, education or workflow and must later be re-measured.
-
----
-
-## 12. External benchmarking requires comparability
-
-External data may be used to learn what high-quality practice looks like, but comparisons must be methodologically honest.
-
-Each benchmark should eventually record:
-
-```text
-metric
-source
-country
-population
-clinical setting
-year
-definition
-value
-comparability: high / moderate / low / context only
-```
-
-Do not claim superiority or inferiority from a benchmark whose population, denominator or clinical setting is materially different.
-
----
-
-## 13. Safety and privacy — public repository rule
-
-This repository is public. Therefore:
-
-> **NO IDENTIFIABLE PATIENT DATA MAY BE COMMITTED.**
-
-Never commit:
-
-- names;
-- GeSY/EMR identifiers;
-- phone numbers/emails/addresses;
-- exact identifiable patient timelines;
-- unredacted clinical documents;
-- transcripts containing patient identifiers;
-- secrets, API keys or credentials.
-
-Use synthetic or fully anonymized fixtures/examples only.
-
-Before any future production use with identifiable patient data, authentication, authorization, audit logging, secure storage, data minimization and applicable GDPR/privacy controls must be addressed outside public source files.
-
----
-
-## 14. Repository/workflow discipline
-
-Before substantial work:
-
-1. read `AGENTS.md`;
-2. read `HANDOFF_CURRENT.md`;
-3. read the current section of `TODO.md`;
-4. read `CLINICAL_EXCELLENCE_PLAN.md` for the active architecture/phase;
-5. inspect relevant code/evidence before proposing implementation.
-
-After meaningful work:
-
-- update `HANDOFF_CURRENT.md` if current operational truth changed;
-- update `TODO.md` if roadmap status changed;
-- append to `osteoporosis-change-log.md` for completed historical events;
-- update the active plan only when architecture/phase truth genuinely changes.
-
-Do not rely on chat history as the sole project memory.
-
----
-
-## 15. Current implementation boundary
-
-The existing `index.html` and `main.py` represent the current Osteoporosis Cockpit/application baseline. They are not the complete Clinical Excellence System.
-
-Until the Blueprint/Baseline phase is approved, prioritize architecture, data definitions and audit design over large runtime rewrites.
-
-Patient handouts and educational leaflets remain downstream assets; do not let them displace current Core Engine / Module 01 design work unless the product owner explicitly changes priority.
+When the approved objective is adequately evidenced, close the slice and move on rather than extending scope without a new reason.
