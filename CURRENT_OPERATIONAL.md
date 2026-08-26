@@ -3,26 +3,23 @@
 > **STATUS:** ACTIVE OPERATIONAL AUTHORITY.
 > **Updated:** 2026-08-26 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Current main:** `1c51b44fc3b89252224f78cfabc818155373e4c6` after PR #39 lumbar-freeze merge; this handoff commit will advance `main` once written.
+> **Verified base main before this operational reconciliation:** `8649f9da02214751a5b5af8a0bacbe67e2a7a3a6`; this reconciliation commit advances `main` once written.
 > **Current major phase:** Personal Clinical Excellence foundation with a bounded Clinic Utilities detour.
 > **Active slice design:** `SLICE_PLAN_CURRENT.md` — CU-1 Physiotherapy Referral v2 clinical/content design.
 > **Supporting detour plan:** `CLINIC_UTILITIES_PLAN.md`.
 > **Frozen cervical profile:** `clinic_utilities/physio_profiles/cervical_v1_1.md`.
 > **Frozen lumbar profile:** `clinic_utilities/physio_profiles/lumbar_v1_1.md`.
 > **NEXT BODY-REGION DESIGN TARGET:** shoulder.
-> **ACTIVE CANONICAL WRITER/LOCK:** NONE.
+> **ACTIVE CANONICAL WRITER/LOCK:** NONE at this reconciliation point.
 > **ACTIVE RUNTIME WRITER/LOCK:** NONE in this repository.
 > **RUNTIME IMPLEMENTATION:** NOT AUTHORIZED for CU-1; design only.
 > **PR-1 TRANSCRIPT SLICE:** intentionally paused, preserved at `archive/slices/PR1_TRANSCRIPT_INTAKE_V3.md`.
-> **CALENDAR / DIGITAL SECRETARY:** paused for Clinical Excellence; Secretary has its own independent AC-2 writer lock.
 
 This file is the sole owner of operational **NOW**. Do not infer mutation authority from chat history.
 
 ---
 
 # 1. Product boundary
-
-The active bounded detour integrates day-to-day clinic utilities into the broader Personal Clinical Excellence workspace.
 
 ```text
 Clinical Excellence Core
@@ -35,31 +32,11 @@ Osteoporosis Module 01
 → osteoporosis-specific clinical standards/audit/workflows
 ```
 
-The PR-1 transcript design is paused intact, not abandoned.
+CU-1 is a bounded cross-module Clinic Utility design detour. PR-1 remains paused intact, not abandoned.
 
 ---
 
-# 2. PR-1 state preserved
-
-PR-1 Transcript Intake + Candidate Extraction v3 remains:
-
-```text
-DESIGNED
-NOT IMPLEMENTED
-NOT AUTHORIZED FOR IMPLEMENTATION
-```
-
-Archive:
-
-```text
-archive/slices/PR1_TRANSCRIPT_INTAKE_V3.md
-```
-
----
-
-# 3. Physiotherapy v2 architectural direction
-
-The standalone source was inspected read-only. Frozen v2 direction:
+# 2. Physiotherapy v2 architectural direction
 
 ```text
 clinical problem
@@ -80,11 +57,14 @@ selected goal != mandatory goal
 condition profile != automatic diagnosis
 not assessed != normal
 adjunct technique != default primary treatment
+clinician-entered diagnosis may be carried but not inferred
 ```
 
 ---
 
-# 4. Cervical — FROZEN v1.1
+# 3. Frozen regional profiles
+
+## Cervical — FROZEN v1.1
 
 Authoritative file:
 
@@ -92,13 +72,7 @@ Authoritative file:
 clinic_utilities/physio_profiles/cervical_v1_1.md
 ```
 
-Frozen pathways include non-specific/mechanical neck pain, radiating/radicular features, explicit formal cervicogenic headache when clinician-asserted, cervical/cervicogenic dizziness when clinician-asserted, and whiplash/post-traumatic neck pain.
-
-Cervical post-operative rehabilitation is excluded from the active cervical MVP. Trigger-point/myofascial and referred shoulder-girdle findings remain directly selectable. Neurological status is component-level tri-state and no missing/unassessed state generates normal wording.
-
----
-
-# 5. Lumbar — FROZEN v1.1
+## Lumbar — FROZEN v1.1
 
 Authoritative file:
 
@@ -106,98 +80,67 @@ Authoritative file:
 clinic_utilities/physio_profiles/lumbar_v1_1.md
 ```
 
-The prior `lumbar_v1.md` remains the historical design candidate.
+Lumbar includes non-specific/mechanical LBP, radiating/radicular features, stenosis/neurogenic claudication and deep-gluteal/piriformis presentation. SI dysfunction is not a lumbar diagnosis. Acupuncture and dry needling remain optional adjuncts with evidence/competence caveats; routine lumbar traction and lumbar post-operative rehabilitation are excluded from the active MVP.
 
-Frozen primary lumbar pathways:
+---
+
+# 4. Current target — shoulder
+
+The next authorized substantive action is shoulder **clinical/content design only** using the same method:
 
 ```text
-non-specific / mechanical low-back pain
-low-back pain with radiating leg symptoms / radicular features
-lumbar spinal stenosis / neurogenic claudication
-deep-gluteal / piriformis presentation
+primary pathway taxonomy
+→ findings vs diagnosis separation
+→ safety/reassessment semantics
+→ functional limitations
+→ condition-sensitive goals
+→ active rehabilitation directions
+→ adjunct visibility
+→ generated wording
+→ current evidence review
+→ product-owner review/freeze
 ```
 
-Frozen lumbar semantics:
-
-- subjective radiating symptoms remain separate from objective motor/sensory/reflex deficits and formal radiculopathy diagnosis;
-- motor/sensory/reflex are tri-state and preserve `not assessed != normal`;
-- SLR/slump findings never create a diagnosis automatically;
-- cauda-equina-type concerns produce high-priority clinician reassessment/disposition prompts without autonomous diagnosis;
-- myofascial/trigger-point and referred buttock/leg findings are directly selectable modifiers;
-- deep-gluteal syndrome or piriformis syndrome may be stated only when explicitly asserted by the clinician;
-- `SI dysfunction` is not a lumbar diagnosis;
-- SI-region/SIJ pathology is reserved for a future separate SI/pelvic profile;
-- MRI may establish sacroiliitis/defined structural pathology but must not automatically establish a mechanically painful SI joint as the pain generator;
-- acupuncture remains an optional clinician-selected adjunct with explicit NICE-vs-WHO evidence-framework transparency;
-- dry needling remains an optional adjunct, with clinician-facing competence/availability caveat because correct technique depends materially on practitioner training;
-- routine lumbar traction is excluded from the MVP;
-- lumbar post-operative rehabilitation is excluded from the active lumbar MVP because it is not part of the product owner's current workflow;
-- active rehabilitation, exercise, education and self-management remain the conceptual backbone.
-
-Evidence-sensitive adjunct wording must be rechecked before CU-2 production implementation.
+No shoulder runtime implementation is authorized.
 
 ---
 
-# 6. Evidence-framework note for lumbar needling
+# 5. Repository-control housekeeping recorded
 
-Current high-quality guidance is not uniform:
-
-- NICE NG59 recommends against acupuncture for low-back pain with or without sciatica;
-- WHO 2023 conditionally supports needling therapies, including acupuncture and dry needling, as part of broader care for chronic primary low-back pain, with low-certainty evidence and explicit practitioner-competence considerations.
-
-Product rule:
+During transition into shoulder design, an empty placeholder file was inadvertently created directly on `main` and immediately removed in the next docs-only commit.
 
 ```text
-acupuncture/dry needling may be clinician-selected adjuncts
-!=
-universal guideline recommendation
-!=
-mandatory physiotherapy technique
+520c5ff7795011724fbd41728f5cf2f6703e5eda
+→ accidental placeholder creation
+
+8649f9da02214751a5b5af8a0bacbe67e2a7a3a6
+→ placeholder removed
 ```
 
----
-
-# 7. RF source inspection — unchanged
-
-The RF workflow was inspected read-only in `athpapachr-cmd/ortho-reception-backend-v2`.
-
-Future target remains one authoritative RF workflow with lifecycle/history/reuse. RF runtime mutation is outside CU-1 and remains constrained by the separate Digital Secretary control plane.
+Net repository tree/content after the cleanup matches the pre-placeholder design state. No HTML/JS/CSS, runtime behavior, patient data, schemas or frozen cervical/lumbar profile content changed in those two commits.
 
 ---
 
-# 8. Current writer / merge state
+# 6. RF / Secretary boundary
 
-PR #39 was squash-merged into `main` as:
+RF runtime mutation is outside CU-1 and remains governed by the separate Digital Secretary control plane. Do not create a competing RF data source or mutate Secretary/Calendar/Setmore/Zadarma from this slice.
+
+---
+
+# 7. Exact next action
 
 ```text
-1c51b44fc3b89252224f78cfabc818155373e4c6
+1. create a docs-only shoulder design branch from reconciled current main
+2. claim that branch as the canonical writer for shoulder CU-1 design
+3. create clinic_utilities/physio_profiles/shoulder_v1.md as DESIGN CANDIDATE
+4. perform current high-quality evidence review
+5. present the candidate to the product owner
+6. do not freeze/merge shoulder until product-owner approval
 ```
-
-It changed documentation/design only:
-
-- added frozen `clinic_utilities/physio_profiles/lumbar_v1_1.md`;
-- updated `SLICE_PLAN_CURRENT.md`, `CURRENT_OPERATIONAL.md` and `CLINIC_UTILITIES_PLAN.md`;
-- advanced the next body-region target to shoulder.
-
-No production HTML/JS/CSS or runtime behavior changed.
-
-There is now **no active writer lock** in this repository.
 
 ---
 
-# 9. Exact next action
-
-```text
-1. create/review shoulder profile design candidate
-2. use the same strict taxonomy/findings/safety/goals/rehab/evidence method
-3. obtain product-owner approval before freezing shoulder
-```
-
-Do not write runtime code.
-
----
-
-# 10. Explicitly forbidden now
+# 8. Explicitly forbidden now
 
 ```text
 WRITE CU-1 production runtime code
@@ -207,11 +150,12 @@ CREATE a second RF database/source of truth
 COMMIT identifiable patient data
 MODIFY Calendar/Setmore/Zadarma
 RUN overlapping runtime writers
+FREEZE shoulder without product-owner review
 ```
 
 ---
 
-# 11. Handoff completeness
+# 9. Handoff completeness
 
 ```text
 active detour = Clinic Utilities
@@ -220,7 +164,7 @@ cervical = frozen v1.1
 lumbar = frozen v1.1
 next body region = shoulder
 PR-1 transcript = paused + archived
-canonical writer = none
 runtime writer = none
 runtime implementation = unauthorized
+next action = shoulder design candidate on docs-only branch
 ```
