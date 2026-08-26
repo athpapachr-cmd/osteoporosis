@@ -3,19 +3,19 @@
 > **STATUS:** ACTIVE OPERATIONAL AUTHORITY.
 > **Updated:** 2026-08-26 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Verified base main before this operational reconciliation:** `8649f9da02214751a5b5af8a0bacbe67e2a7a3a6`; this reconciliation commit advances `main` once written.
+> **Verified base main:** `9cdb6bb5db64a174573c385e90ba11485666fee2`.
 > **Current major phase:** Personal Clinical Excellence foundation with a bounded Clinic Utilities detour.
 > **Active slice design:** `SLICE_PLAN_CURRENT.md` — CU-1 Physiotherapy Referral v2 clinical/content design.
 > **Supporting detour plan:** `CLINIC_UTILITIES_PLAN.md`.
 > **Frozen cervical profile:** `clinic_utilities/physio_profiles/cervical_v1_1.md`.
 > **Frozen lumbar profile:** `clinic_utilities/physio_profiles/lumbar_v1_1.md`.
-> **NEXT BODY-REGION DESIGN TARGET:** shoulder.
-> **ACTIVE CANONICAL WRITER/LOCK:** NONE at this reconciliation point.
+> **Frozen shoulder profile:** `clinic_utilities/physio_profiles/shoulder_v1_1.md`.
+> **ACTIVE CANONICAL WRITER/LOCK:** docs-only branch `docs/cu1-shoulder-v1-design-2026-08-26` until shoulder freeze/handoff review is merged.
 > **ACTIVE RUNTIME WRITER/LOCK:** NONE in this repository.
 > **RUNTIME IMPLEMENTATION:** NOT AUTHORIZED for CU-1; design only.
 > **PR-1 TRANSCRIPT SLICE:** intentionally paused, preserved at `archive/slices/PR1_TRANSCRIPT_INTAKE_V3.md`.
 
-This file is the sole owner of operational **NOW**. Do not infer mutation authority from chat history.
+This file is the sole owner of operational **NOW** for the active branch. Do not infer mutation authority from chat history.
 
 ---
 
@@ -36,7 +36,7 @@ CU-1 is a bounded cross-module Clinic Utility design detour. PR-1 remains paused
 
 ---
 
-# 2. Physiotherapy v2 architectural direction
+# 2. Physiotherapy v2 architecture
 
 ```text
 clinical problem
@@ -55,6 +55,8 @@ Hard rules:
 suggested finding != examined finding
 selected goal != mandatory goal
 condition profile != automatic diagnosis
+special test != diagnosis
+imaging finding != automatically symptomatic diagnosis
 not assessed != normal
 adjunct technique != default primary treatment
 clinician-entered diagnosis may be carried but not inferred
@@ -64,78 +66,77 @@ clinician-entered diagnosis may be carried but not inferred
 
 # 3. Frozen regional profiles
 
-## Cervical — FROZEN v1.1
+```text
+cervical_v1_1 = FROZEN
+lumbar_v1_1 = FROZEN
+shoulder_v1_1 = FROZEN
+```
 
-Authoritative file:
+Files:
 
 ```text
 clinic_utilities/physio_profiles/cervical_v1_1.md
-```
-
-## Lumbar — FROZEN v1.1
-
-Authoritative file:
-
-```text
 clinic_utilities/physio_profiles/lumbar_v1_1.md
+clinic_utilities/physio_profiles/shoulder_v1_1.md
 ```
-
-Lumbar includes non-specific/mechanical LBP, radiating/radicular features, stenosis/neurogenic claudication and deep-gluteal/piriformis presentation. SI dysfunction is not a lumbar diagnosis. Acupuncture and dry needling remain optional adjuncts with evidence/competence caveats; routine lumbar traction and lumbar post-operative rehabilitation are excluded from the active MVP.
 
 ---
 
-# 4. Current target — shoulder
+# 4. Shoulder v1.1 freeze — current material state
 
-The next authorized substantive action is shoulder **clinical/content design only** using the same method:
+Product-owner-approved shoulder design includes:
 
 ```text
-primary pathway taxonomy
-→ findings vs diagnosis separation
-→ safety/reassessment semantics
-→ functional limitations
-→ condition-sensitive goals
-→ active rehabilitation directions
-→ adjunct visibility
-→ generated wording
-→ current evidence review
-→ product-owner review/freeze
+RCRSP / rotator-cuff tendinopathy
+confirmed full-thickness cuff tear — conservative rehab
+calcific cuff tendinopathy
+adhesive capsulitis
+GH instability/dislocation rehabilitation
+GH osteoarthritis
+post-traumatic assessed shoulder injury
+AC-joint pathology
+sternoclavicular-joint pathology
+postoperative shoulder rehabilitation
 ```
 
-No shoulder runtime implementation is authorized.
+Important frozen shoulder semantics:
+
+- `impingement syndrome` is not the preferred top-level diagnosis;
+- long-head biceps tendinopathy is a common selectable secondary/coexisting diagnosis;
+- AC-joint pathology can be a primary referral entity;
+- sternoclavicular disease is diagnosis/context governed;
+- suspected posterior SC dislocation or unexplained SC swelling/systemic concern triggers high-priority reassessment rather than routine physiotherapy reassurance;
+- acute traumatic marked weakness/inability to elevate requires explicit reassessment semantics;
+- acupuncture and dry needling remain optional adjuncts with competence/availability safeguards;
+- ESWT is available only for calcific tendinopathy; prior barbotage is recorded as context and does not create an automatic sequence rule;
+- postoperative shoulder is active and requires procedure/protocol/restriction context;
+- shoulder-region fractures route to the shared fracture/post-immobilization profile rather than being duplicated inside shoulder.
+
+No runtime behavior changed.
 
 ---
 
-# 5. Repository-control housekeeping recorded
+# 5. Evidence boundary
 
-During transition into shoulder design, an empty placeholder file was inadvertently created directly on `main` and immediately removed in the next docs-only commit.
+Stable architecture is frozen; technique/protocol claims remain evidence-sensitive and must be refreshed immediately before CU-2 production implementation.
 
-```text
-520c5ff7795011724fbd41728f5cf2f6703e5eda
-→ accidental placeholder creation
-
-8649f9da02214751a5b5af8a0bacbe67e2a7a3a6
-→ placeholder removed
-```
-
-Net repository tree/content after the cleanup matches the pre-placeholder design state. No HTML/JS/CSS, runtime behavior, patient data, schemas or frozen cervical/lumbar profile content changed in those two commits.
+Current shoulder evidence review included the 2025 rotator-cuff CPG, 2025 AAOS rotator-cuff guideline, acute-shoulder imaging appropriateness criteria, frozen-shoulder guidance, instability literature, calcific ESWT/lavage systematic reviews and sternoclavicular-joint literature.
 
 ---
 
-# 6. RF / Secretary boundary
+# 6. Repository-control note
 
-RF runtime mutation is outside CU-1 and remains governed by the separate Digital Secretary control plane. Do not create a competing RF data source or mutate Secretary/Calendar/Setmore/Zadarma from this slice.
+Before the shoulder branch was created, a placeholder file was accidentally created and immediately removed on `main`; the tree was restored before shoulder clinical content was written. The source-identity housekeeping commit was recorded before branch creation. No runtime or frozen clinical content was affected.
 
 ---
 
 # 7. Exact next action
 
 ```text
-1. create a docs-only shoulder design branch from reconciled current main
-2. claim that branch as the canonical writer for shoulder CU-1 design
-3. create clinic_utilities/physio_profiles/shoulder_v1.md as DESIGN CANDIDATE
-4. perform current high-quality evidence review
-5. present the candidate to the product owner
-6. do not freeze/merge shoulder until product-owner approval
+1. exact branch-vs-main review of shoulder freeze
+2. open/merge docs-only shoulder freeze PR if clean
+3. clear canonical writer lock and record resulting main SHA
+4. product owner selects next remaining regional profile
 ```
 
 ---
@@ -145,12 +146,10 @@ RF runtime mutation is outside CU-1 and remains governed by the separate Digital
 ```text
 WRITE CU-1 production runtime code
 WRITE PR-1 transcript runtime code
-AUTO-PERSIST physiotherapy referrals without a frozen persistence decision
-CREATE a second RF database/source of truth
+AUTO-PERSIST physiotherapy referrals
+MUTATE RF/Secretary/Calendar/Setmore/Zadarma
 COMMIT identifiable patient data
-MODIFY Calendar/Setmore/Zadarma
-RUN overlapping runtime writers
-FREEZE shoulder without product-owner review
+START next regional mutation before shoulder handoff is closed
 ```
 
 ---
@@ -162,9 +161,8 @@ active detour = Clinic Utilities
 active slice = CU-1 Physio Referral v2 design
 cervical = frozen v1.1
 lumbar = frozen v1.1
-next body region = shoulder
-PR-1 transcript = paused + archived
+shoulder = frozen v1.1 on docs branch pending merge/handoff close
+canonical writer = docs/cu1-shoulder-v1-design-2026-08-26
 runtime writer = none
 runtime implementation = unauthorized
-next action = shoulder design candidate on docs-only branch
 ```
