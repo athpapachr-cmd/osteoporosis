@@ -32,12 +32,12 @@ This file answers **where the product is going and in what broad order**. It is 
 - [x] Add Clinical Calendar foundation/navigation/osteoporosis-only filtering.
 - [x] Defer live Setmore/Secretary feed without blocking the rest of Clinical Excellence development.
 - [x] Merge server-side encounter finalization integrity rule: completed encounters cannot silently regress to draft; later material edits become `amended`.
-- [x] Complete 3/3 live synthetic encounter-finalization smoke: no-op Save preserves `completed`; material edit becomes `amended`; reload preserves the amendment.
+- [x] Complete 3/3 live synthetic finalization smoke: no-op Save preserves `completed`; material edit becomes `amended`; reload preserves the amendment.
 - [x] Upgrade documentation/control-plane architecture to six active canonicals with explicit slice/current operational separation.
 
 ---
 
-# 1. CURRENT GATE — BASELINE PILOT + PR-1 DESIGN
+# 1. CURRENT GATE — BASELINE / PR-1 PRESERVED WHILE BOUNDED CU-1 DESIGN DETOUR IS ACTIVE
 
 ## 1.1 Encounter-finalization validation
 
@@ -417,7 +417,7 @@ Permanent rule: **Appointment != CareTask**.
 
 ---
 
-# 15. CLINIC UTILITIES / CLINICAL OPERATIONS — APPROVED NEAR-TERM DETOUR, NOT ACTIVE YET
+# 15. CLINIC UTILITIES / CLINICAL OPERATIONS — ACTIVE BOUNDED DETOUR, CU-1 DESIGN ONLY
 
 Purpose: integrate useful day-to-day clinic tools into the same Clinical Excellence workspace without confusing operational tooling with osteoporosis-specific audit logic.
 
@@ -429,20 +429,24 @@ osteoporosis-specific clinical rules → Module 01
 legacy standalone pages → source artifacts to inspect/migrate, not permanent parallel products
 ```
 
-The product owner may activate this controlled detour in the near future. Activation requires an explicit active-slice switch in `CURRENT_OPERATIONAL.md`; it must not silently overlap an active PR-1 runtime writer.
+The product owner explicitly activated this bounded detour through `CURRENT_OPERATIONAL.md`. PR-1 Transcript Intake remains intentionally paused/archived and no CU runtime implementation is authorized while CU-1 clinical/content design is being frozen.
 
 ## 15.1 Physiotherapy referral text generator
 
-- [ ] Locate/provide and inspect the existing source website read-only before planning mutation.
-- [ ] Preserve the useful referral-text generation behavior.
+- [x] Locate/provide and inspect the existing source website read-only before planning mutation.
+- [x] Establish structured `ReferralDraft` → short/detailed formatter architecture and safety/consistency semantics in CU-1.
+- [x] Freeze cervical clinical/content profile v1.1, including formal cervicogenic-headache support, clinician-entered cervical/cervicogenic-dizziness support, selectable myofascial/trigger-point and referred shoulder-girdle findings, and explicit `not assessed != normal` neurological semantics.
+- [ ] Review/freeze lumbar profile v1; this is the current detailed design target.
+- [ ] Continue region-by-region profile review/freeze after lumbar, beginning with shoulder.
+- [ ] Freeze the remaining CU-1 cross-region taxonomy, output wording and evidence-sensitive technique rules before implementation.
 - [ ] Integrate it into Clinical Excellence workspace/navigation rather than deepen the historical legacy Cockpit as a separate product.
 - [ ] Restyle it to the shared Clinical Excellence visual system where appropriate.
-- [ ] Decide after inspection whether generated text is ephemeral, copied/exported only, or linked to a patient/encounter; do not invent persistent patient storage merely for convenience.
-- [ ] Give this work its own small frozen slice before implementation.
+- [ ] Decide after design review whether generated text is ephemeral, copied/exported only, or linked to a patient/encounter; do not invent persistent patient storage merely for convenience.
+- [ ] Obtain explicit product-owner authorization before moving from CU-1 design to CU-2 runtime implementation.
 
 ## 15.2 Radiofrequency treatment request / PDF workflow
 
-- [ ] Locate/provide and inspect the existing source website read-only before implementation design.
+- [x] Locate/provide and inspect the existing source website/workflow read-only before implementation design.
 - [ ] Preserve its current request/form and PDF-generation behavior unless inspection identifies a concrete defect.
 - [ ] Restyle it to the shared Clinical Excellence visual system.
 - [ ] Integrate it into the protected Clinical Excellence workspace/navigation.
@@ -457,9 +461,9 @@ The product owner may activate this controlled detour in the near future. Activa
 - [ ] Reconfirm/edit copied values before submitting the repeat request so stale historical data do not silently become current truth.
 - [ ] Link to the protected patient registry where clinically/operationally appropriate; no identifiable patient data belongs in the public repository or fixtures.
 - [ ] Keep generated PDFs/export artifacts and persistent structured request data conceptually separate; define retention/storage explicitly in that slice.
-- [ ] Give the request registry/PDF workflow its own frozen design slice after source inspection.
+- [ ] Give the request registry/PDF workflow its own frozen design slice after source inspection and after the separate Secretary writer lock permits that work.
 
-No additional status such as rejected/cancelled is frozen yet; add only if the inspected real workflow demonstrates a need.
+No additional RF status such as rejected/cancelled is frozen yet; add only if the inspected real workflow demonstrates a need.
 
 ---
 
@@ -509,6 +513,6 @@ Clinic Utilities are cross-module operational tools and do not count as declarin
 16. generalize Core to later clinical modules
 ```
 
-The product owner may deliberately insert the bounded **Clinic Utilities detour** after an explicit active-slice switch. Before that detour begins: bootstrap canonicals, inspect both source websites read-only, freeze a small dedicated slice, then implement. Do not overlap it with another active runtime writer.
+The bounded **Clinic Utilities detour is currently active at CU-1 design only**. `CURRENT_OPERATIONAL.md` owns the exact NOW; `SLICE_PLAN_CURRENT.md` owns the current design. Complete the region-by-region clinical/content freeze before any CU-2 runtime implementation, and do not overlap another active runtime writer.
 
 If a safety/data-integrity defect appears, it outranks this sequence.
