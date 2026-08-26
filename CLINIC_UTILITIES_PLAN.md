@@ -4,7 +4,7 @@
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Parent product:** Personal Clinical Excellence System.
 > **Scope:** cross-module Clinic Utilities / Clinical Operations.
-> **Current focus:** CU-1 Physiotherapy Referral v2 design; cervical v1.1, lumbar v1.1, shoulder v1.1 frozen; elbow v1.1 frozen on docs branch pending review/merge.
+> **Current focus:** CU-1 Physiotherapy Referral v2 design; cervical v1.1, lumbar v1.1, shoulder v1.1 and elbow v1.1 frozen.
 
 Clinic Utilities are cross-module clinician-facing operational tools, not a new clinical Module 02.
 
@@ -97,7 +97,7 @@ clinic_utilities/physio_profiles/lumbar_v1_1.md
 clinic_utilities/physio_profiles/shoulder_v1_1.md
 ```
 
-## Elbow — FROZEN v1.1 on docs branch pending merge
+## Elbow — FROZEN v1.1
 
 ```text
 clinic_utilities/physio_profiles/elbow_v1_1.md
@@ -122,7 +122,7 @@ Rare/advanced/context decisions:
 radial tunnel syndrome → secondary/coexisting context; uncommon in workflow
 olecranon bursitis → medical/context only; not routine physio primary pathway
 postoperative elbow → rare advanced/future route, not default MVP
-Distal triceps → rare selectable myotendinous entity
+distal triceps → rare selectable myotendinous entity
 anconeus pain/injury → rare selectable myotendinous entity
 anconeus epitrochlearis → distinct anatomic variant; never auto-pathologized
 fractures → shared fracture/post-immobilization profile
@@ -217,7 +217,7 @@ Region-specific rules live in each frozen profile.
 
 # 7. Remaining regional design sequence
 
-After elbow handoff closes, current preferred working sequence is:
+Current preferred working sequence after elbow:
 
 ```text
 wrist / hand
