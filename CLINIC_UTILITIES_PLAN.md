@@ -4,7 +4,7 @@
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Parent product:** Personal Clinical Excellence System.
 > **Scope:** cross-module Clinic Utilities / Clinical Operations.
-> **Current focus:** CU-1 Physiotherapy Referral v2 design; cervical v1.1 frozen, lumbar v1 under review.
+> **Current focus:** CU-1 Physiotherapy Referral v2 design; cervical v1.1 and lumbar v1.1 frozen; shoulder next.
 
 This document keeps the Clinic Utilities detour detailed without confusing operational tooling with Osteoporosis Module 01 or the reusable Clinical Excellence Core.
 
@@ -27,7 +27,7 @@ Clinic Utilities do not constitute a new clinical Module 02.
 
 # 1. Detour purpose
 
-Integrate two existing clinician-created tools into the future Clinical Excellence workspace:
+Integrate two existing clinician-created tools into the Clinical Excellence workspace:
 
 1. **Physiotherapy Referral Generator** — structured clinical referral text generation.
 2. **Radiofrequency Request / PDF Workflow** — request creation, PDF generation, lifecycle tracking and reuse of previous request data.
@@ -36,58 +36,45 @@ The detour should improve daily clinic workflow while preserving the broader pro
 
 ---
 
-# 2. Source inspection already completed
+# 2. Source inspection status
 
 ## 2.1 Physiotherapy source
+
+Standalone source was inspected read-only.
 
 Useful capabilities to preserve:
 
 - local/no-server operation;
-- condition groups by body region;
-- optional patient name/laterality/chronicity/session count;
+- body-region condition groups;
+- optional laterality/chronicity/session count;
 - clinical findings;
-- rehabilitation goals;
+- goals;
 - active vs adjunct intervention wording;
 - short/detailed output modes;
 - copy/print;
-- basic consistency warnings;
+- consistency warnings;
 - evidence/reference section.
 
-Design weaknesses to correct:
+Design weaknesses being corrected:
 
-- checkbox catalogue rather than clinically structured flow;
+- checkbox catalogue instead of clinically structured flow;
 - generic findings across unrelated diagnoses;
 - globally preselected goals/interventions;
 - under-modelled precautions/restrictions;
-- direct phrase concatenation instead of a structured intermediate object;
+- direct phrase concatenation instead of structured intermediate data;
 - minimal validation;
 - incomplete common pathways;
-- standalone styling instead of Clinical Excellence-native presentation.
+- standalone styling rather than Clinical Excellence-native presentation.
 
-## 2.2 Radiofrequency source
+## 2.2 RF source
 
-Current implementation lives in `athpapachr-cmd/ortho-reception-backend-v2` and was inspected read-only.
+Existing RF implementation was inspected read-only in `athpapachr-cmd/ortho-reception-backend-v2`.
 
-Existing useful pieces include:
-
-- `/rf` protected form route;
-- PDF generation from Medikey / DIROS / Thermedico templates;
-- radiology PDF attachment;
-- previous-application lookup;
-- PostgreSQL-backed `rfa_applications` table;
-- existing status field;
-- patient/site/history/VAS data;
-- repeat-use logic.
-
-Important operational constraint:
-
-> RF runtime mutation is not part of CU-1 and remains blocked while the separate Digital Secretary AC-2 writer lock applies.
+RF runtime mutation is not part of CU-1 and remains governed by the separate Digital Secretary control plane.
 
 ---
 
 # 3. Physiotherapy Referral v2 — product outcome
-
-The future utility should help the clinician create a concise, clinically coherent referral by moving through:
 
 ```text
 1. Clinical problem / diagnosis
@@ -99,13 +86,11 @@ The future utility should help the clinician create a concise, clinically cohere
 7. Final referral text
 ```
 
-The application generates structured referral wording without replacing the physiotherapist's assessment or prescribing a complete treatment recipe.
+The application generates useful structured referral wording without replacing the physiotherapist's assessment or prescribing a complete treatment recipe.
 
 ---
 
 # 4. Structured intermediate model
-
-Do not generate prose directly from checkboxes. First construct:
 
 ```text
 ReferralDraft
@@ -135,28 +120,6 @@ ReferralDraft
 → DetailedReferralFormatter
 ```
 
-This separation is required for later persistence, reuse, auditability or AI-assisted wording refinement.
-
----
-
-# 5. Condition-profile architecture
-
-A profile may define:
-
-```text
-condition_key
-body_region
-display_name
-candidate_findings[]
-candidate_functional_impairments[]
-candidate_precautions[]
-candidate_goals[]
-candidate_rehab_directions[]
-adjunct_options[]
-consistency_rules[]
-required_context_when_selected[]
-```
-
 Hard rules:
 
 ```text
@@ -167,86 +130,88 @@ symptom != objective deficit
 provocation test != diagnosis
 not assessed != normal
 adjunct != core rehabilitation
+clinician-entered diagnosis may be carried but not inferred
 ```
 
 ---
 
-# 6. Body-region taxonomy and current profile state
+# 5. Profile status
 
-## 6.1 Cervical spine — FROZEN v1.1
+## 5.1 Cervical — FROZEN v1.1
 
-Authoritative cervical design:
+Authoritative file:
 
 ```text
 clinic_utilities/physio_profiles/cervical_v1_1.md
 ```
 
-Frozen primary pathways:
+Key frozen pathways:
 
-- non-specific / mechanical neck pain;
-- neck pain with radiating upper-limb / radicular features;
-- headache with cervical musculoskeletal features, with optional explicit formal cervicogenic-headache diagnosis;
-- cervical/cervicogenic dizziness presentation, with optional explicit clinician diagnosis;
+- non-specific/mechanical neck pain;
+- radiating/radicular-feature neck pain;
+- formal cervicogenic headache when explicitly clinician-asserted;
+- cervical/cervicogenic dizziness when explicitly clinician-asserted;
 - whiplash/post-traumatic neck pain.
 
-Cervical post-operative rehabilitation is not part of the active cervical MVP because it is not part of the product owner's actual referral workflow.
+Directly selectable cervical modifiers include myofascial/trigger-point findings and referred shoulder-girdle pain. Cervical post-operative rehabilitation is not part of the active cervical MVP.
 
-Directly selectable cervical findings/presentation modifiers include:
+## 5.2 Lumbar — FROZEN v1.1
 
-- ROM restriction/painful movement;
-- referred shoulder-girdle/scapular pain;
-- myofascial tenderness / active trigger points;
-- radiating upper-limb pain/paresthesia/numbness;
-- Spurling/neurodynamic findings when actually examined;
-- work/ergonomic or sustained-posture aggravation;
-- headache- and dizziness-related contextual findings.
-
-Formal cervicogenic headache and cervicogenic/cervical dizziness are never inferred by the utility. They may be carried into generated wording only when explicitly asserted by the clinician.
-
-The dizziness pathway intentionally preserves the evidence caveat that the Bárány Society does not currently endorse routine clinical diagnostic criteria or a proven cervical causal mechanism; the tool therefore supports clinician-entered truth but does not become diagnostic decision-support.
-
-Cervical neurological screen is component-level tri-state:
+Authoritative file:
 
 ```text
-motor: normal / abnormal / not_assessed
-sensory: normal / abnormal / not_assessed
-reflexes: normal / abnormal / not_assessed
+clinic_utilities/physio_profiles/lumbar_v1_1.md
 ```
 
-There is no global `no neurological deficit` checkbox and no default `no red flags` output sentence.
+Frozen pathways:
 
-Technique-level adjuncts live under a secondary optional expander; active rehabilitation, exercise, education and self-management remain the conceptual core.
+- non-specific/mechanical low-back pain;
+- low-back pain with radiating leg symptoms/radicular features;
+- lumbar spinal stenosis/neurogenic claudication;
+- deep-gluteal/piriformis presentation with optional formal clinician diagnosis.
 
-## 6.2 Lumbar spine — ACTIVE DESIGN CANDIDATE
+Frozen lumbar modifiers include ROM/movement findings, load/postural aggravation, trunk strength/endurance deficit, myofascial/trigger-point findings, referred buttock/non-radicular leg pain, and SLR/slump findings when actually examined.
 
-Current candidate:
+Lumbar safety inherits the tri-state neurological model and adds high-priority clinician handling for cauda-equina-type concerns.
+
+### Lumbar adjunct policy
 
 ```text
-clinic_utilities/physio_profiles/lumbar_v1.md
+manual therapy / mobilization → optional adjunct
+soft-tissue techniques → optional adjunct
+neurodynamic techniques → optional when neural/radiating context exists
+acupuncture → optional clinician-selected adjunct
+dry needling → optional clinician-selected adjunct with competence/availability caveat
+lumbar traction → excluded from MVP
 ```
 
-Proposed primary pathways:
+Evidence-framework transparency is mandatory:
 
-- non-specific / mechanical low-back pain;
-- low-back pain with radiating leg symptoms / radicular features;
-- lumbar spinal stenosis / neurogenic claudication pathway.
+- NICE NG59 recommends against acupuncture for LBP/sciatica;
+- WHO 2023 conditionally supports needling therapies including acupuncture/dry needling for chronic primary LBP, with low-certainty evidence;
+- therefore acupuncture/dry needling must never be rendered as mandatory or universally guideline-endorsed.
 
-Candidate modifiers/findings rather than top-level diagnoses:
+### SI-region boundary
 
-- mobility restriction;
-- movement/load/postural aggravation;
-- trunk strength/endurance deficit;
-- paraspinal/gluteal myofascial tenderness or trigger points;
-- referred buttock/non-radicular leg pain;
-- SLR/slump/neural-tension findings when actually examined.
+`SI dysfunction` is not a lumbar diagnosis.
 
-Neurological screen inherits the same tri-state semantics as cervical. The safety model adds explicit cauda-equina-type concerns including new bladder/bowel/sexual-function disturbance and new perineal/saddle sensory change.
+Future separate SI/pelvic profile should distinguish:
 
-Routine lumbar traction is deliberately not a default adjunct because NICE and WHO recommend against routine traction. Needling/acupuncture requires explicit framework resolution before freeze because NICE and WHO recommendations differ.
+```text
+SI-region pain / suspected SIJ-related pain
+formal clinician diagnosis of SIJ-related pain
+imaging-confirmed sacroiliitis or other defined structural/inflammatory SI pathology
+```
 
-## 6.3 Shoulder
+MRI can support sacroiliitis/structural pathology but does not by itself prove that a mechanically painful SI joint is the pain generator.
 
-Candidate problems include:
+### Post-operative boundary
+
+Lumbar post-operative rehabilitation is not part of the active lumbar MVP because it is not part of the product owner's current workflow. The generic shared post-operative architecture remains available for other regions only where real workflow justifies it.
+
+## 5.3 Shoulder — NEXT DESIGN TARGET
+
+Candidate problems for structured review include:
 
 - rotator-cuff-related shoulder pain/tendinopathy;
 - shoulder stiffness / adhesive capsulitis;
@@ -254,124 +219,31 @@ Candidate problems include:
 - proximal-biceps-related pain;
 - instability/dislocation rehabilitation;
 - post-traumatic shoulder rehabilitation;
-- post-operative shoulder pathway where the real workflow justifies it.
+- other common real-workflow presentations to be confirmed before freeze.
 
-Candidate findings include active/passive ROM pattern, load-related pain, weakness, painful arc where relevant, stiffness pattern, scapular control and functional limits such as overhead use, dressing, sleep and lifting.
-
-## 6.4 Elbow
-
-Candidate problems:
-
-- lateral elbow tendinopathy;
-- medial elbow tendinopathy;
-- stiffness;
-- grip weakness;
-- post-fracture stiffness;
-- distal biceps/triceps rehabilitation where appropriate.
-
-## 6.5 Wrist and hand
-
-Candidate problems:
-
-- De Quervain tenosynovitis;
-- mechanical wrist/hand pain;
-- stiffness;
-- reduced grip/dexterity;
-- thumb CMC osteoarthritis;
-- carpal tunnel conservative/post-operative rehabilitation;
-- trigger-finger post-operative rehabilitation;
-- distal-radius fracture/post-immobilization pathway.
-
-## 6.6 Hip
-
-Candidate problems:
-
-- hip osteoarthritis;
-- greater trochanteric pain syndrome;
-- post total-hip arthroplasty where relevant;
-- post hip-fracture rehabilitation;
-- mobility/strength deficit.
-
-Precautions include weight-bearing status, healing constraints and explicit post-operative restrictions when relevant.
-
-## 6.7 Knee
-
-Candidate problems:
-
-- knee osteoarthritis;
-- patellofemoral pain;
-- meniscal tear/lesion conservative pathway;
-- knee stiffness;
-- lower-limb weakness;
-- ACL reconstruction;
-- collateral-ligament injury;
-- patellar tendinopathy;
-- total-knee arthroplasty where relevant;
-- post-fracture/post-immobilization rehabilitation.
-
-## 6.8 Ankle and foot
-
-Candidate problems:
-
-- lateral ankle sprain;
-- chronic ankle instability;
-- ankle mobility restriction;
-- plantar heel pain;
-- Achilles tendinopathy;
-- Achilles rupture rehabilitation;
-- post ankle fracture;
-- posterior tibial tendon dysfunction pathway;
-- post-operative foot/ankle rehabilitation where relevant.
-
-## 6.9 Muscle strain / myotendinous injury
-
-Required context candidates:
-
-- muscle/group;
-- site;
-- date/phase;
-- imaging/grade if known;
-- activity/sport demand.
-
-Rehab direction remains symptom-guided and criterion-based progressive loading rather than unsupported fixed timelines.
-
-## 6.10 Fracture / post-immobilization
-
-Required context:
-
-- bone/site;
-- treatment;
-- healing/stability status if known;
-- immobilization state;
-- weight-bearing status;
-- surgeon/orthopaedic restrictions.
-
-If loading/healing restrictions are unknown, show a prominent review prompt rather than generate unrestricted mobilisation wording.
-
-## 6.11 Shared post-operative musculoskeletal rehabilitation
-
-This remains a general capability, not a mandatory option within every regional MVP.
-
-When used, require:
-
-- operation;
-- date;
-- surgeon/protocol;
-- weight-bearing/activity restrictions;
-- ROM restrictions;
-- other relevant precautions.
-
-The generator must never invent a generic post-operative protocol.
-
-## 6.12 General deconditioning / balance / gait
-
-Cross-regional pathway for deconditioning, balance deficit, recurrent falls/fall risk, gait retraining and generalized lower-limb weakness.
+Shoulder must undergo the same strict taxonomy/findings/safety/goals/rehab/evidence review before freeze.
 
 ---
 
-# 7. Context-sensitive goals and rehabilitation directions
+# 6. Remaining body-region sequence
 
-Remove the global assumption that pain + ROM + strength + motor control + function always apply.
+After shoulder:
+
+```text
+knee / hip
+→ elbow
+→ wrist / hand
+→ ankle / foot
+→ fracture / post-immobilization
+→ muscle/myotendinous injury
+→ generalized deconditioning / balance / gait
+```
+
+Shared post-operative profiles are included only where the product owner's actual workflow demonstrates a need.
+
+---
+
+# 7. Context-sensitive goals and directions
 
 ```text
 selected condition profile
@@ -380,46 +252,39 @@ selected condition profile
 → only confirmed items enter ReferralDraft
 ```
 
-Examples:
+No global pain + ROM + strength + motor-control bundle.
 
-- De Quervain should not inherit cervical motor-control wording;
-- fracture rehabilitation depends on healing/loading restrictions;
-- chronic OA may prioritize strength/function/activity;
-- post-operative restrictions outrank generic defaults;
-- radicular/radiating symptoms do not imply a promise to reverse neurological deficit.
+Active rehabilitation, exercise, graded activity/loading, education and self-management remain the conceptual backbone where appropriate.
 
 ---
 
-# 8. Safety / consistency engine v1
+# 8. Safety / consistency engine
 
-The utility provides prompts, not autonomous treatment prohibitions or diagnostic decisions.
+The utility provides prompts, not autonomous diagnoses or treatment prohibitions.
 
-Cross-cutting rules:
+Cross-cutting examples:
 
 ```text
-fracture rehab + missing weight-bearing/healing context
+fracture rehab + missing healing/weight-bearing context
 → warning
 
-post-op + missing procedure/protocol/restrictions
+post-op pathway + missing procedure/protocol/restrictions
 → warning
 
-manual/passive adjunct selected without active rehabilitation direction
+adjunct selected without active rehabilitation direction
 → warning
-
-gait training selected without gait/function problem
-→ soft warning
 
 new/progressive objective neurological deficit
-→ prominent medical reassessment warning
+→ prominent medical reassessment prompt
 
-material safety/red-flag concern
+material safety concern
 → require clinician disposition before routine reassuring wording
 
-unassessed neurological component
+not assessed neurological component
 → never generate normal wording
 ```
 
-Region-specific consistency rules belong in each frozen profile.
+Region-specific rules live in each frozen profile.
 
 ---
 
@@ -429,23 +294,20 @@ Preferred structure:
 
 ```text
 Clinical problem + important findings + functional impact.
-
 Referral request + goals.
-
 Rehabilitation direction / restrictions.
-
 Optional reassessment/communication criteria.
 ```
 
-Wording principles:
+Rules:
 
-- collaborative language;
-- active rehabilitation, education, self-management and graded activity/loading where appropriate;
-- passive techniques remain adjunctive;
-- no unsupported diagnosis from a provocation test;
-- no negative neurological/red-flag statement from missing data;
-- preserve explicit restrictions exactly;
-- short and detailed versions derive from the same `ReferralDraft`.
+- collaborative wording;
+- active/function-oriented rehabilitation as core where appropriate;
+- technique-level interventions remain adjuncts;
+- no unsupported diagnosis from symptom combinations or tests;
+- no normal neurological/red-flag statement from missing data;
+- preserve explicit restrictions;
+- short and detailed outputs derive from the same `ReferralDraft`.
 
 ---
 
@@ -468,33 +330,22 @@ ephemeral structured draft
 → copy / print
 ```
 
-Persistence is not frozen yet. If later persisted, reuse creates a new referral identity rather than overwriting historical referral truth.
+Persistence is not frozen yet.
 
 ---
 
 # 11. RF workflow target
 
-Longer-term RF workflow:
+Longer-term RF workflow remains conceptually:
 
 ```text
 new request
-→ application_generated / draft-like state
-→ submitted
-→ pending_approval
-→ approved_awaiting_procedure
-→ performed
+→ submitted / pending decision
+→ approved awaiting procedure
+→ performed/completed
 ```
 
-Views:
-
-```text
-Pending decision
-Approved — awaiting procedure
-Completed / performed
-All / search
-```
-
-`New from previous` clones reusable facts into a new request identity but excludes old status/approval/procedure/follow-up state unless explicitly reconfirmed.
+Reuse must create a new request identity and must not rewrite historical truth.
 
 ---
 
@@ -503,8 +354,8 @@ All / search
 ```text
 CU-1  Physiotherapy Referral v2 clinical/content + structured-draft design
 CU-2  Physiotherapy Referral v2 implementation + Clinical Excellence styling
-CU-3  Cockpit navigation integration / optional patient prefill boundary
-CU-4  RF lifecycle/data-model design after Secretary writer lock permits
+CU-3  Clinical Excellence navigation integration / optional patient prefill boundary
+CU-4  RF lifecycle/data-model design when separately permitted
 CU-5  RF clinician UI + request registry/history/reuse
 CU-6  RF PDF engine ownership/migration/integration cleanup
 ```
@@ -513,8 +364,8 @@ CU-6  RF PDF engine ownership/migration/integration cleanup
 
 # 13. Current design stop point
 
-Current active work remains **CU-1 design only**.
+CU-1 remains **design only**.
 
-Cervical v1.1 is frozen. Lumbar v1 is now the profile under clinical/content review. After lumbar freeze, proceed to shoulder.
+Cervical v1.1 and lumbar v1.1 are frozen. The next substantive body-region task is shoulder design/review.
 
-Do not write production physiotherapy runtime code until CU-1 as a whole is sufficiently frozen and the product owner explicitly authorizes transition to CU-2.
+Do not write production physiotherapy runtime code until CU-1 is sufficiently frozen and the product owner explicitly authorizes transition to CU-2.
