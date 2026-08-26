@@ -3,19 +3,19 @@
 > **STATUS:** ACTIVE OPERATIONAL AUTHORITY.
 > **Updated:** 2026-08-26 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Verified base main before this operational reconciliation:** `8649f9da02214751a5b5af8a0bacbe67e2a7a3a6`; this reconciliation commit advances `main` once written.
+> **Verified base main:** `9cdb6bb5db64a174573c385e90ba11485666fee2`.
 > **Current major phase:** Personal Clinical Excellence foundation with a bounded Clinic Utilities detour.
 > **Active slice design:** `SLICE_PLAN_CURRENT.md` — CU-1 Physiotherapy Referral v2 clinical/content design.
 > **Supporting detour plan:** `CLINIC_UTILITIES_PLAN.md`.
 > **Frozen cervical profile:** `clinic_utilities/physio_profiles/cervical_v1_1.md`.
 > **Frozen lumbar profile:** `clinic_utilities/physio_profiles/lumbar_v1_1.md`.
-> **NEXT BODY-REGION DESIGN TARGET:** shoulder.
-> **ACTIVE CANONICAL WRITER/LOCK:** NONE at this reconciliation point.
+> **CURRENT BODY-REGION DESIGN TARGET:** shoulder.
+> **ACTIVE CANONICAL WRITER/LOCK:** docs-only branch `docs/cu1-shoulder-v1-design-2026-08-26` for shoulder CU-1 clinical/content design.
 > **ACTIVE RUNTIME WRITER/LOCK:** NONE in this repository.
 > **RUNTIME IMPLEMENTATION:** NOT AUTHORIZED for CU-1; design only.
 > **PR-1 TRANSCRIPT SLICE:** intentionally paused, preserved at `archive/slices/PR1_TRANSCRIPT_INTAKE_V3.md`.
 
-This file is the sole owner of operational **NOW**. Do not infer mutation authority from chat history.
+This file is the sole owner of operational **NOW** for the active branch. Do not infer mutation authority from chat history.
 
 ---
 
@@ -64,78 +64,66 @@ clinician-entered diagnosis may be carried but not inferred
 
 # 3. Frozen regional profiles
 
-## Cervical — FROZEN v1.1
+```text
+cervical_v1_1 = FROZEN
+lumbar_v1_1 = FROZEN
+```
 
-Authoritative file:
+Frozen files:
 
 ```text
 clinic_utilities/physio_profiles/cervical_v1_1.md
-```
-
-## Lumbar — FROZEN v1.1
-
-Authoritative file:
-
-```text
 clinic_utilities/physio_profiles/lumbar_v1_1.md
 ```
 
-Lumbar includes non-specific/mechanical LBP, radiating/radicular features, stenosis/neurogenic claudication and deep-gluteal/piriformis presentation. SI dysfunction is not a lumbar diagnosis. Acupuncture and dry needling remain optional adjuncts with evidence/competence caveats; routine lumbar traction and lumbar post-operative rehabilitation are excluded from the active MVP.
-
 ---
 
-# 4. Current target — shoulder
+# 4. Shoulder — ACTIVE DESIGN CANDIDATE WORK
 
-The next authorized substantive action is shoulder **clinical/content design only** using the same method:
+Authorized scope is clinical/content design only:
 
 ```text
 primary pathway taxonomy
-→ findings vs diagnosis separation
-→ safety/reassessment semantics
-→ functional limitations
-→ condition-sensitive goals
-→ active rehabilitation directions
-→ adjunct visibility
-→ generated wording
-→ current evidence review
-→ product-owner review/freeze
+findings vs diagnosis separation
+safety/reassessment semantics
+functional limitations
+condition-sensitive goals
+active rehabilitation directions
+adjunct visibility
+generated wording
+current evidence review
 ```
 
-No shoulder runtime implementation is authorized.
-
----
-
-# 5. Repository-control housekeeping recorded
-
-During transition into shoulder design, an empty placeholder file was inadvertently created directly on `main` and immediately removed in the next docs-only commit.
+The target candidate file is:
 
 ```text
-520c5ff7795011724fbd41728f5cf2f6703e5eda
-→ accidental placeholder creation
-
-8649f9da02214751a5b5af8a0bacbe67e2a7a3a6
-→ placeholder removed
+clinic_utilities/physio_profiles/shoulder_v1.md
 ```
 
-Net repository tree/content after the cleanup matches the pre-placeholder design state. No HTML/JS/CSS, runtime behavior, patient data, schemas or frozen cervical/lumbar profile content changed in those two commits.
+It remains **DESIGN CANDIDATE / NOT FROZEN** until explicit product-owner approval.
 
 ---
 
-# 6. RF / Secretary boundary
+# 5. Evidence framework
 
-RF runtime mutation is outside CU-1 and remains governed by the separate Digital Secretary control plane. Do not create a competing RF data source or mutate Secretary/Calendar/Setmore/Zadarma from this slice.
+Use current high-quality shoulder guidance without silent hybridization. The 2025 rotator-cuff-tendinopathy CPG, the 2025 AAOS rotator cuff injury guideline, current frozen-shoulder guidance, current imaging appropriateness criteria and condition-specific evidence may inform production wording. Evidence-sensitive intervention wording must remain separable from stable structural design.
+
+---
+
+# 6. Repository-control housekeeping
+
+Immediately before this branch was created, an accidental empty shoulder placeholder was created on `main` and removed in the next docs-only commit. `CURRENT_OPERATIONAL.md` on `main` records that housekeeping. No runtime content or frozen clinical profile content changed.
 
 ---
 
 # 7. Exact next action
 
 ```text
-1. create a docs-only shoulder design branch from reconciled current main
-2. claim that branch as the canonical writer for shoulder CU-1 design
-3. create clinic_utilities/physio_profiles/shoulder_v1.md as DESIGN CANDIDATE
-4. perform current high-quality evidence review
-5. present the candidate to the product owner
-6. do not freeze/merge shoulder until product-owner approval
+1. create shoulder_v1.md design candidate
+2. review current evidence
+3. present strict clinical/structural review to product owner
+4. revise based on real-workflow feedback
+5. freeze/merge only after explicit approval
 ```
 
 ---
@@ -145,12 +133,10 @@ RF runtime mutation is outside CU-1 and remains governed by the separate Digital
 ```text
 WRITE CU-1 production runtime code
 WRITE PR-1 transcript runtime code
-AUTO-PERSIST physiotherapy referrals without a frozen persistence decision
-CREATE a second RF database/source of truth
+AUTO-PERSIST physiotherapy referrals
+MUTATE RF/Secretary/Calendar/Setmore/Zadarma
 COMMIT identifiable patient data
-MODIFY Calendar/Setmore/Zadarma
-RUN overlapping runtime writers
-FREEZE shoulder without product-owner review
+FREEZE or merge shoulder without product-owner approval
 ```
 
 ---
@@ -162,9 +148,8 @@ active detour = Clinic Utilities
 active slice = CU-1 Physio Referral v2 design
 cervical = frozen v1.1
 lumbar = frozen v1.1
-next body region = shoulder
-PR-1 transcript = paused + archived
+shoulder = active design candidate work
+canonical writer = docs/cu1-shoulder-v1-design-2026-08-26
 runtime writer = none
 runtime implementation = unauthorized
-next action = shoulder design candidate on docs-only branch
 ```
