@@ -8,7 +8,7 @@
 > **Supporting plan:** `CLINIC_UTILITIES_PLAN.md`.
 > **Frozen cervical profile:** `clinic_utilities/physio_profiles/cervical_v1_1.md`.
 > **Frozen lumbar profile:** `clinic_utilities/physio_profiles/lumbar_v1_1.md`.
-> **Next body-region design target:** shoulder.
+> **Current detailed profile under review:** `clinic_utilities/physio_profiles/shoulder_v1.md` — DESIGN CANDIDATE / NOT FROZEN.
 > **Prior active slice:** PR-1 Transcript Intake + Candidate Extraction v3, intentionally paused and archived at `archive/slices/PR1_TRANSCRIPT_INTAKE_V3.md`.
 
 CU-1 is a bounded product-owner-approved design detour. It does not cancel PR-1 and does not turn Clinic Utilities into a new clinical module.
@@ -68,9 +68,7 @@ Problems to correct:
 
 # 3. Frozen architectural direction
 
-## 3.1 Structured intermediate object
-
-Future implementation must build a deterministic `ReferralDraft` before prose formatting:
+Future implementation must build a deterministic structured object before formatting prose:
 
 ```text
 ReferralDraft
@@ -100,25 +98,7 @@ ReferralDraft
 → DetailedReferralFormatter
 ```
 
-No direct checkbox-to-prose monolith.
-
-## 3.2 Condition profiles
-
-A profile may define:
-
-```text
-condition_key
-body_region
-display_name
-candidate_findings[]
-candidate_functional_impairments[]
-candidate_precautions[]
-candidate_goals[]
-candidate_rehab_directions[]
-adjunct_options[]
-consistency_rules[]
-required_context_when_selected[]
-```
+A condition profile may define clinically relevant candidate findings, functional impairments, precautions, goals, directions, adjuncts, consistency rules and required context.
 
 Hard invariants:
 
@@ -127,7 +107,8 @@ suggested != examined
 suggested != selected
 selected != mandatory
 symptom != objective deficit
-provocation test != diagnosis
+special/provocation test != diagnosis
+imaging finding != automatically symptomatic diagnosis
 not assessed != normal
 adjunct != core rehabilitation
 clinician-entered diagnosis may be carried faithfully but must not be inferred
@@ -145,15 +126,7 @@ Authoritative file:
 clinic_utilities/physio_profiles/cervical_v1_1.md
 ```
 
-Frozen pathways:
-
-- non-specific/mechanical neck pain;
-- neck pain with radiating upper-limb/radicular features;
-- headache with cervical musculoskeletal features + optional formal cervicogenic-headache diagnosis;
-- cervical/cervicogenic dizziness presentation + optional clinician diagnosis;
-- whiplash/post-traumatic neck pain.
-
-Key frozen semantics include component-level tri-state neurological status; no `not assessed → normal`; direct selection of myofascial/trigger-point and referred shoulder-girdle findings; active-first rehabilitation; adjunct techniques under secondary visibility; and no routine cervical post-operative pathway.
+Frozen semantics include strict subjective-vs-objective neurological separation, formal clinician-entered cervicogenic headache/cervical-dizziness diagnoses, directly selectable trigger-point/myofascial and referred shoulder-girdle findings, active-first rehabilitation and no routine cervical post-operative pathway.
 
 ## 4.2 Lumbar — FROZEN v1.1
 
@@ -163,56 +136,70 @@ Authoritative file:
 clinic_utilities/physio_profiles/lumbar_v1_1.md
 ```
 
-Frozen primary pathways:
+Frozen pathways:
 
 ```text
 L1 non-specific / mechanical low-back pain
-L2 low-back pain with radiating leg symptoms / radicular features
-L3 lumbar spinal stenosis / neurogenic claudication
+L2 radiating/radicular-feature low-back pain
+L3 lumbar stenosis / neurogenic claudication
 L4 deep-gluteal / piriformis presentation
 ```
 
-Frozen lumbar decisions:
+Lumbar preserves tri-state neurological status, cauda-equina-type reassessment semantics, directly selectable myofascial findings, no `SI dysfunction` lumbar diagnosis, optional acupuncture/dry needling with evidence/competence caveats, no routine lumbar traction and no active lumbar post-operative pathway.
 
-- radicular symptoms remain separate from objective motor/sensory/reflex deficits and from formal radiculopathy diagnosis;
-- motor/sensory/reflex remain tri-state with `not assessed != normal`;
-- SLR/slump findings never create a diagnosis automatically;
-- cauda-equina-type concerns use high-priority clinician reassessment/disposition semantics without autonomous diagnosis;
-- myofascial/trigger-point and referred buttock/leg findings are directly selectable modifiers;
-- deep-gluteal/piriformis syndrome may be stated only when explicitly asserted by the clinician;
-- `SI dysfunction` is not a lumbar diagnosis;
-- SI-region/SIJ pathology is reserved for a future separate SI/pelvic profile;
-- MRI may support sacroiliitis/defined structural pathology but must not automatically identify a mechanically painful SI joint as the pain generator;
-- acupuncture remains an optional clinician-selected adjunct with explicit NICE-vs-WHO evidence-framework transparency;
-- dry needling remains optional with an explicit competence/availability caveat;
-- routine lumbar traction is excluded from the MVP;
-- lumbar post-operative rehabilitation is excluded from the active lumbar MVP because it is not part of the product owner's current workflow;
-- active rehabilitation, exercise, education and self-management remain the conceptual backbone.
+## 4.3 Shoulder — ACTIVE DESIGN CANDIDATE
 
-Evidence-sensitive technique wording must be rechecked immediately before CU-2 implementation.
-
-## 4.3 Next target — Shoulder
-
-After lumbar freeze, CU-1 proceeds to shoulder design using the same method:
+Current candidate:
 
 ```text
-primary pathway taxonomy
-→ findings vs diagnosis separation
-→ safety/reassessment semantics
-→ functional limitations
-→ context-sensitive goals
-→ active rehabilitation directions
-→ adjunct visibility
-→ generated wording
-→ evidence check
-→ product-owner freeze
+clinic_utilities/physio_profiles/shoulder_v1.md
 ```
+
+Proposed primary pathways for product-owner review:
+
+```text
+S1 rotator-cuff-related shoulder pain / rotator-cuff tendinopathy
+S2 confirmed full-thickness rotator-cuff tear — nonoperative rehabilitation
+S3 calcific rotator-cuff tendinopathy
+S4 adhesive capsulitis / frozen shoulder
+S5 glenohumeral instability / dislocation rehabilitation
+S6 glenohumeral osteoarthritis
+S7 post-traumatic shoulder pain / rehabilitation after assessed injury
+```
+
+Proposed secondary/modifier status pending real-workflow confirmation:
+
+```text
+long-head-of-biceps-related pain/tendinopathy
+AC-joint-related pain / arthropathy
+scapular dyskinesis/control findings
+myofascial / trigger-point findings
+special-test findings
+```
+
+Key proposed shoulder rules:
+
+- `impingement syndrome` is not the preferred top-level diagnosis;
+- special tests, painful arc and scapular findings remain findings, not diagnoses;
+- active and passive ROM remain distinct;
+- pain-inhibited effort does not establish a tear;
+- confirmed full-thickness tear requires established clinician/imaging context;
+- acute trauma with marked new weakness/inability to elevate requires explicit reassessment/imaging/specialist semantics;
+- adhesive capsulitis is not inferred from generic stiffness or imaging alone;
+- instability is not inferred from a single apprehension/relocation test;
+- active rehabilitation is the conceptual core;
+- acupuncture remains an optional adjunct for rotator-cuff tendinopathy;
+- dry needling is optional with competence/availability caveat;
+- ESWT is exposed only for calcific rotator-cuff tendinopathy;
+- routine ESWT for noncalcific rotator-cuff tendinopathy is not suggested;
+- therapeutic ultrasound is excluded from the standard rotator-cuff adjunct list under the current 2025 CPG;
+- calcific lavage/barbotage remains clinician/medical management, not a physiotherapist-technique option.
+
+Shoulder remains **NOT FROZEN** until product-owner review resolves the proposed taxonomy and real-workflow questions.
 
 ---
 
 # 5. Context-sensitive defaults
-
-Remove the global assumption that pain + ROM + strength + motor control + function and a fixed intervention bundle apply to every referral.
 
 ```text
 selected condition profile
@@ -221,17 +208,19 @@ selected condition profile
 → only confirmed values populate ReferralDraft
 ```
 
+No global pain + ROM + strength + motor-control bundle.
+
 ---
 
 # 6. Safety / consistency engine
 
-The engine provides clinician-facing consistency/safety prompts, not autonomous diagnostic decisions or treatment prohibitions.
+The engine provides clinician-facing consistency/safety prompts, not autonomous diagnoses or treatment prohibitions.
 
-Cross-cutting rules include:
+Cross-region rules include:
 
 ```text
-fracture rehab + missing healing/weight-bearing context
-→ warning
+fracture/post-trauma + unresolved structural context
+→ warning/reassessment prompt
 
 post-op pathway + missing procedure/protocol/restrictions
 → warning
@@ -249,7 +238,7 @@ not assessed neurological component
 → never generate normal wording
 ```
 
-Region-specific rules belong in each frozen profile.
+Shoulder-specific rules live in `shoulder_v1.md` and include acute traumatic weakness/possible cuff-tear concern, instability/dislocation context, calcific-specific adjunct rules and cervical/neurological overlap.
 
 ---
 
@@ -268,9 +257,9 @@ Rules:
 
 - collaborative wording, not over-prescription of the physiotherapist;
 - active rehabilitation, education/self-management and graded activity/loading where appropriate;
-- passive/technique-level interventions remain adjunctive;
-- no unsupported diagnosis from provocation tests or symptom combinations;
-- no negative neurological/red-flag statements from missing or unassessed data;
+- technique-level interventions remain adjunctive;
+- no unsupported diagnosis from tests, symptoms or incidental imaging;
+- no negative neurological/red-flag/structural statements from missing or unassessed data;
 - preserve explicit restrictions;
 - short and detailed outputs derive from the same `ReferralDraft`.
 
@@ -327,15 +316,16 @@ L. final evidence check for production wording
 
 # 11. Exact next action
 
-Cervical v1.1 and lumbar v1.1 are frozen.
-
-Next:
-
 ```text
-1. design shoulder profile v1
-2. clinically/structurally review it with the product owner
-3. freeze shoulder after approval
-4. continue through the remaining body-region sequence
+1. product-owner clinical review of clinic_utilities/physio_profiles/shoulder_v1.md
+2. resolve stand-alone biceps pathway vs secondary modifier
+3. resolve AC-joint pathway visibility
+4. resolve labral/SLAP pathway need
+5. resolve real-workflow post-operative shoulder need
+6. confirm adjunct policy (acupuncture, dry needling, calcific ESWT, no standard therapeutic ultrasound)
+7. revise shoulder candidate
+8. freeze/merge only after explicit product-owner approval
+9. then proceed to the next body-region profile
 ```
 
-Do not write runtime code. Explicit product-owner authorization is still required before any transition from CU-1 design to CU-2 implementation.
+Do not write runtime code. Explicit product-owner authorization is still required before transition from CU-1 design to CU-2 implementation.
