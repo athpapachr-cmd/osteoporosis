@@ -3,14 +3,14 @@
 > **STATUS:** ACTIVE OPERATIONAL AUTHORITY.
 > **Updated:** 2026-08-26 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Verified base main before this docs mutation:** `b24bc68ac610a360372d2364e5333e41d8741a4c`.
+> **Current main:** `1c51b44fc3b89252224f78cfabc818155373e4c6` after PR #39 lumbar-freeze merge; this handoff commit will advance `main` once written.
 > **Current major phase:** Personal Clinical Excellence foundation with a bounded Clinic Utilities detour.
 > **Active slice design:** `SLICE_PLAN_CURRENT.md` — CU-1 Physiotherapy Referral v2 clinical/content design.
 > **Supporting detour plan:** `CLINIC_UTILITIES_PLAN.md`.
 > **Frozen cervical profile:** `clinic_utilities/physio_profiles/cervical_v1_1.md`.
 > **Frozen lumbar profile:** `clinic_utilities/physio_profiles/lumbar_v1_1.md`.
 > **NEXT BODY-REGION DESIGN TARGET:** shoulder.
-> **ACTIVE CANONICAL WRITER/LOCK:** docs-only branch `docs/cu1-lumbar-v1-1-freeze-2026-08-26` until this freeze/handoff is merged.
+> **ACTIVE CANONICAL WRITER/LOCK:** NONE.
 > **ACTIVE RUNTIME WRITER/LOCK:** NONE in this repository.
 > **RUNTIME IMPLEMENTATION:** NOT AUTHORIZED for CU-1; design only.
 > **PR-1 TRANSCRIPT SLICE:** intentionally paused, preserved at `archive/slices/PR1_TRANSCRIPT_INTAKE_V3.md`.
@@ -100,7 +100,7 @@ Cervical post-operative rehabilitation is excluded from the active cervical MVP.
 
 # 5. Lumbar — FROZEN v1.1
 
-Product-owner review approved:
+Authoritative file:
 
 ```text
 clinic_utilities/physio_profiles/lumbar_v1_1.md
@@ -167,21 +167,25 @@ Future target remains one authoritative RF workflow with lifecycle/history/reuse
 
 # 8. Current writer / merge state
 
-Current mutation is documentation/design only on:
+PR #39 was squash-merged into `main` as:
 
 ```text
-docs/cu1-lumbar-v1-1-freeze-2026-08-26
+1c51b44fc3b89252224f78cfabc818155373e4c6
 ```
 
-No production HTML/JS/CSS or runtime behavior has changed.
+It changed documentation/design only:
 
-After docs review/merge, the canonical writer lock must return to `NONE` and `CURRENT_OPERATIONAL.md` must record the resulting exact `main` SHA.
+- added frozen `clinic_utilities/physio_profiles/lumbar_v1_1.md`;
+- updated `SLICE_PLAN_CURRENT.md`, `CURRENT_OPERATIONAL.md` and `CLINIC_UTILITIES_PLAN.md`;
+- advanced the next body-region target to shoulder.
+
+No production HTML/JS/CSS or runtime behavior changed.
+
+There is now **no active writer lock** in this repository.
 
 ---
 
 # 9. Exact next action
-
-After lumbar v1.1 freeze is merged:
 
 ```text
 1. create/review shoulder profile design candidate
@@ -216,6 +220,7 @@ cervical = frozen v1.1
 lumbar = frozen v1.1
 next body region = shoulder
 PR-1 transcript = paused + archived
+canonical writer = none
 runtime writer = none
 runtime implementation = unauthorized
 ```
