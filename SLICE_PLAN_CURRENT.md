@@ -6,7 +6,8 @@
 > **Area:** Clinic Utilities / Clinical Operations.
 > **Slice ID:** CU-1.
 > **Supporting plan:** `CLINIC_UTILITIES_PLAN.md`.
-> **Current detailed profile:** `clinic_utilities/physio_profiles/cervical_v1.md` — design candidate, not yet frozen.
+> **Frozen cervical profile:** `clinic_utilities/physio_profiles/cervical_v1_1.md`.
+> **Current detailed profile under review:** `clinic_utilities/physio_profiles/lumbar_v1.md` — design candidate, not frozen.
 > **Prior active slice:** PR-1 Transcript Intake + Candidate Extraction v3, intentionally paused and archived at `archive/slices/PR1_TRANSCRIPT_INTAKE_V3.md`.
 
 This slice is a bounded product-owner-approved detour. It does not cancel PR-1 and does not turn Clinic Utilities into a new clinical module.
@@ -118,21 +119,25 @@ consistency_rules[]
 required_context_when_selected[]
 ```
 
-Hard invariant:
+Hard invariants:
 
 ```text
 suggested != examined
 suggested != selected
 selected != mandatory
+symptom != objective deficit
+provocation test != diagnosis
+not assessed != normal
+adjunct != core rehabilitation
 ```
 
-The UI may recommend relevant fields but must never silently claim that an examination finding occurred.
+The UI may recommend relevant fields but must never silently claim that an examination finding occurred or infer a diagnosis.
 
 ---
 
-# 4. Initial condition-profile taxonomy to review/freeze
+# 4. Body-region profile sequence and status
 
-Detailed candidates live in `CLINIC_UTILITIES_PLAN.md` and include:
+Design sequence remains:
 
 - cervical spine;
 - lumbar spine;
@@ -144,38 +149,71 @@ Detailed candidates live in `CLINIC_UTILITIES_PLAN.md` and include:
 - ankle/foot;
 - muscle strain / myotendinous injury;
 - fracture / post-immobilization;
-- post-operative musculoskeletal rehabilitation;
+- post-operative musculoskeletal rehabilitation where relevant;
 - generalized deconditioning / balance / gait.
 
-Important additions beyond the MVP include selected common pathways such as calcific/proximal-biceps shoulder presentations, instability/post-op shoulder, thumb CMC OA, carpal tunnel/post-op hand, greater trochanteric pain, THA/hip-fracture rehabilitation, ACL/TKA/patellar tendon, Achilles/post-fracture ankle and generalized balance/deconditioning.
+These profiles are clinical-content designs, not automatically evidence-frozen production rules.
 
-These are **design candidates**, not automatically evidence-frozen production rules.
+## 4.1 Cervical profile — FROZEN v1.1
 
-### 4.1 Cervical profile status
-
-A first detailed cervical design candidate now exists at:
+The product owner approved and froze:
 
 ```text
-clinic_utilities/physio_profiles/cervical_v1.md
+clinic_utilities/physio_profiles/cervical_v1_1.md
 ```
 
-It proposes:
+Frozen cervical pathways:
 
-- primary problem choices separated from modifiers/findings;
-- mechanical/non-specific neck pain;
-- radiating/radicular-feature pathway without overdiagnosing radiculopathy from one test;
-- cervicogenic-headache pathway;
-- whiplash/post-traumatic pathway;
-- shared post-operative pathway;
-- explicit neurological-screen semantics (`not assessed != normal`);
-- functional-impact fields;
-- safety/escalation prompts;
-- context-sensitive goals;
-- active rehabilitation as default direction with adjunct techniques optional;
-- deterministic consistency rules;
-- short/detailed wording examples.
+```text
+non-specific / mechanical neck pain
+neck pain with radiating upper-limb / radicular features
+headache with cervical musculoskeletal features
+  + explicit formal cervicogenic-headache clinician assertion
+cervical/cervicogenic dizziness presentation
+  + explicit clinician diagnosis assertion
+whiplash / post-traumatic neck pain
+```
 
-This profile is **not yet frozen**. Product-owner review is required before moving to lumbar design.
+Cervical post-operative rehabilitation is deliberately not part of the active cervical MVP because it is not part of the product owner's current clinical workflow; a shared post-operative pathway may remain available elsewhere in Clinic Utilities.
+
+Frozen cervical semantic decisions:
+
+- Spurling or radiating pain alone does not automatically become radiculopathy;
+- trigger-point/myofascial findings and referred shoulder-girdle pain are directly selectable clinically useful findings/presentation modifiers, not automatically inferred diagnoses;
+- formal cervicogenic headache may be stated only when explicitly asserted by the clinician;
+- cervical/cervicogenic dizziness may be stated only when explicitly asserted by the clinician; the utility must not infer cervical causation from neck pain plus dizziness;
+- neurological screen is component-level tri-state and preserves `not assessed != normal`;
+- subjective radiating symptoms remain separate from objective motor/sensory/reflex deficits;
+- progressive neurological deficit, possible cord/myelopathy concern, trauma/instability concern or other material safety concern produces clinician-facing reassessment/disposition prompts;
+- there is no global `no neurological deficit` or default `no red flags` output;
+- goals are context-sensitive and never globally preselected;
+- active rehabilitation/education/self-management is the conceptual backbone;
+- technique-level adjuncts are optional and live in a secondary expander;
+- short/detailed wording derives only from confirmed `ReferralDraft` values.
+
+Cervical evidence-sensitive technique wording must be rechecked immediately before CU-2 production implementation, especially while the APTA/JOSPT neck-pain CPG is under revision and because cervical-dizziness diagnostic/therapeutic evidence remains uncertain.
+
+## 4.2 Lumbar profile — ACTIVE DESIGN CANDIDATE
+
+Current design candidate:
+
+```text
+clinic_utilities/physio_profiles/lumbar_v1.md
+```
+
+It proposes three main pathways for product-owner review:
+
+```text
+non-specific / mechanical low-back pain
+low-back pain with radiating leg symptoms / radicular features
+lumbar spinal stenosis / neurogenic claudication pathway
+```
+
+Mobility restriction, load/postural aggravation, trunk deconditioning, myofascial/trigger-point findings and referred buttock/leg pain are treated primarily as findings/modifiers rather than equivalent top-level diagnoses.
+
+The candidate inherits cervical safety semantics, adds explicit cauda-equina-type concern/disposition handling, and does not include routine lumbar traction as a default adjunct because major guidance recommends against it.
+
+Lumbar profile remains **not frozen** pending product-owner review.
 
 ---
 
@@ -203,7 +241,9 @@ Examples:
 
 # 6. Safety / consistency engine v1
 
-Initial candidate rules:
+The engine provides consistency/safety prompts, not autonomous diagnostic decisions or treatment prohibitions.
+
+Cross-cutting candidate rules include:
 
 ```text
 fracture rehab + missing healing/weight-bearing context
@@ -212,26 +252,23 @@ fracture rehab + missing healing/weight-bearing context
 post-op + missing procedure/protocol/restrictions
 → warning
 
-traction + no cervical radicular context
+manual/passive adjunct selected without active rehabilitation direction
 → warning
 
-dry needling + no myofascial/trigger-point context
+gait training selected without gait/function problem
 → soft warning
 
-manual/passive techniques with no active rehabilitation direction
-→ warning
-
-gait training with no gait/function problem
-→ soft warning
-
-new/progressive neurological deficit
+new/progressive objective neurological deficit
 → prominent medical reassessment warning
 
-red-flag concern
-→ require clinician acknowledgement before routine referral text is finalized
+material red-flag/safety concern
+→ require explicit clinician disposition before routine reassuring wording
+
+not assessed neurological component
+→ never generate normal wording
 ```
 
-The engine prompts for consistency/safety; it does not autonomously prohibit clinician-selected treatment.
+Region-specific rules belong in each frozen profile.
 
 ---
 
@@ -252,11 +289,11 @@ Optional reassessment / feedback criteria.
 Rules:
 
 - collaborative wording, not over-prescription of the physiotherapist;
-- emphasize active rehabilitation, education/self-management and graded loading when appropriate;
-- passive techniques remain adjunctive when selected;
+- emphasize active rehabilitation, education/self-management and graded loading/activity when appropriate;
+- passive/technique-level interventions remain adjunctive when selected;
 - do not convert provocation tests into unsupported definitive diagnoses;
-- do not state `no neurological deficit` or `no red flags` unless actually selected as assessed;
-- preserve surgeon/healing restrictions explicitly;
+- do not generate negative neurological or red-flag statements from missing/unassessed data;
+- preserve explicit surgeon/healing restrictions where relevant;
 - short and detailed outputs derive from the same `ReferralDraft`.
 
 ---
@@ -316,37 +353,21 @@ L. evidence-review items that must be verified before production wording
 
 # 11. Exact next action
 
-The next fresh conversation should review and refine the detailed cervical design candidate first:
+Cervical review/freeze is closed at v1.1.
+
+Current exact next action:
 
 ```text
-clinic_utilities/physio_profiles/cervical_v1.md
-```
-
-It should challenge:
-
-```text
-primary problem taxonomy
-→ findings/modifiers separation
-→ neurological-screen semantics
-→ safety prompts
-→ goals
-→ rehabilitation directions
-→ adjunct-technique visibility
-→ generated wording
-```
-
-After the product owner approves/freezes the cervical profile, continue in order:
-
-```text
-lumbar spine
-→ shoulder
-→ knee / hip
-→ elbow
-→ wrist / hand
-→ ankle / foot
-→ fracture / post-immobilization
-→ muscle injury
-→ post-operative / generalized deconditioning
+1. critically review clinic_utilities/physio_profiles/lumbar_v1.md
+2. challenge primary-pathway taxonomy
+3. challenge findings/modifiers separation
+4. challenge neurological and cauda-equina safety semantics
+5. challenge functional-limit fields and goals
+6. challenge rehabilitation directions and adjunct visibility
+7. resolve the NICE-vs-WHO needling/acupuncture framework question
+8. review generated short/detailed wording
+9. after product-owner approval, freeze lumbar profile
+10. then proceed to shoulder
 ```
 
 Stop before runtime implementation and obtain explicit product-owner approval to move from CU-1 design to CU-2 implementation.
