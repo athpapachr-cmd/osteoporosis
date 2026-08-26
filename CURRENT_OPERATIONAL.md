@@ -3,7 +3,7 @@
 > **STATUS:** ACTIVE OPERATIONAL AUTHORITY.
 > **Updated:** 2026-08-26 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Current main after elbow-freeze PR #41:** `7fb085265e5c32a002c55c9f1c3046043ecaa49f`; this handoff commit advances `main` once written.
+> **Verified main immediately before this source-identity reconciliation:** `644aca0d3d9f704949064ad5abe80deb98da2a6e`; this reconciliation commit advances `main` once written.
 > **Current major phase:** Personal Clinical Excellence foundation with a bounded Clinic Utilities detour.
 > **Active slice design:** `SLICE_PLAN_CURRENT.md` — CU-1 Physiotherapy Referral v2 clinical/content design.
 > **Supporting detour plan:** `CLINIC_UTILITIES_PLAN.md`.
@@ -12,6 +12,7 @@
 > **Frozen shoulder profile:** `clinic_utilities/physio_profiles/shoulder_v1_1.md`.
 > **Frozen elbow profile:** `clinic_utilities/physio_profiles/elbow_v1_1.md`.
 > **ELBOW FREEZE PR:** PR #41 squash-merged as `7fb085265e5c32a002c55c9f1c3046043ecaa49f`.
+> **POST-MERGE CANONICAL ALIGNMENT:** `2c48bff35aa7128e6f360e17f31e99fd6432ac71` → `c0996601e65a42cebcc899aaff410fb87c152bab` → `644aca0d3d9f704949064ad5abe80deb98da2a6e` before this reconciliation.
 > **ACTIVE CANONICAL WRITER/LOCK:** NONE.
 > **ACTIVE RUNTIME WRITER/LOCK:** NONE in this repository.
 > **RUNTIME IMPLEMENTATION:** NOT AUTHORIZED for CU-1; design only.
