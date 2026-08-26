@@ -3,20 +3,20 @@
 > **STATUS:** ACTIVE OPERATIONAL AUTHORITY.
 > **Updated:** 2026-08-26 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Current main after shoulder-freeze PR #40:** `0d101ea3911308e67db69abb27515423ea3b17ed`; this handoff commit advances `main` once written.
+> **Verified base main for this elbow design:** `9b13c53d0756174368882f1f508c7525cc52ba4d`.
 > **Current major phase:** Personal Clinical Excellence foundation with a bounded Clinic Utilities detour.
 > **Active slice design:** `SLICE_PLAN_CURRENT.md` — CU-1 Physiotherapy Referral v2 clinical/content design.
 > **Supporting detour plan:** `CLINIC_UTILITIES_PLAN.md`.
 > **Frozen cervical profile:** `clinic_utilities/physio_profiles/cervical_v1_1.md`.
 > **Frozen lumbar profile:** `clinic_utilities/physio_profiles/lumbar_v1_1.md`.
 > **Frozen shoulder profile:** `clinic_utilities/physio_profiles/shoulder_v1_1.md`.
-> **SHOULDER FREEZE PR:** PR #40 squash-merged as `0d101ea3911308e67db69abb27515423ea3b17ed`.
-> **ACTIVE CANONICAL WRITER/LOCK:** NONE.
+> **Frozen elbow profile on active docs branch:** `clinic_utilities/physio_profiles/elbow_v1_1.md`.
+> **ACTIVE CANONICAL WRITER/LOCK:** docs-only branch `docs/cu1-elbow-v1-design-2026-08-26` until elbow exact-head review/merge/handoff close.
 > **ACTIVE RUNTIME WRITER/LOCK:** NONE in this repository.
 > **RUNTIME IMPLEMENTATION:** NOT AUTHORIZED for CU-1; design only.
 > **PR-1 TRANSCRIPT SLICE:** intentionally paused, preserved at `archive/slices/PR1_TRANSCRIPT_INTAKE_V3.md`.
 
-This file is the sole owner of operational **NOW**. Do not infer mutation authority from chat history.
+This file is the sole owner of operational **NOW** for the active branch. Do not infer mutation authority from chat history.
 
 ---
 
@@ -56,7 +56,8 @@ Hard rules:
 suggested finding != examined finding
 selected goal != mandatory goal
 condition profile != automatic diagnosis
-special test != diagnosis
+subjective symptom != objective deficit
+special/provocation test != diagnosis
 imaging finding != automatically symptomatic diagnosis
 not assessed != normal
 adjunct technique != default primary treatment
@@ -71,90 +72,86 @@ clinician-entered diagnosis may be carried but not inferred
 cervical_v1_1 = FROZEN
 lumbar_v1_1 = FROZEN
 shoulder_v1_1 = FROZEN
+elbow_v1_1 = FROZEN on docs branch pending exact-head review/merge
 ```
 
-Authoritative files:
+---
+
+# 4. Elbow v1.1 — product-owner-approved design
+
+Frozen default primary pathways:
 
 ```text
-clinic_utilities/physio_profiles/cervical_v1_1.md
-clinic_utilities/physio_profiles/lumbar_v1_1.md
-clinic_utilities/physio_profiles/shoulder_v1_1.md
+E1 lateral elbow tendinopathy / lateral epicondylalgia
+E2 medial elbow tendinopathy / medial epicondylalgia
+E3 ulnar neuropathy at elbow / cubital tunnel
+E4 PIN / supinator syndrome
+E5 distal biceps tendinopathy or established partial tear — conservative pathway
+E6 elbow OA / degenerative painful stiffness
+E7 ligament injury / instability rehabilitation
+E8 post-traumatic elbow pain/stiffness after assessed injury
 ```
 
----
+Rare/advanced/context decisions:
 
-# 4. Shoulder v1.1 — closed freeze
+- radial tunnel syndrome is uncommon and remains secondary/coexisting context rather than a default primary pathway;
+- olecranon bursitis is not a routine physiotherapy referral and is removed from default primary pathways; infection safety/context remains available;
+- postoperative elbow is rare and remains an advanced/future-access route rather than a default MVP pathway;
+- distal triceps and anconeus are rare selectable myotendinous entities rather than top-level pathways;
+- anconeus epitrochlearis is distinct from ordinary anconeus pain/injury and is not automatically pathological;
+- elbow fractures route to the shared fracture/post-immobilization profile.
 
-Frozen shoulder design includes:
+Neural distinction:
 
 ```text
-RCRSP / rotator-cuff tendinopathy
-confirmed full-thickness cuff tear — conservative rehabilitation
-calcific cuff tendinopathy
-adhesive capsulitis
-GH instability/dislocation rehabilitation
-GH osteoarthritis
-post-traumatic assessed shoulder injury
-AC-joint pathology
-sternoclavicular-joint pathology
-postoperative shoulder rehabilitation
+radial tunnel pain-predominant presentation
+!=
+PIN/supinator motor-neuropathy pathway
 ```
 
-Key semantics:
+The literature contains nomenclature overlap, so the utility preserves clinician-entered diagnosis plus actual objective motor findings rather than inferring labels.
 
-- `impingement syndrome` is not the preferred top-level diagnosis;
-- long-head biceps tendinopathy is a common selectable secondary/coexisting diagnosis;
-- AC-joint pathology can be a primary referral entity;
-- sternoclavicular disease is diagnosis/context governed;
-- suspected posterior SC dislocation or unexplained SC swelling/systemic concern triggers high-priority reassessment rather than routine physiotherapy reassurance;
-- acute traumatic marked weakness/inability to elevate requires explicit reassessment semantics;
-- acupuncture and dry needling remain optional adjuncts with competence/availability safeguards;
-- ESWT is calcific-specific; prior barbotage/lavage is context and does not create an automatic treatment sequence;
-- postoperative shoulder is active and requires procedure/protocol/restriction context;
-- shoulder-region fractures route to a future shared fracture/post-immobilization profile.
-
-No production HTML/JS/CSS or runtime behavior changed.
-
----
-
-# 5. Evidence boundary
-
-Stable shoulder architecture is frozen. Technique/protocol claims remain evidence-sensitive and must be refreshed immediately before CU-2 production implementation.
-
-Current review included the 2025 rotator-cuff CPG, 2025 AAOS rotator-cuff guideline, acute-shoulder imaging appropriateness criteria, frozen-shoulder guidance, instability literature, calcific ESWT/lavage systematic reviews and sternoclavicular-joint literature.
-
----
-
-# 6. Repository-control note
-
-Before shoulder design began, an accidental placeholder was created and immediately removed on `main`; the repository tree was restored before any shoulder clinical content was written. The event was documentation-only and did not affect runtime or frozen clinical content.
-
----
-
-# 7. Exact next action
+Adjunct decisions:
 
 ```text
-1. product owner selects the next remaining CU-1 regional profile
-2. use the same taxonomy/findings/safety/goals/rehab/evidence method
-3. create the next design candidate only after that selection
-4. continue CU-1 design only
+manual therapy / soft tissue → optional
+Dry needling → optional + competence safeguard
+Acupuncture → optional
+ESWT → optional evidence-sensitive adjunct for lateral/medial epicondylalgia
+Counterforce/wrist orthosis → optional short-term/activity-specific support
+Therapeutic ultrasound → not standard evidence-backed treatment
 ```
 
-Remaining broad sequence in the supporting plan:
+No runtime behavior changed.
+
+---
+
+# 5. Shared fracture boundary
+
+Elbow-region fractures such as radial head/neck, olecranon/proximal ulna, distal humerus and coronoid route to the future shared fracture/post-immobilization profile.
 
 ```text
-knee / hip
-→ elbow
-→ wrist / hand
-→ ankle / foot
-→ shared fracture / post-immobilization
-→ muscle / myotendinous injury
-→ generalized deconditioning / balance / gait
+unresolved healing/loading/ROM context
+→ warning
+→ no unrestricted routine rehabilitation wording
 ```
 
 ---
 
-# 8. Explicitly forbidden now
+# 6. Exact next action
+
+```text
+1. exact branch-vs-main review of elbow freeze
+2. open docs-only elbow freeze PR if clean
+3. independent exact-head review
+4. merge only if exact head remains clean
+5. clear canonical writer lock and record resulting main SHA
+6. product owner selects next CU-1 region
+```
+
+---
+
+# 7. Explicitly forbidden now
 
 ```text
 WRITE CU-1 production runtime code
@@ -162,12 +159,13 @@ WRITE PR-1 transcript runtime code
 AUTO-PERSIST physiotherapy referrals
 MUTATE RF/Secretary/Calendar/Setmore/Zadarma
 COMMIT identifiable patient data
+START next regional mutation before elbow handoff closes
 CREATE overlapping runtime writers
 ```
 
 ---
 
-# 9. Handoff completeness
+# 8. Handoff completeness
 
 ```text
 active detour = Clinic Utilities
@@ -175,9 +173,8 @@ active slice = CU-1 Physio Referral v2 design
 cervical = frozen v1.1
 lumbar = frozen v1.1
 shoulder = frozen v1.1
-shoulder PR = #40 merged
-canonical writer = none
+elbow = frozen v1.1 on docs branch pending review/merge
+canonical writer = docs/cu1-elbow-v1-design-2026-08-26
 runtime writer = none
 runtime implementation = unauthorized
-next action = product owner selects next regional profile
 ```
