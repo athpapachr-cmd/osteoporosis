@@ -3,12 +3,13 @@
 > **STATUS:** ACTIVE OPERATIONAL AUTHORITY.
 > **Updated:** 2026-08-26 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Current main at start of cervical design:** `c97b7971d4b51146533415747185d88b01b0c2ee`.
+> **Current main:** `d790bf12c6342f7760151ad263eeb2e3a1de9c7e`.
 > **Current major phase:** Personal Clinical Excellence foundation with a bounded Clinic Utilities detour.
 > **Active slice design:** `SLICE_PLAN_CURRENT.md` — CU-1 Physiotherapy Referral v2 clinical/content design.
 > **Supporting detour plan:** `CLINIC_UTILITIES_PLAN.md`.
 > **Current detailed design candidate:** `clinic_utilities/physio_profiles/cervical_v1.md`.
-> **ACTIVE CANONICAL WRITER/LOCK:** current ChatGPT session — cervical design docs only on `docs/cu1-cervical-profile-v1`.
+> **CERVICAL DESIGN PR:** PR #36 merged as `d790bf12c6342f7760151ad263eeb2e3a1de9c7e`.
+> **ACTIVE CANONICAL WRITER/LOCK:** NONE.
 > **ACTIVE RUNTIME WRITER/LOCK:** NONE.
 > **RUNTIME IMPLEMENTATION:** NOT AUTHORIZED for CU-1; design only.
 > **PR-1 TRANSCRIPT SLICE:** intentionally paused, preserved at `archive/slices/PR1_TRANSCRIPT_INTAKE_V3.md`.
@@ -118,13 +119,13 @@ adjunct technique != default primary treatment
 
 # 4. Cervical profile design candidate — created, not frozen
 
-A first detailed cervical design candidate now exists:
+The first detailed body-region design candidate is now merged on `main`:
 
 ```text
 clinic_utilities/physio_profiles/cervical_v1.md
 ```
 
-It proposes a structural improvement over the old checkbox list:
+It proposes:
 
 ```text
 PRIMARY CLINICAL PROBLEM
@@ -149,15 +150,15 @@ shared post-operative pathway
 Important semantic decisions in the candidate:
 
 - Spurling or radiating pain alone does not automatically become a definitive radiculopathy diagnosis;
-- trigger points, referred shoulder-girdle pain, mobility restriction and ergonomic load are moved toward modifiers/findings rather than equivalent top-level diagnoses;
+- trigger points, referred shoulder-girdle pain, mobility restriction and ergonomic load are treated mainly as modifiers/findings rather than equivalent top-level diagnoses;
 - neurological screen distinguishes `not assessed` from `normal`;
 - objective deficits are represented separately from subjective radiating symptoms;
 - progressive deficit / possible myelopathy / red-flag concerns produce explicit reassessment prompts;
 - goals are context-sensitive rather than globally preselected;
 - active rehabilitation remains the main direction and traction/dry needling/manual therapy/acupuncture are optional adjuncts where appropriate;
-- short and detailed wording examples are generated from the same conceptual structure.
+- short and detailed wording examples derive from the same conceptual structure.
 
-This is **not yet product-owner approved or frozen**.
+This profile is **not yet product-owner approved or frozen**.
 
 ---
 
@@ -184,21 +185,23 @@ RF runtime mutation is currently blocked by the separate Digital Secretary AC-2 
 
 ---
 
-# 6. Current branch / mutation state
+# 6. Current merge / writer state
 
-Current documentation/design branch:
+PR #36 was squash-merged into `main` as:
 
 ```text
-docs/cu1-cervical-profile-v1
+d790bf12c6342f7760151ad263eeb2e3a1de9c7e
 ```
 
-Changes on this branch:
+It:
 
-- add `clinic_utilities/physio_profiles/cervical_v1.md`;
-- update `SLICE_PLAN_CURRENT.md` to point explicitly to the cervical candidate and make its review the next action;
-- update this operational handoff.
+- added `clinic_utilities/physio_profiles/cervical_v1.md`;
+- updated `SLICE_PLAN_CURRENT.md` to point to the cervical design candidate;
+- made cervical review/freeze the exact next step.
 
-No production HTML/JS/CSS, patient persistence, RF runtime, Calendar, Digital Secretary or transcript runtime code has been changed.
+No production HTML/JS/CSS or runtime behavior changed.
+
+There is now **no active writer lock** in this repository.
 
 ---
 
