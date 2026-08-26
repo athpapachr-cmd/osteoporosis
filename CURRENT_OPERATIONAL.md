@@ -1,13 +1,13 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
 > **STATUS:** ACTIVE OPERATIONAL AUTHORITY.
-> **Updated:** 2026-08-25 Asia/Nicosia.
+> **Updated:** 2026-08-26 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Current major phase:** Baseline/pilot integrity + Clinical Practice Review foundation.
 > **Active phase plan:** `CLINICAL_EXCELLENCE_PLAN.md`.
-> **Active slice design:** `SLICE_PLAN_CURRENT.md` — PR-1 Transcript Intake + Candidate Extraction v1.
-> **ACTIVE WRITER/LOCK:** NONE after the canonical-control-plane update is merged.
-> **RUNTIME IMPLEMENTATION:** PR-1 NOT STARTED.
+> **Active slice design:** `SLICE_PLAN_CURRENT.md` — PR-1 Transcript Intake + Candidate Extraction v1, pre-code design review.
+> **ACTIVE RUNTIME WRITER/LOCK:** NONE.
+> **RUNTIME IMPLEMENTATION:** PR-1 NOT STARTED and NOT YET AUTHORIZED; detailed design review must close first.
 > **CALENDAR / DIGITAL SECRETARY:** intentionally paused.
 
 This file is the sole owner of operational **NOW**. Do not infer current mutation authority from `HANDOFF_CURRENT.md`, chat history or old PR text.
@@ -16,7 +16,7 @@ This file is the sole owner of operational **NOW**. Do not infer current mutatio
 
 # 1. Current runtime foundation
 
-Latest merged runtime hardening before this canonical update:
+Latest merged runtime hardening before PR-1:
 
 ```text
 PR #29 — fix: preserve completed encounter finalization
@@ -26,31 +26,30 @@ merge commit: 0a2147b8ae5fb8316bde16c8fbb4c0d96aba2194
 Server lifecycle rule:
 
 ```text
-draft + ordinary Save               → draft
-draft + Finish Visit                → completed
-completed + no-op Save              → completed
+draft + ordinary Save                 → draft
+draft + Finish Visit                  → completed
+completed + no-op Save                → completed
 completed + content/date modification → amended
-amended + later Save                → amended
+amended + later Save                  → amended
 ```
 
-The code-level transition contract has focused deterministic tests.
+Focused deterministic transition tests exist.
 
-## Evidence still pending
+## Live synthetic browser smoke — PASSED 3/3
 
-The following live synthetic browser smoke has **not yet been recorded as passed in canonicals**:
+On 2026-08-26 the product owner reported all three agreed synthetic browser checks passed:
 
-1. load a synthetic `completed` encounter and Save without changing content → remains `completed`;
-2. change one synthetic field/date and Save → becomes `amended`;
-3. reload/reopen → remains `amended` and loadable.
+1. `completed` encounter + Save with no content change → remained `completed`;
+2. material field/date change + Save → became `amended`;
+3. reload/reopen → remained `amended` and loadable.
 
-Until this is completed, state must be described as:
+Operational conclusion:
 
 ```text
-MERGED / DEPLOY PATH STARTED HISTORICALLY
-!= LIVE FINALIZATION SMOKE VERIFIED
+PR #29 finalization integrity gate = CLOSED
 ```
 
-A fresh session should verify current Render deploy identity/status before claiming production verification.
+This removes the previous runtime-integrity blocker to PR-1 planning. It does **not** itself authorize PR-1 code; the next gate is pre-code design review.
 
 ---
 
@@ -67,7 +66,8 @@ Already proven before PR-1:
 - Patient → Encounters[] + LabSnapshots[] persistence implemented;
 - patient search/load + encounter save/reload browser smoke passed;
 - longitudinal laboratory save/history browser smoke passed;
-- duplicate lab-history UI removed and `Νέες αναλύσεις` reset smoke passed.
+- duplicate lab-history UI removed and `Νέες αναλύσεις` reset smoke passed;
+- encounter finalization live browser smoke passed 3/3.
 
 Important caveat:
 
@@ -75,9 +75,43 @@ Important caveat:
 
 ---
 
-# 3. Baseline methodology gate
+# 3. Product boundary — Clinical Excellence, not an osteoporosis audit application
 
-The 5-case pilot remains next clinical-use gate after finalization integrity is smoke-verified.
+The project target is a reusable **Personal Clinical Excellence System before, during and after the clinic**. Osteoporosis remains Module 01/proving ground, not the whole product.
+
+Permanent implementation question:
+
+```text
+Is this reusable Clinical Excellence Core behavior?
+or
+Is this Module 01 osteoporosis-specific clinical content?
+```
+
+For PR-1 specifically:
+
+```text
+CORE owns:
+transcript/source intake
+→ semantic candidate envelope
+→ provenance/temporality/negation/uncertainty
+→ provider boundary
+→ privacy/logging rules
+→ validation/failure semantics
+→ candidate review transport
+
+MODULE 01 owns:
+osteoporosis concepts
+→ fracture/DXA/VFA/risk/labs/treatment/task mapping
+→ existing osteoporosis schema targets
+```
+
+Do not build an osteoporosis-only transcript engine that must later be rewritten for other modules.
+
+---
+
+# 4. Baseline methodology gate
+
+The next clinical-use sequence remains:
 
 ```text
 5 pilot encounters
@@ -94,123 +128,149 @@ During the scored baseline:
 - safety-critical exception path allowed;
 - any intervention exposure must be recorded if methodology changes.
 
+PR-1 may be engineered and tested in shadow/capture mode without activating routine coaching.
+
 ---
 
-# 4. Active next engineering slice — PR-1
+# 5. Active next engineering program — PR-1 PRE-CODE DESIGN REVIEW
 
-Active approved design:
+Active slice:
 
 ```text
 PR-1 — Transcript Intake + Candidate Extraction v1
 ```
 
-Purpose:
-
-> Paste a Heidi transcript and convert it into structured **candidate** clinical data aligned to the existing schema, without allowing the model to write authoritative patient data.
-
-Frozen first-slice boundary:
+Current status:
 
 ```text
-paste transcript
-→ protected extraction endpoint
+DESIGN DIRECTION APPROVED
+SOURCE INSPECTION STARTED
+DETAILED PRE-CODE DESIGN UNDER REVIEW
+IMPLEMENTATION NOT STARTED
+RUNTIME WRITER NOT CLAIMED
+```
+
+The product owner explicitly requested a strong design gate before any PR-1 runtime code, following the project’s canonical discipline.
+
+The design must be sufficiently explicit that a fresh implementation conversation can bootstrap from `main`, understand the exact contracts and seams, claim one writer lock, and implement without reconstructing architecture from chat history.
+
+Frozen first-slice product boundary remains:
+
+```text
+paste Heidi transcript
+→ protected Core extraction endpoint
+→ provider adapter
 → validated typed candidates
-→ candidate preview
+→ Module 01 mapping where possible
+→ clinically readable preview
 → no authoritative encounter write
 → no raw transcript persistence
 ```
 
-Full design/acceptance/REPLAN triggers live in `SLICE_PLAN_CURRENT.md`.
+Full design, failure modes, acceptance evidence and REPLAN triggers live in `SLICE_PLAN_CURRENT.md`.
 
 ---
 
-# 5. Practice Review program state
+# 6. Source-inspection findings that constrain PR-1 design
 
-The broader Clinical Practice Review architecture is now a first-class product program in `CLINICAL_EXCELLENCE_PLAN.md` and `TODO.md`.
+Verified repository/runtime facts:
 
-Planned stages:
+- `main.py` composes the current clinical routers over `legacy_main.py`;
+- `/clinical/*` browser access uses the existing clinical-session cookie plus server-side `X-Clinical-Key` injection;
+- the new transcript endpoint should remain under `/clinical/*` and must use the same protection model;
+- `legacy_main.py` already initializes an OpenAI API client from `OPENAI_API_KEY` and uses Chat Completions for legacy AI functions;
+- `requirements.txt` currently specifies `openai>=1.6.0` without an exact pin;
+- the Baseline UI is modularly bootstrapped through `static/baseline-audit/app.js`, so transcript intake can be additive rather than rewriting the form;
+- existing osteoporosis schemas already define anthropometrics, fracture events, formal risk, DXA/VFA, laboratories, treatment episodes/administrations/decision and follow-up tasks.
+
+Design implication:
+
+> PR-1 should introduce a reusable Clinical Excellence transcript Core plus an osteoporosis mapping profile, not import new transcript semantics directly into Step-specific UI code.
+
+Provider/privacy implication:
+
+> `store=false`/local non-persistence is not equivalent to verified Zero Data Retention. Real identifiable transcript use must remain a separate privacy-readiness decision. PR-1 development and acceptance testing use synthetic/de-identified transcripts only until provider retention/data-control configuration is explicitly verified.
+
+---
+
+# 7. Exact next authorized actions — DESIGN ONLY
+
+The next conversation/session should **not begin by writing runtime code**. It should:
 
 ```text
-PR-1 transcript extraction candidates
-PR-2 clinician review/accept/reject/edit + merge
-PR-3 Quick Practice Review shadow mode
-PR-4 Deep Review / Red Team / Decision Reconstruction
-PR-5 longitudinal pattern → Signal integration
-PR-6 intervention / Learning linkage
-PR-7 adaptive consultation-flow presentation layer
-PR-8 Patient Voice/outcome enrichment
+1. bootstrap fresh `main` from all six canonicals
+2. confirm PR #29 finalization gate is closed 3/3
+3. read `SLICE_PLAN_CURRENT.md` in full
+4. inspect only the exact PR-1 seams still needed
+5. challenge the Core-vs-Module boundary
+6. freeze request/response/candidate contracts
+7. freeze privacy/provider/logging behavior
+8. freeze module mapping strategy and conflict behavior
+9. freeze UI lifecycle and ephemeral-data behavior
+10. freeze deterministic + model/eval test matrix
+11. list red-line merge blockers and REPLAN triggers
+12. present the final implementation plan to the product owner
+13. obtain explicit product-owner approval to IMPLEMENT
 ```
 
-Do not skip directly to automated coaching or consultation-flow rewrite before the data/provenance contracts exist.
-
----
-
-# 6. Calendar / Digital Secretary state — paused
-
-Already present:
-
-- Clinical Calendar API/store/UI foundation;
-- Baseline sidebar navigation;
-- osteoporosis-only categories/filtering.
-
-Not yet present/proven:
-
-- live Setmore appointment ingestion;
-- structured `visit_reason` feed;
-- CareTask/Zadarma reminder workflow.
-
-Product-owner decision: pause this track for now and continue independent Clinical Excellence programming.
-
-Permanent rule:
+Only after that approval:
 
 ```text
-Appointment != CareTask
+claim one runtime writer lock
+→ create PR-1 implementation branch
+→ implement the frozen slice only
 ```
 
-Do not modify the Digital Secretary as part of PR-1.
-
 ---
 
-# 7. Exact next authorized actions
+# 8. Explicitly deferred / forbidden before implementation approval
+
+Do not yet:
 
 ```text
-1. verify current Render deploy/runtime identity for PR #29
-2. run the three synthetic encounter-finalization smokes
-3. if PASS, record the result in CURRENT_OPERATIONAL + changelog/TODO as appropriate
-4. claim one writer lock for PR-1
-5. inspect current auth/logging/UI/schema/model-integration seams
-6. implement only the frozen PR-1 candidate-extraction boundary on a feature branch
-7. use synthetic/de-identified transcript fixtures only
-8. focused tests/review
-9. PR → squash merge → auto-deploy
-10. production smoke that does not insert real patient transcript into public logs/tests
-```
-
-If the finalization smoke fails, PR-1 does not outrank the data-integrity defect; fix/replan the integrity problem first.
-
----
-
-# 8. Explicitly deferred / forbidden for the active slice
-
-During PR-1 do not:
-
-```text
+WRITE PR-1 runtime code
 AUTO-WRITE extracted transcript values into patient records
 PERSIST raw transcript
-LOG raw transcript
+LOG raw transcript or candidate clinical values
 SHOW routine Practice Review coaching during scored baseline
 CHANGE KPI scoring contract
 REDESIGN entire Baseline form
 MODIFY Digital Secretary / Setmore / Zadarma
-CREATE fake Calendar appointments for CareTasks
-BUILD polished Clinical Excellence Home before data contracts
+BUILD a polished Clinical Excellence Home
 COMMIT identifiable patient/transcript fixtures
+ASSUME OpenAI/API retention configuration is suitable for identifiable transcripts
 ```
 
 ---
 
-# 9. Conversation handoff contract
+# 9. New-conversation implementation policy
 
-Any session ending after a material step must update this file so a new conversation can resume without prior chat.
+Starting the actual implementation in a fresh conversation is **preferred**, not a problem.
+
+That is the purpose of the six-canonical control plane. A new implementation conversation should not need a pasted chat summary. It should be able to recover:
+
+```text
+fresh main/source identity
+product purpose
+active slice
+approved design
+privacy/baseline invariants
+active writer state
+exact implementation seams
+acceptance tests
+forbidden scope
+next authorized action
+```
+
+Recommended fresh-chat opening after design approval:
+
+> Continue the Clinical Excellence project from the repository canonicals. Bootstrap from fresh `main` and all six canonical files. The active slice is PR-1 Transcript Intake + Candidate Extraction v1. Do not rely on prior chat history. Confirm the current writer lock and exact next authorized action before mutating anything.
+
+---
+
+# 10. Handoff completeness rule
+
+Any session ending after a material design/implementation step must update this file so a new conversation can resume without prior chat.
 
 At minimum preserve:
 
