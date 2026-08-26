@@ -32,18 +32,16 @@ This file answers **where the product is going and in what broad order**. It is 
 - [x] Add Clinical Calendar foundation/navigation/osteoporosis-only filtering.
 - [x] Defer live Setmore/Secretary feed without blocking the rest of Clinical Excellence development.
 - [x] Merge server-side encounter finalization integrity rule: completed encounters cannot silently regress to draft; later material edits become `amended`.
+- [x] Complete 3/3 live synthetic encounter-finalization smoke: no-op Save preserves `completed`; material edit becomes `amended`; reload preserves the amendment.
 - [x] Upgrade documentation/control-plane architecture to six active canonicals with explicit slice/current operational separation.
 
 ---
 
-# 1. CURRENT GATE — PRODUCTION INTEGRITY + BASELINE PILOT
+# 1. CURRENT GATE — BASELINE PILOT + PR-1 DESIGN
 
 ## 1.1 Encounter-finalization validation
 
-- [ ] Complete the small live synthetic smoke for the merged finalization guard:
-  - completed + no-op Save → remains `completed`;
-  - completed + content/date change → becomes `amended`;
-  - reload/reopen → amendment persists and remains loadable.
+- [x] Completed and recorded 3/3 live synthetic finalization smoke.
 
 ## 1.2 Five-case usability/capture pilot
 
@@ -159,7 +157,8 @@ Purpose: reduce duplicate manual entry while preserving clinical truth and clini
 
 ## 3.2 Structured extraction contract
 
-- [ ] Extract candidates into existing normalized clinical schema rather than inventing a second patient model.
+- [ ] Implement the corrected PR-1 v3 composite candidate contract (`components[]` + deterministic `target_mappings[]`).
+- [ ] Map against the versioned **actual persisted runtime target registry**, not YAML wording alone.
 - [ ] Preserve categories:
   - patient/history fact;
   - objective result;
@@ -175,11 +174,13 @@ Purpose: reduce duplicate manual entry while preserving clinical truth and clini
 - [ ] Never synthesize exact dates from vague time references.
 - [ ] Never convert negative history into a negative investigation result.
 - [ ] Never collapse “discussed option” into “final plan”.
+- [ ] Keep provider output separate from deterministic application target mapping.
+- [ ] Use a sanitized request-validation/error boundary so transcript PHI cannot be echoed in errors/logs.
 
 ## 3.3 Clinician review gate
 
 - [ ] Show candidate value + confidence + short temporary evidence snippet where useful.
-- [ ] Allow Accept / Reject / Edit per candidate.
+- [ ] Allow Accept / Reject / Edit per candidate in PR-2, not PR-1.
 - [ ] Optional `Accept all high-confidence safe candidates` only after category-specific guardrails exist.
 - [ ] Only accepted values write to authoritative encounter data.
 - [ ] Persist provenance such as `source=heidi_transcript` and `clinician_reviewed=true`.
@@ -378,6 +379,7 @@ Build after the relevant data contracts are sufficiently stable.
 - [ ] Learning loop summary.
 - [ ] “What the system learned this month”.
 - [ ] Navigation to patient registry, encounters, Calendar/CareTasks when those feeds are ready.
+- [ ] Navigation to reusable Clinic Utilities / workflow tools as those slices are integrated.
 
 ---
 
@@ -390,7 +392,7 @@ Build after the relevant data contracts are sufficiently stable.
 - [ ] Define retention/deletion/data-minimization approach.
 - [ ] Review applicable GDPR/privacy requirements.
 - [ ] Keep transcripts ephemeral by default.
-- [ ] Never commit identifiable clinical datasets or transcripts.
+- [ ] Never commit identifiable clinical datasets, utility-workflow patient data or transcripts.
 
 ---
 
@@ -415,7 +417,53 @@ Permanent rule: **Appointment != CareTask**.
 
 ---
 
-# 15. PATIENT MATERIALS — LOWER PRIORITY CURRENTLY
+# 15. CLINIC UTILITIES / CLINICAL OPERATIONS — APPROVED NEAR-TERM DETOUR, NOT ACTIVE YET
+
+Purpose: integrate useful day-to-day clinic tools into the same Clinical Excellence workspace without confusing operational tooling with osteoporosis-specific audit logic.
+
+Permanent boundary:
+
+```text
+reusable clinic workflow/tooling → Clinical Excellence / Clinic Utilities
+osteoporosis-specific clinical rules → Module 01
+legacy standalone pages → source artifacts to inspect/migrate, not permanent parallel products
+```
+
+The product owner may activate this controlled detour in the near future. Activation requires an explicit active-slice switch in `CURRENT_OPERATIONAL.md`; it must not silently overlap an active PR-1 runtime writer.
+
+## 15.1 Physiotherapy referral text generator
+
+- [ ] Locate/provide and inspect the existing source website read-only before planning mutation.
+- [ ] Preserve the useful referral-text generation behavior.
+- [ ] Integrate it into Clinical Excellence workspace/navigation rather than deepen the historical legacy Cockpit as a separate product.
+- [ ] Restyle it to the shared Clinical Excellence visual system where appropriate.
+- [ ] Decide after inspection whether generated text is ephemeral, copied/exported only, or linked to a patient/encounter; do not invent persistent patient storage merely for convenience.
+- [ ] Give this work its own small frozen slice before implementation.
+
+## 15.2 Radiofrequency treatment request / PDF workflow
+
+- [ ] Locate/provide and inspect the existing source website read-only before implementation design.
+- [ ] Preserve its current request/form and PDF-generation behavior unless inspection identifies a concrete defect.
+- [ ] Restyle it to the shared Clinical Excellence visual system.
+- [ ] Integrate it into the protected Clinical Excellence workspace/navigation.
+- [ ] Add a durable request registry with the minimum lifecycle required by the real clinic workflow:
+  - `pending` — request submitted/made and awaiting decision;
+  - `approved_awaiting_application` — approved, treatment/procedure not yet applied;
+  - `completed` — treatment/procedure performed in the past.
+- [ ] Show clear filtered/list views for pending, approved-awaiting-application and completed requests.
+- [ ] Preserve immutable historical request records rather than rewriting an old request when status/workflow advances.
+- [ ] Design status timestamps/history and actual application/procedure date where useful after inspecting the current form/workflow.
+- [ ] Support **Repeat from previous** by cloning reusable fields from an earlier request into a **new draft/new request identity**; never mutate the historical original.
+- [ ] Reconfirm/edit copied values before submitting the repeat request so stale historical data do not silently become current truth.
+- [ ] Link to the protected patient registry where clinically/operationally appropriate; no identifiable patient data belongs in the public repository or fixtures.
+- [ ] Keep generated PDFs/export artifacts and persistent structured request data conceptually separate; define retention/storage explicitly in that slice.
+- [ ] Give the request registry/PDF workflow its own frozen design slice after source inspection.
+
+No additional status such as rejected/cancelled is frozen yet; add only if the inspected real workflow demonstrates a need.
+
+---
+
+# 16. PATIENT MATERIALS — LOWER PRIORITY CURRENTLY
 
 - [ ] Patient Q&A refinements.
 - [ ] Medication leaflets.
@@ -426,7 +474,7 @@ These remain useful but should not displace Core/Practice Review/measurement wor
 
 ---
 
-# 16. GENERALIZE BEYOND OSTEOPOROSIS
+# 17. GENERALIZE BEYOND OSTEOPOROSIS
 
 Only after Module 01 proves the reusable engine in real use:
 
@@ -436,26 +484,31 @@ Only after Module 01 proves the reusable engine in real use:
 - [ ] build cross-module Clinical Excellence Home;
 - [ ] distinguish domain-specific competence from global skills such as communication, calibration, safety and evidence responsiveness.
 
+Clinic Utilities are cross-module operational tools and do not count as declaring a clinical Module 02.
+
 ---
 
-# 17. BROAD IMPLEMENTATION ORDER
+# 18. BROAD IMPLEMENTATION ORDER
 
 ```text
-1. close encounter-finalization smoke
-2. 5-case usability/capture pilot
-3. one post-pilot refinement
-4. freeze Baseline Form + KPI contract
-5. build transcript extraction / Practice Review infrastructure in shadow mode
-6. 30-case scored baseline without routine coaching exposure
-7. baseline lock
-8. activate clinician-facing Quick Practice Review
-9. Deep Review / Red Team / Decision Reconstruction
-10. longitudinal Signals + targeted interventions
-11. adaptive consultation-flow presentation layer informed by pilot/review evidence
-12. Learning / Evidence / Patient Voice / Improvement loops
-13. Clinical Excellence Home
-14. resume Calendar/CareTask/Secretary integration when external dependency is ready
-15. generalize Core to later modules
+1. encounter-finalization smoke — CLOSED
+2. close/freeze PR-1 corrected pre-code design
+3. 5-case usability/capture pilot
+4. one post-pilot refinement
+5. freeze Baseline Form + KPI contract
+6. build transcript extraction / Practice Review infrastructure in shadow mode
+7. 30-case scored baseline without routine coaching exposure
+8. baseline lock
+9. activate clinician-facing Quick Practice Review
+10. Deep Review / Red Team / Decision Reconstruction
+11. longitudinal Signals + targeted interventions
+12. adaptive consultation-flow presentation layer informed by pilot/review evidence
+13. Learning / Evidence / Patient Voice / Improvement loops
+14. Clinical Excellence Home
+15. resume Calendar/CareTask/Secretary integration when external dependency is ready
+16. generalize Core to later clinical modules
 ```
+
+The product owner may deliberately insert the bounded **Clinic Utilities detour** after an explicit active-slice switch. Before that detour begins: bootstrap canonicals, inspect both source websites read-only, freeze a small dedicated slice, then implement. Do not overlap it with another active runtime writer.
 
 If a safety/data-integrity defect appears, it outranks this sequence.
