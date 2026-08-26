@@ -436,8 +436,9 @@ The product owner explicitly activated this bounded detour through `CURRENT_OPER
 - [x] Locate/provide and inspect the existing source website read-only before planning mutation.
 - [x] Establish structured `ReferralDraft` → short/detailed formatter architecture and safety/consistency semantics in CU-1.
 - [x] Freeze cervical clinical/content profile v1.1, including formal cervicogenic-headache support, clinician-entered cervical/cervicogenic-dizziness support, selectable myofascial/trigger-point and referred shoulder-girdle findings, and explicit `not assessed != normal` neurological semantics.
-- [ ] Review/freeze lumbar profile v1; this is the current detailed design target.
-- [ ] Continue region-by-region profile review/freeze after lumbar, beginning with shoulder.
+- [x] Freeze lumbar clinical/content profile v1.1, including radicular/neurological safety semantics, stenosis/neurogenic claudication, deep-gluteal/piriformis support, selectable myofascial findings, optional acupuncture/dry needling and no routine traction.
+- [x] Freeze shoulder clinical/content profile v1.1, including RCRSP, confirmed full-thickness tear conservative rehabilitation, calcific tendinopathy, adhesive capsulitis, instability/dislocation, GH OA, AC and sternoclavicular pathways, postoperative shoulder rehabilitation, biceps as common secondary diagnosis, and shared fracture routing.
+- [ ] Continue region-by-region profile review/freeze through the remaining body regions and shared fracture/myotendinous/deconditioning profiles.
 - [ ] Freeze the remaining CU-1 cross-region taxonomy, output wording and evidence-sensitive technique rules before implementation.
 - [ ] Integrate it into Clinical Excellence workspace/navigation rather than deepen the historical legacy Cockpit as a separate product.
 - [ ] Restyle it to the shared Clinical Excellence visual system where appropriate.
