@@ -3,19 +3,20 @@
 > **STATUS:** ACTIVE OPERATIONAL AUTHORITY.
 > **Updated:** 2026-08-26 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Verified base main:** `9cdb6bb5db64a174573c385e90ba11485666fee2`.
+> **Current main after shoulder-freeze PR #40:** `0d101ea3911308e67db69abb27515423ea3b17ed`; this handoff commit advances `main` once written.
 > **Current major phase:** Personal Clinical Excellence foundation with a bounded Clinic Utilities detour.
 > **Active slice design:** `SLICE_PLAN_CURRENT.md` — CU-1 Physiotherapy Referral v2 clinical/content design.
 > **Supporting detour plan:** `CLINIC_UTILITIES_PLAN.md`.
 > **Frozen cervical profile:** `clinic_utilities/physio_profiles/cervical_v1_1.md`.
 > **Frozen lumbar profile:** `clinic_utilities/physio_profiles/lumbar_v1_1.md`.
 > **Frozen shoulder profile:** `clinic_utilities/physio_profiles/shoulder_v1_1.md`.
-> **ACTIVE CANONICAL WRITER/LOCK:** docs-only branch `docs/cu1-shoulder-v1-design-2026-08-26` until shoulder freeze/handoff review is merged.
+> **SHOULDER FREEZE PR:** PR #40 squash-merged as `0d101ea3911308e67db69abb27515423ea3b17ed`.
+> **ACTIVE CANONICAL WRITER/LOCK:** NONE.
 > **ACTIVE RUNTIME WRITER/LOCK:** NONE in this repository.
 > **RUNTIME IMPLEMENTATION:** NOT AUTHORIZED for CU-1; design only.
 > **PR-1 TRANSCRIPT SLICE:** intentionally paused, preserved at `archive/slices/PR1_TRANSCRIPT_INTAKE_V3.md`.
 
-This file is the sole owner of operational **NOW** for the active branch. Do not infer mutation authority from chat history.
+This file is the sole owner of operational **NOW**. Do not infer mutation authority from chat history.
 
 ---
 
@@ -72,7 +73,7 @@ lumbar_v1_1 = FROZEN
 shoulder_v1_1 = FROZEN
 ```
 
-Files:
+Authoritative files:
 
 ```text
 clinic_utilities/physio_profiles/cervical_v1_1.md
@@ -82,13 +83,13 @@ clinic_utilities/physio_profiles/shoulder_v1_1.md
 
 ---
 
-# 4. Shoulder v1.1 freeze — current material state
+# 4. Shoulder v1.1 — closed freeze
 
-Product-owner-approved shoulder design includes:
+Frozen shoulder design includes:
 
 ```text
 RCRSP / rotator-cuff tendinopathy
-confirmed full-thickness cuff tear — conservative rehab
+confirmed full-thickness cuff tear — conservative rehabilitation
 calcific cuff tendinopathy
 adhesive capsulitis
 GH instability/dislocation rehabilitation
@@ -99,7 +100,7 @@ sternoclavicular-joint pathology
 postoperative shoulder rehabilitation
 ```
 
-Important frozen shoulder semantics:
+Key semantics:
 
 - `impingement syndrome` is not the preferred top-level diagnosis;
 - long-head biceps tendinopathy is a common selectable secondary/coexisting diagnosis;
@@ -108,35 +109,47 @@ Important frozen shoulder semantics:
 - suspected posterior SC dislocation or unexplained SC swelling/systemic concern triggers high-priority reassessment rather than routine physiotherapy reassurance;
 - acute traumatic marked weakness/inability to elevate requires explicit reassessment semantics;
 - acupuncture and dry needling remain optional adjuncts with competence/availability safeguards;
-- ESWT is available only for calcific tendinopathy; prior barbotage is recorded as context and does not create an automatic sequence rule;
+- ESWT is calcific-specific; prior barbotage/lavage is context and does not create an automatic treatment sequence;
 - postoperative shoulder is active and requires procedure/protocol/restriction context;
-- shoulder-region fractures route to the shared fracture/post-immobilization profile rather than being duplicated inside shoulder.
+- shoulder-region fractures route to a future shared fracture/post-immobilization profile.
 
-No runtime behavior changed.
+No production HTML/JS/CSS or runtime behavior changed.
 
 ---
 
 # 5. Evidence boundary
 
-Stable architecture is frozen; technique/protocol claims remain evidence-sensitive and must be refreshed immediately before CU-2 production implementation.
+Stable shoulder architecture is frozen. Technique/protocol claims remain evidence-sensitive and must be refreshed immediately before CU-2 production implementation.
 
-Current shoulder evidence review included the 2025 rotator-cuff CPG, 2025 AAOS rotator-cuff guideline, acute-shoulder imaging appropriateness criteria, frozen-shoulder guidance, instability literature, calcific ESWT/lavage systematic reviews and sternoclavicular-joint literature.
+Current review included the 2025 rotator-cuff CPG, 2025 AAOS rotator-cuff guideline, acute-shoulder imaging appropriateness criteria, frozen-shoulder guidance, instability literature, calcific ESWT/lavage systematic reviews and sternoclavicular-joint literature.
 
 ---
 
 # 6. Repository-control note
 
-Before the shoulder branch was created, a placeholder file was accidentally created and immediately removed on `main`; the tree was restored before shoulder clinical content was written. The source-identity housekeeping commit was recorded before branch creation. No runtime or frozen clinical content was affected.
+Before shoulder design began, an accidental placeholder was created and immediately removed on `main`; the repository tree was restored before any shoulder clinical content was written. The event was documentation-only and did not affect runtime or frozen clinical content.
 
 ---
 
 # 7. Exact next action
 
 ```text
-1. exact branch-vs-main review of shoulder freeze
-2. open/merge docs-only shoulder freeze PR if clean
-3. clear canonical writer lock and record resulting main SHA
-4. product owner selects next remaining regional profile
+1. product owner selects the next remaining CU-1 regional profile
+2. use the same taxonomy/findings/safety/goals/rehab/evidence method
+3. create the next design candidate only after that selection
+4. continue CU-1 design only
+```
+
+Remaining broad sequence in the supporting plan:
+
+```text
+knee / hip
+→ elbow
+→ wrist / hand
+→ ankle / foot
+→ shared fracture / post-immobilization
+→ muscle / myotendinous injury
+→ generalized deconditioning / balance / gait
 ```
 
 ---
@@ -149,7 +162,7 @@ WRITE PR-1 transcript runtime code
 AUTO-PERSIST physiotherapy referrals
 MUTATE RF/Secretary/Calendar/Setmore/Zadarma
 COMMIT identifiable patient data
-START next regional mutation before shoulder handoff is closed
+CREATE overlapping runtime writers
 ```
 
 ---
@@ -161,8 +174,10 @@ active detour = Clinic Utilities
 active slice = CU-1 Physio Referral v2 design
 cervical = frozen v1.1
 lumbar = frozen v1.1
-shoulder = frozen v1.1 on docs branch pending merge/handoff close
-canonical writer = docs/cu1-shoulder-v1-design-2026-08-26
+shoulder = frozen v1.1
+shoulder PR = #40 merged
+canonical writer = none
 runtime writer = none
 runtime implementation = unauthorized
+next action = product owner selects next regional profile
 ```
