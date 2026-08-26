@@ -3,13 +3,14 @@
 > **STATUS:** ACTIVE OPERATIONAL AUTHORITY.
 > **Updated:** 2026-08-26 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Verified base main before this docs mutation:** `b272b79fe9e0c07462655b9dba830a177cc3d508`.
+> **Current main:** `482db59e2133f538cae985f60813f36d3d50f63e` after PR #38 cervical-freeze/lumbar-design merge; this operational handoff commit will advance `main` once written.
 > **Current major phase:** Personal Clinical Excellence foundation with a bounded Clinic Utilities detour.
 > **Active slice design:** `SLICE_PLAN_CURRENT.md` — CU-1 Physiotherapy Referral v2 clinical/content design.
 > **Supporting detour plan:** `CLINIC_UTILITIES_PLAN.md`.
 > **Frozen cervical profile:** `clinic_utilities/physio_profiles/cervical_v1_1.md`.
 > **Current detailed design candidate:** `clinic_utilities/physio_profiles/lumbar_v1.md`.
-> **ACTIVE CANONICAL WRITER/LOCK:** docs-only branch `docs/cu1-cervical-v1-1-freeze-2026-08-26` for cervical freeze + lumbar-design handoff.
+> **CERVICAL FREEZE PR:** PR #38 squash-merged as `482db59e2133f538cae985f60813f36d3d50f63e`.
+> **ACTIVE CANONICAL WRITER/LOCK:** NONE.
 > **ACTIVE RUNTIME WRITER/LOCK:** NONE in this repository.
 > **RUNTIME IMPLEMENTATION:** NOT AUTHORIZED for CU-1; design only.
 > **PR-1 TRANSCRIPT SLICE:** intentionally paused, preserved at `archive/slices/PR1_TRANSCRIPT_INTAKE_V3.md`.
@@ -194,21 +195,25 @@ RF runtime mutation remains blocked by the separate Digital Secretary AC-2 write
 
 # 7. Current writer / merge state
 
-Current mutation is documentation/design only on:
+PR #38 was squash-merged into `main` as:
 
 ```text
-docs/cu1-cervical-v1-1-freeze-2026-08-26
+482db59e2133f538cae985f60813f36d3d50f63e
 ```
 
-No production HTML/JS/CSS or runtime behavior has been changed.
+It changed documentation/design only:
 
-After this docs change is reviewed/merged, the canonical writer lock should return to `NONE` and `CURRENT_OPERATIONAL.md` should record the resulting exact `main` SHA.
+- added frozen `clinic_utilities/physio_profiles/cervical_v1_1.md`;
+- added candidate `clinic_utilities/physio_profiles/lumbar_v1.md`;
+- updated the CU-1 slice/supporting plan/operational state.
+
+No production HTML/JS/CSS or runtime behavior changed.
+
+There is now **no active writer lock** in this repository.
 
 ---
 
 # 8. Exact next action
-
-After cervical v1.1 freeze is merged:
 
 ```text
 1. review clinic_utilities/physio_profiles/lumbar_v1.md with the product owner
@@ -252,6 +257,7 @@ PR-1 transcript = paused + archived
 physio source = inspected
 RF source = inspected read-only
 RF runtime = blocked by Secretary AC-2 lock
+canonical writer = none
 runtime writer = none
 next substantive action = lumbar clinical/content review and freeze
 ```
