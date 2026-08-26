@@ -10,6 +10,7 @@
 > **Frozen lumbar profile:** `clinic_utilities/physio_profiles/lumbar_v1_1.md`.
 > **Frozen shoulder profile:** `clinic_utilities/physio_profiles/shoulder_v1_1.md`.
 > **Frozen elbow profile:** `clinic_utilities/physio_profiles/elbow_v1_1.md`.
+> **Current detailed profile under review:** `clinic_utilities/physio_profiles/wrist_hand_v1.md` — DESIGN CANDIDATE / NOT FROZEN.
 > **Prior active slice:** PR-1 Transcript Intake + Candidate Extraction v3, intentionally paused and archived at `archive/slices/PR1_TRANSCRIPT_INTAKE_V3.md`.
 
 CU-1 is a bounded product-owner-approved design detour. It does not cancel PR-1 and does not create a new clinical module.
@@ -31,7 +32,7 @@ Clinical problem
 → short/detailed referral text
 ```
 
-The utility should improve referral quality and speed while preserving clinician judgment and physiotherapist autonomy.
+The utility should improve referral quality and speed while preserving clinician judgment and physiotherapist/hand-therapist autonomy.
 
 ---
 
@@ -76,6 +77,7 @@ objective deficit != subjective symptom
 special/provocation test != diagnosis
 imaging finding != automatically symptomatic diagnosis
 not assessed != normal
+orthosis != automatically mandatory
 adjunct != core rehabilitation
 clinician-entered diagnosis may be carried faithfully but must not be inferred
 ```
@@ -91,73 +93,103 @@ shoulder_v1_1 = FROZEN
 elbow_v1_1 = FROZEN
 ```
 
+Authoritative frozen files remain under `clinic_utilities/physio_profiles/*_v1_1.md`.
+
 ---
 
-# 4. Elbow — FROZEN v1.1 design
+# 4. Wrist / Hand — ACTIVE DESIGN CANDIDATE
 
-Authoritative frozen file:
-
-```text
-clinic_utilities/physio_profiles/elbow_v1_1.md
-```
-
-Frozen default primary pathways:
+Authoritative candidate:
 
 ```text
-E1 lateral elbow tendinopathy / lateral epicondylalgia
-E2 medial elbow tendinopathy / medial epicondylalgia
-E3 ulnar neuropathy at elbow / cubital tunnel
-E4 posterior interosseous nerve / supinator syndrome
-E5 distal biceps tendinopathy or established partial tear — conservative pathway
-E6 elbow osteoarthritis / degenerative painful stiffness
-E7 ligament injury / instability rehabilitation
-E8 post-traumatic elbow pain/stiffness after assessed injury
+clinic_utilities/physio_profiles/wrist_hand_v1.md
 ```
 
-Frozen workflow decisions:
+Proposed default primary pathways for product-owner review:
 
-- radial tunnel syndrome is uncommon and remains clinician-entered secondary/coexisting context rather than a default primary pathway;
-- pain-predominant radial tunnel presentation remains distinct from PIN/supinator motor-neuropathy semantics;
-- PIN/supinator syndrome is a clinician-established neurological pathway; lateral forearm pain or a provocation test alone does not create it;
-- olecranon bursitis is not a routine physiotherapy referral for this workflow and is removed from default primary pathways, while infection safety/context remains available;
-- postoperative elbow is rare and remains an advanced/future-access route rather than a default MVP pathway;
-- distal triceps and anconeus presentations remain rare selectable myotendinous entities rather than top-level pathways;
-- anconeus epitrochlearis remains distinct from ordinary anconeus pain/injury and is not automatically pathological;
+```text
+WH1 De Quervain / first dorsal compartment disorder
+WH2 thumb CMC-1 osteoarthritis / rhizarthrosis
+WH3 interphalangeal / generalized hand osteoarthritis
+WH4 median neuropathy at wrist / carpal tunnel syndrome
+WH5 ulnar-sided wrist pain / TFCC-related presentation
+WH6 wrist extensor/flexor tendinopathy / overuse disorder
+WH7 trigger finger / trigger thumb
+WH8 thumb MCP UCL injury / instability rehabilitation
+WH9 post-traumatic wrist/hand pain or stiffness after assessed injury
+WH10 postoperative wrist/hand rehabilitation — pending real-workflow confirmation
+```
+
+Candidate rare/advanced/context entities:
+
+```text
+Guyon's canal / ulnar neuropathy at wrist
+scapholunate/lunotriquetral ligament injury or carpal instability
+ECU instability/subluxation
+established CRPS upper limb
+inflammatory / psoriatic / crystal hand context
+Dupuytren disease / post-procedure context
+ganglion/mass context
+mallet / boutonniere / central-slip / flexor-extensor tendon injuries
+```
+
+Key candidate safety/semantic decisions:
+
+- radial-sided wrist pain or a De Quervain provocation test does not establish De Quervain disease;
+- De Quervain referral wording must not claim physiotherapy alone is the evidence-preferred first-line treatment; current comparative evidence favors corticosteroid injection plus short thumb-spica immobilization;
+- thumb CMC-1 OA and interphalangeal hand OA remain separate phenotypes;
+- incidental hand/wrist OA imaging does not automatically establish the symptomatic pain generator;
+- CTS subjective paresthesia remains separate from objective sensory/motor deficit;
+- Phalen/Tinel/Durkan and upper-limb neurodynamic tests do not independently establish CTS; current AAOS guidance specifically advises against upper-limb neurodynamic testing as a diagnostic substitute;
+- progressive thenar weakness/atrophy requires reassessment/specialist semantics;
+- uncomplicated carpal-tunnel release does not automatically generate supervised postoperative hand therapy;
+- ulnar-sided wrist pain or TFCC provocation does not establish TFCC tear;
+- DRUJ instability/foveal full-tear context changes TFCC management and requires specialist/restriction awareness;
+- ECU instability/subluxation remains distinct from ordinary ECU tendinopathy;
+- acute thumb UCL instability/Stener concern is not routine unrestricted rehabilitation;
+- possible CRPS features do not create a formal CRPS diagnosis;
 - fractures route to the shared fracture/post-immobilization profile;
-- progressive objective ulnar/radial/PIN weakness/atrophy triggers reassessment semantics;
-- acute distal-biceps/triceps rupture concern is not a routine tendinopathy pathway;
-- medial tendinopathy remains separate from ulnar neuropathy and ligament pathology;
-- stress/provocation tests remain findings, not diagnoses.
+- tendon laceration/repair and complex surgery require exact procedure/protocol/restriction context.
 
-Frozen adjunct policy:
+Candidate orthosis/support policy:
 
 ```text
-manual therapy / mobilization → optional adjunct
-soft tissue → optional adjunct
-dry needling → optional + competence/availability safeguard
-acupuncture → optional clinician-selected adjunct
-ESWT → optional evidence-sensitive adjunct for lateral/medial epicondylalgia
-counterforce brace / wrist orthosis → optional short-term/activity-specific support
-therapeutic ultrasound → not standard evidence-backed treatment
+thumb spica → condition-sensitive
+CMC-support orthosis → condition-sensitive, evidence-supported for CMC-1 OA
+neutral-wrist night orthosis → short-term CTS symptom-management option
+trigger-digit orthosis → candidate conservative option
+injury/post-op orthosis → protocol governed
 ```
 
-ESWT wording remains deliberately cautious because recent systematic reviews remain heterogeneous; no claim of universal superiority or mandatory use is permitted. Evidence for medial epicondylalgia is less mature than for lateral epicondylalgia.
+Candidate adjunct policy:
+
+```text
+manual therapy / mobilization → optional where relevant
+soft tissue → optional
+taping → optional
+dry needling → only selected myofascial/tendinous context + competence safeguard
+acupuncture → optional only if product owner confirms wrist/hand use
+ESWT → not proposed as a default wrist/hand adjunct
+therapeutic ultrasound → not standard evidence-backed CTS/general wrist-hand treatment
+```
+
+Wrist/hand remains **NOT FROZEN** until product-owner workflow decisions in `wrist_hand_v1.md` are resolved.
 
 ---
 
 # 5. Shared fracture / post-immobilization boundary
 
-Elbow fracture entry points include:
+Wrist/hand fracture entry points include:
 
 ```text
-radial head/neck fracture
-olecranon/proximal ulna fracture
-distal humerus fracture
-coronoid fracture
-complex fracture-dislocation context
+distal radius / distal ulna
+scaphoid / other carpal fracture
+metacarpal fracture
+phalangeal fracture
+other wrist/hand fracture
 ```
 
-The future shared profile requires explicit healing/stability, immobilization, ROM/loading/use restrictions and orthopaedic instructions.
+The future shared profile requires explicit healing/stability, immobilization/orthosis, ROM/loading/use restrictions and orthopaedic/hand-surgeon instructions.
 
 ```text
 fracture/post-immobilization + unresolved healing/loading context
@@ -188,7 +220,7 @@ Cross-region rules include:
 fracture/post-trauma + unresolved structural/healing context
 → warning/reassessment prompt
 
-rare post-op route + missing procedure/protocol/restrictions
+post-op/tendon-repair route + missing procedure/protocol/restrictions
 → warning
 
 adjunct selected without active rehabilitation direction
@@ -197,14 +229,14 @@ adjunct selected without active rehabilitation direction
 new/progressive objective neurological deficit
 → prominent medical reassessment prompt
 
-material safety concern + no clinician disposition
+material safety/infection concern + no clinician disposition
 → do not generate routine reassuring wording
 
 not assessed neurological component
 → never generate normal wording
 ```
 
-Region-specific elbow rules live in `elbow_v1_1.md`.
+Region-specific wrist/hand rules live in `wrist_hand_v1.md`.
 
 ---
 
@@ -213,14 +245,15 @@ Region-specific elbow rules live in `elbow_v1_1.md`.
 ```text
 Clinical problem + important findings + functional impact.
 Referral request + goals.
-Rehabilitation direction + restrictions/precautions.
+Rehabilitation/hand-therapy direction + restrictions/precautions.
 Optional reassessment/feedback criteria.
 ```
 
 Rules:
 
-- collaborative wording, not over-prescription of the physiotherapist;
+- collaborative wording, not over-prescription of the therapist;
 - active rehabilitation, education/self-management and graded loading/activity where appropriate;
+- orthoses are condition-sensitive supports rather than global defaults;
 - technique-level interventions remain adjunctive;
 - no unsupported diagnosis from tests, symptoms or incidental imaging;
 - no negative neurological/red-flag/structural statements from missing data;
@@ -260,10 +293,15 @@ Do not yet:
 # 11. Exact next action
 
 ```text
-1. product owner selects the next remaining CU-1 regional profile
-2. use the same taxonomy/findings/safety/goals/rehab/evidence method
-3. likely next practical candidate is wrist / hand if product owner confirms
-4. continue CU-1 design only
+1. product-owner clinical review of wrist_hand_v1.md
+2. resolve trigger-digit pathway visibility
+3. resolve Guyon's canal visibility
+4. resolve postoperative wrist/hand need
+5. resolve thumb-UCL and carpal-instability pathway visibility
+6. resolve CRPS and digital-tendon advanced pathways
+7. confirm acupuncture/dry-needling/ESWT policy
+8. revise candidate
+9. freeze/merge only after explicit product-owner approval
 ```
 
 Runtime implementation remains unauthorized.
