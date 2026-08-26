@@ -6,6 +6,7 @@
 > **Area:** Clinic Utilities / Clinical Operations.
 > **Slice ID:** CU-1.
 > **Supporting plan:** `CLINIC_UTILITIES_PLAN.md`.
+> **Current detailed profile:** `clinic_utilities/physio_profiles/cervical_v1.md` — design candidate, not yet frozen.
 > **Prior active slice:** PR-1 Transcript Intake + Candidate Extraction v3, intentionally paused and archived at `archive/slices/PR1_TRANSCRIPT_INTAKE_V3.md`.
 
 This slice is a bounded product-owner-approved detour. It does not cancel PR-1 and does not turn Clinic Utilities into a new clinical module.
@@ -150,6 +151,32 @@ Important additions beyond the MVP include selected common pathways such as calc
 
 These are **design candidates**, not automatically evidence-frozen production rules.
 
+### 4.1 Cervical profile status
+
+A first detailed cervical design candidate now exists at:
+
+```text
+clinic_utilities/physio_profiles/cervical_v1.md
+```
+
+It proposes:
+
+- primary problem choices separated from modifiers/findings;
+- mechanical/non-specific neck pain;
+- radiating/radicular-feature pathway without overdiagnosing radiculopathy from one test;
+- cervicogenic-headache pathway;
+- whiplash/post-traumatic pathway;
+- shared post-operative pathway;
+- explicit neurological-screen semantics (`not assessed != normal`);
+- functional-impact fields;
+- safety/escalation prompts;
+- context-sensitive goals;
+- active rehabilitation as default direction with adjunct techniques optional;
+- deterministic consistency rules;
+- short/detailed wording examples.
+
+This profile is **not yet frozen**. Product-owner review is required before moving to lumbar design.
+
 ---
 
 # 5. Context-sensitive defaults
@@ -289,33 +316,37 @@ L. evidence-review items that must be verified before production wording
 
 # 11. Exact next action
 
-The next step is **clinical-content design review**, starting with the highest-use body regions and moving one by one through the taxonomy.
-
-Recommended order:
+The next fresh conversation should review and refine the detailed cervical design candidate first:
 
 ```text
-1. cervical spine
-2. lumbar spine
-3. shoulder
-4. knee / hip
-5. elbow
-6. wrist / hand
-7. ankle / foot
-8. fracture / post-immobilization
-9. muscle injury
-10. post-operative / generalized deconditioning
+clinic_utilities/physio_profiles/cervical_v1.md
 ```
 
-For each profile freeze:
+It should challenge:
 
 ```text
-diagnoses/problems
-→ key findings
-→ functional limitations
-→ precautions/restrictions
+primary problem taxonomy
+→ findings/modifiers separation
+→ neurological-screen semantics
+→ safety prompts
 → goals
-→ rehab directions
-→ output wording
+→ rehabilitation directions
+→ adjunct-technique visibility
+→ generated wording
+```
+
+After the product owner approves/freezes the cervical profile, continue in order:
+
+```text
+lumbar spine
+→ shoulder
+→ knee / hip
+→ elbow
+→ wrist / hand
+→ ankle / foot
+→ fracture / post-immobilization
+→ muscle injury
+→ post-operative / generalized deconditioning
 ```
 
 Stop before runtime implementation and obtain explicit product-owner approval to move from CU-1 design to CU-2 implementation.
