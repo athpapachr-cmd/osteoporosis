@@ -3,12 +3,12 @@
 > **STATUS:** ACTIVE OPERATIONAL AUTHORITY.
 > **Updated:** 2026-08-26 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Fresh source main at correction start:** `f2ea2c81630f7c13cb1d7ea64fa462a62dafed0c`.
+> **Current main after canonical correction:** `a085bd52da8f3f4c17e71c8bf5fa431280e67bbc`.
 > **Current major phase:** Baseline/pilot integrity + Clinical Practice Review foundation.
 > **Active phase plan:** `CLINICAL_EXCELLENCE_PLAN.md`.
 > **Active slice design:** `SLICE_PLAN_CURRENT.md` — PR-1 Transcript Intake + Candidate Extraction v1, REPLAN-corrected design v3.
-> **CANONICAL CORRECTION PR:** #32 — `docs: correct PR-1 design and register clinic utilities detour`.
-> **ACTIVE CANONICAL WRITER/LOCK:** NONE — docs correction reviewed; PR #32 is the merge vehicle.
+> **CANONICAL CORRECTION:** PR #32 merged as `a085bd52da8f3f4c17e71c8bf5fa431280e67bbc`.
+> **ACTIVE CANONICAL WRITER/LOCK:** NONE.
 > **ACTIVE RUNTIME WRITER/LOCK:** NONE.
 > **RUNTIME IMPLEMENTATION:** PR-1 NOT STARTED and NOT AUTHORIZED.
 > **CALENDAR / DIGITAL SECRETARY:** intentionally paused.
@@ -51,7 +51,7 @@ Operational conclusion:
 PR #29 finalization integrity gate = CLOSED
 ```
 
-`TODO.md` is corrected in PR #32 so this completed gate is no longer shown as pending.
+`TODO.md` now records this completed gate as closed.
 
 ---
 
@@ -157,13 +157,13 @@ REPLAN WITHIN PR-1
 != permission to implement yet
 ```
 
-PR #32 rewrites `SLICE_PLAN_CURRENT.md` as **v3** with the corrected contract.
+PR #32 rewrote `SLICE_PLAN_CURRENT.md` as **v3** with the corrected contract.
 
 ---
 
 # 6. PR-1 v3 corrected design — frozen direction pending final verification
 
-Key corrections in PR #32:
+Key corrections merged in PR #32:
 
 - candidate = composite semantic assertion with `components[]`;
 - `target_mappings[]` are deterministic module output, never provider-authored;
@@ -187,7 +187,7 @@ NOT AUTHORIZED
 
 ---
 
-# 7. Exact next PR-1 action after PR #32 merge
+# 7. Exact next PR-1 action
 
 The next PR-1 conversation should be a **fresh final design verification**, not implementation.
 
@@ -291,7 +291,7 @@ Permanent rule:
 Appointment != CareTask
 ```
 
-Do not modify Digital Secretary as part of PR-1 or PR #32.
+Do not modify Digital Secretary as part of PR-1.
 
 ---
 
