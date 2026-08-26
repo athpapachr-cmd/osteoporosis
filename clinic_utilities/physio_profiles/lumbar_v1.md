@@ -233,15 +233,13 @@ Candidate clinician-entered concerns:
 ```text
 new_or_progressive_objective_motor_deficit
 progressive_or_expanding_sensory_loss
-new_blader_dysfunction_concern
+new_bladder_dysfunction_concern
 new_bowel_dysfunction_concern
 new_sexual_function_change_concern
 new_perineal_or_saddle_sensory_change
 rapidly_progressive_bilateral_neurological_symptoms
 other_cauda_equina_or_major_neurological_concern
 ```
-
-Spelling-normalized runtime key should use `bladder`; the above list is design semantics only.
 
 Any selected cauda-equina-type concern should generate a high-priority clinician reassessment/urgent-pathway prompt rather than routine reassuring referral wording.
 
