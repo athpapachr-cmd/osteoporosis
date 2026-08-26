@@ -3,14 +3,14 @@
 > **STATUS:** ACTIVE OPERATIONAL AUTHORITY.
 > **Updated:** 2026-08-26 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Current main:** `d790bf12c6342f7760151ad263eeb2e3a1de9c7e`.
+> **Verified base main before this docs mutation:** `b272b79fe9e0c07462655b9dba830a177cc3d508`.
 > **Current major phase:** Personal Clinical Excellence foundation with a bounded Clinic Utilities detour.
 > **Active slice design:** `SLICE_PLAN_CURRENT.md` — CU-1 Physiotherapy Referral v2 clinical/content design.
 > **Supporting detour plan:** `CLINIC_UTILITIES_PLAN.md`.
-> **Current detailed design candidate:** `clinic_utilities/physio_profiles/cervical_v1.md`.
-> **CERVICAL DESIGN PR:** PR #36 merged as `d790bf12c6342f7760151ad263eeb2e3a1de9c7e`.
-> **ACTIVE CANONICAL WRITER/LOCK:** NONE.
-> **ACTIVE RUNTIME WRITER/LOCK:** NONE.
+> **Frozen cervical profile:** `clinic_utilities/physio_profiles/cervical_v1_1.md`.
+> **Current detailed design candidate:** `clinic_utilities/physio_profiles/lumbar_v1.md`.
+> **ACTIVE CANONICAL WRITER/LOCK:** docs-only branch `docs/cu1-cervical-v1-1-freeze-2026-08-26` for cervical freeze + lumbar-design handoff.
+> **ACTIVE RUNTIME WRITER/LOCK:** NONE in this repository.
 > **RUNTIME IMPLEMENTATION:** NOT AUTHORIZED for CU-1; design only.
 > **PR-1 TRANSCRIPT SLICE:** intentionally paused, preserved at `archive/slices/PR1_TRANSCRIPT_INTAKE_V3.md`.
 > **CALENDAR / DIGITAL SECRETARY:** paused for Clinical Excellence; Secretary has its own independent AC-2 writer lock.
@@ -21,12 +21,10 @@ This file is the sole owner of operational **NOW**. Do not infer current mutatio
 
 # 1. Why the active slice changed
 
-The product owner requested a small near-term detour to integrate two existing day-to-day clinic utilities into the future Clinical Excellence Cockpit:
+The product owner requested a bounded detour to integrate two existing day-to-day clinic utilities into the broader Personal Clinical Excellence workspace:
 
 1. Physiotherapy referral text generator.
 2. Radiofrequency treatment request / PDF workflow.
-
-This detour is part of the broader product goal — Clinical Excellence before, during and after clinic — and is not Osteoporosis Module 01 logic.
 
 Permanent boundary:
 
@@ -41,13 +39,13 @@ Osteoporosis Module 01
 → osteoporosis-specific clinical standards/audit/workflows
 ```
 
-The PR-1 transcript design is not abandoned. It is paused intact while CU-1 is reviewed.
+The PR-1 transcript design is paused intact, not abandoned.
 
 ---
 
 # 2. Prior PR-1 state preserved
 
-Before the detour, PR-1 Transcript Intake + Candidate Extraction had reached REPLAN-corrected design v3 and remained:
+PR-1 Transcript Intake + Candidate Extraction v3 remains:
 
 ```text
 DESIGNED
@@ -55,19 +53,15 @@ NOT IMPLEMENTED
 NOT AUTHORIZED FOR IMPLEMENTATION
 ```
 
-The complete v3 slice contract was archived unchanged at:
+Frozen archive:
 
 ```text
 archive/slices/PR1_TRANSCRIPT_INTAKE_V3.md
 ```
 
-When the detour ends, a fresh conversation can restore PR-1 as the active slice from that preserved contract after canonical review.
-
 ---
 
 # 3. Physiotherapy source inspection — completed read-only
-
-The supplied standalone physiotherapy referral HTML has been inspected.
 
 Useful behavior to preserve:
 
@@ -81,17 +75,6 @@ Useful behavior to preserve:
 - local/no-server design;
 - initial safety/consistency warnings;
 - evidence/reference block.
-
-Design gaps to correct:
-
-- checkbox catalogue rather than clinically ordered referral flow;
-- overly generic findings across conditions;
-- globally preselected goals/interventions;
-- insufficient condition-specific precautions/restrictions;
-- direct phrase concatenation instead of a structured `ReferralDraft`;
-- limited consistency/safety rules;
-- incomplete common referral pathways;
-- standalone styling rather than Clinical Excellence visual integration.
 
 Frozen v2 architectural direction:
 
@@ -112,61 +95,85 @@ Hard rules:
 suggested finding != examined finding
 selected goal != mandatory goal
 condition profile != automatic diagnosis
+not assessed != normal
 adjunct technique != default primary treatment
 ```
 
 ---
 
-# 4. Cervical profile design candidate — created, not frozen
+# 4. Cervical profile — FROZEN v1.1
 
-The first detailed body-region design candidate is now merged on `main`:
-
-```text
-clinic_utilities/physio_profiles/cervical_v1.md
-```
-
-It proposes:
+Product-owner review approved the final cervical design at:
 
 ```text
-PRIMARY CLINICAL PROBLEM
-+
-MODIFIERS / FINDINGS
-+
-FUNCTIONAL IMPACT
-+
-SAFETY / PRECAUTIONS
+clinic_utilities/physio_profiles/cervical_v1_1.md
 ```
 
-Proposed primary cervical pathways:
+The prior `cervical_v1.md` is retained as the historical candidate.
+
+Frozen primary cervical pathways:
 
 ```text
 non-specific / mechanical neck pain
 neck pain with radiating upper-limb / radicular features
-cervicogenic-headache pathway
+headache with cervical musculoskeletal features
+  + explicit formal cervicogenic-headache clinician assertion
+cervical/cervicogenic dizziness presentation
+  + explicit clinician diagnosis assertion
 whiplash / post-traumatic neck pain
-shared post-operative pathway
 ```
 
-Important semantic decisions in the candidate:
+Cervical post-operative rehabilitation is removed from the active cervical MVP because it is not part of the product owner's actual current referral workflow.
 
-- Spurling or radiating pain alone does not automatically become a definitive radiculopathy diagnosis;
-- trigger points, referred shoulder-girdle pain, mobility restriction and ergonomic load are treated mainly as modifiers/findings rather than equivalent top-level diagnoses;
-- neurological screen distinguishes `not assessed` from `normal`;
-- objective deficits are represented separately from subjective radiating symptoms;
-- progressive deficit / possible myelopathy / red-flag concerns produce explicit reassessment prompts;
-- goals are context-sensitive rather than globally preselected;
-- active rehabilitation remains the main direction and traction/dry needling/manual therapy/acupuncture are optional adjuncts where appropriate;
-- short and detailed wording examples derive from the same conceptual structure.
+Important frozen semantics:
 
-This profile is **not yet product-owner approved or frozen**.
+- formal cervicogenic headache can be output when explicitly asserted by the clinician;
+- cervical/cervicogenic dizziness can be output when explicitly asserted by the clinician, but the software never infers cervical causation from dizziness + neck pain;
+- trigger-point/myofascial findings and referred shoulder-girdle pain remain directly selectable and may appear in referral wording when actually selected;
+- they remain findings/presentation modifiers by default rather than software-derived diagnoses;
+- subjective radiating symptoms remain separate from objective motor/sensory/reflex deficits;
+- motor/sensory/reflex states are tri-state and preserve `not assessed != normal`;
+- no global `no neurological deficit` or default `no red flags` output exists;
+- progressive neurological deficit / possible cord concern / trauma-instability / other material safety concern triggers explicit clinician-facing reassessment/disposition semantics;
+- goals are context-sensitive and not globally preselected;
+- active rehabilitation, exercise, education and self-management are the conceptual backbone;
+- manual therapy, soft-tissue work, neurodynamics, selected traction, dry needling and acupuncture remain optional technique-level adjuncts under secondary visibility where appropriate.
+
+Cervical technique-specific wording remains subject to one final evidence check immediately before CU-2 production implementation.
 
 ---
 
-# 5. RF source inspection — completed read-only
+# 5. Lumbar profile — CURRENT DESIGN TARGET
+
+A first lumbar design candidate now exists at:
+
+```text
+clinic_utilities/physio_profiles/lumbar_v1.md
+```
+
+Proposed primary pathways:
+
+```text
+non-specific / mechanical low-back pain
+low-back pain with radiating leg symptoms / radicular features
+lumbar spinal stenosis / neurogenic claudication pathway
+```
+
+The candidate deliberately keeps mobility restriction, load/postural aggravation, trunk deconditioning, myofascial/trigger-point findings and referred buttock/leg pain mainly as findings/modifiers rather than equivalent top-level diagnoses.
+
+It inherits the cervical tri-state neurological model and adds explicit high-priority handling for new bladder/bowel/sexual-function change, perineal/saddle sensory change, progressive neurological deficit and other cauda-equina-type concerns.
+
+Routine lumbar traction is not included as a default adjunct because NICE and WHO guidance recommend against routine traction. Needling/acupuncture requires explicit framework resolution because NICE and WHO recommendations differ.
+
+Lumbar is **DESIGN CANDIDATE / NOT FROZEN**.
+
+---
+
+# 6. RF source inspection — completed read-only
 
 The RF workflow was inspected in `athpapachr-cmd/ortho-reception-backend-v2`.
 
-Current useful seams include:
+Existing useful seams include:
 
 ```text
 /rf form
@@ -181,63 +188,45 @@ repeat-use support
 
 Future target remains one authoritative RF workflow with lifecycle/history/reuse, not a second competing database.
 
-RF runtime mutation is currently blocked by the separate Digital Secretary AC-2 writer lock.
+RF runtime mutation remains blocked by the separate Digital Secretary AC-2 writer lock.
 
 ---
 
-# 6. Current merge / writer state
+# 7. Current writer / merge state
 
-PR #36 was squash-merged into `main` as:
+Current mutation is documentation/design only on:
 
 ```text
-d790bf12c6342f7760151ad263eeb2e3a1de9c7e
+docs/cu1-cervical-v1-1-freeze-2026-08-26
 ```
 
-It:
+No production HTML/JS/CSS or runtime behavior has been changed.
 
-- added `clinic_utilities/physio_profiles/cervical_v1.md`;
-- updated `SLICE_PLAN_CURRENT.md` to point to the cervical design candidate;
-- made cervical review/freeze the exact next step.
-
-No production HTML/JS/CSS or runtime behavior changed.
-
-There is now **no active writer lock** in this repository.
+After this docs change is reviewed/merged, the canonical writer lock should return to `NONE` and `CURRENT_OPERATIONAL.md` should record the resulting exact `main` SHA.
 
 ---
 
-# 7. Exact next action
+# 8. Exact next action
 
-The next fresh conversation should:
-
-```text
-1. fresh-bootstrap current main + all six canonicals
-2. read CLINIC_UTILITIES_PLAN.md
-3. read clinic_utilities/physio_profiles/cervical_v1.md
-4. critically review the cervical profile clinically and structurally
-5. present recommended corrections/questions to the product owner
-6. after approval, freeze cervical profile
-7. then proceed to lumbar profile design
-```
-
-The cervical review should explicitly challenge:
+After cervical v1.1 freeze is merged:
 
 ```text
-primary-problem taxonomy
-findings/modifiers separation
-neurological-screen detail
-red-flag/reassessment semantics
-functional-limit fields
-goal suggestions
-rehabilitation directions
-visibility of adjunct techniques
-short/detailed generated wording
+1. review clinic_utilities/physio_profiles/lumbar_v1.md with the product owner
+2. resolve lumbar primary taxonomy and real-workflow fit
+3. freeze findings-vs-diagnosis separation
+4. freeze neurological / cauda-equina safety semantics
+5. freeze functional-limit fields and goals
+6. freeze active rehabilitation directions and adjunct visibility
+7. resolve NICE-vs-WHO needling/acupuncture framework issue
+8. freeze generated short/detailed wording
+9. then proceed to shoulder profile design
 ```
 
 Do not write runtime code.
 
 ---
 
-# 8. Explicitly forbidden now
+# 9. Explicitly forbidden now
 
 ```text
 WRITE CU-1 production runtime code
@@ -252,18 +241,17 @@ RUN overlapping runtime writers
 
 ---
 
-# 9. Handoff completeness
-
-A fresh conversation should be able to recover from the repository alone:
+# 10. Handoff completeness
 
 ```text
 active detour = Clinic Utilities
 active slice = CU-1 Physio Referral v2 design
-current profile = cervical_v1 design candidate
-PR-1 transcript = paused + archived, not lost
+cervical = frozen v1.1
+current profile = lumbar_v1 design candidate
+PR-1 transcript = paused + archived
 physio source = inspected
 RF source = inspected read-only
 RF runtime = blocked by Secretary AC-2 lock
 runtime writer = none
-next substantive action = review/freeze cervical profile, then lumbar
+next substantive action = lumbar clinical/content review and freeze
 ```
