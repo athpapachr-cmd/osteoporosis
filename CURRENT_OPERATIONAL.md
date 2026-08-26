@@ -7,7 +7,8 @@
 > **Current major phase:** Baseline/pilot integrity + Clinical Practice Review foundation.
 > **Active phase plan:** `CLINICAL_EXCELLENCE_PLAN.md`.
 > **Active slice design:** `SLICE_PLAN_CURRENT.md` — PR-1 Transcript Intake + Candidate Extraction v1, REPLAN-corrected design v3.
-> **ACTIVE CANONICAL WRITER/LOCK:** ChatGPT — `docs/pr1-replan-v3-clinic-utilities` — documentation/design/roadmap correction only.
+> **CANONICAL CORRECTION PR:** #32 — `docs: correct PR-1 design and register clinic utilities detour`.
+> **ACTIVE CANONICAL WRITER/LOCK:** NONE — docs correction reviewed; PR #32 is the merge vehicle.
 > **ACTIVE RUNTIME WRITER/LOCK:** NONE.
 > **RUNTIME IMPLEMENTATION:** PR-1 NOT STARTED and NOT AUTHORIZED.
 > **CALENDAR / DIGITAL SECRETARY:** intentionally paused.
@@ -50,7 +51,7 @@ Operational conclusion:
 PR #29 finalization integrity gate = CLOSED
 ```
 
-`TODO.md` is corrected in the current docs branch so this completed gate is no longer shown as pending.
+`TODO.md` is corrected in PR #32 so this completed gate is no longer shown as pending.
 
 ---
 
@@ -156,13 +157,13 @@ REPLAN WITHIN PR-1
 != permission to implement yet
 ```
 
-The current docs branch rewrites `SLICE_PLAN_CURRENT.md` as **v3** with the corrected contract.
+PR #32 rewrites `SLICE_PLAN_CURRENT.md` as **v3** with the corrected contract.
 
 ---
 
 # 6. PR-1 v3 corrected design — frozen direction pending final verification
 
-Key corrections now canonical on the branch:
+Key corrections in PR #32:
 
 - candidate = composite semantic assertion with `components[]`;
 - `target_mappings[]` are deterministic module output, never provider-authored;
@@ -186,7 +187,7 @@ NOT AUTHORIZED
 
 ---
 
-# 7. Exact next PR-1 action after this canonical correction closes
+# 7. Exact next PR-1 action after PR #32 merge
 
 The next PR-1 conversation should be a **fresh final design verification**, not implementation.
 
@@ -290,20 +291,20 @@ Permanent rule:
 Appointment != CareTask
 ```
 
-Do not modify Digital Secretary as part of PR-1 or the current docs correction.
+Do not modify Digital Secretary as part of PR-1 or PR #32.
 
 ---
 
-# 10. Explicitly forbidden during this canonical correction
+# 10. Explicitly forbidden until the next active-slice decision
 
 ```text
-WRITE PR-1 runtime code
-CREATE PR-1 implementation branch
+WRITE PR-1 runtime code before explicit IMPLEMENT
 AUTO-WRITE transcript candidates
 PERSIST/LOG transcript content
 MODIFY Calendar/Secretary runtime
-IMPLEMENT Clinic Utilities before their source inspection + slice switch
+IMPLEMENT Clinic Utilities before their source inspection + explicit slice switch
 COMMIT identifiable patient/utility-request data
+RUN two overlapping runtime writers
 ```
 
 ---
