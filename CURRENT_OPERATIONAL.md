@@ -3,12 +3,12 @@
 > **STATUS:** ACTIVE OPERATIONAL AUTHORITY.
 > **Updated:** 2026-08-26 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Current main:** `d8b355e746787854a171e811abd935e887538d97`.
+> **Current main at start of cervical design:** `c97b7971d4b51146533415747185d88b01b0c2ee`.
 > **Current major phase:** Personal Clinical Excellence foundation with a bounded Clinic Utilities detour.
 > **Active slice design:** `SLICE_PLAN_CURRENT.md` — CU-1 Physiotherapy Referral v2 clinical/content design.
 > **Supporting detour plan:** `CLINIC_UTILITIES_PLAN.md`.
-> **DETOUR DESIGN PR:** PR #34 merged as `d8b355e746787854a171e811abd935e887538d97`.
-> **ACTIVE CANONICAL WRITER/LOCK:** NONE.
+> **Current detailed design candidate:** `clinic_utilities/physio_profiles/cervical_v1.md`.
+> **ACTIVE CANONICAL WRITER/LOCK:** current ChatGPT session — cervical design docs only on `docs/cu1-cervical-profile-v1`.
 > **ACTIVE RUNTIME WRITER/LOCK:** NONE.
 > **RUNTIME IMPLEMENTATION:** NOT AUTHORIZED for CU-1; design only.
 > **PR-1 TRANSCRIPT SLICE:** intentionally paused, preserved at `archive/slices/PR1_TRANSCRIPT_INTAKE_V3.md`.
@@ -66,9 +66,9 @@ When the detour ends, a fresh conversation can restore PR-1 as the active slice 
 
 # 3. Physiotherapy source inspection — completed read-only
 
-The product owner supplied the standalone physiotherapy referral HTML and it has now been inspected.
+The supplied standalone physiotherapy referral HTML has been inspected.
 
-Observed useful capabilities:
+Useful behavior to preserve:
 
 - body-region condition groups;
 - laterality/chronicity/session fields;
@@ -81,7 +81,7 @@ Observed useful capabilities:
 - initial safety/consistency warnings;
 - evidence/reference block.
 
-Observed design gaps:
+Design gaps to correct:
 
 - checkbox catalogue rather than clinically ordered referral flow;
 - overly generic findings across conditions;
@@ -92,19 +92,7 @@ Observed design gaps:
 - incomplete common referral pathways;
 - standalone styling rather than Clinical Excellence visual integration.
 
-Disposition:
-
-```text
-source is a useful MVP
-→ preserve useful behavior
-→ redesign clinical/content model before implementation
-```
-
----
-
-# 4. CU-1 frozen design direction
-
-Target referral flow:
+Frozen v2 architectural direction:
 
 ```text
 clinical problem
@@ -126,9 +114,50 @@ condition profile != automatic diagnosis
 adjunct technique != default primary treatment
 ```
 
-The detailed body-region taxonomy, `ReferralDraft`, consistency rules and output wording live in `CLINIC_UTILITIES_PLAN.md` and `SLICE_PLAN_CURRENT.md`.
+---
 
-No runtime code should be written until CU-1 is reviewed and the product owner explicitly authorizes implementation.
+# 4. Cervical profile design candidate — created, not frozen
+
+A first detailed cervical design candidate now exists:
+
+```text
+clinic_utilities/physio_profiles/cervical_v1.md
+```
+
+It proposes a structural improvement over the old checkbox list:
+
+```text
+PRIMARY CLINICAL PROBLEM
++
+MODIFIERS / FINDINGS
++
+FUNCTIONAL IMPACT
++
+SAFETY / PRECAUTIONS
+```
+
+Proposed primary cervical pathways:
+
+```text
+non-specific / mechanical neck pain
+neck pain with radiating upper-limb / radicular features
+cervicogenic-headache pathway
+whiplash / post-traumatic neck pain
+shared post-operative pathway
+```
+
+Important semantic decisions in the candidate:
+
+- Spurling or radiating pain alone does not automatically become a definitive radiculopathy diagnosis;
+- trigger points, referred shoulder-girdle pain, mobility restriction and ergonomic load are moved toward modifiers/findings rather than equivalent top-level diagnoses;
+- neurological screen distinguishes `not assessed` from `normal`;
+- objective deficits are represented separately from subjective radiating symptoms;
+- progressive deficit / possible myelopathy / red-flag concerns produce explicit reassessment prompts;
+- goals are context-sensitive rather than globally preselected;
+- active rehabilitation remains the main direction and traction/dry needling/manual therapy/acupuncture are optional adjuncts where appropriate;
+- short and detailed wording examples are generated from the same conceptual structure.
+
+This is **not yet product-owner approved or frozen**.
 
 ---
 
@@ -149,102 +178,63 @@ patient/location/indication/consumable/VAS history
 repeat-use support
 ```
 
-The existing RF database already stores structured request history and a status field, so future Cockpit tracking should extend/migrate one authoritative workflow rather than create a competing RF registry.
+Future target remains one authoritative RF workflow with lifecycle/history/reuse, not a second competing database.
 
-Target future lifecycle candidate:
-
-```text
-application_generated
-→ submitted
-→ pending_approval
-→ approved_awaiting_procedure
-→ performed
-```
-
-Historical reuse must create a **new request identity** and only clone reusable data after reconfirmation.
+RF runtime mutation is currently blocked by the separate Digital Secretary AC-2 writer lock.
 
 ---
 
-# 6. Digital Secretary lock constraint
+# 6. Current branch / mutation state
 
-The Secretary control plane currently reports an independent active writer for AC-2 in `athpapachr-cmd/ortho-reception-ops`.
-
-Therefore:
+Current documentation/design branch:
 
 ```text
-RF read-only inspection = allowed
-RF runtime mutation in ortho-reception-backend-v2 = NOT ALLOWED NOW
+docs/cu1-cervical-profile-v1
 ```
 
-Do not create a parallel Secretary branch or modify RF runtime there until a fresh Secretary bootstrap explicitly releases/replans that scope.
+Changes on this branch:
 
-This constraint does not block CU-1 physiotherapy design because the physiotherapy source is a standalone file and CU-1 is design-only.
+- add `clinic_utilities/physio_profiles/cervical_v1.md`;
+- update `SLICE_PLAN_CURRENT.md` to point explicitly to the cervical candidate and make its review the next action;
+- update this operational handoff.
+
+No production HTML/JS/CSS, patient persistence, RF runtime, Calendar, Digital Secretary or transcript runtime code has been changed.
 
 ---
 
-# 7. Current merge / writer state
+# 7. Exact next action
 
-PR #34 completed the detour activation/design documentation and was squash-merged into `main` as:
+The next fresh conversation should:
 
 ```text
-d8b355e746787854a171e811abd935e887538d97
+1. fresh-bootstrap current main + all six canonicals
+2. read CLINIC_UTILITIES_PLAN.md
+3. read clinic_utilities/physio_profiles/cervical_v1.md
+4. critically review the cervical profile clinically and structurally
+5. present recommended corrections/questions to the product owner
+6. after approval, freeze cervical profile
+7. then proceed to lumbar profile design
 ```
 
-It:
+The cervical review should explicitly challenge:
 
-- archived PR-1 v3 before the active-slice switch;
-- added `CLINIC_UTILITIES_PLAN.md`;
-- switched `SLICE_PLAN_CURRENT.md` to CU-1;
-- recorded the physiotherapy/RF source-inspection findings and constraints.
+```text
+primary-problem taxonomy
+findings/modifiers separation
+neurological-screen detail
+red-flag/reassessment semantics
+functional-limit fields
+goal suggestions
+rehabilitation directions
+visibility of adjunct techniques
+short/detailed generated wording
+```
 
-No runtime code was changed.
-
-There is now **no active writer lock** in this repository. The next session may perform read-only CU-1 clinical-content review without claiming a runtime writer.
+Do not write runtime code.
 
 ---
 
-# 8. Exact next action
-
-Continue **CU-1 clinical-content design review** one body region at a time in this order:
-
-```text
-cervical spine
-→ lumbar spine
-→ shoulder
-→ knee / hip
-→ elbow
-→ wrist / hand
-→ ankle / foot
-→ fracture / post-immobilization
-→ muscle injury
-→ post-operative / generalized deconditioning
-```
-
-For each region freeze:
-
-```text
-diagnoses/problems
-→ key findings
-→ functional limitations
-→ precautions/restrictions
-→ goals
-→ rehabilitation directions
-→ generated wording
-```
-
-At the end of CU-1:
-
-```text
-product-owner review
-→ APPROVE / REPLAN
-→ if approved, authorize CU-2 implementation
-```
-
-Do not start CU-2 runtime implementation without explicit approval.
-
----
-
-# 9. Explicitly forbidden now
+# 8. Explicitly forbidden now
 
 ```text
 WRITE CU-1 production runtime code
@@ -259,17 +249,18 @@ RUN overlapping runtime writers
 
 ---
 
-# 10. Handoff completeness
+# 9. Handoff completeness
 
-A fresh conversation should now be able to recover from the repository alone:
+A fresh conversation should be able to recover from the repository alone:
 
 ```text
 active detour = Clinic Utilities
 active slice = CU-1 Physio Referral v2 design
-PR-1 = paused + archived, not lost
+current profile = cervical_v1 design candidate
+PR-1 transcript = paused + archived, not lost
 physio source = inspected
 RF source = inspected read-only
 RF runtime = blocked by Secretary AC-2 lock
 runtime writer = none
-next action = body-region clinical-content design review
+next substantive action = review/freeze cervical profile, then lumbar
 ```
