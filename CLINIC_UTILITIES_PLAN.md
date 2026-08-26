@@ -4,7 +4,7 @@
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Parent product:** Personal Clinical Excellence System.
 > **Scope:** cross-module Clinic Utilities / Clinical Operations.
-> **Current focus:** CU-1 Physiotherapy Referral v2 design; cervical v1.1, lumbar v1.1 and shoulder v1.1 frozen; elbow v1 active design candidate.
+> **Current focus:** CU-1 Physiotherapy Referral v2 design; cervical v1.1, lumbar v1.1, shoulder v1.1 frozen; elbow v1.1 frozen on docs branch pending review/merge.
 
 Clinic Utilities are cross-module clinician-facing operational tools, not a new clinical Module 02.
 
@@ -29,8 +29,6 @@ CU-1 currently covers physiotherapy clinical/content design only.
 6. Rehabilitation direction
 7. Final referral text
 ```
-
-The application generates structured referral wording without replacing the physiotherapist's assessment or prescribing a complete treatment recipe.
 
 Structured intermediate model:
 
@@ -81,91 +79,79 @@ clinician-entered diagnosis may be carried but not inferred
 
 # 3. Frozen profile status
 
-## 3.1 Cervical — FROZEN v1.1
+## Cervical — FROZEN v1.1
 
 ```text
 clinic_utilities/physio_profiles/cervical_v1_1.md
 ```
 
-## 3.2 Lumbar — FROZEN v1.1
+## Lumbar — FROZEN v1.1
 
 ```text
 clinic_utilities/physio_profiles/lumbar_v1_1.md
 ```
 
-## 3.3 Shoulder — FROZEN v1.1
+## Shoulder — FROZEN v1.1
 
 ```text
 clinic_utilities/physio_profiles/shoulder_v1_1.md
 ```
 
-Shoulder includes RCRSP, established full-thickness tear conservative rehabilitation, calcific tendinopathy, adhesive capsulitis, GH instability/dislocation, GH OA, post-traumatic assessed injury, AC/SC-joint pathways and postoperative rehabilitation. Long-head biceps is a common secondary/coexisting diagnosis; shoulder fractures route to the shared fracture profile.
-
----
-
-# 4. Elbow — ACTIVE DESIGN CANDIDATE
-
-Candidate file:
+## Elbow — FROZEN v1.1 on docs branch pending merge
 
 ```text
-clinic_utilities/physio_profiles/elbow_v1.md
+clinic_utilities/physio_profiles/elbow_v1_1.md
 ```
 
-Proposed elbow pathways:
+Frozen elbow default pathways:
 
 ```text
 lateral elbow tendinopathy / lateral epicondylalgia
 medial elbow tendinopathy / medial epicondylalgia
-ulnar neuropathy at elbow / cubital tunnel presentation
+ulnar neuropathy at elbow / cubital tunnel
+PIN / supinator syndrome
 distal biceps tendinopathy or established partial tear — conservative pathway
-distal triceps tendinopathy or established partial tear — conservative pathway
 elbow OA / degenerative painful stiffness
 ligament injury / instability rehabilitation
-assessed aseptic olecranon bursitis
 post-traumatic elbow pain/stiffness after assessed injury
-postoperative elbow rehabilitation — pending product-owner workflow confirmation
 ```
 
-Candidate secondary/context items:
+Rare/advanced/context decisions:
 
 ```text
-radial tunnel / radial-PIN-related presentation
-established inflammatory/crystal-disease context
-myofascial/trigger-point findings
+radial tunnel syndrome → secondary/coexisting context; uncommon in workflow
+olecranon bursitis → medical/context only; not routine physio primary pathway
+postoperative elbow → rare advanced/future route, not default MVP
+Distal triceps → rare selectable myotendinous entity
+anconeus pain/injury → rare selectable myotendinous entity
+anconeus epitrochlearis → distinct anatomic variant; never auto-pathologized
+fractures → shared fracture/post-immobilization profile
 ```
 
-Key candidate rules:
-
-- lateral/medial provocation tests remain findings rather than diagnoses;
-- subjective paresthesia remains separate from objective motor/sensory deficit;
-- medial tendinopathy remains separate from ulnar neuropathy and UCL pathology;
-- lateral epicondylalgia remains separate from radial/PIN/cervical/intra-articular differential diagnoses;
-- progressive neurological weakness/atrophy requires reassessment semantics;
-- acute distal biceps/triceps rupture concern is not a routine tendinopathy pathway;
-- aseptic olecranon-bursitis wording requires infection concern to be clinically addressed;
-- ligament stress tests do not create instability diagnosis;
-- postoperative elbow, if retained, requires exact procedure/protocol/restriction context;
-- elbow fractures route to the shared fracture/post-immobilization profile.
-
-### Elbow adjunct policy — candidate, not frozen
+Neural boundary:
 
 ```text
-manual therapy / mobilization → optional adjunct
-dry needling → optional; lateral-elbow CPG has moderate-strength support; competence safeguard applies
-acupuncture → optional; possible short-term benefit but limited certainty
-taping → optional short-term adjunct
-counterforce brace / wrist orthosis → activity-specific optional support, not required long-term treatment
-ESWT → optional evidence-sensitive item for chronic/recalcitrant epicondylalgia only if product owner wants it
-therapeutic ultrasound → not a standard evidence-backed stand-alone lateral-elbow option
+pain-predominant radial tunnel presentation
+!=
+clinician-established PIN/supinator syndrome with motor-neuropathy semantics
 ```
 
-Current high-quality evidence backbone includes the 2022 APTA/JOSPT lateral-elbow-tendinopathy CPG and current systematic reviews on medial epicondylalgia, ulnar neuropathy/cubital tunnel, distal biceps pathology, olecranon bursitis, ligament rehabilitation, postoperative elbow rehabilitation, dry needling, acupuncture and ESWT.
+Adjunct policy:
 
-Elbow remains **NOT FROZEN** until product-owner review.
+```text
+manual therapy / soft tissue → optional
+dry needling → optional + competence safeguard
+acupuncture → optional
+ESWT → optional evidence-sensitive adjunct for lateral/medial epicondylalgia
+counterforce/wrist support → optional short-term/activity-specific
+therapeutic ultrasound → not standard evidence-backed treatment
+```
+
+ESWT remains optional rather than standard because recent reviews are heterogeneous, especially for functional superiority/comparator effects; evidence for medial epicondylalgia is more limited than for lateral disease.
 
 ---
 
-# 5. Shared fracture / post-immobilization profile
+# 4. Shared fracture / post-immobilization profile
 
 Fractures should be handled in one shared profile rather than duplicated region by region.
 
@@ -182,13 +168,13 @@ ROM/loading restrictions
 surgeon/orthopaedic instructions
 ```
 
-Regional entry points include shoulder and elbow fractures such as proximal humerus, clavicle, scapula, radial head/neck, olecranon/proximal ulna, distal humerus and other relevant sites.
+Regional entry points now include shoulder and elbow fractures, including proximal humerus, clavicle, scapula, radial head/neck, olecranon/proximal ulna, distal humerus and other relevant sites.
 
 Unknown healing/loading context must produce a warning rather than unrestricted rehabilitation wording.
 
 ---
 
-# 6. Context-sensitive goals and directions
+# 5. Context-sensitive goals and directions
 
 ```text
 selected condition profile
@@ -203,17 +189,13 @@ Active rehabilitation, exercise, graded activity/loading, education and self-man
 
 ---
 
-# 7. Safety / consistency engine
-
-The utility provides prompts, not autonomous diagnoses or treatment prohibitions.
-
-Cross-cutting examples:
+# 6. Safety / consistency engine
 
 ```text
 fracture rehab + missing healing/use context
 → warning
 
-post-op pathway + missing procedure/protocol/restrictions
+rare post-op route + missing procedure/protocol/restrictions
 → warning
 
 adjunct selected without active rehabilitation direction
@@ -229,13 +211,13 @@ unassessed neurological component
 → never generate normal wording
 ```
 
-Region-specific rules live in each profile.
+Region-specific rules live in each frozen profile.
 
 ---
 
-# 8. Remaining regional design sequence
+# 7. Remaining regional design sequence
 
-After elbow review/freeze, current preferred working sequence is:
+After elbow handoff closes, current preferred working sequence is:
 
 ```text
 wrist / hand
@@ -250,9 +232,7 @@ The product owner may change the exact next region within CU-1.
 
 ---
 
-# 9. Output wording rules
-
-Preferred structure:
+# 8. Output wording rules
 
 ```text
 Clinical problem + important findings + functional impact.
@@ -266,14 +246,14 @@ Rules:
 - collaborative wording;
 - active/function-oriented rehabilitation as core where appropriate;
 - technique-level interventions remain adjuncts;
-- no unsupported diagnosis from symptom combinations, tests or incidental imaging;
+- no unsupported diagnosis from symptoms, tests or incidental imaging;
 - no normal neurological/red-flag statement from missing data;
 - preserve explicit restrictions;
 - short and detailed outputs derive from the same `ReferralDraft`.
 
 ---
 
-# 10. Implementation boundary
+# 9. Implementation boundary
 
 CU-1 remains **design only**.
 
