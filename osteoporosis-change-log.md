@@ -388,7 +388,7 @@ The complete latest external review was consolidated into `CLINICAL_EXCELLENCE_P
 
 Two low-risk data-quality additions were approved before the smoke test:
 
-- Step 3 now captures an optional `labs_date` through a native calendar/date input and persists it as `step3.labs.labs_date`, allowing entered laboratory snapshots to be distinguished as current versus historical.
+- Step 3 now captures an optional `labs_date` through a native calendar/date input and persists it as `step3.labs.labs_date`, allowing entered laboratory snapshots to be distinguished as current versus historical results.
 - Step 6 source-conflict details are now conditional on `source_conflict_present=yes`; `conflict_resolution` and `conflict_note` collapse and are cleared before persistence when conflict changes away from `yes`.
 
 The Step 3 and Step 6 schemas were updated to make these rules explicit. The next gate is deployment followed by the expanded 14-scenario synthetic smoke test. If it passes, the 5-case real pilot is scheduled to begin on Monday 2026-08-24.
@@ -586,3 +586,64 @@ osteoporosis-change-log.md
 A fresh session must verify remote `main`, bootstrap from the active canonicals and reconstruct the current writer/status/next action rather than relying on chat history.
 
 The first active Practice Review implementation slice was frozen as **PR-1 Transcript Intake + Candidate Extraction v1**, deliberately stopping before any extracted value can write into authoritative patient data.
+
+---
+
+## 2026-08-26 — Encounter finalization live verification closed
+
+The product owner completed the agreed three synthetic browser checks for PR #29:
+
+```text
+completed + no-op Save → completed
+material change + Save → amended
+reload/reopen → amended and loadable
+```
+
+All three passed. The encounter-finalization integrity gate is therefore closed and no longer blocks PR-1 design work.
+
+---
+
+## 2026-08-26 — PR-1 pre-code review triggered in-slice REPLAN
+
+A fresh, read-only design review bootstrapped from the canonical `main` and inspected actual runtime/schema seams before implementation. It identified three material design defects:
+
+1. the YAML/documentation target vocabulary does not always match the actual browser payload persisted in `clinical_encounters.payload_json`;
+2. a singular candidate `value + target_mapping` cannot safely represent composite clinical assertions such as fracture events, treatment episodes and final decisions;
+3. transcript PHI requires a dedicated sanitized request-validation/error boundary rather than relying on ordinary validation-error representation.
+
+The product decision was **REPLAN within PR-1**, not a new roadmap phase and not permission to start runtime code.
+
+The corrected v3 design freezes:
+
+- composite `components[]` candidates;
+- deterministic module-owned `target_mappings[]`;
+- `osteoporosis_runtime_targets_v1` based on actual persisted runtime paths;
+- explicit mapped/ambiguous/unmapped behavior;
+- provider-neutral extraction with no provider-authored application paths;
+- PHI-safe validation/logging;
+- no implicit provider SDK retries;
+- ephemeral browser state including BFCache cleanup;
+- deterministic tests plus synthetic provider eval gates;
+- explicit product-owner `IMPLEMENT` approval before any runtime writer/branch.
+
+The canonical correction is carried by docs-only PR #32. No PR-1 runtime code is part of that correction.
+
+---
+
+## 2026-08-26 — Near-term Clinic Utilities detour registered
+
+The product owner requested a bounded near-future detour to bring two existing standalone clinic tools into the Personal Clinical Excellence workspace.
+
+The first tool is a **physiotherapy referral text generator**. The intended direction is to inspect the current source first, preserve/refine its useful generation behavior, integrate it into the Clinical Excellence navigation/workspace and align its presentation with the shared visual system.
+
+The second is a **radiofrequency treatment request/PDF workflow**. After source inspection and visual integration, the intended workflow includes a protected durable request registry with minimum lifecycle states:
+
+```text
+pending
+approved_awaiting_application
+completed
+```
+
+The future UI should make pending requests, approved requests awaiting application and historical completed procedures easy to review. A repeat request must be created by cloning reusable data from a prior request into a **new request identity**, with reconfirmation/editing before submission; the historical request must remain unchanged.
+
+This work is classified as cross-module **Clinic Utilities / Clinical Operations**, not as Osteoporosis Module 01 clinical logic and not as a new clinical Module 02. It is roadmap-approved but not the active runtime slice. Before activation, the source websites must be located/provided and inspected read-only, `CURRENT_OPERATIONAL.md` must explicitly switch the active slice, and a small dedicated design slice must be frozen before implementation.
