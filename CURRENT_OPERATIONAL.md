@@ -3,14 +3,18 @@
 > **STATUS:** ACTIVE OPERATIONAL AUTHORITY.
 > **Updated:** 2026-08-26 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
+> **Fresh source main at correction start:** `f2ea2c81630f7c13cb1d7ea64fa462a62dafed0c`.
 > **Current major phase:** Baseline/pilot integrity + Clinical Practice Review foundation.
 > **Active phase plan:** `CLINICAL_EXCELLENCE_PLAN.md`.
-> **Active slice design:** `SLICE_PLAN_CURRENT.md` — PR-1 Transcript Intake + Candidate Extraction v1, pre-code design review.
+> **Active slice design:** `SLICE_PLAN_CURRENT.md` — PR-1 Transcript Intake + Candidate Extraction v1, REPLAN-corrected design v3.
+> **CANONICAL CORRECTION PR:** #32 — `docs: correct PR-1 design and register clinic utilities detour`.
+> **ACTIVE CANONICAL WRITER/LOCK:** NONE — docs correction reviewed; PR #32 is the merge vehicle.
 > **ACTIVE RUNTIME WRITER/LOCK:** NONE.
-> **RUNTIME IMPLEMENTATION:** PR-1 NOT STARTED and NOT YET AUTHORIZED; detailed design review must close first.
+> **RUNTIME IMPLEMENTATION:** PR-1 NOT STARTED and NOT AUTHORIZED.
 > **CALENDAR / DIGITAL SECRETARY:** intentionally paused.
+> **CLINIC UTILITIES DETOUR:** approved for near-term planning, NOT ACTIVE; source websites not yet inspected.
 
-This file is the sole owner of operational **NOW**. Do not infer current mutation authority from `HANDOFF_CURRENT.md`, chat history or old PR text.
+This file is the sole owner of operational **NOW**. Do not infer mutation authority from chat history, `HANDOFF_CURRENT.md`, an old PR body or the roadmap alone.
 
 ---
 
@@ -33,15 +37,13 @@ completed + content/date modification → amended
 amended + later Save                  → amended
 ```
 
-Focused deterministic transition tests exist.
-
 ## Live synthetic browser smoke — PASSED 3/3
 
-On 2026-08-26 the product owner reported all three agreed synthetic browser checks passed:
+On 2026-08-26 the product owner confirmed:
 
-1. `completed` encounter + Save with no content change → remained `completed`;
-2. material field/date change + Save → became `amended`;
-3. reload/reopen → remained `amended` and loadable.
+1. `completed` + no-op Save remained `completed`;
+2. material change + Save became `amended`;
+3. reload/reopen remained `amended` and loadable.
 
 Operational conclusion:
 
@@ -49,7 +51,7 @@ Operational conclusion:
 PR #29 finalization integrity gate = CLOSED
 ```
 
-This removes the previous runtime-integrity blocker to PR-1 planning. It does **not** itself authorize PR-1 code; the next gate is pre-code design review.
+`TODO.md` is corrected in PR #32 so this completed gate is no longer shown as pending.
 
 ---
 
@@ -67,7 +69,7 @@ Already proven before PR-1:
 - patient search/load + encounter save/reload browser smoke passed;
 - longitudinal laboratory save/history browser smoke passed;
 - duplicate lab-history UI removed and `Νέες αναλύσεις` reset smoke passed;
-- encounter finalization live browser smoke passed 3/3.
+- encounter finalization browser smoke passed 3/3.
 
 Important caveat:
 
@@ -75,43 +77,50 @@ Important caveat:
 
 ---
 
-# 3. Product boundary — Clinical Excellence, not an osteoporosis audit application
+# 3. Product boundary — Personal Clinical Excellence, not osteoporosis audit only
 
-The project target is a reusable **Personal Clinical Excellence System before, during and after the clinic**. Osteoporosis remains Module 01/proving ground, not the whole product.
+The product target is a reusable **Personal Clinical Excellence System before, during and after the clinic**. Osteoporosis remains Module 01/proving ground.
 
 Permanent implementation question:
 
 ```text
 Is this reusable Clinical Excellence Core behavior?
 or
-Is this Module 01 osteoporosis-specific clinical content?
+Is this osteoporosis-specific Module 01 clinical content?
+or
+Is this cross-module Clinic Operations / Utility behavior?
 ```
 
-For PR-1 specifically:
+For PR-1:
 
 ```text
-CORE owns:
-transcript/source intake
-→ semantic candidate envelope
-→ provenance/temporality/negation/uncertainty
+CORE
+transcript intake / validation / semantic candidate envelope
 → provider boundary
-→ privacy/logging rules
-→ validation/failure semantics
-→ candidate review transport
+→ provenance / speaker / temporality / uncertainty
+→ privacy / logging / failure behavior
+→ module dispatch / candidate transport
 
-MODULE 01 owns:
-osteoporosis concepts
-→ fracture/DXA/VFA/risk/labs/treatment/task mapping
-→ existing osteoporosis schema targets
+MODULE 01
+osteoporosis concept profile
+→ fracture / risk / DXA / VFA / lab / treatment / task semantics
+→ deterministic mapping to actual runtime targets
 ```
 
-Do not build an osteoporosis-only transcript engine that must later be rewritten for other modules.
+For the requested near-term utility detour:
+
+```text
+physiotherapy referral generator
+radiofrequency request/PDF workflow
+→ Clinic Utilities / Clinical Operations
+→ not Osteoporosis Module 01 logic
+```
 
 ---
 
 # 4. Baseline methodology gate
 
-The next clinical-use sequence remains:
+Clinical-use sequence remains:
 
 ```text
 5 pilot encounters
@@ -121,158 +130,188 @@ The next clinical-use sequence remains:
 → baseline lock
 ```
 
-During the scored baseline:
+During scored baseline:
 
 - routine KPI coaching hidden;
 - routine Practice Review coaching hidden;
 - safety-critical exception path allowed;
-- any intervention exposure must be recorded if methodology changes.
+- intervention exposure recorded if methodology changes.
 
-PR-1 may be engineered and tested in shadow/capture mode without activating routine coaching.
-
----
-
-# 5. Active next engineering program — PR-1 PRE-CODE DESIGN REVIEW
-
-Active slice:
-
-```text
-PR-1 — Transcript Intake + Candidate Extraction v1
-```
-
-Current status:
-
-```text
-DESIGN DIRECTION APPROVED
-SOURCE INSPECTION STARTED
-DETAILED PRE-CODE DESIGN UNDER REVIEW
-IMPLEMENTATION NOT STARTED
-RUNTIME WRITER NOT CLAIMED
-```
-
-The product owner explicitly requested a strong design gate before any PR-1 runtime code, following the project’s canonical discipline.
-
-The design must be sufficiently explicit that a fresh implementation conversation can bootstrap from `main`, understand the exact contracts and seams, claim one writer lock, and implement without reconstructing architecture from chat history.
-
-Frozen first-slice product boundary remains:
-
-```text
-paste Heidi transcript
-→ protected Core extraction endpoint
-→ provider adapter
-→ validated typed candidates
-→ Module 01 mapping where possible
-→ clinically readable preview
-→ no authoritative encounter write
-→ no raw transcript persistence
-```
-
-Full design, failure modes, acceptance evidence and REPLAN triggers live in `SLICE_PLAN_CURRENT.md`.
+PR-1 may be engineered/tested as capture infrastructure without activating routine coaching.
 
 ---
 
-# 6. Source-inspection findings that constrain PR-1 design
+# 5. PR-1 pre-code review — REPLAN finding
 
-Verified repository/runtime facts:
+A fresh read-only design-review conversation bootstrapped from `main` and inspected the actual runtime/schema seams. It found three material defects in design v2:
 
-- `main.py` composes the current clinical routers over `legacy_main.py`;
-- `/clinical/*` browser access uses the existing clinical-session cookie plus server-side `X-Clinical-Key` injection;
-- the new transcript endpoint should remain under `/clinical/*` and must use the same protection model;
-- `legacy_main.py` already initializes an OpenAI API client from `OPENAI_API_KEY` and uses Chat Completions for legacy AI functions;
-- `requirements.txt` currently specifies `openai>=1.6.0` without an exact pin;
-- the Baseline UI is modularly bootstrapped through `static/baseline-audit/app.js`, so transcript intake can be additive rather than rewriting the form;
-- existing osteoporosis schemas already define anthropometrics, fracture events, formal risk, DXA/VFA, laboratories, treatment episodes/administrations/decision and follow-up tasks.
+1. **schema/runtime target drift** — YAML names do not always equal the actual persisted browser payload paths;
+2. **singular candidate under-modeling** — composite facts require `components[]` and potentially multiple deterministic target mappings;
+3. **PHI-sensitive validation boundary** — standard validation/error paths must not be allowed to echo transcript input.
 
-Design implication:
+Disposition:
 
-> PR-1 should introduce a reusable Clinical Excellence transcript Core plus an osteoporosis mapping profile, not import new transcript semantics directly into Step-specific UI code.
+```text
+REPLAN WITHIN PR-1
+!= new roadmap phase
+!= permission to implement yet
+```
 
-Provider/privacy implication:
-
-> `store=false`/local non-persistence is not equivalent to verified Zero Data Retention. Real identifiable transcript use must remain a separate privacy-readiness decision. PR-1 development and acceptance testing use synthetic/de-identified transcripts only until provider retention/data-control configuration is explicitly verified.
+PR #32 rewrites `SLICE_PLAN_CURRENT.md` as **v3** with the corrected contract.
 
 ---
 
-# 7. Exact next authorized actions — DESIGN ONLY
+# 6. PR-1 v3 corrected design — frozen direction pending final verification
 
-The next conversation/session should **not begin by writing runtime code**. It should:
+Key corrections in PR #32:
+
+- candidate = composite semantic assertion with `components[]`;
+- `target_mappings[]` are deterministic module output, never provider-authored;
+- Module 01 mapping is versioned against `osteoporosis_runtime_targets_v1`, the actual persisted runtime namespace;
+- unsupported/lossy concepts remain `ambiguous`/`unmapped` rather than being forced into unrelated fields;
+- request contract has explicit body/transcript ceilings and forbids unnecessary patient identifiers;
+- endpoint owns sanitized request validation/errors;
+- provider adapter is isolated from Core/module business logic;
+- no implicit SDK retries for transcript transmission;
+- raw transcript/candidates remain ephemeral and content-free logs are enforced;
+- browser cleanup includes `pagehide` and defensive `pageshow`/BFCache reset;
+- deterministic tests and a synthetic Greek provider eval suite are required;
+- exact provider model/SDK version is verified at implementation time rather than frozen as a permanent product invariant.
+
+Runtime implementation remains:
 
 ```text
-1. bootstrap fresh `main` from all six canonicals
-2. confirm PR #29 finalization gate is closed 3/3
-3. read `SLICE_PLAN_CURRENT.md` in full
-4. inspect only the exact PR-1 seams still needed
-5. challenge the Core-vs-Module boundary
-6. freeze request/response/candidate contracts
-7. freeze privacy/provider/logging behavior
-8. freeze module mapping strategy and conflict behavior
-9. freeze UI lifecycle and ephemeral-data behavior
-10. freeze deterministic + model/eval test matrix
-11. list red-line merge blockers and REPLAN triggers
-12. present the final implementation plan to the product owner
-13. obtain explicit product-owner approval to IMPLEMENT
+NOT STARTED
+NOT AUTHORIZED
 ```
 
-Only after that approval:
+---
+
+# 7. Exact next PR-1 action after PR #32 merge
+
+The next PR-1 conversation should be a **fresh final design verification**, not implementation.
+
+It must:
+
+```text
+1. bootstrap fresh main + all six canonicals
+2. verify v3 against actual current runtime paths
+3. verify current official provider/API/SDK facts
+4. identify remaining contradiction/REPLAN trigger, if any
+5. present a compact final implementation contract
+6. STOP and wait for explicit product-owner IMPLEMENT
+```
+
+Only after explicit `IMPLEMENT`:
 
 ```text
 claim one runtime writer lock
-→ create PR-1 implementation branch
-→ implement the frozen slice only
+→ create implementation branch
+→ implement frozen PR-1 only
 ```
 
 ---
 
-# 8. Explicitly deferred / forbidden before implementation approval
+# 8. Near-term controlled detour — Clinic Utilities / Clinical Operations
 
-Do not yet:
+The product owner has requested a small near-future detour to integrate two existing standalone clinic websites into the Clinical Excellence workspace.
+
+## 8.1 Physiotherapy referral text generator
+
+Desired outcome:
+
+- inspect the existing source website first;
+- preserve/refine referral-text generation;
+- integrate into Clinical Excellence navigation/workspace;
+- align styling with the shared Clinical Excellence visual system;
+- determine persistence/linkage only from actual source/workflow needs.
+
+## 8.2 Radiofrequency treatment request/PDF workflow
+
+Desired outcome:
+
+- inspect the existing source website first;
+- preserve/refine PDF generation;
+- align visual design with Clinical Excellence;
+- add protected durable request tracking with minimum states:
 
 ```text
-WRITE PR-1 runtime code
-AUTO-WRITE extracted transcript values into patient records
-PERSIST raw transcript
-LOG raw transcript or candidate clinical values
-SHOW routine Practice Review coaching during scored baseline
-CHANGE KPI scoring contract
-REDESIGN entire Baseline form
-MODIFY Digital Secretary / Setmore / Zadarma
-BUILD a polished Clinical Excellence Home
-COMMIT identifiable patient/transcript fixtures
-ASSUME OpenAI/API retention configuration is suitable for identifiable transcripts
+pending
+approved_awaiting_application
+completed
 ```
 
----
+- provide list/filter views by state;
+- preserve historical requests;
+- allow **Repeat from previous** by cloning reusable fields from an old request into a **new request**, never rewriting the historical original;
+- reconfirm/edit cloned values before resubmission;
+- link to patient registry where appropriate and keep identifiable data out of the public repository.
 
-# 9. New-conversation implementation policy
+No rejected/cancelled state is frozen until the actual workflow/source inspection demonstrates a need.
 
-Starting the actual implementation in a fresh conversation is **preferred**, not a problem.
+## 8.3 Detour activation rule
 
-That is the purpose of the six-canonical control plane. A new implementation conversation should not need a pasted chat summary. It should be able to recover:
+This is approved roadmap work but **not the active runtime slice today**.
+
+When the product owner chooses to activate it:
 
 ```text
-fresh main/source identity
-product purpose
-active slice
-approved design
-privacy/baseline invariants
-active writer state
-exact implementation seams
-acceptance tests
-forbidden scope
-next authorized action
+fresh canonical bootstrap
+→ explicitly pause/switch active slice in CURRENT_OPERATIONAL
+→ inspect both source sites read-only
+→ classify reusable Core/Clinic Utility vs source-specific behavior
+→ freeze one small implementation slice
+→ claim one writer lock
+→ implement
 ```
 
-Recommended fresh-chat opening after design approval:
+Do not overlap Clinic Utilities runtime mutation with an active PR-1 runtime writer.
 
-> Continue the Clinical Excellence project from the repository canonicals. Bootstrap from fresh `main` and all six canonical files. The active slice is PR-1 Transcript Intake + Candidate Extraction v1. Do not rely on prior chat history. Confirm the current writer lock and exact next authorized action before mutating anything.
+The two source websites are not present in the current osteoporosis repository tree; their source location/files must be provided or located before design can be frozen.
 
 ---
 
-# 10. Handoff completeness rule
+# 9. Calendar / Digital Secretary state — paused
 
-Any session ending after a material design/implementation step must update this file so a new conversation can resume without prior chat.
+Already present:
 
-At minimum preserve:
+- Clinical Calendar API/store/UI foundation;
+- Baseline sidebar navigation;
+- osteoporosis-only categories/filtering.
+
+Not yet present/proven:
+
+- live Setmore appointment ingestion;
+- structured `visit_reason` feed;
+- CareTask/Zadarma reminder workflow.
+
+Permanent rule:
+
+```text
+Appointment != CareTask
+```
+
+Do not modify Digital Secretary as part of PR-1 or PR #32.
+
+---
+
+# 10. Explicitly forbidden until the next active-slice decision
+
+```text
+WRITE PR-1 runtime code before explicit IMPLEMENT
+AUTO-WRITE transcript candidates
+PERSIST/LOG transcript content
+MODIFY Calendar/Secretary runtime
+IMPLEMENT Clinic Utilities before their source inspection + explicit slice switch
+COMMIT identifiable patient/utility-request data
+RUN two overlapping runtime writers
+```
+
+---
+
+# 11. Conversation handoff contract
+
+At every material transition preserve:
 
 ```text
 fresh main/source identity
@@ -287,4 +326,4 @@ exact next action
 forbidden overlapping action
 ```
 
-If those cannot be reconstructed from this file plus `SLICE_PLAN_CURRENT.md`, the operational handoff is incomplete.
+A fresh conversation must be able to reconstruct project truth from the six canonicals without relying on chat memory.
