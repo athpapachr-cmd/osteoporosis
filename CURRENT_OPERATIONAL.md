@@ -3,11 +3,12 @@
 > **STATUS:** ACTIVE OPERATIONAL AUTHORITY.
 > **Updated:** 2026-08-26 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Fresh main at detour start:** `beb285a34751fb58baeb8be285025690c3ffc730`.
+> **Current main:** `d8b355e746787854a171e811abd935e887538d97`.
 > **Current major phase:** Personal Clinical Excellence foundation with a bounded Clinic Utilities detour.
 > **Active slice design:** `SLICE_PLAN_CURRENT.md` — CU-1 Physiotherapy Referral v2 clinical/content design.
 > **Supporting detour plan:** `CLINIC_UTILITIES_PLAN.md`.
-> **ACTIVE CANONICAL WRITER/LOCK:** current ChatGPT session — docs/design scope only on `docs/clinic-utilities-physio-v2-design`.
+> **DETOUR DESIGN PR:** PR #34 merged as `d8b355e746787854a171e811abd935e887538d97`.
+> **ACTIVE CANONICAL WRITER/LOCK:** NONE.
 > **ACTIVE RUNTIME WRITER/LOCK:** NONE.
 > **RUNTIME IMPLEMENTATION:** NOT AUTHORIZED for CU-1; design only.
 > **PR-1 TRANSCRIPT SLICE:** intentionally paused, preserved at `archive/slices/PR1_TRANSCRIPT_INTAKE_V3.md`.
@@ -181,22 +182,24 @@ This constraint does not block CU-1 physiotherapy design because the physiothera
 
 ---
 
-# 7. Current branch / mutation state
+# 7. Current merge / writer state
 
-Current design branch:
+PR #34 completed the detour activation/design documentation and was squash-merged into `main` as:
 
 ```text
-docs/clinic-utilities-physio-v2-design
+d8b355e746787854a171e811abd935e887538d97
 ```
 
-Changes on this branch are documentation/design only:
+It:
 
-- archive PR-1 v3 active-slice contract;
-- add `CLINIC_UTILITIES_PLAN.md`;
-- switch `SLICE_PLAN_CURRENT.md` to CU-1;
-- update this operational handoff.
+- archived PR-1 v3 before the active-slice switch;
+- added `CLINIC_UTILITIES_PLAN.md`;
+- switched `SLICE_PLAN_CURRENT.md` to CU-1;
+- recorded the physiotherapy/RF source-inspection findings and constraints.
 
-No application runtime behavior, patient persistence, Calendar, Digital Secretary or PDF generation has been changed.
+No runtime code was changed.
+
+There is now **no active writer lock** in this repository. The next session may perform read-only CU-1 clinical-content review without claiming a runtime writer.
 
 ---
 
