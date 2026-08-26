@@ -10,8 +10,8 @@
 > **Frozen cervical profile:** `clinic_utilities/physio_profiles/cervical_v1_1.md`.
 > **Frozen lumbar profile:** `clinic_utilities/physio_profiles/lumbar_v1_1.md`.
 > **Frozen shoulder profile:** `clinic_utilities/physio_profiles/shoulder_v1_1.md`.
-> **CURRENT BODY-REGION DESIGN TARGET:** elbow.
-> **ACTIVE CANONICAL WRITER/LOCK:** docs-only branch `docs/cu1-elbow-v1-design-2026-08-26` for elbow CU-1 clinical/content design.
+> **Frozen elbow profile on active docs branch:** `clinic_utilities/physio_profiles/elbow_v1_1.md`.
+> **ACTIVE CANONICAL WRITER/LOCK:** docs-only branch `docs/cu1-elbow-v1-design-2026-08-26` until elbow exact-head review/merge/handoff close.
 > **ACTIVE RUNTIME WRITER/LOCK:** NONE in this repository.
 > **RUNTIME IMPLEMENTATION:** NOT AUTHORIZED for CU-1; design only.
 > **PR-1 TRANSCRIPT SLICE:** intentionally paused, preserved at `archive/slices/PR1_TRANSCRIPT_INTAKE_V3.md`.
@@ -72,62 +72,81 @@ clinician-entered diagnosis may be carried but not inferred
 cervical_v1_1 = FROZEN
 lumbar_v1_1 = FROZEN
 shoulder_v1_1 = FROZEN
-```
-
-Authoritative files:
-
-```text
-clinic_utilities/physio_profiles/cervical_v1_1.md
-clinic_utilities/physio_profiles/lumbar_v1_1.md
-clinic_utilities/physio_profiles/shoulder_v1_1.md
+elbow_v1_1 = FROZEN on docs branch pending exact-head review/merge
 ```
 
 ---
 
-# 4. Elbow — ACTIVE DESIGN CANDIDATE WORK
+# 4. Elbow v1.1 — product-owner-approved design
 
-Authorized scope is clinical/content design only:
-
-```text
-primary pathway taxonomy
-findings vs diagnosis separation
-neurological and tendon-rupture safety semantics
-functional limitations
-condition-sensitive goals
-active rehabilitation directions
-adjunct visibility
-generated wording
-current evidence review
-```
-
-Target candidate:
+Frozen default primary pathways:
 
 ```text
-clinic_utilities/physio_profiles/elbow_v1.md
+E1 lateral elbow tendinopathy / lateral epicondylalgia
+E2 medial elbow tendinopathy / medial epicondylalgia
+E3 ulnar neuropathy at elbow / cubital tunnel
+E4 PIN / supinator syndrome
+E5 distal biceps tendinopathy or established partial tear — conservative pathway
+E6 elbow OA / degenerative painful stiffness
+E7 ligament injury / instability rehabilitation
+E8 post-traumatic elbow pain/stiffness after assessed injury
 ```
 
-It remains **DESIGN CANDIDATE / NOT FROZEN** until explicit product-owner approval.
+Rare/advanced/context decisions:
 
-Current evidence frame includes the 2022 APTA/JOSPT lateral-elbow-tendinopathy CPG, current systematic reviews for medial epicondylalgia, ulnar neuropathy/cubital tunnel, distal biceps pathology, olecranon bursitis, elbow UCL rehabilitation, postoperative elbow rehabilitation and current evidence on dry needling/acupuncture/ESWT.
+- radial tunnel syndrome is uncommon and remains secondary/coexisting context rather than a default primary pathway;
+- olecranon bursitis is not a routine physiotherapy referral and is removed from default primary pathways; infection safety/context remains available;
+- postoperative elbow is rare and remains an advanced/future-access route rather than a default MVP pathway;
+- distal triceps and anconeus are rare selectable myotendinous entities rather than top-level pathways;
+- anconeus epitrochlearis is distinct from ordinary anconeus pain/injury and is not automatically pathological;
+- elbow fractures route to the shared fracture/post-immobilization profile.
+
+Neural distinction:
+
+```text
+radial tunnel pain-predominant presentation
+!=
+PIN/supinator motor-neuropathy pathway
+```
+
+The literature contains nomenclature overlap, so the utility preserves clinician-entered diagnosis plus actual objective motor findings rather than inferring labels.
+
+Adjunct decisions:
+
+```text
+manual therapy / soft tissue → optional
+Dry needling → optional + competence safeguard
+Acupuncture → optional
+ESWT → optional evidence-sensitive adjunct for lateral/medial epicondylalgia
+Counterforce/wrist orthosis → optional short-term/activity-specific support
+Therapeutic ultrasound → not standard evidence-backed treatment
+```
+
+No runtime behavior changed.
 
 ---
 
 # 5. Shared fracture boundary
 
-Elbow-region fractures (for example radial head/neck, olecranon, distal humerus, proximal ulna) should route to the future shared fracture/post-immobilization profile rather than duplicate fracture logic inside elbow.
+Elbow-region fractures such as radial head/neck, olecranon/proximal ulna, distal humerus and coronoid route to the future shared fracture/post-immobilization profile.
 
-Unresolved healing/loading/ROM restrictions must prevent unrestricted routine rehabilitation wording.
+```text
+unresolved healing/loading/ROM context
+→ warning
+→ no unrestricted routine rehabilitation wording
+```
 
 ---
 
 # 6. Exact next action
 
 ```text
-1. create clinic_utilities/physio_profiles/elbow_v1.md as a design candidate
-2. perform strict current-evidence and safety review
-3. present taxonomy/adjunct/open decisions to product owner
-4. revise after real-workflow feedback
-5. freeze/merge only after explicit product-owner approval
+1. exact branch-vs-main review of elbow freeze
+2. open docs-only elbow freeze PR if clean
+3. independent exact-head review
+4. merge only if exact head remains clean
+5. clear canonical writer lock and record resulting main SHA
+6. product owner selects next CU-1 region
 ```
 
 ---
@@ -140,7 +159,7 @@ WRITE PR-1 transcript runtime code
 AUTO-PERSIST physiotherapy referrals
 MUTATE RF/Secretary/Calendar/Setmore/Zadarma
 COMMIT identifiable patient data
-FREEZE or merge elbow without product-owner approval
+START next regional mutation before elbow handoff closes
 CREATE overlapping runtime writers
 ```
 
@@ -154,7 +173,7 @@ active slice = CU-1 Physio Referral v2 design
 cervical = frozen v1.1
 lumbar = frozen v1.1
 shoulder = frozen v1.1
-elbow = active design candidate work
+elbow = frozen v1.1 on docs branch pending review/merge
 canonical writer = docs/cu1-elbow-v1-design-2026-08-26
 runtime writer = none
 runtime implementation = unauthorized
