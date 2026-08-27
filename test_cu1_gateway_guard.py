@@ -10,11 +10,11 @@ class CU1GatewayGuardTests(unittest.TestCase):
         draft = {
             "primary_problem": {
                 "profile_id": "hip_groin",
-                "route_id": "acute_hip_groin_muscle_injury_shared",
+                "route_id": "shared_muscle_profile_proximal_rectus_femoris_tendon_injury",
                 "shared_target_optional": {
                     "profile_id": "shared_muscle_myotendinous",
                     "route_id": "acute_muscle_myotendinous_injury_rehabilitation",
-                    "subtype_or_site_id_optional": None,
+                    "subtype_or_site_id_optional": "quadriceps_rectus_femoris_muscle_injury",
                 },
             }
         }
@@ -24,11 +24,11 @@ class CU1GatewayGuardTests(unittest.TestCase):
         draft = {
             "primary_problem": {
                 "profile_id": "hip_groin",
-                "route_id": "acute_hip_groin_muscle_injury_shared",
+                "route_id": "shared_muscle_profile_proximal_rectus_femoris_tendon_injury",
                 "shared_target_optional": {
                     "profile_id": "shared_fracture",
                     "route_id": "fracture_rehabilitation_post_immobilization",
-                    "subtype_or_site_id_optional": None,
+                    "subtype_or_site_id_optional": "quadriceps_rectus_femoris_muscle_injury",
                 },
             }
         }
@@ -42,7 +42,7 @@ class CU1GatewayGuardTests(unittest.TestCase):
                 "shared_target_optional": {
                     "profile_id": "shared_muscle_myotendinous",
                     "route_id": "acute_muscle_myotendinous_injury_rehabilitation",
-                    "subtype_or_site_id_optional": None,
+                    "subtype_or_site_id_optional": "quadriceps_rectus_femoris_muscle_injury",
                 },
             }
         }
