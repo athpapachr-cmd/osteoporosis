@@ -1,13 +1,13 @@
 # SLICE_PLAN_CURRENT.md — CU-1 Physiotherapy Referral v2 design
 
-> **STATUS:** ACTIVE PRE-CODE DESIGN — runtime implementation not authorized.
+> **STATUS:** ACTIVE PRE-CODE DESIGN — all currently planned clinical/content profiles frozen; runtime implementation not authorized.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Parent product:** Personal Clinical Excellence System.
 > **Area:** Clinic Utilities / Clinical Operations.
 > **Slice ID:** CU-1.
 > **Supporting plan:** `CLINIC_UTILITIES_PLAN.md`.
 > **Frozen regional profiles:** cervical, lumbar, shoulder, elbow, wrist/hand, knee, hip/groin and ankle/foot v1.1.
-> **Frozen shared profiles:** Shared Fracture v1.1; Shared Muscle/Myotendinous v1.1; Shared Deconditioning/Balance/Gait v1.1 on docs branch pending exact-head review/merge.
+> **Frozen shared profiles:** Shared Fracture v1.1; Shared Muscle/Myotendinous v1.1; Shared Deconditioning/Balance/Gait v1.1.
 > **Prior active slice:** PR-1 remains intentionally paused.
 
 CU-1 remains design-only.
@@ -57,67 +57,14 @@ hip_v1_1 = FROZEN
 ankle_foot_v1_1 = FROZEN
 shared_fracture_v1_1 = FROZEN
 shared_muscle_myotendinous_v1_1 = FROZEN
-shared_deconditioning_balance_gait_v1_1 = FROZEN on docs branch pending exact-head review/merge
+shared_deconditioning_balance_gait_v1_1 = FROZEN
 ```
+
+The final shared functional profile retains generalized deconditioning and clinician-established frailty-associated decline as direct routes; balance/gait/post-hospital presentations are context/findings in this workflow. SPPB is preferred optional, not diagnostic. Falls history, fear of falling, muscular weakness, poor coordination and walking-aid assessment/training are explicitly represented. Shared Fracture restrictions remain authoritative when routed here.
 
 ---
 
-# 3. Final Shared Deconditioning / Balance / Gait v1.1 design
-
-Authoritative frozen file:
-
-```text
-clinic_utilities/physio_profiles/shared_deconditioning_balance_gait_v1_1.md
-```
-
-Shared route:
-
-```text
-functional_deconditioning_balance_gait_rehabilitation
-```
-
-Routine direct presentation families:
-
-```text
-D1 generalized deconditioning / functional decline
-D2 frailty-associated functional decline — clinician-established only
-```
-
-Balance-only, gait-only and post-hospital presentations are retained as context/findings rather than routine top-level routes in this product-owner workflow.
-
-Direct findings include:
-
-```text
-generalized muscular weakness
-lower-limb weakness
-poor coordination
-balance/postural-control deficit when actually assessed
-walking/mobility limitation
-fear of falling
-falls history
-walking-aid context
-```
-
-Preferred optional functional battery:
-
-```text
-SPPB
-→ total score + standing-balance component + 4-m gait component + 5-chair-rise component
-```
-
-No performance-test threshold autonomously creates frailty, falls-risk or neurological diagnosis.
-
-Falls history preserves single/recurrent/injurious/unable-to-rise/loss-of-consciousness states. Walking-aid assessment/training is directly selectable. Home-hazard assessment is not a routine local option. Neurological disease-specific referral pathways are not added to CU-1.
-
-Shared Fracture may gateway to this profile for strength/balance/falls/independence goals; fracture restrictions remain authoritative.
-
-Generic aerobic/endurance conditioning is not a routine generator direction. Acupuncture, dry needling, ESWT and therapeutic ultrasound are excluded.
-
-Safety boundaries include acute neurological/gait change, LOC/syncope, cardiopulmonary instability, acute vestibular syndrome, fracture-restriction uncertainty, DVT/vascular concern, infection/systemic deterioration, acute cognitive change and progressive unexplained coordination loss.
-
----
-
-# 4. Persistence / runtime boundary
+# 3. Persistence / runtime boundary
 
 ```text
 ephemeral structured draft
@@ -129,14 +76,17 @@ Persistence remains unfrozen. No production HTML/JS/CSS or runtime implementatio
 
 ---
 
-# 5. Exact next action
+# 4. Exact next action — CU-1 design-completeness review
 
 ```text
-1. exact branch-vs-main review of the final shared-profile freeze
-2. docs-only PR if clean
-3. independent exact-head review
-4. merge only if exact head remains clean
-5. clear writer lock / reconcile main
-6. perform CU-1 design-completeness review across all frozen profiles and shared architecture
-7. implementation requires a separate explicit product-owner authorization
+1. inspect all frozen regional/shared profile contracts together
+2. validate cross-profile routing and ownership
+3. validate structured keys / schema consistency / tri-state semantics
+4. validate safety and reassessment invariants across profiles
+5. validate goal / rehab-direction / adjunct semantics
+6. validate ShortReferralFormatter / DetailedReferralFormatter requirements
+7. inspect current runtime seams only to determine implementation fit — do not code
+8. classify outcome as DESIGN-COMPLETE or BLOCK with exact blockers
 ```
+
+Runtime implementation requires a separate explicit product-owner authorization after this review.
