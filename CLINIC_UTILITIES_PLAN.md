@@ -4,7 +4,7 @@
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Parent product:** Personal Clinical Excellence System.
 > **Scope:** cross-module Clinic Utilities / Clinical Operations.
-> **Current focus:** CU-1 Physiotherapy Referral v2; clinical/content profiles and machine contract v1 are frozen, but repeat design-completeness review remains **BLOCK** on two narrow declarative gaps R1–R2.
+> **Current focus:** CU-1 Physiotherapy Referral v2; clinical/content profiles and machine contract are frozen, including the bounded declarative R1–R2 hardening, pending exact review/merge and final repeat completeness review.
 
 Clinic Utilities are cross-module clinician-facing operational tools, not a new clinical Module 02.
 
@@ -34,13 +34,19 @@ Machine contract entrypoint:
 clinic_utilities/contracts/cu1_contract_manifest_v1.yaml
 ```
 
-The broad clinical taxonomy and merged machine-contract v1 remain frozen.
+The manifest now includes declarative R1–R2 authorities:
+
+```text
+cu1_rule_catalog_v1.yaml
+cu1_route_requirements_v1.yaml
+cu1_r1_r2_design_fixtures_v1.yaml
+```
+
+The broad clinical taxonomy remains frozen.
 
 ---
 
-# 2. Repeat completeness gate
-
-Review history:
+# 2. Completeness history
 
 ```text
 CU1_DESIGN_COMPLETENESS_REVIEW.md
@@ -51,48 +57,41 @@ PR #50 machine-contract hardening
 
 CU1_DESIGN_COMPLETENESS_REVIEW_V2.md
 → remaining BLOCK R1–R2
-```
 
-Passed areas:
-
-```text
-typed draft/context homes
-canonical route/key namespace
-shared gateway mapping
-long-tail route/site IDs
-primary route precedence
-common enums and aliases
-safety severity/blocking/disposition behavior after trigger
-formatter contract
-structured-option boundary
-synthetic semantic fixtures
-```
-
-Remaining gaps:
-
-```text
-R1 declarative safety/consistency trigger expressions
-R2 declarative route-specific required/conditional field validation
+current bounded hardening
+→ R1 safety/consistency triggers machine-declarative
+→ R2 route required/conditional validation machine-declarative
+→ frozen pending independent review
 ```
 
 ---
 
-# 3. Only remaining hardening scope
+# 3. R1–R2 hardening boundaries
 
-If CU-1 design continues, create only:
+R1 is resolved by a closed safety-input namespace plus declarative trigger expressions. Non-specific symptoms do not autonomously create unresolved DVT/rupture/infection/Charcot/etc. concerns unless a frozen rule explicitly says so.
 
-```text
-cu1_rule_catalog_v1.yaml
-cu1_route_requirements_v1.yaml
-```
+R2 is resolved by deterministic base, wording-mode, subtype, postoperative, route-specific and shared-context requirements. Validation must be driven by the catalog rather than profile prose.
 
-These must mechanically connect existing canonical fields/IDs to the already frozen safety and route semantics. They must not reopen clinical taxonomy or invent new clinical recommendations.
-
-Then repeat design-completeness review.
+The hardening does not add new clinical recommendations, reopen taxonomy, authorize persistence or authorize runtime code.
 
 ---
 
-# 4. First implementation direction — unchanged and still unauthorized
+# 4. Required gate
+
+```text
+exact branch-vs-main review
+→ docs/schema-only PR
+→ independent exact-head review
+→ merge if clean
+→ fresh final CU-1 design-completeness review
+→ DESIGN-COMPLETE or remaining BLOCK
+```
+
+Even `DESIGN-COMPLETE` does not authorize implementation; product-owner runtime authorization remains separate.
+
+---
+
+# 5. First implementation direction — unchanged and still unauthorized
 
 ```text
 ephemeral structured draft
@@ -100,4 +99,4 @@ ephemeral structured draft
 → copy / print
 ```
 
-Persistence remains unfrozen. Runtime coding begins only after a later review reaches `DESIGN-COMPLETE` and the product owner separately authorizes implementation.
+Persistence remains unfrozen.

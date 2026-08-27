@@ -1,0 +1,58 @@
+version: cu1_validation_error_policy_v1
+status: frozen_pre_code_design
+route_requirements: cu1_route_requirements_v1
+rule_catalog: cu1_rule_catalog_v1
+
+classes:
+  validation_error:
+    behavior: hard_block_until_corrected
+    acknowledgement_cannot_override: true
+  required_structural_restriction_missing:
+    behavior: safety_managed
+    safety_rule: missing_required_structural_restriction
+    direct_formatter_block: false
+    note: formatter_behavior_is_governed_by_materialized_safety_result_and_acknowledgement_policy
+  lower_limb_weight_bearing_required_missing:
+    behavior: safety_managed
+    safety_rule: fracture_weight_bearing_not_stated_when_required
+    direct_formatter_block: false
+    note: formatter_behavior_is_governed_by_materialized_safety_result_and_acknowledgement_policy
+
+error_to_class:
+  required_field_missing: validation_error
+  formal_diagnosis_assertion_required: validation_error
+  established_structural_diagnosis_source_required: validation_error
+  established_nonoperative_management_context_required: validation_error
+  subtype_required: validation_error
+  subtype_required_for_asserted_nonarthritic_intraarticular_diagnosis: validation_error
+  postoperative_protocol_source_required: validation_error
+  postoperative_protocol_status_unresolved: required_structural_restriction_missing
+  operative_structural_context_incomplete: required_structural_restriction_missing
+  generic_postoperative_route_conflicts_with_dedicated_primary: validation_error
+  postoperative_case_has_wrong_primary_route: validation_error
+  upper_limb_use_status_required_missing: required_structural_restriction_missing
+  lower_limb_weight_bearing_required_missing: lower_limb_weight_bearing_required_missing
+  axial_fracture_loading_or_rom_status_required_missing: required_structural_restriction_missing
+  structural_muscle_injury_confirmation_state_required: validation_error
+  frailty_must_be_clinician_established_for_formal_wording: validation_error
+  invalid_route_or_subtype: validation_error
+  invalid_context_key: validation_error
+  invalid_context_enum_value: validation_error
+  invalid_safety_input_flag: validation_error
+
+required_field_error_shape:
+  error_id: required_field_missing
+  metadata: {path: missing_required_path}
+
+resolution_order:
+  - collect_validation_errors
+  - map_each_error_to_class
+  - hard_block_if_any_class_validation_error
+  - materialize_safety_rules_for_safety_managed_classes
+  - apply_highest_safety_severity_acknowledgement_and_disposition_policy
+
+conflict_rules:
+  hard_block_validation_error_cannot_be_downgraded_by_safety_acknowledgement: true
+  safety_managed_missing_restriction_does_not_become_reassuring_after_acknowledgement: true
+  acknowledgement_allows_generation_only_under_existing_safety_contract_and_never_invents_missing_restriction_value: true
+  runtime_may_invent_error_class_or_behavior: false

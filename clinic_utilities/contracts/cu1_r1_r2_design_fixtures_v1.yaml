@@ -1,0 +1,177 @@
+version: cu1_r1_r2_design_fixtures_v1
+status: frozen_pre_code_design
+contract: cu1_referral_draft_v1
+rule_catalog: cu1_rule_catalog_v1
+route_requirements: cu1_route_requirements_v1
+context_value_sets: cu1_context_value_sets_v1
+synthetic_only: true
+fixture_mode: full_validation_oracle
+
+fixtures:
+  - id: r1_calf_dvt_flag_is_explicit_not_inferred
+    input:
+      profile_id: shared_muscle_myotendinous
+      route_id: acute_muscle_myotendinous_injury_rehabilitation
+      context:
+        muscle_group: calf_muscle_myotendinous_injury
+        injury_phase: acute
+        injury_type: clinically_assessed_muscle_strain
+        management_context: conservative_rehabilitation
+      findings: [pain, swelling]
+      safety:
+        input_flags: []
+    expected:
+      rule_not_triggered: unresolved_dvt_concern
+      rationale: pain_and_swelling_alone_do_not_autonomously_create_dvt_concern
+
+  - id: r1_calf_dvt_flag_triggers_urgent_rule
+    input:
+      profile_id: shared_muscle_myotendinous
+      route_id: acute_muscle_myotendinous_injury_rehabilitation
+      context:
+        muscle_group: calf_muscle_myotendinous_injury
+        injury_phase: acute
+        injury_type: clinically_assessed_muscle_strain
+        management_context: conservative_rehabilitation
+      safety:
+        input_flags: [dvt_concern_unresolved]
+      clinician_disposition: none_recorded
+    expected:
+      triggered_rule: unresolved_dvt_concern
+      safety_severity: urgent_reassessment
+      formatter_blocked: true
+
+  - id: r1_adjunct_without_core_rehab_is_mechanical
+    input:
+      profile_id: lumbar
+      route_id: nonspecific_low_back_pain
+      wording_mode: presentation
+      laterality: not_applicable
+      adjunct_options: [acupuncture]
+      rehab_directions: []
+    expected:
+      triggered_rule: adjunct_without_core_rehabilitation
+      safety_severity: hard_warning_ack_required
+      formatter_blocked_until_acknowledged: true
+
+  - id: r1_sifk_missing_loading_is_mechanical
+    input:
+      profile_id: shared_fracture
+      route_id: fracture_rehabilitation_post_immobilization
+      wording_mode: established_structural_diagnosis
+      laterality: right
+      context:
+        fracture_site: subchondral_insufficiency_fracture_of_knee
+        fracture_phase: later_rehabilitation
+        treatment: nonoperative_observation_or_functional_treatment
+        healing_stability_status: documented_stable_for_current_rehabilitation
+        immobilization_status: none_currently
+        weight_bearing_status: partial_weight_bearing
+        rom_status: rom_allowed_with_specific_limits
+        loading_strengthening_status: not_stated
+    expected:
+      triggered_rule: sifk_loading_status_not_stated
+      safety_severity: hard_warning_ack_required
+
+  - id: r2_formal_diagnosis_requires_assertion_yes
+    input:
+      profile_id: cervical
+      route_id: neck_pain_with_radiating_upper_limb_symptoms
+      wording_mode: formal_diagnosis
+      formal_assertion_state_optional: not_stated
+      laterality: right
+      context:
+        neurological_screen: {motor: normal, sensory: normal, reflexes: normal}
+    expected:
+      validation_error: formal_diagnosis_assertion_required
+      formatter_blocked_by_validation: true
+
+  - id: r2_structural_diagnosis_requires_source
+    input:
+      profile_id: shoulder
+      route_id: confirmed_full_thickness_rotator_cuff_tear_nonoperative
+      wording_mode: established_structural_diagnosis
+      laterality: left
+      context:
+        management_context: nonoperative_confirmed
+    expected:
+      validation_error: established_structural_diagnosis_source_required
+      formatter_blocked_by_validation: true
+
+  - id: r2_postoperative_shoulder_requires_context
+    input:
+      profile_id: shoulder
+      route_id: postoperative_shoulder_rehabilitation
+      wording_mode: postoperative
+      laterality: right
+      context:
+        procedure: rotator_cuff_repair
+        protocol_status: available
+    expected:
+      validation_errors:
+        - required_field_missing: primary_problem.context.procedure_date_or_phase
+        - required_field_missing: primary_problem.context.restrictions_review_status
+        - postoperative_protocol_source_required
+      formatter_blocked_by_validation: true
+
+  - id: r2_fracture_lower_limb_requires_weight_bearing
+    input:
+      profile_id: shared_fracture
+      route_id: fracture_rehabilitation_post_immobilization
+      wording_mode: established_structural_diagnosis
+      laterality: right
+      context:
+        fracture_site: lateral_malleolus_fracture
+        fracture_phase: early_healing
+        treatment: orif
+        healing_stability_status: healing_confirmed_with_restrictions
+        immobilization_status: boot
+        rom_status: rom_allowed_with_specific_limits
+        loading_strengthening_status: strengthening_allowed_with_limits
+    expected:
+      validation_error: lower_limb_weight_bearing_required_missing
+      triggered_rule: fracture_weight_bearing_not_stated_when_required
+      safety_severity: hard_warning_ack_required
+
+  - id: r2_fracture_upper_limb_requires_use_status_not_weight_bearing
+    input:
+      profile_id: shared_fracture
+      route_id: fracture_rehabilitation_post_immobilization
+      wording_mode: established_structural_diagnosis
+      laterality: left
+      context:
+        fracture_site: distal_radius_fracture
+        fracture_phase: post_immobilization
+        treatment: nonoperative_observation_or_functional_treatment
+        healing_stability_status: documented_stable_for_current_rehabilitation
+        immobilization_status: none_currently
+        rom_status: rom_allowed_with_specific_limits
+        loading_strengthening_status: strengthening_allowed_with_limits
+    expected:
+      validation_error: upper_limb_use_status_required_missing
+      forbidden_validation_error: lower_limb_weight_bearing_required_missing
+
+  - id: r2_shared_deconditioning_frailty_requires_established_yes
+    input:
+      profile_id: shared_deconditioning_balance_gait
+      route_id: functional_deconditioning_balance_gait_rehabilitation
+      wording_mode: formal_diagnosis
+      laterality: not_applicable
+      context:
+        functional_route_id: frailty_associated_functional_decline
+        frailty_established: not_stated
+    expected:
+      validation_error: frailty_must_be_clinician_established_for_formal_wording
+      formatter_blocked_by_validation: true
+
+  - id: r2_acl_reconstruction_cannot_use_nonoperative_route
+    input:
+      profile_id: knee
+      route_id: acl_injury_instability_rehabilitation
+      wording_mode: established_structural_diagnosis
+      laterality: right
+      context:
+        management_context: post_reconstruction
+    expected:
+      validation_error: postoperative_case_has_wrong_primary_route
+      correct_route: postoperative_knee_rehabilitation

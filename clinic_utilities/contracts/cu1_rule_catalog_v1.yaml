@@ -1,0 +1,124 @@
+version: cu1_rule_catalog_v1
+status: frozen_pre_code_design
+contract: cu1_referral_draft_v1
+severity_source: cu1_option_catalog_v1.safety_rules
+route_requirements_source: cu1_route_requirements_v1
+
+expression_dsl:
+  operators:
+    all: list_of_expressions
+    any: list_of_expressions
+    not: expression
+    eq: {path: value}
+    in: {path: [values]}
+    contains: {path: canonical_id}
+    missing: path
+    empty: path
+    validation_error: canonical_validation_error_id
+    validation_error_class: canonical_validation_error_class
+  path_root: ReferralDraftV1_after_id_context_and_gateway_normalization
+  missing_semantics: absent_or_null_or_not_stated_where_not_stated_is_an_allowed_enum
+  contains_semantics: matches_normalized_string_ids_or_the_canonical_id_field_of_typed_selections_at_the_path
+  prohibition: rules_must_not_infer_a_diagnosis_or_unresolved_safety_concern_from_non_specific_symptoms_unless_an_explicit_structured_rule_below_does_so
+
+safety_input_flags:
+  description: explicit_clinician_selected_or_clinician_confirmed_concerns_not_autonomously_inferred_from_non_specific_symptoms
+  allowed_ids: [material_concern_unresolved, new_or_progressive_objective_neurological_deficit, cauda_equina_type_concern, new_perineal_or_saddle_sensory_change, acute_unresolved_fracture_or_instability_concern, acute_unresolved_tendon_rupture_or_major_avulsion_concern, dvt_concern_unresolved, acute_neurovascular_compromise_concern, infection_or_septic_joint_concern, acute_hot_swollen_neuropathic_foot_or_charcot_concern, postoperative_infection_or_unexpected_major_deterioration, syncope_or_unexplained_loss_of_consciousness, acute_unexplained_gait_or_coordination_change]
+  selected_flag_means: clinician_has_identified_or_not_resolved_the_named_concern
+  unselected_flag_means: no_assertion
+  unselected_never_means: concern_absent_or_screen_normal
+
+rules:
+  generic_material_concern_without_disposition:
+    applies_to: {profiles: all, routes: all}
+    trigger: {contains: {path: safety.input_flags, canonical_id: material_concern_unresolved}}
+    severity_ref: generic_material_concern_without_disposition
+  missing_required_structural_restriction:
+    applies_to: {profiles: all, routes: all}
+    trigger: {validation_error_class: required_structural_restriction_missing}
+    severity_ref: missing_required_structural_restriction
+  adjunct_without_core_rehabilitation:
+    applies_to: {profiles: all, routes: all}
+    trigger: {all: [{not: {empty: adjunct_options}}, {empty: rehab_directions}]}
+    severity_ref: adjunct_without_core_rehabilitation
+  new_or_progressive_objective_neurological_deficit:
+    applies_to: {profiles: [cervical, lumbar, elbow, wrist_hand, ankle_foot], routes: all}
+    trigger: {contains: {path: safety.input_flags, canonical_id: new_or_progressive_objective_neurological_deficit}}
+    severity_ref: new_or_progressive_objective_neurological_deficit
+  cauda_equina_type_concern:
+    applies_to: {profiles: [lumbar], routes: [nonspecific_low_back_pain, low_back_pain_with_radiating_leg_symptoms, lumbar_spinal_stenosis_neurogenic_claudication]}
+    trigger: {contains: {path: safety.input_flags, canonical_id: cauda_equina_type_concern}}
+    severity_ref: cauda_equina_type_concern
+  new_perineal_or_saddle_sensory_change:
+    applies_to: {profiles: [lumbar], routes: [nonspecific_low_back_pain, low_back_pain_with_radiating_leg_symptoms, lumbar_spinal_stenosis_neurogenic_claudication]}
+    trigger: {contains: {path: safety.input_flags, canonical_id: new_perineal_or_saddle_sensory_change}}
+    severity_ref: new_perineal_or_saddle_sensory_change
+  acute_unresolved_fracture_or_instability_concern:
+    applies_to: {profiles: all, routes: all}
+    trigger: {contains: {path: safety.input_flags, canonical_id: acute_unresolved_fracture_or_instability_concern}}
+    severity_ref: acute_unresolved_fracture_or_instability_concern
+  acute_unresolved_tendon_rupture_or_major_avulsion_concern:
+    applies_to: {profiles: [shoulder, elbow, wrist_hand, knee, hip_groin, ankle_foot, shared_muscle_myotendinous], routes: all}
+    trigger: {contains: {path: safety.input_flags, canonical_id: acute_unresolved_tendon_rupture_or_major_avulsion_concern}}
+    severity_ref: acute_unresolved_tendon_rupture_or_major_avulsion_concern
+  unresolved_dvt_concern:
+    applies_to: {profiles: [shared_muscle_myotendinous, shared_fracture, knee, ankle_foot], routes: all}
+    trigger: {contains: {path: safety.input_flags, canonical_id: dvt_concern_unresolved}}
+    severity_ref: unresolved_dvt_concern
+  acute_neurovascular_compromise_concern:
+    applies_to: {profiles: all, routes: all}
+    trigger: {contains: {path: safety.input_flags, canonical_id: acute_neurovascular_compromise_concern}}
+    severity_ref: acute_neurovascular_compromise_concern
+  infection_or_septic_joint_concern:
+    applies_to: {profiles: all, routes: all}
+    trigger: {contains: {path: safety.input_flags, canonical_id: infection_or_septic_joint_concern}}
+    severity_ref: infection_or_septic_joint_concern
+  acute_hot_swollen_neuropathic_foot_or_charcot_concern:
+    applies_to: {profiles: [ankle_foot], routes: all}
+    trigger: {contains: {path: safety.input_flags, canonical_id: acute_hot_swollen_neuropathic_foot_or_charcot_concern}}
+    severity_ref: acute_hot_swollen_neuropathic_foot_or_charcot_concern
+  postoperative_infection_or_unexpected_major_deterioration:
+    applies_to: {profiles: [shoulder, elbow, wrist_hand, knee, ankle_foot, shared_fracture, shared_muscle_myotendinous], routes: all}
+    trigger: {contains: {path: safety.input_flags, canonical_id: postoperative_infection_or_unexpected_major_deterioration}}
+    severity_ref: postoperative_infection_or_unexpected_major_deterioration
+  syncope_or_unexplained_loss_of_consciousness:
+    applies_to: {profiles: [shared_deconditioning_balance_gait], routes: all}
+    trigger: {contains: {path: safety.input_flags, canonical_id: syncope_or_unexplained_loss_of_consciousness}}
+    severity_ref: syncope_or_unexplained_loss_of_consciousness
+  acute_unexplained_gait_or_coordination_change:
+    applies_to: {profiles: [shared_deconditioning_balance_gait, cervical, lumbar], routes: all}
+    trigger: {contains: {path: safety.input_flags, canonical_id: acute_unexplained_gait_or_coordination_change}}
+    severity_ref: acute_unexplained_gait_or_coordination_change
+  spurling_or_neural_test_without_matching_symptom_context:
+    applies_to: {profiles: [cervical], routes: [neck_pain_with_radiating_upper_limb_symptoms]}
+    trigger:
+      any:
+        - {all: [{contains: {path: findings, canonical_id: spurling_concordant_symptoms}}, {not: {contains: {path: findings, canonical_id: radiating_upper_limb_pain}}}]}
+        - {all: [{contains: {path: findings, canonical_id: upper_limb_neurodynamic_finding}}, {not: {contains: {path: findings, canonical_id: radiating_upper_limb_pain}}}]}
+    severity_ref: spurling_or_neural_test_without_matching_symptom_context
+  incomplete_neurological_screen_in_radicular_presentation:
+    applies_to: {profiles: [cervical, lumbar], routes: [neck_pain_with_radiating_upper_limb_symptoms, low_back_pain_with_radiating_leg_symptoms]}
+    trigger:
+      any:
+        - {missing: primary_problem.context.neurological_screen.motor}
+        - {eq: {path: primary_problem.context.neurological_screen.motor, value: not_assessed}}
+        - {missing: primary_problem.context.neurological_screen.sensory}
+        - {eq: {path: primary_problem.context.neurological_screen.sensory, value: not_assessed}}
+        - {missing: primary_problem.context.neurological_screen.reflexes}
+        - {eq: {path: primary_problem.context.neurological_screen.reflexes, value: not_assessed}}
+    severity_ref: incomplete_neurological_screen_in_radicular_presentation
+  sifk_loading_status_not_stated:
+    applies_to: {profiles: [shared_fracture], routes: [fracture_rehabilitation_post_immobilization]}
+    trigger: {all: [{eq: {path: primary_problem.context.fracture_site, value: subchondral_insufficiency_fracture_of_knee}}, {any: [{missing: primary_problem.context.loading_strengthening_status}, {in: {path: primary_problem.context.loading_strengthening_status, values: [not_stated]}}]}]}
+    severity_ref: sifk_loading_status_not_stated
+  fracture_weight_bearing_not_stated_when_required:
+    applies_to: {profiles: [shared_fracture], routes: [fracture_rehabilitation_post_immobilization]}
+    trigger: {validation_error: lower_limb_weight_bearing_required_missing}
+    severity_ref: fracture_weight_bearing_not_stated_when_required
+
+rule_evaluation_order: [validate_route_requirements_and_collect_validation_errors, evaluate_explicit_safety_input_flags, evaluate_structured_consistency_expressions, materialize_safety_results_from_severity_refs, derive_highest_severity, enforce_acknowledgement_and_disposition]
+unknown_rule_or_flag_policy:
+  unknown_rule_id: invalid_contract_error
+  unknown_safety_input_flag: invalid_draft_validation_error
+  runtime_may_invent_rule: false
+  runtime_may_infer_unlisted_flag_from_symptoms: false

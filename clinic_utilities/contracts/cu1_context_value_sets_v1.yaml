@@ -1,0 +1,164 @@
+version: cu1_context_value_sets_v1
+status: frozen_pre_code_design
+id_policy: lowercase_snake_case
+source_semantics: frozen_shared_profiles_normalized_to_machine_ids
+
+shared_fracture:
+  fracture_phase:
+    - acute_established
+    - early_healing
+    - post_immobilization
+    - later_rehabilitation
+    - healed_with_residual_impairment
+    - not_stated
+  fracture_context:
+    - traumatic
+    - fragility_or_insufficiency
+    - stress_or_bone_stress
+    - pediatric_physeal_or_apophyseal
+    - pathological_or_other_medical_context
+    - not_stated
+  treatment:
+    - nonoperative_observation_or_functional_treatment
+    - sling
+    - cast
+    - splint_or_orthosis
+    - boot
+    - closed_reduction_and_immobilization
+    - percutaneous_fixation
+    - orif
+    - intramedullary_fixation
+    - external_fixation
+    - arthroplasty_after_fracture
+    - other_operation
+    - mixed_or_staged_treatment
+    - not_stated
+  treatment_aliases:
+    ORIF: orif
+  healing_stability_status:
+    - documented_stable_for_current_rehabilitation
+    - healing_confirmed_with_restrictions
+    - union_or_healed_confirmed
+    - delayed_union_context
+    - nonunion_context
+    - malunion_context
+    - loss_of_reduction_or_instability_concern
+    - not_stated
+  immobilization_status:
+    - none_currently
+    - sling
+    - cast
+    - removable_splint_or_orthosis
+    - brace
+    - boot
+    - other
+    - not_stated
+  weight_bearing_status:
+    - non_weight_bearing
+    - touch_down_or_toe_touch
+    - partial_weight_bearing
+    - weight_bearing_as_tolerated
+    - full_weight_bearing
+    - other_explicit_restriction
+    - not_applicable
+    - not_stated
+  upper_limb_use_status:
+    - no_functional_use
+    - hand_for_light_adl_only
+    - light_use_with_explicit_limit
+    - no_lifting_or_pushing_through_limb
+    - lifting_limit_entered
+    - use_as_tolerated
+    - unrestricted_use_confirmed
+    - other_explicit_restriction
+    - not_applicable
+    - not_stated
+  upper_limb_use_aliases:
+    hand_for_light_ADL_only: hand_for_light_adl_only
+  rom_status:
+    - unrestricted_rom_confirmed
+    - rom_allowed_with_specific_limits
+    - passive_only_or_assisted_only_context
+    - joint_or_direction_specific_restriction
+    - immobilized_no_rom_currently
+    - not_applicable
+    - not_stated
+  rom_aliases:
+    unrestricted_ROM_confirmed: unrestricted_rom_confirmed
+    ROM_allowed_with_specific_limits: rom_allowed_with_specific_limits
+    immobilized_no_ROM_currently: immobilized_no_rom_currently
+  loading_strengthening_status:
+    - unrestricted_loading_confirmed
+    - graded_loading_allowed
+    - strengthening_allowed_with_limits
+    - strengthening_not_yet_allowed
+    - impact_not_allowed
+    - sport_not_allowed
+    - other_explicit_restriction
+    - not_stated
+  orthopaedic_instructions_source:
+    - written_protocol_available
+    - explicit_clinician_instruction_entered
+    - patient_reported_instruction_only
+    - none_available_or_not_stated
+
+shared_muscle_myotendinous:
+  injury_phase:
+    - acute
+    - early_rehabilitation
+    - progressive_loading
+    - return_to_running_or_sport
+    - later_rehabilitation_with_residual_deficit
+    - not_stated
+  injury_type:
+    - clinically_assessed_muscle_strain
+    - confirmed_partial_muscle_or_myotendinous_tear
+    - confirmed_high_grade_muscle_or_myotendinous_tear_nonoperative
+    - muscle_contusion
+    - established_intramuscular_or_intratendinous_injury
+    - other_established_muscle_myotendinous_injury
+    - not_stated
+  injury_location:
+    - muscle_belly
+    - myofascial
+    - myotendinous_junction
+    - intramuscular_tendon_or_intratendinous
+    - proximal_tendon_region
+    - distal_tendon_region
+    - free_tendon_component
+    - other
+    - not_stated
+  mri_or_ultrasound_confirmed:
+    - yes
+    - no
+    - not_stated
+  management_context:
+    - conservative_rehabilitation
+    - specialist_review_underway
+    - postoperative_or_repair_protocol
+    - not_stated
+
+shared_deconditioning_balance_gait:
+  frailty_established:
+    - yes
+    - no
+    - not_stated
+  functional_route_id_source: cu1_route_detail_catalog_v1.shared_deconditioning_route_ids
+
+postoperative_common:
+  protocol_status:
+    - available
+    - not_available
+    - not_applicable
+    - unknown
+    - not_stated
+  restrictions_review_status:
+    - reviewed_no_additional_restrictions
+    - reviewed_restrictions_present
+    - unknown
+    - not_stated
+
+validation_policy:
+  unknown_value: invalid_draft_validation_error
+  normalization_before_validation: true
+  runtime_may_invent_enum_value: false

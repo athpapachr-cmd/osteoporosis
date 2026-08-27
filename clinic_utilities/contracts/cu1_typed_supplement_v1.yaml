@@ -11,6 +11,30 @@ coded_selection:
     id_must_exist_in: cu1_option_catalog_v1
     free_text_not_allowed_in_id: true
 
+neurological_screen_completion:
+  canonical_path: primary_problem.context.neurological_screen
+  fields:
+    motor: [not_assessed, normal, abnormal]
+    sensory: [not_assessed, normal, abnormal]
+    reflexes: [not_assessed, normal, abnormal]
+  legacy_fixture_alias:
+    neuro: primary_problem.context.neurological_screen
+  semantics:
+    not_assessed_never_means_normal: true
+    partial_normal_screen_never_means_global_no_neurological_deficit: true
+
+safety_state_completion:
+  input_fields:
+    input_flags: list_of_canonical_safety_input_flag_ids
+  input_flag_source: cu1_rule_catalog_v1.safety_input_flags.allowed_ids
+  semantics:
+    selected_flag: clinician_has_identified_or_not_resolved_the_named_concern
+    unselected_flag: no_assertion
+    unselected_never_means: concern_absent_or_screen_normal
+  validation:
+    unknown_flag: invalid_draft_validation_error
+    runtime_may_infer_unlisted_flag_from_symptoms: false
+
 safety_result_completion:
   fields:
     rule_id: canonical_safety_rule_id
@@ -38,19 +62,20 @@ formatter_resolution_context:
     - ReferralDraftV1
     - cu1_contract_manifest_v1
   resolution_order:
-    - apply_id_normalization
+    - apply_id_and_context_alias_normalization
     - validate_profile_route_subtype_and_option_ids
     - resolve_regional_shared_gateway
     - apply_primary_owner_precedence
-    - validate_required_context_and_restrictions
-    - evaluate_profile_rules_and_map_to_canonical_safety_rules
+    - validate_route_requirements_from_cu1_route_requirements_v1
+    - evaluate_rules_from_cu1_rule_catalog_v1
     - calculate_highest_safety_severity
     - enforce_acknowledgement_and_disposition_gate
     - render_short_or_detailed_text
   rule_source:
-    clinical_trigger_conditions: frozen_profile_markdown_and_semantic_fixtures
+    declarative_trigger_conditions: cu1_rule_catalog_v1
+    route_validation_requirements: cu1_route_requirements_v1
     canonical_severity_and_blocking: cu1_option_catalog_v1
-  prohibition: formatter_or_runtime_must_not_create_new_trigger_or_severity_semantics
+  prohibition: formatter_or_runtime_must_not_create_new_trigger_requirement_or_severity_semantics
 
 precedence_note:
   rule: this supplement normatively completes omitted typed fields in CU1_CORE_CONTRACT_V1 without changing clinical meaning
