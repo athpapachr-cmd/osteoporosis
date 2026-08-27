@@ -3,7 +3,7 @@
 > **STATUS:** ACTIVE OPERATIONAL AUTHORITY.
 > **Updated:** 2026-08-27 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Verified base main for this Ankle / Foot design:** `f78da0021a0b881f5561222e0fbeb48a18e79066`.
+> **Verified base main for this Ankle / Foot design:** `48586ffbccdc2959088302c3ffcacd94a2f0bfb2`.
 > **Current major phase:** Personal Clinical Excellence foundation with a bounded Clinic Utilities detour.
 > **Active slice design:** `SLICE_PLAN_CURRENT.md` — CU-1 Physiotherapy Referral v2 clinical/content design.
 > **Supporting detour plan:** `CLINIC_UTILITIES_PLAN.md`.
@@ -125,10 +125,20 @@ No runtime behavior changed.
 
 ---
 
-# 4. Exact next action
+# 4. Operational incident reconciled before PR
+
+During PR preparation, a temporary file `_noop` was accidentally created on `main` and immediately removed. The add/remove commits advanced `main` from `f78da0021a0b881f5561222e0fbeb48a18e79066` to `48586ffbccdc2959088302c3ffcacd94a2f0bfb2`, but an exact compare showed **zero net file diff** between those two main states.
+
+Temporary `_noop2` through `_noop8` files were then created only on the docs branch during an attempted ref rebase. They were discarded by resetting the branch ref to a clean commit built from the previously reviewed Ankle/Foot tree on top of `48586ffbccdc2959088302c3ffcacd94a2f0bfb2`. None exists in the current branch tree or `main`.
+
+The incident changed no clinical/runtime content. The current branch must be reviewed only from its post-reconciliation exact head.
+
+---
+
+# 5. Exact next action
 
 ```text
-1. exact branch-vs-main review of Ankle / Foot v1.1 freeze
+1. exact branch-vs-main review of Ankle / Foot v1.1 freeze from repaired base
 2. open docs-only PR if clean
 3. independent exact-head review
 4. merge only if exact head remains clean
@@ -138,7 +148,7 @@ No runtime behavior changed.
 
 ---
 
-# 5. Explicitly forbidden now
+# 6. Explicitly forbidden now
 
 ```text
 WRITE CU-1 production runtime code
@@ -152,7 +162,7 @@ CREATE overlapping runtime writers
 
 ---
 
-# 6. Handoff completeness
+# 7. Handoff completeness
 
 ```text
 active detour = Clinic Utilities
