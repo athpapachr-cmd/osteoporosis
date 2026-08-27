@@ -4,7 +4,7 @@
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Parent product:** Personal Clinical Excellence System.
 > **Scope:** cross-module Clinic Utilities / Clinical Operations.
-> **Current focus:** CU-1 Physiotherapy Referral v2 design; cervical v1.1, lumbar v1.1, shoulder v1.1, elbow v1.1 and wrist/hand v1.1 frozen.
+> **Current focus:** CU-1 Physiotherapy Referral v2 design; cervical v1.1, lumbar v1.1, shoulder v1.1, elbow v1.1 and wrist/hand v1.1 frozen; Knee v1 active design candidate.
 
 Clinic Utilities are cross-module clinician-facing operational tools, not a new clinical Module 02.
 
@@ -61,14 +61,14 @@ objective deficit != subjective symptom
 provocation/special test != diagnosis
 imaging finding != automatically symptomatic diagnosis
 not assessed != normal
-orthosis != automatically mandatory
+brace/orthosis/taping != automatically mandatory
 adjunct != core rehabilitation
 clinician-entered diagnosis may be carried but not inferred
 ```
 
 ---
 
-# 2. Frozen profile status
+# 2. Frozen / active profile status
 
 ```text
 cervical_v1_1 = FROZEN
@@ -76,80 +76,103 @@ lumbar_v1_1 = FROZEN
 shoulder_v1_1 = FROZEN
 elbow_v1_1 = FROZEN
 wrist_hand_v1_1 = FROZEN
+knee_v1 = ACTIVE DESIGN CANDIDATE / NOT FROZEN
+```
+
+Authoritative current Knee candidate:
+
+```text
+clinic_utilities/physio_profiles/knee_v1.md
 ```
 
 ---
 
-# 3. Wrist / Hand v1.1 frozen design
+# 3. Knee v1 — active candidate frame
 
-Frozen default pathways:
-
-```text
-De Quervain / first dorsal compartment disorder
-thumb CMC-1 OA / rhizarthrosis
-interphalangeal / generalized hand OA
-median neuropathy at wrist / carpal tunnel syndrome
-ulnar-sided wrist / TFCC-related presentation
-intersection syndrome
-thumb MCP collateral-ligament injury — UCL or RCL
-sagittal-band injury / extensor tendon instability at MCP
-digital tendon injury / deformity-specific rehabilitation
-post-traumatic wrist/hand pain or stiffness after assessed injury
-postoperative wrist/hand rehabilitation
-```
-
-Rare/advanced/context decisions:
+Proposed default pathways:
 
 ```text
-trigger finger/thumb → context only; not routine local physiotherapy referral
-Guyon's canal → rare/advanced
-scapholunate/lunotriquetral instability → rare/advanced
-other ECU/FCR/FCU tendon disorders → secondary/advanced
-CRPS → established-diagnosis advanced pathway
-inflammatory/psoriatic/crystal disease → established medical context
-Dupuytren → medical context unless specific postoperative rehab indication
-ganglion/mass → medical context
-fractures → shared fracture/post-immobilization profile
+knee osteoarthritis
+degenerative meniscal lesion/tear — conservative rehabilitation
+acute isolated meniscal injury — assessed nonoperative pathway
+patellofemoral pain
+patellar tendinopathy
+established knee ligament injury/instability — nonoperative rehabilitation
+patellar instability/dislocation rehabilitation
+post-traumatic knee pain/stiffness after assessed injury
+postoperative knee rehabilitation — pending workflow confirmation
 ```
 
-Key distinctions:
+Candidate rare/secondary/context entities:
 
 ```text
-De Quervain != intersection syndrome
-ulnar-sided wrist pain != TFCC tear
-TFCC = canonical terminology; TFCL not used as structured label
-thumb UCL != RCL, but both share one collateral-ligament pathway with subtype-specific safety
-MCP snapping != sagittal-band diagnosis
-possible CRPS features != formal CRPS diagnosis
-finger tendon repair != generic post-traumatic rehab
+quadriceps tendinopathy
+iliotibial-band syndrome
+pes-anserine pain / established bursitis-tendinopathy
+Baker/popliteal cyst context
+prepatellar/infrapatellar bursitis context
+osteochondral/chondral lesion or osteochondritis dissecans
+meniscal root tear / complex repair-relevant lesion
+Hoffa fat-pad / plica context
+inflammatory / crystal knee context
+Osgood-Schlatter / Sinding-Larsen-Johansson if adolescent workflow requires
 ```
 
-Local service rule:
-
-- dedicated `hand therapist` availability is not assumed in Cyprus;
-- generated referrals use physiotherapy / wrist-hand rehabilitation terminology;
-- protocol-sensitive tendon/ligament/orthosis work may request relevant experience/competence rather than an unavailable professional title.
-
-Frozen adjunct policy:
+Key candidate distinctions:
 
 ```text
-manual therapy / mobilization → optional where relevant
-soft tissue → optional
-taping → optional
-selected thermal strategy for OA → optional
-acupuncture → excluded
-dry needling → excluded
-ESWT → excluded
-therapeutic ultrasound → not standard CTS/general wrist-hand treatment
+radiographic OA != automatic symptom generator
+degenerative MRI meniscal tear != automatic symptom generator or surgical indication
+clicking/catching != true locked knee
+degenerative meniscus != acute displaced/displacing meniscus pathway
+anterior knee pain != automatic patellofemoral diagnosis
+cartilage/chondromalacia imaging != automatic symptomatic diagnosis
+patellar-tendon imaging change != automatic tendinopathy
+subjective giving-way != objective ligament instability
+ligament test != autonomous tear grade
+first-time patellar dislocation requires structural/osteochondral context
+postoperative rehabilitation = exact procedure/protocol governed
+posterior swelling != automatic Baker cyst and does not exclude DVT
 ```
 
-Orthosis is a separate condition-sensitive support category and exact procedure/injury protocol outranks generic suggestions.
+Evidence-oriented core directions:
+
+- knee OA: education/self-management plus individualized exercise, strengthening and functional/aerobic activity;
+- common degenerative meniscal lesions: exercise-based rehabilitation first-line when no structural surgical indication is present;
+- acute meniscal tears: selected non-displaced tears may enter rehabilitation, while displaced/displacing tears restricting ROM or repair-relevant lesions require timely specialist decision;
+- patellofemoral pain: education plus knee-targeted with or without hip-targeted exercise as core, with taping/foot orthoses/manual/movement retraining tailored to presentation;
+- patellar tendinopathy: progressive load-based rehabilitation without freezing one universal loading mode;
+- ligament injury: ROM/strength/neuromuscular and criterion-based progression according to established injury and restrictions;
+- postoperative knee: procedure-specific protocol and restrictions outrank generic defaults.
+
+Candidate support policy:
+
+```text
+OA brace → condition-sensitive
+patellofemoral taping/support → condition-sensitive
+prefabricated foot orthosis → selected patellofemoral presentations
+ligament/postoperative brace → exact plan/protocol
+temporary walking aid/cane → optional when appropriate
+```
+
+Candidate adjunct questions remain open:
+
+```text
+manual therapy / soft tissue → optional where relevant
+thermal OA support → optional
+acupuncture for knee OA → unresolved because major guidelines differ
+dry needling → unresolved; not core
+ESWT for patellar tendinopathy → not default; include only if real workflow warrants evidence-sensitive option
+NMES → postoperative/TKA-specific context, not generic knee OA
+```
+
+Knee remains **NOT FROZEN** until product-owner review.
 
 ---
 
 # 4. Shared fracture / post-immobilization profile
 
-Fractures remain handled once in a future shared profile rather than duplicated region by region.
+Fractures are handled once in a future shared profile rather than duplicated region by region.
 
 Required future context:
 
@@ -158,13 +181,13 @@ bone/site
 fracture date/phase
 treatment
 healing/stability status
-immobilization/orthosis status
+immobilization/brace/orthosis status
 weight-bearing/use status
 ROM/loading restrictions
 surgeon/orthopaedic instructions
 ```
 
-Regional entry points now include shoulder, elbow and wrist/hand fractures.
+Regional entry points now include shoulder, elbow, wrist/hand and knee fractures.
 
 Unknown healing/loading context must produce a warning rather than unrestricted rehabilitation wording.
 
@@ -191,39 +214,45 @@ Active/function-oriented rehabilitation, education, self-management and graded l
 fracture rehab + missing healing/use context
 → warning
 
-post-op/tendon-repair route + missing procedure/protocol/restrictions
+true locked knee / major mechanical ROM block
+→ structural reassessment prompt
+
+acute extensor-mechanism rupture concern
+→ structural reassessment before routine rehab
+
+major/multiligament instability or neurovascular deficit
+→ specialist/urgent semantics
+
+post-op route + missing procedure/protocol/restrictions
 → warning
 
-new/progressive objective neurological deficit
-→ prominent medical reassessment prompt
+hot swollen knee / infection / DVT concern
+→ medical reassessment
 
-acute tendon-laceration/rupture concern
-→ structural reassessment before generic rehab
-
-material safety/infection concern + no clinician disposition
+material safety concern + no clinician disposition
 → no routine reassuring wording
 
-not_assessed neurological component
+not_assessed neurological/neurovascular component
 → never generate normal wording
 ```
 
-Region-specific rules live in each frozen profile.
+Region-specific rules live in each frozen/candidate profile.
 
 ---
 
 # 7. Remaining regional design sequence
 
-Current broad remaining sequence is:
+After Knee review/freeze, current broad sequence is:
 
 ```text
-knee / hip
+hip
 → ankle / foot
 → shared fracture / post-immobilization
 → muscle / myotendinous injury
 → generalized deconditioning / balance / gait
 ```
 
-The product owner selects the exact next region.
+The product owner may change the exact next region within CU-1.
 
 ---
 
@@ -239,6 +268,7 @@ Optional reassessment/communication criteria.
 Rules:
 
 - collaborative wording;
+- active/function-oriented rehabilitation as core where appropriate;
 - no unsupported diagnosis from symptoms, tests or incidental imaging;
 - no normal neurological/red-flag statement from missing data;
 - preserve explicit restrictions;
