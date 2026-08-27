@@ -1,0 +1,21 @@
+version: cu1_id_normalization_v1
+canonical_case: lowercase_snake_case
+apply_before_validation: true
+aliases:
+  fadIR_or_faber_provocation_finding: fadir_or_faber_provocation_finding
+  ACL_injury_instability_rehabilitation: acl_injury_instability_rehabilitation
+  MCL_injury_rehabilitation: mcl_injury_rehabilitation
+  ACL_reconstruction: acl_reconstruction
+  MCL_repair_or_reconstruction: mcl_repair_or_reconstruction
+  Osgood_Schlatter_disease: osgood_schlatter_disease
+  Sinding_Larsen_Johansson_syndrome: sinding_larsen_johansson_syndrome
+  formal_GTPS_diagnosis: formal_gtps_diagnosis
+  formal_FAIS_diagnosis: formal_fais_diagnosis
+  formal_CRPS_upper_limb_diagnosis: crps_upper_limb
+  ASIS_avulsion: asis_avulsion
+  AIIS_avulsion: aiis_avulsion
+  ASIS_apophyseal_avulsion: asis_apophyseal_avulsion
+  AIIS_apophyseal_avulsion: aiis_apophyseal_avulsion
+  MRI_or_ultrasound_confirmed: mri_or_ultrasound_confirmed
+  SPPB_total_optional: sppb_total_optional
+rule: aliases_are_input_compatibility_only_and_must_never_be_emitted_as_canonical_output_ids
