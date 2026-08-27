@@ -1,0 +1,194 @@
+version: cu1_route_detail_catalog_v1
+status: frozen_pre_code_design
+id_policy: lowercase_snake_case
+
+exact_route_or_subtype_ids:
+  elbow:
+    - radial_tunnel_pain_presentation_not_formally_diagnosed
+    - formal_radial_tunnel_syndrome
+    - distal_triceps_tendinopathy
+    - confirmed_partial_distal_triceps_tear
+    - other_established_distal_triceps_disorder
+    - anconeus_myotendinous_pain_or_injury
+    - postoperative_elbow_rehabilitation
+  wrist_hand:
+    - formal_guyon_canal_ulnar_neuropathy
+    - scapholunate_ligament_injury
+    - lunotriquetral_ligament_injury
+    - other_established_carpal_instability
+    - ecu_tendinopathy
+    - ecu_instability_or_subluxation
+    - fcr_tendinopathy
+    - fcu_tendinopathy
+    - other_extensor_tendinopathy
+    - other_flexor_tendinopathy
+    - formal_crps_upper_limb_diagnosis
+  knee:
+    - pcl_injury
+    - lcl_injury
+    - posterolateral_corner_injury
+    - combined_multiligament_knee_injury
+    - pes_distal_hamstring_insertional_pathology
+    - semimembranosus_or_medial_hamstring_insertional_pathology
+    - biceps_femoris_distal_insertional_pathology
+    - other_established_distal_hamstring_tendon_pathology
+    - established_hoffa_fat_pad_pain_or_impingement
+    - established_synovial_plica_syndrome
+    - established_chondral_or_osteochondral_lesion
+    - osteochondritis_dissecans
+    - meniscal_root_or_complex_repair_relevant_lesion
+  hip_groin:
+    - proximal_hamstring_tendinopathy
+    - iliopsoas_related_groin_pain_internal_snapping_hip
+    - formal_iliopsoas_tendinopathy
+    - symptomatic_internal_snapping_hip
+    - other_established_iliopsoas_disorder
+    - established_gluteal_abductor_tendon_tear_nonoperative
+    - symptomatic_external_snapping_hip
+    - established_acetabular_dysplasia
+    - established_hip_instability_or_microinstability
+    - inguinal_related_groin_pain
+    - pubic_related_groin_pain
+    - known_hip_osteoarthritis_context
+  ankle_foot:
+    - chronic_ankle_instability_recurrent_sprain
+    - established_syndesmotic_ankle_injury
+    - established_tarsal_tunnel_or_tibial_nerve_entrapment
+    - heel_fat_pad_pain_presentation
+    - established_morton_neuroma
+    - interdigital_neuralgic_forefoot_presentation
+    - established_plantar_plate_injury_or_lesser_mtp_instability
+    - anterior_tibial_tendinopathy
+    - extensor_tendon_disorder
+    - flexor_hallucis_longus_tendon_disorder
+    - established_osteochondral_lesion_talus
+    - known_first_mtp_osteoarthritis_hallux_rigidus_context
+    - known_ankle_osteoarthritis_context
+    - hallux_valgus_context
+    - known_charcot_neuroarthropathy
+    - neuropathic_foot_context
+    - postoperative_achilles_repair_or_reconstruction
+
+shared_fracture_site_ids:
+  - thoracic_or_lumbar_vertebral_compression_fragility_fracture
+  - proximal_humerus_fracture
+  - clavicle_fracture
+  - distal_radius_fracture
+  - metacarpal_fracture
+  - phalangeal_hand_fracture
+  - pelvic_ring_or_pubis_ramus_fracture
+  - patella_fracture
+  - lateral_malleolus_fracture
+  - medial_malleolus_fracture
+  - posterior_malleolus_fracture
+  - bimalleolar_or_trimalleolar_fracture
+  - calcaneus_fracture
+  - anterior_process_calcaneus_fracture
+  - fifth_metatarsal_fracture
+  - other_metatarsal_fracture
+  - phalangeal_foot_fracture
+  - other_common_foot_fracture
+  - radial_head_or_neck_fracture
+  - olecranon_or_proximal_ulna_fracture
+  - distal_humerus_fracture
+  - other_elbow_fracture
+  - distal_ulna_fracture
+  - scaphoid_fracture
+  - other_carpal_fracture
+  - other_wrist_hand_fracture
+  - tibial_plateau_or_proximal_tibia_fracture
+  - proximal_fibula_fracture
+  - talus_fracture
+  - navicular_fracture
+  - cuboid_or_cuneiform_fracture
+  - lisfranc_fracture_dislocation_or_post_treated_injury
+  - other_ankle_foot_fracture
+  - humeral_shaft_fracture
+  - radius_or_ulna_shaft_fracture
+  - femoral_neck_fracture
+  - intertrochanteric_fracture
+  - subtrochanteric_fracture
+  - femoral_shaft_fracture
+  - acetabular_fracture
+  - distal_femur_fracture
+  - tibial_shaft_fracture
+  - fibular_shaft_fracture
+  - other_long_bone_shaft_fracture
+  - pelvic_or_sacral_insufficiency_fracture
+  - subchondral_insufficiency_fracture_of_knee
+  - femoral_neck_stress_fracture
+  - tibial_bone_stress_injury
+  - navicular_stress_fracture
+  - fifth_metatarsal_stress_fracture
+  - calcaneal_stress_fracture
+  - other_established_bone_stress_or_insufficiency_injury
+  - asis_apophyseal_avulsion
+  - aiis_apophyseal_avulsion
+  - ischial_tuberosity_apophyseal_avulsion
+  - lesser_trochanter_apophyseal_avulsion
+  - other_pelvic_apophyseal_avulsion
+  - pediatric_supracondylar_or_distal_humerus_fracture
+  - pediatric_forearm_or_distal_radius_ulna_fracture
+  - pediatric_tibia_or_ankle_fracture
+  - pediatric_foot_fracture
+  - other_physeal_or_apophyseal_fracture
+
+shared_muscle_group_ids:
+  - quadriceps_rectus_femoris_muscle_injury
+  - acute_adductor_muscle_injury
+  - calf_muscle_myotendinous_injury
+  - hamstring_muscle_injury
+  - pectoralis_major_muscle_myotendinous_injury
+  - biceps_muscle_belly_myotendinous_injury
+  - abdominal_wall_muscle_injury
+  - acute_hip_flexor_iliopsoas_muscle_injury
+  - tibialis_anterior_muscle_myotendinous_injury
+  - gluteal_muscle_injury
+  - other_thigh_muscle_injury
+  - popliteus_muscle_injury
+  - other_lower_leg_muscle_injury
+  - intrinsic_foot_muscle_injury
+  - latissimus_dorsi_or_teres_major_muscle_injury
+  - triceps_muscle_belly_or_myotendinous_injury
+  - forearm_muscle_strain
+  - other_upper_limb_or_trunk_muscle_injury
+  - other_lower_limb_muscle_injury
+
+shared_muscle_specific_ids:
+  quadriceps_rectus_femoris_muscle_injury:
+    - rectus_femoris_muscle_or_myotendinous_strain
+    - proximal_rectus_femoris_myotendinous_injury
+    - proximal_rectus_femoris_tendinous_or_free_tendon_injury
+    - vastus_lateralis_medialis_intermedius_injury
+    - quadriceps_contusion
+    - other_quadriceps_injury
+  acute_adductor_muscle_injury:
+    - adductor_longus
+    - adductor_brevis
+    - adductor_magnus
+    - gracilis
+    - pectineus
+    - other_adductor
+  calf_muscle_myotendinous_injury:
+    - medial_gastrocnemius_injury
+    - lateral_gastrocnemius_injury
+    - soleus_injury
+    - plantaris_context_if_established
+    - combined_calf_injury
+    - other_calf_myotendinous_injury
+  hamstring_muscle_injury:
+    - biceps_femoris_long_head
+    - biceps_femoris_short_head
+    - semitendinosus
+    - semimembranosus
+    - proximal_hamstring_myotendinous_region
+    - other_hamstring
+
+shared_deconditioning_route_ids:
+  - generalized_deconditioning_functional_decline
+  - frailty_associated_functional_decline
+  - balance_impairment_context
+  - gait_mobility_impairment_context
+  - post_illness_or_post_hospital_deconditioning_context
+
+ownership_rule: exact_ids_in_this_catalog_refine_registry_aggregate_navigation_without_changing_frozen_clinical_semantics
