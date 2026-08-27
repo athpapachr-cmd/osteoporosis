@@ -4,29 +4,13 @@
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Parent product:** Personal Clinical Excellence System.
 > **Scope:** cross-module Clinic Utilities / Clinical Operations.
-> **Current focus:** CU-1 Physiotherapy Referral v2 design; all currently planned regional and shared clinical/content profiles are frozen and merged. Next step is design-completeness review, not implementation.
+> **Current focus:** CU-1 Physiotherapy Referral v2; all planned clinical/content profiles are frozen, but design-completeness review is **BLOCK** pending bounded cross-profile machine-contract hardening.
 
 Clinic Utilities are cross-module clinician-facing operational tools, not a new clinical Module 02.
 
 ---
 
-# 1. CU-1 target
-
-```text
-Clinical problem / diagnosis
-→ important findings
-→ functional limitation
-→ precautions / restrictions
-→ rehabilitation goals
-→ rehabilitation direction
-→ final referral text
-```
-
-Structured intermediate model remains `ReferralDraft → ShortReferralFormatter / DetailedReferralFormatter` under the frozen CU-1 invariants.
-
----
-
-# 2. Frozen profile set
+# 1. Frozen clinical/content set
 
 ```text
 cervical_v1_1
@@ -42,44 +26,57 @@ shared_muscle_myotendinous_v1_1
 shared_deconditioning_balance_gait_v1_1
 ```
 
-All are FROZEN clinical/content design.
-
-Final shared functional-profile decisions include direct generalized deconditioning and clinician-established frailty-associated decline; SPPB as preferred optional multidomain functional battery; explicit falls history/fear-of-falling/walking-aid semantics; and no autonomous diagnostic inference from performance testing.
+The broad clinical taxonomy remains frozen.
 
 ---
 
-# 3. Design-completeness gate
+# 2. Completeness gate
 
-Before implementation authorization, review the frozen set as one system:
-
-```text
-cross-profile ownership / routing
-structured key consistency
-tri-state / not-assessed semantics
-safety / reassessment invariants
-fracture / tendon / postoperative restriction precedence
-goal / rehab-direction semantics
-adjunct ownership / evidence labels
-short vs detailed formatter requirements
-current runtime/schema seams
-privacy / persistence boundary
-```
-
-Required outcome:
+Review report:
 
 ```text
-DESIGN-COMPLETE
-or
-BLOCK with exact unresolved design blockers
+clinic_utilities/CU1_DESIGN_COMPLETENESS_REVIEW.md
 ```
 
-Design completeness does **not** itself authorize coding.
+Current classification:
+
+```text
+BLOCK for implementation authorization
+```
+
+The block is not broad clinical-content incompleteness. It is unresolved implementation-contract design:
+
+```text
+B1 typed core/problem context
+B2 canonical machine registry + exact shared gateways
+B3 route ownership/precedence
+B4 safety warning/blocking/disposition model
+B5 formatter contract
+B6 normalized common enums/tri-states/key semantics
+```
 
 ---
 
-# 4. Implementation boundary
+# 3. Required bounded hardening pass
 
-Current first implementation direction remains:
+Produce/freeze before implementation:
+
+```text
+CU-1 core typed contract v1
+canonical profile/route/key registry v1
+regional→shared gateway mapping table
+route precedence/ownership table
+common SafetyResult / warning-disposition model
+ShortReferralFormatter / DetailedReferralFormatter specification
+common enum/tri-state definitions
+synthetic design-fixture matrix
+```
+
+Do not reopen regional clinical taxonomies unless a specific blocker requires it.
+
+---
+
+# 4. First implementation direction — unchanged but not yet authorized
 
 ```text
 ephemeral structured draft
@@ -87,4 +84,6 @@ ephemeral structured draft
 → copy / print
 ```
 
-Persistence is not frozen. No production physiotherapy runtime code until a separate explicit product-owner authorization after the design-completeness review.
+Persistence remains unfrozen and is not required for the first implementation.
+
+Current repository runtime is FastAPI/Pydantic-capable, but no CU-1 runtime exists today. Runtime coding begins only after repeat review reaches `DESIGN-COMPLETE` and the product owner separately authorizes implementation.

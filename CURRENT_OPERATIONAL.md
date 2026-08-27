@@ -3,72 +3,60 @@
 > **STATUS:** ACTIVE OPERATIONAL AUTHORITY.
 > **Updated:** 2026-08-27 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **FINAL SHARED PROFILE FREEZE PR:** PR #48 squash-merged as `50c304cbb8bf68cba4fde981942b5fc26065afee`.
+> **Verified base main for this review:** `4b12932cb007994ca5d998f47719ff706191d2e9`.
 > **Current major phase:** Personal Clinical Excellence foundation with a bounded Clinic Utilities detour.
-> **Active slice:** CU-1 Physiotherapy Referral v2 clinical/content design.
+> **Active slice:** CU-1 Physiotherapy Referral v2 design-completeness review.
 > **Frozen regional profiles:** cervical, lumbar, shoulder, elbow, wrist/hand, knee, hip/groin, ankle/foot v1.1.
 > **Frozen shared profiles:** Shared Fracture v1.1; Shared Muscle/Myotendinous v1.1; Shared Deconditioning/Balance/Gait v1.1.
-> **ACTIVE CANONICAL WRITER/LOCK:** NONE.
+> **ACTIVE CANONICAL WRITER/LOCK:** docs-only branch `docs/cu1-design-completeness-review-2026-08-27` for review/canonical documentation only.
 > **ACTIVE RUNTIME WRITER/LOCK:** NONE.
 > **RUNTIME IMPLEMENTATION:** NOT AUTHORIZED.
 > **PR-1:** intentionally paused at `archive/slices/PR1_TRANSCRIPT_INTAKE_V3.md`.
 
 ---
 
-# 1. CU-1 clinical/content design state
-
-All currently planned CU-1 regional/shared clinical/content profiles are frozen and merged.
-
-Final shared functional profile:
+# 1. Review outcome
 
 ```text
-clinic_utilities/physio_profiles/shared_deconditioning_balance_gait_v1_1.md
+CU-1 clinical/content profile set = FROZEN
+CU-1 implementation-contract completeness = BLOCK
+runtime implementation authorization = NOT READY
 ```
 
-Key final decisions:
+The clinical taxonomy/safety content is broadly coherent. The block is caused by unresolved cross-profile and machine-contract design that would otherwise have to be invented during implementation.
+
+Authoritative review report on this branch:
 
 ```text
-D1 generalized deconditioning / functional decline — direct
-D2 frailty-associated functional decline — direct only when frailty is established
-balance-only / gait-only / post-hospital presentations — context/findings, not routine top-level routes
-SPPB — preferred optional functional battery, never a diagnostic gate
-falls history — single/recurrent/injurious/unable-to-rise/LOC preserved
-walking-aid assessment/training — direct referral direction
-fear of falling — distinct from objective balance deficit
-Shared Fracture restrictions override this profile
+clinic_utilities/CU1_DESIGN_COMPLETENESS_REVIEW.md
 ```
-
-No neurological disease-specific pathways were added; home-hazard assessment is not a routine local option; generic aerobic conditioning is not a routine generator direction; acupuncture, dry needling, ESWT and therapeutic ultrasound are excluded.
 
 ---
 
-# 2. Safety boundaries
+# 2. Blocking design gaps
 
 ```text
-acute unexplained gait/coordination change
-new focal neurological deficit
-syncope / unexplained LOC
-unstable cardiopulmonary symptoms
-acute vestibular syndrome
-fracture/restriction uncertainty
-DVT / vascular concern
-infection/systemic deterioration
-acute cognitive change
-→ reassessment / appropriate specialty route
+B1 — ReferralDraft cannot deterministically carry profile-specific structured context
+B2 — no frozen machine-readable profile/route/key registry or exact regional→shared gateway mapping
+B3 — unresolved route ownership/precedence in selected postoperative/structural overlaps
+B4 — no shared warning/safety severity + blocking/disposition contract
+B5 — ShortReferralFormatter / DetailedReferralFormatter interface and omission/output rules are not frozen
+B6 — tri-state/enumeration/key naming is not normalized/versioned across profiles
 ```
 
-No reassuring negative statement is generated from missing assessment.
+No frozen clinical pathway is revoked by this review.
 
 ---
 
 # 3. Exact next action
 
 ```text
-1. perform CU-1 design-completeness review across all frozen regional/shared profiles
-2. inspect cross-profile routing, schema consistency, safety invariants, formatter requirements and implementation seams
-3. identify any blocking contradictions or missing design contracts
-4. STOP at DESIGN-COMPLETE or BLOCK
-5. runtime implementation requires a separate explicit product-owner authorization after that review
+1. complete one bounded CU-1 design-hardening pass resolving B1–B6
+2. do not reopen broad regional clinical taxonomy unless a blocker requires it
+3. freeze the cross-profile machine contract + routing/precedence + formatter contract
+4. repeat exact design-completeness review
+5. STOP at DESIGN-COMPLETE or remaining BLOCK
+6. only after DESIGN-COMPLETE may the product owner separately authorize runtime implementation
 ```
 
 ---
@@ -77,9 +65,10 @@ No reassuring negative statement is generated from missing assessment.
 
 ```text
 WRITE CU-1 production runtime code
-WRITE PR-1 transcript runtime code
-AUTO-PERSIST physiotherapy referrals
+START UI implementation
+ADD persistence for physiotherapy referrals
+INVENT schema/routing/formatter semantics inside implementation
 COMMIT identifiable patient data
-START CU-1 implementation before design-completeness review + explicit authorization
+RESTART PR-1 runtime work
 CREATE overlapping runtime writers
 ```
