@@ -4,7 +4,7 @@
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Parent product:** Personal Clinical Excellence System.
 > **Scope:** cross-module Clinic Utilities / Clinical Operations.
-> **Current focus:** CU-1 Physiotherapy Referral v2; all planned clinical/content profiles are frozen, but design-completeness review is **BLOCK** pending bounded cross-profile machine-contract hardening.
+> **Current focus:** CU-1 Physiotherapy Referral v2; clinical/content profiles remain frozen and B1–B6 machine-contract hardening is now frozen pending exact review/merge and repeat design-completeness review.
 
 Clinic Utilities are cross-module clinician-facing operational tools, not a new clinical Module 02.
 
@@ -30,53 +30,57 @@ The broad clinical taxonomy remains frozen.
 
 ---
 
-# 2. Completeness gate
+# 2. Frozen cross-profile contract set
 
-Review report:
+```text
+clinic_utilities/contracts/CU1_CORE_CONTRACT_V1.md
+clinic_utilities/contracts/cu1_registry_v1.yaml
+clinic_utilities/contracts/cu1_design_fixtures_v1.yaml
+```
+
+These artifacts resolve the prior B1–B6 design gaps by freezing:
+
+```text
+typed ReferralDraftV1 + ProblemSelection/shared context homes
+canonical lowercase snake_case machine namespace + aliases
+exact regional→shared gateway targets
+route ownership/precedence
+common SafetyResult severity/blocking/disposition behavior
+ShortReferralFormatter / DetailedReferralFormatter semantics
+common tri-state/enums
+synthetic semantic fixtures
+```
+
+---
+
+# 3. Completeness gate
+
+Prior review:
 
 ```text
 clinic_utilities/CU1_DESIGN_COMPLETENESS_REVIEW.md
+→ BLOCK before hardening
 ```
 
-Current classification:
+Current hardening state:
 
 ```text
-BLOCK for implementation authorization
+B1–B6 = design-resolved / FROZEN PENDING INDEPENDENT REVIEW
 ```
 
-The block is not broad clinical-content incompleteness. It is unresolved implementation-contract design:
+Required next gate:
 
 ```text
-B1 typed core/problem context
-B2 canonical machine registry + exact shared gateways
-B3 route ownership/precedence
-B4 safety warning/blocking/disposition model
-B5 formatter contract
-B6 normalized common enums/tri-states/key semantics
+exact review + merge hardening
+→ fresh repeat CU-1 design-completeness review
+→ DESIGN-COMPLETE or remaining BLOCK
 ```
+
+Design completeness does not itself authorize runtime coding.
 
 ---
 
-# 3. Required bounded hardening pass
-
-Produce/freeze before implementation:
-
-```text
-CU-1 core typed contract v1
-canonical profile/route/key registry v1
-regional→shared gateway mapping table
-route precedence/ownership table
-common SafetyResult / warning-disposition model
-ShortReferralFormatter / DetailedReferralFormatter specification
-common enum/tri-state definitions
-synthetic design-fixture matrix
-```
-
-Do not reopen regional clinical taxonomies unless a specific blocker requires it.
-
----
-
-# 4. First implementation direction — unchanged but not yet authorized
+# 4. First implementation direction — unchanged and still unauthorized
 
 ```text
 ephemeral structured draft
@@ -84,6 +88,4 @@ ephemeral structured draft
 → copy / print
 ```
 
-Persistence remains unfrozen and is not required for the first implementation.
-
-Current repository runtime is FastAPI/Pydantic-capable, but no CU-1 runtime exists today. Runtime coding begins only after repeat review reaches `DESIGN-COMPLETE` and the product owner separately authorizes implementation.
+Persistence remains unfrozen and is not required for first implementation. No CU-1 runtime exists today. Runtime coding starts only after a repeat review reaches `DESIGN-COMPLETE` and the product owner separately authorizes implementation.
