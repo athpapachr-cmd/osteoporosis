@@ -4,7 +4,7 @@
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Parent product:** Personal Clinical Excellence System.
 > **Scope:** cross-module Clinic Utilities / Clinical Operations.
-> **Current focus:** CU-1 Physiotherapy Referral v2 design; cervical v1.1, lumbar v1.1, shoulder v1.1, elbow v1.1 and wrist/hand v1.1 frozen; Knee v1 active design candidate.
+> **Current focus:** CU-1 Physiotherapy Referral v2 design; cervical v1.1, lumbar v1.1, shoulder v1.1, elbow v1.1, wrist/hand v1.1 frozen; knee v1.1 frozen on docs branch pending review/merge.
 
 Clinic Utilities are cross-module clinician-facing operational tools, not a new clinical Module 02.
 
@@ -68,7 +68,7 @@ clinician-entered diagnosis may be carried but not inferred
 
 ---
 
-# 2. Frozen / active profile status
+# 2. Frozen profile status
 
 ```text
 cervical_v1_1 = FROZEN
@@ -76,103 +76,96 @@ lumbar_v1_1 = FROZEN
 shoulder_v1_1 = FROZEN
 elbow_v1_1 = FROZEN
 wrist_hand_v1_1 = FROZEN
-knee_v1 = ACTIVE DESIGN CANDIDATE / NOT FROZEN
-```
-
-Authoritative current Knee candidate:
-
-```text
-clinic_utilities/physio_profiles/knee_v1.md
+knee_v1_1 = FROZEN on docs branch pending review/merge
 ```
 
 ---
 
-# 3. Knee v1 — active candidate frame
+# 3. Knee v1.1 frozen design
 
-Proposed default pathways:
+Frozen default pathways:
 
 ```text
 knee osteoarthritis
 degenerative meniscal lesion/tear — conservative rehabilitation
-acute isolated meniscal injury — assessed nonoperative pathway
+acute isolated meniscal injury — assessed nonoperative
 patellofemoral pain
 patellar tendinopathy
-established knee ligament injury/instability — nonoperative rehabilitation
+quadriceps tendinopathy
+ACL injury/instability rehabilitation
+MCL injury rehabilitation
 patellar instability/dislocation rehabilitation
+iliotibial-band syndrome
+pes-anserine region pain / established tendinobursitis
 post-traumatic knee pain/stiffness after assessed injury
-postoperative knee rehabilitation — pending workflow confirmation
+postoperative knee rehabilitation
 ```
 
-Candidate rare/secondary/context entities:
+Pediatric/adolescent group:
 
 ```text
-quadriceps tendinopathy
-iliotibial-band syndrome
-pes-anserine pain / established bursitis-tendinopathy
-Baker/popliteal cyst context
-prepatellar/infrapatellar bursitis context
-osteochondral/chondral lesion or osteochondritis dissecans
-meniscal root tear / complex repair-relevant lesion
-Hoffa fat-pad / plica context
-inflammatory / crystal knee context
-Osgood-Schlatter / Sinding-Larsen-Johansson if adolescent workflow requires
+Παιδιά / Έφηβοι — γόνατο
+→ Osgood-Schlatter
+→ Sinding-Larsen-Johansson
 ```
 
-Key candidate distinctions:
+The pediatric/adolescent category is navigation only. Structural conditions such as PFP, meniscus, ACL, MCL and patellar instability continue to use their ordinary pathways with age/skeletal-maturity context.
+
+Rare/advanced/context decisions:
+
+```text
+PCL/LCL/PLC/combined ligament → rare/advanced
+distal hamstring insertional pathology → rare selectable secondary
+Hoffa/plica → rare clinician-entered context
+Baker/popliteal cyst → medical/context only
+prepatellar/infrapatellar bursitis → medical/context only
+osteochondral/OCD lesions → rare structural context
+meniscal root/complex repair-relevant lesions → rare structural context
+gastrocnemius strain → future shared muscle/myotendinous profile
+inflammatory/crystal knee disease → established medical context
+```
+
+Key distinctions:
 
 ```text
 radiographic OA != automatic symptom generator
-degenerative MRI meniscal tear != automatic symptom generator or surgical indication
+degenerative MRI meniscal tear != automatic symptomatic diagnosis or surgery
 clicking/catching != true locked knee
-degenerative meniscus != acute displaced/displacing meniscus pathway
-anterior knee pain != automatic patellofemoral diagnosis
-cartilage/chondromalacia imaging != automatic symptomatic diagnosis
-patellar-tendon imaging change != automatic tendinopathy
+acute displaced/displacing meniscus != routine rehab
+anterior knee pain != automatic PFP
+tendon imaging change != automatic symptomatic tendinopathy
 subjective giving-way != objective ligament instability
-ligament test != autonomous tear grade
-first-time patellar dislocation requires structural/osteochondral context
-postoperative rehabilitation = exact procedure/protocol governed
-posterior swelling != automatic Baker cyst and does not exclude DVT
+ACL and MCL are separate high-visibility pathways
+first-time patellar dislocation requires osteochondral/structural context
+postoperative meniscus repair != partial meniscectomy progression logic
+pediatric category != diagnosis
+Osgood-Schlatter != SLJ != ordinary patellar tendinopathy
+posterior swelling != Baker cyst and does not exclude DVT
 ```
 
-Evidence-oriented core directions:
-
-- knee OA: education/self-management plus individualized exercise, strengthening and functional/aerobic activity;
-- common degenerative meniscal lesions: exercise-based rehabilitation first-line when no structural surgical indication is present;
-- acute meniscal tears: selected non-displaced tears may enter rehabilitation, while displaced/displacing tears restricting ROM or repair-relevant lesions require timely specialist decision;
-- patellofemoral pain: education plus knee-targeted with or without hip-targeted exercise as core, with taping/foot orthoses/manual/movement retraining tailored to presentation;
-- patellar tendinopathy: progressive load-based rehabilitation without freezing one universal loading mode;
-- ligament injury: ROM/strength/neuromuscular and criterion-based progression according to established injury and restrictions;
-- postoperative knee: procedure-specific protocol and restrictions outrank generic defaults.
-
-Candidate support policy:
+Frozen support/adjunct policy:
 
 ```text
-OA brace → condition-sensitive
-patellofemoral taping/support → condition-sensitive
-prefabricated foot orthosis → selected patellofemoral presentations
-ligament/postoperative brace → exact plan/protocol
-temporary walking aid/cane → optional when appropriate
-```
-
-Candidate adjunct questions remain open:
-
-```text
+taping / knee braces / foot orthoses → condition-sensitive supports
 manual therapy / soft tissue → optional where relevant
-thermal OA support → optional
-acupuncture for knee OA → unresolved because major guidelines differ
-dry needling → unresolved; not core
-ESWT for patellar tendinopathy → not default; include only if real workflow warrants evidence-sensitive option
-NMES → postoperative/TKA-specific context, not generic knee OA
+acupuncture for selected knee OA → optional evidence-sensitive adjunct
+dry needling → excluded
+ESWT → not a default generator recommendation; therapist-proposed use may be documented for patellar tendinopathy
+NMES → postoperative/context-specific, especially TKA; not generic OA
 ```
 
-Knee remains **NOT FROZEN** until product-owner review.
+Postoperative emphasis:
+
+- meniscus repair and partial meniscectomy are common real-workflow referrals;
+- meniscectomy progression is primarily criterion/milestone based;
+- meniscus repair/reconstruction requires time + criterion-based progression with lesion/repair-specific restrictions;
+- ACLR, MCL repair/reconstruction, MPFL stabilization, arthroplasty, cartilage procedures and extensor-mechanism repair remain procedure/protocol governed.
 
 ---
 
 # 4. Shared fracture / post-immobilization profile
 
-Fractures are handled once in a future shared profile rather than duplicated region by region.
+Fractures remain handled once in a future shared profile rather than duplicated region by region.
 
 Required future context:
 
@@ -185,6 +178,7 @@ immobilization/brace/orthosis status
 weight-bearing/use status
 ROM/loading restrictions
 surgeon/orthopaedic instructions
+age/skeletal-maturity when relevant
 ```
 
 Regional entry points now include shoulder, elbow, wrist/hand and knee fractures.
@@ -229,6 +223,9 @@ post-op route + missing procedure/protocol/restrictions
 hot swollen knee / infection / DVT concern
 → medical reassessment
 
+atypical/high-risk pediatric presentation
+→ do not hide under Osgood/SLJ label
+
 material safety concern + no clinician disposition
 → no routine reassuring wording
 
@@ -236,13 +233,13 @@ not_assessed neurological/neurovascular component
 → never generate normal wording
 ```
 
-Region-specific rules live in each frozen/candidate profile.
+Region-specific rules live in each frozen profile.
 
 ---
 
 # 7. Remaining regional design sequence
 
-After Knee review/freeze, current broad sequence is:
+After Knee handoff closes, current broad sequence is:
 
 ```text
 hip
