@@ -4,7 +4,7 @@
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Parent product:** Personal Clinical Excellence System.
 > **Scope:** cross-module Clinic Utilities / Clinical Operations.
-> **Current focus:** CU-1 Physiotherapy Referral v2 design; all regional v1.1 profiles and Shared Fracture / Post-immobilization v1.1 frozen.
+> **Current focus:** CU-1 Physiotherapy Referral v2 design; all regional v1.1 profiles and Shared Fracture v1.1 frozen; Shared Muscle / Myotendinous Injury v1.1 frozen on docs branch pending review/merge.
 
 Clinic Utilities are cross-module clinician-facing operational tools, not a new clinical Module 02.
 
@@ -22,7 +22,7 @@ Clinic Utilities are cross-module clinician-facing operational tools, not a new 
 7. Final referral text
 ```
 
-Structured intermediate model:
+Structured intermediate model remains:
 
 ```text
 ReferralDraft
@@ -50,21 +50,7 @@ ReferralDraft
 → DetailedReferralFormatter
 ```
 
-Hard rules:
-
-```text
-suggested != examined
-suggested != selected
-selected != clinically mandatory
-symptom != diagnosis
-objective deficit != subjective symptom
-provocation/special test != diagnosis
-imaging finding != automatically symptomatic diagnosis
-not assessed != normal
-brace/orthosis/taping != automatically mandatory
-adjunct != core rehabilitation
-clinician-entered diagnosis may be carried but not inferred
-```
+Hard rules remain: suggested/examined/selected/mandatory are distinct; symptoms/tests/imaging do not autonomously create diagnoses; not-assessed does not mean normal; adjuncts do not replace core rehabilitation; clinician-entered diagnoses may be carried but not inferred.
 
 ---
 
@@ -80,232 +66,173 @@ knee_v1_1 = FROZEN
 hip_v1_1 = FROZEN
 ankle_foot_v1_1 = FROZEN
 shared_fracture_v1_1 = FROZEN
+shared_muscle_myotendinous_v1_1 = FROZEN on docs branch pending exact-head review/merge
 ```
 
-Authoritative shared-fracture design:
+Authoritative muscle design:
 
 ```text
-clinic_utilities/physio_profiles/shared_fracture_v1_1.md
-```
-
----
-
-# 3. Shared Fracture / Post-immobilization v1.1 frozen design
-
-The shared profile owns restriction/healing logic once rather than duplicating fracture protocols region by region.
-
-```text
-regional/shared fracture gateway
-→ fracture_rehabilitation_post_immobilization
-→ fracture_site
-→ treatment / phase / healing-stability
-→ immobilization/support
-→ lower-limb weight-bearing OR upper-limb use/loading
-→ ROM / strengthening / impact restrictions
-→ actual deficits/function
-→ confirmed goals/directions
-```
-
-Minimum shared context:
-
-```text
-fracture site
-laterality
-date/phase when known
-treatment / surgery when applicable
-healing/stability status
-immobilization/support status
-lower-limb weight-bearing when relevant
-upper-limb use/loading when relevant
-ROM restrictions
-loading / strengthening / impact restrictions
-orthopaedic/surgical instructions and source
-age/skeletal maturity when relevant
-```
-
-Hard rules:
-
-```text
-fracture != healed fracture
-elapsed time != union
-cast/sling/boot removal != unrestricted loading
-fixation != unrestricted use/loading
-not stated != unrestricted
-exact protocol > shared generic suggestion
-no universal week-based timetable
-manual therapy requires known stability + ROM permission
-pediatric fracture != adult timeline
-fragility fracture != automatic osteoporosis diagnosis
-```
-
-High-visibility workflow entries:
-
-```text
-vertebral compression / fragility fracture
-proximal humerus
-clavicle
-distal radius
-hand / finger fractures
-pubic rami
-patella
-ankle fractures
-calcaneus / anterior-process calcaneus
-5th metatarsal / other metatarsal
-foot / toe fractures
-```
-
-Less frequent / advanced / context includes scaphoid with union gate, elbow fractures, tibial plateau, Lisfranc, long-bone shaft fractures and older-adult hip fracture.
-
-## 3.1 Fragility modifier
-
-```text
-formal_fragility_fracture_context
-known_osteoporosis_or_low_bone_strength_context
-falls_risk_or_recurrent_falls_context
-```
-
-When selected, the utility makes strength, balance, falls-risk reduction, mobility and functional independence prominent. It does not generate osteoporosis diagnosis, DXA orders or medication decisions.
-
-## 3.2 SIFK / legacy SONK
-
-Preferred entity:
-
-```text
-subchondral_insufficiency_fracture_of_knee
-```
-
-Frozen terminology:
-
-```text
-SIFK = preferred current term
-SONK = legacy / clinician-entered wording, not a second autonomous software diagnosis
-advanced SIFK may carry osteonecrosis / osteochondral collapse when established
-```
-
-```text
-bone-marrow edema alone != SIFK
-sudden knee pain alone != SIFK
-SIFK + loading status unknown → no generic strengthening / impact progression
-```
-
-## 3.3 Pediatric / apophyseal
-
-Pelvic apophyseal avulsions remain the clinically useful visible pediatric gateway. Other pediatric fractures are low visibility because the product owner rarely refers them. Adult timelines are never imported.
-
-## 3.4 Default adjunct exclusions
-
-Not generator-default fracture-healing recommendations:
-
-```text
-acupuncture
-dry needling
-ESWT
-therapeutic ultrasound to accelerate union
-bone-stimulator prescription
+clinic_utilities/physio_profiles/shared_muscle_myotendinous_v1_1.md
 ```
 
 ---
 
-# 4. Safety / consistency engine
+# 3. Shared Muscle / Myotendinous Injury v1.1 frozen design
+
+The shared profile owns acute muscle/myotendinous rehabilitation semantics once rather than duplicating them region by region.
 
 ```text
-fracture + healing/stability unknown
-→ warning; no healed/stable wording
+regional/shared gateway
+→ acute_muscle_myotendinous_injury_rehabilitation
+→ muscle/site + injury type/phase/tissue context
+→ conservative/specialist/postoperative disposition
+→ restrictions / actual deficits / functional demand
+→ confirmed goals / rehabilitation directions
+```
 
-lower-limb fracture + weight-bearing unknown
-→ no progressive weight-bearing instruction
+High-visibility workflow groups:
 
-upper-limb fracture + use/loading unknown
-→ no unrestricted lifting/pushing/use instruction
+```text
+quadriceps / rectus femoris
+acute adductor injury
+gastrocnemius / soleus / calf
+hamstring strain / partial tear
+```
 
-ROM/loading restriction unknown
-→ no unrestricted ROM/strengthening statement
+Visible but less frequent:
 
-new trauma / loss of reduction / delayed union / nonunion / hardware concern
-→ orthopaedic reassessment semantics
+```text
+pectoralis major muscle/myotendinous injury
+biceps muscle-belly/myotendinous injury
+abdominal-wall muscle injury
+```
 
-infection / wound / neurovascular / compartment / DVT-PE concern
-→ medical/urgent reassessment semantics
+Rare/secondary includes iliopsoas/hip-flexor, tibialis anterior and other uncommon acute muscle injuries.
 
-possible CRPS
-→ preserve concern; do not autonomously diagnose
+Boundaries:
 
-vertebral fracture + unresolved spinal precautions / neurological concern
-→ medical/specialist pathway
+```text
+acute strain != chronic tendinopathy
+muscle pain != exact tear diagnosis
+MRI/US classification != fixed rehabilitation timetable
+bony avulsion → Shared Fracture
+major free-tendon rupture/avulsion without disposition → specialist structural route
+postoperative repair → exact protocol owns progression
+```
 
-SIFK / stress / insufficiency fracture + loading status unknown
-→ no generic impact progression
+Product-owner retraction workflow is represented without turning 2 cm into a universal rule:
 
-pediatric fracture
-→ no adult timeline
+```text
+<2 cm retraction + established conservative decision
+→ routine PT workflow may proceed
 
-material safety concern + no clinician disposition
+<2 cm alone
+→ NOT autonomous clearance
+
+>=2 cm / multi-tendon complete avulsion / major weakness-deformity / high-demand unresolved structural case
+→ prominent specialist-disposition check
+→ no automatic surgery recommendation
+```
+
+---
+
+# 4. Core rehabilitation / return-to-function
+
+Potential active directions when structurally appropriate:
+
+```text
+education / load modification
+progressive ROM / length tolerance when relevant
+progressive strength / load capacity
+lengthened-position / eccentric exposure where appropriate
+running progression
+sprinting progression for sprint-demand sports
+kicking / jumping / change-of-direction progression where relevant
+work-specific graded loading
+home exercise programme
+criterion-based return to training / sport / work
+```
+
+No single loading mode is mandatory for every muscle.
+
+Return-to-sport/work is multi-domain and never based on elapsed time, MRI grade/appearance or strength symmetry alone.
+
+Evidence governance:
+
+```text
+hamstring = comparatively mature rehabilitation/RTS evidence/consensus
+adductor / quadriceps / calf = less certain exact thresholds
+2 cm retraction = context-sensitive decision factor, not universal autonomous threshold
+```
+
+---
+
+# 5. Adjunct / support policy
+
+```text
+acupuncture → optional clinician-selected adjunct; no claim of accelerated tissue healing
+dry needling → excluded
+ESWT → excluded as default acute-muscle healing recommendation
+therapeutic ultrasound → excluded as default acute-muscle healing recommendation
+compression / taping → treating-physiotherapist discretion rather than generator defaults
+```
+
+Progressive active rehabilitation remains the core.
+
+---
+
+# 6. Safety / consistency engine
+
+```text
+major acute weakness / palpable defect / rupture-avulsion concern
+→ structural reassessment
+
+calf pain/swelling + unresolved DVT concern
+→ no routine calf-strain wording
+
+large/expanding haematoma or anticoagulation bleeding concern
+→ medical reassessment
+
+severe escalating pain / tense swelling / compartment concern
+→ urgent pathway
+
+new neurological/vascular deficit
+→ urgent/medical reassessment
+
+postoperative repair + missing protocol/restrictions
+→ warning
+
+significant contusion + atypical persistent/worsening course
+→ myositis-ossificans/other reassessment semantics
+
+material safety concern + no disposition
 → no routine reassuring wording
 ```
 
 ---
 
-# 5. Shared muscle / myotendinous profile — next after fracture
-
-Important future entries already generated by regional gateways include:
-
-```text
-proximal rectus-femoris tendon/myotendinous injury
-adductor strain/tear
-iliopsoas/hip-flexor strain
-rectus-femoris strain
-hamstring strain
-gastrocnemius strain
-soleus strain
-calf myotendinous injury
-other regional acute muscle/tendon injury
-```
-
----
-
-# 6. Context-sensitive goals / directions
-
-```text
-selected condition profile
-→ suggest relevant goals/directions
-→ clinician confirms/changes
-→ only confirmed items enter ReferralDraft
-```
-
-Fracture rehabilitation is restriction-governed before generic active-rehabilitation suggestions become available.
-
----
-
 # 7. Remaining shared design sequence
 
-Current broad remaining sequence is:
+After Shared Muscle/Myotendinous handoff closes:
 
 ```text
-muscle / myotendinous injury
-→ generalized deconditioning / balance / gait
+generalized deconditioning / balance / gait
 ```
 
-The product owner may change the exact next profile within CU-1.
+This is the final currently planned shared CU-1 clinical/content profile before deciding whether CU-1 is sufficiently frozen for a separate implementation authorization step.
 
 ---
 
 # 8. Output wording rules
 
 ```text
-Clinical problem + fracture/site/treatment context + actual deficits + functional impact.
+Clinical problem + muscle/site/injury context + actual findings + functional impact.
 Referral request + goals.
-Exact restrictions / permitted progression.
+Actual restrictions / permitted progression.
 Optional reassessment/communication criteria.
 ```
 
-Rules:
-
-- collaborative wording;
-- no unsupported healing/stability assertion;
-- no automatic timeline from elapsed weeks;
-- no normal neurological/red-flag statement from missing data;
-- preserve exact orthopaedic restrictions;
-- short and detailed outputs derive from the same `ReferralDraft`.
+No unsupported tear grade, automatic timeline, or reassuring safety statement from missing data.
 
 ---
 
@@ -313,12 +240,10 @@ Rules:
 
 CU-1 remains **design only**.
 
-First implementation direction remains:
-
 ```text
 ephemeral structured draft
 → generated text
 → copy / print
 ```
 
-Persistence is not frozen. Do not write production physiotherapy runtime code until CU-1 is sufficiently frozen and the product owner explicitly authorizes transition to CU-2.
+Persistence is not frozen. Do not write production physiotherapy runtime code until CU-1 is sufficiently frozen and the product owner explicitly authorizes transition to implementation.
