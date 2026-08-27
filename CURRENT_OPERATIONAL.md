@@ -3,18 +3,19 @@
 > **STATUS:** ACTIVE OPERATIONAL AUTHORITY.
 > **Updated:** 2026-08-27 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **SHARED FRACTURE FREEZE PR:** PR #46 squash-merged as `a2c01b9019edf62acc32a78129e3944d9979dc08`.
+> **Verified base main for this Muscle / Myotendinous design:** `6ca1b9178a9f70755d7caf342ac5ff85282ebfeb`.
 > **Current major phase:** Personal Clinical Excellence foundation with a bounded Clinic Utilities detour.
 > **Active slice design:** `SLICE_PLAN_CURRENT.md` — CU-1 Physiotherapy Referral v2 clinical/content design.
 > **Supporting detour plan:** `CLINIC_UTILITIES_PLAN.md`.
 > **Frozen regional profiles:** cervical, lumbar, shoulder, elbow, wrist/hand, knee, hip/groin, ankle/foot v1.1.
 > **Frozen shared-fracture profile:** `clinic_utilities/physio_profiles/shared_fracture_v1_1.md`.
-> **ACTIVE CANONICAL WRITER/LOCK:** NONE.
+> **CURRENT SHARED DESIGN TARGET:** Muscle / Myotendinous Injury v1.
+> **ACTIVE CANONICAL WRITER/LOCK:** docs-only branch `docs/cu1-muscle-myotendinous-v1-design-2026-08-27` for Muscle / Myotendinous Injury v1 CU-1 clinical/content design.
 > **ACTIVE RUNTIME WRITER/LOCK:** NONE in this repository.
 > **RUNTIME IMPLEMENTATION:** NOT AUTHORIZED for CU-1; design only.
 > **PR-1 TRANSCRIPT SLICE:** intentionally paused at `archive/slices/PR1_TRANSCRIPT_INTAKE_V3.md`.
 
-This file is the sole owner of operational NOW. Do not infer mutation authority from chat history.
+This file is the sole owner of operational NOW for the active branch. Do not infer mutation authority from chat history.
 
 ---
 
@@ -51,98 +52,73 @@ shared_fracture_v1_1 = FROZEN
 
 ---
 
-# 3. Shared Fracture / Post-immobilization v1.1 — closed freeze
+# 3. Muscle / Myotendinous Injury — ACTIVE DESIGN CANDIDATE WORK
 
-Authoritative frozen file:
+Authorized scope is clinical/content design only.
 
-```text
-clinic_utilities/physio_profiles/shared_fracture_v1_1.md
-```
-
-Architecture:
+Primary reusable design questions:
 
 ```text
-regional/shared fracture entry
-→ fracture_rehabilitation_post_immobilization
-→ fracture site
-→ treatment / phase / healing-stability
-→ immobilization / lower-limb weight-bearing OR upper-limb use/loading
-→ ROM / strengthening / impact restrictions
-→ actual deficits / function
-→ confirmed rehabilitation goals/directions
+acute muscle strain / myotendinous injury taxonomy
+partial tear vs complete tear / avulsion boundary
+muscle-belly vs myotendinous vs intratendinous / free-tendon context when established
+injury mechanism / date / phase
+imaging/classification as context, never autonomous clearance
+loading / stretching / running / sprinting restrictions
+progressive strength / lengthening / functional loading
+return-to-running / return-to-sport / return-to-work semantics
+reinjury / haematoma / compartment / DVT / neurovascular safety
+postoperative or specialist-protocol gateway for major tears/avulsions
+regional quick-entry ownership vs shared rehabilitation logic
 ```
 
-Hard rules:
+Existing frozen regional gateways already point here for:
 
 ```text
-elapsed time != union
-cast/sling/boot removal != unrestricted loading
-fixation != unrestricted loading
-not stated != unrestricted
-exact orthopaedic protocol > generic shared suggestion
-no fixed week-based ROM / weight-bearing / strengthening timeline without explicit instruction
-manual therapy requires known stability + ROM permission
-pediatric fracture != adult timeline
-fragility fracture != software diagnosis of osteoporosis
+proximal rectus-femoris tendon/myotendinous injury
+adductor strain/tear
+iliopsoas / hip-flexor strain
+rectus-femoris strain
+hamstring strain
+gastrocnemius strain
+soleus strain
+calf myotendinous injury
+other acute regional muscle injury
 ```
 
-High-visibility workflow entries include vertebral compression/fragility fracture, proximal humerus, clavicle, distal radius, hand/fingers, pubic rami, patella, ankle, calcaneus including anterior-process calcaneus, metatarsals and foot/toes.
+Candidate should also determine whether commonly useful upper-limb/trunk muscle injuries belong here or remain in regional profiles.
 
-Less frequent / advanced include scaphoid with strong union gate, elbow fractures, tibial plateau, Lisfranc and other site-sensitive fractures. Long-bone shaft fractures and older-adult hip fracture are not routine high-visibility outpatient-referral entries in this workflow.
-
-Fragility modifier makes balance/falls/strength/functional-independence goals prominent without creating osteoporosis diagnosis or medication advice.
-
-SIFK / legacy SONK decision:
-
-```text
-preferred structured entity = subchondral_insufficiency_fracture_of_knee
-SIFK = preferred current terminology
-SONK = legacy / clinician-entered wording, not an autonomous second software diagnosis
-advanced SIFK may carry osteonecrosis / osteochondral-collapse context when established
-bone-marrow edema alone != SIFK
-SIFK + loading status unknown → no generic strengthening / impact progression
-```
-
-Pediatric group remains low visibility except for pelvic apophyseal avulsions; buckle fractures are not routine referrals.
-
-Excluded as default fracture-healing recommendations:
-
-```text
-acupuncture
-dry needling
-ESWT
-therapeutic ultrasound to accelerate union
-bone-stimulator prescription
-```
-
-No runtime behavior changed.
+The shared profile must not duplicate already-frozen dedicated tendon/pathology routes such as rotator cuff, distal biceps/triceps, digital flexor/extensor tendon repair, Achilles tendinopathy/rupture structural routes or fracture/apophyseal-avulsion logic.
 
 ---
 
-# 4. Safety emphasis
+# 4. Initial evidence / safety direction
 
 ```text
-unknown healing/stability/use/loading state
-loss of reduction / reinjury / delayed union / nonunion / hardware concern
-infection / wound / pin-site concern
-new neurovascular deficit / compartment concern
-DVT/PE concern in relevant lower-limb context
-possible CRPS without autonomous diagnosis
-vertebral neurological/spinal-precaution concern
-stress/insufficiency fracture with unknown impact/loading status
-pediatric physeal/apophyseal restrictions
+elapsed time != tissue recovery / return-to-sport clearance
+MRI grade != autonomous rehabilitation prescription
+pain improvement != full load capacity
+strength symmetry alone != complete readiness
+full-thickness proximal tendon tear / major avulsion != routine strain pathway
+bony apophyseal avulsion != muscle strain → shared fracture profile
+progressive loading is individualized by tissue, severity, symptoms and task demands
+return to sport/work is criterion-based where relevant, not calendar-only
 ```
 
-Material concern without clinician disposition prevents routine reassuring referral wording.
+Hamstring evidence provides the strongest current criterion-based rehabilitation/RTS framework; evidence for adductor, quadriceps/rectus-femoris and calf RTS criteria is less certain and should not be presented with false precision.
 
 ---
 
 # 5. Exact next action
 
 ```text
-1. product owner selects the next remaining shared CU-1 profile
-2. current preferred sequence: muscle / myotendinous injury → generalized deconditioning / balance / gait
-3. continue CU-1 design only until explicit runtime authorization
+1. inspect frozen regional gateways and existing dedicated tendon boundaries
+2. perform current evidence/safety review for acute muscle/myotendinous rehabilitation
+3. create `clinic_utilities/physio_profiles/shared_muscle_myotendinous_v1.md` as DESIGN CANDIDATE
+4. align `SLICE_PLAN_CURRENT.md` and `CLINIC_UTILITIES_PLAN.md` to active candidate
+5. present taxonomy / visibility / tear-avulsion / postoperative / adjunct / RTS decisions to product owner
+6. revise after real-workflow feedback
+7. freeze/merge only after explicit product-owner approval
 ```
 
 ---
@@ -155,27 +131,22 @@ WRITE PR-1 transcript runtime code
 AUTO-PERSIST physiotherapy referrals
 MUTATE RF/Secretary/Calendar/Setmore/Zadarma
 COMMIT identifiable patient data
+FREEZE or merge Muscle / Myotendinous Injury without product-owner approval
+START generalized deconditioning / balance / gait design before this writer lock closes
 CREATE overlapping runtime writers
 ```
 
 ---
 
-# 7. Prior resolved operational incident
-
-The Ankle/Foot `_noop` incident remains closed: all temporary files were removed/discarded before PR #45 and the main-tree net file diff was zero.
-
----
-
-# 8. Handoff completeness
+# 7. Handoff completeness
 
 ```text
 active detour = Clinic Utilities
 active slice = CU-1 Physio Referral v2 design
 all regional profiles = frozen v1.1
 shared fracture = frozen v1.1
-shared fracture PR = #46 merged
-canonical writer = none
+shared muscle/myotendinous = active design candidate work
+canonical writer = docs/cu1-muscle-myotendinous-v1-design-2026-08-27
 runtime writer = none
 runtime implementation = unauthorized
-next action = product owner selects next shared profile
 ```
