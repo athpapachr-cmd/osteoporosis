@@ -35,7 +35,6 @@ safety_input_flags:
     - postoperative_infection_or_unexpected_major_deterioration
     - syncope_or_unexplained_loss_of_consciousness
     - acute_unexplained_gait_or_coordination_change
-    - neurological_screen_incomplete
   input_semantics:
     selected_flag_means: clinician_has_identified_or_not_resolved_the_named_concern
     unselected_flag_means: no_assertion
@@ -156,7 +155,14 @@ rules:
     applies_to:
       profiles: [cervical, lumbar]
       routes: [neck_pain_with_radiating_upper_limb_symptoms, low_back_pain_with_radiating_leg_symptoms]
-    trigger: {contains: {path: safety.input_flags, canonical_id: neurological_screen_incomplete}}
+    trigger:
+      any:
+        - {missing: primary_problem.context.neurological_screen.motor}
+        - {eq: {path: primary_problem.context.neurological_screen.motor, value: not_assessed}}
+        - {missing: primary_problem.context.neurological_screen.sensory}
+        - {eq: {path: primary_problem.context.neurological_screen.sensory, value: not_assessed}}
+        - {missing: primary_problem.context.neurological_screen.reflexes}
+        - {eq: {path: primary_problem.context.neurological_screen.reflexes, value: not_assessed}}
     severity_ref: incomplete_neurological_screen_in_radicular_presentation
 
   sifk_loading_status_not_stated:
