@@ -1,0 +1,56 @@
+version: cu1_typed_supplement_v1
+status: frozen_pre_code_design
+applies_to: cu1_referral_draft_v1
+
+coded_selection:
+  fields:
+    id: canonical_option_id
+    selected: true
+    notes_optional: string_or_null
+  validation:
+    id_must_exist_in: cu1_option_catalog_v1
+    free_text_not_allowed_in_id: true
+
+safety_result_completion:
+  fields:
+    rule_id: canonical_safety_rule_id
+    severity: [info, soft_warning, hard_warning_ack_required, block_until_disposition, urgent_reassessment]
+    message_key: string
+    acknowledgement_required: boolean
+    acknowledged: boolean
+    disposition_required: boolean
+    formatter_blocked: boolean
+    clinician_disposition: [none_recorded, reviewed_and_appropriate_to_proceed, medical_reassessment_arranged, imaging_or_specialist_pathway_underway, urgent_or_same_day_assessment_arranged, routine_physiotherapy_deferred, other]
+    source_profile_id: canonical_profile_id
+    source_route_id_optional: canonical_route_id_or_null
+  deterministic_rules:
+    - when: severity == hard_warning_ack_required and acknowledged == false
+      then: formatter_blocked == true
+    - when: severity == hard_warning_ack_required and acknowledged == true and disposition_required == false
+      then: formatter_blocked == false
+    - when: severity == block_until_disposition and clinician_disposition == none_recorded
+      then: formatter_blocked == true
+    - when: severity == urgent_reassessment and clinician_disposition not_in [urgent_or_same_day_assessment_arranged, routine_physiotherapy_deferred]
+      then: formatter_blocked == true
+
+formatter_resolution_context:
+  normative_inputs:
+    - ReferralDraftV1
+    - cu1_contract_manifest_v1
+  resolution_order:
+    - apply_id_normalization
+    - validate_profile_route_subtype_and_option_ids
+    - resolve_regional_shared_gateway
+    - apply_primary_owner_precedence
+    - validate_required_context_and_restrictions
+    - evaluate_profile_rules_and_map_to_canonical_safety_rules
+    - calculate_highest_safety_severity
+    - enforce_acknowledgement_and_disposition_gate
+    - render_short_or_detailed_text
+  rule_source:
+    clinical_trigger_conditions: frozen_profile_markdown_and_semantic_fixtures
+    canonical_severity_and_blocking: cu1_option_catalog_v1
+  prohibition: formatter_or_runtime_must_not_create_new_trigger_or_severity_semantics
+
+precedence_note:
+  rule: this supplement normatively completes omitted typed fields in CU1_CORE_CONTRACT_V1 without changing clinical meaning
