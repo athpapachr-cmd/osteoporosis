@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 import copy
-from pathlib import Path
-from typing import Any, Dict, Mapping, Optional
+from typing import Any, Dict, Mapping
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
@@ -24,7 +23,7 @@ from clinic_utilities.physio_referral_runtime import (
 def _gateway_target_is_canonical(draft: Mapping[str, Any]) -> bool:
     """Accept shared_target_optional only when it exactly matches a frozen gateway.
 
-    Direct shared-profile selection does not need shared_target_optional.  When a
+    Direct shared-profile selection does not need shared_target_optional. When a
     regional/shared gateway is used, client input is treated as untrusted and
     must match one registry gateway exactly before ownership can be resolved.
     """
@@ -66,19 +65,69 @@ def _gateway_target_is_canonical(draft: Mapping[str, Any]) -> bool:
     return False
 
 
-def _invalid_gateway_validation(draft: Mapping[str, Any]) -> CU1ValidationResponse:
+def _safety_state_is_canonical(draft: Mapping[str, Any]) -> bool:
+    """Validate client-controlled SafetyState identifiers against frozen catalogs."""
+
+    safety = draft.get("safety")
+    if safety is None:
+        return True
+    if not isinstance(safety, Mapping):
+        return False
+
+    bundle = get_cu1_bundle()
+    allowed_rule_ids = set((bundle.rules.get("rules") or {}).keys())
+    acknowledged = safety.get("acknowledged_rule_ids", [])
+    if not isinstance(acknowledged, list):
+        return False
+    if any(not isinstance(rule_id, str) or rule_id not in allowed_rule_ids for rule_id in acknowledged):
+        return False
+
+    typed_supplement = bundle.artifacts.get("typed_supplement", {})
+    disposition_values = (
+        typed_supplement.get("safety_result_completion", {})
+        .get("fields", {})
+        .get("clinician_disposition", [])
+        if isinstance(typed_supplement, Mapping)
+        else []
+    )
+    if not isinstance(disposition_values, list) or not disposition_values:
+        return False
+    disposition = safety.get("clinician_disposition", "none_recorded")
+    if not isinstance(disposition, str) or disposition not in disposition_values:
+        return False
+
+    return True
+
+
+def _blocked_validation(draft: Mapping[str, Any], *, path: str, reason: str) -> CU1ValidationResponse:
     return CU1ValidationResponse(
         normalized_draft=copy.deepcopy(dict(draft)),
         validation_errors=[
             CU1ValidationError(
                 error_id="invalid_route_or_subtype",
                 error_class="validation_error",
-                metadata={"path": "primary_problem.shared_target_optional", "reason": "not_a_frozen_registry_gateway"},
+                metadata={"path": path, "reason": reason},
             )
         ],
         safety_results=[],
         highest_severity=None,
         formatter_blocked=True,
+    )
+
+
+def _invalid_gateway_validation(draft: Mapping[str, Any]) -> CU1ValidationResponse:
+    return _blocked_validation(
+        draft,
+        path="primary_problem.shared_target_optional",
+        reason="not_a_frozen_registry_gateway",
+    )
+
+
+def _invalid_safety_validation(draft: Mapping[str, Any]) -> CU1ValidationResponse:
+    return _blocked_validation(
+        draft,
+        path="safety",
+        reason="unknown_acknowledged_rule_id_or_clinician_disposition",
     )
 
 
@@ -102,6 +151,8 @@ def build_cu1_physio_referral_router() -> APIRouter:
         try:
             if not _gateway_target_is_canonical(req.draft):
                 return _invalid_gateway_validation(req.draft)
+            if not _safety_state_is_canonical(req.draft):
+                return _invalid_safety_validation(req.draft)
             return get_cu1_engine().validate(req.draft)
         except CU1ContractError as exc:
             raise HTTPException(status_code=500, detail=f"CU-1 contract error: {exc}") from exc
@@ -112,6 +163,9 @@ def build_cu1_physio_referral_router() -> APIRouter:
             if not _gateway_target_is_canonical(req.draft):
                 blocked = _invalid_gateway_validation(req.draft)
                 return CU1GenerateResponse(**blocked.model_dump(), mode=req.mode, text=None)
+            if not _safety_state_is_canonical(req.draft):
+                blocked = _invalid_safety_validation(req.draft)
+                return CU1GenerateResponse(**blocked.model_dump(), mode=req.mode, text=None)
             return get_cu1_engine().generate(req.draft, req.mode)
         except CU1ContractError as exc:
             raise HTTPException(status_code=500, detail=f"CU-1 contract error: {exc}") from exc
@@ -119,4 +173,8 @@ def build_cu1_physio_referral_router() -> APIRouter:
     return router
 
 
-__all__ = ["build_cu1_physio_referral_router", "_gateway_target_is_canonical"]
+__all__ = [
+    "build_cu1_physio_referral_router",
+    "_gateway_target_is_canonical",
+    "_safety_state_is_canonical",
+]
