@@ -1,31 +1,55 @@
 (() => {
   "use strict";
 
-  function injectCalendarLink() {
-    const nav = document.querySelector(".side-nav");
-    if (!nav || document.querySelector("#clinicalCalendarNavLink")) return;
-
+  function makeNavLink({ id, href, title, iconText, labelText }) {
     const link = document.createElement("a");
-    link.id = "clinicalCalendarNavLink";
-    link.href = "../clinical-calendar/";
+    link.id = id;
+    link.href = href;
     link.className = "side-item";
-    link.title = "Clinical Calendar";
+    link.title = title;
 
     const icon = document.createElement("span");
     icon.className = "side-icon";
-    icon.textContent = "▦";
+    icon.textContent = iconText;
 
     const label = document.createElement("span");
-    label.textContent = "Ημερολόγιο";
+    label.textContent = labelText;
 
     link.append(icon, label);
-
-    const cases = nav.querySelector("[data-nav-action='cases']");
-    if (cases) cases.insertAdjacentElement("afterend", link);
-    else nav.appendChild(link);
+    return link;
   }
 
-  injectCalendarLink();
-  const observer = new MutationObserver(injectCalendarLink);
+  function injectWorkspaceLinks() {
+    const nav = document.querySelector(".side-nav");
+    if (!nav) return;
+
+    let calendar = document.querySelector("#clinicalCalendarNavLink");
+    if (!calendar) {
+      calendar = makeNavLink({
+        id: "clinicalCalendarNavLink",
+        href: "../clinical-calendar/",
+        title: "Clinical Calendar",
+        iconText: "▦",
+        labelText: "Ημερολόγιο",
+      });
+      const cases = nav.querySelector("[data-nav-action='cases']");
+      if (cases) cases.insertAdjacentElement("afterend", calendar);
+      else nav.appendChild(calendar);
+    }
+
+    if (!document.querySelector("#physioReferralNavLink")) {
+      const physio = makeNavLink({
+        id: "physioReferralNavLink",
+        href: "/clinical/clinic-utilities/physio-referral",
+        title: "Physiotherapy Referral v2",
+        iconText: "↗",
+        labelText: "Παραπεμπτικό Φ/Θ",
+      });
+      calendar.insertAdjacentElement("afterend", physio);
+    }
+  }
+
+  injectWorkspaceLinks();
+  const observer = new MutationObserver(injectWorkspaceLinks);
   observer.observe(document.body, { childList: true, subtree: true });
 })();
