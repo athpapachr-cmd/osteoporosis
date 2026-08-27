@@ -13,8 +13,8 @@
 > **Frozen elbow profile:** `clinic_utilities/physio_profiles/elbow_v1_1.md`.
 > **Frozen wrist/hand profile:** `clinic_utilities/physio_profiles/wrist_hand_v1_1.md`.
 > **Frozen knee profile:** `clinic_utilities/physio_profiles/knee_v1_1.md`.
-> **CURRENT BODY-REGION DESIGN TARGET:** hip.
-> **ACTIVE CANONICAL WRITER/LOCK:** docs-only branch `docs/cu1-hip-v1-design-2026-08-27` for Hip v1 CU-1 clinical/content design.
+> **Frozen hip/groin profile on active docs branch:** `clinic_utilities/physio_profiles/hip_v1_1.md`.
+> **ACTIVE CANONICAL WRITER/LOCK:** docs-only branch `docs/cu1-hip-v1-design-2026-08-27` until exact-head review/PR/merge/handoff close.
 > **ACTIVE RUNTIME WRITER/LOCK:** NONE in this repository.
 > **RUNTIME IMPLEMENTATION:** NOT AUTHORIZED for CU-1; design only.
 > **PR-1 TRANSCRIPT SLICE:** intentionally paused at `archive/slices/PR1_TRANSCRIPT_INTAKE_V3.md`.
@@ -49,69 +49,80 @@ shoulder_v1_1 = FROZEN
 elbow_v1_1 = FROZEN
 wrist_hand_v1_1 = FROZEN
 knee_v1_1 = FROZEN
+hip_v1_1 = FROZEN on docs branch pending exact-head review/merge
 ```
 
 ---
 
-# 3. Hip — ACTIVE DESIGN CANDIDATE WORK
+# 3. Hip / Groin v1.1 — product-owner-approved design
 
-Authorized scope is clinical/content design only:
-
-```text
-primary hip/groin pathway taxonomy
-findings vs diagnosis separation
-OA / lateral-hip / intra-articular / tendon / groin semantics
-post-traumatic and postoperative safety/restriction semantics
-pediatric/adolescent routing where clinically useful
-functional limitations
-condition-sensitive goals and rehabilitation directions
-support/adjunct visibility
-generated wording
-current evidence review
-```
-
-Target candidate:
+Frozen routine pathways:
 
 ```text
-clinic_utilities/physio_profiles/hip_v1.md
+H1 lateral hip / greater-trochanteric pain pathway
+H2 nonarthritic intra-articular hip pain — FAIS / symptomatic labral
+H3 adductor-related groin pain / adductor tendinopathy
+H4 post-traumatic hip/groin pain or stiffness after assessed injury
 ```
 
-It remains **DESIGN CANDIDATE / NOT FROZEN** until explicit product-owner review and approval.
+High-value direct shared-profile gateways:
+
+```text
+proximal rectus femoris / proximal quadriceps tendon injury in athletes
+→ shared muscle/myotendinous profile
+
+pelvic apophyseal avulsion fracture, especially ASIS/AIIS
+→ shared fracture/post-immobilization profile
+```
+
+Workflow decisions:
+
+- hip OA is context only because it is not routinely referred;
+- lateral hip/GTPS remains visible, with clinician-entered trochanteric bursitis directly selectable;
+- FAIS and symptomatic labral pathology are combined into one nonarthritic intra-articular pathway;
+- adductor-related groin pain is high visibility because it is seen/referred frequently;
+- proximal hamstring tendinopathy and iliopsoas/internal snapping hip are rare/secondary;
+- gluteus medius/minimus tears, external snapping, dysplasia/instability and inguinal/pubic-related groin pain remain rare/advanced;
+- postoperative hip is excluded from the routine menu;
+- there is no general pediatric/adolescent Hip navigation group;
+- pediatric pelvic apophyseal avulsions remain visible through the shared fracture gateway because they are encountered clinically;
+- deep-gluteal/piriformis continues to route to the frozen lumbar profile.
+
+Adjunct decisions:
+
+```text
+manual therapy / soft tissue → optional where relevant
+dry needling → optional clinician-selected adjunct in appropriate myofascial context
+acupuncture → excluded
+ESWT for GTPS / proximal hamstring → not generator-recommended; therapist-proposed use may be documented
+```
+
+Anatomical safeguard:
+
+```text
+proximal rectus femoris origin → AIIS / supra-acetabular region
+ASIS avulsion → classically sartorius-related traction
+ASIS avulsion != proximal rectus femoris injury by default
+```
+
+No runtime behavior changed.
 
 ---
 
-# 4. Shared fracture / structural boundary
-
-Hip-region fractures remain routed to the future shared fracture/post-immobilization profile rather than duplicated inside this regional profile.
-
-Examples include:
+# 4. Exact next action
 
 ```text
-femoral neck fracture
-intertrochanteric / subtrochanteric fracture
-acetabular fracture
-pelvic/rami fracture
-other proximal-femur or hip-region fracture
-```
-
-Unresolved fracture, occult-fracture/stress-fracture concern, dislocation, major tendon rupture, neurovascular concern or postoperative restriction context must prevent routine unrestricted rehabilitation wording.
-
----
-
-# 5. Exact next action
-
-```text
-1. perform current evidence + safety review for Hip v1
-2. create `hip_v1.md` as DESIGN CANDIDATE
-3. align `SLICE_PLAN_CURRENT.md` and `CLINIC_UTILITIES_PLAN.md` to Hip active candidate
-4. present taxonomy/adjunct/open workflow decisions to product owner
-5. revise after real-workflow feedback
-6. freeze/merge only after explicit product-owner approval
+1. exact branch-vs-main review of Hip v1.1 freeze
+2. open docs-only PR if clean
+3. independent exact-head review
+4. merge only if exact head remains clean
+5. clear canonical writer lock and reconcile main
+6. product owner selects next CU-1 regional/shared profile
 ```
 
 ---
 
-# 6. Explicitly forbidden now
+# 5. Explicitly forbidden now
 
 ```text
 WRITE CU-1 production runtime code
@@ -119,13 +130,13 @@ WRITE PR-1 transcript runtime code
 AUTO-PERSIST physiotherapy referrals
 MUTATE RF/Secretary/Calendar/Setmore/Zadarma
 COMMIT identifiable patient data
-FREEZE or merge hip without product-owner approval
+START next overlapping regional mutation before hip handoff closes
 CREATE overlapping runtime writers
 ```
 
 ---
 
-# 7. Handoff completeness
+# 6. Handoff completeness
 
 ```text
 active detour = Clinic Utilities
@@ -136,7 +147,7 @@ shoulder = frozen v1.1
 elbow = frozen v1.1
 wrist/hand = frozen v1.1
 knee = frozen v1.1
-hip = active design candidate work
+hip = frozen v1.1 on docs branch pending review/merge
 canonical writer = docs/cu1-hip-v1-design-2026-08-27
 runtime writer = none
 runtime implementation = unauthorized
