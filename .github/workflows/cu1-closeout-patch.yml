@@ -1,0 +1,64 @@
+name: CU-1 canonical closeout patch
+
+on:
+  push:
+    branches:
+      - docs/cu1-runtime-closeout-2026-08-28
+
+permissions:
+  contents: write
+
+jobs:
+  patch-canonicals:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: docs/cu1-runtime-closeout-2026-08-28
+          fetch-depth: 0
+      - name: Align TODO and append changelog
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          todo_path = Path('TODO.md')
+          todo = todo_path.read_text(encoding='utf-8')
+          replacements = {
+              '# 1. CURRENT GATE — BASELINE / PR-1 PRESERVED; CU-1 PRE-CODE DESIGN DETOUR COMPLETE':
+                  '# 1. CURRENT GATE — BASELINE / PR-1 PRESERVED; CU-1 RUNTIME COMPLETE',
+              '# 15. CLINIC UTILITIES / CLINICAL OPERATIONS — CU-1 DESIGN COMPLETE; RUNTIME DECISION PENDING':
+                  '# 15. CLINIC UTILITIES / CLINICAL OPERATIONS — CU-1 RUNTIME COMPLETE',
+              'The product owner explicitly activated this bounded detour through `CURRENT_OPERATIONAL.md`. PR-1 Transcript Intake remains intentionally paused/archived. CU-1 pre-code design is now complete, but no CU runtime implementation is authorized until the product owner explicitly opens a runtime implementation slice.':
+                  'The product owner explicitly activated and completed this bounded detour through `CURRENT_OPERATIONAL.md`. PR-1 Transcript Intake remains intentionally paused/archived. CU-1 runtime v1 is implemented, tested, merged and deployed; further CU-1 maintenance or CU-2 work requires a new explicit slice.',
+              '- [ ] Obtain separate explicit product-owner authorization before creating a CU-1 runtime implementation slice/branch.':
+                  '- [x] Obtain separate explicit product-owner authorization and complete the bounded CU-1 runtime implementation slice.',
+              '- [ ] If runtime is authorized, integrate it into Clinical Excellence workspace/navigation rather than deepen the historical legacy Cockpit as a separate product.':
+                  '- [x] Integrate CU-1 into the protected Clinical Excellence workspace/navigation rather than deepen the historical legacy Cockpit as a separate product.',
+              '- [ ] If runtime is authorized, restyle it to the shared Clinical Excellence visual system where appropriate.':
+                  '- [x] Deliver the CU-1 clinician-facing workspace in the shared Clinical Excellence visual direction.',
+          }
+          for old, new in replacements.items():
+              count = todo.count(old)
+              if count != 1:
+                  raise SystemExit(f'TODO replacement mismatch ({count}): {old}')
+              todo = todo.replace(old, new, 1)
+          todo_path.write_text(todo, encoding='utf-8')
+
+          log_path = Path('osteoporosis-change-log.md')
+          log = log_path.read_text(encoding='utf-8')
+          marker = '## 2026-08-28 — CU-1 Physiotherapy Referral v2 runtime implemented and deployed'
+          if marker in log:
+              raise SystemExit('Closeout changelog entry already exists')
+          entry = '''\n\n---\n\n## 2026-08-28 — CU-1 Physiotherapy Referral v2 runtime implemented and deployed\n\nThe bounded CU-1 runtime slice was completed against the frozen `cu1_contract_manifest_v1.yaml` contract without reopening the clinical taxonomy or adding referral persistence.\n\nPR #56 was independently reviewed at exact head `e04004add617afa7222c51d0d669c2134dd8f575`, passed the final focused GitHub Actions suite at **29/29 tests**, and was squash-merged as `c1da07f581cf8ccf1159d18bb63c23b674cbe9bd`.\n\nDelivered runtime includes the protected Clinical Excellence physiotherapy-referral page/API, deterministic normalization/route validation, declarative safety/consistency evaluation, short/detailed formatting, copy/print workflow, exact frozen shared-gateway enforcement, and fail-closed validation of forged gateway/safety acknowledgement/disposition state.\n\nThe first implementation remains deliberately ephemeral: referral drafts and generated text are not persisted to PostgreSQL, localStorage or sessionStorage.\n\nRender auto-deploy `dep-da8afeuk1f9s73f5sr6g` completed successfully and reported `live` at the exact merge commit. External route-level HTTP smoke from the assistant execution sandbox could not be executed because DNS resolution failed before reaching the Render host; this is recorded as not proven rather than as an application failure.\n\nCU-1 runtime v1 is closed after canonical closeout/writer-lock release. CU-2 and PR-1 are not authorized by this completion.\n'''
+          log_path.write_text(log.rstrip() + entry + '\n', encoding='utf-8')
+          PY
+      - name: Remove transient closeout workflow
+        run: rm .github/workflows/cu1-closeout-patch.yml
+      - name: Commit canonical closeout patch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add TODO.md osteoporosis-change-log.md .github/workflows/cu1-closeout-patch.yml
+          git commit -m 'docs: align CU-1 roadmap and changelog closeout'
+          git push origin HEAD:docs/cu1-runtime-closeout-2026-08-28
