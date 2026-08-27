@@ -3,7 +3,7 @@
 > **STATUS:** ACTIVE OPERATIONAL AUTHORITY.
 > **Updated:** 2026-08-27 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **ANKLE/FOOT FREEZE PR:** PR #45 squash-merged as `64b79d571e57a457480cd5a7814001c0566a9e4b`.
+> **Verified base main for this Shared Fracture design:** `0673dc24d1e34d7a6d562103bab84830da8f585e`.
 > **Current major phase:** Personal Clinical Excellence foundation with a bounded Clinic Utilities detour.
 > **Active slice design:** `SLICE_PLAN_CURRENT.md` — CU-1 Physiotherapy Referral v2 clinical/content design.
 > **Supporting detour plan:** `CLINIC_UTILITIES_PLAN.md`.
@@ -15,12 +15,13 @@
 > **Frozen knee profile:** `clinic_utilities/physio_profiles/knee_v1_1.md`.
 > **Frozen hip/groin profile:** `clinic_utilities/physio_profiles/hip_v1_1.md`.
 > **Frozen ankle/foot profile:** `clinic_utilities/physio_profiles/ankle_foot_v1_1.md`.
-> **ACTIVE CANONICAL WRITER/LOCK:** NONE.
+> **CURRENT SHARED DESIGN TARGET:** fracture / post-immobilization.
+> **ACTIVE CANONICAL WRITER/LOCK:** docs-only branch `docs/cu1-shared-fracture-v1-design-2026-08-27` for Shared Fracture / Post-immobilization v1 CU-1 clinical/content design.
 > **ACTIVE RUNTIME WRITER/LOCK:** NONE in this repository.
 > **RUNTIME IMPLEMENTATION:** NOT AUTHORIZED for CU-1; design only.
 > **PR-1 TRANSCRIPT SLICE:** intentionally paused at `archive/slices/PR1_TRANSCRIPT_INTAKE_V3.md`.
 
-This file is the sole owner of operational NOW. Do not infer mutation authority from chat history.
+This file is the sole owner of operational NOW for the active branch. Do not infer mutation authority from chat history.
 
 ---
 
@@ -56,89 +57,73 @@ ankle_foot_v1_1 = FROZEN
 
 ---
 
-# 3. Ankle / Foot v1.1 — closed freeze
+# 3. Shared Fracture / Post-immobilization — ACTIVE DESIGN CANDIDATE WORK
 
-Frozen routine pathways:
-
-```text
-AF1 lateral ankle sprain rehabilitation
-AF2 Achilles tendinopathy — midportion / insertional
-AF3 plantar heel pain / plantar fasciitis
-AF4 posterior tibial tendon dysfunction / flexible PCFD
-AF5 peroneal tendon disorder — conservative rehabilitation
-AF6 mechanical metatarsalgia / forefoot overload
-AF7 post-traumatic ankle/foot pain or stiffness after assessed injury
-```
-
-Frozen pediatric/adolescent navigation:
+Authorized scope is clinical/content design only:
 
 ```text
-Παιδιά / Έφηβοι — ποδοκνημική / άκρος πόδας
-→ Sever disease / calcaneal apophysitis
-→ symptomatic accessory navicular
-→ symptomatic flexible flatfoot
+shared fracture taxonomy across upper limb / lower limb / pelvis
+fracture date / phase / treatment context
+healing / stability state
+immobilization / brace / orthosis state
+weight-bearing / use status
+ROM / loading restrictions
+surgeon / orthopaedic instructions
+post-immobilization stiffness / weakness / function
+pediatric skeletal-maturity / physeal / apophyseal context
+fragility / stress / insufficiency fracture context where relevant
+return-to-function / return-to-sport semantics
+safety / nonunion / displacement / infection / neurovascular / CRPS reassessment semantics
 ```
 
-Rare/advanced/context decisions:
+Target candidate:
 
 ```text
-chronic ankle instability / recurrent sprain → rare/secondary
-syndesmotic/high-ankle sprain → very rare/advanced
-tarsal tunnel → rare neurological
-heel fat-pad pain → rare/secondary
-Morton neuroma → rare/context
-plantar-plate / lesser-MTP instability → very rare/advanced
-anterior tibial / extensor / FHL tendon disorder → rare
-osteochondral talus lesion → rare/advanced
-hallux rigidus / 1st-MTP OA → context only
-ankle OA → context only
-Charcot / neuropathic hot swollen foot → high-priority medical/offloading context, not PT pathway
-postoperative ankle/foot → advanced only; occasional Achilles repair/reconstruction
+clinic_utilities/physio_profiles/shared_fracture_v1.md
 ```
 
-Support/adjunct policy:
-
-```text
-taping → directly visible optional support
-heel lift → directly visible optional support
-brace / orthosis / AFO / metatarsal pad / footwear / offloading → condition-specific context, often podiatry-coordinated
-manual therapy / soft tissue → optional where relevant
-dry needling → optional clinician-selected adjunct
-acupuncture → excluded
-ESWT plantar heel → evidence-supported optional adjunct
-ESWT Achilles → evidence-conflicted optional adjunct; not routine or superior to progressive loading
-```
-
-Safety emphasis:
-
-```text
-fracture / bone-stress / Lisfranc concern
-syndesmotic / Maisonneuve concern
-Achilles rupture concern
-peroneal dislocation/subluxation or major tear
-hot swollen neuropathic foot / Charcot
-infection / nonhealing wound / vascular-neurological deficit
-unknown healing / weight-bearing / postoperative restrictions
-```
-
-No runtime behavior changed.
+It remains **DESIGN CANDIDATE / NOT FROZEN** until explicit product-owner review and approval.
 
 ---
 
-# 4. Resolved operational incident
+# 4. Existing frozen shared-fracture contract
 
-During PR preparation, `_noop` was accidentally created on `main` and immediately removed. Exact comparison of the pre-incident and repaired main states showed zero net file diff. Temporary branch-only `_noop2`–`_noop8` files created during the rebase attempt were discarded before PR #45; none exists in the merged tree.
+Inherited minimum required context:
 
-The incident changed no clinical/runtime content and is closed.
+```text
+bone/site
+fracture date/phase
+treatment
+healing/stability status
+immobilization/brace/orthosis status
+weight-bearing/use status
+ROM/loading restrictions
+surgeon/orthopaedic instructions
+age/skeletal-maturity when relevant
+```
+
+Hard safety rule:
+
+```text
+unknown healing / stability / weight-bearing / use / loading context
+→ warning
+→ no unrestricted rehabilitation wording
+```
+
+Fracture logic should be owned once in this shared profile rather than duplicated across frozen regional profiles.
 
 ---
 
 # 5. Exact next action
 
 ```text
-1. product owner selects the next remaining shared CU-1 profile
-2. current preferred sequence: shared fracture / post-immobilization → muscle / myotendinous injury → generalized deconditioning / balance / gait
-3. continue CU-1 design only until explicit runtime authorization
+1. inspect all frozen regional fracture gateways
+2. perform current evidence/safety review for fracture rehabilitation and post-immobilization semantics
+3. create `shared_fracture_v1.md` as DESIGN CANDIDATE
+4. align `SLICE_PLAN_CURRENT.md` and `CLINIC_UTILITIES_PLAN.md` to active shared-fracture candidate
+5. present taxonomy / visibility / restrictions / pediatric / fragility / postoperative decisions to product owner
+6. revise after real-workflow feedback
+7. freeze/merge only after explicit product-owner approval
 ```
 
 ---
@@ -151,12 +136,20 @@ WRITE PR-1 transcript runtime code
 AUTO-PERSIST physiotherapy referrals
 MUTATE RF/Secretary/Calendar/Setmore/Zadarma
 COMMIT identifiable patient data
+FREEZE or merge Shared Fracture without product-owner approval
+START muscle/myotendinous design before this writer lock is released
 CREATE overlapping runtime writers
 ```
 
 ---
 
-# 7. Handoff completeness
+# 7. Resolved prior operational incident
+
+During Ankle/Foot PR preparation, temporary `_noop` files were created and fully removed/discarded before PR #45. Exact comparison showed zero net file diff on `main`, none exists in the merged tree, and no clinical/runtime content changed. The incident remains closed.
+
+---
+
+# 8. Handoff completeness
 
 ```text
 active detour = Clinic Utilities
@@ -169,9 +162,8 @@ wrist/hand = frozen v1.1
 knee = frozen v1.1
 hip/groin = frozen v1.1
 ankle/foot = frozen v1.1
-ankle/foot PR = #45 merged
-canonical writer = none
+shared fracture = active design candidate work
+canonical writer = docs/cu1-shared-fracture-v1-design-2026-08-27
 runtime writer = none
 runtime implementation = unauthorized
-next action = product owner selects next shared profile
 ```
