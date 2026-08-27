@@ -12,8 +12,8 @@
 > **Frozen shoulder profile:** `clinic_utilities/physio_profiles/shoulder_v1_1.md`.
 > **Frozen elbow profile:** `clinic_utilities/physio_profiles/elbow_v1_1.md`.
 > **Frozen wrist/hand profile:** `clinic_utilities/physio_profiles/wrist_hand_v1_1.md`.
-> **CURRENT BODY-REGION DESIGN TARGET:** knee.
-> **ACTIVE CANONICAL WRITER/LOCK:** docs-only branch `docs/cu1-knee-v1-design-2026-08-27` for Knee v1 CU-1 clinical/content design.
+> **Frozen knee profile on active docs branch:** `clinic_utilities/physio_profiles/knee_v1_1.md`.
+> **ACTIVE CANONICAL WRITER/LOCK:** docs-only branch `docs/cu1-knee-v1-design-2026-08-27` until exact-head review/PR/merge/handoff close.
 > **ACTIVE RUNTIME WRITER/LOCK:** NONE in this repository.
 > **RUNTIME IMPLEMENTATION:** NOT AUTHORIZED for CU-1; design only.
 > **PR-1 TRANSCRIPT SLICE:** intentionally paused at `archive/slices/PR1_TRANSCRIPT_INTAKE_V3.md`.
@@ -47,70 +47,80 @@ lumbar_v1_1 = FROZEN
 shoulder_v1_1 = FROZEN
 elbow_v1_1 = FROZEN
 wrist_hand_v1_1 = FROZEN
+knee_v1_1 = FROZEN on docs branch pending exact-head review/merge
 ```
 
 ---
 
-# 3. Knee — ACTIVE DESIGN CANDIDATE WORK
+# 3. Knee v1.1 — product-owner-approved design
 
-Authorized scope is clinical/content design only:
-
-```text
-primary knee pathway taxonomy
-findings vs diagnosis separation
-OA / meniscal / patellofemoral / tendon / ligament semantics
-post-traumatic and postoperative safety/restriction semantics
-functional limitations
-condition-sensitive goals and rehabilitation directions
-brace/taping/orthosis/support visibility
-adjunct visibility
-generated wording
-current evidence review
-```
-
-Target candidate:
+Frozen default pathways:
 
 ```text
-clinic_utilities/physio_profiles/knee_v1.md
+K1 knee osteoarthritis
+K2 degenerative meniscal lesion/tear — conservative rehabilitation
+K3 acute isolated meniscal injury — assessed nonoperative
+K4 patellofemoral pain
+K5 patellar tendinopathy
+K6 quadriceps tendinopathy
+K7 ACL injury/instability rehabilitation
+K8 MCL injury rehabilitation
+K9 patellar instability/dislocation rehabilitation
+K10 iliotibial-band syndrome
+K11 pes-anserine region pain / established tendinobursitis
+K12 post-traumatic knee pain/stiffness after assessed injury
+K13 postoperative knee rehabilitation
 ```
 
-It remains **DESIGN CANDIDATE / NOT FROZEN** until explicit product-owner review and approval.
+Pediatric/adolescent navigation group:
 
-Initial evidence frame includes current knee-OA rehabilitation guidance, acute meniscal pathology guidance, patellofemoral-pain best-practice evidence, tendon-loading evidence and current ligament/postoperative rehabilitation consensus/guidelines.
+```text
+Παιδιά / Έφηβοι — γόνατο
+→ Osgood-Schlatter
+→ Sinding-Larsen-Johansson
+→ routes to ordinary PFP/meniscus/ACL/MCL/patellar-instability pathways when structural diagnosis is the real problem
+```
+
+Workflow decisions:
+
+- postoperative knee is active; meniscal repair and partial meniscectomy are the most commonly seen postoperative referrals;
+- degenerative and acute traumatic meniscus remain separate;
+- ACL and MCL are separate top-level pathways;
+- patellar instability/dislocation, quadriceps tendinopathy, ITB syndrome and pes-anserine pathology are directly selectable;
+- PCL/LCL/PLC/combined ligament injuries remain rare/advanced;
+- distal hamstring insertional pathology and Hoffa/plica remain rare selectable context;
+- Baker cyst and prepatellar bursitis are medical/context only in this workflow;
+- gastrocnemius strain routes to the future shared muscle/myotendinous profile;
+- Osgood-Schlatter and Sinding-Larsen-Johansson are dedicated pediatric/adolescent growth-related pathways, not a generic pediatric diagnosis.
+
+Adjunct/support decisions:
+
+```text
+acupuncture for selected knee OA → optional evidence-sensitive adjunct
+dry needling → excluded
+ESWT → not a default generator recommendation; therapist-proposed patellar-tendon use may be documented
+taping / knee braces / foot orthoses → condition-sensitive supports
+NMES → procedure/context-specific, especially post-TKA; not generic OA
+```
+
+No runtime behavior changed.
 
 ---
 
-# 4. Shared fracture / structural boundary
-
-Knee-region fractures remain routed to the future shared fracture/post-immobilization profile rather than duplicated inside this regional profile.
-
-Examples include:
+# 4. Exact next action
 
 ```text
-patella fracture
-distal femur fracture
-proximal tibia / tibial plateau fracture
-proximal fibula fracture
-other knee-region fracture
-```
-
-Unresolved fracture, extensor-mechanism rupture, locked-knee structural concern, major instability or postoperative restriction context must prevent routine unrestricted rehabilitation wording.
-
----
-
-# 5. Exact next action
-
-```text
-1. create knee_v1.md as DESIGN CANDIDATE
-2. perform strict current-evidence + safety review
-3. present taxonomy/adjunct/open workflow decisions to product owner
-4. revise after real-workflow feedback
-5. freeze/merge only after explicit product-owner approval
+1. exact branch-vs-main review of knee freeze
+2. open docs-only PR if clean
+3. independent exact-head review
+4. merge only if exact head remains clean
+5. clear canonical writer lock and reconcile main
+6. product owner selects next CU-1 regional/shared profile
 ```
 
 ---
 
-# 6. Explicitly forbidden now
+# 5. Explicitly forbidden now
 
 ```text
 WRITE CU-1 production runtime code
@@ -118,13 +128,13 @@ WRITE PR-1 transcript runtime code
 AUTO-PERSIST physiotherapy referrals
 MUTATE RF/Secretary/Calendar/Setmore/Zadarma
 COMMIT identifiable patient data
-FREEZE or merge knee without product-owner approval
+START next overlapping regional mutation before knee handoff closes
 CREATE overlapping runtime writers
 ```
 
 ---
 
-# 7. Handoff completeness
+# 6. Handoff completeness
 
 ```text
 active detour = Clinic Utilities
@@ -134,7 +144,7 @@ lumbar = frozen v1.1
 shoulder = frozen v1.1
 elbow = frozen v1.1
 wrist/hand = frozen v1.1
-knee = active design candidate work
+knee = frozen v1.1 on docs branch pending review/merge
 canonical writer = docs/cu1-knee-v1-design-2026-08-27
 runtime writer = none
 runtime implementation = unauthorized
