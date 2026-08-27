@@ -7,8 +7,7 @@
 > **Slice ID:** CU-1.
 > **Supporting plan:** `CLINIC_UTILITIES_PLAN.md`.
 > **Frozen regional profiles:** cervical, lumbar, shoulder, elbow, wrist/hand, knee, hip/groin and ankle/foot v1.1.
-> **Frozen shared-fracture profile:** `clinic_utilities/physio_profiles/shared_fracture_v1_1.md`.
-> **Current detailed shared profile under review:** `clinic_utilities/physio_profiles/shared_muscle_myotendinous_v1.md` — DESIGN CANDIDATE / NOT FROZEN.
+> **Frozen shared profiles:** `shared_fracture_v1_1.md`; `shared_muscle_myotendinous_v1_1.md` on active docs branch pending exact-head review/merge.
 > **Prior active slice:** PR-1 Transcript Intake + Candidate Extraction v3 remains intentionally paused at `archive/slices/PR1_TRANSCRIPT_INTAKE_V3.md`.
 
 CU-1 is a bounded cross-module design detour. It does not authorize runtime implementation.
@@ -41,7 +40,7 @@ ReferralDraft
 → DetailedReferralFormatter
 ```
 
-Hard invariants:
+Hard invariants remain:
 
 ```text
 suggested != examined
@@ -52,14 +51,13 @@ objective deficit != subjective symptom
 special/provocation test != diagnosis
 imaging finding != automatically symptomatic diagnosis
 not assessed != normal
-brace/orthosis/taping != automatically mandatory
 adjunct != core rehabilitation
 clinician-entered diagnosis may be carried faithfully but must not be inferred
 ```
 
 ---
 
-# 2. Frozen / active profile status
+# 2. Frozen profile status
 
 ```text
 cervical_v1_1 = FROZEN
@@ -71,20 +69,20 @@ knee_v1_1 = FROZEN
 hip_v1_1 = FROZEN
 ankle_foot_v1_1 = FROZEN
 shared_fracture_v1_1 = FROZEN
-shared_muscle_myotendinous_v1 = DESIGN CANDIDATE / NOT FROZEN
+shared_muscle_myotendinous_v1_1 = FROZEN on docs branch pending exact-head review/merge
 ```
 
 ---
 
-# 3. Muscle / Myotendinous Injury — ACTIVE DESIGN CANDIDATE
+# 3. Shared Muscle / Myotendinous Injury — FROZEN v1.1 design
 
-Authoritative candidate:
+Authoritative frozen file:
 
 ```text
-clinic_utilities/physio_profiles/shared_muscle_myotendinous_v1.md
+clinic_utilities/physio_profiles/shared_muscle_myotendinous_v1_1.md
 ```
 
-Proposed shared route:
+Shared route:
 
 ```text
 acute_muscle_myotendinous_injury_rehabilitation
@@ -95,69 +93,62 @@ Routing contract:
 ```text
 regional/shared entry
 → muscle group / specific muscle
-→ injury type / phase / tissue location if established
+→ injury type / phase / tissue location when established
 → conservative vs specialist/postoperative context
 → actual restrictions / findings / functional demand
 → clinician-confirmed goals and rehabilitation directions
 ```
 
-Candidate core muscle groups:
+High-visibility groups frozen from product-owner workflow:
 
 ```text
-hamstring
 quadriceps / rectus femoris
-adductor
-a cute hip-flexor / iliopsoas
-calf — gastrocnemius / soleus
-other lower-limb muscle injuries as secondary/advanced
-upper-limb/trunk acute muscle injuries pending product-owner workflow decision
+acute adductor strain/tear
+gastrocnemius / soleus / calf
+hamstring strain / partial tear
 ```
 
-[Candidate hygiene note: normalize any machine-key spelling/ASCII issues before v1.1 freeze.]
-
-Hard boundaries:
+Visible but less frequent:
 
 ```text
-acute strain != chronic tendinopathy automatically
-muscle pain != structural tear automatically
-MRI grade != rehabilitation clearance
-elapsed time != tissue readiness
-pain reduction != restored load capacity
-bony avulsion → shared fracture profile
-complete free-tendon rupture / major tendon avulsion → structural/specialist route
-postoperative repair protocol > generic shared muscle suggestion
-Achilles rupture/tendinopathy, regional tendon tears and digital tendon repairs remain in their frozen dedicated routes
+pectoralis-major muscle/myotendinous injury
+biceps muscle-belly/myotendinous injury
+abdominal-wall muscle injury
 ```
 
-Return-to-function principle:
+Rare/secondary includes iliopsoas/hip-flexor and tibialis-anterior muscle injury among other uncommon groups.
+
+Structural/retraction rules:
 
 ```text
-criterion-based where relevant
-→ symptoms + ROM/length tolerance + strength/capacity + progressive task exposure + sport/work demands + confidence
-→ no calendar-only clearance
+bony avulsion → Shared Fracture
+complete/major tendon-avulsion concern without disposition → specialist structural pathway
+postoperative repair → exact protocol governs
+<2 cm retraction may support established conservative/PT workflow but is NOT autonomous clearance
+>=2 cm / multi-tendon complete avulsion / major weakness-deformity / high-demand unresolved case
+→ prominent specialist-disposition check, not automatic surgery recommendation
 ```
 
-Evidence caution:
+Return-to-running/sport/work:
 
 ```text
-hamstring rehabilitation / running / RTS evidence = comparatively developed
-adductor / quadriceps / calf exact RTS thresholds = less certain
-→ do not encode false precision
+criterion-based where possible
+elapsed time alone != clearance
+MRI appearance/grade alone != clearance
+strength symmetry alone != universal clearance
+pain-free jogging != sprint readiness
 ```
 
-Safety domains:
+Adjunct policy:
 
 ```text
-major tear / tendon avulsion / palpable defect / major acute functional loss
-new trauma or reinjury
-large/expanding haematoma
-calf DVT differential
-compartment / vascular / neurological concern
-postoperative repair with missing protocol
-atypical failure to progress / myositis-ossificans concern after significant contusion
+acupuncture → optional clinician-selected adjunct, no healing claim
+dry needling → excluded
+ESWT / therapeutic ultrasound → excluded as default acute-muscle healing recommendations
+compression / taping → treating-physiotherapist discretion
 ```
 
-Candidate adjunct/support decisions remain for product-owner review.
+Safety domains include major tear/avulsion, reinjury, expanding haematoma, calf DVT differential, compartment/vascular/neurological concern, missing postoperative protocol and myositis-ossificans concern after significant contusion.
 
 ---
 
@@ -180,13 +171,12 @@ Do not write production HTML/JS/CSS, add patient persistence, integrate navigati
 # 5. Exact next action
 
 ```text
-1. product-owner clinical review of `shared_muscle_myotendinous_v1.md`
-2. resolve high-visibility muscle groups vs rare/advanced entries
-3. resolve major tear/avulsion/postoperative boundaries
-4. resolve adjunct/support policy
-5. resolve return-to-running/sport/work semantics without fixed timelines
-6. revise candidate
-7. freeze/merge only after explicit product-owner approval
+1. exact branch-vs-main review of Shared Muscle / Myotendinous v1.1 freeze
+2. docs-only PR if clean
+3. independent exact-head review
+4. merge only if exact head remains clean
+5. clear writer lock / reconcile main
+6. next remaining shared profile = generalized deconditioning / balance / gait
 ```
 
 Runtime implementation remains unauthorized.
