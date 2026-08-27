@@ -4,13 +4,13 @@
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Parent product:** Personal Clinical Excellence System.
 > **Scope:** cross-module Clinic Utilities / Clinical Operations.
-> **Current focus:** CU-1 Physiotherapy Referral v2 design; all regional v1.1 profiles plus Shared Fracture, Shared Muscle/Myotendinous and Shared Deconditioning/Balance/Gait v1.1 are frozen, with the final shared profile pending exact-head review/merge.
+> **Current focus:** CU-1 Physiotherapy Referral v2 design; all currently planned regional and shared clinical/content profiles are frozen and merged. Next step is design-completeness review, not implementation.
 
 Clinic Utilities are cross-module clinician-facing operational tools, not a new clinical Module 02.
 
 ---
 
-# 1. Physiotherapy Referral v2 target
+# 1. CU-1 target
 
 ```text
 Clinical problem / diagnosis
@@ -22,98 +22,64 @@ Clinical problem / diagnosis
 → final referral text
 ```
 
-Structured intermediate model remains `ReferralDraft → ShortReferralFormatter / DetailedReferralFormatter` with the existing CU-1 hard invariants.
+Structured intermediate model remains `ReferralDraft → ShortReferralFormatter / DetailedReferralFormatter` under the frozen CU-1 invariants.
 
 ---
 
-# 2. Frozen profile status
+# 2. Frozen profile set
 
 ```text
-cervical_v1_1 = FROZEN
-lumbar_v1_1 = FROZEN
-shoulder_v1_1 = FROZEN
-elbow_v1_1 = FROZEN
-wrist_hand_v1_1 = FROZEN
-knee_v1_1 = FROZEN
-hip_v1_1 = FROZEN
-ankle_foot_v1_1 = FROZEN
-shared_fracture_v1_1 = FROZEN
-shared_muscle_myotendinous_v1_1 = FROZEN
-shared_deconditioning_balance_gait_v1_1 = FROZEN on docs branch pending review/merge
+cervical_v1_1
+lumbar_v1_1
+shoulder_v1_1
+elbow_v1_1
+wrist_hand_v1_1
+knee_v1_1
+hip_v1_1
+ankle_foot_v1_1
+shared_fracture_v1_1
+shared_muscle_myotendinous_v1_1
+shared_deconditioning_balance_gait_v1_1
 ```
+
+All are FROZEN clinical/content design.
+
+Final shared functional-profile decisions include direct generalized deconditioning and clinician-established frailty-associated decline; SPPB as preferred optional multidomain functional battery; explicit falls history/fear-of-falling/walking-aid semantics; and no autonomous diagnostic inference from performance testing.
 
 ---
 
-# 3. Final shared functional profile
+# 3. Design-completeness gate
 
-Authoritative file:
-
-```text
-clinic_utilities/physio_profiles/shared_deconditioning_balance_gait_v1_1.md
-```
-
-Frozen workflow:
+Before implementation authorization, review the frozen set as one system:
 
 ```text
-D1 generalized deconditioning / functional decline — direct
-D2 frailty-associated functional decline — direct only when frailty already established
-balance-only / gait-only / post-hospital presentations — context/findings, not routine top-level routes
+cross-profile ownership / routing
+structured key consistency
+tri-state / not-assessed semantics
+safety / reassessment invariants
+fracture / tendon / postoperative restriction precedence
+goal / rehab-direction semantics
+adjunct ownership / evidence labels
+short vs detailed formatter requirements
+current runtime/schema seams
+privacy / persistence boundary
 ```
 
-Direct findings and referral directions include generalized muscular weakness, poor coordination, fear of falling, falls history and walking-aid assessment/training.
-
-Preferred optional functional battery:
+Required outcome:
 
 ```text
-SPPB
-→ total + standing balance + 4-m gait + 5 chair rises
+DESIGN-COMPLETE
+or
+BLOCK with exact unresolved design blockers
 ```
 
-No SPPB/TUG/gait-speed/5xSTS result autonomously creates frailty, falls-risk or neurological diagnosis.
-
-Falls history preserves single/recurrent/injurious/unable-to-rise/LOC states. Shared Fracture may route here for strength/balance/falls/independence goals, but its restrictions remain authoritative.
-
-Home-hazard assessment is not a routine local option; neurological disease-specific pathways are not added; generic aerobic conditioning is not a routine generator direction; acupuncture, dry needling, ESWT and therapeutic ultrasound are excluded.
+Design completeness does **not** itself authorize coding.
 
 ---
 
-# 4. Safety / consistency
+# 4. Implementation boundary
 
-```text
-acute unexplained gait/coordination change
-new focal neurological deficit
-syncope / unexplained LOC
-unstable cardiopulmonary symptoms
-acute vestibular syndrome
-fracture/restriction uncertainty
-DVT / vascular concern
-infection/systemic deterioration
-acute cognitive change
-→ reassessment / appropriate specialty route
-```
-
-No reassuring negative statement is generated from missing assessment.
-
----
-
-# 5. CU-1 design-completeness gate
-
-This is the final currently planned clinical/content profile for CU-1.
-
-After merge/handoff close:
-
-```text
-all regional/shared profiles frozen
-→ perform CU-1 design-completeness review
-→ inspect cross-profile routing, schema consistency, safety semantics, formatter requirements and implementation seams
-→ decide separately whether implementation should be authorized
-```
-
-Design completion **does not authorize runtime implementation**.
-
----
-
-# 6. Implementation boundary
+Current first implementation direction remains:
 
 ```text
 ephemeral structured draft
@@ -121,4 +87,4 @@ ephemeral structured draft
 → copy / print
 ```
 
-Persistence is not frozen. No production physiotherapy runtime code until explicit product-owner authorization after design-completeness review.
+Persistence is not frozen. No production physiotherapy runtime code until a separate explicit product-owner authorization after the design-completeness review.
