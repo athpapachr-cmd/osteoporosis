@@ -3,13 +3,14 @@
 > **STATUS:** ACTIVE OPERATIONAL AUTHORITY.
 > **Updated:** 2026-08-28 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Verified current main before closeout:** `c1da07f581cf8ccf1159d18bb63c23b674cbe9bd`.
+> **Verified current main after CU-1 closeout:** `53cc6324edbe62243fd887e0073612f669d094cc`.
 > **CU-1 runtime implementation:** PR #56 squash-merged as `c1da07f581cf8ccf1159d18bb63c23b674cbe9bd`.
+> **CU-1 control-plane closeout:** PR #57 squash-merged as `53cc6324edbe62243fd887e0073612f669d094cc`.
 > **Focused evidence:** GitHub Actions exact-head run PASS — 29/29 tests at reviewed head `e04004add617afa7222c51d0d669c2134dd8f575`.
-> **Production deploy:** Render deploy `dep-da8afeuk1f9s73f5sr6g` = `live`, exact commit `c1da07f581cf8ccf1159d18bb63c23b674cbe9bd`.
+> **Production deploy:** Render deploy `dep-da8afeuk1f9s73f5sr6g` = `live`, exact runtime merge commit `c1da07f581cf8ccf1159d18bb63c23b674cbe9bd`.
 > **Current major phase:** Personal Clinical Excellence foundation / baseline and Clinical Practice Review roadmap.
-> **CU-1 status:** IMPLEMENTED + TESTED + MERGED + DEPLOYED; runtime slice closed pending this control-plane closeout merge.
-> **ACTIVE CANONICAL WRITER/LOCK:** `docs/cu1-runtime-closeout-2026-08-28` — closeout documents only.
+> **CU-1 status:** CLOSED — IMPLEMENTED + TESTED + MERGED + DEPLOYED.
+> **ACTIVE CANONICAL WRITER/LOCK:** NONE.
 > **ACTIVE RUNTIME WRITER/LOCK:** NONE.
 > **CU-2:** NOT AUTHORIZED.
 > **PR-1 Transcript Intake:** intentionally paused at `archive/slices/PR1_TRANSCRIPT_INTAKE_V3.md`.
@@ -25,8 +26,10 @@ runtime implementation = COMPLETE
 focused automated evidence = PASS (29/29)
 independent exact-head review = MERGE-READY / CLEAN
 PR #56 = SQUASH-MERGED
-Render auto-deploy = LIVE
+control-plane closeout PR #57 = SQUASH-MERGED
+Render auto-deploy of runtime merge = LIVE
 referral persistence = NONE by design
+active writer = NONE
 ```
 
 Implemented protected entrypoints:
@@ -68,7 +71,7 @@ A duplicate unused router builder remains in `clinic_utilities/physio_referral_r
 
 # 3. Deploy / smoke truth
 
-Render service `osteoporosis` auto-deployed the exact merge commit and reported:
+Render service `osteoporosis` auto-deployed the exact runtime merge commit and reported:
 
 ```text
 build successful
@@ -109,10 +112,8 @@ Frozen CU-1 clinical profiles/contracts remain authoritative unless a future con
 # 5. Exact next action
 
 ```text
-1. merge the docs-only CU-1 runtime closeout PR
-2. release the closeout canonical writer lock
-3. STOP — CU-1 is closed
-4. await explicit product-owner selection of the next roadmap slice
+STOP — CU-1 is closed.
+Await explicit product-owner selection of the next roadmap slice.
 ```
 
 No engineering continuation is implied by CU-1 completion.
