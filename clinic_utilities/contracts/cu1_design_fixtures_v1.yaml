@@ -1,0 +1,272 @@
+version: cu1_design_fixtures_v1
+contract: cu1_referral_draft_v1
+registry: cu1_registry_v1
+synthetic_only: true
+
+fixtures:
+  - id: cervical_radicular_incomplete_neuro
+    input:
+      profile_id: cervical
+      route_id: neck_pain_with_radiating_upper_limb_symptoms
+      wording_mode: presentation
+      findings: [radiating_upper_limb_pain]
+      neuro: {motor: not_assessed, sensory: not_assessed, reflexes: not_assessed}
+    expected:
+      primary_owner: cervical
+      safety_severity: soft_warning
+      formatter_blocked: false
+      short_sections: [problem, selected_findings, goals_and_core_rehab]
+      detailed_sections: [problem, selected_findings, neurological_context, goals_and_core_rehab]
+      forbidden_output: [formal_cervical_radiculopathy, no_neurological_deficit, reflexes_normal]
+
+  - id: lumbar_cauda_equina_concern
+    input:
+      profile_id: lumbar
+      route_id: low_back_pain_with_radiating_leg_symptoms
+      wording_mode: presentation
+      safety_rule: new_perineal_or_saddle_sensory_change
+      clinician_disposition: none_recorded
+    expected:
+      safety_severity: urgent_reassessment
+      formatter_blocked: true
+      required_disposition: true
+      forbidden_output: [routine_reassuring_referral, no_red_flags]
+
+  - id: shoulder_postoperative_restriction
+    input:
+      profile_id: shoulder
+      route_id: postoperative_shoulder_rehabilitation
+      wording_mode: postoperative
+      context:
+        procedure: rotator_cuff_repair
+        written_protocol_available: true
+      restrictions:
+        - {restriction_id: shoulder_rom_limit, state_or_value: surgeon_protocol, source: written_protocol}
+    expected:
+      primary_owner: postoperative_shoulder_rehabilitation
+      restriction_precedence: written_protocol
+      formatter_blocked: false
+      short_sections: [problem, restrictions, goals_and_core_rehab]
+      detailed_sections: [problem, procedure_context, restrictions, findings_and_function, goals_and_core_rehab]
+      forbidden_output: [generic_unrestricted_rom, invented_postoperative_timeline]
+
+  - id: wrist_flexor_tendon_repair_precedence
+    input:
+      profile_id: wrist_hand
+      route_id: digital_tendon_injury_rehabilitation
+      subtype_id: flexor_tendon_repair_postoperative
+      wording_mode: postoperative
+      context: {procedure_protocol_available: true}
+    expected:
+      primary_owner: digital_tendon_injury_rehabilitation
+      forbidden_co_primary_route: postoperative_wrist_hand_rehabilitation
+      formatter_blocked: false
+      forbidden_output: [generic_wrist_hand_postoperative_protocol]
+
+  - id: wrist_thumb_ucl_repair_precedence
+    input:
+      profile_id: wrist_hand
+      route_id: thumb_mcp_collateral_ligament_injury_rehabilitation
+      wording_mode: established_structural_diagnosis
+      context: {operative: true}
+    expected:
+      primary_owner: thumb_mcp_collateral_ligament_injury_rehabilitation
+      forbidden_co_primary_route: postoperative_wrist_hand_rehabilitation
+      formatter_blocked: false
+
+  - id: knee_acl_reconstruction_precedence
+    input:
+      profile_id: knee
+      route_id: postoperative_knee_rehabilitation
+      subtype_id: acl_reconstruction
+      wording_mode: postoperative
+    expected:
+      primary_owner: postoperative_knee_rehabilitation
+      forbidden_co_primary_route: acl_injury_instability_rehabilitation
+      formatter_blocked: false
+      forbidden_output: [nonoperative_acl_pathway_wording, time_only_return_to_sport_clearance]
+
+  - id: knee_acl_preoperative_precedence
+    input:
+      profile_id: knee
+      route_id: acl_injury_instability_rehabilitation
+      wording_mode: established_structural_diagnosis
+      context: {management: preoperative_preparation}
+    expected:
+      primary_owner: acl_injury_instability_rehabilitation
+      forbidden_co_primary_route: postoperative_knee_rehabilitation
+
+  - id: hip_rectus_to_shared_muscle
+    input:
+      source_profile: hip_groin
+      gateway_id: hip_proximal_rectus_femoris
+      target_context:
+        muscle_group: quadriceps_rectus_femoris_muscle_injury
+        injury_type: confirmed_partial_muscle_or_myotendinous_tear
+        management_context: conservative_rehabilitation
+    expected:
+      canonical_profile: shared_muscle_myotendinous
+      canonical_route: acute_muscle_myotendinous_injury_rehabilitation
+      canonical_subtype_or_site: quadriceps_rectus_femoris_muscle_injury
+      duplicate_regional_problem: false
+
+  - id: hip_asis_to_shared_fracture
+    input:
+      source_profile: hip_groin
+      gateway_id: hip_asis_avulsion
+      target_context:
+        fracture_site: asis_apophyseal_avulsion
+        healing_stability_status: documented_stable_for_current_rehabilitation
+    expected:
+      canonical_profile: shared_fracture
+      canonical_route: fracture_rehabilitation_post_immobilization
+      canonical_subtype_or_site: asis_apophyseal_avulsion
+      duplicate_regional_problem: false
+      forbidden_output: [muscle_strain_diagnosis]
+
+  - id: hip_aiis_to_shared_fracture
+    input:
+      source_profile: hip_groin
+      gateway_id: hip_aiis_avulsion
+      target_context:
+        fracture_site: aiis_apophyseal_avulsion
+    expected:
+      canonical_profile: shared_fracture
+      canonical_route: fracture_rehabilitation_post_immobilization
+      canonical_subtype_or_site: aiis_apophyseal_avulsion
+      forbidden_output: [asis_apophyseal_avulsion]
+
+  - id: ankle_fracture_unknown_weight_bearing
+    input:
+      source_profile: ankle_foot
+      gateway_id: ankle_fracture
+      target_context:
+        fracture_site: lateral_malleolus_fracture
+        healing_stability_status: healing_confirmed_with_restrictions
+        weight_bearing_status: not_stated
+    expected:
+      canonical_profile: shared_fracture
+      canonical_route: fracture_rehabilitation_post_immobilization
+      safety_severity: hard_warning_ack_required
+      formatter_blocked_until_restriction_clarified_or_acknowledged: true
+      forbidden_output: [weight_bearing_as_tolerated, full_weight_bearing, unrestricted_loading]
+
+  - id: sifk_unknown_loading
+    input:
+      profile_id: shared_fracture
+      route_id: fracture_rehabilitation_post_immobilization
+      context:
+        fracture_site: subchondral_insufficiency_fracture_of_knee
+        loading_strengthening_status: not_stated
+    expected:
+      primary_owner: shared_fracture
+      safety_severity: hard_warning_ack_required
+      forbidden_output: [generic_strengthening_progression, impact_progression, meniscal_primary_route, knee_oa_primary_route]
+
+  - id: fragility_fracture_to_functional_rehab
+    input:
+      source_profile: shared_fracture
+      gateway_id: fragility_fracture_functional_rehab
+      fracture_restrictions:
+        weight_bearing_status: partial_weight_bearing
+      functional_findings: [generalized_weakness, fear_or_concern_about_falling]
+    expected:
+      primary_structural_owner: shared_fracture
+      secondary_functional_owner: shared_deconditioning_balance_gait
+      restriction_precedence: shared_fracture
+      forbidden_output: [full_weight_bearing, osteoporosis_diagnosis_from_fragility_modifier]
+
+  - id: calf_strain_with_dvt_concern
+    input:
+      profile_id: shared_muscle_myotendinous
+      route_id: acute_muscle_myotendinous_injury_rehabilitation
+      context: {muscle_group: calf_muscle_myotendinous_injury}
+      safety_rule: unresolved_dvt_concern
+      clinician_disposition: none_recorded
+    expected:
+      safety_severity: urgent_reassessment
+      formatter_blocked: true
+      forbidden_output: [routine_calf_strain_referral, no_dvt]
+
+  - id: proximal_tendon_retraction_under_two_cm
+    input:
+      profile_id: shared_muscle_myotendinous
+      route_id: acute_muscle_myotendinous_injury_rehabilitation
+      context:
+        injury_type: confirmed_high_grade_muscle_or_myotendinous_tear_nonoperative
+        retraction_or_gap_cm: 1.5
+        management_context: conservative_rehabilitation
+    expected:
+      formatter_blocked: false
+      autonomous_clearance_from_retraction: false
+      forbidden_output: [surgery_not_needed, automatic_safe_for_physiotherapy_based_on_gap]
+
+  - id: frailty_established_with_sppb
+    input:
+      profile_id: shared_deconditioning_balance_gait
+      route_id: functional_deconditioning_balance_gait_rehabilitation
+      wording_mode: formal_diagnosis
+      context: {frailty_established: yes}
+      measurements:
+        - {measurement_id: sppb_total_optional, value: 7, performed: true}
+    expected:
+      formal_frailty_wording_allowed: true
+      measurement_rendering_allowed: true
+      diagnosis_source: clinician_established
+      forbidden_output: [frailty_diagnosed_by_sppb]
+
+  - id: deconditioning_sppb_without_frailty_assertion
+    input:
+      profile_id: shared_deconditioning_balance_gait
+      route_id: functional_deconditioning_balance_gait_rehabilitation
+      wording_mode: presentation
+      context: {frailty_established: not_stated}
+      measurements:
+        - {measurement_id: sppb_total_optional, value: 7, performed: true}
+    expected:
+      formal_frailty_wording_allowed: false
+      forbidden_output: [frailty_diagnosis]
+
+  - id: safety_screen_not_assessed
+    input:
+      profile_id: cervical
+      route_id: nonspecific_neck_pain
+      safety_screen_status: not_assessed
+    expected:
+      formatter_blocked: false
+      forbidden_output: [no_red_flags, safety_screen_normal]
+
+  - id: explicit_normal_neuro_partial
+    input:
+      profile_id: cervical
+      route_id: neck_pain_with_radiating_upper_limb_symptoms
+      neuro: {motor: normal, sensory: normal, reflexes: not_assessed}
+    expected:
+      allowed_output: [no_motor_or_sensory_deficit_identified_at_current_examination]
+      forbidden_output: [reflexes_normal, no_neurological_deficit]
+
+  - id: adjunct_without_core_rehab
+    input:
+      profile_id: lumbar
+      route_id: nonspecific_low_back_pain
+      adjuncts: [acupuncture]
+      rehab_directions: []
+    expected:
+      safety_severity: hard_warning_ack_required
+      formatter_blocked_until_core_direction_selected: true
+      forbidden_output: [acupuncture_as_complete_rehabilitation_plan]
+
+  - id: short_vs_detailed_same_draft
+    input:
+      profile_id: knee
+      route_id: knee_osteoarthritis
+      wording_mode: established_structural_diagnosis
+      findings: [walking_limitation, quadriceps_weakness]
+      goals: [improve_walking_tolerance, improve_quadriceps_strength]
+      rehab_directions: [individualized_strengthening, progressive_functional_exercise]
+    expected:
+      semantic_equivalence: true
+      short_contains: [problem, important_findings, goals_and_core_rehab]
+      detailed_contains: [problem, findings_and_function, goals, rehab_directions]
+      detailed_may_be_more_verbose: true
+      forbidden_difference: [different_diagnosis, different_restrictions, different_safety_state]

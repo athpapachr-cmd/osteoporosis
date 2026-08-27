@@ -1,0 +1,237 @@
+version: cu1_registry_v1
+id_policy:
+  canonical_case: lowercase_snake_case
+  aliases_allowed: true
+  unknown_ids_invalid: true
+
+profiles:
+  cervical:
+    source: clinic_utilities/physio_profiles/cervical_v1_1.md
+    routes:
+      nonspecific_neck_pain: {visibility: routine, wording_modes: [presentation]}
+      neck_pain_with_radiating_upper_limb_symptoms: {visibility: routine, wording_modes: [presentation, formal_diagnosis]}
+      headache_with_cervical_msk_features: {visibility: routine, wording_modes: [presentation, formal_diagnosis]}
+      cervical_dizziness_presentation: {visibility: routine, wording_modes: [presentation, formal_diagnosis]}
+      post_traumatic_neck_pain: {visibility: routine, wording_modes: [presentation, established_structural_diagnosis]}
+  lumbar:
+    source: clinic_utilities/physio_profiles/lumbar_v1_1.md
+    routes:
+      nonspecific_low_back_pain: {visibility: routine, wording_modes: [presentation]}
+      low_back_pain_with_radiating_leg_symptoms: {visibility: routine, wording_modes: [presentation, formal_diagnosis]}
+      lumbar_spinal_stenosis_neurogenic_claudication: {visibility: routine, wording_modes: [presentation, formal_diagnosis]}
+      deep_gluteal_piriformis_presentation: {visibility: routine, wording_modes: [presentation, formal_diagnosis]}
+  shoulder:
+    source: clinic_utilities/physio_profiles/shoulder_v1_1.md
+    routes:
+      rotator_cuff_related_shoulder_pain: {visibility: routine, wording_modes: [presentation, formal_diagnosis]}
+      confirmed_full_thickness_rotator_cuff_tear_nonoperative: {visibility: routine, wording_modes: [established_structural_diagnosis]}
+      calcific_rotator_cuff_tendinopathy: {visibility: routine, wording_modes: [established_structural_diagnosis]}
+      adhesive_capsulitis_frozen_shoulder: {visibility: routine, wording_modes: [presentation, formal_diagnosis]}
+      glenohumeral_instability_dislocation: {visibility: routine, wording_modes: [presentation, formal_diagnosis, established_structural_diagnosis]}
+      glenohumeral_osteoarthritis: {visibility: routine, wording_modes: [formal_diagnosis, established_structural_diagnosis]}
+      post_traumatic_shoulder_pain: {visibility: routine, wording_modes: [presentation, established_structural_diagnosis]}
+      acromioclavicular_joint_disorder: {visibility: routine, wording_modes: [presentation, formal_diagnosis, established_structural_diagnosis]}
+      sternoclavicular_joint_disorder: {visibility: routine, wording_modes: [formal_diagnosis, established_structural_diagnosis]}
+      postoperative_shoulder_rehabilitation: {visibility: routine, wording_modes: [postoperative], owner_class: postoperative_primary}
+  elbow:
+    source: clinic_utilities/physio_profiles/elbow_v1_1.md
+    routes:
+      lateral_elbow_tendinopathy: {visibility: routine, wording_modes: [presentation, formal_diagnosis]}
+      medial_elbow_tendinopathy: {visibility: routine, wording_modes: [presentation, formal_diagnosis]}
+      ulnar_neuropathy_at_elbow: {visibility: routine, wording_modes: [presentation, formal_diagnosis]}
+      posterior_interosseous_nerve_supinator_syndrome: {visibility: routine, wording_modes: [presentation, formal_diagnosis]}
+      distal_biceps_tendon_disorder_nonoperative: {visibility: routine, wording_modes: [formal_diagnosis, established_structural_diagnosis]}
+      elbow_osteoarthritis_degenerative_stiffness: {visibility: routine, wording_modes: [formal_diagnosis, established_structural_diagnosis]}
+      elbow_ligament_instability_rehabilitation: {visibility: routine, wording_modes: [formal_diagnosis, established_structural_diagnosis]}
+      post_traumatic_elbow_pain_stiffness: {visibility: routine, wording_modes: [presentation, established_structural_diagnosis]}
+      radial_tunnel_syndrome: {visibility: rare_advanced, wording_modes: [presentation, formal_diagnosis]}
+      distal_triceps_tendon_disorder: {visibility: rare_advanced, wording_modes: [formal_diagnosis, established_structural_diagnosis]}
+      anconeus_myotendinous_pain_or_injury: {visibility: rare_advanced, wording_modes: [presentation, established_structural_diagnosis]}
+      postoperative_elbow_rehabilitation: {visibility: rare_advanced, wording_modes: [postoperative], owner_class: postoperative_primary}
+  wrist_hand:
+    source: clinic_utilities/physio_profiles/wrist_hand_v1_1.md
+    routes:
+      de_quervain_first_dorsal_compartment_disorder: {visibility: routine, wording_modes: [presentation, formal_diagnosis]}
+      thumb_cmc1_osteoarthritis: {visibility: routine, wording_modes: [formal_diagnosis, established_structural_diagnosis]}
+      interphalangeal_hand_osteoarthritis: {visibility: routine, wording_modes: [formal_diagnosis, established_structural_diagnosis]}
+      median_neuropathy_at_wrist_carpal_tunnel: {visibility: routine, wording_modes: [presentation, formal_diagnosis]}
+      ulnar_sided_wrist_tfcc_presentation: {visibility: routine, wording_modes: [presentation, formal_diagnosis, established_structural_diagnosis]}
+      intersection_syndrome: {visibility: routine, wording_modes: [presentation, formal_diagnosis]}
+      thumb_mcp_collateral_ligament_injury_rehabilitation: {visibility: routine, wording_modes: [established_structural_diagnosis], owner_class: dedicated_structural_primary}
+      sagittal_band_injury_extensor_tendon_instability: {visibility: routine, wording_modes: [established_structural_diagnosis], owner_class: dedicated_structural_primary}
+      digital_tendon_injury_rehabilitation: {visibility: routine, wording_modes: [established_structural_diagnosis, postoperative], owner_class: dedicated_structural_primary}
+      post_traumatic_wrist_hand_pain_stiffness: {visibility: routine, wording_modes: [presentation, established_structural_diagnosis]}
+      postoperative_wrist_hand_rehabilitation: {visibility: routine, wording_modes: [postoperative], owner_class: generic_postoperative_fallback}
+      guyon_canal_ulnar_neuropathy: {visibility: rare_advanced, wording_modes: [presentation, formal_diagnosis]}
+      carpal_ligament_instability: {visibility: rare_advanced, wording_modes: [established_structural_diagnosis]}
+      other_wrist_tendon_disorder: {visibility: rare_advanced, wording_modes: [formal_diagnosis, established_structural_diagnosis]}
+      crps_upper_limb: {visibility: rare_advanced, wording_modes: [formal_diagnosis]}
+  knee:
+    source: clinic_utilities/physio_profiles/knee_v1_1.md
+    routes:
+      knee_osteoarthritis: {visibility: routine, wording_modes: [formal_diagnosis, established_structural_diagnosis]}
+      degenerative_meniscal_lesion_conservative_rehabilitation: {visibility: routine, wording_modes: [established_structural_diagnosis]}
+      acute_isolated_meniscal_injury_nonoperative: {visibility: routine, wording_modes: [established_structural_diagnosis]}
+      patellofemoral_pain: {visibility: routine, wording_modes: [presentation, formal_diagnosis]}
+      patellar_tendinopathy: {visibility: routine, wording_modes: [presentation, formal_diagnosis]}
+      quadriceps_tendinopathy: {visibility: routine, wording_modes: [formal_diagnosis, established_structural_diagnosis]}
+      acl_injury_instability_rehabilitation: {visibility: routine, wording_modes: [established_structural_diagnosis]}
+      mcl_injury_rehabilitation: {visibility: routine, wording_modes: [established_structural_diagnosis]}
+      patellar_instability_dislocation_rehabilitation: {visibility: routine, wording_modes: [established_structural_diagnosis]}
+      iliotibial_band_syndrome: {visibility: routine, wording_modes: [presentation, formal_diagnosis]}
+      pes_anserine_region_pain_or_tendinobursitis: {visibility: routine, wording_modes: [presentation, formal_diagnosis]}
+      post_traumatic_knee_pain_stiffness: {visibility: routine, wording_modes: [presentation, established_structural_diagnosis]}
+      postoperative_knee_rehabilitation: {visibility: routine, wording_modes: [postoperative], owner_class: postoperative_primary}
+      osgood_schlatter_disease: {visibility: visible_less_frequent, wording_modes: [formal_diagnosis, established_structural_diagnosis]}
+      sinding_larsen_johansson_syndrome: {visibility: visible_less_frequent, wording_modes: [formal_diagnosis, established_structural_diagnosis]}
+      pcl_lcl_multiligament_injury: {visibility: rare_advanced, wording_modes: [established_structural_diagnosis]}
+      distal_hamstring_insertional_pathology: {visibility: rare_advanced, wording_modes: [formal_diagnosis, established_structural_diagnosis]}
+      hoffa_plica_pathology: {visibility: rare_advanced, wording_modes: [formal_diagnosis, established_structural_diagnosis]}
+      osteochondral_ocd_lesion: {visibility: rare_advanced, wording_modes: [established_structural_diagnosis]}
+  hip_groin:
+    source: clinic_utilities/physio_profiles/hip_v1_1.md
+    routes:
+      greater_trochanteric_lateral_hip_pain_pathway: {visibility: routine, wording_modes: [presentation, formal_diagnosis]}
+      nonarthritic_intraarticular_hip_pain: {visibility: routine, wording_modes: [presentation, formal_diagnosis, established_structural_diagnosis]}
+      adductor_related_groin_pain: {visibility: routine, wording_modes: [presentation, formal_diagnosis]}
+      post_traumatic_hip_groin_pain_stiffness: {visibility: routine, wording_modes: [presentation, established_structural_diagnosis]}
+      proximal_hamstring_tendinopathy: {visibility: rare_advanced, wording_modes: [presentation, formal_diagnosis]}
+      iliopsoas_related_groin_pain_internal_snapping_hip: {visibility: rare_advanced, wording_modes: [presentation, formal_diagnosis]}
+      established_gluteal_abductor_tendon_tear_nonoperative: {visibility: rare_advanced, wording_modes: [established_structural_diagnosis]}
+      symptomatic_external_snapping_hip: {visibility: rare_advanced, wording_modes: [formal_diagnosis, established_structural_diagnosis]}
+      hip_dysplasia_instability_context: {visibility: rare_advanced, wording_modes: [established_structural_diagnosis]}
+      inguinal_or_pubic_related_groin_pain: {visibility: rare_advanced, wording_modes: [formal_diagnosis, established_structural_diagnosis]}
+  ankle_foot:
+    source: clinic_utilities/physio_profiles/ankle_foot_v1_1.md
+    routes:
+      lateral_ankle_sprain_rehabilitation: {visibility: routine, wording_modes: [established_structural_diagnosis]}
+      achilles_tendinopathy: {visibility: routine, wording_modes: [presentation, formal_diagnosis]}
+      plantar_heel_pain_plantar_fasciitis: {visibility: routine, wording_modes: [presentation, formal_diagnosis]}
+      posterior_tibial_tendon_dysfunction_progressive_collapsing_foot_deformity: {visibility: routine, wording_modes: [presentation, formal_diagnosis, established_structural_diagnosis]}
+      peroneal_tendon_disorder_nonoperative: {visibility: routine, wording_modes: [formal_diagnosis, established_structural_diagnosis]}
+      mechanical_metatarsalgia_forefoot_overload: {visibility: routine, wording_modes: [presentation]}
+      post_traumatic_ankle_foot_pain_stiffness: {visibility: routine, wording_modes: [presentation, established_structural_diagnosis]}
+      calcaneal_apophysitis_sever_disease: {visibility: visible_less_frequent, wording_modes: [presentation, formal_diagnosis]}
+      symptomatic_accessory_navicular: {visibility: visible_less_frequent, wording_modes: [presentation, formal_diagnosis]}
+      symptomatic_pediatric_flexible_flatfoot: {visibility: visible_less_frequent, wording_modes: [formal_diagnosis, established_structural_diagnosis]}
+      chronic_ankle_instability_recurrent_sprain: {visibility: rare_advanced, wording_modes: [presentation, formal_diagnosis]}
+      established_syndesmotic_ankle_injury: {visibility: rare_advanced, wording_modes: [established_structural_diagnosis]}
+      established_tarsal_tunnel_or_tibial_nerve_entrapment: {visibility: rare_advanced, wording_modes: [formal_diagnosis, established_structural_diagnosis]}
+      heel_fat_pad_pain_presentation: {visibility: rare_advanced, wording_modes: [presentation]}
+      morton_neuroma_or_interdigital_neuralgic_presentation: {visibility: rare_advanced, wording_modes: [presentation, formal_diagnosis]}
+      plantar_plate_lesser_mtp_instability: {visibility: rare_advanced, wording_modes: [established_structural_diagnosis]}
+      anterior_tibial_extensor_fhl_tendon_disorder: {visibility: rare_advanced, wording_modes: [formal_diagnosis, established_structural_diagnosis]}
+      osteochondral_lesion_talus: {visibility: rare_advanced, wording_modes: [established_structural_diagnosis]}
+      postoperative_achilles_repair_reconstruction: {visibility: rare_advanced, wording_modes: [postoperative], owner_class: dedicated_structural_primary}
+  shared_fracture:
+    source: clinic_utilities/physio_profiles/shared_fracture_v1_1.md
+    routes:
+      fracture_rehabilitation_post_immobilization: {visibility: shared_gateway, wording_modes: [shared_structural, established_structural_diagnosis], owner_class: shared_structural_primary}
+  shared_muscle_myotendinous:
+    source: clinic_utilities/physio_profiles/shared_muscle_myotendinous_v1_1.md
+    routes:
+      acute_muscle_myotendinous_injury_rehabilitation: {visibility: shared_gateway, wording_modes: [presentation, established_structural_diagnosis], owner_class: shared_structural_primary}
+  shared_deconditioning_balance_gait:
+    source: clinic_utilities/physio_profiles/shared_deconditioning_balance_gait_v1_1.md
+    routes:
+      functional_deconditioning_balance_gait_rehabilitation: {visibility: shared_gateway, wording_modes: [presentation, formal_diagnosis], owner_class: shared_functional_primary}
+
+subtypes:
+  postoperative_knee_rehabilitation:
+    [meniscus_repair, partial_meniscectomy, acl_reconstruction, mcl_repair_or_reconstruction, mpfl_reconstruction_or_patellar_stabilization, total_knee_arthroplasty_tka, unicompartmental_knee_arthroplasty, pcl_or_multiligament_reconstruction, cartilage_or_osteochondral_procedure, patellar_or_quadriceps_tendon_repair, other_knee_operation]
+  digital_tendon_injury_rehabilitation:
+    [mallet_finger, central_slip_injury, boutonniere_injury_or_deformity, extensor_tendon_injury_nonoperative, extensor_tendon_repair_postoperative, flexor_tendon_injury_nonoperative, flexor_tendon_repair_postoperative, other_established_digit_tendon_injury]
+  achilles_tendinopathy:
+    [midportion_achilles_tendinopathy, insertional_achilles_tendinopathy, other_established_achilles_tendinopathy]
+  greater_trochanteric_lateral_hip_pain_pathway:
+    [formal_gtps_diagnosis, formal_gluteal_tendinopathy_diagnosis, formal_trochanteric_bursitis_diagnosis, other_established_greater_trochanteric_disorder]
+  nonarthritic_intraarticular_hip_pain:
+    [formal_fais_diagnosis, symptomatic_acetabular_labral_tear, other_established_nonarthritic_intraarticular_hip_condition]
+
+gateways:
+  hip_proximal_rectus_femoris:
+    source_profile: hip_groin
+    source_route_alias: shared_muscle_profile_proximal_rectus_femoris_tendon_injury
+    target_profile: shared_muscle_myotendinous
+    target_route: acute_muscle_myotendinous_injury_rehabilitation
+    target_subtype_or_site: quadriceps_rectus_femoris_muscle_injury
+  hip_asis_avulsion:
+    source_profile: hip_groin
+    source_route_alias: asis_avulsion
+    target_profile: shared_fracture
+    target_route: fracture_rehabilitation_post_immobilization
+    target_subtype_or_site: asis_apophyseal_avulsion
+  hip_aiis_avulsion:
+    source_profile: hip_groin
+    source_route_alias: aiis_avulsion
+    target_profile: shared_fracture
+    target_route: fracture_rehabilitation_post_immobilization
+    target_subtype_or_site: aiis_apophyseal_avulsion
+  hip_ischial_tuberosity_avulsion:
+    source_profile: hip_groin
+    source_route_alias: ischial_tuberosity_avulsion
+    target_profile: shared_fracture
+    target_route: fracture_rehabilitation_post_immobilization
+    target_subtype_or_site: ischial_tuberosity_apophyseal_avulsion
+  hip_lesser_trochanter_avulsion:
+    source_profile: hip_groin
+    source_route_alias: lesser_trochanter_avulsion
+    target_profile: shared_fracture
+    target_route: fracture_rehabilitation_post_immobilization
+    target_subtype_or_site: lesser_trochanter_apophyseal_avulsion
+  knee_gastrocnemius_injury:
+    source_profile: knee
+    source_route_alias: gastrocnemius_strain_myotendinous_injury
+    target_profile: shared_muscle_myotendinous
+    target_route: acute_muscle_myotendinous_injury_rehabilitation
+    target_subtype_or_site: calf_muscle_myotendinous_injury
+  ankle_calf_injury:
+    source_profile: ankle_foot
+    source_route_alias: gastrocnemius_soleus_calf_myotendinous_injury
+    target_profile: shared_muscle_myotendinous
+    target_route: acute_muscle_myotendinous_injury_rehabilitation
+    target_subtype_or_site: calf_muscle_myotendinous_injury
+  ankle_fracture:
+    source_profile: ankle_foot
+    source_route_alias: ankle_foot_fracture_gateway
+    target_profile: shared_fracture
+    target_route: fracture_rehabilitation_post_immobilization
+  fragility_fracture_functional_rehab:
+    source_profile: shared_fracture
+    source_route_alias: fragility_fracture_deconditioning_gateway
+    target_profile: shared_deconditioning_balance_gait
+    target_route: functional_deconditioning_balance_gait_rehabilitation
+
+precedence:
+  global:
+    [urgent_safety_disposition, exact_written_or_surgeon_protocol, shared_structural_primary, dedicated_postoperative_or_structural_primary, regional_established_structural_route, regional_presentation_route, secondary_modifier, adjunct]
+  wrist_hand:
+    flexor_extensor_tendon_repair: digital_tendon_injury_rehabilitation
+    thumb_ucl_rcl_repair: thumb_mcp_collateral_ligament_injury_rehabilitation
+    sagittal_band_repair: sagittal_band_injury_extensor_tendon_instability
+    generic_other_operation: postoperative_wrist_hand_rehabilitation
+  knee:
+    acl_nonoperative_or_preoperative: acl_injury_instability_rehabilitation
+    acl_reconstruction: postoperative_knee_rehabilitation
+    mcl_nonoperative: mcl_injury_rehabilitation
+    mcl_repair_or_reconstruction: postoperative_knee_rehabilitation
+  fracture:
+    any_established_fracture_rehabilitation: fracture_rehabilitation_post_immobilization
+
+aliases:
+  ACL_injury_instability_rehabilitation: acl_injury_instability_rehabilitation
+  MCL_injury_rehabilitation: mcl_injury_rehabilitation
+  ACL_reconstruction: acl_reconstruction
+  MCL_repair_or_reconstruction: mcl_repair_or_reconstruction
+  Osgood_Schlatter_disease: osgood_schlatter_disease
+  Sinding_Larsen_Johansson_syndrome: sinding_larsen_johansson_syndrome
+  formal_GTPS_diagnosis: formal_gtps_diagnosis
+  formal_FAIS_diagnosis: formal_fais_diagnosis
+  formal_CRPS_upper_limb_diagnosis: crps_upper_limb
+  ASIS_apophyseal_avulsion: asis_apophyseal_avulsion
+  AIIS_apophyseal_avulsion: aiis_apophyseal_avulsion
+  MRI_or_ultrasound_confirmed: mri_or_ultrasound_confirmed
+  SPPB_total_optional: sppb_total_optional
+
+common_adjunct_ids:
+  [manual_therapy, soft_tissue_techniques, neurodynamic_techniques, traction, dry_needling, acupuncture, eswt, taping, heel_lift, orthosis_or_brace_context]

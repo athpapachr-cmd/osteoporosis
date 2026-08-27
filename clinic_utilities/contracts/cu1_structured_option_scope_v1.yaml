@@ -1,0 +1,25 @@
+version: cu1_structured_option_scope_v1
+status: frozen_pre_code_design
+
+structured_v1_rule:
+  route_and_subtype_identity: must_exist_in_route_registry_or_route_detail_catalog
+  selectable_findings_function_goals_rehab_adjuncts_measurements_restrictions: must_exist_in_cu1_option_catalog_v1
+  unknown_structured_id: invalid
+
+unlisted_frozen_profile_prose:
+  meaning: clinically_valid_profile_content_not_promoted_to_a_structured_v1_control
+  runtime_behavior:
+    - do_not_invent_new_machine_id
+    - do_not_auto_select_or_auto_generate_from_context
+    - clinician_may_add_relevant_content_only_through_explicit_clinician_free_text_optional
+  future_promotion:
+    - requires_design_change_to_option_catalog
+    - must_preserve_original_frozen_clinical_meaning
+
+coverage_boundary:
+  clinical_profile_taxonomy: fully_preserved
+  structured_v1_ui_catalog: deliberately_curated_subset_plus_all_canonical_routes_and_required_safety_restriction_states
+  rationale: avoid_false_precision_and_uncontrolled_machine_key_generation_for_low_frequency_or_optional_prose_suggestions
+
+formatter_rule:
+  clinician_free_text_remains_clinician_authored_and_is_never_reclassified_as_a_machine_diagnosis_finding_or_safety_state
