@@ -4,7 +4,7 @@
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Parent product:** Personal Clinical Excellence System.
 > **Scope:** cross-module Clinic Utilities / Clinical Operations.
-> **Current focus:** CU-1 Physiotherapy Referral v2 design; all regional v1.1 profiles frozen; Shared Fracture / Post-immobilization v1 active design candidate.
+> **Current focus:** CU-1 Physiotherapy Referral v2 design; all regional v1.1 profiles frozen; Shared Fracture / Post-immobilization v1.1 frozen on docs branch pending review/merge.
 
 Clinic Utilities are cross-module clinician-facing operational tools, not a new clinical Module 02.
 
@@ -68,7 +68,7 @@ clinician-entered diagnosis may be carried but not inferred
 
 ---
 
-# 2. Frozen / active profile status
+# 2. Frozen profile status
 
 ```text
 cervical_v1_1 = FROZEN
@@ -79,34 +79,34 @@ wrist_hand_v1_1 = FROZEN
 knee_v1_1 = FROZEN
 hip_v1_1 = FROZEN
 ankle_foot_v1_1 = FROZEN
-shared_fracture_v1 = ACTIVE DESIGN CANDIDATE / NOT FROZEN
+shared_fracture_v1_1 = FROZEN on docs branch pending exact-head review/merge
 ```
 
-Authoritative shared-fracture candidate:
+Authoritative shared-fracture design:
 
 ```text
-clinic_utilities/physio_profiles/shared_fracture_v1.md
+clinic_utilities/physio_profiles/shared_fracture_v1_1.md
 ```
 
 ---
 
-# 3. Shared Fracture / Post-immobilization v1 — active candidate frame
+# 3. Shared Fracture / Post-immobilization v1.1 frozen design
 
-The shared profile owns reusable fracture rehabilitation constraints once, rather than duplicating them in every body region.
-
-Canonical design:
+The shared profile owns restriction/healing logic once rather than duplicating fracture protocols region by region.
 
 ```text
-regional gateway
+regional/shared fracture gateway
 → fracture_rehabilitation_post_immobilization
-→ fracture site
+→ fracture_site
 → treatment / phase / healing-stability
-→ immobilization / use or weight-bearing / ROM / loading restrictions
-→ actual deficits / function
-→ confirmed rehabilitation goals/directions
+→ immobilization/support
+→ lower-limb weight-bearing OR upper-limb use/loading
+→ ROM / strengthening / impact restrictions
+→ actual deficits/function
+→ confirmed goals/directions
 ```
 
-Minimum required shared context:
+Minimum shared context:
 
 ```text
 fracture site
@@ -115,11 +115,11 @@ date/phase when known
 treatment / surgery when applicable
 healing/stability status
 immobilization/support status
-lower-limb weight-bearing status when relevant
-upper-limb use/loading status when relevant
+lower-limb weight-bearing when relevant
+upper-limb use/loading when relevant
 ROM restrictions
 loading / strengthening / impact restrictions
-orthopaedic/surgical instructions
+orthopaedic/surgical instructions and source
 age/skeletal maturity when relevant
 ```
 
@@ -132,133 +132,116 @@ cast/sling/boot removal != unrestricted loading
 fixation != unrestricted use/loading
 not stated != unrestricted
 exact protocol > shared generic suggestion
+no universal week-based timetable
+manual therapy requires known stability + ROM permission
 pediatric fracture != adult timeline
-fragility mechanism != osteoporosis diagnosis automatically
+fragility fracture != automatic osteoporosis diagnosis
 ```
 
-Candidate registry extends frozen regional gateways to include long-bone shaft fractures and reusable stress/bone-stress and pediatric physeal/apophyseal groups.
-
-Candidate workflow decision:
+High-visibility workflow entries:
 
 ```text
 vertebral compression / fragility fracture
-→ active shared route vs context-only
+proximal humerus
+clavicle
+distal radius
+hand / finger fractures
+pubic rami
+patella
+ankle fractures
+calcaneus / anterior-process calcaneus
+5th metatarsal / other metatarsal
+foot / toe fractures
 ```
 
-Core rehabilitation is active/function-oriented but restriction-governed:
+Less frequent / advanced / context includes scaphoid with union gate, elbow fractures, tibial plateau, Lisfranc, long-bone shaft fractures and older-adult hip fracture.
+
+## 3.1 Fragility modifier
 
 ```text
-ROM restoration when allowed
-progressive strengthening when allowed
-upper-limb use / lower-limb weight-bearing progression when allowed
-gait / balance / proprioception
-functional task retraining
-edema / scar / desensitization work
-endurance / walking progression
-falls/balance rehabilitation after fragility fracture when appropriate
-criterion-based work/gym/sport progression
+formal_fragility_fracture_context
+known_osteoporosis_or_low_bone_strength_context
+falls_risk_or_recurrent_falls_context
 ```
 
-No universal week-based timetable is generated.
+When selected, the utility makes strength, balance, falls-risk reduction, mobility and functional independence prominent. It does not generate osteoporosis diagnosis, DXA orders or medication decisions.
 
-Safety domains include:
+## 3.2 SIFK / legacy SONK
+
+Preferred entity:
 
 ```text
-reinjury / loss of reduction / delayed union / nonunion / malunion / hardware concern
-neurovascular deficit / compartment concern
-DVT/PE concern
-infection/wound/pin-site concern
-possible CRPS without autonomous diagnosis
-stress-fracture impact uncertainty
-pediatric physeal/apophyseal restrictions
-spinal neurological/stability concern if vertebral route retained
+subchondral_insufficiency_fracture_of_knee
 ```
 
-Default fracture-healing modalities are not generated:
+Frozen terminology:
 
 ```text
+SIFK = preferred current term
+SONK = legacy / clinician-entered wording, not a second autonomous software diagnosis
+advanced SIFK may carry osteonecrosis / osteochondral collapse when established
+```
+
+```text
+bone-marrow edema alone != SIFK
+sudden knee pain alone != SIFK
+SIFK + loading status unknown → no generic strengthening / impact progression
+```
+
+## 3.3 Pediatric / apophyseal
+
+Pelvic apophyseal avulsions remain the clinically useful visible pediatric gateway. Other pediatric fractures are low visibility because the product owner rarely refers them. Adult timelines are never imported.
+
+## 3.4 Default adjunct exclusions
+
+Not generator-default fracture-healing recommendations:
+
+```text
+acupuncture
+dry needling
+ESWT
 therapeutic ultrasound to accelerate union
-ESWT to accelerate union
-acupuncture as fracture-healing treatment
-dry needling at/around incompletely healed fracture
 bone-stimulator prescription
 ```
 
 ---
 
-# 4. Regional fracture gateway registry already frozen
-
-## Shoulder / arm
+# 4. Safety / consistency engine
 
 ```text
-proximal humerus
-clavicle
-scapula
+fracture + healing/stability unknown
+→ warning; no healed/stable wording
+
+lower-limb fracture + weight-bearing unknown
+→ no progressive weight-bearing instruction
+
+upper-limb fracture + use/loading unknown
+→ no unrestricted lifting/pushing/use instruction
+
+ROM/loading restriction unknown
+→ no unrestricted ROM/strengthening statement
+
+new trauma / loss of reduction / delayed union / nonunion / hardware concern
+→ orthopaedic reassessment semantics
+
+infection / wound / neurovascular / compartment / DVT-PE concern
+→ medical/urgent reassessment semantics
+
+possible CRPS
+→ preserve concern; do not autonomously diagnose
+
+vertebral fracture + unresolved spinal precautions / neurological concern
+→ medical/specialist pathway
+
+SIFK / stress / insufficiency fracture + loading status unknown
+→ no generic impact progression
+
+pediatric fracture
+→ no adult timeline
+
+material safety concern + no clinician disposition
+→ no routine reassuring wording
 ```
-
-Shared candidate additionally includes humeral shaft.
-
-## Elbow
-
-```text
-radial head/neck
-olecranon/proximal ulna
-distal humerus
-coronoid
-```
-
-## Forearm / wrist / hand
-
-```text
-distal radius
-distal ulna
-scaphoid
-other carpal
-metacarpal
-phalangeal
-```
-
-Shared candidate additionally includes radius/ulna shaft.
-
-## Hip / pelvis
-
-```text
-femoral neck
-intertrochanteric / subtrochanteric
-acetabulum
-pelvic ring / pubic rami
-femoral-neck stress fracture
-pelvic stress / insufficiency fracture
-ASIS / AIIS / ischial-tuberosity / lesser-trochanter apophyseal avulsion
-```
-
-Shared candidate additionally includes femoral shaft and sacral insufficiency context.
-
-## Knee / leg
-
-```text
-patella
-distal femur
-proximal tibia / tibial plateau
-proximal fibula
-```
-
-Shared candidate additionally includes tibial/fibular shafts.
-
-## Ankle / foot
-
-```text
-malleolar fractures
-fibula / Maisonneuve context
-talus / calcaneus / navicular
-cuboid / cuneiform
-5th metatarsal / other metatarsals
-phalanges
-Lisfranc fracture-dislocation
-stress / bone-stress injury
-```
-
-Unknown healing/loading context always prevents unrestricted rehabilitation wording.
 
 ---
 
@@ -291,60 +274,24 @@ selected condition profile
 → only confirmed items enter ReferralDraft
 ```
 
-No global pain + ROM + strength bundle.
-
-Fracture rehabilitation is explicitly governed by healing/stability and restrictions before generic active rehabilitation suggestions become available.
+Fracture rehabilitation is restriction-governed before generic active-rehabilitation suggestions become available.
 
 ---
 
-# 7. Safety / consistency engine
+# 7. Remaining shared design sequence
+
+After Shared Fracture handoff closes:
 
 ```text
-fracture + unknown healing/stability
-→ warning; no healed/stable wording
-
-lower-limb fracture + weight-bearing status unknown
-→ no progressive weight-bearing instruction
-
-upper-limb fracture + use/loading status unknown
-→ no unrestricted lifting/pushing/use instruction
-
-ROM/loading restriction unknown
-→ no unrestricted ROM/strengthening statement
-
-new trauma / loss-of-reduction / delayed-union / hardware concern
-→ orthopaedic reassessment semantics
-
-infection / neurovascular / compartment / DVT-PE concern
-→ medical/urgent reassessment semantics
-
-possible CRPS
-→ preserve concern; do not autonomously diagnose
-
-pediatric fracture
-→ no adult timeline
-
-material safety concern + no clinician disposition
-→ no routine reassuring wording
-```
-
----
-
-# 8. Remaining shared design sequence
-
-Current broad remaining sequence is:
-
-```text
-shared fracture / post-immobilization — ACTIVE CANDIDATE
-→ muscle / myotendinous injury
+muscle / myotendinous injury
 → generalized deconditioning / balance / gait
 ```
 
-The product owner may change the exact next profile within CU-1 after the active writer lock closes.
+The product owner may change the exact next profile within CU-1.
 
 ---
 
-# 9. Output wording rules
+# 8. Output wording rules
 
 ```text
 Clinical problem + fracture/site/treatment context + actual deficits + functional impact.
@@ -364,7 +311,7 @@ Rules:
 
 ---
 
-# 10. Implementation boundary
+# 9. Implementation boundary
 
 CU-1 remains **design only**.
 
