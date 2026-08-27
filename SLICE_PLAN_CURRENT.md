@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — CU-1 Physiotherapy Referral v2 design
 
-> **STATUS:** ACTIVE PRE-CODE DESIGN — all currently planned clinical/content profiles frozen; runtime implementation not authorized.
+> **STATUS:** PRE-CODE DESIGN — clinical/content profiles frozen; design-completeness review = **BLOCK** pending bounded cross-profile machine-contract hardening.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Parent product:** Personal Clinical Excellence System.
 > **Area:** Clinic Utilities / Clinical Operations.
@@ -8,13 +8,14 @@
 > **Supporting plan:** `CLINIC_UTILITIES_PLAN.md`.
 > **Frozen regional profiles:** cervical, lumbar, shoulder, elbow, wrist/hand, knee, hip/groin and ankle/foot v1.1.
 > **Frozen shared profiles:** Shared Fracture v1.1; Shared Muscle/Myotendinous v1.1; Shared Deconditioning/Balance/Gait v1.1.
+> **Completeness review:** `clinic_utilities/CU1_DESIGN_COMPLETENESS_REVIEW.md`.
 > **Prior active slice:** PR-1 remains intentionally paused.
 
-CU-1 remains design-only.
+CU-1 remains design-only. No runtime implementation is authorized.
 
 ---
 
-# 1. Frozen architecture
+# 1. Frozen clinical architecture
 
 ```text
 ReferralDraft
@@ -40,53 +41,75 @@ ReferralDraft
 → DetailedReferralFormatter
 ```
 
-Hard invariants remain: suggested/examined/selected/mandatory are distinct; symptoms/tests/imaging do not autonomously create diagnoses; not-assessed does not mean normal; adjuncts do not replace core rehabilitation; clinician-entered diagnoses may be carried but not inferred.
+Clinical invariants remain frozen: suggested/examined/selected/mandatory are distinct; symptoms/tests/imaging do not autonomously create diagnoses; not-assessed does not mean normal; adjuncts do not replace core rehabilitation; clinician-entered diagnoses may be carried but not inferred.
+
+No broad regional taxonomy is reopened by the completeness review.
 
 ---
 
-# 2. Frozen profile status
+# 2. Completeness-review result
 
 ```text
-cervical_v1_1 = FROZEN
-lumbar_v1_1 = FROZEN
-shoulder_v1_1 = FROZEN
-elbow_v1_1 = FROZEN
-wrist_hand_v1_1 = FROZEN
-knee_v1_1 = FROZEN
-hip_v1_1 = FROZEN
-ankle_foot_v1_1 = FROZEN
-shared_fracture_v1_1 = FROZEN
-shared_muscle_myotendinous_v1_1 = FROZEN
-shared_deconditioning_balance_gait_v1_1 = FROZEN
+clinical/content taxonomy = preserve / substantially complete
+implementation-contract completeness = BLOCK
+runtime implementation = NOT READY
 ```
 
-The final shared functional profile retains generalized deconditioning and clinician-established frailty-associated decline as direct routes; balance/gait/post-hospital presentations are context/findings in this workflow. SPPB is preferred optional, not diagnostic. Falls history, fear of falling, muscular weakness, poor coordination and walking-aid assessment/training are explicitly represented. Shared Fracture restrictions remain authoritative when routed here.
+Blocking items:
+
+```text
+B1 — frozen ReferralDraft lacks typed homes for route/profile-specific structured state
+B2 — no canonical machine-readable profile/route/key registry or exact regional→shared gateway map
+B3 — selected postoperative/structural scenarios have unresolved primary-route ownership/precedence
+B4 — no common warning/safety severity + blocking/disposition contract
+B5 — ShortReferralFormatter / DetailedReferralFormatter interface/output/omission rules are not frozen
+B6 — common tri-state/enumeration/key semantics are not normalized/versioned
+```
+
+Authoritative details and examples are in `clinic_utilities/CU1_DESIGN_COMPLETENESS_REVIEW.md`.
 
 ---
 
-# 3. Persistence / runtime boundary
+# 3. Bounded design-hardening scope
+
+Do not reopen broad clinical-content design unless required to resolve a blocker.
+
+Required pre-implementation design artifacts:
 
 ```text
-ephemeral structured draft
-→ generated text
-→ copy / print
+1. CU-1 core typed contract v1
+2. canonical profile/route/key registry v1
+3. exact regional→shared gateway mapping table
+4. route ownership / precedence table
+5. common safety-warning-disposition contract
+6. ShortReferralFormatter / DetailedReferralFormatter specification
+7. normalized common enum / tri-state definitions
+8. focused synthetic design-fixture matrix
 ```
 
-Persistence remains unfrozen. No production HTML/JS/CSS or runtime implementation is authorized.
+Persistence remains unfrozen and is not required for first implementation.
 
 ---
 
-# 4. Exact next action — CU-1 design-completeness review
+# 4. Exact next action
 
 ```text
-1. inspect all frozen regional/shared profile contracts together
-2. validate cross-profile routing and ownership
-3. validate structured keys / schema consistency / tri-state semantics
-4. validate safety and reassessment invariants across profiles
-5. validate goal / rehab-direction / adjunct semantics
-6. validate ShortReferralFormatter / DetailedReferralFormatter requirements
-7. inspect current runtime seams only to determine implementation fit — do not code
-8. classify outcome as DESIGN-COMPLETE or BLOCK with exact blockers
+1. complete one docs/schema-only CU-1 design-hardening pass for B1–B6
+2. exact review of the resulting cross-profile machine contract
+3. repeat CU-1 design-completeness review
+4. STOP at DESIGN-COMPLETE or remaining BLOCK
+5. runtime implementation requires a separate explicit product-owner authorization after DESIGN-COMPLETE
 ```
 
-Runtime implementation requires a separate explicit product-owner authorization after this review.
+---
+
+# 5. Explicitly out of scope now
+
+```text
+production HTML/JS/CSS
+FastAPI CU-1 runtime endpoints
+physiotherapy persistence
+patient-data storage
+broad clinical-taxonomy expansion
+PR-1 runtime implementation
+```
