@@ -4,7 +4,7 @@
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Parent product:** Personal Clinical Excellence System.
 > **Scope:** cross-module Clinic Utilities / Clinical Operations.
-> **Current focus:** CU-1 Physiotherapy Referral v2 design; all regional v1.1 profiles, Shared Fracture v1.1 and Shared Muscle / Myotendinous Injury v1.1 frozen.
+> **Current focus:** CU-1 Physiotherapy Referral v2 design; all regional v1.1 profiles plus Shared Fracture, Shared Muscle/Myotendinous and Shared Deconditioning/Balance/Gait v1.1 are frozen, with the final shared profile pending exact-head review/merge.
 
 Clinic Utilities are cross-module clinician-facing operational tools, not a new clinical Module 02.
 
@@ -13,44 +13,16 @@ Clinic Utilities are cross-module clinician-facing operational tools, not a new 
 # 1. Physiotherapy Referral v2 target
 
 ```text
-1. Clinical problem / diagnosis
-2. Important findings
-3. Functional limitation
-4. Precautions / restrictions
-5. Rehabilitation goals
-6. Rehabilitation direction
-7. Final referral text
+Clinical problem / diagnosis
+→ important findings
+→ functional limitation
+→ precautions / restrictions
+→ rehabilitation goals
+→ rehabilitation direction
+→ final referral text
 ```
 
-Structured intermediate model remains:
-
-```text
-ReferralDraft
-  patient_context
-  body_region
-  primary_problem
-  secondary_problems[]
-  laterality
-  chronicity
-  key_findings[]
-  functional_impairments[]
-  precautions[]
-  explicit_restrictions[]
-  goals[]
-  rehab_directions[]
-  adjunct_options[]
-  reassessment_criteria[]
-  sessions_optional
-  clinician_free_text_optional
-```
-
-```text
-ReferralDraft
-→ ShortReferralFormatter
-→ DetailedReferralFormatter
-```
-
-Hard rules remain: suggested/examined/selected/mandatory are distinct; symptoms/tests/imaging do not autonomously create diagnoses; not-assessed does not mean normal; adjuncts do not replace core rehabilitation; clinician-entered diagnoses may be carried but not inferred.
+Structured intermediate model remains `ReferralDraft → ShortReferralFormatter / DetailedReferralFormatter` with the existing CU-1 hard invariants.
 
 ---
 
@@ -67,137 +39,81 @@ hip_v1_1 = FROZEN
 ankle_foot_v1_1 = FROZEN
 shared_fracture_v1_1 = FROZEN
 shared_muscle_myotendinous_v1_1 = FROZEN
+shared_deconditioning_balance_gait_v1_1 = FROZEN on docs branch pending review/merge
 ```
 
 ---
 
-# 3. Shared Muscle / Myotendinous Injury v1.1 frozen design
+# 3. Final shared functional profile
 
-Authoritative design:
-
-```text
-clinic_utilities/physio_profiles/shared_muscle_myotendinous_v1_1.md
-```
-
-The shared route owns acute muscle/myotendinous rehabilitation semantics once across regions.
+Authoritative file:
 
 ```text
-acute_muscle_myotendinous_injury_rehabilitation
-→ muscle/site + injury type/phase/tissue context
-→ conservative/specialist/postoperative disposition
-→ restrictions / actual deficits / functional demand
-→ confirmed goals / rehabilitation directions
+clinic_utilities/physio_profiles/shared_deconditioning_balance_gait_v1_1.md
 ```
 
-High-visibility workflow groups:
+Frozen workflow:
 
 ```text
-quadriceps / rectus femoris
-acute adductor injury
-gastrocnemius / soleus / calf
-hamstring strain / partial tear
+D1 generalized deconditioning / functional decline — direct
+D2 frailty-associated functional decline — direct only when frailty already established
+balance-only / gait-only / post-hospital presentations — context/findings, not routine top-level routes
 ```
 
-Visible but less frequent:
+Direct findings and referral directions include generalized muscular weakness, poor coordination, fear of falling, falls history and walking-aid assessment/training.
+
+Preferred optional functional battery:
 
 ```text
-pectoralis major muscle/myotendinous injury
-biceps muscle-belly/myotendinous injury
-abdominal-wall muscle injury
+SPPB
+→ total + standing balance + 4-m gait + 5 chair rises
 ```
 
-Rare/secondary includes iliopsoas/hip-flexor, tibialis anterior and other uncommon acute muscle injuries.
+No SPPB/TUG/gait-speed/5xSTS result autonomously creates frailty, falls-risk or neurological diagnosis.
 
-Frozen structural rules:
+Falls history preserves single/recurrent/injurious/unable-to-rise/LOC states. Shared Fracture may route here for strength/balance/falls/independence goals, but its restrictions remain authoritative.
 
-```text
-acute strain != chronic tendinopathy
-muscle pain != exact tear diagnosis
-MRI/US classification != fixed rehabilitation timetable
-bony avulsion → Shared Fracture
-major free-tendon rupture/avulsion without disposition → specialist structural route
-postoperative repair → exact protocol owns progression
-<2 cm retraction + established conservative decision may proceed through routine PT workflow
-<2 cm alone != autonomous clearance
->=2 cm / multi-tendon complete avulsion / major weakness-deformity / high-demand unresolved case
-→ prominent specialist-disposition check
-→ no automatic surgery recommendation
-```
-
-Return-to-sport/work is multi-domain and never based on elapsed time, MRI grade/appearance or strength symmetry alone.
-
-Adjunct policy:
-
-```text
-acupuncture → optional clinician-selected adjunct; no accelerated-healing claim
-dry needling → excluded
-ESWT → excluded as default acute-muscle healing recommendation
-therapeutic ultrasound → excluded as default acute-muscle healing recommendation
-compression / taping → treating-physiotherapist discretion
-```
-
-Progressive active rehabilitation remains the core.
+Home-hazard assessment is not a routine local option; neurological disease-specific pathways are not added; generic aerobic conditioning is not a routine generator direction; acupuncture, dry needling, ESWT and therapeutic ultrasound are excluded.
 
 ---
 
-# 4. Safety / consistency engine
+# 4. Safety / consistency
 
 ```text
-major acute weakness / palpable defect / rupture-avulsion concern
-→ structural reassessment
-
-calf pain/swelling + unresolved DVT concern
-→ no routine calf-strain wording
-
-large/expanding haematoma or anticoagulation bleeding concern
-→ medical reassessment
-
-severe escalating pain / tense swelling / compartment concern
-→ urgent pathway
-
-new neurological/vascular deficit
-→ urgent/medical reassessment
-
-postoperative repair + missing protocol/restrictions
-→ warning
-
-significant contusion + atypical persistent/worsening course
-→ myositis-ossificans/other reassessment semantics
-
-material safety concern + no disposition
-→ no routine reassuring wording
+acute unexplained gait/coordination change
+new focal neurological deficit
+syncope / unexplained LOC
+unstable cardiopulmonary symptoms
+acute vestibular syndrome
+fracture/restriction uncertainty
+DVT / vascular concern
+infection/systemic deterioration
+acute cognitive change
+→ reassessment / appropriate specialty route
 ```
+
+No reassuring negative statement is generated from missing assessment.
 
 ---
 
-# 5. Final remaining shared design profile
+# 5. CU-1 design-completeness gate
 
-Current remaining sequence is now:
+This is the final currently planned clinical/content profile for CU-1.
+
+After merge/handoff close:
 
 ```text
-generalized deconditioning / balance / gait
+all regional/shared profiles frozen
+→ perform CU-1 design-completeness review
+→ inspect cross-profile routing, schema consistency, safety semantics, formatter requirements and implementation seams
+→ decide separately whether implementation should be authorized
 ```
 
-This is the final currently planned shared CU-1 clinical/content profile. Its completion does **not** itself authorize runtime implementation; implementation requires a separate product-owner decision after design completeness review.
+Design completion **does not authorize runtime implementation**.
 
 ---
 
-# 6. Output wording rules
-
-```text
-Clinical problem + muscle/site/injury context + actual findings + functional impact.
-Referral request + goals.
-Actual restrictions / permitted progression.
-Optional reassessment/communication criteria.
-```
-
-No unsupported tear grade, automatic timeline, or reassuring safety statement from missing data.
-
----
-
-# 7. Implementation boundary
-
-CU-1 remains **design only**.
+# 6. Implementation boundary
 
 ```text
 ephemeral structured draft
@@ -205,4 +121,4 @@ ephemeral structured draft
 → copy / print
 ```
 
-Persistence is not frozen. Do not write production physiotherapy runtime code until CU-1 is sufficiently frozen and the product owner explicitly authorizes transition to implementation.
+Persistence is not frozen. No production physiotherapy runtime code until explicit product-owner authorization after design-completeness review.
