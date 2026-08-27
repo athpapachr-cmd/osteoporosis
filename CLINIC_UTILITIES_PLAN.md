@@ -4,7 +4,7 @@
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Parent product:** Personal Clinical Excellence System.
 > **Scope:** cross-module Clinic Utilities / Clinical Operations.
-> **Current focus:** CU-1 Physiotherapy Referral v2 design; all regional v1.1 profiles and Shared Fracture v1.1 frozen; Shared Muscle / Myotendinous Injury v1.1 frozen on docs branch pending review/merge.
+> **Current focus:** CU-1 Physiotherapy Referral v2 design; all regional v1.1 profiles, Shared Fracture v1.1 and Shared Muscle / Myotendinous Injury v1.1 frozen.
 
 Clinic Utilities are cross-module clinician-facing operational tools, not a new clinical Module 02.
 
@@ -66,24 +66,23 @@ knee_v1_1 = FROZEN
 hip_v1_1 = FROZEN
 ankle_foot_v1_1 = FROZEN
 shared_fracture_v1_1 = FROZEN
-shared_muscle_myotendinous_v1_1 = FROZEN on docs branch pending exact-head review/merge
-```
-
-Authoritative muscle design:
-
-```text
-clinic_utilities/physio_profiles/shared_muscle_myotendinous_v1_1.md
+shared_muscle_myotendinous_v1_1 = FROZEN
 ```
 
 ---
 
 # 3. Shared Muscle / Myotendinous Injury v1.1 frozen design
 
-The shared profile owns acute muscle/myotendinous rehabilitation semantics once rather than duplicating them region by region.
+Authoritative design:
 
 ```text
-regional/shared gateway
-→ acute_muscle_myotendinous_injury_rehabilitation
+clinic_utilities/physio_profiles/shared_muscle_myotendinous_v1_1.md
+```
+
+The shared route owns acute muscle/myotendinous rehabilitation semantics once across regions.
+
+```text
+acute_muscle_myotendinous_injury_rehabilitation
 → muscle/site + injury type/phase/tissue context
 → conservative/specialist/postoperative disposition
 → restrictions / actual deficits / functional demand
@@ -109,7 +108,7 @@ abdominal-wall muscle injury
 
 Rare/secondary includes iliopsoas/hip-flexor, tibialis anterior and other uncommon acute muscle injuries.
 
-Boundaries:
+Frozen structural rules:
 
 ```text
 acute strain != chronic tendinopathy
@@ -118,70 +117,30 @@ MRI/US classification != fixed rehabilitation timetable
 bony avulsion → Shared Fracture
 major free-tendon rupture/avulsion without disposition → specialist structural route
 postoperative repair → exact protocol owns progression
-```
-
-Product-owner retraction workflow is represented without turning 2 cm into a universal rule:
-
-```text
-<2 cm retraction + established conservative decision
-→ routine PT workflow may proceed
-
-<2 cm alone
-→ NOT autonomous clearance
-
->=2 cm / multi-tendon complete avulsion / major weakness-deformity / high-demand unresolved structural case
+<2 cm retraction + established conservative decision may proceed through routine PT workflow
+<2 cm alone != autonomous clearance
+>=2 cm / multi-tendon complete avulsion / major weakness-deformity / high-demand unresolved case
 → prominent specialist-disposition check
 → no automatic surgery recommendation
 ```
 
----
-
-# 4. Core rehabilitation / return-to-function
-
-Potential active directions when structurally appropriate:
-
-```text
-education / load modification
-progressive ROM / length tolerance when relevant
-progressive strength / load capacity
-lengthened-position / eccentric exposure where appropriate
-running progression
-sprinting progression for sprint-demand sports
-kicking / jumping / change-of-direction progression where relevant
-work-specific graded loading
-home exercise programme
-criterion-based return to training / sport / work
-```
-
-No single loading mode is mandatory for every muscle.
-
 Return-to-sport/work is multi-domain and never based on elapsed time, MRI grade/appearance or strength symmetry alone.
 
-Evidence governance:
+Adjunct policy:
 
 ```text
-hamstring = comparatively mature rehabilitation/RTS evidence/consensus
-adductor / quadriceps / calf = less certain exact thresholds
-2 cm retraction = context-sensitive decision factor, not universal autonomous threshold
-```
-
----
-
-# 5. Adjunct / support policy
-
-```text
-acupuncture → optional clinician-selected adjunct; no claim of accelerated tissue healing
+acupuncture → optional clinician-selected adjunct; no accelerated-healing claim
 dry needling → excluded
 ESWT → excluded as default acute-muscle healing recommendation
 therapeutic ultrasound → excluded as default acute-muscle healing recommendation
-compression / taping → treating-physiotherapist discretion rather than generator defaults
+compression / taping → treating-physiotherapist discretion
 ```
 
 Progressive active rehabilitation remains the core.
 
 ---
 
-# 6. Safety / consistency engine
+# 4. Safety / consistency engine
 
 ```text
 major acute weakness / palpable defect / rupture-avulsion concern
@@ -211,19 +170,19 @@ material safety concern + no disposition
 
 ---
 
-# 7. Remaining shared design sequence
+# 5. Final remaining shared design profile
 
-After Shared Muscle/Myotendinous handoff closes:
+Current remaining sequence is now:
 
 ```text
 generalized deconditioning / balance / gait
 ```
 
-This is the final currently planned shared CU-1 clinical/content profile before deciding whether CU-1 is sufficiently frozen for a separate implementation authorization step.
+This is the final currently planned shared CU-1 clinical/content profile. Its completion does **not** itself authorize runtime implementation; implementation requires a separate product-owner decision after design completeness review.
 
 ---
 
-# 8. Output wording rules
+# 6. Output wording rules
 
 ```text
 Clinical problem + muscle/site/injury context + actual findings + functional impact.
@@ -236,7 +195,7 @@ No unsupported tear grade, automatic timeline, or reassuring safety statement fr
 
 ---
 
-# 9. Implementation boundary
+# 7. Implementation boundary
 
 CU-1 remains **design only**.
 
