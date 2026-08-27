@@ -1,0 +1,348 @@
+version: cu1_option_catalog_v1
+registry: cu1_registry_v1
+id_policy: lowercase_snake_case
+unknown_selectable_ids_invalid: true
+free_text_allowed_only_in_explicit_free_text_fields: true
+
+common_findings:
+  - pain
+  - swelling
+  - tenderness
+  - bruising
+  - active_rom_restricted
+  - passive_rom_restricted
+  - painful_active_rom
+  - painful_passive_rom
+  - objective_weakness
+  - load_intolerance_without_measured_weakness
+  - paresthesia
+  - numbness
+  - night_or_sleep_disturbance
+  - walking_limitation
+  - stairs_limitation
+  - sit_to_stand_limitation
+  - work_limitation
+  - sport_or_exercise_limitation
+  - adl_self_care_limitation
+  - balance_deficit
+  - poor_coordination
+  - fear_or_concern_about_falling
+
+common_functional_impairments:
+  - walking_tolerance
+  - standing_tolerance
+  - sitting_tolerance
+  - stairs
+  - sit_to_stand
+  - transfers
+  - lifting_carrying
+  - pushing_pulling
+  - driving
+  - desk_or_computer_work
+  - overhead_activity
+  - gripping
+  - pinch
+  - dexterity
+  - squat
+  - kneeling
+  - running
+  - jumping_landing
+  - pivot_change_of_direction
+  - sport_gym
+  - manual_work
+  - school_pe_youth_sport
+  - community_mobility
+  - patient_priority_activity
+
+common_goal_ids:
+  - reduce_symptom_irritability
+  - restore_safe_functional_rom
+  - improve_strength
+  - improve_endurance
+  - improve_motor_control
+  - improve_neuromuscular_control
+  - improve_balance_postural_control
+  - improve_coordination
+  - improve_walking_tolerance
+  - improve_stair_function
+  - improve_sit_to_stand_transfer_function
+  - improve_grip_pinch_or_dexterity
+  - improve_load_tolerance
+  - graded_return_to_activity
+  - graded_return_to_work
+  - graded_return_to_sport
+  - improve_self_management
+  - improve_mobility_confidence
+  - optimize_safe_walking_aid_use
+  - maintain_or_regain_adl_independence
+  - reduce_falls_risk_through_modifiable_physical_factors
+
+common_rehab_direction_ids:
+  - physiotherapy_assessment_and_individualized_active_rehabilitation
+  - therapeutic_exercise
+  - progressive_strengthening
+  - progressive_endurance_or_capacity_work
+  - mobility_exercise_when_restricted
+  - graded_activity_exposure
+  - graded_loading
+  - education_and_self_management
+  - home_exercise_programme
+  - work_activity_load_adaptation
+  - neuromuscular_proprioceptive_training
+  - balance_stepping_recovery_training
+  - gait_walking_practice
+  - walking_aid_assessment_and_training
+  - functional_task_retraining
+  - progressive_running
+  - progressive_sprinting
+  - progressive_kicking
+  - progressive_jump_landing
+  - progressive_change_of_direction
+  - criterion_based_return_to_training_sport_or_work
+  - edema_management
+  - scar_desensitization_management
+  - protected_rom_within_restrictions
+  - progressive_weight_bearing_within_restrictions
+  - progressive_upper_limb_use_within_restrictions
+
+profile_findings:
+  cervical:
+    - axial_cervical_pain
+    - occipital_pain_or_headache
+    - referred_shoulder_girdle_pain
+    - radiating_upper_limb_pain
+    - sustained_posture_aggravation
+    - spurling_concordant_symptoms
+    - upper_limb_neurodynamic_finding
+    - dizziness_or_disequilibrium
+    - balance_related_activity_limitation
+    - trigger_points_or_myofascial_presentation
+  lumbar:
+    - axial_low_back_pain
+    - buttock_pain
+    - referred_nonradicular_leg_pain
+    - radiating_leg_pain
+    - straight_leg_raise_concordant_symptoms
+    - slump_concordant_symptoms
+    - walking_or_standing_limited_leg_symptoms
+    - deep_gluteal_region_tenderness
+    - trunk_strength_or_endurance_deficit
+  shoulder:
+    - anterolateral_shoulder_pain
+    - posterior_shoulder_pain
+    - ac_region_pain
+    - sc_region_pain_or_swelling
+    - painful_arc
+    - objective_abduction_weakness
+    - objective_external_rotation_weakness
+    - instability_apprehension_finding
+    - scapular_control_endurance_deficit
+  elbow:
+    - lateral_elbow_pain
+    - medial_elbow_pain
+    - anterior_antecubital_pain
+    - posterior_elbow_pain
+    - pain_with_gripping
+    - ulnar_distribution_sensory_deficit
+    - intrinsic_hand_weakness
+    - pin_pattern_motor_deficit
+    - objective_supination_weakness
+    - objective_flexion_weakness
+  wrist_hand:
+    - radial_wrist_pain
+    - thumb_base_pain
+    - dorsoradial_distal_forearm_pain
+    - ulnar_sided_wrist_pain
+    - digit_flexion_deficit
+    - digit_extension_deficit
+    - grip_strength_reduced
+    - pinch_strength_reduced
+    - fine_motor_dexterity_deficit
+    - median_distribution_sensory_deficit
+    - thenar_apb_weakness
+    - ulnar_distribution_sensory_deficit
+    - intrinsic_hand_weakness
+    - extensor_lag
+  knee:
+    - joint_line_pain
+    - anterior_peripatellar_pain
+    - patellar_tendon_pain
+    - quadriceps_tendon_pain
+    - pes_anserine_region_pain
+    - true_locking_or_major_mechanical_rom_block
+    - subjective_giving_way
+    - recurrent_instability_episode
+    - effusion
+    - extension_lag
+    - quadriceps_weakness
+    - hop_running_landing_change_of_direction_deficit
+  hip_groin:
+    - lateral_greater_trochanter_region_pain
+    - groin_or_anterior_hip_pain
+    - posterior_ischial_buttock_pain
+    - pain_with_hip_flexion_or_rotation
+    - pain_with_single_leg_loading
+    - hip_abductor_strength_deficit
+    - adductor_strength_deficit
+    - painful_snapping
+    - fadIR_or_faber_provocation_finding
+  ankle_foot:
+    - lateral_ankle_pain
+    - medial_ankle_or_arch_pain
+    - achilles_region_pain
+    - plantar_heel_pain
+    - central_heel_pain
+    - forefoot_pain
+    - first_step_morning_pain
+    - recurrent_sprain_history
+    - subjective_giving_way
+    - plantar_flexor_weakness_or_endurance_deficit
+    - single_leg_heel_raise_deficit
+    - dynamic_postural_control_deficit
+    - burning_or_paresthesia_plantar_foot
+  shared_fracture:
+    - post_immobilization_stiffness
+    - post_immobilization_weakness
+    - atrophy_or_deconditioning
+    - reduced_functional_use
+    - altered_gait
+    - reduced_walking_tolerance
+    - balance_or_proprioceptive_deficit
+    - scar_sensitivity_or_adherence
+    - fear_or_low_confidence_with_loading
+  shared_muscle_myotendinous:
+    - localized_muscle_pain
+    - pain_with_stretch
+    - pain_with_resisted_contraction
+    - palpable_defect
+    - muscle_spasm_or_guarding
+    - isometric_strength_deficit
+    - isotonic_strength_deficit
+    - eccentric_or_lengthened_position_deficit
+    - power_deficit
+    - running_intolerance
+    - sprinting_intolerance
+    - kicking_deficit
+    - change_of_direction_deficit
+    - full_training_not_yet_tolerated
+  shared_deconditioning_balance_gait:
+    - generalized_weakness
+    - lower_limb_weakness
+    - sit_to_stand_difficulty
+    - reduced_repeated_chair_rise_capacity
+    - poor_coordination
+    - static_balance_deficit
+    - dynamic_balance_deficit
+    - turning_instability
+    - stepping_or_recovery_deficit
+    - unsteady_gait
+    - assistance_required_for_gait
+    - walking_aid_use
+    - fear_or_concern_about_falling
+    - reduced_confidence_with_mobility
+
+adjunct_ids:
+  - manual_therapy
+  - soft_tissue_techniques
+  - neurodynamic_techniques
+  - selected_cervical_traction
+  - dry_needling
+  - acupuncture
+  - eswt
+  - taping
+  - heel_lift
+  - night_splint
+  - orthosis_or_brace_context
+
+measurement_ids:
+  - sppb_total_optional
+  - sppb_balance_component_optional
+  - sppb_4m_gait_speed_or_time_optional
+  - sppb_5_chair_rises_time_optional
+  - timed_up_and_go
+  - five_times_sit_to_stand
+  - thirty_second_chair_stand
+  - four_metre_gait_speed
+  - berg_balance_scale
+  - mini_bestest
+  - six_minute_walk
+
+restriction_ids:
+  - weight_bearing_status
+  - upper_limb_use_status
+  - rom_status
+  - loading_strengthening_status
+  - brace_or_orthosis_status
+  - immobilization_status
+  - running_restriction
+  - sprinting_or_kicking_restriction
+  - sport_or_work_restriction
+  - procedure_specific_protocol
+  - other_explicit_restriction
+
+safety_rules:
+  generic_material_concern_without_disposition:
+    severity: block_until_disposition
+    disposition_required: true
+  missing_required_structural_restriction:
+    severity: hard_warning_ack_required
+    disposition_required: false
+  adjunct_without_core_rehabilitation:
+    severity: hard_warning_ack_required
+    disposition_required: false
+  new_or_progressive_objective_neurological_deficit:
+    severity: block_until_disposition
+    disposition_required: true
+  cauda_equina_type_concern:
+    severity: urgent_reassessment
+    disposition_required: true
+  new_perineal_or_saddle_sensory_change:
+    severity: urgent_reassessment
+    disposition_required: true
+  acute_unresolved_fracture_or_instability_concern:
+    severity: block_until_disposition
+    disposition_required: true
+  acute_unresolved_tendon_rupture_or_major_avulsion_concern:
+    severity: block_until_disposition
+    disposition_required: true
+  unresolved_dvt_concern:
+    severity: urgent_reassessment
+    disposition_required: true
+  acute_neurovascular_compromise_concern:
+    severity: urgent_reassessment
+    disposition_required: true
+  infection_or_septic_joint_concern:
+    severity: urgent_reassessment
+    disposition_required: true
+  acute_hot_swollen_neuropathic_foot_or_charcot_concern:
+    severity: urgent_reassessment
+    disposition_required: true
+  postoperative_infection_or_unexpected_major_deterioration:
+    severity: urgent_reassessment
+    disposition_required: true
+  syncope_or_unexplained_loss_of_consciousness:
+    severity: urgent_reassessment
+    disposition_required: true
+  acute_unexplained_gait_or_coordination_change:
+    severity: block_until_disposition
+    disposition_required: true
+  spurling_or_neural_test_without_matching_symptom_context:
+    severity: soft_warning
+    disposition_required: false
+  incomplete_neurological_screen_in_radicular_presentation:
+    severity: soft_warning
+    disposition_required: false
+  sifk_loading_status_not_stated:
+    severity: hard_warning_ack_required
+    disposition_required: false
+  fracture_weight_bearing_not_stated_when_required:
+    severity: hard_warning_ack_required
+    disposition_required: false
+
+safety_resolution_policy:
+  highest_severity_wins: true
+  urgent_reassessment_blocks_routine_formatter: true
+  block_until_disposition_blocks_formatter_without_disposition: true
+  hard_warning_ack_required_blocks_until_acknowledged: true
+  soft_warning_never_creates_diagnosis: true
+  not_assessed_never_generates_reassuring_negative: true
