@@ -4,7 +4,7 @@
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Parent product:** Personal Clinical Excellence System.
 > **Scope:** cross-module Clinic Utilities / Clinical Operations.
-> **Current focus:** CU-1 Physiotherapy Referral v2 pre-code design is `DESIGN-COMPLETE`; runtime remains separately unauthorized.
+> **Current focus:** CU-1 Physiotherapy Referral v2 is implemented, tested, merged and deployed; CU-2 remains separately gated and unauthorized.
 
 Clinic Utilities are cross-module clinician-facing operational tools, not a new clinical Module 02.
 
@@ -34,14 +34,14 @@ Machine contract entrypoint:
 clinic_utilities/contracts/cu1_contract_manifest_v1.yaml
 ```
 
-Final completeness review:
+Final pre-code completeness review:
 
 ```text
 clinic_utilities/CU1_DESIGN_COMPLETENESS_REVIEW_V3.md
 → DESIGN-COMPLETE
 ```
 
-The broad clinical taxonomy and machine contract are frozen unless a later implementation review proves a contradiction.
+The broad clinical taxonomy and machine contract remain frozen unless a later maintenance review proves a concrete contradiction.
 
 ---
 
@@ -66,6 +66,15 @@ PR #53 exact R2 transcription correction
 
 CU1_DESIGN_COMPLETENESS_REVIEW_V3.md
 → DESIGN-COMPLETE
+
+PR #56 runtime implementation
+→ protected ephemeral CU-1 utility
+→ manifest-driven validation/rule/formatter engine
+→ exact frozen gateway trust boundary
+→ fail-closed safety-state boundary
+→ 29/29 focused tests PASS
+→ squash merge `c1da07f581cf8ccf1159d18bb63c23b674cbe9bd`
+→ Render deploy `dep-da8afeuk1f9s73f5sr6g` LIVE
 ```
 
 Resolved areas include:
@@ -84,43 +93,61 @@ validation-error behavior
 formatter contract
 structured-option boundary
 synthetic semantic fixtures
+runtime trust-boundary validation
+protected Clinical Excellence integration
+ephemeral copy/print workflow
 ```
 
 ---
 
-# 3. Frozen first implementation direction
+# 3. CU-1 delivered implementation
 
 ```text
 ephemeral ReferralDraftV1
-→ deterministic validation/rule evaluation
+→ deterministic normalization
+→ frozen gateway/ownership resolution
+→ route validation
+→ declarative safety/consistency evaluation
+→ acknowledgement/disposition gate
 → generated short/detailed referral text
 → copy / print
 ```
 
-Persistence remains outside the first implementation scope.
+Runtime entrypoints:
 
-Runtime implementation has **not** been authorized or started.
+```text
+/clinical/clinic-utilities/physio-referral
+/clinical/clinic-utilities/physio-referral/api/contract
+/clinical/clinic-utilities/physio-referral/api/validate
+/clinical/clinic-utilities/physio-referral/api/generate
+```
+
+Persistence remains outside CU-1 v1. No referral draft or generated referral is saved in PostgreSQL, localStorage or sessionStorage.
+
+External route-level HTTP smoke from the assistant sandbox was not executable because of DNS resolution failure; Render build/start/live status at the exact merge commit is proven. This limitation does not authorize additional scope by itself.
 
 ---
 
-# 4. Future implementation gate
+# 4. CU-1 closure rule
 
-If the product owner later authorizes CU-1 implementation:
+CU-1 is closed at runtime v1 after control-plane closeout and writer-lock release.
 
-```text
-fresh six-canonical bootstrap
-→ inspect current Clinical Excellence runtime/navigation seams
-→ create a fresh CU-1 runtime implementation slice/branch
-→ implement against cu1_contract_manifest_v1.yaml
-→ executable tests derived from frozen fixtures
-→ focused evidence + independent exact-head review
-→ merge/deploy only under the newly authorized slice
-```
-
-Do not treat `DESIGN-COMPLETE` as `IMPLEMENTED`.
+A future CU-1 maintenance slice requires a concrete defect/contradiction and fresh authorization. Design completion or deployment does not authorize persistence, taxonomy expansion or new physiotherapy recommendations.
 
 ---
 
 # 5. CU-2 remains separate
 
-Radiofrequency treatment request / PDF workflow remains a separate future Clinic Utilities slice. It must not be folded into CU-1 and must not begin merely because CU-1 design is complete.
+Radiofrequency treatment request / PDF workflow remains a separate future Clinic Utilities slice. It must not be folded into CU-1 and must not begin merely because CU-1 is complete.
+
+Before CU-2 implementation:
+
+```text
+explicit product-owner selection
+→ fresh six-canonical bootstrap
+→ read-only inspection of the real current workflow/runtime seams
+→ dedicated CU-2 slice design
+→ explicit writer lock
+```
+
+CU-2 is currently **NOT AUTHORIZED**.
