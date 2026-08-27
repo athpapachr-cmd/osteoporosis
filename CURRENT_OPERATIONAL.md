@@ -1,105 +1,118 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
 > **STATUS:** ACTIVE OPERATIONAL AUTHORITY.
-> **Updated:** 2026-08-27 Asia/Nicosia.
+> **Updated:** 2026-08-28 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Verified implementation base main:** `7c49c2c6ad5ad9c710a6c02fe1ec4df467b4bab2`.
-> **CU-1 DESIGN-COMPLETE CLOSEOUT:** PR #54 merged as `e064e1fe86a49dcf5026b4346d9e5f3fedfd3d92`; writer-lock cleanup PR #55 merged as `7c49c2c6ad5ad9c710a6c02fe1ec4df467b4bab2`.
-> **Current major phase:** Personal Clinical Excellence foundation with an explicitly authorized CU-1 runtime implementation slice.
-> **Active slice:** CU-1 Physiotherapy Referral v2 — runtime implementation v1.
-> **Design authority:** `SLICE_PLAN_CURRENT.md` + `clinic_utilities/contracts/cu1_contract_manifest_v1.yaml` + frozen v1.1 clinical profiles.
-> **ACTIVE CANONICAL WRITER/LOCK:** `feat/cu1-physio-referral-runtime-v1-2026-08-27`.
-> **ACTIVE RUNTIME WRITER/LOCK:** `feat/cu1-physio-referral-runtime-v1-2026-08-27`.
-> **RUNTIME IMPLEMENTATION:** AUTHORIZED for this bounded CU-1 slice only.
+> **Verified current main before closeout:** `c1da07f581cf8ccf1159d18bb63c23b674cbe9bd`.
+> **CU-1 runtime implementation:** PR #56 squash-merged as `c1da07f581cf8ccf1159d18bb63c23b674cbe9bd`.
+> **Focused evidence:** GitHub Actions exact-head run PASS — 29/29 tests at reviewed head `e04004add617afa7222c51d0d669c2134dd8f575`.
+> **Production deploy:** Render deploy `dep-da8afeuk1f9s73f5sr6g` = `live`, exact commit `c1da07f581cf8ccf1159d18bb63c23b674cbe9bd`.
+> **Current major phase:** Personal Clinical Excellence foundation / baseline and Clinical Practice Review roadmap.
+> **CU-1 status:** IMPLEMENTED + TESTED + MERGED + DEPLOYED; runtime slice closed pending this control-plane closeout merge.
+> **ACTIVE CANONICAL WRITER/LOCK:** `docs/cu1-runtime-closeout-2026-08-28` — closeout documents only.
+> **ACTIVE RUNTIME WRITER/LOCK:** NONE.
 > **CU-2:** NOT AUTHORIZED.
 > **PR-1 Transcript Intake:** intentionally paused at `archive/slices/PR1_TRANSCRIPT_INTAKE_V3.md`.
 
 ---
 
-# 1. Authorized implementation boundary
-
-Implement the frozen CU-1 first-runtime direction only:
+# 1. Proven CU-1 state
 
 ```text
-protected Clinical Excellence utility page
-→ ephemeral ReferralDraftV1 in browser memory only
-→ canonical normalization
-→ route/gateway/ownership resolution
-→ route requirement validation
-→ declarative safety/consistency rule evaluation
-→ ShortReferralFormatter / DetailedReferralFormatter
-→ generated referral text
-→ copy / print
+pre-code clinical/content design = FROZEN / DESIGN-COMPLETE
+machine contract = FROZEN
+runtime implementation = COMPLETE
+focused automated evidence = PASS (29/29)
+independent exact-head review = MERGE-READY / CLEAN
+PR #56 = SQUASH-MERGED
+Render auto-deploy = LIVE
+referral persistence = NONE by design
 ```
 
-No referral draft or generated referral text is to be persisted server-side or in browser storage in this slice.
+Implemented protected entrypoints:
+
+```text
+GET  /clinical/clinic-utilities/physio-referral
+GET  /clinical/clinic-utilities/physio-referral/api/contract
+POST /clinical/clinic-utilities/physio-referral/api/validate
+POST /clinical/clinic-utilities/physio-referral/api/generate
+```
+
+The browser draft and generated text remain ephemeral. No CU-1 referral data are written to PostgreSQL, localStorage or sessionStorage.
 
 ---
 
-# 2. Runtime/integration seams
+# 2. Safety / contract evidence
 
-Frozen integration direction after fresh inspection of current `main`:
+The merged runtime is manifest-driven from:
 
 ```text
-main.py
-→ include dedicated CU-1 router
-
-/clinical/clinic-utilities/physio-referral
-→ protected HTML entrypoint
-
-/clinical/clinic-utilities/physio-referral/api/*
-→ protected ephemeral contract/validation/generation API
-
-static/clinic-utilities/physio-referral/*
-→ presentation assets only; no persisted clinical state
+clinic_utilities/contracts/cu1_contract_manifest_v1.yaml
 ```
 
-The backend must load/compose the frozen machine contract through `clinic_utilities/contracts/cu1_contract_manifest_v1.yaml`. Runtime must not parse clinical-profile Markdown to invent routing, safety or validation semantics.
+Focused executable evidence covers contract loading/correction precedence, alias normalization, route/context validation, all frozen shared gateways, forged-gateway rejection, safety input semantics, forged acknowledgement/disposition rejection, postoperative/fracture/muscle boundaries, formatter determinism, forbidden reassuring inference and no-persistence behavior.
+
+Important review hardening completed before merge:
+
+```text
+arbitrary shared_target_optional → rejected unless exact frozen gateway
+unknown acknowledged_rule_ids → rejected
+unknown clinician_disposition → rejected
+unknown safety input flag → rejected
+not_assessed/unselected state → never converted to reassuring negative
+```
+
+A duplicate unused router builder remains in `clinic_utilities/physio_referral_runtime.py`; `main.py` imports only the guarded router from `clinic_utilities/physio_referral_api.py`. This is non-blocking maintenance debt, not active behavior and not a reason to reopen CU-1.
 
 ---
 
-# 3. Hard constraints
+# 3. Deploy / smoke truth
+
+Render service `osteoporosis` auto-deployed the exact merge commit and reported:
 
 ```text
-NO PostgreSQL/localStorage/sessionStorage referral persistence
-NO identifiable patient fixtures/data in the public repository
-NO clinical taxonomy reopening without REPLAN
-NO runtime-invented route IDs, context enums, safety flags or validation rules
-NO profile-Markdown interpretation for machine semantics
-NO CU-2 work
-NO PR-1 work
+build successful
+uvicorn process started
+status = live
 ```
 
-A contradiction between implementation reality and frozen contract/profile meaning is a REPLAN trigger, not permission to patch semantics ad hoc.
+External route-level HTTP smoke was **not executed from the assistant execution sandbox** because DNS resolution failed before reaching the Render host. This is an environment limitation, not evidence of an application-route failure.
+
+Therefore the precise status is:
+
+```text
+DEPLOYED = PROVEN
+RENDER LIVE = PROVEN
+EXTERNAL ROUTE-LEVEL HTTP SMOKE FROM THIS SANDBOX = NOT PROVEN
+```
+
+Do not silently upgrade that last item to `PRODUCTION-SMOKE-VERIFIED`.
 
 ---
 
-# 4. Acceptance evidence required before merge
+# 4. Closed scope / prohibitions
+
+CU-1 closure does not authorize any of the following:
 
 ```text
-1. deterministic contract loader/composition tests
-2. alias/context normalization tests
-3. gateway/route ownership tests
-4. route-required/conditional validation tests
-5. declarative safety/consistency rule tests
-6. formatter tests for short + detailed output
-7. explicit negative tests for forbidden inference / not-assessed semantics
-8. no-persistence browser/runtime evidence
-9. protected-route smoke
-10. exact branch-vs-main review
-11. independent exact-head review
+CU-2 implementation
+PR-1 runtime resumption
+referral persistence or patient-registry linkage
+clinical taxonomy reopening
+new evidence-sensitive physiotherapy recommendations
 ```
+
+Frozen CU-1 clinical profiles/contracts remain authoritative unless a future concrete contradiction justifies a separately authorized maintenance slice.
 
 ---
 
 # 5. Exact next action
 
 ```text
-1. freeze runtime implementation slice in SLICE_PLAN_CURRENT.md
-2. implement the bounded backend contract engine + protected utility shell
-3. add executable focused tests derived from frozen fixtures
-4. run focused evidence
-5. STOP at MERGE-READY or BLOCK for independent exact-head review
+1. merge the docs-only CU-1 runtime closeout PR
+2. release the closeout canonical writer lock
+3. STOP — CU-1 is closed
+4. await explicit product-owner selection of the next roadmap slice
 ```
 
-Merge/deploy is not implied merely by implementation completion; it requires the focused evidence/review gate above.
+No engineering continuation is implied by CU-1 completion.
