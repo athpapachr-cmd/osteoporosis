@@ -3,7 +3,7 @@
 > **STATUS:** ACTIVE OPERATIONAL AUTHORITY.
 > **Updated:** 2026-08-27 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **HIP/GROIN FREEZE PR:** PR #44 squash-merged as `00f5e8feda41bd0eec72fade70b4eca88206b175`.
+> **Verified base main for this Ankle / Foot design:** `48586ffbccdc2959088302c3ffcacd94a2f0bfb2`.
 > **Current major phase:** Personal Clinical Excellence foundation with a bounded Clinic Utilities detour.
 > **Active slice design:** `SLICE_PLAN_CURRENT.md` — CU-1 Physiotherapy Referral v2 clinical/content design.
 > **Supporting detour plan:** `CLINIC_UTILITIES_PLAN.md`.
@@ -14,12 +14,13 @@
 > **Frozen wrist/hand profile:** `clinic_utilities/physio_profiles/wrist_hand_v1_1.md`.
 > **Frozen knee profile:** `clinic_utilities/physio_profiles/knee_v1_1.md`.
 > **Frozen hip/groin profile:** `clinic_utilities/physio_profiles/hip_v1_1.md`.
-> **ACTIVE CANONICAL WRITER/LOCK:** NONE.
+> **Frozen ankle/foot profile on active docs branch:** `clinic_utilities/physio_profiles/ankle_foot_v1_1.md`.
+> **ACTIVE CANONICAL WRITER/LOCK:** docs-only branch `docs/cu1-ankle-foot-v1-design-2026-08-27` until exact-head review/PR/merge/handoff close.
 > **ACTIVE RUNTIME WRITER/LOCK:** NONE in this repository.
 > **RUNTIME IMPLEMENTATION:** NOT AUTHORIZED for CU-1; design only.
 > **PR-1 TRANSCRIPT SLICE:** intentionally paused at `archive/slices/PR1_TRANSCRIPT_INTAKE_V3.md`.
 
-This file is the sole owner of operational NOW. Do not infer mutation authority from chat history.
+This file is the sole owner of operational NOW for the active branch. Do not infer mutation authority from chat history.
 
 ---
 
@@ -50,76 +51,104 @@ elbow_v1_1 = FROZEN
 wrist_hand_v1_1 = FROZEN
 knee_v1_1 = FROZEN
 hip_v1_1 = FROZEN
+ankle_foot_v1_1 = FROZEN on docs branch pending exact-head review/merge
 ```
 
 ---
 
-# 3. Hip / Groin v1.1 — closed freeze
+# 3. Ankle / Foot v1.1 — product-owner-approved design
 
 Frozen routine pathways:
 
 ```text
-H1 lateral hip / greater-trochanteric pain pathway
-H2 nonarthritic intra-articular hip pain — FAIS / symptomatic labral
-H3 adductor-related groin pain / adductor tendinopathy
-H4 post-traumatic hip/groin pain or stiffness after assessed injury
+AF1 lateral ankle sprain rehabilitation
+AF2 Achilles tendinopathy — midportion / insertional
+AF3 plantar heel pain / plantar fasciitis
+AF4 posterior tibial tendon dysfunction / flexible PCFD
+AF5 peroneal tendon disorder — conservative rehabilitation
+AF6 mechanical metatarsalgia / forefoot overload
+AF7 post-traumatic ankle/foot pain or stiffness after assessed injury
 ```
 
-High-value direct shared-profile gateways:
+Frozen pediatric/adolescent navigation:
 
 ```text
-proximal rectus femoris / proximal quadriceps tendon injury in athletes
-→ shared muscle/myotendinous profile
-
-pelvic apophyseal avulsion fracture, especially ASIS/AIIS
-→ shared fracture/post-immobilization profile
+Παιδιά / Έφηβοι — ποδοκνημική / άκρος πόδας
+→ Sever disease / calcaneal apophysitis
+→ symptomatic accessory navicular
+→ symptomatic flexible flatfoot
 ```
 
-Workflow decisions:
-
-- hip OA is context only because it is not routinely referred;
-- lateral hip/GTPS remains visible, with clinician-entered trochanteric bursitis directly selectable;
-- FAIS and symptomatic labral pathology are combined into one nonarthritic intra-articular pathway;
-- adductor-related groin pain is high visibility because it is seen/referred frequently;
-- proximal hamstring tendinopathy and iliopsoas/internal snapping hip are rare/secondary;
-- gluteus medius/minimus tears, external snapping, dysplasia/instability and inguinal/pubic-related groin pain remain rare/advanced;
-- postoperative hip is excluded from the routine menu;
-- there is no general pediatric/adolescent Hip navigation group;
-- pediatric pelvic apophyseal avulsions remain visible through the shared fracture gateway;
-- deep-gluteal/piriformis continues to route to the frozen lumbar profile.
-
-Adjunct decisions:
+Rare/advanced/context decisions:
 
 ```text
+chronic ankle instability / recurrent sprain → rare/secondary
+syndesmotic/high-ankle sprain → very rare/advanced
+tarsal tunnel → rare neurological
+heel fat-pad pain → rare/secondary
+Morton neuroma → rare/context
+plantar-plate / lesser-MTP instability → very rare/advanced
+anterior tibial / extensor / FHL tendon disorder → rare
+osteochondral talus lesion → rare/advanced
+hallux rigidus / 1st-MTP OA → context only
+ankle OA → context only
+Charcot / neuropathic hot swollen foot → high-priority medical/offloading context, not PT pathway
+postoperative ankle/foot → advanced only; occasional Achilles repair/reconstruction
+```
+
+Support/adjunct policy:
+
+```text
+taping → directly visible optional support
+heel lift → directly visible optional support
+brace / orthosis / AFO / metatarsal pad / footwear / offloading → condition-specific context, often podiatry-coordinated
 manual therapy / soft tissue → optional where relevant
-dry needling → optional clinician-selected adjunct in appropriate myofascial context
+dry needling → optional clinician-selected adjunct
 acupuncture → excluded
-ESWT for GTPS / proximal hamstring → not generator-recommended; therapist-proposed use may be documented
+ESWT plantar heel → evidence-supported optional adjunct
+ESWT Achilles → evidence-conflicted optional adjunct; not routine or superior to loading
 ```
 
-Anatomical safeguard:
+Safety emphasis:
 
 ```text
-proximal rectus femoris origin → AIIS / supra-acetabular region
-ASIS avulsion → classically sartorius-related traction
-ASIS avulsion != proximal rectus femoris injury by default
+fracture / bone-stress / Lisfranc concern
+syndesmotic / Maisonneuve concern
+Achilles rupture concern
+peroneal dislocation/subluxation or major tear
+hot swollen neuropathic foot / Charcot
+infection / nonhealing wound / vascular-neurological deficit
+unknown healing / weight-bearing / postoperative restrictions
 ```
 
 No runtime behavior changed.
 
 ---
 
-# 4. Exact next action
+# 4. Operational incident reconciled before PR
+
+During PR preparation, a temporary file `_noop` was accidentally created on `main` and immediately removed. The add/remove commits advanced `main` from `f78da0021a0b881f5561222e0fbeb48a18e79066` to `48586ffbccdc2959088302c3ffcacd94a2f0bfb2`, but an exact compare showed **zero net file diff** between those two main states.
+
+Temporary `_noop2` through `_noop8` files were then created only on the docs branch during an attempted ref rebase. They were discarded by resetting the branch ref to a clean commit built from the previously reviewed Ankle/Foot tree on top of `48586ffbccdc2959088302c3ffcacd94a2f0bfb2`. None exists in the current branch tree or `main`.
+
+The incident changed no clinical/runtime content. The current branch must be reviewed only from its post-reconciliation exact head.
+
+---
+
+# 5. Exact next action
 
 ```text
-1. product owner selects the next remaining CU-1 regional/shared profile
-2. use the same taxonomy/findings/safety/goals/rehab/evidence method
-3. continue CU-1 design only
+1. exact branch-vs-main review of Ankle / Foot v1.1 freeze from repaired base
+2. open docs-only PR if clean
+3. independent exact-head review
+4. merge only if exact head remains clean
+5. clear canonical writer lock and reconcile main
+6. product owner selects next shared CU-1 profile
 ```
 
 ---
 
-# 5. Explicitly forbidden now
+# 6. Explicitly forbidden now
 
 ```text
 WRITE CU-1 production runtime code
@@ -127,12 +156,13 @@ WRITE PR-1 transcript runtime code
 AUTO-PERSIST physiotherapy referrals
 MUTATE RF/Secretary/Calendar/Setmore/Zadarma
 COMMIT identifiable patient data
+START overlapping next regional/shared mutation before ankle/foot handoff closes
 CREATE overlapping runtime writers
 ```
 
 ---
 
-# 6. Handoff completeness
+# 7. Handoff completeness
 
 ```text
 active detour = Clinic Utilities
@@ -143,10 +173,9 @@ shoulder = frozen v1.1
 elbow = frozen v1.1
 wrist/hand = frozen v1.1
 knee = frozen v1.1
-hip = frozen v1.1
-hip PR = #44 merged
-canonical writer = none
+hip/groin = frozen v1.1
+ankle/foot = frozen v1.1 on docs branch pending review/merge
+canonical writer = docs/cu1-ankle-foot-v1-design-2026-08-27
 runtime writer = none
 runtime implementation = unauthorized
-next action = product owner selects next regional/shared profile
 ```
