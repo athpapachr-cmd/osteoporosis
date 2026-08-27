@@ -7,16 +7,9 @@
 > **Current major phase:** Personal Clinical Excellence foundation with a bounded Clinic Utilities detour.
 > **Active slice design:** `SLICE_PLAN_CURRENT.md` — CU-1 Physiotherapy Referral v2 clinical/content design.
 > **Supporting detour plan:** `CLINIC_UTILITIES_PLAN.md`.
-> **Frozen cervical profile:** `clinic_utilities/physio_profiles/cervical_v1_1.md`.
-> **Frozen lumbar profile:** `clinic_utilities/physio_profiles/lumbar_v1_1.md`.
-> **Frozen shoulder profile:** `clinic_utilities/physio_profiles/shoulder_v1_1.md`.
-> **Frozen elbow profile:** `clinic_utilities/physio_profiles/elbow_v1_1.md`.
-> **Frozen wrist/hand profile:** `clinic_utilities/physio_profiles/wrist_hand_v1_1.md`.
-> **Frozen knee profile:** `clinic_utilities/physio_profiles/knee_v1_1.md`.
-> **Frozen hip/groin profile:** `clinic_utilities/physio_profiles/hip_v1_1.md`.
-> **Frozen ankle/foot profile:** `clinic_utilities/physio_profiles/ankle_foot_v1_1.md`.
-> **CURRENT SHARED DESIGN TARGET:** fracture / post-immobilization.
-> **ACTIVE CANONICAL WRITER/LOCK:** docs-only branch `docs/cu1-shared-fracture-v1-design-2026-08-27` for Shared Fracture / Post-immobilization v1 CU-1 clinical/content design.
+> **Frozen regional profiles:** cervical, lumbar, shoulder, elbow, wrist/hand, knee, hip/groin, ankle/foot v1.1.
+> **Frozen shared-fracture profile on active docs branch:** `clinic_utilities/physio_profiles/shared_fracture_v1_1.md`.
+> **ACTIVE CANONICAL WRITER/LOCK:** docs-only branch `docs/cu1-shared-fracture-v1-design-2026-08-27` until exact-head review/PR/merge/handoff close.
 > **ACTIVE RUNTIME WRITER/LOCK:** NONE in this repository.
 > **RUNTIME IMPLEMENTATION:** NOT AUTHORIZED for CU-1; design only.
 > **PR-1 TRANSCRIPT SLICE:** intentionally paused at `archive/slices/PR1_TRANSCRIPT_INTAKE_V3.md`.
@@ -42,7 +35,7 @@ CU-1 remains a bounded cross-module design detour. No runtime authority is impli
 
 ---
 
-# 2. Frozen regional state
+# 2. Frozen profile state
 
 ```text
 cervical_v1_1 = FROZEN
@@ -53,77 +46,128 @@ wrist_hand_v1_1 = FROZEN
 knee_v1_1 = FROZEN
 hip_v1_1 = FROZEN
 ankle_foot_v1_1 = FROZEN
+shared_fracture_v1_1 = FROZEN on docs branch pending exact-head review/merge
 ```
 
 ---
 
-# 3. Shared Fracture / Post-immobilization — ACTIVE DESIGN CANDIDATE WORK
+# 3. Shared Fracture / Post-immobilization v1.1 — product-owner-approved design
 
-Authorized scope is clinical/content design only:
-
-```text
-shared fracture taxonomy across upper limb / lower limb / pelvis
-fracture date / phase / treatment context
-healing / stability state
-immobilization / brace / orthosis state
-weight-bearing / use status
-ROM / loading restrictions
-surgeon / orthopaedic instructions
-post-immobilization stiffness / weakness / function
-pediatric skeletal-maturity / physeal / apophyseal context
-fragility / stress / insufficiency fracture context where relevant
-return-to-function / return-to-sport semantics
-safety / nonunion / displacement / infection / neurovascular / CRPS reassessment semantics
-```
-
-Target candidate:
+Authoritative frozen file:
 
 ```text
-clinic_utilities/physio_profiles/shared_fracture_v1.md
+clinic_utilities/physio_profiles/shared_fracture_v1_1.md
 ```
 
-It remains **DESIGN CANDIDATE / NOT FROZEN** until explicit product-owner review and approval.
+Architecture:
+
+```text
+regional/shared fracture entry
+→ fracture_rehabilitation_post_immobilization
+→ fracture site
+→ treatment / phase / healing-stability
+→ immobilization / lower-limb weight-bearing OR upper-limb use/loading
+→ ROM / strengthening / impact restrictions
+→ actual deficits / function
+→ confirmed rehabilitation goals/directions
+```
+
+Hard rules:
+
+```text
+elapsed time != union
+cast/sling/boot removal != unrestricted loading
+fixation != unrestricted loading
+not stated != unrestricted
+exact orthopaedic protocol > generic shared suggestion
+no fixed week-based ROM / weight-bearing / strengthening timeline without explicit instruction
+manual therapy requires known stability + ROM permission
+pediatric fracture != adult timeline
+fragility fracture != software diagnosis of osteoporosis
+```
+
+High-visibility workflow entries include:
+
+```text
+vertebral compression / fragility fracture
+proximal humerus
+clavicle
+distal radius
+hand / finger fractures
+pubic rami
+patella
+ankle fractures
+calcaneus including anterior-process calcaneus
+5th metatarsal / other metatarsal
+foot / toe fractures
+```
+
+Less frequent / advanced include scaphoid with strong union gate, elbow fractures, tibial plateau, Lisfranc and other site-sensitive fractures. Long-bone shaft fractures and older-adult hip fracture are not routine high-visibility outpatient-referral entries in this workflow.
+
+Fragility modifier:
+
+```text
+formal_fragility_fracture_context
+known_osteoporosis_or_low_bone_strength_context
+falls_risk_or_recurrent_falls_context
+```
+
+When selected, balance/falls/strength/functional-independence goals become prominent without creating osteoporosis diagnosis or medication advice.
+
+SIFK / legacy SONK decision:
+
+```text
+preferred structured entity = subchondral_insufficiency_fracture_of_knee
+SIFK = preferred current terminology
+SONK = legacy / clinician-entered wording, not an autonomous second software diagnosis
+advanced SIFK may carry osteonecrosis / osteochondral-collapse context when established
+bone-marrow edema alone != SIFK
+SIFK + loading status unknown → no generic strengthening / impact progression
+```
+
+Pediatric group remains low visibility except for pelvic apophyseal avulsions; buckle fractures are not routine referrals in this workflow.
+
+Excluded as default fracture-healing recommendations:
+
+```text
+acupuncture
+dry needling
+ESWT
+therapeutic ultrasound to accelerate union
+bone-stimulator prescription
+```
+
+No runtime behavior changed.
 
 ---
 
-# 4. Existing frozen shared-fracture contract
-
-Inherited minimum required context:
+# 4. Safety emphasis
 
 ```text
-bone/site
-fracture date/phase
-treatment
-healing/stability status
-immobilization/brace/orthosis status
-weight-bearing/use status
-ROM/loading restrictions
-surgeon/orthopaedic instructions
-age/skeletal-maturity when relevant
+unknown healing/stability/use/loading state
+loss of reduction / reinjury / delayed union / nonunion / hardware concern
+infection / wound / pin-site concern
+new neurovascular deficit / compartment concern
+DVT/PE concern in relevant lower-limb context
+possible CRPS without autonomous diagnosis
+vertebral neurological/spinal-precaution concern
+stress/insufficiency fracture with unknown impact/loading status
+pediatric physeal/apophyseal restrictions
 ```
 
-Hard safety rule:
-
-```text
-unknown healing / stability / weight-bearing / use / loading context
-→ warning
-→ no unrestricted rehabilitation wording
-```
-
-Fracture logic should be owned once in this shared profile rather than duplicated across frozen regional profiles.
+Material concern without clinician disposition prevents routine reassuring referral wording.
 
 ---
 
 # 5. Exact next action
 
 ```text
-1. inspect all frozen regional fracture gateways
-2. perform current evidence/safety review for fracture rehabilitation and post-immobilization semantics
-3. create `shared_fracture_v1.md` as DESIGN CANDIDATE
-4. align `SLICE_PLAN_CURRENT.md` and `CLINIC_UTILITIES_PLAN.md` to active shared-fracture candidate
-5. present taxonomy / visibility / restrictions / pediatric / fragility / postoperative decisions to product owner
-6. revise after real-workflow feedback
-7. freeze/merge only after explicit product-owner approval
+1. exact branch-vs-main review of Shared Fracture v1.1 freeze
+2. open docs-only PR if clean
+3. independent exact-head review
+4. merge only if exact head remains clean
+5. clear canonical writer lock and reconcile main
+6. product owner selects next shared CU-1 profile
 ```
 
 ---
@@ -136,16 +180,15 @@ WRITE PR-1 transcript runtime code
 AUTO-PERSIST physiotherapy referrals
 MUTATE RF/Secretary/Calendar/Setmore/Zadarma
 COMMIT identifiable patient data
-FREEZE or merge Shared Fracture without product-owner approval
-START muscle/myotendinous design before this writer lock is released
+START muscle/myotendinous design before shared-fracture handoff closes
 CREATE overlapping runtime writers
 ```
 
 ---
 
-# 7. Resolved prior operational incident
+# 7. Prior resolved operational incident
 
-During Ankle/Foot PR preparation, temporary `_noop` files were created and fully removed/discarded before PR #45. Exact comparison showed zero net file diff on `main`, none exists in the merged tree, and no clinical/runtime content changed. The incident remains closed.
+The Ankle/Foot `_noop` incident remains closed: all temporary files were removed/discarded before PR #45 and the main-tree net file diff was zero.
 
 ---
 
@@ -154,15 +197,8 @@ During Ankle/Foot PR preparation, temporary `_noop` files were created and fully
 ```text
 active detour = Clinic Utilities
 active slice = CU-1 Physio Referral v2 design
-cervical = frozen v1.1
-lumbar = frozen v1.1
-shoulder = frozen v1.1
-elbow = frozen v1.1
-wrist/hand = frozen v1.1
-knee = frozen v1.1
-hip/groin = frozen v1.1
-ankle/foot = frozen v1.1
-shared fracture = active design candidate work
+all regional profiles = frozen v1.1
+shared fracture = frozen v1.1 on docs branch pending review/merge
 canonical writer = docs/cu1-shared-fracture-v1-design-2026-08-27
 runtime writer = none
 runtime implementation = unauthorized
