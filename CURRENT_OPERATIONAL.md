@@ -3,7 +3,7 @@
 > **STATUS:** ACTIVE OPERATIONAL AUTHORITY.
 > **Updated:** 2026-08-27 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Verified base main for this Ankle / Foot design:** `48586ffbccdc2959088302c3ffcacd94a2f0bfb2`.
+> **ANKLE/FOOT FREEZE PR:** PR #45 squash-merged as `64b79d571e57a457480cd5a7814001c0566a9e4b`.
 > **Current major phase:** Personal Clinical Excellence foundation with a bounded Clinic Utilities detour.
 > **Active slice design:** `SLICE_PLAN_CURRENT.md` — CU-1 Physiotherapy Referral v2 clinical/content design.
 > **Supporting detour plan:** `CLINIC_UTILITIES_PLAN.md`.
@@ -14,13 +14,13 @@
 > **Frozen wrist/hand profile:** `clinic_utilities/physio_profiles/wrist_hand_v1_1.md`.
 > **Frozen knee profile:** `clinic_utilities/physio_profiles/knee_v1_1.md`.
 > **Frozen hip/groin profile:** `clinic_utilities/physio_profiles/hip_v1_1.md`.
-> **Frozen ankle/foot profile on active docs branch:** `clinic_utilities/physio_profiles/ankle_foot_v1_1.md`.
-> **ACTIVE CANONICAL WRITER/LOCK:** docs-only branch `docs/cu1-ankle-foot-v1-design-2026-08-27` until exact-head review/PR/merge/handoff close.
+> **Frozen ankle/foot profile:** `clinic_utilities/physio_profiles/ankle_foot_v1_1.md`.
+> **ACTIVE CANONICAL WRITER/LOCK:** NONE.
 > **ACTIVE RUNTIME WRITER/LOCK:** NONE in this repository.
 > **RUNTIME IMPLEMENTATION:** NOT AUTHORIZED for CU-1; design only.
 > **PR-1 TRANSCRIPT SLICE:** intentionally paused at `archive/slices/PR1_TRANSCRIPT_INTAKE_V3.md`.
 
-This file is the sole owner of operational NOW for the active branch. Do not infer mutation authority from chat history.
+This file is the sole owner of operational NOW. Do not infer mutation authority from chat history.
 
 ---
 
@@ -51,12 +51,12 @@ elbow_v1_1 = FROZEN
 wrist_hand_v1_1 = FROZEN
 knee_v1_1 = FROZEN
 hip_v1_1 = FROZEN
-ankle_foot_v1_1 = FROZEN on docs branch pending exact-head review/merge
+ankle_foot_v1_1 = FROZEN
 ```
 
 ---
 
-# 3. Ankle / Foot v1.1 — product-owner-approved design
+# 3. Ankle / Foot v1.1 — closed freeze
 
 Frozen routine pathways:
 
@@ -106,7 +106,7 @@ manual therapy / soft tissue → optional where relevant
 dry needling → optional clinician-selected adjunct
 acupuncture → excluded
 ESWT plantar heel → evidence-supported optional adjunct
-ESWT Achilles → evidence-conflicted optional adjunct; not routine or superior to loading
+ESWT Achilles → evidence-conflicted optional adjunct; not routine or superior to progressive loading
 ```
 
 Safety emphasis:
@@ -125,25 +125,20 @@ No runtime behavior changed.
 
 ---
 
-# 4. Operational incident reconciled before PR
+# 4. Resolved operational incident
 
-During PR preparation, a temporary file `_noop` was accidentally created on `main` and immediately removed. The add/remove commits advanced `main` from `f78da0021a0b881f5561222e0fbeb48a18e79066` to `48586ffbccdc2959088302c3ffcacd94a2f0bfb2`, but an exact compare showed **zero net file diff** between those two main states.
+During PR preparation, `_noop` was accidentally created on `main` and immediately removed. Exact comparison of the pre-incident and repaired main states showed zero net file diff. Temporary branch-only `_noop2`–`_noop8` files created during the rebase attempt were discarded before PR #45; none exists in the merged tree.
 
-Temporary `_noop2` through `_noop8` files were then created only on the docs branch during an attempted ref rebase. They were discarded by resetting the branch ref to a clean commit built from the previously reviewed Ankle/Foot tree on top of `48586ffbccdc2959088302c3ffcacd94a2f0bfb2`. None exists in the current branch tree or `main`.
-
-The incident changed no clinical/runtime content. The current branch must be reviewed only from its post-reconciliation exact head.
+The incident changed no clinical/runtime content and is closed.
 
 ---
 
 # 5. Exact next action
 
 ```text
-1. exact branch-vs-main review of Ankle / Foot v1.1 freeze from repaired base
-2. open docs-only PR if clean
-3. independent exact-head review
-4. merge only if exact head remains clean
-5. clear canonical writer lock and reconcile main
-6. product owner selects next shared CU-1 profile
+1. product owner selects the next remaining shared CU-1 profile
+2. current preferred sequence: shared fracture / post-immobilization → muscle / myotendinous injury → generalized deconditioning / balance / gait
+3. continue CU-1 design only until explicit runtime authorization
 ```
 
 ---
@@ -156,7 +151,6 @@ WRITE PR-1 transcript runtime code
 AUTO-PERSIST physiotherapy referrals
 MUTATE RF/Secretary/Calendar/Setmore/Zadarma
 COMMIT identifiable patient data
-START overlapping next regional/shared mutation before ankle/foot handoff closes
 CREATE overlapping runtime writers
 ```
 
@@ -174,8 +168,10 @@ elbow = frozen v1.1
 wrist/hand = frozen v1.1
 knee = frozen v1.1
 hip/groin = frozen v1.1
-ankle/foot = frozen v1.1 on docs branch pending review/merge
-canonical writer = docs/cu1-ankle-foot-v1-design-2026-08-27
+ankle/foot = frozen v1.1
+ankle/foot PR = #45 merged
+canonical writer = none
 runtime writer = none
 runtime implementation = unauthorized
+next action = product owner selects next shared profile
 ```
