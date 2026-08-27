@@ -12,6 +12,7 @@
 > **Frozen elbow profile:** `clinic_utilities/physio_profiles/elbow_v1_1.md`.
 > **Frozen wrist/hand profile:** `clinic_utilities/physio_profiles/wrist_hand_v1_1.md`.
 > **Frozen knee profile:** `clinic_utilities/physio_profiles/knee_v1_1.md`.
+> **Frozen hip/groin profile on active docs branch:** `clinic_utilities/physio_profiles/hip_v1_1.md`.
 > **Prior active slice:** PR-1 Transcript Intake + Candidate Extraction v3 remains intentionally paused at `archive/slices/PR1_TRANSCRIPT_INTAKE_V3.md`.
 
 CU-1 is a bounded cross-module design detour. It does not authorize runtime implementation.
@@ -71,88 +72,76 @@ shoulder_v1_1 = FROZEN
 elbow_v1_1 = FROZEN
 wrist_hand_v1_1 = FROZEN
 knee_v1_1 = FROZEN
+hip_v1_1 = FROZEN on docs branch pending exact-head review/merge
 ```
 
 ---
 
-# 3. Knee — FROZEN v1.1 design
+# 3. Hip / Groin — FROZEN v1.1 design
 
 Authoritative frozen file:
 
 ```text
-clinic_utilities/physio_profiles/knee_v1_1.md
+clinic_utilities/physio_profiles/hip_v1_1.md
 ```
 
-Frozen default pathways:
+Frozen routine primary pathways:
 
 ```text
-K1 knee osteoarthritis
-K2 degenerative meniscal lesion/tear — conservative rehabilitation
-K3 acute isolated meniscal injury — assessed nonoperative
-K4 patellofemoral pain
-K5 patellar tendinopathy
-K6 quadriceps tendinopathy
-K7 ACL injury/instability — nonoperative or preoperative rehabilitation
-K8 MCL injury — nonoperative rehabilitation
-K9 patellar instability/dislocation rehabilitation
-K10 iliotibial-band syndrome
-K11 pes-anserine region pain / established tendinobursitis
-K12 post-traumatic knee pain/stiffness after assessed injury
-K13 postoperative knee rehabilitation
+H1 lateral hip / greater-trochanteric pain pathway
+H2 nonarthritic intra-articular hip pain — FAIS / symptomatic labral
+H3 adductor-related groin pain / adductor tendinopathy
+H4 post-traumatic hip/groin pain or stiffness after assessed injury
 ```
 
-Frozen pediatric/adolescent navigation group:
+High-value direct shared-profile gateways:
 
 ```text
-Παιδιά / Έφηβοι — γόνατο
-→ Osgood-Schlatter
-→ Sinding-Larsen-Johansson
-```
+proximal rectus femoris / proximal quadriceps tendon injury in athletes
+→ future shared muscle/myotendinous profile
 
-This is a UI grouping, not a diagnostic umbrella. Pediatric/adolescent PFP, meniscal injury, ACL, MCL, patellar instability and fracture route through the same structural pathways with age/skeletal-maturity context.
+pelvic apophyseal avulsion fracture in children/adolescents
+→ future shared fracture/post-immobilization profile
+```
 
 Frozen workflow decisions:
 
-- meniscus repair and partial meniscectomy are common postoperative referrals and remain separate procedure subtypes;
-- degenerative and acute meniscal pathology remain separate because their structural/surgical semantics differ;
-- ACL and MCL are separate top-level nonoperative/preoperative pathways;
-- postoperative ACL/MCL routes exclusively through K13;
-- patellar instability/dislocation, quadriceps tendinopathy, ITB syndrome and pes-anserine pathology are directly selectable;
-- PCL/LCL/PLC/combined ligament injuries remain rare/advanced;
-- distal hamstring insertional pathology and Hoffa/plica are rare selectable secondary/advanced entities;
-- Baker cyst and prepatellar/infrapatellar bursitis are medical/context only;
-- gastrocnemius strain routes to the future shared muscle/myotendinous profile;
-- Osgood-Schlatter and Sinding-Larsen-Johansson are separate growth-related pathways with no rigid universal rehab protocol.
+- hip OA is context only because it is not routinely referred;
+- lateral hip/GTPS remains directly selectable and clinician-entered trochanteric bursitis is preserved as a subtype;
+- FAIS and symptomatic acetabular labral pathology are combined into one nonarthritic intra-articular pathway;
+- adductor-related groin pain is high visibility because it is common in the product-owner workflow;
+- proximal hamstring tendinopathy is rare/secondary;
+- iliopsoas-related pain/internal snapping hip is rare/secondary;
+- established gluteus medius/minimus tears are very rare/advanced;
+- external snapping hip, dysplasia/instability and inguinal/pubic-related athletic groin pain remain rare/advanced;
+- postoperative hip is not a routine pathway;
+- there is no general pediatric/adolescent Hip navigation group;
+- pelvic apophyseal avulsions remain visible via the shared-fracture gateway because the product owner sees them;
+- deep-gluteal/piriformis routes to the frozen lumbar profile.
 
-Frozen support/adjunct policy:
+Frozen adjunct policy:
 
 ```text
-taping / knee braces / foot orthoses → condition-sensitive supports
 manual therapy / soft tissue → optional where relevant
-acupuncture for selected knee OA → optional evidence-sensitive adjunct
-dry needling → excluded
-ESWT → not a default generator recommendation; therapist-proposed patellar-tendon use may be documented
-NMES → procedure/context-specific, especially postoperative TKA; not generic OA
+dry needling → optional clinician-selected adjunct in appropriate myofascial context
+acupuncture → excluded
+ESWT for GTPS / proximal hamstring → not generator-recommended; therapist-proposed use may be documented
 ```
 
 Key safety/semantic rules:
 
 ```text
-radiographic OA != automatic symptom generator
-degenerative MRI meniscal tear != automatic symptomatic lesion or surgical indication
-clicking/catching != true locked knee
-acute displaced/displacing meniscal tear with ROM block != routine rehab
-anterior knee pain != automatic PFP
-cartilage/chondromalacia imaging != automatic symptomatic diagnosis
-tendon imaging change != automatic tendinopathy
-subjective giving-way != objective ACL/MCL instability
-ligament test != autonomous tear grade
-postoperative ACL/MCL != K7/K8; use K13
-time alone != return-to-sport clearance
-first-time patellar dislocation requires structural/osteochondral context
-posterior swelling != automatic Baker cyst and does not exclude DVT
-pediatric anterior-knee pain != automatic Osgood/SLJ
-postoperative rehabilitation = exact procedure/protocol governed
+lateral hip pain != automatic GTPS / trochanteric bursitis / gluteal tendinopathy
+cam/pincer morphology != FAIS
+FADIR/FABER != FAIS or labral tear
+MRI/MRA labral tear != automatically symptomatic pain generator
+groin pain != automatically adductor-related
+painless snapping != symptomatic snapping-hip syndrome
+femoral-neck stress-fracture concern != routine tendon/FAIS referral
+proximal rectus-femoris injury != ASIS avulsion
+AIIS avulsion may be rectus-femoris-origin related
+ASIS avulsion is classically sartorius-related
+known apophyseal avulsion + unknown healing/loading status → warning
 not_assessed neurovascular component != normal
 ```
 
@@ -161,23 +150,23 @@ not_assessed neurovascular component != normal
 # 4. Safety / consistency engine
 
 ```text
-fracture/post-trauma + unresolved structural context
+fracture/stress-fracture concern
+→ diagnostic/structural reassessment before routine rehab
+
+post-trauma + unresolved fracture/dislocation/major avulsion context
 → warning/reassessment prompt
 
-true locked knee / major ROM block
-→ structural reassessment prompt
+acute major proximal rectus-femoris tear/avulsion concern
+→ sports-medicine/structural reassessment semantics
 
-acute extensor-mechanism rupture concern / loss of straight-leg raise
-→ structural reassessment prompt
+child/adolescent pelvic-apophyseal avulsion concern
+→ imaging/structural pathway before unrestricted rehabilitation
 
-major/multiligament instability or neurovascular deficit
-→ urgent/specialist semantics
+hot/systemically unwell acute hip / septic-joint concern
+→ medical reassessment
 
-post-op route + missing procedure/protocol/restrictions
-→ warning
-
-hot swollen knee / infection or DVT concern
-→ medical reassessment; no routine reassuring wording
+SCFE concern
+→ medical/imaging assessment; no routine PT diagnosis
 
 material safety concern + no clinician disposition
 → no routine reassuring wording
@@ -186,23 +175,41 @@ not_assessed neurological/neurovascular component
 → never generate normal wording
 ```
 
-Region-specific details live in `knee_v1_1.md`.
+Region-specific details live in `hip_v1_1.md`.
 
 ---
 
-# 5. Shared fracture / post-immobilization boundary
+# 5. Shared fracture / muscle boundary
 
-Knee-region fractures route to the future shared profile:
+Hip/pelvic fracture entries include:
 
 ```text
-patella fracture
-distal femur fracture
-proximal tibia / tibial plateau fracture
-proximal fibula fracture
-other knee-region fracture
+femoral neck
+intertrochanteric/subtrochanteric
+acetabulum
+pelvic ring/rami
+femoral-neck stress fracture
+pelvic stress/insufficiency fracture
+ASIS apophyseal avulsion
+AIIS apophyseal avulsion
+ischial-tuberosity avulsion
+lesser-trochanter avulsion
+other pelvic apophyseal avulsion
+other hip/pelvic fracture
 ```
 
-Unresolved healing/stability, immobilization/brace, weight-bearing, ROM or loading context prevents unrestricted rehabilitation wording.
+Shared muscle/myotendinous entries include:
+
+```text
+proximal rectus-femoris tendon/myotendinous injury
+adductor strain/tear
+iliopsoas/hip-flexor strain
+rectus-femoris muscle strain
+hamstring strain
+other acute hip/pelvic muscle/tendon injury
+```
+
+Unknown healing/stability/loading context prevents unrestricted rehabilitation wording.
 
 ---
 
@@ -225,9 +232,12 @@ Do not write production HTML/JS/CSS, add patient persistence, integrate navigati
 # 7. Exact next action
 
 ```text
-1. product owner selects the next remaining CU-1 regional/shared profile
-2. use the same taxonomy/findings/safety/goals/rehab/evidence method
-3. continue CU-1 design only
+1. exact branch-vs-main review of Hip v1.1 freeze
+2. open docs-only Hip freeze PR if clean
+3. independent exact-head review
+4. merge only if exact head remains clean
+5. clear canonical writer lock and record resulting main state
+6. product owner selects next CU-1 regional/shared profile
 ```
 
 Runtime implementation remains unauthorized.
