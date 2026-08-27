@@ -647,3 +647,49 @@ completed
 The future UI should make pending requests, approved requests awaiting application and historical completed procedures easy to review. A repeat request must be created by cloning reusable data from a prior request into a **new request identity**, with reconfirmation/editing before submission; the historical request must remain unchanged.
 
 This work is classified as cross-module **Clinic Utilities / Clinical Operations**, not as Osteoporosis Module 01 clinical logic and not as a new clinical Module 02. It is roadmap-approved but not the active runtime slice. Before activation, the source websites must be located/provided and inspected read-only, `CURRENT_OPERATIONAL.md` must explicitly switch the active slice, and a small dedicated design slice must be frozen before implementation.
+
+---
+
+## 2026-08-27 — CU-1 Physiotherapy Referral v2 pre-code design reached DESIGN-COMPLETE
+
+The bounded Clinic Utilities detour completed the full CU-1 physiotherapy referral pre-code design.
+
+All planned regional/shared v1.1 clinical profiles were frozen, followed by machine-contract hardening of typed state, canonical route/gateway identities, route ownership/precedence, ID/enumeration normalization, formatter behavior and safety-result semantics.
+
+Repeat completeness review v2 identified two remaining declarative gaps:
+
+```text
+R1 — safety/consistency trigger conditions
+R2 — route-specific required/conditional validation
+```
+
+PR #52 added the declarative rule catalog, route-requirements catalog, canonical context value sets, validation-error policy, typed safety/neurological-screen semantics and focused synthetic fixtures. A post-merge review then found two exact shared-muscle transcription defects; PR #53 corrected them without reopening clinical content:
+
+```text
+MRI/ultrasound confirmation remains optional context
+major-avulsion/rupture concern remains the canonical safety-input flag
+```
+
+`clinic_utilities/CU1_DESIGN_COMPLETENESS_REVIEW_V3.md` classifies the resulting pre-code design as:
+
+```text
+DESIGN-COMPLETE
+```
+
+The single normative machine entrypoint remains:
+
+```text
+clinic_utilities/contracts/cu1_contract_manifest_v1.yaml
+```
+
+The frozen first implementation boundary is:
+
+```text
+ephemeral ReferralDraftV1
+→ deterministic validation/rule evaluation
+→ ShortReferralFormatter / DetailedReferralFormatter
+→ generated text
+→ copy / print
+```
+
+This milestone does **not** authorize runtime implementation. No CU-1 runtime writer exists, no production CU-1 code has been written, and persistence remains outside the first implementation scope. A future implementation requires a fresh six-canonical bootstrap, explicit product-owner authorization and a new implementation slice/branch.

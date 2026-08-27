@@ -37,7 +37,7 @@ This file answers **where the product is going and in what broad order**. It is 
 
 ---
 
-# 1. CURRENT GATE — BASELINE / PR-1 PRESERVED WHILE BOUNDED CU-1 DESIGN DETOUR IS ACTIVE
+# 1. CURRENT GATE — BASELINE / PR-1 PRESERVED; CU-1 PRE-CODE DESIGN DETOUR COMPLETE
 
 ## 1.1 Encounter-finalization validation
 
@@ -417,7 +417,7 @@ Permanent rule: **Appointment != CareTask**.
 
 ---
 
-# 15. CLINIC UTILITIES / CLINICAL OPERATIONS — ACTIVE BOUNDED DETOUR, CU-1 DESIGN ONLY
+# 15. CLINIC UTILITIES / CLINICAL OPERATIONS — CU-1 DESIGN COMPLETE; RUNTIME DECISION PENDING
 
 Purpose: integrate useful day-to-day clinic tools into the same Clinical Excellence workspace without confusing operational tooling with osteoporosis-specific audit logic.
 
@@ -429,21 +429,24 @@ osteoporosis-specific clinical rules → Module 01
 legacy standalone pages → source artifacts to inspect/migrate, not permanent parallel products
 ```
 
-The product owner explicitly activated this bounded detour through `CURRENT_OPERATIONAL.md`. PR-1 Transcript Intake remains intentionally paused/archived and no CU runtime implementation is authorized while CU-1 clinical/content design is being frozen.
+The product owner explicitly activated this bounded detour through `CURRENT_OPERATIONAL.md`. PR-1 Transcript Intake remains intentionally paused/archived. CU-1 pre-code design is now complete, but no CU runtime implementation is authorized until the product owner explicitly opens a runtime implementation slice.
 
 ## 15.1 Physiotherapy referral text generator
 
 - [x] Locate/provide and inspect the existing source website read-only before planning mutation.
 - [x] Establish structured `ReferralDraft` → short/detailed formatter architecture and safety/consistency semantics in CU-1.
-- [x] Freeze cervical clinical/content profile v1.1, including formal cervicogenic-headache support, clinician-entered cervical/cervicogenic-dizziness support, selectable myofascial/trigger-point and referred shoulder-girdle findings, and explicit `not assessed != normal` neurological semantics.
-- [x] Freeze lumbar clinical/content profile v1.1, including radicular/neurological safety semantics, stenosis/neurogenic claudication, deep-gluteal/piriformis support, selectable myofascial findings, optional acupuncture/dry needling and no routine traction.
-- [x] Freeze shoulder clinical/content profile v1.1, including RCRSP, confirmed full-thickness tear conservative rehabilitation, calcific tendinopathy, adhesive capsulitis, instability/dislocation, GH OA, AC and sternoclavicular pathways, postoperative shoulder rehabilitation, biceps as common secondary diagnosis, and shared fracture routing.
-- [ ] Continue region-by-region profile review/freeze through the remaining body regions and shared fracture/myotendinous/deconditioning profiles.
-- [ ] Freeze the remaining CU-1 cross-region taxonomy, output wording and evidence-sensitive technique rules before implementation.
-- [ ] Integrate it into Clinical Excellence workspace/navigation rather than deepen the historical legacy Cockpit as a separate product.
-- [ ] Restyle it to the shared Clinical Excellence visual system where appropriate.
-- [ ] Decide after design review whether generated text is ephemeral, copied/exported only, or linked to a patient/encounter; do not invent persistent patient storage merely for convenience.
-- [ ] Obtain explicit product-owner authorization before moving from CU-1 design to CU-2 runtime implementation.
+- [x] Freeze all planned regional clinical/content profiles v1.1: cervical, lumbar, shoulder, elbow, wrist/hand, knee, hip/groin and ankle/foot.
+- [x] Freeze all planned shared profiles v1.1: fracture/post-immobilization, muscle/myotendinous, and deconditioning/balance/gait.
+- [x] Freeze the CU-1 cross-region taxonomy, route ownership/precedence, output wording boundaries and evidence-sensitive technique rules.
+- [x] Freeze the machine contract entrypoint `clinic_utilities/contracts/cu1_contract_manifest_v1.yaml` and normative registry/ID/enum/formatter/safety artifacts.
+- [x] Close the B1–B6 hardening gaps.
+- [x] Close R1 with machine-declarative safety/consistency trigger rules.
+- [x] Close R2 with machine-declarative route required/conditional validation, context enums, assertion/subtype rules and validation-error behavior.
+- [x] Complete final design review v3 with classification `DESIGN-COMPLETE`.
+- [x] Freeze first implementation persistence boundary as ephemeral structured draft → generated text → copy/print; no referral persistence in first slice.
+- [ ] Obtain separate explicit product-owner authorization before creating a CU-1 runtime implementation slice/branch.
+- [ ] If runtime is authorized, integrate it into Clinical Excellence workspace/navigation rather than deepen the historical legacy Cockpit as a separate product.
+- [ ] If runtime is authorized, restyle it to the shared Clinical Excellence visual system where appropriate.
 
 ## 15.2 Radiofrequency treatment request / PDF workflow
 
@@ -514,6 +517,6 @@ Clinic Utilities are cross-module operational tools and do not count as declarin
 16. generalize Core to later clinical modules
 ```
 
-The bounded **Clinic Utilities detour is currently active at CU-1 design only**. `CURRENT_OPERATIONAL.md` owns the exact NOW; `SLICE_PLAN_CURRENT.md` owns the current design. Complete the region-by-region clinical/content freeze before any CU-2 runtime implementation, and do not overlap another active runtime writer.
+The bounded **CU-1 pre-code design detour is complete**. `CURRENT_OPERATIONAL.md` owns the exact NOW and any future writer lock; `SLICE_PLAN_CURRENT.md` records the frozen CU-1 design. No CU-1 runtime implementation or CU-2 work begins without a separate product-owner decision and a fresh authorized slice/branch.
 
 If a safety/data-integrity defect appears, it outranks this sequence.

@@ -4,13 +4,13 @@
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Parent product:** Personal Clinical Excellence System.
 > **Scope:** cross-module Clinic Utilities / Clinical Operations.
-> **Current focus:** CU-1 Physiotherapy Referral v2; clinical/content profiles and machine contract are frozen, including the bounded declarative R1–R2 hardening, pending exact review/merge and final repeat completeness review.
+> **Current focus:** CU-1 Physiotherapy Referral v2 pre-code design is `DESIGN-COMPLETE`; runtime remains separately unauthorized.
 
 Clinic Utilities are cross-module clinician-facing operational tools, not a new clinical Module 02.
 
 ---
 
-# 1. Frozen design set
+# 1. CU-1 frozen design set
 
 Clinical profiles:
 
@@ -34,15 +34,14 @@ Machine contract entrypoint:
 clinic_utilities/contracts/cu1_contract_manifest_v1.yaml
 ```
 
-The manifest now includes declarative R1–R2 authorities:
+Final completeness review:
 
 ```text
-cu1_rule_catalog_v1.yaml
-cu1_route_requirements_v1.yaml
-cu1_r1_r2_design_fixtures_v1.yaml
+clinic_utilities/CU1_DESIGN_COMPLETENESS_REVIEW_V3.md
+→ DESIGN-COMPLETE
 ```
 
-The broad clinical taxonomy remains frozen.
+The broad clinical taxonomy and machine contract are frozen unless a later implementation review proves a contradiction.
 
 ---
 
@@ -58,45 +57,70 @@ PR #50 machine-contract hardening
 CU1_DESIGN_COMPLETENESS_REVIEW_V2.md
 → remaining BLOCK R1–R2
 
-current bounded hardening
-→ R1 safety/consistency triggers machine-declarative
-→ R2 route required/conditional validation machine-declarative
-→ frozen pending independent review
+PR #52 declarative hardening
+→ R1/R2 artifacts frozen
+
+PR #53 exact R2 transcription correction
+→ optional shared-muscle imaging semantics restored
+→ canonical major-avulsion safety flag reference corrected
+
+CU1_DESIGN_COMPLETENESS_REVIEW_V3.md
+→ DESIGN-COMPLETE
+```
+
+Resolved areas include:
+
+```text
+typed draft/context homes
+canonical route/key namespace
+shared gateway mapping
+long-tail route/site IDs
+primary route precedence
+common enums and aliases
+closed context value sets
+machine-declarative safety triggers
+machine-declarative route validation
+validation-error behavior
+formatter contract
+structured-option boundary
+synthetic semantic fixtures
 ```
 
 ---
 
-# 3. R1–R2 hardening boundaries
-
-R1 is resolved by a closed safety-input namespace plus declarative trigger expressions. Non-specific symptoms do not autonomously create unresolved DVT/rupture/infection/Charcot/etc. concerns unless a frozen rule explicitly says so.
-
-R2 is resolved by deterministic base, wording-mode, subtype, postoperative, route-specific and shared-context requirements. Validation must be driven by the catalog rather than profile prose.
-
-The hardening does not add new clinical recommendations, reopen taxonomy, authorize persistence or authorize runtime code.
-
----
-
-# 4. Required gate
+# 3. Frozen first implementation direction
 
 ```text
-exact branch-vs-main review
-→ docs/schema-only PR
-→ independent exact-head review
-→ merge if clean
-→ fresh final CU-1 design-completeness review
-→ DESIGN-COMPLETE or remaining BLOCK
-```
-
-Even `DESIGN-COMPLETE` does not authorize implementation; product-owner runtime authorization remains separate.
-
----
-
-# 5. First implementation direction — unchanged and still unauthorized
-
-```text
-ephemeral structured draft
-→ generated text
+ephemeral ReferralDraftV1
+→ deterministic validation/rule evaluation
+→ generated short/detailed referral text
 → copy / print
 ```
 
-Persistence remains unfrozen.
+Persistence remains outside the first implementation scope.
+
+Runtime implementation has **not** been authorized or started.
+
+---
+
+# 4. Future implementation gate
+
+If the product owner later authorizes CU-1 implementation:
+
+```text
+fresh six-canonical bootstrap
+→ inspect current Clinical Excellence runtime/navigation seams
+→ create a fresh CU-1 runtime implementation slice/branch
+→ implement against cu1_contract_manifest_v1.yaml
+→ executable tests derived from frozen fixtures
+→ focused evidence + independent exact-head review
+→ merge/deploy only under the newly authorized slice
+```
+
+Do not treat `DESIGN-COMPLETE` as `IMPLEMENTED`.
+
+---
+
+# 5. CU-2 remains separate
+
+Radiofrequency treatment request / PDF workflow remains a separate future Clinic Utilities slice. It must not be folded into CU-1 and must not begin merely because CU-1 design is complete.
