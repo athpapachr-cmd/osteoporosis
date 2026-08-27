@@ -1,78 +1,152 @@
-# SLICE_PLAN_CURRENT.md — CU-1 Physiotherapy Referral v2 design
+# SLICE_PLAN_CURRENT.md — CU-1 Physiotherapy Referral v2 runtime implementation v1
 
-> **STATUS:** `DESIGN-COMPLETE` — pre-code clinical/content and machine-contract design frozen.
+> **STATUS:** IMPLEMENTATION AUTHORIZED — bounded runtime slice active.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Parent product:** Personal Clinical Excellence System.
 > **Area:** Clinic Utilities / Clinical Operations.
-> **Slice ID:** CU-1.
+> **Slice ID:** CU-1 runtime v1.
 > **Supporting plan:** `CLINIC_UTILITIES_PLAN.md`.
+> **Implementation base:** `7c49c2c6ad5ad9c710a6c02fe1ec4df467b4bab2`.
+> **Runtime writer:** `feat/cu1-physio-referral-runtime-v1-2026-08-27`.
 > **Frozen regional profiles:** cervical, lumbar, shoulder, elbow, wrist/hand, knee, hip/groin and ankle/foot v1.1.
 > **Frozen shared profiles:** Shared Fracture v1.1; Shared Muscle/Myotendinous v1.1; Shared Deconditioning/Balance/Gait v1.1.
 > **Frozen machine contract entrypoint:** `clinic_utilities/contracts/cu1_contract_manifest_v1.yaml`.
-> **Final review:** `clinic_utilities/CU1_DESIGN_COMPLETENESS_REVIEW_V3.md`.
+> **Pre-code completeness review:** `clinic_utilities/CU1_DESIGN_COMPLETENESS_REVIEW_V3.md` = DESIGN-COMPLETE.
 > **Prior active slice:** PR-1 remains intentionally paused.
 
-CU-1 pre-code design is complete. Runtime implementation remains separately unauthorized.
+---
+
+# 1. Objective
+
+Deliver the first usable CU-1 Physiotherapy Referral v2 inside the Clinical Excellence service without reopening the frozen clinical taxonomy or adding persistence.
+
+The runtime must turn clinician-selected structured inputs into deterministic short/detailed referral text while preserving all frozen semantic and safety invariants.
 
 ---
 
-# 1. Frozen design set
-
-Clinical/content authority consists of the 11 frozen regional/shared profiles.
-
-Machine/runtime-design authority is composed through:
+# 2. In scope
 
 ```text
-clinic_utilities/contracts/cu1_contract_manifest_v1.yaml
-```
-
-The manifest normatively composes:
-
-```text
-CU1_CORE_CONTRACT_V1.md
-cu1_typed_supplement_v1.yaml
-cu1_registry_v1.yaml
-cu1_route_detail_catalog_v1.yaml
-cu1_option_catalog_v1.yaml
-cu1_structured_option_scope_v1.yaml
-cu1_id_normalization_v1.yaml
-cu1_context_value_sets_v1.yaml
-cu1_rule_catalog_v1.yaml
-cu1_route_requirements_v1.yaml
-cu1_route_requirements_correction_v1.yaml
-cu1_validation_error_policy_v1.yaml
-cu1_design_fixtures_v1.yaml
-cu1_r1_r2_design_fixtures_v1.yaml
+A. protected CU-1 utility entrypoint under /clinical/clinic-utilities/physio-referral
+B. ephemeral ReferralDraftV1 browser state
+C. manifest-driven machine-contract loading/composition
+D. canonical ID/alias/context normalization
+E. gateway + route + ownership resolution
+F. route required/conditional validation
+G. declarative safety/consistency rule evaluation
+H. deterministic ShortReferralFormatter
+I. deterministic DetailedReferralFormatter
+J. copy and print actions
+K. Clinical Excellence navigation entry to CU-1
+L. executable tests derived from frozen semantic fixtures
 ```
 
 ---
 
-# 2. Final completeness result
+# 3. Explicitly out of scope
 
 ```text
-B1 typed profile-specific state homes = PASS
-B2 canonical registry / exact gateways = PASS
-B3 route ownership / precedence = PASS
-B4 safety result severity/blocking/disposition = PASS
-B5 formatter contract = PASS
-B6 common enums / ID normalization = PASS
-R1 machine-declarative safety/consistency triggers = PASS
-R2 machine-declarative route required/conditional validation = PASS
-context enum closure = PASS
-validation-error behavior = PASS
-fixture-scope semantics = PASS
-no profile-prose runtime interpretation required for trigger/validation logic = PASS
+referral persistence in PostgreSQL
+localStorage/sessionStorage persistence
+patient-registry linkage
+saving generated referral text
+PDF-specific generation workflow
+CU-2 radiofrequency workflow
+PR-1 transcript runtime
+clinical taxonomy changes
+new evidence-sensitive clinical recommendations
 ```
 
-Final classification:
-
-```text
-CU-1 PRE-CODE DESIGN = DESIGN-COMPLETE
-```
+If a frozen contract cannot be implemented without changing clinical meaning, STOP and REPLAN.
 
 ---
 
-# 3. Core invariants preserved
+# 4. Runtime architecture
+
+## 4.1 Backend
+
+Add one dedicated runtime module, provisionally:
+
+```text
+clinic_utilities/physio_referral_runtime.py
+```
+
+Responsibilities:
+
+```text
+load cu1_contract_manifest_v1.yaml
+resolve listed normative YAML/contract artifacts
+apply manifest precedence including route_requirements_correction before validation
+expose normalized UI/route metadata needed by the browser
+validate ReferralDraftV1 deterministically
+evaluate declarative rule DSL deterministically
+format short/detailed text deterministically
+never interpret clinical profile Markdown for trigger/validation logic
+```
+
+The runtime may use a YAML parser dependency because the normative frozen machine artifacts are YAML. The loader must fail closed on missing/unknown normative artifacts rather than silently falling back.
+
+## 4.2 Protected routes
+
+```text
+GET  /clinical/clinic-utilities/physio-referral
+GET  /clinical/clinic-utilities/physio-referral/api/contract
+POST /clinical/clinic-utilities/physio-referral/api/validate
+POST /clinical/clinic-utilities/physio-referral/api/generate
+```
+
+All `/clinical/*` CU-1 routes use the existing Clinical Excellence browser-session/key protection pattern.
+
+No endpoint writes referral data to database or filesystem.
+
+## 4.3 Browser UI
+
+Presentation assets live under:
+
+```text
+static/clinic-utilities/physio-referral/
+```
+
+Browser state is in-memory only for the open page lifetime.
+
+Minimum flow:
+
+```text
+select body region / gateway
+→ select primary route/problem
+→ enter/select relevant findings/context/restrictions/goals/directions
+→ choose short or detailed output
+→ validate
+→ display blocking/safety/consistency results
+→ generate referral
+→ copy or print
+```
+
+The UI must not synthesize negative findings from unselected/missing state.
+
+---
+
+# 5. Frozen semantic pipeline
+
+```text
+raw structured draft
+→ alias normalization
+→ context-value normalization
+→ registry/gateway validation
+→ route ownership/precedence resolution
+→ route requirements correction overlay
+→ required/conditional/assertion/context validation
+→ declarative safety + consistency rule evaluation
+→ formatter
+```
+
+The implementation must follow the manifest precedence exactly.
+
+---
+
+# 6. Safety and clinical invariants
+
+The runtime must preserve at minimum:
 
 ```text
 suggested != examined
@@ -85,76 +159,84 @@ imaging finding != automatically symptomatic diagnosis
 not assessed != normal
 adjunct != core rehabilitation
 clinician-entered diagnosis may be carried faithfully but must not be inferred
+unselected safety flag != reassuring negative
+nonspecific symptom != autonomous unresolved safety concern unless an explicit frozen rule says so
+exact procedure/protocol/restriction state > generic postoperative defaults
 ```
 
-Additional hard boundaries:
-
-```text
-unselected safety flag = no assertion, not reassuring negative
-nonspecific symptoms do not autonomously create unresolved safety concerns
-postoperative/structural ownership follows frozen precedence
-exact procedure/protocol/restriction state overrides generic rehabilitation defaults
-missing required structural restriction never becomes an invented permissive restriction
-runtime must not read profile Markdown to invent trigger or validation semantics
-```
+Blocking/safety results must come from the frozen machine contract, not ad-hoc UI strings.
 
 ---
 
-# 4. Frozen first implementation direction
+# 7. Persistence/privacy boundary
 
 ```text
-ephemeral ReferralDraftV1
-→ canonical normalization
-→ route/gateway/ownership resolution
-→ route requirement validation
-→ declarative safety/consistency rule evaluation
-→ ShortReferralFormatter / DetailedReferralFormatter
-→ generated text
-→ copy / print
+ReferralDraftV1 = ephemeral
+Generated referral text = ephemeral
+Server = request/response only
+Browser storage = none
+Database writes = none
+Public fixtures = synthetic only
 ```
 
-Persistence is deliberately unfrozen and out of first implementation scope.
-
-No runtime implementation has been authorized or started.
+No name, patient identifier, phone/email/address or real transcript belongs in committed tests/fixtures.
 
 ---
 
-# 5. Implementation prerequisites if later authorized
+# 8. Acceptance tests
 
-A future implementation slice must, before coding:
+Before MERGE-READY, executable evidence must cover:
 
 ```text
-1. fresh six-canonical bootstrap from current main
-2. explicit product-owner authorization for CU-1 runtime implementation
-3. fresh inspection of actual Clinical Excellence runtime/navigation/integration seams
-4. claim one runtime writer branch in CURRENT_OPERATIONAL.md
-5. implement only against cu1_contract_manifest_v1.yaml and frozen clinical sources
-6. add executable tests derived from the semantic fixtures and full-draft validation contract
-7. preserve ephemeral/no-persistence first-slice boundary
-8. STOP for focused evidence + independent exact-head review before merge/deploy
+contract manifest loads and all normative artifacts resolve
+correction overlay precedence works
+unknown route/context/safety/rule IDs fail closed
+aliases normalize before registry validation
+closed context enums reject unknown values
+all frozen gateway mappings resolve
+route ownership/precedence examples resolve deterministically
+required/conditional route fields produce canonical validation errors
+shared fracture and shared muscle boundary cases
+postoperative exclusivity/required restriction cases
+safety-input flags trigger only declared rules
+no symptom-only invented safety concern
+adjunct-without-core-rehab consistency behavior
+short formatter deterministic output
+long formatter deterministic output
+not-assessed does not become normal/negative
+browser code contains no localStorage/sessionStorage referral persistence
+protected API rejects unauthenticated requests when clinical key is configured
 ```
+
+Existing semantic fixture YAML should be converted into executable oracles where practical; full runtime tests must construct complete drafts where the manifest requires them.
 
 ---
 
-# 6. Out of scope until separately authorized
+# 9. Implementation evidence / review gate
 
 ```text
-production HTML/JS/CSS implementation
-FastAPI CU-1 endpoints
-referral persistence or patient-data storage
-CU-2 Radiofrequency workflow implementation
-reopening frozen clinical taxonomy without a proven contradiction
-PR-1 Transcript Intake runtime work
+implementation complete
+→ focused automated tests green
+→ inspect exact branch-vs-main diff
+→ verify no persistence/taxonomy expansion
+→ independent exact-head review
+→ STOP at MERGE-READY or BLOCK
 ```
+
+Merge/deploy occurs only after that gate is clean.
 
 ---
 
-# 7. Stop rule
+# 10. REPLAN triggers
+
+STOP and update this slice instead of patching around the design if any of the following is discovered:
 
 ```text
-current design result = DESIGN-COMPLETE
-runtime = NOT AUTHORIZED
-active runtime writer = NONE
+frozen route cannot be represented by ReferralDraftV1
+manifest precedence is insufficient/contradictory
+clinical profile meaning conflicts with normative machine artifact
+existing auth/static routing cannot preserve the intended protected boundary
+formatter contract is materially ambiguous
+semantic fixtures conflict with frozen route requirements
+implementation would require persistence to function
 ```
-
-The design detour is complete. The next product decision is whether to authorize a dedicated CU-1 implementation slice or leave CU-1 frozen and resume another roadmap item.
