@@ -1,7 +1,7 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
 > **STATUS:** ACTIVE OPERATIONAL AUTHORITY.
-> **Updated:** 2026-08-26 Asia/Nicosia.
+> **Updated:** 2026-08-27 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Verified base main for this wrist/hand design:** `7ce2b408ce5a940d9839289e5a3deab3fa6defc2`.
 > **Current major phase:** Personal Clinical Excellence foundation with a bounded Clinic Utilities detour.
@@ -11,13 +11,13 @@
 > **Frozen lumbar profile:** `clinic_utilities/physio_profiles/lumbar_v1_1.md`.
 > **Frozen shoulder profile:** `clinic_utilities/physio_profiles/shoulder_v1_1.md`.
 > **Frozen elbow profile:** `clinic_utilities/physio_profiles/elbow_v1_1.md`.
-> **CURRENT BODY-REGION DESIGN TARGET:** wrist / hand.
-> **ACTIVE CANONICAL WRITER/LOCK:** docs-only branch `docs/cu1-wrist-hand-v1-design-2026-08-26` for wrist/hand CU-1 clinical/content design.
+> **Frozen wrist/hand profile on active docs branch:** `clinic_utilities/physio_profiles/wrist_hand_v1_1.md`.
+> **ACTIVE CANONICAL WRITER/LOCK:** docs-only branch `docs/cu1-wrist-hand-v1-design-2026-08-26` until exact-head review/PR/merge/handoff close.
 > **ACTIVE RUNTIME WRITER/LOCK:** NONE in this repository.
 > **RUNTIME IMPLEMENTATION:** NOT AUTHORIZED for CU-1; design only.
-> **PR-1 TRANSCRIPT SLICE:** intentionally paused, preserved at `archive/slices/PR1_TRANSCRIPT_INTAKE_V3.md`.
+> **PR-1 TRANSCRIPT SLICE:** intentionally paused at `archive/slices/PR1_TRANSCRIPT_INTAKE_V3.md`.
 
-This file is the sole owner of operational **NOW** for the active branch. Do not infer mutation authority from chat history.
+This file is the sole owner of operational NOW for the active branch.
 
 ---
 
@@ -34,112 +34,84 @@ Osteoporosis Module 01
 → osteoporosis-specific clinical standards/audit/workflows
 ```
 
-CU-1 is a bounded cross-module Clinic Utility design detour. PR-1 remains paused intact, not abandoned.
+CU-1 remains a bounded cross-module design detour. No runtime authority is implied.
 
 ---
 
-# 2. Physiotherapy v2 architecture
-
-```text
-clinical problem
-→ important findings
-→ functional limitation
-→ precautions/restrictions
-→ goals
-→ rehabilitation direction
-→ structured ReferralDraft
-→ short/detailed formatter
-```
-
-Hard rules:
-
-```text
-suggested finding != examined finding
-selected goal != mandatory goal
-condition profile != automatic diagnosis
-subjective symptom != objective deficit
-special/provocation test != diagnosis
-imaging finding != automatically symptomatic diagnosis
-not assessed != normal
-adjunct technique != default primary treatment
-clinician-entered diagnosis may be carried but not inferred
-```
-
----
-
-# 3. Frozen regional profiles
+# 2. Frozen regional state
 
 ```text
 cervical_v1_1 = FROZEN
 lumbar_v1_1 = FROZEN
 shoulder_v1_1 = FROZEN
 elbow_v1_1 = FROZEN
+wrist_hand_v1_1 = FROZEN on docs branch pending review/merge
 ```
 
 ---
 
-# 4. Wrist / Hand — ACTIVE DESIGN CANDIDATE WORK
+# 3. Wrist / Hand v1.1 — product-owner-approved design
 
-Authorized scope is clinical/content design only:
-
-```text
-primary pathway taxonomy
-findings vs diagnosis separation
-median/ulnar/radial neurological semantics
-tendon/ligament/TFCC safety semantics
-functional limitations and dexterity
-condition-sensitive goals
-hand-therapy/active rehabilitation directions
-orthosis visibility
-adjunct visibility
-generated wording
-current evidence review
-```
-
-Target candidate:
+Frozen default pathways:
 
 ```text
-clinic_utilities/physio_profiles/wrist_hand_v1.md
+WH1 De Quervain / first dorsal compartment disorder
+WH2 thumb CMC-1 osteoarthritis / rhizarthrosis
+WH3 interphalangeal / generalized hand osteoarthritis
+WH4 median neuropathy at wrist / carpal tunnel syndrome
+WH5 ulnar-sided wrist / TFCC-related presentation
+WH6 intersection syndrome
+WH7 thumb MCP collateral-ligament injury — UCL or RCL
+WH8 sagittal-band injury / extensor tendon instability at MCP
+WH9 digital tendon injury / deformity-specific rehabilitation
+WH10 post-traumatic wrist/hand pain or stiffness after assessed injury
+WH11 postoperative wrist/hand rehabilitation
 ```
 
-It remains **DESIGN CANDIDATE / NOT FROZEN** until explicit product-owner review and approval.
+Workflow decisions:
 
-Current evidence frame includes the 2024 AAOS carpal-tunnel CPG, current De Quervain systematic review/network meta-analysis, current thumb-CMC OA rehabilitation systematic reviews/trials, current TFCC nonoperative evidence, trigger-digit orthosis evidence, wrist-tendinopathy literature and CRPS rehabilitation guidance.
+- trigger finger/thumb is context only, not a routine physiotherapy referral in the local Cyprus workflow;
+- Guyon's canal and scapholunate/lunotriquetral instability remain rare/advanced;
+- postoperative wrist/hand is active;
+- UCL and RCL are both included in the thumb-MCP collateral-ligament pathway;
+- UCL Stener concern and major RCL instability/subluxation prevent unrestricted rehabilitation wording;
+- CRPS is an established-diagnosis advanced pathway only;
+- mallet, central-slip/boutonniere and flexor/extensor tendon injuries are directly selectable and protocol/zone governed;
+- intersection syndrome is directly selectable and distinct from De Quervain;
+- TFCC is the canonical structured term; `TFCL` is not used;
+- dedicated `hand therapist` availability is not assumed; referrals use physiotherapy/wrist-hand rehabilitation plus competence/protocol requirements;
+- wrist/hand fractures route to the shared fracture/post-immobilization profile.
+
+Adjunct decisions:
+
+```text
+manual therapy / soft tissue / taping → optional where relevant
+selected thermal strategy for OA → optional
+acupuncture → excluded
+dry needling → excluded
+ESWT → excluded
+```
+
+Orthosis/splint support is condition-sensitive and protocol governed.
+
+No runtime behavior changed.
 
 ---
 
-# 5. Shared fracture / tendon-repair boundaries
-
-Wrist/hand fractures remain routed to the shared fracture/post-immobilization profile rather than duplicated inside this regional profile.
-
-Examples:
+# 4. Exact next action
 
 ```text
-distal radius / ulna
-scaphoid / other carpal fracture
-metacarpal fracture
-phalangeal fracture
-```
-
-Unresolved healing/loading/ROM context must prevent unrestricted routine rehabilitation wording.
-
-Established tendon laceration/repair or complex hand surgery requires procedure/protocol/restriction context and must not be converted into a generic tendinopathy pathway.
-
----
-
-# 6. Exact next action
-
-```text
-1. create wrist_hand_v1.md as DESIGN CANDIDATE
-2. perform strict current-evidence + safety review
-3. present taxonomy/adjunct/open workflow decisions to product owner
-4. revise after real-workflow feedback
-5. freeze/merge only after explicit product-owner approval
+1. exact branch-vs-main review of wrist/hand freeze
+2. open docs-only PR if clean
+3. independent exact-head review
+4. merge only if exact head remains clean
+5. clear canonical writer lock and reconcile main
+6. product owner selects next CU-1 region
 ```
 
 ---
 
-# 7. Explicitly forbidden now
+# 5. Explicitly forbidden now
 
 ```text
 WRITE CU-1 production runtime code
@@ -147,13 +119,13 @@ WRITE PR-1 transcript runtime code
 AUTO-PERSIST physiotherapy referrals
 MUTATE RF/Secretary/Calendar/Setmore/Zadarma
 COMMIT identifiable patient data
-FREEZE or merge wrist/hand without product-owner approval
+START next regional mutation before wrist/hand handoff closes
 CREATE overlapping runtime writers
 ```
 
 ---
 
-# 8. Handoff completeness
+# 6. Handoff completeness
 
 ```text
 active detour = Clinic Utilities
@@ -162,7 +134,7 @@ cervical = frozen v1.1
 lumbar = frozen v1.1
 shoulder = frozen v1.1
 elbow = frozen v1.1
-wrist / hand = active design candidate work
+wrist/hand = frozen v1.1 on docs branch pending review/merge
 canonical writer = docs/cu1-wrist-hand-v1-design-2026-08-26
 runtime writer = none
 runtime implementation = unauthorized
