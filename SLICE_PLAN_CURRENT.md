@@ -12,7 +12,7 @@
 > **Frozen elbow profile:** `clinic_utilities/physio_profiles/elbow_v1_1.md`.
 > **Frozen wrist/hand profile:** `clinic_utilities/physio_profiles/wrist_hand_v1_1.md`.
 > **Frozen knee profile:** `clinic_utilities/physio_profiles/knee_v1_1.md`.
-> **Frozen hip/groin profile on active docs branch:** `clinic_utilities/physio_profiles/hip_v1_1.md`.
+> **Frozen hip/groin profile:** `clinic_utilities/physio_profiles/hip_v1_1.md`.
 > **Prior active slice:** PR-1 Transcript Intake + Candidate Extraction v3 remains intentionally paused at `archive/slices/PR1_TRANSCRIPT_INTAKE_V3.md`.
 
 CU-1 is a bounded cross-module design detour. It does not authorize runtime implementation.
@@ -72,7 +72,7 @@ shoulder_v1_1 = FROZEN
 elbow_v1_1 = FROZEN
 wrist_hand_v1_1 = FROZEN
 knee_v1_1 = FROZEN
-hip_v1_1 = FROZEN on docs branch pending exact-head review/merge
+hip_v1_1 = FROZEN
 ```
 
 ---
@@ -232,12 +232,9 @@ Do not write production HTML/JS/CSS, add patient persistence, integrate navigati
 # 7. Exact next action
 
 ```text
-1. exact branch-vs-main review of Hip v1.1 freeze
-2. open docs-only Hip freeze PR if clean
-3. independent exact-head review
-4. merge only if exact head remains clean
-5. clear canonical writer lock and record resulting main state
-6. product owner selects next CU-1 regional/shared profile
+1. product owner selects the next remaining CU-1 regional/shared profile
+2. use the same taxonomy/findings/safety/goals/rehab/evidence method
+3. continue CU-1 design only
 ```
 
 Runtime implementation remains unauthorized.
