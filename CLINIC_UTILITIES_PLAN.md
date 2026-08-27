@@ -4,7 +4,7 @@
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Parent product:** Personal Clinical Excellence System.
 > **Scope:** cross-module Clinic Utilities / Clinical Operations.
-> **Current focus:** CU-1 Physiotherapy Referral v2 design; cervical v1.1, lumbar v1.1, shoulder v1.1, elbow v1.1, wrist/hand v1.1 and knee v1.1 frozen; Hip v1 active design candidate.
+> **Current focus:** CU-1 Physiotherapy Referral v2 design; cervical v1.1, lumbar v1.1, shoulder v1.1, elbow v1.1, wrist/hand v1.1, knee v1.1 frozen; Hip/Groin v1.1 frozen on docs branch pending review/merge.
 
 Clinic Utilities are cross-module clinician-facing operational tools, not a new clinical Module 02.
 
@@ -68,7 +68,7 @@ clinician-entered diagnosis may be carried but not inferred
 
 ---
 
-# 2. Frozen / active profile status
+# 2. Frozen profile status
 
 ```text
 cervical_v1_1 = FROZEN
@@ -77,80 +77,72 @@ shoulder_v1_1 = FROZEN
 elbow_v1_1 = FROZEN
 wrist_hand_v1_1 = FROZEN
 knee_v1_1 = FROZEN
-hip_v1 = ACTIVE DESIGN CANDIDATE / NOT FROZEN
-```
-
-Authoritative Hip candidate:
-
-```text
-clinic_utilities/physio_profiles/hip_v1.md
+hip_v1_1 = FROZEN on docs branch pending exact-head review/merge
 ```
 
 ---
 
-# 3. Hip v1 — active candidate frame
+# 3. Hip / Groin v1.1 frozen design
 
-Proposed default pathways:
+Frozen routine pathways:
 
 ```text
-hip osteoarthritis
-greater trochanteric pain syndrome / gluteal tendinopathy
-hip-related groin pain / FAIS presentation
-established acetabular labral / nonarthritic intra-articular hip pain — conservative rehabilitation
-proximal hamstring tendinopathy
-adductor-related groin pain
-iliopsoas-related groin pain / internal snapping-hip presentation
-post-traumatic hip pain/stiffness after assessed injury
-postoperative hip rehabilitation — pending workflow confirmation
+lateral hip / greater-trochanteric pain pathway
+nonarthritic intra-articular hip pain — FAIS / symptomatic labral
+adductor-related groin pain / adductor tendinopathy
+post-traumatic hip/groin pain or stiffness after assessed injury
 ```
 
-Candidate rare/advanced/context entities:
+Direct shared-profile gateways:
 
 ```text
-established gluteus medius/minimus tendon tear — conservative pathway
-symptomatic external snapping hip
-acetabular dysplasia / hip instability / microinstability
-known femoral-head osteonecrosis
-inguinal-related / pubic-related athletic groin pain
+proximal rectus femoris / proximal quadriceps tendon injury in athletes
+→ shared muscle/myotendinous profile
+
+pelvic apophyseal avulsion fracture in children/adolescents
+→ shared fracture/post-immobilization profile
+```
+
+Workflow decisions:
+
+```text
+hip OA → medical/context only in this referral workflow
+GTPS/lateral hip → visible; clinician-entered trochanteric bursitis retained
+FAIS + symptomatic labral pathology → one nonarthritic intra-articular pathway
+adductor-related groin pain → high visibility
+proximal hamstring tendinopathy → rare/secondary
+iliopsoas/internal snapping hip → rare/secondary
+gluteal-abductor tendon tear → very rare/advanced
+external snapping / dysplasia-instability / inguinal-pubic groin → rare/advanced
+postoperative hip → not routine active pathway
+no generic pediatric/adolescent Hip category
 deep-gluteal/piriformis → frozen lumbar profile
-acute muscle/myotendinous injury → future shared muscle profile
-fracture/stress fracture → future shared fracture profile
 ```
 
-Key candidate distinctions:
-
-```text
-radiographic hip OA != automatic symptom generator
-lateral hip pain != automatic GTPS/gluteal tendinopathy/trochanteric bursitis
-cam/pincer morphology != FAIS
-FADIR/FABER != FAIS or labral tear
-MRI/MRA labral tear != automatically symptomatic pain generator
-buttock/ischial pain != proximal hamstring tendinopathy
-groin pain != automatically adductor or iliopsoas pathology
-painless snapping != snapping-hip syndrome
-postoperative rehabilitation = exact procedure/protocol governed
-femoral-neck stress-fracture concern != routine tendinopathy/FAIS referral
-```
-
-Evidence-oriented core directions:
-
-- hip OA: education/self-management plus individualized exercise; manual therapy may be impairment-specific;
-- GTPS/gluteal tendinopathy: education/load-compression management plus progressive exercise as core/first line;
-- nonarthritic hip pain including FAIS/labral: multimodal impairment-based rehabilitation;
-- proximal hamstring/adductor/iliopsoas presentations: diagnosis-sensitive progressive loading and graded function;
-- postoperative hip: exact procedure/protocol and restrictions outrank generic defaults.
-
-Candidate adjunct questions:
+Adjunct policy:
 
 ```text
 manual therapy / soft tissue → optional where relevant
-acupuncture for hip OA → unresolved
-dry needling for selected hip-OA myofascial context → unresolved; 2025 CPG supports short-term use
-ESWT for GTPS/gluteal tendinopathy → unresolved
-ESWT for proximal hamstring → not default; therapist-proposed context only if desired
+dry needling → optional clinician-selected in appropriate myofascial context
+acupuncture → excluded
+ESWT for GTPS/proximal hamstring → not generator-recommended; therapist-proposed use may be documented
 ```
 
-Candidate pediatric/adolescent hip navigation is unresolved. If included, it is not a diagnostic umbrella: adolescent FAIS/labral/adductor/iliopsoas use ordinary pathways with age/skeletal-maturity context; apophyseal avulsion/fracture routes shared fracture; SCFE remains a medical/imaging safety route rather than a PT diagnosis.
+Key distinctions:
+
+```text
+lateral hip pain != GTPS/gluteal tendinopathy/trochanteric bursitis automatically
+cam/pincer morphology != FAIS
+FADIR/FABER != FAIS or labral tear
+MRI/MRA labral tear != automatically symptomatic
+athletic groin pain may contain multiple entities
+groin pain != automatically adductor pathology
+painless snapping != snapping-hip syndrome
+femoral-neck stress-fracture concern != routine tendon/FAIS referral
+proximal rectus-femoris injury != ASIS avulsion
+AIIS commonly relates to rectus-femoris origin
+ASIS classically relates to sartorius traction
+```
 
 ---
 
@@ -174,11 +166,42 @@ age/skeletal-maturity when relevant
 
 Regional entry points now include shoulder, elbow, wrist/hand, knee and hip/pelvis.
 
+Hip/pelvis specifically adds:
+
+```text
+femoral neck / proximal femur
+acetabulum / pelvic ring / rami
+femoral-neck stress fracture
+pelvic stress/insufficiency fracture
+ASIS / AIIS / ischial-tuberosity / lesser-trochanter apophyseal avulsion
+other pelvic apophyseal avulsion
+```
+
 Unknown healing/loading context must produce a warning rather than unrestricted rehabilitation wording.
 
 ---
 
-# 5. Context-sensitive goals / directions
+# 5. Shared muscle / myotendinous profile
+
+Hip/Groin now creates an explicit need for a reusable shared profile rather than region-specific duplication.
+
+Important future entries:
+
+```text
+proximal rectus-femoris tendon/myotendinous injury
+adductor strain/tear
+iliopsoas/hip-flexor strain
+rectus-femoris strain
+hamstring strain
+gastrocnemius strain from knee entry
+other regional muscle/tendon injury
+```
+
+The Hip UI should be able to expose high-frequency regional gateways while the shared profile owns reusable injury grading, structural concern, loading/healing and return-to-sport semantics.
+
+---
+
+# 6. Context-sensitive goals / directions
 
 ```text
 selected condition profile
@@ -189,26 +212,29 @@ selected condition profile
 
 No global pain + ROM + strength + motor-control bundle.
 
-Active/function-oriented rehabilitation, education, self-management and graded loading/activity remain the conceptual backbone where appropriate, subject to structural/surgical restrictions.
+Active/function-oriented rehabilitation, education, self-management and graded loading/activity remain the conceptual backbone where appropriate, subject to structural restrictions.
 
 ---
 
-# 6. Safety / consistency engine
+# 7. Safety / consistency engine
 
 ```text
 fracture/stress-fracture concern
 → diagnostic/structural reassessment before routine rehab
 
-post-trauma + unresolved fracture/dislocation/major avulsion context
+post-trauma + unresolved fracture/dislocation/major tendon-avulsion context
 → warning/reassessment prompt
 
-post-op route + missing procedure/protocol/restrictions
-→ warning
+proximal rectus-femoris major tear/avulsion concern
+→ sports-medicine/structural assessment semantics
+
+child/adolescent pelvic-apophyseal avulsion concern
+→ imaging/structural pathway before unrestricted rehabilitation
 
 hot/systemically unwell acute hip / septic-joint concern
 → medical reassessment
 
-pediatric/adolescent SCFE concern
+SCFE concern
 → medical/imaging assessment; no routine PT diagnosis
 
 material safety concern + no clinician disposition
@@ -218,13 +244,13 @@ not_assessed neurological/neurovascular component
 → never generate normal wording
 ```
 
-Region-specific rules live in each frozen/candidate profile.
+Region-specific rules live in each frozen profile.
 
 ---
 
-# 7. Remaining regional design sequence
+# 8. Remaining regional design sequence
 
-After Hip review/freeze, current broad sequence is:
+After Hip handoff closes, current broad sequence is:
 
 ```text
 ankle / foot
@@ -237,7 +263,7 @@ The product owner may change the exact next region within CU-1.
 
 ---
 
-# 8. Output wording rules
+# 9. Output wording rules
 
 ```text
 Clinical problem + important findings + functional impact.
@@ -257,7 +283,7 @@ Rules:
 
 ---
 
-# 9. Implementation boundary
+# 10. Implementation boundary
 
 CU-1 remains **design only**.
 
