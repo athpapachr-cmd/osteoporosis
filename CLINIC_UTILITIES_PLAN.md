@@ -4,21 +4,13 @@
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Parent product:** Personal Clinical Excellence System.
 > **Scope:** cross-module Clinic Utilities / Clinical Operations.
-> **Current focus:** CU-1 Physiotherapy Referral v2 design; cervical v1.1, lumbar v1.1, shoulder v1.1 and elbow v1.1 frozen.
+> **Current focus:** CU-1 Physiotherapy Referral v2 design; cervical v1.1, lumbar v1.1, shoulder v1.1, elbow v1.1 frozen; wrist/hand v1.1 frozen on docs branch pending review/merge.
 
 Clinic Utilities are cross-module clinician-facing operational tools, not a new clinical Module 02.
 
 ---
 
-# 1. Detour purpose
-
-Integrate useful day-to-day clinic tools into the Clinical Excellence workspace, beginning with the Physiotherapy Referral Generator clinical/content redesign. RF Request/PDF workflow remains a separate later utility slice.
-
-CU-1 currently covers physiotherapy clinical/content design only.
-
----
-
-# 2. Physiotherapy Referral v2 target
+# 1. Physiotherapy Referral v2 target
 
 ```text
 1. Clinical problem / diagnosis
@@ -52,8 +44,6 @@ ReferralDraft
   clinician_free_text_optional
 ```
 
-Then:
-
 ```text
 ReferralDraft
 → ShortReferralFormatter
@@ -71,89 +61,95 @@ objective deficit != subjective symptom
 provocation/special test != diagnosis
 imaging finding != automatically symptomatic diagnosis
 not assessed != normal
+orthosis != automatically mandatory
 adjunct != core rehabilitation
 clinician-entered diagnosis may be carried but not inferred
 ```
 
 ---
 
-# 3. Frozen profile status
-
-## Cervical — FROZEN v1.1
+# 2. Frozen profile status
 
 ```text
-clinic_utilities/physio_profiles/cervical_v1_1.md
+cervical_v1_1 = FROZEN
+lumbar_v1_1 = FROZEN
+shoulder_v1_1 = FROZEN
+elbow_v1_1 = FROZEN
+wrist_hand_v1_1 = FROZEN on docs branch pending review/merge
 ```
 
-## Lumbar — FROZEN v1.1
+---
+
+# 3. Wrist / Hand v1.1 frozen design
+
+Frozen default pathways:
 
 ```text
-clinic_utilities/physio_profiles/lumbar_v1_1.md
-```
-
-## Shoulder — FROZEN v1.1
-
-```text
-clinic_utilities/physio_profiles/shoulder_v1_1.md
-```
-
-## Elbow — FROZEN v1.1
-
-```text
-clinic_utilities/physio_profiles/elbow_v1_1.md
-```
-
-Frozen elbow default pathways:
-
-```text
-lateral elbow tendinopathy / lateral epicondylalgia
-medial elbow tendinopathy / medial epicondylalgia
-ulnar neuropathy at elbow / cubital tunnel
-PIN / supinator syndrome
-distal biceps tendinopathy or established partial tear — conservative pathway
-elbow OA / degenerative painful stiffness
-ligament injury / instability rehabilitation
-post-traumatic elbow pain/stiffness after assessed injury
+De Quervain / first dorsal compartment disorder
+thumb CMC-1 OA / rhizarthrosis
+interphalangeal / generalized hand OA
+median neuropathy at wrist / carpal tunnel syndrome
+ulnar-sided wrist / TFCC-related presentation
+intersection syndrome
+thumb MCP collateral-ligament injury — UCL or RCL
+sagittal-band injury / extensor tendon instability at MCP
+digital tendon injury / deformity-specific rehabilitation
+post-traumatic wrist/hand pain or stiffness after assessed injury
+postoperative wrist/hand rehabilitation
 ```
 
 Rare/advanced/context decisions:
 
 ```text
-radial tunnel syndrome → secondary/coexisting context; uncommon in workflow
-olecranon bursitis → medical/context only; not routine physio primary pathway
-postoperative elbow → rare advanced/future route, not default MVP
-distal triceps → rare selectable myotendinous entity
-anconeus pain/injury → rare selectable myotendinous entity
-anconeus epitrochlearis → distinct anatomic variant; never auto-pathologized
+trigger finger/thumb → context only; not routine local physiotherapy referral
+Guyon's canal → rare/advanced
+scapholunate/lunotriquetral instability → rare/advanced
+other ECU/FCR/FCU tendon disorders → secondary/advanced
+CRPS → established-diagnosis advanced pathway
+inflammatory/psoriatic/crystal disease → established medical context
+Dupuytren → medical context unless specific postoperative rehab indication
+ganglion/mass → medical context
 fractures → shared fracture/post-immobilization profile
 ```
 
-Neural boundary:
+Key distinctions:
 
 ```text
-pain-predominant radial tunnel presentation
-!=
-clinician-established PIN/supinator syndrome with motor-neuropathy semantics
+De Quervain != intersection syndrome
+ulnar-sided wrist pain != TFCC tear
+TFCC = canonical terminology; TFCL not used as structured label
+thumb UCL != RCL, but both share one collateral-ligament pathway with subtype-specific safety
+MCP snapping != sagittal-band diagnosis
+possible CRPS features != formal CRPS diagnosis
+finger tendon repair != generic post-traumatic rehab
 ```
 
-Adjunct policy:
+Local service rule:
+
+- dedicated `hand therapist` availability is not assumed in Cyprus;
+- generated referrals use physiotherapy / wrist-hand rehabilitation terminology;
+- protocol-sensitive tendon/ligament/orthosis work may request relevant experience/competence rather than an unavailable professional title.
+
+Frozen adjunct policy:
 
 ```text
-manual therapy / soft tissue → optional
-dry needling → optional + competence safeguard
-acupuncture → optional
-ESWT → optional evidence-sensitive adjunct for lateral/medial epicondylalgia
-counterforce/wrist support → optional short-term/activity-specific
-therapeutic ultrasound → not standard evidence-backed treatment
+manual therapy / mobilization → optional where relevant
+soft tissue → optional
+taping → optional
+selected thermal strategy for OA → optional
+acupuncture → excluded
+dry needling → excluded
+ESWT → excluded
+therapeutic ultrasound → not standard CTS/general wrist-hand treatment
 ```
 
-ESWT remains optional rather than standard because recent reviews are heterogeneous, especially for functional superiority/comparator effects; evidence for medial epicondylalgia is more limited than for lateral disease.
+Orthosis is a separate condition-sensitive support category and exact procedure/injury protocol outranks generic suggestions.
 
 ---
 
 # 4. Shared fracture / post-immobilization profile
 
-Fractures should be handled in one shared profile rather than duplicated region by region.
+Fractures remain handled once in a future shared profile rather than duplicated region by region.
 
 Required future context:
 
@@ -161,20 +157,20 @@ Required future context:
 bone/site
 fracture date/phase
 treatment
-healing/stability status if known
-immobilization status
+healing/stability status
+immobilization/orthosis status
 weight-bearing/use status
 ROM/loading restrictions
 surgeon/orthopaedic instructions
 ```
 
-Regional entry points now include shoulder and elbow fractures, including proximal humerus, clavicle, scapula, radial head/neck, olecranon/proximal ulna, distal humerus and other relevant sites.
+Regional entry points now include shoulder, elbow and wrist/hand fractures.
 
 Unknown healing/loading context must produce a warning rather than unrestricted rehabilitation wording.
 
 ---
 
-# 5. Context-sensitive goals and directions
+# 5. Context-sensitive goals / directions
 
 ```text
 selected condition profile
@@ -185,7 +181,7 @@ selected condition profile
 
 No global pain + ROM + strength + motor-control bundle.
 
-Active rehabilitation, exercise, graded activity/loading, education and self-management remain the conceptual backbone where appropriate.
+Active/function-oriented rehabilitation, education, self-management and graded loading/activity remain the conceptual backbone where appropriate, subject to structural/surgical restrictions.
 
 ---
 
@@ -195,19 +191,19 @@ Active rehabilitation, exercise, graded activity/loading, education and self-man
 fracture rehab + missing healing/use context
 → warning
 
-rare post-op route + missing procedure/protocol/restrictions
-→ warning
-
-adjunct selected without active rehabilitation direction
+post-op/tendon-repair route + missing procedure/protocol/restrictions
 → warning
 
 new/progressive objective neurological deficit
 → prominent medical reassessment prompt
 
-material safety/red-flag concern + no clinician disposition
-→ do not generate routine reassuring wording
+acute tendon-laceration/rupture concern
+→ structural reassessment before generic rehab
 
-unassessed neurological component
+material safety/infection concern + no clinician disposition
+→ no routine reassuring wording
+
+not_assessed neurological component
 → never generate normal wording
 ```
 
@@ -217,18 +213,17 @@ Region-specific rules live in each frozen profile.
 
 # 7. Remaining regional design sequence
 
-Current preferred working sequence after elbow:
+After wrist/hand handoff closes, current broad remaining sequence is:
 
 ```text
-wrist / hand
-→ knee / hip
+knee / hip
 → ankle / foot
 → shared fracture / post-immobilization
 → muscle / myotendinous injury
 → generalized deconditioning / balance / gait
 ```
 
-The product owner may change the exact next region within CU-1.
+The product owner selects the exact next region.
 
 ---
 
@@ -244,8 +239,6 @@ Optional reassessment/communication criteria.
 Rules:
 
 - collaborative wording;
-- active/function-oriented rehabilitation as core where appropriate;
-- technique-level interventions remain adjuncts;
 - no unsupported diagnosis from symptoms, tests or incidental imaging;
 - no normal neurological/red-flag statement from missing data;
 - preserve explicit restrictions;
@@ -257,7 +250,7 @@ Rules:
 
 CU-1 remains **design only**.
 
-First implementation direction remains conceptually:
+First implementation direction remains:
 
 ```text
 ephemeral structured draft
