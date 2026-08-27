@@ -3,33 +3,35 @@
 > **STATUS:** ACTIVE OPERATIONAL AUTHORITY.
 > **Updated:** 2026-08-27 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Verified base main for this review:** `4b12932cb007994ca5d998f47719ff706191d2e9`.
+> **CU-1 COMPLETENESS REVIEW PR:** PR #49 squash-merged as `48cd6947b8a3201cad1283cf558a3f979243ec27`.
 > **Current major phase:** Personal Clinical Excellence foundation with a bounded Clinic Utilities detour.
-> **Active slice:** CU-1 Physiotherapy Referral v2 design-completeness review.
+> **Active slice:** CU-1 Physiotherapy Referral v2 — bounded design hardening required after completeness review.
 > **Frozen regional profiles:** cervical, lumbar, shoulder, elbow, wrist/hand, knee, hip/groin, ankle/foot v1.1.
 > **Frozen shared profiles:** Shared Fracture v1.1; Shared Muscle/Myotendinous v1.1; Shared Deconditioning/Balance/Gait v1.1.
-> **ACTIVE CANONICAL WRITER/LOCK:** docs-only branch `docs/cu1-design-completeness-review-2026-08-27` for review/canonical documentation only.
+> **ACTIVE CANONICAL WRITER/LOCK:** NONE.
 > **ACTIVE RUNTIME WRITER/LOCK:** NONE.
 > **RUNTIME IMPLEMENTATION:** NOT AUTHORIZED.
 > **PR-1:** intentionally paused at `archive/slices/PR1_TRANSCRIPT_INTAKE_V3.md`.
 
 ---
 
-# 1. Review outcome
+# 1. Review outcome — CLOSED
 
-```text
-CU-1 clinical/content profile set = FROZEN
-CU-1 implementation-contract completeness = BLOCK
-runtime implementation authorization = NOT READY
-```
-
-The clinical taxonomy/safety content is broadly coherent. The block is caused by unresolved cross-profile and machine-contract design that would otherwise have to be invented during implementation.
-
-Authoritative review report on this branch:
+Authoritative review:
 
 ```text
 clinic_utilities/CU1_DESIGN_COMPLETENESS_REVIEW.md
 ```
+
+Outcome:
+
+```text
+CU-1 clinical/content profile set = FROZEN / PRESERVE
+CU-1 implementation-contract completeness = BLOCK
+runtime implementation authorization = NOT READY
+```
+
+The clinical taxonomy/safety content is broadly coherent. No broad regional clinical redesign is indicated.
 
 ---
 
@@ -44,19 +46,19 @@ B5 — ShortReferralFormatter / DetailedReferralFormatter interface and omission
 B6 — tri-state/enumeration/key naming is not normalized/versioned across profiles
 ```
 
-No frozen clinical pathway is revoked by this review.
+No frozen clinical pathway is revoked by the review.
 
 ---
 
 # 3. Exact next action
 
 ```text
-1. complete one bounded CU-1 design-hardening pass resolving B1–B6
-2. do not reopen broad regional clinical taxonomy unless a blocker requires it
-3. freeze the cross-profile machine contract + routing/precedence + formatter contract
+1. product owner may authorize the bounded docs/schema-only CU-1 design-hardening pass
+2. resolve B1–B6 without reopening broad clinical taxonomy unless specifically required
+3. freeze cross-profile typed contract + registry/gateways + precedence + safety + formatter + common enums
 4. repeat exact design-completeness review
 5. STOP at DESIGN-COMPLETE or remaining BLOCK
-6. only after DESIGN-COMPLETE may the product owner separately authorize runtime implementation
+6. runtime implementation requires a separate explicit product-owner authorization only after DESIGN-COMPLETE
 ```
 
 ---
@@ -65,7 +67,7 @@ No frozen clinical pathway is revoked by this review.
 
 ```text
 WRITE CU-1 production runtime code
-START UI implementation
+START CU-1 UI implementation
 ADD persistence for physiotherapy referrals
 INVENT schema/routing/formatter semantics inside implementation
 COMMIT identifiable patient data
