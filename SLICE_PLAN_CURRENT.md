@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — CU-1 Physiotherapy Referral v2 design
 
-> **STATUS:** PRE-CODE DESIGN — clinical/content profiles frozen; B1–B6 cross-profile machine contract now FROZEN on active docs/schema branch pending exact review/merge and repeat completeness review.
+> **STATUS:** PRE-CODE DESIGN — clinical/content profiles and machine contract v1 frozen; repeat design-completeness review = **BLOCK** on two narrow declarative gaps R1–R2.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Parent product:** Personal Clinical Excellence System.
 > **Area:** Clinic Utilities / Clinical Operations.
@@ -8,60 +8,59 @@
 > **Supporting plan:** `CLINIC_UTILITIES_PLAN.md`.
 > **Frozen regional profiles:** cervical, lumbar, shoulder, elbow, wrist/hand, knee, hip/groin and ankle/foot v1.1.
 > **Frozen shared profiles:** Shared Fracture v1.1; Shared Muscle/Myotendinous v1.1; Shared Deconditioning/Balance/Gait v1.1.
-> **Prior completeness review:** `clinic_utilities/CU1_DESIGN_COMPLETENESS_REVIEW.md` = BLOCK before hardening.
-> **Frozen hardening contract:** `clinic_utilities/contracts/CU1_CORE_CONTRACT_V1.md` + `cu1_registry_v1.yaml` + `cu1_design_fixtures_v1.yaml`.
+> **Frozen machine contract:** `clinic_utilities/contracts/cu1_contract_manifest_v1.yaml` and normative artifacts.
+> **Prior review:** `clinic_utilities/CU1_DESIGN_COMPLETENESS_REVIEW.md`.
+> **Repeat review:** `clinic_utilities/CU1_DESIGN_COMPLETENESS_REVIEW_V2.md`.
 > **Prior active slice:** PR-1 remains intentionally paused.
 
-CU-1 remains design-only. No runtime implementation is authorized.
+CU-1 remains design-only. Runtime implementation is not authorized.
 
 ---
 
-# 1. Frozen clinical architecture
+# 1. What is frozen and passed
 
-The 11 regional/shared v1.1 clinical/content profiles remain unchanged and frozen.
+```text
+11 regional/shared clinical profiles = FROZEN
+ReferralDraftV1 typed homes = PASS
+canonical route/key/gateway registry = PASS
+long-tail route/site/muscle identities = PASS
+route ownership / precedence = PASS
+common enums / ID normalization = PASS
+SafetyResult severity/blocking/disposition model = PASS after rule trigger
+ShortReferralFormatter / DetailedReferralFormatter contract = PASS
+structured-option scope boundary = PASS
+synthetic semantic fixtures = PASS as design oracles
+```
 
-Hard invariants remain: suggested/examined/selected/mandatory are distinct; symptoms/tests/imaging do not autonomously create diagnoses; not-assessed does not mean normal; adjuncts do not replace core rehabilitation; clinician-entered diagnoses may be carried but not inferred.
+The broad clinical taxonomy must not be reopened for the remaining work.
 
 ---
 
-# 2. Frozen cross-profile machine contract v1
-
-Normative artifacts:
+# 2. Remaining blockers
 
 ```text
-clinic_utilities/contracts/CU1_CORE_CONTRACT_V1.md
-clinic_utilities/contracts/cu1_registry_v1.yaml
-clinic_utilities/contracts/cu1_design_fixtures_v1.yaml
+R1 — machine-declarative safety/consistency trigger catalog is missing
+R2 — machine-declarative route requirements / conditional validation catalog is missing
 ```
 
-They freeze:
+R1 means runtime would still need to interpret profile prose to decide exactly when a canonical safety rule fires.
 
-```text
-ReferralDraftV1 typed nested model
-ProblemSelection / SharedTarget / FindingSelection / RestrictionSelection / MeasurementSelection
-AssertionState / AssessmentState / PresenceState / Laterality / Visibility
-SafetyScreenState / SafetySeverity / ClinicianDisposition / SafetyResult
-canonical lowercase snake_case registry + aliases
-exact regional→shared gateway targets
-route ownership / precedence
-ShortReferralFormatter / DetailedReferralFormatter interface and omission rules
-synthetic semantic test fixtures
-```
+R2 means runtime would still need to interpret profile prose to decide route-specific required/conditional context, assertion policy, subtype requirements and applicability of restrictions.
 
 ---
 
-# 3. Prior blocker disposition
+# 3. Exact bounded next design scope
+
+If the product owner chooses to continue CU-1 design hardening, produce only:
 
 ```text
-B1 typed homes for route/profile-specific state = resolved by core contract
-B2 canonical machine registry/gateway map = resolved by registry v1
-B3 route ownership/precedence = resolved by global + route-specific precedence
-B4 safety severity/blocking/disposition = resolved by SafetyResult v1
-B5 formatter interface/output/omission = resolved by formatter contract
-B6 normalized tri-state/enums/key namespace = resolved by common enum + alias policy
+clinic_utilities/contracts/cu1_rule_catalog_v1.yaml
+clinic_utilities/contracts/cu1_route_requirements_v1.yaml
 ```
 
-These are design claims pending independent repeat completeness review; they are not implementation evidence.
+They must reference the existing frozen contract/registry and must not alter clinical meaning.
+
+Then repeat design-completeness review.
 
 ---
 
@@ -73,31 +72,15 @@ ephemeral structured draft
 → copy / print
 ```
 
-Persistence remains unfrozen and out of first implementation scope. No production HTML/JS/CSS, FastAPI CU-1 endpoints or database changes are authorized.
+Persistence remains unfrozen and out of first implementation scope.
 
 ---
 
-# 5. Exact next action
+# 5. Stop rule
 
 ```text
-1. exact branch-vs-main review of frozen hardening artifacts
-2. docs/schema-only PR + independent exact-head review
-3. merge only if contract is internally deterministic and no runtime/profile mutation exists
-4. fresh bootstrap from merged main
-5. repeat CU-1 design-completeness review against frozen contract and fixtures
-6. STOP at DESIGN-COMPLETE or remaining BLOCK
-7. runtime implementation requires separate explicit product-owner authorization even if DESIGN-COMPLETE
+current result = BLOCK
+runtime = NOT AUTHORIZED
 ```
 
----
-
-# 6. Explicitly out of scope
-
-```text
-production HTML/JS/CSS
-FastAPI CU-1 runtime endpoints
-physiotherapy persistence
-patient-data storage
-broad clinical-taxonomy expansion
-PR-1 runtime implementation
-```
+Do not write production HTML/JS/CSS, FastAPI CU-1 endpoints, persistence or patient-data storage. Runtime implementation requires a future `DESIGN-COMPLETE` review result plus separate explicit product-owner authorization.
