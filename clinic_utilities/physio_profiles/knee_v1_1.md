@@ -2,13 +2,12 @@
 
 > **STATUS:** FROZEN CLINICAL/CONTENT DESIGN — product-owner approved 2026-08-27.
 > **Parent slice:** CU-1 Physiotherapy Referral v2 design.
-> **Purpose:** define clinically useful knee referral choices that match the product owner's real workflow while preserving diagnosis-vs-finding separation, meniscal/ligament/extensor-mechanism safety semantics, pediatric/adolescent distinctions, active rehabilitation, procedure-specific restrictions and physiotherapist autonomy.
+> **Purpose:** define clinically useful knee referral choices matching the product owner's real workflow while preserving diagnosis-vs-finding separation, structural safety, pediatric/adolescent distinctions, active rehabilitation, procedure-specific restrictions and physiotherapist autonomy.
 > **Supersedes as active knee design:** `clinic_utilities/physio_profiles/knee_v1.md`.
-> **Prior frozen regional profiles:** `cervical_v1_1.md`, `lumbar_v1_1.md`, `shoulder_v1_1.md`, `elbow_v1_1.md`, `wrist_hand_v1_1.md`.
 
 ---
 
-# 1. Core design contract
+# 1. Core contract
 
 ```text
 PRIMARY CLINICAL PATHWAY
@@ -26,7 +25,7 @@ CONFIRMED GOALS
 CONFIRMED REHABILITATION DIRECTIONS
 ```
 
-Inherited hard invariants:
+Hard invariants:
 
 ```text
 suggested != examined
@@ -50,17 +49,12 @@ The utility structures a referral and checks consistency. It must not autonomous
 
 ## K1 — Knee osteoarthritis
 
-Structured key:
-
 ```text
-knee_osteoarthritis
+key: knee_osteoarthritis
+display: Οστεοαρθρίτιδα γόνατος
 ```
 
-Display:
-
-> Οστεοαρθρίτιδα γόνατος
-
-Possible clinician-entered compartment/context:
+Optional compartment/context:
 
 ```text
 medial_tibiofemoral
@@ -75,80 +69,69 @@ Useful findings/context:
 ```text
 weight-bearing pain
 start-up pain / stiffness
-walking tolerance
-stair limitation
-sit-to-stand limitation
+walking/stair/sit-to-stand limitation
 squat/kneeling limitation
-knee flexion/extension restriction
+flexion/extension restriction
 quadriceps weakness if assessed
 hip/lower-limb weakness if assessed
 balance/neuromuscular deficit if assessed
-varus/valgus alignment context if relevant
-effusion if present
-radiographic OA context if available
+varus/valgus alignment context
+effusion
+radiographic OA context
 BMI/weight-management context when clinically relevant
 ```
 
 Hard rules:
 
 ```text
-radiographic OA alone != proof that all current symptoms arise from OA
+radiographic OA alone != proof that all symptoms arise from OA
 radiographic severity != automatic functional severity
 ```
 
-Core rehabilitation directions may include:
+Core rehabilitation:
 
 ```text
 education / self-management
 individualized strengthening
 low-impact aerobic activity
 progressive functional exercise
-neuromuscular / balance / coordination training when relevant
-mobility/ROM exercise when restricted
+neuromuscular/balance training when relevant
+ROM/mobility when restricted
 graded walking/activity exposure
 weight-management support/referral when relevant and clinician-selected
 ```
 
-Support options may include a knee brace, cane/walking aid or taping when clinically appropriate; these are condition-sensitive rather than globally preselected.
+Supports may include brace, cane/walking aid or taping when appropriate; none are globally preselected.
 
-### Knee-OA acupuncture policy
+### Knee-OA acupuncture
 
-The product owner does refer selected knee-OA patients for acupuncture.
-
-Therefore:
+The product owner refers selected knee-OA patients for acupuncture.
 
 ```text
 acupuncture_for_knee_OA = optional evidence-sensitive adjunct
 ```
 
-It is never preselected, never a substitute for exercise/self-management and never presented as guideline-unanimous. Guideline positions differ materially, including permissive/limited-support frameworks and NICE guidance recommending against acupuncture for OA.
+It is never preselected, never a substitute for exercise/self-management and never presented as guideline-unanimous. Major guideline positions differ, including NICE guidance recommending against acupuncture for OA.
 
-Dry needling is excluded from Knee v1.1 by product-owner decision.
+Dry needling is excluded from Knee v1.1.
 
 ## K2 — Degenerative meniscal lesion / tear — conservative rehabilitation
 
-Structured key:
-
 ```text
-degenerative_meniscal_lesion_conservative_rehabilitation
+key: degenerative_meniscal_lesion_conservative_rehabilitation
+display: Εκφυλιστική βλάβη / ρήξη μηνίσκου — συντηρητική αποκατάσταση
 ```
 
-Display:
-
-> Εκφυλιστική βλάβη / ρήξη μηνίσκου — συντηρητική αποκατάσταση
-
-Use when the clinician has established or is carrying a degenerative meniscal diagnosis and a conservative pathway is appropriate.
-
-Possible context:
+Context:
 
 ```text
 medial / lateral / both / not_stated
 MRI-established tear if available
-degenerative OA overlap
+OA overlap
 joint-line pain/tenderness if examined
-clicking/catching if present
+clicking/catching
 true locking: yes/no/not_stated
-recurrent effusion if present
+recurrent effusion
 squat/twist/pivot provocation
 ```
 
@@ -162,38 +145,31 @@ clicking/catching != true locked knee
 
 Evidence boundary:
 
-- exercise-based physiotherapy is a first-line approach for degenerative meniscal lesions;
+- exercise-based physiotherapy is first-line for common degenerative meniscal lesions when no structural surgical indication is present;
 - long-term randomized evidence supports exercise-based PT as noninferior to arthroscopic partial meniscectomy for patient-reported function in common degenerative tears;
-- the utility must not imply that a degenerative MRI tear automatically requires arthroscopy;
-- true locking or another unresolved structural concern leaves this routine pathway.
+- a degenerative MRI tear does not automatically imply arthroscopy;
+- true locking or unresolved structural concern exits this routine pathway.
 
-Possible rehabilitation directions:
+Core rehabilitation:
 
 ```text
-quadriceps and lower-limb strengthening
+quadriceps/lower-limb strengthening
 progressive functional loading
 ROM restoration if restricted
 neuromuscular/balance control
 movement/load modification
 progressive squat/stair/walking tolerance
-graded return to work/sport according to symptoms/function
+graded return to work/sport
 ```
 
-## K3 — Acute isolated meniscal injury — assessed nonoperative pathway
-
-Structured key:
+## K3 — Acute isolated meniscal injury — assessed nonoperative
 
 ```text
-acute_isolated_meniscal_injury_nonoperative
+key: acute_isolated_meniscal_injury_nonoperative
+display: Οξεία τραυματική κάκωση μηνίσκου — συντηρητική αποκατάσταση μετά από αξιολόγηση
 ```
 
-Display:
-
-> Οξεία τραυματική κάκωση μηνίσκου — συντηρητική αποκατάσταση μετά από αξιολόγηση
-
-Use only when an acute meniscal injury has been clinically assessed and nonoperative rehabilitation is the current plan.
-
-Required/important context:
+Required context:
 
 ```text
 injury date / phase
@@ -201,58 +177,44 @@ medial / lateral / not_stated
 tear morphology if established
 displaced/displacing: yes/no/not_stated
 ROM restriction / true locking
-repairable-lesion or specialist context if known
-weight-bearing restriction if any
-brace restriction if any
+repairable-lesion/specialist context
+weight-bearing restriction
+brace restriction
 associated ligament/chondral injury context
 ```
 
-Hard safety boundary:
+Safety rule:
 
 ```text
 acute meniscal injury
-+ displaced/displacing tear OR true locked knee / major ROM block OR repairable lesion requiring timely specialist decision
++ displaced/displacing tear OR true locked knee/major ROM block OR repairable lesion needing timely decision
 → orthopaedic reassessment / early specialist pathway
 → no routine unrestricted rehabilitation wording
 ```
 
 ## K4 — Patellofemoral pain
 
-Structured key:
-
 ```text
-patellofemoral_pain
-```
-
-Default presentation wording without formal diagnosis:
-
-> Πρόσθιος πόνος γόνατος με επιγονατιδομηριαία χαρακτηριστικά
-
-Optional clinician assertion:
-
-```text
+key: patellofemoral_pain
+default display: Πρόσθιος πόνος γόνατος με επιγονατιδομηριαία χαρακτηριστικά
 formal_patellofemoral_pain_diagnosis: yes / no / not_stated
 ```
 
-If `yes`:
+If formally established:
 
 > Επιγονατιδομηριαίος πόνος
 
-Useful findings/context:
+Context:
 
 ```text
 peripatellar/retropatellar pain
-pain with stairs
-pain with squat
-pain with running/jumping
-pain with prolonged sitting
-pain with kneeling if relevant
+stairs / squat / running / jumping / prolonged sitting
 load-volume change
 quadriceps weakness if assessed
 hip strength/control deficit if assessed
-movement/running pattern finding if assessed
+movement/running pattern if assessed
 foot/ankle contribution if assessed
-patellar taping response if actually tested
+patellar-taping response if actually tested
 ```
 
 Hard rules:
@@ -263,93 +225,68 @@ patellar crepitus != chondromalacia diagnosis
 patellofemoral cartilage MRI finding != automatically symptomatic pain generator
 ```
 
-Core rehabilitation direction:
+Core:
 
 ```text
-education + knee-targeted exercise
+education
+knee-targeted exercise
 ± hip-targeted exercise according to assessment
-load/activity modification and graded return
+load/activity modification
+graded return
 ```
 
-Supporting interventions such as taping, prefabricated foot orthoses, manual therapy or movement/running retraining are condition-sensitive and selected only when the individual presentation justifies them.
+Taping, prefabricated foot orthoses, manual therapy and movement/running retraining are condition-sensitive supports.
 
-Adolescents with ordinary patellofemoral pain use this same pathway with age/skeletal-maturity context; they are not automatically moved into the growth-related pediatric subgroup.
+Adolescent PFP uses K4 with age/skeletal-maturity context; it is not automatically placed in the growth-related pediatric subgroup.
 
 ## K5 — Patellar tendinopathy
 
-Structured key:
-
 ```text
-patellar_tendinopathy
-```
-
-Default wording without formal diagnosis:
-
-> Πρόσθιος πόνος γόνατος / επιγονατιδικού τένοντα με χαρακτηριστικά load-related tendinopathy
-
-Optional clinician assertion:
-
-```text
+key: patellar_tendinopathy
+default display: Πρόσθιος πόνος γόνατος / επιγονατιδικού τένοντα με χαρακτηριστικά load-related tendinopathy
 formal_patellar_tendinopathy_diagnosis: yes / no / not_stated
 ```
 
-Useful findings/context:
+Context:
 
 ```text
 inferior-pole / patellar-tendon pain
-localized tendon tenderness
-pain with jumping/hopping/running
-pain with squat/decline squat if examined
-sport/gym loading history
+localized tenderness
+jump/hop/run/squat load pain
+sport/gym load history
 strength/load capacity
 return-to-sport target
-ultrasound/MRI context if available
+ultrasound/MRI context
 ```
 
 Hard rules:
 
 ```text
-anterior knee pain + tendon tenderness != automatic patellar tendinopathy
+anterior pain + tendon tenderness != automatic patellar tendinopathy
 ultrasound/MRI tendon change != automatically symptomatic tendinopathy
 ```
 
-Core direction:
+Core:
 
 ```text
 load monitoring / education
 progressive tendon-loading exercise
-progressive quadriceps and lower-limb strength
-graded energy-storage / jumping-running return when relevant
+progressive quadriceps/lower-limb strength
+graded energy-storage and jumping/running return when relevant
 ```
 
-No single mandatory eccentric, isometric or heavy-slow-resistance protocol is frozen.
+No single mandatory eccentric/isometric/heavy-slow-resistance protocol is frozen.
 
-ESWT is not a default clinician-selected adjunct. If a treating physiotherapist proposes ESWT, it may be recorded as therapist-proposed context, but the generator does not recommend it by default and does not claim superiority over exercise-based rehabilitation.
+ESWT is not a generator default. Therapist-proposed ESWT may be documented, but the generator does not recommend it or claim superiority over exercise.
 
 ## K6 — Quadriceps tendinopathy
 
-Structured key:
-
 ```text
-quadriceps_tendinopathy
+key: quadriceps_tendinopathy
+display: Τενοντοπάθεια τετρακεφάλου
 ```
-
-Display:
-
-> Τενοντοπάθεια τετρακεφάλου
 
 This is a default pathway because the product owner sees and refers it.
-
-Useful context:
-
-```text
-superior-pole / quadriceps-tendon pain
-localized tenderness
-load-related pain with squat/jump/run/stairs
-sport/gym loading history
-strength/load-capacity deficit if assessed
-ultrasound/MRI context if available
-```
 
 Hard rules:
 
@@ -359,38 +296,33 @@ imaging tendon change != automatically symptomatic diagnosis
 quadriceps tendinopathy != acute quadriceps-tendon rupture
 ```
 
-Core rehabilitation is progressive load/capacity restoration with quadriceps and lower-limb strengthening and graded return to activity.
+Core rehabilitation is progressive load/capacity restoration with quadriceps/lower-limb strengthening and graded return.
 
-Acute traumatic loss of active extension/straight-leg raise or palpable extensor-mechanism defect leaves this pathway and triggers structural reassessment.
+Acute traumatic loss of active extension/straight-leg raise or palpable extensor-mechanism defect exits this pathway and triggers structural reassessment.
 
-## K7 — ACL injury / instability rehabilitation
-
-Structured key:
+## K7 — ACL injury / instability — nonoperative or preoperative rehabilitation
 
 ```text
-ACL_injury_instability_rehabilitation
+key: ACL_injury_instability_rehabilitation
+display: Κάκωση / ανεπάρκεια πρόσθιου χιαστού (ACL) — συντηρητική / προεγχειρητική αποκατάσταση
 ```
 
-Display:
-
-> Κάκωση / ανεπάρκεια πρόσθιου χιαστού (ACL) — αποκατάσταση
-
-Possible pathway context:
+Allowed pathway context:
 
 ```text
 nonoperative_rehabilitation
 preoperative_preparation
-post_ACL_reconstruction
 ```
 
-Required context where relevant:
+**Post-ACL reconstruction is not K7. It routes exclusively to K13 postoperative knee with subtype `ACL_reconstruction`.**
+
+Required context:
 
 ```text
 injury date / phase
 partial vs complete if established
 objective instability if established
 operative vs nonoperative decision
-graft/procedure if postoperative
 brace status
 weight-bearing status
 ROM restrictions
@@ -404,10 +336,10 @@ Hard rules:
 subjective giving-way != objective ACL instability
 Lachman/anterior-drawer/pivot-shift finding != autonomous ACL tear diagnosis
 single functional test != automatic safe return to sport
-time since injury/surgery alone != return-to-sport clearance
+time since injury alone != return-to-sport clearance
 ```
 
-Core rehabilitation directions:
+Core:
 
 ```text
 restore ROM according to restrictions
@@ -416,24 +348,16 @@ neuromuscular/proprioceptive control
 running progression when appropriate
 plyometric/change-of-direction progression when appropriate
 criterion-based functional progression
-return-to-sport/work decision coordinated with structural/surgical context
 ```
 
-Post-ACLR exact graft/procedure and surgeon restrictions outrank generic defaults.
-
-## K8 — MCL injury rehabilitation
-
-Structured key:
+## K8 — MCL injury — nonoperative rehabilitation
 
 ```text
-MCL_injury_rehabilitation
+key: MCL_injury_rehabilitation
+display: Κάκωση έσω πλαγίου συνδέσμου (MCL) — συντηρητική αποκατάσταση
 ```
 
-Display:
-
-> Κάκωση έσω πλαγίου συνδέσμου (MCL) — αποκατάσταση
-
-This is a separate default pathway because the product owner sees it frequently.
+**Postoperative MCL repair/reconstruction is not K8. It routes exclusively to K13 postoperative knee with subtype `MCL_repair_or_reconstruction`.**
 
 Required context:
 
@@ -442,45 +366,39 @@ injury date / phase
 grade if established
 partial/complete if established
 isolated vs combined injury
-valgus instability if objectively established
+objective valgus instability if established
 brace status
 weight-bearing status
 ROM restrictions
 associated ACL/meniscus/other ligament injury
-operative vs nonoperative plan
 ```
 
 Hard rules:
 
 ```text
 medial knee pain != MCL injury
-valgus stress pain/laxity finding != autonomous tear grade
+valgus-stress pain/laxity finding != autonomous tear grade
 combined ligament injury != routine isolated-MCL pathway
 ```
 
-Core rehabilitation may include protected progressive loading, ROM restoration, progressive strength, neuromuscular control and graded return according to stability and restrictions.
+Core may include protected progressive loading, ROM restoration, strength, neuromuscular control and graded return according to stability/restrictions.
 
 ## K9 — Patellar instability / dislocation rehabilitation
 
-Structured key:
-
 ```text
-patellar_instability_dislocation_rehabilitation
+key: patellar_instability_dislocation_rehabilitation
+display: Αστάθεια / εξάρθρημα επιγονατίδας — αποκατάσταση
 ```
-
-Display:
-
-> Αστάθεια / εξάρθρημα επιγονατίδας — αποκατάσταση
 
 Context:
 
 ```text
 first-time vs recurrent
-traumatic vs low-energy/atraumatic context
-skeletal_maturity when relevant
-reduction completed if acute dislocation
+traumatic vs low-energy/atraumatic
+skeletal maturity when relevant
+reduction completed if acute
 osteochondral injury assessed if relevant
-MPFL injury/reconstruction context
+MPFL context
 anatomic recurrence-risk factors if established
 brace status
 weight-bearing/ROM restrictions
@@ -493,36 +411,28 @@ patellar apprehension != autonomous instability diagnosis
 first-time dislocation != automatically routine PT without structural assessment
 ```
 
-Physiotherapy is an important component of operative and nonoperative management, but structural/osteochondral context and recurrence risk must remain visible. Bracing is condition-sensitive and not represented as a universally beneficial long-term intervention.
+Physiotherapy is an important component of operative and nonoperative management, but osteochondral/structural context and recurrence risk remain visible. Bracing is condition-sensitive, not a universally beneficial long-term intervention.
 
-## K10 — Iliotibial-band syndrome / lateral running-related knee pain
+Post-MPFL reconstruction or other stabilization surgery routes to K13.
 
-Structured key:
-
-```text
-iliotibial_band_syndrome
-```
-
-Default wording without formal diagnosis:
-
-> Πλάγιος πόνος γόνατος με χαρακτηριστικά συνδρόμου λαγονοκνημιαίας ταινίας
-
-Optional clinician assertion:
+## K10 — Iliotibial-band syndrome
 
 ```text
+key: iliotibial_band_syndrome
+default display: Πλάγιος πόνος γόνατος με χαρακτηριστικά συνδρόμου λαγονοκνημιαίας ταινίας
 formal_ITB_syndrome_diagnosis: yes / no / not_stated
 ```
 
-This remains a default selectable pathway even though it is less common in the product owner's practice.
+This is directly selectable despite lower frequency in the product-owner workflow.
 
-Useful context:
+Context:
 
 ```text
 running/cycling load
 lateral femoral-condyle region pain
 repetitive flexion-extension provocation
 training-volume/surface/change context
-hip/lower-limb strength/control findings if assessed
+hip/lower-limb strength/control if assessed
 running biomechanics if assessed
 ```
 
@@ -532,36 +442,26 @@ Hard rule:
 lateral knee pain != automatically ITB syndrome
 ```
 
-Rehabilitation emphasizes load modification, progressive lower-limb strength/capacity and activity/running progression according to findings.
+Core: load modification, progressive lower-limb strength/capacity and graded activity/running progression.
 
 ## K11 — Pes anserine region pain / established tendinobursitis
 
-Structured key:
-
 ```text
-pes_anserine_region_pain_or_tendinobursitis
-```
-
-Default presentation wording without formal diagnosis:
-
-> Πόνος περιοχής χήνειου ποδός / pes anserine region
-
-Optional clinician assertion:
-
-```text
+key: pes_anserine_region_pain_or_tendinobursitis
+default display: Πόνος περιοχής χήνειου ποδός / pes anserine region
 formal_pes_anserine_bursitis_or_tendinopathy_diagnosis: yes / no / not_stated
 ```
 
-This is a default pathway because the product owner sees and refers it frequently.
+This is directly selectable because it is common in the product-owner workflow.
 
-Useful context:
+Context:
 
 ```text
 inferomedial knee pain
 localized tenderness
 stair/walking load provocation
 hamstring/adductor loading context
-knee OA overlap
+knee-OA overlap
 local swelling if present
 ```
 
@@ -573,21 +473,16 @@ medial knee pain != automatically pes pathology
 hot/erythematous/infectious-appearing swelling != routine PT pathway
 ```
 
-Core rehabilitation may include load modification, progressive hamstring/adductor/lower-limb strength, mobility where relevant and functional progression.
+Core: load modification, progressive hamstring/adductor/lower-limb strength, mobility when relevant and functional progression.
 
 ## K12 — Post-traumatic knee pain / stiffness after assessed injury
 
-Structured key:
-
 ```text
-post_traumatic_knee_pain_stiffness
+key: post_traumatic_knee_pain_stiffness
+display: Μετατραυματικός πόνος / δυσκαμψία γόνατος μετά από αξιολογημένη κάκωση
 ```
 
-Display:
-
-> Μετατραυματικός πόνος / δυσκαμψία γόνατος μετά από αξιολογημένη κάκωση
-
-Use only after unresolved fracture, major ligament instability, displaced meniscal lesion, extensor-mechanism rupture, osteochondral injury or neurovascular concern has been addressed as required.
+Use only after unresolved fracture, major ligament instability, displaced meniscal lesion, extensor-mechanism rupture, osteochondral injury or neurovascular concern has been addressed.
 
 Required context:
 
@@ -603,19 +498,16 @@ The utility never labels an unassessed knee trauma as a `simple sprain`.
 
 ## K13 — Postoperative knee rehabilitation
 
-Structured key:
-
 ```text
-postoperative_knee_rehabilitation
+key: postoperative_knee_rehabilitation
+display: Μετεγχειρητική αποκατάσταση γόνατος
 ```
 
-Display:
+All postoperative knee cases route through K13 rather than through the corresponding nonoperative injury pathway.
 
-> Μετεγχειρητική αποκατάσταση γόνατος
+In the product-owner workflow, **meniscus repair and partial meniscectomy are the most commonly seen postoperative knee referrals**.
 
-This is an active pathway. In the product owner's workflow, **meniscus repair and partial meniscectomy are the most commonly seen postoperative knee referrals**.
-
-Directly selectable procedure subtypes:
+Procedure subtype:
 
 ```text
 meniscus_repair
@@ -665,58 +557,53 @@ meniscus_repair / reconstruction
 
 No generic postoperative timeline is invented.
 
-### TKA-specific boundary
+### ACL reconstruction boundary
 
-TKA may use TKA-specific evidence-supported strategies such as early mobilization, progressive strength/ROM and, when appropriate, early quadriceps NMES. These interventions must not leak into generic OA, meniscus, PFP or ligament pathways as universal defaults.
+Post-ACLR rehabilitation is exercise-based and criterion-informed, with graft/procedure/surgeon restrictions preserved. Return-to-sport is never generated from elapsed time alone.
+
+### TKA boundary
+
+TKA-specific evidence-supported strategies such as early mobilization, progressive strength/ROM and, when appropriate, early quadriceps NMES may be selected within TKA context. These do not leak into generic OA, meniscus, PFP or ligament pathways.
 
 ---
 
-# 3. Pediatric / adolescent knee category — UI grouping, not a diagnosis
+# 3. Pediatric / adolescent knee category — UI grouping, not diagnosis
 
-The product owner sees children/adolescents and requested a dedicated category.
-
-Frozen design:
+Frozen navigation group:
 
 ```text
-UI category: Παιδιά / Έφηβοι — γόνατο
+Παιδιά / Έφηβοι — γόνατο
 ```
 
-This category is a **navigation/grouping layer**, not a single clinical pathway.
-
-It contains the growth-related anterior-knee entities below and may also route the clinician to standard structural pathways with pediatric context.
+This is a grouping layer, not a diagnostic umbrella.
 
 ## P-K1 — Osgood-Schlatter disease
 
-Structured key:
-
 ```text
-Osgood_Schlatter_disease
+key: Osgood_Schlatter_disease
+display: Νόσος Osgood-Schlatter / αποφυσίτιδα κνημιαίου κυρτώματος
 ```
-
-Display:
-
-> Νόσος Osgood-Schlatter / αποφυσίτιδα κνημιαίου κυρτώματος
 
 Use when clinician-established or carried as the working diagnosis.
 
-Useful context:
+Context:
 
 ```text
 age / skeletal maturity
 tibial-tubercle localized pain/tenderness
 running/jumping/sport load
 growth-spurt context if relevant
-quadriceps/hamstring/calf flexibility or strength findings if assessed
+quadriceps/hamstring/calf flexibility or strength if assessed
 functional limitation
 ```
 
-Core approach:
+Core:
 
 ```text
 education
 activity/load modification rather than automatic total rest
 symptom-guided progressive strengthening/loading
-mobility/flexibility work when an actual restriction is present
+mobility/flexibility work when an actual restriction exists
 graded return to sport/activity
 ```
 
@@ -724,19 +611,14 @@ No rigid universal exercise protocol or fixed return-to-sport timeline is genera
 
 ## P-K2 — Sinding-Larsen-Johansson syndrome
 
-Structured key:
-
 ```text
-Sinding_Larsen_Johansson_syndrome
+key: Sinding_Larsen_Johansson_syndrome
+display: Σύνδρομο Sinding-Larsen-Johansson
 ```
-
-Display:
-
-> Σύνδρομο Sinding-Larsen-Johansson
 
 Use when clinician-established or carried as the working diagnosis.
 
-Useful context:
+Context:
 
 ```text
 age / skeletal maturity
@@ -754,18 +636,16 @@ inferior-pole pain in an adolescent != automatically SLJ
 SLJ != patellar tendinopathy by default
 ```
 
-Core approach is conservative, load/activity modification with progressive restoration of mobility, strength and sport tolerance; no rigid universal protocol is generated.
+Core is conservative load/activity modification with progressive restoration of mobility, strength and sport tolerance; no rigid universal protocol is generated.
 
 ## Pediatric routing rule
 
-Children/adolescents with the following do **not** use a generic pediatric diagnosis:
-
 ```text
-patellofemoral pain → K4 + pediatric/adolescent context
+adolescent PFP → K4 + pediatric/adolescent context
 meniscal injury → K2/K3/K13 as appropriate + pediatric context
-ACL injury → K7 + pediatric context
-MCL injury → K8 + pediatric context
-patellar instability/dislocation → K9 + skeletal-maturity context
+ACL injury → K7 if nonoperative/prehab; K13 after ACLR
+MCL injury → K8 if nonoperative; K13 after surgery
+patellar instability/dislocation → K9; K13 after stabilization surgery
 fracture → shared fracture profile + pediatric context
 osteochondral/OCD lesion → advanced structural pathway
 ```
@@ -783,10 +663,6 @@ skeletal_maturity: immature / mature / not_stated
 
 ## 4.1 PCL / LCL / posterolateral-corner / combined ligament injury
 
-Not default top-level buttons in v1.1.
-
-Possible keys:
-
 ```text
 PCL_injury
 LCL_injury
@@ -794,15 +670,11 @@ posterolateral_corner_injury
 combined_multiligament_knee_injury
 ```
 
-Established injuries require exact stability, neurovascular, operative/nonoperative and restriction context.
+These are not default top-level buttons. Established injuries require exact stability, neurovascular, operative/nonoperative and restriction context. Combined/multiligament injury is never collapsed into routine ACL or MCL rehabilitation.
 
-Combined/multiligament injury is never collapsed into routine ACL or MCL rehabilitation.
+## 4.2 Distal hamstring insertional pathology
 
-## 4.2 Distal hamstring insertional tendinopathy / posteromedial-posterolateral tendon pain
-
-Directly selectable rare/secondary myotendinous entity because the product owner sees it occasionally.
-
-Possible subtypes:
+Rare selectable secondary entity because the product owner sees it occasionally.
 
 ```text
 pes_distal_hamstring_insertional_pathology
@@ -811,13 +683,11 @@ biceps_femoris_distal_insertional_pathology
 other_established_distal_hamstring_tendon_pathology
 ```
 
-Pain location alone does not establish tendon diagnosis. Progressive load-based rehabilitation may be selected where clinically appropriate.
+Pain location alone does not establish tendon diagnosis. Progressive load-based rehabilitation may be selected when appropriate.
 
-## 4.3 Hoffa fat-pad / synovial plica presentation
+## 4.3 Hoffa fat-pad / synovial plica
 
-Rare clinician-entered secondary/advanced pathway/context because the product owner sees it occasionally.
-
-Possible keys:
+Rare clinician-entered context:
 
 ```text
 established_Hoffa_fat_pad_pain_or_impingement
@@ -833,21 +703,19 @@ MRI fat-pad signal or visible plica != automatically symptomatic diagnosis
 
 ## 4.4 Baker / popliteal cyst
 
-Medical/context only by product-owner workflow:
+Medical/context only:
 
 ```text
 known_Baker_or_popliteal_cyst_context
 ```
 
-The generator does not infer a Baker cyst from posterior swelling and does not use it to dismiss DVT or other vascular pathology.
+Posterior swelling does not autonomously establish Baker cyst and never excludes DVT/vascular pathology.
 
 ## 4.5 Prepatellar / infrapatellar bursitis
 
-Medical/context only by product-owner workflow, not a routine physiotherapy primary pathway.
+Medical/context only in this workflow, not a routine physiotherapy primary pathway. Septic bursitis concern remains medical.
 
-Septic bursitis concern is a medical pathway.
-
-## 4.6 Established osteochondral / chondral lesion or osteochondritis dissecans
+## 4.6 Osteochondral/chondral lesion or osteochondritis dissecans
 
 Rare/advanced structural context:
 
@@ -856,133 +724,91 @@ established_chondral_or_osteochondral_lesion
 osteochondritis_dissecans
 ```
 
-Imaging findings do not automatically establish symptom causality. Unstable lesion/loose body/mechanical block requires specialist context.
+Imaging does not automatically establish symptom causality. Unstable lesion/loose body/mechanical block requires specialist context. In children/adolescents, skeletal maturity and lesion stability remain explicit.
 
-In children/adolescents, skeletal maturity and lesion stability must remain explicit.
+## 4.7 Meniscal root tear / complex repair-relevant lesion
 
-## 4.7 Meniscal root tear / complex structural meniscal lesion
-
-Rare/advanced structural pathway rather than routine K2 degenerative meniscus.
-
-Root tears and other repair-relevant complex lesions require explicit orthopaedic context because they are not equivalent to common degenerative meniscal findings.
+Rare/advanced structural pathway rather than routine K2. Requires explicit orthopaedic context.
 
 ## 4.8 Gastrocnemius strain / myotendinous injury
 
-The product owner sees gastrocnemius sprain, but this is routed to the future shared **muscle / myotendinous injury profile**, not duplicated as a knee diagnosis.
-
-Knee referral may carry gastrocnemius injury as secondary context until that shared profile is frozen.
+The product owner sees gastrocnemius sprain, but it routes to the future shared **muscle / myotendinous injury profile** rather than being duplicated as a knee diagnosis.
 
 ## 4.9 Inflammatory / crystal knee context
-
-Directly selectable only when established:
 
 ```text
 known_inflammatory_arthritis_knee_involvement
 known_gout_or_crystal_disease_context
 ```
 
-Acute hot swollen monoarthritis remains a medical diagnostic issue rather than a routine physiotherapy referral.
+Only when established. Acute hot swollen monoarthritis remains a medical diagnostic issue.
 
 ---
 
-# 5. Examination findings — selectable only when actually assessed
+# 5. Findings — only when actually assessed
 
-## 5.1 Pain / symptom behaviour
+## Symptoms / function
 
 ```text
-medial joint-line pain
-lateral joint-line pain
+medial/lateral joint-line pain
 anterior/peripatellar pain
 patellar-tendon pain
 quadriceps-tendon/suprapatellar pain
 posterior/popliteal pain
 pes-anserine-region pain
-lateral femoral-condyle/ITB-region pain
+ITB/lateral-condyle region pain
 tibial-tubercle pain
 inferior-patellar-pole pain
 distal hamstring insertional pain
-diffuse knee pain
+walking/stairs/sit-to-stand/squat/kneeling pain
+running/jumping/landing/pivot pain
+prolonged-sitting pain
 night pain
-pain with walking
-pain with stairs
-pain with sit-to-stand
-pain with squat
-pain with kneeling
-pain with running
-pain with jumping/landing
-pain with pivot/change of direction
-pain with prolonged sitting
 ```
 
-## 5.2 Mechanical symptoms
+## Mechanical
 
 ```text
 clicking
 catching
 subjective giving-way
-true locking / inability to move through expected ROM
+true locking / major mechanical ROM block
 recurrent instability episode
 patellar subluxation/dislocation history
 ```
 
 `clicking/catching` and `true locked knee` remain distinct.
 
-## 5.3 Swelling / effusion
+## Swelling / ROM / performance
 
 ```text
-no swelling if actually assessed
-mild/moderate/large effusion if assessed
-recurrent activity-related effusion
+effusion if assessed
 acute hemarthrosis context
 localized bursal swelling
-posterior/popliteal swelling
-```
-
-## 5.4 Range of motion
-
-```text
-flexion restricted
-extension restricted
+posterior swelling
+flexion restriction
+extension restriction
 extension lag
-painful active ROM
-painful passive ROM
-fixed flexion contracture if present
-```
-
-Extension lag is a finding; after trauma it must not be treated as benign until extensor-mechanism integrity is appropriately assessed.
-
-## 5.5 Strength / performance
-
-```text
-quadriceps weakness if assessed
-hamstring weakness if assessed
-hip abductor/extensor weakness if assessed
-calf weakness if assessed
-single-leg squat deficit
-sit-to-stand deficit
-step-down deficit
+painful active/passive ROM
+fixed flexion contracture
+quadriceps/hamstring/hip/calf weakness if assessed
+single-leg squat / step-down / sit-to-stand deficit
 balance/proprioception deficit
-hop/performance deficit if assessed
-running/landing/change-of-direction deficit if assessed
-load intolerance without measured weakness
+hop/running/landing/change-of-direction deficit if assessed
 ```
 
-## 5.6 Special/provocation findings
+Extension lag after trauma is not treated as benign until extensor-mechanism integrity is appropriately assessed.
 
-Secondary expander only:
+## Special/provocation findings
 
 ```text
 joint-line tenderness
-McMurray-type finding
-Thessaly-type finding
-Lachman finding
-anterior-drawer finding
-pivot-shift finding
-posterior-drawer / posterior-sag finding
-valgus-stress finding
-varus-stress finding
-patellar-apprehension finding
-patellar-compression/grind-type finding
+McMurray / Thessaly finding
+Lachman / anterior drawer / pivot shift
+posterior drawer / posterior sag
+valgus / varus stress
+patellar apprehension
+patellar compression/grind-type finding
 other clinician-entered test
 ```
 
@@ -992,7 +818,7 @@ Tests remain findings, not diagnoses.
 
 # 6. Neurological / neurovascular model
 
-Use when relevant to trauma, fibular-head/LCL/PLC injury, postoperative concern or lower-limb neurological overlap.
+When relevant:
 
 ```text
 motor: normal / abnormal / not_assessed
@@ -1003,22 +829,22 @@ vascular_status: normal / abnormal / not_assessed
 Possible specific context:
 
 ```text
-common_peroneal motor/sensory status
+common-peroneal motor/sensory status
 foot-drop concern
-pulses/perfusion if clinically assessed
+pulses/perfusion if actually assessed
 ```
 
 ```text
 not_assessed != normal
 ```
 
-No global `neurovascularly intact` wording is generated from missing data.
+No `neurovascularly intact` wording is generated from missing data.
 
 ---
 
-# 7. Safety / reassessment semantics
+# 7. Safety / reassessment
 
-## 7.1 High-priority structural concerns
+High-priority structural concerns:
 
 ```text
 acute trauma with unresolved fracture concern
@@ -1027,41 +853,41 @@ acute displaced/displacing meniscal tear concern
 acute extensor-mechanism rupture concern
 new inability to straight-leg raise after acute injury
 acute patellar dislocation not appropriately assessed/reduced
-major ligament instability / multiligament injury
+major/multiligament instability
 new neurovascular deficit after trauma
 large acute hemarthrosis with unresolved structural injury
 osteochondral loose-body / unstable lesion concern
 ```
 
-## 7.2 Medical / inflammatory / vascular concerns
+Medical/vascular concerns:
 
 ```text
 hot swollen knee / septic arthritis concern
 systemic illness with acute knee swelling
 wound/drainage/cellulitis or postoperative infection concern
 acute calf swelling/tenderness with DVT concern
-PE symptoms / cardiopulmonary concern
+PE/cardiopulmonary concern
 unexplained rapidly progressive swelling
-acute crystal/inflammatory monoarthritis not yet established
+acute crystal/inflammatory monoarthritis not established
 ```
 
-## 7.3 Pediatric/adolescent concerns
+Pediatric/adolescent concerns:
 
 ```text
-acute traumatic physeal/apophyseal fracture concern
+acute physeal/apophyseal fracture concern
 persistent severe night/rest pain or systemic concern
 inability to bear weight after trauma without adequate assessment
 unstable osteochondral/OCD concern
-acute extensor-mechanism injury that could mimic traction-apophysitis pain
+acute extensor-mechanism injury mimicking traction-apophysitis pain
 ```
 
-Osgood/SLJ labels must not be used to explain away atypical or high-risk presentations.
+Osgood/SLJ labels must not explain away atypical/high-risk presentations.
 
-## 7.4 Postoperative concerns
+Postoperative concerns:
 
 ```text
 missing procedure/protocol/restrictions
-wound complication/infection concern
+wound/infection concern
 new disproportionate swelling/pain
 DVT/PE concern
 new neurovascular deficit
@@ -1078,7 +904,7 @@ safety_screen_status:
   concern_present
 ```
 
-Disposition when concern present:
+When concern present, clinician disposition may be:
 
 ```text
 reviewed_and_appropriate_to_proceed
@@ -1089,87 +915,65 @@ routine physiotherapy deferred
 other
 ```
 
-No default `no red flags`, `no fracture`, `stable ligaments`, `meniscus intact`, `no DVT`, `no infection` or `neurovascularly intact` wording is generated from missing information.
+No reassuring negative statement is generated from missing information.
 
 ---
 
-# 8. Functional limitations
+# 8. Functional limitations / goals
+
+Selectable limitations:
 
 ```text
 walking distance/tolerance
-stairs up
-stairs down
+stairs up/down
 sit-to-stand
 prolonged standing
-squat
-kneeling
-floor transfer
-car transfer
-driving
+squat/kneeling/floor transfer
+car transfer/driving
 running
 jumping/landing
 pivot/change of direction
-sport-specific activity
-gym / resistance training
-manual work
-carrying loads
+sport/gym
+manual work/carrying loads
 school PE / youth sport
-work duties
 ADLs/self-care
 sleep disturbance
 patient-priority activity / free text
 ```
-
----
-
-# 9. Context-sensitive goals
-
-Nothing is globally preselected.
 
 Goal families:
 
 ```text
 reduce symptom irritability
 restore safe knee ROM
-improve quadriceps strength/capacity
-improve lower-limb strength
-improve gait/walking tolerance
-improve stair and sit-to-stand function
+improve quadriceps/lower-limb strength
+improve gait/walking/stair function
 improve balance/neuromuscular control
 improve tendon load capacity
-restore dynamic knee stability
-restore patellar stability/control where relevant
+restore dynamic knee/patellar stability
 progressive return to running/jumping/pivoting
 criterion-based return to sport/work
 restore function within surgical/structural restrictions
-self-management and load adaptation
+self-management/load adaptation
 age-appropriate return to school PE/sport
 ```
 
-Condition cautions:
-
-- OA: no structural reversal promise;
-- degenerative meniscus: no promise that PT heals MRI morphology;
-- acute meniscus/ligament: structural restriction outranks generic exercise progression;
-- patellar/quadriceps tendinopathy: no universal loading protocol is mandatory;
-- pediatric traction-apophysitis: no rigid timeline or requirement for total rest;
-- postoperative: surgeon/procedure-specific restrictions outrank generic defaults.
+Nothing is globally preselected.
 
 ---
 
-# 10. Rehabilitation directions and supports
+# 9. Rehabilitation directions and supports
 
-## 10.1 Core active directions
+Core active directions:
 
 ```text
 physiotherapy assessment and individualized active rehabilitation
 education / self-management
 activity/load modification
 progressive strengthening
-quadriceps strengthening
-hamstring/calf/hip/lower-limb strengthening where relevant
-ROM/mobility exercise where safe
-neuromuscular / proprioceptive / balance training where relevant
+quadriceps/hamstring/calf/hip/lower-limb strengthening where relevant
+ROM/mobility where safe
+neuromuscular/proprioceptive/balance training where relevant
 gait retraining where relevant
 movement/running retraining where relevant
 progressive tendon loading where relevant
@@ -1179,20 +983,15 @@ age-appropriate graded return to youth sport/school activity
 home exercise programme where appropriate
 ```
 
-## 10.2 Brace / taping / foot-support category
-
-Frozen policy: these remain **condition-sensitive supports**, not generic adjuncts.
-
-Possible selections:
+Condition-sensitive supports:
 
 ```text
-knee OA brace where appropriate
-patellofemoral taping
-patellofemoral support/brace where appropriate
-post-injury ligament brace according to plan
+knee-OA brace
+patellofemoral taping/support
+prefabricated foot orthosis for selected PFP
+ligament brace according to plan
 postoperative brace according to protocol
-prefabricated foot orthosis for selected patellofemoral-pain presentation
-walking aid / cane strategy where appropriate
+walking aid / cane
 ```
 
 Hard rule:
@@ -1202,34 +1001,30 @@ brace/tape/orthosis suggested != automatically required
 exact injury/surgical protocol > generic support suggestion
 ```
 
-## 10.3 Optional adjunct policy
-
-Frozen selections:
+Optional adjuncts:
 
 ```text
-manual therapy / joint mobilization where impairment-specific and appropriate
+manual therapy / joint mobilization where impairment-specific
 soft-tissue techniques where appropriate
 taping where relevant
 thermal strategy for selected OA symptoms
 acupuncture for selected knee OA → optional evidence-sensitive adjunct
 ```
 
-Explicitly excluded as clinician-generated Knee v1.1 adjunct:
+Excluded as clinician-generated Knee v1.1 adjuncts:
 
 ```text
 dry needling
 routine/default ESWT
 ```
 
-ESWT may be documented as a treating-physiotherapist-proposed intervention in patellar tendinopathy, but is not suggested by the generator and is not represented as superior to exercise.
-
-NMES is procedure/context-specific, especially postoperative TKA or other explicit postoperative indications, and not a generic OA modality.
+ESWT may be documented as therapist-proposed in patellar tendinopathy. NMES is procedure/context-specific, especially postoperative TKA, not generic OA.
 
 ---
 
-# 11. Shared fracture / post-immobilization boundary
+# 10. Shared fracture / post-immobilization boundary
 
-Knee-region fractures route to the shared fracture profile:
+Knee-region fractures route to shared fracture profile:
 
 ```text
 patella fracture
@@ -1248,21 +1043,16 @@ treatment
 healing/stability status
 immobilization/brace status
 weight-bearing status
-ROM restrictions
-loading restrictions
+ROM/loading restrictions
 orthopaedic instructions
 age/skeletal maturity when relevant
 ```
 
-```text
-fracture route + unresolved healing/loading context
-→ warning
-→ no unrestricted routine rehabilitation wording
-```
+Unknown healing/loading context prevents unrestricted rehabilitation wording.
 
 ---
 
-# 12. Deterministic consistency rules
+# 11. Deterministic consistency rules
 
 ```text
 K1 + x-ray OA only
@@ -1272,28 +1062,34 @@ K2 + MRI degenerative tear only
 → do not auto-assert symptomatic meniscal pain generator
 
 K2 + true locked knee
-→ leave routine degenerative-meniscus pathway; structural reassessment prompt
+→ structural reassessment prompt
 
-K3 + displaced/displacing tear or repairable-lesion concern
+K3 + displaced/displacing or repairable-lesion concern
 → specialist prompt before generic rehabilitation
 
-K4 + anterior knee pain only
-→ do not infer patellofemoral pain automatically
+K4 + anterior pain only
+→ do not infer PFP
 
-K4 + cartilage/chondromalacia imaging wording only
-→ do not convert to symptomatic PF diagnosis automatically
+K4 + cartilage/chondromalacia imaging only
+→ do not infer symptomatic PF diagnosis
 
-K5/K6 + tendon imaging abnormality only
-→ do not infer symptomatic tendon diagnosis
+K5/K6 + tendon imaging only
+→ do not infer symptomatic tendinopathy
 
 K6 + acute loss of straight-leg raise
-→ do not label quadriceps tendinopathy; extensor-mechanism reassessment prompt
+→ extensor-mechanism reassessment prompt
+
+K7 + postoperative ACL reconstruction
+→ invalid route; use K13 subtype ACL_reconstruction
 
 K7 + subjective giving-way only
 → do not infer ACL rupture/instability
 
-K7 + time since ACLR only
-→ do not generate return-to-sport clearance
+K7 + elapsed time only
+→ no return-to-sport clearance
+
+K8 + postoperative MCL repair/reconstruction
+→ invalid route; use K13 subtype MCL_repair_or_reconstruction
 
 K8 + medial pain/valgus test only
 → do not infer exact MCL grade
@@ -1313,16 +1109,16 @@ K11 + pes tenderness only
 K12 + unresolved fracture/locked knee/extensor rupture/major instability
 → safety prompt
 
-K13 postoperative + missing procedure/protocol/restrictions
+K13 + missing procedure/protocol/restrictions
 → warning
 
-meniscectomy + repair protocol accidentally treated identically
+meniscectomy and meniscus-repair protocol treated identically
 → warning
 
-TKA-specific NMES suggestion outside postoperative/TKA context
+TKA-specific NMES outside postoperative/TKA context
 → invalid
 
-posterior knee swelling + no established Baker cyst
+posterior swelling + no established Baker cyst
 → do not infer Baker cyst or dismiss DVT
 
 P-K1 tibial-tubercle pain only
@@ -1332,10 +1128,10 @@ P-K2 inferior-patellar-pole pain only
 → do not autonomously diagnose SLJ
 
 pediatric structural injury + generic pediatric category only
-→ require the appropriate structural pathway
+→ require appropriate structural pathway
 
 hot swollen knee + diagnostic uncertainty
-→ medical reassessment; no routine reassuring PT wording
+→ medical reassessment
 
 material safety concern + no clinician disposition
 → no routine reassuring wording
@@ -1346,141 +1142,131 @@ not_assessed neurovascular component
 
 ---
 
-# 13. Generated wording examples
+# 12. Generated wording examples
 
-## 13.1 Knee OA
+### Knee OA
 
-> Οστεοαρθρίτιδα του [side] γόνατος με [selected findings] και λειτουργικό περιορισμό σε [selected activities]. Παρακαλώ για εξατομικευμένη φυσιοθεραπευτική αποκατάσταση με έμφαση σε προοδευτική ενδυνάμωση, λειτουργική άσκηση, βελτίωση κινητικότητας/νευρομυϊκού ελέγχου όπου ενδείκνυται και εκπαίδευση αυτοδιαχείρισης. [Brace/taping/acupuncture only if explicitly selected.]
+> Οστεοαρθρίτιδα του [side] γόνατος με [selected findings] και λειτουργικό περιορισμό σε [selected activities]. Παρακαλώ για εξατομικευμένη φυσιοθεραπευτική αποκατάσταση με έμφαση σε προοδευτική ενδυνάμωση, λειτουργική άσκηση, κινητικότητα/νευρομυϊκό έλεγχο όπου ενδείκνυται και εκπαίδευση αυτοδιαχείρισης. [Brace/taping/acupuncture only if explicitly selected.]
 
-## 13.2 Degenerative meniscal lesion
+### Degenerative meniscal lesion
 
 > Εκφυλιστική βλάβη / ρήξη [medial/lateral] μηνίσκου του [side] γόνατος, με [selected findings] και περιορισμό σε [selected activities], για συντηρητική αντιμετώπιση. Παρακαλώ για προοδευτική αποκατάσταση δύναμης, κινητικότητας, νευρομυϊκού ελέγχου και ανοχής στη λειτουργική φόρτιση. Δεν υπονοείται χειρουργική ένδειξη από την απεικονιστική ρήξη και μόνο.
 
-## 13.3 Acute nonoperative meniscal injury
+### ACL nonoperative/prehab
 
-> Οξεία κάκωση [medial/lateral] μηνίσκου του [side] γόνατος μετά από αξιολόγηση, για συντηρητική αποκατάσταση σύμφωνα με τους καταγεγραμμένους περιορισμούς σε φόρτιση/κινητικότητα. Παρακαλώ για προοδευτική αποκατάσταση ROM, δύναμης και λειτουργίας, με επανεκτίμηση εάν εμφανιστεί/επιμένει πραγματικό κλείδωμα ή σημαντικός μηχανικός περιορισμός.
+> Κάκωση / ανεπάρκεια ACL του [side] γόνατος, για [nonoperative/preoperative] αποκατάσταση. Παρακαλώ για προοδευτική αποκατάσταση ROM, δύναμης, νευρομυϊκού ελέγχου και λειτουργικής σταθερότητας σύμφωνα με τους περιορισμούς, με criterion-based progression προς τρέξιμο/άθληση όπου απαιτείται.
 
-## 13.4 ACL
+### MCL nonoperative
 
-> Κάκωση / ανεπάρκεια ACL του [side] γόνατος, [established structural/operative context]. Παρακαλώ για προοδευτική αποκατάσταση ROM, δύναμης, νευρομυϊκού ελέγχου και λειτουργικής σταθερότητας σύμφωνα με τους καταγεγραμμένους περιορισμούς, με criterion-based progression προς τρέξιμο/άθληση όπου απαιτείται. Η επιστροφή σε άθληση δεν καθορίζεται από τον χρόνο μόνο.
+> Κάκωση MCL του [side] γόνατος, [grade/stability if established], για συντηρητική αποκατάσταση. Παρακαλώ για προστατευμένη και προοδευτική κινητοποίηση/φόρτιση, αποκατάσταση δύναμης και νευρομυϊκού ελέγχου σύμφωνα με τη σταθερότητα, το brace και τους καταγεγραμμένους περιορισμούς.
 
-## 13.5 MCL
+### Meniscus repair postoperative
 
-> Κάκωση MCL του [side] γόνατος, [grade/stability if established], για [conservative/postoperative] αποκατάσταση. Παρακαλώ για προστατευμένη και προοδευτική κινητοποίηση/φόρτιση, αποκατάσταση δύναμης και νευρομυϊκού ελέγχου σύμφωνα με τη σταθερότητα, το brace και τους καταγεγραμμένους περιορισμούς.
+> Μετεγχειρητική αποκατάσταση μετά από συρραφή μηνίσκου του [side] γόνατος, επέμβαση [date]. Παρακαλώ για φυσιοθεραπεία σύμφωνα με το ακριβές πρωτόκολλο της συρραφής και τους περιορισμούς σε φόρτιση, ROM, brace και ενδυνάμωση, με time- και criterion-based progression.
 
-## 13.6 Patellar instability
-
-> [First-time/recurrent] αστάθεια/εξάρθρημα επιγονατίδας του [side] γόνατος μετά από κατάλληλη δομική αξιολόγηση. Παρακαλώ για εξατομικευμένη αποκατάσταση δύναμης, νευρομυϊκού ελέγχου και σταδιακής επιστροφής στη λειτουργία σύμφωνα με το osteochondral/MPFL/anatomic-risk context και τυχόν brace/ROM restrictions.
-
-## 13.7 Pes anserine
-
-> Πόνος περιοχής χήνειου ποδός / [clinician-established pes anserine tendinobursitis] του [side] γόνατος με [selected findings]. Παρακαλώ για φυσιοθεραπευτική αποκατάσταση με προσαρμογή φορτίου, προοδευτική ενδυνάμωση και αποκατάσταση λειτουργικής ανοχής σύμφωνα με τα ευρήματα.
-
-## 13.8 Meniscus repair postoperative
-
-> Μετεγχειρητική αποκατάσταση μετά από συρραφή μηνίσκου του [side] γόνατος, επέμβαση [date]. Παρακαλώ για φυσιοθεραπεία σύμφωνα με το ακριβές πρωτόκολλο της συρραφής και τους καταγεγραμμένους περιορισμούς σε φόρτιση, ROM, brace και ενδυνάμωση, με time- και criterion-based progression.
-
-## 13.9 Partial meniscectomy postoperative
+### Partial meniscectomy postoperative
 
 > Μετεγχειρητική αποκατάσταση μετά από μερική μηνισκεκτομή του [side] γόνατος, επέμβαση [date]. Παρακαλώ για criterion-based αποκατάσταση κινητικότητας, δύναμης, βάδισης και λειτουργικής φόρτισης σύμφωνα με την κλινική πρόοδο και τυχόν ειδικές χειρουργικές οδηγίες.
 
-## 13.10 Osgood-Schlatter
+### Osgood-Schlatter
 
 > Νόσος Osgood-Schlatter του [side] γόνατος σε [age/adolescent context], με [selected findings] και περιορισμό σε [sport/school activity]. Παρακαλώ για εκπαίδευση και εξατομικευμένη συντηρητική αποκατάσταση με προσαρμογή φορτίου, προοδευτική ενδυνάμωση/κινητικότητα όπου ενδείκνυται και σταδιακή επιστροφή σε δραστηριότητα χωρίς άκαμπτο προκαθορισμένο χρονοδιάγραμμα.
 
-## 13.11 Sinding-Larsen-Johansson
+### Sinding-Larsen-Johansson
 
 > Σύνδρομο Sinding-Larsen-Johansson του [side] γόνατος σε [age/adolescent context], με [selected findings]. Παρακαλώ για συντηρητική αποκατάσταση με διαχείριση φόρτισης, προοδευτική βελτίωση κινητικότητας/δύναμης και σταδιακή επιστροφή σε αθλητική δραστηριότητα σύμφωνα με την ανοχή και την κλινική εξέλιξη.
 
 ---
 
-# 14. Evidence-governance boundary
+# 13. Evidence-governance boundary
 
-Stable structural decisions frozen in Knee v1.1:
+Frozen structural decisions:
 
 ```text
 exercise / education = core for knee OA
 radiographic OA != automatic symptom generator
 acupuncture = optional evidence-sensitive knee-OA adjunct only
 dry needling = excluded
-degenerative meniscal MRI tear != automatic symptom generator
+degenerative MRI meniscal tear != automatic symptom generator
 exercise-based PT = first-line for degenerative meniscal lesions
 true locked knee != routine degenerative-meniscus rehabilitation
-acute displaced/displacing meniscal tear with ROM block = structural/specialist pathway
+acute displaced/displacing tear with ROM block = structural/specialist pathway
 meniscus repair != partial meniscectomy rehabilitation logic
 anterior knee pain != automatic PFP
 PFP core = education + knee-targeted ± hip-targeted exercise
 patellar/quadriceps tendinopathy core = progressive load-based rehabilitation
 routine ESWT = not a generator default
-ACL and MCL = separate top-level pathways
+ACL and MCL = separate top-level nonoperative/prehab pathways
+all ACL/MCL postoperative care = K13 only
 subjective giving-way != objective ligament instability
 ligament special test != autonomous tear grade
 patellar dislocation requires structural/osteochondral context
-ITB and pes-anserine pathways remain diagnosis-sensitive
+ITB/pes-anserine remain diagnosis-sensitive
 postoperative rehabilitation = exact procedure/protocol governed
 TKA-specific interventions do not leak into generic OA pathways
 pediatric/adolescent category = UI grouping, not diagnosis
 Osgood-Schlatter and SLJ = distinct growth-related pathways
-pediatric meniscus/ACL/MCL/patellar instability use standard structural pathways + age/skeletal-maturity context
+pediatric structural conditions use standard pathways + age/skeletal-maturity context
 possible Baker cyst != exclusion of DVT
-prepatellar bursitis = medical/context only in this workflow
-Hoffa/plica = rare clinician-entered context only
+prepatellar bursitis = medical/context only
+Hoffa/plica = rare clinician-entered context
 fractures route to shared fracture/post-immobilization profile
 gastrocnemius strain routes to shared muscle/myotendinous profile
 ```
 
-Evidence anchors reviewed for this freeze include:
+Evidence anchors reviewed include:
 
-- AAOS Management of Osteoarthritis of the Knee (Non-Arthroplasty), 3rd edition;
-- NICE OA guidance where framework differences matter, including its recommendation against acupuncture/dry needling;
+- AAOS knee-OA guidance;
+- NICE OA guidance where framework differences matter;
 - 2024 AAOS Acute Isolated Meniscal Pathology CPG;
-- formal EU-US Meniscus Rehabilitation 2024 consensus (ESSKA-AOSSM-AASPT), operative and nonoperative parts;
+- formal EU-US Meniscus Rehabilitation 2024 consensus, operative and nonoperative parts;
 - 5-year ESCAPE randomized trial of exercise PT vs arthroscopic partial meniscectomy for degenerative tears;
 - 2024 patellofemoral-pain best-practice guide;
 - contemporary progressive-loading evidence for patellar tendinopathy;
 - AAOS ACL guidance and Aspetar ACL-reconstruction rehabilitation CPG/protocol;
 - ESSKA 2024 formal consensus on first-time patellar dislocation;
-- APTA Physical Therapist Management of Total Knee Arthroplasty Revision 2026;
-- 2026 review of Osgood-Schlatter treatments plus prior conservative-treatment systematic review;
-- 2024 scoping review of Sinding-Larsen-Johansson disease.
+- APTA Physical Therapist Management of TKA Revision 2026;
+- 2026 Osgood-Schlatter treatment review and prior conservative-treatment systematic review;
+- 2024 Sinding-Larsen-Johansson scoping review.
 
-Evidence-sensitive details to refresh immediately before CU-2 implementation:
+Refresh immediately before CU-2 implementation:
 
 ```text
 OA brace/taping/manual-therapy/acupuncture wording across frameworks
-PFP foot-orthosis/taping/movement-retraining selection
+PFP support-selection evidence
 meniscus lesion/repair-specific rehabilitation milestones
-ACL criterion-based progression and return-to-sport language
+ACL progression/return-to-sport language
 MCL grade-specific bracing/loading details
 patellar-instability brace/return-to-sport details
 patellar/quadriceps tendon loading progression
-ITB/pes-anserine rehabilitation evidence
-TKA 2026 detailed intervention/dosage recommendations
+ITB/pes-anserine evidence
+TKA 2026 detailed recommendations
 procedure-specific postoperative restrictions
-Osgood/SLJ exercise and return-to-sport evidence
+Osgood/SLJ exercise/return-to-sport evidence
 ```
 
 ---
 
-# 15. Product-owner decisions incorporated
+# 14. Product-owner decisions incorporated
 
 Product-owner decisions on 2026-08-27:
 
 - postoperative knee is active; meniscal repair and meniscectomy are seen most often;
 - degenerative and acute traumatic meniscal pathways remain separate;
 - ACL and MCL are separate top-level pathways;
-- patellar instability/dislocation is a default pathway;
-- quadriceps tendinopathy is a default pathway;
-- ITB syndrome is a default selectable pathway despite being less common;
-- pes-anserine region pathology is a default pathway because it is seen frequently;
-- acupuncture is retained as an optional evidence-sensitive adjunct for selected knee OA;
+- postoperative ACL/MCL route through K13 only to avoid duplicate primary pathways;
+- patellar instability/dislocation is default;
+- quadriceps tendinopathy is default;
+- ITB syndrome is directly selectable despite lower frequency;
+- pes-anserine pathology is default because it is seen frequently;
+- acupuncture is optional evidence-sensitive for selected knee OA;
 - dry needling is excluded;
-- ESWT is not a default clinician-generated intervention; therapist-proposed use may be documented in patellar tendinopathy;
-- taping, knee braces and foot orthoses remain condition-sensitive supports;
-- children/adolescents are seen and receive a dedicated pediatric/adolescent knee navigation category;
-- Osgood-Schlatter and Sinding-Larsen-Johansson are directly selectable pediatric/adolescent growth-related pathways;
-- Baker cyst and prepatellar bursitis are medical/context only because they are not routinely referred for physiotherapy;
-- distal hamstring insertional pathology and Hoffa/plica are rare selectable secondary/advanced entities;
-- gastrocnemius strain is seen but belongs in the future shared muscle/myotendinous injury profile.
+- ESWT is not default; therapist-proposed use may be documented in patellar tendinopathy;
+- taping, knee braces and foot orthoses are condition-sensitive supports;
+- children/adolescents have a dedicated navigation category;
+- Osgood-Schlatter and Sinding-Larsen-Johansson are directly selectable growth-related pathways;
+- Baker cyst and prepatellar bursitis are medical/context only because they are not routinely referred;
+- distal hamstring insertional pathology and Hoffa/plica are rare selectable context;
+- gastrocnemius strain belongs in the future shared muscle/myotendinous profile.
 
 This file is the frozen knee clinical/content design for CU-1. Runtime implementation remains unauthorized.
