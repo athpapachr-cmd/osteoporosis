@@ -13,6 +13,7 @@
 > **Frozen wrist/hand profile:** `clinic_utilities/physio_profiles/wrist_hand_v1_1.md`.
 > **Frozen knee profile:** `clinic_utilities/physio_profiles/knee_v1_1.md`.
 > **Frozen hip/groin profile:** `clinic_utilities/physio_profiles/hip_v1_1.md`.
+> **Frozen ankle/foot profile on active docs branch:** `clinic_utilities/physio_profiles/ankle_foot_v1_1.md`.
 > **Prior active slice:** PR-1 Transcript Intake + Candidate Extraction v3 remains intentionally paused at `archive/slices/PR1_TRANSCRIPT_INTAKE_V3.md`.
 
 CU-1 is a bounded cross-module design detour. It does not authorize runtime implementation.
@@ -73,76 +74,91 @@ elbow_v1_1 = FROZEN
 wrist_hand_v1_1 = FROZEN
 knee_v1_1 = FROZEN
 hip_v1_1 = FROZEN
+ankle_foot_v1_1 = FROZEN on docs branch pending exact-head review/merge
 ```
 
 ---
 
-# 3. Hip / Groin — FROZEN v1.1 design
+# 3. Ankle / Foot — FROZEN v1.1 design
 
 Authoritative frozen file:
 
 ```text
-clinic_utilities/physio_profiles/hip_v1_1.md
+clinic_utilities/physio_profiles/ankle_foot_v1_1.md
 ```
 
 Frozen routine primary pathways:
 
 ```text
-H1 lateral hip / greater-trochanteric pain pathway
-H2 nonarthritic intra-articular hip pain — FAIS / symptomatic labral
-H3 adductor-related groin pain / adductor tendinopathy
-H4 post-traumatic hip/groin pain or stiffness after assessed injury
+AF1 acute/postacute lateral ankle sprain after structural assessment
+AF2 Achilles tendinopathy — midportion / insertional
+AF3 plantar heel pain / plantar fasciitis
+AF4 posterior tibial tendon dysfunction / flexible PCFD
+AF5 peroneal tendon disorder — conservative rehabilitation
+AF6 mechanical metatarsalgia / forefoot overload
+AF7 assessed post-traumatic ankle/foot pain or stiffness
 ```
 
-High-value direct shared-profile gateways:
+Frozen pediatric/adolescent navigation group:
 
 ```text
-proximal rectus femoris / proximal quadriceps tendon injury in athletes
-→ future shared muscle/myotendinous profile
-
-pelvic apophyseal avulsion fracture in children/adolescents
-→ future shared fracture/post-immobilization profile
+Παιδιά / Έφηβοι — ποδοκνημική / άκρος πόδας
+→ Sever disease / calcaneal apophysitis
+→ symptomatic accessory navicular
+→ symptomatic flexible flatfoot
 ```
 
-Frozen workflow decisions:
+This is navigation only, not a diagnostic umbrella. Asymptomatic flexible flatfoot does not generate treatment.
 
-- hip OA is context only because it is not routinely referred;
-- lateral hip/GTPS remains directly selectable and clinician-entered trochanteric bursitis is preserved as a subtype;
-- FAIS and symptomatic acetabular labral pathology are combined into one nonarthritic intra-articular pathway;
-- adductor-related groin pain is high visibility because it is common in the product-owner workflow;
-- proximal hamstring tendinopathy is rare/secondary;
-- iliopsoas-related pain/internal snapping hip is rare/secondary;
-- established gluteus medius/minimus tears are very rare/advanced;
-- external snapping hip, dysplasia/instability and inguinal/pubic-related athletic groin pain remain rare/advanced;
-- postoperative hip is not a routine pathway;
-- there is no general pediatric/adolescent Hip navigation group;
-- pelvic apophyseal avulsions remain visible via the shared-fracture gateway because the product owner sees them;
-- deep-gluteal/piriformis routes to the frozen lumbar profile.
-
-Frozen adjunct policy:
+Frozen rare/advanced/context entities:
 
 ```text
+chronic ankle instability / recurrent sprain → rare/secondary
+syndesmotic/high-ankle sprain → very rare/advanced
+tarsal tunnel / tibial-nerve entrapment → rare neurological
+heel fat-pad pain → rare/secondary plantar-heel differential
+Morton neuroma → rare/context
+plantar-plate / lesser-MTP instability → very rare/advanced
+anterior tibial / extensor / FHL tendon disorders → rare
+osteochondral talus lesion → rare/advanced
+hallux rigidus / 1st-MTP OA → context only
+ankle OA → context only
+Charcot / neuropathic foot → medical/offloading safety context
+postoperative ankle/foot → advanced only; occasional Achilles repair/reconstruction
+```
+
+Frozen support/adjunct policy:
+
+```text
+taping → directly visible optional support
+heel lift → directly visible optional support
+brace / orthosis / AFO / metatarsal offloading / footwear → condition-specific context, often podiatry-coordinated
 manual therapy / soft tissue → optional where relevant
-dry needling → optional clinician-selected adjunct in appropriate myofascial context
+dry needling → optional clinician-selected adjunct
 acupuncture → excluded
-ESWT for GTPS / proximal hamstring → not generator-recommended; therapist-proposed use may be documented
+ESWT plantar heel → evidence-supported optional adjunct
+ESWT Achilles → evidence-conflicted optional adjunct; not routine and not superior to progressive loading
 ```
 
-Key safety/semantic rules:
+Key semantic and safety rules:
 
 ```text
-lateral hip pain != automatic GTPS / trochanteric bursitis / gluteal tendinopathy
-cam/pincer morphology != FAIS
-FADIR/FABER != FAIS or labral tear
-MRI/MRA labral tear != automatically symptomatic pain generator
-groin pain != automatically adductor-related
-painless snapping != symptomatic snapping-hip syndrome
-femoral-neck stress-fracture concern != routine tendon/FAIS referral
-proximal rectus-femoris injury != ASIS avulsion
-AIIS avulsion may be rectus-femoris-origin related
-ASIS avulsion is classically sartorius-related
-known apophyseal avulsion + unknown healing/loading status → warning
-not_assessed neurovascular component != normal
+inversion + lateral pain != uncomplicated lateral ankle sprain
+subjective giving-way != objective CAI
+Achilles pain / imaging != symptomatic tendinopathy automatically
+acute Achilles rupture concern != tendinopathy pathway
+midportion Achilles != insertional protocol automatically
+plantar heel pain != plantar fasciitis automatically
+heel spur != automatic pain generator
+flat foot + medial pain != PCFD/PTTD automatically
+lateral pain != peroneal tendinopathy automatically
+peroneal snapping/subluxation != routine sprain/tendinopathy
+forefoot pain != exact structural diagnosis
+pediatric heel pain != Sever automatically
+accessory navicular imaging != symptomatic diagnosis automatically
+asymptomatic flexible flatfoot != treatment pathway
+tarsal-tunnel symptoms/test != diagnosis
+hot swollen neuropathic foot / Charcot concern != routine PT
 ```
 
 ---
@@ -150,23 +166,29 @@ not_assessed neurovascular component != normal
 # 4. Safety / consistency engine
 
 ```text
-fracture/stress-fracture concern
-→ diagnostic/structural reassessment before routine rehab
+acute trauma + unresolved fracture concern
+→ imaging/structural reassessment before routine rehab
 
-post-trauma + unresolved fracture/dislocation/major avulsion context
-→ warning/reassessment prompt
+syndesmotic / Maisonneuve concern
+→ structural/specialist pathway
 
-acute major proximal rectus-femoris tear/avulsion concern
-→ sports-medicine/structural reassessment semantics
+Lisfranc / midfoot instability concern
+→ structural reassessment; no generic sprain wording
 
-child/adolescent pelvic-apophyseal avulsion concern
-→ imaging/structural pathway before unrestricted rehabilitation
+acute Achilles rupture concern
+→ leave tendinopathy pathway
 
-hot/systemically unwell acute hip / septic-joint concern
-→ medical reassessment
+peroneal dislocation/subluxation / major tear concern
+→ structural reassessment
 
-SCFE concern
-→ medical/imaging assessment; no routine PT diagnosis
+bone-stress injury concern
+→ diagnostic/structural pathway
+
+hot swollen neuropathic foot / Charcot / infection / nonhealing wound
+→ medical/offloading pathway
+
+atypical pediatric rigid/painful flatfoot or focal bone concern
+→ structural/medical reassessment
 
 material safety concern + no clinician disposition
 → no routine reassuring wording
@@ -175,41 +197,15 @@ not_assessed neurological/neurovascular component
 → never generate normal wording
 ```
 
-Region-specific details live in `hip_v1_1.md`.
+Region-specific details live in `ankle_foot_v1_1.md`.
 
 ---
 
 # 5. Shared fracture / muscle boundary
 
-Hip/pelvic fracture entries include:
+Foot/ankle fracture, Lisfranc fracture-dislocation and stress/bone-stress injuries route to the future shared fracture profile. Acute gastrocnemius/soleus/calf injuries route to the future shared muscle/myotendinous profile. Achilles rupture remains a structural/protocol-governed gateway distinct from tendinopathy.
 
-```text
-femoral neck
-intertrochanteric/subtrochanteric
-acetabulum
-pelvic ring/rami
-femoral-neck stress fracture
-pelvic stress/insufficiency fracture
-ASIS apophyseal avulsion
-AIIS apophyseal avulsion
-ischial-tuberosity avulsion
-lesser-trochanter avulsion
-other pelvic apophyseal avulsion
-other hip/pelvic fracture
-```
-
-Shared muscle/myotendinous entries include:
-
-```text
-proximal rectus-femoris tendon/myotendinous injury
-adductor strain/tear
-iliopsoas/hip-flexor strain
-rectus-femoris muscle strain
-hamstring strain
-other acute hip/pelvic muscle/tendon injury
-```
-
-Unknown healing/stability/loading context prevents unrestricted rehabilitation wording.
+Unknown healing/stability, weight-bearing, immobilization, ROM or loading context prevents unrestricted rehabilitation wording.
 
 ---
 
@@ -232,9 +228,12 @@ Do not write production HTML/JS/CSS, add patient persistence, integrate navigati
 # 7. Exact next action
 
 ```text
-1. product owner selects the next remaining CU-1 regional/shared profile
-2. use the same taxonomy/findings/safety/goals/rehab/evidence method
-3. continue CU-1 design only
+1. exact branch-vs-main review of Ankle / Foot v1.1 freeze
+2. open docs-only PR if clean
+3. independent exact-head review
+4. merge only if exact head remains clean
+5. clear canonical writer lock and record resulting main state
+6. product owner selects next shared CU-1 profile
 ```
 
 Runtime implementation remains unauthorized.
