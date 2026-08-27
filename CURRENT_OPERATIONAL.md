@@ -3,7 +3,7 @@
 > **STATUS:** ACTIVE OPERATIONAL AUTHORITY.
 > **Updated:** 2026-08-27 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Verified main immediately before this operational handoff write:** `52c5bb39bd400eeb95c2e719d6e138c5cc16c03d`; this handoff commit advances `main` once written.
+> **Verified base main for this knee design:** `a22253d6065abdf4624d17d7639dcfe297b5dc25`.
 > **Current major phase:** Personal Clinical Excellence foundation with a bounded Clinic Utilities detour.
 > **Active slice design:** `SLICE_PLAN_CURRENT.md` — CU-1 Physiotherapy Referral v2 clinical/content design.
 > **Supporting detour plan:** `CLINIC_UTILITIES_PLAN.md`.
@@ -12,14 +12,13 @@
 > **Frozen shoulder profile:** `clinic_utilities/physio_profiles/shoulder_v1_1.md`.
 > **Frozen elbow profile:** `clinic_utilities/physio_profiles/elbow_v1_1.md`.
 > **Frozen wrist/hand profile:** `clinic_utilities/physio_profiles/wrist_hand_v1_1.md`.
-> **WRIST/HAND FREEZE PR:** PR #42 squash-merged as `f6e0a3126a6a93f48c140a7738a3c9d4bbe60563`.
-> **POST-MERGE CANONICAL ALIGNMENT:** `3dda1752f59ea61bdc159d62f23746be41cf6dd3` → `52c5bb39bd400eeb95c2e719d6e138c5cc16c03d` before this handoff write.
-> **ACTIVE CANONICAL WRITER/LOCK:** NONE.
+> **CURRENT BODY-REGION DESIGN TARGET:** knee.
+> **ACTIVE CANONICAL WRITER/LOCK:** docs-only branch `docs/cu1-knee-v1-design-2026-08-27` for Knee v1 CU-1 clinical/content design.
 > **ACTIVE RUNTIME WRITER/LOCK:** NONE in this repository.
 > **RUNTIME IMPLEMENTATION:** NOT AUTHORIZED for CU-1; design only.
 > **PR-1 TRANSCRIPT SLICE:** intentionally paused at `archive/slices/PR1_TRANSCRIPT_INTAKE_V3.md`.
 
-This file is the sole owner of operational NOW. Do not infer mutation authority from chat history.
+This file is the sole owner of operational NOW for the active branch. Do not infer mutation authority from chat history.
 
 ---
 
@@ -52,65 +51,66 @@ wrist_hand_v1_1 = FROZEN
 
 ---
 
-# 3. Wrist / Hand v1.1 — closed freeze
+# 3. Knee — ACTIVE DESIGN CANDIDATE WORK
 
-Frozen default pathways:
-
-```text
-WH1 De Quervain / first dorsal compartment disorder
-WH2 thumb CMC-1 osteoarthritis / rhizarthrosis
-WH3 interphalangeal / generalized hand osteoarthritis
-WH4 median neuropathy at wrist / carpal tunnel syndrome
-WH5 ulnar-sided wrist / TFCC-related presentation
-WH6 intersection syndrome
-WH7 thumb MCP collateral-ligament injury — UCL or RCL
-WH8 sagittal-band injury / extensor tendon instability at MCP
-WH9 digital tendon injury / deformity-specific rehabilitation
-WH10 post-traumatic wrist/hand pain or stiffness after assessed injury
-WH11 postoperative wrist/hand rehabilitation
-```
-
-Workflow decisions:
-
-- trigger finger/thumb is context only, not a routine physiotherapy referral in the local Cyprus workflow;
-- Guyon's canal and scapholunate/lunotriquetral instability remain rare/advanced;
-- postoperative wrist/hand is active;
-- UCL and RCL are both included in the thumb-MCP collateral-ligament pathway;
-- UCL Stener concern and major RCL instability/subluxation prevent unrestricted rehabilitation wording;
-- CRPS is an established-diagnosis advanced pathway only;
-- mallet, central-slip/boutonniere and flexor/extensor tendon injuries are directly selectable and protocol/zone governed;
-- intersection syndrome is directly selectable and distinct from De Quervain;
-- TFCC is the canonical structured term; `TFCL` is not used;
-- dedicated `hand therapist` availability is not assumed; referrals use physiotherapy/wrist-hand rehabilitation plus competence/protocol requirements;
-- wrist/hand fractures route to the shared fracture/post-immobilization profile.
-
-Adjunct decisions:
+Authorized scope is clinical/content design only:
 
 ```text
-manual therapy / soft tissue / taping → optional where relevant
-selected thermal strategy for OA → optional
-acupuncture → excluded
-dry needling → excluded
-ESWT → excluded
+primary knee pathway taxonomy
+findings vs diagnosis separation
+OA / meniscal / patellofemoral / tendon / ligament semantics
+post-traumatic and postoperative safety/restriction semantics
+functional limitations
+condition-sensitive goals and rehabilitation directions
+brace/taping/orthosis/support visibility
+adjunct visibility
+generated wording
+current evidence review
 ```
 
-Orthosis/splint support is condition-sensitive and protocol governed.
+Target candidate:
 
-No runtime behavior changed.
+```text
+clinic_utilities/physio_profiles/knee_v1.md
+```
+
+It remains **DESIGN CANDIDATE / NOT FROZEN** until explicit product-owner review and approval.
+
+Initial evidence frame includes current knee-OA rehabilitation guidance, acute meniscal pathology guidance, patellofemoral-pain best-practice evidence, tendon-loading evidence and current ligament/postoperative rehabilitation consensus/guidelines.
 
 ---
 
-# 4. Exact next action
+# 4. Shared fracture / structural boundary
+
+Knee-region fractures remain routed to the future shared fracture/post-immobilization profile rather than duplicated inside this regional profile.
+
+Examples include:
 
 ```text
-1. product owner selects the next remaining CU-1 regional profile
-2. use the same taxonomy/findings/safety/goals/rehab/evidence method
-3. continue CU-1 design only
+patella fracture
+distal femur fracture
+proximal tibia / tibial plateau fracture
+proximal fibula fracture
+other knee-region fracture
+```
+
+Unresolved fracture, extensor-mechanism rupture, locked-knee structural concern, major instability or postoperative restriction context must prevent routine unrestricted rehabilitation wording.
+
+---
+
+# 5. Exact next action
+
+```text
+1. create knee_v1.md as DESIGN CANDIDATE
+2. perform strict current-evidence + safety review
+3. present taxonomy/adjunct/open workflow decisions to product owner
+4. revise after real-workflow feedback
+5. freeze/merge only after explicit product-owner approval
 ```
 
 ---
 
-# 5. Explicitly forbidden now
+# 6. Explicitly forbidden now
 
 ```text
 WRITE CU-1 production runtime code
@@ -118,12 +118,13 @@ WRITE PR-1 transcript runtime code
 AUTO-PERSIST physiotherapy referrals
 MUTATE RF/Secretary/Calendar/Setmore/Zadarma
 COMMIT identifiable patient data
+FREEZE or merge knee without product-owner approval
 CREATE overlapping runtime writers
 ```
 
 ---
 
-# 6. Handoff completeness
+# 7. Handoff completeness
 
 ```text
 active detour = Clinic Utilities
@@ -133,9 +134,8 @@ lumbar = frozen v1.1
 shoulder = frozen v1.1
 elbow = frozen v1.1
 wrist/hand = frozen v1.1
-wrist/hand PR = #42 merged
-canonical writer = none
+knee = active design candidate work
+canonical writer = docs/cu1-knee-v1-design-2026-08-27
 runtime writer = none
 runtime implementation = unauthorized
-next action = product owner selects next regional profile
 ```
