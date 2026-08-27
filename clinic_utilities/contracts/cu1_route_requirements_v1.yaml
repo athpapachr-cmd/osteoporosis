@@ -115,42 +115,24 @@ base_requirements:
     - clinician_free_text_optional
   laterality_policy:
     allowed: [left, right, bilateral, midline, not_applicable, not_stated]
-    route_may_require_not_applicable: false
 
 wording_mode_requirements:
   source_of_allowed_modes: cu1_registry_v1.profiles.*.routes.*.wording_modes
   presentation:
     formal_assertion_policy: forbidden
-    established_diagnosis_source_required: false
   formal_diagnosis:
-    formal_assertion_policy: required_yes
-    established_diagnosis_source_required: false
+    formal_assertion_policy: required_yes_unless_route_override_defines_context_based_assertion
     validation_error_if_not_yes: formal_diagnosis_assertion_required
   established_structural_diagnosis:
-    formal_assertion_policy: not_used
-    established_diagnosis_source_required: true
-    allowed_established_diagnosis_sources:
-      - clinician_entered
-      - imaging_confirmed
-      - specialist_documented
-      - operative_report
-      - prior_documented_diagnosis
-      - other_documented
-    validation_error_if_missing: established_structural_diagnosis_source_required
+    formal_assertion_policy: explicit_clinician_route_selection_is_assertion
+    established_diagnosis_source_required: false
+    note: additional_source_confirmation_is_required_only_by_specific_route_overrides
   postoperative:
     formal_assertion_policy: not_used
-    established_diagnosis_source_required: false
     apply_policy: postoperative_context
   shared_structural:
-    formal_assertion_policy: not_used
-    established_diagnosis_source_required: true
-    allowed_established_diagnosis_sources:
-      - clinician_entered
-      - imaging_confirmed
-      - specialist_documented
-      - operative_report
-      - prior_documented_diagnosis
-      - other_documented
+    formal_assertion_policy: explicit_clinician_shared_route_selection_is_assertion
+    established_diagnosis_source_required: false
 
 postoperative_context:
   required_fields:
@@ -199,7 +181,18 @@ route_overrides:
     require:
       - primary_problem.context.established_diagnosis_source
       - primary_problem.context.management_context
+    allowed_established_diagnosis_sources: [clinician_entered, imaging_confirmed, specialist_documented, prior_documented_diagnosis, other_documented]
     allowed_management_context: [nonoperative_confirmed, conservative_rehabilitation]
+    error_if_diagnosis_source_missing: established_structural_diagnosis_source_required
+    error_if_management_missing: established_nonoperative_management_context_required
+
+  established_gluteal_abductor_tendon_tear_nonoperative:
+    require:
+      - primary_problem.context.established_diagnosis_source
+      - primary_problem.context.management_context
+    allowed_established_diagnosis_sources: [clinician_entered, imaging_confirmed, specialist_documented, prior_documented_diagnosis, other_documented]
+    allowed_management_context: [nonoperative_confirmed, conservative_rehabilitation]
+    error_if_diagnosis_source_missing: established_structural_diagnosis_source_required
     error_if_management_missing: established_nonoperative_management_context_required
 
   distal_biceps_tendon_disorder_nonoperative:
@@ -208,13 +201,6 @@ route_overrides:
         require: [primary_problem.context.management_context]
         allowed_values: [nonoperative_confirmed, conservative_rehabilitation]
         error: established_nonoperative_management_context_required
-
-  established_gluteal_abductor_tendon_tear_nonoperative:
-    require:
-      - primary_problem.context.established_diagnosis_source
-      - primary_problem.context.management_context
-    allowed_management_context: [nonoperative_confirmed, conservative_rehabilitation]
-    error_if_management_missing: established_nonoperative_management_context_required
 
   peroneal_tendon_disorder_nonoperative:
     conditional_requirements:
@@ -278,6 +264,10 @@ route_overrides:
           - primary_problem.context.restrictions_review_status
         error: operative_structural_context_incomplete
 
+  functional_deconditioning_balance_gait_rehabilitation:
+    formal_assertion_policy: context_based_by_functional_route
+    generic_formal_assertion_state_required: false
+
 shared_context_requirements:
   shared_fracture:
     route_id: fracture_rehabilitation_post_immobilization
@@ -290,7 +280,6 @@ shared_context_requirements:
       - primary_problem.context.rom_status
       - primary_problem.context.loading_strengthening_status
     fracture_site_allowed_values_source: cu1_route_detail_catalog_v1.shared_fracture_site_ids
-    structural_diagnosis_source_required: true
     site_groups:
       upper_limb:
         - proximal_humerus_fracture
@@ -365,9 +354,7 @@ shared_context_requirements:
         require: [primary_problem.context.weight_bearing_status]
         error: lower_limb_weight_bearing_required_missing
       - when_site_group: axial
-        require:
-          - primary_problem.context.rom_status
-          - primary_problem.context.loading_strengthening_status
+        require: [primary_problem.context.rom_status, primary_problem.context.loading_strengthening_status]
         error: axial_fracture_loading_or_rom_status_required_missing
 
   shared_muscle_myotendinous:
@@ -397,6 +384,7 @@ shared_context_requirements:
         allowed_wording_modes: [presentation]
       frailty_associated_functional_decline:
         allowed_wording_modes: [formal_diagnosis]
+        formal_assertion_policy: context_field_required_yes
         require: [primary_problem.context.frailty_established]
         require_value: {primary_problem.context.frailty_established: yes}
         error: frailty_must_be_clinician_established_for_formal_wording
@@ -431,5 +419,6 @@ coverage_contract:
   owner_class_postoperative_primary_receives: postoperative_context_unless_more_specific_override_exists
   shared_routes_receive: shared_context_requirements
   route_overrides_are_additive_or_more_specific: true
+  allowed_context_keys_per_route: union_of_common_keys_plus_keys_from_applied_policy_and_route_override
   absence_of_override_does_not_require_prose_interpretation: true
   implementation_must_not_read_profile_markdown_for_validation_logic: true
