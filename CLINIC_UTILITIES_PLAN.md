@@ -4,7 +4,7 @@
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Parent product:** Personal Clinical Excellence System.
 > **Scope:** cross-module Clinic Utilities / Clinical Operations.
-> **Current focus:** CU-1 Physiotherapy Referral v2 design; all regional v1.1 profiles frozen; Shared Fracture / Post-immobilization v1.1 frozen on docs branch pending review/merge.
+> **Current focus:** CU-1 Physiotherapy Referral v2 design; all regional v1.1 profiles and Shared Fracture / Post-immobilization v1.1 frozen.
 
 Clinic Utilities are cross-module clinician-facing operational tools, not a new clinical Module 02.
 
@@ -79,7 +79,7 @@ wrist_hand_v1_1 = FROZEN
 knee_v1_1 = FROZEN
 hip_v1_1 = FROZEN
 ankle_foot_v1_1 = FROZEN
-shared_fracture_v1_1 = FROZEN on docs branch pending exact-head review/merge
+shared_fracture_v1_1 = FROZEN
 ```
 
 Authoritative shared-fracture design:
@@ -261,8 +261,6 @@ calf myotendinous injury
 other regional acute muscle/tendon injury
 ```
 
-This work does not start until the Shared Fracture writer lock closes.
-
 ---
 
 # 6. Context-sensitive goals / directions
@@ -280,7 +278,7 @@ Fracture rehabilitation is restriction-governed before generic active-rehabilita
 
 # 7. Remaining shared design sequence
 
-After Shared Fracture handoff closes:
+Current broad remaining sequence is:
 
 ```text
 muscle / myotendinous injury
