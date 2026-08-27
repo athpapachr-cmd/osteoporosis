@@ -13,7 +13,7 @@
 > **Frozen wrist/hand profile:** `clinic_utilities/physio_profiles/wrist_hand_v1_1.md`.
 > **Frozen knee profile:** `clinic_utilities/physio_profiles/knee_v1_1.md`.
 > **Frozen hip/groin profile:** `clinic_utilities/physio_profiles/hip_v1_1.md`.
-> **Frozen ankle/foot profile on active docs branch:** `clinic_utilities/physio_profiles/ankle_foot_v1_1.md`.
+> **Frozen ankle/foot profile:** `clinic_utilities/physio_profiles/ankle_foot_v1_1.md`.
 > **Prior active slice:** PR-1 Transcript Intake + Candidate Extraction v3 remains intentionally paused at `archive/slices/PR1_TRANSCRIPT_INTAKE_V3.md`.
 
 CU-1 is a bounded cross-module design detour. It does not authorize runtime implementation.
@@ -74,7 +74,7 @@ elbow_v1_1 = FROZEN
 wrist_hand_v1_1 = FROZEN
 knee_v1_1 = FROZEN
 hip_v1_1 = FROZEN
-ankle_foot_v1_1 = FROZEN on docs branch pending exact-head review/merge
+ankle_foot_v1_1 = FROZEN
 ```
 
 ---
@@ -228,12 +228,9 @@ Do not write production HTML/JS/CSS, add patient persistence, integrate navigati
 # 7. Exact next action
 
 ```text
-1. exact branch-vs-main review of Ankle / Foot v1.1 freeze
-2. open docs-only PR if clean
-3. independent exact-head review
-4. merge only if exact head remains clean
-5. clear canonical writer lock and record resulting main state
-6. product owner selects next shared CU-1 profile
+1. product owner selects the next shared CU-1 profile
+2. preferred current sequence: shared fracture / post-immobilization → muscle / myotendinous injury → generalized deconditioning / balance / gait
+3. continue CU-1 design only
 ```
 
 Runtime implementation remains unauthorized.
