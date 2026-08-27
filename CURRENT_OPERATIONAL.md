@@ -3,18 +3,18 @@
 > **STATUS:** ACTIVE OPERATIONAL AUTHORITY.
 > **Updated:** 2026-08-27 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Verified base main for this Shared Fracture design:** `0673dc24d1e34d7a6d562103bab84830da8f585e`.
+> **SHARED FRACTURE FREEZE PR:** PR #46 squash-merged as `a2c01b9019edf62acc32a78129e3944d9979dc08`.
 > **Current major phase:** Personal Clinical Excellence foundation with a bounded Clinic Utilities detour.
 > **Active slice design:** `SLICE_PLAN_CURRENT.md` — CU-1 Physiotherapy Referral v2 clinical/content design.
 > **Supporting detour plan:** `CLINIC_UTILITIES_PLAN.md`.
 > **Frozen regional profiles:** cervical, lumbar, shoulder, elbow, wrist/hand, knee, hip/groin, ankle/foot v1.1.
-> **Frozen shared-fracture profile on active docs branch:** `clinic_utilities/physio_profiles/shared_fracture_v1_1.md`.
-> **ACTIVE CANONICAL WRITER/LOCK:** docs-only branch `docs/cu1-shared-fracture-v1-design-2026-08-27` until exact-head review/PR/merge/handoff close.
+> **Frozen shared-fracture profile:** `clinic_utilities/physio_profiles/shared_fracture_v1_1.md`.
+> **ACTIVE CANONICAL WRITER/LOCK:** NONE.
 > **ACTIVE RUNTIME WRITER/LOCK:** NONE in this repository.
 > **RUNTIME IMPLEMENTATION:** NOT AUTHORIZED for CU-1; design only.
 > **PR-1 TRANSCRIPT SLICE:** intentionally paused at `archive/slices/PR1_TRANSCRIPT_INTAKE_V3.md`.
 
-This file is the sole owner of operational NOW for the active branch. Do not infer mutation authority from chat history.
+This file is the sole owner of operational NOW. Do not infer mutation authority from chat history.
 
 ---
 
@@ -46,12 +46,12 @@ wrist_hand_v1_1 = FROZEN
 knee_v1_1 = FROZEN
 hip_v1_1 = FROZEN
 ankle_foot_v1_1 = FROZEN
-shared_fracture_v1_1 = FROZEN on docs branch pending exact-head review/merge
+shared_fracture_v1_1 = FROZEN
 ```
 
 ---
 
-# 3. Shared Fracture / Post-immobilization v1.1 — product-owner-approved design
+# 3. Shared Fracture / Post-immobilization v1.1 — closed freeze
 
 Authoritative frozen file:
 
@@ -86,33 +86,11 @@ pediatric fracture != adult timeline
 fragility fracture != software diagnosis of osteoporosis
 ```
 
-High-visibility workflow entries include:
-
-```text
-vertebral compression / fragility fracture
-proximal humerus
-clavicle
-distal radius
-hand / finger fractures
-pubic rami
-patella
-ankle fractures
-calcaneus including anterior-process calcaneus
-5th metatarsal / other metatarsal
-foot / toe fractures
-```
+High-visibility workflow entries include vertebral compression/fragility fracture, proximal humerus, clavicle, distal radius, hand/fingers, pubic rami, patella, ankle, calcaneus including anterior-process calcaneus, metatarsals and foot/toes.
 
 Less frequent / advanced include scaphoid with strong union gate, elbow fractures, tibial plateau, Lisfranc and other site-sensitive fractures. Long-bone shaft fractures and older-adult hip fracture are not routine high-visibility outpatient-referral entries in this workflow.
 
-Fragility modifier:
-
-```text
-formal_fragility_fracture_context
-known_osteoporosis_or_low_bone_strength_context
-falls_risk_or_recurrent_falls_context
-```
-
-When selected, balance/falls/strength/functional-independence goals become prominent without creating osteoporosis diagnosis or medication advice.
+Fragility modifier makes balance/falls/strength/functional-independence goals prominent without creating osteoporosis diagnosis or medication advice.
 
 SIFK / legacy SONK decision:
 
@@ -125,7 +103,7 @@ bone-marrow edema alone != SIFK
 SIFK + loading status unknown → no generic strengthening / impact progression
 ```
 
-Pediatric group remains low visibility except for pelvic apophyseal avulsions; buckle fractures are not routine referrals in this workflow.
+Pediatric group remains low visibility except for pelvic apophyseal avulsions; buckle fractures are not routine referrals.
 
 Excluded as default fracture-healing recommendations:
 
@@ -162,12 +140,9 @@ Material concern without clinician disposition prevents routine reassuring refer
 # 5. Exact next action
 
 ```text
-1. exact branch-vs-main review of Shared Fracture v1.1 freeze
-2. open docs-only PR if clean
-3. independent exact-head review
-4. merge only if exact head remains clean
-5. clear canonical writer lock and reconcile main
-6. product owner selects next shared CU-1 profile
+1. product owner selects the next remaining shared CU-1 profile
+2. current preferred sequence: muscle / myotendinous injury → generalized deconditioning / balance / gait
+3. continue CU-1 design only until explicit runtime authorization
 ```
 
 ---
@@ -180,7 +155,6 @@ WRITE PR-1 transcript runtime code
 AUTO-PERSIST physiotherapy referrals
 MUTATE RF/Secretary/Calendar/Setmore/Zadarma
 COMMIT identifiable patient data
-START muscle/myotendinous design before shared-fracture handoff closes
 CREATE overlapping runtime writers
 ```
 
@@ -198,8 +172,10 @@ The Ankle/Foot `_noop` incident remains closed: all temporary files were removed
 active detour = Clinic Utilities
 active slice = CU-1 Physio Referral v2 design
 all regional profiles = frozen v1.1
-shared fracture = frozen v1.1 on docs branch pending review/merge
-canonical writer = docs/cu1-shared-fracture-v1-design-2026-08-27
+shared fracture = frozen v1.1
+shared fracture PR = #46 merged
+canonical writer = none
 runtime writer = none
 runtime implementation = unauthorized
+next action = product owner selects next shared profile
 ```
