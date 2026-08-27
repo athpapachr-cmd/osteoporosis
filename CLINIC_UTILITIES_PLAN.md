@@ -4,7 +4,7 @@
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Parent product:** Personal Clinical Excellence System.
 > **Scope:** cross-module Clinic Utilities / Clinical Operations.
-> **Current focus:** CU-1 Physiotherapy Referral v2 design; all regional v1.1 profiles, Shared Fracture v1.1 and Shared Muscle / Myotendinous Injury v1.1 frozen.
+> **Current focus:** CU-1 Physiotherapy Referral v2 design; all regional v1.1 profiles, Shared Fracture v1.1 and Shared Muscle / Myotendinous Injury v1.1 frozen; Generalized Deconditioning / Balance / Gait v1 active design candidate.
 
 Clinic Utilities are cross-module clinician-facing operational tools, not a new clinical Module 02.
 
@@ -54,7 +54,7 @@ Hard rules remain: suggested/examined/selected/mandatory are distinct; symptoms/
 
 ---
 
-# 2. Frozen profile status
+# 2. Frozen / active profile status
 
 ```text
 cervical_v1_1 = FROZEN
@@ -67,102 +67,76 @@ hip_v1_1 = FROZEN
 ankle_foot_v1_1 = FROZEN
 shared_fracture_v1_1 = FROZEN
 shared_muscle_myotendinous_v1_1 = FROZEN
+shared_deconditioning_balance_gait_v1 = ACTIVE DESIGN CANDIDATE / NOT FROZEN
 ```
 
 ---
 
-# 3. Shared Muscle / Myotendinous Injury v1.1 frozen design
+# 3. Generalized Deconditioning / Balance / Gait v1 — active candidate frame
 
-Authoritative design:
-
-```text
-clinic_utilities/physio_profiles/shared_muscle_myotendinous_v1_1.md
-```
-
-The shared route owns acute muscle/myotendinous rehabilitation semantics once across regions.
+Authoritative candidate:
 
 ```text
-acute_muscle_myotendinous_injury_rehabilitation
-→ muscle/site + injury type/phase/tissue context
-→ conservative/specialist/postoperative disposition
-→ restrictions / actual deficits / functional demand
-→ confirmed goals / rehabilitation directions
+clinic_utilities/physio_profiles/shared_deconditioning_balance_gait_v1.md
 ```
 
-High-visibility workflow groups:
+Shared route:
 
 ```text
-quadriceps / rectus femoris
-acute adductor injury
-gastrocnemius / soleus / calf
-hamstring strain / partial tear
+functional_deconditioning_balance_gait_rehabilitation
 ```
 
-Visible but less frequent:
+Candidate presentation families:
 
 ```text
-pectoralis major muscle/myotendinous injury
-biceps muscle-belly/myotendinous injury
-abdominal-wall muscle injury
+generalized deconditioning / functional decline
+balance impairment / falls-risk rehabilitation
+gait / mobility impairment rehabilitation
+post-illness / post-hospital deconditioning
+frailty-associated functional decline — established/context only
 ```
 
-Rare/secondary includes iliopsoas/hip-flexor, tibialis anterior and other uncommon acute muscle injuries.
-
-Frozen structural rules:
+Hard boundaries:
 
 ```text
-acute strain != chronic tendinopathy
-muscle pain != exact tear diagnosis
-MRI/US classification != fixed rehabilitation timetable
-bony avulsion → Shared Fracture
-major free-tendon rupture/avulsion without disposition → specialist structural route
-postoperative repair → exact protocol owns progression
-<2 cm retraction + established conservative decision may proceed through routine PT workflow
-<2 cm alone != autonomous clearance
->=2 cm / multi-tendon complete avulsion / major weakness-deformity / high-demand unresolved case
-→ prominent specialist-disposition check
-→ no automatic surgery recommendation
+deconditioning != frailty automatically
+one fall != recurrent falls
+fear of falling != objective balance impairment
+performance-test threshold != autonomous diagnosis
+new unexplained gait disorder != generic deconditioning
+age alone != indication for physiotherapy
+assistive device != automatically mandatory
 ```
 
-Return-to-sport/work is multi-domain and never based on elapsed time, MRI grade/appearance or strength symmetry alone.
+Potential core rehabilitation is individualized/progressive and may include resistance/strength, functional transfers, balance/coordination/stepping, power where appropriate, gait/walking, aerobic/endurance conditioning when medically appropriate, stairs/community mobility and falls-prevention exercise when indicated.
 
-Adjunct policy:
-
-```text
-acupuncture → optional clinician-selected adjunct; no accelerated-healing claim
-dry needling → excluded
-ESWT → excluded as default acute-muscle healing recommendation
-therapeutic ultrasound → excluded as default acute-muscle healing recommendation
-compression / taping → treating-physiotherapist discretion
-```
-
-Progressive active rehabilitation remains the core.
+Falls management remains multifactorial when medication, vision/hearing, cardiovascular, neurological, vestibular, foot/footwear, home-environment or other risk factors are present.
 
 ---
 
 # 4. Safety / consistency engine
 
 ```text
-major acute weakness / palpable defect / rupture-avulsion concern
-→ structural reassessment
+new focal neurological deficit / acute gait change
+→ medical/neurological reassessment
 
-calf pain/swelling + unresolved DVT concern
-→ no routine calf-strain wording
+syncope / presyncope / unexplained LOC
+→ no generic falls-exercise-only wording
 
-large/expanding haematoma or anticoagulation bleeding concern
+unstable chest pain / cardiopulmonary symptoms / marked unexplained breathlessness
 → medical reassessment
 
-severe escalating pain / tense swelling / compartment concern
-→ urgent pathway
+acute vestibular syndrome / severe new vertigo with neurological concern
+→ medical/vestibular pathway
 
-new neurological/vascular deficit
-→ urgent/medical reassessment
+fracture or loading restriction unresolved
+→ Shared Fracture restrictions govern
 
-postoperative repair + missing protocol/restrictions
-→ warning
+DVT / vascular concern, infection/systemic deterioration, acute cognitive change
+→ medical/urgent reassessment semantics
 
-significant contusion + atypical persistent/worsening course
-→ myositis-ossificans/other reassessment semantics
+abnormal TUG/gait speed/5xSTS/SPPB alone
+→ measurement context only, not autonomous diagnosis
 
 material safety concern + no disposition
 → no routine reassuring wording
@@ -170,32 +144,17 @@ material safety concern + no disposition
 
 ---
 
-# 5. Final remaining shared design profile
-
-Current remaining sequence is now:
+# 5. Final CU-1 design sequence
 
 ```text
-generalized deconditioning / balance / gait
+generalized deconditioning / balance / gait — ACTIVE CANDIDATE
 ```
 
-This is the final currently planned shared CU-1 clinical/content profile. Its completion does **not** itself authorize runtime implementation; implementation requires a separate product-owner decision after design completeness review.
+After this profile is product-owner reviewed and frozen, CU-1 requires a **design-completeness review**. Completion of design does not authorize implementation. Runtime implementation requires a separate explicit product-owner decision.
 
 ---
 
-# 6. Output wording rules
-
-```text
-Clinical problem + muscle/site/injury context + actual findings + functional impact.
-Referral request + goals.
-Actual restrictions / permitted progression.
-Optional reassessment/communication criteria.
-```
-
-No unsupported tear grade, automatic timeline, or reassuring safety statement from missing data.
-
----
-
-# 7. Implementation boundary
+# 6. Implementation boundary
 
 CU-1 remains **design only**.
 
@@ -205,4 +164,4 @@ ephemeral structured draft
 → copy / print
 ```
 
-Persistence is not frozen. Do not write production physiotherapy runtime code until CU-1 is sufficiently frozen and the product owner explicitly authorizes transition to implementation.
+Persistence is not frozen. Do not write production physiotherapy runtime code until design completeness is reviewed and implementation is explicitly authorized.
