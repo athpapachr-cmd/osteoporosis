@@ -11,7 +11,7 @@
 > **Frozen shoulder profile:** `clinic_utilities/physio_profiles/shoulder_v1_1.md`.
 > **Frozen elbow profile:** `clinic_utilities/physio_profiles/elbow_v1_1.md`.
 > **Frozen wrist/hand profile:** `clinic_utilities/physio_profiles/wrist_hand_v1_1.md`.
-> **Frozen knee profile on active docs branch:** `clinic_utilities/physio_profiles/knee_v1_1.md`.
+> **Frozen knee profile:** `clinic_utilities/physio_profiles/knee_v1_1.md`.
 > **Prior active slice:** PR-1 Transcript Intake + Candidate Extraction v3 remains intentionally paused at `archive/slices/PR1_TRANSCRIPT_INTAKE_V3.md`.
 
 CU-1 is a bounded cross-module design detour. It does not authorize runtime implementation.
@@ -70,7 +70,7 @@ lumbar_v1_1 = FROZEN
 shoulder_v1_1 = FROZEN
 elbow_v1_1 = FROZEN
 wrist_hand_v1_1 = FROZEN
-knee_v1_1 = FROZEN on docs branch pending exact-head review/merge
+knee_v1_1 = FROZEN
 ```
 
 ---
@@ -92,8 +92,8 @@ K3 acute isolated meniscal injury — assessed nonoperative
 K4 patellofemoral pain
 K5 patellar tendinopathy
 K6 quadriceps tendinopathy
-K7 ACL injury/instability rehabilitation
-K8 MCL injury rehabilitation
+K7 ACL injury/instability — nonoperative or preoperative rehabilitation
+K8 MCL injury — nonoperative rehabilitation
 K9 patellar instability/dislocation rehabilitation
 K10 iliotibial-band syndrome
 K11 pes-anserine region pain / established tendinobursitis
@@ -115,11 +115,9 @@ Frozen workflow decisions:
 
 - meniscus repair and partial meniscectomy are common postoperative referrals and remain separate procedure subtypes;
 - degenerative and acute meniscal pathology remain separate because their structural/surgical semantics differ;
-- ACL and MCL are separate top-level pathways;
-- patellar instability/dislocation is directly selectable;
-- quadriceps tendinopathy is directly selectable;
-- ITB syndrome remains directly selectable despite lower frequency;
-- pes-anserine pathology is directly selectable because it is common in the product-owner workflow;
+- ACL and MCL are separate top-level nonoperative/preoperative pathways;
+- postoperative ACL/MCL routes exclusively through K13;
+- patellar instability/dislocation, quadriceps tendinopathy, ITB syndrome and pes-anserine pathology are directly selectable;
 - PCL/LCL/PLC/combined ligament injuries remain rare/advanced;
 - distal hamstring insertional pathology and Hoffa/plica are rare selectable secondary/advanced entities;
 - Baker cyst and prepatellar/infrapatellar bursitis are medical/context only;
@@ -149,7 +147,8 @@ cartilage/chondromalacia imaging != automatic symptomatic diagnosis
 tendon imaging change != automatic tendinopathy
 subjective giving-way != objective ACL/MCL instability
 ligament test != autonomous tear grade
-time since ACLR != return-to-sport clearance
+postoperative ACL/MCL != K7/K8; use K13
+time alone != return-to-sport clearance
 first-time patellar dislocation requires structural/osteochondral context
 posterior swelling != automatic Baker cyst and does not exclude DVT
 pediatric anterior-knee pain != automatic Osgood/SLJ
@@ -226,12 +225,9 @@ Do not write production HTML/JS/CSS, add patient persistence, integrate navigati
 # 7. Exact next action
 
 ```text
-1. exact branch-vs-main review of knee freeze
-2. open docs-only knee freeze PR if clean
-3. independent exact-head review
-4. merge only if exact head remains clean
-5. clear canonical writer lock and record resulting main state
-6. product owner selects next CU-1 regional/shared profile
+1. product owner selects the next remaining CU-1 regional/shared profile
+2. use the same taxonomy/findings/safety/goals/rehab/evidence method
+3. continue CU-1 design only
 ```
 
 Runtime implementation remains unauthorized.
