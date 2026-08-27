@@ -4,73 +4,64 @@
 > **Updated:** 2026-08-27 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **CU-1 COMPLETENESS REVIEW PR:** PR #49 squash-merged as `48cd6947b8a3201cad1283cf558a3f979243ec27`.
+> **Verified base main:** `aed3787188e681e6d57a2ac237a1cf8310099a95`.
 > **Current major phase:** Personal Clinical Excellence foundation with a bounded Clinic Utilities detour.
-> **Active slice:** CU-1 Physiotherapy Referral v2 — bounded design hardening required after completeness review.
+> **Active slice:** CU-1 Physiotherapy Referral v2 — bounded B1–B6 design hardening.
 > **Frozen regional profiles:** cervical, lumbar, shoulder, elbow, wrist/hand, knee, hip/groin, ankle/foot v1.1.
 > **Frozen shared profiles:** Shared Fracture v1.1; Shared Muscle/Myotendinous v1.1; Shared Deconditioning/Balance/Gait v1.1.
-> **ACTIVE CANONICAL WRITER/LOCK:** NONE.
+> **ACTIVE CANONICAL WRITER/LOCK:** docs/schema-only branch `docs/cu1-contract-hardening-v1-2026-08-27`.
 > **ACTIVE RUNTIME WRITER/LOCK:** NONE.
 > **RUNTIME IMPLEMENTATION:** NOT AUTHORIZED.
 > **PR-1:** intentionally paused at `archive/slices/PR1_TRANSCRIPT_INTAKE_V3.md`.
 
 ---
 
-# 1. Review outcome — CLOSED
+# 1. Current authorized work
 
-Authoritative review:
+Resolve only the design-completeness blockers B1–B6 identified in:
 
 ```text
 clinic_utilities/CU1_DESIGN_COMPLETENESS_REVIEW.md
 ```
 
-Outcome:
+Required artifacts:
 
 ```text
-CU-1 clinical/content profile set = FROZEN / PRESERVE
-CU-1 implementation-contract completeness = BLOCK
-runtime implementation authorization = NOT READY
+CU-1 typed core contract v1
+canonical machine registry v1
+exact regional→shared gateway map
+route ownership / precedence rules
+common safety/warning/disposition contract
+ShortReferralFormatter / DetailedReferralFormatter specification
+normalized common enums / tri-states
+synthetic design-fixture matrix
 ```
 
-The clinical taxonomy/safety content is broadly coherent. No broad regional clinical redesign is indicated.
+Broad clinical taxonomy remains frozen.
 
 ---
 
-# 2. Blocking design gaps
+# 2. Hard constraints
 
 ```text
-B1 — ReferralDraft cannot deterministically carry profile-specific structured context
-B2 — no frozen machine-readable profile/route/key registry or exact regional→shared gateway mapping
-B3 — unresolved route ownership/precedence in selected postoperative/structural overlaps
-B4 — no shared warning/safety severity + blocking/disposition contract
-B5 — ShortReferralFormatter / DetailedReferralFormatter interface and omission/output rules are not frozen
-B6 — tri-state/enumeration/key naming is not normalized/versioned across profiles
+NO production HTML/JS/CSS
+NO FastAPI CU-1 runtime endpoints
+NO persistence for physiotherapy referrals
+NO identifiable patient data
+NO broad regional clinical redesign unless an exact blocker forces it
+NO PR-1 runtime work
 ```
-
-No frozen clinical pathway is revoked by the review.
 
 ---
 
 # 3. Exact next action
 
 ```text
-1. product owner may authorize the bounded docs/schema-only CU-1 design-hardening pass
-2. resolve B1–B6 without reopening broad clinical taxonomy unless specifically required
-3. freeze cross-profile typed contract + registry/gateways + precedence + safety + formatter + common enums
-4. repeat exact design-completeness review
-5. STOP at DESIGN-COMPLETE or remaining BLOCK
-6. runtime implementation requires a separate explicit product-owner authorization only after DESIGN-COMPLETE
-```
-
----
-
-# 4. Explicitly forbidden now
-
-```text
-WRITE CU-1 production runtime code
-START CU-1 UI implementation
-ADD persistence for physiotherapy referrals
-INVENT schema/routing/formatter semantics inside implementation
-COMMIT identifiable patient data
-RESTART PR-1 runtime work
-CREATE overlapping runtime writers
+1. freeze B1–B6 machine/design contract on this branch
+2. exact branch-vs-main review
+3. docs/schema-only PR + independent exact-head review
+4. merge only if clean
+5. repeat CU-1 design-completeness review against the frozen contract
+6. STOP at DESIGN-COMPLETE or remaining BLOCK
+7. runtime implementation still requires separate explicit product-owner authorization
 ```
