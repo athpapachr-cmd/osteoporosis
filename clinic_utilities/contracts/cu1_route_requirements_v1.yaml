@@ -3,121 +3,45 @@ status: frozen_pre_code_design
 contract: cu1_referral_draft_v1
 registry: cu1_registry_v1
 route_detail_catalog: cu1_route_detail_catalog_v1
+context_value_sets: cu1_context_value_sets_v1
 
 validation_model:
   evaluation_order:
     - normalize_ids_and_context_aliases
     - resolve_gateway_and_primary_owner
-    - load_registry_route_metadata
+    - validate_route_and_wording_mode_against_registry
     - apply_base_requirements
     - apply_wording_mode_requirements
+    - apply_subtype_policy
     - apply_route_or_owner_class_overrides
     - apply_shared_context_requirements
-    - evaluate_conditional_requirements
+    - validate_context_values_against_context_value_sets
     - emit_canonical_validation_errors
     - evaluate_cu1_rule_catalog_v1
   unknown_context_keys: invalid_unless_explicit_free_text_field
   unknown_route_or_subtype_ids: invalid
+  unknown_context_enum_values: invalid
   runtime_may_invent_requirement: false
+  runtime_may_read_profile_markdown_for_validation_logic: false
 
 canonical_context_keys:
-  common:
-    - established_diagnosis_source
-    - management_context
-    - operative
-    - procedure
-    - procedure_date_or_phase
-    - protocol_status
-    - protocol_source
-    - restrictions_review_status
-    - neurological_screen
-  postoperative:
-    - procedure
-    - procedure_date_or_phase
-    - protocol_status
-    - protocol_source
-    - restrictions_review_status
-  shared_fracture:
-    - fracture_site
-    - fracture_date_optional
-    - fracture_phase
-    - fracture_context
-    - treatment
-    - healing_stability_status
-    - immobilization_status
-    - weight_bearing_status
-    - upper_limb_use_status
-    - rom_status
-    - loading_strengthening_status
-    - orthopaedic_instructions_source
-    - follow_up_due_optional
-    - repeat_imaging_due_optional
-  shared_muscle_myotendinous:
-    - muscle_group
-    - specific_muscle_optional
-    - injury_date_optional
-    - injury_phase
-    - injury_type
-    - injury_location_optional
-    - mri_or_ultrasound_confirmed
-    - classification_system_optional
-    - classification_grade_optional
-    - retraction_or_gap_cm_optional
-    - number_of_tendons_involved_optional
-    - management_context
-    - explicit_loading_restriction_optional
-    - explicit_rom_or_stretch_restriction_optional
-    - running_restriction_optional
-    - sprinting_or_kicking_restriction_optional
-    - sport_or_work_restriction_optional
-    - surgeon_or_sports_medicine_instruction_optional
-  shared_deconditioning_balance_gait:
-    - functional_route_id
-    - frailty_established
-    - falls_history_status
-    - injurious_fall_context
-    - unable_to_rise_after_fall
-    - loss_of_consciousness_with_fall
-    - walking_aid_context_optional
+  common: [established_diagnosis_source, management_context, operative, procedure, procedure_date_or_phase, protocol_status, protocol_source, restrictions_review_status, neurological_screen]
+  shared_fracture: [fracture_site, fracture_date_optional, fracture_phase, fracture_context, treatment, healing_stability_status, immobilization_status, weight_bearing_status, upper_limb_use_status, rom_status, loading_strengthening_status, orthopaedic_instructions_source, follow_up_due_optional, repeat_imaging_due_optional]
+  shared_muscle_myotendinous: [muscle_group, specific_muscle_optional, injury_date_optional, injury_phase, injury_type, injury_location_optional, mri_or_ultrasound_confirmed, classification_system_optional, classification_grade_optional, retraction_or_gap_cm_optional, number_of_tendons_involved_optional, management_context, explicit_loading_restriction_optional, explicit_rom_or_stretch_restriction_optional, running_restriction_optional, sprinting_or_kicking_restriction_optional, sport_or_work_restriction_optional, surgeon_or_sports_medicine_instruction_optional]
+  shared_deconditioning_balance_gait: [functional_route_id, frailty_established, falls_history_status, injurious_fall_context, unable_to_rise_after_fall, loss_of_consciousness_with_fall, walking_aid_context_optional]
 
 context_aliases:
-  written_protocol_available:
-    canonical: protocol_status
-    true_value: available
-    false_value: not_available
-  procedure_protocol_available:
-    canonical: protocol_status
-    true_value: available
-    false_value: not_available
-  management:
-    canonical: management_context
+  written_protocol_available: {canonical: protocol_status, true_value: available, false_value: not_available}
+  procedure_protocol_available: {canonical: protocol_status, true_value: available, false_value: not_available}
+  management: {canonical: management_context}
 
 base_requirements:
-  required_fields:
-    - primary_problem.profile_id
-    - primary_problem.route_id
-    - primary_problem.wording_mode
-    - primary_problem.laterality
-  optional_fields:
-    - primary_problem.subtype_id_optional
-    - primary_problem.chronicity_or_phase_optional
-    - primary_problem.context
-    - findings
-    - functional_impairments
-    - precautions
-    - explicit_restrictions
-    - goals
-    - rehab_directions
-    - adjunct_options
-    - measurements
-    - safety
-    - sessions_optional
-    - clinician_free_text_optional
-  laterality_policy:
-    allowed: [left, right, bilateral, midline, not_applicable, not_stated]
+  required_fields: [primary_problem.profile_id, primary_problem.route_id, primary_problem.wording_mode, primary_problem.laterality]
+  optional_fields: [primary_problem.subtype_id_optional, primary_problem.chronicity_or_phase_optional, primary_problem.context, findings, functional_impairments, precautions, explicit_restrictions, goals, rehab_directions, adjunct_options, measurements, safety, sessions_optional, clinician_free_text_optional]
+  laterality_values: [left, right, bilateral, midline, not_applicable, not_stated]
 
 wording_mode_requirements:
-  source_of_allowed_modes: cu1_registry_v1.profiles.*.routes.*.wording_modes
+  allowed_modes_source: cu1_registry_v1.profiles.*.routes.*.wording_modes
   presentation:
     formal_assertion_policy: forbidden
   formal_diagnosis:
@@ -125,21 +49,17 @@ wording_mode_requirements:
     validation_error_if_not_yes: formal_diagnosis_assertion_required
   established_structural_diagnosis:
     formal_assertion_policy: explicit_clinician_route_selection_is_assertion
-    established_diagnosis_source_required: false
-    note: additional_source_confirmation_is_required_only_by_specific_route_overrides
+    additional_source_confirmation: only_if_route_override_requires_it
   postoperative:
-    formal_assertion_policy: not_used
     apply_policy: postoperative_context
   shared_structural:
     formal_assertion_policy: explicit_clinician_shared_route_selection_is_assertion
-    established_diagnosis_source_required: false
 
 postoperative_context:
-  required_fields:
-    - primary_problem.context.procedure
-    - primary_problem.context.procedure_date_or_phase
-    - primary_problem.context.protocol_status
-    - primary_problem.context.restrictions_review_status
+  required_fields: [primary_problem.context.procedure, primary_problem.context.procedure_date_or_phase, primary_problem.context.protocol_status, primary_problem.context.restrictions_review_status]
+  value_sets:
+    protocol_status: cu1_context_value_sets_v1.postoperative_common.protocol_status
+    restrictions_review_status: cu1_context_value_sets_v1.postoperative_common.restrictions_review_status
   conditional_requirements:
     - when: {eq: {path: primary_problem.context.protocol_status, value: available}}
       require: [primary_problem.context.protocol_source]
@@ -147,25 +67,12 @@ postoperative_context:
     - when: {in: {path: primary_problem.context.protocol_status, values: [unknown, not_stated]}}
       require_safety_input_flag: material_concern_unresolved
       error: postoperative_protocol_status_unresolved
-  allowed_protocol_status: [available, not_available, not_applicable, unknown, not_stated]
-  allowed_restrictions_review_status: [reviewed_no_additional_restrictions, reviewed_restrictions_present, unknown, not_stated]
 
 subtype_policies:
-  postoperative_knee_rehabilitation:
-    policy: required
-    allowed_values_source: cu1_registry_v1.subtypes.postoperative_knee_rehabilitation
-    error_if_missing: subtype_required
-  digital_tendon_injury_rehabilitation:
-    policy: required
-    allowed_values_source: cu1_registry_v1.subtypes.digital_tendon_injury_rehabilitation
-    error_if_missing: subtype_required
-  achilles_tendinopathy:
-    policy: required
-    allowed_values_source: cu1_registry_v1.subtypes.achilles_tendinopathy
-    error_if_missing: subtype_required
-  greater_trochanteric_lateral_hip_pain_pathway:
-    policy: optional
-    allowed_values_source: cu1_registry_v1.subtypes.greater_trochanteric_lateral_hip_pain_pathway
+  postoperative_knee_rehabilitation: {policy: required, allowed_values_source: cu1_registry_v1.subtypes.postoperative_knee_rehabilitation, error_if_missing: subtype_required}
+  digital_tendon_injury_rehabilitation: {policy: required, allowed_values_source: cu1_registry_v1.subtypes.digital_tendon_injury_rehabilitation, error_if_missing: subtype_required}
+  achilles_tendinopathy: {policy: required, allowed_values_source: cu1_registry_v1.subtypes.achilles_tendinopathy, error_if_missing: subtype_required}
+  greater_trochanteric_lateral_hip_pain_pathway: {policy: optional, allowed_values_source: cu1_registry_v1.subtypes.greater_trochanteric_lateral_hip_pain_pathway}
   nonarthritic_intraarticular_hip_pain:
     policy: optional_unless_formal_or_structural_wording
     allowed_values_source: cu1_registry_v1.subtypes.nonarthritic_intraarticular_hip_pain
@@ -173,97 +80,59 @@ subtype_policies:
       - when: {in: {path: primary_problem.wording_mode, values: [formal_diagnosis, established_structural_diagnosis]}}
         require: [primary_problem.subtype_id_optional]
         error: subtype_required_for_asserted_nonarthritic_intraarticular_diagnosis
-  default:
-    policy: optional
+  default: {policy: optional}
 
 route_overrides:
   confirmed_full_thickness_rotator_cuff_tear_nonoperative:
-    require:
-      - primary_problem.context.established_diagnosis_source
-      - primary_problem.context.management_context
+    require: [primary_problem.context.established_diagnosis_source, primary_problem.context.management_context]
     allowed_established_diagnosis_sources: [clinician_entered, imaging_confirmed, specialist_documented, prior_documented_diagnosis, other_documented]
     allowed_management_context: [nonoperative_confirmed, conservative_rehabilitation]
-    error_if_diagnosis_source_missing: established_structural_diagnosis_source_required
-    error_if_management_missing: established_nonoperative_management_context_required
-
+    errors: {diagnosis_source_missing: established_structural_diagnosis_source_required, management_missing: established_nonoperative_management_context_required}
   established_gluteal_abductor_tendon_tear_nonoperative:
-    require:
-      - primary_problem.context.established_diagnosis_source
-      - primary_problem.context.management_context
+    require: [primary_problem.context.established_diagnosis_source, primary_problem.context.management_context]
     allowed_established_diagnosis_sources: [clinician_entered, imaging_confirmed, specialist_documented, prior_documented_diagnosis, other_documented]
     allowed_management_context: [nonoperative_confirmed, conservative_rehabilitation]
-    error_if_diagnosis_source_missing: established_structural_diagnosis_source_required
-    error_if_management_missing: established_nonoperative_management_context_required
-
+    errors: {diagnosis_source_missing: established_structural_diagnosis_source_required, management_missing: established_nonoperative_management_context_required}
   distal_biceps_tendon_disorder_nonoperative:
     conditional_requirements:
       - when: {eq: {path: primary_problem.wording_mode, value: established_structural_diagnosis}}
         require: [primary_problem.context.management_context]
         allowed_values: [nonoperative_confirmed, conservative_rehabilitation]
         error: established_nonoperative_management_context_required
-
   peroneal_tendon_disorder_nonoperative:
     conditional_requirements:
       - when: {eq: {path: primary_problem.wording_mode, value: established_structural_diagnosis}}
         require: [primary_problem.context.management_context]
         allowed_values: [nonoperative_confirmed, conservative_rehabilitation]
         error: established_nonoperative_management_context_required
-
   acl_injury_instability_rehabilitation:
-    forbidden_context_values:
-      - {path: primary_problem.context.management_context, values: [postoperative, post_reconstruction]}
+    forbidden_context_values: [{path: primary_problem.context.management_context, values: [postoperative, post_reconstruction]}]
     error: postoperative_case_has_wrong_primary_route
-
   mcl_injury_rehabilitation:
-    forbidden_context_values:
-      - {path: primary_problem.context.management_context, values: [postoperative, post_repair, post_reconstruction]}
+    forbidden_context_values: [{path: primary_problem.context.management_context, values: [postoperative, post_repair, post_reconstruction]}]
     error: postoperative_case_has_wrong_primary_route
-
-  postoperative_knee_rehabilitation:
-    apply_policy: postoperative_context
-
-  postoperative_shoulder_rehabilitation:
-    apply_policy: postoperative_context
-
-  postoperative_elbow_rehabilitation:
-    apply_policy: postoperative_context
-
+  postoperative_knee_rehabilitation: {apply_policy: postoperative_context}
+  postoperative_shoulder_rehabilitation: {apply_policy: postoperative_context}
+  postoperative_elbow_rehabilitation: {apply_policy: postoperative_context}
+  postoperative_achilles_repair_reconstruction: {apply_policy: postoperative_context}
   postoperative_wrist_hand_rehabilitation:
     apply_policy: postoperative_context
-    forbidden_when_dedicated_primary_exists:
-      - digital_tendon_injury_rehabilitation
-      - thumb_mcp_collateral_ligament_injury_rehabilitation
-      - sagittal_band_injury_extensor_tendon_instability
+    forbidden_when_dedicated_primary_exists: [digital_tendon_injury_rehabilitation, thumb_mcp_collateral_ligament_injury_rehabilitation, sagittal_band_injury_extensor_tendon_instability]
     error: generic_postoperative_route_conflicts_with_dedicated_primary
-
-  postoperative_achilles_repair_reconstruction:
-    apply_policy: postoperative_context
-
   digital_tendon_injury_rehabilitation:
     conditional_requirements:
       - when: {in: {path: primary_problem.subtype_id_optional, values: [extensor_tendon_repair_postoperative, flexor_tendon_repair_postoperative]}}
         apply_policy: postoperative_context
-
   thumb_mcp_collateral_ligament_injury_rehabilitation:
     conditional_requirements:
       - when: {eq: {path: primary_problem.context.operative, value: true}}
-        require:
-          - primary_problem.context.procedure
-          - primary_problem.context.procedure_date_or_phase
-          - primary_problem.context.protocol_status
-          - primary_problem.context.restrictions_review_status
+        require: [primary_problem.context.procedure, primary_problem.context.procedure_date_or_phase, primary_problem.context.protocol_status, primary_problem.context.restrictions_review_status]
         error: operative_structural_context_incomplete
-
   sagittal_band_injury_extensor_tendon_instability:
     conditional_requirements:
       - when: {eq: {path: primary_problem.context.operative, value: true}}
-        require:
-          - primary_problem.context.procedure
-          - primary_problem.context.procedure_date_or_phase
-          - primary_problem.context.protocol_status
-          - primary_problem.context.restrictions_review_status
+        require: [primary_problem.context.procedure, primary_problem.context.procedure_date_or_phase, primary_problem.context.protocol_status, primary_problem.context.restrictions_review_status]
         error: operative_structural_context_incomplete
-
   functional_deconditioning_balance_gait_rehabilitation:
     formal_assertion_policy: context_based_by_functional_route
     generic_formal_assertion_state_required: false
@@ -271,129 +140,61 @@ route_overrides:
 shared_context_requirements:
   shared_fracture:
     route_id: fracture_rehabilitation_post_immobilization
-    required_fields:
-      - primary_problem.context.fracture_site
-      - primary_problem.context.fracture_phase
-      - primary_problem.context.treatment
-      - primary_problem.context.healing_stability_status
-      - primary_problem.context.immobilization_status
-      - primary_problem.context.rom_status
-      - primary_problem.context.loading_strengthening_status
-    fracture_site_allowed_values_source: cu1_route_detail_catalog_v1.shared_fracture_site_ids
+    required_fields: [primary_problem.context.fracture_site, primary_problem.context.fracture_phase, primary_problem.context.treatment, primary_problem.context.healing_stability_status, primary_problem.context.immobilization_status, primary_problem.context.rom_status, primary_problem.context.loading_strengthening_status]
+    value_sets:
+      fracture_site: cu1_route_detail_catalog_v1.shared_fracture_site_ids
+      fracture_phase: cu1_context_value_sets_v1.shared_fracture.fracture_phase
+      fracture_context: cu1_context_value_sets_v1.shared_fracture.fracture_context
+      treatment: cu1_context_value_sets_v1.shared_fracture.treatment
+      healing_stability_status: cu1_context_value_sets_v1.shared_fracture.healing_stability_status
+      immobilization_status: cu1_context_value_sets_v1.shared_fracture.immobilization_status
+      weight_bearing_status: cu1_context_value_sets_v1.shared_fracture.weight_bearing_status
+      upper_limb_use_status: cu1_context_value_sets_v1.shared_fracture.upper_limb_use_status
+      rom_status: cu1_context_value_sets_v1.shared_fracture.rom_status
+      loading_strengthening_status: cu1_context_value_sets_v1.shared_fracture.loading_strengthening_status
+      orthopaedic_instructions_source: cu1_context_value_sets_v1.shared_fracture.orthopaedic_instructions_source
     site_groups:
-      upper_limb:
-        - proximal_humerus_fracture
-        - clavicle_fracture
-        - distal_radius_fracture
-        - metacarpal_fracture
-        - phalangeal_hand_fracture
-        - radial_head_or_neck_fracture
-        - olecranon_or_proximal_ulna_fracture
-        - distal_humerus_fracture
-        - other_elbow_fracture
-        - distal_ulna_fracture
-        - scaphoid_fracture
-        - other_carpal_fracture
-        - other_wrist_hand_fracture
-        - humeral_shaft_fracture
-        - radius_or_ulna_shaft_fracture
-        - pediatric_supracondylar_or_distal_humerus_fracture
-        - pediatric_forearm_or_distal_radius_ulna_fracture
-      lower_limb_or_pelvis:
-        - pelvic_ring_or_pubis_ramus_fracture
-        - patella_fracture
-        - lateral_malleolus_fracture
-        - medial_malleolus_fracture
-        - posterior_malleolus_fracture
-        - bimalleolar_or_trimalleolar_fracture
-        - calcaneus_fracture
-        - anterior_process_calcaneus_fracture
-        - fifth_metatarsal_fracture
-        - other_metatarsal_fracture
-        - phalangeal_foot_fracture
-        - other_common_foot_fracture
-        - tibial_plateau_or_proximal_tibia_fracture
-        - proximal_fibula_fracture
-        - talus_fracture
-        - navicular_fracture
-        - cuboid_or_cuneiform_fracture
-        - lisfranc_fracture_dislocation_or_post_treated_injury
-        - other_ankle_foot_fracture
-        - femoral_neck_fracture
-        - intertrochanteric_fracture
-        - subtrochanteric_fracture
-        - femoral_shaft_fracture
-        - acetabular_fracture
-        - distal_femur_fracture
-        - tibial_shaft_fracture
-        - fibular_shaft_fracture
-        - other_long_bone_shaft_fracture
-        - pelvic_or_sacral_insufficiency_fracture
-        - subchondral_insufficiency_fracture_of_knee
-        - femoral_neck_stress_fracture
-        - tibial_bone_stress_injury
-        - navicular_stress_fracture
-        - fifth_metatarsal_stress_fracture
-        - calcaneal_stress_fracture
-        - other_established_bone_stress_or_insufficiency_injury
-        - asis_apophyseal_avulsion
-        - aiis_apophyseal_avulsion
-        - ischial_tuberosity_apophyseal_avulsion
-        - lesser_trochanter_apophyseal_avulsion
-        - other_pelvic_apophyseal_avulsion
-        - pediatric_tibia_or_ankle_fracture
-        - pediatric_foot_fracture
-        - other_physeal_or_apophyseal_fracture
-      axial:
-        - thoracic_or_lumbar_vertebral_compression_fragility_fracture
+      upper_limb: [proximal_humerus_fracture, clavicle_fracture, distal_radius_fracture, metacarpal_fracture, phalangeal_hand_fracture, radial_head_or_neck_fracture, olecranon_or_proximal_ulna_fracture, distal_humerus_fracture, other_elbow_fracture, distal_ulna_fracture, scaphoid_fracture, other_carpal_fracture, other_wrist_hand_fracture, humeral_shaft_fracture, radius_or_ulna_shaft_fracture, pediatric_supracondylar_or_distal_humerus_fracture, pediatric_forearm_or_distal_radius_ulna_fracture]
+      lower_limb_or_pelvis: [pelvic_ring_or_pubis_ramus_fracture, patella_fracture, lateral_malleolus_fracture, medial_malleolus_fracture, posterior_malleolus_fracture, bimalleolar_or_trimalleolar_fracture, calcaneus_fracture, anterior_process_calcaneus_fracture, fifth_metatarsal_fracture, other_metatarsal_fracture, phalangeal_foot_fracture, other_common_foot_fracture, tibial_plateau_or_proximal_tibia_fracture, proximal_fibula_fracture, talus_fracture, navicular_fracture, cuboid_or_cuneiform_fracture, lisfranc_fracture_dislocation_or_post_treated_injury, other_ankle_foot_fracture, femoral_neck_fracture, intertrochanteric_fracture, subtrochanteric_fracture, femoral_shaft_fracture, acetabular_fracture, distal_femur_fracture, tibial_shaft_fracture, fibular_shaft_fracture, other_long_bone_shaft_fracture, pelvic_or_sacral_insufficiency_fracture, subchondral_insufficiency_fracture_of_knee, femoral_neck_stress_fracture, tibial_bone_stress_injury, navicular_stress_fracture, fifth_metatarsal_stress_fracture, calcaneal_stress_fracture, other_established_bone_stress_or_insufficiency_injury, asis_apophyseal_avulsion, aiis_apophyseal_avulsion, ischial_tuberosity_apophyseal_avulsion, lesser_trochanter_apophyseal_avulsion, other_pelvic_apophyseal_avulsion, pediatric_tibia_or_ankle_fracture, pediatric_foot_fracture, other_physeal_or_apophyseal_fracture]
+      axial: [thoracic_or_lumbar_vertebral_compression_fragility_fracture]
     conditional_requirements:
-      - when_site_group: upper_limb
-        require: [primary_problem.context.upper_limb_use_status]
-        error: upper_limb_use_status_required_missing
-      - when_site_group: lower_limb_or_pelvis
-        require: [primary_problem.context.weight_bearing_status]
-        error: lower_limb_weight_bearing_required_missing
-      - when_site_group: axial
-        require: [primary_problem.context.rom_status, primary_problem.context.loading_strengthening_status]
-        error: axial_fracture_loading_or_rom_status_required_missing
-
+      - {when_site_group: upper_limb, require: [primary_problem.context.upper_limb_use_status], error: upper_limb_use_status_required_missing}
+      - {when_site_group: lower_limb_or_pelvis, require: [primary_problem.context.weight_bearing_status], error: lower_limb_weight_bearing_required_missing}
+      - {when_site_group: axial, require: [primary_problem.context.rom_status, primary_problem.context.loading_strengthening_status], error: axial_fracture_loading_or_rom_status_required_missing}
   shared_muscle_myotendinous:
     route_id: acute_muscle_myotendinous_injury_rehabilitation
-    required_fields:
-      - primary_problem.context.muscle_group
-      - primary_problem.context.injury_phase
-      - primary_problem.context.injury_type
-      - primary_problem.context.management_context
-    muscle_group_allowed_values_source: cu1_route_detail_catalog_v1.shared_muscle_group_ids
+    required_fields: [primary_problem.context.muscle_group, primary_problem.context.injury_phase, primary_problem.context.injury_type, primary_problem.context.management_context]
+    value_sets:
+      muscle_group: cu1_route_detail_catalog_v1.shared_muscle_group_ids
+      injury_phase: cu1_context_value_sets_v1.shared_muscle_myotendinous.injury_phase
+      injury_type: cu1_context_value_sets_v1.shared_muscle_myotendinous.injury_type
+      injury_location_optional: cu1_context_value_sets_v1.shared_muscle_myotendinous.injury_location
+      mri_or_ultrasound_confirmed: cu1_context_value_sets_v1.shared_muscle_myotendinous.mri_or_ultrasound_confirmed
+      management_context: cu1_context_value_sets_v1.shared_muscle_myotendinous.management_context
     conditional_requirements:
-      - when: {in: {path: primary_problem.context.injury_type, values: [confirmed_high_grade_muscle_or_myotendinous_tear_nonoperative, confirmed_partial_muscle_or_myotendinous_tear, proximal_tendon_or_free_tendon_injury]}}
+      - when: {in: {path: primary_problem.context.injury_type, values: [confirmed_partial_muscle_or_myotendinous_tear, confirmed_high_grade_muscle_or_myotendinous_tear_nonoperative, established_intramuscular_or_intratendinous_injury]}}
         require: [primary_problem.context.mri_or_ultrasound_confirmed]
         error: structural_muscle_injury_confirmation_state_required
-      - when: {in: {path: primary_problem.context.injury_type, values: [major_avulsion_or_rupture_concern, proximal_tendon_or_free_tendon_injury]}}
-        require: [primary_problem.context.management_context]
-        allowed_values: [conservative_rehabilitation, specialist_reviewed_nonoperative, postoperative_or_repair_protocol]
-        error: specialist_or_management_disposition_required_for_major_structural_muscle_injury
-
+    safety_boundary:
+      unresolved_major_avulsion_or_rupture: cu1_rule_catalog_v1.safety_input_flags.acute_unresolved_tendon_rupture_or_major_avulsion_concern
+      note: major_avulsion_or_rupture_concern_is_not_an_injury_type_enum
   shared_deconditioning_balance_gait:
     route_id: functional_deconditioning_balance_gait_rehabilitation
-    required_fields:
-      - primary_problem.context.functional_route_id
-    functional_route_allowed_values_source: cu1_route_detail_catalog_v1.shared_deconditioning_route_ids
+    required_fields: [primary_problem.context.functional_route_id]
+    value_sets:
+      functional_route_id: cu1_route_detail_catalog_v1.shared_deconditioning_route_ids
+      frailty_established: cu1_context_value_sets_v1.shared_deconditioning_balance_gait.frailty_established
     route_specific_wording:
-      generalized_deconditioning_functional_decline:
-        allowed_wording_modes: [presentation]
+      generalized_deconditioning_functional_decline: {allowed_wording_modes: [presentation]}
       frailty_associated_functional_decline:
         allowed_wording_modes: [formal_diagnosis]
         formal_assertion_policy: context_field_required_yes
         require: [primary_problem.context.frailty_established]
         require_value: {primary_problem.context.frailty_established: yes}
         error: frailty_must_be_clinician_established_for_formal_wording
-      balance_impairment_context:
-        allowed_wording_modes: [presentation]
-      gait_mobility_impairment_context:
-        allowed_wording_modes: [presentation]
-      post_illness_or_post_hospital_deconditioning_context:
-        allowed_wording_modes: [presentation]
+      balance_impairment_context: {allowed_wording_modes: [presentation]}
+      gait_mobility_impairment_context: {allowed_wording_modes: [presentation]}
+      post_illness_or_post_hospital_deconditioning_context: {allowed_wording_modes: [presentation]}
 
 canonical_validation_errors:
   formal_diagnosis_assertion_required: validation_error
@@ -410,7 +211,6 @@ canonical_validation_errors:
   lower_limb_weight_bearing_required_missing: lower_limb_weight_bearing_required_missing
   axial_fracture_loading_or_rom_status_required_missing: required_structural_restriction_missing
   structural_muscle_injury_confirmation_state_required: validation_error
-  specialist_or_management_disposition_required_for_major_structural_muscle_injury: validation_error
   frailty_must_be_clinician_established_for_formal_wording: validation_error
 
 coverage_contract:
@@ -421,4 +221,5 @@ coverage_contract:
   route_overrides_are_additive_or_more_specific: true
   allowed_context_keys_per_route: union_of_common_keys_plus_keys_from_applied_policy_and_route_override
   absence_of_override_does_not_require_prose_interpretation: true
+  context_enum_values_are_machine_declarative: true
   implementation_must_not_read_profile_markdown_for_validation_logic: true
