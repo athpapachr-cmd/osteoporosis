@@ -4,7 +4,7 @@
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Parent product:** Personal Clinical Excellence System.
 > **Scope:** cross-module Clinic Utilities / Clinical Operations.
-> **Current focus:** CU-1 Physiotherapy Referral v2 design; cervical v1.1, lumbar v1.1, shoulder v1.1, elbow v1.1, wrist/hand v1.1, knee v1.1 frozen; Hip/Groin v1.1 frozen on docs branch pending review/merge.
+> **Current focus:** CU-1 Physiotherapy Referral v2 design; cervical v1.1, lumbar v1.1, shoulder v1.1, elbow v1.1, wrist/hand v1.1, knee v1.1 and Hip/Groin v1.1 frozen.
 
 Clinic Utilities are cross-module clinician-facing operational tools, not a new clinical Module 02.
 
@@ -77,7 +77,7 @@ shoulder_v1_1 = FROZEN
 elbow_v1_1 = FROZEN
 wrist_hand_v1_1 = FROZEN
 knee_v1_1 = FROZEN
-hip_v1_1 = FROZEN on docs branch pending exact-head review/merge
+hip_v1_1 = FROZEN
 ```
 
 ---
@@ -250,7 +250,7 @@ Region-specific rules live in each frozen profile.
 
 # 8. Remaining regional design sequence
 
-After Hip handoff closes, current broad sequence is:
+Current broad remaining sequence is:
 
 ```text
 ankle / foot
