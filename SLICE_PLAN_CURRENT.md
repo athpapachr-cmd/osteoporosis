@@ -8,6 +8,7 @@
 > **Supporting plan:** `CLINIC_UTILITIES_PLAN.md`.
 > **Frozen regional profiles:** cervical, lumbar, shoulder, elbow, wrist/hand, knee, hip/groin and ankle/foot v1.1.
 > **Frozen shared profiles:** `shared_fracture_v1_1.md`; `shared_muscle_myotendinous_v1_1.md`.
+> **Current detailed shared profile under review:** `clinic_utilities/physio_profiles/shared_deconditioning_balance_gait_v1.md` — DESIGN CANDIDATE / NOT FROZEN.
 > **Prior active slice:** PR-1 Transcript Intake + Candidate Extraction v3 remains intentionally paused at `archive/slices/PR1_TRANSCRIPT_INTAKE_V3.md`.
 
 CU-1 is a bounded cross-module design detour. It does not authorize runtime implementation.
@@ -57,7 +58,7 @@ clinician-entered diagnosis may be carried faithfully but must not be inferred
 
 ---
 
-# 2. Frozen profile status
+# 2. Frozen / active profile status
 
 ```text
 cervical_v1_1 = FROZEN
@@ -70,62 +71,63 @@ hip_v1_1 = FROZEN
 ankle_foot_v1_1 = FROZEN
 shared_fracture_v1_1 = FROZEN
 shared_muscle_myotendinous_v1_1 = FROZEN
+shared_deconditioning_balance_gait_v1 = DESIGN CANDIDATE / NOT FROZEN
 ```
 
 ---
 
-# 3. Shared Muscle / Myotendinous Injury — FROZEN v1.1 design
+# 3. Generalized Deconditioning / Balance / Gait — ACTIVE DESIGN CANDIDATE
 
-Authoritative frozen file:
-
-```text
-clinic_utilities/physio_profiles/shared_muscle_myotendinous_v1_1.md
-```
-
-Shared route:
+Authoritative candidate:
 
 ```text
-acute_muscle_myotendinous_injury_rehabilitation
+clinic_utilities/physio_profiles/shared_deconditioning_balance_gait_v1.md
 ```
 
-High-visibility workflow groups:
+Proposed shared route:
 
 ```text
-quadriceps / rectus femoris
-acute adductor strain/tear
-gastrocnemius / soleus / calf
-hamstring strain / partial tear
+functional_deconditioning_balance_gait_rehabilitation
 ```
 
-Visible but less frequent:
+Candidate presentation families:
 
 ```text
-pectoralis-major muscle/myotendinous injury
-biceps muscle-belly/myotendinous injury
-abdominal-wall muscle injury
+D1 generalized deconditioning / functional decline
+D2 balance impairment / falls-risk rehabilitation
+D3 gait / mobility impairment rehabilitation
+D4 post-illness / post-hospital deconditioning
+D5 frailty-associated functional decline — clinician-established/context only
 ```
 
-Key frozen boundaries:
+Core semantic boundaries:
 
 ```text
-bony avulsion → Shared Fracture
-major free-tendon rupture/avulsion without disposition → specialist structural route
-postoperative repair → exact protocol governs
-<2 cm retraction may support established conservative/PT workflow but is NOT autonomous clearance
->=2 cm / multi-tendon complete avulsion / major weakness-deformity / high-demand unresolved case
-→ prominent specialist-disposition check, not automatic surgery recommendation
+deconditioning != frailty automatically
+one fall != recurrent-falls syndrome
+fear of falling != objective balance impairment
+abnormal TUG/5xSTS/gait speed/SPPB/Berg/Mini-BESTest != autonomous diagnosis
+unexplained new gait disorder != generic deconditioning
+assistive device != automatically mandatory
+not assessed != normal
 ```
 
-Return-to-running/sport/work is criterion-based. Elapsed time alone, MRI appearance/grade alone and strength symmetry alone never generate clearance.
-
-Adjunct policy:
+Candidate rehabilitation direction is individualized and progressive, emphasizing actual functional deficits:
 
 ```text
-acupuncture → optional clinician-selected adjunct, no healing claim
-dry needling → excluded
-ESWT / therapeutic ultrasound → excluded as default acute-muscle healing recommendations
-compression / taping → treating-physiotherapist discretion
+strength / resistance
+balance / coordination / stepping
+power where appropriate
+gait and transfer practice
+walking/endurance/aerobic conditioning where medically appropriate
+stairs / obstacle / community mobility
+activity and sedentary-behaviour reduction
+falls-prevention exercise when indicated
 ```
+
+Falls-management context remains multifactorial when non-physical risk factors are present; the utility does not silently substitute generic exercise for medical, medication, vision, neurological, vestibular, podiatry or home-environment management.
+
+Safety domains include acute neurological/gait change, syncope/LOC, unstable cardiopulmonary symptoms, acute vestibular syndrome, fracture/restriction uncertainty, DVT/vascular concern, infection/systemic deterioration and acute cognitive change.
 
 ---
 
@@ -148,9 +150,10 @@ Do not write production HTML/JS/CSS, add patient persistence, integrate navigati
 # 5. Exact next action
 
 ```text
-1. design the final currently planned shared CU-1 profile: generalized deconditioning / balance / gait
-2. perform product-owner review and freeze it separately
-3. only after all design profiles are frozen, decide whether CU-1 is sufficiently complete for a separately authorized implementation step
+1. product-owner clinical review of `shared_deconditioning_balance_gait_v1.md`
+2. resolve presentation visibility / frailty / falls / gait / assistive-device / home-hazard workflow decisions
+3. revise candidate
+4. freeze/merge only after explicit product-owner approval
+5. after this final shared profile is frozen, perform CU-1 design-completeness review
+6. runtime implementation requires a separate explicit authorization decision
 ```
-
-Runtime implementation remains unauthorized.
