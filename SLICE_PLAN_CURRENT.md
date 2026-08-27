@@ -6,15 +6,8 @@
 > **Area:** Clinic Utilities / Clinical Operations.
 > **Slice ID:** CU-1.
 > **Supporting plan:** `CLINIC_UTILITIES_PLAN.md`.
-> **Frozen cervical profile:** `clinic_utilities/physio_profiles/cervical_v1_1.md`.
-> **Frozen lumbar profile:** `clinic_utilities/physio_profiles/lumbar_v1_1.md`.
-> **Frozen shoulder profile:** `clinic_utilities/physio_profiles/shoulder_v1_1.md`.
-> **Frozen elbow profile:** `clinic_utilities/physio_profiles/elbow_v1_1.md`.
-> **Frozen wrist/hand profile:** `clinic_utilities/physio_profiles/wrist_hand_v1_1.md`.
-> **Frozen knee profile:** `clinic_utilities/physio_profiles/knee_v1_1.md`.
-> **Frozen hip/groin profile:** `clinic_utilities/physio_profiles/hip_v1_1.md`.
-> **Frozen ankle/foot profile:** `clinic_utilities/physio_profiles/ankle_foot_v1_1.md`.
-> **Current detailed shared profile under review:** `clinic_utilities/physio_profiles/shared_fracture_v1.md` — DESIGN CANDIDATE / NOT FROZEN.
+> **Frozen regional profiles:** cervical, lumbar, shoulder, elbow, wrist/hand, knee, hip/groin and ankle/foot v1.1.
+> **Frozen shared-fracture profile on active docs branch:** `clinic_utilities/physio_profiles/shared_fracture_v1_1.md`.
 > **Prior active slice:** PR-1 Transcript Intake + Candidate Extraction v3 remains intentionally paused at `archive/slices/PR1_TRANSCRIPT_INTAKE_V3.md`.
 
 CU-1 is a bounded cross-module design detour. It does not authorize runtime implementation.
@@ -65,7 +58,7 @@ clinician-entered diagnosis may be carried faithfully but must not be inferred
 
 ---
 
-# 2. Frozen / active profile status
+# 2. Frozen profile status
 
 ```text
 cervical_v1_1 = FROZEN
@@ -76,122 +69,162 @@ wrist_hand_v1_1 = FROZEN
 knee_v1_1 = FROZEN
 hip_v1_1 = FROZEN
 ankle_foot_v1_1 = FROZEN
-shared_fracture_v1 = DESIGN CANDIDATE / NOT FROZEN
+shared_fracture_v1_1 = FROZEN on docs branch pending exact-head review/merge
 ```
 
 ---
 
-# 3. Shared Fracture / Post-immobilization — ACTIVE DESIGN CANDIDATE
+# 3. Shared Fracture / Post-immobilization — FROZEN v1.1 design
 
-Authoritative candidate:
+Authoritative frozen file:
 
 ```text
-clinic_utilities/physio_profiles/shared_fracture_v1.md
+clinic_utilities/physio_profiles/shared_fracture_v1_1.md
 ```
 
-Architectural model:
+One shared route:
 
 ```text
-regional fracture gateway
-→ fracture_rehabilitation_post_immobilization
-→ fracture_site
-→ treatment / phase / healing-stability
-→ immobilization / use or weight-bearing / ROM / loading restrictions
-→ actual findings / function
-→ clinician-confirmed goals and directions
+fracture_rehabilitation_post_immobilization
 ```
 
-The shared profile owns restriction/healing semantics once. Regional profiles provide entry points and site context rather than separate fracture protocols.
-
-Required candidate context:
+Routing contract:
 
 ```text
-fracture_site
-laterality
-fracture date / phase when known
-fracture context: traumatic / fragility-insufficiency / stress-bone-stress / pediatric physeal-apophyseal / other
-management / operation if applicable
-healing-stability status
-immobilization/support status
-lower-limb weight-bearing status when relevant
-upper-limb use/loading status when relevant
-ROM status / restrictions
-loading-strengthening-impact restrictions
-orthopaedic/surgical instructions and source
+regional/shared entry
+→ fracture site
+→ treatment / phase
+→ healing/stability
+→ immobilization/support
+→ lower-limb weight-bearing OR upper-limb use/loading
+→ ROM / strengthening / impact restrictions
+→ actual findings/function
+→ confirmed goals/directions
+```
+
+Restriction rules:
+
+```text
+fracture site != rehabilitation clearance
+elapsed time != union
+immobilization removed != unrestricted use/loading
+fixation != unrestricted use/loading
+unknown restriction != unrestricted
+exact orthopaedic/surgical protocol > shared generic suggestion
+no universal week-based timeline
+manual therapy requires known stability + ROM permission
+```
+
+High-visibility entries frozen from product-owner workflow:
+
+```text
+vertebral compression / fragility fracture
+proximal humerus
+clavicle
+distal radius
+hand / finger fractures
+pubic rami
+patella
+ankle fractures
+calcaneus
+anterior-process calcaneus
+5th metatarsal / other metatarsal
+foot / toe fractures
+```
+
+Less frequent/advanced/context:
+
+```text
+scaphoid with union-confirmation gate
+elbow fractures
+tibial plateau/proximal tibia
+Lisfranc and other site-sensitive fractures
+long-bone shaft fractures
+older-adult hip fracture as context rather than routine product-owner outpatient referral
+```
+
+Fragility modifier:
+
+```text
+formal_fragility_fracture_context
+known_osteoporosis_or_low_bone_strength_context
+falls_risk_or_recurrent_falls_context
+```
+
+When selected, mobility/independence, strength, balance and falls-risk goals become prominent. The utility does not diagnose osteoporosis or recommend osteoporosis medication from the modifier.
+
+### SIFK / SONK
+
+```text
+preferred structured entity = subchondral_insufficiency_fracture_of_knee
+preferred current term = SIFK
+SONK = legacy / clinician-entered term, not separate autonomous software diagnosis
+advanced SIFK may carry osteonecrosis/osteochondral-collapse context when established
 ```
 
 Hard rules:
 
 ```text
-fracture != healed fracture
-elapsed time != union
-pain reduction != healing confirmation
-cast/boot/sling removal != unrestricted loading
-fixation != unrestricted loading
-unknown weight-bearing/use/ROM/loading state != unrestricted
-exact orthopaedic protocol > generic shared suggestion
-pediatric fracture != adult timeline
-fragility mechanism != software-diagnosed osteoporosis
-vertebral fracture != routine nonspecific back-pain pathway
+bone-marrow edema alone != SIFK
+sudden knee pain alone != SIFK
+SIFK + loading status unknown → no generic strengthening / impact progression
+established SIFK != routine OA or meniscal pathway only
 ```
 
-Candidate site registry includes:
+Pediatric/physeal/apophyseal fracture group remains active but low visibility except for pelvic apophyseal avulsions. Adult timelines are never imported automatically.
+
+Default fracture-healing recommendations excluded:
 
 ```text
-shoulder/arm: proximal humerus, humeral shaft, clavicle, scapula
-elbow: distal humerus, radial head/neck, olecranon/proximal ulna, coronoid
-forearm/wrist/hand: shaft radius/ulna, distal radius/ulna, scaphoid/carpal, metacarpal, phalangeal
-hip/pelvis/femur: femoral neck, inter/subtrochanteric, femoral shaft, acetabular, pelvic ring/rami, sacral/pelvic insufficiency
-knee/leg: distal femur, patella, tibial plateau/proximal tibia, proximal fibula, tibial/fibular shaft
-ankle/foot: malleolar, fibular/Maisonneuve, talus, calcaneus, navicular, cuboid/cuneiform, metatarsal, phalangeal, Lisfranc
-dedicated context groups: stress/bone-stress injuries, pediatric physeal/apophyseal fractures
-candidate workflow decision: vertebral compression/fragility fracture
-```
-
-Core rehabilitation may include, only when allowed by actual restrictions:
-
-```text
-safe ROM restoration
-progressive strengthening
-progressive upper-limb use or lower-limb weight bearing
-gait / balance / proprioception
-functional task retraining
-edema / scar / desensitization work
-walking/endurance progression
-falls-risk / balance intervention after fragility fracture when appropriate
-criterion-based return to work/gym/sport
-```
-
-No universal week-based protocol is frozen.
-
-Safety/reassessment domains:
-
-```text
-loss of reduction / reinjury / delayed union / nonunion / hardware concern
-new neurovascular deficit / compartment concern
-DVT/PE concern for lower-limb context
-infection / wound / pin-site concern
-possible CRPS without automatic diagnosis
-stress-fracture impact/loading uncertainty
-pediatric physeal/apophyseal restrictions
-vertebral/spinal neurological or stability concern if vertebral route retained
-```
-
-Default fracture-healing adjunct recommendations are excluded:
-
-```text
+acupuncture
+dry needling
+ESWT
 therapeutic ultrasound to accelerate union
-ESWT to accelerate union
-acupuncture as fracture-healing treatment
-dry needling around incompletely healed fracture
 bone-stimulator prescription
 ```
 
-Shared Fracture remains **NOT FROZEN** until product-owner workflow decisions in `shared_fracture_v1.md` are resolved.
+---
+
+# 4. Safety / consistency engine
+
+```text
+fracture + healing/stability not stated
+→ warning; no healed/stable wording
+
+lower-limb fracture + weight-bearing status not stated
+→ no progressive weight-bearing instruction
+
+upper-limb fracture + use/loading status not stated
+→ no unrestricted lifting/pushing/use instruction
+
+ROM/loading restriction not stated
+→ no unrestricted ROM/strengthening/impact instruction
+
+new trauma / loss of reduction / delayed union / nonunion / hardware concern
+→ orthopaedic reassessment semantics
+
+infection / wound / neurovascular / compartment / DVT-PE concern
+→ medical/urgent reassessment semantics
+
+possible CRPS without established diagnosis
+→ preserve concern; do not autonomously diagnose
+
+vertebral fracture + unresolved spinal precaution / neurological concern
+→ medical/specialist pathway
+
+SIFK / bone-stress / insufficiency injury + loading status unknown
+→ no generic impact progression
+
+pediatric fracture
+→ no adult timeline
+
+material safety concern + no clinician disposition
+→ no routine reassuring wording
+```
 
 ---
 
-# 4. Persistence / runtime boundary
+# 5. Persistence / runtime boundary
 
 Persistence is not frozen.
 
@@ -207,15 +240,15 @@ Do not write production HTML/JS/CSS, add patient persistence, integrate navigati
 
 ---
 
-# 5. Exact next action
+# 6. Exact next action
 
 ```text
-1. product-owner clinical review of `shared_fracture_v1.md`
-2. resolve fracture-site visibility and common-vs-advanced entries
-3. resolve vertebral / fragility / pediatric scope
-4. resolve restriction and adjunct policy
-5. revise candidate
-6. freeze/merge only after explicit product-owner approval
+1. exact branch-vs-main review of Shared Fracture v1.1 freeze
+2. open docs-only PR if clean
+3. independent exact-head review
+4. merge only if exact head remains clean
+5. clear canonical writer lock and record resulting main state
+6. product owner selects next shared CU-1 profile
 ```
 
 Runtime implementation remains unauthorized.
