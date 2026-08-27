@@ -4,7 +4,7 @@
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Parent product:** Personal Clinical Excellence System.
 > **Scope:** cross-module Clinic Utilities / Clinical Operations.
-> **Current focus:** CU-1 Physiotherapy Referral v2 design; cervical v1.1, lumbar v1.1, shoulder v1.1, elbow v1.1, wrist/hand v1.1 frozen; knee v1.1 frozen on docs branch pending review/merge.
+> **Current focus:** CU-1 Physiotherapy Referral v2 design; cervical v1.1, lumbar v1.1, shoulder v1.1, elbow v1.1, wrist/hand v1.1 and knee v1.1 frozen.
 
 Clinic Utilities are cross-module clinician-facing operational tools, not a new clinical Module 02.
 
@@ -76,7 +76,7 @@ lumbar_v1_1 = FROZEN
 shoulder_v1_1 = FROZEN
 elbow_v1_1 = FROZEN
 wrist_hand_v1_1 = FROZEN
-knee_v1_1 = FROZEN on docs branch pending review/merge
+knee_v1_1 = FROZEN
 ```
 
 ---
@@ -92,8 +92,8 @@ acute isolated meniscal injury — assessed nonoperative
 patellofemoral pain
 patellar tendinopathy
 quadriceps tendinopathy
-ACL injury/instability rehabilitation
-MCL injury rehabilitation
+ACL injury/instability — nonoperative or preoperative rehabilitation
+MCL injury — nonoperative rehabilitation
 patellar instability/dislocation rehabilitation
 iliotibial-band syndrome
 pes-anserine region pain / established tendinobursitis
@@ -135,7 +135,8 @@ acute displaced/displacing meniscus != routine rehab
 anterior knee pain != automatic PFP
 tendon imaging change != automatic symptomatic tendinopathy
 subjective giving-way != objective ligament instability
-ACL and MCL are separate high-visibility pathways
+ACL and MCL are separate high-visibility nonoperative/prehab pathways
+postoperative ACL/MCL → K13 only
 first-time patellar dislocation requires osteochondral/structural context
 postoperative meniscus repair != partial meniscectomy progression logic
 pediatric category != diagnosis
@@ -159,7 +160,7 @@ Postoperative emphasis:
 - meniscus repair and partial meniscectomy are common real-workflow referrals;
 - meniscectomy progression is primarily criterion/milestone based;
 - meniscus repair/reconstruction requires time + criterion-based progression with lesion/repair-specific restrictions;
-- ACLR, MCL repair/reconstruction, MPFL stabilization, arthroplasty, cartilage procedures and extensor-mechanism repair remain procedure/protocol governed.
+- ACLR, MCL repair/reconstruction, MPFL stabilization, arthroplasty, cartilage procedures and extensor-mechanism repair remain K13 procedure/protocol-governed subtypes.
 
 ---
 
@@ -239,7 +240,7 @@ Region-specific rules live in each frozen profile.
 
 # 7. Remaining regional design sequence
 
-After Knee handoff closes, current broad sequence is:
+Current broad remaining sequence is:
 
 ```text
 hip
