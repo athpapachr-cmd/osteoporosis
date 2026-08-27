@@ -693,3 +693,20 @@ ephemeral ReferralDraftV1
 ```
 
 This milestone does **not** authorize runtime implementation. No CU-1 runtime writer exists, no production CU-1 code has been written, and persistence remains outside the first implementation scope. A future implementation requires a fresh six-canonical bootstrap, explicit product-owner authorization and a new implementation slice/branch.
+
+---
+
+## 2026-08-28 — CU-1 Physiotherapy Referral v2 runtime implemented and deployed
+
+The bounded CU-1 runtime slice was completed against the frozen `cu1_contract_manifest_v1.yaml` contract without reopening the clinical taxonomy or adding referral persistence.
+
+PR #56 was independently reviewed at exact head `e04004add617afa7222c51d0d669c2134dd8f575`, passed the final focused GitHub Actions suite at **29/29 tests**, and was squash-merged as `c1da07f581cf8ccf1159d18bb63c23b674cbe9bd`.
+
+Delivered runtime includes the protected Clinical Excellence physiotherapy-referral page/API, deterministic normalization/route validation, declarative safety/consistency evaluation, short/detailed formatting, copy/print workflow, exact frozen shared-gateway enforcement, and fail-closed validation of forged gateway/safety acknowledgement/disposition state.
+
+The first implementation remains deliberately ephemeral: referral drafts and generated text are not persisted to PostgreSQL, localStorage or sessionStorage.
+
+Render auto-deploy `dep-da8afeuk1f9s73f5sr6g` completed successfully and reported `live` at the exact merge commit. External route-level HTTP smoke from the assistant execution sandbox could not be executed because DNS resolution failed before reaching the Render host; this is recorded as not proven rather than as an application failure.
+
+CU-1 runtime v1 is closed after canonical closeout/writer-lock release. CU-2 and PR-1 are not authorized by this completion.
+

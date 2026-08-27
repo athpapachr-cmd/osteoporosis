@@ -37,7 +37,7 @@ This file answers **where the product is going and in what broad order**. It is 
 
 ---
 
-# 1. CURRENT GATE — BASELINE / PR-1 PRESERVED; CU-1 PRE-CODE DESIGN DETOUR COMPLETE
+# 1. CURRENT GATE — BASELINE / PR-1 PRESERVED; CU-1 RUNTIME COMPLETE
 
 ## 1.1 Encounter-finalization validation
 
@@ -417,7 +417,7 @@ Permanent rule: **Appointment != CareTask**.
 
 ---
 
-# 15. CLINIC UTILITIES / CLINICAL OPERATIONS — CU-1 DESIGN COMPLETE; RUNTIME DECISION PENDING
+# 15. CLINIC UTILITIES / CLINICAL OPERATIONS — CU-1 RUNTIME COMPLETE
 
 Purpose: integrate useful day-to-day clinic tools into the same Clinical Excellence workspace without confusing operational tooling with osteoporosis-specific audit logic.
 
@@ -429,7 +429,7 @@ osteoporosis-specific clinical rules → Module 01
 legacy standalone pages → source artifacts to inspect/migrate, not permanent parallel products
 ```
 
-The product owner explicitly activated this bounded detour through `CURRENT_OPERATIONAL.md`. PR-1 Transcript Intake remains intentionally paused/archived. CU-1 pre-code design is now complete, but no CU runtime implementation is authorized until the product owner explicitly opens a runtime implementation slice.
+The product owner explicitly activated and completed this bounded detour through `CURRENT_OPERATIONAL.md`. PR-1 Transcript Intake remains intentionally paused/archived. CU-1 runtime v1 is implemented, tested, merged and deployed; further CU-1 maintenance or CU-2 work requires a new explicit slice.
 
 ## 15.1 Physiotherapy referral text generator
 
@@ -444,9 +444,9 @@ The product owner explicitly activated this bounded detour through `CURRENT_OPER
 - [x] Close R2 with machine-declarative route required/conditional validation, context enums, assertion/subtype rules and validation-error behavior.
 - [x] Complete final design review v3 with classification `DESIGN-COMPLETE`.
 - [x] Freeze first implementation persistence boundary as ephemeral structured draft → generated text → copy/print; no referral persistence in first slice.
-- [ ] Obtain separate explicit product-owner authorization before creating a CU-1 runtime implementation slice/branch.
-- [ ] If runtime is authorized, integrate it into Clinical Excellence workspace/navigation rather than deepen the historical legacy Cockpit as a separate product.
-- [ ] If runtime is authorized, restyle it to the shared Clinical Excellence visual system where appropriate.
+- [x] Obtain separate explicit product-owner authorization and complete the bounded CU-1 runtime implementation slice.
+- [x] Integrate CU-1 into the protected Clinical Excellence workspace/navigation rather than deepen the historical legacy Cockpit as a separate product.
+- [x] Deliver the CU-1 clinician-facing workspace in the shared Clinical Excellence visual direction.
 
 ## 15.2 Radiofrequency treatment request / PDF workflow
 
