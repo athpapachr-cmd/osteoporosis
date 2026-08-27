@@ -3,7 +3,9 @@ status: frozen_pre_code_design
 contract: cu1_referral_draft_v1
 rule_catalog: cu1_rule_catalog_v1
 route_requirements: cu1_route_requirements_v1
+context_value_sets: cu1_context_value_sets_v1
 synthetic_only: true
+fixture_mode: full_validation_oracle
 
 fixtures:
   - id: r1_calf_dvt_flag_is_explicit_not_inferred
@@ -13,7 +15,7 @@ fixtures:
       context:
         muscle_group: calf_muscle_myotendinous_injury
         injury_phase: acute
-        injury_type: muscle_strain
+        injury_type: clinically_assessed_muscle_strain
         management_context: conservative_rehabilitation
       findings: [pain, swelling]
       safety:
@@ -29,7 +31,7 @@ fixtures:
       context:
         muscle_group: calf_muscle_myotendinous_injury
         injury_phase: acute
-        injury_type: muscle_strain
+        injury_type: clinically_assessed_muscle_strain
         management_context: conservative_rehabilitation
       safety:
         input_flags: [dvt_concern_unresolved]
@@ -59,14 +61,13 @@ fixtures:
       wording_mode: established_structural_diagnosis
       laterality: right
       context:
-        established_diagnosis_source: imaging_confirmed
         fracture_site: subchondral_insufficiency_fracture_of_knee
-        fracture_phase: rehabilitation
-        treatment: conservative
+        fracture_phase: later_rehabilitation
+        treatment: nonoperative_observation_or_functional_treatment
         healing_stability_status: documented_stable_for_current_rehabilitation
-        immobilization_status: none
-        weight_bearing_status: protected_or_restricted
-        rom_status: permitted_within_symptoms
+        immobilization_status: none_currently
+        weight_bearing_status: partial_weight_bearing
+        rom_status: rom_allowed_with_specific_limits
         loading_strengthening_status: not_stated
     expected:
       triggered_rule: sifk_loading_status_not_stated
@@ -79,6 +80,8 @@ fixtures:
       wording_mode: formal_diagnosis
       formal_assertion_state_optional: not_stated
       laterality: right
+      context:
+        neurological_screen: {motor: normal, sensory: normal, reflexes: normal}
     expected:
       validation_error: formal_diagnosis_assertion_required
       formatter_blocked_by_validation: true
@@ -118,14 +121,13 @@ fixtures:
       wording_mode: established_structural_diagnosis
       laterality: right
       context:
-        established_diagnosis_source: imaging_confirmed
         fracture_site: lateral_malleolus_fracture
-        fracture_phase: rehabilitation
-        treatment: operative_fixation
+        fracture_phase: early_healing
+        treatment: orif
         healing_stability_status: healing_confirmed_with_restrictions
         immobilization_status: boot
-        rom_status: permitted_with_restrictions
-        loading_strengthening_status: restricted
+        rom_status: rom_allowed_with_specific_limits
+        loading_strengthening_status: strengthening_allowed_with_limits
     expected:
       validation_error: lower_limb_weight_bearing_required_missing
       triggered_rule: fracture_weight_bearing_not_stated_when_required
@@ -138,14 +140,13 @@ fixtures:
       wording_mode: established_structural_diagnosis
       laterality: left
       context:
-        established_diagnosis_source: imaging_confirmed
         fracture_site: distal_radius_fracture
-        fracture_phase: rehabilitation
-        treatment: conservative
+        fracture_phase: post_immobilization
+        treatment: nonoperative_observation_or_functional_treatment
         healing_stability_status: documented_stable_for_current_rehabilitation
-        immobilization_status: removed
-        rom_status: permitted
-        loading_strengthening_status: restricted
+        immobilization_status: none_currently
+        rom_status: rom_allowed_with_specific_limits
+        loading_strengthening_status: strengthening_allowed_with_limits
     expected:
       validation_error: upper_limb_use_status_required_missing
       forbidden_validation_error: lower_limb_weight_bearing_required_missing
@@ -170,7 +171,6 @@ fixtures:
       wording_mode: established_structural_diagnosis
       laterality: right
       context:
-        established_diagnosis_source: operative_report
         management_context: post_reconstruction
     expected:
       validation_error: postoperative_case_has_wrong_primary_route
