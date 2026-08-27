@@ -1,0 +1,28 @@
+version: cu1_contract_manifest_v1
+status: frozen_pre_code_design
+runtime_authorized: false
+clinical_sources:
+  - clinic_utilities/physio_profiles/cervical_v1_1.md
+  - clinic_utilities/physio_profiles/lumbar_v1_1.md
+  - clinic_utilities/physio_profiles/shoulder_v1_1.md
+  - clinic_utilities/physio_profiles/elbow_v1_1.md
+  - clinic_utilities/physio_profiles/wrist_hand_v1_1.md
+  - clinic_utilities/physio_profiles/knee_v1_1.md
+  - clinic_utilities/physio_profiles/hip_v1_1.md
+  - clinic_utilities/physio_profiles/ankle_foot_v1_1.md
+  - clinic_utilities/physio_profiles/shared_fracture_v1_1.md
+  - clinic_utilities/physio_profiles/shared_muscle_myotendinous_v1_1.md
+  - clinic_utilities/physio_profiles/shared_deconditioning_balance_gait_v1_1.md
+normative_machine_artifacts:
+  core_contract: clinic_utilities/contracts/CU1_CORE_CONTRACT_V1.md
+  route_registry: clinic_utilities/contracts/cu1_registry_v1.yaml
+  option_and_safety_catalog: clinic_utilities/contracts/cu1_option_catalog_v1.yaml
+  semantic_fixtures: clinic_utilities/contracts/cu1_design_fixtures_v1.yaml
+precedence:
+  clinical_content: frozen_profile_markdown
+  machine_identity_routing_safety_formatter: normative_machine_artifacts
+conflict_rule: machine_artifact_must_not_change_clinical_meaning; if_conflict_found_block_and_replan
+id_policy: lowercase_snake_case_with_explicit_aliases
+unknown_selectable_ids: invalid
+free_text_policy: allowed_only_in_explicit_free_text_fields
+persistence: unfrozen_and_out_of_first_implementation_scope
