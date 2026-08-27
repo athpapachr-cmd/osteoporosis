@@ -6,14 +6,8 @@
 > **Area:** Clinic Utilities / Clinical Operations.
 > **Slice ID:** CU-1.
 > **Supporting plan:** `CLINIC_UTILITIES_PLAN.md`.
-> **Frozen cervical profile:** `clinic_utilities/physio_profiles/cervical_v1_1.md`.
-> **Frozen lumbar profile:** `clinic_utilities/physio_profiles/lumbar_v1_1.md`.
-> **Frozen shoulder profile:** `clinic_utilities/physio_profiles/shoulder_v1_1.md`.
-> **Frozen elbow profile:** `clinic_utilities/physio_profiles/elbow_v1_1.md`.
-> **Frozen wrist/hand profile:** `clinic_utilities/physio_profiles/wrist_hand_v1_1.md`.
-> **Frozen knee profile:** `clinic_utilities/physio_profiles/knee_v1_1.md`.
-> **Frozen hip/groin profile:** `clinic_utilities/physio_profiles/hip_v1_1.md`.
-> **Frozen ankle/foot profile:** `clinic_utilities/physio_profiles/ankle_foot_v1_1.md`.
+> **Frozen regional profiles:** cervical, lumbar, shoulder, elbow, wrist/hand, knee, hip/groin and ankle/foot v1.1.
+> **Frozen shared-fracture profile on active docs branch:** `clinic_utilities/physio_profiles/shared_fracture_v1_1.md`.
 > **Prior active slice:** PR-1 Transcript Intake + Candidate Extraction v3 remains intentionally paused at `archive/slices/PR1_TRANSCRIPT_INTAKE_V3.md`.
 
 CU-1 is a bounded cross-module design detour. It does not authorize runtime implementation.
@@ -64,7 +58,7 @@ clinician-entered diagnosis may be carried faithfully but must not be inferred
 
 ---
 
-# 2. Frozen regional status
+# 2. Frozen profile status
 
 ```text
 cervical_v1_1 = FROZEN
@@ -75,90 +69,118 @@ wrist_hand_v1_1 = FROZEN
 knee_v1_1 = FROZEN
 hip_v1_1 = FROZEN
 ankle_foot_v1_1 = FROZEN
+shared_fracture_v1_1 = FROZEN on docs branch pending exact-head review/merge
 ```
 
 ---
 
-# 3. Ankle / Foot — FROZEN v1.1 design
+# 3. Shared Fracture / Post-immobilization — FROZEN v1.1 design
 
 Authoritative frozen file:
 
 ```text
-clinic_utilities/physio_profiles/ankle_foot_v1_1.md
+clinic_utilities/physio_profiles/shared_fracture_v1_1.md
 ```
 
-Frozen routine primary pathways:
+One shared route:
 
 ```text
-AF1 acute/postacute lateral ankle sprain after structural assessment
-AF2 Achilles tendinopathy — midportion / insertional
-AF3 plantar heel pain / plantar fasciitis
-AF4 posterior tibial tendon dysfunction / flexible PCFD
-AF5 peroneal tendon disorder — conservative rehabilitation
-AF6 mechanical metatarsalgia / forefoot overload
-AF7 assessed post-traumatic ankle/foot pain or stiffness
+fracture_rehabilitation_post_immobilization
 ```
 
-Frozen pediatric/adolescent navigation group:
+Routing contract:
 
 ```text
-Παιδιά / Έφηβοι — ποδοκνημική / άκρος πόδας
-→ Sever disease / calcaneal apophysitis
-→ symptomatic accessory navicular
-→ symptomatic flexible flatfoot
+regional/shared entry
+→ fracture site
+→ treatment / phase
+→ healing/stability
+→ immobilization/support
+→ lower-limb weight-bearing OR upper-limb use/loading
+→ ROM / strengthening / impact restrictions
+→ actual findings/function
+→ confirmed goals/directions
 ```
 
-This is navigation only, not a diagnostic umbrella. Asymptomatic flexible flatfoot does not generate treatment.
-
-Frozen rare/advanced/context entities:
+Restriction rules:
 
 ```text
-chronic ankle instability / recurrent sprain → rare/secondary
-syndesmotic/high-ankle sprain → very rare/advanced
-tarsal tunnel / tibial-nerve entrapment → rare neurological
-heel fat-pad pain → rare/secondary plantar-heel differential
-Morton neuroma → rare/context
-plantar-plate / lesser-MTP instability → very rare/advanced
-anterior tibial / extensor / FHL tendon disorders → rare
-osteochondral talus lesion → rare/advanced
-hallux rigidus / 1st-MTP OA → context only
-ankle OA → context only
-Charcot / neuropathic foot → medical/offloading safety context
-postoperative ankle/foot → advanced only; occasional Achilles repair/reconstruction
+fracture site != rehabilitation clearance
+elapsed time != union
+immobilization removed != unrestricted use/loading
+fixation != unrestricted use/loading
+unknown restriction != unrestricted
+exact orthopaedic/surgical protocol > shared generic suggestion
+no universal week-based timeline
+manual therapy requires known stability + ROM permission
 ```
 
-Frozen support/adjunct policy:
+High-visibility entries frozen from product-owner workflow:
 
 ```text
-taping → directly visible optional support
-heel lift → directly visible optional support
-brace / orthosis / AFO / metatarsal offloading / footwear → condition-specific context, often podiatry-coordinated
-manual therapy / soft tissue → optional where relevant
-dry needling → optional clinician-selected adjunct
-acupuncture → excluded
-ESWT plantar heel → evidence-supported optional adjunct
-ESWT Achilles → evidence-conflicted optional adjunct; not routine and not superior to progressive loading
+vertebral compression / fragility fracture
+proximal humerus
+clavicle
+distal radius
+hand / finger fractures
+pubic rami
+patella
+ankle fractures
+calcaneus
+anterior-process calcaneus
+5th metatarsal / other metatarsal
+foot / toe fractures
 ```
 
-Key semantic and safety rules:
+Less frequent/advanced/context:
 
 ```text
-inversion + lateral pain != uncomplicated lateral ankle sprain
-subjective giving-way != objective CAI
-Achilles pain / imaging != symptomatic tendinopathy automatically
-acute Achilles rupture concern != tendinopathy pathway
-midportion Achilles != insertional protocol automatically
-plantar heel pain != plantar fasciitis automatically
-heel spur != automatic pain generator
-flat foot + medial pain != PCFD/PTTD automatically
-lateral pain != peroneal tendinopathy automatically
-peroneal snapping/subluxation != routine sprain/tendinopathy
-forefoot pain != exact structural diagnosis
-pediatric heel pain != Sever automatically
-accessory navicular imaging != symptomatic diagnosis automatically
-asymptomatic flexible flatfoot != treatment pathway
-tarsal-tunnel symptoms/test != diagnosis
-hot swollen neuropathic foot / Charcot concern != routine PT
+scaphoid with union-confirmation gate
+elbow fractures
+tibial plateau/proximal tibia
+Lisfranc and other site-sensitive fractures
+long-bone shaft fractures
+older-adult hip fracture as context rather than routine product-owner outpatient referral
+```
+
+Fragility modifier:
+
+```text
+formal_fragility_fracture_context
+known_osteoporosis_or_low_bone_strength_context
+falls_risk_or_recurrent_falls_context
+```
+
+When selected, mobility/independence, strength, balance and falls-risk goals become prominent. The utility does not diagnose osteoporosis or recommend osteoporosis medication from the modifier.
+
+### SIFK / SONK
+
+```text
+preferred structured entity = subchondral_insufficiency_fracture_of_knee
+preferred current term = SIFK
+SONK = legacy / clinician-entered term, not separate autonomous software diagnosis
+advanced SIFK may carry osteonecrosis/osteochondral-collapse context when established
+```
+
+Hard rules:
+
+```text
+bone-marrow edema alone != SIFK
+sudden knee pain alone != SIFK
+SIFK + loading status unknown → no generic strengthening / impact progression
+established SIFK != routine OA or meniscal pathway only
+```
+
+Pediatric/physeal/apophyseal fracture group remains active but low visibility except for pelvic apophyseal avulsions. Adult timelines are never imported automatically.
+
+Default fracture-healing recommendations excluded:
+
+```text
+acupuncture
+dry needling
+ESWT
+therapeutic ultrasound to accelerate union
+bone-stimulator prescription
 ```
 
 ---
@@ -166,50 +188,43 @@ hot swollen neuropathic foot / Charcot concern != routine PT
 # 4. Safety / consistency engine
 
 ```text
-acute trauma + unresolved fracture concern
-→ imaging/structural reassessment before routine rehab
+fracture + healing/stability not stated
+→ warning; no healed/stable wording
 
-syndesmotic / Maisonneuve concern
-→ structural/specialist pathway
+lower-limb fracture + weight-bearing status not stated
+→ no progressive weight-bearing instruction
 
-Lisfranc / midfoot instability concern
-→ structural reassessment; no generic sprain wording
+upper-limb fracture + use/loading status not stated
+→ no unrestricted lifting/pushing/use instruction
 
-acute Achilles rupture concern
-→ leave tendinopathy pathway
+ROM/loading restriction not stated
+→ no unrestricted ROM/strengthening/impact instruction
 
-peroneal dislocation/subluxation / major tear concern
-→ structural reassessment
+new trauma / loss of reduction / delayed union / nonunion / hardware concern
+→ orthopaedic reassessment semantics
 
-bone-stress injury concern
-→ diagnostic/structural pathway
+infection / wound / neurovascular / compartment / DVT-PE concern
+→ medical/urgent reassessment semantics
 
-hot swollen neuropathic foot / Charcot / infection / nonhealing wound
-→ medical/offloading pathway
+possible CRPS without established diagnosis
+→ preserve concern; do not autonomously diagnose
 
-atypical pediatric rigid/painful flatfoot or focal bone concern
-→ structural/medical reassessment
+vertebral fracture + unresolved spinal precaution / neurological concern
+→ medical/specialist pathway
+
+SIFK / bone-stress / insufficiency injury + loading status unknown
+→ no generic impact progression
+
+pediatric fracture
+→ no adult timeline
 
 material safety concern + no clinician disposition
 → no routine reassuring wording
-
-not_assessed neurological/neurovascular component
-→ never generate normal wording
 ```
 
-Region-specific details live in `ankle_foot_v1_1.md`.
-
 ---
 
-# 5. Shared fracture / muscle boundary
-
-Foot/ankle fracture, Lisfranc fracture-dislocation and stress/bone-stress injuries route to the future shared fracture profile. Acute gastrocnemius/soleus/calf injuries route to the future shared muscle/myotendinous profile. Achilles rupture remains a structural/protocol-governed gateway distinct from tendinopathy.
-
-Unknown healing/stability, weight-bearing, immobilization, ROM or loading context prevents unrestricted rehabilitation wording.
-
----
-
-# 6. Persistence / runtime boundary
+# 5. Persistence / runtime boundary
 
 Persistence is not frozen.
 
@@ -225,12 +240,15 @@ Do not write production HTML/JS/CSS, add patient persistence, integrate navigati
 
 ---
 
-# 7. Exact next action
+# 6. Exact next action
 
 ```text
-1. product owner selects the next shared CU-1 profile
-2. preferred current sequence: shared fracture / post-immobilization → muscle / myotendinous injury → generalized deconditioning / balance / gait
-3. continue CU-1 design only
+1. exact branch-vs-main review of Shared Fracture v1.1 freeze
+2. open docs-only PR if clean
+3. independent exact-head review
+4. merge only if exact head remains clean
+5. clear canonical writer lock and record resulting main state
+6. product owner selects next shared CU-1 profile
 ```
 
 Runtime implementation remains unauthorized.
