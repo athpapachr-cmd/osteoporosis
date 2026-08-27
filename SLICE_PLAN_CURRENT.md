@@ -7,7 +7,7 @@
 > **Slice ID:** CU-1.
 > **Supporting plan:** `CLINIC_UTILITIES_PLAN.md`.
 > **Frozen regional profiles:** cervical, lumbar, shoulder, elbow, wrist/hand, knee, hip/groin and ankle/foot v1.1.
-> **Frozen shared-fracture profile on active docs branch:** `clinic_utilities/physio_profiles/shared_fracture_v1_1.md`.
+> **Frozen shared-fracture profile:** `clinic_utilities/physio_profiles/shared_fracture_v1_1.md`.
 > **Prior active slice:** PR-1 Transcript Intake + Candidate Extraction v3 remains intentionally paused at `archive/slices/PR1_TRANSCRIPT_INTAKE_V3.md`.
 
 CU-1 is a bounded cross-module design detour. It does not authorize runtime implementation.
@@ -69,7 +69,7 @@ wrist_hand_v1_1 = FROZEN
 knee_v1_1 = FROZEN
 hip_v1_1 = FROZEN
 ankle_foot_v1_1 = FROZEN
-shared_fracture_v1_1 = FROZEN on docs branch pending exact-head review/merge
+shared_fracture_v1_1 = FROZEN
 ```
 
 ---
@@ -143,15 +143,7 @@ long-bone shaft fractures
 older-adult hip fracture as context rather than routine product-owner outpatient referral
 ```
 
-Fragility modifier:
-
-```text
-formal_fragility_fracture_context
-known_osteoporosis_or_low_bone_strength_context
-falls_risk_or_recurrent_falls_context
-```
-
-When selected, mobility/independence, strength, balance and falls-risk goals become prominent. The utility does not diagnose osteoporosis or recommend osteoporosis medication from the modifier.
+Fragility modifier makes mobility/independence, strength, balance and falls-risk goals prominent without diagnosing osteoporosis or recommending osteoporosis medication.
 
 ### SIFK / SONK
 
@@ -161,8 +153,6 @@ preferred current term = SIFK
 SONK = legacy / clinician-entered term, not separate autonomous software diagnosis
 advanced SIFK may carry osteonecrosis/osteochondral-collapse context when established
 ```
-
-Hard rules:
 
 ```text
 bone-marrow edema alone != SIFK
@@ -243,12 +233,9 @@ Do not write production HTML/JS/CSS, add patient persistence, integrate navigati
 # 6. Exact next action
 
 ```text
-1. exact branch-vs-main review of Shared Fracture v1.1 freeze
-2. open docs-only PR if clean
-3. independent exact-head review
-4. merge only if exact head remains clean
-5. clear canonical writer lock and record resulting main state
-6. product owner selects next shared CU-1 profile
+1. product owner selects the next shared CU-1 profile
+2. preferred sequence: muscle / myotendinous injury → generalized deconditioning / balance / gait
+3. continue CU-1 design only
 ```
 
 Runtime implementation remains unauthorized.
