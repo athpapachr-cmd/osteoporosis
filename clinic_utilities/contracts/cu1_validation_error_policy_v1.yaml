@@ -19,6 +19,7 @@ classes:
     note: formatter_behavior_is_governed_by_materialized_safety_result_and_acknowledgement_policy
 
 error_to_class:
+  required_field_missing: validation_error
   formal_diagnosis_assertion_required: validation_error
   established_structural_diagnosis_source_required: validation_error
   established_nonoperative_management_context_required: validation_error
@@ -38,6 +39,10 @@ error_to_class:
   invalid_context_key: validation_error
   invalid_context_enum_value: validation_error
   invalid_safety_input_flag: validation_error
+
+required_field_error_shape:
+  error_id: required_field_missing
+  metadata: {path: missing_required_path}
 
 resolution_order:
   - collect_validation_errors
