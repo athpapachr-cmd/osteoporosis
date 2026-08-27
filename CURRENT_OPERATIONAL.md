@@ -3,7 +3,7 @@
 > **STATUS:** ACTIVE OPERATIONAL AUTHORITY.
 > **Updated:** 2026-08-27 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Verified base main for this wrist/hand design:** `7ce2b408ce5a940d9839289e5a3deab3fa6defc2`.
+> **Verified main immediately before this operational handoff write:** `52c5bb39bd400eeb95c2e719d6e138c5cc16c03d`; this handoff commit advances `main` once written.
 > **Current major phase:** Personal Clinical Excellence foundation with a bounded Clinic Utilities detour.
 > **Active slice design:** `SLICE_PLAN_CURRENT.md` — CU-1 Physiotherapy Referral v2 clinical/content design.
 > **Supporting detour plan:** `CLINIC_UTILITIES_PLAN.md`.
@@ -11,13 +11,15 @@
 > **Frozen lumbar profile:** `clinic_utilities/physio_profiles/lumbar_v1_1.md`.
 > **Frozen shoulder profile:** `clinic_utilities/physio_profiles/shoulder_v1_1.md`.
 > **Frozen elbow profile:** `clinic_utilities/physio_profiles/elbow_v1_1.md`.
-> **Frozen wrist/hand profile on active docs branch:** `clinic_utilities/physio_profiles/wrist_hand_v1_1.md`.
-> **ACTIVE CANONICAL WRITER/LOCK:** docs-only branch `docs/cu1-wrist-hand-v1-design-2026-08-26` until exact-head review/PR/merge/handoff close.
+> **Frozen wrist/hand profile:** `clinic_utilities/physio_profiles/wrist_hand_v1_1.md`.
+> **WRIST/HAND FREEZE PR:** PR #42 squash-merged as `f6e0a3126a6a93f48c140a7738a3c9d4bbe60563`.
+> **POST-MERGE CANONICAL ALIGNMENT:** `3dda1752f59ea61bdc159d62f23746be41cf6dd3` → `52c5bb39bd400eeb95c2e719d6e138c5cc16c03d` before this handoff write.
+> **ACTIVE CANONICAL WRITER/LOCK:** NONE.
 > **ACTIVE RUNTIME WRITER/LOCK:** NONE in this repository.
 > **RUNTIME IMPLEMENTATION:** NOT AUTHORIZED for CU-1; design only.
 > **PR-1 TRANSCRIPT SLICE:** intentionally paused at `archive/slices/PR1_TRANSCRIPT_INTAKE_V3.md`.
 
-This file is the sole owner of operational NOW for the active branch.
+This file is the sole owner of operational NOW. Do not infer mutation authority from chat history.
 
 ---
 
@@ -45,12 +47,12 @@ cervical_v1_1 = FROZEN
 lumbar_v1_1 = FROZEN
 shoulder_v1_1 = FROZEN
 elbow_v1_1 = FROZEN
-wrist_hand_v1_1 = FROZEN on docs branch pending review/merge
+wrist_hand_v1_1 = FROZEN
 ```
 
 ---
 
-# 3. Wrist / Hand v1.1 — product-owner-approved design
+# 3. Wrist / Hand v1.1 — closed freeze
 
 Frozen default pathways:
 
@@ -101,12 +103,9 @@ No runtime behavior changed.
 # 4. Exact next action
 
 ```text
-1. exact branch-vs-main review of wrist/hand freeze
-2. open docs-only PR if clean
-3. independent exact-head review
-4. merge only if exact head remains clean
-5. clear canonical writer lock and reconcile main
-6. product owner selects next CU-1 region
+1. product owner selects the next remaining CU-1 regional profile
+2. use the same taxonomy/findings/safety/goals/rehab/evidence method
+3. continue CU-1 design only
 ```
 
 ---
@@ -119,7 +118,6 @@ WRITE PR-1 transcript runtime code
 AUTO-PERSIST physiotherapy referrals
 MUTATE RF/Secretary/Calendar/Setmore/Zadarma
 COMMIT identifiable patient data
-START next regional mutation before wrist/hand handoff closes
 CREATE overlapping runtime writers
 ```
 
@@ -134,8 +132,10 @@ cervical = frozen v1.1
 lumbar = frozen v1.1
 shoulder = frozen v1.1
 elbow = frozen v1.1
-wrist/hand = frozen v1.1 on docs branch pending review/merge
-canonical writer = docs/cu1-wrist-hand-v1-design-2026-08-26
+wrist/hand = frozen v1.1
+wrist/hand PR = #42 merged
+canonical writer = none
 runtime writer = none
 runtime implementation = unauthorized
+next action = product owner selects next regional profile
 ```
