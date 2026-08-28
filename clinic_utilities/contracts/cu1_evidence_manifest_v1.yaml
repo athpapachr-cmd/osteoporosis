@@ -1,4 +1,4 @@
-version: cu1_evidence_manifest_v1
+version: cu1_evidence_manifest_v1_1
 status: design_frozen_sharded_registry_manifest
 runtime_authorized: false
 reviewed_on: 2026-08-28
@@ -18,6 +18,10 @@ shards:
     identity_mode: explicit_payload_id
   - shard_id: high_frequency_tranche2
     path: clinic_utilities/contracts/cu1_evidence_tranche2_v1.yaml
+    state: active_design_authority_pending_route_completion
+    identity_mode: map_key_is_canonical_id
+  - shard_id: shoulder_hip_meniscus_tranche3
+    path: clinic_utilities/contracts/cu1_evidence_tranche3_v1.yaml
     state: active_design_authority_pending_route_completion
     identity_mode: map_key_is_canonical_id
 
@@ -63,6 +67,7 @@ clinical_applicability_rules:
   - regional_profile_identity_never_substitutes_for_route_evidence_profile_identity
   - a_midportion_Achilles_claim_cannot_authorize_insertional_Achilles_output
   - a_route_specific_claim_cannot_be_reused_as_generic_MSK_authority
+  - broad_route_container_does_not_authorize_all_internal_conditions_when_source_scope_is_narrower
   - therapist_execution_detail_cannot_auto_render_as_referral_core
   - clinician_ui_only_cannot_auto_render_as_referral_core
 
