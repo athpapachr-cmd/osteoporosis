@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence
+from typing import Any, Dict, Iterable, List, Mapping, Optional
 
 from clinic_utilities.physio_referral_runtime import (
     CU1ContractBundle,
@@ -19,12 +19,7 @@ _MACHINE_ID_RE = re.compile(r"^[a-z0-9]+(?:_[a-z0-9]+)+$")
 
 
 class CU1GreekReferralFormatter:
-    """Natural-language Greek formatter for a validated normalized ReferralDraftV1.
-
-    Validation, route ownership and safety remain owned by CU1Engine. This class
-    only renders already-validated semantic state and must never infer missing
-    diagnoses/findings/restrictions.
-    """
+    """Render a validated normalized ReferralDraftV1 as natural Greek referral prose."""
 
     def __init__(self, bundle: CU1ContractBundle):
         self.bundle = bundle
@@ -39,16 +34,20 @@ class CU1GreekReferralFormatter:
     def format(self, draft: Mapping[str, Any], mode: str) -> str:
         if mode not in {"short", "detailed"}:
             raise CU1ContractError(f"Unsupported CU-1 formatter mode: {mode}")
-        if mode == "short":
-            text = self._format_short(draft)
-        else:
-            text = self._format_detailed(draft)
+        text = self._format_short(draft) if mode == "short" else self._format_detailed(draft)
         self._assert_no_machine_id_leak(text)
         return text.rstrip() + "\n"
 
-    # ------------------------------------------------------------------
-    # Route/problem labels
-    # ------------------------------------------------------------------
+    def contract_route_labels(self) -> Dict[str, Dict[str, str]]:
+        result: Dict[str, Dict[str, str]] = {}
+        for profile_id, profile in (self.bundle.registry.get("profiles") or {}).items():
+            if not isinstance(profile, Mapping):
+                continue
+            routes: Dict[str, str] = {}
+            for route_id in (profile.get("routes") or {}):
+                routes[str(route_id)] = self._route_label(str(profile_id), str(route_id))
+            result[str(profile_id)] = routes
+        return result
 
     def _build_profile_route_labels(self) -> Dict[str, Dict[str, str]]:
         labels: Dict[str, Dict[str, str]] = {}
@@ -59,9 +58,8 @@ class CU1GreekReferralFormatter:
             if not isinstance(spec, Mapping):
                 continue
             source = spec.get("source")
-            if not isinstance(source, str):
-                continue
-            labels[str(profile_id)] = self._extract_route_labels(self.bundle.root / source)
+            if isinstance(source, str):
+                labels[str(profile_id)] = self._extract_route_labels(self.bundle.root / source)
         return labels
 
     def _extract_route_labels(self, profile_path: Path) -> Dict[str, str]:
@@ -70,12 +68,9 @@ class CU1GreekReferralFormatter:
         text = profile_path.read_text(encoding="utf-8")
         labels: Dict[str, str] = {}
 
-        # Most frozen profiles use a compact fenced form:
-        # key: knee_osteoarthritis
-        # display: Οστεοαρθρίτιδα γόνατος
         compact = re.compile(
-            r"(?im)^\s*(?:key|structured\s+key)\s*:\s*([a-z0-9_]+)\s*$"
-            r"(?:(?!^\s*```\s*$).){0,1200}?"
+            r"(?ims)^\s*(?:key|structured\s+key)\s*:\s*([a-z0-9_]+)\s*$"
+            r"(?:(?!^\s*(?:key|structured\s+key)\s*:).){0,1400}?"
             r"^\s*(?:default\s+display|display)\s*:\s*([^\n`]+)\s*$"
         )
         for match in compact.finditer(text):
@@ -83,30 +78,23 @@ class CU1GreekReferralFormatter:
             if label:
                 labels[match.group(1)] = label
 
-        # Some profiles use a prose heading followed by a key code block and a
-        # blockquote display line.
         structured = re.compile(
             r"(?is)(?:Structured\s+key|Structured\s+key:)\s*\n\s*```(?:text)?\s*\n\s*([a-z0-9_]+)\s*\n\s*```"
-            r"(?:(?!\n## ).){0,1200}?"
+            r"(?:(?!\n## ).){0,1400}?"
             r"(?:Default\s+display|Display)\s*:\s*\n\s*>\s*([^\n]+)"
         )
         for match in structured.finditer(text):
             label = _normalize_whitespace(match.group(2))
             if label:
                 labels[match.group(1)] = label
-
         return labels
 
     def _route_label(self, profile_id: str, route_id: str) -> str:
         label = self._profile_route_labels.get(profile_id, {}).get(route_id)
         if not label:
-            # The older runtime parser may have found a label; use it only if it
-            # is already Greek and not a machine-id fallback.
             label = self.bundle.profile_route_labels.get(profile_id, {}).get(route_id)
         if not label or not self._is_greek_clinician_phrase(label):
-            raise CU1ContractError(
-                f"Missing Greek clinician-facing route label for {profile_id}.{route_id}"
-            )
+            raise CU1ContractError(f"Missing Greek clinician-facing route label for {profile_id}.{route_id}")
         return label
 
     def _problem_label(self, problem: Mapping[str, Any], *, include_subtype: bool) -> str:
@@ -123,30 +111,23 @@ class CU1GreekReferralFormatter:
                 label += f" — {subtype_label}"
         return label
 
-    # ------------------------------------------------------------------
-    # Label/selection rendering
-    # ------------------------------------------------------------------
-
     def _required_label(self, section: str, canonical_id: str) -> str:
         value = _deep_get(self.language, f"{section}.{canonical_id}")
         if not isinstance(value, str) or not value.strip():
-            raise CU1ContractError(
-                f"Missing Greek clinician-facing label for {section}.{canonical_id}"
-            )
+            raise CU1ContractError(f"Missing Greek clinician-facing label for {section}.{canonical_id}")
         value = _normalize_whitespace(value)
         if not self._is_greek_clinician_phrase(value):
-            raise CU1ContractError(
-                f"Non-Greek clinician-facing label for {section}.{canonical_id}: {value}"
-            )
+            raise CU1ContractError(f"Non-Greek clinician-facing label for {section}.{canonical_id}: {value}")
         return value
 
     def _optional_label(self, section: str, canonical_id: str) -> Optional[str]:
-        if not canonical_id or canonical_id in {"not_stated", "not_assessed", "not_applicable"}:
+        if not canonical_id or canonical_id in {"not_stated", "not_assessed", "not_applicable", "unknown"}:
             return None
         value = _deep_get(self.language, f"{section}.{canonical_id}")
         if not isinstance(value, str) or not value.strip():
             return None
-        return _normalize_whitespace(value)
+        value = _normalize_whitespace(value)
+        return value if self._is_greek_clinician_phrase(value) else None
 
     def _selection_labels(self, draft: Mapping[str, Any], key: str, language_section: str) -> List[str]:
         values = draft.get(key, [])
@@ -155,9 +136,22 @@ class CU1GreekReferralFormatter:
         rendered: List[str] = []
         for item in values:
             canonical_id = _canonical_id_from_selection(item)
+            if canonical_id:
+                rendered.append(self._required_label(language_section, canonical_id))
+        return rendered
+
+    def _optional_selection_labels(self, draft: Mapping[str, Any], key: str, language_section: str) -> List[str]:
+        values = draft.get(key, [])
+        if not isinstance(values, list):
+            return []
+        rendered: List[str] = []
+        for item in values:
+            canonical_id = _canonical_id_from_selection(item)
             if not canonical_id:
                 continue
-            rendered.append(self._required_label(language_section, canonical_id))
+            label = self._optional_label(language_section, canonical_id)
+            if label:
+                rendered.append(label)
         return rendered
 
     def _restriction_labels(self, draft: Mapping[str, Any], *, detailed: bool) -> List[str]:
@@ -221,40 +215,28 @@ class CU1GreekReferralFormatter:
             rendered.append(text)
         return rendered
 
-    # ------------------------------------------------------------------
-    # Natural prose composition
-    # ------------------------------------------------------------------
-
     def _format_short(self, draft: Mapping[str, Any]) -> str:
         problem = draft.get("primary_problem", {}) if isinstance(draft.get("primary_problem"), Mapping) else {}
         problem_label = self._problem_label(problem, include_subtype=False)
-        sentences: List[str] = [
-            f"Παραπέμπεται για φυσιοθεραπευτική αποκατάσταση με κύριο πρόβλημα: {problem_label}."
-        ]
+        sentences: List[str] = [f"Παραπέμπεται για φυσιοθεραπευτική αποκατάσταση με κύριο πρόβλημα: {problem_label}."]
 
         findings = self._selection_labels(draft, "findings", "findings")
         function = self._selection_labels(draft, "functional_impairments", "functional_impairments")
         if findings and function:
-            sentences.append(
-                f"Η κλινική εικόνα περιλαμβάνει {self._join_greek(findings)}, με λειτουργικό περιορισμό σε {self._join_greek(function)}."
-            )
+            sentences.append(f"Η κλινική εικόνα περιλαμβάνει {self._join_greek(findings)}, με λειτουργικό περιορισμό σε {self._join_greek(function)}.")
         elif findings:
             sentences.append(f"Η κλινική εικόνα περιλαμβάνει {self._join_greek(findings)}.")
         elif function:
             sentences.append(f"Λειτουργικά καταγράφεται {self._join_greek(function)}.")
 
-        restrictions = self._restriction_labels(draft, detailed=False)
-        precautions = self._selection_labels(draft, "precautions", "restrictions")
-        all_limits = restrictions + precautions
-        if all_limits:
-            sentences.append(f"Να τηρηθούν οι εξής περιορισμοί/προφυλάξεις: {self._join_greek(all_limits)}.")
+        limits = self._restriction_labels(draft, detailed=False) + self._optional_selection_labels(draft, "precautions", "precautions")
+        if limits:
+            sentences.append(f"Να τηρηθούν οι εξής περιορισμοί/προφυλάξεις: {self._join_greek(limits)}.")
 
         directions = self._selection_labels(draft, "rehab_directions", "rehab_directions")
         goals = self._selection_labels(draft, "goals", "goals")
         if directions and goals:
-            sentences.append(
-                f"Παρακαλώ για {self._join_greek(directions)}, με στόχο {self._join_greek(goals)}."
-            )
+            sentences.append(f"Παρακαλώ για {self._join_greek(directions)}, με στόχο {self._join_greek(goals)}.")
         elif directions:
             sentences.append(f"Παρακαλώ για {self._join_greek(directions)}.")
         elif goals:
@@ -263,11 +245,9 @@ class CU1GreekReferralFormatter:
         adjuncts = self._adjunct_labels(draft, detailed=False)
         if adjuncts:
             sentences.append(f"Επιπλέον έχει επιλεγεί {self._join_greek(adjuncts)}.")
-
         note = draft.get("clinician_free_text_optional")
         if isinstance(note, str) and note.strip():
             sentences.append(_normalize_whitespace(note).rstrip(".") + ".")
-
         return " ".join(sentences)
 
     def _format_detailed(self, draft: Mapping[str, Any]) -> str:
@@ -275,33 +255,29 @@ class CU1GreekReferralFormatter:
         problem_label = self._problem_label(problem, include_subtype=True)
         sections: List[str] = ["ΠΑΡΑΠΟΜΠΗ ΓΙΑ ΦΥΣΙΟΘΕΡΑΠΕΙΑ"]
 
-        clinical_sentences: List[str] = [
-            f"Παραπέμπεται για φυσιοθεραπευτική αποκατάσταση με κύριο πρόβλημα: {problem_label}."
-        ]
+        clinical: List[str] = [f"Παραπέμπεται για φυσιοθεραπευτική αποκατάσταση με κύριο πρόβλημα: {problem_label}."]
         findings = self._selection_labels(draft, "findings", "findings")
         function = self._selection_labels(draft, "functional_impairments", "functional_impairments")
         if findings:
-            clinical_sentences.append(f"Στην κλινική εικόνα καταγράφονται {self._join_greek(findings)}.")
+            clinical.append(f"Στην κλινική εικόνα καταγράφονται {self._join_greek(findings)}.")
         if function:
-            clinical_sentences.append(f"Λειτουργικά καταγράφεται {self._join_greek(function)}.")
-
+            clinical.append(f"Λειτουργικά καταγράφεται {self._join_greek(function)}.")
         secondary = draft.get("secondary_problems", [])
         if isinstance(secondary, list):
             labels = [self._problem_label(item, include_subtype=True) for item in secondary if isinstance(item, Mapping)]
             if labels:
-                clinical_sentences.append(f"Συνυπάρχει επίσης {self._join_greek(labels)}.")
-
-        sections.append("Κλινική εικόνα\n" + " ".join(clinical_sentences))
+                clinical.append(f"Συνυπάρχει επίσης {self._join_greek(labels)}.")
+        sections.append("Κλινική εικόνα\n" + " ".join(clinical))
 
         restrictions = self._restriction_labels(draft, detailed=True)
-        precautions = self._selection_labels(draft, "precautions", "restrictions")
+        precautions = self._optional_selection_labels(draft, "precautions", "precautions")
         if restrictions or precautions:
-            text = []
+            limit_sentences: List[str] = []
             if restrictions:
-                text.append(f"Ισχύουν οι εξής περιορισμοί: {self._join_greek(restrictions)}.")
+                limit_sentences.append(f"Ισχύουν οι εξής περιορισμοί: {self._join_greek(restrictions)}.")
             if precautions:
-                text.append(f"Προφυλάξεις: {self._join_greek(precautions)}.")
-            sections.append("Περιορισμοί / προφυλάξεις\n" + " ".join(text))
+                limit_sentences.append(f"Προφυλάξεις: {self._join_greek(precautions)}.")
+            sections.append("Περιορισμοί / προφυλάξεις\n" + " ".join(limit_sentences))
 
         goals = self._selection_labels(draft, "goals", "goals")
         directions = self._selection_labels(draft, "rehab_directions", "rehab_directions")
@@ -329,7 +305,6 @@ class CU1GreekReferralFormatter:
             extra.append(f"Καταγεγραμμένη ενέργεια: {disposition_label}.")
         if extra:
             sections.append("Πρόσθετα κλινικά στοιχεία\n" + " ".join(extra))
-
         return "\n\n".join(sections)
 
     def _detailed_context_sentences(self, problem: Mapping[str, Any]) -> List[str]:
@@ -346,7 +321,6 @@ class CU1GreekReferralFormatter:
             value_label = self._context_value_label(value)
             if value_label:
                 rendered.append(f"{key_label}: {value_label}.")
-
         neuro = context.get("neurological_screen")
         if isinstance(neuro, Mapping):
             parts: List[str] = []
@@ -375,11 +349,8 @@ class CU1GreekReferralFormatter:
                 label = self._optional_label(section, value)
                 if label:
                     return label
-            # Explicit clinician-entered/free-text values can be rendered when
-            # they are clearly not canonical snake_case machine identifiers.
             if not _MACHINE_ID_RE.match(value):
                 return _normalize_whitespace(value)
-            return None
         return None
 
     @staticmethod
@@ -395,33 +366,19 @@ class CU1GreekReferralFormatter:
 
     @staticmethod
     def _is_greek_clinician_phrase(value: str) -> bool:
-        # Standard abbreviations/proper names may coexist, but the phrase must
-        # contain Greek text rather than being a raw English machine token.
         return bool(_GREEK_RE.search(value)) and "_" not in value
 
     def _assert_no_machine_id_leak(self, text: str) -> None:
         if "_" in text:
             raise CU1ContractError("Generated CU-1 referral contains an underscore/machine-id leak")
-        # Assert that known selectable canonical ids never appear verbatim even
-        # if they happen not to contain underscores.
-        sections = (
-            "findings",
-            "functional_impairments",
-            "goals",
-            "rehab_directions",
-            "adjuncts",
-            "measurements",
-            "restrictions",
-        )
+        sections = ("findings", "functional_impairments", "goals", "rehab_directions", "adjuncts", "measurements", "restrictions")
         for section in sections:
             mapping = self.language.get(section, {})
             if not isinstance(mapping, Mapping):
                 continue
             for canonical_id in mapping:
                 if canonical_id and str(canonical_id) in text:
-                    raise CU1ContractError(
-                        f"Generated CU-1 referral leaked machine id: {canonical_id}"
-                    )
+                    raise CU1ContractError(f"Generated CU-1 referral leaked machine id: {canonical_id}")
 
 
 __all__ = ["CU1GreekReferralFormatter"]
