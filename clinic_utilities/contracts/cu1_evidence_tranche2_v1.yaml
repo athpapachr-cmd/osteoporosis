@@ -1,0 +1,733 @@
+version: cu1_evidence_tranche2_v1
+status: staged_design_evidence_for_consolidation
+runtime_authorized: false
+reviewed_on: 2026-08-28
+normative_schema: cu1_history_timeline_schema_v1.yaml
+consolidation_target: cu1_evidence_registry_v1.yaml
+
+purpose: >-
+  Evidence curation tranche for high-frequency routine routes after the v1.1 evidence-authority
+  schema freeze. This file is design evidence only and does not independently authorize runtime
+  generation. Before DESIGN-COMPLETE its accepted content must be consolidated into the canonical
+  evidence registry or explicitly incorporated by a reviewed registry manifest.
+
+sources:
+  lateral_ankle_las_cpg_2021:
+    source_type: clinical_practice_guideline
+    title: "Ankle Stability and Movement Coordination Impairments: Lateral Ankle Ligament Sprains Revision 2021"
+    authors_or_organization: Academy of Orthopaedic Physical Therapy / APTA
+    year_or_version: 2021
+    reference: "J Orthop Sports Phys Ther. 2021;51(4):CPG1-CPG80"
+    doi_optional: 10.2519/jospt.2021.0302
+    population_scope_optional: adolescents and adults with acute/postacute lateral ankle sprain or chronic ankle instability
+    reviewed_on: 2026-08-28
+    next_review_due: 2027-02-28
+    freshness_state: current
+    status: active
+    note: APTA states an update is currently in progress; freshness review shortened accordingly.
+
+  plantar_fasciitis_cpg_2023:
+    source_type: clinical_practice_guideline
+    title: "Heel Pain - Plantar Fasciitis: Revision 2023"
+    authors_or_organization: Academy of Orthopaedic Physical Therapy + American Academy of Sports Physical Therapy / APTA
+    year_or_version: 2023
+    reference: "J Orthop Sports Phys Ther. 2023;53(12):CPG1-CPG39"
+    doi_optional: 10.2519/jospt.2023.0303
+    population_scope_optional: non-arthritic heel pain / plantar fasciitis in people 16 years and older
+    reviewed_on: 2026-08-28
+    next_review_due: 2027-08-28
+    freshness_state: current
+    status: active
+
+  rotator_cuff_tendinopathy_cpg_2025:
+    source_type: clinical_practice_guideline
+    title: "Rotator Cuff Tendinopathy Diagnosis, Nonsurgical Medical Care, and Rehabilitation: A Clinical Practice Guideline"
+    authors_or_organization: Desmeules et al.
+    year_or_version: 2025
+    reference: "J Orthop Sports Phys Ther. 2025;55(4):235-274"
+    doi_optional: 10.2519/jospt.2025.13182
+    population_scope_optional: adults with suspected or established rotator cuff tendinopathy; includes calcification and partial-thickness tear; excludes full-thickness tear
+    reviewed_on: 2026-08-28
+    next_review_due: 2027-08-28
+    freshness_state: current
+    status: active
+
+  knee_oa_aaos_cpg_2021:
+    source_type: clinical_practice_guideline
+    title: Management of Osteoarthritis of the Knee (Non-Arthroplasty) Evidence-Based Clinical Practice Guideline - 3rd Edition
+    authors_or_organization: American Academy of Orthopaedic Surgeons
+    year_or_version: 2021
+    reference: AAOS Knee OA CPG 3rd Edition
+    population_scope_optional: adults with symptomatic knee osteoarthritis managed non-operatively
+    reviewed_on: 2026-08-28
+    next_review_due: 2027-08-28
+    freshness_state: current
+    status: active
+
+  knee_hip_oa_eular_2023_update:
+    source_type: guideline
+    title: EULAR recommendations for the non-pharmacological core management of hip and knee osteoarthritis - 2023 update
+    authors_or_organization: EULAR multidisciplinary task force
+    year_or_version: 2023_update_published_2024
+    reference: EULAR non-pharmacological core management of hip and knee OA
+    population_scope_optional: adults with hip or knee osteoarthritis
+    reviewed_on: 2026-08-28
+    next_review_due: 2027-08-28
+    freshness_state: current
+    status: active
+
+  patellofemoral_pain_cpg_2019:
+    source_type: clinical_practice_guideline
+    title: Patellofemoral Pain - Clinical Practice Guidelines
+    authors_or_organization: Academy of Orthopaedic Physical Therapy / APTA
+    year_or_version: 2019
+    reference: "J Orthop Sports Phys Ther. 2019;49(9):CPG1-CPG95"
+    doi_optional: 10.2519/jospt.2019.0302
+    population_scope_optional: adolescents and adults with patellofemoral pain
+    reviewed_on: 2026-08-28
+    next_review_due: 2027-02-28
+    freshness_state: current
+    status: active
+    note: older CPG retained only after current-source check; shortened review interval because age increases supersession risk.
+
+  lss_neurogenic_claudication_cpg_2021:
+    source_type: clinical_practice_guideline
+    title: "Non-Surgical Interventions for Lumbar Spinal Stenosis Leading To Neurogenic Claudication: A Clinical Practice Guideline"
+    authors_or_organization: multidisciplinary guideline panel
+    year_or_version: 2021
+    reference: "J Pain. 2021;22(9):1015-1039"
+    population_scope_optional: adults with lumbar spinal stenosis causing neurogenic claudication
+    reviewed_on: 2026-08-28
+    next_review_due: 2027-02-28
+    freshness_state: current
+    status: active
+
+  carpal_tunnel_aaos_cpg_2024:
+    source_type: clinical_practice_guideline
+    title: Management of Carpal Tunnel Syndrome Evidence-Based Clinical Practice Guideline
+    authors_or_organization: AAOS / ASSH
+    year_or_version: 2024
+    reference: AAOS Management of Carpal Tunnel Syndrome CPG
+    population_scope_optional: adults with complaints attributable to carpal tunnel syndrome
+    reviewed_on: 2026-08-28
+    next_review_due: 2027-08-28
+    freshness_state: current
+    status: active
+
+  de_quervain_nma_2023:
+    source_type: systematic_review
+    title: "Management of de Quervain Tenosynovitis: A Systematic Review and Network Meta-Analysis"
+    authors_or_organization: Challoumas et al.
+    year_or_version: 2023
+    reference: "JAMA Netw Open. 2023;6(10):e2337001"
+    doi_optional: 10.1001/jamanetworkopen.2023.37001
+    population_scope_optional: adults with de Quervain tenosynovitis in randomized trials
+    reviewed_on: 2026-08-28
+    next_review_due: 2027-02-28
+    freshness_state: current
+    status: active
+
+  de_quervain_nma_2025:
+    source_type: systematic_review
+    title: Conservative treatments for De Quervain's tenosynovitis - systematic review and network meta-analysis
+    authors_or_organization: multi-author systematic review
+    year_or_version: 2025
+    reference: PubMed PMID 41298159
+    population_scope_optional: adults with de Quervain tenosynovitis; most included evidence low to very low certainty
+    reviewed_on: 2026-08-28
+    next_review_due: 2027-08-28
+    freshness_state: current
+    status: active
+
+claims:
+  las_external_support_progressive_weight_bearing:
+    applicable_route_evidence_profile_ids: [rep_lateral_ankle_sprain_v1]
+    applicable_route_ids: [lateral_ankle_sprain_rehabilitation]
+    evidence_ids: [lateral_ankle_las_cpg_2021]
+    domain: core_rehabilitation
+    claim_summary: Acute lateral ankle sprain rehabilitation should use external support selected according to severity/healing/protection needs and progressively restore weight bearing.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    strength_optional: A
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-28
+
+  las_structured_exercise:
+    applicable_route_evidence_profile_ids: [rep_lateral_ankle_sprain_v1]
+    applicable_route_ids: [lateral_ankle_sprain_rehabilitation]
+    evidence_ids: [lateral_ankle_las_cpg_2021]
+    domain: core_rehabilitation
+    claim_summary: Structured exercise may include protected active ROM, stretching, neuromuscular training, postural re-education and balance training, individualized to injury severity and identified impairments.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    strength_optional: A
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-28
+
+  las_function_measure_progression:
+    applicable_route_evidence_profile_ids: [rep_lateral_ankle_sprain_v1]
+    applicable_route_ids: [lateral_ankle_sprain_rehabilitation]
+    evidence_ids: [lateral_ankle_las_cpg_2021]
+    domain: progression_criteria
+    claim_summary: Repeated objective activity/participation measures should guide recovery assessment; timed single-limb hopping is included when appropriate and safe after suitable progression.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    strength_optional: B
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-28
+
+  las_return_work_sport_training:
+    applicable_route_evidence_profile_ids: [rep_lateral_ankle_sprain_v1]
+    applicable_route_ids: [lateral_ankle_sprain_rehabilitation]
+    evidence_ids: [lateral_ankle_las_cpg_2021]
+    domain: rehab_phase
+    claim_summary: Occupational/sport-related training and a graded return-to-work or sport plan should address remaining activity and participation restrictions after lateral ankle sprain.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    strength_optional: B
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-28
+
+  plantar_fascia_stretch_core:
+    applicable_route_evidence_profile_ids: [rep_plantar_heel_pain_v1]
+    applicable_route_ids: [plantar_heel_pain_plantar_fasciitis]
+    evidence_ids: [plantar_fasciitis_cpg_2023]
+    domain: core_rehabilitation
+    claim_summary: Plantar-fascia-specific and gastrocnemius/soleus stretching are recommended exercise components for plantar heel pain/plantar fasciitis.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    strength_optional: A
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-28
+
+  plantar_foot_ankle_resistance:
+    applicable_route_evidence_profile_ids: [rep_plantar_heel_pain_v1]
+    applicable_route_ids: [plantar_heel_pain_plantar_fasciitis]
+    evidence_ids: [plantar_fasciitis_cpg_2023]
+    domain: core_rehabilitation
+    claim_summary: Resistance training for foot and ankle musculature may be included in rehabilitation.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    strength_optional: B
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-28
+
+  plantar_taping_short_term_adjunct:
+    applicable_route_evidence_profile_ids: [rep_plantar_heel_pain_v1]
+    applicable_route_ids: [plantar_heel_pain_plantar_fasciitis]
+    evidence_ids: [plantar_fasciitis_cpg_2023]
+    domain: adjunct
+    claim_summary: Rigid or elastic foot taping can be used with other physiotherapy treatment for short-term improvement in pain and function.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    strength_optional: A
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-28
+
+  plantar_orthosis_not_standalone:
+    applicable_route_evidence_profile_ids: [rep_plantar_heel_pain_v1]
+    applicable_route_ids: [plantar_heel_pain_plantar_fasciitis]
+    evidence_ids: [plantar_fasciitis_cpg_2023]
+    domain: adjunct
+    claim_summary: Foot orthoses should not be represented as isolated treatment; they may be combined with other treatment when selected.
+    recommendation_direction: consider
+    output_scope: clinician_ui_only
+    strength_optional: B_and_C
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-28
+
+  plantar_night_splint_execution_detail:
+    applicable_route_evidence_profile_ids: [rep_plantar_heel_pain_v1]
+    applicable_route_ids: [plantar_heel_pain_plantar_fasciitis]
+    evidence_ids: [plantar_fasciitis_cpg_2023]
+    domain: execution_detail
+    claim_summary: Night splint treatment is recommended for persistent first-step morning pain; the CPG specifies a 1-3 month program.
+    recommendation_direction: recommend
+    output_scope: therapist_execution_detail
+    strength_optional: A
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-28
+
+  rc_patient_centered_education:
+    applicable_route_evidence_profile_ids: [rep_rotator_cuff_related_pain_v1]
+    applicable_route_ids: [rotator_cuff_related_shoulder_pain]
+    evidence_ids: [rotator_cuff_tendinopathy_cpg_2025]
+    domain: core_rehabilitation
+    claim_summary: Provide individualized education about the condition, pain-management options, activity modification and self-management while considering goals, beliefs and psychosocial context.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    strength_optional: C
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-28
+
+  rc_active_rehabilitation_core:
+    applicable_route_evidence_profile_ids: [rep_rotator_cuff_related_pain_v1]
+    applicable_route_ids: [rotator_cuff_related_shoulder_pain]
+    evidence_ids: [rotator_cuff_tendinopathy_cpg_2025]
+    domain: core_rehabilitation
+    claim_summary: An active rehabilitation program including motor-control and/or resistance exercise with individualized loads is recommended as initial treatment.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    strength_optional: A
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-28
+
+  rc_return_sport_capacity_load_tolerance:
+    applicable_route_evidence_profile_ids: [rep_rotator_cuff_related_pain_v1]
+    applicable_route_ids: [rotator_cuff_related_shoulder_pain]
+    evidence_ids: [rotator_cuff_tendinopathy_cpg_2025]
+    domain: progression_criteria
+    claim_summary: For athletes, rotator-cuff and associated shoulder capacity/load tolerance plus patient-rated and functional performance measures may guide the return-to-sport continuum.
+    recommendation_direction: may_consider
+    output_scope: referral_core
+    strength_optional: F
+    certainty_optional: not_graded
+    applicability_conditions: [athletic_return_to_sport_goal]
+    reviewed_on: 2026-08-28
+
+  rc_persistent_severe_reassessment:
+    applicable_route_evidence_profile_ids: [rep_rotator_cuff_related_pain_v1]
+    applicable_route_ids: [rotator_cuff_related_shoulder_pain]
+    evidence_ids: [rotator_cuff_tendinopathy_cpg_2025]
+    domain: safety
+    claim_summary: Severe persistent pain and/or disability despite an adequate nonsurgical-care trial warrants specialist reassessment; the CPG specifies a maximum 12-week adequate-care threshold for this referral recommendation.
+    recommendation_direction: recommend
+    output_scope: clinician_ui_only
+    strength_optional: not_copied
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-28
+
+  knee_oa_exercise_core:
+    applicable_route_evidence_profile_ids: [rep_knee_oa_v1]
+    applicable_route_ids: [knee_osteoarthritis]
+    evidence_ids: [knee_oa_aaos_cpg_2021, knee_hip_oa_eular_2023_update]
+    domain: core_rehabilitation
+    claim_summary: Exercise is core nonpharmacological management for knee OA; supervised, unsupervised and aquatic exercise are preferable to no exercise for pain and function.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    strength_optional: strong_AAOS
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-28
+
+  knee_oa_self_management_education:
+    applicable_route_evidence_profile_ids: [rep_knee_oa_v1]
+    applicable_route_ids: [knee_osteoarthritis]
+    evidence_ids: [knee_oa_aaos_cpg_2021, knee_hip_oa_eular_2023_update]
+    domain: core_rehabilitation
+    claim_summary: Self-management and patient education should accompany exercise-based care.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    strength_optional: strong_AAOS
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-28
+
+  knee_oa_neuromuscular_adjunct:
+    applicable_route_evidence_profile_ids: [rep_knee_oa_v1]
+    applicable_route_ids: [knee_osteoarthritis]
+    evidence_ids: [knee_oa_aaos_cpg_2021]
+    domain: adjunct
+    claim_summary: Neuromuscular training involving balance, agility or coordination may be combined with traditional exercise to improve performance-based function and walking speed.
+    recommendation_direction: consider
+    output_scope: referral_core
+    strength_optional: moderate_AAOS
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-28
+
+  pfp_combined_hip_knee_exercise:
+    applicable_route_evidence_profile_ids: [rep_patellofemoral_pain_v1]
+    applicable_route_ids: [patellofemoral_pain]
+    evidence_ids: [patellofemoral_pain_cpg_2019]
+    domain: core_rehabilitation
+    claim_summary: Combined hip- and knee-targeted exercise is recommended to reduce pain and improve patient-reported and functional outcomes; early emphasis on hip-targeted exercise may be used, but combined treatment is preferred overall.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    strength_optional: A
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-28
+
+  pfp_load_management_education:
+    applicable_route_evidence_profile_ids: [rep_patellofemoral_pain_v1]
+    applicable_route_ids: [patellofemoral_pain]
+    evidence_ids: [patellofemoral_pain_cpg_2019]
+    domain: core_rehabilitation
+    claim_summary: Education may address load management, adherence to active treatment, relevant biomechanics, weight management where appropriate and kinesiophobia.
+    recommendation_direction: may_consider
+    output_scope: referral_core
+    strength_optional: F
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-28
+
+  pfp_running_gait_retraining:
+    applicable_route_evidence_profile_ids: [rep_patellofemoral_pain_v1]
+    applicable_route_ids: [patellofemoral_pain]
+    evidence_ids: [patellofemoral_pain_cpg_2019]
+    domain: adjunct
+    claim_summary: For runners, gait retraining may be used when clinically applicable.
+    recommendation_direction: may_consider
+    output_scope: referral_core
+    strength_optional: C
+    certainty_optional: not_graded
+    applicability_conditions: [runner_with_patellofemoral_pain]
+    reviewed_on: 2026-08-28
+
+  lss_multimodal_nonpharmacological_care:
+    applicable_route_evidence_profile_ids: [rep_lumbar_stenosis_claudication_v1]
+    applicable_route_ids: [lumbar_spinal_stenosis_neurogenic_claudication]
+    evidence_ids: [lss_neurogenic_claudication_cpg_2021]
+    domain: core_rehabilitation
+    claim_summary: For lumbar spinal stenosis causing neurogenic claudication, initial nonpharmacological multimodal care may combine education/advice/lifestyle or behavioral strategies with home exercise, manual therapy and/or rehabilitation.
+    recommendation_direction: consider
+    output_scope: referral_core
+    strength_optional: conditional_weak
+    certainty_optional: moderate
+    reviewed_on: 2026-08-28
+
+  lss_no_false_strong_recommendation:
+    applicable_route_evidence_profile_ids: [rep_lumbar_stenosis_claudication_v1]
+    applicable_route_ids: [lumbar_spinal_stenosis_neurogenic_claudication]
+    evidence_ids: [lss_neurogenic_claudication_cpg_2021]
+    domain: core_rehabilitation
+    claim_summary: All overarching nonsurgical CPG recommendations are conditional/weak and must not be rendered as strong universal prescriptions.
+    recommendation_direction: context_only
+    output_scope: clinician_ui_only
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-28
+
+  cts_long_term_injection_limit:
+    applicable_route_evidence_profile_ids: [rep_carpal_tunnel_v1]
+    applicable_route_ids: [median_neuropathy_at_wrist_carpal_tunnel]
+    evidence_ids: [carpal_tunnel_aaos_cpg_2024]
+    domain: adjunct
+    claim_summary: Corticosteroid injection does not provide long-term CTS improvement and should not be represented as a durable disease-modifying rehabilitation strategy.
+    recommendation_direction: context_only
+    output_scope: clinician_ui_only
+    strength_optional: strong_AAOS
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-28
+
+  cts_rehab_sequence_gap:
+    applicable_route_evidence_profile_ids: [rep_carpal_tunnel_v1]
+    applicable_route_ids: [median_neuropathy_at_wrist_carpal_tunnel]
+    evidence_ids: [carpal_tunnel_aaos_cpg_2024]
+    domain: core_rehabilitation
+    claim_summary: The 2024 AAOS guideline is current medical-treatment authority but does not by itself establish the exact therapist-facing criteria-based rehabilitation sequence required by CU-1.
+    recommendation_direction: insufficient_evidence
+    output_scope: clinician_ui_only
+    certainty_optional: not_applicable
+    reviewed_on: 2026-08-28
+
+  de_quervain_injection_spica_first_line_evidence:
+    applicable_route_evidence_profile_ids: [rep_de_quervain_v1]
+    applicable_route_ids: [de_quervain_first_dorsal_compartment_disorder]
+    evidence_ids: [de_quervain_nma_2023, de_quervain_nma_2025]
+    domain: adjunct
+    claim_summary: Comparative conservative evidence favors corticosteroid injection, often combined with thumb-spica immobilization; benefits of added immobilization are modest and newer evidence remains low certainty.
+    recommendation_direction: consider
+    output_scope: clinician_ui_only
+    certainty_optional: low
+    reviewed_on: 2026-08-28
+
+  de_quervain_active_rehab_gap:
+    applicable_route_evidence_profile_ids: [rep_de_quervain_v1]
+    applicable_route_ids: [de_quervain_first_dorsal_compartment_disorder]
+    evidence_ids: [de_quervain_nma_2025]
+    domain: core_rehabilitation
+    claim_summary: Current comparative evidence does not establish a sufficiently validated active progressive-loading sequence for De Quervain rehabilitation; active loading and education require further high-quality study.
+    recommendation_direction: insufficient_evidence
+    output_scope: clinician_ui_only
+    certainty_optional: low
+    reviewed_on: 2026-08-28
+
+route_history_prompts:
+  las_weight_bearing_ability:
+    applicable_route_ids: [lateral_ankle_sprain_rehabilitation]
+    label_el: Ικανότητα φόρτισης / βάδισης μετά την κάκωση
+    response_type: text
+    requiredness: optional
+    evidence_claim_ids_optional: [las_external_support_progressive_weight_bearing]
+  las_recurrent_sprain:
+    applicable_route_ids: [lateral_ankle_sprain_rehabilitation]
+    label_el: Πρώτο ή υποτροπιάζον διάστρεμμα
+    response_type: canonical_enum
+    enum_values_optional: [first_time, recurrent, not_stated]
+    requiredness: optional
+  plantar_first_step_pain:
+    applicable_route_ids: [plantar_heel_pain_plantar_fasciitis]
+    label_el: Πόνος στα πρώτα βήματα το πρωί ή μετά από ανάπαυση
+    response_type: boolean_tristate
+    requiredness: optional
+  rc_work_sport_load:
+    applicable_route_ids: [rotator_cuff_related_shoulder_pain]
+    label_el: Εργασιακές / αθλητικές απαιτήσεις ώμου και overhead φόρτιση
+    response_type: text
+    requiredness: optional
+  rc_prior_treatment_response:
+    applicable_route_ids: [rotator_cuff_related_shoulder_pain]
+    label_el: Προηγούμενη θεραπεία και ανταπόκριση
+    response_type: text
+    requiredness: optional
+  knee_oa_priority_activity:
+    applicable_route_ids: [knee_osteoarthritis]
+    label_el: Κύρια δραστηριότητα που θέλει να βελτιώσει ο ασθενής
+    response_type: text
+    requiredness: optional
+  pfp_load_aggravators:
+    applicable_route_ids: [patellofemoral_pain]
+    label_el: Επιβάρυνση με κάθισμα, σκάλες, squat, τρέξιμο ή άλματα
+    response_type: text
+    requiredness: optional
+  lss_walking_standing_tolerance:
+    applicable_route_ids: [lumbar_spinal_stenosis_neurogenic_claudication]
+    label_el: Περιορισμός βάδισης / ορθοστασίας και ανακούφιση με κάμψη ή καθιστή θέση
+    response_type: text
+    requiredness: optional
+  cts_nocturnal_symptoms:
+    applicable_route_ids: [median_neuropathy_at_wrist_carpal_tunnel]
+    label_el: Νυχτερινά συμπτώματα / αφύπνιση από παραισθησίες
+    response_type: boolean_tristate
+    requiredness: optional
+  de_quervain_load_context:
+    applicable_route_ids: [de_quervain_first_dorsal_compartment_disorder]
+    label_el: Επαναλαμβανόμενη φόρτιση αντίχειρα / καρπού και λειτουργικός περιορισμός
+    response_type: text
+    requiredness: optional
+
+route_evidence_profiles:
+  rep_lateral_ankle_sprain_v1:
+    region_profile_id: ankle_foot
+    route_id: lateral_ankle_sprain_rehabilitation
+    primary_source_ids: [lateral_ankle_las_cpg_2021]
+    rehabilitation_sequence_id: seq_lateral_ankle_sprain_v1
+    evidence_gaps: [no_universal_numeric_return_to_sport_threshold]
+    last_reviewed_on: 2026-08-28
+    next_review_due: 2027-02-28
+    freshness_state: current
+
+  rep_plantar_heel_pain_v1:
+    region_profile_id: ankle_foot
+    route_id: plantar_heel_pain_plantar_fasciitis
+    primary_source_ids: [plantar_fasciitis_cpg_2023]
+    rehabilitation_sequence_id: seq_plantar_heel_pain_v1
+    evidence_gaps: [CPG_does_not_define_required_multi_phase_transition_thresholds]
+    last_reviewed_on: 2026-08-28
+    next_review_due: 2027-08-28
+    freshness_state: current
+
+  rep_rotator_cuff_related_pain_v1:
+    region_profile_id: shoulder
+    route_id: rotator_cuff_related_shoulder_pain
+    applicability_conditions_optional: [suspected_or_established_rotator_cuff_tendinopathy_scope]
+    primary_source_ids: [rotator_cuff_tendinopathy_cpg_2025]
+    rehabilitation_sequence_id: seq_rotator_cuff_related_pain_v1
+    evidence_gaps: [full_thickness_rotator_cuff_tear_is_excluded_and_requires_separate_profile]
+    last_reviewed_on: 2026-08-28
+    next_review_due: 2027-08-28
+    freshness_state: current
+
+  rep_knee_oa_v1:
+    region_profile_id: knee
+    route_id: knee_osteoarthritis
+    primary_source_ids: [knee_oa_aaos_cpg_2021, knee_hip_oa_eular_2023_update]
+    rehabilitation_sequence_id: seq_knee_oa_v1
+    evidence_gaps: [no_universal_multi_phase_progression_thresholds]
+    last_reviewed_on: 2026-08-28
+    next_review_due: 2027-08-28
+    freshness_state: current
+
+  rep_patellofemoral_pain_v1:
+    region_profile_id: knee
+    route_id: patellofemoral_pain
+    primary_source_ids: [patellofemoral_pain_cpg_2019]
+    rehabilitation_sequence_id: seq_patellofemoral_pain_v1
+    evidence_gaps: [optimal_dose_and_exact_phase_transition_thresholds_not_defined]
+    last_reviewed_on: 2026-08-28
+    next_review_due: 2027-02-28
+    freshness_state: current
+
+  rep_lumbar_stenosis_claudication_v1:
+    region_profile_id: lumbar
+    route_id: lumbar_spinal_stenosis_neurogenic_claudication
+    primary_source_ids: [lss_neurogenic_claudication_cpg_2021]
+    rehabilitation_sequence_id: seq_lumbar_stenosis_claudication_v1
+    evidence_gaps: [all_overarching_recommendations_are_conditional_and_no_universal_progression_thresholds]
+    last_reviewed_on: 2026-08-28
+    next_review_due: 2027-02-28
+    freshness_state: current
+
+  rep_carpal_tunnel_v1:
+    region_profile_id: wrist_hand
+    route_id: median_neuropathy_at_wrist_carpal_tunnel
+    primary_source_ids: [carpal_tunnel_aaos_cpg_2024]
+    rehabilitation_sequence_id: null
+    evidence_gaps: [exact_rehabilitation_sequence_requires_separate_current_rehab_specific_authority]
+    last_reviewed_on: 2026-08-28
+    next_review_due: 2027-08-28
+    freshness_state: current
+
+  rep_de_quervain_v1:
+    region_profile_id: wrist_hand
+    route_id: de_quervain_first_dorsal_compartment_disorder
+    primary_source_ids: [de_quervain_nma_2023, de_quervain_nma_2025]
+    rehabilitation_sequence_id: null
+    evidence_gaps: [no_definitive_current_rehabilitation_CPG, active_progressive_loading_sequence_not_established]
+    last_reviewed_on: 2026-08-28
+    next_review_due: 2027-02-28
+    freshness_state: current
+
+rehabilitation_sequences:
+  seq_lateral_ankle_sprain_v1:
+    route_id: lateral_ankle_sprain_rehabilitation
+    route_evidence_profile_id: rep_lateral_ankle_sprain_v1
+    status: ready_for_exact_review
+    phases:
+      - phase_id: las_protection_optimal_loading
+        order: 1
+        clinical_objective: restore safe supported weight bearing, pain-free mobility and early neuromuscular control according to injury severity and healing status
+        objective_authority: {authority_type: evidence_claim, evidence_claim_ids: [las_external_support_progressive_weight_bearing, las_structured_exercise]}
+        intervention_directions:
+          - {intervention_direction_id: las_supported_progressive_weight_bearing, statement: progressively restore weight bearing with external support selected to severity and protection needs, authority: {authority_type: evidence_claim, evidence_claim_ids: [las_external_support_progressive_weight_bearing]}}
+          - {intervention_direction_id: las_structured_therapeutic_exercise, statement: use protected ROM plus impairment-specific neuromuscular and balance exercise, authority: {authority_type: evidence_claim, evidence_claim_ids: [las_structured_exercise]}}
+        progression_criteria:
+          - {criterion_id: las_ready_for_higher_function_measurement, criterion_kind: progression, statement: advance functional loading when activity measures can be performed safely and objective functional recovery can be reassessed, authority: {authority_type: evidence_claim, evidence_claim_ids: [las_function_measure_progression]}}
+        precautions_or_do_not_progress_criteria: []
+        strength_optional: A
+        certainty_optional: not_graded
+        required_for_route: true
+      - phase_id: las_function_work_sport_return
+        order: 2
+        clinical_objective: restore activity and participation demands for work or sport while monitoring objective functional recovery
+        objective_authority: {authority_type: evidence_claim, evidence_claim_ids: [las_return_work_sport_training, las_function_measure_progression]}
+        intervention_directions:
+          - {intervention_direction_id: las_work_sport_specific_training, statement: use occupational or sport-related training matched to residual participation restrictions, authority: {authority_type: evidence_claim, evidence_claim_ids: [las_return_work_sport_training]}}
+        progression_criteria:
+          - {criterion_id: las_functional_measures_support_progression, criterion_kind: progression, statement: base further return progression on repeated objective activity/participation measures and appropriate functional tests rather than elapsed time alone, authority: {authority_type: evidence_claim, evidence_claim_ids: [las_function_measure_progression]}}
+        precautions_or_do_not_progress_criteria: []
+        strength_optional: B
+        certainty_optional: not_graded
+        required_for_route: true
+
+  seq_plantar_heel_pain_v1:
+    route_id: plantar_heel_pain_plantar_fasciitis
+    route_evidence_profile_id: rep_plantar_heel_pain_v1
+    status: evidence_bounded_single_phase_pending_progression_semantics
+    phases:
+      - phase_id: plantar_active_multimodal_rehabilitation
+        order: 1
+        clinical_objective: reduce pain and improve standing/walking function through active and impairment-specific plantar-heel rehabilitation
+        objective_authority: {authority_type: evidence_claim, evidence_claim_ids: [plantar_fascia_stretch_core, plantar_foot_ankle_resistance]}
+        intervention_directions:
+          - {intervention_direction_id: plantar_specific_stretching, statement: use plantar-fascia-specific and calf stretching as clinically indicated, authority: {authority_type: evidence_claim, evidence_claim_ids: [plantar_fascia_stretch_core]}}
+          - {intervention_direction_id: plantar_foot_ankle_resistance, statement: include foot/ankle resistance exercise, authority: {authority_type: evidence_claim, evidence_claim_ids: [plantar_foot_ankle_resistance]}}
+          - {intervention_direction_id: plantar_taping_optional, statement: taping may be used as a short-term adjunct with active care, authority: {authority_type: evidence_claim, evidence_claim_ids: [plantar_taping_short_term_adjunct]}}
+        progression_criteria: []
+        precautions_or_do_not_progress_criteria: []
+        strength_optional: null
+        certainty_optional: not_graded
+        required_for_route: true
+    missing_before_freeze: [evidence_supported_phase_transition_or_explicit_one_phase_completion_rule]
+
+  seq_rotator_cuff_related_pain_v1:
+    route_id: rotator_cuff_related_shoulder_pain
+    route_evidence_profile_id: rep_rotator_cuff_related_pain_v1
+    status: ready_for_exact_review
+    phases:
+      - phase_id: rc_active_rehabilitation
+        order: 1
+        clinical_objective: reduce pain/disability and restore shoulder load tolerance through individualized active rehabilitation and self-management
+        objective_authority: {authority_type: evidence_claim, evidence_claim_ids: [rc_active_rehabilitation_core, rc_patient_centered_education]}
+        intervention_directions:
+          - {intervention_direction_id: rc_motor_control_resistance_rehab, statement: use an individualized active program that may include motor-control and/or resistance exercise with appropriate loads, authority: {authority_type: evidence_claim, evidence_claim_ids: [rc_active_rehabilitation_core]}}
+          - {intervention_direction_id: rc_education_self_management, statement: provide individualized education, activity modification and self-management support, authority: {authority_type: evidence_claim, evidence_claim_ids: [rc_patient_centered_education]}}
+        progression_criteria: []
+        precautions_or_do_not_progress_criteria: []
+        strength_optional: A
+        certainty_optional: not_graded
+        required_for_route: true
+      - phase_id: rc_return_to_sport_when_applicable
+        order: 2
+        clinical_objective: restore sport-specific shoulder capacity and load tolerance when return to sport is a patient goal
+        objective_authority: {authority_type: evidence_claim, evidence_claim_ids: [rc_return_sport_capacity_load_tolerance]}
+        intervention_directions: []
+        progression_criteria:
+          - {criterion_id: rc_rts_capacity_and_function_measures, criterion_kind: progression, statement: guide return using rotator-cuff/shoulder capacity and load tolerance together with patient-rated and functional performance measures, authority: {authority_type: evidence_claim, evidence_claim_ids: [rc_return_sport_capacity_load_tolerance]}}
+        precautions_or_do_not_progress_criteria: []
+        strength_optional: F
+        certainty_optional: not_graded
+        required_for_route: false
+        applicability_conditions_optional: [athletic_return_to_sport_goal]
+
+  seq_knee_oa_v1:
+    route_id: knee_osteoarthritis
+    route_evidence_profile_id: rep_knee_oa_v1
+    status: evidence_bounded_single_phase_pending_progression_semantics
+    phases:
+      - phase_id: knee_oa_active_self_management
+        order: 1
+        clinical_objective: improve pain and function through individualized exercise, education and self-management
+        objective_authority: {authority_type: evidence_claim, evidence_claim_ids: [knee_oa_exercise_core, knee_oa_self_management_education]}
+        intervention_directions:
+          - {intervention_direction_id: knee_oa_exercise, statement: use supervised, unsupervised and/or aquatic exercise according to individual needs and access, authority: {authority_type: evidence_claim, evidence_claim_ids: [knee_oa_exercise_core]}}
+          - {intervention_direction_id: knee_oa_education_self_management, statement: integrate patient education and self-management support, authority: {authority_type: evidence_claim, evidence_claim_ids: [knee_oa_self_management_education]}}
+          - {intervention_direction_id: knee_oa_neuromuscular_when_relevant, statement: neuromuscular balance/agility/coordination work may supplement traditional exercise when functional deficits warrant it, authority: {authority_type: evidence_claim, evidence_claim_ids: [knee_oa_neuromuscular_adjunct]}}
+        progression_criteria: []
+        precautions_or_do_not_progress_criteria: []
+        strength_optional: strong_AAOS
+        certainty_optional: not_graded
+        required_for_route: true
+    missing_before_freeze: [evidence_supported_phase_transition_or_explicit_one_phase_completion_rule]
+
+  seq_patellofemoral_pain_v1:
+    route_id: patellofemoral_pain
+    route_evidence_profile_id: rep_patellofemoral_pain_v1
+    status: sequence_incomplete_exact_transition_criteria
+    phases:
+      - phase_id: pfp_combined_exercise_core
+        order: 1
+        clinical_objective: reduce patellofemoral pain and improve function using combined hip- and knee-targeted exercise with load-management education
+        objective_authority: {authority_type: evidence_claim, evidence_claim_ids: [pfp_combined_hip_knee_exercise, pfp_load_management_education]}
+        intervention_directions:
+          - {intervention_direction_id: pfp_hip_knee_exercise, statement: use combined posterolateral-hip and knee-targeted exercise; early hip emphasis may be considered while retaining combined rehabilitation as the overall strategy, authority: {authority_type: evidence_claim, evidence_claim_ids: [pfp_combined_hip_knee_exercise]}}
+          - {intervention_direction_id: pfp_load_management, statement: include individualized load-management and active-treatment adherence education, authority: {authority_type: evidence_claim, evidence_claim_ids: [pfp_load_management_education]}}
+        progression_criteria: []
+        precautions_or_do_not_progress_criteria: []
+        strength_optional: A
+        certainty_optional: not_graded
+        required_for_route: true
+      - phase_id: pfp_running_specific_when_applicable
+        order: 2
+        clinical_objective: address running-specific contributors when running is a relevant patient goal
+        objective_authority: {authority_type: evidence_claim, evidence_claim_ids: [pfp_running_gait_retraining]}
+        intervention_directions:
+          - {intervention_direction_id: pfp_running_gait_retraining, statement: gait retraining may be used for runners when clinically applicable, authority: {authority_type: evidence_claim, evidence_claim_ids: [pfp_running_gait_retraining]}}
+        progression_criteria: []
+        precautions_or_do_not_progress_criteria: []
+        strength_optional: C
+        certainty_optional: not_graded
+        required_for_route: false
+        applicability_conditions_optional: [runner_with_patellofemoral_pain]
+    missing_before_freeze: [evidence_linked_transition_criterion_to_running_specific_phase]
+
+  seq_lumbar_stenosis_claudication_v1:
+    route_id: lumbar_spinal_stenosis_neurogenic_claudication
+    route_evidence_profile_id: rep_lumbar_stenosis_claudication_v1
+    status: evidence_bounded_single_phase_pending_progression_semantics
+    phases:
+      - phase_id: lss_multimodal_conservative_rehab
+        order: 1
+        clinical_objective: improve walking/function using individualized multimodal nonpharmacological care while preserving conditional evidence language
+        objective_authority: {authority_type: evidence_claim, evidence_claim_ids: [lss_multimodal_nonpharmacological_care, lss_no_false_strong_recommendation]}
+        intervention_directions:
+          - {intervention_direction_id: lss_multimodal_rehab, statement: consider education/advice and rehabilitation combining exercise with manual therapy and/or behavioral/lifestyle strategies according to presentation, authority: {authority_type: evidence_claim, evidence_claim_ids: [lss_multimodal_nonpharmacological_care]}}
+        progression_criteria: []
+        precautions_or_do_not_progress_criteria: []
+        strength_optional: conditional_weak
+        certainty_optional: moderate
+        required_for_route: true
+    missing_before_freeze: [evidence_supported_progression_criteria, explicit_neurological_escalation_claims_from_route_specific_authority]
+
+coverage_effect:
+  route_profiles_staged: 8
+  sequences_staged: 6
+  explicit_blocked_sequence_profiles: [rep_carpal_tunnel_v1, rep_de_quervain_v1]
+  routes_not_yet_curated: many
+  runtime_authorized: false
