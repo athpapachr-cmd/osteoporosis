@@ -3,14 +3,13 @@
 > **STATUS:** ACTIVE OPERATIONAL AUTHORITY.
 > **Updated:** 2026-08-28 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Verified maintenance base main:** `d1716f8ea889a9369367c3bb18e469e9bbfef9f0`.
-> **Prior CU-1 runtime implementation:** PR #56 squash-merged as `c1da07f581cf8ccf1159d18bb63c23b674cbe9bd`.
-> **Prior CU-1 technical smoke:** authenticated product-owner browser smoke passed load/validate/generate/copy/print/no-persistence checks.
-> **New product-quality defect:** generated referral prose is machine-like, contains English/machine-derived wording, and Short vs Detailed are insufficiently differentiated.
-> **Current major phase:** bounded CU-1 formatter-quality maintenance.
-> **CU-1 status:** REOPENED FOR FORMATTER QUALITY CORRECTION — prior technical smoke remains valid but clinician-facing prose acceptance failed.
-> **ACTIVE CANONICAL WRITER/LOCK:** `fix/cu1-greek-human-referral-formatting-2026-08-28`.
-> **ACTIVE RUNTIME WRITER/LOCK:** `fix/cu1-greek-human-referral-formatting-2026-08-28`.
+> **Verified current main:** `58f41b5b29ee61280f1557df480989c5830465ba`.
+> **Prior CU-1 formatter-quality fix:** PR #61 squash-merged as `58f41b5b29ee61280f1557df480989c5830465ba`.
+> **New product-quality defects:** routine referral generation can be blocked by avoidable field friction, and the form exposes global unrelated option catalogs instead of dynamically relevant controls.
+> **Current major phase:** bounded CU-1 dynamic-form / generation-friction maintenance.
+> **CU-1 status:** REOPENED FOR UX/VALIDATION-PRESENTATION CORRECTION.
+> **ACTIVE CANONICAL WRITER/LOCK:** `fix/cu1-dynamic-relevant-fields-2026-08-28`.
+> **ACTIVE RUNTIME WRITER/LOCK:** `fix/cu1-dynamic-relevant-fields-2026-08-28`.
 > **CU-2:** NOT AUTHORIZED.
 > **PR-1 Transcript Intake:** intentionally paused at `archive/slices/PR1_TRANSCRIPT_INTAKE_V3.md`.
 
@@ -18,26 +17,16 @@
 
 # 1. Defect statement
 
-The deployed v1 formatter passed technical end-to-end smoke but failed clinician-facing quality acceptance.
-
-Observed product defects reported by the product owner:
+Product-owner testing exposed two clinically meaningful usability defects:
 
 ```text
-1. referral prose does not read like text a clinician would naturally write
-2. generated content contains English / machine-derived wording instead of Greek clinician-facing prose
-3. Short and Detailed outputs do not differ meaningfully enough
+1. routine generation can fail because the UI leaves avoidable contract fields unresolved instead of choosing a safe/default presentation path or explaining the one truly required field in context
+2. findings/functions/goals/rehab/adjuncts/restrictions/safety controls are rendered from global catalogs, so unrelated options appear for the selected region/pathway
 ```
 
-Root cause identified in runtime:
+Example: selecting Elbow must not expose walking/stair/weight-bearing/cervical-only controls.
 
-```text
-selected machine IDs
-→ _humanize_id()
-→ underscore replacement / English token exposure
-→ section-style serialization rather than natural referral composition
-```
-
-This is a clinically meaningful usability defect because the utility's purpose is a ready-to-copy referral, not a structured debug rendering.
+This is an execution/workflow defect. It does not by itself reopen the frozen clinical taxonomy.
 
 ---
 
@@ -46,70 +35,72 @@ This is a clinically meaningful usability defect because the utility's purpose i
 Authorized changes:
 
 ```text
-CU1 formatter language/prose contract amendment
-Greek clinician-facing phrase catalog
-ShortReferralFormatter prose composition
-DetailedReferralFormatter prose composition
-formatter-specific tests and synthetic output fixtures
-UI labels only if required to prevent machine-English exposure
+CU-1 browser interaction model
+contract-driven UI option scoping / progressive disclosure
+auto-selection of the safest allowed wording mode when this does not create a diagnosis assertion
+contextual display of route-required structural/postoperative fields
+routine-generation friction reduction without weakening genuine safety gates
+human-readable inline validation guidance
+focused synthetic UX/contract tests
 canonical/changelog reconciliation after verified fix
 ```
 
 Explicitly out of scope:
 
 ```text
-clinical taxonomy changes
-route ownership/precedence changes
-new diagnoses/findings/goals/adjuncts
-safety-rule changes
-route validation changes
-persistence/patient-registry linkage
+new diagnoses or clinical pathways
+new evidence-sensitive rehabilitation recommendations
+silent inference of diagnosis/findings/normal examination
+removal of genuine structural/postoperative safety requirements
+referral persistence / patient-registry linkage
 CU-2 work
 PR-1 work
 ```
 
-Existing validation, gateway, safety and no-persistence invariants remain frozen unless the formatter fix reveals a direct contradiction.
+---
+
+# 3. UX acceptance contract
+
+```text
+region not selected → no downstream clinical option catalogs shown
+region selected + route not selected → only route choice shown
+route selected → only options relevant to that profile/route are shown
+routine presentation route → generation possible without findings/goals/rehab selections
+multiple wording modes → safest non-assertive presentation mode selected automatically when available
+formal diagnosis assertion → explicit clinician confirmation only when actually required
+structural/postoperative route → only its required context fields appear, with plain-Greek explanation
+advanced safety/restriction controls → collapsed or surfaced only when relevant
+```
+
+No irrelevant global option should remain visible simply because it exists in the machine catalog.
 
 ---
 
-# 3. Formatter quality acceptance gate
+# 4. Generation blocking policy
 
-Before MERGE-READY, executable evidence must demonstrate:
-
-```text
-A. no generated referral contains raw machine IDs or underscore-humanized English phrases
-B. all generated clinician-facing referral text is Greek except unavoidable standard abbreviations/proper names
-C. Short output is compact natural prose, normally 2–4 sentences
-D. Detailed output has materially greater clinical/contextual information and a distinct medical-referral structure
-E. Short and Detailed preserve identical clinical truth and safety restrictions
-F. explicit restrictions remain visible in both modes when clinically material
-G. not_assessed/unselected values never become reassuring negatives
-H. existing CU-1 gateway/safety/no-persistence tests remain green
-I. representative clinician-style synthetic cases pass exact assertions
-```
-
-At least these representative cases must be tested:
+Blocking remains appropriate for:
 
 ```text
-knee OA
-cervical nonspecific pain
-lumbar nonspecific pain
-shared fracture with restriction
-shared muscle injury
-postoperative route
+missing primary region/route
+required formal-diagnosis assertion when no non-assertive mode applies
+required structural disposition/source where the frozen route contract requires it
+postoperative protocol/restriction state required for safe generic rehabilitation
+fracture loading/use status required by anatomical site
+active safety rule whose frozen severity requires acknowledgement or disposition
 ```
+
+Blocking is NOT appropriate merely because optional findings, functional impairments, goals, rehab directions, adjuncts, measurements or clinician notes were not selected.
 
 ---
 
-# 4. Exact next action
+# 5. Exact next action
 
 ```text
-1. freeze formatter language/prose amendment
-2. implement Greek label/phrase authority and natural prose composition
-3. update focused tests
-4. run exact-head CI
-5. independent exact-head review
-6. STOP at MERGE-READY or BLOCK
+1. add explicit contract-driven UI relevance scope
+2. implement progressive-disclosure rendering and safe wording defaults
+3. improve contextual required-field guidance
+4. add focused tests proving unrelated controls are absent and routine generation remains possible
+5. run exact-head CI
+6. independent exact-head review
+7. STOP at MERGE-READY or BLOCK
 ```
-
-No merge/deploy is implied until the acceptance gate is clean.
