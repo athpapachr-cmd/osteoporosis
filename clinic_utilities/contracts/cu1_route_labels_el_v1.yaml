@@ -1,0 +1,113 @@
+version: cu1_route_labels_el_v1
+language: el
+status: maintenance_formatter_authority
+
+routes:
+  cervical:
+    nonspecific_neck_pain: Μη ειδικός μηχανικός αυχενικός πόνος
+    neck_pain_with_radiating_upper_limb_symptoms: Αυχενικός πόνος με συμπτώματα που αντανακλούν στο άνω άκρο
+    headache_with_cervical_msk_features: Κεφαλαλγία με αυχενικά μυοσκελετικά χαρακτηριστικά
+    cervical_dizziness_presentation: Ζάλη ή αστάθεια με αυχενικά μυοσκελετικά χαρακτηριστικά
+    post_traumatic_neck_pain: Μετατραυματικός αυχενικός πόνος
+  lumbar:
+    nonspecific_low_back_pain: Μη ειδική οσφυαλγία
+    low_back_pain_with_radiating_leg_symptoms: Οσφυαλγία με συμπτώματα που αντανακλούν στο κάτω άκρο
+    lumbar_spinal_stenosis_neurogenic_claudication: Οσφυϊκή σπονδυλική στένωση με νευρογενή διαλείπουσα χωλότητα
+    deep_gluteal_piriformis_presentation: Πόνος βαθιάς γλουτιαίας περιοχής / απιοειδούς
+  shoulder:
+    rotator_cuff_related_shoulder_pain: Πόνος ώμου σχετιζόμενος με το στροφικό πέταλο
+    confirmed_full_thickness_rotator_cuff_tear_nonoperative: Επιβεβαιωμένη πλήρους πάχους ρήξη στροφικού πετάλου υπό συντηρητική αντιμετώπιση
+    calcific_rotator_cuff_tendinopathy: Ασβεστοποιός τενοντοπάθεια στροφικού πετάλου
+    adhesive_capsulitis_frozen_shoulder: Συμφυτική θυλακίτιδα / παγωμένος ώμος
+    glenohumeral_instability_dislocation: Αστάθεια ή εξάρθρημα γληνοβραχιόνιας άρθρωσης
+    glenohumeral_osteoarthritis: Οστεοαρθρίτιδα γληνοβραχιόνιας άρθρωσης
+    post_traumatic_shoulder_pain: Μετατραυματικός πόνος και δυσλειτουργία ώμου
+    acromioclavicular_joint_disorder: Πάθηση ακρωμιοκλειδικής άρθρωσης
+    sternoclavicular_joint_disorder: Πάθηση στερνοκλειδικής άρθρωσης
+    postoperative_shoulder_rehabilitation: Μετεγχειρητική αποκατάσταση ώμου
+  elbow:
+    lateral_elbow_tendinopathy: Έξω επικονδυλαλγία / τενοντοπάθεια
+    medial_elbow_tendinopathy: Έσω επικονδυλαλγία / τενοντοπάθεια
+    ulnar_neuropathy_at_elbow: Ωλένια νευροπάθεια στον αγκώνα
+    posterior_interosseous_nerve_supinator_syndrome: Σύνδρομο οπίσθιου μεσόστεου νεύρου / υπτιαστή
+    distal_biceps_tendon_disorder_nonoperative: Πάθηση άπω τένοντα δικεφάλου υπό συντηρητική αντιμετώπιση
+    elbow_osteoarthritis_degenerative_stiffness: Οστεοαρθρίτιδα ή εκφυλιστική δυσκαμψία αγκώνα
+    elbow_ligament_instability_rehabilitation: Αποκατάσταση συνδεσμικής αστάθειας αγκώνα
+    post_traumatic_elbow_pain_stiffness: Μετατραυματικός πόνος ή δυσκαμψία αγκώνα
+    radial_tunnel_syndrome: Σύνδρομο κερκιδικού σωλήνα
+    distal_triceps_tendon_disorder: Πάθηση άπω τένοντα τρικεφάλου
+    anconeus_myotendinous_pain_or_injury: Μυοτενόντια κάκωση ή πόνος αγκωνιαίου μυός
+    postoperative_elbow_rehabilitation: Μετεγχειρητική αποκατάσταση αγκώνα
+  wrist_hand:
+    de_quervain_first_dorsal_compartment_disorder: Τενοντοελυτρίτιδα De Quervain
+    thumb_cmc1_osteoarthritis: Οστεοαρθρίτιδα καρπομετακάρπιας άρθρωσης αντίχειρα
+    interphalangeal_hand_osteoarthritis: Οστεοαρθρίτιδα μεσοφαλαγγικών αρθρώσεων χεριού
+    median_neuropathy_at_wrist_carpal_tunnel: Σύνδρομο καρπιαίου σωλήνα / νευροπάθεια μέσου νεύρου στον καρπό
+    ulnar_sided_wrist_tfcc_presentation: Ωλένιος πόνος καρπού / πάθηση τριγωνικού ινοχόνδρινου συμπλέγματος
+    intersection_syndrome: Σύνδρομο διασταύρωσης τενόντων
+    thumb_mcp_collateral_ligament_injury_rehabilitation: Κάκωση πλαγίου συνδέσμου μετακαρπιοφαλαγγικής άρθρωσης αντίχειρα
+    sagittal_band_injury_extensor_tendon_instability: Κάκωση οβελιαίας ταινίας / αστάθεια εκτείνοντα τένοντα
+    digital_tendon_injury_rehabilitation: Αποκατάσταση κάκωσης τένοντα δακτύλου
+    post_traumatic_wrist_hand_pain_stiffness: Μετατραυματικός πόνος ή δυσκαμψία καρπού/χεριού
+    postoperative_wrist_hand_rehabilitation: Μετεγχειρητική αποκατάσταση καρπού/χεριού
+    guyon_canal_ulnar_neuropathy: Ωλένια νευροπάθεια στον σωλήνα Guyon
+    carpal_ligament_instability: Συνδεσμική αστάθεια καρπού
+    other_wrist_tendon_disorder: Άλλη τενοντοπάθεια ή πάθηση τένοντα καρπού
+    crps_upper_limb: Σύνδρομο σύνθετου περιοχικού πόνου άνω άκρου
+  knee:
+    knee_osteoarthritis: Οστεοαρθρίτιδα γόνατος
+    degenerative_meniscal_lesion_conservative_rehabilitation: Εκφυλιστική βλάβη / ρήξη μηνίσκου — συντηρητική αποκατάσταση
+    acute_isolated_meniscal_injury_nonoperative: Οξεία τραυματική κάκωση μηνίσκου υπό συντηρητική αντιμετώπιση
+    patellofemoral_pain: Επιγονατιδομηριαίος πόνος
+    patellar_tendinopathy: Τενοντοπάθεια επιγονατιδικού τένοντα
+    quadriceps_tendinopathy: Τενοντοπάθεια τετρακεφάλου
+    acl_injury_instability_rehabilitation: Κάκωση πρόσθιου χιαστού συνδέσμου — συντηρητική / προεγχειρητική αποκατάσταση
+    mcl_injury_rehabilitation: Κάκωση έσω πλαγίου συνδέσμου — συντηρητική αποκατάσταση
+    patellar_instability_dislocation_rehabilitation: Αστάθεια ή εξάρθρημα επιγονατίδας
+    iliotibial_band_syndrome: Σύνδρομο λαγονοκνημιαίας ταινίας
+    pes_anserine_region_pain_or_tendinobursitis: Πόνος ή τενοντοθυλακίτιδα περιοχής χήνειου ποδός
+    post_traumatic_knee_pain_stiffness: Μετατραυματικός πόνος ή δυσκαμψία γόνατος
+    postoperative_knee_rehabilitation: Μετεγχειρητική αποκατάσταση γόνατος
+    osgood_schlatter_disease: Νόσος Osgood-Schlatter
+    sinding_larsen_johansson_syndrome: Σύνδρομο Sinding-Larsen-Johansson
+    pcl_lcl_multiligament_injury: Κάκωση οπίσθιου χιαστού, έξω πλαγίου ή πολυσυνδεσμική κάκωση γόνατος
+    distal_hamstring_insertional_pathology: Πάθηση άπω κατάφυσης οπίσθιων μηριαίων
+    hoffa_plica_pathology: Πάθηση λιπώδους σώματος Hoffa ή υμενικής πτυχής
+    osteochondral_ocd_lesion: Χόνδρινη / οστεοχόνδρινη βλάβη ή διαχωριστική οστεοχονδρίτιδα
+  hip_groin:
+    greater_trochanteric_lateral_hip_pain_pathway: Πλάγιος πόνος ισχίου / περιοχή μείζονα τροχαντήρα
+    nonarthritic_intraarticular_hip_pain: Μη αρθριτικός ενδαρθρικός πόνος ισχίου
+    adductor_related_groin_pain: Βουβωνικός πόνος σχετιζόμενος με τους προσαγωγούς
+    post_traumatic_hip_groin_pain_stiffness: Μετατραυματικός πόνος ή δυσκαμψία ισχίου/βουβωνικής χώρας
+    proximal_hamstring_tendinopathy: Εγγύς τενοντοπάθεια οπίσθιων μηριαίων
+    iliopsoas_related_groin_pain_internal_snapping_hip: Πόνος σχετιζόμενος με λαγονοψοΐτη / έσω αναπήδηση ισχίου
+    established_gluteal_abductor_tendon_tear_nonoperative: Τεκμηριωμένη ρήξη απαγωγών γλουτιαίων υπό συντηρητική αντιμετώπιση
+    symptomatic_external_snapping_hip: Συμπτωματική έξω αναπήδηση ισχίου
+    hip_dysplasia_instability_context: Δυσπλασία ή αστάθεια ισχίου
+    inguinal_or_pubic_related_groin_pain: Βουβωνικός ή ηβικός πόνος
+  ankle_foot:
+    lateral_ankle_sprain_rehabilitation: Αποκατάσταση έξω διαστρέμματος ποδοκνημικής
+    achilles_tendinopathy: Τενοντοπάθεια Αχίλλειου τένοντα
+    plantar_heel_pain_plantar_fasciitis: Πελματιαίος πόνος πτέρνας / πελματιαία απονευρωσίτιδα
+    posterior_tibial_tendon_dysfunction_progressive_collapsing_foot_deformity: Δυσλειτουργία οπίσθιου κνημιαίου τένοντα / προοδευτική παραμόρφωση ποδός
+    peroneal_tendon_disorder_nonoperative: Πάθηση περονιαίων τενόντων υπό συντηρητική αντιμετώπιση
+    mechanical_metatarsalgia_forefoot_overload: Μηχανική μεταταρσαλγία / υπερφόρτιση προσθίου ποδός
+    post_traumatic_ankle_foot_pain_stiffness: Μετατραυματικός πόνος ή δυσκαμψία ποδοκνημικής/άκρου ποδός
+    calcaneal_apophysitis_sever_disease: Αποφυσίτιδα πτέρνας / νόσος Sever
+    symptomatic_accessory_navicular: Συμπτωματικό επικουρικό σκαφοειδές
+    symptomatic_pediatric_flexible_flatfoot: Συμπτωματική παιδιατρική εύκαμπτη πλατυποδία
+    chronic_ankle_instability_recurrent_sprain: Χρόνια αστάθεια ποδοκνημικής / υποτροπιάζοντα διαστρέμματα
+    established_syndesmotic_ankle_injury: Τεκμηριωμένη συνδεσμωτική κάκωση ποδοκνημικής
+    established_tarsal_tunnel_or_tibial_nerve_entrapment: Σύνδρομο ταρσιαίου σωλήνα / παγίδευση κνημιαίου νεύρου
+    heel_fat_pad_pain_presentation: Πόνος λιπώδους σώματος πτέρνας
+    morton_neuroma_or_interdigital_neuralgic_presentation: Νεύρωμα Morton / μεσοδακτύλια νευραλγική εικόνα
+    plantar_plate_lesser_mtp_instability: Κάκωση πελματιαίας πλάκας / αστάθεια μικρής μεταταρσιοφαλαγγικής άρθρωσης
+    anterior_tibial_extensor_fhl_tendon_disorder: Πάθηση πρόσθιου κνημιαίου, εκτεινόντων ή μακρού καμπτήρα μεγάλου δακτύλου
+    osteochondral_lesion_talus: Οστεοχόνδρινη βλάβη αστραγάλου
+    postoperative_achilles_repair_reconstruction: Μετεγχειρητική αποκατάσταση μετά από συρραφή / ανακατασκευή Αχίλλειου
+  shared_fracture:
+    fracture_rehabilitation_post_immobilization: Αποκατάσταση κατάγματος / μετά από ακινητοποίηση
+  shared_muscle_myotendinous:
+    acute_muscle_myotendinous_injury_rehabilitation: Αποκατάσταση οξείας μυϊκής ή μυοτενόντιας κάκωσης
+  shared_deconditioning_balance_gait:
+    functional_deconditioning_balance_gait_rehabilitation: Αποκατάσταση λειτουργικής αποδυνάμωσης / ευπάθειας
