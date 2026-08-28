@@ -1,16 +1,18 @@
-version: cu1_evidence_registry_v1
-status: design_candidate
+version: cu1_evidence_registry_v1_1
+status: design_hardening_route_coverage_incomplete
 reviewed_on: 2026-08-28
 runtime_authorized: false
+normative_schema: cu1_history_timeline_schema_v1.yaml
 
 source_schema:
-  required: [evidence_id, source_type, title, authors_or_organization, year_or_version, reference, reviewed_on, next_review_due, status]
+  required: [evidence_id, source_type, title, authors_or_organization, year_or_version, reference, reviewed_on, next_review_due, freshness_state, status]
   source_type_values: [guideline, systematic_review, clinical_practice_guideline, consensus, randomized_trial, cohort, narrative_review, other]
   status_values: [active, superseded, context_only]
+  freshness_state_values: [current, review_due, stale, superseded]
 
 claim_schema:
-  required: [claim_id, evidence_ids, applicable_profile_ids, applicable_route_ids, domain, claim_summary, recommendation_direction, output_scope, reviewed_on]
-  optional: [applicable_subtype_ids, applicability_conditions]
+  required: [claim_id, evidence_ids, applicable_route_evidence_profile_ids, applicable_route_ids, domain, claim_summary, recommendation_direction, output_scope, reviewed_on]
+  optional: [applicable_subtype_ids, applicability_conditions, strength_optional, certainty_optional, conflicts_with_claim_ids_optional]
   domain_values: [diagnostic_definition, history, examination, core_rehabilitation, rehab_phase, progression_criteria, adjunct, safety, differential, execution_detail]
   recommendation_direction_values: [recommend, consider, may_consider, do_not_offer, insufficient_evidence, context_only]
   output_scope_values: [referral_core, therapist_execution_detail, clinician_ui_only]
@@ -20,134 +22,214 @@ sources:
   dgs_definition_kizaki_2020:
     evidence_id: dgs_definition_kizaki_2020
     source_type: systematic_review
-    title: Deep gluteal syndrome is defined as a non-discogenic sciatic nerve disorder with entrapment in the deep gluteal space
+    title: "Deep gluteal syndrome is defined as a non-discogenic sciatic nerve disorder with entrapment in the deep gluteal space: a systematic review"
     authors_or_organization: Kizaki et al.
     year_or_version: 2020
-    reference: Knee Surg Sports Traumatol Arthrosc. 2020;28(10):3354-3364
+    published_on_optional: 2020-04-03
+    reference: "Knee Surg Sports Traumatol Arthrosc. 2020;28(10):3354-3364"
     doi_optional: 10.1007/s00167-020-05966-x
     url_optional: https://pubmed.ncbi.nlm.nih.gov/32246173/
+    population_scope_optional: clinically diagnosed deep gluteal syndrome cases in included studies
+    setting_scope_optional: diagnostic pathway systematic review
     reviewed_on: 2026-08-28
     next_review_due: 2027-08-28
+    freshness_state: current
     status: active
+    supersedes_optional: []
+    superseded_by_optional: []
 
-  dgs_treatment_mirzaei_2023:
-    evidence_id: dgs_treatment_mirzaei_2023
+  dgs_conservative_hopayian_2023:
+    evidence_id: dgs_conservative_hopayian_2023
     source_type: systematic_review
     title: A systematic review of conservative and surgical treatments for deep gluteal syndrome
-    authors_or_organization: Mirzaei et al.
+    authors_or_organization: Hopayian et al.
     year_or_version: 2023
-    reference: J Bodyw Mov Ther. 2023
+    reference: "J Bodyw Mov Ther. 2023;36:244-250"
     doi_optional: 10.1016/j.jbmt.2022.12.003
     url_optional: https://pubmed.ncbi.nlm.nih.gov/37949567/
+    population_scope_optional: deep gluteal syndrome literature; heterogeneous and low-quality conservative evidence
     reviewed_on: 2026-08-28
     next_review_due: 2027-08-28
+    freshness_state: current
     status: active
+    supersedes_optional: []
+    superseded_by_optional: []
 
   nice_ng59_lbp_sciatica:
     evidence_id: nice_ng59_lbp_sciatica
     source_type: guideline
-    title: Low back pain and sciatica in over 16s — assessment and management
+    title: Low back pain and sciatica in over 16s - assessment and management
     authors_or_organization: NICE
     year_or_version: 2016_updated_2020
     reference: NICE guideline NG59
     url_optional: https://www.nice.org.uk/guidance/ng59
     framework_optional: NICE
+    population_scope_optional: people aged 16 and over with low back pain with or without sciatica
     reviewed_on: 2026-08-28
     next_review_due: 2027-08-28
+    freshness_state: current
     status: active
+    supersedes_optional: []
+    superseded_by_optional: []
 
-  dgs_beyond_entrapment_2025:
-    evidence_id: dgs_beyond_entrapment_2025
-    source_type: narrative_review
-    title: Beyond Nerve Entrapment — A Narrative Review of Muscle-Tendon Pathologies in Deep Gluteal Syndrome
-    authors_or_organization: narrative review authors
-    year_or_version: 2025
-    reference: PubMed PMID 41095750
-    url_optional: https://pubmed.ncbi.nlm.nih.gov/41095750/
+  lbp_cpg_2021:
+    evidence_id: lbp_cpg_2021
+    source_type: clinical_practice_guideline
+    title: "Interventions for the Management of Acute and Chronic Low Back Pain: Revision 2021"
+    authors_or_organization: Academy of Orthopaedic Physical Therapy / APTA
+    year_or_version: 2021
+    reference: "J Orthop Sports Phys Ther. 2021;51(11):CPG1-CPG60"
+    doi_optional: 10.2519/jospt.2021.0304
+    url_optional: https://pmc.ncbi.nlm.nih.gov/articles/PMC10508241/
+    population_scope_optional: adults with acute or chronic low back pain, including subgroups with leg pain
     reviewed_on: 2026-08-28
     next_review_due: 2027-08-28
-    status: context_only
+    freshness_state: current
+    status: active
+    supersedes_optional: []
+    superseded_by_optional: []
 
   lateral_elbow_cpg_2022:
     evidence_id: lateral_elbow_cpg_2022
     source_type: clinical_practice_guideline
-    title: Lateral Elbow Pain and Muscle Function Impairments — Clinical Practice Guidelines
+    title: Lateral Elbow Pain and Muscle Function Impairments - Clinical Practice Guidelines
     authors_or_organization: Academy of Hand and Upper Extremity Physical Therapy + Academy of Orthopaedic Physical Therapy / APTA
     year_or_version: 2022
-    reference: J Orthop Sports Phys Ther. 2022;52(12):CPG1-CPG111
+    reference: "J Orthop Sports Phys Ther. 2022;52(12):CPG1-CPG111"
     doi_optional: 10.2519/jospt.2022.0302
     url_optional: https://www.apta.org/patient-care/evidence-based-practice-resources/cpgs/lateral-elbow-pain-and-muscle-function-impairments
+    population_scope_optional: adults with lateral elbow tendinopathy; APTA overview target population adults 18-65
     reviewed_on: 2026-08-28
     next_review_due: 2027-08-28
+    freshness_state: current
     status: active
+    supersedes_optional: []
+    superseded_by_optional: []
 
   achilles_midportion_cpg_2024:
     evidence_id: achilles_midportion_cpg_2024
     source_type: clinical_practice_guideline
-    title: Achilles Pain, Stiffness, and Muscle Power Deficits — Midportion Achilles Tendinopathy Revision 2024
+    title: Achilles Pain, Stiffness, and Muscle Power Deficits - Midportion Achilles Tendinopathy Revision 2024
     authors_or_organization: Academy of Orthopaedic Physical Therapy / APTA
     year_or_version: 2024
-    reference: J Orthop Sports Phys Ther. 2024;54(12):CPG1-CPG32
+    reference: "J Orthop Sports Phys Ther. 2024;54(12):CPG1-CPG32"
     doi_optional: 10.2519/jospt.2024.0302
     url_optional: https://pubmed.ncbi.nlm.nih.gov/39611662/
+    population_scope_optional: primarily nonacute and physically active people with midportion Achilles tendinopathy
+    subtype_scope_optional: [midportion_achilles_tendinopathy]
     reviewed_on: 2026-08-28
     next_review_due: 2027-08-28
+    freshness_state: current
     status: active
+    supersedes_optional: []
+    superseded_by_optional: []
+
+  achilles_midportion_rts_systematic_review_2018:
+    evidence_id: achilles_midportion_rts_systematic_review_2018
+    source_type: systematic_review
+    title: "Return to Sport in Athletes with Midportion Achilles Tendinopathy: A Qualitative Systematic Review Regarding Definitions and Criteria"
+    authors_or_organization: Habets et al.
+    year_or_version: 2018
+    reference: "Sports Med. 2018;48(3):705-723"
+    doi_optional: 10.1007/s40279-017-0833-9
+    url_optional: https://pubmed.ncbi.nlm.nih.gov/29249084/
+    population_scope_optional: athletes with midportion Achilles tendinopathy
+    subtype_scope_optional: [midportion_achilles_tendinopathy]
+    reviewed_on: 2026-08-28
+    next_review_due: 2027-02-28
+    freshness_state: current
+    status: active
+    supersedes_optional: []
+    superseded_by_optional: []
+
+  achilles_insertional_low_compression_rct_2025:
+    evidence_id: achilles_insertional_low_compression_rct_2025
+    source_type: randomized_trial
+    title: "Effectiveness of reducing tendon compression in the rehabilitation of insertional Achilles tendinopathy: a randomised clinical trial"
+    authors_or_organization: Pringels et al.
+    year_or_version: 2025
+    published_on_optional: 2025-04-24
+    reference: "Br J Sports Med. 2025;59(9):640-650"
+    doi_optional: 10.1136/bjsports-2024-109138
+    url_optional: https://pubmed.ncbi.nlm.nih.gov/40011018/
+    population_scope_optional: 42 sport-active adults with chronic insertional Achilles tendinopathy
+    setting_scope_optional: investigator-blinded single trial
+    subtype_scope_optional: [insertional_achilles_tendinopathy]
+    reviewed_on: 2026-08-28
+    next_review_due: 2027-02-28
+    freshness_state: current
+    status: active
+    supersedes_optional: []
+    superseded_by_optional: []
 
 claims:
   dgs_classical_definition:
     claim_id: dgs_classical_definition
     evidence_ids: [dgs_definition_kizaki_2020]
-    applicable_profile_ids: [lumbar]
+    applicable_route_evidence_profile_ids: [rep_deep_gluteal_piriformis_v1]
     applicable_route_ids: [deep_gluteal_piriformis_presentation]
     domain: diagnostic_definition
-    claim_summary: Classical DGS is a non-discogenic sciatic nerve disorder caused by entrapment in the deep gluteal space.
+    claim_summary: Classical DGS is a non-discogenic sciatic nerve disorder involving entrapment in the deep gluteal space; the software must not infer it from buttock pain alone.
     recommendation_direction: context_only
     output_scope: clinician_ui_only
     certainty_optional: not_graded
     reviewed_on: 2026-08-28
 
-  dgs_history_exam_are_central:
-    claim_id: dgs_history_exam_are_central
+  dgs_history_exam_pathway:
+    claim_id: dgs_history_exam_pathway
     evidence_ids: [dgs_definition_kizaki_2020]
-    applicable_profile_ids: [lumbar]
+    applicable_route_evidence_profile_ids: [rep_deep_gluteal_piriformis_v1]
     applicable_route_ids: [deep_gluteal_piriformis_presentation]
     domain: history
-    claim_summary: Diagnostic pathways commonly include history of posterior hip/buttock pain, sciatic-type symptoms or sitting intolerance together with targeted physical examination and selected investigations.
+    claim_summary: Published DGS diagnostic pathways commonly include posterior hip/buttock pain, sciatic-type symptoms or sitting intolerance together with targeted physical examination and selected investigations.
     recommendation_direction: consider
     output_scope: referral_core
     certainty_optional: low
     applicability_conditions: [do_not_infer_syndrome_from_buttock_pain_alone]
     reviewed_on: 2026-08-28
 
-  dgs_no_single_superior_conservative_treatment:
-    claim_id: dgs_no_single_superior_conservative_treatment
-    evidence_ids: [dgs_treatment_mirzaei_2023]
-    applicable_profile_ids: [lumbar]
+  dgs_no_superior_specific_conservative_protocol:
+    claim_id: dgs_no_superior_specific_conservative_protocol
+    evidence_ids: [dgs_conservative_hopayian_2023]
+    applicable_route_evidence_profile_ids: [rep_deep_gluteal_piriformis_v1]
     applicable_route_ids: [deep_gluteal_piriformis_presentation]
     domain: core_rehabilitation
-    claim_summary: Available evidence is low quality and does not establish one conservative treatment as superior to another.
+    claim_summary: Available conservative-treatment evidence is low quality and does not establish one DGS-specific conservative treatment as superior to another.
     recommendation_direction: insufficient_evidence
     output_scope: clinician_ui_only
     certainty_optional: low
     reviewed_on: 2026-08-28
 
-  dgs_use_broader_active_physiotherapy_principles_when_applicable:
-    claim_id: dgs_use_broader_active_physiotherapy_principles_when_applicable
-    evidence_ids: [dgs_treatment_mirzaei_2023, nice_ng59_lbp_sciatica]
-    applicable_profile_ids: [lumbar]
+  dgs_broad_first_line_physiotherapy_only:
+    claim_id: dgs_broad_first_line_physiotherapy_only
+    evidence_ids: [dgs_conservative_hopayian_2023]
+    applicable_route_evidence_profile_ids: [rep_deep_gluteal_piriformis_v1]
     applicable_route_ids: [deep_gluteal_piriformis_presentation]
     domain: core_rehabilitation
-    claim_summary: In the absence of a proven superior DGS-specific conservative protocol, active physiotherapy/self-management principles may be used when clinically applicable without implying superiority of a specific DGS technique.
+    claim_summary: In the absence of a proven superior DGS-specific conservative technique, first-line care may remain physiotherapy-based without claiming superiority of a specific exercise or manual technique.
     recommendation_direction: consider
     output_scope: referral_core
     certainty_optional: low
     reviewed_on: 2026-08-28
 
-  nice_lbp_sciatica_self_management_activity:
-    claim_id: nice_lbp_sciatica_self_management_activity
+  lbp_chronic_exercise_core:
+    claim_id: lbp_chronic_exercise_core
+    evidence_ids: [lbp_cpg_2021]
+    applicable_route_evidence_profile_ids: [rep_nonspecific_lbp_v1]
+    applicable_route_ids: [nonspecific_low_back_pain]
+    domain: core_rehabilitation
+    claim_summary: For chronic low back pain, exercise training including strengthening/endurance, multimodal, aerobic, aquatic or general exercise is recommended; no single exercise type is established as universally superior.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    strength_optional: A
+    certainty_optional: not_graded
+    applicability_conditions: [chronic_low_back_pain]
+    reviewed_on: 2026-08-28
+
+  lbp_activity_self_management_core:
+    claim_id: lbp_activity_self_management_core
     evidence_ids: [nice_ng59_lbp_sciatica]
-    applicable_profile_ids: [lumbar]
+    applicable_route_evidence_profile_ids: [rep_nonspecific_lbp_v1, rep_lbp_radiating_leg_v1]
     applicable_route_ids: [nonspecific_low_back_pain, low_back_pain_with_radiating_leg_symptoms]
     domain: core_rehabilitation
     claim_summary: Advice, self-management and continuation of normal activity are recommended components of care for low-back pain with or without sciatica.
@@ -156,35 +238,50 @@ claims:
     certainty_optional: not_graded
     reviewed_on: 2026-08-28
 
-  nice_lbp_sciatica_manual_therapy_only_with_exercise_package:
-    claim_id: nice_lbp_sciatica_manual_therapy_only_with_exercise_package
-    evidence_ids: [nice_ng59_lbp_sciatica]
-    applicable_profile_ids: [lumbar]
-    applicable_route_ids: [nonspecific_low_back_pain, low_back_pain_with_radiating_leg_symptoms]
-    domain: adjunct
-    claim_summary: Manual therapy may be considered only as part of a treatment package that includes exercise, with or without psychological therapy.
+  lbp_leg_pain_exercise:
+    claim_id: lbp_leg_pain_exercise
+    evidence_ids: [lbp_cpg_2021]
+    applicable_route_evidence_profile_ids: [rep_lbp_radiating_leg_v1]
+    applicable_route_ids: [low_back_pain_with_radiating_leg_symptoms]
+    domain: core_rehabilitation
+    claim_summary: Exercise may be used for low back pain with leg pain; chronic presentations may include specific trunk activation and movement-control exercise.
     recommendation_direction: consider
     output_scope: referral_core
     certainty_optional: not_graded
-    applicability_conditions: [core_exercise_direction_present]
+    applicability_conditions: [leg_pain_or_radiating_symptoms]
     reviewed_on: 2026-08-28
 
-  nice_lbp_sciatica_no_traction:
-    claim_id: nice_lbp_sciatica_no_traction
-    evidence_ids: [nice_ng59_lbp_sciatica]
-    applicable_profile_ids: [lumbar]
-    applicable_route_ids: [nonspecific_low_back_pain, low_back_pain_with_radiating_leg_symptoms]
+  lbp_leg_pain_neural_mobilization:
+    claim_id: lbp_leg_pain_neural_mobilization
+    evidence_ids: [lbp_cpg_2021]
+    applicable_route_evidence_profile_ids: [rep_lbp_radiating_leg_v1]
+    applicable_route_ids: [low_back_pain_with_radiating_leg_symptoms]
     domain: adjunct
-    claim_summary: Traction should not be offered for low-back pain with or without sciatica.
+    claim_summary: Neural mobilization may be used with other treatments for short-term improvement in pain and disability in chronic low back pain with leg pain.
+    recommendation_direction: may_consider
+    output_scope: referral_core
+    strength_optional: B
+    certainty_optional: not_graded
+    applicability_conditions: [chronic_leg_pain_neural_context]
+    reviewed_on: 2026-08-28
+
+  lbp_leg_pain_no_mechanical_traction:
+    claim_id: lbp_leg_pain_no_mechanical_traction
+    evidence_ids: [lbp_cpg_2021, nice_ng59_lbp_sciatica]
+    applicable_route_evidence_profile_ids: [rep_lbp_radiating_leg_v1]
+    applicable_route_ids: [low_back_pain_with_radiating_leg_symptoms]
+    domain: adjunct
+    claim_summary: Mechanical traction should not be used for chronic low back pain with leg pain and NICE also recommends against traction for low back pain with or without sciatica.
     recommendation_direction: do_not_offer
     output_scope: clinician_ui_only
+    strength_optional: B
     certainty_optional: not_graded
     reviewed_on: 2026-08-28
 
   lateral_elbow_resisted_wrist_extensor_exercise:
     claim_id: lateral_elbow_resisted_wrist_extensor_exercise
     evidence_ids: [lateral_elbow_cpg_2022]
-    applicable_profile_ids: [elbow]
+    applicable_route_evidence_profile_ids: [rep_lateral_elbow_tendinopathy_v1]
     applicable_route_ids: [lateral_elbow_tendinopathy]
     domain: core_rehabilitation
     claim_summary: For subacute or chronic lateral elbow tendinopathy, therapeutic resisted wrist-extensor exercise may use isometric, concentric and/or eccentric loading.
@@ -192,25 +289,27 @@ claims:
     output_scope: referral_core
     strength_optional: B
     certainty_optional: not_graded
+    applicability_conditions: [subacute_or_chronic_lateral_elbow_tendinopathy]
     reviewed_on: 2026-08-28
 
-  lateral_elbow_phased_stress_strength_endurance_motor_control:
-    claim_id: lateral_elbow_phased_stress_strength_endurance_motor_control
+  lateral_elbow_high_demand_phased_reintroduction:
+    claim_id: lateral_elbow_high_demand_phased_reintroduction
     evidence_ids: [lateral_elbow_cpg_2022]
-    applicable_profile_ids: [elbow]
+    applicable_route_evidence_profile_ids: [rep_lateral_elbow_tendinopathy_v1]
     applicable_route_ids: [lateral_elbow_tendinopathy]
     domain: rehab_phase
-    claim_summary: A phased reintroduction of stress, strength, endurance and motor-control demands may be used for patients with high-demand occupational, hobby, performing-arts or athletic requirements.
+    claim_summary: A phased approach may be used to reintroduce stress, increase strength, improve endurance and restore motor control when high-demand occupational, hobby, performing-arts or athletic requirements exist.
     recommendation_direction: may_consider
     output_scope: referral_core
     strength_optional: F
     certainty_optional: not_graded
+    applicability_conditions: [high_demand_upper_limb_context]
     reviewed_on: 2026-08-28
 
-  achilles_tendon_loading_first_line_midportion:
-    claim_id: achilles_tendon_loading_first_line_midportion
+  achilles_midportion_tendon_loading_first_line:
+    claim_id: achilles_midportion_tendon_loading_first_line
     evidence_ids: [achilles_midportion_cpg_2024]
-    applicable_profile_ids: [ankle_foot]
+    applicable_route_evidence_profile_ids: [rep_achilles_midportion_v1]
     applicable_route_ids: [achilles_tendinopathy]
     applicable_subtype_ids: [midportion_achilles_tendinopathy]
     domain: core_rehabilitation
@@ -221,24 +320,24 @@ claims:
     certainty_optional: not_graded
     reviewed_on: 2026-08-28
 
-  achilles_loading_mode_not_eccentric_only_midportion:
-    claim_id: achilles_loading_mode_not_eccentric_only_midportion
+  achilles_midportion_multiple_loading_modes:
+    claim_id: achilles_midportion_multiple_loading_modes
     evidence_ids: [achilles_midportion_cpg_2024]
-    applicable_profile_ids: [ankle_foot]
+    applicable_route_evidence_profile_ids: [rep_achilles_midportion_v1]
     applicable_route_ids: [achilles_tendinopathy]
     applicable_subtype_ids: [midportion_achilles_tendinopathy]
-    domain: rehab_phase
-    claim_summary: Effective midportion Achilles loading is not limited to eccentric exercise; multiple loading approaches may improve pain and function, so progression should be individualized to tolerance and functional demand.
+    domain: core_rehabilitation
+    claim_summary: Effective midportion Achilles loading is not restricted to eccentric exercise; multiple loading approaches may improve pain and function.
     recommendation_direction: recommend
     output_scope: referral_core
     strength_optional: A_context
     certainty_optional: not_graded
     reviewed_on: 2026-08-28
 
-  achilles_stretching_if_dorsiflexion_limited_midportion:
-    claim_id: achilles_stretching_if_dorsiflexion_limited_midportion
+  achilles_midportion_stretch_if_dorsiflexion_limited:
+    claim_id: achilles_midportion_stretch_if_dorsiflexion_limited
     evidence_ids: [achilles_midportion_cpg_2024]
-    applicable_profile_ids: [ankle_foot]
+    applicable_route_evidence_profile_ids: [rep_achilles_midportion_v1]
     applicable_route_ids: [achilles_tendinopathy]
     applicable_subtype_ids: [midportion_achilles_tendinopathy]
     domain: adjunct
@@ -250,116 +349,397 @@ claims:
     applicability_conditions: [limited_ankle_dorsiflexion]
     reviewed_on: 2026-08-28
 
-  achilles_loading_frequency_midportion:
-    claim_id: achilles_loading_frequency_midportion
+  achilles_midportion_loading_frequency_execution_detail:
+    claim_id: achilles_midportion_loading_frequency_execution_detail
     evidence_ids: [achilles_midportion_cpg_2024]
-    applicable_profile_ids: [ankle_foot]
+    applicable_route_evidence_profile_ids: [rep_achilles_midportion_v1]
     applicable_route_ids: [achilles_tendinopathy]
     applicable_subtype_ids: [midportion_achilles_tendinopathy]
     domain: execution_detail
-    claim_summary: The CPG includes exercise-frequency guidance for tendon-loading programmes.
+    claim_summary: The CPG recommends tendon-loading exercise at least three times per week at an intensity as high as tolerated.
     recommendation_direction: recommend
     output_scope: therapist_execution_detail
     strength_optional: E
     certainty_optional: not_graded
     reviewed_on: 2026-08-28
 
+  achilles_midportion_rts_criteria_not_well_operationalized:
+    claim_id: achilles_midportion_rts_criteria_not_well_operationalized
+    evidence_ids: [achilles_midportion_rts_systematic_review_2018]
+    applicable_route_evidence_profile_ids: [rep_achilles_midportion_v1]
+    applicable_route_ids: [achilles_tendinopathy]
+    applicable_subtype_ids: [midportion_achilles_tendinopathy]
+    domain: progression_criteria
+    claim_summary: Return-to-sport criteria reported in midportion Achilles studies span pain, functional recovery, strength, ROM and endurance, but most criteria were poorly operationalized; exact thresholds should not be invented from this review.
+    recommendation_direction: context_only
+    output_scope: clinician_ui_only
+    certainty_optional: low
+    reviewed_on: 2026-08-28
+
+  achilles_insertional_low_compression_bundle:
+    claim_id: achilles_insertional_low_compression_bundle
+    evidence_ids: [achilles_insertional_low_compression_rct_2025]
+    applicable_route_evidence_profile_ids: [rep_achilles_insertional_v1]
+    applicable_route_ids: [achilles_tendinopathy]
+    applicable_subtype_ids: [insertional_achilles_tendinopathy]
+    domain: core_rehabilitation
+    claim_summary: In a small trial of sport-active adults with chronic insertional Achilles tendinopathy, a progressive low-tendon-compression rehabilitation programme produced greater pain/function improvement than a high-compression programme; this supports considering a low-compression strategy but does not establish universal component-specific effects.
+    recommendation_direction: consider
+    output_scope: referral_core
+    certainty_optional: low
+    applicability_conditions: [chronic_insertional_achilles, sport_active_population_evidence]
+    reviewed_on: 2026-08-28
+
+  achilles_insertional_low_compression_components_not_independently_causal:
+    claim_id: achilles_insertional_low_compression_components_not_independently_causal
+    evidence_ids: [achilles_insertional_low_compression_rct_2025]
+    applicable_route_evidence_profile_ids: [rep_achilles_insertional_v1]
+    applicable_route_ids: [achilles_tendinopathy]
+    applicable_subtype_ids: [insertional_achilles_tendinopathy]
+    domain: execution_detail
+    claim_summary: The successful low-compression intervention was a bundle involving limited dorsiflexion during exercise, removal of calf stretching, heel lifts and progressive loading; the trial does not isolate the causal contribution of each component.
+    recommendation_direction: context_only
+    output_scope: clinician_ui_only
+    certainty_optional: low
+    reviewed_on: 2026-08-28
+
+route_history_prompts:
+  dgs_sitting_intolerance:
+    prompt_id: dgs_sitting_intolerance
+    applicable_route_ids: [deep_gluteal_piriformis_presentation]
+    label_el: Δυσανεξία ή επιδείνωση με παρατεταμένη καθιστή θέση
+    response_type: boolean_tristate
+    requiredness: optional
+    evidence_claim_ids_optional: [dgs_history_exam_pathway]
+
+  dgs_sciatic_type_symptoms:
+    prompt_id: dgs_sciatic_type_symptoms
+    applicable_route_ids: [deep_gluteal_piriformis_presentation]
+    label_el: Ισχιακού τύπου συμπτώματα / ακτινοβολία
+    response_type: boolean_tristate
+    requiredness: optional
+    evidence_claim_ids_optional: [dgs_history_exam_pathway]
+
+  lateral_elbow_load_context:
+    prompt_id: lateral_elbow_load_context
+    applicable_route_ids: [lateral_elbow_tendinopathy]
+    label_el: Εργασιακό / αθλητικό / εργαλειακό φορτίο που επιβαρύνει τη λαβή ή τους εκτείνοντες
+    response_type: text
+    requiredness: optional
+    evidence_claim_ids_optional: [lateral_elbow_high_demand_phased_reintroduction]
+
+  achilles_location_subtype:
+    prompt_id: achilles_location_subtype
+    applicable_route_ids: [achilles_tendinopathy]
+    applicable_subtype_ids_optional: [midportion_achilles_tendinopathy, insertional_achilles_tendinopathy, other_established_achilles_tendinopathy]
+    label_el: Εντόπιση συμπτωμάτων Αχιλλείου
+    response_type: canonical_enum
+    enum_values_optional: [midportion, insertional, other_established]
+    requiredness: conditional
+    applicability_conditions_optional: [achilles_subtype_not_already_explicit]
+
+  achilles_training_load_change:
+    prompt_id: achilles_training_load_change
+    applicable_route_ids: [achilles_tendinopathy]
+    label_el: Πρόσφατη μεταβολή προπονητικού / λειτουργικού φορτίου
+    response_type: text
+    requiredness: optional
+
+  achilles_startup_stiffness:
+    prompt_id: achilles_startup_stiffness
+    applicable_route_ids: [achilles_tendinopathy]
+    label_el: Πρωινή ή start-up δυσκαμψία
+    response_type: boolean_tristate
+    requiredness: optional
+
 route_evidence_profiles:
-  deep_gluteal_piriformis_presentation:
-    profile_id: lumbar
+  rep_deep_gluteal_piriformis_v1:
+    route_evidence_profile_id: rep_deep_gluteal_piriformis_v1
+    region_profile_id: lumbar
     route_id: deep_gluteal_piriformis_presentation
     diagnostic_claim_ids: [dgs_classical_definition]
-    history_claim_ids: [dgs_history_exam_are_central]
+    history_claim_ids: [dgs_history_exam_pathway]
     examination_claim_ids: []
-    rehabilitation_sequence_id: dgs_sequence_incomplete_v1
+    rehabilitation_sequence_id: seq_dgs_evidence_bounded_v1
     adjunct_claim_ids: []
     safety_claim_ids: []
-    evidence_gaps: [route_specific_progression_criteria, comparative_effectiveness_of_specific_exercise_protocols]
-    primary_source_ids: [dgs_definition_kizaki_2020, dgs_treatment_mirzaei_2023]
+    evidence_gaps: [no_high_quality_comparative_specific_conservative_protocol, no_validated_route_specific_progression_thresholds]
+    primary_source_ids: [dgs_definition_kizaki_2020, dgs_conservative_hopayian_2023]
     last_reviewed_on: 2026-08-28
     next_review_due: 2027-08-28
     freshness_state: current
 
-  lateral_elbow_tendinopathy:
-    profile_id: elbow
+  rep_nonspecific_lbp_v1:
+    route_evidence_profile_id: rep_nonspecific_lbp_v1
+    region_profile_id: lumbar
+    route_id: nonspecific_low_back_pain
+    diagnostic_claim_ids: []
+    history_claim_ids: []
+    examination_claim_ids: []
+    rehabilitation_sequence_id: seq_nonspecific_lbp_active_v1
+    adjunct_claim_ids: []
+    safety_claim_ids: []
+    evidence_gaps: [no_universal_evidence_based_phase_progression_thresholds]
+    primary_source_ids: [lbp_cpg_2021, nice_ng59_lbp_sciatica]
+    last_reviewed_on: 2026-08-28
+    next_review_due: 2027-08-28
+    freshness_state: current
+
+  rep_lbp_radiating_leg_v1:
+    route_evidence_profile_id: rep_lbp_radiating_leg_v1
+    region_profile_id: lumbar
+    route_id: low_back_pain_with_radiating_leg_symptoms
+    diagnostic_claim_ids: []
+    history_claim_ids: []
+    examination_claim_ids: []
+    rehabilitation_sequence_id: seq_lbp_radiating_active_v1
+    adjunct_claim_ids: [lbp_leg_pain_neural_mobilization, lbp_leg_pain_no_mechanical_traction]
+    safety_claim_ids: []
+    evidence_gaps: [acute_vs_chronic_branching_needs_explicit_sequence_handling, no_universal_evidence_based_phase_progression_thresholds]
+    primary_source_ids: [lbp_cpg_2021, nice_ng59_lbp_sciatica]
+    last_reviewed_on: 2026-08-28
+    next_review_due: 2027-08-28
+    freshness_state: current
+
+  rep_lateral_elbow_tendinopathy_v1:
+    route_evidence_profile_id: rep_lateral_elbow_tendinopathy_v1
+    region_profile_id: elbow
     route_id: lateral_elbow_tendinopathy
     diagnostic_claim_ids: []
     history_claim_ids: []
     examination_claim_ids: []
-    rehabilitation_sequence_id: lateral_elbow_sequence_seed_v1
+    rehabilitation_sequence_id: seq_lateral_elbow_seed_v1
     adjunct_claim_ids: []
     safety_claim_ids: []
-    evidence_gaps: [exact_progression_criteria_for_each_phase, route_specific_return_to_function_criteria]
+    evidence_gaps: [exact_evidence_based_transition_criterion_to_high_demand_phase, route_specific_return_to_function_thresholds]
     primary_source_ids: [lateral_elbow_cpg_2022]
     last_reviewed_on: 2026-08-28
     next_review_due: 2027-08-28
     freshness_state: current
 
-  achilles_tendinopathy_midportion:
-    profile_id: ankle_foot
+  rep_achilles_midportion_v1:
+    route_evidence_profile_id: rep_achilles_midportion_v1
+    region_profile_id: ankle_foot
     route_id: achilles_tendinopathy
     subtype_ids_optional: [midportion_achilles_tendinopathy]
     diagnostic_claim_ids: []
     history_claim_ids: []
     examination_claim_ids: []
-    rehabilitation_sequence_id: achilles_midportion_sequence_seed_v1
-    adjunct_claim_ids: [achilles_stretching_if_dorsiflexion_limited_midportion]
+    rehabilitation_sequence_id: seq_achilles_midportion_seed_v1
+    adjunct_claim_ids: [achilles_midportion_stretch_if_dorsiflexion_limited]
     safety_claim_ids: []
-    evidence_gaps: [full_criteria_based_progression_sequence]
-    primary_source_ids: [achilles_midportion_cpg_2024]
+    evidence_gaps: [operationalized_criteria_based_return_to_running_or_sport_thresholds_not_established_by_current_cpg]
+    primary_source_ids: [achilles_midportion_cpg_2024, achilles_midportion_rts_systematic_review_2018]
     last_reviewed_on: 2026-08-28
-    next_review_due: 2027-08-28
+    next_review_due: 2027-02-28
     freshness_state: current
 
-  achilles_tendinopathy_insertional:
-    profile_id: ankle_foot
+  rep_achilles_insertional_v1:
+    route_evidence_profile_id: rep_achilles_insertional_v1
+    region_profile_id: ankle_foot
     route_id: achilles_tendinopathy
     subtype_ids_optional: [insertional_achilles_tendinopathy]
-    rehabilitation_sequence_id: null
     diagnostic_claim_ids: []
     history_claim_ids: []
     examination_claim_ids: []
+    rehabilitation_sequence_id: seq_achilles_insertional_seed_v1
     adjunct_claim_ids: []
     safety_claim_ids: []
-    evidence_gaps: [insertional_Achilles_route_specific_evidence_not_yet_curated]
-    primary_source_ids: []
+    evidence_gaps: [no_current_insertional_specific_cpg_identified, single_small_sport_active_rct_does_not_establish_universal_progression_thresholds, component_specific_causal_effects_of_low_compression_bundle_not_isolated]
+    primary_source_ids: [achilles_insertional_low_compression_rct_2025]
     last_reviewed_on: 2026-08-28
-    next_review_due: 2026-09-28
-    freshness_state: review_due
+    next_review_due: 2027-02-28
+    freshness_state: current
 
-rehabilitation_sequence_seeds:
-  lateral_elbow_sequence_seed_v1:
+rehabilitation_sequences:
+  seq_dgs_evidence_bounded_v1:
+    sequence_id: seq_dgs_evidence_bounded_v1
+    route_id: deep_gluteal_piriformis_presentation
+    route_evidence_profile_id: rep_deep_gluteal_piriformis_v1
+    sequence_source: route_evidence_profile
+    status: evidence_bounded_incomplete_progression
+    phases:
+      - phase_id: dgs_active_conservative_management
+        order: 1
+        clinical_objective: improve symptom-limited function with individualized physiotherapy without asserting a superior DGS-specific technique
+        objective_authority: {authority_type: evidence_claim, evidence_claim_ids: [dgs_broad_first_line_physiotherapy_only]}
+        intervention_directions:
+          - intervention_direction_id: individualized_physio_without_specific_technique_superiority
+            statement: individualized physiotherapy may be used while avoiding claims that one specific conservative technique is superior
+            authority: {authority_type: evidence_claim, evidence_claim_ids: [dgs_broad_first_line_physiotherapy_only, dgs_no_superior_specific_conservative_protocol]}
+        progression_criteria: []
+        precautions_or_do_not_progress_criteria: []
+        strength_optional: null
+        certainty_optional: low
+        required_for_route: true
+    clinician_modifications_optional: []
+    protocol_overrides_optional: []
+    missing_before_freeze: [route_specific_progression_criteria]
+
+  seq_nonspecific_lbp_active_v1:
+    sequence_id: seq_nonspecific_lbp_active_v1
+    route_id: nonspecific_low_back_pain
+    route_evidence_profile_id: rep_nonspecific_lbp_v1
+    sequence_source: route_evidence_profile
+    status: evidence_bounded_single_phase_pending_progression_model
+    phases:
+      - phase_id: lbp_active_rehabilitation
+        order: 1
+        clinical_objective: improve pain-related function through active rehabilitation and maintenance or restoration of activity
+        objective_authority: {authority_type: evidence_claim, evidence_claim_ids: [lbp_chronic_exercise_core, lbp_activity_self_management_core]}
+        intervention_directions:
+          - intervention_direction_id: active_exercise_lbp
+            statement: use individualized exercise and progressive activity rather than a single mandatory exercise school
+            authority: {authority_type: evidence_claim, evidence_claim_ids: [lbp_chronic_exercise_core]}
+          - intervention_direction_id: self_management_activity_lbp
+            statement: support self-management and continuation or graded restoration of normal activity
+            authority: {authority_type: evidence_claim, evidence_claim_ids: [lbp_activity_self_management_core]}
+        progression_criteria: []
+        precautions_or_do_not_progress_criteria: []
+        strength_optional: A
+        certainty_optional: not_graded
+        required_for_route: true
+    clinician_modifications_optional: []
+    protocol_overrides_optional: []
+    missing_before_freeze: [route_specific_phase_progression_criteria]
+
+  seq_lbp_radiating_active_v1:
+    sequence_id: seq_lbp_radiating_active_v1
+    route_id: low_back_pain_with_radiating_leg_symptoms
+    route_evidence_profile_id: rep_lbp_radiating_leg_v1
+    sequence_source: route_evidence_profile
+    status: evidence_bounded_single_phase_pending_branching
+    phases:
+      - phase_id: lbp_leg_pain_active_rehabilitation
+        order: 1
+        clinical_objective: improve pain-related function and activity tolerance while preserving neurological/safety monitoring semantics
+        objective_authority: {authority_type: evidence_claim, evidence_claim_ids: [lbp_leg_pain_exercise, lbp_activity_self_management_core]}
+        intervention_directions:
+          - intervention_direction_id: exercise_lbp_leg_pain
+            statement: use individualized exercise appropriate to the low-back-pain-with-leg-pain presentation
+            authority: {authority_type: evidence_claim, evidence_claim_ids: [lbp_leg_pain_exercise]}
+          - intervention_direction_id: optional_neural_mobilization_lbp_leg_pain
+            statement: neural mobilization may be considered with other treatment in chronic leg-pain presentations when clinically applicable
+            authority: {authority_type: evidence_claim, evidence_claim_ids: [lbp_leg_pain_neural_mobilization]}
+        progression_criteria: []
+        precautions_or_do_not_progress_criteria: []
+        strength_optional: null
+        certainty_optional: not_graded
+        required_for_route: true
+    clinician_modifications_optional: []
+    protocol_overrides_optional: []
+    missing_before_freeze: [acute_chronic_sequence_branching, route_specific_phase_progression_criteria]
+
+  seq_lateral_elbow_seed_v1:
+    sequence_id: seq_lateral_elbow_seed_v1
     route_id: lateral_elbow_tendinopathy
+    route_evidence_profile_id: rep_lateral_elbow_tendinopathy_v1
+    sequence_source: route_evidence_profile
     status: incomplete_seed_not_runtime_authority
     phases:
-      - phase_id: tendon_load_capacity
+      - phase_id: lateral_elbow_resisted_loading
         order: 1
-        clinical_objective: restore wrist-extensor load tolerance and strength
-        intervention_direction_claim_ids: [lateral_elbow_resisted_wrist_extensor_exercise]
-      - phase_id: high_demand_function
+        clinical_objective: restore wrist-extensor load tolerance, strength and functional grip capacity
+        objective_authority: {authority_type: evidence_claim, evidence_claim_ids: [lateral_elbow_resisted_wrist_extensor_exercise]}
+        intervention_directions:
+          - intervention_direction_id: resisted_wrist_extensor_loading
+            statement: use isometric, concentric and/or eccentric resisted wrist-extensor exercise in subacute or chronic LET
+            authority: {authority_type: evidence_claim, evidence_claim_ids: [lateral_elbow_resisted_wrist_extensor_exercise]}
+        progression_criteria: []
+        precautions_or_do_not_progress_criteria: []
+        strength_optional: B
+        certainty_optional: not_graded
+        required_for_route: true
+      - phase_id: lateral_elbow_high_demand_function
         order: 2
-        clinical_objective: reintroduce higher stress endurance and motor-control demands when relevant
-        intervention_direction_claim_ids: [lateral_elbow_phased_stress_strength_endurance_motor_control]
-    missing_before_freeze: [explicit_progression_criteria, low_irritability_vs_high_irritability_branching]
+        clinical_objective: reintroduce higher stress, endurance and motor-control demands when high-demand function is relevant
+        objective_authority: {authority_type: evidence_claim, evidence_claim_ids: [lateral_elbow_high_demand_phased_reintroduction]}
+        intervention_directions:
+          - intervention_direction_id: phased_high_demand_reintroduction
+            statement: progressively reintroduce stress and high-demand occupational, hobby, performing-arts or athletic requirements
+            authority: {authority_type: evidence_claim, evidence_claim_ids: [lateral_elbow_high_demand_phased_reintroduction]}
+        progression_criteria: []
+        precautions_or_do_not_progress_criteria: []
+        strength_optional: F
+        certainty_optional: not_graded
+        required_for_route: false
+    clinician_modifications_optional: []
+    protocol_overrides_optional: []
+    missing_before_freeze: [evidence_linked_transition_criterion_between_phases, route_specific_return_to_function_thresholds]
 
-  achilles_midportion_sequence_seed_v1:
+  seq_achilles_midportion_seed_v1:
+    sequence_id: seq_achilles_midportion_seed_v1
     route_id: achilles_tendinopathy
     subtype_ids_optional: [midportion_achilles_tendinopathy]
+    route_evidence_profile_id: rep_achilles_midportion_v1
+    sequence_source: route_evidence_profile
     status: incomplete_seed_not_runtime_authority
     phases:
-      - phase_id: tendon_loading
+      - phase_id: achilles_midportion_tendon_loading
         order: 1
-        clinical_objective: improve pain function and tendon load capacity through tolerated tendon loading
-        intervention_direction_claim_ids: [achilles_tendon_loading_first_line_midportion, achilles_loading_mode_not_eccentric_only_midportion]
-      - phase_id: impairment_specific_mobility
+        clinical_objective: improve pain, function and tendon load capacity through tolerated tendon loading
+        objective_authority: {authority_type: evidence_claim, evidence_claim_ids: [achilles_midportion_tendon_loading_first_line]}
+        intervention_directions:
+          - intervention_direction_id: midportion_progressive_tendon_loading
+            statement: use tendon loading as first-line care; loading is not limited to eccentric exercise
+            authority: {authority_type: evidence_claim, evidence_claim_ids: [achilles_midportion_tendon_loading_first_line, achilles_midportion_multiple_loading_modes]}
+          - intervention_direction_id: midportion_stretching_if_dorsiflexion_limited
+            statement: plantar-flexor stretching may be considered when ankle dorsiflexion is limited
+            authority: {authority_type: evidence_claim, evidence_claim_ids: [achilles_midportion_stretch_if_dorsiflexion_limited]}
+            applicability_conditions_optional: [limited_ankle_dorsiflexion]
+        progression_criteria: []
+        precautions_or_do_not_progress_criteria: []
+        strength_optional: A
+        certainty_optional: not_graded
+        required_for_route: true
+      - phase_id: achilles_midportion_functional_return
         order: 2
-        clinical_objective: address limited dorsiflexion when present
-        intervention_direction_claim_ids: [achilles_stretching_if_dorsiflexion_limited_midportion]
-        conditional: limited_ankle_dorsiflexion
-    missing_before_freeze: [criteria_for_progressing_load, functional_return_sequence]
+        clinical_objective: progress toward the patient's required walking, running, jumping or sport function without inventing unsupported numeric return thresholds
+        objective_authority: {authority_type: evidence_claim, evidence_claim_ids: [achilles_midportion_rts_criteria_not_well_operationalized]}
+        intervention_directions: []
+        progression_criteria: []
+        precautions_or_do_not_progress_criteria: []
+        strength_optional: null
+        certainty_optional: low
+        required_for_route: false
+    clinician_modifications_optional: []
+    protocol_overrides_optional: []
+    missing_before_freeze: [validated_operationalized_progression_criteria_for_functional_return]
+
+  seq_achilles_insertional_seed_v1:
+    sequence_id: seq_achilles_insertional_seed_v1
+    route_id: achilles_tendinopathy
+    subtype_ids_optional: [insertional_achilles_tendinopathy]
+    route_evidence_profile_id: rep_achilles_insertional_v1
+    sequence_source: route_evidence_profile
+    status: incomplete_population_bounded_seed_not_runtime_authority
+    phases:
+      - phase_id: achilles_insertional_low_compression_loading
+        order: 1
+        clinical_objective: improve pain and function using progressive loading with attention to insertional tendon compression
+        objective_authority: {authority_type: evidence_claim, evidence_claim_ids: [achilles_insertional_low_compression_bundle]}
+        intervention_directions:
+          - intervention_direction_id: insertional_consider_low_compression_strategy
+            statement: consider a low-tendon-compression rehabilitation strategy rather than silently copying a midportion deep-dorsiflexion loading approach
+            authority: {authority_type: evidence_claim, evidence_claim_ids: [achilles_insertional_low_compression_bundle]}
+        progression_criteria: []
+        precautions_or_do_not_progress_criteria: []
+        strength_optional: null
+        certainty_optional: low
+        required_for_route: true
+    clinician_modifications_optional: []
+    protocol_overrides_optional: []
+    missing_before_freeze: [broader_population_replication, independently_supported_component_effects, evidence_linked_progression_thresholds]
 
 coverage_status:
   routine_route_variants_complete: false
-  current_seed_scope: [deep_gluteal_piriformis_presentation, nonspecific_low_back_pain, low_back_pain_with_radiating_leg_symptoms, lateral_elbow_tendinopathy, achilles_tendinopathy__midportion]
+  object_semantics_frozen: true
+  current_curated_scope:
+    - deep_gluteal_piriformis_presentation
+    - nonspecific_low_back_pain
+    - low_back_pain_with_radiating_leg_symptoms
+    - lateral_elbow_tendinopathy
+    - achilles_tendinopathy__midportion
+    - achilles_tendinopathy__insertional
   runtime_evidence_aware_generation_authorized: false
-  gate: every_routine_route_and_material_subtype_requires_applicable_route_evidence_profile_and_complete_rehabilitation_sequence_before_runtime_authorization
+  gate: every_routine_route_and_material_subtype_requires_unique_applicable_route_evidence_profile_and_complete_evidence_traceable_sequence_or_explicit_blocked_gap_before_runtime_authorization
