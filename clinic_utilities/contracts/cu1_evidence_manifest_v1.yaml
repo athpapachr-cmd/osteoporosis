@@ -1,7 +1,7 @@
-version: cu1_evidence_manifest_v1_3
+version: cu1_evidence_manifest_v1_4
 status: design_frozen_sharded_registry_manifest
 runtime_authorized: false
-reviewed_on: 2026-08-28
+reviewed_on: 2026-08-29
 
 purpose: >-
   Single normative entrypoint for the CU-1 evidence corpus. The corpus is sharded for maintainability.
@@ -35,9 +35,13 @@ shards:
 
   - shard_id: shoulder_hip_meniscus_tranche3
     path: clinic_utilities/contracts/cu1_evidence_tranche3_v1.yaml
-    state: staged_candidate_not_schema_frozen
-    identity_mode: map_key_is_canonical_id
-    schema_conformance_reviewed: false
+    state: active_design_authority
+    identity_mode: map_key_identity_with_reviewed_promotion_projection
+    promotion_projection: clinic_utilities/contracts/cu1_evidence_tranche3_promotion_v1.yaml
+    promotion_overlay: clinic_utilities/contracts/cu1_evidence_tranche3_promotion_fix_v1.yaml
+    promotion_review: clinic_utilities/contracts/CU1_TRANCHE3_PROMOTION_REVIEW_2026-08-29.md
+    schema_conformance_reviewed: true
+    normative_read_rule: apply_promotion_projection_then_mandatory_overlay_before_logical_registry_merge
 
 logical_collections:
   - sources
@@ -57,9 +61,10 @@ identity_rules:
   map_key_identity_with_reviewed_promotion_projection:
     description: >-
       The staging map key is the canonical identity, but the shard participates in the normative
-      logical registry only after applying its named reviewed promotion projection. The projection
-      must materialize IDs/defaults, remove superseded/hybrid objects, apply reviewed corrections and
-      then satisfy the ordinary schema/reference/applicability/output-scope/freshness gates.
+      logical registry only after applying its named reviewed promotion projection and any named
+      mandatory promotion overlay. These layers must materialize IDs/defaults, remove
+      superseded/hybrid objects, apply reviewed corrections and then satisfy the ordinary
+      schema/reference/applicability/output-scope/freshness gates.
     materialized_identity_fields:
       sources: evidence_id
       claims: claim_id
@@ -83,17 +88,19 @@ promotion_gate_for_staged_shard:
 promotion_projection_rules:
   - staging_source_is_retained_for_audit_history
   - promotion_projection_is_normative_for_the_promoted_logical_shard
+  - named_mandatory_promotion_overlay_is_applied_after_projection_and_before_merge
   - dropped_or_replaced_ids_do_not_survive_logical_merge
-  - projection_may_materialize_required_identity_and_empty_collection_fields
-  - projection_may_correct_verified_source_metadata
-  - projection_may_split_silent_hybrid_claims_into_framework_specific_claims
-  - projection_may_remove_output_scope_leaks
-  - projection_must_not_invent_unsupported_clinical_recommendations_or_progression_thresholds
-  - projection_must_not_change_frozen_route_taxonomy
+  - projection_or_overlay_may_materialize_required_identity_and_empty_collection_fields
+  - projection_or_overlay_may_correct_verified_source_metadata
+  - projection_or_overlay_may_split_silent_hybrid_claims_into_framework_specific_claims
+  - projection_or_overlay_may_remove_output_scope_or_applicability_leaks
+  - projection_or_overlay_must_not_invent_unsupported_clinical_recommendations_or_progression_thresholds
+  - projection_or_overlay_must_not_change_frozen_route_taxonomy
 
 merge_rules:
   - only_active_design_authority_shards_participate_in_the_normative_logical_registry
   - active_shard_with_promotion_projection_is_normalized_before_merge
+  - named_mandatory_promotion_overlay_is_applied_before_merge
   - staged_candidates_may_inform_the_work_queue_but_are_not_normative_registry_authority
   - shard_order_does_not_create_clinical_precedence
   - duplicate_canonical_id_across_active_or_promotion_candidate_shards_is_hard_failure
@@ -140,6 +147,7 @@ future_runtime_boundary:
   allowed_after_separate_authorization_only:
     - load_manifest
     - apply_reviewed_promotion_projection
+    - apply_named_mandatory_promotion_overlay
     - normalize_shard_identity
     - merge_logical_registry
     - validate_all_references_and_applicability
@@ -152,9 +160,9 @@ readiness_gate:
   manifest_frozen: true
   active_core_schema_reviewed: true
   tranche2_promotion_gate_passed: true
-  tranche3_promotion_gate_passed: false
+  tranche3_promotion_gate_passed: true
   all_active_authority_shards_schema_reviewed: true
-  all_listed_shards_schema_reviewed: false
+  all_listed_shards_schema_reviewed: true
   all_routes_covered: false
   exact_design_completeness_review_passed: false
   runtime_authorized: false
