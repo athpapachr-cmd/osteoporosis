@@ -1,0 +1,200 @@
+version: cu1_evidence_registry_v1
+status: design_candidate
+reviewed_on: 2026-08-28
+runtime_authorized: false
+
+source_schema:
+  required: [evidence_id, source_type, title, authors_or_organization, year_or_version, reference, reviewed_on, status]
+  source_type_values: [guideline, systematic_review, clinical_practice_guideline, consensus, randomized_trial, cohort, narrative_review, other]
+  status_values: [active, superseded, context_only]
+
+claim_schema:
+  required: [claim_id, evidence_ids, applicable_profile_ids, applicable_route_ids, domain, claim_summary, recommendation_direction, reviewed_on]
+  domain_values: [diagnostic_definition, history, examination, core_rehabilitation, adjunct, timeline, reassessment, safety, differential]
+  recommendation_direction_values: [recommend, consider, may_consider, do_not_offer, insufficient_evidence, context_only]
+  certainty_values: [high, moderate, low, very_low, not_graded, not_applicable]
+
+sources:
+  dgs_definition_kizaki_2020:
+    evidence_id: dgs_definition_kizaki_2020
+    source_type: systematic_review
+    title: Deep gluteal syndrome is defined as a non-discogenic sciatic nerve disorder with entrapment in the deep gluteal space
+    authors_or_organization: Kizaki et al.
+    year_or_version: 2020
+    reference: Knee Surg Sports Traumatol Arthrosc. 2020;28(10):3354-3364
+    doi_optional: 10.1007/s00167-020-05966-x
+    url_optional: https://pubmed.ncbi.nlm.nih.gov/32246173/
+    framework_optional: null
+    reviewed_on: 2026-08-28
+    status: active
+
+  dgs_treatment_mirzaei_2023:
+    evidence_id: dgs_treatment_mirzaei_2023
+    source_type: systematic_review
+    title: A systematic review of conservative and surgical treatments for deep gluteal syndrome
+    authors_or_organization: Mirzaei et al.
+    year_or_version: 2023
+    reference: J Bodyw Mov Ther. 2023
+    doi_optional: 10.1016/j.jbmt.2022.12.003
+    url_optional: https://pubmed.ncbi.nlm.nih.gov/37949567/
+    framework_optional: null
+    reviewed_on: 2026-08-28
+    status: active
+
+  nice_ng59_lbp_sciatica:
+    evidence_id: nice_ng59_lbp_sciatica
+    source_type: guideline
+    title: Low back pain and sciatica in over 16s — assessment and management
+    authors_or_organization: NICE
+    year_or_version: 2016_updated_2020
+    reference: NICE guideline NG59
+    doi_optional: null
+    url_optional: https://www.nice.org.uk/guidance/ng59
+    framework_optional: NICE
+    reviewed_on: 2026-08-28
+    status: active
+
+  dgs_beyond_entrapment_2025:
+    evidence_id: dgs_beyond_entrapment_2025
+    source_type: narrative_review
+    title: Beyond Nerve Entrapment — A Narrative Review of Muscle-Tendon Pathologies in Deep Gluteal Syndrome
+    authors_or_organization: narrative review authors
+    year_or_version: 2025
+    reference: PubMed PMID 41095750
+    doi_optional: null
+    url_optional: https://pubmed.ncbi.nlm.nih.gov/41095750/
+    framework_optional: evolving_concept
+    reviewed_on: 2026-08-28
+    status: context_only
+
+claims:
+  dgs_classical_definition:
+    claim_id: dgs_classical_definition
+    evidence_ids: [dgs_definition_kizaki_2020]
+    applicable_profile_ids: [lumbar]
+    applicable_route_ids: [deep_gluteal_piriformis_presentation]
+    domain: diagnostic_definition
+    claim_summary: Classical DGS is a non-discogenic sciatic nerve disorder caused by entrapment in the deep gluteal space.
+    recommendation_direction: context_only
+    strength_optional: null
+    certainty_optional: not_graded
+    conditions_optional: []
+    conflicts_with_claim_ids: [dgs_evolving_muscle_tendon_concept]
+    reviewed_on: 2026-08-28
+
+  dgs_history_exam_are_central:
+    claim_id: dgs_history_exam_are_central
+    evidence_ids: [dgs_definition_kizaki_2020]
+    applicable_profile_ids: [lumbar]
+    applicable_route_ids: [deep_gluteal_piriformis_presentation]
+    domain: history
+    claim_summary: Diagnostic pathways commonly include history of posterior hip/buttock pain, sciatic-type symptoms or sitting intolerance together with targeted physical examination and selected investigations.
+    recommendation_direction: consider
+    strength_optional: null
+    certainty_optional: low
+    conditions_optional: [do_not_infer_syndrome_from_buttock_pain_alone]
+    conflicts_with_claim_ids: []
+    reviewed_on: 2026-08-28
+
+  dgs_no_single_superior_conservative_treatment:
+    claim_id: dgs_no_single_superior_conservative_treatment
+    evidence_ids: [dgs_treatment_mirzaei_2023]
+    applicable_profile_ids: [lumbar]
+    applicable_route_ids: [deep_gluteal_piriformis_presentation]
+    domain: core_rehabilitation
+    claim_summary: Available evidence is low quality and does not establish one conservative treatment as superior to another.
+    recommendation_direction: insufficient_evidence
+    strength_optional: null
+    certainty_optional: low
+    conditions_optional: []
+    conflicts_with_claim_ids: []
+    reviewed_on: 2026-08-28
+
+  dgs_use_broader_first_line_physiotherapy_principles_when_applicable:
+    claim_id: dgs_use_broader_first_line_physiotherapy_principles_when_applicable
+    evidence_ids: [dgs_treatment_mirzaei_2023, nice_ng59_lbp_sciatica]
+    applicable_profile_ids: [lumbar]
+    applicable_route_ids: [deep_gluteal_piriformis_presentation]
+    domain: core_rehabilitation
+    claim_summary: In the absence of route-specific superior conservative treatment evidence, physiotherapy and active/self-management principles may be used when clinically applicable, without implying that a specific DGS technique is proven superior.
+    recommendation_direction: consider
+    strength_optional: conditional_contextual
+    certainty_optional: low
+    conditions_optional: [active_rehabilitation_not_adjunct_only]
+    conflicts_with_claim_ids: []
+    reviewed_on: 2026-08-28
+
+  dgs_no_fixed_evidence_based_recovery_window:
+    claim_id: dgs_no_fixed_evidence_based_recovery_window
+    evidence_ids: [dgs_treatment_mirzaei_2023]
+    applicable_profile_ids: [lumbar]
+    applicable_route_ids: [deep_gluteal_piriformis_presentation]
+    domain: timeline
+    claim_summary: The reviewed DGS evidence does not justify a universal fixed 6–8 week evidence-based recovery or goal-achievement window.
+    recommendation_direction: insufficient_evidence
+    strength_optional: null
+    certainty_optional: low
+    conditions_optional: [allow_clinician_entered_reassessment_window]
+    conflicts_with_claim_ids: []
+    reviewed_on: 2026-08-28
+
+  nice_lbp_sciatica_self_management_activity:
+    claim_id: nice_lbp_sciatica_self_management_activity
+    evidence_ids: [nice_ng59_lbp_sciatica]
+    applicable_profile_ids: [lumbar]
+    applicable_route_ids: [nonspecific_low_back_pain, low_back_pain_with_radiating_leg_symptoms]
+    domain: core_rehabilitation
+    claim_summary: Advice, self-management and continuation of normal activity are recommended components of care for low-back pain with or without sciatica.
+    recommendation_direction: recommend
+    strength_optional: guideline_recommendation
+    certainty_optional: not_graded
+    conditions_optional: []
+    conflicts_with_claim_ids: []
+    reviewed_on: 2026-08-28
+
+  nice_lbp_sciatica_manual_therapy_only_with_exercise_package:
+    claim_id: nice_lbp_sciatica_manual_therapy_only_with_exercise_package
+    evidence_ids: [nice_ng59_lbp_sciatica]
+    applicable_profile_ids: [lumbar]
+    applicable_route_ids: [nonspecific_low_back_pain, low_back_pain_with_radiating_leg_symptoms]
+    domain: adjunct
+    claim_summary: Manual therapy may be considered only as part of a treatment package that includes exercise, with or without psychological therapy.
+    recommendation_direction: consider
+    strength_optional: guideline_recommendation
+    certainty_optional: not_graded
+    conditions_optional: [core_exercise_direction_present]
+    conflicts_with_claim_ids: []
+    reviewed_on: 2026-08-28
+
+  nice_lbp_sciatica_no_traction:
+    claim_id: nice_lbp_sciatica_no_traction
+    evidence_ids: [nice_ng59_lbp_sciatica]
+    applicable_profile_ids: [lumbar]
+    applicable_route_ids: [nonspecific_low_back_pain, low_back_pain_with_radiating_leg_symptoms]
+    domain: adjunct
+    claim_summary: Traction should not be offered for low-back pain with or without sciatica.
+    recommendation_direction: do_not_offer
+    strength_optional: guideline_recommendation
+    certainty_optional: not_graded
+    conditions_optional: []
+    conflicts_with_claim_ids: []
+    reviewed_on: 2026-08-28
+
+route_evidence_map:
+  deep_gluteal_piriformis_presentation:
+    profile_id: lumbar
+    route_id: deep_gluteal_piriformis_presentation
+    diagnostic_claim_ids: [dgs_classical_definition]
+    history_claim_ids: [dgs_history_exam_are_central]
+    core_rehabilitation_claim_ids: [dgs_no_single_superior_conservative_treatment, dgs_use_broader_first_line_physiotherapy_principles_when_applicable]
+    adjunct_claim_ids: []
+    timeline_claim_ids: [dgs_no_fixed_evidence_based_recovery_window]
+    reassessment_claim_ids: []
+    evidence_gaps: [route_specific_reassessment_interval, comparative_effectiveness_of_specific_exercise_protocols]
+    last_reviewed_on: 2026-08-28
+
+coverage_status:
+  routine_routes_complete: false
+  current_seed_scope: [deep_gluteal_piriformis_presentation, nonspecific_low_back_pain, low_back_pain_with_radiating_leg_symptoms]
+  runtime_evidence_aware_generation_authorized: false
+  gate: every_routine_route_requires_route_evidence_profile_before_runtime_authorization
