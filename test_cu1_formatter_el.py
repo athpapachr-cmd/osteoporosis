@@ -4,7 +4,7 @@ import re
 import unittest
 from pathlib import Path
 
-from clinic_utilities.physio_referral_formatter_el import CU1GreekReferralFormatter
+from clinic_utilities.physio_referral_formatter_el_v2 import CU1GreekReferralFormatter
 from clinic_utilities.physio_referral_runtime import CONTRACT_VERSION, CU1ContractBundle, CU1ContractError
 
 
@@ -60,7 +60,7 @@ class CU1GreekFormatterTests(unittest.TestCase):
     def setUpClass(cls):
         cls.bundle = CU1ContractBundle(ROOT)
         cls.formatter = CU1GreekReferralFormatter(cls.bundle)
-        cls.language = cls.bundle.artifacts["referral_language_el"]
+        cls.language = cls.formatter.language
 
     def assert_no_machine_leak(self, text: str):
         self.assertNotIn("_", text)
