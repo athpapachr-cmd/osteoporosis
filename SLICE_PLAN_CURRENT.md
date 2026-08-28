@@ -1,6 +1,6 @@
-# SLICE_PLAN_CURRENT.md — CU-1 history + evidence + rehabilitation-sequence design hardening v1.1
+# SLICE_PLAN_CURRENT.md — CU-1 history + evidence + rehabilitation-sequence design hardening v1.2
 
-> **STATUS:** ACTIVE PRE-RUNTIME DESIGN HARDENING — EXACT GATE IN PROGRESS.
+> **STATUS:** ACTIVE PRE-RUNTIME DESIGN HARDENING — SHARD INTEGRATION PASS / ROUTE COVERAGE IN PROGRESS.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Parent product:** Personal Clinical Excellence System.
 > **Area:** Clinic Utilities / Clinical Operations.
@@ -161,7 +161,7 @@ The conflicting route default is suppressed rather than blended. The protocol is
 
 ---
 
-# 7. Evidence corpus architecture
+# 7. Evidence corpus architecture and promotion state
 
 The logical evidence registry is sharded for maintainability under:
 
@@ -169,15 +169,27 @@ The logical evidence registry is sharded for maintainability under:
 clinic_utilities/contracts/cu1_evidence_manifest_v1.yaml
 ```
 
-Current shards:
+Current normative shards:
 
 ```text
 cu1_evidence_registry_v1.yaml
+→ ACTIVE DESIGN AUTHORITY
+
 cu1_evidence_tranche2_v1.yaml
++ cu1_evidence_tranche2_promotion_v1.yaml
+→ ACTIVE DESIGN AUTHORITY
+→ promotion review PASS
+
 cu1_evidence_tranche3_v1.yaml
++ cu1_evidence_tranche3_promotion_v1.yaml
++ cu1_evidence_tranche3_promotion_fix_v1.yaml
+→ ACTIVE DESIGN AUTHORITY
+→ promotion review PASS
 ```
 
-The manifest requires unique IDs across all shards, exact reference resolution, subtype/applicability matching, freshness checks and no cross-route fallback. Shard order has no clinical precedence.
+The manifest requires unique IDs across logical shards, exact reference resolution, subtype/applicability matching, freshness checks and no cross-route fallback. Shard order has no clinical precedence.
+
+Tranche3 uses an immutable staging source plus reviewed projection and mandatory exact-review overlay. The overlay is applied before logical registry merge.
 
 Work queue:
 
@@ -190,6 +202,8 @@ Synthetic design regression oracle:
 ```text
 clinic_utilities/contracts/cu1_history_evidence_fixtures_v1.yaml
 ```
+
+Shard promotion/integration is now PASS. Route coverage remains incomplete.
 
 ---
 
@@ -209,6 +223,12 @@ GTPS / gluteal-tendinopathy exercise evidence
 
 traumatic anterior shoulder-instability consensus
 != posterior or multidirectional instability authority automatically
+
+acute isolated non-displaced meniscus consensus PT context
+!= displaced / locked / repair-candidate meniscus authority
+
+primary frozen-shoulder evidence
+!= secondary or other stiff-shoulder presentation automatically
 ```
 
 The current frozen route taxonomy may use explicit applicability conditions where this is sufficient; a taxonomy mutation is not justified merely to mirror every evidence subgroup.
@@ -238,6 +258,8 @@ clinician_ui_only
 
 A therapist execution detail such as exact exercise frequency does not automatically become a physician prescription. A clinician-UI-only caveat does not automatically enter routine referral prose.
 
+Framework grades remain framework-specific. Expert consensus / clinical opinion is preserved as consensus and is not relabelled as low-certainty trial evidence.
+
 ---
 
 # 10. Referral output target
@@ -264,7 +286,7 @@ When evidence cannot support a specific progression criterion, the system must n
 
 # 11. Current evidence-design coverage
 
-Curated or staged route-specific profiles now include at least:
+Reviewed route-specific profiles now include at least:
 
 ```text
 deep_gluteal_piriformis_presentation
@@ -281,12 +303,12 @@ confirmed_full_thickness_rotator_cuff_tear_nonoperative
 adhesive_capsulitis_frozen_shoulder
 knee_osteoarthritis
 patellofemoral_pain
-acute_isolated_meniscal_injury_nonoperative
-nonarthritic_intraarticular_hip_pain
-greater_trochanteric_lateral_hip_pain_pathway — GTPS/gluteal-tendinopathy scope
+acute_isolated_meniscal_injury_nonoperative — selected non-displaced nonoperative scope
+nonarthritic_intraarticular_hip_pain — reviewed applicable scope
+greater_trochanteric_lateral_hip_pain_pathway — formal GTPS / formal gluteal-tendinopathy scope
 median_neuropathy_at_wrist_carpal_tunnel — evidence-gap profile
 de_quervain_first_dorsal_compartment_disorder — evidence-gap profile
-glenohumeral_instability_dislocation — direction-specific evidence seeds only
+glenohumeral_instability_dislocation — traumatic-anterior and posterior direction-specific evidence profiles
 ```
 
 Coverage does not imply runtime readiness. Several profiles are deliberately `sequence_incomplete` or `blocked_evidence_gap` because current literature does not support the required precision.
@@ -299,7 +321,7 @@ Before any future runtime evidence-aware generation can be separately authorized
 
 ```text
 EVERY routine route / material variant
-→ unique applicable RouteEvidenceProfile
+→ unique applicable RouteEvidenceProfile or reviewed evidence-gap behavior
 
 EVERY nonblocked route variant
 → complete evidence-bounded RehabilitationSequenceV1
@@ -348,7 +370,7 @@ clinician modification not relabelled as evidence
 protocol-time rule
 ```
 
-Additional route-specific fixtures remain required as route coverage expands.
+Additional route-specific fixtures remain required as route coverage expands, including acute-meniscus applicability, greater-trochanteric subtype separation, shoulder-instability direction separation and primary-frozen-shoulder scope.
 
 ---
 
@@ -362,7 +384,7 @@ material subtype/applicability boundary is unresolved
 evidence-supported rehabilitation direction exists but no safe criterion can be supported and no explicit evidence-gap behavior is defined
 routine referral route has no evidence-supported rehabilitation direction at all
 claim scope/strength cannot be preserved in the formatter contract
-shard contains unresolved or duplicate IDs
+shard contains unresolved or duplicate logical IDs
 route-history prompt coverage is materially incomplete
 fixtures reveal cross-route/subtype leakage
 ```
@@ -371,17 +393,39 @@ Current literature gaps must be handled as gaps; they are not permission to inve
 
 ---
 
-# 15. Current exact next action
+# 15. Current gate and exact next action
+
+Current gate:
 
 ```text
-1. exact-review the sharded evidence corpus against the frozen schema
-2. reconcile coverage matrix with every accepted shard
-3. continue route-by-route evidence curation for remaining routine routes
-4. for evidence-gap routes, define reviewed safe behavior without invented rehabilitation claims
-5. complete route-specific history prompts
-6. expand route-specific fixtures
-7. exact design-completeness review
-8. STOP only at DESIGN-COMPLETE or BLOCK
+object/history/evidence-authority semantics      PASS
+tranche2 promotion                              PASS
+tranche3 promotion                              PASS
+shard integration                               PASS
+routine-route coverage                          FAIL
+route-history prompt completeness               FAIL
+route-complete fixture corpus                    FAIL
+
+DESIGN-COMPLETE                                 NO
+RUNTIME AUTHORIZED                              NO
+```
+
+Continue route-by-route from the reconciled matrix:
+
+```text
+1. calcific_rotator_cuff_tendinopathy
+2. glenohumeral_instability_dislocation_initial_rehabilitation_split
+3. glenohumeral_osteoarthritis
+4. degenerative_meniscal_lesion_conservative_rehabilitation
+5. patellar_tendinopathy
+6. thumb_cmc1_osteoarthritis
+7. cervical_routes
+8. remaining_wrist_hand_and_elbow_routes
+9. remaining routine routes in registry order
+10. define reviewed evidence-gap behavior where full staging is unsupported
+11. complete route-specific history prompts and matching fixtures alongside route curation
+12. exact design-completeness review
+13. STOP only at DESIGN-COMPLETE or a newly specific BLOCK
 ```
 
 No runtime evidence-aware generation is authorized by this slice.
