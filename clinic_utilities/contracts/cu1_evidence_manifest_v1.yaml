@@ -1,0 +1,97 @@
+version: cu1_evidence_manifest_v1
+status: design_frozen_sharded_registry_manifest
+runtime_authorized: false
+reviewed_on: 2026-08-28
+
+purpose: >-
+  Single normative entrypoint for the CU-1 evidence corpus. The evidence corpus is sharded for
+  maintainability, but behaves as one logical registry. Sharding must never relax route/subtype
+  applicability, freshness, provenance, conflict, or output-scope semantics.
+
+normative_schema: clinic_utilities/contracts/cu1_history_timeline_schema_v1.yaml
+coverage_matrix: clinic_utilities/contracts/cu1_evidence_coverage_matrix_v1.yaml
+
+shards:
+  - shard_id: core_seed_registry
+    path: clinic_utilities/contracts/cu1_evidence_registry_v1.yaml
+    state: active_design_authority
+    identity_mode: explicit_payload_id
+  - shard_id: high_frequency_tranche2
+    path: clinic_utilities/contracts/cu1_evidence_tranche2_v1.yaml
+    state: active_design_authority_pending_route_completion
+    identity_mode: map_key_is_canonical_id
+
+logical_collections:
+  - sources
+  - claims
+  - route_history_prompts
+  - route_evidence_profiles
+  - rehabilitation_sequences
+
+identity_rules:
+  explicit_payload_id:
+    description: object carries its canonical id field and it must equal the map key
+  map_key_is_canonical_id:
+    description: >-
+      For design shards, the YAML mapping key is the canonical object id. Before schema validation
+      or any future runtime consumption, normalization materializes that key into the collection's
+      canonical identity field and then applies the same schema as the monolithic registry.
+    materialized_identity_fields:
+      sources: evidence_id
+      claims: claim_id
+      route_history_prompts: prompt_id
+      route_evidence_profiles: route_evidence_profile_id
+      rehabilitation_sequences: sequence_id
+
+merge_rules:
+  - shard_order_does_not_create_clinical_precedence
+  - duplicate_canonical_id_across_shards_is_hard_failure
+  - normalized_object_must_validate_against_normative_schema
+  - evidence_claim_reference_must_resolve_to_exactly_one_claim
+  - evidence_source_reference_must_resolve_to_exactly_one_source
+  - route_evidence_profile_reference_must_resolve_to_exactly_one_profile
+  - rehabilitation_sequence_reference_must_resolve_to_exactly_one_sequence
+  - route_history_prompt_reference_must_resolve_to_exactly_one_prompt
+  - unresolved_reference_is_hard_failure
+  - cyclic_conflict_or_supersession_reference_requires_review
+  - map_key_and_explicit_payload_id_mismatch_is_hard_failure
+
+clinical_applicability_rules:
+  - route_match_is_required
+  - material_subtype_match_is_required_when_claim_or_profile_is_subtype_scoped
+  - applicability_conditions_must_be_satisfied_before_render_authority
+  - regional_profile_identity_never_substitutes_for_route_evidence_profile_identity
+  - a_midportion_Achilles_claim_cannot_authorize_insertional_Achilles_output
+  - a_route_specific_claim_cannot_be_reused_as_generic_MSK_authority
+  - therapist_execution_detail_cannot_auto_render_as_referral_core
+  - clinician_ui_only_cannot_auto_render_as_referral_core
+
+freshness_rules:
+  - source_and_profile_freshness_are_checked_independently
+  - superseded_source_cannot_authorize_current_guideline_wording
+  - review_due_does_not_silently_change_recommendation
+  - stale_or_superseded_authority_requires_clinician_reviewer_action_before_current_label
+
+protocol_and_clinician_override_rules:
+  - explicit_patient_specific_written_protocol_may_override_conflicting_route_default
+  - protocol_authority_is_not_literature_authority
+  - clinician_instruction_is_not_literature_authority
+  - route_evidence_is_not_automatically_selected_when_clinician_modifies_or_omits_it
+
+future_runtime_boundary:
+  allowed_after_separate_authorization_only:
+    - load_manifest
+    - normalize_shard_identity
+    - merge_logical_registry
+    - validate_all_references_and_applicability
+  forbidden_in_current_slice:
+    - runtime_recommendation_selection
+    - patient_data_persistence_change
+    - autonomous_evidence_update
+
+readiness_gate:
+  manifest_frozen: true
+  current_shards_schema_reviewed: false
+  all_routes_covered: false
+  exact_design_completeness_review_passed: false
+  runtime_authorized: false
