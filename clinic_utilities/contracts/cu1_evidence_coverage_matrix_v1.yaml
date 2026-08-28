@@ -1,12 +1,13 @@
-version: cu1_evidence_coverage_matrix_v1_4
+version: cu1_evidence_coverage_matrix_v1_5
 status: active_route_by_route_work_queue
 runtime_authorized: false
 route_registry: cu1_registry_v1.yaml
 evidence_manifest: cu1_evidence_manifest_v1.yaml
 active_core_registry: cu1_evidence_registry_v1.yaml
-promoted_evidence_extensions: [cu1_evidence_tranche2_v1.yaml]
-promotion_projections: [cu1_evidence_tranche2_promotion_v1.yaml]
-staged_evidence_extensions: [cu1_evidence_tranche3_v1.yaml]
+promoted_evidence_extensions: [cu1_evidence_tranche2_v1.yaml, cu1_evidence_tranche3_v1.yaml]
+promotion_projections: [cu1_evidence_tranche2_promotion_v1.yaml, cu1_evidence_tranche3_promotion_v1.yaml]
+promotion_overlays: [cu1_evidence_tranche3_promotion_fix_v1.yaml]
+staged_evidence_extensions: []
 normative_schema: cu1_history_timeline_schema_v1.yaml
 coverage_rule: every_routine_route_and_material_subtype_requires_unique_current_applicable_evidence_profile_and_complete_element_traceable_rehabilitation_sequence_or_explicit_blocked_evidence_gap
 
@@ -89,8 +90,10 @@ profiles:
       status: profile_curated
       sequence_status: sequence_incomplete
       profile_id: rep_full_thickness_cuff_nonoperative_v1
-      source_state: staged_candidate_not_schema_frozen
+      source_state: promoted_active_design_authority
       shard: cu1_evidence_tranche3_v1.yaml
+      promotion_projection: cu1_evidence_tranche3_promotion_v1.yaml
+      promotion_overlay: cu1_evidence_tranche3_promotion_fix_v1.yaml
       blocker: AAOS_2025_supports_PT_for_patient_reported_outcomes_but_does_not_define_one_universal_criteria_based_PT_sequence
     calcific_rotator_cuff_tendinopathy:
       status: evidence_seeded
@@ -100,16 +103,21 @@ profiles:
       status: profile_curated
       sequence_status: sequence_incomplete
       profile_id: rep_adhesive_capsulitis_v1
-      source_state: staged_candidate_not_schema_frozen
+      source_state: promoted_active_design_authority
       shard: cu1_evidence_tranche3_v1.yaml
-      blocker: systematic_review_supports_exercise_and_mobilization_but_current_high_authority_CPG_and_exact_progression_semantics_not_established_in_this_pass
+      promotion_projection: cu1_evidence_tranche3_promotion_v1.yaml
+      promotion_overlay: cu1_evidence_tranche3_promotion_fix_v1.yaml
+      framework_state: Korean_primary_frozen_shoulder_CPG_2025_and_BESS_2025_pathway_preserved_with_2023_SR_context
+      blocker: current_2025_frameworks_support_selected_nonoperative_interventions_but_do_not_define_one_universal_criteria_based_progression_sequence_and_BESS_does_not_establish_supervised_PT_as_superior_to_natural_history
     glenohumeral_instability_dislocation:
-      status: evidence_seeded
+      status: profile_curated
       sequence_status: blocked_evidence_gap
-      source_state: staged_candidate_not_schema_frozen
+      source_state: promoted_active_design_authority
       shard: cu1_evidence_tranche3_v1.yaml
-      candidate_profile_ids: [rep_shoulder_instability_anterior_traumatic_v1, rep_shoulder_instability_posterior_v1]
-      blocker: direction_recurrence_and_operative_context_are_material_and_no_single_route_level_sequence_is_authorized
+      promotion_projection: cu1_evidence_tranche3_promotion_v1.yaml
+      promotion_overlay: cu1_evidence_tranche3_promotion_fix_v1.yaml
+      profile_ids: [rep_shoulder_instability_anterior_traumatic_v1, rep_shoulder_instability_posterior_v1]
+      blocker: traumatic_anterior_and_posterior_authorities_are_direction_specific_and_management_context_is_material_so_no_single_route_level_initial_rehabilitation_sequence_is_authorized
     glenohumeral_osteoarthritis:
       status: evidence_seeded
       next_source: AAOS_2020_glenohumeral_joint_osteoarthritis_CPG
@@ -185,9 +193,12 @@ profiles:
       status: profile_curated
       sequence_status: blocked_evidence_gap
       profile_id: rep_acute_isolated_meniscus_nonoperative_v1
-      source_state: staged_candidate_not_schema_frozen
+      source_state: promoted_active_design_authority
       shard: cu1_evidence_tranche3_v1.yaml
-      blocker: AAOS_2024_support_for_PT_in_selected_nondisplaced_nonoperative_tears_is_consensus_level_and_does_not_supply_a_validated_rehabilitation_progression_sequence
+      promotion_projection: cu1_evidence_tranche3_promotion_v1.yaml
+      promotion_overlay: cu1_evidence_tranche3_promotion_fix_v1.yaml
+      applicability_note: routine_PT_sequence_is_scoped_to_acute_isolated_nondisplaced_non_repair_candidate_nonoperative_context
+      blocker: AAOS_2024_PT_authority_is_workgroup_clinical_opinion_and_does_not_supply_a_validated_rehabilitation_progression_sequence
     patellofemoral_pain:
       status: profile_curated
       sequence_status: sequence_incomplete
@@ -218,18 +229,22 @@ profiles:
       status: profile_curated
       sequence_status: sequence_incomplete
       profile_id: rep_gtps_gluteal_tendinopathy_v1
-      source_state: staged_candidate_not_schema_frozen
+      source_state: promoted_active_design_authority
       shard: cu1_evidence_tranche3_v1.yaml
+      promotion_projection: cu1_evidence_tranche3_promotion_v1.yaml
+      promotion_overlay: cu1_evidence_tranche3_promotion_fix_v1.yaml
       material_subtype_split_review_required: true
-      blocker: exercise_evidence_is_applicable_to_GT_GTPS_gluteal_tendinopathy_but_not_automatically_to_isolated_trochanteric_bursitis_or_other_established_subtype
+      blocker: promoted_exercise_authority_is_limited_to_formal_GTPS_or_formal_gluteal_tendinopathy_and_does_not_cover_formal_trochanteric_bursitis_or_other_established_greater_trochanteric_disorder
     nonarthritic_intraarticular_hip_pain:
       status: profile_curated
       sequence_status: sequence_incomplete
       profile_id: rep_nonarthritic_intraarticular_hip_v1
-      source_state: staged_candidate_not_schema_frozen
+      source_state: promoted_active_design_authority
       shard: cu1_evidence_tranche3_v1.yaml
+      promotion_projection: cu1_evidence_tranche3_promotion_v1.yaml
+      promotion_overlay: cu1_evidence_tranche3_promotion_fix_v1.yaml
       material_subtype_split_review_required: true
-      blocker: 2023_CPG_is_route_specific_but_strongest_rehabilitation_recommendations_are_for_FAIS_and_labral_presentations_and_CPG_notes_limited_reporting_of_progression_criteria
+      blocker: 2023_CPG_supports_multimodal_FAIS_labral_and_impairment_specific_rehabilitation_but_no_validated_route_wide_progression_thresholds_exist_and_other_established_nonarthritic_conditions_require_specific_applicability_review
     adductor_related_groin_pain: {status: pending}
     post_traumatic_hip_groin_pain_stiffness: {status: pending}
 
@@ -292,7 +307,6 @@ shared_owners:
 research_queue_priority:
   rationale: prioritize_routes_with_current_route_specific_CPGs_and_high_real_world_frequency_while_preserving_subtype_boundaries
   next:
-    - normalize_review_promote_tranche3
     - calcific_rotator_cuff_tendinopathy
     - glenohumeral_instability_dislocation_initial_rehabilitation_split
     - glenohumeral_osteoarthritis
@@ -308,9 +322,11 @@ integration_state:
   tranche2_schema_conformance_reviewed: true
   tranche2_promotion_gate_passed: true
   tranche2_state: promoted_active_design_authority
-  staged_tranche3_schema_conformance_reviewed: false
-  tranche3_promotion_gate_passed: false
-  all_staged_shards_promotion_gate_passed: false
+  tranche3_schema_conformance_reviewed: true
+  tranche3_promotion_gate_passed: true
+  tranche3_state: promoted_active_design_authority
+  all_listed_shards_schema_reviewed: true
+  all_listed_shards_promotion_or_native_gate_passed: true
   fixtures_catalog_created: true
   route_specific_history_prompt_catalog_complete: false
 
@@ -319,8 +335,9 @@ readiness_gate:
   object_semantics_gate: passed_for_v1_1_design
   active_core_output_scope_gate: passed_after_scope_leak_fix
   tranche2_promotion_gate: passed
+  tranche3_promotion_gate: passed
+  shard_integration_gate: passed
   route_coverage_gate: failed
-  tranche3_integration_gate: failed
   route_history_prompt_gate: failed
   exact_design_completeness_review: blocked
   requirements:
@@ -332,6 +349,6 @@ readiness_gate:
     - evidence_gaps_and_conflicts_are_explicit
     - no_route_level_source_is_applied_to_a_noncovered_subtype
     - route_specific_history_prompts_are_defined
-    - tranche3_passes_promotion_gate_or_is_removed
+    - all_shards_pass_native_or_reviewed_promotion_gate
     - synthetic_composition_and_evidence_fixtures_pass_exact_review
     - exact_design_completeness_review_passed
