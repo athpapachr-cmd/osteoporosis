@@ -1,0 +1,212 @@
+version: cu1_history_evidence_fixtures_v1
+status: design_oracle_pending_full_route_coverage
+runtime_authorized: false
+normative_schema: cu1_history_timeline_schema_v1.yaml
+evidence_registry: cu1_evidence_registry_v1.yaml
+
+fixture_policy:
+  - fixtures_test_semantics_not_runtime_formatter_implementation
+  - missing_fields_outside_fixture_focus_do_not_assert_full_referral_validity
+  - no_fixture_may_authorize_runtime_evidence_generation
+  - route_or_subtype_mismatch_is_hard_failure
+  - evidence_gap_must_not_be_filled_by_generic_content
+
+fixtures:
+  chronic_deep_gluteal_8_month_uncertain_diagnosis:
+    route_id: deep_gluteal_piriformis_presentation
+    input:
+      diagnosis_assertion: not_stated
+      history:
+        duration_value_optional: 8
+        duration_unit_optional: months
+        onset_pattern: gradual
+        course: fluctuating
+        patient_priority_activity_optional: prolonged_sitting_for_work
+        provenance_entries:
+          - {field_path: duration_value_optional, source: patient_reported, assertion_state: stated}
+          - {field_path: duration_unit_optional, source: patient_reported, assertion_state: stated}
+          - {field_path: patient_priority_activity_optional, source: patient_reported, assertion_state: stated}
+        route_history_items:
+          - {history_item_id: dgs_sitting_intolerance, response_type: boolean_tristate, state_or_value: yes, unit_optional: null, free_text_optional: null, source: patient_reported, assertion_state: stated}
+    expected:
+      history_contains_approximate_duration: true
+      exact_onset_date_inferred: false
+      definitive_DGS_diagnosis_generated: false
+      evidence_profile_id: rep_deep_gluteal_piriformis_v1
+      specific_superior_DGS_technique_generated: false
+      evidence_gap_visible_to_clinician: true
+
+  lateral_epicondylalgia_disease_specific_loading:
+    route_id: lateral_elbow_tendinopathy
+    input:
+      formal_diagnosis_asserted: true
+      work_sport_context: high_demand_racquet_sport
+    expected:
+      evidence_profile_id: rep_lateral_elbow_tendinopathy_v1
+      required_claim_ids: [lateral_elbow_resisted_wrist_extensor_exercise]
+      high_demand_optional_claim_ids: [lateral_elbow_high_demand_phased_reintroduction]
+      wording_must_include_disease_specific_wrist_extensor_semantics: true
+      generic_tendon_loading_only_is_insufficient: true
+      invented_return_threshold_forbidden: true
+
+  midportion_achilles_subtype_boundary:
+    route_id: achilles_tendinopathy
+    subtype_id: midportion_achilles_tendinopathy
+    input:
+      formal_diagnosis_asserted: true
+    expected:
+      evidence_profile_id: rep_achilles_midportion_v1
+      allowed_primary_source_ids: [achilles_midportion_cpg_2024]
+      required_claim_ids: [achilles_midportion_tendon_loading_first_line]
+      insertional_source_authority_allowed: false
+      eccentric_only_wording_allowed: false
+      execution_frequency_auto_rendered_in_referral_core: false
+
+  insertional_achilles_evidence_boundary:
+    route_id: achilles_tendinopathy
+    subtype_id: insertional_achilles_tendinopathy
+    input:
+      formal_diagnosis_asserted: true
+      symptom_duration: chronic
+      activity_context: sport_active
+    expected:
+      evidence_profile_id: rep_achilles_insertional_v1
+      midportion_CPG_authority_allowed: false
+      low_compression_strategy_may_be_considered: true
+      universal_component_specific_effect_claim_allowed: false
+      universal_progression_threshold_allowed: false
+      population_limit_visible_to_clinician: true
+
+  same_loading_label_not_same_semantics:
+    compared_routes:
+      - {route_id: lateral_elbow_tendinopathy, profile_id: rep_lateral_elbow_tendinopathy_v1}
+      - {route_id: achilles_tendinopathy, subtype_id: midportion_achilles_tendinopathy, profile_id: rep_achilles_midportion_v1}
+    expected:
+      shared_generic_intervention_authority_allowed: false
+      elbow_requires_wrist_extensor_specific_claim: true
+      Achilles_requires_Achilles_specific_claim: true
+      cross_route_claim_resolution_hard_failure: true
+
+  postoperative_written_protocol_overrides_route_default:
+    route_id: postoperative_knee_rehabilitation
+    input:
+      patient_specific_protocol:
+        protocol_constraint_id: postop_fixture_no_loaded_flexion
+        protocol_type: postoperative_written_protocol
+        source_description: surgeon_written_protocol
+        constraint_statement: loaded_flexion_restricted_until_explicit_clearance
+        affected_phase_or_element_ids: [generic_loaded_flexion_progression]
+    expected:
+      protocol_authority_precedence_over_route_default: true
+      conflicting_default_suppressed_not_blended: true
+      protocol_constraint_mislabeled_as_literature: false
+      generic_calendar_progression_invented: false
+
+  fracture_healing_restriction_overrides_generic_rehab:
+    route_id: fracture_rehabilitation_post_immobilization
+    input:
+      patient_specific_protocol:
+        protocol_constraint_id: fracture_fixture_weight_bearing
+        protocol_type: fracture_healing_restriction
+        source_description: orthopaedic_documented_restriction
+        constraint_statement: weight_bearing_restricted_until_documented_clearance
+        affected_phase_or_element_ids: [progressive_weight_bearing]
+    expected:
+      unrestricted_weight_bearing_generated: false
+      healing_restriction_precedence: true
+      time_alone_used_to_infer_clearance: false
+
+  conflicting_adjunct_guidance_not_silently_hybridized:
+    route_id: nonspecific_low_back_pain
+    input:
+      clinician_selected_adjunct: acupuncture
+      chronic_primary_low_back_pain_context: true
+    expected:
+      conflict_must_be_explicit_if_NICE_and_other_authority_disagree: true
+      wording_cannot_state_universal_guideline_recommendation: true
+      clinician_selection_does_not_change_evidence_strength: true
+      active_rehabilitation_remains_core: true
+
+  weak_evidence_route_no_false_precision:
+    route_id: deep_gluteal_piriformis_presentation
+    expected:
+      evidence_certainty: low
+      route_specific_progression_threshold_generated: false
+      comparative_superiority_statement_generated: false
+      broad_noninvented_physio_direction_allowed: true
+
+  missing_history_not_negative_history:
+    route_id: nonspecific_low_back_pain
+    input:
+      history: {}
+    expected:
+      history_section_may_be_omitted: true
+      no_prior_episodes_generated: false
+      no_trauma_generated: false
+      no_prior_treatment_generated: false
+      exact_duration_generated: false
+      reassuring_negative_from_missing_data_generated: false
+
+  stale_or_superseded_evidence_block:
+    synthetic_source:
+      evidence_id: synthetic_stale_source
+      status: active
+      freshness_state: stale
+      next_review_due: 2026-01-01
+    synthetic_claim:
+      claim_id: synthetic_stale_claim
+      evidence_ids: [synthetic_stale_source]
+      applicable_route_evidence_profile_ids: [rep_lateral_elbow_tendinopathy_v1]
+      applicable_route_ids: [lateral_elbow_tendinopathy]
+    expected:
+      current_guideline_label_allowed: false
+      automatic_referral_core_render_allowed: false
+      clinician_review_required: true
+
+  therapist_execution_detail_not_physician_prescription:
+    route_id: achilles_tendinopathy
+    subtype_id: midportion_achilles_tendinopathy
+    claim_id: achilles_midportion_loading_frequency_execution_detail
+    expected:
+      claim_output_scope: therapist_execution_detail
+      exact_frequency_auto_rendered_in_referral_core: false
+      evidence_available_to_clinician_UI: true
+      physiotherapist_execution_autonomy_preserved: true
+
+  clinician_modification_not_relabelled_as_evidence:
+    route_id: lateral_elbow_tendinopathy
+    input:
+      clinician_modification:
+        modification_id: fixture_clinician_instruction
+        target_element_id: lateral_elbow_resisted_loading
+        action: add_clinician_instruction
+        replacement_or_added_text_optional: avoid_specific_activity_temporarily_for_patient_specific_reason
+        rationale_optional: clinician_documented_patient_specific_context
+    expected:
+      modification_preserved: true
+      modification_labelled_guideline_recommendation: false
+      original_evidence_claims_remain_auditable: true
+
+  insertional_midportion_cross_authority_regression:
+    route_id: achilles_tendinopathy
+    subtype_id: insertional_achilles_tendinopathy
+    attempted_claim_id: achilles_midportion_tendon_loading_first_line
+    expected:
+      validation_result: hard_fail
+      reason: claim_subtype_not_applicable
+
+  protocol_time_rule_regression:
+    route_id: postoperative_shoulder_rehabilitation
+    scenarios:
+      - input: {explicit_written_protocol_time_restriction: true}
+        expected: {calendar_constraint_allowed: true, authority_type: patient_specific_protocol}
+      - input: {explicit_written_protocol_time_restriction: false}
+        expected: {generic_calendar_constraint_allowed: false}
+
+readiness:
+  fixture_catalog_created: true
+  fixtures_fully_executable: false
+  blockers:
+    - remaining_route_profiles_and_sequences_not_curated
+    - runtime_validator_not_authorized
+    - route_specific_prompt_catalog_incomplete
