@@ -1,13 +1,13 @@
-version: cu1_evidence_manifest_v1_2
+version: cu1_evidence_manifest_v1_3
 status: design_frozen_sharded_registry_manifest
 runtime_authorized: false
 reviewed_on: 2026-08-28
 
 purpose: >-
-  Single normative entrypoint for the CU-1 evidence corpus. The evidence corpus is sharded for
-  maintainability, but behaves as one logical registry only after every included shard passes the
-  same schema/applicability/reference review. Sharding must never relax route/subtype applicability,
-  freshness, provenance, conflict, or output-scope semantics.
+  Single normative entrypoint for the CU-1 evidence corpus. The corpus is sharded for maintainability.
+  A staging shard may become active design authority only after its reviewed normalization/promotion
+  projection passes the same schema, applicability, reference, freshness and output-scope gates as
+  the active core registry. Sharding must never relax clinical evidence governance.
 
 normative_schema: clinic_utilities/contracts/cu1_history_timeline_schema_v1.yaml
 coverage_matrix: clinic_utilities/contracts/cu1_evidence_coverage_matrix_v1.yaml
@@ -23,11 +23,16 @@ shards:
     state: active_design_authority
     identity_mode: explicit_payload_id
     schema_conformance_reviewed: true
+
   - shard_id: high_frequency_tranche2
     path: clinic_utilities/contracts/cu1_evidence_tranche2_v1.yaml
-    state: staged_candidate_not_schema_frozen
-    identity_mode: map_key_is_canonical_id
-    schema_conformance_reviewed: false
+    state: active_design_authority
+    identity_mode: map_key_identity_with_reviewed_promotion_projection
+    promotion_projection: clinic_utilities/contracts/cu1_evidence_tranche2_promotion_v1.yaml
+    promotion_review: clinic_utilities/contracts/CU1_TRANCHE2_PROMOTION_REVIEW_2026-08-28.md
+    schema_conformance_reviewed: true
+    normative_read_rule: apply_promotion_projection_before_logical_registry_merge
+
   - shard_id: shoulder_hip_meniscus_tranche3
     path: clinic_utilities/contracts/cu1_evidence_tranche3_v1.yaml
     state: staged_candidate_not_schema_frozen
@@ -46,10 +51,15 @@ identity_rules:
     description: object carries its canonical id field and it must equal the map key
   map_key_is_canonical_id:
     description: >-
-      A staged design shard may use the YAML mapping key as the object identity during curation.
-      Before promotion to active design authority, normalization must materialize that key into the
-      collection's canonical identity field and the resulting object must contain every required
-      non-optional field from the normative schema.
+      A staged design shard may use the YAML mapping key as object identity during curation. It is not
+      active authority until a reviewed promotion process materializes identities and all required
+      non-optional fields and validates the resulting logical objects.
+  map_key_identity_with_reviewed_promotion_projection:
+    description: >-
+      The staging map key is the canonical identity, but the shard participates in the normative
+      logical registry only after applying its named reviewed promotion projection. The projection
+      must materialize IDs/defaults, remove superseded/hybrid objects, apply reviewed corrections and
+      then satisfy the ordinary schema/reference/applicability/output-scope/freshness gates.
     materialized_identity_fields:
       sources: evidence_id
       claims: claim_id
@@ -67,12 +77,24 @@ promotion_gate_for_staged_shard:
   - validate_route_and_subtype_applicability
   - validate_output_scope_compatibility_for_every_rendered_element
   - validate_freshness_and_supersession_state
-  - validate_no_duplicate_ids_across_all_active_or_promoted_shards
+  - validate_no_duplicate_ids_across_all_active_or_promotion_candidate_shards
   - exact_human_evidence_scope_review
+
+promotion_projection_rules:
+  - staging_source_is_retained_for_audit_history
+  - promotion_projection_is_normative_for_the_promoted_logical_shard
+  - dropped_or_replaced_ids_do_not_survive_logical_merge
+  - projection_may_materialize_required_identity_and_empty_collection_fields
+  - projection_may_correct_verified_source_metadata
+  - projection_may_split_silent_hybrid_claims_into_framework_specific_claims
+  - projection_may_remove_output_scope_leaks
+  - projection_must_not_invent_unsupported_clinical_recommendations_or_progression_thresholds
+  - projection_must_not_change_frozen_route_taxonomy
 
 merge_rules:
   - only_active_design_authority_shards_participate_in_the_normative_logical_registry
-  - staged_candidates_may_inform_the_work_queue_but_are_not_yet_normative_registry_authority
+  - active_shard_with_promotion_projection_is_normalized_before_merge
+  - staged_candidates_may_inform_the_work_queue_but_are_not_normative_registry_authority
   - shard_order_does_not_create_clinical_precedence
   - duplicate_canonical_id_across_active_or_promotion_candidate_shards_is_hard_failure
   - normalized_object_must_validate_against_normative_schema
@@ -96,6 +118,12 @@ clinical_applicability_rules:
   - therapist_execution_detail_cannot_auto_render_as_referral_core
   - clinician_ui_only_cannot_auto_render_as_referral_core
 
+framework_governance_rules:
+  - framework_specific_strength_or_grade_is_not_shared_with_another_framework
+  - compatible_framework_claims_may_both_support_an_element_without_manufacturing_a_hybrid_strength
+  - conflicting_framework_positions_remain_explicit
+  - newer_route_specific_guidance_does_not_silently_erase_an_older_still_relevant_distinct_framework
+
 freshness_rules:
   - source_and_profile_freshness_are_checked_independently
   - superseded_source_cannot_authorize_current_guideline_wording
@@ -111,6 +139,7 @@ protocol_and_clinician_override_rules:
 future_runtime_boundary:
   allowed_after_separate_authorization_only:
     - load_manifest
+    - apply_reviewed_promotion_projection
     - normalize_shard_identity
     - merge_logical_registry
     - validate_all_references_and_applicability
@@ -121,7 +150,11 @@ future_runtime_boundary:
 
 readiness_gate:
   manifest_frozen: true
-  all_included_shards_schema_reviewed: false
+  active_core_schema_reviewed: true
+  tranche2_promotion_gate_passed: true
+  tranche3_promotion_gate_passed: false
+  all_active_authority_shards_schema_reviewed: true
+  all_listed_shards_schema_reviewed: false
   all_routes_covered: false
   exact_design_completeness_review_passed: false
   runtime_authorized: false
