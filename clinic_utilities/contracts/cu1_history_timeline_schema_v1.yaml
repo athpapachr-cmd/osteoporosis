@@ -53,12 +53,16 @@ route_history_selection:
     source:
       enum: [clinician_entered, patient_reported, documented_record]
   rules:
-    - route_history_item_must_be_allowed_for_current_route
+    - route_history_item_must_be_allowed_for_current_route_variant
     - not_selected_does_not_mean_absent
 
 rehabilitation_sequence_v1:
   fields:
     route_id: canonical_route_id
+    subtype_ids_optional:
+      type: list_of_canonical_subtype_ids
+    applicability_conditions_optional:
+      type: list_of_canonical_conditions
     sequence_source:
       enum: [route_evidence_profile]
     phases:
@@ -66,9 +70,10 @@ rehabilitation_sequence_v1:
     clinician_modifications_optional:
       type: list_of_strings
   rules:
-    - route_must_have_its_own_evidence_profile
-    - route_must_have_its_own_rehabilitation_sequence
+    - selected_route_variant_must_have_applicable_evidence_profile
+    - selected_route_variant_must_have_applicable_rehabilitation_sequence
     - generic_cross_route_sequence_is_forbidden
+    - route_level_profile_must_not_be_applied_to_noncovered_subtype
     - written_postoperative_or_fracture_protocol_overrides_route_sequence
 
 rehabilitation_phase_v1:
@@ -87,7 +92,7 @@ rehabilitation_phase_v1:
     strength_or_certainty_optional: string_or_null
     required_for_route: boolean
   rules:
-    - every_phase_requires_at_least_one_active_route_applicable_evidence_claim
+    - every_phase_requires_at_least_one_active_applicable_evidence_claim
     - progression_is_criteria_based_unless_authoritative_protocol_explicitly_uses_time
     - elapsed_time_alone_does_not_advance_phase
     - unsupported_phase_is_not_rendered
@@ -130,6 +135,10 @@ route_evidence_profile_v1:
   fields:
     profile_id: canonical_profile_id
     route_id: canonical_route_id
+    subtype_ids_optional:
+      type: list_of_canonical_subtype_ids
+    applicability_conditions_optional:
+      type: list_of_canonical_conditions
     diagnostic_claim_ids: list_of_evidence_claim_ids
     history_claim_ids: list_of_evidence_claim_ids
     examination_claim_ids: list_of_evidence_claim_ids
@@ -143,8 +152,9 @@ route_evidence_profile_v1:
     freshness_state:
       enum: [current, review_due, stale, superseded]
   rules:
-    - every_routine_route_requires_profile_before_evidence_aware_generation
-    - every_rendered_recommendation_requires_active_route_applicable_claim
+    - every_routine_route_variant_requires_applicable_profile_before_evidence_aware_generation
+    - every_rendered_recommendation_requires_active_route_and_subtype_applicable_claim
+    - a_midportion_only_source_must_not_authorize_insertional_Achilles_wording
     - missing_evidence_is_explicit_gap_not_generic_fill
     - stale_or_superseded_profile_cannot_be_labelled_current_guideline_based
 
@@ -163,10 +173,11 @@ formatter_semantics:
   short_rehab_rule: compress_route_specific_sequence_without_replacing_it_with_generic_goals
   empty_history_rule: omit_section
   evidence_basis_required:
-    short: compact_route_specific_source_footer
-    detailed: route_specific_source_section
+    short: compact_route_variant_specific_source_footer
+    detailed: route_variant_specific_source_section
   bibliography_source_priority:
+    - current_route_and_subtype_specific_cpg
     - current_route_specific_cpg
-    - current_route_specific_systematic_review
+    - current_route_or_subtype_specific_systematic_review
     - high_quality_consensus_or_other_best_available_source
   no_unrelated_general_source_when_route_specific_source_exists: true
