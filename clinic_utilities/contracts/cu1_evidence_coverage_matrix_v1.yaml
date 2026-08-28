@@ -1,12 +1,14 @@
-version: cu1_evidence_coverage_matrix_v1_3
+version: cu1_evidence_coverage_matrix_v1_4
 status: active_route_by_route_work_queue
 runtime_authorized: false
 route_registry: cu1_registry_v1.yaml
 evidence_manifest: cu1_evidence_manifest_v1.yaml
 active_core_registry: cu1_evidence_registry_v1.yaml
-staged_evidence_extensions: [cu1_evidence_tranche2_v1.yaml, cu1_evidence_tranche3_v1.yaml]
+promoted_evidence_extensions: [cu1_evidence_tranche2_v1.yaml]
+promotion_projections: [cu1_evidence_tranche2_promotion_v1.yaml]
+staged_evidence_extensions: [cu1_evidence_tranche3_v1.yaml]
 normative_schema: cu1_history_timeline_schema_v1.yaml
-coverage_rule: every_routine_route_and_material_subtype_requires_unique_current_applicable_evidence_profile_and complete_element_traceable_rehabilitation_sequence_or_explicit_blocked_evidence_gap
+coverage_rule: every_routine_route_and_material_subtype_requires_unique_current_applicable_evidence_profile_and_complete_element_traceable_rehabilitation_sequence_or_explicit_blocked_evidence_gap
 
 status_values:
   - pending
@@ -19,6 +21,7 @@ status_values:
 
 source_state_values:
   - active_core_registry
+  - promoted_active_design_authority
   - staged_candidate_not_schema_frozen
 
 object_contract_status:
@@ -62,9 +65,10 @@ profiles:
       status: profile_curated
       sequence_status: sequence_incomplete
       profile_id: rep_lumbar_stenosis_claudication_v1
-      source_state: staged_candidate_not_schema_frozen
+      source_state: promoted_active_design_authority
       shard: cu1_evidence_tranche2_v1.yaml
-      blocker: current_route_specific_CPG_supports_multimodal_care_only_with_conditional_weak_recommendations_and_does_not_define_universal_progression_thresholds
+      promotion_projection: cu1_evidence_tranche2_promotion_v1.yaml
+      blocker: route_specific_CPG_supports_multimodal_care_only_with_conditional_weak_recommendations_and_does_not_define_universal_progression_thresholds
     deep_gluteal_piriformis_presentation:
       status: profile_curated
       sequence_status: blocked_evidence_gap
@@ -77,8 +81,9 @@ profiles:
       status: profile_curated
       sequence_status: ready_for_review
       profile_id: rep_rotator_cuff_related_pain_v1
-      source_state: staged_candidate_not_schema_frozen
+      source_state: promoted_active_design_authority
       shard: cu1_evidence_tranche2_v1.yaml
+      promotion_projection: cu1_evidence_tranche2_promotion_v1.yaml
       note: 2025_tendinopathy_CPG_excludes_full_thickness_tears
     confirmed_full_thickness_rotator_cuff_tear_nonoperative:
       status: profile_curated
@@ -137,8 +142,9 @@ profiles:
       status: blocked_evidence_gap
       sequence_status: pending
       profile_id: rep_de_quervain_v1
-      source_state: staged_candidate_not_schema_frozen
+      source_state: promoted_active_design_authority
       shard: cu1_evidence_tranche2_v1.yaml
+      promotion_projection: cu1_evidence_tranche2_promotion_v1.yaml
       blocker: current_systematic_reviews_support_injection_orthosis_management_but_do_not_establish_a_validated_active_progressive_rehabilitation_sequence
     thumb_cmc1_osteoarthritis: {status: pending}
     interphalangeal_hand_osteoarthritis: {status: pending}
@@ -146,9 +152,10 @@ profiles:
       status: blocked_evidence_gap
       sequence_status: pending
       profile_id: rep_carpal_tunnel_v1
-      source_state: staged_candidate_not_schema_frozen
+      source_state: promoted_active_design_authority
       shard: cu1_evidence_tranche2_v1.yaml
-      blocker: AAOS_2024_is_current_medical_management_authority_and_rehab_evidence_is_conditional_but_the_required_criteria_based_sequence_is_not_established
+      promotion_projection: cu1_evidence_tranche2_promotion_v1.yaml
+      blocker: AAOS_2024_is_current_medical_management_authority_but_the_required_criteria_based_rehabilitation_sequence_is_not_established
     ulnar_sided_wrist_tfcc_presentation: {status: pending}
     intersection_syndrome: {status: pending}
     thumb_mcp_collateral_ligament_injury_rehabilitation: {status: pending, structural_restrictions_apply: true}
@@ -168,9 +175,11 @@ profiles:
       status: profile_curated
       sequence_status: sequence_incomplete
       profile_id: rep_knee_oa_v1
-      source_state: staged_candidate_not_schema_frozen
+      source_state: promoted_active_design_authority
       shard: cu1_evidence_tranche2_v1.yaml
-      blocker: strong_exercise_and_self_management_authority_exists_but_no_universal_multi_phase_transition_thresholds
+      promotion_projection: cu1_evidence_tranche2_promotion_v1.yaml
+      framework_state: AAOS_2021_and_EULAR_2023_update_preserved_as_distinct_compatible_authorities
+      blocker: strong_core_exercise_self_management_authority_exists_but_no_universal_multi_phase_transition_thresholds
     degenerative_meniscal_lesion_conservative_rehabilitation: {status: pending}
     acute_isolated_meniscal_injury_nonoperative:
       status: profile_curated
@@ -183,9 +192,11 @@ profiles:
       status: profile_curated
       sequence_status: sequence_incomplete
       profile_id: rep_patellofemoral_pain_v1
-      source_state: staged_candidate_not_schema_frozen
+      source_state: promoted_active_design_authority
       shard: cu1_evidence_tranche2_v1.yaml
-      blocker: core_combined_hip_knee_exercise_is_strong_but_exact_transition_to_running_specific_work_is_not_defined
+      promotion_projection: cu1_evidence_tranche2_promotion_v1.yaml
+      framework_state: APTA_2019_and_Dutch_multidisciplinary_2025_preserved_separately
+      blocker: current_sources_support_exercise_first_and_structured_reassessment_but_exact_transition_to_running_specific_work_is_not_defined
     patellar_tendinopathy: {status: pending}
     quadriceps_tendinopathy: {status: pending}
     acl_injury_instability_rehabilitation:
@@ -210,7 +221,7 @@ profiles:
       source_state: staged_candidate_not_schema_frozen
       shard: cu1_evidence_tranche3_v1.yaml
       material_subtype_split_review_required: true
-      blocker: exercise_evidence_is_applicable_to_GT/GTPS_gluteal_tendinopathy_but_not_automatically_to_isolated_trochanteric_bursitis_or_other_established_subtype
+      blocker: exercise_evidence_is_applicable_to_GT_GTPS_gluteal_tendinopathy_but_not_automatically_to_isolated_trochanteric_bursitis_or_other_established_subtype
     nonarthritic_intraarticular_hip_pain:
       status: profile_curated
       sequence_status: sequence_incomplete
@@ -227,8 +238,9 @@ profiles:
       status: profile_curated
       sequence_status: ready_for_review
       profile_id: rep_lateral_ankle_sprain_v1
-      source_state: staged_candidate_not_schema_frozen
+      source_state: promoted_active_design_authority
       shard: cu1_evidence_tranche2_v1.yaml
+      promotion_projection: cu1_evidence_tranche2_promotion_v1.yaml
       freshness_note: 2021_CPG_current_but_APTA_lists_update_in_progress_so_next_review_shortened
     achilles_tendinopathy:
       status: profile_curated
@@ -253,8 +265,9 @@ profiles:
       status: profile_curated
       sequence_status: sequence_incomplete
       profile_id: rep_plantar_heel_pain_v1
-      source_state: staged_candidate_not_schema_frozen
+      source_state: promoted_active_design_authority
       shard: cu1_evidence_tranche2_v1.yaml
+      promotion_projection: cu1_evidence_tranche2_promotion_v1.yaml
       blocker: 2023_CPG_supports_core_interventions_but_not_a_required_multi_phase_transition_model
     posterior_tibial_tendon_dysfunction_progressive_collapsing_foot_deformity: {status: pending}
     peroneal_tendon_disorder_nonoperative: {status: pending}
@@ -279,6 +292,7 @@ shared_owners:
 research_queue_priority:
   rationale: prioritize_routes_with_current_route_specific_CPGs_and_high_real_world_frequency_while_preserving_subtype_boundaries
   next:
+    - normalize_review_promote_tranche3
     - calcific_rotator_cuff_tendinopathy
     - glenohumeral_instability_dislocation_initial_rehabilitation_split
     - glenohumeral_osteoarthritis
@@ -291,9 +305,12 @@ research_queue_priority:
 
 integration_state:
   active_core_registry_scope_complete: false
-  staged_tranche2_schema_conformance_reviewed: false
+  tranche2_schema_conformance_reviewed: true
+  tranche2_promotion_gate_passed: true
+  tranche2_state: promoted_active_design_authority
   staged_tranche3_schema_conformance_reviewed: false
-  shard_promotion_gate_passed: false
+  tranche3_promotion_gate_passed: false
+  all_staged_shards_promotion_gate_passed: false
   fixtures_catalog_created: true
   route_specific_history_prompt_catalog_complete: false
 
@@ -301,8 +318,9 @@ readiness_gate:
   runtime_evidence_aware_generation: blocked
   object_semantics_gate: passed_for_v1_1_design
   active_core_output_scope_gate: passed_after_scope_leak_fix
+  tranche2_promotion_gate: passed
   route_coverage_gate: failed
-  shard_integration_gate: failed
+  tranche3_integration_gate: failed
   route_history_prompt_gate: failed
   exact_design_completeness_review: blocked
   requirements:
@@ -314,6 +332,6 @@ readiness_gate:
     - evidence_gaps_and_conflicts_are_explicit
     - no_route_level_source_is_applied_to_a_noncovered_subtype
     - route_specific_history_prompts_are_defined
-    - staged_shards_pass_promotion_gate_or_are_removed
+    - tranche3_passes_promotion_gate_or_is_removed
     - synthetic_composition_and_evidence_fixtures_pass_exact_review
     - exact_design_completeness_review_passed
