@@ -1,244 +1,306 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** ACTIVE OPERATIONAL AUTHORITY.
+> **STATUS:** ACTIVE OPERATIONAL AUTHORITY — CU-1 DESIGN GATE = `BLOCK`.
 > **Updated:** 2026-08-28 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Verified current main at slice start:** `ad8045657616cd306b66d3becbda271f00c7fbbc`.
-> **Prior CU-1 dynamic-form fix:** PR #62 squash-merged as `ad8045657616cd306b66d3becbda271f00c7fbbc`.
-> **Current major phase:** bounded CU-1 clinician-quality design hardening — history + criteria-based rehabilitation sequence + disease-specific evidence.
-> **CU-1 status:** REOPENED / REPLAN REQUIRED BEFORE FURTHER RUNTIME WORK.
+> **Verified current remote `main`:** `08ecd3ab33e98d567c47042a8a1de482df6952b9`.
+> **Current major phase:** CU-1 clinician-quality pre-runtime design hardening — history + criteria-based rehabilitation + route/subtype-specific evidence.
+> **CU-1 status:** REOPENED / ACTIVE DESIGN HARDENING / EXACT DESIGN GATE BLOCKED.
 > **ACTIVE CANONICAL WRITER/LOCK:** `design/cu1-history-evidence-timeline-2026-08-28`.
 > **ACTIVE RUNTIME WRITER/LOCK:** NONE.
-> **Runtime mutation in this slice:** NOT AUTHORIZED until design/evidence coverage review passes.
+> **PR #63:** draft; design-only; reviewed design head before canonical closeout `a73b72beefcaafa901163a77758b795b78101330`.
+> **Runtime evidence-aware generation:** NOT AUTHORIZED.
 > **CU-2:** NOT AUTHORIZED.
-> **PR-1 Transcript Intake:** intentionally paused at `archive/slices/PR1_TRANSCRIPT_INTAKE_V3.md`.
+> **PR-1 Transcript Intake:** intentionally paused.
 
 ---
 
-# 1. Trigger for replan
+# 1. Why CU-1 remains open
 
-Product-owner clinician review identified three structural deficits that remain after formatter and dynamic-form maintenance:
-
-```text
-1. generated referral lacks a coherent structured HISTORY section
-2. goals are flat and do not express a safe criteria-based rehabilitation progression
-3. rehabilitation recommendations are not route-specific and are disconnected from explicit current literature provenance
-```
-
-Critical correction:
+Clinician review identified three structural deficits after the prior formatter/dynamic-form work:
 
 ```text
-"timeline" in this CU-1 slice
-!= physiotherapy session frequency
-!= total course duration
-!= generic recovery prediction
-
-"timeline" means
-ordered rehabilitation phases/goals
-→ each phase progresses after functional/clinical criteria are met
-→ the next phase becomes appropriate only after the previous phase is sufficiently achieved
+1. referral history was not coherent enough
+2. goals were flat rather than criteria-based rehabilitation progression
+3. rehabilitation directions were not explicitly route/subtype-linked to current evidence
 ```
 
-The physician does not need CU-1 to prescribe routine session frequency or total physiotherapy duration.
+The current slice addresses those design/evidence gaps only.
 
 ---
 
-# 2. Current design authority
+# 2. What is now proven at the design-object level
 
-Primary design candidate:
+The following semantics are frozen for the current design pass:
+
+```text
+ReferralHistoryV2 with explicit provenance
+HistoryProvenanceEntryV1
+RouteHistoryPromptV1
+RehabilitationSequenceV1
+RehabilitationPhaseV1
+InterventionDirectionV1
+RehabilitationCriterionV1
+GoalPlanV2
+ReassessmentPlanV2
+AuthorityReferenceV1
+ProtocolConstraintV1
+ClinicianModificationV1
+EvidenceSourceV1
+EvidenceClaimV1
+RouteEvidenceProfileV1
+```
+
+Proven invariants include:
+
+```text
+missing history != negative history
+patient statement != objective finding
+approximate duration != inferred exact date
+progression != elapsed time alone
+route A evidence != route B evidence
+subtype A authority != subtype B authority
+therapist_execution_detail != automatic referral_core
+clinician_ui_only != automatic referral_core
+clinician instruction != evidence recommendation
+patient-specific written protocol != literature recommendation
+explicit written protocol/healing restriction > conflicting route default
+```
+
+No patient identifiers were added.
+
+---
+
+# 3. Current design/evidence artifacts
+
+Human contract:
 
 ```text
 clinic_utilities/contracts/CU1_HISTORY_EVIDENCE_TIMELINE_V1.md
 ```
 
-Machine schema:
+Machine design schema:
 
 ```text
 clinic_utilities/contracts/cu1_history_timeline_schema_v1.yaml
 ```
 
-Evidence registry seed:
+Evidence manifest:
+
+```text
+clinic_utilities/contracts/cu1_evidence_manifest_v1.yaml
+```
+
+Active core evidence shard:
 
 ```text
 clinic_utilities/contracts/cu1_evidence_registry_v1.yaml
 ```
 
-The existing frozen clinical route taxonomy remains preserved unless a specific evidence conflict later demonstrates a narrow correction is required.
-
----
-
-# 3. Required new objects / semantics
+Staged evidence candidates:
 
 ```text
-ReferralHistoryV2
-RehabilitationSequenceV1
-RehabilitationPhaseV1
-GoalPlanV2
-ReassessmentPlanV2
-EvidenceSource
-EvidenceClaim
-RouteEvidenceProfile
+clinic_utilities/contracts/cu1_evidence_tranche2_v1.yaml
+clinic_utilities/contracts/cu1_evidence_tranche3_v1.yaml
 ```
 
-Core distinctions:
+Route work queue:
 
 ```text
-history fact != diagnosis
-rehabilitation phase order != calendar prescription
-progression criterion != elapsed time alone
-route_A evidence != route_B evidence
-clinician-selected intervention != evidence recommendation
-low-certainty evidence != strong recommendation
-missing route-specific evidence != permission to invent a default
+clinic_utilities/contracts/cu1_evidence_coverage_matrix_v1.yaml
+```
+
+Synthetic semantic fixtures:
+
+```text
+clinic_utilities/contracts/cu1_history_evidence_fixtures_v1.yaml
+```
+
+Exact gate report:
+
+```text
+clinic_utilities/contracts/CU1_DESIGN_COMPLETENESS_REVIEW_2026-08-28.md
 ```
 
 ---
 
-# 4. Disease-specific evidence requirement
+# 4. Evidence corpus state
 
-Every routine CU-1 route must have its own versioned `RouteEvidenceProfile`.
+The evidence registry is sharded for maintainability.
 
-Examples:
+Current normative state:
 
 ```text
-lateral_elbow_tendinopathy
-→ lateral-elbow-specific CPG/review claims
-→ elbow-specific rehabilitation sequence
+core_seed_registry
+→ active design authority
 
-achilles_tendinopathy
-→ Achilles-specific CPG/review claims
-→ Achilles-specific loading/progression sequence
+high_frequency_tranche2
+→ staged candidate, not schema-frozen
+
+shoulder_hip_meniscus_tranche3
+→ staged candidate, not schema-frozen
 ```
 
-The system must not render the same generic rehabilitation package across unrelated routes merely because both may involve strengthening or loading.
-
-Every generated rehabilitation recommendation must resolve to one or more active route-applicable `EvidenceClaim` objects.
+Staged shards may inform the work queue but must not be treated as normative referral authority until they pass the manifest promotion gate.
 
 ---
 
-# 5. What must appear in the referral
+# 5. Current route evidence progress
 
-Evidence is not only a hidden clinician-side tooltip.
-
-The generated referral itself must show the disease-specific evidence-informed rehabilitation direction for the selected condition.
-
-Detailed output target:
-
-```text
-ΔΙΑΓΝΩΣΗ / ΚΛΙΝΙΚΗ ΕΝΤΥΠΩΣΗ
-ΙΣΤΟΡΙΚΟ
-ΚΛΙΝΙΚΑ ΕΥΡΗΜΑΤΑ
-ΛΕΙΤΟΥΡΓΙΚΗ ΕΠΙΒΑΡΥΝΣΗ
-ΑΙΤΗΜΑ
-ΣΤΑΔΙΑΚΟΙ ΣΤΟΧΟΙ ΚΑΙ ΚΡΙΤΗΡΙΑ ΠΡΟΟΔΟΥ
-ΠΡΟΤΕΙΝΟΜΕΝΟΣ ΠΡΟΣΑΝΑΤΟΛΙΣΜΟΣ ΑΠΟΚΑΤΑΣΤΑΣΗΣ
-ΠΡΟΫΠΟΘΕΣΕΙΣ ΕΠΑΝΕΚΤΙΜΗΣΗΣ / ΚΛΙΜΑΚΩΣΗΣ
-ΒΙΒΛΙΟΓΡΑΦΙΚΗ ΒΑΣΗ
-```
-
-Short output uses the same route-specific evidence profile in compressed form and includes a compact route-specific source footer.
-
----
-
-# 6. Rehabilitation progression policy
-
-The core model is criteria-based progression.
-
-```text
-phase 1 objective
-→ progression criteria met
-→ phase 2 objective
-→ progression criteria met
-→ later functional phase
-```
-
-Possible phase vocabulary includes symptom control, ROM restoration, active-assisted/active movement, loading, strengthening, endurance, motor control and return-to-function — but no universal phase sequence is allowed.
-
-Each disease/pathway selects only the phases supported by its own evidence profile.
-
-Written postoperative protocols and fracture/healing restrictions override generic route evidence.
-
----
-
-# 7. Evidence freshness / renewal
-
-Evidence sources and route profiles carry:
-
-```text
-reviewed_on
-next_review_due
-freshness_state
-superseded_by
-```
-
-New evidence follows:
-
-```text
-new source detected
-→ classify impact
-→ clinician/reviewer approval
-→ update claims
-→ update affected route sequence only if warranted
-→ regression fixtures
-→ version/changelog
-```
-
-Evidence surveillance must never silently rewrite clinical recommendations.
-
----
-
-# 8. Current evidence seeds
-
-The design registry currently includes seed evidence for:
+Active core route-specific profiles include:
 
 ```text
 deep_gluteal_piriformis_presentation
 nonspecific_low_back_pain
 low_back_pain_with_radiating_leg_symptoms
 lateral_elbow_tendinopathy
-achilles_tendinopathy
+achilles_tendinopathy — midportion
+achilles_tendinopathy — insertional
 ```
 
-The elbow and Achilles seeds deliberately demonstrate different route-specific rehabilitation claims rather than a shared generic package.
+Current staged research additionally covers or partially covers:
 
-These are seed profiles only; evidence-aware runtime generation remains blocked until all routine routes reach the coverage gate.
+```text
+lumbar spinal stenosis / neurogenic claudication
+lateral ankle sprain
+plantar heel pain / plantar fasciitis
+rotator-cuff-related shoulder pain
+full-thickness rotator-cuff tear — nonoperative
+adhesive capsulitis
+knee osteoarthritis
+patellofemoral pain
+acute isolated meniscal injury — nonoperative
+nonarthritic intra-articular hip pain
+GTPS / gluteal-tendinopathy scope
+carpal tunnel syndrome evidence-gap profile
+De Quervain evidence-gap profile
+anterior/posterior shoulder-instability evidence seeds
+```
+
+Coverage status is not runtime readiness.
+
+---
+
+# 6. Exact design gate result
+
+Formal review result:
+
+```text
+ReferralHistoryV2 semantics                 PASS
+RehabilitationSequence object semantics     PASS
+GoalPlanV2 / ReassessmentPlanV2 semantics   PASS
+EvidenceSource / EvidenceClaim schema        PASS
+Element-level evidence provenance            PASS
+Protocol override model                      PASS
+Active core output-scope audit               PASS
+Subtype-boundary architecture                PASS
+Evidence freshness architecture              PASS
+
+Routine-route evidence coverage              FAIL
+Staged-shard promotion/conformance            FAIL
+Route-specific history prompt coverage        FAIL
+Route-complete fixture corpus                 FAIL
+Several route progression/evidence gaps       BLOCKED / EXPLICIT
+
+FINAL RESULT                                  BLOCK
+DESIGN-COMPLETE                               NO
+RUNTIME AUTHORIZED                            NO
+```
+
+---
+
+# 7. Concrete evidence blocks
+
+Fresh evidence review confirms that not every routine route supports the same level of staged precision.
+
+Examples:
+
+```text
+DGS
+→ low-quality conservative evidence
+→ no validated disease-specific progression thresholds
+
+De Quervain
+→ current comparative evidence centers on injection/orthosis
+→ active progressive rehabilitation sequence not established
+
+carpal tunnel syndrome
+→ current management guideline + conditional conservative rehab evidence
+→ no validated CU-1-style criteria-based PT sequence established
+
+acute isolated meniscal injury
+→ PT may benefit selected non-displaced nonoperative cases by consensus
+→ no validated staged progression sequence supplied by the CPG
+
+glenohumeral OA
+→ PT may benefit selected patients by AAOS consensus
+→ no reliable evidence-derived route progression sequence
+```
+
+The correct response is explicit evidence limitation, not a generic invented sequence.
+
+---
+
+# 8. Subtype/applicability boundaries proven by current evidence
+
+Hard boundaries now include:
+
+```text
+midportion Achilles != insertional Achilles
+rotator-cuff tendinopathy != full-thickness rotator-cuff tear
+GTPS/gluteal-tendinopathy evidence != isolated trochanteric bursitis automatically
+traumatic anterior instability != posterior/multidirectional instability automatically
+acute isolated meniscus != chronic/degenerative meniscal lesion
+```
+
+The frozen route taxonomy remains unchanged; evidence applicability conditions handle these distinctions unless a later reviewed conflict proves a taxonomy correction necessary.
 
 ---
 
 # 9. Exact next authorized action
 
+Continue on the existing writer only:
+
 ```text
-1. freeze ReferralHistoryV2 semantics
-2. freeze RehabilitationSequenceV1 / GoalPlanV2 / ReassessmentPlanV2
-3. complete EvidenceSource/EvidenceClaim registry schema
-4. build RouteEvidenceProfile for every routine route
-5. create a disease-specific RehabilitationSequence for every routine route
-6. classify evidence gaps/conflicts and evidence strength
-7. define route-specific dynamic history prompts
-8. create synthetic composition/evidence fixtures
-9. exact design-completeness review
-10. STOP at DESIGN-COMPLETE or BLOCK
+design/cu1-history-evidence-timeline-2026-08-28
+```
+
+Next order:
+
+```text
+1. normalize tranche2 map-key identities and complete required object fields
+2. exact reference/applicability/output-scope/freshness review of tranche2
+3. promote tranche2 only if the evidence-manifest promotion gate passes
+4. repeat for tranche3
+5. continue remaining routine routes from cu1_evidence_coverage_matrix_v1.yaml
+6. define narrow safe evidence-gap behavior for routes where staged progression is unsupported
+7. complete route-specific history prompts and matching fixtures with each route
+8. rerun exact design-completeness review
+9. STOP only at DESIGN-COMPLETE or a newly specific BLOCK
 ```
 
 ---
 
-# 10. Explicitly forbidden until the gate passes
+# 10. Explicitly forbidden
 
 ```text
 WRITE runtime evidence recommendation logic
-USE one generic rehab sequence across conditions
-INVENT progression criteria not supported by evidence/protocol
+WRITE runtime formatter integration for this evidence corpus
+CHANGE persistence/retention behavior
+USE a generic MSK rehabilitation fallback
+INVENT progression thresholds
 USE elapsed time alone as universal progression criterion
-PRESCRIBE routine session frequency or total PT duration as a CU-1 requirement
 LABEL clinician preference as guideline recommendation
-LABEL stale/superseded evidence as current
+LABEL therapist-execution detail as physician prescription by default
+USE evidence across a noncovered subtype
+PROMOTE staged shard without exact conformance review
+MERGE PR #63 merely because several routes are well curated
 OPEN CU-2
 RESTART PR-1
-CHANGE frozen clinical taxonomy without a specific reviewed evidence conflict
 ```
 
 ---
 
 # 11. Continuity rule
 
-A new conversation can resume by fresh six-canonical bootstrap. It should find this branch/writer lock and continue the history + criteria-based rehabilitation-sequence + disease-specific evidence design hardening only; chat history is not required for continuity.
+A fresh session must repeat the six-canonical bootstrap, verify the then-current remote `main` and PR #63 head, inspect this exact `BLOCK` state, and continue only the existing CU-1 design writer unless the canonical lock has changed.
