@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feat/cu1-physio-referral-runtime-v1-2026-08-27
+      - fix/cu1-greek-human-referral-formatting-2026-08-28
   pull_request:
     paths:
       - 'clinic_utilities/**'
@@ -12,6 +13,7 @@ on:
       - 'main.py'
       - 'requirements.txt'
       - 'test_cu1_physio_referral.py'
+      - 'test_cu1_formatter_el.py'
       - 'test_cu1_gateway_guard.py'
       - 'test_cu1_gateway_registry.py'
       - 'test_cu1_safety_trust_boundary.py'
@@ -29,6 +31,6 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
       - name: Compile CU-1 runtime and tests
-        run: python -m py_compile clinic_utilities/physio_referral_runtime.py clinic_utilities/physio_referral_api.py test_cu1_physio_referral.py test_cu1_gateway_guard.py test_cu1_gateway_registry.py test_cu1_safety_trust_boundary.py main.py
+        run: python -m py_compile clinic_utilities/physio_referral_runtime.py clinic_utilities/physio_referral_api.py clinic_utilities/physio_referral_formatter_el.py test_cu1_physio_referral.py test_cu1_formatter_el.py test_cu1_gateway_guard.py test_cu1_gateway_registry.py test_cu1_safety_trust_boundary.py main.py
       - name: Run CU-1 focused tests
-        run: python -m unittest -v test_cu1_physio_referral.py test_cu1_gateway_guard.py test_cu1_gateway_registry.py test_cu1_safety_trust_boundary.py
+        run: python -m unittest -v test_cu1_physio_referral.py test_cu1_formatter_el.py test_cu1_gateway_guard.py test_cu1_gateway_registry.py test_cu1_safety_trust_boundary.py
