@@ -1,10 +1,10 @@
-# SLICE_PLAN_CURRENT.md — CU-1 history + evidence + timeline design hardening v1
+# SLICE_PLAN_CURRENT.md — CU-1 history + evidence + rehabilitation-sequence design hardening v1
 
 > **STATUS:** ACTIVE PRE-RUNTIME DESIGN HARDENING.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Parent product:** Personal Clinical Excellence System.
 > **Area:** Clinic Utilities / Clinical Operations.
-> **Slice ID:** CU-1 history-evidence-timeline v1.
+> **Slice ID:** CU-1 history-evidence-rehab-sequence v1.
 > **Base:** `ad8045657616cd306b66d3becbda271f00c7fbbc`.
 > **Writer:** `design/cu1-history-evidence-timeline-2026-08-28`.
 > **Runtime writer:** NONE.
@@ -17,21 +17,43 @@
 
 # 1. Problem
 
-The current CU-1 can now produce Greek prose and dynamically relevant fields, but clinician review demonstrates that it is still not a sufficiently evidence-grounded referral system.
+The current CU-1 can produce Greek prose and dynamically relevant fields, but clinician review demonstrates that it is still not a sufficiently complete evidence-grounded referral system.
 
 Three gaps are structural:
 
 ```text
 A. HISTORY is under-modelled and therefore under-rendered
-B. goals have no explicit time horizon / reassessment semantics
-C. route recommendations and timelines do not resolve to explicit literature claims
+B. goals are a flat checklist rather than an ordered rehabilitation progression
+C. route recommendations are not disease-specific machine-readable literature claims
 ```
 
 The active objective is therefore not more formatter polish. It is to add the missing clinical-composition and evidence architecture.
 
 ---
 
-# 2. Objective
+# 2. Product-owner clarification — what "timeline" means
+
+In CU-1, rehabilitation timing means **ordered therapeutic progression**, not routine prescription of visit frequency or total course duration.
+
+Target model:
+
+```text
+initial clinical objective
+→ objective/progression criteria met
+→ next rehabilitation objective
+→ criteria met
+→ later functional/load phase
+```
+
+Examples of possible objectives include analgesia/symptom control, passive or protected ROM, active-assisted/active ROM, loading, strengthening, endurance, motor control and functional return.
+
+These examples are not a universal protocol. Each selected condition/pathway must define its own evidence-supported sequence.
+
+The physician is not interested in routinely dictating `1–2 sessions/week` or a fixed total number of weeks.
+
+---
+
+# 3. Objective
 
 Build a referral contract that supports:
 
@@ -46,18 +68,22 @@ functional impact
 +
 referral request
 +
-selected goals with explicit timing semantics
+route-specific staged goals
 +
-evidence-aware rehabilitation directions
+criteria for progression from one objective to the next
 +
-reassessment plan
+disease-specific evidence-informed rehabilitation directions
++
+criteria for reassessment/escalation
++
+route-specific bibliography
 ```
 
-The resulting system must preserve clinician autonomy and must never turn evidence metadata into autonomous diagnosis or treatment selection.
+The resulting system must preserve clinician judgment and physiotherapist autonomy while providing a safe and complete direction of care.
 
 ---
 
-# 3. New typed objects
+# 4. New typed objects
 
 Normative candidate design is defined in:
 
@@ -70,8 +96,10 @@ Required objects:
 ```text
 ReferralHistoryV2
 RouteHistorySelection
-GoalPlanV1
-ReassessmentPlanV1
+RehabilitationSequenceV1
+RehabilitationPhaseV1
+GoalPlanV2
+ReassessmentPlanV2
 EvidenceSource
 EvidenceClaim
 RouteEvidenceProfile
@@ -81,7 +109,7 @@ No patient identifiers are introduced.
 
 ---
 
-# 4. History contract
+# 5. History contract
 
 History must be capable of carrying, when explicitly supplied:
 
@@ -113,121 +141,65 @@ Detailed formatter must include a coherent `ΙΣΤΟΡΙΚΟ` section when data 
 
 ---
 
-# 5. Timing contract
+# 6. Criteria-based rehabilitation sequence
 
-Timing must distinguish:
+Every routine route must have an explicit ordered `RehabilitationSequenceV1`.
 
-```text
-reassessment_window
-expected_progress_window
-goal_achievement_target
-safety-triggered earlier reassessment
-```
-
-A time window carries provenance:
+Each phase contains:
 
 ```text
-clinician_entered
-evidence_supported_default
-evidence_informed_suggestion
+clinical objective
+route-specific intervention directions
+progression criteria
+precautions / do-not-progress criteria
+evidence claim IDs
 ```
 
-and certainty/strength where available.
+Hard rules:
 
-No generic `6–8 weeks` default is permitted.
+```text
+progression criterion != elapsed time alone
+same words across two diseases != same treatment authority
+written postoperative/fracture protocol > route evidence sequence
+unsupported phase is omitted rather than filled with a generic default
+```
 
 ---
 
-# 6. Evidence architecture
+# 7. Disease-specific evidence architecture
 
 CU-1 reuses the Clinical Excellence evidence-governance model.
 
-Machine-readable evidence requires two layers:
+Machine-readable evidence requires:
 
 ```text
 EvidenceSource = bibliographic/source identity
-EvidenceClaim = what that source supports, discourages, or leaves uncertain
+EvidenceClaim = exact clinical claim supported/discouraged/left uncertain
+RouteEvidenceProfile = all current claims for one clinical route
+RehabilitationSequence = ordered route-specific application of those claims
 ```
 
-A `RouteEvidenceProfile` maps a route to its claims across:
+There is no global musculoskeletal treatment template.
+
+Examples:
 
 ```text
-diagnostic definition
-history
-examination
-core rehabilitation
-adjuncts
-timeline
-reassessment
-safety/differential where relevant
+lateral_elbow_tendinopathy
+→ 2022 lateral-elbow CPG + other route-specific evidence
+→ elbow-specific intervention/progression claims
+
+achilles_tendinopathy
+→ 2024 midportion-Achilles CPG + other route-specific evidence
+→ Achilles-specific tendon-loading/progression claims
 ```
 
-No generated statement may be labelled evidence-based unless it resolves to an active claim.
+A shared term such as `progressive loading` does not authorize identical referral text or progression logic across the two conditions.
 
 ---
 
-# 7. Evidence status visible to clinician
+# 8. Evidence must be visible in the referral
 
-The UI should ultimately distinguish:
-
-```text
-SUPPORTED / RECOMMENDED
-CONDITIONAL / MAY CONSIDER
-CONFLICTING FRAMEWORKS
-INSUFFICIENT ROUTE-SPECIFIC EVIDENCE
-CLINICIAN-SELECTED — NO EVIDENCE CLAIM ATTACHED
-DO NOT OFFER / NOT ROUTINE
-```
-
-Evidence status informs but does not auto-select treatment.
-
----
-
-# 8. Routine-route coverage gate
-
-Before runtime evidence-aware generation is authorized:
-
-```text
-EVERY routine route
-→ has RouteEvidenceProfile
-→ every evidence-labelled rehab direction resolves to >=1 active claim
-→ every evidence-labelled timeline resolves to >=1 active timing/reassessment claim
-→ evidence gaps are explicit
-→ framework conflicts are explicit
-```
-
-Rare/advanced routes may carry explicit evidence-gap status, but the system must not invent support.
-
----
-
-# 9. Deep-gluteal seed fixture
-
-The first seed evidence profile is `deep_gluteal_piriformis_presentation`.
-
-Required behavior based on reviewed sources:
-
-```text
-classical DGS definition
-→ non-discogenic sciatic nerve disorder/entrapment in deep gluteal space
-
-buttock pain alone
-→ does not establish DGS/piriformis syndrome
-
-history + examination
-→ central to diagnostic pathway
-
-specific conservative treatment superiority
-→ insufficient/low-quality evidence
-
-universal fixed 6–8 week recovery window
-→ not evidence-supported
-```
-
-The route may still support physiotherapy referral and clinician-selected active rehabilitation, but the evidence panel must represent uncertainty accurately.
-
----
-
-# 10. Formatter target
+The literature connection is part of the clinician-to-physiotherapist communication, not merely hidden metadata.
 
 Detailed output target:
 
@@ -237,59 +209,150 @@ Detailed output target:
 ΚΛΙΝΙΚΑ ΕΥΡΗΜΑΤΑ
 ΛΕΙΤΟΥΡΓΙΚΗ ΕΠΙΒΑΡΥΝΣΗ
 ΑΙΤΗΜΑ
-ΣΤΟΧΟΙ + ΧΡΟΝΙΚΟΣ ΟΡΙΖΟΝΤΑΣ
-ΚΑΤΕΥΘΥΝΣΕΙΣ ΑΠΟΚΑΤΑΣΤΑΣΗΣ
-ΕΠΑΝΕΚΤΙΜΗΣΗ
+ΣΤΑΔΙΑΚΟΙ ΣΤΟΧΟΙ ΚΑΙ ΚΡΙΤΗΡΙΑ ΠΡΟΟΔΟΥ
+ΠΡΟΤΕΙΝΟΜΕΝΟΣ ΠΡΟΣΑΝΑΤΟΛΙΣΜΟΣ ΑΠΟΚΑΤΑΣΤΑΣΗΣ
+ΠΡΟΫΠΟΘΕΣΕΙΣ ΕΠΑΝΕΚΤΙΜΗΣΗΣ / ΚΛΙΜΑΚΩΣΗΣ
+ΒΙΒΛΙΟΓΡΑΦΙΚΗ ΒΑΣΗ
 ```
 
-Short output remains compact but must carry meaningful duration/mechanism and timeline when supplied.
+Short output:
 
-Evidence bibliography is clinician-facing by default; an optional bibliography appendix may later be enabled for Detailed output.
+```text
+same route-specific evidence authority
++ compressed staged rehabilitation direction
++ compact disease-specific source footer
+```
+
+A short referral must not become generic merely because it is shorter.
 
 ---
 
-# 11. Acceptance fixtures
+# 9. Evidence wording
+
+The generated referral must preserve evidence strength.
+
+```text
+strong/core recommendation
+→ direct recommendation wording
+
+conditional / low-certainty
+→ "μπορεί να εξεταστεί" / "επικουρικά"
+
+conflicting guidance
+→ conflict retained; no silent hybrid
+
+insufficient evidence
+→ not presented as routine evidence-based treatment
+```
+
+The default bibliography should show 1–3 highest-authority route-specific sources.
+
+---
+
+# 10. Evidence freshness / update lifecycle
+
+Every evidence source/profile includes:
+
+```text
+reviewed_on
+next_review_due
+freshness_state
+supersedes / superseded_by
+```
+
+New evidence workflow:
+
+```text
+new guideline / systematic review detected
+→ classify as confirming / no_change / potentially_practice_changing / practice_changing / conflicting
+→ clinician/reviewer approval
+→ update EvidenceClaim
+→ update affected route RehabilitationSequence if warranted
+→ regression tests/fixtures
+→ version bump + changelog
+```
+
+No silent autonomous update of clinical recommendations.
+
+---
+
+# 11. Current seed examples
+
+The evidence registry now includes design seeds for:
+
+```text
+deep_gluteal_piriformis_presentation
+lateral_elbow_tendinopathy
+achilles_tendinopathy
+```
+
+The elbow and Achilles seeds exist specifically to prove that two tendinopathies do not collapse into the same generic rehabilitation wording.
+
+The seeds are incomplete and are not runtime authority yet.
+
+---
+
+# 12. Routine-route coverage gate
+
+Before runtime evidence-aware generation is authorized:
+
+```text
+EVERY routine route
+→ own RouteEvidenceProfile
+→ own RehabilitationSequenceV1
+→ every rendered phase/intervention/progression criterion resolves to >=1 active route-applicable claim
+→ evidence gaps explicit
+→ conflicts explicit
+→ freshness current or explicitly reviewed
+```
+
+Rare/advanced routes may carry explicit evidence-gap status, but the system must not invent support.
+
+---
+
+# 13. Acceptance fixtures
 
 At minimum:
 
 ```text
 1. chronic deep-gluteal pain with 8-month duration, mechanism and uncertain diagnosis
-2. lateral epicondylalgia with history + evidence-linked loading direction
-3. knee OA with exercise evidence and a defensible reassessment window
-4. postoperative shoulder where protocol overrides generic evidence suggestions
-5. fracture where healing/loading restrictions override evidence defaults
-6. conflicting-framework adjunct case
-7. route with no supported timeline → no invented recovery window
-8. clinician-entered goal target → rendered as clinician target, not evidence-derived
+2. lateral epicondylalgia → elbow-specific staged evidence-linked rehabilitation
+3. Achilles tendinopathy → Achilles-specific loading/progression rehabilitation
+4. elbow and Achilles outputs materially differ despite both being tendinopathies
+5. postoperative shoulder → exact protocol overrides generic route evidence
+6. fracture → healing/loading restrictions override evidence defaults
+7. conflicting-framework adjunct case
+8. route with weak evidence → appropriately broad/cautious sequence, not invented detail
 9. missing history → omitted, never converted into reassuring negatives
-10. evidence-gap route → explicit clinician-facing evidence-gap state
+10. stale/superseded evidence profile → cannot be labelled current guideline-based
 ```
 
 ---
 
-# 12. REPLAN / BLOCK triggers
+# 14. REPLAN / BLOCK triggers
 
 STOP and replan if:
 
 ```text
 route evidence contradicts a frozen clinical recommendation materially
 history schema requires new diagnosis inference
-reassessment timing cannot be separated from recovery prediction
+criteria-based progression cannot be represented without inventing unsupported thresholds
 an evidence claim cannot preserve framework-specific wording/strength
 routine-route evidence coverage cannot be completed without uncontrolled scope
 ```
 
 ---
 
-# 13. Exact next action
+# 15. Exact next action
 
 ```text
-1. review/freeze typed history and timeline semantics
-2. curate route evidence profiles beginning with high-frequency routine routes
-3. complete every routine route to coverage gate
-4. add evidence/conflict/gap fixtures
-5. exact design-completeness review
-6. STOP at DESIGN-COMPLETE or BLOCK
+1. freeze typed history + criteria-based progression semantics
+2. curate high-frequency route evidence profiles first
+3. define complete RehabilitationSequence for each routine route
+4. complete every routine route to evidence coverage gate
+5. add evidence/conflict/gap/progression fixtures
+6. exact design-completeness review
+7. STOP at DESIGN-COMPLETE or BLOCK
 ```
 
 No runtime evidence-aware generation in this design slice.
