@@ -1,8 +1,8 @@
-# CU-1 History + Evidence + Timeline Contract v1 — DESIGN CANDIDATE
+# CU-1 History + Evidence + Rehabilitation Sequence Contract v1 — DESIGN CANDIDATE
 
 > **STATUS:** PRE-RUNTIME DESIGN CANDIDATE — requires exact review before implementation.
 > **Slice:** CU-1 clinician-quality completion.
-> **Purpose:** add clinically useful history, evidence provenance and goal/reassessment timing without inventing facts, overstating evidence or forcing generic treatment protocols.
+> **Purpose:** add clinically useful history, disease-specific evidence provenance, and criteria-based rehabilitation sequencing without inventing facts, overstating evidence or forcing generic treatment protocols.
 > **Clinical taxonomy:** existing frozen CU-1 routes remain unchanged unless a specific evidence conflict requires a separately reviewed correction.
 
 ---
@@ -13,11 +13,11 @@ Product-owner review identified three structural deficits that are not solved by
 
 ```text
 1. generated referrals lack a coherent HISTORY section
-2. goals have no explicit time horizon / reassessment plan
-3. rehabilitation suggestions are not connected at runtime to explicit literature provenance
+2. goals are a flat list and do not express a safe staged rehabilitation sequence
+3. rehabilitation suggestions are not connected at runtime to disease-specific literature provenance
 ```
 
-The target is a referral that reads like a clinician wrote it while preserving the existing CU-1 safety invariants.
+The target is a referral that reads like a clinician wrote it and gives the physiotherapist a safe, complete, evidence-linked rehabilitation direction while preserving physiotherapist autonomy and the existing CU-1 safety invariants.
 
 ---
 
@@ -27,14 +27,16 @@ The target is a referral that reads like a clinician wrote it while preserving t
 history_fact != diagnosis
 history_not_recorded != negative_history
 selected_goal != guaranteed_outcome
-reassessment_window != promised_goal_achievement
+rehabilitation_phase_order != calendar-duration prescription
+progression_criterion_met != elapsed_time_only
 clinician_selected_intervention != evidence_recommended_intervention
 one_evidence_source != universal_guideline_consensus
 low_certainty_evidence != strong_recommendation
 absence_of_route_specific_evidence != evidence_of_no_effect
+route_A_evidence != route_B_evidence
 ```
 
-No referral generator may describe a recommendation as evidence-based unless a current machine-readable evidence claim supports that wording.
+No referral generator may describe a recommendation as evidence-based unless a current machine-readable evidence claim supports that wording for the selected route.
 
 ---
 
@@ -61,106 +63,128 @@ ReferralHistoryV2
   route_history_items[]: RouteHistorySelection
 ```
 
-`RouteHistorySelection`:
-
-```text
-history_item_id
-state_or_value
-unit_optional
-free_text_optional
-source: clinician_entered|patient_reported|documented_record
-```
-
 Rules:
 
 ```text
-- duration may be represented by exact onset date OR approximate duration; exact date is never inferred from approximate wording
-- mechanism/trigger remains history, not proof of tissue diagnosis
-- prior treatment and response are carried only when explicitly entered
-- route-specific history prompts are dynamically scoped and never auto-selected
-- negative history statements require an explicit negative entry; omission is not a negative
+exact onset date is never inferred from approximate duration
+mechanism/trigger remains history, not proof of tissue diagnosis
+prior treatment/response are carried only when explicitly entered
+route-specific history prompts are dynamically scoped and never auto-selected
+negative history statements require explicit negative entry; omission is not a negative
 ```
 
 ---
 
-# 4. History composition
+# 4. RehabilitationSequenceV1 — criteria-based, not calendar-based
 
-Detailed referral order becomes:
+The prior `GoalTimelineV1` concept is superseded for routine CU-1 rehabilitation planning.
 
-```text
-CLINICAL IMPRESSION / PRESENTATION
-HISTORY
-RELEVANT EXAMINATION / FINDINGS
-FUNCTIONAL IMPACT
-REFERRAL REQUEST
-GOALS + TIME HORIZON
-REHABILITATION DIRECTIONS
-REASSESSMENT PLAN
-```
-
-Short referral may compress history to one sentence, but must retain duration/mechanism when supplied and clinically useful.
-
-Example shape only:
-
-> Συμπτωματολογία διάρκειας περίπου 8 μηνών, με έναρξη μετά από κάμψη/άρση φορτίου, με επίμονη πορεία χωρίς πλήρη ύφεση.
-
-The formatter must not convert this into a causal diagnosis.
-
----
-
-# 5. GoalTimelineV1
-
-Goals may carry timing, but timing is explicitly typed to avoid fake prognostic certainty.
+The product owner's intended meaning is **clinical progression from one therapeutic objective to the next after the previous objective is functionally adequate**, not session frequency or total treatment duration.
 
 ```text
-GoalPlanV1
-  goal_id
-  timing:
-    timing_type: reassessment_window|expected_progress_window|goal_achievement_target
-    min_value_optional
-    max_value_optional
-    unit: days|weeks|months
-    provenance: clinician_entered|evidence_supported_default|evidence_informed_suggestion
-    evidence_claim_ids[]
-    certainty: high|moderate|low|very_low|not_graded|not_applicable
-    wording_strength: target|expected_progress|reassess_by|no_default
-  clinician_override_optional
+RehabilitationSequenceV1
+  route_id
+  sequence_source: route_evidence_profile
+  phases[]: RehabilitationPhaseV1
+  clinician_modifications_optional[]
 ```
+
+`RehabilitationPhaseV1`:
+
+```text
+phase_id
+order
+clinical_objective
+intervention_direction_ids[]
+progression_criteria[]
+precautions_or_do_not_progress_criteria[]
+evidence_claim_ids[]
+strength_or_certainty_optional
+required_for_route: boolean
+```
+
+Examples of phase concepts that may exist **only when supported for that route**:
+
+```text
+symptom control / irritability reduction
+protected or pain-limited mobility
+passive ROM restoration
+active-assisted ROM
+active ROM / motor control
+isometric loading
+isotonic loading
+progressive resistance / strengthening
+energy-storage / plyometric loading
+functional task retraining
+return-to-work / return-to-sport exposure
+self-management / recurrence prevention
+```
+
+These are a vocabulary, not a universal sequence. Each route selects and orders only the phases supported by its own evidence profile.
 
 Hard rules:
 
 ```text
-- evidence default may populate only when a route evidence claim explicitly supports that time window
-- low/very-low certainty must not become a promise
-- if evidence supports only reassessment timing, output says reassessment, not expected recovery
-- clinician may enter an individualized target; it is labelled clinician-entered, not evidence-derived
-- no universal 6–8 week default exists
+- progression is criterion-based whenever evidence or protocol supports criteria
+- elapsed time alone never advances a phase unless an authoritative postoperative/fracture protocol explicitly uses time
+- a phase may be omitted entirely when not relevant to the selected disease
+- postoperative and fracture written protocols override generic route evidence
+- the engine must not force passive ROM before active ROM, analgesia before loading, or any other universal sequence across all diagnoses
+- clinician may modify or remove a proposed phase, but the generated referral must preserve that it was clinician-modified when evidence metadata are shown
 ```
 
 ---
 
-# 6. ReassessmentPlanV1
+# 5. GoalPlanV2
+
+Goals are attached to phases rather than existing as an unrelated flat checklist.
 
 ```text
-ReassessmentPlanV1
-  suggested_window_optional
-  clinician_selected_window_optional
-  trigger_criteria_optional[]
-  escalation_criteria_optional[]
+GoalPlanV2
+  phase_id
+  goal_ids[]
+  patient_priority_goal_optional
+  progression_criteria[]
   evidence_claim_ids[]
 ```
 
-The plan distinguishes:
+The referral may say, for example:
 
 ```text
-scheduled reassessment
-vs
-expected clinical progress
-vs
-full goal achievement
-vs
-safety-triggered earlier reassessment
+Αρχικά: έλεγχος συμπτωμάτων και αποκατάσταση ανεκτής κινητικότητας.
+Μετά την επίτευξη των σχετικών κριτηρίων: προοδευτική ενδυνάμωση / φόρτιση.
+Τελικό λειτουργικό στάδιο: επάνοδος στις επιλεγμένες δραστηριότητες με επαρκή ανοχή φορτίου.
 ```
+
+Only route-supported phases are rendered.
+
+---
+
+# 6. ReassessmentPlanV2
+
+Reassessment is primarily **criteria-triggered**, not a fixed calendar recommendation from the physician.
+
+```text
+ReassessmentPlanV2
+  phase_progression_checks[]
+  failure_to_progress_criteria[]
+  safety_escalation_criteria[]
+  clinician_requested_review_optional
+  evidence_claim_ids[]
+```
+
+The physician is not required to prescribe physiotherapy frequency or total duration.
+
+Calendar timing may still exist when:
+
+```text
+exact postoperative protocol requires it
+fracture/healing follow-up requires it
+an evidence source explicitly provides a clinically meaningful reassessment window
+clinician explicitly requests a medical review date
+```
+
+Otherwise the referral focuses on **what must be achieved before progression**, not how many sessions or weeks must elapse.
 
 ---
 
@@ -168,22 +192,24 @@ safety-triggered earlier reassessment
 
 CU-1 reuses the Clinical Excellence evidence-governance model rather than creating an unrelated citation list.
 
-Two layers are required.
-
 ## 7.1 EvidenceSource
 
 ```text
 evidence_id
-source_type: guideline|systematic_review|clinical_practice_guideline|consensus|randomized_trial|cohort|narrative_review|other
+source_type: guideline|clinical_practice_guideline|systematic_review|consensus|randomized_trial|cohort|narrative_review|other
 title
 authors_or_organization
 year_or_version
+published_on_optional
 reference
 doi_optional
 url_optional
 framework_optional
 reviewed_on
+next_review_due
 status: active|superseded|context_only
+supersedes_optional[]
+superseded_by_optional[]
 ```
 
 ## 7.2 EvidenceClaim
@@ -193,7 +219,7 @@ claim_id
 evidence_ids[]
 applicable_profile_ids[]
 applicable_route_ids[]
-domain: diagnostic_definition|history|examination|core_rehabilitation|adjunct|timeline|reassessment|safety|differential
+domain: diagnostic_definition|history|examination|core_rehabilitation|rehab_phase|progression_criteria|adjunct|safety|differential
 claim_summary
 recommendation_direction: recommend|consider|may_consider|do_not_offer|insufficient_evidence|context_only
 strength_optional
@@ -207,9 +233,9 @@ A source is not itself a recommendation. Generated behavior is driven by `Eviden
 
 ---
 
-# 8. RouteEvidenceMap
+# 8. RouteEvidenceProfile — disease-specific authority
 
-Every routine route must resolve to a route evidence profile before evidence-aware runtime generation is authorized.
+Every routine route must resolve to its **own** route evidence profile before evidence-aware runtime generation is authorized.
 
 ```text
 RouteEvidenceProfile
@@ -217,72 +243,125 @@ RouteEvidenceProfile
   route_id
   diagnostic_claim_ids[]
   history_claim_ids[]
-  core_rehabilitation_claim_ids[]
+  examination_claim_ids[]
+  rehabilitation_sequence_id
   adjunct_claim_ids[]
-  timeline_claim_ids[]
-  reassessment_claim_ids[]
+  safety_claim_ids[]
   evidence_gaps[]
+  primary_source_ids[]
   last_reviewed_on
+  next_review_due
+  freshness_state: current|review_due|stale|superseded
 ```
 
-Coverage rule:
+Coverage rules:
 
 ```text
 routine route
-→ must have route evidence profile
-→ every evidence-labelled rehab/timeline statement must resolve to >=1 active claim
-→ missing evidence is represented as evidence_gap, never silently filled by model preference
+→ must have its own RouteEvidenceProfile
+→ must have an explicit RehabilitationSequenceV1
+→ every phase/intervention/progression statement must resolve to >=1 active route-applicable evidence claim
+→ missing evidence is represented as evidence_gap, never silently filled by generic recommendations
 ```
 
-Rare/advanced routes may initially carry explicit `evidence_gap` states, but the UI must not present unsupported recommendations as guideline-backed.
+**No cross-route generic treatment template is allowed.** Shared rehabilitation concepts may be reused only when each route independently maps to supporting evidence claims.
 
 ---
 
-# 9. Evidence-aware intervention behavior
+# 9. Disease-specific recommendation behavior
 
-For each selectable rehabilitation direction the UI may show one of:
+The selected diagnosis/pathway determines the initial evidence-backed rehabilitation proposal.
+
+Examples of architecture, not final recommendations:
 
 ```text
-SUPPORTED / RECOMMENDED
-CONDITIONAL / MAY CONSIDER
-CONFLICTING FRAMEWORKS
-INSUFFICIENT ROUTE-SPECIFIC EVIDENCE
-CLINICIAN-SELECTED — NO EVIDENCE CLAIM ATTACHED
-DO NOT OFFER / NOT ROUTINE
+lateral elbow tendinopathy
+→ use the lateral-elbow RouteEvidenceProfile and its own phase/intervention/progression claims
+
+midportion Achilles tendinopathy
+→ use the Achilles RouteEvidenceProfile and its own loading/progression claims
 ```
 
-Rules:
+The two routes may share words such as `progressive loading`, but they do not share authority, sequence, dose logic, progression criteria or adjunct posture unless their route-specific evidence independently supports them.
+
+The clinician may modify the proposal, but the default must be disease-specific and literature-backed.
+
+---
+
+# 10. What must appear in the referral
+
+The evidence-informed rehabilitation approach is not merely a hidden clinician-side tooltip. **What the literature supports for the selected condition must be visible in the generated referral.**
+
+Detailed referral order:
 
 ```text
-- clinician choice is preserved
-- evidence status never auto-selects a treatment
-- contradictory guidelines remain visible separately; no silent hybridization
-- adjuncts cannot be presented with the same evidentiary status as core active rehabilitation unless the evidence claims justify it
-- evidence caveats belong primarily in clinician UI/evidence panel; referral prose stays concise unless bibliography/evidence appendix is explicitly enabled
+ΔΙΑΓΝΩΣΗ / ΚΛΙΝΙΚΗ ΕΝΤΥΠΩΣΗ
+ΙΣΤΟΡΙΚΟ
+ΚΛΙΝΙΚΑ ΕΥΡΗΜΑΤΑ
+ΛΕΙΤΟΥΡΓΙΚΗ ΕΠΙΒΑΡΥΝΣΗ
+ΑΙΤΗΜΑ
+ΣΤΑΔΙΑΚΟΙ ΣΤΟΧΟΙ ΚΑΙ ΚΡΙΤΗΡΙΑ ΠΡΟΟΔΟΥ
+ΠΡΟΤΕΙΝΟΜΕΝΟΣ ΠΡΟΣΑΝΑΤΟΛΙΣΜΟΣ ΑΠΟΚΑΤΑΣΤΑΣΗΣ
+ΠΡΟΫΠΟΘΕΣΕΙΣ ΕΠΑΝΕΚΤΙΜΗΣΗΣ / ΚΛΙΜΑΚΩΣΗΣ
+ΒΙΒΛΙΟΓΡΑΦΙΚΗ ΒΑΣΗ
+```
+
+Short referral still uses the same route-specific evidence profile but compresses the output. It must include a compact evidence-based rehabilitation direction and a concise source footer; it must not fall back to generic goals merely to stay short.
+
+---
+
+# 11. Evidence presentation rules
+
+The referral should distinguish recommendation strength without becoming a literature review.
+
+Examples:
+
+```text
+core recommendation → direct wording
+conditional/low-certainty recommendation → "μπορεί να εξεταστεί" / "επικουρικά"
+conflicting guidance → do not hide the conflict; use cautious wording or omit from default
+insufficient evidence → never present as routine recommended care
+```
+
+Bibliographic section:
+
+```text
+- 1–3 highest-authority route-specific sources by default
+- source title/organization + year/version
+- stable link/DOI where available
+- no unrelated general-MSK source when a route-specific CPG exists
 ```
 
 ---
 
-# 10. Evidence display / output
+# 12. Evidence freshness / renewal
 
-The clinician-facing tool gains an `Evidence` panel after route selection.
-
-It should display compactly:
+The route evidence profile is versioned and actively maintained.
 
 ```text
-core evidence posture
-recommended/considered/discouraged directions
-certainty/strength when available
-last reviewed date
-source links
-known evidence gaps
+new guideline/systematic review detected
+→ evidence candidate
+→ classify impact: confirming | no_change | potentially_practice_changing | practice_changing | conflicting
+→ clinician/reviewer approval
+→ update EvidenceClaim(s)
+→ update affected RehabilitationSequence only if warranted
+→ regression fixtures
+→ version bump / changelog
 ```
 
-Detailed referral may optionally include a short `Βιβλιογραφική βάση` appendix when the clinician enables it. Routine recipient-facing referral text does not need inline citations by default.
+Freshness rules:
+
+```text
+next_review_due reached → freshness_state=review_due
+known superseding guideline → freshness_state=superseded
+stale/superseded route profile → UI warns clinician and blocks claims labelled "current guideline recommendation" until reviewed
+```
+
+The system must eventually support scheduled evidence surveillance, but surveillance itself never silently changes clinical recommendations.
 
 ---
 
-# 11. Deep-gluteal example — evidence behavior
+# 13. Deep-gluteal example — evidence behavior
 
 For `deep_gluteal_piriformis_presentation`:
 
@@ -291,55 +370,54 @@ For `deep_gluteal_piriformis_presentation`:
 - history/exam are central to diagnostic pathway
 - route must not infer DGS or piriformis syndrome from buttock pain alone
 - conservative-treatment comparative evidence is low quality; no single conservative technique is established as superior
-- first-line physiotherapy/activity-oriented care may be referenced through broader back/sciatica guidance when clinically applicable
-- a fixed 6–8 week evidence-based recovery claim is NOT supported by the reviewed DGS evidence
 ```
 
-Therefore the tool may offer clinician-entered or evidence-informed reassessment timing, but must not label a universal DGS recovery window as guideline-derived.
+Therefore the route-specific sequence may remain deliberately broad where evidence is weak. The engine must not invent a detailed staged protocol merely to make the referral look comprehensive.
 
 ---
 
-# 12. Implementation boundary
+# 14. Implementation boundary
 
 Before runtime implementation:
 
 ```text
-1. freeze ReferralHistoryV2 schema
-2. freeze GoalTimelineV1 / ReassessmentPlanV1
+1. freeze ReferralHistoryV2
+2. freeze RehabilitationSequenceV1 / GoalPlanV2 / ReassessmentPlanV2
 3. create machine-readable evidence registry
-4. create route evidence map
-5. curate all routine routes to the defined coverage gate
-6. review evidence freshness/conflicts
+4. create RouteEvidenceProfile for every routine route
+5. curate a route-specific RehabilitationSequence for every routine route
+6. verify evidence freshness/conflicts
 7. add synthetic composition fixtures
-8. repeat exact design review
+8. repeat exact design-completeness review
 ```
 
-No runtime recommendation engine may be written before this gate passes.
+No evidence-aware runtime recommendation engine may be written before this gate passes.
 
 ---
 
-# 13. Acceptance fixtures
+# 15. Acceptance fixtures
 
 At minimum:
 
 ```text
 A. chronic deep-gluteal pain with 8-month history and uncertain diagnosis
-B. routine lateral epicondylalgia with onset/duration and evidence-linked loading plan
-C. knee OA with evidence-linked exercise and reassessment window
-D. postoperative shoulder where protocol overrides generic evidence suggestions
-E. fracture where healing/loading restrictions override route evidence
-F. route with conflicting guideline positions on adjunct treatment
-G. route with no supported timeline → no invented recovery window
-H. clinician-entered timeline overrides evidence suggestion without being mislabeled as evidence-derived
+B. lateral epicondylalgia → elbow-specific evidence profile + elbow-specific staged rehab sequence
+C. midportion Achilles tendinopathy → Achilles-specific evidence profile + Achilles-specific staged loading/progression sequence
+D. same generic option cannot render identically for B and C unless route-specific evidence independently maps to it
+E. postoperative shoulder → exact protocol overrides generic route evidence
+F. fracture → healing/loading restrictions override route evidence
+G. conflicting guideline positions on adjunct treatment remain explicit
+H. unsupported route → no invented staged protocol
+I. stale/superseded evidence profile cannot be labelled current guideline-based
 ```
 
 ---
 
-# 14. Stop rule
+# 16. Stop rule
 
 ```text
 design freeze
-→ evidence coverage review
+→ complete route-specific evidence coverage
 → exact synthetic fixtures
 → DESIGN-COMPLETE or BLOCK
 → only then runtime implementation
