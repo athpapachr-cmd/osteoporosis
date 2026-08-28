@@ -1,4 +1,4 @@
-version: cu1_history_timeline_schema_v1
+version: cu1_history_rehab_sequence_schema_v1
 status: design_candidate
 runtime_authorized: false
 
@@ -56,51 +56,97 @@ route_history_selection:
     - route_history_item_must_be_allowed_for_current_route
     - not_selected_does_not_mean_absent
 
-goal_plan_v1:
+rehabilitation_sequence_v1:
   fields:
-    goal_id: canonical_goal_id
-    timing:
-      type: goal_timing_or_null
-    clinician_override_optional: string_or_null
-  goal_timing:
-    fields:
-      timing_type:
-        enum: [reassessment_window, expected_progress_window, goal_achievement_target]
-      min_value_optional: nonnegative_number_or_null
-      max_value_optional: nonnegative_number_or_null
-      unit:
-        enum: [days, weeks, months]
-      provenance:
-        enum: [clinician_entered, evidence_supported_default, evidence_informed_suggestion]
-      evidence_claim_ids:
-        type: list_of_evidence_claim_ids
-      certainty:
-        enum: [high, moderate, low, very_low, not_graded, not_applicable]
-      wording_strength:
-        enum: [target, expected_progress, reassess_by, no_default]
-    rules:
-      - evidence_supported_or_informed_provenance_requires_at_least_one_active_timing_claim
-      - clinician_entered_timing_must_not_be_relabelled_as_evidence_derived
-      - low_or_very_low_certainty_must_not_generate_guaranteed_outcome_wording
-      - reassessment_window_must_not_be_rendered_as_recovery_prediction
+    route_id: canonical_route_id
+    sequence_source:
+      enum: [route_evidence_profile]
+    phases:
+      type: ordered_list_of_rehabilitation_phase_v1
+    clinician_modifications_optional:
+      type: list_of_strings
+  rules:
+    - route_must_have_its_own_evidence_profile
+    - route_must_have_its_own_rehabilitation_sequence
+    - generic_cross_route_sequence_is_forbidden
+    - written_postoperative_or_fracture_protocol_overrides_route_sequence
 
-reassessment_plan_v1:
+rehabilitation_phase_v1:
   fields:
-    suggested_window_optional:
-      type: goal_timing_or_null
-      allowed_timing_types: [reassessment_window]
-    clinician_selected_window_optional:
-      type: goal_timing_or_null
-      allowed_provenance: [clinician_entered]
-    trigger_criteria_optional:
-      type: list_of_strings
-    escalation_criteria_optional:
-      type: list_of_strings
+    phase_id: canonical_route_scoped_phase_id
+    order: positive_integer
+    clinical_objective: string
+    intervention_direction_ids:
+      type: list_of_canonical_intervention_direction_ids
+    progression_criteria:
+      type: list_of_criteria
+    precautions_or_do_not_progress_criteria:
+      type: list_of_criteria
+    evidence_claim_ids:
+      type: list_of_evidence_claim_ids
+    strength_or_certainty_optional: string_or_null
+    required_for_route: boolean
+  rules:
+    - every_phase_requires_at_least_one_active_route_applicable_evidence_claim
+    - progression_is_criteria_based_unless_authoritative_protocol_explicitly_uses_time
+    - elapsed_time_alone_does_not_advance_phase
+    - unsupported_phase_is_not_rendered
+    - phase_vocabulary_does_not_imply_universal_phase_order
+
+goal_plan_v2:
+  fields:
+    phase_id: canonical_route_scoped_phase_id
+    goal_ids:
+      type: list_of_canonical_goal_ids
+    patient_priority_goal_optional: string_or_null
+    progression_criteria:
+      type: list_of_criteria
     evidence_claim_ids:
       type: list_of_evidence_claim_ids
   rules:
-    - safety_triggered_reassessment_precedes_routine_reassessment
-    - no_default_window_without_claim_or_clinician_entry
+    - goals_are_attached_to_rehabilitation_phases
+    - goal_completion_is_not_inferred_from_elapsed_time
+    - patient_priority_goal_is_never_inferred
+
+reassessment_plan_v2:
+  fields:
+    phase_progression_checks:
+      type: list_of_criteria
+    failure_to_progress_criteria:
+      type: list_of_criteria
+    safety_escalation_criteria:
+      type: list_of_criteria
+    clinician_requested_review_optional: string_or_null
+    evidence_claim_ids:
+      type: list_of_evidence_claim_ids
+  rules:
+    - progression_review_is_criteria_triggered_by_default
+    - physiotherapy_frequency_is_not_a_required_physician_output
+    - total_course_duration_is_not_a_required_physician_output
+    - calendar_time_may_be_used_only_for_authoritative_protocol_healing_followup_or_explicit_clinician_review
+    - safety_triggered_reassessment_precedes_routine_progression
+
+route_evidence_profile_v1:
+  fields:
+    profile_id: canonical_profile_id
+    route_id: canonical_route_id
+    diagnostic_claim_ids: list_of_evidence_claim_ids
+    history_claim_ids: list_of_evidence_claim_ids
+    examination_claim_ids: list_of_evidence_claim_ids
+    rehabilitation_sequence_id: canonical_rehabilitation_sequence_id
+    adjunct_claim_ids: list_of_evidence_claim_ids
+    safety_claim_ids: list_of_evidence_claim_ids
+    evidence_gaps: list_of_strings
+    primary_source_ids: list_of_evidence_source_ids
+    last_reviewed_on: date
+    next_review_due: date
+    freshness_state:
+      enum: [current, review_due, stale, superseded]
+  rules:
+    - every_routine_route_requires_profile_before_evidence_aware_generation
+    - every_rendered_recommendation_requires_active_route_applicable_claim
+    - missing_evidence_is_explicit_gap_not_generic_fill
+    - stale_or_superseded_profile_cannot_be_labelled_current_guideline_based
 
 formatter_semantics:
   detailed_section_order:
@@ -109,11 +155,18 @@ formatter_semantics:
     - relevant_examination_findings
     - functional_impact
     - referral_request
-    - goals_and_time_horizon
-    - rehabilitation_directions
-    - reassessment_plan
+    - staged_goals_and_progression_criteria
+    - disease_specific_rehabilitation_directions
+    - reassessment_or_escalation_criteria
+    - evidence_basis
   short_history_rule: include_duration_and_mechanism_when_supplied_and_material
-  short_timeline_rule: include_only_clinician_selected_or_evidence_supported_material_timing
+  short_rehab_rule: compress_route_specific_sequence_without_replacing_it_with_generic_goals
   empty_history_rule: omit_section
-  evidence_bibliography_default: clinician_ui_only
-  optional_detailed_evidence_appendix: allowed_after_design_freeze
+  evidence_basis_required:
+    short: compact_route_specific_source_footer
+    detailed: route_specific_source_section
+  bibliography_source_priority:
+    - current_route_specific_cpg
+    - current_route_specific_systematic_review
+    - high_quality_consensus_or_other_best_available_source
+  no_unrelated_general_source_when_route_specific_source_exists: true
