@@ -162,6 +162,14 @@ def build_cu1_physio_referral_router() -> APIRouter:
             )
         }
         payload["ui_relevance_scope"] = copy.deepcopy(bundle.artifacts.get("ui_relevance_scope", {}))
+        requirements = bundle.route_requirements
+        payload["ui_route_requirements"] = {
+            "wording_mode_requirements": copy.deepcopy(requirements.get("wording_mode_requirements", {})),
+            "postoperative_context": copy.deepcopy(requirements.get("postoperative_context", {})),
+            "subtype_policies": copy.deepcopy(requirements.get("subtype_policies", {})),
+            "route_overrides": copy.deepcopy(requirements.get("route_overrides", {})),
+            "shared_context_requirements": copy.deepcopy(requirements.get("shared_context_requirements", {})),
+        }
         route_labels = formatter.contract_route_labels()
         for profile_id, profile in (payload.get("profiles") or {}).items():
             if not isinstance(profile, dict):
