@@ -6,7 +6,7 @@
 > **Verified remote `main`:** `08ecd3ab33e98d567c47042a8a1de482df6952b9`.
 > **ACTIVE CANONICAL WRITER/LOCK:** `design/cu1-history-evidence-timeline-2026-08-28`.
 > **ACTIVE RUNTIME WRITER/LOCK:** NONE.
-> **PR #63:** draft / design-only; tranche3 promotion closeout lineage is complete through `1d69fafeee5a30a8191817748de9d0a2629c981b`; this file update itself may advance the branch by one documentation commit.
+> **PR #63:** draft / design-only; tranche3 promotion closeout is complete through branch commit `4e126b9c2f646bc026d3601f31e8a88bda8ece36`; this canonical pin commit may advance the branch by one documentation-only commit.
 > **Runtime evidence-aware generation:** NOT AUTHORIZED.
 > **CU-2:** NOT AUTHORIZED.
 > **PR-1 Transcript Intake:** intentionally paused.
