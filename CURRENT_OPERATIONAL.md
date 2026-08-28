@@ -3,133 +3,113 @@
 > **STATUS:** ACTIVE OPERATIONAL AUTHORITY.
 > **Updated:** 2026-08-28 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Verified current main after smoke reconciliation:** `62d206dd69e191fe813667280e99498df5438cef`.
-> **CU-1 runtime implementation:** PR #56 squash-merged as `c1da07f581cf8ccf1159d18bb63c23b674cbe9bd`.
-> **CU-1 control-plane closeout:** PR #57 squash-merged as `53cc6324edbe62243fd887e0073612f669d094cc`; writer-lock release PR #58 squash-merged as `a6a9257bc93693bfdd3d3e37090ebbb157f3634c`.
-> **CU-1 production-smoke reconciliation:** PR #59 squash-merged as `62d206dd69e191fe813667280e99498df5438cef`.
-> **Focused evidence:** GitHub Actions exact-head run PASS — 29/29 tests at reviewed head `e04004add617afa7222c51d0d669c2134dd8f575`.
-> **Production deploy:** Render deploy `dep-da8afeuk1f9s73f5sr6g` = `live`, exact runtime merge commit `c1da07f581cf8ccf1159d18bb63c23b674cbe9bd`.
-> **Production browser smoke:** PASS — authenticated product-owner smoke recorded in `clinic_utilities/CU1_PRODUCTION_SMOKE_2026-08-28.md`.
-> **Current major phase:** Personal Clinical Excellence foundation / baseline and Clinical Practice Review roadmap.
-> **CU-1 status:** CLOSED — IMPLEMENTED + TESTED + MERGED + DEPLOYED + PRODUCTION-SMOKE-VERIFIED.
-> **ACTIVE CANONICAL WRITER/LOCK:** NONE.
-> **ACTIVE RUNTIME WRITER/LOCK:** NONE.
+> **Verified maintenance base main:** `d1716f8ea889a9369367c3bb18e469e9bbfef9f0`.
+> **Prior CU-1 runtime implementation:** PR #56 squash-merged as `c1da07f581cf8ccf1159d18bb63c23b674cbe9bd`.
+> **Prior CU-1 technical smoke:** authenticated product-owner browser smoke passed load/validate/generate/copy/print/no-persistence checks.
+> **New product-quality defect:** generated referral prose is machine-like, contains English/machine-derived wording, and Short vs Detailed are insufficiently differentiated.
+> **Current major phase:** bounded CU-1 formatter-quality maintenance.
+> **CU-1 status:** REOPENED FOR FORMATTER QUALITY CORRECTION — prior technical smoke remains valid but clinician-facing prose acceptance failed.
+> **ACTIVE CANONICAL WRITER/LOCK:** `fix/cu1-greek-human-referral-formatting-2026-08-28`.
+> **ACTIVE RUNTIME WRITER/LOCK:** `fix/cu1-greek-human-referral-formatting-2026-08-28`.
 > **CU-2:** NOT AUTHORIZED.
 > **PR-1 Transcript Intake:** intentionally paused at `archive/slices/PR1_TRANSCRIPT_INTAKE_V3.md`.
 
 ---
 
-# 1. Proven CU-1 state
+# 1. Defect statement
+
+The deployed v1 formatter passed technical end-to-end smoke but failed clinician-facing quality acceptance.
+
+Observed product defects reported by the product owner:
 
 ```text
-pre-code clinical/content design = FROZEN / DESIGN-COMPLETE
-machine contract = FROZEN
-runtime implementation = COMPLETE
-focused automated evidence = PASS (29/29)
-independent exact-head review = MERGE-READY / CLEAN
-PR #56 = SQUASH-MERGED
-control-plane closeout PR #57 = SQUASH-MERGED
-writer-lock release PR #58 = SQUASH-MERGED
-production-smoke reconciliation PR #59 = SQUASH-MERGED
-Render auto-deploy of runtime merge = LIVE
-authenticated production browser smoke = PASS
-referral persistence = NONE by design
-active writer = NONE
+1. referral prose does not read like text a clinician would naturally write
+2. generated content contains English / machine-derived wording instead of Greek clinician-facing prose
+3. Short and Detailed outputs do not differ meaningfully enough
 ```
 
-Implemented protected entrypoints:
+Root cause identified in runtime:
 
 ```text
-GET  /clinical/clinic-utilities/physio-referral
-GET  /clinical/clinic-utilities/physio-referral/api/contract
-POST /clinical/clinic-utilities/physio-referral/api/validate
-POST /clinical/clinic-utilities/physio-referral/api/generate
+selected machine IDs
+→ _humanize_id()
+→ underscore replacement / English token exposure
+→ section-style serialization rather than natural referral composition
 ```
 
-The browser draft and generated text remain ephemeral. No CU-1 referral data are written to PostgreSQL, localStorage or sessionStorage.
+This is a clinically meaningful usability defect because the utility's purpose is a ready-to-copy referral, not a structured debug rendering.
 
 ---
 
-# 2. Safety / contract evidence
+# 2. Authorized maintenance boundary
 
-The merged runtime is manifest-driven from:
-
-```text
-clinic_utilities/contracts/cu1_contract_manifest_v1.yaml
-```
-
-Focused executable evidence covers contract loading/correction precedence, alias normalization, route/context validation, all frozen shared gateways, forged-gateway rejection, safety input semantics, forged acknowledgement/disposition rejection, postoperative/fracture/muscle boundaries, formatter determinism, forbidden reassuring inference and no-persistence behavior.
-
-Important review hardening completed before merge:
+Authorized changes:
 
 ```text
-arbitrary shared_target_optional → rejected unless exact frozen gateway
-unknown acknowledged_rule_ids → rejected
-unknown clinician_disposition → rejected
-unknown safety input flag → rejected
-not_assessed/unselected state → never converted to reassuring negative
+CU1 formatter language/prose contract amendment
+Greek clinician-facing phrase catalog
+ShortReferralFormatter prose composition
+DetailedReferralFormatter prose composition
+formatter-specific tests and synthetic output fixtures
+UI labels only if required to prevent machine-English exposure
+canonical/changelog reconciliation after verified fix
 ```
 
-A duplicate unused router builder remains in `clinic_utilities/physio_referral_runtime.py`; `main.py` imports only the guarded router from `clinic_utilities/physio_referral_api.py`. This is non-blocking maintenance debt, not active behavior and not a reason to reopen CU-1.
+Explicitly out of scope:
+
+```text
+clinical taxonomy changes
+route ownership/precedence changes
+new diagnoses/findings/goals/adjuncts
+safety-rule changes
+route validation changes
+persistence/patient-registry linkage
+CU-2 work
+PR-1 work
+```
+
+Existing validation, gateway, safety and no-persistence invariants remain frozen unless the formatter fix reveals a direct contradiction.
 
 ---
 
-# 3. Deploy / smoke truth
+# 3. Formatter quality acceptance gate
 
-Render service `osteoporosis` auto-deployed the exact runtime merge commit and reported:
+Before MERGE-READY, executable evidence must demonstrate:
 
 ```text
-build successful
-uvicorn process started
-status = live
+A. no generated referral contains raw machine IDs or underscore-humanized English phrases
+B. all generated clinician-facing referral text is Greek except unavoidable standard abbreviations/proper names
+C. Short output is compact natural prose, normally 2–4 sentences
+D. Detailed output has materially greater clinical/contextual information and a distinct medical-referral structure
+E. Short and Detailed preserve identical clinical truth and safety restrictions
+F. explicit restrictions remain visible in both modes when clinically material
+G. not_assessed/unselected values never become reassuring negatives
+H. existing CU-1 gateway/safety/no-persistence tests remain green
+I. representative clinician-style synthetic cases pass exact assertions
 ```
 
-The product owner subsequently executed the authenticated production browser smoke and reported all requested checks as passing:
+At least these representative cases must be tested:
 
 ```text
-Clinical Excellence authenticated access = PASS
-Clinic Utilities → Physiotherapy Referral load = PASS
-representative Knee → Knee OA path = PASS
-required-field completion + Validate = PASS
-Short referral generation = PASS
-Detailed referral generation = PASS
-Copy = PASS
-Print = PASS
-refresh clears prior referral state = PASS
-```
-
-Therefore the precise status is:
-
-```text
-DEPLOYED = PROVEN
-RENDER LIVE = PROVEN
-PRODUCTION-SMOKE-VERIFIED = PROVEN
-PILOT-VALIDATED = NOT CLAIMED
+knee OA
+cervical nonspecific pain
+lumbar nonspecific pain
+shared fracture with restriction
+shared muscle injury
+postoperative route
 ```
 
 ---
 
-# 4. Closed scope / prohibitions
-
-CU-1 closure does not authorize any of the following:
+# 4. Exact next action
 
 ```text
-CU-2 implementation
-PR-1 runtime resumption
-referral persistence or patient-registry linkage
-clinical taxonomy reopening
-new evidence-sensitive physiotherapy recommendations
+1. freeze formatter language/prose amendment
+2. implement Greek label/phrase authority and natural prose composition
+3. update focused tests
+4. run exact-head CI
+5. independent exact-head review
+6. STOP at MERGE-READY or BLOCK
 ```
 
-Frozen CU-1 clinical profiles/contracts remain authoritative unless a future concrete contradiction justifies a separately authorized maintenance slice.
-
----
-
-# 5. Exact next action
-
-```text
-STOP — CU-1 is closed and production-smoke-verified.
-Await explicit product-owner selection of the next roadmap slice.
-```
-
-No engineering continuation is implied by CU-1 completion.
+No merge/deploy is implied until the acceptance gate is clean.
