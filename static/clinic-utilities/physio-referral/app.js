@@ -14,29 +14,80 @@
   const els = {
     contractStatus: $('contractStatus'),
     profile: $('profileSelect'), route: $('routeSelect'), wording: $('wordingSelect'), laterality: $('lateralitySelect'),
-    subtypeWrap: $('subtypeWrap'), subtype: $('subtypeSelect'), assertionWrap: $('assertionWrap'), assertion: $('assertionSelect'),
-    contextFields: $('contextFields'), extraContextKey: $('extraContextKey'), extraContextValue: $('extraContextValue'),
-    extraContextList: $('extraContextList'), addContextBtn: $('addContextBtn'),
-    findings: $('findingsOptions'), functions: $('functionOptions'), goals: $('goalOptions'), rehab: $('rehabOptions'), adjuncts: $('adjunctOptions'),
-    restrictionId: $('restrictionIdSelect'), restrictionValue: $('restrictionValue'), restrictionSource: $('restrictionSource'), restrictionList: $('restrictionList'), addRestrictionBtn: $('addRestrictionBtn'),
-    safetyFlags: $('safetyFlagOptions'), disposition: $('dispositionSelect'), sessions: $('sessionsInput'), freeText: $('clinicianFreeText'),
+    wordingWrap: $('wordingWrap'), lateralityWrap: $('lateralityWrap'), subtypeWrap: $('subtypeWrap'), subtype: $('subtypeSelect'), assertionWrap: $('assertionWrap'), assertion: $('assertionSelect'),
+    contextCard: $('contextCard'), contextFields: $('contextFields'),
+    findingsCard: $('findingsCard'), findings: $('findingsOptions'), functions: $('functionOptions'), findingsBlock: $('findingsBlock'), functionBlock: $('functionBlock'),
+    rehabCard: $('rehabCard'), goals: $('goalOptions'), rehab: $('rehabOptions'), adjuncts: $('adjunctOptions'), goalsBlock: $('goalsBlock'), rehabBlock: $('rehabBlock'), adjunctBlock: $('adjunctBlock'),
+    notesCard: $('notesCard'), sessions: $('sessionsInput'), freeText: $('clinicianFreeText'),
+    advancedCard: $('advancedCard'), restrictionId: $('restrictionIdSelect'), restrictionValue: $('restrictionValue'), restrictionSource: $('restrictionSource'), restrictionList: $('restrictionList'), addRestrictionBtn: $('addRestrictionBtn'),
+    safetyFlags: $('safetyFlagOptions'), disposition: $('dispositionSelect'), dispositionWrap: $('dispositionWrap'),
+    extraContextKey: $('extraContextKey'), extraContextValue: $('extraContextValue'), extraContextList: $('extraContextList'), addContextBtn: $('addContextBtn'),
     validateBtn: $('validateBtn'), generateBtn: $('generateBtn'), validationPanel: $('validationPanel'), validationSummary: $('validationSummary'),
     output: $('outputText'), copyBtn: $('copyBtn'), printBtn: $('printBtn'), clearBtn: $('clearBtn'),
   };
 
-  const greek = {
-    left:'Αριστερά', right:'Δεξιά', bilateral:'Αμφοτερόπλευρα', midline:'Μέση γραμμή', not_applicable:'Δεν εφαρμόζεται', not_stated:'Δεν δηλώνεται',
-    presentation:'Παρουσίαση / συμπτωματολογία', formal_diagnosis:'Ρητή κλινική διάγνωση', established_structural_diagnosis:'Εγκατεστημένη δομική διάγνωση', postoperative:'Μετεγχειρητικό', shared_structural:'Κοινό δομικό pathway',
-    pain:'Πόνος', swelling:'Οίδημα', tenderness:'Ευαισθησία', bruising:'Εκχύμωση', active_rom_restricted:'Περιορισμένο ενεργητικό ROM', passive_rom_restricted:'Περιορισμένο παθητικό ROM', painful_active_rom:'Επώδυνο ενεργητικό ROM', painful_passive_rom:'Επώδυνο παθητικό ROM', objective_weakness:'Αντικειμενική μυϊκή αδυναμία', load_intolerance_without_measured_weakness:'Δυσανεξία φόρτισης χωρίς μετρημένη αδυναμία', paresthesia:'Παραισθησίες', numbness:'Αιμωδία', night_or_sleep_disturbance:'Νυχτερινή ενόχληση / διαταραχή ύπνου', walking_limitation:'Περιορισμός βάδισης', stairs_limitation:'Δυσκολία στις σκάλες', sit_to_stand_limitation:'Δυσκολία sit-to-stand', work_limitation:'Περιορισμός εργασίας', sport_or_exercise_limitation:'Περιορισμός άθλησης/άσκησης', adl_self_care_limitation:'Περιορισμός ADL/αυτοεξυπηρέτησης', balance_deficit:'Έλλειμμα ισορροπίας', poor_coordination:'Μη καλός συντονισμός', fear_or_concern_about_falling:'Φόβος/ανησυχία για πτώση',
-    walking_tolerance:'Ανοχή βάδισης', standing_tolerance:'Ανοχή ορθοστασίας', sitting_tolerance:'Ανοχή καθιστής θέσης', stairs:'Σκάλες', sit_to_stand:'Sit-to-stand', transfers:'Μεταφορές', lifting_carrying:'Άρση/μεταφορά φορτίου', pushing_pulling:'Ώθηση/έλξη', driving:'Οδήγηση', desk_or_computer_work:'Εργασία γραφείου/ΗΥ', overhead_activity:'Δραστηριότητες πάνω από το ύψος του ώμου', gripping:'Λαβή', pinch:'Pinch', dexterity:'Επιδεξιότητα', squat:'Κάθισμα/squat', kneeling:'Γονάτισμα', running:'Τρέξιμο', jumping_landing:'Άλμα/προσγείωση', pivot_change_of_direction:'Pivot/αλλαγή κατεύθυνσης', sport_gym:'Άθληση/γυμναστήριο', manual_work:'Χειρωνακτική εργασία', school_pe_youth_sport:'Σχολική ΦΑ/νεανικός αθλητισμός', community_mobility:'Κινητικότητα στην κοινότητα', patient_priority_activity:'Δραστηριότητα προτεραιότητας ασθενούς',
-    reduce_symptom_irritability:'Μείωση ερεθιστικότητας συμπτωμάτων', restore_safe_functional_rom:'Αποκατάσταση ασφαλούς λειτουργικού ROM', improve_strength:'Βελτίωση δύναμης', improve_endurance:'Βελτίωση αντοχής', improve_motor_control:'Βελτίωση κινητικού ελέγχου', improve_neuromuscular_control:'Βελτίωση νευρομυϊκού ελέγχου', improve_balance_postural_control:'Βελτίωση ισορροπίας/στασικού ελέγχου', improve_coordination:'Βελτίωση συντονισμού', improve_walking_tolerance:'Βελτίωση ανοχής βάδισης', improve_stair_function:'Βελτίωση λειτουργίας στις σκάλες', improve_sit_to_stand_transfer_function:'Βελτίωση sit-to-stand/μεταφορών', improve_grip_pinch_or_dexterity:'Βελτίωση λαβής/pinch/επιδεξιότητας', improve_load_tolerance:'Βελτίωση ανοχής φόρτισης', graded_return_to_activity:'Σταδιακή επιστροφή σε δραστηριότητα', graded_return_to_work:'Σταδιακή επιστροφή στην εργασία', graded_return_to_sport:'Σταδιακή επιστροφή στον αθλητισμό', improve_self_management:'Βελτίωση αυτοδιαχείρισης', improve_mobility_confidence:'Βελτίωση εμπιστοσύνης στην κινητικότητα', optimize_safe_walking_aid_use:'Βελτιστοποίηση ασφαλούς χρήσης βοηθήματος βάδισης', maintain_or_regain_adl_independence:'Διατήρηση/ανάκτηση ανεξαρτησίας ADL', reduce_falls_risk_through_modifiable_physical_factors:'Μείωση κινδύνου πτώσεων μέσω τροποποιήσιμων φυσικών παραγόντων',
-    physiotherapy_assessment_and_individualized_active_rehabilitation:'Φυσιοθεραπευτική αξιολόγηση και εξατομικευμένη ενεργητική αποκατάσταση', therapeutic_exercise:'Θεραπευτική άσκηση', progressive_strengthening:'Προοδευτική ενδυνάμωση', progressive_endurance_or_capacity_work:'Προοδευτική βελτίωση αντοχής/ικανότητας', mobility_exercise_when_restricted:'Ασκήσεις κινητικότητας όταν υπάρχει περιορισμός', graded_activity_exposure:'Σταδιακή έκθεση σε δραστηριότητα', graded_loading:'Σταδιακή φόρτιση', education_and_self_management:'Εκπαίδευση και αυτοδιαχείριση', home_exercise_programme:'Πρόγραμμα ασκήσεων στο σπίτι', work_activity_load_adaptation:'Προσαρμογή φορτίου εργασίας/δραστηριότητας', neuromuscular_proprioceptive_training:'Νευρομυϊκή/ιδιοδεκτική εκπαίδευση', balance_stepping_recovery_training:'Εκπαίδευση ισορροπίας/βηματισμού/ανάκτησης', gait_walking_practice:'Εκπαίδευση βάδισης', walking_aid_assessment_and_training:'Αξιολόγηση και εκπαίδευση βοηθήματος βάδισης', functional_task_retraining:'Επανεκπαίδευση λειτουργικών δραστηριοτήτων', progressive_running:'Προοδευτικό τρέξιμο', progressive_sprinting:'Προοδευτικό sprint', progressive_kicking:'Προοδευτικές λακτίσεις', progressive_jump_landing:'Προοδευτικό άλμα/προσγείωση', progressive_change_of_direction:'Προοδευτική αλλαγή κατεύθυνσης', criterion_based_return_to_training_sport_or_work:'Criterion-based επιστροφή σε προπόνηση/άθληση/εργασία', edema_management:'Διαχείριση οιδήματος', scar_desensitization_management:'Διαχείριση ουλής/απευαισθητοποίηση', protected_rom_within_restrictions:'Προστατευμένο ROM εντός περιορισμών', progressive_weight_bearing_within_restrictions:'Προοδευτική φόρτιση βάρους εντός περιορισμών', progressive_upper_limb_use_within_restrictions:'Προοδευτική χρήση άνω άκρου εντός περιορισμών',
-    manual_therapy:'Manual therapy', soft_tissue_techniques:'Τεχνικές μαλακών μορίων', neurodynamic_techniques:'Νευροδυναμικές τεχνικές', selected_cervical_traction:'Επιλεγμένη αυχενική έλξη', dry_needling:'Dry needling', acupuncture:'Βελονισμός', eswt:'ESWT', taping:'Taping', heel_lift:'Heel lift', night_splint:'Night splint', orthosis_or_brace_context:'Ορθωτικό/brace ως context',
+  const greekStatic = {
+    presentation: 'Συμπτωματολογία / κλινική παρουσίαση',
+    formal_diagnosis: 'Ρητή κλινική διάγνωση',
+    established_structural_diagnosis: 'Τεκμηριωμένη δομική διάγνωση',
+    postoperative: 'Μετεγχειρητική αποκατάσταση',
+    shared_structural: 'Δομική αποκατάσταση',
+    left: 'Αριστερά', right: 'Δεξιά', bilateral: 'Αμφοτερόπλευρα', midline: 'Μέση γραμμή', not_applicable: 'Δεν εφαρμόζεται', not_stated: 'Δεν δηλώνεται',
+    normal: 'Φυσιολογικό', abnormal: 'Παθολογικό', not_assessed: 'Δεν αξιολογήθηκε',
   };
 
-  const label = (id) => greek[id] || String(id || '').replaceAll('_', ' ');
-  const option = (value, text = label(value)) => `<option value="${escapeHtml(value)}">${escapeHtml(text)}</option>`;
+  const errorLabels = {
+    required_field_missing: 'Λείπει απαραίτητο πεδίο για τη συγκεκριμένη επιλογή.',
+    formal_diagnosis_assertion_required: 'Χρειάζεται να επιβεβαιώσεις ότι η διάγνωση έχει τεθεί κλινικά.',
+    established_structural_diagnosis_source_required: 'Χρειάζεται η πηγή της τεκμηριωμένης διάγνωσης.',
+    established_nonoperative_management_context_required: 'Χρειάζεται να δηλωθεί ότι έχει επιλεγεί συντηρητική / μη χειρουργική αντιμετώπιση.',
+    subtype_required: 'Χρειάζεται να επιλέξεις υποτύπο.',
+    subtype_required_for_asserted_nonarthritic_intraarticular_diagnosis: 'Χρειάζεται να επιλέξεις συγκεκριμένο υποτύπο.',
+    postoperative_protocol_source_required: 'Χρειάζεται η πηγή του διαθέσιμου μετεγχειρητικού πρωτοκόλλου.',
+    postoperative_protocol_status_unresolved: 'Η κατάσταση του μετεγχειρητικού πρωτοκόλλου πρέπει να διευκρινιστεί.',
+    lower_limb_weight_bearing_required_missing: 'Χρειάζεται να δηλωθεί η επιτρεπόμενη φόρτιση του κάτω άκρου.',
+    upper_limb_use_status_required_missing: 'Χρειάζεται να δηλωθεί η επιτρεπόμενη χρήση του άνω άκρου.',
+    axial_fracture_loading_or_rom_status_required_missing: 'Χρειάζεται να δηλωθούν οι περιορισμοί κίνησης/φόρτισης.',
+    frailty_must_be_clinician_established_for_formal_wording: 'Η ευπάθεια (frailty) πρέπει να έχει τεθεί ρητά από τον κλινικό.',
+    invalid_route_or_subtype: 'Η επιλογή δεν είναι έγκυρη για το συγκεκριμένο pathway.',
+  };
+
+  const fieldLabels = {
+    'primary_problem.context.established_diagnosis_source': 'Πηγή διάγνωσης',
+    'primary_problem.context.management_context': 'Πλάνο αντιμετώπισης',
+    'primary_problem.context.procedure': 'Επέμβαση',
+    'primary_problem.context.procedure_date_or_phase': 'Ημερομηνία / φάση επέμβασης',
+    'primary_problem.context.protocol_status': 'Μετεγχειρητικό πρωτόκολλο',
+    'primary_problem.context.restrictions_review_status': 'Περιορισμοί μετά την επέμβαση',
+    'primary_problem.context.protocol_source': 'Πηγή πρωτοκόλλου',
+    'primary_problem.context.fracture_site': 'Θέση κατάγματος',
+    'primary_problem.context.fracture_phase': 'Φάση κατάγματος',
+    'primary_problem.context.treatment': 'Αντιμετώπιση κατάγματος',
+    'primary_problem.context.healing_stability_status': 'Πώρωση / σταθερότητα',
+    'primary_problem.context.immobilization_status': 'Ακινητοποίηση',
+    'primary_problem.context.weight_bearing_status': 'Επιτρεπόμενη φόρτιση',
+    'primary_problem.context.upper_limb_use_status': 'Επιτρεπόμενη χρήση άνω άκρου',
+    'primary_problem.context.rom_status': 'Επιτρεπόμενο εύρος κίνησης',
+    'primary_problem.context.loading_strengthening_status': 'Επιτρεπόμενη ενδυνάμωση / φόρτιση',
+    'primary_problem.context.muscle_group': 'Μυϊκή ομάδα',
+    'primary_problem.context.injury_phase': 'Φάση κάκωσης',
+    'primary_problem.context.injury_type': 'Τύπος κάκωσης',
+    'primary_problem.context.functional_route_id': 'Λειτουργικό πρόβλημα',
+  };
+
   const escapeHtml = (text) => String(text ?? '').replace(/[&<>'"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+
+  function label(id, preferredSection = null) {
+    if (!id) return '';
+    const labels = state.contract?.display_labels || {};
+    if (preferredSection && labels[preferredSection]?.[id]) return labels[preferredSection][id];
+    for (const section of ['laterality','findings','functional_impairments','goals','rehab_directions','adjuncts','measurements','restrictions','context_values','route_detail_labels']) {
+      if (labels[section]?.[id]) return labels[section][id];
+    }
+    return greekStatic[id] || String(id).replaceAll('_', ' ');
+  }
+
+  const option = (value, text = label(value)) => `<option value="${escapeHtml(value)}">${escapeHtml(text)}</option>`;
 
   async function api(path, init = {}) {
     const response = await fetch(`${API_BASE}${path}`, {
@@ -54,74 +105,98 @@
 
   async function loadContract() {
     try {
-      const contract = await api('/contract');
-      state.contract = contract;
-      els.contractStatus.textContent = `${contract.contract_version} · loaded`;
+      state.contract = await api('/contract');
+      els.contractStatus.textContent = 'έτοιμο';
       els.contractStatus.classList.add('ok');
-      renderProfiles();
-      renderLaterality();
-      renderStaticOptionSets();
-      els.validationSummary.textContent = 'Επίλεξε κύριο πρόβλημα και συμπλήρωσε το referral draft.';
+      populateProfiles();
+      populateLaterality();
+      resetDownstream();
     } catch (error) {
-      els.contractStatus.textContent = 'contract error';
-      els.contractStatus.classList.add('error');
-      showValidation({validation_errors:[{error_id:'contract_load_error', error_class:'validation_error', metadata:{detail:error.message}}], safety_results:[], formatter_blocked:true});
+      els.contractStatus.textContent = 'σφάλμα φόρτωσης';
+      showRequestError(error.message);
     }
   }
 
-  function renderProfiles() {
+  function populateProfiles() {
     els.profile.innerHTML = '<option value="">Επίλεξε…</option>';
-    Object.entries(state.contract.profiles).forEach(([id, profile]) => {
-      els.profile.insertAdjacentHTML('beforeend', option(id, profile.display));
+    Object.entries(state.contract.profiles || {}).forEach(([id, profile]) => {
+      els.profile.insertAdjacentHTML('beforeend', option(id, profile.display || id));
     });
   }
 
-  function renderLaterality() {
-    els.laterality.innerHTML = '';
-    state.contract.laterality_values.forEach((id) => els.laterality.insertAdjacentHTML('beforeend', option(id)));
+  function populateLaterality() {
+    els.laterality.innerHTML = (state.contract.laterality_values || []).map((id) => option(id)).join('');
     els.laterality.value = 'not_stated';
-  }
-
-  function renderStaticOptionSets() {
-    renderChecks(els.functions, state.contract.functional_impairments, 'functional');
-    renderChecks(els.goals, state.contract.goals, 'goal');
-    renderChecks(els.rehab, state.contract.rehab_directions, 'rehab');
-    renderChecks(els.adjuncts, state.contract.adjuncts, 'adjunct');
-    renderChecks(els.safetyFlags, state.contract.safety_input_flags, 'safety');
-    els.restrictionId.innerHTML = '<option value="">Επίλεξε…</option>' + state.contract.restrictions.map((id) => option(id)).join('');
-  }
-
-  function renderChecks(container, ids, group) {
-    container.innerHTML = (ids || []).map((id) => `
-      <label class="check-item"><input type="checkbox" data-group="${group}" value="${escapeHtml(id)}" /> <span>${escapeHtml(label(id))}</span></label>
-    `).join('') || '<span class="empty-note">Δεν υπάρχουν επιλογές.</span>';
-  }
-
-  function onProfileChange() {
-    const profileId = els.profile.value;
-    const profile = state.contract.profiles[profileId];
-    els.route.disabled = !profile;
-    els.route.innerHTML = profile ? '<option value="">Επίλεξε…</option>' : '<option value="">Επίλεξε περιοχή πρώτα</option>';
-    if (profile) {
-      const routeEntries = Object.entries(profile.routes).sort((a,b) => visibilityRank(a[1].visibility) - visibilityRank(b[1].visibility));
-      routeEntries.forEach(([id, route]) => {
-        const suffix = route.visibility === 'rare_advanced' ? ' · advanced' : route.visibility === 'visible_less_frequent' ? ' · less frequent' : '';
-        els.route.insertAdjacentHTML('beforeend', option(id, `${route.display}${suffix}`));
-      });
-    }
-    renderFindings();
-    resetRouteDependent();
   }
 
   const visibilityRank = (value) => ({routine:0, visible_less_frequent:1, rare_advanced:2, shared_gateway:3, context_only:4}[value] ?? 9);
 
+  function onProfileChange() {
+    clearSelectionsAndState();
+    const profileId = els.profile.value;
+    const profile = state.contract?.profiles?.[profileId];
+    els.route.disabled = !profile;
+    els.route.innerHTML = profile ? '<option value="">Επίλεξε…</option>' : '<option value="">Επίλεξε περιοχή πρώτα</option>';
+    if (profile) {
+      Object.entries(profile.routes)
+        .sort((a,b) => visibilityRank(a[1].visibility) - visibilityRank(b[1].visibility))
+        .forEach(([id, route]) => {
+          const suffix = route.visibility === 'rare_advanced' ? ' · σπάνιο/advanced' : route.visibility === 'visible_less_frequent' ? ' · λιγότερο συχνό' : '';
+          els.route.insertAdjacentHTML('beforeend', option(id, `${route.display}${suffix}`));
+        });
+    }
+    resetDownstream();
+  }
+
   function onRouteChange() {
+    clearSelectionsAndState({keepRoute:true});
     const route = currentRoute();
-    els.wording.disabled = !route;
-    els.wording.innerHTML = route ? '<option value="">Επίλεξε…</option>' + (route.wording_modes || []).map((id) => option(id)).join('') : '<option value="">Επίλεξε pathway πρώτα</option>';
+    if (!route) {
+      resetDownstream();
+      return;
+    }
+    configureWording(route);
+    configureLaterality();
     renderSubtype();
-    renderContextFields();
     renderAssertion();
+    renderRelevantOptions();
+    renderContextFields();
+    renderAdvancedControls();
+    els.findingsCard.hidden = false;
+    els.rehabCard.hidden = false;
+    els.notesCard.hidden = false;
+    els.advancedCard.hidden = false;
+    els.validationSummary.textContent = 'Μπορείς ήδη να δημιουργήσεις βασικό παραπεμπτικό ή να προσθέσεις προαιρετικές λεπτομέρειες.';
+  }
+
+  function currentRoute() {
+    return state.contract?.profiles?.[els.profile.value]?.routes?.[els.route.value] || null;
+  }
+
+  function configureWording(route) {
+    const modes = route.wording_modes || [];
+    els.wording.innerHTML = modes.map((id) => option(id)).join('');
+    const preferred = ['presentation','established_structural_diagnosis','postoperative','shared_structural'].find((id) => modes.includes(id));
+    els.wording.value = preferred || (modes.length === 1 ? modes[0] : '');
+    els.wordingWrap.hidden = modes.length <= 1 && els.wording.value !== 'formal_diagnosis';
+  }
+
+  function configureLaterality() {
+    els.lateralityWrap.hidden = false;
+    els.laterality.value = 'not_stated';
+  }
+
+  function renderSubtype() {
+    const subtypes = state.contract.subtypes?.[els.route.value] || [];
+    els.subtypeWrap.hidden = subtypes.length === 0;
+    els.subtype.innerHTML = '<option value="">Επίλεξε…</option>' + subtypes.map((id) => option(id, label(id, 'route_detail_labels'))).join('');
+    if (subtypes.length === 1) els.subtype.value = subtypes[0];
+  }
+
+  function renderAssertion() {
+    const formal = els.wording.value === 'formal_diagnosis';
+    els.assertionWrap.hidden = !formal;
+    if (!formal) els.assertion.value = 'not_stated';
   }
 
   function onWordingChange() {
@@ -129,103 +204,155 @@
     renderContextFields();
   }
 
-  function currentRoute() {
-    return state.contract?.profiles?.[els.profile.value]?.routes?.[els.route.value] || null;
+  function scopeForCurrentProfile() {
+    return state.contract?.ui_relevance_scope?.profiles?.[els.profile.value] || {};
   }
 
-  function resetRouteDependent() {
-    els.wording.disabled = true;
-    els.wording.innerHTML = '<option value="">Επίλεξε pathway πρώτα</option>';
-    els.subtypeWrap.hidden = true;
-    els.assertionWrap.hidden = true;
-    els.contextFields.innerHTML = '<span class="empty-note">Επίλεξε pathway.</span>';
-    state.extraContext = {};
-    renderExtraContext();
+  function prioritized(ids, preferred = []) {
+    const set = new Set(ids || []);
+    return [...preferred.filter((id) => set.has(id)), ...(ids || []).filter((id) => !preferred.includes(id))];
   }
 
-  function renderSubtype() {
-    const subtypes = state.contract.subtypes?.[els.route.value] || [];
-    els.subtypeWrap.hidden = subtypes.length === 0;
-    els.subtype.innerHTML = '<option value="">Δεν δηλώνεται</option>' + subtypes.map((id) => option(id)).join('');
+  function renderRelevantOptions() {
+    const scope = scopeForCurrentProfile();
+    const adjustment = state.contract?.ui_relevance_scope?.route_adjustments?.[els.profile.value]?.[els.route.value] || {};
+    renderChecks(els.findings, scope.findings || [], 'finding', 'findings');
+    renderChecks(els.functions, scope.functional_impairments || [], 'functional', 'functional_impairments');
+    renderChecks(els.goals, scope.goals || [], 'goal', 'goals');
+    renderChecks(els.rehab, scope.rehab_directions || [], 'rehab', 'rehab_directions');
+    renderChecks(els.adjuncts, prioritized(scope.adjuncts || [], adjustment.prioritize_adjuncts || []), 'adjunct', 'adjuncts');
+    els.findingsBlock.hidden = !(scope.findings || []).length;
+    els.functionBlock.hidden = !(scope.functional_impairments || []).length;
+    els.goalsBlock.hidden = !(scope.goals || []).length;
+    els.rehabBlock.hidden = !(scope.rehab_directions || []).length;
+    els.adjunctBlock.hidden = !(scope.adjuncts || []).length;
   }
 
-  function renderAssertion() {
-    const mode = els.wording.value;
-    els.assertionWrap.hidden = mode !== 'formal_diagnosis';
-    if (mode !== 'formal_diagnosis') els.assertion.value = 'not_stated';
+  function renderChecks(container, ids, group, section) {
+    container.innerHTML = (ids || []).map((id) => `
+      <label class="check-item"><input type="checkbox" data-group="${group}" value="${escapeHtml(id)}" /> <span>${escapeHtml(label(id, section))}</span></label>
+    `).join('') || '<span class="empty-note">Δεν υπάρχουν σχετικές επιλογές.</span>';
   }
 
-  function renderFindings() {
-    if (!state.contract) return;
-    const common = state.contract.common_findings || [];
-    const specific = state.contract.profile_findings?.[els.profile.value] || [];
-    const ids = [...new Set([...common, ...specific])];
-    renderChecks(els.findings, ids, 'finding');
+  function routeOverride() {
+    return state.contract?.ui_route_requirements?.route_overrides?.[els.route.value] || {};
+  }
+
+  function hasPostoperativePolicy() {
+    const override = routeOverride();
+    return els.wording.value === 'postoperative' || override.apply_policy === 'postoperative_context' || els.route.value.startsWith('postoperative_');
+  }
+
+  function directRequiredContextKeys() {
+    const paths = routeOverride().require || [];
+    return paths.filter((path) => path.startsWith('primary_problem.context.')).map((path) => path.split('.').pop());
+  }
+
+  function conditionalRequiredContextKeys() {
+    const conditional = routeOverride().conditional_requirements || [];
+    const keys = [];
+    conditional.forEach((item) => {
+      const mode = item?.when?.eq?.path === 'primary_problem.wording_mode' ? item.when.eq.value : null;
+      if (mode && mode !== els.wording.value) return;
+      (item.require || []).forEach((path) => {
+        if (path.startsWith('primary_problem.context.')) keys.push(path.split('.').pop());
+      });
+    });
+    return keys;
   }
 
   function renderContextFields() {
     const profile = els.profile.value;
     const route = els.route.value;
-    const mode = els.wording.value;
     const fields = [];
+    const required = new Set([...directRequiredContextKeys(), ...conditionalRequiredContextKeys()]);
 
-    if (mode === 'established_structural_diagnosis') {
-      fields.push(textField('established_diagnosis_source', 'Πηγή εγκατεστημένης διάγνωσης', 'clinician_entered'));
-      fields.push(textField('management_context', 'Management context', 'conservative_rehabilitation'));
+    if (required.has('established_diagnosis_source')) {
+      fields.push(selectField('established_diagnosis_source', 'Πηγή τεκμηριωμένης διάγνωσης', ['clinician_entered','imaging_confirmed','specialist_documented','prior_documented_diagnosis','other_documented'], true));
+    }
+    if (required.has('management_context')) {
+      fields.push(selectField('management_context', 'Πλάνο αντιμετώπισης', ['nonoperative_confirmed','conservative_rehabilitation'], true));
     }
 
-    if (mode === 'postoperative' || route.startsWith('postoperative_')) {
-      fields.push(textField('procedure', 'Επέμβαση / procedure', ''));
-      fields.push(textField('procedure_date_or_phase', 'Ημερομηνία ή φάση επέμβασης', ''));
-      fields.push(selectField('protocol_status', 'Protocol status', state.contract.context_value_sets.postoperative_common.protocol_status || []));
-      fields.push(selectField('restrictions_review_status', 'Restrictions review status', state.contract.context_value_sets.postoperative_common.restrictions_review_status || []));
-      fields.push(textField('protocol_source', 'Protocol source (αν διαθέσιμο)', ''));
+    if (hasPostoperativePolicy()) {
+      const postop = state.contract.ui_route_requirements?.postoperative_context || {};
+      const values = state.contract.context_value_sets?.postoperative_common || {};
+      fields.push(textField('procedure', 'Επέμβαση', '', true));
+      fields.push(textField('procedure_date_or_phase', 'Ημερομηνία ή φάση επέμβασης', '', true));
+      fields.push(selectField('protocol_status', 'Υπάρχει μετεγχειρητικό πρωτόκολλο;', values.protocol_status || [], true));
+      fields.push(selectField('restrictions_review_status', 'Έχουν ελεγχθεί οι περιορισμοί;', values.restrictions_review_status || [], true));
+      fields.push(textField('protocol_source', 'Πηγή πρωτοκόλλου (μόνο αν υπάρχει)', '', false));
     }
 
     if (profile === 'shared_fracture') {
-      const v = state.contract.context_value_sets.shared_fracture;
-      fields.push(textField('fracture_site', 'Canonical fracture site', 'π.χ. distal_radius_fracture'));
-      fields.push(selectField('fracture_phase', 'Φάση κατάγματος', v.fracture_phase || []));
-      fields.push(selectField('fracture_context', 'Context κατάγματος', v.fracture_context || []));
-      fields.push(selectField('treatment', 'Αντιμετώπιση', v.treatment || []));
-      fields.push(selectField('healing_stability_status', 'Healing / stability status', v.healing_stability_status || []));
-      fields.push(selectField('immobilization_status', 'Immobilization status', v.immobilization_status || []));
-      fields.push(selectField('weight_bearing_status', 'Weight-bearing status', v.weight_bearing_status || []));
-      fields.push(selectField('upper_limb_use_status', 'Upper-limb use status', v.upper_limb_use_status || []));
-      fields.push(selectField('rom_status', 'ROM status', v.rom_status || []));
-      fields.push(selectField('loading_strengthening_status', 'Loading / strengthening status', v.loading_strengthening_status || []));
-      fields.push(selectField('orthopaedic_instructions_source', 'Πηγή ορθοπαιδικών οδηγιών', v.orthopaedic_instructions_source || []));
+      const req = state.contract.ui_route_requirements?.shared_context_requirements?.shared_fracture || {};
+      const v = state.contract.context_value_sets.shared_fracture || {};
+      const sites = [...new Set(Object.values(req.site_groups || {}).flat())];
+      fields.push(selectField('fracture_site', 'Θέση κατάγματος', sites, true, 'route_detail_labels'));
+      fields.push(selectField('fracture_phase', 'Φάση κατάγματος', v.fracture_phase || [], true));
+      fields.push(selectField('treatment', 'Αντιμετώπιση', v.treatment || [], true));
+      fields.push(selectField('healing_stability_status', 'Πώρωση / σταθερότητα', v.healing_stability_status || [], true));
+      fields.push(selectField('immobilization_status', 'Ακινητοποίηση', v.immobilization_status || [], true));
+      fields.push(selectField('rom_status', 'Επιτρεπόμενο εύρος κίνησης', v.rom_status || [], true));
+      fields.push(selectField('loading_strengthening_status', 'Επιτρεπόμενη ενδυνάμωση / φόρτιση', v.loading_strengthening_status || [], true));
+      fields.push('<div id="fractureSiteDependent"></div>');
     }
 
     if (profile === 'shared_muscle_myotendinous') {
-      const v = state.contract.context_value_sets.shared_muscle_myotendinous;
-      fields.push(textField('muscle_group', 'Canonical muscle group', 'π.χ. hamstring_muscle_injury'));
-      fields.push(textField('specific_muscle_optional', 'Specific muscle (optional)', ''));
-      fields.push(selectField('injury_phase', 'Φάση κάκωσης', v.injury_phase || []));
-      fields.push(selectField('injury_type', 'Τύπος κάκωσης', v.injury_type || []));
-      fields.push(selectField('injury_location_optional', 'Εντόπιση', v.injury_location || []));
-      fields.push(selectField('mri_or_ultrasound_confirmed', 'MRI/US confirmation state', v.mri_or_ultrasound_confirmed || []));
-      fields.push(selectField('management_context', 'Management context', v.management_context || []));
+      const v = state.contract.context_value_sets.shared_muscle_myotendinous || {};
+      fields.push(textField('muscle_group', 'Μυϊκή ομάδα', 'π.χ. hamstring_muscle_injury', true));
+      fields.push(selectField('injury_phase', 'Φάση κάκωσης', v.injury_phase || [], true));
+      fields.push(selectField('injury_type', 'Τύπος κάκωσης', v.injury_type || [], true));
+      fields.push(selectField('injury_location_optional', 'Εντόπιση (προαιρετικό)', v.injury_location || [], false));
+      fields.push(selectField('management_context', 'Πλάνο αντιμετώπισης', v.management_context || [], true));
     }
 
     if (profile === 'shared_deconditioning_balance_gait') {
-      fields.push(selectField('functional_route_id', 'Functional route', ['generalized_deconditioning_functional_decline','frailty_associated_functional_decline','balance_impairment_context','gait_mobility_impairment_context','post_illness_or_post_hospital_deconditioning_context']));
-      fields.push(selectField('frailty_established', 'Frailty established', state.contract.context_value_sets.shared_deconditioning_balance_gait.frailty_established || []));
+      fields.push(selectField('functional_route_id', 'Κύριο λειτουργικό πρόβλημα', ['generalized_deconditioning_functional_decline','frailty_associated_functional_decline','balance_impairment_context','gait_mobility_impairment_context','post_illness_or_post_hospital_deconditioning_context'], true, 'route_detail_labels'));
+      if (els.wording.value === 'formal_diagnosis') {
+        fields.push(selectField('frailty_established', 'Έχει τεθεί ρητά frailty;', state.contract.context_value_sets.shared_deconditioning_balance_gait?.frailty_established || [], true));
+      }
     }
 
     if (['neck_pain_with_radiating_upper_limb_symptoms','low_back_pain_with_radiating_leg_symptoms'].includes(route)) {
-      fields.push(`<div class="context-group"><h3>Neurological screen</h3><div class="grid three">${selectField('neurological_screen.motor','Motor',['not_assessed','normal','abnormal'])}${selectField('neurological_screen.sensory','Sensory',['not_assessed','normal','abnormal'])}${selectField('neurological_screen.reflexes','Reflexes',['not_assessed','normal','abnormal'])}</div></div>`);
+      fields.push(`<div class="context-group"><h3>Νευρολογικός έλεγχος</h3><div class="grid three">${selectField('neurological_screen.motor','Κινητικότητα',['not_assessed','normal','abnormal'],false)}${selectField('neurological_screen.sensory','Αισθητικότητα',['not_assessed','normal','abnormal'],false)}${selectField('neurological_screen.reflexes','Αντανακλαστικά',['not_assessed','normal','abnormal'],false)}</div></div>`);
     }
 
-    els.contextFields.innerHTML = fields.join('') || '<span class="empty-note">Δεν απαιτείται ειδικό structured context για το επιλεγμένο pathway. Μπορείς να προσθέσεις canonical context από το advanced πεδίο.</span>';
+    els.contextFields.innerHTML = fields.join('');
+    els.contextCard.hidden = fields.length === 0;
+    renderFractureSiteDependent();
   }
 
-  function textField(key, title, placeholder) {
-    return `<label>${escapeHtml(title)}<input type="text" data-context-key="${escapeHtml(key)}" placeholder="${escapeHtml(placeholder)}" /></label>`;
+  function renderFractureSiteDependent() {
+    const holder = $('fractureSiteDependent');
+    if (!holder) return;
+    const siteNode = document.querySelector('[data-context-key="fracture_site"]');
+    const site = siteNode?.value || '';
+    const req = state.contract.ui_route_requirements?.shared_context_requirements?.shared_fracture || {};
+    const groups = req.site_groups || {};
+    const v = state.contract.context_value_sets.shared_fracture || {};
+    if ((groups.upper_limb || []).includes(site)) {
+      holder.innerHTML = selectField('upper_limb_use_status', 'Επιτρεπόμενη χρήση άνω άκρου', v.upper_limb_use_status || [], true);
+    } else if ((groups.lower_limb_or_pelvis || []).includes(site)) {
+      holder.innerHTML = selectField('weight_bearing_status', 'Επιτρεπόμενη φόρτιση κάτω άκρου', v.weight_bearing_status || [], true);
+    } else {
+      holder.innerHTML = '';
+    }
   }
 
-  function selectField(key, title, values) {
-    return `<label>${escapeHtml(title)}<select data-context-key="${escapeHtml(key)}"><option value="">Δεν δηλώνεται</option>${(values || []).map((id) => option(id)).join('')}</select></label>`;
+  function textField(key, title, placeholder, required = false) {
+    return `<label>${escapeHtml(title)}${required ? ' <span class="required-mark">*</span>' : ''}<input type="text" data-context-key="${escapeHtml(key)}" placeholder="${escapeHtml(placeholder)}" /></label>`;
+  }
+
+  function selectField(key, title, values, required = false, section = 'context_values') {
+    return `<label>${escapeHtml(title)}${required ? ' <span class="required-mark">*</span>' : ''}<select data-context-key="${escapeHtml(key)}"><option value="">Επίλεξε…</option>${(values || []).map((id) => option(id, label(id, section))).join('')}</select></label>`;
+  }
+
+  function renderAdvancedControls() {
+    renderChecks(els.safetyFlags, state.contract.safety_input_flags || [], 'safety', null);
+    els.restrictionId.innerHTML = '<option value="">Επίλεξε…</option>' + (state.contract.restrictions || []).map((id) => option(id, label(id, 'restrictions'))).join('');
+    const structural = ['shared_fracture','shared_muscle_myotendinous'].includes(els.profile.value) || hasPostoperativePolicy() || els.wording.value === 'established_structural_diagnosis';
+    els.dispositionWrap.hidden = !structural;
   }
 
   function addExtraContext() {
@@ -254,7 +381,7 @@
   }
 
   function renderRestrictions() {
-    els.restrictionList.innerHTML = state.restrictions.map((item,index) => `<span class="chip">${escapeHtml(label(item.restriction_id))}: ${escapeHtml(item.state_or_value)} <button type="button" data-remove-restriction="${index}">×</button></span>`).join('');
+    els.restrictionList.innerHTML = state.restrictions.map((item,index) => `<span class="chip">${escapeHtml(label(item.restriction_id, 'restrictions'))}: ${escapeHtml(item.state_or_value)} <button type="button" data-remove-restriction="${index}">×</button></span>`).join('');
   }
 
   function checkedValues(group) {
@@ -278,13 +405,6 @@
   }
 
   function collectDraft() {
-    const findings = checkedValues('finding').map((id) => ({finding_id:id, state_optional:null, laterality_optional:null, value_optional:null, unit_optional:null, free_text_optional:null}));
-    const functional = checkedValues('functional').map((id) => ({id, selected:true, notes_optional:null}));
-    const goals = checkedValues('goal').map((id) => ({id, selected:true, notes_optional:null}));
-    const rehab = checkedValues('rehab').map((id) => ({id, selected:true, notes_optional:null}));
-    const adjuncts = checkedValues('adjunct').map((id) => ({adjunct_id:id, selected:true, provenance:'clinician_selected'}));
-    const safetyFlags = checkedValues('safety');
-    const sessions = els.sessions.value ? Number(els.sessions.value) : null;
     return {
       contract_version: state.contract?.contract_version || 'cu1_referral_draft_v1',
       patient_context: {age_years_optional:null, skeletal_maturity_optional:null, sport_or_work_demand_optional:null, relevant_medical_context_ids:[], free_text_optional:null},
@@ -303,34 +423,42 @@
         source_route_optional: null,
       },
       secondary_problems: [],
-      findings,
-      functional_impairments: functional,
+      findings: checkedValues('finding').map((id) => ({finding_id:id, state_optional:null, laterality_optional:null, value_optional:null, unit_optional:null, free_text_optional:null})),
+      functional_impairments: checkedValues('functional').map((id) => ({id, selected:true, notes_optional:null})),
       precautions: [],
       explicit_restrictions: state.restrictions,
-      goals,
-      rehab_directions: rehab,
-      adjunct_options: adjuncts,
+      goals: checkedValues('goal').map((id) => ({id, selected:true, notes_optional:null})),
+      rehab_directions: checkedValues('rehab').map((id) => ({id, selected:true, notes_optional:null})),
+      adjunct_options: checkedValues('adjunct').map((id) => ({adjunct_id:id, selected:true, provenance:'clinician_selected'})),
       measurements: [],
       safety: {
-        input_flags: safetyFlags,
+        input_flags: checkedValues('safety'),
         acknowledged_rule_ids: [...state.acknowledgedRules],
         clinician_disposition: els.disposition.value || 'none_recorded',
       },
-      sessions_optional: sessions,
+      sessions_optional: els.sessions.value ? Number(els.sessions.value) : null,
       clinician_free_text_optional: els.freeText.value.trim() || null,
     };
   }
 
   async function validateOnly() {
+    if (!els.profile.value || !els.route.value) {
+      showLocalMissingPrimary();
+      return;
+    }
     try {
       const result = await api('/validate', {method:'POST', body:JSON.stringify({draft:collectDraft()})});
       showValidation(result);
     } catch (error) {
-      showValidation({validation_errors:[{error_id:'request_failed', error_class:'validation_error', metadata:{detail:error.message}}], safety_results:[], formatter_blocked:true});
+      showRequestError(error.message);
     }
   }
 
   async function generate() {
+    if (!els.profile.value || !els.route.value) {
+      showLocalMissingPrimary();
+      return;
+    }
     try {
       const result = await api('/generate', {method:'POST', body:JSON.stringify({draft:collectDraft(), mode:state.mode})});
       showValidation(result);
@@ -339,11 +467,24 @@
       els.copyBtn.disabled = !hasText;
       els.printBtn.disabled = !hasText;
     } catch (error) {
-      showValidation({validation_errors:[{error_id:'request_failed', error_class:'validation_error', metadata:{detail:error.message}}], safety_results:[], formatter_blocked:true});
+      showRequestError(error.message);
       els.output.value = '';
       els.copyBtn.disabled = true;
       els.printBtn.disabled = true;
     }
+  }
+
+  function showLocalMissingPrimary() {
+    els.validationPanel.hidden = false;
+    els.validationPanel.className = 'validation-panel error';
+    els.validationPanel.innerHTML = '<strong>Χρειάζεται μόνο να επιλέξεις περιοχή και πάθηση για να ξεκινήσεις.</strong>';
+    els.validationSummary.textContent = 'Επίλεξε περιοχή και πάθηση.';
+  }
+
+  function friendlyError(item) {
+    const path = item.metadata?.path;
+    const base = errorLabels[item.error_id] || 'Χρειάζεται μία διόρθωση πριν δημιουργηθεί το παραπεμπτικό.';
+    return path && fieldLabels[path] ? `${base} <strong>${escapeHtml(fieldLabels[path])}</strong>` : base;
   }
 
   function showValidation(result) {
@@ -351,26 +492,48 @@
     const safety = result.safety_results || [];
     els.validationPanel.hidden = false;
     els.validationPanel.className = 'validation-panel';
+    clearInvalidMarkers();
+
     if (!errors.length && !safety.length && !result.formatter_blocked) {
       els.validationPanel.classList.add('ok');
-      els.validationPanel.innerHTML = '<strong>Validation PASS.</strong> Δεν υπάρχει ενεργό blocking αποτέλεσμα.';
-      els.validationSummary.textContent = 'Έτοιμο για generation.';
+      els.validationPanel.innerHTML = '<strong>Έτοιμο.</strong> Το παραπεμπτικό μπορεί να δημιουργηθεί.';
+      els.validationSummary.textContent = 'Έτοιμο.';
       return;
     }
-    const hardErrors = errors.filter((item) => item.error_class === 'validation_error');
-    if (hardErrors.length || result.formatter_blocked) els.validationPanel.classList.add('error');
+
+    if (errors.length || result.formatter_blocked) els.validationPanel.classList.add('error');
     const chunks = [];
     if (errors.length) {
-      chunks.push(`<strong>Validation</strong><ul>${errors.map((item) => `<li><b>${escapeHtml(item.error_id)}</b> · ${escapeHtml(JSON.stringify(item.metadata || {}))}</li>`).join('')}</ul>`);
+      chunks.push(`<strong>Χρειάζεται να συμπληρωθεί:</strong><ul>${errors.map((item) => `<li>${friendlyError(item)}</li>`).join('')}</ul>`);
+      markInvalidFromErrors(errors);
     }
     if (safety.length) {
-      chunks.push(`<strong>Safety / consistency</strong><ul>${safety.map((item) => {
-        const ack = item.acknowledgement_required ? `<label class="check-item"><input type="checkbox" data-ack-rule="${escapeHtml(item.rule_id)}" ${state.acknowledgedRules.has(item.rule_id) ? 'checked' : ''}/> Αναγνώριση ${escapeHtml(item.rule_id)}</label>` : '';
-        return `<li><b>${escapeHtml(item.severity)}</b> · ${escapeHtml(item.rule_id)} ${item.formatter_blocked ? '· BLOCKED' : ''}${ack}</li>`;
+      chunks.push(`<strong>Ασφάλεια / συνέπεια</strong><ul>${safety.map((item) => {
+        const ack = item.acknowledgement_required ? `<label class="check-item"><input type="checkbox" data-ack-rule="${escapeHtml(item.rule_id)}" ${state.acknowledgedRules.has(item.rule_id) ? 'checked' : ''}/> Το έχω ελέγξει</label>` : '';
+        return `<li>${escapeHtml(item.rule_id)}${item.formatter_blocked ? ' · απαιτεί ενέργεια' : ''}${ack}</li>`;
       }).join('')}</ul>`);
     }
     els.validationPanel.innerHTML = chunks.join('');
-    els.validationSummary.textContent = result.formatter_blocked ? 'Απαιτείται διόρθωση/acknowledgement/disposition πριν από generation.' : 'Υπάρχουν μη blocking παρατηρήσεις.';
+    els.validationSummary.textContent = result.formatter_blocked ? 'Συμπλήρωσε μόνο τα επισημασμένα απαραίτητα πεδία.' : 'Υπάρχουν μη blocking παρατηρήσεις.';
+  }
+
+  function clearInvalidMarkers() {
+    document.querySelectorAll('.field-invalid').forEach((node) => node.classList.remove('field-invalid'));
+  }
+
+  function markInvalidFromErrors(errors) {
+    errors.forEach((item) => {
+      const path = item.metadata?.path || '';
+      const key = path.startsWith('primary_problem.context.') ? path.replace('primary_problem.context.','') : null;
+      if (key) document.querySelector(`[data-context-key="${CSS.escape(key)}"]`)?.closest('label')?.classList.add('field-invalid');
+    });
+  }
+
+  function showRequestError(message) {
+    els.validationPanel.hidden = false;
+    els.validationPanel.className = 'validation-panel error';
+    els.validationPanel.innerHTML = `<strong>Δεν ολοκληρώθηκε το αίτημα.</strong> ${escapeHtml(message)}`;
+    els.validationSummary.textContent = 'Σφάλμα αιτήματος.';
   }
 
   async function copyOutput() {
@@ -391,29 +554,58 @@
     w.print();
   }
 
-  function clearDraft() {
+  function clearSelectionsAndState({keepRoute = false} = {}) {
     document.querySelectorAll('input[type="checkbox"]').forEach((node) => { node.checked = false; });
-    document.querySelectorAll('input[type="text"],input[type="number"],textarea').forEach((node) => { node.value = ''; });
-    els.profile.value = '';
-    els.laterality.value = 'not_stated';
-    els.disposition.value = 'none_recorded';
     state.extraContext = {};
     state.restrictions = [];
     state.acknowledgedRules.clear();
+    els.disposition.value = 'none_recorded';
+    els.sessions.value = '';
+    els.freeText.value = '';
+    if (!keepRoute) els.route.value = '';
     renderExtraContext();
     renderRestrictions();
-    resetRouteDependent();
-    renderFindings();
     els.output.value = '';
     els.copyBtn.disabled = true;
     els.printBtn.disabled = true;
     els.validationPanel.hidden = true;
-    els.validationSummary.textContent = 'Συμπλήρωσε το κύριο πρόβλημα.';
+  }
+
+  function resetDownstream() {
+    els.wordingWrap.hidden = true;
+    els.lateralityWrap.hidden = true;
+    els.subtypeWrap.hidden = true;
+    els.assertionWrap.hidden = true;
+    els.contextCard.hidden = true;
+    els.findingsCard.hidden = true;
+    els.rehabCard.hidden = true;
+    els.notesCard.hidden = true;
+    els.advancedCard.hidden = true;
+    els.wording.innerHTML = '';
+    els.contextFields.innerHTML = '';
+    els.findings.innerHTML = '';
+    els.functions.innerHTML = '';
+    els.goals.innerHTML = '';
+    els.rehab.innerHTML = '';
+    els.adjuncts.innerHTML = '';
+    els.validationSummary.textContent = els.profile.value ? 'Επίλεξε πάθηση.' : 'Επίλεξε περιοχή και πάθηση.';
+  }
+
+  function clearDraft() {
+    clearSelectionsAndState();
+    els.profile.value = '';
+    els.route.disabled = true;
+    els.route.innerHTML = '<option value="">Επίλεξε περιοχή πρώτα</option>';
+    els.laterality.value = 'not_stated';
+    resetDownstream();
   }
 
   els.profile.addEventListener('change', onProfileChange);
   els.route.addEventListener('change', onRouteChange);
   els.wording.addEventListener('change', onWordingChange);
+  els.contextFields.addEventListener('change', (event) => {
+    if (event.target?.dataset?.contextKey === 'fracture_site') renderFractureSiteDependent();
+  });
   els.addContextBtn.addEventListener('click', addExtraContext);
   els.extraContextList.addEventListener('click', (event) => {
     const button = event.target.closest('[data-remove-context]');
