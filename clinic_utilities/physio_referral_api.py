@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import copy
-from typing import Any, Dict, Mapping
+from typing import Any, Dict, Mapping, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
 
+from clinic_utilities.physio_referral_formatter_el import CU1GreekReferralFormatter
 from clinic_utilities.physio_referral_runtime import (
     CU1ContractError,
     CU1GenerateRequest,
@@ -18,6 +19,16 @@ from clinic_utilities.physio_referral_runtime import (
     get_cu1_bundle,
     get_cu1_engine,
 )
+
+
+_FORMATTER_EL: Optional[CU1GreekReferralFormatter] = None
+
+
+def _get_greek_formatter() -> CU1GreekReferralFormatter:
+    global _FORMATTER_EL
+    if _FORMATTER_EL is None:
+        _FORMATTER_EL = CU1GreekReferralFormatter(get_cu1_bundle())
+    return _FORMATTER_EL
 
 
 def _gateway_target_is_canonical(draft: Mapping[str, Any]) -> bool:
@@ -144,7 +155,26 @@ def build_cu1_physio_referral_router() -> APIRouter:
 
     @router.get("/api/contract", dependencies=protected)
     def cu1_contract() -> Dict[str, Any]:
-        return get_cu1_bundle().contract_payload()
+        payload = get_cu1_bundle().contract_payload()
+        language = get_cu1_bundle().artifacts.get("referral_language_el", {})
+        if isinstance(language, Mapping):
+            payload["display_language"] = "el"
+            payload["display_labels"] = {
+                key: copy.deepcopy(language.get(key, {}))
+                for key in (
+                    "laterality",
+                    "findings",
+                    "functional_impairments",
+                    "goals",
+                    "rehab_directions",
+                    "adjuncts",
+                    "measurements",
+                    "restrictions",
+                    "context_values",
+                    "route_detail_labels",
+                )
+            }
+        return payload
 
     @router.post("/api/validate", response_model=CU1ValidationResponse, dependencies=protected)
     def cu1_validate(req: CU1ValidateRequest) -> CU1ValidationResponse:
@@ -166,7 +196,12 @@ def build_cu1_physio_referral_router() -> APIRouter:
             if not _safety_state_is_canonical(req.draft):
                 blocked = _invalid_safety_validation(req.draft)
                 return CU1GenerateResponse(**blocked.model_dump(), mode=req.mode, text=None)
-            return get_cu1_engine().generate(req.draft, req.mode)
+
+            validation = get_cu1_engine().validate(req.draft)
+            text = None
+            if not validation.formatter_blocked:
+                text = _get_greek_formatter().format(validation.normalized_draft, req.mode)
+            return CU1GenerateResponse(**validation.model_dump(), mode=req.mode, text=text)
         except CU1ContractError as exc:
             raise HTTPException(status_code=500, detail=f"CU-1 contract error: {exc}") from exc
 
@@ -177,4 +212,5 @@ __all__ = [
     "build_cu1_physio_referral_router",
     "_gateway_target_is_canonical",
     "_safety_state_is_canonical",
+    "_get_greek_formatter",
 ]
