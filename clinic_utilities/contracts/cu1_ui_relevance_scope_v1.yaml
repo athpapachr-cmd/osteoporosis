@@ -1,0 +1,93 @@
+version: cu1_ui_relevance_scope_v1
+status: maintenance_presentation_authority
+principle: show_only_controls_relevant_to_selected_profile_and_route
+optional_selection_policy: findings_functions_goals_rehab_adjuncts_are_nonblocking_unless_existing_safety_rule_is_explicitly_triggered
+
+profiles:
+  cervical:
+    findings: [pain, tenderness, night_or_sleep_disturbance, active_rom_restricted, passive_rom_restricted, painful_active_rom, painful_passive_rom, objective_weakness, paresthesia, numbness, axial_cervical_pain, occipital_pain_or_headache, referred_shoulder_girdle_pain, radiating_upper_limb_pain, sustained_posture_aggravation, spurling_concordant_symptoms, upper_limb_neurodynamic_finding, dizziness_or_disequilibrium, balance_related_activity_limitation, trigger_points_or_myofascial_presentation]
+    functional_impairments: [sitting_tolerance, driving, desk_or_computer_work, overhead_activity, lifting_carrying, manual_work, sport_gym, patient_priority_activity]
+    goals: [reduce_symptom_irritability, restore_safe_functional_rom, improve_strength, improve_motor_control, improve_neuromuscular_control, improve_self_management, graded_return_to_activity, graded_return_to_work, graded_return_to_sport]
+    rehab_directions: [physiotherapy_assessment_and_individualized_active_rehabilitation, therapeutic_exercise, progressive_strengthening, mobility_exercise_when_restricted, graded_activity_exposure, graded_loading, education_and_self_management, home_exercise_programme, work_activity_load_adaptation, neuromuscular_proprioceptive_training]
+    adjuncts: [manual_therapy, soft_tissue_techniques, neurodynamic_techniques, selected_cervical_traction, dry_needling, acupuncture, taping]
+  lumbar:
+    findings: [pain, tenderness, night_or_sleep_disturbance, active_rom_restricted, painful_active_rom, paresthesia, numbness, axial_low_back_pain, buttock_pain, referred_nonradicular_leg_pain, radiating_leg_pain, straight_leg_raise_concordant_symptoms, slump_concordant_symptoms, walking_or_standing_limited_leg_symptoms, deep_gluteal_region_tenderness, trunk_strength_or_endurance_deficit]
+    functional_impairments: [walking_tolerance, standing_tolerance, sitting_tolerance, stairs, sit_to_stand, lifting_carrying, driving, desk_or_computer_work, manual_work, sport_gym, patient_priority_activity]
+    goals: [reduce_symptom_irritability, restore_safe_functional_rom, improve_strength, improve_endurance, improve_motor_control, improve_load_tolerance, improve_self_management, graded_return_to_activity, graded_return_to_work, graded_return_to_sport]
+    rehab_directions: [physiotherapy_assessment_and_individualized_active_rehabilitation, therapeutic_exercise, progressive_strengthening, progressive_endurance_or_capacity_work, mobility_exercise_when_restricted, graded_activity_exposure, graded_loading, education_and_self_management, home_exercise_programme, work_activity_load_adaptation, neuromuscular_proprioceptive_training]
+    adjuncts: [manual_therapy, soft_tissue_techniques, neurodynamic_techniques, dry_needling, acupuncture, taping]
+  shoulder:
+    findings: [pain, swelling, tenderness, night_or_sleep_disturbance, active_rom_restricted, passive_rom_restricted, painful_active_rom, painful_passive_rom, objective_weakness, anterolateral_shoulder_pain, posterior_shoulder_pain, ac_region_pain, sc_region_pain_or_swelling, painful_arc, objective_abduction_weakness, objective_external_rotation_weakness, instability_apprehension_finding, scapular_control_endurance_deficit]
+    functional_impairments: [overhead_activity, lifting_carrying, pushing_pulling, driving, desk_or_computer_work, manual_work, sport_gym, patient_priority_activity, adl_self_care_limitation]
+    goals: [reduce_symptom_irritability, restore_safe_functional_rom, improve_strength, improve_motor_control, improve_neuromuscular_control, improve_load_tolerance, improve_self_management, graded_return_to_activity, graded_return_to_work, graded_return_to_sport]
+    rehab_directions: [physiotherapy_assessment_and_individualized_active_rehabilitation, therapeutic_exercise, progressive_strengthening, mobility_exercise_when_restricted, graded_activity_exposure, graded_loading, education_and_self_management, home_exercise_programme, work_activity_load_adaptation, neuromuscular_proprioceptive_training, functional_task_retraining]
+    adjuncts: [manual_therapy, soft_tissue_techniques, dry_needling, acupuncture, taping, eswt]
+  elbow:
+    findings: [pain, swelling, tenderness, bruising, active_rom_restricted, passive_rom_restricted, painful_active_rom, painful_passive_rom, objective_weakness, paresthesia, numbness, lateral_elbow_pain, medial_elbow_pain, anterior_antecubital_pain, posterior_elbow_pain, pain_with_gripping, ulnar_distribution_sensory_deficit, intrinsic_hand_weakness, pin_pattern_motor_deficit, objective_supination_weakness, objective_flexion_weakness]
+    functional_impairments: [gripping, lifting_carrying, pushing_pulling, driving, desk_or_computer_work, manual_work, sport_gym, patient_priority_activity]
+    goals: [reduce_symptom_irritability, restore_safe_functional_rom, improve_strength, improve_neuromuscular_control, improve_load_tolerance, improve_grip_pinch_or_dexterity, improve_self_management, graded_return_to_activity, graded_return_to_work, graded_return_to_sport]
+    rehab_directions: [physiotherapy_assessment_and_individualized_active_rehabilitation, therapeutic_exercise, progressive_strengthening, mobility_exercise_when_restricted, graded_activity_exposure, graded_loading, education_and_self_management, home_exercise_programme, work_activity_load_adaptation, neuromuscular_proprioceptive_training, functional_task_retraining]
+    adjuncts: [manual_therapy, soft_tissue_techniques, neurodynamic_techniques, taping, eswt]
+  wrist_hand:
+    findings: [pain, swelling, tenderness, bruising, active_rom_restricted, passive_rom_restricted, painful_active_rom, painful_passive_rom, objective_weakness, paresthesia, numbness, radial_wrist_pain, thumb_base_pain, dorsoradial_distal_forearm_pain, ulnar_sided_wrist_pain, digit_flexion_deficit, digit_extension_deficit, grip_strength_reduced, pinch_strength_reduced, fine_motor_dexterity_deficit, median_distribution_sensory_deficit, thenar_apb_weakness, ulnar_distribution_sensory_deficit, intrinsic_hand_weakness, extensor_lag]
+    functional_impairments: [gripping, pinch, dexterity, lifting_carrying, pushing_pulling, driving, desk_or_computer_work, manual_work, sport_gym, patient_priority_activity, adl_self_care_limitation]
+    goals: [reduce_symptom_irritability, restore_safe_functional_rom, improve_strength, improve_grip_pinch_or_dexterity, improve_load_tolerance, improve_self_management, graded_return_to_activity, graded_return_to_work, graded_return_to_sport]
+    rehab_directions: [physiotherapy_assessment_and_individualized_active_rehabilitation, therapeutic_exercise, progressive_strengthening, mobility_exercise_when_restricted, graded_activity_exposure, graded_loading, education_and_self_management, home_exercise_programme, work_activity_load_adaptation, neurodynamic_techniques, functional_task_retraining, edema_management, scar_desensitization_management]
+    adjuncts: [manual_therapy, soft_tissue_techniques, neurodynamic_techniques, taping, orthosis_or_brace_context, night_splint]
+  knee:
+    findings: [pain, swelling, tenderness, bruising, active_rom_restricted, passive_rom_restricted, painful_active_rom, painful_passive_rom, objective_weakness, walking_limitation, stairs_limitation, sit_to_stand_limitation, sport_or_exercise_limitation, balance_deficit, joint_line_pain, anterior_peripatellar_pain, patellar_tendon_pain, quadriceps_tendon_pain, pes_anserine_region_pain, true_locking_or_major_mechanical_rom_block, subjective_giving_way, recurrent_instability_episode, effusion, extension_lag, quadriceps_weakness, hop_running_landing_change_of_direction_deficit]
+    functional_impairments: [walking_tolerance, standing_tolerance, stairs, sit_to_stand, squat, kneeling, running, jumping_landing, pivot_change_of_direction, sport_gym, manual_work, community_mobility, patient_priority_activity]
+    goals: [reduce_symptom_irritability, restore_safe_functional_rom, improve_strength, improve_endurance, improve_motor_control, improve_neuromuscular_control, improve_balance_postural_control, improve_walking_tolerance, improve_stair_function, improve_sit_to_stand_transfer_function, improve_load_tolerance, improve_self_management, graded_return_to_activity, graded_return_to_work, graded_return_to_sport]
+    rehab_directions: [physiotherapy_assessment_and_individualized_active_rehabilitation, therapeutic_exercise, progressive_strengthening, progressive_endurance_or_capacity_work, mobility_exercise_when_restricted, graded_activity_exposure, graded_loading, education_and_self_management, home_exercise_programme, neuromuscular_proprioceptive_training, balance_stepping_recovery_training, gait_walking_practice, functional_task_retraining, progressive_running, progressive_jump_landing, progressive_change_of_direction, criterion_based_return_to_training_sport_or_work]
+    adjuncts: [manual_therapy, soft_tissue_techniques, acupuncture, taping, orthosis_or_brace_context]
+  hip_groin:
+    findings: [pain, swelling, tenderness, active_rom_restricted, passive_rom_restricted, painful_active_rom, painful_passive_rom, objective_weakness, walking_limitation, stairs_limitation, sport_or_exercise_limitation, lateral_greater_trochanter_region_pain, groin_or_anterior_hip_pain, posterior_ischial_buttock_pain, pain_with_hip_flexion_or_rotation, pain_with_single_leg_loading, hip_abductor_strength_deficit, adductor_strength_deficit, painful_snapping, fadir_or_faber_provocation_finding]
+    functional_impairments: [walking_tolerance, standing_tolerance, sitting_tolerance, stairs, sit_to_stand, squat, running, jumping_landing, pivot_change_of_direction, sport_gym, manual_work, community_mobility, patient_priority_activity]
+    goals: [reduce_symptom_irritability, restore_safe_functional_rom, improve_strength, improve_endurance, improve_motor_control, improve_neuromuscular_control, improve_load_tolerance, improve_self_management, graded_return_to_activity, graded_return_to_work, graded_return_to_sport]
+    rehab_directions: [physiotherapy_assessment_and_individualized_active_rehabilitation, therapeutic_exercise, progressive_strengthening, progressive_endurance_or_capacity_work, mobility_exercise_when_restricted, graded_activity_exposure, graded_loading, education_and_self_management, home_exercise_programme, neuromuscular_proprioceptive_training, functional_task_retraining, progressive_running, progressive_sprinting, progressive_kicking, progressive_change_of_direction, criterion_based_return_to_training_sport_or_work]
+    adjuncts: [manual_therapy, soft_tissue_techniques, dry_needling, taping]
+  ankle_foot:
+    findings: [pain, swelling, tenderness, bruising, active_rom_restricted, passive_rom_restricted, painful_active_rom, painful_passive_rom, objective_weakness, paresthesia, numbness, walking_limitation, stairs_limitation, balance_deficit, lateral_ankle_pain, medial_ankle_or_arch_pain, achilles_region_pain, plantar_heel_pain, central_heel_pain, forefoot_pain, first_step_morning_pain, recurrent_sprain_history, subjective_giving_way, plantar_flexor_weakness_or_endurance_deficit, single_leg_heel_raise_deficit, dynamic_postural_control_deficit, burning_or_paresthesia_plantar_foot]
+    functional_impairments: [walking_tolerance, standing_tolerance, stairs, running, jumping_landing, pivot_change_of_direction, sport_gym, manual_work, community_mobility, patient_priority_activity]
+    goals: [reduce_symptom_irritability, restore_safe_functional_rom, improve_strength, improve_endurance, improve_neuromuscular_control, improve_balance_postural_control, improve_walking_tolerance, improve_load_tolerance, improve_self_management, graded_return_to_activity, graded_return_to_work, graded_return_to_sport]
+    rehab_directions: [physiotherapy_assessment_and_individualized_active_rehabilitation, therapeutic_exercise, progressive_strengthening, progressive_endurance_or_capacity_work, mobility_exercise_when_restricted, graded_activity_exposure, graded_loading, education_and_self_management, home_exercise_programme, neuromuscular_proprioceptive_training, balance_stepping_recovery_training, gait_walking_practice, functional_task_retraining, progressive_running, progressive_jump_landing, progressive_change_of_direction, criterion_based_return_to_training_sport_or_work]
+    adjuncts: [manual_therapy, soft_tissue_techniques, eswt, taping, heel_lift, night_splint, orthosis_or_brace_context]
+  shared_fracture:
+    findings: [pain, swelling, tenderness, active_rom_restricted, passive_rom_restricted, objective_weakness, walking_limitation, stairs_limitation, balance_deficit, post_immobilization_stiffness, post_immobilization_weakness, atrophy_or_deconditioning, reduced_functional_use, altered_gait, reduced_walking_tolerance, balance_or_proprioceptive_deficit, scar_sensitivity_or_adherence, fear_or_low_confidence_with_loading]
+    functional_impairments: [walking_tolerance, standing_tolerance, stairs, sit_to_stand, transfers, lifting_carrying, overhead_activity, gripping, dexterity, squat, kneeling, community_mobility, adl_self_care_limitation, patient_priority_activity]
+    goals: [reduce_symptom_irritability, restore_safe_functional_rom, improve_strength, improve_endurance, improve_balance_postural_control, improve_walking_tolerance, improve_stair_function, improve_sit_to_stand_transfer_function, improve_load_tolerance, improve_mobility_confidence, maintain_or_regain_adl_independence, improve_self_management, graded_return_to_activity]
+    rehab_directions: [physiotherapy_assessment_and_individualized_active_rehabilitation, therapeutic_exercise, progressive_strengthening, mobility_exercise_when_restricted, graded_activity_exposure, education_and_self_management, home_exercise_programme, balance_stepping_recovery_training, gait_walking_practice, functional_task_retraining, edema_management, scar_desensitization_management, protected_rom_within_restrictions, progressive_weight_bearing_within_restrictions, progressive_upper_limb_use_within_restrictions]
+    adjuncts: [manual_therapy, soft_tissue_techniques, taping, orthosis_or_brace_context]
+  shared_muscle_myotendinous:
+    findings: [pain, swelling, tenderness, bruising, objective_weakness, localized_muscle_pain, pain_with_stretch, pain_with_resisted_contraction, palpable_defect, muscle_spasm_or_guarding, isometric_strength_deficit, isotonic_strength_deficit, eccentric_or_lengthened_position_deficit, power_deficit, running_intolerance, sprinting_intolerance, kicking_deficit, change_of_direction_deficit, full_training_not_yet_tolerated]
+    functional_impairments: [walking_tolerance, stairs, lifting_carrying, pushing_pulling, running, jumping_landing, pivot_change_of_direction, sport_gym, manual_work, patient_priority_activity]
+    goals: [reduce_symptom_irritability, restore_safe_functional_rom, improve_strength, improve_endurance, improve_load_tolerance, improve_self_management, graded_return_to_activity, graded_return_to_work, graded_return_to_sport]
+    rehab_directions: [physiotherapy_assessment_and_individualized_active_rehabilitation, therapeutic_exercise, progressive_strengthening, graded_activity_exposure, graded_loading, education_and_self_management, home_exercise_programme, work_activity_load_adaptation, progressive_running, progressive_sprinting, progressive_kicking, progressive_jump_landing, progressive_change_of_direction, criterion_based_return_to_training_sport_or_work]
+    adjuncts: [acupuncture, taping]
+  shared_deconditioning_balance_gait:
+    findings: [generalized_weakness, lower_limb_weakness, sit_to_stand_difficulty, reduced_repeated_chair_rise_capacity, poor_coordination, static_balance_deficit, dynamic_balance_deficit, turning_instability, stepping_or_recovery_deficit, unsteady_gait, assistance_required_for_gait, walking_aid_use, fear_or_concern_about_falling, reduced_confidence_with_mobility]
+    functional_impairments: [walking_tolerance, standing_tolerance, stairs, sit_to_stand, transfers, community_mobility, adl_self_care_limitation, patient_priority_activity]
+    goals: [improve_strength, improve_endurance, improve_balance_postural_control, improve_coordination, improve_walking_tolerance, improve_stair_function, improve_sit_to_stand_transfer_function, improve_mobility_confidence, optimize_safe_walking_aid_use, maintain_or_regain_adl_independence, reduce_falls_risk_through_modifiable_physical_factors, improve_self_management]
+    rehab_directions: [physiotherapy_assessment_and_individualized_active_rehabilitation, therapeutic_exercise, progressive_strengthening, progressive_endurance_or_capacity_work, graded_activity_exposure, education_and_self_management, home_exercise_programme, balance_stepping_recovery_training, gait_walking_practice, walking_aid_assessment_and_training, functional_task_retraining]
+    adjuncts: []
+
+route_adjustments:
+  cervical:
+    neck_pain_with_radiating_upper_limb_symptoms:
+      prioritize_adjuncts: [neurodynamic_techniques, selected_cervical_traction]
+  elbow:
+    lateral_elbow_tendinopathy: {prioritize_adjuncts: [eswt, taping]}
+    medial_elbow_tendinopathy: {prioritize_adjuncts: [eswt, taping]}
+    ulnar_neuropathy_at_elbow: {prioritize_adjuncts: [neurodynamic_techniques]}
+    posterior_interosseous_nerve_supinator_syndrome: {prioritize_adjuncts: [neurodynamic_techniques]}
+  knee:
+    knee_osteoarthritis: {prioritize_adjuncts: [acupuncture, taping]}
+  ankle_foot:
+    plantar_heel_pain_plantar_fasciitis: {prioritize_adjuncts: [eswt, taping, night_splint]}
+    achilles_tendinopathy: {prioritize_adjuncts: [eswt, heel_lift]}
+
+advanced_controls:
+  manual_canonical_context: collapsed
+  explicit_restrictions: contextual_or_collapsed
+  safety_flags: collapsed_unless_route_requires_safety_resolution
+  disposition: hidden_unless_safety_result_or_structural_route
