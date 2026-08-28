@@ -1,0 +1,119 @@
+version: cu1_history_timeline_schema_v1
+status: design_candidate
+runtime_authorized: false
+
+referral_history_v2:
+  fields:
+    onset_date_optional:
+      type: date_or_null
+      rule: exact_date_only_if_explicitly_known
+    duration_value_optional:
+      type: nonnegative_number_or_null
+    duration_unit_optional:
+      enum: [days, weeks, months, years]
+      nullable: true
+    onset_pattern:
+      enum: [sudden, gradual, post_traumatic, postoperative, post_immobilization, recurrent_episode, other, not_stated]
+    mechanism_or_trigger_optional:
+      type: string_or_null
+      rule: history_only_not_causal_diagnosis
+    course:
+      enum: [improving, stable, fluctuating, worsening, recurrent, not_stated]
+    prior_episode_state:
+      enum: [yes, no, not_stated]
+    prior_treatment_summary_optional:
+      type: string_or_null
+    prior_treatment_response_optional:
+      enum: [improved, partial_response, no_change, worse, mixed, not_stated]
+      nullable: true
+    relevant_investigation_summary_optional:
+      type: string_or_null
+    aggravating_factors_optional:
+      type: list_of_strings
+    easing_factors_optional:
+      type: list_of_strings
+    work_sport_activity_context_optional:
+      type: string_or_null
+    patient_priority_activity_optional:
+      type: string_or_null
+    route_history_items:
+      type: list_of_route_history_selection
+  cross_field_rules:
+    - if_duration_value_present_duration_unit_required
+    - onset_date_and_approximate_duration_may_coexist_only_if_both_explicitly_supplied
+    - never_infer_exact_onset_date_from_duration
+    - missing_history_does_not_generate_negative_history
+
+route_history_selection:
+  fields:
+    history_item_id: canonical_route_history_id
+    state_or_value: scalar_or_canonical_enum
+    unit_optional: string_or_null
+    free_text_optional: string_or_null
+    source:
+      enum: [clinician_entered, patient_reported, documented_record]
+  rules:
+    - route_history_item_must_be_allowed_for_current_route
+    - not_selected_does_not_mean_absent
+
+goal_plan_v1:
+  fields:
+    goal_id: canonical_goal_id
+    timing:
+      type: goal_timing_or_null
+    clinician_override_optional: string_or_null
+  goal_timing:
+    fields:
+      timing_type:
+        enum: [reassessment_window, expected_progress_window, goal_achievement_target]
+      min_value_optional: nonnegative_number_or_null
+      max_value_optional: nonnegative_number_or_null
+      unit:
+        enum: [days, weeks, months]
+      provenance:
+        enum: [clinician_entered, evidence_supported_default, evidence_informed_suggestion]
+      evidence_claim_ids:
+        type: list_of_evidence_claim_ids
+      certainty:
+        enum: [high, moderate, low, very_low, not_graded, not_applicable]
+      wording_strength:
+        enum: [target, expected_progress, reassess_by, no_default]
+    rules:
+      - evidence_supported_or_informed_provenance_requires_at_least_one_active_timing_claim
+      - clinician_entered_timing_must_not_be_relabelled_as_evidence_derived
+      - low_or_very_low_certainty_must_not_generate_guaranteed_outcome_wording
+      - reassessment_window_must_not_be_rendered_as_recovery_prediction
+
+reassessment_plan_v1:
+  fields:
+    suggested_window_optional:
+      type: goal_timing_or_null
+      allowed_timing_types: [reassessment_window]
+    clinician_selected_window_optional:
+      type: goal_timing_or_null
+      allowed_provenance: [clinician_entered]
+    trigger_criteria_optional:
+      type: list_of_strings
+    escalation_criteria_optional:
+      type: list_of_strings
+    evidence_claim_ids:
+      type: list_of_evidence_claim_ids
+  rules:
+    - safety_triggered_reassessment_precedes_routine_reassessment
+    - no_default_window_without_claim_or_clinician_entry
+
+formatter_semantics:
+  detailed_section_order:
+    - clinical_impression_or_presentation
+    - history
+    - relevant_examination_findings
+    - functional_impact
+    - referral_request
+    - goals_and_time_horizon
+    - rehabilitation_directions
+    - reassessment_plan
+  short_history_rule: include_duration_and_mechanism_when_supplied_and_material
+  short_timeline_rule: include_only_clinician_selected_or_evidence_supported_material_timing
+  empty_history_rule: omit_section
+  evidence_bibliography_default: clinician_ui_only
+  optional_detailed_evidence_appendix: allowed_after_design_freeze
