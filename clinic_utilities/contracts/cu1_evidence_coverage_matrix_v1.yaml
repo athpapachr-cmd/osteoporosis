@@ -2,7 +2,7 @@ version: cu1_evidence_coverage_matrix_v1
 status: design_candidate
 runtime_authorized: false
 source_registry: cu1_registry_v1.yaml
-coverage_rule: every_routine_route_requires_current_route_evidence_profile_and_complete_rehabilitation_sequence
+coverage_rule: every_routine_route_and_material_subtype_requires_current_applicable_evidence_profile_and_complete_rehabilitation_sequence
 
 status_values:
   - pending
@@ -36,7 +36,7 @@ profiles:
     post_traumatic_shoulder_pain: {status: pending}
     acromioclavicular_joint_disorder: {status: pending}
     sternoclavicular_joint_disorder: {status: pending}
-    postoperative_shoulder_rehabilitation: {status: pending, protocol_override_required: true}
+    postoperative_shoulder_rehabilitation: {status: pending, material_subtype_or_protocol_split_required: true}
 
   elbow:
     lateral_elbow_tendinopathy: {status: evidence_seeded, sequence_status: pending}
@@ -57,9 +57,9 @@ profiles:
     intersection_syndrome: {status: pending}
     thumb_mcp_collateral_ligament_injury_rehabilitation: {status: pending, structural_restrictions_apply: true}
     sagittal_band_injury_extensor_tendon_instability: {status: pending, structural_restrictions_apply: true}
-    digital_tendon_injury_rehabilitation: {status: pending, subtype_or_protocol_specific: true}
+    digital_tendon_injury_rehabilitation: {status: pending, material_subtype_or_protocol_split_required: true}
     post_traumatic_wrist_hand_pain_stiffness: {status: pending}
-    postoperative_wrist_hand_rehabilitation: {status: pending, protocol_override_required: true}
+    postoperative_wrist_hand_rehabilitation: {status: pending, material_subtype_or_protocol_split_required: true}
 
   knee:
     knee_osteoarthritis: {status: pending}
@@ -74,17 +74,22 @@ profiles:
     iliotibial_band_syndrome: {status: pending}
     pes_anserine_region_pain_or_tendinobursitis: {status: pending}
     post_traumatic_knee_pain_stiffness: {status: pending}
-    postoperative_knee_rehabilitation: {status: pending, protocol_override_required: true}
+    postoperative_knee_rehabilitation: {status: pending, material_subtype_or_protocol_split_required: true}
 
   hip_groin:
-    greater_trochanteric_lateral_hip_pain_pathway: {status: pending}
-    nonarthritic_intraarticular_hip_pain: {status: pending}
+    greater_trochanteric_lateral_hip_pain_pathway: {status: pending, material_subtype_split_review_required: true}
+    nonarthritic_intraarticular_hip_pain: {status: pending, material_subtype_split_review_required: true}
     adductor_related_groin_pain: {status: pending}
     post_traumatic_hip_groin_pain_stiffness: {status: pending}
 
   ankle_foot:
     lateral_ankle_sprain_rehabilitation: {status: pending}
-    achilles_tendinopathy: {status: evidence_seeded, sequence_status: pending, subtype_split_required: true}
+    achilles_tendinopathy:
+      status: pending
+      variants:
+        midportion_achilles_tendinopathy: {status: evidence_seeded, sequence_status: pending}
+        insertional_achilles_tendinopathy: {status: blocked_evidence_gap, sequence_status: pending}
+        other_established_achilles_tendinopathy: {status: blocked_evidence_gap, sequence_status: pending}
     plantar_heel_pain_plantar_fasciitis: {status: pending}
     posterior_tibial_tendon_dysfunction_progressive_collapsing_foot_deformity: {status: pending}
     peroneal_tendon_disorder_nonoperative: {status: pending}
@@ -106,8 +111,9 @@ shared_owners:
 readiness_gate:
   runtime_evidence_aware_generation: blocked
   requirements:
-    - all_routine_routes_profile_complete
-    - all_routine_routes_sequence_complete_or_explicit_blocked_evidence_gap_with_safe_noninvented_output
+    - all_routine_routes_and_material_subtypes_have_applicable_profiles
+    - all_routine_route_variants_have_complete_sequences_or_explicit_blocked_evidence_gap_with_safe_noninvented_output
     - all_profile_sources_current_or_reviewed
-    - all_rendered_recommendations_traceable_to_active_claims
+    - all_rendered_recommendations_traceable_to_active_applicable_claims
+    - no_route_level_source_is_applied_to_a_noncovered_subtype
     - exact_design_completeness_review_passed
