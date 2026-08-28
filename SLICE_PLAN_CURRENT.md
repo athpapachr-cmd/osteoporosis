@@ -1,114 +1,128 @@
-# SLICE_PLAN_CURRENT.md — CU-1 Physiotherapy Referral v2 runtime implementation v1
+# SLICE_PLAN_CURRENT.md — CU-1 Greek human referral formatting maintenance v1
 
-> **STATUS:** CLOSED — IMPLEMENTED / TESTED / MERGED / DEPLOYED / PRODUCTION-SMOKE-VERIFIED.
+> **STATUS:** ACTIVE MAINTENANCE IMPLEMENTATION.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Parent product:** Personal Clinical Excellence System.
 > **Area:** Clinic Utilities / Clinical Operations.
-> **Slice ID:** CU-1 runtime v1.
-> **Supporting plan:** `CLINIC_UTILITIES_PLAN.md`.
-> **Implementation base:** `7c49c2c6ad5ad9c710a6c02fe1ec4df467b4bab2`.
-> **Reviewed implementation head:** `e04004add617afa7222c51d0d669c2134dd8f575`.
-> **Merge commit:** `c1da07f581cf8ccf1159d18bb63c23b674cbe9bd` (PR #56 squash merge).
-> **Render deploy:** `dep-da8afeuk1f9s73f5sr6g` = live at the runtime merge commit.
-> **Production smoke:** authenticated product-owner browser smoke PASS; see `clinic_utilities/CU1_PRODUCTION_SMOKE_2026-08-28.md`.
-> **Runtime writer:** NONE.
-> **Frozen machine contract entrypoint:** `clinic_utilities/contracts/cu1_contract_manifest_v1.yaml`.
-> **Prior active slice:** PR-1 remains intentionally paused.
+> **Slice ID:** CU-1 formatter-quality maintenance v1.
+> **Maintenance base:** `d1716f8ea889a9369367c3bb18e469e9bbfef9f0`.
+> **Writer:** `fix/cu1-greek-human-referral-formatting-2026-08-28`.
+> **Clinical taxonomy:** frozen and unchanged.
+> **Machine contract entrypoint:** `clinic_utilities/contracts/cu1_contract_manifest_v1.yaml`.
+> **Formatter amendment:** `clinic_utilities/contracts/CU1_FORMATTER_LANGUAGE_EL_V1.md`.
+> **Prior runtime slice:** CU-1 runtime v1 remains technically implemented/deployed but clinician-facing formatter acceptance failed.
+> **CU-2:** not authorized.
+> **PR-1:** remains paused.
 
 ---
 
-# 1. Objective — completed
+# 1. Problem
 
-The first usable CU-1 Physiotherapy Referral v2 was integrated into the protected Clinical Excellence service without reopening the frozen clinical taxonomy or adding referral persistence.
+The deployed CU-1 runtime produces technically valid referrals but the actual prose is not acceptable as a clinician-authored referral.
 
-The runtime converts clinician-selected structured inputs into deterministic short/detailed referral text while preserving the frozen semantic and safety invariants.
+Observed defects:
+
+```text
+machine-like field serialization
+English/machine-derived phrases in generated text
+insufficient semantic/structural difference between Short and Detailed
+```
+
+The defect is in the formatter/display layer. It does not demonstrate a taxonomy, routing, safety, validation or persistence defect.
 
 ---
 
-# 2. Delivered scope
+# 2. Objective
+
+Deliver clinician-facing Greek referral text that is immediately usable after generation.
 
 ```text
-A. protected CU-1 utility entrypoint under /clinical/clinic-utilities/physio-referral
-B. ephemeral ReferralDraftV1 browser state
-C. manifest-driven machine-contract loading/composition
-D. canonical ID/alias/context normalization
-E. gateway + route + ownership resolution
-F. route required/conditional validation
-G. declarative safety/consistency rule evaluation
-H. deterministic ShortReferralFormatter
-I. deterministic DetailedReferralFormatter
-J. copy and print actions
-K. Clinical Excellence navigation entry to CU-1
-L. executable focused contract/safety/gateway tests
+validated ReferralDraftV1
+→ unchanged clinical/safety semantics
+→ Greek clinician-facing phrase resolution
+→ natural Short or Detailed referral composition
+→ copy / print
 ```
 
-Explicitly not delivered, by design:
-
-```text
-referral persistence in PostgreSQL
-localStorage/sessionStorage persistence
-patient-registry linkage
-saving generated referral text
-PDF-specific workflow
-CU-2
-PR-1 runtime
-clinical taxonomy changes
-```
+No raw machine ID may appear in final referral prose.
 
 ---
 
-# 3. Final runtime architecture
+# 3. Short formatter contract
+
+Short output should read like a routine referral written by a clinician.
+
+Target:
 
 ```text
-clinic_utilities/physio_referral_runtime.py
-→ frozen machine-contract loader/composer
-→ normalization / validation / declarative rule engine / formatter
-
-clinic_utilities/physio_referral_api.py
-→ protected trust boundary
-→ exact frozen gateway validation
-→ canonical safety-state validation
-
-main.py
-→ includes guarded CU-1 router
-
-static/clinic-utilities/physio-referral/*
-→ ephemeral browser presentation and copy/print workflow
+2–4 compact sentences
+problem/presentation + laterality
+most actionable findings/function
+request for selected rehabilitation goals/directions
+material restrictions if present
+optional clinician note
 ```
 
-Protected routes:
-
-```text
-GET  /clinical/clinic-utilities/physio-referral
-GET  /clinical/clinic-utilities/physio-referral/api/contract
-POST /clinical/clinic-utilities/physio-referral/api/validate
-POST /clinical/clinic-utilities/physio-referral/api/generate
-```
-
-No endpoint writes referral data to database or filesystem.
+It should not be a list of labeled database fields.
 
 ---
 
-# 4. Frozen semantic pipeline implemented
+# 4. Detailed formatter contract
+
+Detailed output should have a clearly different structure and information density.
+
+Default shape:
 
 ```text
-raw structured draft
-→ alias normalization
-→ context-value normalization
-→ frozen registry/gateway trust-boundary validation
-→ shared semantic ownership resolution
-→ route requirements correction overlay
-→ required/conditional/assertion/context validation
-→ declarative safety + consistency rule evaluation
-→ acknowledgement/disposition gate
-→ deterministic short or detailed formatter
+ΠΑΡΑΠΟΜΠΗ ΓΙΑ ΦΥΣΙΟΘΕΡΑΠΕΙΑ
+
+Κλινική εικόνα
+<problem + selected findings + functional impact + relevant secondary/context>
+
+Περιορισμοί / προφυλάξεις
+<only if present>
+
+Στόχοι και κατευθύνσεις αποκατάστασης
+<selected goals + core rehab directions + adjuncts only when explicitly selected>
+
+Πρόσθετα κλινικά στοιχεία
+<measurements, structural/postoperative context, clinician free text when useful>
 ```
 
-The runtime does not use clinical-profile Markdown to invent trigger or validation semantics. Profile prose may contribute clinician-facing display labels only.
+Detailed output must contain materially more selected information than Short when such information exists, while retaining natural medical prose.
 
 ---
 
-# 5. Final safety / clinical invariants
+# 5. Greek phrase authority
+
+Create a versioned machine-readable Greek phrase catalog for every selectable ID that can be rendered:
+
+```text
+findings
+functional impairments
+goals
+rehab directions
+adjuncts
+restrictions
+measurements
+relevant context values
+safety disposition wording if rendered
+```
+
+Rules:
+
+```text
+known renderable id + Greek label → render Greek phrase
+known renderable id + missing Greek label → formatter contract error / fail closed
+unknown id → existing validation already blocks
+_humanize_id() must never be the final generated-referral fallback
+```
+
+Profile route display labels may be sourced from frozen profile display text when already Greek.
+
+---
+
+# 6. Invariants preserved
 
 ```text
 suggested != examined
@@ -118,146 +132,67 @@ symptom != diagnosis
 objective deficit != subjective symptom
 provocation/test finding != diagnosis
 imaging finding != automatically symptomatic diagnosis
-not assessed != normal
+not_assessed != normal
 adjunct != core rehabilitation
 clinician-entered diagnosis may be carried faithfully but must not be inferred
-unselected safety flag != reassuring negative
-nonspecific symptom != autonomous unresolved safety concern unless an explicit frozen rule says so
-exact procedure/protocol/restriction state > generic postoperative defaults
+explicit restrictions retain precedence
+safety generation blocks remain unchanged
+no persistence
 ```
-
-Additional fail-closed hardening established during implementation review:
-
-```text
-forged shared_target_optional → hard block
-unknown acknowledged rule id → hard block
-unknown clinician disposition → hard block
-unknown safety input flag → hard block
-```
-
----
-
-# 6. Persistence/privacy boundary — proven
-
-```text
-ReferralDraftV1 = ephemeral
-Generated referral text = ephemeral
-Server = request/response only
-Browser storage = none
-Database writes = none
-Public fixtures = synthetic only
-```
-
-Focused tests explicitly verify absence of CU-1 `localStorage`, `sessionStorage` and SQLAlchemy persistence paths. The production browser smoke also verified that refresh clears the prior referral state.
 
 ---
 
 # 7. Acceptance evidence
 
-Exact reviewed implementation head:
+Executable tests must prove:
 
 ```text
-e04004add617afa7222c51d0d669c2134dd8f575
+1. representative outputs are Greek and natural
+2. machine IDs/underscores do not leak into final prose
+3. Short and Detailed are both deterministic
+4. Short and Detailed are materially different for a rich draft
+5. Detailed carries extra context/measurements/secondary problem when supplied
+6. Short remains compact while retaining material restrictions
+7. route labels/laterality are rendered naturally in Greek
+8. not_assessed/unselected never generate reassuring negatives
+9. existing gateway/safety/no-persistence suites remain green
 ```
 
-Final GitHub Actions evidence:
+Representative output tests:
 
 ```text
-compile = PASS
-focused unittest suite = PASS
-29/29 tests = PASS
+knee OA
+cervical nonspecific pain
+lumbar nonspecific pain
+shared fracture + restriction
+shared muscle injury
+postoperative rehabilitation
 ```
 
-Coverage includes:
-
-```text
-manifest and correction overlay
-alias normalization
-closed route/context/safety namespaces
-all frozen gateway mappings
-forged gateway rejection
-route-required/conditional validation
-fracture WB/use boundaries
-shared muscle correction boundary
-postoperative exclusivity/context
-explicit-vs-inferred safety behavior
-urgent disposition gating
-adjunct/core-rehab consistency
-frailty assertion semantics
-not-assessed neurological semantics
-short/detailed formatter determinism
-no browser/server referral persistence
-forged acknowledgement/disposition rejection
-protected clinical-key dependency
-```
-
-Independent exact-head diff review found no frozen clinical profile/contract mutation, no persistence/schema change, no CU-2/PR-1 scope creep and no identifiable patient data.
+Product-owner browser smoke after deploy must include visual inspection of the actual generated prose, not merely successful button execution.
 
 ---
 
-# 8. Merge, deploy and production smoke evidence
+# 8. REPLAN triggers
 
-PR #56 was squash-merged with `expected_head_sha=e04004add617afa7222c51d0d669c2134dd8f575`.
-
-Resulting runtime `main` commit:
+STOP and replan rather than silently expanding scope if:
 
 ```text
-c1da07f581cf8ccf1159d18bb63c23b674cbe9bd
-```
-
-Render auto-deploy:
-
-```text
-deploy = dep-da8afeuk1f9s73f5sr6g
-commit = c1da07f581cf8ccf1159d18bb63c23b674cbe9bd
-build = successful
-uvicorn startup = observed
-status = live
-```
-
-Authenticated product-owner production browser smoke:
-
-```text
-Clinical Excellence access = PASS
-CU-1 page load = PASS
-representative Knee → Knee OA path = PASS
-Validate = PASS
-Short referral = PASS
-Detailed referral = PASS
-Copy = PASS
-Print = PASS
-refresh/no-persistence behavior = PASS
-```
-
-Therefore:
-
-```text
-IMPLEMENTED = PROVEN
-TESTED = PROVEN
-MERGED = PROVEN
-DEPLOYED / RENDER LIVE = PROVEN
-PRODUCTION-SMOKE-VERIFIED = PROVEN
-PILOT-VALIDATED = NOT CLAIMED
+natural Greek prose requires changing clinical taxonomy
+formatter needs to infer unselected findings/diagnoses
+clinical-profile wording contradicts the machine contract
+required Greek phrasing introduces a new clinical recommendation
 ```
 
 ---
 
-# 9. Non-blocking maintenance note
-
-`clinic_utilities/physio_referral_runtime.py` retains an older unused router builder. The active application imports only the guarded router from `clinic_utilities/physio_referral_api.py`. Removal is optional maintenance and does not reopen CU-1.
-
----
-
-# 10. Stop rule
-
-CU-1 runtime v1 is closed and production-smoke-verified.
+# 9. Stop rule
 
 ```text
-NO runtime continuation implied
-NO CU-2 authorization implied
-NO PR-1 resumption implied
-NO persistence expansion implied
-NO taxonomy reopening implied
+implementation
+→ focused exact-head tests
+→ independent exact-head review
+→ MERGE-READY or BLOCK
 ```
 
-After the production-smoke evidence reconciliation is merged and its temporary canonical writer lock is released, the next engineering slice requires a new explicit product-owner decision.
+Merge/deploy and final product-owner prose acceptance occur only after that gate.

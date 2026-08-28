@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import copy
-from typing import Any, Dict, Mapping
+from typing import Any, Dict, Mapping, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
 
+from clinic_utilities.physio_referral_formatter_el_v2 import CU1GreekReferralFormatter
 from clinic_utilities.physio_referral_runtime import (
     CU1ContractError,
     CU1GenerateRequest,
@@ -20,14 +21,17 @@ from clinic_utilities.physio_referral_runtime import (
 )
 
 
+_FORMATTER_EL: Optional[CU1GreekReferralFormatter] = None
+
+
+def _get_greek_formatter() -> CU1GreekReferralFormatter:
+    global _FORMATTER_EL
+    if _FORMATTER_EL is None:
+        _FORMATTER_EL = CU1GreekReferralFormatter(get_cu1_bundle())
+    return _FORMATTER_EL
+
+
 def _gateway_target_is_canonical(draft: Mapping[str, Any]) -> bool:
-    """Accept shared_target_optional only when it exactly matches a frozen gateway.
-
-    Direct shared-profile selection does not need shared_target_optional. When a
-    regional/shared gateway is used, client input is treated as untrusted and
-    must match one registry gateway exactly before ownership can be resolved.
-    """
-
     problem = draft.get("primary_problem")
     if not isinstance(problem, Mapping):
         return True
@@ -46,7 +50,6 @@ def _gateway_target_is_canonical(draft: Mapping[str, Any]) -> bool:
     gateways = get_cu1_bundle().registry.get("gateways", {})
     if not isinstance(gateways, Mapping):
         return False
-
     for gateway in gateways.values():
         if not isinstance(gateway, Mapping):
             continue
@@ -58,16 +61,13 @@ def _gateway_target_is_canonical(draft: Mapping[str, Any]) -> bool:
             continue
         if gateway.get("target_route") != target_route:
             continue
-        expected_detail = gateway.get("target_subtype_or_site")
-        if expected_detail != target_subtype_or_site:
+        if gateway.get("target_subtype_or_site") != target_subtype_or_site:
             continue
         return True
     return False
 
 
 def _safety_state_is_canonical(draft: Mapping[str, Any]) -> bool:
-    """Validate client-controlled SafetyState identifiers against frozen catalogs."""
-
     safety = draft.get("safety")
     if safety is None:
         return True
@@ -93,10 +93,7 @@ def _safety_state_is_canonical(draft: Mapping[str, Any]) -> bool:
     if not isinstance(disposition_values, list) or not disposition_values:
         return False
     disposition = safety.get("clinician_disposition", "none_recorded")
-    if not isinstance(disposition, str) or disposition not in disposition_values:
-        return False
-
-    return True
+    return isinstance(disposition, str) and disposition in disposition_values
 
 
 def _blocked_validation(draft: Mapping[str, Any], *, path: str, reason: str) -> CU1ValidationResponse:
@@ -144,7 +141,34 @@ def build_cu1_physio_referral_router() -> APIRouter:
 
     @router.get("/api/contract", dependencies=protected)
     def cu1_contract() -> Dict[str, Any]:
-        return get_cu1_bundle().contract_payload()
+        bundle = get_cu1_bundle()
+        formatter = _get_greek_formatter()
+        payload = bundle.contract_payload()
+        language = formatter.language
+        payload["display_language"] = "el"
+        payload["display_labels"] = {
+            key: copy.deepcopy(language.get(key, {}))
+            for key in (
+                "laterality",
+                "findings",
+                "functional_impairments",
+                "goals",
+                "rehab_directions",
+                "adjuncts",
+                "measurements",
+                "restrictions",
+                "context_values",
+                "route_detail_labels",
+            )
+        }
+        route_labels = formatter.contract_route_labels()
+        for profile_id, profile in (payload.get("profiles") or {}).items():
+            if not isinstance(profile, dict):
+                continue
+            for route_id, route in (profile.get("routes") or {}).items():
+                if isinstance(route, dict):
+                    route["display"] = route_labels[profile_id][route_id]
+        return payload
 
     @router.post("/api/validate", response_model=CU1ValidationResponse, dependencies=protected)
     def cu1_validate(req: CU1ValidateRequest) -> CU1ValidationResponse:
@@ -166,7 +190,12 @@ def build_cu1_physio_referral_router() -> APIRouter:
             if not _safety_state_is_canonical(req.draft):
                 blocked = _invalid_safety_validation(req.draft)
                 return CU1GenerateResponse(**blocked.model_dump(), mode=req.mode, text=None)
-            return get_cu1_engine().generate(req.draft, req.mode)
+
+            validation = get_cu1_engine().validate(req.draft)
+            text = None
+            if not validation.formatter_blocked:
+                text = _get_greek_formatter().format(validation.normalized_draft, req.mode)
+            return CU1GenerateResponse(**validation.model_dump(), mode=req.mode, text=text)
         except CU1ContractError as exc:
             raise HTTPException(status_code=500, detail=f"CU-1 contract error: {exc}") from exc
 
@@ -177,4 +206,5 @@ __all__ = [
     "build_cu1_physio_referral_router",
     "_gateway_target_is_canonical",
     "_safety_state_is_canonical",
+    "_get_greek_formatter",
 ]

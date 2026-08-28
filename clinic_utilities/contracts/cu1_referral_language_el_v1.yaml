@@ -1,0 +1,432 @@
+version: cu1_referral_language_el_v1
+language: el
+status: maintenance_formatter_authority
+machine_ids_must_not_leak: true
+
+laterality:
+  left: αριστερά
+  right: δεξιά
+  bilateral: αμφοτερόπλευρα
+  midline: στη μέση γραμμή
+  not_applicable: ''
+  not_stated: ''
+
+findings:
+  pain: πόνος
+  swelling: οίδημα
+  tenderness: ευαισθησία στην ψηλάφηση
+  bruising: εκχύμωση
+  active_rom_restricted: περιορισμός ενεργητικού εύρους κίνησης
+  passive_rom_restricted: περιορισμός παθητικού εύρους κίνησης
+  painful_active_rom: επώδυνο ενεργητικό εύρος κίνησης
+  painful_passive_rom: επώδυνο παθητικό εύρος κίνησης
+  objective_weakness: αντικειμενικά διαπιστωμένη μυϊκή αδυναμία
+  load_intolerance_without_measured_weakness: μειωμένη ανοχή στη φόρτιση χωρίς τεκμηριωμένη μυϊκή αδυναμία
+  paresthesia: παραισθησίες
+  numbness: αιμωδίες
+  night_or_sleep_disturbance: νυχτερινός πόνος ή διαταραχή ύπνου
+  walking_limitation: περιορισμός στη βάδιση
+  stairs_limitation: δυσκολία στις σκάλες
+  sit_to_stand_limitation: δυσκολία στην έγερση από καθιστή θέση
+  work_limitation: περιορισμός στην εργασία
+  sport_or_exercise_limitation: περιορισμός στην άθληση ή την άσκηση
+  adl_self_care_limitation: περιορισμός στις δραστηριότητες καθημερινής ζωής
+  balance_deficit: έλλειμμα ισορροπίας
+  poor_coordination: μειωμένος συντονισμός
+  fear_or_concern_about_falling: φόβος ή ανησυχία για πτώση
+  axial_cervical_pain: αυχενικός πόνος
+  occipital_pain_or_headache: ινιακός πόνος ή κεφαλαλγία
+  referred_shoulder_girdle_pain: αναφερόμενος πόνος στην ωμική ζώνη
+  radiating_upper_limb_pain: πόνος με αντανάκλαση στο άνω άκρο
+  sustained_posture_aggravation: επιδείνωση με παρατεταμένη στάση
+  spurling_concordant_symptoms: αναπαραγωγή συμβατών συμπτωμάτων με δοκιμασία Spurling
+  upper_limb_neurodynamic_finding: θετικό νευροδυναμικό εύρημα άνω άκρου
+  dizziness_or_disequilibrium: ζάλη ή αίσθημα αστάθειας
+  balance_related_activity_limitation: λειτουργικός περιορισμός σχετιζόμενος με ισορροπία
+  trigger_points_or_myofascial_presentation: μυοπεριτονιακή εικόνα ή σημεία πυροδότησης
+  axial_low_back_pain: οσφυαλγία
+  buttock_pain: γλουτιαίος πόνος
+  referred_nonradicular_leg_pain: αναφερόμενος μη ριζιτικός πόνος στο κάτω άκρο
+  radiating_leg_pain: πόνος με αντανάκλαση στο κάτω άκρο
+  straight_leg_raise_concordant_symptoms: αναπαραγωγή συμβατών συμπτωμάτων με ανύψωση τεντωμένου σκέλους
+  slump_concordant_symptoms: αναπαραγωγή συμβατών συμπτωμάτων με δοκιμασία Slump
+  walking_or_standing_limited_leg_symptoms: συμπτώματα κάτω άκρων που περιορίζουν βάδιση ή ορθοστασία
+  deep_gluteal_region_tenderness: ευαισθησία στη βαθιά γλουτιαία περιοχή
+  trunk_strength_or_endurance_deficit: έλλειμμα δύναμης ή αντοχής κορμού
+  anterolateral_shoulder_pain: προσθιοπλάγιος πόνος ώμου
+  posterior_shoulder_pain: οπίσθιος πόνος ώμου
+  ac_region_pain: πόνος στην ακρωμιοκλειδική περιοχή
+  sc_region_pain_or_swelling: πόνος ή οίδημα στη στερνοκλειδική περιοχή
+  painful_arc: επώδυνο τόξο κίνησης
+  objective_abduction_weakness: αντικειμενική αδυναμία απαγωγής
+  objective_external_rotation_weakness: αντικειμενική αδυναμία έξω στροφής
+  instability_apprehension_finding: εύρημα φόβου/αστάθειας
+  scapular_control_endurance_deficit: έλλειμμα ελέγχου ή αντοχής ωμοπλάτης
+  lateral_elbow_pain: έξω πόνος αγκώνα
+  medial_elbow_pain: έσω πόνος αγκώνα
+  anterior_antecubital_pain: πρόσθιος πόνος στην καμπτική επιφάνεια του αγκώνα
+  posterior_elbow_pain: οπίσθιος πόνος αγκώνα
+  pain_with_gripping: πόνος κατά τη σύλληψη
+  ulnar_distribution_sensory_deficit: αισθητικό έλλειμμα στην κατανομή του ωλενίου νεύρου
+  intrinsic_hand_weakness: αδυναμία ενδογενών μυών του χεριού
+  pin_pattern_motor_deficit: κινητικό έλλειμμα συμβατό με οπίσθιο μεσόστεο νεύρο
+  objective_supination_weakness: αντικειμενική αδυναμία υπτιασμού
+  objective_flexion_weakness: αντικειμενική αδυναμία κάμψης
+  radial_wrist_pain: κερκιδικός πόνος καρπού
+  thumb_base_pain: πόνος στη βάση του αντίχειρα
+  dorsoradial_distal_forearm_pain: ραχιοκερκιδικός πόνος περιφερικού αντιβραχίου
+  ulnar_sided_wrist_pain: ωλένιος πόνος καρπού
+  digit_flexion_deficit: έλλειμμα κάμψης δακτύλου
+  digit_extension_deficit: έλλειμμα έκτασης δακτύλου
+  grip_strength_reduced: μειωμένη δύναμη σύλληψης
+  pinch_strength_reduced: μειωμένη δύναμη λαβής ακριβείας
+  fine_motor_dexterity_deficit: έλλειμμα λεπτής κινητικότητας
+  median_distribution_sensory_deficit: αισθητικό έλλειμμα στην κατανομή του μέσου νεύρου
+  thenar_apb_weakness: αδυναμία θέναρος/βραχέος απαγωγού αντίχειρα
+  extensor_lag: υστέρηση έκτασης
+  joint_line_pain: πόνος στη μεσάρθρια γραμμή
+  anterior_peripatellar_pain: πρόσθιος ή περιεπιγονατιδικός πόνος
+  patellar_tendon_pain: πόνος επιγονατιδικού τένοντα
+  quadriceps_tendon_pain: πόνος τένοντα τετρακεφάλου
+  pes_anserine_region_pain: πόνος στην περιοχή του χήνειου ποδός
+  true_locking_or_major_mechanical_rom_block: πραγματικό κλείδωμα ή σημαντικός μηχανικός περιορισμός κίνησης
+  subjective_giving_way: υποκειμενικό αίσθημα υποχώρησης του γόνατος
+  recurrent_instability_episode: υποτροπιάζον επεισόδιο αστάθειας
+  effusion: ενδαρθρική συλλογή
+  extension_lag: υστέρηση έκτασης
+  quadriceps_weakness: αδυναμία τετρακεφάλου
+  hop_running_landing_change_of_direction_deficit: έλλειμμα σε άλμα, τρέξιμο, προσγείωση ή αλλαγή κατεύθυνσης
+  lateral_greater_trochanter_region_pain: πλάγιος πόνος στην περιοχή του μείζονα τροχαντήρα
+  groin_or_anterior_hip_pain: βουβωνικός ή πρόσθιος πόνος ισχίου
+  posterior_ischial_buttock_pain: οπίσθιος ισχιακός ή γλουτιαίος πόνος
+  pain_with_hip_flexion_or_rotation: πόνος με κάμψη ή στροφή του ισχίου
+  pain_with_single_leg_loading: πόνος με μονοποδική φόρτιση
+  hip_abductor_strength_deficit: έλλειμμα δύναμης απαγωγών ισχίου
+  adductor_strength_deficit: έλλειμμα δύναμης προσαγωγών
+  painful_snapping: επώδυνο αναπήδημα
+  fadir_or_faber_provocation_finding: θετικό προκλητικό εύρημα FADIR ή FABER
+  lateral_ankle_pain: έξω πόνος ποδοκνημικής
+  medial_ankle_or_arch_pain: έσω πόνος ποδοκνημικής ή ποδικής καμάρας
+  achilles_region_pain: πόνος στην περιοχή του Αχίλλειου τένοντα
+  plantar_heel_pain: πελματιαίος πόνος πτέρνας
+  central_heel_pain: κεντρικός πόνος πτέρνας
+  forefoot_pain: πόνος προσθίου ποδός
+  first_step_morning_pain: πόνος στα πρώτα πρωινά βήματα
+  recurrent_sprain_history: ιστορικό υποτροπιαζόντων διαστρεμμάτων
+  plantar_flexor_weakness_or_endurance_deficit: αδυναμία ή μειωμένη αντοχή πελματιαίων καμπτήρων
+  single_leg_heel_raise_deficit: έλλειμμα μονοποδικής ανύψωσης πτέρνας
+  dynamic_postural_control_deficit: έλλειμμα δυναμικού στασικού ελέγχου
+  burning_or_paresthesia_plantar_foot: καύσος ή παραισθησίες στο πέλμα
+  post_immobilization_stiffness: δυσκαμψία μετά από ακινητοποίηση
+  post_immobilization_weakness: αδυναμία μετά από ακινητοποίηση
+  atrophy_or_deconditioning: ατροφία ή αποδυνάμωση
+  reduced_functional_use: μειωμένη λειτουργική χρήση
+  altered_gait: διαταραχή βάδισης
+  reduced_walking_tolerance: μειωμένη ανοχή στη βάδιση
+  balance_or_proprioceptive_deficit: έλλειμμα ισορροπίας ή ιδιοδεκτικότητας
+  scar_sensitivity_or_adherence: ευαισθησία ή συμφύσεις ουλής
+  fear_or_low_confidence_with_loading: φόβος ή μειωμένη αυτοπεποίθηση στη φόρτιση
+  localized_muscle_pain: εντοπισμένος μυϊκός πόνος
+  pain_with_stretch: πόνος με διάταση
+  pain_with_resisted_contraction: πόνος με αντίσταση στη σύσπαση
+  palpable_defect: ψηλαφητό έλλειμμα
+  muscle_spasm_or_guarding: μυϊκός σπασμός ή προστατευτικός περιορισμός
+  isometric_strength_deficit: έλλειμμα ισομετρικής δύναμης
+  isotonic_strength_deficit: έλλειμμα ισοτονικής δύναμης
+  eccentric_or_lengthened_position_deficit: έλλειμμα σε έκκεντρη ή επιμηκυμένη θέση
+  power_deficit: έλλειμμα ισχύος
+  running_intolerance: μειωμένη ανοχή στο τρέξιμο
+  sprinting_intolerance: μειωμένη ανοχή σε ταχεία επιτάχυνση ή sprint
+  kicking_deficit: έλλειμμα στο λάκτισμα
+  change_of_direction_deficit: έλλειμμα στην αλλαγή κατεύθυνσης
+  full_training_not_yet_tolerated: μη πλήρης ανοχή σε κανονική προπόνηση
+  generalized_weakness: γενικευμένη μυϊκή αδυναμία
+  lower_limb_weakness: μυϊκή αδυναμία κάτω άκρων
+  sit_to_stand_difficulty: δυσκολία στην έγερση από καθιστή θέση
+  reduced_repeated_chair_rise_capacity: μειωμένη ικανότητα επαναλαμβανόμενης έγερσης από καρέκλα
+  static_balance_deficit: έλλειμμα στατικής ισορροπίας
+  dynamic_balance_deficit: έλλειμμα δυναμικής ισορροπίας
+  turning_instability: αστάθεια κατά τις στροφές
+  stepping_or_recovery_deficit: έλλειμμα βηματισμού ή αντιδράσεων ανάκτησης ισορροπίας
+  unsteady_gait: ασταθής βάδιση
+  assistance_required_for_gait: ανάγκη βοήθειας στη βάδιση
+  walking_aid_use: χρήση βοηθήματος βάδισης
+  reduced_confidence_with_mobility: μειωμένη αυτοπεποίθηση στην κινητικότητα
+
+functional_impairments:
+  walking_tolerance: μειωμένη ανοχή στη βάδιση
+  standing_tolerance: μειωμένη ανοχή στην ορθοστασία
+  sitting_tolerance: μειωμένη ανοχή στην καθιστή θέση
+  stairs: δυσκολία στις σκάλες
+  sit_to_stand: δυσκολία στην έγερση από καθιστή θέση
+  transfers: δυσκολία στις μεταφορές θέσης
+  lifting_carrying: δυσκολία σε άρση ή μεταφορά φορτίου
+  pushing_pulling: δυσκολία σε ώθηση ή έλξη
+  driving: δυσκολία στην οδήγηση
+  desk_or_computer_work: δυσκολία σε εργασία γραφείου ή υπολογιστή
+  overhead_activity: δυσκολία σε δραστηριότητες πάνω από το ύψος του ώμου
+  gripping: δυσκολία στη σύλληψη
+  pinch: δυσκολία στη λαβή ακριβείας
+  dexterity: μειωμένη επιδεξιότητα
+  squat: δυσκολία στο βαθύ κάθισμα
+  kneeling: δυσκολία στο γονάτισμα
+  running: δυσκολία στο τρέξιμο
+  jumping_landing: δυσκολία σε άλμα ή προσγείωση
+  pivot_change_of_direction: δυσκολία σε pivot ή αλλαγή κατεύθυνσης
+  sport_gym: περιορισμός σε άθληση ή γυμναστήριο
+  manual_work: περιορισμός σε χειρωνακτική εργασία
+  school_pe_youth_sport: περιορισμός σε σχολική φυσική αγωγή ή νεανικό αθλητισμό
+  community_mobility: περιορισμός στην κινητικότητα εκτός σπιτιού
+  patient_priority_activity: περιορισμός στη δραστηριότητα προτεραιότητας του ασθενούς
+
+goals:
+  reduce_symptom_irritability: μείωση της έντασης και ευερεθιστότητας των συμπτωμάτων
+  restore_safe_functional_rom: αποκατάσταση ασφαλούς λειτουργικού εύρους κίνησης
+  improve_strength: βελτίωση μυϊκής δύναμης
+  improve_endurance: βελτίωση αντοχής
+  improve_motor_control: βελτίωση κινητικού ελέγχου
+  improve_neuromuscular_control: βελτίωση νευρομυϊκού ελέγχου
+  improve_balance_postural_control: βελτίωση ισορροπίας και στασικού ελέγχου
+  improve_coordination: βελτίωση συντονισμού
+  improve_walking_tolerance: βελτίωση ανοχής στη βάδιση
+  improve_stair_function: βελτίωση λειτουργικότητας στις σκάλες
+  improve_sit_to_stand_transfer_function: βελτίωση έγερσης και μεταφορών θέσης
+  improve_grip_pinch_or_dexterity: βελτίωση σύλληψης, λαβής ακριβείας ή επιδεξιότητας
+  improve_load_tolerance: βελτίωση ανοχής στη φόρτιση
+  graded_return_to_activity: σταδιακή επιστροφή στις δραστηριότητες
+  graded_return_to_work: σταδιακή επιστροφή στην εργασία
+  graded_return_to_sport: σταδιακή επιστροφή στον αθλητισμό
+  improve_self_management: βελτίωση αυτοδιαχείρισης
+  improve_mobility_confidence: βελτίωση αυτοπεποίθησης στην κινητικότητα
+  optimize_safe_walking_aid_use: ασφαλής και αποτελεσματική χρήση βοηθήματος βάδισης
+  maintain_or_regain_adl_independence: διατήρηση ή ανάκτηση ανεξαρτησίας στις καθημερινές δραστηριότητες
+  reduce_falls_risk_through_modifiable_physical_factors: μείωση τροποποιήσιμων σωματικών παραγόντων κινδύνου πτώσεων
+
+rehab_directions:
+  physiotherapy_assessment_and_individualized_active_rehabilitation: φυσιοθεραπευτική αξιολόγηση και εξατομικευμένο ενεργητικό πρόγραμμα αποκατάστασης
+  therapeutic_exercise: θεραπευτική άσκηση
+  progressive_strengthening: προοδευτική ενδυνάμωση
+  progressive_endurance_or_capacity_work: προοδευτική βελτίωση αντοχής και λειτουργικής ικανότητας
+  mobility_exercise_when_restricted: ασκήσεις κινητικότητας όταν υπάρχει περιορισμός
+  graded_activity_exposure: σταδιακή επανέκθεση σε δραστηριότητες
+  graded_loading: προοδευτική φόρτιση
+  education_and_self_management: εκπαίδευση και αυτοδιαχείριση
+  home_exercise_programme: πρόγραμμα ασκήσεων στο σπίτι
+  work_activity_load_adaptation: προσαρμογή φορτίου στις απαιτήσεις εργασίας ή δραστηριότητας
+  neuromuscular_proprioceptive_training: νευρομυϊκή και ιδιοδεκτική επανεκπαίδευση
+  balance_stepping_recovery_training: εκπαίδευση ισορροπίας, βηματισμού και αντιδράσεων ανάκτησης
+  gait_walking_practice: επανεκπαίδευση βάδισης
+  walking_aid_assessment_and_training: αξιολόγηση και εκπαίδευση στη χρήση βοηθήματος βάδισης
+  functional_task_retraining: λειτουργική επανεκπαίδευση
+  progressive_running: προοδευτική επανένταξη στο τρέξιμο
+  progressive_sprinting: προοδευτική επανένταξη σε sprint/ταχεία επιτάχυνση
+  progressive_kicking: προοδευτική επανένταξη στο λάκτισμα
+  progressive_jump_landing: προοδευτική επανένταξη σε άλματα και προσγειώσεις
+  progressive_change_of_direction: προοδευτική επανένταξη σε αλλαγές κατεύθυνσης
+  criterion_based_return_to_training_sport_or_work: επιστροφή σε προπόνηση, αθλητισμό ή εργασία βάσει λειτουργικών κριτηρίων
+  edema_management: αντιμετώπιση οιδήματος
+  scar_desensitization_management: κινητοποίηση και απευαισθητοποίηση ουλής
+  protected_rom_within_restrictions: κινητοποίηση εντός των επιτρεπόμενων ορίων
+  progressive_weight_bearing_within_restrictions: προοδευτική φόρτιση βάρους εντός των επιτρεπόμενων ορίων
+  progressive_upper_limb_use_within_restrictions: προοδευτική χρήση άνω άκρου εντός των επιτρεπόμενων ορίων
+
+adjuncts:
+  manual_therapy: τεχνικές manual therapy
+  soft_tissue_techniques: τεχνικές μαλακών μορίων
+  neurodynamic_techniques: νευροδυναμικές τεχνικές
+  selected_cervical_traction: επιλεγμένη αυχενική έλξη
+  dry_needling: dry needling
+  acupuncture: βελονισμός
+  eswt: θεραπεία με κρουστικά κύματα (ESWT)
+  taping: taping
+  heel_lift: ανύψωση πτέρνας
+  night_splint: νυχτερινός νάρθηκας
+  orthosis_or_brace_context: νάρθηκας ή ορθωτικό βοήθημα
+
+measurements:
+  sppb_total_optional: συνολική βαθμολογία SPPB
+  sppb_balance_component_optional: υποκλίμακα ισορροπίας SPPB
+  sppb_4m_gait_speed_or_time_optional: ταχύτητα ή χρόνος βάδισης 4 m στο SPPB
+  sppb_5_chair_rises_time_optional: χρόνος 5 εγέρσεων από καρέκλα στο SPPB
+  timed_up_and_go: Timed Up and Go
+  five_times_sit_to_stand: 5 φορές Sit-to-Stand
+  thirty_second_chair_stand: Chair Stand 30 δευτερολέπτων
+  four_metre_gait_speed: ταχύτητα βάδισης 4 μέτρων
+  berg_balance_scale: κλίμακα ισορροπίας Berg
+  mini_bestest: Mini-BESTest
+  six_minute_walk: δοκιμασία βάδισης 6 λεπτών
+
+restrictions:
+  weight_bearing_status: περιορισμός φόρτισης βάρους
+  upper_limb_use_status: περιορισμός χρήσης άνω άκρου
+  rom_status: περιορισμός εύρους κίνησης
+  loading_strengthening_status: περιορισμός φόρτισης ή ενδυνάμωσης
+  brace_or_orthosis_status: οδηγίες για νάρθηκα ή ορθωτικό
+  immobilization_status: κατάσταση ακινητοποίησης
+  running_restriction: περιορισμός τρεξίματος
+  sprinting_or_kicking_restriction: περιορισμός sprint ή λακτίσματος
+  sport_or_work_restriction: περιορισμός αθλητισμού ή εργασίας
+  procedure_specific_protocol: ειδικό μετεγχειρητικό/επεμβατικό πρωτόκολλο
+  other_explicit_restriction: άλλος ρητός περιορισμός
+
+context_keys:
+  fracture_site: εντόπιση κατάγματος
+  fracture_phase: φάση κατάγματος
+  fracture_context: πλαίσιο κατάγματος
+  treatment: αντιμετώπιση
+  healing_stability_status: κατάσταση πώρωσης/σταθερότητας
+  immobilization_status: ακινητοποίηση
+  weight_bearing_status: φόρτιση βάρους
+  upper_limb_use_status: χρήση άνω άκρου
+  rom_status: εύρος κίνησης
+  loading_strengthening_status: φόρτιση/ενδυνάμωση
+  orthopaedic_instructions_source: πηγή ορθοπαιδικών οδηγιών
+  injury_phase: φάση μυϊκής κάκωσης
+  injury_type: τύπος μυϊκής κάκωσης
+  injury_location: εντόπιση μυϊκής κάκωσης
+  management_context: πλαίσιο αντιμετώπισης
+  specific_muscle_optional: συγκεκριμένος μυς
+  muscle_group: μυϊκή ομάδα
+  procedure: επέμβαση
+  procedure_date_or_phase: ημερομηνία ή φάση επέμβασης
+  protocol_status: κατάσταση πρωτοκόλλου
+  restrictions_review_status: έλεγχος περιορισμών
+  frailty_established: τεκμηριωμένη ευπάθεια
+  functional_route_id: λειτουργικό πλαίσιο
+
+context_values:
+  acute_established: οξεία φάση με τεκμηριωμένο κάταγμα
+  early_healing: πρώιμη φάση πώρωσης
+  post_immobilization: μετά την ακινητοποίηση
+  later_rehabilitation: όψιμη φάση αποκατάστασης
+  healed_with_residual_impairment: πώρωση με υπολειπόμενο λειτουργικό έλλειμμα
+  traumatic: τραυματικό
+  fragility_or_insufficiency: κάταγμα ευθραυστότητας ή ανεπάρκειας
+  stress_or_bone_stress: κάταγμα κόπωσης / οστική καταπόνηση
+  pediatric_physeal_or_apophyseal: παιδιατρικό φυσεο/αποφυσιακό
+  pathological_or_other_medical_context: παθολογικό ή άλλο ιατρικό πλαίσιο
+  nonoperative_observation_or_functional_treatment: συντηρητική αντιμετώπιση
+  sling: ανάρτηση
+  cast: γύψος
+  splint_or_orthosis: νάρθηκας ή όρθωση
+  boot: μπότα ακινητοποίησης
+  closed_reduction_and_immobilization: κλειστή ανάταξη και ακινητοποίηση
+  percutaneous_fixation: διαδερμική οστεοσύνθεση
+  orif: ανοικτή ανάταξη και εσωτερική οστεοσύνθεση (ORIF)
+  intramedullary_fixation: ενδομυελική οστεοσύνθεση
+  external_fixation: εξωτερική οστεοσύνθεση
+  arthroplasty_after_fracture: αρθροπλαστική μετά από κάταγμα
+  other_operation: άλλη επέμβαση
+  mixed_or_staged_treatment: συνδυασμένη ή σταδιακή αντιμετώπιση
+  documented_stable_for_current_rehabilitation: τεκμηριωμένα σταθερό για την τρέχουσα αποκατάσταση
+  healing_confirmed_with_restrictions: επιβεβαιωμένη πώρωση με περιορισμούς
+  union_or_healed_confirmed: επιβεβαιωμένη πώρωση
+  delayed_union_context: πλαίσιο καθυστερημένης πώρωσης
+  nonunion_context: πλαίσιο ψευδάρθρωσης
+  malunion_context: πλαίσιο πλημμελούς πώρωσης
+  loss_of_reduction_or_instability_concern: ανησυχία για απώλεια ανάταξης ή αστάθεια
+  none_currently: χωρίς τρέχουσα ακινητοποίηση
+  removable_splint_or_orthosis: αφαιρούμενος νάρθηκας ή όρθωση
+  brace: κηδεμόνας/νάρθηκας
+  non_weight_bearing: χωρίς φόρτιση βάρους
+  touch_down_or_toe_touch: φόρτιση επαφής/δακτύλων
+  partial_weight_bearing: μερική φόρτιση βάρους
+  weight_bearing_as_tolerated: φόρτιση κατά ανοχή
+  full_weight_bearing: πλήρης φόρτιση βάρους
+  other_explicit_restriction: άλλος ρητός περιορισμός
+  no_functional_use: χωρίς λειτουργική χρήση
+  hand_for_light_adl_only: χρήση χεριού μόνο για ελαφρές καθημερινές δραστηριότητες
+  light_use_with_explicit_limit: ελαφρά χρήση με ρητό περιορισμό
+  no_lifting_or_pushing_through_limb: χωρίς άρση ή ώθηση μέσω του άκρου
+  lifting_limit_entered: έχει καταγραφεί όριο άρσης
+  use_as_tolerated: χρήση κατά ανοχή
+  unrestricted_use_confirmed: επιβεβαιωμένη χρήση χωρίς περιορισμό
+  unrestricted_rom_confirmed: επιβεβαιωμένο εύρος κίνησης χωρίς περιορισμό
+  rom_allowed_with_specific_limits: επιτρεπόμενη κίνηση με συγκεκριμένα όρια
+  passive_only_or_assisted_only_context: μόνο παθητική ή υποβοηθούμενη κίνηση
+  joint_or_direction_specific_restriction: περιορισμός συγκεκριμένης άρθρωσης ή κατεύθυνσης
+  immobilized_no_rom_currently: ακινητοποίηση χωρίς τρέχουσα κινητοποίηση
+  unrestricted_loading_confirmed: επιβεβαιωμένη φόρτιση χωρίς περιορισμό
+  graded_loading_allowed: επιτρέπεται προοδευτική φόρτιση
+  strengthening_allowed_with_limits: επιτρέπεται ενδυνάμωση με περιορισμούς
+  strengthening_not_yet_allowed: δεν επιτρέπεται ακόμη ενδυνάμωση
+  impact_not_allowed: δεν επιτρέπονται δραστηριότητες πρόσκρουσης
+  sport_not_allowed: δεν επιτρέπεται ακόμη αθλητική δραστηριότητα
+  written_protocol_available: διαθέσιμο γραπτό πρωτόκολλο
+  explicit_clinician_instruction_entered: καταγεγραμμένη ρητή κλινική οδηγία
+  patient_reported_instruction_only: οδηγία αναφερόμενη μόνο από τον ασθενή
+  none_available_or_not_stated: δεν υπάρχει διαθέσιμη οδηγία ή δεν έχει καταγραφεί
+  acute: οξεία φάση
+  early_rehabilitation: πρώιμη αποκατάσταση
+  progressive_loading: φάση προοδευτικής φόρτισης
+  return_to_running_or_sport: φάση επιστροφής σε τρέξιμο ή αθλητισμό
+  later_rehabilitation_with_residual_deficit: όψιμη αποκατάσταση με υπολειπόμενο έλλειμμα
+  clinically_assessed_muscle_strain: κλινικά αξιολογημένη μυϊκή θλάση
+  confirmed_partial_muscle_or_myotendinous_tear: επιβεβαιωμένη μερική μυϊκή ή μυοτενόντια ρήξη
+  confirmed_high_grade_muscle_or_myotendinous_tear_nonoperative: επιβεβαιωμένη υψηλού βαθμού μυϊκή/μυοτενόντια ρήξη υπό συντηρητική αντιμετώπιση
+  muscle_contusion: μυϊκή θλάση από άμεση πλήξη
+  established_intramuscular_or_intratendinous_injury: τεκμηριωμένη ενδομυϊκή ή ενδοτενόντια κάκωση
+  other_established_muscle_myotendinous_injury: άλλη τεκμηριωμένη μυϊκή/μυοτενόντια κάκωση
+  muscle_belly: μυϊκή γαστέρα
+  myofascial: μυοπεριτονιακή περιοχή
+  myotendinous_junction: μυοτενόντια συμβολή
+  intramuscular_tendon_or_intratendinous: ενδομυϊκός/ενδοτενόντιος τένοντας
+  proximal_tendon_region: εγγύς τενοντώδης περιοχή
+  distal_tendon_region: άπω τενοντώδης περιοχή
+  free_tendon_component: ελεύθερο τενοντώδες τμήμα
+  conservative_rehabilitation: συντηρητική αποκατάσταση
+  specialist_review_underway: βρίσκεται σε αξιολόγηση από ειδικό
+  postoperative_or_repair_protocol: μετεγχειρητικό πρωτόκολλο ή πρωτόκολλο μετά από συρραφή
+  available: διαθέσιμο
+  not_available: μη διαθέσιμο
+  reviewed_no_additional_restrictions: ελέγχθηκαν και δεν υπάρχουν πρόσθετοι περιορισμοί
+  reviewed_restrictions_present: ελέγχθηκαν και υπάρχουν περιορισμοί
+  yes: ναι
+  no: όχι
+  normal: φυσιολογικό
+  abnormal: παθολογικό
+  present: παρόν
+  absent: απουσιάζει
+
+route_detail_labels:
+  generalized_deconditioning_functional_decline: γενικευμένη αποδυνάμωση / λειτουργική έκπτωση
+  frailty_associated_functional_decline: λειτουργική έκπτωση σχετιζόμενη με τεκμηριωμένη ευπάθεια
+  balance_impairment_context: έλλειμμα ισορροπίας
+  gait_mobility_impairment_context: διαταραχή βάδισης ή κινητικότητας
+  post_illness_or_post_hospital_deconditioning_context: αποδυνάμωση μετά από νόσηση ή νοσηλεία
+  quadriceps_rectus_femoris_muscle_injury: κάκωση τετρακεφάλου / ορθού μηριαίου
+  acute_adductor_muscle_injury: οξεία κάκωση προσαγωγών
+  calf_muscle_myotendinous_injury: μυοτενόντια κάκωση γαστροκνημίου/υποκνημιδίου
+  hamstring_muscle_injury: κάκωση οπίσθιων μηριαίων
+  pectoralis_major_muscle_myotendinous_injury: μυοτενόντια κάκωση μείζονος θωρακικού
+  biceps_muscle_belly_myotendinous_injury: μυοτενόντια κάκωση δικεφάλου
+  abdominal_wall_muscle_injury: μυϊκή κάκωση κοιλιακού τοιχώματος
+  acute_hip_flexor_iliopsoas_muscle_injury: οξεία κάκωση καμπτήρων ισχίου / λαγονοψοΐτη
+  tibialis_anterior_muscle_myotendinous_injury: μυοτενόντια κάκωση πρόσθιου κνημιαίου
+  gluteal_muscle_injury: γλουτιαία μυϊκή κάκωση
+  other_thigh_muscle_injury: άλλη μυϊκή κάκωση μηρού
+  popliteus_muscle_injury: κάκωση ιγνυακού μυός
+  other_lower_leg_muscle_injury: άλλη μυϊκή κάκωση κνήμης
+  intrinsic_foot_muscle_injury: κάκωση ενδογενών μυών άκρου ποδός
+  latissimus_dorsi_or_teres_major_muscle_injury: κάκωση πλατύ ραχιαίου ή μείζονος στρογγύλου
+  triceps_muscle_belly_or_myotendinous_injury: μυοτενόντια κάκωση τρικεφάλου
+  forearm_muscle_strain: μυϊκή θλάση αντιβραχίου
+  other_upper_limb_or_trunk_muscle_injury: άλλη μυϊκή κάκωση άνω άκρου ή κορμού
+  other_lower_limb_muscle_injury: άλλη μυϊκή κάκωση κάτω άκρου
+  distal_radius_fracture: κάταγμα περιφερικού άκρου κερκίδας
+  proximal_humerus_fracture: κάταγμα εγγύς βραχιονίου
+  clavicle_fracture: κάταγμα κλείδας
+  patella_fracture: κάταγμα επιγονατίδας
+  lateral_malleolus_fracture: κάταγμα έξω σφυρού
+  medial_malleolus_fracture: κάταγμα έσω σφυρού
+  bimalleolar_or_trimalleolar_fracture: αμφισφύριο ή τρισφύριο κάταγμα
+  calcaneus_fracture: κάταγμα πτέρνας
+  anterior_process_calcaneus_fracture: κάταγμα πρόσθιας απόφυσης πτέρνας
+  fifth_metatarsal_fracture: κάταγμα 5ου μεταταρσίου
+  other_metatarsal_fracture: κάταγμα μεταταρσίου
+  thoracic_or_lumbar_vertebral_compression_fragility_fracture: συμπιεστικό κάταγμα θωρακικού/οσφυϊκού σπονδύλου ευθραυστότητας
+
+neurological_keys:
+  motor: κινητικότητα/μυϊκή ισχύς
+  sensory: αισθητικότητα
+  reflexes: αντανακλαστικά

@@ -1,0 +1,14 @@
+version: cu1_referral_language_el_corrections_v1
+language: el
+status: maintenance_formatter_overlay
+
+findings:
+  fadIR_or_faber_provocation_finding: θετικό προκλητικό εύρημα FADIR ή FABER
+
+adjuncts:
+  dry_needling: τεχνική ξηράς βελόνας (dry needling)
+  taping: λειτουργική περίδεση (taping)
+
+measurements:
+  timed_up_and_go: δοκιμασία Timed Up and Go
+  mini_bestest: δοκιμασία Mini-BESTest
