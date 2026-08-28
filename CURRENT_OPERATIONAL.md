@@ -1,57 +1,33 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** ACTIVE OPERATIONAL AUTHORITY — CU-1 DESIGN GATE = `BLOCK`; TRANCHE2 PROMOTION = `PASS`; TRANCHE3 PROMOTION = `PASS`.
+> **STATUS:** ACTIVE OPERATIONAL AUTHORITY — CU-1 DESIGN GATE = `BLOCK`; TRANCHE2 = `PASS`; TRANCHE3 = `PASS`; SHARD INTEGRATION = `PASS`.
 > **Updated:** 2026-08-29 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Verified current remote `main`:** `08ecd3ab33e98d567c47042a8a1de482df6952b9`.
-> **Current major phase:** CU-1 clinician-quality pre-runtime design hardening — history + criteria-based rehabilitation + route/subtype-specific evidence.
-> **CU-1 status:** REOPENED / ACTIVE DESIGN HARDENING / EXACT OVERALL DESIGN GATE BLOCKED.
+> **Verified remote `main`:** `08ecd3ab33e98d567c47042a8a1de482df6952b9`.
 > **ACTIVE CANONICAL WRITER/LOCK:** `design/cu1-history-evidence-timeline-2026-08-28`.
 > **ACTIVE RUNTIME WRITER/LOCK:** NONE.
-> **PR #63:** draft; design-only; tranche3 promotion/matrix reconciliation reviewed through head `283c2769f88dbc77851e0463b33aa6f9adcd681f` before this canonical reconciliation commit.
+> **PR #63:** draft / design-only; exact head immediately before this operational reconciliation commit: `6252f4b6662f5c346476288cf13590fa99702dc0`.
 > **Runtime evidence-aware generation:** NOT AUTHORIZED.
 > **CU-2:** NOT AUTHORIZED.
 > **PR-1 Transcript Intake:** intentionally paused.
 
 ---
 
-# 1. Why CU-1 remains open
+# 1. Current phase
 
-Clinician review identified three structural deficits after the prior formatter/dynamic-form work:
+CU-1 remains open because clinician review required:
 
 ```text
-1. referral history was not coherent enough
-2. goals were flat rather than criteria-based rehabilitation progression
-3. rehabilitation directions were not explicitly route/subtype-linked to current evidence
+coherent structured HISTORY
++ criteria-based / evidence-bounded rehabilitation progression
++ route/subtype-specific literature provenance
 ```
 
-The design-object and evidence-shard architecture is now hardened, but routine-route coverage and route-complete evidence-bounded composition are not yet complete.
+The object/evidence architecture and all currently listed evidence shards are now reviewed. The remaining work is route-content completeness, route-specific history prompts and route-complete regression fixtures.
 
 ---
 
-# 2. Proven design-object semantics
-
-Frozen design objects:
-
-```text
-ReferralHistoryV2 with explicit provenance
-HistoryProvenanceEntryV1
-RouteHistoryPromptV1
-RehabilitationSequenceV1
-RehabilitationPhaseV1
-InterventionDirectionV1
-RehabilitationCriterionV1
-GoalPlanV2
-ReassessmentPlanV2
-AuthorityReferenceV1
-ProtocolConstraintV1
-ClinicianModificationV1
-EvidenceSourceV1
-EvidenceClaimV1
-RouteEvidenceProfileV1
-```
-
-Proven invariants include:
+# 2. Proven design invariants
 
 ```text
 missing history != negative history
@@ -60,125 +36,57 @@ approximate duration != inferred exact date
 progression != elapsed time alone
 route A evidence != route B evidence
 subtype A authority != subtype B authority
+clinician_ui_only != rendered referral authority
 therapist_execution_detail != automatic referral_core
-clinician_ui_only != automatic referral_core
 clinician instruction != evidence recommendation
-patient-specific written protocol != literature recommendation
+patient-specific protocol != literature recommendation
 explicit written protocol/healing restriction > conflicting route default
 framework-specific strength != synthetic cross-framework strength
-consensus/clinical opinion != low-certainty trial evidence
+expert consensus / clinical opinion != low-certainty trial evidence
 ```
+
+Frozen objects include `ReferralHistoryV2`, `RouteHistoryPromptV1`, `RehabilitationSequenceV1`, `RehabilitationPhaseV1`, `GoalPlanV2`, `ReassessmentPlanV2`, `AuthorityReferenceV1`, `ProtocolConstraintV1`, `ClinicianModificationV1`, `EvidenceSourceV1`, `EvidenceClaimV1` and `RouteEvidenceProfileV1`.
 
 No patient identifiers were added.
 
 ---
 
-# 3. Current design/evidence artifacts
+# 3. Normative evidence corpus
 
-Human contract:
-
-```text
-clinic_utilities/contracts/CU1_HISTORY_EVIDENCE_TIMELINE_V1.md
-```
-
-Machine design schema:
-
-```text
-clinic_utilities/contracts/cu1_history_timeline_schema_v1.yaml
-```
-
-Evidence manifest:
+Manifest:
 
 ```text
 clinic_utilities/contracts/cu1_evidence_manifest_v1.yaml
 ```
 
-Active core evidence shard:
-
-```text
-clinic_utilities/contracts/cu1_evidence_registry_v1.yaml
-```
-
-Promoted tranche2:
-
-```text
-clinic_utilities/contracts/cu1_evidence_tranche2_v1.yaml
-+ clinic_utilities/contracts/cu1_evidence_tranche2_promotion_v1.yaml
-+ clinic_utilities/contracts/CU1_TRANCHE2_PROMOTION_REVIEW_2026-08-28.md
-```
-
-Promoted tranche3:
-
-```text
-clinic_utilities/contracts/cu1_evidence_tranche3_v1.yaml
-+ clinic_utilities/contracts/cu1_evidence_tranche3_promotion_v1.yaml
-+ clinic_utilities/contracts/cu1_evidence_tranche3_promotion_fix_v1.yaml
-+ clinic_utilities/contracts/CU1_TRANCHE3_PROMOTION_REVIEW_2026-08-29.md
-```
-
-Route work queue:
-
-```text
-clinic_utilities/contracts/cu1_evidence_coverage_matrix_v1.yaml
-```
-
-Synthetic semantic fixtures:
-
-```text
-clinic_utilities/contracts/cu1_history_evidence_fixtures_v1.yaml
-```
-
-Prior overall exact-gate report:
-
-```text
-clinic_utilities/contracts/CU1_DESIGN_COMPLETENESS_REVIEW_2026-08-28.md
-```
-
-That prior report predates tranche3 promotion. Its overall `BLOCK` remains directionally correct, but its tranche3-integration failure has now been resolved and the overall exact gate must be rerun only after the remaining route work is completed.
-
----
-
-# 4. Evidence corpus state
-
-Current normative design-time evidence state:
+Current logical shards:
 
 ```text
 core_seed_registry
 → ACTIVE DESIGN AUTHORITY
-→ schema reviewed
+→ native schema review PASS
 
 high_frequency_tranche2
 → ACTIVE DESIGN AUTHORITY
-→ immutable staging source + reviewed promotion projection
-→ promotion gate PASS
+→ cu1_evidence_tranche2_v1.yaml
+→ cu1_evidence_tranche2_promotion_v1.yaml
+→ CU1_TRANCHE2_PROMOTION_REVIEW_2026-08-28.md
+→ PASS
 
 shoulder_hip_meniscus_tranche3
 → ACTIVE DESIGN AUTHORITY
-→ immutable staging source + reviewed promotion projection + mandatory exact-review overlay
-→ promotion gate PASS
+→ cu1_evidence_tranche3_v1.yaml
+→ cu1_evidence_tranche3_promotion_v1.yaml
+→ cu1_evidence_tranche3_promotion_fix_v1.yaml
+→ CU1_TRANCHE3_PROMOTION_REVIEW_2026-08-29.md
+→ PASS
 ```
 
-All currently listed shards have passed their native or reviewed promotion/schema gate. Only active design-authority shards participate in the normative logical design registry.
+All listed shards have passed their native or reviewed promotion/schema gate. No staged shard currently remains in the manifest.
 
 ---
 
-# 5. Tranche2 promotion — proven
-
-Formal result:
-
-```text
-TRANCHE2 PROMOTION = PASS
-STATE               = ACTIVE DESIGN AUTHORITY
-RUNTIME AUTHORIZED  = NO
-```
-
-Material corrections included plantar-heel orthosis framework separation, AAOS/EULAR knee-OA separation, 2025 Dutch PFP framework addition without silent replacement of APTA 2019, lumbar-stenosis output-scope correction and source-identity hardening.
-
----
-
-# 6. Tranche3 promotion — proven
-
-Formal review result:
+# 4. Tranche3 promotion — exact result
 
 ```text
 identity materialization                      PASS
@@ -199,39 +107,36 @@ ROUTE COMPLETION IMPLIED                      NO
 RUNTIME AUTHORIZED                            NO
 ```
 
-Material tranche3 corrections:
+Material corrections before promotion:
 
 ```text
 acute isolated meniscus
-→ AAOS PT / displaced-ROM-block statements preserved as workgroup clinical opinion / consensus
-→ clinician_ui_only safety-authority leak removed
-→ routine sequence scoped to acute isolated non-displaced non-repair-candidate nonoperative context
+→ AAOS PT and displaced/ROM-block statements preserved as clinical opinion/consensus
+→ prior clinician_ui_only rendered safety leak removed
+→ routine sequence limited to acute isolated non-displaced non-repair-candidate nonoperative context
 
 nonarthritic intra-articular hip
-→ synthetic C_or_lower strength removed
-→ exact Grade B / Grade C distinctions preserved
+→ synthetic C_or_lower grade removed
+→ exact Grade B / C distinctions preserved
 → unsupported route-wide progression criterion removed
-→ FAIS impingement and instability capsuloligamentous precautions separated
-→ other established nonarthritic conditions remain outside automatic sequence applicability
+→ FAIS impingement vs hip-instability precautions separated
+→ other established intra-articular conditions not silently covered by the sequence
 
 GTPS / gluteal tendinopathy
-→ canonical `formal_GTPS_diagnosis` identity restored
-→ GTPS and formal gluteal-tendinopathy exercise authorities kept population-specific
-→ formal trochanteric bursitis / other greater-trochanteric disorder not silently covered
+→ exact canonical `formal_GTPS_diagnosis` restored
+→ GTPS and gluteal-tendinopathy evidence kept population-specific
+→ formal trochanteric bursitis / other greater-trochanteric disorders not silently covered
 
-posterior shoulder instability
-→ 2025 Part I + Part II expert consensus preserved as expert consensus
+shoulder instability
+→ traumatic-anterior and posterior authorities remain direction/context specific
+→ posterior literature remains expert consensus
 → no universal initial rehabilitation sequence invented
 
-traumatic anterior shoulder instability
-→ 2026 publication of 2024 ESSKA-ESA consensus retained only for traumatic-anterior scope
-→ posterior/multidirectional and operative/nonoperative contexts not collapsed
-
 adhesive capsulitis / frozen shoulder
-→ stale 'no current CPG' gap removed
-→ Korean 2025 CPG + BESS 2025 pathway added with 2023 SR context
+→ 2025 Korean CPG + BESS pathway added
+→ 2023 SR retained as supporting context
 → supervised-PT uncertainty preserved
-→ no universal criteria-based phase sequence invented
+→ no universal criteria-based progression sequence invented
 
 full-thickness rotator-cuff tear — nonoperative
 → AAOS 2025 PT benefit for patient-reported outcomes preserved
@@ -241,117 +146,67 @@ full-thickness rotator-cuff tear — nonoperative
 
 ---
 
-# 7. Current route evidence progress
-
-The normalized logical evidence registry now has reviewed authority for core/tranche2/tranche3 profiles including:
+# 5. Current overall gate
 
 ```text
-deep-gluteal presentation
-nonspecific low-back pain
-low-back pain with radiating leg symptoms
-lumbar stenosis / neurogenic claudication
-rotator-cuff-related shoulder pain
-full-thickness rotator-cuff tear — nonoperative
-adhesive capsulitis / frozen shoulder
-traumatic anterior shoulder-instability evidence profile
-posterior shoulder-instability evidence profile
-lateral elbow tendinopathy
-carpal tunnel evidence-gap profile
-De Quervain evidence-gap profile
-knee osteoarthritis
-patellofemoral pain
-acute isolated meniscus — selected nonoperative context
-nonarthritic intra-articular hip — reviewed applicable scope
-GTPS / formal gluteal tendinopathy scope
-lateral ankle sprain
-midportion Achilles
-insertional Achilles
-plantar heel pain / plantar fasciitis
+object/history/evidence-authority semantics   PASS
+element-level evidence provenance             PASS
+protocol override model                       PASS
+tranche2 promotion                            PASS
+tranche3 promotion                            PASS
+shard integration                             PASS
+
+routine-route evidence coverage               FAIL
+route-specific history prompt coverage         FAIL
+route-complete fixture corpus                  FAIL
+several route progression/evidence gaps        BLOCKED / EXPLICIT
+
+FINAL RESULT                                   BLOCK
+DESIGN-COMPLETE                                NO
+RUNTIME AUTHORIZED                             NO
 ```
 
-Evidence authority does not imply route completeness.
+The prior tranche3-integration blocker is closed. The remaining block is route-content completeness.
 
 ---
 
-# 8. Exact overall design gate state after tranche3 promotion
-
-Current state:
-
-```text
-ReferralHistoryV2 semantics                 PASS
-RehabilitationSequence object semantics     PASS
-GoalPlanV2 / ReassessmentPlanV2 semantics   PASS
-EvidenceSource / EvidenceClaim schema        PASS
-Element-level evidence provenance            PASS
-Protocol override model                      PASS
-Active-core output-scope audit               PASS
-Subtype-boundary architecture                PASS
-Evidence freshness architecture              PASS
-Tranche2 promotion                           PASS
-Tranche3 promotion                           PASS
-Shard integration                            PASS
-
-Routine-route evidence coverage              FAIL
-Route-specific history prompt coverage        FAIL
-Route-complete fixture corpus                 FAIL
-Several route progression/evidence gaps       BLOCKED / EXPLICIT
-
-FINAL RESULT                                  BLOCK
-DESIGN-COMPLETE                               NO
-RUNTIME AUTHORIZED                            NO
-```
-
-The prior tranche3-integration blocker is closed. The remaining block is now route-content completeness, not shard integration.
-
----
-
-# 9. Concrete evidence blocks preserved
+# 6. Preserved evidence-gap behavior
 
 Examples:
 
 ```text
 DGS
-→ low-quality conservative evidence
 → no validated disease-specific progression thresholds
 
 De Quervain
-→ comparative evidence centers on injection/orthosis
-→ active progressive rehabilitation sequence not established
+→ no validated active progressive rehabilitation sequence
 
 carpal tunnel syndrome
-→ current management guideline is authoritative for medical management
-→ no validated CU-1-style criteria-based PT sequence established by reviewed authority
+→ no validated CU-1-style criteria-based PT sequence from reviewed authority
 
-acute isolated meniscal injury
-→ selected non-displaced nonoperative PT wording is consensus/clinical opinion
+acute isolated meniscus
+→ selected PT wording is consensus/clinical opinion
 → no validated staged progression sequence
 
 glenohumeral instability
-→ direction, recurrence, age, structural context and operative/nonoperative pathway are material
-→ no single generic route-level sequence
+→ direction/recurrence/age/structural/operative context material
+→ no single generic route sequence
 
 adhesive capsulitis
 → current 2025 guidance exists
-→ no single validated universal criteria-based progression sequence
+→ no single validated universal phase progression
 
 glenohumeral OA
-→ PT may benefit selected patients by AAOS consensus
-→ no reliable evidence-derived route progression sequence
+→ PT guidance remains consensus-level without route-specific progression sequence
 ```
 
-The correct response remains explicit evidence limitation, not a generic invented sequence.
+No generic MSK fallback is permitted.
 
 ---
 
-# 10. Exact next authorized action
+# 7. Exact next authorized action
 
-Continue on the existing writer only:
-
-```text
-design/cu1-history-evidence-timeline-2026-08-28
-```
-
-Next route-coverage order from the reconciled matrix:
+Continue only on the existing writer, route-by-route from the reconciled matrix:
 
 ```text
 1. calcific_rotator_cuff_tendinopathy
@@ -363,34 +218,33 @@ Next route-coverage order from the reconciled matrix:
 7. cervical_routes
 8. remaining_wrist_hand_and_elbow_routes
 9. remaining routine routes in registry order
-10. complete route-specific history prompts and matching fixtures alongside each route
-11. rerun exact design-completeness review
-12. STOP only at DESIGN-COMPLETE or a newly specific BLOCK
+10. define reviewed evidence-gap behavior where full staging is unsupported
+11. complete route-specific history prompts + matching fixtures alongside route curation
+12. rerun exact design-completeness review
+13. STOP only at DESIGN-COMPLETE or a newly specific BLOCK
 ```
-
-For every route, preserve explicit evidence-gap behavior when evidence does not support a full staged sequence.
 
 ---
 
-# 11. Explicitly forbidden
+# 8. Explicitly forbidden
 
 ```text
 WRITE runtime evidence recommendation logic
-WRITE runtime formatter integration for this evidence corpus
+WRITE runtime formatter integration
 CHANGE persistence/retention behavior
-USE a generic MSK rehabilitation fallback
+USE generic MSK rehabilitation fallback
 INVENT progression thresholds
 USE elapsed time alone as universal progression criterion
 LABEL clinician preference as guideline recommendation
-LABEL therapist-execution detail as physician prescription by default
+LABEL therapist execution detail as physician prescription by default
 USE evidence across a noncovered subtype
-MERGE PR #63 merely because shard promotion gates passed
+MERGE PR #63 merely because shard integration passed
 OPEN CU-2
 RESTART PR-1
 ```
 
 ---
 
-# 12. Continuity rule
+# 9. Continuity rule
 
-A fresh session must repeat the six-canonical bootstrap, verify the then-current remote `main` and PR #63 head, inspect this exact `BLOCK` state and continue the remaining route-coverage/history-prompt/fixture work only on the existing CU-1 design writer unless the canonical lock has changed.
+A fresh session must repeat the six-canonical bootstrap, verify the then-current remote `main` and PR #63 head, inspect this exact `BLOCK`, and continue only the route-coverage/history-prompt/fixture work on the existing CU-1 design writer unless the canonical lock changes.
