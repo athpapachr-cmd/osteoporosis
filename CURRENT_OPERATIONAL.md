@@ -6,7 +6,7 @@
 > **Verified remote `main`:** `08ecd3ab33e98d567c47042a8a1de482df6952b9`.
 > **ACTIVE CANONICAL WRITER/LOCK:** `design/cu1-history-evidence-timeline-2026-08-28`.
 > **ACTIVE RUNTIME WRITER/LOCK:** NONE.
-> **PR #63:** draft / design-only; exact head immediately before this operational reconciliation commit: `6252f4b6662f5c346476288cf13590fa99702dc0`.
+> **PR #63:** draft / design-only; exact head immediately before this operational closeout commit: `be9955f4ca3bf34350d68922641587eb15c65723`.
 > **Runtime evidence-aware generation:** NOT AUTHORIZED.
 > **CU-2:** NOT AUTHORIZED.
 > **PR-1 Transcript Intake:** intentionally paused.
