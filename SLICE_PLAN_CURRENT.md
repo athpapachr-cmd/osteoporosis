@@ -1,16 +1,15 @@
-# SLICE_PLAN_CURRENT.md — CU-1 Greek human referral formatting maintenance v1
+# SLICE_PLAN_CURRENT.md — CU-1 dynamic relevant-field UX maintenance v1
 
 > **STATUS:** ACTIVE MAINTENANCE IMPLEMENTATION.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Parent product:** Personal Clinical Excellence System.
 > **Area:** Clinic Utilities / Clinical Operations.
-> **Slice ID:** CU-1 formatter-quality maintenance v1.
-> **Maintenance base:** `d1716f8ea889a9369367c3bb18e469e9bbfef9f0`.
-> **Writer:** `fix/cu1-greek-human-referral-formatting-2026-08-28`.
+> **Slice ID:** CU-1 dynamic-form maintenance v1.
+> **Maintenance base:** `58f41b5b29ee61280f1557df480989c5830465ba`.
+> **Writer:** `fix/cu1-dynamic-relevant-fields-2026-08-28`.
 > **Clinical taxonomy:** frozen and unchanged.
 > **Machine contract entrypoint:** `clinic_utilities/contracts/cu1_contract_manifest_v1.yaml`.
-> **Formatter amendment:** `clinic_utilities/contracts/CU1_FORMATTER_LANGUAGE_EL_V1.md`.
-> **Prior runtime slice:** CU-1 runtime v1 remains technically implemented/deployed but clinician-facing formatter acceptance failed.
+> **Prior formatter maintenance:** merged in PR #61; final clinician prose acceptance still pending.
 > **CU-2:** not authorized.
 > **PR-1:** remains paused.
 
@@ -18,84 +17,49 @@
 
 # 1. Problem
 
-The deployed CU-1 runtime produces technically valid referrals but the actual prose is not acceptable as a clinician-authored referral.
-
-Observed defects:
+The current browser UI presents machine-contract catalogs as if they were one universal clinical form. That creates two defects:
 
 ```text
-machine-like field serialization
-English/machine-derived phrases in generated text
-insufficient semantic/structural difference between Short and Detailed
+A. irrelevant controls are visible for the selected clinical problem
+B. routine referral generation can be blocked by interaction friction rather than a true safety requirement
 ```
 
-The defect is in the formatter/display layer. It does not demonstrate a taxonomy, routing, safety, validation or persistence defect.
+For example, an elbow referral should not display walking, stair, lower-limb loading or cervical-only options.
 
 ---
 
 # 2. Objective
 
-Deliver clinician-facing Greek referral text that is immediately usable after generation.
+Convert CU-1 from a global contract inspector into a clinician-facing adaptive referral builder.
 
 ```text
-validated ReferralDraftV1
-→ unchanged clinical/safety semantics
-→ Greek clinician-facing phrase resolution
-→ natural Short or Detailed referral composition
-→ copy / print
+region
+→ pathway
+→ safest allowed wording mode
+→ only relevant optional findings/function/goals/rehab
+→ only route-triggered structural/safety context
+→ generate
 ```
 
-No raw machine ID may appear in final referral prose.
+The browser remains ephemeral and deterministic.
 
 ---
 
-# 3. Short formatter contract
+# 3. Progressive-disclosure contract
 
-Short output should read like a routine referral written by a clinician.
+## 3.1 Before region/pathway selection
 
-Target:
+Do not render downstream clinical catalogs.
 
-```text
-2–4 compact sentences
-problem/presentation + laterality
-most actionable findings/function
-request for selected rehabilitation goals/directions
-material restrictions if present
-optional clinician note
-```
+## 3.2 After region selection
 
-It should not be a list of labeled database fields.
+Show only the routes for that region.
 
----
+## 3.3 After route selection
 
-# 4. Detailed formatter contract
+Render only the option IDs allowed by a versioned UI relevance scope for the selected profile, with optional route-specific additions/removals.
 
-Detailed output should have a clearly different structure and information density.
-
-Default shape:
-
-```text
-ΠΑΡΑΠΟΜΠΗ ΓΙΑ ΦΥΣΙΟΘΕΡΑΠΕΙΑ
-
-Κλινική εικόνα
-<problem + selected findings + functional impact + relevant secondary/context>
-
-Περιορισμοί / προφυλάξεις
-<only if present>
-
-Στόχοι και κατευθύνσεις αποκατάστασης
-<selected goals + core rehab directions + adjuncts only when explicitly selected>
-
-Πρόσθετα κλινικά στοιχεία
-<measurements, structural/postoperative context, clinician free text when useful>
-```
-
-Detailed output must contain materially more selected information than Short when such information exists, while retaining natural medical prose.
-
----
-
-# 5. Greek phrase authority
-
-Create a versioned machine-readable Greek phrase catalog for every selectable ID that can be rendered:
+Relevant domains:
 
 ```text
 findings
@@ -103,85 +67,100 @@ functional impairments
 goals
 rehab directions
 adjuncts
-restrictions
-measurements
-relevant context values
-safety disposition wording if rendered
+explicit restrictions
+safety concerns
 ```
 
-Rules:
+A global machine option catalog remains validation authority but is not the presentation menu.
+
+## 3.4 Structural/postoperative context
+
+Special context fields appear only when triggered by the selected route/wording/profile.
+
+Examples:
 
 ```text
-known renderable id + Greek label → render Greek phrase
-known renderable id + missing Greek label → formatter contract error / fail closed
-unknown id → existing validation already blocks
-_humanize_id() must never be the final generated-referral fallback
+routine elbow tendinopathy → no fracture/loading/protocol fields
+postoperative elbow rehabilitation → procedure/protocol/restriction context
+shared fracture → fracture-specific status and limb/site-dependent loading/use controls
+radicular cervical/lumbar presentation → neurological screen
+shared muscle injury → muscle/injury/management context
 ```
-
-Profile route display labels may be sourced from frozen profile display text when already Greek.
 
 ---
 
-# 6. Invariants preserved
+# 4. Generation-first interaction
+
+For routine routes:
 
 ```text
-suggested != examined
-suggested != selected
-selected != mandatory
-symptom != diagnosis
-objective deficit != subjective symptom
-provocation/test finding != diagnosis
-imaging finding != automatically symptomatic diagnosis
-not_assessed != normal
-adjunct != core rehabilitation
-clinician-entered diagnosis may be carried faithfully but must not be inferred
-explicit restrictions retain precedence
-safety generation blocks remain unchanged
-no persistence
+profile + route
+→ auto-select presentation wording when available
+→ allow immediate basic referral generation
 ```
+
+Optional findings, function, goals and rehab selections enrich the referral but do not block it.
+
+If presentation wording is unavailable, choose the least inferential allowed mode that is already asserted by explicit route selection (for example established structural diagnosis). Formal-diagnosis mode that requires a separate clinician assertion must still request that assertion.
+
+No software-generated diagnosis assertion is allowed.
+
+---
+
+# 5. True blocking fields
+
+Retain blocking only when required by the frozen semantic/safety contract, including:
+
+```text
+formal diagnostic assertion when required
+established diagnosis/nonoperative disposition where explicitly required
+postoperative procedure/protocol/restriction state
+fracture healing/loading/use state where required
+shared muscle structural/management context where required
+active safety-rule acknowledgement/disposition
+```
+
+The UI must explain missing required fields in plain Greek and visually surface the exact relevant control.
+
+---
+
+# 6. Advanced controls
+
+Global safety and manual canonical-context tools must not dominate routine workflow.
+
+They may remain available under an explicitly collapsed advanced section for unusual clinician-entered context, but they must not expose unrelated routine choices by default.
 
 ---
 
 # 7. Acceptance evidence
 
-Executable tests must prove:
+Tests must prove at minimum:
 
 ```text
-1. representative outputs are Greek and natural
-2. machine IDs/underscores do not leak into final prose
-3. Short and Detailed are both deterministic
-4. Short and Detailed are materially different for a rich draft
-5. Detailed carries extra context/measurements/secondary problem when supplied
-6. Short remains compact while retaining material restrictions
-7. route labels/laterality are rendered naturally in Greek
-8. not_assessed/unselected never generate reassuring negatives
-9. existing gateway/safety/no-persistence suites remain green
+1. elbow scope excludes walking/stairs/weight-bearing/cervical traction
+2. cervical scope excludes lower-limb-only function/loading options
+3. knee scope includes walking/stairs/squat and excludes upper-limb gripping/dexterity
+4. routine elbow referral can generate with no optional findings/goals/rehab selected
+5. presentation wording auto-selects when available
+6. structural/postoperative requirements still block when genuinely missing
+7. irrelevant context cards stay hidden
+8. no hidden stale selection leaks when profile/route changes
+9. existing gateway/safety/formatter/no-persistence tests remain green
+10. generated prose remains Greek and deterministic
 ```
-
-Representative output tests:
-
-```text
-knee OA
-cervical nonspecific pain
-lumbar nonspecific pain
-shared fracture + restriction
-shared muscle injury
-postoperative rehabilitation
-```
-
-Product-owner browser smoke after deploy must include visual inspection of the actual generated prose, not merely successful button execution.
 
 ---
 
 # 8. REPLAN triggers
 
-STOP and replan rather than silently expanding scope if:
+STOP and replan if dynamic scoping would require:
 
 ```text
-natural Greek prose requires changing clinical taxonomy
-formatter needs to infer unselected findings/diagnoses
-clinical-profile wording contradicts the machine contract
-required Greek phrasing introduces a new clinical recommendation
+new clinical recommendations
+new machine IDs
+changing route ownership
+weakening a genuine safety requirement
+inferring a diagnosis or examination finding
 ```
 
 ---
@@ -194,5 +173,3 @@ implementation
 → independent exact-head review
 → MERGE-READY or BLOCK
 ```
-
-Merge/deploy and final product-owner prose acceptance occur only after that gate.

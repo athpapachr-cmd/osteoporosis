@@ -1,7 +1,7 @@
 version: cu1_route_requirements_correction_v1
-status: frozen_pre_code_design
+status: maintenance_corrected_contract
 applies_to: cu1_route_requirements_v1
-scope: exact_two_transcription_corrections_found_in_final_review
+scope: exact_contract_corrections_found_in_review_and_product_use
 
 corrections:
   shared_context_requirements.shared_muscle_myotendinous.conditional_requirements:
@@ -10,7 +10,10 @@ corrections:
   shared_context_requirements.shared_muscle_myotendinous.safety_boundary.unresolved_major_avulsion_or_rupture:
     replace_with: acute_unresolved_tendon_rupture_or_major_avulsion_concern
     value_type: canonical_safety_input_flag_id
-    reason: prior_value_was_an_invalid_artifact_path; the semantic value_is_the_closed_flag_id_from_cu1_rule_catalog_v1
+    reason: prior_value_was_an_invalid_artifact_path; the_semantic_value_is_the_closed_flag_id_from_cu1_rule_catalog_v1
+  base_requirements.required_fields:
+    replace_with: [primary_problem.profile_id, primary_problem.route_id, primary_problem.wording_mode]
+    reason: laterality_has_an_explicit_not_stated_enum_value_and_is_not_a_universal_safety_prerequisite; treating_not_stated_as_missing_created_avoidable_routine_generation_blocking
 
 precedence:
   rule: this_correction_artifact_overrides_only_the_exact_paths_listed_above
@@ -20,6 +23,8 @@ clinical_meaning:
   new_clinical_requirement_added: false
   existing_optional_imaging_context_preserved: true
   unresolved_major_avulsion_safety_boundary_preserved: true
+  laterality_remains_available_and_enum_validated: true
+  unspecified_laterality_does_not_assert_bilateral_or_midline_disease: true
 
 runtime_policy:
   apply_corrections_before_route_validation: true

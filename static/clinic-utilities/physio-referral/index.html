@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Physiotherapy Referral v2 — Clinical Excellence</title>
+  <title>Παραπεμπτικό Φυσιοθεραπείας — Clinical Excellence</title>
   <meta name="description" content="CU-1 Physiotherapy Referral v2" />
   <link rel="stylesheet" href="/static/clinic-utilities/physio-referral/styles.css" />
 </head>
@@ -13,42 +13,42 @@
       <div>
         <a class="back-link" href="/">← Clinical Excellence</a>
         <h1>Παραπεμπτικό Φυσιοθεραπείας</h1>
-        <p>CU-1 · structured referral generator · ephemeral session</p>
+        <p>Δυναμική φόρμα · εμφανίζει μόνο ό,τι σχετίζεται με την επιλογή σου</p>
       </div>
-      <div class="status-pill" id="contractStatus">φόρτωση contract…</div>
+      <div class="status-pill" id="contractStatus">φόρτωση…</div>
     </header>
 
     <section class="privacy-note">
       <strong>Ephemeral χρήση.</strong>
-      Τα δεδομένα αυτής της φόρμας δεν αποθηκεύονται σε PostgreSQL, localStorage ή sessionStorage. Κλείσιμο/refresh της σελίδας καθαρίζει το draft.
+      Τα δεδομένα της φόρμας δεν αποθηκεύονται. Κλείσιμο ή refresh καθαρίζει το draft.
     </section>
 
     <main class="workspace">
       <section class="builder">
-        <article class="card">
+        <article class="card" id="problemCard">
           <div class="card-title">
             <span class="step">1</span>
-            <div><h2>Κύριο πρόβλημα</h2><p>Επίλεξε profile, pathway, wording και πλευρά.</p></div>
+            <div><h2>Τι παραπέμπεις;</h2><p>Επίλεξε περιοχή και πάθηση. Τα υπόλοιπα πεδία προσαρμόζονται αυτόματα.</p></div>
           </div>
           <div class="grid two">
             <label>Περιοχή
               <select id="profileSelect"><option value="">Επίλεξε…</option></select>
             </label>
-            <label>Pathway
+            <label>Πάθηση / κλινικό pathway
               <select id="routeSelect" disabled><option value="">Επίλεξε περιοχή πρώτα</option></select>
             </label>
-            <label>Wording mode
-              <select id="wordingSelect" disabled><option value="">Επίλεξε pathway πρώτα</option></select>
+            <label id="wordingWrap" hidden>Τρόπος διατύπωσης
+              <select id="wordingSelect"></select>
             </label>
-            <label>Πλευρά
+            <label id="lateralityWrap" hidden>Πλευρά
               <select id="lateralitySelect"></select>
             </label>
-            <label id="subtypeWrap" hidden>Subtype
+            <label id="subtypeWrap" hidden>Υποτύπος
               <select id="subtypeSelect"></select>
             </label>
-            <label id="assertionWrap" hidden>Ρητή κλινική διάγνωση
+            <label id="assertionWrap" hidden>Η διάγνωση έχει τεθεί κλινικά;
               <select id="assertionSelect">
-                <option value="not_stated">Δεν δηλώνεται</option>
+                <option value="not_stated">Επίλεξε…</option>
                 <option value="yes">Ναι</option>
                 <option value="no">Όχι</option>
               </select>
@@ -56,119 +56,128 @@
           </div>
         </article>
 
-        <article class="card" id="contextCard">
+        <article class="card" id="contextCard" hidden>
           <div class="card-title">
             <span class="step">2</span>
-            <div><h2>Κλινικό / δομικό πλαίσιο</h2><p>Εμφανίζονται μόνο πεδία που μπορεί να απαιτούνται από το frozen contract.</p></div>
+            <div><h2>Απαραίτητο ειδικό πλαίσιο</h2><p>Αυτά τα πεδία εμφανίζονται μόνο επειδή σχετίζονται με τη συγκεκριμένη επιλογή.</p></div>
           </div>
           <div id="contextFields" class="grid two"></div>
-          <details class="advanced-context">
-            <summary>Πρόσθετο canonical context</summary>
-            <div class="grid two compact-top">
-              <label>Context key<input id="extraContextKey" type="text" placeholder="π.χ. management_context" /></label>
-              <label>Value<input id="extraContextValue" type="text" placeholder="canonical value" /></label>
-            </div>
-            <button type="button" class="btn secondary small" id="addContextBtn">Προσθήκη context</button>
-            <div id="extraContextList" class="chip-list"></div>
-          </details>
         </article>
 
-        <article class="card">
+        <article class="card" id="findingsCard" hidden>
           <div class="card-title">
             <span class="step">3</span>
-            <div><h2>Ευρήματα & λειτουργία</h2><p>Τίποτα δεν προεπιλέγεται και η μη επιλογή δεν σημαίνει φυσιολογικό.</p></div>
+            <div><h2>Ευρήματα & λειτουργία <small>(προαιρετικά)</small></h2><p>Επίλεξε μόνο όσα θέλεις να μεταφερθούν στο παραπεμπτικό.</p></div>
           </div>
-          <div class="section-block">
-            <h3>Ευρήματα</h3>
+          <div class="section-block" id="findingsBlock">
+            <h3>Σχετικά ευρήματα</h3>
             <div id="findingsOptions" class="check-grid"></div>
           </div>
-          <div class="section-block">
-            <h3>Λειτουργικοί περιορισμοί</h3>
+          <div class="section-block" id="functionBlock">
+            <h3>Σχετικοί λειτουργικοί περιορισμοί</h3>
             <div id="functionOptions" class="check-grid"></div>
           </div>
         </article>
 
-        <article class="card">
+        <article class="card" id="rehabCard" hidden>
           <div class="card-title">
             <span class="step">4</span>
-            <div><h2>Στόχοι & αποκατάσταση</h2><p>Core rehabilitation πριν από adjuncts.</p></div>
+            <div><h2>Στόχοι & αποκατάσταση <small>(προαιρετικά)</small></h2><p>Οι επιλογές εδώ εμπλουτίζουν το κείμενο αλλά δεν απαιτούνται για ένα βασικό routine referral.</p></div>
           </div>
-          <div class="section-block">
+          <div class="section-block" id="goalsBlock">
             <h3>Στόχοι</h3>
             <div id="goalOptions" class="check-grid"></div>
           </div>
-          <div class="section-block">
+          <div class="section-block" id="rehabBlock">
             <h3>Κατευθύνσεις αποκατάστασης</h3>
             <div id="rehabOptions" class="check-grid"></div>
           </div>
-          <div class="section-block">
-            <h3>Adjuncts</h3>
+          <div class="section-block" id="adjunctBlock">
+            <h3>Συμπληρωματικές επιλογές</h3>
             <div id="adjunctOptions" class="check-grid"></div>
           </div>
         </article>
 
-        <article class="card">
+        <article class="card" id="notesCard" hidden>
           <div class="card-title">
             <span class="step">5</span>
-            <div><h2>Περιορισμοί & ασφάλεια</h2><p>Safety flags καταγράφονται μόνο όταν τα επιλέξεις ρητά.</p></div>
+            <div><h2>Πρόσθετη σημείωση <small>(προαιρετικά)</small></h2><p>Μόνο αν θέλεις να προσθέσεις κάτι ελεύθερα.</p></div>
           </div>
+          <label class="full-width">Σημείωση κλινικού
+            <textarea id="clinicianFreeText" rows="3" placeholder="Προαιρετικό ελεύθερο κείμενο…"></textarea>
+          </label>
+          <label>Συνεδρίες (προαιρετικό)<input id="sessionsInput" type="number" min="1" max="100" placeholder="—" /></label>
+        </article>
+
+        <details class="card advanced-context" id="advancedCard" hidden>
+          <summary><strong>Προχωρημένες επιλογές / περιορισμοί / ασφάλεια</strong></summary>
+          <p>Χρησιμοποίησέ τα μόνο όταν υπάρχει συγκεκριμένος λόγος. Δεν αποτελούν μέρος του routine referral.</p>
+
           <div class="section-block">
             <h3>Ρητοί περιορισμοί</h3>
             <div class="grid three restriction-entry">
-              <label>Restriction<select id="restrictionIdSelect"></select></label>
-              <label>State / value<input id="restrictionValue" type="text" placeholder="canonical value ή ελεύθερη ρητή οδηγία" /></label>
-              <label>Source
+              <label>Περιορισμός<select id="restrictionIdSelect"></select></label>
+              <label>Τι ισχύει<input id="restrictionValue" type="text" placeholder="Ρητή οδηγία / τιμή" /></label>
+              <label>Πηγή
                 <select id="restrictionSource">
-                  <option value="clinician_entered">clinician_entered</option>
-                  <option value="written_protocol">written_protocol</option>
-                  <option value="patient_reported">patient_reported</option>
-                  <option value="other">other</option>
+                  <option value="clinician_entered">Κλινικός</option>
+                  <option value="written_protocol">Γραπτό πρωτόκολλο</option>
+                  <option value="patient_reported">Αναφορά ασθενούς</option>
+                  <option value="other">Άλλη</option>
                 </select>
               </label>
             </div>
             <button type="button" class="btn secondary small" id="addRestrictionBtn">Προσθήκη περιορισμού</button>
             <div id="restrictionList" class="chip-list"></div>
           </div>
+
           <div class="section-block">
-            <h3>Explicit safety concerns</h3>
+            <h3>Ρητές ανησυχίες ασφάλειας</h3>
             <div id="safetyFlagOptions" class="check-grid"></div>
           </div>
+
           <div class="grid two">
-            <label>Disposition
+            <label id="dispositionWrap">Disposition
               <select id="dispositionSelect">
-                <option value="none_recorded">none_recorded</option>
-                <option value="reviewed_and_appropriate_to_proceed">reviewed_and_appropriate_to_proceed</option>
-                <option value="medical_reassessment_arranged">medical_reassessment_arranged</option>
-                <option value="imaging_or_specialist_pathway_underway">imaging_or_specialist_pathway_underway</option>
-                <option value="urgent_or_same_day_assessment_arranged">urgent_or_same_day_assessment_arranged</option>
-                <option value="routine_physiotherapy_deferred">routine_physiotherapy_deferred</option>
-                <option value="other">other</option>
+                <option value="none_recorded">Δεν καταγράφεται</option>
+                <option value="reviewed_and_appropriate_to_proceed">Ελέγχθηκε — κατάλληλο να προχωρήσει</option>
+                <option value="medical_reassessment_arranged">Έχει οργανωθεί ιατρική επανεκτίμηση</option>
+                <option value="imaging_or_specialist_pathway_underway">Εξέταση/ειδικός σε εξέλιξη</option>
+                <option value="urgent_or_same_day_assessment_arranged">Επείγουσα/ίδιας ημέρας αξιολόγηση</option>
+                <option value="routine_physiotherapy_deferred">Η routine φυσιοθεραπεία αναβάλλεται</option>
+                <option value="other">Άλλο</option>
               </select>
             </label>
-            <label>Συνεδρίες (προαιρετικό)<input id="sessionsInput" type="number" min="1" max="100" placeholder="—" /></label>
           </div>
-          <label class="full-width">Σημείωση κλινικού (προαιρετικό)
-            <textarea id="clinicianFreeText" rows="3" placeholder="Ελεύθερο κείμενο που θα μεταφερθεί αυτούσιο ως κλινική σημείωση."></textarea>
-          </label>
-        </article>
+
+          <details class="advanced-context">
+            <summary>Χειροκίνητο canonical context</summary>
+            <div class="grid two compact-top">
+              <label>Context key<input id="extraContextKey" type="text" /></label>
+              <label>Value<input id="extraContextValue" type="text" /></label>
+            </div>
+            <button type="button" class="btn secondary small" id="addContextBtn">Προσθήκη</button>
+            <div id="extraContextList" class="chip-list"></div>
+          </details>
+        </details>
       </section>
 
       <aside class="output-panel">
         <div class="output-sticky">
           <div class="output-head">
-            <div><h2>Έλεγχος & παραπεμπτικό</h2><p id="validationSummary">Συμπλήρωσε το κύριο πρόβλημα.</p></div>
+            <div><h2>Παραπεμπτικό</h2><p id="validationSummary">Επίλεξε περιοχή και πάθηση.</p></div>
           </div>
           <div class="mode-switch" role="group" aria-label="Formatter mode">
             <button type="button" class="mode active" data-mode="short">Σύντομο</button>
             <button type="button" class="mode" data-mode="detailed">Αναλυτικό</button>
           </div>
           <div class="action-row">
+            <button type="button" class="btn primary" id="generateBtn">Δημιουργία παραπεμπτικού</button>
             <button type="button" class="btn secondary" id="validateBtn">Έλεγχος</button>
-            <button type="button" class="btn primary" id="generateBtn">Δημιουργία</button>
           </div>
           <div id="validationPanel" class="validation-panel" hidden></div>
-          <label class="output-label">Κείμενο παραπεμπτικού
-            <textarea id="outputText" rows="18" readonly placeholder="Το παραπεμπτικό θα εμφανιστεί εδώ μετά από επιτυχή validation."></textarea>
+          <label class="output-label">Κείμενο
+            <textarea id="outputText" rows="18" readonly placeholder="Το παραπεμπτικό θα εμφανιστεί εδώ."></textarea>
           </label>
           <div class="action-row">
             <button type="button" class="btn secondary" id="copyBtn" disabled>Αντιγραφή</button>
@@ -180,5 +189,6 @@
     </main>
   </div>
   <script src="/static/clinic-utilities/physio-referral/app.js" defer></script>
+  <script src="/static/clinic-utilities/physio-referral/dynamic-subtype.js" defer></script>
 </body>
 </html>
