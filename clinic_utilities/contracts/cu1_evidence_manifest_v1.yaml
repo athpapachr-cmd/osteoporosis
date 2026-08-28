@@ -1,29 +1,38 @@
-version: cu1_evidence_manifest_v1_1
+version: cu1_evidence_manifest_v1_2
 status: design_frozen_sharded_registry_manifest
 runtime_authorized: false
 reviewed_on: 2026-08-28
 
 purpose: >-
   Single normative entrypoint for the CU-1 evidence corpus. The evidence corpus is sharded for
-  maintainability, but behaves as one logical registry. Sharding must never relax route/subtype
-  applicability, freshness, provenance, conflict, or output-scope semantics.
+  maintainability, but behaves as one logical registry only after every included shard passes the
+  same schema/applicability/reference review. Sharding must never relax route/subtype applicability,
+  freshness, provenance, conflict, or output-scope semantics.
 
 normative_schema: clinic_utilities/contracts/cu1_history_timeline_schema_v1.yaml
 coverage_matrix: clinic_utilities/contracts/cu1_evidence_coverage_matrix_v1.yaml
+
+shard_state_values:
+  - active_design_authority
+  - staged_candidate_not_schema_frozen
+  - superseded
 
 shards:
   - shard_id: core_seed_registry
     path: clinic_utilities/contracts/cu1_evidence_registry_v1.yaml
     state: active_design_authority
     identity_mode: explicit_payload_id
+    schema_conformance_reviewed: true
   - shard_id: high_frequency_tranche2
     path: clinic_utilities/contracts/cu1_evidence_tranche2_v1.yaml
-    state: active_design_authority_pending_route_completion
+    state: staged_candidate_not_schema_frozen
     identity_mode: map_key_is_canonical_id
+    schema_conformance_reviewed: false
   - shard_id: shoulder_hip_meniscus_tranche3
     path: clinic_utilities/contracts/cu1_evidence_tranche3_v1.yaml
-    state: active_design_authority_pending_route_completion
+    state: staged_candidate_not_schema_frozen
     identity_mode: map_key_is_canonical_id
+    schema_conformance_reviewed: false
 
 logical_collections:
   - sources
@@ -37,9 +46,10 @@ identity_rules:
     description: object carries its canonical id field and it must equal the map key
   map_key_is_canonical_id:
     description: >-
-      For design shards, the YAML mapping key is the canonical object id. Before schema validation
-      or any future runtime consumption, normalization materializes that key into the collection's
-      canonical identity field and then applies the same schema as the monolithic registry.
+      A staged design shard may use the YAML mapping key as the object identity during curation.
+      Before promotion to active design authority, normalization must materialize that key into the
+      collection's canonical identity field and the resulting object must contain every required
+      non-optional field from the normative schema.
     materialized_identity_fields:
       sources: evidence_id
       claims: claim_id
@@ -47,9 +57,24 @@ identity_rules:
       route_evidence_profiles: route_evidence_profile_id
       rehabilitation_sequences: sequence_id
 
+promotion_gate_for_staged_shard:
+  - materialize_map_key_identity
+  - populate_all_required_non_optional_object_fields
+  - validate_every_source_reference
+  - validate_every_claim_reference
+  - validate_every_route_profile_reference
+  - validate_every_sequence_reference
+  - validate_route_and_subtype_applicability
+  - validate_output_scope_compatibility_for_every_rendered_element
+  - validate_freshness_and_supersession_state
+  - validate_no_duplicate_ids_across_all_active_or_promoted_shards
+  - exact_human_evidence_scope_review
+
 merge_rules:
+  - only_active_design_authority_shards_participate_in_the_normative_logical_registry
+  - staged_candidates_may_inform_the_work_queue_but_are_not_yet_normative_registry_authority
   - shard_order_does_not_create_clinical_precedence
-  - duplicate_canonical_id_across_shards_is_hard_failure
+  - duplicate_canonical_id_across_active_or_promotion_candidate_shards_is_hard_failure
   - normalized_object_must_validate_against_normative_schema
   - evidence_claim_reference_must_resolve_to_exactly_one_claim
   - evidence_source_reference_must_resolve_to_exactly_one_source
@@ -96,7 +121,7 @@ future_runtime_boundary:
 
 readiness_gate:
   manifest_frozen: true
-  current_shards_schema_reviewed: false
+  all_included_shards_schema_reviewed: false
   all_routes_covered: false
   exact_design_completeness_review_passed: false
   runtime_authorized: false
