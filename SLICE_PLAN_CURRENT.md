@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — CU-1 Physiotherapy Referral v2 runtime implementation v1
 
-> **STATUS:** CLOSED — IMPLEMENTED / TESTED / MERGED / DEPLOYED.
+> **STATUS:** CLOSED — IMPLEMENTED / TESTED / MERGED / DEPLOYED / PRODUCTION-SMOKE-VERIFIED.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Parent product:** Personal Clinical Excellence System.
 > **Area:** Clinic Utilities / Clinical Operations.
@@ -9,7 +9,8 @@
 > **Implementation base:** `7c49c2c6ad5ad9c710a6c02fe1ec4df467b4bab2`.
 > **Reviewed implementation head:** `e04004add617afa7222c51d0d669c2134dd8f575`.
 > **Merge commit:** `c1da07f581cf8ccf1159d18bb63c23b674cbe9bd` (PR #56 squash merge).
-> **Render deploy:** `dep-da8afeuk1f9s73f5sr6g` = live at the same merge commit.
+> **Render deploy:** `dep-da8afeuk1f9s73f5sr6g` = live at the runtime merge commit.
+> **Production smoke:** authenticated product-owner browser smoke PASS; see `clinic_utilities/CU1_PRODUCTION_SMOKE_2026-08-28.md`.
 > **Runtime writer:** NONE.
 > **Frozen machine contract entrypoint:** `clinic_utilities/contracts/cu1_contract_manifest_v1.yaml`.
 > **Prior active slice:** PR-1 remains intentionally paused.
@@ -147,7 +148,7 @@ Database writes = none
 Public fixtures = synthetic only
 ```
 
-Focused tests explicitly verify absence of CU-1 `localStorage`, `sessionStorage` and SQLAlchemy persistence paths.
+Focused tests explicitly verify absence of CU-1 `localStorage`, `sessionStorage` and SQLAlchemy persistence paths. The production browser smoke also verified that refresh clears the prior referral state.
 
 ---
 
@@ -194,11 +195,11 @@ Independent exact-head diff review found no frozen clinical profile/contract mut
 
 ---
 
-# 8. Merge and deploy evidence
+# 8. Merge, deploy and production smoke evidence
 
 PR #56 was squash-merged with `expected_head_sha=e04004add617afa7222c51d0d669c2134dd8f575`.
 
-Resulting `main` commit:
+Resulting runtime `main` commit:
 
 ```text
 c1da07f581cf8ccf1159d18bb63c23b674cbe9bd
@@ -214,7 +215,19 @@ uvicorn startup = observed
 status = live
 ```
 
-External route-level HTTP smoke from the assistant execution sandbox could not be executed because DNS resolution failed before reaching the Render host. This is recorded as **NOT PROVEN**, not as an application failure.
+Authenticated product-owner production browser smoke:
+
+```text
+Clinical Excellence access = PASS
+CU-1 page load = PASS
+representative Knee → Knee OA path = PASS
+Validate = PASS
+Short referral = PASS
+Detailed referral = PASS
+Copy = PASS
+Print = PASS
+refresh/no-persistence behavior = PASS
+```
 
 Therefore:
 
@@ -223,7 +236,7 @@ IMPLEMENTED = PROVEN
 TESTED = PROVEN
 MERGED = PROVEN
 DEPLOYED / RENDER LIVE = PROVEN
-EXTERNAL ROUTE-LEVEL HTTP SMOKE FROM THIS SANDBOX = NOT PROVEN
+PRODUCTION-SMOKE-VERIFIED = PROVEN
 PILOT-VALIDATED = NOT CLAIMED
 ```
 
@@ -237,7 +250,7 @@ PILOT-VALIDATED = NOT CLAIMED
 
 # 10. Stop rule
 
-CU-1 runtime v1 is closed.
+CU-1 runtime v1 is closed and production-smoke-verified.
 
 ```text
 NO runtime continuation implied
@@ -247,4 +260,4 @@ NO persistence expansion implied
 NO taxonomy reopening implied
 ```
 
-After the control-plane closeout is merged and its writer lock released, the next engineering slice requires a new explicit product-owner decision.
+After the production-smoke evidence reconciliation is merged and its temporary canonical writer lock is released, the next engineering slice requires a new explicit product-owner decision.
