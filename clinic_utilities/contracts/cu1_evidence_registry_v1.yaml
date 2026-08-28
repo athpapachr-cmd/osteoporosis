@@ -1,4 +1,4 @@
-version: cu1_evidence_registry_v1_1
+version: cu1_evidence_registry_v1_2
 status: design_hardening_route_coverage_incomplete
 reviewed_on: 2026-08-28
 runtime_authorized: false
@@ -566,7 +566,7 @@ rehabilitation_sequences:
         intervention_directions:
           - intervention_direction_id: individualized_physio_without_specific_technique_superiority
             statement: individualized physiotherapy may be used while avoiding claims that one specific conservative technique is superior
-            authority: {authority_type: evidence_claim, evidence_claim_ids: [dgs_broad_first_line_physiotherapy_only, dgs_no_superior_specific_conservative_protocol]}
+            authority: {authority_type: evidence_claim, evidence_claim_ids: [dgs_broad_first_line_physiotherapy_only]}
         progression_criteria: []
         precautions_or_do_not_progress_criteria: []
         strength_optional: null
@@ -692,16 +692,6 @@ rehabilitation_sequences:
         strength_optional: A
         certainty_optional: not_graded
         required_for_route: true
-      - phase_id: achilles_midportion_functional_return
-        order: 2
-        clinical_objective: progress toward the patient's required walking, running, jumping or sport function without inventing unsupported numeric return thresholds
-        objective_authority: {authority_type: evidence_claim, evidence_claim_ids: [achilles_midportion_rts_criteria_not_well_operationalized]}
-        intervention_directions: []
-        progression_criteria: []
-        precautions_or_do_not_progress_criteria: []
-        strength_optional: null
-        certainty_optional: low
-        required_for_route: false
     clinician_modifications_optional: []
     protocol_overrides_optional: []
     missing_before_freeze: [validated_operationalized_progression_criteria_for_functional_return]
@@ -734,7 +724,7 @@ rehabilitation_sequences:
 coverage_status:
   routine_route_variants_complete: false
   object_semantics_frozen: true
-  current_curated_scope:
+  active_core_scope:
     - deep_gluteal_piriformis_presentation
     - nonspecific_low_back_pain
     - low_back_pain_with_radiating_leg_symptoms
