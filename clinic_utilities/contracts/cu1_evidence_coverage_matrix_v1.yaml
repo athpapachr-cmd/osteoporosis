@@ -1,0 +1,113 @@
+version: cu1_evidence_coverage_matrix_v1
+status: design_candidate
+runtime_authorized: false
+source_registry: cu1_registry_v1.yaml
+coverage_rule: every_routine_route_requires_current_route_evidence_profile_and_complete_rehabilitation_sequence
+
+status_values:
+  - pending
+  - evidence_seeded
+  - profile_complete
+  - sequence_complete
+  - ready_for_review
+  - blocked_evidence_gap
+
+profiles:
+  cervical:
+    nonspecific_neck_pain: {status: pending}
+    neck_pain_with_radiating_upper_limb_symptoms: {status: pending}
+    headache_with_cervical_msk_features: {status: pending}
+    cervical_dizziness_presentation: {status: pending}
+    post_traumatic_neck_pain: {status: pending}
+
+  lumbar:
+    nonspecific_low_back_pain: {status: evidence_seeded, sequence_status: pending}
+    low_back_pain_with_radiating_leg_symptoms: {status: evidence_seeded, sequence_status: pending}
+    lumbar_spinal_stenosis_neurogenic_claudication: {status: pending}
+    deep_gluteal_piriformis_presentation: {status: evidence_seeded, sequence_status: blocked_evidence_gap}
+
+  shoulder:
+    rotator_cuff_related_shoulder_pain: {status: pending}
+    confirmed_full_thickness_rotator_cuff_tear_nonoperative: {status: pending}
+    calcific_rotator_cuff_tendinopathy: {status: pending}
+    adhesive_capsulitis_frozen_shoulder: {status: pending}
+    glenohumeral_instability_dislocation: {status: pending}
+    glenohumeral_osteoarthritis: {status: pending}
+    post_traumatic_shoulder_pain: {status: pending}
+    acromioclavicular_joint_disorder: {status: pending}
+    sternoclavicular_joint_disorder: {status: pending}
+    postoperative_shoulder_rehabilitation: {status: pending, protocol_override_required: true}
+
+  elbow:
+    lateral_elbow_tendinopathy: {status: evidence_seeded, sequence_status: pending}
+    medial_elbow_tendinopathy: {status: pending}
+    ulnar_neuropathy_at_elbow: {status: pending}
+    posterior_interosseous_nerve_supinator_syndrome: {status: pending}
+    distal_biceps_tendon_disorder_nonoperative: {status: pending}
+    elbow_osteoarthritis_degenerative_stiffness: {status: pending}
+    elbow_ligament_instability_rehabilitation: {status: pending}
+    post_traumatic_elbow_pain_stiffness: {status: pending}
+
+  wrist_hand:
+    de_quervain_first_dorsal_compartment_disorder: {status: pending}
+    thumb_cmc1_osteoarthritis: {status: pending}
+    interphalangeal_hand_osteoarthritis: {status: pending}
+    median_neuropathy_at_wrist_carpal_tunnel: {status: pending}
+    ulnar_sided_wrist_tfcc_presentation: {status: pending}
+    intersection_syndrome: {status: pending}
+    thumb_mcp_collateral_ligament_injury_rehabilitation: {status: pending, structural_restrictions_apply: true}
+    sagittal_band_injury_extensor_tendon_instability: {status: pending, structural_restrictions_apply: true}
+    digital_tendon_injury_rehabilitation: {status: pending, subtype_or_protocol_specific: true}
+    post_traumatic_wrist_hand_pain_stiffness: {status: pending}
+    postoperative_wrist_hand_rehabilitation: {status: pending, protocol_override_required: true}
+
+  knee:
+    knee_osteoarthritis: {status: pending}
+    degenerative_meniscal_lesion_conservative_rehabilitation: {status: pending}
+    acute_isolated_meniscal_injury_nonoperative: {status: pending}
+    patellofemoral_pain: {status: pending}
+    patellar_tendinopathy: {status: pending}
+    quadriceps_tendinopathy: {status: pending}
+    acl_injury_instability_rehabilitation: {status: pending, structural_restrictions_apply: true}
+    mcl_injury_rehabilitation: {status: pending, structural_restrictions_apply: true}
+    patellar_instability_dislocation_rehabilitation: {status: pending, structural_restrictions_apply: true}
+    iliotibial_band_syndrome: {status: pending}
+    pes_anserine_region_pain_or_tendinobursitis: {status: pending}
+    post_traumatic_knee_pain_stiffness: {status: pending}
+    postoperative_knee_rehabilitation: {status: pending, protocol_override_required: true}
+
+  hip_groin:
+    greater_trochanteric_lateral_hip_pain_pathway: {status: pending}
+    nonarthritic_intraarticular_hip_pain: {status: pending}
+    adductor_related_groin_pain: {status: pending}
+    post_traumatic_hip_groin_pain_stiffness: {status: pending}
+
+  ankle_foot:
+    lateral_ankle_sprain_rehabilitation: {status: pending}
+    achilles_tendinopathy: {status: evidence_seeded, sequence_status: pending, subtype_split_required: true}
+    plantar_heel_pain_plantar_fasciitis: {status: pending}
+    posterior_tibial_tendon_dysfunction_progressive_collapsing_foot_deformity: {status: pending}
+    peroneal_tendon_disorder_nonoperative: {status: pending}
+    mechanical_metatarsalgia_forefoot_overload: {status: pending}
+    post_traumatic_ankle_foot_pain_stiffness: {status: pending}
+
+shared_owners:
+  fracture_rehabilitation_post_immobilization:
+    profile_id: shared_fracture
+    status: pending
+    note: evidence_sequence_must_remain_subordinate_to_healing_weight_bearing_rom_and_written_orthopaedic_restrictions
+  acute_muscle_myotendinous_injury_rehabilitation:
+    profile_id: shared_muscle_myotendinous
+    status: pending
+  functional_deconditioning_balance_gait_rehabilitation:
+    profile_id: shared_deconditioning_balance_gait
+    status: pending
+
+readiness_gate:
+  runtime_evidence_aware_generation: blocked
+  requirements:
+    - all_routine_routes_profile_complete
+    - all_routine_routes_sequence_complete_or_explicit_blocked_evidence_gap_with_safe_noninvented_output
+    - all_profile_sources_current_or_reviewed
+    - all_rendered_recommendations_traceable_to_active_claims
+    - exact_design_completeness_review_passed
