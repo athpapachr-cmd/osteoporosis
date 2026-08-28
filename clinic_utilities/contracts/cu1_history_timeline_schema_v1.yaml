@@ -1,6 +1,20 @@
-version: cu1_history_rehab_sequence_schema_v1
-status: design_candidate
+version: cu1_history_rehab_sequence_schema_v1_1
+status: design_frozen_pending_route_coverage
 runtime_authorized: false
+reviewed_on: 2026-08-28
+
+semantic_invariants:
+  - history_fact_is_not_diagnosis
+  - missing_history_is_not_negative_history
+  - patient_statement_is_not_objective_finding
+  - approximate_duration_is_not_inferred_exact_date
+  - rehabilitation_phase_order_is_not_calendar_duration_prescription
+  - progression_is_criteria_based_unless_authoritative_protocol_requires_time
+  - evidence_does_not_equal_automatic_treatment_selection
+  - clinician_modification_is_not_evidence_recommendation
+  - physiotherapist_execution_detail_is_not_routine_referral_core
+  - route_evidence_must_not_leak_to_noncovered_subtype
+  - patient_specific_written_protocol_or_healing_restriction_overrides_route_default
 
 referral_history_v2:
   fields:
@@ -38,76 +52,146 @@ referral_history_v2:
       type: string_or_null
     route_history_items:
       type: list_of_route_history_selection
+    provenance_entries:
+      type: list_of_history_provenance_entry_v1
   cross_field_rules:
     - if_duration_value_present_duration_unit_required
     - onset_date_and_approximate_duration_may_coexist_only_if_both_explicitly_supplied
     - never_infer_exact_onset_date_from_duration
+    - every_nonempty_history_value_requires_provenance_entry
     - missing_history_does_not_generate_negative_history
+    - history_provenance_cannot_assert_objective_examination_finding
+
+history_provenance_entry_v1:
+  fields:
+    field_path: canonical_history_field_path
+    source:
+      enum: [patient_reported, clinician_entered_history_summary, documented_record]
+    assertion_state:
+      enum: [stated, explicitly_negative, uncertain]
+    source_note_optional: string_or_null
+  rules:
+    - explicitly_negative_requires_explicit_source_statement
+    - index_or_stable_item_key_required_for_list_item_provenance
+    - objective_finding_source_is_forbidden_in_history
 
 route_history_selection:
   fields:
     history_item_id: canonical_route_history_id
-    state_or_value: scalar_or_canonical_enum
+    response_type:
+      enum: [boolean_tristate, canonical_enum, number, text, duration, date]
+    state_or_value: response_type_compatible_value
     unit_optional: string_or_null
     free_text_optional: string_or_null
     source:
       enum: [clinician_entered, patient_reported, documented_record]
+    assertion_state:
+      enum: [stated, explicitly_negative, uncertain]
   rules:
     - route_history_item_must_be_allowed_for_current_route_variant
+    - response_type_must_match_prompt_catalog
     - not_selected_does_not_mean_absent
+
+route_history_prompt_v1:
+  fields:
+    prompt_id: canonical_route_history_id
+    applicable_route_ids: list_of_canonical_route_ids
+    applicable_subtype_ids_optional: list_of_canonical_subtype_ids
+    label_el: string
+    response_type:
+      enum: [boolean_tristate, canonical_enum, number, text, duration, date]
+    enum_values_optional: list_of_canonical_enum_values
+    unit_values_optional: list_of_units
+    requiredness:
+      enum: [optional, conditional]
+    applicability_conditions_optional: list_of_canonical_conditions
+    evidence_claim_ids_optional: list_of_evidence_claim_ids
+  rules:
+    - prompt_is_shown_only_for_applicable_route_variant
+    - prompt_is_never_auto_selected
+    - prompt_does_not_infer_diagnosis
 
 rehabilitation_sequence_v1:
   fields:
+    sequence_id: canonical_rehabilitation_sequence_id
     route_id: canonical_route_id
-    subtype_ids_optional:
-      type: list_of_canonical_subtype_ids
-    applicability_conditions_optional:
-      type: list_of_canonical_conditions
+    subtype_ids_optional: list_of_canonical_subtype_ids
+    applicability_conditions_optional: list_of_canonical_conditions
     sequence_source:
       enum: [route_evidence_profile]
-    phases:
-      type: ordered_list_of_rehabilitation_phase_v1
-    clinician_modifications_optional:
-      type: list_of_strings
+    route_evidence_profile_id: canonical_route_evidence_profile_id
+    phases: ordered_list_of_rehabilitation_phase_v1
+    clinician_modifications_optional: list_of_clinician_modification_v1
+    protocol_overrides_optional: list_of_protocol_constraint_v1
   rules:
     - selected_route_variant_must_have_applicable_evidence_profile
-    - selected_route_variant_must_have_applicable_rehabilitation_sequence
+    - selected_route_variant_must_have_applicable_rehabilitation_sequence_or_explicit_evidence_gap
     - generic_cross_route_sequence_is_forbidden
     - route_level_profile_must_not_be_applied_to_noncovered_subtype
-    - written_postoperative_or_fracture_protocol_overrides_route_sequence
+    - every_evidence_derived_rendered_element_requires_active_applicable_claim
+    - patient_specific_written_postoperative_or_fracture_protocol_overrides_conflicting_route_elements
+    - protocol_derived_text_must_not_be_labelled_literature_recommendation
 
 rehabilitation_phase_v1:
   fields:
     phase_id: canonical_route_scoped_phase_id
     order: positive_integer
     clinical_objective: string
-    intervention_direction_ids:
-      type: list_of_canonical_intervention_direction_ids
-    progression_criteria:
-      type: list_of_criteria
-    precautions_or_do_not_progress_criteria:
-      type: list_of_criteria
-    evidence_claim_ids:
-      type: list_of_evidence_claim_ids
-    strength_or_certainty_optional: string_or_null
+    objective_authority: authority_reference_v1
+    intervention_directions: list_of_intervention_direction_v1
+    progression_criteria: list_of_rehabilitation_criterion_v1
+    precautions_or_do_not_progress_criteria: list_of_rehabilitation_criterion_v1
+    strength_optional: string_or_null
+    certainty_optional:
+      enum: [high, moderate, low, very_low, not_graded, not_applicable]
+      nullable: true
     required_for_route: boolean
   rules:
-    - every_phase_requires_at_least_one_active_applicable_evidence_claim
-    - progression_is_criteria_based_unless_authoritative_protocol_explicitly_uses_time
-    - elapsed_time_alone_does_not_advance_phase
+    - clinical_objective_requires_authority
     - unsupported_phase_is_not_rendered
     - phase_vocabulary_does_not_imply_universal_phase_order
+    - elapsed_time_alone_cannot_be_route_evidence_progression_criterion
+    - strength_and_certainty_are_not_free_text_hybrids
+
+intervention_direction_v1:
+  fields:
+    intervention_direction_id: canonical_route_scoped_intervention_direction_id
+    statement: string
+    authority: authority_reference_v1
+    applicability_conditions_optional: list_of_canonical_conditions
+  rules:
+    - evidence_authority_requires_at_least_one_active_applicable_claim
+    - therapist_execution_detail_claim_cannot_render_as_referral_core_without_separate_referral_core_authority
+
+rehabilitation_criterion_v1:
+  fields:
+    criterion_id: canonical_route_scoped_criterion_id
+    criterion_kind:
+      enum: [progression, do_not_progress, failure_to_progress, reassessment, safety_escalation]
+    statement: string
+    authority: authority_reference_v1
+    applicability_conditions_optional: list_of_canonical_conditions
+  rules:
+    - evidence_authority_requires_at_least_one_active_applicable_claim
+    - time_only_progression_requires_authoritative_protocol_authority
+    - safety_escalation_precedes_routine_progression
+
+objective_or_goal_item_v2:
+  fields:
+    goal_id: canonical_route_scoped_goal_id
+    statement: string
+    source:
+      enum: [route_evidence, clinician_selected, patient_priority]
+    authority_optional: authority_reference_v1_or_null
+  rules:
+    - route_evidence_source_requires_active_applicable_claim
+    - clinician_selected_or_patient_priority_goal_is_not_relabeled_as_guideline_recommendation
 
 goal_plan_v2:
   fields:
     phase_id: canonical_route_scoped_phase_id
-    goal_ids:
-      type: list_of_canonical_goal_ids
-    patient_priority_goal_optional: string_or_null
-    progression_criteria:
-      type: list_of_criteria
-    evidence_claim_ids:
-      type: list_of_evidence_claim_ids
+    goals: list_of_objective_or_goal_item_v2
+    progression_criteria: list_of_rehabilitation_criterion_v1
   rules:
     - goals_are_attached_to_rehabilitation_phases
     - goal_completion_is_not_inferred_from_elapsed_time
@@ -115,15 +199,10 @@ goal_plan_v2:
 
 reassessment_plan_v2:
   fields:
-    phase_progression_checks:
-      type: list_of_criteria
-    failure_to_progress_criteria:
-      type: list_of_criteria
-    safety_escalation_criteria:
-      type: list_of_criteria
+    phase_progression_checks: list_of_rehabilitation_criterion_v1
+    failure_to_progress_criteria: list_of_rehabilitation_criterion_v1
+    safety_escalation_criteria: list_of_rehabilitation_criterion_v1
     clinician_requested_review_optional: string_or_null
-    evidence_claim_ids:
-      type: list_of_evidence_claim_ids
   rules:
     - progression_review_is_criteria_triggered_by_default
     - physiotherapy_frequency_is_not_a_required_physician_output
@@ -131,18 +210,68 @@ reassessment_plan_v2:
     - calendar_time_may_be_used_only_for_authoritative_protocol_healing_followup_or_explicit_clinician_review
     - safety_triggered_reassessment_precedes_routine_progression
 
+authority_reference_v1:
+  one_of:
+    evidence:
+      fields:
+        authority_type:
+          const: evidence_claim
+        evidence_claim_ids:
+          type: nonempty_list_of_evidence_claim_ids
+    patient_specific_protocol:
+      fields:
+        authority_type:
+          const: patient_specific_protocol
+        protocol_constraint_ids:
+          type: nonempty_list_of_protocol_constraint_ids
+    clinician_instruction:
+      fields:
+        authority_type:
+          const: clinician_instruction
+        clinician_modification_id: canonical_clinician_modification_id
+  rules:
+    - evidence_claims_must_be_active_route_subtype_and_condition_applicable
+    - clinician_instruction_is_not_evidence_claim
+    - patient_specific_protocol_is_not_literature_claim
+
+protocol_constraint_v1:
+  fields:
+    protocol_constraint_id: canonical_protocol_constraint_id
+    protocol_type:
+      enum: [postoperative_written_protocol, fracture_healing_restriction, orthopaedic_written_instruction]
+    source_description: string
+    constraint_statement: string
+    affected_phase_or_element_ids: list_of_canonical_route_element_ids
+    effective_from_optional: date_or_null
+    effective_until_optional: date_or_null
+  rules:
+    - source_must_be_explicitly_entered_or_documented
+    - restriction_is_never_inferred_from_generic_route
+    - conflicting_route_default_is_suppressed_not_blended
+
+clinician_modification_v1:
+  fields:
+    modification_id: canonical_clinician_modification_id
+    target_element_id: canonical_route_element_id
+    action:
+      enum: [accept, modify, omit, add_clinician_instruction]
+    replacement_or_added_text_optional: string_or_null
+    rationale_optional: string_or_null
+  rules:
+    - modification_must_remain_visibly_distinct_from_evidence_authority
+    - omitted_evidence_element_is_not_silently_reintroduced
+
 route_evidence_profile_v1:
   fields:
-    profile_id: canonical_profile_id
+    route_evidence_profile_id: canonical_unique_route_evidence_profile_id
+    region_profile_id: canonical_region_profile_id
     route_id: canonical_route_id
-    subtype_ids_optional:
-      type: list_of_canonical_subtype_ids
-    applicability_conditions_optional:
-      type: list_of_canonical_conditions
+    subtype_ids_optional: list_of_canonical_subtype_ids
+    applicability_conditions_optional: list_of_canonical_conditions
     diagnostic_claim_ids: list_of_evidence_claim_ids
     history_claim_ids: list_of_evidence_claim_ids
     examination_claim_ids: list_of_evidence_claim_ids
-    rehabilitation_sequence_id: canonical_rehabilitation_sequence_id
+    rehabilitation_sequence_id: canonical_rehabilitation_sequence_id_or_null
     adjunct_claim_ids: list_of_evidence_claim_ids
     safety_claim_ids: list_of_evidence_claim_ids
     evidence_gaps: list_of_strings
@@ -152,11 +281,71 @@ route_evidence_profile_v1:
     freshness_state:
       enum: [current, review_due, stale, superseded]
   rules:
+    - route_evidence_profile_id_is_unique_per_route_or_material_subtype_scope
     - every_routine_route_variant_requires_applicable_profile_before_evidence_aware_generation
-    - every_rendered_recommendation_requires_active_route_and_subtype_applicable_claim
-    - a_midportion_only_source_must_not_authorize_insertional_Achilles_wording
+    - every_evidence_derived_rendered_element_requires_active_route_and_subtype_applicable_claim
+    - midportion_only_source_must_not_authorize_insertional_Achilles_wording
     - missing_evidence_is_explicit_gap_not_generic_fill
     - stale_or_superseded_profile_cannot_be_labelled_current_guideline_based
+
+evidence_source_v1:
+  required_fields:
+    - evidence_id
+    - source_type
+    - title
+    - authors_or_organization
+    - year_or_version
+    - reference
+    - reviewed_on
+    - next_review_due
+    - freshness_state
+    - status
+  fields:
+    source_type:
+      enum: [guideline, clinical_practice_guideline, systematic_review, consensus, randomized_trial, cohort, narrative_review, other]
+    status:
+      enum: [active, superseded, context_only]
+    freshness_state:
+      enum: [current, review_due, stale, superseded]
+    supersedes_optional: list_of_evidence_source_ids
+    superseded_by_optional: list_of_evidence_source_ids
+    population_scope_optional: string_or_null
+    setting_scope_optional: string_or_null
+    subtype_scope_optional: list_of_canonical_subtype_ids
+  rules:
+    - superseded_status_requires_superseded_freshness_or_explicit_transition_record
+    - source_identity_is_not_itself_a_treatment_recommendation
+
+evidence_claim_v1:
+  required_fields:
+    - claim_id
+    - evidence_ids
+    - applicable_route_evidence_profile_ids
+    - applicable_route_ids
+    - domain
+    - claim_summary
+    - recommendation_direction
+    - output_scope
+    - reviewed_on
+  fields:
+    applicable_subtype_ids_optional: list_of_canonical_subtype_ids
+    applicability_conditions_optional: list_of_canonical_conditions
+    domain:
+      enum: [diagnostic_definition, history, examination, core_rehabilitation, rehab_phase, progression_criteria, adjunct, safety, differential, execution_detail]
+    recommendation_direction:
+      enum: [recommend, consider, may_consider, do_not_offer, insufficient_evidence, context_only]
+    output_scope:
+      enum: [referral_core, therapist_execution_detail, clinician_ui_only]
+    strength_optional: string_or_null
+    certainty_optional:
+      enum: [high, moderate, low, very_low, not_graded, not_applicable]
+      nullable: true
+    conflicts_with_claim_ids_optional: list_of_evidence_claim_ids
+  rules:
+    - source_strength_and_claim_scope_are_preserved
+    - conflicting_claims_are_not_silently_hybridized
+    - therapist_execution_detail_does_not_automatically_enter_referral_prose
+    - clinician_ui_only_does_not_automatically_enter_referral_prose
 
 formatter_semantics:
   detailed_section_order:
@@ -169,7 +358,7 @@ formatter_semantics:
     - disease_specific_rehabilitation_directions
     - reassessment_or_escalation_criteria
     - evidence_basis
-  short_history_rule: include_duration_and_mechanism_when_supplied_and_material
+  short_history_rule: include_explicit_duration_mechanism_and_material_route_history_when_supplied
   short_rehab_rule: compress_route_specific_sequence_without_replacing_it_with_generic_goals
   empty_history_rule: omit_section
   evidence_basis_required:
@@ -179,5 +368,25 @@ formatter_semantics:
     - current_route_and_subtype_specific_cpg
     - current_route_specific_cpg
     - current_route_or_subtype_specific_systematic_review
-    - high_quality_consensus_or_other_best_available_source
-  no_unrelated_general_source_when_route_specific_source_exists: true
+    - high_quality_consensus
+    - route_or_subtype_specific_trial_when_higher_level_guidance_is_absent_or_insufficient
+  no_unrelated_general_source_when_more_specific_source_exists: true
+  clinician_modification_label_required_when_material: true
+
+coverage_gate_semantics:
+  evidence_derived_rendered_elements_requiring_traceability:
+    - phase_objective
+    - intervention_direction
+    - progression_criterion
+    - precaution_or_do_not_progress_criterion
+    - reassessment_or_escalation_criterion
+  allowed_non_evidence_authority_exception:
+    - explicit_patient_specific_written_protocol_or_healing_restriction
+    - explicit_clinician_instruction_clearly_labelled_as_such
+  runtime_authorization_requires:
+    - every_routine_route_and_material_subtype_has_unique_applicable_route_evidence_profile
+    - every_nonblocked_route_variant_has_complete_rehabilitation_sequence
+    - every_evidence_derived_rendered_element_resolves_to_active_applicable_evidence_claim
+    - evidence_gaps_and_conflicts_are_explicit
+    - freshness_is_current_or_explicitly_reviewed
+    - subtype_boundaries_are_regression_tested
