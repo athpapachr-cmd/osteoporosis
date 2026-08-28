@@ -1,0 +1,336 @@
+version: cu1_evidence_tranche2_promotion_v1
+status: normalized_promotion_projection
+runtime_authorized: false
+reviewed_on: 2026-08-28
+source_shard: clinic_utilities/contracts/cu1_evidence_tranche2_v1.yaml
+normative_schema: clinic_utilities/contracts/cu1_history_timeline_schema_v1.yaml
+promotion_review: clinic_utilities/contracts/CU1_TRANCHE2_PROMOTION_REVIEW_2026-08-28.md
+
+purpose: >-
+  Deterministic normalization and semantic-correction projection for the immutable tranche2 staging
+  shard. The normative logical tranche2 authority is source_shard + this projection. The staging file
+  remains preserved for audit history and is not independently authoritative after promotion.
+
+normalization_order:
+  - materialize_map_key_identity
+  - populate_required_non_optional_fields
+  - apply_source_metadata_corrections
+  - drop_superseded_or_hybrid_claims
+  - add_reviewed_replacement_sources_and_claims
+  - apply_profile_corrections
+  - apply_sequence_corrections
+  - resolve_and_validate_references
+  - validate_route_and_subtype_applicability
+  - validate_output_scope
+  - validate_freshness
+  - validate_cross_shard_id_uniqueness
+
+identity_materialization:
+  sources:
+    canonical_field: evidence_id
+    rule: evidence_id_equals_source_map_key
+  claims:
+    canonical_field: claim_id
+    rule: claim_id_equals_claim_map_key
+  route_history_prompts:
+    canonical_field: prompt_id
+    rule: prompt_id_equals_prompt_map_key
+  route_evidence_profiles:
+    canonical_field: route_evidence_profile_id
+    rule: route_evidence_profile_id_equals_profile_map_key
+  rehabilitation_sequences:
+    canonical_field: sequence_id
+    rule: sequence_id_equals_sequence_map_key
+
+required_field_defaults:
+  route_evidence_profiles:
+    diagnostic_claim_ids: []
+    history_claim_ids: []
+    examination_claim_ids: []
+    adjunct_claim_ids: []
+    safety_claim_ids: []
+  rehabilitation_sequences:
+    sequence_source: route_evidence_profile
+    clinician_modifications_optional: []
+    protocol_overrides_optional: []
+
+source_metadata_corrections:
+  knee_hip_oa_eular_2023_update:
+    authors_or_organization: Moseng et al. / EULAR multidisciplinary task force
+    reference: Ann Rheum Dis. 2024;83(6):730-740
+    doi_optional: 10.1136/ard-2023-225041
+  lss_neurogenic_claudication_cpg_2021:
+    authors_or_organization: Bussières et al.
+    reference: J Pain. 2021;22(9):1015-1039
+    doi_optional: 10.1016/j.jpain.2021.03.147
+  de_quervain_nma_2025:
+    authors_or_organization: Cuenca-Zaldívar et al.
+    reference: J Hand Ther. 2025 Nov 25; online ahead of print. PMID 41298159
+    doi_optional: 10.1016/j.jht.2025.09.001
+
+additional_sources:
+  pfp_dutch_multidisciplinary_cpg_2025:
+    evidence_id: pfp_dutch_multidisciplinary_cpg_2025
+    source_type: clinical_practice_guideline
+    title: "Dutch multidisciplinary guideline on anterior knee pain: Patellofemoral pain and patellar tendinopathy"
+    authors_or_organization: Ophey et al.
+    year_or_version: 2025
+    reference: Knee Surg Sports Traumatol Arthrosc. 2025;33(2):457-469
+    doi_optional: 10.1002/ksa.12367
+    population_scope_optional: clinically diagnosed patellofemoral pain or patellar tendinopathy; only the PFP module is applied to the PFP route
+    reviewed_on: 2026-08-28
+    next_review_due: 2027-08-28
+    freshness_state: current
+    status: active
+
+claims_to_drop_before_logical_merge:
+  - plantar_orthosis_not_standalone
+  - knee_oa_exercise_core
+  - knee_oa_self_management_education
+
+replacement_claims:
+  plantar_orthosis_not_isolated:
+    claim_id: plantar_orthosis_not_isolated
+    evidence_ids: [plantar_fasciitis_cpg_2023]
+    applicable_route_evidence_profile_ids: [rep_plantar_heel_pain_v1]
+    applicable_route_ids: [plantar_heel_pain_plantar_fasciitis]
+    domain: adjunct
+    claim_summary: Foot orthoses should not be used as an isolated treatment for short-term pain relief in plantar heel pain or plantar fasciitis.
+    recommendation_direction: do_not_offer
+    output_scope: clinician_ui_only
+    strength_optional: B
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-28
+  plantar_orthosis_combined:
+    claim_id: plantar_orthosis_combined
+    evidence_ids: [plantar_fasciitis_cpg_2023]
+    applicable_route_evidence_profile_ids: [rep_plantar_heel_pain_v1]
+    applicable_route_ids: [plantar_heel_pain_plantar_fasciitis]
+    domain: adjunct
+    claim_summary: Foot orthoses may be used in combination with other treatments to reduce pain and improve function when clinically selected.
+    recommendation_direction: may_consider
+    output_scope: clinician_ui_only
+    strength_optional: C
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-28
+
+  knee_oa_exercise_aaos:
+    claim_id: knee_oa_exercise_aaos
+    evidence_ids: [knee_oa_aaos_cpg_2021]
+    applicable_route_evidence_profile_ids: [rep_knee_oa_v1]
+    applicable_route_ids: [knee_osteoarthritis]
+    domain: core_rehabilitation
+    claim_summary: AAOS recommends supervised, unsupervised and/or aquatic exercise over no exercise to improve pain and function in knee osteoarthritis.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    strength_optional: strong_AAOS
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-28
+  knee_oa_self_management_aaos:
+    claim_id: knee_oa_self_management_aaos
+    evidence_ids: [knee_oa_aaos_cpg_2021]
+    applicable_route_evidence_profile_ids: [rep_knee_oa_v1]
+    applicable_route_ids: [knee_osteoarthritis]
+    domain: core_rehabilitation
+    claim_summary: AAOS recommends self-management programs to improve pain and function in knee osteoarthritis.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    strength_optional: strong_AAOS
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-28
+  knee_oa_patient_education_aaos:
+    claim_id: knee_oa_patient_education_aaos
+    evidence_ids: [knee_oa_aaos_cpg_2021]
+    applicable_route_evidence_profile_ids: [rep_knee_oa_v1]
+    applicable_route_ids: [knee_osteoarthritis]
+    domain: core_rehabilitation
+    claim_summary: AAOS recommends patient education programs to improve pain in knee osteoarthritis.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    strength_optional: strong_AAOS
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-28
+  knee_oa_multicomponent_eular:
+    claim_id: knee_oa_multicomponent_eular
+    evidence_ids: [knee_hip_oa_eular_2023_update]
+    applicable_route_evidence_profile_ids: [rep_knee_oa_v1]
+    applicable_route_ids: [knee_osteoarthritis]
+    domain: core_rehabilitation
+    claim_summary: EULAR recommends an individualized multicomponent non-pharmacological management plan for hip and knee osteoarthritis.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-28
+  knee_oa_exercise_eular:
+    claim_id: knee_oa_exercise_eular
+    evidence_ids: [knee_hip_oa_eular_2023_update]
+    applicable_route_evidence_profile_ids: [rep_knee_oa_v1]
+    applicable_route_ids: [knee_osteoarthritis]
+    domain: core_rehabilitation
+    claim_summary: EULAR recommends exercise with adequate tailoring of dosage and progression as part of core management for knee osteoarthritis.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-28
+  knee_oa_self_management_eular:
+    claim_id: knee_oa_self_management_eular
+    evidence_ids: [knee_hip_oa_eular_2023_update]
+    applicable_route_evidence_profile_ids: [rep_knee_oa_v1]
+    applicable_route_ids: [knee_osteoarthritis]
+    domain: core_rehabilitation
+    claim_summary: EULAR recommends information, education and self-management as part of core non-pharmacological management for knee osteoarthritis.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-28
+
+  pfp_dutch_exercise_first_line:
+    claim_id: pfp_dutch_exercise_first_line
+    evidence_ids: [pfp_dutch_multidisciplinary_cpg_2025]
+    applicable_route_evidence_profile_ids: [rep_patellofemoral_pain_v1]
+    applicable_route_ids: [patellofemoral_pain]
+    domain: core_rehabilitation
+    claim_summary: The 2025 Dutch multidisciplinary framework recommends starting PFP care with individualized quadriceps- and/or hip-focused exercise therapy and prioritized patient education.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    certainty_optional: low
+    reviewed_on: 2026-08-28
+  pfp_dutch_pain_guided_structured_program:
+    claim_id: pfp_dutch_pain_guided_structured_program
+    evidence_ids: [pfp_dutch_multidisciplinary_cpg_2025]
+    applicable_route_evidence_profile_ids: [rep_patellofemoral_pain_v1]
+    applicable_route_ids: [patellofemoral_pain]
+    domain: core_rehabilitation
+    claim_summary: The 2025 Dutch framework recommends a structured exercise program whose volume and intensity are continuously adjusted to pain intensity.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    certainty_optional: low
+    reviewed_on: 2026-08-28
+  pfp_dutch_reassessment_6_12_weeks:
+    claim_id: pfp_dutch_reassessment_6_12_weeks
+    evidence_ids: [pfp_dutch_multidisciplinary_cpg_2025]
+    applicable_route_evidence_profile_ids: [rep_patellofemoral_pain_v1]
+    applicable_route_ids: [patellofemoral_pain]
+    domain: progression_criteria
+    claim_summary: The 2025 Dutch framework recommends structured reassessment of exercise progression, pain and function after 6 and 12 weeks; elapsed time alone does not establish successful progression.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    certainty_optional: low
+    reviewed_on: 2026-08-28
+  pfp_dutch_adjunct_after_no_change:
+    claim_id: pfp_dutch_adjunct_after_no_change
+    evidence_ids: [pfp_dutch_multidisciplinary_cpg_2025]
+    applicable_route_evidence_profile_ids: [rep_patellofemoral_pain_v1]
+    applicable_route_ids: [patellofemoral_pain]
+    domain: adjunct
+    claim_summary: The 2025 Dutch framework recommends considering additional conservative treatments only when exercise has not produced clinically relevant change after an initial exercise period, with patient involvement and disclosure of limited evidence.
+    recommendation_direction: consider
+    output_scope: clinician_ui_only
+    certainty_optional: very_low
+    reviewed_on: 2026-08-28
+
+profile_field_overrides:
+  rep_plantar_heel_pain_v1:
+    adjunct_claim_ids:
+      - plantar_taping_short_term_adjunct
+      - plantar_orthosis_not_isolated
+      - plantar_orthosis_combined
+      - plantar_night_splint_execution_detail
+  rep_rotator_cuff_related_pain_v1:
+    safety_claim_ids: [rc_persistent_severe_reassessment]
+  rep_knee_oa_v1:
+    adjunct_claim_ids: [knee_oa_neuromuscular_adjunct]
+  rep_patellofemoral_pain_v1:
+    primary_source_ids: [patellofemoral_pain_cpg_2019, pfp_dutch_multidisciplinary_cpg_2025]
+    adjunct_claim_ids: [pfp_running_gait_retraining, pfp_dutch_adjunct_after_no_change]
+    evidence_gaps:
+      - frameworks_are_preserved_separately
+      - exact_transition_to_running_specific_work_not_defined_by_current_sources
+  rep_carpal_tunnel_v1:
+    adjunct_claim_ids: [cts_long_term_injection_limit]
+  rep_de_quervain_v1:
+    adjunct_claim_ids: [de_quervain_injection_spica_first_line_evidence]
+
+sequence_overrides:
+  seq_lumbar_stenosis_claudication_v1:
+    remove_rendered_authority_claim_ids: [lss_no_false_strong_recommendation]
+    objective_authority_after_projection: [lss_multimodal_nonpharmacological_care]
+    invariant: clinician_ui_only_claim_must_not_authorize_rendered_objective
+
+  seq_knee_oa_v1:
+    replace_authority_claim_ids:
+      knee_oa_exercise_core: [knee_oa_exercise_aaos, knee_oa_exercise_eular]
+      knee_oa_self_management_education: [knee_oa_self_management_aaos, knee_oa_patient_education_aaos, knee_oa_self_management_eular]
+    phase_strength_optional_after_projection: null
+    invariant: framework_specific_strength_is_not_projected_as_hybrid_phase_strength
+
+  seq_patellofemoral_pain_v1:
+    phase_1_id_after_projection: pfp_exercise_core
+    phase_1_objective_after_projection: reduce patellofemoral pain and improve function using individualized quadriceps and/or hip-focused exercise with education and load-management principles
+    phase_1_objective_authority_after_projection:
+      - pfp_combined_hip_knee_exercise
+      - pfp_dutch_exercise_first_line
+      - pfp_load_management_education
+    phase_1_strength_optional_after_projection: null
+    phase_1_certainty_optional_after_projection: low
+    add_intervention_directions:
+      - intervention_direction_id: pfp_2019_combined_hip_knee_exercise
+        statement: within the 2019 APTA framework, use combined hip- and knee-targeted exercise as the overall exercise strategy
+        authority: {authority_type: evidence_claim, evidence_claim_ids: [pfp_combined_hip_knee_exercise]}
+      - intervention_direction_id: pfp_2025_individualized_exercise
+        statement: within the 2025 Dutch framework, use individualized quadriceps- and/or hip-focused exercise with pain-guided volume/intensity and prioritized education
+        authority: {authority_type: evidence_claim, evidence_claim_ids: [pfp_dutch_exercise_first_line, pfp_dutch_pain_guided_structured_program]}
+    add_reassessment_criteria:
+      - criterion_id: pfp_dutch_structured_reassessment
+        criterion_kind: reassessment
+        statement: within the 2025 Dutch framework, reassess exercise progression, pain and function after 6 and 12 weeks; time alone does not mean progression succeeded
+        authority: {authority_type: evidence_claim, evidence_claim_ids: [pfp_dutch_reassessment_6_12_weeks]}
+    invariant: 2019_APTA_and_2025_Dutch_frameworks_remain_distinguishable
+
+post_projection_validation_assertions:
+  identity:
+    every_source_has_explicit_evidence_id: true
+    every_claim_has_explicit_claim_id: true
+    every_history_prompt_has_explicit_prompt_id: true
+    every_route_profile_has_explicit_route_evidence_profile_id: true
+    every_sequence_has_explicit_sequence_id: true
+  required_fields:
+    every_route_profile_has_required_claim_arrays: true
+    every_sequence_has_sequence_source: true
+    every_sequence_has_clinician_modifications_optional: true
+    every_sequence_has_protocol_overrides_optional: true
+  references:
+    all_source_references_resolve: true
+    all_claim_references_resolve: true
+    all_profile_references_resolve: true
+    all_sequence_references_resolve: true
+    all_history_prompt_evidence_references_resolve: true
+  applicability:
+    all_claim_route_ids_exist_in_frozen_registry: true
+    no_tranche2_claim_crosses_material_subtype_boundary: true
+    rotator_cuff_tendinopathy_authority_does_not_cover_full_thickness_tear: true
+  output_scope:
+    rendered_authorities_use_only_referral_core_compatible_claims: true
+    clinician_ui_only_claims_used_as_rendered_authority: false
+    therapist_execution_detail_claims_used_as_rendered_authority: false
+  evidence_governance:
+    plantar_orthosis_B_and_C_hybrid_removed: true
+    knee_OA_AAOS_EULAR_strength_hybrid_removed: true
+    patellofemoral_2019_2025_frameworks_kept_separate: true
+    de_quervain_2025_metadata_refreshed: true
+    LSS_2021_metadata_refreshed: true
+  cross_shard_identity:
+    duplicate_ids_against_active_core_registry: false
+  runtime_authorized: false
+
+promotion_result:
+  logical_shard_id: high_frequency_tranche2
+  state: active_design_authority
+  source_staging_file_retained: true
+  promotion_projection_required_for_normative_read: true
+  route_profiles_promoted: 8
+  rehabilitation_sequences_promoted: 6
+  explicit_evidence_gap_profiles: [rep_carpal_tunnel_v1, rep_de_quervain_v1]
+  route_completion_implied: false
+  design_complete_implied: false
+  runtime_authorized: false
