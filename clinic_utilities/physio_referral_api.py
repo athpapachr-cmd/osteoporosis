@@ -6,7 +6,7 @@ from typing import Any, Dict, Mapping, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
 
-from clinic_utilities.physio_referral_formatter_el import CU1GreekReferralFormatter
+from clinic_utilities.physio_referral_formatter_el_v2 import CU1GreekReferralFormatter
 from clinic_utilities.physio_referral_runtime import (
     CU1ContractError,
     CU1GenerateRequest,
@@ -32,13 +32,6 @@ def _get_greek_formatter() -> CU1GreekReferralFormatter:
 
 
 def _gateway_target_is_canonical(draft: Mapping[str, Any]) -> bool:
-    """Accept shared_target_optional only when it exactly matches a frozen gateway.
-
-    Direct shared-profile selection does not need shared_target_optional. When a
-    regional/shared gateway is used, client input is treated as untrusted and
-    must match one registry gateway exactly before ownership can be resolved.
-    """
-
     problem = draft.get("primary_problem")
     if not isinstance(problem, Mapping):
         return True
@@ -57,7 +50,6 @@ def _gateway_target_is_canonical(draft: Mapping[str, Any]) -> bool:
     gateways = get_cu1_bundle().registry.get("gateways", {})
     if not isinstance(gateways, Mapping):
         return False
-
     for gateway in gateways.values():
         if not isinstance(gateway, Mapping):
             continue
@@ -69,16 +61,13 @@ def _gateway_target_is_canonical(draft: Mapping[str, Any]) -> bool:
             continue
         if gateway.get("target_route") != target_route:
             continue
-        expected_detail = gateway.get("target_subtype_or_site")
-        if expected_detail != target_subtype_or_site:
+        if gateway.get("target_subtype_or_site") != target_subtype_or_site:
             continue
         return True
     return False
 
 
 def _safety_state_is_canonical(draft: Mapping[str, Any]) -> bool:
-    """Validate client-controlled SafetyState identifiers against frozen catalogs."""
-
     safety = draft.get("safety")
     if safety is None:
         return True
@@ -104,10 +93,7 @@ def _safety_state_is_canonical(draft: Mapping[str, Any]) -> bool:
     if not isinstance(disposition_values, list) or not disposition_values:
         return False
     disposition = safety.get("clinician_disposition", "none_recorded")
-    if not isinstance(disposition, str) or disposition not in disposition_values:
-        return False
-
-    return True
+    return isinstance(disposition, str) and disposition in disposition_values
 
 
 def _blocked_validation(draft: Mapping[str, Any], *, path: str, reason: str) -> CU1ValidationResponse:
@@ -155,25 +141,33 @@ def build_cu1_physio_referral_router() -> APIRouter:
 
     @router.get("/api/contract", dependencies=protected)
     def cu1_contract() -> Dict[str, Any]:
-        payload = get_cu1_bundle().contract_payload()
-        language = get_cu1_bundle().artifacts.get("referral_language_el", {})
-        if isinstance(language, Mapping):
-            payload["display_language"] = "el"
-            payload["display_labels"] = {
-                key: copy.deepcopy(language.get(key, {}))
-                for key in (
-                    "laterality",
-                    "findings",
-                    "functional_impairments",
-                    "goals",
-                    "rehab_directions",
-                    "adjuncts",
-                    "measurements",
-                    "restrictions",
-                    "context_values",
-                    "route_detail_labels",
-                )
-            }
+        bundle = get_cu1_bundle()
+        formatter = _get_greek_formatter()
+        payload = bundle.contract_payload()
+        language = formatter.language
+        payload["display_language"] = "el"
+        payload["display_labels"] = {
+            key: copy.deepcopy(language.get(key, {}))
+            for key in (
+                "laterality",
+                "findings",
+                "functional_impairments",
+                "goals",
+                "rehab_directions",
+                "adjuncts",
+                "measurements",
+                "restrictions",
+                "context_values",
+                "route_detail_labels",
+            )
+        }
+        route_labels = formatter.contract_route_labels()
+        for profile_id, profile in (payload.get("profiles") or {}).items():
+            if not isinstance(profile, dict):
+                continue
+            for route_id, route in (profile.get("routes") or {}).items():
+                if isinstance(route, dict):
+                    route["display"] = route_labels[profile_id][route_id]
         return payload
 
     @router.post("/api/validate", response_model=CU1ValidationResponse, dependencies=protected)
