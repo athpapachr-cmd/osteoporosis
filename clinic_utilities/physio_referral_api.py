@@ -161,6 +161,7 @@ def build_cu1_physio_referral_router() -> APIRouter:
                 "route_detail_labels",
             )
         }
+        payload["ui_relevance_scope"] = copy.deepcopy(bundle.artifacts.get("ui_relevance_scope", {}))
         route_labels = formatter.contract_route_labels()
         for profile_id, profile in (payload.get("profiles") or {}).items():
             if not isinstance(profile, dict):
