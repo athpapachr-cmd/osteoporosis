@@ -1,15 +1,15 @@
-# SLICE_PLAN_CURRENT.md — CU-1 dynamic relevant-field UX maintenance v1
+# SLICE_PLAN_CURRENT.md — CU-1 history + evidence + rehabilitation-sequence design hardening v1
 
-> **STATUS:** ACTIVE MAINTENANCE IMPLEMENTATION.
+> **STATUS:** ACTIVE PRE-RUNTIME DESIGN HARDENING.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Parent product:** Personal Clinical Excellence System.
 > **Area:** Clinic Utilities / Clinical Operations.
-> **Slice ID:** CU-1 dynamic-form maintenance v1.
-> **Maintenance base:** `58f41b5b29ee61280f1557df480989c5830465ba`.
-> **Writer:** `fix/cu1-dynamic-relevant-fields-2026-08-28`.
-> **Clinical taxonomy:** frozen and unchanged.
-> **Machine contract entrypoint:** `clinic_utilities/contracts/cu1_contract_manifest_v1.yaml`.
-> **Prior formatter maintenance:** merged in PR #61; final clinician prose acceptance still pending.
+> **Slice ID:** CU-1 history-evidence-rehab-sequence v1.
+> **Base:** `ad8045657616cd306b66d3becbda271f00c7fbbc`.
+> **Writer:** `design/cu1-history-evidence-timeline-2026-08-28`.
+> **Runtime writer:** NONE.
+> **Clinical taxonomy:** frozen and preserved unless a specific evidence conflict requires a narrow reviewed correction.
+> **Runtime implementation:** NOT AUTHORIZED in this slice until design-complete review passes.
 > **CU-2:** not authorized.
 > **PR-1:** remains paused.
 
@@ -17,159 +17,342 @@
 
 # 1. Problem
 
-The current browser UI presents machine-contract catalogs as if they were one universal clinical form. That creates two defects:
+The current CU-1 can produce Greek prose and dynamically relevant fields, but clinician review demonstrates that it is still not a sufficiently complete evidence-grounded referral system.
+
+Three gaps are structural:
 
 ```text
-A. irrelevant controls are visible for the selected clinical problem
-B. routine referral generation can be blocked by interaction friction rather than a true safety requirement
+A. HISTORY is under-modelled and therefore under-rendered
+B. goals are a flat checklist rather than an ordered rehabilitation progression
+C. route recommendations are not disease-specific machine-readable literature claims
 ```
 
-For example, an elbow referral should not display walking, stair, lower-limb loading or cervical-only options.
+The active objective is therefore not more formatter polish. It is to add the missing clinical-composition and evidence architecture.
 
 ---
 
-# 2. Objective
+# 2. Product-owner clarification — what "timeline" means
 
-Convert CU-1 from a global contract inspector into a clinician-facing adaptive referral builder.
+In CU-1, rehabilitation timing means **ordered therapeutic progression**, not routine prescription of visit frequency or total course duration.
+
+Target model:
 
 ```text
-region
-→ pathway
-→ safest allowed wording mode
-→ only relevant optional findings/function/goals/rehab
-→ only route-triggered structural/safety context
-→ generate
+initial clinical objective
+→ objective/progression criteria met
+→ next rehabilitation objective
+→ criteria met
+→ later functional/load phase
 ```
 
-The browser remains ephemeral and deterministic.
+Examples of possible objectives include analgesia/symptom control, passive or protected ROM, active-assisted/active ROM, loading, strengthening, endurance, motor control and functional return.
+
+These examples are not a universal protocol. Each selected condition/pathway must define its own evidence-supported sequence.
+
+The physician is not interested in routinely dictating `1–2 sessions/week` or a fixed total number of weeks.
 
 ---
 
-# 3. Progressive-disclosure contract
+# 3. Objective
 
-## 3.1 Before region/pathway selection
-
-Do not render downstream clinical catalogs.
-
-## 3.2 After region selection
-
-Show only the routes for that region.
-
-## 3.3 After route selection
-
-Render only the option IDs allowed by a versioned UI relevance scope for the selected profile, with optional route-specific additions/removals.
-
-Relevant domains:
+Build a referral contract that supports:
 
 ```text
-findings
-functional impairments
-goals
-rehab directions
-adjuncts
-explicit restrictions
-safety concerns
+clinical presentation / asserted diagnosis
++
+coherent structured history
++
+actual examination/findings
++
+functional impact
++
+referral request
++
+route-specific staged goals
++
+criteria for progression from one objective to the next
++
+disease-specific evidence-informed rehabilitation directions
++
+criteria for reassessment/escalation
++
+route-specific bibliography
 ```
 
-A global machine option catalog remains validation authority but is not the presentation menu.
+The resulting system must preserve clinician judgment and physiotherapist autonomy while providing a safe and complete direction of care.
 
-## 3.4 Structural/postoperative context
+---
 
-Special context fields appear only when triggered by the selected route/wording/profile.
+# 4. New typed objects
+
+Normative candidate design is defined in:
+
+```text
+clinic_utilities/contracts/CU1_HISTORY_EVIDENCE_TIMELINE_V1.md
+```
+
+Required objects:
+
+```text
+ReferralHistoryV2
+RouteHistorySelection
+RehabilitationSequenceV1
+RehabilitationPhaseV1
+GoalPlanV2
+ReassessmentPlanV2
+EvidenceSource
+EvidenceClaim
+RouteEvidenceProfile
+```
+
+No patient identifiers are introduced.
+
+---
+
+# 5. History contract
+
+History must be capable of carrying, when explicitly supplied:
+
+```text
+onset date or approximate duration
+onset pattern
+mechanism / trigger
+symptom course
+prior episodes
+prior treatment + response
+relevant investigations
+aggravating/easing factors
+work/sport/activity context
+patient-priority activity
+route-specific history items
+```
+
+Rules:
+
+```text
+approximate duration != inferred exact date
+mechanism != causal diagnosis
+missing history != negative history
+route-specific history questions are dynamically scoped
+nothing is auto-selected
+```
+
+Detailed formatter must include a coherent `ΙΣΤΟΡΙΚΟ` section when data exist.
+
+---
+
+# 6. Criteria-based rehabilitation sequence
+
+Every routine route must have an explicit ordered `RehabilitationSequenceV1`.
+
+Each phase contains:
+
+```text
+clinical objective
+route-specific intervention directions
+progression criteria
+precautions / do-not-progress criteria
+evidence claim IDs
+```
+
+Hard rules:
+
+```text
+progression criterion != elapsed time alone
+same words across two diseases != same treatment authority
+written postoperative/fracture protocol > route evidence sequence
+unsupported phase is omitted rather than filled with a generic default
+```
+
+---
+
+# 7. Disease-specific evidence architecture
+
+CU-1 reuses the Clinical Excellence evidence-governance model.
+
+Machine-readable evidence requires:
+
+```text
+EvidenceSource = bibliographic/source identity
+EvidenceClaim = exact clinical claim supported/discouraged/left uncertain
+RouteEvidenceProfile = all current claims for one clinical route
+RehabilitationSequence = ordered route-specific application of those claims
+```
+
+There is no global musculoskeletal treatment template.
 
 Examples:
 
 ```text
-routine elbow tendinopathy → no fracture/loading/protocol fields
-postoperative elbow rehabilitation → procedure/protocol/restriction context
-shared fracture → fracture-specific status and limb/site-dependent loading/use controls
-radicular cervical/lumbar presentation → neurological screen
-shared muscle injury → muscle/injury/management context
+lateral_elbow_tendinopathy
+→ 2022 lateral-elbow CPG + other route-specific evidence
+→ elbow-specific intervention/progression claims
+
+achilles_tendinopathy
+→ 2024 midportion-Achilles CPG + other route-specific evidence
+→ Achilles-specific tendon-loading/progression claims
 ```
+
+A shared term such as `progressive loading` does not authorize identical referral text or progression logic across the two conditions.
 
 ---
 
-# 4. Generation-first interaction
+# 8. Evidence must be visible in the referral
 
-For routine routes:
+The literature connection is part of the clinician-to-physiotherapist communication, not merely hidden metadata.
+
+Detailed output target:
 
 ```text
-profile + route
-→ auto-select presentation wording when available
-→ allow immediate basic referral generation
+ΔΙΑΓΝΩΣΗ / ΚΛΙΝΙΚΗ ΕΝΤΥΠΩΣΗ
+ΙΣΤΟΡΙΚΟ
+ΚΛΙΝΙΚΑ ΕΥΡΗΜΑΤΑ
+ΛΕΙΤΟΥΡΓΙΚΗ ΕΠΙΒΑΡΥΝΣΗ
+ΑΙΤΗΜΑ
+ΣΤΑΔΙΑΚΟΙ ΣΤΟΧΟΙ ΚΑΙ ΚΡΙΤΗΡΙΑ ΠΡΟΟΔΟΥ
+ΠΡΟΤΕΙΝΟΜΕΝΟΣ ΠΡΟΣΑΝΑΤΟΛΙΣΜΟΣ ΑΠΟΚΑΤΑΣΤΑΣΗΣ
+ΠΡΟΫΠΟΘΕΣΕΙΣ ΕΠΑΝΕΚΤΙΜΗΣΗΣ / ΚΛΙΜΑΚΩΣΗΣ
+ΒΙΒΛΙΟΓΡΑΦΙΚΗ ΒΑΣΗ
 ```
 
-Optional findings, function, goals and rehab selections enrich the referral but do not block it.
-
-If presentation wording is unavailable, choose the least inferential allowed mode that is already asserted by explicit route selection (for example established structural diagnosis). Formal-diagnosis mode that requires a separate clinician assertion must still request that assertion.
-
-No software-generated diagnosis assertion is allowed.
-
----
-
-# 5. True blocking fields
-
-Retain blocking only when required by the frozen semantic/safety contract, including:
+Short output:
 
 ```text
-formal diagnostic assertion when required
-established diagnosis/nonoperative disposition where explicitly required
-postoperative procedure/protocol/restriction state
-fracture healing/loading/use state where required
-shared muscle structural/management context where required
-active safety-rule acknowledgement/disposition
+same route-specific evidence authority
++ compressed staged rehabilitation direction
++ compact disease-specific source footer
 ```
 
-The UI must explain missing required fields in plain Greek and visually surface the exact relevant control.
+A short referral must not become generic merely because it is shorter.
 
 ---
 
-# 6. Advanced controls
+# 9. Evidence wording
 
-Global safety and manual canonical-context tools must not dominate routine workflow.
-
-They may remain available under an explicitly collapsed advanced section for unusual clinician-entered context, but they must not expose unrelated routine choices by default.
-
----
-
-# 7. Acceptance evidence
-
-Tests must prove at minimum:
+The generated referral must preserve evidence strength.
 
 ```text
-1. elbow scope excludes walking/stairs/weight-bearing/cervical traction
-2. cervical scope excludes lower-limb-only function/loading options
-3. knee scope includes walking/stairs/squat and excludes upper-limb gripping/dexterity
-4. routine elbow referral can generate with no optional findings/goals/rehab selected
-5. presentation wording auto-selects when available
-6. structural/postoperative requirements still block when genuinely missing
-7. irrelevant context cards stay hidden
-8. no hidden stale selection leaks when profile/route changes
-9. existing gateway/safety/formatter/no-persistence tests remain green
-10. generated prose remains Greek and deterministic
+strong/core recommendation
+→ direct recommendation wording
+
+conditional / low-certainty
+→ "μπορεί να εξεταστεί" / "επικουρικά"
+
+conflicting guidance
+→ conflict retained; no silent hybrid
+
+insufficient evidence
+→ not presented as routine evidence-based treatment
+```
+
+The default bibliography should show 1–3 highest-authority route-specific sources.
+
+---
+
+# 10. Evidence freshness / update lifecycle
+
+Every evidence source/profile includes:
+
+```text
+reviewed_on
+next_review_due
+freshness_state
+supersedes / superseded_by
+```
+
+New evidence workflow:
+
+```text
+new guideline / systematic review detected
+→ classify as confirming / no_change / potentially_practice_changing / practice_changing / conflicting
+→ clinician/reviewer approval
+→ update EvidenceClaim
+→ update affected route RehabilitationSequence if warranted
+→ regression tests/fixtures
+→ version bump + changelog
+```
+
+No silent autonomous update of clinical recommendations.
+
+---
+
+# 11. Current seed examples
+
+The evidence registry now includes design seeds for:
+
+```text
+deep_gluteal_piriformis_presentation
+lateral_elbow_tendinopathy
+achilles_tendinopathy
+```
+
+The elbow and Achilles seeds exist specifically to prove that two tendinopathies do not collapse into the same generic rehabilitation wording.
+
+The seeds are incomplete and are not runtime authority yet.
+
+---
+
+# 12. Routine-route coverage gate
+
+Before runtime evidence-aware generation is authorized:
+
+```text
+EVERY routine route
+→ own RouteEvidenceProfile
+→ own RehabilitationSequenceV1
+→ every rendered phase/intervention/progression criterion resolves to >=1 active route-applicable claim
+→ evidence gaps explicit
+→ conflicts explicit
+→ freshness current or explicitly reviewed
+```
+
+Rare/advanced routes may carry explicit evidence-gap status, but the system must not invent support.
+
+---
+
+# 13. Acceptance fixtures
+
+At minimum:
+
+```text
+1. chronic deep-gluteal pain with 8-month duration, mechanism and uncertain diagnosis
+2. lateral epicondylalgia → elbow-specific staged evidence-linked rehabilitation
+3. Achilles tendinopathy → Achilles-specific loading/progression rehabilitation
+4. elbow and Achilles outputs materially differ despite both being tendinopathies
+5. postoperative shoulder → exact protocol overrides generic route evidence
+6. fracture → healing/loading restrictions override evidence defaults
+7. conflicting-framework adjunct case
+8. route with weak evidence → appropriately broad/cautious sequence, not invented detail
+9. missing history → omitted, never converted into reassuring negatives
+10. stale/superseded evidence profile → cannot be labelled current guideline-based
 ```
 
 ---
 
-# 8. REPLAN triggers
+# 14. REPLAN / BLOCK triggers
 
-STOP and replan if dynamic scoping would require:
+STOP and replan if:
 
 ```text
-new clinical recommendations
-new machine IDs
-changing route ownership
-weakening a genuine safety requirement
-inferring a diagnosis or examination finding
+route evidence contradicts a frozen clinical recommendation materially
+history schema requires new diagnosis inference
+criteria-based progression cannot be represented without inventing unsupported thresholds
+an evidence claim cannot preserve framework-specific wording/strength
+routine-route evidence coverage cannot be completed without uncontrolled scope
 ```
 
 ---
 
-# 9. Stop rule
+# 15. Exact next action
 
 ```text
-implementation
-→ focused exact-head tests
-→ independent exact-head review
-→ MERGE-READY or BLOCK
+1. freeze typed history + criteria-based progression semantics
+2. curate high-frequency route evidence profiles first
+3. define complete RehabilitationSequence for each routine route
+4. complete every routine route to evidence coverage gate
+5. add evidence/conflict/gap/progression fixtures
+6. exact design-completeness review
+7. STOP at DESIGN-COMPLETE or BLOCK
 ```
+
+No runtime evidence-aware generation in this design slice.
