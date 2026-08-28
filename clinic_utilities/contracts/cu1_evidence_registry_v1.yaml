@@ -9,10 +9,11 @@ source_schema:
   status_values: [active, superseded, context_only]
 
 claim_schema:
-  required: [claim_id, evidence_ids, applicable_profile_ids, applicable_route_ids, domain, claim_summary, recommendation_direction, reviewed_on]
+  required: [claim_id, evidence_ids, applicable_profile_ids, applicable_route_ids, domain, claim_summary, recommendation_direction, output_scope, reviewed_on]
   optional: [applicable_subtype_ids, applicability_conditions]
-  domain_values: [diagnostic_definition, history, examination, core_rehabilitation, rehab_phase, progression_criteria, adjunct, safety, differential]
+  domain_values: [diagnostic_definition, history, examination, core_rehabilitation, rehab_phase, progression_criteria, adjunct, safety, differential, execution_detail]
   recommendation_direction_values: [recommend, consider, may_consider, do_not_offer, insufficient_evidence, context_only]
+  output_scope_values: [referral_core, therapist_execution_detail, clinician_ui_only]
   certainty_values: [high, moderate, low, very_low, not_graded, not_applicable]
 
 sources:
@@ -102,6 +103,7 @@ claims:
     domain: diagnostic_definition
     claim_summary: Classical DGS is a non-discogenic sciatic nerve disorder caused by entrapment in the deep gluteal space.
     recommendation_direction: context_only
+    output_scope: clinician_ui_only
     certainty_optional: not_graded
     reviewed_on: 2026-08-28
 
@@ -113,6 +115,7 @@ claims:
     domain: history
     claim_summary: Diagnostic pathways commonly include history of posterior hip/buttock pain, sciatic-type symptoms or sitting intolerance together with targeted physical examination and selected investigations.
     recommendation_direction: consider
+    output_scope: referral_core
     certainty_optional: low
     applicability_conditions: [do_not_infer_syndrome_from_buttock_pain_alone]
     reviewed_on: 2026-08-28
@@ -125,6 +128,7 @@ claims:
     domain: core_rehabilitation
     claim_summary: Available evidence is low quality and does not establish one conservative treatment as superior to another.
     recommendation_direction: insufficient_evidence
+    output_scope: clinician_ui_only
     certainty_optional: low
     reviewed_on: 2026-08-28
 
@@ -136,6 +140,7 @@ claims:
     domain: core_rehabilitation
     claim_summary: In the absence of a proven superior DGS-specific conservative protocol, active physiotherapy/self-management principles may be used when clinically applicable without implying superiority of a specific DGS technique.
     recommendation_direction: consider
+    output_scope: referral_core
     certainty_optional: low
     reviewed_on: 2026-08-28
 
@@ -147,6 +152,7 @@ claims:
     domain: core_rehabilitation
     claim_summary: Advice, self-management and continuation of normal activity are recommended components of care for low-back pain with or without sciatica.
     recommendation_direction: recommend
+    output_scope: referral_core
     certainty_optional: not_graded
     reviewed_on: 2026-08-28
 
@@ -158,6 +164,7 @@ claims:
     domain: adjunct
     claim_summary: Manual therapy may be considered only as part of a treatment package that includes exercise, with or without psychological therapy.
     recommendation_direction: consider
+    output_scope: referral_core
     certainty_optional: not_graded
     applicability_conditions: [core_exercise_direction_present]
     reviewed_on: 2026-08-28
@@ -170,6 +177,7 @@ claims:
     domain: adjunct
     claim_summary: Traction should not be offered for low-back pain with or without sciatica.
     recommendation_direction: do_not_offer
+    output_scope: clinician_ui_only
     certainty_optional: not_graded
     reviewed_on: 2026-08-28
 
@@ -181,6 +189,7 @@ claims:
     domain: core_rehabilitation
     claim_summary: For subacute or chronic lateral elbow tendinopathy, therapeutic resisted wrist-extensor exercise may use isometric, concentric and/or eccentric loading.
     recommendation_direction: recommend
+    output_scope: referral_core
     strength_optional: B
     certainty_optional: not_graded
     reviewed_on: 2026-08-28
@@ -193,6 +202,7 @@ claims:
     domain: rehab_phase
     claim_summary: A phased reintroduction of stress, strength, endurance and motor-control demands may be used for patients with high-demand occupational, hobby, performing-arts or athletic requirements.
     recommendation_direction: may_consider
+    output_scope: referral_core
     strength_optional: F
     certainty_optional: not_graded
     reviewed_on: 2026-08-28
@@ -206,6 +216,7 @@ claims:
     domain: core_rehabilitation
     claim_summary: Tendon-loading exercise, with load as high as tolerated, is first-line treatment for midportion Achilles tendinopathy when tendon-structure frailty is not presumed.
     recommendation_direction: recommend
+    output_scope: referral_core
     strength_optional: A
     certainty_optional: not_graded
     reviewed_on: 2026-08-28
@@ -219,6 +230,7 @@ claims:
     domain: rehab_phase
     claim_summary: Effective midportion Achilles loading is not limited to eccentric exercise; multiple loading approaches may improve pain and function, so progression should be individualized to tolerance and functional demand.
     recommendation_direction: recommend
+    output_scope: referral_core
     strength_optional: A_context
     certainty_optional: not_graded
     reviewed_on: 2026-08-28
@@ -232,9 +244,24 @@ claims:
     domain: adjunct
     claim_summary: Plantar-flexor stretching may be used for midportion Achilles tendinopathy when ankle dorsiflexion is limited.
     recommendation_direction: may_consider
+    output_scope: referral_core
     strength_optional: C
     certainty_optional: not_graded
     applicability_conditions: [limited_ankle_dorsiflexion]
+    reviewed_on: 2026-08-28
+
+  achilles_loading_frequency_midportion:
+    claim_id: achilles_loading_frequency_midportion
+    evidence_ids: [achilles_midportion_cpg_2024]
+    applicable_profile_ids: [ankle_foot]
+    applicable_route_ids: [achilles_tendinopathy]
+    applicable_subtype_ids: [midportion_achilles_tendinopathy]
+    domain: execution_detail
+    claim_summary: The CPG includes exercise-frequency guidance for tendon-loading programmes.
+    recommendation_direction: recommend
+    output_scope: therapist_execution_detail
+    strength_optional: E
+    certainty_optional: not_graded
     reviewed_on: 2026-08-28
 
 route_evidence_profiles:
