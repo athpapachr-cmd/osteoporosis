@@ -1,5 +1,5 @@
 version: cu1_medial_elbow_fixtures_v1
-status: normative_design_regression_oracle_pending_route_activation
+status: active_normative_design_regression_oracle
 runtime_authorized: false
 route_id: medial_elbow_tendinopathy
 reviewed_on: 2026-08-29
