@@ -6,7 +6,7 @@
 > **Verified remote `main`:** `08ecd3ab33e98d567c47042a8a1de482df6952b9`.
 > **ACTIVE CANONICAL WRITER/LOCK:** `design/cu1-history-evidence-timeline-2026-08-28`.
 > **ACTIVE RUNTIME WRITER/LOCK:** NONE.
-> **PR #63:** draft / design-only / unmerged; route-coverage reconciliation is complete through matrix commit `2a51b4a2824e38ed171cda7a90953e41d4ed1dbf`; this canonical commit may advance branch head.
+> **PR #63:** draft / design-only / unmerged; reviewed route coverage is complete through matrix commit `6543e8d06b7492ceb391b22ecf514dbd7c9e3bd2`; this canonical commit may advance branch head.
 > **Runtime evidence-aware generation:** NOT AUTHORIZED.
 > **CU-2:** NOT AUTHORIZED.
 > **PR-1 Transcript Intake:** intentionally paused.
@@ -42,8 +42,8 @@ clinician instruction != evidence recommendation
 patient-specific protocol != literature recommendation
 explicit written protocol/healing restriction > conflicting route default
 framework-specific strength != synthetic cross-framework strength
-expert consensus / clinical opinion != low-certainty trial evidence
-no eligible comparative trials != very-low effect estimate
+expert consensus / clinical opinion / best-practice opinion != treatment-effect estimate
+no eligible comparative trials != low or very-low effect estimate
 framework conflict != silent guideline consensus
 ```
 
@@ -63,113 +63,65 @@ Active logical evidence layers:
 
 ```text
 core_seed_registry
-→ ACTIVE DESIGN AUTHORITY
-
-high_frequency_tranche2
-→ ACTIVE DESIGN AUTHORITY
-→ reviewed promotion projection
-
-shoulder_hip_meniscus_tranche3
-→ ACTIVE DESIGN AUTHORITY
-→ reviewed promotion projection + mandatory overlay
-
+high_frequency_tranche2 + reviewed promotion projection
+shoulder_hip_meniscus_tranche3 + reviewed projection/overlay
 route_coverage_extension
-→ ACTIVE DESIGN AUTHORITY
-→ native explicit-ID reviewed routes
-
 shoulder_instability_route_coverage_extension
-→ ACTIVE DESIGN AUTHORITY
-→ native explicit-ID context-scoped route objects
-
 cu1_evidence_route_coverage_amendments_v1.yaml
-→ reviewed logical narrowing/suppression layer
-→ applied after active-shard merge and before authority resolution
 ```
 
-All listed shards have passed their native or reviewed schema/promotion gate. No staged evidence shard currently remains.
+All listed shards have passed their native or reviewed schema/promotion gate. No staged evidence shard remains.
 
 ---
 
 # 4. Newly completed route coverage
 
-## 4.1 Calcific rotator-cuff tendinopathy — PASS
+## Calcific rotator-cuff tendinopathy — PASS
 
 ```text
-profile: rep_calcific_rotator_cuff_v1
-sequence: seq_calcific_rotator_cuff_v1
-status: sequence_complete — evidence-bounded
+rep_calcific_rotator_cuff_v1
+seq_calcific_rotator_cuff_v1
+→ sequence_complete — evidence-bounded
 ```
 
-Current evidence posture:
+Core active rehabilitation is supported. ESWT remains an explicit JOSPT-2025-vs-NICE-HTG645 conflict and is not automatically rendered.
 
-```text
-active rehabilitation exercise
-→ JOSPT 2025 Grade A
-→ referral core
-
-individualized education
-→ Grade C
-→ referral core
-
-lavage
-→ Grade B for refractory-to-initial-treatment calcific tendinopathy
-→ clinician-facing procedural context, not an initial rehab phase
-
-therapeutic ultrasound
-→ Grade C do-not-use/recommend
-
-ESWT
-→ JOSPT 2025: Grade C may use/recommend
-→ NICE HTG645: efficacy evidence inadequate; research-only
-→ explicit framework conflict
-→ NOT auto-rendered as unanimous adjunct
-```
-
-Matching route-specific history prompts and ESWT-conflict fixtures were added.
-
-## 4.2 Glenohumeral instability/dislocation split — PASS
+## Glenohumeral instability/dislocation split — PASS
 
 No generic instability sequence exists.
 
-Reviewed branches:
-
 ```text
-traumatic anterior — first-time / recurrent context-scoped
-posterior — explicit nonoperative-management decision
-atraumatic anterior — explicit nonoperative-management decision
-multidirectional instability — explicit nonoperative-management decision
+traumatic anterior
+posterior nonoperative
+atraumatic anterior nonoperative
+multidirectional instability nonoperative
 ```
 
-Behavior:
+are distinct evidence contexts. Unresolved direction/cause/management blocks evidence-aware output; postoperative instability belongs to the postoperative owner. Posterior Part-II postoperative RTS evidence is suppressed from nonoperative authority.
+
+## Glenohumeral osteoarthritis — PASS
+
+Management context is explicit:
 
 ```text
-unresolved direction / cause / management context
-→ block evidence-aware sequence until clarified
+nonoperative primary GHOA
+→ rep_glenohumeral_oa_nonoperative_v1
+→ broad APTA best-practice/evidence-gap-aware sequence
 
-postoperative instability rehabilitation
+preoperative TSA
+→ rep_glenohumeral_oa_preop_TSA_v1
+→ broad APTA best-practice/evidence-gap-aware sequence
+
+postoperative arthroplasty
 → postoperative_shoulder_rehabilitation
-→ patient-specific surgical protocol has precedence
+→ procedure/patient-specific protocol owner
 ```
 
-Material evidence corrections:
+The 2023 APTA CPG reports no high/moderate-quality comparative evidence for nonoperative PT and no evidence-supported superior PT intervention. A 2026 systematic review confirms no nonsurgical PT RCTs through its June-2025 search. These are represented as `best_practice / insufficient_evidence`, not as low-certainty effect estimates.
 
-```text
-anterior RTS
-→ ESSKA-ESA claim narrowed to conservative-treatment context
+Matching history prompts and fixtures exist for all three newly reviewed route groups.
 
-posterior Part-II Delphi RTS
-→ identified as postoperative rehabilitation/RTS authority
-→ suppressed from generic nonoperative posterior authority
-
-MDI Cochrane 2026
-→ no eligible control/usual-care RCTs
-→ efficacy estimate unavailable
-→ NOT mislabeled as very-low effect evidence
-```
-
-Matching context-leakage fixtures were added.
-
-Formal route review:
+Formal review:
 
 ```text
 clinic_utilities/contracts/CU1_ROUTE_COVERAGE_REVIEW_2026-08-29.md
@@ -205,32 +157,14 @@ The remaining block is route-content completeness, not shard integration.
 
 # 6. Preserved evidence-gap behavior
 
-Examples remain explicit:
-
 ```text
-DGS
-→ no validated disease-specific progression thresholds
-
-De Quervain
-→ no validated active progressive rehabilitation sequence
-
-carpal tunnel syndrome
-→ no validated CU-1-style criteria-based PT sequence from reviewed authority
-
-acute isolated meniscus
-→ selected PT wording is consensus/clinical opinion
-→ no validated staged progression sequence
-
-adhesive capsulitis
-→ current 2025 guidance exists
-→ no single validated universal phase progression
-
-glenohumeral OA
-→ PT guidance remains consensus-level without route-specific progression sequence
-
-MDI
-→ cautious nonoperative framework may be described when selected
-→ comparative exercise benefit/harm remains unknown from control RCTs
+DGS → no validated disease-specific progression thresholds
+De Quervain → no validated active progressive rehabilitation sequence
+carpal tunnel → no validated CU-1 criteria-based PT sequence from reviewed authority
+acute isolated meniscus → selected PT wording is consensus/clinical opinion; no validated staged sequence
+adhesive capsulitis → current guidance exists; no universal validated phase progression
+GHOA → PT may benefit by best practice; nonsurgical comparative efficacy remains unestablished
+MDI → cautious framework may be described when selected; comparative exercise benefit/harm remains unknown
 ```
 
 No generic MSK fallback is permitted.
@@ -242,17 +176,16 @@ No generic MSK fallback is permitted.
 Continue only on the existing writer, route-by-route from the reconciled matrix:
 
 ```text
-1. glenohumeral_osteoarthritis
-2. degenerative_meniscal_lesion_conservative_rehabilitation
-3. patellar_tendinopathy
-4. thumb_cmc1_osteoarthritis
-5. cervical_routes
-6. remaining_wrist_hand_and_elbow_routes
-7. remaining routine routes in registry order
-8. define reviewed evidence-gap behavior where full staging is unsupported
-9. complete route-specific history prompts + matching fixtures alongside each route
-10. rerun exact design-completeness review
-11. STOP only at DESIGN-COMPLETE or a newly specific BLOCK
+1. degenerative_meniscal_lesion_conservative_rehabilitation
+2. patellar_tendinopathy
+3. thumb_cmc1_osteoarthritis
+4. cervical_routes
+5. remaining_wrist_hand_and_elbow_routes
+6. remaining routine routes in registry order
+7. define reviewed evidence-gap behavior where full staging is unsupported
+8. complete route-specific history prompts + matching fixtures alongside each route
+9. rerun exact design-completeness review
+10. STOP only at DESIGN-COMPLETE or a newly specific BLOCK
 ```
 
 ---
@@ -271,6 +204,8 @@ LABEL therapist execution detail as physician prescription by default
 USE evidence across a noncovered subtype or management context
 USE posterior postoperative RTS evidence as nonoperative posterior authority
 SILENTLY resolve conflicting ESWT frameworks
+REPRESENT best-practice GHOA opinion as comparative treatment efficacy
+IMPORT postoperative arthroplasty protocol into nonoperative/preoperative GHOA route
 MERGE PR #63 merely because individual routes passed
 OPEN CU-2
 RESTART PR-1
