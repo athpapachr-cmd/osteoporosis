@@ -1128,3 +1128,62 @@ RUNTIME AUTHORIZED            NO
 PR #63 remains draft/unmerged. No runtime recommendation logic, persistence change, CU-2 work or PR-1 restart was authorized.
 
 The exact next route is now `distal_biceps_tendon_disorder_nonoperative`, followed by the remaining wrist/hand and elbow routes and then the remaining routine registry.
+
+---
+
+## 2026-08-29 — Primary frozen shoulder rich-referral route closed as context-gated evidence-bounded runtime projection
+
+The runtime rich-referral route `shoulder.adhesive_capsulitis_frozen_shoulder` was closed for the currently approved CU-1 scope on `feat/cu1-rich-referral-global-evidence-2026-08-29` without broadening primary-frozen-shoulder evidence to every stiff-shoulder presentation.
+
+The accepted runtime gate is:
+
+```text
+formal_diagnosis
++ frozen_shoulder_scope=primary_frozen_shoulder
+→ context-gated rich referral
+→ exact rep_adhesive_capsulitis_v1 evidence projection
+
+presentation-only
+secondary_or_other_stiff_shoulder
+not_stated / unresolved scope
+→ no primary-frozen-shoulder rich authority
+→ non-rich path / explicit evidence-context gap
+```
+
+Current authority includes the 2025 Korean primary frozen shoulder CPG, the 2025 BESS frozen shoulder pathway and the 2023 exercise/mobilization systematic review. The rich output uses one evidence-bounded organizational stage for individualized mobility/ROM, function and self-management. It deliberately does not manufacture a `freezing → frozen → thawing` rehabilitation protocol, fixed treatment duration, universal ROM transition threshold or numerical progression rule.
+
+Evidence-scope boundaries were preserved:
+
+- manual therapy including ROM may be considered for clinician-established primary frozen shoulder;
+- self-stretching remains `therapist_execution_detail`, with no physician-generated fixed dose;
+- strengthening is not a mandatory routine referral direction because current evidence is insufficient/very low certainty;
+- BESS uncertainty about supervised physiotherapy versus natural history remains clinician-visible and is not converted into a superiority claim;
+- physiotherapy after injection remains context-specific and is not auto-rendered into the general primary-frozen-shoulder referral;
+- secondary, post-traumatic, postoperative and other stiff-shoulder contexts cannot borrow the primary frozen shoulder authority.
+
+The route has a dedicated review record, context contract, Greek rich-content shard, migration-matrix context gate, regression fixtures, logical coverage amendment and clinician-evidence projection. `test_cu1_shoulder_frozen_rich.py` is included in the focused GitHub Actions workflow.
+
+Exact clinical/runtime acceptance passed at:
+
+```text
+3364d1b6f9e749ccad8bac059a4cb6d5b54d4ed4
+workflow run 33268968382 / run #357
+compile PASS
+browser JavaScript syntax PASS
+Python acceptance suite 116/116 PASS
+```
+
+The docs-only canonical closeout commit `2cbccb13e50ab9530d1a3b68f7a31467688e6e0e` also passed focused CI in workflow run `33269037260` / run #358.
+
+State at this milestone:
+
+```text
+DESIGNED                   YES
+IMPLEMENTED                YES
+TESTED                     YES
+MERGED                     NO
+DEPLOYED                   NO
+PRODUCTION-SMOKE-VERIFIED  NO
+```
+
+No further frozen-shoulder implementation work is required for the current feature-branch scope unless new evidence, a demonstrated defect or product-owner feedback creates a specific REPLAN trigger. Merge/deploy remains on HOLD pending the broader global rich-referral acceptance work.
