@@ -93,6 +93,60 @@ class CU1RichReferralContextRouteTests(unittest.TestCase):
         self.assertIn("χωρίς ένα καθολικό πρόγραμμα ή δόση", formal_detailed.lower())
         self.assertLessEqual(len(formal_detailed), self.renderer.standard_detailed_target_chars)
 
+    def test_cervical_dizziness_requires_explicit_clinician_diagnosis(self):
+        route_id = "cervical_dizziness_presentation"
+        profile_id = "cervical"
+
+        self.assertEqual(self.renderer.rollout_state(profile_id=profile_id, route_id=route_id), "context_gated")
+        self.assertFalse(self.renderer.supports(profile_id=profile_id, route_id=route_id))
+        self.assertFalse(
+            self.renderer.supports(
+                profile_id=profile_id,
+                route_id=route_id,
+                context={"__wording_mode": "presentation"},
+            )
+        )
+        self.assertFalse(
+            self.renderer.supports(
+                profile_id=profile_id,
+                route_id=route_id,
+                context={
+                    "__wording_mode": "formal_diagnosis",
+                    "clinician_diagnosis_cervicogenic_dizziness": "no",
+                },
+            )
+        )
+
+        formal_context = {
+            "__wording_mode": "formal_diagnosis",
+            "clinician_diagnosis_cervicogenic_dizziness": "yes",
+        }
+        self.assertTrue(
+            self.renderer.supports(
+                profile_id=profile_id,
+                route_id=route_id,
+                context=formal_context,
+            )
+        )
+        short = self.renderer.render_short(
+            profile_id=profile_id,
+            route_id=route_id,
+            subtype_id=None,
+            context=formal_context,
+            clinical_context=["Αυχενογενής / αυχενικής προέλευσης ζάλη", "Περιορισμός σε βάδιση και εργασία"],
+        )
+        detailed = self.renderer.render_detailed(
+            profile_id=profile_id,
+            route_id=route_id,
+            subtype_id=None,
+            context=formal_context,
+            clinical_context=["Αυχενογενής / αυχενικής προέλευσης ζάλη", "Περιορισμός σε βάδιση και εργασία"],
+        )
+        self.assertIn("χωρίς υπόσχεση επίλυσης της ζάλης", short.lower())
+        self.assertIn("δεν προστίθεται αυτόματα αιθουσαία", detailed.lower())
+        self.assertIn("ιατρική επανεκτίμηση", detailed.lower())
+        self.assertLessEqual(len(detailed), self.renderer.standard_detailed_target_chars)
+
 
 if __name__ == "__main__":
     unittest.main()
