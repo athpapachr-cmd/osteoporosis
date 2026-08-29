@@ -1,4 +1,4 @@
-version: cu1_evidence_manifest_v1_5
+version: cu1_evidence_manifest_v1_6
 status: design_frozen_sharded_registry_manifest
 runtime_authorized: false
 reviewed_on: 2026-08-29
@@ -7,11 +7,15 @@ purpose: >-
   Single normative entrypoint for the CU-1 evidence corpus. The corpus is sharded for maintainability.
   A staging shard may become active design authority only after its reviewed normalization/promotion
   projection passes the same schema, applicability, reference, freshness and output-scope gates as
-  the active core registry. A native explicit-ID route-coverage shard may be active only after each
-  added route passes an exact recorded review. Sharding must never relax clinical evidence governance.
+  the active core registry. Native explicit-ID route-coverage shards may be active only after each
+  added route passes an exact recorded review. Narrow reviewed logical amendments may only reduce
+  scope, attach reviewed sequences, correct evidence grading without upgrading evidence, or suppress
+  scope-unsafe claims. Sharding must never relax clinical evidence governance.
 
 normative_schema: clinic_utilities/contracts/cu1_history_timeline_schema_v1.yaml
 coverage_matrix: clinic_utilities/contracts/cu1_evidence_coverage_matrix_v1.yaml
+logical_amendments:
+  - clinic_utilities/contracts/cu1_evidence_route_coverage_amendments_v1.yaml
 
 shard_state_values:
   - active_design_authority
@@ -53,6 +57,19 @@ shards:
     normative_read_rule: use_only_route_objects_with_pass_record_in_named_route_coverage_review
     reviewed_routes:
       - calcific_rotator_cuff_tendinopathy
+
+  - shard_id: shoulder_instability_route_coverage_extension
+    path: clinic_utilities/contracts/cu1_evidence_route_coverage_instability_v1.yaml
+    state: active_design_authority
+    identity_mode: explicit_payload_id
+    review_record: clinic_utilities/contracts/CU1_ROUTE_COVERAGE_REVIEW_2026-08-29.md
+    schema_conformance_reviewed: true
+    normative_read_rule: >-
+      use_only_context_scoped_route_objects_with_PASS_record_then_apply_named_logical_amendment
+      before_referral_authority_resolution
+    logical_amendment: clinic_utilities/contracts/cu1_evidence_route_coverage_amendments_v1.yaml
+    reviewed_routes:
+      - glenohumeral_instability_dislocation
 
 logical_collections:
   - sources
@@ -107,7 +124,16 @@ native_route_coverage_gate:
   - validate_no_duplicate_ids_across_active_logical_registry
   - preserve_framework_conflicts_as_distinct_claims
   - add_route_specific_history_prompts
+  - add_matching_route_or_subtype_regression_fixtures
   - exact_human_route_review_recorded_before_manifest_activation
+
+logical_amendment_gate:
+  - amendment_target_must_already_exist_in_active_logical_registry_or_same_reviewed_route_extension
+  - amendment_may_only_narrow_applicability_or_suppress_scope_unsafe_claim_or_attach_reviewed_sequence_or_correct_grading_without_upgrading_evidence
+  - amendment_must_preserve_original_source_and_historical_artifact
+  - amendment_must_have_exact_human_review_record
+  - suppressed_claim_cannot_resolve_as_active_authority_in_suppressed_scope
+  - amendment_cannot_create_duplicate_canonical_identity
 
 promotion_projection_rules:
   - staging_source_is_retained_for_audit_history
@@ -126,6 +152,7 @@ merge_rules:
   - active_shard_with_promotion_projection_is_normalized_before_merge
   - named_mandatory_promotion_overlay_is_applied_before_merge
   - native_route_coverage_objects_require_a_matching_PASS_record_before_normative_use
+  - all_named_reviewed_logical_amendments_are_applied_after_active_shard_merge_and_before_authority_resolution
   - staged_candidates_may_inform_the_work_queue_but_are_not_normative_registry_authority
   - shard_order_does_not_create_clinical_precedence
   - duplicate_canonical_id_across_active_or_promotion_candidate_shards_is_hard_failure
@@ -141,8 +168,10 @@ merge_rules:
 
 clinical_applicability_rules:
   - route_match_is_required
-  - material_subtype_match_is_required_when_claim_or_profile_is_subtype_scoped
+  - material_subtype_or_context_match_is_required_when_claim_profile_or_sequence_is_scoped
   - applicability_conditions_must_be_satisfied_before_render_authority
+  - unresolved_material_direction_cause_or_management_context_blocks_evidence_aware_sequence_resolution
+  - postoperative_context_routes_to_the_procedure_specific_or_postoperative_owner_and_not_a_nonoperative_route_sequence
   - regional_profile_identity_never_substitutes_for_route_evidence_profile_identity
   - a_midportion_Achilles_claim_cannot_authorize_insertional_Achilles_output
   - a_route_specific_claim_cannot_be_reused_as_generic_MSK_authority
@@ -155,6 +184,7 @@ framework_governance_rules:
   - compatible_framework_claims_may_both_support_an_element_without_manufacturing_a_hybrid_strength
   - conflicting_framework_positions_remain_explicit
   - framework_conflict_prevents_silent_auto_rendering_of_one_position_as_unanimous_authority
+  - no_effect_estimate_from_absent_eligible_trials_must_not_be_relabelled_as_very_low_effect_evidence
   - newer_route_specific_guidance_does_not_silently_erase_an_older_still_relevant_distinct_framework
 
 freshness_rules:
@@ -176,6 +206,7 @@ future_runtime_boundary:
     - apply_named_mandatory_promotion_overlay
     - normalize_shard_identity
     - merge_logical_registry
+    - apply_reviewed_logical_amendments
     - validate_all_references_and_applicability
   forbidden_in_current_slice:
     - runtime_recommendation_selection
@@ -188,6 +219,10 @@ readiness_gate:
   tranche2_promotion_gate_passed: true
   tranche3_promotion_gate_passed: true
   route_coverage_extension_gate_passed_for_reviewed_routes: true
+  route_coverage_reviewed_routes:
+    - calcific_rotator_cuff_tendinopathy
+    - glenohumeral_instability_dislocation
+  logical_amendment_gate_passed: true
   all_active_authority_shards_schema_reviewed: true
   all_listed_shards_schema_reviewed: true
   all_routes_covered: false
