@@ -1,4 +1,4 @@
-version: cu1_evidence_manifest_v1_8
+version: cu1_evidence_manifest_v1_9
 status: design_frozen_sharded_registry_manifest
 runtime_authorized: false
 reviewed_on: 2026-08-29
@@ -84,6 +84,18 @@ shards:
       and_route_specific_PASS_fixtures_are_satisfied
     reviewed_routes:
       - degenerative_meniscal_lesion_conservative_rehabilitation
+
+  - shard_id: patellar_tendinopathy_route_coverage_extension
+    path: clinic_utilities/contracts/cu1_evidence_route_coverage_patellar_tendinopathy_v1.yaml
+    state: active_design_authority
+    identity_mode: explicit_payload_id
+    review_record: clinic_utilities/contracts/CU1_PATELLAR_TENDINOPATHY_ROUTE_REVIEW_2026-08-29.md
+    schema_conformance_reviewed: true
+    normative_read_rule: >-
+      preserve_absolute_exercise_effect_uncertainty_and_do_not_resolve_any_loading_mode_as_a_mandatory
+      physician_protocol_or_render_unvalidated_numeric_RTS_thresholds
+    reviewed_routes:
+      - patellar_tendinopathy
 
 logical_collections:
   - sources
@@ -204,6 +216,7 @@ framework_governance_rules:
   - no_effect_estimate_from_absent_eligible_trials_must_not_be_relabelled_as_low_or_very_low_effect_evidence
   - best_practice_opinion_must_not_be_relabelled_as_comparative_efficacy_evidence
   - consensus_grade_must_not_be_relabelled_as_trial_certainty
+  - population_specific_trial_superiority_must_not_be_promoted_to_universal_protocol_superiority_when_later_synthesis_does_not_support_a_clinically_meaningful_hierarchy
   - newer_route_specific_guidance_does_not_silently_erase_an_older_still_relevant_distinct_framework
 
 freshness_rules:
@@ -243,6 +256,7 @@ readiness_gate:
     - glenohumeral_instability_dislocation
     - glenohumeral_osteoarthritis
     - degenerative_meniscal_lesion_conservative_rehabilitation
+    - patellar_tendinopathy
   logical_amendment_gate_passed: true
   all_active_authority_shards_schema_reviewed: true
   all_listed_shards_schema_reviewed: true
