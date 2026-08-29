@@ -50,3 +50,46 @@ routes:
     reassessment_el: >-
       Ιατρική επανεκτίμηση σε προοδευτικό αντικειμενικό ωλένιο κινητικό έλλειμμα, σημαντική valgus/UCL αστάθεια ή τραυματικό πλαίσιο, ουσιαστικό μηχανικό μπλοκάρισμα ή άλλη ασύμβατη έσω αγκωνιαία εικόνα.
     reassessment_evidence_claim_ids: [met_ulnar_and_medial_elbow_differential_reassessment]
+
+  ulnar_neuropathy_at_elbow:
+    profile_ids: [elbow]
+    problem_label_el_by_wording_mode:
+      presentation: Συμπτωματολογία ωλενίου νεύρου στην περιοχή του αγκώνα
+      formal_diagnosis: Ωλένια νευροπάθεια στον αγκώνα / σύνδρομο κυβοειδούς σωλήνα
+    variants:
+      - variant_id: une_mild_sensory_predominant_conservative
+        match:
+          wording_modes: [presentation, formal_diagnosis]
+          context_equals:
+            une_clinician_severity_context: mild
+            une_objective_ulnar_motor_status: assessed_without_material_motor_deficit
+            une_intrinsic_atrophy_or_clawing: absent_when_assessed
+            une_unresolved_alternative_localization_or_structural_owner: "no"
+        evidence_profile_ids: [rep_une_mild_sensory_predominant_v1]
+        authority_mode: evidence_bounded_mild_conservative_sequence
+        short_flow_el:
+          - >-
+            Σε ρητά ήπια, sensory-predominant εικόνα χωρίς ουσιώδες αντικειμενικό κινητικό έλλειμμα προτείνεται εκπαίδευση για τις πραγματικά καταγεγραμμένες θέσεις ή κινήσεις του αγκώνα που προκαλούν συμπτώματα και εξατομικευμένη προσωρινή τροποποίησή τους, με διατήρηση της σχετικής λειτουργίας και επανεκτίμηση.
+          - >-
+            Δεν καθιερώνεται αυτόματα νυχτερινός νάρθηκας, nerve gliding/νευροδυναμική, χειροθεραπεία ή ηλεκτροθεραπεία ως routine core. Νέα ή προοδευτική κινητική αδυναμία, ατροφία/clawing ή άλλο ουσιώδες αντικειμενικό νευρολογικό έλλειμμα απαιτεί ιατρική ή ειδική επανεκτίμηση.
+        stages:
+          - stage_id: une_mild_education_position_modification
+            label_el: ΣΤΑΔΙΟ 1 — ΕΚΠΑΙΔΕΥΣΗ / ΤΡΟΠΟΠΟΙΗΣΗ ΕΚΛΥΤΙΚΩΝ ΘΕΣΕΩΝ ΚΑΙ ΚΙΝΗΣΕΩΝ
+            goals_el:
+              - μείωση της συμπτωματικής επιβάρυνσης από τις πραγματικά καταγεγραμμένες εκλυτικές θέσεις ή κινήσεις
+              - διατήρηση της σχετικής λειτουργίας και ενίσχυση της αυτοδιαχείρισης
+            intervention_directions_el:
+              - εκπαίδευση σχετικά με τις θέσεις ή κινήσεις που έχουν πράγματι καταγραφεί ότι προκαλούν συμπτώματα και εξατομικευμένη προσωρινή τροποποίηση αυτών των εκθέσεων
+              - αποφυγή κατασκευασμένου καθολικού πρωτοκόλλου νάρθηκα, nerve gliding, χειροθεραπείας, ηλεκτροθεραπείας, συχνότητας επισκέψεων ή συνολικής διάρκειας θεραπείας
+            progress_markers_el:
+              - καλύτερη ανοχή στις σχετικές θέσεις, κινήσεις και λειτουργικές απαιτήσεις χωρίς νέο ή προοδευτικό αντικειμενικό κινητικό έλλειμμα
+            evidence_claim_ids:
+              - une_mild_position_education_small_rct
+              - une_no_best_physiotherapy_modality
+              - une_night_splint_very_low_uncertain
+            organization_authority: clinical_rehabilitation_organization
+        adjunct_boundary_el: >-
+          Η τεκμηρίωση δεν καθιερώνει routine νυχτερινό νάρθηκα, nerve gliding/νευροδυναμική, χειροθεραπεία ή ηλεκτροθεραπεία ως υποχρεωτικό ή ανώτερο core πρόγραμμα για ήπια UNE.
+        reassessment_el: >-
+          Ιατρική ή ειδική επανεκτίμηση σε νέα/προοδευτική αντικειμενική ωλένια κινητική αδυναμία, ενδογενή ατροφία, clawing, άλλο ουσιωδώς επιδεινούμενο αντικειμενικό νευρολογικό έλλειμμα ή μη επιλυμένη εναλλακτική εντόπιση/δομική αιτία.
+        reassessment_evidence_claim_ids: [une_progressive_motor_or_atrophy_reassessment, une_alternative_localization_or_structural_owner]
