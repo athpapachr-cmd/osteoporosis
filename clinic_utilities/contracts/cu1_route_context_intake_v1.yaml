@@ -15,6 +15,7 @@ rules:
   unknown_enum_value_invalid: true
   omission_does_not_imply_negative: true
   rich_variant_may_require_more_context_than_base_referral: true
+  machine_ids_must_not_be_browser_labels: true
 
 routes:
   headache_with_cervical_msk_features:
@@ -23,6 +24,10 @@ routes:
         type: enum
         label_el: Έχει τεθεί ρητά διάγνωση αυχενογενούς κεφαλαλγίας;
         values: ["yes", "no", not_stated]
+        value_labels_el:
+          "yes": Ναι
+          "no": Όχι
+          not_stated: Δεν δηλώνεται
         required: false
         show_when:
           wording_modes: [formal_diagnosis]
@@ -33,6 +38,10 @@ routes:
         type: enum
         label_el: Έχει τεθεί ρητά διάγνωση αυχενογενούς / αυχενικής ζάλης;
         values: ["yes", "no", not_stated]
+        value_labels_el:
+          "yes": Ναι
+          "no": Όχι
+          not_stated: Δεν δηλώνεται
         required: false
         show_when:
           wording_modes: [formal_diagnosis]
@@ -43,12 +52,20 @@ routes:
         type: enum
         label_el: Μηχανισμός τραυματισμού
         values: [whiplash_acceleration_deceleration, other_cervical_trauma, not_stated]
+        value_labels_el:
+          whiplash_acceleration_deceleration: Μηχανισμός επιτάχυνσης–επιβράδυνσης / whiplash
+          other_cervical_trauma: Άλλος αυχενικός τραυματισμός
+          not_stated: Δεν δηλώνεται
         required: false
         required_for_rich_variant: true
       temporal_phase:
         type: enum
         label_el: Χρονική φάση
         values: [recent_or_acute_within_12_weeks, persistent_over_3_months, not_stated]
+        value_labels_el:
+          recent_or_acute_within_12_weeks: Πρόσφατο / οξύ, έως 12 εβδομάδες
+          persistent_over_3_months: Επίμονο, πάνω από 3 μήνες
+          not_stated: Δεν δηλώνεται
         required: false
         required_for_rich_variant: true
         note: >-
@@ -57,22 +74,38 @@ routes:
         type: enum
         label_el: Δομική κατάσταση μετά τον τραυματισμό
         values: [no_material_structural_injury_identified_by_clinician, material_structural_injury_or_restriction_present, structural_status_not_stated]
+        value_labels_el:
+          no_material_structural_injury_identified_by_clinician: Δεν έχει διαπιστωθεί ουσιώδης δομική κάκωση από τον κλινικό
+          material_structural_injury_or_restriction_present: Υπάρχει δομική κάκωση ή ειδικός περιορισμός
+          structural_status_not_stated: Δεν έχει δηλωθεί / δεν έχει διευκρινιστεί
         required: false
         required_for_rich_variant: true
       material_neurological_or_other_safety_concern:
         type: enum
         label_el: Υπάρχει ουσιώδης νευρολογική ή άλλη ανησυχία ασφάλειας;
         values: ["yes", "no", not_stated]
+        value_labels_el:
+          "yes": Ναι
+          "no": Όχι
+          not_stated: Δεν δηλώνεται
         required: false
         required_for_rich_variant: true
       physiotherapy_considered_appropriate_by_clinician:
         type: enum
         label_el: Έχει κριθεί κατάλληλη η συνήθης φυσιοθεραπευτική αποκατάσταση;
         values: ["yes", "no", not_stated]
+        value_labels_el:
+          "yes": Ναι
+          "no": Όχι
+          not_stated: Δεν δηλώνεται
         required: false
         required_for_rich_variant: true
       manual_therapy_selected_as_adjunct:
         type: enum
         label_el: Έχει επιλεγεί χειροθεραπεία ως επικουρικό μέσο;
         values: ["yes", "no", not_stated]
+        value_labels_el:
+          "yes": Ναι
+          "no": Όχι
+          not_stated: Δεν δηλώνεται
         required: false
