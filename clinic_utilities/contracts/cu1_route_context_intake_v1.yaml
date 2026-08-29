@@ -1,0 +1,78 @@
+version: cu1_route_context_intake_v1
+status: active_runtime_authority
+runtime_authorized: true
+reviewed_on: 2026-08-29
+purpose: >-
+  Data-driven route-specific clinician context fields that are valid in primary_problem.context.
+  These fields may expose already-reviewed route distinctions to the UI and validator, but they do
+  not diagnose, infer missing context, or independently authorize rich referral output. Rich output
+  remains governed by the separate fail-closed migration matrix and exact variant matching.
+
+rules:
+  clinician_entered_only: true
+  no_inference_from_findings_or_route_label: true
+  unknown_field_for_route_invalid: true
+  unknown_enum_value_invalid: true
+  omission_does_not_imply_negative: true
+  rich_variant_may_require_more_context_than_base_referral: true
+
+routes:
+  headache_with_cervical_msk_features:
+    fields:
+      formal_cervicogenic_headache_diagnosis:
+        type: enum
+        label_el: Έχει τεθεί ρητά διάγνωση αυχενογενούς κεφαλαλγίας;
+        values: ["yes", "no", not_stated]
+        required: false
+        show_when:
+          wording_modes: [formal_diagnosis]
+
+  cervical_dizziness_presentation:
+    fields:
+      clinician_diagnosis_cervicogenic_dizziness:
+        type: enum
+        label_el: Έχει τεθεί ρητά διάγνωση αυχενογενούς / αυχενικής ζάλης;
+        values: ["yes", "no", not_stated]
+        required: false
+        show_when:
+          wording_modes: [formal_diagnosis]
+
+  post_traumatic_neck_pain:
+    fields:
+      trauma_mechanism_context:
+        type: enum
+        label_el: Μηχανισμός τραυματισμού
+        values: [whiplash_acceleration_deceleration, other_cervical_trauma, not_stated]
+        required: false
+        required_for_rich_variant: true
+      temporal_phase:
+        type: enum
+        label_el: Χρονική φάση
+        values: [recent_or_acute_within_12_weeks, persistent_over_3_months, not_stated]
+        required: false
+        required_for_rich_variant: true
+        note: >-
+          Must be explicitly selected by the clinician; runtime must not infer temporal phase from an approximate duration.
+      structural_status:
+        type: enum
+        label_el: Δομική κατάσταση μετά τον τραυματισμό
+        values: [no_material_structural_injury_identified_by_clinician, material_structural_injury_or_restriction_present, structural_status_not_stated]
+        required: false
+        required_for_rich_variant: true
+      material_neurological_or_other_safety_concern:
+        type: enum
+        label_el: Υπάρχει ουσιώδης νευρολογική ή άλλη ανησυχία ασφάλειας;
+        values: ["yes", "no", not_stated]
+        required: false
+        required_for_rich_variant: true
+      physiotherapy_considered_appropriate_by_clinician:
+        type: enum
+        label_el: Έχει κριθεί κατάλληλη η συνήθης φυσιοθεραπευτική αποκατάσταση;
+        values: ["yes", "no", not_stated]
+        required: false
+        required_for_rich_variant: true
+      manual_therapy_selected_as_adjunct:
+        type: enum
+        label_el: Έχει επιλεγεί χειροθεραπεία ως επικουρικό μέσο;
+        values: ["yes", "no", not_stated]
+        required: false
