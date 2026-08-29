@@ -6,7 +6,7 @@
 > **Verified remote `main`:** `08ecd3ab33e98d567c47042a8a1de482df6952b9`.
 > **ACTIVE CANONICAL WRITER/LOCK:** `design/cu1-history-evidence-timeline-2026-08-28`.
 > **ACTIVE RUNTIME WRITER/LOCK:** NONE.
-> **PR #63:** draft / design-only / unmerged; reviewed route coverage is complete through matrix commit `6543e8d06b7492ceb391b22ecf514dbd7c9e3bd2`; this canonical commit may advance branch head.
+> **PR #63:** draft / design-only / unmerged; reviewed route coverage is complete through matrix commit `795292aca8a526857fa6c24eb3cd2f1668cb91a5`; this canonical commit may advance branch head.
 > **Runtime evidence-aware generation:** NOT AUTHORIZED.
 > **CU-2:** NOT AUTHORIZED.
 > **PR-1 Transcript Intake:** intentionally paused.
@@ -45,6 +45,7 @@ framework-specific strength != synthetic cross-framework strength
 expert consensus / clinical opinion / best-practice opinion != treatment-effect estimate
 no eligible comparative trials != low or very-low effect estimate
 framework conflict != silent guideline consensus
+population-specific trial superiority != universal protocol superiority
 ```
 
 No patient identifiers were added.
@@ -59,7 +60,7 @@ Manifest:
 clinic_utilities/contracts/cu1_evidence_manifest_v1.yaml
 ```
 
-Active logical evidence layers:
+Active logical evidence layers now include:
 
 ```text
 core_seed_registry
@@ -67,6 +68,8 @@ high_frequency_tranche2 + reviewed promotion projection
 shoulder_hip_meniscus_tranche3 + reviewed projection/overlay
 route_coverage_extension
 shoulder_instability_route_coverage_extension
+degenerative_meniscus_route_coverage_extension
+patellar_tendinopathy_route_coverage_extension
 cu1_evidence_route_coverage_amendments_v1.yaml
 ```
 
@@ -74,7 +77,7 @@ All listed shards have passed their native or reviewed schema/promotion gate. No
 
 ---
 
-# 4. Newly completed route coverage
+# 4. Reviewed native route coverage
 
 ## Calcific rotator-cuff tendinopathy — PASS
 
@@ -88,43 +91,66 @@ Core active rehabilitation is supported. ESWT remains an explicit JOSPT-2025-vs-
 
 ## Glenohumeral instability/dislocation split — PASS
 
-No generic instability sequence exists.
-
-```text
-traumatic anterior
-posterior nonoperative
-atraumatic anterior nonoperative
-multidirectional instability nonoperative
-```
-
-are distinct evidence contexts. Unresolved direction/cause/management blocks evidence-aware output; postoperative instability belongs to the postoperative owner. Posterior Part-II postoperative RTS evidence is suppressed from nonoperative authority.
+No generic instability sequence exists. Traumatic anterior, posterior nonoperative, atraumatic anterior nonoperative and multidirectional-instability nonoperative contexts remain distinct. Unresolved direction/cause/management blocks evidence-aware output; postoperative instability belongs to the postoperative owner. Posterior Part-II postoperative RTS evidence is suppressed from nonoperative authority.
 
 ## Glenohumeral osteoarthritis — PASS
 
-Management context is explicit:
+Nonoperative and preoperative-TSA contexts use broad APTA best-practice/evidence-gap-aware sequences. Postoperative arthroplasty belongs to `postoperative_shoulder_rehabilitation`. The absence of nonsurgical comparative PT RCTs is not relabelled as a low-certainty treatment effect.
+
+## Degenerative meniscal lesion — PASS
 
 ```text
-nonoperative primary GHOA
-→ rep_glenohumeral_oa_nonoperative_v1
-→ broad APTA best-practice/evidence-gap-aware sequence
-
-preoperative TSA
-→ rep_glenohumeral_oa_preop_TSA_v1
-→ broad APTA best-practice/evidence-gap-aware sequence
-
-postoperative arthroplasty
-→ postoperative_shoulder_rehabilitation
-→ procedure/patient-specific protocol owner
+rep_degenerative_meniscus_conservative_v1
+seq_degenerative_meniscus_conservative_v1
+→ sequence_complete — evidence-bounded
 ```
 
-The 2023 APTA CPG reports no high/moderate-quality comparative evidence for nonoperative PT and no evidence-supported superior PT intervention. A 2026 systematic review confirms no nonsurgical PT RCTs through its June-2025 search. These are represented as `best_practice / insufficient_evidence`, not as low-certainty effect estimates.
+The 2025 EU-US meniscus consensus supports nonoperative treatment including PT as first approach for symptomatic degenerative lesions and supports progressive ROM/strength/neuromuscular rehabilitation. ESCAPE 5-year and OMEX 10-year randomized follow-up support exercise-based management compared with arthroscopic partial meniscectomy in common degenerative tears.
 
-Matching history prompts and fixtures exist for all three newly reviewed route groups.
+Hard boundary:
 
-Formal review:
+```text
+MRI tear != automatic symptom generator or surgery logic
+clicking/catching != true locking
+true locking / unresolved structural surgical indication -> block routine sequence + reassess
+acute traumatic context -> acute-meniscus owner
+postoperative context -> postoperative-knee owner
+```
+
+## Patellar tendinopathy — PASS
+
+```text
+rep_patellar_tendinopathy_v1
+seq_patellar_tendinopathy_v1
+→ sequence_complete — single-phase evidence-bounded
+```
+
+Current evidence is deliberately reconciled rather than flattened:
+
+```text
+Cochrane 2025
+→ absolute strengthening effect remains low/very-low certainty by outcome/comparator
+→ no universal high-certainty efficacy statement
+
+2026 exercise NMA
+→ no clinically meaningful superiority hierarchy among contemporary loading strategies
+→ HSR reasonable reference, not mandatory protocol
+
+Breda 2021 PTLE RCT
+→ population-specific PTLE signal vs eccentric-only
+→ not universal PTLE-superiority authority
+```
+
+Therefore progressive tendon/quadriceps loading may be represented as the broad conservative rehabilitation direction, but eccentric/isometric/HSR/PTLE choice and dosing remain therapist execution detail. No universal numeric progression or return-to-sport threshold is rendered. ESWT is not auto-recommended.
+
+Matching history prompts and fixtures exist for all five reviewed native route groups.
+
+Formal route reviews:
 
 ```text
 clinic_utilities/contracts/CU1_ROUTE_COVERAGE_REVIEW_2026-08-29.md
+clinic_utilities/contracts/CU1_DEGENERATIVE_MENISCUS_ROUTE_REVIEW_2026-08-29.md
+clinic_utilities/contracts/CU1_PATELLAR_TENDINOPATHY_ROUTE_REVIEW_2026-08-29.md
 ```
 
 ---
@@ -165,6 +191,7 @@ acute isolated meniscus → selected PT wording is consensus/clinical opinion; n
 adhesive capsulitis → current guidance exists; no universal validated phase progression
 GHOA → PT may benefit by best practice; nonsurgical comparative efficacy remains unestablished
 MDI → cautious framework may be described when selected; comparative exercise benefit/harm remains unknown
+patellar tendinopathy → progressive loading direction may be used cautiously; no mandatory loading mode or validated universal numeric RTS threshold
 ```
 
 No generic MSK fallback is permitted.
@@ -176,17 +203,17 @@ No generic MSK fallback is permitted.
 Continue only on the existing writer, route-by-route from the reconciled matrix:
 
 ```text
-1. degenerative_meniscal_lesion_conservative_rehabilitation
-2. patellar_tendinopathy
-3. thumb_cmc1_osteoarthritis
-4. cervical_routes
-5. remaining_wrist_hand_and_elbow_routes
-6. remaining routine routes in registry order
-7. define reviewed evidence-gap behavior where full staging is unsupported
-8. complete route-specific history prompts + matching fixtures alongside each route
-9. rerun exact design-completeness review
-10. STOP only at DESIGN-COMPLETE or a newly specific BLOCK
+1. thumb_cmc1_osteoarthritis
+2. cervical_routes
+3. remaining_wrist_hand_and_elbow_routes
+4. remaining routine routes in registry order
+5. define reviewed evidence-gap behavior where full staging is unsupported
+6. complete route-specific history prompts + matching fixtures alongside each route
+7. rerun exact design-completeness review
+8. STOP only at DESIGN-COMPLETE or a newly specific BLOCK
 ```
+
+A small reconciliation cleanup remains allowed inside the same scope: the internal `review_record` metadata in `cu1_evidence_route_coverage_meniscus_v1.yaml` must be aligned with its already-authoritative dedicated review file without changing clinical content.
 
 ---
 
@@ -206,6 +233,8 @@ USE posterior postoperative RTS evidence as nonoperative posterior authority
 SILENTLY resolve conflicting ESWT frameworks
 REPRESENT best-practice GHOA opinion as comparative treatment efficacy
 IMPORT postoperative arthroplasty protocol into nonoperative/preoperative GHOA route
+FREEZE eccentric / isometric / HSR / PTLE as a universal patellar-tendinopathy physician protocol
+IMPORT older expert numeric patellar RTS/pain thresholds as current validated clearance rules
 MERGE PR #63 merely because individual routes passed
 OPEN CU-2
 RESTART PR-1
