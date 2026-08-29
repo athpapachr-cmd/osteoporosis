@@ -87,6 +87,31 @@ class CU1SharedRichReferralTests(unittest.TestCase):
                 with self.subTest(profile=profile_id, route=route_id):
                     self.assertIn(entry.get("state"), allowed_states)
 
+    def test_rollout_states_do_not_overstate_authoritative_sequence_coverage(self):
+        rollout = self.renderer.contract_rollout_entries()
+        coverage_profiles = self.evidence.coverage.get("profiles") or {}
+        for profile_id, routes in rollout.items():
+            profile_coverage = coverage_profiles.get(profile_id) or {}
+            for route_id, entry in routes.items():
+                coverage = profile_coverage.get(route_id) or {}
+                state = entry.get("state")
+                sequence_status = coverage.get("sequence_status")
+                with self.subTest(profile=profile_id, route=route_id, state=state):
+                    if state == "rich_ready":
+                        self.assertEqual(sequence_status, "sequence_complete")
+                    elif state == "context_gated":
+                        if sequence_status == "sequence_complete":
+                            continue
+                        branches = coverage.get("contexts") or coverage.get("variants") or {}
+                        complete_branches = [
+                            branch
+                            for branch in branches.values()
+                            if isinstance(branch, dict) and branch.get("sequence_status") == "sequence_complete"
+                        ] if isinstance(branches, dict) else []
+                        self.assertTrue(complete_branches)
+                    elif state == "evidence_limited" and sequence_status:
+                        self.assertNotEqual(sequence_status, "sequence_complete")
+
     def test_only_rich_ready_routes_can_be_supported_without_context(self):
         rollout = self.renderer.contract_rollout_entries()
         for profile_id, routes in rollout.items():
