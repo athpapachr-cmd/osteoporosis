@@ -6,7 +6,7 @@
 > **Verified remote `main`:** `08ecd3ab33e98d567c47042a8a1de482df6952b9`.
 > **ACTIVE CANONICAL WRITER/LOCK:** `design/cu1-history-evidence-timeline-2026-08-28`.
 > **ACTIVE RUNTIME WRITER/LOCK:** NONE.
-> **PR #63:** draft / design-only / unmerged; reviewed route coverage is complete through C5 matrix commit `57cc0a75e1653b0f1536f51b9495f46e844c4b41`; this canonical commit may advance branch head.
+> **PR #63:** draft / design-only / unmerged; reviewed route coverage is complete through lateral-elbow matrix commit `0e403817a1fdadbb915b08d349713417754493e1`; this canonical commit may advance branch head.
 > **Runtime evidence-aware generation:** NOT AUTHORIZED.
 > **CU-2:** NOT AUTHORIZED.
 > **PR-1 Transcript Intake:** intentionally paused.
@@ -47,6 +47,7 @@ no eligible comparative trials != low or very-low effect estimate
 framework conflict != silent guideline consensus
 population-specific trial superiority != universal protocol superiority
 assessment recommendation != validated progression threshold
+evidence recommendation direction != automatic treatment selection
 subjective radiating symptoms != objective neurological deficit
 positive provocation test != formal cervical radiculopathy diagnosis
 not_assessed neurological status != normal
@@ -66,6 +67,10 @@ C5_selection != structural_clearance
 WAD_grade != CU1_inferred_classification
 post_traumatic_headache_dizziness_or_arm_symptoms != automatic_C3_C4_C2_disease_specific_authority
 study_programme_duration_or_frequency != universal_referral_schedule
+lateral_elbow_pain_or_provocation_or_imaging_finding != automatic_lateral_elbow_tendinopathy_diagnosis
+acute_or_highly_irritable_LET != subacute_or_chronic_Grade_B_loading_context
+outcome_measure_recommendation != progression_or_RTW_RTS_threshold
+newer_low_certainty_synthesis != automatic_do_not_offer_of_older_route_specific_CPG_recommendation
 ```
 
 No patient identifiers were added.
@@ -96,16 +101,19 @@ cervical_radiating_route_coverage_extension
 cervical_headache_route_coverage_extension
 cervical_dizziness_route_coverage_extension
 cervical_posttraumatic_route_coverage_extension
+lateral_elbow_route_coverage_extension
 cu1_evidence_route_coverage_amendments_v1.yaml
+cu1_evidence_route_coverage_lateral_elbow_amendment_v1.yaml
 ```
 
-Cervical regression extensions:
+Regression extensions include:
 
 ```text
 clinic_utilities/contracts/cu1_cervical_history_evidence_fixtures_v1.yaml
 clinic_utilities/contracts/cu1_c3_cervical_headache_fixtures_v1.yaml
 clinic_utilities/contracts/cu1_c4_cervical_dizziness_fixtures_v1.yaml
 clinic_utilities/contracts/cu1_c5_post_traumatic_neck_fixtures_v1.yaml
+clinic_utilities/contracts/cu1_lateral_elbow_fixtures_v1.yaml
 ```
 
 All listed active shards have passed their native or reviewed schema/promotion gate. No staged evidence shard remains.
@@ -332,16 +340,54 @@ No universal numeric progression threshold, fixed visit frequency, total PT dura
 
 Post-traumatic headache, dizziness and radiating arm symptoms remain history/context and do not automatically import C3/C4/C2 disease-specific authority.
 
-Matching route-specific prompts and regression fixtures now exist for C1-C5.
-
-Formal cervical reviews:
+## Lateral elbow tendinopathy — PASS as single-phase evidence-bounded route
 
 ```text
-clinic_utilities/contracts/CU1_CERVICAL_ROUTE_REVIEW_2026-08-29.md
-clinic_utilities/contracts/CU1_C2_RADIATING_NECK_ROUTE_REVIEW_2026-08-29.md
-clinic_utilities/contracts/CU1_C3_CERVICAL_HEADACHE_ROUTE_REVIEW_2026-08-29.md
-clinic_utilities/contracts/CU1_C4_CERVICAL_DIZZINESS_ROUTE_REVIEW_2026-08-29.md
-clinic_utilities/contracts/CU1_C5_POST_TRAUMATIC_NECK_ROUTE_REVIEW_2026-08-29.md
+rep_lateral_elbow_tendinopathy_v1
+→ seq_lateral_elbow_evidence_bounded_v1
+→ sequence_complete
+```
+
+The existing 2022 APTA/JOSPT LET CPG remains the route-specific clinical-practice authority. The reviewed activation amendment preserves exact CPG grading and replaces the incomplete two-phase seed as the profile target.
+
+Key route semantics:
+
+```text
+lateral elbow pain / local tenderness / Cozen-Mill-Maudsley-type finding / imaging abnormality
+!= autonomous LET diagnosis
+
+subacute or chronic LET
+→ Grade-B resisted wrist-extensor loading
+→ isometric and/or concentric and/or eccentric
+→ no universal exercise dose
+
+acute or highly irritable LET
+!= automatic subacute/chronic Grade-B loading authority
+
+high-demand occupation/sport/hobby context
+→ Grade-F gradual stress/strength/endurance/motor-control reintroduction
+→ conditional direction, not a second phase with invented transition threshold
+```
+
+Selected adjuncts preserve their own CPG evidence direction while remaining optional by applicability/selection: local manual therapy Grade B, dry needling Grade B, rigid taping Grade B in selected irritable context, and activity-related counterforce/wrist-support orthosis Grade F for immediate use context. Evidence direction does not equal automatic selection.
+
+The 2024 Cochrane review and 2024 Campos synthesis limit confidence in effect magnitude/durability and prevent claims of a universally superior conservative modality; they do not turn individualized exercise into `do_not_offer`.
+
+The original synthetic outcome-measure strength was removed during pre-PASS review. PRTEE/DASH and PSFS/high-demand scales retain Grade-A assessment authority, while ROM, pressure-pain threshold, pain-free grip and maximum grip retain Grade-B assessment authority. None becomes an automatic progression or RTW/RTS threshold.
+
+The sequence deliberately contains:
+
+```text
+progression_criteria: []
+```
+
+No universal numeric loading progression, return-to-work/sport threshold, fixed visit frequency or total course duration is manufactured. Atypical PIN/radial motor deficit, cervical/radicular pattern, substantial mechanical block, material trauma/instability or another discordant presentation requires reassessment/correct owner rather than generic LET reassurance.
+
+Formal LET review and fixtures:
+
+```text
+clinic_utilities/contracts/CU1_LATERAL_ELBOW_ROUTE_REVIEW_2026-08-29.md
+clinic_utilities/contracts/cu1_lateral_elbow_fixtures_v1.yaml
 ```
 
 ---
@@ -368,7 +414,7 @@ DESIGN-COMPLETE                                  NO
 RUNTIME AUTHORIZED                               NO
 ```
 
-The remaining block is route-content completeness, not cervical-route evidence governance.
+The remaining block is route-content completeness, not LET evidence governance.
 
 ---
 
@@ -389,9 +435,10 @@ C2 radiating neck pain → no universal progression threshold or fixed traction 
 C3 cervical headache → no automatic CGH diagnosis; no durable universal manual-therapy claim, superior exercise programme or validated progression threshold
 C4 presentation-only dizziness → no disease-specific rehabilitation sequence because cervical causation/diagnostic criteria are not established
 C5 unclear WAD phase / non-WAD cervical trauma → no cross-phase, WAD or generic-C1 fallback; unresolved structural/neuro context remains blocked
+LET → no validated universal loading dose, numeric high-demand transition, RTW/RTS threshold or fixed PT course; newer evidence limits effect magnitude/durability claims
 ```
 
-No generic MSK or generic cervical fallback is permitted.
+No generic MSK, cervical or elbow fallback is permitted.
 
 ---
 
@@ -400,8 +447,8 @@ No generic MSK or generic cervical fallback is permitted.
 Continue only on the existing writer, route-by-route from the reconciled matrix:
 
 ```text
-1. lateral_elbow_tendinopathy
-2. remaining_wrist_hand_and_elbow_routes
+1. medial_elbow_tendinopathy
+2. remaining wrist_hand_and_elbow_routes
 3. remaining routine routes in registry order
 4. define reviewed evidence-gap behavior where full staging is unsupported
 5. complete route-specific history prompts + matching fixtures alongside each route
@@ -419,6 +466,7 @@ WRITE runtime formatter integration
 CHANGE persistence/retention behavior
 USE generic MSK rehabilitation fallback
 USE generic cervical fallback across C1-C5
+USE generic elbow fallback across elbow routes
 INVENT progression thresholds
 USE elapsed time alone as universal progression criterion
 LABEL clinician preference as guideline recommendation
@@ -453,6 +501,15 @@ REPRESENT education-plus-exercise as proven superior in WAD despite 2025 very-lo
 HYBRIDIZE SIRA consensus activity-restriction advice with Level-A collar strength
 ALLOW uncomplicated-WAD stay-active/no-collar defaults to override a patient-specific structural/healing restriction
 AUTO-IMPORT C2/C3/C4 disease-specific evidence merely because post-traumatic arm symptoms/headache/dizziness coexist
+INFER lateral_elbow_tendinopathy_from_one_provocation_test_local_tenderness_grip_loss_or_imaging_finding
+APPLY subacute_chronic_LET_Grade_B_resisted_loading_to_acute_highly_irritable_context_without_matching_applicability
+CONVERT Grade_F_high_demand_LET_reintroduction_into_a_required_second_phase_or_invent_a_transition_threshold
+FLATTEN Grade_A_LET_PROM_function_measures_and_Grade_B_impairment_measures_into_one_synthetic_strength
+TREAT CPG_recommend_direction_as_automatic_manual_therapy_dry_needling_taping_or_orthosis_selection
+CLAIM large_or_durable_LET_benefit_despite_2024_low_certainty_synthesis
+RELABEL low_certainty_2024_LET_synthesis_as_proven_no_effect_or_do_not_offer_exercise
+LABEL clinician-selected_ESWT_as_route_evidence_without_a_reviewed_applicable_claim
+ALLOW PIN_motor_deficit_cervical_pattern_mechanical_block_or_material_trauma_to_fall_back_to_routine_LET
 USE posterior postoperative RTS evidence as nonoperative posterior authority
 SILENTLY resolve conflicting ESWT frameworks
 REPRESENT best-practice GHOA opinion as comparative treatment efficacy
