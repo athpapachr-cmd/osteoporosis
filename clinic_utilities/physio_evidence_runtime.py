@@ -4,7 +4,7 @@ import copy
 import json
 import re
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Mapping, Optional
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Set
 
 import yaml
 
@@ -94,11 +94,16 @@ def _merge_fields(target: Dict[str, Any], patch: Mapping[str, Any]) -> None:
             target[key] = copy.deepcopy(value)
 
 
+def _claim_subtype_ids(claim: Mapping[str, Any]) -> List[Any]:
+    # Both spellings exist in the reviewed evidence corpus. Treat them as one semantic field.
+    return list(claim.get("applicable_subtype_ids_optional") or claim.get("applicable_subtype_ids") or [])
+
+
 def _route_matches_claim(claim: Mapping[str, Any], route_id: str, subtype_id: Optional[str]) -> bool:
     route_ids = claim.get("applicable_route_ids") or []
     if route_id not in route_ids:
         return False
-    subtype_ids = claim.get("applicable_subtype_ids_optional") or []
+    subtype_ids = _claim_subtype_ids(claim)
     if subtype_ids:
         return bool(subtype_id and subtype_id in subtype_ids)
     return True
@@ -111,6 +116,13 @@ def _route_matches_profile(profile: Mapping[str, Any], route_id: str, subtype_id
     if subtype_ids:
         return bool(subtype_id and subtype_id in subtype_ids)
     return True
+
+
+def _claim_matches_profiles(claim: Mapping[str, Any], profile_ids: Set[str]) -> bool:
+    linked = {str(item) for item in (claim.get("applicable_route_evidence_profile_ids") or [])}
+    if not linked:
+        return True
+    return bool(linked & profile_ids)
 
 
 def _human_source(source: Mapping[str, Any]) -> Dict[str, Any]:
@@ -144,7 +156,9 @@ def _human_claim(claim: Mapping[str, Any], sources: Mapping[str, Mapping[str, An
         "output_scope": claim.get("output_scope"),
         "strength": claim.get("strength_optional"),
         "certainty": claim.get("certainty_optional"),
-        "applicability_conditions": copy.deepcopy(claim.get("applicability_conditions_optional") or []),
+        "applicability_conditions": copy.deepcopy(
+            claim.get("applicability_conditions_optional") or claim.get("applicability_conditions") or []
+        ),
         "source_titles": titles,
         "has_conflict": bool(claim.get("conflicts_with_claim_ids_optional")),
     }
@@ -267,14 +281,33 @@ class CU1ClinicianEvidenceResolver:
             collections["claims"].pop(str(claim_id), None)
 
     def route_summary(self, *, profile_id: str, route_id: str, subtype_id: Optional[str] = None) -> Dict[str, Any]:
-        profiles = [
+        route_profiles = [
             profile for profile in self.route_evidence_profiles.values()
+            if profile.get("route_id") == route_id
+        ]
+        profiles = [
+            profile for profile in route_profiles
             if _route_matches_profile(profile, route_id, subtype_id)
         ]
-        claims = [
-            claim for claim in self.claims.values()
-            if _route_matches_claim(claim, route_id, subtype_id)
-        ]
+        profile_ids = {
+            str(profile.get("route_evidence_profile_id"))
+            for profile in profiles
+            if profile.get("route_evidence_profile_id")
+        }
+        subtype_required = bool(
+            subtype_id is None
+            and not profiles
+            and route_profiles
+            and all(bool(profile.get("subtype_ids_optional")) for profile in route_profiles)
+        )
+
+        claims = []
+        if profiles:
+            claims = [
+                claim for claim in self.claims.values()
+                if _route_matches_claim(claim, route_id, subtype_id)
+                and _claim_matches_profiles(claim, profile_ids)
+            ]
 
         source_ids = set()
         for profile in profiles:
@@ -294,6 +327,8 @@ class CU1ClinicianEvidenceResolver:
         gaps: List[str] = []
         for profile in profiles:
             gaps.extend(str(item) for item in (profile.get("evidence_gaps") or []))
+        if subtype_required:
+            gaps.append("select_route_subtype_to_resolve_evidence")
 
         coverage_info = self._coverage_info(profile_id, route_id)
         for key in ("blocker", "reason"):
@@ -313,10 +348,18 @@ class CU1ClinicianEvidenceResolver:
             str(item.get("claim_summary") or ""),
         ))
 
+        selection_state = (
+            "subtype_required_for_evidence"
+            if subtype_required
+            else "resolved"
+            if profiles
+            else "no_applicable_profile"
+        )
         return {
             "profile_id": profile_id,
             "route_id": route_id,
             "subtype_id": subtype_id,
+            "selection_state": selection_state,
             "coverage_status": coverage_info.get("status"),
             "sequence_status": coverage_info.get("sequence_status"),
             "evidence_state": coverage_info.get("evidence_state"),
