@@ -1,4 +1,4 @@
-version: cu1_cervical_history_evidence_fixtures_v1_1
+version: cu1_cervical_history_evidence_fixtures_v1_2
 status: design_oracle_extension_pending_full_cervical_coverage
 runtime_authorized: false
 normative_schema: cu1_history_timeline_schema_v1.yaml
@@ -10,6 +10,7 @@ fixture_policy:
   - route_or_context_mismatch_is_hard_failure
   - no_generic_cervical_or_MSK_fallback
   - older_classification_specific_guidance_must_not_override_newer_generic_route_scope_without_matching_context
+  - disease_specific_evidence_must_not_auto_expand_to_broader_symptom_presentation
   - clinician_ui_only_and_therapist_execution_detail_do_not_auto_render_as_referral_core
   - no_fixture_may_authorize_runtime_evidence_generation
 
@@ -119,10 +120,124 @@ fixtures:
       source_defined_4_to_6_week_medical_review_window_converted_to_fixed_PT_duration: false
       elapsed_time_only_rehabilitation_progression_allowed: false
 
+  c2_radiating_symptoms_not_formal_radiculopathy:
+    route_id: neck_pain_with_radiating_upper_limb_symptoms
+    input:
+      radiating_arm_pain: true
+      paresthesia: true
+      spurling_concordant: true
+      formal_cervical_radiculopathy_diagnosis: not_stated
+      objective_motor_status: not_assessed
+      objective_sensory_status: not_assessed
+      reflex_status: not_assessed
+    expected:
+      evidence_profile_id: rep_neck_radiating_upper_limb_v1
+      rehabilitation_sequence_id: seq_neck_radiating_upper_limb_v1
+      diagnostic_boundary_claim_id: c2_radiating_presentation_not_formal_radiculopathy
+      formal_cervical_radiculopathy_generated: false
+      positive_spurling_converted_to_diagnosis: false
+      objective_neurological_deficit_generated: false
+      not_assessed_converted_to_normal: false
+
+  c2_acute_active_rehabilitation_grade_preserved:
+    route_id: neck_pain_with_radiating_upper_limb_symptoms
+    input:
+      course: acute
+      progressive_objective_neurological_deficit: false
+      possible_cord_feature: false
+    expected:
+      evidence_profile_id: rep_neck_radiating_upper_limb_v1
+      rehabilitation_sequence_id: seq_neck_radiating_upper_limb_v1
+      active_backbone_claim_id: c2_active_rehabilitation_backbone
+      acute_claim_id: c2_acute_mobilizing_stabilizing_exercise_C
+      acute_claim_strength: C_APTA_2017
+      acute_claim_relabelled_high_certainty: false
+      fixed_exercise_dose_generated: false
+
+  c2_chronic_traction_is_selected_adjunct_not_universal:
+    route_id: neck_pain_with_radiating_upper_limb_symptoms
+    scenarios:
+      - input: {course: chronic, traction_selected_as_adjunct: false}
+        expected:
+          traction_auto_rendered: false
+          active_rehabilitation_remains_core: true
+      - input: {course: chronic, traction_selected_as_adjunct: true}
+        expected:
+          traction_claim_id: c2_apta_chronic_intermit_traction_B
+          traction_may_render_with_multimodal_active_rehabilitation: true
+          traction_rendered_as_isolated_treatment: false
+          fixed_traction_force_generated: false
+          fixed_traction_duration_generated: false
+          fixed_traction_frequency_generated: false
+
+  c2_broad_symptom_route_does_not_auto_use_radiculopathy_NMA:
+    route_id: neck_pain_with_radiating_upper_limb_symptoms
+    input:
+      radiating_arm_symptoms: true
+      formal_cervical_radiculopathy_diagnosis: not_stated
+      clinician_established_radicular_classification: false
+    expected:
+      c2_broad_route_allowed: true
+      NMA_claim_ids_auto_applicable: false
+      traction_component_NMA_auto_rendered: false
+      neurodynamic_component_NMA_auto_rendered: false
+      articular_component_NMA_auto_rendered: false
+      disease_specific_evidence_scope_expanded_to_symptom_only_case: false
+
+  c2_radiculopathy_NMA_components_not_mandatory_bundle:
+    route_id: neck_pain_with_radiating_upper_limb_symptoms
+    input:
+      formal_cervical_radiculopathy_diagnosis: true
+      clinician_selected_traction: false
+      clinician_selected_neurodynamic: false
+      clinician_selected_manual_therapy: false
+    expected:
+      clinician_ui_context_claim_id: c2_nma_combination_not_mandatory_bundle
+      NMA_promising_combination_auto_rendered_as_required_bundle: false
+      analgesic_electrotherapy_auto_mandated: false
+      traction_auto_mandated_from_NMA: false
+      neurodynamic_auto_mandated_from_NMA: false
+      manual_articular_treatment_auto_mandated_from_NMA: false
+      strengthening_may_remain_part_of_active_rehabilitation: true
+
+  c2_progressive_objective_neurological_deficit_blocks_routine_progression:
+    route_id: neck_pain_with_radiating_upper_limb_symptoms
+    input:
+      progressive_objective_motor_deficit: true
+      subjective_radiating_pain: true
+    expected:
+      evidence_aware_routine_sequence_allowed: false
+      safety_claim_id: c2_progressive_neurological_or_cord_reassessment
+      medical_reassessment_required: true
+      subjective_symptoms_equated_with_objective_deficit: false
+      routine_reassuring_wording_generated: false
+
+  c2_possible_cord_feature_blocks_routine_progression:
+    route_id: neck_pain_with_radiating_upper_limb_symptoms
+    input:
+      gait_change: true
+      upper_motor_neuron_or_possible_myelopathy_concern: true
+    expected:
+      evidence_aware_routine_sequence_allowed: false
+      medical_reassessment_required: true
+      routine_traction_or_exercise_progression_generated: false
+
+  c2_no_universal_progression_threshold:
+    route_id: neck_pain_with_radiating_upper_limb_symptoms
+    input:
+      symptoms_improving: true
+      return_to_activity_goal: true
+    expected:
+      rehabilitation_sequence_progression_criteria_count: 0
+      universal_numeric_strength_threshold_generated: false
+      universal_pain_threshold_generated: false
+      elapsed_time_only_progression_allowed: false
+      fixed_PT_course_duration_generated: false
+
 readiness:
   cervical_fixture_extension_created: true
   C1_matching_fixtures_complete: true
-  C2_matching_fixtures_complete: false
+  C2_matching_fixtures_complete: true
   C3_matching_fixtures_complete: false
   C4_matching_fixtures_complete: false
   C5_matching_fixtures_complete: false
