@@ -1,4 +1,4 @@
-version: cu1_evidence_manifest_v1_4
+version: cu1_evidence_manifest_v1_5
 status: design_frozen_sharded_registry_manifest
 runtime_authorized: false
 reviewed_on: 2026-08-29
@@ -7,7 +7,8 @@ purpose: >-
   Single normative entrypoint for the CU-1 evidence corpus. The corpus is sharded for maintainability.
   A staging shard may become active design authority only after its reviewed normalization/promotion
   projection passes the same schema, applicability, reference, freshness and output-scope gates as
-  the active core registry. Sharding must never relax clinical evidence governance.
+  the active core registry. A native explicit-ID route-coverage shard may be active only after each
+  added route passes an exact recorded review. Sharding must never relax clinical evidence governance.
 
 normative_schema: clinic_utilities/contracts/cu1_history_timeline_schema_v1.yaml
 coverage_matrix: clinic_utilities/contracts/cu1_evidence_coverage_matrix_v1.yaml
@@ -42,6 +43,16 @@ shards:
     promotion_review: clinic_utilities/contracts/CU1_TRANCHE3_PROMOTION_REVIEW_2026-08-29.md
     schema_conformance_reviewed: true
     normative_read_rule: apply_promotion_projection_then_mandatory_overlay_before_logical_registry_merge
+
+  - shard_id: route_coverage_extension
+    path: clinic_utilities/contracts/cu1_evidence_route_coverage_v1.yaml
+    state: active_design_authority
+    identity_mode: explicit_payload_id
+    review_record: clinic_utilities/contracts/CU1_ROUTE_COVERAGE_REVIEW_2026-08-29.md
+    schema_conformance_reviewed: true
+    normative_read_rule: use_only_route_objects_with_pass_record_in_named_route_coverage_review
+    reviewed_routes:
+      - calcific_rotator_cuff_tendinopathy
 
 logical_collections:
   - sources
@@ -85,6 +96,19 @@ promotion_gate_for_staged_shard:
   - validate_no_duplicate_ids_across_all_active_or_promotion_candidate_shards
   - exact_human_evidence_scope_review
 
+native_route_coverage_gate:
+  - explicit_payload_ids_match_mapping_keys
+  - populate_all_required_non_optional_object_fields
+  - validate_every_source_reference_in_logical_registry
+  - validate_every_claim_profile_and_sequence_reference
+  - validate_route_and_subtype_applicability
+  - validate_output_scope_compatibility_for_every_rendered_element
+  - validate_freshness_and_supersession_state
+  - validate_no_duplicate_ids_across_active_logical_registry
+  - preserve_framework_conflicts_as_distinct_claims
+  - add_route_specific_history_prompts
+  - exact_human_route_review_recorded_before_manifest_activation
+
 promotion_projection_rules:
   - staging_source_is_retained_for_audit_history
   - promotion_projection_is_normative_for_the_promoted_logical_shard
@@ -101,6 +125,7 @@ merge_rules:
   - only_active_design_authority_shards_participate_in_the_normative_logical_registry
   - active_shard_with_promotion_projection_is_normalized_before_merge
   - named_mandatory_promotion_overlay_is_applied_before_merge
+  - native_route_coverage_objects_require_a_matching_PASS_record_before_normative_use
   - staged_candidates_may_inform_the_work_queue_but_are_not_normative_registry_authority
   - shard_order_does_not_create_clinical_precedence
   - duplicate_canonical_id_across_active_or_promotion_candidate_shards_is_hard_failure
@@ -129,6 +154,7 @@ framework_governance_rules:
   - framework_specific_strength_or_grade_is_not_shared_with_another_framework
   - compatible_framework_claims_may_both_support_an_element_without_manufacturing_a_hybrid_strength
   - conflicting_framework_positions_remain_explicit
+  - framework_conflict_prevents_silent_auto_rendering_of_one_position_as_unanimous_authority
   - newer_route_specific_guidance_does_not_silently_erase_an_older_still_relevant_distinct_framework
 
 freshness_rules:
@@ -161,6 +187,7 @@ readiness_gate:
   active_core_schema_reviewed: true
   tranche2_promotion_gate_passed: true
   tranche3_promotion_gate_passed: true
+  route_coverage_extension_gate_passed_for_reviewed_routes: true
   all_active_authority_shards_schema_reviewed: true
   all_listed_shards_schema_reviewed: true
   all_routes_covered: false
