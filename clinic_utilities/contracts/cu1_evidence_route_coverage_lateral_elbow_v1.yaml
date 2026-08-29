@@ -1,0 +1,424 @@
+version: cu1_evidence_route_coverage_lateral_elbow_v1
+status: ready_for_exact_review_not_manifest_active
+runtime_authorized: false
+reviewed_on: 2026-08-29
+normative_schema: clinic_utilities/contracts/cu1_history_timeline_schema_v1.yaml
+identity_mode: explicit_payload_id
+review_record: clinic_utilities/contracts/CU1_LATERAL_ELBOW_ROUTE_REVIEW_2026-08-29.md
+
+purpose: >-
+  Route-specific evidence hardening for the frozen elbow route lateral_elbow_tendinopathy. The active
+  core registry already contains the 2022 APTA/JOSPT CPG source, the Grade-B subacute/chronic resisted
+  wrist-extensor claim, the Grade-F high-demand reintroduction claim, the original route evidence
+  profile, and an incomplete two-phase seed sequence. This extension adds current 2024 synthesis
+  context, diagnostic/differential boundaries, route-history prompts, optional adjunct authority, and
+  a replacement single-phase evidence-bounded sequence that avoids inventing a phase-transition
+  threshold. The existing route profile is amended only after exact review and manifest activation.
+
+external_source_dependencies:
+  - lateral_elbow_cpg_2022
+
+external_claim_dependencies:
+  - lateral_elbow_resisted_wrist_extensor_exercise
+  - lateral_elbow_high_demand_phased_reintroduction
+
+external_profile_dependency:
+  - rep_lateral_elbow_tendinopathy_v1
+
+sources:
+  lateral_elbow_manual_exercise_cochrane_2024:
+    evidence_id: lateral_elbow_manual_exercise_cochrane_2024
+    source_type: systematic_review
+    title: "Manual therapy and exercise for lateral elbow pain"
+    authors_or_organization: Wallis JA, Bourne AM, Jessup RL, Johnston RV, Frydman A, Cyril S, Buchbinder R
+    year_or_version: 2024
+    reference: "Cochrane Database Syst Rev. 2024;5(5):CD013042"
+    doi_optional: 10.1002/14651858.CD013042.pub2
+    population_scope_optional: adults with lateral elbow pain in randomized or quasi-randomized trials; evidence searched through 2024-01-31
+    reviewed_on: 2026-08-29
+    next_review_due: 2027-08-29
+    freshness_state: current
+    status: active
+
+  lateral_elbow_noninvasive_sr_2024:
+    evidence_id: lateral_elbow_noninvasive_sr_2024
+    source_type: systematic_review
+    title: "Effectiveness of non-invasive therapies on pain, maximum grip strength, disability, and quality of life for lateral elbow tendinopathy: A systematic review and meta-analysis"
+    authors_or_organization: Campos MGM, Maia LB, Mascarenhas RO, Lourenco BM, Henschke N, Oliveira VC
+    year_or_version: 2024
+    reference: "Braz J Phys Ther. 2024;28(2):100596"
+    doi_optional: 10.1016/j.bjpt.2024.100596
+    population_scope_optional: adults with lateral elbow tendinopathy across 47 randomized trials and 22 non-invasive therapy categories; certainty commonly low or very low
+    reviewed_on: 2026-08-29
+    next_review_due: 2027-08-29
+    freshness_state: current
+    status: active
+
+claims:
+  let_diagnostic_boundary_history_exam_not_single_test_2022:
+    claim_id: let_diagnostic_boundary_history_exam_not_single_test_2022
+    evidence_ids: [lateral_elbow_cpg_2022]
+    applicable_route_evidence_profile_ids: [rep_lateral_elbow_tendinopathy_v1]
+    applicable_route_ids: [lateral_elbow_tendinopathy]
+    domain: diagnostic_definition
+    claim_summary: >-
+      LET diagnosis is a clinical synthesis of history and examination. Local lateral-epicondyle pain,
+      palpation, resisted wrist/digit extension, pain-free grip loss, Cozen/Mill/Maudsley-type findings,
+      or imaging may support the presentation but no single finding should be converted by CU-1 into an
+      autonomous tendinopathy diagnosis.
+    recommendation_direction: context_only
+    output_scope: clinician_ui_only
+    certainty_optional: not_applicable
+    reviewed_on: 2026-08-29
+
+  let_history_irritability_load_and_function_context_2022:
+    claim_id: let_history_irritability_load_and_function_context_2022
+    evidence_ids: [lateral_elbow_cpg_2022]
+    applicable_route_evidence_profile_ids: [rep_lateral_elbow_tendinopathy_v1]
+    applicable_route_ids: [lateral_elbow_tendinopathy]
+    domain: history
+    claim_summary: >-
+      LET management should preserve symptom duration/course and irritability, symptom distribution,
+      gripping and wrist/digit-extensor load behavior, work/sport/manual-tool exposure, disability, and
+      the patient's relevant functional demand. Irritability is clinician-assessed context and is not
+      inferred from one pain score or one provocative test.
+    recommendation_direction: consider
+    output_scope: clinician_ui_only
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  let_irritability_guided_load_management_2022:
+    claim_id: let_irritability_guided_load_management_2022
+    evidence_ids: [lateral_elbow_cpg_2022]
+    applicable_route_evidence_profile_ids: [rep_lateral_elbow_tendinopathy_v1]
+    applicable_route_ids: [lateral_elbow_tendinopathy]
+    domain: core_rehabilitation
+    claim_summary: >-
+      The 2022 CPG decision framework emphasizes education/self-care, reduction or modification of
+      aggravating biomechanical overload, and gradual reintroduction of tissue loading according to
+      symptom irritability and functional context. This framework does not supply a validated universal
+      numeric phase-transition threshold.
+    recommendation_direction: consider
+    output_scope: referral_core
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  let_ergonomic_education_load_modification_E_2022:
+    claim_id: let_ergonomic_education_load_modification_E_2022
+    evidence_ids: [lateral_elbow_cpg_2022]
+    applicable_route_evidence_profile_ids: [rep_lateral_elbow_tendinopathy_v1]
+    applicable_route_ids: [lateral_elbow_tendinopathy]
+    domain: core_rehabilitation
+    claim_summary: >-
+      Education, behavioral or activity modification, ergonomic equipment, and workstation adjustment
+      may be used to reduce relevant overload and support self-management in LET when the patient's
+      work, sport, tool, or daily-activity context makes them applicable.
+    recommendation_direction: may_consider
+    output_scope: referral_core
+    strength_optional: E
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  let_proximal_strength_if_impairment_C_2022:
+    claim_id: let_proximal_strength_if_impairment_C_2022
+    evidence_ids: [lateral_elbow_cpg_2022]
+    applicable_route_evidence_profile_ids: [rep_lateral_elbow_tendinopathy_v1]
+    applicable_route_ids: [lateral_elbow_tendinopathy]
+    applicability_conditions_optional: [actual_shoulder_or_scapular_stabilizer_impairment_identified]
+    domain: core_rehabilitation
+    claim_summary: >-
+      Shoulder and scapular stabilizer training may be included with wrist-extensor strengthening only
+      when a relevant proximal impairment has actually been identified; it is not a universal LET bundle.
+    recommendation_direction: may_consider
+    output_scope: referral_core
+    strength_optional: C
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  let_local_manual_therapy_short_term_B_2022:
+    claim_id: let_local_manual_therapy_short_term_B_2022
+    evidence_ids: [lateral_elbow_cpg_2022]
+    applicable_route_evidence_profile_ids: [rep_lateral_elbow_tendinopathy_v1]
+    applicable_route_ids: [lateral_elbow_tendinopathy]
+    applicability_conditions_optional: [manual_therapy_selected_as_adjunct, technique_tolerated]
+    domain: adjunct
+    claim_summary: >-
+      The 2022 CPG supports local elbow mobilization/manipulation for short-term pain and pain-free grip
+      outcomes in people who tolerate the technique. It remains a selected adjunct rather than an
+      automatically required component of every LET referral.
+    recommendation_direction: may_consider
+    output_scope: referral_core
+    strength_optional: B
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  let_dry_needling_selected_B_2022:
+    claim_id: let_dry_needling_selected_B_2022
+    evidence_ids: [lateral_elbow_cpg_2022]
+    applicable_route_evidence_profile_ids: [rep_lateral_elbow_tendinopathy_v1]
+    applicable_route_ids: [lateral_elbow_tendinopathy]
+    applicability_conditions_optional: [dry_needling_selected_as_adjunct, practitioner_competence_and_availability_confirmed]
+    domain: adjunct
+    claim_summary: >-
+      Tendon or trigger-point dry needling has a Grade-B CPG recommendation for LET pain/function, but
+      CU-1 treats it as an optional selected adjunct subject to competence and availability rather than
+      as routine core rehabilitation.
+    recommendation_direction: may_consider
+    output_scope: referral_core
+    strength_optional: B
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  let_activity_orthosis_immediate_F_2022:
+    claim_id: let_activity_orthosis_immediate_F_2022
+    evidence_ids: [lateral_elbow_cpg_2022]
+    applicable_route_evidence_profile_ids: [rep_lateral_elbow_tendinopathy_v1]
+    applicable_route_ids: [lateral_elbow_tendinopathy]
+    applicability_conditions_optional: [activity_aggravated_symptoms, orthosis_selected_as_adjunct]
+    domain: adjunct
+    claim_summary: >-
+      A forearm counterforce or wrist-support orthosis may be considered during aggravating activity for
+      immediate symptom/strength benefit, but the CPG does not support converting this into a fixed
+      intermediate- or long-term orthosis prescription.
+    recommendation_direction: may_consider
+    output_scope: referral_core
+    strength_optional: F
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  let_rigid_taping_short_term_B_2022:
+    claim_id: let_rigid_taping_short_term_B_2022
+    evidence_ids: [lateral_elbow_cpg_2022]
+    applicable_route_evidence_profile_ids: [rep_lateral_elbow_tendinopathy_v1]
+    applicable_route_ids: [lateral_elbow_tendinopathy]
+    applicability_conditions_optional: [irritable_lateral_elbow_tendinopathy, rigid_taping_selected_as_adjunct]
+    domain: adjunct
+    claim_summary: >-
+      Rigid taping may be used for immediate or short-term pain relief and pain-free muscle function in
+      irritable LET, but it is not a substitute for active rehabilitation or a mandatory long-term element.
+    recommendation_direction: may_consider
+    output_scope: referral_core
+    strength_optional: B
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  let_manual_exercise_effect_small_low_certainty_cochrane_2024:
+    claim_id: let_manual_exercise_effect_small_low_certainty_cochrane_2024
+    evidence_ids: [lateral_elbow_manual_exercise_cochrane_2024]
+    applicable_route_evidence_profile_ids: [rep_lateral_elbow_tendinopathy_v1]
+    applicable_route_ids: [lateral_elbow_tendinopathy]
+    domain: core_rehabilitation
+    claim_summary: >-
+      The 2024 Cochrane review found low-certainty evidence that manual therapy, prescribed exercise, or
+      both may produce only small improvements in pain/disability at end of treatment and that effects
+      were generally not sustained. This attenuates claims about magnitude or durability of benefit but
+      is not a do-not-offer recommendation for individualized exercise or physiotherapy support.
+    recommendation_direction: context_only
+    output_scope: clinician_ui_only
+    certainty_optional: low
+    reviewed_on: 2026-08-29
+
+  let_noninvasive_therapy_effect_certainty_limited_2024:
+    claim_id: let_noninvasive_therapy_effect_certainty_limited_2024
+    evidence_ids: [lateral_elbow_noninvasive_sr_2024]
+    applicable_route_evidence_profile_ids: [rep_lateral_elbow_tendinopathy_v1]
+    applicable_route_ids: [lateral_elbow_tendinopathy]
+    domain: core_rehabilitation
+    claim_summary: >-
+      A 2024 LET meta-analysis across 47 trials found mostly small-to-no effects and predominantly low or
+      very-low certainty for non-invasive therapies. CU-1 therefore must not claim that one conservative
+      modality is universally superior or that symptom improvement is guaranteed by the selected package.
+    recommendation_direction: context_only
+    output_scope: clinician_ui_only
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  let_no_validated_universal_dose_or_transition_2022_2024:
+    claim_id: let_no_validated_universal_dose_or_transition_2022_2024
+    evidence_ids: [lateral_elbow_cpg_2022, lateral_elbow_manual_exercise_cochrane_2024, lateral_elbow_noninvasive_sr_2024]
+    applicable_route_evidence_profile_ids: [rep_lateral_elbow_tendinopathy_v1]
+    applicable_route_ids: [lateral_elbow_tendinopathy]
+    domain: progression_criteria
+    claim_summary: >-
+      Current evidence does not establish one optimal exercise dose, one validated numeric transition
+      criterion to higher-demand loading, one universal return-to-work/sport threshold, or one fixed
+      physiotherapy course duration for LET. High-demand reintroduction may be gradual and function-led
+      without manufacturing numeric clearance rules.
+    recommendation_direction: context_only
+    output_scope: clinician_ui_only
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  let_atypical_differential_reassessment_2022:
+    claim_id: let_atypical_differential_reassessment_2022
+    evidence_ids: [lateral_elbow_cpg_2022]
+    applicable_route_evidence_profile_ids: [rep_lateral_elbow_tendinopathy_v1]
+    applicable_route_ids: [lateral_elbow_tendinopathy]
+    domain: safety
+    claim_summary: >-
+      Atypical lateral-elbow presentations require consideration of alternative sources such as cervical
+      radiculopathy, radial-tunnel/PIN disorders, intra-articular pathology, radiocapitellar disease or
+      posterolateral instability. Objective progressive motor deficit, substantial mechanical block,
+      material trauma, or other clinician concern should not be reassured as routine LET by CU-1.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    certainty_optional: not_applicable
+    reviewed_on: 2026-08-29
+
+  let_outcome_tracking_not_progression_threshold_2022:
+    claim_id: let_outcome_tracking_not_progression_threshold_2022
+    evidence_ids: [lateral_elbow_cpg_2022]
+    applicable_route_evidence_profile_ids: [rep_lateral_elbow_tendinopathy_v1]
+    applicable_route_ids: [lateral_elbow_tendinopathy]
+    domain: examination
+    claim_summary: >-
+      PRTEE and/or DASH, PSFS for high-demand activity, pain-free grip, maximum grip and relevant ROM can
+      be used to track pain/function and impairment over time. Their recommendation as outcome measures
+      does not create a validated automatic phase-progression or return-to-function threshold.
+    recommendation_direction: recommend
+    output_scope: clinician_ui_only
+    strength_optional: A_B_by_measure_family
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+route_history_prompts:
+  let_symptom_course_and_irritability:
+    prompt_id: let_symptom_course_and_irritability
+    applicable_route_ids: [lateral_elbow_tendinopathy]
+    label_el: Διάρκεια/πορεία και ερεθιστικότητα των συμπτωμάτων, μόνο όπως έχουν πραγματικά εκτιμηθεί ή περιγραφεί
+    response_type: text
+    requiredness: optional
+    evidence_claim_ids_optional: [let_history_irritability_load_and_function_context_2022]
+
+  let_grip_wrist_extension_symptom_pattern:
+    prompt_id: let_grip_wrist_extension_symptom_pattern
+    applicable_route_ids: [lateral_elbow_tendinopathy]
+    label_el: Σχέση συμπτωμάτων με λαβή, άρση/μεταφορά, αντίσταση σε έκταση καρπού/δακτύλων ή άλλη σχετική φόρτιση
+    response_type: text
+    requiredness: optional
+    evidence_claim_ids_optional: [let_history_irritability_load_and_function_context_2022]
+
+  let_high_demand_function_context:
+    prompt_id: let_high_demand_function_context
+    applicable_route_ids: [lateral_elbow_tendinopathy]
+    label_el: Υψηλές απαιτήσεις εργασίας, χειρωνακτικών εργαλείων, ρακέτας, γυμναστηρίου, μουσικού/παραστατικού ή άλλου επαναλαμβανόμενου φορτίου
+    response_type: text
+    requiredness: optional
+    evidence_claim_ids_optional: [lateral_elbow_high_demand_phased_reintroduction]
+
+  let_prior_treatment_and_response:
+    prompt_id: let_prior_treatment_and_response
+    applicable_route_ids: [lateral_elbow_tendinopathy]
+    label_el: Προηγούμενη συντηρητική αντιμετώπιση, ενεργητική άσκηση/φόρτιση ή άλλα μέτρα και ανταπόκριση
+    response_type: text
+    requiredness: optional
+
+  let_atypical_neural_cervical_joint_context:
+    prompt_id: let_atypical_neural_cervical_joint_context
+    applicable_route_ids: [lateral_elbow_tendinopathy]
+    label_el: Άτυπα νευρολογικά, αυχενικά, ενδαρθρικά, αστάθειας ή μετατραυματικά στοιχεία που μπορεί να αλλάζουν τον κύριο ιδιοκτήτη της διαδρομής
+    response_type: text
+    requiredness: optional
+    evidence_claim_ids_optional: [let_atypical_differential_reassessment_2022]
+
+  let_patient_priority_grip_or_load_task:
+    prompt_id: let_patient_priority_grip_or_load_task
+    applicable_route_ids: [lateral_elbow_tendinopathy]
+    label_el: Δραστηριότητα προτεραιότητας του ασθενούς που απαιτεί λαβή, φόρτιση ή επαναλαμβανόμενη χρήση του άνω άκρου
+    response_type: text
+    requiredness: optional
+    evidence_claim_ids_optional: [let_history_irritability_load_and_function_context_2022]
+
+rehabilitation_sequences:
+  seq_lateral_elbow_evidence_bounded_v1:
+    sequence_id: seq_lateral_elbow_evidence_bounded_v1
+    route_id: lateral_elbow_tendinopathy
+    sequence_source: route_evidence_profile
+    route_evidence_profile_id: rep_lateral_elbow_tendinopathy_v1
+    phases:
+      - phase_id: let_irritability_guided_active_rehabilitation
+        order: 1
+        clinical_objective: support function and progressively restore wrist-extensor and grip load tolerance using irritability- and task-informed active rehabilitation without a fixed universal treatment schedule
+        objective_authority:
+          authority_type: evidence_claim
+          evidence_claim_ids: [let_irritability_guided_load_management_2022]
+        intervention_directions:
+          - intervention_direction_id: let_education_and_load_modification
+            statement: use individualized education, self-management and relevant activity/workstation/load modification to reduce unnecessary aggravating extensor load while preserving useful activity
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [let_ergonomic_education_load_modification_E_2022]
+          - intervention_direction_id: let_subacute_chronic_resisted_extensor_loading
+            statement: for subacute or chronic LET, use individualized resisted wrist-extensor loading that may include isometric, concentric and/or eccentric exercise without prescribing one universal dose
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [lateral_elbow_resisted_wrist_extensor_exercise]
+            applicability_conditions_optional: [subacute_or_chronic_lateral_elbow_tendinopathy]
+          - intervention_direction_id: let_proximal_training_if_impairment
+            statement: add shoulder or scapular stabilizer training only when a relevant proximal impairment has actually been identified
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [let_proximal_strength_if_impairment_C_2022]
+            applicability_conditions_optional: [actual_shoulder_or_scapular_stabilizer_impairment_identified]
+          - intervention_direction_id: let_high_demand_gradual_reintroduction
+            statement: when high-demand work, sport, tools, performing arts or similar requirements exist, gradually reintroduce stress, strength, endurance and motor-control demands without an invented numeric clearance threshold
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [lateral_elbow_high_demand_phased_reintroduction]
+            applicability_conditions_optional: [high_demand_upper_limb_context]
+        progression_criteria: []
+        precautions_or_do_not_progress_criteria:
+          - criterion_id: let_atypical_or_neurological_reassessment
+            criterion_kind: safety_escalation
+            statement: objective progressive motor deficit, substantial mechanical block, material trauma/instability concern or another atypical presentation requiring a different diagnosis/owner should trigger clinician reassessment rather than routine LET progression
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [let_atypical_differential_reassessment_2022]
+        strength_optional: null
+        certainty_optional: not_graded
+        required_for_route: true
+    clinician_modifications_optional: []
+    protocol_overrides_optional: []
+
+proposed_profile_amendment_after_pass:
+  rep_lateral_elbow_tendinopathy_v1:
+    diagnostic_claim_ids: [let_diagnostic_boundary_history_exam_not_single_test_2022]
+    history_claim_ids: [let_history_irritability_load_and_function_context_2022]
+    examination_claim_ids: [let_outcome_tracking_not_progression_threshold_2022]
+    rehabilitation_sequence_id: seq_lateral_elbow_evidence_bounded_v1
+    adjunct_claim_ids:
+      - let_local_manual_therapy_short_term_B_2022
+      - let_dry_needling_selected_B_2022
+      - let_activity_orthosis_immediate_F_2022
+      - let_rigid_taping_short_term_B_2022
+    safety_claim_ids: [let_atypical_differential_reassessment_2022]
+    evidence_gaps:
+      - no_validated_universal_numeric_transition_to_high_demand_loading
+      - no_universal_return_to_work_or_sport_clearance_threshold
+      - no_single_optimal_resisted_exercise_dose_or_loading_mode_established
+      - newer_2024_synthesis_limits_confidence_in_magnitude_and_durability_of_manual_therapy_or_exercise_effects
+      - acute_highly_irritable_presentations_do_not_receive_the_subacute_chronic_Grade_B_resisted_loading_claim_until_applicable
+      - ESWT_remains_selectable_only_as_clinician_instruction_in_this_review_and_is_not_auto_labelled_route_evidence
+      - outcome_measures_track_status_but_do_not_become_automatic_progression_thresholds
+    primary_source_ids:
+      - lateral_elbow_cpg_2022
+      - lateral_elbow_manual_exercise_cochrane_2024
+      - lateral_elbow_noninvasive_sr_2024
+    last_reviewed_on: 2026-08-29
+    next_review_due: 2027-02-28
+    freshness_state: current
+
+coverage_effect:
+  route_id: lateral_elbow_tendinopathy
+  replacement_sequence_added: seq_lateral_elbow_evidence_bounded_v1
+  route_history_prompts_added:
+    - let_symptom_course_and_irritability
+    - let_grip_wrist_extension_symptom_pattern
+    - let_high_demand_function_context
+    - let_prior_treatment_and_response
+    - let_atypical_neural_cervical_joint_context
+    - let_patient_priority_grip_or_load_task
+  existing_core_prompt_retained:
+    - lateral_elbow_load_context
+  current_state: ready_for_exact_review_not_manifest_active
+  runtime_authorized: false
