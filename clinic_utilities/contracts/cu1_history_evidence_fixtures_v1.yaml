@@ -1,4 +1,4 @@
-version: cu1_history_evidence_fixtures_v1_3
+version: cu1_history_evidence_fixtures_v1_4
 status: design_oracle_pending_full_route_coverage
 runtime_authorized: false
 normative_schema: cu1_history_timeline_schema_v1.yaml
@@ -345,6 +345,62 @@ fixtures:
       route_history_prompt_required: ghoa_management_context
       generic_shoulder_OA_sequence_fallback_allowed: false
 
+  degenerative_meniscus_common_nonoperative_first_line:
+    route_id: degenerative_meniscal_lesion_conservative_rehabilitation
+    input:
+      symptomatic_degenerative_meniscal_lesion: true
+      MRI_established_tear: true
+      true_locking: false
+      unresolved_structural_surgical_indication: false
+      postoperative: false
+    expected:
+      evidence_profile_id: rep_degenerative_meniscus_conservative_v1
+      rehabilitation_sequence_id: seq_degenerative_meniscus_conservative_v1
+      first_line_claim_id: degenerative_meniscus_PT_first_line_A
+      progressive_rehab_claim_id: degenerative_meniscus_progressive_rehab_components_B
+      MRI_tear_alone_triggers_surgery_logic: false
+      surgery_timeline_used_as_routine_progression: false
+      criterion_based_progression_used: true
+      generic_knee_rehab_fallback_allowed: false
+
+  degenerative_meniscus_true_locking_blocks_routine_sequence:
+    route_id: degenerative_meniscal_lesion_conservative_rehabilitation
+    input:
+      symptomatic_degenerative_meniscal_lesion: true
+      true_locking: true
+      clicking_or_catching_only: false
+    expected:
+      evidence_aware_routine_sequence_allowed: false
+      orthopaedic_reassessment_required: true
+      reason: true_locking_or_unresolved_structural_surgical_indication
+      clicking_catching_equated_with_true_locking: false
+      acute_meniscus_claims_auto_substituted: false
+
+  degenerative_meniscus_postoperative_and_acute_owner_boundaries:
+    route_id: degenerative_meniscal_lesion_conservative_rehabilitation
+    scenarios:
+      - input: {postoperative: true, procedure: partial_meniscectomy}
+        expected:
+          degenerative_conservative_sequence_allowed: false
+          postoperative_knee_rehabilitation_required: true
+      - input: {acute_traumatic_injury: true}
+        expected:
+          degenerative_conservative_sequence_allowed: false
+          acute_isolated_meniscal_route_requires_its_own_applicability_check: true
+
+  degenerative_meniscus_persistent_symptoms_trigger_reassessment:
+    route_id: degenerative_meniscal_lesion_conservative_rehabilitation
+    input:
+      persistent_pain: true
+      recurrent_effusion: true
+      rehabilitation_milestones_not_met: true
+    expected:
+      applicable_safety_claim_ids:
+        - degenerative_meniscus_reassessment_mechanical_symptoms_C
+        - degenerative_meniscus_milestone_failure_reassessment_D
+      indefinite_routine_progression_allowed: false
+      orthopaedic_reassessment_required: true
+
 readiness:
   fixture_catalog_created: true
   fixtures_fully_executable: false
@@ -352,6 +408,7 @@ readiness:
     - calcific_rotator_cuff_tendinopathy
     - glenohumeral_instability_dislocation
     - glenohumeral_osteoarthritis
+    - degenerative_meniscal_lesion_conservative_rehabilitation
   blockers:
     - remaining_route_profiles_and_sequences_not_curated
     - runtime_validator_not_authorized
