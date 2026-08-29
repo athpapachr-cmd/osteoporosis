@@ -60,31 +60,33 @@ class CU1GreekReferralFormatter(_BaseGreekFormatter):
     def _format_short(self, draft: Mapping[str, Any]) -> str:
         route = self._rich_route_identity(draft)
         if route and self.rich_renderer.supports(
-            profile_id=route[0], route_id=route[1], subtype_id=route[2]
+            profile_id=route[0], route_id=route[1], subtype_id=route[2], context=route[3]
         ):
             return self.rich_renderer.render_short(
                 profile_id=route[0],
                 route_id=route[1],
                 subtype_id=route[2],
                 clinical_context=self._rich_clinical_context(draft, detailed=False),
+                context=route[3],
             )
         return super()._format_short(draft)
 
     def _format_detailed(self, draft: Mapping[str, Any]) -> str:
         route = self._rich_route_identity(draft)
         if route and self.rich_renderer.supports(
-            profile_id=route[0], route_id=route[1], subtype_id=route[2]
+            profile_id=route[0], route_id=route[1], subtype_id=route[2], context=route[3]
         ):
             return self.rich_renderer.render_detailed(
                 profile_id=route[0],
                 route_id=route[1],
                 subtype_id=route[2],
                 clinical_context=self._rich_clinical_context(draft, detailed=True),
+                context=route[3],
             )
         return super()._format_detailed(draft)
 
     @staticmethod
-    def _rich_route_identity(draft: Mapping[str, Any]) -> Optional[Tuple[str, str, Optional[str]]]:
+    def _rich_route_identity(draft: Mapping[str, Any]) -> Optional[Tuple[str, str, Optional[str], Mapping[str, Any]]]:
         problem = draft.get("primary_problem")
         if not isinstance(problem, Mapping):
             return None
@@ -93,7 +95,12 @@ class CU1GreekReferralFormatter(_BaseGreekFormatter):
         subtype_id = problem.get("subtype_id_optional")
         if not isinstance(profile_id, str) or not profile_id or not isinstance(route_id, str) or not route_id:
             return None
-        return profile_id, route_id, subtype_id if isinstance(subtype_id, str) and subtype_id else None
+        raw_context = problem.get("context")
+        context: Dict[str, Any] = copy.deepcopy(dict(raw_context)) if isinstance(raw_context, Mapping) else {}
+        wording_mode = problem.get("wording_mode")
+        if isinstance(wording_mode, str) and wording_mode:
+            context["__wording_mode"] = wording_mode
+        return profile_id, route_id, subtype_id if isinstance(subtype_id, str) and subtype_id else None, context
 
     def _rich_clinical_context(self, draft: Mapping[str, Any], *, detailed: bool) -> List[str]:
         problem = draft.get("primary_problem", {}) if isinstance(draft.get("primary_problem"), Mapping) else {}
