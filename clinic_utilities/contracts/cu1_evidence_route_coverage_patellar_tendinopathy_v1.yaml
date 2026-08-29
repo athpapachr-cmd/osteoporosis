@@ -1,0 +1,273 @@
+version: cu1_evidence_route_coverage_patellar_tendinopathy_v1
+status: active_design_authority_route_coverage_extension
+runtime_authorized: false
+reviewed_on: 2026-08-29
+normative_schema: clinic_utilities/contracts/cu1_history_timeline_schema_v1.yaml
+identity_mode: explicit_payload_id
+review_record: clinic_utilities/contracts/CU1_PATELLAR_TENDINOPATHY_ROUTE_REVIEW_2026-08-29.md
+
+purpose: >-
+  Native schema-conformant evidence extension for patellar tendinopathy. The route supports a
+  progressive loading/capacity-restoration rehabilitation direction while explicitly preserving
+  uncertainty in absolute exercise effects and the absence of a clinically meaningful superiority
+  hierarchy among contemporary loading strategies. It must not freeze eccentric, isometric, HSR or
+  PTLE as a universal mandatory physician-prescribed protocol.
+
+sources:
+  patellar_tendinopathy_exercise_cochrane_2025:
+    evidence_id: patellar_tendinopathy_exercise_cochrane_2025
+    source_type: systematic_review
+    title: Exercise for patellar tendinopathy
+    authors_or_organization: Lopes AD, Rizzo RRN, Hespanhol L, Costa LOP, Kamper SJ / Cochrane
+    year_or_version: 2025
+    reference: Cochrane Database Syst Rev. 2025;5:CD013078
+    doi_optional: 10.1002/14651858.CD013078.pub2
+    population_scope_optional: athletes with chronic patellar tendinopathy in randomized trials of strengthening exercise versus no treatment, injection, surgery or other comparators
+    reviewed_on: 2026-08-29
+    next_review_due: 2027-08-29
+    freshness_state: current
+    status: active
+
+  patellar_loading_nma_2026:
+    evidence_id: patellar_loading_nma_2026
+    source_type: systematic_review
+    title: Comparative effectiveness of exercise interventions for patellar tendinopathy — a systematic review and network meta-analysis of randomized controlled trials
+    authors_or_organization: Liu Y, Li C, Yang F
+    year_or_version: 2026
+    reference: BMC Sports Sci Med Rehabil. 2026;18:296
+    doi_optional: 10.1186/s13102-026-01743-4
+    population_scope_optional: clinically and/or imaging-diagnosed patellar tendinopathy in randomized trials comparing exercise-based rehabilitation strategies; search through December 2025
+    reviewed_on: 2026-08-29
+    next_review_due: 2027-08-29
+    freshness_state: current
+    status: active
+
+  patellar_PTLE_rct_2021:
+    evidence_id: patellar_PTLE_rct_2021
+    source_type: randomized_trial
+    title: Effectiveness of progressive tendon-loading exercise therapy in patients with patellar tendinopathy — a randomised clinical trial
+    authors_or_organization: Breda SJ et al.
+    year_or_version: 2021
+    reference: Br J Sports Med. 2021;55(9):501-509
+    doi_optional: 10.1136/bjsports-2020-103403
+    population_scope_optional: 76 predominantly young athletes with mostly chronic clinically and ultrasound-confirmed patellar tendinopathy; median symptom duration two years and most had prior failed treatment; PTLE compared with eccentric exercise
+    reviewed_on: 2026-08-29
+    next_review_due: 2027-08-29
+    freshness_state: current
+    status: active
+
+  patellar_management_nma_2021:
+    evidence_id: patellar_management_nma_2021
+    source_type: systematic_review
+    title: Management of patellar tendinopathy — a systematic review and network meta-analysis of randomised studies
+    authors_or_organization: Challoumas D et al.
+    year_or_version: 2021
+    reference: BMJ Open Sport Exerc Med. 2021;7(4):e001110
+    doi_optional: 10.1136/bmjsem-2021-001110
+    population_scope_optional: adults with clinical patellar tendinopathy in randomized studies of exercise and nonexercise interventions
+    reviewed_on: 2026-08-29
+    next_review_due: 2027-02-28
+    freshness_state: current
+    status: active
+
+claims:
+  patellar_progressive_loading_conservative_direction:
+    claim_id: patellar_progressive_loading_conservative_direction
+    evidence_ids: [patellar_PTLE_rct_2021, patellar_loading_nma_2026, patellar_tendinopathy_exercise_cochrane_2025]
+    applicable_route_evidence_profile_ids: [rep_patellar_tendinopathy_v1]
+    applicable_route_ids: [patellar_tendinopathy]
+    domain: core_rehabilitation
+    claim_summary: For a clinician-selected conservative patellar-tendinopathy rehabilitation pathway, progressive tendon and quadriceps loading is a reasonable core direction, but the absolute treatment-effect evidence remains limited and the intervention should not be represented as a certainty of benefit for every patient.
+    recommendation_direction: consider
+    output_scope: referral_core
+    reviewed_on: 2026-08-29
+
+  patellar_PTLE_population_specific_signal:
+    claim_id: patellar_PTLE_population_specific_signal
+    evidence_ids: [patellar_PTLE_rct_2021]
+    applicable_route_evidence_profile_ids: [rep_patellar_tendinopathy_v1]
+    applicable_route_ids: [patellar_tendinopathy]
+    domain: core_rehabilitation
+    claim_summary: In one randomized trial of mostly chronic, previously treated young athletes, a progressive tendon-loading programme improved VISA-P more than eccentric-only exercise at 24 weeks; this population-specific trial signal does not establish PTLE as a universal mandatory protocol.
+    recommendation_direction: consider
+    output_scope: clinician_ui_only
+    reviewed_on: 2026-08-29
+
+  patellar_no_single_loading_protocol_superior_2026:
+    claim_id: patellar_no_single_loading_protocol_superior_2026
+    evidence_ids: [patellar_loading_nma_2026]
+    applicable_route_evidence_profile_ids: [rep_patellar_tendinopathy_v1]
+    applicable_route_ids: [patellar_tendinopathy]
+    domain: core_rehabilitation
+    claim_summary: The 2026 network meta-analysis did not identify a statistically or clinically meaningful superiority hierarchy among contemporary exercise strategies relative to HSR; HSR is a reasonable reference and several progressive loading approaches appear broadly comparable.
+    recommendation_direction: context_only
+    output_scope: clinician_ui_only
+    reviewed_on: 2026-08-29
+
+  patellar_absolute_strengthening_effect_uncertain_2025:
+    claim_id: patellar_absolute_strengthening_effect_uncertain_2025
+    evidence_ids: [patellar_tendinopathy_exercise_cochrane_2025]
+    applicable_route_evidence_profile_ids: [rep_patellar_tendinopathy_v1]
+    applicable_route_ids: [patellar_tendinopathy]
+    domain: core_rehabilitation
+    claim_summary: Cochrane 2025 concluded that the available strengthening-exercise evidence is too uncertain to draw firm conclusions about pain or function versus no treatment or several alternative comparators; all included participants were athletes.
+    recommendation_direction: insufficient_evidence
+    output_scope: clinician_ui_only
+    reviewed_on: 2026-08-29
+
+  patellar_loading_progression_by_response:
+    claim_id: patellar_loading_progression_by_response
+    evidence_ids: [patellar_PTLE_rct_2021, patellar_loading_nma_2026]
+    applicable_route_evidence_profile_ids: [rep_patellar_tendinopathy_v1]
+    applicable_route_ids: [patellar_tendinopathy]
+    domain: progression_criteria
+    claim_summary: Progressive loading should be individualized according to symptom/load tolerance, strength and functional response rather than advanced by elapsed time alone; current comparative evidence does not validate one universal numeric progression threshold.
+    recommendation_direction: consider
+    output_scope: referral_core
+    reviewed_on: 2026-08-29
+
+  patellar_loading_mode_execution_detail:
+    claim_id: patellar_loading_mode_execution_detail
+    evidence_ids: [patellar_loading_nma_2026, patellar_PTLE_rct_2021]
+    applicable_route_evidence_profile_ids: [rep_patellar_tendinopathy_v1]
+    applicable_route_ids: [patellar_tendinopathy]
+    domain: execution_detail
+    claim_summary: Choice and dosing of eccentric, HSR, moderate slow resistance, isometric or other progressive loading strategies are therapist-level execution decisions to individualize; no single mode is a mandatory physician referral prescription.
+    recommendation_direction: context_only
+    output_scope: therapist_execution_detail
+    reviewed_on: 2026-08-29
+
+  patellar_ESWT_no_clear_added_benefit_2021:
+    claim_id: patellar_ESWT_no_clear_added_benefit_2021
+    evidence_ids: [patellar_management_nma_2021]
+    applicable_route_evidence_profile_ids: [rep_patellar_tendinopathy_v1]
+    applicable_route_ids: [patellar_tendinopathy]
+    domain: adjunct
+    claim_summary: In randomized evidence synthesized in 2021, ESWT added to eccentric exercise did not show clear short-term superiority over sham ESWT with the same exercise background for pain or function; ESWT therefore must not be an automatic CU-1 referral adjunct.
+    recommendation_direction: insufficient_evidence
+    output_scope: clinician_ui_only
+    reviewed_on: 2026-08-29
+
+  patellar_RTS_threshold_gap:
+    claim_id: patellar_RTS_threshold_gap
+    evidence_ids: [patellar_tendinopathy_exercise_cochrane_2025, patellar_loading_nma_2026, patellar_PTLE_rct_2021]
+    applicable_route_evidence_profile_ids: [rep_patellar_tendinopathy_v1]
+    applicable_route_ids: [patellar_tendinopathy]
+    applicability_conditions_optional: [return_to_sport_or_high_demand_activity_goal]
+    domain: progression_criteria
+    claim_summary: Current reviewed evidence does not establish validated universal return-to-sport thresholds for patellar tendinopathy; trial protocols and older expert frameworks must not be converted into mandatory physician-authored numeric clearance criteria.
+    recommendation_direction: insufficient_evidence
+    output_scope: clinician_ui_only
+    reviewed_on: 2026-08-29
+
+route_history_prompts:
+  patellar_tendinopathy_load_history:
+    prompt_id: patellar_tendinopathy_load_history
+    applicable_route_ids: [patellar_tendinopathy]
+    label_el: Πρόσφατη μεταβολή σε άλματα, τρέξιμο, καθίσματα, γυμναστήριο ή άλλο φορτίο του επιγονατιδικού τένοντα
+    response_type: text
+    requiredness: optional
+
+  patellar_tendinopathy_symptom_location_load_relation:
+    prompt_id: patellar_tendinopathy_symptom_location_load_relation
+    applicable_route_ids: [patellar_tendinopathy]
+    label_el: Εντόπιση συμπτώματος και σχέση με άλμα / hop / τρέξιμο / squat ή άλλο load-related έργο
+    response_type: text
+    requiredness: optional
+
+  patellar_tendinopathy_prior_loading_response:
+    prompt_id: patellar_tendinopathy_prior_loading_response
+    applicable_route_ids: [patellar_tendinopathy]
+    label_el: Προηγούμενο πρόγραμμα φόρτισης / αποκατάστασης και ανταπόκριση
+    response_type: text
+    requiredness: optional
+
+  patellar_tendinopathy_imaging_context:
+    prompt_id: patellar_tendinopathy_imaging_context
+    applicable_route_ids: [patellar_tendinopathy]
+    label_el: Υπέρηχος / MRI εφόσον υπάρχει, χωρίς αυτόματη εξίσωση απεικονιστικής αλλοίωσης με συμπτωματική τενοντοπάθεια
+    response_type: text
+    requiredness: optional
+
+  patellar_tendinopathy_activity_goal:
+    prompt_id: patellar_tendinopathy_activity_goal
+    applicable_route_ids: [patellar_tendinopathy]
+    label_el: Στόχος επιστροφής σε εργασία, τρέξιμο, άλματα, άθλημα ή γυμναστήριο
+    response_type: text
+    requiredness: optional
+
+route_evidence_profiles:
+  rep_patellar_tendinopathy_v1:
+    route_evidence_profile_id: rep_patellar_tendinopathy_v1
+    region_profile_id: knee
+    route_id: patellar_tendinopathy
+    diagnostic_claim_ids: []
+    history_claim_ids: []
+    examination_claim_ids: []
+    rehabilitation_sequence_id: seq_patellar_tendinopathy_v1
+    adjunct_claim_ids: [patellar_ESWT_no_clear_added_benefit_2021]
+    safety_claim_ids: []
+    evidence_gaps:
+      - absolute_strengthening_effects_vs_no_treatment_are_low_or_very_low_certainty_in_Cochrane_2025
+      - no_clinically_meaningful_loading_mode_superiority_hierarchy_established_by_2026_NMA
+      - PTLE_superiority_signal_is_from_one_small_population_specific_RCT_and_does_not_create_universal_protocol_authority
+      - no_validated_universal_numeric_progression_threshold
+      - no_validated_universal_return_to_sport_threshold
+      - imaging_tendon_change_alone_does_not_establish_symptomatic_patellar_tendinopathy
+      - ESWT_is_not_supported_as_an_automatic_add_on_to_exercise
+    primary_source_ids:
+      - patellar_tendinopathy_exercise_cochrane_2025
+      - patellar_loading_nma_2026
+      - patellar_PTLE_rct_2021
+      - patellar_management_nma_2021
+    last_reviewed_on: 2026-08-29
+    next_review_due: 2027-08-29
+    freshness_state: current
+
+rehabilitation_sequences:
+  seq_patellar_tendinopathy_v1:
+    sequence_id: seq_patellar_tendinopathy_v1
+    route_id: patellar_tendinopathy
+    sequence_source: route_evidence_profile
+    route_evidence_profile_id: rep_patellar_tendinopathy_v1
+    phases:
+      - phase_id: patellar_tendinopathy_progressive_capacity_rehabilitation
+        order: 1
+        clinical_objective: improve load tolerance, quadriceps/tendon capacity and function through individualized progressive loading while preserving current evidence uncertainty
+        objective_authority:
+          authority_type: evidence_claim
+          evidence_claim_ids: [patellar_progressive_loading_conservative_direction]
+        intervention_directions:
+          - intervention_direction_id: patellar_tendinopathy_progressive_loading
+            statement: use an individualized progressive tendon and quadriceps loading strategy without prescribing one mandatory eccentric, isometric, HSR or PTLE protocol
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [patellar_progressive_loading_conservative_direction]
+        progression_criteria:
+          - criterion_id: patellar_tendinopathy_load_response_progression
+            criterion_kind: progression
+            statement: progress loading according to symptom and load tolerance, strength and functional response rather than elapsed time alone; no universal numeric cut-off is prescribed
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [patellar_loading_progression_by_response]
+        precautions_or_do_not_progress_criteria: []
+        strength_optional: null
+        certainty_optional: not_graded
+        required_for_route: true
+    clinician_modifications_optional: []
+    protocol_overrides_optional: []
+
+coverage_effect:
+  route_profiles_added: [rep_patellar_tendinopathy_v1]
+  rehabilitation_sequences_added: [seq_patellar_tendinopathy_v1]
+  route_history_prompts_added:
+    - patellar_tendinopathy_load_history
+    - patellar_tendinopathy_symptom_location_load_relation
+    - patellar_tendinopathy_prior_loading_response
+    - patellar_tendinopathy_imaging_context
+    - patellar_tendinopathy_activity_goal
+  route_status_after_review: sequence_complete_evidence_bounded_single_phase
+  return_to_sport_behavior: no_universal_evidence_derived_RTS_threshold_rendered
+  loading_mode_behavior: therapist_selects_and_doses_loading_mode_without_mandatory_physician_protocol
+  ESWT_behavior: not_auto_recommended
+  runtime_authorized: false
