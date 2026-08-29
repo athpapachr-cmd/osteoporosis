@@ -1,0 +1,49 @@
+version: cu1_evidence_coverage_rcrsp_amendment_v1
+status: reviewed_logical_coverage_amendment
+runtime_authorized: false
+reviewed_on: 2026-08-29
+review_record: CU1_ROTATOR_CUFF_RELATED_SHOULDER_ROUTE_REVIEW_2026-08-29.md
+
+purpose: >-
+  Preserve the historical route-by-route coverage matrix while projecting the result of the exact
+  2026-08-29 rotator-cuff-related shoulder-pain review into the active logical coverage view. This
+  amendment may narrow or complete reviewed coverage metadata; it does not alter source claims or
+  create new treatment authority.
+
+route_overrides:
+  shoulder:
+    rotator_cuff_related_shoulder_pain:
+      status: profile_curated
+      sequence_status: sequence_complete
+      profile_id: rep_rotator_cuff_related_pain_v1
+      source_state: promoted_active_design_authority
+      shard: cu1_evidence_tranche2_v1.yaml
+      promotion_projection: cu1_evidence_tranche2_promotion_v1.yaml
+      review_record: CU1_ROTATOR_CUFF_RELATED_SHOULDER_ROUTE_REVIEW_2026-08-29.md
+      fixture_extension: cu1_rotator_cuff_related_shoulder_fixtures_v1.yaml
+      rehabilitation_sequence_id: seq_rotator_cuff_related_pain_v1
+      evidence_state: JOSPT_2025_current_primary_rotator_cuff_tendinopathy_authority_with_active_rehabilitation_education_and_conditional_return_to_sport_guidance
+      sequence_model: evidence_bounded_active_rehabilitation_plus_conditional_functional_reintegration_without_fixed_phase_protocol_claim
+      diagnostic_boundary: full_thickness_rotator_cuff_tear_is_excluded_and_uses_separate_route
+      loading_behavior: motor_control_and_or_resistance_exercise_with_individualized_load_is_initial_treatment_but_no_specific_program_or_FITT_dose_is_universally_superior
+      adjunct_behavior: manual_therapy_and_taping_are_selected_short_term_adjuncts_and_calcific_specific_interventions_use_the_calcific_route
+      reassessment_behavior: maximum_12_week_specialist_reassessment_recommendation_remains_clinician_ui_only_and_is_not_a_fixed_PT_course_or_progression_rule
+      progression_behavior: no_universal_numeric_phase_transition_return_threshold_or_fixed_course_duration
+
+top_level_list_additions:
+  fixture_extensions:
+    - cu1_rotator_cuff_related_shoulder_fixtures_v1.yaml
+
+integration_state_list_additions:
+  route_coverage_reviewed_routes:
+    - rotator_cuff_related_shoulder_pain
+  fixture_extensions:
+    - cu1_rotator_cuff_related_shoulder_fixtures_v1.yaml
+
+validation_assertions:
+  historical_coverage_matrix_not_rewritten: true
+  no_new_evidence_claim_created: true
+  no_full_thickness_tear_scope_expansion: true
+  sequence_complete_means_complete_for_evidence_bounded_referral_projection_not_fixed_protocol: true
+  clinician_only_12_week_rule_remains_outside_referral_core: true
+  runtime_authorized: false
