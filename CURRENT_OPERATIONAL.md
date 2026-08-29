@@ -8,7 +8,9 @@
 > **ACTIVE CANONICAL WRITER/LOCK:** `feat/cu1-rich-referral-global-evidence-2026-08-29`.
 > **ACTIVE RUNTIME WRITER/LOCK:** `feat/cu1-rich-referral-global-evidence-2026-08-29`.
 > **Runtime authorization:** GLOBAL HORIZONTAL RICH-REFERRAL MODEL + CLINICIAN-ONLY EVIDENCE VIEW + TESTS.
-> **Deploy/merge authorization:** NO — exact-head tests, global coverage review and product-owner output review first.
+> **Latest clinically tested head before docs-only closeout:** `3364d1b6f9e749ccad8bac059a4cb6d5b54d4ed4`.
+> **Latest focused CI evidence:** workflow run `33268968382` / run #357 — compile PASS, browser JavaScript syntax PASS, Python acceptance suite **116/116 PASS**.
+> **Deploy/merge authorization:** NO — global coverage review and product-owner representative output review first.
 > **Further route-by-route evidence research:** HOLD unless a concrete evidence gap blocks safe global rendering.
 > **CU-2:** NOT AUTHORIZED.
 > **PR-1 Transcript Intake:** intentionally paused.
@@ -155,13 +157,61 @@ Not authorized now:
 - persistence changes;
 - CU-2 or PR-1 restart.
 
+## 6.1 Frozen shoulder route — CLOSED / TESTED ON FEATURE BRANCH
+
+`shoulder.adhesive_capsulitis_frozen_shoulder` is complete for the currently approved CU-1 rich-referral scope.
+
+Validated behavior:
+
+```text
+formal_diagnosis + frozen_shoulder_scope=primary_frozen_shoulder
+→ context-gated rich referral + exact clinician evidence projection
+
+presentation-only
+secondary_or_other_stiff_shoulder
+not_stated / unresolved scope
+→ no primary-frozen-shoulder rich authority; fail closed to the non-rich path / evidence-context gap
+```
+
+The rich projection is deliberately a **single evidence-bounded organizational stage** for individualized mobility/ROM, function and self-management. It is not a `freezing → frozen → thawing` protocol and contains no universal treatment duration, fixed ROM threshold or disease-stage transition rule.
+
+Evidence-scope boundaries remain locked:
+- manual therapy including ROM may be considered within primary frozen shoulder authority;
+- self-stretching remains `therapist_execution_detail` and no fixed dose is generated;
+- strengthening is not a mandatory routine direction because current evidence is insufficient/very low certainty;
+- BESS uncertainty about supervised physiotherapy versus natural history remains visible and is not converted into a superiority claim;
+- post-injection physiotherapy remains a context-specific evidence claim and is not auto-rendered into the general primary-frozen-shoulder plan;
+- secondary/post-traumatic/postoperative or otherwise different stiff-shoulder contexts do not borrow primary frozen shoulder authority.
+
+Acceptance evidence at `3364d1b6f9e749ccad8bac059a4cb6d5b54d4ed4`:
+- frozen route test is part of `.github/workflows/cu1-tests.yml`;
+- exact context-gating and invalid-enum fail-closed behavior PASS;
+- primary-vs-secondary/unresolved evidence isolation PASS;
+- clinician evidence-panel context isolation PASS;
+- coverage amendment / fixture linkage PASS;
+- Short/Detailed content and character ceilings PASS;
+- no fixed-stage, fixed-dose or mandatory-strengthening leakage PASS;
+- whole focused suite: **116/116 PASS**.
+
+State distinction:
+
+```text
+FROZEN SHOULDER DESIGNED      YES
+IMPLEMENTED                   YES
+TESTED                        YES
+MERGED                        NO
+DEPLOYED                      NO
+PRODUCTION-SMOKE-VERIFIED     NO
+```
+
+No further frozen-shoulder implementation work is required unless later evidence review or product feedback creates a specific replan trigger.
+
 ---
 
 # 7. Exact next action
 
-1. Freeze a shared Rich Rehabilitation Document Model and evidence-resolution seam.
-2. Expose clinician-readable evidence references from the existing structured evidence corpus.
-3. Convert the approved LET prototype to the shared model without changing its accepted clinical meaning.
-4. Apply the same renderer horizontally to registry routes that have applicable structured authority; preserve explicit evidence-limited/block states where authority is incomplete.
-5. Add coverage tests across route classes (pain, tendinopathy, OA, neurological, traumatic/structural, postoperative, fracture, muscle, balance/gait) and ensure no cross-route content leakage.
-6. Run exact-head CI and review representative Short/Detailed outputs plus the evidence panel before merge/deploy.
+1. Treat frozen shoulder as closed for the current feature-branch scope; do not reopen it for cosmetic refinement.
+2. Continue the horizontal CU-1 rollout with the next unresolved registry route, preserving route/context-specific evidence authority and explicit block states.
+3. Keep exact-head CI green after each bounded route batch.
+4. When representative route classes and remaining coverage are adequate, perform the global representative Short/Detailed + clinician-evidence review before PR/merge/deploy.
+5. Merge/deploy remains explicitly on HOLD until product-owner review and global acceptance are complete.
