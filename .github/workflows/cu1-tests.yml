@@ -7,6 +7,7 @@ on:
       - fix/cu1-greek-human-referral-formatting-2026-08-28
       - fix/cu1-dynamic-relevant-fields-2026-08-28
       - feat/cu1-rich-referral-lateral-elbow-2026-08-29
+      - feat/cu1-rich-referral-global-evidence-2026-08-29
   pull_request:
     paths:
       - 'clinic_utilities/**'
@@ -17,6 +18,7 @@ on:
       - 'test_cu1_physio_referral.py'
       - 'test_cu1_formatter_el.py'
       - 'test_cu1_rich_referral_lateral_elbow.py'
+      - 'test_cu1_clinician_evidence.py'
       - 'test_cu1_dynamic_ui.py'
       - 'test_cu1_gateway_guard.py'
       - 'test_cu1_gateway_registry.py'
@@ -35,8 +37,8 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
       - name: Compile CU-1 runtime and tests
-        run: python -m py_compile clinic_utilities/physio_referral_runtime.py clinic_utilities/physio_referral_api.py clinic_utilities/physio_referral_formatter_el.py clinic_utilities/physio_referral_formatter_el_v2.py test_cu1_physio_referral.py test_cu1_formatter_el.py test_cu1_rich_referral_lateral_elbow.py test_cu1_dynamic_ui.py test_cu1_gateway_guard.py test_cu1_gateway_registry.py test_cu1_safety_trust_boundary.py main.py
+        run: python -m py_compile clinic_utilities/physio_referral_runtime.py clinic_utilities/physio_referral_api.py clinic_utilities/physio_referral_formatter_el.py clinic_utilities/physio_referral_formatter_el_v2.py clinic_utilities/physio_evidence_runtime.py clinic_utilities/physio_evidence_api.py test_cu1_physio_referral.py test_cu1_formatter_el.py test_cu1_rich_referral_lateral_elbow.py test_cu1_clinician_evidence.py test_cu1_dynamic_ui.py test_cu1_gateway_guard.py test_cu1_gateway_registry.py test_cu1_safety_trust_boundary.py main.py
       - name: Check browser JavaScript syntax
         run: node --check static/clinic-utilities/physio-referral/app.js && node --check static/clinic-utilities/physio-referral/dynamic-subtype.js
       - name: Run CU-1 focused tests
-        run: python -m unittest -v test_cu1_physio_referral.py test_cu1_formatter_el.py test_cu1_rich_referral_lateral_elbow.py test_cu1_dynamic_ui.py test_cu1_gateway_guard.py test_cu1_gateway_registry.py test_cu1_safety_trust_boundary.py
+        run: python -m unittest -v test_cu1_physio_referral.py test_cu1_formatter_el.py test_cu1_rich_referral_lateral_elbow.py test_cu1_clinician_evidence.py test_cu1_dynamic_ui.py test_cu1_gateway_guard.py test_cu1_gateway_registry.py test_cu1_safety_trust_boundary.py
