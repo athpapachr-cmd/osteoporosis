@@ -1,4 +1,4 @@
-version: cu1_evidence_coverage_matrix_v1_6
+version: cu1_evidence_coverage_matrix_v1_7
 status: active_route_by_route_work_queue
 runtime_authorized: false
 route_registry: cu1_registry_v1.yaml
@@ -7,10 +7,11 @@ active_core_registry: cu1_evidence_registry_v1.yaml
 promoted_evidence_extensions: [cu1_evidence_tranche2_v1.yaml, cu1_evidence_tranche3_v1.yaml]
 promotion_projections: [cu1_evidence_tranche2_promotion_v1.yaml, cu1_evidence_tranche3_promotion_v1.yaml]
 promotion_overlays: [cu1_evidence_tranche3_promotion_fix_v1.yaml]
-active_route_coverage_extension: cu1_evidence_route_coverage_v1.yaml
+active_route_coverage_extensions: [cu1_evidence_route_coverage_v1.yaml, cu1_evidence_route_coverage_instability_v1.yaml]
+logical_amendments: [cu1_evidence_route_coverage_amendments_v1.yaml]
 staged_evidence_extensions: []
 normative_schema: cu1_history_timeline_schema_v1.yaml
-coverage_rule: every_routine_route_and_material_subtype_requires_unique_current_applicable_evidence_profile_and_complete_element_traceable_rehabilitation_sequence_or_explicit_blocked_evidence_gap
+coverage_rule: every_routine_route_and_material_subtype_or_management_context_requires_unique_current_applicable_evidence_profile_and_complete_element_traceable_rehabilitation_sequence_or_explicit_blocked_evidence_gap
 
 status_values:
   - pending
@@ -118,13 +119,24 @@ profiles:
       blocker: current_2025_frameworks_support_selected_nonoperative_interventions_but_do_not_define_one_universal_criteria_based_progression_sequence_and_BESS_does_not_establish_supervised_PT_as_superior_to_natural_history
     glenohumeral_instability_dislocation:
       status: profile_curated
-      sequence_status: blocked_evidence_gap
-      source_state: promoted_active_design_authority
-      shard: cu1_evidence_tranche3_v1.yaml
-      promotion_projection: cu1_evidence_tranche3_promotion_v1.yaml
-      promotion_overlay: cu1_evidence_tranche3_promotion_fix_v1.yaml
-      profile_ids: [rep_shoulder_instability_anterior_traumatic_v1, rep_shoulder_instability_posterior_v1]
-      blocker: traumatic_anterior_and_posterior_authorities_are_direction_specific_and_management_context_is_material_so_no_single_route_level_initial_rehabilitation_sequence_is_authorized
+      sequence_status: sequence_complete
+      source_state: native_active_design_authority
+      shards: [cu1_evidence_tranche3_v1.yaml, cu1_evidence_route_coverage_instability_v1.yaml]
+      logical_amendment: cu1_evidence_route_coverage_amendments_v1.yaml
+      review_record: CU1_ROUTE_COVERAGE_REVIEW_2026-08-29.md
+      profile_ids:
+        - rep_shoulder_instability_anterior_traumatic_v1
+        - rep_shoulder_instability_posterior_v1
+        - rep_shoulder_instability_anterior_atraumatic_v1
+        - rep_shoulder_instability_multidirectional_v1
+      branch_state:
+        traumatic_anterior: evidence_bounded_context_scoped_sequence
+        posterior_nonoperative: evidence_bounded_lower_authority_sequence
+        atraumatic_anterior_nonoperative: evidence_bounded_lower_authority_sequence
+        multidirectional_nonoperative: cautious_sequence_with_explicit_comparative_efficacy_uncertainty
+      unresolved_context_behavior: direction_or_cause_or_management_context_not_stated_blocks_evidence_aware_sequence_until_clarified
+      postoperative_behavior: route_to_postoperative_shoulder_rehabilitation_with_patient_specific_protocol_precedence
+      correction_note: posterior_PartII_postoperative_RTS_claim_is_suppressed_from_nonoperative_route_authority
     glenohumeral_osteoarthritis:
       status: evidence_seeded
       next_source: AAOS_2020_glenohumeral_joint_osteoarthritis_CPG
@@ -312,9 +324,8 @@ shared_owners:
     status: pending
 
 research_queue_priority:
-  rationale: prioritize_routes_with_current_route_specific_CPGs_and_high_real_world_frequency_while_preserving_subtype_boundaries
+  rationale: prioritize_routes_with_current_route_specific_CPGs_and_high_real_world_frequency_while_preserving_subtype_and_management_context_boundaries
   next:
-    - glenohumeral_instability_dislocation_initial_rehabilitation_split
     - glenohumeral_osteoarthritis
     - degenerative_meniscal_lesion_conservative_rehabilitation
     - patellar_tendinopathy
@@ -331,11 +342,13 @@ integration_state:
   tranche3_schema_conformance_reviewed: true
   tranche3_promotion_gate_passed: true
   tranche3_state: promoted_active_design_authority
-  route_coverage_extension_schema_conformance_reviewed: true
-  route_coverage_extension_reviewed_routes: [calcific_rotator_cuff_tendinopathy]
+  native_route_coverage_schema_conformance_reviewed: true
+  route_coverage_reviewed_routes: [calcific_rotator_cuff_tendinopathy, glenohumeral_instability_dislocation]
+  logical_amendment_gate_passed: true
   all_listed_shards_schema_reviewed: true
   all_listed_shards_promotion_or_native_gate_passed: true
   fixtures_catalog_created: true
+  matching_fixtures_added_for_reviewed_route_coverage: true
   route_specific_history_prompt_catalog_complete: false
 
 readiness_gate:
@@ -347,15 +360,16 @@ readiness_gate:
   shard_integration_gate: passed
   route_coverage_gate: failed
   route_history_prompt_gate: failed
+  route_fixture_gate: failed_until_all_routes_curated
   exact_design_completeness_review: blocked
   requirements:
-    - all_routine_routes_and_material_subtypes_have_unique_applicable_route_evidence_profiles_or_explicit_reviewed_evidence_gap_behavior
+    - all_routine_routes_and_material_subtypes_or_management_contexts_have_unique_applicable_route_evidence_profiles_or_explicit_reviewed_evidence_gap_behavior
     - all_nonblocked_routine_route_variants_have_complete_evidence_bounded_sequences
     - every_evidence_derived_rendered_phase_objective_intervention_progression_precaution_and_reassessment_element_is_traceable_to_active_applicable_referral_compatible_claim
     - patient_specific_protocol_overrides_are_machine_distinct_from_literature_authority
     - all_profile_sources_current_or_explicitly_reviewed
     - evidence_gaps_and_conflicts_are_explicit
-    - no_route_level_source_is_applied_to_a_noncovered_subtype
+    - no_route_level_source_is_applied_to_a_noncovered_subtype_or_management_context
     - route_specific_history_prompts_are_defined
     - all_shards_pass_native_or_reviewed_promotion_gate
     - synthetic_composition_and_evidence_fixtures_pass_exact_review
