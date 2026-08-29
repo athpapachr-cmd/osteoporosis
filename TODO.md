@@ -492,6 +492,38 @@ Only after Module 01 proves the reusable engine in real use:
 - [ ] build cross-module Clinical Excellence Home;
 - [ ] distinguish domain-specific competence from global skills such as communication, calibration, safety and evidence responsiveness.
 
+### Future evidence-grounded multi-document clinical documentation
+
+Approved as a **future architectural direction**, not as an active implementation slice:
+
+```text
+ONE reviewed patient-specific clinical-assertion layer
++
+SEPARATE literature/evidence layer
++
+MANY document-specific policies/views
+```
+
+Future design review must preserve:
+
+- [ ] source/provenance axis separately from semantic clinical-claim type;
+- [ ] patient-specific clinical assertions separately from literature/guideline `EvidenceClaim` authority;
+- [ ] contradiction resolution that can preserve unresolved competing interpretations when evidence does not justify a single winner;
+- [ ] `diagnosis != causation`;
+- [ ] `temporal association != causal relationship`;
+- [ ] one verified/reviewed patient-specific clinical-information layer reused by multiple downstream documents rather than duplicated per document type;
+- [ ] medico-legal / accident reports as a future **Document Policy**, not a separate clinical-fact engine;
+- [ ] document wording as a downstream view, never as the canonical patient-specific clinical fact itself;
+- [ ] clinician review/approval before material AI-generated patient-specific assertions become authoritative.
+
+At the next explicitly authorized safe design boundary:
+
+- [ ] repeat fresh six-canonical bootstrap;
+- [ ] perform owner/schema audit against the then-current runtime and existing objects;
+- [ ] decide the minimal canonical and machine-contract changes;
+- [ ] decide whether a separate design slice is required for the shared patient-specific clinical-assertion layer;
+- [ ] do **not** create `ClinicalAssertionV1`, new claim-state enums, medico-legal schemas or medico-legal runtime code merely from this roadmap item.
+
 Clinic Utilities are cross-module operational tools and do not count as declaring a clinical Module 02.
 
 ---
