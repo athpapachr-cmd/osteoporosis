@@ -1,0 +1,502 @@
+version: cu1_evidence_route_coverage_pin_supinator_v1
+status: ready_for_exact_review_not_manifest_active
+runtime_authorized: false
+reviewed_on: 2026-08-29
+normative_schema: clinic_utilities/contracts/cu1_history_timeline_schema_v1.yaml
+identity_mode: explicit_payload_id
+review_record: clinic_utilities/contracts/CU1_PIN_SUPINATOR_ROUTE_REVIEW_2026-08-29.md
+
+purpose: >-
+  Route-specific evidence hardening for posterior_interosseous_nerve_supinator_syndrome. The route preserves
+  the frozen distinction between pain-predominant radial-tunnel presentations and motor posterior-interosseous
+  neuropathy/palsy, does not infer diagnosis from lateral-forearm pain or provocation alone, and does not convert
+  current conservative-management observations into a specific physiotherapy protocol. Spontaneous non-traumatic,
+  non-compressive PIN palsy has prospective 2026 support for an initial conservative-management period, but that
+  evidence does not define a route-specific PT regimen. Known compressive/space-occupying, traumatic, iatrogenic,
+  inflammatory/structural or progressive motor contexts require specialist/correct-owner review rather than a
+  generic elbow, LET, radial-tunnel or peripheral-nerve rehabilitation fallback.
+
+sources:
+  pin_spontaneous_multicenter_2026:
+    evidence_id: pin_spontaneous_multicenter_2026
+    source_type: cohort
+    title: "Clinical characteristics and results after conservative treatment or interfascicular neurolysis of 58 limbs with spontaneous posterior interosseous nerve palsy: A prospective Japanese multicenter study"
+    authors_or_organization: Kato H, Ochi K, Hara Y, et al.
+    year_or_version: 2026
+    published_on_optional: 2026-03-07
+    reference: "J Orthop Sci. 2026. Online ahead of print. S0949-2658(26)00036-9"
+    doi_optional: 10.1016/j.jos.2026.02.010
+    url_optional: https://pubmed.ncbi.nlm.nih.gov/41796461/
+    population_scope_optional: spontaneous posterior interosseous nerve palsy defined as non-traumatic, non-compressive/non-entrapment palsy without a space-occupying lesion
+    setting_scope_optional: prospective Japanese multicenter observational study; 58 limbs; conservative treatment or interfascicular neurolysis
+    reviewed_on: 2026-08-29
+    next_review_due: 2027-03-31
+    freshness_state: current
+    status: active
+    supersedes_optional: []
+    superseded_by_optional: []
+
+  pin_interventions_sr_2006:
+    evidence_id: pin_interventions_sr_2006
+    source_type: systematic_review
+    title: "Interventions for treating the posterior interosseus nerve syndrome: a systematic review of observational studies"
+    authors_or_organization: Huisstede BMA et al.
+    year_or_version: 2006
+    reference: "J Hand Surg Br. 2006;31(4):414-423"
+    url_optional: https://pubmed.ncbi.nlm.nih.gov/16787507/
+    population_scope_optional: posterior interosseous nerve syndrome intervention literature
+    setting_scope_optional: systematic review finding no randomized or controlled clinical trials and relying on case series
+    reviewed_on: 2026-08-29
+    next_review_due: 2027-02-28
+    freshness_state: current
+    status: context_only
+    supersedes_optional: []
+    superseded_by_optional: []
+
+  pin_spontaneous_management_review_2019:
+    evidence_id: pin_spontaneous_management_review_2019
+    source_type: narrative_review
+    title: "Isolated spontaneous posterior interosseous nerve palsy: a review of aetiology and management"
+    authors_or_organization: authors as indexed in PubMed PMID 30509150
+    year_or_version: 2019
+    reference: "J Hand Surg Eur Vol. Review; PMID 30509150"
+    url_optional: https://pubmed.ncbi.nlm.nih.gov/30509150/
+    population_scope_optional: spontaneous posterior interosseous nerve palsy with compressive and non-compressive etiologic distinction
+    setting_scope_optional: narrative management review; supports different ownership for demonstrable compressive lesions versus non-compressive spontaneous palsy
+    reviewed_on: 2026-08-29
+    next_review_due: 2027-02-28
+    freshness_state: current
+    status: context_only
+    supersedes_optional: []
+    superseded_by_optional: []
+
+  radial_tunnel_diagnosis_sr_2024:
+    evidence_id: radial_tunnel_diagnosis_sr_2024
+    source_type: systematic_review
+    title: "Establishing the diagnosis of radial tunnel syndrome: a systematic review of published clinical series"
+    authors_or_organization: Hones KM, Cueto RJ, Ndjonko LC, et al.
+    year_or_version: 2024
+    reference: "Eur J Orthop Surg Traumatol. 2024;34(6):2813-2821"
+    doi_optional: 10.1007/s00590-024-04003-8
+    url_optional: https://pubmed.ncbi.nlm.nih.gov/38782802/
+    population_scope_optional: published clinical series labelled radial tunnel syndrome
+    setting_scope_optional: diagnostic systematic review showing substantial heterogeneity and low frequency of abnormal EMG/NCS in pain-predominant RTS series
+    reviewed_on: 2026-08-29
+    next_review_due: 2027-05-31
+    freshness_state: current
+    status: context_only
+    supersedes_optional: []
+    superseded_by_optional: []
+
+  radial_nerve_nomenclature_2025:
+    evidence_id: radial_nerve_nomenclature_2025
+    source_type: other
+    title: "Nomenclature of the radial nerve: distinguishing between the deep branch of the radial nerve and the posterior interosseous nerve"
+    authors_or_organization: Braun N, Save AV, Lee SK, Wolfe SW
+    year_or_version: 2025
+    reference: "J Hand Surg Eur Vol. 2025;50(1):122-123"
+    doi_optional: 10.1177/17531934241254706
+    url_optional: https://pubmed.ncbi.nlm.nih.gov/38833555/
+    population_scope_optional: terminology/classification of deep radial-branch compression syndromes
+    setting_scope_optional: nomenclature commentary proposing a pain-to-palsy spectrum; not a treatment-effect guideline
+    reviewed_on: 2026-08-29
+    next_review_due: 2027-08-29
+    freshness_state: current
+    status: context_only
+    supersedes_optional: []
+    superseded_by_optional: []
+
+  pin_edx_review_2013:
+    evidence_id: pin_edx_review_2013
+    source_type: narrative_review
+    title: "Posterior interosseous neuropathy: electrodiagnostic evaluation"
+    authors_or_organization: authors as indexed in PubMed PMID 23874261
+    year_or_version: 2013
+    reference: "PM R. 2013; PMID 23874261"
+    url_optional: https://pubmed.ncbi.nlm.nih.gov/23874261/
+    population_scope_optional: posterior interosseous neuropathy diagnostic localization
+    setting_scope_optional: clinical/electrodiagnostic review; describes characteristic motor pattern and use of electrodiagnostics for localization and exclusion of other disorders
+    reviewed_on: 2026-08-29
+    next_review_due: 2027-02-28
+    freshness_state: current
+    status: context_only
+    supersedes_optional: []
+    superseded_by_optional: []
+
+  pin_motor_ncs_differential_2025:
+    evidence_id: pin_motor_ncs_differential_2025
+    source_type: cohort
+    title: "Radial motor nerve conduction study in posterior interosseous nerve syndrome and multifocal motor neuropathy"
+    authors_or_organization: Baima JPS, Heise CO
+    year_or_version: 2025
+    reference: "Arq Neuropsiquiatr. 2025;83(2):1-5"
+    doi_optional: 10.1055/s-0045-1806818
+    url_optional: https://pubmed.ncbi.nlm.nih.gov/40288409/
+    population_scope_optional: patients with selective radial/PIN-pattern weakness including PIN syndrome and multifocal motor neuropathy
+    setting_scope_optional: electrodiagnostic differential-localization study; not rehabilitation treatment evidence
+    reviewed_on: 2026-08-29
+    next_review_due: 2027-04-30
+    freshness_state: current
+    status: context_only
+    supersedes_optional: []
+    superseded_by_optional: []
+
+  elbow_nerve_treatment_review_2025:
+    evidence_id: elbow_nerve_treatment_review_2025
+    source_type: narrative_review
+    title: "Peripheral Nerve Syndromes at the Elbow: A Review of Current Treatments"
+    authors_or_organization: Bartoletti D, Gupta A, Bohne W, Gresham S, Ghayyad K, Kachooei AR
+    year_or_version: 2025
+    reference: "Arch Bone Jt Surg. 2025;13(12):800-806"
+    doi_optional: 10.22038/ABJS.2025.87645.3996
+    url_optional: https://pubmed.ncbi.nlm.nih.gov/41509048/
+    population_scope_optional: multiple peripheral nerve compression syndromes at the elbow including radial tunnel and posterior interosseous syndrome
+    setting_scope_optional: broad narrative treatment review; conservative modalities are discussed across syndromes but route-specific comparative evidence remains limited
+    reviewed_on: 2026-08-29
+    next_review_due: 2027-08-29
+    freshness_state: current
+    status: context_only
+    supersedes_optional: []
+    superseded_by_optional: []
+
+claims:
+  pin_motor_pattern_supports_localization_not_autodiagnosis:
+    claim_id: pin_motor_pattern_supports_localization_not_autodiagnosis
+    evidence_ids: [pin_edx_review_2013, pin_motor_ncs_differential_2025]
+    applicable_route_evidence_profile_ids: [rep_pin_motor_presentation_unresolved_v1, rep_pin_spontaneous_noncompressive_established_v1, rep_pin_compressive_structural_or_progressive_v1]
+    applicable_route_ids: [posterior_interosseous_nerve_supinator_syndrome]
+    domain: diagnostic_definition
+    claim_summary: >-
+      Finger- and thumb-extension weakness with relatively preserved wrist extension can support localization to the
+      posterior interosseous/deep radial motor branch, but the pattern does not independently establish etiology or
+      a formal PIN/supinator diagnosis. Electrodiagnostic evaluation can assist localization and exclusion of other
+      motor disorders; selective radial-pattern weakness can also occur in disorders such as multifocal motor neuropathy.
+    recommendation_direction: context_only
+    output_scope: clinician_ui_only
+    certainty_optional: not_applicable
+    reviewed_on: 2026-08-29
+
+  pin_pain_predominant_radial_tunnel_not_motor_PIN_authority:
+    claim_id: pin_pain_predominant_radial_tunnel_not_motor_PIN_authority
+    evidence_ids: [radial_tunnel_diagnosis_sr_2024, radial_nerve_nomenclature_2025]
+    applicable_route_evidence_profile_ids: [rep_pin_pain_only_or_radial_tunnel_mismatch_v1, rep_pin_motor_presentation_unresolved_v1]
+    applicable_route_ids: [posterior_interosseous_nerve_supinator_syndrome]
+    domain: differential
+    claim_summary: >-
+      Pain-predominant radial-tunnel presentations have heterogeneous diagnostic definitions and commonly lack the
+      objective motor pattern of posterior interosseous palsy. Current nomenclature remains debated. Under the frozen
+      CU-1 taxonomy, lateral/proximal radial forearm pain or radial-tunnel provocation without a material PIN-pattern
+      motor deficit must not be silently converted into motor PIN/supinator syndrome or used to import a PIN treatment pathway.
+    recommendation_direction: context_only
+    output_scope: clinician_ui_only
+    certainty_optional: not_applicable
+    reviewed_on: 2026-08-29
+
+  pin_spontaneous_conservative_management_context_2026:
+    claim_id: pin_spontaneous_conservative_management_context_2026
+    evidence_ids: [pin_spontaneous_multicenter_2026]
+    applicable_route_evidence_profile_ids: [rep_pin_spontaneous_noncompressive_established_v1]
+    applicable_route_ids: [posterior_interosseous_nerve_supinator_syndrome]
+    applicability_conditions_optional:
+      - explicit_clinician_established_spontaneous_PIN_palsy
+      - non_traumatic_context
+      - no_demonstrable_external_compression_or_entrapment
+      - no_space_occupying_lesion
+      - no_material_progressive_motor_safety_trigger
+    domain: core_rehabilitation
+    claim_summary: >-
+      In the 2026 prospective multicenter cohort of spontaneous non-traumatic, non-compressive PIN palsy without
+      space-occupying lesions, conservative management was advisable initially and good recovery occurred in 31 of
+      34 conservatively managed limbs. This is management-course evidence, not evidence for a specific physiotherapy
+      intervention, exercise, splint, nerve-gliding technique, visit frequency or treatment duration.
+    recommendation_direction: context_only
+    output_scope: clinician_ui_only
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  pin_no_validated_route_specific_physio_sequence:
+    claim_id: pin_no_validated_route_specific_physio_sequence
+    evidence_ids: [pin_interventions_sr_2006, elbow_nerve_treatment_review_2025, pin_spontaneous_multicenter_2026]
+    applicable_route_evidence_profile_ids: [rep_pin_motor_presentation_unresolved_v1, rep_pin_spontaneous_noncompressive_established_v1]
+    applicable_route_ids: [posterior_interosseous_nerve_supinator_syndrome]
+    domain: progression_criteria
+    claim_summary: >-
+      Route-specific intervention evidence does not establish a validated criteria-based physiotherapy sequence for
+      posterior interosseous motor neuropathy/palsy. The historical systematic review found no randomized or controlled
+      clinical trials, and newer literature supports conservative management in selected contexts without defining a
+      specific PT programme. CU-1 must therefore preserve an explicit rehabilitation evidence gap rather than generate
+      a generic peripheral-nerve protocol.
+    recommendation_direction: insufficient_evidence
+    output_scope: clinician_ui_only
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  pin_no_auto_gliding_splint_manual_or_electrical_protocol:
+    claim_id: pin_no_auto_gliding_splint_manual_or_electrical_protocol
+    evidence_ids: [pin_interventions_sr_2006, elbow_nerve_treatment_review_2025]
+    applicable_route_evidence_profile_ids: [rep_pin_motor_presentation_unresolved_v1, rep_pin_spontaneous_noncompressive_established_v1]
+    applicable_route_ids: [posterior_interosseous_nerve_supinator_syndrome]
+    domain: adjunct
+    claim_summary: >-
+      Broad elbow-nerve reviews discuss physiotherapy, splinting, nerve-glide and other conservative modalities, but
+      current route-specific comparative evidence does not establish any of these as mandatory or superior PIN care.
+      CU-1 must not auto-render nerve gliding, splinting, manual therapy, electrical stimulation or a fixed exercise
+      programme as literature-authorized PIN referral core.
+    recommendation_direction: insufficient_evidence
+    output_scope: clinician_ui_only
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  pin_known_compression_or_structural_cause_correct_owner:
+    claim_id: pin_known_compression_or_structural_cause_correct_owner
+    evidence_ids: [pin_spontaneous_management_review_2019]
+    applicable_route_evidence_profile_ids: [rep_pin_compressive_structural_or_progressive_v1]
+    applicable_route_ids: [posterior_interosseous_nerve_supinator_syndrome]
+    domain: safety
+    claim_summary: >-
+      A demonstrable compressive lesion/entrapment, space-occupying lesion, trauma, iatrogenic injury or other material
+      structural cause changes management ownership and must not be treated as the spontaneous non-compressive cohort.
+      Such context requires clinician/specialist management and any patient-specific restrictions or postoperative plan
+      take precedence over generic conservative assumptions.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    certainty_optional: not_applicable
+    reviewed_on: 2026-08-29
+
+  pin_progressive_or_nonrecovering_motor_reassessment:
+    claim_id: pin_progressive_or_nonrecovering_motor_reassessment
+    evidence_ids: [pin_spontaneous_multicenter_2026, pin_spontaneous_management_review_2019]
+    applicable_route_evidence_profile_ids: [rep_pin_spontaneous_noncompressive_established_v1, rep_pin_motor_presentation_unresolved_v1, rep_pin_compressive_structural_or_progressive_v1]
+    applicable_route_ids: [posterior_interosseous_nerve_supinator_syndrome]
+    domain: safety
+    claim_summary: >-
+      New or progressive objective PIN-pattern motor weakness, worsening motor function or failure of recovery under a
+      clinician-directed conservative pathway warrants reassessment of etiology and specialist management rather than
+      automatic rehabilitation progression. The 2026 cohort's six-month recovery decision point applies specifically to
+      spontaneous PIN palsy and must not become a universal CU-1 surgical threshold, PT course duration or progression rule.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    certainty_optional: not_applicable
+    reviewed_on: 2026-08-29
+
+  pin_alternative_localization_motor_differential:
+    claim_id: pin_alternative_localization_motor_differential
+    evidence_ids: [pin_edx_review_2013, pin_motor_ncs_differential_2025]
+    applicable_route_evidence_profile_ids: [rep_pin_motor_presentation_unresolved_v1, rep_pin_compressive_structural_or_progressive_v1]
+    applicable_route_ids: [posterior_interosseous_nerve_supinator_syndrome]
+    domain: differential
+    claim_summary: >-
+      A radial/PIN-pattern motor deficit requires localization. Proximal radial neuropathy, cervical or plexus pathology,
+      multifocal motor neuropathy and other motor disorders must not be silently excluded merely because the PIN route is
+      selected. Sensory findings or a motor pattern inconsistent with an isolated PIN lesion should prompt correct-owner
+      evaluation rather than a generic supinator-entrapment assumption.
+    recommendation_direction: context_only
+    output_scope: clinician_ui_only
+    certainty_optional: not_applicable
+    reviewed_on: 2026-08-29
+
+route_history_prompts:
+  pin_onset_course_motor_change:
+    prompt_id: pin_onset_course_motor_change
+    applicable_route_ids: [posterior_interosseous_nerve_supinator_syndrome]
+    label_el: Έναρξη, διάρκεια και πορεία της κινητικής αδυναμίας ή άλλων συμπτωμάτων, συμπεριλαμβανομένης πραγματικής βελτίωσης ή επιδείνωσης
+    response_type: text
+    requiredness: conditional
+    evidence_claim_ids_optional: [pin_progressive_or_nonrecovering_motor_reassessment]
+
+  pin_objective_finger_thumb_extension:
+    prompt_id: pin_objective_finger_thumb_extension
+    applicable_route_ids: [posterior_interosseous_nerve_supinator_syndrome]
+    label_el: Αντικειμενική δύναμη έκτασης δακτύλων και αντίχειρα, μόνο εφόσον εξετάστηκε
+    response_type: text
+    requiredness: conditional
+    evidence_claim_ids_optional: [pin_motor_pattern_supports_localization_not_autodiagnosis, pin_progressive_or_nonrecovering_motor_reassessment]
+
+  pin_wrist_extension_pattern:
+    prompt_id: pin_wrist_extension_pattern
+    applicable_route_ids: [posterior_interosseous_nerve_supinator_syndrome]
+    label_el: Πρότυπο έκτασης καρπού και πιθανή κερκιδική απόκλιση, μόνο ως πραγματικό εξεταστικό εύρημα
+    response_type: text
+    requiredness: optional
+    evidence_claim_ids_optional: [pin_motor_pattern_supports_localization_not_autodiagnosis]
+
+  pin_pain_prodrome_or_radial_forearm_pattern:
+    prompt_id: pin_pain_prodrome_or_radial_forearm_pattern
+    applicable_route_ids: [posterior_interosseous_nerve_supinator_syndrome]
+    label_el: Πόνος πριν από την αδυναμία ή pain-predominant εγγύς ραχιαίο/κερκιδικό αντιβράχιο, χωρίς μετατροπή του πόνου σε PIN διάγνωση
+    response_type: text
+    requiredness: optional
+    evidence_claim_ids_optional: [pin_pain_predominant_radial_tunnel_not_motor_PIN_authority]
+
+  pin_sensory_findings:
+    prompt_id: pin_sensory_findings
+    applicable_route_ids: [posterior_interosseous_nerve_supinator_syndrome]
+    label_el: Αισθητικά συμπτώματα ή αντικειμενικό αισθητικό έλλειμμα, εφόσον υπάρχουν, ως πιθανό στοιχείο εναλλακτικής εντόπισης
+    response_type: text
+    requiredness: optional
+    evidence_claim_ids_optional: [pin_alternative_localization_motor_differential]
+
+  pin_formal_diagnosis_state:
+    prompt_id: pin_formal_diagnosis_state
+    applicable_route_ids: [posterior_interosseous_nerve_supinator_syndrome]
+    label_el: Ρητή κλινική διάγνωση PIN/supinator syndrome: ναι / όχι / δεν αναφέρεται
+    response_type: canonical_enum
+    enum_values_optional: [yes, no, not_stated]
+    requiredness: conditional
+    evidence_claim_ids_optional: [pin_motor_pattern_supports_localization_not_autodiagnosis]
+
+  pin_etiology_context:
+    prompt_id: pin_etiology_context
+    applicable_route_ids: [posterior_interosseous_nerve_supinator_syndrome]
+    label_el: Γνωστό αιτιολογικό πλαίσιο: spontaneous/non-compressive, εξωτερική συμπίεση/entrapment, μάζα, τραύμα, ιατρογενές, φλεγμονώδες ή άλλο/άγνωστο
+    response_type: text
+    requiredness: conditional
+    evidence_claim_ids_optional: [pin_spontaneous_conservative_management_context_2026, pin_known_compression_or_structural_cause_correct_owner]
+
+  pin_edx_imaging_localization:
+    prompt_id: pin_edx_imaging_localization
+    applicable_route_ids: [posterior_interosseous_nerve_supinator_syndrome]
+    label_el: EMG/NCS, υπερηχογράφημα ή άλλη απεικόνιση και ακριβής εντόπιση/αιτία, εφόσον υπάρχουν
+    response_type: text
+    requiredness: optional
+    evidence_claim_ids_optional: [pin_motor_pattern_supports_localization_not_autodiagnosis, pin_known_compression_or_structural_cause_correct_owner]
+
+  pin_trauma_iatrogenic_structural_context:
+    prompt_id: pin_trauma_iatrogenic_structural_context
+    applicable_route_ids: [posterior_interosseous_nerve_supinator_syndrome]
+    label_el: Πρόσφατο τραύμα, επέμβαση/έγχυση ή άλλη ιατρογενής/δομική αιτία στην περιοχή, εφόσον υπάρχει
+    response_type: text
+    requiredness: optional
+    evidence_claim_ids_optional: [pin_known_compression_or_structural_cause_correct_owner]
+
+  pin_functional_motor_impact:
+    prompt_id: pin_functional_motor_impact
+    applicable_route_ids: [posterior_interosseous_nerve_supinator_syndrome]
+    label_el: Λειτουργική επίπτωση της κινητικής αδυναμίας σε άνοιγμα χεριού, χειρισμό αντικειμένων, εργασία ή δραστηριότητα προτεραιότητας
+    response_type: text
+    requiredness: optional
+
+  pin_prior_management_and_recovery:
+    prompt_id: pin_prior_management_and_recovery
+    applicable_route_ids: [posterior_interosseous_nerve_supinator_syndrome]
+    label_el: Προηγούμενη συντηρητική/ειδική αντιμετώπιση και πραγματική κινητική ανταπόκριση ή ανάκαμψη
+    response_type: text
+    requiredness: optional
+    evidence_claim_ids_optional: [pin_progressive_or_nonrecovering_motor_reassessment]
+
+route_evidence_profiles:
+  rep_pin_pain_only_or_radial_tunnel_mismatch_v1:
+    route_evidence_profile_id: rep_pin_pain_only_or_radial_tunnel_mismatch_v1
+    region_profile_id: elbow
+    route_id: posterior_interosseous_nerve_supinator_syndrome
+    applicability_conditions_optional:
+      - pain_predominant_radial_tunnel_or_lateral_forearm_presentation_without_material_PIN_pattern_motor_deficit
+    diagnostic_claim_ids: [pin_pain_predominant_radial_tunnel_not_motor_PIN_authority]
+    history_claim_ids: []
+    examination_claim_ids: []
+    rehabilitation_sequence_id: null
+    adjunct_claim_ids: []
+    safety_claim_ids: [pin_alternative_localization_motor_differential]
+    evidence_gaps:
+      - pain_predominant_radial_tunnel_presentation_is_not_the_frozen_motor_PIN_route
+      - radial_tunnel_diagnostic_definitions_are_heterogeneous
+      - no_PIN_rehabilitation_authority_may_be_imported_from_pain_only_context
+    primary_source_ids: [radial_tunnel_diagnosis_sr_2024, radial_nerve_nomenclature_2025]
+    last_reviewed_on: 2026-08-29
+    next_review_due: 2027-05-31
+    freshness_state: current
+
+  rep_pin_motor_presentation_unresolved_v1:
+    route_evidence_profile_id: rep_pin_motor_presentation_unresolved_v1
+    region_profile_id: elbow
+    route_id: posterior_interosseous_nerve_supinator_syndrome
+    applicability_conditions_optional:
+      - PIN_pattern_motor_presentation_present_or_suspected
+      - formal_diagnosis_or_etiology_or_localization_not_sufficiently_established
+      - no_material_progressive_motor_safety_trigger
+    diagnostic_claim_ids: [pin_motor_pattern_supports_localization_not_autodiagnosis]
+    history_claim_ids: []
+    examination_claim_ids: []
+    rehabilitation_sequence_id: null
+    adjunct_claim_ids: [pin_no_auto_gliding_splint_manual_or_electrical_protocol]
+    safety_claim_ids: [pin_progressive_or_nonrecovering_motor_reassessment, pin_alternative_localization_motor_differential]
+    evidence_gaps:
+      - presentation_does_not_establish_specific_etiology_or_entrapment_site
+      - no_validated_route_specific_PT_sequence
+      - generic_elbow_or_peripheral_nerve_fallback_forbidden
+    primary_source_ids: [pin_edx_review_2013, pin_motor_ncs_differential_2025, pin_interventions_sr_2006]
+    last_reviewed_on: 2026-08-29
+    next_review_due: 2027-02-28
+    freshness_state: current
+
+  rep_pin_spontaneous_noncompressive_established_v1:
+    route_evidence_profile_id: rep_pin_spontaneous_noncompressive_established_v1
+    region_profile_id: elbow
+    route_id: posterior_interosseous_nerve_supinator_syndrome
+    applicability_conditions_optional:
+      - explicit_clinician_established_spontaneous_PIN_palsy
+      - non_traumatic_context
+      - no_demonstrable_external_compression_or_entrapment
+      - no_space_occupying_lesion
+      - no_material_progressive_motor_safety_trigger
+    diagnostic_claim_ids: [pin_motor_pattern_supports_localization_not_autodiagnosis]
+    history_claim_ids: []
+    examination_claim_ids: []
+    rehabilitation_sequence_id: null
+    adjunct_claim_ids: [pin_spontaneous_conservative_management_context_2026, pin_no_validated_route_specific_physio_sequence, pin_no_auto_gliding_splint_manual_or_electrical_protocol]
+    safety_claim_ids: [pin_progressive_or_nonrecovering_motor_reassessment, pin_alternative_localization_motor_differential]
+    evidence_gaps:
+      - 2026_prospective_conservative_management_signal_does_not_define_a_specific_physiotherapy_programme
+      - no_validated_criteria_based_PIN_rehabilitation_sequence
+      - six_month_spontaneous_palsy_decision_point_is_not_a_universal_PT_course_or_surgical_threshold
+    primary_source_ids: [pin_spontaneous_multicenter_2026, pin_interventions_sr_2006, pin_spontaneous_management_review_2019]
+    last_reviewed_on: 2026-08-29
+    next_review_due: 2027-02-28
+    freshness_state: current
+
+  rep_pin_compressive_structural_or_progressive_v1:
+    route_evidence_profile_id: rep_pin_compressive_structural_or_progressive_v1
+    region_profile_id: elbow
+    route_id: posterior_interosseous_nerve_supinator_syndrome
+    applicability_conditions_optional:
+      - demonstrable_compression_or_entrapment_or_space_occupying_lesion_or_trauma_or_iatrogenic_or_inflammatory_structural_cause_or_progressive_objective_motor_deficit_or_material_motor_worsening
+    diagnostic_claim_ids: [pin_motor_pattern_supports_localization_not_autodiagnosis]
+    history_claim_ids: []
+    examination_claim_ids: []
+    rehabilitation_sequence_id: null
+    adjunct_claim_ids: []
+    safety_claim_ids: [pin_known_compression_or_structural_cause_correct_owner, pin_progressive_or_nonrecovering_motor_reassessment, pin_alternative_localization_motor_differential]
+    evidence_gaps:
+      - routine_nonoperative_PIN_referral_sequence_is_not_authorized_for_material_structural_or_progressive_motor_context
+      - CU1_does_not_generate_surgical_timing_threshold_or_procedure_choice
+      - postoperative_or_patient_specific_restrictions_require_their_own_owner_and_override_generic_assumptions
+    primary_source_ids: [pin_spontaneous_management_review_2019, pin_spontaneous_multicenter_2026, pin_edx_review_2013]
+    last_reviewed_on: 2026-08-29
+    next_review_due: 2027-02-28
+    freshness_state: current
+
+rehabilitation_sequences: {}
+
+coverage_effect:
+  route_id: posterior_interosseous_nerve_supinator_syndrome
+  route_profiles_added:
+    - rep_pin_pain_only_or_radial_tunnel_mismatch_v1
+    - rep_pin_motor_presentation_unresolved_v1
+    - rep_pin_spontaneous_noncompressive_established_v1
+    - rep_pin_compressive_structural_or_progressive_v1
+  rehabilitation_sequences_added: []
+  route_history_prompts_added:
+    - pin_onset_course_motor_change
+    - pin_objective_finger_thumb_extension
+    - pin_wrist_extension_pattern
+    - pin_pain_prodrome_or_radial_forearm_pattern
+    - pin_sensory_findings
+    - pin_formal_diagnosis_state
+    - pin_etiology_context
+    - pin_edx_imaging_localization
+    - pin_trauma_iatrogenic_structural_context
+    - pin_functional_motor_impact
+    - pin_prior_management_and_recovery
+  route_status_after_review: pending_exact_review_before_manifest_activation
+  route_sequence_status_after_review: explicit_evidence_gap_all_contexts_pending_exact_review
+  runtime_authorized: false
