@@ -6,7 +6,7 @@
 > **Verified remote `main`:** `08ecd3ab33e98d567c47042a8a1de482df6952b9`.
 > **ACTIVE CANONICAL WRITER/LOCK:** `design/cu1-history-evidence-timeline-2026-08-28`.
 > **ACTIVE RUNTIME WRITER/LOCK:** NONE.
-> **PR #63:** draft / design-only / unmerged; reviewed route coverage is complete through matrix commit `795292aca8a526857fa6c24eb3cd2f1668cb91a5`; this canonical commit may advance branch head.
+> **PR #63:** draft / design-only / unmerged; reviewed route coverage is complete through matrix commit `d4eed6ed8a020c8da650fbe353a14202dfebbe75`; this canonical commit may advance branch head.
 > **Runtime evidence-aware generation:** NOT AUTHORIZED.
 > **CU-2:** NOT AUTHORIZED.
 > **PR-1 Transcript Intake:** intentionally paused.
@@ -46,6 +46,7 @@ expert consensus / clinical opinion / best-practice opinion != treatment-effect 
 no eligible comparative trials != low or very-low effect estimate
 framework conflict != silent guideline consensus
 population-specific trial superiority != universal protocol superiority
+assessment recommendation != validated progression threshold
 ```
 
 No patient identifiers were added.
@@ -70,6 +71,7 @@ route_coverage_extension
 shoulder_instability_route_coverage_extension
 degenerative_meniscus_route_coverage_extension
 patellar_tendinopathy_route_coverage_extension
+thumb_cmc1_oa_route_coverage_extension
 cu1_evidence_route_coverage_amendments_v1.yaml
 ```
 
@@ -143,7 +145,34 @@ Breda 2021 PTLE RCT
 
 Therefore progressive tendon/quadriceps loading may be represented as the broad conservative rehabilitation direction, but eccentric/isometric/HSR/PTLE choice and dosing remain therapist execution detail. No universal numeric progression or return-to-sport threshold is rendered. ESWT is not auto-recommended.
 
-Matching history prompts and fixtures exist for all five reviewed native route groups.
+## Thumb CMC-1 osteoarthritis — PASS
+
+```text
+rep_thumb_cmc1_oa_v1
+seq_thumb_cmc1_oa_v1
+→ sequence_complete — single-phase evidence-bounded
+```
+
+Current authority supports:
+
+```text
+education / ergonomic principles / pacing / assistive devices
++ individualized hand/thumb exercise
++ CMC-support orthosis when clinically appropriate
+```
+
+EULAR Grade-A and ACR strong recommendations are preserved separately. Recent thumb-specific syntheses support short-term hand-exercise/multimodal benefit and orthosis benefit, but do not justify a universal exercise programme, orthosis design or fixed wear schedule. A rigid CMC-MCP medium-term signal remains therapist execution detail rather than a mandatory physician prescription.
+
+A pre-activation review explicitly corrected:
+
+```text
+recommended ASHT assessment measures
+!= validated rehabilitation progression criteria
+```
+
+The resulting one-phase sequence intentionally has no evidence-derived progression threshold. CMC1-specific orthosis/rehabilitation evidence does not authorize interphalangeal or generic hand-OA output.
+
+Matching history prompts and fixtures exist for all six reviewed native route groups.
 
 Formal route reviews:
 
@@ -151,6 +180,7 @@ Formal route reviews:
 clinic_utilities/contracts/CU1_ROUTE_COVERAGE_REVIEW_2026-08-29.md
 clinic_utilities/contracts/CU1_DEGENERATIVE_MENISCUS_ROUTE_REVIEW_2026-08-29.md
 clinic_utilities/contracts/CU1_PATELLAR_TENDINOPATHY_ROUTE_REVIEW_2026-08-29.md
+clinic_utilities/contracts/CU1_THUMB_CMC1_OA_ROUTE_REVIEW_2026-08-29.md
 ```
 
 ---
@@ -192,6 +222,7 @@ adhesive capsulitis → current guidance exists; no universal validated phase pr
 GHOA → PT may benefit by best practice; nonsurgical comparative efficacy remains unestablished
 MDI → cautious framework may be described when selected; comparative exercise benefit/harm remains unknown
 patellar tendinopathy → progressive loading direction may be used cautiously; no mandatory loading mode or validated universal numeric RTS threshold
+thumb CMC1 OA → exercise/orthosis conservative directions supported; optimal exercise dose, universal orthosis type/wear schedule and validated progression threshold remain unestablished
 ```
 
 No generic MSK fallback is permitted.
@@ -203,14 +234,18 @@ No generic MSK fallback is permitted.
 Continue only on the existing writer, route-by-route from the reconciled matrix:
 
 ```text
-1. thumb_cmc1_osteoarthritis
-2. cervical_routes
-3. remaining_wrist_hand_and_elbow_routes
-4. remaining routine routes in registry order
-5. define reviewed evidence-gap behavior where full staging is unsupported
-6. complete route-specific history prompts + matching fixtures alongside each route
-7. rerun exact design-completeness review
-8. STOP only at DESIGN-COMPLETE or a newly specific BLOCK
+1. cervical_routes
+   1a. nonspecific_neck_pain
+   1b. neck_pain_with_radiating_upper_limb_symptoms
+   1c. headache_with_cervical_msk_features
+   1d. cervical_dizziness_presentation
+   1e. post_traumatic_neck_pain
+2. remaining_wrist_hand_and_elbow_routes
+3. remaining routine routes in registry order
+4. define reviewed evidence-gap behavior where full staging is unsupported
+5. complete route-specific history prompts + matching fixtures alongside each route
+6. rerun exact design-completeness review
+7. STOP only at DESIGN-COMPLETE or a newly specific BLOCK
 ```
 
 A small reconciliation cleanup remains allowed inside the same scope: the internal `review_record` metadata in `cu1_evidence_route_coverage_meniscus_v1.yaml` must be aligned with its already-authoritative dedicated review file without changing clinical content.
@@ -235,6 +270,9 @@ REPRESENT best-practice GHOA opinion as comparative treatment efficacy
 IMPORT postoperative arthroplasty protocol into nonoperative/preoperative GHOA route
 FREEZE eccentric / isometric / HSR / PTLE as a universal patellar-tendinopathy physician protocol
 IMPORT older expert numeric patellar RTS/pain thresholds as current validated clearance rules
+CONVERT thumb-CMC orthosis long-term-use guidance into a fixed PT course or wear duration
+CONVERT hand-therapy assessment measures into validated progression thresholds
+USE thumb-CMC-specific orthosis evidence as interphalangeal/generalized hand-OA authority
 MERGE PR #63 merely because individual routes passed
 OPEN CU-2
 RESTART PR-1
