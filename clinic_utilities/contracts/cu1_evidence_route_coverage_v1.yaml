@@ -1,0 +1,283 @@
+version: cu1_evidence_route_coverage_v1
+status: active_design_authority_route_coverage_extension
+runtime_authorized: false
+reviewed_on: 2026-08-29
+normative_schema: clinic_utilities/contracts/cu1_history_timeline_schema_v1.yaml
+identity_mode: explicit_payload_id
+review_record: clinic_utilities/contracts/CU1_ROUTE_COVERAGE_REVIEW_2026-08-29.md
+
+purpose: >-
+  Native schema-conformant evidence extension for route-by-route CU-1 coverage after tranche2 and
+  tranche3 promotion. Every object carries its explicit canonical identity. New routes may be added
+  only after exact source/reference/applicability/output-scope review and must not create generic
+  cross-route rehabilitation fallbacks.
+
+external_source_dependencies:
+  - rotator_cuff_tendinopathy_cpg_2025
+
+sources: {}
+
+claims:
+  calcific_rc_imaging_defined:
+    claim_id: calcific_rc_imaging_defined
+    evidence_ids: [rotator_cuff_tendinopathy_cpg_2025]
+    applicable_route_evidence_profile_ids: [rep_calcific_rotator_cuff_v1]
+    applicable_route_ids: [calcific_rotator_cuff_tendinopathy]
+    domain: diagnostic_definition
+    claim_summary: Rotator-cuff calcific tendinopathy denotes a rotator-cuff tendinopathy with a calcific deposit confirmed by imaging; an imaging deposit alone is not to be inferred by the utility from symptoms or examination findings.
+    recommendation_direction: context_only
+    output_scope: clinician_ui_only
+    certainty_optional: not_applicable
+    reviewed_on: 2026-08-29
+
+  calcific_rc_patient_centered_education:
+    claim_id: calcific_rc_patient_centered_education
+    evidence_ids: [rotator_cuff_tendinopathy_cpg_2025]
+    applicable_route_evidence_profile_ids: [rep_calcific_rotator_cuff_v1]
+    applicable_route_ids: [calcific_rotator_cuff_tendinopathy]
+    domain: core_rehabilitation
+    claim_summary: Provide individualized education about the condition, pain-management options, activity modification and self-management while considering health literacy, beliefs, goals and relevant psychosocial factors.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    strength_optional: C
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  calcific_rc_active_rehabilitation_core:
+    claim_id: calcific_rc_active_rehabilitation_core
+    evidence_ids: [rotator_cuff_tendinopathy_cpg_2025]
+    applicable_route_evidence_profile_ids: [rep_calcific_rotator_cuff_v1]
+    applicable_route_ids: [calcific_rotator_cuff_tendinopathy]
+    domain: core_rehabilitation
+    claim_summary: Active rehabilitation exercise, including motor-control and/or resistance exercise with individualized loads, is recommended as initial treatment to reduce pain and disability in rotator-cuff tendinopathy including the calcific presentation.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    strength_optional: A
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  calcific_rc_eswt_optional:
+    claim_id: calcific_rc_eswt_optional
+    evidence_ids: [rotator_cuff_tendinopathy_cpg_2025]
+    applicable_route_evidence_profile_ids: [rep_calcific_rotator_cuff_v1]
+    applicable_route_ids: [calcific_rotator_cuff_tendinopathy]
+    domain: adjunct
+    claim_summary: Extracorporeal shock-wave therapy may be used or recommended to reduce pain and disability in adults with rotator-cuff calcific tendinopathy.
+    recommendation_direction: may_consider
+    output_scope: referral_core
+    strength_optional: C
+    certainty_optional: not_graded
+    applicability_conditions_optional: [clinician_selected_eswt]
+    reviewed_on: 2026-08-29
+
+  calcific_rc_lavage_refractory:
+    claim_id: calcific_rc_lavage_refractory
+    evidence_ids: [rotator_cuff_tendinopathy_cpg_2025]
+    applicable_route_evidence_profile_ids: [rep_calcific_rotator_cuff_v1]
+    applicable_route_ids: [calcific_rotator_cuff_tendinopathy]
+    domain: adjunct
+    claim_summary: Calcific lavage is recommended for adults with calcific rotator-cuff tendinopathy that remains symptomatic despite initial treatment; evidence does not establish lavage as an initial treatment for acute presentations.
+    recommendation_direction: recommend
+    output_scope: clinician_ui_only
+    strength_optional: B
+    certainty_optional: not_graded
+    applicability_conditions_optional: [refractory_to_initial_treatment]
+    reviewed_on: 2026-08-29
+
+  calcific_rc_laser_optional_context:
+    claim_id: calcific_rc_laser_optional_context
+    evidence_ids: [rotator_cuff_tendinopathy_cpg_2025]
+    applicable_route_evidence_profile_ids: [rep_calcific_rotator_cuff_v1]
+    applicable_route_ids: [calcific_rotator_cuff_tendinopathy]
+    domain: adjunct
+    claim_summary: Laser therapy may reduce pain and disability in adults with calcific rotator-cuff tendinopathy, but laser is not added to the frozen CU-1 selectable adjunct taxonomy by this evidence-curation slice.
+    recommendation_direction: may_consider
+    output_scope: clinician_ui_only
+    strength_optional: C
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  calcific_rc_therapeutic_ultrasound_do_not_offer:
+    claim_id: calcific_rc_therapeutic_ultrasound_do_not_offer
+    evidence_ids: [rotator_cuff_tendinopathy_cpg_2025]
+    applicable_route_evidence_profile_ids: [rep_calcific_rotator_cuff_v1]
+    applicable_route_ids: [calcific_rotator_cuff_tendinopathy]
+    domain: adjunct
+    claim_summary: Therapeutic ultrasound should not be used or recommended, alone or with active rehabilitation, to reduce pain and disability in calcific rotator-cuff tendinopathy.
+    recommendation_direction: do_not_offer
+    output_scope: clinician_ui_only
+    strength_optional: C
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  calcific_rc_persistent_severe_reassessment:
+    claim_id: calcific_rc_persistent_severe_reassessment
+    evidence_ids: [rotator_cuff_tendinopathy_cpg_2025]
+    applicable_route_evidence_profile_ids: [rep_calcific_rotator_cuff_v1]
+    applicable_route_ids: [calcific_rotator_cuff_tendinopathy]
+    domain: safety
+    claim_summary: Severe persistent pain and/or disability despite up to 12 weeks of appropriate nonsurgical care warrants musculoskeletal specialist reassessment rather than indefinite routine progression.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    strength_optional: F
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  calcific_rc_return_sport_capacity:
+    claim_id: calcific_rc_return_sport_capacity
+    evidence_ids: [rotator_cuff_tendinopathy_cpg_2025]
+    applicable_route_evidence_profile_ids: [rep_calcific_rotator_cuff_v1]
+    applicable_route_ids: [calcific_rotator_cuff_tendinopathy]
+    domain: progression_criteria
+    claim_summary: When return to sport is relevant, rotator-cuff and associated shoulder capacity and load tolerance may be used to develop the return-to-sport program.
+    recommendation_direction: may_consider
+    output_scope: referral_core
+    strength_optional: F
+    certainty_optional: not_graded
+    applicability_conditions_optional: [athletic_return_to_sport_goal]
+    reviewed_on: 2026-08-29
+
+  calcific_rc_return_sport_measures:
+    claim_id: calcific_rc_return_sport_measures
+    evidence_ids: [rotator_cuff_tendinopathy_cpg_2025]
+    applicable_route_evidence_profile_ids: [rep_calcific_rotator_cuff_v1]
+    applicable_route_ids: [calcific_rotator_cuff_tendinopathy]
+    domain: progression_criteria
+    claim_summary: Patient-rated pain/disability/readiness measures and functional performance measures may guide the return-to-sport continuum rather than elapsed time alone.
+    recommendation_direction: may_consider
+    output_scope: referral_core
+    strength_optional: F
+    certainty_optional: not_graded
+    applicability_conditions_optional: [athletic_return_to_sport_goal]
+    reviewed_on: 2026-08-29
+
+route_history_prompts:
+  calcific_rc_imaging_confirmation:
+    prompt_id: calcific_rc_imaging_confirmation
+    applicable_route_ids: [calcific_rotator_cuff_tendinopathy]
+    label_el: Επιβεβαίωση ασβεστοποίησης με απεικόνιση και, αν είναι γνωστό, τένοντας / εντόπιση
+    response_type: text
+    requiredness: conditional
+    evidence_claim_ids_optional: [calcific_rc_imaging_defined]
+
+  calcific_rc_course_irritability:
+    prompt_id: calcific_rc_course_irritability
+    applicable_route_ids: [calcific_rotator_cuff_tendinopathy]
+    label_el: Οξεία έντονα ερεθιστική ή επίμονη / χρόνια πορεία συμπτωμάτων
+    response_type: text
+    requiredness: optional
+
+  calcific_rc_prior_treatment_response:
+    prompt_id: calcific_rc_prior_treatment_response
+    applicable_route_ids: [calcific_rotator_cuff_tendinopathy]
+    label_el: Προηγούμενη αρχική θεραπεία και ανταπόκριση / επιμονή συμπτωμάτων
+    response_type: text
+    requiredness: optional
+    evidence_claim_ids_optional: [calcific_rc_lavage_refractory]
+
+  calcific_rc_prior_lavage:
+    prompt_id: calcific_rc_prior_lavage
+    applicable_route_ids: [calcific_rotator_cuff_tendinopathy]
+    label_el: Προηγούμενο barbotage / lavage
+    response_type: boolean_tristate
+    requiredness: optional
+
+route_evidence_profiles:
+  rep_calcific_rotator_cuff_v1:
+    route_evidence_profile_id: rep_calcific_rotator_cuff_v1
+    region_profile_id: shoulder
+    route_id: calcific_rotator_cuff_tendinopathy
+    diagnostic_claim_ids: [calcific_rc_imaging_defined]
+    history_claim_ids: []
+    examination_claim_ids: []
+    rehabilitation_sequence_id: seq_calcific_rotator_cuff_v1
+    adjunct_claim_ids:
+      - calcific_rc_eswt_optional
+      - calcific_rc_lavage_refractory
+      - calcific_rc_laser_optional_context
+      - calcific_rc_therapeutic_ultrasound_do_not_offer
+    safety_claim_ids: [calcific_rc_persistent_severe_reassessment]
+    evidence_gaps:
+      - no_universal_numeric_rehabilitation_progression_thresholds
+      - lavage_evidence_is_for_refractory_persistent_cases_not_initial_acute_treatment
+      - no_evidence_that_sequential_post_lavage_ESWT_is_required_or_superior
+      - laser_evidence_does_not_change_the_frozen_selectable_adjunct_taxonomy_in_this_slice
+    primary_source_ids: [rotator_cuff_tendinopathy_cpg_2025]
+    last_reviewed_on: 2026-08-29
+    next_review_due: 2027-08-28
+    freshness_state: current
+
+rehabilitation_sequences:
+  seq_calcific_rotator_cuff_v1:
+    sequence_id: seq_calcific_rotator_cuff_v1
+    route_id: calcific_rotator_cuff_tendinopathy
+    sequence_source: route_evidence_profile
+    route_evidence_profile_id: rep_calcific_rotator_cuff_v1
+    phases:
+      - phase_id: calcific_rc_active_rehabilitation
+        order: 1
+        clinical_objective: reduce pain and disability and restore shoulder load tolerance through individualized active rehabilitation and self-management
+        objective_authority:
+          authority_type: evidence_claim
+          evidence_claim_ids: [calcific_rc_active_rehabilitation_core, calcific_rc_patient_centered_education]
+        intervention_directions:
+          - intervention_direction_id: calcific_rc_active_exercise
+            statement: use an individualized active rehabilitation program that may include motor-control and/or resistance exercise with appropriate loads
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [calcific_rc_active_rehabilitation_core]
+          - intervention_direction_id: calcific_rc_education_self_management
+            statement: provide individualized education, activity modification and self-management support
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [calcific_rc_patient_centered_education]
+          - intervention_direction_id: calcific_rc_eswt_when_selected
+            statement: ESWT may be included as a calcific-specific adjunct when explicitly selected and clinically appropriate
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [calcific_rc_eswt_optional]
+            applicability_conditions_optional: [clinician_selected_eswt]
+        progression_criteria: []
+        precautions_or_do_not_progress_criteria:
+          - criterion_id: calcific_rc_persistent_severe_specialist_reassessment
+            criterion_kind: reassessment
+            statement: severe persistent pain and/or disability despite up to 12 weeks of appropriate nonsurgical care should trigger specialist reassessment rather than indefinite routine progression
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [calcific_rc_persistent_severe_reassessment]
+        strength_optional: null
+        certainty_optional: not_graded
+        required_for_route: true
+
+      - phase_id: calcific_rc_return_to_sport_when_applicable
+        order: 2
+        clinical_objective: restore sport-specific shoulder capacity and load tolerance when return to sport is a patient goal
+        objective_authority:
+          authority_type: evidence_claim
+          evidence_claim_ids: [calcific_rc_return_sport_capacity, calcific_rc_return_sport_measures]
+        intervention_directions: []
+        progression_criteria:
+          - criterion_id: calcific_rc_rts_capacity_and_function
+            criterion_kind: progression
+            statement: guide return using rotator-cuff and shoulder capacity/load tolerance together with patient-rated and functional performance measures rather than elapsed time alone
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [calcific_rc_return_sport_capacity, calcific_rc_return_sport_measures]
+            applicability_conditions_optional: [athletic_return_to_sport_goal]
+        precautions_or_do_not_progress_criteria: []
+        strength_optional: F
+        certainty_optional: not_graded
+        required_for_route: false
+    clinician_modifications_optional: []
+    protocol_overrides_optional: []
+
+coverage_effect:
+  route_profiles_added: [rep_calcific_rotator_cuff_v1]
+  rehabilitation_sequences_added: [seq_calcific_rotator_cuff_v1]
+  route_history_prompts_added:
+    - calcific_rc_imaging_confirmation
+    - calcific_rc_course_irritability
+    - calcific_rc_prior_treatment_response
+    - calcific_rc_prior_lavage
+  route_status_after_review: sequence_complete_evidence_bounded
+  runtime_authorized: false
