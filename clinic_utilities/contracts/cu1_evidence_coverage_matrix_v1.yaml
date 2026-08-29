@@ -1,4 +1,4 @@
-version: cu1_evidence_coverage_matrix_v1_10
+version: cu1_evidence_coverage_matrix_v1_11
 status: active_route_by_route_work_queue
 runtime_authorized: false
 route_registry: cu1_registry_v1.yaml
@@ -7,7 +7,7 @@ active_core_registry: cu1_evidence_registry_v1.yaml
 promoted_evidence_extensions: [cu1_evidence_tranche2_v1.yaml, cu1_evidence_tranche3_v1.yaml]
 promotion_projections: [cu1_evidence_tranche2_promotion_v1.yaml, cu1_evidence_tranche3_promotion_v1.yaml]
 promotion_overlays: [cu1_evidence_tranche3_promotion_fix_v1.yaml]
-active_route_coverage_extensions: [cu1_evidence_route_coverage_v1.yaml, cu1_evidence_route_coverage_instability_v1.yaml, cu1_evidence_route_coverage_meniscus_v1.yaml, cu1_evidence_route_coverage_patellar_tendinopathy_v1.yaml]
+active_route_coverage_extensions: [cu1_evidence_route_coverage_v1.yaml, cu1_evidence_route_coverage_instability_v1.yaml, cu1_evidence_route_coverage_meniscus_v1.yaml, cu1_evidence_route_coverage_patellar_tendinopathy_v1.yaml, cu1_evidence_route_coverage_thumb_cmc1_oa_v1.yaml]
 logical_amendments: [cu1_evidence_route_coverage_amendments_v1.yaml]
 staged_evidence_extensions: []
 normative_schema: cu1_history_timeline_schema_v1.yaml
@@ -174,7 +174,18 @@ profiles:
       shard: cu1_evidence_tranche2_v1.yaml
       promotion_projection: cu1_evidence_tranche2_promotion_v1.yaml
       blocker: current_systematic_reviews_support_injection_orthosis_management_but_do_not_establish_a_validated_active_progressive_rehabilitation_sequence
-    thumb_cmc1_osteoarthritis: {status: pending}
+    thumb_cmc1_osteoarthritis:
+      status: profile_curated
+      sequence_status: sequence_complete
+      profile_id: rep_thumb_cmc1_oa_v1
+      source_state: native_active_design_authority
+      shard: cu1_evidence_route_coverage_thumb_cmc1_oa_v1.yaml
+      review_record: CU1_THUMB_CMC1_OA_ROUTE_REVIEW_2026-08-29.md
+      evidence_state: EULAR_A_education_exercise_orthosis_plus_ACR_strong_hand_exercise_and_first_CMC_orthosis_with_2024_2025_thumb_specific_syntheses
+      sequence_model: single_phase_education_joint_protection_exercise_optional_CMC_support
+      orthosis_behavior: exact_type_fit_and_wear_schedule_are_therapist_execution_detail
+      progression_behavior: no_evidence_derived_progression_threshold_rendered
+      cross_route_boundary: thumb_CMC1_specific_authority_does_not_authorize_interphalangeal_or_generalized_hand_OA_output
     interphalangeal_hand_osteoarthritis: {status: pending}
     median_neuropathy_at_wrist_carpal_tunnel:
       status: blocked_evidence_gap
@@ -344,7 +355,6 @@ shared_owners:
 research_queue_priority:
   rationale: prioritize_routes_with_current_route_specific_guidance_and_high_real_world_frequency_while_preserving_subtype_and_management_context_boundaries
   next:
-    - thumb_cmc1_osteoarthritis
     - cervical_routes
     - remaining_wrist_hand_and_elbow_routes
   then: remaining_routine_routes_in_registry_order
@@ -356,7 +366,7 @@ integration_state:
   tranche3_schema_conformance_reviewed: true
   tranche3_promotion_gate_passed: true
   native_route_coverage_schema_conformance_reviewed: true
-  route_coverage_reviewed_routes: [calcific_rotator_cuff_tendinopathy, glenohumeral_instability_dislocation, glenohumeral_osteoarthritis, degenerative_meniscal_lesion_conservative_rehabilitation, patellar_tendinopathy]
+  route_coverage_reviewed_routes: [calcific_rotator_cuff_tendinopathy, glenohumeral_instability_dislocation, glenohumeral_osteoarthritis, degenerative_meniscal_lesion_conservative_rehabilitation, patellar_tendinopathy, thumb_cmc1_osteoarthritis]
   logical_amendment_gate_passed: true
   all_listed_shards_schema_reviewed: true
   all_listed_shards_promotion_or_native_gate_passed: true
