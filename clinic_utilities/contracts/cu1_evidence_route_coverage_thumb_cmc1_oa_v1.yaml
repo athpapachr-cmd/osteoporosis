@@ -149,7 +149,7 @@ claims:
     claim_summary: Contemporary syntheses support hand/thumb exercise for short-term pain, disability and/or grip-strength improvement in symptomatic thumb CMC-1 OA, but an optimal exercise programme is not established and benefits are less certain at longer follow-up.
     recommendation_direction: recommend
     output_scope: referral_core
-    certainty_optional: moderate
+    certainty_optional: not_graded
     reviewed_on: 2026-08-29
 
   thumb_cmc_eular_orthosis_A:
@@ -224,15 +224,15 @@ claims:
     certainty_optional: not_applicable
     reviewed_on: 2026-08-29
 
-  thumb_cmc_response_measurement_consensus:
-    claim_id: thumb_cmc_response_measurement_consensus
+  thumb_cmc_assessment_measures_consensus:
+    claim_id: thumb_cmc_assessment_measures_consensus
     evidence_ids: [thumb_cmc_asht_consensus_2023]
     applicable_route_evidence_profile_ids: [rep_thumb_cmc1_oa_v1]
     applicable_route_ids: [thumb_cmc1_osteoarthritis]
-    domain: progression_criteria
-    claim_summary: Response to nonsurgical thumb-CMC rehabilitation may be reassessed using pain, thumb range of motion, grip and tripod-pinch measures, a region-specific patient-reported outcome and functional/environmental demands; no universal numeric progression threshold is established.
-    recommendation_direction: consider
-    output_scope: referral_core
+    domain: examination
+    claim_summary: Expert hand-therapy consensus supports assessment of pain, thumb range of motion, grip and tripod-pinch, a region-specific patient-reported outcome and relevant environmental/functional factors; this is assessment guidance and does not itself validate a progression threshold.
+    recommendation_direction: context_only
+    output_scope: clinician_ui_only
     strength_optional: expert_consensus
     certainty_optional: not_applicable
     reviewed_on: 2026-08-29
@@ -287,7 +287,7 @@ route_evidence_profiles:
     route_id: thumb_cmc1_osteoarthritis
     diagnostic_claim_ids: []
     history_claim_ids: []
-    examination_claim_ids: []
+    examination_claim_ids: [thumb_cmc_assessment_measures_consensus]
     rehabilitation_sequence_id: seq_thumb_cmc1_oa_v1
     adjunct_claim_ids:
       - thumb_cmc_eular_orthosis_A
@@ -302,6 +302,7 @@ route_evidence_profiles:
       - exact_orthosis_type_and_wear_schedule_are_not_universal_physician_prescriptions
       - comparative_orthosis_findings_differ_across_recent_syntheses_and_must_not_be_flattened_into_one_mandatory_design
       - no_validated_universal_numeric_progression_threshold
+      - assessment_measures_do_not_by_themselves_authorize_a_progression_rule
       - radiographic_CMC1_OA_alone_does_not_prove_all_current_symptoms_are_generated_by_the_joint
       - evidence_profile_is_thumb_CMC1_specific_and_must_not_authorize_interphalangeal_or_generalized_hand_OA_output
     primary_source_ids:
@@ -347,13 +348,7 @@ rehabilitation_sequences:
             authority:
               authority_type: evidence_claim
               evidence_claim_ids: [thumb_cmc_eular_orthosis_A, thumb_cmc_acr_orthosis_strong]
-        progression_criteria:
-          - criterion_id: thumb_cmc1_response_based_progression
-            criterion_kind: progression
-            statement: progress functional loading and exercise according to pain, thumb motion, grip/pinch capacity, patient-reported function and task tolerance rather than elapsed time or a universal numeric threshold
-            authority:
-              authority_type: evidence_claim
-              evidence_claim_ids: [thumb_cmc_response_measurement_consensus]
+        progression_criteria: []
         precautions_or_do_not_progress_criteria: []
         strength_optional: null
         certainty_optional: not_graded
@@ -374,6 +369,6 @@ coverage_effect:
   route_status_after_review: sequence_complete_evidence_bounded_single_phase
   orthosis_behavior: optional_referral_core_support_direction_with_type_and_schedule_as_therapist_execution_detail
   exercise_behavior: broad_hand_thumb_exercise_without_fixed_programme_or_dose
-  progression_behavior: response_based_without_universal_numeric_threshold
+  progression_behavior: no_evidence_derived_progression_threshold_rendered
   cross_route_behavior: thumb_CMC1_authority_must_not_render_interphalangeal_or_generalized_hand_OA_output
   runtime_authorized: false
