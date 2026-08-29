@@ -107,7 +107,8 @@ class CU1DynamicUIScopeTests(unittest.TestCase):
         self.assertFalse(validation.formatter_blocked, validation.validation_errors)
         self.assertEqual(validation.validation_errors, [])
         text = self.formatter.format(validation.normalized_draft, "short")
-        self.assertIn("φυσιοθεραπευτική", text.lower())
+        self.assertIn("επικονδυλαλγία", text.lower())
+        self.assertIn("ενεργητική", text.lower())
         self.assertNotIn("_", text)
 
     def test_optional_findings_goals_and_rehab_are_not_route_requirements(self):
