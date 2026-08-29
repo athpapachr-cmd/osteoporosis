@@ -1,4 +1,4 @@
-# SLICE_PLAN_CURRENT.md — CU-1 history + evidence + rehabilitation-sequence design hardening v1.4
+# SLICE_PLAN_CURRENT.md — CU-1 history + evidence + rehabilitation-sequence design hardening v1.5
 
 > **STATUS:** ACTIVE PRE-RUNTIME DESIGN HARDENING — SHARD INTEGRATION PASS / ROUTE COVERAGE IN PROGRESS.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
@@ -151,10 +151,16 @@ cu1_evidence_tranche3_v1.yaml
 → promotion PASS
 
 cu1_evidence_route_coverage_v1.yaml
-→ native explicit-ID reviewed route coverage
+→ calcific cuff + GHOA native explicit-ID route coverage
 
 cu1_evidence_route_coverage_instability_v1.yaml
 → native explicit-ID instability context split
+
+cu1_evidence_route_coverage_meniscus_v1.yaml
+→ degenerative-meniscus native route coverage
+
+cu1_evidence_route_coverage_patellar_tendinopathy_v1.yaml
+→ patellar-tendinopathy native route coverage
 
 cu1_evidence_route_coverage_amendments_v1.yaml
 → reviewed post-merge narrowing / source-identity / grading / suppression layer
@@ -200,6 +206,15 @@ posterior postoperative Part-II rehab/RTS evidence
 nonoperative primary GHOA
 != preoperative TSA
 != postoperative arthroplasty rehabilitation
+
+MRI degenerative meniscal tear
+!= automatic symptom generator or surgical indication
+
+true meniscal locking
+!= clicking/catching
+
+patellar PTLE superiority signal in one selected RCT
+!= universal PTLE protocol superiority
 ```
 
 Unresolved material subtype/management context blocks evidence-aware sequence resolution rather than invoking a generic fallback.
@@ -224,6 +239,7 @@ expert consensus / best-practice opinion != comparative efficacy evidence
 no eligible comparative trials != low or very-low effect estimate
 conflicting frameworks remain separate
 conflicting framework claim != automatic referral recommendation
+population-specific trial superiority != universal protocol superiority when later synthesis does not support a meaningful hierarchy
 ```
 
 ---
@@ -275,8 +291,6 @@ Unresolved direction/cause/management blocks evidence-aware output. Postoperativ
 
 ### Glenohumeral osteoarthritis
 
-Context-specific profiles:
-
 ```text
 rep_glenohumeral_oa_nonoperative_v1
 → seq_glenohumeral_oa_nonoperative_v1
@@ -290,7 +304,41 @@ postoperative arthroplasty
 → postoperative_shoulder_rehabilitation
 ```
 
-The 2023 APTA CPG has no high/moderate-quality comparative nonoperative PT evidence and does not identify a superior specific PT intervention. A 2026 systematic review confirms no nonsurgical PT RCTs through June 2025. CU-1 therefore preserves broad individualized PT wording without inventing a specific exercise package, frequency, duration or numeric progression threshold.
+The 2023 APTA CPG has no high/moderate-quality comparative nonoperative PT evidence and does not identify a superior specific PT intervention. A 2026 systematic review confirms no nonsurgical PT RCTs through June 2025. CU-1 preserves broad individualized PT wording without inventing a specific exercise package, frequency, duration or numeric progression threshold.
+
+### Degenerative meniscal lesion — conservative rehabilitation
+
+```text
+rep_degenerative_meniscus_conservative_v1
+seq_degenerative_meniscus_conservative_v1
+→ sequence_complete / evidence-bounded
+```
+
+The 2025 EU-US consensus supports first-line nonoperative treatment including PT and ROM/progressive knee-hip strengthening/neuromuscular rehabilitation. Long-term ESCAPE and OMEX randomized follow-up support exercise-based care for common degenerative tears. True locking or another unresolved structural surgical indication blocks the routine sequence; acute traumatic and postoperative meniscal contexts use different owners.
+
+### Patellar tendinopathy
+
+```text
+rep_patellar_tendinopathy_v1
+seq_patellar_tendinopathy_v1
+→ sequence_complete / single-phase evidence-bounded
+```
+
+The route preserves apparently competing current evidence rather than flattening it:
+
+```text
+Cochrane 2025
+→ absolute strengthening effects remain uncertain
+
+2026 exercise NMA
+→ no clinically meaningful loading-strategy superiority hierarchy
+
+Breda 2021 RCT
+→ PTLE signal versus eccentric-only in mostly chronic previously treated young athletes
+→ population-specific, not universal protocol authority
+```
+
+CU-1 may therefore describe individualized progressive tendon/quadriceps loading but must not prescribe one mandatory eccentric/isometric/HSR/PTLE regimen. Loading-mode dosing remains therapist execution detail. No validated universal numeric progression or RTS threshold is rendered. ESWT is not an automatic adjunct.
 
 ---
 
@@ -327,7 +375,7 @@ Generic fallback is forbidden.
 
 # 13. Acceptance fixtures
 
-The regression oracle now includes route-specific cases for:
+The regression oracle includes route-specific cases for:
 
 ```text
 calcific ESWT JOSPT-vs-NICE conflict
@@ -342,6 +390,14 @@ GHOA nonoperative no false specific PT superiority
 GHOA no nonsurgical-RCT false effect estimate
 GHOA preoperative != postoperative owner
 GHOA missing management context block
+degenerative meniscus common first-line conservative pathway
+degenerative meniscus true locking block
+degenerative meniscus acute/postoperative owner boundaries
+degenerative meniscus persistent-symptom reassessment
+patellar tendinopathy no mandatory loading mode
+patellar absolute-effect uncertainty visible
+patellar no invented numeric RTS/pain threshold
+patellar ESWT not default
 ```
 
 Additional route fixtures remain required as coverage expands.
@@ -375,6 +431,8 @@ shard integration                               PASS
 calcific route coverage                         PASS
 instability context-split coverage              PASS
 GHOA management-context coverage                PASS
+degenerative-meniscus route coverage            PASS
+patellar-tendinopathy route coverage             PASS
 routine-route coverage                          FAIL globally
 route-history prompt completeness               FAIL globally
 route-complete fixture corpus                   FAIL globally
@@ -386,16 +444,14 @@ RUNTIME AUTHORIZED                              NO
 Continue route-by-route:
 
 ```text
-1. degenerative_meniscal_lesion_conservative_rehabilitation
-2. patellar_tendinopathy
-3. thumb_cmc1_osteoarthritis
-4. cervical_routes
-5. remaining_wrist_hand_and_elbow_routes
-6. remaining routine routes in registry order
-7. reviewed evidence-gap behavior where full staging is unsupported
-8. route-specific prompts + matching fixtures alongside each route
-9. exact design-completeness review
-10. STOP only at DESIGN-COMPLETE or a newly specific BLOCK
+1. thumb_cmc1_osteoarthritis
+2. cervical_routes
+3. remaining_wrist_hand_and_elbow_routes
+4. remaining routine routes in registry order
+5. reviewed evidence-gap behavior where full staging is unsupported
+6. route-specific prompts + matching fixtures alongside each route
+7. exact design-completeness review
+8. STOP only at DESIGN-COMPLETE or a newly specific BLOCK
 ```
 
 No runtime evidence-aware generation is authorized by this slice.
