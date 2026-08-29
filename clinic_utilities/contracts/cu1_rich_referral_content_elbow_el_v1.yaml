@@ -1,0 +1,52 @@
+version: cu1_rich_referral_content_elbow_el_v1
+status: prepared_runtime_authority_profile_shard
+runtime_authorized: true
+reviewed_on: 2026-08-29
+language: el
+profile_id: elbow
+
+routes:
+  medial_elbow_tendinopathy:
+    profile_ids: [elbow]
+    evidence_profile_ids: [rep_medial_elbow_tendinopathy_v1]
+    authority_mode: reviewed_evidence_bounded_sequence_plus_clinical_rehabilitation_organization
+    short_flow_el:
+      - >-
+        Προτείνεται ενεργητική συντηρητική αποκατάσταση με αναγνώριση και προσωρινή τροποποίηση των φορτίων
+        λαβής/κάμψης-πρηνισμού που επιδεινώνουν τα συμπτώματα, διατηρώντας χρήσιμη δραστηριότητα και προετοιμάζοντας
+        σταδιακή επανέκθεση στο φορτίο.
+      - >-
+        Μπορεί να χρησιμοποιηθεί εξατομικευμένη έκκεντρη φόρτιση των καμπτήρων-πρηνιστών ως μία επιλογή, χωρίς
+        υποχρεωτικό loading protocol ή καθολική δοσολογία. Στόχος η λειτουργική επάνοδος στις πραγματικές απαιτήσεις.
+    stages:
+      - stage_id: active_load_rehabilitation
+        label_el: ΣΤΑΔΙΟ 1 — ΔΙΑΧΕΙΡΙΣΗ ΦΟΡΤΙΟΥ / ΕΝΕΡΓΗΤΙΚΗ ΑΠΟΚΑΤΑΣΤΑΣΗ
+        goals_el:
+          - μείωση συμπτωματικής επιβάρυνσης από επαναλαμβανόμενη λαβή και φόρτιση καμπτήρων-πρηνιστών
+          - βελτίωση ανοχής σε ενεργητική φόρτιση και λειτουργική χρήση
+        intervention_directions_el:
+          - αναγνώριση και προσωρινή τροποποίηση επανειλημμένα επιβαρυντικών φορτίων με διατήρηση χρήσιμης δραστηριότητας και προετοιμασία σταδιακής επανέκθεσης
+          - εξατομικευμένη έκκεντρη φόρτιση καμπτήρων-πρηνιστών μπορεί να εξεταστεί ως μία επιλογή, διατηρώντας τη χαμηλή βεβαιότητα της τεκμηρίωσης και χωρίς καθολική δοσολογία
+        progress_markers_el:
+          - καλύτερη ανοχή σε λαβή, κάμψη/πρηνισμό και σχετική λειτουργική φόρτιση χωρίς παρατεταμένη επιδείνωση
+        evidence_claim_ids:
+          - met_activity_load_modification_context
+          - met_eccentric_flexor_pronator_loading_low_certainty_2026
+        organization_authority: clinical_rehabilitation_organization
+      - stage_id: functional_return_self_management
+        label_el: ΣΤΑΔΙΟ 2 — ΛΕΙΤΟΥΡΓΙΚΗ ΕΠΑΝΕΚΘΕΣΗ / ΑΥΤΟΔΙΑΧΕΙΡΙΣΗ
+        goals_el:
+          - επάνοδος στις σχετικές καθημερινές, εργασιακές ή αθλητικές απαιτήσεις
+          - ανεξάρτητη διαχείριση του σχετικού φορτίου
+        intervention_directions_el:
+          - σταδιακή επανέκθεση στις πραγματικές απαιτήσεις λαβής, κάμψης/πρηνισμού, χειρωνακτικής ή αθλητικής χρήσης σύμφωνα με την κλινική και λειτουργική ανταπόκριση
+        progress_markers_el:
+          - λειτουργική ανοχή στις σημαντικές δραστηριότητες χωρίς καθολικό αριθμητικό κριτήριο προόδου
+        evidence_claim_ids:
+          - met_activity_load_modification_context
+        organization_authority: clinical_rehabilitation_organization
+    adjunct_boundary_el: >-
+      Δεν εισάγονται αυτόματα manual therapy, dry needling, taping, orthosis ή ESWT από αναλογία με την έξω επικονδυλαλγία.
+    reassessment_el: >-
+      Ιατρική επανεκτίμηση σε προοδευτικό αντικειμενικό ωλένιο κινητικό έλλειμμα, σημαντική valgus/UCL αστάθεια ή τραυματικό πλαίσιο, ουσιαστικό μηχανικό μπλοκάρισμα ή άλλη ασύμβατη έσω αγκωνιαία εικόνα.
+    reassessment_evidence_claim_ids: [met_ulnar_and_medial_elbow_differential_reassessment]
