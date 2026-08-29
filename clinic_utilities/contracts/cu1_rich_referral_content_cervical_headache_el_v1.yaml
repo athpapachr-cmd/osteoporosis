@@ -45,7 +45,7 @@ routes:
         match:
           wording_modes: [formal_diagnosis]
           context_equals:
-            formal_cervicogenic_headache_diagnosis: yes
+            formal_cervicogenic_headache_diagnosis: "yes"
         evidence_profile_ids: [rep_c3_formal_cervicogenic_headache_v1]
         authority_mode: reviewed_formal_diagnosis_context_sequence
         short_flow_el:
