@@ -1,321 +1,298 @@
-# SLICE_PLAN_CURRENT.md — CU-1 referral product-model REPLAN v1.15
+# SLICE_PLAN_CURRENT.md — CU-1 rich referral lateral-elbow prototype v1.16
 
-> **STATUS:** ACTIVE PRE-RUNTIME REPLAN — PRODUCT-UTILITY BLOCK.
+> **STATUS:** ACTIVE BOUNDED RUNTIME PROTOTYPE — PRODUCT-SHAPE VALIDATION.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Parent product:** Personal Clinical Excellence System.
 > **Area:** Clinic Utilities / Clinical Operations.
-> **Slice:** CU-1 Physiotherapy Referral — rich clinical referral model + evidence guardrails.
-> **Authoritative base:** `08ecd3ab33e98d567c47042a8a1de482df6952b9`.
-> **Writer:** `design/cu1-history-evidence-timeline-2026-08-28`.
-> **Runtime writer:** NONE.
-> **Runtime implementation:** NOT AUTHORIZED.
-> **CU-2:** NOT AUTHORIZED.
-> **PR-1 Transcript Intake:** intentionally paused.
+> **Slice:** CU-1 Physiotherapy Referral — rich clinical rehabilitation document model.
+> **Authoritative remote main:** `08ecd3ab33e98d567c47042a8a1de482df6952b9`.
+> **Design parent:** `design/cu1-history-evidence-timeline-2026-08-28` @ `cc479f4a1d818481a886916e3f0f05dc56c623b3`.
+> **Writer/runtime writer:** `feat/cu1-rich-referral-lateral-elbow-2026-08-29`.
+> **Product-owner authorization:** YES for bounded `lateral_elbow_tendinopathy` runtime prototype + tests.
+> **Merge/deploy:** NOT AUTHORIZED until generated text is reviewed.
+> **Global rollout:** NEXT after LET wording approval; must be horizontal/shared, not route-by-route product coding.
+> **Further evidence-route expansion:** HOLD.
 
 ---
 
-# 1. REPLAN trigger
+# 1. Locked product job
 
-A product-owner review identified that the route-by-route evidence hardening was optimizing the wrong completion target.
+Generate a physiotherapy referral that is clinically useful enough to guide the **direction and expected progression of rehabilitation** while preserving the treating physiotherapist's responsibility for exact exercise selection and dosing.
 
-The deployed/previous CU-1 utility can generate safe but clinically thin text such as generic requests for individualized exercise, strengthening and assessment. The intended clinic product is materially richer: an **analytical, clinically intelligent physiotherapy referral** that communicates the clinical picture, rehabilitation logic, staged objectives, functional restoration and reassessment priorities to the physiotherapist.
-
-The evidence work remains valuable and is preserved. The design error was allowing the evidence/provenance layer to become the de facto author of the referral rather than a guardrail over a richer clinical rehabilitation/document model.
-
-Therefore:
+The output has two audiences:
 
 ```text
-EVIDENCE / SAFETY ENGINE
-!=
-REFERRAL AUTHOR
+physiotherapist → understands clinical priorities, rehabilitation progression and expected functional endpoint
+patient          → understands what meaningful rehabilitation should contain and can distinguish it from passive-only care
 ```
 
-and:
+The product must therefore sit between two unacceptable extremes:
 
 ```text
-route evidence coverage PASS
-!=
-clinically useful detailed referral PASS
-```
+TOO THIN
+"reduce pain / improve strength / improve function"
 
-This is a material active-slice design change and therefore a REPLAN, not permission to continue mechanically to the next route.
+TOO PRESCRIPTIVE
+named exact exercises + sets + repetitions + kilograms + fixed weeks + fabricated clearance cutoffs
+```
 
 ---
 
-# 2. Correct product architecture
+# 2. Locked rehabilitation-document grammar
 
-The target architecture for the physiotherapy referral utility is now:
+Every rehabilitation stage is represented as:
 
 ```text
+STAGE
+├── Goal(s): what clinical/functional capability should improve
+├── Intervention directions: how those goals are pursued
+├── Progress markers: what improvement should be observed/measured
+└── Next-stage orientation: what the rehabilitation evolves toward
+```
+
+This grammar is a clinical/document organization layer. It is not itself a literature authority and must never be labelled as a universal evidence-validated protocol.
+
+Intervention directions may name broad treatment categories such as:
+
+```text
+active ROM / mobility work
+isometric activation/loading
+concentric/eccentric resisted loading
+progressive strengthening/endurance work
+load/activity modification
+manual therapy where applicable
+cryotherapy/TENS or other evidence-compatible symptom modulation
+functional graded exposure / work or sport reintegration
+```
+
+They must not define universal dosage.
+
+---
+
+# 3. Non-negotiable product invariants
+
+1. **Goal without method is insufficient.** "Μείωση πόνου" must be linked to how pain/irritability will be managed. "Αποκατάσταση ROM" must be linked to mobility treatment. "Βελτίωση load tolerance" must be linked to progressive loading.
+2. **Passive-only care is not complete rehabilitation.** TENS, laser, ultrasound, cryotherapy, taping, manual therapy or similar modalities may be adjunctive when appropriate but cannot satisfy the rehabilitation plan by themselves.
+3. **No exercise micromanagement.** No universal sets/reps/kg/hold times or exact named exercise menu in the physician-generated referral.
+4. **No false precision.** No universal fixed week phases, pain cutoff, strength-symmetry threshold, PRTEE/DASH percentage or return-to-work threshold unless a patient-specific protocol/clinician instruction or appropriately reviewed authority actually supplies it.
+5. **No invented patient facts.** Occupation or sport may inform reintegration only from explicit patient context; it must not create causal mechanism or unreported task limitations.
+6. **Evidence direction != automatic selection.** Evidence-supported adjuncts are not automatically required.
+7. **Therapist execution remains therapist-owned.** The referral specifies destination and treatment direction; exact technique/exercise/dose remains clinical execution detail.
+
+---
+
+# 4. Evidence/safety architecture preserved
+
+The accepted architecture remains:
+
+```text
+PATIENT CLINICAL STATE
++
 STRICT EVIDENCE / SAFETY ENGINE
-        ↓
-sets boundaries, applicability, strength/certainty, conflicts,
-do-not-infer rules, protocol precedence and reassessment triggers
-
 +
-
-RICH CLINICAL REHABILITATION MODEL
-        ↓
-organizes clinically useful rehabilitation logic without pretending
-that every clinically sensible statement is a guideline-derived threshold
-
+REFERENCE REHABILITATION PATHWAYS / CLINICAL ORGANIZATION
 +
-
 REFERRAL DOCUMENT POLICY
-        ↓
-produces a concise or detailed referral useful to the treating physiotherapist
+→ SHORT or DETAILED REFERRAL
 ```
 
-The layers remain machine-distinct. Evidence provenance must not be weakened merely to make prose richer.
+The evidence layer remains responsible for applicability, strength/certainty, conflicts, do-not-infer rules, protocol precedence and reassessment/safety boundaries. It is not the sole prose author.
+
+Useful reference rehabilitation pathways may inform practical stage organization without promoting their exact protocol thresholds to guideline authority.
 
 ---
 
-# 3. Preserved evidence/safety work
+# 5. Lateral elbow prototype — expected clinical shape
 
-All reviewed CU-1 v1.1 evidence-governance work through PIN/supinator remains valid unless a later exact review identifies a specific defect.
+## Stage 1 — symptom/irritability control, mobility and initial loading
 
-Preserve in particular:
+### Goals
 
-- diagnosis vs finding separation;
-- missing/not-assessed != negative/normal;
-- patient statement != objective finding;
-- route/subtype/management-context-specific evidence applicability;
-- framework-specific grades/certainty without silent hybridization;
-- clinician instruction and patient-specific protocol authority distinct from literature authority;
-- explicit protocol/healing restriction precedence;
-- no invented universal numeric progression/RTW/RTS thresholds;
-- no generic cross-route evidence leakage;
-- explicit evidence-gap behavior;
-- route-specific safety/reassessment boundaries;
-- existing reviewed route shards/fixtures and manifest/matrix state through PIN/supinator.
+- reduce pain/irritability enough to support active rehabilitation;
+- maintain or restore functionally adequate elbow/forearm/wrist mobility where impaired;
+- begin restoration of wrist-extensor load tolerance;
+- identify and modify relevant aggravating load while maintaining useful activity.
 
-No reviewed route is rolled back merely because the product-output model is being replanned.
+### Intervention directions
+
+- education, activity/load modification and ergonomic adaptation as relevant;
+- active mobility/ROM and flexibility work for identified mobility restriction;
+- low-demand active wrist-extensor recruitment with isometric loading as an early option when tolerated;
+- short-term symptom-modulation adjuncts such as cryotherapy/TENS in appropriate contexts;
+- selected manual therapy, taping or other evidence-compatible adjuncts where indicated;
+- passive modalities must serve active progression rather than replace it.
+
+### Progress markers
+
+- irritability and activity-related pain are improving rather than progressively worsening;
+- functional ROM is adequate or improving when an impairment was present;
+- initial active/isometric loading is tolerated without clinically important prolonged exacerbation;
+- basic grip/use tasks are becoming better tolerated.
+
+### Next-stage orientation
+
+Progress toward more demanding resisted loading and restoration of strength/endurance when the clinical response permits.
 
 ---
 
-# 4. Product requirement — Detailed Referral must be clinically rich
+## Stage 2 — strength, endurance and load-capacity restoration
 
-The detailed referral should be capable, when supported by the clinician-entered case state, of communicating a coherent sequence such as:
+### Goals
+
+- restore progressive wrist-extensor loading capacity;
+- improve grip strength and repeated-use tolerance;
+- improve upper-limb endurance for relevant daily/work/sport demands;
+- address proximal shoulder/scapular impairment only when actually identified.
+
+### Intervention directions
+
+- progressive resisted wrist-extensor loading, evolving from initial activation/isometric work toward concentric and eccentric loading as tolerated;
+- progressive grip and upper-limb endurance work;
+- progressive mechanical loading based on response rather than a universal dose;
+- shoulder/scapular stabilizer work only when examination identifies a relevant impairment;
+- adjunct symptom-modulation treatment may continue selectively but must not displace active progression.
+
+### Progress markers
+
+- objective and/or functional grip capacity improves relative to baseline;
+- progressive resisted loading is increasingly tolerated;
+- repeated use produces less limitation and no clinically important prolonged deterioration;
+- patient-reported function and priority tasks are improving.
+
+### Next-stage orientation
+
+Progress toward higher-demand, longer-duration and task-specific functional loading.
+
+---
+
+## Stage 3 — functional / occupational / sport reintegration
+
+### Goals
+
+- restore capacity for the patient's explicitly recorded high-demand activities;
+- restore tolerance to repeated and sustained upper-limb use;
+- support self-management, load control and recurrence-risk reduction.
+
+### Intervention directions
+
+- progressively higher mechanical demand and longer-duration/repeated loading;
+- task-specific grip/upper-limb functional conditioning;
+- graded exposure to actual work, sport or hobby demands that were explicitly recorded as limited;
+- ergonomic/activity strategy and independent self-management plan.
+
+### Progress markers
+
+- meaningful return toward the patient's actual priority activities;
+- improved function/outcome measures relative to baseline;
+- sufficient strength/endurance/load tolerance for the patient's real demands;
+- no material or disproportionate deterioration with ordinary functional loading;
+- patient demonstrates practical self-management of load and recurrence symptoms.
+
+### Completion/reassessment orientation
+
+No universal numeric discharge rule is generated. Reassess diagnosis/owner/plan when progress is discordant or when neurological, cervical/radicular, mechanical-block, traumatic/instability or other atypical findings emerge.
+
+---
+
+# 6. LET evidence boundary for the prototype
+
+Use the already-reviewed lateral-elbow package and preserve its exact limitations:
+
+- JOSPT 2022: subacute/chronic resisted wrist-extensor exercise, isometric/concentric/eccentric, Grade B, no universal dose;
+- high-demand reintegration Grade F and conditional;
+- shoulder/scapular work Grade C only if impairment exists;
+- local mobilization/manipulation Grade B when selected/applicable;
+- dry needling Grade B when selected/applicable;
+- rigid taping Grade B for selected irritable short-term context;
+- counterforce/wrist support Grade F for selected aggravating-activity/immediate context;
+- education/behavioral/ergonomic intervention Grade E;
+- cryotherapy + burst TENS may be used for short-term pain reduction in the CPG-defined context, cryotherapy may be used for irritable LET, TENS may be used for short-term pain relief, and laser may be used as an adjunctive option;
+- ultrasound as stand-alone treatment has conflicting evidence and must not be presented as a core treatment;
+- PRTEE/DASH/PSFS and grip/ROM measures are follow-up measures, not automatic phase-transition or discharge thresholds;
+- the Day/Lucado/Uhl 2019 three-phase program is a Level-5 clinical rehabilitation commentary/pathway: its useful organization may inform this document model, while its exact repetitions/loads/pain cutoffs are not universalized.
+
+---
+
+# 7. Short vs Detailed document policy
+
+Both modes consume the same patient/evidence state.
+
+**Short** must still be clinically directive, not a compressed checkbox list. It should include:
 
 ```text
-1. clinical diagnosis / impression and relevant context
-2. focused history and symptom/load behavior
-3. actual examination findings
-4. functional impact and patient-priority task
-5. therapeutic rationale / rehabilitation priorities
-6. early rehabilitation orientation
-7. progressive rehabilitation orientation
-8. functional / work / sport reintegration orientation where relevant
-9. selected adjunct options where appropriate
-10. reassessment / escalation conditions
-11. evidence basis / authority where useful
+diagnosis/context
++ core active rehabilitation progression
++ key functional endpoint
++ passive-adjunct boundary
++ reassessment trigger when relevant
 ```
 
-This is a **clinical communication structure**, not a claim that the literature validates one universal numbered protocol for every route.
-
-The referral must be able to say clinically useful things such as:
-
-- control irritability and modify the specifically aggravating load while maintaining useful activity;
-- begin tolerated active loading appropriate to the presentation;
-- progressively restore relevant strength, mobility, endurance and load tolerance;
-- progressively reintroduce the patient's actual functional, work or sport demands;
-- use selected adjuncts when clinically indicated and evidence-compatible;
-- reassess when progress is discordant or when defined safety/alternative-owner findings emerge.
-
-The exact content must remain route/context aware and must not invent patient facts.
-
----
-
-# 5. Evidence does not have to supply every clinical-organization sentence
-
-The old route-hardening logic implicitly pushed too much referral content through `EvidenceClaimV1` and `RehabilitationSequenceV1` as if every clinically useful organizational statement required a route-specific graded recommendation.
-
-The REPLAN must explicitly determine which statements belong to:
-
-```text
-A. evidence-derived recommendation / restriction
-B. patient-specific protocol or clinician instruction
-C. clinically reasonable rehabilitation organization / document structure
-D. therapist execution detail
-E. clinician-UI-only evidence/context
-```
-
-Category C is the missing product layer. It must be clinically responsible and must never be mislabeled as literature authority.
-
-The design may use clinically meaningful stages/orientations without asserting unsupported universal time windows, numeric pain-monitoring thresholds, fixed exercise doses, fixed visit counts or validated transition criteria.
-
----
-
-# 6. Detailed referral quality target
-
-A route is not product-complete merely because it has an evidence profile or an explicit evidence gap.
-
-For representative routes, the detailed output must demonstrate that a physiotherapist receives enough information to understand:
-
-```text
-WHAT the clinician thinks the problem is
-WHY physiotherapy is being requested
-WHAT was actually found
-WHAT function matters
-WHAT broad rehabilitation priorities are intended
-HOW rehabilitation should evolve conceptually
-WHAT should not be assumed/prescribed automatically
-WHEN reassessment or escalation is appropriate
-```
-
-The referral should avoid both extremes:
-
-```text
-unsafe pseudo-protocol specificity
-AND
-sterile generic wording with little clinical value
-```
-
----
-
-# 7. DIA/reference-output lesson
-
-External/generated richer referral examples may be used as **product-shape pressure tests**, not as canonical evidence authority.
-
-Useful structure observed in such examples:
+**Detailed** should expose the full stage grammar:
 
 ```text
 clinical picture
-→ therapeutic logic
-→ goals
-→ organized rehabilitation
-→ adjuncts
-→ reassessment
-→ return to function
++ Stage 1 goals/methods/progress
++ Stage 2 goals/methods/progress
++ Stage 3 goals/methods/progress when relevant
++ monitoring
++ adjunct boundary
++ reassessment
 ```
 
-However, unsupported or weakly supported specifics must not be promoted into universal defaults, including examples such as:
-
-- fixed pain-monitoring cutoffs/recovery windows;
-- mandatory isometric set/hold prescriptions;
-- universal week-based phases;
-- mandatory heavy-slow-resistance progression;
-- fixed session counts/course duration;
-- universal symmetric-strength discharge thresholds;
-- broad superiority claims unsupported by the applicable evidence.
-
-The product should preserve the useful structure while rejecting false precision.
+Short is a compression of the same plan, not a separate clinical truth.
 
 ---
 
-# 8. Existing object model — review before mutation
+# 8. Acceptance fixtures for the prototype
 
-The following frozen v1.1 objects remain preserved pending audit:
+The prototype must pass all of the following:
 
 ```text
-ReferralHistoryV2
-HistoryProvenanceEntryV1
-RouteHistoryPromptV1
-RehabilitationSequenceV1
-RehabilitationPhaseV1
-InterventionDirectionV1
-RehabilitationCriterionV1
-GoalPlanV2
-ReassessmentPlanV2
-AuthorityReferenceV1
-ProtocolConstraintV1
-ClinicianModificationV1
-EvidenceSourceV1
-EvidenceClaimV1
-RouteEvidenceProfileV1
+PRODUCT-SHAPE
+- every rendered stage contains both goals and intervention directions
+- progress markers are visible
+- detailed output contains meaningful evolution across stages
+- short output preserves the active-rehab direction
+
+PASSIVE-ONLY FAILURE
+- output cannot be interpreted as complete care through TENS/laser/ultrasound/manual modalities alone
+- active loading/progression and functional reintegration remain explicit
+
+NO FALSE PRECISION
+- no universal sets/reps/kg/hold times
+- no fixed week ranges
+- no universal pain cutoff
+- no invented PRTEE/DASH/grip discharge percentage
+
+CONDITIONALITY
+- proximal/scapular work is conditional on actual impairment
+- work/sport reintegration does not invent unreported tasks
+- adjunct evidence does not become mandatory selection
+
+SAFETY / INTEGRITY
+- diagnosis is not generated from findings alone
+- missing/not-assessed is not rendered as normal
+- atypical PIN/cervical/mechanical/traumatic context preserves reassessment ownership
+- existing non-LET formatter behavior remains unchanged in this prototype
 ```
-
-Do **not** create new runtime objects merely to satisfy this REPLAN.
-
-The next design review must determine whether the missing rich-clinical layer can be represented by refining existing referral/goal/rehabilitation/document-policy semantics or requires a narrowly scoped new design object. Object proliferation is not assumed.
 
 ---
 
-# 9. Relationship to future Clinical Documentation architecture
+# 9. Exact next action
 
-The previously accepted future direction remains deferred:
+Implement only the LET product-shape override at the existing Greek formatter seam and focused tests. Generate actual short and detailed outputs from a synthetic but contract-valid LET case and present them to the product owner.
 
-```text
-ONE reviewed patient-specific clinical-assertion layer
-+
-SEPARATE literature/evidence layer
-+
-MANY document policies
-```
-
-This CU-1 REPLAN does not authorize `ClinicalAssertionV1`, medico-legal runtime code, new claim-state enums or persistence changes.
-
-The physiotherapy referral is, however, a concrete pressure test for the broader principle that **document policy and clinical communication logic must not be collapsed into the literature-evidence layer**.
-
----
-
-# 10. Explicitly out of scope now
+After wording review:
 
 ```text
-NO distal_biceps route review
-NO further route-by-route evidence expansion
-NO runtime evidence-aware generation
-NO formatter/runtime implementation
-NO persistence/retention change
-NO CU-2
-NO PR-1 restart
-NO medico-legal implementation
-NO ClinicalAssertionV1 creation
-NO universal numeric progression thresholds
-NO fixed generic MSK protocol
+IF product owner requests corrections
+→ correct LET product shape and re-render
+
+IF product owner approves LET output
+→ freeze shared Rich Rehabilitation Document Model
+→ implement horizontal/global generation across all conditions
+→ use route clinical/evidence content as data/configuration
+→ DO NOT manually hand-code one disease after another
 ```
 
-Route expansion remains paused until the rich referral product model is reviewed and accepted.
-
----
-
-# 11. Exact next authorized action
-
-Perform a **fresh pre-code product/architecture review of the Detailed Physiotherapy Referral model** using the real current runtime/contracts and representative already-reviewed routes.
-
-Required review outputs before any further route work:
-
-```text
-A. exact user/product job of the detailed referral
-B. detailed-referral information architecture
-C. evidence-engine vs rich-clinical-model vs document-policy ownership
-D. exact statement/authority taxonomy for evidence-derived vs clinical-organizational content
-E. how goals / rehabilitation orientation / functional reintegration are represented without false evidence claims
-F. how selected adjuncts are represented
-G. how reassessment/escalation is represented
-H. short-vs-detailed output relationship
-I. representative rendered examples from existing reviewed routes
-J. exact minimal schema/contract changes, if any
-K. acceptance fixtures that test usefulness as well as safety
-L. migration impact on existing reviewed evidence shards
-```
-
-Use at minimum representative pressure-test routes with different evidence states, including:
-
-- lateral elbow tendinopathy — relatively strong route-specific CPG authority;
-- medial elbow tendinopathy — lower-certainty treatment evidence;
-- UNE or PIN — context with material evidence gaps/safety ownership.
-
-Do not resume `distal_biceps_tendon_disorder_nonoperative` until this design review reaches an explicit product-owner-approved target and the canonical exact-next action is changed again.
-
----
-
-# 12. Acceptance gate for the REPLAN
-
-Before route-by-route work can resume:
-
-```text
-evidence/safety guardrails preserved                         PASS required
-rich detailed-referral product contract defined              PASS required
-clinical-organizational vs literature authority separated    PASS required
-representative detailed outputs clinically useful            PASS required
-no false universal protocol specificity                      PASS required
-short/detailed relationship explicit                         PASS required
-minimal machine-contract delta identified                    PASS required
-product-owner approval                                       PASS required
-
-ROUTE EXPANSION                                               HOLD
-RUNTIME AUTHORIZED                                            NO
-```
-
-The goal is not more evidence files. The goal is a physiotherapy referral utility that is simultaneously **clinically useful, analytically rich, safe, evidence-aware and honest about uncertainty**.
+Further route-by-route evidence expansion remains on hold while this product work is active.
