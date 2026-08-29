@@ -1,4 +1,4 @@
-# SLICE_PLAN_CURRENT.md — CU-1 history + evidence + rehabilitation-sequence design hardening v1.8
+# SLICE_PLAN_CURRENT.md — CU-1 history + evidence + rehabilitation-sequence design hardening v1.9
 
 > **STATUS:** ACTIVE PRE-RUNTIME DESIGN HARDENING — SHARD INTEGRATION PASS / ROUTE COVERAGE IN PROGRESS.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
@@ -99,6 +99,7 @@ patient statement != objective finding
 route-specific prompt != selected answer
 not_assessed neurological status != normal
 headache feature != formal headache diagnosis
+dizziness symptom or neck association != cervical causation
 ```
 
 ---
@@ -176,6 +177,9 @@ cu1_evidence_route_coverage_cervical_radiating_v1.yaml
 cu1_evidence_route_coverage_cervical_headache_v1.yaml
 → C3 presentation-only + formal-CGH context split
 
+cu1_evidence_route_coverage_cervical_dizziness_v1.yaml
+→ C4 presentation-only evidence-gap + clinician-established cervical-dizziness context split
+
 cu1_evidence_route_coverage_amendments_v1.yaml
 → reviewed post-merge narrowing / source-identity / grading / suppression layer
 ```
@@ -194,6 +198,7 @@ Regression oracles:
 clinic_utilities/contracts/cu1_history_evidence_fixtures_v1.yaml
 clinic_utilities/contracts/cu1_cervical_history_evidence_fixtures_v1.yaml
 clinic_utilities/contracts/cu1_c3_cervical_headache_fixtures_v1.yaml
+clinic_utilities/contracts/cu1_c4_cervical_dizziness_fixtures_v1.yaml
 ```
 
 The cervical fixture files are dedicated extensions; their cases are normative design regressions for reviewed cervical routes and do not authorize runtime behavior.
@@ -267,9 +272,27 @@ formal-CGH systematic-review evidence
 
 low-certainty CGH network ranking
 != best or mandatory treatment protocol
+
+dizziness + neck pain/stiffness or head-neck movement association
+!= cervical causation
+
+positive cervical/sensorimotor test or response to neck treatment
+!= accepted cervical-dizziness diagnostic proof
+
+clinician-entered cervical-dizziness diagnosis
+!= CU-1 generated or validated diagnosis
+
+cervical-dizziness treatment-effect evidence
+!= presentation-only C4 authority
+
+C4 route selection or clinician diagnosis
+!= exclusion of vestibular migraine, BPPV, neurological, vascular, cardiovascular or otological causes
+
+primary post-traumatic dizziness/neck presentation
+!= routine C4 owner
 ```
 
-Unresolved material subtype/management/neurological/headache-safety context blocks evidence-aware sequence resolution rather than invoking a generic fallback.
+Unresolved material subtype/management/neurological/headache/dizziness-safety context blocks evidence-aware sequence resolution rather than invoking a generic fallback.
 
 ---
 
@@ -297,6 +320,8 @@ disease-specific evidence != broader symptom-presentation authority without matc
 positive provocation test != diagnosis
 guideline framework grade != GRADE treatment-effect certainty
 low-certainty network rank != protocol authority
+outcome-specific GRADE certainty != synthetic cross-outcome certainty
+therapeutic response != diagnostic proof
 ```
 
 ---
@@ -453,6 +478,38 @@ progression_criteria: []
 
 No universal exercise/manual dose, numeric transition threshold, fixed PT frequency or course duration is manufactured. New/changed/progressive headache or neurological/vascular/systemic concern blocks routine progression. Primary post-traumatic/whiplash context routes to C5 review.
 
+### C4 — Cervical/cervicogenic dizziness presentation
+
+The C4 review results in a deliberate context split rather than a generic treatment route.
+
+```text
+presentation-only / clinician_diagnosis_cervicogenic_dizziness != yes:
+rep_c4_cervical_dizziness_presentation_v1
+→ rehabilitation_sequence_id: null
+→ blocked_evidence_gap
+
+explicit clinician-established cervical/cervicogenic dizziness:
+rep_c4_clinician_established_cervical_dizziness_v1
+→ seq_c4_clinician_established_cervical_dizziness_v1
+→ sequence_complete / single-phase evidence-bounded
+```
+
+The current Bárány Society position is used as diagnostic-boundary authority. It does not endorse routine clinical diagnostic criteria, an accepted diagnostic test or a specific treatment recommendation for cervical dizziness. Therefore neck pain/stiffness plus dizziness, movement association, positive cervical/sensorimotor findings or response to neck-directed therapy cannot establish cervical causation in CU-1.
+
+Presentation-only C4 deliberately receives no disease-specific rehabilitation sequence. Disease-specific treatment claims from diagnosed/classified cervical-dizziness study populations cannot leak into this symptom-only context, and generic C1/C4 fallback is forbidden.
+
+When an explicit clinician diagnosis is present, current evidence supports only cautious one-phase rehabilitation. The 2026 physiotherapy systematic review found a limited/conflicting evidence base with most included studies at high risk of bias. The 2025 manual-therapy GRADE review has outcome-specific low/very-low certainty; CU-1 does not flatten these outcomes into a single synthetic certainty. A small 2023 non-traumatic self-exercise RCT may support considering individualized active cervical rehabilitation, but its exact exercise bundle, frequency, dose and two-week follow-up are not universal protocol authority.
+
+Manual therapy remains selected/optional. Mulligan-specific cervical-ROM findings remain therapist execution detail and do not establish balance/global superiority or diagnosis. Vestibular rehabilitation, balance, oculomotor or sensorimotor work is not automatically rendered without a matching deficit/indication or clinician instruction.
+
+The clinician-established sequence deliberately contains:
+
+```text
+progression_criteria: []
+```
+
+No universal numeric progression threshold, fixed PT frequency/course duration or promise of dizziness resolution is manufactured. New acute/progressive dizziness or neurological, gait, otological, vascular/cardiovascular concern blocks routine progression. Primary recent trauma/whiplash context routes to C5 review.
+
 ---
 
 # 12. Coverage gate
@@ -519,9 +576,22 @@ C3 low-certainty NMA rankings != best protocol
 C3 known primary-headache context not silently excluded
 C3 safety concern blocks routine progression
 C3 post-traumatic primary context → C5 review
+
+C4 neck pain + dizziness != cervical causation or diagnosis
+C4 presentation-only does not inherit disease-specific treatment claims
+C4 positive cervical/sensorimotor test != diagnosis
+C4 treatment response != diagnostic proof
+C4 explicit clinician diagnosis selects formal profile without CU-1 validation
+C4 manual therapy optional with outcome-specific GRADE preserved
+C4 Mulligan ROM signal != balance/global superiority or mandatory technique
+C4 small self-exercise RCT != frozen protocol/dose/course duration
+C4 vestibular rehabilitation is not an automatic default
+C4 alternative vestibular/migraine/neurovascular causes not silently excluded
+C4 material dizziness safety concern blocks routine progression
+C4 post-traumatic primary context → C5 review
 ```
 
-Additional route fixtures remain required as coverage expands through C4-C5 and the remaining registry.
+Additional route fixtures remain required as coverage expands through C5 and the remaining registry.
 
 ---
 
@@ -558,6 +628,7 @@ thumb-CMC1-OA route coverage                     PASS
 C1 nonspecific-neck route coverage              PASS
 C2 radiating-neck route coverage                PASS
 C3 cervical-headache route coverage              PASS
+C4 cervical-dizziness context-split coverage     PASS
 routine-route coverage                          FAIL globally
 route-history prompt completeness               FAIL globally
 route-complete fixture corpus                   FAIL globally
@@ -569,14 +640,13 @@ RUNTIME AUTHORIZED                              NO
 Continue route-by-route:
 
 ```text
-1. cervical_dizziness_presentation
-2. post_traumatic_neck_pain
-3. remaining_wrist_hand_and_elbow_routes
-4. remaining routine routes in registry order
-5. reviewed evidence-gap behavior where full staging is unsupported
-6. route-specific prompts + matching fixtures alongside each route
-7. exact design-completeness review
-8. STOP only at DESIGN-COMPLETE or a newly specific BLOCK
+1. post_traumatic_neck_pain
+2. remaining_wrist_hand_and_elbow_routes
+3. remaining routine routes in registry order
+4. reviewed evidence-gap behavior where full staging is unsupported
+5. route-specific prompts + matching fixtures alongside each route
+6. exact design-completeness review
+7. STOP only at DESIGN-COMPLETE or a newly specific BLOCK
 ```
 
 No runtime evidence-aware generation is authorized by this slice.
