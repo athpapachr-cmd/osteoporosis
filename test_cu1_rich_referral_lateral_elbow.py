@@ -9,6 +9,7 @@ from clinic_utilities.physio_referral_runtime import CONTRACT_VERSION, CU1Contra
 
 ROOT = Path(__file__).resolve().parent
 MAX_REFERRAL_CHARS = 2000
+STANDARD_DETAILED_TARGET_CHARS = 1850
 
 
 def lateral_elbow_draft():
@@ -66,25 +67,36 @@ class CU1RichLateralElbowReferralTests(unittest.TestCase):
         cls.bundle = CU1ContractBundle(ROOT)
         cls.formatter = CU1GreekReferralFormatter(cls.bundle)
 
-    def test_detailed_let_has_locked_stage_grammar_and_active_rehab(self):
+    def test_detailed_let_is_compact_structured_and_active(self):
         text = self.formatter.format(lateral_elbow_draft(), "detailed")
 
+        self.assertIn("ΚΛΙΝΙΚΗ ΕΙΚΟΝΑ", text)
         for stage in ("ΣΤΑΔΙΟ 1", "ΣΤΑΔΙΟ 2", "ΣΤΑΔΙΟ 3"):
             self.assertIn(stage, text)
         self.assertGreaterEqual(text.count("Στόχοι:"), 3)
         self.assertGreaterEqual(text.count("Κατευθύνσεις:"), 3)
-        self.assertGreaterEqual(text.count("Δείκτες:"), 3)
-        self.assertGreaterEqual(text.count("Μετάβαση:"), 2)
+        self.assertGreaterEqual(text.count("Πρόοδος"), 3)
+
+        self.assertIn("Έξω επικονδυλαλγία / τενοντοπάθεια", text)
+        self.assertIn("έξω πόνος αγκώνα", text.lower())
+        self.assertIn("δυσκολία στη σύλληψη", text.lower())
+        self.assertIn("κομμώτρια", text.lower())
+        self.assertNotIn("ΠΑΡΑΠΟΜΠΗ ΓΙΑ ΦΥΣΙΟΘΕΡΑΠΕΙΑ", text)
+        self.assertNotIn("Κύριο πρόβλημα:", text)
+        self.assertNotIn("Κλινικά ευρήματα:", text)
+        self.assertNotIn("Λειτουργικός περιορισμός:", text)
+        self.assertNotIn("Καταγεγραμμένο επαγγελματικό/αθλητικό πλαίσιο:", text)
+        self.assertNotIn("Μετάβαση:", text)
+        self.assertNotIn("ΠΑΡΑΚΟΛΟΥΘΗΣΗ", text)
 
         self.assertIn("ισομετρική", text.lower())
         self.assertIn("ομόκεντρη", text.lower())
         self.assertIn("έκκεντρη", text.lower())
         self.assertIn("ενεργητική κινητοποίηση", text.lower())
         self.assertIn("κρυοθεραπεία/tens", text.lower())
-        self.assertIn("δεν υποκαθιστούν", text.lower())
-        self.assertIn("λειτουργ", text.lower())
-        self.assertIn("κομμώτρια", text.lower())
-        self.assertLessEqual(len(text.rstrip("\n")), MAX_REFERRAL_CHARS)
+        self.assertIn("όχι ως υποκατάστατο", text.lower())
+        self.assertIn("ιατρική επανεκτίμηση", text.lower())
+        self.assertLessEqual(len(text.rstrip("\n")), STANDARD_DETAILED_TARGET_CHARS)
 
     def test_detailed_let_does_not_encode_universal_dose_or_false_transition_threshold(self):
         text = self.formatter.format(lateral_elbow_draft(), "detailed")
@@ -114,13 +126,14 @@ class CU1RichLateralElbowReferralTests(unittest.TestCase):
         lower = text.lower()
 
         self.assertNotIn("ΣΤΑΔΙΟ 1", text)
+        self.assertIn("έξω επικονδυλαλγία / τενοντοπάθεια", lower)
+        self.assertIn("κομμώτρια", lower)
         self.assertIn("ισομετρική", lower)
         self.assertIn("ομόκεντρη", lower)
         self.assertIn("έκκεντρη", lower)
-        self.assertIn("κρυοθεραπεία/tens", lower)
-        self.assertIn("δεν υποκαθιστούν", lower)
+        self.assertIn("παθητικά μέσα μόνο επικουρικά", lower)
         self.assertIn("επανένταξη", lower)
-        self.assertIn("χωρίς προκαθορισμένα καθολικά αριθμητικά κριτήρια", lower)
+        self.assertIn("χωρίς καθολικά αριθμητικά κριτήρια", lower)
         self.assertLessEqual(len(text.rstrip("\n")), MAX_REFERRAL_CHARS)
 
     def test_lateral_elbow_output_ceiling_survives_long_work_context(self):
