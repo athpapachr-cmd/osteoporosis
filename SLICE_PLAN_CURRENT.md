@@ -1,4 +1,4 @@
-# SLICE_PLAN_CURRENT.md — CU-1 history + evidence + rehabilitation-sequence design hardening v1.13
+# SLICE_PLAN_CURRENT.md — CU-1 history + evidence + rehabilitation-sequence design hardening v1.14
 
 > **STATUS:** ACTIVE PRE-RUNTIME DESIGN HARDENING — SHARD INTEGRATION PASS / ROUTE COVERAGE IN PROGRESS.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
@@ -110,6 +110,10 @@ subjective_ulnar_paresthesia != objective_ulnar_deficit_or_formal_ulnar_neuropat
 ulnar_distribution_symptom_or_Tinel_or_flexion_provocation != formal_cubital_tunnel_diagnosis
 formal_UNE_diagnosis != mild_severity
 not_assessed_ulnar_motor_status != normal_or_mild_eligibility
+lateral_forearm_pain_or_radial_tunnel_provocation != motor_PIN_diagnosis
+PIN_motor_pattern != formal_PIN_diagnosis_or_etiology_or_supinator_compression_site
+formal_PIN_diagnosis != spontaneous_noncompressive_etiology
+not_assessed_PIN_motor_status != normal_or_pain_only_classification
 ```
 
 ---
@@ -202,11 +206,17 @@ cu1_evidence_route_coverage_medial_elbow_v1.yaml
 cu1_evidence_route_coverage_ulnar_elbow_v1.yaml
 → ulnar-neuropathy-at-elbow mild-conservative + nonmild/safety context split
 
+cu1_evidence_route_coverage_pin_supinator_v1.yaml
+→ PIN/supinator pain-only mismatch + unresolved motor + spontaneous-noncompressive + structural/progressive safety context split with no route-specific rehabilitation sequence
+
 cu1_evidence_route_coverage_amendments_v1.yaml
 → reviewed post-merge narrowing / source-identity / grading / suppression layer
 
 cu1_evidence_route_coverage_lateral_elbow_amendment_v1.yaml
 → reviewed LET profile-sequence redirection + exact CPG grading/direction corrections
+
+cu1_evidence_route_coverage_pin_supinator_amendment_v1.yaml
+→ reviewed PIN source-identity corrections + pain-only profile applicability narrowing
 ```
 
 The amendment layers may only narrow applicability, attach a reviewed sequence, correct evidence grading/direction without inventing or upgrading evidence, correct verified source identity metadata or suppress a scope-unsafe claim. They cannot broaden evidence scope or manufacture clinical recommendations.
@@ -228,6 +238,7 @@ clinic_utilities/contracts/cu1_c5_post_traumatic_neck_fixtures_v1.yaml
 clinic_utilities/contracts/cu1_lateral_elbow_fixtures_v1.yaml
 clinic_utilities/contracts/cu1_medial_elbow_fixtures_v1.yaml
 clinic_utilities/contracts/cu1_ulnar_elbow_fixtures_v1.yaml
+clinic_utilities/contracts/cu1_pin_supinator_fixtures_v1.yaml
 ```
 
 The dedicated fixture extensions are normative design regressions for reviewed routes and do not authorize runtime behavior.
@@ -410,6 +421,30 @@ progressive objective motor weakness / intrinsic atrophy / clawing / material ne
 
 cervical / plexus / wrist-level ulnar / structural-trauma localization concern
 != cubital-tunnel fallback
+
+lateral forearm pain / radial-tunnel provocation
+!= motor PIN diagnosis
+
+finger/thumb extension weakness with relatively preserved wrist extension
+!= formal PIN diagnosis
+!= spontaneous PIN etiology
+!= supinator/arcade-of-Frohse compression
+
+formal PIN diagnosis
+!= etiology established
+!= compression site established
+
+spontaneous non-traumatic/non-compressive PIN management evidence
+!= route-specific physiotherapy protocol
+
+source-specific six-month spontaneous-PIN recovery signal
+!= universal PT duration, progression criterion or surgery threshold
+
+compressive / mass / traumatic / iatrogenic / inflammatory structural / progressive-motor PIN context
+!= generic rehabilitation owner
+
+PIN route selection
+!= cervical / plexus / proximal radial / multifocal motor neuropathy exclusion
 ```
 
 Unresolved material subtype/management/neurological/headache/dizziness/structural-trauma or elbow/peripheral-nerve differential safety context blocks evidence-aware sequence resolution rather than invoking a generic fallback.
@@ -451,6 +486,9 @@ low-certainty medial eccentric evidence != mandatory protocol or universal loadi
 AANEM diagnostic Level-B ultrasound authority != treatment-effect certainty
 very-low-certainty night-splint evidence != automatic recommend or do-not-offer
 small mild-case conservative RCT signal != nonmild or unknown-severity authority
+spontaneous PIN conservative-management cohort signal != evidence for a specific physiotherapy programme
+observed PIN recovery/surgical-review timing != universal rehabilitation timeline or autonomous surgical threshold
+broad peripheral-nerve narrative rehabilitation advice != route-specific PIN treatment-effect authority
 ```
 
 ---
@@ -825,6 +863,78 @@ clinic_utilities/contracts/CU1_ULNAR_ELBOW_ROUTE_REVIEW_2026-08-29.md
 clinic_utilities/contracts/cu1_ulnar_elbow_fixtures_v1.yaml
 ```
 
+### Posterior interosseous nerve / supinator syndrome
+
+The PIN review closes route coverage as an explicit evidence-gap + safety/context split. No route-specific `RehabilitationSequenceV1` is authorized.
+
+```text
+pain-predominant radial-tunnel / lateral-forearm presentation without material PIN motor deficit
+→ rep_pin_pain_only_or_radial_tunnel_mismatch_v1
+→ rehabilitation_sequence_id: null
+→ blocked_evidence_gap / route mismatch
+
+PIN-pattern motor presentation with diagnosis/etiology/localization unresolved
+→ rep_pin_motor_presentation_unresolved_v1
+→ rehabilitation_sequence_id: null
+→ blocked_evidence_gap
+
+explicit clinician-established spontaneous non-traumatic/non-compressive PIN palsy
++ no space-occupying lesion
++ no progressive motor safety trigger
+→ rep_pin_spontaneous_noncompressive_established_v1
+→ rehabilitation_sequence_id: null
+→ conservative-management context supported but specific PT sequence not established
+
+demonstrable compression/entrapment or mass
+or trauma / iatrogenic / inflammatory structural cause
+or progressive/materially worsening motor deficit
+→ rep_pin_compressive_structural_or_progressive_v1
+→ rehabilitation_sequence_id: null
+→ specialist/correct-owner/safety behavior
+```
+
+The 2026 prospective multicenter spontaneous-PIN cohort supports an initial conservative-management strategy only in its narrow spontaneous, non-traumatic, non-compressive, no-space-occupying-lesion population. It does not define nerve gliding, splinting, manual therapy, electrical stimulation, strengthening dosage, visit frequency or PT duration. The route-specific systematic review found no randomized or controlled clinical trials, and current review does not identify a later high-quality controlled rehabilitation evidence base that establishes a criteria-based PIN physiotherapy sequence.
+
+The cohort's six-month motor-recovery signal is retained only as source/population-specific management-course context. It is not converted into a universal PT duration, elapsed-time progression rule, automatic surgery trigger or procedure choice.
+
+Hard PIN regressions:
+
+```text
+lateral forearm pain / radial-tunnel provocation
+!= motor PIN diagnosis
+
+motor pattern
+!= formal PIN diagnosis
+!= spontaneous etiology
+!= supinator/arcade-of-Frohse compression
+
+formal PIN diagnosis
+!= etiology established
+!= compression site established
+
+not_assessed motor status
+!= normal
+!= pain-only classification
+
+route selection
+!= cervical / plexus / proximal radial / multifocal motor neuropathy excluded
+
+investigation finding
+!= rehabilitation protocol
+
+spontaneous conservative-management evidence
+!= specific PT effectiveness evidence
+```
+
+No nerve-gliding, splinting, manual-therapy, electrical-stimulation or fixed strengthening programme is automatically rendered. New/progressive objective motor weakness, demonstrable compression/mass, trauma/iatrogenic/structural cause or other material discordant localization requires clinician/specialist reassessment or the correct owner rather than generic elbow/peripheral-nerve fallback.
+
+Formal PIN review and fixtures:
+
+```text
+clinic_utilities/contracts/CU1_PIN_SUPINATOR_ROUTE_REVIEW_2026-08-29.md
+clinic_utilities/contracts/cu1_pin_supinator_fixtures_v1.yaml
+```
+
 ---
 
 # 12. Coverage gate
@@ -860,7 +970,7 @@ Generic fallback is forbidden.
 
 # 13. Acceptance fixtures
 
-The main regression oracle contains the previously reviewed route cases. Dedicated extensions now cover C1-C5 plus lateral, medial and ulnar elbow.
+The main regression oracle contains the previously reviewed route cases. Dedicated extensions now cover C1-C5 plus lateral, medial, ulnar and PIN elbow routes.
 
 LET-specific fixtures verify:
 
@@ -916,6 +1026,24 @@ formal diagnosis does not bypass severity/motor-status gate
 missing history remains missing
 ```
 
+PIN fixtures verify:
+
+```text
+pain-only/radial-tunnel presentation does not become motor PIN
+motor pattern does not create formal diagnosis or compression site
+not_assessed motor status does not become normal or pain-only
+formal diagnosis does not infer spontaneous etiology
+2026 spontaneous conservative-management signal does not become a PT protocol
+source-specific six-month signal is not universalized
+compressive/mass/traumatic/iatrogenic contexts fail closed
+progressive motor weakness triggers reassessment rather than rehab progression
+cervical/plexus/proximal-radial/MMN differential remains open when relevant
+EDX/ultrasound localization does not define rehabilitation protocol
+nerve gliding/splint/manual/electrical modalities are not auto-rendered
+no LET/generic-elbow/generic-peripheral-nerve fallback
+missing history remains missing
+```
+
 Additional route fixtures remain required as coverage expands through the remaining registry.
 
 ---
@@ -940,36 +1068,37 @@ fixtures reveal cross-route/subtype/context leakage
 # 15. Current gate and exact next action
 
 ```text
-object/history/evidence-authority semantics      PASS
-tranche2 promotion                              PASS
-tranche3 promotion                              PASS
-shard integration                               PASS
-calcific route coverage                         PASS
-instability context-split coverage              PASS
-GHOA management-context coverage                PASS
-degenerative-meniscus route coverage            PASS
-patellar-tendinopathy route coverage             PASS
+object/history/evidence-authority semantics       PASS
+tranche2 promotion                               PASS
+tranche3 promotion                               PASS
+shard integration                                PASS
+calcific route coverage                          PASS
+instability context-split coverage               PASS
+GHOA management-context coverage                 PASS
+degenerative-meniscus route coverage             PASS
+patellar-tendinopathy route coverage              PASS
 thumb-CMC1-OA route coverage                     PASS
-C1 nonspecific-neck route coverage              PASS
-C2 radiating-neck route coverage                PASS
+C1 nonspecific-neck route coverage               PASS
+C2 radiating-neck route coverage                 PASS
 C3 cervical-headache route coverage              PASS
-C4 cervical-dizziness context-split coverage     PASS
-C5 post-traumatic temporal/context coverage      PASS
-lateral-elbow-tendinopathy route coverage        PASS
-medial-elbow-tendinopathy route coverage         PASS
-ulnar-neuropathy-at-elbow context-split coverage PASS
-routine-route coverage                          FAIL globally
-route-history prompt completeness               FAIL globally
-route-complete fixture corpus                   FAIL globally
+C4 cervical-dizziness context-split coverage      PASS
+C5 post-traumatic temporal/context coverage       PASS
+lateral-elbow-tendinopathy route coverage         PASS
+medial-elbow-tendinopathy route coverage          PASS
+ulnar-neuropathy-at-elbow context-split coverage  PASS
+PIN/supinator evidence-gap/safety coverage        PASS
+routine-route coverage                           FAIL globally
+route-history prompt completeness                FAIL globally
+route-complete fixture corpus                    FAIL globally
 
-DESIGN-COMPLETE                                 NO
-RUNTIME AUTHORIZED                              NO
+DESIGN-COMPLETE                                  NO
+RUNTIME AUTHORIZED                               NO
 ```
 
 Continue route-by-route:
 
 ```text
-1. posterior_interosseous_nerve_supinator_syndrome
+1. distal_biceps_tendon_disorder_nonoperative
 2. remaining wrist_hand_and_elbow_routes
 3. remaining routine routes in registry order
 4. reviewed evidence-gap behavior where full staging is unsupported
