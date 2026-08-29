@@ -149,13 +149,13 @@ class CU1RichLateralElbowReferralTests(unittest.TestCase):
             text = self.formatter.format(draft, mode)
             self.assertLessEqual(len(text.rstrip("\n")), MAX_REFERRAL_CHARS)
 
-    def test_non_let_routes_keep_existing_formatter_path(self):
+    def test_evidence_limited_route_keeps_existing_formatter_path(self):
         draft = lateral_elbow_draft()
-        draft["body_region"] = "cervical"
+        draft["body_region"] = "lumbar"
         draft["primary_problem"].update(
             {
-                "profile_id": "cervical",
-                "route_id": "nonspecific_neck_pain",
+                "profile_id": "lumbar",
+                "route_id": "nonspecific_low_back_pain",
                 "laterality": "not_applicable",
                 "wording_mode": "presentation",
             }
