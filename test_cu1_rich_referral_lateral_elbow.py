@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import re
 import unittest
 from pathlib import Path
 
@@ -37,12 +36,12 @@ def lateral_elbow_draft():
         },
         "secondary_problems": [],
         "findings": [
-            {"finding_id": "lateral_epicondyle_tenderness"},
-            {"finding_id": "pain_with_resisted_wrist_extension"},
+            {"finding_id": "lateral_elbow_pain"},
+            {"finding_id": "pain_with_gripping"},
         ],
         "functional_impairments": [
-            {"id": "grip_tasks"},
-            {"id": "repetitive_upper_limb_use"},
+            {"id": "gripping"},
+            {"id": "manual_work"},
         ],
         "precautions": [],
         "explicit_restrictions": [],
@@ -136,8 +135,8 @@ class CU1RichLateralElbowReferralTests(unittest.TestCase):
         draft["functional_impairments"] = []
         text = self.formatter.format(draft, "detailed")
         self.assertNotIn("ΣΤΑΔΙΟ 1", text)
-        self.assertIn("Στόχοι και κατευθύνσεις αποκατάστασης", text) if draft["goals"] else None
         self.assertNotIn("κρυοθεραπεία/TENS", text)
+        self.assertIn("Κλινική εικόνα", text)
 
 
 if __name__ == "__main__":
