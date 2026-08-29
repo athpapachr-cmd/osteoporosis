@@ -12,6 +12,7 @@ from clinic_utilities.physio_referral_runtime import CU1ContractError, _repo_roo
 _CONTENT_PATH = "clinic_utilities/contracts/cu1_rich_referral_content_el_v1.yaml"
 _MIGRATION_PATH = "clinic_utilities/contracts/cu1_rich_referral_migration_matrix_v1.yaml"
 _RICH_READY = "rich_ready"
+_CONTEXT_GATED = "context_gated"
 
 
 def _load_yaml_mapping(root: Path, relative_path: str, *, label: str, require_runtime_authorized: bool = True) -> Dict[str, Any]:
@@ -89,13 +90,45 @@ def _sentences(values: Iterable[str]) -> str:
     return " ".join(_sentence(value) for value in values if value.strip())
 
 
+def _variant_matches(
+    variant: Mapping[str, Any],
+    *,
+    subtype_id: Optional[str],
+    context: Optional[Mapping[str, Any]],
+) -> bool:
+    match = variant.get("match") or {}
+    if not isinstance(match, Mapping):
+        return False
+
+    subtype_ids = match.get("subtype_ids") or []
+    if subtype_ids:
+        if not subtype_id or subtype_id not in subtype_ids:
+            return False
+
+    context_equals = match.get("context_equals") or {}
+    if not isinstance(context_equals, Mapping):
+        return False
+    current_context = context or {}
+    for key, expected in context_equals.items():
+        if current_context.get(key) != expected:
+            return False
+
+    wording_modes = match.get("wording_modes") or []
+    if wording_modes:
+        wording_mode = current_context.get("__wording_mode")
+        if wording_mode not in wording_modes:
+            return False
+
+    return bool(subtype_ids or context_equals or wording_modes)
+
+
 class CU1RichReferralRenderer:
     """Shared deterministic renderer for reviewed route-specific rich-referral content.
 
     Clinical treatment prose lives in reviewed structured content rather than route-specific Python.
     The rollout matrix is a second fail-closed gate: merely adding prose to a content shard cannot make
-    a pending/evidence-limited/protocol-owned route eligible for rich rendering. Context-gated routes
-    remain unsupported until their exact runtime context is explicitly resolved by a reviewed seam.
+    a pending/evidence-limited/protocol-owned route eligible for rich rendering. A context-gated route
+    can render only when exactly one reviewed content variant matches explicit draft subtype/context.
     """
 
     def __init__(self, root: Optional[Path] = None):
@@ -119,34 +152,100 @@ class CU1RichReferralRenderer:
         state = entry.get("state") if isinstance(entry, Mapping) else None
         return str(state) if isinstance(state, str) and state else None
 
-    def supports(self, *, profile_id: str, route_id: str, subtype_id: Optional[str] = None) -> bool:
-        if self.rollout_state(profile_id=profile_id, route_id=route_id) != _RICH_READY:
-            return False
-        spec = self.routes.get(route_id)
-        if not isinstance(spec, Mapping):
-            return False
-        profile_ids = spec.get("profile_ids") or []
-        if profile_ids and profile_id not in profile_ids:
-            return False
-        subtype_ids = spec.get("subtype_ids_optional") or []
-        if subtype_ids:
-            return bool(subtype_id and subtype_id in subtype_ids)
-        return True
-
-    def route_spec(self, *, profile_id: str, route_id: str, subtype_id: Optional[str] = None) -> Mapping[str, Any]:
+    def _resolved_spec(
+        self,
+        *,
+        profile_id: str,
+        route_id: str,
+        subtype_id: Optional[str],
+        context: Optional[Mapping[str, Any]],
+    ) -> Optional[Mapping[str, Any]]:
         state = self.rollout_state(profile_id=profile_id, route_id=route_id)
-        if state != _RICH_READY:
+        container = self.routes.get(route_id)
+        if not isinstance(container, Mapping):
+            return None
+        profile_ids = container.get("profile_ids") or []
+        if profile_ids and profile_id not in profile_ids:
+            return None
+
+        if state == _RICH_READY:
+            subtype_ids = container.get("subtype_ids_optional") or []
+            if subtype_ids and (not subtype_id or subtype_id not in subtype_ids):
+                return None
+            return container
+
+        if state != _CONTEXT_GATED:
+            return None
+
+        variants = container.get("variants") or []
+        if not isinstance(variants, list) or not variants:
+            return None
+        matches = [
+            variant
+            for variant in variants
+            if isinstance(variant, Mapping)
+            and _variant_matches(variant, subtype_id=subtype_id, context=context)
+        ]
+        if len(matches) != 1:
+            return None
+
+        resolved = copy.deepcopy(dict(container))
+        resolved.pop("variants", None)
+        resolved.update(copy.deepcopy(dict(matches[0])))
+        resolved.pop("match", None)
+        return resolved
+
+    def supports(
+        self,
+        *,
+        profile_id: str,
+        route_id: str,
+        subtype_id: Optional[str] = None,
+        context: Optional[Mapping[str, Any]] = None,
+    ) -> bool:
+        return self._resolved_spec(
+            profile_id=profile_id,
+            route_id=route_id,
+            subtype_id=subtype_id,
+            context=context,
+        ) is not None
+
+    def route_spec(
+        self,
+        *,
+        profile_id: str,
+        route_id: str,
+        subtype_id: Optional[str] = None,
+        context: Optional[Mapping[str, Any]] = None,
+    ) -> Mapping[str, Any]:
+        state = self.rollout_state(profile_id=profile_id, route_id=route_id)
+        spec = self._resolved_spec(
+            profile_id=profile_id,
+            route_id=route_id,
+            subtype_id=subtype_id,
+            context=context,
+        )
+        if spec is None:
             raise CU1ContractError(
-                f"Rich-referral route is not rollout-ready for {profile_id}.{route_id}: {state or 'unclassified'}"
+                f"No applicable rich-referral authority for {profile_id}.{route_id}.{subtype_id or '-'} "
+                f"(rollout_state={state or 'unclassified'})"
             )
-        if not self.supports(profile_id=profile_id, route_id=route_id, subtype_id=subtype_id):
-            raise CU1ContractError(f"No applicable rich-referral content for {profile_id}.{route_id}.{subtype_id or '-'}")
-        spec = self.routes.get(route_id)
-        assert isinstance(spec, Mapping)
         return spec
 
-    def evidence_profile_ids(self, *, profile_id: str, route_id: str, subtype_id: Optional[str] = None) -> List[str]:
-        spec = self.route_spec(profile_id=profile_id, route_id=route_id, subtype_id=subtype_id)
+    def evidence_profile_ids(
+        self,
+        *,
+        profile_id: str,
+        route_id: str,
+        subtype_id: Optional[str] = None,
+        context: Optional[Mapping[str, Any]] = None,
+    ) -> List[str]:
+        spec = self.route_spec(
+            profile_id=profile_id,
+            route_id=route_id,
+            subtype_id=subtype_id,
+            context=context,
+        )
         return [str(item) for item in (spec.get("evidence_profile_ids") or [])]
 
     def render_short(
@@ -156,13 +255,19 @@ class CU1RichReferralRenderer:
         route_id: str,
         subtype_id: Optional[str],
         clinical_context: Sequence[str],
+        context: Optional[Mapping[str, Any]] = None,
     ) -> str:
-        spec = self.route_spec(profile_id=profile_id, route_id=route_id, subtype_id=subtype_id)
-        context = [_sentence(_clean_phrase(item)) for item in clinical_context if _clean_phrase(item)]
+        spec = self.route_spec(
+            profile_id=profile_id,
+            route_id=route_id,
+            subtype_id=subtype_id,
+            context=context,
+        )
+        clinical = [_sentence(_clean_phrase(item)) for item in clinical_context if _clean_phrase(item)]
         flow = _clean_lines(spec.get("short_flow_el"))
         if not flow:
             raise CU1ContractError(f"Rich-referral short flow is missing for {route_id}")
-        text = " ".join(context + [_sentence(item) for item in flow]).strip()
+        text = " ".join(clinical + [_sentence(item) for item in flow]).strip()
         return self._enforce_limit(text, mode="short", route_id=route_id)
 
     def render_detailed(
@@ -172,12 +277,18 @@ class CU1RichReferralRenderer:
         route_id: str,
         subtype_id: Optional[str],
         clinical_context: Sequence[str],
+        context: Optional[Mapping[str, Any]] = None,
     ) -> str:
-        spec = self.route_spec(profile_id=profile_id, route_id=route_id, subtype_id=subtype_id)
-        context = [_sentence(_clean_phrase(item)) for item in clinical_context if _clean_phrase(item)]
+        spec = self.route_spec(
+            profile_id=profile_id,
+            route_id=route_id,
+            subtype_id=subtype_id,
+            context=context,
+        )
+        clinical = [_sentence(_clean_phrase(item)) for item in clinical_context if _clean_phrase(item)]
         sections: List[str] = []
-        if context:
-            sections.append("ΚΛΙΝΙΚΗ ΕΙΚΟΝΑ\n" + " ".join(context))
+        if clinical:
+            sections.append("ΚΛΙΝΙΚΗ ΕΙΚΟΝΑ\n" + " ".join(clinical))
 
         stages = spec.get("stages") or []
         if not isinstance(stages, list) or not stages:
