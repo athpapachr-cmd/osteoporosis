@@ -1,0 +1,102 @@
+version: cu1_rich_referral_content_knee_el_v1
+status: active_runtime_authority_profile_shard
+runtime_authorized: true
+reviewed_on: 2026-08-29
+language: el
+profile_id: knee
+
+routes:
+  degenerative_meniscal_lesion_conservative_rehabilitation:
+    profile_ids: [knee]
+    evidence_profile_ids: [rep_degenerative_meniscus_conservative_v1]
+    authority_mode: reviewed_route_sequence_plus_clinical_rehabilitation_organization
+    short_flow_el:
+      - >-
+        Προτείνεται συντηρητική αποκατάσταση με αποκατάσταση του εύρους κίνησης όταν περιορίζεται,
+        προοδευτική ενδυνάμωση γόνατος και ισχίου και νευρομυϊκή εκπαίδευση.
+      - >-
+        Η λειτουργική φόρτιση προχωρά βάσει συμπτωμάτων, εύρους κίνησης, υδράρθρου, δύναμης και λειτουργικής
+        επίδοσης και όχι βάσει χρόνου μόνο, με στόχο επάνοδο στις σχετικές καθημερινές, εργασιακές ή αθλητικές απαιτήσεις.
+    stages:
+      - stage_id: restore_knee_function_capacity
+        label_el: ΣΤΑΔΙΟ 1 — ΚΙΝΗΤΙΚΟΤΗΤΑ / ΔΥΝΑΜΗ / ΝΕΥΡΟΜΥΪΚΟΣ ΕΛΕΓΧΟΣ
+        goals_el:
+          - βελτίωση συμπτωμάτων και λειτουργικής κινητικότητας
+          - αποκατάσταση δύναμης γόνατος και ισχίου
+          - βελτίωση νευρομυϊκού ελέγχου και ανοχής στη φόρτιση
+        intervention_directions_el:
+          - προοδευτική ενδυνάμωση γόνατος και ισχίου, ασκήσεις εύρους κίνησης όταν υπάρχει περιορισμός και νευρομυϊκή εκπαίδευση
+          - κινητοποιήσεις/manual therapy μόνο όταν υπάρχει σχετική κλινική ένδειξη και ως συμπλήρωμα της ενεργητικής αποκατάστασης
+        progress_markers_el:
+          - βελτίωση συμπτωμάτων, υδράρθρου, εύρους κίνησης, δύναμης και κατάλληλης λειτουργικής επίδοσης
+        evidence_claim_ids:
+          - degenerative_meniscus_PT_first_line_A
+          - degenerative_meniscus_progressive_rehab_components_B
+          - degenerative_meniscus_criterion_based_monitoring_D
+        organization_authority: clinical_rehabilitation_organization
+      - stage_id: functional_return_self_management
+        label_el: ΣΤΑΔΙΟ 2 — ΛΕΙΤΟΥΡΓΙΚΗ ΕΠΑΝΕΝΤΑΞΗ / ΔΙΑΤΗΡΗΣΗ
+        goals_el:
+          - επάνοδος στις καθημερινές και εργασιακές απαιτήσεις
+          - επάνοδος σε αθλητική ή άλλη υψηλή απαίτηση όταν αποτελεί στόχο
+          - διατήρηση δύναμης, λειτουργίας και ανεξάρτητης άσκησης
+        intervention_directions_el:
+          - προοδευτική λειτουργική φόρτιση και έκθεση στις πραγματικές απαιτήσεις, χωρίς χρήση χειρουργικού χρονοδιαγράμματος για συντηρητικά αντιμετωπιζόμενη εκφυλιστική βλάβη
+          - σε υψηλές απαιτήσεις, συνεκτίμηση συμπτωμάτων, εύρους κίνησης, υδράρθρου, δύναμης, συντονισμού/σταθερότητας και λειτουργικής ετοιμότητας
+        progress_markers_el:
+          - ουσιαστική λειτουργική βελτίωση και ανοχή στο επιθυμητό φορτίο βάσει κλινικών και λειτουργικών κριτηρίων, χωρίς καθολικά αριθμητικά όρια
+        evidence_claim_ids:
+          - degenerative_meniscus_criterion_based_monitoring_D
+          - degenerative_meniscus_RTS_criteria_D
+          - degenerative_meniscus_progressive_rehab_components_B
+        organization_authority: clinical_rehabilitation_organization
+    adjunct_boundary_el: >-
+      Παθητικές τεχνικές χρησιμοποιούνται μόνο όταν ενδείκνυνται και δεν υποκαθιστούν την προοδευτική ενεργητική αποκατάσταση.
+    reassessment_el: >-
+      Ορθοπαιδική/ιατρική επανεκτίμηση σε επίμονο πόνο, υποτροπιάζον ύδραρθρο ή δυσκαμψία, λειτουργική αστάθεια, μηχανικά συμπτώματα, απρόσμενα νευρολογικά συμπτώματα ή αποτυχία ουσιαστικής λειτουργικής προόδου.
+    reassessment_evidence_claim_ids:
+      - degenerative_meniscus_reassessment_mechanical_symptoms_C
+      - degenerative_meniscus_milestone_failure_reassessment_D
+
+  patellar_tendinopathy:
+    profile_ids: [knee]
+    evidence_profile_ids: [rep_patellar_tendinopathy_v1]
+    authority_mode: reviewed_route_sequence_plus_clinical_rehabilitation_organization
+    short_flow_el:
+      - >-
+        Προτείνεται εξατομικευμένη προοδευτική φόρτιση του επιγονατιδικού τένοντα και του τετρακεφάλου με στόχο
+        βελτίωση της ανοχής στο φορτίο, της δύναμης και της λειτουργίας, χωρίς υποχρεωτικό συγκεκριμένο loading protocol.
+      - >-
+        Η πρόοδος καθορίζεται από την ανταπόκριση των συμπτωμάτων, την ανοχή στο φορτίο, τη δύναμη και τη λειτουργική
+        ικανότητα και όχι από τον χρόνο μόνο, με σταδιακή επανένταξη στις πραγματικές απαιτήσεις του ασθενούς.
+    stages:
+      - stage_id: progressive_tendon_capacity
+        label_el: ΣΤΑΔΙΟ 1 — ΠΡΟΟΔΕΥΤΙΚΗ ΦΟΡΤΙΣΗ / ΙΚΑΝΟΤΗΤΑ ΤΕΝΟΝΤΑ
+        goals_el:
+          - βελτίωση ανοχής του τένοντα στη φόρτιση
+          - αποκατάσταση δύναμης και ικανότητας του τετρακεφάλου
+          - βελτίωση λειτουργίας σε load-related δραστηριότητες
+        intervention_directions_el:
+          - εξατομικευμένη προοδευτική φόρτιση τένοντα και τετρακεφάλου χωρίς υποχρεωτική επιλογή έκκεντρου, ισομετρικού, HSR ή άλλου συγκεκριμένου πρωτοκόλλου από το παραπεμπτικό
+        progress_markers_el:
+          - καλύτερη ανοχή στο φορτίο, δύναμη και λειτουργική ανταπόκριση χωρίς ανάγκη καθολικού αριθμητικού cut-off
+        evidence_claim_ids:
+          - patellar_progressive_loading_conservative_direction
+          - patellar_loading_progression_by_response
+        organization_authority: clinical_rehabilitation_organization
+      - stage_id: functional_return_self_management
+        label_el: ΣΤΑΔΙΟ 2 — ΛΕΙΤΟΥΡΓΙΚΗ ΕΠΑΝΕΝΤΑΞΗ / ΔΙΑΤΗΡΗΣΗ ΙΚΑΝΟΤΗΤΑΣ
+        goals_el:
+          - επάνοδος στις σχετικές εργασιακές, αθλητικές ή καθημερινές απαιτήσεις
+          - διατήρηση της ικανότητας φόρτισης και αυτοδιαχείριση
+        intervention_directions_el:
+          - προοδευτική έκθεση στις πραγματικές απαιτήσεις με συνέχιση κατάλληλης φόρτισης και προσαρμογή της απαίτησης σύμφωνα με την κλινική και λειτουργική ανταπόκριση
+        progress_markers_el:
+          - λειτουργική ανοχή στο απαιτούμενο φορτίο με σταθερή ή βελτιούμενη κλινική ανταπόκριση, χωρίς καθολικό αριθμητικό κριτήριο επιστροφής
+        evidence_claim_ids:
+          - patellar_progressive_loading_conservative_direction
+          - patellar_loading_progression_by_response
+          - patellar_RTS_threshold_gap
+        organization_authority: clinical_rehabilitation_organization
+    adjunct_boundary_el: >-
+      Η προοδευτική ενεργητική φόρτιση παραμένει ο πυρήνας της αποκατάστασης· δεν προστίθεται αυτόματα συγκεκριμένη παθητική ή τεχνολογική θεραπεία.
