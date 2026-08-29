@@ -66,7 +66,7 @@ class CU1GreekReferralFormatter(_BaseGreekFormatter):
                 profile_id=route[0],
                 route_id=route[1],
                 subtype_id=route[2],
-                clinical_context=self._rich_clinical_context(draft, detailed=False),
+                clinical_context=self._rich_clinical_context(draft, detailed=False, route=route),
                 context=route[3],
             )
         return super()._format_short(draft)
@@ -80,7 +80,7 @@ class CU1GreekReferralFormatter(_BaseGreekFormatter):
                 profile_id=route[0],
                 route_id=route[1],
                 subtype_id=route[2],
-                clinical_context=self._rich_clinical_context(draft, detailed=True),
+                clinical_context=self._rich_clinical_context(draft, detailed=True, route=route),
                 context=route[3],
             )
         return super()._format_detailed(draft)
@@ -102,9 +102,27 @@ class CU1GreekReferralFormatter(_BaseGreekFormatter):
             context["__wording_mode"] = wording_mode
         return profile_id, route_id, subtype_id if isinstance(subtype_id, str) and subtype_id else None, context
 
-    def _rich_clinical_context(self, draft: Mapping[str, Any], *, detailed: bool) -> List[str]:
+    def _rich_clinical_context(
+        self,
+        draft: Mapping[str, Any],
+        *,
+        detailed: bool,
+        route: Tuple[str, str, Optional[str], Mapping[str, Any]],
+    ) -> List[str]:
         problem = draft.get("primary_problem", {}) if isinstance(draft.get("primary_problem"), Mapping) else {}
-        problem_label = self._problem_label(problem, include_subtype=detailed)
+        problem_label = self.rich_renderer.problem_label_el(
+            profile_id=route[0],
+            route_id=route[1],
+            subtype_id=route[2],
+            context=route[3],
+        )
+        if problem_label:
+            laterality = self._optional_label("laterality", str(problem.get("laterality") or ""))
+            if laterality:
+                problem_label = f"{problem_label} ({laterality})"
+        else:
+            problem_label = self._problem_label(problem, include_subtype=detailed)
+
         findings = self._selection_labels(draft, "findings", "findings")
         function = self._selection_labels(draft, "functional_impairments", "functional_impairments")
         work_context = self._explicit_work_or_sport_context(draft)
