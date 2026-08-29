@@ -1,4 +1,4 @@
-version: cu1_evidence_coverage_matrix_v1_8
+version: cu1_evidence_coverage_matrix_v1_9
 status: active_route_by_route_work_queue
 runtime_authorized: false
 route_registry: cu1_registry_v1.yaml
@@ -7,7 +7,7 @@ active_core_registry: cu1_evidence_registry_v1.yaml
 promoted_evidence_extensions: [cu1_evidence_tranche2_v1.yaml, cu1_evidence_tranche3_v1.yaml]
 promotion_projections: [cu1_evidence_tranche2_promotion_v1.yaml, cu1_evidence_tranche3_promotion_v1.yaml]
 promotion_overlays: [cu1_evidence_tranche3_promotion_fix_v1.yaml]
-active_route_coverage_extensions: [cu1_evidence_route_coverage_v1.yaml, cu1_evidence_route_coverage_instability_v1.yaml]
+active_route_coverage_extensions: [cu1_evidence_route_coverage_v1.yaml, cu1_evidence_route_coverage_instability_v1.yaml, cu1_evidence_route_coverage_meniscus_v1.yaml]
 logical_amendments: [cu1_evidence_route_coverage_amendments_v1.yaml]
 staged_evidence_extensions: []
 normative_schema: cu1_history_timeline_schema_v1.yaml
@@ -208,7 +208,16 @@ profiles:
       promotion_projection: cu1_evidence_tranche2_promotion_v1.yaml
       framework_state: AAOS_2021_and_EULAR_2023_update_preserved_as_distinct_compatible_authorities
       blocker: strong_core_exercise_self_management_authority_exists_but_no_universal_multi_phase_transition_thresholds
-    degenerative_meniscal_lesion_conservative_rehabilitation: {status: pending}
+    degenerative_meniscal_lesion_conservative_rehabilitation:
+      status: profile_curated
+      sequence_status: sequence_complete
+      profile_id: rep_degenerative_meniscus_conservative_v1
+      source_state: native_active_design_authority
+      shard: cu1_evidence_route_coverage_meniscus_v1.yaml
+      review_record: CU1_DEGENERATIVE_MENISCUS_ROUTE_REVIEW_2026-08-29.md
+      framework_state: EU_US_2025_consensus_Grade_A_first_line_PT_plus_Grade_B_progressive_rehabilitation_with_ESCAPЕ_5y_and_OMEX_10y_randomized_support
+      applicability_note: true_locking_or_other_unresolved_structural_surgical_indication_blocks_routine_sequence
+      owner_boundaries: acute_traumatic_context_and_postoperative_context_use_separate_routes
     acute_isolated_meniscal_injury_nonoperative:
       status: profile_curated
       sequence_status: blocked_evidence_gap
@@ -325,7 +334,6 @@ shared_owners:
 research_queue_priority:
   rationale: prioritize_routes_with_current_route_specific_guidance_and_high_real_world_frequency_while_preserving_subtype_and_management_context_boundaries
   next:
-    - degenerative_meniscal_lesion_conservative_rehabilitation
     - patellar_tendinopathy
     - thumb_cmc1_osteoarthritis
     - cervical_routes
@@ -339,7 +347,7 @@ integration_state:
   tranche3_schema_conformance_reviewed: true
   tranche3_promotion_gate_passed: true
   native_route_coverage_schema_conformance_reviewed: true
-  route_coverage_reviewed_routes: [calcific_rotator_cuff_tendinopathy, glenohumeral_instability_dislocation, glenohumeral_osteoarthritis]
+  route_coverage_reviewed_routes: [calcific_rotator_cuff_tendinopathy, glenohumeral_instability_dislocation, glenohumeral_osteoarthritis, degenerative_meniscal_lesion_conservative_rehabilitation]
   logical_amendment_gate_passed: true
   all_listed_shards_schema_reviewed: true
   all_listed_shards_promotion_or_native_gate_passed: true
