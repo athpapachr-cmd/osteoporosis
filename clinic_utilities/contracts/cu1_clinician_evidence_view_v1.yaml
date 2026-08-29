@@ -6,6 +6,7 @@ source_evidence_manifest: clinic_utilities/contracts/cu1_evidence_manifest_v1.ya
 source_coverage_matrix: clinic_utilities/contracts/cu1_evidence_coverage_matrix_v1.yaml
 source_coverage_amendments:
   - clinic_utilities/contracts/cu1_evidence_coverage_rcrsp_amendment_v1.yaml
+  - clinic_utilities/contracts/cu1_evidence_coverage_frozen_shoulder_amendment_v1.yaml
 
 purpose: >-
   Authorize read-only clinician UI projection of the reviewed CU-1 evidence corpus without promoting
