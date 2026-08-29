@@ -1,0 +1,486 @@
+version: cu1_evidence_route_coverage_cervical_dizziness_v1
+status: active_design_authority_route_coverage_extension
+runtime_authorized: false
+reviewed_on: 2026-08-29
+normative_schema: clinic_utilities/contracts/cu1_history_timeline_schema_v1.yaml
+identity_mode: explicit_payload_id
+review_record: clinic_utilities/contracts/CU1_C4_CERVICAL_DIZZINESS_ROUTE_REVIEW_2026-08-29.md
+
+purpose: >-
+  Native schema-conformant evidence extension for the frozen C4 route
+  cervical_dizziness_presentation. The route preserves dizziness with cervical musculoskeletal
+  features as distinct from an explicitly clinician-entered cervical/cervicogenic-dizziness
+  diagnosis. Because the Bárány Society does not endorse clinical diagnostic criteria and current
+  treatment evidence is limited and condition-classification dependent, presentation-only C4 has
+  explicit reviewed evidence-gap behavior rather than receiving disease-specific treatment claims.
+  A cautious one-phase rehabilitation sequence is available only when the clinician explicitly
+  records the cervical-dizziness diagnosis and no material unresolved dizziness-safety or primary
+  post-traumatic context is present.
+
+sources:
+  barany_cervical_dizziness_position_2022:
+    evidence_id: barany_cervical_dizziness_position_2022
+    source_type: consensus
+    title: "The Bárány Society position on 'Cervical Dizziness'"
+    authors_or_organization: Seemungal BM et al.; Bárány Society Classification OverSight Committee
+    year_or_version: 2022_current_position
+    reference: "J Vestib Res. 2022;32(6):487-499. DOI 10.3233/VES-220202"
+    doi_optional: 10.3233/VES-220202
+    population_scope_optional: patients with dizziness or vertigo and neck symptoms; used for diagnostic-boundary and research-governance semantics, not as a treatment-effect estimate
+    reviewed_on: 2026-08-29
+    next_review_due: 2027-02-28
+    freshness_state: current
+    status: active
+
+  cervical_dizziness_physio_sr_2026:
+    evidence_id: cervical_dizziness_physio_sr_2026
+    source_type: systematic_review
+    title: "The effects of physiotherapy on neck pain with associated symptoms, including cervicogenic dizziness and tinnitus: a systematic review"
+    authors_or_organization: Canli K, De Greef I, Van Looveren E, Meeus M, Cagnie B, De Meulemeester K
+    year_or_version: 2026
+    reference: "BMC Musculoskelet Disord. 2026;27(1):244. DOI 10.1186/s12891-026-09664-6"
+    doi_optional: 10.1186/s12891-026-09664-6
+    population_scope_optional: people with neck pain and concurrent cervicogenic-dizziness and/or tinnitus presentations; 13 studies, 785 participants; most included studies were high risk of bias and evidence was limited or conflicting across outcomes
+    reviewed_on: 2026-08-29
+    next_review_due: 2027-08-29
+    freshness_state: current
+    status: active
+
+  cervical_dizziness_manual_sr_2025:
+    evidence_id: cervical_dizziness_manual_sr_2025
+    source_type: systematic_review
+    title: "Is manual therapy effective for cervical dizziness? A systematic review and meta-analysis of randomized controlled trials"
+    authors_or_organization: Carrasco-Uribarren A et al.
+    year_or_version: 2025
+    reference: "BMC Musculoskelet Disord. 2025;26:659. DOI 10.1186/s12891-025-08899-z"
+    doi_optional: 10.1186/s12891-025-08899-z
+    population_scope_optional: adults classified with cervical-related dizziness in randomized manual-therapy trials; low to very-low certainty for key outcomes
+    reviewed_on: 2026-08-29
+    next_review_due: 2027-08-29
+    freshness_state: current
+    status: active
+
+  cervical_dizziness_self_exercise_rct_2023:
+    evidence_id: cervical_dizziness_self_exercise_rct_2023
+    source_type: randomized_trial
+    title: "The efficacy of self-exercise in a patient with cervicogenic dizziness: A randomized controlled trial"
+    authors_or_organization: Piromchai P, Toumjaidee N, Srirompotong S, Yimtae K
+    year_or_version: 2023
+    reference: "Front Neurol. 2023;14:1121101. DOI 10.3389/fneur.2023.1121101"
+    doi_optional: 10.3389/fneur.2023.1121101
+    population_scope_optional: 32 adults with non-traumatic clinician-classified cervicogenic dizziness; short two-week follow-up; active programme included muscle, mobilization and oculomotor self-exercise
+    reviewed_on: 2026-08-29
+    next_review_due: 2027-08-29
+    freshness_state: current
+    status: active
+
+  dizziness_interdisciplinary_guidance_2025:
+    evidence_id: dizziness_interdisciplinary_guidance_2025
+    source_type: consensus
+    title: "Diagnosis and treatment of vertigo and dizziness: Interdisciplinary guidance paper for clinical practice"
+    authors_or_organization: Tarnutzer AA et al.
+    year_or_version: 2025
+    reference: "HNO. 2025;73(Suppl 3):357-369. DOI 10.1007/s00106-025-01599-z"
+    doi_optional: 10.1007/s00106-025-01599-z
+    population_scope_optional: primary-care and specialist evaluation of acute, episodic and chronic vertigo/dizziness syndromes; used here for history and safety context, not cervical-causation authority
+    reviewed_on: 2026-08-29
+    next_review_due: 2027-08-29
+    freshness_state: current
+    status: active
+
+claims:
+  c4_dizziness_neck_features_not_cervical_causation:
+    claim_id: c4_dizziness_neck_features_not_cervical_causation
+    evidence_ids: [barany_cervical_dizziness_position_2022]
+    applicable_route_evidence_profile_ids: [rep_c4_cervical_dizziness_presentation_v1, rep_c4_clinician_established_cervical_dizziness_v1]
+    applicable_route_ids: [cervical_dizziness_presentation]
+    domain: diagnostic_definition
+    claim_summary: >-
+      Coexisting dizziness or imbalance and neck pain/stiffness, including symptoms aggravated by
+      head or neck movement, do not by themselves establish cervical causation. Head movement
+      aggravates many vestibular disorders, and common alternative explanations include vestibular
+      migraine and BPPV; central, cardiovascular and other causes remain clinically relevant by context.
+    recommendation_direction: context_only
+    output_scope: clinician_ui_only
+    certainty_optional: not_applicable
+    reviewed_on: 2026-08-29
+
+  c4_barany_no_clinical_diagnostic_criteria:
+    claim_id: c4_barany_no_clinical_diagnostic_criteria
+    evidence_ids: [barany_cervical_dizziness_position_2022]
+    applicable_route_evidence_profile_ids: [rep_c4_cervical_dizziness_presentation_v1, rep_c4_clinician_established_cervical_dizziness_v1]
+    applicable_route_ids: [cervical_dizziness_presentation]
+    domain: diagnostic_definition
+    claim_summary: >-
+      The Bárány Society considers the mechanistic evidence for cervical dizziness insufficient and
+      refrains from proposing diagnostic criteria for routine clinical use outside research. CU-1 may
+      faithfully carry an explicit clinician diagnosis but must not infer it or treat therapeutic
+      response as proof of cervical causation.
+    recommendation_direction: context_only
+    output_scope: clinician_ui_only
+    certainty_optional: not_applicable
+    reviewed_on: 2026-08-29
+
+  c4_alternative_causes_not_excluded:
+    claim_id: c4_alternative_causes_not_excluded
+    evidence_ids: [barany_cervical_dizziness_position_2022, dizziness_interdisciplinary_guidance_2025]
+    applicable_route_evidence_profile_ids: [rep_c4_cervical_dizziness_presentation_v1, rep_c4_clinician_established_cervical_dizziness_v1]
+    applicable_route_ids: [cervical_dizziness_presentation]
+    domain: differential
+    claim_summary: >-
+      Selecting C4 or recording a clinician cervical-dizziness diagnosis does not establish that
+      vestibular, migraine-related, neurological, vascular, cardiovascular, otological or other
+      causes were excluded. Any such exclusion or completed work-up must come from explicit clinical
+      documentation rather than software inference.
+    recommendation_direction: context_only
+    output_scope: clinician_ui_only
+    certainty_optional: not_applicable
+    reviewed_on: 2026-08-29
+
+  c4_structured_dizziness_history_and_safety_context:
+    claim_id: c4_structured_dizziness_history_and_safety_context
+    evidence_ids: [dizziness_interdisciplinary_guidance_2025, barany_cervical_dizziness_position_2022]
+    applicable_route_evidence_profile_ids: [rep_c4_cervical_dizziness_presentation_v1, rep_c4_clinician_established_cervical_dizziness_v1]
+    applicable_route_ids: [cervical_dizziness_presentation]
+    domain: history
+    claim_summary: >-
+      Dizziness evaluation should preserve timing, episode duration, triggers versus exacerbating
+      factors, accompanying neurological/otological/cardiovascular symptoms and relevant medication
+      or prior assessment context. Cervical association is one history element and must not replace a
+      structured dizziness differential assessment.
+    recommendation_direction: recommend
+    output_scope: clinician_ui_only
+    certainty_optional: not_applicable
+    reviewed_on: 2026-08-29
+
+  c4_current_physio_evidence_limited_conflicting_2026:
+    claim_id: c4_current_physio_evidence_limited_conflicting_2026
+    evidence_ids: [cervical_dizziness_physio_sr_2026]
+    applicable_route_evidence_profile_ids: [rep_c4_clinician_established_cervical_dizziness_v1]
+    applicable_route_ids: [cervical_dizziness_presentation]
+    applicability_conditions_optional: [clinician_diagnosis_cervicogenic_dizziness_yes]
+    domain: core_rehabilitation
+    claim_summary: >-
+      The 2026 systematic review found no specific evidence-based physiotherapy guideline and an
+      overall limited or conflicting evidence base for neck-pain presentations with cervicogenic
+      dizziness; most included studies were high risk of bias. CU-1 therefore must not claim a
+      universally effective physiotherapy package, durable dizziness resolution or a validated
+      criteria-based progression model.
+    recommendation_direction: context_only
+    output_scope: clinician_ui_only
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  c4_selected_active_cervical_rehabilitation:
+    claim_id: c4_selected_active_cervical_rehabilitation
+    evidence_ids: [cervical_dizziness_self_exercise_rct_2023, cervical_dizziness_physio_sr_2026]
+    applicable_route_evidence_profile_ids: [rep_c4_clinician_established_cervical_dizziness_v1]
+    applicable_route_ids: [cervical_dizziness_presentation]
+    applicability_conditions_optional: [clinician_diagnosis_cervicogenic_dizziness_yes, nontraumatic_or_trauma_not_primary_context]
+    domain: core_rehabilitation
+    claim_summary: >-
+      In a small non-traumatic randomized trial, a short self-exercise programme improved DHI and NDI
+      versus control, while pain, cervical ROM and posturography did not differ between groups; the
+      broader 2026 synthesis remains limited and heterogeneous. Individualized active cervical
+      rehabilitation may therefore be considered when clinically selected, but the exact exercise
+      bundle, frequency and dose are not universal evidence-based physician prescriptions.
+    recommendation_direction: may_consider
+    output_scope: referral_core
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  c4_selected_manual_therapy_low_certainty_2025:
+    claim_id: c4_selected_manual_therapy_low_certainty_2025
+    evidence_ids: [cervical_dizziness_manual_sr_2025, cervical_dizziness_physio_sr_2026]
+    applicable_route_evidence_profile_ids: [rep_c4_clinician_established_cervical_dizziness_v1]
+    applicable_route_ids: [cervical_dizziness_presentation]
+    applicability_conditions_optional: [clinician_diagnosis_cervicogenic_dizziness_yes, manual_therapy_selected_as_adjunct]
+    domain: adjunct
+    claim_summary: >-
+      In cervical-related-dizziness trials, upper-cervical manual therapy has low to very-low
+      certainty evidence for improvement in dizziness impact/intensity compared with control or sham.
+      The 2026 broader review does not establish a general balance benefit or durable universal
+      superiority. Manual therapy may be considered as a selected adjunct but is not mandatory.
+    recommendation_direction: may_consider
+    output_scope: referral_core
+    certainty_optional: low
+    reviewed_on: 2026-08-29
+
+  c4_mulligan_rom_not_global_superiority_2026:
+    claim_id: c4_mulligan_rom_not_global_superiority_2026
+    evidence_ids: [cervical_dizziness_physio_sr_2026]
+    applicable_route_evidence_profile_ids: [rep_c4_clinician_established_cervical_dizziness_v1]
+    applicable_route_ids: [cervical_dizziness_presentation]
+    applicability_conditions_optional: [clinician_diagnosis_cervicogenic_dizziness_yes]
+    domain: execution_detail
+    claim_summary: >-
+      The 2026 review found a short-term cervical-ROM signal favoring Mulligan mobilization in the
+      reviewed evidence, while balance was similar to placebo and other outcomes were limited or
+      conflicting. This technique-level signal must remain therapist execution context and must not
+      become a mandatory technique or proof of cervical causation.
+    recommendation_direction: context_only
+    output_scope: therapist_execution_detail
+    certainty_optional: moderate
+    reviewed_on: 2026-08-29
+
+  c4_balance_sensorimotor_only_if_deficit_identified:
+    claim_id: c4_balance_sensorimotor_only_if_deficit_identified
+    evidence_ids: [cervical_dizziness_physio_sr_2026, cervical_dizziness_self_exercise_rct_2023]
+    applicable_route_evidence_profile_ids: [rep_c4_clinician_established_cervical_dizziness_v1]
+    applicable_route_ids: [cervical_dizziness_presentation]
+    applicability_conditions_optional: [clinician_diagnosis_cervicogenic_dizziness_yes, relevant_balance_or_sensorimotor_deficit_identified]
+    domain: execution_detail
+    claim_summary: >-
+      Balance, oculomotor or sensorimotor exercise may be individualized when a relevant deficit and
+      treatment rationale have been identified, but current cervical-dizziness evidence does not
+      authorize automatic vestibular rehabilitation, a fixed balance programme or a universal
+      physician-prescribed sensorimotor bundle.
+    recommendation_direction: may_consider
+    output_scope: therapist_execution_detail
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  c4_dizziness_safety_reassessment:
+    claim_id: c4_dizziness_safety_reassessment
+    evidence_ids: [dizziness_interdisciplinary_guidance_2025, barany_cervical_dizziness_position_2022]
+    applicable_route_evidence_profile_ids: [rep_c4_cervical_dizziness_presentation_v1, rep_c4_clinician_established_cervical_dizziness_v1]
+    applicable_route_ids: [cervical_dizziness_presentation]
+    domain: safety
+    claim_summary: >-
+      New acute or materially progressive dizziness/vertigo, new focal neurological or gait findings,
+      concerning otological symptoms, vascular/cardiovascular features or other clinician safety
+      concern require medical reassessment or the clinician-selected diagnostic pathway rather than
+      routine C4 rehabilitation progression. CU-1 does not autonomously determine urgency.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    certainty_optional: not_applicable
+    reviewed_on: 2026-08-29
+
+route_history_prompts:
+  c4_dizziness_timing_course_episode_duration:
+    prompt_id: c4_dizziness_timing_course_episode_duration
+    applicable_route_ids: [cervical_dizziness_presentation]
+    label_el: Χρονικό πρότυπο ζάλης/αστάθειας, έναρξη, πορεία και διάρκεια επεισοδίων εφόσον είναι γνωστά
+    response_type: text
+    requiredness: optional
+    evidence_claim_ids_optional: [c4_structured_dizziness_history_and_safety_context]
+
+  c4_trigger_vs_exacerbator_context:
+    prompt_id: c4_trigger_vs_exacerbator_context
+    applicable_route_ids: [cervical_dizziness_presentation]
+    label_el: Εκλυτικοί έναντι επιδεινωτικών παράγοντες: αυχενική/κεφαλική κίνηση, αλλαγή θέσης ως προς τη βαρύτητα, όρθια θέση ή αυτόματη εμφάνιση χωρίς κίνηση
+    response_type: text
+    requiredness: optional
+    evidence_claim_ids_optional: [c4_dizziness_neck_features_not_cervical_causation, c4_structured_dizziness_history_and_safety_context]
+
+  c4_relation_to_neck_symptoms:
+    prompt_id: c4_relation_to_neck_symptoms
+    applicable_route_ids: [cervical_dizziness_presentation]
+    label_el: Χρονική σχέση της ζάλης/αστάθειας με αυχενικό πόνο, δυσκαμψία ή έξαρση αυχενικών συμπτωμάτων, χωρίς αυτόματη απόδοση αιτιότητας
+    response_type: text
+    requiredness: optional
+    evidence_claim_ids_optional: [c4_dizziness_neck_features_not_cervical_causation]
+
+  c4_clinician_diagnosis_state:
+    prompt_id: c4_clinician_diagnosis_state
+    applicable_route_ids: [cervical_dizziness_presentation]
+    label_el: Ρητή διάγνωση αυχενογενούς / αυχενικής προέλευσης ζάλης από τον κλινικό
+    response_type: canonical_enum
+    enum_values_optional: [yes, no, not_stated]
+    requiredness: conditional
+    evidence_claim_ids_optional: [c4_barany_no_clinical_diagnostic_criteria]
+
+  c4_migraine_headache_context:
+    prompt_id: c4_migraine_headache_context
+    applicable_route_ids: [cervical_dizziness_presentation]
+    label_el: Ημικρανικό/κεφαλαλγικό ιστορικό ή γνωστή vestibular-migraine/άλλη σχετική διάγνωση, εφόσον υπάρχει
+    response_type: text
+    requiredness: optional
+    evidence_claim_ids_optional: [c4_dizziness_neck_features_not_cervical_causation, c4_alternative_causes_not_excluded]
+
+  c4_otologic_vestibular_context:
+    prompt_id: c4_otologic_vestibular_context
+    applicable_route_ids: [cervical_dizziness_presentation]
+    label_el: Ακουστικά/ωτολογικά/αιθουσαία συμπτώματα, γνωστή BPPV ή άλλη αιθουσαία διάγνωση και σχετική αξιολόγηση εφόσον είναι γνωστά
+    response_type: text
+    requiredness: optional
+    evidence_claim_ids_optional: [c4_alternative_causes_not_excluded, c4_structured_dizziness_history_and_safety_context]
+
+  c4_neurovascular_cardiovascular_safety_context:
+    prompt_id: c4_neurovascular_cardiovascular_safety_context
+    applicable_route_ids: [cervical_dizziness_presentation]
+    label_el: Νέο/προοδευτικό νευρολογικό ή βαδιστικό εύρημα, αγγειακό/καρδιαγγειακό στοιχείο ή άλλο κλινικό σημείο ανησυχίας
+    response_type: text
+    requiredness: conditional
+    evidence_claim_ids_optional: [c4_dizziness_safety_reassessment]
+
+  c4_prior_specialist_or_vestibular_assessment:
+    prompt_id: c4_prior_specialist_or_vestibular_assessment
+    applicable_route_ids: [cervical_dizziness_presentation]
+    label_el: Προηγούμενη ΩΡΛ/νευρολογική/αιθουσαία ή άλλη σχετική αξιολόγηση και εξετάσεις, μόνο αν είναι γνωστές
+    response_type: text
+    requiredness: optional
+    evidence_claim_ids_optional: [c4_alternative_causes_not_excluded]
+
+  c4_trauma_whiplash_context:
+    prompt_id: c4_trauma_whiplash_context
+    applicable_route_ids: [cervical_dizziness_presentation]
+    label_el: Πρόσφατο τραυματικό/whiplash πλαίσιο ή μετατραυματική έναρξη που μπορεί να απαιτεί το C5 route
+    response_type: text
+    requiredness: optional
+
+  c4_balance_function_priority_activity:
+    prompt_id: c4_balance_function_priority_activity
+    applicable_route_ids: [cervical_dizziness_presentation]
+    label_el: Λειτουργικός περιορισμός σε ισορροπία/βάδιση, οδήγηση, εργασία, κινήσεις κεφαλής, άσκηση, ADL ή άλλη δραστηριότητα προτεραιότητας
+    response_type: text
+    requiredness: optional
+
+  c4_prior_treatment_response:
+    prompt_id: c4_prior_treatment_response
+    applicable_route_ids: [cervical_dizziness_presentation]
+    label_el: Προηγούμενη φυσικοθεραπεία, αυχενική άσκηση/manual therapy, αιθουσαία ή άλλη θεραπεία και ανταπόκριση
+    response_type: text
+    requiredness: optional
+
+route_evidence_profiles:
+  rep_c4_cervical_dizziness_presentation_v1:
+    route_evidence_profile_id: rep_c4_cervical_dizziness_presentation_v1
+    region_profile_id: cervical
+    route_id: cervical_dizziness_presentation
+    applicability_conditions_optional:
+      - cervical_dizziness_presentation_selected
+      - clinician_diagnosis_cervicogenic_dizziness_not_yes
+      - no_unresolved_material_dizziness_safety_concern
+      - no_unresolved_post_traumatic_primary_context
+    diagnostic_claim_ids:
+      - c4_dizziness_neck_features_not_cervical_causation
+      - c4_barany_no_clinical_diagnostic_criteria
+    history_claim_ids:
+      - c4_structured_dizziness_history_and_safety_context
+    examination_claim_ids: []
+    rehabilitation_sequence_id: null
+    adjunct_claim_ids: []
+    safety_claim_ids:
+      - c4_dizziness_safety_reassessment
+    evidence_gaps:
+      - presentation_only_C4_does_not_establish_cervical_causation_or_a_formal_cervical_dizziness_diagnosis
+      - Barany_Society_does_not_endorse_routine_clinical_diagnostic_criteria_for_cervical_dizziness
+      - cervical_dizziness_treatment_effect_claims_from_diagnosed_or_classified_trial_populations_do_not_apply_automatically_to_symptom_only_C4
+      - no_disease_specific_rehabilitation_sequence_is_authorized_for_presentation_only_C4
+      - other_vestibular_migraine_neurological_vascular_cardiovascular_otological_causes_are_not_excluded_by_route_selection
+      - clinician_instruction_may_be_recorded_separately_but_must_not_be_relabelled_as_literature_authority
+      - primary_post_traumatic_or_whiplash_context_requires_C5_review
+    primary_source_ids:
+      - barany_cervical_dizziness_position_2022
+      - dizziness_interdisciplinary_guidance_2025
+    last_reviewed_on: 2026-08-29
+    next_review_due: 2027-02-28
+    freshness_state: current
+
+  rep_c4_clinician_established_cervical_dizziness_v1:
+    route_evidence_profile_id: rep_c4_clinician_established_cervical_dizziness_v1
+    region_profile_id: cervical
+    route_id: cervical_dizziness_presentation
+    applicability_conditions_optional:
+      - clinician_diagnosis_cervicogenic_dizziness_yes
+      - no_unresolved_material_dizziness_safety_concern
+      - no_unresolved_post_traumatic_primary_context
+    diagnostic_claim_ids:
+      - c4_dizziness_neck_features_not_cervical_causation
+      - c4_barany_no_clinical_diagnostic_criteria
+      - c4_alternative_causes_not_excluded
+    history_claim_ids:
+      - c4_structured_dizziness_history_and_safety_context
+    examination_claim_ids: []
+    rehabilitation_sequence_id: seq_c4_clinician_established_cervical_dizziness_v1
+    adjunct_claim_ids:
+      - c4_selected_manual_therapy_low_certainty_2025
+      - c4_mulligan_rom_not_global_superiority_2026
+      - c4_balance_sensorimotor_only_if_deficit_identified
+    safety_claim_ids:
+      - c4_dizziness_safety_reassessment
+    evidence_gaps:
+      - clinician_entered_cervical_dizziness_diagnosis_is_preserved_as_clinician_assertion_not_validated_or_generated_by_CU1
+      - current_2026_physio_evidence_is_limited_or_conflicting_and_most_included_studies_have_high_risk_of_bias
+      - manual_therapy_effect_evidence_is_low_to_very_low_certainty_and_does_not_establish_durable_universal_benefit
+      - small_nontraumatic_self_exercise_RCT_does_not_authorize_a_universal_exercise_bundle_or_dose
+      - no_automatic_vestibular_rehabilitation_without_a_matching_vestibular_indication_or_clinician_instruction
+      - no_validated_universal_numeric_progression_threshold
+      - no_fixed_PT_frequency_or_total_course_duration
+      - primary_post_traumatic_or_whiplash_context_requires_C5_review
+    primary_source_ids:
+      - barany_cervical_dizziness_position_2022
+      - cervical_dizziness_physio_sr_2026
+      - cervical_dizziness_manual_sr_2025
+      - cervical_dizziness_self_exercise_rct_2023
+      - dizziness_interdisciplinary_guidance_2025
+    last_reviewed_on: 2026-08-29
+    next_review_due: 2027-02-28
+    freshness_state: current
+
+rehabilitation_sequences:
+  seq_c4_clinician_established_cervical_dizziness_v1:
+    sequence_id: seq_c4_clinician_established_cervical_dizziness_v1
+    route_id: cervical_dizziness_presentation
+    applicability_conditions_optional:
+      - clinician_diagnosis_cervicogenic_dizziness_yes
+      - no_unresolved_material_dizziness_safety_concern
+      - no_unresolved_post_traumatic_primary_context
+    sequence_source: route_evidence_profile
+    route_evidence_profile_id: rep_c4_clinician_established_cervical_dizziness_v1
+    phases:
+      - phase_id: c4_clinician_established_cautious_active_rehabilitation
+        order: 1
+        clinical_objective: reduce dizziness-related functional limitation and improve relevant cervical function through cautious individualized rehabilitation while preserving diagnostic and treatment-effect uncertainty
+        objective_authority:
+          authority_type: evidence_claim
+          evidence_claim_ids: [c4_selected_active_cervical_rehabilitation]
+        intervention_directions:
+          - intervention_direction_id: c4_selected_active_cervical_rehabilitation_direction
+            statement: consider individualized active cervical rehabilitation directed to identified neck-related impairments and functional goals without prescribing a universal exercise bundle, frequency or dose and without promising resolution of dizziness
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [c4_selected_active_cervical_rehabilitation]
+          - intervention_direction_id: c4_selected_manual_adjunct_direction
+            statement: selected cervical manual therapy may be considered as an adjunct when clinically appropriate, while preserving low to very-low certainty and avoiding a mandatory technique or durable-benefit claim
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [c4_selected_manual_therapy_low_certainty_2025]
+            applicability_conditions_optional: [manual_therapy_selected_as_adjunct]
+        progression_criteria: []
+        precautions_or_do_not_progress_criteria:
+          - criterion_id: c4_material_dizziness_safety_reassessment
+            criterion_kind: safety_escalation
+            statement: new acute or materially progressive dizziness/vertigo, new focal neurological or gait findings, concerning otological symptoms, vascular/cardiovascular features or another clinician safety concern require reassessment rather than routine C4 progression
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [c4_dizziness_safety_reassessment]
+        strength_optional: null
+        certainty_optional: not_graded
+        required_for_route: true
+    clinician_modifications_optional: []
+    protocol_overrides_optional: []
+
+coverage_effect:
+  route_profiles_added:
+    - rep_c4_cervical_dizziness_presentation_v1
+    - rep_c4_clinician_established_cervical_dizziness_v1
+  rehabilitation_sequences_added:
+    - seq_c4_clinician_established_cervical_dizziness_v1
+  route_history_prompts_added:
+    - c4_dizziness_timing_course_episode_duration
+    - c4_trigger_vs_exacerbator_context
+    - c4_relation_to_neck_symptoms
+    - c4_clinician_diagnosis_state
+    - c4_migraine_headache_context
+    - c4_otologic_vestibular_context
+    - c4_neurovascular_cardiovascular_safety_context
+    - c4_prior_specialist_or_vestibular_assessment
+    - c4_trauma_whiplash_context
+    - c4_balance_function_priority_activity
+    - c4_prior_treatment_response
+  route_state: ready_for_exact_review_not_manifest_active_until_PASS
+  presentation_only_state: blocked_evidence_gap
+  clinician_established_state: sequence_complete_evidence_bounded
+  runtime_authorized: false
