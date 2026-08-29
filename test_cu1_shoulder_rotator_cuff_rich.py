@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import unicodedata
 import unittest
 from pathlib import Path
 
@@ -10,6 +11,14 @@ from clinic_utilities.physio_route_context import CU1RouteContextEngine
 
 
 ROOT = Path(__file__).resolve().parent
+
+
+def fold_el(text: str) -> str:
+    return "".join(
+        char
+        for char in unicodedata.normalize("NFD", text.lower())
+        if unicodedata.category(char) != "Mn"
+    )
 
 
 def draft(*, wording_mode: str = "presentation", assertion=None):
@@ -102,14 +111,13 @@ class CU1ShoulderRotatorCuffRichTests(unittest.TestCase):
         short = self._format("short")
         detailed = self._format("detailed")
         for text in (short, detailed):
-            lowered = text.lower()
-            self.assertIn("ενεργητικ", lowered)
-            self.assertIn("αποκαταστα", lowered)
-            self.assertIn("κινητικ", lowered)
-            self.assertIn("ελεγχ", lowered)
-            self.assertIn("αντίστασης", lowered)
-            self.assertIn("αυτοδιαχείρι", lowered)
-            self.assertIn("φόρτι", lowered)
+            folded = fold_el(text)
+            self.assertIn("ενεργητικη αποκατασταση", folded)
+            self.assertIn("κινητικ", folded)
+            self.assertIn("ελεγχ", folded)
+            self.assertIn("αντισταση", folded)
+            self.assertIn("αυτοδιαχειρι", folded)
+            self.assertIn("φορτι", folded)
             self.assertLessEqual(len(text), self.renderer.max_chars)
         self.assertIn("ΣΤΑΔΙΟ 1", detailed)
         self.assertIn("ΣΤΑΔΙΟ 2", detailed)
