@@ -44,7 +44,7 @@ profiles:
     deep_gluteal_piriformis_presentation: {state: evidence_limited, evidence_profile_ids: [rep_deep_gluteal_piriformis_v1], reason: low_quality_evidence_does_not_authorize_specific_sequence}
 
   shoulder:
-    rotator_cuff_related_shoulder_pain: {state: evidence_limited, evidence_profile_ids: [rep_rotator_cuff_related_pain_v1], reason: evidence_profile_ready_for_review_but_not_yet_runtime_rich_content}
+    rotator_cuff_related_shoulder_pain: {state: rich_ready, evidence_profile_ids: [rep_rotator_cuff_related_pain_v1], reason: reviewed_2025_CPG_supports_active_rehabilitation_and_functional_return_without_universal_dose_or_transition_threshold}
     confirmed_full_thickness_rotator_cuff_tear_nonoperative: {state: evidence_limited, evidence_profile_ids: [rep_full_thickness_cuff_nonoperative_v1], reason: PT_outcome_authority_without_universal_criteria_based_sequence}
     calcific_rotator_cuff_tendinopathy: {state: rich_ready, evidence_profile_ids: [rep_calcific_rotator_cuff_v1]}
     adhesive_capsulitis_frozen_shoulder: {state: evidence_limited, evidence_profile_ids: [rep_adhesive_capsulitis_v1], reason: selected_interventions_supported_but_no_universal_progression_sequence}
