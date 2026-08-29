@@ -1,4 +1,4 @@
-version: cu1_history_evidence_fixtures_v1_2
+version: cu1_history_evidence_fixtures_v1_3
 status: design_oracle_pending_full_route_coverage
 runtime_authorized: false
 normative_schema: cu1_history_timeline_schema_v1.yaml
@@ -54,8 +54,7 @@ fixtures:
   midportion_achilles_subtype_boundary:
     route_id: achilles_tendinopathy
     subtype_id: midportion_achilles_tendinopathy
-    input:
-      formal_diagnosis_asserted: true
+    input: {formal_diagnosis_asserted: true}
     expected:
       evidence_profile_id: rep_achilles_midportion_v1
       allowed_primary_source_ids: [achilles_midportion_cpg_2024]
@@ -67,10 +66,7 @@ fixtures:
   insertional_achilles_evidence_boundary:
     route_id: achilles_tendinopathy
     subtype_id: insertional_achilles_tendinopathy
-    input:
-      formal_diagnosis_asserted: true
-      symptom_duration: chronic
-      activity_context: sport_active
+    input: {formal_diagnosis_asserted: true, symptom_duration: chronic, activity_context: sport_active}
     expected:
       evidence_profile_id: rep_achilles_insertional_v1
       midportion_CPG_authority_allowed: false
@@ -120,9 +116,7 @@ fixtures:
 
   conflicting_adjunct_guidance_not_silently_hybridized:
     route_id: nonspecific_low_back_pain
-    input:
-      clinician_selected_adjunct: acupuncture
-      chronic_primary_low_back_pain_context: true
+    input: {clinician_selected_adjunct: acupuncture, chronic_primary_low_back_pain_context: true}
     expected:
       conflict_must_be_explicit_if_NICE_and_other_authority_disagree: true
       wording_cannot_state_universal_guideline_recommendation: true
@@ -139,8 +133,7 @@ fixtures:
 
   missing_history_not_negative_history:
     route_id: nonspecific_low_back_pain
-    input:
-      history: {}
+    input: {history: {}}
     expected:
       history_section_may_be_omitted: true
       no_prior_episodes_generated: false
@@ -193,9 +186,7 @@ fixtures:
     route_id: achilles_tendinopathy
     subtype_id: insertional_achilles_tendinopathy
     attempted_claim_id: achilles_midportion_tendon_loading_first_line
-    expected:
-      validation_result: hard_fail
-      reason: claim_subtype_not_applicable
+    expected: {validation_result: hard_fail, reason: claim_subtype_not_applicable}
 
   protocol_time_rule_regression:
     route_id: postoperative_shoulder_rehabilitation
@@ -207,9 +198,7 @@ fixtures:
 
   calcific_rotator_cuff_ESWT_framework_conflict:
     route_id: calcific_rotator_cuff_tendinopathy
-    input:
-      imaging_confirmed_calcific_tendinopathy: true
-      clinician_selected_eswt: false
+    input: {imaging_confirmed_calcific_tendinopathy: true, clinician_selected_eswt: false}
     expected:
       evidence_profile_id: rep_calcific_rotator_cuff_v1
       required_core_claim_ids: [calcific_rc_active_rehabilitation_core, calcific_rc_patient_centered_education]
@@ -222,9 +211,7 @@ fixtures:
 
   calcific_rotator_cuff_refractory_lavage_not_initial_phase:
     route_id: calcific_rotator_cuff_tendinopathy
-    input:
-      imaging_confirmed_calcific_tendinopathy: true
-      refractory_to_initial_treatment: false
+    input: {imaging_confirmed_calcific_tendinopathy: true, refractory_to_initial_treatment: false}
     expected:
       claim_id: calcific_rc_lavage_refractory
       lavage_auto_rendered_in_initial_rehabilitation_phase: false
@@ -233,12 +220,7 @@ fixtures:
 
   traumatic_anterior_first_time_instability_branch:
     route_id: glenohumeral_instability_dislocation
-    input:
-      direction: anterior
-      cause: traumatic
-      recurrence: first_time
-      management_context: explicit_rehabilitation_pathway
-      postoperative: false
+    input: {direction: anterior, cause: traumatic, recurrence: first_time, management_context: explicit_rehabilitation_pathway, postoperative: false}
     expected:
       evidence_profile_id: rep_shoulder_instability_anterior_traumatic_v1
       rehabilitation_sequence_id: seq_shoulder_instability_anterior_traumatic_v1
@@ -251,19 +233,9 @@ fixtures:
   recurrent_traumatic_anterior_requires_management_context:
     route_id: glenohumeral_instability_dislocation
     scenarios:
-      - input:
-          direction: anterior
-          cause: traumatic
-          recurrence: recurrent
-          management_context: not_stated
-        expected:
-          evidence_aware_sequence_allowed: false
-          reason: recurrent_management_context_required
-      - input:
-          direction: anterior
-          cause: traumatic
-          recurrence: recurrent
-          management_context: preoperative_or_selected_rehabilitation
+      - input: {direction: anterior, cause: traumatic, recurrence: recurrent, management_context: not_stated}
+        expected: {evidence_aware_sequence_allowed: false, reason: recurrent_management_context_required}
+      - input: {direction: anterior, cause: traumatic, recurrence: recurrent, management_context: preoperative_or_selected_rehabilitation}
         expected:
           evidence_profile_id: rep_shoulder_instability_anterior_traumatic_v1
           rehabilitation_sequence_id: seq_shoulder_instability_anterior_traumatic_v1
@@ -282,10 +254,7 @@ fixtures:
 
   posterior_nonoperative_must_not_use_postoperative_partII_RTS:
     route_id: glenohumeral_instability_dislocation
-    input:
-      direction: posterior
-      management_context: explicit_nonoperative_management_decision
-      return_to_sport_goal: true
+    input: {direction: posterior, management_context: explicit_nonoperative_management_decision, return_to_sport_goal: true}
     expected:
       evidence_profile_id: rep_shoulder_instability_posterior_v1
       rehabilitation_sequence_id: seq_shoulder_instability_posterior_nonoperative_v1
@@ -296,10 +265,7 @@ fixtures:
 
   atraumatic_anterior_instability_branch:
     route_id: glenohumeral_instability_dislocation
-    input:
-      direction: anterior
-      cause: atraumatic
-      management_context: explicit_nonoperative_management_decision
+    input: {direction: anterior, cause: atraumatic, management_context: explicit_nonoperative_management_decision}
     expected:
       evidence_profile_id: rep_shoulder_instability_anterior_atraumatic_v1
       rehabilitation_sequence_id: seq_shoulder_instability_anterior_atraumatic_v1
@@ -309,10 +275,7 @@ fixtures:
 
   multidirectional_instability_no_false_efficacy_claim:
     route_id: glenohumeral_instability_dislocation
-    input:
-      direction: multidirectional
-      management_context: explicit_nonoperative_management_decision
-      formal_MDI_diagnosis_asserted: true
+    input: {direction: multidirectional, management_context: explicit_nonoperative_management_decision, formal_MDI_diagnosis_asserted: true}
     expected:
       evidence_profile_id: rep_shoulder_instability_multidirectional_v1
       rehabilitation_sequence_id: seq_shoulder_instability_multidirectional_v1
@@ -334,12 +297,61 @@ fixtures:
       - input: {direction: multidirectional, management_context: postoperative}
         expected: {evidence_aware_sequence_allowed: false, postoperative_route_required: true}
 
+  ghoa_nonoperative_no_false_specific_superiority:
+    route_id: glenohumeral_osteoarthritis
+    input:
+      clinician_established_primary_GHOA: true
+      management_context: nonoperative
+      patient_priority: reach_overhead_with_less_pain
+    expected:
+      evidence_profile_id: rep_glenohumeral_oa_nonoperative_v1
+      rehabilitation_sequence_id: seq_glenohumeral_oa_nonoperative_v1
+      best_practice_claim_ids: [ghoa_nonoperative_PT_best_practice_2023, ghoa_individualized_PT_selection_2023]
+      named_specific_exercise_or_manual_technique_claimed_superior: false
+      fixed_frequency_or_course_duration_generated: false
+      universal_numeric_progression_threshold_generated: false
+      comparative_efficacy_claim_generated_from_2026_SR: false
+      evidence_gap_visible_to_clinician: true
+
+  ghoa_nonoperative_RCT_gap_not_relabelled_low_certainty_effect:
+    route_id: glenohumeral_osteoarthritis
+    claim_id: ghoa_nonoperative_RCT_gap_2026
+    expected:
+      recommendation_direction: insufficient_evidence
+      certainty: not_applicable
+      no_nonsurgical_PT_RCTs_through_review_search: true
+      false_low_or_very_low_effect_estimate_generated: false
+
+  ghoa_preoperative_vs_postoperative_owner_boundary:
+    route_id: glenohumeral_osteoarthritis
+    scenarios:
+      - input: {management_context: preoperative_TSA}
+        expected:
+          evidence_profile_id: rep_glenohumeral_oa_preop_TSA_v1
+          rehabilitation_sequence_id: seq_glenohumeral_oa_preop_TSA_v1
+          postoperative_TSA_protocol_auto_imported: false
+          preoperative_specific_protocol_invented: false
+      - input: {management_context: postoperative_arthroplasty}
+        expected:
+          evidence_aware_GHOA_nonoperative_or_preop_sequence_allowed: false
+          postoperative_route_required: true
+          patient_specific_protocol_precedence_required: true
+
+  ghoa_management_context_missing_blocks_profile_selection:
+    route_id: glenohumeral_osteoarthritis
+    input: {clinician_established_primary_GHOA: true, management_context: not_stated}
+    expected:
+      evidence_aware_sequence_allowed: false
+      route_history_prompt_required: ghoa_management_context
+      generic_shoulder_OA_sequence_fallback_allowed: false
+
 readiness:
   fixture_catalog_created: true
   fixtures_fully_executable: false
   newly_reviewed_route_fixtures:
     - calcific_rotator_cuff_tendinopathy
     - glenohumeral_instability_dislocation
+    - glenohumeral_osteoarthritis
   blockers:
     - remaining_route_profiles_and_sequences_not_curated
     - runtime_validator_not_authorized
