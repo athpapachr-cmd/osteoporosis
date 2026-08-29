@@ -113,13 +113,22 @@ def _variant_matches(
         if current_context.get(key) != expected:
             return False
 
+    context_in = match.get("context_in") or {}
+    if not isinstance(context_in, Mapping):
+        return False
+    for key, allowed in context_in.items():
+        if not isinstance(allowed, Sequence) or isinstance(allowed, (str, bytes)) or not allowed:
+            return False
+        if current_context.get(key) not in allowed:
+            return False
+
     wording_modes = match.get("wording_modes") or []
     if wording_modes:
         wording_mode = current_context.get("__wording_mode")
         if wording_mode not in wording_modes:
             return False
 
-    return bool(subtype_ids or context_equals or wording_modes)
+    return bool(subtype_ids or context_equals or context_in or wording_modes)
 
 
 class CU1RichReferralRenderer:
