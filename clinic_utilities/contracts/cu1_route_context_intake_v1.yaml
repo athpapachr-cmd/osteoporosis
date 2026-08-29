@@ -152,3 +152,73 @@ routes:
           not_stated: Δεν δηλώνεται
         required: false
         required_for_rich_variant: true
+
+  glenohumeral_instability_dislocation:
+    fields:
+      shoulder_instability_direction:
+        type: enum
+        label_el: Κατεύθυνση αστάθειας
+        values: [anterior, posterior, multidirectional, not_stated]
+        value_labels_el:
+          anterior: Πρόσθια
+          posterior: Οπίσθια
+          multidirectional: Πολυκατευθυντική
+          not_stated: Δεν έχει δηλωθεί
+        required: false
+        required_for_rich_variant: true
+      shoulder_instability_cause:
+        type: enum
+        label_el: Τραυματικό ή ατραυματικό πλαίσιο
+        values: [traumatic, atraumatic, not_stated]
+        value_labels_el:
+          traumatic: Τραυματικό
+          atraumatic: Ατραυματικό
+          not_stated: Δεν έχει δηλωθεί
+        required: false
+        required_for_rich_variant: true
+      shoulder_instability_recurrence:
+        type: enum
+        label_el: Πρώτο ή υποτροπιάζον επεισόδιο
+        values: [first_time, recurrent, not_stated]
+        value_labels_el:
+          first_time: Πρώτο επεισόδιο
+          recurrent: Υποτροπιάζουσα αστάθεια / εξάρθρημα
+          not_stated: Δεν έχει δηλωθεί
+        required: false
+        required_for_rich_variant: true
+      shoulder_instability_management_context:
+        type: enum
+        label_el: Τρέχουσα στρατηγική αντιμετώπισης
+        values: [nonoperative_rehabilitation, preoperative_selected_rehabilitation, pending_specialist_assessment, postoperative_rehabilitation, not_stated]
+        value_labels_el:
+          nonoperative_rehabilitation: Έχει επιλεγεί συντηρητική αποκατάσταση
+          preoperative_selected_rehabilitation: Προεγχειρητική / ρητά επιλεγμένη αποκατάσταση
+          pending_specialist_assessment: Εκκρεμεί ειδική αξιολόγηση / απόφαση
+          postoperative_rehabilitation: Μετεγχειρητική αποκατάσταση
+          not_stated: Δεν έχει δηλωθεί
+        required: false
+        required_for_rich_variant: true
+      shoulder_instability_structural_protocol_context:
+        type: enum
+        label_el: Υπάρχει μη επιλυμένη δομική βλάβη ή ειδικός περιορισμός / πρωτόκολλο που αλλάζει τη φόρτιση;
+        values: [clear_for_selected_rehabilitation, material_restriction_or_unresolved_structural_context, not_stated]
+        value_labels_el:
+          clear_for_selected_rehabilitation: Όχι — έχει κριθεί κατάλληλη η επιλεγμένη αποκατάσταση χωρίς ειδικό μη επιλυμένο περιορισμό
+          material_restriction_or_unresolved_structural_context: Ναι — υπάρχει ειδικός περιορισμός ή μη επιλυμένο δομικό πλαίσιο
+          not_stated: Δεν έχει δηλωθεί
+        required: false
+        required_for_rich_variant: true
+
+  glenohumeral_osteoarthritis:
+    fields:
+      ghoa_management_context:
+        type: enum
+        label_el: Τρέχον πλαίσιο αντιμετώπισης της γληνοβραχιόνιας οστεοαρθρίτιδας
+        values: [nonoperative, preoperative_TSA, postoperative_arthroplasty, not_stated]
+        value_labels_el:
+          nonoperative: Συντηρητική / μη χειρουργική αντιμετώπιση
+          preoperative_TSA: Προεγχειρητική προετοιμασία για ολική αρθροπλαστική ώμου
+          postoperative_arthroplasty: Μετεγχειρητική αποκατάσταση μετά από αρθροπλαστική
+          not_stated: Δεν έχει δηλωθεί
+        required: false
+        required_for_rich_variant: true
