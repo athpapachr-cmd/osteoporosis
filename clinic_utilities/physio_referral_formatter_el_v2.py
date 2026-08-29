@@ -89,7 +89,7 @@ class CU1GreekReferralFormatter(_BaseGreekFormatter):
         if function:
             parts.append(self._join_greek(function).capitalize() + ".")
         if work_context:
-            parts.append(f"Πλαίσιο δραστηριότητας: {work_context}.")
+            parts.append(work_context.rstrip(".") + ".")
         if restrictions or precautions:
             parts.append(f"Περιορισμοί/προφυλάξεις: {self._join_greek(restrictions + precautions)}.")
 
@@ -118,7 +118,7 @@ class CU1GreekReferralFormatter(_BaseGreekFormatter):
         if function:
             clinical.append(self._join_greek(function).capitalize() + ".")
         if work_context:
-            clinical.append(f"Πλαίσιο δραστηριότητας: {work_context}.")
+            clinical.append(work_context.rstrip(".") + ".")
         if restrictions or precautions:
             clinical.append(f"Περιορισμοί/προφυλάξεις: {self._join_greek(restrictions + precautions)}.")
 
