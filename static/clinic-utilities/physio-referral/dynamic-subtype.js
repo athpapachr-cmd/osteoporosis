@@ -55,6 +55,16 @@
     }
   }
 
+  function currentRouteContext() {
+    const context = {};
+    document.querySelectorAll('[data-context-key]').forEach((node) => {
+      const key = node.dataset?.contextKey;
+      const value = node.value;
+      if (key && value) context[key] = value;
+    });
+    return context;
+  }
+
   function ensureEvidencePanel() {
     let panel = document.getElementById('clinicianEvidencePanel');
     if (panel) return panel;
@@ -113,19 +123,24 @@
     const gaps = data.evidence_gaps || [];
     const status = data.sequence_status || data.coverage_status || (data.has_applicable_profile ? 'profile' : 'χωρίς profile');
     const subtypeRequired = data.selection_state === 'subtype_required_for_evidence';
+    const contextRequired = data.selection_state === 'context_required_for_evidence';
     badge.textContent = subtypeRequired
       ? 'χρειάζεται υπότυπος'
-      : sources.length
-        ? `${sources.length} πηγ${sources.length === 1 ? 'ή' : 'ές'}`
-        : 'χωρίς πηγές';
+      : contextRequired
+        ? 'χρειάζεται πλαίσιο'
+        : sources.length
+          ? `${sources.length} πηγ${sources.length === 1 ? 'ή' : 'ές'}`
+          : 'χωρίς πηγές';
 
     const warning = subtypeRequired
       ? '<div class="evidence-alert"><strong>Επίλεξε υπότυπο για την τεκμηρίωση.</strong> Οι βιβλιογραφικές πηγές δεν αναμειγνύονται μεταξύ κλινικά διαφορετικών υποτύπων.</div>'
-      : !data.has_applicable_profile
-        ? '<div class="evidence-alert"><strong>Δεν υπάρχει εφαρμοστέο structured evidence profile.</strong> Δεν πρέπει να χρησιμοποιηθεί generic evidence fallback.</div>'
-        : (String(status).includes('blocked') || String(status).includes('incomplete'))
-          ? `<div class="evidence-alert"><strong>Περιορισμένη route coverage:</strong> ${escapeHtml(humanize(status))}. Το κενό τεκμηρίωσης δεν πρέπει να συμπληρώνεται με δανεισμένο protocol.</div>`
-          : '';
+      : contextRequired
+        ? '<div class="evidence-alert"><strong>Συμπλήρωσε το ειδικό κλινικό πλαίσιο για την τεκμηρίωση.</strong> Οι πηγές δεν αναμειγνύονται μεταξύ διαφορετικών κατευθύνσεων, management contexts ή άλλων evidence profiles.</div>'
+        : !data.has_applicable_profile
+          ? '<div class="evidence-alert"><strong>Δεν υπάρχει εφαρμοστέο structured evidence profile.</strong> Δεν πρέπει να χρησιμοποιηθεί generic evidence fallback.</div>'
+          : (String(status).includes('blocked') || String(status).includes('incomplete'))
+            ? `<div class="evidence-alert"><strong>Περιορισμένη route coverage:</strong> ${escapeHtml(humanize(status))}. Το κενό τεκμηρίωσης δεν πρέπει να συμπληρώνεται με δανεισμένο protocol.</div>`
+            : '';
 
     const sourceHtml = sources.length ? sources.map((source) => {
       const meta = [source.authors_or_organization, source.year_or_version, source.reference].filter(Boolean).map(escapeHtml).join(' · ');
@@ -138,7 +153,9 @@
       </div>`;
     }).join('') : subtypeRequired
       ? '<p class="evidence-muted">Η βιβλιογραφία θα εμφανιστεί αφού επιλεγεί ο κατάλληλος υπότυπος.</p>'
-      : '<p class="evidence-muted">Δεν έχουν επιλυθεί ανθρώπινα αναγνώσιμες πηγές για αυτή την επιλογή.</p>';
+      : contextRequired
+        ? '<p class="evidence-muted">Η βιβλιογραφία θα εμφανιστεί αφού επιλυθεί το απαιτούμενο κλινικό πλαίσιο.</p>'
+        : '<p class="evidence-muted">Δεν έχουν επιλυθεί ανθρώπινα αναγνώσιμες πηγές για αυτή την επιλογή.</p>';
 
     const claimHtml = claims.length ? claims.map((claim) => {
       const tags = [
@@ -177,6 +194,7 @@
     const profile = document.getElementById('profileSelect');
     const route = document.getElementById('routeSelect');
     const subtype = document.getElementById('subtypeSelect');
+    const wording = document.getElementById('wordingSelect');
     const content = document.getElementById('evidenceContent');
     const badge = document.getElementById('evidenceBadge');
     if (!profile?.value || !route?.value) {
@@ -195,6 +213,8 @@
           profile_id: profile.value,
           route_id: route.value,
           subtype_id_optional: subtype?.value || null,
+          wording_mode_optional: wording?.value || null,
+          context_optional: currentRouteContext(),
         }),
       });
       if (!response.ok) {
@@ -210,7 +230,10 @@
 
   document.addEventListener('change', (event) => {
     if (event.target?.id === 'subtypeSelect') syncSubtypeDependentWording();
-    if (['profileSelect', 'routeSelect', 'subtypeSelect', 'wordingSelect'].includes(event.target?.id)) {
+    if (
+      ['profileSelect', 'routeSelect', 'subtypeSelect', 'wordingSelect'].includes(event.target?.id)
+      || event.target?.dataset?.contextKey
+    ) {
       setTimeout(refreshEvidence, 0);
     }
   });
