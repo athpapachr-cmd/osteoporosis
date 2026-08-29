@@ -353,6 +353,35 @@ If frameworks differ, show them separately rather than manufacturing a silent hy
 
 New evidence should be classified as confirming, interesting/no change, potentially practice-changing, practice-changing or conflicting/insufficient before changing workflow or standards.
 
+## 12.1 Patient-specific clinical assertion governance — permanent future-safe invariants
+
+The reusable Core must preserve a strict boundary between patient-specific assertions and literature/evidence authority.
+
+```text
+SOURCE ASSERTION != REVIEWED ACTIVE CLINICAL ASSERTION
+PATIENT-SPECIFIC CLINICAL ASSERTION != LITERATURE / GUIDELINE EVIDENCE CLAIM
+DOCUMENT WORDING != CLINICAL FACT
+GUIDELINE RECOMMENDATION != PATIENT FACT
+```
+
+For patient-specific clinical information, **source/provenance is one axis and semantic claim type is a separate axis**. A radiology report, clinician note, transcript, prior document, AI draft or patient statement identifies where an assertion came from; it does not by itself determine whether that assertion is an objective finding, diagnosis, interpretation, recommendation, causation opinion or another semantic type, nor whether the assertion is correct.
+
+Permanent reasoning boundaries:
+
+```text
+DIAGNOSIS != CAUSATION
+TEMPORAL ASSOCIATION != CAUSAL RELATIONSHIP
+PATIENT-REPORTED != OBJECTIVELY CONFIRMED
+SUPPORTED INTERPRETATION != CONFIRMED FACT
+NOT DOCUMENTED != NEGATIVE
+```
+
+Material contradictions must not be silently propagated. Contradiction review may resolve one assertion as contradicted/superseded when justified, but the system must also be able to preserve **unresolved competing interpretations** when the available evidence does not support a defensible single winner. Historical provenance is preserved; two mutually incompatible assertions must not be silently presented downstream as one settled active truth.
+
+The clinician retains final clinical authority. Material override of a surfaced evidence/provenance conflict should remain explicit and attributable when the future data contract supports it.
+
+These invariants define future Core behavior only. They do **not** by themselves authorize a new `ClinicalAssertionV1`, new enums, medico-legal implementation, persistence change or expansion of an active slice. Exact object/schema ownership must be decided by a fresh owner/schema audit in an explicitly authorized future design boundary.
+
 ---
 
 # 13. Patient Voice
