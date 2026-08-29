@@ -1,4 +1,4 @@
-version: cu1_evidence_coverage_matrix_v1_18
+version: cu1_evidence_coverage_matrix_v1_19
 status: active_route_by_route_work_queue
 runtime_authorized: false
 route_registry: cu1_registry_v1.yaml
@@ -7,9 +7,9 @@ active_core_registry: cu1_evidence_registry_v1.yaml
 promoted_evidence_extensions: [cu1_evidence_tranche2_v1.yaml, cu1_evidence_tranche3_v1.yaml]
 promotion_projections: [cu1_evidence_tranche2_promotion_v1.yaml, cu1_evidence_tranche3_promotion_v1.yaml]
 promotion_overlays: [cu1_evidence_tranche3_promotion_fix_v1.yaml]
-active_route_coverage_extensions: [cu1_evidence_route_coverage_v1.yaml, cu1_evidence_route_coverage_instability_v1.yaml, cu1_evidence_route_coverage_meniscus_v1.yaml, cu1_evidence_route_coverage_patellar_tendinopathy_v1.yaml, cu1_evidence_route_coverage_thumb_cmc1_oa_v1.yaml, cu1_evidence_route_coverage_cervical_v1.yaml, cu1_evidence_route_coverage_cervical_radiating_v1.yaml, cu1_evidence_route_coverage_cervical_headache_v1.yaml, cu1_evidence_route_coverage_cervical_dizziness_v1.yaml, cu1_evidence_route_coverage_cervical_posttraumatic_v1.yaml, cu1_evidence_route_coverage_lateral_elbow_v1.yaml, cu1_evidence_route_coverage_medial_elbow_v1.yaml, cu1_evidence_route_coverage_ulnar_elbow_v1.yaml]
-logical_amendments: [cu1_evidence_route_coverage_amendments_v1.yaml, cu1_evidence_route_coverage_lateral_elbow_amendment_v1.yaml]
-fixture_extensions: [cu1_cervical_history_evidence_fixtures_v1.yaml, cu1_c3_cervical_headache_fixtures_v1.yaml, cu1_c4_cervical_dizziness_fixtures_v1.yaml, cu1_c5_post_traumatic_neck_fixtures_v1.yaml, cu1_lateral_elbow_fixtures_v1.yaml, cu1_medial_elbow_fixtures_v1.yaml, cu1_ulnar_elbow_fixtures_v1.yaml]
+active_route_coverage_extensions: [cu1_evidence_route_coverage_v1.yaml, cu1_evidence_route_coverage_instability_v1.yaml, cu1_evidence_route_coverage_meniscus_v1.yaml, cu1_evidence_route_coverage_patellar_tendinopathy_v1.yaml, cu1_evidence_route_coverage_thumb_cmc1_oa_v1.yaml, cu1_evidence_route_coverage_cervical_v1.yaml, cu1_evidence_route_coverage_cervical_radiating_v1.yaml, cu1_evidence_route_coverage_cervical_headache_v1.yaml, cu1_evidence_route_coverage_cervical_dizziness_v1.yaml, cu1_evidence_route_coverage_cervical_posttraumatic_v1.yaml, cu1_evidence_route_coverage_lateral_elbow_v1.yaml, cu1_evidence_route_coverage_medial_elbow_v1.yaml, cu1_evidence_route_coverage_ulnar_elbow_v1.yaml, cu1_evidence_route_coverage_pin_supinator_v1.yaml]
+logical_amendments: [cu1_evidence_route_coverage_amendments_v1.yaml, cu1_evidence_route_coverage_lateral_elbow_amendment_v1.yaml, cu1_evidence_route_coverage_pin_supinator_amendment_v1.yaml]
+fixture_extensions: [cu1_cervical_history_evidence_fixtures_v1.yaml, cu1_c3_cervical_headache_fixtures_v1.yaml, cu1_c4_cervical_dizziness_fixtures_v1.yaml, cu1_c5_post_traumatic_neck_fixtures_v1.yaml, cu1_lateral_elbow_fixtures_v1.yaml, cu1_medial_elbow_fixtures_v1.yaml, cu1_ulnar_elbow_fixtures_v1.yaml, cu1_pin_supinator_fixtures_v1.yaml]
 staged_evidence_extensions: []
 normative_schema: cu1_history_timeline_schema_v1.yaml
 coverage_rule: every_routine_route_and_material_subtype_or_management_context_requires_unique_current_applicable_evidence_profile_and_complete_element_traceable_rehabilitation_sequence_or_explicit_blocked_evidence_gap
@@ -317,7 +317,40 @@ profiles:
       diagnostic_ultrasound_behavior: AANEM_Level_B_is_diagnostic_adjunct_authority_not_treatment_effect_or_autonomous_diagnosis
       safety_behavior: progressive_objective_motor_weakness_atrophy_clawing_material_neurological_worsening_structural_trauma_or_discordant_localization_requires_reassessment_or_correct_owner
       progression_behavior: mild_sequence_progression_criteria_empty_and_no_numeric_discharge_or_fixed_course_threshold
-    posterior_interosseous_nerve_supinator_syndrome: {status: pending}
+    posterior_interosseous_nerve_supinator_syndrome:
+      status: profile_curated
+      sequence_status: blocked_evidence_gap
+      source_state: native_active_design_authority
+      shard: cu1_evidence_route_coverage_pin_supinator_v1.yaml
+      logical_amendment: cu1_evidence_route_coverage_pin_supinator_amendment_v1.yaml
+      review_record: CU1_PIN_SUPINATOR_ROUTE_REVIEW_2026-08-29.md
+      fixture_extension: cu1_pin_supinator_fixtures_v1.yaml
+      profile_ids: [rep_pin_pain_only_or_radial_tunnel_mismatch_v1, rep_pin_motor_presentation_unresolved_v1, rep_pin_spontaneous_noncompressive_established_v1, rep_pin_compressive_structural_or_progressive_v1]
+      contexts:
+        pain_only_radial_tunnel_mismatch:
+          sequence_status: blocked_evidence_gap
+          rehabilitation_sequence_id: null
+          reason: pain_predominant_radial_tunnel_presentation_is_not_the_frozen_motor_PIN_route_and_does_not_authorize_PIN_rehabilitation
+        motor_presentation_unresolved:
+          sequence_status: blocked_evidence_gap
+          rehabilitation_sequence_id: null
+          reason: motor_pattern_may_support_localization_but_diagnosis_etiology_and_compression_site_are_not_established_and_no_validated_PIN_PT_sequence_exists
+        spontaneous_noncompressive_established:
+          sequence_status: blocked_evidence_gap
+          rehabilitation_sequence_id: null
+          reason: 2026_prospective_cohort_supports_initial_conservative_management_in_spontaneous_nontraumatic_noncompressive_no_mass_PIN_palsy_but_does_not_define_a_specific_PT_programme
+        compressive_structural_or_progressive_motor:
+          sequence_status: blocked_evidence_gap
+          rehabilitation_sequence_id: null
+          reason: structural_compression_mass_trauma_iatrogenic_or_progressive_motor_context_requires_specialist_or_correct_owner_and_not_generic_rehabilitation
+      evidence_state: 2026_prospective_spontaneous_PIN_palsy_conservative_management_context_plus_2006_no_controlled_trial_systematic_review_plus_2019_etiology_management_review_and_2024_RTS_diagnostic_heterogeneity
+      diagnostic_boundary: finger_thumb_extension_motor_pattern_or_radial_tunnel_provocation_does_not_auto_create_formal_PIN_diagnosis_or_supinator_compression_site
+      radial_tunnel_boundary: pain_predominant_radial_tunnel_presentation_does_not_auto_receive_motor_PIN_authority
+      spontaneous_scope_behavior: 2026_conservative_management_signal_requires_spontaneous_nontraumatic_noncompressive_no_space_occupying_lesion_context
+      rehabilitation_behavior: no_route_specific_rehabilitation_sequence_is_authorized_and_nerve_gliding_splint_manual_electrical_or_fixed_exercise_programmes_are_not_auto_rendered
+      recovery_timing_behavior: six_month_spontaneous_cohort_signal_is_not_a_universal_PT_course_progression_or_surgical_threshold
+      safety_behavior: compressive_structural_traumatic_iatrogenic_progressive_motor_or_alternative_localization_context_requires_reassessment_or_correct_owner
+      progression_behavior: no_numeric_progression_discharge_or_fixed_PT_course_threshold_because_no_route_specific_sequence_is_supported
     distal_biceps_tendon_disorder_nonoperative: {status: pending}
     elbow_osteoarthritis_degenerative_stiffness: {status: pending}
     elbow_ligament_instability_rehabilitation: {status: pending, structural_restrictions_apply: true}
@@ -513,7 +546,7 @@ shared_owners:
 research_queue_priority:
   rationale: prioritize_routes_with_current_route_specific_guidance_and_high_real_world_frequency_while_preserving_subtype_and_management_context_boundaries
   next:
-    - posterior_interosseous_nerve_supinator_syndrome
+    - distal_biceps_tendon_disorder_nonoperative
     - remaining_wrist_hand_and_elbow_routes
   then: remaining_routine_routes_in_registry_order
 
@@ -524,12 +557,12 @@ integration_state:
   tranche3_schema_conformance_reviewed: true
   tranche3_promotion_gate_passed: true
   native_route_coverage_schema_conformance_reviewed: true
-  route_coverage_reviewed_routes: [calcific_rotator_cuff_tendinopathy, glenohumeral_instability_dislocation, glenohumeral_osteoarthritis, degenerative_meniscal_lesion_conservative_rehabilitation, patellar_tendinopathy, thumb_cmc1_osteoarthritis, nonspecific_neck_pain, neck_pain_with_radiating_upper_limb_symptoms, headache_with_cervical_msk_features, cervical_dizziness_presentation, post_traumatic_neck_pain, lateral_elbow_tendinopathy, medial_elbow_tendinopathy, ulnar_neuropathy_at_elbow]
+  route_coverage_reviewed_routes: [calcific_rotator_cuff_tendinopathy, glenohumeral_instability_dislocation, glenohumeral_osteoarthritis, degenerative_meniscal_lesion_conservative_rehabilitation, patellar_tendinopathy, thumb_cmc1_osteoarthritis, nonspecific_neck_pain, neck_pain_with_radiating_upper_limb_symptoms, headache_with_cervical_msk_features, cervical_dizziness_presentation, post_traumatic_neck_pain, lateral_elbow_tendinopathy, medial_elbow_tendinopathy, ulnar_neuropathy_at_elbow, posterior_interosseous_nerve_supinator_syndrome]
   logical_amendment_gate_passed: true
   all_listed_shards_schema_reviewed: true
   all_listed_shards_promotion_or_native_gate_passed: true
   fixtures_catalog_created: true
-  fixture_extensions: [cu1_cervical_history_evidence_fixtures_v1.yaml, cu1_c3_cervical_headache_fixtures_v1.yaml, cu1_c4_cervical_dizziness_fixtures_v1.yaml, cu1_c5_post_traumatic_neck_fixtures_v1.yaml, cu1_lateral_elbow_fixtures_v1.yaml, cu1_medial_elbow_fixtures_v1.yaml, cu1_ulnar_elbow_fixtures_v1.yaml]
+  fixture_extensions: [cu1_cervical_history_evidence_fixtures_v1.yaml, cu1_c3_cervical_headache_fixtures_v1.yaml, cu1_c4_cervical_dizziness_fixtures_v1.yaml, cu1_c5_post_traumatic_neck_fixtures_v1.yaml, cu1_lateral_elbow_fixtures_v1.yaml, cu1_medial_elbow_fixtures_v1.yaml, cu1_ulnar_elbow_fixtures_v1.yaml, cu1_pin_supinator_fixtures_v1.yaml]
   matching_fixtures_added_for_reviewed_route_coverage: true
   route_specific_history_prompt_catalog_complete: false
 
