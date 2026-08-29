@@ -1,0 +1,92 @@
+version: cu1_evidence_route_coverage_lateral_elbow_amendment_v1
+status: reviewed_route_activation_amendment_pending_manifest_activation
+runtime_authorized: false
+reviewed_on: 2026-08-29
+review_record: clinic_utilities/contracts/CU1_LATERAL_ELBOW_ROUTE_REVIEW_2026-08-29.md
+applies_after:
+  - core_seed_registry
+  - lateral_elbow_route_coverage_extension
+
+purpose: >-
+  Narrow activation-time amendments for the already-existing core LET profile and for grading/direction
+  fidelity in the new lateral-elbow route extension. The amendment does not broaden route scope, invent
+  a new recommendation, or change the frozen elbow taxonomy. It replaces the incomplete seed sequence
+  pointer with the reviewed single-phase evidence-bounded sequence and removes synthetic grading.
+
+claim_amendments:
+  let_local_manual_therapy_short_term_B_2022:
+    recommendation_direction: recommend
+    amendment_reason: >-
+      The 2022 CPG wording is a Grade-B should-use recommendation. Optionality is preserved by the
+      manual_therapy_selected_as_adjunct and technique_tolerated applicability conditions rather than
+      by downgrading the evidence direction.
+
+  let_dry_needling_selected_B_2022:
+    recommendation_direction: recommend
+    amendment_reason: >-
+      The 2022 CPG wording is a Grade-B should-use recommendation. CU-1 still requires explicit adjunct
+      selection plus practitioner competence/availability before the claim may render.
+
+  let_rigid_taping_short_term_B_2022:
+    recommendation_direction: recommend
+    amendment_reason: >-
+      The 2022 CPG wording is Grade B for immediate/short-term relief in irritable LET. Selection and
+      irritability applicability prevent automatic use; the evidence direction itself is not weakened.
+
+  let_outcome_tracking_not_progression_threshold_2022:
+    strength_optional: not_graded
+    claim_summary: >-
+      PRTEE and/or DASH and PSFS/high-demand activity-specific scales carry Grade-A CPG recommendation
+      as outcome/activity measures, while relevant ROM, pressure-pain threshold, pain-free grip and
+      maximum grip measures carry Grade-B recommendation. These framework grades remain separate and
+      the measures track status over time; none becomes an automatic phase-progression or return-to-
+      function threshold.
+    amendment_reason: >-
+      The original route-extension draft used a synthetic A_B_by_measure_family strength string.
+      Normative resolution removes that hybrid and preserves the two framework grades explicitly in
+      the claim summary and regression fixture.
+
+route_evidence_profile_amendments:
+  rep_lateral_elbow_tendinopathy_v1:
+    diagnostic_claim_ids:
+      - let_diagnostic_boundary_history_exam_not_single_test_2022
+    history_claim_ids:
+      - let_history_irritability_load_and_function_context_2022
+    examination_claim_ids:
+      - let_outcome_tracking_not_progression_threshold_2022
+    rehabilitation_sequence_id: seq_lateral_elbow_evidence_bounded_v1
+    adjunct_claim_ids:
+      - let_local_manual_therapy_short_term_B_2022
+      - let_dry_needling_selected_B_2022
+      - let_activity_orthosis_immediate_F_2022
+      - let_rigid_taping_short_term_B_2022
+    safety_claim_ids:
+      - let_atypical_differential_reassessment_2022
+    evidence_gaps:
+      - no_validated_universal_numeric_transition_to_high_demand_loading
+      - no_universal_return_to_work_or_sport_clearance_threshold
+      - no_single_optimal_resisted_exercise_dose_or_loading_mode_established
+      - newer_2024_synthesis_limits_confidence_in_magnitude_and_durability_of_manual_therapy_or_exercise_effects
+      - acute_highly_irritable_presentations_do_not_receive_the_subacute_chronic_Grade_B_resisted_loading_claim_until_applicable
+      - ESWT_remains_selectable_only_as_clinician_instruction_in_this_review_and_is_not_auto_labelled_route_evidence
+      - outcome_measures_track_status_but_do_not_become_automatic_progression_thresholds
+    primary_source_ids:
+      - lateral_elbow_cpg_2022
+      - lateral_elbow_manual_exercise_cochrane_2024
+      - lateral_elbow_noninvasive_sr_2024
+    last_reviewed_on: 2026-08-29
+    next_review_due: 2027-02-28
+    freshness_state: current
+
+validation_assertions:
+  existing_core_profile_identity_preserved: true
+  incomplete_seed_sequence_no_longer_profile_target_after_activation: true
+  no_duplicate_profile_identity_created: true
+  no_synthetic_A_B_strength_survives_normative_resolution: true
+  Grade_B_should_use_direction_preserved_for_selected_manual_therapy: true
+  Grade_B_should_use_direction_preserved_for_selected_dry_needling: true
+  Grade_B_should_use_direction_preserved_for_selected_rigid_taping: true
+  adjunct_selection_remains_separate_from_evidence_direction: true
+  CPG_outcome_and_impairment_measure_grades_remain_distinct: true
+  newer_Cochrane_uncertainty_does_not_become_do_not_offer_exercise: true
+  runtime_authorized: false
