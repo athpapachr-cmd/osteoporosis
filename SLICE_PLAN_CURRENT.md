@@ -1,4 +1,4 @@
-# SLICE_PLAN_CURRENT.md — CU-1 history + evidence + rehabilitation-sequence design hardening v1.9
+# SLICE_PLAN_CURRENT.md — CU-1 history + evidence + rehabilitation-sequence design hardening v1.10
 
 > **STATUS:** ACTIVE PRE-RUNTIME DESIGN HARDENING — SHARD INTEGRATION PASS / ROUTE COVERAGE IN PROGRESS.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
@@ -100,6 +100,9 @@ route-specific prompt != selected answer
 not_assessed neurological status != normal
 headache feature != formal headache diagnosis
 dizziness symptom or neck association != cervical causation
+post_traumatic_neck_pain != inferred_whiplash
+approximate_post_traumatic_duration != inferred_WAD_temporal_phase
+C5_route_selection != structural_clearance_or_WAD_grade
 ```
 
 ---
@@ -180,6 +183,9 @@ cu1_evidence_route_coverage_cervical_headache_v1.yaml
 cu1_evidence_route_coverage_cervical_dizziness_v1.yaml
 → C4 presentation-only evidence-gap + clinician-established cervical-dizziness context split
 
+cu1_evidence_route_coverage_cervical_posttraumatic_v1.yaml
+→ C5 recent-WAD + persistent-WAD sequence coverage with explicit unclear-phase / other-trauma / safety blocked contexts
+
 cu1_evidence_route_coverage_amendments_v1.yaml
 → reviewed post-merge narrowing / source-identity / grading / suppression layer
 ```
@@ -199,6 +205,7 @@ clinic_utilities/contracts/cu1_history_evidence_fixtures_v1.yaml
 clinic_utilities/contracts/cu1_cervical_history_evidence_fixtures_v1.yaml
 clinic_utilities/contracts/cu1_c3_cervical_headache_fixtures_v1.yaml
 clinic_utilities/contracts/cu1_c4_cervical_dizziness_fixtures_v1.yaml
+clinic_utilities/contracts/cu1_c5_post_traumatic_neck_fixtures_v1.yaml
 ```
 
 The cervical fixture files are dedicated extensions; their cases are normative design regressions for reviewed cervical routes and do not authorize runtime behavior.
@@ -290,9 +297,35 @@ C4 route selection or clinician diagnosis
 
 primary post-traumatic dizziness/neck presentation
 != routine C4 owner
+
+post-traumatic cervical presentation
+!= automatic WAD
+
+recent/acute WAD
+!= persistent WAD
+
+unclear WAD temporal phase
+!= inferred recent or persistent phase
+
+other cervical trauma
+!= WAD treatment-evidence authority
+!= generic C1 fallback
+
+C5 selection
+!= fracture/dislocation/instability excluded
+!= WAD/QTF grade assigned
+
+post-traumatic headache/dizziness/radiating-arm symptoms
+!= automatic C3/C4/C2 disease-specific authority
+
+SIRA activity-restriction consensus
+!= SIRA Level-A collar recommendation
+
+2024 guided-exercise study frequency/duration observation
+!= universal referral schedule
 ```
 
-Unresolved material subtype/management/neurological/headache/dizziness-safety context blocks evidence-aware sequence resolution rather than invoking a generic fallback.
+Unresolved material subtype/management/neurological/headache/dizziness/structural-trauma safety context blocks evidence-aware sequence resolution rather than invoking a generic fallback.
 
 ---
 
@@ -322,6 +355,8 @@ guideline framework grade != GRADE treatment-effect certainty
 low-certainty network rank != protocol authority
 outcome-specific GRADE certainty != synthetic cross-outcome certainty
 therapeutic response != diagnostic proof
+study programme frequency/duration signal != universal physician referral schedule
+distinct recommendation strengths in one framework != synthetic hybrid strength
 ```
 
 ---
@@ -510,6 +545,55 @@ progression_criteria: []
 
 No universal numeric progression threshold, fixed PT frequency/course duration or promise of dizziness resolution is manufactured. New acute/progressive dizziness or neurological, gait, otological, vascular/cardiovascular concern blocks routine progression. Primary recent trauma/whiplash context routes to C5 review.
 
+### C5 — Post-traumatic / whiplash-associated neck pain
+
+The C5 review is a deliberate temporal + mechanism + safety split.
+
+```text
+recent explicit uncomplicated WAD:
+rep_c5_recent_whiplash_wad_v1
+→ seq_c5_recent_whiplash_wad_v1
+→ sequence_complete / single-phase evidence-bounded
+
+persistent explicit WAD:
+rep_c5_persistent_whiplash_wad_v1
+→ seq_c5_persistent_whiplash_wad_v1
+→ sequence_complete / single-phase evidence-bounded
+
+explicit WAD but temporal phase unclear:
+rep_c5_whiplash_phase_unresolved_v1
+→ rehabilitation_sequence_id: null
+→ blocked_evidence_gap
+
+other post-traumatic cervical pain without explicit matching WAD context:
+rep_c5_other_posttraumatic_neck_pain_v1
+→ rehabilitation_sequence_id: null
+→ blocked_evidence_gap
+
+unresolved structural / neurological safety context:
+rep_c5_unresolved_posttraumatic_safety_v1
+→ rehabilitation_sequence_id: null
+→ routine C5 sequence blocked
+```
+
+The currently active SIRA third-edition acute WAD guideline remains the recent/acute authority. Stay-active advice and neck exercise each retain Level-B SIRA strength. Manual therapy remains a selected limited-evidence Level-C adjunct rather than automatic core care. SIRA's consensus advice against prolonged reduction of usual activities and its Level-A recommendation against routine immobilisation collars remain separate claims rather than a synthetic shared strength.
+
+The proposed SIRA fourth edition remains draft/non-approved and is not normative authority in this review.
+
+For persistent WAD, current guideline and synthesis evidence supports an active exercise/self-management direction but not one universal programme. The 2024 guided neck-specific exercise review's observed programme duration/frequency pattern remains therapist execution context and is not converted into a minimum physician-prescribed schedule. The 2025 education-plus-exercise meta-analysis remains very-low certainty and does not establish a mandatory superior combined bundle.
+
+OPTIMa/Côté 2016 supplies the persistent objective-neurological-sign safety/reassessment context; it is not generic WAD exercise authority.
+
+Both nonblocked C5 sequences deliberately contain:
+
+```text
+progression_criteria: []
+```
+
+No universal numeric progression threshold, fixed visit frequency, total PT duration or elapsed-time-only progression rule is manufactured. WAD/QTF grade and structural clearance remain explicit clinician-entered/documented context. Patient-specific structural/healing/orthopaedic restrictions override conflicting uncomplicated-WAD defaults.
+
+Post-traumatic headache, dizziness and radiating-arm symptoms remain C5 history/context and do not automatically import C3 formal-CGH, C4 cervical-dizziness or C2 radiculopathy-specific authority.
+
 ---
 
 # 12. Coverage gate
@@ -589,9 +673,26 @@ C4 vestibular rehabilitation is not an automatic default
 C4 alternative vestibular/migraine/neurovascular causes not silently excluded
 C4 material dizziness safety concern blocks routine progression
 C4 post-traumatic primary context → C5 review
+
+C5 recent WAD uses only recent-WAD profile/sequence and SIRA Level-B active claims
+C5 persistent WAD uses only persistent-WAD profile/sequence
+C5 recent and persistent WAD profiles do not cross-resolve
+C5 vague/unknown temporal phase is not inferred and blocks sequence
+C5 non-WAD cervical trauma does not inherit WAD or C1 authority
+C5 missing/abnormal structural status blocks routine sequence
+C5 patient-specific structural restriction overrides stay-active/no-collar defaults
+C5 WAD IV/equivalent structural context is not routine uncomplicated WAD rehabilitation
+C5 progressive neurological/cord concern blocks routine progression
+C5 persistent objective neurological signs + disability use OPTIMa medical-review context
+C5 guided-exercise study frequency/duration != universal referral schedule
+C5 education+exercise very-low certainty != mandatory superior bundle
+C5 manual therapy remains selected SIRA Level-C adjunct
+C5 activity-restriction consensus != collar Level-A strength
+C5 associated headache/dizziness/arm symptoms do not auto-import C3/C4/C2 authority
+C5 route selection does not autonomously determine WAD risk stratum or PT eligibility
 ```
 
-Additional route fixtures remain required as coverage expands through C5 and the remaining registry.
+Additional route fixtures remain required as coverage expands through the remaining registry.
 
 ---
 
@@ -629,6 +730,7 @@ C1 nonspecific-neck route coverage              PASS
 C2 radiating-neck route coverage                PASS
 C3 cervical-headache route coverage              PASS
 C4 cervical-dizziness context-split coverage     PASS
+C5 post-traumatic temporal/context coverage      PASS
 routine-route coverage                          FAIL globally
 route-history prompt completeness               FAIL globally
 route-complete fixture corpus                   FAIL globally
@@ -640,7 +742,7 @@ RUNTIME AUTHORIZED                              NO
 Continue route-by-route:
 
 ```text
-1. post_traumatic_neck_pain
+1. lateral_elbow_tendinopathy
 2. remaining_wrist_hand_and_elbow_routes
 3. remaining routine routes in registry order
 4. reviewed evidence-gap behavior where full staging is unsupported
