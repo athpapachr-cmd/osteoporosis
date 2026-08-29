@@ -1,4 +1,4 @@
-version: cu1_evidence_coverage_matrix_v1_13
+version: cu1_evidence_coverage_matrix_v1_14
 status: active_route_by_route_work_queue
 runtime_authorized: false
 route_registry: cu1_registry_v1.yaml
@@ -7,9 +7,9 @@ active_core_registry: cu1_evidence_registry_v1.yaml
 promoted_evidence_extensions: [cu1_evidence_tranche2_v1.yaml, cu1_evidence_tranche3_v1.yaml]
 promotion_projections: [cu1_evidence_tranche2_promotion_v1.yaml, cu1_evidence_tranche3_promotion_v1.yaml]
 promotion_overlays: [cu1_evidence_tranche3_promotion_fix_v1.yaml]
-active_route_coverage_extensions: [cu1_evidence_route_coverage_v1.yaml, cu1_evidence_route_coverage_instability_v1.yaml, cu1_evidence_route_coverage_meniscus_v1.yaml, cu1_evidence_route_coverage_patellar_tendinopathy_v1.yaml, cu1_evidence_route_coverage_thumb_cmc1_oa_v1.yaml, cu1_evidence_route_coverage_cervical_v1.yaml, cu1_evidence_route_coverage_cervical_radiating_v1.yaml, cu1_evidence_route_coverage_cervical_headache_v1.yaml]
+active_route_coverage_extensions: [cu1_evidence_route_coverage_v1.yaml, cu1_evidence_route_coverage_instability_v1.yaml, cu1_evidence_route_coverage_meniscus_v1.yaml, cu1_evidence_route_coverage_patellar_tendinopathy_v1.yaml, cu1_evidence_route_coverage_thumb_cmc1_oa_v1.yaml, cu1_evidence_route_coverage_cervical_v1.yaml, cu1_evidence_route_coverage_cervical_radiating_v1.yaml, cu1_evidence_route_coverage_cervical_headache_v1.yaml, cu1_evidence_route_coverage_cervical_dizziness_v1.yaml]
 logical_amendments: [cu1_evidence_route_coverage_amendments_v1.yaml]
-fixture_extensions: [cu1_cervical_history_evidence_fixtures_v1.yaml, cu1_c3_cervical_headache_fixtures_v1.yaml]
+fixture_extensions: [cu1_cervical_history_evidence_fixtures_v1.yaml, cu1_c3_cervical_headache_fixtures_v1.yaml, cu1_c4_cervical_dizziness_fixtures_v1.yaml]
 staged_evidence_extensions: []
 normative_schema: cu1_history_timeline_schema_v1.yaml
 coverage_rule: every_routine_route_and_material_subtype_or_management_context_requires_unique_current_applicable_evidence_profile_and_complete_element_traceable_rehabilitation_sequence_or_explicit_blocked_evidence_gap
@@ -92,7 +92,30 @@ profiles:
       safety_behavior: materially_new_changed_progressive_or_neurological_vascular_systemic_headache_concern_blocks_routine_C3_progression
       progression_behavior: no_universal_numeric_progression_threshold_or_fixed_PT_course_duration
       cross_route_boundary: post_traumatic_primary_context_requires_C5_review
-    cervical_dizziness_presentation: {status: pending}
+    cervical_dizziness_presentation:
+      status: profile_curated
+      source_state: native_active_design_authority
+      shard: cu1_evidence_route_coverage_cervical_dizziness_v1.yaml
+      review_record: CU1_C4_CERVICAL_DIZZINESS_ROUTE_REVIEW_2026-08-29.md
+      fixture_extension: cu1_c4_cervical_dizziness_fixtures_v1.yaml
+      profile_ids: [rep_c4_cervical_dizziness_presentation_v1, rep_c4_clinician_established_cervical_dizziness_v1]
+      contexts:
+        presentation_only:
+          sequence_status: blocked_evidence_gap
+          rehabilitation_sequence_id: null
+          reason: Barany_no_routine_clinical_diagnostic_criteria_and_disease_specific_treatment_evidence_cannot_auto_apply_to_symptom_only_C4
+        clinician_established_cervical_dizziness:
+          sequence_status: sequence_complete
+          rehabilitation_sequence_id: seq_c4_clinician_established_cervical_dizziness_v1
+          model: single_phase_cautious_active_rehabilitation_with_optional_manual_adjunct
+      evidence_state: Barany_2022_no_clinical_criteria_plus_Canli_2026_limited_conflicting_physio_evidence_plus_Carrasco_Uribarren_2025_outcome_specific_low_very_low_GRADE_and_small_nontraumatic_2023_RCT
+      diagnostic_boundary: dizziness_plus_neck_features_or_treatment_response_does_not_establish_cervical_causation
+      alternative_cause_behavior: route_or_clinician_diagnosis_does_not_silently_exclude_vestibular_migraine_neurological_vascular_cardiovascular_or_otological_causes
+      adjunct_behavior: manual_therapy_optional_with_outcome_specific_certainty_preserved_and_technique_signals_kept_as_execution_detail
+      vestibular_rehab_behavior: not_auto_rendered_without_matching_indication_or_clinician_instruction
+      safety_behavior: new_acute_or_progressive_dizziness_or_neurological_gait_otological_vascular_cardiovascular_concern_blocks_routine_progression
+      progression_behavior: no_universal_numeric_progression_threshold_or_fixed_PT_course_duration
+      cross_route_boundary: primary_post_traumatic_or_whiplash_context_requires_C5_review
     post_traumatic_neck_pain: {status: pending}
 
   lumbar:
@@ -398,7 +421,6 @@ shared_owners:
 research_queue_priority:
   rationale: prioritize_routes_with_current_route_specific_guidance_and_high_real_world_frequency_while_preserving_subtype_and_management_context_boundaries
   next:
-    - cervical_dizziness_presentation
     - post_traumatic_neck_pain
     - remaining_wrist_hand_and_elbow_routes
   then: remaining_routine_routes_in_registry_order
@@ -410,12 +432,12 @@ integration_state:
   tranche3_schema_conformance_reviewed: true
   tranche3_promotion_gate_passed: true
   native_route_coverage_schema_conformance_reviewed: true
-  route_coverage_reviewed_routes: [calcific_rotator_cuff_tendinopathy, glenohumeral_instability_dislocation, glenohumeral_osteoarthritis, degenerative_meniscal_lesion_conservative_rehabilitation, patellar_tendinopathy, thumb_cmc1_osteoarthritis, nonspecific_neck_pain, neck_pain_with_radiating_upper_limb_symptoms, headache_with_cervical_msk_features]
+  route_coverage_reviewed_routes: [calcific_rotator_cuff_tendinopathy, glenohumeral_instability_dislocation, glenohumeral_osteoarthritis, degenerative_meniscal_lesion_conservative_rehabilitation, patellar_tendinopathy, thumb_cmc1_osteoarthritis, nonspecific_neck_pain, neck_pain_with_radiating_upper_limb_symptoms, headache_with_cervical_msk_features, cervical_dizziness_presentation]
   logical_amendment_gate_passed: true
   all_listed_shards_schema_reviewed: true
   all_listed_shards_promotion_or_native_gate_passed: true
   fixtures_catalog_created: true
-  fixture_extensions: [cu1_cervical_history_evidence_fixtures_v1.yaml, cu1_c3_cervical_headache_fixtures_v1.yaml]
+  fixture_extensions: [cu1_cervical_history_evidence_fixtures_v1.yaml, cu1_c3_cervical_headache_fixtures_v1.yaml, cu1_c4_cervical_dizziness_fixtures_v1.yaml]
   matching_fixtures_added_for_reviewed_route_coverage: true
   route_specific_history_prompt_catalog_complete: false
 
