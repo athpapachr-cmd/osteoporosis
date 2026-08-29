@@ -1,4 +1,4 @@
-version: cu1_history_evidence_fixtures_v1_5
+version: cu1_history_evidence_fixtures_v1_6
 status: design_oracle_pending_full_route_coverage
 runtime_authorized: false
 normative_schema: cu1_history_timeline_schema_v1.yaml
@@ -441,13 +441,77 @@ fixtures:
 
   patellar_tendinopathy_ESWT_not_default:
     route_id: patellar_tendinopathy
-    input:
-      clinician_selected_ESWT: false
+    input: {clinician_selected_ESWT: false}
     expected:
       claim_id: patellar_ESWT_no_clear_added_benefit_2021
       ESWT_auto_recommended: false
       ESWT_claimed_superior_to_exercise: false
       progressive_loading_direction_remains_primary_referral_content: true
+
+  thumb_cmc1_core_conservative_route:
+    route_id: thumb_cmc1_osteoarthritis
+    input:
+      clinician_established_thumb_cmc1_OA: true
+      painful_key_pinch: true
+      prior_orthosis: not_stated
+    expected:
+      evidence_profile_id: rep_thumb_cmc1_oa_v1
+      rehabilitation_sequence_id: seq_thumb_cmc1_oa_v1
+      required_core_claim_ids:
+        - thumb_cmc_eular_education_joint_protection_A
+        - thumb_cmc_eular_exercise_A
+        - thumb_cmc_acr_exercise_strong
+      orthosis_may_be_considered: true
+      orthosis_auto_mandatory_in_every_referral: false
+      structural_reversal_promise_generated: false
+      fixed_exercise_programme_generated: false
+
+  thumb_cmc1_orthosis_type_and_duration_not_mandatory:
+    route_id: thumb_cmc1_osteoarthritis
+    input:
+      orthosis_clinically_appropriate: true
+    expected:
+      referral_core_claim_ids: [thumb_cmc_eular_orthosis_A, thumb_cmc_acr_orthosis_strong]
+      therapist_execution_claim_ids:
+        - thumb_cmc_rigid_cmcmp_mediumterm_signal_2025
+        - thumb_cmc_orthosis_type_schedule_execution_detail
+      rigid_CMC_MCP_auto_mandated: false
+      neoprene_auto_mandated: false
+      fixed_night_wear_schedule_auto_generated: false
+      EULAR_long_term_use_converted_to_fixed_PT_course_duration: false
+
+  thumb_cmc1_assessment_not_progression_regression:
+    route_id: thumb_cmc1_osteoarthritis
+    claim_id: thumb_cmc_assessment_measures_consensus
+    expected:
+      claim_domain: examination
+      claim_output_scope: clinician_ui_only
+      pain_ROM_grip_pinch_PROM_are_validated_progression_thresholds: false
+      rehabilitation_sequence_progression_criteria_count: 0
+      invented_numeric_progression_threshold: false
+
+  thumb_cmc1_does_not_authorize_interphalangeal_OA:
+    compared_routes:
+      - {route_id: thumb_cmc1_osteoarthritis, profile_id: rep_thumb_cmc1_oa_v1}
+      - {route_id: interphalangeal_hand_osteoarthritis}
+    attempted_claim_ids:
+      - thumb_cmc_eular_orthosis_A
+      - thumb_cmc_acr_orthosis_strong
+      - thumb_cmc_rigid_cmcmp_mediumterm_signal_2025
+    expected:
+      CMC1_specific_claims_authorize_interphalangeal_output: false
+      generic_cross_hand_OA_sequence_fallback_allowed: false
+      separate_interphalangeal_route_review_required: true
+
+  thumb_cmc1_radiograph_not_symptom_attribution:
+    route_id: thumb_cmc1_osteoarthritis
+    input:
+      radiographic_CMC1_OA: true
+      clinician_symptom_attribution: not_stated
+    expected:
+      definitive_all_symptoms_from_CMC1_generated: false
+      radiograph_alone_satisfies_clinician_established_symptomatic_route: false
+      symptom_and_clinician_context_required: true
 
 readiness:
   fixture_catalog_created: true
@@ -458,6 +522,7 @@ readiness:
     - glenohumeral_osteoarthritis
     - degenerative_meniscal_lesion_conservative_rehabilitation
     - patellar_tendinopathy
+    - thumb_cmc1_osteoarthritis
   blockers:
     - remaining_route_profiles_and_sequences_not_curated
     - runtime_validator_not_authorized
