@@ -1,4 +1,4 @@
-# SLICE_PLAN_CURRENT.md — CU-1 history + evidence + rehabilitation-sequence design hardening v1.12
+# SLICE_PLAN_CURRENT.md — CU-1 history + evidence + rehabilitation-sequence design hardening v1.13
 
 > **STATUS:** ACTIVE PRE-RUNTIME DESIGN HARDENING — SHARD INTEGRATION PASS / ROUTE COVERAGE IN PROGRESS.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
@@ -41,7 +41,7 @@ clinical objective
 → next objective when supported
 ```
 
-No universal MSK sequence, generic cervical sequence or generic elbow sequence is permitted. A one-phase evidence-bounded sequence is valid when evidence supports only one broad direction. Unsupported later phases or thresholds are omitted and the evidence gap is explicit.
+No universal MSK sequence, generic cervical sequence, generic elbow sequence or generic peripheral-nerve sequence is permitted. A one-phase evidence-bounded sequence is valid when evidence supports only one broad direction. Unsupported later phases or thresholds are omitted and the evidence gap is explicit.
 
 Calendar constraints are allowed only when an explicit patient-specific postoperative/fracture/orthopaedic protocol or an evidence source genuinely requires time.
 
@@ -107,6 +107,9 @@ lateral_elbow_pain_or_provocation_or_imaging_finding != inferred_lateral_elbow_t
 LET_irritability_or_acuity != inferred_from_one_pain_score_or_test
 medial_elbow_pain_or_flexor_pronator_provocation_or_imaging_finding != inferred_medial_elbow_tendinopathy
 subjective_ulnar_paresthesia != objective_ulnar_deficit_or_formal_ulnar_neuropathy
+ulnar_distribution_symptom_or_Tinel_or_flexion_provocation != formal_cubital_tunnel_diagnosis
+formal_UNE_diagnosis != mild_severity
+not_assessed_ulnar_motor_status != normal_or_mild_eligibility
 ```
 
 ---
@@ -196,6 +199,9 @@ cu1_evidence_route_coverage_lateral_elbow_v1.yaml
 cu1_evidence_route_coverage_medial_elbow_v1.yaml
 → medial-elbow native route coverage using medial-specific low-certainty evidence without lateral-CGP grade borrowing
 
+cu1_evidence_route_coverage_ulnar_elbow_v1.yaml
+→ ulnar-neuropathy-at-elbow mild-conservative + nonmild/safety context split
+
 cu1_evidence_route_coverage_amendments_v1.yaml
 → reviewed post-merge narrowing / source-identity / grading / suppression layer
 
@@ -221,6 +227,7 @@ clinic_utilities/contracts/cu1_c4_cervical_dizziness_fixtures_v1.yaml
 clinic_utilities/contracts/cu1_c5_post_traumatic_neck_fixtures_v1.yaml
 clinic_utilities/contracts/cu1_lateral_elbow_fixtures_v1.yaml
 clinic_utilities/contracts/cu1_medial_elbow_fixtures_v1.yaml
+clinic_utilities/contracts/cu1_ulnar_elbow_fixtures_v1.yaml
 ```
 
 The dedicated fixture extensions are normative design regressions for reviewed routes and do not authorize runtime behavior.
@@ -377,9 +384,35 @@ narrative medial rehabilitation phases
 
 manual therapy / dry needling / taping / orthosis / ESWT evidence for lateral elbow
 != automatic medial-elbow route authority
+
+ulnar-distribution paresthesia / night symptoms / flexion-provocation / Tinel
+!= objective neurological deficit
+!= formal UNE/cubital-tunnel diagnosis
+
+formal UNE/cubital-tunnel diagnosis
+!= mild severity
+
+objective ulnar motor status not assessed
+!= normal
+!= eligibility for mild conservative sequence
+
+mild UNE position-education signal
+!= nonmild or severity-unclear complete rehabilitation authority
+
+very-low-certainty night-splint evidence
+!= default orthosis protocol
+
+heterogeneous UNE physiotherapy evidence
+!= best nerve-gliding/manual/electrical method
+
+progressive objective motor weakness / intrinsic atrophy / clawing / material neurological worsening
+!= routine mild conservative pathway
+
+cervical / plexus / wrist-level ulnar / structural-trauma localization concern
+!= cubital-tunnel fallback
 ```
 
-Unresolved material subtype/management/neurological/headache/dizziness/structural-trauma or elbow-differential safety context blocks evidence-aware sequence resolution rather than invoking a generic fallback.
+Unresolved material subtype/management/neurological/headache/dizziness/structural-trauma or elbow/peripheral-nerve differential safety context blocks evidence-aware sequence resolution rather than invoking a generic fallback.
 
 ---
 
@@ -415,6 +448,9 @@ evidence recommendation direction != automatic treatment selection
 newer low-certainty synthesis != automatic reversal of a route-specific CPG recommendation unless an explicit reviewed conflict exists
 narrative management or phase description != comparative treatment-effect estimate or validated progression threshold
 low-certainty medial eccentric evidence != mandatory protocol or universal loading superiority
+AANEM diagnostic Level-B ultrasound authority != treatment-effect certainty
+very-low-certainty night-splint evidence != automatic recommend or do-not-offer
+small mild-case conservative RCT signal != nonmild or unknown-severity authority
 ```
 
 ---
@@ -719,6 +755,76 @@ clinic_utilities/contracts/CU1_MEDIAL_ELBOW_ROUTE_REVIEW_2026-08-29.md
 clinic_utilities/contracts/cu1_medial_elbow_fixtures_v1.yaml
 ```
 
+### Ulnar neuropathy at the elbow / cubital-tunnel presentation
+
+The UNE review is a deliberate mild-conservative + nonmild/safety context split.
+
+```text
+explicit mild clinical context
++ objective motor status actually assessed without material deficit
++ no intrinsic atrophy/clawing
++ no unresolved structural or alternative localization owner
+→ rep_une_mild_sensory_predominant_v1
+→ seq_une_mild_conservative_v1
+→ sequence_complete / single-phase evidence-bounded
+
+nonmild / severity unresolved / objective motor status not sufficiently assessed
+→ rep_une_nonmild_or_severity_unresolved_v1
+→ rehabilitation_sequence_id: null
+→ blocked_evidence_gap
+
+progressive motor weakness / intrinsic atrophy / clawing / materially worsening objective neurological deficit
+or material trauma / structural compression / nerve instability / alternative localization concern
+→ rep_une_progressive_motor_or_structural_safety_v1
+→ rehabilitation_sequence_id: null
+→ routine sequence blocked
+```
+
+The 2025 Cochrane treatment review gives only a narrow conservative signal: a small RCT in mild UNE supports cautious education about movements/positions to avoid. This does not establish a universal splint, exercise, nerve-gliding, treatment-frequency or total-course protocol.
+
+The 2025 night-splint systematic review is very-low certainty and concludes evidence is insufficient to determine benefit over advice. CU-1 therefore does not auto-render night splinting and does not generate one device, elbow angle, nightly duration or course. The 2022 physiotherapy systematic review is heterogeneous and does not establish one best physiotherapy method; nerve gliding, manual therapy and electrical modalities remain non-core without separate reviewed authority.
+
+AANEM 2022 neuromuscular-ultrasound Level B is preserved as a diagnostic-framework recommendation to help confirm/localize UNE in patients with suggestive symptoms/signs. It is clinician-UI authority, not treatment-effect certainty, and ultrasound does not replace clinical/EDX evaluation or independently create the symptomatic diagnosis.
+
+The 2025 diagnostic Delphi is retained as expert-consensus candidate criteria only; further weighting and validation are required before a formal diagnostic scale. CU-1 does not use it as an autonomous diagnostic engine.
+
+Hard UNE regressions:
+
+```text
+subjective paresthesia
+!= objective sensory deficit
+!= objective motor deficit
+!= formal diagnosis
+
+positive Tinel/elbow-flexion test
+!= definitive diagnosis
+
+formal diagnosis = yes
+!= mild severity
+
+objective motor status = not_assessed
+!= normal
+!= mild conservative eligibility
+
+mild position-education signal
+!= nonmild/unknown-severity complete sequence
+```
+
+The mild sequence deliberately contains:
+
+```text
+progression_criteria: []
+```
+
+No numeric progression/discharge threshold, fixed PT frequency or total course duration is manufactured. Progressive objective weakness, atrophy, clawing or other material neurological worsening requires clinician/specialist reassessment; CU-1 does not generate a surgical threshold or procedure choice.
+
+Formal UNE review and fixtures:
+
+```text
+clinic_utilities/contracts/CU1_ULNAR_ELBOW_ROUTE_REVIEW_2026-08-29.md
+clinic_utilities/contracts/cu1_ulnar_elbow_fixtures_v1.yaml
+```
+
 ---
 
 # 12. Coverage gate
@@ -754,7 +860,7 @@ Generic fallback is forbidden.
 
 # 13. Acceptance fixtures
 
-The main regression oracle contains the previously reviewed route cases. Dedicated extensions now cover C1-C5 plus lateral and medial elbow.
+The main regression oracle contains the previously reviewed route cases. Dedicated extensions now cover C1-C5 plus lateral, medial and ulnar elbow.
 
 LET-specific fixtures verify:
 
@@ -789,6 +895,24 @@ valgus/UCL structural concern -> reassessment/correct owner
 activity modification != fixed rest protocol
 narrative phase description != validated progression model
 manual therapy/dry needling/taping/orthosis/ESWT not auto medial evidence
+missing history remains missing
+```
+
+UNE fixtures verify:
+
+```text
+explicit mild + objectively assessed nonmaterial motor status resolves narrow sequence
+not_assessed motor status != normal or mild eligibility
+explicit moderate/nonmild does not inherit mild RCT as complete sequence
+subjective paresthesia != objective deficit or formal diagnosis
+positive Tinel/flexion provocation != formal diagnosis
+Delphi consensus != validated diagnostic scale
+AANEM ultrasound Level B remains diagnostic adjunct
+progressive weakness/atrophy/clawing -> reassessment/safety block
+night splint remains very-low-certainty and nondefault
+nerve gliding/manual/electrical modalities not auto best method
+cervical/plexus/wrist-level localization and trauma/instability fail closed
+formal diagnosis does not bypass severity/motor-status gate
 missing history remains missing
 ```
 
@@ -833,6 +957,7 @@ C4 cervical-dizziness context-split coverage     PASS
 C5 post-traumatic temporal/context coverage      PASS
 lateral-elbow-tendinopathy route coverage        PASS
 medial-elbow-tendinopathy route coverage         PASS
+ulnar-neuropathy-at-elbow context-split coverage PASS
 routine-route coverage                          FAIL globally
 route-history prompt completeness               FAIL globally
 route-complete fixture corpus                   FAIL globally
@@ -844,7 +969,7 @@ RUNTIME AUTHORIZED                              NO
 Continue route-by-route:
 
 ```text
-1. ulnar_neuropathy_at_elbow
+1. posterior_interosseous_nerve_supinator_syndrome
 2. remaining wrist_hand_and_elbow_routes
 3. remaining routine routes in registry order
 4. reviewed evidence-gap behavior where full staging is unsupported
