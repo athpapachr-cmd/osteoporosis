@@ -1,223 +1,147 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** ACTIVE OPERATIONAL AUTHORITY — CU-1 PRODUCT REPLAN / ROUTE EXPANSION HOLD.
+> **STATUS:** ACTIVE — CU-1 RICH REFERRAL LATERAL-ELBOW RUNTIME PROTOTYPE.
 > **Updated:** 2026-08-29 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Verified remote `main`:** `08ecd3ab33e98d567c47042a8a1de482df6952b9`.
-> **ACTIVE CANONICAL WRITER/LOCK:** `design/cu1-history-evidence-timeline-2026-08-28`.
-> **ACTIVE RUNTIME WRITER/LOCK:** NONE.
-> **PR #63:** draft / design-only / unmerged.
-> **Runtime evidence-aware generation:** NOT AUTHORIZED.
+> **Design parent:** `design/cu1-history-evidence-timeline-2026-08-28` @ `cc479f4a1d818481a886916e3f0f05dc56c623b3` / PR #63 draft.
+> **ACTIVE CANONICAL WRITER/LOCK:** `feat/cu1-rich-referral-lateral-elbow-2026-08-29`.
+> **ACTIVE RUNTIME WRITER/LOCK:** `feat/cu1-rich-referral-lateral-elbow-2026-08-29`.
+> **Runtime authorization:** BOUNDED TO LATERAL-ELBOW PRODUCT-SHAPE PROTOTYPE + TESTS.
+> **Deploy/merge authorization:** NO — product-owner output review first.
+> **Further route-by-route evidence expansion:** HOLD.
 > **CU-2:** NOT AUTHORIZED.
 > **PR-1 Transcript Intake:** intentionally paused.
 
 ---
 
-# 1. Current truth
+# 1. Current product decision — LOCKED
 
-The previous CU-1 route-by-route evidence-hardening direction is **paused by product-owner REPLAN**.
+Product-owner review on 2026-08-29 accepted the corrected CU-1 referral target and explicitly authorized a bounded runtime prototype for `lateral_elbow_tendinopathy`.
 
-Reviewed evidence/safety work through `posterior_interosseous_nerve_supinator_syndrome` remains valid and preserved. The product defect is not that the evidence layer is too strict; the defect is that the current design has allowed evidence coverage to become the primary success metric while the actual clinic output can remain too generic and clinically thin.
-
-The intended product is a **clinically rich, analytical physiotherapy referral** rather than a safe but minimal evidence summary.
-
-Current architectural correction:
+The referral must not be either:
 
 ```text
-STRICT EVIDENCE / SAFETY ENGINE
-+
-RICH CLINICAL REHABILITATION MODEL
-+
-REFERRAL DOCUMENT POLICY
-→ clinically useful detailed referral
+sterile generic goals
+OR
+exercise-prescription micromanagement
 ```
 
-Evidence remains a guardrail and authority layer. It is not the sole author of referral content.
+The locked rehabilitation-document unit is:
+
+```text
+STAGE
+→ GOALS
+→ INTERVENTION DIRECTIONS: how each goal is pursued
+→ PROGRESS MARKERS
+→ NEXT-STAGE ORIENTATION
+```
+
+Intervention directions may name clinically meaningful treatment categories such as active ROM, isometric loading, concentric/eccentric resisted loading, load modification, manual therapy, cryotherapy/TENS or functional graded exposure when appropriate. They must not prescribe universal exercise sets, repetitions, kilograms, hold times, fixed weekly phase duration or fabricated numeric clearance thresholds.
 
 ---
 
-# 2. Why the route queue is stopped
+# 2. Product purpose
 
-The former exact-next action was:
+The referral is a clinician-to-physiotherapist communication document and also a transparent expectation-setting document for the patient.
 
-```text
-distal_biceps_tendon_disorder_nonoperative
-```
+It must make clear what a complete rehabilitation process is expected to address. Passive symptom-modulation modalities may be adjuncts when evidence-compatible and clinically indicated, but must not be rendered as substitutes for active, progressive and function-oriented rehabilitation.
 
-That action is now **superseded**.
-
-Continuing route-by-route would risk repeating the same design failure: accumulating correct provenance/evidence-gap states while still producing referrals that do not adequately communicate therapeutic logic, staged rehabilitation orientation and return-to-function priorities.
-
-No repository mutation for distal-biceps route coverage was made before the product-owner stop. Read-only evidence/registry inspection performed after the stop request creates no design authority and must not be treated as route progress.
+A detailed referral fails the product gate if it could reasonably be considered fulfilled by passive modalities alone without progressive active rehabilitation.
 
 ---
 
-# 3. Preserved proven work
+# 3. Lateral-elbow prototype scope
 
-The following remain valid:
+The current prototype must use the already-reviewed LET route authority and the accepted rehabilitation-product model to generate both:
 
-- deployed CU-1 runtime v1 and its frozen base contract;
-- v1.1 structured-history/evidence-authority semantics already reviewed in PR #63;
-- protocol precedence and clinician-instruction separation;
-- route/subtype/context applicability;
-- no invented universal numeric progression or RTW/RTS thresholds;
-- no silent framework hybridization;
-- diagnosis/finding and symptom/objective-deficit distinctions;
-- reviewed evidence shards, amendments and fixtures through PIN/supinator;
-- manifest/matrix state through `cu1_evidence_manifest_v1_19` / `cu1_evidence_coverage_matrix_v1_19` as historical/current evidence-registry state pending the product replan.
+```text
+Short referral
+Detailed referral
+```
 
-These are guardrails to build on, not the final referral product model.
+For the detailed output, the intended conceptual progression is:
+
+```text
+Stage 1 — irritability / symptom control + mobility + initial active loading
+Stage 2 — progressive strength / endurance / load capacity
+Stage 3 — functional / occupational / sport reintegration when relevant
+```
+
+This is a document/clinical-organization model, not a claim that the 2022 CPG validates a universal three-stage protocol or a universal transition threshold.
+
+Required LET content behavior:
+
+- pain/irritability goal must state how it is pursued: education/load modification and appropriate short-term symptom-modulation options;
+- mobility goal must state how it is pursued: active mobility/ROM work and relevant mobility treatment if an actual deficit exists;
+- initial load-tolerance goal may use isometric/low-demand extensor activation as an early orientation;
+- progressive stage must state progressive resisted wrist-extensor loading, including concentric/eccentric orientation, without dose prescription;
+- grip strength/endurance and repeated-use tolerance must be restored and tracked;
+- shoulder/scapular rehabilitation is conditional on an actual proximal impairment;
+- high-demand work/sport reintegration is conditional on actual patient context and must not invent job tasks;
+- adjuncts remain adjuncts; ultrasound is not to be presented as a stand-alone core treatment;
+- progress markers are clinical/functional observations, not invented universal thresholds;
+- PRTEE/DASH/PSFS and grip/ROM measures may be used for follow-up but not converted into automatic discharge/progression cutoffs;
+- atypical neurological/cervical/mechanical/traumatic findings preserve reassessment/correct-owner behavior.
 
 ---
 
-# 4. Current design blocker
+# 4. Evidence boundary preserved
+
+The already-reviewed route package remains authoritative for evidence applicability and grading. Preserve in particular:
 
 ```text
-PRODUCT-UTILITY BLOCK
+subacute/chronic wrist-extensor resisted exercise → JOSPT Grade B
+isometric / concentric / eccentric modes → allowed, no universal dose
+high-demand reintroduction → Grade F, conditional, no numeric clearance threshold
+proximal shoulder/scapular training → Grade C only if impairment exists
+local manual therapy → Grade B when selected/applicable
+dry needling → Grade B when selected/applicable
+rigid taping → Grade B in selected irritable short-term context
+counterforce/wrist support → Grade F selected immediate/activity context
+education / behavioral / ergonomic modification → Grade E
+PRTEE/DASH/PSFS and impairment measures → tracking, not transition thresholds
 ```
 
-The detailed referral acceptance target is under-specified.
+The 2019 Day/Lucado/Uhl phased program may inform **rehabilitation organization** but its exact dose/load/transition criteria are not promoted to universal CPG rules.
 
-The product must be able to communicate, when supported by actual case inputs:
-
-```text
-clinical picture
-+ focused history
-+ actual findings
-+ functional impact
-+ therapeutic rationale
-+ early rehabilitation priorities
-+ progressive rehabilitation orientation
-+ functional/work/sport reintegration where relevant
-+ selected adjuncts when appropriate
-+ reassessment/escalation conditions
-```
-
-without converting weak evidence, individual-study protocols or clinical organization into fake guideline certainty.
-
-Therefore:
-
-```text
-route evidence profile PASS
-!= detailed referral product PASS
-```
+The 2022 CPG also permits short-term cryotherapy/TENS and laser in defined contexts and cannot recommend therapeutic ultrasound as stand-alone treatment because evidence is conflicting. These modalities remain symptom-modulation adjuncts, not the active rehabilitation core.
 
 ---
 
-# 5. Exact next authorized action
+# 5. Exact current implementation boundary
 
-The next session must **not** start another route review.
-
-It must perform a fresh six-canonical bootstrap and then conduct a pre-code design review of the **Rich Detailed Physiotherapy Referral model** defined in `SLICE_PLAN_CURRENT.md v1.15`.
-
-Required outputs:
-
-1. exact product job/user need for detailed referral;
-2. detailed referral information architecture;
-3. ownership boundaries between evidence engine, rich clinical rehabilitation model and referral document policy;
-4. statement/authority taxonomy distinguishing literature-derived content, patient-specific protocol/clinician instruction, clinical-organizational content and therapist execution detail;
-5. goals/progression/function-reintegration representation without false universal thresholds;
-6. adjunct representation;
-7. reassessment/escalation representation;
-8. short-vs-detailed output relationship;
-9. representative rendered referrals for already-reviewed routes with different evidence strength;
-10. minimal schema/contract delta, if any;
-11. usefulness + safety regression fixtures;
-12. product-owner approval gate.
-
-Pressure-test at minimum:
+Allowed now:
 
 ```text
-lateral_elbow_tendinopathy
-medial_elbow_tendinopathy
-ulnar_neuropathy_at_elbow or posterior_interosseous_nerve_supinator_syndrome
+- route-specific lateral-elbow output synthesis in the existing formatter seam
+- short + detailed generated output
+- focused deterministic formatter/product tests
+- canonical/PR documentation for this prototype
+- review of the generated texts with the product owner
 ```
 
----
-
-# 6. Explicit HOLD / forbidden work
-
-Until the product-model review is accepted:
+Not allowed yet:
 
 ```text
-HOLD distal_biceps_tendon_disorder_nonoperative
-HOLD all further route-by-route evidence expansion
-HOLD runtime evidence-aware recommendation generation
-HOLD formatter/runtime mutation
-HOLD persistence/retention changes
-HOLD CU-2
-HOLD PR-1 restart
-HOLD medico-legal runtime implementation
-HOLD ClinicalAssertionV1/new claim-state enums
-```
-
-Existing evidence guardrails remain mandatory:
-
-```text
-missing history != negative history
-not_assessed != normal
-patient statement != objective finding
-diagnosis != single finding/provocation/imaging result
-route A evidence != route B evidence
-clinician instruction != literature recommendation
-patient-specific written protocol/healing restriction > conflicting route default
-framework-specific strength != synthetic hybrid strength
-therapist execution detail != automatic physician prescription
-assessment measure != validated progression threshold
-no generic MSK/cervical/elbow/peripheral-nerve evidence fallback
-no invented universal numeric progression/RTW/RTS thresholds
+- deploy or merge the prototype before product-owner text review
+- global rollout to all conditions before the lateral-elbow wording is accepted
+- new route-by-route evidence queue work
+- distal-biceps continuation
+- persistence changes
+- ClinicalAssertionV1 or medico-legal runtime
+- CU-2 or PR-1 restart
 ```
 
 ---
 
-# 7. Future Clinical Documentation direction remains deferred
+# 6. Exact next action
 
-The approved future direction remains:
+1. Implement the LET short/detailed synthesis at the existing formatter seam without breaking other routes.
+2. Add regression tests that enforce the locked product shape, including the passive-only failure concept and no-dose/no-false-threshold rules.
+3. Run focused tests at exact branch head.
+4. Render the actual Short and Detailed LET outputs and present them to the product owner.
+5. Collect wording corrections.
+6. After explicit text approval, redesign the implementation as a **shared/global rehabilitation document model** and apply it across the route registry in one horizontal rollout rather than manually repeating one route at a time.
 
-```text
-ONE reviewed patient-specific clinical-assertion layer
-+
-SEPARATE literature/evidence layer
-+
-MANY document policies
-```
-
-with:
-
-```text
-source/provenance axis != semantic claim-type axis
-diagnosis != causation
-temporal association != causal relationship
-contradiction resolution may preserve unresolved competing interpretations
-medico-legal report = future Document Policy, not a separate clinical engine
-```
-
-This remains future architecture only. The current CU-1 referral REPLAN does not authorize `ClinicalAssertionV1`, medico-legal schemas/runtime or persistence changes.
-
----
-
-# 8. Current gates
-
-```text
-reviewed evidence/safety work through PIN       PRESERVED / PASS
-route expansion                                 HOLD
-rich detailed-referral product contract         NOT YET FROZEN
-representative usefulness validation             NOT YET DONE
-runtime evidence-aware generation               NO
-DESIGN-COMPLETE for revised product target       NO
-```
-
-PR #63 remains draft and must not be merged merely because the earlier evidence-route gates passed.
-
----
-
-# 9. Continuity rule
-
-A fresh session must:
-
-1. verify the then-current remote `main` and PR #63 head;
-2. read all six canonicals in mandatory order;
-3. recognize `SLICE_PLAN_CURRENT.md v1.15` as a **product REPLAN**;
-4. preserve the completed evidence work;
-5. perform the rich detailed-referral pre-code design review;
-6. **not** resume `distal_biceps_tendon_disorder_nonoperative` or another route unless a later canonical decision explicitly reauthorizes route expansion.
+Global rollout is intentionally deferred only until the LET text is approved; route-by-route product implementation is not the intended strategy.
