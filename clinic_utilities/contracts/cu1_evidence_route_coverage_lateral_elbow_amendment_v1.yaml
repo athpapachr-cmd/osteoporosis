@@ -1,5 +1,5 @@
 version: cu1_evidence_route_coverage_lateral_elbow_amendment_v1
-status: reviewed_route_activation_amendment_pending_manifest_activation
+status: reviewed_route_activation_amendment_active
 runtime_authorized: false
 reviewed_on: 2026-08-29
 review_record: clinic_utilities/contracts/CU1_LATERAL_ELBOW_ROUTE_REVIEW_2026-08-29.md
