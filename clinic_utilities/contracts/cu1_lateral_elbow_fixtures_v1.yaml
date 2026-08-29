@@ -1,0 +1,175 @@
+version: cu1_lateral_elbow_fixtures_v1
+status: normative_design_regression_oracle_pending_route_activation
+runtime_authorized: false
+route_id: lateral_elbow_tendinopathy
+reviewed_on: 2026-08-29
+
+purpose: >-
+  Regression oracle for evidence-aware design behavior of lateral elbow tendinopathy. These fixtures
+  preserve diagnosis-vs-finding separation, acuity/irritability applicability, optional-adjunct behavior,
+  newer evidence uncertainty, differential/safety boundaries and the absence of invented progression or
+  return-to-function thresholds.
+
+fixtures:
+  - fixture_id: let_typical_subacute_chronic_active_loading
+    given:
+      route_id: lateral_elbow_tendinopathy
+      formal_lateral_elbow_tendinopathy_diagnosis: yes
+      clinical_course: subacute_or_chronic
+      safety_context: no_material_concern_identified
+    expect:
+      route_evidence_profile_id: rep_lateral_elbow_tendinopathy_v1
+      rehabilitation_sequence_id: seq_lateral_elbow_evidence_bounded_v1
+      must_include_authority: lateral_elbow_resisted_wrist_extensor_exercise
+      must_allow_loading_modes: [isometric, concentric, eccentric]
+      must_not_create_fixed_exercise_dose: true
+      progression_criteria_must_remain_empty: true
+
+  - fixture_id: let_acute_highly_irritable_does_not_inherit_subacute_chronic_Grade_B_loading
+    given:
+      route_id: lateral_elbow_tendinopathy
+      clinical_course: acute_or_highly_irritable
+      safety_context: no_material_concern_identified
+    expect:
+      rehabilitation_sequence_id: seq_lateral_elbow_evidence_bounded_v1
+      must_allow_authority: let_irritability_guided_load_management_2022
+      must_allow_authority: let_ergonomic_education_load_modification_E_2022
+      must_not_apply_authority: lateral_elbow_resisted_wrist_extensor_exercise
+      must_not_infer_subacute_or_chronic_state: true
+      must_not_create_fixed_symptom_modulation_bundle: true
+
+  - fixture_id: let_high_demand_reintroduction_has_no_invented_clearance_threshold
+    given:
+      route_id: lateral_elbow_tendinopathy
+      clinical_course: subacute_or_chronic
+      high_demand_upper_limb_context: true
+    expect:
+      may_include_authority: lateral_elbow_high_demand_phased_reintroduction
+      must_preserve_strength: F
+      must_not_create_numeric_transition_threshold: true
+      must_not_create_universal_RTW_RTS_clearance_threshold: true
+      must_not_create_fixed_phase_duration: true
+
+  - fixture_id: let_single_provocation_or_imaging_finding_not_autonomous_diagnosis
+    given:
+      route_id: lateral_elbow_tendinopathy
+      formal_lateral_elbow_tendinopathy_diagnosis: not_stated
+      findings: [local_lateral_tenderness, Cozen_positive, imaging_common_extensor_abnormality]
+    expect:
+      must_apply_boundary_claim: let_diagnostic_boundary_history_exam_not_single_test_2022
+      must_not_generate_new_formal_diagnosis_from_findings: true
+      findings_remain_findings: true
+
+  - fixture_id: let_objective_PIN_motor_deficit_blocks_routine_reassurance
+    given:
+      route_id: lateral_elbow_tendinopathy
+      findings: [lateral_or_proximal_radial_forearm_pain, objective_finger_extension_weakness]
+      safety_context: material_neurological_concern
+    expect:
+      must_apply_authority: let_atypical_differential_reassessment_2022
+      must_not_output_routine_LET_reassurance: true
+      must_not_infer_normal_neurology: true
+      must_route_to_clinician_reassessment_or_correct_owner: true
+
+  - fixture_id: let_cervical_radicular_pattern_not_silently_absorbed
+    given:
+      route_id: lateral_elbow_tendinopathy
+      findings: [neck_related_arm_symptoms, paresthesia_or_radiation]
+    expect:
+      must_apply_authority: let_atypical_differential_reassessment_2022
+      must_not_relabel_cervical_or_neural_pattern_as_tendon_only: true
+      must_not_import_C2_radiculopathy_specific_evidence_without_matching_C2_context: true
+
+  - fixture_id: let_manual_therapy_is_selected_adjunct_not_mandatory_bundle
+    given:
+      route_id: lateral_elbow_tendinopathy
+      clinical_course: subacute_or_chronic
+      manual_therapy_selected_as_adjunct: false
+    expect:
+      must_not_auto_render_authority: let_local_manual_therapy_short_term_B_2022
+      core_sequence_must_remain_valid_without_manual_therapy: true
+      must_preserve_newer_Cochrane_effect_uncertainty: true
+
+  - fixture_id: let_manual_therapy_selected_preserves_CPG_grade_and_Cochrane_uncertainty
+    given:
+      route_id: lateral_elbow_tendinopathy
+      manual_therapy_selected_as_adjunct: true
+      technique_tolerated: true
+    expect:
+      may_render_authority: let_local_manual_therapy_short_term_B_2022
+      must_preserve_CPG_strength: B
+      must_preserve_context_claim: let_manual_exercise_effect_small_low_certainty_cochrane_2024
+      must_not_claim_durable_or_large_effect: true
+
+  - fixture_id: let_dry_needling_selected_not_core
+    given:
+      route_id: lateral_elbow_tendinopathy
+      dry_needling_selected_as_adjunct: true
+      practitioner_competence_and_availability_confirmed: true
+    expect:
+      may_render_authority: let_dry_needling_selected_B_2022
+      must_preserve_CPG_strength: B
+      must_not_make_dry_needling_required_for_route: true
+
+  - fixture_id: let_activity_orthosis_immediate_not_long_term_protocol
+    given:
+      route_id: lateral_elbow_tendinopathy
+      activity_aggravated_symptoms: true
+      orthosis_selected_as_adjunct: true
+    expect:
+      may_render_authority: let_activity_orthosis_immediate_F_2022
+      must_preserve_CPG_strength: F
+      must_not_create_fixed_wear_schedule: true
+      must_not_claim_intermediate_or_long_term_orthosis_superiority: true
+
+  - fixture_id: let_outcome_measures_do_not_become_progression_thresholds
+    given:
+      route_id: lateral_elbow_tendinopathy
+      measured: [PRTEE, DASH, PSFS, pain_free_grip, maximum_grip, ROM]
+    expect:
+      PROM_family_strength_must_remain: A
+      impairment_measure_family_strength_must_remain: B
+      must_not_flatten_strengths_into_synthetic_hybrid: true
+      must_not_convert_any_measure_to_automatic_progression_threshold: true
+
+  - fixture_id: let_2024_low_certainty_does_not_become_do_not_offer_exercise
+    given:
+      route_id: lateral_elbow_tendinopathy
+      evidence_context: lateral_elbow_manual_exercise_cochrane_2024
+    expect:
+      must_preserve_certainty: low
+      must_not_relabel_as_proven_no_effect: true
+      must_not_relabel_as_do_not_offer_exercise: true
+      must_not_claim_large_or_durable_benefit: true
+
+  - fixture_id: let_ESWT_not_auto_evidence_authorized_in_this_review
+    given:
+      route_id: lateral_elbow_tendinopathy
+      ESWT_selected_by_clinician: false
+    expect:
+      must_not_auto_render_ESWT_as_route_evidence: true
+      clinician_instruction_pathway_may_remain_available: true
+      must_not_label_clinician_preference_as_CPG_recommendation: true
+
+  - fixture_id: let_missing_history_remains_missing
+    given:
+      route_id: lateral_elbow_tendinopathy
+      history_fields_supplied: []
+    expect:
+      must_not_infer_negative_history: true
+      must_not_infer_low_irritability: true
+      must_not_infer_no_high_demand_context: true
+      must_not_infer_no_neural_or_joint_context: true
+
+validation_assertions:
+  route_scope_only: true
+  findings_do_not_create_diagnosis: true
+  subacute_chronic_loading_scope_preserved: true
+  high_demand_Grade_F_not_upgraded: true
+  adjuncts_not_mandatory: true
+  CPG_strengths_not_flattened: true
+  newer_synthesis_uncertainty_preserved: true
+  no_numeric_progression_threshold_invented: true
+  no_generic_elbow_or_MSK_fallback: true
+  safety_differential_fail_closed: true
+  runtime_authorized: false
