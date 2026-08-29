@@ -53,3 +53,40 @@ routes:
     reassessment_el: >-
       Ιατρική επανεκτίμηση σε νέο ή προοδευτικό αντικειμενικό κινητικό ή αισθητικό έλλειμμα, διαταραχή βάδισης/σημεία ανώτερου κινητικού νευρώνα ή άλλο πιθανό νωτιαίο/μυελοπαθητικό εύρημα.
     reassessment_evidence_claim_ids: [c2_progressive_neurological_or_cord_reassessment]
+
+  cervical_dizziness_presentation:
+    profile_ids: [cervical]
+    variants:
+      - variant_id: clinician_established_cervical_dizziness
+        match:
+          wording_modes: [formal_diagnosis]
+          context_equals:
+            clinician_diagnosis_cervicogenic_dizziness: "yes"
+        evidence_profile_ids: [rep_c4_clinician_established_cervical_dizziness_v1]
+        authority_mode: clinician_asserted_diagnosis_plus_evidence_bounded_sequence
+        short_flow_el:
+          - >-
+            Σε ρητά καταγεγραμμένη διάγνωση αυχενογενούς/αυχενικής ζάλης μπορεί να εφαρμοστεί προσεκτική εξατομικευμένη ενεργητική αυχενική αποκατάσταση με στόχο τη λειτουργία, χωρίς υπόσχεση επίλυσης της ζάλης ή καθολικό πρόγραμμα άσκησης.
+          - >-
+            Χειροθεραπεία μπορεί να χρησιμοποιηθεί επιλεκτικά ως επικουρικό μέσο. Η καταγεγραμμένη διάγνωση δεν σημαίνει ότι το εργαλείο απέκλεισε αιθουσαίες, ημικρανικές, νευρολογικές, αγγειακές, καρδιαγγειακές ή ωτολογικές αιτίες.
+        stages:
+          - stage_id: cautious_active_cervical_dizziness_rehabilitation
+            label_el: ΣΤΑΔΙΟ 1 — ΠΡΟΣΕΚΤΙΚΗ ΕΝΕΡΓΗΤΙΚΗ ΑΠΟΚΑΤΑΣΤΑΣΗ / ΛΕΙΤΟΥΡΓΙΑ
+            goals_el:
+              - μείωση της λειτουργικής επιβάρυνσης από ζάλη και αυχενικά συμπτώματα
+              - βελτίωση σχετικής αυχενικής λειτουργίας όπου υπάρχει τεκμηριωμένο έλλειμμα
+              - βελτίωση ανοχής στις σημαντικές καθημερινές και εργασιακές δραστηριότητες
+            intervention_directions_el:
+              - εξατομικευμένη ενεργητική αυχενική αποκατάσταση προσαρμοσμένη στα πραγματικά αυχενικά ελλείμματα και στους λειτουργικούς στόχους, χωρίς καθολικό exercise bundle, συχνότητα ή δόση
+              - επιλεκτική χειροθεραπεία μόνο όταν ενδείκνυται ως επικουρικό μέσο, με διατήρηση της χαμηλής ή πολύ χαμηλής βεβαιότητας για σχετικά αποτελέσματα
+            progress_markers_el:
+              - κλινική και λειτουργική βελτίωση με καλύτερη ανοχή στις σχετικές δραστηριότητες, χωρίς καθολικό αριθμητικό κριτήριο ή ισχυρισμό ότι η ανταπόκριση αποδεικνύει αυχενική αιτιότητα
+            evidence_claim_ids:
+              - c4_selected_active_cervical_rehabilitation
+              - c4_selected_manual_therapy_low_certainty_2025
+            organization_authority: clinical_rehabilitation_organization
+        adjunct_boundary_el: >-
+          Δεν προστίθεται αυτόματα αιθουσαία, οφθαλμοκινητική ή ισορροπιστική αποκατάσταση χωρίς αντίστοιχο έλλειμμα/ένδειξη ή ρητή κλινική οδηγία· η ακριβής επιλογή και δοσολογία παραμένουν ευθύνη του φυσιοθεραπευτή.
+        reassessment_el: >-
+          Ιατρική επανεκτίμηση σε νέα οξεία ή ουσιωδώς προοδευτική ζάλη/ίλιγγο, νέο εστιακό νευρολογικό ή βάδισης εύρημα, ανησυχητικό ωτολογικό σύμπτωμα, αγγειακό/καρδιαγγειακό στοιχείο ή άλλη κλινική ανησυχία.
+        reassessment_evidence_claim_ids: [c4_dizziness_safety_reassessment]
