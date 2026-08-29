@@ -44,6 +44,38 @@ class CU1GreekReferralFormatter(_BaseGreekFormatter):
             raise CU1ContractError(f"Invalid Greek route label for {profile_id}.{route_id}: {label}")
         return label
 
+    def _problem_label(self, problem: Mapping[str, Any], *, include_subtype: bool) -> str:
+        profile_id = str(problem.get("profile_id") or "")
+        route_id = str(problem.get("route_id") or "")
+        wording_mode = str(problem.get("wording_mode") or "")
+        route_spec = self.rich_renderer.routes.get(route_id)
+        label: Optional[str] = None
+        if isinstance(route_spec, Mapping):
+            profile_ids = route_spec.get("profile_ids") or []
+            labels = route_spec.get("problem_label_el_by_wording_mode")
+            if (not profile_ids or profile_id in profile_ids) and isinstance(labels, Mapping):
+                candidate = labels.get(wording_mode)
+                if isinstance(candidate, str) and candidate.strip():
+                    candidate = _normalize_whitespace(candidate)
+                    if not self._is_greek_clinician_phrase(candidate):
+                        raise CU1ContractError(
+                            f"Invalid wording-aware Greek problem label for {profile_id}.{route_id}.{wording_mode}: {candidate}"
+                        )
+                    label = candidate
+
+        if not label:
+            return super()._problem_label(problem, include_subtype=include_subtype)
+
+        laterality = self._optional_label("laterality", str(problem.get("laterality") or ""))
+        if laterality:
+            label = f"{label} ({laterality})"
+        subtype = problem.get("subtype_id_optional")
+        if include_subtype and subtype:
+            subtype_label = self._optional_label("route_detail_labels", str(subtype))
+            if subtype_label:
+                label += f" — {subtype_label}"
+        return label
+
     def contract_route_labels(self) -> Dict[str, Dict[str, str]]:
         result: Dict[str, Dict[str, str]] = {}
         profiles = self.bundle.registry.get("profiles", {})
@@ -110,18 +142,7 @@ class CU1GreekReferralFormatter(_BaseGreekFormatter):
         route: Tuple[str, str, Optional[str], Mapping[str, Any]],
     ) -> List[str]:
         problem = draft.get("primary_problem", {}) if isinstance(draft.get("primary_problem"), Mapping) else {}
-        problem_label = self.rich_renderer.problem_label_el(
-            profile_id=route[0],
-            route_id=route[1],
-            subtype_id=route[2],
-            context=route[3],
-        )
-        if problem_label:
-            laterality = self._optional_label("laterality", str(problem.get("laterality") or ""))
-            if laterality:
-                problem_label = f"{problem_label} ({laterality})"
-        else:
-            problem_label = self._problem_label(problem, include_subtype=detailed)
+        problem_label = self._problem_label(problem, include_subtype=detailed)
 
         findings = self._selection_labels(draft, "findings", "findings")
         function = self._selection_labels(draft, "functional_impairments", "functional_impairments")
