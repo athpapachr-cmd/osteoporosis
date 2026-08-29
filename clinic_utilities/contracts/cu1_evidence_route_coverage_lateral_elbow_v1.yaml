@@ -1,5 +1,5 @@
 version: cu1_evidence_route_coverage_lateral_elbow_v1
-status: ready_for_exact_review_not_manifest_active
+status: active_design_authority_route_coverage_extension
 runtime_authorized: false
 reviewed_on: 2026-08-29
 normative_schema: clinic_utilities/contracts/cu1_history_timeline_schema_v1.yaml
@@ -13,7 +13,8 @@ purpose: >-
   profile, and an incomplete two-phase seed sequence. This extension adds current 2024 synthesis
   context, diagnostic/differential boundaries, route-history prompts, optional adjunct authority, and
   a replacement single-phase evidence-bounded sequence that avoids inventing a phase-transition
-  threshold. The existing route profile is amended only after exact review and manifest activation.
+  threshold. The existing core profile is resolved through the reviewed lateral-elbow activation
+  amendment after logical registry merge.
 
 external_source_dependencies:
   - lateral_elbow_cpg_2022
@@ -420,5 +421,5 @@ coverage_effect:
     - let_patient_priority_grip_or_load_task
   existing_core_prompt_retained:
     - lateral_elbow_load_context
-  current_state: ready_for_exact_review_not_manifest_active
+  current_state: active_design_authority_route_coverage_extension
   runtime_authorized: false
