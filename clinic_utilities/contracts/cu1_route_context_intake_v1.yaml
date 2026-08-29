@@ -109,3 +109,46 @@ routes:
           "no": Όχι
           not_stated: Δεν δηλώνεται
         required: false
+
+  ulnar_neuropathy_at_elbow:
+    fields:
+      une_clinician_severity_context:
+        type: enum
+        label_el: Ρητή κλινική βαρύτητα / πλαίσιο διαχείρισης
+        values: [mild, nonmild, not_stated]
+        value_labels_el:
+          mild: Ήπια / sensory-predominant εικόνα
+          nonmild: Μέτρια, σοβαρή ή άλλη μη ήπια εικόνα
+          not_stated: Δεν έχει δηλωθεί
+        required: false
+        required_for_rich_variant: true
+      une_objective_ulnar_motor_status:
+        type: enum
+        label_el: Αντικειμενική κινητική κατάσταση ωλενίου νεύρου
+        values: [assessed_without_material_motor_deficit, material_motor_deficit_present, not_assessed]
+        value_labels_el:
+          assessed_without_material_motor_deficit: Εξετάστηκε — χωρίς ουσιώδες κινητικό έλλειμμα
+          material_motor_deficit_present: Υπάρχει ουσιώδες αντικειμενικό κινητικό έλλειμμα
+          not_assessed: Δεν αξιολογήθηκε
+        required: false
+        required_for_rich_variant: true
+      une_intrinsic_atrophy_or_clawing:
+        type: enum
+        label_el: Ενδογενής ατροφία / clawing ή άλλο όψιμο κινητικό σημείο
+        values: [absent_when_assessed, present, not_assessed]
+        value_labels_el:
+          absent_when_assessed: Δεν διαπιστώθηκε κατά την εξέταση
+          present: Παρόν
+          not_assessed: Δεν αξιολογήθηκε
+        required: false
+        required_for_rich_variant: true
+      une_unresolved_alternative_localization_or_structural_owner:
+        type: enum
+        label_el: Υπάρχει μη επιλυμένη εναλλακτική εντόπιση ή δομική αιτία / ιδιοκτήτης;
+        values: ["yes", "no", not_stated]
+        value_labels_el:
+          "yes": Ναι
+          "no": Όχι
+          not_stated: Δεν δηλώνεται
+        required: false
+        required_for_rich_variant: true
