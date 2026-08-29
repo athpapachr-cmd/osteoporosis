@@ -96,7 +96,7 @@ class CU1RichLateralElbowReferralTests(unittest.TestCase):
         self.assertIn("κρυοθεραπεία/tens", text.lower())
         self.assertIn("όχι ως υποκατάστατο", text.lower())
         self.assertIn("ιατρική επανεκτίμηση", text.lower())
-        self.assertIn("πρόληψη υποτροπής", text.lower())
+        self.assertIn("ΠΡΟΛΗΨΗ ΥΠΟΤΡΟΠΗΣ", text)
         self.assertIn("μείωση κινδύνου υποτροπής", text.lower())
         self.assertIn("πρόγραμμα διατήρησης δύναμης/αντοχής", text.lower())
         self.assertIn("ικανότητα αυτοδιαχείρισης", text.lower())
