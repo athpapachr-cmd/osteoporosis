@@ -6,7 +6,7 @@
 > **Verified remote `main`:** `08ecd3ab33e98d567c47042a8a1de482df6952b9`.
 > **ACTIVE CANONICAL WRITER/LOCK:** `design/cu1-history-evidence-timeline-2026-08-28`.
 > **ACTIVE RUNTIME WRITER/LOCK:** NONE.
-> **PR #63:** draft / design-only / unmerged; reviewed route coverage is complete through matrix commit `3f1dc97d31421e9b52e768f1c054a52414039973`; this canonical commit may advance branch head.
+> **PR #63:** draft / design-only / unmerged; reviewed route coverage is complete through C5 matrix commit `57cc0a75e1653b0f1536f51b9495f46e844c4b41`; this canonical commit may advance branch head.
 > **Runtime evidence-aware generation:** NOT AUTHORIZED.
 > **CU-2:** NOT AUTHORIZED.
 > **PR-1 Transcript Intake:** intentionally paused.
@@ -58,6 +58,14 @@ clinician_entered_cervical_dizziness_diagnosis != CU1_generated_diagnosis
 treatment_response_or_positive_cervical_sensorimotor_test != diagnostic_proof
 route_selection != exclusion_of_vestibular_migraine_neurovascular_or_other_causes
 outcome_specific_GRADE != synthetic_cross_outcome_certainty
+post_traumatic_neck_pain != generic_C1_nonspecific_neck_pain
+whiplash_context != every_cervical_trauma
+recent_WAD != persistent_WAD
+unclear_WAD_phase != inferred_phase
+C5_selection != structural_clearance
+WAD_grade != CU1_inferred_classification
+post_traumatic_headache_dizziness_or_arm_symptoms != automatic_C3_C4_C2_disease_specific_authority
+study_programme_duration_or_frequency != universal_referral_schedule
 ```
 
 No patient identifiers were added.
@@ -87,6 +95,7 @@ cervical_nonspecific_route_coverage_extension
 cervical_radiating_route_coverage_extension
 cervical_headache_route_coverage_extension
 cervical_dizziness_route_coverage_extension
+cervical_posttraumatic_route_coverage_extension
 cu1_evidence_route_coverage_amendments_v1.yaml
 ```
 
@@ -96,6 +105,7 @@ Cervical regression extensions:
 clinic_utilities/contracts/cu1_cervical_history_evidence_fixtures_v1.yaml
 clinic_utilities/contracts/cu1_c3_cervical_headache_fixtures_v1.yaml
 clinic_utilities/contracts/cu1_c4_cervical_dizziness_fixtures_v1.yaml
+clinic_utilities/contracts/cu1_c5_post_traumatic_neck_fixtures_v1.yaml
 ```
 
 All listed active shards have passed their native or reviewed schema/promotion gate. No staged evidence shard remains.
@@ -250,7 +260,7 @@ ICHD-3 is used for diagnostic-boundary semantics, not autonomous diagnosis. Curr
 
 ## C4 — Cervical dizziness presentation — PASS as context split
 
-The frozen C4 route now has two machine-distinct contexts:
+The frozen C4 route has two machine-distinct contexts:
 
 ```text
 presentation-only / clinician_diagnosis_cervicogenic_dizziness != yes
@@ -267,32 +277,62 @@ rep_c4_clinician_established_cervical_dizziness_v1
 Hard boundary:
 
 ```text
-dizziness + neck pain/stiffness or movement association
-!= proven cervical causation
-
-positive cervical/sensorimotor test
-!= accepted diagnostic criterion
-
-treatment response
-!= diagnostic proof
-
-C4 selection or clinician diagnosis
-!= migraine/BPPV/vestibular/neurological/vascular/cardiovascular/otological causes excluded
+dizziness + neck pain/stiffness or movement association != proven cervical causation
+positive cervical/sensorimotor test != accepted diagnostic criterion
+treatment response != diagnostic proof
+C4 selection or clinician diagnosis != alternative causes excluded
 ```
 
-The current Bárány Society position does not endorse routine clinical diagnostic criteria and does not recommend a specific therapy. Therefore symptom-only C4 receives explicit evidence-gap behavior rather than disease-specific treatment-effect claims.
+The Bárány Society position does not endorse routine clinical diagnostic criteria or a specific therapy. Presentation-only C4 therefore remains an explicit evidence gap. The clinician-established branch is cautious, single-phase and contains no universal progression threshold, fixed course or promise of dizziness resolution.
 
-When the clinician explicitly records a cervical/cervicogenic-dizziness diagnosis, current evidence permits only a cautious one-phase sequence. The 2026 physiotherapy review remains limited/conflicting with most included studies at high risk of bias. A 2025 GRADE manual-therapy review has outcome-specific low/very-low certainty; it is not flattened into one synthetic certainty. A small 2023 non-traumatic RCT can support considering individualized active cervical rehabilitation but does not freeze its exact muscle/mobilization/oculomotor bundle, dose or two-week follow-up into referral protocol.
+## C5 — Post-traumatic / whiplash-associated neck pain — PASS as temporal + mechanism + safety split
 
-Manual therapy is optional and selected. Mulligan ROM findings remain therapist execution detail and do not imply balance/global superiority. Vestibular rehabilitation is not an automatic C4 default without a matching vestibular indication or clinician instruction. The sequence has:
+The frozen C5 route is not one homogeneous evidence population. Current active contexts are:
+
+```text
+recent explicit uncomplicated WAD
+rep_c5_recent_whiplash_wad_v1
+→ seq_c5_recent_whiplash_wad_v1
+→ sequence_complete
+
+persistent explicit WAD
+rep_c5_persistent_whiplash_wad_v1
+→ seq_c5_persistent_whiplash_wad_v1
+→ sequence_complete
+
+explicit WAD but temporal phase unclear
+rep_c5_whiplash_phase_unresolved_v1
+→ rehabilitation_sequence_id: null
+→ blocked_evidence_gap
+
+other post-traumatic cervical pain without matching WAD context
+rep_c5_other_posttraumatic_neck_pain_v1
+→ rehabilitation_sequence_id: null
+→ blocked_evidence_gap
+
+unresolved structural / neurological safety context
+rep_c5_unresolved_posttraumatic_safety_v1
+→ rehabilitation_sequence_id: null
+→ routine sequence blocked
+```
+
+Recent WAD uses the still-current SIRA third-edition acute guideline: stay-active advice and neck exercise retain separate Level-B authority. Manual therapy remains a selected limited-evidence Level-C adjunct. SIRA's consensus recommendation against prolonged activity reduction and its Level-A collar recommendation remain separate claims rather than a hybrid strength.
+
+Persistent WAD uses condition-specific guideline/systematic-review context with a weak/modest exercise signal. The 2024 guided neck-specific exercise review does not authorize its observed >6-week / >=2-session-per-week study pattern as a universal referral schedule. The 2025 education-plus-exercise meta-analysis remains very-low certainty and does not establish a mandatory superior combined bundle.
+
+The proposed SIRA fourth edition remains draft/non-approved and is not normative authority. OPTIMa/Côté 2016 supplies the persistent objective-neurological-sign safety/reassessment context; it is not generic WAD treatment authority.
+
+Both nonblocked C5 sequences deliberately contain:
 
 ```text
 progression_criteria: []
 ```
 
-No universal numeric progression threshold, fixed PT frequency/course duration or promise of dizziness resolution is generated. New acute/progressive dizziness or neurological/gait/otological/vascular/cardiovascular concern blocks routine progression. Primary post-traumatic/whiplash context routes to C5 review.
+No universal numeric progression threshold, fixed visit frequency, total PT duration or elapsed-time-only progression rule is generated. WAD grade and structural clearance remain clinician-entered/documented rather than CU-1 inference. A patient-specific written structural/healing restriction overrides conflicting uncomplicated-WAD defaults.
 
-Matching route-specific prompts and regression fixtures exist for C1-C4.
+Post-traumatic headache, dizziness and radiating arm symptoms remain history/context and do not automatically import C3/C4/C2 disease-specific authority.
+
+Matching route-specific prompts and regression fixtures now exist for C1-C5.
 
 Formal cervical reviews:
 
@@ -301,6 +341,7 @@ clinic_utilities/contracts/CU1_CERVICAL_ROUTE_REVIEW_2026-08-29.md
 clinic_utilities/contracts/CU1_C2_RADIATING_NECK_ROUTE_REVIEW_2026-08-29.md
 clinic_utilities/contracts/CU1_C3_CERVICAL_HEADACHE_ROUTE_REVIEW_2026-08-29.md
 clinic_utilities/contracts/CU1_C4_CERVICAL_DIZZINESS_ROUTE_REVIEW_2026-08-29.md
+clinic_utilities/contracts/CU1_C5_POST_TRAUMATIC_NECK_ROUTE_REVIEW_2026-08-29.md
 ```
 
 ---
@@ -327,7 +368,7 @@ DESIGN-COMPLETE                                  NO
 RUNTIME AUTHORIZED                               NO
 ```
 
-The remaining block is route-content completeness, not shard integration or C4 evidence governance.
+The remaining block is route-content completeness, not cervical-route evidence governance.
 
 ---
 
@@ -346,7 +387,8 @@ thumb CMC1 OA → exercise/orthosis conservative directions supported; optimal e
 C1 nonspecific neck pain → no universal evidence-derived progression threshold; passive-modality bundle is not generic core care
 C2 radiating neck pain → no universal progression threshold or fixed traction prescription; disease-specific NMA evidence requires narrower matching context
 C3 cervical headache → no automatic CGH diagnosis; no durable universal manual-therapy claim, superior exercise programme or validated progression threshold
-C4 presentation-only dizziness → no disease-specific rehabilitation sequence because cervical causation/diagnostic criteria are not established; clinician-established context remains cautious with no validated progression threshold
+C4 presentation-only dizziness → no disease-specific rehabilitation sequence because cervical causation/diagnostic criteria are not established
+C5 unclear WAD phase / non-WAD cervical trauma → no cross-phase, WAD or generic-C1 fallback; unresolved structural/neuro context remains blocked
 ```
 
 No generic MSK or generic cervical fallback is permitted.
@@ -358,7 +400,7 @@ No generic MSK or generic cervical fallback is permitted.
 Continue only on the existing writer, route-by-route from the reconciled matrix:
 
 ```text
-1. post_traumatic_neck_pain
+1. lateral_elbow_tendinopathy
 2. remaining_wrist_hand_and_elbow_routes
 3. remaining routine routes in registry order
 4. define reviewed evidence-gap behavior where full staging is unsupported
@@ -394,12 +436,23 @@ CONVERT low-certainty CGH network rankings into a mandatory or superior techniqu
 CLAIM durable universal manual-therapy benefit from the short-term low-certainty CGH signal
 USE routine C3 when post-traumatic/whiplash context is the primary presentation
 INFER cervical/cervicogenic dizziness from neck pain plus dizziness, cervical provocation, sensorimotor testing or response to treatment
-CLAIM that vestibular, migraine-related, neurological, vascular, cardiovascular or otological causes were excluded merely because C4 is selected or a clinician diagnosis is entered
+CLAIM that alternative dizziness causes were excluded merely because C4 is selected or a clinician diagnosis is entered
 APPLY cervical-dizziness treatment-effect evidence to presentation-only C4
 AUTO-PRESCRIBE vestibular rehabilitation, a fixed balance programme or the exact 2023 self-exercise bundle in C4
 CONVERT Mulligan cervical-ROM evidence into global dizziness/balance superiority or diagnostic proof
 FLATTEN outcome-specific low/very-low manual-therapy GRADE into a synthetic certainty
 USE routine C4 when post-traumatic/whiplash context is primary
+TREAT every post-traumatic cervical presentation as WAD
+APPLY recent-WAD authority to persistent WAD or persistent-WAD authority to recent WAD
+INFER WAD temporal phase from vague duration
+INFER WAD grade or structural clearance from route selection
+USE generic C1 as fallback for C5 or other cervical trauma
+APPLY WAD-specific treatment authority to other cervical trauma without matching context
+AUTO-PRESCRIBE the 2024 guided neck-exercise study frequency/duration as a universal C5 schedule
+REPRESENT education-plus-exercise as proven superior in WAD despite 2025 very-low-certainty synthesis
+HYBRIDIZE SIRA consensus activity-restriction advice with Level-A collar strength
+ALLOW uncomplicated-WAD stay-active/no-collar defaults to override a patient-specific structural/healing restriction
+AUTO-IMPORT C2/C3/C4 disease-specific evidence merely because post-traumatic arm symptoms/headache/dizziness coexist
 USE posterior postoperative RTS evidence as nonoperative posterior authority
 SILENTLY resolve conflicting ESWT frameworks
 REPRESENT best-practice GHOA opinion as comparative treatment efficacy
