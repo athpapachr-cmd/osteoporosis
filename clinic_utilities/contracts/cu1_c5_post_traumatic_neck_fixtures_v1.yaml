@@ -1,19 +1,20 @@
-version: cu1_c5_post_traumatic_neck_fixtures_v1
+version: cu1_c5_post_traumatic_neck_fixtures_v1_1
 status: design_oracle_extension_pending_manifest_activation
 runtime_authorized: false
 normative_schema: cu1_history_timeline_schema_v1.yaml
 evidence_manifest: cu1_evidence_manifest_v1.yaml
 route_shard: cu1_evidence_route_coverage_cervical_posttraumatic_v1.yaml
-pending_route_amendment: cu1_evidence_route_coverage_cervical_posttraumatic_amendment_v1.yaml
 
 fixture_policy:
   - post_traumatic_neck_pain_is_not_generic_nonspecific_neck_pain
   - WAD_specific_evidence_requires_explicit_whiplash_acceleration_deceleration_context
+  - recent_WAD_and_persistent_WAD_authority_remain_machine_distinct
   - WAD_temporal_phase_is_not_inferred_from_approximate_duration
   - unresolved_structural_or_neurological_safety_context_blocks_routine_sequence
   - patient_specific_structural_or_healing_restriction_overrides_conflicting_WAD_defaults
   - associated_headache_dizziness_or_arm_symptoms_do_not_auto_import_C3_C4_or_C2_specific_authority
   - guideline_or_study_timepoints_do_not_become_universal_PT_course_duration
+  - framework_specific_SIRA_strength_is_preserved
   - no_fixture_authorizes_runtime_evidence_generation
 
 fixtures:
@@ -27,8 +28,8 @@ fixtures:
       physiotherapy_considered_appropriate_by_clinician: true
       manual_therapy_selected_as_adjunct: false
     expected:
-      evidence_profile_id: rep_c5_whiplash_wad_v1
-      rehabilitation_sequence_id: seq_c5_whiplash_wad_v1
+      evidence_profile_id: rep_c5_recent_whiplash_wad_v1
+      rehabilitation_sequence_id: seq_c5_recent_whiplash_wad_v1
       applicable_core_claim_ids:
         - c5_recent_wad_stay_active_B_SIRA
         - c5_recent_wad_neck_exercise_B_SIRA
@@ -49,8 +50,8 @@ fixtures:
       material_neurological_or_other_safety_concern: false
       physiotherapy_considered_appropriate_by_clinician: true
     expected:
-      evidence_profile_id: rep_c5_whiplash_wad_v1
-      rehabilitation_sequence_id: seq_c5_whiplash_wad_v1
+      evidence_profile_id: rep_c5_persistent_whiplash_wad_v1
+      rehabilitation_sequence_id: seq_c5_persistent_whiplash_wad_v1
       applicable_core_claim_id: c5_persistent_wad_exercise_advice_context
       one_superior_exercise_programme_generated: false
       supervised_programme_mandatory: false
@@ -58,7 +59,7 @@ fixtures:
       fixed_total_course_duration_generated: false
       progression_criteria_count: 0
 
-  c5_explicit_wad_but_phase_not_stated_blocks_sequence:
+  c5_explicit_wad_but_phase_not_stated_uses_blocked_context:
     route_id: post_traumatic_neck_pain
     input:
       trauma_mechanism_context: whiplash_acceleration_deceleration
@@ -68,12 +69,33 @@ fixtures:
       material_neurological_or_other_safety_concern: false
     expected:
       WAD_phase_inferred_from_approximate_duration: false
-      rep_c5_whiplash_wad_v1_resolves: false
-      rehabilitation_sequence_allowed: false
-      clarification_required: whiplash_phase_recent_or_persistent_known
+      evidence_profile_id: rep_c5_whiplash_phase_unresolved_v1
+      rehabilitation_sequence_id: null
+      sequence_status: blocked_evidence_gap
       acute_claims_auto_applied: false
       persistent_claims_auto_applied: false
       generic_C1_fallback_allowed: false
+
+  c5_recent_and_persistent_WAD_profiles_do_not_cross_resolve:
+    route_id: post_traumatic_neck_pain
+    scenarios:
+      - input:
+          trauma_mechanism_context: whiplash_acceleration_deceleration
+          temporal_phase: recent_or_acute_within_12_weeks
+          structural_status: no_material_structural_injury_identified_by_clinician
+        expected:
+          evidence_profile_id: rep_c5_recent_whiplash_wad_v1
+          persistent_profile_allowed: false
+          persistent_core_claim_auto_applied: false
+      - input:
+          trauma_mechanism_context: whiplash_acceleration_deceleration
+          temporal_phase: persistent_over_3_months
+          structural_status: no_material_structural_injury_identified_by_clinician
+        expected:
+          evidence_profile_id: rep_c5_persistent_whiplash_wad_v1
+          recent_profile_allowed: false
+          SIRA_acute_exercise_claim_auto_applied: false
+          SIRA_acute_manual_claim_auto_applied: false
 
   c5_other_cervical_trauma_does_not_inherit_wad_evidence:
     route_id: post_traumatic_neck_pain
@@ -159,6 +181,7 @@ fixtures:
       ongoing_disability: true
     expected:
       applicable_safety_claim_id: c5_persistent_neurological_signs_require_medical_review
+      evidence_source_id: optima_nad_cpg_2016
       physician_investigation_or_management_required_before_treating_as_routine_nonprogression: true
       persistent_neurological_signs_treated_as_exercise_progression_problem_only: false
 
@@ -210,20 +233,25 @@ fixtures:
           manual_therapy_auto_rendered: false
           active_rehabilitation_remains_core: true
 
-  c5_no_collar_or_activity_restriction_claim_is_protocol_conditional:
+  c5_activity_restriction_and_collar_strengths_remain_distinct_and_protocol_conditional:
     route_id: post_traumatic_neck_pain
     scenarios:
       - input:
           uncomplicated_acute_WAD: true
           patient_specific_structural_protocol_requiring_restriction: false
         expected:
-          clinician_ui_claim_id: c5_no_routine_prolonged_activity_restriction_or_collar
+          activity_restriction_claim_id: c5_no_prolonged_activity_restriction_consensus_SIRA
+          activity_restriction_strength: consensus_SIRA_2014
+          collar_claim_id: c5_no_routine_collar_A_SIRA
+          collar_strength: A_SIRA_2014
+          strengths_hybridized: false
           generic_prolonged_activity_restriction_routinely_recommended: false
           routine_immobilisation_collar_routinely_recommended: false
       - input:
           uncomplicated_acute_WAD: false
           patient_specific_structural_protocol_requiring_restriction: true
         expected:
+          generic_activity_restriction_claim_overrides_protocol: false
           generic_no_collar_claim_overrides_protocol: false
           generic_stay_active_claim_overrides_protocol: false
           patient_specific_protocol_precedence_preserved: true
