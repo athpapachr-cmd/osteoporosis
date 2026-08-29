@@ -10,12 +10,24 @@ purpose: >-
   Native schema-conformant evidence extension for route-by-route CU-1 coverage after tranche2 and
   tranche3 promotion. Every object carries its explicit canonical identity. New routes may be added
   only after exact source/reference/applicability/output-scope review and must not create generic
-  cross-route rehabilitation fallbacks.
+  cross-route rehabilitation fallbacks or silently hybridize conflicting frameworks.
 
 external_source_dependencies:
   - rotator_cuff_tendinopathy_cpg_2025
 
-sources: {}
+sources:
+  nice_eswt_calcific_shoulder_htg645_2022:
+    evidence_id: nice_eswt_calcific_shoulder_htg645_2022
+    source_type: guideline
+    title: Extracorporeal shockwave therapy for calcific tendinopathy in the shoulder
+    authors_or_organization: National Institute for Health and Care Excellence
+    year_or_version: 2022_HTG645_migrated_2026_recommendations_unchanged
+    reference: NICE HealthTech guidance HTG645, originally IPG742; published 2022-11-09; migrated January 2026 without recommendation change
+    population_scope_optional: adults with calcific tendinopathy in the shoulder considered for extracorporeal shockwave therapy
+    reviewed_on: 2026-08-29
+    next_review_due: 2027-02-28
+    freshness_state: current
+    status: active
 
 claims:
   calcific_rc_imaging_defined:
@@ -24,7 +36,7 @@ claims:
     applicable_route_evidence_profile_ids: [rep_calcific_rotator_cuff_v1]
     applicable_route_ids: [calcific_rotator_cuff_tendinopathy]
     domain: diagnostic_definition
-    claim_summary: Rotator-cuff calcific tendinopathy denotes a rotator-cuff tendinopathy with a calcific deposit confirmed by imaging; an imaging deposit alone is not to be inferred by the utility from symptoms or examination findings.
+    claim_summary: Rotator-cuff calcific tendinopathy denotes a rotator-cuff tendinopathy with a calcific deposit confirmed by imaging; the utility must not infer a calcific deposit from symptoms or examination findings.
     recommendation_direction: context_only
     output_scope: clinician_ui_only
     certainty_optional: not_applicable
@@ -56,18 +68,32 @@ claims:
     certainty_optional: not_graded
     reviewed_on: 2026-08-29
 
-  calcific_rc_eswt_optional:
-    claim_id: calcific_rc_eswt_optional
+  calcific_rc_eswt_jospt_optional:
+    claim_id: calcific_rc_eswt_jospt_optional
     evidence_ids: [rotator_cuff_tendinopathy_cpg_2025]
     applicable_route_evidence_profile_ids: [rep_calcific_rotator_cuff_v1]
     applicable_route_ids: [calcific_rotator_cuff_tendinopathy]
     domain: adjunct
-    claim_summary: Extracorporeal shock-wave therapy may be used or recommended to reduce pain and disability in adults with rotator-cuff calcific tendinopathy.
+    claim_summary: The 2025 rotator-cuff CPG states that extracorporeal shock-wave therapy may be used or recommended to reduce pain and disability in adults with calcific rotator-cuff tendinopathy.
     recommendation_direction: may_consider
-    output_scope: referral_core
+    output_scope: clinician_ui_only
     strength_optional: C
     certainty_optional: not_graded
-    applicability_conditions_optional: [clinician_selected_eswt]
+    conflicts_with_claim_ids_optional: [calcific_rc_eswt_nice_research_only]
+    reviewed_on: 2026-08-29
+
+  calcific_rc_eswt_nice_research_only:
+    claim_id: calcific_rc_eswt_nice_research_only
+    evidence_ids: [nice_eswt_calcific_shoulder_htg645_2022]
+    applicable_route_evidence_profile_ids: [rep_calcific_rotator_cuff_v1]
+    applicable_route_ids: [calcific_rotator_cuff_tendinopathy]
+    domain: adjunct
+    claim_summary: NICE HTG645 states that short-term safety shows no major concern but efficacy evidence is inadequate, so ESWT for calcific shoulder tendinopathy should only be used in the context of research.
+    recommendation_direction: do_not_offer
+    output_scope: clinician_ui_only
+    certainty_optional: not_graded
+    applicability_conditions_optional: [routine_clinical_use_outside_research]
+    conflicts_with_claim_ids_optional: [calcific_rc_eswt_jospt_optional]
     reviewed_on: 2026-08-29
 
   calcific_rc_lavage_refractory:
@@ -90,7 +116,7 @@ claims:
     applicable_route_evidence_profile_ids: [rep_calcific_rotator_cuff_v1]
     applicable_route_ids: [calcific_rotator_cuff_tendinopathy]
     domain: adjunct
-    claim_summary: Laser therapy may reduce pain and disability in adults with calcific rotator-cuff tendinopathy, but laser is not added to the frozen CU-1 selectable adjunct taxonomy by this evidence-curation slice.
+    claim_summary: The 2025 CPG states that laser therapy may reduce pain and disability in adults with calcific rotator-cuff tendinopathy, but laser is not added to the frozen CU-1 selectable adjunct taxonomy by this evidence-curation slice.
     recommendation_direction: may_consider
     output_scope: clinician_ui_only
     strength_optional: C
@@ -192,7 +218,8 @@ route_evidence_profiles:
     examination_claim_ids: []
     rehabilitation_sequence_id: seq_calcific_rotator_cuff_v1
     adjunct_claim_ids:
-      - calcific_rc_eswt_optional
+      - calcific_rc_eswt_jospt_optional
+      - calcific_rc_eswt_nice_research_only
       - calcific_rc_lavage_refractory
       - calcific_rc_laser_optional_context
       - calcific_rc_therapeutic_ultrasound_do_not_offer
@@ -201,10 +228,11 @@ route_evidence_profiles:
       - no_universal_numeric_rehabilitation_progression_thresholds
       - lavage_evidence_is_for_refractory_persistent_cases_not_initial_acute_treatment
       - no_evidence_that_sequential_post_lavage_ESWT_is_required_or_superior
+      - ESWT_framework_conflict_requires_explicit_clinician_framework_context_before_referral_rendering
       - laser_evidence_does_not_change_the_frozen_selectable_adjunct_taxonomy_in_this_slice
-    primary_source_ids: [rotator_cuff_tendinopathy_cpg_2025]
+    primary_source_ids: [rotator_cuff_tendinopathy_cpg_2025, nice_eswt_calcific_shoulder_htg645_2022]
     last_reviewed_on: 2026-08-29
-    next_review_due: 2027-08-28
+    next_review_due: 2027-02-28
     freshness_state: current
 
 rehabilitation_sequences:
@@ -231,12 +259,6 @@ rehabilitation_sequences:
             authority:
               authority_type: evidence_claim
               evidence_claim_ids: [calcific_rc_patient_centered_education]
-          - intervention_direction_id: calcific_rc_eswt_when_selected
-            statement: ESWT may be included as a calcific-specific adjunct when explicitly selected and clinically appropriate
-            authority:
-              authority_type: evidence_claim
-              evidence_claim_ids: [calcific_rc_eswt_optional]
-            applicability_conditions_optional: [clinician_selected_eswt]
         progression_criteria: []
         precautions_or_do_not_progress_criteria:
           - criterion_id: calcific_rc_persistent_severe_specialist_reassessment
@@ -268,6 +290,7 @@ rehabilitation_sequences:
         strength_optional: F
         certainty_optional: not_graded
         required_for_route: false
+        applicability_conditions_optional: [athletic_return_to_sport_goal]
     clinician_modifications_optional: []
     protocol_overrides_optional: []
 
@@ -279,5 +302,6 @@ coverage_effect:
     - calcific_rc_course_irritability
     - calcific_rc_prior_treatment_response
     - calcific_rc_prior_lavage
+  framework_conflicts_preserved: [calcific_ESWT_JOSPT_2025_vs_NICE_HTG645]
   route_status_after_review: sequence_complete_evidence_bounded
   runtime_authorized: false
