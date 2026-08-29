@@ -248,6 +248,29 @@ class CU1RichReferralRenderer:
         )
         return [str(item) for item in (spec.get("evidence_profile_ids") or [])]
 
+    def problem_label_el(
+        self,
+        *,
+        profile_id: str,
+        route_id: str,
+        subtype_id: Optional[str] = None,
+        context: Optional[Mapping[str, Any]] = None,
+    ) -> Optional[str]:
+        spec = self.route_spec(
+            profile_id=profile_id,
+            route_id=route_id,
+            subtype_id=subtype_id,
+            context=context,
+        )
+        labels = spec.get("problem_label_el_by_wording_mode")
+        if not isinstance(labels, Mapping):
+            return None
+        wording_mode = (context or {}).get("__wording_mode")
+        if not isinstance(wording_mode, str) or not wording_mode:
+            return None
+        label = _clean_phrase(labels.get(wording_mode))
+        return label or None
+
     def render_short(
         self,
         *,
