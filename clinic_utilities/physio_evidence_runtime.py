@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import copy
+import json
+import re
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Optional
 
@@ -11,8 +13,54 @@ from clinic_utilities.physio_referral_runtime import CU1ContractError, _repo_roo
 
 _VIEW_CONFIG = "clinic_utilities/contracts/cu1_clinician_evidence_view_v1.yaml"
 _COLLECTIONS = ("sources", "claims", "route_history_prompts", "route_evidence_profiles", "rehabilitation_sequences")
-_KNOWN_TRANCHE3_BAD_TITLE = "    title: British Elbow and Shoulder Society patient care pathway: Frozen shoulder"
-_KNOWN_TRANCHE3_FIXED_TITLE = '    title: "British Elbow and Shoulder Society patient care pathway: Frozen shoulder"'
+_LEGACY_PLAIN_TEXT_KEYS = {
+    "title",
+    "label_el",
+    "reference",
+    "claim_summary",
+    "population_scope_optional",
+    "setting_scope_optional",
+    "clinical_objective",
+    "statement",
+    "reason",
+    "blocker",
+    "amendment_reason",
+}
+_LEGACY_PLAIN_SCALAR_RE = re.compile(r"^(?P<indent>\s*)(?P<key>[A-Za-z0-9_]+):\s+(?P<value>.+)$")
+
+
+def _quote_legacy_plain_text_scalars(text: str) -> str:
+    """Quote only legacy human-text scalar values whose embedded `: ` breaks YAML.
+
+    The evidence corpus predates runtime parsing and contains a small number of valid human phrases
+    stored as unquoted YAML plain scalars even though they contain a colon followed by a space. This
+    compatibility projection preserves the exact string value and does not repair arbitrary YAML
+    structure: only explicitly enumerated human-text keys are eligible, and already quoted/block/list/
+    mapping values are left untouched.
+    """
+
+    repaired: List[str] = []
+    changed = False
+    for line in text.splitlines():
+        match = _LEGACY_PLAIN_SCALAR_RE.match(line)
+        if not match:
+            repaired.append(line)
+            continue
+        key = match.group("key")
+        value = match.group("value")
+        if (
+            key in _LEGACY_PLAIN_TEXT_KEYS
+            and ": " in value
+            and not value.startswith(("\"", "'", "|", ">", "[", "{"))
+        ):
+            repaired.append(f'{match.group("indent")}{key}: {json.dumps(value, ensure_ascii=False)}')
+            changed = True
+        else:
+            repaired.append(line)
+    if not changed:
+        return text
+    suffix = "\n" if text.endswith("\n") else ""
+    return "\n".join(repaired) + suffix
 
 
 def _load_yaml(path: Path) -> Dict[str, Any]:
@@ -22,17 +70,13 @@ def _load_yaml(path: Path) -> Dict[str, Any]:
     try:
         payload = yaml.safe_load(text)
     except yaml.YAMLError as exc:
-        # The reviewed tranche-3 promotion artifact predates runtime parsing and contains one known
-        # semantically harmless unquoted colon in a source title. Repair only that exact legacy scalar
-        # for the read-only clinician evidence projection; any other YAML defect must still fail closed.
-        if path.name == "cu1_evidence_tranche3_promotion_v1.yaml" and _KNOWN_TRANCHE3_BAD_TITLE in text:
-            repaired = text.replace(_KNOWN_TRANCHE3_BAD_TITLE, _KNOWN_TRANCHE3_FIXED_TITLE, 1)
-            try:
-                payload = yaml.safe_load(repaired)
-            except yaml.YAMLError as repair_exc:  # pragma: no cover - defensive compatibility boundary
-                raise CU1ContractError(f"Unable to parse CU-1 evidence artifact: {path}") from repair_exc
-        else:  # pragma: no cover - defensive evidence boundary
+        repaired = _quote_legacy_plain_text_scalars(text)
+        if repaired == text:  # pragma: no cover - defensive evidence boundary
             raise CU1ContractError(f"Unable to parse CU-1 evidence artifact: {path}") from exc
+        try:
+            payload = yaml.safe_load(repaired)
+        except yaml.YAMLError as repair_exc:  # pragma: no cover - defensive compatibility boundary
+            raise CU1ContractError(f"Unable to parse CU-1 evidence artifact: {path}") from repair_exc
     if not isinstance(payload, dict):
         raise CU1ContractError(f"CU-1 evidence artifact must be a mapping: {path}")
     return payload
