@@ -1,0 +1,104 @@
+version: cu1_rotator_cuff_related_shoulder_fixtures_v1
+status: normative_design_regression_oracle_active
+runtime_authorized: false
+route_id: rotator_cuff_related_shoulder_pain
+reviewed_on: 2026-08-29
+review_record: CU1_ROTATOR_CUFF_RELATED_SHOULDER_ROUTE_REVIEW_2026-08-29.md
+
+purpose: >-
+  Regression oracle for the evidence-bounded CU-1 rotator-cuff-related shoulder-pain route after
+  exact review of the 2025 JOSPT rotator-cuff tendinopathy CPG. These fixtures preserve active-care
+  priority, dosing uncertainty, conditional return-to-sport guidance, clinician-only reassessment
+  timing and the boundary from full-thickness tear and calcific-specific treatment authority.
+
+fixtures:
+  - fixture_id: rcrsp_active_rehabilitation_is_core
+    given:
+      route_id: rotator_cuff_related_shoulder_pain
+      clinical_context: suspected_or_established_rotator_cuff_tendinopathy_scope
+    expect:
+      route_evidence_profile_id: rep_rotator_cuff_related_pain_v1
+      rehabilitation_sequence_id: seq_rotator_cuff_related_pain_v1
+      must_include_authorities: [rc_patient_centered_education, rc_active_rehabilitation_core]
+      may_include_loading_modes: [motor_control, resistance]
+      must_not_create_fixed_exercise_dose: true
+      must_not_claim_one_exercise_package_is_superior: true
+
+  - fixture_id: rcrsp_return_to_sport_is_goal_conditioned
+    given:
+      route_id: rotator_cuff_related_shoulder_pain
+      athletic_return_to_sport_goal: true
+    expect:
+      may_include_authority: rc_return_sport_capacity_load_tolerance
+      must_preserve_strength: F
+      must_use_capacity_load_tolerance_patient_rated_and_functional_context: true
+      must_not_create_universal_numeric_clearance_threshold: true
+      must_not_create_fixed_return_time: true
+
+  - fixture_id: rcrsp_nonathlete_does_not_require_sport_phase
+    given:
+      route_id: rotator_cuff_related_shoulder_pain
+      athletic_return_to_sport_goal: false
+    expect:
+      core_sequence_must_remain_valid: true
+      must_not_require_sport_specific_content: true
+      functional_reintegration_may_follow_actual_daily_or_work_demands: true
+
+  - fixture_id: rcrsp_manual_and_taping_are_adjuncts
+    given:
+      route_id: rotator_cuff_related_shoulder_pain
+      adjunct_selected: false
+    expect:
+      active_rehabilitation_must_remain_core: true
+      must_not_make_manual_therapy_mandatory: true
+      must_not_make_taping_mandatory: true
+      must_not_create_passive_only_plan: true
+
+  - fixture_id: rcrsp_calcific_specific_intervention_not_borrowed
+    given:
+      route_id: rotator_cuff_related_shoulder_pain
+      calcific_tendinopathy_specific_treatment_context: not_established
+    expect:
+      must_not_auto_render_calcific_specific_ESWT_authority: true
+      calcific_specific_care_uses_separate_route: calcific_rotator_cuff_tendinopathy
+
+  - fixture_id: rcrsp_full_thickness_tear_is_separate_owner
+    given:
+      route_id: rotator_cuff_related_shoulder_pain
+      full_thickness_rotator_cuff_tear_established: true
+    expect:
+      must_not_apply_profile: rep_rotator_cuff_related_pain_v1
+      must_route_to: confirmed_full_thickness_rotator_cuff_tear_nonoperative
+      must_not_borrow_RCRSP_rich_plan: true
+
+  - fixture_id: rcrsp_12_week_specialist_rule_stays_clinician_only
+    given:
+      route_id: rotator_cuff_related_shoulder_pain
+      evidence_claim_id: rc_persistent_severe_reassessment
+    expect:
+      output_scope_must_remain: clinician_ui_only
+      clinician_evidence_panel_may_display_12_week_context: true
+      routine_referral_must_not_create_fixed_12_week_PT_course: true
+      routine_referral_must_not_create_12_week_progression_threshold: true
+
+  - fixture_id: rcrsp_stage_labels_are_document_organization_not_protocol_claim
+    given:
+      route_id: rotator_cuff_related_shoulder_pain
+      rich_referral_mode: detailed
+    expect:
+      may_organize_as_active_rehabilitation_and_functional_reintegration: true
+      must_not_claim_evidence_validated_fixed_multiphase_protocol: true
+      must_not_create_universal_phase_transition_threshold: true
+
+validation_assertions:
+  route_scope_only: true
+  active_rehabilitation_priority_preserved: true
+  individualized_education_preserved: true
+  no_universal_FITT_dose_invented: true
+  return_to_sport_remains_conditional: true
+  full_thickness_tear_boundary_preserved: true
+  calcific_specific_treatment_boundary_preserved: true
+  clinician_only_reassessment_timing_does_not_leak_to_referral: true
+  stage_organization_is_not_mislabeled_as_validated_protocol: true
+  no_generic_shoulder_or_MSK_fallback: true
+  runtime_authorized: false
