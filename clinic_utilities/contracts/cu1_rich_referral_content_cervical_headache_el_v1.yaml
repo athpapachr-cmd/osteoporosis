@@ -1,0 +1,77 @@
+version: cu1_rich_referral_content_cervical_headache_el_v1
+status: active_runtime_authority_profile_shard
+runtime_authorized: true
+reviewed_on: 2026-08-29
+language: el
+profile_id: cervical
+
+routes:
+  headache_with_cervical_msk_features:
+    profile_ids: [cervical]
+    variants:
+      - variant_id: cervical_headache_presentation_only
+        match:
+          wording_modes: [presentation]
+        evidence_profile_ids: [rep_c3_cervical_headache_presentation_v1]
+        authority_mode: reviewed_context_specific_route_sequence
+        short_flow_el:
+          - >-
+            Προτείνεται εξατομικευμένη ενεργητική αυχενική αποκατάσταση με κινητικότητα και αυχενική/ωμοπλατιαία άσκηση σύμφωνα με τα πραγματικά ελλείμματα και τη λειτουργική εικόνα.
+          - >-
+            Τα αυχενικά μυοσκελετικά χαρακτηριστικά δεν ισοδυναμούν από μόνα τους με διάγνωση αυχενογενούς κεφαλαλγίας. Χειροθεραπεία μπορεί να χρησιμοποιηθεί επιλεκτικά ως επικουρική παρέμβαση, όχι ως καθολική απαίτηση.
+        stages:
+          - stage_id: active_cervical_function_rehabilitation
+            label_el: ΣΤΑΔΙΟ 1 — ΕΝΕΡΓΗΤΙΚΗ ΑΥΧΕΝΙΚΗ / ΛΕΙΤΟΥΡΓΙΚΗ ΑΠΟΚΑΤΑΣΤΑΣΗ
+            goals_el:
+              - μείωση της επίδρασης κεφαλαλγίας και αυχενικών συμπτωμάτων στη λειτουργία
+              - βελτίωση σχετικής αυχενικής κινητικότητας και λειτουργικής ανοχής όπου υπάρχει έλλειμμα
+              - βελτίωση αυχενικής/ωμοπλατιαίας ικανότητας και αυτοδιαχείρισης
+            intervention_directions_el:
+              - εξατομικευμένη ενεργητική αυχενική κινητικότητα και αυχενική/ωμοπλατιαία άσκηση σύμφωνα με την πορεία, τα ελλείμματα και τις δραστηριότητες προτεραιότητας
+              - επιλεκτική χειροθεραπεία μόνο όταν ενδείκνυται ως συμπλήρωμα της ενεργητικής αποκατάστασης
+            progress_markers_el:
+              - λειτουργική βελτίωση, καλύτερη ανοχή στις σχετικές κινήσεις/δραστηριότητες και βελτίωση της επίδρασης της κεφαλαλγίας χωρίς καθολικό αριθμητικό όριο
+            evidence_claim_ids:
+              - c3_apta_active_rehabilitation_context
+              - c3_selected_manual_therapy_apta_context
+            organization_authority: clinical_rehabilitation_organization
+        adjunct_boundary_el: >-
+          Τα αυχενικά μυοσκελετικά ευρήματα δεν δημιουργούν αυτόματα διάγνωση αυχενογενούς κεφαλαλγίας· ειδικές τεχνικές παραμένουν επιλεγμένα επικουρικά μέσα και όχι υποκατάστατο της ενεργητικής αποκατάστασης.
+        reassessment_el: >-
+          Ιατρική επανεκτίμηση σε νέα, ουσιωδώς αλλαγμένη ή προοδευτική κεφαλαλγία, ανεξήγητο νευρολογικό/κρανιακό εύρημα ή άλλο αγγειακό, συστηματικό ή κλινικό στοιχείο ανησυχίας.
+        reassessment_evidence_claim_ids: [c3_headache_safety_reassessment]
+
+      - variant_id: formal_cervicogenic_headache
+        match:
+          wording_modes: [formal_diagnosis]
+          context_equals:
+            formal_cervicogenic_headache_diagnosis: yes
+        evidence_profile_ids: [rep_c3_formal_cervicogenic_headache_v1]
+        authority_mode: reviewed_formal_diagnosis_context_sequence
+        short_flow_el:
+          - >-
+            Σε ρητά διαγνωσμένη αυχενογενή κεφαλαλγία προτείνεται εξατομικευμένη ενεργητική αυχενική αποκατάσταση με κινητικότητα και αυχενική/ωμοπλατιαία άσκηση σύμφωνα με τα πραγματικά ελλείμματα και τους λειτουργικούς στόχους.
+          - >-
+            Επιλεγμένη χειροθεραπεία μπορεί να χρησιμοποιηθεί επικουρικά, χωρίς υπόσχεση διαρκούς καθολικού οφέλους ή επιβολή συγκεκριμένης τεχνικής/πρωτοκόλλου.
+        stages:
+          - stage_id: active_cgh_function_rehabilitation
+            label_el: ΣΤΑΔΙΟ 1 — ΕΝΕΡΓΗΤΙΚΗ ΑΠΟΚΑΤΑΣΤΑΣΗ / ΛΕΙΤΟΥΡΓΙΑ
+            goals_el:
+              - μείωση της λειτουργικής επιβάρυνσης από την κεφαλαλγία
+              - βελτίωση σχετικής αυχενικής κινητικότητας και λειτουργίας όπου υπάρχει έλλειμμα
+              - βελτίωση αυχενικής/ωμοπλατιαίας ικανότητας και αυτοδιαχείρισης
+            intervention_directions_el:
+              - εξατομικευμένη αυχενική κινητικότητα και αυχενική/ωμοπλατιαία άσκηση βάσει των πραγματικών ελλειμμάτων και δραστηριοτήτων, χωρίς ένα καθολικό πρόγραμμα ή δόση
+              - επιλεγμένη χειροθεραπεία μπορεί να χρησιμοποιηθεί επικουρικά για βραχυπρόθεσμη συμπτωματική υποστήριξη χωρίς ισχυρισμό διαρκούς καθολικού οφέλους
+            progress_markers_el:
+              - λειτουργική βελτίωση και καλύτερη ανοχή στις σχετικές δραστηριότητες με παρακολούθηση της κλινικής ανταπόκρισης, χωρίς καθολικό αριθμητικό κριτήριο
+            evidence_claim_ids:
+              - c3_apta_active_rehabilitation_context
+              - c3_selected_manual_therapy_apta_context
+              - c3_formal_cgh_manual_short_term_low_2026
+            organization_authority: clinical_rehabilitation_organization
+        adjunct_boundary_el: >-
+          Οι συγκριτικές κατατάξεις τεχνικών δεν μετατρέπονται σε υποχρεωτικό bundle· η επιλογή και δοσολογία συγκεκριμένων τεχνικών παραμένουν ευθύνη του φυσιοθεραπευτή.
+        reassessment_el: >-
+          Ιατρική επανεκτίμηση σε νέα, ουσιωδώς αλλαγμένη ή προοδευτική κεφαλαλγία, ανεξήγητο νευρολογικό/κρανιακό εύρημα ή άλλο αγγειακό, συστηματικό ή κλινικό στοιχείο ανησυχίας.
+        reassessment_evidence_claim_ids: [c3_headache_safety_reassessment]
