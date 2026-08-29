@@ -1,4 +1,4 @@
-# SLICE_PLAN_CURRENT.md — CU-1 history + evidence + rehabilitation-sequence design hardening v1.6
+# SLICE_PLAN_CURRENT.md — CU-1 history + evidence + rehabilitation-sequence design hardening v1.7
 
 > **STATUS:** ACTIVE PRE-RUNTIME DESIGN HARDENING — SHARD INTEGRATION PASS / ROUTE COVERAGE IN PROGRESS.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
@@ -41,7 +41,7 @@ clinical objective
 → next objective when supported
 ```
 
-No universal MSK sequence is permitted. A one-phase evidence-bounded sequence is valid when evidence supports only one broad direction. Unsupported later phases or thresholds are omitted and the evidence gap is explicit.
+No universal MSK sequence or generic cervical sequence is permitted. A one-phase evidence-bounded sequence is valid when evidence supports only one broad direction. Unsupported later phases or thresholds are omitted and the evidence gap is explicit.
 
 Calendar constraints are allowed only when an explicit patient-specific postoperative/fracture/orthopaedic protocol or an evidence source genuinely requires time.
 
@@ -97,6 +97,7 @@ mechanism != causal diagnosis
 missing history != negative history
 patient statement != objective finding
 route-specific prompt != selected answer
+not_assessed neurological status != normal
 ```
 
 ---
@@ -165,6 +166,12 @@ cu1_evidence_route_coverage_patellar_tendinopathy_v1.yaml
 cu1_evidence_route_coverage_thumb_cmc1_oa_v1.yaml
 → thumb CMC-1 OA native route coverage
 
+cu1_evidence_route_coverage_cervical_v1.yaml
+→ C1 nonspecific-neck native route coverage
+
+cu1_evidence_route_coverage_cervical_radiating_v1.yaml
+→ C2 radiating-upper-limb cervical native route coverage
+
 cu1_evidence_route_coverage_amendments_v1.yaml
 → reviewed post-merge narrowing / source-identity / grading / suppression layer
 ```
@@ -177,11 +184,14 @@ Work queue:
 clinic_utilities/contracts/cu1_evidence_coverage_matrix_v1.yaml
 ```
 
-Regression oracle:
+Regression oracles:
 
 ```text
 clinic_utilities/contracts/cu1_history_evidence_fixtures_v1.yaml
+clinic_utilities/contracts/cu1_cervical_history_evidence_fixtures_v1.yaml
 ```
+
+The cervical fixture file is a dedicated extension; its C1/C2 cases are normative design regressions for the reviewed cervical routes and do not authorize runtime behavior.
 
 ---
 
@@ -224,9 +234,22 @@ thumb CMC-1 OA orthosis evidence
 
 hand-therapy assessment measures
 != validated rehabilitation progression criteria
+
+C1 nonspecific neck pain
+!= C2 radiating upper-limb presentation
+!= C3 cervical-headache presentation
+!= C4 cervical-dizziness presentation
+!= C5 post-traumatic neck pain
+
+subjective radiating arm symptoms
+!= objective motor/sensory/reflex deficit
+!= formal cervical radiculopathy diagnosis
+
+cervical-radiculopathy-specific component NMA
+!= automatic authority for every symptom-only C2 case
 ```
 
-Unresolved material subtype/management context blocks evidence-aware sequence resolution rather than invoking a generic fallback.
+Unresolved material subtype/management/neurological context blocks evidence-aware sequence resolution rather than invoking a generic fallback.
 
 ---
 
@@ -250,6 +273,8 @@ conflicting frameworks remain separate
 conflicting framework claim != automatic referral recommendation
 population-specific trial superiority != universal protocol superiority when later synthesis does not support a meaningful hierarchy
 assessment recommendation != validated progression threshold
+disease-specific evidence != broader symptom-presentation authority without matching applicability
+positive provocation test != diagnosis
 ```
 
 ---
@@ -288,33 +313,11 @@ Active rehabilitation is core. ESWT remains an explicit JOSPT-vs-NICE conflict a
 
 ### Glenohumeral instability / dislocation
 
-Context-specific branches:
-
-```text
-traumatic anterior
-posterior nonoperative
-atraumatic anterior nonoperative
-multidirectional instability nonoperative
-```
-
-Unresolved direction/cause/management blocks evidence-aware output. Postoperative rehabilitation routes separately.
+Context-specific branches remain distinct: traumatic anterior, posterior nonoperative, atraumatic anterior nonoperative and multidirectional instability nonoperative. Unresolved direction/cause/management blocks evidence-aware output. Postoperative rehabilitation routes separately.
 
 ### Glenohumeral osteoarthritis
 
-```text
-rep_glenohumeral_oa_nonoperative_v1
-→ seq_glenohumeral_oa_nonoperative_v1
-→ APTA best-practice / evidence-gap-aware
-
-rep_glenohumeral_oa_preop_TSA_v1
-→ seq_glenohumeral_oa_preop_TSA_v1
-→ APTA best-practice / evidence-gap-aware
-
-postoperative arthroplasty
-→ postoperative_shoulder_rehabilitation
-```
-
-The 2023 APTA CPG has no high/moderate-quality comparative nonoperative PT evidence and does not identify a superior specific PT intervention. A 2026 systematic review confirms no nonsurgical PT RCTs through June 2025. CU-1 preserves broad individualized PT wording without inventing a specific exercise package, frequency, duration or numeric progression threshold.
+Nonoperative and preoperative-TSA profiles use broad APTA best-practice/evidence-gap-aware sequences. Postoperative arthroplasty routes separately. The absence of nonsurgical comparative PT RCTs is not relabelled as a low-certainty treatment effect.
 
 ### Degenerative meniscal lesion — conservative rehabilitation
 
@@ -324,7 +327,7 @@ seq_degenerative_meniscus_conservative_v1
 → sequence_complete / evidence-bounded
 ```
 
-The 2025 EU-US consensus supports first-line nonoperative treatment including PT and ROM/progressive knee-hip strengthening/neuromuscular rehabilitation. Long-term ESCAPE and OMEX randomized follow-up support exercise-based care for common degenerative tears. True locking or another unresolved structural surgical indication blocks the routine sequence; acute traumatic and postoperative meniscal contexts use different owners.
+First-line exercise-based conservative care is supported. True locking or another unresolved structural surgical indication blocks the routine sequence; acute traumatic and postoperative meniscal contexts use different owners.
 
 ### Patellar tendinopathy
 
@@ -334,21 +337,7 @@ seq_patellar_tendinopathy_v1
 → sequence_complete / single-phase evidence-bounded
 ```
 
-The route preserves apparently competing current evidence rather than flattening it:
-
-```text
-Cochrane 2025
-→ absolute strengthening effects remain uncertain
-
-2026 exercise NMA
-→ no clinically meaningful loading-strategy superiority hierarchy
-
-Breda 2021 RCT
-→ PTLE signal versus eccentric-only in mostly chronic previously treated young athletes
-→ population-specific, not universal protocol authority
-```
-
-CU-1 may therefore describe individualized progressive tendon/quadriceps loading but must not prescribe one mandatory eccentric/isometric/HSR/PTLE regimen. Loading-mode dosing remains therapist execution detail. No validated universal numeric progression or RTS threshold is rendered. ESWT is not an automatic adjunct.
+CU-1 may describe individualized progressive tendon/quadriceps loading but must not prescribe one mandatory eccentric/isometric/HSR/PTLE regimen. Loading-mode dosing remains therapist execution detail. No validated universal numeric progression or RTS threshold is rendered.
 
 ### Thumb CMC-1 osteoarthritis
 
@@ -358,15 +347,61 @@ seq_thumb_cmc1_oa_v1
 → sequence_complete / single-phase evidence-bounded
 ```
 
-Current EULAR/ACR authority and recent thumb-specific syntheses support:
+Current EULAR/ACR authority and recent thumb-specific syntheses support education/ergonomic principles/pacing/assistive strategies, individualized thumb/hand exercise and a CMC-support orthosis when clinically appropriate. The route does not mandate one exercise programme, orthosis type or wear schedule and has no evidence-derived progression criterion.
+
+### C1 — Nonspecific neck pain
 
 ```text
-education / ergonomic principles / pacing / assistive strategies
-+ individualized thumb/hand exercise
-+ CMC-support orthosis when clinically appropriate
+rep_nonspecific_neck_pain_v1
+seq_nonspecific_neck_pain_v1
+→ sequence_complete / single-phase evidence-bounded
 ```
 
-The route does not mandate one exercise programme, orthosis type or wear schedule. A rigid CMC-MCP signal from the current NMA remains therapist execution detail. EULAR longer-term orthosis-use wording is not converted into a fixed physiotherapy course or wear duration. An exact pre-activation review removed an unsupported assessment→progression inference, so the one-phase sequence intentionally has no evidence-derived progression criterion.
+The 2025 DEGAM/AWMF S3 guideline is the primary generic C1 authority. The APTA/JOSPT 2017 CPG remains classification-specific supporting context. The route centers activation/physical activity, education/self-management and individualized exercise. Manual therapy is optional rather than mandatory. Newer generic negative recommendations prevent mechanical traction and selected passive modalities from being imported as routine C1 core care.
+
+C1 deliberately has:
+
+```text
+progression_criteria: []
+```
+
+because no universal evidence-derived transition threshold is established. Persistent/progressive activity-limiting symptoms or neurological deterioration trigger reassessment rather than a fixed PT timeline.
+
+### C2 — Neck pain with radiating upper-limb symptoms / radicular features
+
+```text
+rep_neck_radiating_upper_limb_v1
+seq_neck_radiating_upper_limb_v1
+→ sequence_complete / single-phase evidence-bounded
+```
+
+The broad route authority is the APTA/JOSPT 2017 `neck pain with radiating pain` classification. Current 2025 cervical-radiculopathy component-NMA evidence is narrower and can only apply under matching radicular-classification context.
+
+Hard C2 invariants:
+
+```text
+radiating pain / paresthesia / numbness
+!= objective neurological deficit
+!= formal cervical radiculopathy diagnosis
+
+positive Spurling / neurodynamic finding
+!= formal diagnosis
+
+not_assessed
+!= normal
+```
+
+Acute mobilizing/stabilizing exercise retains its APTA Grade-C context; chronic activity/education retains Grade-B context. Intermittent mechanical traction can appear only when specifically selected/applicable in chronic radiating-pain care and CU-1 does not generate a fixed traction force, duration or frequency.
+
+The 2025 NMA's traction/neurodynamic/articular components and promising combination remain conditional evidence context rather than a mandatory physician-prescribed bundle. New/progressive objective neurological deficit or possible cord/myelopathic features block routine progression and trigger reassessment.
+
+C2 also deliberately has:
+
+```text
+progression_criteria: []
+```
+
+No universal numeric progression threshold is manufactured.
 
 ---
 
@@ -403,37 +438,28 @@ Generic fallback is forbidden.
 
 # 13. Acceptance fixtures
 
-The regression oracle includes route-specific cases for:
+The main regression oracle contains the previously reviewed route cases. The dedicated cervical extension now additionally covers:
 
 ```text
-calcific ESWT JOSPT-vs-NICE conflict
-calcific refractory lavage not initial-phase authority
-traumatic anterior first-time and recurrent context
-conservative anterior RTS scope
-posterior nonoperative != postoperative Part-II RTS authority
-atraumatic anterior
-MDI no false efficacy estimate
-unresolved instability context block
-GHOA nonoperative no false specific PT superiority
-GHOA no nonsurgical-RCT false effect estimate
-GHOA preoperative != postoperative owner
-GHOA missing management context block
-degenerative meniscus common first-line conservative pathway
-degenerative meniscus true locking block
-degenerative meniscus acute/postoperative owner boundaries
-degenerative meniscus persistent-symptom reassessment
-patellar tendinopathy no mandatory loading mode
-patellar absolute-effect uncertainty visible
-patellar no invented numeric RTS/pain threshold
-patellar ESWT not default
-thumb CMC1 conservative route
-thumb CMC1 orthosis type/wear duration not mandatory
-thumb CMC1 assessment != progression
-thumb CMC1 != interphalangeal OA authority
-thumb CMC1 radiograph != symptom attribution
+C1 activation/self-management core
+C1 acute exercise evidence-grade preservation
+C1 manual therapy optional not mandatory
+C1 newer generic passive-modality scope vs older classification bundle
+C1 other-cervical-route fallback prevention
+C1 neurological/structural concern without false reassurance
+C1 medical-review window != PT course duration
+
+C2 radiating symptoms != formal radiculopathy
+C2 acute active-rehabilitation grade preservation
+C2 chronic traction selected adjunct != universal treatment
+C2 broad symptom route != automatic cervical-radiculopathy NMA scope
+C2 NMA components != mandatory bundle
+C2 progressive objective neurological deficit block
+C2 possible cord-feature block
+C2 no universal progression threshold
 ```
 
-Additional route fixtures remain required as coverage expands.
+Additional route fixtures remain required as coverage expands through C3-C5 and the remaining registry.
 
 ---
 
@@ -467,6 +493,8 @@ GHOA management-context coverage                PASS
 degenerative-meniscus route coverage            PASS
 patellar-tendinopathy route coverage             PASS
 thumb-CMC1-OA route coverage                     PASS
+C1 nonspecific-neck route coverage              PASS
+C2 radiating-neck route coverage                PASS
 routine-route coverage                          FAIL globally
 route-history prompt completeness               FAIL globally
 route-complete fixture corpus                   FAIL globally
@@ -478,18 +506,15 @@ RUNTIME AUTHORIZED                              NO
 Continue route-by-route:
 
 ```text
-1. cervical_routes
-   1a. nonspecific_neck_pain
-   1b. neck_pain_with_radiating_upper_limb_symptoms
-   1c. headache_with_cervical_msk_features
-   1d. cervical_dizziness_presentation
-   1e. post_traumatic_neck_pain
-2. remaining_wrist_hand_and_elbow_routes
-3. remaining routine routes in registry order
-4. reviewed evidence-gap behavior where full staging is unsupported
-5. route-specific prompts + matching fixtures alongside each route
-6. exact design-completeness review
-7. STOP only at DESIGN-COMPLETE or a newly specific BLOCK
+1. headache_with_cervical_msk_features
+2. cervical_dizziness_presentation
+3. post_traumatic_neck_pain
+4. remaining_wrist_hand_and_elbow_routes
+5. remaining routine routes in registry order
+6. reviewed evidence-gap behavior where full staging is unsupported
+7. route-specific prompts + matching fixtures alongside each route
+8. exact design-completeness review
+9. STOP only at DESIGN-COMPLETE or a newly specific BLOCK
 ```
 
 No runtime evidence-aware generation is authorized by this slice.
