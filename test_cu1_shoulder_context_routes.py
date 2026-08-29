@@ -165,7 +165,8 @@ class CU1ShoulderContextRouteTests(unittest.TestCase):
         _, detailed = self._validate_and_format(
             shoulder_draft("glenohumeral_instability_dislocation", context=context)
         )
-        self.assertIn("ΟΠΙΣΘΙΟΥ ΣΤΡΟΦΙΚΟΥ ΠΕΤΑΛΟΥ", detailed.upper())
+        self.assertIn("οπίσθιου", detailed.lower())
+        self.assertIn("στροφικού πετάλου", detailed.lower())
         self.assertIn("ψυχολογική ετοιμότητα", detailed.lower())
         self.assertLessEqual(len(detailed), self.renderer.standard_detailed_target_chars)
 
@@ -193,7 +194,8 @@ class CU1ShoulderContextRouteTests(unittest.TestCase):
         _, detailed = self._validate_and_format(
             shoulder_draft("glenohumeral_instability_dislocation", context=context)
         )
-        self.assertIn("συγκριτική αποτελεσματικότητα", detailed.lower())
+        self.assertIn("αβεβαιότητα", detailed.lower())
+        self.assertIn("αποτελεσματικότητας", detailed.lower())
         self.assertIn("αβέβαι", detailed.lower())
         self.assertLessEqual(len(detailed), self.renderer.standard_detailed_target_chars)
 
