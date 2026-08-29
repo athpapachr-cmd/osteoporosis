@@ -13,6 +13,7 @@ from clinical_calendar import build_clinical_calendar_router
 from clinical_data import build_clinical_router
 from clinical_data_ext import build_clinical_ext_router
 from clinical_status import build_clinical_status_router
+from clinic_utilities.physio_evidence_api import build_cu1_physio_evidence_router
 from clinic_utilities.physio_referral_api import build_cu1_physio_referral_router
 
 # The legacy app still owns a historical GET / route. Keep the old Cockpit
@@ -40,5 +41,6 @@ app.include_router(build_clinical_router(engine))
 app.include_router(build_clinical_ext_router(engine))
 app.include_router(build_clinical_calendar_router(engine))
 app.include_router(build_cu1_physio_referral_router())
+app.include_router(build_cu1_physio_evidence_router())
 
 __all__ = ["app", "engine"]
