@@ -1,5 +1,5 @@
 version: cu1_evidence_route_coverage_ulnar_elbow_v1
-status: ready_for_exact_review_not_manifest_active
+status: active_design_authority
 runtime_authorized: false
 reviewed_on: 2026-08-29
 normative_schema: clinic_utilities/contracts/cu1_history_timeline_schema_v1.yaml
@@ -468,5 +468,5 @@ coverage_effect:
     - une_instability_trauma_structural_context
     - une_function_dexterity_grip
     - une_prior_treatment_response
-  route_status_after_review: pending_exact_review_before_manifest_activation
+  route_status_after_review: active_design_authority
   runtime_authorized: false
