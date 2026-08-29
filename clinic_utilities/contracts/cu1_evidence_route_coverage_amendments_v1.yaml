@@ -1,16 +1,14 @@
-version: cu1_evidence_route_coverage_amendments_v1_3
+version: cu1_evidence_route_coverage_amendments_v1_2
 status: reviewed_logical_registry_amendments
 runtime_authorized: false
 reviewed_on: 2026-08-29
 review_record: clinic_utilities/contracts/CU1_ROUTE_COVERAGE_REVIEW_2026-08-29.md
-c5_review_record: clinic_utilities/contracts/CU1_C5_POST_TRAUMATIC_NECK_ROUTE_REVIEW_2026-08-29.md
 applies_after:
   - core_seed_registry
   - high_frequency_tranche2
   - shoulder_hip_meniscus_tranche3
   - route_coverage_extension
   - shoulder_instability_route_coverage_extension
-  - cervical_posttraumatic_route_coverage_extension
 
 purpose: >-
   Narrow post-merge amendments required when route-by-route evidence review discovers that an older
@@ -89,19 +87,6 @@ route_evidence_profile_amendments:
       - structural_pathology_primary_vs_recurrent_status_and_patient_preference_materially_change_management
       - no_universal_numeric_return_threshold_is_authorized
 
-  rep_c5_whiplash_wad_v1:
-    applicability_conditions_optional:
-      - post_traumatic_neck_pain_selected
-      - whiplash_acceleration_deceleration_context_explicit
-      - whiplash_phase_recent_or_persistent_known
-      - no_unresolved_fracture_dislocation_instability_or_other_material_structural_injury
-      - no_unresolved_material_neurological_or_other_safety_concern
-      - physiotherapy_considered_appropriate_by_clinician
-    amendment_reason: >-
-      The single C5 WAD sequence contains recent and persistent intervention directions with distinct
-      source applicability. Temporal phase must therefore be sufficiently known before the profile can
-      resolve; unknown phase must not leave the phase objective backed only by nonapplicable claims.
-
 rehabilitation_sequence_amendments:
   seq_shoulder_instability_anterior_traumatic_v1:
     phase_amendments:
@@ -116,15 +101,6 @@ rehabilitation_sequence_amendments:
       mdi_cautious_nonoperative_rehabilitation:
         certainty_optional: not_graded
 
-  seq_c5_whiplash_wad_v1:
-    applicability_conditions_optional:
-      - whiplash_acceleration_deceleration_context_explicit
-      - whiplash_phase_recent_or_persistent_known
-      - no_unresolved_fracture_dislocation_instability_or_other_material_structural_injury
-      - no_unresolved_material_neurological_or_other_safety_concern
-      - physiotherapy_considered_appropriate_by_clinician
-    amendment_reason: unknown_temporal_phase_blocks_C5_WAD_sequence_resolution_instead_of_invoking_generic_or_cross_phase_authority
-
 validation_assertions:
   no_duplicate_profile_identity_created: true
   profile_applicability_is_narrowed_not_broadened: true
@@ -133,7 +109,5 @@ validation_assertions:
   posterior_postoperative_RTS_claim_removed_from_generic_nonoperative_authority: true
   MDI_no_effect_estimate_is_not_mislabeled_very_low_certainty: true
   GHOA_2026_systematic_review_identity_verified: true
-  C5_WAD_unknown_phase_cannot_resolve_recent_or_persistent_sequence_authority: true
-  C5_amendment_does_not_expand_WAD_evidence_to_other_cervical_trauma: true
   existing_tranche3_history_is_preserved: true
   runtime_authorized: false
