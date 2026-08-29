@@ -1,0 +1,55 @@
+version: cu1_rich_referral_content_cervical_el_v1
+status: active_runtime_authority_profile_shard
+runtime_authorized: true
+reviewed_on: 2026-08-29
+language: el
+profile_id: cervical
+
+routes:
+  neck_pain_with_radiating_upper_limb_symptoms:
+    profile_ids: [cervical]
+    evidence_profile_ids: [rep_neck_radiating_upper_limb_v1]
+    authority_mode: reviewed_route_sequence_plus_clinical_rehabilitation_organization
+    short_flow_el:
+      - >-
+        Προτείνεται εξατομικευμένη ενεργητική αποκατάσταση με στόχο μείωση της ερεθιστικότητας των αυχενικών και
+        άνω-άκρου συμπτωμάτων, διατήρηση ή αποκατάσταση λειτουργικής δραστηριότητας και κατάλληλη κινητική/σταθεροποιητική άσκηση.
+      - >-
+        Η αποκατάσταση προσαρμόζεται στην πορεία και στη λειτουργική εικόνα, με εκπαίδευση και υποστήριξη της
+        συμμετοχής σε εργασία και άσκηση. Η απλή ακτινοβολία δεν εξισώνεται αυτόματα με ριζοπάθεια και νέο ή
+        προοδευτικό αντικειμενικό νευρολογικό εύρημα απαιτεί ιατρική επανεκτίμηση.
+    stages:
+      - stage_id: active_function_preserving_rehabilitation
+        label_el: ΣΤΑΔΙΟ 1 — ΕΝΕΡΓΗΤΙΚΗ ΑΠΟΚΑΤΑΣΤΑΣΗ / ΔΙΑΤΗΡΗΣΗ ΛΕΙΤΟΥΡΓΙΑΣ
+        goals_el:
+          - μείωση ερεθιστικότητας αυχενικών και άνω-άκρου συμπτωμάτων
+          - διατήρηση ή αποκατάσταση λειτουργικής δραστηριότητας
+          - βελτίωση ανοχής σε κατάλληλη ενεργητική άσκηση
+        intervention_directions_el:
+          - εξατομικευμένη ενεργητική αποκατάσταση με κινητοποιητικές/σταθεροποιητικές ασκήσεις όταν ταιριάζουν στην οξεία εικόνα και κατάλληλη ενδυνάμωση/δραστηριότητα σύμφωνα με την πορεία
+          - σε χρόνια εικόνα, εκπαίδευση και συμβουλευτική που υποστηρίζουν συμμετοχή σε επαγγελματικές και ασκησιακές δραστηριότητες
+        progress_markers_el:
+          - βελτίωση συμπτωματικής και λειτουργικής ανοχής χωρίς νέο ή προοδευτικό αντικειμενικό νευρολογικό έλλειμμα
+        evidence_claim_ids:
+          - c2_active_rehabilitation_backbone
+          - c2_acute_mobilizing_stabilizing_exercise_C
+          - c2_chronic_education_activity_B
+        organization_authority: clinical_rehabilitation_organization
+      - stage_id: functional_return_self_management
+        label_el: ΣΤΑΔΙΟ 2 — ΛΕΙΤΟΥΡΓΙΚΗ ΕΠΑΝΕΝΤΑΞΗ / ΑΥΤΟΔΙΑΧΕΙΡΙΣΗ
+        goals_el:
+          - επάνοδος στις σημαντικές καθημερινές, εργασιακές και ασκησιακές απαιτήσεις
+          - ανεξάρτητη διαχείριση της δραστηριότητας και της ενεργητικής αποκατάστασης
+        intervention_directions_el:
+          - προοδευτική επάνοδος στις πραγματικές απαιτήσεις με συνέχιση εξατομικευμένης ενεργητικής άσκησης και διατήρηση δραστηριότητας ανάλογα με την κλινική πορεία
+        progress_markers_el:
+          - ουσιαστική λειτουργική βελτίωση και ανοχή στις σημαντικές δραστηριότητες χωρίς καθολικό αριθμητικό κριτήριο προόδου
+        evidence_claim_ids:
+          - c2_active_rehabilitation_backbone
+          - c2_chronic_education_activity_B
+        organization_authority: clinical_rehabilitation_organization
+    adjunct_boundary_el: >-
+      Μηχανική αυχενική έλξη ή άλλες ειδικές τεχνικές δεν προστίθενται αυτόματα· όταν ενδείκνυνται παραμένουν επιλεγμένα συμπληρώματα της ενεργητικής/πολυτροπικής αποκατάστασης και όχι καθολική θεραπεία.
+    reassessment_el: >-
+      Ιατρική επανεκτίμηση σε νέο ή προοδευτικό αντικειμενικό κινητικό ή αισθητικό έλλειμμα, διαταραχή βάδισης/σημεία ανώτερου κινητικού νευρώνα ή άλλο πιθανό νωτιαίο/μυελοπαθητικό εύρημα.
+    reassessment_evidence_claim_ids: [c2_progressive_neurological_or_cord_reassessment]
