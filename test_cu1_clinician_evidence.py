@@ -189,8 +189,8 @@ class CU1ClinicianEvidenceTests(unittest.TestCase):
         nonop_text = "\n".join(str(item.get("claim_summary") or "") for item in nonop["claims"]).lower()
         preop_text = "\n".join(str(item.get("claim_summary") or "") for item in preop["claims"]).lower()
         self.assertIn("nonoperative", nonop_text)
-        self.assertNotIn("preoperative physical therapy", nonop_text)
-        self.assertIn("preoperative physical therapy", preop_text)
+        self.assertNotIn("preoperative physical therapist services", nonop_text)
+        self.assertIn("preoperative physical therapist services", preop_text)
 
         postop = contextual_evidence_summary(
             self.resolver,
