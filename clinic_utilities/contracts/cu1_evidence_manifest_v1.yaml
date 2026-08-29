@@ -1,4 +1,4 @@
-version: cu1_evidence_manifest_v1_6
+version: cu1_evidence_manifest_v1_7
 status: design_frozen_sharded_registry_manifest
 runtime_authorized: false
 reviewed_on: 2026-08-29
@@ -9,8 +9,9 @@ purpose: >-
   projection passes the same schema, applicability, reference, freshness and output-scope gates as
   the active core registry. Native explicit-ID route-coverage shards may be active only after each
   added route passes an exact recorded review. Narrow reviewed logical amendments may only reduce
-  scope, attach reviewed sequences, correct evidence grading without upgrading evidence, or suppress
-  scope-unsafe claims. Sharding must never relax clinical evidence governance.
+  scope, attach reviewed sequences, correct evidence grading without upgrading evidence, correct
+  verified source identity metadata, or suppress scope-unsafe claims. Sharding must never relax
+  clinical evidence governance.
 
 normative_schema: clinic_utilities/contracts/cu1_history_timeline_schema_v1.yaml
 coverage_matrix: clinic_utilities/contracts/cu1_evidence_coverage_matrix_v1.yaml
@@ -57,6 +58,7 @@ shards:
     normative_read_rule: use_only_route_objects_with_pass_record_in_named_route_coverage_review
     reviewed_routes:
       - calcific_rotator_cuff_tendinopathy
+      - glenohumeral_osteoarthritis
 
   - shard_id: shoulder_instability_route_coverage_extension
     path: clinic_utilities/contracts/cu1_evidence_route_coverage_instability_v1.yaml
@@ -118,18 +120,20 @@ native_route_coverage_gate:
   - populate_all_required_non_optional_object_fields
   - validate_every_source_reference_in_logical_registry
   - validate_every_claim_profile_and_sequence_reference
-  - validate_route_and_subtype_applicability
+  - validate_route_subtype_and_management_context_applicability
   - validate_output_scope_compatibility_for_every_rendered_element
   - validate_freshness_and_supersession_state
   - validate_no_duplicate_ids_across_active_logical_registry
   - preserve_framework_conflicts_as_distinct_claims
+  - preserve_best_practice_or_consensus_as_non_effect_estimate_authority
   - add_route_specific_history_prompts
-  - add_matching_route_or_subtype_regression_fixtures
+  - add_matching_route_or_subtype_or_context_regression_fixtures
   - exact_human_route_review_recorded_before_manifest_activation
 
 logical_amendment_gate:
   - amendment_target_must_already_exist_in_active_logical_registry_or_same_reviewed_route_extension
-  - amendment_may_only_narrow_applicability_or_suppress_scope_unsafe_claim_or_attach_reviewed_sequence_or_correct_grading_without_upgrading_evidence
+  - amendment_may_only_narrow_applicability_or_suppress_scope_unsafe_claim_or_attach_reviewed_sequence_or_correct_grading_without_upgrading_evidence_or_correct_verified_source_identity_metadata
+  - source_metadata_amendment_cannot_change_clinical_recommendation_scope_or_strength
   - amendment_must_preserve_original_source_and_historical_artifact
   - amendment_must_have_exact_human_review_record
   - suppressed_claim_cannot_resolve_as_active_authority_in_suppressed_scope
@@ -171,7 +175,7 @@ clinical_applicability_rules:
   - material_subtype_or_context_match_is_required_when_claim_profile_or_sequence_is_scoped
   - applicability_conditions_must_be_satisfied_before_render_authority
   - unresolved_material_direction_cause_or_management_context_blocks_evidence_aware_sequence_resolution
-  - postoperative_context_routes_to_the_procedure_specific_or_postoperative_owner_and_not_a_nonoperative_route_sequence
+  - postoperative_context_routes_to_the_procedure_specific_or_postoperative_owner_and_not_a_nonoperative_or_preoperative_route_sequence
   - regional_profile_identity_never_substitutes_for_route_evidence_profile_identity
   - a_midportion_Achilles_claim_cannot_authorize_insertional_Achilles_output
   - a_route_specific_claim_cannot_be_reused_as_generic_MSK_authority
@@ -184,7 +188,8 @@ framework_governance_rules:
   - compatible_framework_claims_may_both_support_an_element_without_manufacturing_a_hybrid_strength
   - conflicting_framework_positions_remain_explicit
   - framework_conflict_prevents_silent_auto_rendering_of_one_position_as_unanimous_authority
-  - no_effect_estimate_from_absent_eligible_trials_must_not_be_relabelled_as_very_low_effect_evidence
+  - no_effect_estimate_from_absent_eligible_trials_must_not_be_relabelled_as_low_or_very_low_effect_evidence
+  - best_practice_opinion_must_not_be_relabelled_as_comparative_efficacy_evidence
   - newer_route_specific_guidance_does_not_silently_erase_an_older_still_relevant_distinct_framework
 
 freshness_rules:
@@ -222,6 +227,7 @@ readiness_gate:
   route_coverage_reviewed_routes:
     - calcific_rotator_cuff_tendinopathy
     - glenohumeral_instability_dislocation
+    - glenohumeral_osteoarthritis
   logical_amendment_gate_passed: true
   all_active_authority_shards_schema_reviewed: true
   all_listed_shards_schema_reviewed: true
