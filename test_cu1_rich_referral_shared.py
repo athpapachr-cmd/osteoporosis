@@ -137,6 +137,39 @@ class CU1SharedRichReferralTests(unittest.TestCase):
         self.assertIn("ΣΤΑΔΙΟ 3", detailed)
         self.assertNotIn("ΣΤΑΔΙΟ 1", short)
 
+    def test_nonspecific_neck_pain_is_first_non_let_shared_rich_route(self):
+        self.assertTrue(
+            self.renderer.supports(
+                profile_id="cervical",
+                route_id="nonspecific_neck_pain",
+                subtype_id=None,
+            )
+        )
+        short = self.renderer.render_short(
+            profile_id="cervical",
+            route_id="nonspecific_neck_pain",
+            subtype_id=None,
+            clinical_context=["Μη ειδική αυχεναλγία", "Περιορισμός σε παρατεταμένη εργασία σε υπολογιστή"],
+        )
+        detailed = self.renderer.render_detailed(
+            profile_id="cervical",
+            route_id="nonspecific_neck_pain",
+            subtype_id=None,
+            clinical_context=["Μη ειδική αυχεναλγία", "Περιορισμός σε παρατεταμένη εργασία σε υπολογιστή"],
+        )
+        for text in (short, detailed):
+            lower = text.lower()
+            self.assertIn("ενεργ", lower)
+            self.assertIn("αυτοδιαχείρι", lower)
+            self.assertIn("δραστηρι", lower)
+            self.assertNotIn("traction", lower)
+            self.assertNotIn("υπέρηχ", lower)
+            self.assertLessEqual(len(text), self.renderer.max_chars)
+        self.assertIn("ΣΤΑΔΙΟ 1", detailed)
+        self.assertIn("ΣΤΑΔΙΟ 2", detailed)
+        self.assertNotIn("ΣΤΑΔΙΟ 3", detailed)
+        self.assertLessEqual(len(detailed), self.renderer.standard_detailed_target_chars)
+
     def test_rich_renderer_overflow_fails_closed_instead_of_clipping_safety_tail(self):
         with self.assertRaisesRegex(Exception, "exceeds 2000 characters"):
             self.renderer.render_detailed(
