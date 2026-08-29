@@ -54,7 +54,7 @@ sources:
     year_or_version: 2025
     reference: "BMC Musculoskelet Disord. 2025;26:659. DOI 10.1186/s12891-025-08899-z"
     doi_optional: 10.1186/s12891-025-08899-z
-    population_scope_optional: adults classified with cervical-related dizziness in randomized manual-therapy trials; low to very-low certainty for key outcomes
+    population_scope_optional: adults classified with cervical-related dizziness in randomized manual-therapy trials; GRADE certainty varies by outcome and is low or very low for key outcomes
     reviewed_on: 2026-08-29
     next_review_due: 2027-08-29
     freshness_state: current
@@ -197,13 +197,14 @@ claims:
     applicability_conditions_optional: [clinician_diagnosis_cervicogenic_dizziness_yes, manual_therapy_selected_as_adjunct]
     domain: adjunct
     claim_summary: >-
-      In cervical-related-dizziness trials, upper-cervical manual therapy has low to very-low
-      certainty evidence for improvement in dizziness impact/intensity compared with control or sham.
-      The 2026 broader review does not establish a general balance benefit or durable universal
-      superiority. Manual therapy may be considered as a selected adjunct but is not mandatory.
+      In cervical-related-dizziness trials, upper-cervical manual therapy has outcome-specific GRADE
+      certainty: dizziness intensity evidence is low, while dizziness impact/disability and other
+      related outcomes include very-low-certainty evidence. The 2026 broader review does not establish
+      a general balance benefit or durable universal superiority. Manual therapy may be considered as
+      a selected adjunct but is not mandatory.
     recommendation_direction: may_consider
     output_scope: referral_core
-    certainty_optional: low
+    certainty_optional: not_graded
     reviewed_on: 2026-08-29
 
   c4_mulligan_rom_not_global_superiority_2026:
@@ -403,7 +404,7 @@ route_evidence_profiles:
     evidence_gaps:
       - clinician_entered_cervical_dizziness_diagnosis_is_preserved_as_clinician_assertion_not_validated_or_generated_by_CU1
       - current_2026_physio_evidence_is_limited_or_conflicting_and_most_included_studies_have_high_risk_of_bias
-      - manual_therapy_effect_evidence_is_low_to_very_low_certainty_and_does_not_establish_durable_universal_benefit
+      - manual_therapy_effect_certainty_varies_by_outcome_and_does_not_establish_durable_universal_benefit
       - small_nontraumatic_self_exercise_RCT_does_not_authorize_a_universal_exercise_bundle_or_dose
       - no_automatic_vestibular_rehabilitation_without_a_matching_vestibular_indication_or_clinician_instruction
       - no_validated_universal_numeric_progression_threshold
@@ -443,7 +444,7 @@ rehabilitation_sequences:
               authority_type: evidence_claim
               evidence_claim_ids: [c4_selected_active_cervical_rehabilitation]
           - intervention_direction_id: c4_selected_manual_adjunct_direction
-            statement: selected cervical manual therapy may be considered as an adjunct when clinically appropriate, while preserving low to very-low certainty and avoiding a mandatory technique or durable-benefit claim
+            statement: selected cervical manual therapy may be considered as an adjunct when clinically appropriate, while preserving outcome-specific low/very-low certainty and avoiding a mandatory technique or durable-benefit claim
             authority:
               authority_type: evidence_claim
               evidence_claim_ids: [c4_selected_manual_therapy_low_certainty_2025]
