@@ -3,8 +3,10 @@ from __future__ import annotations
 import unittest
 from pathlib import Path
 
+from clinic_utilities.physio_evidence_api import contextual_evidence_summary
 from clinic_utilities.physio_evidence_runtime import CU1ClinicianEvidenceResolver
 from clinic_utilities.physio_referral_runtime import CU1ContractBundle
+from clinic_utilities.physio_rich_referral import CU1RichReferralRenderer
 
 
 ROOT = Path(__file__).resolve().parent
@@ -14,6 +16,7 @@ class CU1ClinicianEvidenceTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.resolver = CU1ClinicianEvidenceResolver(ROOT)
+        cls.renderer = CU1RichReferralRenderer(ROOT)
         cls.bundle = CU1ContractBundle(ROOT)
 
     def test_lateral_elbow_panel_resolves_reviewed_sources_and_scoped_claims(self):
@@ -78,11 +81,138 @@ class CU1ClinicianEvidenceTests(unittest.TestCase):
                         self.assertEqual(data["sources"], [])
                         self.assertEqual(data["claims"], [])
 
-    def test_browser_evidence_panel_is_clinician_only_and_separate_from_referral_text(self):
+    def test_shoulder_instability_evidence_is_context_scoped(self):
+        anterior_context = {
+            "shoulder_instability_direction": "anterior",
+            "shoulder_instability_cause": "traumatic",
+            "shoulder_instability_recurrence": "first_time",
+            "shoulder_instability_management_context": "nonoperative_rehabilitation",
+            "shoulder_instability_structural_protocol_context": "clear_for_selected_rehabilitation",
+        }
+        posterior_context = {
+            "shoulder_instability_direction": "posterior",
+            "shoulder_instability_cause": "traumatic",
+            "shoulder_instability_recurrence": "recurrent",
+            "shoulder_instability_management_context": "nonoperative_rehabilitation",
+            "shoulder_instability_structural_protocol_context": "clear_for_selected_rehabilitation",
+        }
+        mdi_context = {
+            "shoulder_instability_direction": "multidirectional",
+            "shoulder_instability_cause": "atraumatic",
+            "shoulder_instability_recurrence": "recurrent",
+            "shoulder_instability_management_context": "nonoperative_rehabilitation",
+            "shoulder_instability_structural_protocol_context": "clear_for_selected_rehabilitation",
+        }
+
+        anterior = contextual_evidence_summary(
+            self.resolver,
+            self.renderer,
+            profile_id="shoulder",
+            route_id="glenohumeral_instability_dislocation",
+            wording_mode="presentation",
+            context=anterior_context,
+        )
+        posterior = contextual_evidence_summary(
+            self.resolver,
+            self.renderer,
+            profile_id="shoulder",
+            route_id="glenohumeral_instability_dislocation",
+            wording_mode="presentation",
+            context=posterior_context,
+        )
+        mdi = contextual_evidence_summary(
+            self.resolver,
+            self.renderer,
+            profile_id="shoulder",
+            route_id="glenohumeral_instability_dislocation",
+            wording_mode="presentation",
+            context=mdi_context,
+        )
+
+        for data in (anterior, posterior, mdi):
+            self.assertEqual(data["selection_state"], "resolved_context_profile")
+            self.assertEqual(data["profile_count"], 1)
+            self.assertTrue(data["sources"])
+            self.assertTrue(data["claims"])
+
+        anterior_text = "\n".join(str(item.get("claim_summary") or "") for item in anterior["claims"]).lower()
+        posterior_text = "\n".join(str(item.get("claim_summary") or "") for item in posterior["claims"]).lower()
+        mdi_text = "\n".join(str(item.get("claim_summary") or "") for item in mdi["claims"]).lower()
+
+        self.assertIn("traumatic anterior", anterior_text)
+        self.assertNotIn("posterior rotator-cuff", anterior_text)
+        self.assertNotIn("multidirectional instability", anterior_text)
+
+        self.assertIn("posterior", posterior_text)
+        self.assertNotIn("traumatic anterior", posterior_text)
+        self.assertNotIn("multidirectional instability", posterior_text)
+
+        self.assertIn("multidirectional instability", mdi_text)
+        self.assertIn("uncertain", mdi_text)
+        self.assertNotIn("traumatic anterior", mdi_text)
+        self.assertNotIn("posterior rotator-cuff", mdi_text)
+
+    def test_shoulder_instability_unresolved_context_shows_no_mixed_evidence(self):
+        data = contextual_evidence_summary(
+            self.resolver,
+            self.renderer,
+            profile_id="shoulder",
+            route_id="glenohumeral_instability_dislocation",
+            wording_mode="presentation",
+            context={"shoulder_instability_direction": "anterior"},
+        )
+        self.assertEqual(data["selection_state"], "context_required_for_evidence")
+        self.assertFalse(data["has_applicable_profile"])
+        self.assertEqual(data["sources"], [])
+        self.assertEqual(data["claims"], [])
+        self.assertIn("select_route_context_to_resolve_evidence", data["evidence_gaps"])
+
+    def test_ghoa_evidence_is_management_context_scoped(self):
+        nonop = contextual_evidence_summary(
+            self.resolver,
+            self.renderer,
+            profile_id="shoulder",
+            route_id="glenohumeral_osteoarthritis",
+            wording_mode="formal_diagnosis",
+            context={"ghoa_management_context": "nonoperative"},
+        )
+        preop = contextual_evidence_summary(
+            self.resolver,
+            self.renderer,
+            profile_id="shoulder",
+            route_id="glenohumeral_osteoarthritis",
+            wording_mode="formal_diagnosis",
+            context={"ghoa_management_context": "preoperative_TSA"},
+        )
+        self.assertEqual(nonop["profile_count"], 1)
+        self.assertEqual(preop["profile_count"], 1)
+        nonop_text = "\n".join(str(item.get("claim_summary") or "") for item in nonop["claims"]).lower()
+        preop_text = "\n".join(str(item.get("claim_summary") or "") for item in preop["claims"]).lower()
+        self.assertIn("nonoperative", nonop_text)
+        self.assertNotIn("preoperative physical therapy", nonop_text)
+        self.assertIn("preoperative physical therapy", preop_text)
+
+        postop = contextual_evidence_summary(
+            self.resolver,
+            self.renderer,
+            profile_id="shoulder",
+            route_id="glenohumeral_osteoarthritis",
+            wording_mode="formal_diagnosis",
+            context={"ghoa_management_context": "postoperative_arthroplasty"},
+        )
+        self.assertEqual(postop["selection_state"], "context_required_for_evidence")
+        self.assertEqual(postop["sources"], [])
+        self.assertEqual(postop["claims"], [])
+
+    def test_browser_evidence_panel_is_clinician_only_context_aware_and_separate_from_referral_text(self):
         js = (ROOT / "static/clinic-utilities/physio-referral/dynamic-subtype.js").read_text(encoding="utf-8")
         self.assertIn("Τεκμηρίωση / Παραπομπές", js)
         self.assertIn("/api/evidence", js)
         self.assertIn("clinicianEvidencePanel", js)
+        self.assertIn("wording_mode_optional", js)
+        self.assertIn("context_optional: currentRouteContext()", js)
+        self.assertIn("context_required_for_evidence", js)
+        self.assertIn("event.target?.dataset?.contextKey", js)
         self.assertNotIn("outputText.value +=", js)
         self.assertNotIn("navigator.clipboard.writeText", js)
 
