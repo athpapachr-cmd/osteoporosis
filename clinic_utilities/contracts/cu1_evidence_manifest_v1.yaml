@@ -1,4 +1,4 @@
-version: cu1_evidence_manifest_v1_13
+version: cu1_evidence_manifest_v1_14
 status: design_frozen_sharded_registry_manifest
 runtime_authorized: false
 reviewed_on: 2026-08-29
@@ -146,6 +146,19 @@ shards:
     reviewed_routes:
       - headache_with_cervical_msk_features
 
+  - shard_id: cervical_dizziness_route_coverage_extension
+    path: clinic_utilities/contracts/cu1_evidence_route_coverage_cervical_dizziness_v1.yaml
+    state: active_design_authority
+    identity_mode: explicit_payload_id
+    review_record: clinic_utilities/contracts/CU1_C4_CERVICAL_DIZZINESS_ROUTE_REVIEW_2026-08-29.md
+    schema_conformance_reviewed: true
+    normative_read_rule: >-
+      preserve_presentation_only_C4_as_explicit_blocked_evidence_gap_and_allow_disease_specific
+      rehabilitation_only_for_explicit_clinician_established_cervical_dizziness_without_unresolved
+      safety_or_primary_post_traumatic_context; never_infer_cervical_causation_or_exclusion_of_other_causes
+    reviewed_routes:
+      - cervical_dizziness_presentation
+
 logical_collections:
   - sources
   - claims
@@ -256,6 +269,10 @@ clinical_applicability_rules:
   - cervical_MSK_headache_features_do_not_auto_establish_formal_cervicogenic_headache
   - cervicogenic_headache_specific_synthesis_requires_formal_or_clinician_established_CGH_context
   - post_traumatic_primary_headache_or_neck_context_requires_C5_review_not_routine_C3_fallback
+  - dizziness_plus_cervical_features_does_not_auto_establish_cervical_causation_or_cervical_dizziness_diagnosis
+  - cervical_dizziness_treatment_effect_claims_require_explicit_clinician_established_cervical_dizziness_context
+  - presentation_only_C4_has_explicit_evidence_gap_and_cannot_receive_disease_specific_rehabilitation_sequence
+  - primary_post_traumatic_dizziness_or_neck_context_requires_C5_review_not_routine_C4_sequence
   - regional_profile_identity_never_substitutes_for_route_evidence_profile_identity
   - a_midportion_Achilles_claim_cannot_authorize_insertional_Achilles_output
   - a_route_specific_claim_cannot_be_reused_as_generic_MSK_authority
@@ -275,6 +292,7 @@ framework_governance_rules:
   - assessment_recommendation_must_not_be_relabelled_as_validated_progression_threshold
   - low_certainty_network_meta_analysis_ranking_must_not_become_mandatory_protocol_or_universal_superiority
   - guideline_framework_grade_must_not_be_relabelled_as_GRADE_effect_certainty
+  - outcome_specific_GRADE_certainty_must_not_be_flattened_into_one_synthetic_cross_outcome_certainty
   - newer_route_specific_guidance_does_not_silently_erase_an_older_still_relevant_distinct_framework
 
 freshness_rules:
@@ -319,6 +337,7 @@ readiness_gate:
     - nonspecific_neck_pain
     - neck_pain_with_radiating_upper_limb_symptoms
     - headache_with_cervical_msk_features
+    - cervical_dizziness_presentation
   logical_amendment_gate_passed: true
   all_active_authority_shards_schema_reviewed: true
   all_listed_shards_schema_reviewed: true
