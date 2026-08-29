@@ -982,3 +982,74 @@ RUNTIME AUTHORIZED            NO
 PR #63 remains draft/unmerged. No runtime recommendation logic, persistence change, CU-2 work or PR-1 restart was authorized.
 
 The exact next route is now `ulnar_neuropathy_at_elbow`, followed by the remaining wrist/hand and elbow routes and then the remaining routine registry.
+
+---
+
+## 2026-08-29 — Ulnar neuropathy at the elbow route closed as mild-conservative + nonmild/safety context split
+
+The route `ulnar_neuropathy_at_elbow` passed exact evidence/applicability review without being converted into a generic cubital-tunnel physiotherapy protocol.
+
+The normative context split is:
+
+```text
+explicit mild clinical context
++ objective ulnar motor status actually assessed without material deficit
++ no intrinsic atrophy/clawing
++ no unresolved structural/alternative localization owner
+→ rep_une_mild_sensory_predominant_v1
+→ seq_une_mild_conservative_v1
+→ sequence_complete
+
+nonmild / severity unresolved / motor status not sufficiently assessed
+→ rep_une_nonmild_or_severity_unresolved_v1
+→ rehabilitation_sequence_id: null
+→ blocked_evidence_gap
+
+progressive objective motor weakness / intrinsic atrophy / clawing / material neurological worsening
+or material trauma / structural compression / nerve instability / discordant localization
+→ rep_une_progressive_motor_or_structural_safety_v1
+→ rehabilitation_sequence_id: null
+→ routine sequence blocked + reassessment/correct owner
+```
+
+The 2025 Cochrane review supplies only a narrow conservative signal in mild UNE: information about movements or positions to avoid may reduce subjective discomfort. This is represented as cautious education and individualized provoking-position/movement modification; it does not establish a universal splint, exercise, nerve-gliding, treatment-frequency or course-duration protocol.
+
+The 2025 night-splint systematic review remains very-low certainty and insufficient to determine benefit over advice. The route therefore does not auto-render night splinting or generate a device type, elbow angle, nightly duration or total course. The 2022 physiotherapy systematic review remains heterogeneous and cannot establish nerve gliding, manual therapy, electrical modalities or another method as best or mandatory physiotherapy.
+
+The AANEM neuromuscular-ultrasound guideline was source-identity corrected during pre-PASS review to its 2022 publication year. Its Level-B recommendation remains diagnostic-framework authority to help confirm/localize UNE; it is not treatment-effect certainty, does not replace clinical/electrodiagnostic evaluation and does not create an autonomous diagnosis. The 2025 diagnostic Delphi remains expert-consensus candidate criteria requiring further validation/weighting rather than a CU-1 diagnostic scale.
+
+Hard route boundaries include:
+
+```text
+subjective ulnar paresthesia != objective sensory deficit != objective motor deficit != formal UNE diagnosis
+positive Tinel or elbow-flexion provocation != definitive diagnosis
+formal UNE diagnosis != mild severity
+not_assessed motor status != normal != mild conservative eligibility
+mild-case conservative evidence != nonmild or unknown-severity complete sequence
+progressive motor weakness/atrophy/clawing != routine mild sequence
+cervical/plexus/wrist-level ulnar/trauma/structural localization concern != cubital-tunnel fallback
+```
+
+The mild sequence contains `progression_criteria: []`; no numeric progression/discharge threshold, fixed visit frequency or total physiotherapy course is manufactured. CU-1 also does not generate an autonomous surgical threshold or procedure choice.
+
+Matching route-history prompts and `cu1_ulnar_elbow_fixtures_v1.yaml` were added. The fixtures explicitly test `not_assessed != normal`, mild-vs-nonmild applicability, symptom-vs-diagnosis separation, Delphi nonvalidation, AANEM ultrasound scope, night-splint certainty, no best physiotherapy method, structural/localization fail-closed behavior and missing-history semantics.
+
+Focused GitHub Actions run #214 passed at exact review head `fc25283bbe8cb5dde0efebb670650990ac4db782` before activation. The UNE shard, fixture extension, manifest and coverage matrix were then reconciled. Runtime evidence-aware generation remains unauthorized.
+
+The global CU-1 gate remains:
+
+```text
+SHARD INTEGRATION             PASS
+LATERAL ELBOW ROUTE           PASS
+MEDIAL ELBOW ROUTE            PASS
+ULNAR NEUROPATHY ELBOW ROUTE  PASS as context split
+GLOBAL ROUTE COVERAGE         FAIL / IN PROGRESS
+ROUTE-HISTORY PROMPTS         FAIL globally until all routes curated
+ROUTE FIXTURE CORPUS          FAIL globally until all routes curated
+DESIGN-COMPLETE               NO
+RUNTIME AUTHORIZED            NO
+```
+
+PR #63 remains draft/unmerged. No runtime recommendation logic, persistence change, CU-2 work or PR-1 restart was authorized.
+
+The exact next route is now `posterior_interosseous_nerve_supinator_syndrome`, followed by the remaining wrist/hand and elbow routes and then the remaining routine registry.
