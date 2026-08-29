@@ -1,4 +1,4 @@
-version: cu1_evidence_coverage_matrix_v1_12
+version: cu1_evidence_coverage_matrix_v1_13
 status: active_route_by_route_work_queue
 runtime_authorized: false
 route_registry: cu1_registry_v1.yaml
@@ -7,9 +7,9 @@ active_core_registry: cu1_evidence_registry_v1.yaml
 promoted_evidence_extensions: [cu1_evidence_tranche2_v1.yaml, cu1_evidence_tranche3_v1.yaml]
 promotion_projections: [cu1_evidence_tranche2_promotion_v1.yaml, cu1_evidence_tranche3_promotion_v1.yaml]
 promotion_overlays: [cu1_evidence_tranche3_promotion_fix_v1.yaml]
-active_route_coverage_extensions: [cu1_evidence_route_coverage_v1.yaml, cu1_evidence_route_coverage_instability_v1.yaml, cu1_evidence_route_coverage_meniscus_v1.yaml, cu1_evidence_route_coverage_patellar_tendinopathy_v1.yaml, cu1_evidence_route_coverage_thumb_cmc1_oa_v1.yaml, cu1_evidence_route_coverage_cervical_v1.yaml, cu1_evidence_route_coverage_cervical_radiating_v1.yaml]
+active_route_coverage_extensions: [cu1_evidence_route_coverage_v1.yaml, cu1_evidence_route_coverage_instability_v1.yaml, cu1_evidence_route_coverage_meniscus_v1.yaml, cu1_evidence_route_coverage_patellar_tendinopathy_v1.yaml, cu1_evidence_route_coverage_thumb_cmc1_oa_v1.yaml, cu1_evidence_route_coverage_cervical_v1.yaml, cu1_evidence_route_coverage_cervical_radiating_v1.yaml, cu1_evidence_route_coverage_cervical_headache_v1.yaml]
 logical_amendments: [cu1_evidence_route_coverage_amendments_v1.yaml]
-fixture_extensions: [cu1_cervical_history_evidence_fixtures_v1.yaml]
+fixture_extensions: [cu1_cervical_history_evidence_fixtures_v1.yaml, cu1_c3_cervical_headache_fixtures_v1.yaml]
 staged_evidence_extensions: []
 normative_schema: cu1_history_timeline_schema_v1.yaml
 coverage_rule: every_routine_route_and_material_subtype_or_management_context_requires_unique_current_applicable_evidence_profile_and_complete_element_traceable_rehabilitation_sequence_or_explicit_blocked_evidence_gap
@@ -75,7 +75,23 @@ profiles:
       NMA_scope_behavior: cervical_radiculopathy_component_evidence_does_not_auto_expand_to_symptom_only_C2
       safety_behavior: progressive_objective_neurological_or_possible_cord_findings_block_routine_progression_and_trigger_reassessment
       progression_behavior: no_universal_numeric_progression_threshold_or_fixed_traction_dose
-    headache_with_cervical_msk_features: {status: pending}
+    headache_with_cervical_msk_features:
+      status: profile_curated
+      sequence_status: sequence_complete
+      profile_ids: [rep_c3_cervical_headache_presentation_v1, rep_c3_formal_cervicogenic_headache_v1]
+      source_state: native_active_design_authority
+      shard: cu1_evidence_route_coverage_cervical_headache_v1.yaml
+      review_record: CU1_C3_CERVICAL_HEADACHE_ROUTE_REVIEW_2026-08-29.md
+      fixture_extension: cu1_c3_cervical_headache_fixtures_v1.yaml
+      evidence_state: ICHD3_diagnostic_boundary_plus_APTA_2017_neck_pain_with_headache_framework_plus_Martins_2026_GRADE_and_Jung_2024_NMA_only_for_formal_CGH_context
+      sequence_model: two_context_specific_single_phase_evidence_bounded_sequences_presentation_only_vs_formal_CGH
+      diagnostic_boundary: cervical_MSK_headache_features_do_not_auto_establish_formal_cervicogenic_headache
+      disease_specific_scope_behavior: CGH_specific_2026_2024_syntheses_require_formal_or_clinician_established_CGH_context
+      adjunct_behavior: manual_therapy_is_context_specific_and_not_automatic_with_low_certainty_short_term_CGH_effect_preserved
+      ranking_behavior: low_certainty_NMA_rankings_do_not_become_mandatory_protocol_or_universal_superiority
+      safety_behavior: materially_new_changed_progressive_or_neurological_vascular_systemic_headache_concern_blocks_routine_C3_progression
+      progression_behavior: no_universal_numeric_progression_threshold_or_fixed_PT_course_duration
+      cross_route_boundary: post_traumatic_primary_context_requires_C5_review
     cervical_dizziness_presentation: {status: pending}
     post_traumatic_neck_pain: {status: pending}
 
@@ -382,7 +398,6 @@ shared_owners:
 research_queue_priority:
   rationale: prioritize_routes_with_current_route_specific_guidance_and_high_real_world_frequency_while_preserving_subtype_and_management_context_boundaries
   next:
-    - headache_with_cervical_msk_features
     - cervical_dizziness_presentation
     - post_traumatic_neck_pain
     - remaining_wrist_hand_and_elbow_routes
@@ -395,12 +410,12 @@ integration_state:
   tranche3_schema_conformance_reviewed: true
   tranche3_promotion_gate_passed: true
   native_route_coverage_schema_conformance_reviewed: true
-  route_coverage_reviewed_routes: [calcific_rotator_cuff_tendinopathy, glenohumeral_instability_dislocation, glenohumeral_osteoarthritis, degenerative_meniscal_lesion_conservative_rehabilitation, patellar_tendinopathy, thumb_cmc1_osteoarthritis, nonspecific_neck_pain, neck_pain_with_radiating_upper_limb_symptoms]
+  route_coverage_reviewed_routes: [calcific_rotator_cuff_tendinopathy, glenohumeral_instability_dislocation, glenohumeral_osteoarthritis, degenerative_meniscal_lesion_conservative_rehabilitation, patellar_tendinopathy, thumb_cmc1_osteoarthritis, nonspecific_neck_pain, neck_pain_with_radiating_upper_limb_symptoms, headache_with_cervical_msk_features]
   logical_amendment_gate_passed: true
   all_listed_shards_schema_reviewed: true
   all_listed_shards_promotion_or_native_gate_passed: true
   fixtures_catalog_created: true
-  fixture_extensions: [cu1_cervical_history_evidence_fixtures_v1.yaml]
+  fixture_extensions: [cu1_cervical_history_evidence_fixtures_v1.yaml, cu1_c3_cervical_headache_fixtures_v1.yaml]
   matching_fixtures_added_for_reviewed_route_coverage: true
   route_specific_history_prompt_catalog_complete: false
 
