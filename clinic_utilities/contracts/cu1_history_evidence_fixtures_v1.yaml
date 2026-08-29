@@ -1,4 +1,4 @@
-version: cu1_history_evidence_fixtures_v1_4
+version: cu1_history_evidence_fixtures_v1_5
 status: design_oracle_pending_full_route_coverage
 runtime_authorized: false
 normative_schema: cu1_history_timeline_schema_v1.yaml
@@ -401,6 +401,54 @@ fixtures:
       indefinite_routine_progression_allowed: false
       orthopaedic_reassessment_required: true
 
+  patellar_tendinopathy_no_mandatory_loading_mode:
+    route_id: patellar_tendinopathy
+    input:
+      conservative_rehabilitation_selected: true
+      formal_patellar_tendinopathy_diagnosis: true
+      return_to_sport_goal: true
+    expected:
+      evidence_profile_id: rep_patellar_tendinopathy_v1
+      rehabilitation_sequence_id: seq_patellar_tendinopathy_v1
+      required_claim_id: patellar_progressive_loading_conservative_direction
+      eccentric_mandatory: false
+      HSR_mandatory: false
+      isometric_mandatory: false
+      PTLE_mandatory: false
+      loading_mode_is_therapist_execution_detail: true
+      comparative_hierarchy_claimed: false
+
+  patellar_tendinopathy_absolute_effect_uncertainty_visible:
+    route_id: patellar_tendinopathy
+    expected:
+      clinician_ui_claim_id: patellar_absolute_strengthening_effect_uncertain_2025
+      false_high_certainty_exercise_effect_claim_generated: false
+      Cochrane_uncertainty_preserved: true
+      loading_rehabilitation_direction_may_still_be_described_cautiously: true
+
+  patellar_tendinopathy_no_numeric_RTS_or_pain_threshold_invention:
+    route_id: patellar_tendinopathy
+    input:
+      return_to_sport_goal: true
+      prior_expert_protocol_available_in_literature: true
+    expected:
+      clinician_ui_claim_id: patellar_RTS_threshold_gap
+      universal_numeric_pain_threshold_auto_rendered: false
+      universal_strength_percentage_auto_rendered: false
+      universal_week_based_RTS_clearance_auto_rendered: false
+      elapsed_time_only_progression_allowed: false
+      individualized_load_response_progression_claim_id: patellar_loading_progression_by_response
+
+  patellar_tendinopathy_ESWT_not_default:
+    route_id: patellar_tendinopathy
+    input:
+      clinician_selected_ESWT: false
+    expected:
+      claim_id: patellar_ESWT_no_clear_added_benefit_2021
+      ESWT_auto_recommended: false
+      ESWT_claimed_superior_to_exercise: false
+      progressive_loading_direction_remains_primary_referral_content: true
+
 readiness:
   fixture_catalog_created: true
   fixtures_fully_executable: false
@@ -409,6 +457,7 @@ readiness:
     - glenohumeral_instability_dislocation
     - glenohumeral_osteoarthritis
     - degenerative_meniscal_lesion_conservative_rehabilitation
+    - patellar_tendinopathy
   blockers:
     - remaining_route_profiles_and_sequences_not_curated
     - runtime_validator_not_authorized
