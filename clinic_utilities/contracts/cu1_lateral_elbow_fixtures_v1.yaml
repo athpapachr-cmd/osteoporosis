@@ -32,8 +32,9 @@ fixtures:
       safety_context: no_material_concern_identified
     expect:
       rehabilitation_sequence_id: seq_lateral_elbow_evidence_bounded_v1
-      must_allow_authority: let_irritability_guided_load_management_2022
-      must_allow_authority: let_ergonomic_education_load_modification_E_2022
+      must_allow_authorities:
+        - let_irritability_guided_load_management_2022
+        - let_ergonomic_education_load_modification_E_2022
       must_not_apply_authority: lateral_elbow_resisted_wrist_extensor_exercise
       must_not_infer_subacute_or_chronic_state: true
       must_not_create_fixed_symptom_modulation_bundle: true
