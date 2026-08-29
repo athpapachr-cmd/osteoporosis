@@ -4,12 +4,16 @@ runtime_authorized: true
 reviewed_on: 2026-08-29
 source_evidence_manifest: clinic_utilities/contracts/cu1_evidence_manifest_v1.yaml
 source_coverage_matrix: clinic_utilities/contracts/cu1_evidence_coverage_matrix_v1.yaml
+source_coverage_amendments:
+  - clinic_utilities/contracts/cu1_evidence_coverage_rcrsp_amendment_v1.yaml
 
 purpose: >-
   Authorize read-only clinician UI projection of the reviewed CU-1 evidence corpus without promoting
   that corpus wholesale into referral-generation runtime authority. This view exists to let the
   clinician inspect route-relevant references, claim scope, strength/certainty, freshness, conflicts
-  and evidence gaps while preserving the source corpus' own activation and coverage gates.
+  and evidence gaps while preserving the source corpus' own activation and coverage gates. Reviewed
+  logical coverage amendments may project completed route-review metadata without rewriting the
+  historical coverage work queue or changing underlying evidence claims.
 
 allowed_runtime_use:
   - clinician_ui_reference_panel
