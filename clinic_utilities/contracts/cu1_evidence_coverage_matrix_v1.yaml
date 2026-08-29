@@ -1,4 +1,4 @@
-version: cu1_evidence_coverage_matrix_v1_7
+version: cu1_evidence_coverage_matrix_v1_8
 status: active_route_by_route_work_queue
 runtime_authorized: false
 route_registry: cu1_registry_v1.yaml
@@ -106,7 +106,6 @@ profiles:
       shard: cu1_evidence_route_coverage_v1.yaml
       review_record: CU1_ROUTE_COVERAGE_REVIEW_2026-08-29.md
       framework_state: JOSPT_2025_ESWT_may_consider_vs_NICE_HTG645_research_only_preserved_as_explicit_conflict
-      note: core_active_rehabilitation_is_evidence_supported;_ESWT_is_not_auto_rendered;_no_universal_numeric_progression_threshold_is_invented
     adhesive_capsulitis_frozen_shoulder:
       status: profile_curated
       sequence_status: sequence_incomplete
@@ -124,23 +123,25 @@ profiles:
       shards: [cu1_evidence_tranche3_v1.yaml, cu1_evidence_route_coverage_instability_v1.yaml]
       logical_amendment: cu1_evidence_route_coverage_amendments_v1.yaml
       review_record: CU1_ROUTE_COVERAGE_REVIEW_2026-08-29.md
-      profile_ids:
-        - rep_shoulder_instability_anterior_traumatic_v1
-        - rep_shoulder_instability_posterior_v1
-        - rep_shoulder_instability_anterior_atraumatic_v1
-        - rep_shoulder_instability_multidirectional_v1
-      branch_state:
-        traumatic_anterior: evidence_bounded_context_scoped_sequence
-        posterior_nonoperative: evidence_bounded_lower_authority_sequence
-        atraumatic_anterior_nonoperative: evidence_bounded_lower_authority_sequence
-        multidirectional_nonoperative: cautious_sequence_with_explicit_comparative_efficacy_uncertainty
+      profile_ids: [rep_shoulder_instability_anterior_traumatic_v1, rep_shoulder_instability_posterior_v1, rep_shoulder_instability_anterior_atraumatic_v1, rep_shoulder_instability_multidirectional_v1]
       unresolved_context_behavior: direction_or_cause_or_management_context_not_stated_blocks_evidence_aware_sequence_until_clarified
       postoperative_behavior: route_to_postoperative_shoulder_rehabilitation_with_patient_specific_protocol_precedence
       correction_note: posterior_PartII_postoperative_RTS_claim_is_suppressed_from_nonoperative_route_authority
     glenohumeral_osteoarthritis:
-      status: evidence_seeded
-      next_source: AAOS_2020_glenohumeral_joint_osteoarthritis_CPG
-      blocker: current_AAOS_PT_recommendation_is_consensus_due_absence_of_reliable_evidence_and_no_route_specific_progression_sequence_is_defined
+      status: profile_curated
+      sequence_status: sequence_complete
+      source_state: native_active_design_authority
+      shard: cu1_evidence_route_coverage_v1.yaml
+      logical_amendment: cu1_evidence_route_coverage_amendments_v1.yaml
+      review_record: CU1_ROUTE_COVERAGE_REVIEW_2026-08-29.md
+      profile_ids: [rep_glenohumeral_oa_nonoperative_v1, rep_glenohumeral_oa_preop_TSA_v1]
+      management_contexts:
+        nonoperative: sequence_complete_best_practice_evidence_gap_aware
+        preoperative_TSA: sequence_complete_best_practice_evidence_gap_aware
+        postoperative_arthroplasty: separate_postoperative_shoulder_rehabilitation_owner
+        not_stated: block_context_scoped_profile_selection_until_clarified
+      evidence_state: APTA_2023_best_practice_with_no_high_or_moderate_nonoperative_comparative_evidence_and_2026_SR_no_nonsurgical_PT_RCTs
+      no_specific_PT_intervention_superiority: true
     post_traumatic_shoulder_pain: {status: pending}
     acromioclavicular_joint_disorder: {status: pending}
     sternoclavicular_joint_disorder: {status: pending}
@@ -313,20 +314,17 @@ shared_owners:
     profile_id: shared_fracture
     status: pending
     protocol_override_required: true
-    note: evidence_sequence_must_remain_subordinate_to_explicit_healing_weight_bearing_ROM_and_written_orthopaedic_restrictions
   acute_muscle_myotendinous_injury_rehabilitation:
     profile_id: shared_muscle_myotendinous
     status: evidence_seeded
     next_source: JOSPT_2022_hamstring_strain_CPG_for_subtype_boundary_only
-    note: hamstring_specific_evidence_cannot_authorize_generic_all_muscle_injury_sequence
   functional_deconditioning_balance_gait_rehabilitation:
     profile_id: shared_deconditioning_balance_gait
     status: pending
 
 research_queue_priority:
-  rationale: prioritize_routes_with_current_route_specific_CPGs_and_high_real_world_frequency_while_preserving_subtype_and_management_context_boundaries
+  rationale: prioritize_routes_with_current_route_specific_guidance_and_high_real_world_frequency_while_preserving_subtype_and_management_context_boundaries
   next:
-    - glenohumeral_osteoarthritis
     - degenerative_meniscal_lesion_conservative_rehabilitation
     - patellar_tendinopathy
     - thumb_cmc1_osteoarthritis
@@ -338,12 +336,10 @@ integration_state:
   active_core_registry_scope_complete: false
   tranche2_schema_conformance_reviewed: true
   tranche2_promotion_gate_passed: true
-  tranche2_state: promoted_active_design_authority
   tranche3_schema_conformance_reviewed: true
   tranche3_promotion_gate_passed: true
-  tranche3_state: promoted_active_design_authority
   native_route_coverage_schema_conformance_reviewed: true
-  route_coverage_reviewed_routes: [calcific_rotator_cuff_tendinopathy, glenohumeral_instability_dislocation]
+  route_coverage_reviewed_routes: [calcific_rotator_cuff_tendinopathy, glenohumeral_instability_dislocation, glenohumeral_osteoarthritis]
   logical_amendment_gate_passed: true
   all_listed_shards_schema_reviewed: true
   all_listed_shards_promotion_or_native_gate_passed: true
@@ -362,15 +358,3 @@ readiness_gate:
   route_history_prompt_gate: failed
   route_fixture_gate: failed_until_all_routes_curated
   exact_design_completeness_review: blocked
-  requirements:
-    - all_routine_routes_and_material_subtypes_or_management_contexts_have_unique_applicable_route_evidence_profiles_or_explicit_reviewed_evidence_gap_behavior
-    - all_nonblocked_routine_route_variants_have_complete_evidence_bounded_sequences
-    - every_evidence_derived_rendered_phase_objective_intervention_progression_precaution_and_reassessment_element_is_traceable_to_active_applicable_referral_compatible_claim
-    - patient_specific_protocol_overrides_are_machine_distinct_from_literature_authority
-    - all_profile_sources_current_or_explicitly_reviewed
-    - evidence_gaps_and_conflicts_are_explicit
-    - no_route_level_source_is_applied_to_a_noncovered_subtype_or_management_context
-    - route_specific_history_prompts_are_defined
-    - all_shards_pass_native_or_reviewed_promotion_gate
-    - synthetic_composition_and_evidence_fixtures_pass_exact_review
-    - exact_design_completeness_review_passed
