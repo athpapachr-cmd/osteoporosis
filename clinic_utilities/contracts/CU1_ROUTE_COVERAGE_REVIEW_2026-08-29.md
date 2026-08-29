@@ -91,11 +91,9 @@ ESWT claims remain separate + mutually conflicting
 future rendering requires explicit framework/clinician context
 ```
 
-This preserves the frozen shoulder design statement that ESWT may exist as a selectable calcific-specific adjunct without converting that product option into an automatic evidence recommendation.
-
 ### Rehabilitation-sequence decision
 
-A complete **evidence-bounded** sequence is supportable without inventing numeric thresholds:
+A complete evidence-bounded sequence is supportable without inventing numeric thresholds:
 
 ```text
 required phase
@@ -109,7 +107,7 @@ optional athlete phase
 → no elapsed-time-only return rule
 ```
 
-No separate lavage/ESWT treatment phase is created. Lavage is a refractory medical/procedural option; ESWT has a live framework conflict.
+No separate lavage/ESWT treatment phase is created.
 
 ### History prompts added
 
@@ -119,8 +117,6 @@ acute-irritable vs persistent/chronic course
 prior initial treatment + response
 prior lavage/barbotage
 ```
-
-Prompts remain non-inferential and are never auto-selected.
 
 ### Exact gate
 
@@ -132,30 +128,18 @@ explicit payload IDs                            PASS
 required profile fields                         PASS
 required sequence fields                        PASS
 route applicability                             PASS
-full-thickness tear leakage                     PASS — excluded by source scope
+full-thickness tear leakage                     PASS
 output-scope compatibility                      PASS
 framework conflict preservation                 PASS
 no generic MSK fallback                         PASS
 no invented progression threshold               PASS
 route-specific history prompts                  PASS
+matching fixtures                               PASS
 
 CALCIFIC ROUTE PROFILE                           PASS
 REHABILITATION SEQUENCE                          COMPLETE — EVIDENCE-BOUNDED
 RUNTIME AUTHORIZED                              NO
-CU-1 DESIGN-COMPLETE                            NO
 ```
-
-### Remaining route-specific limitations
-
-```text
-no universal numeric rehabilitation progression thresholds
-lavage efficacy evidence is for refractory/persistent cases rather than initial acute treatment
-no evidence that post-lavage ESWT is automatically required or superior
-ESWT guideline positions conflict
-laser evidence does not itself authorize frozen-taxonomy expansion
-```
-
-These limitations are explicit and do not block the calcific route from being counted as a reviewed evidence-bounded route.
 
 ---
 
@@ -167,7 +151,7 @@ Canonical route container:
 glenohumeral_instability_dislocation
 ```
 
-The frozen shoulder design explicitly requires direction, traumatic/atraumatic context, first-time/recurrent status, current structural/specialist assessment, restrictions and sport/work demands. These are material evidence-applicability variables; they cannot be collapsed into one generic instability protocol.
+The frozen shoulder design explicitly requires direction, traumatic/atraumatic context, first-time/recurrent status, current structural/specialist assessment, restrictions and sport/work demands. These variables cannot be collapsed into one generic instability protocol.
 
 ### Current sources reviewed
 
@@ -179,8 +163,6 @@ The frozen shoulder design explicitly requires direction, traumatic/atraumatic c
 6. Posterior Shoulder Instability Part II and its companion editorial were reviewed specifically to determine whether postoperative rehabilitation/RTS evidence could be applied to nonoperative posterior instability. It cannot.
 
 ### Material split
-
-The route now resolves only after the clinically material context is known:
 
 ```text
 A. traumatic anterior — first-time dislocation
@@ -195,93 +177,28 @@ G. postoperative instability rehabilitation
 Behavior:
 
 ```text
-A-E
-→ branch-specific evidence profile / sequence
-
-F
-→ block evidence-aware sequence until clarified
-
-G
-→ postoperative_shoulder_rehabilitation
-→ patient-specific surgical protocol remains higher authority
+A-E → branch-specific evidence profile / sequence
+F   → block evidence-aware sequence until clarified
+G   → postoperative_shoulder_rehabilitation with protocol precedence
 ```
 
-### Traumatic anterior — first-time
+### Traumatic anterior
 
-ESSKA-ESA supports rehabilitation after first-time traumatic anterior dislocation regardless of whether surgery is planned, while acknowledging lack of high-level evidence for one exact regimen.
+First-time traumatic anterior dislocation is authorized for pain-controlled motion and progressive periscapular/rotator-cuff rehabilitation in the selected rehabilitation pathway, preserving the ESSKA-ESA Grade-D evidence level.
 
-The evidence-bounded direction is:
+Recurrent traumatic anterior instability is separate. ESSKA-ESA generally recommends surgical management and notes that rehabilitation alone is unlikely to achieve stability in many recurrent cases. Therefore rehabilitation wording is allowed only in an explicit preoperative or selected conservative pathway and is not represented as definitive structural treatment.
 
-```text
-after immobilization / reduction context
-→ pain-controlled passive ROM
-→ gradual active-assisted exercise
-→ when pain allows, periscapular + rotator-cuff strengthening
-→ concomitant injury context must be considered
-```
-
-This is preserved as Grade D consensus and not upgraded to stronger evidence.
-
-### Traumatic anterior — recurrent
-
-Recurrent instability is materially different.
-
-ESSKA-ESA generally recommends surgical management for recurrent traumatic anterior dislocation and states that rehabilitation alone is unlikely to provide stability in many recurrent cases, particularly contact/collision athletes.
-
-Therefore the generated rehabilitation sequence is authorized only when there is an explicit:
-
-```text
-preoperative rehabilitation pathway
-OR
-selected conservative rehabilitation pathway
-```
-
-The evidence-bounded rehabilitation direction is pain-tolerated passive/active-assisted motion followed by proprioceptive and rotator-cuff, deltoid and periscapular strengthening. It must not imply that rehabilitation is definitive treatment for a recurrent structural-instability problem.
-
-### Conservative traumatic-anterior return to sport
-
-The previous tranche3 RTS claim required a scope correction.
-
-ESSKA-ESA Question 23 is specifically about **conservatively treated** traumatic anterior instability. It supports return only after:
-
-```text
-full pain-free ROM
-+ clinical stability / no apprehension
-+ adequate strength and endurance
-+ sport-specific readiness
-```
-
-The logical claim and optional RTS phase are therefore narrowed to conservative-treatment context. No time-only clearance is permitted.
+Conservative traumatic-anterior RTS is narrowed to the source-specific context and requires pain-free ROM, clinical stability/no apprehension, adequate strength/endurance and sport-specific readiness rather than elapsed time alone.
 
 ### Posterior instability — nonoperative
 
-Posterior Part I is Level-V expert consensus for diagnosis and selection between nonoperative and operative management. It supports individualized nonoperative consideration according to:
+Posterior Part I provides Level-V expert consensus for selection between nonoperative and operative management according to primary/recurrent status, symptoms/functional limitation, pathology and patient preference.
 
-```text
-primary vs recurrent instability
-symptoms / functional limitation
-underlying pathology
-patient preference
-```
-
-It does **not** provide a complete comparative evidence-based rehabilitation protocol.
-
-The 2024 Current Clinical Concepts paper supplies a direction- and impairment-specific nonoperative framework:
-
-```text
-posterior rotator-cuff / scapular motor control and strength
-→ progressive dynamic stability
-→ symptom-free functional milestones
-→ higher-demand perturbation / sport tasks when ready
-```
-
-This is recorded as current clinical-concepts guidance, not as a high-strength CPG recommendation.
+The 2024 Current Clinical Concepts paper supplies the lower-authority direction-specific rehabilitation framework for posterior nonoperative care.
 
 ### Posterior Part-II regression correction
 
-A material scope leak was identified during exact review.
-
-The previously promoted `posterior_shoulder_instability_RTS_consensus` claim came from the 2025 Part-II Delphi paper. The companion editorial clarifies that Part II addresses **postoperative rehabilitation and return to play**, and that rehabilitation/RTS after conservative treatment was not addressed.
+The previously promoted Part-II RTS claim is postoperative authority. The companion editorial explicitly notes that conservative rehabilitation/RTS was not addressed.
 
 Therefore:
 
@@ -290,50 +207,20 @@ posterior Part-II RTS claim
 != nonoperative posterior-instability authority
 ```
 
-The logical amendment suppresses this claim from the generic `glenohumeral_instability_dislocation` nonoperative registry. The source remains available for later curation of `postoperative_shoulder_rehabilitation`.
+It is suppressed from the generic nonoperative route and retained only as potential source material for future postoperative-route curation.
 
-### Atraumatic anterior instability
+### Atraumatic anterior and MDI
 
-Atraumatic anterior instability selected for nonoperative care is not treated as traumatic dislocation.
+Atraumatic anterior instability uses only a cautious direction-specific nonoperative clinical-concepts framework.
 
-Current clinical-concepts evidence supports a cautious direction-specific framework based on anterior rotator-cuff/scapular motor control, strength and progressive dynamic functional loading according to identified deficits.
-
-No route-specific high-authority CPG or universal numeric progression threshold was identified; this limitation remains explicit.
-
-### Multidirectional instability
-
-MDI is explicitly separated from unidirectional traumatic instability.
-
-The 2024 systematic review confirms substantial diagnostic/classification heterogeneity and supports the principle:
+For MDI, the 2026 Cochrane review found no eligible control/usual-care RCTs. Hence:
 
 ```text
-generalized laxity alone != MDI diagnosis
-symptomatic instability in >=2 directions + clinical context required
+comparative exercise effect estimate = unavailable
+certainty of a nonexistent comparative effect estimate = not_applicable
 ```
 
-The 2026 Cochrane review found **no eligible randomized trials** comparing exercise with placebo, no treatment, waiting-list or usual-care controls through the review search period.
-
-Therefore:
-
-```text
-comparative exercise efficacy estimate = unavailable
-certainty grade for a nonexistent effect estimate = not_applicable
-```
-
-It would be incorrect to label this as a `very_low` effect estimate.
-
-When a clinician has explicitly selected nonoperative rehabilitation, a cautious individualized motor-control, co-contraction/scapular-control and dynamic-stability framework may be described, but its comparative benefit must remain explicitly uncertain. No fabricated progression or RTS threshold is added.
-
-### History prompts added
-
-In addition to the existing direction/recurrence/traumatic-context prompt, the route now requires/supports:
-
-```text
-current management strategy
-known bone loss / Bankart / Hill-Sachs / other structural context
-sport/work/contact-collision/overhead demands
-current restrictions after reduction or specialist assessment
-```
+A cautious motor-control/co-contraction/dynamic-stability framework may be described only when nonoperative rehabilitation is explicitly selected; comparative efficacy remains uncertain.
 
 ### Exact gate
 
@@ -348,37 +235,175 @@ anterior conservative RTS scope                    PASS after amendment
 posterior Part-II postoperative leak                PASS after suppression
 MDI no-RCT certainty semantics                     PASS after amendment
 route-specific history prompts                     PASS
+matching context-leakage fixtures                  PASS
 no generic instability sequence                    PASS
 no elapsed-time-only progression                   PASS
-no invented numeric progression thresholds         PASS
 
 GLENOHUMERAL INSTABILITY ROUTE SPLIT                PASS
 TRAUMATIC ANTERIOR SEQUENCE                         COMPLETE — EVIDENCE-BOUNDED / CONTEXT-SCOPED
 POSTERIOR NONOPERATIVE SEQUENCE                     COMPLETE — EVIDENCE-BOUNDED / LOWER-AUTHORITY
 ATRAUMATIC ANTERIOR SEQUENCE                        COMPLETE — EVIDENCE-BOUNDED / LOWER-AUTHORITY
-MDI SEQUENCE                                        COMPLETE — CAUTIOUS EVIDENCE-BOUNDED WITH EXPLICIT EFFICACY UNCERTAINTY
+MDI SEQUENCE                                        COMPLETE — CAUTIOUS WITH EXPLICIT EFFICACY UNCERTAINTY
 UNRESOLVED DIRECTION/CAUSE/MANAGEMENT                BLOCK OUTPUT UNTIL CLARIFIED
 POSTOPERATIVE INSTABILITY                            EXCLUDED FROM THIS ROUTE SPLIT
 RUNTIME AUTHORIZED                                  NO
-CU-1 DESIGN-COMPLETE                                NO
+```
+
+---
+
+## Route 3 — Glenohumeral osteoarthritis
+
+Canonical route:
+
+```text
+glenohumeral_osteoarthritis
+```
+
+Frozen shoulder design uses this route only for clinician-established GHOA with compatible clinical/imaging context. Rehabilitation wording is directed at pain/function, mobility/strength/activity where clinically useful and must not imply structural reversal.
+
+### Current sources reviewed
+
+1. Michener et al. / APTA. **Physical Therapist Management of Glenohumeral Joint Osteoarthritis: A Clinical Practice Guideline from the American Physical Therapy Association.** Phys Ther. 2023;103(6):pzad041. DOI `10.1093/ptj/pzad041`.
+2. Muhammad DG, Foster NE, Pelaez M, O'Leary K, Ackerman IN, Quicke JG. **The effectiveness of physiotherapy-led non-surgical and perioperative interventions for glenohumeral osteoarthritis: A systematic review.** Shoulder Elbow. 2026 May 22; online ahead of print. DOI `10.1177/17585732261450961`; PMID 42186453.
+3. AAOS continues to list the 2020 Glenohumeral Joint Osteoarthritis CPG as its current GHOA guideline. For PT-specific route design, the 2023 APTA CPG is the more directly applicable source.
+
+### Freshness finding
+
+The 2026 systematic review searched through June 2025 and found four eligible RCTs, all postoperative. It found **no published RCTs evaluating physiotherapist-led interventions in nonsurgical GHOA care**.
+
+This confirms rather than closes the evidence gap documented in the 2023 APTA CPG.
+
+### Material management-context split
+
+```text
+A. established primary GHOA — nonoperative management
+B. established primary GHOA — scheduled for TSA / preoperative PT context
+C. postoperative shoulder arthroplasty
+D. management context not stated
+```
+
+Behavior:
+
+```text
+A
+→ rep_glenohumeral_oa_nonoperative_v1
+→ seq_glenohumeral_oa_nonoperative_v1
+
+B
+→ rep_glenohumeral_oa_preop_TSA_v1
+→ seq_glenohumeral_oa_preop_TSA_v1
+
+C
+→ postoperative_shoulder_rehabilitation
+→ procedure-specific/patient-specific protocol authority
+
+D
+→ history prompt requires management-context clarification before selecting A or B
+```
+
+### Nonoperative GHOA evidence posture
+
+The APTA CPG states:
+
+```text
+high/moderate-quality comparative evidence = absent
+aggregate included studies for nonoperative PT comparison = 0
+```
+
+Its best-practice position is that PT services **may benefit** patients with GHOA who have not undergone TSA.
+
+It also states that no one specific PT intervention is established as superior. Intervention selection is intentionally individualized according to examination findings, impairments, tissue irritability, patient goals and values.
+
+Therefore the CU-1 sequence is deliberately broad:
+
+```text
+one evidence-gap-aware nonoperative phase
+→ individualized PT management
+→ no evidence-superior named exercise/technique package
+→ no invented frequency/duration
+→ no universal numeric progression threshold
+→ repeated patient-reported function/disability + clinical evaluation for reassessment
+```
+
+This is recorded as `best_practice_APTA / certainty=not_applicable`, not as low-certainty treatment-effect evidence.
+
+### Preoperative TSA context
+
+The APTA CPG similarly states as best practice, in the absence of high/moderate-quality evidence, that preoperative PT services may benefit postoperative outcomes.
+
+The route therefore allows one broad preoperative phase without inventing a prehabilitation protocol.
+
+It does **not** borrow postoperative TSA exercises, immobilization timing or strengthening restrictions into the preoperative route.
+
+### Postoperative context boundary
+
+The same APTA CPG contains stronger postoperative TSA evidence, including procedure/timing-sensitive recommendations. Those recommendations are not imported into `glenohumeral_osteoarthritis` because the frozen product has a separate:
+
+```text
+postoperative_shoulder_rehabilitation
+```
+
+owner.
+
+Thus:
+
+```text
+postoperative TSA evidence
+!= nonoperative GHOA authority
+!= preoperative GHOA authority
+```
+
+Patient-specific surgeon/protocol restrictions retain precedence.
+
+### Route-specific history prompts
+
+Added prompts capture:
+
+```text
+management context: nonoperative / pre-op TSA / postoperative / not stated
+symptom irritability and functional priority
+prior nonoperative/PT care and response
+imaging / glenoid-deformity / structural context when known
+```
+
+### Exact gate
+
+```text
+canonical route identity                         PASS
+current PT-specific CPG identified               PASS
+2026 evidence-gap freshness check                PASS
+systematic-review source identity                PASS after amendment
+nonoperative vs preoperative split               PASS
+postoperative-owner separation                   PASS
+best-practice opinion not relabelled as efficacy PASS
+no specific PT superiority invented              PASS
+no frequency/course duration invented            PASS
+no universal progression threshold invented      PASS
+route-specific history prompts                   PASS
+
+GHOA NONOPERATIVE PROFILE                        PASS
+GHOA NONOPERATIVE SEQUENCE                       COMPLETE — BEST-PRACTICE / EVIDENCE-GAP-AWARE
+GHOA PREOPERATIVE TSA PROFILE                    PASS
+GHOA PREOPERATIVE SEQUENCE                       COMPLETE — BEST-PRACTICE / EVIDENCE-GAP-AWARE
+POSTOPERATIVE ARTHROPLASTY                       SEPARATE ROUTE OWNER
+RUNTIME AUTHORIZED                              NO
 ```
 
 ### Remaining route-specific limitations
 
 ```text
-recurrent traumatic anterior instability often has operative-management implications
-posterior nonoperative detailed rehabilitation is not supported by high-level comparative evidence
-atraumatic anterior evidence is clinical-concepts level rather than route-specific CPG authority
-MDI comparative exercise benefit/harm remains unknown because eligible control RCTs were absent
-bone loss / soft-tissue lesion / age / sport context may materially change the management decision
-postoperative rehabilitation requires procedure-specific protocol authority
+no nonsurgical PT RCT evidence through June 2025 search
+no evidence-supported superior PT intervention
+no validated nonoperative staged progression thresholds
+preoperative PT recommendation is best-practice opinion
+postoperative TSA evidence requires separate procedure/protocol-scoped curation
 ```
 
-These limitations are explicit. They do not justify a generic instability fallback.
+These are explicit evidence limitations, not a reason to fabricate a generic shoulder-OA exercise protocol.
 
 ---
 
-## Current route-coverage state after Routes 1–2
+## Current route-coverage state after Routes 1–3
 
 ```text
 calcific_rotator_cuff_tendinopathy
@@ -386,9 +411,11 @@ calcific_rotator_cuff_tendinopathy
 
 glenohumeral_instability_dislocation
 → PASS as context-gated split
-→ four evidence-bounded sequence branches
-→ unresolved context blocks evidence-aware output
-→ postoperative context routed separately
+
+glenohumeral_osteoarthritis
+→ PASS as management-context split
+→ nonoperative + preoperative TSA broad best-practice sequences
+→ postoperative context owned separately
 ```
 
 ## Next route
@@ -396,5 +423,5 @@ glenohumeral_instability_dislocation
 Per the reconciled work queue:
 
 ```text
-glenohumeral_osteoarthritis
+degenerative_meniscal_lesion_conservative_rehabilitation
 ```
