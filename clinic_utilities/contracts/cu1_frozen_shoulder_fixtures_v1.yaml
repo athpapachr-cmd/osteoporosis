@@ -1,0 +1,99 @@
+version: cu1_frozen_shoulder_fixtures_v1
+status: normative_design_regression_oracle_active
+runtime_authorized: false
+route_id: adhesive_capsulitis_frozen_shoulder
+reviewed_on: 2026-08-29
+review_record: CU1_FROZEN_SHOULDER_ROUTE_REVIEW_2026-08-29.md
+
+purpose: >-
+  Regression oracle for the context-gated primary frozen-shoulder rich referral. The fixtures prevent
+  primary-frozen-shoulder evidence from being applied to presentation-only, secondary, post-traumatic,
+  postoperative or otherwise unresolved stiff-shoulder contexts and preserve current uncertainty
+  around strengthening, supervised-PT superiority and universal progression rules.
+
+fixtures:
+  - fixture_id: primary_frozen_shoulder_formal_context_may_use_rich_plan
+    given:
+      route_id: adhesive_capsulitis_frozen_shoulder
+      wording_mode: formal_diagnosis
+      formal_assertion_state: "yes"
+      frozen_shoulder_scope: primary_frozen_shoulder
+    expect:
+      route_evidence_profile_id: rep_adhesive_capsulitis_v1
+      may_include_authorities: [adhesive_capsulitis_manual_ROM_cpg2025, adhesive_capsulitis_exercise_and_mobilization]
+      must_use_single_phase_evidence_bounded_organization: true
+      must_not_create_freezing_frozen_thawing_protocol: true
+      must_not_create_universal_numeric_ROM_threshold: true
+
+  - fixture_id: presentation_only_does_not_receive_primary_disease_authority
+    given:
+      route_id: adhesive_capsulitis_frozen_shoulder
+      wording_mode: presentation
+      frozen_shoulder_scope: not_stated
+    expect:
+      rich_plan_must_not_resolve: true
+      must_not_auto_apply_primary_frozen_shoulder_claims: true
+
+  - fixture_id: secondary_or_other_stiff_shoulder_is_blocked_from_primary_authority
+    given:
+      route_id: adhesive_capsulitis_frozen_shoulder
+      wording_mode: formal_diagnosis
+      frozen_shoulder_scope: secondary_or_other_stiff_shoulder
+    expect:
+      rich_plan_must_not_resolve: true
+      must_not_borrow_primary_frozen_shoulder_authority: true
+      correct_owner_or_context_review_required: true
+
+  - fixture_id: unresolved_scope_is_fail_closed
+    given:
+      route_id: adhesive_capsulitis_frozen_shoulder
+      wording_mode: formal_diagnosis
+      frozen_shoulder_scope: not_stated
+    expect:
+      rich_plan_must_not_resolve: true
+      must_not_infer_primary_disease_from_route_label: true
+
+  - fixture_id: strengthening_uncertainty_is_preserved
+    given:
+      route_id: adhesive_capsulitis_frozen_shoulder
+      frozen_shoulder_scope: primary_frozen_shoulder
+    expect:
+      clinician_claim: adhesive_capsulitis_strengthening_inconclusive_cpg2025
+      routine_referral_must_not_make_strengthening_mandatory: true
+      evidence_certainty_remains_very_low_or_insufficient: true
+
+  - fixture_id: self_stretching_remains_execution_detail
+    given:
+      route_id: adhesive_capsulitis_frozen_shoulder
+      evidence_claim: adhesive_capsulitis_self_stretching_cpg2025
+    expect:
+      output_scope_must_remain: therapist_execution_detail
+      routine_referral_must_not_prescribe_fixed_stretch_dose: true
+
+  - fixture_id: supervised_PT_superiority_is_not_claimed
+    given:
+      route_id: adhesive_capsulitis_frozen_shoulder
+      evidence_claim: adhesive_capsulitis_BESS_supervised_PT_uncertain
+    expect:
+      output_scope_must_remain: clinician_ui_only
+      routine_referral_must_not_claim_superiority_over_natural_history: true
+
+  - fixture_id: post_injection_PT_claim_requires_matching_context
+    given:
+      route_id: adhesive_capsulitis_frozen_shoulder
+      evidence_claim: adhesive_capsulitis_BESS_PT_after_injection
+    expect:
+      applicability_condition_must_remain: after_glenohumeral_injection_therapy
+      routine_primary_plan_must_not_auto_render_post_injection_claim: true
+
+validation_assertions:
+  primary_scope_only: true
+  formal_diagnosis_required_for_rich_projection: true
+  no_secondary_stiff_shoulder_evidence_borrowing: true
+  no_fixed_disease_stage_protocol: true
+  no_universal_ROM_progression_threshold: true
+  no_mandatory_strengthening: true
+  no_fixed_self_stretching_dose: true
+  no_supervised_PT_superiority_claim: true
+  no_generic_shoulder_fallback: true
+  runtime_authorized: false
