@@ -1053,3 +1053,78 @@ RUNTIME AUTHORIZED            NO
 PR #63 remains draft/unmerged. No runtime recommendation logic, persistence change, CU-2 work or PR-1 restart was authorized.
 
 The exact next route is now `posterior_interosseous_nerve_supinator_syndrome`, followed by the remaining wrist/hand and elbow routes and then the remaining routine registry.
+
+---
+
+## 2026-08-29 — Posterior interosseous nerve / supinator route closed as explicit evidence-gap + safety/context split
+
+The route `posterior_interosseous_nerve_supinator_syndrome` passed exact evidence/applicability review without manufacturing a route-specific physiotherapy sequence.
+
+The reviewed model has four machine-distinct contexts:
+
+```text
+pain-predominant radial-tunnel / lateral-forearm presentation without material PIN motor deficit
+→ rep_pin_pain_only_or_radial_tunnel_mismatch_v1
+→ rehabilitation_sequence_id: null
+→ blocked_evidence_gap / route mismatch
+
+PIN-pattern motor presentation with diagnosis/etiology/localization unresolved
+→ rep_pin_motor_presentation_unresolved_v1
+→ rehabilitation_sequence_id: null
+→ blocked_evidence_gap
+
+explicit clinician-established spontaneous non-traumatic/non-compressive PIN palsy
++ no space-occupying lesion
++ no progressive motor safety trigger
+→ rep_pin_spontaneous_noncompressive_established_v1
+→ rehabilitation_sequence_id: null
+→ conservative-management context supported, specific PT sequence not established
+
+demonstrable compression/entrapment or mass
+or trauma / iatrogenic / inflammatory structural cause
+or progressive/materially worsening motor deficit
+→ rep_pin_compressive_structural_or_progressive_v1
+→ rehabilitation_sequence_id: null
+→ specialist/correct-owner/safety behavior
+```
+
+The 2026 prospective Japanese multicenter cohort of spontaneous PIN palsy supports initial conservative management in its narrow spontaneous, non-traumatic, non-compressive, no-space-occupying-lesion population. It does not define a nerve-gliding, splinting, manual-therapy, electrical-stimulation, strengthening, visit-frequency or PT-duration protocol. The route-specific 2006 systematic review found no randomized or controlled clinical trials, and the current review did not identify a later high-quality controlled rehabilitation evidence base sufficient to create a criteria-based `RehabilitationSequenceV1`.
+
+Hard PIN boundaries preserved by the review include:
+
+```text
+lateral forearm pain / radial-tunnel provocation != motor PIN diagnosis
+motor pattern != formal PIN diagnosis != etiology != supinator/Frohse compression site
+formal diagnosis != spontaneous/noncompressive etiology
+not_assessed motor status != normal or pain-only classification
+route selection != cervical / plexus / proximal radial / multifocal motor neuropathy exclusion
+investigation finding != rehabilitation protocol
+spontaneous conservative-management signal != specific physiotherapy effectiveness evidence
+```
+
+The 2026 cohort's six-month motor-recovery signal remains source/population-specific management-course context. CU-1 does not convert it into a universal PT course duration, elapsed-time progression rule, automatic surgical threshold or procedure choice. New/progressive objective motor weakness, demonstrable compression/mass, trauma/iatrogenic/structural cause or other discordant localization requires reassessment or the correct owner.
+
+A pre-PASS source audit corrected the 2006 systematic-review citation to `J Peripher Nerv Syst. 2006;11(2):101-110`, DOI `10.1111/j.1085-9489.2006.00074.x`, corrected the electrodiagnostic review issue year/citation to `HSS J. 2012;8(2):184-189`, DOI `10.1007/s11420-011-9238-8`, and removed a motor-deficit-only safety claim from the pain-only mismatch profile. These were source-identity/applicability corrections only and did not broaden clinical authority.
+
+Matching route-history prompts and `cu1_pin_supinator_fixtures_v1.yaml` were added. The fixture oracle verifies pain-only-vs-motor separation, motor-pattern-vs-diagnosis separation, `not_assessed != normal`, formal-diagnosis-vs-etiology separation, non-universalization of the 2026 six-month signal, fail-closed structural/traumatic/progressive-motor contexts, alternative localization/MMN boundaries, diagnostic-test-vs-treatment separation, non-auto-rendering of nerve gliding/splint/manual/electrical modalities, no generic LET/elbow/peripheral-nerve fallback, and missing-history semantics.
+
+Focused GitHub Actions run #236 passed at exact review head `ce56ea9bcd1774547627e9a46d8470ab2a4053c0` before activation. The reviewed PIN shard and mandatory narrow amendment were activated in manifest `cu1_evidence_manifest_v1_19`; the coverage matrix was reconciled to `cu1_evidence_coverage_matrix_v1_19` and correctly records PIN as `profile_curated / blocked_evidence_gap`, not `sequence_complete`.
+
+The global CU-1 gate remains:
+
+```text
+SHARD INTEGRATION             PASS
+LATERAL ELBOW ROUTE           PASS
+MEDIAL ELBOW ROUTE            PASS
+ULNAR NEUROPATHY ELBOW ROUTE  PASS as context split
+PIN / SUPINATOR ROUTE         PASS as explicit evidence-gap + safety/context split
+GLOBAL ROUTE COVERAGE         FAIL / IN PROGRESS
+ROUTE-HISTORY PROMPTS         FAIL globally until all routes curated
+ROUTE FIXTURE CORPUS          FAIL globally until all routes curated
+DESIGN-COMPLETE               NO
+RUNTIME AUTHORIZED            NO
+```
+
+PR #63 remains draft/unmerged. No runtime recommendation logic, persistence change, CU-2 work or PR-1 restart was authorized.
+
+The exact next route is now `distal_biceps_tendon_disorder_nonoperative`, followed by the remaining wrist/hand and elbow routes and then the remaining routine registry.
