@@ -120,6 +120,11 @@ class CU1GreekReferralFormatter(_BaseGreekFormatter):
             clinical.append(work_context.rstrip("."))
         if restrictions or precautions:
             clinical.append(f"Περιορισμοί/προφυλάξεις: {self._join_greek(restrictions + precautions)}")
+        if detailed:
+            for sentence in self._detailed_context_sentences(problem):
+                clean = sentence.strip().rstrip(".")
+                if clean:
+                    clinical.append(clean)
         return clinical
 
     @staticmethod
