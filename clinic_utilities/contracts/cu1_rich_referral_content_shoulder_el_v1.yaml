@@ -1,5 +1,5 @@
 version: cu1_rich_referral_content_shoulder_el_v1
-status: prepared_runtime_authority_profile_shard
+status: active_runtime_authority_profile_shard
 runtime_authorized: true
 reviewed_on: 2026-08-29
 language: el
@@ -56,3 +56,309 @@ routes:
     reassessment_el: >-
       Επανεκτίμηση από ιατρό/ειδικό σε σοβαρό επίμονο πόνο ή λειτουργικό περιορισμό παρά την κατάλληλη συντηρητική αντιμετώπιση, αντί απεριόριστης συνέχισης της ίδιας αποκατάστασης.
     reassessment_evidence_claim_ids: [calcific_rc_persistent_severe_reassessment]
+
+  glenohumeral_instability_dislocation:
+    profile_ids: [shoulder]
+    problem_label_el_by_wording_mode:
+      presentation: Συμπτωματολογία αστάθειας γληνοβραχιόνιας άρθρωσης
+      formal_diagnosis: Αστάθεια γληνοβραχιόνιας άρθρωσης
+      established_structural_diagnosis: Εξάρθρημα / αστάθεια γληνοβραχιόνιας άρθρωσης — αποκατάσταση
+    variants:
+      - variant_id: anterior_traumatic_first_time_selected_rehabilitation
+        match:
+          wording_modes: [presentation, formal_diagnosis, established_structural_diagnosis]
+          context_equals:
+            shoulder_instability_direction: anterior
+            shoulder_instability_cause: traumatic
+            shoulder_instability_recurrence: first_time
+            shoulder_instability_structural_protocol_context: clear_for_selected_rehabilitation
+          context_in:
+            shoulder_instability_management_context: [nonoperative_rehabilitation, preoperative_selected_rehabilitation]
+        evidence_profile_ids: [rep_shoulder_instability_anterior_traumatic_v1]
+        authority_mode: reviewed_context_specific_sequence
+        short_flow_el:
+          - >-
+            Με ρητά επιλεγμένη αποκατάσταση μετά από πρώτο τραυματικό πρόσθιο επεισόδιο προτείνεται σταδιακή αποκατάσταση της ανεκτής κίνησης και στη συνέχεια ενεργοποίηση/ενδυνάμωση στροφικού πετάλου και ωμοπλάτης, αφού έχουν ληφθεί υπόψη τυχόν συνοδές κακώσεις ή περιορισμοί.
+          - >-
+            Η πρόοδος προς δυναμική φόρτιση και επιστροφή στις πραγματικές απαιτήσεις βασίζεται σε κινητικό έλεγχο, δύναμη/αντοχή, κλινική σταθερότητα και λειτουργική ετοιμότητα και όχι στον χρόνο μόνο.
+        stages:
+          - stage_id: anterior_traumatic_initial_rehabilitation
+            label_el: ΣΤΑΔΙΟ 1 — ΚΙΝΗΣΗ / ΚΙΝΗΤΙΚΟΣ ΕΛΕΓΧΟΣ / ΔΥΝΑΜΗ
+            goals_el:
+              - αποκατάσταση ανεκτής λειτουργικής κίνησης
+              - βελτίωση ελέγχου και δύναμης στροφικού πετάλου και ωμοπλάτης
+            intervention_directions_el:
+              - μετά το πρώτο τραυματικό πρόσθιο εξάρθρημα, πρόοδος από pain-controlled παθητική κίνηση σε ενεργητικά υποβοηθούμενη άσκηση και έναρξη ενδυνάμωσης στροφικού πετάλου/ωμοπλάτης όταν το επιτρέπει ο πόνος και το συνοδό δομικό πλαίσιο
+            progress_markers_el:
+              - pain-free κινητικός έλεγχος, βελτίωση δύναμης/αντοχής και λειτουργικών οροσήμων πριν από υψηλότερες απαιτήσεις
+            evidence_claim_ids:
+              - anterior_first_time_rehab_esska_2026
+              - anterior_traumatic_criterion_progression_2024
+            organization_authority: clinical_rehabilitation_organization
+          - stage_id: functional_return_self_management
+            label_el: ΣΤΑΔΙΟ 2 — ΔΥΝΑΜΙΚΗ ΦΟΡΤΙΣΗ / ΛΕΙΤΟΥΡΓΙΚΗ ΕΠΑΝΕΝΤΑΞΗ
+            goals_el:
+              - ασφαλής επάνοδος στις καθημερινές, εργασιακές και αθλητικές απαιτήσεις όταν σχετίζονται
+              - διατήρηση ελέγχου και ικανότητας φόρτισης του ώμου
+            intervention_directions_el:
+              - προοδευτική έκθεση σε δυναμικές και πραγματικές απαιτήσεις σύμφωνα με κλινική σταθερότητα, δύναμη/αντοχή και λειτουργική ετοιμότητα
+            progress_markers_el:
+              - για πλήρη αθλητική επιστροφή, πλήρες ανώδυνο εύρος, κλινική σταθερότητα χωρίς apprehension, επαρκής δύναμη/αντοχή και sport-specific readiness αντί χρονικού κριτηρίου μόνο
+            evidence_claim_ids:
+              - anterior_traumatic_criterion_progression_2024
+              - anterior_shoulder_instability_RTS_criteria
+            organization_authority: clinical_rehabilitation_organization
+        adjunct_boundary_el: >-
+          Η ακριβής δοσολογία, ειδικές ασκήσεις και τεχνικές παραμένουν ευθύνη του φυσιοθεραπευτή και δεν παράγεται καθολικό χρονικό πρωτόκολλο.
+        reassessment_el: >-
+          Επανεκτίμηση όταν προκύπτει ή παραμένει ουσιώδες δομικό πρόβλημα, ειδικός περιορισμός, νέο επεισόδιο αστάθειας ή ανάγκη αλλαγής της στρατηγικής αντιμετώπισης.
+        reassessment_evidence_claim_ids: [anterior_recurrent_surgical_context_esska_2026]
+
+      - variant_id: anterior_traumatic_recurrent_selected_rehabilitation
+        match:
+          wording_modes: [presentation, formal_diagnosis, established_structural_diagnosis]
+          context_equals:
+            shoulder_instability_direction: anterior
+            shoulder_instability_cause: traumatic
+            shoulder_instability_recurrence: recurrent
+            shoulder_instability_structural_protocol_context: clear_for_selected_rehabilitation
+          context_in:
+            shoulder_instability_management_context: [nonoperative_rehabilitation, preoperative_selected_rehabilitation]
+        evidence_profile_ids: [rep_shoulder_instability_anterior_traumatic_v1]
+        authority_mode: reviewed_context_specific_sequence_with_recurrent_management_boundary
+        short_flow_el:
+          - >-
+            Σε υποτροπιάζουσα τραυματική πρόσθια αστάθεια μόνο όταν έχει ρητά επιλεγεί συντηρητική ή προεγχειρητική αποκατάσταση προτείνεται pain-tolerated αποκατάσταση κίνησης, ιδιοδεκτικότητα και προοδευτική ενδυνάμωση στροφικού πετάλου, δελτοειδούς και ωμοπλάτης.
+          - >-
+            Η αποκατάσταση δεν παρουσιάζεται ως υποκατάστατο της απαιτούμενης ορθοπαιδικής στρατηγικής. Πρόοδος και λειτουργική επανένταξη βάσει ελέγχου, δύναμης/αντοχής και πραγματικών απαιτήσεων και όχι χρόνου μόνο.
+        stages:
+          - stage_id: anterior_recurrent_selected_rehabilitation
+            label_el: ΣΤΑΔΙΟ 1 — ΚΙΝΗΣΗ / ΙΔΙΟΔΕΚΤΙΚΟΤΗΤΑ / ΔΥΝΑΜΗ
+            goals_el:
+              - αποκατάσταση ανεκτής κίνησης και δυναμικού ελέγχου
+              - βελτίωση δύναμης και αντοχής στροφικού πετάλου, δελτοειδούς και ωμοπλάτης
+            intervention_directions_el:
+              - pain-tolerated παθητική/ενεργητικά υποβοηθούμενη κίνηση και στη συνέχεια ιδιοδεκτικότητα και προοδευτική ενδυνάμωση στο πλαίσιο της ρητά επιλεγμένης συντηρητικής ή προεγχειρητικής αποκατάστασης
+            progress_markers_el:
+              - pain-free κινητικός έλεγχος, δύναμη/αντοχή και λειτουργικά ορόσημα που επιτρέπουν υψηλότερη δυναμική απαίτηση
+            evidence_claim_ids:
+              - anterior_recurrent_rehab_esska_2026
+              - anterior_traumatic_criterion_progression_2024
+            organization_authority: clinical_rehabilitation_organization
+          - stage_id: functional_return_self_management
+            label_el: ΣΤΑΔΙΟ 2 — ΛΕΙΤΟΥΡΓΙΚΗ ΕΠΑΝΕΝΤΑΞΗ / ΔΙΑΤΗΡΗΣΗ
+            goals_el:
+              - λειτουργική επάνοδος στο πλαίσιο της επιλεγμένης στρατηγικής
+              - διατήρηση δυναμικού ελέγχου και ικανότητας φόρτισης
+            intervention_directions_el:
+              - προοδευτική έκθεση στις πραγματικές απαιτήσεις με διατήρηση των ορθοπαιδικών/προεγχειρητικών περιορισμών όπου υπάρχουν
+            progress_markers_el:
+              - λειτουργική ετοιμότητα με επαρκή έλεγχο, δύναμη/αντοχή και σταθερότητα χωρίς χρήση καθολικού χρονικού ορίου
+            evidence_claim_ids:
+              - anterior_traumatic_criterion_progression_2024
+            organization_authority: clinical_rehabilitation_organization
+        adjunct_boundary_el: >-
+          Η υποτροπιάζουσα τραυματική πρόσθια αστάθεια συχνά έχει χειρουργικό management context· το παραπεμπτικό δεν μετατρέπει τη φυσιοθεραπεία σε οριστική εναλλακτική της ειδικής αξιολόγησης.
+        reassessment_el: >-
+          Ειδική/ορθοπαιδική επανεκτίμηση σε νέα υποτροπή, ουσιώδες δομικό εύρημα, ανεπαρκή σταθερότητα ή όταν αλλάζει η επιλεγμένη στρατηγική αντιμετώπισης.
+        reassessment_evidence_claim_ids: [anterior_recurrent_surgical_context_esska_2026]
+
+      - variant_id: posterior_nonoperative_instability
+        match:
+          wording_modes: [presentation, formal_diagnosis, established_structural_diagnosis]
+          context_equals:
+            shoulder_instability_direction: posterior
+            shoulder_instability_management_context: nonoperative_rehabilitation
+            shoulder_instability_structural_protocol_context: clear_for_selected_rehabilitation
+          context_in:
+            shoulder_instability_cause: [traumatic, atraumatic]
+            shoulder_instability_recurrence: [first_time, recurrent]
+        evidence_profile_ids: [rep_shoulder_instability_posterior_v1]
+        authority_mode: reviewed_nonoperative_direction_specific_sequence
+        short_flow_el:
+          - >-
+            Σε οπίσθια αστάθεια με ρητά επιλεγμένη μη χειρουργική αντιμετώπιση προτείνεται κατευθυνσιο-ειδική αποκατάσταση κινητικού ελέγχου και δύναμης του οπίσθιου στροφικού πετάλου/ωμοπλάτης, με σταδιακή μετάβαση σε δυναμική σταθερότητα σύμφωνα με τα πραγματικά ελλείμματα.
+          - >-
+            Η πρόοδος βασίζεται σε έλεγχο, δύναμη/αντοχή και ανώδυνη λειτουργική απόδοση. Για υψηλές απαιτήσεις λαμβάνονται υπόψη η κατευθυνσιο-ειδική επίδοση, η ψυχολογική ετοιμότητα και οι απαιτήσεις δραστηριότητας, όχι χρόνος μόνο.
+        stages:
+          - stage_id: posterior_direction_specific_rehabilitation
+            label_el: ΣΤΑΔΙΟ 1 — ΚΙΝΗΤΙΚΟΣ ΕΛΕΓΧΟΣ / ΔΥΝΑΜΗ / ΔΥΝΑΜΙΚΗ ΣΤΑΘΕΡΟΤΗΤΑ
+            goals_el:
+              - βελτίωση οπίσθιου κατευθυνσιο-ειδικού ελέγχου
+              - βελτίωση δύναμης και αντοχής στροφικού πετάλου και ωμοπλάτης
+              - αποκατάσταση δυναμικής σταθερότητας
+            intervention_directions_el:
+              - εξατομικευμένη εργασία κινητικού ελέγχου και δύναμης οπίσθιου στροφικού πετάλου/ωμοπλάτης με πρόοδο σε δυναμικές απαιτήσεις σύμφωνα με συμπτώματα και ελλείμματα
+            progress_markers_el:
+              - επαρκής κινητικός έλεγχος, δύναμη/αντοχή και symptom-free λειτουργικά ορόσημα πριν από μεγαλύτερες δυναμικές ή perturbation απαιτήσεις
+            evidence_claim_ids:
+              - posterior_nonoperative_rehab_framework_2024
+              - posterior_nonoperative_progression_2024
+            organization_authority: clinical_rehabilitation_organization
+          - stage_id: functional_return_self_management
+            label_el: ΣΤΑΔΙΟ 2 — ΛΕΙΤΟΥΡΓΙΚΗ / ΥΨΗΛΩΝ ΑΠΑΙΤΗΣΕΩΝ ΕΠΑΝΕΝΤΑΞΗ
+            goals_el:
+              - επάνοδος στις πραγματικές εργασιακές ή αθλητικές απαιτήσεις
+              - διατήρηση κατευθυνσιο-ειδικού ελέγχου και λειτουργικής ικανότητας
+            intervention_directions_el:
+              - προοδευτική έκθεση σε κατευθυνσιο-ειδικές και υψηλότερες απαιτήσεις μετά την επίτευξη των προηγούμενων λειτουργικών οροσήμων
+            progress_markers_el:
+              - κατευθυνσιο-ειδική φυσική επίδοση, ψυχολογική ετοιμότητα και ανοχή στις πραγματικές απαιτήσεις πριν από πλήρη high-demand επιστροφή
+            evidence_claim_ids:
+              - posterior_nonoperative_return_readiness_2024
+            organization_authority: clinical_rehabilitation_organization
+        adjunct_boundary_el: >-
+          Δεν χρησιμοποιείται το postoperative posterior return-to-play consensus ως authority για τη μη χειρουργική αποκατάσταση.
+        reassessment_el: >-
+          Επανεκτίμηση σε νέα υποτροπή, σημαντικό δομικό εύρημα, αποτυχία διατήρησης σταθερότητας ή αλλαγή του management context.
+
+      - variant_id: anterior_atraumatic_nonoperative_instability
+        match:
+          wording_modes: [presentation, formal_diagnosis, established_structural_diagnosis]
+          context_equals:
+            shoulder_instability_direction: anterior
+            shoulder_instability_cause: atraumatic
+            shoulder_instability_management_context: nonoperative_rehabilitation
+            shoulder_instability_structural_protocol_context: clear_for_selected_rehabilitation
+          context_in:
+            shoulder_instability_recurrence: [first_time, recurrent]
+        evidence_profile_ids: [rep_shoulder_instability_anterior_atraumatic_v1]
+        authority_mode: reviewed_direction_specific_clinical_concepts_sequence
+        short_flow_el:
+          - >-
+            Σε ατραυματική πρόσθια αστάθεια με ρητά επιλεγμένη μη χειρουργική αντιμετώπιση προτείνεται εξατομικευμένος κινητικός έλεγχος και ενδυνάμωση στροφικού πετάλου/ωμοπλάτης, με προοδευτική δυναμική φόρτιση σύμφωνα με τα διαπιστωμένα ελλείμματα.
+          - >-
+            Η πρόοδος γίνεται βάσει ανώδυνου ελέγχου, δύναμης/αντοχής και λειτουργικής επίδοσης και όχι με καθολικό χρονοδιάγραμμα ή αριθμητικό threshold.
+        stages:
+          - stage_id: anterior_atraumatic_direction_specific_rehabilitation
+            label_el: ΣΤΑΔΙΟ 1 — ΚΙΝΗΤΙΚΟΣ ΕΛΕΓΧΟΣ / ΔΥΝΑΜΗ
+            goals_el:
+              - βελτίωση δυναμικού πρόσθιου ελέγχου
+              - βελτίωση δύναμης και αντοχής στροφικού πετάλου και ωμοπλάτης
+            intervention_directions_el:
+              - εξατομικευμένος κατευθυνσιο-ειδικός κινητικός έλεγχος και ενδυνάμωση με πρόοδο της δυναμικής φόρτισης σύμφωνα με τα πραγματικά ελλείμματα
+            progress_markers_el:
+              - ανώδυνος κινητικός έλεγχος, δύναμη/αντοχή και λειτουργική επίδοση που επιτρέπουν προοδευτικά μεγαλύτερη απαίτηση
+            evidence_claim_ids:
+              - anterior_atraumatic_rehab_framework_2024
+              - anterior_atraumatic_progression_2024
+            organization_authority: clinical_rehabilitation_organization
+          - stage_id: functional_return_self_management
+            label_el: ΣΤΑΔΙΟ 2 — ΛΕΙΤΟΥΡΓΙΚΗ ΕΠΑΝΕΝΤΑΞΗ / ΑΥΤΟΔΙΑΧΕΙΡΙΣΗ
+            goals_el:
+              - επάνοδος στις σημαντικές δραστηριότητες
+              - διατήρηση δυναμικού ελέγχου και αυτοδιαχείριση της φόρτισης
+            intervention_directions_el:
+              - προοδευτική έκθεση στις πραγματικές απαιτήσεις με συνέχιση της κατευθυνσιο-ειδικής ενεργητικής αποκατάστασης
+            progress_markers_el:
+              - λειτουργική ανοχή και επίδοση χωρίς καθολικό χρονικό ή αριθμητικό κριτήριο
+            evidence_claim_ids:
+              - anterior_atraumatic_progression_2024
+            organization_authority: clinical_rehabilitation_organization
+        adjunct_boundary_el: >-
+          Το πλαίσιο είναι evidence-bounded clinical-concepts guidance και δεν αποδίδεται ως ανώτερο συγκεκριμένο πρωτόκολλο ή καθολική δοσολογία.
+        reassessment_el: >-
+          Επανεκτίμηση αν εμφανιστεί νέο τραυματικό επεισόδιο, σημαντικό δομικό εύρημα ή ανεπαρκής σταθερότητα παρά την κατάλληλη πορεία.
+
+      - variant_id: multidirectional_nonoperative_instability
+        match:
+          wording_modes: [presentation, formal_diagnosis, established_structural_diagnosis]
+          context_equals:
+            shoulder_instability_direction: multidirectional
+            shoulder_instability_management_context: nonoperative_rehabilitation
+            shoulder_instability_structural_protocol_context: clear_for_selected_rehabilitation
+          context_in:
+            shoulder_instability_cause: [traumatic, atraumatic]
+            shoulder_instability_recurrence: [first_time, recurrent]
+        evidence_profile_ids: [rep_shoulder_instability_multidirectional_v1]
+        authority_mode: cautious_evidence_bounded_MDI_sequence
+        short_flow_el:
+          - >-
+            Σε ρητά πολυκατευθυντική εικόνα με επιλεγμένη μη χειρουργική αντιμετώπιση μπορεί να εφαρμοστεί προσεκτική εξατομικευμένη αποκατάσταση με κινητικό έλεγχο, co-contraction/ωμοπλατιαίο έλεγχο και δυναμική σταθερότητα σύμφωνα με τα πραγματικά ελλείμματα.
+          - >-
+            Η συγκριτική αποτελεσματικότητα της άσκησης παραμένει αβέβαιη και δεν παρουσιάζεται συγκεκριμένο πρόγραμμα, δόση ή threshold ως αποδεδειγμένα ανώτερο. Η λειτουργική πρόοδος καθορίζεται εξατομικευμένα.
+        stages:
+          - stage_id: mdi_cautious_nonoperative_rehabilitation
+            label_el: ΣΤΑΔΙΟ 1 — ΕΞΑΤΟΜΙΚΕΥΜΕΝΟΣ ΕΛΕΓΧΟΣ / ΔΥΝΑΜΙΚΗ ΣΤΑΘΕΡΟΤΗΤΑ
+            goals_el:
+              - βελτίωση συμπτωματικού δυναμικού ελέγχου και λειτουργικής σταθερότητας
+              - βελτίωση ανοχής στις σχετικές δραστηριότητες
+            intervention_directions_el:
+              - εξατομικευμένος κινητικός έλεγχος, co-contraction/ωμοπλατιαίος έλεγχος και δυναμική σταθερότητα σύμφωνα με τα πραγματικά ελλείμματα, διατηρώντας ρητά την αβεβαιότητα της συγκριτικής αποτελεσματικότητας
+            progress_markers_el:
+              - εξατομικευμένη κλινική και λειτουργική βελτίωση χωρίς καθολικό αριθμητικό κριτήριο προόδου ή επιστροφής
+            evidence_claim_ids:
+              - mdi_nonoperative_rehab_cautious_2024_2026
+              - mdi_exercise_efficacy_uncertain_cochrane_2026
+            organization_authority: clinical_rehabilitation_organization
+        adjunct_boundary_el: >-
+          Δεν παρουσιάζεται συγκεκριμένο MDI exercise protocol ως αποδεδειγμένα ανώτερο· η διαθέσιμη συγκριτική evidence βάση είναι περιορισμένη/αβέβαιη.
+        reassessment_el: >-
+          Επανεκτίμηση όταν το κλινικό pattern, το δομικό πλαίσιο ή η επιλεγμένη στρατηγική αντιμετώπισης δεν παραμένουν συμβατά με συντηρητική αποκατάσταση.
+
+  glenohumeral_osteoarthritis:
+    profile_ids: [shoulder]
+    variants:
+      - variant_id: ghoa_nonoperative
+        match:
+          wording_modes: [formal_diagnosis, established_structural_diagnosis]
+          context_equals:
+            ghoa_management_context: nonoperative
+        evidence_profile_ids: [rep_glenohumeral_oa_nonoperative_v1]
+        authority_mode: APTA_best_practice_evidence_gap_aware_sequence
+        short_flow_el:
+          - >-
+            Σε τεκμηριωμένη γληνοβραχιόνια οστεοαρθρίτιδα υπό συντηρητική αντιμετώπιση μπορεί να εφαρμοστεί εξατομικευμένη φυσιοθεραπεία για πόνο, λειτουργία και ανοχή δραστηριότητας, προσαρμοσμένη στα πραγματικά ευρήματα, ελλείμματα, ερεθιστικότητα και στόχους.
+          - >-
+            Δεν υπάρχει τεκμηριωμένη υπεροχή συγκεκριμένης φυσιοθεραπευτικής τεχνικής ή exercise package. Η αποτελεσματικότητα κρίνεται με επαναλαμβανόμενη κλινική και λειτουργική αξιολόγηση, χωρίς καθολικό αριθμητικό threshold.
+        stages:
+          - stage_id: ghoa_nonoperative_individualized_PT
+            label_el: ΣΤΑΔΙΟ 1 — ΕΞΑΤΟΜΙΚΕΥΜΕΝΗ ΣΥΝΤΗΡΗΤΙΚΗ ΑΠΟΚΑΤΑΣΤΑΣΗ
+            goals_el:
+              - βελτίωση πόνου, λειτουργίας και ανοχής δραστηριότητας
+              - αντιμετώπιση των πραγματικά διαπιστωμένων λειτουργικών ελλειμμάτων χωρίς ισχυρισμό δομικής αναστροφής
+            intervention_directions_el:
+              - εξατομικευμένη φυσιοθεραπευτική διαχείριση βάσει εξέτασης, ελλειμμάτων, ερεθιστικότητας, λειτουργικών στόχων και αξιών του ασθενούς, χωρίς να παρουσιάζεται μία τεχνική ή exercise package ως evidence-superior
+            progress_markers_el:
+              - επαναλαμβανόμενη βελτίωση patient-reported λειτουργίας/αναπηρίας και κλινικής εικόνας χωρίς καθολικό αριθμητικό threshold
+            evidence_claim_ids:
+              - ghoa_nonoperative_PT_best_practice_2023
+              - ghoa_individualized_PT_selection_2023
+              - ghoa_patient_reported_reassessment_2023
+            organization_authority: clinical_rehabilitation_organization
+        adjunct_boundary_el: >-
+          Η 2023 CPG και η 2026 systematic review δεν τεκμηριώνουν υπεροχή συγκεκριμένης nonoperative PT παρέμβασης και η συγκριτική RCT evidence παραμένει ανεπαρκής.
+        reassessment_el: >-
+          Επανεκτίμηση της στρατηγικής όταν η λειτουργία δεν βελτιώνεται επαρκώς ή όταν το management context αλλάζει προς χειρουργική/αρθροπλαστική αντιμετώπιση.
+        reassessment_evidence_claim_ids: [ghoa_patient_reported_reassessment_2023, ghoa_postoperative_context_separate_owner]
+
+      - variant_id: ghoa_preoperative_TSA
+        match:
+          wording_modes: [formal_diagnosis, established_structural_diagnosis]
+          context_equals:
+            ghoa_management_context: preoperative_TSA
+        evidence_profile_ids: [rep_glenohumeral_oa_preop_TSA_v1]
+        authority_mode: APTA_preoperative_best_practice_evidence_gap_aware_sequence
+        short_flow_el:
+          - >-
+            Σε τεκμηριωμένη γληνοβραχιόνια οστεοαρθρίτιδα με προγραμματισμένη ολική αρθροπλαστική ώμου μπορεί να χρησιμοποιηθεί εξατομικευμένη προεγχειρητική φυσιοθεραπεία για υποστήριξη λειτουργίας και προετοιμασία σύμφωνα με τα πραγματικά ελλείμματα και τους στόχους.
+          - >-
+            Δεν παράγεται συγκεκριμένο evidence-based prehabilitation protocol ούτε μετεγχειρητικό πρόγραμμα. Μετά την επέμβαση απαιτείται το ξεχωριστό postoperative shoulder pathway με procedure-specific restrictions.
+        stages:
+          - stage_id: ghoa_preop_TSA_PT
+            label_el: ΣΤΑΔΙΟ 1 — ΠΡΟΕΓΧΕΙΡΗΤΙΚΗ ΛΕΙΤΟΥΡΓΙΚΗ ΠΡΟΕΤΟΙΜΑΣΙΑ
+            goals_el:
+              - υποστήριξη προεγχειρητικής λειτουργίας και προετοιμασίας
+              - αντιμετώπιση σχετικών λειτουργικών ελλειμμάτων χωρίς επιβολή καθολικού prehabilitation protocol
+            intervention_directions_el:
+              - εξατομικευμένες φυσιοθεραπευτικές υπηρεσίες σύμφωνα με λειτουργικά ελλείμματα, στόχους και το σχεδιαζόμενο αρθροπλαστικό pathway, χωρίς συγκεκριμένη καθολική δοσολογία ή protocol
+            progress_markers_el:
+              - λειτουργική προετοιμασία και ανοχή στο προεγχειρητικό πρόγραμμα σύμφωνα με την κλινική ανταπόκριση, χωρίς καθολικό αριθμητικό threshold
+            evidence_claim_ids:
+              - ghoa_preop_PT_best_practice_2023
+            organization_authority: clinical_rehabilitation_organization
+        adjunct_boundary_el: >-
+          Η preoperative PT σύσταση είναι APTA best-practice opinion με ανεπαρκή υψηλής ποιότητας evidence και δεν μετατρέπεται σε συγκεκριμένο υποχρεωτικό πρόγραμμα.
+        reassessment_el: >-
+          Μετά την αρθροπλαστική η αποκατάσταση μεταφέρεται στο postoperative shoulder route και ακολουθεί procedure-/patient-specific περιορισμούς· δεν συνεχίζεται το preoperative GHOA plan.
+        reassessment_evidence_claim_ids: [ghoa_postoperative_context_separate_owner]
