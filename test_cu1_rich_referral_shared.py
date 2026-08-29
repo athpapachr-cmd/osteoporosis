@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import unicodedata
 import unittest
 from pathlib import Path
 
@@ -10,6 +11,11 @@ from clinic_utilities.physio_rich_referral import CU1RichReferralRenderer
 
 
 ROOT = Path(__file__).resolve().parent
+
+
+def greek_fold(value: str) -> str:
+    decomposed = unicodedata.normalize("NFD", value.casefold())
+    return "".join(char for char in decomposed if not unicodedata.combining(char))
 
 
 def lateral_elbow_draft():
@@ -117,19 +123,45 @@ class CU1SharedRichReferralTests(unittest.TestCase):
                     for claim_id in stage.get("evidence_claim_ids") or []:
                         self.assertIn(claim_id, known_claims)
 
+    def test_every_active_rich_route_renders_short_and_detailed_within_limits(self):
+        for route_id, spec in self.renderer.contract_route_specs().items():
+            profile_id = (spec.get("profile_ids") or [None])[0]
+            with self.subTest(profile=profile_id, route=route_id):
+                self.assertIsNotNone(profile_id)
+                short = self.renderer.render_short(
+                    profile_id=profile_id,
+                    route_id=route_id,
+                    subtype_id=None,
+                    clinical_context=["Κλινική διάγνωση", "Σχετικός λειτουργικός περιορισμός"],
+                )
+                detailed = self.renderer.render_detailed(
+                    profile_id=profile_id,
+                    route_id=route_id,
+                    subtype_id=None,
+                    clinical_context=["Κλινική διάγνωση", "Σχετικός λειτουργικός περιορισμός"],
+                )
+                self.assertTrue(short.strip())
+                self.assertTrue(detailed.strip())
+                self.assertNotIn("ΣΤΑΔΙΟ", short)
+                self.assertIn("Στόχοι:", detailed)
+                self.assertIn("Κατευθύνσεις:", detailed)
+                self.assertIn("Πρόοδος", detailed)
+                self.assertLessEqual(len(short), self.renderer.max_chars)
+                self.assertLessEqual(len(detailed), self.renderer.standard_detailed_target_chars)
+
     def test_approved_let_meaning_survives_shared_renderer_migration(self):
         draft = lateral_elbow_draft()
         short = self.formatter.format(draft, "short")
         detailed = self.formatter.format(draft, "detailed")
 
         for text in (short, detailed):
-            lower = text.lower()
-            self.assertIn("ισομετρική", lower)
-            self.assertIn("ομόκεντρη", lower)
-            self.assertIn("έκκεντρη", lower)
-            self.assertIn("επανένταξη", lower)
-            self.assertIn("μείωση κινδύνου υποτροπής", lower)
-            self.assertIn("διαχείριση φορτίου", lower)
+            folded = greek_fold(text)
+            self.assertIn(greek_fold("ισομετρική"), folded)
+            self.assertIn(greek_fold("ομόκεντρη"), folded)
+            self.assertIn(greek_fold("έκκεντρη"), folded)
+            self.assertIn(greek_fold("επανένταξη"), folded)
+            self.assertIn(greek_fold("μείωση κινδύνου υποτροπής"), folded)
+            self.assertIn(greek_fold("διαχείριση φορτίου"), folded)
             self.assertLessEqual(len(text.rstrip("\n")), self.renderer.max_chars)
 
         self.assertIn("ΣΤΑΔΙΟ 1", detailed)
