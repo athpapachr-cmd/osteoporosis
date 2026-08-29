@@ -96,6 +96,10 @@ class CU1RichLateralElbowReferralTests(unittest.TestCase):
         self.assertIn("κρυοθεραπεία/tens", text.lower())
         self.assertIn("όχι ως υποκατάστατο", text.lower())
         self.assertIn("ιατρική επανεκτίμηση", text.lower())
+        self.assertIn("πρόληψη υποτροπής", text.lower())
+        self.assertIn("μείωση κινδύνου υποτροπής", text.lower())
+        self.assertIn("πρόγραμμα διατήρησης δύναμης/αντοχής", text.lower())
+        self.assertIn("ικανότητα αυτοδιαχείρισης", text.lower())
         self.assertLessEqual(len(text.rstrip("\n")), STANDARD_DETAILED_TARGET_CHARS)
 
     def test_detailed_let_does_not_encode_universal_dose_or_false_transition_threshold(self):
@@ -133,6 +137,8 @@ class CU1RichLateralElbowReferralTests(unittest.TestCase):
         self.assertIn("έκκεντρη", lower)
         self.assertIn("παθητικά μέσα μόνο επικουρικά", lower)
         self.assertIn("επανένταξη", lower)
+        self.assertIn("μείωση κινδύνου υποτροπής", lower)
+        self.assertIn("πρόγραμμα διατήρησης δύναμης/αντοχής", lower)
         self.assertIn("χωρίς καθολικά αριθμητικά κριτήρια", lower)
         self.assertLessEqual(len(text.rstrip("\n")), MAX_REFERRAL_CHARS)
 
