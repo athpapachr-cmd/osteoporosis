@@ -10,20 +10,34 @@ from clinic_utilities.physio_referral_runtime import CU1ContractError, _repo_roo
 
 
 _CONTENT_PATH = "clinic_utilities/contracts/cu1_rich_referral_content_el_v1.yaml"
+_MIGRATION_PATH = "clinic_utilities/contracts/cu1_rich_referral_migration_matrix_v1.yaml"
+_RICH_READY = "rich_ready"
 
 
-def _load_content(root: Path) -> Dict[str, Any]:
-    path = root / _CONTENT_PATH
+def _load_runtime_mapping(root: Path, relative_path: str, *, label: str) -> Dict[str, Any]:
+    path = root / relative_path
     if not path.exists():
-        raise CU1ContractError(f"Missing CU-1 rich-referral content artifact: {path}")
+        raise CU1ContractError(f"Missing CU-1 {label} artifact: {path}")
     try:
         payload = yaml.safe_load(path.read_text(encoding="utf-8"))
     except Exception as exc:  # pragma: no cover - contract boundary
-        raise CU1ContractError(f"Unable to parse CU-1 rich-referral content artifact: {path}") from exc
+        raise CU1ContractError(f"Unable to parse CU-1 {label} artifact: {path}") from exc
     if not isinstance(payload, dict) or payload.get("runtime_authorized") is not True:
-        raise CU1ContractError("CU-1 rich-referral content is not runtime-authorized")
+        raise CU1ContractError(f"CU-1 {label} is not runtime-authorized")
+    return payload
+
+
+def _load_content(root: Path) -> Dict[str, Any]:
+    payload = _load_runtime_mapping(root, _CONTENT_PATH, label="rich-referral content")
     if not isinstance(payload.get("routes"), Mapping):
         raise CU1ContractError("CU-1 rich-referral route map is missing")
+    return payload
+
+
+def _load_migration(root: Path) -> Dict[str, Any]:
+    payload = _load_runtime_mapping(root, _MIGRATION_PATH, label="rich-referral migration matrix")
+    if not isinstance(payload.get("profiles"), Mapping):
+        raise CU1ContractError("CU-1 rich-referral migration profile map is missing")
     return payload
 
 
@@ -55,19 +69,37 @@ def _sentences(values: Iterable[str]) -> str:
 class CU1RichReferralRenderer:
     """Shared deterministic renderer for reviewed route-specific rich-referral content.
 
-    This class contains no diagnosis-specific treatment prose. Clinical content lives in the reviewed
-    YAML projection. A route absent from that projection is unsupported here and must be handled by the
-    caller without borrowing another route's content.
+    Clinical treatment prose lives in reviewed structured content rather than route-specific Python.
+    The rollout matrix is a second fail-closed gate: merely adding prose to the content artifact cannot
+    make a pending/evidence-limited/protocol-owned route eligible for rich rendering. Context-gated
+    routes remain unsupported until their exact runtime context is explicitly resolved by a reviewed
+    context seam.
     """
 
     def __init__(self, root: Optional[Path] = None):
         self.root = root or _repo_root()
         self.content = _load_content(self.root)
+        self.migration = _load_migration(self.root)
         self.routes: Mapping[str, Any] = self.content["routes"]
+        self.rollout_profiles: Mapping[str, Any] = self.migration["profiles"]
         self.max_chars = int(self.content.get("max_referral_chars") or 2000)
         self.standard_detailed_target_chars = int(self.content.get("standard_detailed_target_chars") or 1850)
 
+    def rollout_entry(self, *, profile_id: str, route_id: str) -> Optional[Mapping[str, Any]]:
+        profile = self.rollout_profiles.get(profile_id)
+        if not isinstance(profile, Mapping):
+            return None
+        entry = profile.get(route_id)
+        return entry if isinstance(entry, Mapping) else None
+
+    def rollout_state(self, *, profile_id: str, route_id: str) -> Optional[str]:
+        entry = self.rollout_entry(profile_id=profile_id, route_id=route_id)
+        state = entry.get("state") if isinstance(entry, Mapping) else None
+        return str(state) if isinstance(state, str) and state else None
+
     def supports(self, *, profile_id: str, route_id: str, subtype_id: Optional[str] = None) -> bool:
+        if self.rollout_state(profile_id=profile_id, route_id=route_id) != _RICH_READY:
+            return False
         spec = self.routes.get(route_id)
         if not isinstance(spec, Mapping):
             return False
@@ -80,6 +112,11 @@ class CU1RichReferralRenderer:
         return True
 
     def route_spec(self, *, profile_id: str, route_id: str, subtype_id: Optional[str] = None) -> Mapping[str, Any]:
+        state = self.rollout_state(profile_id=profile_id, route_id=route_id)
+        if state != _RICH_READY:
+            raise CU1ContractError(
+                f"Rich-referral route is not rollout-ready for {profile_id}.{route_id}: {state or 'unclassified'}"
+            )
         if not self.supports(profile_id=profile_id, route_id=route_id, subtype_id=subtype_id):
             raise CU1ContractError(f"No applicable rich-referral content for {profile_id}.{route_id}.{subtype_id or '-'}")
         spec = self.routes.get(route_id)
@@ -157,9 +194,6 @@ class CU1RichReferralRenderer:
     def _enforce_limit(self, text: str, *, mode: str, route_id: str) -> str:
         if len(text) <= self.max_chars:
             return text
-        # Do not silently truncate a safety tail or fabricate a compressed clinical meaning. Route
-        # content is expected to fit by design; an overflow is a contract failure that must be fixed in
-        # content/config rather than hidden from the clinician.
         raise CU1ContractError(
             f"Rich-referral {mode} output for {route_id} exceeds {self.max_chars} characters ({len(text)})"
         )
@@ -170,6 +204,18 @@ class CU1RichReferralRenderer:
             for route_id, spec in self.routes.items()
             if isinstance(spec, Mapping)
         }
+
+    def contract_rollout_entries(self) -> Dict[str, Dict[str, Dict[str, Any]]]:
+        result: Dict[str, Dict[str, Dict[str, Any]]] = {}
+        for profile_id, routes in self.rollout_profiles.items():
+            if not isinstance(routes, Mapping):
+                continue
+            result[str(profile_id)] = {
+                str(route_id): copy.deepcopy(dict(entry))
+                for route_id, entry in routes.items()
+                if isinstance(entry, Mapping)
+            }
+        return result
 
 
 __all__ = ["CU1RichReferralRenderer"]
