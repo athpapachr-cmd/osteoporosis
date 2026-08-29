@@ -1,0 +1,142 @@
+version: cu1_medial_elbow_fixtures_v1
+status: active_normative_design_regression_oracle
+runtime_authorized: false
+route_id: medial_elbow_tendinopathy
+reviewed_on: 2026-08-29
+
+purpose: >-
+  Regression oracle for the medial-elbow-tendinopathy evidence design. The fixtures preserve
+  diagnosis-vs-finding separation, low-certainty medial-specific loading evidence, ulnar-neural and
+  valgus/UCL differential boundaries, and strict prevention of lateral-elbow evidence borrowing.
+
+fixtures:
+  - fixture_id: met_typical_conservative_route_uses_medial_specific_profile
+    given:
+      route_id: medial_elbow_tendinopathy
+      formal_medial_elbow_tendinopathy_diagnosis: yes
+      safety_context: no_material_concern_identified
+    expect:
+      route_evidence_profile_id: rep_medial_elbow_tendinopathy_v1
+      rehabilitation_sequence_id: seq_medial_elbow_evidence_bounded_v1
+      must_allow_authority: met_eccentric_flexor_pronator_loading_low_certainty_2026
+      progression_criteria_must_remain_empty: true
+      must_not_use_profile: rep_lateral_elbow_tendinopathy_v1
+
+  - fixture_id: met_single_medial_findings_do_not_create_diagnosis
+    given:
+      route_id: medial_elbow_tendinopathy
+      formal_medial_elbow_tendinopathy_diagnosis: not_stated
+      findings: [medial_epicondyle_tenderness, painful_resisted_wrist_flexion, painful_resisted_pronation, imaging_common_flexor_abnormality]
+    expect:
+      must_apply_boundary_claim: met_diagnostic_boundary_not_single_finding
+      must_not_generate_new_formal_diagnosis_from_findings: true
+      findings_remain_findings: true
+
+  - fixture_id: met_eccentric_loading_remains_low_certainty_and_optional
+    given:
+      route_id: medial_elbow_tendinopathy
+      evidence_context: medial_elbow_eccentric_sr_2026
+    expect:
+      may_render_authority: met_eccentric_flexor_pronator_loading_low_certainty_2026
+      must_preserve_certainty: low
+      must_not_claim_universal_superiority: true
+      must_not_make_eccentric_loading_mandatory: true
+      must_not_create_universal_dose: true
+
+  - fixture_id: met_does_not_borrow_lateral_elbow_CPG_grades
+    given:
+      route_id: medial_elbow_tendinopathy
+      lateral_elbow_CPG_available_in_registry: true
+    expect:
+      must_not_apply_authority: lateral_elbow_resisted_wrist_extensor_exercise
+      must_not_apply_authority: lateral_elbow_high_demand_phased_reintroduction
+      must_not_import_lateral_manual_therapy_grade: true
+      must_not_import_lateral_dry_needling_grade: true
+      must_not_import_lateral_taping_grade: true
+      must_not_import_lateral_orthosis_grade: true
+
+  - fixture_id: met_subjective_ulnar_symptoms_are_not_objective_neuropathy
+    given:
+      route_id: medial_elbow_tendinopathy
+      symptoms: [paresthesia_ring_small_finger]
+      objective_ulnar_motor_status: not_assessed
+      objective_ulnar_sensory_status: not_assessed
+    expect:
+      must_preserve_history_prompt: met_ulnar_neural_symptoms
+      must_not_infer_objective_neurological_deficit: true
+      must_not_generate_formal_ulnar_neuropathy_diagnosis: true
+      must_not_convert_not_assessed_to_normal: true
+
+  - fixture_id: met_progressive_ulnar_motor_deficit_requires_reassessment
+    given:
+      route_id: medial_elbow_tendinopathy
+      findings: [progressive_intrinsic_hand_weakness]
+      safety_context: material_neurological_concern
+    expect:
+      must_apply_authority: met_ulnar_and_medial_elbow_differential_reassessment
+      must_not_output_routine_medial_tendinopathy_reassurance: true
+      must_route_to_clinician_reassessment_or_correct_owner: true
+
+  - fixture_id: met_valgus_instability_or_throwing_structural_context_not_tendon_only
+    given:
+      route_id: medial_elbow_tendinopathy
+      context: [throwing_or_valgus_load]
+      findings: [material_valgus_instability_concern]
+    expect:
+      must_apply_authority: met_ulnar_and_medial_elbow_differential_reassessment
+      must_not_relabel_as_isolated_flexor_pronator_tendinopathy: true
+      must_route_to_reassessment_or_elbow_instability_owner: true
+
+  - fixture_id: met_activity_modification_is_not_fixed_rest_protocol
+    given:
+      route_id: medial_elbow_tendinopathy
+      aggravating_load_identified: true
+    expect:
+      may_render_authority: met_activity_load_modification_context
+      must_not_prescribe_fixed_rest_duration: true
+      must_not_prescribe_complete_inactivity_by_default: true
+      must_preserve_narrative_context_not_effect_estimate: true
+
+  - fixture_id: met_narrative_three_phase_description_not_validated_progression_model
+    given:
+      route_id: medial_elbow_tendinopathy
+      source_context: medial_elbow_clinical_overview_2023
+    expect:
+      rehabilitation_sequence_id: seq_medial_elbow_evidence_bounded_v1
+      must_not_create_three_mandatory_phases: true
+      must_not_create_elapsed_time_transition: true
+      must_not_create_numeric_progression_threshold: true
+
+  - fixture_id: met_ESWT_manual_taping_orthosis_not_auto_medial_evidence
+    given:
+      route_id: medial_elbow_tendinopathy
+      clinician_selected_adjuncts: []
+    expect:
+      must_apply_context_claim: met_adjuncts_not_medial_evidence_core
+      must_not_auto_render_manual_therapy_as_medial_route_evidence: true
+      must_not_auto_render_dry_needling_as_medial_route_evidence: true
+      must_not_auto_render_taping_as_medial_route_evidence: true
+      must_not_auto_render_orthosis_as_medial_route_evidence: true
+      must_not_auto_render_ESWT_as_medial_route_evidence: true
+
+  - fixture_id: met_missing_history_remains_missing
+    given:
+      route_id: medial_elbow_tendinopathy
+      history_fields_supplied: []
+    expect:
+      must_not_infer_negative_history: true
+      must_not_infer_no_throwing_or_work_load: true
+      must_not_infer_no_ulnar_symptoms: true
+      must_not_infer_low_irritability: true
+
+validation_assertions:
+  route_scope_only: true
+  findings_do_not_create_diagnosis: true
+  subjective_ulnar_symptoms_do_not_create_objective_neuropathy: true
+  medial_evidence_not_borrowed_from_lateral_CPG: true
+  low_certainty_eccentric_signal_not_upgraded: true
+  narrative_review_not_relabelled_as_effect_estimate: true
+  no_numeric_progression_threshold_invented: true
+  adjuncts_not_auto_evidence_authorized: true
+  safety_differential_fail_closed: true
+  runtime_authorized: false

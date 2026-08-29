@@ -1,0 +1,322 @@
+version: cu1_evidence_route_coverage_cervical_radiating_v1
+status: active_design_authority_route_coverage_extension
+runtime_authorized: false
+reviewed_on: 2026-08-29
+normative_schema: clinic_utilities/contracts/cu1_history_timeline_schema_v1.yaml
+identity_mode: explicit_payload_id
+review_record: clinic_utilities/contracts/CU1_C2_RADIATING_NECK_ROUTE_REVIEW_2026-08-29.md
+
+purpose: >-
+  Native schema-conformant evidence extension for neck pain with radiating upper-limb symptoms or
+  radicular-type features. The route preserves subjective radiating symptoms, objective neurological
+  findings and a formal cervical-radiculopathy diagnosis as distinct concepts. APTA/JOSPT 2017
+  provides broad neck-pain-with-radiating-pain route authority; newer cervical-radiculopathy-specific
+  synthesis is used only under its narrower applicability conditions and cannot turn every C2
+  presentation into a formal radiculopathy diagnosis or a mandatory multimodal protocol.
+
+external_source_dependencies:
+  - neck_pain_apta_cpg_2017
+  - nonspecific_neck_degam_awmd_2025
+
+sources:
+  cervical_radiculopathy_component_nma_2025:
+    evidence_id: cervical_radiculopathy_component_nma_2025
+    source_type: systematic_review
+    title: What components and formats of rehabilitation interventions are more effective to reduce pain in patients with cervical radiculopathy? A systematic review and component network meta-analysis
+    authors_or_organization: Nunez de Arenas-Arroyo et al.
+    year_or_version: 2025
+    reference: Clin Rehabil. 2025;39(10). DOI 10.1177/02692155251365193
+    doi_optional: 10.1177/02692155251365193
+    population_scope_optional: adults with cervical radiculopathy in randomized rehabilitation trials; search through 2025-07-01; this evidence is narrower than the full C2 symptom-presentation route
+    reviewed_on: 2026-08-29
+    next_review_due: 2027-08-29
+    freshness_state: current
+    status: active
+
+claims:
+  c2_radiating_presentation_not_formal_radiculopathy:
+    claim_id: c2_radiating_presentation_not_formal_radiculopathy
+    evidence_ids: [neck_pain_apta_cpg_2017]
+    applicable_route_evidence_profile_ids: [rep_neck_radiating_upper_limb_v1]
+    applicable_route_ids: [neck_pain_with_radiating_upper_limb_symptoms]
+    domain: diagnostic_definition
+    claim_summary: Neck pain with radiating arm pain, paresthesia or numbness is a clinical presentation; objective motor, sensory or reflex findings may or may not coexist, and provocation tests such as Spurling, distraction or neurodynamic testing support classification only in context rather than independently establishing a formal cervical-radiculopathy diagnosis.
+    recommendation_direction: context_only
+    output_scope: clinician_ui_only
+    certainty_optional: not_applicable
+    reviewed_on: 2026-08-29
+
+  c2_active_rehabilitation_backbone:
+    claim_id: c2_active_rehabilitation_backbone
+    evidence_ids: [neck_pain_apta_cpg_2017]
+    applicable_route_evidence_profile_ids: [rep_neck_radiating_upper_limb_v1]
+    applicable_route_ids: [neck_pain_with_radiating_upper_limb_symptoms]
+    domain: core_rehabilitation
+    claim_summary: Active rehabilitation is a common component of care for neck pain with radiating pain: acute guidance includes mobilizing/stabilizing exercise and chronic guidance includes stretching/strengthening within multimodal rehabilitation, without defining one universal exercise dose or criteria-based progression threshold.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  c2_acute_mobilizing_stabilizing_exercise_C:
+    claim_id: c2_acute_mobilizing_stabilizing_exercise_C
+    evidence_ids: [neck_pain_apta_cpg_2017]
+    applicable_route_evidence_profile_ids: [rep_neck_radiating_upper_limb_v1]
+    applicable_route_ids: [neck_pain_with_radiating_upper_limb_symptoms]
+    applicability_conditions_optional: [acute_radiating_pain_presentation]
+    domain: core_rehabilitation
+    claim_summary: For acute neck pain with radiating pain, mobilizing and stabilizing exercises may be used; this is a Grade-C APTA recommendation and must not be relabelled as high-certainty treatment-effect evidence.
+    recommendation_direction: may_consider
+    output_scope: referral_core
+    strength_optional: C_APTA_2017
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  c2_chronic_education_activity_B:
+    claim_id: c2_chronic_education_activity_B
+    evidence_ids: [neck_pain_apta_cpg_2017]
+    applicable_route_evidence_profile_ids: [rep_neck_radiating_upper_limb_v1]
+    applicable_route_ids: [neck_pain_with_radiating_upper_limb_symptoms]
+    applicability_conditions_optional: [chronic_radiating_pain_presentation]
+    domain: core_rehabilitation
+    claim_summary: For chronic neck pain with radiating pain, education and counseling should encourage participation in occupational and exercise activities.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    strength_optional: B_APTA_2017
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  c2_apta_chronic_intermit_traction_B:
+    claim_id: c2_apta_chronic_intermit_traction_B
+    evidence_ids: [neck_pain_apta_cpg_2017]
+    applicable_route_evidence_profile_ids: [rep_neck_radiating_upper_limb_v1]
+    applicable_route_ids: [neck_pain_with_radiating_upper_limb_symptoms]
+    applicability_conditions_optional: [chronic_radiating_pain_presentation, traction_selected_as_adjunct]
+    domain: adjunct
+    claim_summary: The 2017 APTA CPG recommends mechanical intermittent cervical traction for chronic neck pain with radiating pain when combined with other rehabilitation interventions; CU-1 keeps traction conditional on clinician/therapist selection rather than auto-prescribing it for every C2 referral.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    strength_optional: B_APTA_2017
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  c2_radiculopathy_nma_traction_component:
+    claim_id: c2_radiculopathy_nma_traction_component
+    evidence_ids: [cervical_radiculopathy_component_nma_2025]
+    applicable_route_evidence_profile_ids: [rep_neck_radiating_upper_limb_v1]
+    applicable_route_ids: [neck_pain_with_radiating_upper_limb_symptoms]
+    applicability_conditions_optional: [formal_or_clinician_established_radicular_classification]
+    domain: adjunct
+    claim_summary: In a 2025 component network meta-analysis restricted to cervical radiculopathy trials, cervical traction was one component associated with pain reduction; this narrower evidence supports selective use but does not by itself authorize traction in every broad C2 symptom presentation.
+    recommendation_direction: may_consider
+    output_scope: clinician_ui_only
+    certainty_optional: moderate_network_confidence_context
+    reviewed_on: 2026-08-29
+
+  c2_radiculopathy_nma_neurodynamic_component:
+    claim_id: c2_radiculopathy_nma_neurodynamic_component
+    evidence_ids: [cervical_radiculopathy_component_nma_2025]
+    applicable_route_evidence_profile_ids: [rep_neck_radiating_upper_limb_v1]
+    applicable_route_ids: [neck_pain_with_radiating_upper_limb_symptoms]
+    applicability_conditions_optional: [formal_or_clinician_established_radicular_classification]
+    domain: execution_detail
+    claim_summary: Neurodynamic techniques were associated with pain reduction in the 2025 cervical-radiculopathy component network meta-analysis; exact technique selection and dosing remain therapist execution details and are not physician-mandated referral content.
+    recommendation_direction: may_consider
+    output_scope: therapist_execution_detail
+    certainty_optional: moderate_network_confidence_context
+    reviewed_on: 2026-08-29
+
+  c2_radiculopathy_nma_articular_component:
+    claim_id: c2_radiculopathy_nma_articular_component
+    evidence_ids: [cervical_radiculopathy_component_nma_2025]
+    applicable_route_evidence_profile_ids: [rep_neck_radiating_upper_limb_v1]
+    applicable_route_ids: [neck_pain_with_radiating_upper_limb_symptoms]
+    applicability_conditions_optional: [formal_or_clinician_established_radicular_classification]
+    domain: execution_detail
+    claim_summary: Articular/manual treatment was associated with pain reduction in the 2025 cervical-radiculopathy component network meta-analysis; this does not make one manual technique or dose mandatory.
+    recommendation_direction: may_consider
+    output_scope: therapist_execution_detail
+    certainty_optional: moderate_network_confidence_context
+    reviewed_on: 2026-08-29
+
+  c2_nma_combination_not_mandatory_bundle:
+    claim_id: c2_nma_combination_not_mandatory_bundle
+    evidence_ids: [cervical_radiculopathy_component_nma_2025]
+    applicable_route_evidence_profile_ids: [rep_neck_radiating_upper_limb_v1]
+    applicable_route_ids: [neck_pain_with_radiating_upper_limb_symptoms]
+    applicability_conditions_optional: [formal_or_clinician_established_radicular_classification]
+    domain: core_rehabilitation
+    claim_summary: The 2025 component network meta-analysis identified a promising combination of articular treatment, analgesic electrotherapy, neurodynamic techniques, strengthening and cervical traction for pain reduction with moderate confidence; this comparative network finding must not be converted into a mandatory physician-prescribed bundle or assumed applicable to symptom-only C2 cases.
+    recommendation_direction: context_only
+    output_scope: clinician_ui_only
+    certainty_optional: moderate_network_confidence_context
+    reviewed_on: 2026-08-29
+
+  c2_progressive_neurological_or_cord_reassessment:
+    claim_id: c2_progressive_neurological_or_cord_reassessment
+    evidence_ids: [neck_pain_apta_cpg_2017, nonspecific_neck_degam_awmd_2025]
+    applicable_route_evidence_profile_ids: [rep_neck_radiating_upper_limb_v1]
+    applicable_route_ids: [neck_pain_with_radiating_upper_limb_symptoms]
+    domain: safety
+    claim_summary: New or progressive objective motor deficit, expanding sensory deficit, gait/upper-motor-neuron or possible cord features require medical reassessment rather than routine rehabilitation progression; subjective radiating symptoms alone must remain distinct from these objective safety findings.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    certainty_optional: not_applicable
+    reviewed_on: 2026-08-29
+
+route_history_prompts:
+  c2_radiating_distribution_laterality:
+    prompt_id: c2_radiating_distribution_laterality
+    applicable_route_ids: [neck_pain_with_radiating_upper_limb_symptoms]
+    label_el: Κατανομή και πλευρά ακτινοβολίας πόνου, παραισθησιών ή αιμωδίας στο άνω άκρο
+    response_type: text
+    requiredness: optional
+
+  c2_duration_course:
+    prompt_id: c2_duration_course
+    applicable_route_ids: [neck_pain_with_radiating_upper_limb_symptoms]
+    label_el: Διάρκεια, έναρξη και πορεία των αυχενικών και άνω-άκρου συμπτωμάτων
+    response_type: text
+    requiredness: optional
+
+  c2_objective_neurological_status:
+    prompt_id: c2_objective_neurological_status
+    applicable_route_ids: [neck_pain_with_radiating_upper_limb_symptoms]
+    label_el: Αν έχουν εξεταστεί: κινητικό, αισθητικό και αντανακλαστικά ως ξεχωριστά αντικειμενικά ευρήματα, με λεπτομέρειες τυχόν ελλείμματος
+    response_type: text
+    requiredness: conditional
+    evidence_claim_ids_optional: [c2_progressive_neurological_or_cord_reassessment]
+
+  c2_provocation_neurodynamic_context:
+    prompt_id: c2_provocation_neurodynamic_context
+    applicable_route_ids: [neck_pain_with_radiating_upper_limb_symptoms]
+    label_el: Spurling, distraction ή upper-limb neurodynamic findings μόνο εφόσον έχουν πραγματικά εξεταστεί
+    response_type: text
+    requiredness: optional
+    evidence_claim_ids_optional: [c2_radiating_presentation_not_formal_radiculopathy]
+
+  c2_formal_diagnosis_investigation_context:
+    prompt_id: c2_formal_diagnosis_investigation_context
+    applicable_route_ids: [neck_pain_with_radiating_upper_limb_symptoms]
+    label_el: Τυχόν ρητή διάγνωση αυχενικής ριζοπάθειας και σχετικό MRI / EMG-NCS / ειδικό πλαίσιο, χωρίς αυτόματη εξαγωγή διάγνωσης από το εργαλείο
+    response_type: text
+    requiredness: optional
+
+  c2_progressive_neuro_or_cord_features:
+    prompt_id: c2_progressive_neuro_or_cord_features
+    applicable_route_ids: [neck_pain_with_radiating_upper_limb_symptoms]
+    label_el: Νέο ή προοδευτικό αντικειμενικό κινητικό/αισθητικό έλλειμμα, αλλαγή βάδισης/δεξιότητας ή άλλο πιθανό μυελοπαθητικό/νωτιαίο στοιχείο
+    response_type: text
+    requiredness: conditional
+    evidence_claim_ids_optional: [c2_progressive_neurological_or_cord_reassessment]
+
+  c2_function_work_activity:
+    prompt_id: c2_function_work_activity
+    applicable_route_ids: [neck_pain_with_radiating_upper_limb_symptoms]
+    label_el: Λειτουργικός περιορισμός σε εργασία, άρση/μεταφορά, άνω άκρο, ύπνο, οδήγηση, άσκηση ή άλλη δραστηριότητα προτεραιότητας
+    response_type: text
+    requiredness: optional
+
+  c2_prior_treatment_response:
+    prompt_id: c2_prior_treatment_response
+    applicable_route_ids: [neck_pain_with_radiating_upper_limb_symptoms]
+    label_el: Προηγούμενη συντηρητική θεραπεία / φυσικοθεραπεία / άσκηση και ανταπόκριση
+    response_type: text
+    requiredness: optional
+
+route_evidence_profiles:
+  rep_neck_radiating_upper_limb_v1:
+    route_evidence_profile_id: rep_neck_radiating_upper_limb_v1
+    region_profile_id: cervical
+    route_id: neck_pain_with_radiating_upper_limb_symptoms
+    applicability_conditions_optional: [radiating_upper_limb_or_radicular_type_presentation, no_unresolved_progressive_neurological_or_cord_concern]
+    diagnostic_claim_ids: [c2_radiating_presentation_not_formal_radiculopathy]
+    history_claim_ids: []
+    examination_claim_ids: []
+    rehabilitation_sequence_id: seq_neck_radiating_upper_limb_v1
+    adjunct_claim_ids:
+      - c2_apta_chronic_intermit_traction_B
+      - c2_radiculopathy_nma_traction_component
+      - c2_radiculopathy_nma_neurodynamic_component
+      - c2_radiculopathy_nma_articular_component
+      - c2_nma_combination_not_mandatory_bundle
+    safety_claim_ids: [c2_progressive_neurological_or_cord_reassessment]
+    evidence_gaps:
+      - subjective_radiating_symptoms_do_not_establish_objective_neurological_deficit_or_formal_cervical_radiculopathy
+      - positive_Spurling_or_neurodynamic_finding_alone_does_not_establish_formal_radiculopathy
+      - no_universal_numeric_progression_or_return_threshold_for_C2
+      - exact_traction_force_duration_frequency_and_position_are_not_physician_prescribed_by_CU1
+      - cervical_radiculopathy_component_NMA_is_narrower_than_the_full_symptom_presentation_route
+      - promising_network_component_combination_is_not_a_mandatory_multimodal_bundle
+      - progressive_objective_neurological_or_possible_cord_findings_exit_routine_progression
+    primary_source_ids: [neck_pain_apta_cpg_2017, cervical_radiculopathy_component_nma_2025]
+    last_reviewed_on: 2026-08-29
+    next_review_due: 2027-02-28
+    freshness_state: current
+
+rehabilitation_sequences:
+  seq_neck_radiating_upper_limb_v1:
+    sequence_id: seq_neck_radiating_upper_limb_v1
+    route_id: neck_pain_with_radiating_upper_limb_symptoms
+    applicability_conditions_optional: [radiating_upper_limb_or_radicular_type_presentation, no_unresolved_progressive_neurological_or_cord_concern]
+    sequence_source: route_evidence_profile
+    route_evidence_profile_id: rep_neck_radiating_upper_limb_v1
+    phases:
+      - phase_id: c2_active_function_preserving_rehabilitation
+        order: 1
+        clinical_objective: reduce neck and upper-limb symptom irritability while maintaining or restoring functional activity through individualized active rehabilitation without implying reversal of an objective neurological deficit
+        objective_authority:
+          authority_type: evidence_claim
+          evidence_claim_ids: [c2_active_rehabilitation_backbone]
+        intervention_directions:
+          - intervention_direction_id: c2_acute_mobilizing_stabilizing_exercise
+            statement: in an acute radiating-pain presentation, mobilizing and stabilizing exercises may be used as part of individualized active rehabilitation
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [c2_acute_mobilizing_stabilizing_exercise_C]
+            applicability_conditions_optional: [acute_radiating_pain_presentation]
+          - intervention_direction_id: c2_chronic_activity_education
+            statement: in chronic radiating pain, provide education/counseling that supports participation in occupational and exercise activities
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [c2_chronic_education_activity_B]
+            applicability_conditions_optional: [chronic_radiating_pain_presentation]
+          - intervention_direction_id: c2_selected_chronic_intermit_traction
+            statement: when specifically selected for chronic radiating pain, intermittent mechanical cervical traction may be included with active/multimodal rehabilitation rather than used as isolated or universal treatment
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [c2_apta_chronic_intermit_traction_B]
+            applicability_conditions_optional: [chronic_radiating_pain_presentation, traction_selected_as_adjunct]
+        progression_criteria: []
+        precautions_or_do_not_progress_criteria:
+          - criterion_id: c2_progressive_neuro_or_cord_reassessment
+            criterion_kind: reassessment
+            statement: new or progressive objective motor or sensory deficit, gait/upper-motor-neuron or possible cord findings require medical reassessment rather than routine progression
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [c2_progressive_neurological_or_cord_reassessment]
+        strength_optional: null
+        certainty_optional: not_graded
+        required_for_route: true
+    clinician_modifications_optional: []
+    protocol_overrides_optional: []
+
+coverage_effect:
+  route_profiles_added: [rep_neck_radiating_upper_limb_v1]
+  rehabilitation_sequences_added: [seq_neck_radiating_upper_limb_v1]
+  route_history_prompts_added:
+    - c2_radiating_distribution_laterality
+    - c2_duration_course
+    - c2_objective_neurological_status
+    - c2_provocation_neurodynamic_context
+    - c2_formal_diagnosis_investigation_context
+    - c2_progressive_neuro_or_cord_features
+    - c2_function_work_activity
+    - c2_prior_treatment_response
+  route_status_after_review: sequence_complete_single_phase_evidence_bounded
+  semantic_boundaries:
+    subjective_radiating_symptoms_vs_objective_deficit_vs_formal_radiculopathy: preserved
+    positive_provocation_test_vs_diagnosis: preserved
+    broad_C2_vs_narrow_cervical_radiculopathy_NMA_scope: preserved
+    progressive_neurological_or_cord_concern: block_routine_progression_and_reassess
+  runtime_authorized: false

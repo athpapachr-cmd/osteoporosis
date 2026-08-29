@@ -1,0 +1,43 @@
+version: cu1_evidence_tranche3_promotion_fix_v1
+status: reviewed_promotion_overlay
+runtime_authorized: false
+reviewed_on: 2026-08-29
+applies_after: clinic_utilities/contracts/cu1_evidence_tranche3_promotion_v1.yaml
+
+purpose: >-
+  Final exact-review overlay for tranche3 promotion. This file corrects applicability details found
+  during the post-projection pass and is mandatory after the main promotion projection before the
+  tranche participates in the normative logical registry.
+
+profile_overrides:
+  rep_nonarthritic_intraarticular_hip_v1:
+    applicability_conditions_optional: []
+    rationale: >-
+      Keep the evidence profile available at route level so condition-specific safety claims can
+      remain resolvable. The rehabilitation sequence, not the profile itself, is scoped away from
+      other established nonarthritic intra-articular conditions that lack reviewed applicability.
+
+sequence_overrides:
+  seq_gtps_gluteal_tendinopathy_v1:
+    subtype_ids_optional: [formal_GTPS_diagnosis, formal_gluteal_tendinopathy_diagnosis]
+    replace_intervention_applicability_conditions:
+      gtps_exercise_first_line: [selected_subtype_is_formal_GTPS_diagnosis]
+      gluteal_tendinopathy_exercise_education_core: [selected_subtype_is_formal_gluteal_tendinopathy_diagnosis]
+    invariant: >-
+      The frozen hip profile uses case-sensitive formal_GTPS_diagnosis. The staging spelling
+      formal_gtps_diagnosis is not canonical and must not survive the normative projection.
+
+  seq_acute_isolated_meniscus_nonoperative_v1:
+    applicability_conditions_optional: [acute_isolated_nondisplaced_not_repair_candidate_nonoperative]
+    invariant: >-
+      Consensus-only PT authority is limited to the selected acute isolated non-displaced tear that
+      is not amenable to repair and is being managed nonoperatively. The sequence must not become
+      applicable to a displaced/displacing tear, true locked knee, or repair candidate.
+
+post_overlay_validation_assertions:
+  nonarthritic_hip_profile_remains_route_level_for_safety_claim_resolution: true
+  nonarthritic_hip_rehabilitation_sequence_remains_condition_scoped: true
+  gtps_profile_and_sequence_subtype_ids_match_frozen_hip_profile_exactly: true
+  acute_meniscus_PT_sequence_is_non_displaced_non_repair_candidate_scoped: true
+  acute_meniscus_displaced_or_locked_presentation_does_not_receive_routine_sequence: true
+  runtime_authorized: false

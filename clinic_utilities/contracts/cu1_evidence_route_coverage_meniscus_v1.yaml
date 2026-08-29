@@ -1,0 +1,322 @@
+version: cu1_evidence_route_coverage_meniscus_v1
+status: active_design_authority_route_coverage_extension
+runtime_authorized: false
+reviewed_on: 2026-08-29
+normative_schema: clinic_utilities/contracts/cu1_history_timeline_schema_v1.yaml
+identity_mode: explicit_payload_id
+review_record: clinic_utilities/contracts/CU1_ROUTE_COVERAGE_REVIEW_2026-08-29.md
+
+purpose: >-
+  Native schema-conformant evidence extension for the routine degenerative meniscal lesion
+  conservative-rehabilitation route. It preserves the distinction from acute isolated meniscal
+  injury and from postoperative meniscal rehabilitation, and it blocks routine evidence-aware
+  rehabilitation when true locking or another unresolved structural/surgical indication is present.
+
+sources:
+  meniscus_rehab_eu_us_consensus_2025:
+    evidence_id: meniscus_rehab_eu_us_consensus_2025
+    source_type: consensus
+    title: The formal EU-US Meniscus Rehabilitation 2024 Consensus — Part II: Prevention, non-operative treatment and return to sport
+    authors_or_organization: Prill et al. / ESSKA-AOSSM-AASPT initiative
+    year_or_version: 2025
+    reference: Knee Surg Sports Traumatol Arthrosc. 2025. DOI 10.1002/ksa.12689
+    doi_optional: 10.1002/ksa.12689
+    population_scope_optional: acute meniscal tears and degenerative meniscal lesions; this route uses only the statements applicable to non-operated degenerative meniscal lesions and general meniscal rehabilitation assessment
+    reviewed_on: 2026-08-29
+    next_review_due: 2027-08-29
+    freshness_state: current
+    status: active
+
+  escape_degenerative_meniscus_5y_2022:
+    evidence_id: escape_degenerative_meniscus_5y_2022
+    source_type: randomized_trial
+    title: Effect of Physical Therapy vs Arthroscopic Partial Meniscectomy in People With Degenerative Meniscal Tears — Five-Year Follow-up of the ESCAPE Randomized Clinical Trial
+    authors_or_organization: Noorduyn et al. / ESCAPE Research Group
+    year_or_version: 2022
+    reference: JAMA Netw Open. 2022;5(7):e2220394
+    doi_optional: 10.1001/jamanetworkopen.2022.20394
+    population_scope_optional: adults aged 45 to 70 years with degenerative meniscal tear; exercise-based physical therapy compared with arthroscopic partial meniscectomy
+    reviewed_on: 2026-08-29
+    next_review_due: 2027-08-29
+    freshness_state: current
+    status: active
+
+  omex_degenerative_meniscus_10y_2025:
+    evidence_id: omex_degenerative_meniscus_10y_2025
+    source_type: randomized_trial
+    title: Arthroscopic partial meniscectomy versus exercise therapy for degenerative meniscal tears — 10-year follow-up of the OMEX randomised controlled trial
+    authors_or_organization: Berg et al. / OMEX trial investigators
+    year_or_version: 2025
+    reference: Br J Sports Med. 2025;59(2):91-98
+    doi_optional: 10.1136/bjsports-2024-108644
+    population_scope_optional: adults with degenerative meniscal tear and no or minimal radiographic knee osteoarthritis; exercise therapy compared with arthroscopic partial meniscectomy
+    reviewed_on: 2026-08-29
+    next_review_due: 2027-08-29
+    freshness_state: current
+    status: active
+
+claims:
+  degenerative_meniscus_PT_first_line_A:
+    claim_id: degenerative_meniscus_PT_first_line_A
+    evidence_ids: [meniscus_rehab_eu_us_consensus_2025, escape_degenerative_meniscus_5y_2022, omex_degenerative_meniscus_10y_2025]
+    applicable_route_evidence_profile_ids: [rep_degenerative_meniscus_conservative_v1]
+    applicable_route_ids: [degenerative_meniscal_lesion_conservative_rehabilitation]
+    applicability_conditions_optional: [symptomatic_degenerative_meniscal_lesion_without_unresolved_structural_surgical_indication]
+    domain: core_rehabilitation
+    claim_summary: Non-operative management including physical therapy should be the first approach for symptomatic degenerative meniscal lesions without an unresolved structural surgical indication; long-term randomized trials show exercise-based physical therapy provides patient-reported outcomes comparable to arthroscopic partial meniscectomy in common degenerative tears.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    strength_optional: A_consensus
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  degenerative_meniscus_progressive_rehab_components_B:
+    claim_id: degenerative_meniscus_progressive_rehab_components_B
+    evidence_ids: [meniscus_rehab_eu_us_consensus_2025]
+    applicable_route_evidence_profile_ids: [rep_degenerative_meniscus_conservative_v1]
+    applicable_route_ids: [degenerative_meniscal_lesion_conservative_rehabilitation]
+    applicability_conditions_optional: [symptomatic_degenerative_meniscal_lesion_without_unresolved_structural_surgical_indication]
+    domain: core_rehabilitation
+    claim_summary: Rehabilitation may include range-of-motion work, progressive knee and hip muscle strengthening and neuromuscular training; manual therapy or joint mobilisation may be used when clinically indicated, while home exercise should accompany supervised rehabilitation.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    strength_optional: B
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  degenerative_meniscus_supervised_plus_home_D:
+    claim_id: degenerative_meniscus_supervised_plus_home_D
+    evidence_ids: [meniscus_rehab_eu_us_consensus_2025]
+    applicable_route_evidence_profile_ids: [rep_degenerative_meniscus_conservative_v1]
+    applicable_route_ids: [degenerative_meniscal_lesion_conservative_rehabilitation]
+    domain: execution_detail
+    claim_summary: Supervised rehabilitation addressing ROM, effusion, strength, knee function and neuromuscular control may be combined with a home-exercise programme, but supervised versus home-only programmes have not been directly compared.
+    recommendation_direction: consider
+    output_scope: therapist_execution_detail
+    strength_optional: D
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  degenerative_meniscus_criterion_based_monitoring_D:
+    claim_id: degenerative_meniscus_criterion_based_monitoring_D
+    evidence_ids: [meniscus_rehab_eu_us_consensus_2025]
+    applicable_route_evidence_profile_ids: [rep_degenerative_meniscus_conservative_v1]
+    applicable_route_ids: [degenerative_meniscal_lesion_conservative_rehabilitation]
+    domain: progression_criteria
+    claim_summary: Meniscal rehabilitation may be monitored with a criterion-based approach using knee range of motion, joint effusion, objective quadriceps and hamstring strength and functional performance measures such as hop testing when appropriate and safe.
+    recommendation_direction: consider
+    output_scope: referral_core
+    strength_optional: D
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  degenerative_meniscus_RTS_criteria_D:
+    claim_id: degenerative_meniscus_RTS_criteria_D
+    evidence_ids: [meniscus_rehab_eu_us_consensus_2025]
+    applicable_route_evidence_profile_ids: [rep_degenerative_meniscus_conservative_v1]
+    applicable_route_ids: [degenerative_meniscal_lesion_conservative_rehabilitation]
+    applicability_conditions_optional: [return_to_sport_or_high_demand_activity_goal]
+    domain: progression_criteria
+    claim_summary: Return to sport or high-demand activity should be criterion based, considering subjective and objective knee function, ROM, effusion, quadriceps and hamstring strength, coordination/stability performance and psychological readiness; surgical healing timelines must not be imported into conservatively managed degenerative lesions.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    strength_optional: D
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  degenerative_meniscus_reassessment_mechanical_symptoms_C:
+    claim_id: degenerative_meniscus_reassessment_mechanical_symptoms_C
+    evidence_ids: [meniscus_rehab_eu_us_consensus_2025]
+    applicable_route_evidence_profile_ids: [rep_degenerative_meniscus_conservative_v1]
+    applicable_route_ids: [degenerative_meniscal_lesion_conservative_rehabilitation]
+    domain: safety
+    claim_summary: Persistent pain, recurrent stiffness or effusion, persistent functional instability, mechanical symptoms or unexpected neurological symptoms during rehabilitation should prompt orthopaedic reassessment rather than indefinite routine progression.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    strength_optional: C
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  degenerative_meniscus_milestone_failure_reassessment_D:
+    claim_id: degenerative_meniscus_milestone_failure_reassessment_D
+    evidence_ids: [meniscus_rehab_eu_us_consensus_2025]
+    applicable_route_evidence_profile_ids: [rep_degenerative_meniscus_conservative_v1]
+    applicable_route_ids: [degenerative_meniscal_lesion_conservative_rehabilitation]
+    domain: safety
+    claim_summary: Failure to reach clinically relevant knee rehabilitation milestones because of persistent knee symptoms should prompt orthopaedic reassessment.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    strength_optional: D
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  degenerative_meniscus_no_prognostic_selector_D:
+    claim_id: degenerative_meniscus_no_prognostic_selector_D
+    evidence_ids: [meniscus_rehab_eu_us_consensus_2025]
+    applicable_route_evidence_profile_ids: [rep_degenerative_meniscus_conservative_v1]
+    applicable_route_ids: [degenerative_meniscal_lesion_conservative_rehabilitation]
+    domain: differential
+    claim_summary: Current evidence does not establish reliable knee-specific or personal factors that identify who will or will not succeed with rehabilitation; higher-grade OA, higher BMI and longer symptom duration may adversely influence outcome but are not deterministic selectors.
+    recommendation_direction: context_only
+    output_scope: clinician_ui_only
+    strength_optional: D
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+route_history_prompts:
+  degenerative_meniscus_true_locking:
+    prompt_id: degenerative_meniscus_true_locking
+    applicable_route_ids: [degenerative_meniscal_lesion_conservative_rehabilitation]
+    label_el: Πραγματικό locking / μηχανικό μπλοκάρισμα του γόνατος, διακριτό από clicking ή catching
+    response_type: boolean_tristate
+    requiredness: conditional
+    evidence_claim_ids_optional: [degenerative_meniscus_reassessment_mechanical_symptoms_C]
+
+  degenerative_meniscus_effusion_course:
+    prompt_id: degenerative_meniscus_effusion_course
+    applicable_route_ids: [degenerative_meniscal_lesion_conservative_rehabilitation]
+    label_el: Υποτροπιάζον ή επίμονο ύδραρθρο / οίδημα και πορεία του
+    response_type: text
+    requiredness: optional
+    evidence_claim_ids_optional: [degenerative_meniscus_reassessment_mechanical_symptoms_C]
+
+  degenerative_meniscus_imaging_and_location:
+    prompt_id: degenerative_meniscus_imaging_and_location
+    applicable_route_ids: [degenerative_meniscal_lesion_conservative_rehabilitation]
+    label_el: MRI / απεικονιστική τεκμηρίωση, έσω/έξω εντόπιση και μορφολογία εφόσον είναι γνωστή
+    response_type: text
+    requiredness: optional
+
+  degenerative_meniscus_OA_overlap:
+    prompt_id: degenerative_meniscus_OA_overlap
+    applicable_route_ids: [degenerative_meniscal_lesion_conservative_rehabilitation]
+    label_el: Συνυπάρχουσα οστεοαρθρίτιδα γόνατος και κλινική/απεικονιστική βαρύτητα εφόσον είναι γνωστή
+    response_type: text
+    requiredness: optional
+
+  degenerative_meniscus_prior_rehab_response:
+    prompt_id: degenerative_meniscus_prior_rehab_response
+    applicable_route_ids: [degenerative_meniscal_lesion_conservative_rehabilitation]
+    label_el: Προηγούμενη συντηρητική αποκατάσταση / άσκηση και ανταπόκριση
+    response_type: text
+    requiredness: optional
+
+  degenerative_meniscus_activity_goal:
+    prompt_id: degenerative_meniscus_activity_goal
+    applicable_route_ids: [degenerative_meniscal_lesion_conservative_rehabilitation]
+    label_el: Εργασιακές, αθλητικές ή καθημερινές απαιτήσεις και στόχος επιστροφής
+    response_type: text
+    requiredness: optional
+
+route_evidence_profiles:
+  rep_degenerative_meniscus_conservative_v1:
+    route_evidence_profile_id: rep_degenerative_meniscus_conservative_v1
+    region_profile_id: knee
+    route_id: degenerative_meniscal_lesion_conservative_rehabilitation
+    applicability_conditions_optional: [symptomatic_degenerative_meniscal_lesion_without_unresolved_structural_surgical_indication]
+    diagnostic_claim_ids: []
+    history_claim_ids: []
+    examination_claim_ids: []
+    rehabilitation_sequence_id: seq_degenerative_meniscus_conservative_v1
+    adjunct_claim_ids: []
+    safety_claim_ids:
+      - degenerative_meniscus_reassessment_mechanical_symptoms_C
+      - degenerative_meniscus_milestone_failure_reassessment_D
+    evidence_gaps:
+      - MRI_meniscal_tear_does_not_identify_symptom_generator_by_itself
+      - no_reliable_prognostic_classifier_identifies_who_will_fail_rehabilitation
+      - exact_numeric_progression_thresholds_are_not_established_for_routine_degenerative_lesions
+      - supervised_outpatient_rehabilitation_has_not_been_directly_compared_with_home_only_exercise
+      - true_locking_or_other_unresolved_structural_surgical_indication_exits_the_routine_route
+      - postoperative_meniscal_rehabilitation_is_owned_by_postoperative_knee_rehabilitation
+    primary_source_ids:
+      - meniscus_rehab_eu_us_consensus_2025
+      - escape_degenerative_meniscus_5y_2022
+      - omex_degenerative_meniscus_10y_2025
+    last_reviewed_on: 2026-08-29
+    next_review_due: 2027-08-29
+    freshness_state: current
+
+rehabilitation_sequences:
+  seq_degenerative_meniscus_conservative_v1:
+    sequence_id: seq_degenerative_meniscus_conservative_v1
+    route_id: degenerative_meniscal_lesion_conservative_rehabilitation
+    applicability_conditions_optional: [symptomatic_degenerative_meniscal_lesion_without_unresolved_structural_surgical_indication]
+    sequence_source: route_evidence_profile
+    route_evidence_profile_id: rep_degenerative_meniscus_conservative_v1
+    phases:
+      - phase_id: degenerative_meniscus_restore_function_and_capacity
+        order: 1
+        clinical_objective: improve knee symptoms, motion, strength, neuromuscular control and functional loading through first-line conservative rehabilitation
+        objective_authority:
+          authority_type: evidence_claim
+          evidence_claim_ids: [degenerative_meniscus_PT_first_line_A, degenerative_meniscus_progressive_rehab_components_B]
+        intervention_directions:
+          - intervention_direction_id: degenerative_meniscus_progressive_strength_ROM_neuromuscular
+            statement: use progressive knee and hip strengthening, range-of-motion restoration when restricted and neuromuscular training, with manual therapy or mobilisation only when clinically indicated
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [degenerative_meniscus_progressive_rehab_components_B]
+        progression_criteria:
+          - criterion_id: degenerative_meniscus_criterion_based_reassessment
+            criterion_kind: progression
+            statement: progress functional loading according to knee symptoms, ROM, effusion, objective quadriceps/hamstring strength and appropriate functional performance rather than elapsed time alone
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [degenerative_meniscus_criterion_based_monitoring_D]
+        precautions_or_do_not_progress_criteria:
+          - criterion_id: degenerative_meniscus_mechanical_or_persistent_symptom_reassessment
+            criterion_kind: reassessment
+            statement: persistent pain, recurrent stiffness or effusion, persistent functional instability, mechanical symptoms or unexpected neurological symptoms should prompt orthopaedic reassessment rather than indefinite progression
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [degenerative_meniscus_reassessment_mechanical_symptoms_C]
+          - criterion_id: degenerative_meniscus_failure_to_meet_milestones
+            criterion_kind: failure_to_progress
+            statement: inability to achieve clinically relevant knee rehabilitation milestones because of persistent symptoms should prompt orthopaedic reassessment
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [degenerative_meniscus_milestone_failure_reassessment_D]
+        strength_optional: null
+        certainty_optional: not_graded
+        required_for_route: true
+
+      - phase_id: degenerative_meniscus_return_to_high_demand_activity_when_applicable
+        order: 2
+        clinical_objective: restore high-demand work or sport function when this is a patient goal
+        objective_authority:
+          authority_type: evidence_claim
+          evidence_claim_ids: [degenerative_meniscus_RTS_criteria_D]
+        intervention_directions: []
+        progression_criteria:
+          - criterion_id: degenerative_meniscus_high_demand_return_criteria
+            criterion_kind: progression
+            statement: return to high-demand activity should consider subjective and objective knee function, ROM, effusion, quadriceps/hamstring strength, coordination/stability performance and psychological readiness rather than using a routine surgery-derived timeline
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [degenerative_meniscus_RTS_criteria_D]
+            applicability_conditions_optional: [return_to_sport_or_high_demand_activity_goal]
+        precautions_or_do_not_progress_criteria: []
+        strength_optional: D
+        certainty_optional: not_graded
+        required_for_route: false
+        applicability_conditions_optional: [return_to_sport_or_high_demand_activity_goal]
+    clinician_modifications_optional: []
+    protocol_overrides_optional: []
+
+coverage_effect:
+  route_profiles_added: [rep_degenerative_meniscus_conservative_v1]
+  rehabilitation_sequences_added: [seq_degenerative_meniscus_conservative_v1]
+  route_history_prompts_added:
+    - degenerative_meniscus_true_locking
+    - degenerative_meniscus_effusion_course
+    - degenerative_meniscus_imaging_and_location
+    - degenerative_meniscus_OA_overlap
+    - degenerative_meniscus_prior_rehab_response
+    - degenerative_meniscus_activity_goal
+  route_status_after_review: sequence_complete_evidence_bounded
+  routine_route_exclusion_behavior:
+    true_locking_or_unresolved_structural_surgical_indication: block_routine_sequence_and_reassess
+    postoperative_meniscal_context: route_to_postoperative_knee_rehabilitation
+    acute_isolated_traumatic_context: route_to_acute_isolated_meniscal_injury_nonoperative_if_applicable
+  runtime_authorized: false

@@ -1,0 +1,575 @@
+version: cu1_evidence_route_coverage_v1_2
+status: active_design_authority_route_coverage_extension
+runtime_authorized: false
+reviewed_on: 2026-08-29
+normative_schema: clinic_utilities/contracts/cu1_history_timeline_schema_v1.yaml
+identity_mode: explicit_payload_id
+review_record: clinic_utilities/contracts/CU1_ROUTE_COVERAGE_REVIEW_2026-08-29.md
+
+purpose: >-
+  Native schema-conformant evidence extension for route-by-route CU-1 coverage after tranche2 and
+  tranche3 promotion. Every object carries its explicit canonical identity. New routes may be added
+  only after exact source/reference/applicability/output-scope review and must not create generic
+  cross-route rehabilitation fallbacks or silently hybridize conflicting frameworks.
+
+external_source_dependencies:
+  - rotator_cuff_tendinopathy_cpg_2025
+
+sources:
+  nice_eswt_calcific_shoulder_htg645_2022:
+    evidence_id: nice_eswt_calcific_shoulder_htg645_2022
+    source_type: guideline
+    title: Extracorporeal shockwave therapy for calcific tendinopathy in the shoulder
+    authors_or_organization: National Institute for Health and Care Excellence
+    year_or_version: 2022_HTG645_migrated_2026_recommendations_unchanged
+    reference: NICE HealthTech guidance HTG645, originally IPG742; published 2022-11-09; migrated January 2026 without recommendation change
+    population_scope_optional: adults with calcific tendinopathy in the shoulder considered for extracorporeal shockwave therapy
+    reviewed_on: 2026-08-29
+    next_review_due: 2027-02-28
+    freshness_state: current
+    status: active
+
+  glenohumeral_oa_apta_cpg_2023:
+    evidence_id: glenohumeral_oa_apta_cpg_2023
+    source_type: clinical_practice_guideline
+    title: Physical Therapist Management of Glenohumeral Joint Osteoarthritis — A Clinical Practice Guideline from the American Physical Therapy Association
+    authors_or_organization: Michener et al. / American Physical Therapy Association guideline development group
+    year_or_version: 2023
+    reference: Phys Ther. 2023;103(6):pzad041
+    doi_optional: 10.1093/ptj/pzad041
+    population_scope_optional: adults with primary glenohumeral joint osteoarthritis managed nonoperatively, preoperatively for total shoulder arthroplasty, or after total shoulder arthroplasty; postoperative reverse-TSA rehabilitation is outside the CPG scope
+    reviewed_on: 2026-08-29
+    next_review_due: 2027-08-29
+    freshness_state: current
+    status: active
+
+  glenohumeral_oa_pt_sr_2026:
+    evidence_id: glenohumeral_oa_pt_sr_2026
+    source_type: systematic_review
+    title: The effectiveness of physiotherapy-led non-surgical and perioperative interventions for glenohumeral osteoarthritis — a systematic review
+    authors_or_organization: systematic review authors
+    year_or_version: 2026
+    reference: Shoulder Elbow. 2026; online publication. PMID 42186453
+    doi_optional: 10.1177/17585732261450961
+    population_scope_optional: adults aged 45 years and older with glenohumeral osteoarthritis including rotator-cuff arthropathy; physiotherapist-led nonsurgical and perioperative interventions; evidence search through June 2025
+    reviewed_on: 2026-08-29
+    next_review_due: 2027-08-29
+    freshness_state: current
+    status: active
+
+claims:
+  calcific_rc_imaging_defined:
+    claim_id: calcific_rc_imaging_defined
+    evidence_ids: [rotator_cuff_tendinopathy_cpg_2025]
+    applicable_route_evidence_profile_ids: [rep_calcific_rotator_cuff_v1]
+    applicable_route_ids: [calcific_rotator_cuff_tendinopathy]
+    domain: diagnostic_definition
+    claim_summary: Rotator-cuff calcific tendinopathy denotes a rotator-cuff tendinopathy with a calcific deposit confirmed by imaging; the utility must not infer a calcific deposit from symptoms or examination findings.
+    recommendation_direction: context_only
+    output_scope: clinician_ui_only
+    certainty_optional: not_applicable
+    reviewed_on: 2026-08-29
+
+  calcific_rc_patient_centered_education:
+    claim_id: calcific_rc_patient_centered_education
+    evidence_ids: [rotator_cuff_tendinopathy_cpg_2025]
+    applicable_route_evidence_profile_ids: [rep_calcific_rotator_cuff_v1]
+    applicable_route_ids: [calcific_rotator_cuff_tendinopathy]
+    domain: core_rehabilitation
+    claim_summary: Provide individualized education about the condition, pain-management options, activity modification and self-management while considering health literacy, beliefs, goals and relevant psychosocial factors.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    strength_optional: C
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  calcific_rc_active_rehabilitation_core:
+    claim_id: calcific_rc_active_rehabilitation_core
+    evidence_ids: [rotator_cuff_tendinopathy_cpg_2025]
+    applicable_route_evidence_profile_ids: [rep_calcific_rotator_cuff_v1]
+    applicable_route_ids: [calcific_rotator_cuff_tendinopathy]
+    domain: core_rehabilitation
+    claim_summary: Active rehabilitation exercise, including motor-control and/or resistance exercise with individualized loads, is recommended as initial treatment to reduce pain and disability in rotator-cuff tendinopathy including the calcific presentation.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    strength_optional: A
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  calcific_rc_eswt_jospt_optional:
+    claim_id: calcific_rc_eswt_jospt_optional
+    evidence_ids: [rotator_cuff_tendinopathy_cpg_2025]
+    applicable_route_evidence_profile_ids: [rep_calcific_rotator_cuff_v1]
+    applicable_route_ids: [calcific_rotator_cuff_tendinopathy]
+    domain: adjunct
+    claim_summary: The 2025 rotator-cuff CPG states that extracorporeal shock-wave therapy may be used or recommended to reduce pain and disability in adults with calcific rotator-cuff tendinopathy.
+    recommendation_direction: may_consider
+    output_scope: clinician_ui_only
+    strength_optional: C
+    certainty_optional: not_graded
+    conflicts_with_claim_ids_optional: [calcific_rc_eswt_nice_research_only]
+    reviewed_on: 2026-08-29
+
+  calcific_rc_eswt_nice_research_only:
+    claim_id: calcific_rc_eswt_nice_research_only
+    evidence_ids: [nice_eswt_calcific_shoulder_htg645_2022]
+    applicable_route_evidence_profile_ids: [rep_calcific_rotator_cuff_v1]
+    applicable_route_ids: [calcific_rotator_cuff_tendinopathy]
+    domain: adjunct
+    claim_summary: NICE HTG645 states that short-term safety shows no major concern but efficacy evidence is inadequate, so ESWT for calcific shoulder tendinopathy should only be used in the context of research.
+    recommendation_direction: do_not_offer
+    output_scope: clinician_ui_only
+    certainty_optional: not_graded
+    applicability_conditions_optional: [routine_clinical_use_outside_research]
+    conflicts_with_claim_ids_optional: [calcific_rc_eswt_jospt_optional]
+    reviewed_on: 2026-08-29
+
+  calcific_rc_lavage_refractory:
+    claim_id: calcific_rc_lavage_refractory
+    evidence_ids: [rotator_cuff_tendinopathy_cpg_2025]
+    applicable_route_evidence_profile_ids: [rep_calcific_rotator_cuff_v1]
+    applicable_route_ids: [calcific_rotator_cuff_tendinopathy]
+    domain: adjunct
+    claim_summary: Calcific lavage is recommended for adults with calcific rotator-cuff tendinopathy that remains symptomatic despite initial treatment; evidence does not establish lavage as an initial treatment for acute presentations.
+    recommendation_direction: recommend
+    output_scope: clinician_ui_only
+    strength_optional: B
+    certainty_optional: not_graded
+    applicability_conditions_optional: [refractory_to_initial_treatment]
+    reviewed_on: 2026-08-29
+
+  calcific_rc_laser_optional_context:
+    claim_id: calcific_rc_laser_optional_context
+    evidence_ids: [rotator_cuff_tendinopathy_cpg_2025]
+    applicable_route_evidence_profile_ids: [rep_calcific_rotator_cuff_v1]
+    applicable_route_ids: [calcific_rotator_cuff_tendinopathy]
+    domain: adjunct
+    claim_summary: The 2025 CPG states that laser therapy may reduce pain and disability in adults with calcific rotator-cuff tendinopathy, but laser is not added to the frozen CU-1 selectable adjunct taxonomy by this evidence-curation slice.
+    recommendation_direction: may_consider
+    output_scope: clinician_ui_only
+    strength_optional: C
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  calcific_rc_therapeutic_ultrasound_do_not_offer:
+    claim_id: calcific_rc_therapeutic_ultrasound_do_not_offer
+    evidence_ids: [rotator_cuff_tendinopathy_cpg_2025]
+    applicable_route_evidence_profile_ids: [rep_calcific_rotator_cuff_v1]
+    applicable_route_ids: [calcific_rotator_cuff_tendinopathy]
+    domain: adjunct
+    claim_summary: Therapeutic ultrasound should not be used or recommended, alone or with active rehabilitation, to reduce pain and disability in calcific rotator-cuff tendinopathy.
+    recommendation_direction: do_not_offer
+    output_scope: clinician_ui_only
+    strength_optional: C
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  calcific_rc_persistent_severe_reassessment:
+    claim_id: calcific_rc_persistent_severe_reassessment
+    evidence_ids: [rotator_cuff_tendinopathy_cpg_2025]
+    applicable_route_evidence_profile_ids: [rep_calcific_rotator_cuff_v1]
+    applicable_route_ids: [calcific_rotator_cuff_tendinopathy]
+    domain: safety
+    claim_summary: Severe persistent pain and/or disability despite up to 12 weeks of appropriate nonsurgical care warrants musculoskeletal specialist reassessment rather than indefinite routine progression.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    strength_optional: F
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  calcific_rc_return_sport_capacity:
+    claim_id: calcific_rc_return_sport_capacity
+    evidence_ids: [rotator_cuff_tendinopathy_cpg_2025]
+    applicable_route_evidence_profile_ids: [rep_calcific_rotator_cuff_v1]
+    applicable_route_ids: [calcific_rotator_cuff_tendinopathy]
+    domain: progression_criteria
+    claim_summary: When return to sport is relevant, rotator-cuff and associated shoulder capacity and load tolerance may be used to develop the return-to-sport program.
+    recommendation_direction: may_consider
+    output_scope: referral_core
+    strength_optional: F
+    certainty_optional: not_graded
+    applicability_conditions_optional: [athletic_return_to_sport_goal]
+    reviewed_on: 2026-08-29
+
+  calcific_rc_return_sport_measures:
+    claim_id: calcific_rc_return_sport_measures
+    evidence_ids: [rotator_cuff_tendinopathy_cpg_2025]
+    applicable_route_evidence_profile_ids: [rep_calcific_rotator_cuff_v1]
+    applicable_route_ids: [calcific_rotator_cuff_tendinopathy]
+    domain: progression_criteria
+    claim_summary: Patient-rated pain/disability/readiness measures and functional performance measures may guide the return-to-sport continuum rather than elapsed time alone.
+    recommendation_direction: may_consider
+    output_scope: referral_core
+    strength_optional: F
+    certainty_optional: not_graded
+    applicability_conditions_optional: [athletic_return_to_sport_goal]
+    reviewed_on: 2026-08-29
+
+  ghoa_nonoperative_PT_best_practice_2023:
+    claim_id: ghoa_nonoperative_PT_best_practice_2023
+    evidence_ids: [glenohumeral_oa_apta_cpg_2023]
+    applicable_route_evidence_profile_ids: [rep_glenohumeral_oa_nonoperative_v1]
+    applicable_route_ids: [glenohumeral_osteoarthritis]
+    applicability_conditions_optional: [established_primary_GHOA_nonoperative_management]
+    domain: core_rehabilitation
+    claim_summary: For primary glenohumeral osteoarthritis not undergoing total shoulder arthroplasty, the APTA guideline development group states as a best-practice recommendation that physical therapist services may benefit pain and functional outcomes despite insufficient comparative evidence.
+    recommendation_direction: consider
+    output_scope: referral_core
+    strength_optional: best_practice_APTA
+    certainty_optional: not_applicable
+    reviewed_on: 2026-08-29
+
+  ghoa_individualized_PT_selection_2023:
+    claim_id: ghoa_individualized_PT_selection_2023
+    evidence_ids: [glenohumeral_oa_apta_cpg_2023]
+    applicable_route_evidence_profile_ids: [rep_glenohumeral_oa_nonoperative_v1]
+    applicable_route_ids: [glenohumeral_osteoarthritis]
+    applicability_conditions_optional: [established_primary_GHOA_nonoperative_management]
+    domain: core_rehabilitation
+    claim_summary: Nonoperative physical therapist intervention selection should be individualized to examination findings, associated impairments, tissue irritability, patient goals and values; the guideline does not identify one specific physical therapist intervention as superior to another.
+    recommendation_direction: consider
+    output_scope: referral_core
+    strength_optional: best_practice_APTA
+    certainty_optional: not_applicable
+    reviewed_on: 2026-08-29
+
+  ghoa_no_specific_PT_superior_2023:
+    claim_id: ghoa_no_specific_PT_superior_2023
+    evidence_ids: [glenohumeral_oa_apta_cpg_2023]
+    applicable_route_evidence_profile_ids: [rep_glenohumeral_oa_nonoperative_v1]
+    applicable_route_ids: [glenohumeral_osteoarthritis]
+    applicability_conditions_optional: [established_primary_GHOA_nonoperative_management]
+    domain: core_rehabilitation
+    claim_summary: The 2023 APTA CPG found no high- or moderate-quality evidence comparing nonoperative physical therapist interventions and therefore does not support representing any one specific PT intervention as superior for GHOA.
+    recommendation_direction: insufficient_evidence
+    output_scope: clinician_ui_only
+    strength_optional: best_practice_APTA
+    certainty_optional: not_applicable
+    reviewed_on: 2026-08-29
+
+  ghoa_nonoperative_RCT_gap_2026:
+    claim_id: ghoa_nonoperative_RCT_gap_2026
+    evidence_ids: [glenohumeral_oa_pt_sr_2026]
+    applicable_route_evidence_profile_ids: [rep_glenohumeral_oa_nonoperative_v1]
+    applicable_route_ids: [glenohumeral_osteoarthritis]
+    applicability_conditions_optional: [established_primary_GHOA_nonoperative_management]
+    domain: core_rehabilitation
+    claim_summary: A 2026 systematic review found no published randomized trials evaluating physiotherapist-led interventions for people with glenohumeral osteoarthritis receiving nonsurgical care, so comparative efficacy remains unestablished.
+    recommendation_direction: insufficient_evidence
+    output_scope: clinician_ui_only
+    certainty_optional: not_applicable
+    reviewed_on: 2026-08-29
+
+  ghoa_patient_reported_reassessment_2023:
+    claim_id: ghoa_patient_reported_reassessment_2023
+    evidence_ids: [glenohumeral_oa_apta_cpg_2023]
+    applicable_route_evidence_profile_ids: [rep_glenohumeral_oa_nonoperative_v1]
+    applicable_route_ids: [glenohumeral_osteoarthritis]
+    applicability_conditions_optional: [established_primary_GHOA_nonoperative_management]
+    domain: progression_criteria
+    claim_summary: Patient-reported function and disability outcomes together with repeated clinical evaluation may be used to judge effectiveness of nonoperative physical therapist management; no universal numeric progression threshold is supplied.
+    recommendation_direction: consider
+    output_scope: referral_core
+    strength_optional: best_practice_APTA
+    certainty_optional: not_applicable
+    reviewed_on: 2026-08-29
+
+  ghoa_preop_PT_best_practice_2023:
+    claim_id: ghoa_preop_PT_best_practice_2023
+    evidence_ids: [glenohumeral_oa_apta_cpg_2023]
+    applicable_route_evidence_profile_ids: [rep_glenohumeral_oa_preop_TSA_v1]
+    applicable_route_ids: [glenohumeral_osteoarthritis]
+    applicability_conditions_optional: [established_primary_GHOA_scheduled_for_TSA_preoperative]
+    domain: core_rehabilitation
+    claim_summary: In the absence of high- or moderate-quality evidence, the APTA guideline development group states as best practice that preoperative physical therapist services may benefit postoperative outcomes in people with GHOA scheduled for total shoulder arthroplasty.
+    recommendation_direction: consider
+    output_scope: referral_core
+    strength_optional: best_practice_APTA
+    certainty_optional: not_applicable
+    reviewed_on: 2026-08-29
+
+  ghoa_postoperative_context_separate_owner:
+    claim_id: ghoa_postoperative_context_separate_owner
+    evidence_ids: [glenohumeral_oa_apta_cpg_2023]
+    applicable_route_evidence_profile_ids: [rep_glenohumeral_oa_nonoperative_v1, rep_glenohumeral_oa_preop_TSA_v1]
+    applicable_route_ids: [glenohumeral_osteoarthritis]
+    applicability_conditions_optional: [post_TSA_or_other_shoulder_arthroplasty_context]
+    domain: safety
+    claim_summary: Postoperative total shoulder arthroplasty rehabilitation has procedure- and time-sensitive evidence and restrictions and must be routed to postoperative shoulder rehabilitation rather than generated from the nonoperative or preoperative GHOA sequence.
+    recommendation_direction: context_only
+    output_scope: clinician_ui_only
+    certainty_optional: not_applicable
+    reviewed_on: 2026-08-29
+
+route_history_prompts:
+  calcific_rc_imaging_confirmation:
+    prompt_id: calcific_rc_imaging_confirmation
+    applicable_route_ids: [calcific_rotator_cuff_tendinopathy]
+    label_el: Επιβεβαίωση ασβεστοποίησης με απεικόνιση και, αν είναι γνωστό, τένοντας / εντόπιση
+    response_type: text
+    requiredness: conditional
+    evidence_claim_ids_optional: [calcific_rc_imaging_defined]
+
+  calcific_rc_course_irritability:
+    prompt_id: calcific_rc_course_irritability
+    applicable_route_ids: [calcific_rotator_cuff_tendinopathy]
+    label_el: Οξεία έντονα ερεθιστική ή επίμονη / χρόνια πορεία συμπτωμάτων
+    response_type: text
+    requiredness: optional
+
+  calcific_rc_prior_treatment_response:
+    prompt_id: calcific_rc_prior_treatment_response
+    applicable_route_ids: [calcific_rotator_cuff_tendinopathy]
+    label_el: Προηγούμενη αρχική θεραπεία και ανταπόκριση / επιμονή συμπτωμάτων
+    response_type: text
+    requiredness: optional
+    evidence_claim_ids_optional: [calcific_rc_lavage_refractory]
+
+  calcific_rc_prior_lavage:
+    prompt_id: calcific_rc_prior_lavage
+    applicable_route_ids: [calcific_rotator_cuff_tendinopathy]
+    label_el: Προηγούμενο barbotage / lavage
+    response_type: boolean_tristate
+    requiredness: optional
+
+  ghoa_management_context:
+    prompt_id: ghoa_management_context
+    applicable_route_ids: [glenohumeral_osteoarthritis]
+    label_el: Τρέχον πλαίσιο: συντηρητική αντιμετώπιση, προεγχειρητική προετοιμασία για αρθροπλαστική ή μετεγχειρητική αποκατάσταση
+    response_type: canonical_enum
+    enum_values_optional: [nonoperative, preoperative_TSA, postoperative_arthroplasty, not_stated]
+    requiredness: conditional
+
+  ghoa_symptom_irritability_function:
+    prompt_id: ghoa_symptom_irritability_function
+    applicable_route_ids: [glenohumeral_osteoarthritis]
+    label_el: Ερεθιστικότητα συμπτωμάτων, λειτουργικοί περιορισμοί και δραστηριότητες προτεραιότητας
+    response_type: text
+    requiredness: optional
+
+  ghoa_prior_nonoperative_care_response:
+    prompt_id: ghoa_prior_nonoperative_care_response
+    applicable_route_ids: [glenohumeral_osteoarthritis]
+    label_el: Προηγούμενη συντηρητική αντιμετώπιση / φυσικοθεραπεία και ανταπόκριση
+    response_type: text
+    requiredness: optional
+
+  ghoa_imaging_and_deformity_context:
+    prompt_id: ghoa_imaging_and_deformity_context
+    applicable_route_ids: [glenohumeral_osteoarthritis]
+    label_el: Απεικονιστική τεκμηρίωση ΟΑ και, αν είναι γνωστά, τύπος/έκταση γληνοειδικής παραμόρφωσης ή άλλο σχετικό δομικό πλαίσιο
+    response_type: text
+    requiredness: optional
+
+route_evidence_profiles:
+  rep_calcific_rotator_cuff_v1:
+    route_evidence_profile_id: rep_calcific_rotator_cuff_v1
+    region_profile_id: shoulder
+    route_id: calcific_rotator_cuff_tendinopathy
+    diagnostic_claim_ids: [calcific_rc_imaging_defined]
+    history_claim_ids: []
+    examination_claim_ids: []
+    rehabilitation_sequence_id: seq_calcific_rotator_cuff_v1
+    adjunct_claim_ids:
+      - calcific_rc_eswt_jospt_optional
+      - calcific_rc_eswt_nice_research_only
+      - calcific_rc_lavage_refractory
+      - calcific_rc_laser_optional_context
+      - calcific_rc_therapeutic_ultrasound_do_not_offer
+    safety_claim_ids: [calcific_rc_persistent_severe_reassessment]
+    evidence_gaps:
+      - no_universal_numeric_rehabilitation_progression_thresholds
+      - lavage_evidence_is_for_refractory_persistent_cases_not_initial_acute_treatment
+      - no_evidence_that_sequential_post_lavage_ESWT_is_required_or_superior
+      - ESWT_framework_conflict_requires_explicit_clinician_framework_context_before_referral_rendering
+      - laser_evidence_does_not_change_the_frozen_selectable_adjunct_taxonomy_in_this_slice
+    primary_source_ids: [rotator_cuff_tendinopathy_cpg_2025, nice_eswt_calcific_shoulder_htg645_2022]
+    last_reviewed_on: 2026-08-29
+    next_review_due: 2027-02-28
+    freshness_state: current
+
+  rep_glenohumeral_oa_nonoperative_v1:
+    route_evidence_profile_id: rep_glenohumeral_oa_nonoperative_v1
+    region_profile_id: shoulder
+    route_id: glenohumeral_osteoarthritis
+    applicability_conditions_optional: [established_primary_GHOA_nonoperative_management]
+    diagnostic_claim_ids: []
+    history_claim_ids: []
+    examination_claim_ids: []
+    rehabilitation_sequence_id: seq_glenohumeral_oa_nonoperative_v1
+    adjunct_claim_ids: []
+    safety_claim_ids: [ghoa_postoperative_context_separate_owner]
+    evidence_gaps:
+      - no_high_or_moderate_quality_nonoperative_PT_comparative_evidence_in_2023_CPG
+      - 2026_SR_found_no_nonsurgical_PT_RCTs
+      - no_specific_PT_intervention_is_evidence_supported_as_superior
+      - no_universal_numeric_progression_or_course_duration_thresholds
+    primary_source_ids: [glenohumeral_oa_apta_cpg_2023, glenohumeral_oa_pt_sr_2026]
+    last_reviewed_on: 2026-08-29
+    next_review_due: 2027-08-29
+    freshness_state: current
+
+  rep_glenohumeral_oa_preop_TSA_v1:
+    route_evidence_profile_id: rep_glenohumeral_oa_preop_TSA_v1
+    region_profile_id: shoulder
+    route_id: glenohumeral_osteoarthritis
+    applicability_conditions_optional: [established_primary_GHOA_scheduled_for_TSA_preoperative]
+    diagnostic_claim_ids: []
+    history_claim_ids: []
+    examination_claim_ids: []
+    rehabilitation_sequence_id: seq_glenohumeral_oa_preop_TSA_v1
+    adjunct_claim_ids: []
+    safety_claim_ids: [ghoa_postoperative_context_separate_owner]
+    evidence_gaps:
+      - preoperative_PT_recommendation_is_best_practice_opinion_with_insufficient_evidence
+      - no_specific_preoperative_PT_protocol_or_numeric_progression_threshold_is_authorized
+      - postoperative_protocol_must_not_be_inferred_from_preoperative_route
+    primary_source_ids: [glenohumeral_oa_apta_cpg_2023]
+    last_reviewed_on: 2026-08-29
+    next_review_due: 2027-08-29
+    freshness_state: current
+
+rehabilitation_sequences:
+  seq_calcific_rotator_cuff_v1:
+    sequence_id: seq_calcific_rotator_cuff_v1
+    route_id: calcific_rotator_cuff_tendinopathy
+    sequence_source: route_evidence_profile
+    route_evidence_profile_id: rep_calcific_rotator_cuff_v1
+    phases:
+      - phase_id: calcific_rc_active_rehabilitation
+        order: 1
+        clinical_objective: reduce pain and disability and restore shoulder load tolerance through individualized active rehabilitation and self-management
+        objective_authority:
+          authority_type: evidence_claim
+          evidence_claim_ids: [calcific_rc_active_rehabilitation_core, calcific_rc_patient_centered_education]
+        intervention_directions:
+          - intervention_direction_id: calcific_rc_active_exercise
+            statement: use an individualized active rehabilitation program that may include motor-control and/or resistance exercise with appropriate loads
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [calcific_rc_active_rehabilitation_core]
+          - intervention_direction_id: calcific_rc_education_self_management
+            statement: provide individualized education, activity modification and self-management support
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [calcific_rc_patient_centered_education]
+        progression_criteria: []
+        precautions_or_do_not_progress_criteria:
+          - criterion_id: calcific_rc_persistent_severe_specialist_reassessment
+            criterion_kind: reassessment
+            statement: severe persistent pain and/or disability despite up to 12 weeks of appropriate nonsurgical care should trigger specialist reassessment rather than indefinite routine progression
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [calcific_rc_persistent_severe_reassessment]
+        strength_optional: null
+        certainty_optional: not_graded
+        required_for_route: true
+
+      - phase_id: calcific_rc_return_to_sport_when_applicable
+        order: 2
+        clinical_objective: restore sport-specific shoulder capacity and load tolerance when return to sport is a patient goal
+        objective_authority:
+          authority_type: evidence_claim
+          evidence_claim_ids: [calcific_rc_return_sport_capacity, calcific_rc_return_sport_measures]
+        intervention_directions: []
+        progression_criteria:
+          - criterion_id: calcific_rc_rts_capacity_and_function
+            criterion_kind: progression
+            statement: guide return using rotator-cuff and shoulder capacity/load tolerance together with patient-rated and functional performance measures rather than elapsed time alone
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [calcific_rc_return_sport_capacity, calcific_rc_return_sport_measures]
+            applicability_conditions_optional: [athletic_return_to_sport_goal]
+        precautions_or_do_not_progress_criteria: []
+        strength_optional: F
+        certainty_optional: not_graded
+        required_for_route: false
+        applicability_conditions_optional: [athletic_return_to_sport_goal]
+    clinician_modifications_optional: []
+    protocol_overrides_optional: []
+
+  seq_glenohumeral_oa_nonoperative_v1:
+    sequence_id: seq_glenohumeral_oa_nonoperative_v1
+    route_id: glenohumeral_osteoarthritis
+    applicability_conditions_optional: [established_primary_GHOA_nonoperative_management]
+    sequence_source: route_evidence_profile
+    route_evidence_profile_id: rep_glenohumeral_oa_nonoperative_v1
+    phases:
+      - phase_id: ghoa_nonoperative_individualized_PT
+        order: 1
+        clinical_objective: improve pain-related function and activity tolerance through individualized physical therapist management without implying structural reversal or superiority of one specific intervention
+        objective_authority:
+          authority_type: evidence_claim
+          evidence_claim_ids: [ghoa_nonoperative_PT_best_practice_2023, ghoa_individualized_PT_selection_2023]
+        intervention_directions:
+          - intervention_direction_id: ghoa_individualized_impairment_irritability_goal_based_PT
+            statement: use individualized physical therapist management matched to examination findings, impairments, tissue irritability and patient goals; do not present one specific PT technique or exercise package as evidence-superior
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [ghoa_individualized_PT_selection_2023]
+        progression_criteria: []
+        precautions_or_do_not_progress_criteria:
+          - criterion_id: ghoa_reassess_patient_reported_function
+            criterion_kind: reassessment
+            statement: use repeated patient-reported function/disability together with clinical evaluation to judge effectiveness and whether the management plan should continue or change; no universal numeric threshold is implied
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [ghoa_patient_reported_reassessment_2023]
+        strength_optional: best_practice_APTA
+        certainty_optional: not_applicable
+        required_for_route: true
+    clinician_modifications_optional: []
+    protocol_overrides_optional: []
+
+  seq_glenohumeral_oa_preop_TSA_v1:
+    sequence_id: seq_glenohumeral_oa_preop_TSA_v1
+    route_id: glenohumeral_osteoarthritis
+    applicability_conditions_optional: [established_primary_GHOA_scheduled_for_TSA_preoperative]
+    sequence_source: route_evidence_profile
+    route_evidence_profile_id: rep_glenohumeral_oa_preop_TSA_v1
+    phases:
+      - phase_id: ghoa_preop_TSA_PT
+        order: 1
+        clinical_objective: support preoperative function and preparation through individualized physical therapist services without inventing a procedure-specific postoperative protocol
+        objective_authority:
+          authority_type: evidence_claim
+          evidence_claim_ids: [ghoa_preop_PT_best_practice_2023]
+        intervention_directions:
+          - intervention_direction_id: ghoa_preop_individualized_PT
+            statement: preoperative physical therapist services may be considered according to the patient's functional deficits, goals and planned arthroplasty pathway; no specific evidence-based preoperative protocol is prescribed
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [ghoa_preop_PT_best_practice_2023]
+        progression_criteria: []
+        precautions_or_do_not_progress_criteria: []
+        strength_optional: best_practice_APTA
+        certainty_optional: not_applicable
+        required_for_route: true
+    clinician_modifications_optional: []
+    protocol_overrides_optional: []
+
+coverage_effect:
+  route_profiles_added:
+    - rep_calcific_rotator_cuff_v1
+    - rep_glenohumeral_oa_nonoperative_v1
+    - rep_glenohumeral_oa_preop_TSA_v1
+  rehabilitation_sequences_added:
+    - seq_calcific_rotator_cuff_v1
+    - seq_glenohumeral_oa_nonoperative_v1
+    - seq_glenohumeral_oa_preop_TSA_v1
+  route_history_prompts_added:
+    - calcific_rc_imaging_confirmation
+    - calcific_rc_course_irritability
+    - calcific_rc_prior_treatment_response
+    - calcific_rc_prior_lavage
+    - ghoa_management_context
+    - ghoa_symptom_irritability_function
+    - ghoa_prior_nonoperative_care_response
+    - ghoa_imaging_and_deformity_context
+  framework_conflicts_preserved: [calcific_ESWT_JOSPT_2025_vs_NICE_HTG645]
+  reviewed_route_states:
+    calcific_rotator_cuff_tendinopathy: sequence_complete_evidence_bounded
+    glenohumeral_osteoarthritis_nonoperative: sequence_complete_best_practice_evidence_gap_aware
+    glenohumeral_osteoarthritis_preoperative_TSA: sequence_complete_best_practice_evidence_gap_aware
+    glenohumeral_osteoarthritis_postoperative: separate_postoperative_route_required
+  runtime_authorized: false

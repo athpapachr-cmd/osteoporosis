@@ -1,0 +1,527 @@
+version: cu1_evidence_tranche3_promotion_v1
+status: normalized_promotion_projection
+runtime_authorized: false
+reviewed_on: 2026-08-29
+source_shard: clinic_utilities/contracts/cu1_evidence_tranche3_v1.yaml
+normative_schema: clinic_utilities/contracts/cu1_history_timeline_schema_v1.yaml
+promotion_review: clinic_utilities/contracts/CU1_TRANCHE3_PROMOTION_REVIEW_2026-08-29.md
+
+purpose: >-
+  Deterministic normalization, freshness correction and clinical-scope correction projection for
+  the immutable tranche3 staging shard. The normative logical tranche3 authority is source_shard
+  plus this reviewed projection. Promotion does not imply route completion or runtime authorization.
+
+normalization_order:
+  - materialize_map_key_identity
+  - populate_required_non_optional_fields
+  - apply_source_metadata_corrections
+  - drop_invalid_or_scope_unsafe_claims
+  - add_reviewed_replacement_sources_and_claims
+  - apply_profile_corrections
+  - apply_sequence_corrections
+  - resolve_and_validate_references
+  - validate_route_and_subtype_applicability
+  - validate_output_scope
+  - validate_freshness
+  - validate_cross_shard_id_uniqueness
+
+identity_materialization:
+  sources:
+    canonical_field: evidence_id
+    rule: evidence_id_equals_source_map_key
+  claims:
+    canonical_field: claim_id
+    rule: claim_id_equals_claim_map_key
+  route_history_prompts:
+    canonical_field: prompt_id
+    rule: prompt_id_equals_prompt_map_key
+  route_evidence_profiles:
+    canonical_field: route_evidence_profile_id
+    rule: route_evidence_profile_id_equals_profile_map_key
+  rehabilitation_sequences:
+    canonical_field: sequence_id
+    rule: sequence_id_equals_sequence_map_key
+
+required_field_defaults:
+  route_evidence_profiles:
+    diagnostic_claim_ids: []
+    history_claim_ids: []
+    examination_claim_ids: []
+    adjunct_claim_ids: []
+    safety_claim_ids: []
+  rehabilitation_sequences:
+    sequence_source: route_evidence_profile
+    clinician_modifications_optional: []
+    protocol_overrides_optional: []
+
+source_metadata_corrections:
+  nonarthritic_hip_cpg_2023:
+    authors_or_organization: Enseki et al. / Academy of Orthopaedic Physical Therapy + American Academy of Sports Physical Therapy / APTA
+    reference: J Orthop Sports Phys Ther. 2023;53(7):CPG1-CPG70
+    doi_optional: 10.2519/jospt.2023.0302
+  gtps_exercise_sr_2024:
+    authors_or_organization: Kjeldsen et al.
+    reference: Physiotherapy. 2024;123:69-80
+    doi_optional: 10.1016/j.physio.2024.01.001
+  gluteal_tendinopathy_sr_2025:
+    authors_or_organization: Bremer et al.
+    reference: Clin Rehabil. 2025;39(5):600-617. PMID 40223303
+    doi_optional: 10.1177/02692155251327298
+  aaos_acute_isolated_meniscus_2024:
+    reference: AAOS Management of Acute Isolated Meniscal Pathology CPG, published 2024-06-10
+    url_optional: https://www.aaos.org/ampcpg
+  traumatic_anterior_shoulder_instability_esska_esa_2026:
+    authors_or_organization: Alentorn-Geli et al. / ESSKA-ESA formal consensus group
+    year_or_version: 2024_consensus_published_2026
+    published_on_optional: 2026-06-24
+    reference: Knee Surg Sports Traumatol Arthrosc. 2026;34(8):3040-3051
+    doi_optional: 10.1002/ksa.70497
+  posterior_shoulder_instability_consensus_2025:
+    title: Posterior Shoulder Instability, Part II-Glenoid Bone Grafting, Glenoid Osteotomy, and Rehabilitation/Return to Play-An International Expert Delphi Consensus Statement
+    authors_or_organization: Hurley et al. / Posterior Shoulder Instability International Consensus Group
+    reference: Arthroscopy. 2025;41(2):181-195.e7
+    doi_optional: 10.1016/j.arthro.2024.04.034
+  adhesive_capsulitis_exercise_mobilization_sr_2023:
+    authors_or_organization: Lee JH, Jeon HG, Yoon YJ
+    reference: Healthcare (Basel). 2023;11(10):1504. PMID 37239790
+    doi_optional: 10.3390/healthcare11101504
+
+additional_sources:
+  posterior_shoulder_instability_consensus_part1_2025:
+    evidence_id: posterior_shoulder_instability_consensus_part1_2025
+    source_type: consensus
+    title: Posterior Shoulder Instability, Part I-Diagnosis, Nonoperative Management, and Labral Repair for Posterior Shoulder Instability-An International Expert Delphi Consensus Statement
+    authors_or_organization: Hurley et al. / Posterior Shoulder Instability International Consensus Group
+    year_or_version: 2025
+    reference: Arthroscopy. 2025;41(2):166-180.e11
+    doi_optional: 10.1016/j.arthro.2024.04.035
+    population_scope_optional: posterior shoulder instability; diagnosis, relative indications for nonoperative management and labral repair
+    reviewed_on: 2026-08-29
+    next_review_due: 2027-08-29
+    freshness_state: current
+    status: active
+
+  primary_frozen_shoulder_cpg_2025_korea:
+    evidence_id: primary_frozen_shoulder_cpg_2025_korea
+    source_type: clinical_practice_guideline
+    title: Clinical Practice Guidelines for Diagnosis and Non-Surgical Treatment of Primary Frozen Shoulder
+    authors_or_organization: Lee et al. / multidisciplinary Korean guideline development committee
+    year_or_version: 2025
+    reference: Ann Rehabil Med. 2025;49(3):113-138
+    doi_optional: 10.5535/arm.250057
+    population_scope_optional: adults with primary frozen shoulder; diagnosis and non-surgical treatment
+    reviewed_on: 2026-08-29
+    next_review_due: 2027-08-29
+    freshness_state: current
+    status: active
+
+  bess_frozen_shoulder_pathway_2025:
+    evidence_id: bess_frozen_shoulder_pathway_2025
+    source_type: guideline
+    title: British Elbow and Shoulder Society patient care pathway: Frozen shoulder
+    authors_or_organization: Rupani, Gwilym / BESS Frozen Shoulder Working Group
+    year_or_version: 2025
+    reference: Shoulder Elbow. 2025;17(4):351-363
+    doi_optional: 10.1177/17585732251335955
+    population_scope_optional: adults with frozen shoulder managed in primary and secondary care
+    reviewed_on: 2026-08-29
+    next_review_due: 2027-08-29
+    freshness_state: current
+    status: active
+
+claims_to_drop_before_logical_merge:
+  - nonarthritic_hip_impairment_specific_exercise
+  - nonarthritic_hip_avoid_symptom_provoking_impingement_or_instability_load
+  - gtps_exercise_first_line
+  - acute_meniscus_PT_may_benefit_nondisplaced_nonoperative
+  - acute_meniscus_displaced_ROM_block_early_surgical_context
+  - posterior_shoulder_instability_RTS_criteria
+
+replacement_claims:
+  nonarthritic_hip_therapeutic_exercise_C:
+    claim_id: nonarthritic_hip_therapeutic_exercise_C
+    evidence_ids: [nonarthritic_hip_cpg_2023]
+    applicable_route_evidence_profile_ids: [rep_nonarthritic_intraarticular_hip_v1]
+    applicable_route_ids: [nonarthritic_intraarticular_hip_pain]
+    domain: core_rehabilitation
+    claim_summary: Clinicians may use therapeutic exercises and activities to address joint mobility, muscle flexibility and muscle strength deficits identified during examination of nonarthritic hip joint pain.
+    recommendation_direction: may_consider
+    output_scope: referral_core
+    strength_optional: C
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  nonarthritic_hip_fais_avoid_impingement_range:
+    claim_id: nonarthritic_hip_fais_avoid_impingement_range
+    evidence_ids: [nonarthritic_hip_cpg_2023]
+    applicable_route_evidence_profile_ids: [rep_nonarthritic_intraarticular_hip_v1]
+    applicable_route_ids: [nonarthritic_intraarticular_hip_pain]
+    applicable_subtype_ids_optional: [formal_FAIS_diagnosis]
+    applicability_conditions_optional: [FAIS_or_impingement_presentation]
+    domain: safety
+    claim_summary: In FAIS or an applicable impingement presentation, exercise and activity should avoid repeatedly symptom-provoking ranges that create hip impingement.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  nonarthritic_hip_instability_avoid_capsuloligamentous_stress:
+    claim_id: nonarthritic_hip_instability_avoid_capsuloligamentous_stress
+    evidence_ids: [nonarthritic_hip_cpg_2023]
+    applicable_route_evidence_profile_ids: [rep_nonarthritic_intraarticular_hip_v1]
+    applicable_route_ids: [nonarthritic_intraarticular_hip_pain]
+    applicability_conditions_optional: [established_or_suspected_hip_instability_context]
+    domain: safety
+    claim_summary: In a hip-instability presentation, exercise and activity should avoid excessive capsuloligamentous stress.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  gtps_exercise_first_line_sr2024:
+    claim_id: gtps_exercise_first_line_sr2024
+    evidence_ids: [gtps_exercise_sr_2024]
+    applicable_route_evidence_profile_ids: [rep_gtps_gluteal_tendinopathy_v1]
+    applicable_route_ids: [greater_trochanteric_lateral_hip_pain_pathway]
+    applicable_subtype_ids_optional: [formal_GTPS_diagnosis]
+    domain: core_rehabilitation
+    claim_summary: The 2024 GTPS systematic review supports exercise as first-line treatment for clinically diagnosed greater trochanteric pain syndrome, with long-term benefit over control and better long-term global improvement than corticosteroid injection.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    strength_optional: strong_review_conclusion
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  gluteal_tendinopathy_exercise_education_core_sr2025:
+    claim_id: gluteal_tendinopathy_exercise_education_core_sr2025
+    evidence_ids: [gluteal_tendinopathy_sr_2025]
+    applicable_route_evidence_profile_ids: [rep_gtps_gluteal_tendinopathy_v1]
+    applicable_route_ids: [greater_trochanteric_lateral_hip_pain_pathway]
+    applicable_subtype_ids_optional: [formal_gluteal_tendinopathy_diagnosis]
+    domain: core_rehabilitation
+    claim_summary: For clinically diagnosed gluteal tendinopathy, exercise plus education can be cautiously recommended as the core approach for pain and function; the review reports moderate-strength evidence for benefit.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    certainty_optional: moderate
+    reviewed_on: 2026-08-29
+
+  acute_meniscus_PT_consensus_nonoperative:
+    claim_id: acute_meniscus_PT_consensus_nonoperative
+    evidence_ids: [aaos_acute_isolated_meniscus_2024]
+    applicable_route_evidence_profile_ids: [rep_acute_isolated_meniscus_nonoperative_v1]
+    applicable_route_ids: [acute_isolated_meniscal_injury_nonoperative]
+    applicability_conditions_optional: [acute_isolated_nondisplaced_not_repair_candidate_nonoperative]
+    domain: core_rehabilitation
+    claim_summary: AAOS workgroup clinical opinion states that physical therapy or rehabilitation may benefit selected patients with an acute non-displaced isolated meniscal tear not amenable to repair when managed nonoperatively.
+    recommendation_direction: may_consider
+    output_scope: referral_core
+    strength_optional: consensus_AAOS
+    certainty_optional: not_applicable
+    reviewed_on: 2026-08-29
+
+  acute_meniscus_displaced_ROM_block_consensus_reassessment:
+    claim_id: acute_meniscus_displaced_ROM_block_consensus_reassessment
+    evidence_ids: [aaos_acute_isolated_meniscus_2024]
+    applicable_route_evidence_profile_ids: [rep_acute_isolated_meniscus_nonoperative_v1]
+    applicable_route_ids: [acute_isolated_meniscal_injury_nonoperative]
+    applicability_conditions_optional: [displaced_or_displacing_tear_with_ROM_restriction]
+    domain: safety
+    claim_summary: AAOS workgroup consensus states that a displaced or displacing acute meniscal tear, particularly one restricting knee range of motion, may benefit from acute surgical intervention and warrants reassessment rather than unrestricted routine rehabilitation.
+    recommendation_direction: consider
+    output_scope: referral_core
+    strength_optional: consensus_AAOS
+    certainty_optional: not_applicable
+    reviewed_on: 2026-08-29
+
+  posterior_shoulder_instability_RTS_consensus:
+    claim_id: posterior_shoulder_instability_RTS_consensus
+    evidence_ids: [posterior_shoulder_instability_consensus_2025]
+    applicable_route_evidence_profile_ids: [rep_shoulder_instability_posterior_v1]
+    applicable_route_ids: [glenohumeral_instability_dislocation]
+    applicability_conditions_optional: [posterior_instability_return_to_play]
+    domain: progression_criteria
+    claim_summary: Posterior-instability expert consensus supports return-to-play decisions using restoration of strength, range of motion, proprioception, sport-specific skills and absence of symptoms; no minimum time point alone is required.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    strength_optional: expert_consensus
+    certainty_optional: not_applicable
+    reviewed_on: 2026-08-29
+
+  posterior_shoulder_nonoperative_indication_consensus:
+    claim_id: posterior_shoulder_nonoperative_indication_consensus
+    evidence_ids: [posterior_shoulder_instability_consensus_part1_2025]
+    applicable_route_evidence_profile_ids: [rep_shoulder_instability_posterior_v1]
+    applicable_route_ids: [glenohumeral_instability_dislocation]
+    applicability_conditions_optional: [posterior_instability]
+    domain: core_rehabilitation
+    claim_summary: Expert consensus supports individualized consideration of nonoperative management for posterior shoulder instability according to primary versus recurrent instability, symptoms and functional limitations, associated pathology, and patient preference; it does not define one universal initial rehabilitation sequence.
+    recommendation_direction: context_only
+    output_scope: clinician_ui_only
+    strength_optional: expert_consensus
+    certainty_optional: not_applicable
+    reviewed_on: 2026-08-29
+
+  adhesive_capsulitis_manual_ROM_cpg2025:
+    claim_id: adhesive_capsulitis_manual_ROM_cpg2025
+    evidence_ids: [primary_frozen_shoulder_cpg_2025_korea]
+    applicable_route_evidence_profile_ids: [rep_adhesive_capsulitis_v1]
+    applicable_route_ids: [adhesive_capsulitis_frozen_shoulder]
+    applicability_conditions_optional: [primary_frozen_shoulder]
+    domain: core_rehabilitation
+    claim_summary: For primary frozen shoulder, manual therapy including range-of-motion exercise may be considered to improve upper-limb function and shoulder range of motion.
+    recommendation_direction: consider
+    output_scope: referral_core
+    strength_optional: B
+    certainty_optional: low
+    reviewed_on: 2026-08-29
+
+  adhesive_capsulitis_self_stretching_cpg2025:
+    claim_id: adhesive_capsulitis_self_stretching_cpg2025
+    evidence_ids: [primary_frozen_shoulder_cpg_2025_korea]
+    applicable_route_evidence_profile_ids: [rep_adhesive_capsulitis_v1]
+    applicable_route_ids: [adhesive_capsulitis_frozen_shoulder]
+    applicability_conditions_optional: [primary_frozen_shoulder]
+    domain: execution_detail
+    claim_summary: Self-stretching may be considered as an adjunct in primary frozen shoulder when exercise prescription is appropriate and adherence is supported.
+    recommendation_direction: consider
+    output_scope: therapist_execution_detail
+    strength_optional: expert_consensus
+    certainty_optional: not_applicable
+    reviewed_on: 2026-08-29
+
+  adhesive_capsulitis_strengthening_inconclusive_cpg2025:
+    claim_id: adhesive_capsulitis_strengthening_inconclusive_cpg2025
+    evidence_ids: [primary_frozen_shoulder_cpg_2025_korea]
+    applicable_route_evidence_profile_ids: [rep_adhesive_capsulitis_v1]
+    applicable_route_ids: [adhesive_capsulitis_frozen_shoulder]
+    applicability_conditions_optional: [primary_frozen_shoulder]
+    domain: core_rehabilitation
+    claim_summary: Shoulder strengthening may improve pain and function in primary frozen shoulder, but evidence is insufficient for a routine recommendation and implementation should remain individualized.
+    recommendation_direction: insufficient_evidence
+    output_scope: clinician_ui_only
+    strength_optional: I
+    certainty_optional: very_low
+    reviewed_on: 2026-08-29
+
+  adhesive_capsulitis_BESS_supervised_PT_uncertain:
+    claim_id: adhesive_capsulitis_BESS_supervised_PT_uncertain
+    evidence_ids: [bess_frozen_shoulder_pathway_2025]
+    applicable_route_evidence_profile_ids: [rep_adhesive_capsulitis_v1]
+    applicable_route_ids: [adhesive_capsulitis_frozen_shoulder]
+    domain: core_rehabilitation
+    claim_summary: BESS 2025 concludes that evidence is insufficient to determine whether supervised physiotherapy provides greater benefit than the natural history of frozen shoulder; low-certainty evidence suggests hospital-based group exercise may outperform some physiotherapy or home-exercise comparisons.
+    recommendation_direction: insufficient_evidence
+    output_scope: clinician_ui_only
+    certainty_optional: low
+    reviewed_on: 2026-08-29
+
+  adhesive_capsulitis_BESS_PT_after_injection:
+    claim_id: adhesive_capsulitis_BESS_PT_after_injection
+    evidence_ids: [bess_frozen_shoulder_pathway_2025]
+    applicable_route_evidence_profile_ids: [rep_adhesive_capsulitis_v1]
+    applicable_route_ids: [adhesive_capsulitis_frozen_shoulder]
+    applicability_conditions_optional: [after_glenohumeral_injection_therapy]
+    domain: core_rehabilitation
+    claim_summary: Within the BESS 2025 pathway, physiotherapy following injection therapy is conditionally supported.
+    recommendation_direction: consider
+    output_scope: referral_core
+    strength_optional: conditional_BESS
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+profile_field_overrides:
+  rep_full_thickness_cuff_nonoperative_v1:
+    safety_claim_ids: [full_thickness_cuff_structural_progression_context]
+
+  rep_nonarthritic_intraarticular_hip_v1:
+    applicability_conditions_optional:
+      - default_nonarthritic_presentation_or_formal_FAIS_or_symptomatic_labral_pathology
+    adjunct_claim_ids: [nonarthritic_hip_movement_pattern_training]
+    safety_claim_ids:
+      - nonarthritic_hip_fais_avoid_impingement_range
+      - nonarthritic_hip_instability_avoid_capsuloligamentous_stress
+    evidence_gaps:
+      - multimodal_recommendation_is_strongest_for_FAIS_and_labral_presentations
+      - other_established_nonarthritic_intraarticular_conditions_require_specific_applicability_review
+      - current_CPG_does_not_supply_validated_route_wide_progression_thresholds
+
+  rep_gtps_gluteal_tendinopathy_v1:
+    subtype_ids_optional: [formal_GTPS_diagnosis, formal_gluteal_tendinopathy_diagnosis]
+    evidence_gaps:
+      - exact_progression_thresholds_not_established
+      - formal_trochanteric_bursitis_diagnosis_not_covered_by_this_profile
+      - other_established_greater_trochanteric_disorder_not_covered_by_this_profile
+
+  rep_acute_isolated_meniscus_nonoperative_v1:
+    safety_claim_ids: [acute_meniscus_displaced_ROM_block_consensus_reassessment]
+    evidence_gaps:
+      - nonoperative_PT_statement_is_workgroup_clinical_opinion
+      - no_validated_route_specific_rehabilitation_progression_sequence
+
+  rep_shoulder_instability_anterior_traumatic_v1:
+    evidence_gaps:
+      - evidence_profile_is_traumatic_anterior_only
+      - first_time_vs_recurrent_age_bone_loss_and_soft_tissue_context_materially_change_management
+      - route_level_initial_rehabilitation_sequence_not_curated
+      - operative_and_nonoperative_rehabilitation_must_not_be_collapsed
+
+  rep_shoulder_instability_posterior_v1:
+    primary_source_ids:
+      - posterior_shoulder_instability_consensus_part1_2025
+      - posterior_shoulder_instability_consensus_2025
+    evidence_gaps:
+      - evidence_is_expert_consensus
+      - nonoperative_indications_are_defined_but_one_universal_initial_rehabilitation_sequence_is_not
+      - postoperative_and_nonoperative_rehabilitation_must_not_be_collapsed
+
+  rep_adhesive_capsulitis_v1:
+    primary_source_ids:
+      - primary_frozen_shoulder_cpg_2025_korea
+      - bess_frozen_shoulder_pathway_2025
+      - adhesive_capsulitis_exercise_mobilization_sr_2023
+    adjunct_claim_ids:
+      - adhesive_capsulitis_self_stretching_cpg2025
+      - adhesive_capsulitis_strengthening_inconclusive_cpg2025
+    evidence_gaps:
+      - current_2025_frameworks_do_not_define_one_universal_criteria_based_phase_progression_sequence
+      - primary_frozen_shoulder_specific_claims_must_not_be_applied_to_secondary_or_other_stiff_shoulder_presentations_without_review
+      - BESS_does_not_establish_supervised_physiotherapy_as_superior_to_natural_history
+
+sequence_overrides:
+  seq_full_thickness_cuff_nonoperative_v1:
+    invariant: >-
+      Nonoperative physical therapy may improve patient-reported outcomes, but the sequence remains
+      intentionally single-phase because the AAOS CPG does not provide one universal PT progression
+      protocol; structural progression context remains clinician-facing rather than a promise of stability.
+
+  seq_nonarthritic_intraarticular_hip_v1:
+    applicability_conditions_optional:
+      - default_nonarthritic_presentation_or_formal_FAIS_or_symptomatic_labral_pathology
+    replace_claim_ids:
+      nonarthritic_hip_impairment_specific_exercise: nonarthritic_hip_therapeutic_exercise_C
+    remove_progression_criterion_ids:
+      - nonarthritic_hip_objective_reassessment_guides_progression
+    add_intervention_directions:
+      - intervention_direction_id: nonarthritic_hip_impairment_specific_exercise_C
+        statement: use therapeutic exercise to address identified hip mobility, flexibility and strength deficits when clinically applicable
+        authority: {authority_type: evidence_claim, evidence_claim_ids: [nonarthritic_hip_therapeutic_exercise_C]}
+    replace_precautions_or_do_not_progress_criteria:
+      - criterion_id: nonarthritic_hip_FAIS_avoid_impingement_range
+        criterion_kind: do_not_progress
+        statement: in FAIS or an applicable impingement presentation, avoid repeatedly progressing into symptom-provoking impingement ranges
+        authority: {authority_type: evidence_claim, evidence_claim_ids: [nonarthritic_hip_fais_avoid_impingement_range]}
+        applicability_conditions_optional: [FAIS_or_impingement_presentation]
+      - criterion_id: nonarthritic_hip_instability_avoid_capsular_stress
+        criterion_kind: do_not_progress
+        statement: in a hip-instability presentation, avoid progression that places excessive stress on capsuloligamentous structures
+        authority: {authority_type: evidence_claim, evidence_claim_ids: [nonarthritic_hip_instability_avoid_capsuloligamentous_stress]}
+        applicability_conditions_optional: [established_or_suspected_hip_instability_context]
+    status_after_projection: evidence_bounded_single_phase_pending_progression_and_other_subtype_review
+    missing_before_freeze:
+      - validated_route_wide_progression_criteria
+      - evidence_profile_for_other_established_nonarthritic_intraarticular_conditions
+
+  seq_gtps_gluteal_tendinopathy_v1:
+    replace_objective_authority_claim_ids:
+      - gtps_exercise_first_line_sr2024
+      - gluteal_tendinopathy_exercise_education_core_sr2025
+    replace_intervention_directions:
+      - intervention_direction_id: gtps_exercise_first_line
+        statement: for formal GTPS, use individualized exercise as first-line conservative care
+        authority: {authority_type: evidence_claim, evidence_claim_ids: [gtps_exercise_first_line_sr2024]}
+        applicability_conditions_optional: [formal_GTPS_diagnosis]
+      - intervention_direction_id: gluteal_tendinopathy_exercise_education_core
+        statement: for formal gluteal tendinopathy, use individualized exercise with education as the core conservative approach
+        authority: {authority_type: evidence_claim, evidence_claim_ids: [gluteal_tendinopathy_exercise_education_core_sr2025]}
+        applicability_conditions_optional: [formal_gluteal_tendinopathy_diagnosis]
+    phase_strength_optional_after_projection: null
+    status_after_projection: evidence_bounded_single_phase_pending_progression_semantics
+
+  seq_acute_isolated_meniscus_nonoperative_v1:
+    replace_claim_ids:
+      acute_meniscus_PT_may_benefit_nondisplaced_nonoperative: acute_meniscus_PT_consensus_nonoperative
+      acute_meniscus_displaced_ROM_block_early_surgical_context: acute_meniscus_displaced_ROM_block_consensus_reassessment
+    phase_strength_optional_after_projection: consensus_AAOS
+    phase_certainty_optional_after_projection: not_applicable
+    status_after_projection: blocked_consensus_only_sequence_evidence
+    invariant: >-
+      AAOS clinical opinion may authorize cautious nonoperative PT wording for the selected
+      non-displaced acute isolated tear, but it does not authorize an invented staged progression protocol.
+
+  seq_adhesive_capsulitis_evidence_bounded_v1:
+    add_intervention_directions:
+      - intervention_direction_id: adhesive_capsulitis_primary_manual_ROM
+        statement: for primary frozen shoulder, manual therapy including range-of-motion exercise may be considered according to symptoms and mobility findings
+        authority: {authority_type: evidence_claim, evidence_claim_ids: [adhesive_capsulitis_manual_ROM_cpg2025]}
+        applicability_conditions_optional: [primary_frozen_shoulder]
+      - intervention_direction_id: adhesive_capsulitis_post_injection_PT
+        statement: when glenohumeral injection therapy has been used, physiotherapy may be considered within the BESS 2025 pathway
+        authority: {authority_type: evidence_claim, evidence_claim_ids: [adhesive_capsulitis_BESS_PT_after_injection]}
+        applicability_conditions_optional: [after_glenohumeral_injection_therapy]
+    status_after_projection: evidence_bounded_single_phase_current_authority_no_validated_progression
+    missing_before_freeze:
+      - validated_criteria_based_phase_progression_sequence
+      - secondary_frozen_shoulder_or_other_stiff_shoulder_applicability_review
+
+post_projection_validation_assertions:
+  identity:
+    every_source_has_explicit_evidence_id: true
+    every_claim_has_explicit_claim_id: true
+    every_history_prompt_has_explicit_prompt_id: true
+    every_route_profile_has_explicit_route_evidence_profile_id: true
+    every_sequence_has_explicit_sequence_id: true
+  required_fields:
+    every_route_profile_has_required_claim_arrays: true
+    every_sequence_has_sequence_source: true
+    every_sequence_has_clinician_modifications_optional: true
+    every_sequence_has_protocol_overrides_optional: true
+  references:
+    all_source_references_resolve: true
+    all_claim_references_resolve: true
+    all_profile_references_resolve: true
+    all_sequence_references_resolve: true
+    all_history_prompt_evidence_references_resolve: true
+  applicability:
+    all_claim_route_ids_exist_in_frozen_registry: true
+    formal_GTPS_subtype_case_matches_frozen_profile: true
+    GTPS_gluteal_tendinopathy_authority_does_not_cover_formal_trochanteric_bursitis: true
+    nonarthritic_hip_multimodal_sequence_does_not_auto_cover_other_established_nonarthritic_subtype: true
+    traumatic_anterior_instability_authority_does_not_cover_posterior_or_multidirectional_instability: true
+    posterior_instability_authority_does_not_cover_anterior_or_multidirectional_instability: true
+    primary_frozen_shoulder_claims_do_not_auto_cover_secondary_stiff_shoulder_presentations: true
+  output_scope:
+    rendered_authorities_use_only_referral_core_compatible_claims: true
+    clinician_ui_only_claims_used_as_rendered_authority: false
+    therapist_execution_detail_claims_used_as_rendered_authority: false
+    acute_meniscus_safety_escalation_scope_leak_removed: true
+  evidence_governance:
+    nonarthritic_hip_C_or_lower_hybrid_removed: true
+    nonarthritic_hip_progression_inference_removed: true
+    GTPS_and_gluteal_tendinopathy_framework_claims_separated: true
+    acute_meniscus_clinical_opinion_not_relabeled_low_certainty_evidence: true
+    posterior_instability_consensus_not_relabeled_as_trial_grade_evidence: true
+    adhesive_capsulitis_2025_current_guidelines_added: true
+    adhesive_capsulitis_supervised_PT_uncertainty_preserved: true
+  source_identity:
+    ESSKA_ESA_2026_publication_metadata_hardened: true
+    posterior_instability_partII_title_and_authors_hardened: true
+    GTPS_2024_DOI_hardened: true
+    gluteal_tendinopathy_2025_authors_hardened: true
+    adhesive_capsulitis_2023_authors_DOI_hardened: true
+  cross_shard_identity:
+    duplicate_ids_against_active_core_or_promoted_tranche2: false
+  runtime_authorized: false
+
+promotion_result:
+  logical_shard_id: shoulder_hip_meniscus_tranche3
+  state: active_design_authority
+  source_staging_file_retained: true
+  promotion_projection_required_for_normative_read: true
+  route_profiles_promoted: 7
+  rehabilitation_sequences_promoted: 5
+  explicit_evidence_gap_profiles:
+    - rep_shoulder_instability_anterior_traumatic_v1
+    - rep_shoulder_instability_posterior_v1
+  route_completion_implied: false
+  design_complete_implied: false
+  runtime_authorized: false

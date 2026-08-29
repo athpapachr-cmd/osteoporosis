@@ -1,0 +1,461 @@
+version: cu1_evidence_manifest_v1_19
+status: design_frozen_sharded_registry_manifest
+runtime_authorized: false
+reviewed_on: 2026-08-29
+
+purpose: >-
+  Single normative entrypoint for the CU-1 evidence corpus. The corpus is sharded for maintainability.
+  A staging shard may become active design authority only after its reviewed normalization/promotion
+  projection passes the same schema, applicability, reference, freshness and output-scope gates as
+  the active core registry. Native explicit-ID route-coverage shards may be active only after each
+  added route passes an exact recorded review. Narrow reviewed logical amendments may only reduce
+  scope, attach reviewed sequences, correct evidence grading without upgrading evidence, correct
+  verified source identity metadata, or suppress scope-unsafe claims. Sharding must never relax
+  clinical evidence governance.
+
+normative_schema: clinic_utilities/contracts/cu1_history_timeline_schema_v1.yaml
+coverage_matrix: clinic_utilities/contracts/cu1_evidence_coverage_matrix_v1.yaml
+logical_amendments:
+  - clinic_utilities/contracts/cu1_evidence_route_coverage_amendments_v1.yaml
+  - clinic_utilities/contracts/cu1_evidence_route_coverage_lateral_elbow_amendment_v1.yaml
+  - clinic_utilities/contracts/cu1_evidence_route_coverage_pin_supinator_amendment_v1.yaml
+
+shard_state_values:
+  - active_design_authority
+  - staged_candidate_not_schema_frozen
+  - superseded
+
+shards:
+  - shard_id: core_seed_registry
+    path: clinic_utilities/contracts/cu1_evidence_registry_v1.yaml
+    state: active_design_authority
+    identity_mode: explicit_payload_id
+    schema_conformance_reviewed: true
+
+  - shard_id: high_frequency_tranche2
+    path: clinic_utilities/contracts/cu1_evidence_tranche2_v1.yaml
+    state: active_design_authority
+    identity_mode: map_key_identity_with_reviewed_promotion_projection
+    promotion_projection: clinic_utilities/contracts/cu1_evidence_tranche2_promotion_v1.yaml
+    promotion_review: clinic_utilities/contracts/CU1_TRANCHE2_PROMOTION_REVIEW_2026-08-28.md
+    schema_conformance_reviewed: true
+    normative_read_rule: apply_promotion_projection_before_logical_registry_merge
+
+  - shard_id: shoulder_hip_meniscus_tranche3
+    path: clinic_utilities/contracts/cu1_evidence_tranche3_v1.yaml
+    state: active_design_authority
+    identity_mode: map_key_identity_with_reviewed_promotion_projection
+    promotion_projection: clinic_utilities/contracts/cu1_evidence_tranche3_promotion_v1.yaml
+    promotion_overlay: clinic_utilities/contracts/cu1_evidence_tranche3_promotion_fix_v1.yaml
+    promotion_review: clinic_utilities/contracts/CU1_TRANCHE3_PROMOTION_REVIEW_2026-08-29.md
+    schema_conformance_reviewed: true
+    normative_read_rule: apply_promotion_projection_then_mandatory_overlay_before_logical_registry_merge
+
+  - shard_id: route_coverage_extension
+    path: clinic_utilities/contracts/cu1_evidence_route_coverage_v1.yaml
+    state: active_design_authority
+    identity_mode: explicit_payload_id
+    review_record: clinic_utilities/contracts/CU1_ROUTE_COVERAGE_REVIEW_2026-08-29.md
+    schema_conformance_reviewed: true
+    normative_read_rule: use_only_route_objects_with_pass_record_in_named_route_coverage_review
+    reviewed_routes:
+      - calcific_rotator_cuff_tendinopathy
+      - glenohumeral_osteoarthritis
+
+  - shard_id: shoulder_instability_route_coverage_extension
+    path: clinic_utilities/contracts/cu1_evidence_route_coverage_instability_v1.yaml
+    state: active_design_authority
+    identity_mode: explicit_payload_id
+    review_record: clinic_utilities/contracts/CU1_ROUTE_COVERAGE_REVIEW_2026-08-29.md
+    schema_conformance_reviewed: true
+    normative_read_rule: >-
+      use_only_context_scoped_route_objects_with_PASS_record_then_apply_named_logical_amendment
+      before_referral_authority_resolution
+    logical_amendment: clinic_utilities/contracts/cu1_evidence_route_coverage_amendments_v1.yaml
+    reviewed_routes:
+      - glenohumeral_instability_dislocation
+
+  - shard_id: degenerative_meniscus_route_coverage_extension
+    path: clinic_utilities/contracts/cu1_evidence_route_coverage_meniscus_v1.yaml
+    state: active_design_authority
+    identity_mode: explicit_payload_id
+    review_record: clinic_utilities/contracts/CU1_DEGENERATIVE_MENISCUS_ROUTE_REVIEW_2026-08-29.md
+    schema_conformance_reviewed: true
+    normative_read_rule: >-
+      use_only_when_symptomatic_degenerative_meniscal_lesion_has_no_unresolved_structural_surgical_indication
+      and_route_specific_PASS_fixtures_are_satisfied
+    reviewed_routes:
+      - degenerative_meniscal_lesion_conservative_rehabilitation
+
+  - shard_id: patellar_tendinopathy_route_coverage_extension
+    path: clinic_utilities/contracts/cu1_evidence_route_coverage_patellar_tendinopathy_v1.yaml
+    state: active_design_authority
+    identity_mode: explicit_payload_id
+    review_record: clinic_utilities/contracts/CU1_PATELLAR_TENDINOPATHY_ROUTE_REVIEW_2026-08-29.md
+    schema_conformance_reviewed: true
+    normative_read_rule: >-
+      preserve_absolute_exercise_effect_uncertainty_and_do_not_resolve_any_loading_mode_as_a_mandatory
+      physician_protocol_or_render_unvalidated_numeric_RTS_thresholds
+    reviewed_routes:
+      - patellar_tendinopathy
+
+  - shard_id: thumb_cmc1_oa_route_coverage_extension
+    path: clinic_utilities/contracts/cu1_evidence_route_coverage_thumb_cmc1_oa_v1.yaml
+    state: active_design_authority
+    identity_mode: explicit_payload_id
+    review_record: clinic_utilities/contracts/CU1_THUMB_CMC1_OA_ROUTE_REVIEW_2026-08-29.md
+    schema_conformance_reviewed: true
+    normative_read_rule: >-
+      preserve_thumb_CMC1_specific_scope_keep_orthosis_type_and_wear_schedule_as_execution_detail
+      and_do_not_convert_assessment_measures_into_progression_thresholds
+    reviewed_routes:
+      - thumb_cmc1_osteoarthritis
+
+  - shard_id: cervical_nonspecific_route_coverage_extension
+    path: clinic_utilities/contracts/cu1_evidence_route_coverage_cervical_v1.yaml
+    state: active_design_authority
+    identity_mode: explicit_payload_id
+    review_record: clinic_utilities/contracts/CU1_CERVICAL_ROUTE_REVIEW_2026-08-29.md
+    schema_conformance_reviewed: true
+    normative_read_rule: >-
+      use_DEGAM_AWMF_2025_as_generic_nonspecific_neck_authority_keep_APTA_2017_classification_specific
+      and_do_not_import_other_cervical_routes_or_passive_modality_bundles_as_generic_C1_defaults
+    reviewed_routes:
+      - nonspecific_neck_pain
+
+  - shard_id: cervical_radiating_route_coverage_extension
+    path: clinic_utilities/contracts/cu1_evidence_route_coverage_cervical_radiating_v1.yaml
+    state: active_design_authority
+    identity_mode: explicit_payload_id
+    review_record: clinic_utilities/contracts/CU1_C2_RADIATING_NECK_ROUTE_REVIEW_2026-08-29.md
+    schema_conformance_reviewed: true
+    normative_read_rule: >-
+      preserve_subjective_radiating_symptoms_objective_neurological_findings_and_formal_radiculopathy_as_distinct
+      and_apply_cervical_radiculopathy_NMA_components_only_under_narrow_matching_context
+    reviewed_routes:
+      - neck_pain_with_radiating_upper_limb_symptoms
+
+  - shard_id: cervical_headache_route_coverage_extension
+    path: clinic_utilities/contracts/cu1_evidence_route_coverage_cervical_headache_v1.yaml
+    state: active_design_authority
+    identity_mode: explicit_payload_id
+    review_record: clinic_utilities/contracts/CU1_C3_CERVICAL_HEADACHE_ROUTE_REVIEW_2026-08-29.md
+    schema_conformance_reviewed: true
+    normative_read_rule: >-
+      preserve_presentation_only_C3_as_distinct_from_explicit_formal_cervicogenic_headache
+      restrict_CGH_specific_syntheses_to_formal_matching_context_and_do_not_convert_low_certainty
+      network_rankings_or_manual_therapy_signals_into_mandatory_protocols
+    reviewed_routes:
+      - headache_with_cervical_msk_features
+
+  - shard_id: cervical_dizziness_route_coverage_extension
+    path: clinic_utilities/contracts/cu1_evidence_route_coverage_cervical_dizziness_v1.yaml
+    state: active_design_authority
+    identity_mode: explicit_payload_id
+    review_record: clinic_utilities/contracts/CU1_C4_CERVICAL_DIZZINESS_ROUTE_REVIEW_2026-08-29.md
+    schema_conformance_reviewed: true
+    normative_read_rule: >-
+      preserve_presentation_only_C4_as_explicit_blocked_evidence_gap_and_allow_disease_specific
+      rehabilitation_only_for_explicit_clinician_established_cervical_dizziness_without_unresolved
+      safety_or_primary_post_traumatic_context; never_infer_cervical_causation_or_exclusion_of_other_causes
+    reviewed_routes:
+      - cervical_dizziness_presentation
+
+  - shard_id: cervical_posttraumatic_route_coverage_extension
+    path: clinic_utilities/contracts/cu1_evidence_route_coverage_cervical_posttraumatic_v1.yaml
+    state: active_design_authority
+    identity_mode: explicit_payload_id
+    review_record: clinic_utilities/contracts/CU1_C5_POST_TRAUMATIC_NECK_ROUTE_REVIEW_2026-08-29.md
+    schema_conformance_reviewed: true
+    normative_read_rule: >-
+      split_recent_and_persistent_WAD_authority_by_explicit_temporal_context; preserve_other_cervical_trauma
+      and_unknown_WAD_phase_as_explicit_evidence_gaps; block_unresolved_structural_or_neurological_safety_context;
+      never_import_generic_C1_or_cross_route_C2_C3_C4_authority_and_preserve_patient_specific_protocol_precedence
+    reviewed_routes:
+      - post_traumatic_neck_pain
+
+  - shard_id: lateral_elbow_route_coverage_extension
+    path: clinic_utilities/contracts/cu1_evidence_route_coverage_lateral_elbow_v1.yaml
+    state: active_design_authority
+    identity_mode: explicit_payload_id
+    review_record: clinic_utilities/contracts/CU1_LATERAL_ELBOW_ROUTE_REVIEW_2026-08-29.md
+    schema_conformance_reviewed: true
+    normative_read_rule: >-
+      preserve_subacute_chronic_Grade_B_resisted_loading_scope_keep_high_demand_reintroduction_as_Grade_F
+      conditional_direction_without_invented_transition_threshold_and_apply_the_named_lateral_elbow_activation
+      amendment_before_profile_authority_resolution
+    logical_amendment: clinic_utilities/contracts/cu1_evidence_route_coverage_lateral_elbow_amendment_v1.yaml
+    reviewed_routes:
+      - lateral_elbow_tendinopathy
+
+  - shard_id: medial_elbow_route_coverage_extension
+    path: clinic_utilities/contracts/cu1_evidence_route_coverage_medial_elbow_v1.yaml
+    state: active_design_authority
+    identity_mode: explicit_payload_id
+    review_record: clinic_utilities/contracts/CU1_MEDIAL_ELBOW_ROUTE_REVIEW_2026-08-29.md
+    schema_conformance_reviewed: true
+    normative_read_rule: >-
+      use_medial_specific_2026_low_certainty_eccentric_evidence_without_borrowing_lateral_elbow_CPG_grades;
+      preserve_narrative_management_context_as_non_effect_estimate_authority; keep_ulnar_UCL_and_other_medial
+      differentials_distinct_and_do_not_invent_numeric_progression_or_RTW_RTS_thresholds
+    reviewed_routes:
+      - medial_elbow_tendinopathy
+
+  - shard_id: ulnar_elbow_route_coverage_extension
+    path: clinic_utilities/contracts/cu1_evidence_route_coverage_ulnar_elbow_v1.yaml
+    state: active_design_authority
+    identity_mode: explicit_payload_id
+    review_record: clinic_utilities/contracts/CU1_ULNAR_ELBOW_ROUTE_REVIEW_2026-08-29.md
+    schema_conformance_reviewed: true
+    normative_read_rule: >-
+      preserve_symptom_vs_formal_diagnosis_and_subjective_vs_objective_neurological_semantics; allow_the_narrow
+      mild_conservative_sequence_only_when_mild_context_and_objective_motor_status_are_explicitly_documented;
+      keep_nonmild_or_unresolved_severity_as_explicit_evidence_gap; keep_progressive_motor_structural_or
+      alternative_localization_contexts_blocked; do_not_auto_promote_night_splint_or_other_physio_modalities
+    reviewed_routes:
+      - ulnar_neuropathy_at_elbow
+
+  - shard_id: pin_supinator_route_coverage_extension
+    path: clinic_utilities/contracts/cu1_evidence_route_coverage_pin_supinator_v1.yaml
+    state: active_design_authority
+    identity_mode: explicit_payload_id
+    review_record: clinic_utilities/contracts/CU1_PIN_SUPINATOR_ROUTE_REVIEW_2026-08-29.md
+    schema_conformance_reviewed: true
+    normative_read_rule: >-
+      preserve_pain_predominant_radial_tunnel_vs_motor_PIN_boundary; preserve_spontaneous_nontraumatic_noncompressive
+      cohort_scope; keep_all_PIN_contexts_without_a_validated_route_specific_PT_sequence_as_explicit_evidence_gap_or
+      safety_correct_owner_states; apply_named_PIN_amendment_for_verified_source_metadata_and_pain_only_applicability;
+      never_generate_generic_elbow_LET_or_peripheral_nerve_fallback_or_universalize_the_2026_six_month_signal
+    logical_amendment: clinic_utilities/contracts/cu1_evidence_route_coverage_pin_supinator_amendment_v1.yaml
+    reviewed_routes:
+      - posterior_interosseous_nerve_supinator_syndrome
+
+logical_collections:
+  - sources
+  - claims
+  - route_history_prompts
+  - route_evidence_profiles
+  - rehabilitation_sequences
+
+identity_rules:
+  explicit_payload_id:
+    description: object carries its canonical id field and it must equal the map key
+  map_key_is_canonical_id:
+    description: >-
+      A staged design shard may use the YAML mapping key as object identity during curation. It is not
+      active authority until a reviewed promotion process materializes identities and all required
+      non-optional fields and validates the resulting logical objects.
+  map_key_identity_with_reviewed_promotion_projection:
+    description: >-
+      The staging map key is the canonical identity, but the shard participates in the normative
+      logical registry only after applying its named reviewed promotion projection and any named
+      mandatory promotion overlay. These layers must materialize IDs/defaults, remove
+      superseded/hybrid objects, apply reviewed corrections and then satisfy the ordinary
+      schema/reference/applicability/output-scope/freshness gates.
+    materialized_identity_fields:
+      sources: evidence_id
+      claims: claim_id
+      route_history_prompts: prompt_id
+      route_evidence_profiles: route_evidence_profile_id
+      rehabilitation_sequences: sequence_id
+
+promotion_gate_for_staged_shard:
+  - materialize_map_key_identity
+  - populate_all_required_non_optional_object_fields
+  - validate_every_source_reference
+  - validate_every_claim_reference
+  - validate_every_route_profile_reference
+  - validate_every_sequence_reference
+  - validate_route_and_subtype_applicability
+  - validate_output_scope_compatibility_for_every_rendered_element
+  - validate_freshness_and_supersession_state
+  - validate_no_duplicate_ids_across_all_active_or_promotion_candidate_shards
+  - exact_human_evidence_scope_review
+
+native_route_coverage_gate:
+  - explicit_payload_ids_match_mapping_keys
+  - populate_all_required_non_optional_object_fields
+  - validate_every_source_reference_in_logical_registry
+  - validate_every_claim_profile_and_sequence_reference
+  - validate_route_subtype_and_management_context_applicability
+  - validate_output_scope_compatibility_for_every_rendered_element
+  - validate_freshness_and_supersession_state
+  - validate_no_duplicate_ids_across_active_logical_registry
+  - preserve_framework_conflicts_as_distinct_claims
+  - preserve_best_practice_or_consensus_as_non_effect_estimate_authority
+  - add_route_specific_history_prompts
+  - add_matching_route_or_subtype_or_context_regression_fixtures
+  - exact_human_route_review_recorded_before_manifest_activation
+
+logical_amendment_gate:
+  - amendment_target_must_already_exist_in_active_logical_registry_or_same_reviewed_route_extension
+  - amendment_may_only_narrow_applicability_or_suppress_scope_unsafe_claim_or_attach_reviewed_sequence_or_correct_grading_without_upgrading_evidence_or_correct_verified_source_identity_metadata
+  - source_metadata_amendment_cannot_change_clinical_recommendation_scope_or_strength
+  - amendment_must_preserve_original_source_and_historical_artifact
+  - amendment_must_have_exact_human_review_record
+  - suppressed_claim_cannot_resolve_as_active_authority_in_suppressed_scope
+  - amendment_cannot_create_duplicate_canonical_identity
+
+promotion_projection_rules:
+  - staging_source_is_retained_for_audit_history
+  - promotion_projection_is_normative_for_the_promoted_logical_shard
+  - named_mandatory_promotion_overlay_is_applied_after_projection_and_before_merge
+  - dropped_or_replaced_ids_do_not_survive_logical_merge
+  - projection_or_overlay_may_materialize_required_identity_and_empty_collection_fields
+  - projection_or_overlay_may_correct_verified_source_metadata
+  - projection_or_overlay_may_split_silent_hybrid_claims_into_framework_specific_claims
+  - projection_or_overlay_may_remove_output_scope_or_applicability_leaks
+  - projection_or_overlay_must_not_invent_unsupported_clinical_recommendations_or_progression_thresholds
+  - projection_or_overlay_must_not_change_frozen_route_taxonomy
+
+merge_rules:
+  - only_active_design_authority_shards_participate_in_the_normative_logical_registry
+  - active_shard_with_promotion_projection_is_normalized_before_merge
+  - named_mandatory_promotion_overlay_is_applied_before_merge
+  - native_route_coverage_objects_require_a_matching_PASS_record_before_normative_use
+  - all_named_reviewed_logical_amendments_are_applied_after_active_shard_merge_and_before_authority_resolution
+  - staged_candidates_may_inform_the_work_queue_but_are_not_normative_registry_authority
+  - shard_order_does_not_create_clinical_precedence
+  - duplicate_canonical_id_across_active_or_promotion_candidate_shards_is_hard_failure
+  - normalized_object_must_validate_against_normative_schema
+  - evidence_claim_reference_must_resolve_to_exactly_one_claim
+  - evidence_source_reference_must_resolve_to_exactly_one_source
+  - route_evidence_profile_reference_must_resolve_to_exactly_one_profile
+  - rehabilitation_sequence_reference_must_resolve_to_exactly_one_sequence
+  - route_history_prompt_reference_must_resolve_to_exactly_one_prompt
+  - unresolved_reference_is_hard_failure
+  - cyclic_conflict_or_supersession_reference_requires_review
+  - map_key_and_explicit_payload_id_mismatch_is_hard_failure
+
+clinical_applicability_rules:
+  - route_match_is_required
+  - material_subtype_or_context_match_is_required_when_claim_profile_or_sequence_is_scoped
+  - applicability_conditions_must_be_satisfied_before_render_authority
+  - unresolved_material_direction_cause_or_management_context_blocks_evidence_aware_sequence_resolution
+  - unresolved_structural_surgical_indication_or_true_locking_blocks_routine_degenerative_meniscus_sequence_resolution
+  - postoperative_context_routes_to_the_procedure_specific_or_postoperative_owner_and_not_a_nonoperative_or_preoperative_route_sequence
+  - thumb_CMC1_specific_orthosis_and_rehabilitation_authority_cannot_auto_render_interphalangeal_or_generalized_hand_OA_output
+  - nonspecific_neck_pain_authority_cannot_absorb_radiating_headache_dizziness_or_post_traumatic_cervical_routes
+  - cervical_radiculopathy_specific_evidence_cannot_auto_expand_to_symptom_only_C2_without_matching_radicular_classification
+  - cervical_MSK_headache_features_do_not_auto_establish_formal_cervicogenic_headache
+  - cervicogenic_headache_specific_synthesis_requires_formal_or_clinician_established_CGH_context
+  - post_traumatic_primary_headache_or_neck_context_requires_C5_review_not_routine_C3_fallback
+  - dizziness_plus_cervical_features_does_not_auto_establish_cervical_causation_or_cervical_dizziness_diagnosis
+  - cervical_dizziness_treatment_effect_claims_require_explicit_clinician_established_cervical_dizziness_context
+  - presentation_only_C4_has_explicit_evidence_gap_and_cannot_receive_disease_specific_rehabilitation_sequence
+  - primary_post_traumatic_dizziness_or_neck_context_requires_C5_review_not_routine_C4_sequence
+  - WAD_specific_evidence_requires_explicit_whiplash_acceleration_deceleration_context
+  - recent_WAD_authority_cannot_auto_expand_to_persistent_WAD_and_persistent_WAD_authority_cannot_auto_expand_to_recent_WAD
+  - unclear_WAD_temporal_phase_has_explicit_evidence_gap_and_cannot_receive_cross_phase_or_generic_C1_sequence
+  - other_post_traumatic_cervical_pain_without_matching_WAD_context_cannot_receive_WAD_or_generic_C1_sequence
+  - unresolved_post_traumatic_structural_or_neurological_safety_context_blocks_routine_C5_sequence
+  - associated_post_traumatic_headache_dizziness_or_arm_symptoms_do_not_auto_import_C3_C4_or_C2_disease_specific_authority
+  - lateral_elbow_subacute_chronic_Grade_B_resisted_loading_requires_matching_subacute_or_chronic_context
+  - lateral_elbow_high_demand_Grade_F_authority_requires_matching_high_demand_function_context
+  - lateral_elbow_findings_or_imaging_do_not_auto_generate_tendinopathy_diagnosis
+  - atypical_lateral_elbow_neurological_cervical_intraarticular_instability_or_trauma_context_requires_reassessment_or_correct_owner_not_generic_LET_fallback
+  - medial_elbow_findings_or_imaging_do_not_auto_generate_tendinopathy_diagnosis
+  - medial_elbow_treatment_effect_authority_must_not_borrow_lateral_elbow_CPG_grades
+  - subjective_ulnar_symptoms_do_not_auto_create_objective_ulnar_neuropathy_or_normal_neurological_status
+  - medial_elbow_material_valgus_UCL_progressive_ulnar_motor_or_other_discordant_context_requires_reassessment_or_correct_owner
+  - ulnar_elbow_symptoms_Tinel_flexion_provocation_or_imaging_do_not_auto_create_formal_cubital_tunnel_diagnosis
+  - ulnar_elbow_mild_conservative_authority_requires_explicit_mild_context_and_objective_motor_status_actually_assessed_without_material_deficit
+  - ulnar_elbow_not_assessed_motor_status_cannot_resolve_as_normal_or_mild_eligibility
+  - ulnar_elbow_mild_case_education_authority_cannot_auto_expand_to_nonmild_or_severity_unresolved_context
+  - ulnar_elbow_night_splint_or_heterogeneous_physiotherapy_modalities_are_not_default_route_core_without_separate_reviewed_authority
+  - ulnar_elbow_progressive_motor_atrophy_clawing_structural_or_alternative_localization_context_blocks_routine_mild_sequence_and_requires_reassessment_or_correct_owner
+  - PIN_pain_only_radial_tunnel_presentation_does_not_auto_create_motor_PIN_supinator_diagnosis_or_rehabilitation_authority
+  - PIN_motor_pattern_does_not_auto_create_formal_diagnosis_etiology_or_supinator_compression_site
+  - PIN_spontaneous_2026_conservative_management_authority_requires_nontraumatic_noncompressive_no_space_occupying_lesion_context
+  - PIN_spontaneous_conservative_management_signal_does_not_authorize_a_specific_PT_programme
+  - PIN_compressive_structural_traumatic_iatrogenic_or_progressive_motor_context_blocks_generic_rehabilitation_and_requires_correct_owner_or_reassessment
+  - PIN_route_selection_does_not_silently_exclude_cervical_plexus_proximal_radial_or_multifocal_motor_neuropathy
+  - regional_profile_identity_never_substitutes_for_route_evidence_profile_identity
+  - a_midportion_Achilles_claim_cannot_authorize_insertional_Achilles_output
+  - a_route_specific_claim_cannot_be_reused_as_generic_MSK_authority
+  - broad_route_container_does_not_authorize_all_internal_conditions_when_source_scope_is_narrower
+  - therapist_execution_detail_cannot_auto_render_as_referral_core
+  - clinician_ui_only_cannot_auto_render_as_referral_core
+
+framework_governance_rules:
+  - framework_specific_strength_or_grade_is_not_shared_with_another_framework
+  - compatible_framework_claims_may_both_support_an_element_without_manufacturing_a_hybrid_strength
+  - conflicting_framework_positions_remain_explicit
+  - framework_conflict_prevents_silent_auto_rendering_of_one_position_as_unanimous_authority
+  - no_effect_estimate_from_absent_eligible_trials_must_not_be_relabelled_as_low_or_very_low_effect_evidence
+  - best_practice_opinion_must_not_be_relabelled_as_comparative_efficacy_evidence
+  - consensus_grade_must_not_be_relabelled_as_trial_certainty
+  - population_specific_trial_superiority_must_not_be_promoted_to_universal_protocol_superiority_when_later_synthesis_does_not_support_a_clinically_meaningful_hierarchy
+  - assessment_recommendation_must_not_be_relabelled_as_validated_progression_threshold
+  - low_certainty_network_meta_analysis_ranking_must_not_become_mandatory_protocol_or_universal_superiority
+  - guideline_framework_grade_must_not_be_relabelled_as_GRADE_effect_certainty
+  - outcome_specific_GRADE_certainty_must_not_be_flattened_into_one_synthetic_cross_outcome_certainty
+  - study_programme_frequency_or_duration_signal_must_not_become_universal_referral_schedule
+  - distinct_framework_recommendation_strengths_must_not_be_hybridized_within_one_claim
+  - evidence_recommendation_direction_is_not_automatic_treatment_selection
+  - outcome_measure_framework_grades_must_not_be_flattened_into_synthetic_strength
+  - newer_low_certainty_synthesis_does_not_convert_older_route_specific_CPG_recommendation_into_do_not_offer_without_explicit_conflict
+  - narrative_review_management_or_phase_description_must_not_be_relabelled_as_comparative_effect_or_validated_progression_threshold
+  - low_certainty_medial_eccentric_signal_must_not_become_universal_loading_superiority_or_mandatory_protocol
+  - AANEM_ultrasound_Level_B_is_diagnostic_framework_strength_not_treatment_effect_certainty
+  - very_low_certainty_night_splint_evidence_must_not_become_recommend_or_do_not_offer_without_stronger_applicable_authority
+  - sparse_mild_UNE_conservative_evidence_must_not_be_upgraded_or_expanded_across_severity
+  - spontaneous_PIN_conservative_management_observation_must_not_be_relabelled_as_route_specific_physiotherapy_effectiveness
+  - source_specific_PIN_six_month_recovery_decision_point_must_not_become_universal_PT_course_progression_or_surgical_threshold
+  - broad_elbow_nerve_narrative_review_does_not_authorize_mandatory_PIN_nerve_gliding_splint_manual_or_electrical_protocol
+  - newer_route_specific_guidance_does_not_silently_erase_an_older_still_relevant_distinct_framework
+
+freshness_rules:
+  - source_and_profile_freshness_are_checked_independently
+  - superseded_source_cannot_authorize_current_guideline_wording
+  - review_due_does_not_silently_change_recommendation
+  - stale_or_superseded_authority_requires_clinician_reviewer_action_before_current_label
+
+protocol_and_clinician_override_rules:
+  - explicit_patient_specific_written_protocol_may_override_conflicting_route_default
+  - protocol_authority_is_not_literature_authority
+  - clinician_instruction_is_not_literature_authority
+  - route_evidence_is_not_automatically_selected_when_clinician_modifies_or_omits_it
+
+future_runtime_boundary:
+  allowed_after_separate_authorization_only:
+    - load_manifest
+    - apply_reviewed_promotion_projection
+    - apply_named_mandatory_promotion_overlay
+    - normalize_shard_identity
+    - merge_logical_registry
+    - apply_reviewed_logical_amendments
+    - validate_all_references_and_applicability
+  forbidden_in_current_slice:
+    - runtime_recommendation_selection
+    - patient_data_persistence_change
+    - autonomous_evidence_update
+
+readiness_gate:
+  manifest_frozen: true
+  active_core_schema_reviewed: true
+  tranche2_promotion_gate_passed: true
+  tranche3_promotion_gate_passed: true
+  route_coverage_extension_gate_passed_for_reviewed_routes: true
+  route_coverage_reviewed_routes:
+    - calcific_rotator_cuff_tendinopathy
+    - glenohumeral_instability_dislocation
+    - glenohumeral_osteoarthritis
+    - degenerative_meniscal_lesion_conservative_rehabilitation
+    - patellar_tendinopathy
+    - thumb_cmc1_osteoarthritis
+    - nonspecific_neck_pain
+    - neck_pain_with_radiating_upper_limb_symptoms
+    - headache_with_cervical_msk_features
+    - cervical_dizziness_presentation
+    - post_traumatic_neck_pain
+    - lateral_elbow_tendinopathy
+    - medial_elbow_tendinopathy
+    - ulnar_neuropathy_at_elbow
+    - posterior_interosseous_nerve_supinator_syndrome
+  logical_amendment_gate_passed: true
+  all_active_authority_shards_schema_reviewed: true
+  all_listed_shards_schema_reviewed: true
+  all_routes_covered: false
+  exact_design_completeness_review_passed: false
+  runtime_authorized: false

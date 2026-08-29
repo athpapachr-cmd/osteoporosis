@@ -710,3 +710,421 @@ Render auto-deploy `dep-da8afeuk1f9s73f5sr6g` completed successfully and reporte
 
 CU-1 runtime v1 is closed after canonical closeout/writer-lock release. CU-2 and PR-1 are not authorized by this completion.
 
+---
+
+## 2026-08-29 — CU-1 history/evidence/rehabilitation design hardening advanced through cervical C4
+
+PR #63 on `design/cu1-history-evidence-timeline-2026-08-28` established the v1.1 structured-history, evidence-authority and rehabilitation-sequence semantics as a design-only extension of the deployed CU-1 referral utility. Runtime evidence-aware recommendation generation remains explicitly unauthorized.
+
+The evidence corpus was normalized into a reviewed sharded registry. Tranche 2 and tranche 3 both passed their promotion gates, the shard-integration gate passed, and route-specific native coverage was then advanced with matching history prompts, evidence profiles/sequences or explicit evidence-gap behavior, formal route reviews and regression fixtures.
+
+Reviewed native coverage now includes:
+
+```text
+calcific rotator-cuff tendinopathy
+glenohumeral instability/dislocation context split
+glenohumeral osteoarthritis management-context split
+degenerative meniscal lesion — conservative rehabilitation
+patellar tendinopathy
+thumb CMC-1 osteoarthritis
+C1 nonspecific neck pain
+C2 neck pain with radiating upper-limb symptoms
+C3 headache with cervical musculoskeletal features / formal-CGH split
+C4 cervical-dizziness presentation / clinician-established split
+```
+
+Material evidence-governance corrections preserved during the work include:
+
+- posterior shoulder-instability Part-II postoperative rehabilitation/RTS evidence is not nonoperative authority;
+- multidirectional-instability absence of eligible comparative RCTs is not relabelled as a very-low treatment-effect estimate;
+- GHOA best-practice opinion is not represented as comparative efficacy, and the 2026 review confirming no nonsurgical physiotherapy RCTs is preserved as an evidence gap rather than a negative effect estimate;
+- degenerative meniscal MRI findings do not automatically establish symptom causation or surgical indication, and true locking remains distinct from clicking/catching;
+- contemporary patellar-tendinopathy evidence does not justify freezing eccentric, HSR, isometric or PTLE loading as a universal physician protocol or inventing numeric RTS thresholds;
+- thumb-CMC assessment measures are not converted into rehabilitation progression thresholds and orthosis type/wear schedule remain execution detail;
+- C1 generic nonspecific-neck authority cannot absorb radiating, headache, dizziness or post-traumatic cervical routes;
+- C2 preserves subjective radiating symptoms, objective neurological findings and formal radiculopathy as distinct concepts, and cervical-radiculopathy-specific synthesis does not automatically apply to symptom-only cases;
+- C3 cervical headache features do not automatically establish formal cervicogenic headache, ICHD-3 remains diagnostic-boundary authority rather than an autonomous diagnostic engine, and low-certainty network rankings/manual-therapy signals are not turned into a mandatory protocol;
+- C4 dizziness plus neck symptoms, cervical/sensorimotor testing or treatment response does not establish cervical causation. The Bárány Society no-routine-criteria position is preserved, presentation-only C4 has an explicit blocked evidence gap, and only a clinician-entered cervical-dizziness context receives a cautious one-phase evidence-bounded sequence. Alternative vestibular/migraine/neurological/vascular/cardiovascular/otological causes are not silently declared excluded, vestibular rehabilitation is not an automatic default, and outcome-specific low/very-low GRADE evidence is not flattened into one synthetic certainty.
+
+The global CU-1 gate remains:
+
+```text
+SHARD INTEGRATION             PASS
+REVIEWED ROUTE COVERAGE       PASS for completed routes/contexts
+GLOBAL ROUTE COVERAGE         FAIL / IN PROGRESS
+ROUTE-HISTORY PROMPTS         FAIL globally until all routes curated
+ROUTE FIXTURE CORPUS          FAIL globally until all routes curated
+DESIGN-COMPLETE               NO
+RUNTIME AUTHORIZED            NO
+```
+
+The next authorized route after this reconciliation is `post_traumatic_neck_pain` (C5), followed by the remaining wrist/hand and elbow routes and then the remaining routine registry. PR #63 remains draft and must not be merged merely because individual route gates pass.
+
+---
+
+## 2026-08-29 — C5 post-traumatic / whiplash-associated cervical route closed as a context split
+
+The C5 route `post_traumatic_neck_pain` passed exact evidence/applicability review without being collapsed into either a generic nonspecific-neck pathway or a single undifferentiated whiplash protocol.
+
+The normative C5 design now separates:
+
+```text
+recent explicit uncomplicated WAD
+→ rep_c5_recent_whiplash_wad_v1
+→ seq_c5_recent_whiplash_wad_v1
+→ sequence_complete
+
+persistent explicit WAD
+→ rep_c5_persistent_whiplash_wad_v1
+→ seq_c5_persistent_whiplash_wad_v1
+→ sequence_complete
+
+explicit WAD with unclear/not-stated temporal phase
+→ rep_c5_whiplash_phase_unresolved_v1
+→ blocked_evidence_gap
+
+other post-traumatic cervical pain without explicit matching WAD context
+→ rep_c5_other_posttraumatic_neck_pain_v1
+→ blocked_evidence_gap
+
+unresolved structural / neurological safety context
+→ rep_c5_unresolved_posttraumatic_safety_v1
+→ routine sequence blocked
+```
+
+The current SIRA third-edition 2014 acute-WAD guideline remains the active recent/acute WAD authority at this review date. The proposed fourth edition remains draft/non-approved and is not used as normative authority.
+
+Evidence-strength boundaries were preserved rather than hybridized:
+
+- SIRA stay-active advice and neck exercise remain separate Level-B recommendations for recent/acute uncomplicated WAD;
+- manual therapy remains a selected limited-evidence Level-C adjunct rather than automatic core care;
+- SIRA's advice against prolonged reduction of usual activities remains a consensus clinical-practice point, while the recommendation against routine immobilisation collars is Level A;
+- the 2024 guided neck-specific exercise meta-analysis does not convert observed study frequency/duration patterns into a universal referral schedule;
+- the 2025 education-plus-exercise GRADE synthesis remains very-low certainty and does not establish a mandatory superior combined bundle;
+- persistent objective neurological signs with ongoing disability use the OPTIMa/Côté 2016 medical-review context after a pre-PASS source-attribution correction.
+
+C5 also freezes the following safety/applicability boundaries:
+
+```text
+post-traumatic neck pain != automatic WAD
+recent WAD != persistent WAD
+vague duration != inferred WAD temporal phase
+C5 selection != fracture/dislocation/instability excluded
+WAD/QTF grade != CU-1 inferred classification
+other cervical trauma != WAD authority != generic C1 fallback
+post-traumatic headache/dizziness/arm symptoms != automatic C3/C4/C2 disease-specific authority
+patient-specific structural/healing restriction > conflicting uncomplicated-WAD default
+```
+
+Both nonblocked WAD sequences remain single-phase and deliberately contain no universal numeric progression threshold, fixed visit frequency, total PT course duration or elapsed-time-only progression rule.
+
+Focused GitHub Actions passed at the exact C5 review head before manifest activation. The reviewed shard and matching fixtures were then activated in the normative manifest and coverage matrix.
+
+The overall CU-1 gate remains:
+
+```text
+SHARD INTEGRATION             PASS
+C1-C5 CERVICAL COVERAGE       PASS for reviewed contexts
+GLOBAL ROUTE COVERAGE         FAIL / IN PROGRESS
+ROUTE-HISTORY PROMPTS         FAIL globally until all routes curated
+ROUTE FIXTURE CORPUS          FAIL globally until all routes curated
+DESIGN-COMPLETE               NO
+RUNTIME AUTHORIZED            NO
+```
+
+PR #63 remains draft/unmerged. No runtime recommendation logic, persistence change, CU-2 work or PR-1 restart was authorized.
+
+The exact next route is now `lateral_elbow_tendinopathy`, followed by the remaining wrist/hand and elbow routes and then the remaining routine registry.
+
+---
+
+## 2026-08-29 — Lateral elbow tendinopathy route closed as single-phase evidence-bounded authority
+
+The route `lateral_elbow_tendinopathy` passed exact evidence/applicability review and was activated without converting the existing incomplete two-phase seed into a fabricated staged protocol.
+
+The existing core profile identity was retained:
+
+```text
+rep_lateral_elbow_tendinopathy_v1
+```
+
+but its normative sequence now resolves, through the reviewed route activation amendment, to:
+
+```text
+seq_lateral_elbow_evidence_bounded_v1
+→ sequence_complete
+→ single required phase
+→ progression_criteria: []
+```
+
+The 2022 APTA/JOSPT lateral-elbow CPG remains the route-specific clinical-practice authority. The reviewed route preserves:
+
+- Grade-B resisted wrist-extensor exercise for subacute/chronic LET, with isometric, concentric and/or eccentric loading but no universal dose;
+- Grade-F high-demand reintroduction as a conditional work/sport/hobby direction rather than a second phase requiring an invented transition threshold;
+- Grade-C proximal shoulder/scapular training only when an actual proximal impairment is present;
+- selected Grade-B local manual therapy, dry needling and rigid taping recommendations without confusing evidence direction with automatic adjunct selection;
+- Grade-F counterforce/wrist-support orthosis authority only for selected aggravating-activity/immediate contexts;
+- education, activity/load modification and ergonomic/workstation context without a fixed conservative-care package.
+
+Two 2024 syntheses were added as current effect-context authority. The Cochrane manual-therapy/exercise review found low-certainty, generally small and non-durable effects, while the Campos non-invasive-therapy review found mostly small-to-no effects with evidence commonly low or very low certainty. These sources narrow claims about magnitude, durability and universal superiority; they do not transform individualized exercise into a `do_not_offer` recommendation.
+
+A pre-PASS audit corrected a synthetic outcome-measure strength. The final logical registry keeps:
+
+```text
+PRTEE / DASH / PSFS or high-demand activity-specific function measures
+→ CPG Grade A
+
+ROM / pressure-pain threshold / pain-free grip / maximum grip
+→ CPG Grade B
+```
+
+without flattening the two families into one hybrid strength. These measures remain tracking/assessment tools and are not automatic loading-progression, discharge, return-to-work or return-to-sport thresholds.
+
+Hard LET boundaries now include:
+
+```text
+lateral elbow pain or local tenderness != automatic LET diagnosis
+Cozen/Mill/Maudsley-type finding != automatic diagnosis
+imaging common-extensor abnormality != automatically symptomatic diagnosis
+acute/highly irritable LET != automatic subacute/chronic Grade-B loading authority
+objective PIN/radial motor deficit != routine LET
+cervical/radicular pattern != routine LET
+substantial mechanical block or material trauma/instability != routine LET
+CPG recommendation direction != automatic treatment selection
+newer low-certainty synthesis != proven no-effect claim
+```
+
+Matching route-history prompts and `cu1_lateral_elbow_fixtures_v1.yaml` were added. The route fixture corpus explicitly tests acute-vs-subacute/chronic applicability, high-demand Grade-F behavior, diagnosis-vs-finding separation, PIN/cervical owner boundaries, adjunct selection, CPG-grade preservation, outcome-measure grading, 2024 low-certainty interpretation, ESWT non-auto-authority and missing-history semantics.
+
+The exact route review passed focused GitHub Actions before activation. The route shard, activation amendment, manifest and coverage matrix were then reconciled. Runtime evidence-aware generation remains unauthorized.
+
+The global CU-1 gate remains:
+
+```text
+SHARD INTEGRATION             PASS
+LATERAL ELBOW ROUTE           PASS
+GLOBAL ROUTE COVERAGE         FAIL / IN PROGRESS
+ROUTE-HISTORY PROMPTS         FAIL globally until all routes curated
+ROUTE FIXTURE CORPUS          FAIL globally until all routes curated
+DESIGN-COMPLETE               NO
+RUNTIME AUTHORIZED            NO
+```
+
+PR #63 remains draft/unmerged. No runtime recommendation logic, persistence change, CU-2 work or PR-1 restart was authorized.
+
+The exact next route is now `medial_elbow_tendinopathy`, followed by the remaining wrist/hand and elbow routes and then the remaining routine registry.
+
+---
+
+## 2026-08-29 — Medial elbow tendinopathy route closed as low-certainty evidence-bounded authority
+
+The route `medial_elbow_tendinopathy` passed exact evidence/applicability review and was activated as a distinct medial-elbow authority rather than as a mirrored copy of the lateral-elbow pathway.
+
+The normative objects are:
+
+```text
+rep_medial_elbow_tendinopathy_v1
+→ seq_medial_elbow_evidence_bounded_v1
+→ sequence_complete
+→ single required phase
+→ progression_criteria: []
+```
+
+No current medial-specific rehabilitation clinical-practice guideline with graded recommendations equivalent to the 2022 APTA/JOSPT lateral-elbow CPG was identified. The primary treatment-effect authority is the 2026 See/Loo/Jaafar systematic review of eccentric exercise for medial epicondylitis. It included five small clinical studies totaling 143 patients, used heterogeneous protocols, could not support meta-analysis, and was judged overall low certainty.
+
+The normative interpretation is deliberately narrow:
+
+```text
+eccentric flexor-pronator loading
+→ may be considered
+→ low certainty
+→ not mandatory
+→ not universally superior
+→ no universal dose/frequency/duration
+
+lateral-elbow CPG grades
+→ not medial-elbow authority by analogy
+```
+
+The 2023 clinical overview and 2024 medial-elbow differential review are retained as history, management-context and differential authority rather than comparative treatment-effect evidence. Narrative staged management descriptions are not converted into validated rehabilitation phases or elapsed-time progression rules.
+
+Hard medial-elbow boundaries now include:
+
+```text
+medial elbow pain/tenderness != automatic tendinopathy diagnosis
+pain with resisted wrist flexion/pronation != automatic diagnosis
+imaging common-flexor abnormality != automatically symptomatic diagnosis
+subjective ring/small-finger paresthesia != objective ulnar deficit != formal ulnar neuropathy
+material valgus/UCL instability != routine tendon-only pathway
+progressive objective ulnar motor deficit != routine tendon-only pathway
+major trauma or substantial mechanical block != routine medial tendinopathy
+```
+
+Manual therapy, dry needling, taping, orthosis and ESWT are not automatically labelled medial-route evidence merely because analogous interventions appear in lateral-elbow literature or the frozen UI. A separate reviewed evidence claim or clinician-instruction pathway would be required.
+
+Matching route-history prompts and `cu1_medial_elbow_fixtures_v1.yaml` were added. The fixtures test medial-specific profile resolution, diagnosis-vs-finding separation, low-certainty eccentric evidence, no lateral-CGP grade borrowing, subjective-vs-objective ulnar-neural semantics, valgus/UCL owner boundaries, no fixed rest protocol, no narrative-phase promotion, adjunct non-auto-authority and missing-history behavior.
+
+Focused GitHub Actions run #203 passed at exact review head `531e94ce2a92857247962f1d68be20b01e6a05c3` before manifest activation. The medial shard, fixtures, manifest and coverage matrix were then reconciled. Runtime evidence-aware generation remains unauthorized.
+
+The global CU-1 gate remains:
+
+```text
+SHARD INTEGRATION             PASS
+LATERAL ELBOW ROUTE           PASS
+MEDIAL ELBOW ROUTE            PASS
+GLOBAL ROUTE COVERAGE         FAIL / IN PROGRESS
+ROUTE-HISTORY PROMPTS         FAIL globally until all routes curated
+ROUTE FIXTURE CORPUS          FAIL globally until all routes curated
+DESIGN-COMPLETE               NO
+RUNTIME AUTHORIZED            NO
+```
+
+PR #63 remains draft/unmerged. No runtime recommendation logic, persistence change, CU-2 work or PR-1 restart was authorized.
+
+The exact next route is now `ulnar_neuropathy_at_elbow`, followed by the remaining wrist/hand and elbow routes and then the remaining routine registry.
+
+---
+
+## 2026-08-29 — Ulnar neuropathy at the elbow route closed as mild-conservative + nonmild/safety context split
+
+The route `ulnar_neuropathy_at_elbow` passed exact evidence/applicability review without being converted into a generic cubital-tunnel physiotherapy protocol.
+
+The normative context split is:
+
+```text
+explicit mild clinical context
++ objective ulnar motor status actually assessed without material deficit
++ no intrinsic atrophy/clawing
++ no unresolved structural/alternative localization owner
+→ rep_une_mild_sensory_predominant_v1
+→ seq_une_mild_conservative_v1
+→ sequence_complete
+
+nonmild / severity unresolved / motor status not sufficiently assessed
+→ rep_une_nonmild_or_severity_unresolved_v1
+→ rehabilitation_sequence_id: null
+→ blocked_evidence_gap
+
+progressive objective motor weakness / intrinsic atrophy / clawing / material neurological worsening
+or material trauma / structural compression / nerve instability / discordant localization
+→ rep_une_progressive_motor_or_structural_safety_v1
+→ rehabilitation_sequence_id: null
+→ routine sequence blocked + reassessment/correct owner
+```
+
+The 2025 Cochrane review supplies only a narrow conservative signal in mild UNE: information about movements or positions to avoid may reduce subjective discomfort. This is represented as cautious education and individualized provoking-position/movement modification; it does not establish a universal splint, exercise, nerve-gliding, treatment-frequency or course-duration protocol.
+
+The 2025 night-splint systematic review remains very-low certainty and insufficient to determine benefit over advice. The route therefore does not auto-render night splinting or generate a device type, elbow angle, nightly duration or total course. The 2022 physiotherapy systematic review remains heterogeneous and cannot establish nerve gliding, manual therapy, electrical modalities or another method as best or mandatory physiotherapy.
+
+The AANEM neuromuscular-ultrasound guideline was source-identity corrected during pre-PASS review to its 2022 publication year. Its Level-B recommendation remains diagnostic-framework authority to help confirm/localize UNE; it is not treatment-effect certainty, does not replace clinical/electrodiagnostic evaluation and does not create an autonomous diagnosis. The 2025 diagnostic Delphi remains expert-consensus candidate criteria requiring further validation/weighting rather than a CU-1 diagnostic scale.
+
+Hard route boundaries include:
+
+```text
+subjective ulnar paresthesia != objective sensory deficit != objective motor deficit != formal UNE diagnosis
+positive Tinel or elbow-flexion provocation != definitive diagnosis
+formal UNE diagnosis != mild severity
+not_assessed motor status != normal != mild conservative eligibility
+mild-case conservative evidence != nonmild or unknown-severity complete sequence
+progressive motor weakness/atrophy/clawing != routine mild sequence
+cervical/plexus/wrist-level ulnar/trauma/structural localization concern != cubital-tunnel fallback
+```
+
+The mild sequence contains `progression_criteria: []`; no numeric progression/discharge threshold, fixed visit frequency or total physiotherapy course is manufactured. CU-1 also does not generate an autonomous surgical threshold or procedure choice.
+
+Matching route-history prompts and `cu1_ulnar_elbow_fixtures_v1.yaml` were added. The fixtures explicitly test `not_assessed != normal`, mild-vs-nonmild applicability, symptom-vs-diagnosis separation, Delphi nonvalidation, AANEM ultrasound scope, night-splint certainty, no best physiotherapy method, structural/localization fail-closed behavior and missing-history semantics.
+
+Focused GitHub Actions run #214 passed at exact review head `fc25283bbe8cb5dde0efebb670650990ac4db782` before activation. The UNE shard, fixture extension, manifest and coverage matrix were then reconciled. Runtime evidence-aware generation remains unauthorized.
+
+The global CU-1 gate remains:
+
+```text
+SHARD INTEGRATION             PASS
+LATERAL ELBOW ROUTE           PASS
+MEDIAL ELBOW ROUTE            PASS
+ULNAR NEUROPATHY ELBOW ROUTE  PASS as context split
+GLOBAL ROUTE COVERAGE         FAIL / IN PROGRESS
+ROUTE-HISTORY PROMPTS         FAIL globally until all routes curated
+ROUTE FIXTURE CORPUS          FAIL globally until all routes curated
+DESIGN-COMPLETE               NO
+RUNTIME AUTHORIZED            NO
+```
+
+PR #63 remains draft/unmerged. No runtime recommendation logic, persistence change, CU-2 work or PR-1 restart was authorized.
+
+The exact next route is now `posterior_interosseous_nerve_supinator_syndrome`, followed by the remaining wrist/hand and elbow routes and then the remaining routine registry.
+
+---
+
+## 2026-08-29 — Posterior interosseous nerve / supinator route closed as explicit evidence-gap + safety/context split
+
+The route `posterior_interosseous_nerve_supinator_syndrome` passed exact evidence/applicability review without manufacturing a route-specific physiotherapy sequence.
+
+The reviewed model has four machine-distinct contexts:
+
+```text
+pain-predominant radial-tunnel / lateral-forearm presentation without material PIN motor deficit
+→ rep_pin_pain_only_or_radial_tunnel_mismatch_v1
+→ rehabilitation_sequence_id: null
+→ blocked_evidence_gap / route mismatch
+
+PIN-pattern motor presentation with diagnosis/etiology/localization unresolved
+→ rep_pin_motor_presentation_unresolved_v1
+→ rehabilitation_sequence_id: null
+→ blocked_evidence_gap
+
+explicit clinician-established spontaneous non-traumatic/non-compressive PIN palsy
++ no space-occupying lesion
++ no progressive motor safety trigger
+→ rep_pin_spontaneous_noncompressive_established_v1
+→ rehabilitation_sequence_id: null
+→ conservative-management context supported, specific PT sequence not established
+
+demonstrable compression/entrapment or mass
+or trauma / iatrogenic / inflammatory structural cause
+or progressive/materially worsening motor deficit
+→ rep_pin_compressive_structural_or_progressive_v1
+→ rehabilitation_sequence_id: null
+→ specialist/correct-owner/safety behavior
+```
+
+The 2026 prospective Japanese multicenter cohort of spontaneous PIN palsy supports initial conservative management in its narrow spontaneous, non-traumatic, non-compressive, no-space-occupying-lesion population. It does not define a nerve-gliding, splinting, manual-therapy, electrical-stimulation, strengthening, visit-frequency or PT-duration protocol. The route-specific 2006 systematic review found no randomized or controlled clinical trials, and the current review did not identify a later high-quality controlled rehabilitation evidence base sufficient to create a criteria-based `RehabilitationSequenceV1`.
+
+Hard PIN boundaries preserved by the review include:
+
+```text
+lateral forearm pain / radial-tunnel provocation != motor PIN diagnosis
+motor pattern != formal PIN diagnosis != etiology != supinator/Frohse compression site
+formal diagnosis != spontaneous/noncompressive etiology
+not_assessed motor status != normal or pain-only classification
+route selection != cervical / plexus / proximal radial / multifocal motor neuropathy exclusion
+investigation finding != rehabilitation protocol
+spontaneous conservative-management signal != specific physiotherapy effectiveness evidence
+```
+
+The 2026 cohort's six-month motor-recovery signal remains source/population-specific management-course context. CU-1 does not convert it into a universal PT course duration, elapsed-time progression rule, automatic surgical threshold or procedure choice. New/progressive objective motor weakness, demonstrable compression/mass, trauma/iatrogenic/structural cause or other discordant localization requires reassessment or the correct owner.
+
+A pre-PASS source audit corrected the 2006 systematic-review citation to `J Peripher Nerv Syst. 2006;11(2):101-110`, DOI `10.1111/j.1085-9489.2006.00074.x`, corrected the electrodiagnostic review issue year/citation to `HSS J. 2012;8(2):184-189`, DOI `10.1007/s11420-011-9238-8`, and removed a motor-deficit-only safety claim from the pain-only mismatch profile. These were source-identity/applicability corrections only and did not broaden clinical authority.
+
+Matching route-history prompts and `cu1_pin_supinator_fixtures_v1.yaml` were added. The fixture oracle verifies pain-only-vs-motor separation, motor-pattern-vs-diagnosis separation, `not_assessed != normal`, formal-diagnosis-vs-etiology separation, non-universalization of the 2026 six-month signal, fail-closed structural/traumatic/progressive-motor contexts, alternative localization/MMN boundaries, diagnostic-test-vs-treatment separation, non-auto-rendering of nerve gliding/splint/manual/electrical modalities, no generic LET/elbow/peripheral-nerve fallback, and missing-history semantics.
+
+Focused GitHub Actions run #236 passed at exact review head `ce56ea9bcd1774547627e9a46d8470ab2a4053c0` before activation. The reviewed PIN shard and mandatory narrow amendment were activated in manifest `cu1_evidence_manifest_v1_19`; the coverage matrix was reconciled to `cu1_evidence_coverage_matrix_v1_19` and correctly records PIN as `profile_curated / blocked_evidence_gap`, not `sequence_complete`.
+
+The global CU-1 gate remains:
+
+```text
+SHARD INTEGRATION             PASS
+LATERAL ELBOW ROUTE           PASS
+MEDIAL ELBOW ROUTE            PASS
+ULNAR NEUROPATHY ELBOW ROUTE  PASS as context split
+PIN / SUPINATOR ROUTE         PASS as explicit evidence-gap + safety/context split
+GLOBAL ROUTE COVERAGE         FAIL / IN PROGRESS
+ROUTE-HISTORY PROMPTS         FAIL globally until all routes curated
+ROUTE FIXTURE CORPUS          FAIL globally until all routes curated
+DESIGN-COMPLETE               NO
+RUNTIME AUTHORIZED            NO
+```
+
+PR #63 remains draft/unmerged. No runtime recommendation logic, persistence change, CU-2 work or PR-1 restart was authorized.
+
+The exact next route is now `distal_biceps_tendon_disorder_nonoperative`, followed by the remaining wrist/hand and elbow routes and then the remaining routine registry.

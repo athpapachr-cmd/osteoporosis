@@ -1,0 +1,529 @@
+version: cu1_history_evidence_fixtures_v1_6
+status: design_oracle_pending_full_route_coverage
+runtime_authorized: false
+normative_schema: cu1_history_timeline_schema_v1.yaml
+evidence_manifest: cu1_evidence_manifest_v1.yaml
+
+fixture_policy:
+  - fixtures_test_semantics_not_runtime_formatter_implementation
+  - missing_fields_outside_fixture_focus_do_not_assert_full_referral_validity
+  - no_fixture_may_authorize_runtime_evidence_generation
+  - route_or_subtype_mismatch_is_hard_failure
+  - evidence_gap_must_not_be_filled_by_generic_content
+  - conflicting_framework_claims_must_not_be_silently_hybridized
+  - management_context_must_be_satisfied_before_context_scoped_rehabilitation_sequence_resolution
+
+fixtures:
+  chronic_deep_gluteal_8_month_uncertain_diagnosis:
+    route_id: deep_gluteal_piriformis_presentation
+    input:
+      diagnosis_assertion: not_stated
+      history:
+        duration_value_optional: 8
+        duration_unit_optional: months
+        onset_pattern: gradual
+        course: fluctuating
+        patient_priority_activity_optional: prolonged_sitting_for_work
+        provenance_entries:
+          - {field_path: duration_value_optional, source: patient_reported, assertion_state: stated}
+          - {field_path: duration_unit_optional, source: patient_reported, assertion_state: stated}
+          - {field_path: patient_priority_activity_optional, source: patient_reported, assertion_state: stated}
+        route_history_items:
+          - {history_item_id: dgs_sitting_intolerance, response_type: boolean_tristate, state_or_value: yes, unit_optional: null, free_text_optional: null, source: patient_reported, assertion_state: stated}
+    expected:
+      history_contains_approximate_duration: true
+      exact_onset_date_inferred: false
+      definitive_DGS_diagnosis_generated: false
+      evidence_profile_id: rep_deep_gluteal_piriformis_v1
+      specific_superior_DGS_technique_generated: false
+      evidence_gap_visible_to_clinician: true
+
+  lateral_epicondylalgia_disease_specific_loading:
+    route_id: lateral_elbow_tendinopathy
+    input:
+      formal_diagnosis_asserted: true
+      work_sport_context: high_demand_racquet_sport
+    expected:
+      evidence_profile_id: rep_lateral_elbow_tendinopathy_v1
+      required_claim_ids: [lateral_elbow_resisted_wrist_extensor_exercise]
+      high_demand_optional_claim_ids: [lateral_elbow_high_demand_phased_reintroduction]
+      wording_must_include_disease_specific_wrist_extensor_semantics: true
+      generic_tendon_loading_only_is_insufficient: true
+      invented_return_threshold_forbidden: true
+
+  midportion_achilles_subtype_boundary:
+    route_id: achilles_tendinopathy
+    subtype_id: midportion_achilles_tendinopathy
+    input: {formal_diagnosis_asserted: true}
+    expected:
+      evidence_profile_id: rep_achilles_midportion_v1
+      allowed_primary_source_ids: [achilles_midportion_cpg_2024]
+      required_claim_ids: [achilles_midportion_tendon_loading_first_line]
+      insertional_source_authority_allowed: false
+      eccentric_only_wording_allowed: false
+      execution_frequency_auto_rendered_in_referral_core: false
+
+  insertional_achilles_evidence_boundary:
+    route_id: achilles_tendinopathy
+    subtype_id: insertional_achilles_tendinopathy
+    input: {formal_diagnosis_asserted: true, symptom_duration: chronic, activity_context: sport_active}
+    expected:
+      evidence_profile_id: rep_achilles_insertional_v1
+      midportion_CPG_authority_allowed: false
+      low_compression_strategy_may_be_considered: true
+      universal_component_specific_effect_claim_allowed: false
+      universal_progression_threshold_allowed: false
+      population_limit_visible_to_clinician: true
+
+  same_loading_label_not_same_semantics:
+    compared_routes:
+      - {route_id: lateral_elbow_tendinopathy, profile_id: rep_lateral_elbow_tendinopathy_v1}
+      - {route_id: achilles_tendinopathy, subtype_id: midportion_achilles_tendinopathy, profile_id: rep_achilles_midportion_v1}
+    expected:
+      shared_generic_intervention_authority_allowed: false
+      elbow_requires_wrist_extensor_specific_claim: true
+      Achilles_requires_Achilles_specific_claim: true
+      cross_route_claim_resolution_hard_failure: true
+
+  postoperative_written_protocol_overrides_route_default:
+    route_id: postoperative_knee_rehabilitation
+    input:
+      patient_specific_protocol:
+        protocol_constraint_id: postop_fixture_no_loaded_flexion
+        protocol_type: postoperative_written_protocol
+        source_description: surgeon_written_protocol
+        constraint_statement: loaded_flexion_restricted_until_explicit_clearance
+        affected_phase_or_element_ids: [generic_loaded_flexion_progression]
+    expected:
+      protocol_authority_precedence_over_route_default: true
+      conflicting_default_suppressed_not_blended: true
+      protocol_constraint_mislabeled_as_literature: false
+      generic_calendar_progression_invented: false
+
+  fracture_healing_restriction_overrides_generic_rehab:
+    route_id: fracture_rehabilitation_post_immobilization
+    input:
+      patient_specific_protocol:
+        protocol_constraint_id: fracture_fixture_weight_bearing
+        protocol_type: fracture_healing_restriction
+        source_description: orthopaedic_documented_restriction
+        constraint_statement: weight_bearing_restricted_until_documented_clearance
+        affected_phase_or_element_ids: [progressive_weight_bearing]
+    expected:
+      unrestricted_weight_bearing_generated: false
+      healing_restriction_precedence: true
+      time_alone_used_to_infer_clearance: false
+
+  conflicting_adjunct_guidance_not_silently_hybridized:
+    route_id: nonspecific_low_back_pain
+    input: {clinician_selected_adjunct: acupuncture, chronic_primary_low_back_pain_context: true}
+    expected:
+      conflict_must_be_explicit_if_NICE_and_other_authority_disagree: true
+      wording_cannot_state_universal_guideline_recommendation: true
+      clinician_selection_does_not_change_evidence_strength: true
+      active_rehabilitation_remains_core: true
+
+  weak_evidence_route_no_false_precision:
+    route_id: deep_gluteal_piriformis_presentation
+    expected:
+      evidence_certainty: low
+      route_specific_progression_threshold_generated: false
+      comparative_superiority_statement_generated: false
+      broad_noninvented_physio_direction_allowed: true
+
+  missing_history_not_negative_history:
+    route_id: nonspecific_low_back_pain
+    input: {history: {}}
+    expected:
+      history_section_may_be_omitted: true
+      no_prior_episodes_generated: false
+      no_trauma_generated: false
+      no_prior_treatment_generated: false
+      exact_duration_generated: false
+      reassuring_negative_from_missing_data_generated: false
+
+  stale_or_superseded_evidence_block:
+    synthetic_source:
+      evidence_id: synthetic_stale_source
+      status: active
+      freshness_state: stale
+      next_review_due: 2026-01-01
+    synthetic_claim:
+      claim_id: synthetic_stale_claim
+      evidence_ids: [synthetic_stale_source]
+      applicable_route_evidence_profile_ids: [rep_lateral_elbow_tendinopathy_v1]
+      applicable_route_ids: [lateral_elbow_tendinopathy]
+    expected:
+      current_guideline_label_allowed: false
+      automatic_referral_core_render_allowed: false
+      clinician_review_required: true
+
+  therapist_execution_detail_not_physician_prescription:
+    route_id: achilles_tendinopathy
+    subtype_id: midportion_achilles_tendinopathy
+    claim_id: achilles_midportion_loading_frequency_execution_detail
+    expected:
+      claim_output_scope: therapist_execution_detail
+      exact_frequency_auto_rendered_in_referral_core: false
+      evidence_available_to_clinician_UI: true
+      physiotherapist_execution_autonomy_preserved: true
+
+  clinician_modification_not_relabelled_as_evidence:
+    route_id: lateral_elbow_tendinopathy
+    input:
+      clinician_modification:
+        modification_id: fixture_clinician_instruction
+        target_element_id: lateral_elbow_resisted_loading
+        action: add_clinician_instruction
+        replacement_or_added_text_optional: avoid_specific_activity_temporarily_for_patient_specific_reason
+        rationale_optional: clinician_documented_patient_specific_context
+    expected:
+      modification_preserved: true
+      modification_labelled_guideline_recommendation: false
+      original_evidence_claims_remain_auditable: true
+
+  insertional_midportion_cross_authority_regression:
+    route_id: achilles_tendinopathy
+    subtype_id: insertional_achilles_tendinopathy
+    attempted_claim_id: achilles_midportion_tendon_loading_first_line
+    expected: {validation_result: hard_fail, reason: claim_subtype_not_applicable}
+
+  protocol_time_rule_regression:
+    route_id: postoperative_shoulder_rehabilitation
+    scenarios:
+      - input: {explicit_written_protocol_time_restriction: true}
+        expected: {calendar_constraint_allowed: true, authority_type: patient_specific_protocol}
+      - input: {explicit_written_protocol_time_restriction: false}
+        expected: {generic_calendar_constraint_allowed: false}
+
+  calcific_rotator_cuff_ESWT_framework_conflict:
+    route_id: calcific_rotator_cuff_tendinopathy
+    input: {imaging_confirmed_calcific_tendinopathy: true, clinician_selected_eswt: false}
+    expected:
+      evidence_profile_id: rep_calcific_rotator_cuff_v1
+      required_core_claim_ids: [calcific_rc_active_rehabilitation_core, calcific_rc_patient_centered_education]
+      conflicting_claim_ids: [calcific_rc_eswt_jospt_optional, calcific_rc_eswt_nice_research_only]
+      eswt_auto_rendered_as_unanimous_recommendation: false
+      eswt_auto_rendered_as_core_rehabilitation: false
+      framework_conflict_visible_to_clinician: true
+      therapeutic_ultrasound_auto_offered: false
+      invented_numeric_progression_threshold: false
+
+  calcific_rotator_cuff_refractory_lavage_not_initial_phase:
+    route_id: calcific_rotator_cuff_tendinopathy
+    input: {imaging_confirmed_calcific_tendinopathy: true, refractory_to_initial_treatment: false}
+    expected:
+      claim_id: calcific_rc_lavage_refractory
+      lavage_auto_rendered_in_initial_rehabilitation_phase: false
+      refractory_condition_required: true
+      post_lavage_eswt_superiority_inferred: false
+
+  traumatic_anterior_first_time_instability_branch:
+    route_id: glenohumeral_instability_dislocation
+    input: {direction: anterior, cause: traumatic, recurrence: first_time, management_context: explicit_rehabilitation_pathway, postoperative: false}
+    expected:
+      evidence_profile_id: rep_shoulder_instability_anterior_traumatic_v1
+      rehabilitation_sequence_id: seq_shoulder_instability_anterior_traumatic_v1
+      applicable_claim_ids: [anterior_first_time_rehab_esska_2026, anterior_traumatic_selected_rehab_framework_2024]
+      recurrent_surgical_context_auto_rendered: false
+      posterior_claim_authority_allowed: false
+      MDI_claim_authority_allowed: false
+      elapsed_time_only_progression_allowed: false
+
+  recurrent_traumatic_anterior_requires_management_context:
+    route_id: glenohumeral_instability_dislocation
+    scenarios:
+      - input: {direction: anterior, cause: traumatic, recurrence: recurrent, management_context: not_stated}
+        expected: {evidence_aware_sequence_allowed: false, reason: recurrent_management_context_required}
+      - input: {direction: anterior, cause: traumatic, recurrence: recurrent, management_context: preoperative_or_selected_rehabilitation}
+        expected:
+          evidence_profile_id: rep_shoulder_instability_anterior_traumatic_v1
+          rehabilitation_sequence_id: seq_shoulder_instability_anterior_traumatic_v1
+          recurrent_rehabilitation_claim_allowed: true
+          rehabilitation_may_be_represented_as_definitive_stability_treatment: false
+          recurrent_surgical_context_remains_visible_to_clinician: true
+
+  anterior_instability_RTS_is_conservative_context_only:
+    route_id: glenohumeral_instability_dislocation
+    claim_id: anterior_shoulder_instability_RTS_criteria
+    scenarios:
+      - input: {management_context: conservative, return_to_sport_goal: true}
+        expected: {claim_applicable: true}
+      - input: {management_context: postoperative, return_to_sport_goal: true}
+        expected: {claim_applicable: false, postoperative_route_required: true}
+
+  posterior_nonoperative_must_not_use_postoperative_partII_RTS:
+    route_id: glenohumeral_instability_dislocation
+    input: {direction: posterior, management_context: explicit_nonoperative_management_decision, return_to_sport_goal: true}
+    expected:
+      evidence_profile_id: rep_shoulder_instability_posterior_v1
+      rehabilitation_sequence_id: seq_shoulder_instability_posterior_nonoperative_v1
+      posterior_shoulder_instability_RTS_consensus_resolves_as_nonoperative_authority: false
+      posterior_partII_source_may_authorize_nonoperative_RTS: false
+      nonoperative_current_concepts_return_readiness_may_be_used: true
+      postoperative_route_not_auto_selected: true
+
+  atraumatic_anterior_instability_branch:
+    route_id: glenohumeral_instability_dislocation
+    input: {direction: anterior, cause: atraumatic, management_context: explicit_nonoperative_management_decision}
+    expected:
+      evidence_profile_id: rep_shoulder_instability_anterior_atraumatic_v1
+      rehabilitation_sequence_id: seq_shoulder_instability_anterior_atraumatic_v1
+      traumatic_ESSKA_dislocation_claims_allowed: false
+      direction_specific_motor_control_framework_allowed: true
+      universal_numeric_threshold_allowed: false
+
+  multidirectional_instability_no_false_efficacy_claim:
+    route_id: glenohumeral_instability_dislocation
+    input: {direction: multidirectional, management_context: explicit_nonoperative_management_decision, formal_MDI_diagnosis_asserted: true}
+    expected:
+      evidence_profile_id: rep_shoulder_instability_multidirectional_v1
+      rehabilitation_sequence_id: seq_shoulder_instability_multidirectional_v1
+      efficacy_claim_id: mdi_exercise_efficacy_uncertain_cochrane_2026
+      efficacy_recommendation_direction: insufficient_evidence
+      efficacy_certainty: not_applicable
+      false_very_low_effect_estimate_generated: false
+      cautious_nonoperative_framework_allowed: true
+      comparative_benefit_claim_generated: false
+      numeric_progression_or_RTS_threshold_generated: false
+
+  instability_unresolved_direction_or_management_blocks_sequence:
+    route_id: glenohumeral_instability_dislocation
+    scenarios:
+      - input: {direction: not_stated, cause: traumatic, management_context: conservative}
+        expected: {evidence_aware_sequence_allowed: false, reason: direction_required_for_evidence_applicability}
+      - input: {direction: posterior, cause: not_stated, management_context: not_stated}
+        expected: {evidence_aware_sequence_allowed: false, reason: management_context_required}
+      - input: {direction: multidirectional, management_context: postoperative}
+        expected: {evidence_aware_sequence_allowed: false, postoperative_route_required: true}
+
+  ghoa_nonoperative_no_false_specific_superiority:
+    route_id: glenohumeral_osteoarthritis
+    input:
+      clinician_established_primary_GHOA: true
+      management_context: nonoperative
+      patient_priority: reach_overhead_with_less_pain
+    expected:
+      evidence_profile_id: rep_glenohumeral_oa_nonoperative_v1
+      rehabilitation_sequence_id: seq_glenohumeral_oa_nonoperative_v1
+      best_practice_claim_ids: [ghoa_nonoperative_PT_best_practice_2023, ghoa_individualized_PT_selection_2023]
+      named_specific_exercise_or_manual_technique_claimed_superior: false
+      fixed_frequency_or_course_duration_generated: false
+      universal_numeric_progression_threshold_generated: false
+      comparative_efficacy_claim_generated_from_2026_SR: false
+      evidence_gap_visible_to_clinician: true
+
+  ghoa_nonoperative_RCT_gap_not_relabelled_low_certainty_effect:
+    route_id: glenohumeral_osteoarthritis
+    claim_id: ghoa_nonoperative_RCT_gap_2026
+    expected:
+      recommendation_direction: insufficient_evidence
+      certainty: not_applicable
+      no_nonsurgical_PT_RCTs_through_review_search: true
+      false_low_or_very_low_effect_estimate_generated: false
+
+  ghoa_preoperative_vs_postoperative_owner_boundary:
+    route_id: glenohumeral_osteoarthritis
+    scenarios:
+      - input: {management_context: preoperative_TSA}
+        expected:
+          evidence_profile_id: rep_glenohumeral_oa_preop_TSA_v1
+          rehabilitation_sequence_id: seq_glenohumeral_oa_preop_TSA_v1
+          postoperative_TSA_protocol_auto_imported: false
+          preoperative_specific_protocol_invented: false
+      - input: {management_context: postoperative_arthroplasty}
+        expected:
+          evidence_aware_GHOA_nonoperative_or_preop_sequence_allowed: false
+          postoperative_route_required: true
+          patient_specific_protocol_precedence_required: true
+
+  ghoa_management_context_missing_blocks_profile_selection:
+    route_id: glenohumeral_osteoarthritis
+    input: {clinician_established_primary_GHOA: true, management_context: not_stated}
+    expected:
+      evidence_aware_sequence_allowed: false
+      route_history_prompt_required: ghoa_management_context
+      generic_shoulder_OA_sequence_fallback_allowed: false
+
+  degenerative_meniscus_common_nonoperative_first_line:
+    route_id: degenerative_meniscal_lesion_conservative_rehabilitation
+    input:
+      symptomatic_degenerative_meniscal_lesion: true
+      MRI_established_tear: true
+      true_locking: false
+      unresolved_structural_surgical_indication: false
+      postoperative: false
+    expected:
+      evidence_profile_id: rep_degenerative_meniscus_conservative_v1
+      rehabilitation_sequence_id: seq_degenerative_meniscus_conservative_v1
+      first_line_claim_id: degenerative_meniscus_PT_first_line_A
+      progressive_rehab_claim_id: degenerative_meniscus_progressive_rehab_components_B
+      MRI_tear_alone_triggers_surgery_logic: false
+      surgery_timeline_used_as_routine_progression: false
+      criterion_based_progression_used: true
+      generic_knee_rehab_fallback_allowed: false
+
+  degenerative_meniscus_true_locking_blocks_routine_sequence:
+    route_id: degenerative_meniscal_lesion_conservative_rehabilitation
+    input:
+      symptomatic_degenerative_meniscal_lesion: true
+      true_locking: true
+      clicking_or_catching_only: false
+    expected:
+      evidence_aware_routine_sequence_allowed: false
+      orthopaedic_reassessment_required: true
+      reason: true_locking_or_unresolved_structural_surgical_indication
+      clicking_catching_equated_with_true_locking: false
+      acute_meniscus_claims_auto_substituted: false
+
+  degenerative_meniscus_postoperative_and_acute_owner_boundaries:
+    route_id: degenerative_meniscal_lesion_conservative_rehabilitation
+    scenarios:
+      - input: {postoperative: true, procedure: partial_meniscectomy}
+        expected:
+          degenerative_conservative_sequence_allowed: false
+          postoperative_knee_rehabilitation_required: true
+      - input: {acute_traumatic_injury: true}
+        expected:
+          degenerative_conservative_sequence_allowed: false
+          acute_isolated_meniscal_route_requires_its_own_applicability_check: true
+
+  degenerative_meniscus_persistent_symptoms_trigger_reassessment:
+    route_id: degenerative_meniscal_lesion_conservative_rehabilitation
+    input:
+      persistent_pain: true
+      recurrent_effusion: true
+      rehabilitation_milestones_not_met: true
+    expected:
+      applicable_safety_claim_ids:
+        - degenerative_meniscus_reassessment_mechanical_symptoms_C
+        - degenerative_meniscus_milestone_failure_reassessment_D
+      indefinite_routine_progression_allowed: false
+      orthopaedic_reassessment_required: true
+
+  patellar_tendinopathy_no_mandatory_loading_mode:
+    route_id: patellar_tendinopathy
+    input:
+      conservative_rehabilitation_selected: true
+      formal_patellar_tendinopathy_diagnosis: true
+      return_to_sport_goal: true
+    expected:
+      evidence_profile_id: rep_patellar_tendinopathy_v1
+      rehabilitation_sequence_id: seq_patellar_tendinopathy_v1
+      required_claim_id: patellar_progressive_loading_conservative_direction
+      eccentric_mandatory: false
+      HSR_mandatory: false
+      isometric_mandatory: false
+      PTLE_mandatory: false
+      loading_mode_is_therapist_execution_detail: true
+      comparative_hierarchy_claimed: false
+
+  patellar_tendinopathy_absolute_effect_uncertainty_visible:
+    route_id: patellar_tendinopathy
+    expected:
+      clinician_ui_claim_id: patellar_absolute_strengthening_effect_uncertain_2025
+      false_high_certainty_exercise_effect_claim_generated: false
+      Cochrane_uncertainty_preserved: true
+      loading_rehabilitation_direction_may_still_be_described_cautiously: true
+
+  patellar_tendinopathy_no_numeric_RTS_or_pain_threshold_invention:
+    route_id: patellar_tendinopathy
+    input:
+      return_to_sport_goal: true
+      prior_expert_protocol_available_in_literature: true
+    expected:
+      clinician_ui_claim_id: patellar_RTS_threshold_gap
+      universal_numeric_pain_threshold_auto_rendered: false
+      universal_strength_percentage_auto_rendered: false
+      universal_week_based_RTS_clearance_auto_rendered: false
+      elapsed_time_only_progression_allowed: false
+      individualized_load_response_progression_claim_id: patellar_loading_progression_by_response
+
+  patellar_tendinopathy_ESWT_not_default:
+    route_id: patellar_tendinopathy
+    input: {clinician_selected_ESWT: false}
+    expected:
+      claim_id: patellar_ESWT_no_clear_added_benefit_2021
+      ESWT_auto_recommended: false
+      ESWT_claimed_superior_to_exercise: false
+      progressive_loading_direction_remains_primary_referral_content: true
+
+  thumb_cmc1_core_conservative_route:
+    route_id: thumb_cmc1_osteoarthritis
+    input:
+      clinician_established_thumb_cmc1_OA: true
+      painful_key_pinch: true
+      prior_orthosis: not_stated
+    expected:
+      evidence_profile_id: rep_thumb_cmc1_oa_v1
+      rehabilitation_sequence_id: seq_thumb_cmc1_oa_v1
+      required_core_claim_ids:
+        - thumb_cmc_eular_education_joint_protection_A
+        - thumb_cmc_eular_exercise_A
+        - thumb_cmc_acr_exercise_strong
+      orthosis_may_be_considered: true
+      orthosis_auto_mandatory_in_every_referral: false
+      structural_reversal_promise_generated: false
+      fixed_exercise_programme_generated: false
+
+  thumb_cmc1_orthosis_type_and_duration_not_mandatory:
+    route_id: thumb_cmc1_osteoarthritis
+    input:
+      orthosis_clinically_appropriate: true
+    expected:
+      referral_core_claim_ids: [thumb_cmc_eular_orthosis_A, thumb_cmc_acr_orthosis_strong]
+      therapist_execution_claim_ids:
+        - thumb_cmc_rigid_cmcmp_mediumterm_signal_2025
+        - thumb_cmc_orthosis_type_schedule_execution_detail
+      rigid_CMC_MCP_auto_mandated: false
+      neoprene_auto_mandated: false
+      fixed_night_wear_schedule_auto_generated: false
+      EULAR_long_term_use_converted_to_fixed_PT_course_duration: false
+
+  thumb_cmc1_assessment_not_progression_regression:
+    route_id: thumb_cmc1_osteoarthritis
+    claim_id: thumb_cmc_assessment_measures_consensus
+    expected:
+      claim_domain: examination
+      claim_output_scope: clinician_ui_only
+      pain_ROM_grip_pinch_PROM_are_validated_progression_thresholds: false
+      rehabilitation_sequence_progression_criteria_count: 0
+      invented_numeric_progression_threshold: false
+
+  thumb_cmc1_does_not_authorize_interphalangeal_OA:
+    compared_routes:
+      - {route_id: thumb_cmc1_osteoarthritis, profile_id: rep_thumb_cmc1_oa_v1}
+      - {route_id: interphalangeal_hand_osteoarthritis}
+    attempted_claim_ids:
+      - thumb_cmc_eular_orthosis_A
+      - thumb_cmc_acr_orthosis_strong
+      - thumb_cmc_rigid_cmcmp_mediumterm_signal_2025
+    expected:
+      CMC1_specific_claims_authorize_interphalangeal_output: false
+      generic_cross_hand_OA_sequence_fallback_allowed: false
+      separate_interphalangeal_route_review_required: true
+
+  thumb_cmc1_radiograph_not_symptom_attribution:
+    route_id: thumb_cmc1_osteoarthritis
+    input:
+      radiographic_CMC1_OA: true
+      clinician_symptom_attribution: not_stated
+    expected:
+      definitive_all_symptoms_from_CMC1_generated: false
+      radiograph_alone_satisfies_clinician_established_symptomatic_route: false
+      symptom_and_clinician_context_required: true
+
+readiness:
+  fixture_catalog_created: true
+  fixtures_fully_executable: false
+  newly_reviewed_route_fixtures:
+    - calcific_rotator_cuff_tendinopathy
+    - glenohumeral_instability_dislocation
+    - glenohumeral_osteoarthritis
+    - degenerative_meniscal_lesion_conservative_rehabilitation
+    - patellar_tendinopathy
+    - thumb_cmc1_osteoarthritis
+  blockers:
+    - remaining_route_profiles_and_sequences_not_curated
+    - runtime_validator_not_authorized
+    - route_specific_prompt_catalog_incomplete

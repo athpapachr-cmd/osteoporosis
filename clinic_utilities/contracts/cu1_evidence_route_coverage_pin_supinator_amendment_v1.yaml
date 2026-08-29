@@ -1,0 +1,51 @@
+version: cu1_evidence_route_coverage_pin_supinator_amendment_v1
+status: reviewed_route_activation_amendment_active
+runtime_authorized: false
+reviewed_on: 2026-08-29
+review_record: clinic_utilities/contracts/CU1_PIN_SUPINATOR_ROUTE_REVIEW_2026-08-29.md
+applies_after:
+  - pin_supinator_route_coverage_extension
+
+purpose: >-
+  Narrow activation-time corrections for the PIN/supinator route extension. The pain-only/radial-tunnel
+  mismatch profile must not carry a motor-localization safety claim whose applicability requires a material
+  PIN-pattern motor deficit. Two verified bibliographic identity corrections are also applied without changing
+  evidence scope, recommendation direction or strength. The amendment does not broaden evidence, create a
+  rehabilitation sequence, or alter the frozen elbow taxonomy.
+
+source_metadata_amendments:
+  pin_interventions_sr_2006:
+    authors_or_organization: Huisstede BMA, Miedema HS, van Opstal T, de Ronde MTM, Kuiper JI, Verhaar JAN, Koes BW
+    year_or_version: 2006
+    reference: "J Peripher Nerv Syst. 2006;11(2):101-110"
+    doi_optional: 10.1111/j.1085-9489.2006.00074.x
+    amendment_reason: >-
+      Verified against PubMed PMID 16787507 and publisher metadata; the initial curation draft carried an
+      incorrect journal/page transcription. This is source-identity correction only.
+
+  pin_edx_review_2013:
+    authors_or_organization: Bevelaqua AC, Hayter CL, Feinberg JH, Rodeo SA
+    year_or_version: 2012
+    reference: "HSS J. 2012;8(2):184-189"
+    doi_optional: 10.1007/s11420-011-9238-8
+    amendment_reason: >-
+      Verified against PubMed PMID 23874261. The article issue year is 2012; the evidence ID is retained to
+      avoid identity churn during pre-activation curation, while normative metadata resolves to the verified year.
+
+route_evidence_profile_amendments:
+  rep_pin_pain_only_or_radial_tunnel_mismatch_v1:
+    safety_claim_ids: []
+    amendment_reason: >-
+      The profile already resolves the pain-predominant/radial-tunnel mismatch through the dedicated
+      differential claim. pin_alternative_localization_motor_differential is scoped to actual motor-deficit
+      presentations and must not be referenced by a pain-only profile.
+
+validation_assertions:
+  pain_only_profile_has_no_motor_deficit_only_safety_claim: true
+  source_identity_corrections_do_not_change_clinical_scope: true
+  pin_interventions_2006_journal_and_DOI_verified: true
+  pin_edx_review_issue_year_and_citation_verified: true
+  no_rehabilitation_sequence_created: true
+  no_evidence_scope_broadened: true
+  frozen_route_taxonomy_unchanged: true
+  runtime_authorized: false

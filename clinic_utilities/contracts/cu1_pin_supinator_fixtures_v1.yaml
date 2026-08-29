@@ -1,0 +1,219 @@
+version: cu1_pin_supinator_fixtures_v1
+status: normative_design_regression_oracle_active
+runtime_authorized: false
+route_id: posterior_interosseous_nerve_supinator_syndrome
+reviewed_on: 2026-08-29
+
+purpose: >-
+  Regression oracle for posterior-interosseous-nerve/supinator evidence governance. The fixtures preserve
+  motor-presentation-vs-diagnosis separation, pain-predominant radial-tunnel boundaries, spontaneous-vs-compressive
+  etiologic scope, motor-safety escalation, alternative localization, and the explicit absence of a validated
+  route-specific physiotherapy sequence.
+
+fixtures:
+  - fixture_id: pin_pain_only_radial_tunnel_pattern_does_not_become_motor_PIN
+    given:
+      route_id: posterior_interosseous_nerve_supinator_syndrome
+      symptoms: [proximal_dorsal_radial_forearm_pain]
+      objective_PIN_motor_status: assessed_no_material_motor_deficit
+      radial_tunnel_provocation: positive
+      formal_pin_supinator_syndrome_diagnosis: not_stated
+    expect:
+      route_evidence_profile_id: rep_pin_pain_only_or_radial_tunnel_mismatch_v1
+      rehabilitation_sequence_id: null
+      must_apply_boundary_claim: pin_pain_predominant_radial_tunnel_not_motor_PIN_authority
+      must_not_generate_formal_PIN_diagnosis: true
+      must_not_import_PIN_motor_rehabilitation_authority: true
+      must_preserve_blocked_evidence_gap: true
+
+  - fixture_id: pin_motor_pattern_supports_localization_but_not_formal_diagnosis
+    given:
+      route_id: posterior_interosseous_nerve_supinator_syndrome
+      findings: [finger_extension_weakness, thumb_extension_weakness, preserved_wrist_extension]
+      formal_pin_supinator_syndrome_diagnosis: not_stated
+      etiology_localization_status: unresolved
+    expect:
+      route_evidence_profile_id: rep_pin_motor_presentation_unresolved_v1
+      rehabilitation_sequence_id: null
+      must_apply_boundary_claim: pin_motor_pattern_supports_localization_not_autodiagnosis
+      must_not_generate_formal_PIN_diagnosis: true
+      must_not_infer_supinator_or_arcade_of_Frohse_compression: true
+      must_preserve_blocked_evidence_gap: true
+
+  - fixture_id: pin_not_assessed_motor_status_does_not_become_normal_or_pain_only
+    given:
+      route_id: posterior_interosseous_nerve_supinator_syndrome
+      symptoms: [lateral_forearm_discomfort]
+      objective_PIN_motor_status: not_assessed
+      formal_pin_supinator_syndrome_diagnosis: not_stated
+    expect:
+      rehabilitation_sequence_id: null
+      must_not_infer_no_motor_deficit: true
+      must_not_infer_pain_only_radial_tunnel_classification: true
+      must_not_infer_formal_PIN_diagnosis: true
+      must_require_clarification_or_correct_profile_resolution: true
+
+  - fixture_id: pin_established_spontaneous_noncompressive_context_has_management_signal_not_PT_sequence
+    given:
+      route_id: posterior_interosseous_nerve_supinator_syndrome
+      formal_pin_supinator_syndrome_diagnosis: yes
+      clinician_established_context: spontaneous_PIN_palsy
+      trauma: no
+      demonstrable_external_compression_or_entrapment: no
+      space_occupying_lesion: no
+      progressive_motor_worsening: no
+    expect:
+      route_evidence_profile_id: rep_pin_spontaneous_noncompressive_established_v1
+      rehabilitation_sequence_id: null
+      must_allow_context_claim: pin_spontaneous_conservative_management_context_2026
+      must_apply_context_claim: pin_no_validated_route_specific_physio_sequence
+      must_not_convert_conservative_management_into_specific_PT_protocol: true
+      must_preserve_blocked_evidence_gap: true
+
+  - fixture_id: pin_2026_six_month_signal_not_universal_PT_course_or_surgical_threshold
+    given:
+      route_id: posterior_interosseous_nerve_supinator_syndrome
+      formal_pin_supinator_syndrome_diagnosis: yes
+      clinician_established_context: spontaneous_noncompressive_PIN_palsy
+      months_since_onset: 6
+    expect:
+      must_apply_context_claim: pin_progressive_or_nonrecovering_motor_reassessment
+      must_not_generate_automatic_surgery_decision: true
+      must_not_generate_fixed_six_month_PT_course: true
+      must_not_generate_elapsed_time_only_progression_rule: true
+      must_preserve_source_population_scope: spontaneous_nontraumatic_noncompressive_PIN_palsy
+
+  - fixture_id: pin_known_compressive_lesion_is_not_spontaneous_conservative_context
+    given:
+      route_id: posterior_interosseous_nerve_supinator_syndrome
+      formal_pin_supinator_syndrome_diagnosis: yes
+      demonstrable_compression_or_entrapment: yes
+      compression_site: supinator_or_arcade_of_Frohse
+    expect:
+      route_evidence_profile_id: rep_pin_compressive_structural_or_progressive_v1
+      rehabilitation_sequence_id: null
+      must_apply_authority: pin_known_compression_or_structural_cause_correct_owner
+      must_not_apply_authority: pin_spontaneous_conservative_management_context_2026
+      must_route_to_clinician_or_specialist_management: true
+      must_not_create_generic_PIN_PT_sequence: true
+
+  - fixture_id: pin_mass_or_space_occupying_lesion_is_structural_owner
+    given:
+      route_id: posterior_interosseous_nerve_supinator_syndrome
+      structural_context: space_occupying_lesion
+      objective_PIN_motor_deficit: present
+    expect:
+      route_evidence_profile_id: rep_pin_compressive_structural_or_progressive_v1
+      rehabilitation_sequence_id: null
+      must_apply_authority: pin_known_compression_or_structural_cause_correct_owner
+      must_not_treat_as_spontaneous_noncompressive_palsy: true
+      must_not_fall_back_to_LET_or_generic_elbow_rehabilitation: true
+
+  - fixture_id: pin_traumatic_or_iatrogenic_context_routes_to_correct_owner
+    given:
+      route_id: posterior_interosseous_nerve_supinator_syndrome
+      context: [material_trauma_or_fracture, recent_procedure_or_iatrogenic_injury]
+      objective_PIN_motor_deficit: present
+    expect:
+      route_evidence_profile_id: rep_pin_compressive_structural_or_progressive_v1
+      rehabilitation_sequence_id: null
+      must_apply_authority: pin_known_compression_or_structural_cause_correct_owner
+      must_not_apply_spontaneous_2026_management_course_as_route_default: true
+      patient_specific_structural_or_postoperative_restrictions_take_precedence_if_present: true
+
+  - fixture_id: pin_progressive_motor_weakness_requires_reassessment_not_rehab_progression
+    given:
+      route_id: posterior_interosseous_nerve_supinator_syndrome
+      findings: [progressive_finger_extension_weakness, progressive_thumb_extension_weakness]
+    expect:
+      route_evidence_profile_id: rep_pin_compressive_structural_or_progressive_v1
+      rehabilitation_sequence_id: null
+      must_apply_authority: pin_progressive_or_nonrecovering_motor_reassessment
+      must_route_to_clinician_or_specialist_reassessment: true
+      must_not_generate_autonomous_surgical_threshold_or_procedure: true
+
+  - fixture_id: pin_sensory_deficit_or_proximal_pattern_keeps_alternative_localization_open
+    given:
+      route_id: posterior_interosseous_nerve_supinator_syndrome
+      findings: [finger_extension_weakness, objective_sensory_deficit]
+      alternative_context: [possible_proximal_radial_neuropathy_or_cervical_or_plexus]
+    expect:
+      rehabilitation_sequence_id: null
+      must_apply_context_claim: pin_alternative_localization_motor_differential
+      must_not_label_isolated_PIN_lesion_as_settled: true
+      must_not_silently_exclude_proximal_localization: true
+      must_route_to_correct_owner_or_diagnostic_reassessment: true
+
+  - fixture_id: pin_selective_motor_weakness_does_not_silently_exclude_multifocal_motor_neuropathy
+    given:
+      route_id: posterior_interosseous_nerve_supinator_syndrome
+      findings: [selective_radial_pattern_motor_weakness]
+      formal_pin_supinator_syndrome_diagnosis: not_stated
+    expect:
+      must_apply_context_claim: pin_alternative_localization_motor_differential
+      must_not_silently_exclude_multifocal_motor_neuropathy: true
+      electrodiagnostic_localization_may_be_relevant: true
+      must_not_generate_formal_PIN_diagnosis_from_motor_pattern_alone: true
+
+  - fixture_id: pin_edx_or_ultrasound_localization_does_not_define_rehabilitation_protocol
+    given:
+      route_id: posterior_interosseous_nerve_supinator_syndrome
+      investigation_context: [EMG_NCS_localizes_PIN, ultrasound_abnormality]
+    expect:
+      may_support_localization_context: true
+      must_not_convert_investigation_into_automatic_specific_etiology_without_documented_support: true
+      must_not_generate_PT_protocol_from_diagnostic_test: true
+      must_not_generate_progression_threshold_from_EDX_or_imaging: true
+
+  - fixture_id: pin_no_auto_nerve_gliding_splint_manual_or_electrical_programme
+    given:
+      route_id: posterior_interosseous_nerve_supinator_syndrome
+      clinician_selected_adjuncts: []
+    expect:
+      must_apply_context_claim: pin_no_auto_gliding_splint_manual_or_electrical_protocol
+      must_not_auto_render_nerve_gliding: true
+      must_not_auto_render_splinting: true
+      must_not_auto_render_manual_therapy: true
+      must_not_auto_render_electrical_stimulation: true
+      must_not_claim_superior_PIN_physiotherapy_method: true
+
+  - fixture_id: pin_formal_diagnosis_yes_does_not_infer_etiology_or_entrapment_site
+    given:
+      route_id: posterior_interosseous_nerve_supinator_syndrome
+      formal_pin_supinator_syndrome_diagnosis: yes
+      etiology: not_stated
+      compression_site: not_stated
+    expect:
+      rehabilitation_sequence_id: null
+      must_not_infer_spontaneous_noncompressive_context: true
+      must_not_infer_supinator_entrapment: true
+      must_not_infer_arcade_of_Frohse_compression: true
+      must_preserve_etiology_uncertainty: true
+
+  - fixture_id: pin_missing_history_remains_missing
+    given:
+      route_id: posterior_interosseous_nerve_supinator_syndrome
+      history_fields_supplied: []
+    expect:
+      must_not_infer_no_trauma: true
+      must_not_infer_no_iatrogenic_context: true
+      must_not_infer_no_mass_or_compression: true
+      must_not_infer_no_motor_progression: true
+      must_not_infer_normal_sensory_status: true
+      must_not_infer_spontaneous_noncompressive_etiology: true
+
+validation_assertions:
+  route_scope_only: true
+  pain_only_radial_tunnel_does_not_become_motor_PIN: true
+  objective_motor_pattern_does_not_create_formal_diagnosis: true
+  formal_diagnosis_does_not_create_etiology_or_compression_site: true
+  not_assessed_motor_status_does_not_become_normal: true
+  spontaneous_2026_management_signal_not_relabelled_as_PT_protocol: true
+  six_month_source_specific_decision_point_not_universalized: true
+  compressive_structural_traumatic_iatrogenic_contexts_fail_closed: true
+  progressive_motor_context_requires_reassessment: true
+  alternative_localization_and_MMN_remain_open_when_relevant: true
+  no_auto_nerve_gliding_splint_manual_or_electrical_protocol: true
+  no_generic_LET_elbow_or_peripheral_nerve_fallback: true
+  no_numeric_progression_or_fixed_PT_course_invented: true
+  runtime_authorized: false

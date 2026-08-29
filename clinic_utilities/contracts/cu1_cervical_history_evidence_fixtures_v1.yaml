@@ -1,0 +1,244 @@
+version: cu1_cervical_history_evidence_fixtures_v1_2
+status: design_oracle_extension_pending_full_cervical_coverage
+runtime_authorized: false
+normative_schema: cu1_history_timeline_schema_v1.yaml
+evidence_manifest: cu1_evidence_manifest_v1.yaml
+
+fixture_policy:
+  - fixtures_test_semantics_not_runtime_formatter_implementation
+  - missing_fields_do_not_become_negative_history_or_reassuring_findings
+  - route_or_context_mismatch_is_hard_failure
+  - no_generic_cervical_or_MSK_fallback
+  - older_classification_specific_guidance_must_not_override_newer_generic_route_scope_without_matching_context
+  - disease_specific_evidence_must_not_auto_expand_to_broader_symptom_presentation
+  - clinician_ui_only_and_therapist_execution_detail_do_not_auto_render_as_referral_core
+  - no_fixture_may_authorize_runtime_evidence_generation
+
+fixtures:
+  c1_nonspecific_neck_activation_core:
+    route_id: nonspecific_neck_pain
+    input:
+      structural_cause_or_red_flag_identified: false
+      radiating_upper_limb_symptoms: false
+      headache_dominant_cervical_presentation: false
+      dizziness_presentation: false
+      post_traumatic_context: false
+      course: chronic
+    expected:
+      evidence_profile_id: rep_nonspecific_neck_pain_v1
+      rehabilitation_sequence_id: seq_nonspecific_neck_pain_v1
+      required_core_claim_ids:
+        - nsnp_physical_activity_activation_A
+        - nsnp_patient_education_B
+        - nsnp_chronic_exercise_A
+      activation_self_management_remains_core: true
+      fixed_exercise_type_generated: false
+      fixed_exercise_dose_generated: false
+      universal_numeric_progression_threshold_generated: false
+      fixed_PT_frequency_or_course_duration_generated: false
+
+  c1_acute_exercise_not_relabelled_high_certainty:
+    route_id: nonspecific_neck_pain
+    input:
+      structural_cause_or_red_flag_identified: false
+      course: acute
+    expected:
+      evidence_profile_id: rep_nonspecific_neck_pain_v1
+      applicable_claim_id: nsnp_acute_exercise_consensus
+      acute_exercise_position_labelled_expert_consensus: true
+      acute_exercise_relabelled_as_high_certainty_effect_estimate: false
+      activation_claim_id: nsnp_physical_activity_activation_A
+
+  c1_manual_therapy_optional_not_mandatory:
+    route_id: nonspecific_neck_pain
+    scenarios:
+      - input: {manual_therapy_selected_as_adjunct: false, course: chronic}
+        expected:
+          manual_therapy_auto_rendered: false
+          activation_self_management_remains_core: true
+      - input: {manual_therapy_selected_as_adjunct: true, course: chronic}
+        expected:
+          manual_therapy_claim_id: nsnp_manual_mobilization_optional
+          manual_therapy_may_be_rendered_as_selected_adjunct: true
+          manual_therapy_rendered_as_required_core_bundle: false
+          active_rehabilitation_suppressed: false
+
+  c1_newer_generic_passive_modality_scope_prevents_old_bundle_leak:
+    route_id: nonspecific_neck_pain
+    input:
+      course: chronic
+      APTA_chronic_mobility_deficit_classification: false
+    expected:
+      generic_negative_claim_ids:
+        - nsnp_mechanical_traction_negative_2025
+        - nsnp_passive_modalities_negative_2025
+      apta_2017_mobility_deficit_bundle_auto_applied: false
+      mechanical_traction_auto_recommended: false
+      laser_auto_recommended: false
+      electrotherapy_auto_recommended: false
+      ultrasound_auto_recommended: false
+      kinesiotaping_auto_recommended: false
+
+  c1_other_cervical_route_features_block_generic_fallback:
+    route_id: nonspecific_neck_pain
+    scenarios:
+      - input: {radiating_upper_limb_symptoms: true}
+        expected: {c1_sequence_allowed_without_route_reassessment: false, C2_route_review_required: true}
+      - input: {headache_dominant_cervical_presentation: true}
+        expected: {c1_sequence_allowed_without_route_reassessment: false, C3_route_review_required: true}
+      - input: {dizziness_presentation: true}
+        expected: {c1_sequence_allowed_without_route_reassessment: false, C4_route_review_required: true}
+      - input: {post_traumatic_context: true}
+        expected: {c1_sequence_allowed_without_route_reassessment: false, C5_route_review_required: true}
+
+  c1_neurological_or_structural_concern_not_reassured_away:
+    route_id: nonspecific_neck_pain
+    scenarios:
+      - input: {progressive_objective_motor_deficit: true}
+        expected:
+          routine_c1_sequence_allowed: false
+          medical_reassessment_required: true
+          no_neurological_deficit_generated: false
+      - input: {possible_myelopathic_feature: true}
+        expected:
+          routine_c1_sequence_allowed: false
+          medical_reassessment_required: true
+      - input: {safety_screen_status: not_assessed}
+        expected:
+          no_red_flags_generated: false
+          structural_cause_excluded_generated: false
+
+  c1_reassessment_window_not_PT_course_duration:
+    route_id: nonspecific_neck_pain
+    input:
+      persistent_activity_limiting_symptoms: true
+      guideline_concordant_care: true
+    expected:
+      reassessment_claim_id: nsnp_persistent_progressive_reassessment
+      imaging_context_claim_id: nsnp_imaging_reconsideration_window_ui
+      medical_reassessment_may_be_triggered: true
+      source_defined_4_to_6_week_medical_review_window_converted_to_fixed_PT_duration: false
+      elapsed_time_only_rehabilitation_progression_allowed: false
+
+  c2_radiating_symptoms_not_formal_radiculopathy:
+    route_id: neck_pain_with_radiating_upper_limb_symptoms
+    input:
+      radiating_arm_pain: true
+      paresthesia: true
+      spurling_concordant: true
+      formal_cervical_radiculopathy_diagnosis: not_stated
+      objective_motor_status: not_assessed
+      objective_sensory_status: not_assessed
+      reflex_status: not_assessed
+    expected:
+      evidence_profile_id: rep_neck_radiating_upper_limb_v1
+      rehabilitation_sequence_id: seq_neck_radiating_upper_limb_v1
+      diagnostic_boundary_claim_id: c2_radiating_presentation_not_formal_radiculopathy
+      formal_cervical_radiculopathy_generated: false
+      positive_spurling_converted_to_diagnosis: false
+      objective_neurological_deficit_generated: false
+      not_assessed_converted_to_normal: false
+
+  c2_acute_active_rehabilitation_grade_preserved:
+    route_id: neck_pain_with_radiating_upper_limb_symptoms
+    input:
+      course: acute
+      progressive_objective_neurological_deficit: false
+      possible_cord_feature: false
+    expected:
+      evidence_profile_id: rep_neck_radiating_upper_limb_v1
+      rehabilitation_sequence_id: seq_neck_radiating_upper_limb_v1
+      active_backbone_claim_id: c2_active_rehabilitation_backbone
+      acute_claim_id: c2_acute_mobilizing_stabilizing_exercise_C
+      acute_claim_strength: C_APTA_2017
+      acute_claim_relabelled_high_certainty: false
+      fixed_exercise_dose_generated: false
+
+  c2_chronic_traction_is_selected_adjunct_not_universal:
+    route_id: neck_pain_with_radiating_upper_limb_symptoms
+    scenarios:
+      - input: {course: chronic, traction_selected_as_adjunct: false}
+        expected:
+          traction_auto_rendered: false
+          active_rehabilitation_remains_core: true
+      - input: {course: chronic, traction_selected_as_adjunct: true}
+        expected:
+          traction_claim_id: c2_apta_chronic_intermit_traction_B
+          traction_may_render_with_multimodal_active_rehabilitation: true
+          traction_rendered_as_isolated_treatment: false
+          fixed_traction_force_generated: false
+          fixed_traction_duration_generated: false
+          fixed_traction_frequency_generated: false
+
+  c2_broad_symptom_route_does_not_auto_use_radiculopathy_NMA:
+    route_id: neck_pain_with_radiating_upper_limb_symptoms
+    input:
+      radiating_arm_symptoms: true
+      formal_cervical_radiculopathy_diagnosis: not_stated
+      clinician_established_radicular_classification: false
+    expected:
+      c2_broad_route_allowed: true
+      NMA_claim_ids_auto_applicable: false
+      traction_component_NMA_auto_rendered: false
+      neurodynamic_component_NMA_auto_rendered: false
+      articular_component_NMA_auto_rendered: false
+      disease_specific_evidence_scope_expanded_to_symptom_only_case: false
+
+  c2_radiculopathy_NMA_components_not_mandatory_bundle:
+    route_id: neck_pain_with_radiating_upper_limb_symptoms
+    input:
+      formal_cervical_radiculopathy_diagnosis: true
+      clinician_selected_traction: false
+      clinician_selected_neurodynamic: false
+      clinician_selected_manual_therapy: false
+    expected:
+      clinician_ui_context_claim_id: c2_nma_combination_not_mandatory_bundle
+      NMA_promising_combination_auto_rendered_as_required_bundle: false
+      analgesic_electrotherapy_auto_mandated: false
+      traction_auto_mandated_from_NMA: false
+      neurodynamic_auto_mandated_from_NMA: false
+      manual_articular_treatment_auto_mandated_from_NMA: false
+      strengthening_may_remain_part_of_active_rehabilitation: true
+
+  c2_progressive_objective_neurological_deficit_blocks_routine_progression:
+    route_id: neck_pain_with_radiating_upper_limb_symptoms
+    input:
+      progressive_objective_motor_deficit: true
+      subjective_radiating_pain: true
+    expected:
+      evidence_aware_routine_sequence_allowed: false
+      safety_claim_id: c2_progressive_neurological_or_cord_reassessment
+      medical_reassessment_required: true
+      subjective_symptoms_equated_with_objective_deficit: false
+      routine_reassuring_wording_generated: false
+
+  c2_possible_cord_feature_blocks_routine_progression:
+    route_id: neck_pain_with_radiating_upper_limb_symptoms
+    input:
+      gait_change: true
+      upper_motor_neuron_or_possible_myelopathy_concern: true
+    expected:
+      evidence_aware_routine_sequence_allowed: false
+      medical_reassessment_required: true
+      routine_traction_or_exercise_progression_generated: false
+
+  c2_no_universal_progression_threshold:
+    route_id: neck_pain_with_radiating_upper_limb_symptoms
+    input:
+      symptoms_improving: true
+      return_to_activity_goal: true
+    expected:
+      rehabilitation_sequence_progression_criteria_count: 0
+      universal_numeric_strength_threshold_generated: false
+      universal_pain_threshold_generated: false
+      elapsed_time_only_progression_allowed: false
+      fixed_PT_course_duration_generated: false
+
+readiness:
+  cervical_fixture_extension_created: true
+  C1_matching_fixtures_complete: true
+  C2_matching_fixtures_complete: true
+  C3_matching_fixtures_complete: false
+  C4_matching_fixtures_complete: false
+  C5_matching_fixtures_complete: false
+  runtime_validator_authorized: false

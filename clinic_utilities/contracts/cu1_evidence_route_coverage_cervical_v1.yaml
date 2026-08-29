@@ -1,0 +1,363 @@
+version: cu1_evidence_route_coverage_cervical_v1
+status: active_design_authority_route_coverage_extension
+runtime_authorized: false
+reviewed_on: 2026-08-29
+normative_schema: clinic_utilities/contracts/cu1_history_timeline_schema_v1.yaml
+identity_mode: explicit_payload_id
+review_record: clinic_utilities/contracts/CU1_CERVICAL_ROUTE_REVIEW_2026-08-29.md
+
+purpose: >-
+  Native schema-conformant evidence extension for cervical routes. The first reviewed route is
+  nonspecific_neck_pain. Generic nonspecific neck pain uses the current DEGAM/AWMF S3 guideline as
+  primary route authority. The older APTA/JOSPT 2017 neck-pain CPG remains classification-specific
+  supporting context and must not automatically import its chronic mobility-deficit passive-modality
+  bundle into every nonspecific-neck-pain referral.
+
+sources:
+  nonspecific_neck_degam_awmd_2025:
+    evidence_id: nonspecific_neck_degam_awmd_2025
+    source_type: clinical_practice_guideline
+    title: Clinical Practice Guideline: Nonspecific Neck Pain
+    authors_or_organization: El-Allawy A, Hecht N, Luedtke K, Schleicher P, Weidner N, Koetter T / DEGAM-AWMF S3 guideline
+    year_or_version: 2025_S3_version_3_0
+    reference: Dtsch Arztebl Int. 2025;122(20):552-557
+    doi_optional: 10.3238/arztebl.m2025.0119
+    population_scope_optional: nonspecific neck pain without history/examination evidence of a structural cause; acute, subacute and chronic presentations addressed
+    reviewed_on: 2026-08-29
+    next_review_due: 2027-08-29
+    freshness_state: current
+    status: active
+
+  neck_pain_apta_cpg_2017:
+    evidence_id: neck_pain_apta_cpg_2017
+    source_type: clinical_practice_guideline
+    title: Neck Pain: Revision 2017
+    authors_or_organization: Blanpied PR, Gross AR, Elliott JM, Devaney LL, Clewley D, Walton DM, Sparks C, Robertson EK / Academy of Orthopaedic Physical Therapy APTA
+    year_or_version: 2017
+    reference: J Orthop Sports Phys Ther. 2017;47(7):A1-A83
+    doi_optional: 10.2519/jospt.2017.0302
+    population_scope_optional: neck pain classified as mobility deficits, movement-coordination impairments including WAD, headache/cervicogenic headache, or radiating/radicular pain
+    reviewed_on: 2026-08-29
+    next_review_due: 2027-02-28
+    freshness_state: current
+    status: active
+    note: APTA Orthopedics still lists this as the published Neck Pain CPG at review date; shortened review interval because the evidence search underlying the guideline is older and newer route-specific guidance exists.
+
+  neck_manual_exercise_cochrane_2025:
+    evidence_id: neck_manual_exercise_cochrane_2025
+    source_type: systematic_review
+    title: Manual therapy with exercise for neck pain
+    authors_or_organization: Cochrane Back and Neck Group
+    year_or_version: 2025
+    reference: Cochrane Database Syst Rev. 2025;12:CD011225
+    doi_optional: 10.1002/14651858.CD011225.pub2
+    population_scope_optional: adults with neck pain; evidence predominantly chronic; manual therapy combined with exercise compared with placebo, no treatment or other care
+    reviewed_on: 2026-08-29
+    next_review_due: 2027-08-29
+    freshness_state: current
+    status: active
+
+claims:
+  nsnp_physical_activity_activation_A:
+    claim_id: nsnp_physical_activity_activation_A
+    evidence_ids: [nonspecific_neck_degam_awmd_2025]
+    applicable_route_evidence_profile_ids: [rep_nonspecific_neck_pain_v1]
+    applicable_route_ids: [nonspecific_neck_pain]
+    domain: core_rehabilitation
+    claim_summary: Physical activity and activating self-management should be central to nonspecific neck-pain care when history and examination do not indicate a structural cause.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    strength_optional: A_DEGAM
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  nsnp_chronic_exercise_A:
+    claim_id: nsnp_chronic_exercise_A
+    evidence_ids: [nonspecific_neck_degam_awmd_2025]
+    applicable_route_evidence_profile_ids: [rep_nonspecific_neck_pain_v1]
+    applicable_route_ids: [nonspecific_neck_pain]
+    applicability_conditions_optional: [chronic_nonspecific_neck_pain]
+    domain: core_rehabilitation
+    claim_summary: Exercise therapy is recommended for chronic nonspecific neck pain; available evidence does not support one universal exercise form for self-management or one physician-prescribed dose.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    strength_optional: A_DEGAM
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  nsnp_acute_exercise_consensus:
+    claim_id: nsnp_acute_exercise_consensus
+    evidence_ids: [nonspecific_neck_degam_awmd_2025]
+    applicable_route_evidence_profile_ids: [rep_nonspecific_neck_pain_v1]
+    applicable_route_ids: [nonspecific_neck_pain]
+    applicability_conditions_optional: [acute_nonspecific_neck_pain]
+    domain: core_rehabilitation
+    claim_summary: Exercise therapy may be offered in acute nonspecific neck pain as an activating treatment, but this specific acute recommendation is expert consensus rather than a graded comparative treatment-effect recommendation.
+    recommendation_direction: consider
+    output_scope: referral_core
+    strength_optional: expert_consensus
+    certainty_optional: not_applicable
+    reviewed_on: 2026-08-29
+
+  nsnp_patient_education_B:
+    claim_id: nsnp_patient_education_B
+    evidence_ids: [nonspecific_neck_degam_awmd_2025]
+    applicable_route_evidence_profile_ids: [rep_nonspecific_neck_pain_v1]
+    applicable_route_ids: [nonspecific_neck_pain]
+    domain: core_rehabilitation
+    claim_summary: Patient education is recommended in acute and chronic nonspecific neck pain to support understanding, activity and self-management.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    strength_optional: B_DEGAM
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  nsnp_manual_mobilization_optional:
+    claim_id: nsnp_manual_mobilization_optional
+    evidence_ids: [nonspecific_neck_degam_awmd_2025, neck_manual_exercise_cochrane_2025]
+    applicable_route_evidence_profile_ids: [rep_nonspecific_neck_pain_v1]
+    applicable_route_ids: [nonspecific_neck_pain]
+    applicability_conditions_optional: [manual_therapy_selected_as_adjunct]
+    domain: adjunct
+    claim_summary: Mobilization or manipulation may be offered as an adjunct in nonspecific neck pain, but passive treatment must not replace activation/self-management and current evidence does not justify making manual therapy mandatory in every referral.
+    recommendation_direction: may_consider
+    output_scope: referral_core
+    strength_optional: zero_DEGAM
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  nsnp_soft_tissue_chronic_only_with_activation:
+    claim_id: nsnp_soft_tissue_chronic_only_with_activation
+    evidence_ids: [nonspecific_neck_degam_awmd_2025]
+    applicable_route_evidence_profile_ids: [rep_nonspecific_neck_pain_v1]
+    applicable_route_ids: [nonspecific_neck_pain]
+    applicability_conditions_optional: [chronic_nonspecific_neck_pain, soft_tissue_adjunct_selected]
+    domain: adjunct
+    claim_summary: Soft-tissue treatment may be offered for chronic nonspecific neck pain only in combination with activating methods and should not become the core rehabilitation strategy.
+    recommendation_direction: may_consider
+    output_scope: referral_core
+    strength_optional: zero_DEGAM
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  nsnp_immobilization_do_not_recommend:
+    claim_id: nsnp_immobilization_do_not_recommend
+    evidence_ids: [nonspecific_neck_degam_awmd_2025]
+    applicable_route_evidence_profile_ids: [rep_nonspecific_neck_pain_v1]
+    applicable_route_ids: [nonspecific_neck_pain]
+    domain: safety
+    claim_summary: Routine immobilization should not be recommended for nonspecific neck pain because it conflicts with the guideline's activating treatment strategy and may promote medicalization and deconditioning.
+    recommendation_direction: do_not_offer
+    output_scope: clinician_ui_only
+    strength_optional: expert_consensus
+    certainty_optional: not_applicable
+    reviewed_on: 2026-08-29
+
+  nsnp_mechanical_traction_negative_2025:
+    claim_id: nsnp_mechanical_traction_negative_2025
+    evidence_ids: [nonspecific_neck_degam_awmd_2025]
+    applicable_route_evidence_profile_ids: [rep_nonspecific_neck_pain_v1]
+    applicable_route_ids: [nonspecific_neck_pain]
+    domain: adjunct
+    claim_summary: Mechanical traction is not recommended for generic nonspecific neck pain in the 2025 DEGAM/AWMF guideline.
+    recommendation_direction: do_not_offer
+    output_scope: clinician_ui_only
+    strength_optional: B_DEGAM_negative
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  nsnp_passive_modalities_negative_2025:
+    claim_id: nsnp_passive_modalities_negative_2025
+    evidence_ids: [nonspecific_neck_degam_awmd_2025]
+    applicable_route_evidence_profile_ids: [rep_nonspecific_neck_pain_v1]
+    applicable_route_ids: [nonspecific_neck_pain]
+    domain: adjunct
+    claim_summary: Laser therapy, electrotherapy and ultrasound are not recommended for generic nonspecific neck pain in the current DEGAM/AWMF guideline; kinesiotaping is also negatively recommended.
+    recommendation_direction: do_not_offer
+    output_scope: clinician_ui_only
+    strength_optional: B_or_consensus_DEGAM_negative
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  nsnp_apta_2017_mobility_deficit_bundle_context:
+    claim_id: nsnp_apta_2017_mobility_deficit_bundle_context
+    evidence_ids: [neck_pain_apta_cpg_2017]
+    applicable_route_evidence_profile_ids: [rep_nonspecific_neck_pain_v1]
+    applicable_route_ids: [nonspecific_neck_pain]
+    applicability_conditions_optional: [APTA_chronic_neck_pain_with_mobility_deficits_classification]
+    domain: core_rehabilitation
+    claim_summary: The 2017 APTA CPG gives a Grade-B multimodal recommendation for chronic neck pain specifically classified with mobility deficits; that bundle included manual therapy, mixed cervical/scapulothoracic exercise and selected passive modalities. Because it is classification-specific and predates the 2025 generic nonspecific-neck-pain guideline, it must not be auto-applied to every C1 referral or used to override newer negative generic recommendations for passive modalities.
+    recommendation_direction: context_only
+    output_scope: clinician_ui_only
+    strength_optional: B_APTA_2017
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  nsnp_persistent_progressive_reassessment:
+    claim_id: nsnp_persistent_progressive_reassessment
+    evidence_ids: [nonspecific_neck_degam_awmd_2025]
+    applicable_route_evidence_profile_ids: [rep_nonspecific_neck_pain_v1]
+    applicable_route_ids: [nonspecific_neck_pain]
+    domain: safety
+    claim_summary: Persistent activity-limiting or progressive neck pain despite guideline-concordant care warrants medical reassessment, with earlier reassessment when there is very severe progression or neurological deficit; this is not a routine physiotherapy-course duration rule.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    strength_optional: expert_consensus
+    certainty_optional: not_applicable
+    reviewed_on: 2026-08-29
+
+  nsnp_imaging_reconsideration_window_ui:
+    claim_id: nsnp_imaging_reconsideration_window_ui
+    evidence_ids: [nonspecific_neck_degam_awmd_2025]
+    applicable_route_evidence_profile_ids: [rep_nonspecific_neck_pain_v1]
+    applicable_route_ids: [nonspecific_neck_pain]
+    domain: execution_detail
+    claim_summary: The DEGAM/AWMF guideline discusses reconsidering imaging for persistent activity-limiting or progressive nonspecific neck pain after approximately 4-6 weeks of guideline-concordant treatment, or earlier for very severe progression/neurological deficits; this source-defined medical review window must not be converted into a fixed PT frequency or total-course duration.
+    recommendation_direction: context_only
+    output_scope: clinician_ui_only
+    strength_optional: expert_consensus
+    certainty_optional: not_applicable
+    reviewed_on: 2026-08-29
+
+route_history_prompts:
+  nsnp_duration_course:
+    prompt_id: nsnp_duration_course
+    applicable_route_ids: [nonspecific_neck_pain]
+    label_el: Διάρκεια και πορεία της αυχεναλγίας, συμπεριλαμβανομένης τυχόν προοδευτικής ή επίμονης λειτουργικής επιβάρυνσης
+    response_type: text
+    requiredness: optional
+    evidence_claim_ids_optional: [nsnp_persistent_progressive_reassessment]
+
+  nsnp_activity_posture_work_load:
+    prompt_id: nsnp_activity_posture_work_load
+    applicable_route_ids: [nonspecific_neck_pain]
+    label_el: Σχέση συμπτωμάτων με δραστηριότητα, παρατεταμένη στάση, υπολογιστή, εργασία ή άλλη μηχανική φόρτιση
+    response_type: text
+    requiredness: optional
+
+  nsnp_prior_episodes_treatment_response:
+    prompt_id: nsnp_prior_episodes_treatment_response
+    applicable_route_ids: [nonspecific_neck_pain]
+    label_el: Προηγούμενα επεισόδια, προηγούμενη θεραπεία / άσκηση και ανταπόκριση
+    response_type: text
+    requiredness: optional
+
+  nsnp_activity_avoidance_self_management:
+    prompt_id: nsnp_activity_avoidance_self_management
+    applicable_route_ids: [nonspecific_neck_pain]
+    label_el: Αποφυγή δραστηριότητας / φόβος κίνησης ή τρέχουσες στρατηγικές αυτοδιαχείρισης εφόσον αναφέρονται
+    response_type: text
+    requiredness: optional
+
+  nsnp_other_cervical_route_features:
+    prompt_id: nsnp_other_cervical_route_features
+    applicable_route_ids: [nonspecific_neck_pain]
+    label_el: Ακτινοβολία ή νευρικά συμπτώματα στο άνω άκρο, σχετιζόμενη κεφαλαλγία, ζάλη ή μετατραυματικό πλαίσιο που μπορεί να απαιτούν διαφορετικό cervical route
+    response_type: text
+    requiredness: optional
+
+route_evidence_profiles:
+  rep_nonspecific_neck_pain_v1:
+    route_evidence_profile_id: rep_nonspecific_neck_pain_v1
+    region_profile_id: cervical
+    route_id: nonspecific_neck_pain
+    diagnostic_claim_ids: []
+    history_claim_ids: []
+    examination_claim_ids: []
+    rehabilitation_sequence_id: seq_nonspecific_neck_pain_v1
+    adjunct_claim_ids:
+      - nsnp_manual_mobilization_optional
+      - nsnp_soft_tissue_chronic_only_with_activation
+      - nsnp_mechanical_traction_negative_2025
+      - nsnp_passive_modalities_negative_2025
+      - nsnp_apta_2017_mobility_deficit_bundle_context
+    safety_claim_ids:
+      - nsnp_immobilization_do_not_recommend
+      - nsnp_persistent_progressive_reassessment
+    evidence_gaps:
+      - no_single_optimal_exercise_type_or_dose_for_generic_nonspecific_neck_pain
+      - acute_exercise_recommendation_is_expert_consensus_in_current_DEGAM_guideline
+      - no_validated_universal_rehabilitation_progression_threshold
+      - older_APTA_2017_mobility_deficit_bundle_is_classification_specific_and_conflicts_with_2025_generic_guidance_for_selected_passive_modalities
+      - exact_4_6_week_imaging_reconsideration_window_is_medical_review_context_not_PT_course_duration
+      - C1_profile_must_not_auto_cover_radiating_headache_dizziness_or_posttraumatic_routes
+    primary_source_ids:
+      - nonspecific_neck_degam_awmd_2025
+      - neck_pain_apta_cpg_2017
+      - neck_manual_exercise_cochrane_2025
+    last_reviewed_on: 2026-08-29
+    next_review_due: 2027-02-28
+    freshness_state: current
+
+rehabilitation_sequences:
+  seq_nonspecific_neck_pain_v1:
+    sequence_id: seq_nonspecific_neck_pain_v1
+    route_id: nonspecific_neck_pain
+    sequence_source: route_evidence_profile
+    route_evidence_profile_id: rep_nonspecific_neck_pain_v1
+    phases:
+      - phase_id: nsnp_activation_self_management_rehabilitation
+        order: 1
+        clinical_objective: restore activity and function through activation, education, self-management and individualized exercise when appropriate
+        objective_authority:
+          authority_type: evidence_claim
+          evidence_claim_ids: [nsnp_physical_activity_activation_A, nsnp_patient_education_B]
+        intervention_directions:
+          - intervention_direction_id: nsnp_activity_self_management
+            statement: emphasize physical activity, graded return to normal function and self-management rather than passive care as the central strategy
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [nsnp_physical_activity_activation_A]
+          - intervention_direction_id: nsnp_education
+            statement: provide patient education that supports understanding, activity and self-management
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [nsnp_patient_education_B]
+          - intervention_direction_id: nsnp_chronic_exercise
+            statement: for chronic nonspecific neck pain, use individualized exercise therapy without prescribing one universal exercise type, dose or fixed course
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [nsnp_chronic_exercise_A]
+            applicability_conditions_optional: [chronic_nonspecific_neck_pain]
+          - intervention_direction_id: nsnp_acute_exercise_when_selected
+            statement: in acute nonspecific neck pain, exercise may be used as part of an activating approach without overstating the expert-consensus evidence level
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [nsnp_acute_exercise_consensus]
+            applicability_conditions_optional: [acute_nonspecific_neck_pain]
+          - intervention_direction_id: nsnp_manual_therapy_adjunct_when_selected
+            statement: manual mobilization/manipulation may be included as a selected adjunct but must not replace active rehabilitation and self-management
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [nsnp_manual_mobilization_optional]
+            applicability_conditions_optional: [manual_therapy_selected_as_adjunct]
+        progression_criteria: []
+        precautions_or_do_not_progress_criteria:
+          - criterion_id: nsnp_persistent_progressive_reassessment
+            criterion_kind: reassessment
+            statement: persistent activity-limiting or progressive symptoms despite appropriate care, or severe progression/neurological deficit, should prompt medical reassessment rather than indefinite routine progression
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [nsnp_persistent_progressive_reassessment]
+        strength_optional: null
+        certainty_optional: not_graded
+        required_for_route: true
+    clinician_modifications_optional: []
+    protocol_overrides_optional: []
+
+coverage_effect:
+  route_profiles_added: [rep_nonspecific_neck_pain_v1]
+  rehabilitation_sequences_added: [seq_nonspecific_neck_pain_v1]
+  route_history_prompts_added:
+    - nsnp_duration_course
+    - nsnp_activity_posture_work_load
+    - nsnp_prior_episodes_treatment_response
+    - nsnp_activity_avoidance_self_management
+    - nsnp_other_cervical_route_features
+  route_status_after_review: pending_exact_review_before_manifest_activation
+  generic_route_primary_authority: DEGAM_AWMF_S3_2025
+  APTA_2017_behavior: classification_specific_context_not_generic_auto_authority
+  passive_modality_behavior: newer_DEGAM_negative_posture_preserved_for_generic_C1
+  progression_behavior: no_evidence_derived_progression_threshold_rendered
+  medical_reassessment_window_behavior: source_defined_context_not_routine_PT_timeline
+  runtime_authorized: false

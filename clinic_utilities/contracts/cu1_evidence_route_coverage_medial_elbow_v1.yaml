@@ -1,0 +1,309 @@
+version: cu1_evidence_route_coverage_medial_elbow_v1
+status: active_design_authority
+runtime_authorized: false
+reviewed_on: 2026-08-29
+normative_schema: clinic_utilities/contracts/cu1_history_timeline_schema_v1.yaml
+identity_mode: explicit_payload_id
+review_record: clinic_utilities/contracts/CU1_MEDIAL_ELBOW_ROUTE_REVIEW_2026-08-29.md
+
+purpose: >-
+  Route-specific evidence hardening for the frozen elbow route medial_elbow_tendinopathy. Unlike the
+  lateral-elbow route, no current medial-specific clinical practice guideline with equivalent graded
+  rehabilitation recommendations was identified. This shard therefore uses a 2026 medial-specific
+  systematic review as low-certainty treatment-effect authority and preserves 2023/2024 review evidence
+  as clinical-context and differential authority only. It deliberately does not borrow lateral-elbow
+  CPG grades or convert narrative phase descriptions into validated progression thresholds.
+
+sources:
+  medial_elbow_eccentric_sr_2026:
+    evidence_id: medial_elbow_eccentric_sr_2026
+    source_type: systematic_review
+    title: "Eccentric exercise therapy for medial epicondylitis: A systematic review of clinical outcomes"
+    authors_or_organization: See ZH, Loo CE, Jaafar Z
+    year_or_version: 2026
+    published_on_optional: 2026-03-24
+    reference: "Complement Ther Med. 2026;98:103364"
+    doi_optional: 10.1016/j.ctim.2026.103364
+    url_optional: https://pubmed.ncbi.nlm.nih.gov/41887339/
+    population_scope_optional: clinically diagnosed medial epicondylitis / flexor-pronator tendinopathy in five small clinical studies totaling 143 patients
+    setting_scope_optional: eccentric exercise as a primary component of conservative rehabilitation; heterogeneous protocols; no meta-analysis
+    reviewed_on: 2026-08-29
+    next_review_due: 2027-02-28
+    freshness_state: current
+    status: active
+    supersedes_optional: []
+    superseded_by_optional: []
+
+  medial_elbow_clinical_overview_2023:
+    evidence_id: medial_elbow_clinical_overview_2023
+    source_type: narrative_review
+    title: "Current concepts of natural course and in management of medial epicondylitis: a clinical overview"
+    authors_or_organization: Konarski W, Pobozy T, Pobozy K, Domanska J, Konarska K
+    year_or_version: 2023
+    reference: "Orthop Rev (Pavia). 2023;15:84275"
+    doi_optional: 10.52965/001c.84275
+    url_optional: https://pubmed.ncbi.nlm.nih.gov/37701778/
+    population_scope_optional: medial epicondylitis / golfer's elbow; diagnostic and management overview with acknowledged limited direct evidence compared with lateral epicondylitis
+    reviewed_on: 2026-08-29
+    next_review_due: 2027-08-29
+    freshness_state: current
+    status: context_only
+    supersedes_optional: []
+    superseded_by_optional: []
+
+  medial_elbow_differential_ultrasound_2024:
+    evidence_id: medial_elbow_differential_ultrasound_2024
+    source_type: narrative_review
+    title: "Ultrasonographic differential diagnosis of medial elbow pain"
+    authors_or_organization: Cho MJ, Chai JW, Kim DH, Kim HJ, Seo J
+    year_or_version: 2024
+    reference: "Ultrasonography. 2024;43(5):299-313"
+    doi_optional: 10.14366/usg.24102
+    url_optional: https://pubmed.ncbi.nlm.nih.gov/39086070/
+    population_scope_optional: medial elbow pain differential including medial epicondylitis, ulnar neuropathy, snapping triceps, UCL injury, medial antebrachial cutaneous neuropathy and elbow-joint disease
+    reviewed_on: 2026-08-29
+    next_review_due: 2027-08-29
+    freshness_state: current
+    status: context_only
+    supersedes_optional: []
+    superseded_by_optional: []
+
+claims:
+  met_diagnostic_boundary_not_single_finding:
+    claim_id: met_diagnostic_boundary_not_single_finding
+    evidence_ids: [medial_elbow_clinical_overview_2023, medial_elbow_differential_ultrasound_2024]
+    applicable_route_evidence_profile_ids: [rep_medial_elbow_tendinopathy_v1]
+    applicable_route_ids: [medial_elbow_tendinopathy]
+    domain: diagnostic_definition
+    claim_summary: >-
+      Medial epicondylitis/tendinopathy is a clinical diagnosis based on a compatible history and
+      examination. Medial-epicondyle tenderness, pain with resisted wrist flexion or forearm pronation,
+      gripping pain, or an imaging common-flexor abnormality may support the presentation but no single
+      finding may be converted by CU-1 into an autonomous tendinopathy diagnosis.
+    recommendation_direction: context_only
+    output_scope: clinician_ui_only
+    certainty_optional: not_applicable
+    reviewed_on: 2026-08-29
+
+  met_history_load_course_and_function_context:
+    claim_id: met_history_load_course_and_function_context
+    evidence_ids: [medial_elbow_clinical_overview_2023]
+    applicable_route_evidence_profile_ids: [rep_medial_elbow_tendinopathy_v1]
+    applicable_route_ids: [medial_elbow_tendinopathy]
+    domain: history
+    claim_summary: >-
+      Relevant history includes onset/course, repetitive gripping or flexor-pronator loading, work or
+      sport exposure including throwing/valgus-load context where relevant, symptom behavior and the
+      functional task that matters to the patient. Missing context remains unknown rather than negative.
+    recommendation_direction: consider
+    output_scope: clinician_ui_only
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  met_activity_load_modification_context:
+    claim_id: met_activity_load_modification_context
+    evidence_ids: [medial_elbow_clinical_overview_2023]
+    applicable_route_evidence_profile_ids: [rep_medial_elbow_tendinopathy_v1]
+    applicable_route_ids: [medial_elbow_tendinopathy]
+    domain: core_rehabilitation
+    claim_summary: >-
+      Conservative management may include temporary modification of repeatedly aggravating gripping,
+      wrist-flexion/pronation or sport/work loading while maintaining useful activity and preparing for
+      graded re-exposure. This is clinical-context guidance from a narrative review, not a comparative
+      treatment-effect estimate or a fixed rest prescription.
+    recommendation_direction: consider
+    output_scope: referral_core
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  met_eccentric_flexor_pronator_loading_low_certainty_2026:
+    claim_id: met_eccentric_flexor_pronator_loading_low_certainty_2026
+    evidence_ids: [medial_elbow_eccentric_sr_2026]
+    applicable_route_evidence_profile_ids: [rep_medial_elbow_tendinopathy_v1]
+    applicable_route_ids: [medial_elbow_tendinopathy]
+    domain: core_rehabilitation
+    claim_summary: >-
+      A 2026 medial-specific systematic review found that eccentric flexor-pronator loading may reduce
+      pain and improve function when used within conservative rehabilitation, but the evidence base was
+      small and heterogeneous and overall certainty remained low. Eccentric loading may therefore be
+      considered without representing it as a universally superior or mandatory loading mode.
+    recommendation_direction: consider
+    output_scope: referral_core
+    certainty_optional: low
+    reviewed_on: 2026-08-29
+
+  met_no_optimal_loading_protocol_or_threshold_2026:
+    claim_id: met_no_optimal_loading_protocol_or_threshold_2026
+    evidence_ids: [medial_elbow_eccentric_sr_2026, medial_elbow_clinical_overview_2023]
+    applicable_route_evidence_profile_ids: [rep_medial_elbow_tendinopathy_v1]
+    applicable_route_ids: [medial_elbow_tendinopathy]
+    domain: progression_criteria
+    claim_summary: >-
+      Current medial-elbow evidence does not establish one optimal exercise dose, one superior loading
+      mode, a validated numeric progression criterion, a universal return-to-work/sport threshold, or a
+      fixed physiotherapy course duration. Narrative staged descriptions must not be converted into
+      evidence-validated phase transitions.
+    recommendation_direction: context_only
+    output_scope: clinician_ui_only
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  met_ulnar_and_medial_elbow_differential_reassessment:
+    claim_id: met_ulnar_and_medial_elbow_differential_reassessment
+    evidence_ids: [medial_elbow_differential_ultrasound_2024, medial_elbow_clinical_overview_2023]
+    applicable_route_evidence_profile_ids: [rep_medial_elbow_tendinopathy_v1]
+    applicable_route_ids: [medial_elbow_tendinopathy]
+    domain: safety
+    claim_summary: >-
+      Medial elbow pain requires preservation of alternative-owner possibilities including ulnar
+      neuropathy, UCL/valgus instability, snapping triceps, medial antebrachial cutaneous neuropathy,
+      intra-articular disease and material traumatic injury. Progressive objective ulnar motor deficit,
+      established instability/major trauma, substantial mechanical block or other discordant findings
+      require clinician reassessment or the correct route rather than routine tendinopathy reassurance.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    certainty_optional: not_applicable
+    reviewed_on: 2026-08-29
+
+  met_adjuncts_not_medial_evidence_core:
+    claim_id: met_adjuncts_not_medial_evidence_core
+    evidence_ids: [medial_elbow_eccentric_sr_2026, medial_elbow_clinical_overview_2023]
+    applicable_route_evidence_profile_ids: [rep_medial_elbow_tendinopathy_v1]
+    applicable_route_ids: [medial_elbow_tendinopathy]
+    domain: adjunct
+    claim_summary: >-
+      The reviewed medial-specific evidence does not justify automatically importing lateral-elbow CPG
+      grades for manual therapy, dry needling, rigid taping, orthoses or ESWT. Such interventions may
+      remain available only through separately reviewed evidence or clinician instruction and must not
+      be relabelled as medial-route evidence by analogy.
+    recommendation_direction: context_only
+    output_scope: clinician_ui_only
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+route_history_prompts:
+  met_symptom_course:
+    prompt_id: met_symptom_course
+    applicable_route_ids: [medial_elbow_tendinopathy]
+    label_el: Διάρκεια και πορεία των έσω αγκωνιαίων συμπτωμάτων, μόνο όπως έχουν πραγματικά περιγραφεί
+    response_type: text
+    requiredness: optional
+    evidence_claim_ids_optional: [met_history_load_course_and_function_context]
+
+  met_flexor_pronator_grip_load:
+    prompt_id: met_flexor_pronator_grip_load
+    applicable_route_ids: [medial_elbow_tendinopathy]
+    label_el: Σχέση συμπτωμάτων με λαβή, κάμψη καρπού, πρηνισμό, άρση/μεταφορά ή άλλο σχετικό φορτίο
+    response_type: text
+    requiredness: optional
+    evidence_claim_ids_optional: [met_history_load_course_and_function_context]
+
+  met_work_sport_throwing_context:
+    prompt_id: met_work_sport_throwing_context
+    applicable_route_ids: [medial_elbow_tendinopathy]
+    label_el: Εργασιακό, αθλητικό, χειρωνακτικό ή ριπτικό/valgus φορτίο που σχετίζεται με τα συμπτώματα
+    response_type: text
+    requiredness: optional
+    evidence_claim_ids_optional: [met_history_load_course_and_function_context]
+
+  met_ulnar_neural_symptoms:
+    prompt_id: met_ulnar_neural_symptoms
+    applicable_route_ids: [medial_elbow_tendinopathy]
+    label_el: Παραισθησίες/μούδιασμα 4ου-5ου δακτύλου ή άλλα ωλένια νευρικά συμπτώματα, εφόσον υπάρχουν
+    response_type: boolean_tristate
+    requiredness: optional
+    evidence_claim_ids_optional: [met_ulnar_and_medial_elbow_differential_reassessment]
+
+  met_prior_treatment_response:
+    prompt_id: met_prior_treatment_response
+    applicable_route_ids: [medial_elbow_tendinopathy]
+    label_el: Προηγούμενη συντηρητική αντιμετώπιση/φόρτιση και ανταπόκριση
+    response_type: text
+    requiredness: optional
+
+  met_patient_priority_task:
+    prompt_id: met_patient_priority_task
+    applicable_route_ids: [medial_elbow_tendinopathy]
+    label_el: Δραστηριότητα προτεραιότητας του ασθενούς που απαιτεί λαβή, κάμψη/πρηνισμό ή επαναλαμβανόμενη χρήση
+    response_type: text
+    requiredness: optional
+    evidence_claim_ids_optional: [met_history_load_course_and_function_context]
+
+route_evidence_profiles:
+  rep_medial_elbow_tendinopathy_v1:
+    route_evidence_profile_id: rep_medial_elbow_tendinopathy_v1
+    region_profile_id: elbow
+    route_id: medial_elbow_tendinopathy
+    diagnostic_claim_ids: [met_diagnostic_boundary_not_single_finding]
+    history_claim_ids: [met_history_load_course_and_function_context]
+    examination_claim_ids: []
+    rehabilitation_sequence_id: seq_medial_elbow_evidence_bounded_v1
+    adjunct_claim_ids: [met_adjuncts_not_medial_evidence_core]
+    safety_claim_ids: [met_ulnar_and_medial_elbow_differential_reassessment]
+    evidence_gaps:
+      - no_current_medial_specific_CPG_with_graded_rehabilitation_recommendations_identified
+      - 2026_eccentric_exercise_evidence_is_low_certainty_small_and_heterogeneous
+      - no_universal_superior_loading_mode_or_dose_established
+      - no_validated_numeric_progression_or_RTW_RTS_threshold
+      - manual_therapy_dry_needling_taping_orthosis_and_ESWT_not_auto_authorized_by_lateral_elbow_analogy
+    primary_source_ids:
+      - medial_elbow_eccentric_sr_2026
+      - medial_elbow_clinical_overview_2023
+      - medial_elbow_differential_ultrasound_2024
+    last_reviewed_on: 2026-08-29
+    next_review_due: 2027-02-28
+    freshness_state: current
+
+rehabilitation_sequences:
+  seq_medial_elbow_evidence_bounded_v1:
+    sequence_id: seq_medial_elbow_evidence_bounded_v1
+    route_id: medial_elbow_tendinopathy
+    route_evidence_profile_id: rep_medial_elbow_tendinopathy_v1
+    sequence_source: route_evidence_profile
+    status: sequence_complete_evidence_bounded
+    phases:
+      - phase_id: medial_elbow_active_load_rehabilitation
+        order: 1
+        clinical_objective: improve symptom-limited function and flexor-pronator load tolerance through individualized conservative rehabilitation without importing a lateral-elbow protocol or fixed schedule
+        objective_authority:
+          authority_type: evidence_claim
+          evidence_claim_ids: [met_activity_load_modification_context, met_eccentric_flexor_pronator_loading_low_certainty_2026]
+        intervention_directions:
+          - intervention_direction_id: met_activity_and_load_modification
+            statement: identify and temporarily modify repeatedly aggravating grip/flexor-pronator/work/sport loading while maintaining useful activity and preparing for graded re-exposure
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [met_activity_load_modification_context]
+          - intervention_direction_id: met_consider_eccentric_flexor_pronator_loading
+            statement: consider individualized eccentric flexor-pronator loading as one conservative rehabilitation option while preserving low certainty and avoiding a mandatory loading mode or universal dose
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [met_eccentric_flexor_pronator_loading_low_certainty_2026]
+        progression_criteria: []
+        precautions_or_do_not_progress_criteria:
+          - criterion_id: met_ulnar_instability_or_other_owner_reassessment
+            criterion_kind: safety_escalation
+            statement: progressive objective ulnar motor deficit, material valgus/UCL instability or trauma, substantial mechanical block, or another discordant medial-elbow presentation should trigger clinician reassessment or the correct route rather than routine tendinopathy progression
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [met_ulnar_and_medial_elbow_differential_reassessment]
+        strength_optional: null
+        certainty_optional: not_graded
+        required_for_route: true
+    clinician_modifications_optional: []
+    protocol_overrides_optional: []
+    missing_before_freeze: []
+
+coverage_effect:
+  route_id: medial_elbow_tendinopathy
+  route_profile_added: rep_medial_elbow_tendinopathy_v1
+  rehabilitation_sequence_added: seq_medial_elbow_evidence_bounded_v1
+  route_history_prompts_added:
+    - met_symptom_course
+    - met_flexor_pronator_grip_load
+    - met_work_sport_throwing_context
+    - met_ulnar_neural_symptoms
+    - met_prior_treatment_response
+    - met_patient_priority_task
+  route_status_after_review: sequence_complete_evidence_bounded
+  runtime_authorized: false

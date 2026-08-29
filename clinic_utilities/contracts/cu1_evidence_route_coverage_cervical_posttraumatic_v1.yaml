@@ -1,0 +1,674 @@
+version: cu1_evidence_route_coverage_cervical_posttraumatic_v1_1
+status: active_design_authority_route_coverage_extension
+runtime_authorized: false
+reviewed_on: 2026-08-29
+normative_schema: clinic_utilities/contracts/cu1_history_timeline_schema_v1.yaml
+identity_mode: explicit_payload_id
+review_record: clinic_utilities/contracts/CU1_C5_POST_TRAUMATIC_NECK_ROUTE_REVIEW_2026-08-29.md
+
+purpose: >-
+  Native schema-conformant evidence extension for the frozen C5 route post_traumatic_neck_pain.
+  The route label includes both whiplash-associated and other post-traumatic neck pain, while the
+  strongest route-specific rehabilitation evidence is WAD-specific and differs materially between
+  recent/acute and persistent presentations. C5 therefore uses separate recent-WAD and persistent-WAD
+  evidence profiles/sequences. Unknown WAD temporal phase, other non-WAD cervical trauma and unresolved
+  structural/neurological safety context are explicit blocked states rather than recipients of generic
+  C1 or cross-phase fallback. Known fracture/dislocation/instability or another structural/healing
+  restriction remains clinician-entered context with patient-specific protocol precedence.
+
+external_source_dependencies:
+  - neck_pain_apta_cpg_2017
+
+sources:
+  sira_acute_whiplash_guideline_2014_current:
+    evidence_id: sira_acute_whiplash_guideline_2014_current
+    source_type: clinical_practice_guideline
+    title: "Guidelines for the management of acute whiplash-associated disorders for health professionals"
+    authors_or_organization: State Insurance Regulatory Authority (SIRA), New South Wales
+    year_or_version: 2014_third_edition_current_SIRA_resource_page_updated_2024
+    reference: "State Insurance Regulatory Authority. Guidelines for the management of acute whiplash-associated disorders – for health professionals. 3rd ed. Sydney; 2014. Current SIRA resource page reviewed 2026-08-29."
+    population_scope_optional: adults with acute whiplash-associated disorders in the first 12 weeks after injury; recommendations use the Quebec Task Force WAD framework and Canadian C-Spine Rule for assessment context
+    setting_scope_optional: primary care and rehabilitation after acute whiplash injury
+    reviewed_on: 2026-08-29
+    next_review_due: 2027-02-28
+    freshness_state: current
+    status: active
+
+  wad_nad_cpg_bussieres_2016:
+    evidence_id: wad_nad_cpg_bussieres_2016
+    source_type: clinical_practice_guideline
+    title: "The Treatment of Neck Pain-Associated Disorders and Whiplash-Associated Disorders: A Clinical Practice Guideline"
+    authors_or_organization: Bussières AE, Stewart G, Al-Zoubi F, et al.
+    year_or_version: 2016
+    reference: "J Manipulative Physiol Ther. 2016;39(8):523-564.e27"
+    doi_optional: 10.1016/j.jmpt.2016.08.007
+    population_scope_optional: adults with recent-onset or persistent neck pain-associated disorders and whiplash-associated disorders; recommendations remain condition/grade/context specific
+    reviewed_on: 2026-08-29
+    next_review_due: 2027-02-28
+    freshness_state: current
+    status: active
+
+  optima_nad_cpg_2016:
+    evidence_id: optima_nad_cpg_2016
+    source_type: clinical_practice_guideline
+    title: "Management of neck pain and associated disorders: A clinical practice guideline from the Ontario Protocol for Traffic Injury Management (OPTIMa) Collaboration"
+    authors_or_organization: Côté P, Wong JJ, Sutton D, et al.
+    year_or_version: 2016
+    reference: "Eur Spine J. 2016;25(7):2000-2022"
+    doi_optional: 10.1007/s00586-016-4467-7
+    population_scope_optional: adults with grades I-III neck pain and associated disorders, including traffic-injury management context; used here for structural-safety and persistent objective-neurological-sign review semantics rather than generic C5 treatment authority
+    reviewed_on: 2026-08-29
+    next_review_due: 2027-02-28
+    freshness_state: current
+    status: active
+
+  wad_exercise_sr_2022:
+    evidence_id: wad_exercise_sr_2022
+    source_type: systematic_review
+    title: "Exercise therapy for whiplash-associated disorders: a systematic review and meta-analysis"
+    authors_or_organization: Chrcanovic B, Larsson J, Malmström EM, Westergren H, Häggman-Henrikson B
+    year_or_version: 2022
+    reference: "Scand J Pain. 2022;22(2):232-261"
+    doi_optional: 10.1515/sjpain-2021-0064
+    population_scope_optional: acute and chronic whiplash-associated disorders in randomized exercise-therapy studies; review concluded that the evidence base remained weak despite some short- and medium-term signals
+    reviewed_on: 2026-08-29
+    next_review_due: 2027-08-29
+    freshness_state: current
+    status: active
+
+  wad_guided_neck_specific_sr_2024:
+    evidence_id: wad_guided_neck_specific_sr_2024
+    source_type: systematic_review
+    title: "Effects of a Guided Neck-Specific Exercise Therapy on Recovery After a Whiplash: A Systematic Review and Meta-analysis"
+    authors_or_organization: Muñoz Lazcano P, Rojano Ortega D, Fernández López I
+    year_or_version: 2024
+    reference: "Am J Phys Med Rehabil. 2024;103(11):971-978"
+    doi_optional: 10.1097/PHM.0000000000002460
+    population_scope_optional: people with whiplash-associated disorders in randomized neck-specific exercise studies; pooled short-term effects favored guided neck-specific exercise modestly, but intervention-duration/frequency observations are not universal prescription rules
+    reviewed_on: 2026-08-29
+    next_review_due: 2027-08-29
+    freshness_state: current
+    status: active
+
+  wad_education_exercise_grade_sr_2025:
+    evidence_id: wad_education_exercise_grade_sr_2025
+    source_type: systematic_review
+    title: "Is the integration of education with exercise beneficial for whiplash-associated disorders? A systematic review and meta-analysis"
+    authors_or_organization: Muñoz-Bustos M, Soto-Martínez A, Carrasco-Uribarren A, Ceballos-Laita L
+    year_or_version: 2025
+    reference: "J Man Manip Ther. 2025;33(5):378-391"
+    doi_optional: 10.1080/10669817.2025.2475453
+    population_scope_optional: adults with whiplash-associated disorders in trials comparing exercise plus education with exercise alone or education alone; GRADE certainty was very low for all pooled comparisons
+    reviewed_on: 2026-08-29
+    next_review_due: 2027-08-29
+    freshness_state: current
+    status: active
+
+  chronic_wad_vs_nontraumatic_neck_sr_2025:
+    evidence_id: chronic_wad_vs_nontraumatic_neck_sr_2025
+    source_type: systematic_review
+    title: "Differences in the clinical presentation of chronic whiplash-associated disorders and nontraumatic neck pain: a systematic review and meta-analysis"
+    authors_or_organization: Chen J, Farrell SF, Huang WI, Cagnie B, Murillo C, Sterling M
+    year_or_version: 2025
+    reference: "Pain. 2025;166(8):1738-1756"
+    doi_optional: 10.1097/j.pain.0000000000003554
+    population_scope_optional: chronic whiplash-associated disorders compared directly with nontraumatic neck pain across pain, disability, psychological, movement, sensorimotor and muscle-function outcomes
+    reviewed_on: 2026-08-29
+    next_review_due: 2027-08-29
+    freshness_state: current
+    status: active
+
+claims:
+  c5_whiplash_context_not_generic_posttraumatic_neck_authority:
+    claim_id: c5_whiplash_context_not_generic_posttraumatic_neck_authority
+    evidence_ids: [neck_pain_apta_cpg_2017, chronic_wad_vs_nontraumatic_neck_sr_2025]
+    applicable_route_evidence_profile_ids: [rep_c5_recent_whiplash_wad_v1, rep_c5_persistent_whiplash_wad_v1, rep_c5_whiplash_phase_unresolved_v1, rep_c5_other_posttraumatic_neck_pain_v1, rep_c5_unresolved_posttraumatic_safety_v1]
+    applicable_route_ids: [post_traumatic_neck_pain]
+    domain: diagnostic_definition
+    claim_summary: >-
+      Whiplash-associated disorder is a trauma-related neck-pain context with clinical features that
+      are not interchangeable with nontraumatic nonspecific neck pain. Conversely, the frozen C5 label
+      also includes other cervical trauma, and WAD-specific treatment evidence must not be expanded
+      automatically to a different traumatic mechanism or structural injury.
+    recommendation_direction: context_only
+    output_scope: clinician_ui_only
+    certainty_optional: not_applicable
+    reviewed_on: 2026-08-29
+
+  c5_structural_status_must_not_be_inferred:
+    claim_id: c5_structural_status_must_not_be_inferred
+    evidence_ids: [sira_acute_whiplash_guideline_2014_current, optima_nad_cpg_2016]
+    applicable_route_evidence_profile_ids: [rep_c5_recent_whiplash_wad_v1, rep_c5_persistent_whiplash_wad_v1, rep_c5_whiplash_phase_unresolved_v1, rep_c5_other_posttraumatic_neck_pain_v1, rep_c5_unresolved_posttraumatic_safety_v1]
+    applicable_route_ids: [post_traumatic_neck_pain]
+    domain: safety
+    claim_summary: >-
+      Post-traumatic neck assessment distinguishes routine grades I-III rehabilitation contexts from
+      fracture/dislocation and other major structural pathology. CU-1 must not infer that fracture,
+      dislocation, instability or another structural injury has been excluded merely because C5 was
+      selected or physiotherapy was requested. Known structural/healing restrictions require explicit
+      clinician documentation and their own protocol/owner semantics.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    certainty_optional: not_applicable
+    reviewed_on: 2026-08-29
+
+  c5_recent_wad_stay_active_B_SIRA:
+    claim_id: c5_recent_wad_stay_active_B_SIRA
+    evidence_ids: [sira_acute_whiplash_guideline_2014_current]
+    applicable_route_evidence_profile_ids: [rep_c5_recent_whiplash_wad_v1]
+    applicable_route_ids: [post_traumatic_neck_pain]
+    applicability_conditions_optional: [recent_or_acute_whiplash_within_12_weeks]
+    domain: core_rehabilitation
+    claim_summary: >-
+      For acute WAD, SIRA recommends advice to remain active and continue usual activities, with
+      function-focused reassurance and self-management rather than prolonged activity restriction.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    strength_optional: B_SIRA_2014
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  c5_recent_wad_neck_exercise_B_SIRA:
+    claim_id: c5_recent_wad_neck_exercise_B_SIRA
+    evidence_ids: [sira_acute_whiplash_guideline_2014_current]
+    applicable_route_evidence_profile_ids: [rep_c5_recent_whiplash_wad_v1]
+    applicable_route_ids: [post_traumatic_neck_pain]
+    applicability_conditions_optional: [recent_or_acute_whiplash_within_12_weeks]
+    domain: core_rehabilitation
+    claim_summary: >-
+      For acute WAD, SIRA recommends neck exercise including range-of-motion work, low-load isometric
+      exercise, postural endurance and strengthening. CU-1 preserves these as broad active directions
+      and does not convert guideline examples into a fixed exercise dose or mandatory technique sequence.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    strength_optional: B_SIRA_2014
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  c5_persistent_wad_exercise_advice_context:
+    claim_id: c5_persistent_wad_exercise_advice_context
+    evidence_ids: [wad_nad_cpg_bussieres_2016, wad_exercise_sr_2022, wad_guided_neck_specific_sr_2024]
+    applicable_route_evidence_profile_ids: [rep_c5_persistent_whiplash_wad_v1]
+    applicable_route_ids: [post_traumatic_neck_pain]
+    applicability_conditions_optional: [persistent_whiplash_over_3_months]
+    domain: core_rehabilitation
+    claim_summary: >-
+      For persistent WAD, guideline and systematic-review evidence supports considering active exercise
+      and self-management/advice, with some evidence for supervised or guided neck-specific exercise.
+      Effect estimates are generally small or limited by the underlying evidence base; no single
+      exercise programme, supervision model, session frequency or course duration is established as a
+      universal physician-prescribed standard.
+    recommendation_direction: may_consider
+    output_scope: referral_core
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  c5_education_plus_exercise_not_required_superior_2025:
+    claim_id: c5_education_plus_exercise_not_required_superior_2025
+    evidence_ids: [wad_education_exercise_grade_sr_2025]
+    applicable_route_evidence_profile_ids: [rep_c5_recent_whiplash_wad_v1, rep_c5_persistent_whiplash_wad_v1]
+    applicable_route_ids: [post_traumatic_neck_pain]
+    domain: core_rehabilitation
+    claim_summary: >-
+      The 2025 GRADE meta-analysis found no clinically important advantage for combining education and
+      exercise compared with education alone or exercise alone for WAD pain or disability; certainty
+      was very low for all pooled comparisons. CU-1 therefore must not represent a combined
+      education-plus-exercise package as proven superior or mandatory.
+    recommendation_direction: context_only
+    output_scope: clinician_ui_only
+    certainty_optional: very_low
+    reviewed_on: 2026-08-29
+
+  c5_guided_neck_specific_signal_not_fixed_schedule:
+    claim_id: c5_guided_neck_specific_signal_not_fixed_schedule
+    evidence_ids: [wad_guided_neck_specific_sr_2024]
+    applicable_route_evidence_profile_ids: [rep_c5_persistent_whiplash_wad_v1]
+    applicable_route_ids: [post_traumatic_neck_pain]
+    domain: execution_detail
+    claim_summary: >-
+      A 2024 meta-analysis reported modest short-term pain and disability advantages for guided
+      neck-specific exercise compared with different or unguided neck-specific exercise. Positive
+      results were observed mainly in longer and more frequently supervised study programmes, but
+      those programme characteristics are not validated universal minimum visit frequency or
+      treatment-duration requirements and remain therapist execution context.
+    recommendation_direction: context_only
+    output_scope: therapist_execution_detail
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  c5_recent_manual_therapy_optional_C_SIRA:
+    claim_id: c5_recent_manual_therapy_optional_C_SIRA
+    evidence_ids: [sira_acute_whiplash_guideline_2014_current]
+    applicable_route_evidence_profile_ids: [rep_c5_recent_whiplash_wad_v1]
+    applicable_route_ids: [post_traumatic_neck_pain]
+    applicability_conditions_optional: [recent_or_acute_whiplash_within_12_weeks, manual_therapy_selected_as_adjunct]
+    domain: adjunct
+    claim_summary: >-
+      SIRA classifies manual therapy for acute WAD as limited-evidence Grade C and places it among
+      treatments that are not routinely recommended and should be monitored for benefit. Manual therapy
+      may be considered as a selected adjunct; CU-1 does not auto-select a technique or dose.
+    recommendation_direction: may_consider
+    output_scope: referral_core
+    strength_optional: C_SIRA_2014
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  c5_no_prolonged_activity_restriction_consensus_SIRA:
+    claim_id: c5_no_prolonged_activity_restriction_consensus_SIRA
+    evidence_ids: [sira_acute_whiplash_guideline_2014_current]
+    applicable_route_evidence_profile_ids: [rep_c5_recent_whiplash_wad_v1]
+    applicable_route_ids: [post_traumatic_neck_pain]
+    applicability_conditions_optional: [recent_or_acute_whiplash_within_12_weeks, no_patient_specific_structural_protocol_requiring_restriction_or_immobilization]
+    domain: core_rehabilitation
+    claim_summary: >-
+      SIRA's acute-WAD clinical practice point advises against reduction of usual activities for more
+      than four days. This is a consensus recommendation and does not override an explicit structural,
+      healing or orthopaedic restriction.
+    recommendation_direction: do_not_offer
+    output_scope: clinician_ui_only
+    strength_optional: consensus_SIRA_2014
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  c5_no_routine_collar_A_SIRA:
+    claim_id: c5_no_routine_collar_A_SIRA
+    evidence_ids: [sira_acute_whiplash_guideline_2014_current]
+    applicable_route_evidence_profile_ids: [rep_c5_recent_whiplash_wad_v1]
+    applicable_route_ids: [post_traumatic_neck_pain]
+    applicability_conditions_optional: [recent_or_acute_whiplash_within_12_weeks, no_patient_specific_structural_protocol_requiring_restriction_or_immobilization]
+    domain: core_rehabilitation
+    claim_summary: >-
+      SIRA recommends that immobilisation collars should not be prescribed for uncomplicated acute
+      WAD and grades the recommendation as Level A. This does not override an explicit structural,
+      healing or orthopaedic restriction requiring immobilisation.
+    recommendation_direction: do_not_offer
+    output_scope: clinician_ui_only
+    strength_optional: A_SIRA_2014
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  c5_wad_function_and_risk_monitoring:
+    claim_id: c5_wad_function_and_risk_monitoring
+    evidence_ids: [sira_acute_whiplash_guideline_2014_current, wad_nad_cpg_bussieres_2016]
+    applicable_route_evidence_profile_ids: [rep_c5_recent_whiplash_wad_v1, rep_c5_persistent_whiplash_wad_v1]
+    applicable_route_ids: [post_traumatic_neck_pain]
+    domain: progression_criteria
+    claim_summary: >-
+      WAD guidance supports serial reassessment of pain, disability, function and recovery trajectory,
+      with treatment review or broader assessment when recovery is not progressing. Framework-specific
+      review intervals and numeric thresholds may inform clinician review but are not converted by CU-1
+      into a universal physiotherapy course duration or automatic phase-transition rule.
+    recommendation_direction: recommend
+    output_scope: clinician_ui_only
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  c5_posttraumatic_safety_reassessment:
+    claim_id: c5_posttraumatic_safety_reassessment
+    evidence_ids: [sira_acute_whiplash_guideline_2014_current, optima_nad_cpg_2016]
+    applicable_route_evidence_profile_ids: [rep_c5_recent_whiplash_wad_v1, rep_c5_persistent_whiplash_wad_v1, rep_c5_whiplash_phase_unresolved_v1, rep_c5_other_posttraumatic_neck_pain_v1, rep_c5_unresolved_posttraumatic_safety_v1]
+    applicable_route_ids: [post_traumatic_neck_pain]
+    domain: safety
+    claim_summary: >-
+      New or progressive objective neurological findings, possible cord/myelopathic features,
+      worsening or materially new symptoms, or unresolved concern for fracture/dislocation/instability
+      or other significant traumatic pathology require clinician reassessment or the selected medical/
+      structural pathway rather than routine C5 progression. CU-1 does not determine urgency autonomously.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    certainty_optional: not_applicable
+    reviewed_on: 2026-08-29
+
+  c5_persistent_neurological_signs_require_medical_review:
+    claim_id: c5_persistent_neurological_signs_require_medical_review
+    evidence_ids: [optima_nad_cpg_2016]
+    applicable_route_evidence_profile_ids: [rep_c5_persistent_whiplash_wad_v1, rep_c5_unresolved_posttraumatic_safety_v1]
+    applicable_route_ids: [post_traumatic_neck_pain]
+    applicability_conditions_optional: [persistent_whiplash_over_3_months, persistent_objective_neurological_signs_with_disability]
+    domain: safety
+    claim_summary: >-
+      In persistent grade-III/equivalent neck-pain context, ongoing objective neurological signs with
+      disability beyond three months warrant physician investigation/management rather than being
+      treated only as a routine exercise-progression problem.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+route_history_prompts:
+  c5_injury_date_or_timing:
+    prompt_id: c5_injury_date_or_timing
+    applicable_route_ids: [post_traumatic_neck_pain]
+    label_el: Ημερομηνία τραυματισμού ή χρονικό πλαίσιο από τον τραυματισμό, μόνο εφόσον είναι ρητά γνωστό
+    response_type: text
+    requiredness: conditional
+
+  c5_trauma_mechanism_context:
+    prompt_id: c5_trauma_mechanism_context
+    applicable_route_ids: [post_traumatic_neck_pain]
+    label_el: Μηχανισμός τραυματισμού / αν υπάρχει ρητό whiplash ή acceleration-deceleration πλαίσιο
+    response_type: canonical_enum
+    enum_values_optional: [whiplash_acceleration_deceleration, other_cervical_trauma, not_stated]
+    requiredness: conditional
+    evidence_claim_ids_optional: [c5_whiplash_context_not_generic_posttraumatic_neck_authority]
+
+  c5_wad_temporal_phase:
+    prompt_id: c5_wad_temporal_phase
+    applicable_route_ids: [post_traumatic_neck_pain]
+    label_el: Χρονική κατηγορία WAD μόνο εφόσον είναι σαφής από ρητή ημερομηνία/ιστορικό και όχι από αυτόματη μετατροπή ασαφούς διάρκειας
+    response_type: canonical_enum
+    enum_values_optional: [recent_or_acute_within_12_weeks, persistent_over_3_months, other_or_unclear_phase, not_stated]
+    requiredness: conditional
+    applicability_conditions_optional: [whiplash_acceleration_deceleration_context_explicit]
+
+  c5_known_structural_status:
+    prompt_id: c5_known_structural_status
+    applicable_route_ids: [post_traumatic_neck_pain]
+    label_el: Γνωστή δομική κατάσταση μετά το τραύμα: αν έχει τεκμηριωθεί απουσία σημαντικού κατάγματος/εξαρθρήματος/αστάθειας ή αν υπάρχει σχετική δομική βλάβη/εκκρεμότητα
+    response_type: canonical_enum
+    enum_values_optional: [no_material_structural_injury_identified_by_clinician, material_structural_injury_or_restriction_present, structural_status_not_stated]
+    requiredness: conditional
+    evidence_claim_ids_optional: [c5_structural_status_must_not_be_inferred, c5_posttraumatic_safety_reassessment]
+
+  c5_current_restrictions_precautions:
+    prompt_id: c5_current_restrictions_precautions
+    applicable_route_ids: [post_traumatic_neck_pain]
+    label_el: Τρέχοντες περιορισμοί, προφυλάξεις ή γραπτές ορθοπαιδικές/θεραπευτικές οδηγίες μετά τον τραυματισμό, εφόσον υπάρχουν
+    response_type: text
+    requiredness: conditional
+    evidence_claim_ids_optional: [c5_structural_status_must_not_be_inferred]
+
+  c5_wad_grade_if_known:
+    prompt_id: c5_wad_grade_if_known
+    applicable_route_ids: [post_traumatic_neck_pain]
+    label_el: WAD/QTF βαθμός μόνο εφόσον έχει ήδη εκτιμηθεί/τεκμηριωθεί από τον κλινικό
+    response_type: canonical_enum
+    enum_values_optional: [I, II, III, IV, not_stated]
+    requiredness: optional
+    evidence_claim_ids_optional: [c5_structural_status_must_not_be_inferred]
+
+  c5_associated_posttraumatic_symptoms:
+    prompt_id: c5_associated_posttraumatic_symptoms
+    applicable_route_ids: [post_traumatic_neck_pain]
+    label_el: Συνοδά μετατραυματικά συμπτώματα όπως κεφαλαλγία, ζάλη/αστάθεια, συμπτώματα άνω άκρου ή άλλα συμπτώματα, χωρίς αυτόματη αιτιολογική ερμηνεία
+    response_type: text
+    requiredness: optional
+
+  c5_recovery_expectation_and_psychological_context:
+    prompt_id: c5_recovery_expectation_and_psychological_context
+    applicable_route_ids: [post_traumatic_neck_pain]
+    label_el: Προσδοκία ανάρρωσης και σχετικό ψυχολογικό/μετατραυματικό πλαίσιο μόνο εφόσον έχει πραγματικά διερευνηθεί
+    response_type: text
+    requiredness: optional
+    evidence_claim_ids_optional: [c5_wad_function_and_risk_monitoring]
+
+  c5_function_work_driving_priority_activity:
+    prompt_id: c5_function_work_driving_priority_activity
+    applicable_route_ids: [post_traumatic_neck_pain]
+    label_el: Λειτουργικός περιορισμός σε εργασία, οδήγηση/στροφή κεφαλής, ύπνο, ADL, άσκηση ή άλλη δραστηριότητα προτεραιότητας
+    response_type: text
+    requiredness: optional
+    evidence_claim_ids_optional: [c5_wad_function_and_risk_monitoring]
+
+  c5_prior_treatment_and_response:
+    prompt_id: c5_prior_treatment_and_response
+    applicable_route_ids: [post_traumatic_neck_pain]
+    label_el: Προηγούμενη αντιμετώπιση μετά τον τραυματισμό, βαθμός ενεργητικής συμμετοχής και ανταπόκριση
+    response_type: text
+    requiredness: optional
+
+  c5_material_safety_or_neurological_context:
+    prompt_id: c5_material_safety_or_neurological_context
+    applicable_route_ids: [post_traumatic_neck_pain]
+    label_el: Νέα/προοδευτική αντικειμενική νευρολογική μεταβολή, πιθανό μυελοπαθητικό στοιχείο ή άλλη τρέχουσα δομική/κλινική ανησυχία
+    response_type: text
+    requiredness: conditional
+    evidence_claim_ids_optional: [c5_posttraumatic_safety_reassessment, c5_persistent_neurological_signs_require_medical_review]
+
+route_evidence_profiles:
+  rep_c5_recent_whiplash_wad_v1:
+    route_evidence_profile_id: rep_c5_recent_whiplash_wad_v1
+    region_profile_id: cervical
+    route_id: post_traumatic_neck_pain
+    applicability_conditions_optional:
+      - post_traumatic_neck_pain_selected
+      - whiplash_acceleration_deceleration_context_explicit
+      - recent_or_acute_whiplash_within_12_weeks
+      - no_unresolved_fracture_dislocation_instability_or_other_material_structural_injury
+      - no_unresolved_material_neurological_or_other_safety_concern
+      - physiotherapy_considered_appropriate_by_clinician
+    diagnostic_claim_ids: [c5_whiplash_context_not_generic_posttraumatic_neck_authority]
+    history_claim_ids: [c5_wad_function_and_risk_monitoring]
+    examination_claim_ids: []
+    rehabilitation_sequence_id: seq_c5_recent_whiplash_wad_v1
+    adjunct_claim_ids: [c5_recent_manual_therapy_optional_C_SIRA]
+    safety_claim_ids: [c5_structural_status_must_not_be_inferred, c5_posttraumatic_safety_reassessment]
+    evidence_gaps:
+      - no_universal_exercise_dose_or_numeric_progression_threshold
+      - no_fixed_PT_visit_frequency_or_total_course_duration
+      - education_plus_exercise_not_proven_clinically_superior_to_either_alone
+      - SIRA_risk_stratification_and_review_timepoints_are_not_autonomous_CU1_referral_triage_or_PT_course_rules
+      - WAD_grade_and_structural_clearance_are_clinician_entered_context_not_CU1_inference
+      - posttraumatic_headache_dizziness_or_radiating_symptoms_do_not_automatically_import_C3_C4_or_C2_disease_specific_claims
+    primary_source_ids: [sira_acute_whiplash_guideline_2014_current, neck_pain_apta_cpg_2017, wad_education_exercise_grade_sr_2025]
+    last_reviewed_on: 2026-08-29
+    next_review_due: 2027-02-28
+    freshness_state: current
+
+  rep_c5_persistent_whiplash_wad_v1:
+    route_evidence_profile_id: rep_c5_persistent_whiplash_wad_v1
+    region_profile_id: cervical
+    route_id: post_traumatic_neck_pain
+    applicability_conditions_optional:
+      - post_traumatic_neck_pain_selected
+      - whiplash_acceleration_deceleration_context_explicit
+      - persistent_whiplash_over_3_months
+      - no_unresolved_fracture_dislocation_instability_or_other_material_structural_injury
+      - no_unresolved_material_neurological_or_other_safety_concern
+      - physiotherapy_considered_appropriate_by_clinician
+    diagnostic_claim_ids: [c5_whiplash_context_not_generic_posttraumatic_neck_authority]
+    history_claim_ids: [c5_wad_function_and_risk_monitoring]
+    examination_claim_ids: []
+    rehabilitation_sequence_id: seq_c5_persistent_whiplash_wad_v1
+    adjunct_claim_ids: [c5_guided_neck_specific_signal_not_fixed_schedule]
+    safety_claim_ids: [c5_structural_status_must_not_be_inferred, c5_posttraumatic_safety_reassessment, c5_persistent_neurological_signs_require_medical_review]
+    evidence_gaps:
+      - exercise_effect_estimates_are_limited_and_no_universal_programme_is_superior
+      - no_universal_numeric_progression_threshold
+      - no_fixed_PT_visit_frequency_or_total_course_duration
+      - guided_neck_specific_study_frequency_and_duration_are_not_universal_prescription_rules
+      - education_plus_exercise_not_proven_clinically_superior_to_either_alone
+      - WAD_grade_and_structural_clearance_are_clinician_entered_context_not_CU1_inference
+      - posttraumatic_headache_dizziness_or_radiating_symptoms_do_not_automatically_import_C3_C4_or_C2_disease_specific_claims
+    primary_source_ids: [neck_pain_apta_cpg_2017, wad_nad_cpg_bussieres_2016, optima_nad_cpg_2016, wad_exercise_sr_2022, wad_guided_neck_specific_sr_2024, wad_education_exercise_grade_sr_2025, chronic_wad_vs_nontraumatic_neck_sr_2025]
+    last_reviewed_on: 2026-08-29
+    next_review_due: 2027-02-28
+    freshness_state: current
+
+  rep_c5_whiplash_phase_unresolved_v1:
+    route_evidence_profile_id: rep_c5_whiplash_phase_unresolved_v1
+    region_profile_id: cervical
+    route_id: post_traumatic_neck_pain
+    applicability_conditions_optional:
+      - post_traumatic_neck_pain_selected
+      - whiplash_acceleration_deceleration_context_explicit
+      - whiplash_temporal_phase_other_unclear_or_not_stated
+      - no_unresolved_material_structural_or_neurological_safety_concern
+    diagnostic_claim_ids: [c5_whiplash_context_not_generic_posttraumatic_neck_authority]
+    history_claim_ids: []
+    examination_claim_ids: []
+    rehabilitation_sequence_id: null
+    adjunct_claim_ids: []
+    safety_claim_ids: [c5_structural_status_must_not_be_inferred, c5_posttraumatic_safety_reassessment]
+    evidence_gaps:
+      - temporal_phase_is_material_to_recent_vs_persistent_WAD_authority_and_must_not_be_inferred_from_approximate_duration
+      - no_cross_phase_sequence_or_generic_C1_fallback_is_permitted
+    primary_source_ids: [sira_acute_whiplash_guideline_2014_current, wad_nad_cpg_bussieres_2016]
+    last_reviewed_on: 2026-08-29
+    next_review_due: 2027-02-28
+    freshness_state: current
+
+  rep_c5_other_posttraumatic_neck_pain_v1:
+    route_evidence_profile_id: rep_c5_other_posttraumatic_neck_pain_v1
+    region_profile_id: cervical
+    route_id: post_traumatic_neck_pain
+    applicability_conditions_optional:
+      - post_traumatic_neck_pain_selected
+      - whiplash_acceleration_deceleration_context_not_explicit
+      - no_unresolved_material_structural_or_neurological_safety_concern
+    diagnostic_claim_ids: [c5_whiplash_context_not_generic_posttraumatic_neck_authority]
+    history_claim_ids: []
+    examination_claim_ids: []
+    rehabilitation_sequence_id: null
+    adjunct_claim_ids: []
+    safety_claim_ids: [c5_structural_status_must_not_be_inferred, c5_posttraumatic_safety_reassessment]
+    evidence_gaps:
+      - current_reviewed_C5_treatment_authority_is_whiplash_WAD_specific_and_cannot_auto_expand_to_other_cervical_trauma
+      - generic_C1_sequence_is_not_a_permitted_fallback_for_traumatic_context
+      - mechanism_structural_status_and_any_protocol_or_healing_restriction_require_clinician_documentation
+    primary_source_ids: [sira_acute_whiplash_guideline_2014_current, chronic_wad_vs_nontraumatic_neck_sr_2025]
+    last_reviewed_on: 2026-08-29
+    next_review_due: 2027-02-28
+    freshness_state: current
+
+  rep_c5_unresolved_posttraumatic_safety_v1:
+    route_evidence_profile_id: rep_c5_unresolved_posttraumatic_safety_v1
+    region_profile_id: cervical
+    route_id: post_traumatic_neck_pain
+    applicability_conditions_optional:
+      - post_traumatic_neck_pain_selected
+      - unresolved_fracture_dislocation_instability_or_other_material_structural_or_neurological_safety_concern
+    diagnostic_claim_ids: []
+    history_claim_ids: []
+    examination_claim_ids: []
+    rehabilitation_sequence_id: null
+    adjunct_claim_ids: []
+    safety_claim_ids: [c5_structural_status_must_not_be_inferred, c5_posttraumatic_safety_reassessment, c5_persistent_neurological_signs_require_medical_review]
+    evidence_gaps:
+      - routine_C5_rehabilitation_is_blocked_until_material_structural_or_neurological_safety_context_is_resolved_or_explicitly_managed
+      - no_CU1_autonomous_urgency_or_imaging_decision
+      - patient_specific_written_structural_or_healing_protocol_remains_separate_authority
+    primary_source_ids: [sira_acute_whiplash_guideline_2014_current, optima_nad_cpg_2016]
+    last_reviewed_on: 2026-08-29
+    next_review_due: 2027-02-28
+    freshness_state: current
+
+rehabilitation_sequences:
+  seq_c5_recent_whiplash_wad_v1:
+    sequence_id: seq_c5_recent_whiplash_wad_v1
+    route_id: post_traumatic_neck_pain
+    applicability_conditions_optional:
+      - whiplash_acceleration_deceleration_context_explicit
+      - recent_or_acute_whiplash_within_12_weeks
+      - no_unresolved_fracture_dislocation_instability_or_other_material_structural_injury
+      - no_unresolved_material_neurological_or_other_safety_concern
+      - physiotherapy_considered_appropriate_by_clinician
+    sequence_source: route_evidence_profile
+    route_evidence_profile_id: rep_c5_recent_whiplash_wad_v1
+    phases:
+      - phase_id: c5_recent_wad_active_function_rehabilitation
+        order: 1
+        clinical_objective: restore function and confidence in normal movement/activity through individualized active rehabilitation while preserving structural and neurological safety context
+        objective_authority:
+          authority_type: evidence_claim
+          evidence_claim_ids: [c5_recent_wad_stay_active_B_SIRA, c5_recent_wad_neck_exercise_B_SIRA]
+        intervention_directions:
+          - intervention_direction_id: c5_recent_wad_stay_active_and_function
+            statement: support continued usual activity with sensible temporary modification as needed and avoid routine prolonged activity restriction when no structural/healing restriction conflicts
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [c5_recent_wad_stay_active_B_SIRA]
+          - intervention_direction_id: c5_recent_wad_active_neck_exercise
+            statement: use individualized active cervical ROM, low-load isometric, postural-endurance and strengthening directions without a fixed evidence-derived dose
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [c5_recent_wad_neck_exercise_B_SIRA]
+          - intervention_direction_id: c5_recent_wad_selected_manual_adjunct
+            statement: selected manual therapy may be considered and monitored for benefit when clinically appropriate, but it is not automatic core care and no technique or dose is mandated
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [c5_recent_manual_therapy_optional_C_SIRA]
+            applicability_conditions_optional: [manual_therapy_selected_as_adjunct]
+        progression_criteria: []
+        precautions_or_do_not_progress_criteria:
+          - criterion_id: c5_recent_wad_material_safety_reassessment
+            criterion_kind: safety_escalation
+            statement: new or progressive objective neurological findings, possible cord features, worsening materially new symptoms or unresolved structural traumatic concern require clinician reassessment rather than routine progression
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [c5_posttraumatic_safety_reassessment]
+        strength_optional: null
+        certainty_optional: not_graded
+        required_for_route: true
+    clinician_modifications_optional: []
+    protocol_overrides_optional: []
+
+  seq_c5_persistent_whiplash_wad_v1:
+    sequence_id: seq_c5_persistent_whiplash_wad_v1
+    route_id: post_traumatic_neck_pain
+    applicability_conditions_optional:
+      - whiplash_acceleration_deceleration_context_explicit
+      - persistent_whiplash_over_3_months
+      - no_unresolved_fracture_dislocation_instability_or_other_material_structural_injury
+      - no_unresolved_material_neurological_or_other_safety_concern
+      - physiotherapy_considered_appropriate_by_clinician
+    sequence_source: route_evidence_profile
+    route_evidence_profile_id: rep_c5_persistent_whiplash_wad_v1
+    phases:
+      - phase_id: c5_persistent_wad_active_function_rehabilitation
+        order: 1
+        clinical_objective: improve persistent WAD-related pain/disability and functional tolerance through individualized active rehabilitation without claiming one superior programme or fixed treatment schedule
+        objective_authority:
+          authority_type: evidence_claim
+          evidence_claim_ids: [c5_persistent_wad_exercise_advice_context]
+        intervention_directions:
+          - intervention_direction_id: c5_persistent_wad_active_exercise_and_self_management
+            statement: consider individualized supervised or guided neck-specific/functional exercise with self-management or advice, without a fixed evidence-derived visit frequency, course duration or mandatory technique bundle
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [c5_persistent_wad_exercise_advice_context]
+        progression_criteria: []
+        precautions_or_do_not_progress_criteria:
+          - criterion_id: c5_persistent_wad_material_safety_reassessment
+            criterion_kind: safety_escalation
+            statement: new/progressive objective neurological findings or another materially concerning change require clinician reassessment rather than routine progression
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [c5_posttraumatic_safety_reassessment]
+          - criterion_id: c5_persistent_wad_neurological_signs_review
+            criterion_kind: reassessment
+            statement: persistent objective neurological signs with ongoing disability beyond three months require physician investigation/management rather than being treated as routine rehabilitation nonprogression
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [c5_persistent_neurological_signs_require_medical_review]
+            applicability_conditions_optional: [persistent_objective_neurological_signs_with_disability]
+        strength_optional: null
+        certainty_optional: not_graded
+        required_for_route: true
+    clinician_modifications_optional: []
+    protocol_overrides_optional: []
+
+coverage_effect:
+  route_profiles_added:
+    - rep_c5_recent_whiplash_wad_v1
+    - rep_c5_persistent_whiplash_wad_v1
+    - rep_c5_whiplash_phase_unresolved_v1
+    - rep_c5_other_posttraumatic_neck_pain_v1
+    - rep_c5_unresolved_posttraumatic_safety_v1
+  rehabilitation_sequences_added:
+    - seq_c5_recent_whiplash_wad_v1
+    - seq_c5_persistent_whiplash_wad_v1
+  route_history_prompts_added:
+    - c5_injury_date_or_timing
+    - c5_trauma_mechanism_context
+    - c5_wad_temporal_phase
+    - c5_known_structural_status
+    - c5_current_restrictions_precautions
+    - c5_wad_grade_if_known
+    - c5_associated_posttraumatic_symptoms
+    - c5_recovery_expectation_and_psychological_context
+    - c5_function_work_driving_priority_activity
+    - c5_prior_treatment_and_response
+    - c5_material_safety_or_neurological_context
+  route_state: ready_for_exact_review_not_manifest_active
+  runtime_authorized: false

@@ -1,0 +1,485 @@
+version: cu1_evidence_route_coverage_cervical_headache_v1
+status: active_design_authority_route_coverage_extension
+runtime_authorized: false
+reviewed_on: 2026-08-29
+normative_schema: clinic_utilities/contracts/cu1_history_timeline_schema_v1.yaml
+identity_mode: explicit_payload_id
+review_record: clinic_utilities/contracts/CU1_C3_CERVICAL_HEADACHE_ROUTE_REVIEW_2026-08-29.md
+
+purpose: >-
+  Native schema-conformant evidence extension for the frozen C3 route
+  headache_with_cervical_msk_features. The route preserves a presentation-only state as distinct
+  from an explicitly clinician-established cervicogenic-headache diagnosis. Cervical pain,
+  restricted/painful ROM, tenderness or provocation by cervical movement may support a cervical
+  musculoskeletal presentation but must not automatically establish ICHD-3 cervicogenic headache.
+  Disease-specific treatment syntheses are therefore restricted to the formal/clinician-established
+  cervicogenic-headache profile and cannot leak into presentation-only C3 output.
+
+external_source_dependencies:
+  - neck_pain_apta_cpg_2017
+
+sources:
+  ichd3_cervicogenic_headache_current:
+    evidence_id: ichd3_cervicogenic_headache_current
+    source_type: other
+    title: "International Classification of Headache Disorders, 3rd edition — 11.2.1 Cervicogenic headache"
+    authors_or_organization: International Headache Society Headache Classification Committee
+    year_or_version: 2018_ICHD3_current_online_classification
+    reference: "Cephalalgia. 2018;38(1):1-211. Online ICHD-3 entry 11.2.1 Cervicogenic headache"
+    population_scope_optional: adults and children evaluated for headache attributed to a cervical disorder; used here only for diagnostic-boundary semantics, not autonomous diagnosis
+    reviewed_on: 2026-08-29
+    next_review_due: 2027-08-29
+    freshness_state: current
+    status: active
+
+  cgh_nonsurgical_grade_sr_2026:
+    evidence_id: cgh_nonsurgical_grade_sr_2026
+    source_type: systematic_review
+    title: "Efficacy of nonsurgical interventions for the management of adults with cervicogenic headache: a systematic review and meta-analyses"
+    authors_or_organization: Martins L, Collet P, Lafrance S, Demont A
+    year_or_version: 2026
+    reference: "Ann Phys Rehabil Med. 2026;69(4):102070"
+    doi_optional: 10.1016/j.rehab.2025.102070
+    population_scope_optional: adults with cervicogenic headache in randomized nonsurgical-intervention trials; six databases searched through September 2025 with GRADE certainty assessment
+    reviewed_on: 2026-08-29
+    next_review_due: 2027-08-29
+    freshness_state: current
+    status: active
+
+  cgh_PT_network_meta_analysis_2024:
+    evidence_id: cgh_PT_network_meta_analysis_2024
+    source_type: systematic_review
+    title: "Physical Therapist Interventions to Reduce Headache Intensity, Frequency, and Duration in Patients With Cervicogenic Headache: A Systematic Review and Network Meta-Analysis"
+    authors_or_organization: Jung A, Carvalho GF, Szikszay TM, Pawlowsky V, Gabler T, Luedtke K
+    year_or_version: 2024
+    reference: "Phys Ther. 2024;104(2):pzad154"
+    doi_optional: 10.1093/ptj/pzad154
+    population_scope_optional: adults classified or diagnosed with cervicogenic headache in randomized physical-therapy trials; search through October 2022; comparative rankings are predominantly low-certainty and are not protocol authority
+    reviewed_on: 2026-08-29
+    next_review_due: 2027-08-29
+    freshness_state: current
+    status: active
+
+claims:
+  c3_cervical_features_not_formal_cgh:
+    claim_id: c3_cervical_features_not_formal_cgh
+    evidence_ids: [ichd3_cervicogenic_headache_current, neck_pain_apta_cpg_2017]
+    applicable_route_evidence_profile_ids: [rep_c3_cervical_headache_presentation_v1, rep_c3_formal_cervicogenic_headache_v1]
+    applicable_route_ids: [headache_with_cervical_msk_features]
+    domain: diagnostic_definition
+    claim_summary: >-
+      Headache associated with neck pain, restricted or painful cervical movement, occipital or
+      suboccipital tenderness, or provocation by cervical movement/posture may support a cervical
+      musculoskeletal headache presentation. These findings are not unique to cervicogenic headache
+      and do not independently establish a formal cervicogenic-headache diagnosis.
+    recommendation_direction: context_only
+    output_scope: clinician_ui_only
+    certainty_optional: not_applicable
+    reviewed_on: 2026-08-29
+
+  c3_ichd_causation_not_single_finding:
+    claim_id: c3_ichd_causation_not_single_finding
+    evidence_ids: [ichd3_cervicogenic_headache_current]
+    applicable_route_evidence_profile_ids: [rep_c3_cervical_headache_presentation_v1, rep_c3_formal_cervicogenic_headache_v1]
+    applicable_route_ids: [headache_with_cervical_msk_features]
+    domain: diagnostic_definition
+    claim_summary: >-
+      ICHD-3 requires a cervical disorder/lesion capable of causing headache plus evidence of
+      causation and exclusion of a better headache diagnosis; reduced cervical ROM with provocation
+      is only one possible causation criterion. Common upper-cervical imaging findings are not firm
+      evidence of headache causation by themselves.
+    recommendation_direction: context_only
+    output_scope: clinician_ui_only
+    certainty_optional: not_applicable
+    reviewed_on: 2026-08-29
+
+  c3_apta_active_rehabilitation_context:
+    claim_id: c3_apta_active_rehabilitation_context
+    evidence_ids: [neck_pain_apta_cpg_2017]
+    applicable_route_evidence_profile_ids: [rep_c3_cervical_headache_presentation_v1, rep_c3_formal_cervicogenic_headache_v1]
+    applicable_route_ids: [headache_with_cervical_msk_features]
+    domain: core_rehabilitation
+    claim_summary: >-
+      The APTA/JOSPT neck-pain-with-headache classification supports active cervical rehabilitation:
+      acute guidance includes supervised active mobility, while chronic guidance includes cervical
+      and scapulothoracic stretching, strengthening and endurance work within multimodal care. The
+      guideline does not establish one universal exercise dose or criteria-based progression threshold.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  c3_acute_active_mobility_B:
+    claim_id: c3_acute_active_mobility_B
+    evidence_ids: [neck_pain_apta_cpg_2017]
+    applicable_route_evidence_profile_ids: [rep_c3_cervical_headache_presentation_v1, rep_c3_formal_cervicogenic_headache_v1]
+    applicable_route_ids: [headache_with_cervical_msk_features]
+    applicability_conditions_optional: [acute_cervical_headache_presentation]
+    domain: core_rehabilitation
+    claim_summary: For acute neck pain with headache, supervised instruction in active mobility exercise is a Grade-B APTA recommendation.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    strength_optional: B_APTA_2017
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  c3_self_SNAG_execution_detail_C:
+    claim_id: c3_self_SNAG_execution_detail_C
+    evidence_ids: [neck_pain_apta_cpg_2017]
+    applicable_route_evidence_profile_ids: [rep_c3_cervical_headache_presentation_v1, rep_c3_formal_cervicogenic_headache_v1]
+    applicable_route_ids: [headache_with_cervical_msk_features]
+    applicability_conditions_optional: [acute_or_subacute_cervical_headache_presentation, self_SNAG_selected]
+    domain: execution_detail
+    claim_summary: >-
+      C1-2 self-SNAG may be used in acute or subacute neck pain with headache under the 2017 APTA
+      framework, but exact technique selection, instruction and dose are therapist execution details
+      rather than automatic physician referral prescriptions.
+    recommendation_direction: may_consider
+    output_scope: therapist_execution_detail
+    strength_optional: C_APTA_2017
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  c3_selected_manual_therapy_apta_context:
+    claim_id: c3_selected_manual_therapy_apta_context
+    evidence_ids: [neck_pain_apta_cpg_2017]
+    applicable_route_evidence_profile_ids: [rep_c3_cervical_headache_presentation_v1, rep_c3_formal_cervicogenic_headache_v1]
+    applicable_route_ids: [headache_with_cervical_msk_features]
+    applicability_conditions_optional: [subacute_or_chronic_cervical_headache_presentation]
+    domain: adjunct
+    claim_summary: >-
+      The 2017 APTA guideline recommends cervical manipulation/mobilization in subacute neck pain
+      with headache and manual therapy combined with cervical/scapular exercise in chronic neck pain
+      with headache. CU-1 preserves the Grade-B framework while keeping treatment selection separate
+      from evidence authority, so manipulation or mobilization is not automatically inserted into every C3 referral.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    strength_optional: B_APTA_2017
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  c3_formal_cgh_manual_short_term_low_2026:
+    claim_id: c3_formal_cgh_manual_short_term_low_2026
+    evidence_ids: [cgh_nonsurgical_grade_sr_2026]
+    applicable_route_evidence_profile_ids: [rep_c3_formal_cervicogenic_headache_v1]
+    applicable_route_ids: [headache_with_cervical_msk_features]
+    applicability_conditions_optional: [formal_cervicogenic_headache_diagnosis_yes]
+    domain: adjunct
+    claim_summary: >-
+      In adults with diagnosed/classified cervicogenic headache, the 2026 GRADE review found
+      low-certainty evidence that manual therapy may reduce headache intensity in the short term
+      compared with sham; a durable 12-month benefit was not established. This does not authorize a
+      universal manual-technique choice or long-term efficacy claim.
+    recommendation_direction: may_consider
+    output_scope: referral_core
+    certainty_optional: low
+    reviewed_on: 2026-08-29
+
+  c3_formal_cgh_exercise_headache_effect_uncertain_2026:
+    claim_id: c3_formal_cgh_exercise_headache_effect_uncertain_2026
+    evidence_ids: [cgh_nonsurgical_grade_sr_2026]
+    applicable_route_evidence_profile_ids: [rep_c3_formal_cervicogenic_headache_v1]
+    applicable_route_ids: [headache_with_cervical_msk_features]
+    applicability_conditions_optional: [formal_cervicogenic_headache_diagnosis_yes]
+    domain: core_rehabilitation
+    claim_summary: >-
+      The 2026 GRADE review found low-certainty and limited evidence for exercise therapy's direct
+      effect on cervicogenic-headache symptoms, with uncertainty across follow-up periods. Exercise
+      may still address cervical disability/function, but CU-1 must not claim a high-certainty direct
+      headache effect or one superior exercise programme.
+    recommendation_direction: context_only
+    output_scope: clinician_ui_only
+    certainty_optional: low
+    reviewed_on: 2026-08-29
+
+  c3_formal_cgh_nma_rankings_not_protocol_2024:
+    claim_id: c3_formal_cgh_nma_rankings_not_protocol_2024
+    evidence_ids: [cgh_PT_network_meta_analysis_2024]
+    applicable_route_evidence_profile_ids: [rep_c3_formal_cervicogenic_headache_v1]
+    applicable_route_ids: [headache_with_cervical_msk_features]
+    applicability_conditions_optional: [formal_cervicogenic_headache_diagnosis_yes]
+    domain: execution_detail
+    claim_summary: >-
+      The 2024 physical-therapy network meta-analysis ranked several combined manual/dry-needling/
+      exercise interventions highly for short-term cervicogenic-headache outcomes, but the key
+      comparisons were low-certainty and heterogeneous. Ranking probabilities must not be converted
+      into a mandatory physician-prescribed technique bundle or a universal superiority claim.
+    recommendation_direction: context_only
+    output_scope: clinician_ui_only
+    certainty_optional: low
+    reviewed_on: 2026-08-29
+
+  c3_headache_safety_reassessment:
+    claim_id: c3_headache_safety_reassessment
+    evidence_ids: [neck_pain_apta_cpg_2017, ichd3_cervicogenic_headache_current]
+    applicable_route_evidence_profile_ids: [rep_c3_cervical_headache_presentation_v1, rep_c3_formal_cervicogenic_headache_v1]
+    applicable_route_ids: [headache_with_cervical_msk_features]
+    domain: safety
+    claim_summary: >-
+      A materially new, markedly changed or progressive headache pattern, unexplained neurological
+      or cranial-nerve findings, vascular/systemic concern, or other clinician red-flag concern
+      requires medical reassessment rather than routine C3 rehabilitation progression. The utility
+      must not autonomously determine urgency or state that alternative headache causes were excluded.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    certainty_optional: not_applicable
+    reviewed_on: 2026-08-29
+
+route_history_prompts:
+  c3_headache_pattern_frequency_intensity:
+    prompt_id: c3_headache_pattern_frequency_intensity
+    applicable_route_ids: [headache_with_cervical_msk_features]
+    label_el: Πρότυπο κεφαλαλγίας, πλευρά/εντόπιση, συχνότητα, ένταση και διάρκεια επεισοδίων εφόσον είναι γνωστά
+    response_type: text
+    requiredness: optional
+
+  c3_temporal_relation_to_neck:
+    prompt_id: c3_temporal_relation_to_neck
+    applicable_route_ids: [headache_with_cervical_msk_features]
+    label_el: Χρονική σχέση της κεφαλαλγίας με την έναρξη ή έξαρση των αυχενικών συμπτωμάτων
+    response_type: text
+    requiredness: optional
+    evidence_claim_ids_optional: [c3_ichd_causation_not_single_finding]
+
+  c3_cervical_provocation_context:
+    prompt_id: c3_cervical_provocation_context
+    applicable_route_ids: [headache_with_cervical_msk_features]
+    label_el: Αν η τυπική κεφαλαλγία προκαλείται ή επιδεινώνεται με αυχενική κίνηση, παρατεταμένη στάση ή συγκεκριμένο αυχενικό ερέθισμα, μόνο εφόσον έχει πραγματικά τεκμηριωθεί
+    response_type: text
+    requiredness: optional
+    evidence_claim_ids_optional: [c3_cervical_features_not_formal_cgh, c3_ichd_causation_not_single_finding]
+
+  c3_formal_cgh_diagnosis:
+    prompt_id: c3_formal_cgh_diagnosis
+    applicable_route_ids: [headache_with_cervical_msk_features]
+    label_el: Ρητή διάγνωση αυχενογενούς κεφαλαλγίας από τον κλινικό
+    response_type: canonical_enum
+    enum_values_optional: [yes, no, not_stated]
+    requiredness: conditional
+    evidence_claim_ids_optional: [c3_cervical_features_not_formal_cgh]
+
+  c3_other_headache_features_differential:
+    prompt_id: c3_other_headache_features_differential
+    applicable_route_ids: [headache_with_cervical_msk_features]
+    label_el: Άλλα χαρακτηριστικά κεφαλαλγίας ή γνωστή άλλη διάγνωση κεφαλαλγίας (π.χ. ημικρανικό/τάσεως πλαίσιο), χωρίς αυτόματη ερμηνεία από το εργαλείο
+    response_type: text
+    requiredness: optional
+
+  c3_new_changed_or_safety_context:
+    prompt_id: c3_new_changed_or_safety_context
+    applicable_route_ids: [headache_with_cervical_msk_features]
+    label_el: Νέα ή ουσιωδώς αλλαγμένη/προοδευτική κεφαλαλγία, νευρολογικό/κρανιακό εύρημα ή άλλο συστηματικό/αγγειακό/κλινικό στοιχείο ανησυχίας
+    response_type: text
+    requiredness: conditional
+    evidence_claim_ids_optional: [c3_headache_safety_reassessment]
+
+  c3_trauma_context:
+    prompt_id: c3_trauma_context
+    applicable_route_ids: [headache_with_cervical_msk_features]
+    label_el: Πρόσφατο τραυματικό/whiplash πλαίσιο ή μετατραυματική έναρξη που μπορεί να απαιτεί το C5 route
+    response_type: text
+    requiredness: optional
+
+  c3_function_and_priority_activity:
+    prompt_id: c3_function_and_priority_activity
+    applicable_route_ids: [headache_with_cervical_msk_features]
+    label_el: Λειτουργικός περιορισμός από κεφαλαλγία/αυχενικά συμπτώματα σε εργασία, ύπνο, οδήγηση, οθόνη, άσκηση ή άλλη δραστηριότητα προτεραιότητας
+    response_type: text
+    requiredness: optional
+
+  c3_prior_treatment_response:
+    prompt_id: c3_prior_treatment_response
+    applicable_route_ids: [headache_with_cervical_msk_features]
+    label_el: Προηγούμενη φαρμακευτική/φυσικοθεραπευτική/άλλη αντιμετώπιση της κεφαλαλγίας ή του αυχένα και ανταπόκριση
+    response_type: text
+    requiredness: optional
+
+route_evidence_profiles:
+  rep_c3_cervical_headache_presentation_v1:
+    route_evidence_profile_id: rep_c3_cervical_headache_presentation_v1
+    region_profile_id: cervical
+    route_id: headache_with_cervical_msk_features
+    applicability_conditions_optional:
+      - headache_with_cervical_msk_features_selected
+      - formal_cervicogenic_headache_diagnosis_not_yes
+      - no_unresolved_material_headache_safety_concern
+      - no_unresolved_post_traumatic_primary_context
+    diagnostic_claim_ids:
+      - c3_cervical_features_not_formal_cgh
+      - c3_ichd_causation_not_single_finding
+    history_claim_ids: []
+    examination_claim_ids: []
+    rehabilitation_sequence_id: seq_c3_cervical_headache_presentation_v1
+    adjunct_claim_ids:
+      - c3_selected_manual_therapy_apta_context
+      - c3_self_SNAG_execution_detail_C
+    safety_claim_ids:
+      - c3_headache_safety_reassessment
+    evidence_gaps:
+      - cervical_msk_features_do_not_establish_formal_cervicogenic_headache
+      - disease_specific_CGH_meta_analysis_claims_do_not_apply_without_formal_or_clinician_established_CGH_context
+      - no_universal_exercise_dose_or_numeric_progression_threshold
+      - no_fixed_PT_frequency_or_total_course_duration
+      - primary_headache_or_other_secondary_headache_causes_are_not_excluded_by_route_selection
+      - post_traumatic_headache_or_neck_context_requires_C5_applicability_review
+    primary_source_ids:
+      - neck_pain_apta_cpg_2017
+      - ichd3_cervicogenic_headache_current
+    last_reviewed_on: 2026-08-29
+    next_review_due: 2027-02-28
+    freshness_state: current
+
+  rep_c3_formal_cervicogenic_headache_v1:
+    route_evidence_profile_id: rep_c3_formal_cervicogenic_headache_v1
+    region_profile_id: cervical
+    route_id: headache_with_cervical_msk_features
+    applicability_conditions_optional:
+      - formal_cervicogenic_headache_diagnosis_yes
+      - no_unresolved_material_headache_safety_concern
+      - no_unresolved_post_traumatic_primary_context
+    diagnostic_claim_ids:
+      - c3_cervical_features_not_formal_cgh
+      - c3_ichd_causation_not_single_finding
+    history_claim_ids: []
+    examination_claim_ids: []
+    rehabilitation_sequence_id: seq_c3_formal_cervicogenic_headache_v1
+    adjunct_claim_ids:
+      - c3_selected_manual_therapy_apta_context
+      - c3_formal_cgh_manual_short_term_low_2026
+      - c3_self_SNAG_execution_detail_C
+      - c3_formal_cgh_nma_rankings_not_protocol_2024
+    safety_claim_ids:
+      - c3_headache_safety_reassessment
+    evidence_gaps:
+      - newer_2026_GRADE_synthesis_does_not_establish_durable_manual_therapy_benefit
+      - direct_exercise_effect_on_headache_outcomes_remains_low_certainty_or_uncertain
+      - network_meta_analysis_rankings_are_low_certainty_and_not_protocol_authority
+      - no_universal_manual_technique_or_exercise_programme_superiority
+      - no_universal_numeric_progression_threshold
+      - no_fixed_PT_frequency_or_total_course_duration
+      - clinician_entered_CGH_diagnosis_is_preserved_as_clinician_assertion_not_generated_by_CU1
+    primary_source_ids:
+      - neck_pain_apta_cpg_2017
+      - ichd3_cervicogenic_headache_current
+      - cgh_nonsurgical_grade_sr_2026
+      - cgh_PT_network_meta_analysis_2024
+    last_reviewed_on: 2026-08-29
+    next_review_due: 2027-02-28
+    freshness_state: current
+
+rehabilitation_sequences:
+  seq_c3_cervical_headache_presentation_v1:
+    sequence_id: seq_c3_cervical_headache_presentation_v1
+    route_id: headache_with_cervical_msk_features
+    applicability_conditions_optional:
+      - headache_with_cervical_msk_features_selected
+      - formal_cervicogenic_headache_diagnosis_not_yes
+      - no_unresolved_material_headache_safety_concern
+      - no_unresolved_post_traumatic_primary_context
+    sequence_source: route_evidence_profile
+    route_evidence_profile_id: rep_c3_cervical_headache_presentation_v1
+    phases:
+      - phase_id: c3_presentation_active_function_rehabilitation
+        order: 1
+        clinical_objective: reduce headache-related and cervical functional impact through individualized active cervical rehabilitation without asserting a cervicogenic-headache diagnosis
+        objective_authority:
+          authority_type: evidence_claim
+          evidence_claim_ids: [c3_apta_active_rehabilitation_context]
+        intervention_directions:
+          - intervention_direction_id: c3_presentation_active_mobility_exercise
+            statement: use individualized active cervical mobility and cervical/scapulothoracic exercise according to symptom course and identified impairments, without a fixed evidence-derived dose
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [c3_apta_active_rehabilitation_context]
+          - intervention_direction_id: c3_presentation_acute_supervised_mobility
+            statement: in acute C3 presentations, supervised active mobility instruction may be used under the Grade-B APTA framework
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [c3_acute_active_mobility_B]
+            applicability_conditions_optional: [acute_cervical_headache_presentation]
+          - intervention_direction_id: c3_presentation_selected_manual_adjunct
+            statement: selected cervical manual therapy may be included when clinically appropriate and explicitly chosen, but it is not an automatic route requirement
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [c3_selected_manual_therapy_apta_context]
+            applicability_conditions_optional: [subacute_or_chronic_cervical_headache_presentation, manual_therapy_selected_as_adjunct]
+        progression_criteria: []
+        precautions_or_do_not_progress_criteria:
+          - criterion_id: c3_presentation_headache_safety_reassessment
+            criterion_kind: safety_escalation
+            statement: a materially new, markedly changed or progressive headache pattern or neurological/vascular/systemic clinician concern requires reassessment rather than routine progression
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [c3_headache_safety_reassessment]
+        strength_optional: null
+        certainty_optional: not_graded
+        required_for_route: true
+    clinician_modifications_optional: []
+    protocol_overrides_optional: []
+
+  seq_c3_formal_cervicogenic_headache_v1:
+    sequence_id: seq_c3_formal_cervicogenic_headache_v1
+    route_id: headache_with_cervical_msk_features
+    applicability_conditions_optional:
+      - formal_cervicogenic_headache_diagnosis_yes
+      - no_unresolved_material_headache_safety_concern
+      - no_unresolved_post_traumatic_primary_context
+    sequence_source: route_evidence_profile
+    route_evidence_profile_id: rep_c3_formal_cervicogenic_headache_v1
+    phases:
+      - phase_id: c3_formal_cgh_active_evidence_bounded_rehabilitation
+        order: 1
+        clinical_objective: reduce headache-related disability and improve relevant cervical function using active rehabilitation with selected adjuncts while preserving current evidence uncertainty
+        objective_authority:
+          authority_type: evidence_claim
+          evidence_claim_ids: [c3_apta_active_rehabilitation_context]
+        intervention_directions:
+          - intervention_direction_id: c3_formal_cgh_active_mobility_exercise
+            statement: use individualized cervical mobility and cervical/scapulothoracic exercise according to identified impairments and activity goals; do not claim one superior programme or high-certainty direct headache effect
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [c3_apta_active_rehabilitation_context]
+          - intervention_direction_id: c3_formal_cgh_acute_supervised_mobility
+            statement: in acute formal/clinician-established C3 presentations, supervised active mobility instruction may be used under the Grade-B APTA framework
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [c3_acute_active_mobility_B]
+            applicability_conditions_optional: [acute_cervical_headache_presentation]
+          - intervention_direction_id: c3_formal_cgh_selected_manual_adjunct
+            statement: selected manual therapy may be considered as an adjunct, particularly for short-term symptom relief, without claiming durable universal benefit or a mandatory manual technique
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [c3_selected_manual_therapy_apta_context, c3_formal_cgh_manual_short_term_low_2026]
+            applicability_conditions_optional: [subacute_or_chronic_cervical_headache_presentation, manual_therapy_selected_as_adjunct]
+        progression_criteria: []
+        precautions_or_do_not_progress_criteria:
+          - criterion_id: c3_formal_cgh_headache_safety_reassessment
+            criterion_kind: safety_escalation
+            statement: a materially new, markedly changed or progressive headache pattern or neurological/vascular/systemic clinician concern requires reassessment rather than routine progression
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [c3_headache_safety_reassessment]
+        strength_optional: null
+        certainty_optional: not_graded
+        required_for_route: true
+    clinician_modifications_optional: []
+    protocol_overrides_optional: []
+
+coverage_effect:
+  route_profiles_added:
+    - rep_c3_cervical_headache_presentation_v1
+    - rep_c3_formal_cervicogenic_headache_v1
+  rehabilitation_sequences_added:
+    - seq_c3_cervical_headache_presentation_v1
+    - seq_c3_formal_cervicogenic_headache_v1
+  route_history_prompts_added:
+    - c3_headache_pattern_frequency_intensity
+    - c3_temporal_relation_to_neck
+    - c3_cervical_provocation_context
+    - c3_formal_cgh_diagnosis
+    - c3_other_headache_features_differential
+    - c3_new_changed_or_safety_context
+    - c3_trauma_context
+    - c3_function_and_priority_activity
+    - c3_prior_treatment_response
+  route_state: ready_for_exact_review_not_runtime

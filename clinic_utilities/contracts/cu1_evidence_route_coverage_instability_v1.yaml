@@ -1,0 +1,482 @@
+version: cu1_evidence_route_coverage_instability_v1
+status: active_design_authority_route_coverage_extension
+runtime_authorized: false
+reviewed_on: 2026-08-29
+normative_schema: clinic_utilities/contracts/cu1_history_timeline_schema_v1.yaml
+identity_mode: explicit_payload_id
+review_record: clinic_utilities/contracts/CU1_ROUTE_COVERAGE_REVIEW_2026-08-29.md
+logical_amendment: clinic_utilities/contracts/cu1_evidence_route_coverage_amendments_v1.yaml
+
+purpose: >-
+  Route-specific evidence objects for glenohumeral instability/dislocation. The route is split by
+  cause, direction, recurrence and management context. No generic shoulder-instability sequence is
+  authorized. Existing tranche3 anterior/posterior profiles are amended only through the named
+  reviewed logical-amendment artifact.
+
+external_source_dependencies:
+  - traumatic_anterior_shoulder_instability_esska_esa_2026
+  - posterior_shoulder_instability_consensus_part1_2025
+
+sources:
+  shoulder_instability_nonoperative_clinical_concepts_2024:
+    evidence_id: shoulder_instability_nonoperative_clinical_concepts_2024
+    source_type: narrative_review
+    title: Current Clinical Concepts: Nonoperative Management of Shoulder Instability
+    authors_or_organization: Margie Olds and Timothy L Uhl
+    year_or_version: 2024
+    reference: J Athl Train. 2024;59(3):243-254
+    doi_optional: 10.4085/1062-6050-0468.22
+    population_scope_optional: people with anterior, posterior or multidirectional shoulder instability selected for nonoperative management; rehabilitation framework is direction and impairment specific
+    reviewed_on: 2026-08-29
+    next_review_due: 2027-02-28
+    freshness_state: current
+    status: active
+
+  shoulder_mdi_cochrane_2026:
+    evidence_id: shoulder_mdi_cochrane_2026
+    source_type: systematic_review
+    title: Exercise for multidirectional instability of the shoulder
+    authors_or_organization: Karasuyama et al. / Cochrane
+    year_or_version: 2026
+    reference: Cochrane Database Syst Rev. 2026;2:CD015450
+    doi_optional: 10.1002/14651858.CD015450.pub2
+    population_scope_optional: people with multidirectional shoulder instability; randomized comparisons of exercise against placebo/no treatment/waiting-list/usual-care control
+    reviewed_on: 2026-08-29
+    next_review_due: 2027-08-29
+    freshness_state: current
+    status: active
+
+  shoulder_mdi_classification_sr_2024:
+    evidence_id: shoulder_mdi_classification_sr_2024
+    source_type: systematic_review
+    title: Multidirectional instability of the shoulder: a systematic review with a novel classification
+    authors_or_organization: Housset et al.
+    year_or_version: 2024
+    reference: EFORT Open Rev. 2024;9(4):285-296
+    doi_optional: 10.1530/EOR-23-0029
+    population_scope_optional: multidirectional shoulder instability; classification and diagnostic heterogeneity
+    reviewed_on: 2026-08-29
+    next_review_due: 2027-08-29
+    freshness_state: current
+    status: active
+
+claims:
+  anterior_traumatic_selected_rehab_framework_2024:
+    claim_id: anterior_traumatic_selected_rehab_framework_2024
+    evidence_ids: [shoulder_instability_nonoperative_clinical_concepts_2024]
+    applicable_route_evidence_profile_ids: [rep_shoulder_instability_anterior_traumatic_v1]
+    applicable_route_ids: [glenohumeral_instability_dislocation]
+    applicability_conditions_optional: [traumatic_anterior_instability_with_explicit_rehabilitation_pathway]
+    domain: core_rehabilitation
+    claim_summary: When a traumatic anterior instability patient has an explicit rehabilitation pathway, rehabilitation should be direction- and impairment-specific, restoring motor control, strength and endurance before higher-demand dynamic loading rather than following a generic time-only protocol.
+    recommendation_direction: consider
+    output_scope: referral_core
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  anterior_first_time_rehab_esska_2026:
+    claim_id: anterior_first_time_rehab_esska_2026
+    evidence_ids: [traumatic_anterior_shoulder_instability_esska_esa_2026]
+    applicable_route_evidence_profile_ids: [rep_shoulder_instability_anterior_traumatic_v1]
+    applicable_route_ids: [glenohumeral_instability_dislocation]
+    applicability_conditions_optional: [first_time_traumatic_anterior_dislocation]
+    domain: rehab_phase
+    claim_summary: After first-time traumatic anterior dislocation, rehabilitation is recommended regardless of whether surgery is planned; after immobilization, begin pain-controlled passive range of motion, progress gradually to active-assisted exercise, and begin periscapular and rotator-cuff strengthening when pain allows after concomitant injuries have been considered.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    strength_optional: D
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  anterior_recurrent_rehab_esska_2026:
+    claim_id: anterior_recurrent_rehab_esska_2026
+    evidence_ids: [traumatic_anterior_shoulder_instability_esska_esa_2026]
+    applicable_route_evidence_profile_ids: [rep_shoulder_instability_anterior_traumatic_v1]
+    applicable_route_ids: [glenohumeral_instability_dislocation]
+    applicability_conditions_optional: [recurrent_traumatic_anterior_preoperative_or_selected_rehabilitation]
+    domain: rehab_phase
+    claim_summary: In recurrent traumatic anterior instability, when rehabilitation is being used preoperatively or in an explicitly selected rehabilitation pathway, begin passive and active-assisted movement as pain is tolerated and progress to proprioceptive and rotator-cuff, deltoid and periscapular strengthening.
+    recommendation_direction: consider
+    output_scope: referral_core
+    strength_optional: C
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  anterior_recurrent_surgical_context_esska_2026:
+    claim_id: anterior_recurrent_surgical_context_esska_2026
+    evidence_ids: [traumatic_anterior_shoulder_instability_esska_esa_2026]
+    applicable_route_evidence_profile_ids: [rep_shoulder_instability_anterior_traumatic_v1]
+    applicable_route_ids: [glenohumeral_instability_dislocation]
+    applicability_conditions_optional: [recurrent_traumatic_anterior_instability]
+    domain: safety
+    claim_summary: The 2026 ESSKA-ESA consensus generally recommends surgical treatment for recurrent traumatic anterior dislocation and notes that rehabilitation alone is unlikely to achieve stability in many recurrent cases, particularly contact/collision athletes; the management decision must therefore remain explicit.
+    recommendation_direction: context_only
+    output_scope: clinician_ui_only
+    strength_optional: C
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  anterior_traumatic_criterion_progression_2024:
+    claim_id: anterior_traumatic_criterion_progression_2024
+    evidence_ids: [shoulder_instability_nonoperative_clinical_concepts_2024]
+    applicable_route_evidence_profile_ids: [rep_shoulder_instability_anterior_traumatic_v1]
+    applicable_route_ids: [glenohumeral_instability_dislocation]
+    applicability_conditions_optional: [traumatic_anterior_instability_with_explicit_rehabilitation_pathway]
+    domain: progression_criteria
+    claim_summary: Progress higher-demand anterior-instability rehabilitation according to pain-free motor control, strength/endurance and functional milestones rather than elapsed time alone.
+    recommendation_direction: consider
+    output_scope: referral_core
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  posterior_nonoperative_rehab_framework_2024:
+    claim_id: posterior_nonoperative_rehab_framework_2024
+    evidence_ids: [shoulder_instability_nonoperative_clinical_concepts_2024]
+    applicable_route_evidence_profile_ids: [rep_shoulder_instability_posterior_v1]
+    applicable_route_ids: [glenohumeral_instability_dislocation]
+    applicability_conditions_optional: [posterior_instability_with_explicit_nonoperative_management_decision]
+    domain: core_rehabilitation
+    claim_summary: For posterior instability selected for nonoperative management, rehabilitation should be direction- and impairment-specific with restoration of posterior rotator-cuff/scapular motor control and strength followed by progressive dynamic loading and stability work as symptoms permit.
+    recommendation_direction: consider
+    output_scope: referral_core
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  posterior_nonoperative_progression_2024:
+    claim_id: posterior_nonoperative_progression_2024
+    evidence_ids: [shoulder_instability_nonoperative_clinical_concepts_2024]
+    applicable_route_evidence_profile_ids: [rep_shoulder_instability_posterior_v1]
+    applicable_route_ids: [glenohumeral_instability_dislocation]
+    applicability_conditions_optional: [posterior_instability_with_explicit_nonoperative_management_decision]
+    domain: progression_criteria
+    claim_summary: Progress posterior-instability rehabilitation by motor-control, strength/endurance and symptom-free functional milestones before more demanding dynamic or perturbation tasks rather than by calendar time alone.
+    recommendation_direction: consider
+    output_scope: referral_core
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  posterior_nonoperative_return_readiness_2024:
+    claim_id: posterior_nonoperative_return_readiness_2024
+    evidence_ids: [shoulder_instability_nonoperative_clinical_concepts_2024]
+    applicable_route_evidence_profile_ids: [rep_shoulder_instability_posterior_v1]
+    applicable_route_ids: [glenohumeral_instability_dislocation]
+    applicability_conditions_optional: [posterior_instability_return_to_activity_nonoperative]
+    domain: progression_criteria
+    claim_summary: Before full sport or high-demand return after nonoperative posterior-instability rehabilitation, prior rehabilitation milestones should be met and psychological readiness, direction-specific physical performance and sport/endurance demands should be considered.
+    recommendation_direction: consider
+    output_scope: referral_core
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  anterior_atraumatic_rehab_framework_2024:
+    claim_id: anterior_atraumatic_rehab_framework_2024
+    evidence_ids: [shoulder_instability_nonoperative_clinical_concepts_2024]
+    applicable_route_evidence_profile_ids: [rep_shoulder_instability_anterior_atraumatic_v1]
+    applicable_route_ids: [glenohumeral_instability_dislocation]
+    applicability_conditions_optional: [atraumatic_anterior_instability_with_explicit_nonoperative_management_decision]
+    domain: core_rehabilitation
+    claim_summary: For atraumatic anterior instability selected for nonoperative management, a direction-specific rehabilitation framework may target anterior rotator-cuff/scapular motor control and strength and then progress dynamic functional loading according to identified deficits.
+    recommendation_direction: consider
+    output_scope: referral_core
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  anterior_atraumatic_progression_2024:
+    claim_id: anterior_atraumatic_progression_2024
+    evidence_ids: [shoulder_instability_nonoperative_clinical_concepts_2024]
+    applicable_route_evidence_profile_ids: [rep_shoulder_instability_anterior_atraumatic_v1]
+    applicable_route_ids: [glenohumeral_instability_dislocation]
+    applicability_conditions_optional: [atraumatic_anterior_instability_with_explicit_nonoperative_management_decision]
+    domain: progression_criteria
+    claim_summary: Progress atraumatic anterior-instability rehabilitation according to pain-free motor control, strength/endurance and functional performance rather than a universal elapsed-time sequence.
+    recommendation_direction: consider
+    output_scope: referral_core
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  mdi_definition_heterogeneous_2024:
+    claim_id: mdi_definition_heterogeneous_2024
+    evidence_ids: [shoulder_mdi_classification_sr_2024]
+    applicable_route_evidence_profile_ids: [rep_shoulder_instability_multidirectional_v1]
+    applicable_route_ids: [glenohumeral_instability_dislocation]
+    domain: diagnostic_definition
+    claim_summary: Multidirectional instability denotes symptomatic instability in at least two directions, but published definitions are heterogeneous and trauma and hyperlaxity materially affect subtype interpretation; the utility must not infer MDI from generalized laxity alone.
+    recommendation_direction: context_only
+    output_scope: clinician_ui_only
+    certainty_optional: not_applicable
+    reviewed_on: 2026-08-29
+
+  mdi_nonoperative_rehab_cautious_2024_2026:
+    claim_id: mdi_nonoperative_rehab_cautious_2024_2026
+    evidence_ids: [shoulder_instability_nonoperative_clinical_concepts_2024, shoulder_mdi_cochrane_2026]
+    applicable_route_evidence_profile_ids: [rep_shoulder_instability_multidirectional_v1]
+    applicable_route_ids: [glenohumeral_instability_dislocation]
+    applicability_conditions_optional: [multidirectional_instability_with_explicit_nonoperative_management_decision]
+    domain: core_rehabilitation
+    claim_summary: When nonoperative rehabilitation has been selected for multidirectional instability, an individualized motor-control, co-contraction/scapular-control and dynamic-stability framework may be considered, but comparative benefits and harms remain uncertain because the 2026 Cochrane review found no eligible randomized trials against control/usual-care comparators.
+    recommendation_direction: consider
+    output_scope: referral_core
+    certainty_optional: very_low
+    reviewed_on: 2026-08-29
+
+  mdi_exercise_efficacy_uncertain_cochrane_2026:
+    claim_id: mdi_exercise_efficacy_uncertain_cochrane_2026
+    evidence_ids: [shoulder_mdi_cochrane_2026]
+    applicable_route_evidence_profile_ids: [rep_shoulder_instability_multidirectional_v1]
+    applicable_route_ids: [glenohumeral_instability_dislocation]
+    domain: core_rehabilitation
+    claim_summary: The benefits and harms of exercise therapy for multidirectional shoulder instability versus placebo, no treatment, waiting list or usual care are currently uncertain because no eligible randomized controlled trials were identified through May 2025.
+    recommendation_direction: insufficient_evidence
+    output_scope: clinician_ui_only
+    certainty_optional: very_low
+    reviewed_on: 2026-08-29
+
+route_history_prompts:
+  shoulder_instability_management_context:
+    prompt_id: shoulder_instability_management_context
+    applicable_route_ids: [glenohumeral_instability_dislocation]
+    label_el: Τρέχουσα στρατηγική αντιμετώπισης: συντηρητική αποκατάσταση, προεγχειρητική αποκατάσταση, εκκρεμής ειδική εκτίμηση ή άλλο πλαίσιο
+    response_type: text
+    requiredness: conditional
+
+  shoulder_instability_structural_risk_context:
+    prompt_id: shoulder_instability_structural_risk_context
+    applicable_route_ids: [glenohumeral_instability_dislocation]
+    label_el: Γνωστή οστική απώλεια, Bankart / Hill-Sachs ή άλλη συνοδός δομική βλάβη και σχετική ειδική εκτίμηση
+    response_type: text
+    requiredness: optional
+
+  shoulder_instability_sport_demand:
+    prompt_id: shoulder_instability_sport_demand
+    applicable_route_ids: [glenohumeral_instability_dislocation]
+    label_el: Άθλημα / εργασία, contact-collision ή overhead απαιτήσεις και στόχος επιστροφής
+    response_type: text
+    requiredness: optional
+
+  shoulder_instability_current_restrictions:
+    prompt_id: shoulder_instability_current_restrictions
+    applicable_route_ids: [glenohumeral_instability_dislocation]
+    label_el: Τρέχοντες περιορισμοί κίνησης / φόρτισης ή οδηγίες μετά από ανάταξη / ειδική αξιολόγηση
+    response_type: text
+    requiredness: optional
+
+route_evidence_profiles:
+  rep_shoulder_instability_anterior_atraumatic_v1:
+    route_evidence_profile_id: rep_shoulder_instability_anterior_atraumatic_v1
+    region_profile_id: shoulder
+    route_id: glenohumeral_instability_dislocation
+    applicability_conditions_optional: [atraumatic_anterior_instability_with_explicit_nonoperative_management_decision]
+    diagnostic_claim_ids: []
+    history_claim_ids: []
+    examination_claim_ids: []
+    rehabilitation_sequence_id: seq_shoulder_instability_anterior_atraumatic_v1
+    adjunct_claim_ids: []
+    safety_claim_ids: []
+    evidence_gaps:
+      - current_authority_is_a_clinical_concepts_framework_not_a_route_specific_CPG
+      - exact_comparative_efficacy_and_universal_numeric_progression_thresholds_are_not_established
+      - structural_or_specialist_context_may_change_management
+    primary_source_ids: [shoulder_instability_nonoperative_clinical_concepts_2024]
+    last_reviewed_on: 2026-08-29
+    next_review_due: 2027-02-28
+    freshness_state: current
+
+  rep_shoulder_instability_multidirectional_v1:
+    route_evidence_profile_id: rep_shoulder_instability_multidirectional_v1
+    region_profile_id: shoulder
+    route_id: glenohumeral_instability_dislocation
+    applicability_conditions_optional: [multidirectional_instability_with_explicit_nonoperative_management_decision]
+    diagnostic_claim_ids: [mdi_definition_heterogeneous_2024]
+    history_claim_ids: []
+    examination_claim_ids: []
+    rehabilitation_sequence_id: seq_shoulder_instability_multidirectional_v1
+    adjunct_claim_ids: []
+    safety_claim_ids: []
+    evidence_gaps:
+      - comparative_benefit_and_harm_of_exercise_vs_control_remains_uncertain
+      - MDI_definition_and_subtypes_are_heterogeneous
+      - no_universal_numeric_progression_or_return_threshold_is_authorized
+    primary_source_ids: [shoulder_mdi_cochrane_2026, shoulder_mdi_classification_sr_2024, shoulder_instability_nonoperative_clinical_concepts_2024]
+    last_reviewed_on: 2026-08-29
+    next_review_due: 2027-02-28
+    freshness_state: current
+
+rehabilitation_sequences:
+  seq_shoulder_instability_anterior_traumatic_v1:
+    sequence_id: seq_shoulder_instability_anterior_traumatic_v1
+    route_id: glenohumeral_instability_dislocation
+    applicability_conditions_optional: [traumatic_anterior_instability_with_explicit_rehabilitation_pathway]
+    sequence_source: route_evidence_profile
+    route_evidence_profile_id: rep_shoulder_instability_anterior_traumatic_v1
+    phases:
+      - phase_id: anterior_traumatic_initial_rehabilitation
+        order: 1
+        clinical_objective: restore pain-controlled motion and direction-specific shoulder motor control and strength within the explicitly selected rehabilitation pathway
+        objective_authority:
+          authority_type: evidence_claim
+          evidence_claim_ids: [anterior_traumatic_selected_rehab_framework_2024]
+        intervention_directions:
+          - intervention_direction_id: anterior_first_time_esska_progression
+            statement: after first-time traumatic anterior dislocation, progress from pain-controlled passive motion to active-assisted exercise and begin periscapular and rotator-cuff strengthening when pain allows, after concomitant injury context has been considered
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [anterior_first_time_rehab_esska_2026]
+            applicability_conditions_optional: [first_time_traumatic_anterior_dislocation]
+          - intervention_direction_id: anterior_recurrent_selected_rehabilitation
+            statement: in recurrent traumatic anterior instability with an explicit preoperative or selected rehabilitation pathway, use pain-tolerated passive/active-assisted motion followed by proprioceptive and rotator-cuff, deltoid and periscapular strengthening
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [anterior_recurrent_rehab_esska_2026]
+            applicability_conditions_optional: [recurrent_traumatic_anterior_preoperative_or_selected_rehabilitation]
+        progression_criteria:
+          - criterion_id: anterior_traumatic_functional_progression
+            criterion_kind: progression
+            statement: advance toward higher-demand dynamic rehabilitation when pain-free motor control, strength/endurance and functional milestones support progression rather than by elapsed time alone
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [anterior_traumatic_criterion_progression_2024]
+        precautions_or_do_not_progress_criteria: []
+        strength_optional: null
+        certainty_optional: not_graded
+        required_for_route: true
+
+      - phase_id: anterior_traumatic_return_to_sport_when_applicable
+        order: 2
+        clinical_objective: restore safe sport-specific function after conservative traumatic anterior instability care when return to sport is a patient goal
+        objective_authority:
+          authority_type: evidence_claim
+          evidence_claim_ids: [anterior_shoulder_instability_RTS_criteria]
+        intervention_directions: []
+        progression_criteria:
+          - criterion_id: anterior_conservative_rts_criteria
+            criterion_kind: progression
+            statement: return to sport only when full pain-free range of motion, clinical stability without apprehension, adequate strength/endurance and sport-specific readiness are present rather than using time alone
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [anterior_shoulder_instability_RTS_criteria]
+            applicability_conditions_optional: [traumatic_anterior_instability_return_to_sport]
+        precautions_or_do_not_progress_criteria: []
+        strength_optional: C
+        certainty_optional: not_graded
+        required_for_route: false
+    clinician_modifications_optional: []
+    protocol_overrides_optional: []
+
+  seq_shoulder_instability_posterior_nonoperative_v1:
+    sequence_id: seq_shoulder_instability_posterior_nonoperative_v1
+    route_id: glenohumeral_instability_dislocation
+    applicability_conditions_optional: [posterior_instability_with_explicit_nonoperative_management_decision]
+    sequence_source: route_evidence_profile
+    route_evidence_profile_id: rep_shoulder_instability_posterior_v1
+    phases:
+      - phase_id: posterior_nonoperative_direction_specific_rehabilitation
+        order: 1
+        clinical_objective: restore posterior-direction shoulder motor control, strength and dynamic stability in a patient explicitly selected for nonoperative management
+        objective_authority:
+          authority_type: evidence_claim
+          evidence_claim_ids: [posterior_nonoperative_rehab_framework_2024]
+        intervention_directions:
+          - intervention_direction_id: posterior_rotator_cuff_scapular_control
+            statement: use direction-specific posterior rotator-cuff and scapular motor-control/strength work and progress to dynamic stability tasks according to symptoms and identified deficits
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [posterior_nonoperative_rehab_framework_2024]
+        progression_criteria:
+          - criterion_id: posterior_nonoperative_functional_progression
+            criterion_kind: progression
+            statement: progress when motor control, strength/endurance and symptom-free functional milestones support higher-demand dynamic or perturbation work rather than by calendar time alone
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [posterior_nonoperative_progression_2024]
+          - criterion_id: posterior_nonoperative_return_readiness
+            criterion_kind: progression
+            statement: before full sport or high-demand return, confirm prior rehabilitation milestones plus direction-specific physical performance, psychological readiness and sport/endurance demands
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [posterior_nonoperative_return_readiness_2024]
+            applicability_conditions_optional: [posterior_instability_return_to_activity_nonoperative]
+        precautions_or_do_not_progress_criteria: []
+        strength_optional: null
+        certainty_optional: not_graded
+        required_for_route: true
+    clinician_modifications_optional: []
+    protocol_overrides_optional: []
+
+  seq_shoulder_instability_anterior_atraumatic_v1:
+    sequence_id: seq_shoulder_instability_anterior_atraumatic_v1
+    route_id: glenohumeral_instability_dislocation
+    applicability_conditions_optional: [atraumatic_anterior_instability_with_explicit_nonoperative_management_decision]
+    sequence_source: route_evidence_profile
+    route_evidence_profile_id: rep_shoulder_instability_anterior_atraumatic_v1
+    phases:
+      - phase_id: anterior_atraumatic_direction_specific_rehabilitation
+        order: 1
+        clinical_objective: improve dynamic anterior shoulder control and function through direction- and impairment-specific nonoperative rehabilitation
+        objective_authority:
+          authority_type: evidence_claim
+          evidence_claim_ids: [anterior_atraumatic_rehab_framework_2024]
+        intervention_directions:
+          - intervention_direction_id: anterior_atraumatic_motor_control_strength
+            statement: use individualized anterior rotator-cuff/scapular motor-control and strengthening work and progress dynamic loading according to identified deficits
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [anterior_atraumatic_rehab_framework_2024]
+        progression_criteria:
+          - criterion_id: anterior_atraumatic_functional_progression
+            criterion_kind: progression
+            statement: progress according to pain-free motor control, strength/endurance and functional performance rather than a universal elapsed-time sequence
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [anterior_atraumatic_progression_2024]
+        precautions_or_do_not_progress_criteria: []
+        strength_optional: null
+        certainty_optional: not_graded
+        required_for_route: true
+    clinician_modifications_optional: []
+    protocol_overrides_optional: []
+
+  seq_shoulder_instability_multidirectional_v1:
+    sequence_id: seq_shoulder_instability_multidirectional_v1
+    route_id: glenohumeral_instability_dislocation
+    applicability_conditions_optional: [multidirectional_instability_with_explicit_nonoperative_management_decision]
+    sequence_source: route_evidence_profile
+    route_evidence_profile_id: rep_shoulder_instability_multidirectional_v1
+    phases:
+      - phase_id: mdi_cautious_nonoperative_rehabilitation
+        order: 1
+        clinical_objective: provide cautious individualized dynamic-stability rehabilitation without overstating uncertain comparative efficacy
+        objective_authority:
+          authority_type: evidence_claim
+          evidence_claim_ids: [mdi_nonoperative_rehab_cautious_2024_2026]
+        intervention_directions:
+          - intervention_direction_id: mdi_motor_control_cocontraction_dynamic_stability
+            statement: when nonoperative rehabilitation is explicitly selected, consider individualized motor-control, co-contraction/scapular-control and dynamic-stability work while preserving the current uncertainty in comparative benefit
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [mdi_nonoperative_rehab_cautious_2024_2026]
+        progression_criteria: []
+        precautions_or_do_not_progress_criteria: []
+        strength_optional: null
+        certainty_optional: very_low
+        required_for_route: true
+    clinician_modifications_optional: []
+    protocol_overrides_optional: []
+
+coverage_effect:
+  existing_profiles_amended:
+    - rep_shoulder_instability_anterior_traumatic_v1
+    - rep_shoulder_instability_posterior_v1
+  route_profiles_added:
+    - rep_shoulder_instability_anterior_atraumatic_v1
+    - rep_shoulder_instability_multidirectional_v1
+  rehabilitation_sequences_added:
+    - seq_shoulder_instability_anterior_traumatic_v1
+    - seq_shoulder_instability_posterior_nonoperative_v1
+    - seq_shoulder_instability_anterior_atraumatic_v1
+    - seq_shoulder_instability_multidirectional_v1
+  claim_scope_correction_required:
+    - posterior_shoulder_instability_RTS_consensus_must_not_authorize_nonoperative_RTS
+  unresolved_context_behavior:
+    direction_or_cause_or_management_context_not_stated: block_evidence_aware_sequence_until_clarified
+    postoperative_instability_rehabilitation: route_to_postoperative_shoulder_rehabilitation_not_generic_instability_sequence
+  runtime_authorized: false

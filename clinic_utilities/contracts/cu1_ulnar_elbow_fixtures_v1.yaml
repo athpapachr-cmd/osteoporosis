@@ -1,0 +1,189 @@
+version: cu1_ulnar_elbow_fixtures_v1
+status: normative_design_regression_oracle_active
+runtime_authorized: false
+route_id: ulnar_neuropathy_at_elbow
+reviewed_on: 2026-08-29
+
+purpose: >-
+  Regression oracle for ulnar-neuropathy-at-elbow evidence governance. The fixtures preserve symptom-vs-diagnosis,
+  subjective-vs-objective neurological findings, mild-only conservative applicability, night-splint and physiotherapy
+  uncertainty, localization boundaries, and fail-closed behavior when severity or motor status is unresolved.
+
+fixtures:
+  - fixture_id: une_mild_explicit_context_resolves_narrow_conservative_sequence
+    given:
+      route_id: ulnar_neuropathy_at_elbow
+      clinician_severity: mild
+      objective_ulnar_motor_status: assessed_no_material_deficit
+      intrinsic_atrophy_or_clawing: no
+      alternative_localization_or_structural_concern: no
+    expect:
+      route_evidence_profile_id: rep_une_mild_sensory_predominant_v1
+      rehabilitation_sequence_id: seq_une_mild_conservative_v1
+      must_allow_authority: une_mild_position_education_small_rct
+      progression_criteria_must_remain_empty: true
+      must_not_auto_render_night_splint: true
+      must_not_auto_render_nerve_gliding: true
+
+  - fixture_id: une_not_assessed_motor_status_does_not_become_mild
+    given:
+      route_id: ulnar_neuropathy_at_elbow
+      clinician_severity: not_stated
+      objective_ulnar_motor_status: not_assessed
+      symptoms: [ring_small_finger_paresthesia, night_symptoms]
+    expect:
+      route_evidence_profile_id: rep_une_nonmild_or_severity_unresolved_v1
+      rehabilitation_sequence_id: null
+      must_not_infer_normal_motor_exam: true
+      must_not_apply_authority: une_mild_position_education_small_rct
+      must_preserve_blocked_evidence_gap: true
+
+  - fixture_id: une_explicit_moderate_does_not_inherit_mild_RCT_sequence
+    given:
+      route_id: ulnar_neuropathy_at_elbow
+      clinician_severity: moderate
+      objective_ulnar_motor_status: assessed_no_progressive_motor_deficit
+    expect:
+      route_evidence_profile_id: rep_une_nonmild_or_severity_unresolved_v1
+      rehabilitation_sequence_id: null
+      must_apply_context_claim: une_nonmild_conservative_sequence_not_established
+      must_not_apply_authority: une_mild_position_education_small_rct
+      must_not_create_generic_peripheral_nerve_sequence: true
+
+  - fixture_id: une_subjective_paresthesia_not_objective_deficit_or_formal_diagnosis
+    given:
+      route_id: ulnar_neuropathy_at_elbow
+      formal_ulnar_neuropathy_cubital_tunnel_diagnosis: not_stated
+      symptoms: [paresthesia_ring_small_finger]
+      objective_sensory_status: not_assessed
+      objective_motor_status: not_assessed
+    expect:
+      must_apply_boundary_claim: une_symptoms_and_provocation_not_formal_diagnosis
+      must_not_generate_formal_ulnar_neuropathy_diagnosis: true
+      must_not_infer_objective_sensory_deficit: true
+      must_not_infer_objective_motor_deficit: true
+
+  - fixture_id: une_positive_tinel_and_flexion_test_do_not_create_diagnosis
+    given:
+      route_id: ulnar_neuropathy_at_elbow
+      formal_ulnar_neuropathy_cubital_tunnel_diagnosis: not_stated
+      findings: [positive_medial_elbow_tinel, positive_elbow_flexion_provocation]
+    expect:
+      must_apply_boundary_claim: une_symptoms_and_provocation_not_formal_diagnosis
+      must_not_generate_formal_ulnar_neuropathy_diagnosis: true
+      findings_remain_findings: true
+      must_not_treat_Delphi_consensus_as_validated_diagnostic_scale: true
+
+  - fixture_id: une_ultrasound_is_diagnostic_adjunct_not_autonomous_replacement
+    given:
+      route_id: ulnar_neuropathy_at_elbow
+      symptoms_signs_suggestive_of_UNE: true
+      ultrasound_context_available: true
+    expect:
+      may_show_clinician_ui_authority: une_ultrasound_diagnostic_adjunct_level_B
+      must_preserve_strength: AANEM_Level_B
+      must_not_claim_ultrasound_replaces_clinical_or_EDX_evaluation: true
+      must_not_convert_imaging_finding_into_automatic_symptomatic_diagnosis: true
+
+  - fixture_id: une_progressive_motor_weakness_or_atrophy_blocks_routine_sequence
+    given:
+      route_id: ulnar_neuropathy_at_elbow
+      findings: [progressive_intrinsic_hand_weakness, intrinsic_atrophy]
+    expect:
+      route_evidence_profile_id: rep_une_progressive_motor_or_structural_safety_v1
+      rehabilitation_sequence_id: null
+      must_apply_authority: une_progressive_motor_or_atrophy_reassessment
+      must_route_to_clinician_or_specialist_reassessment: true
+      must_not_generate_autonomous_surgical_procedure_or_threshold: true
+
+  - fixture_id: une_clawing_or_material_worsening_objective_deficit_is_safety_context
+    given:
+      route_id: ulnar_neuropathy_at_elbow
+      findings: [ulnar_clawing, materially_worsening_objective_neurological_deficit]
+    expect:
+      route_evidence_profile_id: rep_une_progressive_motor_or_structural_safety_v1
+      rehabilitation_sequence_id: null
+      must_not_use_mild_conservative_sequence: true
+      must_apply_authority: une_progressive_motor_or_atrophy_reassessment
+
+  - fixture_id: une_night_splint_evidence_remains_very_low_and_nondefault
+    given:
+      route_id: ulnar_neuropathy_at_elbow
+      clinician_selected_night_splint: false
+    expect:
+      must_apply_context_claim: une_night_splint_very_low_uncertain
+      must_preserve_certainty: very_low
+      must_not_auto_render_night_splint: true
+      must_not_generate_splint_angle_or_device_type: true
+      must_not_generate_nightly_duration_or_total_course: true
+
+  - fixture_id: une_nerve_gliding_manual_and_electrical_modalities_not_best_method
+    given:
+      route_id: ulnar_neuropathy_at_elbow
+      clinician_selected_adjuncts: []
+    expect:
+      must_apply_context_claim: une_no_best_physiotherapy_modality
+      must_not_auto_render_nerve_gliding: true
+      must_not_auto_render_manual_therapy: true
+      must_not_auto_render_electrical_modality: true
+      must_not_claim_superior_physiotherapy_method: true
+
+  - fixture_id: une_cervical_plexus_or_wrist_localization_does_not_fall_back_to_cubital_tunnel
+    given:
+      route_id: ulnar_neuropathy_at_elbow
+      discordant_localization_context: [possible_cervical_or_lower_trunk, possible_ulnar_neuropathy_at_wrist]
+    expect:
+      route_evidence_profile_id: rep_une_progressive_motor_or_structural_safety_v1
+      rehabilitation_sequence_id: null
+      must_apply_context_claim: une_alternative_localization_or_structural_owner
+      must_not_silently_label_cubital_tunnel: true
+      must_route_to_correct_owner_or_reassessment: true
+
+  - fixture_id: une_trauma_or_nerve_instability_is_not_routine_mild_UNE
+    given:
+      route_id: ulnar_neuropathy_at_elbow
+      context: [material_trauma, observed_ulnar_nerve_subluxation_or_snapping]
+    expect:
+      route_evidence_profile_id: rep_une_progressive_motor_or_structural_safety_v1
+      rehabilitation_sequence_id: null
+      must_apply_context_claim: une_alternative_localization_or_structural_owner
+      must_not_apply_mild_position_education_as_complete_route_sequence: true
+
+  - fixture_id: une_formal_diagnosis_yes_does_not_override_severity_gate
+    given:
+      route_id: ulnar_neuropathy_at_elbow
+      formal_ulnar_neuropathy_cubital_tunnel_diagnosis: yes
+      clinician_severity: not_stated
+      objective_ulnar_motor_status: not_assessed
+    expect:
+      route_evidence_profile_id: rep_une_nonmild_or_severity_unresolved_v1
+      rehabilitation_sequence_id: null
+      may_carry_formal_diagnostic_wording: true
+      must_not_infer_mild_severity_from_formal_diagnosis: true
+      must_not_convert_not_assessed_to_normal: true
+
+  - fixture_id: une_missing_history_remains_missing
+    given:
+      route_id: ulnar_neuropathy_at_elbow
+      history_fields_supplied: []
+    expect:
+      must_not_infer_no_night_symptoms: true
+      must_not_infer_no_flexion_pressure_trigger: true
+      must_not_infer_no_motor_deficit: true
+      must_not_infer_mild_severity: true
+      must_not_infer_negative_trauma_or_structural_history: true
+
+validation_assertions:
+  route_scope_only: true
+  symptom_does_not_create_formal_diagnosis: true
+  positive_provocation_does_not_create_formal_diagnosis: true
+  Delphi_consensus_not_validated_scale: true
+  subjective_symptoms_do_not_create_objective_deficit: true
+  not_assessed_motor_status_does_not_become_normal: true
+  mild_evidence_does_not_expand_to_nonmild_or_unknown_severity: true
+  night_splint_very_low_certainty_not_upgraded: true
+  no_best_physiotherapy_method_claimed: true
+  structural_and_alternative_localization_contexts_fail_closed: true
+  progressive_motor_or_atrophy_context_reassessed: true
+  no_numeric_progression_or_fixed_course_invented: true
+  runtime_authorized: false
