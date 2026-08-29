@@ -1,0 +1,58 @@
+version: cu1_rich_referral_content_shoulder_el_v1
+status: prepared_runtime_authority_profile_shard
+runtime_authorized: true
+reviewed_on: 2026-08-29
+language: el
+profile_id: shoulder
+
+routes:
+  calcific_rotator_cuff_tendinopathy:
+    profile_ids: [shoulder]
+    evidence_profile_ids: [rep_calcific_rotator_cuff_v1]
+    authority_mode: reviewed_route_sequence_plus_clinical_rehabilitation_organization
+    short_flow_el:
+      - >-
+        Προτείνεται εξατομικευμένη ενεργητική αποκατάσταση με εκπαίδευση, τροποποίηση δραστηριότητας και
+        αυτοδιαχείριση, μαζί με κατάλληλες ασκήσεις κινητικού ελέγχου και/ή αντίστασης για βελτίωση πόνου,
+        λειτουργίας και ανοχής του ώμου στη φόρτιση.
+      - >-
+        Η επανένταξη στις πραγματικές καθημερινές, εργασιακές ή αθλητικές απαιτήσεις γίνεται προοδευτικά βάσει
+        λειτουργικής ικανότητας και load tolerance και όχι χρόνου μόνο. ESWT ή άλλη ειδική τεχνολογική παρέμβαση
+        δεν προστίθεται αυτόματα στο παραπεμπτικό.
+    stages:
+      - stage_id: active_rehabilitation_self_management
+        label_el: ΣΤΑΔΙΟ 1 — ΕΝΕΡΓΗΤΙΚΗ ΑΠΟΚΑΤΑΣΤΑΣΗ / ΑΥΤΟΔΙΑΧΕΙΡΙΣΗ
+        goals_el:
+          - μείωση πόνου και αναπηρίας
+          - βελτίωση λειτουργίας και ανοχής του ώμου στη φόρτιση
+          - κατανόηση και ενεργή αυτοδιαχείριση της κατάστασης
+        intervention_directions_el:
+          - εξατομικευμένη εκπαίδευση, τροποποίηση δραστηριότητας και υποστήριξη αυτοδιαχείρισης
+          - ενεργητικό πρόγραμμα με ασκήσεις κινητικού ελέγχου και/ή αντίστασης με κατάλληλη εξατομίκευση του φορτίου
+        progress_markers_el:
+          - βελτίωση πόνου, λειτουργίας και ανοχής σε κίνηση και σχετική φόρτιση του ώμου
+        evidence_claim_ids:
+          - calcific_rc_patient_centered_education
+          - calcific_rc_active_rehabilitation_core
+        organization_authority: clinical_rehabilitation_organization
+      - stage_id: functional_return_self_management
+        label_el: ΣΤΑΔΙΟ 2 — ΛΕΙΤΟΥΡΓΙΚΗ ΕΠΑΝΕΝΤΑΞΗ / ΔΙΑΤΗΡΗΣΗ
+        goals_el:
+          - επάνοδος στις σημαντικές καθημερινές και εργασιακές απαιτήσεις
+          - επάνοδος σε αθλητικές απαιτήσεις όταν αποτελεί στόχο
+          - διατήρηση ικανότητας φόρτισης και αυτοδιαχείρισης
+        intervention_directions_el:
+          - προοδευτική έκθεση στις πραγματικές απαιτήσεις με συνέχιση κατάλληλης ενεργητικής φόρτισης
+          - όταν υπάρχει αθλητικός στόχος, καθοδήγηση της επιστροφής βάσει ικανότητας του στροφικού πετάλου και του ώμου, load tolerance, patient-rated readiness και λειτουργικής επίδοσης και όχι χρόνου μόνο
+        progress_markers_el:
+          - ουσιαστική λειτουργική βελτίωση και ανοχή στο απαιτούμενο φορτίο χωρίς καθολικό αριθμητικό κριτήριο επιστροφής
+        evidence_claim_ids:
+          - calcific_rc_active_rehabilitation_core
+          - calcific_rc_return_sport_capacity
+          - calcific_rc_return_sport_measures
+        organization_authority: clinical_rehabilitation_organization
+    adjunct_boundary_el: >-
+      Η ενεργητική αποκατάσταση παραμένει ο πυρήνας. Η σύγκρουση τεκμηρίωσης για ESWT και οι ενδείξεις για άλλες ειδικές παρεμβάσεις εμφανίζονται στο clinician evidence panel και δεν μετατρέπονται σε αυτόματη σύσταση του παραπεμπτικού.
+    reassessment_el: >-
+      Επανεκτίμηση από ιατρό/ειδικό σε σοβαρό επίμονο πόνο ή λειτουργικό περιορισμό παρά την κατάλληλη συντηρητική αντιμετώπιση, αντί απεριόριστης συνέχισης της ίδιας αποκατάστασης.
+    reassessment_evidence_claim_ids: [calcific_rc_persistent_severe_reassessment]
