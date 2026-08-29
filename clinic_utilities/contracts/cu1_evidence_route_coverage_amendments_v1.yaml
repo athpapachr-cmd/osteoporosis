@@ -1,4 +1,4 @@
-version: cu1_evidence_route_coverage_amendments_v1
+version: cu1_evidence_route_coverage_amendments_v1_2
 status: reviewed_logical_registry_amendments
 runtime_authorized: false
 reviewed_on: 2026-08-29
@@ -12,10 +12,18 @@ applies_after:
 
 purpose: >-
   Narrow post-merge amendments required when route-by-route evidence review discovers that an older
-  active design profile or claim is too broad, or that a newly curated object's grading needs a
-  stricter evidence-preserving correction. Amendments may only narrow applicability, attach a newly
-  reviewed sequence, refresh source linkage, correct grading without upgrading evidence, or suppress
-  a scope-unsafe claim. They must not rewrite historical staging or promotion artifacts.
+  active design profile or claim is too broad, or that a newly curated object's grading or verified
+  source metadata needs a stricter evidence-preserving correction. Amendments may only narrow
+  applicability, attach a newly reviewed sequence, refresh source linkage/identity, correct grading
+  without upgrading evidence, or suppress a scope-unsafe claim. They must not rewrite historical
+  staging or promotion artifacts.
+
+source_metadata_amendments:
+  glenohumeral_oa_pt_sr_2026:
+    authors_or_organization: Muhammad DG, Foster NE, Pelaez M, O'Leary K, Ackerman IN, Quicke JG
+    reference: Shoulder Elbow. 2026 May 22; online ahead of print. PMID 42186453
+    doi_optional: 10.1177/17585732261450961
+    amendment_reason: PubMed_source_identity_verified_before_GHOA_route_activation
 
 claim_amendments:
   anterior_shoulder_instability_RTS_criteria:
@@ -96,8 +104,10 @@ rehabilitation_sequence_amendments:
 validation_assertions:
   no_duplicate_profile_identity_created: true
   profile_applicability_is_narrowed_not_broadened: true
+  source_metadata_correction_does_not_change_recommendation_scope: true
   anterior_RTS_claim_is_conservative_context_only: true
   posterior_postoperative_RTS_claim_removed_from_generic_nonoperative_authority: true
   MDI_no_effect_estimate_is_not_mislabeled_very_low_certainty: true
+  GHOA_2026_systematic_review_identity_verified: true
   existing_tranche3_history_is_preserved: true
   runtime_authorized: false
