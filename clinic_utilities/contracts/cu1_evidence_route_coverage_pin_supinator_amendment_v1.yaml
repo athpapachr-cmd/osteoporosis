@@ -13,7 +13,7 @@ purpose: >-
   evidence scope, recommendation direction or strength. The amendment does not broaden evidence, create a
   rehabilitation sequence, or alter the frozen elbow taxonomy.
 
-source_amendments:
+source_metadata_amendments:
   pin_interventions_sr_2006:
     authors_or_organization: Huisstede BMA, Miedema HS, van Opstal T, de Ronde MTM, Kuiper JI, Verhaar JAN, Koes BW
     year_or_version: 2006
@@ -24,7 +24,6 @@ source_amendments:
       incorrect journal/page transcription. This is source-identity correction only.
 
   pin_edx_review_2013:
-    evidence_id: pin_edx_review_2013
     authors_or_organization: Bevelaqua AC, Hayter CL, Feinberg JH, Rodeo SA
     year_or_version: 2012
     reference: "HSS J. 2012;8(2):184-189"
