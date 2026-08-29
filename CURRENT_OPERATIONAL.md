@@ -1,147 +1,167 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** ACTIVE — CU-1 RICH REFERRAL LATERAL-ELBOW RUNTIME PROTOTYPE.
+> **STATUS:** ACTIVE — CU-1 GLOBAL RICH PHYSIOTHERAPY REFERRAL + CLINICIAN EVIDENCE PANEL.
 > **Updated:** 2026-08-29 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Verified remote `main`:** `08ecd3ab33e98d567c47042a8a1de482df6952b9`.
-> **Design parent:** `design/cu1-history-evidence-timeline-2026-08-28` @ `cc479f4a1d818481a886916e3f0f05dc56c623b3` / PR #63 draft.
-> **ACTIVE CANONICAL WRITER/LOCK:** `feat/cu1-rich-referral-lateral-elbow-2026-08-29`.
-> **ACTIVE RUNTIME WRITER/LOCK:** `feat/cu1-rich-referral-lateral-elbow-2026-08-29`.
-> **Runtime authorization:** BOUNDED TO LATERAL-ELBOW PRODUCT-SHAPE PROTOTYPE + TESTS.
-> **Deploy/merge authorization:** NO — product-owner output review first.
-> **Further route-by-route evidence expansion:** HOLD.
+> **Approved LET prototype parent:** `feat/cu1-rich-referral-lateral-elbow-2026-08-29` @ `aebfb5a6ee14a0e44d80dd6183a1877d74567b46`.
+> **ACTIVE CANONICAL WRITER/LOCK:** `feat/cu1-rich-referral-global-evidence-2026-08-29`.
+> **ACTIVE RUNTIME WRITER/LOCK:** `feat/cu1-rich-referral-global-evidence-2026-08-29`.
+> **Runtime authorization:** GLOBAL HORIZONTAL RICH-REFERRAL MODEL + CLINICIAN-ONLY EVIDENCE VIEW + TESTS.
+> **Deploy/merge authorization:** NO — exact-head tests, global coverage review and product-owner output review first.
+> **Further route-by-route evidence research:** HOLD unless a concrete evidence gap blocks safe global rendering.
 > **CU-2:** NOT AUTHORIZED.
 > **PR-1 Transcript Intake:** intentionally paused.
 
 ---
 
-# 1. Current product decision — LOCKED
+# 1. Product-owner approval — LOCKED
 
-Product-owner review on 2026-08-29 accepted the corrected CU-1 referral target and explicitly authorized a bounded runtime prototype for `lateral_elbow_tendinopathy`.
+On 2026-08-29 the product owner approved the lateral-elbow referral product shape and authorized horizontal application across the physiotherapy condition registry using the corresponding guideline/literature authority for each route.
 
-The referral must not be either:
+The global model must not be implemented as one custom formatter branch per disease. It must use one shared rehabilitation-document model with route/subtype/context-specific content supplied as structured data/evidence authority.
+
+The approved referral principles are:
 
 ```text
-sterile generic goals
-OR
-exercise-prescription micromanagement
+COMPACT CLINICAL CONTEXT
++
+EARLY MANAGEMENT / INITIAL CAPACITY
++
+PROGRESSIVE CAPACITY RESTORATION
++
+FUNCTIONAL RETURN
++
+RECURRENCE-RISK REDUCTION / SELF-MANAGEMENT
 ```
 
-The locked rehabilitation-document unit is:
+For detailed output, the document may organize this into clinically meaningful stages with:
 
 ```text
 STAGE
 → GOALS
-→ INTERVENTION DIRECTIONS: how each goal is pursued
-→ PROGRESS MARKERS
-→ NEXT-STAGE ORIENTATION
+→ INTERVENTION DIRECTIONS (how goals are pursued)
+→ TELEGRAPHIC PROGRESS MARKERS
 ```
 
-Intervention directions may name clinically meaningful treatment categories such as active ROM, isometric loading, concentric/eccentric resisted loading, load modification, manual therapy, cryotherapy/TENS or functional graded exposure when appropriate. They must not prescribe universal exercise sets, repetitions, kilograms, hold times, fixed weekly phase duration or fabricated numeric clearance thresholds.
+The stage structure is document/clinical organization. It must never be falsely labelled as a universal evidence-validated phase protocol when the cited source does not establish that protocol.
 
 ---
 
-# 2. Product purpose
+# 2. GeSY output policy
 
-The referral is a clinician-to-physiotherapist communication document and also a transparent expectation-setting document for the patient.
+Hard ceiling:
 
-It must make clear what a complete rehabilitation process is expected to address. Passive symptom-modulation modalities may be adjuncts when evidence-compatible and clinically indicated, but must not be rendered as substitutes for active, progressive and function-oriented rehabilitation.
+```text
+2000 characters
+```
 
-A detailed referral fails the product gate if it could reasonably be considered fulfilled by passive modalities alone without progressive active rehabilitation.
+Target for ordinary Detailed output:
+
+```text
+~1500–1850 characters
+```
+
+The formatter must compose below the limit by design. Mechanical clipping is only an abnormal final fail-safe and must not be relied upon to remove safety/reassessment content.
+
+Clinical context may include only information actually supplied/selected:
+- diagnosis/presentation wording;
+- relevant findings;
+- functional limitation;
+- explicit work/sport/activity context;
+- material restriction/protocol context when applicable.
+
+Do not repeat unnecessary field labels. Do not invent patient facts, tasks, causality or deficits.
+
+Short output is a coherent narrative with flow, not a checklist. Detailed output remains compact but preserves goals, intervention directions and progression logic.
 
 ---
 
-# 3. Lateral-elbow prototype scope
+# 3. Global rehabilitation invariants
 
-The current prototype must use the already-reviewed LET route authority and the accepted rehabilitation-product model to generate both:
-
-```text
-Short referral
-Detailed referral
-```
-
-For the detailed output, the intended conceptual progression is:
-
-```text
-Stage 1 — irritability / symptom control + mobility + initial active loading
-Stage 2 — progressive strength / endurance / load capacity
-Stage 3 — functional / occupational / sport reintegration when relevant
-```
-
-This is a document/clinical-organization model, not a claim that the 2022 CPG validates a universal three-stage protocol or a universal transition threshold.
-
-Required LET content behavior:
-
-- pain/irritability goal must state how it is pursued: education/load modification and appropriate short-term symptom-modulation options;
-- mobility goal must state how it is pursued: active mobility/ROM work and relevant mobility treatment if an actual deficit exists;
-- initial load-tolerance goal may use isometric/low-demand extensor activation as an early orientation;
-- progressive stage must state progressive resisted wrist-extensor loading, including concentric/eccentric orientation, without dose prescription;
-- grip strength/endurance and repeated-use tolerance must be restored and tracked;
-- shoulder/scapular rehabilitation is conditional on an actual proximal impairment;
-- high-demand work/sport reintegration is conditional on actual patient context and must not invent job tasks;
-- adjuncts remain adjuncts; ultrasound is not to be presented as a stand-alone core treatment;
-- progress markers are clinical/functional observations, not invented universal thresholds;
-- PRTEE/DASH/PSFS and grip/ROM measures may be used for follow-up but not converted into automatic discharge/progression cutoffs;
-- atypical neurological/cervical/mechanical/traumatic findings preserve reassessment/correct-owner behavior.
+1. **Goal without method is insufficient.** A goal such as pain reduction, mobility, strength or return to activity must be accompanied by the route-appropriate way it is pursued.
+2. **Passive-only care is not a complete routine rehabilitation plan** unless a route/protocol context explicitly prevents active progression.
+3. **No micromanagement.** Do not prescribe universal sets, repetitions, kilograms, hold times, fixed weeks or unsupported numerical clearance thresholds.
+4. **Therapist execution remains therapist-owned.** Evidence tagged `therapist_execution_detail` must not automatically enter referral prose.
+5. **Evidence applicability is route/subtype/context-specific.** Never borrow a recommendation from a neighboring diagnosis simply to fill a gap.
+6. **Evidence gap is explicit.** A blocked or insufficiently covered route must not receive a generic evidence-labelled treatment sequence.
+7. **Patient-specific protocol wins.** Written postoperative/fracture/healing restrictions override conflicting route defaults.
+8. **Short and Detailed are two renderings of the same clinical truth.**
+9. **Stage 3 includes both function and prevention.** Where clinically applicable, return to actual daily/work/sport demands is paired with load self-management, relevant ergonomic/technical modification and maintenance of required capacity to reduce recurrence risk.
+10. **Reassessment remains compact but preserved** where route-specific safety or failure-to-progress authority requires it.
 
 ---
 
-# 4. Evidence boundary preserved
+# 4. Evidence-source policy
 
-The already-reviewed route package remains authoritative for evidence applicability and grading. Preserve in particular:
+The existing structured CU-1 evidence corpus remains the source of literature identity, applicability, recommendation direction, source class, strength/certainty, freshness and evidence-gap state.
+
+The runtime must preserve these distinctions:
 
 ```text
-subacute/chronic wrist-extensor resisted exercise → JOSPT Grade B
-isometric / concentric / eccentric modes → allowed, no universal dose
-high-demand reintroduction → Grade F, conditional, no numeric clearance threshold
-proximal shoulder/scapular training → Grade C only if impairment exists
-local manual therapy → Grade B when selected/applicable
-dry needling → Grade B when selected/applicable
-rigid taping → Grade B in selected irritable short-term context
-counterforce/wrist support → Grade F selected immediate/activity context
-education / behavioral / ergonomic modification → Grade E
-PRTEE/DASH/PSFS and impairment measures → tracking, not transition thresholds
+referral_core
+therapist_execution_detail
+clinician_ui_only
 ```
 
-The 2019 Day/Lucado/Uhl phased program may inform **rehabilitation organization** but its exact dose/load/transition criteria are not promoted to universal CPG rules.
+Only `referral_core` authority may automatically support referral treatment prose. `therapist_execution_detail` remains available for evidence transparency but is not converted into physician exercise prescription. `clinician_ui_only` may inform the clinician evidence view, limitations and safety context but does not automatically enter the GeSY referral.
 
-The 2022 CPG also permits short-term cryotherapy/TENS and laser in defined contexts and cannot recommend therapeutic ultrasound as stand-alone treatment because evidence is conflicting. These modalities remain symptom-modulation adjuncts, not the active rehabilitation core.
+Conflicting guideline frameworks, low/very-low certainty findings and evidence gaps must remain visible as such; they must not be silently blended into a stronger recommendation.
 
 ---
 
-# 5. Exact current implementation boundary
+# 5. Clinician-only evidence panel — AUTHORIZED
 
-Allowed now:
+Add a separate UI section, outside the GeSY text box, for the clinician to inspect the evidence behind the selected route/subtype/context.
 
-```text
-- route-specific lateral-elbow output synthesis in the existing formatter seam
-- short + detailed generated output
-- focused deterministic formatter/product tests
-- canonical/PR documentation for this prototype
-- review of the generated texts with the product owner
-```
-
-Not allowed yet:
+Preferred label:
 
 ```text
-- deploy or merge the prototype before product-owner text review
-- global rollout to all conditions before the lateral-elbow wording is accepted
-- new route-by-route evidence queue work
-- distal-biceps continuation
-- persistence changes
-- ClinicalAssertionV1 or medico-legal runtime
-- CU-2 or PR-1 restart
+Τεκμηρίωση / Παραπομπές
 ```
+
+It should show human-readable information only:
+- source title;
+- organization/authors;
+- year/version;
+- journal/guideline reference;
+- DOI/link when available;
+- recommendation strength/certainty where attached to the relevant claim;
+- short `Υποστηρίζει:` explanation for the claim/component;
+- freshness / reviewed-on state;
+- evidence gaps or important limitations/conflicts.
+
+Internal machine IDs must not be shown to the user-facing referral. The evidence panel is clinician-only UI and is not copied or printed as part of the GeSY referral by default.
 
 ---
 
-# 6. Exact next action
+# 6. Current implementation boundary
 
-1. Implement the LET short/detailed synthesis at the existing formatter seam without breaking other routes.
-2. Add regression tests that enforce the locked product shape, including the passive-only failure concept and no-dose/no-false-threshold rules.
-3. Run focused tests at exact branch head.
-4. Render the actual Short and Detailed LET outputs and present them to the product owner.
-5. Collect wording corrections.
-6. After explicit text approval, redesign the implementation as a **shared/global rehabilitation document model** and apply it across the route registry in one horizontal rollout rather than manually repeating one route at a time.
+Authorized now:
+- shared/global rich-referral document model;
+- route/subtype/context evidence resolution from structured machine artifacts;
+- Short + Detailed rendering under the 2000-character ceiling;
+- explicit evidence-gap behavior instead of generic fallback;
+- clinician-only evidence panel/API;
+- deterministic cross-route tests;
+- canonical/changelog/PR documentation.
 
-Global rollout is intentionally deferred only until the LET text is approved; route-by-route product implementation is not the intended strategy.
+Not authorized now:
+- direct merge to `main`;
+- deployment before exact-head review;
+- weakening route/subtype safety gates;
+- runtime interpretation of profile Markdown for trigger/validation logic;
+- inventing evidence to make every route appear complete;
+- persistence changes;
+- CU-2 or PR-1 restart.
+
+---
+
+# 7. Exact next action
+
+1. Freeze a shared Rich Rehabilitation Document Model and evidence-resolution seam.
+2. Expose clinician-readable evidence references from the existing structured evidence corpus.
+3. Convert the approved LET prototype to the shared model without changing its accepted clinical meaning.
+4. Apply the same renderer horizontally to registry routes that have applicable structured authority; preserve explicit evidence-limited/block states where authority is incomplete.
+5. Add coverage tests across route classes (pain, tendinopathy, OA, neurological, traumatic/structural, postoperative, fracture, muscle, balance/gait) and ensure no cross-route content leakage.
+6. Run exact-head CI and review representative Short/Detailed outputs plus the evidence panel before merge/deploy.
