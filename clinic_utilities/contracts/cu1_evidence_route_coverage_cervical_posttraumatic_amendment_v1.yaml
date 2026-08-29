@@ -1,0 +1,48 @@
+version: cu1_evidence_route_coverage_cervical_posttraumatic_amendment_v1
+status: pending_review_not_manifest_active
+runtime_authorized: false
+reviewed_on: 2026-08-29
+review_record: clinic_utilities/contracts/CU1_C5_POST_TRAUMATIC_NECK_ROUTE_REVIEW_2026-08-29.md
+applies_after:
+  - cervical_posttraumatic_route_coverage_extension
+
+purpose: >-
+  Narrow the C5 whiplash/WAD evidence profile and rehabilitation sequence so that a sufficiently
+  known temporal phase is required before recent/acute versus persistent WAD evidence can resolve.
+  The amendment is intentionally separate from the already-active global amendment file and remains
+  non-normative until the C5 exact route review passes and the manifest explicitly activates it.
+
+route_evidence_profile_amendments:
+  rep_c5_whiplash_wad_v1:
+    applicability_conditions_optional:
+      - post_traumatic_neck_pain_selected
+      - whiplash_acceleration_deceleration_context_explicit
+      - whiplash_phase_recent_or_persistent_known
+      - no_unresolved_fracture_dislocation_instability_or_other_material_structural_injury
+      - no_unresolved_material_neurological_or_other_safety_concern
+      - physiotherapy_considered_appropriate_by_clinician
+    amendment_reason: >-
+      Recent/acute and persistent WAD rehabilitation directions rely on different evidence scopes.
+      If temporal phase is not stated, CU-1 must not infer it from approximate duration or resolve a
+      route objective whose supporting recent/persistent claims are not known to be applicable.
+
+rehabilitation_sequence_amendments:
+  seq_c5_whiplash_wad_v1:
+    applicability_conditions_optional:
+      - whiplash_acceleration_deceleration_context_explicit
+      - whiplash_phase_recent_or_persistent_known
+      - no_unresolved_fracture_dislocation_instability_or_other_material_structural_injury
+      - no_unresolved_material_neurological_or_other_safety_concern
+      - physiotherapy_considered_appropriate_by_clinician
+    amendment_reason: >-
+      Unknown temporal phase blocks C5 WAD sequence resolution rather than invoking acute evidence,
+      persistent evidence, a generic C1 sequence or a synthetic cross-phase fallback.
+
+validation_assertions:
+  no_new_canonical_identity_created: true
+  applicability_is_narrowed_not_broadened: true
+  unknown_WAD_phase_is_not_inferred: true
+  unknown_WAD_phase_blocks_sequence_resolution: true
+  WAD_evidence_is_not_expanded_to_other_cervical_trauma: true
+  active_global_amendment_file_is_unchanged: true
+  runtime_authorized: false
