@@ -12,9 +12,10 @@ applies_after:
 
 purpose: >-
   Narrow post-merge amendments required when route-by-route evidence review discovers that an older
-  active design profile or claim is too broad. Amendments may only narrow applicability, attach a
-  newly reviewed sequence, refresh source linkage, or suppress a scope-unsafe claim. They must not
-  rewrite historical staging or promotion artifacts.
+  active design profile or claim is too broad, or that a newly curated object's grading needs a
+  stricter evidence-preserving correction. Amendments may only narrow applicability, attach a newly
+  reviewed sequence, refresh source linkage, correct grading without upgrading evidence, or suppress
+  a scope-unsafe claim. They must not rewrite historical staging or promotion artifacts.
 
 claim_amendments:
   anterior_shoulder_instability_RTS_criteria:
@@ -27,6 +28,17 @@ claim_amendments:
   posterior_shoulder_nonoperative_indication_consensus:
     applicability_conditions_optional: [posterior_instability_with_explicit_nonoperative_management_decision]
     amendment_reason: nonoperative_consensus_must_not_be_used_before_management_context_is_explicit
+
+  mdi_nonoperative_rehab_cautious_2024_2026:
+    certainty_optional: not_graded
+    amendment_reason: >-
+      The rehabilitation framework is clinical-concepts guidance while the Cochrane review found no
+      eligible randomized control/usual-care comparisons; assigning very_low certainty would falsely
+      imply a GRADE body of comparative effect evidence.
+
+  mdi_exercise_efficacy_uncertain_cochrane_2026:
+    certainty_optional: not_applicable
+    amendment_reason: Cochrane_found_no_eligible_control_RCTs_so_there_is_no_effect_estimate_to_grade
 
 claim_suppressions:
   posterior_shoulder_instability_RTS_consensus:
@@ -67,10 +79,25 @@ route_evidence_profile_amendments:
       - structural_pathology_primary_vs_recurrent_status_and_patient_preference_materially_change_management
       - no_universal_numeric_return_threshold_is_authorized
 
+rehabilitation_sequence_amendments:
+  seq_shoulder_instability_anterior_traumatic_v1:
+    phase_amendments:
+      anterior_traumatic_return_to_sport_when_applicable:
+        applicability_conditions_optional: [traumatic_anterior_instability_conservative_return_to_sport]
+        progression_criterion_amendments:
+          anterior_conservative_rts_criteria:
+            applicability_conditions_optional: [traumatic_anterior_instability_conservative_return_to_sport]
+
+  seq_shoulder_instability_multidirectional_v1:
+    phase_amendments:
+      mdi_cautious_nonoperative_rehabilitation:
+        certainty_optional: not_graded
+
 validation_assertions:
   no_duplicate_profile_identity_created: true
   profile_applicability_is_narrowed_not_broadened: true
   anterior_RTS_claim_is_conservative_context_only: true
   posterior_postoperative_RTS_claim_removed_from_generic_nonoperative_authority: true
+  MDI_no_effect_estimate_is_not_mislabeled_very_low_certainty: true
   existing_tranche3_history_is_preserved: true
   runtime_authorized: false
