@@ -24,6 +24,8 @@ governance:
 route_shards:
   - clinic_utilities/contracts/cu1_rich_referral_content_knee_el_v1.yaml
   - clinic_utilities/contracts/cu1_rich_referral_content_wrist_hand_el_v1.yaml
+  - clinic_utilities/contracts/cu1_rich_referral_content_elbow_el_v1.yaml
+  - clinic_utilities/contracts/cu1_rich_referral_content_shoulder_el_v1.yaml
 
 routes:
   lateral_elbow_tendinopathy:
