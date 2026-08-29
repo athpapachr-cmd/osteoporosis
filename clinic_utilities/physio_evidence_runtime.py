@@ -11,15 +11,28 @@ from clinic_utilities.physio_referral_runtime import CU1ContractError, _repo_roo
 
 _VIEW_CONFIG = "clinic_utilities/contracts/cu1_clinician_evidence_view_v1.yaml"
 _COLLECTIONS = ("sources", "claims", "route_history_prompts", "route_evidence_profiles", "rehabilitation_sequences")
+_KNOWN_TRANCHE3_BAD_TITLE = "    title: British Elbow and Shoulder Society patient care pathway: Frozen shoulder"
+_KNOWN_TRANCHE3_FIXED_TITLE = '    title: "British Elbow and Shoulder Society patient care pathway: Frozen shoulder"'
 
 
 def _load_yaml(path: Path) -> Dict[str, Any]:
     if not path.exists():
         raise CU1ContractError(f"Missing CU-1 evidence artifact: {path}")
+    text = path.read_text(encoding="utf-8")
     try:
-        payload = yaml.safe_load(path.read_text(encoding="utf-8"))
-    except Exception as exc:  # pragma: no cover - defensive evidence boundary
-        raise CU1ContractError(f"Unable to parse CU-1 evidence artifact: {path}") from exc
+        payload = yaml.safe_load(text)
+    except yaml.YAMLError as exc:
+        # The reviewed tranche-3 promotion artifact predates runtime parsing and contains one known
+        # semantically harmless unquoted colon in a source title. Repair only that exact legacy scalar
+        # for the read-only clinician evidence projection; any other YAML defect must still fail closed.
+        if path.name == "cu1_evidence_tranche3_promotion_v1.yaml" and _KNOWN_TRANCHE3_BAD_TITLE in text:
+            repaired = text.replace(_KNOWN_TRANCHE3_BAD_TITLE, _KNOWN_TRANCHE3_FIXED_TITLE, 1)
+            try:
+                payload = yaml.safe_load(repaired)
+            except yaml.YAMLError as repair_exc:  # pragma: no cover - defensive compatibility boundary
+                raise CU1ContractError(f"Unable to parse CU-1 evidence artifact: {path}") from repair_exc
+        else:  # pragma: no cover - defensive evidence boundary
+            raise CU1ContractError(f"Unable to parse CU-1 evidence artifact: {path}") from exc
     if not isinstance(payload, dict):
         raise CU1ContractError(f"CU-1 evidence artifact must be a mapping: {path}")
     return payload
