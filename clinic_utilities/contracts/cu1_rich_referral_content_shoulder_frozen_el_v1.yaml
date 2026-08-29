@@ -1,0 +1,46 @@
+version: cu1_rich_referral_content_shoulder_frozen_el_v1
+status: active_runtime_authority_profile_shard
+runtime_authorized: true
+reviewed_on: 2026-08-29
+language: el
+profile_id: shoulder
+
+routes:
+  adhesive_capsulitis_frozen_shoulder:
+    profile_ids: [shoulder]
+    variants:
+      - variant_id: clinician_established_primary_frozen_shoulder
+        match:
+          wording_modes: [formal_diagnosis]
+          context_equals:
+            frozen_shoulder_scope: primary_frozen_shoulder
+        evidence_profile_ids: [rep_adhesive_capsulitis_v1]
+        authority_mode: reviewed_primary_frozen_shoulder_single_phase_evidence_bounded
+        short_flow_el:
+          - >-
+            Σε κλινικά τεκμηριωμένο πρωτοπαθή παγωμένο ώμο προτείνεται εξατομικευμένη αποκατάσταση κινητικότητας
+            και λειτουργίας με ασκήσεις εύρους κίνησης και, όταν ενδείκνυται, χειροθεραπεία/κινητοποίηση, με ένταση
+            προσαρμοσμένη στα συμπτώματα και στο διαθέσιμο εύρος.
+          - >-
+            Η πορεία καθοδηγείται από βελτίωση πόνου, λειτουργικής χρήσης και κινητικότητας χωρίς καθολικό
+            χρονοδιάγραμμα, στάδιο νόσου ή αριθμητικό όριο μετάβασης.
+        stages:
+          - stage_id: individualized_mobility_function
+            label_el: ΣΤΑΔΙΟ 1 — ΚΙΝΗΤΙΚΟΤΗΤΑ / ΛΕΙΤΟΥΡΓΙΑ / ΑΥΤΟΔΙΑΧΕΙΡΙΣΗ
+            goals_el:
+              - βελτίωση πόνου και λειτουργικής χρήσης του άνω άκρου
+              - βελτίωση του διαθέσιμου εύρους κίνησης σύμφωνα με την κλινική ανοχή
+              - υποστήριξη αυτοδιαχείρισης χωρίς επιβολή καθολικού χρονοδιαγράμματος
+            intervention_directions_el:
+              - εξατομικευμένες ασκήσεις εύρους κίνησης και λειτουργικής χρήσης με ένταση προσαρμοσμένη στα συμπτώματα και στην κινητικότητα
+              - χειροθεραπεία/κινητοποίηση μπορεί να χρησιμοποιηθεί επιλεκτικά μαζί με την ενεργητική αποκατάσταση όταν κρίνεται κατάλληλη
+            progress_markers_el:
+              - βελτίωση συμπτωμάτων, λειτουργίας και κινητικότητας χωρίς καθολικό αριθμητικό κριτήριο ή fixed phase-transition rule
+            evidence_claim_ids:
+              - adhesive_capsulitis_manual_ROM_cpg2025
+              - adhesive_capsulitis_exercise_and_mobilization
+            organization_authority: clinical_rehabilitation_organization
+        adjunct_boundary_el: >-
+          Η αυτοδιάταση και η ακριβής δοσολογία παραμένουν λεπτομέρειες εκτέλεσης. Η ενδυνάμωση δεν επιβάλλεται ως routine σύσταση λόγω ανεπαρκούς τεκμηρίωσης και η φυσιοθεραπεία δεν παρουσιάζεται ως αποδεδειγμένα ανώτερη της φυσικής πορείας.
+        reassessment_el: >-
+          Ιατρική επανεκτίμηση όταν η εικόνα δεν παραμένει συμβατή με πρωτοπαθή frozen shoulder, εμφανίζεται νέο τραυματικό/δομικό πλαίσιο ή η πορεία απαιτεί αλλαγή της στρατηγικής αντιμετώπισης.
