@@ -123,7 +123,7 @@ class CU1PrimaryFrozenShoulderRichTests(unittest.TestCase):
             folded = fold_el(text)
             self.assertIn("πρωτοπαθη", folded)
             self.assertIn("κινητικ", folded)
-            self.assertIn("ευρους κινησης", folded)
+            self.assertIn(fold_el("εύρους κίνησης"), folded)
             self.assertLessEqual(len(text), self.renderer.max_chars)
         self.assertEqual(detailed.count("ΣΤΑΔΙΟ "), 1)
         self.assertLessEqual(len(detailed), self.renderer.standard_detailed_target_chars)
@@ -156,7 +156,7 @@ class CU1PrimaryFrozenShoulderRichTests(unittest.TestCase):
         self.assertNotIn("σταδιο 2", folded)
         self.assertNotIn("3x", folded)
         self.assertNotIn("3 x", folded)
-        self.assertIn("χωρις καθολικο αριθμητικο", folded)
+        self.assertIn(fold_el("χωρίς καθολικό αριθμητικό"), folded)
         self.assertIn("ενδυναμωση δεν επιβαλλεται", folded)
         self.assertIn("φυσικη πορεια", folded)
 
