@@ -6,7 +6,7 @@
 > **Verified remote `main`:** `08ecd3ab33e98d567c47042a8a1de482df6952b9`.
 > **ACTIVE CANONICAL WRITER/LOCK:** `design/cu1-history-evidence-timeline-2026-08-28`.
 > **ACTIVE RUNTIME WRITER/LOCK:** NONE.
-> **PR #63:** draft / design-only / unmerged; reviewed route coverage is complete through lateral-elbow matrix commit `0e403817a1fdadbb915b08d349713417754493e1`; this canonical commit may advance branch head.
+> **PR #63:** draft / design-only / unmerged; reviewed route coverage is complete through medial-elbow matrix commit `2cf8f286a57a1a2794938e183acfa8bb73b4d420`; this canonical commit may advance branch head.
 > **Runtime evidence-aware generation:** NOT AUTHORIZED.
 > **CU-2:** NOT AUTHORIZED.
 > **PR-1 Transcript Intake:** intentionally paused.
@@ -71,6 +71,11 @@ lateral_elbow_pain_or_provocation_or_imaging_finding != automatic_lateral_elbow_
 acute_or_highly_irritable_LET != subacute_or_chronic_Grade_B_loading_context
 outcome_measure_recommendation != progression_or_RTW_RTS_threshold
 newer_low_certainty_synthesis != automatic_do_not_offer_of_older_route_specific_CPG_recommendation
+medial_elbow_pain_or_flexor_pronator_provocation_or_imaging_finding != automatic_medial_elbow_tendinopathy_diagnosis
+subjective_ulnar_paresthesia != objective_ulnar_deficit_or_formal_ulnar_neuropathy
+lateral_elbow_CPG_grade != medial_elbow_authority_by_analogy
+low_certainty_medial_eccentric_signal != mandatory_or_superior_loading_protocol
+narrative_review_phase_description != validated_progression_model
 ```
 
 No patient identifiers were added.
@@ -102,6 +107,7 @@ cervical_headache_route_coverage_extension
 cervical_dizziness_route_coverage_extension
 cervical_posttraumatic_route_coverage_extension
 lateral_elbow_route_coverage_extension
+medial_elbow_route_coverage_extension
 cu1_evidence_route_coverage_amendments_v1.yaml
 cu1_evidence_route_coverage_lateral_elbow_amendment_v1.yaml
 ```
@@ -114,6 +120,7 @@ clinic_utilities/contracts/cu1_c3_cervical_headache_fixtures_v1.yaml
 clinic_utilities/contracts/cu1_c4_cervical_dizziness_fixtures_v1.yaml
 clinic_utilities/contracts/cu1_c5_post_traumatic_neck_fixtures_v1.yaml
 clinic_utilities/contracts/cu1_lateral_elbow_fixtures_v1.yaml
+clinic_utilities/contracts/cu1_medial_elbow_fixtures_v1.yaml
 ```
 
 All listed active shards have passed their native or reviewed schema/promotion gate. No staged evidence shard remains.
@@ -390,6 +397,50 @@ clinic_utilities/contracts/CU1_LATERAL_ELBOW_ROUTE_REVIEW_2026-08-29.md
 clinic_utilities/contracts/cu1_lateral_elbow_fixtures_v1.yaml
 ```
 
+## Medial elbow tendinopathy — PASS as single-phase low-certainty evidence-bounded route
+
+```text
+rep_medial_elbow_tendinopathy_v1
+→ seq_medial_elbow_evidence_bounded_v1
+→ sequence_complete
+```
+
+No current medial-specific rehabilitation CPG with graded recommendations equivalent to the lateral-elbow CPG was identified. The primary treatment-effect authority is the 2026 See/Loo/Jaafar systematic review of eccentric exercise in medial epicondylitis: five small studies / 143 patients, heterogeneous protocols, no meta-analysis and overall low certainty.
+
+Normative route behavior:
+
+```text
+activity/load modification
+→ narrative clinical context, not comparative efficacy
+
+eccentric flexor-pronator loading
+→ may be considered
+→ low certainty
+→ not mandatory
+→ not universally superior
+→ no universal dose
+
+lateral-elbow CPG grades
+→ NOT medial authority by analogy
+```
+
+The 2023 clinical overview and 2024 medial-elbow differential review are used for history, management context and differential boundaries rather than as treatment-effect estimates. Subjective ring/small-finger paresthesia remains distinct from objective ulnar deficit or formal ulnar neuropathy. Material valgus/UCL instability, progressive objective ulnar motor deficit, major trauma, substantial mechanical block or another discordant presentation requires reassessment/correct owner.
+
+The sequence deliberately contains:
+
+```text
+progression_criteria: []
+```
+
+No narrative three-phase description is promoted into a validated phase model. No universal numeric loading progression, RTW/RTS threshold, fixed visit frequency or course duration is manufactured. Manual therapy, dry needling, taping, orthosis and ESWT are not auto-labelled medial-route evidence from lateral analogy.
+
+Formal medial-elbow review and fixtures:
+
+```text
+clinic_utilities/contracts/CU1_MEDIAL_ELBOW_ROUTE_REVIEW_2026-08-29.md
+clinic_utilities/contracts/cu1_medial_elbow_fixtures_v1.yaml
+```
+
 ---
 
 # 5. Current overall gate
@@ -414,7 +465,7 @@ DESIGN-COMPLETE                                  NO
 RUNTIME AUTHORIZED                               NO
 ```
 
-The remaining block is route-content completeness, not LET evidence governance.
+The remaining block is route-content completeness, not lateral/medial elbow evidence governance.
 
 ---
 
@@ -436,6 +487,7 @@ C3 cervical headache → no automatic CGH diagnosis; no durable universal manual
 C4 presentation-only dizziness → no disease-specific rehabilitation sequence because cervical causation/diagnostic criteria are not established
 C5 unclear WAD phase / non-WAD cervical trauma → no cross-phase, WAD or generic-C1 fallback; unresolved structural/neuro context remains blocked
 LET → no validated universal loading dose, numeric high-demand transition, RTW/RTS threshold or fixed PT course; newer evidence limits effect magnitude/durability claims
+medial elbow tendinopathy → low-certainty eccentric evidence only; no medial graded CPG, universal loading mode/dose, validated progression or imported lateral-CGP adjunct grades
 ```
 
 No generic MSK, cervical or elbow fallback is permitted.
@@ -447,7 +499,7 @@ No generic MSK, cervical or elbow fallback is permitted.
 Continue only on the existing writer, route-by-route from the reconciled matrix:
 
 ```text
-1. medial_elbow_tendinopathy
+1. ulnar_neuropathy_at_elbow
 2. remaining wrist_hand_and_elbow_routes
 3. remaining routine routes in registry order
 4. define reviewed evidence-gap behavior where full staging is unsupported
@@ -510,6 +562,13 @@ CLAIM large_or_durable_LET_benefit_despite_2024_low_certainty_synthesis
 RELABEL low_certainty_2024_LET_synthesis_as_proven_no_effect_or_do_not_offer_exercise
 LABEL clinician-selected_ESWT_as_route_evidence_without_a_reviewed_applicable_claim
 ALLOW PIN_motor_deficit_cervical_pattern_mechanical_block_or_material_trauma_to_fall_back_to_routine_LET
+INFER_medial_elbow_tendinopathy_from_one_tenderness_provocation_or_imaging_finding
+CONVERT_subjective_ulnar_paresthesia_into_objective_deficit_or_formal_ulnar_neuropathy
+BORROW_lateral_elbow_CPG_grades_as_medial_route_authority
+UPGRADE_low_certainty_medial_eccentric_evidence_to_mandatory_or_superior_protocol
+CONVERT_narrative_medial_three_phase_description_into_validated_progression_model
+AUTO_LABEL_manual_therapy_dry_needling_taping_orthosis_or_ESWT_as_medial_route_evidence_without_independent_review
+ALLOW_material_UCL_valgus_instability_progressive_ulnar_motor_deficit_or_major_trauma_to_fall_back_to_routine_medial_tendinopathy
 USE posterior postoperative RTS evidence as nonoperative posterior authority
 SILENTLY resolve conflicting ESWT frameworks
 REPRESENT best-practice GHOA opinion as comparative treatment efficacy
