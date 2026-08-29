@@ -710,3 +710,52 @@ Render auto-deploy `dep-da8afeuk1f9s73f5sr6g` completed successfully and reporte
 
 CU-1 runtime v1 is closed after canonical closeout/writer-lock release. CU-2 and PR-1 are not authorized by this completion.
 
+---
+
+## 2026-08-29 — CU-1 history/evidence/rehabilitation design hardening advanced through cervical C4
+
+PR #63 on `design/cu1-history-evidence-timeline-2026-08-28` established the v1.1 structured-history, evidence-authority and rehabilitation-sequence semantics as a design-only extension of the deployed CU-1 referral utility. Runtime evidence-aware recommendation generation remains explicitly unauthorized.
+
+The evidence corpus was normalized into a reviewed sharded registry. Tranche 2 and tranche 3 both passed their promotion gates, the shard-integration gate passed, and route-specific native coverage was then advanced with matching history prompts, evidence profiles/sequences or explicit evidence-gap behavior, formal route reviews and regression fixtures.
+
+Reviewed native coverage now includes:
+
+```text
+calcific rotator-cuff tendinopathy
+glenohumeral instability/dislocation context split
+glenohumeral osteoarthritis management-context split
+degenerative meniscal lesion — conservative rehabilitation
+patellar tendinopathy
+thumb CMC-1 osteoarthritis
+C1 nonspecific neck pain
+C2 neck pain with radiating upper-limb symptoms
+C3 headache with cervical musculoskeletal features / formal-CGH split
+C4 cervical-dizziness presentation / clinician-established split
+```
+
+Material evidence-governance corrections preserved during the work include:
+
+- posterior shoulder-instability Part-II postoperative rehabilitation/RTS evidence is not nonoperative authority;
+- multidirectional-instability absence of eligible comparative RCTs is not relabelled as a very-low treatment-effect estimate;
+- GHOA best-practice opinion is not represented as comparative efficacy, and the 2026 review confirming no nonsurgical physiotherapy RCTs is preserved as an evidence gap rather than a negative effect estimate;
+- degenerative meniscal MRI findings do not automatically establish symptom causation or surgical indication, and true locking remains distinct from clicking/catching;
+- contemporary patellar-tendinopathy evidence does not justify freezing eccentric, HSR, isometric or PTLE loading as a universal physician protocol or inventing numeric RTS thresholds;
+- thumb-CMC assessment measures are not converted into rehabilitation progression thresholds and orthosis type/wear schedule remain execution detail;
+- C1 generic nonspecific-neck authority cannot absorb radiating, headache, dizziness or post-traumatic cervical routes;
+- C2 preserves subjective radiating symptoms, objective neurological findings and formal radiculopathy as distinct concepts, and cervical-radiculopathy-specific synthesis does not automatically apply to symptom-only cases;
+- C3 cervical headache features do not automatically establish formal cervicogenic headache, ICHD-3 remains diagnostic-boundary authority rather than an autonomous diagnostic engine, and low-certainty network rankings/manual-therapy signals are not turned into a mandatory protocol;
+- C4 dizziness plus neck symptoms, cervical/sensorimotor testing or treatment response does not establish cervical causation. The Bárány Society no-routine-criteria position is preserved, presentation-only C4 has an explicit blocked evidence gap, and only a clinician-entered cervical-dizziness context receives a cautious one-phase evidence-bounded sequence. Alternative vestibular/migraine/neurological/vascular/cardiovascular/otological causes are not silently declared excluded, vestibular rehabilitation is not an automatic default, and outcome-specific low/very-low GRADE evidence is not flattened into one synthetic certainty.
+
+The global CU-1 gate remains:
+
+```text
+SHARD INTEGRATION             PASS
+REVIEWED ROUTE COVERAGE       PASS for completed routes/contexts
+GLOBAL ROUTE COVERAGE         FAIL / IN PROGRESS
+ROUTE-HISTORY PROMPTS         FAIL globally until all routes curated
+ROUTE FIXTURE CORPUS          FAIL globally until all routes curated
+DESIGN-COMPLETE               NO
+RUNTIME AUTHORIZED            NO
+```
+
+The next authorized route after this reconciliation is `post_traumatic_neck_pain` (C5), followed by the remaining wrist/hand and elbow routes and then the remaining routine registry. PR #63 remains draft and must not be merged merely because individual route gates pass.
