@@ -1,5 +1,5 @@
 version: cu1_lateral_elbow_fixtures_v1
-status: normative_design_regression_oracle_pending_route_activation
+status: normative_design_regression_oracle_active
 runtime_authorized: false
 route_id: lateral_elbow_tendinopathy
 reviewed_on: 2026-08-29
