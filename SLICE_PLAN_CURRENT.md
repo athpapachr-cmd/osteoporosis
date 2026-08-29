@@ -1,4 +1,4 @@
-# SLICE_PLAN_CURRENT.md — CU-1 history + evidence + rehabilitation-sequence design hardening v1.11
+# SLICE_PLAN_CURRENT.md — CU-1 history + evidence + rehabilitation-sequence design hardening v1.12
 
 > **STATUS:** ACTIVE PRE-RUNTIME DESIGN HARDENING — SHARD INTEGRATION PASS / ROUTE COVERAGE IN PROGRESS.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
@@ -105,6 +105,8 @@ approximate_post_traumatic_duration != inferred_WAD_temporal_phase
 C5_route_selection != structural_clearance_or_WAD_grade
 lateral_elbow_pain_or_provocation_or_imaging_finding != inferred_lateral_elbow_tendinopathy
 LET_irritability_or_acuity != inferred_from_one_pain_score_or_test
+medial_elbow_pain_or_flexor_pronator_provocation_or_imaging_finding != inferred_medial_elbow_tendinopathy
+subjective_ulnar_paresthesia != objective_ulnar_deficit_or_formal_ulnar_neuropathy
 ```
 
 ---
@@ -191,6 +193,9 @@ cu1_evidence_route_coverage_cervical_posttraumatic_v1.yaml
 cu1_evidence_route_coverage_lateral_elbow_v1.yaml
 → lateral-elbow native route extension using the existing core profile identity
 
+cu1_evidence_route_coverage_medial_elbow_v1.yaml
+→ medial-elbow native route coverage using medial-specific low-certainty evidence without lateral-CGP grade borrowing
+
 cu1_evidence_route_coverage_amendments_v1.yaml
 → reviewed post-merge narrowing / source-identity / grading / suppression layer
 
@@ -215,6 +220,7 @@ clinic_utilities/contracts/cu1_c3_cervical_headache_fixtures_v1.yaml
 clinic_utilities/contracts/cu1_c4_cervical_dizziness_fixtures_v1.yaml
 clinic_utilities/contracts/cu1_c5_post_traumatic_neck_fixtures_v1.yaml
 clinic_utilities/contracts/cu1_lateral_elbow_fixtures_v1.yaml
+clinic_utilities/contracts/cu1_medial_elbow_fixtures_v1.yaml
 ```
 
 The dedicated fixture extensions are normative design regressions for reviewed routes and do not authorize runtime behavior.
@@ -351,9 +357,29 @@ Grade-B LET adjunct recommendation
 
 2024 low-certainty LET synthesis
 != proven no effect or do-not-offer exercise
+
+medial elbow pain/tenderness/resisted wrist-flexion or pronation finding/imaging abnormality
+!= automatic medial elbow tendinopathy diagnosis
+
+subjective ring/small-finger paresthesia
+!= objective ulnar deficit
+!= formal ulnar neuropathy
+
+lateral-elbow CPG recommendation grades
+!= medial-elbow evidence authority by analogy
+
+2026 low-certainty medial eccentric signal
+!= mandatory eccentric-only protocol
+!= universal loading-mode superiority
+
+narrative medial rehabilitation phases
+!= validated progression model
+
+manual therapy / dry needling / taping / orthosis / ESWT evidence for lateral elbow
+!= automatic medial-elbow route authority
 ```
 
-Unresolved material subtype/management/neurological/headache/dizziness/structural-trauma or LET-differential safety context blocks evidence-aware sequence resolution rather than invoking a generic fallback.
+Unresolved material subtype/management/neurological/headache/dizziness/structural-trauma or elbow-differential safety context blocks evidence-aware sequence resolution rather than invoking a generic fallback.
 
 ---
 
@@ -387,6 +413,8 @@ study programme frequency/duration signal != universal physician referral schedu
 distinct recommendation strengths in one framework != synthetic hybrid strength
 evidence recommendation direction != automatic treatment selection
 newer low-certainty synthesis != automatic reversal of a route-specific CPG recommendation unless an explicit reviewed conflict exists
+narrative management or phase description != comparative treatment-effect estimate or validated progression threshold
+low-certainty medial eccentric evidence != mandatory protocol or universal loading superiority
 ```
 
 ---
@@ -648,6 +676,49 @@ progression_criteria: []
 
 No universal exercise dose, numeric high-demand transition, return-to-work/sport threshold, fixed visit frequency or total PT duration is manufactured. Atypical PIN/radial motor deficit, cervical/radicular pattern, substantial mechanical block, material trauma/instability or other discordant presentation triggers reassessment/correct-owner behavior rather than generic LET fallback.
 
+### Medial elbow tendinopathy
+
+```text
+rep_medial_elbow_tendinopathy_v1
+→ seq_medial_elbow_evidence_bounded_v1
+→ sequence_complete / single-phase low-certainty evidence-bounded
+```
+
+No current medial-specific rehabilitation CPG with graded recommendations equivalent to the 2022 lateral-elbow CPG was identified. The treatment-effect authority is the 2026 See/Loo/Jaafar systematic review: five small clinical studies, 143 participants, heterogeneous eccentric-loading protocols, no meta-analysis and overall low certainty.
+
+The reviewed route therefore allows activity/load modification as narrative clinical context and allows individualized eccentric flexor-pronator loading only as a low-certainty `consider` direction. It does not make eccentric loading mandatory, does not claim universal superiority, and does not create a universal dose, frequency or duration.
+
+The 2023 clinical overview and 2024 medial-elbow differential review remain context/differential authority rather than comparative efficacy evidence. Lateral-elbow CPG Grade-B/Grade-F recommendations are not imported by analogy. Manual therapy, dry needling, taping, orthoses and ESWT are not automatically relabelled as medial-elbow route evidence.
+
+Hard route boundaries:
+
+```text
+medial pain / local tenderness / resisted wrist-flexion or pronation pain / imaging abnormality
+!= autonomous medial-elbow tendinopathy diagnosis
+
+subjective ulnar paresthesia
+!= objective neurological deficit
+!= formal ulnar neuropathy
+
+material valgus/UCL instability, progressive objective ulnar motor deficit, major trauma or substantial mechanical block
+→ reassessment / correct owner
+```
+
+The sequence deliberately contains:
+
+```text
+progression_criteria: []
+```
+
+No narrative multi-phase description is promoted into a validated progression model, and no numeric loading transition, RTW/RTS threshold, fixed visit frequency or total PT course is manufactured.
+
+Formal medial-elbow review and fixtures:
+
+```text
+clinic_utilities/contracts/CU1_MEDIAL_ELBOW_ROUTE_REVIEW_2026-08-29.md
+clinic_utilities/contracts/cu1_medial_elbow_fixtures_v1.yaml
+```
+
 ---
 
 # 12. Coverage gate
@@ -683,7 +754,7 @@ Generic fallback is forbidden.
 
 # 13. Acceptance fixtures
 
-The main regression oracle contains the previously reviewed route cases. Dedicated extensions now cover C1-C5 plus LET.
+The main regression oracle contains the previously reviewed route cases. Dedicated extensions now cover C1-C5 plus lateral and medial elbow.
 
 LET-specific fixtures verify:
 
@@ -702,6 +773,22 @@ Grade-A vs Grade-B outcome-measure families remain distinct
 outcome measures do not become progression criteria
 2024 low certainty != do-not-offer exercise
 ESWT not auto-evidence-authorized in this review
+missing history remains missing
+```
+
+Medial-elbow fixtures verify:
+
+```text
+medial-specific profile/sequence resolution
+single medial finding or imaging abnormality != autonomous diagnosis
+2026 eccentric signal remains low certainty and optional
+no lateral-elbow CPG grade borrowing
+subjective ulnar symptoms != objective neuropathy
+progressive ulnar motor deficit -> reassessment/correct owner
+valgus/UCL structural concern -> reassessment/correct owner
+activity modification != fixed rest protocol
+narrative phase description != validated progression model
+manual therapy/dry needling/taping/orthosis/ESWT not auto medial evidence
 missing history remains missing
 ```
 
@@ -745,6 +832,7 @@ C3 cervical-headache route coverage              PASS
 C4 cervical-dizziness context-split coverage     PASS
 C5 post-traumatic temporal/context coverage      PASS
 lateral-elbow-tendinopathy route coverage        PASS
+medial-elbow-tendinopathy route coverage         PASS
 routine-route coverage                          FAIL globally
 route-history prompt completeness               FAIL globally
 route-complete fixture corpus                   FAIL globally
@@ -756,8 +844,8 @@ RUNTIME AUTHORIZED                              NO
 Continue route-by-route:
 
 ```text
-1. medial_elbow_tendinopathy
-2. remaining_wrist_hand_and_elbow_routes
+1. ulnar_neuropathy_at_elbow
+2. remaining wrist_hand_and_elbow_routes
 3. remaining routine routes in registry order
 4. reviewed evidence-gap behavior where full staging is unsupported
 5. route-specific prompts + matching fixtures alongside each route
