@@ -1,0 +1,86 @@
+version: cu1_rich_referral_content_cervical_posttraumatic_el_v1
+status: active_runtime_authority_profile_shard
+runtime_authorized: true
+reviewed_on: 2026-08-29
+language: el
+profile_id: cervical
+
+routes:
+  post_traumatic_neck_pain:
+    profile_ids: [cervical]
+    variants:
+      - variant_id: recent_uncomplicated_wad
+        match:
+          wording_modes: [presentation]
+          context_equals:
+            trauma_mechanism_context: whiplash_acceleration_deceleration
+            temporal_phase: recent_or_acute_within_12_weeks
+            structural_status: no_material_structural_injury_identified_by_clinician
+            material_neurological_or_other_safety_concern: "no"
+            physiotherapy_considered_appropriate_by_clinician: "yes"
+        evidence_profile_ids: [rep_c5_recent_whiplash_wad_v1]
+        authority_mode: reviewed_recent_wad_sequence_with_explicit_safety_clearance
+        short_flow_el:
+          - >-
+            Σε πρόσφατη μη επιπλεγμένη whiplash-associated αυχεναλγία προτείνεται ενεργητική αποκατάσταση με διατήρηση της συνήθους δραστηριότητας όσο είναι ανεκτή, προσωρινές λογικές προσαρμογές φορτίου και εξατομικευμένη αυχενική άσκηση.
+          - >-
+            Η πρόοδος καθοδηγείται από τη λειτουργική ανταπόκριση χωρίς καθολική δόση, αριθμητικό όριο ή σταθερή διάρκεια θεραπείας. Νέο/προοδευτικό νευρολογικό ή ουσιώδες δομικό/τραυματικό εύρημα απαιτεί επανεκτίμηση.
+        stages:
+          - stage_id: recent_wad_active_function_rehabilitation
+            label_el: ΣΤΑΔΙΟ 1 — ΕΝΕΡΓΗΤΙΚΗ ΑΠΟΚΑΤΑΣΤΑΣΗ / ΔΙΑΤΗΡΗΣΗ ΛΕΙΤΟΥΡΓΙΑΣ
+            goals_el:
+              - μείωση συμπτωματικής επιβάρυνσης και αποκατάσταση εμπιστοσύνης στην κίνηση
+              - διατήρηση ή επάνοδος στη συνήθη λειτουργική δραστηριότητα
+              - βελτίωση αυχενικής κινητικής ικανότητας και αντοχής
+            intervention_directions_el:
+              - συνέχιση συνήθους δραστηριότητας με λογική προσωρινή τροποποίηση όταν χρειάζεται, χωρίς routine παρατεταμένο περιορισμό εφόσον δεν υπάρχει δομικός/θεραπευτικός περιορισμός
+              - εξατομικευμένη ενεργητική αυχενική κινητικότητα, χαμηλού φορτίου ισομετρική άσκηση, αντοχή στάσης και προοδευτική ενδυνάμωση σύμφωνα με την κλινική ανοχή, χωρίς καθολική δόση
+            progress_markers_el:
+              - καλύτερη λειτουργική ανοχή, κίνηση και συμμετοχή στις σχετικές δραστηριότητες χωρίς νέο ή προοδευτικό αντικειμενικό νευρολογικό ή άλλο ουσιώδες εύρημα
+            evidence_claim_ids:
+              - c5_recent_wad_stay_active_B_SIRA
+              - c5_recent_wad_neck_exercise_B_SIRA
+            organization_authority: clinical_rehabilitation_organization
+        adjunct_boundary_el: >-
+          Δεν επιβάλλεται συγκεκριμένη τεχνική, δόση, συχνότητα συνεδριών ή συνολική διάρκεια θεραπείας. Τυχόν χειροθεραπεία παραμένει επιλεγμένο επικουρικό μέσο και όχι υποκατάστατο της ενεργητικής αποκατάστασης.
+        reassessment_el: >-
+          Ιατρική επανεκτίμηση σε νέο ή προοδευτικό αντικειμενικό νευρολογικό εύρημα, πιθανό νωτιαίο/μυελοπαθητικό στοιχείο, ουσιωδώς νέα ή επιδεινούμενα συμπτώματα ή μη επιλυμένη δομική τραυματική ανησυχία.
+        reassessment_evidence_claim_ids: [c5_posttraumatic_safety_reassessment]
+
+      - variant_id: persistent_wad
+        match:
+          wording_modes: [presentation]
+          context_equals:
+            trauma_mechanism_context: whiplash_acceleration_deceleration
+            temporal_phase: persistent_over_3_months
+            structural_status: no_material_structural_injury_identified_by_clinician
+            material_neurological_or_other_safety_concern: "no"
+            physiotherapy_considered_appropriate_by_clinician: "yes"
+        evidence_profile_ids: [rep_c5_persistent_whiplash_wad_v1]
+        authority_mode: reviewed_persistent_wad_sequence_with_explicit_safety_clearance
+        short_flow_el:
+          - >-
+            Σε επίμονη whiplash-associated αυχεναλγία προτείνεται εξατομικευμένη ενεργητική αποκατάσταση με αυχενική/λειτουργική άσκηση, εκπαίδευση και αυτοδιαχείριση, με στόχο βελτίωση πόνου, λειτουργικής ανοχής και συμμετοχής στις σημαντικές δραστηριότητες.
+          - >-
+            Δεν τεκμηριώνεται ένα καθολικά ανώτερο πρόγραμμα, σταθερή συχνότητα συνεδριών ή διάρκεια θεραπείας. Νέο/προοδευτικό ή επίμονο αντικειμενικό νευρολογικό εύρημα με συνεχιζόμενη αναπηρία απαιτεί ιατρική επανεκτίμηση.
+        stages:
+          - stage_id: persistent_wad_active_function_rehabilitation
+            label_el: ΣΤΑΔΙΟ 1 — ΕΝΕΡΓΗΤΙΚΗ ΑΠΟΚΑΤΑΣΤΑΣΗ / ΑΥΤΟΔΙΑΧΕΙΡΙΣΗ
+            goals_el:
+              - βελτίωση πόνου και λειτουργικής ανοχής
+              - βελτίωση συμμετοχής στις καθημερινές, εργασιακές και ασκησιακές δραστηριότητες
+              - ενίσχυση ανεξάρτητης αυτοδιαχείρισης
+            intervention_directions_el:
+              - εξατομικευμένη καθοδηγούμενη αυχενική/λειτουργική άσκηση μαζί με αυτοδιαχείριση και συμβουλευτική, χωρίς υποχρεωτικό exercise bundle, σταθερή συχνότητα επισκέψεων ή προκαθορισμένη διάρκεια
+            progress_markers_el:
+              - ουσιαστική λειτουργική βελτίωση και αυξανόμενη ανοχή στις δραστηριότητες βάσει κλινικής ανταπόκρισης, χωρίς καθολικό αριθμητικό κριτήριο
+            evidence_claim_ids:
+              - c5_persistent_wad_exercise_advice_context
+            organization_authority: clinical_rehabilitation_organization
+        adjunct_boundary_el: >-
+          Η διαθέσιμη τεκμηρίωση δεν ορίζει ένα καθολικά ανώτερο πρόγραμμα ή υποχρεωτικό passive/manual bundle· η ακριβής επιλογή και δοσολογία παραμένουν εξατομικευμένες.
+        reassessment_el: >-
+          Ιατρική επανεκτίμηση σε νέο/προοδευτικό αντικειμενικό νευρολογικό εύρημα ή άλλη ουσιώδη κλινική μεταβολή· επίμονα αντικειμενικά νευρολογικά σημεία με συνεχιζόμενη αναπηρία πέραν των τριών μηνών απαιτούν ιατρική διερεύνηση/διαχείριση.
+        reassessment_evidence_claim_ids:
+          - c5_posttraumatic_safety_reassessment
+          - c5_persistent_neurological_signs_require_medical_review
