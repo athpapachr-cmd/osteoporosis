@@ -1,4 +1,4 @@
-# SLICE_PLAN_CURRENT.md — CU-1 history + evidence + rehabilitation-sequence design hardening v1.7
+# SLICE_PLAN_CURRENT.md — CU-1 history + evidence + rehabilitation-sequence design hardening v1.8
 
 > **STATUS:** ACTIVE PRE-RUNTIME DESIGN HARDENING — SHARD INTEGRATION PASS / ROUTE COVERAGE IN PROGRESS.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
@@ -98,6 +98,7 @@ missing history != negative history
 patient statement != objective finding
 route-specific prompt != selected answer
 not_assessed neurological status != normal
+headache feature != formal headache diagnosis
 ```
 
 ---
@@ -172,6 +173,9 @@ cu1_evidence_route_coverage_cervical_v1.yaml
 cu1_evidence_route_coverage_cervical_radiating_v1.yaml
 → C2 radiating-upper-limb cervical native route coverage
 
+cu1_evidence_route_coverage_cervical_headache_v1.yaml
+→ C3 presentation-only + formal-CGH context split
+
 cu1_evidence_route_coverage_amendments_v1.yaml
 → reviewed post-merge narrowing / source-identity / grading / suppression layer
 ```
@@ -189,9 +193,10 @@ Regression oracles:
 ```text
 clinic_utilities/contracts/cu1_history_evidence_fixtures_v1.yaml
 clinic_utilities/contracts/cu1_cervical_history_evidence_fixtures_v1.yaml
+clinic_utilities/contracts/cu1_c3_cervical_headache_fixtures_v1.yaml
 ```
 
-The cervical fixture file is a dedicated extension; its C1/C2 cases are normative design regressions for the reviewed cervical routes and do not authorize runtime behavior.
+The cervical fixture files are dedicated extensions; their cases are normative design regressions for reviewed cervical routes and do not authorize runtime behavior.
 
 ---
 
@@ -247,9 +252,24 @@ subjective radiating arm symptoms
 
 cervical-radiculopathy-specific component NMA
 != automatic authority for every symptom-only C2 case
+
+headache with cervical MSK features
+!= formal cervicogenic headache diagnosis
+
+restricted cervical ROM / cervical provocation / occipital tenderness
+!= sufficient CGH diagnosis
+
+upper-cervical imaging finding
+!= proven headache causation
+
+formal-CGH systematic-review evidence
+!= presentation-only C3 authority
+
+low-certainty CGH network ranking
+!= best or mandatory treatment protocol
 ```
 
-Unresolved material subtype/management/neurological context blocks evidence-aware sequence resolution rather than invoking a generic fallback.
+Unresolved material subtype/management/neurological/headache-safety context blocks evidence-aware sequence resolution rather than invoking a generic fallback.
 
 ---
 
@@ -275,6 +295,8 @@ population-specific trial superiority != universal protocol superiority when lat
 assessment recommendation != validated progression threshold
 disease-specific evidence != broader symptom-presentation authority without matching applicability
 positive provocation test != diagnosis
+guideline framework grade != GRADE treatment-effect certainty
+low-certainty network rank != protocol authority
 ```
 
 ---
@@ -403,6 +425,34 @@ progression_criteria: []
 
 No universal numeric progression threshold is manufactured.
 
+### C3 — Headache with cervical musculoskeletal features / formal cervicogenic headache
+
+Two profiles preserve diagnostic authority:
+
+```text
+presentation-only:
+rep_c3_cervical_headache_presentation_v1
+→ seq_c3_cervical_headache_presentation_v1
+
+explicit clinician diagnosis of CGH:
+rep_c3_formal_cervicogenic_headache_v1
+→ seq_c3_formal_cervicogenic_headache_v1
+```
+
+ICHD-3 is used for diagnostic-boundary semantics only. Cervical pain, ROM restriction, cervical provocation, occipital tenderness, or upper-cervical imaging do not independently authorize definitive CGH wording. Only an explicit clinician assertion can move the route into the formal-CGH profile.
+
+APTA/JOSPT 2017 provides the neck-pain-with-headache rehabilitation framework. Acute supervised active mobility retains Grade B. Self-SNAG remains therapist execution detail. Subacute/chronic manual-therapy authority retains APTA Grade B but treatment selection remains separate from evidence authority.
+
+For explicit formal CGH, the 2026 GRADE systematic review preserves only a low-certainty short-term manual-therapy signal, with no durable 12-month benefit established and direct exercise effect on headache outcomes still uncertain. The 2024 PT NMA's intervention rankings remain low-certainty comparative context and cannot be converted into a mandatory technique bundle or universal superiority claim.
+
+Both C3 sequences deliberately contain:
+
+```text
+progression_criteria: []
+```
+
+No universal exercise/manual dose, numeric transition threshold, fixed PT frequency or course duration is manufactured. New/changed/progressive headache or neurological/vascular/systemic concern blocks routine progression. Primary post-traumatic/whiplash context routes to C5 review.
+
 ---
 
 # 12. Coverage gate
@@ -438,7 +488,7 @@ Generic fallback is forbidden.
 
 # 13. Acceptance fixtures
 
-The main regression oracle contains the previously reviewed route cases. The dedicated cervical extension now additionally covers:
+The main regression oracle contains the previously reviewed route cases. Dedicated cervical extensions now cover:
 
 ```text
 C1 activation/self-management core
@@ -457,9 +507,21 @@ C2 NMA components != mandatory bundle
 C2 progressive objective neurological deficit block
 C2 possible cord-feature block
 C2 no universal progression threshold
+
+C3 presentation-only != formal CGH
+C3 ROM/provocation != sufficient diagnosis
+C3 upper-cervical imaging != causation by itself
+C3 formal-CGH profile without false certainty
+C3 manual therapy selected not mandatory / no false durable effect
+C3 acute active-mobility Grade-B preservation
+C3 self-SNAG remains execution detail
+C3 low-certainty NMA rankings != best protocol
+C3 known primary-headache context not silently excluded
+C3 safety concern blocks routine progression
+C3 post-traumatic primary context → C5 review
 ```
 
-Additional route fixtures remain required as coverage expands through C3-C5 and the remaining registry.
+Additional route fixtures remain required as coverage expands through C4-C5 and the remaining registry.
 
 ---
 
@@ -495,6 +557,7 @@ patellar-tendinopathy route coverage             PASS
 thumb-CMC1-OA route coverage                     PASS
 C1 nonspecific-neck route coverage              PASS
 C2 radiating-neck route coverage                PASS
+C3 cervical-headache route coverage              PASS
 routine-route coverage                          FAIL globally
 route-history prompt completeness               FAIL globally
 route-complete fixture corpus                   FAIL globally
@@ -506,15 +569,14 @@ RUNTIME AUTHORIZED                              NO
 Continue route-by-route:
 
 ```text
-1. headache_with_cervical_msk_features
-2. cervical_dizziness_presentation
-3. post_traumatic_neck_pain
-4. remaining_wrist_hand_and_elbow_routes
-5. remaining routine routes in registry order
-6. reviewed evidence-gap behavior where full staging is unsupported
-7. route-specific prompts + matching fixtures alongside each route
-8. exact design-completeness review
-9. STOP only at DESIGN-COMPLETE or a newly specific BLOCK
+1. cervical_dizziness_presentation
+2. post_traumatic_neck_pain
+3. remaining_wrist_hand_and_elbow_routes
+4. remaining routine routes in registry order
+5. reviewed evidence-gap behavior where full staging is unsupported
+6. route-specific prompts + matching fixtures alongside each route
+7. exact design-completeness review
+8. STOP only at DESIGN-COMPLETE or a newly specific BLOCK
 ```
 
 No runtime evidence-aware generation is authorized by this slice.
