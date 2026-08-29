@@ -1,4 +1,4 @@
-version: cu1_evidence_manifest_v1_17
+version: cu1_evidence_manifest_v1_18
 status: design_frozen_sharded_registry_manifest
 runtime_authorized: false
 reviewed_on: 2026-08-29
@@ -200,6 +200,20 @@ shards:
     reviewed_routes:
       - medial_elbow_tendinopathy
 
+  - shard_id: ulnar_elbow_route_coverage_extension
+    path: clinic_utilities/contracts/cu1_evidence_route_coverage_ulnar_elbow_v1.yaml
+    state: active_design_authority
+    identity_mode: explicit_payload_id
+    review_record: clinic_utilities/contracts/CU1_ULNAR_ELBOW_ROUTE_REVIEW_2026-08-29.md
+    schema_conformance_reviewed: true
+    normative_read_rule: >-
+      preserve_symptom_vs_formal_diagnosis_and_subjective_vs_objective_neurological_semantics; allow_the_narrow
+      mild_conservative_sequence_only_when_mild_context_and_objective_motor_status_are_explicitly_documented;
+      keep_nonmild_or_unresolved_severity_as_explicit_evidence_gap; keep_progressive_motor_structural_or
+      alternative_localization_contexts_blocked; do_not_auto_promote_night_splint_or_other_physio_modalities
+    reviewed_routes:
+      - ulnar_neuropathy_at_elbow
+
 logical_collections:
   - sources
   - claims
@@ -328,6 +342,12 @@ clinical_applicability_rules:
   - medial_elbow_treatment_effect_authority_must_not_borrow_lateral_elbow_CPG_grades
   - subjective_ulnar_symptoms_do_not_auto_create_objective_ulnar_neuropathy_or_normal_neurological_status
   - medial_elbow_material_valgus_UCL_progressive_ulnar_motor_or_other_discordant_context_requires_reassessment_or_correct_owner
+  - ulnar_elbow_symptoms_Tinel_flexion_provocation_or_imaging_do_not_auto_create_formal_cubital_tunnel_diagnosis
+  - ulnar_elbow_mild_conservative_authority_requires_explicit_mild_context_and_objective_motor_status_actually_assessed_without_material_deficit
+  - ulnar_elbow_not_assessed_motor_status_cannot_resolve_as_normal_or_mild_eligibility
+  - ulnar_elbow_mild_case_education_authority_cannot_auto_expand_to_nonmild_or_severity_unresolved_context
+  - ulnar_elbow_night_splint_or_heterogeneous_physiotherapy_modalities_are_not_default_route_core_without_separate_reviewed_authority
+  - ulnar_elbow_progressive_motor_atrophy_clawing_structural_or_alternative_localization_context_blocks_routine_mild_sequence_and_requires_reassessment_or_correct_owner
   - regional_profile_identity_never_substitutes_for_route_evidence_profile_identity
   - a_midportion_Achilles_claim_cannot_authorize_insertional_Achilles_output
   - a_route_specific_claim_cannot_be_reused_as_generic_MSK_authority
@@ -355,6 +375,9 @@ framework_governance_rules:
   - newer_low_certainty_synthesis_does_not_convert_older_route_specific_CPG_recommendation_into_do_not_offer_without_explicit_conflict
   - narrative_review_management_or_phase_description_must_not_be_relabelled_as_comparative_effect_or_validated_progression_threshold
   - low_certainty_medial_eccentric_signal_must_not_become_universal_loading_superiority_or_mandatory_protocol
+  - AANEM_ultrasound_Level_B_is_diagnostic_framework_strength_not_treatment_effect_certainty
+  - very_low_certainty_night_splint_evidence_must_not_become_recommend_or_do_not_offer_without_stronger_applicable_authority
+  - sparse_mild_UNE_conservative_evidence_must_not_be_upgraded_or_expanded_across_severity
   - newer_route_specific_guidance_does_not_silently_erase_an_older_still_relevant_distinct_framework
 
 freshness_rules:
@@ -403,6 +426,7 @@ readiness_gate:
     - post_traumatic_neck_pain
     - lateral_elbow_tendinopathy
     - medial_elbow_tendinopathy
+    - ulnar_neuropathy_at_elbow
   logical_amendment_gate_passed: true
   all_active_authority_shards_schema_reviewed: true
   all_listed_shards_schema_reviewed: true
