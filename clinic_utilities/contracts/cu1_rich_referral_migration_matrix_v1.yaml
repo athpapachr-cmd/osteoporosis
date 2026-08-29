@@ -108,8 +108,8 @@ profiles:
     osteochondral_ocd_lesion: {state: protocol_owned, reason: structural_lesion_and_loading_restriction_context_precedence}
 
   hip_groin:
-    greater_trochanteric_lateral_hip_pain_pathway: {state: context_gated, evidence_profile_ids: [rep_gtps_gluteal_tendinopathy_v1], reason: formal_GTPS_or_gluteal_tendinopathy_authority_does_not_cover_bursitis_or_other_subtypes}
-    nonarthritic_intraarticular_hip_pain: {state: context_gated, evidence_profile_ids: [rep_nonarthritic_intraarticular_hip_v1], reason: FAIS_labral_authority_does_not_safely_generalize_to_all_other_subtypes}
+    greater_trochanteric_lateral_hip_pain_pathway: {state: evidence_limited, evidence_profile_ids: [rep_gtps_gluteal_tendinopathy_v1], reason: sequence_incomplete_even_for_formal_GTPS_or_gluteal_tendinopathy_and_authority_does_not_cover_bursitis_or_other_subtypes}
+    nonarthritic_intraarticular_hip_pain: {state: evidence_limited, evidence_profile_ids: [rep_nonarthritic_intraarticular_hip_v1], reason: sequence_incomplete_and_FAIS_labral_authority_does_not_safely_generalize_to_all_other_subtypes}
     adductor_related_groin_pain: {state: pending_evidence}
     post_traumatic_hip_groin_pain_stiffness: {state: pending_evidence}
     proximal_hamstring_tendinopathy: {state: pending_evidence}
@@ -121,7 +121,7 @@ profiles:
 
   ankle_foot:
     lateral_ankle_sprain_rehabilitation: {state: evidence_limited, evidence_profile_ids: [rep_lateral_ankle_sprain_v1], reason: evidence_profile_ready_for_review_but_not_yet_runtime_rich_content}
-    achilles_tendinopathy: {state: context_gated, evidence_profile_ids: [rep_achilles_midportion_v1, rep_achilles_insertional_v1], reason: midportion_and_insertional_authority_must_remain_separate_and_other_subtype_is_blocked}
+    achilles_tendinopathy: {state: evidence_limited, evidence_profile_ids: [rep_achilles_midportion_v1, rep_achilles_insertional_v1], reason: midportion_and_insertional_sequences_are_both_incomplete_and_other_subtype_is_blocked_evidence_gap}
     plantar_heel_pain_plantar_fasciitis: {state: evidence_limited, evidence_profile_ids: [rep_plantar_heel_pain_v1], reason: core_interventions_supported_but_required_multi_phase_transition_model_not_established}
     posterior_tibial_tendon_dysfunction_progressive_collapsing_foot_deformity: {state: pending_evidence}
     peroneal_tendon_disorder_nonoperative: {state: pending_evidence}
