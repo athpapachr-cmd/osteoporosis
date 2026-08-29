@@ -73,12 +73,12 @@ sources:
     supersedes_optional: []
     superseded_by_optional: []
 
-  une_ultrasound_aanem_2021:
-    evidence_id: une_ultrasound_aanem_2021
+  une_ultrasound_aanem_2022:
+    evidence_id: une_ultrasound_aanem_2022
     source_type: guideline
     title: "Evidence-based guideline: Neuromuscular ultrasound for the diagnosis of ulnar neuropathy at the elbow"
     authors_or_organization: American Association of Neuromuscular & Electrodiagnostic Medicine / Shook SJ et al.
-    year_or_version: 2021
+    year_or_version: 2022
     reference: "Muscle Nerve. 2022;65(3):255-263"
     doi_optional: 10.1002/mus.27460
     url_optional: https://pubmed.ncbi.nlm.nih.gov/34921428/
@@ -112,7 +112,7 @@ sources:
 claims:
   une_symptoms_and_provocation_not_formal_diagnosis:
     claim_id: une_symptoms_and_provocation_not_formal_diagnosis
-    evidence_ids: [cubital_diagnostic_delphi_2025, une_ultrasound_aanem_2021]
+    evidence_ids: [cubital_diagnostic_delphi_2025, une_ultrasound_aanem_2022]
     applicable_route_evidence_profile_ids: [rep_une_mild_sensory_predominant_v1, rep_une_nonmild_or_severity_unresolved_v1, rep_une_progressive_motor_or_structural_safety_v1]
     applicable_route_ids: [ulnar_neuropathy_at_elbow]
     domain: diagnostic_definition
@@ -129,7 +129,7 @@ claims:
 
   une_ultrasound_diagnostic_adjunct_level_B:
     claim_id: une_ultrasound_diagnostic_adjunct_level_B
-    evidence_ids: [une_ultrasound_aanem_2021]
+    evidence_ids: [une_ultrasound_aanem_2022]
     applicable_route_evidence_profile_ids: [rep_une_mild_sensory_predominant_v1, rep_une_nonmild_or_severity_unresolved_v1, rep_une_progressive_motor_or_structural_safety_v1]
     applicable_route_ids: [ulnar_neuropathy_at_elbow]
     domain: examination
@@ -231,7 +231,7 @@ claims:
 
   une_alternative_localization_or_structural_owner:
     claim_id: une_alternative_localization_or_structural_owner
-    evidence_ids: [une_ultrasound_aanem_2021, cubital_diagnostic_delphi_2025]
+    evidence_ids: [une_ultrasound_aanem_2022, cubital_diagnostic_delphi_2025]
     applicable_route_evidence_profile_ids: [rep_une_progressive_motor_or_structural_safety_v1, rep_une_nonmild_or_severity_unresolved_v1, rep_une_mild_sensory_predominant_v1]
     applicable_route_ids: [ulnar_neuropathy_at_elbow]
     domain: differential
@@ -361,7 +361,7 @@ route_evidence_profiles:
       - no_best_physiotherapy_method_established
       - no_validated_numeric_progression_or_discharge_threshold
       - no_universal_visit_frequency_or_total_PT_course_duration
-    primary_source_ids: [une_cochrane_2025, une_night_splint_sr_2025, une_physiotherapy_sr_2022, une_ultrasound_aanem_2021, cubital_diagnostic_delphi_2025]
+    primary_source_ids: [une_cochrane_2025, une_night_splint_sr_2025, une_physiotherapy_sr_2022, une_ultrasound_aanem_2022, cubital_diagnostic_delphi_2025]
     last_reviewed_on: 2026-08-29
     next_review_due: 2027-02-28
     freshness_state: current
@@ -383,7 +383,7 @@ route_evidence_profiles:
       - no_complete_criteria_based_physio_sequence_for_moderate_or_severity_unclear_UNE_established
       - night_splinting_is_very_low_certainty_and_not_a_default_sequence_substitute
       - nerve_gliding_manual_therapy_and_electrical_modalities_lack_best_method_authority
-    primary_source_ids: [une_cochrane_2025, une_night_splint_sr_2025, une_physiotherapy_sr_2022, une_ultrasound_aanem_2021]
+    primary_source_ids: [une_cochrane_2025, une_night_splint_sr_2025, une_physiotherapy_sr_2022, une_ultrasound_aanem_2022]
     last_reviewed_on: 2026-08-29
     next_review_due: 2027-02-28
     freshness_state: current
@@ -403,7 +403,7 @@ route_evidence_profiles:
     evidence_gaps:
       - routine_mild_conservative_sequence_is_not_applicable_in_material_motor_or_structural_safety_context
       - CU1_does_not_generate_autonomous_surgical_threshold_or_procedure_choice
-    primary_source_ids: [une_cochrane_2025, une_ultrasound_aanem_2021, cubital_diagnostic_delphi_2025]
+    primary_source_ids: [une_cochrane_2025, une_ultrasound_aanem_2022, cubital_diagnostic_delphi_2025]
     last_reviewed_on: 2026-08-29
     next_review_due: 2027-02-28
     freshness_state: current
