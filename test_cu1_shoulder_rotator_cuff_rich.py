@@ -85,6 +85,19 @@ class CU1ShoulderRotatorCuffRichTests(unittest.TestCase):
             ["rep_rotator_cuff_related_pain_v1"],
         )
 
+    def test_reviewed_logical_coverage_is_sequence_complete_and_fixture_backed(self):
+        route = self.evidence.coverage["profiles"]["shoulder"]["rotator_cuff_related_shoulder_pain"]
+        self.assertEqual(route["sequence_status"], "sequence_complete")
+        self.assertEqual(
+            route["review_record"],
+            "CU1_ROTATOR_CUFF_RELATED_SHOULDER_ROUTE_REVIEW_2026-08-29.md",
+        )
+        self.assertEqual(route["fixture_extension"], "cu1_rotator_cuff_related_shoulder_fixtures_v1.yaml")
+        self.assertIn(
+            "cu1_rotator_cuff_related_shoulder_fixtures_v1.yaml",
+            self.evidence.coverage.get("fixture_extensions") or [],
+        )
+
     def test_short_and_detailed_preserve_active_rehabilitation_truth(self):
         short = self._format("short")
         detailed = self._format("detailed")
@@ -107,18 +120,18 @@ class CU1ShoulderRotatorCuffRichTests(unittest.TestCase):
         self.assertNotIn("12 εβδο", lowered)
         self.assertNotIn("3 x", lowered)
         self.assertNotIn("3x", lowered)
-        self.assertIn("χωρίς καθολική συνταγή", lowered)
+        self.assertIn("χωρίς καθολική δοσολογία", lowered)
         self.assertIn("χωρίς καθολικό αριθμητικό", lowered)
 
     def test_adjuncts_remain_secondary_and_calcific_specific_care_is_not_borrowed(self):
         detailed = self._format("detailed")
         lowered = detailed.lower()
         self.assertIn("επικουρικά μέσα", lowered)
-        self.assertIn("όχι ως υποκατάστατο", lowered)
+        self.assertIn("όχι αντί ενεργητικής αποκατάστασης", lowered)
         self.assertNotIn("eswt", lowered)
         self.assertNotIn("κρουστικ", lowered)
-        self.assertIn("ασβεστοποιό τενοντοπάθεια", lowered)
-        self.assertIn("ξεχωριστό", lowered)
+        self.assertIn("ασβεστοποιός τενοντοπάθεια", lowered)
+        self.assertIn("ξεχωριστή διαδρομή", lowered)
 
     def test_full_thickness_tear_cannot_inherit_rcrsp_rich_authority(self):
         self.assertEqual(
@@ -135,7 +148,7 @@ class CU1ShoulderRotatorCuffRichTests(unittest.TestCase):
             )
         )
         detailed = self._format("detailed")
-        self.assertIn("Ρήξη πλήρους πάχους δεν αντιμετωπίζεται", detailed)
+        self.assertIn("Η ρήξη πλήρους πάχους ακολουθεί ξεχωριστή διαδρομή", detailed)
 
     def test_clinician_evidence_retains_scope_and_12_week_reassessment_claim(self):
         data = self.evidence.route_summary(
@@ -144,6 +157,7 @@ class CU1ShoulderRotatorCuffRichTests(unittest.TestCase):
         )
         self.assertTrue(data["has_applicable_profile"])
         self.assertEqual(data["profile_count"], 1)
+        self.assertEqual(data["sequence_status"], "sequence_complete")
         summaries = "\n".join(str(item.get("claim_summary") or "") for item in data["claims"]).lower()
         self.assertIn("active rehabilitation", summaries)
         self.assertIn("12-week", summaries)
