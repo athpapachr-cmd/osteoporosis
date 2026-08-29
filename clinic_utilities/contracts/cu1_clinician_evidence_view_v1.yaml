@@ -1,0 +1,56 @@
+version: cu1_clinician_evidence_view_v1
+status: active_runtime_clinician_ui_authority
+runtime_authorized: true
+reviewed_on: 2026-08-29
+source_evidence_manifest: clinic_utilities/contracts/cu1_evidence_manifest_v1.yaml
+source_coverage_matrix: clinic_utilities/contracts/cu1_evidence_coverage_matrix_v1.yaml
+
+purpose: >-
+  Authorize read-only clinician UI projection of the reviewed CU-1 evidence corpus without promoting
+  that corpus wholesale into referral-generation runtime authority. This view exists to let the
+  clinician inspect route-relevant references, claim scope, strength/certainty, freshness, conflicts
+  and evidence gaps while preserving the source corpus' own activation and coverage gates.
+
+allowed_runtime_use:
+  - clinician_ui_reference_panel
+  - human_readable_route_evidence_summary
+  - evidence_gap_and_conflict_visibility
+  - source_link_and_freshness_display
+
+forbidden_runtime_use:
+  - autonomous_diagnosis
+  - automatic_treatment_selection
+  - bypass_of_route_subtype_or_context_applicability
+  - promotion_of_therapist_execution_detail_to_referral_core
+  - promotion_of_clinician_ui_only_claim_to_referral_core
+  - generic_cross_route_evidence_fallback
+  - silent_hybridization_of_conflicting_frameworks
+  - suppression_of_evidence_gap_or_stale_state
+
+projection_rules:
+  show_only_human_readable_fields: true
+  internal_ids_may_be_used_for_resolution_but_not_primary_display: true
+  include_source_title: true
+  include_authors_or_organization: true
+  include_year_or_version: true
+  include_reference: true
+  include_doi_or_url_when_available: true
+  include_reviewed_on_and_freshness: true
+  include_claim_summary: true
+  include_recommendation_direction: true
+  include_strength_and_certainty_when_available: true
+  include_output_scope: true
+  include_evidence_gaps: true
+  include_conflicts: true
+  referral_copy_print_includes_panel: false
+
+source_state_policy:
+  active_design_authority: displayable
+  staged_candidate_not_schema_frozen: hidden
+  superseded: hidden
+
+freshness_policy:
+  current: displayable
+  review_due: display_with_warning
+  stale: display_with_warning
+  superseded: hidden
