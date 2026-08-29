@@ -21,6 +21,10 @@ governance:
   passive_only_routine_plan_forbidden_unless_protocol_exception: true
   stage_3_function_and_self_management_when_applicable: true
 
+route_shards:
+  - clinic_utilities/contracts/cu1_rich_referral_content_knee_el_v1.yaml
+  - clinic_utilities/contracts/cu1_rich_referral_content_wrist_hand_el_v1.yaml
+
 routes:
   lateral_elbow_tendinopathy:
     profile_ids: [elbow]
