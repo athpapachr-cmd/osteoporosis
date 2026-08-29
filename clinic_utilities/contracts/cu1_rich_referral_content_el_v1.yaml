@@ -87,3 +87,56 @@ routes:
     reassessment_el: >-
       Ιατρική επανεκτίμηση σε άτυπη πορεία ή νέο/προοδευτικό νευρολογικό, ριζιτικό, μηχανικό ή τραυματικό/ασταθές εύρημα.
     reassessment_evidence_claim_ids: [let_atypical_differential_reassessment_2022]
+
+  nonspecific_neck_pain:
+    profile_ids: [cervical]
+    evidence_profile_ids: [rep_nonspecific_neck_pain_v1]
+    authority_mode: reviewed_route_sequence_plus_clinical_rehabilitation_organization
+    short_flow_el:
+      - >-
+        Προτείνεται ενεργητική αποκατάσταση με εκπαίδευση, διατήρηση ή σταδιακή επάνοδο στη φυσική δραστηριότητα
+        και εξατομικευμένη άσκηση ανάλογα με τη φάση και τη λειτουργική εικόνα.
+      - >-
+        Στόχος είναι η αποκατάσταση της καθημερινής και εργασιακής λειτουργίας και η μακροχρόνια αυτοδιαχείριση.
+        Κινητοποιήσεις ή τεχνικές μαλακών μορίων μπορούν να χρησιμοποιηθούν επιλεκτικά ως επικουρικά μέσα και όχι
+        ως υποκατάστατο της ενεργητικής προσέγγισης.
+    stages:
+      - stage_id: activation_self_management
+        label_el: ΣΤΑΔΙΟ 1 — ΕΝΕΡΓΟΠΟΙΗΣΗ / ΑΥΤΟΔΙΑΧΕΙΡΙΣΗ
+        goals_el:
+          - διατήρηση ή αποκατάσταση δραστηριότητας και λειτουργικής κινητικότητας
+          - κατανόηση και ενεργή αυτοδιαχείριση των συμπτωμάτων
+          - έναρξη κατάλληλης εξατομικευμένης άσκησης
+        intervention_directions_el:
+          - εκπαίδευση και ενεργοποίηση με αποφυγή αδικαιολόγητης ακινητοποίησης ή παθητικής εξάρτησης
+          - διατήρηση ή σταδιακή επάνοδος στη συνήθη δραστηριότητα και εξατομικευμένη άσκηση, ιδίως σε χρόνιο μη ειδικό αυχενικό πόνο
+          - επιλεκτικά κινητοποιήσεις/χειρισμοί ή τεχνικές μαλακών μορίων ως συμπλήρωμα της ενεργητικής αποκατάστασης όταν ενδείκνυνται
+        progress_markers_el:
+          - καλύτερη ανοχή σε κίνηση και δραστηριότητα, λειτουργική βελτίωση και αυξανόμενη ικανότητα αυτοδιαχείρισης
+        evidence_claim_ids:
+          - nsnp_physical_activity_activation_A
+          - nsnp_patient_education_B
+          - nsnp_chronic_exercise_A
+          - nsnp_acute_exercise_consensus
+          - nsnp_manual_mobilization_optional
+          - nsnp_soft_tissue_chronic_only_with_activation
+        organization_authority: clinical_rehabilitation_organization
+      - stage_id: functional_return_self_management
+        label_el: ΣΤΑΔΙΟ 2 — ΛΕΙΤΟΥΡΓΙΚΗ ΕΠΑΝΕΝΤΑΞΗ / ΔΙΑΤΗΡΗΣΗ
+        goals_el:
+          - επάνοδος στις σχετικές καθημερινές και επαγγελματικές απαιτήσεις
+          - διατήρηση φυσικής δραστηριότητας και ανεξάρτητης αυτοδιαχείρισης
+        intervention_directions_el:
+          - προοδευτική επάνοδος στις πραγματικές λειτουργικές απαιτήσεις με συνέχιση κατάλληλης άσκησης και στρατηγικών αυτοδιαχείρισης
+        progress_markers_el:
+          - ουσιαστική λειτουργική βελτίωση και ανοχή στο συνήθες επίπεδο δραστηριότητας χωρίς καθολικά αριθμητικά κριτήρια
+        evidence_claim_ids:
+          - nsnp_physical_activity_activation_A
+          - nsnp_patient_education_B
+          - nsnp_chronic_exercise_A
+        organization_authority: clinical_rehabilitation_organization
+    adjunct_boundary_el: >-
+      Παθητικά μέσα δεν αποτελούν τον πυρήνα της αποκατάστασης· η ενεργοποίηση, η δραστηριότητα και η αυτοδιαχείριση παραμένουν κεντρικές.
+    reassessment_el: >-
+      Ιατρική επανεκτίμηση σε επίμονο λειτουργικά περιοριστικό ή προοδευτικό πόνο παρά την κατάλληλη αντιμετώπιση, και νωρίτερα σε σοβαρή επιδείνωση ή νέο/προοδευτικό νευρολογικό εύρημα.
+    reassessment_evidence_claim_ids: [nsnp_persistent_progressive_reassessment]
