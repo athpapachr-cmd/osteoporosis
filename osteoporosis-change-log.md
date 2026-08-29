@@ -759,3 +759,79 @@ RUNTIME AUTHORIZED            NO
 ```
 
 The next authorized route after this reconciliation is `post_traumatic_neck_pain` (C5), followed by the remaining wrist/hand and elbow routes and then the remaining routine registry. PR #63 remains draft and must not be merged merely because individual route gates pass.
+
+---
+
+## 2026-08-29 — C5 post-traumatic / whiplash-associated cervical route closed as a context split
+
+The C5 route `post_traumatic_neck_pain` passed exact evidence/applicability review without being collapsed into either a generic nonspecific-neck pathway or a single undifferentiated whiplash protocol.
+
+The normative C5 design now separates:
+
+```text
+recent explicit uncomplicated WAD
+→ rep_c5_recent_whiplash_wad_v1
+→ seq_c5_recent_whiplash_wad_v1
+→ sequence_complete
+
+persistent explicit WAD
+→ rep_c5_persistent_whiplash_wad_v1
+→ seq_c5_persistent_whiplash_wad_v1
+→ sequence_complete
+
+explicit WAD with unclear/not-stated temporal phase
+→ rep_c5_whiplash_phase_unresolved_v1
+→ blocked_evidence_gap
+
+other post-traumatic cervical pain without explicit matching WAD context
+→ rep_c5_other_posttraumatic_neck_pain_v1
+→ blocked_evidence_gap
+
+unresolved structural / neurological safety context
+→ rep_c5_unresolved_posttraumatic_safety_v1
+→ routine sequence blocked
+```
+
+The current SIRA third-edition 2014 acute-WAD guideline remains the active recent/acute WAD authority at this review date. The proposed fourth edition remains draft/non-approved and is not used as normative authority.
+
+Evidence-strength boundaries were preserved rather than hybridized:
+
+- SIRA stay-active advice and neck exercise remain separate Level-B recommendations for recent/acute uncomplicated WAD;
+- manual therapy remains a selected limited-evidence Level-C adjunct rather than automatic core care;
+- SIRA's advice against prolonged reduction of usual activities remains a consensus clinical-practice point, while the recommendation against routine immobilisation collars is Level A;
+- the 2024 guided neck-specific exercise meta-analysis does not convert observed study frequency/duration patterns into a universal referral schedule;
+- the 2025 education-plus-exercise GRADE synthesis remains very-low certainty and does not establish a mandatory superior combined bundle;
+- persistent objective neurological signs with ongoing disability use the OPTIMa/Côté 2016 medical-review context after a pre-PASS source-attribution correction.
+
+C5 also freezes the following safety/applicability boundaries:
+
+```text
+post-traumatic neck pain != automatic WAD
+recent WAD != persistent WAD
+vague duration != inferred WAD temporal phase
+C5 selection != fracture/dislocation/instability excluded
+WAD/QTF grade != CU-1 inferred classification
+other cervical trauma != WAD authority != generic C1 fallback
+post-traumatic headache/dizziness/arm symptoms != automatic C3/C4/C2 disease-specific authority
+patient-specific structural/healing restriction > conflicting uncomplicated-WAD default
+```
+
+Both nonblocked WAD sequences remain single-phase and deliberately contain no universal numeric progression threshold, fixed visit frequency, total PT course duration or elapsed-time-only progression rule.
+
+Focused GitHub Actions passed at the exact C5 review head before manifest activation. The reviewed shard and matching fixtures were then activated in the normative manifest and coverage matrix.
+
+The overall CU-1 gate remains:
+
+```text
+SHARD INTEGRATION             PASS
+C1-C5 CERVICAL COVERAGE       PASS for reviewed contexts
+GLOBAL ROUTE COVERAGE         FAIL / IN PROGRESS
+ROUTE-HISTORY PROMPTS         FAIL globally until all routes curated
+ROUTE FIXTURE CORPUS          FAIL globally until all routes curated
+DESIGN-COMPLETE               NO
+RUNTIME AUTHORIZED            NO
+```
+
+PR #63 remains draft/unmerged. No runtime recommendation logic, persistence change, CU-2 work or PR-1 restart was authorized.
+
+The exact next route is now `lateral_elbow_tendinopathy`, followed by the remaining wrist/hand and elbow routes and then the remaining routine registry.
