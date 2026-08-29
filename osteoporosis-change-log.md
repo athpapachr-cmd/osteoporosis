@@ -835,3 +835,81 @@ RUNTIME AUTHORIZED            NO
 PR #63 remains draft/unmerged. No runtime recommendation logic, persistence change, CU-2 work or PR-1 restart was authorized.
 
 The exact next route is now `lateral_elbow_tendinopathy`, followed by the remaining wrist/hand and elbow routes and then the remaining routine registry.
+
+---
+
+## 2026-08-29 — Lateral elbow tendinopathy route closed as single-phase evidence-bounded authority
+
+The route `lateral_elbow_tendinopathy` passed exact evidence/applicability review and was activated without converting the existing incomplete two-phase seed into a fabricated staged protocol.
+
+The existing core profile identity was retained:
+
+```text
+rep_lateral_elbow_tendinopathy_v1
+```
+
+but its normative sequence now resolves, through the reviewed route activation amendment, to:
+
+```text
+seq_lateral_elbow_evidence_bounded_v1
+→ sequence_complete
+→ single required phase
+→ progression_criteria: []
+```
+
+The 2022 APTA/JOSPT lateral-elbow CPG remains the route-specific clinical-practice authority. The reviewed route preserves:
+
+- Grade-B resisted wrist-extensor exercise for subacute/chronic LET, with isometric, concentric and/or eccentric loading but no universal dose;
+- Grade-F high-demand reintroduction as a conditional work/sport/hobby direction rather than a second phase requiring an invented transition threshold;
+- Grade-C proximal shoulder/scapular training only when an actual proximal impairment is present;
+- selected Grade-B local manual therapy, dry needling and rigid taping recommendations without confusing evidence direction with automatic adjunct selection;
+- Grade-F counterforce/wrist-support orthosis authority only for selected aggravating-activity/immediate contexts;
+- education, activity/load modification and ergonomic/workstation context without a fixed conservative-care package.
+
+Two 2024 syntheses were added as current effect-context authority. The Cochrane manual-therapy/exercise review found low-certainty, generally small and non-durable effects, while the Campos non-invasive-therapy review found mostly small-to-no effects with evidence commonly low or very low certainty. These sources narrow claims about magnitude, durability and universal superiority; they do not transform individualized exercise into a `do_not_offer` recommendation.
+
+A pre-PASS audit corrected a synthetic outcome-measure strength. The final logical registry keeps:
+
+```text
+PRTEE / DASH / PSFS or high-demand activity-specific function measures
+→ CPG Grade A
+
+ROM / pressure-pain threshold / pain-free grip / maximum grip
+→ CPG Grade B
+```
+
+without flattening the two families into one hybrid strength. These measures remain tracking/assessment tools and are not automatic loading-progression, discharge, return-to-work or return-to-sport thresholds.
+
+Hard LET boundaries now include:
+
+```text
+lateral elbow pain or local tenderness != automatic LET diagnosis
+Cozen/Mill/Maudsley-type finding != automatic diagnosis
+imaging common-extensor abnormality != automatically symptomatic diagnosis
+acute/highly irritable LET != automatic subacute/chronic Grade-B loading authority
+objective PIN/radial motor deficit != routine LET
+cervical/radicular pattern != routine LET
+substantial mechanical block or material trauma/instability != routine LET
+CPG recommendation direction != automatic treatment selection
+newer low-certainty synthesis != proven no-effect claim
+```
+
+Matching route-history prompts and `cu1_lateral_elbow_fixtures_v1.yaml` were added. The route fixture corpus explicitly tests acute-vs-subacute/chronic applicability, high-demand Grade-F behavior, diagnosis-vs-finding separation, PIN/cervical owner boundaries, adjunct selection, CPG-grade preservation, outcome-measure grading, 2024 low-certainty interpretation, ESWT non-auto-authority and missing-history semantics.
+
+The exact route review passed focused GitHub Actions before activation. The route shard, activation amendment, manifest and coverage matrix were then reconciled. Runtime evidence-aware generation remains unauthorized.
+
+The global CU-1 gate remains:
+
+```text
+SHARD INTEGRATION             PASS
+LATERAL ELBOW ROUTE           PASS
+GLOBAL ROUTE COVERAGE         FAIL / IN PROGRESS
+ROUTE-HISTORY PROMPTS         FAIL globally until all routes curated
+ROUTE FIXTURE CORPUS          FAIL globally until all routes curated
+DESIGN-COMPLETE               NO
+RUNTIME AUTHORIZED            NO
+```
+
+PR #63 remains draft/unmerged. No runtime recommendation logic, persistence change, CU-2 work or PR-1 restart was authorized.
+
+The exact next route is now `medial_elbow_tendinopathy`, followed by the remaining wrist/hand and elbow routes and then the remaining routine registry.
