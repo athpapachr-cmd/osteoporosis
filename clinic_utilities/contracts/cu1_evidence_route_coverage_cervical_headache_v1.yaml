@@ -145,14 +145,14 @@ claims:
     evidence_ids: [neck_pain_apta_cpg_2017]
     applicable_route_evidence_profile_ids: [rep_c3_cervical_headache_presentation_v1, rep_c3_formal_cervicogenic_headache_v1]
     applicable_route_ids: [headache_with_cervical_msk_features]
-    applicability_conditions_optional: [subacute_or_chronic_cervical_headache_presentation, manual_therapy_selected_as_adjunct]
+    applicability_conditions_optional: [subacute_or_chronic_cervical_headache_presentation]
     domain: adjunct
     claim_summary: >-
       The 2017 APTA guideline recommends cervical manipulation/mobilization in subacute neck pain
       with headache and manual therapy combined with cervical/scapular exercise in chronic neck pain
-      with headache. CU-1 keeps this as a selected adjunct/context rather than automatically inserting
-      manipulation or mobilization into every C3 referral.
-    recommendation_direction: consider
+      with headache. CU-1 preserves the Grade-B framework while keeping treatment selection separate
+      from evidence authority, so manipulation or mobilization is not automatically inserted into every C3 referral.
+    recommendation_direction: recommend
     output_scope: referral_core
     strength_optional: B_APTA_2017
     certainty_optional: not_graded
@@ -163,7 +163,7 @@ claims:
     evidence_ids: [cgh_nonsurgical_grade_sr_2026]
     applicable_route_evidence_profile_ids: [rep_c3_formal_cervicogenic_headache_v1]
     applicable_route_ids: [headache_with_cervical_msk_features]
-    applicability_conditions_optional: [formal_cervicogenic_headache_diagnosis_yes, manual_therapy_selected_as_adjunct]
+    applicability_conditions_optional: [formal_cervicogenic_headache_diagnosis_yes]
     domain: adjunct
     claim_summary: >-
       In adults with diagnosed/classified cervicogenic headache, the 2026 GRADE review found
@@ -390,7 +390,13 @@ rehabilitation_sequences:
             statement: use individualized active cervical mobility and cervical/scapulothoracic exercise according to symptom course and identified impairments, without a fixed evidence-derived dose
             authority:
               authority_type: evidence_claim
-              evidence_claim_ids: [c3_apta_active_rehabilitation_context, c3_acute_active_mobility_B]
+              evidence_claim_ids: [c3_apta_active_rehabilitation_context]
+          - intervention_direction_id: c3_presentation_acute_supervised_mobility
+            statement: in acute C3 presentations, supervised active mobility instruction may be used under the Grade-B APTA framework
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [c3_acute_active_mobility_B]
+            applicability_conditions_optional: [acute_cervical_headache_presentation]
           - intervention_direction_id: c3_presentation_selected_manual_adjunct
             statement: selected cervical manual therapy may be included when clinically appropriate and explicitly chosen, but it is not an automatic route requirement
             authority:
@@ -433,12 +439,18 @@ rehabilitation_sequences:
             authority:
               authority_type: evidence_claim
               evidence_claim_ids: [c3_apta_active_rehabilitation_context]
+          - intervention_direction_id: c3_formal_cgh_acute_supervised_mobility
+            statement: in acute formal/clinician-established C3 presentations, supervised active mobility instruction may be used under the Grade-B APTA framework
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [c3_acute_active_mobility_B]
+            applicability_conditions_optional: [acute_cervical_headache_presentation]
           - intervention_direction_id: c3_formal_cgh_selected_manual_adjunct
             statement: selected manual therapy may be considered as an adjunct, particularly for short-term symptom relief, without claiming durable universal benefit or a mandatory manual technique
             authority:
               authority_type: evidence_claim
               evidence_claim_ids: [c3_selected_manual_therapy_apta_context, c3_formal_cgh_manual_short_term_low_2026]
-            applicability_conditions_optional: [manual_therapy_selected_as_adjunct]
+            applicability_conditions_optional: [subacute_or_chronic_cervical_headache_presentation, manual_therapy_selected_as_adjunct]
         progression_criteria: []
         precautions_or_do_not_progress_criteria:
           - criterion_id: c3_formal_cgh_headache_safety_reassessment
@@ -448,7 +460,7 @@ rehabilitation_sequences:
               authority_type: evidence_claim
               evidence_claim_ids: [c3_headache_safety_reassessment]
         strength_optional: null
-        certainty_optional: low
+        certainty_optional: not_graded
         required_for_route: true
     clinician_modifications_optional: []
     protocol_overrides_optional: []
