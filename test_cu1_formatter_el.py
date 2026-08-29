@@ -124,12 +124,15 @@ class CU1GreekFormatterTests(unittest.TestCase):
             {"id": "progressive_strengthening"},
         ]
         text = self.formatter.format(draft, "short")
+        lower = text.lower()
         self.assert_no_machine_leak(text)
-        self.assertIn("αυχ", text.lower())
-        self.assertIn("Παρακαλώ", text)
-        self.assertNotIn("Κλινική εικόνα\n", text)
-        self.assertNotIn("Στόχοι και κατευθύνσεις αποκατάστασης\n", text)
-        self.assertLessEqual(text.count("."), 5)
+        self.assertIn("αυχ", lower)
+        self.assertIn("προτείνεται ενεργητική αποκατάσταση", lower)
+        self.assertIn("αυτοδιαχείρι", lower)
+        self.assertIn("δραστηρι", lower)
+        self.assertNotIn("ΚΛΙΝΙΚΗ ΕΙΚΟΝΑ", text)
+        self.assertNotIn("ΣΤΑΔΙΟ", text)
+        self.assertLessEqual(len(text.rstrip("\n")), 850)
 
     def test_rich_knee_short_and_detailed_are_materially_different(self):
         draft = base_draft(
