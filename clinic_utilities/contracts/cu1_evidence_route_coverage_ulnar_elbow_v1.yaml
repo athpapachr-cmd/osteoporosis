@@ -1,0 +1,472 @@
+version: cu1_evidence_route_coverage_ulnar_elbow_v1
+status: ready_for_exact_review_not_manifest_active
+runtime_authorized: false
+reviewed_on: 2026-08-29
+normative_schema: clinic_utilities/contracts/cu1_history_timeline_schema_v1.yaml
+identity_mode: explicit_payload_id
+review_record: clinic_utilities/contracts/CU1_ULNAR_ELBOW_ROUTE_REVIEW_2026-08-29.md
+
+purpose: >-
+  Route-specific evidence hardening for ulnar_neuropathy_at_elbow. The route preserves the frozen
+  presentation-vs-formal-diagnosis distinction and does not infer cubital tunnel syndrome from paresthesia,
+  Tinel sign, elbow-flexion provocation, or an imaging finding. Current conservative evidence supports only
+  a narrow mild-case education/position-modification direction. Night splinting, nerve gliding, manual therapy,
+  electrical modalities and other physiotherapy techniques are not promoted to routine route core because
+  current evidence is insufficient or inconclusive. Nonmild, severity-unclear, progressive motor, structural,
+  or alternative-localization contexts fail closed rather than receiving a generic peripheral-nerve sequence.
+
+sources:
+  une_cochrane_2025:
+    evidence_id: une_cochrane_2025
+    source_type: systematic_review
+    title: "Treatment for ulnar neuropathy at the elbow"
+    authors_or_organization: Caliandro P, La Torre G, Padua R, Giannini F, Reale G, Padua L
+    year_or_version: 2025
+    published_on_optional: 2025-04-29
+    reference: "Cochrane Database Syst Rev. 2025;4(4):CD006839"
+    doi_optional: 10.1002/14651858.CD006839.pub5
+    url_optional: https://pubmed.ncbi.nlm.nih.gov/40298125/
+    population_scope_optional: adults with clinical symptoms suggesting ulnar neuropathy at the elbow, with or without neurophysiological evidence, including conservative and surgical trials
+    setting_scope_optional: randomized or quasi-randomized treatment evidence; conservative evidence remains sparse
+    reviewed_on: 2026-08-29
+    next_review_due: 2027-04-30
+    freshness_state: current
+    status: active
+    supersedes_optional: []
+    superseded_by_optional: []
+
+  une_night_splint_sr_2025:
+    evidence_id: une_night_splint_sr_2025
+    source_type: systematic_review
+    title: "Effectiveness of night splints for cubital tunnel syndrome - A systematic review"
+    authors_or_organization: Bateman M, Swaile H, Tambe A
+    year_or_version: 2025
+    published_on_optional: 2025-05-15
+    reference: "Hand Ther. 2025;30(3):105-112"
+    doi_optional: 10.1177/17589983251336157
+    url_optional: https://pubmed.ncbi.nlm.nih.gov/40385935/
+    population_scope_optional: adults with idiopathic cubital tunnel syndrome treated with night splints/orthoses
+    setting_scope_optional: systematic review; only one control RCT, underpowered/high risk of bias; overall certainty very low
+    reviewed_on: 2026-08-29
+    next_review_due: 2027-05-31
+    freshness_state: current
+    status: active
+    supersedes_optional: []
+    superseded_by_optional: []
+
+  une_physiotherapy_sr_2022:
+    evidence_id: une_physiotherapy_sr_2022
+    source_type: systematic_review
+    title: "The Effects of Physiotherapy in the Treatment of Cubital Tunnel Syndrome: A Systematic Review"
+    authors_or_organization: Wolny T, Fernandez-de-las-Penas C, Buczek T, Domin M, Granek A, Linek P
+    year_or_version: 2022
+    published_on_optional: 2022-07-21
+    reference: "J Clin Med. 2022;11(14):4247"
+    doi_optional: 10.3390/jcm11144247
+    url_optional: https://pubmed.ncbi.nlm.nih.gov/35888010/
+    population_scope_optional: adults with diagnosed cubital tunnel syndrome receiving physiotherapy interventions
+    setting_scope_optional: 11 studies / 187 participants; heterogeneous modalities and mostly high or serious risk of bias
+    reviewed_on: 2026-08-29
+    next_review_due: 2027-02-28
+    freshness_state: current
+    status: active
+    supersedes_optional: []
+    superseded_by_optional: []
+
+  une_ultrasound_aanem_2021:
+    evidence_id: une_ultrasound_aanem_2021
+    source_type: guideline
+    title: "Evidence-based guideline: Neuromuscular ultrasound for the diagnosis of ulnar neuropathy at the elbow"
+    authors_or_organization: American Association of Neuromuscular & Electrodiagnostic Medicine / Shook SJ et al.
+    year_or_version: 2021
+    reference: "Muscle Nerve. 2022;65(3):255-263"
+    doi_optional: 10.1002/mus.27460
+    url_optional: https://pubmed.ncbi.nlm.nih.gov/34921428/
+    population_scope_optional: patients with symptoms and signs suggestive of ulnar neuropathy at the elbow
+    setting_scope_optional: diagnostic guideline for neuromuscular ultrasound as adjunct to clinical and electrodiagnostic evaluation
+    reviewed_on: 2026-08-29
+    next_review_due: 2027-02-28
+    freshness_state: current
+    status: active
+    supersedes_optional: []
+    superseded_by_optional: []
+
+  cubital_diagnostic_delphi_2025:
+    evidence_id: cubital_diagnostic_delphi_2025
+    source_type: consensus
+    title: "Cubital Tunnel Syndrome: Does a Consensus Exist for Diagnosis?"
+    authors_or_organization: Collins DW, Rehak D, Dawes A, Collins DP, Daly C, Wagner ER, Gottschalk MB
+    year_or_version: 2025
+    reference: "J Hand Surg Am. 2025;50(2):230.e1-230.e7"
+    doi_optional: 10.1016/j.jhsa.2023.05.014
+    url_optional: https://pubmed.ncbi.nlm.nih.gov/37422755/
+    population_scope_optional: expert consensus on potentially useful clinical criteria for cubital tunnel syndrome diagnosis
+    setting_scope_optional: Delphi consensus; criteria require further weighting and validation before a formal diagnostic scale exists
+    reviewed_on: 2026-08-29
+    next_review_due: 2027-08-29
+    freshness_state: current
+    status: context_only
+    supersedes_optional: []
+    superseded_by_optional: []
+
+claims:
+  une_symptoms_and_provocation_not_formal_diagnosis:
+    claim_id: une_symptoms_and_provocation_not_formal_diagnosis
+    evidence_ids: [cubital_diagnostic_delphi_2025, une_ultrasound_aanem_2021]
+    applicable_route_evidence_profile_ids: [rep_une_mild_sensory_predominant_v1, rep_une_nonmild_or_severity_unresolved_v1, rep_une_progressive_motor_or_structural_safety_v1]
+    applicable_route_ids: [ulnar_neuropathy_at_elbow]
+    domain: diagnostic_definition
+    claim_summary: >-
+      Ulnar-distribution paresthesia, symptoms provoked by elbow flexion, medial-elbow Tinel sign and related
+      findings may support a suspected ulnar-neuropathy/cubital-tunnel presentation but do not independently
+      create a formal diagnosis. The 2025 Delphi criteria are expert-consensus candidates that still require
+      weighting and validation before use as a formal diagnostic scale. Definitive diagnostic wording in CU-1
+      therefore requires an explicit clinician assertion.
+    recommendation_direction: context_only
+    output_scope: clinician_ui_only
+    certainty_optional: not_applicable
+    reviewed_on: 2026-08-29
+
+  une_ultrasound_diagnostic_adjunct_level_B:
+    claim_id: une_ultrasound_diagnostic_adjunct_level_B
+    evidence_ids: [une_ultrasound_aanem_2021]
+    applicable_route_evidence_profile_ids: [rep_une_mild_sensory_predominant_v1, rep_une_nonmild_or_severity_unresolved_v1, rep_une_progressive_motor_or_structural_safety_v1]
+    applicable_route_ids: [ulnar_neuropathy_at_elbow]
+    domain: examination
+    claim_summary: >-
+      For patients with symptoms and signs suggestive of ulnar neuropathy, the AANEM guideline recommends
+      offering neuromuscular ultrasound measurement of ulnar-nerve cross-sectional area or diameter to help
+      confirm the diagnosis and localize compression. Ultrasound is an adjunct and is not sufficient to replace
+      clinical examination or electrodiagnostic evaluation.
+    recommendation_direction: recommend
+    output_scope: clinician_ui_only
+    strength_optional: AANEM_Level_B
+    certainty_optional: not_applicable
+    reviewed_on: 2026-08-29
+
+  une_mild_position_education_small_rct:
+    claim_id: une_mild_position_education_small_rct
+    evidence_ids: [une_cochrane_2025]
+    applicable_route_evidence_profile_ids: [rep_une_mild_sensory_predominant_v1]
+    applicable_route_ids: [ulnar_neuropathy_at_elbow]
+    applicability_conditions_optional:
+      - explicit_mild_clinical_context
+      - objective_ulnar_motor_status_assessed_without_material_deficit
+      - no_intrinsic_atrophy_or_clawing
+      - no_unresolved_alternative_localization_or_structural_owner
+    domain: core_rehabilitation
+    claim_summary: >-
+      In a small randomized trial summarized by the 2025 Cochrane review, people with mild ulnar neuropathy
+      may have less subjective discomfort after information about movements or positions to avoid. This supports
+      cautious education and individualized reduction of documented provoking positions/movements, but it does
+      not establish a universal splint, exercise, nerve-gliding, visit-frequency or treatment-duration protocol.
+    recommendation_direction: consider
+    output_scope: referral_core
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  une_night_splint_very_low_uncertain:
+    claim_id: une_night_splint_very_low_uncertain
+    evidence_ids: [une_night_splint_sr_2025, une_cochrane_2025]
+    applicable_route_evidence_profile_ids: [rep_une_mild_sensory_predominant_v1, rep_une_nonmild_or_severity_unresolved_v1]
+    applicable_route_ids: [ulnar_neuropathy_at_elbow]
+    domain: adjunct
+    claim_summary: >-
+      The 2025 night-splint systematic review found very-low-certainty evidence and insufficient evidence to
+      determine whether night splints provide benefit over advice alone. Night splinting therefore must not be
+      auto-rendered as evidence-backed core care or assigned a universal device type, elbow angle, nightly
+      duration or course length.
+    recommendation_direction: insufficient_evidence
+    output_scope: clinician_ui_only
+    certainty_optional: very_low
+    reviewed_on: 2026-08-29
+
+  une_no_best_physiotherapy_modality:
+    claim_id: une_no_best_physiotherapy_modality
+    evidence_ids: [une_physiotherapy_sr_2022, une_cochrane_2025]
+    applicable_route_evidence_profile_ids: [rep_une_mild_sensory_predominant_v1, rep_une_nonmild_or_severity_unresolved_v1]
+    applicable_route_ids: [ulnar_neuropathy_at_elbow]
+    domain: adjunct
+    claim_summary: >-
+      Current physiotherapy evidence is heterogeneous and does not establish a best physiotherapy method for
+      cubital tunnel syndrome. Nerve gliding/neurodynamic techniques, manual therapy, electrical modalities or
+      other physiotherapy techniques must not be auto-promoted to mandatory or superior route core without a
+      separately reviewed applicable claim.
+    recommendation_direction: insufficient_evidence
+    output_scope: clinician_ui_only
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  une_nonmild_conservative_sequence_not_established:
+    claim_id: une_nonmild_conservative_sequence_not_established
+    evidence_ids: [une_cochrane_2025, une_night_splint_sr_2025, une_physiotherapy_sr_2022]
+    applicable_route_evidence_profile_ids: [rep_une_nonmild_or_severity_unresolved_v1]
+    applicable_route_ids: [ulnar_neuropathy_at_elbow]
+    domain: progression_criteria
+    claim_summary: >-
+      Current evidence does not establish a complete criteria-based physiotherapy sequence for an explicitly
+      moderate/nonmild or severity-unclear UNE presentation. Mild-case education evidence must not be expanded
+      across severity, and uncertainty about splinting or physiotherapy modalities must not be filled by a generic
+      peripheral-nerve rehabilitation protocol.
+    recommendation_direction: insufficient_evidence
+    output_scope: clinician_ui_only
+    certainty_optional: not_graded
+    reviewed_on: 2026-08-29
+
+  une_progressive_motor_or_atrophy_reassessment:
+    claim_id: une_progressive_motor_or_atrophy_reassessment
+    evidence_ids: [une_cochrane_2025, cubital_diagnostic_delphi_2025]
+    applicable_route_evidence_profile_ids: [rep_une_progressive_motor_or_structural_safety_v1, rep_une_mild_sensory_predominant_v1, rep_une_nonmild_or_severity_unresolved_v1]
+    applicable_route_ids: [ulnar_neuropathy_at_elbow]
+    domain: safety
+    claim_summary: >-
+      Progressive objective ulnar motor weakness, intrinsic-hand atrophy, clawing/late motor signs, or materially
+      worsening objective neurological deficit should trigger clinician/specialist reassessment rather than routine
+      progression of a mild conservative sequence. This is a safety/management-context boundary and is not a
+      universal autonomous surgical threshold generated by CU-1.
+    recommendation_direction: recommend
+    output_scope: referral_core
+    certainty_optional: not_applicable
+    reviewed_on: 2026-08-29
+
+  une_alternative_localization_or_structural_owner:
+    claim_id: une_alternative_localization_or_structural_owner
+    evidence_ids: [une_ultrasound_aanem_2021, cubital_diagnostic_delphi_2025]
+    applicable_route_evidence_profile_ids: [rep_une_progressive_motor_or_structural_safety_v1, rep_une_nonmild_or_severity_unresolved_v1, rep_une_mild_sensory_predominant_v1]
+    applicable_route_ids: [ulnar_neuropathy_at_elbow]
+    domain: differential
+    claim_summary: >-
+      Ulnar-distribution symptoms may overlap with cervical radiculopathy, brachial-plexus/lower-trunk pathology,
+      or ulnar neuropathy at another site. Material trauma, nerve instability/subluxation, structural compression,
+      or discordant localization requires explicit evaluation/correct ownership rather than silent cubital-tunnel
+      or medial-elbow fallback.
+    recommendation_direction: context_only
+    output_scope: clinician_ui_only
+    certainty_optional: not_applicable
+    reviewed_on: 2026-08-29
+
+route_history_prompts:
+  une_symptom_distribution_laterality:
+    prompt_id: une_symptom_distribution_laterality
+    applicable_route_ids: [ulnar_neuropathy_at_elbow]
+    label_el: Κατανομή και πλευρά παραισθησιών/μουδιάσματος ή άλλων ωλένιων συμπτωμάτων, όπως πραγματικά περιγράφηκαν
+    response_type: text
+    requiredness: optional
+    evidence_claim_ids_optional: [une_symptoms_and_provocation_not_formal_diagnosis]
+
+  une_flexion_pressure_night_pattern:
+    prompt_id: une_flexion_pressure_night_pattern
+    applicable_route_ids: [ulnar_neuropathy_at_elbow]
+    label_el: Σχέση συμπτωμάτων με παρατεταμένη κάμψη αγκώνα, νυκτερινή θέση ή άμεση πίεση στην έσω περιοχή του αγκώνα
+    response_type: text
+    requiredness: optional
+    evidence_claim_ids_optional: [une_symptoms_and_provocation_not_formal_diagnosis, une_mild_position_education_small_rct]
+
+  une_duration_course:
+    prompt_id: une_duration_course
+    applicable_route_ids: [ulnar_neuropathy_at_elbow]
+    label_el: Διάρκεια και πορεία των συμπτωμάτων χωρίς μετατροπή της κατά προσέγγιση διάρκειας σε ακριβή ημερομηνία
+    response_type: text
+    requiredness: optional
+
+  une_clinician_severity_or_management_context:
+    prompt_id: une_clinician_severity_or_management_context
+    applicable_route_ids: [ulnar_neuropathy_at_elbow]
+    label_el: Ρητή κλινική ταξινόμηση βαρύτητας/διαχείρισης (π.χ. ήπια, μέτρια, σοβαρή), μόνο εφόσον έχει δοθεί από κλινικό
+    response_type: text
+    requiredness: conditional
+    evidence_claim_ids_optional: [une_mild_position_education_small_rct, une_nonmild_conservative_sequence_not_established]
+
+  une_objective_motor_status:
+    prompt_id: une_objective_motor_status
+    applicable_route_ids: [ulnar_neuropathy_at_elbow]
+    label_el: Αντικειμενική κινητική κατάσταση ωλενίου νεύρου (ενδογενείς μύες χεριού/δύναμη), μόνο εφόσον εξετάστηκε
+    response_type: text
+    requiredness: conditional
+    evidence_claim_ids_optional: [une_progressive_motor_or_atrophy_reassessment]
+
+  une_objective_sensory_status:
+    prompt_id: une_objective_sensory_status
+    applicable_route_ids: [ulnar_neuropathy_at_elbow]
+    label_el: Αντικειμενικό αισθητικό έλλειμμα στην ωλένια κατανομή, μόνο εφόσον εξετάστηκε
+    response_type: text
+    requiredness: optional
+    evidence_claim_ids_optional: [une_progressive_motor_or_atrophy_reassessment]
+
+  une_atrophy_clawing_motor_signs:
+    prompt_id: une_atrophy_clawing_motor_signs
+    applicable_route_ids: [ulnar_neuropathy_at_elbow]
+    label_el: Ενδογενής ατροφία, clawing, Froment/Wartenberg ή άλλο τεκμηριωμένο όψιμο κινητικό σημείο, εφόσον εξετάστηκε
+    response_type: text
+    requiredness: conditional
+    evidence_claim_ids_optional: [une_progressive_motor_or_atrophy_reassessment]
+
+  une_provocation_findings:
+    prompt_id: une_provocation_findings
+    applicable_route_ids: [ulnar_neuropathy_at_elbow]
+    label_el: Tinel στον κυβοειδή σωλήνα, elbow-flexion provocation ή νευροδυναμικό εύρημα, μόνο ως πραγματικό εύρημα και όχι ως διάγνωση
+    response_type: text
+    requiredness: optional
+    evidence_claim_ids_optional: [une_symptoms_and_provocation_not_formal_diagnosis]
+
+  une_edx_ultrasound_localization:
+    prompt_id: une_edx_ultrasound_localization
+    applicable_route_ids: [ulnar_neuropathy_at_elbow]
+    label_el: EMG/NCS ή νευρομυϊκό υπερηχογράφημα και εντόπιση βλάβης, εφόσον υπάρχουν
+    response_type: text
+    requiredness: optional
+    evidence_claim_ids_optional: [une_ultrasound_diagnostic_adjunct_level_B, une_alternative_localization_or_structural_owner]
+
+  une_instability_trauma_structural_context:
+    prompt_id: une_instability_trauma_structural_context
+    applicable_route_ids: [ulnar_neuropathy_at_elbow]
+    label_el: Τραύμα, υπεξάρθρημα/snapping ωλενίου νεύρου ή άλλη γνωστή δομική αιτία/πίεση, εφόσον υπάρχει
+    response_type: text
+    requiredness: optional
+    evidence_claim_ids_optional: [une_alternative_localization_or_structural_owner]
+
+  une_function_dexterity_grip:
+    prompt_id: une_function_dexterity_grip
+    applicable_route_ids: [ulnar_neuropathy_at_elbow]
+    label_el: Λειτουργική επίπτωση σε λεπτή δεξιότητα, λαβή/τσιμπητική λαβή, εργασία, ύπνο ή δραστηριότητα προτεραιότητας
+    response_type: text
+    requiredness: optional
+
+  une_prior_treatment_response:
+    prompt_id: une_prior_treatment_response
+    applicable_route_ids: [ulnar_neuropathy_at_elbow]
+    label_el: Προηγούμενη συντηρητική αντιμετώπιση και πραγματική ανταπόκριση
+    response_type: text
+    requiredness: optional
+
+route_evidence_profiles:
+  rep_une_mild_sensory_predominant_v1:
+    route_evidence_profile_id: rep_une_mild_sensory_predominant_v1
+    region_profile_id: elbow
+    route_id: ulnar_neuropathy_at_elbow
+    applicability_conditions_optional:
+      - explicit_mild_clinical_context
+      - objective_ulnar_motor_status_assessed_without_material_deficit
+      - no_intrinsic_atrophy_or_clawing
+      - no_unresolved_alternative_localization_or_structural_owner
+    diagnostic_claim_ids: [une_symptoms_and_provocation_not_formal_diagnosis]
+    history_claim_ids: []
+    examination_claim_ids: [une_ultrasound_diagnostic_adjunct_level_B]
+    rehabilitation_sequence_id: seq_une_mild_conservative_v1
+    adjunct_claim_ids: [une_night_splint_very_low_uncertain, une_no_best_physiotherapy_modality]
+    safety_claim_ids: [une_progressive_motor_or_atrophy_reassessment, une_alternative_localization_or_structural_owner]
+    evidence_gaps:
+      - conservative_treatment_RCT_evidence_is_sparse
+      - night_splint_benefit_over_advice_remains_very_low_certainty_and_uncertain
+      - no_best_physiotherapy_method_established
+      - no_validated_numeric_progression_or_discharge_threshold
+      - no_universal_visit_frequency_or_total_PT_course_duration
+    primary_source_ids: [une_cochrane_2025, une_night_splint_sr_2025, une_physiotherapy_sr_2022, une_ultrasound_aanem_2021, cubital_diagnostic_delphi_2025]
+    last_reviewed_on: 2026-08-29
+    next_review_due: 2027-02-28
+    freshness_state: current
+
+  rep_une_nonmild_or_severity_unresolved_v1:
+    route_evidence_profile_id: rep_une_nonmild_or_severity_unresolved_v1
+    region_profile_id: elbow
+    route_id: ulnar_neuropathy_at_elbow
+    applicability_conditions_optional:
+      - severity_not_explicitly_mild_or_objective_motor_status_not_sufficiently_assessed_or_explicit_nonmild_without_material_progressive_motor_safety_trigger
+    diagnostic_claim_ids: [une_symptoms_and_provocation_not_formal_diagnosis]
+    history_claim_ids: []
+    examination_claim_ids: [une_ultrasound_diagnostic_adjunct_level_B]
+    rehabilitation_sequence_id: null
+    adjunct_claim_ids: [une_night_splint_very_low_uncertain, une_no_best_physiotherapy_modality]
+    safety_claim_ids: [une_progressive_motor_or_atrophy_reassessment, une_alternative_localization_or_structural_owner]
+    evidence_gaps:
+      - mild_case_position_education_evidence_cannot_be_auto_expanded_across_severity
+      - no_complete_criteria_based_physio_sequence_for_moderate_or_severity_unclear_UNE_established
+      - night_splinting_is_very_low_certainty_and_not_a_default_sequence_substitute
+      - nerve_gliding_manual_therapy_and_electrical_modalities_lack_best_method_authority
+    primary_source_ids: [une_cochrane_2025, une_night_splint_sr_2025, une_physiotherapy_sr_2022, une_ultrasound_aanem_2021]
+    last_reviewed_on: 2026-08-29
+    next_review_due: 2027-02-28
+    freshness_state: current
+
+  rep_une_progressive_motor_or_structural_safety_v1:
+    route_evidence_profile_id: rep_une_progressive_motor_or_structural_safety_v1
+    region_profile_id: elbow
+    route_id: ulnar_neuropathy_at_elbow
+    applicability_conditions_optional:
+      - progressive_objective_ulnar_motor_deficit_or_intrinsic_atrophy_or_clawing_or_material_worsening_objective_neurological_deficit_or_unresolved_structural_alternative_localization_context
+    diagnostic_claim_ids: [une_symptoms_and_provocation_not_formal_diagnosis]
+    history_claim_ids: []
+    examination_claim_ids: [une_ultrasound_diagnostic_adjunct_level_B]
+    rehabilitation_sequence_id: null
+    adjunct_claim_ids: []
+    safety_claim_ids: [une_progressive_motor_or_atrophy_reassessment, une_alternative_localization_or_structural_owner]
+    evidence_gaps:
+      - routine_mild_conservative_sequence_is_not_applicable_in_material_motor_or_structural_safety_context
+      - CU1_does_not_generate_autonomous_surgical_threshold_or_procedure_choice
+    primary_source_ids: [une_cochrane_2025, une_ultrasound_aanem_2021, cubital_diagnostic_delphi_2025]
+    last_reviewed_on: 2026-08-29
+    next_review_due: 2027-02-28
+    freshness_state: current
+
+rehabilitation_sequences:
+  seq_une_mild_conservative_v1:
+    sequence_id: seq_une_mild_conservative_v1
+    route_id: ulnar_neuropathy_at_elbow
+    route_evidence_profile_id: rep_une_mild_sensory_predominant_v1
+    applicability_conditions_optional:
+      - explicit_mild_clinical_context
+      - objective_ulnar_motor_status_assessed_without_material_deficit
+      - no_intrinsic_atrophy_or_clawing
+      - no_unresolved_alternative_localization_or_structural_owner
+    sequence_source: route_evidence_profile
+    status: sequence_complete_evidence_bounded
+    phases:
+      - phase_id: une_mild_education_position_modification
+        order: 1
+        clinical_objective: reduce documented positional or movement provocation and preserve relevant function through cautious education and individualized self-management without manufacturing a splinting or nerve-gliding protocol
+        objective_authority:
+          authority_type: evidence_claim
+          evidence_claim_ids: [une_mild_position_education_small_rct]
+        intervention_directions:
+          - intervention_direction_id: une_identify_and_reduce_provoking_positions
+            statement: provide education about the patient's documented provoking elbow positions or movements and consider individualized modification of those exposures while symptoms are being reassessed
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [une_mild_position_education_small_rct]
+        progression_criteria: []
+        precautions_or_do_not_progress_criteria:
+          - criterion_id: une_progressive_motor_atrophy_reassess
+            criterion_kind: safety_escalation
+            statement: progressive objective ulnar motor weakness, intrinsic-hand atrophy, clawing or another materially worsening objective neurological deficit requires clinician or specialist reassessment rather than routine progression
+            authority:
+              authority_type: evidence_claim
+              evidence_claim_ids: [une_progressive_motor_or_atrophy_reassessment]
+        strength_optional: null
+        certainty_optional: not_graded
+        required_for_route: true
+    clinician_modifications_optional: []
+    protocol_overrides_optional: []
+    missing_before_freeze: []
+
+coverage_effect:
+  route_id: ulnar_neuropathy_at_elbow
+  route_profiles_added:
+    - rep_une_mild_sensory_predominant_v1
+    - rep_une_nonmild_or_severity_unresolved_v1
+    - rep_une_progressive_motor_or_structural_safety_v1
+  rehabilitation_sequence_added: seq_une_mild_conservative_v1
+  route_history_prompts_added:
+    - une_symptom_distribution_laterality
+    - une_flexion_pressure_night_pattern
+    - une_duration_course
+    - une_clinician_severity_or_management_context
+    - une_objective_motor_status
+    - une_objective_sensory_status
+    - une_atrophy_clawing_motor_signs
+    - une_provocation_findings
+    - une_edx_ultrasound_localization
+    - une_instability_trauma_structural_context
+    - une_function_dexterity_grip
+    - une_prior_treatment_response
+  route_status_after_review: pending_exact_review_before_manifest_activation
+  runtime_authorized: false
