@@ -1,0 +1,56 @@
+version: cu1_rich_referral_content_wrist_hand_el_v1
+status: active_runtime_authority_profile_shard
+runtime_authorized: true
+reviewed_on: 2026-08-29
+language: el
+profile_id: wrist_hand
+
+routes:
+  thumb_cmc1_osteoarthritis:
+    profile_ids: [wrist_hand]
+    evidence_profile_ids: [rep_thumb_cmc1_oa_v1]
+    authority_mode: reviewed_route_sequence_plus_clinical_rehabilitation_organization
+    short_flow_el:
+      - >-
+        Προτείνεται αποκατάσταση με εκπαίδευση σε προστασία άρθρωσης/διαχείριση φορτίου και εργονομικές ή
+        προσαρμοστικές στρατηγικές, μαζί με εξατομικευμένες ασκήσεις αντίχειρα και χεριού για λειτουργία και δύναμη.
+      - >-
+        Ορθωτική υποστήριξη της CMC-1 μπορεί να χρησιμοποιηθεί όταν είναι κατάλληλη, με τον ακριβή τύπο, εφαρμογή και
+        πρόγραμμα χρήσης να εξατομικεύονται. Στόχος η βελτίωση λαβής/τσιμπήματος και η ανεξάρτητη διαχείριση των απαιτήσεων.
+    stages:
+      - stage_id: pain_function_joint_protection
+        label_el: ΣΤΑΔΙΟ 1 — ΛΕΙΤΟΥΡΓΙΑ / ΠΡΟΣΤΑΣΙΑ ΑΡΘΡΩΣΗΣ
+        goals_el:
+          - μείωση συμπτωματικής επιβάρυνσης στις λειτουργικές χρήσεις του αντίχειρα
+          - βελτίωση λειτουργίας, δύναμης και ανοχής σε λαβή/τσιμπήματα
+          - εκμάθηση στρατηγικών προστασίας άρθρωσης και διαχείρισης φορτίου
+        intervention_directions_el:
+          - εκπαίδευση σε εργονομικές αρχές, pacing, joint protection, τροποποίηση φορτίου/δραστηριότητας και κατάλληλες προσαρμοστικές στρατηγικές
+          - εξατομικευμένες ασκήσεις αντίχειρα/χεριού χωρίς καθολικό πρόγραμμα ή δοσολογία
+          - εξέταση CMC-support orthosis όταν είναι κλινικά κατάλληλη, με τον ακριβή σχεδιασμό και το πρόγραμμα χρήσης ως εξατομικευμένη εφαρμογή
+        progress_markers_el:
+          - καλύτερη λειτουργική χρήση του αντίχειρα, ανοχή στη λαβή/τσιμπήματα και αυξανόμενη ικανότητα αυτοδιαχείρισης
+        evidence_claim_ids:
+          - thumb_cmc_eular_education_joint_protection_A
+          - thumb_cmc_eular_exercise_A
+          - thumb_cmc_acr_exercise_strong
+          - thumb_cmc_exercise_shortterm_sr_2024
+          - thumb_cmc_eular_orthosis_A
+          - thumb_cmc_acr_orthosis_strong
+        organization_authority: clinical_rehabilitation_organization
+      - stage_id: functional_return_self_management
+        label_el: ΣΤΑΔΙΟ 2 — ΛΕΙΤΟΥΡΓΙΚΗ ΕΠΑΝΕΝΤΑΞΗ / ΑΥΤΟΔΙΑΧΕΙΡΙΣΗ
+        goals_el:
+          - καλύτερη ανοχή στις καθημερινές, εργασιακές και χομπίστικες απαιτήσεις του χεριού
+          - διατήρηση λειτουργίας και ανεξάρτητης διαχείρισης φορτίου
+        intervention_directions_el:
+          - προοδευτική εφαρμογή των ασκήσεων και των στρατηγικών προστασίας άρθρωσης στις πραγματικές λειτουργικές απαιτήσεις του ασθενούς
+        progress_markers_el:
+          - ουσιαστική λειτουργική βελτίωση και καλύτερη ανοχή στις σημαντικές δραστηριότητες χωρίς καθολικό αριθμητικό κριτήριο προόδου
+        evidence_claim_ids:
+          - thumb_cmc_eular_education_joint_protection_A
+          - thumb_cmc_eular_exercise_A
+          - thumb_cmc_acr_exercise_strong
+        organization_authority: clinical_rehabilitation_organization
+    adjunct_boundary_el: >-
+      Η ορθωτική υποστήριξη είναι μέρος εξατομικευμένης συντηρητικής διαχείρισης και δεν αντικαθιστά την εκπαίδευση και την ενεργητική λειτουργική αποκατάσταση.
