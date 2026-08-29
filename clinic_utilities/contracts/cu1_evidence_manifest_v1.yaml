@@ -1,4 +1,4 @@
-version: cu1_evidence_manifest_v1_10
+version: cu1_evidence_manifest_v1_11
 status: design_frozen_sharded_registry_manifest
 runtime_authorized: false
 reviewed_on: 2026-08-29
@@ -109,6 +109,18 @@ shards:
     reviewed_routes:
       - thumb_cmc1_osteoarthritis
 
+  - shard_id: cervical_nonspecific_route_coverage_extension
+    path: clinic_utilities/contracts/cu1_evidence_route_coverage_cervical_v1.yaml
+    state: active_design_authority
+    identity_mode: explicit_payload_id
+    review_record: clinic_utilities/contracts/CU1_CERVICAL_ROUTE_REVIEW_2026-08-29.md
+    schema_conformance_reviewed: true
+    normative_read_rule: >-
+      use_DEGAM_AWMF_2025_as_generic_nonspecific_neck_authority_keep_APTA_2017_classification_specific
+      and_do_not_import_other_cervical_routes_or_passive_modality_bundles_as_generic_C1_defaults
+    reviewed_routes:
+      - nonspecific_neck_pain
+
 logical_collections:
   - sources
   - claims
@@ -214,6 +226,7 @@ clinical_applicability_rules:
   - unresolved_structural_surgical_indication_or_true_locking_blocks_routine_degenerative_meniscus_sequence_resolution
   - postoperative_context_routes_to_the_procedure_specific_or_postoperative_owner_and_not_a_nonoperative_or_preoperative_route_sequence
   - thumb_CMC1_specific_orthosis_and_rehabilitation_authority_cannot_auto_render_interphalangeal_or_generalized_hand_OA_output
+  - nonspecific_neck_pain_authority_cannot_absorb_radiating_headache_dizziness_or_post_traumatic_cervical_routes
   - regional_profile_identity_never_substitutes_for_route_evidence_profile_identity
   - a_midportion_Achilles_claim_cannot_authorize_insertional_Achilles_output
   - a_route_specific_claim_cannot_be_reused_as_generic_MSK_authority
@@ -272,6 +285,7 @@ readiness_gate:
     - degenerative_meniscal_lesion_conservative_rehabilitation
     - patellar_tendinopathy
     - thumb_cmc1_osteoarthritis
+    - nonspecific_neck_pain
   logical_amendment_gate_passed: true
   all_active_authority_shards_schema_reviewed: true
   all_listed_shards_schema_reviewed: true
