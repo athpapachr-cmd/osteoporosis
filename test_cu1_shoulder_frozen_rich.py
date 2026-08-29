@@ -121,7 +121,7 @@ class CU1PrimaryFrozenShoulderRichTests(unittest.TestCase):
         detailed = self.formatter.format(result.normalized_draft, "detailed")
         for text in (short, detailed):
             folded = fold_el(text)
-            self.assertIn("πρωτοπαθη", folded)
+            self.assertIn(fold_el("πρωτοπαθή"), folded)
             self.assertIn("κινητικ", folded)
             self.assertIn(fold_el("εύρους κίνησης"), folded)
             self.assertLessEqual(len(text), self.renderer.max_chars)
@@ -157,8 +157,8 @@ class CU1PrimaryFrozenShoulderRichTests(unittest.TestCase):
         self.assertNotIn("3x", folded)
         self.assertNotIn("3 x", folded)
         self.assertIn(fold_el("χωρίς καθολικό αριθμητικό"), folded)
-        self.assertIn("ενδυναμωση δεν επιβαλλεται", folded)
-        self.assertIn("φυσικη πορεια", folded)
+        self.assertIn(fold_el("ενδυνάμωση δεν επιβάλλεται"), folded)
+        self.assertIn(fold_el("φυσικής πορείας"), folded)
 
     def test_self_stretching_and_strengthening_scope_remain_outside_mandatory_referral_core(self):
         self.assertEqual(
