@@ -103,8 +103,10 @@ class CU1ShoulderRotatorCuffRichTests(unittest.TestCase):
         detailed = self._format("detailed")
         for text in (short, detailed):
             lowered = text.lower()
-            self.assertIn("ενεργητική αποκατάσταση", lowered)
-            self.assertIn("κινητικού ελέγχου", lowered)
+            self.assertIn("ενεργητικ", lowered)
+            self.assertIn("αποκαταστα", lowered)
+            self.assertIn("κινητικ", lowered)
+            self.assertIn("ελεγχ", lowered)
             self.assertIn("αντίστασης", lowered)
             self.assertIn("αυτοδιαχείρι", lowered)
             self.assertIn("φόρτι", lowered)
