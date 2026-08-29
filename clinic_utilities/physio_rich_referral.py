@@ -14,7 +14,7 @@ _MIGRATION_PATH = "clinic_utilities/contracts/cu1_rich_referral_migration_matrix
 _RICH_READY = "rich_ready"
 
 
-def _load_runtime_mapping(root: Path, relative_path: str, *, label: str) -> Dict[str, Any]:
+def _load_yaml_mapping(root: Path, relative_path: str, *, label: str, require_runtime_authorized: bool = True) -> Dict[str, Any]:
     path = root / relative_path
     if not path.exists():
         raise CU1ContractError(f"Missing CU-1 {label} artifact: {path}")
@@ -22,20 +22,43 @@ def _load_runtime_mapping(root: Path, relative_path: str, *, label: str) -> Dict
         payload = yaml.safe_load(path.read_text(encoding="utf-8"))
     except Exception as exc:  # pragma: no cover - contract boundary
         raise CU1ContractError(f"Unable to parse CU-1 {label} artifact: {path}") from exc
-    if not isinstance(payload, dict) or payload.get("runtime_authorized") is not True:
+    if not isinstance(payload, dict):
+        raise CU1ContractError(f"CU-1 {label} must be a mapping")
+    if require_runtime_authorized and payload.get("runtime_authorized") is not True:
         raise CU1ContractError(f"CU-1 {label} is not runtime-authorized")
     return payload
 
 
 def _load_content(root: Path) -> Dict[str, Any]:
-    payload = _load_runtime_mapping(root, _CONTENT_PATH, label="rich-referral content")
-    if not isinstance(payload.get("routes"), Mapping):
-        raise CU1ContractError("CU-1 rich-referral route map is missing")
+    payload = _load_yaml_mapping(root, _CONTENT_PATH, label="rich-referral content")
+    embedded = payload.get("routes") or {}
+    if not isinstance(embedded, Mapping):
+        raise CU1ContractError("CU-1 rich-referral route map is invalid")
+    routes: Dict[str, Any] = copy.deepcopy(dict(embedded))
+    shards = payload.get("route_shards") or []
+    if not isinstance(shards, list):
+        raise CU1ContractError("CU-1 rich-referral route_shards must be a list")
+    for relative_path in shards:
+        if not isinstance(relative_path, str) or not relative_path:
+            raise CU1ContractError("CU-1 rich-referral shard path is invalid")
+        shard = _load_yaml_mapping(root, relative_path, label="rich-referral shard")
+        shard_routes = shard.get("routes") or {}
+        if not isinstance(shard_routes, Mapping):
+            raise CU1ContractError(f"CU-1 rich-referral shard route map is invalid: {relative_path}")
+        for route_id, spec in shard_routes.items():
+            route_key = str(route_id)
+            if route_key in routes:
+                raise CU1ContractError(f"Duplicate rich-referral route across content shards: {route_key}")
+            if not isinstance(spec, Mapping):
+                raise CU1ContractError(f"Invalid rich-referral route spec in {relative_path}: {route_key}")
+            routes[route_key] = copy.deepcopy(dict(spec))
+    payload = copy.deepcopy(payload)
+    payload["routes"] = routes
     return payload
 
 
 def _load_migration(root: Path) -> Dict[str, Any]:
-    payload = _load_runtime_mapping(root, _MIGRATION_PATH, label="rich-referral migration matrix")
+    payload = _load_yaml_mapping(root, _MIGRATION_PATH, label="rich-referral migration matrix")
     if not isinstance(payload.get("profiles"), Mapping):
         raise CU1ContractError("CU-1 rich-referral migration profile map is missing")
     return payload
@@ -70,10 +93,9 @@ class CU1RichReferralRenderer:
     """Shared deterministic renderer for reviewed route-specific rich-referral content.
 
     Clinical treatment prose lives in reviewed structured content rather than route-specific Python.
-    The rollout matrix is a second fail-closed gate: merely adding prose to the content artifact cannot
-    make a pending/evidence-limited/protocol-owned route eligible for rich rendering. Context-gated
-    routes remain unsupported until their exact runtime context is explicitly resolved by a reviewed
-    context seam.
+    The rollout matrix is a second fail-closed gate: merely adding prose to a content shard cannot make
+    a pending/evidence-limited/protocol-owned route eligible for rich rendering. Context-gated routes
+    remain unsupported until their exact runtime context is explicitly resolved by a reviewed seam.
     """
 
     def __init__(self, root: Optional[Path] = None):
