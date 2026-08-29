@@ -56,6 +56,9 @@ routes:
 
   cervical_dizziness_presentation:
     profile_ids: [cervical]
+    problem_label_el_by_wording_mode:
+      presentation: Ζάλη με αυχενικά μυοσκελετικά χαρακτηριστικά
+      formal_diagnosis: Αυχενογενής / αυχενικής προέλευσης ζάλη
     variants:
       - variant_id: clinician_established_cervical_dizziness
         match:
