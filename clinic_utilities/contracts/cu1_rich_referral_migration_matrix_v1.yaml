@@ -1,0 +1,150 @@
+version: cu1_rich_referral_migration_matrix_v1
+status: active_runtime_rollout_control
+runtime_authorized: true
+reviewed_on: 2026-08-29
+registry: clinic_utilities/contracts/cu1_registry_v1.yaml
+evidence_coverage_matrix: clinic_utilities/contracts/cu1_evidence_coverage_matrix_v1.yaml
+rich_content: clinic_utilities/contracts/cu1_rich_referral_content_el_v1.yaml
+
+purpose: >-
+  Exhaustive registry-level rollout control for the shared CU-1 rich referral model. Every registry
+  route is classified before rich rendering. A route may render through the shared rich model only
+  when this matrix marks it rich_ready or when a context-gated branch resolves to a rich-ready
+  evidence context. Missing or incomplete evidence never authorizes a generic cross-route fallback.
+
+state_values:
+  - rich_ready
+  - context_gated
+  - evidence_limited
+  - pending_evidence
+  - protocol_owned
+
+rules:
+  every_registry_route_must_be_listed: true
+  rich_ready_requires_applicable_structured_authority: true
+  evidence_limited_is_not_generic_fallback_permission: true
+  pending_evidence_is_not_generic_fallback_permission: true
+  context_gated_requires_explicit_context_resolution: true
+  protocol_owned_requires_patient_or_procedure_specific_restriction_precedence: true
+  therapist_execution_detail_cannot_authorize_referral_prose: true
+  clinician_ui_only_cannot_authorize_referral_prose: true
+
+profiles:
+  cervical:
+    nonspecific_neck_pain: {state: rich_ready, evidence_profile_ids: [rep_nonspecific_neck_pain_v1]}
+    neck_pain_with_radiating_upper_limb_symptoms: {state: rich_ready, evidence_profile_ids: [rep_neck_radiating_upper_limb_v1]}
+    headache_with_cervical_msk_features: {state: context_gated, evidence_profile_ids: [rep_c3_cervical_headache_presentation_v1, rep_c3_formal_cervicogenic_headache_v1], reason: presentation_and_formal_CGH_authority_must_remain_distinct}
+    cervical_dizziness_presentation: {state: context_gated, evidence_profile_ids: [rep_c4_cervical_dizziness_presentation_v1, rep_c4_clinician_established_cervical_dizziness_v1], reason: presentation_only_is_blocked_and_only_clinician_established_context_has_a_complete_sequence}
+    post_traumatic_neck_pain: {state: context_gated, evidence_profile_ids: [rep_c5_recent_whiplash_wad_v1, rep_c5_persistent_whiplash_wad_v1, rep_c5_whiplash_phase_unresolved_v1, rep_c5_other_posttraumatic_neck_pain_v1, rep_c5_unresolved_posttraumatic_safety_v1], reason: recent_and_persistent_explicit_WAD_are_supported_but_unresolved_or_nonWAD_contexts_are_blocked}
+
+  lumbar:
+    nonspecific_low_back_pain: {state: evidence_limited, evidence_profile_ids: [rep_nonspecific_lbp_v1], reason: sequence_incomplete_no_universal_progression_semantics}
+    low_back_pain_with_radiating_leg_symptoms: {state: evidence_limited, evidence_profile_ids: [rep_lbp_radiating_leg_v1], reason: acute_chronic_branching_and_progression_semantics_incomplete}
+    lumbar_spinal_stenosis_neurogenic_claudication: {state: evidence_limited, evidence_profile_ids: [rep_lumbar_stenosis_claudication_v1], reason: conditional_multimodal_authority_without_complete_progression_sequence}
+    deep_gluteal_piriformis_presentation: {state: evidence_limited, evidence_profile_ids: [rep_deep_gluteal_piriformis_v1], reason: low_quality_evidence_does_not_authorize_specific_sequence}
+
+  shoulder:
+    rotator_cuff_related_shoulder_pain: {state: evidence_limited, evidence_profile_ids: [rep_rotator_cuff_related_pain_v1], reason: evidence_profile_ready_for_review_but_not_yet_runtime_rich_content}
+    confirmed_full_thickness_rotator_cuff_tear_nonoperative: {state: evidence_limited, evidence_profile_ids: [rep_full_thickness_cuff_nonoperative_v1], reason: PT_outcome_authority_without_universal_criteria_based_sequence}
+    calcific_rotator_cuff_tendinopathy: {state: rich_ready, evidence_profile_ids: [rep_calcific_rotator_cuff_v1]}
+    adhesive_capsulitis_frozen_shoulder: {state: evidence_limited, evidence_profile_ids: [rep_adhesive_capsulitis_v1], reason: selected_interventions_supported_but_no_universal_progression_sequence}
+    glenohumeral_instability_dislocation: {state: context_gated, evidence_profile_ids: [rep_shoulder_instability_anterior_traumatic_v1, rep_shoulder_instability_posterior_v1, rep_shoulder_instability_anterior_atraumatic_v1, rep_shoulder_instability_multidirectional_v1], reason: direction_cause_management_context_must_be_resolved}
+    glenohumeral_osteoarthritis: {state: context_gated, evidence_profile_ids: [rep_glenohumeral_oa_nonoperative_v1, rep_glenohumeral_oa_preop_TSA_v1], reason: nonoperative_and_preoperative_TSA_are_supported_but_postoperative_has_separate_owner_and_unspecified_context_blocks}
+    post_traumatic_shoulder_pain: {state: pending_evidence}
+    acromioclavicular_joint_disorder: {state: pending_evidence}
+    sternoclavicular_joint_disorder: {state: pending_evidence}
+    postoperative_shoulder_rehabilitation: {state: protocol_owned, reason: procedure_specific_patient_specific_protocol_precedence}
+
+  elbow:
+    lateral_elbow_tendinopathy: {state: rich_ready, evidence_profile_ids: [rep_lateral_elbow_tendinopathy_v1]}
+    medial_elbow_tendinopathy: {state: rich_ready, evidence_profile_ids: [rep_medial_elbow_tendinopathy_v1]}
+    ulnar_neuropathy_at_elbow: {state: context_gated, evidence_profile_ids: [rep_une_mild_sensory_predominant_v1, rep_une_nonmild_or_severity_unresolved_v1, rep_une_progressive_motor_or_structural_safety_v1], reason: only_explicit_mild_sensory_predominant_context_has_complete_conservative_sequence}
+    posterior_interosseous_nerve_supinator_syndrome: {state: evidence_limited, reason: no_route_specific_PT_sequence_authorized}
+    distal_biceps_tendon_disorder_nonoperative: {state: pending_evidence}
+    elbow_osteoarthritis_degenerative_stiffness: {state: pending_evidence}
+    elbow_ligament_instability_rehabilitation: {state: pending_evidence, reason: structural_restrictions_require_route_curation}
+    post_traumatic_elbow_pain_stiffness: {state: pending_evidence}
+    radial_tunnel_syndrome: {state: pending_evidence}
+    distal_triceps_tendon_disorder: {state: pending_evidence}
+    anconeus_myotendinous_pain_or_injury: {state: pending_evidence}
+    postoperative_elbow_rehabilitation: {state: protocol_owned, reason: procedure_specific_patient_specific_protocol_precedence}
+
+  wrist_hand:
+    de_quervain_first_dorsal_compartment_disorder: {state: evidence_limited, evidence_profile_ids: [rep_de_quervain_v1], reason: no_validated_active_progressive_rehabilitation_sequence}
+    thumb_cmc1_osteoarthritis: {state: rich_ready, evidence_profile_ids: [rep_thumb_cmc1_oa_v1]}
+    interphalangeal_hand_osteoarthritis: {state: pending_evidence}
+    median_neuropathy_at_wrist_carpal_tunnel: {state: evidence_limited, evidence_profile_ids: [rep_carpal_tunnel_v1], reason: current_medical_authority_does_not_supply_required_rehabilitation_sequence}
+    ulnar_sided_wrist_tfcc_presentation: {state: pending_evidence}
+    intersection_syndrome: {state: pending_evidence}
+    thumb_mcp_collateral_ligament_injury_rehabilitation: {state: protocol_owned, reason: structural_restriction_and_healing_context_precedence}
+    sagittal_band_injury_extensor_tendon_instability: {state: protocol_owned, reason: structural_restriction_and_healing_context_precedence}
+    digital_tendon_injury_rehabilitation: {state: protocol_owned, reason: material_subtype_and_postoperative_protocol_split_required}
+    post_traumatic_wrist_hand_pain_stiffness: {state: pending_evidence}
+    postoperative_wrist_hand_rehabilitation: {state: protocol_owned, reason: procedure_specific_patient_specific_protocol_precedence}
+    guyon_canal_ulnar_neuropathy: {state: pending_evidence}
+    carpal_ligament_instability: {state: protocol_owned, reason: structural_restriction_context_precedence}
+    other_wrist_tendon_disorder: {state: pending_evidence}
+    crps_upper_limb: {state: pending_evidence}
+
+  knee:
+    knee_osteoarthritis: {state: evidence_limited, evidence_profile_ids: [rep_knee_oa_v1], reason: strong_exercise_self_management_authority_but_no_universal_multi_phase_transition_thresholds}
+    degenerative_meniscal_lesion_conservative_rehabilitation: {state: rich_ready, evidence_profile_ids: [rep_degenerative_meniscus_conservative_v1]}
+    acute_isolated_meniscal_injury_nonoperative: {state: evidence_limited, evidence_profile_ids: [rep_acute_isolated_meniscus_nonoperative_v1], reason: AAOS_workgroup_opinion_does_not_supply_validated_progression_sequence}
+    patellofemoral_pain: {state: evidence_limited, evidence_profile_ids: [rep_patellofemoral_pain_v1], reason: exercise_first_supported_but_return_transition_semantics_incomplete}
+    patellar_tendinopathy: {state: rich_ready, evidence_profile_ids: [rep_patellar_tendinopathy_v1]}
+    quadriceps_tendinopathy: {state: pending_evidence}
+    acl_injury_instability_rehabilitation: {state: pending_evidence, reason: evidence_seeded_structural_route_not_yet_curated}
+    mcl_injury_rehabilitation: {state: protocol_owned, reason: structural_healing_and_loading_restrictions_precedence}
+    patellar_instability_dislocation_rehabilitation: {state: protocol_owned, reason: structural_context_and_restrictions_precedence}
+    iliotibial_band_syndrome: {state: pending_evidence}
+    pes_anserine_region_pain_or_tendinobursitis: {state: pending_evidence}
+    post_traumatic_knee_pain_stiffness: {state: pending_evidence}
+    postoperative_knee_rehabilitation: {state: protocol_owned, reason: procedure_subtype_and_patient_specific_protocol_precedence}
+    osgood_schlatter_disease: {state: pending_evidence}
+    sinding_larsen_johansson_syndrome: {state: pending_evidence}
+    pcl_lcl_multiligament_injury: {state: protocol_owned, reason: structural_multiligament_context_precedence}
+    distal_hamstring_insertional_pathology: {state: pending_evidence}
+    hoffa_plica_pathology: {state: pending_evidence}
+    osteochondral_ocd_lesion: {state: protocol_owned, reason: structural_lesion_and_loading_restriction_context_precedence}
+
+  hip_groin:
+    greater_trochanteric_lateral_hip_pain_pathway: {state: context_gated, evidence_profile_ids: [rep_gtps_gluteal_tendinopathy_v1], reason: formal_GTPS_or_gluteal_tendinopathy_authority_does_not_cover_bursitis_or_other_subtypes}
+    nonarthritic_intraarticular_hip_pain: {state: context_gated, evidence_profile_ids: [rep_nonarthritic_intraarticular_hip_v1], reason: FAIS_labral_authority_does_not_safely_generalize_to_all_other_subtypes}
+    adductor_related_groin_pain: {state: pending_evidence}
+    post_traumatic_hip_groin_pain_stiffness: {state: pending_evidence}
+    proximal_hamstring_tendinopathy: {state: pending_evidence}
+    iliopsoas_related_groin_pain_internal_snapping_hip: {state: pending_evidence}
+    established_gluteal_abductor_tendon_tear_nonoperative: {state: pending_evidence}
+    symptomatic_external_snapping_hip: {state: pending_evidence}
+    hip_dysplasia_instability_context: {state: protocol_owned, reason: structural_instability_context_requires_specific_restrictions_and_authority}
+    inguinal_or_pubic_related_groin_pain: {state: pending_evidence}
+
+  ankle_foot:
+    lateral_ankle_sprain_rehabilitation: {state: evidence_limited, evidence_profile_ids: [rep_lateral_ankle_sprain_v1], reason: evidence_profile_ready_for_review_but_not_yet_runtime_rich_content}
+    achilles_tendinopathy: {state: context_gated, evidence_profile_ids: [rep_achilles_midportion_v1, rep_achilles_insertional_v1], reason: midportion_and_insertional_authority_must_remain_separate_and_other_subtype_is_blocked}
+    plantar_heel_pain_plantar_fasciitis: {state: evidence_limited, evidence_profile_ids: [rep_plantar_heel_pain_v1], reason: core_interventions_supported_but_required_multi_phase_transition_model_not_established}
+    posterior_tibial_tendon_dysfunction_progressive_collapsing_foot_deformity: {state: pending_evidence}
+    peroneal_tendon_disorder_nonoperative: {state: pending_evidence}
+    mechanical_metatarsalgia_forefoot_overload: {state: pending_evidence}
+    post_traumatic_ankle_foot_pain_stiffness: {state: pending_evidence}
+    calcaneal_apophysitis_sever_disease: {state: pending_evidence}
+    symptomatic_accessory_navicular: {state: pending_evidence}
+    symptomatic_pediatric_flexible_flatfoot: {state: pending_evidence}
+    chronic_ankle_instability_recurrent_sprain: {state: pending_evidence}
+    established_syndesmotic_ankle_injury: {state: protocol_owned, reason: structural_healing_loading_restriction_context_precedence}
+    established_tarsal_tunnel_or_tibial_nerve_entrapment: {state: pending_evidence}
+    heel_fat_pad_pain_presentation: {state: pending_evidence}
+    morton_neuroma_or_interdigital_neuralgic_presentation: {state: pending_evidence}
+    plantar_plate_lesser_mtp_instability: {state: protocol_owned, reason: structural_instability_and_loading_restriction_context_precedence}
+    anterior_tibial_extensor_fhl_tendon_disorder: {state: pending_evidence}
+    osteochondral_lesion_talus: {state: protocol_owned, reason: structural_lesion_and_loading_restriction_context_precedence}
+    postoperative_achilles_repair_reconstruction: {state: protocol_owned, reason: procedure_specific_patient_specific_protocol_precedence}
+
+  shared_fracture:
+    fracture_rehabilitation_post_immobilization: {state: protocol_owned, reason: healing_weight_bearing_ROM_and_loading_restrictions_precedence}
+
+  shared_muscle_myotendinous:
+    acute_muscle_myotendinous_injury_rehabilitation: {state: pending_evidence, reason: evidence_seeded_but_subtype_generalization_not_yet_curated}
+
+  shared_deconditioning_balance_gait:
+    functional_deconditioning_balance_gait_rehabilitation: {state: pending_evidence}
