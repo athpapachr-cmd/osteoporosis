@@ -8,6 +8,9 @@ profile_id: cervical
 routes:
   headache_with_cervical_msk_features:
     profile_ids: [cervical]
+    problem_label_el_by_wording_mode:
+      presentation: Κεφαλαλγία με αυχενικά μυοσκελετικά χαρακτηριστικά
+      formal_diagnosis: Αυχενογενής κεφαλαλγία
     variants:
       - variant_id: cervical_headache_presentation_only
         match:
