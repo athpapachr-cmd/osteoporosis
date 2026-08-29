@@ -1,0 +1,62 @@
+version: cu1_evidence_coverage_frozen_shoulder_amendment_v1
+status: reviewed_logical_coverage_amendment
+runtime_authorized: false
+reviewed_on: 2026-08-29
+review_record: CU1_FROZEN_SHOULDER_ROUTE_REVIEW_2026-08-29.md
+
+purpose: >-
+  Project the exact primary frozen-shoulder review into the logical route-coverage view without
+  rewriting the historical work queue or changing underlying evidence claims. Only the explicitly
+  clinician-established primary frozen-shoulder context is considered complete for the constrained
+  CU-1 rich referral projection.
+
+route_overrides:
+  shoulder:
+    adhesive_capsulitis_frozen_shoulder:
+      status: profile_curated
+      sequence_status: sequence_incomplete
+      profile_id: rep_adhesive_capsulitis_v1
+      source_state: promoted_active_design_authority
+      shard: cu1_evidence_tranche3_v1.yaml
+      promotion_projection: cu1_evidence_tranche3_promotion_v1.yaml
+      promotion_overlay: cu1_evidence_tranche3_promotion_fix_v1.yaml
+      review_record: CU1_FROZEN_SHOULDER_ROUTE_REVIEW_2026-08-29.md
+      fixture_extension: cu1_frozen_shoulder_fixtures_v1.yaml
+      evidence_state: Korean_primary_frozen_shoulder_CPG_2025_plus_BESS_2025_pathway_plus_2023_exercise_mobilization_SR_with_scope_and_uncertainty_preserved
+      contexts:
+        clinician_established_primary_frozen_shoulder:
+          sequence_status: sequence_complete
+          rehabilitation_sequence_id: seq_adhesive_capsulitis_evidence_bounded_v1
+          model: single_phase_individualized_ROM_mobility_function_without_fixed_stage_protocol
+        presentation_only_or_primary_scope_unresolved:
+          sequence_status: blocked_evidence_gap
+          rehabilitation_sequence_id: null
+          reason: primary_frozen_shoulder_disease_specific_authority_requires_formal_clinician_established_primary_context
+        secondary_or_other_stiff_shoulder:
+          sequence_status: blocked_evidence_gap
+          rehabilitation_sequence_id: null
+          reason: reviewed_primary_frozen_shoulder_authority_does_not_generalize_to_secondary_posttraumatic_postoperative_or_other_stiff_shoulder
+      intervention_behavior: manual_therapy_including_ROM_may_be_considered_with_low_certainty_and_exercise_mobilization_intensity_is_symptom_and_ROM_individualized
+      strengthening_behavior: routine_strengthening_not_required_because_current_CPG_evidence_is_inconclusive_or_very_low_certainty
+      self_stretching_behavior: therapist_execution_detail_only_no_fixed_dose
+      supervised_PT_behavior: BESS_does_not_establish_superiority_over_natural_history
+      post_injection_behavior: BESS_PT_after_injection_is_context_specific_and_not_auto_rendered_in_general_primary_plan
+      progression_behavior: no_universal_freezing_frozen_thawing_protocol_numeric_ROM_transition_or_fixed_course_duration
+
+top_level_list_additions:
+  fixture_extensions:
+    - cu1_frozen_shoulder_fixtures_v1.yaml
+
+integration_state_list_additions:
+  route_coverage_reviewed_routes:
+    - adhesive_capsulitis_frozen_shoulder
+  fixture_extensions:
+    - cu1_frozen_shoulder_fixtures_v1.yaml
+
+validation_assertions:
+  historical_coverage_matrix_not_rewritten: true
+  no_new_evidence_claim_created: true
+  primary_scope_required_for_complete_branch: true
+  secondary_and_unresolved_contexts_remain_blocked: true
+  sequence_complete_means_complete_for_single_phase_evidence_bounded_referral_projection_not_fixed_protocol: true
+  runtime_authorized: false
