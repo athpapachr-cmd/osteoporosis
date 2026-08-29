@@ -1,4 +1,4 @@
-# SLICE_PLAN_CURRENT.md — CU-1 history + evidence + rehabilitation-sequence design hardening v1.10
+# SLICE_PLAN_CURRENT.md — CU-1 history + evidence + rehabilitation-sequence design hardening v1.11
 
 > **STATUS:** ACTIVE PRE-RUNTIME DESIGN HARDENING — SHARD INTEGRATION PASS / ROUTE COVERAGE IN PROGRESS.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
@@ -41,7 +41,7 @@ clinical objective
 → next objective when supported
 ```
 
-No universal MSK sequence or generic cervical sequence is permitted. A one-phase evidence-bounded sequence is valid when evidence supports only one broad direction. Unsupported later phases or thresholds are omitted and the evidence gap is explicit.
+No universal MSK sequence, generic cervical sequence or generic elbow sequence is permitted. A one-phase evidence-bounded sequence is valid when evidence supports only one broad direction. Unsupported later phases or thresholds are omitted and the evidence gap is explicit.
 
 Calendar constraints are allowed only when an explicit patient-specific postoperative/fracture/orthopaedic protocol or an evidence source genuinely requires time.
 
@@ -103,6 +103,8 @@ dizziness symptom or neck association != cervical causation
 post_traumatic_neck_pain != inferred_whiplash
 approximate_post_traumatic_duration != inferred_WAD_temporal_phase
 C5_route_selection != structural_clearance_or_WAD_grade
+lateral_elbow_pain_or_provocation_or_imaging_finding != inferred_lateral_elbow_tendinopathy
+LET_irritability_or_acuity != inferred_from_one_pain_score_or_test
 ```
 
 ---
@@ -186,11 +188,17 @@ cu1_evidence_route_coverage_cervical_dizziness_v1.yaml
 cu1_evidence_route_coverage_cervical_posttraumatic_v1.yaml
 → C5 recent-WAD + persistent-WAD sequence coverage with explicit unclear-phase / other-trauma / safety blocked contexts
 
+cu1_evidence_route_coverage_lateral_elbow_v1.yaml
+→ lateral-elbow native route extension using the existing core profile identity
+
 cu1_evidence_route_coverage_amendments_v1.yaml
 → reviewed post-merge narrowing / source-identity / grading / suppression layer
+
+cu1_evidence_route_coverage_lateral_elbow_amendment_v1.yaml
+→ reviewed LET profile-sequence redirection + exact CPG grading/direction corrections
 ```
 
-The amendment layer may only narrow applicability, attach a reviewed sequence, correct evidence grading without upgrading evidence, correct verified source identity metadata or suppress a scope-unsafe claim. It cannot broaden evidence scope or manufacture clinical recommendations.
+The amendment layers may only narrow applicability, attach a reviewed sequence, correct evidence grading/direction without inventing or upgrading evidence, correct verified source identity metadata or suppress a scope-unsafe claim. They cannot broaden evidence scope or manufacture clinical recommendations.
 
 Work queue:
 
@@ -206,9 +214,10 @@ clinic_utilities/contracts/cu1_cervical_history_evidence_fixtures_v1.yaml
 clinic_utilities/contracts/cu1_c3_cervical_headache_fixtures_v1.yaml
 clinic_utilities/contracts/cu1_c4_cervical_dizziness_fixtures_v1.yaml
 clinic_utilities/contracts/cu1_c5_post_traumatic_neck_fixtures_v1.yaml
+clinic_utilities/contracts/cu1_lateral_elbow_fixtures_v1.yaml
 ```
 
-The cervical fixture files are dedicated extensions; their cases are normative design regressions for reviewed cervical routes and do not authorize runtime behavior.
+The dedicated fixture extensions are normative design regressions for reviewed routes and do not authorize runtime behavior.
 
 ---
 
@@ -323,9 +332,28 @@ SIRA activity-restriction consensus
 
 2024 guided-exercise study frequency/duration observation
 != universal referral schedule
+
+lateral elbow pain/tenderness/grip loss/provocation/imaging finding
+!= automatic lateral elbow tendinopathy diagnosis
+
+acute/highly irritable LET
+!= subacute/chronic Grade-B resisted wrist-extensor loading authority
+
+Grade-F high-demand LET reintroduction
+!= validated second phase or numeric transition threshold
+
+Grade-A LET PROM/function outcome measures
+!= Grade-B impairment measures
+!= automatic progression/RTW/RTS criteria
+
+Grade-B LET adjunct recommendation
+!= automatic adjunct selection
+
+2024 low-certainty LET synthesis
+!= proven no effect or do-not-offer exercise
 ```
 
-Unresolved material subtype/management/neurological/headache/dizziness/structural-trauma safety context blocks evidence-aware sequence resolution rather than invoking a generic fallback.
+Unresolved material subtype/management/neurological/headache/dizziness/structural-trauma or LET-differential safety context blocks evidence-aware sequence resolution rather than invoking a generic fallback.
 
 ---
 
@@ -357,6 +385,8 @@ outcome-specific GRADE certainty != synthetic cross-outcome certainty
 therapeutic response != diagnostic proof
 study programme frequency/duration signal != universal physician referral schedule
 distinct recommendation strengths in one framework != synthetic hybrid strength
+evidence recommendation direction != automatic treatment selection
+newer low-certainty synthesis != automatic reversal of a route-specific CPG recommendation unless an explicit reviewed conflict exists
 ```
 
 ---
@@ -594,6 +624,30 @@ No universal numeric progression threshold, fixed visit frequency, total PT dura
 
 Post-traumatic headache, dizziness and radiating-arm symptoms remain C5 history/context and do not automatically import C3 formal-CGH, C4 cervical-dizziness or C2 radiculopathy-specific authority.
 
+### Lateral elbow tendinopathy
+
+```text
+rep_lateral_elbow_tendinopathy_v1
+→ seq_lateral_elbow_evidence_bounded_v1
+→ sequence_complete / single-phase evidence-bounded
+```
+
+The existing APTA/JOSPT 2022 CPG remains the route-specific authority and is reconciled with 2024 Cochrane/Campos evidence that limits confidence in effect magnitude and durability without converting exercise into a `do_not_offer` recommendation.
+
+The reviewed design uses one required irritability-/task-informed phase. Education/self-management and relevant activity/load modification are available broadly. Grade-B resisted wrist-extensor loading is condition-gated to subacute/chronic LET and may use isometric, concentric and/or eccentric loading without one universal evidence-derived dose. Grade-C shoulder/scapular work is conditional on an actual proximal impairment. Grade-F high-demand stress/strength/endurance/motor-control reintroduction is a conditional direction rather than a second phase because no validated transition threshold exists.
+
+Selected adjuncts preserve exact CPG direction and grading while remaining optional through selection/applicability gates. Manual therapy, dry needling and rigid taping retain Grade-B route authority in their reviewed contexts; activity-related counterforce/wrist support retains Grade-F immediate-context authority. `evidence recommendation direction != automatic treatment selection`.
+
+The mandatory activation amendment removes a synthetic A/B outcome-measure strength. PRTEE/DASH and PSFS/high-demand activity scales retain Grade-A assessment authority; ROM, pressure-pain threshold, pain-free grip and maximum grip retain Grade-B assessment authority. These are tracking measures, not automatic progression or RTW/RTS thresholds.
+
+The sequence deliberately contains:
+
+```text
+progression_criteria: []
+```
+
+No universal exercise dose, numeric high-demand transition, return-to-work/sport threshold, fixed visit frequency or total PT duration is manufactured. Atypical PIN/radial motor deficit, cervical/radicular pattern, substantial mechanical block, material trauma/instability or other discordant presentation triggers reassessment/correct-owner behavior rather than generic LET fallback.
+
 ---
 
 # 12. Coverage gate
@@ -629,67 +683,26 @@ Generic fallback is forbidden.
 
 # 13. Acceptance fixtures
 
-The main regression oracle contains the previously reviewed route cases. Dedicated cervical extensions now cover:
+The main regression oracle contains the previously reviewed route cases. Dedicated extensions now cover C1-C5 plus LET.
+
+LET-specific fixtures verify:
 
 ```text
-C1 activation/self-management core
-C1 acute exercise evidence-grade preservation
-C1 manual therapy optional not mandatory
-C1 newer generic passive-modality scope vs older classification bundle
-C1 other-cervical-route fallback prevention
-C1 neurological/structural concern without false reassurance
-C1 medical-review window != PT course duration
-
-C2 radiating symptoms != formal radiculopathy
-C2 acute active-rehabilitation grade preservation
-C2 chronic traction selected adjunct != universal treatment
-C2 broad symptom route != automatic cervical-radiculopathy NMA scope
-C2 NMA components != mandatory bundle
-C2 progressive objective neurological deficit block
-C2 possible cord-feature block
-C2 no universal progression threshold
-
-C3 presentation-only != formal CGH
-C3 ROM/provocation != sufficient diagnosis
-C3 upper-cervical imaging != causation by itself
-C3 formal-CGH profile without false certainty
-C3 manual therapy selected not mandatory / no false durable effect
-C3 acute active-mobility Grade-B preservation
-C3 self-SNAG remains execution detail
-C3 low-certainty NMA rankings != best protocol
-C3 known primary-headache context not silently excluded
-C3 safety concern blocks routine progression
-C3 post-traumatic primary context → C5 review
-
-C4 neck pain + dizziness != cervical causation or diagnosis
-C4 presentation-only does not inherit disease-specific treatment claims
-C4 positive cervical/sensorimotor test != diagnosis
-C4 treatment response != diagnostic proof
-C4 explicit clinician diagnosis selects formal profile without CU-1 validation
-C4 manual therapy optional with outcome-specific GRADE preserved
-C4 Mulligan ROM signal != balance/global superiority or mandatory technique
-C4 small self-exercise RCT != frozen protocol/dose/course duration
-C4 vestibular rehabilitation is not an automatic default
-C4 alternative vestibular/migraine/neurovascular causes not silently excluded
-C4 material dizziness safety concern blocks routine progression
-C4 post-traumatic primary context → C5 review
-
-C5 recent WAD uses only recent-WAD profile/sequence and SIRA Level-B active claims
-C5 persistent WAD uses only persistent-WAD profile/sequence
-C5 recent and persistent WAD profiles do not cross-resolve
-C5 vague/unknown temporal phase is not inferred and blocks sequence
-C5 non-WAD cervical trauma does not inherit WAD or C1 authority
-C5 missing/abnormal structural status blocks routine sequence
-C5 patient-specific structural restriction overrides stay-active/no-collar defaults
-C5 WAD IV/equivalent structural context is not routine uncomplicated WAD rehabilitation
-C5 progressive neurological/cord concern blocks routine progression
-C5 persistent objective neurological signs + disability use OPTIMa medical-review context
-C5 guided-exercise study frequency/duration != universal referral schedule
-C5 education+exercise very-low certainty != mandatory superior bundle
-C5 manual therapy remains selected SIRA Level-C adjunct
-C5 activity-restriction consensus != collar Level-A strength
-C5 associated headache/dizziness/arm symptoms do not auto-import C3/C4/C2 authority
-C5 route selection does not autonomously determine WAD risk stratum or PT eligibility
+typical subacute/chronic resisted loading
+acute/high-irritability does not inherit subacute/chronic Grade-B loading
+high-demand Grade-F direction without numeric transition/RTW/RTS threshold
+single provocation/imaging finding != autonomous diagnosis
+objective PIN motor deficit -> reassessment/correct owner
+cervical pattern not silently absorbed
+manual therapy selected vs mandatory
+manual therapy CPG grade + Cochrane uncertainty
+dry needling selected not core
+orthosis immediate context not long-term protocol
+Grade-A vs Grade-B outcome-measure families remain distinct
+outcome measures do not become progression criteria
+2024 low certainty != do-not-offer exercise
+ESWT not auto-evidence-authorized in this review
+missing history remains missing
 ```
 
 Additional route fixtures remain required as coverage expands through the remaining registry.
@@ -731,6 +744,7 @@ C2 radiating-neck route coverage                PASS
 C3 cervical-headache route coverage              PASS
 C4 cervical-dizziness context-split coverage     PASS
 C5 post-traumatic temporal/context coverage      PASS
+lateral-elbow-tendinopathy route coverage        PASS
 routine-route coverage                          FAIL globally
 route-history prompt completeness               FAIL globally
 route-complete fixture corpus                   FAIL globally
@@ -742,7 +756,7 @@ RUNTIME AUTHORIZED                              NO
 Continue route-by-route:
 
 ```text
-1. lateral_elbow_tendinopathy
+1. medial_elbow_tendinopathy
 2. remaining_wrist_hand_and_elbow_routes
 3. remaining routine routes in registry order
 4. reviewed evidence-gap behavior where full staging is unsupported
