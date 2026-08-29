@@ -913,3 +913,72 @@ RUNTIME AUTHORIZED            NO
 PR #63 remains draft/unmerged. No runtime recommendation logic, persistence change, CU-2 work or PR-1 restart was authorized.
 
 The exact next route is now `medial_elbow_tendinopathy`, followed by the remaining wrist/hand and elbow routes and then the remaining routine registry.
+
+---
+
+## 2026-08-29 — Medial elbow tendinopathy route closed as low-certainty evidence-bounded authority
+
+The route `medial_elbow_tendinopathy` passed exact evidence/applicability review and was activated as a distinct medial-elbow authority rather than as a mirrored copy of the lateral-elbow pathway.
+
+The normative objects are:
+
+```text
+rep_medial_elbow_tendinopathy_v1
+→ seq_medial_elbow_evidence_bounded_v1
+→ sequence_complete
+→ single required phase
+→ progression_criteria: []
+```
+
+No current medial-specific rehabilitation clinical-practice guideline with graded recommendations equivalent to the 2022 APTA/JOSPT lateral-elbow CPG was identified. The primary treatment-effect authority is the 2026 See/Loo/Jaafar systematic review of eccentric exercise for medial epicondylitis. It included five small clinical studies totaling 143 patients, used heterogeneous protocols, could not support meta-analysis, and was judged overall low certainty.
+
+The normative interpretation is deliberately narrow:
+
+```text
+eccentric flexor-pronator loading
+→ may be considered
+→ low certainty
+→ not mandatory
+→ not universally superior
+→ no universal dose/frequency/duration
+
+lateral-elbow CPG grades
+→ not medial-elbow authority by analogy
+```
+
+The 2023 clinical overview and 2024 medial-elbow differential review are retained as history, management-context and differential authority rather than comparative treatment-effect evidence. Narrative staged management descriptions are not converted into validated rehabilitation phases or elapsed-time progression rules.
+
+Hard medial-elbow boundaries now include:
+
+```text
+medial elbow pain/tenderness != automatic tendinopathy diagnosis
+pain with resisted wrist flexion/pronation != automatic diagnosis
+imaging common-flexor abnormality != automatically symptomatic diagnosis
+subjective ring/small-finger paresthesia != objective ulnar deficit != formal ulnar neuropathy
+material valgus/UCL instability != routine tendon-only pathway
+progressive objective ulnar motor deficit != routine tendon-only pathway
+major trauma or substantial mechanical block != routine medial tendinopathy
+```
+
+Manual therapy, dry needling, taping, orthosis and ESWT are not automatically labelled medial-route evidence merely because analogous interventions appear in lateral-elbow literature or the frozen UI. A separate reviewed evidence claim or clinician-instruction pathway would be required.
+
+Matching route-history prompts and `cu1_medial_elbow_fixtures_v1.yaml` were added. The fixtures test medial-specific profile resolution, diagnosis-vs-finding separation, low-certainty eccentric evidence, no lateral-CGP grade borrowing, subjective-vs-objective ulnar-neural semantics, valgus/UCL owner boundaries, no fixed rest protocol, no narrative-phase promotion, adjunct non-auto-authority and missing-history behavior.
+
+Focused GitHub Actions run #203 passed at exact review head `531e94ce2a92857247962f1d68be20b01e6a05c3` before manifest activation. The medial shard, fixtures, manifest and coverage matrix were then reconciled. Runtime evidence-aware generation remains unauthorized.
+
+The global CU-1 gate remains:
+
+```text
+SHARD INTEGRATION             PASS
+LATERAL ELBOW ROUTE           PASS
+MEDIAL ELBOW ROUTE            PASS
+GLOBAL ROUTE COVERAGE         FAIL / IN PROGRESS
+ROUTE-HISTORY PROMPTS         FAIL globally until all routes curated
+ROUTE FIXTURE CORPUS          FAIL globally until all routes curated
+DESIGN-COMPLETE               NO
+RUNTIME AUTHORIZED            NO
+```
+
+PR #63 remains draft/unmerged. No runtime recommendation logic, persistence change, CU-2 work or PR-1 restart was authorized.
+
+The exact next route is now `ulnar_neuropathy_at_elbow`, followed by the remaining wrist/hand and elbow routes and then the remaining routine registry.
