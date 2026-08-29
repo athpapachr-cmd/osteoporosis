@@ -94,6 +94,62 @@ def _merge_fields(target: Dict[str, Any], patch: Mapping[str, Any]) -> None:
             target[key] = copy.deepcopy(value)
 
 
+def _append_unique(target: Dict[str, Any], key: str, values: Iterable[Any]) -> None:
+    current = target.get(key) or []
+    if not isinstance(current, list):
+        raise CU1ContractError(f"CU-1 coverage list field is not a list: {key}")
+    merged = list(current)
+    for value in values:
+        if value not in merged:
+            merged.append(copy.deepcopy(value))
+    target[key] = merged
+
+
+def _apply_coverage_amendment(coverage: Dict[str, Any], amendment: Mapping[str, Any]) -> None:
+    """Apply a reviewed logical coverage amendment without rewriting historical coverage artifacts."""
+
+    if amendment.get("status") != "reviewed_logical_coverage_amendment":
+        raise CU1ContractError("CU-1 coverage amendment is not reviewed")
+    if amendment.get("runtime_authorized") is not False:
+        raise CU1ContractError("CU-1 coverage amendment must remain non-runtime-authority metadata")
+
+    profiles = coverage.get("profiles") or {}
+    if not isinstance(profiles, Mapping):
+        raise CU1ContractError("CU-1 coverage matrix profiles are invalid")
+    materialized_profiles = dict(profiles)
+    for profile_id, routes in (amendment.get("route_overrides") or {}).items():
+        profile = materialized_profiles.get(profile_id)
+        if not isinstance(profile, Mapping) or not isinstance(routes, Mapping):
+            raise CU1ContractError(f"CU-1 coverage amendment references unknown profile: {profile_id}")
+        materialized_profile = dict(profile)
+        for route_id, patch in routes.items():
+            route = materialized_profile.get(route_id)
+            if not isinstance(route, Mapping) or not isinstance(patch, Mapping):
+                raise CU1ContractError(
+                    f"CU-1 coverage amendment references unknown route: {profile_id}.{route_id}"
+                )
+            materialized_route = dict(route)
+            _merge_fields(materialized_route, patch)
+            materialized_profile[route_id] = materialized_route
+        materialized_profiles[profile_id] = materialized_profile
+    coverage["profiles"] = materialized_profiles
+
+    for key, values in (amendment.get("top_level_list_additions") or {}).items():
+        if not isinstance(values, list):
+            raise CU1ContractError(f"CU-1 coverage amendment list addition is invalid: {key}")
+        _append_unique(coverage, str(key), values)
+
+    integration = coverage.get("integration_state") or {}
+    if not isinstance(integration, Mapping):
+        raise CU1ContractError("CU-1 coverage integration_state is invalid")
+    materialized_integration = dict(integration)
+    for key, values in (amendment.get("integration_state_list_additions") or {}).items():
+        if not isinstance(values, list):
+            raise CU1ContractError(f"CU-1 integration-state list addition is invalid: {key}")
+        _append_unique(materialized_integration, str(key), values)
+    coverage["integration_state"] = materialized_integration
+
+
 def _claim_subtype_ids(claim: Mapping[str, Any]) -> List[Any]:
     # Both spellings exist in the reviewed evidence corpus. Treat them as one semantic field.
     return list(claim.get("applicable_subtype_ids_optional") or claim.get("applicable_subtype_ids") or [])
@@ -183,6 +239,13 @@ class CU1ClinicianEvidenceResolver:
             raise CU1ContractError("Clinician evidence view source paths are invalid")
         self.manifest = _load_yaml(self.root / manifest_rel)
         self.coverage = _load_yaml(self.root / coverage_rel)
+        coverage_amendments = self.view_config.get("source_coverage_amendments") or []
+        if not isinstance(coverage_amendments, list):
+            raise CU1ContractError("Clinician evidence coverage amendments must be a list")
+        for amendment_rel in coverage_amendments:
+            if not isinstance(amendment_rel, str):
+                raise CU1ContractError("Clinician evidence coverage amendment path is invalid")
+            _apply_coverage_amendment(self.coverage, _load_yaml(self.root / amendment_rel))
         self.sources: Dict[str, Dict[str, Any]] = {}
         self.claims: Dict[str, Dict[str, Any]] = {}
         self.route_evidence_profiles: Dict[str, Dict[str, Any]] = {}
