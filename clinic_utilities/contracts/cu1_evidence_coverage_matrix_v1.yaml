@@ -1,4 +1,4 @@
-version: cu1_evidence_coverage_matrix_v1_5
+version: cu1_evidence_coverage_matrix_v1_6
 status: active_route_by_route_work_queue
 runtime_authorized: false
 route_registry: cu1_registry_v1.yaml
@@ -7,6 +7,7 @@ active_core_registry: cu1_evidence_registry_v1.yaml
 promoted_evidence_extensions: [cu1_evidence_tranche2_v1.yaml, cu1_evidence_tranche3_v1.yaml]
 promotion_projections: [cu1_evidence_tranche2_promotion_v1.yaml, cu1_evidence_tranche3_promotion_v1.yaml]
 promotion_overlays: [cu1_evidence_tranche3_promotion_fix_v1.yaml]
+active_route_coverage_extension: cu1_evidence_route_coverage_v1.yaml
 staged_evidence_extensions: []
 normative_schema: cu1_history_timeline_schema_v1.yaml
 coverage_rule: every_routine_route_and_material_subtype_requires_unique_current_applicable_evidence_profile_and_complete_element_traceable_rehabilitation_sequence_or_explicit_blocked_evidence_gap
@@ -23,6 +24,7 @@ status_values:
 source_state_values:
   - active_core_registry
   - promoted_active_design_authority
+  - native_active_design_authority
   - staged_candidate_not_schema_frozen
 
 object_contract_status:
@@ -96,9 +98,14 @@ profiles:
       promotion_overlay: cu1_evidence_tranche3_promotion_fix_v1.yaml
       blocker: AAOS_2025_supports_PT_for_patient_reported_outcomes_but_does_not_define_one_universal_criteria_based_PT_sequence
     calcific_rotator_cuff_tendinopathy:
-      status: evidence_seeded
-      next_source: 2025_rotator_cuff_tendinopathy_CPG_calcific_scope
-      note: requires_separate_claim_and_sequence_curation_despite_shared_CPG_document
+      status: profile_curated
+      sequence_status: sequence_complete
+      profile_id: rep_calcific_rotator_cuff_v1
+      source_state: native_active_design_authority
+      shard: cu1_evidence_route_coverage_v1.yaml
+      review_record: CU1_ROUTE_COVERAGE_REVIEW_2026-08-29.md
+      framework_state: JOSPT_2025_ESWT_may_consider_vs_NICE_HTG645_research_only_preserved_as_explicit_conflict
+      note: core_active_rehabilitation_is_evidence_supported;_ESWT_is_not_auto_rendered;_no_universal_numeric_progression_threshold_is_invented
     adhesive_capsulitis_frozen_shoulder:
       status: profile_curated
       sequence_status: sequence_incomplete
@@ -307,7 +314,6 @@ shared_owners:
 research_queue_priority:
   rationale: prioritize_routes_with_current_route_specific_CPGs_and_high_real_world_frequency_while_preserving_subtype_boundaries
   next:
-    - calcific_rotator_cuff_tendinopathy
     - glenohumeral_instability_dislocation_initial_rehabilitation_split
     - glenohumeral_osteoarthritis
     - degenerative_meniscal_lesion_conservative_rehabilitation
@@ -325,6 +331,8 @@ integration_state:
   tranche3_schema_conformance_reviewed: true
   tranche3_promotion_gate_passed: true
   tranche3_state: promoted_active_design_authority
+  route_coverage_extension_schema_conformance_reviewed: true
+  route_coverage_extension_reviewed_routes: [calcific_rotator_cuff_tendinopathy]
   all_listed_shards_schema_reviewed: true
   all_listed_shards_promotion_or_native_gate_passed: true
   fixtures_catalog_created: true
