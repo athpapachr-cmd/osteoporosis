@@ -1,4 +1,4 @@
-# SLICE_PLAN_CURRENT.md — CU-1 history + evidence + rehabilitation-sequence design hardening v1.5
+# SLICE_PLAN_CURRENT.md — CU-1 history + evidence + rehabilitation-sequence design hardening v1.6
 
 > **STATUS:** ACTIVE PRE-RUNTIME DESIGN HARDENING — SHARD INTEGRATION PASS / ROUTE COVERAGE IN PROGRESS.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
@@ -162,6 +162,9 @@ cu1_evidence_route_coverage_meniscus_v1.yaml
 cu1_evidence_route_coverage_patellar_tendinopathy_v1.yaml
 → patellar-tendinopathy native route coverage
 
+cu1_evidence_route_coverage_thumb_cmc1_oa_v1.yaml
+→ thumb CMC-1 OA native route coverage
+
 cu1_evidence_route_coverage_amendments_v1.yaml
 → reviewed post-merge narrowing / source-identity / grading / suppression layer
 ```
@@ -215,6 +218,12 @@ true meniscal locking
 
 patellar PTLE superiority signal in one selected RCT
 != universal PTLE protocol superiority
+
+thumb CMC-1 OA orthosis evidence
+!= interphalangeal/generalized hand-OA authority
+
+hand-therapy assessment measures
+!= validated rehabilitation progression criteria
 ```
 
 Unresolved material subtype/management context blocks evidence-aware sequence resolution rather than invoking a generic fallback.
@@ -240,6 +249,7 @@ no eligible comparative trials != low or very-low effect estimate
 conflicting frameworks remain separate
 conflicting framework claim != automatic referral recommendation
 population-specific trial superiority != universal protocol superiority when later synthesis does not support a meaningful hierarchy
+assessment recommendation != validated progression threshold
 ```
 
 ---
@@ -340,6 +350,24 @@ Breda 2021 RCT
 
 CU-1 may therefore describe individualized progressive tendon/quadriceps loading but must not prescribe one mandatory eccentric/isometric/HSR/PTLE regimen. Loading-mode dosing remains therapist execution detail. No validated universal numeric progression or RTS threshold is rendered. ESWT is not an automatic adjunct.
 
+### Thumb CMC-1 osteoarthritis
+
+```text
+rep_thumb_cmc1_oa_v1
+seq_thumb_cmc1_oa_v1
+→ sequence_complete / single-phase evidence-bounded
+```
+
+Current EULAR/ACR authority and recent thumb-specific syntheses support:
+
+```text
+education / ergonomic principles / pacing / assistive strategies
++ individualized thumb/hand exercise
++ CMC-support orthosis when clinically appropriate
+```
+
+The route does not mandate one exercise programme, orthosis type or wear schedule. A rigid CMC-MCP signal from the current NMA remains therapist execution detail. EULAR longer-term orthosis-use wording is not converted into a fixed physiotherapy course or wear duration. An exact pre-activation review removed an unsupported assessment→progression inference, so the one-phase sequence intentionally has no evidence-derived progression criterion.
+
 ---
 
 # 12. Coverage gate
@@ -398,6 +426,11 @@ patellar tendinopathy no mandatory loading mode
 patellar absolute-effect uncertainty visible
 patellar no invented numeric RTS/pain threshold
 patellar ESWT not default
+thumb CMC1 conservative route
+thumb CMC1 orthosis type/wear duration not mandatory
+thumb CMC1 assessment != progression
+thumb CMC1 != interphalangeal OA authority
+thumb CMC1 radiograph != symptom attribution
 ```
 
 Additional route fixtures remain required as coverage expands.
@@ -433,6 +466,7 @@ instability context-split coverage              PASS
 GHOA management-context coverage                PASS
 degenerative-meniscus route coverage            PASS
 patellar-tendinopathy route coverage             PASS
+thumb-CMC1-OA route coverage                     PASS
 routine-route coverage                          FAIL globally
 route-history prompt completeness               FAIL globally
 route-complete fixture corpus                   FAIL globally
@@ -444,14 +478,18 @@ RUNTIME AUTHORIZED                              NO
 Continue route-by-route:
 
 ```text
-1. thumb_cmc1_osteoarthritis
-2. cervical_routes
-3. remaining_wrist_hand_and_elbow_routes
-4. remaining routine routes in registry order
-5. reviewed evidence-gap behavior where full staging is unsupported
-6. route-specific prompts + matching fixtures alongside each route
-7. exact design-completeness review
-8. STOP only at DESIGN-COMPLETE or a newly specific BLOCK
+1. cervical_routes
+   1a. nonspecific_neck_pain
+   1b. neck_pain_with_radiating_upper_limb_symptoms
+   1c. headache_with_cervical_msk_features
+   1d. cervical_dizziness_presentation
+   1e. post_traumatic_neck_pain
+2. remaining_wrist_hand_and_elbow_routes
+3. remaining routine routes in registry order
+4. reviewed evidence-gap behavior where full staging is unsupported
+5. route-specific prompts + matching fixtures alongside each route
+6. exact design-completeness review
+7. STOP only at DESIGN-COMPLETE or a newly specific BLOCK
 ```
 
 No runtime evidence-aware generation is authorized by this slice.
