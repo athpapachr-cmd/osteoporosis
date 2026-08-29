@@ -153,6 +153,21 @@ routes:
         required: false
         required_for_rich_variant: true
 
+  adhesive_capsulitis_frozen_shoulder:
+    fields:
+      frozen_shoulder_scope:
+        type: enum
+        label_el: Κλινικό πλαίσιο της δυσκαμψίας ώμου
+        values: [primary_frozen_shoulder, secondary_or_other_stiff_shoulder, not_stated]
+        value_labels_el:
+          primary_frozen_shoulder: Πρωτοπαθής παγωμένος ώμος / adhesive capsulitis — έχει τεθεί κλινικά
+          secondary_or_other_stiff_shoulder: Δευτεροπαθής ή άλλη δυσκαμψία ώμου / διαφορετικό πλαίσιο
+          not_stated: Δεν έχει διευκρινιστεί
+        required: false
+        required_for_rich_variant: true
+        show_when:
+          wording_modes: [formal_diagnosis]
+
   glenohumeral_instability_dislocation:
     fields:
       shoulder_instability_direction:
