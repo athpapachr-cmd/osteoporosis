@@ -26,6 +26,7 @@ route_shards:
   - clinic_utilities/contracts/cu1_rich_referral_content_wrist_hand_el_v1.yaml
   - clinic_utilities/contracts/cu1_rich_referral_content_elbow_el_v1.yaml
   - clinic_utilities/contracts/cu1_rich_referral_content_shoulder_el_v1.yaml
+  - clinic_utilities/contracts/cu1_rich_referral_content_shoulder_frozen_el_v1.yaml
   - clinic_utilities/contracts/cu1_rich_referral_content_cervical_el_v1.yaml
   - clinic_utilities/contracts/cu1_rich_referral_content_cervical_headache_el_v1.yaml
   - clinic_utilities/contracts/cu1_rich_referral_content_cervical_posttraumatic_el_v1.yaml
