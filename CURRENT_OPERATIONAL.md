@@ -6,7 +6,7 @@
 > **Verified remote `main`:** `08ecd3ab33e98d567c47042a8a1de482df6952b9`.
 > **ACTIVE CANONICAL WRITER/LOCK:** `design/cu1-history-evidence-timeline-2026-08-28`.
 > **ACTIVE RUNTIME WRITER/LOCK:** NONE.
-> **PR #63:** draft / design-only / unmerged; reviewed route coverage is complete through ulnar-neuropathy-at-elbow matrix commit `71a263568ca0bbb4100e89a95eb16e36d5889bbe`; this canonical commit may advance branch head.
+> **PR #63:** draft / design-only / unmerged; reviewed route coverage is complete through ulnar-neuropathy-at-elbow matrix commit `71a263568ca0bbb4100e89a95eb16e36d5889bbe`; canonical bookkeeping commits may advance branch head.
 > **Runtime evidence-aware generation:** NOT AUTHORIZED.
 > **CU-2:** NOT AUTHORIZED.
 > **PR-1 Transcript Intake:** intentionally paused.
@@ -24,6 +24,32 @@ coherent structured HISTORY
 ```
 
 The object/evidence architecture, tranche2/tranche3 promotion and shard integration are proven. Work is now route-by-route completeness with route-specific history prompts and matching regression fixtures.
+
+## 1.1 Deferred future Clinical Documentation direction — accepted, not active
+
+The product owner accepted a future reusable architecture direction and it is recorded only in the permanent/roadmap owners (`AGENTS.md`, `TODO.md`). It does **not** alter the active CU-1 slice, does not authorize a new schema/object taxonomy, and does not open medico-legal implementation.
+
+Future direction:
+
+```text
+ONE reviewed patient-specific clinical-assertion layer
++
+SEPARATE literature/evidence layer
++
+MANY document-specific policies/views
+```
+
+Preserved future requirements include source/provenance axis distinct from semantic claim type, unresolved competing interpretations when contradiction evidence is not decisive, `diagnosis != causation`, `temporal association != causal relationship`, and medico-legal/accident reports as a future Document Policy rather than a separate clinical engine.
+
+Explicitly deferred until a fresh safe design boundary:
+
+```text
+NO ClinicalAssertionV1 frozen now
+NO new claim-state enums now
+NO medico-legal schema/runtime code now
+NO CU-1 REPLAN from this future requirement
+NO CLINICAL_EXCELLENCE_PLAN object-taxonomy mutation before fresh owner/schema audit
+```
 
 ---
 
