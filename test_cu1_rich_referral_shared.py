@@ -66,7 +66,31 @@ class CU1SharedRichReferralTests(unittest.TestCase):
         self.assertNotIn('_format_lateral_elbow', formatter_source)
         self.assertNotIn('lateral_elbow_tendinopathy', renderer_source)
 
-    def test_every_configured_rich_route_exists_in_registry_and_evidence_profiles_resolve(self):
+    def test_every_registry_route_has_exactly_one_rollout_classification(self):
+        rollout = self.renderer.contract_rollout_entries()
+        registry_profiles = self.bundle.registry.get("profiles") or {}
+        allowed_states = {"rich_ready", "context_gated", "evidence_limited", "pending_evidence", "protocol_owned"}
+
+        self.assertEqual(set(rollout), set(registry_profiles))
+        for profile_id, profile_spec in registry_profiles.items():
+            registry_routes = set(((profile_spec or {}).get("routes") or {}))
+            rollout_routes = set(rollout.get(profile_id) or {})
+            with self.subTest(profile=profile_id):
+                self.assertEqual(rollout_routes, registry_routes)
+            for route_id, entry in (rollout.get(profile_id) or {}).items():
+                with self.subTest(profile=profile_id, route=route_id):
+                    self.assertIn(entry.get("state"), allowed_states)
+
+    def test_only_rich_ready_routes_can_be_supported_by_shared_renderer(self):
+        rollout = self.renderer.contract_rollout_entries()
+        for profile_id, routes in rollout.items():
+            for route_id, entry in routes.items():
+                if entry.get("state") == "rich_ready":
+                    continue
+                with self.subTest(profile=profile_id, route=route_id, state=entry.get("state")):
+                    self.assertFalse(self.renderer.supports(profile_id=profile_id, route_id=route_id, subtype_id=None))
+
+    def test_every_configured_rich_route_is_rollout_ready_and_evidence_profiles_resolve(self):
         registry_profiles = self.bundle.registry.get("profiles") or {}
         known_routes = {
             route_id
@@ -80,6 +104,10 @@ class CU1SharedRichReferralTests(unittest.TestCase):
             with self.subTest(route=route_id):
                 self.assertIn(route_id, known_routes)
                 self.assertTrue(spec.get("profile_ids"))
+                for profile_id in spec.get("profile_ids") or []:
+                    self.assertEqual(self.renderer.rollout_state(profile_id=profile_id, route_id=route_id), "rich_ready")
+                    rollout_entry = self.renderer.rollout_entry(profile_id=profile_id, route_id=route_id) or {}
+                    self.assertTrue(set(spec.get("evidence_profile_ids") or []).issubset(set(rollout_entry.get("evidence_profile_ids") or [])))
                 for evidence_profile_id in spec.get("evidence_profile_ids") or []:
                     self.assertIn(evidence_profile_id, known_profiles)
                 for stage in spec.get("stages") or []:
@@ -118,11 +146,15 @@ class CU1SharedRichReferralTests(unittest.TestCase):
                 clinical_context=["πολύ μεγάλο κλινικό πλαίσιο " * 200],
             )
 
-    def test_absent_route_is_not_given_generic_rich_content(self):
+    def test_evidence_limited_route_cannot_gain_rich_authority_from_content_presence(self):
+        self.assertEqual(
+            self.renderer.rollout_state(profile_id="lumbar", route_id="nonspecific_low_back_pain"),
+            "evidence_limited",
+        )
         self.assertFalse(
             self.renderer.supports(
-                profile_id="cervical",
-                route_id="nonspecific_neck_pain",
+                profile_id="lumbar",
+                route_id="nonspecific_low_back_pain",
                 subtype_id=None,
             )
         )
