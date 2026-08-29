@@ -1,0 +1,89 @@
+version: cu1_rich_referral_content_el_v1
+status: active_runtime_authority
+runtime_authorized: true
+reviewed_on: 2026-08-29
+language: el
+max_referral_chars: 2000
+standard_detailed_target_chars: 1850
+
+purpose: >-
+  Human-reviewed Greek content projection for the shared CU-1 RichReferralPlan renderer. Route-specific
+  clinical content is data; the renderer is shared. The presence of stages is clinical/document
+  organization and must not be presented as a universal evidence-validated phase protocol unless a
+  route-specific source explicitly establishes such a protocol.
+
+governance:
+  no_generic_cross_route_fallback: true
+  therapist_execution_remains_therapist_owned: true
+  patient_specific_protocol_precedence: true
+  evidence_gap_must_remain_explicit: true
+  exact_dose_or_universal_numeric_thresholds_forbidden: true
+  passive_only_routine_plan_forbidden_unless_protocol_exception: true
+  stage_3_function_and_self_management_when_applicable: true
+
+routes:
+  lateral_elbow_tendinopathy:
+    profile_ids: [elbow]
+    evidence_profile_ids: [rep_lateral_elbow_tendinopathy_v1]
+    authority_mode: reviewed_product_shape_plus_route_specific_evidence
+    short_flow_el:
+      - >-
+        Αρχικά έλεγχος ερεθιστικότητας/φορτίου, ενεργητική κινητοποίηση και ανεκτή ισομετρική φόρτιση
+        εκτεινόντων καρπού· στη συνέχεια προοδευτική ομόκεντρη/έκκεντρη φόρτιση, δύναμη λαβής και αντοχή.
+      - >-
+        Τέλος λειτουργική/επαγγελματική επανένταξη και μείωση κινδύνου υποτροπής με διαχείριση φορτίου,
+        εργονομικές/τεχνικές προσαρμογές και πρόγραμμα διατήρησης δύναμης/αντοχής. Παθητικά μέσα μόνο
+        επικουρικά· όχι αντί ενεργητικής αποκατάστασης. Πρόοδος βάσει κλινικής/λειτουργικής ανταπόκρισης,
+        χωρίς καθολικά αριθμητικά κριτήρια.
+    stages:
+      - stage_id: early_irritability_initial_load
+        label_el: ΣΤΑΔΙΟ 1 — ΕΡΕΘΙΣΤΙΚΟΤΗΤΑ / ΑΡΧΙΚΗ ΦΟΡΤΙΣΗ
+        goals_el:
+          - μείωση πόνου/ερεθιστικότητας
+          - λειτουργική κινητικότητα
+          - έναρξη φόρτισης εκτεινόντων καρπού
+        intervention_directions_el:
+          - εκπαίδευση/διαχείριση φορτίου, εργονομική προσαρμογή όπου χρειάζεται, ενεργητική κινητοποίηση, ανεκτή ισομετρική φόρτιση
+          - Επικουρικά κρυοθεραπεία/TENS ή αναλγητικές/κινητοποιητικές τεχνικές
+        progress_markers_el:
+          - μικρότερη ερεθιστικότητα, καλύτερη ανοχή σε κίνηση, σύλληψη και αρχική φόρτιση
+        evidence_claim_ids:
+          - let_irritability_guided_load_management_2022
+          - let_ergonomic_education_load_modification_E_2022
+          - lateral_elbow_resisted_wrist_extensor_exercise
+        organization_authority: clinical_rehabilitation_organization
+      - stage_id: capacity_restoration
+        label_el: ΣΤΑΔΙΟ 2 — ΔΥΝΑΜΗ / ΑΝΤΟΧΗ / ΦΟΡΤΙΣΗ
+        goals_el:
+          - δύναμη λαβής
+          - μυϊκή αντοχή
+          - ανοχή σε επαναλαμβανόμενη χρήση
+        intervention_directions_el:
+          - προοδευτική αντιστασιακή φόρτιση εκτεινόντων με ισομετρική, ομόκεντρη και έκκεντρη κατεύθυνση· σταδιακή αύξηση μηχανικής απαίτησης
+          - Ώμος/ωμοπλάτη μόνο αν υπάρχει σχετικό έλλειμμα
+        progress_markers_el:
+          - καλύτερη δύναμη/αντοχή, φόρτιση και λειτουργία χωρίς παρατεταμένη έξαρση
+        evidence_claim_ids:
+          - lateral_elbow_resisted_wrist_extensor_exercise
+          - let_proximal_strength_if_impairment_C_2022
+          - let_no_validated_universal_dose_or_transition_2022_2024
+        organization_authority: clinical_rehabilitation_organization
+      - stage_id: functional_return_self_management
+        label_el: ΣΤΑΔΙΟ 3 — ΛΕΙΤΟΥΡΓΙΚΗ ΕΠΑΝΕΝΤΑΞΗ / ΠΡΟΛΗΨΗ ΥΠΟΤΡΟΠΗΣ
+        goals_el:
+          - επάνοδος στις καθημερινές, επαγγελματικές/αθλητικές απαιτήσεις
+          - αυτοδιαχείριση και μείωση κινδύνου υποτροπής
+        intervention_directions_el:
+          - προοδευτική έκθεση στις πραγματικές απαιτήσεις, λειτουργική χρήση/λαβή, διαχείριση φορτίου, εργονομικές/τεχνικές προσαρμογές όπου χρειάζονται και πρόγραμμα διατήρησης δύναμης/αντοχής
+        progress_markers_el:
+          - ουσιαστική λειτουργική βελτίωση, ανοχή στο συνήθες φορτίο και ικανότητα αυτοδιαχείρισης, χωρίς καθολικά αριθμητικά κριτήρια
+        evidence_claim_ids:
+          - lateral_elbow_high_demand_phased_reintroduction
+          - let_ergonomic_education_load_modification_E_2022
+          - let_no_validated_universal_dose_or_transition_2022_2024
+        organization_authority: clinical_rehabilitation_organization
+    adjunct_boundary_el: >-
+      Παθητικά μέσα μόνο επικουρικά· όχι ως υποκατάστατο ενεργητικής προοδευτικής αποκατάστασης.
+    reassessment_el: >-
+      Ιατρική επανεκτίμηση σε άτυπη πορεία ή νέο/προοδευτικό νευρολογικό, ριζιτικό, μηχανικό ή τραυματικό/ασταθές εύρημα.
+    reassessment_evidence_claim_ids: [let_atypical_differential_reassessment_2022]
