@@ -8,6 +8,7 @@ from clinic_utilities.physio_referral_runtime import CONTRACT_VERSION, CU1Contra
 
 
 ROOT = Path(__file__).resolve().parent
+MAX_REFERRAL_CHARS = 2000
 
 
 def lateral_elbow_draft():
@@ -71,9 +72,9 @@ class CU1RichLateralElbowReferralTests(unittest.TestCase):
         for stage in ("ΣΤΑΔΙΟ 1", "ΣΤΑΔΙΟ 2", "ΣΤΑΔΙΟ 3"):
             self.assertIn(stage, text)
         self.assertGreaterEqual(text.count("Στόχοι:"), 3)
-        self.assertGreaterEqual(text.count("Κατευθύνσεις για την επίτευξη των στόχων:"), 3)
-        self.assertGreaterEqual(text.count("Δείκτες"), 3)
-        self.assertIn("Κατεύθυνση μετάβασης", text)
+        self.assertGreaterEqual(text.count("Κατευθύνσεις:"), 3)
+        self.assertGreaterEqual(text.count("Δείκτες:"), 3)
+        self.assertGreaterEqual(text.count("Μετάβαση:"), 2)
 
         self.assertIn("ισομετρική", text.lower())
         self.assertIn("ομόκεντρη", text.lower())
@@ -83,6 +84,7 @@ class CU1RichLateralElbowReferralTests(unittest.TestCase):
         self.assertIn("δεν υποκαθιστούν", text.lower())
         self.assertIn("λειτουργ", text.lower())
         self.assertIn("κομμώτρια", text.lower())
+        self.assertLessEqual(len(text.rstrip("\n")), MAX_REFERRAL_CHARS)
 
     def test_detailed_let_does_not_encode_universal_dose_or_false_transition_threshold(self):
         text = self.formatter.format(lateral_elbow_draft(), "detailed")
@@ -105,7 +107,7 @@ class CU1RichLateralElbowReferralTests(unittest.TestCase):
             self.assertNotIn(fragment.lower(), lower)
         self.assertNotRegex(lower, r"\b\d+\s*(kg|κιλ(?:ό|ά)|lbs)\b")
         self.assertNotRegex(lower, r"\b\d+\s*(σετ|επαναλήψεις)\b")
-        self.assertIn("δεν εφαρμόζεται αυτόματο καθολικό αριθμητικό κριτήριο", lower)
+        self.assertIn("χωρίς καθολικά αριθμητικά κριτήρια", lower)
 
     def test_short_let_is_compact_but_preserves_methods_progression_and_passive_boundary(self):
         text = self.formatter.format(lateral_elbow_draft(), "short")
@@ -119,6 +121,14 @@ class CU1RichLateralElbowReferralTests(unittest.TestCase):
         self.assertIn("δεν υποκαθιστούν", lower)
         self.assertIn("επανένταξη", lower)
         self.assertIn("χωρίς προκαθορισμένα καθολικά αριθμητικά κριτήρια", lower)
+        self.assertLessEqual(len(text.rstrip("\n")), MAX_REFERRAL_CHARS)
+
+    def test_lateral_elbow_output_ceiling_survives_long_work_context(self):
+        draft = lateral_elbow_draft()
+        draft["patient_context"]["sport_or_work_demand_optional"] = "κομμώτρια με επαναλαμβανόμενη χρήση άνω άκρου " * 20
+        for mode in ("short", "detailed"):
+            text = self.formatter.format(draft, mode)
+            self.assertLessEqual(len(text.rstrip("\n")), MAX_REFERRAL_CHARS)
 
     def test_non_let_routes_keep_existing_formatter_path(self):
         draft = lateral_elbow_draft()
