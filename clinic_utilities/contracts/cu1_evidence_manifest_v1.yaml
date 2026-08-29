@@ -1,4 +1,4 @@
-version: cu1_evidence_manifest_v1_7
+version: cu1_evidence_manifest_v1_8
 status: design_frozen_sharded_registry_manifest
 runtime_authorized: false
 reviewed_on: 2026-08-29
@@ -72,6 +72,18 @@ shards:
     logical_amendment: clinic_utilities/contracts/cu1_evidence_route_coverage_amendments_v1.yaml
     reviewed_routes:
       - glenohumeral_instability_dislocation
+
+  - shard_id: degenerative_meniscus_route_coverage_extension
+    path: clinic_utilities/contracts/cu1_evidence_route_coverage_meniscus_v1.yaml
+    state: active_design_authority
+    identity_mode: explicit_payload_id
+    review_record: clinic_utilities/contracts/CU1_DEGENERATIVE_MENISCUS_ROUTE_REVIEW_2026-08-29.md
+    schema_conformance_reviewed: true
+    normative_read_rule: >-
+      use_only_when_symptomatic_degenerative_meniscal_lesion_has_no_unresolved_structural_surgical_indication
+      and_route_specific_PASS_fixtures_are_satisfied
+    reviewed_routes:
+      - degenerative_meniscal_lesion_conservative_rehabilitation
 
 logical_collections:
   - sources
@@ -175,6 +187,7 @@ clinical_applicability_rules:
   - material_subtype_or_context_match_is_required_when_claim_profile_or_sequence_is_scoped
   - applicability_conditions_must_be_satisfied_before_render_authority
   - unresolved_material_direction_cause_or_management_context_blocks_evidence_aware_sequence_resolution
+  - unresolved_structural_surgical_indication_or_true_locking_blocks_routine_degenerative_meniscus_sequence_resolution
   - postoperative_context_routes_to_the_procedure_specific_or_postoperative_owner_and_not_a_nonoperative_or_preoperative_route_sequence
   - regional_profile_identity_never_substitutes_for_route_evidence_profile_identity
   - a_midportion_Achilles_claim_cannot_authorize_insertional_Achilles_output
@@ -190,6 +203,7 @@ framework_governance_rules:
   - framework_conflict_prevents_silent_auto_rendering_of_one_position_as_unanimous_authority
   - no_effect_estimate_from_absent_eligible_trials_must_not_be_relabelled_as_low_or_very_low_effect_evidence
   - best_practice_opinion_must_not_be_relabelled_as_comparative_efficacy_evidence
+  - consensus_grade_must_not_be_relabelled_as_trial_certainty
   - newer_route_specific_guidance_does_not_silently_erase_an_older_still_relevant_distinct_framework
 
 freshness_rules:
@@ -228,6 +242,7 @@ readiness_gate:
     - calcific_rotator_cuff_tendinopathy
     - glenohumeral_instability_dislocation
     - glenohumeral_osteoarthritis
+    - degenerative_meniscal_lesion_conservative_rehabilitation
   logical_amendment_gate_passed: true
   all_active_authority_shards_schema_reviewed: true
   all_listed_shards_schema_reviewed: true
