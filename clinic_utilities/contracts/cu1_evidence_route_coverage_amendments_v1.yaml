@@ -1,0 +1,76 @@
+version: cu1_evidence_route_coverage_amendments_v1
+status: reviewed_logical_registry_amendments
+runtime_authorized: false
+reviewed_on: 2026-08-29
+review_record: clinic_utilities/contracts/CU1_ROUTE_COVERAGE_REVIEW_2026-08-29.md
+applies_after:
+  - core_seed_registry
+  - high_frequency_tranche2
+  - shoulder_hip_meniscus_tranche3
+  - route_coverage_extension
+  - shoulder_instability_route_coverage_extension
+
+purpose: >-
+  Narrow post-merge amendments required when route-by-route evidence review discovers that an older
+  active design profile or claim is too broad. Amendments may only narrow applicability, attach a
+  newly reviewed sequence, refresh source linkage, or suppress a scope-unsafe claim. They must not
+  rewrite historical staging or promotion artifacts.
+
+claim_amendments:
+  anterior_shoulder_instability_RTS_criteria:
+    applicable_route_ids: [glenohumeral_instability_dislocation]
+    applicable_route_evidence_profile_ids: [rep_shoulder_instability_anterior_traumatic_v1]
+    applicability_conditions_optional: [traumatic_anterior_instability_conservative_return_to_sport]
+    claim_summary: In conservatively treated traumatic anterior shoulder instability, return-to-sport decisions should require full pain-free range of motion, clinical stability without apprehension, adequate strength/endurance and sport-specific readiness rather than elapsed time alone.
+    amendment_reason: ESSKA_ESA_Question_23_is_explicitly_conservative_treatment_RTS
+
+  posterior_shoulder_nonoperative_indication_consensus:
+    applicability_conditions_optional: [posterior_instability_with_explicit_nonoperative_management_decision]
+    amendment_reason: nonoperative_consensus_must_not_be_used_before_management_context_is_explicit
+
+claim_suppressions:
+  posterior_shoulder_instability_RTS_consensus:
+    suppress_from_logical_registry_for_route_ids: [glenohumeral_instability_dislocation]
+    reason: >-
+      The 2025 Posterior Shoulder Instability Part II rehabilitation/return-to-play Delphi consensus
+      addresses postoperative rehabilitation and return to play. The companion editorial explicitly
+      notes that rehabilitation/return to play after conservative treatment was not addressed. This
+      claim therefore cannot authorize generic nonoperative posterior-instability output. The source
+      remains available for later postoperative_shoulder_rehabilitation curation.
+
+route_evidence_profile_amendments:
+  rep_shoulder_instability_anterior_traumatic_v1:
+    applicability_conditions_optional: [traumatic_anterior_instability_with_explicit_rehabilitation_pathway]
+    rehabilitation_sequence_id: seq_shoulder_instability_anterior_traumatic_v1
+    primary_source_ids:
+      - traumatic_anterior_shoulder_instability_esska_esa_2026
+      - shoulder_instability_nonoperative_clinical_concepts_2024
+    safety_claim_ids: [anterior_recurrent_surgical_context_esska_2026]
+    evidence_gaps:
+      - first_time_vs_recurrent_management_remains_material_and_is_condition_scoped_inside_the_sequence
+      - recurrent_instability_often_requires_surgical_management_context_and_rehabilitation_must_not_be_assumed_definitive
+      - bone_loss_soft_tissue_lesions_age_and_sport_demands_materially_change_management
+      - postoperative_rehabilitation_is_excluded_and_belongs_to_postoperative_shoulder_rehabilitation
+      - exact_numeric_progression_thresholds_from_the_clinical_concepts_framework_are_not_physician_auto_prescriptions
+
+  rep_shoulder_instability_posterior_v1:
+    applicability_conditions_optional: [posterior_instability_with_explicit_nonoperative_management_decision]
+    rehabilitation_sequence_id: seq_shoulder_instability_posterior_nonoperative_v1
+    primary_source_ids:
+      - posterior_shoulder_instability_consensus_part1_2025
+      - shoulder_instability_nonoperative_clinical_concepts_2024
+    safety_claim_ids: []
+    evidence_gaps:
+      - nonoperative_candidate_selection_is_expert_consensus_Level_V
+      - detailed_nonoperative_rehabilitation_framework_is_current_clinical_concepts_not_high_level_comparative_evidence
+      - postoperative_Part_II_rehabilitation_and_RTS_consensus_is_not_nonoperative_authority
+      - structural_pathology_primary_vs_recurrent_status_and_patient_preference_materially_change_management
+      - no_universal_numeric_return_threshold_is_authorized
+
+validation_assertions:
+  no_duplicate_profile_identity_created: true
+  profile_applicability_is_narrowed_not_broadened: true
+  anterior_RTS_claim_is_conservative_context_only: true
+  posterior_postoperative_RTS_claim_removed_from_generic_nonoperative_authority: true
+  existing_tranche3_history_is_preserved: true
+  runtime_authorized: false
