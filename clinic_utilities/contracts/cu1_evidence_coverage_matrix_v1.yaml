@@ -1,4 +1,4 @@
-version: cu1_evidence_coverage_matrix_v1_9
+version: cu1_evidence_coverage_matrix_v1_10
 status: active_route_by_route_work_queue
 runtime_authorized: false
 route_registry: cu1_registry_v1.yaml
@@ -7,7 +7,7 @@ active_core_registry: cu1_evidence_registry_v1.yaml
 promoted_evidence_extensions: [cu1_evidence_tranche2_v1.yaml, cu1_evidence_tranche3_v1.yaml]
 promotion_projections: [cu1_evidence_tranche2_promotion_v1.yaml, cu1_evidence_tranche3_promotion_v1.yaml]
 promotion_overlays: [cu1_evidence_tranche3_promotion_fix_v1.yaml]
-active_route_coverage_extensions: [cu1_evidence_route_coverage_v1.yaml, cu1_evidence_route_coverage_instability_v1.yaml, cu1_evidence_route_coverage_meniscus_v1.yaml]
+active_route_coverage_extensions: [cu1_evidence_route_coverage_v1.yaml, cu1_evidence_route_coverage_instability_v1.yaml, cu1_evidence_route_coverage_meniscus_v1.yaml, cu1_evidence_route_coverage_patellar_tendinopathy_v1.yaml]
 logical_amendments: [cu1_evidence_route_coverage_amendments_v1.yaml]
 staged_evidence_extensions: []
 normative_schema: cu1_history_timeline_schema_v1.yaml
@@ -215,7 +215,7 @@ profiles:
       source_state: native_active_design_authority
       shard: cu1_evidence_route_coverage_meniscus_v1.yaml
       review_record: CU1_DEGENERATIVE_MENISCUS_ROUTE_REVIEW_2026-08-29.md
-      framework_state: EU_US_2025_consensus_Grade_A_first_line_PT_plus_Grade_B_progressive_rehabilitation_with_ESCAPЕ_5y_and_OMEX_10y_randomized_support
+      framework_state: EU_US_2025_consensus_Grade_A_first_line_PT_plus_Grade_B_progressive_rehabilitation_with_ESCAPE_5y_and_OMEX_10y_randomized_support
       applicability_note: true_locking_or_other_unresolved_structural_surgical_indication_blocks_routine_sequence
       owner_boundaries: acute_traumatic_context_and_postoperative_context_use_separate_routes
     acute_isolated_meniscal_injury_nonoperative:
@@ -237,7 +237,17 @@ profiles:
       promotion_projection: cu1_evidence_tranche2_promotion_v1.yaml
       framework_state: APTA_2019_and_Dutch_multidisciplinary_2025_preserved_separately
       blocker: current_sources_support_exercise_first_and_structured_reassessment_but_exact_transition_to_running_specific_work_is_not_defined
-    patellar_tendinopathy: {status: pending}
+    patellar_tendinopathy:
+      status: profile_curated
+      sequence_status: sequence_complete
+      profile_id: rep_patellar_tendinopathy_v1
+      source_state: native_active_design_authority
+      shard: cu1_evidence_route_coverage_patellar_tendinopathy_v1.yaml
+      review_record: CU1_PATELLAR_TENDINOPATHY_ROUTE_REVIEW_2026-08-29.md
+      evidence_state: Cochrane_2025_absolute_strengthening_effect_uncertain_plus_2026_NMA_no_clinically_meaningful_loading_mode_hierarchy
+      sequence_model: single_phase_progressive_loading_with_response_based_progression_and_no_universal_numeric_RTS_threshold
+      loading_mode_behavior: eccentric_isometric_HSR_or_PTLE_are_not_mandatory_physician_protocols
+      adjunct_note: ESWT_not_auto_recommended
     quadriceps_tendinopathy: {status: pending}
     acl_injury_instability_rehabilitation:
       status: evidence_seeded
@@ -334,7 +344,6 @@ shared_owners:
 research_queue_priority:
   rationale: prioritize_routes_with_current_route_specific_guidance_and_high_real_world_frequency_while_preserving_subtype_and_management_context_boundaries
   next:
-    - patellar_tendinopathy
     - thumb_cmc1_osteoarthritis
     - cervical_routes
     - remaining_wrist_hand_and_elbow_routes
@@ -347,7 +356,7 @@ integration_state:
   tranche3_schema_conformance_reviewed: true
   tranche3_promotion_gate_passed: true
   native_route_coverage_schema_conformance_reviewed: true
-  route_coverage_reviewed_routes: [calcific_rotator_cuff_tendinopathy, glenohumeral_instability_dislocation, glenohumeral_osteoarthritis, degenerative_meniscal_lesion_conservative_rehabilitation]
+  route_coverage_reviewed_routes: [calcific_rotator_cuff_tendinopathy, glenohumeral_instability_dislocation, glenohumeral_osteoarthritis, degenerative_meniscal_lesion_conservative_rehabilitation, patellar_tendinopathy]
   logical_amendment_gate_passed: true
   all_listed_shards_schema_reviewed: true
   all_listed_shards_promotion_or_native_gate_passed: true
