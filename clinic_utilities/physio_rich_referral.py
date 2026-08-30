@@ -147,13 +147,7 @@ def _variant_matches(
 
 
 class CU1RichReferralRenderer:
-    """Shared deterministic renderer for reviewed route-specific rich-referral content.
-
-    Clinical treatment prose lives in reviewed structured content rather than route-specific Python.
-    The rollout matrix is a second fail-closed gate: merely adding prose to a content shard cannot make
-    a pending/evidence-limited/protocol-owned route eligible for rich rendering. A context-gated route
-    can render only when exactly one reviewed content variant matches explicit draft subtype/context.
-    """
+    """Shared deterministic renderer for reviewed route-specific rich-referral content."""
 
     def __init__(self, root: Optional[Path] = None):
         self.root = root or _repo_root()
@@ -335,6 +329,23 @@ class CU1RichReferralRenderer:
         )
         clinical = [_sentence(_clean_phrase(item)) for item in clinical_context if _clean_phrase(item)]
         clinical.extend(_sentence(item) for item in _context_referral_phrases(spec, context))
+
+        section_layout = spec.get("detailed_sections_el")
+        if isinstance(section_layout, list) and section_layout:
+            sections: List[str] = []
+            if clinical:
+                sections.append("ΚΛΙΝΙΚΗ ΕΙΚΟΝΑ\n" + " ".join(clinical))
+            for section in section_layout:
+                if not isinstance(section, Mapping):
+                    raise CU1ContractError(f"Invalid rich-referral detailed section for {route_id}")
+                heading = _clean_phrase(section.get("heading_el"))
+                sentences = _clean_lines(section.get("sentences_el"))
+                if not heading or not sentences:
+                    raise CU1ContractError(f"Incomplete rich-referral detailed section for {route_id}")
+                sections.append(heading + "\n" + _sentences(sentences))
+            text = "\n\n".join(sections).strip()
+            return self._enforce_limit(text, mode="detailed", route_id=route_id)
+
         sections: List[str] = []
         if clinical:
             sections.append("ΚΛΙΝΙΚΗ ΕΙΚΟΝΑ\n" + " ".join(clinical))
