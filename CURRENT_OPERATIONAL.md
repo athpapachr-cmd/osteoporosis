@@ -8,11 +8,11 @@
 > **ACTIVE CANONICAL WRITER/LOCK:** `feat/cu1-rich-referral-global-evidence-2026-08-29`.
 > **ACTIVE RUNTIME WRITER/LOCK:** `feat/cu1-rich-referral-global-evidence-2026-08-29`.
 > **Runtime authorization:** GLOBAL HORIZONTAL RICH-REFERRAL MODEL + CLINICIAN-ONLY EVIDENCE VIEW + TESTS.
-> **Latest product-correction runtime head:** `8007f9f7bddba4a75f102454c347737445bb0cea`.
-> **Latest focused CI evidence:** workflow run `33293621220` / run #364 — compile PASS, browser JavaScript syntax PASS, focused Python suite PASS.
+> **Latest product-correction runtime head:** `866025435025a76c6369883ae3efb0e5f5d29359`.
+> **Latest focused CI evidence:** workflow run `33297662822` / run #383 — compile PASS, browser JavaScript syntax PASS, focused Python suite 122/122 PASS.
 > **Deploy/merge authorization:** NO — product-owner representative output review first.
 > **Preview deployment:** NOT REQUESTED / NOT AUTHORIZED by product owner.
-> **Further route-by-route evidence rollout:** HOLD until context-gated generation behavior is product-reviewed.
+> **Further route-by-route evidence rollout:** HOLD until current referral text + hierarchical UI behavior is product-reviewed.
 > **CU-2:** NOT AUTHORIZED.
 > **PR-1 Transcript Intake:** intentionally paused.
 
@@ -94,6 +94,8 @@ Short output is a coherent narrative with flow, not a checklist. Detailed output
 10. **Reassessment remains compact but preserved** where route-specific safety or failure-to-progress authority requires it.
 11. **Selection input is not referral prose.** Checkbox/catalog selections are source data for composition and must not become the output merely because a rich plan failed to resolve.
 12. **Context-gated unresolved means generation blocked.** Missing/unsupported context must never fall through to the legacy formatter.
+13. **Clinical condition knowledge is reusable system knowledge.** Condition-specific assessment/evidence learned while building a utility must be structured so it can later support the full condition card, follow-up, referral projection, evidence view and learning/audit surfaces rather than being recreated.
+14. **Clinical card owns patient-specific facts; referral is a projection.** Future card-to-referral prefill may reuse clinician-reviewed data, but referral editing must not silently mutate the underlying clinical record.
 
 ---
 
@@ -149,7 +151,9 @@ Authorized now:
 - explicit evidence-gap behavior instead of generic fallback;
 - clinician-only evidence panel/API;
 - deterministic cross-route tests;
-- canonical/changelog/PR documentation.
+- canonical/changelog/PR documentation;
+- presentation-only hierarchical UI relevance resolution from profile → route → subtype → explicit context;
+- reusable condition-knowledge architecture for future clinical-card ↔ referral linkage.
 
 Not authorized now:
 - direct merge to `main`;
@@ -193,39 +197,87 @@ Regression coverage was updated in:
 
 The tests now reproduce deliberate context omission and unsupported contexts for frozen shoulder, post-traumatic neck, cervical dizziness and UNE rather than merely checking `renderer.supports()`.
 
-Exact runtime/test acceptance:
+The earlier wording `fail closed to the non-rich path` is explicitly superseded. For a context-gated route, **non-rich legacy fallback is not fail-closed behavior**.
+
+## 6.2 Frozen-shoulder referral prose + hierarchical dynamic UI — IMPLEMENTED / TESTED
+
+Product-owner review of the controlled feature-branch frozen-shoulder output produced three additional product corrections:
+
+1. referral prose should be Greek-only rather than exposing internal English/evidence terminology;
+2. evidence commentary such as physiotherapy-versus-natural-history uncertainty belongs in the clinician evidence view, not automatically in the referral;
+3. insufficient evidence for routine strengthening means strengthening should not be promoted into the referral core; the referral does not need a negative commentary paragraph about it.
+
+The reviewed primary frozen-shoulder rich referral now:
+- uses Greek-only clinical prose;
+- focuses on individualized mobility/ROM, function and self-management;
+- allows selected manual therapy/mobilization as an adjunct to active rehabilitation when appropriate;
+- leaves exact exercise/technique selection and dosing to the physiotherapist;
+- preserves compact medical reassessment criteria;
+- does not render fixed disease phases, fixed weeks, numeric transition thresholds, routine-strengthening prose or natural-history superiority commentary.
+
+### Optional rehabilitation-relevant irritability
+
+`frozen_shoulder_irritability` is now an optional, clinician-entered route context with:
 
 ```text
-8007f9f7bddba4a75f102454c347737445bb0cea
-workflow run 33293621220 / run #364
+high
+moderate
+low
+uncertain_or_not_assessed
+```
+
+It is never inferred from pain/ROM checkboxes. When high/moderate/low is explicitly selected it may be projected into the referral as clinically useful handoff context and may reorder the condition-relevant UI findings. It is not required to authorize the primary frozen-shoulder rich variant.
+
+### Hierarchical relevance model
+
+The coarse profile-wide UI list is now supplemented by:
+
+`clinic_utilities/contracts/cu1_ui_relevance_hierarchy_v1.yaml`
+
+with generic resolution:
+
+```text
+profile base
+→ route
+→ subtype
+→ explicit context variant
+```
+
+The browser implementation is data-driven in:
+
+`static/clinic-utilities/physio-referral/hierarchical-relevance.js`
+
+It supports only presentation-level `replace/include/exclude/prioritize` operations on existing machine option IDs and cannot create clinical authority or infer context.
+
+For the currently reviewed shoulder rich routes — primary frozen shoulder, rotator-cuff-related shoulder pain, selected instability branches and glenohumeral OA — route-specific relevant findings/functions replace the generic shoulder list. Generic goals/rehab-direction/adjunct checkbox blocks are hidden where the rich evidence plan owns the rehabilitation composition, preventing a return to checkbox-to-text serialization.
+
+The UI readiness message is also context-aware: routes with required rich context no longer state that a basic referral is already ready. Missing required rich context disables generation until the necessary route context is supplied; the API remains the authoritative fail-closed gate.
+
+### Reusable condition knowledge
+
+The future cross-product ownership rule is recorded in:
+
+`CONDITION_KNOWLEDGE_REUSE_ARCHITECTURE.md`
+
+It establishes one reusable condition knowledge model feeding clinical assessment cards, referrals, evidence views, follow-up/reassessment, longitudinal measurement and later learning/audit surfaces. The future clinical condition card is the owner of reusable patient-specific facts; physiotherapy referral data are a reviewed document projection/prefill, with no silent reverse write.
+
+Exact runtime/UI/test acceptance for this correction:
+
+```text
+866025435025a76c6369883ae3efb0e5f5d29359
+workflow run 33297662822 / run #383
 compile PASS
 browser JavaScript syntax PASS
-focused Python acceptance suite PASS
+focused Python acceptance suite 122/122 PASS
 ```
-
-### Frozen shoulder state after product correction
-
-`shoulder.adhesive_capsulitis_frozen_shoulder` remains evidence-curated for the explicit primary/formal context, but its prior product acceptance is superseded by the 2026-08-30 correction.
-
-```text
-formal_diagnosis + frozen_shoulder_scope=primary_frozen_shoulder
-→ rich referral allowed
-
-presentation-only
-secondary_or_other_stiff_shoulder
-not_stated / omitted scope
-→ generation BLOCKED
-→ no legacy referral text
-```
-
-The earlier wording `fail closed to the non-rich path` is explicitly superseded. For a context-gated route, **non-rich legacy fallback is not fail-closed behavior**.
 
 ---
 
 # 7. Exact next action
 
 1. Do not create a preview service unless the product owner later asks for one.
-2. Keep the context-gated generation correction fixed and exact-head green.
+2. Keep the context-gated generation and hierarchical relevance corrections fixed and exact-head green.
 3. Do not resume horizontal route rollout yet.
-4. Next product step is representative referral-output inspection using controlled generated examples or a later explicitly authorized preview/deployment path.
-5. Merge/deploy remains explicitly on HOLD.
+4. Next product gate is product-owner inspection of controlled generated referral examples and of the intended route/subtype/context control model.
+5. Reusable condition knowledge discovered during any later route review must be classified for future clinical-card use rather than stored only as referral-specific prose.
+6. Merge/deploy remains explicitly on HOLD.
