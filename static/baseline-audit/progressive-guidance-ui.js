@@ -50,6 +50,8 @@
 
   let historyPatientId = "";
   let historicalEncounters = [];
+  let historyLoadState = "not_loaded";
+  let historyLoadError = "";
   let lastPlan = null;
   let refreshTimer = null;
 
@@ -75,8 +77,18 @@
     return sessionStorage.getItem(ACTIVE_PATIENT_KEY) || "";
   }
 
-  function fractureEventsFromDom() {
-    return $$(".fracture-event").map(row => {
+  function liveValue(selector, persistedValue = "") {
+    const node = $(selector);
+    return node ? String(node.value ?? "") : persistedValue;
+  }
+
+  function liveTrimmedValue(selector, persistedValue = "") {
+    const node = $(selector);
+    return node ? String(node.value ?? "").trim() : persistedValue;
+  }
+
+  function fractureEventsFromDom(root = document) {
+    return $$(".fracture-event", root).map(row => {
       const event = { id: row.dataset.eventId || "" };
       $$('[data-event-field]', row).forEach(field => {
         event[field.dataset.eventField] = field.value;
@@ -88,17 +100,19 @@
   function currentCaseSnapshot() {
     const base = activeCase() || {};
     const fractureHistory = { ...(base.fracture_history || {}) };
+
     const intervalNode = $("#intervalFractureStatus");
-    if (intervalNode) fractureHistory.interval_fracture_status = intervalNode.value || fractureHistory.interval_fracture_status || "";
-    const liveFractureEvents = fractureEventsFromDom();
-    if (liveFractureEvents.length) fractureHistory.events = liveFractureEvents;
+    if (intervalNode) fractureHistory.interval_fracture_status = String(intervalNode.value ?? "");
+
+    const fractureRoot = $("#fractureEvents");
+    if (fractureRoot) fractureHistory.events = fractureEventsFromDom(fractureRoot);
 
     return {
       ...base,
       internal_uuid: base.internal_uuid || activeUuid(),
-      encounter_archetype: $("#encounterArchetype")?.value || base.encounter_archetype || "",
-      encounter_date: $("#encounterDate")?.value || base.encounter_date || "",
-      quick_notes: $("#quickNotes")?.value?.trim() || base.quick_notes || "",
+      encounter_archetype: liveValue("#encounterArchetype", base.encounter_archetype || ""),
+      encounter_date: liveValue("#encounterDate", base.encounter_date || ""),
+      quick_notes: liveTrimmedValue("#quickNotes", base.quick_notes || ""),
       fracture_history: fractureHistory
     };
   }
@@ -113,6 +127,32 @@
     if (!res.ok) throw new Error(`Historical encounters unavailable (${res.status})`);
     const body = await res.json();
     return Array.isArray(body) ? body : [];
+  }
+
+  function historyStateSnapshot() {
+    return {
+      status: historyLoadState,
+      patient_id: historyPatientId || null,
+      encounter_count: historicalEncounters.length,
+      error_present: Boolean(historyLoadError)
+    };
+  }
+
+  function longitudinalMetaText(context = {}) {
+    const patientId = activePatientId();
+    if (!patientId) {
+      return "Δεν έχει φορτωθεί protected patient — η ροή βασίζεται μόνο στο τρέχον local encounter.";
+    }
+    if (historyLoadState === "loading") {
+      return "Φορτώνεται το προηγούμενο protected ιστορικό. Η σημερινή local ροή παραμένει διαθέσιμη, αλλά το longitudinal context δεν είναι ακόμη πλήρες.";
+    }
+    if (historyLoadState === "unavailable") {
+      return "Δεν ήταν δυνατή η φόρτωση του προηγούμενου protected ιστορικού. Μην θεωρήσεις ότι δεν υπάρχουν προηγούμενες επισκέψεις ή εκκρεμότητες.";
+    }
+    if (historyLoadState !== "loaded") {
+      return "Το προηγούμενο protected ιστορικό δεν έχει φορτωθεί ακόμη. Δεν εξάγεται συμπέρασμα απουσίας ιστορικού.";
+    }
+    return `${context.prior_encounter_count || 0} προηγούμενες ολοκληρωμένες/τροποποιημένες επισκέψεις${context.latest_prior_encounter_date ? ` · τελευταία ${context.latest_prior_encounter_date}` : ""}`;
   }
 
   function cardsForDomain(domain) {
@@ -209,11 +249,12 @@
       root.appendChild(empty);
     }
 
-    const patientId = activePatientId();
-    const priorText = patientId
-      ? `${context.prior_encounter_count} προηγούμενες ολοκληρωμένες/τροποποιημένες επισκέψεις${context.latest_prior_encounter_date ? ` · τελευταία ${context.latest_prior_encounter_date}` : ""}`
-      : "Δεν έχει φορτωθεί protected patient — η ροή βασίζεται μόνο στο τρέχον local encounter.";
-    addTextRow(root, "progressive-guidance-meta", "Longitudinal context: ", priorText);
+    addTextRow(
+      root,
+      historyLoadState === "unavailable" ? "progressive-guidance-conflict" : "progressive-guidance-meta",
+      "Longitudinal context: ",
+      longitudinalMetaText(context)
+    );
 
     const cards = plan?.ordered_cards || [];
     if (cards.length) {
@@ -254,10 +295,10 @@
     const current = currentCaseSnapshot();
     const projection = core.buildLongitudinalProjection(historicalEncounters, { currentInternalUuid: current.internal_uuid || "" });
     const context = core.buildEncounterContext(current, projection, {
-      encounter_archetype: $("#encounterArchetype")?.value || "",
-      encounter_date: $("#encounterDate")?.value || "",
-      visit_context_text: $("#quickNotes")?.value?.trim() || "",
-      interval_fracture_status: $("#intervalFractureStatus")?.value || ""
+      encounter_archetype: liveValue("#encounterArchetype", ""),
+      encounter_date: liveValue("#encounterDate", ""),
+      visit_context_text: liveTrimmedValue("#quickNotes", ""),
+      interval_fracture_status: liveValue("#intervalFractureStatus", "")
     });
     const plan = core.buildVisitPlan(context);
     lastPlan = plan;
@@ -278,18 +319,35 @@
     if (!patientId) {
       historyPatientId = "";
       historicalEncounters = [];
+      historyLoadState = "not_loaded";
+      historyLoadError = "";
       scheduleRender(0);
       return;
     }
-    if (!force && patientId === historyPatientId && historicalEncounters.length) {
+
+    if (!force && patientId === historyPatientId && historyLoadState === "loaded") {
       scheduleRender(0);
       return;
     }
-    historyPatientId = patientId;
+
+    const requestedPatientId = patientId;
+    historyPatientId = requestedPatientId;
+    historicalEncounters = [];
+    historyLoadState = "loading";
+    historyLoadError = "";
+    scheduleRender(0);
+
     try {
-      historicalEncounters = await fetchHistoricalEncounters(patientId);
-    } catch {
+      const rows = await fetchHistoricalEncounters(requestedPatientId);
+      if (activePatientId() !== requestedPatientId || historyPatientId !== requestedPatientId) return;
+      historicalEncounters = rows;
+      historyLoadState = "loaded";
+      historyLoadError = "";
+    } catch (error) {
+      if (activePatientId() !== requestedPatientId || historyPatientId !== requestedPatientId) return;
       historicalEncounters = [];
+      historyLoadState = "unavailable";
+      historyLoadError = error?.message || "history unavailable";
     }
     scheduleRender(0);
   }
@@ -319,7 +377,10 @@
 
   window.ProgressiveGuidanceUI = Object.freeze({
     refresh: () => refreshHistory({ force: true }),
-    getLastPlan: () => lastPlan
+    getLastPlan: () => lastPlan,
+    getHistoryLoadState: () => historyStateSnapshot(),
+    getLongitudinalMetaText: context => longitudinalMetaText(context),
+    getCurrentCaseSnapshot: () => currentCaseSnapshot()
   });
 
   if (!document.querySelector('link[data-progressive-guidance-style]')) {
