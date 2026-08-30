@@ -1,4 +1,4 @@
-# SLICE_PLAN_CURRENT.md — CU-1 global rich referral + evidence panel v1.18
+# SLICE_PLAN_CURRENT.md — CU-1 global rich referral + evidence panel v1.19
 
 > **STATUS:** ACTIVE RUNTIME IMPLEMENTATION — GLOBAL HORIZONTAL ROLLOUT.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
@@ -57,23 +57,28 @@ Do not add redundant labels such as `Κύριο πρόβλημα:`, `Κλινι�
 
 # 3. Shared Rich Rehabilitation Document Model
 
-The normalized render model is:
+The normalized render model remains route-data driven and supports two clinically appropriate detailed organizations:
 
 ```text
 RichReferralPlan
 ├── clinical_context
-├── stages[]
-│   ├── stage_label
-│   ├── goals[]
-│   ├── intervention_directions[]
-│   └── progress_markers[]
+├── staged_layout_optional
+│   └── stages[]
+│       ├── stage_label
+│       ├── goals[]
+│       ├── intervention_directions[]
+│       └── progress_markers[]
+├── section_layout_optional
+│   └── detailed_sections[]
+│       ├── heading
+│       └── sentences[]
 ├── adjunct_boundary_optional
 ├── reassessment_optional
 ├── evidence_state
 └── evidence_source_ids[]
 ```
 
-The default conceptual organization for ordinary musculoskeletal rehabilitation is:
+The default conceptual organization for ordinary musculoskeletal rehabilitation may be staged:
 
 ```text
 1. Early management / symptom or tissue irritability / mobility / initial activation
@@ -81,7 +86,9 @@ The default conceptual organization for ordinary musculoskeletal rehabilitation 
 3. Functional reintegration / actual activity demands / self-management / recurrence-risk reduction
 ```
 
-This is **document organization**, not a universal three-phase evidence claim. Routes may use fewer/different stages when their actual authority, healing state, neurological context or written protocol requires it.
+This is **document organization**, not a universal three-phase evidence claim. Routes may use fewer/different stages, or a section-based referral layout, when their actual authority and product wording are better represented without artificial stages.
+
+A route with no clinically meaningful staged progression must not display `ΣΤΑΔΙΟ 1` merely because the renderer historically required a stage object.
 
 ---
 
@@ -98,15 +105,9 @@ Route-specific examples of possible intervention families include:
 - selected manual, orthotic, taping, electrotherapeutic or other adjuncts only within their evidence/applicability boundary;
 - postoperative/fracture/healing protection only from explicit route/protocol authority.
 
-Stage 3 should include both:
+Stage 3 should include both functional return and recurrence-risk reduction/self-management when clinically appropriate; this rule does not force a three-stage visual layout.
 
-```text
-functional return
-+
-recurrence-risk reduction / self-management
-```
-
-when clinically appropriate. Typical components are load management, relevant ergonomic/technical adaptation, maintenance of required strength/endurance/control and a self-management strategy. These must not be falsely presented as proven recurrence-prevention interventions when the source only supports broader self-management/load modification.
+Evidence complexity may remain high internally while referral prose should remain clinically simple, useful and physician-to-physiotherapist appropriate.
 
 ---
 
@@ -141,36 +142,11 @@ Add an expandable panel labelled:
 
 It is separate from the GeSY referral text and is not copied/printed with it by default.
 
-For the currently selected route/subtype/context show:
-
-```text
-Core sources
-- title
-- organization/authors
-- year/version
-- reference
-- DOI/link when available
-- freshness / reviewed-on
-
-Relevant claims
-- human-readable claim summary
-- recommendation direction
-- strength/certainty when available
-- domain
-- whether it supports referral core or is clinician-only/execution detail
-
-Evidence gaps / conflicts
-- explicit limitations
-- blocked evidence state where applicable
-```
-
-The panel must not expose internal IDs as its primary user-facing content.
+For the currently selected route/subtype/context show source identity, applicable claims, strength/certainty, freshness and explicit gaps/conflicts. Internal IDs must not be primary user-facing content.
 
 ---
 
 # 7. Route-class exceptions
-
-The global renderer must explicitly support exceptions rather than forcing every route through the LET pattern.
 
 ### Postoperative / fracture / tissue-healing
 Written protocol, healing, weight-bearing, ROM or loading restrictions override generic active progression. Time may appear only when supplied by authoritative protocol/healing instruction.
@@ -182,7 +158,7 @@ Do not invent tendon-style loading stages. Progressive objective neurological de
 If reviewed evidence does not support a route-specific rehabilitation sequence, show the evidence limitation to the clinician and do not fabricate a complete treatment pathway.
 
 ### Context-gated routes
-A `context_gated` route may generate referral text only when explicit clinician-entered subtype/context resolves to exactly one reviewed rich-referral variant. Missing, unresolved, unsupported or multiply-matched context must **block referral generation**. It must never degrade to the legacy checkbox/list formatter merely because rich authority did not resolve.
+A `context_gated` route may generate referral text only when explicit clinician-entered subtype/context resolves to exactly one reviewed rich-referral variant. Missing, unresolved, unsupported or multiply-matched context must **block referral generation**. It must never degrade to the legacy checkbox/list formatter.
 
 ```text
 context_gated + exact reviewed variant
@@ -192,10 +168,6 @@ context_gated + no exact reviewed variant
 → formatter_blocked
 → explicit context/evidence validation state
 → text = null
-
-NEVER
-context_gated + no exact reviewed variant
-→ legacy generic referral
 ```
 
 ### Pediatric / growth-related routes
@@ -205,11 +177,26 @@ Preserve age/skeletal-maturity and condition-specific load-management boundaries
 
 # 8. Short vs Detailed
 
-Both outputs must be generated from the same `RichReferralPlan`.
+Both outputs must be generated from the same reviewed route truth.
 
-**Short:** flowing prose with beginning → progression → functional/prevention endpoint. It should retain the core intervention method and not collapse to generic goals.
+**Short:** flowing prose with clinical context plus the minimum useful rehabilitation direction. It may use direct referral language such as `Παρακαλώ για ...` when this is the product-owner approved physician-referral register.
 
-**Detailed:** compact staged format with `Στόχοι`, `Κατευθύνσεις`, `Πρόοδος`; no transition paragraphs; no separate routine monitoring section; concise adjunct/reassessment tail.
+**Detailed:** may be either:
+
+```text
+staged rehabilitation layout
+```
+
+or:
+
+```text
+ΚΛΙΝΙΚΗ ΕΙΚΟΝΑ
+ΣΤΟΧΟΙ ΑΠΟΚΑΤΑΣΤΑΣΗΣ
+ΚΑΤΕΥΘΥΝΣΗ ΦΥΣΙΟΘΕΡΑΠΕΙΑΣ
+ΕΠΑΝΕΚΤΙΜΗΣΗ
+```
+
+when a disease does not justify artificial stage labels. Both layouts remain data-driven through the shared renderer; no disease-specific Python formatter branch is authorized.
 
 ---
 
@@ -228,7 +215,7 @@ CONTENT
 - no orphan goals
 - goal → intervention linkage
 - materially route-specific content
-- Stage 3 return + self-management/recurrence-risk reduction when appropriate
+- no artificial stage numbering when section layout is selected
 - passive-only care cannot satisfy routine rehabilitation unless route/protocol prevents active progression
 
 PRECISION
@@ -242,11 +229,10 @@ FACTUALITY
 - no unselected findings/deficits
 - no diagnosis from findings alone
 - not assessed != normal
+- optional context values marked uncertain/not assessed must not be printed as if clinically established
 
 EVIDENCE GOVERNANCE
 - every evidence-derived rendered element resolves to applicable authority
-- source class / recommendation direction / strength / certainty preserved
-- conflicting frameworks are not silently hybridized
 - therapist execution detail does not leak into referral
 - evidence gaps are visible, not filled
 
@@ -255,7 +241,6 @@ DUAL OUTPUT
 
 CLINICIAN EVIDENCE UI
 - references are human readable
-- DOI/source links available when stored
 - evidence gaps/freshness visible
 - panel content is excluded from referral copy/print by default
 ```
@@ -275,13 +260,9 @@ CLINICIAN EVIDENCE UI
 
 ---
 
-# 11. Product-acceptance correction — 2026-08-30
+# 11. Product-acceptance correction — context-gated fallback — 2026-08-30
 
-Product-owner browser review demonstrated that the prior implementation interpreted "fail closed" incorrectly for context-gated routes: unresolved rich authority was allowed to fall through to the legacy formatter, which serialized selected findings/goals into superficially polished but clinically low-value prose.
-
-That behavior is a product defect, not an acceptable fallback mode.
-
-The corrected invariant is now part of the active slice design:
+Product-owner browser review demonstrated that unresolved rich authority must never fall through to the legacy formatter.
 
 ```text
 SELECTION INPUT != REFERRAL TEXT
@@ -289,4 +270,27 @@ UNRESOLVED CONTEXT != PERMISSION FOR LEGACY FALLBACK
 CONTEXT-GATED FAILURE MUST BLOCK GENERATION
 ```
 
-Regression coverage must reproduce real clinician behavior, including deliberate omission of a context field, and assert the final generation state rather than checking only whether the rich renderer itself matched.
+Regression coverage reproduces real clinician behavior, including deliberate omission of a context field, and asserts the final API generation state.
+
+---
+
+# 12. Product-acceptance correction — frozen-shoulder referral wording — 2026-08-30
+
+The primary frozen-shoulder output is the first route explicitly approved for a section-based Detailed layout rather than an artificial single-stage layout.
+
+Approved product boundaries:
+
+- Greek-only referral prose;
+- direct physician-referral register (`Παρακαλώ για ...`);
+- optional explicitly clinician-entered irritability may appear as `Κλινική ερεθιστικότητα: υψηλή/μέτρια/χαμηλή`;
+- uncertain/not-assessed irritability is omitted from referral prose;
+- mobility/available ROM/function are the referral core;
+- mobilization may be supplementary when appropriate;
+- exact exercise/technique choice and dosing remain physiotherapist-owned;
+- no routine strengthening recommendation;
+- no natural-history evidence commentary in the referral;
+- no fixed phases/weeks/numeric transition criteria;
+- no `ΣΤΑΔΙΟ 1` when there is no true staged pathway;
+- medical reassessment remains compact and explicit.
+
+The shared renderer therefore supports a generic `detailed_sections_el` content structure in addition to staged content. This is a reusable layout capability, not a frozen-shoulder-specific formatter branch.
