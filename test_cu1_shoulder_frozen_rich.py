@@ -1,11 +1,17 @@
 from __future__ import annotations
 
+import os
 import unicodedata
 import unittest
 from pathlib import Path
+from unittest.mock import patch
+
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 
 from clinic_utilities.physio_evidence_api import contextual_evidence_summary
 from clinic_utilities.physio_evidence_runtime import CU1ClinicianEvidenceResolver
+from clinic_utilities.physio_referral_api import build_cu1_physio_referral_router
 from clinic_utilities.physio_referral_formatter_el_v2 import CU1GreekReferralFormatter
 from clinic_utilities.physio_referral_runtime import CONTRACT_VERSION, CU1ContractBundle, CU1ContractError
 from clinic_utilities.physio_rich_referral import CU1RichReferralRenderer
@@ -163,6 +169,25 @@ class CU1PrimaryFrozenShoulderRichTests(unittest.TestCase):
             ["primary_problem.context.frozen_shoulder_scope"],
         )
         self.assertTrue(result.formatter_blocked)
+
+    def test_missing_scope_generate_endpoint_returns_no_referral_text(self):
+        app = FastAPI()
+        app.include_router(build_cu1_physio_referral_router())
+        with patch.dict(os.environ, {"CLINICAL_DATA_KEY": "cu1-test-key"}, clear=False):
+            with TestClient(app) as client:
+                response = client.post(
+                    "/clinical/clinic-utilities/physio-referral/api/generate",
+                    headers={"X-Clinical-Key": "cu1-test-key"},
+                    json={"draft": frozen_draft(scope=None), "mode": "detailed"},
+                )
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertTrue(payload["formatter_blocked"])
+        self.assertIsNone(payload["text"])
+        self.assertIn(
+            "rich_referral_context_required",
+            [item["error_id"] for item in payload["validation_errors"]],
+        )
 
     def test_rich_output_does_not_invent_fixed_stages_dose_or_mandatory_strengthening(self):
         result = self._validate()
