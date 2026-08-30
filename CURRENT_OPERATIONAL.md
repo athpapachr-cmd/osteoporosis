@@ -1,119 +1,69 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** ACTIVE — CU-1 CLINICAL-CONTEXT COMPOSITION.
+> **STATUS:** CU-1 CLINICAL-CONTEXT COMPOSITION — IMPLEMENTED / TESTED / PRODUCT REVIEW GATE.
 > **Updated:** 2026-08-30 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Verified remote `main`:** `08ecd3ab33e98d567c47042a8a1de482df6952b9`.
-> **Branch head at composition-slice claim:** `0a17856ae2d0d7737ad3748711676cdc34297b2d`.
 > **ACTIVE CANONICAL WRITER/LOCK:** `feat/cu1-rich-referral-global-evidence-2026-08-29`.
-> **ACTIVE RUNTIME WRITER/LOCK:** `feat/cu1-rich-referral-global-evidence-2026-08-29`.
-> **Runtime authorization:** shared/data-driven clinical-context composition + exact frozen-shoulder integration + deterministic tests only.
-> **Latest previously accepted runtime head:** `917f38704745aeec48d8e332bdf5f1d23c82a26d`.
-> **Latest previously accepted CI evidence:** workflow run `33303230721` / run #389 — compile PASS, browser JavaScript syntax PASS, focused Python suite PASS.
+> **ACTIVE RUNTIME WRITER/LOCK:** `feat/cu1-rich-referral-global-evidence-2026-08-29` — HOLD except for product-owner-requested correction of this slice.
+> **Composition implementation commit:** `38f7977811d50636a1585225c74306bef496601c`.
+> **Accepted exact-head test commit:** `9b46623b2c991df631698bf018749550dd843f87`.
+> **CI evidence:** workflow `CU-1 focused tests`, run `33306399908` / run #394 — compile PASS, browser JavaScript syntax PASS, Python suite 127/127 PASS.
 > **Merge/deploy authorization:** NO.
 > **Preview deployment:** NOT REQUESTED / NOT AUTHORIZED.
-> **Further route-by-route rollout:** HOLD until the clinical-context composer is product-reviewed and exact-head tested.
+> **Further route-by-route rollout:** HOLD pending product-owner review of the composed referral output.
 > **CU-2 / PR-1:** HOLD.
 
 ---
 
-# 1. Current product problem
+# 1. Current state
 
-The frozen-shoulder rehabilitation content and section-based rich renderer are already accepted, but the opening clinical context still serializes selected findings/functions too literally.
+The initial rich-referral clinical-context serialization defect has been corrected on the active feature branch.
 
-Canonical product rule:
+Canonical product rule now has a concrete runtime implementation:
 
 ```text
 SELECTION INPUT != REFERRAL TEXT
 ```
 
-Current defect:
+Implemented seam:
 
 ```text
-validated structured selections
-→ label lookup
-→ joined phrases
-→ checklist-like clinical opening
+validated normalized ReferralDraftV1
+→ shared deterministic CU1ClinicalContextComposer
+→ reviewed selected-fact fusion/subsumption
+→ composed clinical-context sentences
+→ existing CU1RichReferralRenderer
+→ Short / Detailed referral
 ```
 
-Required behavior:
-
-```text
-validated structured selections
-→ deterministic clinical composition
-→ natural physician-to-physiotherapist clinical prose
-```
-
-No patient fact may be invented. Composition may fuse or subsume selected facts only when a reviewed declarative rule explicitly supports that transformation.
+No patient-specific fact is introduced from diagnosis or route identity alone. Unselected findings/functions remain unrendered. Unsupported combinations are not guessed.
 
 ---
 
-# 2. Proven state preserved
+# 2. Implemented architecture
 
-Already IMPLEMENTED / TESTED before this slice:
+Implemented and tested:
 
-- rich referral renderer with staged and section-based Detailed layouts;
-- context-gated fail-closed behavior (`formatter_blocked=true`, `text=null` when required rich context is unresolved);
-- primary frozen shoulder rich generation only for clinician-established primary frozen shoulder;
-- optional clinician-entered `frozen_shoulder_irritability` with no inference from findings;
-- frozen-shoulder Greek physician-referral wording and section structure;
-- hierarchical UI relevance (`profile → route → subtype → explicit context`);
-- clinician-only evidence panel and route-specific rich content architecture.
+- shared `clinic_utilities/physio_clinical_composition.py`;
+- versioned normative `clinic_utilities/contracts/cu1_clinical_composition_el_v1.yaml`;
+- manifest precedence for clinical-context composition;
+- route-data grammar hook for a reviewed problem phrase without route-specific Python branching;
+- deterministic priority-ordered finding/function fusion rules;
+- explicit `consume` and `suppress_if_matched` semantics;
+- residual selected facts preserved through existing clinician-facing Greek labels;
+- integration at the formatter → rich-renderer seam;
+- exact frozen-shoulder Short/Detailed golden outputs;
+- partial-selection/no-invention regression tests;
+- existing context-gated `formatter_blocked=true` / `text=null` behavior preserved.
 
-Not yet proven:
-
-- natural shared composition of the initial clinical context.
-
----
-
-# 3. Exact authorized implementation
-
-Authorized now:
-
-1. introduce one shared deterministic clinical-context composer;
-2. add a versioned declarative Greek composition contract;
-3. allow route data to provide a grammar-ready problem phrase for the shared composer;
-4. add reviewed fusion/subsumption rules for compatible selected facts;
-5. integrate the composer at the existing formatter → rich-renderer seam;
-6. preserve selected-facts-only / no-invention behavior;
-7. add focused exact-output and partial-selection regression tests;
-8. update workflow coverage and canonical state.
-
-The implementation must remain generic. A Python branch such as:
-
-```text
-if route_id == adhesive_capsulitis_frozen_shoulder
-```
-
-is forbidden.
-
-Route-specific language data is allowed because clinical grammar/content belongs in reviewed data, not in disease-specific formatter code.
+The composer source contains no `adhesive_capsulitis_frozen_shoulder` / frozen-shoulder treatment branch.
 
 ---
 
-# 4. Composition safety contract
+# 3. Frozen-shoulder accepted test case
 
-The shared composer must obey:
-
-```text
-selected fact → may appear directly
-selected compatible fact set → may be fused by an explicit reviewed rule
-selected more-general fact → may be suppressed only by explicit reviewed subsumption
-unselected fact → must not appear as patient-specific clinical truth
-ambiguous/unsupported combination → no invented resolution
-```
-
-Fusion rules must declare their required IDs, consumed IDs and any explicitly subsumed IDs. More-specific rules must resolve before less-specific overlapping rules.
-
-Residual facts that are not safely composable remain represented using existing clinician-facing labels rather than being guessed into new prose.
-
-`frozen_shoulder_irritability` remains explicit context and is never inferred from pain/ROM selections.
-
----
-
-# 5. Frozen-shoulder acceptance target
-
-For the realistic selected case:
+For:
 
 ```text
 formal diagnosis
@@ -130,16 +80,52 @@ driving difficulty
 high irritability
 ```
 
-the clinical opening should read naturally, beginning approximately:
+the runtime output is locked by exact deterministic tests to begin:
 
 ```text
 Ασθενής με συμφυτική θυλακίτιδα / παγωμένο ώμο δεξιά,
 με επώδυνο και περιορισμένο ενεργητικό και παθητικό εύρος κίνησης.
 Λειτουργικά αναφέρεται δυσκολία σε δραστηριότητες πάνω από το ύψος του ώμου,
 στην άρση ή μεταφορά φορτίου και στην οδήγηση.
+Κλινική ερεθιστικότητα: υψηλή.
 ```
 
-The exact Short/Detailed full outputs must be locked by deterministic tests.
+The generic `pain` selection is subsumed only when the complete reviewed painful-ROM fusion matches. Partial selection remains literal/safe and does not invent passive ROM, painful ROM, lifting/carrying or driving.
+
+---
+
+# 4. Test evidence
+
+First implementation CI at `38f7977811d50636a1585225c74306bef496601c` correctly exposed one obsolete grammatical oracle: a pre-composition test still required nominative `παγωμένος ώμος` although the natural sentence requires accusative `παγωμένο ώμο`.
+
+The obsolete assertion was corrected without changing the desired runtime output.
+
+Accepted exact-head evidence:
+
+```text
+head: 9b46623b2c991df631698bf018749550dd843f87
+workflow: CU-1 focused tests
+run id: 33306399908
+run number: 394
+compile: PASS
+browser JavaScript syntax: PASS
+Python focused suite: 127/127 PASS
+```
+
+---
+
+# 5. Status matrix
+
+```text
+DESIGNED                   YES
+IMPLEMENTED                YES
+TESTED                     YES
+PRODUCT-OWNER REVIEWED     PENDING
+MERGED                     NO
+DEPLOYED                   NO
+PREVIEWED                  NO
+PRODUCTION-SMOKE-VERIFIED  NO
+```
 
 ---
 
@@ -161,10 +147,8 @@ Do not:
 # 7. Exact next action
 
 ```text
-canonical claim
-→ implement shared composer + declarative rules
-→ exact-output/partial-selection tests
-→ exact-head CI
-→ update CURRENT_OPERATIONAL + append changelog
-→ STOP for product-owner review
+show actual Short + Detailed outputs to product owner
+→ product-owner clinical wording review
+→ if accepted: keep slice closed and decide separately whether/when to merge
+→ if specific defect identified: bounded correction on same writer branch + exact-head CI
 ```
