@@ -1,17 +1,18 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
 > **STATUS:** ACTIVE — CU-1 GLOBAL RICH PHYSIOTHERAPY REFERRAL + CLINICIAN EVIDENCE PANEL.
-> **Updated:** 2026-08-29 Asia/Nicosia.
+> **Updated:** 2026-08-30 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Verified remote `main`:** `08ecd3ab33e98d567c47042a8a1de482df6952b9`.
 > **Approved LET prototype parent:** `feat/cu1-rich-referral-lateral-elbow-2026-08-29` @ `aebfb5a6ee14a0e44d80dd6183a1877d74567b46`.
 > **ACTIVE CANONICAL WRITER/LOCK:** `feat/cu1-rich-referral-global-evidence-2026-08-29`.
 > **ACTIVE RUNTIME WRITER/LOCK:** `feat/cu1-rich-referral-global-evidence-2026-08-29`.
 > **Runtime authorization:** GLOBAL HORIZONTAL RICH-REFERRAL MODEL + CLINICIAN-ONLY EVIDENCE VIEW + TESTS.
-> **Latest clinically tested head before docs-only closeout:** `3364d1b6f9e749ccad8bac059a4cb6d5b54d4ed4`.
-> **Latest focused CI evidence:** workflow run `33268968382` / run #357 — compile PASS, browser JavaScript syntax PASS, Python acceptance suite **116/116 PASS**.
-> **Deploy/merge authorization:** NO — global coverage review and product-owner representative output review first.
-> **Further route-by-route evidence research:** HOLD unless a concrete evidence gap blocks safe global rendering.
+> **Latest product-correction runtime head:** `8007f9f7bddba4a75f102454c347737445bb0cea`.
+> **Latest focused CI evidence:** workflow run `33293621220` / run #364 — compile PASS, browser JavaScript syntax PASS, focused Python suite PASS.
+> **Deploy/merge authorization:** NO — product-owner representative output review first.
+> **Preview deployment:** NOT REQUESTED / NOT AUTHORIZED by product owner.
+> **Further route-by-route evidence rollout:** HOLD until context-gated generation behavior is product-reviewed.
 > **CU-2:** NOT AUTHORIZED.
 > **PR-1 Transcript Intake:** intentionally paused.
 
@@ -91,6 +92,8 @@ Short output is a coherent narrative with flow, not a checklist. Detailed output
 8. **Short and Detailed are two renderings of the same clinical truth.**
 9. **Stage 3 includes both function and prevention.** Where clinically applicable, return to actual daily/work/sport demands is paired with load self-management, relevant ergonomic/technical modification and maintenance of required capacity to reduce recurrence risk.
 10. **Reassessment remains compact but preserved** where route-specific safety or failure-to-progress authority requires it.
+11. **Selection input is not referral prose.** Checkbox/catalog selections are source data for composition and must not become the output merely because a rich plan failed to resolve.
+12. **Context-gated unresolved means generation blocked.** Missing/unsupported context must never fall through to the legacy formatter.
 
 ---
 
@@ -150,68 +153,79 @@ Authorized now:
 
 Not authorized now:
 - direct merge to `main`;
-- deployment before exact-head review;
+- deployment or preview deployment without explicit product-owner instruction;
 - weakening route/subtype safety gates;
 - runtime interpretation of profile Markdown for trigger/validation logic;
 - inventing evidence to make every route appear complete;
 - persistence changes;
 - CU-2 or PR-1 restart.
 
-## 6.1 Frozen shoulder route — CLOSED / TESTED ON FEATURE BRANCH
+## 6.1 Product acceptance defect — context-gated legacy fallback — CORRECTED / TESTED
 
-`shoulder.adhesive_capsulitis_frozen_shoulder` is complete for the currently approved CU-1 rich-referral scope.
+Product-owner browser testing on 2026-08-30 intentionally omitted `frozen_shoulder_scope` while generating a frozen-shoulder referral. The deployed/main formatter produced a generic checklist-like referral. Inspection of the feature branch then identified the same architectural defect in its fallback path: when a context-gated rich variant did not resolve, `physio_referral_formatter_el_v2.py` could call the legacy formatter.
 
-Validated behavior:
+That behavior is now forbidden horizontally.
+
+Corrected runtime behavior:
+
+```text
+context_gated route
++ exactly one reviewed rich variant resolves
+→ formatter allowed
+→ rich route-specific referral
+
+context_gated route
++ missing / unresolved / unsupported context
+→ validation error: rich_referral_context_required
+→ formatter_blocked = true
+→ no referral text from the API
+→ direct formatter fallback also raises CU1ContractError
+```
+
+The correction is implemented in:
+- `clinic_utilities/physio_route_context.py` — validation-level context gate;
+- `clinic_utilities/physio_referral_formatter_el_v2.py` — defense-in-depth ban on legacy fallback.
+
+Regression coverage was updated in:
+- `test_cu1_route_context_intake.py`;
+- `test_cu1_wording_labels_and_une.py`;
+- `test_cu1_shoulder_frozen_rich.py`.
+
+The tests now reproduce deliberate context omission and unsupported contexts for frozen shoulder, post-traumatic neck, cervical dizziness and UNE rather than merely checking `renderer.supports()`.
+
+Exact runtime/test acceptance:
+
+```text
+8007f9f7bddba4a75f102454c347737445bb0cea
+workflow run 33293621220 / run #364
+compile PASS
+browser JavaScript syntax PASS
+focused Python acceptance suite PASS
+```
+
+### Frozen shoulder state after product correction
+
+`shoulder.adhesive_capsulitis_frozen_shoulder` remains evidence-curated for the explicit primary/formal context, but its prior product acceptance is superseded by the 2026-08-30 correction.
 
 ```text
 formal_diagnosis + frozen_shoulder_scope=primary_frozen_shoulder
-→ context-gated rich referral + exact clinician evidence projection
+→ rich referral allowed
 
 presentation-only
 secondary_or_other_stiff_shoulder
-not_stated / unresolved scope
-→ no primary-frozen-shoulder rich authority; fail closed to the non-rich path / evidence-context gap
+not_stated / omitted scope
+→ generation BLOCKED
+→ no legacy referral text
 ```
 
-The rich projection is deliberately a **single evidence-bounded organizational stage** for individualized mobility/ROM, function and self-management. It is not a `freezing → frozen → thawing` protocol and contains no universal treatment duration, fixed ROM threshold or disease-stage transition rule.
-
-Evidence-scope boundaries remain locked:
-- manual therapy including ROM may be considered within primary frozen shoulder authority;
-- self-stretching remains `therapist_execution_detail` and no fixed dose is generated;
-- strengthening is not a mandatory routine direction because current evidence is insufficient/very low certainty;
-- BESS uncertainty about supervised physiotherapy versus natural history remains visible and is not converted into a superiority claim;
-- post-injection physiotherapy remains a context-specific evidence claim and is not auto-rendered into the general primary-frozen-shoulder plan;
-- secondary/post-traumatic/postoperative or otherwise different stiff-shoulder contexts do not borrow primary frozen shoulder authority.
-
-Acceptance evidence at `3364d1b6f9e749ccad8bac059a4cb6d5b54d4ed4`:
-- frozen route test is part of `.github/workflows/cu1-tests.yml`;
-- exact context-gating and invalid-enum fail-closed behavior PASS;
-- primary-vs-secondary/unresolved evidence isolation PASS;
-- clinician evidence-panel context isolation PASS;
-- coverage amendment / fixture linkage PASS;
-- Short/Detailed content and character ceilings PASS;
-- no fixed-stage, fixed-dose or mandatory-strengthening leakage PASS;
-- whole focused suite: **116/116 PASS**.
-
-State distinction:
-
-```text
-FROZEN SHOULDER DESIGNED      YES
-IMPLEMENTED                   YES
-TESTED                        YES
-MERGED                        NO
-DEPLOYED                      NO
-PRODUCTION-SMOKE-VERIFIED     NO
-```
-
-No further frozen-shoulder implementation work is required unless later evidence review or product feedback creates a specific replan trigger.
+The earlier wording `fail closed to the non-rich path` is explicitly superseded. For a context-gated route, **non-rich legacy fallback is not fail-closed behavior**.
 
 ---
 
 # 7. Exact next action
 
-1. Treat frozen shoulder as closed for the current feature-branch scope; do not reopen it for cosmetic refinement.
-2. Continue the horizontal CU-1 rollout with the next unresolved registry route, preserving route/context-specific evidence authority and explicit block states.
-3. Keep exact-head CI green after each bounded route batch.
-4. When representative route classes and remaining coverage are adequate, perform the global representative Short/Detailed + clinician-evidence review before PR/merge/deploy.
-5. Merge/deploy remains explicitly on HOLD until product-owner review and global acceptance are complete.
+1. Do not create a preview service unless the product owner later asks for one.
+2. Keep the context-gated generation correction fixed and exact-head green.
+3. Do not resume horizontal route rollout yet.
+4. Next product step is representative referral-output inspection using controlled generated examples or a later explicitly authorized preview/deployment path.
+5. Merge/deploy remains explicitly on HOLD.
