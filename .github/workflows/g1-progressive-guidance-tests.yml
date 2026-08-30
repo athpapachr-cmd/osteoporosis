@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feat/module01-g1-progressive-guidance-foundation-2026-08-30
+      - fix/module01-g1-why-now-production-smoke-2026-08-30
   pull_request:
     paths:
       - 'static/baseline-audit/progressive-guidance-core.js'
@@ -18,6 +19,7 @@ on:
       - 'test_progressive_guidance_node.js'
       - 'test_progressive_guidance_wiring.js'
       - 'test_progressive_guidance_ui_state.js'
+      - 'test_progressive_guidance_why_now_ui.js'
       - 'test_baseline_finish_browser.js'
       - 'test_baseline_finalization_api.py'
       - 'test_encounter_finalization.py'
@@ -46,6 +48,7 @@ jobs:
           node --check test_progressive_guidance_node.js
           node --check test_progressive_guidance_wiring.js
           node --check test_progressive_guidance_ui_state.js
+          node --check test_progressive_guidance_why_now_ui.js
           node --check test_baseline_finish_browser.js
       - name: Run progressive guidance core regressions
         run: node test_progressive_guidance_node.js
@@ -53,6 +56,8 @@ jobs:
         run: node test_progressive_guidance_wiring.js
       - name: Run progressive guidance UI state regressions
         run: node test_progressive_guidance_ui_state.js
+      - name: Run progressive guidance WHY-NOW presentation regression
+        run: node test_progressive_guidance_why_now_ui.js
       - name: Preserve authoritative Finish browser regression
         run: node test_baseline_finish_browser.js
       - name: Preserve server finalization lifecycle regression
