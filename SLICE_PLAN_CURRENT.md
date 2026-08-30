@@ -1,4 +1,4 @@
-# SLICE_PLAN_CURRENT.md — CU-1 global rich referral + evidence panel v1.17
+# SLICE_PLAN_CURRENT.md — CU-1 global rich referral + evidence panel v1.18
 
 > **STATUS:** ACTIVE RUNTIME IMPLEMENTATION — GLOBAL HORIZONTAL ROLLOUT.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
@@ -181,6 +181,23 @@ Do not invent tendon-style loading stages. Progressive objective neurological de
 ### Evidence-limited routes
 If reviewed evidence does not support a route-specific rehabilitation sequence, show the evidence limitation to the clinician and do not fabricate a complete treatment pathway.
 
+### Context-gated routes
+A `context_gated` route may generate referral text only when explicit clinician-entered subtype/context resolves to exactly one reviewed rich-referral variant. Missing, unresolved, unsupported or multiply-matched context must **block referral generation**. It must never degrade to the legacy checkbox/list formatter merely because rich authority did not resolve.
+
+```text
+context_gated + exact reviewed variant
+→ rich referral may render
+
+context_gated + no exact reviewed variant
+→ formatter_blocked
+→ explicit context/evidence validation state
+→ text = null
+
+NEVER
+context_gated + no exact reviewed variant
+→ legacy generic referral
+```
+
 ### Pediatric / growth-related routes
 Preserve age/skeletal-maturity and condition-specific load-management boundaries; do not apply adult evidence by silent extrapolation.
 
@@ -204,6 +221,8 @@ Required gates:
 COVERAGE
 - every registry route resolves to either an applicable rich plan or an explicit evidence-limited/block state
 - no generic cross-route evidence fallback
+- every context-gated route with unresolved/unsupported context returns formatter_blocked and no referral text
+- direct formatter calls cannot bypass the context gate into legacy prose
 
 CONTENT
 - no orphan goals
@@ -253,3 +272,21 @@ CLINICIAN EVIDENCE UI
 6. Add representative cross-route tests and an all-registry coverage gate.
 7. Run exact-head CI.
 8. Review representative outputs and evidence panel with the product owner before merge/deploy.
+
+---
+
+# 11. Product-acceptance correction — 2026-08-30
+
+Product-owner browser review demonstrated that the prior implementation interpreted "fail closed" incorrectly for context-gated routes: unresolved rich authority was allowed to fall through to the legacy formatter, which serialized selected findings/goals into superficially polished but clinically low-value prose.
+
+That behavior is a product defect, not an acceptable fallback mode.
+
+The corrected invariant is now part of the active slice design:
+
+```text
+SELECTION INPUT != REFERRAL TEXT
+UNRESOLVED CONTEXT != PERMISSION FOR LEGACY FALLBACK
+CONTEXT-GATED FAILURE MUST BLOCK GENERATION
+```
+
+Regression coverage must reproduce real clinician behavior, including deliberate omission of a context field, and assert the final generation state rather than checking only whether the rich renderer itself matched.
