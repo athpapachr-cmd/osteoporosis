@@ -1,132 +1,123 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** MODULE 01 — G-1 PRODUCTION SMOKE PARTIAL FAIL / BOUNDED WHY-NOW UI CORRECTION ACTIVE.
+> **STATUS:** MODULE 01 — G-1 WHY-NOW SMOKE CORRECTION IMPLEMENTED / TESTED / RELEASE GATE.
 > **Updated:** 2026-08-30 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Fresh verified remote `main`:** `21c188fad41743a8a3b82b0954e471d2c07bdcc8`.
+> **Fresh verified remote `main` at correction start:** `21c188fad41743a8a3b82b0954e471d2c07bdcc8`.
 > **Runtime release ancestry:** PR #64 → `a6ba9ef1719a18a48a1756bf08bbd157d448a63e`.
-> **Current correction branch:** `fix/module01-g1-why-now-production-smoke-2026-08-30`.
-> **ACTIVE CANONICAL WRITER/LOCK:** `fix/module01-g1-why-now-production-smoke-2026-08-30` — bounded smoke-defect closeout only.
-> **ACTIVE RUNTIME WRITER/LOCK:** `fix/module01-g1-why-now-production-smoke-2026-08-30` — G-1 WHY-NOW presentation seam only.
+> **Correction branch:** `fix/module01-g1-why-now-production-smoke-2026-08-30`.
+> **Tested runtime/CI head before this closeout commit:** `b78f8856b3e101bef3e048f0bd4a3999e3f09f32`.
+> **ACTIVE CANONICAL WRITER/LOCK:** correction branch — release closeout only.
+> **ACTIVE RUNTIME WRITER/LOCK:** NONE — bounded implementation complete.
 
 ---
 
-# 1. Production smoke evidence from product owner
+# 1. Production smoke finding
 
-Authenticated production use confirmed that the released G-1 flow is present and the existing `Τύπος σημερινής επίσκεψης` control can be completed.
+Authenticated production smoke by the product owner confirmed that G-1 loaded and the existing `Τύπος σημερινής επίσκεψης` control was usable, but the explicit WHY-NOW explanation was not discoverable.
 
-The product owner reported one concrete smoke defect:
-
-```text
-visit type selected
-→ G-1 flow present
-→ explicit WHY NOW not discoverable to the clinician
-```
-
-This means the production smoke is not a full PASS.
-
-Classification:
+Root cause inspection showed:
 
 ```text
-core guidance calculation          appears functional
-visit-type input                   functional
-WHY-NOW presentation/discoverability DEFECT
-production-smoke-verified          NO
+core VisitPlan item.why_now                 PRESENT
+explicit `Γιατί τώρα:` inside destination cards PRESENT
+summary `Σημερινή ροή` reason text          PRESENT but unlabeled/small
+clinician-visible WHY-NOW discoverability   INSUFFICIENT
 ```
+
+This was a presentation defect, not a guidance-rule failure.
 
 ---
 
-# 2. Fresh code inspection finding
+# 2. Bounded correction
 
-The current core produces `why_now` text for surfaced cards.
+Changed only the summary presentation so every surfaced item now renders:
 
-The UI renderer currently:
+```text
+Γιατί τώρα: <existing deterministic item.why_now>
+```
 
-- renders an explicit `Γιατί τώρα:` label only inside individual destination cards;
-- renders the top `Σημερινή ροή` summary reasons as small secondary text without the `Γιατί τώρα:` label;
-- therefore requires the clinician to infer that the grey summary text is the WHY-NOW explanation or navigate into later cards to see the explicit label.
+No guidance reason, priority, clinical rule, treatment logic, taxonomy, storage or schema changed.
 
-The existing UI-state regression suite tests history availability and live-state precedence but does not assert visible WHY-NOW discoverability in the summary.
-
-This is a bounded UX/runtime defect against the frozen G-1 contract; it does not require new guidance rules or clinical content.
+A focused regression was added to prevent loss of the explicit summary label while preserving the existing in-card label.
 
 ---
 
-# 3. Authorized bounded correction
+# 3. Exact test evidence
 
-The product owner instructed continuation of the smoke after reporting the defect.
-
-Allowed mutation scope:
+Tested head:
 
 ```text
-static/baseline-audit/progressive-guidance-ui.js
-static/baseline-audit/progressive-guidance.css       only if needed for legibility
-test_progressive_guidance_ui_state.js                or one focused equivalent regression
-.github/workflows/g1-progressive-guidance-tests.yml  only if needed to run the new regression
-CURRENT_OPERATIONAL.md
-osteoporosis-change-log.md                           only after validated completion/release
+b78f8856b3e101bef3e048f0bd4a3999e3f09f32
 ```
 
-Required behavior:
+GitHub Actions:
 
 ```text
-Σημερινή ροή
-→ each surfaced summary item visibly says `Γιατί τώρα:`
-→ reason text remains the deterministic existing `why_now`
-→ no new clinical rule or treatment recommendation
-→ existing in-card `Γιατί τώρα:` remains intact
+workflow: G1 progressive guidance foundation
+run:      33333473030
+job:      g1-guidance
+result:   SUCCESS
 ```
+
+The workflow passed:
+
+- JavaScript syntax checks;
+- progressive guidance core regressions;
+- wiring/ownership regression;
+- R1/R2 UI-state regressions;
+- new explicit WHY-NOW presentation regression;
+- inherited authoritative Finish browser regression;
+- inherited server finalization lifecycle regression.
 
 ---
 
-# 4. Explicitly out of scope
+# 4. Exact scope review
+
+Compare from `main` `21c188fad41743a8a3b82b0954e471d2c07bdcc8` to tested head changed only:
 
 ```text
-new archetypes
-new medication-specific milestone rules
-change to guidance priority/content semantics
-PR-1 Heidi
-PR-2 provisional population
-physiotherapy/RF
-KPI/audit methodology
-real pilot data
+static/baseline-audit/progressive-guidance-ui.js      1 line changed
+test_progressive_guidance_why_now_ui.js               new focused regression
+.github/workflows/g1-progressive-guidance-tests.yml   run new regression
+CURRENT_OPERATIONAL.md                                 operational state only
 ```
+
+No clinical-content or unrelated parked scope is included.
 
 ---
 
-# 5. Acceptance gate
+# 5. Release authority / next action
 
-Before release:
+The product owner instructed continuation of the production smoke and supplied the defect report. The bounded smoke-fix acceptance path already authorizes release after PASS.
+
+Exact next action:
 
 ```text
-1. add explicit summary WHY-NOW affordance
-2. add focused regression proving visible `Γιατί τώρα:` summary labeling after a valid visit type creates cards
-3. rerun full G-1 + inherited C1 regression workflow
-4. exact scope review
-5. if PASS, PR → squash merge → normal Render auto-deploy
-6. product-owner re-smoke only the corrected WHY-NOW path plus already-completed smoke checks as needed
+fresh main verification
+→ PR
+→ exact PR-head CI
+→ exact scope/mergeability review
+→ squash merge
+→ normal Render auto-deploy
+→ product-owner production re-smoke of `Σημερινή ροή` / `Γιατί τώρα:`
 ```
 
-Do not mark `PRODUCTION-SMOKE-VERIFIED` until the product owner can directly see/use the explicit WHY-NOW path in production and the remaining agreed smoke behavior is confirmed.
+Do not mark full `PRODUCTION-SMOKE-VERIFIED` until the corrected WHY-NOW path is directly confirmed in production.
 
 ---
 
-# 6. Current status matrix
+# 6. Status matrix
 
 ```text
 C1 MERGED / DEPLOYED                       YES
 G-1 MERGED / DEPLOYED                      YES
-G-1 CORE WHY-NOW GENERATION                IMPLEMENTED / TESTED
-G-1 WHY-NOW SUMMARY DISCOVERABILITY        DEFECT CONFIRMED
-BOUNDED CORRECTION                         ACTIVE
+WHY-NOW CORE GENERATION                    YES
+WHY-NOW SUMMARY CORRECTION IMPLEMENTED     YES
+WHY-NOW SUMMARY CORRECTION TESTED          YES
+CORRECTION MERGED / DEPLOYED               NO
 PRODUCTION-SMOKE-VERIFIED                  NO
 PR-1 / PR-2                                NOT IMPLEMENTED
 REAL 5-CASE PILOT                          NOT STARTED
 MODULE 01 CLOSED                           NO
 ```
-
----
-
-# 7. Exact next action
-
-Implement and test only the explicit WHY-NOW summary presentation correction. If the focused and full regression gates pass, release that bounded correction through the normal PR/auto-deploy path.
