@@ -18,6 +18,8 @@
   const contextFields = document.getElementById('contextFields');
   const findingsCard = document.getElementById('findingsCard');
   const rehabCard = document.getElementById('rehabCard');
+  const validationSummary = document.getElementById('validationSummary');
+  const generateBtn = document.getElementById('generateBtn');
 
   if (!profileSelect || !routeSelect || !subtypeSelect || !wordingSelect || !contextFields) return;
 
@@ -88,6 +90,49 @@
     return Object.entries(equals).every(([key, value]) => context[key] === value);
   }
 
+  function unresolvedContextValue(value) {
+    if (!value) return true;
+    return value === 'not_stated'
+      || value === 'not_assessed'
+      || value === 'uncertain_or_not_assessed'
+      || value.endsWith('_not_stated');
+  }
+
+  function richContextRequirementState() {
+    const fields = contract?.route_context_intake?.routes?.[routeSelect.value]?.fields || {};
+    const allRequired = Object.entries(fields).filter(([, spec]) => spec?.required_for_rich_variant === true);
+    if (!allRequired.length) return {hasGate: false, readyForValidation: true, missing: []};
+
+    const context = collectContext();
+    const visibleRequired = allRequired.filter(([, spec]) => {
+      const modes = spec?.show_when?.wording_modes;
+      return !Array.isArray(modes) || !modes.length || modes.includes(wordingSelect.value);
+    });
+    if (!visibleRequired.length) return {hasGate: true, readyForValidation: false, missing: []};
+
+    const missing = visibleRequired
+      .filter(([key]) => unresolvedContextValue(context[key]))
+      .map(([key]) => key);
+    return {hasGate: true, readyForValidation: missing.length === 0, missing};
+  }
+
+  function updateReadinessSummary() {
+    if (!validationSummary || !routeSelect.value) return;
+    const gate = richContextRequirementState();
+    if (!gate.hasGate) return;
+
+    if (!gate.readyForValidation) {
+      validationSummary.textContent = gate.missing.length
+        ? 'Συμπλήρωσε το απαραίτητο ειδικό κλινικό πλαίσιο πριν από τη δημιουργία.'
+        : 'Η συγκεκριμένη πάθηση χρειάζεται ειδικό κλινικό πλαίσιο. Συμπλήρωσέ το και πάτησε Έλεγχο.';
+      if (generateBtn) generateBtn.disabled = true;
+      return;
+    }
+
+    validationSummary.textContent = 'Το ειδικό κλινικό πλαίσιο έχει συμπληρωθεί. Πάτησε Έλεγχο πριν από τη δημιουργία.';
+    if (generateBtn) generateBtn.disabled = false;
+  }
+
   function resolvedScope() {
     const base = contract?.ui_relevance_scope?.profiles?.[profileSelect.value] || {};
     const scope = cloneScope(base);
@@ -140,6 +185,7 @@
     const hasRehab = scope.goals.length || scope.rehab_directions.length || scope.adjuncts.length;
     if (findingsCard) findingsCard.hidden = !hasFindings;
     if (rehabCard) rehabCard.hidden = !hasRehab;
+    updateReadinessSummary();
   }
 
   async function load() {
