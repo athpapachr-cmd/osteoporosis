@@ -32,8 +32,9 @@ This file answers **where the product is going and in what broad order**. It is 
 - [x] Implement/test bounded authoritative browser Finish correction on `fix/module01-c1-authoritative-finish-2026-08-30`.
 - [x] Reframe the clinician-facing product from manual Baseline Audit form to dynamic Clinical Excellence consultation system.
 - [x] Freeze G-0 dynamic-guidance architecture and revised system-assisted baseline methodology.
+- [x] Implement/test the bounded G-1 progressive-guidance runtime foundation on `feat/module01-g1-progressive-guidance-foundation-2026-08-30`.
 
-The authoritative Finish browser correction is **implemented/tested but not merged/deployed**. G-0 dynamic-guidance work is **design-complete but not implemented**.
+The authoritative Finish browser correction and G-1 progressive-guidance foundation are **implemented/tested but not merged/deployed**. Production release/smoke remains a separate gate.
 
 ---
 
@@ -80,18 +81,21 @@ No real pilot before production finalization integrity is verified.
 - [x] Freeze machine contract manifest: `schemas/dynamic_guided_visit_contract_manifest_v1.yaml`.
 - [x] Complete exact G-0 design review: `M01_G0_DYNAMIC_GUIDANCE_DESIGN_REVIEW_V1.md` = `DESIGN-COMPLETE`.
 
-## 1.3 G-1 Dynamic Guidance runtime foundation — NEXT RUNTIME PROGRAM AFTER SEPARATE AUTHORIZATION
+## 1.3 G-1 Dynamic Guidance runtime foundation — IMPLEMENTED / TESTED / RELEASE GATE
 
-- [ ] Build ephemeral `LongitudinalGuidanceProjectionV1` from protected historical encounters.
-- [ ] Build `EncounterContextV1` resolver.
-- [ ] Implement deterministic `GuidanceRuleV1` evaluation and priority resolution.
-- [ ] Produce `VisitPlanV1` + `GuidedCardStateV1`.
-- [ ] Render `why now` reason(s).
-- [ ] Prove new-event override of routine flow.
-- [ ] Prove unresolved-prior item resurfacing.
-- [ ] Prove due/overdue/treatment timeline plumbing.
-- [ ] Reuse prior authoritative data rather than reopening blank full-history cards.
-- [ ] Keep G-1 generic: do not invent medication-specific milestone content.
+- [x] Build ephemeral `LongitudinalGuidanceProjectionV1` from protected historical encounters.
+- [x] Build `EncounterContextV1` resolver.
+- [x] Implement deterministic minimum guidance evaluation and priority resolution.
+- [x] Produce `VisitPlanV1`-compatible card guidance states for the current UI.
+- [x] Render `why now` reason(s).
+- [x] Prove new-event override of routine flow.
+- [x] Prove unresolved-prior item resurfacing.
+- [x] Prove explicit due/overdue/treatment timeline plumbing without invented cadence.
+- [ ] Expand prior authoritative data reuse into richer read-only card summaries only when real-use evidence shows it is useful.
+- [x] Keep G-1 generic: no medication-specific milestone content invented.
+- [x] Preserve coarse applicability ownership and authoritative Finish regressions.
+- [ ] Merge/deploy only after separate release authority and fresh compare/review.
+- [ ] Production smoke G-1 guidance loading/context/`WHY NOW` after deployment.
 
 ## 1.4 Osteoporosis guidance-content profiles — BEFORE REAL PILOT
 
@@ -221,9 +225,10 @@ Permanent requirements:
 - [x] Architecture can represent unresolved prior items.
 - [x] Architecture can explain `WHY NOW?`.
 - [x] Architecture avoids a form per ordinal treatment visit.
-- [ ] Runtime implementation.
+- [x] Minimum G-1 runtime foundation implemented/tested.
 - [ ] Evidence-backed osteoporosis guidance-content registry.
-- [ ] Regression suite for representative encounter pathways.
+- [x] Regression suite for representative G-1 encounter mechanics.
+- [ ] Real-clinic usability validation and evidence-from-use card/taxonomy refinement.
 
 ---
 
@@ -320,7 +325,7 @@ Do not mutate/merge/deploy during Module 01 closure without separate authorizati
 
 ```text
 1. C1 authoritative Finish release/smoke
-2. G-1 dynamic-guidance runtime mechanics
+2. G-1 dynamic-guidance runtime mechanics — code-level implemented/tested; production release still pending
 3. evidence-backed osteoporosis guidance profiles
 4. PR-1 transcript extraction
 5. PR-2 inline provisional population
