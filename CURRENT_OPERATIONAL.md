@@ -1,244 +1,177 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** ACTIVE OPERATIONAL AUTHORITY.
-> **Updated:** 2026-08-28 Asia/Nicosia.
+> **STATUS:** MODULE 01 CLOSURE PROGRAM — ACTIVE DESIGN / EXECUTION REBASE.
+> **Updated:** 2026-08-30 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Verified current main at slice start:** `ad8045657616cd306b66d3becbda271f00c7fbbc`.
-> **Prior CU-1 dynamic-form fix:** PR #62 squash-merged as `ad8045657616cd306b66d3becbda271f00c7fbbc`.
-> **Current major phase:** bounded CU-1 clinician-quality design hardening — history + criteria-based rehabilitation sequence + disease-specific evidence.
-> **CU-1 status:** REOPENED / REPLAN REQUIRED BEFORE FURTHER RUNTIME WORK.
-> **ACTIVE CANONICAL WRITER/LOCK:** `design/cu1-history-evidence-timeline-2026-08-28`.
+> **Verified remote `main`:** `08ecd3ab33e98d567c47042a8a1de482df6952b9`.
+> **Current major phase:** close Osteoporosis Module 01 against explicit exit evidence, then generalize later.
+> **ACTIVE CANONICAL WRITER/LOCK:** `design/module01-closure-program-2026-08-30`.
 > **ACTIVE RUNTIME WRITER/LOCK:** NONE.
-> **Runtime mutation in this slice:** NOT AUTHORIZED until design/evidence coverage review passes.
-> **CU-2:** NOT AUTHORIZED.
-> **PR-1 Transcript Intake:** intentionally paused at `archive/slices/PR1_TRANSCRIPT_INTAKE_V3.md`.
+> **Runtime mutation:** NOT AUTHORIZED in this closure-planning slice.
+> **Merge/deploy/preview:** NOT AUTHORIZED / NOT DONE.
 
 ---
 
-# 1. Trigger for replan
+# 1. Product-owner decision
 
-Product-owner clinician review identified three structural deficits that remain after formatter and dynamic-form maintenance:
-
-```text
-1. generated referral lacks a coherent structured HISTORY section
-2. goals are flat and do not express a safe criteria-based rehabilitation progression
-3. rehabilitation recommendations are not route-specific and are disconnected from explicit current literature provenance
-```
-
-Critical correction:
+The product owner has explicitly ended the current physiotherapy expansion detour and changed priority to:
 
 ```text
-"timeline" in this CU-1 slice
-!= physiotherapy session frequency
-!= total course duration
-!= generic recovery prediction
-
-"timeline" means
-ordered rehabilitation phases/goals
-→ each phase progresses after functional/clinical criteria are met
-→ the next phase becomes appropriate only after the previous phase is sufficiently achieved
+PRESERVE completed/tested CU-1 work
+→ stop further physiotherapy disease rollout
+→ finish Osteoporosis Module 01
+→ only then return to later disease work using condition-centered vertical slices
 ```
 
-The physician does not need CU-1 to prescribe routine session frequency or total physiotherapy duration.
+This is a priority/slicing decision, not a declaration that Module 01 is already complete.
 
 ---
 
-# 2. Current design authority
+# 2. Physiotherapy state — PARKED / PRESERVED
 
-Primary design candidate:
+The production CU-1 v1 baseline already merged/deployed historically remains untouched on `main`.
 
-```text
-clinic_utilities/contracts/CU1_HISTORY_EVIDENCE_TIMELINE_V1.md
-```
-
-Machine schema:
+The later product-reviewed rich-referral enhancement work is preserved separately at:
 
 ```text
-clinic_utilities/contracts/cu1_history_timeline_schema_v1.yaml
+branch: feat/cu1-rich-referral-global-evidence-2026-08-29
+head:   bdd23b83a8252405f5aa5a0c0b67f303ccfcef5f
+state:  IMPLEMENTED / TESTED / PRODUCT-OWNER REVIEWED
+PR:     NONE OPEN
+MERGED: NO
+DEPLOYED: NO
 ```
 
-Evidence registry seed:
+Do not delete, rewrite, expand, merge or deploy that parked branch during Module 01 closure work unless the product owner separately authorizes it.
+
+The older design branch:
 
 ```text
-clinic_utilities/contracts/cu1_evidence_registry_v1.yaml
+design/cu1-history-evidence-timeline-2026-08-28
+head: cc479f4a1d818481a886916e3f0f05dc56c623b3
 ```
 
-The existing frozen clinical route taxonomy remains preserved unless a specific evidence conflict later demonstrates a narrow correction is required.
+is no longer the active writer. It is historical/preserved only.
 
 ---
 
-# 3. Required new objects / semantics
+# 3. Module 01 closure definition
+
+`MODULE 01 CLOSED` may be claimed only after closure-critical exit evidence is satisfied or an explicit methodological revision is canonically approved.
+
+Closure-critical work is intentionally smaller than the entire long-range TODO.
+
+## 3.1 Engineering / system gates
+
+Required before final closure:
+
+1. safe transcript-assisted candidate extraction with raw transcript ephemeral by default;
+2. clinician review/edit/accept/reject before extracted data become authoritative;
+3. structured evidence-traceable Quick Practice Review capability;
+4. clinician disposition on important observations;
+5. denominator-aware Signal promotion and root-cause-appropriate intervention linkage sufficient to support at least one closed improvement loop;
+6. adaptive osteoporosis clinical workflow / Close behavior informed by real pilot/review evidence, not one-off preference;
+7. privacy/safety controls required by the closure features, without claiming whole-service GDPR compliance beyond evidence.
+
+Deep Review / Red Team completeness, full Patient Voice, benchmarking, full Clinical Excellence Home, Calendar/Secretary integration, RF utility work and comprehensive cross-domain polish are NOT closure blockers unless later evidence makes one of them necessary for safety/data integrity.
+
+## 3.2 Real-practice gates
+
+Required before final closure:
 
 ```text
-ReferralHistoryV2
-RehabilitationSequenceV1
-RehabilitationPhaseV1
-GoalPlanV2
-ReassessmentPlanV2
-EvidenceSource
-EvidenceClaim
-RouteEvidenceProfile
+5 consecutive eligible real osteoporosis pilot encounters
+→ one deliberate post-pilot refinement
+→ freeze Baseline Form v1 + KPI applicability/calculation contract
+→ 30 consecutive unique scored baseline encounters
+→ baseline lock OR explicit approved methodology revision
+→ activate clinician-facing improvement intervention after baseline policy permits it
+→ observe at least one repeated actionable pattern/Signal
+→ apply the appropriate intervention
+→ re-measure in later encounters
+→ demonstrate whether the targeted change persisted
 ```
 
-Core distinctions:
-
-```text
-history fact != diagnosis
-rehabilitation phase order != calendar prescription
-progression criterion != elapsed time alone
-route_A evidence != route_B evidence
-clinician-selected intervention != evidence recommendation
-low-certainty evidence != strong recommendation
-missing route-specific evidence != permission to invent a default
-```
+Engineering completion alone is therefore insufficient to close Module 01.
 
 ---
 
-# 4. Disease-specific evidence requirement
+# 4. Current closure sequence
 
-Every routine CU-1 route must have its own versioned `RouteEvidenceProfile`.
-
-Examples:
+The current approved order is:
 
 ```text
-lateral_elbow_tendinopathy
-→ lateral-elbow-specific CPG/review claims
-→ elbow-specific rehabilitation sequence
-
-achilles_tendinopathy
-→ Achilles-specific CPG/review claims
-→ Achilles-specific loading/progression sequence
+C0  canonical closure-program rebase                           ← ACTIVE NOW
+C1  five-case pilot readiness / run 5 real cases
+C2  one deliberate post-pilot refinement + freeze form/KPI
+C3  PR-1 transcript extraction implementation
+C4  PR-2 clinician review/acceptance workflow
+C5  Quick Practice Review shadow-mode minimum viable engine
+C6  30-case scored baseline + baseline lock
+C7  activate reviewed Signals/intervention loop
+C8  adaptive workflow/Close refinement from observed evidence
+C9  re-measure persistence + Module 01 closure review
 ```
 
-The system must not render the same generic rehabilitation package across unrelated routes merely because both may involve strengthening or loading.
-
-Every generated rehabilitation recommendation must resolve to one or more active route-applicable `EvidenceClaim` objects.
+Implementation slices C3–C8 each require their own bounded writer/runtime authorization. Do not convert this closure plan into one giant implementation branch.
 
 ---
 
-# 5. What must appear in the referral
+# 5. Baseline integrity remains binding
 
-Evidence is not only a hidden clinician-side tooltip.
-
-The generated referral itself must show the disease-specific evidence-informed rehabilitation direction for the selected condition.
-
-Detailed output target:
+The approved sequence remains:
 
 ```text
-ΔΙΑΓΝΩΣΗ / ΚΛΙΝΙΚΗ ΕΝΤΥΠΩΣΗ
-ΙΣΤΟΡΙΚΟ
-ΚΛΙΝΙΚΑ ΕΥΡΗΜΑΤΑ
-ΛΕΙΤΟΥΡΓΙΚΗ ΕΠΙΒΑΡΥΝΣΗ
-ΑΙΤΗΜΑ
-ΣΤΑΔΙΑΚΟΙ ΣΤΟΧΟΙ ΚΑΙ ΚΡΙΤΗΡΙΑ ΠΡΟΟΔΟΥ
-ΠΡΟΤΕΙΝΟΜΕΝΟΣ ΠΡΟΣΑΝΑΤΟΛΙΣΜΟΣ ΑΠΟΚΑΤΑΣΤΑΣΗΣ
-ΠΡΟΫΠΟΘΕΣΕΙΣ ΕΠΑΝΕΚΤΙΜΗΣΗΣ / ΚΛΙΜΑΚΩΣΗΣ
-ΒΙΒΛΙΟΓΡΑΦΙΚΗ ΒΑΣΗ
+5-case usability/capture pilot
+→ one deliberate refinement
+→ freeze Baseline Form + KPI contract
+→ 30-case scored baseline
+→ baseline lock
+→ systematic coaching/intervention
 ```
 
-Short output uses the same route-specific evidence profile in compressed form and includes a compact route-specific source footer.
+During the scored 30-case baseline, routine KPI coaching/Practice Review intervention remains hidden by default; safety-critical exceptions remain allowed. If this methodology changes, record the revision explicitly before collecting/labeling the cohort.
 
 ---
 
-# 6. Rehabilitation progression policy
-
-The core model is criteria-based progression.
+# 6. Status matrix
 
 ```text
-phase 1 objective
-→ progression criteria met
-→ phase 2 objective
-→ progression criteria met
-→ later functional phase
-```
-
-Possible phase vocabulary includes symptom control, ROM restoration, active-assisted/active movement, loading, strengthening, endurance, motor control and return-to-function — but no universal phase sequence is allowed.
-
-Each disease/pathway selects only the phases supported by its own evidence profile.
-
-Written postoperative protocols and fracture/healing restrictions override generic route evidence.
-
----
-
-# 7. Evidence freshness / renewal
-
-Evidence sources and route profiles carry:
-
-```text
-reviewed_on
-next_review_due
-freshness_state
-superseded_by
-```
-
-New evidence follows:
-
-```text
-new source detected
-→ classify impact
-→ clinician/reviewer approval
-→ update claims
-→ update affected route sequence only if warranted
-→ regression fixtures
-→ version/changelog
-```
-
-Evidence surveillance must never silently rewrite clinical recommendations.
-
----
-
-# 8. Current evidence seeds
-
-The design registry currently includes seed evidence for:
-
-```text
-deep_gluteal_piriformis_presentation
-nonspecific_low_back_pain
-low_back_pain_with_radiating_leg_symptoms
-lateral_elbow_tendinopathy
-achilles_tendinopathy
-```
-
-The elbow and Achilles seeds deliberately demonstrate different route-specific rehabilitation claims rather than a shared generic package.
-
-These are seed profiles only; evidence-aware runtime generation remains blocked until all routine routes reach the coverage gate.
-
----
-
-# 9. Exact next authorized action
-
-```text
-1. freeze ReferralHistoryV2 semantics
-2. freeze RehabilitationSequenceV1 / GoalPlanV2 / ReassessmentPlanV2
-3. complete EvidenceSource/EvidenceClaim registry schema
-4. build RouteEvidenceProfile for every routine route
-5. create a disease-specific RehabilitationSequence for every routine route
-6. classify evidence gaps/conflicts and evidence strength
-7. define route-specific dynamic history prompts
-8. create synthetic composition/evidence fixtures
-9. exact design-completeness review
-10. STOP at DESIGN-COMPLETE or BLOCK
+PHYSIO CU-1 PARKED/PRESERVED             YES
+PHYSIO NEW ROUTE ROLLOUT                  HOLD
+MODULE 01 CLOSURE PROGRAM DESIGNED        IN PROGRESS
+MODULE 01 ENGINEERING EXIT GATES          NOT YET COMPLETE
+5-CASE REAL PILOT                         NOT YET PROVEN
+BASELINE FORM/KPI FROZEN                  NO
+30-CASE SCORED BASELINE LOCKED            NO
+CLOSED IMPROVEMENT LOOP DEMONSTRATED      NO
+MODULE 01 CLOSED                          NO
+MERGED/DEPLOYED BY THIS SLICE             NO
 ```
 
 ---
 
-# 10. Explicitly forbidden until the gate passes
+# 7. Exact next authorized action
 
 ```text
-WRITE runtime evidence recommendation logic
-USE one generic rehab sequence across conditions
-INVENT progression criteria not supported by evidence/protocol
-USE elapsed time alone as universal progression criterion
-PRESCRIBE routine session frequency or total PT duration as a CU-1 requirement
-LABEL clinician preference as guideline recommendation
-LABEL stale/superseded evidence as current
-OPEN CU-2
-RESTART PR-1
-CHANGE frozen clinical taxonomy without a specific reviewed evidence conflict
+1. freeze the Module 01 closure-critical vs deferred boundary in SLICE_PLAN_CURRENT.md;
+2. reconcile TODO priority/order to this closure program;
+3. perform a read-only pilot-readiness check against current production/runtime evidence;
+4. STOP before runtime mutation;
+5. present the exact 5-case pilot protocol / blockers to the product owner.
 ```
 
 ---
 
-# 11. Continuity rule
+# 8. Explicit HOLD
 
-A new conversation can resume by fresh six-canonical bootstrap. It should find this branch/writer lock and continue the history + criteria-based rehabilitation-sequence + disease-specific evidence design hardening only; chat history is not required for continuity.
+Do not, during this planning slice:
+
+- resume physiotherapy route expansion;
+- merge/deploy the parked CU-1 enhancement branch;
+- open CU-2 or RF runtime work;
+- write PR-1/PR-2/Practice Review runtime code;
+- redesign the Baseline Form before pilot evidence;
+- expose routine coaching during scored baseline;
+- declare Module 01 closed from engineering completion alone;
+- claim privacy/GDPR compliance beyond what is actually verified.
