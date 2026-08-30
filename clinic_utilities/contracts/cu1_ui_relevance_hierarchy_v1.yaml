@@ -1,0 +1,122 @@
+version: cu1_ui_relevance_hierarchy_v1
+status: active_runtime_presentation_authority
+runtime_authorized: true
+reviewed_on: 2026-08-30
+purpose: >-
+  Hierarchical presentation-only narrowing of existing CU-1 structured options. This artifact may
+  filter or prioritize existing option IDs by profile, route, subtype and explicit clinician-entered
+  context. It must not add clinical meanings, infer context, or change validation/evidence authority.
+resolution_order: [profile_base, route, subtype, context_variant]
+rules:
+  existing_option_ids_only: true
+  no_inference_from_findings: true
+  context_must_be_explicitly_entered: true
+  referral_authority_unchanged: true
+  empty_section_means_hide_section: true
+
+routes:
+  shoulder:
+    adhesive_capsulitis_frozen_shoulder:
+      replace:
+        findings:
+          - pain
+          - night_or_sleep_disturbance
+          - active_rom_restricted
+          - passive_rom_restricted
+          - painful_active_rom
+          - painful_passive_rom
+        functional_impairments:
+          - overhead_activity
+          - lifting_carrying
+          - driving
+          - patient_priority_activity
+        goals: []
+        rehab_directions: []
+        adjuncts: []
+      context_variants:
+        - match:
+            context_equals:
+              frozen_shoulder_irritability: high
+          prioritize:
+            findings: [pain, night_or_sleep_disturbance, painful_active_rom, painful_passive_rom]
+        - match:
+            context_equals:
+              frozen_shoulder_irritability: low
+          prioritize:
+            findings: [active_rom_restricted, passive_rom_restricted, pain]
+
+    rotator_cuff_related_shoulder_pain:
+      replace:
+        findings:
+          - pain
+          - night_or_sleep_disturbance
+          - anterolateral_shoulder_pain
+          - painful_arc
+          - active_rom_restricted
+          - painful_active_rom
+          - objective_abduction_weakness
+          - objective_external_rotation_weakness
+          - scapular_control_endurance_deficit
+        functional_impairments:
+          - overhead_activity
+          - lifting_carrying
+          - pushing_pulling
+          - manual_work
+          - sport_gym
+          - patient_priority_activity
+        goals: []
+        rehab_directions: []
+        adjuncts: []
+
+    glenohumeral_instability_dislocation:
+      replace:
+        findings:
+          - pain
+          - instability_apprehension_finding
+          - active_rom_restricted
+          - painful_active_rom
+          - objective_weakness
+          - scapular_control_endurance_deficit
+        functional_impairments:
+          - overhead_activity
+          - lifting_carrying
+          - pushing_pulling
+          - manual_work
+          - sport_gym
+          - patient_priority_activity
+        goals: []
+        rehab_directions: []
+        adjuncts: []
+      context_variants:
+        - match:
+            context_equals:
+              shoulder_instability_direction: multidirectional
+          prioritize:
+            findings: [instability_apprehension_finding, scapular_control_endurance_deficit, objective_weakness]
+            functional_impairments: [sport_gym, overhead_activity, patient_priority_activity]
+        - match:
+            context_equals:
+              shoulder_instability_cause: traumatic
+          prioritize:
+            findings: [pain, instability_apprehension_finding, painful_active_rom]
+
+    glenohumeral_osteoarthritis:
+      replace:
+        findings:
+          - pain
+          - night_or_sleep_disturbance
+          - active_rom_restricted
+          - passive_rom_restricted
+          - painful_active_rom
+          - painful_passive_rom
+          - objective_weakness
+        functional_impairments:
+          - overhead_activity
+          - lifting_carrying
+          - pushing_pulling
+          - driving
+          - manual_work
+          - patient_priority_activity
+        goals: []
+        rehab_directions: []
+        adjuncts: []
