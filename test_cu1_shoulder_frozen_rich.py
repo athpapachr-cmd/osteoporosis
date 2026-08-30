@@ -161,11 +161,13 @@ class CU1PrimaryFrozenShoulderRichTests(unittest.TestCase):
         detailed = self.formatter.format(result.normalized_draft, "detailed")
         for text in (short, detailed):
             folded = fold_el(text)
-            self.assertIn(fold_el("πρωτοπαθή"), folded)
+            self.assertIn(fold_el("παγωμένος ώμος"), folded)
             self.assertIn("κινητικ", folded)
             self.assertIn(fold_el("εύρους κίνησης"), folded)
             self.assertLessEqual(len(text), self.renderer.max_chars)
-        self.assertEqual(detailed.count("ΣΤΑΔΙΟ "), 1)
+        self.assertEqual(detailed.count("ΣΤΑΔΙΟ "), 0)
+        for heading in ("ΚΛΙΝΙΚΗ ΕΙΚΟΝΑ", "ΣΤΟΧΟΙ ΑΠΟΚΑΤΑΣΤΑΣΗΣ", "ΚΑΤΕΥΘΥΝΣΗ ΦΥΣΙΟΘΕΡΑΠΕΙΑΣ", "ΕΠΑΝΕΚΤΙΜΗΣΗ"):
+            self.assertIn(heading, detailed)
         self.assertLessEqual(len(detailed), self.renderer.standard_detailed_target_chars)
 
     def test_realistic_frozen_case_is_clinical_synthesis_not_checkbox_serializer(self):
@@ -190,11 +192,23 @@ class CU1PrimaryFrozenShoulderRichTests(unittest.TestCase):
             self.assertIn(fold_el("δραστηριότητες πάνω από το ύψος του ώμου"), folded)
             self.assertIn(fold_el("άρση ή μεταφορά φορτίου"), folded)
             self.assertIn(fold_el("οδήγηση"), folded)
-            self.assertNotIn(fold_el("Παρακαλώ για"), folded)
+            self.assertIn(fold_el("Παρακαλώ για"), folded)
             self.assertNotIn(fold_el("προοδευτική ενδυνάμωση"), folded)
             self.assertNotIn(fold_el("φυσικής πορείας"), folded)
             for english_leak in ("freezing", "thawing", "routine", "fixed", "frozen shoulder"):
                 self.assertNotIn(english_leak, folded)
+        self.assertIn("Παρακαλώ για εξατομικευμένη φυσιοθεραπευτική αποκατάσταση", short)
+        self.assertIn("Παρακαλώ για εξατομικευμένο πρόγραμμα ενεργητικής αποκατάστασης και ασκήσεων κινητικότητας", detailed)
+        self.assertIn("Η επιλογή και δοσολογία των επιμέρους ασκήσεων και τεχνικών εξατομικεύονται από τον φυσιοθεραπευτή", detailed)
+        self.assertNotIn("ΣΤΑΔΙΟ ", detailed)
+
+    def test_uncertain_irritability_is_not_rendered_in_referral(self):
+        result = self._validate(irritability="uncertain_or_not_assessed")
+        for mode in ("short", "detailed"):
+            text = fold_el(self.formatter.format(result.normalized_draft, mode))
+            self.assertNotIn(fold_el("Κλινική ερεθιστικότητα"), text)
+            self.assertNotIn(fold_el("αβέβαι"), text)
+            self.assertNotIn(fold_el("δεν αξιολογήθηκε"), text)
 
     def test_presentation_secondary_and_unresolved_scope_block_generation(self):
         cases = [
@@ -260,13 +274,16 @@ class CU1PrimaryFrozenShoulderRichTests(unittest.TestCase):
         self.assertNotIn("routine", folded)
         self.assertNotIn("fixed", folded)
         self.assertNotIn("frozen shoulder", folded)
-        self.assertNotIn("σταδιο 2", folded)
+        self.assertNotIn("σταδιο", folded)
         self.assertNotIn("3x", folded)
         self.assertNotIn("3 x", folded)
         self.assertNotIn(fold_el("φυσικής πορείας"), folded)
         self.assertNotIn(fold_el("ενδυνάμωση"), folded)
-        self.assertIn(fold_el("χωρίς καθολικό αριθμητικό"), folded)
-        self.assertIn(fold_el("προκαθορισμένο κανόνα μετάβασης"), folded)
+        self.assertNotIn(fold_el("καθολικό αριθμητικό"), folded)
+        self.assertNotIn(fold_el("προκαθορισμένο κανόνα μετάβασης"), folded)
+        self.assertIn(fold_el("ΣΤΟΧΟΙ ΑΠΟΚΑΤΑΣΤΑΣΗΣ"), folded)
+        self.assertIn(fold_el("ΚΑΤΕΥΘΥΝΣΗ ΦΥΣΙΟΘΕΡΑΠΕΙΑΣ"), folded)
+        self.assertIn(fold_el("ΕΠΑΝΕΚΤΙΜΗΣΗ"), folded)
 
     def test_self_stretching_and_strengthening_scope_remain_outside_mandatory_referral_core(self):
         self.assertEqual(
