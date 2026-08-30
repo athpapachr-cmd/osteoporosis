@@ -1,259 +1,182 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** MODULE 01 — G-1 PROGRESSIVE GUIDANCE FOUNDATION IMPLEMENTED / TESTED / RELEASE GATE.
+> **STATUS:** MODULE 01 — G-1 RELEASE REVIEW BLOCKED / RUNTIME CORRECTION REQUIRED.
 > **Updated:** 2026-08-30 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Verified remote `main` at G-1 bootstrap:** `08ecd3ab33e98d567c47042a8a1de482df6952b9`.
-> **Implementation branch:** `feat/module01-g1-progressive-guidance-foundation-2026-08-30`.
-> **Parent accepted design:** `design/module01-progressive-guidance-foundations-2026-08-30` @ `298d8d525f1bac97ffb6904fe09800519bd1a584`.
-> **Runtime/test head before canonical closeout:** `d66ac728e379a90542f95a8ecdde6d945420f6ae`.
-> **ACTIVE CANONICAL WRITER/LOCK:** `feat/module01-g1-progressive-guidance-foundation-2026-08-30` — canonical closeout only.
-> **ACTIVE RUNTIME WRITER/LOCK:** NONE — bounded G-1 implementation complete.
-> **Merge/deploy/production smoke:** NOT AUTHORIZED / NOT DONE.
+> **Fresh verified remote `main`:** `08ecd3ab33e98d567c47042a8a1de482df6952b9`.
+> **Release-review branch:** `feat/module01-g1-progressive-guidance-foundation-2026-08-30`.
+> **Reviewed branch head before this canonical update:** `a7cc4277b57075dd6f0f0e721b12052da77eed25`.
+> **Inherited tested C1 head:** `a4005dc88140d8f988fcac2b4f4bd9f9bb0c3871`.
+> **ACTIVE CANONICAL WRITER/LOCK:** `feat/module01-g1-progressive-guidance-foundation-2026-08-30` — release-review closeout only.
+> **ACTIVE RUNTIME WRITER/LOCK:** NONE.
+> **PR/merge/deploy/production smoke:** NOT DONE / NOT AUTHORIZED.
 
 ---
 
-# 1. Product outcome implemented
+# 1. Release-review result
 
-G-1 installs only the first progressive guidance foundations; it does not attempt a complete osteoporosis taxonomy.
+A fresh six-canonical bootstrap was completed from current remote `main`, followed by an exact compare/review of the accepted Module-01 branch chain.
 
-Current runtime model:
+Ancestry/scope findings:
 
 ```text
-existing first-page encounter dropdown
-+ existing first-page quick_notes / short context
-+ protected prior completed/amended encounters when a patient is loaded
-→ read-only longitudinal projection
-→ deterministic current encounter context
-→ minimum Visit Plan
-→ existing cards visually prioritized with WHY NOW
+main 08ecd3ab33e98d567c47042a8a1de482df6952b9
+→ C1 authoritative Finish a4005dc88140d8f988fcac2b4f4bd9f9bb0c3871
+→ G-1 progressive guidance a7cc4277b57075dd6f0f0e721b12052da77eed25
 ```
 
-The dropdown remains clinician-declared coarse intent. `quick_notes` remains context only and is not parsed into new authoritative clinical facts or an inferred visit class.
+The G-1 branch is directly descended from the exact C1 head. The complete `main...G-1` compare contains only accepted Module-01 canonicals/contracts, C1 finalization files/tests and G-1 guidance files/tests. No parked physiotherapy/RF runtime work is included.
+
+Open draft PR #63 remains unrelated parked CU-1 work and must not be merged as part of Module 01.
 
 ---
 
-# 2. Implemented runtime files
+# 2. Existing test evidence remains valid but is not sufficient for release
 
-```text
-static/baseline-audit/progressive-guidance-core.js   NEW
-static/baseline-audit/progressive-guidance-ui.js     NEW
-static/baseline-audit/progressive-guidance.css       NEW
-static/baseline-audit/adaptive-applicability.css     bounded ownership-compatible change
-static/baseline-audit/app.js                         bootstrap wiring
-```
-
-Tests/CI:
-
-```text
-test_progressive_guidance_node.js                    NEW
-test_progressive_guidance_wiring.js                  NEW
-.github/workflows/g1-progressive-guidance-tests.yml  NEW
-```
-
-No clinical storage schema or database migration was added.
-
----
-
-# 3. Longitudinal projection implemented
-
-The pure guidance core builds an ephemeral projection from:
-
-```text
-GET /clinical/patient/{patient_id}/encounters
-```
-
-using completed/amended historical encounters only and excluding the current encounter when identifiable.
-
-Implemented invariants:
-
-- scheduled/planned administration without an exact `actual_date` does not count as administered;
-- repeated representation of the same exact `agent + actual_date` is not double-counted;
-- stable administration IDs are retained when useful;
-- contradictory representations remain explicit projection conflicts;
-- actual administration count is never reconstructed from expected cadence or elapsed treatment time;
-- a later blank treatment snapshot does not itself erase older history;
-- unresolved prior planned tasks may resurface when the same semantic task has not later been explicitly completed/not applicable;
-- no new patient-level treatment table/source of truth is created.
-
-G-1 uses explicit stored `next_due_date`/due-status context only. It does not derive medication-specific next-dose timing from clinical cadence.
-
----
-
-# 4. Current Visit Plan behavior
-
-Current G-1 reason classes:
-
-```text
-NEW_EVENT
-UNRESOLVED_PRIOR
-EXPLICIT_DUE_STATE
-TREATMENT_CONTEXT
-VISIT_TYPE_CORE
-CONTEXTUAL
-```
-
-Priority:
-
-```text
-NEW_EVENT
-→ UNRESOLVED_PRIOR
-→ EXPLICIT_DUE_STATE
-→ TREATMENT_CONTEXT
-→ VISIT_TYPE_CORE
-→ CONTEXTUAL
-```
-
-Examples implemented as mechanics:
-
-- first-assessment archetypes surface a broader base flow;
-- routine treatment continuation remains narrower;
-- an explicit new fracture overrides the routine flow and surfaces fracture/risk/treatment domains;
-- explicit fracture-on-treatment additionally surfaces administration/transition context;
-- unresolved prior tasks resurface follow-up context;
-- explicitly recorded due/overdue treatment state prioritizes administration/follow-up cards;
-- longitudinal treatment conflicts are shown rather than silently resolved.
-
-These are visit-flow mechanics, not medication-specific treatment recommendations.
-
----
-
-# 5. UI ownership correction found during implementation review
-
-Initial implementation temporarily removed coarse adaptive collapse classes when higher-priority G-1 guidance surfaced a card. Review identified that this could leave the card visually open after the higher-priority trigger disappeared unless the coarse applicability module reran.
-
-The final implementation preserves ownership instead:
-
-```text
-adaptive-applicability.js/classes remain untouched
-+
-guidance-surfaced class provides a temporary visual override
-```
-
-CSS applies coarse collapse only to:
-
-```text
-.adaptive-collapsed:not(.guidance-surfaced)
-```
-
-When the G-1 reason disappears, the underlying coarse applicability state automatically becomes visible again without repair logic or state mutation.
-
----
-
-# 6. Exact test evidence
-
-Runtime/test head:
-
-```text
-d66ac728e379a90542f95a8ecdde6d945420f6ae
-```
-
-GitHub Actions:
+Exact-head G-1 CI before release review:
 
 ```text
 workflow: G1 progressive guidance foundation
-run:      33327717796
-head:     d66ac728e379a90542f95a8ecdde6d945420f6ae
+run:      33327944349
+head:     a7cc4277b57075dd6f0f0e721b12052da77eed25
 result:   SUCCESS
 ```
 
-Successful gates:
+Passed:
 
-- JavaScript syntax checks;
-- progressive guidance pure-core regressions;
-- progressive guidance bootstrap/ownership/wiring regression;
-- pre-existing authoritative Finish browser regression;
-- pre-existing server finalization lifecycle regression.
+- JavaScript syntax;
+- progressive-guidance core regressions;
+- guidance wiring/ownership regression;
+- authoritative Finish browser regression;
+- server finalization lifecycle regression.
 
-Core regressions explicitly cover:
-
-1. first-assessment broad base flow;
-2. `other + quick_notes` stays context only and is not silently classified;
-3. repeated exact actual administration deduplication;
-4. scheduled-only administration not counted;
-5. conflicting explicit next-due facts remain conflicts;
-6. unresolved prior task and later explicit completion behavior;
-7. no due state inferred from actual administration date alone;
-8. new fracture/fracture-on-treatment override of routine flow;
-9. current/draft encounter excluded from historical projection;
-10. deterministic same structured context → same Visit Plan.
-
-Wiring regression proves the finalization bootstrap remains:
-
-```text
-finalization coordinator
-→ patient registry
-→ pilot completion
-```
-
-and that G-1 loads without taking Finish ownership.
+The release review found runtime states that these tests do not cover.
 
 ---
 
-# 7. What is NOT proven / NOT done
+# 3. RELEASE BLOCKER G1-R1 — unavailable history is silently presented as empty history
+
+Current `progressive-guidance-ui.js` behavior:
 
 ```text
-G-1 IMPLEMENTED                         YES
-G-1 TESTED                              YES
-G-1 MERGED                              NO
-G-1 DEPLOYED                            NO
-G-1 PRODUCTION-SMOKE-VERIFIED           NO
-G-1 REAL-CLINIC-USABILITY-VALIDATED     NO
-FULL VISIT TAXONOMY                     NO / deliberately deferred
-MEDICATION-SPECIFIC MILESTONE RULES     NO
-PR-1 HEIDI EXTRACTION                   NO
-PR-2 INLINE ACCEPT/EDIT/REJECT          NO
-5-CASE SYSTEM-ASSISTED PILOT            NOT STARTED
-30-CASE SYSTEM-ASSISTED BASELINE        NOT STARTED
-MODULE 01 CLOSED                        NO
+protected GET /clinical/patient/{patient_id}/encounters fails
+→ catch
+→ historicalEncounters = []
+→ render continues
+→ active patient can be shown as having 0 previous completed/amended encounters
 ```
 
-No real patient/transcript fixture was used in G-1 tests.
+This is not acceptable for clinical guidance.
+
+Required invariant:
+
+```text
+HISTORY UNAVAILABLE != NO HISTORY
+AUTH/NETWORK/SERVER FAILURE != ZERO PRIOR ENCOUNTERS
+```
+
+The guidance layer must carry an explicit history-load state such as:
+
+```text
+not_loaded / loading / loaded / unavailable
+```
+
+When history is unavailable:
+
+- do not claim `0 previous encounters`;
+- do not imply longitudinal guidance is complete;
+- visibly state that prior context could not be loaded;
+- keep current-visit/local guidance usable where safe;
+- do not derive absence-based longitudinal conclusions.
+
+This is a release blocker because silent loss of longitudinal context can suppress unresolved-prior or treatment-timeline guidance.
 
 ---
 
-# 8. C1 authoritative Finish state preserved
+# 4. RELEASE BLOCKER G1-R2 — live UI clearing can fall back to stale persisted context
 
-The branch still inherits the previously tested C1 implementation:
+`currentCaseSnapshot()` currently uses truthy fallback patterns such as:
 
 ```text
-fix/module01-c1-authoritative-finish-2026-08-30
-@ a4005dc88140d8f988fcac2b4f4bd9f9bb0c3871
-IMPLEMENTED / TESTED
-MERGED NO
-DEPLOYED NO
-PRODUCTION-SMOKE NO
+DOM value || persisted value
 ```
 
-G-1 testing re-ran and passed the authoritative Finish browser and server lifecycle regressions. This does not constitute release/deploy authority.
+and only replaces fracture-event state when the live DOM contains one or more events.
+
+Consequences before Save can include:
+
+- clearing `quick_notes` still displaying the previous persisted note;
+- clearing/resetting an optional current field falling back to the old stored value;
+- deleting all visible fracture events leaving old persisted fracture events in the guidance snapshot;
+- stale guidance remaining surfaced until another persistence/synchronization step updates the cache.
+
+Required invariant:
+
+```text
+IF A LIVE CONTROL EXISTS
+→ its current value, including explicit blank/empty state, owns today's in-memory guidance snapshot
+```
+
+Persisted state is only fallback when the corresponding live control is absent, not when its current value is empty.
+
+For live fracture-event UI, an empty rendered event list must project as an empty current list rather than resurrecting prior local-cache events.
+
+This is a data-state integrity release blocker for the guidance presentation layer.
 
 ---
 
-# 9. Physiotherapy remains parked/preserved
+# 5. C1 authoritative Finish review
+
+C1 ancestry remains intact and its tested ownership model is preserved:
 
 ```text
-feat/cu1-rich-referral-global-evidence-2026-08-29
-@ bdd23b83a8252405f5aa5a0c0b67f303ccfcef5f
-IMPLEMENTED / TESTED / PRODUCT-OWNER REVIEWED
-MERGED NO / DEPLOYED NO
+coordinator
+→ local Save/flush
+→ local pilot-completion payload marker
+→ strict protected completed sync
+→ protected success shown only after server confirmation
 ```
 
-No physiotherapy mutation occurred.
+On protected finalization failure, local data including the completion marker are intentionally retained for retry while protected completion is explicitly reported as unconfirmed. This behavior is already an accepted C1 contract; the release review did not identify a new regression in C1 wiring.
+
+Production C1 behavior remains unproven until merge/deploy/synthetic smoke.
 
 ---
 
-# 10. Exact next action
-
-STOP runtime mutation at the G-1 release gate.
-
-A separate product-owner release decision is required before PR/merge/deploy. Because this branch includes the inherited C1 correction and accepted Module-01 design ancestry, any release action must fresh-bootstrap, inspect the complete compare against current `main`, and verify that no unrelated parked work is included.
-
-After an authorized merge/deploy, production smoke must distinguish:
+# 6. Current status matrix
 
 ```text
-C1 authoritative Finish integrity
-+
-G-1 guidance loading / dropdown + context / longitudinal WHY NOW behavior
+C1 IMPLEMENTED / TESTED                    YES
+C1 MERGED / DEPLOYED / PROD-SMOKED         NO
+G-1 IMPLEMENTED / PREVIOUSLY TESTED        YES
+G-1 RELEASE-READY                          NO — BLOCKED G1-R1 + G1-R2
+G-1 MERGED / DEPLOYED / PROD-SMOKED        NO
+PR-1 HEIDI                                 NOT IMPLEMENTED
+PR-2 INLINE REVIEW/POPULATION               NOT IMPLEMENTED
+5-CASE SYSTEM-ASSISTED PILOT               NOT STARTED
+30-CASE SYSTEM-ASSISTED BASELINE            NOT STARTED
+MODULE 01 CLOSED                           NO
 ```
 
-PR-1 Heidi extraction and PR-2 inline provisional population remain later bounded slices required before the five-case system-assisted real pilot unless separately replanned.
+---
+
+# 7. Exact next authorized action
+
+STOP release activity. Do not open/merge/deploy G-1 in the present state.
+
+Next action requires a separate product-owner authorization for one bounded runtime correction:
+
+```text
+fresh main verification
+→ claim runtime writer on the existing G-1 branch or a dedicated correction branch
+→ fix G1-R1 explicit history availability state
+→ fix G1-R2 live-DOM-over-persisted snapshot semantics
+→ add focused browser/core regressions for both failure modes
+→ run full G-1 + C1 regression workflow at exact correction head
+→ release-review exact compare again
+→ STOP at release gate
+```
+
+Only after that correction passes may a separate release decision authorize PR/merge/Render auto-deploy/production smoke.
+
+No physiotherapy/RF mutation. No PR-1/PR-2 expansion in this correction.
