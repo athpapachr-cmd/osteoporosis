@@ -1,0 +1,50 @@
+name: G1 progressive guidance foundation
+
+on:
+  push:
+    branches:
+      - feat/module01-g1-progressive-guidance-foundation-2026-08-30
+  pull_request:
+    paths:
+      - 'static/baseline-audit/progressive-guidance-core.js'
+      - 'static/baseline-audit/progressive-guidance-ui.js'
+      - 'static/baseline-audit/progressive-guidance.css'
+      - 'static/baseline-audit/adaptive-applicability.js'
+      - 'static/baseline-audit/app.js'
+      - 'static/baseline-audit/finalization-coordinator.js'
+      - 'static/baseline-audit/patient-registry.js'
+      - 'static/baseline-audit/pilot-completion.js'
+      - 'test_progressive_guidance_node.js'
+      - 'test_baseline_finish_browser.js'
+      - 'test_baseline_finalization_api.py'
+      - 'test_encounter_finalization.py'
+      - '.github/workflows/g1-progressive-guidance-tests.yml'
+  workflow_dispatch:
+
+jobs:
+  g1-guidance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Check JavaScript syntax
+        run: |
+          node --check static/baseline-audit/progressive-guidance-core.js
+          node --check static/baseline-audit/progressive-guidance-ui.js
+          node --check static/baseline-audit/adaptive-applicability.js
+          node --check static/baseline-audit/finalization-coordinator.js
+          node --check static/baseline-audit/patient-registry.js
+          node --check static/baseline-audit/pilot-completion.js
+          node --check static/baseline-audit/app.js
+          node --check test_progressive_guidance_node.js
+          node --check test_baseline_finish_browser.js
+      - name: Run progressive guidance core regressions
+        run: node test_progressive_guidance_node.js
+      - name: Preserve authoritative Finish browser regression
+        run: node test_baseline_finish_browser.js
+      - name: Preserve server finalization lifecycle regression
+        run: python -m unittest -v test_baseline_finalization_api.py
