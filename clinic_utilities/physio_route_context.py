@@ -6,18 +6,26 @@ from clinic_utilities.physio_referral_runtime import (
     CU1ContractBundle,
     CU1Engine,
     CU1ValidationError,
+    CU1ValidationResponse,
     _deep_get,
     _is_empty,
 )
+from clinic_utilities.physio_rich_referral import CU1RichReferralRenderer
 
 
 class CU1RouteContextEngine(CU1Engine):
     """CU-1 engine extension for closed, data-driven route-specific clinician context.
 
     The base engine remains authoritative for routing, shared/postoperative context, options and
-    safety. This subclass only widens the *closed* context namespace for the selected route using
-    cu1_route_context_intake_v1 and validates those values exactly. It never infers a context value.
+    safety. This subclass widens the *closed* context namespace for the selected route using
+    cu1_route_context_intake_v1, validates those values exactly, and enforces the product invariant
+    that a context-gated route cannot degrade to the legacy checklist formatter when its reviewed
+    rich-referral context is unresolved or unsupported. It never infers a context value.
     """
+
+    def __init__(self, bundle: Optional[CU1ContractBundle] = None):
+        super().__init__(bundle)
+        self.rich_renderer = CU1RichReferralRenderer(self.bundle.root)
 
     @property
     def route_context_intake(self) -> Mapping[str, Any]:
@@ -28,6 +36,76 @@ class CU1RouteContextEngine(CU1Engine):
         routes = self.route_context_intake.get("routes", {})
         route = routes.get(route_id) if isinstance(routes, Mapping) else None
         return route if isinstance(route, Mapping) else {}
+
+    def validate(self, raw_draft: Mapping[str, Any]) -> CU1ValidationResponse:
+        result = super().validate(raw_draft)
+        if result.formatter_blocked:
+            return result
+
+        problem = result.normalized_draft.get("primary_problem")
+        if not isinstance(problem, Mapping):
+            return result
+        profile_id = problem.get("profile_id")
+        route_id = problem.get("route_id")
+        if not isinstance(profile_id, str) or not profile_id or not isinstance(route_id, str) or not route_id:
+            return result
+
+        if self.rich_renderer.rollout_state(profile_id=profile_id, route_id=route_id) != "context_gated":
+            return result
+
+        raw_context = problem.get("context")
+        context: Dict[str, Any] = dict(raw_context) if isinstance(raw_context, Mapping) else {}
+        wording_mode = problem.get("wording_mode")
+        if isinstance(wording_mode, str) and wording_mode:
+            context["__wording_mode"] = wording_mode
+        subtype_id = problem.get("subtype_id_optional")
+        subtype = subtype_id if isinstance(subtype_id, str) and subtype_id else None
+
+        if self.rich_renderer.supports(
+            profile_id=profile_id,
+            route_id=route_id,
+            subtype_id=subtype,
+            context=context,
+        ):
+            return result
+
+        required_paths = self._required_rich_context_paths(route_id, wording_mode)
+        error = CU1ValidationError(
+            error_id="rich_referral_context_required",
+            error_class="validation_error",
+            metadata={
+                "path": "primary_problem.context",
+                "profile_id": profile_id,
+                "route_id": route_id,
+                "rollout_state": "context_gated",
+                "required_context_paths": required_paths,
+                "reason": "no_applicable_reviewed_rich_variant",
+            },
+        )
+        return CU1ValidationResponse(
+            normalized_draft=result.normalized_draft,
+            validation_errors=[*result.validation_errors, error],
+            safety_results=result.safety_results,
+            highest_severity=result.highest_severity,
+            formatter_blocked=True,
+        )
+
+    def _required_rich_context_paths(self, route_id: str, wording_mode: Any) -> list[str]:
+        route_context = self._route_context_spec(route_id)
+        fields = route_context.get("fields", {}) if isinstance(route_context, Mapping) else {}
+        if not isinstance(fields, Mapping):
+            return []
+        paths: list[str] = []
+        for key, field in fields.items():
+            if not isinstance(field, Mapping) or field.get("required_for_rich_variant") is not True:
+                continue
+            show_when = field.get("show_when")
+            if isinstance(show_when, Mapping):
+                modes = show_when.get("wording_modes")
+                if isinstance(modes, list) and modes and wording_mode not in modes:
+                    continue
+            paths.append(f"primary_problem.context.{key}")
+        return paths
 
     def _validate_context_keys_and_values(
         self,
