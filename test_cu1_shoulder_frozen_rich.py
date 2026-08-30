@@ -29,8 +29,18 @@ def fold_el(text: str) -> str:
     )
 
 
-def frozen_draft(*, wording_mode="formal_diagnosis", assertion="yes", scope="primary_frozen_shoulder"):
+def frozen_draft(
+    *,
+    wording_mode="formal_diagnosis",
+    assertion="yes",
+    scope="primary_frozen_shoulder",
+    irritability=None,
+    findings=None,
+    functional_impairments=None,
+):
     context = {} if scope is None else {"frozen_shoulder_scope": scope}
+    if irritability is not None:
+        context["frozen_shoulder_irritability"] = irritability
     return {
         "contract_version": CONTRACT_VERSION,
         "patient_context": {
@@ -55,8 +65,21 @@ def frozen_draft(*, wording_mode="formal_diagnosis", assertion="yes", scope="pri
             "source_route_optional": None,
         },
         "secondary_problems": [],
-        "findings": [],
-        "functional_impairments": [],
+        "findings": [
+            {
+                "finding_id": item,
+                "state_optional": None,
+                "laterality_optional": None,
+                "value_optional": None,
+                "unit_optional": None,
+                "free_text_optional": None,
+            }
+            for item in (findings or [])
+        ],
+        "functional_impairments": [
+            {"id": item, "selected": True, "notes_optional": None}
+            for item in (functional_impairments or [])
+        ],
         "precautions": [],
         "explicit_restrictions": [],
         "goals": [],
@@ -89,17 +112,28 @@ class CU1PrimaryFrozenShoulderRichTests(unittest.TestCase):
         self.assertFalse(result.formatter_blocked)
         return result
 
-    def test_frozen_shoulder_scope_field_is_closed_and_browser_labelled(self):
+    def test_frozen_shoulder_context_fields_are_closed_and_browser_labelled(self):
         fields = self.context_contract["routes"]["adhesive_capsulitis_frozen_shoulder"]["fields"]
-        self.assertEqual(set(fields), {"frozen_shoulder_scope"})
-        spec = fields["frozen_shoulder_scope"]
-        self.assertEqual(spec["type"], "enum")
+        self.assertEqual(set(fields), {"frozen_shoulder_scope", "frozen_shoulder_irritability"})
+
+        scope = fields["frozen_shoulder_scope"]
+        self.assertEqual(scope["type"], "enum")
         self.assertEqual(
-            spec["values"],
+            scope["values"],
             ["primary_frozen_shoulder", "secondary_or_other_stiff_shoulder", "not_stated"],
         )
-        self.assertEqual(set(spec["values"]), set(spec["value_labels_el"]))
-        self.assertEqual(spec["show_when"]["wording_modes"], ["formal_diagnosis"])
+        self.assertEqual(set(scope["values"]), set(scope["value_labels_el"]))
+        self.assertEqual(scope["show_when"]["wording_modes"], ["formal_diagnosis"])
+
+        irritability = fields["frozen_shoulder_irritability"]
+        self.assertEqual(irritability["type"], "enum")
+        self.assertEqual(
+            irritability["values"],
+            ["high", "moderate", "low", "uncertain_or_not_assessed"],
+        )
+        self.assertEqual(set(irritability["values"]), set(irritability["value_labels_el"]))
+        self.assertFalse(irritability.get("required", False))
+        self.assertFalse(irritability.get("required_for_rich_variant", False))
 
     def test_primary_formal_context_is_the_only_rich_variant(self):
         result = self._validate()
@@ -133,6 +167,34 @@ class CU1PrimaryFrozenShoulderRichTests(unittest.TestCase):
             self.assertLessEqual(len(text), self.renderer.max_chars)
         self.assertEqual(detailed.count("ΣΤΑΔΙΟ "), 1)
         self.assertLessEqual(len(detailed), self.renderer.standard_detailed_target_chars)
+
+    def test_realistic_frozen_case_is_clinical_synthesis_not_checkbox_serializer(self):
+        result = self._validate(
+            irritability="high",
+            findings=[
+                "pain",
+                "active_rom_restricted",
+                "passive_rom_restricted",
+                "painful_active_rom",
+                "painful_passive_rom",
+            ],
+            functional_impairments=["overhead_activity", "lifting_carrying", "driving"],
+        )
+        short = self.formatter.format(result.normalized_draft, "short")
+        detailed = self.formatter.format(result.normalized_draft, "detailed")
+        for text in (short, detailed):
+            folded = fold_el(text)
+            self.assertIn(fold_el("Κλινική ερεθιστικότητα: υψηλή"), folded)
+            self.assertIn(fold_el("περιορισμός ενεργητικού εύρους κίνησης"), folded)
+            self.assertIn(fold_el("περιορισμός παθητικού εύρους κίνησης"), folded)
+            self.assertIn(fold_el("δραστηριότητες πάνω από το ύψος του ώμου"), folded)
+            self.assertIn(fold_el("άρση ή μεταφορά φορτίου"), folded)
+            self.assertIn(fold_el("οδήγηση"), folded)
+            self.assertNotIn(fold_el("Παρακαλώ για"), folded)
+            self.assertNotIn(fold_el("προοδευτική ενδυνάμωση"), folded)
+            self.assertNotIn(fold_el("φυσικής πορείας"), folded)
+            for english_leak in ("freezing", "thawing", "routine", "fixed", "frozen shoulder"):
+                self.assertNotIn(english_leak, folded)
 
     def test_presentation_secondary_and_unresolved_scope_block_generation(self):
         cases = [
@@ -195,12 +257,16 @@ class CU1PrimaryFrozenShoulderRichTests(unittest.TestCase):
         folded = fold_el(detailed)
         self.assertNotIn("freezing", folded)
         self.assertNotIn("thawing", folded)
+        self.assertNotIn("routine", folded)
+        self.assertNotIn("fixed", folded)
+        self.assertNotIn("frozen shoulder", folded)
         self.assertNotIn("σταδιο 2", folded)
         self.assertNotIn("3x", folded)
         self.assertNotIn("3 x", folded)
+        self.assertNotIn(fold_el("φυσικής πορείας"), folded)
+        self.assertNotIn(fold_el("ενδυνάμωση"), folded)
         self.assertIn(fold_el("χωρίς καθολικό αριθμητικό"), folded)
-        self.assertIn(fold_el("ενδυνάμωση δεν επιβάλλεται"), folded)
-        self.assertIn(fold_el("φυσικής πορείας"), folded)
+        self.assertIn(fold_el("προκαθορισμένο κανόνα μετάβασης"), folded)
 
     def test_self_stretching_and_strengthening_scope_remain_outside_mandatory_referral_core(self):
         self.assertEqual(
@@ -255,10 +321,15 @@ class CU1PrimaryFrozenShoulderRichTests(unittest.TestCase):
         self.assertEqual(contexts["secondary_or_other_stiff_shoulder"]["sequence_status"], "blocked_evidence_gap")
         self.assertEqual(route["fixture_extension"], "cu1_frozen_shoulder_fixtures_v1.yaml")
 
-    def test_unknown_frozen_shoulder_scope_enum_fails_closed(self):
-        result = self.engine.validate(frozen_draft(scope="probably_primary"))
-        self.assertTrue(any(error.error_id == "invalid_context_enum_value" for error in result.validation_errors))
-        self.assertTrue(result.formatter_blocked)
+    def test_unknown_frozen_shoulder_context_enums_fail_closed(self):
+        for key, draft in (
+            ("scope", frozen_draft(scope="probably_primary")),
+            ("irritability", frozen_draft(irritability="very_high")),
+        ):
+            with self.subTest(key=key):
+                result = self.engine.validate(draft)
+                self.assertTrue(any(error.error_id == "invalid_context_enum_value" for error in result.validation_errors))
+                self.assertTrue(result.formatter_blocked)
 
 
 if __name__ == "__main__":
