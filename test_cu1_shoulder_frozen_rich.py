@@ -7,7 +7,7 @@ from pathlib import Path
 from clinic_utilities.physio_evidence_api import contextual_evidence_summary
 from clinic_utilities.physio_evidence_runtime import CU1ClinicianEvidenceResolver
 from clinic_utilities.physio_referral_formatter_el_v2 import CU1GreekReferralFormatter
-from clinic_utilities.physio_referral_runtime import CONTRACT_VERSION, CU1ContractBundle
+from clinic_utilities.physio_referral_runtime import CONTRACT_VERSION, CU1ContractBundle, CU1ContractError
 from clinic_utilities.physio_rich_referral import CU1RichReferralRenderer
 from clinic_utilities.physio_route_context import CU1RouteContextEngine, route_context_contract_payload
 
@@ -128,7 +128,7 @@ class CU1PrimaryFrozenShoulderRichTests(unittest.TestCase):
         self.assertEqual(detailed.count("ΣΤΑΔΙΟ "), 1)
         self.assertLessEqual(len(detailed), self.renderer.standard_detailed_target_chars)
 
-    def test_presentation_secondary_and_unresolved_scope_fail_closed(self):
+    def test_presentation_secondary_and_unresolved_scope_block_generation(self):
         cases = [
             ("presentation", "yes", "primary_frozen_shoulder"),
             ("formal_diagnosis", "yes", "secondary_or_other_stiff_shoulder"),
@@ -137,6 +137,11 @@ class CU1PrimaryFrozenShoulderRichTests(unittest.TestCase):
         ]
         for wording, assertion, scope in cases:
             with self.subTest(wording=wording, scope=scope):
+                draft = frozen_draft(wording_mode=wording, assertion=assertion, scope=scope)
+                result = self.engine.validate(draft)
+                self.assertTrue(result.formatter_blocked)
+                gate_errors = [error for error in result.validation_errors if error.error_id == "rich_referral_context_required"]
+                self.assertEqual(len(gate_errors), 1)
                 context = {} if scope is None else {"frozen_shoulder_scope": scope}
                 context["__wording_mode"] = wording
                 self.assertFalse(
@@ -146,6 +151,18 @@ class CU1PrimaryFrozenShoulderRichTests(unittest.TestCase):
                         context=context,
                     )
                 )
+                with self.assertRaises(CU1ContractError):
+                    self.formatter.format(result.normalized_draft, "detailed")
+
+    def test_missing_scope_reports_the_exact_required_context_path(self):
+        result = self.engine.validate(frozen_draft(scope=None))
+        gate = next(error for error in result.validation_errors if error.error_id == "rich_referral_context_required")
+        self.assertEqual(gate.metadata.get("reason"), "no_applicable_reviewed_rich_variant")
+        self.assertEqual(
+            gate.metadata.get("required_context_paths"),
+            ["primary_problem.context.frozen_shoulder_scope"],
+        )
+        self.assertTrue(result.formatter_blocked)
 
     def test_rich_output_does_not_invent_fixed_stages_dose_or_mandatory_strengthening(self):
         result = self._validate()
