@@ -1,26 +1,26 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** CU-1 CLINICAL-CONTEXT COMPOSITION — IMPLEMENTED / TESTED / PRODUCT REVIEW GATE.
+> **STATUS:** CU-1 CLINICAL-CONTEXT COMPOSITION — IMPLEMENTED / TESTED / PRODUCT-OWNER REVIEWED.
 > **Updated:** 2026-08-30 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Verified remote `main`:** `08ecd3ab33e98d567c47042a8a1de482df6952b9`.
 > **ACTIVE CANONICAL WRITER/LOCK:** `feat/cu1-rich-referral-global-evidence-2026-08-29`.
-> **ACTIVE RUNTIME WRITER/LOCK:** `feat/cu1-rich-referral-global-evidence-2026-08-29` — HOLD except for product-owner-requested correction of this slice.
+> **ACTIVE RUNTIME WRITER/LOCK:** `feat/cu1-rich-referral-global-evidence-2026-08-29` — HOLD; no further CU-1 runtime mutation without a new explicit product defect/authorization.
 > **Composition implementation commit:** `38f7977811d50636a1585225c74306bef496601c`.
-> **Accepted exact-head test commit:** `9b46623b2c991df631698bf018749550dd843f87`.
-> **CI evidence:** workflow `CU-1 focused tests`, run `33306399908` / run #394 — compile PASS, browser JavaScript syntax PASS, Python suite 127/127 PASS.
+> **Accepted product-review correction head:** `e0f690818c63c146a08a5e508a8123b9059b6b33`.
+> **CI evidence:** workflow `CU-1 focused tests`, run `33311066018` / run #398 — compile PASS, browser JavaScript syntax PASS, Python focused suite PASS.
 > **Merge/deploy authorization:** NO.
 > **Preview deployment:** NOT REQUESTED / NOT AUTHORIZED.
-> **Further route-by-route rollout:** HOLD pending product-owner review of the composed referral output.
+> **Further route-by-route rollout:** HOLD pending an explicit delivery-model decision.
 > **CU-2 / PR-1:** HOLD.
 
 ---
 
 # 1. Current state
 
-The initial rich-referral clinical-context serialization defect has been corrected on the active feature branch.
+The initial rich-referral clinical-context serialization defect has been corrected on the active feature branch and the resulting frozen-shoulder Detailed referral wording has now been product-owner reviewed.
 
-Canonical product rule now has a concrete runtime implementation:
+Canonical product rule:
 
 ```text
 SELECTION INPUT != REFERRAL TEXT
@@ -61,55 +61,37 @@ The composer source contains no `adhesive_capsulitis_frozen_shoulder` / frozen-s
 
 ---
 
-# 3. Frozen-shoulder accepted test case
+# 3. Product-owner reviewed frozen-shoulder wording
 
-For:
+For the Detailed referral, product-owner review on 2026-08-30 locked two bounded corrections:
 
-```text
-formal diagnosis
-primary frozen shoulder
-right
-pain
-active ROM restricted
-passive ROM restricted
-painful active ROM
-painful passive ROM
-overhead activity difficulty
-lifting/carrying difficulty
-driving difficulty
-high irritability
-```
-
-the runtime output is locked by exact deterministic tests to begin:
+1. remove the sentence asserting that exercise/technique selection and dosage are individualized by the physiotherapist from the rendered Detailed referral because it is unnecessary referral prose;
+2. replace the generic reassessment wording with an escalation-oriented handoff rule:
 
 ```text
-Ασθενής με συμφυτική θυλακίτιδα / παγωμένο ώμο δεξιά,
-με επώδυνο και περιορισμένο ενεργητικό και παθητικό εύρος κίνησης.
-Λειτουργικά αναφέρεται δυσκολία σε δραστηριότητες πάνω από το ύψος του ώμου,
-στην άρση ή μεταφορά φορτίου και στην οδήγηση.
-Κλινική ερεθιστικότητα: υψηλή.
+Παρότι έχει προγραμματιστεί ιατρική επανεκτίμηση, συνιστάται επικοινωνία με τον θεράποντα ιατρό για νωρίτερη επανεκτίμηση σε περίπτωση επιδείνωσης, εμφάνισης νέων κλινικών ή τραυματικών στοιχείων ή άλλης ουσιώδους μεταβολής της κλινικής εικόνας.
 ```
 
-The generic `pain` selection is subsumed only when the complete reviewed painful-ROM fusion matches. Partial selection remains literal/safe and does not invent passive ROM, painful ROM, lifting/carrying or driving.
+The second rule communicates only when earlier medical reassessment should be activated; it does not impose a universal routine follow-up interval on the physiotherapist.
+
+The route-level `reassessment_el` authority and rendered Detailed section now carry the same reviewed wording.
 
 ---
 
 # 4. Test evidence
 
-First implementation CI at `38f7977811d50636a1585225c74306bef496601c` correctly exposed one obsolete grammatical oracle: a pre-composition test still required nominative `παγωμένος ώμος` although the natural sentence requires accusative `παγωμένο ώμο`.
-
-The obsolete assertion was corrected without changing the desired runtime output.
+The first product-review correction head exposed one obsolete frozen-shoulder test oracle that still required the removed physiotherapist-dosage sentence. That oracle was corrected to assert the sentence is absent and the new earlier-reassessment communication rule is present.
 
 Accepted exact-head evidence:
 
 ```text
-head: 9b46623b2c991df631698bf018749550dd843f87
+head: e0f690818c63c146a08a5e508a8123b9059b6b33
 workflow: CU-1 focused tests
-run id: 33306399908
-run number: 394
+run id: 33311066018
+run number: 398
 compile: PASS
 browser JavaScript syntax: PASS
-Python focused suite: 127/127 PASS
+Python focused suite: PASS
 ```
 
 ---
@@ -120,7 +102,7 @@ Python focused suite: 127/127 PASS
 DESIGNED                   YES
 IMPLEMENTED                YES
 TESTED                     YES
-PRODUCT-OWNER REVIEWED     PENDING
+PRODUCT-OWNER REVIEWED     YES
 MERGED                     NO
 DEPLOYED                   NO
 PREVIEWED                  NO
@@ -133,12 +115,12 @@ PRODUCTION-SMOKE-VERIFIED  NO
 
 Do not:
 
-- merge to `main`;
+- merge to `main` without explicit authorization;
 - deploy;
 - create preview service;
-- resume new disease-route rollout;
+- resume new disease-route rollout without an explicit delivery-model decision;
 - change persistence;
-- reopen CU-2 or PR-1;
+- reopen CU-2 or PR-1 without explicit authorization;
 - alter underlying clinical-record semantics;
 - add inferred diagnosis/severity/phase/function.
 
@@ -147,8 +129,8 @@ Do not:
 # 7. Exact next action
 
 ```text
-show actual Short + Detailed outputs to product owner
-→ product-owner clinical wording review
-→ if accepted: keep slice closed and decide separately whether/when to merge
-→ if specific defect identified: bounded correction on same writer branch + exact-head CI
+CU-1 reviewed wording slice is closed on the feature branch
+→ keep merge/deploy separate decisions
+→ decide next product slice explicitly
+→ for future disease work, evaluate disease-centered delivery in which one reviewed condition model can project into clinical assessment and physiotherapy referral without duplicating clinical truth
 ```
