@@ -1,72 +1,57 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** MODULE 01 — G-1 RELEASE REVIEW BLOCKED / RUNTIME CORRECTION REQUIRED.
+> **STATUS:** MODULE 01 — G-1 R1/R2 BOUNDED RUNTIME CORRECTION ACTIVE.
 > **Updated:** 2026-08-30 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Fresh verified remote `main`:** `08ecd3ab33e98d567c47042a8a1de482df6952b9`.
-> **Release-review branch:** `feat/module01-g1-progressive-guidance-foundation-2026-08-30`.
-> **Reviewed branch head before this canonical update:** `a7cc4277b57075dd6f0f0e721b12052da77eed25`.
+> **Implementation/correction branch:** `feat/module01-g1-progressive-guidance-foundation-2026-08-30`.
+> **Release-review block head:** `56267d08dc5d68b8c5e4208f2ae3761fa15156b5`.
 > **Inherited tested C1 head:** `a4005dc88140d8f988fcac2b4f4bd9f9bb0c3871`.
-> **ACTIVE CANONICAL WRITER/LOCK:** `feat/module01-g1-progressive-guidance-foundation-2026-08-30` — release-review closeout only.
-> **ACTIVE RUNTIME WRITER/LOCK:** NONE.
+> **ACTIVE CANONICAL WRITER/LOCK:** `feat/module01-g1-progressive-guidance-foundation-2026-08-30` — correction state/evidence only.
+> **ACTIVE RUNTIME WRITER/LOCK:** `feat/module01-g1-progressive-guidance-foundation-2026-08-30` — **ONLY G1-R1 + G1-R2 + focused regression/CI wiring**.
 > **PR/merge/deploy/production smoke:** NOT DONE / NOT AUTHORIZED.
 
 ---
 
-# 1. Release-review result
+# 1. Product-owner authorization
 
-A fresh six-canonical bootstrap was completed from current remote `main`, followed by an exact compare/review of the accepted Module-01 branch chain.
+The product owner explicitly authorized:
 
-Ancestry/scope findings:
+```text
+fix R1 + R2
++ new focused regressions
++ full G-1 + C1 CI
+```
+
+This does **not** authorize PR creation, merge, deployment, production smoke, PR-1/PR-2 work, taxonomy expansion, medication-specific milestone logic, physiotherapy or RF mutation.
+
+---
+
+# 2. Preserved release-review findings
+
+Fresh release review verified the accepted ancestry:
 
 ```text
 main 08ecd3ab33e98d567c47042a8a1de482df6952b9
 → C1 authoritative Finish a4005dc88140d8f988fcac2b4f4bd9f9bb0c3871
-→ G-1 progressive guidance a7cc4277b57075dd6f0f0e721b12052da77eed25
+→ G-1 progressive guidance
 ```
 
-The G-1 branch is directly descended from the exact C1 head. The complete `main...G-1` compare contains only accepted Module-01 canonicals/contracts, C1 finalization files/tests and G-1 guidance files/tests. No parked physiotherapy/RF runtime work is included.
+The branch contains accepted Module-01 canonical/contracts, C1 finalization files/tests and G-1 guidance files/tests only. Parked physiotherapy/RF work is excluded.
 
-Open draft PR #63 remains unrelated parked CU-1 work and must not be merged as part of Module 01.
+Exact-head G-1 CI before this correction was successful at `a7cc4277b57075dd6f0f0e721b12052da77eed25` (run `33327944349`), but release review identified two uncovered state-integrity blockers.
 
 ---
 
-# 2. Existing test evidence remains valid but is not sufficient for release
+# 3. G1-R1 — explicit longitudinal-history availability state
 
-Exact-head G-1 CI before release review:
-
-```text
-workflow: G1 progressive guidance foundation
-run:      33327944349
-head:     a7cc4277b57075dd6f0f0e721b12052da77eed25
-result:   SUCCESS
-```
-
-Passed:
-
-- JavaScript syntax;
-- progressive-guidance core regressions;
-- guidance wiring/ownership regression;
-- authoritative Finish browser regression;
-- server finalization lifecycle regression.
-
-The release review found runtime states that these tests do not cover.
-
----
-
-# 3. RELEASE BLOCKER G1-R1 — unavailable history is silently presented as empty history
-
-Current `progressive-guidance-ui.js` behavior:
+Defect:
 
 ```text
-protected GET /clinical/patient/{patient_id}/encounters fails
-→ catch
+protected historical encounter fetch fails
 → historicalEncounters = []
-→ render continues
-→ active patient can be shown as having 0 previous completed/amended encounters
+→ UI can imply zero prior encounters
 ```
-
-This is not acceptable for clinical guidance.
 
 Required invariant:
 
@@ -75,71 +60,68 @@ HISTORY UNAVAILABLE != NO HISTORY
 AUTH/NETWORK/SERVER FAILURE != ZERO PRIOR ENCOUNTERS
 ```
 
-The guidance layer must carry an explicit history-load state such as:
+Bounded correction requirements:
 
-```text
-not_loaded / loading / loaded / unavailable
-```
-
-When history is unavailable:
-
-- do not claim `0 previous encounters`;
-- do not imply longitudinal guidance is complete;
-- visibly state that prior context could not be loaded;
-- keep current-visit/local guidance usable where safe;
-- do not derive absence-based longitudinal conclusions.
-
-This is a release blocker because silent loss of longitudinal context can suppress unresolved-prior or treatment-timeline guidance.
+- carry explicit `not_loaded / loading / loaded / unavailable` history state;
+- clear old-patient history immediately when a different/current patient history load begins;
+- on failure, do not claim zero previous encounters;
+- visibly state that longitudinal context is unavailable/incomplete;
+- keep current local visit guidance usable;
+- no absence-based longitudinal conclusion from unavailable history.
 
 ---
 
-# 4. RELEASE BLOCKER G1-R2 — live UI clearing can fall back to stale persisted context
+# 4. G1-R2 — live DOM owns current in-memory guidance snapshot
 
-`currentCaseSnapshot()` currently uses truthy fallback patterns such as:
+Defect:
 
 ```text
-DOM value || persisted value
+live DOM value || persisted cache value
 ```
 
-and only replaces fracture-event state when the live DOM contains one or more events.
-
-Consequences before Save can include:
-
-- clearing `quick_notes` still displaying the previous persisted note;
-- clearing/resetting an optional current field falling back to the old stored value;
-- deleting all visible fracture events leaving old persisted fracture events in the guidance snapshot;
-- stale guidance remaining surfaced until another persistence/synchronization step updates the cache.
+can resurrect stale persisted values after the clinician clears a live field before Save.
 
 Required invariant:
 
 ```text
 IF A LIVE CONTROL EXISTS
-→ its current value, including explicit blank/empty state, owns today's in-memory guidance snapshot
+→ its present value, including blank/empty, owns today's in-memory guidance snapshot
+
+persisted cache
+→ fallback only when the live control/root is absent
 ```
 
-Persisted state is only fallback when the corresponding live control is absent, not when its current value is empty.
+This applies at minimum to:
 
-For live fracture-event UI, an empty rendered event list must project as an empty current list rather than resurrecting prior local-cache events.
-
-This is a data-state integrity release blocker for the guidance presentation layer.
+- encounter archetype;
+- encounter date;
+- quick notes;
+- interval fracture status;
+- live fracture-event collection, including an explicitly empty rendered list.
 
 ---
 
-# 5. C1 authoritative Finish review
+# 5. Required regression evidence
 
-C1 ancestry remains intact and its tested ownership model is preserved:
+Add focused synthetic regressions that prove:
 
 ```text
-coordinator
-→ local Save/flush
-→ local pilot-completion payload marker
-→ strict protected completed sync
-→ protected success shown only after server confirmation
+R1-A protected history fetch failure → state=unavailable
+R1-B unavailable history summary never claims 0 previous visits
+R1-C beginning a new patient/history load does not retain prior patient's historical rows
+R1-D successful empty history is distinct: state=loaded + 0 is allowed
+R2-A live blank quick_notes overrides persisted nonblank quick_notes
+R2-B live blank select/date/status overrides persisted value when control exists
+R2-C live empty fracture-event container overrides persisted fracture events with []
+R2-D persisted fallback remains available only when corresponding live control/root is absent
 ```
 
-On protected finalization failure, local data including the completion marker are intentionally retained for retry while protected completion is explicitly reported as unconfirmed. This behavior is already an accepted C1 contract; the release review did not identify a new regression in C1 wiring.
+Then run the complete existing G-1 workflow, preserving:
 
-Production C1 behavior remains unproven until merge/deploy/synthetic smoke.
+- progressive guidance core regressions;
+- guidance wiring/ownership regression;
+- authoritative Finish browser regression;
+- server finalization lifecycle regression.
 
 ---
 
@@ -148,11 +130,12 @@ Production C1 behavior remains unproven until merge/deploy/synthetic smoke.
 ```text
 C1 IMPLEMENTED / TESTED                    YES
 C1 MERGED / DEPLOYED / PROD-SMOKED         NO
-G-1 IMPLEMENTED / PREVIOUSLY TESTED        YES
-G-1 RELEASE-READY                          NO — BLOCKED G1-R1 + G1-R2
-G-1 MERGED / DEPLOYED / PROD-SMOKED        NO
+G-1 BASE IMPLEMENTED / PREVIOUSLY TESTED   YES
+G1-R1 CORRECTION                           ACTIVE
+G1-R2 CORRECTION                           ACTIVE
+G-1 RELEASE-READY                          NO — pending correction + exact-head CI
 PR-1 HEIDI                                 NOT IMPLEMENTED
-PR-2 INLINE REVIEW/POPULATION               NOT IMPLEMENTED
+PR-2 INLINE REVIEW/POPULATION              NOT IMPLEMENTED
 5-CASE SYSTEM-ASSISTED PILOT               NOT STARTED
 30-CASE SYSTEM-ASSISTED BASELINE            NOT STARTED
 MODULE 01 CLOSED                           NO
@@ -160,23 +143,16 @@ MODULE 01 CLOSED                           NO
 
 ---
 
-# 7. Exact next authorized action
-
-STOP release activity. Do not open/merge/deploy G-1 in the present state.
-
-Next action requires a separate product-owner authorization for one bounded runtime correction:
+# 7. Exact next action
 
 ```text
-fresh main verification
-→ claim runtime writer on the existing G-1 branch or a dedicated correction branch
-→ fix G1-R1 explicit history availability state
-→ fix G1-R2 live-DOM-over-persisted snapshot semantics
-→ add focused browser/core regressions for both failure modes
-→ run full G-1 + C1 regression workflow at exact correction head
-→ release-review exact compare again
-→ STOP at release gate
+1. modify only progressive-guidance state/snapshot seams required by R1/R2
+2. add focused synthetic regression(s)
+3. wire focused test into G-1 workflow
+4. run exact-head full G-1 + C1 CI
+5. inspect exact correction diff and CI evidence
+6. update canonicals, release runtime writer
+7. STOP at release gate
 ```
 
-Only after that correction passes may a separate release decision authorize PR/merge/Render auto-deploy/production smoke.
-
-No physiotherapy/RF mutation. No PR-1/PR-2 expansion in this correction.
+No PR/merge/deploy/production smoke in this authorization.
