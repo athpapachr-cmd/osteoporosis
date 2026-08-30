@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — Osteoporosis Module 01 Closure Program v1
 
-> **STATUS:** ACTIVE CLOSURE DESIGN / PILOT-READINESS GATE.
+> **STATUS:** CLOSURE DESIGN FROZEN / C1 PILOT READINESS BLOCKED.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Parent product:** Personal Clinical Excellence System.
 > **Module:** 01 — Osteoporosis.
@@ -229,29 +229,31 @@ The minimum evidence/standards needed to support material Practice Review claims
 # 6. Sequence and dependencies
 
 ```text
-C0 Closure program + canonical priority rebase
+C0 Closure program + canonical priority rebase                  COMPLETE
 ↓
-C1 5-case real pilot
+C1 pilot finalization-integrity readiness correction            BLOCKED / NEXT RUNTIME SLICE
 ↓
-C2 one post-pilot refinement
+C1b 5-case real pilot                                           NOT STARTED
 ↓
-C2b freeze Baseline Form/KPI contract
+C2 one post-pilot refinement                                    NOT STARTED
 ↓
-C3 PR-1 transcript extraction
+C2b freeze Baseline Form/KPI contract                           NOT STARTED
 ↓
-C4 PR-2 clinician candidate review/merge
+C3 PR-1 transcript extraction                                   NOT STARTED
 ↓
-C5 Quick Practice Review shadow mode
+C4 PR-2 clinician candidate review/merge                        NOT STARTED
 ↓
-C6 30-case scored baseline + lock
+C5 Quick Practice Review shadow mode                            NOT STARTED
 ↓
-C7 expose reviewed Signals/interventions
+C6 30-case scored baseline + lock                               NOT STARTED
 ↓
-C8 adaptive workflow refinement from accumulated evidence
+C7 expose reviewed Signals/interventions                        NOT STARTED
 ↓
-C9 re-measure at least one intervention/pattern
+C8 adaptive workflow refinement from accumulated evidence       NOT STARTED
 ↓
-C10 final Module 01 closure review
+C9 re-measure at least one intervention/pattern                 NOT STARTED
+↓
+C10 final Module 01 closure review                              NOT STARTED
 ```
 
 PR-1/PR-2/Practice Review engineering may be designed around pilot findings, but no systematic coaching may contaminate the scored baseline without explicit methodology revision.
@@ -267,7 +269,7 @@ Already proven and reusable for closure:
 - PostgreSQL patient/encounter/lab persistence;
 - browser-session clinical authentication;
 - patient load/save/reload and longitudinal lab smoke;
-- encounter finalization integrity + 3/3 live synthetic validation;
+- server-side encounter finalization state-machine integrity + 3/3 live synthetic validation;
 - baseline methodology and KPI draft contracts;
 - Practice Review / Signal / gap-class architecture;
 - corrected PR-1 v3 pre-code design archived for restart;
@@ -279,38 +281,129 @@ Do not rebuild these from scratch merely because the active priority changed.
 
 ---
 
-# 8. Pilot-readiness check — required next
+# 8. Pilot-readiness result — BLOCKED
 
-Before asking the product owner to start the five real cases, perform read-only verification of:
+Read-only verification confirms that current `main` contains the expected Steps 1–6 pilot flow, protected patient/encounter persistence and the existing eligibility/baseline methodology. No later unrelated branch is required for pilot use.
 
-1. current production/main code still contains the expected pilot flow;
-2. no known open safety/data-loss/persistence blocker invalidates pilot collection;
-3. exact pilot case inclusion/uniqueness rules are recoverable from the schemas/canonicals;
-4. current capture form and server persistence paths correspond to the frozen pre-pilot assumptions;
-5. no later unrelated branch is required for pilot use.
+However, the integrated Step-6 finalization path has a concrete ownership defect.
 
-If a critical blocker exists:
+## 8.1 Current browser event wiring
+
+`pilot-completion.js` owns a capture-phase listener on `#finishVisitBtn` and performs:
 
 ```text
-BLOCK pilot
-→ define one bounded safety/data-integrity correction
-→ test/deploy separately
-→ re-run readiness
+preventDefault()
+stopImmediatePropagation()
+click Save
+mark local pilot_completion=complete
 ```
 
-Otherwise:
+`patient-registry.js` separately binds:
 
 ```text
-PILOT READY
-→ provide exact 5-case protocol to product owner
+Save → syncActiveEncounter("draft")
+Finish → syncActiveEncounter("completed")
 ```
+
+Because the capture-phase Finish handler stops immediate propagation, the later `Finish → completed` server synchronization is not a reliable executed path. The Save action triggered inside the pilot-completion handler schedules a `draft` synchronization.
+
+The resulting possible state is internally contradictory:
+
+```text
+browser/local pilot completion: complete
+protected server encounter status: draft
+```
+
+This violates pilot persistence/finalization integrity and blocks use of real pilot cases until corrected.
+
+## 8.2 Existing evidence does not close this exact gap
+
+`test_encounter_finalization.py` validates `resolve_encounter_status()` after the requested status reaches the server. It proves completed/amended transition semantics but does not drive the browser Finish event chain.
+
+The prior 3/3 live synthetic finalization smoke remains valid for the tested completed/amended scenarios, but it did not establish an integrated invariant that Step-6 Finish necessarily delivers `requested status=completed` through the current capture/bubble listener composition.
 
 ---
 
-# 9. REPLAN triggers
+# 9. Bounded C1 correction design
+
+The next implementation must create one authoritative finalization operation rather than two competing click-listener owners.
+
+Required semantic result:
+
+```text
+Step-6 Finish
+→ snapshot/save all current module state
+→ mark pilot completion locally
+→ synchronize the same final encounter payload to the protected server as completed
+→ await/verify success
+→ only then present successful completion state
+```
+
+Implementation may refactor event ownership as needed, but must NOT change clinical fields, KPI meaning, pilot eligibility, scored-baseline methodology or unrelated registry behavior.
+
+### Acceptance fixtures / integrated regression
+
+Required:
+
+```text
+1. new/draft encounter + Step-6 Finish
+   local pilot_completion.status == complete
+   server status == completed
+   server payload contains final Steps 1–6 state
+
+2. reload/reopen
+   completed encounter remains loadable and completed
+
+3. no-op Save after completion
+   completed remains completed
+
+4. material edit + Save
+   completed becomes amended
+
+5. Finish without an active protected patient/server link
+   must not falsely imply protected-server completion;
+   behavior/error state must be explicit
+```
+
+A browser/integration-level test is required in addition to the existing server transition unit test.
+
+---
+
+# 10. Pilot protocol after C1 passes
+
+The five pilot cases are:
+
+```text
+5 consecutive eligible real osteoporosis encounters
+```
+
+Eligibility follows the existing baseline schema:
+
+- adult encounter;
+- osteoporosis, osteopenia, fragility-fracture risk or osteoporosis treatment materially assessed or managed;
+- includes new assessment, follow-up, post-fracture review, treatment review or transition;
+- excludes purely administrative contacts and encounters outside osteoporosis clinical scope.
+
+Unlike the later core scored baseline, pilot design does not require 30 unique patients; its purpose is usability/capture validation. Pilot cases are not included in the locked scored baseline because the form may change.
+
+For each pilot case record:
+
+- completion time;
+- friction/duplicated work;
+- ambiguous/missing fields;
+- branching/applicability issues;
+- persistence/load/reload behavior;
+- safety/data-integrity issue if any.
+
+Do not alter the form after individual pilot cases unless safety/data-loss/persistence requires immediate correction. After all five, make one deliberate refinement and freeze the measurement contract before scored-baseline accrual.
+
+---
+
+# 11. REPLAN triggers
 
 Stop and replan if:
 
+- the C1 correction reveals broader ownership conflict across Save/Finish/patient sync rather than the bounded seam above;
 - real pilot shows the current form cannot capture core eligible osteoporosis encounters reliably;
 - persistence or finalization integrity fails in real use;
 - current KPI applicability cannot be frozen without material new clinical modelling;
@@ -321,17 +414,20 @@ Stop and replan if:
 
 ---
 
-# 10. Acceptance of this planning slice
+# 12. Acceptance of this planning slice
 
-This closure-planning slice is complete when:
+This closure-planning slice is now complete at design/readiness level:
 
 ```text
-closure-critical boundary frozen
-+ deferred/non-blocking boundary frozen
-+ physiotherapy parked/preserved by exact branch+SHA
-+ TODO priority/order reconciled
-+ pilot-readiness inspected
-+ exact next product-owner action defined
+closure-critical boundary frozen                    YES
+deferred/non-blocking boundary frozen               YES
+physiotherapy parked/preserved by exact branch+SHA  YES
+TODO priority/order reconciled                      YES
+pilot-readiness inspected                           YES
+pilot readiness                                     BLOCKED
+exact blocker defined                               YES
+bounded next implementation scope defined           YES
+runtime mutation in this slice                      NO
 ```
 
-Then STOP. Runtime work requires the next bounded slice/authorization.
+STOP. The next action is a separately authorized bounded C1 pilot-finalization-integrity implementation slice followed by readiness re-verification.
