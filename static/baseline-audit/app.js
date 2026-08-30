@@ -24,9 +24,10 @@
     .then(() => loadScript("./step5.js"))
     .then(() => loadScript("./step6.js"))
     .then(() => loadScript("./adaptive-applicability.js"))
+    .then(() => loadScript("./finalization-coordinator.js"))
+    .then(() => loadScript("./patient-registry.js"))
     .then(() => loadScript("./pilot-completion.js"))
     .then(() => loadScript("./whole-form-progress.js"))
-    .then(() => loadScript("./patient-registry.js"))
     .then(() => loadScript("./lab-history-ui.js"))
     .then(() => loadScript("./calendar-link.js"))
     .catch((error) => console.error("Baseline Audit bootstrap failed", error));
