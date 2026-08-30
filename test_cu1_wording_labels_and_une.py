@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 
 from clinic_utilities.physio_referral_formatter_el_v2 import CU1GreekReferralFormatter
-from clinic_utilities.physio_referral_runtime import CONTRACT_VERSION, CU1ContractBundle
+from clinic_utilities.physio_referral_runtime import CONTRACT_VERSION, CU1ContractBundle, CU1ContractError
 from clinic_utilities.physio_route_context import CU1RouteContextEngine, route_context_contract_payload
 
 
@@ -99,10 +99,13 @@ class CU1WordingLabelsAndUNETests(unittest.TestCase):
         formal_text = self.formatter.format(formal_result.normalized_draft, "short")
         self.assertIn("Αυχενογενής κεφαλαλγία.", formal_text)
 
-    def test_c4_presentation_fallback_stays_non_diagnostic_and_formal_is_diagnostic(self):
+    def test_c4_presentation_is_blocked_instead_of_legacy_fallback_and_formal_is_diagnostic(self):
         presentation = draft_for("cervical", "cervical_dizziness_presentation")
         presentation_result = self.engine.validate(presentation)
-        self.assertFalse(presentation_result.validation_errors)
+        self.assertTrue(presentation_result.formatter_blocked)
+        self.assertTrue(
+            any(error.error_id == "rich_referral_context_required" for error in presentation_result.validation_errors)
+        )
         self.assertFalse(
             self.renderer.supports(
                 profile_id="cervical",
@@ -110,9 +113,8 @@ class CU1WordingLabelsAndUNETests(unittest.TestCase):
                 context={"__wording_mode": "presentation"},
             )
         )
-        presentation_text = self.formatter.format(presentation_result.normalized_draft, "short")
-        self.assertIn("Ζάλη με αυχενικά μυοσκελετικά χαρακτηριστικά", presentation_text)
-        self.assertNotIn("Αυχενογενής / αυχενικής προέλευσης ζάλη", presentation_text)
+        with self.assertRaises(CU1ContractError):
+            self.formatter.format(presentation_result.normalized_draft, "short")
 
         formal = draft_for(
             "cervical",
@@ -182,7 +184,7 @@ class CU1WordingLabelsAndUNETests(unittest.TestCase):
         self.assertIn("Ωλένια νευροπάθεια στον αγκώνα / σύνδρομο κυβοειδούς σωλήνα.", short)
         self.assertNotIn("Συμπτωματολογία ωλενίου νεύρου στην περιοχή του αγκώνα", short)
 
-    def test_une_incomplete_or_nonmild_context_never_receives_rich_sequence(self):
+    def test_une_incomplete_or_nonmild_context_blocks_generation(self):
         cases = []
         for key in MILD_UNE_CONTEXT:
             candidate = copy.deepcopy(MILD_UNE_CONTEXT)
@@ -196,32 +198,17 @@ class CU1WordingLabelsAndUNETests(unittest.TestCase):
         ):
             candidate = copy.deepcopy(MILD_UNE_CONTEXT)
             candidate[key] = value
-            cases.append((f"unsafe_{key}", candidate))
+            cases.append((f"unsupported_{key}", candidate))
 
         for name, context in cases:
             with self.subTest(case=name):
-                rich_context = dict(context, __wording_mode="presentation")
-                self.assertFalse(
-                    self.renderer.supports(
-                        profile_id="elbow",
-                        route_id="ulnar_neuropathy_at_elbow",
-                        context=rich_context,
-                    )
+                result = self.engine.validate(
+                    draft_for("elbow", "ulnar_neuropathy_at_elbow", context=context)
                 )
-
-    def test_une_presentation_fallback_remains_non_diagnostic_when_rich_context_is_incomplete(self):
-        draft = draft_for(
-            "elbow",
-            "ulnar_neuropathy_at_elbow",
-            context={"une_clinician_severity_context": "mild"},
-        )
-        result = self.engine.validate(draft)
-        self.assertFalse(result.validation_errors)
-        self.assertFalse(result.formatter_blocked)
-        text = self.formatter.format(result.normalized_draft, "short")
-        self.assertIn("Συμπτωματολογία ωλενίου νεύρου στην περιοχή του αγκώνα", text)
-        self.assertNotIn("Ωλένια νευροπάθεια στον αγκώνα / σύνδρομο κυβοειδούς σωλήνα", text)
-        self.assertNotIn("Δεν καθιερώνεται αυτόματα νυχτερινός νάρθηκας", text)
+                self.assertTrue(result.formatter_blocked)
+                self.assertTrue(any(error.error_id == "rich_referral_context_required" for error in result.validation_errors))
+                with self.assertRaises(CU1ContractError):
+                    self.formatter.format(result.normalized_draft, "short")
 
     def test_une_unknown_context_enum_fails_closed(self):
         draft = draft_for(
