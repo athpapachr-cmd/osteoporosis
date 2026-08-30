@@ -170,6 +170,7 @@ def build_cu1_physio_referral_router() -> APIRouter:
             )
         }
         payload["ui_relevance_scope"] = copy.deepcopy(bundle.artifacts.get("ui_relevance_scope", {}))
+        payload["ui_relevance_hierarchy"] = copy.deepcopy(bundle.artifacts.get("ui_relevance_hierarchy", {}))
         requirements = bundle.route_requirements
         payload["ui_route_requirements"] = {
             "wording_mode_requirements": copy.deepcopy(requirements.get("wording_mode_requirements", {})),
