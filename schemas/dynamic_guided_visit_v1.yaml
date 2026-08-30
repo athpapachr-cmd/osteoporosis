@@ -1,0 +1,568 @@
+schema: dynamic_guided_visit_v1
+status: design_frozen_g0
+module: osteoporosis
+purpose: >-
+  Machine-readable design contract for deriving an encounter-specific clinician-facing
+  Visit Plan from authoritative longitudinal data and current encounter context. This
+  contract governs presentation/guidance semantics only; it does not make treatment
+  decisions and does not itself persist new clinical truth.
+
+principles:
+  - clinical_guidance_is_not_audit_score
+  - clinical_guidance_is_not_postvisit_practice_review
+  - clinical_workflow_presentation_is_not_storage_schema
+  - reuse_authoritative_longitudinal_data_before_requesting_reentry
+  - every_nonobvious_surfaced_item_should_retain_why_now
+  - safety_and_event_triggers_outrank_routine_visit_defaults
+  - no_treatment_decision_is_silently_made_by_the_guidance_engine
+  - exact_clinical_milestones_require_reviewed_evidence_or_approved_clinic_policy
+  - ordinal_administration_count_and_elapsed_exposure_are_distinct
+  - missing_data_is_not_a_negative_finding
+
+runtime_source_registry:
+  version: osteoporosis_guidance_runtime_sources_v1
+  note: >-
+    These are current persisted/browser paths verified during G-0. G-1 must stop and
+    replan if actual runtime paths differ materially.
+  sources:
+    encounter_archetype:
+      path: encounter_archetype
+      availability: current
+    patient_relationship:
+      path: patient_relationship_status
+      availability: current
+    fracture_events:
+      path: fracture_history.events[]
+      availability: current
+    treatment_episodes:
+      path: step4.treatment_episodes[]
+      availability: current
+      fields:
+        - id
+        - agent
+        - status
+        - start_date
+        - end_date
+        - duration_years
+        - adherence
+        - tolerance
+        - fractures_on_episode
+        - response_context
+        - reason_started
+        - reason_stopped
+    administrations:
+      path: step4.administrations[]
+      availability: current
+      fields:
+        - id
+        - agent
+        - scheduled_date
+        - actual_date
+        - status
+        - next_due_date
+    followup_tasks:
+      path: step4.tasks[]
+      availability: current
+      fields:
+        - id
+        - type
+        - due_date
+        - timeframe_text
+        - status
+    treatment_decision:
+      path: step4.decision
+      availability: current
+    transition:
+      path: step4.transition
+      availability: current
+    close_state:
+      path: step4.close
+      availability: current
+    current_labs:
+      path: step3.labs
+      availability: current
+    current_dxa:
+      path: step3.dxa
+      availability: current
+    current_vfa:
+      path: step3.vfa
+      availability: current
+    current_secondary_cause_state:
+      path: step3.secondary
+      availability: current
+    current_function_state:
+      path: step3.function
+      availability: current
+    applicability_review:
+      path: applicability_review
+      availability: current_coarse_only
+
+encounter_archetypes:
+  current_runtime_values:
+    - initial_assessment_new_or_uncertain_diagnosis
+    - initial_assessment_known_osteoporosis_or_osteopenia
+    - routine_followup_stable
+    - treatment_start
+    - treatment_continuation_or_due_monitoring
+    - treatment_change_or_transition
+    - post_fragility_fracture
+    - fracture_on_treatment
+    - adverse_effect_or_intolerance
+    - treatment_completion_or_consolidation
+    - other
+  candidate_future_value:
+    - results_or_workup_review_with_management_decision
+  rule: >-
+    Archetype is coarse visit intent. It must not encode every treatment ordinal or
+    every possible longitudinal state.
+
+objects:
+  EncounterContextV1:
+    required:
+      - schema_version
+      - module
+      - encounter_archetype
+      - patient_relationship
+      - active_treatment
+      - monitoring_due
+      - new_events
+      - unresolved_prior_items
+      - special_context_flags
+    fields:
+      schema_version:
+        const: encounter_context_v1
+      module:
+        const: osteoporosis
+      encounter_archetype:
+        type: string
+        allowed_from: encounter_archetypes.current_runtime_values
+      patient_relationship:
+        enum: [new_to_service, established_patient, unknown]
+      current_problem_state:
+        type: object
+        optional: true
+      active_treatment:
+        type: object
+        fields:
+          episode_id:
+            type: string
+            nullable: true
+          agent:
+            type: string
+            nullable: true
+          episode_status:
+            type: string
+            nullable: true
+          start_date:
+            type: date
+            nullable: true
+          elapsed_exposure_months:
+            type: integer
+            minimum: 0
+            nullable: true
+            derivation: only_from_supported_authoritative_dates
+          administration_count:
+            type: integer
+            minimum: 0
+            nullable: true
+            derivation: count_only_reliable_actual_administrations_for_active_agent_episode
+          last_actual_administration:
+            type: date
+            nullable: true
+          next_due_date:
+            type: date
+            nullable: true
+          due_state:
+            enum: [not_applicable, not_due, due, overdue, uncertain]
+          count_exposure_consistency:
+            enum: [consistent, divergent_due_to_delay_or_gap, insufficient_data, not_applicable]
+      monitoring_due:
+        type: object
+        fields:
+          labs:
+            enum: [yes, no, uncertain]
+          dxa:
+            enum: [yes, no, uncertain]
+          vfa_or_imaging:
+            enum: [yes, no, uncertain]
+          other:
+            type: array
+            items: string
+      new_events:
+        type: object
+        fields:
+          fracture:
+            enum: [yes, no, uncertain]
+          fracture_on_treatment:
+            enum: [yes, no, uncertain]
+          adverse_effect:
+            enum: [yes, no, uncertain]
+          other_safety:
+            type: array
+            items: string
+      unresolved_prior_items:
+        type: array
+        items:
+          type: object
+          fields:
+            item_id: string
+            item_type: string
+            critical: boolean
+            due_date:
+              type: date
+              nullable: true
+            source_path:
+              type: string
+              nullable: true
+      special_context_flags:
+        type: array
+        items: string
+      context_quality:
+        type: object
+        fields:
+          treatment_timeline_complete:
+            enum: [yes, no, uncertain]
+          administration_history_reliable:
+            enum: [yes, no, uncertain]
+          due_state_reliable:
+            enum: [yes, no, uncertain]
+
+  GuidanceRuleV1:
+    required:
+      - rule_id
+      - module
+      - domain
+      - card_id
+      - rule_class
+      - priority
+      - applies_if
+      - reason_code
+      - human_reason
+      - source
+      - status
+    fields:
+      rule_id: string
+      module:
+        const: osteoporosis
+      domain: string
+      card_id: string
+      rule_class:
+        enum:
+          - critical_safety
+          - event_triggered
+          - unresolved_prior
+          - agent_specific
+          - milestone_due
+          - archetype_core
+          - contextual
+      priority:
+        type: integer
+        minimum: 1
+      applies_if:
+        type: deterministic_predicate
+        allowed_roots:
+          - encounter_archetype
+          - patient_relationship
+          - active_treatment
+          - monitoring_due
+          - new_events
+          - unresolved_prior_items
+          - special_context_flags
+          - context_quality
+      suppresses_if:
+        type: deterministic_predicate
+        optional: true
+      reason_code: string
+      human_reason: string
+      source:
+        type: object
+        fields:
+          type:
+            enum: [guideline, evidence, approved_clinic_policy, product_flow]
+          id:
+            type: string
+            nullable: true
+          version:
+            type: string
+            nullable: true
+          strength_or_certainty:
+            type: string
+            nullable: true
+          reviewed_on:
+            type: date
+            nullable: true
+      status:
+        enum: [draft, active, superseded]
+
+  VisitPlanV1:
+    required:
+      - schema_version
+      - module
+      - encounter_archetype
+      - ordered_cards
+      - critical_unresolved
+      - close_requirements
+      - rule_trace
+    fields:
+      schema_version:
+        const: visit_plan_v1
+      visit_plan_id:
+        type: uuid
+      module:
+        const: osteoporosis
+      encounter_archetype: string
+      ordered_cards:
+        type: array
+        items:
+          ref: GuidedCardStateV1
+      critical_unresolved:
+        type: array
+        items: string
+      close_requirements:
+        type: array
+        items: string
+      rule_trace:
+        type: array
+        items:
+          type: object
+          fields:
+            rule_id: string
+            matched: boolean
+            reason_code: string
+            card_id: string
+      generated_at:
+        type: datetime
+
+  GuidedCardStateV1:
+    required:
+      - card_id
+      - visibility
+      - priority
+      - reason_codes
+      - why_now
+      - prior_data_state
+      - capture_state
+      - critical_unresolved
+    fields:
+      card_id: string
+      visibility:
+        enum: [surfaced, collapsed, hidden]
+      priority:
+        type: integer
+      reason_codes:
+        type: array
+        unique: true
+        items: string
+      why_now: string
+      prior_data_state:
+        enum: [available, absent, stale_or_due, uncertain, not_applicable]
+      capture_state:
+        enum: [resolved, unresolved, partial, not_applicable]
+      provisional_candidate_count:
+        type: integer
+        minimum: 0
+      conflict_count:
+        type: integer
+        minimum: 0
+      critical_unresolved: boolean
+      clinician_override:
+        type: object
+        nullable: true
+        fields:
+          action:
+            enum: [surface, collapse, dismiss_for_visit]
+          reason: string
+
+  TherapyMilestoneProfileV1:
+    required:
+      - profile_id
+      - agent
+      - milestones
+      - status
+    fields:
+      profile_id: string
+      agent: string
+      source:
+        type: object
+        fields:
+          type:
+            enum: [guideline, evidence, approved_clinic_policy]
+          id:
+            type: string
+          version:
+            type: string
+            nullable: true
+          reviewed_on:
+            type: date
+      milestones:
+        type: array
+        items:
+          type: object
+          fields:
+            milestone_id: string
+            trigger:
+              type: object
+              allowed_keys:
+                - every_administration
+                - administration_count_in
+                - administration_count_gte
+                - elapsed_exposure_months_gte
+                - due_state_in
+                - monitoring_due
+                - new_fracture
+                - fracture_on_treatment
+                - course_completion_state
+                - transition_state
+            guidance_rule_ids:
+              type: array
+              items: string
+            rationale: string
+      status:
+        enum: [draft, active, superseded]
+    hard_rule: >-
+      G-0 defines trigger capability only. No denosumab or other agent-specific clinical
+      milestone is active merely because this schema can represent it.
+
+  GuidanceExposureV1:
+    required:
+      - encounter_id
+      - item_id
+      - reason_code
+      - was_surfaced
+      - content_present_before_surface
+      - resolved_after_surface
+      - resolution_source
+    fields:
+      encounter_id: string
+      item_id: string
+      reason_code: string
+      was_surfaced: boolean
+      surfaced_at:
+        type: datetime
+        nullable: true
+      content_present_before_surface:
+        enum: [yes, no, unknown]
+      resolved_after_surface:
+        enum: [yes, no, unknown]
+      resolution_source:
+        enum: [transcript, clinician_entry, prior_data, mixed, unknown]
+    interpretation: >-
+      GuidanceExposure is descriptive context, not a punitive competence score and not
+      proof of causal learning when event timing is uncertain.
+
+rule_resolution:
+  priority_order:
+    - critical_safety
+    - event_triggered
+    - unresolved_prior
+    - agent_specific
+    - milestone_due
+    - archetype_core
+    - contextual
+  semantics:
+    - higher_priority_match_can_surface_card_despite_lower_priority_default_not_applicable
+    - multiple_matching_rules_preserve_multiple_reason_codes
+    - safety_critical_unresolved_card_cannot_be_silently_hidden
+    - same_context_and_rule_set_must_produce_same_visit_plan
+    - clinician_override_does_not_rewrite_rule_authority
+
+capture_integration:
+  transcript_candidate_states:
+    - proposed
+    - accepted
+    - edited_and_accepted
+    - rejected
+    - conflict_needs_resolution
+    - unmapped_needs_review
+  rules:
+    - proposed_value_is_not_authoritative
+    - existing_authoritative_value_is_never_silently_overwritten
+    - mapped_candidates_should_be_presentable_in_destination_card
+    - not_mentioned_is_not_negative
+    - coverage_is_relative_to_current_visit_plan_not_entire_osteoporosis_schema
+
+baseline_methodology:
+  pilot:
+    target_cases: 5
+    type: consecutive_eligible_system_assisted_encounters
+    starts_after:
+      - authoritative_finish_production_smoke_pass
+      - minimum_dynamic_visit_plan_runtime
+      - transcript_extraction_runtime
+      - inline_clinician_review_population_runtime
+    measures:
+      - completion_time
+      - manual_entry_or_correction_burden
+      - clinically_meaningful_transcript_omissions
+      - false_or_incorrect_candidates
+      - ambiguous_or_conflicting_candidates
+      - incorrect_card_relevance
+      - duplicate_questioning_or_entry
+      - persistence_or_finalization_defects
+      - cognitive_burden
+      - safety_or_data_integrity_defects
+  scored_baseline:
+    target_cases: 30
+    type: consecutive_unique_system_assisted_encounters
+    clinical_guidance: active_and_frozen
+    transcript_capture: active_and_frozen
+    kpi_performance_feedback: hidden
+    routine_practice_review_feedback: hidden_by_default
+    safety_critical_feedback: allowed
+    guidance_exposure: record_when_reliable
+    label: system_assisted_baseline
+
+synthetic_design_fixtures:
+  - id: first_assessment
+    archetype: initial_assessment_new_or_uncertain_diagnosis
+    expected_high_level_behavior:
+      - broad_initial_characterization
+      - no_treatment_decision_automation
+  - id: results_review_decision
+    archetype: initial_assessment_known_osteoporosis_or_osteopenia
+    prior_data:
+      full_history_available: true
+    triggers:
+      monitoring_due: true
+      unresolved_prior: true
+    expected_high_level_behavior:
+      - reuse_prior_history
+      - surface_pending_results_and_decision_cards
+      - avoid_full_history_reentry
+  - id: routine_repeated_denosumab
+    archetype: treatment_continuation_or_due_monitoring
+    active_treatment:
+      agent: denosumab
+    new_events:
+      fracture: no
+    expected_high_level_behavior:
+      - concise_base_administration_flow
+      - only_reviewed_due_or_milestone_items_added
+  - id: scheduled_administration_with_new_fracture
+    archetype: treatment_continuation_or_due_monitoring
+    active_treatment:
+      agent: denosumab
+    new_events:
+      fracture: yes
+      fracture_on_treatment: yes
+    expected_high_level_behavior:
+      - event_override_supersedes_routine_abbreviated_flow
+  - id: delayed_time_critical_administration
+    archetype: treatment_continuation_or_due_monitoring
+    active_treatment:
+      due_state: overdue
+    expected_high_level_behavior:
+      - timing_or_safety_override_prominent
+  - id: long_duration_milestone
+    archetype: treatment_continuation_or_due_monitoring
+    expected_high_level_behavior:
+      - milestone_content_only_if_active_reviewed_profile_matches
+
+forbidden_in_g0:
+  - runtime_guidance_code
+  - hard_coded_prolia_4th_8th_10th_clinical_rules_without_evidence_or_policy
+  - provider_or_model_runtime
+  - authoritative_transcript_write
+  - silent_existing_value_overwrite
+  - clinical_form_or_kpi_semantic_mutation
+  - physiotherapy_or_rf_work

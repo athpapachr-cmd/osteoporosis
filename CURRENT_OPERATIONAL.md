@@ -1,244 +1,142 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** ACTIVE OPERATIONAL AUTHORITY.
-> **Updated:** 2026-08-28 Asia/Nicosia.
+> **STATUS:** MODULE 01 — G-1 RELEASE PR OPEN / MERGE GATE.
+> **Updated:** 2026-08-30 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Verified current main at slice start:** `ad8045657616cd306b66d3becbda271f00c7fbbc`.
-> **Prior CU-1 dynamic-form fix:** PR #62 squash-merged as `ad8045657616cd306b66d3becbda271f00c7fbbc`.
-> **Current major phase:** bounded CU-1 clinician-quality design hardening — history + criteria-based rehabilitation sequence + disease-specific evidence.
-> **CU-1 status:** REOPENED / REPLAN REQUIRED BEFORE FURTHER RUNTIME WORK.
-> **ACTIVE CANONICAL WRITER/LOCK:** `design/cu1-history-evidence-timeline-2026-08-28`.
+> **Fresh verified remote `main`:** `08ecd3ab33e98d567c47042a8a1de482df6952b9`.
+> **Release branch:** `feat/module01-g1-progressive-guidance-foundation-2026-08-30`.
+> **Pre-PR tested head:** `8628dbcd9320e91497d49e1c223cc51a810cd51b`.
+> **Release PR:** `#64` → `main`.
+> **Inherited tested C1 head:** `a4005dc88140d8f988fcac2b4f4bd9f9bb0c3871`.
+> **ACTIVE CANONICAL WRITER/LOCK:** release branch — PR/release closeout only.
 > **ACTIVE RUNTIME WRITER/LOCK:** NONE.
-> **Runtime mutation in this slice:** NOT AUTHORIZED until design/evidence coverage review passes.
-> **CU-2:** NOT AUTHORIZED.
-> **PR-1 Transcript Intake:** intentionally paused at `archive/slices/PR1_TRANSCRIPT_INTAKE_V3.md`.
+> **Merge/deploy/production smoke:** MERGE AUTHORIZED BY PRODUCT OWNER / NOT YET DONE.
 
 ---
 
-# 1. Trigger for replan
+# 1. Release authorization
 
-Product-owner clinician review identified three structural deficits that remain after formatter and dynamic-form maintenance:
+The product owner explicitly authorized release of G-1 after G1-R1/R2 were closed and the full G-1+C1 suite passed.
 
-```text
-1. generated referral lacks a coherent structured HISTORY section
-2. goals are flat and do not express a safe criteria-based rehabilitation progression
-3. rehabilitation recommendations are not route-specific and are disconnected from explicit current literature provenance
-```
-
-Critical correction:
+Authorized path:
 
 ```text
-"timeline" in this CU-1 slice
-!= physiotherapy session frequency
-!= total course duration
-!= generic recovery prediction
-
-"timeline" means
-ordered rehabilitation phases/goals
-→ each phase progresses after functional/clinical criteria are met
-→ the next phase becomes appropriate only after the previous phase is sufficiently achieved
+fresh six-canonical bootstrap
+→ fresh main verification
+→ exact full compare/review
+→ PR
+→ squash merge
+→ normal Render auto-deploy
+→ production synthetic smoke
+→ canonical release closeout
 ```
 
-The physician does not need CU-1 to prescribe routine session frequency or total physiotherapy duration.
+PR-1/PR-2, new taxonomy/milestone rules, physiotherapy/RF mutation and real pilot data remain outside this release.
 
 ---
 
-# 2. Current design authority
+# 2. Release evidence before PR
 
-Primary design candidate:
-
-```text
-clinic_utilities/contracts/CU1_HISTORY_EVIDENCE_TIMELINE_V1.md
-```
-
-Machine schema:
+Fresh release bootstrap verified:
 
 ```text
-clinic_utilities/contracts/cu1_history_timeline_schema_v1.yaml
+main = 08ecd3ab33e98d567c47042a8a1de482df6952b9
+release head = 8628dbcd9320e91497d49e1c223cc51a810cd51b
 ```
 
-Evidence registry seed:
+Exact compare is directly ahead of main and contains only accepted Module-01 canonical/design artifacts, C1 finalization files/tests and G-1 guidance files/tests. No parked physiotherapy/RF runtime is included.
+
+Fresh exact-head check-run evidence at `8628dbcd...`:
 
 ```text
-clinic_utilities/contracts/cu1_evidence_registry_v1.yaml
+workflow: G1 progressive guidance foundation
+run:      33329427497
+result:   SUCCESS
 ```
 
-The existing frozen clinical route taxonomy remains preserved unless a specific evidence conflict later demonstrates a narrow correction is required.
+This includes:
+
+- JavaScript syntax;
+- G-1 core regression;
+- G-1 wiring/ownership regression;
+- G1-R1/R2 UI-state regression;
+- C1 authoritative Finish browser regression;
+- C1 server finalization lifecycle regression.
 
 ---
 
-# 3. Required new objects / semantics
+# 3. PR state
 
 ```text
-ReferralHistoryV2
-RehabilitationSequenceV1
-RehabilitationPhaseV1
-GoalPlanV2
-ReassessmentPlanV2
-EvidenceSource
-EvidenceClaim
-RouteEvidenceProfile
+PR:       #64
+base:     main @ 08ecd3ab33e98d567c47042a8a1de482df6952b9
+head:     feat/module01-g1-progressive-guidance-foundation-2026-08-30
+state:    OPEN
+mergeable: YES at initial PR inspection
 ```
 
-Core distinctions:
-
-```text
-history fact != diagnosis
-rehabilitation phase order != calendar prescription
-progression criterion != elapsed time alone
-route_A evidence != route_B evidence
-clinician-selected intervention != evidence recommendation
-low-certainty evidence != strong recommendation
-missing route-specific evidence != permission to invent a default
-```
+Because this operational closeout commit moves the PR head, PR-head CI must pass again before merge.
 
 ---
 
-# 4. Disease-specific evidence requirement
+# 4. Release invariants
 
-Every routine CU-1 route must have its own versioned `RouteEvidenceProfile`.
-
-Examples:
+Must remain true before merge:
 
 ```text
-lateral_elbow_tendinopathy
-→ lateral-elbow-specific CPG/review claims
-→ elbow-specific rehabilitation sequence
-
-achilles_tendinopathy
-→ Achilles-specific CPG/review claims
-→ Achilles-specific loading/progression sequence
+main has not moved unexpectedly
+PR head contains no unrelated parked scope
+G1 full suite SUCCESS at exact PR head
+PR mergeable
+C1 ancestry preserved
+no real patient data/transcript committed
 ```
 
-The system must not render the same generic rehabilitation package across unrelated routes merely because both may involve strengthening or loading.
+After squash merge:
 
-Every generated rehabilitation recommendation must resolve to one or more active route-applicable `EvidenceClaim` objects.
+```text
+Render auto-deploy only; do not manually trigger duplicate deploy
+verify exact deployed main commit
+production synthetic smoke:
+- G-1 page/bootstrap loads
+- dropdown + quick context produce guidance / WHY NOW
+- longitudinal history unavailable state is explicit and never false zero
+- loaded empty history can legitimately show zero
+- C1 authoritative Finish confirms protected completed/amended state and reload behavior using synthetic data
+```
+
+Do not mark production-smoke verified without direct evidence.
 
 ---
 
-# 5. What must appear in the referral
-
-Evidence is not only a hidden clinician-side tooltip.
-
-The generated referral itself must show the disease-specific evidence-informed rehabilitation direction for the selected condition.
-
-Detailed output target:
+# 5. Current status matrix
 
 ```text
-ΔΙΑΓΝΩΣΗ / ΚΛΙΝΙΚΗ ΕΝΤΥΠΩΣΗ
-ΙΣΤΟΡΙΚΟ
-ΚΛΙΝΙΚΑ ΕΥΡΗΜΑΤΑ
-ΛΕΙΤΟΥΡΓΙΚΗ ΕΠΙΒΑΡΥΝΣΗ
-ΑΙΤΗΜΑ
-ΣΤΑΔΙΑΚΟΙ ΣΤΟΧΟΙ ΚΑΙ ΚΡΙΤΗΡΙΑ ΠΡΟΟΔΟΥ
-ΠΡΟΤΕΙΝΟΜΕΝΟΣ ΠΡΟΣΑΝΑΤΟΛΙΣΜΟΣ ΑΠΟΚΑΤΑΣΤΑΣΗΣ
-ΠΡΟΫΠΟΘΕΣΕΙΣ ΕΠΑΝΕΚΤΙΜΗΣΗΣ / ΚΛΙΜΑΚΩΣΗΣ
-ΒΙΒΛΙΟΓΡΑΦΙΚΗ ΒΑΣΗ
-```
-
-Short output uses the same route-specific evidence profile in compressed form and includes a compact route-specific source footer.
-
----
-
-# 6. Rehabilitation progression policy
-
-The core model is criteria-based progression.
-
-```text
-phase 1 objective
-→ progression criteria met
-→ phase 2 objective
-→ progression criteria met
-→ later functional phase
-```
-
-Possible phase vocabulary includes symptom control, ROM restoration, active-assisted/active movement, loading, strengthening, endurance, motor control and return-to-function — but no universal phase sequence is allowed.
-
-Each disease/pathway selects only the phases supported by its own evidence profile.
-
-Written postoperative protocols and fracture/healing restrictions override generic route evidence.
-
----
-
-# 7. Evidence freshness / renewal
-
-Evidence sources and route profiles carry:
-
-```text
-reviewed_on
-next_review_due
-freshness_state
-superseded_by
-```
-
-New evidence follows:
-
-```text
-new source detected
-→ classify impact
-→ clinician/reviewer approval
-→ update claims
-→ update affected route sequence only if warranted
-→ regression fixtures
-→ version/changelog
-```
-
-Evidence surveillance must never silently rewrite clinical recommendations.
-
----
-
-# 8. Current evidence seeds
-
-The design registry currently includes seed evidence for:
-
-```text
-deep_gluteal_piriformis_presentation
-nonspecific_low_back_pain
-low_back_pain_with_radiating_leg_symptoms
-lateral_elbow_tendinopathy
-achilles_tendinopathy
-```
-
-The elbow and Achilles seeds deliberately demonstrate different route-specific rehabilitation claims rather than a shared generic package.
-
-These are seed profiles only; evidence-aware runtime generation remains blocked until all routine routes reach the coverage gate.
-
----
-
-# 9. Exact next authorized action
-
-```text
-1. freeze ReferralHistoryV2 semantics
-2. freeze RehabilitationSequenceV1 / GoalPlanV2 / ReassessmentPlanV2
-3. complete EvidenceSource/EvidenceClaim registry schema
-4. build RouteEvidenceProfile for every routine route
-5. create a disease-specific RehabilitationSequence for every routine route
-6. classify evidence gaps/conflicts and evidence strength
-7. define route-specific dynamic history prompts
-8. create synthetic composition/evidence fixtures
-9. exact design-completeness review
-10. STOP at DESIGN-COMPLETE or BLOCK
+C1 IMPLEMENTED / TESTED                    YES
+G-1 IMPLEMENTED / TESTED                   YES
+G1-R1 / G1-R2                              CLOSED / TESTED
+PR #64                                     OPEN
+MERGED                                     NO
+DEPLOYED                                   NO
+PRODUCTION-SMOKE-VERIFIED                  NO
+PR-1 HEIDI                                 NOT IMPLEMENTED
+PR-2 REVIEW/POPULATION                     NOT IMPLEMENTED
+REAL 5-CASE PILOT                          NOT STARTED
+MODULE 01 CLOSED                           NO
 ```
 
 ---
 
-# 10. Explicitly forbidden until the gate passes
+# 6. Exact next action
 
 ```text
-WRITE runtime evidence recommendation logic
-USE one generic rehab sequence across conditions
-INVENT progression criteria not supported by evidence/protocol
-USE elapsed time alone as universal progression criterion
-PRESCRIBE routine session frequency or total PT duration as a CU-1 requirement
-LABEL clinician preference as guideline recommendation
-LABEL stale/superseded evidence as current
-OPEN CU-2
-RESTART PR-1
-CHANGE frozen clinical taxonomy without a specific reviewed evidence conflict
+wait for exact PR-head CI
+→ inspect complete PR diff / mergeability / main freshness
+→ if PASS, squash-merge PR #64 using exact expected head SHA
+→ verify new main SHA
+→ verify Render auto-deploy exact commit
+→ perform production synthetic smoke if available through connected/browser tooling
+→ record release evidence and append changelog
 ```
 
----
-
-# 11. Continuity rule
-
-A new conversation can resume by fresh six-canonical bootstrap. It should find this branch/writer lock and continue the history + criteria-based rehabilitation-sequence + disease-specific evidence design hardening only; chat history is not required for continuity.
+If any release invariant fails, STOP before merge or before declaring production validation.

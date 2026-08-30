@@ -1,0 +1,132 @@
+.progressive-guidance-summary {
+  margin: 12px 0 14px;
+  padding: 14px 16px;
+  border: 1px solid #dbe3ec;
+  border-radius: 14px;
+  background: #ffffff;
+}
+
+.progressive-guidance-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.progressive-guidance-head h2 {
+  margin: 0;
+  font-size: 17px;
+}
+
+.progressive-guidance-intent {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.progressive-guidance-context,
+.progressive-guidance-meta,
+.progressive-guidance-empty {
+  margin-top: 8px;
+  color: #475569;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.progressive-guidance-context strong,
+.progressive-guidance-meta strong {
+  color: #334155;
+}
+
+.progressive-guidance-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.progressive-guidance-item {
+  padding: 9px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.progressive-guidance-item strong {
+  display: block;
+  font-size: 13px;
+  color: #1e293b;
+}
+
+.progressive-guidance-item span {
+  display: block;
+  margin-top: 3px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #64748b;
+}
+
+.progressive-guidance-conflict {
+  margin-top: 10px;
+  padding: 8px 10px;
+  border: 1px solid #e5d7b8;
+  border-radius: 9px;
+  background: #fffdf7;
+  color: #6b5b2c;
+  font-size: 12px;
+}
+
+article.card.guidance-surfaced {
+  position: relative;
+}
+
+article.card.guidance-surfaced .adaptive-badge.na,
+article.card.guidance-surfaced .adaptive-badge.uncertain,
+article.card.guidance-surfaced .adaptive-use-domain {
+  display: none;
+}
+
+.progressive-why-now {
+  margin: -2px 0 10px;
+  padding: 7px 9px;
+  border-left: 3px solid #cbd5e1;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.progressive-why-now strong {
+  color: #334155;
+}
+
+.progressive-why-now.is-event {
+  border-left-width: 4px;
+}
+
+.progressive-guidance-live-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 7px;
+  padding: 2px 7px;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  background: #fff;
+  color: #475569;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+@media (max-width: 720px) {
+  .progressive-guidance-list {
+    grid-template-columns: 1fr;
+  }
+}

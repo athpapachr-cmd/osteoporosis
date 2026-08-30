@@ -76,22 +76,22 @@
   background: #f8fafc;
 }
 
-article.card.adaptive-collapsed {
+article.card.adaptive-collapsed:not(.guidance-surfaced) {
   background: #f8fafc;
   border-color: #dbe3ec;
   box-shadow: none;
   opacity: .88;
 }
 
-article.card.adaptive-collapsed > :not(.card-heading):not(.adaptive-applicability-control) {
+article.card.adaptive-collapsed:not(.guidance-surfaced) > :not(.card-heading):not(.adaptive-applicability-control) {
   display: none !important;
 }
 
-article.card.adaptive-collapsed .card-heading {
+article.card.adaptive-collapsed:not(.guidance-surfaced) .card-heading {
   margin-bottom: 0;
 }
 
-article.card.adaptive-collapsed .card-heading p {
+article.card.adaptive-collapsed:not(.guidance-surfaced) .card-heading p {
   margin-bottom: 0;
 }
 
@@ -100,6 +100,13 @@ article.card.adaptive-not-applicable .card-heading p,
 article.card.adaptive-uncertain .card-heading h2,
 article.card.adaptive-uncertain .card-heading p {
   color: #64748b;
+}
+
+article.card.guidance-surfaced.adaptive-not-applicable .card-heading h2,
+article.card.guidance-surfaced.adaptive-not-applicable .card-heading p,
+article.card.guidance-surfaced.adaptive-uncertain .card-heading h2,
+article.card.guidance-surfaced.adaptive-uncertain .card-heading p {
+  color: inherit;
 }
 
 article.card.adaptive-overridden {

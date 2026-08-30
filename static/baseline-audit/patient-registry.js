@@ -247,11 +247,24 @@
     }
   }
 
-  async function syncActiveEncounter(statusOverride = null) {
-    const patientId = activePatientId(); const c = activeCase();
-    if (!patientId || !c) return;
+  async function syncActiveEncounter(statusOverride = null, { strict = false } = {}) {
+    const patientId = activePatientId();
+    const c = activeCase();
+    if (!patientId || !c) {
+      const err = new Error(!patientId ? "Δεν υπάρχει ενεργός protected patient." : "Δεν υπάρχει ενεργό encounter payload.");
+      setStatus(err.message, "err");
+      if (strict) throw err;
+      return null;
+    }
+
     const date = c.encounter_date || $("#encounterDate")?.value || "";
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      const err = new Error("Το encounter date δεν είναι έγκυρο για server sync.");
+      setStatus(err.message, "err");
+      if (strict) throw err;
+      return null;
+    }
+
     try {
       const links = getLinks(); const link = links[c.internal_uuid];
       let row;
@@ -262,8 +275,23 @@
         links[c.internal_uuid] = { patient_id: patientId, encounter_id: row.encounter_id }; setLinks(links);
       }
       await syncLabs(patientId, row.encounter_id, c.step3?.labs);
-      setStatus(`Synced ${date}`, "ok");
-    } catch (err) { setStatus(`Sync failed: ${err.message}`, "err"); }
+      setStatus(`Synced ${date} · ${row.status}`, "ok");
+      return row;
+    } catch (err) {
+      setStatus(`Sync failed: ${err.message}`, "err");
+      if (strict) throw err;
+      return null;
+    }
+  }
+
+  function scheduleDraftSyncFromSave() {
+    const coordinator = window.BaselineFinalizationCoordinator;
+    if (coordinator && !coordinator.shouldSyncDraftOnSave()) return;
+    setTimeout(() => syncActiveEncounter("draft"), 120);
+  }
+
+  async function finalizeActiveEncounter() {
+    return syncActiveEncounter("completed", { strict: true });
   }
 
   function bind() {
@@ -272,10 +300,13 @@
     $("#clinicalSearchBtn")?.addEventListener("click", searchPatients);
     $("#clinicalPatientSearch")?.addEventListener("keydown", e => { if (e.key === "Enter") searchPatients(); });
     $("#clinicalCreatePatientBtn")?.addEventListener("click", createPatient);
-    ["#saveTopBtn", "#saveDraftBtn"].forEach(s => $(s)?.addEventListener("click", () => setTimeout(() => syncActiveEncounter("draft"), 120)));
-    $("#finishVisitBtn")?.addEventListener("click", () => setTimeout(() => syncActiveEncounter("completed"), 160));
+    ["#saveTopBtn", "#saveDraftBtn"].forEach(s => $(s)?.addEventListener("click", scheduleDraftSyncFromSave));
     $$(".step-tab").forEach(btn => btn.addEventListener("click", () => { if (btn.dataset.step === "3") setTimeout(async () => { const pid = activePatientId(); if (!pid) return; try { renderLabs(await api(`/clinical/patient/${encodeURIComponent(pid)}/labs`, { method: "GET", headers: {} })); } catch {} }, 80); }));
   }
+
+  window.ClinicalRegistry = Object.freeze({
+    finalizeActiveEncounter
+  });
 
   injectUi(); bind(); checkAuth();
 })();
