@@ -1,0 +1,251 @@
+schema: longitudinal_guidance_projection_v1
+status: design_frozen_g0
+module: osteoporosis
+purpose: >-
+  Read-only deterministic projection that supplies longitudinal context to
+  EncounterContextV1 from the existing protected per-encounter payload model. It does
+  not create a second source of clinical truth and does not silently resolve conflicts.
+
+current_storage_reality:
+  patient_level_treatment_table_exists: false
+  encounter_store:
+    endpoint: GET /clinical/patient/{patient_id}/encounters
+    returns_full_payload: true
+    persisted_table: clinical_encounters
+    payload_column: payload_json
+  lab_store:
+    endpoint: GET /clinical/patient/{patient_id}/labs
+    persisted_table: clinical_lab_snapshots
+  implication: >-
+    G-1 may construct longitudinal guidance context from protected historical encounter
+    payloads and lab snapshots without a database migration. The projection must remain
+    derived/read-only unless a later separately designed patient-level canonical store
+    is justified.
+
+inputs:
+  prior_encounters:
+    include_status: [completed, amended]
+    exclude_current_encounter: true
+    sort:
+      - encounter_date_ascending
+      - updated_at_ascending
+    required_fields:
+      - encounter_id
+      - encounter_date
+      - status
+      - payload
+      - updated_at
+  current_draft_or_visit_state:
+    optional: true
+    authority: current_encounter_only
+  lab_snapshots:
+    optional: true
+
+objects:
+  LongitudinalGuidanceProjectionV1:
+    required:
+      - schema_version
+      - module
+      - source_encounter_ids
+      - treatment_projection
+      - administration_projection
+      - unresolved_task_projection
+      - conflict_records
+      - quality
+    fields:
+      schema_version:
+        const: longitudinal_guidance_projection_v1
+      module:
+        const: osteoporosis
+      source_encounter_ids:
+        type: array
+        items: string
+      latest_completed_or_amended_encounter_id:
+        type: string
+        nullable: true
+      treatment_projection:
+        type: object
+        fields:
+          active_episode:
+            type: object
+            nullable: true
+          historical_episodes:
+            type: array
+            items: object
+          source_strategy:
+            const: latest_reliable_snapshot_plus_conflict_detection
+      administration_projection:
+        type: object
+        fields:
+          unique_actual_events:
+            type: array
+            items:
+              type: object
+              fields:
+                agent: string
+                actual_date:
+                  type: date
+                scheduled_date:
+                  type: date
+                  nullable: true
+                next_due_date:
+                  type: date
+                  nullable: true
+                source_encounter_ids:
+                  type: array
+                  items: string
+                identity_basis:
+                  enum: [stable_event_id, agent_plus_exact_actual_date]
+          administration_count_by_agent:
+            type: object
+          last_actual_administration_by_agent:
+            type: object
+          count_reliability_by_agent:
+            type: object
+      unresolved_task_projection:
+        type: array
+        items:
+          type: object
+          fields:
+            task_type: string
+            due_date:
+              type: date
+              nullable: true
+            timeframe_text:
+              type: string
+              nullable: true
+            source_encounter_id: string
+            critical:
+              type: boolean
+              default: false
+      prior_close_projection:
+        type: object
+        fields:
+          latest_unresolved_critical:
+            enum: [yes, no, uncertain, absent]
+          source_encounter_id:
+            type: string
+            nullable: true
+          note_present:
+            type: boolean
+      conflict_records:
+        type: array
+        items:
+          ref: ProjectionConflictV1
+      quality:
+        type: object
+        fields:
+          treatment_timeline:
+            enum: [reliable, partial, conflicting, absent]
+          administration_history:
+            enum: [reliable, partial, conflicting, absent]
+          task_state:
+            enum: [reliable, partial, conflicting, absent]
+          can_compute_reliable_administration_count:
+            type: boolean
+
+  ProjectionConflictV1:
+    required:
+      - conflict_id
+      - domain
+      - summary_code
+      - source_encounter_ids
+      - resolution_state
+    fields:
+      conflict_id: string
+      domain: string
+      summary_code: string
+      source_encounter_ids:
+        type: array
+        items: string
+      candidate_values:
+        type: array
+        items: object
+      resolution_state:
+        enum: [unresolved, current_visit_resolved, insufficient_information]
+      rule: >-
+        A longitudinal conflict is surfaced to EncounterContext/GuidedCardState and is
+        never silently converted into one authoritative value by the projection layer.
+
+projection_rules:
+  treatment_episode_snapshot:
+    - prefer_the_most_recent_completed_or_amended_encounter_containing_a_nonempty_treatment_episode_snapshot
+    - if_later_and_earlier_snapshots_materially_conflict_preserve_conflict_record
+    - do_not_infer_active_agent_from_scheduled_appointment_label_alone
+    - do_not_infer_start_or_end_date_from_duration_alone
+
+  administration_identity:
+    - stable_event_id_may_deduplicate_when_the_same_event_id_is_preserved_across_snapshots
+    - otherwise_exact_agent_plus_exact_actual_date_may_deduplicate_the_same_actual_administration
+    - scheduled_date_without_actual_date_does_not_count_as_an_administered_dose
+    - planned_due_or_overdue_events_do_not_increment_actual_administration_count
+    - if_duplicate_identity_is_ambiguous_mark_count_reliability_partial_or_conflicting
+
+  administration_count:
+    - compute_only_from_unique_actual_events
+    - retain_count_separately_from_elapsed_exposure
+    - never_reconstruct_missing_doses_from_expected_cadence
+    - delayed_or_missed_doses_may_make_count_and_elapsed_exposure_diverge
+
+  unresolved_tasks:
+    - include_prior_task_status_planned_when_not_superseded_by_later_explicit_completion_or_not_applicable_state
+    - preserve_due_date_when_exact
+    - preserve_timeframe_text_without_inventing_exact_date
+    - if_task_identity_cannot_be_matched_across_encounters_keep_conflict_or_uncertainty_instead_of_silent_resolution
+
+  current_visit_overlay:
+    - current_visit_explicit_facts_may_overlay_projection_for_today_without_rewriting_historical_source_encounters
+    - provisional_transcript_candidates_do_not_overlay_authoritative_projection_until_clinician_acceptance
+    - accepted_current_visit_values_retain_current_encounter_provenance
+
+  missing_and_negative:
+    - absent_value_in_a_later_encounter_does_not_mean_prior_fact_became_negative
+    - blank_snapshot_does_not_erase_prior_authoritative_history
+    - explicit_negative_or_stopped_state_must_be_semantically_supported_before_replacing_prior_positive_or_active_state
+
+output_to_encounter_context:
+  allowed_derivations:
+    active_treatment_agent:
+      from: treatment_projection.active_episode.agent
+      only_if: projection_quality_supports_value
+    administration_count:
+      from: administration_projection.administration_count_by_agent
+      only_if: count_reliability_by_agent_is_reliable
+    last_actual_administration:
+      from: administration_projection.last_actual_administration_by_agent
+      only_if: exact_actual_date_exists
+    unresolved_prior_items:
+      from:
+        - unresolved_task_projection
+        - prior_close_projection
+        - conflict_records
+  prohibited_derivations:
+    - guessed_next_due_date_from_expected_cadence_without_active_reviewed_milestone_rule
+    - guessed_administration_count_from_elapsed_years
+    - guessed_active_agent_from_latest_discussed_or_selected_agent_without_treatment_history_support
+    - automatic_conflict_resolution_by_recency_when_values_are_materially_incompatible
+
+implementation_boundary_g1:
+  preferred_first_approach: >-
+    Fetch/use already protected historical encounters and build an ephemeral deterministic
+    projection for Visit Plan evaluation. Do not introduce a new persistent patient-level
+    treatment table in G-1 unless implementation inspection proves the projection cannot
+    meet correctness/performance requirements.
+  no_new_persistence_by_default: true
+  no_schema_migration_by_default: true
+
+synthetic_projection_fixtures:
+  - id: repeated_same_administration_in_two_snapshots
+    expected: one_unique_actual_event
+  - id: scheduled_but_not_actual_administration
+    expected: does_not_increment_administration_count
+  - id: delayed_denosumab_count_vs_elapsed_time
+    expected: preserve_divergence_without_guessing_missing_dose
+  - id: latest_encounter_blank_treatment_history
+    expected: prior_authoritative_history_not_erased
+  - id: conflicting_last_actual_dates
+    expected: conflict_record_and_unreliable_due_state
+  - id: unresolved_prior_lab_task
+    expected: surface_as_unresolved_prior_context
+  - id: prior_task_with_later_explicit_completion
+    expected: no_longer_unresolved
