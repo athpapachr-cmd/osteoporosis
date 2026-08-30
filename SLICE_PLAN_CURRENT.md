@@ -1,217 +1,230 @@
-# SLICE_PLAN_CURRENT.md — Progressive Guidance Foundations v1
+# SLICE_PLAN_CURRENT.md — G-1 Progressive Guidance Runtime Foundation v1
 
-> **STATUS:** DESIGN REFINEMENT COMPLETE / PRE-RUNTIME STOP.
+> **STATUS:** IMPLEMENTATION ACTIVE.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Parent product:** Personal Clinical Excellence System.
 > **Module:** 01 — Osteoporosis.
-> **Slice ID:** M01-G0.1-PROGRESSIVE-GUIDANCE-v1.
-> **Verified remote main:** `08ecd3ab33e98d567c47042a8a1de482df6952b9`.
-> **Parent design:** `design/module01-dynamic-guided-visit-replan-2026-08-30` @ `6aadc8ef55719be98233afa6a80a179f43512c1d`.
-> **Current design branch:** `design/module01-progressive-guidance-foundations-2026-08-30`.
-> **Runtime writer:** NONE.
-> **Runtime mutation:** NOT AUTHORIZED by this refinement.
-> **Merge/deploy/preview:** NOT AUTHORIZED / NOT DONE.
+> **Slice ID:** M01-G1-PROGRESSIVE-GUIDANCE-RUNTIME-v1.
+> **Verified remote main at bootstrap:** `08ecd3ab33e98d567c47042a8a1de482df6952b9`.
+> **Parent accepted design:** `design/module01-progressive-guidance-foundations-2026-08-30` @ `298d8d525f1bac97ffb6904fe09800519bd1a584`.
+> **Implementation branch:** `feat/module01-g1-progressive-guidance-foundation-2026-08-30`.
+> **Runtime writer:** same branch, bounded to G-1 guidance mechanics/tests/bootstrap wiring.
+> **Merge/deploy/production smoke:** NOT AUTHORIZED / NOT DONE.
 
 ---
 
-# 1. Product-owner clarification
+# 1. Objective
 
-The dynamic consultation architecture is intentionally **progressive**, not a requirement to fully classify every osteoporosis encounter before real use.
+Implement the smallest useful runtime foundation for progressive visit guidance without attempting a complete osteoporosis visit taxonomy.
 
-The immediate goal is to install extensible foundations and then improve the visit taxonomy/cards from actual encounters and transcripts.
-
-Do not front-load a complete ontology of first/second/4th/8th/10th visits or every possible treatment state.
-
----
-
-# 2. Minimum first-use encounter classification
-
-The existing first-page encounter dropdown remains the primary clinician-supplied **coarse visit label**.
-
-Useful coarse intents include, conceptually:
+Target behavior:
 
 ```text
-first / initial assessment
-results or work-up review / management decision
-treatment start
-treatment administration / continuation
-repeat prescription / routine treatment maintenance
-treatment change / transition
-fracture / fracture-on-treatment
-adverse effect / intolerance
-other
+coarse clinician visit intent
++ short first-page visit context
++ minimal read-only longitudinal context
+→ deterministic card relevance/order
+→ visible WHY NOW reason(s)
 ```
 
-The exact persisted enum does not need to contain every one of these before first pilot use. Existing compatible archetypes may be reused.
+The runtime is guidance/navigation infrastructure, not a treatment-recommendation engine.
 
-The first-page free-text/quick-notes field acts as a fallback **visit summary/context** when the dropdown is too coarse or no option fits.
+---
+
+# 2. Existing clinician inputs retained
+
+Use existing persisted fields:
+
+```text
+encounter_archetype
+quick_notes
+patient_relationship_status
+fracture_history.events[]
+step4.treatment_episodes[]
+step4.administrations[]
+step4.tasks[]
+step4.close
+```
 
 Rules:
 
-- dropdown label = clinician-declared visit intent, not inferred clinical truth;
-- free text may clarify what happened but must not silently become a new authoritative enum;
-- transcript extraction may later propose a visit-classification candidate, but clinician confirmation remains required before reclassification;
-- `other` plus concise summary is preferable to forcing a wrong category.
+- `encounter_archetype` remains coarse clinician-declared intent;
+- `quick_notes` is fallback visit context, especially for `other` or categories that are still too broad;
+- G-1 must not silently parse free text into new authoritative structured facts;
+- later transcript extraction may supply richer candidate context only in PR-1/PR-2.
 
 ---
 
-# 3. Minimal G-1 foundation
+# 3. Minimal longitudinal projection
 
-The first runtime guidance slice should prove only enough mechanics to support progressive refinement:
+G-1 may read protected historical encounters and derive only the context needed for current guidance.
+
+Initial projection fields:
 
 ```text
-coarse encounter intent
-+ concise current-visit context
-+ read-only prior encounter context where available
-+ basic deterministic card applicability / ordering
-+ event/safety override plumbing
-+ unresolved-prior plumbing
-+ treatment/due context plumbing
-+ WHY NOW explanation
+prior_encounter_count
+latest_completed_or_amended_encounter_date
+latest_coarse_visit_intent
+latest_visit_context_summary_if_non_sensitive_runtime_field
+reliable_actual_administration_events[]
+latest_actual_administration_by_agent
+unresolved_prior_tasks[]
+prior_unresolved_critical_item_optional
+material_projection_conflicts[]
 ```
 
-G-1 does **not** require:
+Hard rules:
 
-- a complete osteoporosis visit taxonomy;
-- all medication-specific cards;
-- all treatment milestones;
-- complete Prolia dose-number logic;
-- predictive/AI auto-classification;
-- a new patient-level treatment database;
-- Practice Review runtime;
-- transcript/provider runtime unless separately authorized.
+- read-only/ephemeral derived state;
+- no new patient-level DB table;
+- completed/amended encounters are historical sources;
+- blank later snapshot must not erase prior known state;
+- scheduled/planned administration does not count as actual;
+- no inferred missing doses from expected cadence;
+- exact duplicate actual administration representations may deduplicate only when identity is reliable;
+- conflicts remain explicit rather than silently resolved.
 
 ---
 
-# 4. Progressive taxonomy rule
+# 4. Minimal current Encounter Context
 
-The visit taxonomy and card library should mature from real-use evidence rather than speculative completeness.
-
-Canonical refinement checkpoints:
+Build a deterministic context from current case + projection:
 
 ```text
-initial foundation
-→ 5 real system-assisted encounters
-→ one deliberate usability/classification refinement
-→ 30-case system-assisted baseline
-→ second evidence-from-use refinement
-→ later periodic/milestone reviews when enough new data accumulate
+coarse_visit_intent
+visit_context_text
+new_fracture_or_fracture_on_treatment
+has_prior_unresolved_item
+active_or_recent_treatment_agents
+latest_actual_administration_by_agent
+due_or_overdue_context_only_when_explicit_in_existing_data
+prior_encounter_count
+projection_conflicts_present
 ```
 
-At each checkpoint review:
-
-- which dropdown categories were actually used;
-- how often `other` was selected;
-- recurring free-text visit summaries that suggest a missing category;
-- transcript patterns that repeatedly imply the same visit purpose;
-- cards repeatedly opened despite being initially hidden;
-- cards repeatedly irrelevant despite being surfaced;
-- clinically important omissions;
-- duplicate questioning/data entry;
-- unresolved items that recur across visits;
-- treatment/event patterns that justify a new evidence-backed milestone rule.
-
-Do not change taxonomy automatically from frequency alone. Proposed category/card/rule changes remain clinician-reviewed and versioned.
+Do not invent medication-specific timing thresholds in G-1.
 
 ---
 
-# 5. Transcript role in future classification
+# 5. Minimal card guidance model
 
-Heidi transcript data may later help classify encounters more accurately, but first priority remains capture of clinical facts.
+G-1 may reuse existing cards/domains rather than create a new full card library.
 
-Possible later flow:
+Initial reason classes:
 
 ```text
-clinician chooses coarse visit label
-+ optional short visit summary
-+ transcript extraction identifies what actually occurred
-→ system compares these sources
-→ proposes classification refinement only when useful
-→ clinician confirms/edits
+VISIT_TYPE_CORE
+NEW_EVENT
+UNRESOLVED_PRIOR
+TREATMENT_CONTEXT
+EXPLICIT_DUE_STATE
+CONTEXTUAL
 ```
 
-Examples of useful signals:
-
-- repeated transcript pattern: review of pending tests followed by treatment decision;
-- repeated routine administration visits with very small common information set;
-- repeat-prescription visits distinct from administration visits;
-- fracture events that override a routine visit label;
-- recurring treatment-transition pattern not represented well by current dropdown.
-
-`Transcript pattern != automatic taxonomy mutation`.
-
----
-
-# 6. Relationship to G-0 design
-
-The G-0 architecture remains valid as **capability**, including:
+Initial priority:
 
 ```text
-EncounterContextV1
-LongitudinalGuidanceProjectionV1
-GuidanceRuleV1
-VisitPlanV1
-GuidedCardStateV1
-TherapyMilestoneProfileV1
-GuidanceExposureV1
+NEW_EVENT
+→ UNRESOLVED_PRIOR
+→ EXPLICIT_DUE_STATE / TREATMENT_CONTEXT
+→ VISIT_TYPE_CORE
+→ CONTEXTUAL
 ```
 
-This refinement changes the **implementation ambition/order**, not those extension seams.
+Every surfaced non-obvious card must expose one or more human-readable `why now` reasons.
 
-The first implementation may use only a small subset. Richer rules are added only after evidence from real use or reviewed clinical guidance justifies them.
-
----
-
-# 7. Five-case pilot purpose after this refinement
-
-The five cases are now explicitly a test of the intended lightweight system-assisted workflow, including:
-
-- whether the coarse visit label was adequate;
-- whether free-text fallback captured missing context;
-- whether cards shown were relevant;
-- whether important cards/items were missing;
-- whether Heidi extraction reduced manual entry;
-- whether transcript omissions/errors were easy to correct;
-- completion time and cognitive burden;
-- persistence/finalization integrity.
-
-The five cases are **not** expected to validate a complete visit taxonomy.
-
-After all five, make one deliberate refinement rather than changing the taxonomy after each case unless safety/data-integrity demands it.
+No clinical treatment choice is generated.
 
 ---
 
-# 8. Thirty-case role
+# 6. Progressive-taxonomy invariant
 
-The 30-case system-assisted baseline is also a richer product-learning dataset.
+Do not add a large new enum set in G-1.
 
-Without contaminating KPI/performance feedback methodology, it may be used after baseline lock to review:
+Current dropdown stays primary. `other + quick_notes` is supported as a valid first-use path.
 
-- distribution of visit types;
-- repeated `other`/free-text clusters;
-- transcript-derived recurring encounter patterns;
-- stable versus unnecessary cards;
-- treatment-specific/milestone patterns;
-- guidance exposure and unresolved-item patterns where reliable.
-
-This can support a second, better-informed taxonomy/card revision.
-
----
-
-# 9. Exact next action
-
-STOP design mutation after this clarification.
-
-If runtime work is separately authorized after fresh bootstrap, G-1 should implement the **minimum progressive foundation**, not the full G-0 capability surface:
+Potential future categories such as:
 
 ```text
-1. use existing encounter dropdown as coarse intent;
-2. preserve/use short first-page visit summary/free text as fallback context;
-3. derive only the longitudinal context required for first useful card relevance;
-4. render basic dynamic card ordering/applicability + WHY NOW;
-5. support safety/new-event and unresolved-prior overrides;
-6. leave richer taxonomy, therapy milestones and card specialization for evidence-from-use refinement;
-7. keep extensibility compatible with the frozen G-0 contracts.
+results/work-up review with management decision
+repeat prescription / routine maintenance
 ```
 
-C1 authoritative Finish merge/deploy remains a separate release decision. PR-1/PR-2 remain required before the five-case real pilot unless separately replanned.
+remain evidence-from-use candidates until post-pilot refinement or a separately approved earlier correction.
+
+---
+
+# 7. UI boundary
+
+G-1 should minimally:
+
+- show the current coarse visit intent/context near the guidance summary;
+- show which cards/domains are prioritized for today;
+- show `why now` text;
+- keep irrelevant existing cards collapsed rather than delete their stored schema;
+- allow existing clinician override/`Χρήση σήμερα` mechanics to remain available;
+- avoid KPI/red-green/performance-coaching styling;
+- avoid introducing a second competing source of truth.
+
+---
+
+# 8. Acceptance fixtures
+
+Focused synthetic tests must include at least:
+
+1. first assessment → broad core domains surfaced;
+2. `other` + quick notes context preserved and displayed without forced classification;
+3. routine treatment continuation with explicit actual administration history → treatment-related cards prioritized, full diagnostic work-up not forced;
+4. routine continuation + new fracture → fracture/event domains outrank routine flow;
+5. unresolved prior task → corresponding follow-up context resurfaces;
+6. scheduled administration without actual administration → not counted as administered;
+7. duplicate historical actual administration representation → no double count when reliably identical;
+8. conflicting historical administration facts → conflict visible, not silently resolved;
+9. no medication-specific due threshold invented from dates alone;
+10. same structured context → deterministic same Visit Plan ordering/reasons.
+
+---
+
+# 9. Replan triggers
+
+STOP and replan if implementation demonstrates that:
+
+- protected historical encounter payloads cannot support safe minimal projection;
+- required prior-task/treatment identity cannot be represented without unsafe guessing;
+- existing adaptive card ownership conflicts materially with the new guidance layer;
+- G-1 would require medication-specific clinical rules to be useful at all;
+- implementation requires a new persistent patient-level source of truth rather than an ephemeral projection;
+- free-text context would need automatic clinical inference to drive safe behavior.
+
+---
+
+# 10. Out of scope
+
+No:
+
+- complete visit taxonomy;
+- PR-1 provider/API transcript extraction;
+- PR-2 inline candidate acceptance;
+- Practice Review;
+- evidence-backed medication milestone content;
+- automatic taxonomy mutation;
+- real-patient fixtures;
+- physiotherapy/RF mutation;
+- merge/deploy.
+
+---
+
+# 11. Exact implementation sequence
+
+```text
+1. inspect current protected encounter fetch/browser seams
+2. implement read-only longitudinal projection helper
+3. implement minimal encounter-context + visit-plan resolver
+4. integrate with existing adaptive card UI without replacing storage schema
+5. surface WHY NOW + coarse visit context
+6. add focused synthetic regression suite
+7. run syntax/tests
+8. exact implementation review
+9. update CURRENT_OPERATIONAL with evidence
+10. STOP at TESTED / RELEASE GATE
+```
