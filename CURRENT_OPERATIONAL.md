@@ -1,111 +1,130 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** MODULE 01 — G-1 RELEASE PR OPEN / MERGE GATE.
+> **STATUS:** MODULE 01 — C1 + G-1 MERGED / DEPLOYED / PRODUCTION SMOKE NOT YET PROVEN.
 > **Updated:** 2026-08-30 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Fresh verified remote `main`:** `08ecd3ab33e98d567c47042a8a1de482df6952b9`.
-> **Release branch:** `feat/module01-g1-progressive-guidance-foundation-2026-08-30`.
-> **Pre-PR tested head:** `8628dbcd9320e91497d49e1c223cc51a810cd51b`.
-> **Release PR:** `#64` → `main`.
-> **Inherited tested C1 head:** `a4005dc88140d8f988fcac2b4f4bd9f9bb0c3871`.
-> **ACTIVE CANONICAL WRITER/LOCK:** release branch — PR/release closeout only.
+> **Runtime release main verified at:** `a6ba9ef1719a18a48a1756bf08bbd157d448a63e`.
+> **Release PR:** `#64` — SQUASH-MERGED.
+> **Release merge SHA:** `a6ba9ef1719a18a48a1756bf08bbd157d448a63e`.
+> **Render deploy:** `dep-daa8iv0ae00c73b7eudg` — LIVE at exact release merge SHA.
+> **ACTIVE CANONICAL WRITER/LOCK:** NONE — release closeout complete.
 > **ACTIVE RUNTIME WRITER/LOCK:** NONE.
-> **Merge/deploy/production smoke:** MERGE AUTHORIZED BY PRODUCT OWNER / NOT YET DONE.
 
 ---
 
-# 1. Release authorization
+# 1. Released scope
 
-The product owner explicitly authorized release of G-1 after G1-R1/R2 were closed and the full G-1+C1 suite passed.
-
-Authorized path:
+The product owner authorized release of the accepted Module-01 ancestry through:
 
 ```text
-fresh six-canonical bootstrap
-→ fresh main verification
-→ exact full compare/review
-→ PR
-→ squash merge
-→ normal Render auto-deploy
-→ production synthetic smoke
-→ canonical release closeout
+C1 authoritative Finish
++
+G-1 progressive guidance foundation
++
+G1-R1 history-availability integrity correction
++
+G1-R2 live-DOM-over-persisted state correction
 ```
 
-PR-1/PR-2, new taxonomy/milestone rules, physiotherapy/RF mutation and real pilot data remain outside this release.
+Explicitly outside this release:
+
+```text
+PR-1 Heidi transcript extraction
+PR-2 candidate review/population
+new medication-specific milestone rules
+physiotherapy/RF runtime changes
+real 5-case or 30-case data
+```
 
 ---
 
-# 2. Release evidence before PR
+# 2. Release evidence
 
-Fresh release bootstrap verified:
+Fresh release bootstrap began from:
 
 ```text
 main = 08ecd3ab33e98d567c47042a8a1de482df6952b9
-release head = 8628dbcd9320e91497d49e1c223cc51a810cd51b
 ```
 
-Exact compare is directly ahead of main and contains only accepted Module-01 canonical/design artifacts, C1 finalization files/tests and G-1 guidance files/tests. No parked physiotherapy/RF runtime is included.
+The complete release compare contained only accepted Module-01 canonicals/contracts, C1 finalization runtime/tests and G-1 guidance runtime/tests. No parked physiotherapy/RF runtime was included.
 
-Fresh exact-head check-run evidence at `8628dbcd...`:
+PR #64 exact pre-merge head:
 
 ```text
-workflow: G1 progressive guidance foundation
-run:      33329427497
-result:   SUCCESS
+e7f400b3a99810a5667cf89899f7db91424ea253
 ```
 
-This includes:
+At that exact PR head all relevant checks passed:
 
-- JavaScript syntax;
-- G-1 core regression;
-- G-1 wiring/ownership regression;
-- G1-R1/R2 UI-state regression;
-- C1 authoritative Finish browser regression;
-- C1 server finalization lifecycle regression.
+```text
+g1-guidance            SUCCESS — run 33331923695
+baseline-finalization   SUCCESS — run 33331923682
+```
+
+The G-1 suite includes syntax, core, wiring, R1/R2 UI-state, C1 authoritative-Finish browser and C1 server-finalization lifecycle regressions.
+
+PR #64 was then squash-merged with exact expected head into:
+
+```text
+a6ba9ef1719a18a48a1756bf08bbd157d448a63e
+```
+
+Fresh post-merge GitHub verification confirmed that exact SHA as `main` at runtime release.
+
+A later docs-only canonical closeout may advance `main` without changing the released runtime; every fresh session must still verify the current remote `main` SHA before project work.
 
 ---
 
-# 3. PR state
+# 3. Deployment evidence
+
+The Render `osteoporosis` service is configured:
 
 ```text
-PR:       #64
-base:     main @ 08ecd3ab33e98d567c47042a8a1de482df6952b9
-head:     feat/module01-g1-progressive-guidance-foundation-2026-08-30
-state:    OPEN
-mergeable: YES at initial PR inspection
+service:    srv-d5qfk31r0fns73di596g
+branch:     main
+autoDeploy: yes
+trigger:    commit
 ```
 
-Because this operational closeout commit moves the PR head, PR-head CI must pass again before merge.
+No manual duplicate deploy was triggered.
+
+Render created automatically:
+
+```text
+deploy: dep-daa8iv0ae00c73b7eudg
+commit: a6ba9ef1719a18a48a1756bf08bbd157d448a63e
+trigger: new_commit
+status: LIVE
+```
+
+Therefore C1 + G-1 are MERGED and DEPLOYED.
 
 ---
 
-# 4. Release invariants
+# 4. Production-smoke boundary
 
-Must remain true before merge:
+Production browser behavior is **not yet marked smoke-verified**.
 
-```text
-main has not moved unexpectedly
-PR head contains no unrelated parked scope
-G1 full suite SUCCESS at exact PR head
-PR mergeable
-C1 ancestry preserved
-no real patient data/transcript committed
-```
+The assistant execution sandbox attempted direct requests to the production hostname, but DNS resolution failed before reaching Render. This is a tooling/network limitation and is not evidence of application failure.
 
-After squash merge:
+No authenticated production-browser evidence was obtained for:
 
 ```text
-Render auto-deploy only; do not manually trigger duplicate deploy
-verify exact deployed main commit
-production synthetic smoke:
-- G-1 page/bootstrap loads
-- dropdown + quick context produce guidance / WHY NOW
-- longitudinal history unavailable state is explicit and never false zero
-- loaded empty history can legitimately show zero
-- C1 authoritative Finish confirms protected completed/amended state and reload behavior using synthetic data
+C1 authoritative Finish
+→ protected server completed/amended confirmation
+→ reload/reopen persistence
+
+G-1 interactive guidance
+→ dropdown / quick context
+→ WHY NOW rendering
+→ loaded vs unavailable longitudinal-history presentation
 ```
 
-Do not mark production-smoke verified without direct evidence.
+Hard rule retained:
+
+```text
+MERGED != DEPLOYED != PRODUCTION-SMOKE-VERIFIED
+```
 
 ---
 
@@ -113,15 +132,18 @@ Do not mark production-smoke verified without direct evidence.
 
 ```text
 C1 IMPLEMENTED / TESTED                    YES
+C1 MERGED                                  YES
+C1 DEPLOYED                                YES
+C1 PRODUCTION-SMOKE-VERIFIED               NO
 G-1 IMPLEMENTED / TESTED                   YES
 G1-R1 / G1-R2                              CLOSED / TESTED
-PR #64                                     OPEN
-MERGED                                     NO
-DEPLOYED                                   NO
-PRODUCTION-SMOKE-VERIFIED                  NO
+G-1 MERGED                                 YES
+G-1 DEPLOYED                               YES
+G-1 PRODUCTION-SMOKE-VERIFIED              NO
 PR-1 HEIDI                                 NOT IMPLEMENTED
 PR-2 REVIEW/POPULATION                     NOT IMPLEMENTED
-REAL 5-CASE PILOT                          NOT STARTED
+REAL 5-CASE SYSTEM-ASSISTED PILOT          NOT STARTED
+30-CASE SYSTEM-ASSISTED BASELINE           NOT STARTED
 MODULE 01 CLOSED                           NO
 ```
 
@@ -129,14 +151,20 @@ MODULE 01 CLOSED                           NO
 
 # 6. Exact next action
 
+Do not mutate G-1 runtime further merely for release polish.
+
+Before real pilot collection, obtain one authenticated synthetic production smoke covering:
+
 ```text
-wait for exact PR-head CI
-→ inspect complete PR diff / mergeability / main freshness
-→ if PASS, squash-merge PR #64 using exact expected head SHA
-→ verify new main SHA
-→ verify Render auto-deploy exact commit
-→ perform production synthetic smoke if available through connected/browser tooling
-→ record release evidence and append changelog
+1. open/load protected synthetic patient
+2. confirm G-1 guidance bootstrap and coarse visit intent/context
+3. verify an explicit WHY NOW path
+4. verify longitudinal-history loaded/unavailable state is truthful
+5. exercise authoritative Finish
+6. confirm protected completed/amended response
+7. reload/reopen and confirm persisted final state
 ```
 
-If any release invariant fails, STOP before merge or before declaring production validation.
+If this smoke passes, record `PRODUCTION-SMOKE-VERIFIED` and release the production-readiness gate for the next authorized Module-01 slice. If it fails, classify the exact defect and re-open only the bounded affected seam.
+
+No PR-1/PR-2, taxonomy expansion, physiotherapy/RF mutation or real pilot is authorized by this release closeout alone.
