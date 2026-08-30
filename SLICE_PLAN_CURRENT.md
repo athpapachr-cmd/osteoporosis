@@ -1,269 +1,162 @@
 # SLICE_PLAN_CURRENT.md — Dynamic Guided Visit + Heidi-First Pilot Replan v1
 
-> **STATUS:** ACTIVE PRE-RUNTIME DESIGN / METHODOLOGY REPLAN.
+> **STATUS:** DESIGN-COMPLETE / PRE-RUNTIME STOP.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Parent product:** Personal Clinical Excellence System.
 > **Module:** 01 — Osteoporosis.
 > **Slice ID:** M01-G0-DYNAMIC-VISIT-v1.
-> **Verified remote main:** `08ecd3ab33e98d567c47042a8a1de482df6952b9`.
+> **Verified remote main at bootstrap:** `08ecd3ab33e98d567c47042a8a1de482df6952b9`.
 > **Parent tested runtime ancestry:** `fix/module01-c1-authoritative-finish-2026-08-30` @ `a4005dc88140d8f988fcac2b4f4bd9f9bb0c3871`.
-> **Writer:** `design/module01-dynamic-guided-visit-replan-2026-08-30`.
+> **Design branch:** `design/module01-dynamic-guided-visit-replan-2026-08-30`.
 > **Runtime writer:** NONE.
-> **Runtime mutation:** NOT AUTHORIZED in this design slice.
+> **Runtime mutation:** NOT AUTHORIZED by G-0.
 > **Merge/deploy/preview:** NOT AUTHORIZED / NOT DONE.
 
 ---
 
-# 1. Product-owner correction that triggered REPLAN
+# 1. Product correction
 
-The product owner clarified three linked facts:
-
-1. the current largely manual Baseline Audit capture can take roughly 12 minutes and is not a viable intended clinical workflow;
-2. Heidi transcript should populate as much of the structured encounter as possible, with clinician review for omissions/uncertainty/conflicts;
-3. the application was created to improve the **visit itself** and then improve the clinician longitudinally by reviewing whether what was said/reasoned/decided was appropriate.
-
-The product owner also clarified that osteoporosis visits are highly dynamic. Examples include:
-
-- first assessment;
-- a later results/work-up review where management is decided;
-- repeated denosumab administrations;
-- different long-term treatment milestones;
-- fracture or fracture-on-treatment;
-- treatment transition/exit;
-- adverse effects or other new events.
-
-Therefore the prior closure order:
+The product owner clarified that Module 01 exists primarily to:
 
 ```text
-manual 5-case pilot
-→ later transcript extraction
-→ much later adaptive consultation flow
-```
-
-is invalid for the intended product and is superseded.
-
----
-
-# 2. Exact problem in the current runtime
-
-The current runtime already contains useful foundations:
-
-- coarse encounter archetypes in `static/baseline-audit/index.html`;
-- an `adaptive-applicability.js` map that marks domains `applicable / uncertain / not_applicable` by archetype;
-- longitudinal treatment episodes and administration events in Step 4;
-- protected patient/encounter/lab persistence;
-- the tested authoritative Finish correction in parent ancestry;
-- archived corrected PR-1 v3 transcript extraction design.
-
-But the current adaptive layer is too coarse.
-
-It answers roughly:
-
-> Is this domain usually applicable for this archetype?
-
-It does **not** yet answer:
-
-> Why is this card relevant now for this exact patient at this exact longitudinal treatment point?
-
-Missing inputs include:
-
-```text
-active agent / treatment episode
-actual administration history
-administration count when reliable
-elapsed treatment exposure
-last actual dose / next due / delay state
-monitoring due state
-new fracture / adverse event / safety trigger
-unresolved prior task/prerequisite
-transcript uncertainty/conflict
-```
-
----
-
-# 3. Design objective
-
-Freeze the minimum architecture needed so the clinician-facing product can behave as:
-
-```text
-LONGITUDINAL PATIENT STATE
+improve the current visit
 +
-TODAY'S VISIT INTENT
+reduce duplicate/manual data entry
 +
-CURRENT EVENT / TREATMENT / DUE TRIGGERS
+review whether what was said/reasoned/decided was appropriate
 +
-PRIOR UNRESOLVED ITEMS
-        ↓
-DYNAMIC VISIT PLAN
-        ↓
-ONLY RELEVANT CLINICAL CARDS
-        ↓
-HEIDI-ASSISTED PROVISIONAL POPULATION
-        ↓
-CLINICIAN REVIEW / RESOLUTION
-        ↓
-EXPLICIT DECISION + CLOSE
-        ↓
-POST-VISIT PRACTICE REVIEW / AUDIT LATER
+improve the clinician longitudinally
 ```
 
-The design must avoid both extremes:
+The current largely manual Steps 1–6 workflow is already known to impose unacceptable burden for intended routine use. Therefore it is not the product that should be tested in the five-case real pilot.
+
+Osteoporosis encounters are intrinsically dynamic: first assessment, later results/work-up decision visit, routine treatment administration, treatment milestones, delayed therapy, fracture/fracture-on-treatment, adverse effects, transition/exit and other states require different emphasis.
+
+---
+
+# 2. Methodology correction
+
+The former order is superseded:
 
 ```text
-one giant static checklist for every encounter
-and
-one separate hard-coded form for every visit/dose number
+5 manual pilot cases
+→ freeze
+→ transcript extraction later
+→ adaptive workflow later
 ```
 
----
-
-# 4. Core object — `EncounterContextV1`
-
-Minimum candidate contract:
-
-```yaml
-schema_version: encounter_context_v1
-module: osteoporosis
-patient_relationship: new_to_service | established_patient | unknown
-encounter_archetype: <coarse visit intent>
-active_treatment:
-  agent: <normalized agent or null>
-  episode_id: <optional>
-  start_date: <optional exact date>
-  elapsed_exposure_months: <optional derived>
-  administration_count: <optional integer>
-  last_actual_administration: <optional exact date>
-  next_due_date: <optional exact date>
-  due_state: not_applicable | not_due | due | overdue | uncertain
-monitoring_due:
-  labs: true | false | uncertain
-  dxa: true | false | uncertain
-  other: []
-new_events:
-  fracture: true | false | uncertain
-  fracture_on_treatment: true | false | uncertain
-  adverse_effect: true | false | uncertain
-  other_safety: []
-unresolved_prior_items: []
-special_context_flags: []
-```
-
-Rules:
-
-- derived values use authoritative treatment history only;
-- missing dates remain missing/uncertain;
-- administration count is not reconstructed from guessed cadence;
-- elapsed exposure and administration count remain separate;
-- a nominal appointment label does not prove an administration occurred.
-
----
-
-# 5. Core object — `GuidanceRuleV1`
-
-Minimum candidate contract:
-
-```yaml
-rule_id: string
-module: osteoporosis
-domain: string
-card_id: string
-rule_class: critical_safety | event_triggered | unresolved_prior | agent_specific | milestone_due | archetype_core | contextual
-priority: integer
-applies_if: <deterministic predicate over EncounterContextV1>
-reason_code: string
-human_reason: string
-source:
-  type: guideline | evidence | approved_clinic_policy | product_flow
-  id: string | null
-  version: string | null
-  strength_or_certainty: string | null
-reviewed_on: date | null
-status: active | draft | superseded
-```
-
-Clinical guidance rules must be deterministic once the structured context is known.
-
----
-
-# 6. Rule priority / conflict resolution
-
-Frozen priority:
+Approved order:
 
 ```text
-critical safety / urgent event
-→ unresolved prior critical item
-→ treatment/agent-specific requirement
-→ evidence-defined milestone/due item
-→ archetype base flow
-→ patient-specific contextual item
+C1 finalization integrity merge/deploy/smoke
+→ dynamic Clinical Guidance foundation
+→ PR-1 Heidi transcript extraction
+→ PR-2 inline provisional population / clinician review
+→ guided clinical-card UX sufficient for real use
+→ 5 consecutive real system-assisted pilot encounters
+→ one deliberate refinement
+→ freeze Guidance/Capture/KPI applicability contracts
+→ minimum Quick Practice Review shadow capability
+→ 30 consecutive unique scored system-assisted encounters
+→ baseline lock
+→ reviewed Signals/intervention
+→ re-measure
+→ Module 01 closure review
 ```
 
-Rules:
+During the 30-case baseline:
 
-1. higher-priority triggers cannot be hidden by a lower-priority archetype default;
-2. a card may carry multiple reason codes;
-3. generic `not_applicable` is overridden by a current higher-priority event/safety/due trigger;
-4. clinician override remains possible where appropriate and should retain reason/provenance;
-5. the engine surfaces checks/prerequisites but does not silently choose treatment.
+- stable Clinical Guidance remains active;
+- transcript-assisted capture remains active;
+- routine KPI/performance feedback remains hidden;
+- routine clinician-facing Practice Review remains hidden by default;
+- safety-critical feedback remains allowed;
+- guidance exposure is recorded where reliable;
+- the cohort is labelled **system-assisted baseline**.
 
 ---
 
-# 7. Core object — `VisitPlanV1`
+# 3. Four-function product boundary
 
-Candidate output:
-
-```yaml
-visit_plan_id: uuid
-module: osteoporosis
-encounter_archetype: string
-ordered_cards:
-  - card_id: string
-    priority: integer
-    reason_codes: []
-    why_now: string
-    state: required | due | contextual
-critical_unresolved: []
-close_requirements: []
-rule_trace: []
+```text
+Clinical Guidance
+!= Transcript-assisted Capture
+!= Audit / Measurement
+!= Clinical Practice Review
 ```
 
-A Visit Plan is ephemeral/derivable presentation state. It does not duplicate authoritative clinical facts.
+### Clinical Guidance
+Helps conduct today's encounter: what is due, newly triggered, unresolved or needed before safe closure.
+
+### Transcript-assisted Capture
+Turns what was said into provisional structured data without duplicate manual entry.
+
+### Audit
+Measures whether applicable process/standards occurred and how performance changes.
+
+### Practice Review
+Reviews whether reasoning, communication and decisions were appropriate and converts repeated observations into improvement Signals.
 
 ---
 
-# 8. Core object — `GuidedCardStateV1`
+# 4. Normative machine-contract entrypoint
 
-A card needs more than current `applicable/conditional/N/A` state.
-
-Candidate state:
-
-```yaml
-card_id: string
-visibility: surfaced | collapsed | hidden
-priority: integer
-reason_codes: []
-why_now: string
-prior_data_state: available | absent | stale_or_due | uncertain
-capture_state: resolved | unresolved | partial
-provisional_candidate_count: integer
-conflict_count: integer
-critical_unresolved: boolean
+```text
+schemas/dynamic_guided_visit_contract_manifest_v1.yaml
 ```
 
-UX requirements:
+It points to:
 
-- prior stable authoritative data may appear as summary/read-only rather than blank re-entry fields;
-- due/current facts are prominent;
-- provisional transcript values appear in place;
-- unresolved/conflicting values are obvious;
-- irrelevant cards do not dominate the visit;
-- `why now` is available for dynamically surfaced content.
+```text
+schemas/dynamic_guided_visit_v1.yaml
+schemas/longitudinal_guidance_projection_v1.yaml
+```
+
+Frozen objects:
+
+```text
+EncounterContextV1
+LongitudinalGuidanceProjectionV1
+ProjectionConflictV1
+GuidanceRuleV1
+VisitPlanV1
+GuidedCardStateV1
+TherapyMilestoneProfileV1
+GuidanceExposureV1
+```
+
+Formal exact review:
+
+```text
+M01_G0_DYNAMIC_GUIDANCE_DESIGN_REVIEW_V1.md
+classification: DESIGN-COMPLETE
+```
 
 ---
 
-# 9. Archetype strategy — coarse intent, not dose-number explosion
+# 5. Existing runtime foundations verified
 
-Preserve current coarse intents as much as possible:
+The current protected/runtime system already supplies:
+
+```text
+patient_relationship_status
+encounter_archetype
+fracture_history.events[]
+step3.dxa
+step3.vfa
+step3.secondary
+step3.labs
+step3.function
+step4.treatment_episodes[]
+step4.administrations[]
+step4.tasks[]
+step4.decision
+step4.transition
+step4.close
+applicability_review
+```
+
+Current coarse archetypes remain useful as **visit intent**:
 
 ```text
 initial_assessment_new_or_uncertain_diagnosis
@@ -279,327 +172,277 @@ treatment_completion_or_consolidation
 other
 ```
 
-Potential addition to review during G-1 design/runtime:
+A candidate future intent `results_or_workup_review_with_management_decision` is preserved for later runtime review because a second visit reviewing results and making management decisions is materially different from both a full first assessment and stable routine follow-up. It is not yet a persisted runtime enum.
+
+---
+
+# 6. Why archetype alone is insufficient
+
+Current `adaptive-applicability.js` can only express roughly:
 
 ```text
-results_or_workup_review_with_management_decision
+applicable
+uncertain
+not_applicable
 ```
 
-because this represents a materially different visit intent from either a full initial assessment or a stable routine follow-up.
+The approved product needs relevance derived from:
+
+```text
+visit intent
++ longitudinal treatment state
++ actual administration history
++ elapsed exposure
++ reliable administration count
++ due/overdue state
++ monitoring due state
++ new fracture/adverse event/safety trigger
++ unresolved prior tasks/prerequisites
++ patient-specific context
++ transcript uncertainty/conflict
+```
+
+Every non-obvious surfaced card should be able to answer:
+
+> **WHY NOW?**
+
+---
+
+# 7. Rule hierarchy
+
+Frozen priority:
+
+```text
+critical safety / urgent event
+→ unresolved prior critical item
+→ treatment/agent-specific requirement
+→ evidence-defined milestone/due item
+→ archetype base flow
+→ contextual item
+```
+
+Rules:
+
+1. higher-priority safety/event triggers cannot be hidden by lower-priority routine defaults;
+2. one card may retain multiple reason codes;
+3. generic `not_applicable` cannot suppress a current higher-priority trigger;
+4. clinician override remains possible where appropriate and retains reason/provenance;
+5. the guidance engine structures checks/prerequisites but does not silently make the treatment decision.
+
+---
+
+# 8. Longitudinal projection correction found during review
+
+Storage is currently encounter-snapshot based; there is no separate patient-level treatment timeline table.
+
+However:
+
+```text
+GET /clinical/patient/{patient_id}/encounters
+```
+
+returns every protected historical encounter with full `payload`.
+
+Therefore the first guidance runtime can derive a read-only longitudinal projection without a database migration.
+
+`LongitudinalGuidanceProjectionV1` freezes these rules:
+
+- completed/amended prior encounters are historical sources;
+- blank later snapshots do not erase prior authoritative history;
+- material conflicts remain explicit conflicts;
+- scheduled/planned administration does not count as an actual administered dose;
+- administration count is computed only from reliable unique actual events;
+- exact `agent + actual_date` may identify a repeated representation of the same actual administration when a stable event ID is unavailable;
+- administration count and elapsed exposure remain separate;
+- missing doses are never reconstructed from expected cadence;
+- unresolved prior tasks may surface into today's context;
+- provisional transcript candidates do not alter longitudinal authority until clinician acceptance.
+
+Preferred G-1 implementation is an **ephemeral derived projection**, not a new persistent patient-level treatment database.
+
+---
+
+# 9. Repeated Prolia / repeated-treatment design
+
+The product-owner examples of early, later and long-duration Prolia visits demonstrate the need for milestone-aware behavior, but do not themselves establish clinical milestone rules.
 
 Do not create:
 
 ```text
 prolia_visit_1
 prolia_visit_2
-prolia_visit_3
 ...
 prolia_visit_10
 ```
 
-Instead use `treatment_continuation_or_due_monitoring` plus treatment timeline/milestone/event rules.
-
----
-
-# 10. Repeated denosumab / repeated-therapy milestone model
-
-The product-owner examples (“1–3”, “4th/8th”, “10th” Prolia visits) demonstrate a real need for longitudinal milestone-aware behavior, but do not themselves establish clinical rule authority.
-
-Required model:
+Use:
 
 ```text
-base administration flow
+treatment_continuation_or_due_monitoring
 +
-agent-specific rules
+active agent
 +
-actual administration count when reliable
+actual administrations
++
+reliable administration count
 +
 elapsed exposure
 +
-monitoring-due rules
+due/overdue state
 +
-long-duration review rules
+monitoring state
 +
-event overrides
+reviewed TherapyMilestoneProfile rules
++
+event/safety overrides
 ```
 
-A `TherapyMilestoneProfileV1` should allow triggers such as:
+Hard rule:
 
-```text
-every_administration
-administration_count in {...}
-elapsed_exposure >= X
-monitoring_due == true
-next_due_state == overdue
-new_fracture == true
-fracture_on_treatment == true
-course_completion / transition state
-```
+> No exact “4th / 8th / 10th Prolia” clinical guidance is activated without reviewed evidence or an explicitly approved clinic-policy source explaining the milestone.
 
-Hard rules:
-
-- exact clinical milestone content requires reviewed evidence or approved clinic-policy provenance;
-- count and elapsed time remain separate;
-- delays must not be hidden by a nominal dose number;
-- no invented “10th dose rule” without defining its evidence/policy rationale.
+If treatment delays make count and elapsed time diverge, preserve both.
 
 ---
 
-# 11. Visit-flow examples to prove architecture
+# 10. Heidi-first / inline review direction
 
-These are design fixtures, not final clinical protocols.
-
-## Fixture A — first assessment
-
-Expected plan shape:
+The corrected archived PR-1 v3 semantics remain authoritative for extraction safety:
 
 ```text
-why today
-→ fracture/risk characterization
-→ DXA/VFA/imaging as relevant
-→ secondary causes/labs
-→ falls/function as relevant
-→ risk synthesis
-→ treatment decision if ready
-→ communication/close
+raw transcript
+→ ephemeral provider processing
+→ structured semantic candidates
+→ deterministic Module 01 target mapping
+→ no authoritative PR-1 write
 ```
 
-## Fixture B — second visit / results review / management decision
+Preserve:
 
-Prior full history exists.
+- negation;
+- temporality;
+- speaker/source;
+- uncertainty;
+- objective result vs interpretation;
+- option discussed vs recommendation vs final decision;
+- patient preference vs acceptance;
+- exact vs vague dates;
+- actual runtime target mapping;
+- PHI-safe validation/logging.
 
-Expected behavior:
+PR-2 UX direction is now:
 
-- do not reopen all first-visit fields;
-- surface pending labs/results/DXA/VFA;
-- surface unresolved secondary-cause questions;
-- surface risk synthesis;
-- surface options/recommendation/preference/final decision;
-- surface prerequisites/tasks/close.
+```text
+mapped candidate
+→ provisional value in destination clinical card
+→ Accept / Edit / Reject
+→ authoritative value only after clinician review
+```
 
-## Fixture C — routine repeated denosumab administration without new issue
-
-Expected behavior:
-
-- concise interval-change/fracture check;
-- current administration/timing state;
-- only due monitoring/milestone items;
-- agent-specific safety/tolerance items defined by reviewed rules;
-- short Close;
-- no full secondary-cause/risk reassessment without a trigger.
-
-## Fixture D — same scheduled administration but new fracture
-
-Expected behavior:
-
-- fracture/event override supersedes routine administration flow;
-- verify fracture and treatment exposure/timing;
-- surface relevant reassessment/response/decision cards;
-- transition/escalation reasoning as applicable;
-- no routine-only abbreviated visit plan.
-
-## Fixture E — delayed/missed time-critical administration
-
-Expected behavior:
-
-- timing/safety override prominently surfaced;
-- exact actual administration history used;
-- ordinary “routine continuation” flow cannot hide the delay state.
-
-## Fixture F — long-duration treatment milestone
-
-Expected behavior:
-
-- milestone rules add the defined reassessment content to the otherwise routine flow;
-- milestone is derived from reviewed timeline/count rules, not hard-coded screen identity.
+Do not rebuild duplicate data entry around a detached candidate list.
 
 ---
 
-# 12. Heidi-first capture architecture retained and repositioned
+# 11. Guidance exposure / clinician improvement
 
-The corrected archived `PR1_TRANSCRIPT_INTAKE_V3.md` remains the technical starting point.
-
-New product sequencing:
+Where technically reliable, `GuidanceExposureV1` may retain:
 
 ```text
-PR-1 semantic extraction
-→ deterministic target mapping
-→ PR-2 inline provisional card population
-→ clinician review
-→ authoritative merge
-```
-
-This now occurs **before the five real pilot cases**.
-
----
-
-# 13. Inline population contract
-
-Mapped transcript candidates should appear in their destination clinical cards.
-
-Candidate state:
-
-```text
-proposed
-accepted
-edited_and_accepted
-rejected
-conflict_needs_resolution
-unmapped_needs_review
-```
-
-Rules:
-
-- `proposed` values are visually populated but not authoritative;
-- authoritative existing data are never silently overwritten;
-- evidence snippet/confidence may be available on demand;
-- one clinician action may accept a safe group only after category-specific safeguards exist;
-- unmapped clinically meaningful assertions remain visible rather than disappearing;
-- “not mentioned” never becomes a negative finding.
-
----
-
-# 14. Guidance exposure / clinician internalization
-
-Introduce `GuidanceExposureV1` where technically reliable:
-
-```yaml
-encounter_id: string
-item_id: string
-reason_code: string
-was_surfaced: boolean
-content_present_before_surface: yes | no | unknown
-resolved_after_surface: yes | no | unknown
-resolution_source: transcript | clinician_entry | prior_data | mixed | unknown
+item surfaced?
+reason
+content already present before cue? yes/no/unknown
+resolved after cue? yes/no/unknown
+resolution source: transcript / clinician / prior data / mixed / unknown
 ```
 
 Purpose:
 
-- measure system-supported execution without pretending it was unassisted;
-- later assess whether correct behavior becomes increasingly pre-prompt/spontaneous;
-- avoid withholding useful guidance merely to manufacture a baseline.
-
-Do not infer causality if event timing cannot be established.
-
----
-
-# 15. Revised pilot/baseline methodology
-
-## 15.1 Five-case pilot
-
-Pilot only after:
-
 ```text
-authoritative Finish deployed/smoked
-+
-minimum dynamic Visit Plan
-+
-transcript extraction
-+
-inline clinician review/population
+system-supported correct execution
+→ repeated supported performance
+→ potentially increasingly pre-prompt/spontaneous correct behavior
 ```
 
-Pilot metrics:
-
-- completion time;
-- number of manual corrections/entries;
-- clinically meaningful transcript omissions;
-- false/incorrect candidates;
-- ambiguous/conflict candidates;
-- wrong card relevance;
-- duplicate questioning;
-- persistence/finalization problems;
-- cognitive burden;
-- safety/data-integrity issues.
-
-After five consecutive eligible cases: one deliberate refinement, then freeze.
-
-## 15.2 Thirty-case baseline
-
-Frozen policy:
-
-- Clinical Guidance active;
-- transcript-assisted capture active;
-- routine KPI score/performance feedback hidden;
-- routine clinician-facing Practice Review hidden by default;
-- safety-critical feedback allowed;
-- label cohort **system-assisted baseline**;
-- capture guidance exposure when reliable.
+This is descriptive context, not a punitive score and not proof of causal learning when event timing is uncertain.
 
 ---
 
-# 16. Scope of this design slice
+# 12. Design fixtures frozen
 
-IN SCOPE:
+The machine contract includes at least:
 
-- canonical methodology rebase;
-- dynamic Visit Plan object model;
-- guidance reason/priority semantics;
-- repeated-treatment milestone architecture;
-- positioning of PR-1/PR-2 before pilot;
-- system-assisted baseline semantics;
-- synthetic design fixtures;
-- machine-readable contract file(s).
+1. first assessment;
+2. results/work-up review and management decision using prior data;
+3. routine repeated denosumab administration without new issue;
+4. scheduled administration with new fracture/fracture-on-treatment override;
+5. delayed/missed time-critical administration;
+6. long-duration milestone where additional content appears only if an active reviewed milestone profile matches.
 
-OUT OF SCOPE:
+Longitudinal projection fixtures include duplicate administration snapshots, scheduled-not-actual events, delayed count-vs-time divergence, later blank snapshots, conflicting dates and unresolved/completed prior tasks.
 
-- runtime code changes;
-- actual clinical milestone rules for Prolia/other agents without evidence review;
-- provider/model implementation;
-- transcript endpoint runtime;
-- Accept/Reject/Edit runtime;
-- UI restyle;
+---
+
+# 13. G-0 exact review result
+
+```text
+PRODUCT PURPOSE                            PASS
+FOUR-FUNCTION SYSTEM BOUNDARY              PASS
+CURRENT RUNTIME SOURCE PATHS               PASS
+LONGITUDINAL SOURCE AVAILABILITY           PASS
+LONGITUDINAL PROJECTION CONTRACT           PASS
+ARCHETYPE + TRIGGER MODEL                  PASS
+RULE PRIORITY                              PASS
+REPEATED-THERAPY CAPABILITY                PASS
+MACHINE CONTRACT MANIFEST                  PASS
+HEIDI SEMANTIC COMPATIBILITY               PASS
+SYSTEM-ASSISTED BASELINE METHODOLOGY        PASS
+RUNTIME IMPLEMENTATION IN G-0              NO
+CLINICAL MILESTONE CONTENT INVENTED         NO
+DATABASE MIGRATION REQUIRED FOR G-1        NO
+```
+
+**G-0 classification: DESIGN-COMPLETE.**
+
+---
+
+# 14. Explicit non-decisions / out of scope
+
+G-0 does not freeze or implement:
+
+- exact denosumab 4th/8th/10th-dose guidance;
+- exact DXA/lab monitoring cadence;
+- exact medication-specific safety questions;
+- provider/model/API configuration for transcript extraction;
+- final detailed visual styling;
+- automatic treatment recommendations;
+- new patient-level treatment persistence;
 - Practice Review runtime;
-- merge/deploy of C1;
 - physiotherapy/RF work.
 
 ---
 
-# 17. REPLAN triggers
+# 15. Recommended next runtime slice — G-1
 
-STOP and replan if:
+If separately authorized after a fresh bootstrap, G-1 should be limited to generic dynamic-guidance mechanics:
 
-- actual current persistence cannot supply the longitudinal context needed for Visit Plan evaluation;
-- treatment history cannot reliably distinguish scheduled vs actual administration;
-- a proposed rule needs undocumented clinical assumptions;
-- coarse archetype + trigger layering cannot represent a common real encounter without special-case explosion;
-- transcript inline population requires silent overwrite of existing authoritative data;
-- guidance exposure cannot be represented without invasive surveillance or unreliable event claims;
-- system-assisted baseline cannot be described transparently enough to preserve methodological honesty.
+```text
+1. derive LongitudinalGuidanceProjectionV1 from protected historical encounters;
+2. build EncounterContextV1;
+3. implement deterministic GuidanceRuleV1 evaluation / priority resolution;
+4. produce VisitPlanV1 + GuidedCardStateV1;
+5. render `why now` and current coarse archetype flow;
+6. prove event override, unresolved-prior and treatment/due plumbing with synthetic fixtures;
+7. use only product-flow/synthetic rules needed to prove mechanics;
+8. do not invent agent-specific clinical milestone content;
+9. do not implement transcript/provider/PR-2 in G-1 unless a later approved slice explicitly includes them.
+```
+
+Agent-specific evidence-backed guidance profiles and PR-1/PR-2 then follow as bounded slices **before the five-case real pilot**.
 
 ---
 
-# 18. Acceptance of G-0 design
+# 16. Stop rule
 
-G-0 is design-complete when:
+G-0 is complete. Runtime mutation is not authorized by this design-complete state.
 
-```text
-product purpose reconciled in AGENTS                 YES
-roadmap sequence reconciled                           YES
-phase methodology reconciled                         YES
-EncounterContextV1 frozen                            YES
-GuidanceRuleV1 frozen                                YES
-VisitPlanV1 frozen                                   YES
-GuidedCardStateV1 frozen                             YES
-rule priority frozen                                 YES
-therapy milestone architecture frozen                YES
-Heidi/PR-2 moved before pilot                        YES
-system-assisted baseline semantics frozen            YES
-design fixtures defined                              YES
-machine contract added                               REQUIRED
-runtime mutation                                     NO
-```
-
----
-
-# 19. Exact next action
-
-```text
-1. add machine-readable dynamic-guidance contract/schema;
-2. run exact design-completeness review against actual current runtime paths;
-3. update CURRENT_OPERATIONAL with PASS/BLOCK;
-4. STOP this design slice;
-5. if PASS and runtime work is separately authorized, create bounded G-1 implementation slice for context resolver + Visit Plan/rule engine only.
-```
-
-Do not merge/deploy the C1 runtime fix as part of this G-0 design slice unless a separate merge/deploy decision is recorded.
+Next actions require fresh canonical bootstrap and a separate product-owner/runtime decision. C1 merge/deploy remains a separate release decision.
