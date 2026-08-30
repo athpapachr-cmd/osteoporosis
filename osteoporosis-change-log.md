@@ -710,3 +710,56 @@ Render auto-deploy `dep-da8afeuk1f9s73f5sr6g` completed successfully and reporte
 
 CU-1 runtime v1 is closed after canonical closeout/writer-lock release. CU-2 and PR-1 are not authorized by this completion.
 
+---
+
+## 2026-08-30 — Module 01 C1 + G-1 progressive guidance released
+
+The product owner authorized release of the accepted Module-01 ancestry containing the C1 authoritative Finish correction and G-1 progressive-guidance foundation after the R1/R2 state-integrity blockers were corrected and the complete G-1+C1 regression suite passed.
+
+Release PR #64 was reviewed at exact head:
+
+```text
+e7f400b3a99810a5667cf89899f7db91424ea253
+```
+
+At that exact head both relevant GitHub Actions checks passed:
+
+```text
+g1-guidance            SUCCESS — run 33331923695
+baseline-finalization   SUCCESS — run 33331923682
+```
+
+PR #64 was squash-merged to `main` as:
+
+```text
+a6ba9ef1719a18a48a1756bf08bbd157d448a63e
+```
+
+The released runtime includes:
+
+- the single authoritative C1 Finish path with protected completed/amended confirmation semantics;
+- the G-1 read-only longitudinal guidance projection;
+- coarse clinician-declared visit intent plus quick-notes context;
+- deterministic Visit Plan / `WHY NOW` guidance;
+- G1-R1 explicit history availability states so unavailable history is never presented as zero history;
+- G1-R2 live-DOM-over-persisted semantics so explicit live clearing cannot resurrect stale cached context.
+
+Render auto-deploy was triggered by the merge commit without manual duplication. Deploy:
+
+```text
+dep-daa8iv0ae00c73b7eudg
+```
+
+reached `live` at the exact runtime release SHA `a6ba9ef1719a18a48a1756bf08bbd157d448a63e`.
+
+Production browser smoke is **not yet proven**. The assistant execution sandbox could not resolve the Render production hostname, so no route-level or authenticated browser request reached the service. This is recorded as a tooling/network limitation, not as evidence of application failure.
+
+Accordingly:
+
+```text
+MERGED = YES
+DEPLOYED = YES
+PRODUCTION-SMOKE-VERIFIED = NO
+```
+
+An authenticated synthetic production smoke of C1 Finish/reload and G-1 interactive guidance/history-state behavior remains required before the production-readiness gate is considered fully closed. PR-1/PR-2, real pilot collection, new medication-specific milestone rules and parked physiotherapy/RF work remain outside this release.
