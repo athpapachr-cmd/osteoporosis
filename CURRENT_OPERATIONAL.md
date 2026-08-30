@@ -3,11 +3,11 @@
 > **STATUS:** MODULE 01 — C1 + G-1 MERGED / DEPLOYED / PRODUCTION SMOKE NOT YET PROVEN.
 > **Updated:** 2026-08-30 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Fresh verified remote `main` after release:** `a6ba9ef1719a18a48a1756bf08bbd157d448a63e`.
+> **Runtime release main verified at:** `a6ba9ef1719a18a48a1756bf08bbd157d448a63e`.
 > **Release PR:** `#64` — SQUASH-MERGED.
 > **Release merge SHA:** `a6ba9ef1719a18a48a1756bf08bbd157d448a63e`.
 > **Render deploy:** `dep-daa8iv0ae00c73b7eudg` — LIVE at exact release merge SHA.
-> **ACTIVE CANONICAL WRITER/LOCK:** `docs/module01-g1-release-closeout-2026-08-30` — release closeout only.
+> **ACTIVE CANONICAL WRITER/LOCK:** NONE — release closeout complete.
 > **ACTIVE RUNTIME WRITER/LOCK:** NONE.
 
 ---
@@ -69,7 +69,9 @@ PR #64 was then squash-merged with exact expected head into:
 a6ba9ef1719a18a48a1756bf08bbd157d448a63e
 ```
 
-Fresh post-merge GitHub verification confirmed that exact SHA as `main`.
+Fresh post-merge GitHub verification confirmed that exact SHA as `main` at runtime release.
+
+A later docs-only canonical closeout may advance `main` without changing the released runtime; every fresh session must still verify the current remote `main` SHA before project work.
 
 ---
 
