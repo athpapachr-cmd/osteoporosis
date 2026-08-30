@@ -32,7 +32,7 @@ class CU1GreekReferralFormatter(_BaseGreekFormatter):
         if not isinstance(routes, Mapping):
             raise CU1ContractError("CU-1 explicit Greek route-label artifact is missing")
         self.explicit_route_labels: Mapping[str, Any] = routes
-        self.rich_renderer = CU1RichReferralRenderer()
+        self.rich_renderer = CU1RichReferralRenderer(bundle.root)
 
     def _route_label(self, profile_id: str, route_id: str) -> str:
         profile = self.explicit_route_labels.get(profile_id)
@@ -91,31 +91,48 @@ class CU1GreekReferralFormatter(_BaseGreekFormatter):
 
     def _format_short(self, draft: Mapping[str, Any]) -> str:
         route = self._rich_route_identity(draft)
-        if route and self.rich_renderer.supports(
-            profile_id=route[0], route_id=route[1], subtype_id=route[2], context=route[3]
-        ):
-            return self.rich_renderer.render_short(
-                profile_id=route[0],
-                route_id=route[1],
-                subtype_id=route[2],
-                clinical_context=self._rich_clinical_context(draft, detailed=False, route=route),
-                context=route[3],
+        if route:
+            supported = self.rich_renderer.supports(
+                profile_id=route[0], route_id=route[1], subtype_id=route[2], context=route[3]
             )
+            if supported:
+                return self.rich_renderer.render_short(
+                    profile_id=route[0],
+                    route_id=route[1],
+                    subtype_id=route[2],
+                    clinical_context=self._rich_clinical_context(draft, detailed=False, route=route),
+                    context=route[3],
+                )
+            self._assert_context_gated_route_may_not_fallback(route)
         return super()._format_short(draft)
 
     def _format_detailed(self, draft: Mapping[str, Any]) -> str:
         route = self._rich_route_identity(draft)
-        if route and self.rich_renderer.supports(
-            profile_id=route[0], route_id=route[1], subtype_id=route[2], context=route[3]
-        ):
-            return self.rich_renderer.render_detailed(
-                profile_id=route[0],
-                route_id=route[1],
-                subtype_id=route[2],
-                clinical_context=self._rich_clinical_context(draft, detailed=True, route=route),
-                context=route[3],
+        if route:
+            supported = self.rich_renderer.supports(
+                profile_id=route[0], route_id=route[1], subtype_id=route[2], context=route[3]
             )
+            if supported:
+                return self.rich_renderer.render_detailed(
+                    profile_id=route[0],
+                    route_id=route[1],
+                    subtype_id=route[2],
+                    clinical_context=self._rich_clinical_context(draft, detailed=True, route=route),
+                    context=route[3],
+                )
+            self._assert_context_gated_route_may_not_fallback(route)
         return super()._format_detailed(draft)
+
+    def _assert_context_gated_route_may_not_fallback(
+        self,
+        route: Tuple[str, str, Optional[str], Mapping[str, Any]],
+    ) -> None:
+        state = self.rich_renderer.rollout_state(profile_id=route[0], route_id=route[1])
+        if state == "context_gated":
+            raise CU1ContractError(
+                f"Context-gated referral {route[0]}.{route[1]} has no applicable reviewed rich variant; "
+                "legacy formatter fallback is forbidden"
+            )
 
     @staticmethod
     def _rich_route_identity(draft: Mapping[str, Any]) -> Optional[Tuple[str, str, Optional[str], Mapping[str, Any]]]:
