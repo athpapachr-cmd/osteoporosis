@@ -1,40 +1,38 @@
 # SLICE_PLAN_CURRENT.md — G-1 Progressive Guidance Runtime Foundation v1
 
-> **STATUS:** IMPLEMENTED / TESTED / RELEASE GATE — G1-R1 + G1-R2 CLOSED IN CODE.
+> **STATUS:** IMPLEMENTED / TESTED / MERGED / DEPLOYED — FINAL PRODUCT-OWNER WHY-NOW RE-SMOKE PENDING.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Parent product:** Personal Clinical Excellence System.
 > **Module:** 01 — Osteoporosis.
 > **Slice ID:** M01-G1-PROGRESSIVE-GUIDANCE-RUNTIME-v1.
-> **Fresh verified remote main for R1/R2 correction:** `08ecd3ab33e98d567c47042a8a1de482df6952b9`.
-> **Parent accepted design:** `design/module01-progressive-guidance-foundations-2026-08-30` @ `298d8d525f1bac97ffb6904fe09800519bd1a584`.
-> **Implementation branch:** `feat/module01-g1-progressive-guidance-foundation-2026-08-30`.
-> **R1/R2 runtime+test head:** `3294deebb97cf3f0a0d8fa2848ac4af7a04b01de`.
-> **Runtime writer:** NONE — bounded R1/R2 correction complete.
-> **Merge/deploy/production smoke:** NOT AUTHORIZED / NOT DONE.
+> **Current production correction main SHA:** `d9423f4dcf6bebd056e83407132c6ce3e25d2280`.
+> **Original release PR:** `#64`.
+> **WHY-NOW correction PR:** `#66`.
+> **Runtime writer:** NONE.
 
 ---
 
 # 1. Objective
 
-G-1 implements the smallest useful runtime foundation for progressive visit guidance without attempting a complete osteoporosis visit taxonomy.
+G-1 provides the smallest useful runtime foundation for progressive osteoporosis visit guidance without pretending to be a complete treatment-recommendation engine or exhaustive visit taxonomy.
 
-Current flow:
+Current runtime flow:
 
 ```text
-coarse clinician visit intent
+coarse clinician-declared visit intent
 + short first-page visit context
 + protected longitudinal context when available
 → deterministic card relevance/order
 → visible WHY NOW reason(s)
 ```
 
-The runtime is guidance/navigation infrastructure, not a treatment-recommendation engine.
+Clinical workflow presentation remains distinct from storage/audit schema.
 
 ---
 
 # 2. Existing clinician inputs retained
 
-G-1 reuses existing persisted/runtime fields:
+G-1 reuses existing fields including:
 
 ```text
 encounter_archetype
@@ -49,46 +47,42 @@ step4.close
 
 Rules:
 
-- `encounter_archetype` remains coarse clinician-declared intent;
-- `quick_notes` is fallback visit context, especially for `other` or categories that are still too broad;
-- G-1 does not parse free text into new authoritative structured facts;
-- later transcript extraction may supply richer candidate context only in PR-1/PR-2.
+- `encounter_archetype` is coarse clinician-declared intent;
+- `quick_notes` is contextual text, especially for `other` or broad categories;
+- G-1 does not parse free text into authoritative structured facts;
+- transcript-derived candidates remain future PR-1/PR-2 work.
 
 ---
 
-# 3. Longitudinal projection
+# 3. Longitudinal projection invariants
 
-G-1 reads protected historical encounters and derives only the context needed for current guidance.
+G-1 reads completed/amended protected historical encounters and derives read-only ephemeral context for current guidance.
 
-Projection includes:
+Preserved rules:
 
 ```text
-prior encounter count/latest historical encounter
-reliable unique actual administration events
-administration count by agent when representable
-last actual administration by agent
-explicit stored next-due context
-latest nonempty treatment snapshot / active episode when unambiguous
-unresolved prior planned tasks
-latest prior unresolved-critical close state
-material projection conflicts
+HISTORY UNAVAILABLE != NO HISTORY
+scheduled/planned administration != actual administration
+administration count != elapsed exposure
+missing expected doses are not reconstructed
+material conflicts remain explicit
+current/draft encounter is not historical authority
 ```
 
-Hard behavior:
+History availability states remain:
 
-- read-only/ephemeral derived state;
-- no new patient-level DB table;
-- completed/amended encounters are historical sources;
-- current/draft encounter is not historical authority;
-- scheduled/planned administration does not count as actual;
-- no inferred missing doses from expected cadence;
-- no medication-specific due threshold inferred from actual dates alone;
-- exact duplicate `agent + actual_date` representation is not double-counted;
-- material conflicts remain explicit rather than silently resolved.
+```text
+not_loaded
+loading
+loaded
+unavailable
+```
+
+A failed history request must never render as false zero prior encounters.
 
 ---
 
-# 4. Minimal Visit Plan
+# 4. Minimal Visit Plan / priority
 
 Reason classes:
 
@@ -112,224 +106,167 @@ NEW_EVENT
 → CONTEXTUAL
 ```
 
-Representative mechanics:
+Representative mechanics already tested:
 
-- first assessment produces broad core guidance;
-- routine treatment continuation is smaller;
-- new fracture overrides routine treatment flow;
-- explicit fracture-on-treatment adds treatment administration/transition context;
-- unresolved prior tasks surface follow-up context;
-- explicitly stored due/overdue state surfaces administration/follow-up context;
-- longitudinal conflicts surface treatment/admin review context.
-
-No treatment selection/recommendation is generated.
+- first assessment broad core flow;
+- smaller routine treatment-continuation flow;
+- new fracture overrides routine flow;
+- fracture on treatment adds treatment/transition context;
+- unresolved prior tasks resurface;
+- explicit stored due/overdue information can surface administration/follow-up context;
+- longitudinal conflicts remain reviewable;
+- no treatment selection/recommendation is generated.
 
 ---
 
 # 5. Progressive-taxonomy invariant
 
-No large new visit enum set was added.
+No large new visit enum set was introduced.
 
-Current dropdown stays primary. `other + quick_notes` is a valid first-use path.
+The existing `Τύπος σημερινής επίσκεψης` / `encounter_archetype` dropdown remains primary. `other + quick_notes` remains a valid fallback.
 
-Potential future categories such as:
-
-```text
-results/work-up review with management decision
-repeat prescription / routine maintenance
-```
-
-remain evidence-from-use candidates until post-pilot refinement or a separately approved earlier correction.
+Potential future categories such as results/work-up review with management decision remain evidence-from-use candidates and are not silently introduced by G-1.
 
 ---
 
-# 6. G1-R1 correction — longitudinal history availability integrity
+# 6. G1-R1 / G1-R2 closed integrity corrections
 
-Release review identified that a failed protected history request could be represented as an empty history.
-
-Closed invariant:
+## G1-R1 — history availability
 
 ```text
-HISTORY UNAVAILABLE != NO HISTORY
 AUTH/NETWORK/SERVER FAILURE != ZERO PRIOR ENCOUNTERS
 ```
 
-Runtime now carries explicit UI history state:
+Successful empty history may show zero. Failed/unavailable history must explicitly say it is unavailable/incomplete.
 
-```text
-not_loaded
-loading
-loaded
-unavailable
-```
-
-Behavior now proven:
-
-- successful loaded empty history may legitimately display zero previous completed/amended visits;
-- failed history load displays unavailable/incomplete longitudinal context and does not claim zero visits;
-- current local visit guidance remains usable during loading/unavailable state;
-- starting a load for another patient clears prior in-memory historical rows immediately;
-- stale completion from a no-longer-active patient request cannot overwrite the current patient's history state.
-
----
-
-# 7. G1-R2 correction — live UI state owns the current snapshot
-
-Release review identified stale persisted fallback when a clinician cleared live values before Save.
-
-Closed invariant:
+## G1-R2 — live UI owns the current snapshot
 
 ```text
 IF A LIVE CONTROL EXISTS
-→ its present value, including blank/empty, owns today's in-memory guidance snapshot
+→ its current value, including blank/empty, owns today's in-memory guidance snapshot
 
 persisted cache
-→ fallback only when the corresponding live control/root is absent
+→ fallback only when corresponding live control/root is absent
 ```
 
-Covered current fields:
-
-- encounter archetype;
-- encounter date;
-- quick notes;
-- interval fracture status;
-- rendered fracture-event collection.
-
-An explicitly empty live fracture-event container now projects `events=[]` rather than resurrecting old cached events.
+This includes encounter archetype/date/quick notes/interval fracture status and the rendered fracture-event collection.
 
 ---
 
-# 8. UI ownership
+# 7. WHY-NOW UX contract and production correction
 
-G-1 adds a lightweight `Σημερινή ροή` summary and reuses existing cards.
+Normative UX invariant:
 
-It displays:
+> A dynamically surfaced item must make its `WHY NOW?` reason discoverable to the clinician at the point of use.
 
-- current coarse visit intent;
-- short visit context when supplied;
-- explicit longitudinal-context availability;
-- prioritized relevant domains;
-- human-readable `Γιατί τώρα` reasons;
-- explicit conflict warning when longitudinal treatment data disagree.
+Original G-1 already generated deterministic `item.why_now` and rendered explicit `Γιατί τώρα:` inside destination cards.
 
-No red/green KPI/performance styling is introduced.
-
-Existing `adaptive-applicability` remains the coarse owner. G-1 does not rewrite that state.
-
-Visual ownership remains:
+Production smoke found a presentation gap:
 
 ```text
-coarse adaptive classes persist unchanged
+`Σημερινή ροή` summary
+→ reason text present
+→ but explicit `Γιατί τώρα:` label absent
+→ clinician could not identify/find WHY NOW reliably
+```
+
+Bounded correction PR #66 changed only the summary presentation:
+
+```text
+Γιατί τώρα: <existing deterministic item.why_now>
+```
+
+No guidance reason, priority, clinical rule, recommendation, taxonomy, persistence or schema changed.
+
+A focused regression now locks both:
+
+```text
+summary explicit `Γιατί τώρα:`
 +
-.guidance-surfaced temporarily overrides collapsed presentation
+destination-card explicit `Γιατί τώρα:` retained
 ```
 
 ---
 
-# 9. Exact acceptance evidence
+# 8. Acceptance / release evidence
 
-R1/R2 runtime+test head:
-
-```text
-3294deebb97cf3f0a0d8fa2848ac4af7a04b01de
-```
-
-GitHub Actions:
+Original G-1+C1 release was squash-merged through PR #64 as:
 
 ```text
-workflow: G1 progressive guidance foundation
-run:      33329341340
-job:      g1-guidance
-result:   SUCCESS
+a6ba9ef1719a18a48a1756bf08bbd157d448a63e
 ```
 
-Passed at the exact correction head:
-
-- JavaScript syntax checks;
-- progressive guidance pure-core regressions;
-- guidance wiring/ownership regression;
-- **new progressive guidance UI-state regressions**;
-- authoritative Finish browser regression;
-- server finalization lifecycle regression.
-
-Focused R1/R2 regression coverage proves:
+The production-smoke WHY-NOW correction final PR head was:
 
 ```text
-R1-A failed protected history fetch → unavailable
-R1-B unavailable history summary does not claim zero prior visits
-R1-C new-patient history load clears previous patient's rows before await completion
-R1-D successful empty history → loaded + zero is legitimate
-R2-A live blank quick_notes overrides persisted nonblank value
-R2-B live blank encounter archetype/date/fracture status overrides persisted value
-R2-C live empty fracture-event container overrides persisted fracture events with []
-R2-D persisted fallback remains only when live control/root is absent
+e2960454cfa1acf6fa4e2c0735a2e7ba3c267f48
 ```
 
-The full workflow simultaneously re-proved the inherited C1 authoritative Finish browser/server lifecycle behavior.
+Exact-head G-1 workflow runs:
+
+```text
+33333512964  SUCCESS
+33333526378  SUCCESS
+```
+
+PR #66 was squash-merged as:
+
+```text
+d9423f4dcf6bebd056e83407132c6ce3e25d2280
+```
+
+Render auto-deploy:
+
+```text
+dep-daa93ljncjis739ssef0
+→ LIVE
+→ exact commit d9423f4dcf6bebd056e83407132c6ce3e25d2280
+```
+
+No manual duplicate deploy was triggered.
 
 ---
 
-# 10. Correction scope verification
-
-Exact compare from release-block head `56267d08dc5d68b8c5e4208f2ae3761fa15156b5` to R1/R2 test head `3294deebb97cf3f0a0d8fa2848ac4af7a04b01de` contains only:
+# 9. Completion matrix
 
 ```text
-static/baseline-audit/progressive-guidance-ui.js
-test_progressive_guidance_ui_state.js
-.github/workflows/g1-progressive-guidance-tests.yml
-CURRENT_OPERATIONAL.md
+coarse dropdown reused                         YES / TESTED / PRODUCTION-SEEN
+quick-notes context reused                     YES / TESTED
+protected historical projection                YES / TESTED
+history unavailable != zero                    YES / TESTED
+live-empty > persisted-cache snapshot          YES / TESTED
+actual administration dedup                    YES / TESTED
+scheduled-only does not count                  YES / TESTED
+unresolved-prior resurfacing                   YES / TESTED
+explicit due-state plumbing                    YES / TESTED
+new-fracture override                          YES / TESTED
+WHY-NOW core generation                        YES / TESTED
+WHY-NOW explicit summary presentation          YES / TESTED / DEPLOYED
+applicability ownership preserved              YES / TESTED
+C1 regressions preserved                       YES / TESTED
+merged                                         YES
+deployed                                       YES
+final corrected WHY-NOW production re-smoke    PENDING
+production-smoke-verified                      NO
+real-clinic pilot                              NO
 ```
-
-No G-1 core clinical rule, database/schema, KPI, PR-1/PR-2, physiotherapy, RF or medication-specific milestone content changed.
 
 ---
 
-# 11. Completion matrix
+# 10. Exact next action
+
+STOP runtime mutation.
+
+Product owner performs only the bounded correction re-smoke:
 
 ```text
-coarse dropdown reused                     YES / TESTED
-quick-notes context reused                 YES / TESTED
-protected historical projection            YES / TESTED
-history availability state                 YES / TESTED
-unavailable != zero history                YES / TESTED
-cross-patient transient history cleared    YES / TESTED
-live-empty > persisted-cache snapshot      YES / TESTED
-actual administration dedup                YES / TESTED
-scheduled-only does not count              YES / TESTED
-unresolved-prior resurfacing               YES / TESTED
-explicit due-state plumbing                YES / TESTED
-new-fracture override                      YES / TESTED
-WHY NOW                                    YES / TESTED
-applicability ownership preserved          YES / TESTED
-C1 regressions preserved                   YES / TESTED
-full taxonomy                              NO / deliberately deferred
-medication-specific milestones             NO
-merged                                     NO
-deployed                                   NO
-production smoke                           NO
-real-clinic pilot                          NO
+select/use existing `Τύπος σημερινής επίσκεψης`
+→ inspect top `Σημερινή ροή`
+→ confirm each surfaced reason is visibly prefixed `Γιατί τώρα: ...`
 ```
 
-G-1 including R1/R2 is code-level IMPLEMENTED / TESTED. It is not production-validated.
+If PASS, record `PRODUCTION-SMOKE-VERIFIED`, append final correction/smoke evidence to `osteoporosis-change-log.md`, and close the G-1 production-readiness gate.
 
----
+If FAIL, reopen only the exact observed presentation seam.
 
-# 12. Exact next action
-
-STOP at release gate.
-
-No more runtime mutation is authorized by the R1/R2 correction request.
-
-A separate release decision is required before:
-
-```text
-fresh current-main verification
-→ exact compare/review
-→ PR
-→ merge
-→ normal Render auto-deploy
-→ production synthetic smoke of C1 Finish + G-1 guidance/history/context/WHY NOW
-→ release evidence closeout
-```
-
-PR-1 Heidi extraction and PR-2 inline provisional population remain later bounded slices before the five-case system-assisted real pilot unless separately replanned.
+PR-1 Heidi extraction, PR-2 provisional population, new medication-specific milestone content, parked physiotherapy/RF work and real pilot collection remain outside this slice until separately authorized.
