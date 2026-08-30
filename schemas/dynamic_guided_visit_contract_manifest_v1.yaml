@@ -1,0 +1,45 @@
+manifest: dynamic_guided_visit_contract_manifest_v1
+status: normative_design_g0
+module: osteoporosis
+purpose: >-
+  Single machine-readable entrypoint for the G-0 dynamic guided-visit architecture.
+
+normative_contracts:
+  dynamic_visit:
+    path: schemas/dynamic_guided_visit_v1.yaml
+    owns:
+      - EncounterContextV1
+      - GuidanceRuleV1
+      - VisitPlanV1
+      - GuidedCardStateV1
+      - TherapyMilestoneProfileV1
+      - GuidanceExposureV1
+      - rule_resolution
+      - system_assisted_pilot_and_baseline_semantics
+  longitudinal_projection:
+    path: schemas/longitudinal_guidance_projection_v1.yaml
+    owns:
+      - LongitudinalGuidanceProjectionV1
+      - ProjectionConflictV1
+      - historical_encounter_projection_rules
+      - administration_deduplication_and_count_reliability
+      - unresolved_prior_task_projection
+      - no_new_persistence_by_default
+
+upstream_authorities:
+  - AGENTS.md
+  - TODO.md
+  - CLINICAL_EXCELLENCE_PLAN.md
+  - SLICE_PLAN_CURRENT.md
+  - CURRENT_OPERATIONAL.md
+
+downstream_implementation_rule: >-
+  G-1 runtime must implement against this manifest and stop/replan if exact persisted
+  runtime paths or required source semantics differ materially from the verified G-0
+  assumptions.
+
+explicit_non_authority:
+  - no_agent_specific_clinical_milestone_is_activated_by_this_manifest
+  - no_treatment_recommendation_is_encoded_here
+  - no_provider_model_configuration_is_frozen_here
+  - no_transcript_candidate_has_authoritative_write_permission_here
