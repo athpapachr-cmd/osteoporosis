@@ -19,516 +19,322 @@ This file answers **where the product is going and in what broad order**. It is 
 - [x] Establish gap classes: knowledge / reasoning / execution / communication-system.
 - [x] Establish sustained strengths as positive Signals.
 - [x] Establish STANDARD / CHALLENGE / RED TEAM / LEARNING modes.
-- [x] Define first Core objects and provisional osteoporosis competency domains.
-- [x] Define transparent measurement principles and no-composite-score-before-baseline rule.
-- [x] Define Baseline Osteoporosis Audit draft v1 and KPI Dictionary v1.
-- [x] Implement Baseline Audit Steps 1–6.
-- [x] Implement pre-pilot hardening P1–P8.
-- [x] Add `labs_date` and Step-6 conflict clear-on-collapse.
-- [x] Pass explicit 14-scenario synthetic form smoke.
+- [x] Define transparent measurement and no-composite-score-before-baseline principles.
+- [x] Define Baseline Osteoporosis Audit draft v1 + KPI Dictionary v1.
+- [x] Implement Baseline Audit Steps 1–6 and pre-pilot hardening.
+- [x] Pass 14-scenario synthetic form smoke.
 - [x] Implement authenticated patient registry + PostgreSQL encounter/lab persistence.
-- [x] Browser-smoke patient load/save/reload and longitudinal laboratory snapshots.
-- [x] Remove duplicate top-level lab-history table and add `Νέες αναλύσεις` capture reset.
-- [x] Add Clinical Calendar foundation/navigation/osteoporosis-only filtering.
-- [x] Defer live Setmore/Secretary feed without blocking Clinical Excellence development.
-- [x] Merge server-side encounter-finalization integrity rule: completed encounters cannot silently regress to draft; later material edits become `amended`.
-- [x] Complete 3/3 live synthetic finalization smoke for server-side completed/amended semantics.
-- [x] Upgrade documentation/control-plane architecture to six active canonicals.
-- [x] Implement/test the bounded authoritative browser Finish correction on `fix/module01-c1-authoritative-finish-2026-08-30`.
+- [x] Verify patient load/save/reload and longitudinal laboratory snapshots.
+- [x] Implement Clinical Calendar foundation and keep live Secretary integration independently deferrable.
+- [x] Merge server-side completed/amended finalization integrity semantics.
+- [x] Complete prior live 3/3 server-finalization smoke.
+- [x] Upgrade to six active canonicals.
+- [x] Implement/test bounded authoritative browser Finish correction on `fix/module01-c1-authoritative-finish-2026-08-30`.
+- [x] Reframe the clinician-facing product from manual Baseline Audit form to dynamic Clinical Excellence consultation system.
+- [x] Freeze G-0 dynamic-guidance architecture and revised system-assisted baseline methodology.
 
-The authoritative Finish correction remains **unmerged/undeployed** until separately authorized and production-smoke verified.
+The authoritative Finish browser correction is **implemented/tested but not merged/deployed**. G-0 dynamic-guidance work is **design-complete but not implemented**.
 
 ---
 
-# 1. CURRENT PRIMARY PROGRAM — OSTEOPOROSIS AS A DYNAMIC CLINICAL EXCELLENCE CONSULTATION SYSTEM
+# 1. CURRENT PRIMARY PROGRAM — OSTEOPOROSIS MODULE 01 CLOSURE
 
-The product owner has clarified the primary purpose:
+Primary product objective:
 
 ```text
-improve the current osteoporosis visit
+improve today's osteoporosis encounter
 +
 reduce duplicate/manual capture
 +
-review what was actually said/reasoned/decided
+review whether what was said/reasoned/decided was appropriate
 +
-improve the clinician over repeated real encounters
+improve clinician performance longitudinally
 ```
 
-The Baseline Audit remains a measurement engine underneath the product. It is not the intended clinician-facing workflow.
-
-The previous plan to run five real cases on the current largely manual Steps 1–6 workflow before transcript population/adaptive visit guidance is superseded.
+Audit remains an underlying measurement engine, not the main clinician-facing workflow.
 
 ## 1.1 Critical finalization integrity
 
-- [x] C1 authoritative Finish fix implemented.
-- [x] C1 focused browser/API regression passed.
-- [ ] PR/review/merge C1 using exact tested ancestry after explicit merge authority.
+- [x] Authoritative Finish correction designed.
+- [x] Authoritative Finish correction implemented.
+- [x] Focused browser/API regression passed.
+- [ ] Fresh-bootstrap/review and merge exact tested ancestry after explicit release authority.
 - [ ] Allow normal Render auto-deploy from `main`.
-- [ ] Production synthetic Finish → completed → reload smoke.
+- [ ] Production synthetic Finish → protected `completed` → reload smoke.
 
-No real pilot against production until finalization integrity is deployed/smoke-verified.
+No real pilot before production finalization integrity is verified.
 
-## 1.2 Dynamic guided-visit foundation — BEFORE real pilot
+## 1.2 G-0 Dynamic Guidance design — COMPLETE
 
-- [ ] Freeze `EncounterContextV1` / `VisitPlanV1` / `GuidanceRuleV1` semantics.
-- [ ] Replace coarse archetype-only `applicable/conditional/N/A` logic with layered relevance reasons:
-  - safety/event override;
-  - unresolved prior critical item;
-  - treatment/agent-specific requirement;
-  - evidence-defined milestone/due item;
-  - archetype base flow;
-  - contextual/optional item.
-- [ ] Preserve the current encounter archetypes as coarse visit intent rather than multiplying one form per visit number.
-- [ ] Add longitudinal treatment context:
-  - active treatment episode/agent;
-  - actual administration history;
-  - administration count when reliable;
-  - elapsed exposure;
-  - next-due/delay state;
-  - monitoring due state;
-  - unresolved prior tasks/prerequisites;
-  - new fracture/adverse-event/safety triggers.
-- [ ] Define machine-readable therapy/milestone rule registry with evidence/approved-policy provenance.
-- [ ] Do **not** hard-code clinical behavior for “4th/8th/10th Prolia” merely from ordinal number; use actual treatment timeline + reviewed milestone rules.
-- [ ] Make every surfaced card able to answer `WHY NOW?`.
-- [ ] Keep critical safety/event cards unhideable by a lower-priority archetype default.
-- [ ] Preserve clinician override with explicit reason where appropriate.
+- [x] Separate Clinical Guidance / Transcript Capture / Audit / Practice Review.
+- [x] Freeze `EncounterContextV1`.
+- [x] Freeze `LongitudinalGuidanceProjectionV1` + conflict semantics.
+- [x] Freeze `GuidanceRuleV1`.
+- [x] Freeze `VisitPlanV1`.
+- [x] Freeze `GuidedCardStateV1`.
+- [x] Freeze `TherapyMilestoneProfileV1` capability.
+- [x] Freeze `GuidanceExposureV1`.
+- [x] Freeze rule priority: safety/event → unresolved prior → agent-specific → milestone/due → archetype → contextual.
+- [x] Preserve current coarse archetypes as visit intent rather than creating a form per dose number.
+- [x] Verify existing protected historical encounter payloads can feed a read-only longitudinal projection without immediate DB migration.
+- [x] Freeze machine contract manifest: `schemas/dynamic_guided_visit_contract_manifest_v1.yaml`.
+- [x] Complete exact G-0 design review: `M01_G0_DYNAMIC_GUIDANCE_DESIGN_REVIEW_V1.md` = `DESIGN-COMPLETE`.
 
-## 1.3 Heidi-first capture + in-place provisional population — BEFORE real pilot
+## 1.3 G-1 Dynamic Guidance runtime foundation — NEXT RUNTIME PROGRAM AFTER SEPARATE AUTHORIZATION
 
-- [ ] Restart corrected PR-1 v3 transcript extraction design.
-- [ ] Implement protected transcript paste/intake with raw transcript ephemeral by default.
-- [ ] Implement reusable Core semantic candidates + deterministic osteoporosis target mapping.
-- [ ] Preserve negation, temporality, speaker/source, uncertainty and discussion/recommendation/final-decision distinctions.
-- [ ] Do not invent exact dates from vague timing.
-- [ ] Do not force currently unmapped concepts into unrelated fields.
-- [ ] Implement PR-2 minimum clinician review boundary.
-- [ ] Render mapped candidates **inside the relevant clinical cards** as provisional values rather than requiring a second disconnected data-entry workflow.
-- [ ] Support Accept / Reject / Edit and explicit conflicts with existing authoritative longitudinal data.
-- [ ] Only accepted values become authoritative encounter data.
-- [ ] Preserve provenance and clinician-review state.
-- [ ] Add compact extraction coverage summary, e.g. captured / unresolved / needs review, without implying that unmentioned = negative.
+- [ ] Build ephemeral `LongitudinalGuidanceProjectionV1` from protected historical encounters.
+- [ ] Build `EncounterContextV1` resolver.
+- [ ] Implement deterministic `GuidanceRuleV1` evaluation and priority resolution.
+- [ ] Produce `VisitPlanV1` + `GuidedCardStateV1`.
+- [ ] Render `why now` reason(s).
+- [ ] Prove new-event override of routine flow.
+- [ ] Prove unresolved-prior item resurfacing.
+- [ ] Prove due/overdue/treatment timeline plumbing.
+- [ ] Reuse prior authoritative data rather than reopening blank full-history cards.
+- [ ] Keep G-1 generic: do not invent medication-specific milestone content.
 
-## 1.4 Guided consultation UX — BEFORE real pilot
+## 1.4 Osteoporosis guidance-content profiles — BEFORE REAL PILOT
 
-- [ ] Replace the visible Steps 1–6 mental model with an encounter-adaptive clinical sequence while keeping the storage/audit schema underneath.
-- [ ] Surface only information that is:
-  - needed today;
-  - due today;
-  - triggered by a new event;
-  - unresolved from prior care;
-  - uncertain/conflicting after transcript extraction;
-  - required to close the current decision safely.
-- [ ] Reuse prior authoritative data rather than repeatedly asking stable history.
-- [ ] Support a concise explicit Close state: decision, prerequisites, unresolved items, patient tasks, clinician tasks, communication plan and timing.
-- [ ] Ensure live Clinical Guidance structures the encounter but never silently makes the treatment decision.
+- [ ] Review evidence/approved clinic policy for clinically active dynamic rules.
+- [ ] Define first-assessment guidance profile.
+- [ ] Define known-patient initial-to-service profile.
+- [ ] Evaluate/add results/work-up-review-with-management-decision visit intent if runtime evidence confirms need.
+- [ ] Define routine stable follow-up profile.
+- [ ] Define treatment-start profile.
+- [ ] Define repeated-administration/continuation profile.
+- [ ] Define fracture/post-fracture and fracture-on-treatment event overrides.
+- [ ] Define transition/exit/consolidation profile.
+- [ ] Define adverse-effect/intolerance profile.
+- [ ] Define evidence-backed denosumab/time-critical therapy timing and milestone rules.
+- [ ] Keep administration count and elapsed exposure separate.
+- [ ] Do not activate “4th/8th/10th Prolia” rules without explicit reviewed rationale/provenance.
 
-## 1.5 Five-case real pilot — AFTER the real workflow exists
+## 1.5 Heidi-first capture — BEFORE REAL PILOT
 
-- [ ] Run 5 consecutive eligible real **system-assisted** osteoporosis encounters.
-- [ ] Pilot the intended workflow: dynamic guidance + longitudinal reuse + transcript-assisted provisional population + clinician verification.
-- [ ] For each case record:
-  - time from transcript/visit close to authoritative completion;
-  - manual fields/corrections required;
-  - missed transcript facts;
-  - false/incorrect extraction candidates;
-  - ambiguous candidates;
-  - duplicate questioning/data entry;
-  - wrong/missing card relevance;
-  - persistence/load/reload defects;
-  - safety/data-integrity defects;
-  - clinician friction/cognitive burden.
-- [ ] Do not redesign after every individual case unless safety/data-loss/persistence requires it.
+- [ ] Restart corrected archived PR-1 v3 design as bounded implementation slice.
+- [ ] Protected transcript paste/intake.
+- [ ] Raw transcript ephemeral by default.
+- [ ] PHI-safe request validation/logging.
+- [ ] Reusable Core semantic candidates.
+- [ ] Deterministic osteoporosis target mapping against actual persisted runtime paths.
+- [ ] Preserve negation, temporality, speaker/source and uncertainty.
+- [ ] Preserve option discussed / recommendation / preference / final decision distinctions.
+- [ ] No exact-date invention from vague timing.
+- [ ] No authoritative PR-1 write.
+
+## 1.6 PR-2 Inline provisional population — BEFORE REAL PILOT
+
+- [ ] Show mapped candidates inside destination clinical cards.
+- [ ] `proposed` values are visually populated but non-authoritative.
+- [ ] Accept / Reject / Edit.
+- [ ] Explicit conflict handling with authoritative longitudinal data.
+- [ ] No silent overwrite.
+- [ ] Persist provenance after clinician acceptance.
+- [ ] Keep clinically meaningful unmapped candidates visible for review.
+- [ ] Show compact applicable-visit extraction coverage without treating unmentioned as negative.
+
+## 1.7 Five-case real system-assisted pilot
+
+Only after:
+
+```text
+C1 production smoke
++ minimum dynamic guidance
++ PR-1 extraction
++ PR-2 inline review/population
+```
+
+- [ ] Run 5 consecutive eligible real system-assisted osteoporosis encounters.
+- [ ] Measure completion time.
+- [ ] Measure manual entry/correction burden.
+- [ ] Track clinically meaningful transcript omissions.
+- [ ] Track false/incorrect candidates.
+- [ ] Track ambiguous/conflicting candidates.
+- [ ] Track wrong/missing card relevance.
+- [ ] Track duplicate questioning/data entry.
+- [ ] Track persistence/finalization defects.
+- [ ] Track cognitive burden and safety/data-integrity issues.
+- [ ] Do not redesign after each case unless safety/data-loss/persistence requires it.
 - [ ] After all five, make one deliberate refinement.
-- [ ] Freeze `GuidanceRule` applicability semantics + capture/review contract + KPI denominator semantics for the scored baseline.
+- [ ] Freeze Guidance/Capture/KPI applicability/denominator contracts.
 
-## 1.6 Thirty-case scored system-assisted baseline
+## 1.8 Quick Practice Review shadow capability
 
-- [ ] Run 30 consecutive unique eligible osteoporosis encounters under the frozen guided/capture contract.
-- [ ] Keep the stabilized **Clinical Guidance** layer active.
-- [ ] Keep routine KPI score feedback/red-green performance coaching hidden.
-- [ ] Keep routine clinician-facing Practice Review hidden by default until the baseline policy permits it; safety-critical exceptions remain allowed.
-- [ ] Record guidance exposure where technically feasible.
-- [ ] Distinguish content already present before a system cue from content resolved after a cue where the event sequence can be established.
-- [ ] Label this cohort accurately as a **system-assisted baseline**, not an untouched/unassisted clinician baseline.
-- [ ] Lock denominator definitions and run-chart/reliability conventions.
+- [ ] `PracticeReviewV1`.
+- [ ] `PracticeObservationV1` with direction, importance, confidence, provenance, evidence, suggested change and clinician disposition.
+- [ ] Review clinical completeness relative to the actual Visit Plan, not a universal checklist.
+- [ ] Review reasoning sequence.
+- [ ] Review decision quality.
+- [ ] Review risk interpretation.
+- [ ] Review safety.
+- [ ] Review communication accuracy/clarity.
+- [ ] Review shared decision making.
+- [ ] Review consultation flow/efficiency.
+- [ ] Review follow-up execution.
+- [ ] Keep routine clinician-facing Practice Review hidden during scored baseline by default.
 
-## 1.7 Module 01 closure evidence
+## 1.9 Thirty-case scored system-assisted baseline
 
-- [ ] Implement minimum viable Quick Practice Review with structured evidence-traceable observations.
-- [ ] Implement clinician disposition on important review observations.
-- [ ] Promote repeated observations into denominator-aware Signals.
-- [ ] Classify negative Signals by root cause.
-- [ ] Apply at least one root-cause-appropriate intervention.
-- [ ] Re-measure in later encounters and record improved / unchanged / worsened / insufficient evidence.
-- [ ] Demonstrate whether prompt dependence decreases or spontaneous correct clinical behavior increases where measurement is feasible.
-- [ ] Perform final Module 01 closure review.
-- [ ] Only then mark `MODULE 01 CLOSED` and generalize the proven Core.
+- [ ] Run 30 consecutive unique eligible osteoporosis encounters under frozen guidance/capture contracts.
+- [ ] Clinical Guidance remains active.
+- [ ] Transcript-assisted capture remains active.
+- [ ] Routine KPI/performance feedback remains hidden.
+- [ ] Routine clinician-facing Practice Review remains hidden by default.
+- [ ] Safety-critical feedback remains allowed.
+- [ ] Record guidance exposure where reliable.
+- [ ] Distinguish pre-cue vs post-cue correct behavior where event sequence is technically trustworthy.
+- [ ] Label cohort accurately as `system-assisted baseline`.
+- [ ] Lock denominators/baseline and run-chart/reliability conventions.
+
+## 1.10 Close one real improvement loop
+
+- [ ] Clinician dispositions on important PracticeObservations.
+- [ ] Aggregate repeated observations longitudinally.
+- [ ] Promote denominator-aware Signals.
+- [ ] Classify negative Signals: knowledge / reasoning / execution / communication-system.
+- [ ] Apply root-cause-appropriate intervention.
+- [ ] Re-measure later encounters.
+- [ ] Record improved / unchanged / worsened / insufficient evidence.
+- [ ] Where feasible, assess whether correct behavior becomes less prompt-dependent over time without overstating causality.
+
+## 1.11 Final Module 01 closure
+
+- [ ] No unresolved critical safety/data-integrity defect.
+- [ ] Dynamic visit flow validated in real use.
+- [ ] Transcript capture reduces duplicate manual entry safely.
+- [ ] Practice Review produces evidence-traceable clinician-governed observations.
+- [ ] Baseline locked or explicit methodology revision approved.
+- [ ] At least one real improvement loop re-measured.
+- [ ] Reusable Core vs osteoporosis-specific content distinguishable.
+- [ ] Six canonicals reconstruct project truth without chat history.
+- [ ] Only then mark `MODULE 01 CLOSED`.
 
 ---
 
 # 2. CLINICAL GUIDANCE / DYNAMIC VISIT ENGINE
 
-Purpose: help conduct the encounter, not merely document it afterward.
+Permanent requirements:
 
-## 2.1 Core candidate objects
-
-- [ ] `EncounterContextV1`.
-- [ ] `VisitPlanV1`.
-- [ ] `GuidanceRuleV1`.
-- [ ] `GuidedCardStateV1`.
-- [ ] `GuidanceExposureV1`.
-- [ ] `TherapyMilestoneProfileV1`.
-
-## 2.2 Visit-context inputs
-
-At minimum:
-
-- [ ] encounter archetype/visit intent;
-- [ ] new vs established patient;
-- [ ] active disease/risk state;
-- [ ] active and prior therapies;
-- [ ] actual administration dates;
-- [ ] course/administration count when reliable;
-- [ ] elapsed exposure;
-- [ ] next due/overdue state;
-- [ ] due DXA/lab/other monitoring state;
-- [ ] new fracture/post-fracture state;
-- [ ] fracture on treatment;
-- [ ] adverse effect/intolerance;
-- [ ] transition/exit/consolidation state;
-- [ ] unresolved prior tasks/critical prerequisites;
-- [ ] special populations/context modifiers.
-
-## 2.3 Rule reasons / card states
-
-- [ ] `critical_safety`.
-- [ ] `event_triggered`.
-- [ ] `unresolved_prior`.
-- [ ] `agent_specific`.
-- [ ] `milestone_due`.
-- [ ] `archetype_core`.
-- [ ] `contextual`.
-- [ ] `not_applicable`.
-
-Every surfaced item should retain the reason it is shown.
-
-## 2.4 Archetype examples
-
-- [ ] Initial new/uncertain diagnosis.
-- [ ] Initial-to-service known osteoporosis/osteopenia.
-- [ ] Results/work-up review with treatment decision.
-- [ ] Routine stable follow-up.
-- [ ] Treatment start.
-- [ ] Treatment administration/continuation.
-- [ ] Due-monitoring / milestone review.
-- [ ] Treatment change/transition/exit.
-- [ ] Post-fragility-fracture.
-- [ ] Fracture-on-treatment.
-- [ ] Adverse effect/intolerance.
-- [ ] Completion/consolidation.
-
-The examples may combine. A fracture event or safety trigger may override the normal routine-administration flow.
-
-## 2.5 Denosumab/other repeated therapy modelling
-
-- [ ] Build repeated-administration logic from actual treatment history rather than nominal appointment labels.
-- [ ] Permit evidence/policy rules to trigger on:
-  - every administration;
-  - early-course administrations;
-  - elapsed months/years;
-  - administration count;
-  - monitoring due state;
-  - long-duration review point;
-  - delayed/missed administration;
-  - new fracture or treatment-response concern.
-- [ ] If administration count and elapsed exposure diverge because of delays, preserve both and avoid pretending the ordinal count alone defines the clinical state.
+- [x] Architecture uses archetype + longitudinal triggers, not one universal checklist.
+- [x] Architecture can represent safety/event overrides.
+- [x] Architecture can represent due/milestone rules.
+- [x] Architecture can represent unresolved prior items.
+- [x] Architecture can explain `WHY NOW?`.
+- [x] Architecture avoids a form per ordinal treatment visit.
+- [ ] Runtime implementation.
+- [ ] Evidence-backed osteoporosis guidance-content registry.
+- [ ] Regression suite for representative encounter pathways.
 
 ---
 
-# 3. HEIDI / TRANSCRIPT-ASSISTED CAPTURE
+# 3. CLINICAL PRACTICE REVIEW / LEARNING
 
-Purpose: remove duplicate manual entry while preserving clinical truth and clinician control.
+- [ ] Quick Review sufficient for Module 01 closure.
+- [ ] Evidence/provenance on material claims.
+- [ ] Accept / Modify / Dismiss.
+- [ ] Longitudinal recurrence/reliability logic.
+- [ ] Sustained-strength detection.
+- [ ] Signal → intervention → re-measurement.
 
-## 3.1 Transcript intake/privacy
+Later/non-blocking by default:
 
-- [ ] Clear `Εισαγωγή από Heidi` workflow.
-- [ ] Raw transcript ephemeral by default.
-- [ ] No PostgreSQL/localStorage/sessionStorage/log persistence of raw transcript.
-- [ ] Sanitized validation/error boundary.
-- [ ] No identifiable real transcript in public repo/tests.
-- [ ] Provider privacy/data-control gate before identifiable production transcript use.
-
-## 3.2 Structured extraction
-
-- [ ] Corrected PR-1 v3 composite candidate contract.
-- [ ] Deterministic target mapping against actual persisted runtime registry.
-- [ ] Provider-neutral Core extraction interface.
-- [ ] Preserve semantic categories:
-  - history fact;
-  - objective result;
-  - clinician interpretation;
-  - option discussed;
-  - recommendation;
-  - patient preference;
-  - final decision;
-  - accepted/declined/undecided;
-  - follow-up task;
-  - uncertainty/needs review.
-
-## 3.3 Clinician review / inline population
-
-- [ ] Provisional values displayed in destination cards.
-- [ ] Accept / Reject / Edit.
-- [ ] Existing-value conflict handling.
-- [ ] No silent overwrite.
-- [ ] Provenance retained after acceptance.
-- [ ] Optional safe bulk acceptance only after category-specific guardrails are proven.
+- [ ] Full Deep Review.
+- [ ] Full RED TEAM productization.
+- [ ] Exhaustive Decision Reconstruction UI.
+- [ ] Full learning/mastery breadth.
 
 ---
 
-# 4. CLINICAL PRACTICE REVIEW — PRIMARY LONGITUDINAL IMPROVEMENT ENGINE
+# 4. EVIDENCE / STANDARDS
 
-Purpose: determine whether what was said, reasoned and decided was appropriate, not merely whether a checkbox was completed.
+Osteoporosis domains remain:
 
-## 4.1 Foundation objects
+1. Diagnosis & case finding
+2. DXA / VFA / imaging
+3. Fracture-risk assessment
+4. Secondary osteoporosis & laboratory evaluation
+5. Pharmacologic treatment selection
+6. Sequential therapy / treatment transitions
+7. Monitoring / treatment response / adherence
+8. Falls, frailty, exercise & nutrition
+9. Communication / shared decision making / continuity
 
-- [ ] `PracticeReviewV1`.
-- [ ] `PracticeObservationV1` with direction, gap class, importance, confidence, provenance, evidence linkage, suggested change and clinician disposition.
-- [ ] `DecisionReconstructionV1`.
-- [ ] `CommunicationReviewV1`.
-- [ ] `WorkflowReviewV1`.
-- [ ] `ReviewExposureV1`.
+- [ ] Material Clinical Guidance rules carry source/version/applicability/strength/freshness where relevant.
+- [ ] Material Practice Review claims link to explicit standards/evidence.
+- [ ] No silent framework hybridization.
+- [ ] Evidence-impact classification and renewal lifecycle.
 
-## 4.2 Review dimensions
-
-- [ ] Clinical completeness.
-- [ ] Clinical reasoning.
-- [ ] Decision quality.
-- [ ] Risk interpretation.
-- [ ] Safety.
-- [ ] Communication accuracy/clarity.
-- [ ] Shared decision making.
-- [ ] Consultation flow/efficiency.
-- [ ] Follow-up execution.
-
-## 4.3 Quick Review
-
-- [ ] Concise post-visit review rather than exhaustive criticism.
-- [ ] Strengths.
-- [ ] Highest-value improvements.
-- [ ] Safety concern when present.
-- [ ] Reasoning issue.
-- [ ] Communication issue.
-- [ ] One concrete change for next similar encounter.
-- [ ] Accept / Modify / Dismiss / Challenge me / Create Learning.
-
-## 4.4 Deep Review / Red Team — not a Module 01 closure blocker by default
-
-- [ ] Chronological decision reconstruction.
-- [ ] Anti-hindsight evaluation.
-- [ ] Evidence-based counter-case.
-- [ ] Reasonable override vs genuine reasoning defect.
-
-## 4.5 Longitudinal patterns
-
-- [ ] Aggregate reviewed observations across encounters.
-- [ ] Distinguish isolated event, recurrent gap, improving trend, stable weakness and sustained strength.
-- [ ] Denominator/sample-size/reliability before declaring stable patterns.
+Comprehensive curriculum/registry breadth is not a Module 01 closure blocker beyond what is required for safe guidance/review.
 
 ---
 
-# 5. AUDIT / QUALITY IMPROVEMENT
+# 5. SAFETY / PRIVACY
 
-- [ ] Formal `AuditMetric` objects.
-- [ ] Transparent numerator/denominator/applicability.
-- [ ] System-assisted baseline → intervention → re-audit cycles.
-- [ ] Run charts.
-- [ ] `ImprovementProject` / PDSA-style iteration.
-- [ ] Omissions vs reasoned overrides separate.
-- [ ] Process audit + decision audit + later outcome review.
-- [ ] Periodic random case review.
-- [ ] Persistence of improvement after intervention.
-
----
-
-# 6. OSTEOPOROSIS STANDARDS / EVIDENCE / COMPETENCY MAP
-
-Domains:
-
-- [ ] Diagnosis & case finding.
-- [ ] DXA / VFA / imaging.
-- [ ] Fracture-risk assessment.
-- [ ] Secondary osteoporosis & laboratory evaluation.
-- [ ] Pharmacologic treatment selection.
-- [ ] Sequential therapy / treatment transitions.
-- [ ] Monitoring / treatment response / adherence.
-- [ ] Falls, frailty, exercise & nutrition.
-- [ ] Communication / shared decision making / continuity.
-
-For clinically active guidance rules:
-
-- [ ] explicit evidence/policy source;
-- [ ] version/year;
-- [ ] applicability/trigger;
-- [ ] recommendation/criterion;
-- [ ] strength/certainty when available;
-- [ ] reviewed date/freshness;
-- [ ] no silent guideline hybridization.
-
-Comprehensive completion of every future competency/learning resource is not a Module 01 closure blocker. Evidence required to support material Clinical Guidance and Practice Review claims is closure-critical.
+- [x] Protected clinical route/session auth foundation.
+- [x] PostgreSQL clinical encounter/lab storage.
+- [ ] Complete broader legacy-route/CORS hardening before whole-service privacy claims.
+- [ ] Sensitive-action/data-access audit trail.
+- [ ] Retention/deletion/data-minimization policy.
+- [ ] GDPR/privacy review appropriate to identifiable transcript use.
+- [ ] Provider data-control/privacy gate before real identifiable transcripts.
+- [ ] Safety/event guidance outranks routine visit convenience.
+- [ ] Denosumab/time-critical therapy rules use exact actual timelines and reviewed provenance.
 
 ---
 
-# 7. LEARNING / TESTING / MASTERY ENGINE
+# 6. DEFERRED / NON-BLOCKING TRACKS
 
-- [ ] `unread → studied → tested → mastered → retention check`.
-- [ ] MCQ/case/open response/image interpretation.
-- [ ] Confidence-before-answer where useful.
-- [ ] High-confidence errors prioritized.
-- [ ] Spaced repetition.
-- [ ] Case-triggered learning from accepted Practice Review Signals.
-- [ ] Advanced cases for sustained strengths.
+Unless later evidence elevates one to a safety/data-integrity dependency:
 
-Only the intervention capability needed to close at least one real Module 01 improvement loop is closure-critical; the full future mastery product is not.
+- [ ] Patient Voice full program.
+- [ ] External Benchmark Registry.
+- [ ] Full Clinical Excellence Home/analytics polish.
+- [ ] Calendar/Setmore/Zadarma/CareTask live integration.
+- [ ] Radiofrequency utility runtime.
+- [ ] Patient leaflets/posters/materials.
+- [ ] New physiotherapy disease routes.
+- [ ] Module 02/generalization.
 
----
-
-# 8. SAFETY
-
-- [ ] Error / near-miss register.
-- [ ] FMEA/potential failure-mode register for high-risk workflows.
-- [ ] Safety Signals outrank educational convenience.
-- [ ] Denosumab delay/exit safety logic with exact treatment timelines and explicit evidence provenance.
-- [ ] Safety tasks/escalation lifecycle.
-- [ ] Trace clinician override and AI/system recommendation separately.
-- [ ] A critical safety/event trigger may override a routine visit plan.
+Permanent: `Appointment != CareTask`.
 
 ---
 
-# 9. PATIENT VOICE — POST-CLOSURE BY DEFAULT
+# 7. CLINIC UTILITIES — PARKED/PRESERVED
 
-- [ ] Compact patient-feedback instrument for understanding condition/plan/rationale and whether concerns/preferences were addressed.
-- [ ] Free text where useful.
-- [ ] Repeated theme detection.
-- [ ] Theme → Signal/ImprovementProject.
-- [ ] Re-measure after communication/process change.
+Production CU-1 physiotherapy baseline is already historically merged/deployed.
 
-Not a Module 01 closure blocker unless evidence later makes it necessary for a critical improvement loop.
-
----
-
-# 10. BENCHMARKING — POST-CLOSURE BY DEFAULT
-
-- [ ] Benchmark Registry with source/country/population/setting/year/definition/value.
-- [ ] Comparability high/moderate/low/context-only.
-- [ ] Avoid superiority/inferiority claims from non-comparable denominators.
-
----
-
-# 11. CLINICAL EXCELLENCE HOME / ANALYTICS — LATER
-
-- [ ] Attention-first panel: safety → overdue care → practice gaps → learning/evidence.
-- [ ] Domain baseline/change/trend/reliability/sample size.
-- [ ] Run charts.
-- [ ] Current strongest domain / priority gap.
-- [ ] Active Improvement Projects.
-- [ ] Learning due.
-- [ ] Evidence freshness.
-- [ ] “What the system learned this month”.
-
-Do not build polished summary scores before the relevant contracts/baseline are stable.
-
----
-
-# 12. PRIVACY / PRODUCTION READINESS
-
-- [x] PostgreSQL durable clinical storage implemented.
-- [x] Browser-session authentication implemented for `/clinical/*`.
-- [ ] Complete legacy-route/CORS exposure hardening before claiming whole-service protection for identifiable data.
-- [ ] Add access/audit trail for sensitive actions/data access.
-- [ ] Define retention/deletion/data-minimization approach.
-- [ ] Review applicable GDPR/privacy requirements.
-- [ ] Keep transcripts ephemeral by default.
-- [ ] Never commit identifiable clinical datasets/transcripts.
-
----
-
-# 13. CLINICAL CALENDAR / CARETASK / DIGITAL SECRETARY — DEFERRED, NOT ABANDONED
-
-Already built:
-
-- [x] Clinical Calendar storage/API/UI foundation.
-- [x] Baseline sidebar navigation/root routing foundation.
-- [x] Osteoporosis-only appointment filtering.
-
-Deferred:
-
-- [ ] structured live `visit_reason` feed;
-- [ ] Setmore → Clinical Calendar live feed;
-- [ ] CareTasks for labs/treatment/results/follow-up;
-- [ ] reminders/notification workflow.
-
-Permanent rule: **Appointment != CareTask**.
-
----
-
-# 14. CLINIC UTILITIES / CLINICAL OPERATIONS — PARKED
-
-## 14.1 Physiotherapy referral
-
-Production CU-1 baseline is implemented/merged/deployed historically.
-
-Later richer referral work remains preserved separately and must not be mutated/merged/deployed during Module 01 closure without explicit authorization.
-
-## 14.2 Radiofrequency request/PDF workflow
-
-Roadmap-preserved, not a Module 01 closure blocker.
-
----
-
-# 15. PATIENT MATERIALS — LOWER PRIORITY
-
-- [ ] Q&A refinements.
-- [ ] Medication leaflets.
-- [ ] Exercise materials.
-- [ ] Other patient education assets.
-
----
-
-# 16. GENERALIZE BEYOND OSTEOPOROSIS
-
-Only after Module 01 proves the reusable engine in real use:
-
-- [ ] freeze reusable Core APIs/data contracts;
-- [ ] select Module 02 based on clinical priority/overlap;
-- [ ] reuse Clinical Guidance / Signal / Learning / Audit / Practice Review / Patient Voice / Improvement machinery;
-- [ ] distinguish domain-specific competence from global skills such as communication, calibration, safety and evidence responsiveness.
-
-Clinic Utilities do not count as declaring a clinical Module 02.
-
----
-
-# 17. BROAD IMPLEMENTATION ORDER — REVISED 2026-08-30
+Later rich-referral work remains preserved at:
 
 ```text
-1. authoritative Finish correction — IMPLEMENTED/TESTED, merge/deploy/smoke pending
-2. dynamic guided-visit architecture + machine contract
-3. PR-1 transcript extraction
-4. PR-2 inline provisional population / clinician review
-5. guided clinical-card runtime sufficient for real use
-6. 5-case system-assisted usability/capture pilot
-7. one deliberate refinement
-8. freeze guidance + capture + KPI applicability contracts
-9. minimum Quick Practice Review infrastructure/shadow validation
-10. 30-case scored system-assisted baseline with KPI/performance coaching hidden
-11. baseline lock
-12. clinician-facing reviewed Signals/interventions
-13. longitudinal pattern detection + one closed improvement loop
-14. re-measurement / prompt-dependence trend where feasible
-15. final Module 01 closure review
-16. later Deep Review / Patient Voice / Home / benchmarking breadth
-17. generalize Core to later clinical modules
+feat/cu1-rich-referral-global-evidence-2026-08-29
+@ bdd23b83a8252405f5aa5a0c0b67f303ccfcef5f
+IMPLEMENTED / TESTED / PRODUCT-OWNER REVIEWED
+MERGED NO / DEPLOYED NO
 ```
 
-If a safety/data-integrity defect appears, it outranks this sequence.
+Do not mutate/merge/deploy during Module 01 closure without separate authorization.
+
+---
+
+# 8. BROAD IMPLEMENTATION ORDER
+
+```text
+1. C1 authoritative Finish release/smoke
+2. G-1 dynamic-guidance runtime mechanics
+3. evidence-backed osteoporosis guidance profiles
+4. PR-1 transcript extraction
+5. PR-2 inline provisional population
+6. guided card UX sufficient for real use
+7. 5-case system-assisted pilot
+8. one refinement + contract freeze
+9. Quick Practice Review shadow capability
+10. 30-case system-assisted scored baseline
+11. baseline lock
+12. clinician-facing reviewed Signals/interventions
+13. one longitudinal closed improvement loop
+14. re-measurement / prompt-dependence trend where valid
+15. final Module 01 closure review
+16. later breadth/generalization
+```
+
+Safety/data-integrity defects always outrank this order.
