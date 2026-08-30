@@ -1,0 +1,40 @@
+name: Baseline finalization integrity
+
+on:
+  push:
+    branches:
+      - fix/module01-c1-authoritative-finish-2026-08-30
+  pull_request:
+    paths:
+      - 'static/baseline-audit/finalization-coordinator.js'
+      - 'static/baseline-audit/pilot-completion.js'
+      - 'static/baseline-audit/patient-registry.js'
+      - 'static/baseline-audit/app.js'
+      - 'clinical_data.py'
+      - 'test_baseline_finish_browser.js'
+      - 'test_baseline_finalization_api.py'
+      - 'test_encounter_finalization.py'
+      - '.github/workflows/baseline-finalization-tests.yml'
+  workflow_dispatch:
+
+jobs:
+  baseline-finalization:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Check JavaScript syntax
+        run: |
+          node --check static/baseline-audit/finalization-coordinator.js
+          node --check static/baseline-audit/patient-registry.js
+          node --check static/baseline-audit/pilot-completion.js
+          node --check static/baseline-audit/app.js
+          node --check test_baseline_finish_browser.js
+      - name: Run browser event-order regression
+        run: node test_baseline_finish_browser.js
+      - name: Run server finalization regressions
+        run: python -m unittest -v test_encounter_finalization.py test_baseline_finalization_api.py
