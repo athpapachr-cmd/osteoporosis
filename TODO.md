@@ -33,8 +33,10 @@ This file answers **where the product is going and in what broad order**. It is 
 - [x] Reframe the clinician-facing product from manual Baseline Audit form to dynamic Clinical Excellence consultation system.
 - [x] Freeze G-0 dynamic-guidance architecture and revised system-assisted baseline methodology.
 - [x] Implement/test the bounded G-1 progressive-guidance runtime foundation on `feat/module01-g1-progressive-guidance-foundation-2026-08-30`.
+- [x] Release C1 authoritative Finish + G-1 progressive guidance to production through PR #64.
+- [x] Correct and deploy explicit `Γιατί τώρα:` discoverability in the top `Σημερινή ροή` summary through PR #66.
 
-The authoritative Finish browser correction and G-1 progressive-guidance foundation are **implemented/tested but not merged/deployed**. Production release/smoke remains a separate gate.
+The authoritative Finish browser correction and G-1 progressive-guidance foundation are now **implemented / tested / merged / deployed**. The only remaining G-1 production-readiness gate is direct product-owner confirmation that the corrected `Γιατί τώρα:` label is visible in production.
 
 ---
 
@@ -59,11 +61,11 @@ Audit remains an underlying measurement engine, not the main clinician-facing wo
 - [x] Authoritative Finish correction designed.
 - [x] Authoritative Finish correction implemented.
 - [x] Focused browser/API regression passed.
-- [ ] Fresh-bootstrap/review and merge exact tested ancestry after explicit release authority.
-- [ ] Allow normal Render auto-deploy from `main`.
-- [ ] Production synthetic Finish → protected `completed` → reload smoke.
+- [x] Fresh-bootstrap/review and merge exact tested ancestry after explicit release authority.
+- [x] Allow normal Render auto-deploy from `main`.
+- [x] Authenticated production smoke reported working by product owner; no current C1 Finish defect reported.
 
-No real pilot before production finalization integrity is verified.
+No real pilot before the full intended guided/capture workflow is ready.
 
 ## 1.2 G-0 Dynamic Guidance design — COMPLETE
 
@@ -81,7 +83,7 @@ No real pilot before production finalization integrity is verified.
 - [x] Freeze machine contract manifest: `schemas/dynamic_guided_visit_contract_manifest_v1.yaml`.
 - [x] Complete exact G-0 design review: `M01_G0_DYNAMIC_GUIDANCE_DESIGN_REVIEW_V1.md` = `DESIGN-COMPLETE`.
 
-## 1.3 G-1 Dynamic Guidance runtime foundation — IMPLEMENTED / TESTED / RELEASE GATE
+## 1.3 G-1 Dynamic Guidance runtime foundation — MERGED / DEPLOYED / FINAL RE-SMOKE GATE
 
 - [x] Build ephemeral `LongitudinalGuidanceProjectionV1` from protected historical encounters.
 - [x] Build `EncounterContextV1` resolver.
@@ -94,8 +96,10 @@ No real pilot before production finalization integrity is verified.
 - [ ] Expand prior authoritative data reuse into richer read-only card summaries only when real-use evidence shows it is useful.
 - [x] Keep G-1 generic: no medication-specific milestone content invented.
 - [x] Preserve coarse applicability ownership and authoritative Finish regressions.
-- [ ] Merge/deploy only after separate release authority and fresh compare/review.
-- [ ] Production smoke G-1 guidance loading/context/`WHY NOW` after deployment.
+- [x] Merge/deploy through reviewed release path.
+- [x] Production smoke confirmed G-1 loads and existing `Τύπος σημερινής επίσκεψης` is usable.
+- [x] Correct the production-smoke WHY-NOW discoverability defect without changing guidance semantics.
+- [ ] Product-owner re-smoke confirms literal `Γιατί τώρα: ...` is visible in top `Σημερινή ροή` after the correction deploy.
 
 ## 1.4 Osteoporosis guidance-content profiles — BEFORE REAL PILOT
 
@@ -142,8 +146,8 @@ No real pilot before production finalization integrity is verified.
 Only after:
 
 ```text
-C1 production smoke
-+ minimum dynamic guidance
+G-1 production-readiness gate closed
++ evidence-backed minimum osteoporosis guidance content
 + PR-1 extraction
 + PR-2 inline review/population
 ```
@@ -225,9 +229,11 @@ Permanent requirements:
 - [x] Architecture can represent unresolved prior items.
 - [x] Architecture can explain `WHY NOW?`.
 - [x] Architecture avoids a form per ordinal treatment visit.
-- [x] Minimum G-1 runtime foundation implemented/tested.
-- [ ] Evidence-backed osteoporosis guidance-content registry.
+- [x] Minimum G-1 runtime foundation implemented/tested/merged/deployed.
 - [x] Regression suite for representative G-1 encounter mechanics.
+- [x] Explicit WHY-NOW summary presentation regression.
+- [ ] Final product-owner correction re-smoke.
+- [ ] Evidence-backed osteoporosis guidance-content registry.
 - [ ] Real-clinic usability validation and evidence-from-use card/taxonomy refinement.
 
 ---
@@ -324,8 +330,8 @@ Do not mutate/merge/deploy during Module 01 closure without separate authorizati
 # 8. BROAD IMPLEMENTATION ORDER
 
 ```text
-1. C1 authoritative Finish release/smoke
-2. G-1 dynamic-guidance runtime mechanics — code-level implemented/tested; production release still pending
+1. C1 authoritative Finish release/smoke — released; no current defect reported
+2. G-1 dynamic-guidance mechanics — merged/deployed; final corrected WHY-NOW re-smoke pending
 3. evidence-backed osteoporosis guidance profiles
 4. PR-1 transcript extraction
 5. PR-2 inline provisional population
