@@ -266,7 +266,7 @@
         const name = document.createElement("strong");
         name.textContent = DOMAIN_LABELS[item.card_id] || item.card_id;
         const why = document.createElement("span");
-        why.textContent = item.why_now || "Σχετικό με τη σημερινή επίσκεψη.";
+        why.textContent = `Γιατί τώρα: ${item.why_now || "Σχετικό με τη σημερινή επίσκεψη."}`;
         box.append(name, why);
         list.appendChild(box);
       });
