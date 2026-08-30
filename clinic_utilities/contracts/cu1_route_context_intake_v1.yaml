@@ -1,7 +1,7 @@
 version: cu1_route_context_intake_v1
 status: active_runtime_authority
 runtime_authorized: true
-reviewed_on: 2026-08-29
+reviewed_on: 2026-08-30
 purpose: >-
   Data-driven route-specific clinician context fields that are valid in primary_problem.context.
   These fields may expose already-reviewed route distinctions to the UI and validator, but they do
@@ -160,11 +160,25 @@ routes:
         label_el: Κλινικό πλαίσιο της δυσκαμψίας ώμου
         values: [primary_frozen_shoulder, secondary_or_other_stiff_shoulder, not_stated]
         value_labels_el:
-          primary_frozen_shoulder: Πρωτοπαθής παγωμένος ώμος / adhesive capsulitis — έχει τεθεί κλινικά
+          primary_frozen_shoulder: Πρωτοπαθής παγωμένος ώμος / συμφυτική θυλακίτιδα — έχει τεθεί κλινικά
           secondary_or_other_stiff_shoulder: Δευτεροπαθής ή άλλη δυσκαμψία ώμου / διαφορετικό πλαίσιο
           not_stated: Δεν έχει διευκρινιστεί
         required: false
         required_for_rich_variant: true
+        show_when:
+          wording_modes: [formal_diagnosis]
+      frozen_shoulder_irritability:
+        type: enum
+        label_el: Κλινική ερεθιστικότητα
+        values: [high, moderate, low, uncertain_or_not_assessed]
+        value_labels_el:
+          high: Υψηλή
+          moderate: Μέτρια
+          low: Χαμηλή
+          uncertain_or_not_assessed: Αβέβαιη / δεν αξιολογήθηκε
+        required: false
+        note: >-
+          Optional clinician-entered rehabilitation context. Runtime must not infer irritability from pain or ROM findings.
         show_when:
           wording_modes: [formal_diagnosis]
 
