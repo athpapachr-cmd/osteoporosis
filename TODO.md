@@ -37,26 +37,51 @@ This file answers **where the product is going and in what broad order**. It is 
 
 ---
 
-# 1. CURRENT GATE — BASELINE / PR-1 PRESERVED; CU-1 RUNTIME COMPLETE
+# 1. CURRENT PRIMARY PROGRAM — CLOSE OSTEOPOROSIS MODULE 01
+
+The product owner has explicitly ended further physiotherapy disease-route expansion for now and made **Osteoporosis Module 01 closure** the primary product priority.
+
+Closure is governed by `SLICE_PLAN_CURRENT.md` and requires the minimum evidence-valid learning-health loop, not implementation of every long-range roadmap idea.
 
 ## 1.1 Encounter-finalization validation
 
 - [x] Completed and recorded 3/3 live synthetic finalization smoke.
 
-## 1.2 Five-case usability/capture pilot
+## 1.2 Five-case usability/capture pilot — NEXT REAL-PRACTICE GATE
 
+- [ ] Complete read-only pilot-readiness verification against current production/main.
 - [ ] Run 5 consecutive eligible real pilot encounters.
 - [ ] Measure post-visit completion time, friction, ambiguous/missing fields and persistence behavior.
 - [ ] Do not change the form after every case unless safety/data-loss/persistence requires it.
 - [ ] After all 5, make one deliberate refinement.
 - [ ] Freeze Baseline Form v1 + KPI applicability/calculation contract.
 
-## 1.3 Thirty-case scored baseline
+## 1.3 Closure-critical engineering after pilot/freeze
+
+- [ ] Implement PR-1 transcript paste + ephemeral structured candidate extraction from the corrected v3 design.
+- [ ] Implement deterministic target mapping against actual persisted runtime targets.
+- [ ] Preserve PHI-safe validation/logging and no raw transcript persistence by default.
+- [ ] Implement PR-2 clinician Accept / Reject / Edit workflow before authoritative merge.
+- [ ] Preserve provenance, conflict handling and clinician-review state.
+- [ ] Implement minimum viable Quick Practice Review in shadow mode with structured evidence-traceable observations.
+- [ ] Implement clinician disposition and sufficient Signal/intervention linkage to support a real closed improvement loop.
+
+## 1.4 Thirty-case scored baseline
 
 - [ ] Run 30 consecutive unique eligible osteoporosis encounters under the frozen contract.
 - [ ] Keep routine KPI/practice coaching hidden during scored baseline; safety-critical exceptions only.
-- [ ] Lock baseline and denominator definitions.
-- [ ] Finalize run-chart conventions and reliability display.
+- [ ] Lock baseline and denominator definitions, or canonically approve an explicit methodology revision before relabelling the cohort.
+- [ ] Finalize run-chart conventions and reliability display needed for the baseline/intervention loop.
+
+## 1.5 Final closure evidence
+
+- [ ] Activate clinician-facing reviewed improvement intervention after baseline policy permits it.
+- [ ] Demonstrate at least one repeated denominator-aware actionable pattern/Signal.
+- [ ] Apply a root-cause-appropriate intervention.
+- [ ] Re-measure in later encounters and record whether the targeted change persisted.
+- [ ] Refine adaptive osteoporosis workflow/Close behavior from accumulated pilot/review evidence.
+- [ ] Perform final Module 01 closure review against `SLICE_PLAN_CURRENT.md`.
+- [ ] Only then mark `MODULE 01 CLOSED` and generalize the proven Core later.
 
 ---
 
@@ -108,7 +133,7 @@ Purpose: move beyond “was the KPI met?” and create a structured system that 
   - one concrete behavior to change next similar visit.
 - [ ] Support clinician `Accept Signal`, `Modify`, `Dismiss`, `Challenge me`, `Create Learning` actions.
 
-## 2.4 Deep Review / Red Team
+## 2.4 Deep Review / Red Team — NOT A MODULE 01 CLOSURE BLOCKER BY DEFAULT
 
 - [ ] Reconstruct encounter chronology and critical decision points.
 - [ ] Evaluate what information was actually available at each decision point to reduce hindsight bias.
@@ -295,6 +320,8 @@ For each:
 - [ ] safety/failure modes;
 - [ ] external benchmarks where methodologically comparable.
 
+Comprehensive completion of every standards/competency enrichment item is not a Module 01 closure blocker. The evidence/standards necessary to support material Practice Review claims remain required.
+
 ---
 
 # 6. EVIDENCE / GUIDELINE GOVERNANCE
@@ -320,6 +347,8 @@ For each:
 - [ ] Advanced cases for sustained strengths.
 - [ ] Evidence Responsiveness without rewarding reflexive adoption of weak evidence.
 
+Only the intervention capability needed to close at least one real Module 01 improvement loop is closure-critical; the complete future mastery product is not.
+
 ---
 
 # 8. AUDIT / QUALITY IMPROVEMENT
@@ -335,13 +364,15 @@ For each:
 
 ---
 
-# 9. PATIENT VOICE
+# 9. PATIENT VOICE — POST-CLOSURE BY DEFAULT
 
 - [ ] Compact patient-feedback instrument for condition/plan/rationale understanding and whether concerns/preferences were addressed.
 - [ ] Free text where appropriate.
 - [ ] Repeated theme detection.
 - [ ] Theme → Signal/ImprovementProject.
 - [ ] Re-measure after communication/process change.
+
+Patient Voice remains architecturally important but is not a Module 01 closure blocker unless closure evidence reveals a specific communication question that cannot be evaluated safely without it.
 
 ---
 
@@ -354,9 +385,11 @@ For each:
 - [ ] Safety tasks/escalation lifecycle.
 - [ ] Trace clinician override and AI recommendation separately.
 
+Safety/data-integrity defects discovered during closure always outrank schedule and may become immediate closure blockers.
+
 ---
 
-# 11. BENCHMARKING
+# 11. BENCHMARKING — POST-CLOSURE BY DEFAULT
 
 - [ ] Benchmark Registry with source/country/population/setting/year/definition/value.
 - [ ] Comparability: high / moderate / low / context-only.
@@ -365,7 +398,7 @@ For each:
 
 ---
 
-# 12. CLINICAL EXCELLENCE HOME / ANALYTICS
+# 12. CLINICAL EXCELLENCE HOME / ANALYTICS — POST-CLOSURE POLISH BY DEFAULT
 
 Build after the relevant data contracts are sufficiently stable.
 
@@ -381,6 +414,8 @@ Build after the relevant data contracts are sufficiently stable.
 - [ ] Navigation to patient registry, encounters, Calendar/CareTasks when those feeds are ready.
 - [ ] Navigation to reusable Clinic Utilities / workflow tools as those slices are integrated.
 
+A polished full Home is not required to prove the Module 01 learning-health loop.
+
 ---
 
 # 13. PRIVACY / PRODUCTION READINESS
@@ -393,6 +428,8 @@ Build after the relevant data contracts are sufficiently stable.
 - [ ] Review applicable GDPR/privacy requirements.
 - [ ] Keep transcripts ephemeral by default.
 - [ ] Never commit identifiable clinical datasets, utility-workflow patient data or transcripts.
+
+Closure requires the privacy/safety controls needed for the actual Module 01 closure features; it does not authorize unsupported whole-service GDPR-compliance claims.
 
 ---
 
@@ -415,9 +452,11 @@ Deferred until Digital Secretary work is ready:
 
 Permanent rule: **Appointment != CareTask**.
 
+This track is not a Module 01 closure blocker.
+
 ---
 
-# 15. CLINIC UTILITIES / CLINICAL OPERATIONS — CU-1 RUNTIME COMPLETE
+# 15. CLINIC UTILITIES / CLINICAL OPERATIONS — PHYSIOTHERAPY PARKED / PRESERVED
 
 Purpose: integrate useful day-to-day clinic tools into the same Clinical Excellence workspace without confusing operational tooling with osteoporosis-specific audit logic.
 
@@ -429,7 +468,18 @@ osteoporosis-specific clinical rules → Module 01
 legacy standalone pages → source artifacts to inspect/migrate, not permanent parallel products
 ```
 
-The product owner explicitly activated and completed this bounded detour through `CURRENT_OPERATIONAL.md`. PR-1 Transcript Intake remains intentionally paused/archived. CU-1 runtime v1 is implemented, tested, merged and deployed; further CU-1 maintenance or CU-2 work requires a new explicit slice.
+The production CU-1 v1 runtime remains implemented, tested, merged and deployed from the completed bounded detour.
+
+A later rich-referral/frozen-shoulder enhancement is preserved separately and intentionally unmerged while Module 01 closure is active:
+
+```text
+branch: feat/cu1-rich-referral-global-evidence-2026-08-29
+head: bdd23b83a8252405f5aa5a0c0b67f303ccfcef5f
+state: IMPLEMENTED / TESTED / PRODUCT-OWNER REVIEWED
+merge/deploy: NO
+```
+
+Do not resume new physiotherapy disease-route rollout during Module 01 closure.
 
 ## 15.1 Physiotherapy referral text generator
 
@@ -447,8 +497,9 @@ The product owner explicitly activated and completed this bounded detour through
 - [x] Obtain separate explicit product-owner authorization and complete the bounded CU-1 runtime implementation slice.
 - [x] Integrate CU-1 into the protected Clinical Excellence workspace/navigation rather than deepen the historical legacy Cockpit as a separate product.
 - [x] Deliver the CU-1 clinician-facing workspace in the shared Clinical Excellence visual direction.
+- [x] Preserve the later product-reviewed rich-referral enhancement branch without merging/deploying it during the Module 01 closure pivot.
 
-## 15.2 Radiofrequency treatment request / PDF workflow
+## 15.2 Radiofrequency treatment request / PDF workflow — DEFERRED
 
 - [x] Locate/provide and inspect the existing source website/workflow read-only before implementation design.
 - [ ] Preserve its current request/form and PDF-generation behavior unless inspection identifies a concrete defect.
@@ -471,14 +522,14 @@ No additional RF status such as rejected/cancelled is frozen yet; add only if th
 
 ---
 
-# 16. PATIENT MATERIALS — LOWER PRIORITY CURRENTLY
+# 16. PATIENT MATERIALS — LOWER PRIORITY / NOT CLOSURE-BLOCKING
 
 - [ ] Patient Q&A refinements.
 - [ ] Medication leaflets.
 - [ ] Exercise posters/materials.
 - [ ] Other patient education assets.
 
-These remain useful but should not displace Core/Practice Review/measurement work unless priority changes explicitly.
+These remain useful but should not displace Module 01 closure-critical work unless priority changes explicitly.
 
 ---
 
@@ -494,29 +545,26 @@ Only after Module 01 proves the reusable engine in real use:
 
 Clinic Utilities are cross-module operational tools and do not count as declaring a clinical Module 02.
 
+Future disease work should preferentially use condition-centered vertical slices in which clinical assessment and physiotherapy are projections from one reviewed condition model rather than independent disease redesigns.
+
 ---
 
-# 18. BROAD IMPLEMENTATION ORDER
+# 18. BROAD IMPLEMENTATION ORDER — MODULE 01 CLOSURE PATH
 
 ```text
-1. encounter-finalization smoke — CLOSED
-2. close/freeze PR-1 corrected pre-code design
-3. 5-case usability/capture pilot
-4. one post-pilot refinement
-5. freeze Baseline Form + KPI contract
-6. build transcript extraction / Practice Review infrastructure in shadow mode
-7. 30-case scored baseline without routine coaching exposure
-8. baseline lock
-9. activate clinician-facing Quick Practice Review
-10. Deep Review / Red Team / Decision Reconstruction
-11. longitudinal Signals + targeted interventions
-12. adaptive consultation-flow presentation layer informed by pilot/review evidence
-13. Learning / Evidence / Patient Voice / Improvement loops
-14. Clinical Excellence Home
-15. resume Calendar/CareTask/Secretary integration when external dependency is ready
-16. generalize Core to later clinical modules
+C0. closure-program canonical rebase + pilot-readiness check
+C1. run 5 consecutive real usability/capture pilot cases
+C2. one deliberate post-pilot refinement
+C3. freeze Baseline Form v1 + KPI applicability/calculation contract
+C4. implement PR-1 transcript extraction
+C5. implement PR-2 clinician review/acceptance merge boundary
+C6. implement Quick Practice Review minimum viable engine in shadow mode
+C7. run/lock 30-case scored baseline without routine coaching exposure
+C8. activate reviewed Signals + root-cause-appropriate intervention loop
+C9. adapt visible osteoporosis workflow/Close behavior from accumulated evidence
+C10. re-measure at least one intervention/pattern in later encounters
+C11. final Module 01 closure review
+C12. only after Module 01 closure: resume deferred utilities/generalization as newly authorized slices
 ```
 
-The bounded **CU-1 pre-code design detour is complete**. `CURRENT_OPERATIONAL.md` owns the exact NOW and any future writer lock; `SLICE_PLAN_CURRENT.md` records the frozen CU-1 design. No CU-1 runtime implementation or CU-2 work begins without a separate product-owner decision and a fresh authorized slice/branch.
-
-If a safety/data-integrity defect appears, it outranks this sequence.
+The active closure slice is design/pilot-readiness only. No PR-1 runtime, new Clinic Utility, merge or deploy is authorized merely by this roadmap priority change.
