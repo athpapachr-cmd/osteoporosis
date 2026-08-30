@@ -10,11 +10,13 @@ on:
       - 'static/baseline-audit/progressive-guidance-ui.js'
       - 'static/baseline-audit/progressive-guidance.css'
       - 'static/baseline-audit/adaptive-applicability.js'
+      - 'static/baseline-audit/adaptive-applicability.css'
       - 'static/baseline-audit/app.js'
       - 'static/baseline-audit/finalization-coordinator.js'
       - 'static/baseline-audit/patient-registry.js'
       - 'static/baseline-audit/pilot-completion.js'
       - 'test_progressive_guidance_node.js'
+      - 'test_progressive_guidance_wiring.js'
       - 'test_baseline_finish_browser.js'
       - 'test_baseline_finalization_api.py'
       - 'test_encounter_finalization.py'
@@ -41,9 +43,12 @@ jobs:
           node --check static/baseline-audit/pilot-completion.js
           node --check static/baseline-audit/app.js
           node --check test_progressive_guidance_node.js
+          node --check test_progressive_guidance_wiring.js
           node --check test_baseline_finish_browser.js
       - name: Run progressive guidance core regressions
         run: node test_progressive_guidance_node.js
+      - name: Run progressive guidance wiring regression
+        run: node test_progressive_guidance_wiring.js
       - name: Preserve authoritative Finish browser regression
         run: node test_baseline_finish_browser.js
       - name: Preserve server finalization lifecycle regression
