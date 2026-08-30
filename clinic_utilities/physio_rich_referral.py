@@ -90,6 +90,21 @@ def _sentences(values: Iterable[str]) -> str:
     return " ".join(_sentence(value) for value in values if value.strip())
 
 
+def _context_referral_phrases(spec: Mapping[str, Any], context: Optional[Mapping[str, Any]]) -> List[str]:
+    mapping = spec.get("context_referral_phrases_el") or {}
+    if not isinstance(mapping, Mapping) or not isinstance(context, Mapping):
+        return []
+    phrases: List[str] = []
+    for key, values in mapping.items():
+        if not isinstance(values, Mapping):
+            continue
+        selected = context.get(key)
+        phrase = _clean_phrase(values.get(selected))
+        if phrase:
+            phrases.append(phrase)
+    return phrases
+
+
 def _variant_matches(
     variant: Mapping[str, Any],
     *,
@@ -296,10 +311,11 @@ class CU1RichReferralRenderer:
             context=context,
         )
         clinical = [_sentence(_clean_phrase(item)) for item in clinical_context if _clean_phrase(item)]
+        contextual = [_sentence(item) for item in _context_referral_phrases(spec, context)]
         flow = _clean_lines(spec.get("short_flow_el"))
         if not flow:
             raise CU1ContractError(f"Rich-referral short flow is missing for {route_id}")
-        text = " ".join(clinical + [_sentence(item) for item in flow]).strip()
+        text = " ".join(clinical + contextual + [_sentence(item) for item in flow]).strip()
         return self._enforce_limit(text, mode="short", route_id=route_id)
 
     def render_detailed(
@@ -318,6 +334,7 @@ class CU1RichReferralRenderer:
             context=context,
         )
         clinical = [_sentence(_clean_phrase(item)) for item in clinical_context if _clean_phrase(item)]
+        clinical.extend(_sentence(item) for item in _context_referral_phrases(spec, context))
         sections: List[str] = []
         if clinical:
             sections.append("ΚΛΙΝΙΚΗ ΕΙΚΟΝΑ\n" + " ".join(clinical))
