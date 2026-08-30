@@ -1,212 +1,135 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** MODULE 01 — G-0 DYNAMIC GUIDED VISIT DESIGN-COMPLETE / PRE-RUNTIME STOP.
+> **STATUS:** MODULE 01 — PROGRESSIVE GUIDANCE FOUNDATION DESIGN COMPLETE / PRE-RUNTIME STOP.
 > **Updated:** 2026-08-30 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Verified remote `main` at G-0 bootstrap:** `08ecd3ab33e98d567c47042a8a1de482df6952b9`.
-> **Completed design branch:** `design/module01-dynamic-guided-visit-replan-2026-08-30`.
+> **Verified remote `main`:** `08ecd3ab33e98d567c47042a8a1de482df6952b9`.
+> **Current design branch:** `design/module01-progressive-guidance-foundations-2026-08-30`.
+> **Parent G-0 design:** `design/module01-dynamic-guided-visit-replan-2026-08-30` @ `6aadc8ef55719be98233afa6a80a179f43512c1d`.
 > **Parent tested runtime ancestry:** `fix/module01-c1-authoritative-finish-2026-08-30` @ `a4005dc88140d8f988fcac2b4f4bd9f9bb0c3871`.
-> **Current major phase:** dynamic guided osteoporosis consultation + Heidi-first capture before real pilot.
-> **ACTIVE CANONICAL WRITER/LOCK:** NONE — G-0 design is complete.
+> **ACTIVE CANONICAL WRITER/LOCK:** NONE — refinement complete.
 > **ACTIVE RUNTIME WRITER/LOCK:** NONE.
-> **Runtime mutation:** NOT AUTHORIZED by G-0 completion.
+> **Runtime mutation:** NOT AUTHORIZED by this design refinement.
 > **Merge/deploy/preview:** NOT AUTHORIZED / NOT DONE.
 
 ---
 
-# 1. Product truth now frozen
+# 1. Product-owner clarification now authoritative
 
-The clinician-facing Module 01 product exists primarily to:
+The dynamic visit architecture is intentionally progressive.
+
+The product owner does **not** require a complete visit taxonomy/card model before first real use. The immediate objective is to install extensible foundations and let actual encounters/transcripts drive later refinement.
+
+Current practical capture model:
 
 ```text
-improve the current osteoporosis visit
-+
-reduce duplicate/manual capture
-+
-review whether what was said/reasoned/decided was appropriate
-+
-improve future clinician performance longitudinally
+first-page dropdown
+→ coarse clinician-declared visit type
+
+first-page short notes / free text
+→ fallback visit context when dropdown is too coarse or no option fits
+
+later Heidi transcript
+→ richer evidence about what actually occurred
 ```
 
-The Baseline Audit is an underlying measurement/storage foundation, not the intended clinician-facing workflow.
-
-The current largely manual Steps 1–6 flow is already known to impose unacceptable burden for routine intended use and will not be the workflow tested in the five-case real pilot.
+The system may later propose better classification, but clinician confirmation remains required.
 
 ---
 
-# 2. G-0 methodology replan complete
+# 2. Progressive classification policy
 
-Approved sequence:
+Do not front-load a complete set of visit subtypes or card rules.
+
+Start with coarse categories such as:
 
 ```text
-C1 authoritative Finish merge/deploy/smoke
-→ G-1 dynamic Clinical Guidance mechanics
-→ evidence-backed osteoporosis guidance profiles
-→ PR-1 Heidi transcript extraction
-→ PR-2 inline provisional population / clinician review
-→ guided clinical-card UX sufficient for real use
-→ 5 real system-assisted pilot encounters
-→ one deliberate refinement + freeze
-→ Quick Practice Review shadow capability
-→ 30-case scored system-assisted baseline
-→ baseline lock
-→ reviewed Signals/intervention
-→ re-measure
-→ final Module 01 closure review
+initial assessment
+results/work-up review with management decision
+treatment start
+treatment administration / continuation
+repeat prescription / routine maintenance
+treatment change / transition
+fracture / fracture-on-treatment
+adverse effect / intolerance
+other
 ```
 
-During the 30-case baseline:
-
-- stable Clinical Guidance stays active;
-- transcript-assisted capture stays active;
-- routine KPI/performance feedback stays hidden;
-- routine clinician-facing Practice Review stays hidden by default;
-- safety-critical feedback is allowed;
-- guidance exposure is recorded where technically reliable;
-- cohort is labelled **system-assisted baseline**.
+Existing runtime archetypes may be reused where sufficiently close. `other` plus concise summary is valid and preferable to forcing an inaccurate category.
 
 ---
 
-# 3. Frozen architecture
+# 3. Learning-from-use checkpoints
 
-System functions:
-
-```text
-Clinical Guidance
-!= Transcript-assisted Capture
-!= Audit / Measurement
-!= Clinical Practice Review
-```
-
-Normative machine entrypoint:
+Refine visit taxonomy/cards deliberately from real use:
 
 ```text
-schemas/dynamic_guided_visit_contract_manifest_v1.yaml
+minimum foundation
+→ 5 system-assisted pilot encounters
+→ one deliberate refinement
+→ 30-case system-assisted baseline
+→ post-baseline evidence-from-use refinement
+→ later periodic/milestone refinement when enough new evidence accumulates
 ```
 
-Normative contracts:
+Review at these checkpoints:
 
-```text
-schemas/dynamic_guided_visit_v1.yaml
-schemas/longitudinal_guidance_projection_v1.yaml
-```
+- actual dropdown usage;
+- frequency/content of `other`;
+- recurring free-text visit summaries;
+- recurring transcript patterns;
+- missing/irrelevant cards;
+- duplicate questioning/data entry;
+- clinically important omissions;
+- repeated unresolved tasks;
+- treatment/event patterns that may justify new milestone rules.
 
-Frozen objects:
-
-```text
-EncounterContextV1
-LongitudinalGuidanceProjectionV1
-ProjectionConflictV1
-GuidanceRuleV1
-VisitPlanV1
-GuidedCardStateV1
-TherapyMilestoneProfileV1
-GuidanceExposureV1
-```
-
-Exact design review:
-
-```text
-M01_G0_DYNAMIC_GUIDANCE_DESIGN_REVIEW_V1.md
-classification: DESIGN-COMPLETE
-```
+No autonomous taxonomy mutation from frequency or model output alone.
 
 ---
 
-# 4. Dynamic visit rule
+# 4. Minimum G-1 runtime ambition
 
-Coarse `encounter_archetype` remains **visit intent**, not the whole Visit Plan.
-
-The Visit Plan is derived from:
+If separately authorized, G-1 should build only the useful extensible foundation:
 
 ```text
-visit intent
-+ prior authoritative longitudinal state
-+ active treatment/agent
-+ actual administrations
-+ elapsed exposure
-+ reliable administration count
-+ due/overdue state
-+ monitoring due state
-+ new fracture/adverse event/safety trigger
-+ unresolved prior tasks/prerequisites
-+ patient-specific context
-+ transcript uncertainty/conflict later
+coarse visit intent
++ short visit context
++ minimum read-only longitudinal context
++ basic dynamic card applicability/ordering
++ WHY NOW
++ safety/new-event override
++ unresolved-prior override
++ treatment/due plumbing
 ```
 
-Frozen priority:
+G-1 does not need complete drug-specific guidance, complete therapy milestones, predictive encounter classification, or a complete card library.
 
-```text
-critical safety / urgent event
-→ unresolved prior critical item
-→ treatment/agent-specific requirement
-→ evidence-defined milestone/due item
-→ archetype base flow
-→ contextual item
-```
-
-Every non-obvious surfaced card should be able to answer `WHY NOW?`.
+The richer G-0 objects remain extension seams, not first-runtime completeness requirements.
 
 ---
 
-# 5. Repeated-treatment / Prolia design
+# 5. Heidi position
 
-Do not create one hard-coded form per ordinal dose.
+Heidi remains required before the five-case real pilot unless separately replanned because the known manual workflow is not the intended product.
 
-Use treatment timeline + milestone/event rules.
-
-Count and elapsed exposure remain separate. Scheduled/planned events do not count as actual administrations. Delays may make count and elapsed duration diverge and that divergence must remain visible.
-
-No exact 4th/8th/10th Prolia clinical rule is active from G-0. Exact milestone content requires reviewed evidence or approved clinic-policy provenance.
-
----
-
-# 6. Longitudinal storage seam — verified / no G-1 migration required
-
-There is no separate patient-level treatment timeline table today.
-
-However the protected endpoint:
+Preferred future flow:
 
 ```text
-GET /clinical/patient/{patient_id}/encounters
+coarse clinician visit label
++ optional short summary
++ Heidi transcript extraction
+→ structured candidates
+→ provisional in-place population
+→ Accept / Edit / Reject
+→ authoritative encounter data
 ```
 
-returns all historical encounters with full `payload`.
-
-G-0 therefore froze a read-only `LongitudinalGuidanceProjectionV1` that:
-
-- derives context from completed/amended historical encounters;
-- does not let a later blank snapshot erase prior history;
-- preserves material conflicts;
-- counts only reliable unique actual administration events;
-- never reconstructs missing doses from expected cadence;
-- resurfaces unresolved prior tasks where deterministically supported;
-- does not create a second source of truth.
-
-Preferred G-1 boundary: ephemeral projection, no DB migration by default.
+Transcript patterns may later inform category/card redesign but do not silently reclassify encounters or mutate taxonomy.
 
 ---
 
-# 7. Heidi / PR-2 position
-
-Archived corrected PR-1 v3 semantic/privacy design remains the extraction starting point.
-
-New product UX:
-
-```text
-raw Heidi transcript
-→ ephemeral semantic extraction
-→ deterministic Module 01 target mapping
-→ provisional values in destination cards
-→ clinician Accept / Edit / Reject
-→ authoritative write only after review
-```
-
-No silent overwrite. `Not mentioned` does not mean negative.
-
----
-
-# 8. C1 authoritative Finish state preserved
+# 6. C1 authoritative Finish state preserved
 
 ```text
 branch: fix/module01-c1-authoritative-finish-2026-08-30
@@ -218,11 +141,11 @@ DEPLOYED: NO
 PRODUCTION-SMOKE: NO
 ```
 
-G-0 inherits this code in ancestry but did not merge/deploy it.
+No real pilot should start until finalization integrity is released/deployed/smoke-verified and the intended minimum system-assisted workflow is available.
 
 ---
 
-# 9. Physiotherapy remains parked/preserved
+# 7. Physiotherapy remains parked/preserved
 
 ```text
 feat/cu1-rich-referral-global-evidence-2026-08-29
@@ -235,44 +158,37 @@ Do not mutate/merge/deploy during Module 01 work without separate authorization.
 
 ---
 
-# 10. Status matrix
+# 8. Status matrix
 
 ```text
-G-0 PRODUCT/METHODOLOGY REPLAN               COMPLETE
-G-0 MACHINE CONTRACT                         COMPLETE
-G-0 LONGITUDINAL PROJECTION CONTRACT         COMPLETE
-G-0 EXACT DESIGN REVIEW                      PASS
-G-0 DESIGN-COMPLETE                          YES
-G-0 RUNTIME MUTATION                         NO
-ACTIVE WRITER                                NONE
-C1 AUTHORITATIVE FINISH IMPLEMENTED/TESTED   YES
-C1 MERGED                                    NO
-C1 DEPLOYED                                  NO
-G-1 IMPLEMENTED                              NO
-PR-1 IMPLEMENTED                             NO
-PR-2 IMPLEMENTED                             NO
-5-CASE SYSTEM-ASSISTED PILOT                 NOT STARTED
-30-CASE SYSTEM-ASSISTED BASELINE             NOT STARTED
-MODULE 01 CLOSED                             NO
+G-0 DYNAMIC GUIDANCE ARCHITECTURE             DESIGN-COMPLETE
+G-0.1 PROGRESSIVE-FOUNDATION REFINEMENT       COMPLETE
+FULL VISIT TAXONOMY REQUIRED NOW               NO
+COARSE DROPDOWN AS FIRST-LINE LABEL            YES
+FREE-TEXT FALLBACK CONTEXT                     YES
+LATER TRANSCRIPT-INFORMED REFINEMENT           YES
+AUTOMATIC TAXONOMY MUTATION                     NO
+G-1 RUNTIME                                    NOT IMPLEMENTED
+PR-1 / PR-2                                    NOT IMPLEMENTED
+5-CASE SYSTEM-ASSISTED PILOT                   NOT STARTED
+30-CASE SYSTEM-ASSISTED BASELINE               NOT STARTED
+MODULE 01 CLOSED                               NO
 ```
 
 ---
 
-# 11. Exact next action
+# 9. Exact next action
 
-STOP G-0.
+STOP design refinement.
 
-If the product owner authorizes implementation, a new session must fresh-bootstrap and open a bounded **G-1 runtime slice** limited to:
+If the product owner separately authorizes runtime implementation:
 
 ```text
-1. read-only LongitudinalGuidanceProjectionV1;
-2. EncounterContextV1 resolver;
-3. generic deterministic GuidanceRuleV1 evaluator / priority resolution;
-4. VisitPlanV1 + GuidedCardStateV1;
-5. `why now` rendering;
-6. synthetic tests for event override, unresolved-prior and treatment/due plumbing;
-7. no invented agent-specific clinical milestone content;
-8. no PR-1/provider/PR-2 work unless explicitly included in a later approved slice.
+fresh six-canonical bootstrap
+→ create bounded G-1 runtime branch
+→ implement minimum progressive guidance foundation only
+→ synthetic regression
+→ stop at tested implementation / release gate
 ```
 
-C1 merge/deploy remains a separate release decision and must be distinguished from G-1 runtime authorization.
+C1 merge/deploy remains a separate release decision. PR-1/PR-2 remain later bounded runtime slices before real pilot use.
