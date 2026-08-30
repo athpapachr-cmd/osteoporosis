@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 from typing import Any, Dict, List, Mapping, Optional, Tuple
 
+from clinic_utilities.physio_clinical_composition import CU1ClinicalContextComposer
 from clinic_utilities.physio_referral_formatter_el import CU1GreekReferralFormatter as _BaseGreekFormatter
 from clinic_utilities.physio_referral_runtime import CU1ContractBundle, CU1ContractError, _normalize_whitespace
 from clinic_utilities.physio_rich_referral import CU1RichReferralRenderer
@@ -33,6 +34,7 @@ class CU1GreekReferralFormatter(_BaseGreekFormatter):
             raise CU1ContractError("CU-1 explicit Greek route-label artifact is missing")
         self.explicit_route_labels: Mapping[str, Any] = routes
         self.rich_renderer = CU1RichReferralRenderer(bundle.root)
+        self.clinical_composer = CU1ClinicalContextComposer(bundle, self.rich_renderer)
 
     def _route_label(self, profile_id: str, route_id: str) -> str:
         profile = self.explicit_route_labels.get(profile_id)
@@ -161,17 +163,17 @@ class CU1GreekReferralFormatter(_BaseGreekFormatter):
         problem = draft.get("primary_problem", {}) if isinstance(draft.get("primary_problem"), Mapping) else {}
         problem_label = self._problem_label(problem, include_subtype=detailed)
 
-        findings = self._selection_labels(draft, "findings", "findings")
-        function = self._selection_labels(draft, "functional_impairments", "functional_impairments")
+        clinical = self.clinical_composer.compose(
+            draft,
+            detailed=detailed,
+            route=route,
+            fallback_problem_label=problem_label,
+        )
+
         work_context = self._explicit_work_or_sport_context(draft)
         restrictions = self._restriction_labels(draft, detailed=detailed)
         precautions = self._optional_selection_labels(draft, "precautions", "precautions")
 
-        clinical: List[str] = [problem_label]
-        if findings:
-            clinical.append(self._join_greek(findings).capitalize())
-        if function:
-            clinical.append(self._join_greek(function).capitalize())
         if work_context:
             clinical.append(work_context.rstrip("."))
         if restrictions or precautions:

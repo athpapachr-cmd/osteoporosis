@@ -16,6 +16,8 @@ routes:
             frozen_shoulder_scope: primary_frozen_shoulder
         evidence_profile_ids: [rep_adhesive_capsulitis_v1]
         authority_mode: reviewed_primary_frozen_shoulder_single_phase_evidence_bounded
+        clinical_context_problem_phrase_el_by_wording_mode:
+          formal_diagnosis: "συμφυτική θυλακίτιδα / παγωμένο ώμο"
         context_referral_phrases_el:
           frozen_shoulder_irritability:
             high: "Κλινική ερεθιστικότητα: υψηλή"

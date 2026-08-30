@@ -1,0 +1,77 @@
+version: cu1_clinical_composition_el_v1
+status: active_runtime_authority
+runtime_authorized: true
+language: el
+
+governance:
+  selected_facts_only: true
+  route_specific_python_branches_forbidden: true
+  explicit_subsumption_only: true
+  deterministic_priority_order: true
+  unsupported_combinations_must_not_be_inferred: true
+
+templates:
+  patient_problem_with_findings_el: "Ασθενής με {problem}{laterality}, με {findings}"
+  patient_problem_only_el: "Ασθενής με {problem}{laterality}"
+  residual_findings_sentence_el: "Στην κλινική εικόνα καταγράφονται {findings}"
+  functional_sentence_el: "Λειτουργικά αναφέρεται {function}"
+  laterality_suffix_el:
+    left: " αριστερά"
+    right: " δεξιά"
+    bilateral: " αμφοτερόπλευρα"
+    midline: " στη μέση γραμμή"
+    not_applicable: ""
+    not_stated: ""
+
+finding_fusions:
+  - rule_id: painful_restricted_active_passive_rom
+    priority: 100
+    require_all:
+      - active_rom_restricted
+      - passive_rom_restricted
+      - painful_active_rom
+      - painful_passive_rom
+    consume:
+      - active_rom_restricted
+      - passive_rom_restricted
+      - painful_active_rom
+      - painful_passive_rom
+    suppress_if_matched:
+      - pain
+    phrase_el: "επώδυνο και περιορισμένο ενεργητικό και παθητικό εύρος κίνησης"
+
+  - rule_id: restricted_active_passive_rom
+    priority: 80
+    require_all:
+      - active_rom_restricted
+      - passive_rom_restricted
+    consume:
+      - active_rom_restricted
+      - passive_rom_restricted
+    suppress_if_matched: []
+    phrase_el: "περιορισμένο ενεργητικό και παθητικό εύρος κίνησης"
+
+functional_fusions:
+  - rule_id: overhead_lifting_driving_difficulty
+    priority: 100
+    require_all:
+      - overhead_activity
+      - lifting_carrying
+      - driving
+    consume:
+      - overhead_activity
+      - lifting_carrying
+      - driving
+    suppress_if_matched: []
+    phrase_el: "δυσκολία σε δραστηριότητες πάνω από το ύψος του ώμου, στην άρση ή μεταφορά φορτίου και στην οδήγηση"
+
+  - rule_id: overhead_lifting_difficulty
+    priority: 80
+    require_all:
+      - overhead_activity
+      - lifting_carrying
+    consume:
+      - overhead_activity
+      - lifting_carrying
+    suppress_if_matched: []
+    phrase_el: "δυσκολία σε δραστηριότητες πάνω από το ύψος του ώμου και στην άρση ή μεταφορά φορτίου"

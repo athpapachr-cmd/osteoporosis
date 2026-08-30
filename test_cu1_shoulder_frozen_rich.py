@@ -187,8 +187,9 @@ class CU1PrimaryFrozenShoulderRichTests(unittest.TestCase):
         for text in (short, detailed):
             folded = fold_el(text)
             self.assertIn(fold_el("Κλινική ερεθιστικότητα: υψηλή"), folded)
-            self.assertIn(fold_el("περιορισμός ενεργητικού εύρους κίνησης"), folded)
-            self.assertIn(fold_el("περιορισμός παθητικού εύρους κίνησης"), folded)
+            self.assertIn(fold_el("επώδυνο και περιορισμένο ενεργητικό και παθητικό εύρος κίνησης"), folded)
+            self.assertNotIn(fold_el("περιορισμός ενεργητικού εύρους κίνησης"), folded)
+            self.assertNotIn(fold_el("περιορισμός παθητικού εύρους κίνησης"), folded)
             self.assertIn(fold_el("δραστηριότητες πάνω από το ύψος του ώμου"), folded)
             self.assertIn(fold_el("άρση ή μεταφορά φορτίου"), folded)
             self.assertIn(fold_el("οδήγηση"), folded)
@@ -197,6 +198,7 @@ class CU1PrimaryFrozenShoulderRichTests(unittest.TestCase):
             self.assertNotIn(fold_el("φυσικής πορείας"), folded)
             for english_leak in ("freezing", "thawing", "routine", "fixed", "frozen shoulder"):
                 self.assertNotIn(english_leak, folded)
+        self.assertIn("Ασθενής με συμφυτική θυλακίτιδα / παγωμένο ώμο δεξιά", short)
         self.assertIn("Παρακαλώ για εξατομικευμένη φυσιοθεραπευτική αποκατάσταση", short)
         self.assertIn("Παρακαλώ για εξατομικευμένο πρόγραμμα ενεργητικής αποκατάστασης και ασκήσεων κινητικότητας", detailed)
         self.assertIn("Η επιλογή και δοσολογία των επιμέρους ασκήσεων και τεχνικών εξατομικεύονται από τον φυσιοθεραπευτή", detailed)
