@@ -1,53 +1,53 @@
 # SLICE_PLAN_CURRENT.md — C1 Authoritative Finish / Pilot Finalization Integrity v1
 
-> **STATUS:** IMPLEMENTATION AUTHORIZED / ACTIVE.
+> **STATUS:** IMPLEMENTED / TESTED / MERGE GATE.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Parent product:** Personal Clinical Excellence System.
 > **Module:** 01 — Osteoporosis.
 > **Slice ID:** M01-C1-FINISH-v1.
 > **Verified remote main:** `08ecd3ab33e98d567c47042a8a1de482df6952b9`.
 > **Parent closure branch:** `design/module01-closure-program-2026-08-30` @ `804c5cd3db9d8089efc127c0cf1866768fa4140d`.
-> **Writer/runtime writer:** `fix/module01-c1-authoritative-finish-2026-08-30`.
-> **Merge/deploy/preview:** NOT AUTHORIZED in this slice without a separate decision.
+> **Implementation branch:** `fix/module01-c1-authoritative-finish-2026-08-30`.
+> **Runtime writer:** NONE — implementation complete.
+> **Merge/deploy/preview:** NOT AUTHORIZED / NOT DONE.
 
 ---
 
 # 1. Problem
 
-The Baseline Audit browser currently has two competing finalization owners:
+The Baseline Audit browser had two competing finalization owners:
 
 ```text
 pilot-completion.js capture listener
-→ intercepts Finish
-→ stops propagation
-→ triggers ordinary Save
-→ marks local pilot completion
+→ intercept Finish
+→ stop propagation
+→ trigger ordinary Save
+→ local pilot completion
 
-patient-registry.js listeners
-→ Save syncs draft
-→ Finish intends to sync completed
+patient-registry.js
+→ Save sync draft
+→ separate Finish sync completed
 ```
 
-Because the capture listener can suppress the later Finish listener, local state can say complete while protected server state remains draft.
-
-This is a pilot-blocking persistence/finalization integrity defect.
+This allowed the finalization order to depend on browser event propagation and could create local `complete` with protected server `draft`.
 
 ---
 
-# 2. Required invariant
+# 2. Frozen invariant
 
-One operation must own finalization end-to-end:
+One operation now owns finalization end-to-end:
 
 ```text
 Finish
-→ snapshot/persist latest Steps 1–6/module state
-→ establish local pilot_completion=complete
-→ send that same final payload to protected server with requested status=completed
+→ suppress ordinary Save→draft server sync
+→ persist latest local/module state
+→ mark pilot completion locally
+→ synchronize the same final payload to protected server with requested status=completed
 → await successful server response
-→ report success
+→ report protected completion only after confirmation
 ```
 
-The server-side `resolve_encounter_status()` semantics remain unchanged:
+Server status semantics remain unchanged:
 
 ```text
 draft + completed → completed
@@ -58,109 +58,150 @@ amended → amended
 
 ---
 
-# 3. Ownership design
+# 3. Implemented ownership
 
-The preferred correction is to remove competing independent Finish click ownership and expose an explicit finalization function/interface that the Finish handler invokes once.
-
-Allowed implementation options include:
-
-- `pilot-completion.js` owns the single user Finish event and invokes an exported protected-sync finalization function from `patient-registry.js`; or
-- a small shared finalization coordinator owns Finish and calls local completion + protected sync in deterministic sequence.
-
-Do not retain two independent listeners whose ordering/propagation determines correctness.
-
-Ordinary Save remains draft synchronization for draft encounters and continues to rely on the server state machine to preserve completed/amended states.
-
----
-
-# 4. Failure semantics
-
-Protected completion and local pilot completion are not interchangeable.
-
-If no active protected patient exists, no server link can be created, authentication fails, or final completed synchronization fails:
-
-- do not display a message claiming protected encounter completion;
-- surface an explicit failure/not-synced state;
-- preserve locally entered data rather than discarding it;
-- allow retry after the protected context is restored.
-
-No silent fallback from `completed` to `draft` is allowed during Finish.
-
----
-
-# 5. Scope
-
-Files may be changed only as needed around:
+Implementation uses:
 
 ```text
-static/baseline-audit/pilot-completion.js
-static/baseline-audit/patient-registry.js
-static/baseline-audit/app.js              (only if load/ownership wiring requires it)
-focused regression test(s)
-CURRENT_OPERATIONAL.md / SLICE_PLAN_CURRENT.md
+BaselineFinalizationCoordinator
+→ owns finalization-in-progress guard
+
+ClinicalRegistry.finalizeActiveEncounter()
+→ strict completed server synchronization
+
+pilot-completion.js
+→ sole Finish click owner
 ```
 
-Do not change clinical fields, schemas, KPI definitions, pilot N, baseline methodology or unrelated Clinic Utilities code.
+`patient-registry.js` no longer owns a second Finish click listener.
 
----
+Ordinary Save still performs draft synchronization when no authoritative Finish is active. During Finish, the coordinator suppresses that draft sync so no race is scheduled.
 
-# 6. Acceptance tests
-
-Required integrated cases:
-
-1. **Successful Finish**
-   - draft encounter exists or is created;
-   - final module state is saved;
-   - local `pilot_completion.status=complete`;
-   - protected server receives requested `completed` with final payload;
-   - resulting server status is `completed`.
-
-2. **Reload**
-   - reopen same server encounter;
-   - final payload reloads;
-   - status remains `completed`.
-
-3. **No-op Save**
-   - ordinary Save after completion;
-   - server remains `completed`.
-
-4. **Material amendment**
-   - edit material payload after completion and Save;
-   - server becomes `amended`.
-
-5. **Missing protected context / sync failure**
-   - Finish must not claim protected completion;
-   - local data remains available;
-   - failure is explicit and retryable.
-
-The browser-side test must prove event ownership/order rather than only string presence. Existing Python `test_encounter_finalization.py` remains the server-transition regression.
-
----
-
-# 7. REPLAN triggers
-
-Stop and replan if:
-
-- one authoritative Finish requires changing clinical-form semantics;
-- the defect is actually caused by broader unsound persistence ownership beyond Finish/Save;
-- final payload cannot be obtained deterministically before server sync;
-- fixing this seam requires changing server encounter status semantics;
-- protected completion cannot be distinguished from local-only completion without a larger UI redesign.
-
----
-
-# 8. Completion gate
-
-This slice is complete when:
+The bootstrap order is explicitly:
 
 ```text
-single authoritative Finish owner          YES
-final payload synchronized as completed    TESTED
-reload completed                           TESTED
-no-op Save preservation                    TESTED
-material edit → amended                    TESTED
-missing/sync-failure state explicit         TESTED
+finalization coordinator
+→ patient registry / exported strict finalization API
+→ pilot completion / sole Finish owner
+```
+
+---
+
+# 4. Final payload sequencing
+
+Existing Steps 3–6 persist module state from Save through `setTimeout(..., 0)` handlers.
+
+The authoritative Finish therefore:
+
+1. acquires the coordinator guard;
+2. clicks local Save;
+3. waits one event-loop flush so module persistence completes;
+4. marks `pilot_completion.status=complete` locally;
+5. reads/sends that final local case through `ClinicalRegistry.finalizeActiveEncounter()`;
+6. waits for the protected server response before success UI.
+
+No Steps 3–6 clinical capture logic was changed.
+
+---
+
+# 5. Failure semantics implemented
+
+If protected patient context is absent, encounter payload is absent, date is invalid, authentication fails or server sync fails:
+
+- strict finalization throws/returns failure to the sole Finish owner;
+- local data remain available;
+- no protected-completion success text is shown;
+- ordinary draft fallback remains suppressed during the failed Finish attempt;
+- the coordinator is released and Finish can be retried.
+
+Local preservation does not equal protected-server completion.
+
+---
+
+# 6. Acceptance evidence
+
+Runtime/test head:
+
+```text
+a26e2a7415cff5b1409400ddfddce4ba01e6b6b7
+```
+
+GitHub Actions:
+
+```text
+workflow: Baseline finalization integrity
+run:      33323066983
+result:   SUCCESS
+```
+
+### Browser/event regression
+
+Dynamic Node regression proves:
+
+- one Finish owner;
+- no second registry Finish listener;
+- coordinator → registry → pilot load order;
+- Save draft sync suppressed during Finish;
+- final server payload sees module state persisted by local Save;
+- final server payload includes `pilot_completion.status=complete`;
+- server finalization called exactly once;
+- protected-sync failure is explicit and local data remain retryable.
+
+### Server lifecycle regression
+
+Synthetic FastAPI + SQLite lifecycle test proves:
+
+```text
+draft encounter
+→ Finish payload requested completed
+→ server completed
+→ GET/reload completed with same final payload
+→ no-op Save requesting draft stays completed
+→ material edit + Save becomes amended
+```
+
+JavaScript syntax checks also passed.
+
+---
+
+# 7. Scope verification
+
+Changed only the finalization seam, focused tests/CI and active canonicals.
+
+Not changed:
+
+- clinical questions/fields;
+- baseline schemas;
+- KPI definitions/applicability;
+- pilot target N;
+- 30-case baseline methodology;
+- transcript extraction;
+- Practice Review;
+- physiotherapy code.
+
+---
+
+# 8. Completion matrix
+
+```text
+single authoritative Finish owner          YES / TESTED
+final payload synchronized as completed    YES / TESTED
+reload completed                           YES / TESTED
+no-op Save preservation                    YES / TESTED
+material edit → amended                    YES / TESTED
+missing/sync-failure state explicit         YES / TESTED
 clinical form/KPI semantics changed         NO
+merged                                      NO
+deployed                                    NO
+production smoke                            NO
 ```
 
-Then update `CURRENT_OPERATIONAL.md` and stop before merge/deploy unless separately authorized.
+The code-level C1 blocker is closed. Real pilot readiness remains blocked until this tested fix is merged, auto-deployed and smoke-verified in production.
+
+---
+
+# 9. Exact next action
+
+STOP at merge gate.
+
+A separate authorization is required for PR/merge/deploy. After production deployment, run one synthetic authoritative-Finish smoke and reload check. Only after that PASS should the real-pilot gate be released.
