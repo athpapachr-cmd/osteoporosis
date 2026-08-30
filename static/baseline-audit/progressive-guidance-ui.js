@@ -75,11 +75,23 @@
     return sessionStorage.getItem(ACTIVE_PATIENT_KEY) || "";
   }
 
+  function fractureEventsFromDom() {
+    return $$(".fracture-event").map(row => {
+      const event = { id: row.dataset.eventId || "" };
+      $$('[data-event-field]', row).forEach(field => {
+        event[field.dataset.eventField] = field.value;
+      });
+      return event;
+    });
+  }
+
   function currentCaseSnapshot() {
     const base = activeCase() || {};
     const fractureHistory = { ...(base.fracture_history || {}) };
     const intervalNode = $("#intervalFractureStatus");
     if (intervalNode) fractureHistory.interval_fracture_status = intervalNode.value || fractureHistory.interval_fracture_status || "";
+    const liveFractureEvents = fractureEventsFromDom();
+    if (liveFractureEvents.length) fractureHistory.events = liveFractureEvents;
 
     return {
       ...base,
@@ -128,7 +140,6 @@
     (plan?.ordered_cards || []).forEach(item => {
       cardsForDomain(item.card_id).forEach(card => {
         card.classList.add("guidance-surfaced");
-        card.classList.remove("adaptive-collapsed", "adaptive-uncertain", "adaptive-not-applicable");
         card.dataset.guidancePriority = String(item.priority);
         card.dataset.guidanceDomain = item.card_id;
         card.style.order = String(-1000 + Number(item.priority || 999));
