@@ -1,194 +1,207 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** MODULE 01 CLOSURE PROGRAM — C1 AUTHORITATIVE FINISH IMPLEMENTED / TESTED / MERGE GATE.
+> **STATUS:** MODULE 01 — G-0 DYNAMIC GUIDED VISIT REPLAN ACTIVE / PRE-RUNTIME DESIGN.
 > **Updated:** 2026-08-30 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Verified remote `main`:** `08ecd3ab33e98d567c47042a8a1de482df6952b9`.
-> **Parent closure branch:** `design/module01-closure-program-2026-08-30` @ `804c5cd3db9d8089efc127c0cf1866768fa4140d`.
-> **Current major phase:** close Osteoporosis Module 01 against explicit exit evidence, then generalize later.
-> **ACTIVE CANONICAL WRITER/LOCK:** `fix/module01-c1-authoritative-finish-2026-08-30`.
-> **ACTIVE RUNTIME WRITER/LOCK:** NONE — bounded C1 implementation is complete.
+> **Current design branch:** `design/module01-dynamic-guided-visit-replan-2026-08-30`.
+> **Parent tested runtime ancestry:** `fix/module01-c1-authoritative-finish-2026-08-30` @ `a4005dc88140d8f988fcac2b4f4bd9f9bb0c3871`.
+> **Current major phase:** dynamic guided osteoporosis consultation + Heidi-first capture before real pilot.
+> **ACTIVE CANONICAL WRITER/LOCK:** `design/module01-dynamic-guided-visit-replan-2026-08-30`.
+> **ACTIVE RUNTIME WRITER/LOCK:** NONE.
+> **Runtime mutation:** NOT AUTHORIZED in G-0.
 > **Merge/deploy/preview:** NOT AUTHORIZED / NOT DONE.
 
 ---
 
-# 1. Product-owner authorization
+# 1. Product-owner decision now governing Module 01
 
-The product owner explicitly authorized the bounded C1 correction:
+The product owner clarified that the system exists primarily to:
 
 ```text
-make one authoritative Finish fix
+improve the current osteoporosis visit
++
+reduce duplicate/manual capture
++
+review whether what was said/reasoned/decided was appropriate
++
+improve future clinician performance longitudinally
 ```
 
-The authorized scope was limited to the pilot finalization-integrity seam. Clinical questions, KPI semantics, pilot target N, baseline methodology, PR-1/PR-2 and physiotherapy were not changed.
+The current largely manual post-visit form is already known to impose unacceptable burden for intended routine use. Therefore a five-case real pilot must test the **intended system-assisted product**, not the known manual predecessor.
+
+The product owner also clarified that visit content is intrinsically dynamic across first assessment, results review/decision visits, repeated treatment administrations/milestones, fracture events, treatment transitions and other clinical states.
 
 ---
 
-# 2. Preserved project state
+# 2. Methodology REPLAN accepted
 
-Physiotherapy remains PARKED/PRESERVED.
-
-The later product-reviewed rich-referral enhancement remains at:
+The prior order:
 
 ```text
-branch: feat/cu1-rich-referral-global-evidence-2026-08-29
-head:   bdd23b83a8252405f5aa5a0c0b67f303ccfcef5f
-state:  IMPLEMENTED / TESTED / PRODUCT-OWNER REVIEWED
-PR:     NONE OPEN
+5 manual pilot cases
+→ freeze form
+→ transcript extraction later
+→ adaptive visible workflow much later
+```
+
+is superseded.
+
+Current intended order:
+
+```text
+C1 authoritative Finish merge/deploy/smoke
+→ dynamic guided-visit engine
+→ PR-1 transcript extraction
+→ PR-2 inline provisional population / clinician review
+→ guided clinical-card UX
+→ 5 real system-assisted pilot cases
+→ one deliberate refinement + freeze
+→ Quick Practice Review shadow capability
+→ 30-case scored system-assisted baseline
+→ baseline lock
+→ Signals/intervention
+→ re-measure
+→ final Module 01 closure review
+```
+
+During the scored baseline, stable Clinical Guidance remains active; routine KPI/performance feedback and routine clinician-facing Practice Review remain hidden by default. The cohort must be labelled **system-assisted baseline**.
+
+---
+
+# 3. Current G-0 design architecture
+
+The design now separates four functions:
+
+```text
+Clinical Guidance
+!= Transcript-assisted Capture
+!= Audit / Measurement
+!= Clinical Practice Review
+```
+
+New design objects:
+
+```text
+EncounterContextV1
+VisitPlanV1
+GuidanceRuleV1
+GuidedCardStateV1
+GuidanceExposureV1
+TherapyMilestoneProfileV1
+```
+
+The existing runtime coarse encounter archetypes remain useful as visit intent, but they are combined with longitudinal triggers rather than treated as the full applicability model.
+
+---
+
+# 4. Dynamic rule hierarchy
+
+Frozen design priority:
+
+```text
+critical safety / urgent event
+→ unresolved prior critical item
+→ treatment/agent-specific requirement
+→ evidence-defined milestone/due item
+→ archetype base flow
+→ patient-specific contextual item
+```
+
+Every dynamically surfaced non-obvious item should be able to answer `WHY NOW?`.
+
+Repeated therapy must use actual treatment history, elapsed exposure, reliable administration count, due/overdue state and reviewed milestone rules rather than a separate hard-coded form for each ordinal visit.
+
+Exact Prolia/other treatment milestone content is NOT frozen in G-0 and must not be invented without reviewed evidence or approved clinic-policy provenance.
+
+---
+
+# 5. Actual runtime seams already inspected
+
+Read-only inspection confirms the current runtime already contains:
+
+- coarse `encounterArchetype` values in `static/baseline-audit/index.html`;
+- `adaptive-applicability.js` with archetype→domain `applicable/uncertain/not_applicable` mapping;
+- Step 4 structured treatment episodes;
+- Step 4 administration events/due dates;
+- treatment decision / transition / tasks / Close state;
+- protected encounter persistence in `clinical_encounters.payload_json`;
+- archived corrected PR-1 v3 actual-runtime target mapping.
+
+Therefore G-0 does **not** require a new patient-data model from scratch. It must define a deterministic presentation/guidance layer over current authoritative longitudinal data, adding only the minimum structured state later proven necessary.
+
+Known current limitation: the coarse applicability map cannot yet express `why now`, due/milestone/event/unresolved-prior reasons, or treatment-timeline-derived relevance.
+
+---
+
+# 6. C1 authoritative Finish preserved
+
+The parent runtime branch remains:
+
+```text
+branch: fix/module01-c1-authoritative-finish-2026-08-30
+head:   a4005dc88140d8f988fcac2b4f4bd9f9bb0c3871
+state:  IMPLEMENTED / TESTED
 MERGED: NO
 DEPLOYED: NO
+PRODUCTION-SMOKE: NO
 ```
 
-Do not mutate, merge or deploy it in Module 01 closure work without separate authorization.
+Exact-head GitHub Actions run `33323204227` succeeded.
+
+G-0 inherits this tested code in branch ancestry but does not grant merge/deploy authority.
 
 ---
 
-# 3. C1 defect closed in code
+# 7. Physiotherapy remains parked
 
-Prior wiring allowed two competing Finish owners:
+Preserved rich-referral branch:
 
 ```text
-pilot-completion.js capture Finish
-→ stopped propagation
-→ triggered ordinary Save
-→ local pilot_completion=complete
-
-patient-registry.js
-Save → draft sync
-Finish → intended completed sync
+feat/cu1-rich-referral-global-evidence-2026-08-29
+@ bdd23b83a8252405f5aa5a0c0b67f303ccfcef5f
+IMPLEMENTED / TESTED / PRODUCT-OWNER REVIEWED
+MERGED NO / DEPLOYED NO
 ```
 
-This could yield local `complete` with server `draft`.
-
-The implementation now establishes one authoritative end-to-end Finish path.
+Do not mutate/merge/deploy it during Module 01 G-0.
 
 ---
 
-# 4. Implemented invariant
-
-Current implementation on this branch:
+# 8. G-0 status matrix
 
 ```text
-Step-6 Finish
-→ acquire BaselineFinalizationCoordinator guard
-→ suppress ordinary Save→draft server synchronization
-→ click local Save so Steps/modules persist their current state
-→ flush setTimeout(0) module persistence
-→ mark local pilot_completion=complete
-→ call ClinicalRegistry.finalizeActiveEncounter()
-→ strict protected server sync with requested status=completed using the final local payload
-→ await returned server row
-→ show protected-completion success only after confirmed server response
-```
-
-If protected context is missing or synchronization fails:
-
-```text
-local data remain available
-protected completion is NOT claimed
-failure is shown explicitly
-ordinary draft fallback is suppressed during Finish
-retry remains possible
-```
-
-The server-side `resolve_encounter_status()` semantics were not changed.
-
----
-
-# 5. Implementation evidence
-
-Runtime/test implementation head before canonical closeout:
-
-```text
-a26e2a7415cff5b1409400ddfddce4ba01e6b6b7
-```
-
-Focused GitHub Actions evidence:
-
-```text
-workflow: Baseline finalization integrity
-run:      33323066983
-head:     a26e2a7415cff5b1409400ddfddce4ba01e6b6b7
-result:   SUCCESS
-```
-
-Passed steps:
-
-- JavaScript syntax checks for coordinator, registry, pilot completion, bootstrap and browser regression;
-- dynamic Node browser event-order/ownership regression;
-- FastAPI/SQLite server finalization lifecycle regression.
-
-The browser regression proves:
-
-- Save→draft sync is suppressed while authoritative Finish is active;
-- server finalization is called exactly once;
-- module state persisted through the local Save is present before server finalization;
-- `pilot_completion.status=complete` is included in the final server payload;
-- failed protected finalization cannot display false protected-completion success;
-- local data remain available after failure;
-- the coordinator guard is released after success or failure.
-
-The API lifecycle regression proves in one synthetic end-to-end server test:
-
-```text
-draft
-→ completed with final payload
-→ reload remains completed with same payload
-→ no-op Save requesting draft remains completed
-→ material payload edit + Save becomes amended
-```
-
-Historical `test_encounter_finalization.py` remains the pre-existing unit-level state-machine evidence; the new workflow's Python `unittest` discovery executed the new lifecycle test, while the dynamic Node regression covers the newly fixed browser seam.
-
----
-
-# 6. Files changed in bounded C1
-
-```text
-static/baseline-audit/finalization-coordinator.js   NEW
-static/baseline-audit/app.js
-static/baseline-audit/pilot-completion.js
-static/baseline-audit/patient-registry.js
-test_baseline_finish_browser.js                    NEW
-test_baseline_finalization_api.py                  NEW
-.github/workflows/baseline-finalization-tests.yml  NEW
-CURRENT_OPERATIONAL.md
-SLICE_PLAN_CURRENT.md
-```
-
-No clinical form/schema/KPI content was changed.
-
----
-
-# 7. Status matrix
-
-```text
-C1 DESIGNED                            YES
-C1 IMPLEMENTED                         YES
-C1 TESTED                              YES
-C1 MERGED                              NO
-C1 DEPLOYED                            NO
-C1 PRODUCTION-SMOKE-VERIFIED           NO
-C1 CODE-LEVEL PILOT BLOCKER CLOSED     YES
-PRODUCTION PILOT READINESS             BLOCKED PENDING MERGE/DEPLOY + SMOKE
-5-CASE REAL PILOT                      NOT STARTED
-MODULE 01 CLOSED                       NO
+PRODUCT PURPOSE RECONCILED                    YES
+METHODOLOGY REPLAN                            YES
+AGENTS UPDATED                                YES
+TODO REBASED                                  YES
+CLINICAL_EXCELLENCE_PLAN v3                   YES
+SLICE PLAN G-0                                YES
+MACHINE DYNAMIC-GUIDANCE CONTRACT             NOT YET
+EXACT DESIGN-COMPLETENESS REVIEW              NOT YET
+G-0 DESIGN-COMPLETE                           NO
+RUNTIME MUTATION                              NO
+C1 MERGED                                     NO
+C1 DEPLOYED                                   NO
+REAL PILOT STARTED                            NO
 ```
 
 ---
 
-# 8. Exact next action
+# 9. Exact next authorized action
 
 ```text
-STOP runtime mutation.
-Obtain separate merge/deploy decision.
-If authorized:
-→ fresh main verification
-→ PR/review/merge using exact tested head ancestry
-→ allow normal Render auto-deploy from main
-→ production synthetic Finish smoke:
-   local completion + protected server completed + reload
-→ if PASS, mark C1 production-ready and release the real-pilot gate.
+1. add machine-readable dynamic-guidance contract/schema for:
+   EncounterContextV1
+   GuidanceRuleV1
+   VisitPlanV1
+   GuidedCardStateV1
+   GuidanceExposureV1
+   TherapyMilestoneProfileV1;
+2. verify the contract against actual current persisted/runtime paths;
+3. run exact G-0 design-completeness review;
+4. if PASS, update CURRENT_OPERATIONAL to G-0 DESIGN-COMPLETE and release canonical writer;
+5. STOP before runtime implementation.
 ```
 
-Do not start real pilot collection against production until the fix is merged/deployed and the authoritative Finish path is smoke-verified there.
+A separate product-owner/runtime authorization is required before creating G-1 runtime code. C1 merge/deploy also remains a separate release decision.
