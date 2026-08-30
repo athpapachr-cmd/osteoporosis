@@ -16,6 +16,11 @@ routes:
             frozen_shoulder_scope: primary_frozen_shoulder
         evidence_profile_ids: [rep_adhesive_capsulitis_v1]
         authority_mode: reviewed_primary_frozen_shoulder_single_phase_evidence_bounded
+        context_referral_phrases_el:
+          frozen_shoulder_irritability:
+            high: Κλινική ερεθιστικότητα: υψηλή
+            moderate: Κλινική ερεθιστικότητα: μέτρια
+            low: Κλινική ερεθιστικότητα: χαμηλή
         short_flow_el:
           - >-
             Σε κλινικά τεκμηριωμένο πρωτοπαθή παγωμένο ώμο προτείνεται εξατομικευμένη αποκατάσταση κινητικότητας
