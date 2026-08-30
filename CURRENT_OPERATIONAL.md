@@ -1,123 +1,171 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** MODULE 01 — G-1 WHY-NOW SMOKE CORRECTION IMPLEMENTED / TESTED / RELEASE GATE.
+> **STATUS:** MODULE 01 — G-1 WHY-NOW CORRECTION MERGED / DEPLOYED / PRODUCT-OWNER RE-SMOKE PENDING.
 > **Updated:** 2026-08-30 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Fresh verified remote `main` at correction start:** `21c188fad41743a8a3b82b0954e471d2c07bdcc8`.
-> **Runtime release ancestry:** PR #64 → `a6ba9ef1719a18a48a1756bf08bbd157d448a63e`.
-> **Correction branch:** `fix/module01-g1-why-now-production-smoke-2026-08-30`.
-> **Tested runtime/CI head before this closeout commit:** `b78f8856b3e101bef3e048f0bd4a3999e3f09f32`.
-> **ACTIVE CANONICAL WRITER/LOCK:** correction branch — release closeout only.
-> **ACTIVE RUNTIME WRITER/LOCK:** NONE — bounded implementation complete.
+> **Fresh verified remote `main` after correction release:** `d9423f4dcf6bebd056e83407132c6ce3e25d2280`.
+> **Correction PR:** `#66` — SQUASH-MERGED.
+> **Correction merge SHA:** `d9423f4dcf6bebd056e83407132c6ce3e25d2280`.
+> **Render deploy:** `dep-daa93ljncjis739ssef0` — LIVE at exact correction merge SHA.
+> **ACTIVE CANONICAL WRITER/LOCK:** NONE — release closeout complete.
+> **ACTIVE RUNTIME WRITER/LOCK:** NONE.
 
 ---
 
-# 1. Production smoke finding
+# 1. Production-smoke finding
 
-Authenticated production smoke by the product owner confirmed that G-1 loaded and the existing `Τύπος σημερινής επίσκεψης` control was usable, but the explicit WHY-NOW explanation was not discoverable.
-
-Root cause inspection showed:
+The product owner performed the authenticated production smoke and reported that the smoke worked except for one concrete G-1 presentation problem:
 
 ```text
-core VisitPlan item.why_now                 PRESENT
-explicit `Γιατί τώρα:` inside destination cards PRESENT
-summary `Σημερινή ροή` reason text          PRESENT but unlabeled/small
-clinician-visible WHY-NOW discoverability   INSUFFICIENT
+existing `Τύπος σημερινής επίσκεψης` completed
+→ G-1 flow available
+→ explicit WHY NOW not discoverable
 ```
 
-This was a presentation defect, not a guidance-rule failure.
+Code inspection showed that the deterministic `item.why_now` already existed and the explicit `Γιατί τώρα:` label already appeared inside destination cards, but the top `Σημερινή ροή` summary displayed the reason only as unlabeled secondary text.
+
+Classification:
+
+```text
+core guidance calculation                 functional / already tested
+visit-type input                          functional in production smoke
+WHY-NOW summary discoverability           production defect
+clinical guidance rules                   unchanged
+```
 
 ---
 
-# 2. Bounded correction
+# 2. Bounded correction released
 
-Changed only the summary presentation so every surfaced item now renders:
+PR #66 changed only the summary presentation so every surfaced `Σημερινή ροή` item now renders:
 
 ```text
 Γιατί τώρα: <existing deterministic item.why_now>
 ```
 
-No guidance reason, priority, clinical rule, treatment logic, taxonomy, storage or schema changed.
+No guidance reason, priority, treatment rule, clinical recommendation, taxonomy, persistence, database/schema or KPI semantics changed.
 
-A focused regression was added to prevent loss of the explicit summary label while preserving the existing in-card label.
+A focused regression was added to require the explicit summary `Γιατί τώρα:` label while preserving the existing in-card label.
 
 ---
 
-# 3. Exact test evidence
+# 3. Exact test / release evidence
 
-Tested head:
-
-```text
-b78f8856b3e101bef3e048f0bd4a3999e3f09f32
-```
-
-GitHub Actions:
+Final PR head:
 
 ```text
-workflow: G1 progressive guidance foundation
-run:      33333473030
-job:      g1-guidance
-result:   SUCCESS
+e2960454cfa1acf6fa4e2c0735a2e7ba3c267f48
 ```
 
-The workflow passed:
+Both exact-head G-1 runs completed successfully:
+
+```text
+33333512964  SUCCESS
+33333526378  SUCCESS
+```
+
+The workflow includes:
 
 - JavaScript syntax checks;
-- progressive guidance core regressions;
+- progressive-guidance core regressions;
 - wiring/ownership regression;
 - R1/R2 UI-state regressions;
-- new explicit WHY-NOW presentation regression;
+- explicit WHY-NOW presentation regression;
 - inherited authoritative Finish browser regression;
 - inherited server finalization lifecycle regression.
 
----
-
-# 4. Exact scope review
-
-Compare from `main` `21c188fad41743a8a3b82b0954e471d2c07bdcc8` to tested head changed only:
+Exact PR file scope:
 
 ```text
-static/baseline-audit/progressive-guidance-ui.js      1 line changed
-test_progressive_guidance_why_now_ui.js               new focused regression
-.github/workflows/g1-progressive-guidance-tests.yml   run new regression
+static/baseline-audit/progressive-guidance-ui.js      1 runtime line changed
+test_progressive_guidance_why_now_ui.js               focused regression
+.github/workflows/g1-progressive-guidance-tests.yml   executes regression
 CURRENT_OPERATIONAL.md                                 operational state only
 ```
 
-No clinical-content or unrelated parked scope is included.
+PR #66 was squash-merged to:
+
+```text
+d9423f4dcf6bebd056e83407132c6ce3e25d2280
+```
+
+Fresh verification confirmed that exact SHA as `main` immediately after merge.
+
+Render auto-deploy occurred normally without manual duplication:
+
+```text
+deploy:  dep-daa93ljncjis739ssef0
+commit:  d9423f4dcf6bebd056e83407132c6ce3e25d2280
+trigger: new_commit
+status:  LIVE
+```
 
 ---
 
-# 5. Release authority / next action
+# 4. Production-smoke boundary
 
-The product owner instructed continuation of the production smoke and supplied the defect report. The bounded smoke-fix acceptance path already authorizes release after PASS.
+The original authenticated smoke was reported by the product owner as working apart from WHY-NOW discoverability.
 
-Exact next action:
+Therefore the only correction-specific re-smoke still required is:
 
 ```text
-fresh main verification
-→ PR
-→ exact PR-head CI
-→ exact scope/mergeability review
-→ squash merge
-→ normal Render auto-deploy
-→ product-owner production re-smoke of `Σημερινή ροή` / `Γιατί τώρα:`
+select/use the existing `Τύπος σημερινής επίσκεψης`
+→ inspect the top `Σημερινή ροή`
+→ confirm surfaced items literally display `Γιατί τώρα: ...`
 ```
 
-Do not mark full `PRODUCTION-SMOKE-VERIFIED` until the corrected WHY-NOW path is directly confirmed in production.
+Until that direct production confirmation is received:
+
+```text
+C1/G-1 MERGED                         YES
+C1/G-1 DEPLOYED                       YES
+WHY-NOW DEFECT FIX MERGED             YES
+WHY-NOW DEFECT FIX DEPLOYED           YES
+WHY-NOW PRODUCTION RE-SMOKE           PENDING
+PRODUCTION-SMOKE-VERIFIED             NO
+```
+
+Do not repeat already successful smoke steps unless the product owner reports another defect.
 
 ---
 
-# 6. Status matrix
+# 5. Current status matrix
 
 ```text
-C1 MERGED / DEPLOYED                       YES
-G-1 MERGED / DEPLOYED                      YES
-WHY-NOW CORE GENERATION                    YES
-WHY-NOW SUMMARY CORRECTION IMPLEMENTED     YES
-WHY-NOW SUMMARY CORRECTION TESTED          YES
-CORRECTION MERGED / DEPLOYED               NO
-PRODUCTION-SMOKE-VERIFIED                  NO
-PR-1 / PR-2                                NOT IMPLEMENTED
-REAL 5-CASE PILOT                          NOT STARTED
-MODULE 01 CLOSED                           NO
+C1 IMPLEMENTED / TESTED / MERGED / DEPLOYED        YES
+G-1 IMPLEMENTED / TESTED / MERGED / DEPLOYED       YES
+G1-R1 / G1-R2                                      CLOSED / TESTED / DEPLOYED
+WHY-NOW SUMMARY DISCOVERABILITY FIX                 MERGED / DEPLOYED
+WHY-NOW PRODUCTION RE-SMOKE                         PENDING
+PRODUCTION-SMOKE-VERIFIED                           NO
+PR-1 HEIDI                                          NOT IMPLEMENTED
+PR-2 REVIEW/POPULATION                              NOT IMPLEMENTED
+REAL 5-CASE SYSTEM-ASSISTED PILOT                   NOT STARTED
+30-CASE SYSTEM-ASSISTED BASELINE                    NOT STARTED
+MODULE 01 CLOSED                                    NO
 ```
+
+---
+
+# 6. Exact next action
+
+STOP runtime mutation.
+
+Product owner re-smokes only the corrected production path:
+
+```text
+`Τύπος σημερινής επίσκεψης`
+→ `Σημερινή ροή`
+→ visible literal `Γιατί τώρα: ...`
+```
+
+If PASS:
+
+```text
+record PRODUCTION-SMOKE-VERIFIED
+→ append final correction/smoke evidence to changelog
+→ release the G-1 production-readiness gate
+→ fresh-bootstrap before the next authorized Module-01 slice
+```
+
+If FAIL, reopen only the exact observed presentation seam. PR-1/PR-2, new medication-specific milestone content, physiotherapy/RF mutation and real pilot collection are not authorized by this closeout alone.
