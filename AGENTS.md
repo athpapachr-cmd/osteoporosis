@@ -182,11 +182,16 @@ At the end of a substantial session, `CURRENT_OPERATIONAL.md` must be sufficient
 
 ---
 
-# 5. Product purpose
+# 5. Product purpose — improve the visit and improve the clinician
 
-This repository is not only an Osteoporosis Cockpit. It is the proving ground for a reusable **Personal Clinical Excellence System** whose purpose is to improve the clinician's real practice over time.
+The repository is the proving ground for a reusable **Personal Clinical Excellence System**.
 
-Canonical learning-health loop:
+The primary product outcome is not data entry, documentation completeness or audit-score production. The system exists to improve:
+
+1. the **current clinical encounter** while it is happening; and
+2. the **clinician's future practice** by reviewing what was said, reasoned and decided and whether it was appropriate.
+
+The canonical learning-health loop remains:
 
 ```text
 STANDARD
@@ -210,18 +215,37 @@ Every substantial design decision asks:
 
 ---
 
-# 6. Audit and Practice Review are different instruments
+# 6. Clinical Guidance, Audit and Practice Review are different instruments
 
-The system must not collapse measurement and coaching into one black box.
+The system must not collapse live guidance, measurement and coaching into one black box.
 
-### Audit
+## 6.1 Clinical Guidance
+
+Answers primarily:
+
+> Given this patient's longitudinal state and today's purpose, what should be surfaced, checked, resolved or closed now?
+
+Clinical Guidance may:
+
+- order the visible consultation flow;
+- surface due, milestone, event-triggered or unresolved items;
+- show why an item is relevant now;
+- use prior structured data to avoid repeated questioning;
+- identify unresolved prerequisites before downstream decisions;
+- remain agent-/treatment-/archetype-aware.
+
+Clinical Guidance must not silently choose the clinician's treatment decision or present an unsupported rule as guideline truth.
+
+## 6.2 Audit
+
 Answers primarily:
 
 > Did the applicable clinical process occur according to the defined metric/standard?
 
-Audit should be deterministic where possible, denominator-aware, transparent and neutral during baseline collection.
+Audit should be deterministic where possible, denominator-aware, transparent and suitable for longitudinal measurement.
 
-### Clinical Practice Review
+## 6.3 Clinical Practice Review
+
 Answers primarily:
 
 > How well was the consultation conducted, reasoned, communicated and closed, and what should change next time?
@@ -232,11 +256,19 @@ Practice Review may use AI-assisted interpretation but every important observati
 - linked standard/evidence when applicable;
 - confidence;
 - clinical importance;
-- whether it is a strength, gap, safety concern or uncertainty;
+- strength/gap/safety/uncertainty direction;
 - proposed action;
 - clinician accept/modify/dismiss state.
 
 Practice Review never silently rewrites clinical truth or substitutes for clinician judgment.
+
+Hard distinction:
+
+```text
+LIVE CLINICAL GUIDANCE
+!= KPI/PERFORMANCE FEEDBACK
+!= POST-VISIT PRACTICE REVIEW
+```
 
 ---
 
@@ -254,7 +286,7 @@ Typical response:
 ```text
 knowledge → targeted reading/testing/spaced repetition
 reasoning → cases/challenge/red-team/deliberate practice
-execution → workflow/checklist/task redesign
+execution → workflow/interface/task redesign
 communication/system → teach-back/template/handoff/process redesign
 ```
 
@@ -290,26 +322,81 @@ No stable-looking composite Clinical Excellence score before an adequate baselin
 
 ---
 
-# 10. Baseline integrity and intervention exposure
+# 10. Revised baseline integrity — pilot the real product, not a known-unusable manual form
 
-The approved osteoporosis baseline sequence remains:
+The former sequence that placed a five-case manual usability pilot before transcript-assisted capture and adaptive visit guidance is superseded.
+
+The approved sequence is now:
 
 ```text
-5-case usability/capture pilot
+close/merge/deploy/smoke critical finalization integrity
+→ implement minimum dynamic guided-visit engine
+→ implement transcript candidate extraction
+→ implement inline clinician review / provisional population
+→ run 5 consecutive eligible real system-assisted pilot encounters
 → one deliberate refinement
-→ freeze Baseline Form + KPI applicability/calculation contract
-→ 30 consecutive unique scored baseline cases
+→ freeze guided-visit + capture + KPI/applicability contracts
+→ 30 consecutive unique scored system-assisted baseline encounters
 → baseline lock
-→ systematic improvement interventions + re-audit
+→ systematic Practice Review / improvement interventions
+→ re-measure
 ```
 
-During the scored baseline, no live KPI coaching/red-green feedback or routine Practice Review intervention should alter behavior. Safety-critical alerts remain an exception.
+The five-case pilot tests the **workflow intended for actual use**, not a deliberately manual predecessor already known to impose unacceptable duplicate-entry burden.
 
-Clinical Practice Review infrastructure may be developed and validated in **shadow mode** before baseline lock. If the product owner chooses to expose systematic coaching before the scored baseline, that is a methodological change and must be explicitly recorded; the resulting cohort must not be mislabeled as an untouched pre-intervention baseline.
+During the 30-case scored baseline:
+
+- the stabilized **Clinical Guidance** layer remains active because it is part of the product being evaluated;
+- routine KPI score feedback, red/green performance coaching and routine clinician-facing Practice Review remain hidden by default;
+- safety-critical alerts remain allowed;
+- guidance exposure must be traceable where technically feasible;
+- the cohort must be described as a **system-assisted baseline**, not an untouched/unassisted clinician baseline.
+
+The architecture should preserve, where feasible, whether clinically relevant content was already present before a system cue versus entered/resolved after a cue. This enables later measurement of prompt dependence and internalization rather than forcing the clinician to work without useful support merely to preserve a theoretical unassisted baseline.
+
+Any later methodological change must be recorded explicitly before relabelling a cohort.
 
 ---
 
-# 11. AI/transcript governance
+# 11. Dynamic encounter principle — archetype plus longitudinal triggers, not one checklist per visit number
+
+Osteoporosis visits are not interchangeable. The visible workflow must be derived from multiple context layers rather than from one static form.
+
+At minimum the visit-plan engine may use:
+
+```text
+encounter archetype / visit intent
+patient relationship / prior encounter state
+active treatment agent and treatment episode
+actual administration history
+elapsed treatment exposure
+next-due status / delay state
+monitoring due state
+new fracture / adverse event / other safety trigger
+unresolved prior tasks or prerequisites
+patient-specific modifiers
+```
+
+Do not create a separate hard-coded form for every ordinal treatment visit.
+
+For repeated therapy such as denosumab, ordinal administration count may be an input, but clinical behavior should be driven by versioned evidence/clinic-policy **milestone rules** using actual administration history and elapsed exposure. Exact visit-number rules must not be invented merely because examples such as early doses, periodic reviews or a long-duration review were discussed.
+
+Priority layering:
+
+```text
+critical safety/event override
+→ unresolved prior critical item
+→ treatment/agent-specific requirement
+→ evidence-defined milestone/due item
+→ archetype base flow
+→ contextual/optional item
+```
+
+A higher-priority trigger must never be hidden by a lower-priority default.
+
+---
+
+# 12. AI/transcript governance
 
 Heidi or other transcripts are supplementary sources, not unreviewed clinical truth.
 
@@ -318,7 +405,8 @@ For transcript-assisted capture/review:
 ```text
 raw transcript
 → structured candidate extraction
-→ clinician review/edit/accept/reject
+→ provisional in-place population / review state
+→ clinician edit/accept/reject
 → accepted structured data
 ```
 
@@ -330,20 +418,28 @@ Default rules:
 - preserve negation, temporality, speaker/source and uncertainty;
 - distinguish patient statement, objective result, clinician interpretation, option discussed, recommendation, preference, final decision and follow-up task;
 - accepted data retains provenance such as `source=heidi_transcript` and clinician-review state;
-- AI suggestions require clinician review before becoming authoritative patient data.
+- AI suggestions require clinician review before becoming authoritative patient data;
+- a blank field after extraction means "not captured / not established", not an inferred negative;
+- existing authoritative patient data must not be silently overwritten by transcript extraction;
+- conflict between transcript candidates and authoritative longitudinal data must surface for clinician resolution.
+
+The preferred UX is not a second disconnected candidate list that recreates data-entry burden. Candidates should be able to appear **in the clinical cards they belong to** as clearly provisional values until reviewed.
 
 ---
 
-# 12. Evidence governance
+# 13. Evidence governance
 
-Clinical standards/rules must be explicit, versioned and non-hybrid. Important rules should eventually carry:
+Clinical standards, guidance rules and milestone rules must be explicit, versioned and non-hybrid.
+
+Important rules should eventually carry:
 
 ```text
 rule_id
 module/domain
-framework/guideline
+framework/guideline or approved clinic policy
 version/year
 recommendation/criterion
+applicability / trigger
 strength/certainty when available
 reviewed_on
 status
@@ -353,9 +449,11 @@ If frameworks differ, show them separately rather than manufacturing a silent hy
 
 New evidence should be classified as confirming, interesting/no change, potentially practice-changing, practice-changing or conflicting/insufficient before changing workflow or standards.
 
+No exact therapy milestone, monitoring cadence or visit-number behavior becomes canonical clinical guidance without reviewed evidence/policy provenance.
+
 ---
 
-# 13. Patient Voice
+# 14. Patient Voice
 
 Patient feedback is a learning input, not merely satisfaction scoring. It should be capable of generating Signals and later re-measurement around understanding, plan/rationale, questions/preferences and communication failures.
 
@@ -363,7 +461,7 @@ Clinician impression of understanding remains distinct from the patient's own re
 
 ---
 
-# 14. Privacy and production safety
+# 15. Privacy and production safety
 
 The repository is public.
 
@@ -375,7 +473,7 @@ Do not claim whole-service privacy/GDPR compliance merely because one clinical r
 
 ---
 
-# 15. Repository/release discipline
+# 16. Repository/release discipline
 
 Prefer feature branch → PR → focused review/evidence → squash merge.
 
@@ -387,17 +485,13 @@ Public fixtures/tests must be synthetic or fully anonymized.
 
 ---
 
-# 16. Current product boundary
+# 17. Current product boundary and stop rule
 
 The legacy `index.html`/legacy Cockpit remains historical point-of-care material, not the final Clinical Excellence Home.
 
-The Baseline Audit/patient-centric clinical layer is the current production proving ground. Calendar/Setmore/Zadarma integration can be paused independently and must not block Clinical Practice Review, Core Engine, standards, audit or learning work.
+The patient-centric clinical layer is the current production proving ground. Calendar/Setmore/Zadarma integration can be paused independently and must not block Clinical Guidance, transcript-assisted capture, Practice Review, Core Engine, standards, audit or learning work.
 
 Patient leaflets/posters remain downstream unless the product owner explicitly changes priority.
-
----
-
-# 17. Stop rule
 
 The system exists to improve real clinical practice, not to maximize documentation volume or engineering polish.
 
