@@ -42,6 +42,89 @@ Suggested projection scopes:
 
 A datum can belong to more than one scope, but no projection should be automatic merely because the datum exists.
 
+## Clinical card ↔ physiotherapy referral linkage
+
+The future condition card and the physiotherapy referral utility should be connected through the same canonical structured condition data rather than behaving as two independent forms.
+
+Default direction:
+
+```text
+CLINICAL CONDITION CARD
+        ↓
+reviewed structured condition data
+        ↓
+REFERRAL PROJECTION / PREFILL
+        ↓
+clinician review / edit / omit
+        ↓
+generated referral text
+```
+
+The condition card is the primary owner of reusable patient-specific clinical facts. The referral is a document-specific view.
+
+### Automatic prefill rule
+
+When the clinician opens a physiotherapy referral from an existing condition card, the referral draft may be pre-populated automatically with fields that are both:
+
+1. present and clinician-reviewed in the condition record; and
+2. explicitly mapped to `referral_context` or `referral_core` for the exact route / subtype / context.
+
+Typical examples include:
+
+- condition / route and laterality;
+- relevant current findings;
+- relevant functional impairments;
+- clinician-entered rehabilitation-relevant irritability;
+- explicit restrictions or safety context;
+- exact subtype or management context where needed to resolve the correct evidence branch.
+
+Automatic prefill does **not** mean automatic inclusion in the final referral prose. The referral projection remains governed by route/subtype/context-specific document policy.
+
+### Provenance and review
+
+Auto-populated referral fields should preserve provenance such as:
+
+```text
+source = clinical_condition_card
+source_condition_id = ...
+source_encounter_id = ...
+clinician_reviewed = true
+```
+
+The UI should make imported values visibly distinguishable from newly entered referral-only values where useful. The clinician must be able to remove or edit a projected value before generation without silently altering the underlying condition record.
+
+### No silent reverse write
+
+Referral editing must not silently overwrite the clinical condition card.
+
+If future workflow allows a useful referral-only observation to be promoted back into the condition record, that must be an explicit reviewed action such as:
+
+```text
+Save to clinical card
+```
+
+with clear destination and provenance. Document composition must never become an implicit clinical-data mutation path.
+
+### Synchronization behavior
+
+If the clinical card changes after a referral draft has already been created, the system should not silently rewrite the existing referral draft. It may instead offer a visible refresh/reconcile action showing what changed.
+
+This preserves document intent and avoids a previously reviewed referral changing unexpectedly because another clinical field was edited later.
+
+### Deterministic mapping rule
+
+Clinical-card-to-referral mapping must resolve through the exact condition hierarchy:
+
+```text
+profile
+ -> route / condition
+ -> subtype
+ -> context / management branch
+ -> projection scope
+```
+
+There must be no generic neighboring-route borrowing. A field that is relevant to shoulder instability does not become visible or auto-projected into frozen shoulder merely because both belong to the shoulder profile.
+
 ## Example: primary frozen shoulder
 
 The current frozen-shoulder evidence work should later seed a dedicated clinical assessment card rather than be recreated.
@@ -78,7 +161,38 @@ These measurements may support longitudinal reassessment but are not mandatory r
 
 Treatment-history data belong to the clinician's condition record. They are not automatically rendered into the physiotherapy referral; a future reviewed projection may expose them only when they materially affect the handoff.
 
-### Referral projection
+### Frozen-shoulder prefill example
+
+If a future primary-frozen-shoulder card contains:
+
+```text
+laterality = right
+primary_frozen_shoulder = clinician established
+pain = present
+active_ROM_restricted = present
+passive_ROM_restricted = present
+painful_ROM = present
+overhead_activity = limited
+driving = limited
+irritability = high
+prior_intraarticular_injection = yes
+```
+
+then opening the physiotherapy referral may automatically prefill:
+
+```text
+right shoulder
+primary frozen shoulder context
+pain / relevant ROM restriction
+relevant functional limitations
+high irritability
+```
+
+but should **not** automatically project `prior_intraarticular_injection = yes` into referral prose because that datum belongs to treatment history unless an exact future handoff rule establishes material relevance.
+
+The rich rehabilitation plan is then generated from the condition/subtype/context evidence authority rather than from manually selected treatment checkboxes.
+
+## Referral projection
 The physiotherapy referral should receive only clinically useful handoff information:
 - diagnosis/presentation and laterality
 - actual relevant findings
