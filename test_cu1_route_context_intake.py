@@ -4,7 +4,7 @@ import unittest
 from pathlib import Path
 
 from clinic_utilities.physio_referral_formatter_el_v2 import CU1GreekReferralFormatter
-from clinic_utilities.physio_referral_runtime import CONTRACT_VERSION, CU1ContractBundle
+from clinic_utilities.physio_referral_runtime import CONTRACT_VERSION, CU1ContractBundle, CU1ContractError
 from clinic_utilities.physio_route_context import CU1RouteContextEngine, route_context_contract_payload
 
 
@@ -125,18 +125,18 @@ class CU1RouteContextIntakeTests(unittest.TestCase):
         self.assertTrue(any(error.error_id == "invalid_context_enum_value" for error in result.validation_errors))
         self.assertTrue(result.formatter_blocked)
 
-    def test_c5_context_is_accepted_but_omission_does_not_block_legacy_referral(self):
+    def test_c5_context_omission_blocks_generation_instead_of_legacy_fallback(self):
         empty = self.engine.validate(cervical_draft("post_traumatic_neck_pain"))
-        self.assertFalse(empty.validation_errors)
-        self.assertFalse(empty.formatter_blocked)
-        self.assertFalse(
-            self.formatter.rich_renderer.supports(
-                profile_id="cervical",
-                route_id="post_traumatic_neck_pain",
-                subtype_id=None,
-                context={"__wording_mode": "presentation"},
-            )
+        self.assertTrue(any(error.error_id == "rich_referral_context_required" for error in empty.validation_errors))
+        self.assertTrue(empty.formatter_blocked)
+        gate_error = next(error for error in empty.validation_errors if error.error_id == "rich_referral_context_required")
+        self.assertEqual(gate_error.metadata.get("reason"), "no_applicable_reviewed_rich_variant")
+        self.assertIn(
+            "primary_problem.context.trauma_mechanism_context",
+            gate_error.metadata.get("required_context_paths", []),
         )
+        with self.assertRaises(CU1ContractError):
+            self.formatter.format(empty.normalized_draft, "short")
 
         explicit = cervical_draft(
             "post_traumatic_neck_pain",
@@ -150,6 +150,7 @@ class CU1RouteContextIntakeTests(unittest.TestCase):
         )
         explicit_result = self.engine.validate(explicit)
         self.assertFalse(explicit_result.validation_errors)
+        self.assertFalse(explicit_result.formatter_blocked)
         self.assertEqual(
             explicit_result.normalized_draft["primary_problem"]["context"]["temporal_phase"],
             "recent_or_acute_within_12_weeks",
