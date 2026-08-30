@@ -1,21 +1,21 @@
-# SLICE_PLAN_CURRENT.md — CU-1 rich referral clinical-context composition v1.20
+# SLICE_PLAN_CURRENT.md — CU-1 rich referral clinical-context composition v1.21
 
-> **STATUS:** IMPLEMENTED / TESTED — PRODUCT-OWNER REVIEW GATE.
+> **STATUS:** IMPLEMENTED / TESTED / PRODUCT-OWNER REVIEWED — SLICE CLOSED ON FEATURE BRANCH.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Parent product:** Personal Clinical Excellence System.
 > **Area:** Clinic Utilities / Clinical Operations.
 > **Slice:** CU-1 Physiotherapy Referral — shared clinical-context composer for rich referrals.
 > **Authoritative remote main:** `08ecd3ab33e98d567c47042a8a1de482df6952b9`.
 > **Writer/runtime writer:** `feat/cu1-rich-referral-global-evidence-2026-08-29`.
-> **Product-owner authorization used:** update canonicals + implement the shared composition correction.
+> **Product-owner authorization used:** bounded wording correction + lock reviewed Detailed referral.
 > **Implementation commit:** `38f7977811d50636a1585225c74306bef496601c`.
-> **Accepted test head:** `9b46623b2c991df631698bf018749550dd843f87`.
-> **CI:** `CU-1 focused tests` run `33306399908` / #394 — 127/127 Python tests PASS; compile PASS; browser-JS syntax PASS.
+> **Accepted product-review correction head:** `e0f690818c63c146a08a5e508a8123b9059b6b33`.
+> **CI:** `CU-1 focused tests` run `33311066018` / #398 — compile PASS; browser-JS syntax PASS; Python focused suite PASS.
 > **Merge/deploy/preview:** NOT AUTHORIZED / NOT DONE.
 
 ---
 
-# 1. Product objective — CLOSED AT IMPLEMENTATION/TEST LEVEL
+# 1. Product objective — CLOSED AT IMPLEMENTATION/TEST/PRODUCT-REVIEW LEVEL
 
 The checklist-like opening of rich physiotherapy referrals has been replaced by deterministic clinical composition while preserving the existing evidence/rehabilitation architecture.
 
@@ -74,7 +74,7 @@ Semantics:
 - `consume` declares selected IDs represented by the fused phrase;
 - `suppress_if_matched` declares broader selected facts explicitly subsumed by that exact fusion;
 - higher-priority more-specific rules resolve before overlapping lower-priority rules;
-- residual selected facts remain rendered with existing clinician-facing labels rather than being silently dropped or guessed.
+- residual selected facts remain rendered with existing clinician-facing Greek labels rather than being silently dropped or guessed.
 
 Route-specific grammar is data. The frozen route provides the reviewed formal-diagnosis problem phrase:
 
@@ -86,40 +86,31 @@ The shared Python composer does not know the frozen route ID.
 
 ---
 
-# 4. Implemented initial global fusion rules
+# 4. Product-owner reviewed Detailed wording
 
-Finding composition:
+The product owner reviewed the actual generated referral and locked the following corrections on 2026-08-30:
 
-```text
-active ROM restricted
-+ passive ROM restricted
-+ painful active ROM
-+ painful passive ROM
-(+ selected generic pain may be explicitly subsumed)
-→ επώδυνο και περιορισμένο ενεργητικό και παθητικό εύρος κίνησης
-```
+## 4.1 Physiotherapy direction
 
-and:
+The rendered Detailed referral must NOT include:
 
 ```text
-active ROM restricted
-+ passive ROM restricted
-→ περιορισμένο ενεργητικό και παθητικό εύρος κίνησης
+Η επιλογή και δοσολογία των επιμέρους ασκήσεων και τεχνικών εξατομικεύονται από τον φυσιοθεραπευτή σύμφωνα με την κλινική ανταπόκριση.
 ```
 
-Functional composition:
+Rationale: this is an unnecessary execution/disclaimer statement in the physician-to-physiotherapist referral. The underlying execution boundary may remain represented in route/evidence governance; it does not need to be rendered as referral prose.
+
+## 4.2 Reassessment / escalation handoff
+
+The Detailed `ΕΠΑΝΕΚΤΙΜΗΣΗ` section is locked to:
 
 ```text
-overhead activity
-+ lifting/carrying
-+ driving
-→ δυσκολία σε δραστηριότητες πάνω από το ύψος του ώμου,
-  στην άρση ή μεταφορά φορτίου και στην οδήγηση
+Παρότι έχει προγραμματιστεί ιατρική επανεκτίμηση, συνιστάται επικοινωνία με τον θεράποντα ιατρό για νωρίτερη επανεκτίμηση σε περίπτωση επιδείνωσης, εμφάνισης νέων κλινικών ή τραυματικών στοιχείων ή άλλης ουσιώδους μεταβολής της κλινικής εικόνας.
 ```
 
-and the narrower overhead + lifting/carrying pair.
+This intentionally does NOT specify a universal routine medical follow-up interval. The purpose of the referral sentence is to tell the physiotherapist when earlier medical reassessment should be activated.
 
-These are canonical-fact rules, not frozen-only rules.
+The rendered Detailed section and route-level `reassessment_el` authority carry the same wording.
 
 ---
 
@@ -141,7 +132,7 @@ Regression coverage proves that partial ROM selection does not invent passive or
 
 ---
 
-# 6. Frozen-shoulder output contract — TESTED
+# 6. Frozen-shoulder output contract — TESTED / REVIEWED
 
 Rich generation remains limited to clinician-established primary frozen shoulder. Missing/unresolved/secondary scope remains blocked with `formatter_blocked=true` and `text=null`.
 
@@ -154,13 +145,13 @@ Short and Detailed share the same composed clinical truth. Detailed retains:
 ΕΠΑΝΕΚΤΙΜΗΣΗ
 ```
 
-No artificial `ΣΤΑΔΙΟ 1` was reintroduced. Existing accepted frozen-shoulder rehabilitation wording remains route-owned and unchanged apart from the clinical-context grammar hook.
+No artificial `ΣΤΑΔΙΟ 1` was reintroduced.
 
 ---
 
 # 7. Acceptance evidence
 
-The dedicated clinical-composition tests lock:
+The dedicated clinical-composition and frozen-shoulder tests lock:
 
 ```text
 A. exact natural Short output
@@ -173,15 +164,20 @@ G. priority resolution for overlapping function rules
 H. unresolved irritability omission
 I. no frozen route branch in composer source
 J. existing context-gated fail-closed behavior
+K. removed physiotherapist dosage/selection sentence stays absent from Detailed
+L. earlier-reassessment communication sentence stays present in Detailed
 ```
 
-The full focused suite passed at exact head `9b46623b2c991df631698bf018749550dd843f87`:
+Accepted corrected head:
 
 ```text
-127 tests
-0 failures
-compile PASS
-browser JavaScript syntax PASS
+head: e0f690818c63c146a08a5e508a8123b9059b6b33
+workflow: CU-1 focused tests
+run id: 33311066018
+run number: 398
+compile: PASS
+browser JavaScript syntax: PASS
+Python focused suite: PASS
 ```
 
 ---
@@ -199,17 +195,20 @@ Still out of scope / not authorized:
 - deployment;
 - CU-2 / PR-1.
 
+A future delivery-model decision may choose disease-centered slices that pair clinical assessment and physiotherapy projection from one reviewed condition model. That is a sequencing/product decision, not authorization to alter the current runtime in this slice.
+
 ---
 
 # 9. Completion boundary
 
 ```text
-DESIGNED       YES
-IMPLEMENTED    YES
-TESTED         YES
-MERGED         NO
-DEPLOYED       NO
-PREVIEWED      NO
+DESIGNED                YES
+IMPLEMENTED             YES
+TESTED                  YES
+PRODUCT-OWNER REVIEWED  YES
+MERGED                  NO
+DEPLOYED                NO
+PREVIEWED               NO
 ```
 
-The implementation/test slice is complete. The next gate is product-owner review of the actual generated Short and Detailed referral text. Any further code mutation requires a specific product defect or an explicit next authorization.
+This slice is closed on the feature branch. Merge/deploy remain separate explicit decisions.
