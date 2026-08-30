@@ -201,7 +201,8 @@ class CU1PrimaryFrozenShoulderRichTests(unittest.TestCase):
         self.assertIn("Ασθενής με συμφυτική θυλακίτιδα / παγωμένο ώμο δεξιά", short)
         self.assertIn("Παρακαλώ για εξατομικευμένη φυσιοθεραπευτική αποκατάσταση", short)
         self.assertIn("Παρακαλώ για εξατομικευμένο πρόγραμμα ενεργητικής αποκατάστασης και ασκήσεων κινητικότητας", detailed)
-        self.assertIn("Η επιλογή και δοσολογία των επιμέρους ασκήσεων και τεχνικών εξατομικεύονται από τον φυσιοθεραπευτή", detailed)
+        self.assertNotIn("Η επιλογή και δοσολογία των επιμέρους ασκήσεων και τεχνικών εξατομικεύονται από τον φυσιοθεραπευτή", detailed)
+        self.assertIn("συνιστάται επικοινωνία με τον θεράποντα ιατρό για νωρίτερη επανεκτίμηση", detailed)
         self.assertNotIn("ΣΤΑΔΙΟ ", detailed)
 
     def test_uncertain_irritability_is_not_rendered_in_referral(self):
