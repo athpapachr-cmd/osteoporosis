@@ -161,7 +161,7 @@ class CU1PrimaryFrozenShoulderRichTests(unittest.TestCase):
         detailed = self.formatter.format(result.normalized_draft, "detailed")
         for text in (short, detailed):
             folded = fold_el(text)
-            self.assertIn(fold_el("παγωμένος ώμος"), folded)
+            self.assertIn(fold_el("παγωμένο ώμο"), folded)
             self.assertIn("κινητικ", folded)
             self.assertIn(fold_el("εύρους κίνησης"), folded)
             self.assertLessEqual(len(text), self.renderer.max_chars)
