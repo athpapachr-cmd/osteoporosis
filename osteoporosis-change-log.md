@@ -75,7 +75,7 @@ COMMUNICATION / SYSTEM GAP
 
 This prevents the system from treating every poor result as an educational deficit.
 
-Positive repeated signals can mature into `SUSTAINED STRENGTH` and should trigger reinforcement, advanced challenge and appropriate external comparison rather than endless basic repetition.
+Positive repeated signals can mature into `SUSTAINED_STRENGTH` and should trigger reinforcement, advanced challenge and appropriate external comparison rather than endless basic repetition.
 
 ---
 
@@ -814,3 +814,127 @@ PILOT-VALIDATED = NO
 ```
 
 The positive usefulness observation is recorded as product-owner production feedback only. It is not a substitute for the planned real system-assisted pilot or evidence-from-use refinement. No PR-1/PR-2 runtime, new medication-specific milestone content, physiotherapy/RF mutation or real pilot collection was authorized by this smoke closeout.
+
+---
+
+## 2026-08-31 — G-2 evidence-backed osteoporosis guidance design completed
+
+The first evidence-backed clinical-content layer for the G-1 dynamic visit engine reached **DESIGN-COMPLETE** on branch `design/module01-g2-evidence-backed-guidance-2026-08-31`.
+
+The frozen design adds versioned machine contracts for:
+
+```text
+evidence registry
+→ guidance rules
+→ visit profiles
+→ therapy milestones
+→ normative activation manifest
+```
+
+with NOGG 2024 as the primary clinical framework, current EMA/EU regulatory safety sources where applicable, and explicitly separate supporting/context evidence including Endocrine Society, ECTS, ASBMR/BHOF and recent denosumab-discontinuation studies.
+
+Final clinical review corrected two important applicability details before runtime work:
+
+- the NOGG-specific `>7 months` denosumab rebound-risk escalation now requires at least **two reliable actual denosumab doses**, rather than firing after a first dose;
+- the NOGG FRAX evidence rule now requires explicit formal-risk indication and NOGG scope, rather than treating every initial visit as evidence that FRAX is mandatory.
+
+The design also freezes explicit non-rules:
+
+```text
+no automatic CTX 280/300 ng/L → second zoledronate command
+no generic Prolia 4th/8th/10th dose milestone
+no automatic treatment-failure label after fracture on treatment
+no automatic cardiology/vascular referral for romosozumab without approved clinic policy
+```
+
+Medication safety content is classified as checklist guidance when the existing data model cannot prove full/current safety clearance. Two denosumab-exit rules remain evidence-valid but blocked from first runtime activation: post-exit CTX follow-up until reliable denosumab-exit→zoledronate linkage exists, and the no-CTX fallback until CTX-monitoring availability is explicitly represented.
+
+The G-2 machine contract passed GitHub Actions at:
+
+```text
+run   33358433732
+head  6a40a4a87882a4531c69ce9dff5e0ecd46011d84
+result SUCCESS
+```
+
+This milestone means the evidence/content contract is reviewed and frozen for bounded implementation. It does **not** mean G-2 is implemented, runtime-tested, merged, deployed, production-smoke-verified or pilot-validated.
+
+---
+
+## 2026-08-31 — G-2 evidence-backed guidance runtime implemented and tested
+
+The bounded G-2 runtime slice was completed on branch:
+
+```text
+feat/module01-g2-evidence-guidance-runtime-2026-08-31
+```
+
+against the design-complete ancestry:
+
+```text
+0395e52ed75f835d49713504df3df4ce51183edf
+```
+
+The exact runtime head tested by the complete regression gate was:
+
+```text
+e0657ba5924db87b38a0e05514613fbadf45bcd9
+```
+
+The implementation adds a pure deterministic osteoporosis evidence-guidance layer over the existing G-1 mechanics rather than replacing G-1 with a monolithic treatment engine.
+
+Runtime flow is:
+
+```text
+G-1 protected longitudinal projection
++ live current encounter snapshot
+→ G-2 evidence context
+→ deterministic evidence contributions
+→ merge with existing G-1 Visit Plan
+→ existing Σημερινή ροή / Γιατί τώρα renderer
+```
+
+The implementation also extends the live snapshot so current Step 1–4 controls and repeated treatment/administration rows outrank stale browser cache, including explicit blank/empty state. Evidence-backed cards display concise provenance, while medication-specific safety rules classified as `checklist_only` are visibly labelled as requiring clinical confirmation rather than automatic clearance.
+
+Key tested clinical/runtime safeguards include:
+
+- NOGG-specific framework/scope guards;
+- explicit formal-risk indication before the NOGG FRAX evidence rule;
+- exact actual dates for denosumab timing and no counting of scheduled-only doses;
+- six-month denosumab evidence due as an ephemeral derived value;
+- specific >7-month NOGG rebound escalation only after at least two reliable actual doses;
+- fail-closed suppression of exact denosumab milestones when history conflicts;
+- no automatic treatment-failure/switch label after fracture on treatment;
+- no automatic selected-agent write during denosumab exit guidance;
+- exact-start requirements for oral-bisphosphonate 12–16-week / ≥5-year and zoledronate ≥3-year milestones;
+- R15/R16 remaining inactive;
+- no CTX 280/300 automatic retreatment command;
+- no generic Prolia 4th/8th/10th milestone.
+
+GitHub Actions evidence:
+
+```text
+workflow: G2 evidence guidance runtime
+run:      33403182604
+head:     e0657ba5924db87b38a0e05514613fbadf45bcd9
+result:   SUCCESS
+```
+
+The single workflow job passed the frozen G-2 contract validator, focused G-2 core/live-state/wiring regressions, all inherited G-1 core/wiring/UI-state/WHY-NOW regressions, the authoritative Finish browser regression and the server finalization lifecycle regression.
+
+Exact-head comparison found the branch ahead of `main` with merge base exactly `5182d250e244b2ed9e086138cb3b2edcdb967e25`, behind by 0, and no PR-1/PR-2 or parked physiotherapy/RF leakage.
+
+This milestone closes only the bounded implementation/test gate:
+
+```text
+IMPLEMENTED = YES
+TESTED = YES
+PRODUCT-OWNER RELEASE REVIEW = NO
+PR = NONE
+MERGED = NO
+DEPLOYED = NO
+PRODUCTION-SMOKE-VERIFIED = NO
+PILOT-VALIDATED = NO
+```
+
+The runtime/canonical writer lock was released after closeout. A separate fresh release-readiness review and explicit product-owner release authority are required before any PR/merge/deploy action.

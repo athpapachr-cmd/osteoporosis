@@ -125,6 +125,30 @@ article.card.guidance-surfaced .adaptive-use-domain {
   font-weight: 700;
 }
 
+.progressive-guidance-evidence {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.progressive-guidance-evidence span {
+  margin-top: 0;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.progressive-guidance-provenance {
+  color: #64748b;
+}
+
+.progressive-guidance-checklist-note {
+  font-weight: 700;
+  color: #7c4a03;
+}
+
 @media (max-width: 720px) {
   .progressive-guidance-list {
     grid-template-columns: 1fr;

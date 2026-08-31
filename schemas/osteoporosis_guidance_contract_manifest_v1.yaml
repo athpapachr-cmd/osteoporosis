@@ -1,0 +1,114 @@
+schema: osteoporosis_guidance_contract_manifest_v1
+status: design_candidate_g2
+module: osteoporosis
+reviewed_on: 2026-08-31
+purpose: Normative machine entrypoint for G-2 evidence-backed osteoporosis guidance content once design-complete.
+
+contracts:
+  evidence_registry:
+    path: schemas/osteoporosis_guidance_evidence_registry_v1.yaml
+    schema: osteoporosis_guidance_evidence_registry_v1
+  rules_registry:
+    path: schemas/osteoporosis_guidance_rules_v1.yaml
+    schema: osteoporosis_guidance_rules_v1
+  visit_profiles:
+    path: schemas/osteoporosis_guidance_profiles_v1.yaml
+    schema: osteoporosis_guidance_profiles_v1
+  therapy_milestones:
+    path: schemas/osteoporosis_therapy_milestones_v1.yaml
+    schema: osteoporosis_therapy_milestones_v1
+  parent_dynamic_contract:
+    path: schemas/dynamic_guided_visit_v1.yaml
+    schema: dynamic_guided_visit_v1
+
+normative_precedence:
+  - regulatory_safety_and_contraindication
+  - critical_event_or_time_critical_safety
+  - unresolved_prior_critical_item
+  - evidence_backed_agent_specific_rule
+  - evidence_backed_milestone_due_rule
+  - evidence_backed_event_or_context_rule
+  - g1_product_flow_archetype
+  - optional_contextual_content
+
+hard_invariants:
+  - clinical_guidance_is_not_automatic_treatment_selection
+  - evidence_source_and_strength_are_preserved
+  - framework_variation_is_not_silently_hybridized
+  - unknown_is_not_negative
+  - scheduled_or_planned_administration_is_not_actual_administration
+  - exact_date_math_requires_reliable_exact_actual_date
+  - evidence_derived_due_dates_are_ephemeral_and_do_not_overwrite_recorded_due_dates
+  - administration_count_and_elapsed_exposure_remain_distinct
+  - missing_doses_are_not_reconstructed_from_expected_cadence
+  - higher_priority_safety_event_rules_cannot_be_hidden_by_routine_profile
+  - treatment_choice_remains_clinician_owned
+  - product_flow_rules_are_not_mislabeled_as_guideline_recommendations
+  - checklist_guidance_does_not_equal_safety_clearance
+  - live_current_control_value_including_blank_outranks_persisted_browser_cache
+
+primary_framework:
+  id: NOGG_2024
+  scope_guard: postmenopausal_women_and_men_age_gte_50
+  declared_framework_behavior: >-
+    NOGG-specific thresholds or categories are applied only when the patient is in scope and
+    NOGG is the declared/appropriate framework. Other declared frameworks remain visible and
+    must not inherit NOGG thresholds silently.
+
+runtime_activation_boundary:
+  allowed_after_design_complete:
+    - deterministic_context_projection_from_existing_structured_fields
+    - evidence_rule_evaluation
+    - evidence_derived_ephemeral_milestones
+    - visible_rule_provenance_and_why_now
+    - agent_specific_safety_checklists_as_guidance
+  activation_modes:
+    activate_v1: deterministic structured trigger is currently representable
+    checklist_only: surface verify_or_review guidance without inferring clearance
+    blocked_missing_structured_input: evidence-valid rule must remain inactive until explicit input exists
+    blocked_missing_reliable_linkage: evidence-valid rule must remain inactive until longitudinal linkage is trustworthy
+    design_only: retained for future product/evidence design but inactive now
+  blocked_in_first_runtime_activation:
+    - OST_G2_R15_DENOSUMAB_EXIT_CTX_FOLLOWUP
+    - OST_G2_R16_DENOSUMAB_EXIT_NO_CTX_OPTION
+  prohibited:
+    - automatic_selected_agent
+    - automatic_treatment_failure_label
+    - automatic_zoledronate_from_ctx_280_or_300
+    - automatic_overwrite_of_clinician_due_date
+    - automatic_romosozumab_cardiology_or_vascular_referral_without_approved_clinic_policy
+    - arbitrary_ordinal_prolia_milestones
+    - hidden_framework_hybridization
+    - safety_clearance_inferred_from_missing_or_stale_data
+    - blank_ctx_value_interpreted_as_ctx_monitoring_unavailable
+
+minimum_test_matrix:
+  - initial_product_flow_does_not_assert_frax_until_formal_risk_is_indicated
+  - first_assessment_nogg_scope_and_explicit_formal_risk_indication
+  - vfa_height_loss_trigger
+  - known_patient_prior_workup_reuse
+  - stable_followup_remains_small
+  - new_fragility_fracture_overrides_routine_flow
+  - fracture_on_treatment_reassessment_not_auto_failure
+  - denosumab_exact_6_month_due_from_actual_date
+  - denosumab_scheduled_only_event_does_not_create_due_derivation
+  - denosumab_gt7m_after_first_dose_does_not_use_specific_rebound_rule
+  - denosumab_gt7m_after_two_or_more_reliable_doses_activates_rebound_rule
+  - denosumab_exit_6_month_sequential_guidance
+  - denosumab_post_zoledronate_ctx_rules_remain_blocked_without_reliable_linkage_or_availability_input
+  - no_ctx_280_or_300_automatic_retreatment_command
+  - zoledronate_renal_mineral_safety_is_checklist_without_freshness_clearance
+  - romosozumab_cv_hypocalcaemia_safety_is_checklist_not_auto_clearance
+  - teriparatide_metabolic_safety_is_checklist_not_auto_clearance
+  - post_romosozumab_or_teriparatide_consolidation
+  - oral_bisphosphonate_start_safety_use_checklist
+  - oral_bisphosphonate_12_16_week_review_from_reliable_exact_start
+  - oral_bisphosphonate_5_year_review
+  - zoledronate_3_year_review
+  - conflicting_or_missing_timeline_suppresses_exact_milestone
+  - non_nogg_declared_framework_does_not_receive_nogg_threshold_rule
+  - live_blank_or_changed_control_outranks_persisted_cache
+  - no_generic_prolia_4th_8th_10th_milestone
+  - inherited_g1_and_c1_regressions_remain_green
+
+review_document: M01_G2_EVIDENCE_GUIDANCE_REVIEW_V1.md

@@ -1,0 +1,246 @@
+schema: osteoporosis_guidance_profiles_v1
+status: design_candidate_g2
+module: osteoporosis
+reviewed_on: 2026-08-31
+rules_registry: schemas/osteoporosis_guidance_rules_v1.yaml
+purpose: >-
+  Visit-level composition of evidence-backed rules. Profiles remain deliberately small:
+  routine visits do not reopen a full osteoporosis assessment unless a higher-priority
+  event, safety, due, milestone or unresolved-prior trigger applies.
+
+composition_principles:
+  - event_and_safety_rules_can_override_profile_defaults
+  - profile_default_is_not_a_guideline_claim_unless_a_source_ref_is_attached
+  - stable_prior_data_should_be_reused_not_reentered
+  - routine_followup_should_be_small
+  - treatment_decision_is_clinician_owned
+  - results_workup_review_is_product_flow_candidate_not_yet_runtime_enum
+
+profiles:
+  - profile_id: OST_G2_P01_FIRST_ASSESSMENT_NEW_OR_UNCERTAIN
+    encounter_archetypes: [initial_assessment_new_or_uncertain_diagnosis]
+    product_flow_domains:
+      - fracture_history
+      - formal_risk
+      - dxa
+      - secondary_causes
+      - laboratory_monitoring
+      - treatment_decision
+      - followup_tasks
+    conditional_rule_ids:
+      - OST_G2_R01_INITIAL_FORMAL_RISK
+      - OST_G2_R02_VFA_STRUCTURED_TRIGGER
+      - OST_G2_R03_SECONDARY_CAUSE_REVIEW
+      - OST_G2_R04_FALLS_RISK_AFTER_FRACTURE_OR_INITIAL
+      - OST_G2_R08_EXPLICIT_VERY_HIGH_RISK_REVIEW
+      - OST_G2_R23_TARGETED_LIFESTYLE_COMMUNICATION
+    note: >-
+      Treatment-start agent prerequisites apply only if a treatment decision is actually
+      being made today. Do not force a drug-choice workflow before diagnostic/risk synthesis is ready.
+
+  - profile_id: OST_G2_P02_INITIAL_TO_SERVICE_KNOWN_DISEASE
+    encounter_archetypes: [initial_assessment_known_osteoporosis_or_osteopenia]
+    product_flow_domains:
+      - fracture_history
+      - dxa
+      - treatment_history
+      - treatment_decision
+      - followup_tasks
+    conditional_rule_ids:
+      - OST_G2_R01_INITIAL_FORMAL_RISK
+      - OST_G2_R02_VFA_STRUCTURED_TRIGGER
+      - OST_G2_R03_SECONDARY_CAUSE_REVIEW
+      - OST_G2_R04_FALLS_RISK_AFTER_FRACTURE_OR_INITIAL
+      - OST_G2_R08_EXPLICIT_VERY_HIGH_RISK_REVIEW
+      - OST_G2_R23_TARGETED_LIFESTYLE_COMMUNICATION
+      - OST_G2_R24_DENOSUMAB_GT7M_REBOUND_ESCALATION
+      - OST_G2_R26_ORAL_BISPHOSPHONATE_EARLY_REVIEW
+    prior_data_behavior:
+      - reuse_prior_fracture_history_when_reliable
+      - reuse_prior_secondary_workup_when_explicitly_accepted_as_still_adequate
+      - show_current_or_due_items_not_blank_full_history
+
+  - profile_id: OST_G2_P03_ROUTINE_STABLE_FOLLOWUP
+    encounter_archetypes: [routine_followup_stable]
+    product_flow_domains:
+      - fracture_history
+      - treatment_history
+      - followup_tasks
+    conditional_rule_ids:
+      - OST_G2_R02_VFA_STRUCTURED_TRIGGER
+      - OST_G2_R04_FALLS_RISK_AFTER_FRACTURE_OR_INITIAL
+      - OST_G2_R05_NEW_FRAGILITY_FRACTURE_PROMPT_REASSESSMENT
+      - OST_G2_R06_NEW_FRAGILITY_FRACTURE_TREATMENT_PLAN
+      - OST_G2_R07_FRACTURE_ON_TREATMENT_REVIEW
+      - OST_G2_R12_DENOSUMAB_EVIDENCE_DUE
+      - OST_G2_R13_DENOSUMAB_PRE_DOSE_CALCIUM
+      - OST_G2_R21_ORAL_BISPHOSPHONATE_5Y_REASSESS
+      - OST_G2_R22_ZOLEDRONATE_3Y_REASSESS
+      - OST_G2_R24_DENOSUMAB_GT7M_REBOUND_ESCALATION
+      - OST_G2_R26_ORAL_BISPHOSPHONATE_EARLY_REVIEW
+    suppress_by_default:
+      - repeat_full_secondary_cause_workup_without_new_signal
+      - repeat_full_frax_without_due_or_new_risk_signal
+      - generic_lifestyle_reeducation_without_current_reason
+
+  - profile_id: OST_G2_P04_TREATMENT_START
+    encounter_archetypes: [treatment_start]
+    product_flow_domains:
+      - treatment_decision
+      - administrations
+      - followup_tasks
+      - communication
+    conditional_rule_ids:
+      - OST_G2_R08_EXPLICIT_VERY_HIGH_RISK_REVIEW
+      - OST_G2_R09_SHARED_TREATMENT_DECISION_FACTORS
+      - OST_G2_R10_PARENTERAL_VITAMIN_D_REPLETION
+      - OST_G2_R11_DENOSUMAB_START_LONG_TERM_PLAN
+      - OST_G2_R13_DENOSUMAB_PRE_DOSE_CALCIUM
+      - OST_G2_R17_ZOLEDRONATE_START_SAFETY
+      - OST_G2_R18_ROMOSOZUMAB_START_SAFETY
+      - OST_G2_R19_TERIPARATIDE_START_SAFETY
+      - OST_G2_R25_ORAL_BISPHOSPHONATE_START_SAFETY_USE
+    note: Medication-specific safety rules are selected by the clinician-selected/planned agent, not by AI treatment choice.
+
+  - profile_id: OST_G2_P05_TREATMENT_CONTINUATION_OR_DUE_MONITORING
+    encounter_archetypes: [treatment_continuation_or_due_monitoring]
+    product_flow_domains:
+      - fracture_history
+      - treatment_history
+      - administrations
+      - followup_tasks
+    conditional_rule_ids:
+      - OST_G2_R05_NEW_FRAGILITY_FRACTURE_PROMPT_REASSESSMENT
+      - OST_G2_R06_NEW_FRAGILITY_FRACTURE_TREATMENT_PLAN
+      - OST_G2_R07_FRACTURE_ON_TREATMENT_REVIEW
+      - OST_G2_R12_DENOSUMAB_EVIDENCE_DUE
+      - OST_G2_R13_DENOSUMAB_PRE_DOSE_CALCIUM
+      - OST_G2_R17_ZOLEDRONATE_START_SAFETY
+      - OST_G2_R21_ORAL_BISPHOSPHONATE_5Y_REASSESS
+      - OST_G2_R22_ZOLEDRONATE_3Y_REASSESS
+      - OST_G2_R24_DENOSUMAB_GT7M_REBOUND_ESCALATION
+      - OST_G2_R26_ORAL_BISPHOSPHONATE_EARLY_REVIEW
+    routine_behavior: >-
+      Keep administration visits concise. Full DXA/secondary/risk/treatment-change flow appears
+      only when due/milestone/new-event/response/safety context supports it.
+
+  - profile_id: OST_G2_P06_TREATMENT_CHANGE_OR_TRANSITION
+    encounter_archetypes: [treatment_change_or_transition]
+    product_flow_domains:
+      - treatment_history
+      - administrations
+      - treatment_decision
+      - transition_safety
+      - followup_tasks
+    conditional_rule_ids:
+      - OST_G2_R07_FRACTURE_ON_TREATMENT_REVIEW
+      - OST_G2_R08_EXPLICIT_VERY_HIGH_RISK_REVIEW
+      - OST_G2_R09_SHARED_TREATMENT_DECISION_FACTORS
+      - OST_G2_R10_PARENTERAL_VITAMIN_D_REPLETION
+      - OST_G2_R14_DENOSUMAB_EXIT_6M_SEQUENTIAL
+      - OST_G2_R15_DENOSUMAB_EXIT_CTX_FOLLOWUP
+      - OST_G2_R16_DENOSUMAB_EXIT_NO_CTX_OPTION
+      - OST_G2_R17_ZOLEDRONATE_START_SAFETY
+      - OST_G2_R18_ROMOSOZUMAB_START_SAFETY
+      - OST_G2_R19_TERIPARATIDE_START_SAFETY
+      - OST_G2_R20_POST_ANABOLIC_CONSOLIDATION
+      - OST_G2_R24_DENOSUMAB_GT7M_REBOUND_ESCALATION
+      - OST_G2_R25_ORAL_BISPHOSPHONATE_START_SAFETY_USE
+
+  - profile_id: OST_G2_P07_POST_FRAGILITY_FRACTURE
+    encounter_archetypes: [post_fragility_fracture]
+    product_flow_domains:
+      - fracture_history
+      - formal_risk
+      - dxa
+      - secondary_causes
+      - laboratory_monitoring
+      - falls_function
+      - treatment_history
+      - treatment_decision
+      - followup_tasks
+    conditional_rule_ids:
+      - OST_G2_R02_VFA_STRUCTURED_TRIGGER
+      - OST_G2_R03_SECONDARY_CAUSE_REVIEW
+      - OST_G2_R04_FALLS_RISK_AFTER_FRACTURE_OR_INITIAL
+      - OST_G2_R05_NEW_FRAGILITY_FRACTURE_PROMPT_REASSESSMENT
+      - OST_G2_R06_NEW_FRAGILITY_FRACTURE_TREATMENT_PLAN
+      - OST_G2_R08_EXPLICIT_VERY_HIGH_RISK_REVIEW
+      - OST_G2_R09_SHARED_TREATMENT_DECISION_FACTORS
+      - OST_G2_R23_TARGETED_LIFESTYLE_COMMUNICATION
+      - OST_G2_R24_DENOSUMAB_GT7M_REBOUND_ESCALATION
+
+  - profile_id: OST_G2_P08_FRACTURE_ON_TREATMENT
+    encounter_archetypes: [fracture_on_treatment]
+    product_flow_domains:
+      - fracture_history
+      - formal_risk
+      - secondary_causes
+      - treatment_history
+      - administrations
+      - treatment_decision
+      - transition_safety
+      - followup_tasks
+    conditional_rule_ids:
+      - OST_G2_R02_VFA_STRUCTURED_TRIGGER
+      - OST_G2_R03_SECONDARY_CAUSE_REVIEW
+      - OST_G2_R04_FALLS_RISK_AFTER_FRACTURE_OR_INITIAL
+      - OST_G2_R05_NEW_FRAGILITY_FRACTURE_PROMPT_REASSESSMENT
+      - OST_G2_R06_NEW_FRAGILITY_FRACTURE_TREATMENT_PLAN
+      - OST_G2_R07_FRACTURE_ON_TREATMENT_REVIEW
+      - OST_G2_R08_EXPLICIT_VERY_HIGH_RISK_REVIEW
+      - OST_G2_R09_SHARED_TREATMENT_DECISION_FACTORS
+      - OST_G2_R24_DENOSUMAB_GT7M_REBOUND_ESCALATION
+    hard_rule: fracture_on_treatment_does_not_equal_automatic_failure_or_switch
+
+  - profile_id: OST_G2_P09_ADVERSE_EFFECT_OR_INTOLERANCE
+    encounter_archetypes: [adverse_effect_or_intolerance]
+    product_flow_domains:
+      - treatment_history
+      - treatment_decision
+      - transition_safety
+      - followup_tasks
+    conditional_rule_ids:
+      - OST_G2_R09_SHARED_TREATMENT_DECISION_FACTORS
+      - OST_G2_R10_PARENTERAL_VITAMIN_D_REPLETION
+      - OST_G2_R14_DENOSUMAB_EXIT_6M_SEQUENTIAL
+      - OST_G2_R17_ZOLEDRONATE_START_SAFETY
+      - OST_G2_R18_ROMOSOZUMAB_START_SAFETY
+      - OST_G2_R19_TERIPARATIDE_START_SAFETY
+      - OST_G2_R24_DENOSUMAB_GT7M_REBOUND_ESCALATION
+      - OST_G2_R25_ORAL_BISPHOSPHONATE_START_SAFETY_USE
+    note: Targeted adverse-effect evaluation remains clinician-owned; G2 v1 does not attempt exhaustive drug-monograph symptom logic.
+
+  - profile_id: OST_G2_P10_TREATMENT_COMPLETION_OR_CONSOLIDATION
+    encounter_archetypes: [treatment_completion_or_consolidation]
+    product_flow_domains:
+      - treatment_history
+      - treatment_decision
+      - transition_safety
+      - followup_tasks
+    conditional_rule_ids:
+      - OST_G2_R09_SHARED_TREATMENT_DECISION_FACTORS
+      - OST_G2_R14_DENOSUMAB_EXIT_6M_SEQUENTIAL
+      - OST_G2_R15_DENOSUMAB_EXIT_CTX_FOLLOWUP
+      - OST_G2_R16_DENOSUMAB_EXIT_NO_CTX_OPTION
+      - OST_G2_R20_POST_ANABOLIC_CONSOLIDATION
+      - OST_G2_R21_ORAL_BISPHOSPHONATE_5Y_REASSESS
+      - OST_G2_R22_ZOLEDRONATE_3Y_REASSESS
+      - OST_G2_R24_DENOSUMAB_GT7M_REBOUND_ESCALATION
+
+candidate_product_flow_profile:
+  profile_id: OST_G2_P11_RESULTS_WORKUP_REVIEW_DECISION
+  runtime_enum_value: results_or_workup_review_with_management_decision
+  status: candidate_not_activated_in_g2_design
+  rationale: >-
+    This is a clinically distinct workflow that should reuse prior history and focus on pending
+    DXA/VFA/labs/risk synthesis/treatment decision, but its addition is a product-taxonomy change,
+    not a guideline recommendation. Keep it separate until explicitly activated after runtime/pilot review.
+  candidate_domains:
+    - dxa
+    - vfa
+    - secondary_causes
+    - laboratory_monitoring
+    - formal_risk
+    - treatment_decision
+    - followup_tasks

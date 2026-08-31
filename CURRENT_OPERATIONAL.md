@@ -1,150 +1,274 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** MODULE 01 — C1 + G-1 PRODUCTION-SMOKE-VERIFIED / G-1 PRODUCTION-READINESS GATE CLOSED.
+> **STATUS:** MODULE 01 — G-2 RELEASE REVIEW PASS / PR #69 OPEN / MERGE HOLD.
 > **Updated:** 2026-08-31 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Fresh verified remote `main` before closeout:** `de32e7625e87ace8038223934ee88d64c9cdd2e5`.
-> **Original C1 + G-1 release PR:** `#64`.
-> **WHY-NOW correction PR:** `#66`.
-> **WHY-NOW correction runtime merge SHA:** `d9423f4dcf6bebd056e83407132c6ce3e25d2280`.
-> **Correction Render deploy:** `dep-daa93ljncjis739ssef0` — LIVE at exact runtime correction SHA.
-> **ACTIVE CANONICAL WRITER/LOCK:** NONE — smoke closeout complete.
+> **Fresh verified remote `main` for release review:** `5182d250e244b2ed9e086138cb3b2edcdb967e25`.
+> **Design-complete ancestry:** `design/module01-g2-evidence-backed-guidance-2026-08-31 @ 0395e52ed75f835d49713504df3df4ce51183edf`.
+> **Implementation branch:** `feat/module01-g2-evidence-guidance-runtime-2026-08-31`.
+> **Exact tested runtime head:** `e0657ba5924db87b38a0e05514613fbadf45bcd9`.
+> **Release-review / PR-open head before this docs-only operational closeout:** `4c9ecad3535d795bcf85b4687ce7db44187e68a2`.
+> **Release PR:** `#69` — OPEN, non-draft, base `main`, explicit MERGE HOLD.
+> **ACTIVE CANONICAL WRITER/LOCK:** NONE after release-review/PR operational closeout.
 > **ACTIVE RUNTIME WRITER/LOCK:** NONE.
 
 ---
 
-# 1. Production smoke — CLOSED
+# 1. Production base retained
 
-The product owner completed the authenticated production smoke across the released C1/G-1 ancestry.
-
-Initial production smoke showed that the workflow worked but the deterministic WHY-NOW reason was not sufficiently discoverable in the top `Σημερινή ροή` summary.
-
-That bounded presentation defect was corrected by PR #66 so each surfaced summary item renders:
+C1 authoritative Finish and G-1 progressive guidance remain:
 
 ```text
-Γιατί τώρα: <existing deterministic item.why_now>
+IMPLEMENTED
+TESTED
+MERGED
+DEPLOYED
+PRODUCTION-SMOKE-VERIFIED
 ```
 
-No guidance reason, priority, treatment rule, clinical recommendation, taxonomy, persistence, database/schema or KPI semantics changed in that correction.
+G-2 has **not** been merged or deployed.
 
 ---
 
-# 2. Exact release evidence retained
+# 2. G-2 current state
 
-WHY-NOW correction final PR head:
-
-```text
-e2960454cfa1acf6fa4e2c0735a2e7ba3c267f48
-```
-
-Exact-head GitHub Actions:
+Slice:
 
 ```text
-33333512964  SUCCESS
-33333526378  SUCCESS
+M01-G2-EVIDENCE-GUIDANCE-RUNTIME-v1
 ```
 
-PR #66 squash merge:
+State:
 
 ```text
-d9423f4dcf6bebd056e83407132c6ce3e25d2280
+DESIGN-COMPLETE = YES
+IMPLEMENTED = YES
+TESTED = YES
+RELEASE-READINESS REVIEW = PASS
+RELEASE PR = #69 OPEN
+MERGE AUTHORITY = NO
+MERGED = NO
+DEPLOYED = NO
+PRODUCTION-SMOKE-VERIFIED = NO
+PILOT-VALIDATED = NO
 ```
 
-Render auto-deploy:
+Do not collapse these states.
 
-```text
-deploy:  dep-daa93ljncjis739ssef0
-commit:  d9423f4dcf6bebd056e83407132c6ce3e25d2280
-trigger: new_commit
-status:  LIVE
-```
-
-The focused workflow preserved:
-
-- JavaScript syntax checks;
-- progressive-guidance core regressions;
-- wiring/ownership regression;
-- G1-R1/G1-R2 UI-state regressions;
-- explicit WHY-NOW presentation regression;
-- inherited authoritative Finish browser regression;
-- inherited server finalization lifecycle regression.
+The product owner explicitly authorized the fresh release-readiness review and opening of the release PR. That authorization did **not** authorize merge or deploy.
 
 ---
 
-# 3. Product-owner production re-smoke evidence
+# 3. Implemented runtime boundary
 
-On 2026-08-31 Asia/Nicosia, the product owner directly confirmed in production that:
-
-```text
-existing `Τύπος σημερινής επίσκεψης`
-→ top `Σημερινή ροή` is present
-→ literal `Γιατί τώρα:` is visible
-→ the surfaced guidance changes dynamically with the selected/current visit context
-→ the resulting content is experienced as informative / guiding
-```
-
-Interpretation:
+The tested runtime preserves the generic G-1 architecture:
 
 ```text
-WHY-NOW discoverability                    PASS
-G-1 dynamic interaction in production      PASS
-G-1 clinician-facing guidance usefulness   positive product-owner observation
+G-1 longitudinal projection
++ live current encounter snapshot
+→ G-2 osteoporosis evidence context
+→ pure deterministic evidence evaluator
+→ evidence contributions
+→ deterministic merge with G-1 Visit Plan
+→ existing Σημερινή ροή / Γιατί τώρα UI
 ```
 
-The usefulness observation is **not** equivalent to real-clinic pilot validation and must not be represented as such.
+Primary new runtime:
+
+```text
+static/baseline-audit/osteoporosis-evidence-guidance-core.js
+```
+
+`progressive-guidance-ui.js` remains the single guidance render/order owner.
 
 ---
 
-# 4. Status matrix
+# 4. Frozen clinical/runtime safeguards preserved
 
 ```text
-C1 IMPLEMENTED                              YES
-C1 TESTED                                   YES
-C1 MERGED                                   YES
-C1 DEPLOYED                                 YES
-G-1 IMPLEMENTED                             YES
-G-1 TESTED                                  YES
-G-1 MERGED                                  YES
-G-1 DEPLOYED                                YES
-G1-R1 / G1-R2                               CLOSED / TESTED / DEPLOYED
-WHY-NOW SUMMARY DISCOVERABILITY FIX         MERGED / DEPLOYED
-WHY-NOW PRODUCTION RE-SMOKE                 PASS
-PRODUCTION-SMOKE-VERIFIED                   YES
-PILOT-VALIDATED                             NO
-PR-1 HEIDI                                  NOT IMPLEMENTED
-PR-2 REVIEW/POPULATION                      NOT IMPLEMENTED
-REAL 5-CASE SYSTEM-ASSISTED PILOT           NOT STARTED
-30-CASE SYSTEM-ASSISTED BASELINE            NOT STARTED
-MODULE 01 CLOSED                            NO
+GUIDANCE != AUTOMATIC TREATMENT DECISION
+CHECKLIST GUIDANCE != SAFETY CLEARANCE
+MISSING / UNKNOWN != NEGATIVE
+SCHEDULED / PLANNED DOSE != ACTUAL DOSE
+ADMINISTRATION COUNT != ELAPSED EXPOSURE
+LIVE CURRENT CONTROL, INCLUDING BLANK > PERSISTED BROWSER CACHE
+```
+
+Tested behavior includes:
+
+- R01 only with explicit formal-risk indication and NOGG scope/framework guard;
+- VFA from supported structured triggers such as ≥4 cm height loss;
+- new-fragility-fracture and fracture-on-treatment event overrides;
+- no automatic failure/switch after fracture on treatment;
+- denosumab exact 6-month evidence due from reliable actual administration date only;
+- scheduled-only denosumab does not count as actual;
+- denosumab >7-month NOGG escalation only after ≥2 reliable actual doses;
+- conflicting denosumab history suppresses exact milestone derivation;
+- denosumab exit guidance never writes a selected agent;
+- oral-BP 12–16-week / ≥5-year and zoledronate ≥3-year milestones require exact reliable exposure;
+- medication safety rules render as checklists requiring clinical confirmation, not clearance;
+- concise NOGG/EMA provenance is visible with evidence-backed guidance.
+
+---
+
+# 5. Explicitly blocked / forbidden
+
+The following remain inactive:
+
+```text
+OST_G2_R15_DENOSUMAB_EXIT_CTX_FOLLOWUP
+OST_G2_R16_DENOSUMAB_EXIT_NO_CTX_OPTION
+```
+
+The runtime still has no:
+
+```text
+automatic CTX 280/300 second-zoledronate command
+mandatory CTX-at-3-month retreatment command
+generic Prolia 4th/8th/10th milestone
+automatic treatment failure/switch label
+automatic selected-agent mutation
+automatic romosozumab cardiology/vascular referral without approved clinic policy
 ```
 
 ---
 
-# 5. Closed gate / next action
+# 6. Implementation/test evidence
 
-The G-1 production-readiness gate is closed.
-
-Do not reopen G-1 runtime or taxonomy merely because later product expansion is planned. Future G-1 refinement should be driven by evidence-backed guidance content or real-use evidence and handled as a separately authorized slice.
-
-No new runtime mutation is authorized by this smoke closeout alone.
-
-Before the next substantial Module-01 task:
+Exact tested runtime head:
 
 ```text
-fresh six-canonical bootstrap
-→ confirm next product-owner-authorized slice
-→ claim writer/lock only for that bounded scope
+e0657ba5924db87b38a0e05514613fbadf45bcd9
 ```
 
-Broad remaining order remains:
+Implementation workflow:
 
 ```text
-evidence-backed minimum osteoporosis guidance content
-→ PR-1 transcript extraction
-→ PR-2 inline provisional population
-→ 5-case real system-assisted pilot
-→ one deliberate refinement
-→ later scored baseline / Practice Review / improvement loop
+G2 evidence guidance runtime
+run 33403182604
+COMPLETED / SUCCESS
 ```
 
-Parked physiotherapy/RF work remains outside this closeout unless separately authorized.
+That exact runtime head passed:
+
+- JavaScript syntax;
+- frozen G-2 contract validation;
+- G-2 evidence-core regressions;
+- G-2 live-state regressions;
+- G-2 wiring/ownership regressions;
+- inherited G-1 core/wiring/UI-state/WHY-NOW regressions;
+- authoritative Finish browser regression;
+- server finalization lifecycle regression.
+
+No runtime file changed after `e0657ba5…` before release PR creation; the four subsequent closeout commits affected only:
+
+```text
+CURRENT_OPERATIONAL.md
+SLICE_PLAN_CURRENT.md
+TODO.md
+osteoporosis-change-log.md
+```
+
+---
+
+# 7. Fresh release-readiness review
+
+Fresh remote main remained:
+
+```text
+5182d250e244b2ed9e086138cb3b2edcdb967e25
+```
+
+Release-review head before the present docs-only operational closeout:
+
+```text
+4c9ecad3535d795bcf85b4687ce7db44187e68a2
+```
+
+Compare `main → 4c9ecad3…`:
+
+```text
+status: ahead
+ahead_by: 39
+behind_by: 0
+merge_base: exactly current main
+changed_files: 20
+```
+
+The changed-file set contains only expected G-2 contracts, evidence/design review, runtime integration, tests/workflows and canonicals. No PR-1/PR-2, physiotherapy or RF leakage was found.
+
+Release PR opened:
+
+```text
+PR #69
+feat: release G-2 evidence-backed osteoporosis guidance runtime
+base: main
+head: feat/module01-g2-evidence-guidance-runtime-2026-08-31
+state: OPEN
+mergeable: YES at reviewed head
+MERGE HOLD: YES
+```
+
+Exact PR-head checks at `4c9ecad3…` all passed:
+
+```text
+G2 evidence guidance contract       run 33405228779  SUCCESS
+G2 evidence guidance runtime        run 33405228669  SUCCESS
+G1 progressive guidance foundation  run 33405228587  SUCCESS
+Baseline finalization integrity     run 33405228589  SUCCESS
+```
+
+This establishes a clean release-review gate. The present update is documentation-only and does not change runtime semantics.
+
+---
+
+# 8. Status matrix
+
+```text
+G-2 EVIDENCE REGISTRY                    DESIGN-COMPLETE
+G-2 RULE REGISTRY                        DESIGN-COMPLETE
+G-2 VISIT PROFILES                       DESIGN-COMPLETE
+G-2 THERAPY MILESTONES                   DESIGN-COMPLETE
+G-2 MACHINE CONTRACT CI                  PASS
+G-2 HUMAN DESIGN REVIEW                  COMPLETE
+G-2 RUNTIME IMPLEMENTED                  YES
+G-2 RUNTIME TESTED                       YES
+G-2 RELEASE REVIEW                       PASS
+G-2 RELEASE PR                           #69 OPEN
+G-2 MERGE AUTHORITY                      NO
+G-2 MERGED                               NO
+G-2 DEPLOYED                             NO
+G-2 PRODUCTION-SMOKE-VERIFIED            NO
+PR-1 HEIDI                               NOT IMPLEMENTED
+PR-2 INLINE REVIEW/POPULATION             NOT IMPLEMENTED
+REAL 5-CASE SYSTEM-ASSISTED PILOT         NOT STARTED
+MODULE 01 CLOSED                         NO
+```
+
+---
+
+# 9. Exact next action / STOP gate
+
+The authorized release-review/PR-opening action is complete.
+
+**STOP before merge.**
+
+Only after a separate explicit product-owner merge instruction may a future session perform:
+
+```text
+fresh verify remote main
+→ fresh six-canonical bootstrap
+→ fetch exact current PR #69 head
+→ confirm no branch/base drift
+→ confirm exact-head required checks/review remain green
+→ inspect any new review comments/threads
+→ if still clean, squash-merge using expected exact head SHA
+→ allow normal Render auto-deploy from main
+→ verify deploy identity/state
+→ perform/coordinate production smoke
+→ canonical release closeout
+```
+
+No merge, deploy or production smoke is authorized now.
+
+Parked physiotherapy/RF work and PR-1/PR-2 remain outside this release PR.

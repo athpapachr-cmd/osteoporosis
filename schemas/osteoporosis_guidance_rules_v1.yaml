@@ -1,0 +1,484 @@
+schema: osteoporosis_guidance_rules_v1
+status: design_candidate_g2
+module: osteoporosis
+reviewed_on: 2026-08-31
+evidence_registry: schemas/osteoporosis_guidance_evidence_registry_v1.yaml
+purpose: >-
+  Declarative osteoporosis-specific guidance rules layered over the generic G-1 Visit Plan.
+  Rules surface checks/reassessment/safety/timing context; they do not silently make the
+  clinician's final treatment decision.
+
+predicate_semantics:
+  missing_value: unknown_not_false
+  exact_date_required_for_date_math: true
+  calendar_month_addition: calendar_months_not_fixed_days
+  source_framework_guard: do_not_apply_framework_specific_threshold_to_other_declared_framework
+  rule_output: surface_domain_with_reason_and_provenance
+
+context_extensions_required_from_current_runtime:
+  - age_years
+  - sex
+  - menopause_status
+  - osteoporosis_status
+  - anthropometrics.derived_height_loss_cm
+  - risk_context.glucocorticoids
+  - risk_context.glucocorticoid_prednisolone_mg_day
+  - risk_context.glucocorticoid_duration_months
+  - risk_context.falls_last_12_months
+  - risk_assessment.formal_indicated
+  - risk_assessment.declared_framework
+  - risk_assessment.resulting_risk_category
+  - fracture_history.events[]
+  - step3.dxa
+  - step3.vfa
+  - step3.secondary
+  - step3.labs
+  - step4.treatment_episodes[]
+  - step4.administrations[]
+  - step4.decision
+  - step4.transition
+
+rules:
+  - rule_id: OST_G2_R01_INITIAL_FORMAL_RISK
+    domain: formal_risk
+    card_id: formal_risk
+    rule_class: contextual
+    priority: 45
+    applies_if:
+      all:
+        - encounter_archetype_in: [initial_assessment_new_or_uncertain_diagnosis, initial_assessment_known_osteoporosis_or_osteopenia]
+        - nogg_scope_eligible: true
+        - formal_risk_indicated_is: "yes"
+    guidance_objective: >-
+      When formal fracture-risk assessment is explicitly indicated, perform/record it and
+      preserve the declared framework/country model rather than generating an internal surrogate score.
+    why_now: Έχει δηλωθεί ότι formal fracture-risk assessment ενδείκνυται σήμερα· το NOGG χρησιμοποιεί FRAX όταν υπάρχει clinical risk factor σε άτομα εντός του πεδίου εφαρμογής του.
+    source_refs: [NOGG_2024_SECTION3#frax_with_clinical_risk_factor]
+    strength: strong_when_nogg_scope_and_clinical_risk_factor_apply
+    runtime_state: active_candidate
+    safeguard: >-
+      The initial-visit product flow may surface the formal-risk card before this rule matches,
+      but this evidence rule must not claim FRAX is mandatory merely because the visit is initial.
+
+  - rule_id: OST_G2_R02_VFA_STRUCTURED_TRIGGER
+    domain: vfa
+    card_id: vfa
+    rule_class: contextual
+    priority: 25
+    applies_if:
+      any:
+        - derived_height_loss_cm_gte: 4
+        - long_term_oral_glucocorticoid_context: true
+        - minimum_spine_or_hip_t_score_lte: -2.5
+        - current_or_prior_structured_vertebral_fracture: true
+    guidance_objective: Review/perform/arrange vertebral imaging or VFA when an evidence-backed indication is present.
+    why_now: Υπάρχει δομημένη ένδειξη για έλεγχο σπονδυλικού κατάγματος/VFA.
+    source_refs: [NOGG_2024_SECTION3#vfa_indications]
+    strength: strong
+    runtime_state: active_candidate
+    known_gap: acute_back_pain_and_kyphosis_are_not_yet_reliable_structured_triggers
+
+  - rule_id: OST_G2_R03_SECONDARY_CAUSE_REVIEW
+    domain: secondary_causes
+    card_id: secondary_causes
+    rule_class: contextual
+    priority: 35
+    applies_if:
+      any:
+        - osteoporosis_status_confirmed: true
+        - current_fragility_fracture: true
+        - fracture_on_treatment: true
+    guidance_objective: Confirm that underlying/secondary causes have been considered and relevant investigations reviewed or arranged.
+    why_now: Οστεοπόρωση ή κάταγμα ευθραυστότητας απαιτεί έλεγχο για υποκείμενα/δευτεροπαθή αίτια ανάλογα με το κλινικό πλαίσιο.
+    source_refs: [NOGG_2024_SECTION3#investigate_underlying_causes]
+    strength: strong
+    runtime_state: active_candidate
+    suppression_note: A stable prior work-up explicitly accepted as still adequate should avoid needless full repeat testing.
+
+  - rule_id: OST_G2_R04_FALLS_RISK_AFTER_FRACTURE_OR_INITIAL
+    domain: falls_function
+    card_id: falls_function
+    rule_class: contextual
+    priority: 45
+    applies_if:
+      any:
+        - current_fragility_fracture: true
+        - encounter_archetype_in: [initial_assessment_new_or_uncertain_diagnosis, initial_assessment_known_osteoporosis_or_osteopenia]
+        - falls_last_12_months_gte: 1
+    guidance_objective: Assess current falls risk/function and act when material risk is identified.
+    why_now: Η πτώση/λειτουργικότητα επηρεάζει άμεσα τον κίνδυνο νέου κατάγματος και την πρόληψη επόμενου συμβάντος.
+    source_refs: [NOGG_2024_SUMMARY#falls_assessment]
+    strength: guideline_main_recommendation
+    runtime_state: active_candidate
+
+  - rule_id: OST_G2_R05_NEW_FRAGILITY_FRACTURE_PROMPT_REASSESSMENT
+    domain: formal_risk
+    card_id: formal_risk
+    rule_class: event_triggered
+    priority: 10
+    applies_if:
+      current_fragility_fracture: true
+    guidance_objective: Reassess fracture risk promptly after a new fragility fracture and avoid unnecessary delay in treatment planning.
+    why_now: Νέο κάταγμα ευθραυστότητας αυξάνει τον άμεσο κίνδυνο επανακατάγματος και απαιτεί άμεση επανεκτίμηση.
+    source_refs:
+      - NOGG_2024_SUMMARY#prompt_after_fragility_fracture
+      - NOGG_2024_SUMMARY#repeat_risk_after_new_fracture
+    strength: guideline_main_recommendation
+    runtime_state: active_candidate
+
+  - rule_id: OST_G2_R06_NEW_FRAGILITY_FRACTURE_TREATMENT_PLAN
+    domain: treatment_decision
+    card_id: treatment_decision
+    rule_class: event_triggered
+    priority: 10
+    applies_if:
+      current_fragility_fracture: true
+    guidance_objective: Ensure treatment need/options are addressed promptly; do not auto-select the drug.
+    why_now: Μετά από νέο κάταγμα η θεραπευτική απόφαση δεν πρέπει να μένει χωρίς σαφές πλάνο ή αιτιολογημένη αναβολή.
+    source_refs: [NOGG_2024_SUMMARY#prompt_after_fragility_fracture]
+    strength: guideline_main_recommendation
+    runtime_state: active_candidate
+    forbidden_output: automatic_selected_agent
+
+  - rule_id: OST_G2_R07_FRACTURE_ON_TREATMENT_REVIEW
+    domains: [treatment_history, secondary_causes, formal_risk, dxa]
+    rule_class: event_triggered
+    priority: 10
+    applies_if:
+      fracture_on_treatment: true
+    guidance_objective: Review adherence/actual exposure, investigate secondary causes and reassess fracture risk with BMD context.
+    why_now: Κάταγμα υπό θεραπεία απαιτεί έλεγχο πραγματικής έκθεσης/adherence και επανεκτίμηση πριν θεωρηθεί αποτυχία ή αποφασιστεί αλλαγή.
+    source_refs:
+      - NOGG_2024_SECTION7#fracture_on_treatment_review
+      - NOGG_2024_SECTION7#fracture_not_automatic_failure
+    strength: strong
+    runtime_state: active_candidate
+    forbidden_output: automatic_treatment_failure_or_switch
+
+  - rule_id: OST_G2_R08_EXPLICIT_VERY_HIGH_RISK_REVIEW
+    domains: [treatment_decision, followup_tasks]
+    rule_class: contextual
+    priority: 20
+    applies_if:
+      any:
+        - declared_nogg_risk_category_is: very_high
+        - recent_vertebral_fracture_within_24_months: true
+        - vertebral_fracture_count_gte: 2
+        - minimum_spine_or_hip_t_score_lte: -3.5
+        - high_dose_glucocorticoid_gte_7_5_mg_for_gte_3m: true
+    framework_guard: nogg_2024
+    guidance_objective: Surface specialist/parenteral/anabolic consideration without choosing an agent automatically.
+    why_now: Υπάρχει ρητός δείκτης πολύ υψηλού καταγματικού κινδύνου που αλλάζει το βάθος της θεραπευτικής συζήτησης και μπορεί να απαιτεί specialist strategy.
+    source_refs:
+      - NOGG_2024_SUMMARY#very_high_risk_referral
+      - NOGG_2024_SECTION6#very_high_risk_anabolic
+    source_locator_detail: NOGG_2024_SECTION4_recommendation_8_exact_indicators_verified_2026_08_31
+    strength: conditional_referral_plus_conditional_anabolic_consideration
+    runtime_state: active_candidate
+
+  - rule_id: OST_G2_R09_SHARED_TREATMENT_DECISION_FACTORS
+    domains: [treatment_decision, communication]
+    rule_class: contextual
+    priority: 45
+    applies_if:
+      encounter_archetype_in: [treatment_start, treatment_change_or_transition, post_fragility_fracture, fracture_on_treatment, treatment_completion_or_consolidation]
+    guidance_objective: Make risk, suitability, alternatives and patient preference explicit in the treatment decision.
+    why_now: Η σημερινή επίσκεψη περιλαμβάνει θεραπευτική απόφαση· κίνδυνος, καταλληλότητα και προτίμηση ασθενούς πρέπει να είναι ορατά στο rationale.
+    source_refs: [NOGG_2024_SECTION6#treatment_choice_factors]
+    strength: strong
+    runtime_state: active_candidate
+
+  - rule_id: OST_G2_R10_PARENTERAL_VITAMIN_D_REPLETION
+    domain: laboratory_monitoring
+    card_id: laboratory_monitoring
+    rule_class: agent_specific
+    priority: 20
+    applies_if:
+      selected_or_planned_agent_in: [zoledronate, denosumab, teriparatide, romosozumab, ibandronate_iv]
+    guidance_objective: Confirm vitamin D deficiency/insufficiency has been addressed before parenteral osteoporosis therapy.
+    why_now: Η προγραμματισμένη παρεντερική θεραπεία απαιτεί έλεγχο/διόρθωση vitamin-D deficiency πριν από την έναρξη.
+    source_refs: [NOGG_2024_FAQ#parenteral_vitamin_d_before_start]
+    strength: nogg_practical_guidance
+    runtime_state: active_candidate
+
+  - rule_id: OST_G2_R11_DENOSUMAB_START_LONG_TERM_PLAN
+    domains: [transition_safety, communication, followup_tasks]
+    rule_class: agent_specific
+    priority: 15
+    applies_if:
+      all:
+        - decision_type_is: start
+        - selected_agent_is: denosumab
+    guidance_objective: Establish the long-term denosumab plan, explicit six-month scheduling and an exit strategy before the first dose.
+    why_now: Πριν από την έναρξη denosumab πρέπει να είναι σαφές ότι η θεραπεία είναι time-critical και πώς θα αντιμετωπιστεί πιθανή μελλοντική διακοπή.
+    source_refs:
+      - NOGG_2024_SECTION6#denosumab_long_term_plan
+      - ENDOCRINE_SOCIETY_2020_DENOSUMAB#denosumab_no_stop_without_followon
+    strength: strong_plus_good_practice
+    runtime_state: active_candidate
+
+  - rule_id: OST_G2_R12_DENOSUMAB_EVIDENCE_DUE
+    domains: [administrations, followup_tasks]
+    rule_class: milestone_due
+    priority: 12
+    applies_if:
+      all:
+        - active_or_current_agent_is: denosumab
+        - reliable_last_actual_administration_exists: true
+        - encounter_date_exists: true
+        - evidence_derived_due_state_in: [due, overdue]
+    derivation:
+      expected_due_date: add_calendar_months(last_actual_denosumab_date, 6)
+      persistence: ephemeral_only
+      label: evidence_derived_expected_due_date
+      never_overwrite: stored_next_due_date
+    guidance_objective: Surface denosumab timing as due/late from the exact actual prior administration date.
+    why_now: Η denosumab είναι θεραπεία ανά 6 μήνες και η καθυστέρηση δεν πρέπει να αντιμετωπίζεται σαν routine drug holiday.
+    source_refs:
+      - NOGG_2024_SECTION6#denosumab_q6m
+      - ENDOCRINE_SOCIETY_2020_DENOSUMAB#denosumab_q6m_no_holiday
+      - EMA_PROLIA_2026_08_19#prolia_q6m
+    strength: regulatory_plus_guideline
+    runtime_state: active_candidate
+
+  - rule_id: OST_G2_R13_DENOSUMAB_PRE_DOSE_CALCIUM
+    domain: laboratory_monitoring
+    card_id: laboratory_monitoring
+    rule_class: agent_specific
+    priority: 15
+    applies_if:
+      denosumab_administration_or_start_relevant_today: true
+    guidance_objective: Confirm calcium before the dose and correct hypocalcaemia/vitamin-D deficiency; recognize increased hypocalcaemia risk with renal impairment.
+    why_now: Πριν από τη σημερινή denosumab δόση χρειάζεται επιβεβαίωση calcium/mineral safety.
+    source_refs:
+      - NOGG_2024_SECTION6#denosumab_calcium_each_dose
+      - EMA_PROLIA_2026_08_19#prolia_hypocalcaemia
+    strength: regulatory_safety
+    runtime_state: active_candidate
+
+  - rule_id: OST_G2_R14_DENOSUMAB_EXIT_6M_SEQUENTIAL
+    domains: [transition_safety, administrations, laboratory_monitoring, followup_tasks]
+    rule_class: critical_safety
+    priority: 5
+    applies_if:
+      any:
+        - transition_type_is: denosumab_exit
+        - all:
+            - decision_type_is: stop
+            - active_or_prior_agent_is: denosumab
+    guidance_objective: >-
+      Make the denosumab exit plan explicit. NOGG 2024 recommends IV zoledronate at
+      6 calendar months after the last denosumab injection when denosumab is stopped,
+      subject to clinical suitability, with subsequent CTX-guided further treatment.
+    why_now: Η διακοπή denosumab έχει rebound/σπονδυλικό κίνδυνο και απαιτεί time-locked sequential antiresorptive plan.
+    source_refs:
+      - NOGG_2024_SECTION6#denosumab_stop_zoledronate_6m
+      - ECTS_2020_DENOSUMAB_DISCONTINUATION#antiresorptive_6m_after_final_denosumab
+    strength: nogg_strong_with_supporting_ects_position
+    runtime_state: active_candidate
+    safeguards:
+      - do_not_auto_mark_zoledronate_as_clinician_selected_agent
+      - check_zoledronate_suitability_if_that_route_is_planned
+      - no_automatic_ctx_threshold_retreatment
+
+  - rule_id: OST_G2_R15_DENOSUMAB_EXIT_CTX_FOLLOWUP
+    domains: [laboratory_monitoring, followup_tasks]
+    rule_class: milestone_due
+    priority: 15
+    applies_if:
+      denosumab_exit_with_post_exit_zoledronate_actual_date_exists: true
+    guidance_objective: >-
+      Use serum CTX to guide further treatment after sequential zoledronate. NOGG 2024 evidence
+      discussion supports monitoring around 3 and 6 months after zoledronate, but G2 does not
+      convert any single CTX value into an automatic retreatment command.
+    why_now: Μετά το zoledronate της denosumab-exit στρατηγικής χρειάζεται BTM follow-up επειδή μία έγχυση δεν εξασφαλίζει πλήρη suppression σε όλους.
+    source_refs:
+      - NOGG_2024_SECTION6#denosumab_stop_zoledronate_6m
+      - ECTS_2020_DENOSUMAB_DISCONTINUATION#btm_may_help_regimen
+      - JAMA_2024_ZOL_AFTER_DENOSUMAB_RCT#one_zol_not_full_lumbar_protection
+    strength: strong_for_ctx_guided_further_treatment_with_contextual_rct_uncertainty
+    runtime_state: active_candidate_blocked_until_reliable_exit_to_zoledronate_linkage
+    forbidden_thresholds: [280_ng_L_automatic, 300_ng_L_automatic]
+
+  - rule_id: OST_G2_R16_DENOSUMAB_EXIT_NO_CTX_OPTION
+    domains: [transition_safety, followup_tasks]
+    rule_class: milestone_due
+    priority: 20
+    applies_if:
+      all:
+        - denosumab_exit_with_first_zoledronate_actual_date_exists: true
+        - ctx_monitoring_available_is: "no"
+    guidance_objective: Surface the NOGG conditional option to consider another zoledronate infusion 6 months after the first when CTX monitoring is not possible.
+    why_now: Δεν είναι διαθέσιμο CTX monitoring μετά τη denosumab exit· υπάρχει conditional NOGG fallback που χρειάζεται κλινική απόφαση.
+    source_refs: [NOGG_2024_SECTION6#denosumab_no_ctx_second_zol]
+    strength: conditional
+    runtime_state: active_candidate_blocked_until_ctx_availability_is_explicitly_representable
+
+  - rule_id: OST_G2_R17_ZOLEDRONATE_START_SAFETY
+    domain: laboratory_monitoring
+    card_id: laboratory_monitoring
+    rule_class: critical_safety
+    priority: 5
+    applies_if:
+      zoledronate_start_or_administration_relevant_today: true
+    guidance_objective: Confirm renal function, calcium and vitamin-D safety before zoledronate; GFR <=35 ml/min or hypocalcaemia is a contraindication under NOGG/label framing.
+    why_now: Η σημερινή zoledronate χορήγηση έχει συγκεκριμένες renal/mineral prerequisites που πρέπει να επιβεβαιωθούν πριν από την έγχυση.
+    source_refs:
+      - NOGG_2024_SECTION6#zoledronate_renal_hypocalcaemia
+      - EMA_ACLASTA_2026_04_20#aclasta_severe_renal
+      - EMA_ACLASTA_2026_04_20#aclasta_hypocalcaemia
+    strength: regulatory_safety
+    runtime_state: active_candidate
+    safeguard: checklist_guidance_only_unless_current_lab_freshness_is_explicitly_proven
+
+  - rule_id: OST_G2_R18_ROMOSOZUMAB_START_SAFETY
+    domains: [laboratory_monitoring, treatment_decision, communication]
+    rule_class: critical_safety
+    priority: 5
+    applies_if:
+      romosozumab_start_relevant_today: true
+    guidance_objective: Confirm no prior MI/stroke, assess cardiovascular risk, correct hypocalcaemia and ensure calcium/vitamin-D adequacy before romosozumab.
+    why_now: Η έναρξη romosozumab απαιτεί CV και calcium safety review πριν από την πρώτη δόση.
+    source_refs:
+      - NOGG_2024_SECTION6#romosozumab_cv_hypocalcaemia
+      - EMA_EVENITY_CURRENT#evenity_mi_stroke_hypocalcaemia
+    strength: regulatory_safety
+    runtime_state: active_candidate_checklist_only
+    clinic_policy_note: No automatic cardiology_or_vascular_referral is encoded without separately approved clinic policy.
+
+  - rule_id: OST_G2_R19_TERIPARATIDE_START_SAFETY
+    domains: [laboratory_monitoring, treatment_decision]
+    rule_class: critical_safety
+    priority: 5
+    applies_if:
+      teriparatide_start_relevant_today: true
+    guidance_objective: Confirm calcium/PTH/renal and major contraindication context before teriparatide; treatment course is limited to 24 months.
+    why_now: Η έναρξη teriparatide απαιτεί συγκεκριμένο metabolic/safety screen και σαφές course plan.
+    source_refs:
+      - NOGG_2024_SECTION6#teriparatide_safety
+      - EMA_FORSTEO_2026_01_28#forsteo_course_24m
+      - EMA_FORSTEO_2026_01_28#forsteo_major_restrictions
+    strength: regulatory_safety
+    runtime_state: active_candidate_checklist_only
+
+  - rule_id: OST_G2_R20_POST_ANABOLIC_CONSOLIDATION
+    domains: [transition_safety, treatment_decision, followup_tasks]
+    rule_class: critical_safety
+    priority: 8
+    applies_if:
+      any:
+        - transition_type_in: [post_teriparatide, post_romosozumab]
+        - all:
+            - encounter_archetype_is: treatment_completion_or_consolidation
+            - completed_or_completing_agent_in: [teriparatide, romosozumab]
+    guidance_objective: Ensure an antiresorptive follow-on plan is explicit without delay after completion of the anabolic/romosozumab course.
+    why_now: Η ολοκλήρωση anabolic/romosozumab course απαιτεί άμεσο antiresorptive follow-on plan για διατήρηση του οφέλους.
+    source_refs: [NOGG_2024_SECTION6#post_anabolic_antiresorptive]
+    strength: strong
+    runtime_state: active_candidate
+
+  - rule_id: OST_G2_R21_ORAL_BISPHOSPHONATE_5Y_REASSESS
+    domains: [formal_risk, dxa, treatment_decision]
+    rule_class: milestone_due
+    priority: 25
+    applies_if:
+      all:
+        - active_agent_in: [alendronate, risedronate, ibandronate_oral]
+        - reliable_treatment_exposure_years_gte: 5
+    guidance_objective: Reassess fracture risk/adherence/secondary context and ongoing treatment strategy after at least 5 years of oral bisphosphonate therapy.
+    why_now: Έχει συμπληρωθεί evidence-backed oral-bisphosphonate review point· χρειάζεται επανεκτίμηση αντί για αυτόματη συνέχιση ή αυτόματο holiday.
+    source_refs: [NOGG_2024_SECTION7#oral_bp_review_5y]
+    strength: strong
+    runtime_state: active_candidate_when_exposure_is_reliable
+
+  - rule_id: OST_G2_R22_ZOLEDRONATE_3Y_REASSESS
+    domains: [formal_risk, dxa, treatment_decision]
+    rule_class: milestone_due
+    priority: 25
+    applies_if:
+      all:
+        - active_agent_is: zoledronate
+        - reliable_treatment_exposure_years_gte: 3
+    guidance_objective: Reassess fracture risk and ongoing strategy after at least 3 years of IV zoledronate therapy.
+    why_now: Έχει συμπληρωθεί evidence-backed IV-zoledronate review point· η συνέχιση ή παύση πρέπει να βασιστεί σε επανεκτίμηση κινδύνου.
+    source_refs: [NOGG_2024_SECTION7#iv_zoledronate_review_3y]
+    strength: strong
+    runtime_state: active_candidate_when_exposure_is_reliable
+
+  - rule_id: OST_G2_R23_TARGETED_LIFESTYLE_COMMUNICATION
+    domain: communication
+    card_id: communication
+    rule_class: contextual
+    priority: 60
+    applies_if:
+      encounter_archetype_in: [initial_assessment_new_or_uncertain_diagnosis, initial_assessment_known_osteoporosis_or_osteopenia, post_fragility_fracture]
+    guidance_objective: Address exercise, falls prevention and adequate calcium/vitamin-D intake as relevant rather than repeating generic counselling at every visit.
+    why_now: Η αρχική/μετά-κάταγμα επίσκεψη είναι κατάλληλο σημείο για στοχευμένη πρόληψη πτώσεων, άσκηση και bone-health nutrition.
+    source_refs:
+      - NOGG_2024_SECTION5#calcium_vitamin_d_repletion
+      - NOGG_2024_SECTION5#exercise
+    strength: guideline_recommendation
+    runtime_state: active_candidate
+
+  - rule_id: OST_G2_R24_DENOSUMAB_GT7M_REBOUND_ESCALATION
+    domains: [administrations, transition_safety, followup_tasks]
+    rule_class: critical_safety
+    priority: 4
+    applies_if:
+      all:
+        - active_or_current_agent_is: denosumab
+        - reliable_actual_denosumab_administration_count_gte: 2
+        - reliable_last_actual_administration_exists: true
+        - encounter_date_exists: true
+        - calendar_months_since_last_actual_gt: 7
+    guidance_objective: Escalate a >7-month interval after at least two documented denosumab doses as a rebound-risk safety problem, distinct from ordinary 6-month due status.
+    why_now: Έχουν προηγηθεί ≥2 αξιόπιστα τεκμηριωμένες denosumab δόσεις και έχουν περάσει >7 μήνες από την τελευταία πραγματική δόση· το NOGG επισημαίνει ουσιαστικό rebound high-turnover/vertebral-fracture κίνδυνο.
+    source_refs: [NOGG_2024_FAQ#denosumab_gt7m_rebound_risk]
+    strength: nogg_practical_guidance
+    runtime_state: active_candidate
+    safeguard: do_not_infer_missing_dose_or_select_rescue_agent_automatically
+
+  - rule_id: OST_G2_R25_ORAL_BISPHOSPHONATE_START_SAFETY_USE
+    domains: [treatment_decision, communication]
+    rule_class: agent_specific
+    priority: 15
+    applies_if:
+      all:
+        - decision_type_is: start
+        - selected_agent_in: [alendronate, risedronate, ibandronate_oral]
+    guidance_objective: Review oral-bisphosphonate suitability and correct administration instructions before starting therapy.
+    why_now: Η έναρξη oral bisphosphonate απαιτεί έλεγχο oesophageal/upright/renal-mineral suitability και σαφείς οδηγίες σωστής λήψης.
+    source_refs: [NOGG_2024_SECTION6#oral_bisphosphonate_use_and_contraindications]
+    strength: product_use_and_safety_guidance
+    runtime_state: active_candidate_checklist_only
+
+  - rule_id: OST_G2_R26_ORAL_BISPHOSPHONATE_EARLY_REVIEW
+    domains: [treatment_history, communication, followup_tasks]
+    rule_class: milestone_due
+    priority: 30
+    applies_if:
+      all:
+        - active_agent_in: [alendronate, risedronate, ibandronate_oral]
+        - reliable_treatment_exposure_weeks_gte: 12
+        - reliable_treatment_exposure_weeks_lte: 16
+    guidance_objective: Review early tolerance, adherence and correct administration after oral bisphosphonate initiation.
+    why_now: Είναι το NOGG 12–16 εβδομάδων early review window για tolerance/adherence και σωστή λήψη oral bisphosphonate.
+    source_refs: [NOGG_2024_FAQ#oral_bp_early_tolerance_adherence_review]
+    strength: nogg_practical_guidance
+    runtime_state: active_candidate_when_exposure_is_reliable
+
+explicit_non_rules:
+  - id: CTX_280_OR_300_AUTOMATIC_SECOND_ZOLEDRONATE
+    status: forbidden_g2_v1
+    reason: No validated automatic threshold in the primary NOGG recommendation; repeated-ZOL observational evidence does not prove efficacy.
+    evidence_refs:
+      - JCEM_2024_REPEAT_ZOL_CTX_280#ctx_280_protocol_not_proven_effective
+      - JAMA_2024_ZOL_AFTER_DENOSUMAB_RCT#one_zol_not_full_lumbar_protection
+
+  - id: PROLIA_4TH_8TH_10TH_DOSE_GENERIC_MILESTONES
+    status: forbidden_g2_v1
+    reason: No reviewed source establishes those ordinals as generic clinical review points independent of actual timeline/risk context.
+
+  - id: ROMOSOZUMAB_AUTOMATIC_SPECIALIST_REFERRAL_TO_CARDIOLOGY_OR_VASCULAR_SURGERY
+    status: not_guideline_rule
+    reason: CV risk assessment is evidence/regulatory-backed; mandatory named-specialty referral would require explicit approved clinic policy.
