@@ -1,19 +1,21 @@
 # SLICE_PLAN_CURRENT.md — G-2 Evidence-backed Guidance Runtime v1
 
-> **STATUS:** ACTIVE IMPLEMENTATION.
+> **STATUS:** IMPLEMENTED / TESTED — RELEASE REVIEW REQUIRED BEFORE PR/MERGE/DEPLOY.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Module:** 01 — Osteoporosis.
 > **Slice ID:** `M01-G2-EVIDENCE-GUIDANCE-RUNTIME-v1`.
 > **Fresh base main:** `5182d250e244b2ed9e086138cb3b2edcdb967e25`.
 > **Design-complete ancestry:** `0395e52ed75f835d49713504df3df4ce51183edf`.
 > **Implementation branch:** `feat/module01-g2-evidence-guidance-runtime-2026-08-31`.
-> **Runtime writer:** THIS SESSION.
+> **Exact tested runtime head:** `e0657ba5924db87b38a0e05514613fbadf45bcd9`.
+> **Runtime test workflow:** `G2 evidence guidance runtime` run `33403182604` — SUCCESS.
+> **Runtime writer:** NONE after implementation/test closeout.
 
 ---
 
-# 1. Objective
+# 1. Objective / result
 
-Activate the reviewed G-2 evidence content over the production-proven G-1 guidance mechanics while preserving one render owner and all existing finalization/state-integrity invariants.
+The reviewed G-2 evidence content is now implemented over the production-proven G-1 guidance mechanics while preserving one render owner and the existing finalization/state-integrity boundaries.
 
 Runtime composition:
 
@@ -27,13 +29,13 @@ G-1 LongitudinalGuidanceProjection
 → existing Σημερινή ροή / Γιατί τώρα presentation
 ```
 
-No treatment decision is made automatically.
+No automatic treatment decision or authoritative treatment write was introduced.
 
 ---
 
-# 2. Normative design authority
+# 2. Normative design authority preserved
 
-Implementation must conform to:
+Implementation conforms to:
 
 ```text
 schemas/osteoporosis_guidance_contract_manifest_v1.yaml
@@ -44,121 +46,130 @@ schemas/osteoporosis_therapy_milestones_v1.yaml
 M01_G2_EVIDENCE_GUIDANCE_REVIEW_V1.md
 ```
 
-The frozen design is `DESIGN-COMPLETE`; this slice must not reopen evidence content merely for convenience.
+The frozen design remains the clinical-content authority. Runtime implementation did not reopen evidence thresholds/policy.
 
 ---
 
-# 3. In scope
+# 3. Implemented runtime
 
-- pure deterministic browser G-2 evidence-guidance core;
-- projection of currently available structured fields into an evidence context;
-- exact date/timeline derivation only from reliable exact facts;
-- evidence contributions carrying rule ID, class, priority, domain, reason, objective, source refs, strength and activation mode;
-- deterministic merge into current G-1 ordered cards;
-- live-DOM snapshot support for G-2 trigger fields;
-- checklist-only medication safety presentation without automated clearance;
-- focused synthetic/unit/wiring tests;
-- inherited G-1/C1 regression preservation;
-- CI and canonical closeout.
-
----
-
-# 4. Out of scope / forbidden
-
-- R15 post-denosumab-exit CTX rule activation;
-- R16 no-CTX fallback activation;
-- any automatic CTX 280/300 retreatment rule;
-- arbitrary Prolia 4th/8th/10th milestone;
-- automatic treatment failure/switch after fracture;
-- automatic selected-agent mutation;
-- automatic cardiology/vascular referral for romosozumab without approved clinic policy;
-- treating missing/stale data as safety clearance;
-- parsing free text into authoritative G-2 trigger facts;
-- new persistence/schema migration unless a REPLAN trigger is formally accepted;
-- PR-1 / PR-2;
-- physiotherapy / RF;
-- release PR / merge / deploy.
-
----
-
-# 5. Runtime ownership
-
-## G-1 remains generic owner of
-
-- historical encounter projection;
-- base encounter context;
-- product-flow/archetype guidance;
-- unresolved prior-item resurfacing;
-- existing Visit Plan/card state mechanics.
-
-## G-2 owns
-
-- osteoporosis-specific evidence context;
-- reviewed evidence rules and therapy milestones;
-- evidence provenance/activation mode;
-- evidence-derived ephemeral timing states.
-
-## UI ownership
-
-`progressive-guidance-ui.js` remains the single guidance render owner. G-2 must not add a second independent renderer/listener competing for card ordering or `Σημερινή ροή`.
-
----
-
-# 6. Live-state invariant
-
-For every G-2 field with a live control/root:
+Primary runtime file:
 
 ```text
-current live value, including explicit blank
->
-persisted browser/cache fallback
+static/baseline-audit/osteoporosis-evidence-guidance-core.js
 ```
 
-Fallback to persisted state is allowed only when the corresponding live control/root is absent.
+Export:
 
-This must be regression-tested for at least formal-risk/framework and treatment/agent fields, plus any repeated Step-4 timeline structures used for current-visit evaluation.
+```text
+window.BaselineOsteoporosisEvidenceGuidance
+```
+
+The G-2 core is pure deterministic browser-domain logic and does not own DOM rendering, local/session storage, network fetch or Finish listeners.
+
+Implemented capabilities include:
+
+- G-2 evidence-context projection from current structured state + G-1 longitudinal projection;
+- exact calendar-month/year calculations;
+- current/historical actual-administration timeline with fail-closed conflict handling;
+- NOGG scope/framework guards;
+- evidence contributions carrying rule ID, rule class, priority, domains, WHY NOW, objective, provenance, strength and activation mode;
+- deterministic merge into existing G-1 card states and rule trace;
+- evidence-derived timing values kept ephemeral.
 
 ---
 
-# 7. Timeline semantics
+# 4. G-1 integration / single render owner
+
+Bootstrap order is now:
+
+```text
+adaptive applicability
+→ progressive-guidance-core.js
+→ osteoporosis-evidence-guidance-core.js
+→ finalization-coordinator.js
+→ patient-registry.js
+→ progressive-guidance-ui.js
+→ pilot-completion.js
+```
+
+`progressive-guidance-ui.js` remains the only guidance renderer/order owner.
+
+Its compute path is:
+
+```text
+G1 projection
+→ G1 encounter context
+→ G1 base plan
+→ G2 evidence context
+→ G2 deterministic contributions
+→ merged Visit Plan
+→ existing card + Σημερινή ροή rendering
+```
+
+C1 Finish ownership remains unchanged.
+
+---
+
+# 5. Live-state invariant implemented
+
+For G-2 trigger seams the current in-memory snapshot now reads live controls/roots before persisted browser cache.
+
+Covered current-state seams include:
+
+- encounter archetype/date/age;
+- sex / menopause / patient relationship / osteoporosis status segmented choices;
+- current/reference height with live derived height loss;
+- glucocorticoid flag/dose/duration;
+- falls count;
+- formal-risk indication/framework/resulting category;
+- live fracture-event rows;
+- Step-3 DXA use/T-scores and prior-workup adequacy;
+- live Step-4 treatment episodes;
+- live Step-4 administrations;
+- decision type/selected agent;
+- transition type/next agent/timing fields.
+
+Hard behavior:
+
+```text
+LIVE CURRENT CONTROL/ROOT, INCLUDING BLANK OR EMPTY LIST
+>
+PERSISTED BROWSER CACHE
+```
+
+The protected longitudinal projection remains a distinct authoritative prior-data source and is not silently rewritten by current local UI state.
+
+---
+
+# 6. Timeline semantics implemented/tested
 
 - actual administration requires exact `actual_date`;
 - scheduled/planned-only events never count as actual doses;
-- duplicate representations of the same actual event are deduplicated under existing G-1 semantics;
-- conflicting administration history suppresses exact G-2 milestone derivation;
+- duplicate actual events use existing G-1 identity semantics;
+- conflicting administration history suppresses exact G-2 denosumab timing derivation;
 - denosumab evidence due = 6 calendar months from reliable last actual dose, ephemeral only;
-- specific denosumab >7-month rebound escalation requires reliable actual administration count ≥2;
-- treatment exposure milestones require an exact reliable episode start date; approximate duration is insufficient;
-- oral-bisphosphonate early review = 12–16 weeks from exact reliable start;
-- oral-BP ≥5y and zoledronate ≥3y use calendar-anniversary logic, not fixed day approximations;
-- administration count and elapsed exposure remain separate.
+- specific denosumab >7-month rebound escalation requires reliable actual count ≥2;
+- treatment-exposure milestones require exact reliable episode start date;
+- approximate duration does not create exact milestones;
+- oral-bisphosphonate early review = 12–16 weeks from exact start;
+- oral-BP ≥5y and zoledronate ≥3y use calendar anniversaries;
+- administration count and elapsed exposure remain distinct.
 
 ---
 
-# 8. Framework/scope semantics
+# 7. Framework / safety semantics implemented/tested
 
-NOGG-specific threshold rules must not silently apply under another declared framework.
+NOGG-specific rules are guarded against silent application under an explicitly non-NOGG framework.
 
-For first runtime:
-
-- R01 requires NOGG scope and explicit formal-risk indication; if an explicitly non-NOGG framework is declared, product flow remains but NOGG evidence labeling is suppressed;
-- R08 exact NOGG very-high-risk threshold semantics require NOGG framework/scope;
-- generic new-fracture/event guidance remains independent of those threshold labels.
-
----
-
-# 9. Safety checklist semantics
-
-Rules classified `checklist_only` may surface statements such as:
+Medication-specific safety content classified `checklist_only` is visibly presented as:
 
 ```text
-verify
-review
-confirm
-address before treatment
+Safety checklist — requires clinical confirmation, not automatic clearance.
 ```
 
-They must never output or imply:
+The UI also surfaces concise evidence provenance such as NOGG/EMA source labels.
+
+The runtime does not infer:
 
 ```text
 safe
@@ -167,71 +178,131 @@ no contraindication
 ready for administration
 ```
 
-unless a later separately reviewed contract explicitly proves all required current inputs/freshness.
+from missing/stale data.
 
 ---
 
-# 10. Minimum test matrix
+# 8. Blocked / forbidden semantics preserved
 
-1. Initial visit product flow does not assert R01 merely because visit is initial.
-2. NOGG scope + explicit formal-risk indication activates R01.
-3. Non-NOGG declared framework suppresses NOGG threshold labeling.
-4. ≥4 cm height loss activates VFA guidance.
-5. New fragility fracture surfaces event reassessment/treatment-plan guidance.
-6. Fracture on treatment triggers reassessment but never automatic failure/switch.
-7. Denosumab 6-month expected due derives from reliable exact actual date.
-8. Scheduled-only denosumab administration does not count or create an exact due milestone.
-9. >7 months after one reliable denosumab dose does not activate R24.
-10. >7 months after ≥2 reliable denosumab doses activates R24.
-11. Conflicting denosumab history suppresses exact milestone derivation.
-12. Denosumab exit guidance does not write selected agent.
-13. R15 and R16 remain inactive.
-14. Zoledronate/romosozumab/teriparatide/oral-BP safety outputs remain checklist-only.
-15. Oral-BP 12–16-week review requires exact reliable start date.
-16. Oral-BP ≥5y and zoledronate ≥3y require reliable exact exposure.
-17. Post-romosozumab/teriparatide consolidation only from explicit/reliable completion context.
-18. No CTX 280/300 automatic rule exists.
-19. No generic Prolia 4th/8th/10th milestone exists.
-20. Live blank/changed controls outrank persisted cache.
-21. Same evidence context produces deterministic same contributions/merged plan.
-22. Existing G-1 tests remain green.
-23. Existing authoritative Finish browser/server regressions remain green.
-
-All fixtures must be synthetic and non-identifiable.
-
----
-
-# 11. Acceptance gate
-
-The slice may reach:
+Not activated:
 
 ```text
-IMPLEMENTED / TESTED
+OST_G2_R15_DENOSUMAB_EXIT_CTX_FOLLOWUP
+OST_G2_R16_DENOSUMAB_EXIT_NO_CTX_OPTION
 ```
 
-only when:
+Still explicitly absent:
 
-- exact implementation head passes G-2 focused tests;
-- design contract validation passes;
-- inherited G-1/C1 regression suite passes;
-- no runtime rule violates activation/blocking classification;
-- no unexpected unrelated file enters the branch delta;
-- canonicals record exact evidence.
-
-Then STOP.
-
-No PR/merge/deploy is authorized by this slice.
+```text
+CTX >=280 ng/L → automatic second zoledronate
+CTX >=300 ng/L → automatic second zoledronate
+CTX at 3 months → mandatory retreatment command
+Prolia 4th/8th/10th dose → generic milestone
+fracture on treatment → automatic failure/switch
+romosozumab → automatic cardiology/vascular referral without approved clinic policy
+automatic selected-agent mutation
+```
 
 ---
 
-# 12. REPLAN triggers
+# 9. Test evidence
 
-Stop implementation and replan before further mutation if inspection demonstrates any of:
+New focused tests:
 
-- a required trigger cannot obey live-over-cache ownership without changing source ownership;
-- a reviewed rule requires data that current schema cannot distinguish safely;
-- exact treatment-event linkage assumed by an active rule is not reliable;
-- integration would require a second guidance render owner;
-- a safety checklist would necessarily be presented as automated clearance;
-- current runtime target/card IDs materially differ from the reviewed contract;
-- a DB/schema migration becomes necessary.
+```text
+test_g2_evidence_guidance_node.js
+test_g2_guidance_live_state.js
+test_g2_evidence_guidance_wiring.js
+```
+
+Runtime workflow:
+
+```text
+G2 evidence guidance runtime
+run: 33403182604
+head: e0657ba5924db87b38a0e05514613fbadf45bcd9
+status: COMPLETED
+conclusion: SUCCESS
+```
+
+The single `g2-runtime` job passed all steps, including:
+
+- JavaScript syntax checks;
+- frozen G-2 contract validation;
+- G-2 evidence-core regressions;
+- G-2 live-state regressions;
+- G-2 wiring/ownership regressions;
+- inherited G-1 core regression;
+- inherited G-1 wiring regression;
+- inherited G-1 UI-state regressions;
+- inherited G-1 WHY-NOW presentation regression;
+- authoritative Finish browser regression;
+- server finalization lifecycle regression.
+
+---
+
+# 10. Exact-head review
+
+At tested head `e0657ba5…`:
+
+```text
+main 5182d250… → tested head
+status: ahead
+merge base: exactly main
+behind: 0
+```
+
+From design-complete head `0395e52e…` to tested runtime head there are 10 commits and only expected G-2 runtime/test/canonical files.
+
+No physiotherapy/RF, PR-1 or PR-2 leakage was found.
+
+Source review confirmed:
+
+- R15/R16 have no evaluator activation branch;
+- G-2 core has no DOM/storage/fetch/listener ownership;
+- single G-1 render owner is preserved;
+- C1 Finish owner/load order is preserved;
+- checklist≠clearance is visible in UI;
+- no prohibited automatic treatment semantics were introduced.
+
+---
+
+# 11. Completion matrix
+
+```text
+G-2 evidence/content design                DESIGN-COMPLETE / REVIEWED
+G-2 runtime implementation                 YES
+G-2 focused runtime tests                  PASS
+G-2 frozen contract validation             PASS
+Inherited G-1 regressions                  PASS
+Inherited C1 regressions                   PASS
+Exact-head source/delta review             PASS
+Product-owner release review               NO
+PR opened                                  NO
+Merged                                     NO
+Deployed                                   NO
+Production-smoke-verified                  NO
+Pilot-validated                            NO
+```
+
+`IMPLEMENTED / TESTED` does not imply release readiness has been authorized by the product owner.
+
+---
+
+# 12. Next action / stop gate
+
+This bounded implementation slice is closed at its authorized stop gate.
+
+Next possible action requires a **separate fresh release-readiness bootstrap/review and explicit product-owner release authority** before any release PR/merge/deploy action.
+
+Until then:
+
+```text
+NO ACTIVE RUNTIME WRITER
+NO RELEASE PR
+NO MERGE
+NO DEPLOY
+NO PRODUCTION-SMOKE CLAIM
+```
+
+PR-1/PR-2 and parked physiotherapy/RF work remain outside this completed slice.
