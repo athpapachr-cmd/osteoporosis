@@ -1,0 +1,37 @@
+name: G2 evidence guidance contract
+
+on:
+  push:
+    branches:
+      - design/module01-g2-evidence-backed-guidance-2026-08-31
+      - feat/module01-g2-evidence-guidance-runtime-2026-08-31
+    paths:
+      - 'schemas/osteoporosis_guidance_evidence_registry_v1.yaml'
+      - 'schemas/osteoporosis_guidance_rules_v1.yaml'
+      - 'schemas/osteoporosis_guidance_profiles_v1.yaml'
+      - 'schemas/osteoporosis_therapy_milestones_v1.yaml'
+      - 'schemas/osteoporosis_guidance_contract_manifest_v1.yaml'
+      - 'test_g2_guidance_contract.py'
+      - '.github/workflows/g2-guidance-contract-tests.yml'
+  pull_request:
+    paths:
+      - 'schemas/osteoporosis_guidance_evidence_registry_v1.yaml'
+      - 'schemas/osteoporosis_guidance_rules_v1.yaml'
+      - 'schemas/osteoporosis_guidance_profiles_v1.yaml'
+      - 'schemas/osteoporosis_therapy_milestones_v1.yaml'
+      - 'schemas/osteoporosis_guidance_contract_manifest_v1.yaml'
+      - 'test_g2_guidance_contract.py'
+      - '.github/workflows/g2-guidance-contract-tests.yml'
+
+jobs:
+  g2-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install YAML parser
+        run: python -m pip install --disable-pip-version-check pyyaml
+      - name: Validate G2 YAML syntax and cross-references
+        run: python test_g2_guidance_contract.py
