@@ -1,245 +1,199 @@
-# SLICE_PLAN_CURRENT.md — G-1 Progressive Guidance Runtime Foundation v1
+# SLICE_PLAN_CURRENT.md — G-2 Evidence-backed Osteoporosis Guidance Content v1
 
-> **STATUS:** IMPLEMENTED / TESTED / MERGED / DEPLOYED / PRODUCTION-SMOKE-VERIFIED — SLICE PRODUCTION-READINESS GATE CLOSED.
+> **STATUS:** ACTIVE DESIGN / EVIDENCE REVIEW.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Parent product:** Personal Clinical Excellence System.
 > **Module:** 01 — Osteoporosis.
-> **Slice ID:** M01-G1-PROGRESSIVE-GUIDANCE-RUNTIME-v1.
-> **Original release PR:** `#64`.
-> **WHY-NOW correction PR:** `#66`.
-> **Correction runtime merge SHA:** `d9423f4dcf6bebd056e83407132c6ce3e25d2280`.
-> **Runtime writer:** NONE.
+> **Slice ID:** `M01-G2-EVIDENCE-GUIDANCE-CONTENT-v1`.
+> **Base main:** `5182d250e244b2ed9e086138cb3b2edcdb967e25`.
+> **Design branch:** `design/module01-g2-evidence-backed-guidance-2026-08-31`.
+> **Runtime writer:** NONE during design/evidence review.
 
 ---
 
-# 1. Objective
+# 1. Problem
 
-G-1 provides the minimum reusable runtime foundation for progressive osteoporosis visit guidance without pretending to be a complete treatment-recommendation engine or exhaustive visit taxonomy.
+G-1 proves that dynamic visit planning and `WHY NOW` work in production, but its current base flows are primarily product-flow mechanics. Before the real system-assisted pilot, clinically active guidance must be backed by explicit reviewed osteoporosis evidence or approved clinic policy.
 
-Runtime flow:
-
-```text
-coarse clinician-declared visit intent
-+ short first-page visit context
-+ protected longitudinal context when available
-→ deterministic card relevance/order
-→ visible WHY NOW reason(s)
-```
-
-Clinical workflow presentation remains distinct from storage/audit schema.
+The goal is not an exhaustive osteoporosis textbook. The goal is the **minimum safe and useful content registry** that improves the real encounter and can later be refined from five-case use evidence.
 
 ---
 
-# 2. Preserved clinician inputs / invariants
+# 2. Scope
 
-G-1 reuses existing fields including:
+G-2 v1 will define evidence-backed content for:
+
+1. first assessment — new/uncertain diagnosis;
+2. initial-to-service patient with known osteoporosis/osteopenia;
+3. results/work-up review with management decision, if justified as a distinct visit intent;
+4. routine stable follow-up;
+5. treatment start;
+6. repeated administration / continuation / due monitoring;
+7. post-fragility fracture and fracture-on-treatment event overrides;
+8. treatment change / transition / consolidation;
+9. adverse-effect/intolerance context;
+10. denosumab/time-critical administration and discontinuation/transition safety where exact evidence supports it.
+
+---
+
+# 3. Evidence governance contract
+
+Every clinically active rule must contain at minimum:
 
 ```text
-encounter_archetype
-quick_notes
-patient_relationship_status
-fracture_history.events[]
-step4.treatment_episodes[]
-step4.administrations[]
-step4.tasks[]
-step4.close
+rule_id
+module/domain
+card/domain target
+rule_class
+trigger/applicability
+human guidance objective
+WHY NOW text
+source_id
+source_org/publication
+source_version/year
+source_locator
+recommendation/criterion summary
+strength/certainty when available
+reviewed_on
+status
 ```
 
-Rules:
-
-- `encounter_archetype` is coarse clinician-declared visit intent;
-- `quick_notes` is contextual fallback text;
-- G-1 does not parse free text into authoritative structured facts;
-- transcript-derived candidates remain future PR-1/PR-2 work;
-- no large visit taxonomy was introduced;
-- `other + quick_notes` remains a valid fallback.
-
-Longitudinal integrity remains:
+Source classes:
 
 ```text
-HISTORY UNAVAILABLE != NO HISTORY
-scheduled/planned administration != actual administration
+guideline
+position_statement
+consensus_statement
+regulatory_label_or_safety_source
+systematic_review_or_key_trial
+approved_clinic_policy
+product_flow
+```
+
+`product_flow` may organize a visit but may not be presented as guideline-backed clinical truth.
+
+---
+
+# 4. Non-hybridization rule
+
+If two frameworks differ materially, the registry preserves separate rule/source records. The runtime may show that guidance varies by framework, but G-2 must not create a silent synthetic threshold.
+
+```text
+SOURCE A != SOURCE B
+CONFLICT/VARIATION → explicit provenance + clinician judgment
+```
+
+---
+
+# 5. Clinical decision boundary
+
+G-2 may surface:
+
+- what should be checked;
+- what needs reassessment;
+- prerequisites/safety issues;
+- timing risk;
+- unresolved transition requirements;
+- evidence-backed options or decision factors.
+
+G-2 must not silently choose the final drug or substitute for clinician judgment.
+
+---
+
+# 6. Denosumab hard boundary
+
+G-2 may activate exact time-sensitive rules only when the reviewed source supports the exact semantic claim.
+
+Required distinctions:
+
+```text
+actual administration date > scheduled label
+next-due date may be explicit but must not be invented
 administration count != elapsed exposure
-missing expected doses are not reconstructed
-material conflicts remain explicit
-current/draft encounter is not historical authority
+late administration risk != discontinuation plan
+planned transition != actual antiresorptive administration
+BTM monitoring recommendation != automatic retreatment command unless source/policy explicitly defines it
 ```
+
+No 4th/8th/10th-dose milestone is active merely from ordinal count.
 
 ---
 
-# 3. Minimal Visit Plan / priority
+# 7. Machine-readable deliverables
 
-Reason classes:
-
-```text
-VISIT_TYPE_CORE
-NEW_EVENT
-UNRESOLVED_PRIOR
-TREATMENT_CONTEXT
-EXPLICIT_DUE_STATE
-CONTEXTUAL
-```
-
-Priority:
+Planned design artifacts:
 
 ```text
-NEW_EVENT
-→ UNRESOLVED_PRIOR
-→ EXPLICIT_DUE_STATE
-→ TREATMENT_CONTEXT
-→ VISIT_TYPE_CORE
-→ CONTEXTUAL
+schemas/osteoporosis_guidance_evidence_registry_v1.yaml
+schemas/osteoporosis_guidance_rules_v1.yaml
+schemas/osteoporosis_guidance_profiles_v1.yaml
+schemas/osteoporosis_therapy_milestones_v1.yaml
+schemas/osteoporosis_guidance_contract_manifest_v1.yaml
+M01_G2_EVIDENCE_GUIDANCE_REVIEW_V1.md
 ```
 
-Mechanics already tested include:
-
-- first-assessment core flow;
-- smaller routine treatment-continuation flow;
-- new-fracture override;
-- fracture-on-treatment treatment/transition context;
-- unresolved-prior resurfacing;
-- explicit stored due/overdue plumbing;
-- explicit longitudinal conflicts;
-- no automatic treatment selection/recommendation.
+The manifest will be the normative machine entrypoint if the design reaches `DESIGN-COMPLETE`.
 
 ---
 
-# 4. G1-R1 / G1-R2 closed integrity corrections
+# 8. Runtime mapping constraint
 
-## G1-R1 — history availability
-
-```text
-AUTH/NETWORK/SERVER FAILURE != ZERO PRIOR ENCOUNTERS
-```
-
-History states remain `not_loaded / loading / loaded / unavailable`.
-
-## G1-R2 — live UI owns today's snapshot
+G-2 must map only to real G-1/current form domains such as:
 
 ```text
-IF A LIVE CONTROL EXISTS
-→ its current value, including blank/empty, owns today's in-memory guidance snapshot
-
-persisted cache
-→ fallback only when corresponding live control/root is absent
+fracture_history
+formal_risk
+dxa
+vfa
+secondary_causes
+laboratory_monitoring
+falls_function
+sarcopenia
+treatment_history
+administrations
+treatment_decision
+transition_safety
+followup_tasks
+communication
+understanding
 ```
 
-This includes encounter archetype/date/quick notes/interval fracture status and rendered fracture events.
+If useful clinical content has no safe current target, record it as a design/runtime gap rather than forcing it into a wrong domain.
 
 ---
 
-# 5. WHY-NOW UX contract / production correction
+# 9. Acceptance fixtures
 
-Normative invariant:
+At minimum design tests/fixtures must cover:
 
-> A dynamically surfaced item must make its `WHY NOW?` reason discoverable to the clinician at the point of use.
-
-Original G-1 already generated deterministic `item.why_now` and rendered `Γιατί τώρα:` inside destination cards.
-
-Initial production smoke found a presentation defect in the top `Σημερινή ροή` summary: reason text existed but the explicit `Γιατί τώρα:` label was missing, so the clinician could not reliably identify the WHY-NOW explanation.
-
-PR #66 changed only summary presentation:
-
-```text
-Γιατί τώρα: <existing deterministic item.why_now>
-```
-
-No guidance reason, priority, clinical rule, treatment recommendation, taxonomy, persistence or schema changed.
-
-Focused regression locks both summary and destination-card `Γιατί τώρα:` presentation.
+- first assessment with no prior structured history;
+- known patient with reusable prior data and pending results;
+- routine stable follow-up without new event;
+- due/late denosumab administration with exact actual-date evidence;
+- new fragility fracture overriding routine continuation;
+- fracture on treatment;
+- treatment start with agent-specific prerequisites;
+- denosumab stopping/transition context;
+- consolidation after anabolic/romosozumab where evidence supports sequence guidance;
+- conflicting or insufficient source evidence → explicit uncertainty/no automatic rule.
 
 ---
 
-# 6. Exact release evidence
+# 10. Out of scope
 
-Original G-1+C1 release PR #64 was squash-merged as:
-
-```text
-a6ba9ef1719a18a48a1756bf08bbd157d448a63e
-```
-
-WHY-NOW correction final PR head:
-
-```text
-e2960454cfa1acf6fa4e2c0735a2e7ba3c267f48
-```
-
-Exact-head G-1 workflow runs:
-
-```text
-33333512964  SUCCESS
-33333526378  SUCCESS
-```
-
-PR #66 squash merge:
-
-```text
-d9423f4dcf6bebd056e83407132c6ce3e25d2280
-```
-
-Render auto-deploy:
-
-```text
-dep-daa93ljncjis739ssef0
-→ LIVE
-→ exact commit d9423f4dcf6bebd056e83407132c6ce3e25d2280
-```
+- exhaustive drug monographs;
+- unsupported clinic habits presented as guidelines;
+- PR-1/PR-2 implementation;
+- treatment recommendation automation;
+- real-patient data;
+- five-case pilot collection;
+- KPI scoring/Practice Review changes;
+- physiotherapy/RF work.
 
 ---
 
-# 7. Product-owner production re-smoke — PASS
+# 11. Current gate
 
-On 2026-08-31 Asia/Nicosia, the product owner directly confirmed that in production:
+`DESIGN/EVIDENCE REVIEW IN PROGRESS`.
 
-```text
-existing `Τύπος σημερινής επίσκεψης` is used
-→ `Σημερινή ροή` displays explicit `Γιατί τώρα:`
-→ guidance changes dynamically with the current visit context
-→ the surfaced information is experienced as informative / guiding
-```
-
-Therefore:
-
-```text
-WHY-NOW discoverability                    PASS
-G-1 dynamic production interaction         PASS
-PRODUCTION-SMOKE-VERIFIED                  YES
-```
-
-The positive usefulness observation is a **product-owner production observation**, not a real-clinic pilot result and not `PILOT-VALIDATED` evidence.
-
----
-
-# 8. Completion matrix
-
-```text
-coarse dropdown reused                         YES / TESTED / PRODUCTION-SEEN
-quick-notes context reused                     YES / TESTED
-protected historical projection                YES / TESTED
-history unavailable != zero                    YES / TESTED
-live-empty > persisted-cache snapshot          YES / TESTED
-actual administration dedup                    YES / TESTED
-scheduled-only does not count                  YES / TESTED
-unresolved-prior resurfacing                   YES / TESTED
-explicit due-state plumbing                    YES / TESTED
-new-fracture override                          YES / TESTED
-WHY-NOW core generation                        YES / TESTED
-WHY-NOW explicit summary presentation          YES / TESTED / DEPLOYED / PRODUCTION-SEEN
-applicability ownership preserved              YES / TESTED
-C1 regressions preserved                       YES / TESTED
-merged                                         YES
-deployed                                       YES
-production-smoke-verified                      YES
-pilot-validated                                NO
-real-clinic pilot                              NO
-```
-
----
-
-# 9. Slice stop rule
-
-G-1 production-readiness is closed. STOP runtime mutation for this slice.
-
-Do not reopen G-1 taxonomy, clinical rules or presentation merely for speculative completeness. Further refinement requires a separately authorized slice driven by evidence-backed guidance content or real-use evidence.
-
-PR-1 Heidi extraction, PR-2 provisional population, medication-specific milestone content, parked physiotherapy/RF work and real pilot collection remain outside this closed slice until separately authorized.
+No new clinical runtime rule is active until the evidence registry, rule semantics, profile mapping and conflict handling have been reviewed as one coherent contract.
