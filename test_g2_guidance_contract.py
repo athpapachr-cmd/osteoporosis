@@ -34,8 +34,10 @@ def source_claim_index(evidence):
     for source in evidence.get("sources", []):
         sid = source["source_id"]
         source_ids.append(sid)
-        for claim in source.get("claims", []):
-            index.add(f"{sid}#{claim['claim_id']}")
+        claim_ids = [claim["claim_id"] for claim in source.get("claims", [])]
+        unique(claim_ids, f"claim_id within {sid}")
+        for claim_id in claim_ids:
+            index.add(f"{sid}#{claim_id}")
     unique(source_ids, "source_id")
     return set(source_ids), index
 
@@ -89,6 +91,10 @@ def test_contract():
             assert rid in rule_id_set, f"dangling profile rule {rid} in {profile['profile_id']}"
             reachable_rules.add(rid)
 
+    candidate_profile = profiles.get("candidate_product_flow_profile") or {}
+    for domain in candidate_profile.get("candidate_domains", []):
+        assert domain in DOMAIN_SET, f"unknown candidate profile domain {domain}"
+
     milestone_profile_ids = [p["profile_id"] for p in milestones.get("profiles", [])]
     unique(milestone_profile_ids, "therapy milestone profile_id")
     milestone_ids = []
@@ -116,6 +122,9 @@ def test_contract():
     forbidden = {item["id"] for item in rules_doc.get("explicit_non_rules", [])}
     assert "CTX_280_OR_300_AUTOMATIC_SECOND_ZOLEDRONATE" in forbidden
     assert "PROLIA_4TH_8TH_10TH_DOSE_GENERIC_MILESTONES" in forbidden
+    for item in rules_doc.get("explicit_non_rules", []):
+        for ref in item.get("evidence_refs", []):
+            assert ref in claim_refs, f"dangling non-rule evidence ref: {ref}"
 
     absent = set(milestones.get("explicitly_absent_milestones", []))
     assert "ctx_280_automatic_second_zoledronate" in absent
@@ -124,18 +133,20 @@ def test_contract():
 
     contracts = manifest.get("contracts", {})
     expected = {
-        "evidence_registry": FILES["evidence"],
-        "rules_registry": FILES["rules"],
-        "visit_profiles": FILES["profiles"],
-        "therapy_milestones": FILES["milestones"],
+        "evidence_registry": ("evidence", FILES["evidence"]),
+        "rules_registry": ("rules", FILES["rules"]),
+        "visit_profiles": ("profiles", FILES["profiles"]),
+        "therapy_milestones": ("milestones", FILES["milestones"]),
     }
-    for key, path in expected.items():
-        entry = contracts[key]
-        assert (ROOT / entry["path"]).resolve() == path.resolve(), f"manifest path mismatch for {key}"
-        assert entry["schema"] == docs[key if key != "visit_profiles" else "profiles"]["schema"] if key != "therapy_milestones" else entry["schema"] == milestones["schema"]
+    for contract_key, (doc_key, path) in expected.items():
+        entry = contracts[contract_key]
+        assert (ROOT / entry["path"]).resolve() == path.resolve(), f"manifest path mismatch for {contract_key}"
+        assert entry["schema"] == docs[doc_key]["schema"], f"manifest schema mismatch for {contract_key}"
 
-    assert "automatic_zoledronate_from_ctx_280_or_300" in manifest["runtime_activation_boundary"]["prohibited"]
-    assert "arbitrary_ordinal_prolia_milestones" in manifest["runtime_activation_boundary"]["prohibited"]
+    prohibited = set(manifest["runtime_activation_boundary"]["prohibited"])
+    assert "automatic_zoledronate_from_ctx_280_or_300" in prohibited
+    assert "arbitrary_ordinal_prolia_milestones" in prohibited
+    assert "automatic_selected_agent" in prohibited
 
 
 if __name__ == "__main__":
