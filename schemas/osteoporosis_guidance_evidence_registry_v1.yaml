@@ -5,14 +5,14 @@ reviewed_on: 2026-08-31
 primary_framework: NOGG_2024
 purpose: >-
   Versioned evidence/provenance registry for clinician-facing osteoporosis guidance.
-  A source being present here does not by itself activate a runtime rule.
+  Presence in this registry does not itself activate a runtime rule.
 
 principles:
   - source_a_is_not_silently_hybridized_with_source_b
   - regulatory_safety_source_may_override_product_flow_convenience
   - position_statements_and_new_trials_can_supply_context_without_becoming_automatic_rules
   - exact_thresholds_require_exact_source_support
-  - current_web_access_date_is_recorded_separately_from_publication_or_revision_date
+  - publication_or_revision_date_is_distinct_from_access_date
 
 sources:
   - source_id: NOGG_2024_SECTION3
@@ -55,7 +55,7 @@ sources:
         summary: Ensure adequate calcium/vitamin D intake and supplement when dietary intake is low or vitamin D insufficiency risk is present.
         strength: guideline_recommendation
       - claim_id: exercise
-        summary: Encourage weight-bearing and muscle-strengthening exercise; address falls risk where relevant.
+        summary: Encourage weight-bearing and muscle-strengthening exercise and address falls risk where relevant.
         strength: guideline_recommendation
     runtime_use: active_candidate_as_targeted_communication_not_every_visit
 
@@ -71,8 +71,14 @@ sources:
     framework_role: primary
     claims:
       - claim_id: treatment_choice_factors
-        summary: Fracture risk, patient suitability and preference should inform drug choice.
+        summary: Fracture risk assessment, patient suitability and preference should inform drug choice.
         strength: strong
+      - claim_id: oral_bisphosphonate_use_and_contraindications
+        summary: >-
+          Oral bisphosphonates require appropriate fasting/upright administration and are contraindicated
+          with oesophageal emptying disorders or inability to sit/stand upright for the required period;
+          renal/mineral contraindications and cautions are agent-specific.
+        strength: product_use_and_safety_guidance
       - claim_id: denosumab_long_term_plan
         summary: Before denosumab, establish a long-term personalised plan and warn that treatment should not be stopped or delayed without clinical discussion.
         strength: strong
@@ -89,7 +95,7 @@ sources:
         summary: Check serum calcium prior to each denosumab dose; correct pre-existing hypocalcaemia/vitamin D deficiency and ensure adequate calcium/vitamin D.
         strength: product_label_precaution_reproduced_in_guideline
       - claim_id: zoledronate_renal_hypocalcaemia
-        summary: Zoledronate is contraindicated at GFR <=35 ml/min and in hypocalcaemia; correct vitamin D-related hypocalcaemia before treatment.
+        summary: Zoledronate is contraindicated at GFR <=35 ml/min and in hypocalcaemia; correct vitamin-D-related hypocalcaemia before treatment.
         strength: product_label_precaution_reproduced_in_guideline
       - claim_id: romosozumab_cv_hypocalcaemia
         summary: Romosozumab is contraindicated with prior myocardial infarction or stroke and with hypocalcaemia; weigh fracture and cardiovascular risk.
@@ -138,7 +144,7 @@ sources:
     organization: National Osteoporosis Guideline Group
     title: Summary of main recommendations
     version: NOGG 2024
-    published_or_updated: 2024-09_to_2024-12
+    published_or_updated: 2024-12
     accessed_on: 2026-08-31
     url: https://www.nogg.org.uk/full-guideline/summary-main-recommendations
     scope: postmenopausal_women_and_men_age_gte_50
@@ -158,6 +164,34 @@ sources:
         strength: guideline_main_recommendation
     runtime_use: active_candidate
 
+  - source_id: NOGG_2024_FAQ
+    source_class: guideline_supporting_faq
+    organization: National Osteoporosis Guideline Group
+    title: Frequently Asked Questions
+    version: updated December 2024
+    published_or_updated: 2024-12
+    accessed_on: 2026-08-31
+    url: https://www.nogg.org.uk/frequently-asked-questions
+    scope: practical_application_of_nogg_2024
+    framework_role: primary_supporting
+    claims:
+      - claim_id: denosumab_gt7m_rebound_risk
+        summary: >-
+          After at least two denosumab doses, a dose missed or delayed by more than 7 months
+          from the previous injection carries substantial rebound high-turnover/bone-loss risk
+          that can lead to multiple vertebral fractures; risk is greater with longer treatment duration.
+        strength: nogg_practical_guidance
+      - claim_id: denosumab_review_5y
+        summary: Review denosumab every 5 years, or sooner after fracture or worsening clinical risk; if clinically indicated it can be continued over 10 years.
+        strength: nogg_practical_guidance
+      - claim_id: parenteral_vitamin_d_before_start
+        summary: Treat vitamin D deficiency/insufficiency before parenteral osteoporosis therapies; rapid correction may be required before zoledronate, denosumab, teriparatide or romosozumab.
+        strength: nogg_practical_guidance
+      - claim_id: oral_bp_early_tolerance_adherence_review
+        summary: Review oral bisphosphonate tolerance/adherence at 12-16 weeks and reinforce correct upright/water administration.
+        strength: nogg_practical_guidance
+    runtime_use: active_candidate
+
   - source_id: ENDOCRINE_SOCIETY_2020_DENOSUMAB
     source_class: guideline
     organization: Endocrine Society
@@ -172,8 +206,11 @@ sources:
       - claim_id: denosumab_q6m_no_holiday
         summary: Denosumab 60 mg every 6 months; drug holiday or interruption is not recommended because effects reverse after 6 months if not on schedule.
         strength: technical_remark
+      - claim_id: denosumab_reassess_5_10y
+        summary: Reassess fracture risk after 5-10 years; women who remain at high risk should continue denosumab or receive other osteoporosis therapy.
+        strength: conditional_2_low_certainty
       - claim_id: denosumab_no_stop_without_followon
-        summary: Do not delay or stop denosumab without subsequent antiresorptive or other therapy to prevent rebound bone turnover, rapid BMD loss and fracture risk.
+        summary: Do not delay or stop denosumab without subsequent antiresorptive or other therapy to prevent rebound bone turnover, rapid BMD loss and increased fracture risk.
         strength: ungraded_good_practice_statement
     runtime_use: corroborating_active_candidate
 
