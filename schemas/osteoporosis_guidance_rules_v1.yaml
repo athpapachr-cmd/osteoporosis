@@ -48,7 +48,7 @@ rules:
       all:
         - encounter_archetype_in: [initial_assessment_new_or_uncertain_diagnosis, initial_assessment_known_osteoporosis_or_osteopenia]
         - nogg_scope_eligible: true
-        - formal_risk_indicated_is: yes
+        - formal_risk_indicated_is: "yes"
     guidance_objective: >-
       When formal fracture-risk assessment is explicitly indicated, perform/record it and
       preserve the declared framework/country model rather than generating an internal surrogate score.
@@ -307,7 +307,7 @@ rules:
     applies_if:
       all:
         - denosumab_exit_with_first_zoledronate_actual_date_exists: true
-        - ctx_monitoring_available_is: no
+        - ctx_monitoring_available_is: "no"
     guidance_objective: Surface the NOGG conditional option to consider another zoledronate infusion 6 months after the first when CTX monitoring is not possible.
     why_now: Δεν είναι διαθέσιμο CTX monitoring μετά τη denosumab exit· υπάρχει conditional NOGG fallback που χρειάζεται κλινική απόφαση.
     source_refs: [NOGG_2024_SECTION6#denosumab_no_ctx_second_zol]
