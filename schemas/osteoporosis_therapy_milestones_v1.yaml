@@ -24,6 +24,7 @@ profiles:
     status: active_candidate
     sources:
       - NOGG_2024_SECTION6
+      - NOGG_2024_FAQ
       - ENDOCRINE_SOCIETY_2020_DENOSUMAB
       - EMA_PROLIA_2026_08_19
     milestones:
@@ -46,17 +47,27 @@ profiles:
         rationale: Denosumab is administered every 6 months and interruption/drug holiday is not recommended.
         persistence: ephemeral_only
 
-      - milestone_id: DENOSUMAB_LONG_TERM_REASSESSMENT_FROM_5Y
+      - milestone_id: DENOSUMAB_GT7_MONTH_REBOUND_ESCALATION
+        trigger:
+          reliable_last_actual_administration: required
+          calendar_months_since_last_actual_gt: 7
+        guidance_rule_ids:
+          - OST_G2_R24_DENOSUMAB_GT7M_REBOUND_ESCALATION
+        rationale: NOGG FAQ distinguishes >7 months after the last injection as a substantial rebound-risk interval after at least two doses.
+        safeguard: does_not_infer_missing_dose_or_auto_select_rescue_therapy
+
+      - milestone_id: DENOSUMAB_LONG_TERM_REASSESSMENT_5Y
         trigger:
           reliable_elapsed_exposure_years_gte: 5
         guidance_domains:
           - formal_risk
           - dxa
           - treatment_decision
-        rationale: Endocrine Society suggests reassessing fracture risk after 5-10 years; this is a review point, not a stop point.
+        rationale: NOGG practical guidance reviews denosumab every 5 years or sooner after fracture/risk worsening; Endocrine Society suggests reassessment at 5-10 years.
         source_refs:
+          - NOGG_2024_FAQ#denosumab_review_5y
           - ENDOCRINE_SOCIETY_2020_DENOSUMAB#denosumab_reassess_5_10y
-        status: candidate_requires_source_registry_claim
+        status: active_candidate
         forbidden_semantics:
           - automatic_stop_at_5_years
           - automatic_switch_at_5_years
@@ -78,7 +89,7 @@ profiles:
           calendar_months_after_zoledronate: 3
         guidance_rule_ids:
           - OST_G2_R15_DENOSUMAB_EXIT_CTX_FOLLOWUP
-        rationale: NOGG evidence summary states BTM monitoring at 3 and 6 months post-zoledronate can guide subsequent infusion timing.
+        rationale: NOGG evidence discussion states BTM monitoring at 3 and 6 months post-zoledronate can guide subsequent infusion timing.
         strength: evidence_summary_not_threshold_command
 
       - milestone_id: DENOSUMAB_EXIT_POST_ZOL_CTX_6M
@@ -95,8 +106,23 @@ profiles:
   - profile_id: OST_TM_ORAL_BISPHOSPHONATE_V1
     agents: [alendronate, risedronate, ibandronate_oral]
     status: active_candidate
-    sources: [NOGG_2024_SECTION7]
+    sources: [NOGG_2024_SECTION6, NOGG_2024_SECTION7, NOGG_2024_FAQ]
     milestones:
+      - milestone_id: ORAL_BP_START
+        trigger:
+          decision_type: start
+          selected_agent_in: [alendronate, risedronate, ibandronate_oral]
+        guidance_rule_ids:
+          - OST_G2_R25_ORAL_BISPHOSPHONATE_START_SAFETY_USE
+        rationale: Suitability and correct administration instructions are required at treatment start.
+
+      - milestone_id: ORAL_BP_EARLY_12_16_WEEK_REVIEW
+        trigger:
+          reliable_treatment_exposure_weeks_between: [12, 16]
+        guidance_rule_ids:
+          - OST_G2_R26_ORAL_BISPHOSPHONATE_EARLY_REVIEW
+        rationale: NOGG FAQ recommends tolerance/adherence review 12-16 weeks after starting oral bisphosphonate therapy.
+
       - milestone_id: ORAL_BP_5Y_REASSESSMENT
         trigger:
           reliable_elapsed_exposure_years_gte: 5
@@ -111,6 +137,7 @@ profiles:
     agent: zoledronate
     status: active_candidate
     sources:
+      - NOGG_2024_SECTION6
       - NOGG_2024_SECTION7
       - EMA_ACLASTA_2026_04_20
     milestones:
