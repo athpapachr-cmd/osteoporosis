@@ -1,15 +1,16 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** MODULE 01 — G-2 EVIDENCE-BACKED GUIDANCE RUNTIME IMPLEMENTED / TESTED; RELEASE REVIEW REQUIRED.
+> **STATUS:** MODULE 01 — G-2 RELEASE REVIEW PASS / PR #69 OPEN / MERGE HOLD.
 > **Updated:** 2026-08-31 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Fresh verified remote `main` before implementation closeout:** `5182d250e244b2ed9e086138cb3b2edcdb967e25`.
+> **Fresh verified remote `main` for release review:** `5182d250e244b2ed9e086138cb3b2edcdb967e25`.
 > **Design-complete ancestry:** `design/module01-g2-evidence-backed-guidance-2026-08-31 @ 0395e52ed75f835d49713504df3df4ce51183edf`.
 > **Implementation branch:** `feat/module01-g2-evidence-guidance-runtime-2026-08-31`.
 > **Exact tested runtime head:** `e0657ba5924db87b38a0e05514613fbadf45bcd9`.
-> **Runtime CI:** `G2 evidence guidance runtime` run `33403182604` — SUCCESS.
-> **ACTIVE CANONICAL WRITER/LOCK:** NONE after G-2 implementation/test closeout.
-> **ACTIVE RUNTIME WRITER/LOCK:** NONE after G-2 implementation/test closeout.
+> **Release-review / PR-open head before this docs-only operational closeout:** `4c9ecad3535d795bcf85b4687ce7db44187e68a2`.
+> **Release PR:** `#69` — OPEN, non-draft, base `main`, explicit MERGE HOLD.
+> **ACTIVE CANONICAL WRITER/LOCK:** NONE after release-review/PR operational closeout.
+> **ACTIVE RUNTIME WRITER/LOCK:** NONE.
 
 ---
 
@@ -25,7 +26,7 @@ DEPLOYED
 PRODUCTION-SMOKE-VERIFIED
 ```
 
-G-2 has not changed production yet.
+G-2 has **not** been merged or deployed.
 
 ---
 
@@ -43,8 +44,9 @@ State:
 DESIGN-COMPLETE = YES
 IMPLEMENTED = YES
 TESTED = YES
-PRODUCT-OWNER RELEASE REVIEW = NO
-PR = NONE
+RELEASE-READINESS REVIEW = PASS
+RELEASE PR = #69 OPEN
+MERGE AUTHORITY = NO
 MERGED = NO
 DEPLOYED = NO
 PRODUCTION-SMOKE-VERIFIED = NO
@@ -52,6 +54,8 @@ PILOT-VALIDATED = NO
 ```
 
 Do not collapse these states.
+
+The product owner explicitly authorized the fresh release-readiness review and opening of the release PR. That authorization did **not** authorize merge or deploy.
 
 ---
 
@@ -129,7 +133,7 @@ automatic romosozumab cardiology/vascular referral without approved clinic polic
 
 ---
 
-# 6. Test / review evidence
+# 6. Implementation/test evidence
 
 Exact tested runtime head:
 
@@ -137,7 +141,7 @@ Exact tested runtime head:
 e0657ba5924db87b38a0e05514613fbadf45bcd9
 ```
 
-CI:
+Implementation workflow:
 
 ```text
 G2 evidence guidance runtime
@@ -145,31 +149,80 @@ run 33403182604
 COMPLETED / SUCCESS
 ```
 
-All job steps passed:
+That exact runtime head passed:
 
-- JS syntax;
+- JavaScript syntax;
 - frozen G-2 contract validation;
-- G-2 core regressions;
+- G-2 evidence-core regressions;
 - G-2 live-state regressions;
 - G-2 wiring/ownership regressions;
 - inherited G-1 core/wiring/UI-state/WHY-NOW regressions;
 - authoritative Finish browser regression;
 - server finalization lifecycle regression.
 
-Exact-head compare/review:
+No runtime file changed after `e0657ba5…` before release PR creation; the four subsequent closeout commits affected only:
 
 ```text
-main 5182d250… → e0657ba5…
-status ahead
-behind 0
-merge base exactly main
+CURRENT_OPERATIONAL.md
+SLICE_PLAN_CURRENT.md
+TODO.md
+osteoporosis-change-log.md
 ```
-
-Design head `0395e52e…` → tested head contains only expected G-2 runtime/test/canonical changes. No PR-1/PR-2 or parked utility leakage.
 
 ---
 
-# 7. Status matrix
+# 7. Fresh release-readiness review
+
+Fresh remote main remained:
+
+```text
+5182d250e244b2ed9e086138cb3b2edcdb967e25
+```
+
+Release-review head before the present docs-only operational closeout:
+
+```text
+4c9ecad3535d795bcf85b4687ce7db44187e68a2
+```
+
+Compare `main → 4c9ecad3…`:
+
+```text
+status: ahead
+ahead_by: 39
+behind_by: 0
+merge_base: exactly current main
+changed_files: 20
+```
+
+The changed-file set contains only expected G-2 contracts, evidence/design review, runtime integration, tests/workflows and canonicals. No PR-1/PR-2, physiotherapy or RF leakage was found.
+
+Release PR opened:
+
+```text
+PR #69
+feat: release G-2 evidence-backed osteoporosis guidance runtime
+base: main
+head: feat/module01-g2-evidence-guidance-runtime-2026-08-31
+state: OPEN
+mergeable: YES at reviewed head
+MERGE HOLD: YES
+```
+
+Exact PR-head checks at `4c9ecad3…` all passed:
+
+```text
+G2 evidence guidance contract       run 33405228779  SUCCESS
+G2 evidence guidance runtime        run 33405228669  SUCCESS
+G1 progressive guidance foundation  run 33405228587  SUCCESS
+Baseline finalization integrity     run 33405228589  SUCCESS
+```
+
+This establishes a clean release-review gate. The present update is documentation-only and does not change runtime semantics.
+
+---
+
+# 8. Status matrix
 
 ```text
 G-2 EVIDENCE REGISTRY                    DESIGN-COMPLETE
@@ -180,8 +233,9 @@ G-2 MACHINE CONTRACT CI                  PASS
 G-2 HUMAN DESIGN REVIEW                  COMPLETE
 G-2 RUNTIME IMPLEMENTED                  YES
 G-2 RUNTIME TESTED                       YES
-G-2 RELEASE REVIEW                       NOT YET PRODUCT-OWNER AUTHORIZED
-G-2 PR                                   NONE
+G-2 RELEASE REVIEW                       PASS
+G-2 RELEASE PR                           #69 OPEN
+G-2 MERGE AUTHORITY                      NO
 G-2 MERGED                               NO
 G-2 DEPLOYED                             NO
 G-2 PRODUCTION-SMOKE-VERIFIED            NO
@@ -193,23 +247,28 @@ MODULE 01 CLOSED                         NO
 
 ---
 
-# 8. Exact next action
+# 9. Exact next action / STOP gate
 
-The bounded runtime implementation authority is exhausted and the writer lock is released.
+The authorized release-review/PR-opening action is complete.
 
-The next action, **only after a new explicit product-owner instruction to release/proceed with release**, is:
+**STOP before merge.**
+
+Only after a separate explicit product-owner merge instruction may a future session perform:
 
 ```text
 fresh verify remote main
 → fresh six-canonical bootstrap
-→ exact-head release-readiness review of the tested G-2 ancestry
-→ confirm main compatibility / no new blockers
-→ if explicitly authorized, open reviewed release PR
-→ STOP again before merge unless merge authority is separately explicit
+→ fetch exact current PR #69 head
+→ confirm no branch/base drift
+→ confirm exact-head required checks/review remain green
+→ inspect any new review comments/threads
+→ if still clean, squash-merge using expected exact head SHA
+→ allow normal Render auto-deploy from main
+→ verify deploy identity/state
+→ perform/coordinate production smoke
+→ canonical release closeout
 ```
 
-Do not infer release authority from implementation completion.
+No merge, deploy or production smoke is authorized now.
 
-No PR, merge, deploy or production smoke is currently authorized.
-
-Parked physiotherapy/RF work and PR-1/PR-2 remain outside the closed G-2 implementation slice.
+Parked physiotherapy/RF work and PR-1/PR-2 remain outside this release PR.
