@@ -49,11 +49,12 @@ profiles:
 
       - milestone_id: DENOSUMAB_GT7_MONTH_REBOUND_ESCALATION
         trigger:
+          reliable_actual_denosumab_administration_count_gte: 2
           reliable_last_actual_administration: required
           calendar_months_since_last_actual_gt: 7
         guidance_rule_ids:
           - OST_G2_R24_DENOSUMAB_GT7M_REBOUND_ESCALATION
-        rationale: NOGG FAQ distinguishes >7 months after the last injection as a substantial rebound-risk interval after at least two doses.
+        rationale: NOGG FAQ distinguishes >7 months after the last injection as a substantial rebound-risk interval after at least two denosumab doses.
         safeguard: does_not_infer_missing_dose_or_auto_select_rescue_therapy
 
       - milestone_id: DENOSUMAB_LONG_TERM_REASSESSMENT_5Y
@@ -91,6 +92,7 @@ profiles:
           - OST_G2_R15_DENOSUMAB_EXIT_CTX_FOLLOWUP
         rationale: NOGG evidence discussion states BTM monitoring at 3 and 6 months post-zoledronate can guide subsequent infusion timing.
         strength: evidence_summary_not_threshold_command
+        runtime_activation: blocked_until_reliable_exit_to_zoledronate_linkage
 
       - milestone_id: DENOSUMAB_EXIT_POST_ZOL_CTX_6M
         trigger:
@@ -102,6 +104,7 @@ profiles:
           - OST_G2_R16_DENOSUMAB_EXIT_NO_CTX_OPTION
         rationale: CTX-guided further treatment is recommended; if CTX monitoring is unavailable NOGG conditionally suggests another zoledronate infusion at 6 months.
         safeguard: no_ctx_value_threshold_is_encoded
+        runtime_activation: blocked_until_reliable_exit_linkage_and_explicit_ctx_availability
 
   - profile_id: OST_TM_ORAL_BISPHOSPHONATE_V1
     agents: [alendronate, risedronate, ibandronate_oral]
