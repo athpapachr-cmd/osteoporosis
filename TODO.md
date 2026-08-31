@@ -35,8 +35,9 @@ This file answers **where the product is going and in what broad order**. It is 
 - [x] Implement/test the bounded G-1 progressive-guidance runtime foundation on `feat/module01-g1-progressive-guidance-foundation-2026-08-30`.
 - [x] Release C1 authoritative Finish + G-1 progressive guidance to production through PR #64.
 - [x] Correct and deploy explicit `Γιατί τώρα:` discoverability in the top `Σημερινή ροή` summary through PR #66.
+- [x] Complete product-owner production re-smoke confirming visible `Γιατί τώρα:` and dynamic guidance behavior.
 
-The authoritative Finish browser correction and G-1 progressive-guidance foundation are now **implemented / tested / merged / deployed**. The only remaining G-1 production-readiness gate is direct product-owner confirmation that the corrected `Γιατί τώρα:` label is visible in production.
+The authoritative Finish browser correction and G-1 progressive-guidance foundation are now **implemented / tested / merged / deployed / production-smoke-verified**. G-1 production-readiness is closed; later real-clinic usefulness/refinement remains a separate pilot/evidence-from-use question.
 
 ---
 
@@ -83,7 +84,7 @@ No real pilot before the full intended guided/capture workflow is ready.
 - [x] Freeze machine contract manifest: `schemas/dynamic_guided_visit_contract_manifest_v1.yaml`.
 - [x] Complete exact G-0 design review: `M01_G0_DYNAMIC_GUIDANCE_DESIGN_REVIEW_V1.md` = `DESIGN-COMPLETE`.
 
-## 1.3 G-1 Dynamic Guidance runtime foundation — MERGED / DEPLOYED / FINAL RE-SMOKE GATE
+## 1.3 G-1 Dynamic Guidance runtime foundation — PRODUCTION-SMOKE-VERIFIED / CLOSED
 
 - [x] Build ephemeral `LongitudinalGuidanceProjectionV1` from protected historical encounters.
 - [x] Build `EncounterContextV1` resolver.
@@ -99,7 +100,8 @@ No real pilot before the full intended guided/capture workflow is ready.
 - [x] Merge/deploy through reviewed release path.
 - [x] Production smoke confirmed G-1 loads and existing `Τύπος σημερινής επίσκεψης` is usable.
 - [x] Correct the production-smoke WHY-NOW discoverability defect without changing guidance semantics.
-- [ ] Product-owner re-smoke confirms literal `Γιατί τώρα: ...` is visible in top `Σημερινή ροή` after the correction deploy.
+- [x] Product-owner re-smoke confirms literal `Γιατί τώρα: ...` is visible in top `Σημερινή ροή` after the correction deploy.
+- [x] Product-owner observed that surfaced guidance changes dynamically with visit context and is informative/guiding; this remains a production observation, not pilot validation.
 
 ## 1.4 Osteoporosis guidance-content profiles — BEFORE REAL PILOT
 
@@ -232,7 +234,7 @@ Permanent requirements:
 - [x] Minimum G-1 runtime foundation implemented/tested/merged/deployed.
 - [x] Regression suite for representative G-1 encounter mechanics.
 - [x] Explicit WHY-NOW summary presentation regression.
-- [ ] Final product-owner correction re-smoke.
+- [x] Final product-owner correction re-smoke.
 - [ ] Evidence-backed osteoporosis guidance-content registry.
 - [ ] Real-clinic usability validation and evidence-from-use card/taxonomy refinement.
 
@@ -330,8 +332,8 @@ Do not mutate/merge/deploy during Module 01 closure without separate authorizati
 # 8. BROAD IMPLEMENTATION ORDER
 
 ```text
-1. C1 authoritative Finish release/smoke — released; no current defect reported
-2. G-1 dynamic-guidance mechanics — merged/deployed; final corrected WHY-NOW re-smoke pending
+1. C1 authoritative Finish release/smoke — closed
+2. G-1 dynamic-guidance mechanics — production-smoke-verified / closed
 3. evidence-backed osteoporosis guidance profiles
 4. PR-1 transcript extraction
 5. PR-2 inline provisional population
