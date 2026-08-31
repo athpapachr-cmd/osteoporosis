@@ -42,19 +42,23 @@ rules:
   - rule_id: OST_G2_R01_INITIAL_FORMAL_RISK
     domain: formal_risk
     card_id: formal_risk
-    rule_class: archetype_core
-    priority: 50
+    rule_class: contextual
+    priority: 45
     applies_if:
       all:
         - encounter_archetype_in: [initial_assessment_new_or_uncertain_diagnosis, initial_assessment_known_osteoporosis_or_osteopenia]
-        - nogg_scope_eligible_or_scope_uncertain: true
+        - nogg_scope_eligible: true
+        - formal_risk_indicated_is: yes
     guidance_objective: >-
-      Determine whether formal fracture-risk assessment is indicated and, when used,
+      When formal fracture-risk assessment is explicitly indicated, perform/record it and
       preserve the declared framework/country model rather than generating an internal surrogate score.
-    why_now: Η αρχική αξιολόγηση χρειάζεται ρητή εκτίμηση του τρέχοντος καταγματικού κινδύνου όταν εφαρμόζεται το επιλεγμένο framework.
+    why_now: Έχει δηλωθεί ότι formal fracture-risk assessment ενδείκνυται σήμερα· το NOGG χρησιμοποιεί FRAX όταν υπάρχει clinical risk factor σε άτομα εντός του πεδίου εφαρμογής του.
     source_refs: [NOGG_2024_SECTION3#frax_with_clinical_risk_factor]
     strength: strong_when_nogg_scope_and_clinical_risk_factor_apply
     runtime_state: active_candidate
+    safeguard: >-
+      The initial-visit product flow may surface the formal-risk card before this rule matches,
+      but this evidence rule must not claim FRAX is mandatory merely because the visit is initial.
 
   - rule_id: OST_G2_R02_VFA_STRUCTURED_TRIGGER
     domain: vfa
@@ -168,7 +172,8 @@ rules:
     source_refs:
       - NOGG_2024_SUMMARY#very_high_risk_referral
       - NOGG_2024_SECTION6#very_high_risk_anabolic
-    strength: mixed_main_and_conditional_recommendation
+    source_locator_detail: NOGG_2024_SECTION4_recommendation_8_exact_indicators_verified_2026_08_31
+    strength: conditional_referral_plus_conditional_anabolic_consideration
     runtime_state: active_candidate
 
   - rule_id: OST_G2_R09_SHARED_TREATMENT_DECISION_FACTORS
@@ -292,7 +297,7 @@ rules:
       - ECTS_2020_DENOSUMAB_DISCONTINUATION#btm_may_help_regimen
       - JAMA_2024_ZOL_AFTER_DENOSUMAB_RCT#one_zol_not_full_lumbar_protection
     strength: strong_for_ctx_guided_further_treatment_with_contextual_rct_uncertainty
-    runtime_state: active_candidate
+    runtime_state: active_candidate_blocked_until_reliable_exit_to_zoledronate_linkage
     forbidden_thresholds: [280_ng_L_automatic, 300_ng_L_automatic]
 
   - rule_id: OST_G2_R16_DENOSUMAB_EXIT_NO_CTX_OPTION
@@ -307,7 +312,7 @@ rules:
     why_now: Δεν είναι διαθέσιμο CTX monitoring μετά τη denosumab exit· υπάρχει conditional NOGG fallback που χρειάζεται κλινική απόφαση.
     source_refs: [NOGG_2024_SECTION6#denosumab_no_ctx_second_zol]
     strength: conditional
-    runtime_state: active_candidate_only_if_ctx_availability_is_explicitly_representable
+    runtime_state: active_candidate_blocked_until_ctx_availability_is_explicitly_representable
 
   - rule_id: OST_G2_R17_ZOLEDRONATE_START_SAFETY
     domain: laboratory_monitoring
@@ -324,6 +329,7 @@ rules:
       - EMA_ACLASTA_2026_04_20#aclasta_hypocalcaemia
     strength: regulatory_safety
     runtime_state: active_candidate
+    safeguard: checklist_guidance_only_unless_current_lab_freshness_is_explicitly_proven
 
   - rule_id: OST_G2_R18_ROMOSOZUMAB_START_SAFETY
     domains: [laboratory_monitoring, treatment_decision, communication]
@@ -337,7 +343,7 @@ rules:
       - NOGG_2024_SECTION6#romosozumab_cv_hypocalcaemia
       - EMA_EVENITY_CURRENT#evenity_mi_stroke_hypocalcaemia
     strength: regulatory_safety
-    runtime_state: active_candidate
+    runtime_state: active_candidate_checklist_only
     clinic_policy_note: No automatic cardiology_or_vascular_referral is encoded without separately approved clinic policy.
 
   - rule_id: OST_G2_R19_TERIPARATIDE_START_SAFETY
@@ -353,7 +359,7 @@ rules:
       - EMA_FORSTEO_2026_01_28#forsteo_course_24m
       - EMA_FORSTEO_2026_01_28#forsteo_major_restrictions
     strength: regulatory_safety
-    runtime_state: active_candidate
+    runtime_state: active_candidate_checklist_only
 
   - rule_id: OST_G2_R20_POST_ANABOLIC_CONSOLIDATION
     domains: [transition_safety, treatment_decision, followup_tasks]
@@ -421,11 +427,12 @@ rules:
     applies_if:
       all:
         - active_or_current_agent_is: denosumab
+        - reliable_actual_denosumab_administration_count_gte: 2
         - reliable_last_actual_administration_exists: true
         - encounter_date_exists: true
         - calendar_months_since_last_actual_gt: 7
-    guidance_objective: Escalate a >7-month interval from the prior actual denosumab injection as a rebound-risk safety problem, distinct from ordinary 6-month due status.
-    why_now: Έχουν περάσει >7 μήνες από την τελευταία πραγματική denosumab δόση· αυτό αυξάνει ουσιαστικά τον rebound high-turnover/vertebral-fracture κίνδυνο και απαιτεί άμεσο σχέδιο.
+    guidance_objective: Escalate a >7-month interval after at least two documented denosumab doses as a rebound-risk safety problem, distinct from ordinary 6-month due status.
+    why_now: Έχουν προηγηθεί ≥2 αξιόπιστα τεκμηριωμένες denosumab δόσεις και έχουν περάσει >7 μήνες από την τελευταία πραγματική δόση· το NOGG επισημαίνει ουσιαστικό rebound high-turnover/vertebral-fracture κίνδυνο.
     source_refs: [NOGG_2024_FAQ#denosumab_gt7m_rebound_risk]
     strength: nogg_practical_guidance
     runtime_state: active_candidate
@@ -443,7 +450,7 @@ rules:
     why_now: Η έναρξη oral bisphosphonate απαιτεί έλεγχο oesophageal/upright/renal-mineral suitability και σαφείς οδηγίες σωστής λήψης.
     source_refs: [NOGG_2024_SECTION6#oral_bisphosphonate_use_and_contraindications]
     strength: product_use_and_safety_guidance
-    runtime_state: active_candidate
+    runtime_state: active_candidate_checklist_only
 
   - rule_id: OST_G2_R26_ORAL_BISPHOSPHONATE_EARLY_REVIEW
     domains: [treatment_history, communication, followup_tasks]
