@@ -115,7 +115,7 @@ Data completeness
 
 Progress bars represent current state; run charts represent trajectory.
 
-No composite Clinical Excellence score should be treated as real before an adequate baseline exists.
+No composite Clinical Excellence score should be treated as real before an adequate baseline audit exists.
 
 ---
 
