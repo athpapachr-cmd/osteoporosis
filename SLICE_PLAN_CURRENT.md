@@ -1,127 +1,39 @@
 # SLICE_PLAN_CURRENT.md — G-2 Evidence-backed Osteoporosis Guidance Content v1
 
-> **STATUS:** ACTIVE DESIGN / EVIDENCE REVIEW.
+> **STATUS:** DESIGN-COMPLETE — EVIDENCE/RULE/PROFILE/MILESTONE CONTRACT REVIEWED; RUNTIME NOT IMPLEMENTED.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Parent product:** Personal Clinical Excellence System.
 > **Module:** 01 — Osteoporosis.
 > **Slice ID:** `M01-G2-EVIDENCE-GUIDANCE-CONTENT-v1`.
 > **Base main:** `5182d250e244b2ed9e086138cb3b2edcdb967e25`.
 > **Design branch:** `design/module01-g2-evidence-backed-guidance-2026-08-31`.
-> **Runtime writer:** NONE during design/evidence review.
+> **Runtime writer:** NONE at design closeout.
 
 ---
 
-# 1. Problem
+# 1. Objective / result
 
-G-1 proves that dynamic visit planning and `WHY NOW` work in production, but its current base flows are primarily product-flow mechanics. Before the real system-assisted pilot, clinically active guidance must be backed by explicit reviewed osteoporosis evidence or approved clinic policy.
+G-2 defines the minimum evidence-backed osteoporosis guidance content required before the real system-assisted pilot. It converts the generic G-1 capability into a versioned clinical-content contract without turning guidelines into automatic treatment decisions.
 
-The goal is not an exhaustive osteoporosis textbook. The goal is the **minimum safe and useful content registry** that improves the real encounter and can later be refined from five-case use evidence.
-
----
-
-# 2. Scope
-
-G-2 v1 will define evidence-backed content for:
-
-1. first assessment — new/uncertain diagnosis;
-2. initial-to-service patient with known osteoporosis/osteopenia;
-3. results/work-up review with management decision, if justified as a distinct visit intent;
-4. routine stable follow-up;
-5. treatment start;
-6. repeated administration / continuation / due monitoring;
-7. post-fragility fracture and fracture-on-treatment event overrides;
-8. treatment change / transition / consolidation;
-9. adverse-effect/intolerance context;
-10. denosumab/time-critical administration and discontinuation/transition safety where exact evidence supports it.
-
----
-
-# 3. Evidence governance contract
-
-Every clinically active rule must contain at minimum:
+The frozen design separates:
 
 ```text
-rule_id
-module/domain
-card/domain target
-rule_class
-trigger/applicability
-human guidance objective
-WHY NOW text
-source_id
-source_org/publication
-source_version/year
-source_locator
-recommendation/criterion summary
-strength/certainty when available
-reviewed_on
-status
+product-flow profile
+!=
+evidence-backed rule
+!=
+medication safety checklist
+!=
+exact therapy milestone
+!=
+clinician treatment decision
 ```
 
-Source classes:
-
-```text
-guideline
-position_statement
-consensus_statement
-regulatory_label_or_safety_source
-systematic_review_or_key_trial
-approved_clinic_policy
-product_flow
-```
-
-`product_flow` may organize a visit but may not be presented as guideline-backed clinical truth.
+This design is deliberately narrower than an exhaustive osteoporosis textbook. It prioritizes rules that materially improve the current consultation and can be represented safely from current structured data.
 
 ---
 
-# 4. Non-hybridization rule
-
-If two frameworks differ materially, the registry preserves separate rule/source records. The runtime may show that guidance varies by framework, but G-2 must not create a silent synthetic threshold.
-
-```text
-SOURCE A != SOURCE B
-CONFLICT/VARIATION → explicit provenance + clinician judgment
-```
-
----
-
-# 5. Clinical decision boundary
-
-G-2 may surface:
-
-- what should be checked;
-- what needs reassessment;
-- prerequisites/safety issues;
-- timing risk;
-- unresolved transition requirements;
-- evidence-backed options or decision factors.
-
-G-2 must not silently choose the final drug or substitute for clinician judgment.
-
----
-
-# 6. Denosumab hard boundary
-
-G-2 may activate exact time-sensitive rules only when the reviewed source supports the exact semantic claim.
-
-Required distinctions:
-
-```text
-actual administration date > scheduled label
-next-due date may be explicit but must not be invented
-administration count != elapsed exposure
-late administration risk != discontinuation plan
-planned transition != actual antiresorptive administration
-BTM monitoring recommendation != automatic retreatment command unless source/policy explicitly defines it
-```
-
-No 4th/8th/10th-dose milestone is active merely from ordinal count.
-
----
-
-# 7. Machine-readable deliverables
-
-Planned design artifacts:
+# 2. Normative machine artifacts
 
 ```text
 schemas/osteoporosis_guidance_evidence_registry_v1.yaml
@@ -132,68 +44,277 @@ schemas/osteoporosis_guidance_contract_manifest_v1.yaml
 M01_G2_EVIDENCE_GUIDANCE_REVIEW_V1.md
 ```
 
-The manifest will be the normative machine entrypoint if the design reaches `DESIGN-COMPLETE`.
+The manifest is the normative machine entrypoint for bounded runtime implementation.
 
 ---
 
-# 8. Runtime mapping constraint
+# 3. Evidence governance
 
-G-2 must map only to real G-1/current form domains such as:
+Primary clinical framework for G-2 v1:
 
 ```text
-fracture_history
-formal_risk
-dxa
-vfa
-secondary_causes
-laboratory_monitoring
-falls_function
-sarcopenia
-treatment_history
-administrations
-treatment_decision
-transition_safety
-followup_tasks
-communication
-understanding
+NOGG 2024
 ```
 
-If useful clinical content has no safe current target, record it as a design/runtime gap rather than forcing it into a wrong domain.
+Supporting evidence is kept explicitly separate:
+
+- current EMA/EU product information for regulatory safety facts;
+- Endocrine Society 2020 denosumab recommendations;
+- ECTS 2020 denosumab-discontinuation position statement;
+- ASBMR/BHOF 2024 as contextual goal-directed-treatment reasoning;
+- recent denosumab-discontinuation trials/observational evidence as uncertainty context.
+
+Hard rule:
+
+```text
+SOURCE A != SOURCE B
+CONFLICT / VARIATION → EXPLICIT PROVENANCE + CLINICIAN JUDGMENT
+```
+
+No silent framework hybridization is permitted.
 
 ---
 
-# 9. Acceptance fixtures
+# 4. Visit profiles frozen
 
-At minimum design tests/fixtures must cover:
+The design defines profiles for:
 
-- first assessment with no prior structured history;
-- known patient with reusable prior data and pending results;
-- routine stable follow-up without new event;
-- due/late denosumab administration with exact actual-date evidence;
-- new fragility fracture overriding routine continuation;
-- fracture on treatment;
-- treatment start with agent-specific prerequisites;
-- denosumab stopping/transition context;
-- consolidation after anabolic/romosozumab where evidence supports sequence guidance;
-- conflicting or insufficient source evidence → explicit uncertainty/no automatic rule.
+1. first assessment — new/uncertain diagnosis;
+2. initial-to-service known osteoporosis/osteopenia;
+3. routine stable follow-up;
+4. treatment start;
+5. repeated administration / continuation / due monitoring;
+6. treatment change / transition;
+7. post-fragility fracture;
+8. fracture on treatment;
+9. adverse effect / intolerance;
+10. treatment completion / consolidation.
 
----
-
-# 10. Out of scope
-
-- exhaustive drug monographs;
-- unsupported clinic habits presented as guidelines;
-- PR-1/PR-2 implementation;
-- treatment recommendation automation;
-- real-patient data;
-- five-case pilot collection;
-- KPI scoring/Practice Review changes;
-- physiotherapy/RF work.
+A distinct `results_or_workup_review_with_management_decision` profile was evaluated and retained as a **product-flow candidate**, not activated as a new runtime enum in G-2 design. It is not a guideline claim.
 
 ---
 
-# 11. Current gate
+# 5. Evidence-backed rule set
 
-`DESIGN/EVIDENCE REVIEW IN PROGRESS`.
+The G-2 rules registry contains 26 evidence-backed candidate rules covering:
 
-No new clinical runtime rule is active until the evidence registry, rule semantics, profile mapping and conflict handling have been reviewed as one coherent contract.
+- formal fracture-risk assessment when explicitly indicated;
+- VFA/vertebral-imaging structured triggers;
+- secondary-cause review;
+- falls/function review;
+- new-fragility-fracture event override;
+- fracture-on-treatment reassessment without automatic failure/switch labeling;
+- NOGG very-high-risk review;
+- treatment-decision factors and patient preference;
+- parenteral vitamin-D preparation;
+- denosumab start, due, delay and exit safety;
+- medication-specific safety for denosumab, zoledronate, romosozumab, teriparatide and oral bisphosphonates;
+- post-anabolic/romosozumab antiresorptive follow-on;
+- oral-bisphosphonate 12–16-week and ≥5-year review points;
+- zoledronate ≥3-year reassessment;
+- targeted lifestyle/falls/bone-health communication.
+
+---
+
+# 6. Final clinical-review corrections
+
+## G2-RV1 — denosumab >7-month rule
+
+The specific NOGG >7-month rebound-risk escalation requires:
+
+```text
+reliable actual denosumab administration count >= 2
++ reliable last actual dose date
++ encounter date
++ >7 calendar months since last actual dose
+```
+
+It must not be asserted after only one documented dose. General six-month due/time-critical guidance remains separate.
+
+## G2-RV2 — FRAX evidence rule
+
+The initial-visit profile may surface Formal Risk as product flow, but the evidence-specific NOGG FRAX rule activates only when:
+
+```text
+NOGG scope eligible
++ formal_risk_indicated == "yes"
+```
+
+Initial visit alone does not imply mandatory FRAX.
+
+## G2-RV3 — NOGG very-high-risk criteria
+
+The represented NOGG criteria were verified against Section 4 and include:
+
+- recent vertebral fracture within 2 years;
+- ≥2 vertebral fractures;
+- BMD T-score ≤ -3.5;
+- high-dose glucocorticoids ≥7.5 mg/day prednisolone equivalent over 3 months;
+- other/multiple risk factors or FRAX-defined very-high risk.
+
+These surface specialist/parenteral/anabolic consideration, not automatic anabolic selection.
+
+## G2-RV4 — persisted enum predicates
+
+Persisted string enums such as `"yes"` / `"no"` are explicitly quoted in YAML predicates so YAML boolean coercion cannot alter runtime semantics.
+
+---
+
+# 7. Therapy milestone design
+
+Evidence-backed milestone capability includes:
+
+### Denosumab
+
+- every-administration calcium/mineral safety check;
+- evidence-derived expected due date at 6 calendar months from reliable actual administration;
+- separate >7-month rebound-risk escalation after ≥2 reliable actual doses;
+- long-term reassessment at 5 years / sooner with changed risk context;
+- explicit denosumab-exit sequential planning at 6 months from last actual dose.
+
+### Oral bisphosphonate
+
+- start safety/use guidance;
+- 12–16-week tolerance/adherence/correct-use review;
+- ≥5-year fracture-risk reassessment.
+
+### Zoledronate
+
+- administration renal/mineral safety guidance;
+- ≥3-year fracture-risk reassessment.
+
+### Romosozumab / teriparatide
+
+- start safety guidance;
+- explicit completion/transition milestones with antiresorptive follow-on without delay.
+
+Administration count and elapsed exposure remain separate. Approximate duration does not become an exact milestone date.
+
+---
+
+# 8. Explicit non-rules
+
+G-2 v1 explicitly does **not** encode:
+
+```text
+CTX >=280 ng/L → automatic second zoledronate
+CTX >=300 ng/L → automatic second zoledronate
+CTX at 3 months → mandatory retreatment command
+Prolia 4th/8th/10th dose → generic milestone
+romosozumab → mandatory cardiology/vascular referral without approved clinic policy
+a fracture on treatment → automatic treatment failure/switch
+```
+
+CTX-guided post-denosumab management remains clinically relevant, but no validated universal automatic retreatment threshold is asserted.
+
+---
+
+# 9. Runtime activation classification
+
+The design review classifies rules as:
+
+```text
+activate_v1
+checklist_only
+blocked_missing_structured_input
+blocked_missing_reliable_linkage
+design_only
+```
+
+Important first-runtime exclusions:
+
+- `OST_G2_R15_DENOSUMAB_EXIT_CTX_FOLLOWUP` remains blocked until a specific post-exit zoledronate actual event can be linked reliably to the denosumab-exit sequence across visits;
+- `OST_G2_R16_DENOSUMAB_EXIT_NO_CTX_OPTION` remains blocked until CTX-monitoring availability is represented explicitly; a blank CTX value is not evidence that monitoring is unavailable.
+
+Medication safety rules may surface **verify/review/confirm** guidance when the current data model cannot prove full safety clearance. Missing/stale data must never produce “safe/cleared”.
+
+---
+
+# 10. G-1 integration boundary
+
+Preferred bounded implementation:
+
+```text
+existing G-1 longitudinal projection
++ live current encounter snapshot
+→ G2 osteoporosis evidence context
+→ pure deterministic evidence evaluator
+→ evidence contributions per existing domain/card
+→ merge with G-1 Visit Plan using manifest priority
+→ existing `Σημερινή ροή` / `Γιατί τώρα:` UI
+```
+
+Do not replace the generic G-1 engine with a monolithic osteoporosis engine.
+
+G-1 live-state ownership remains mandatory:
+
+```text
+LIVE CONTROL VALUE, INCLUDING BLANK
+>
+PERSISTED BROWSER CACHE
+```
+
+---
+
+# 11. Acceptance evidence
+
+Contract workflow:
+
+```text
+G2 evidence guidance contract
+run 33358433732
+head 6a40a4a87882a4531c69ce9dff5e0ecd46011d84
+COMPLETED / SUCCESS
+```
+
+The workflow validates YAML syntax, source/claim references, rule/profile/milestone cross-references, domains, active-rule reachability, manifest paths/schemas and explicit forbidden semantics.
+
+Human clinical/runtime review:
+
+```text
+M01_G2_EVIDENCE_GUIDANCE_REVIEW_V1.md
+```
+
+The review explicitly classifies runtime-safe, checklist-only and blocked rules.
+
+---
+
+# 12. Completion matrix
+
+```text
+evidence registry                         DESIGNED / REVIEWED
+rules registry                            DESIGNED / REVIEWED
+visit profiles                            DESIGNED / REVIEWED
+therapy milestones                        DESIGNED / REVIEWED
+non-hybridization                         FROZEN
+CTX automatic threshold rules             EXPLICITLY FORBIDDEN
+generic Prolia ordinal milestones          EXPLICITLY FORBIDDEN
+runtime activation classification          FROZEN
+machine contract CI                        PASS
+human design review                        COMPLETE
+runtime implementation                     NO
+runtime tests                              NO
+merged                                     NO
+deployed                                   NO
+production-smoke-verified                  NO
+pilot-validated                            NO
+```
+
+---
+
+# 13. Stop / next action
+
+The evidence/content **design** slice is complete.
+
+The next product-owner-authorized action is a separate bounded runtime implementation branch from the exact design-complete ancestry:
+
+```text
+fresh main verification
+→ create G-2 runtime implementation branch from design-complete head
+→ claim runtime/canonical writer lock
+→ implement deterministic evidence context/evaluator + G-1 merge
+→ add focused synthetic/runtime regressions + inherited G-1/C1 regressions
+→ STOP at implementation/test gate
+```
+
+No PR, merge, deploy or production smoke is authorized by this design closeout.
