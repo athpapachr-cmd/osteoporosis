@@ -50,6 +50,35 @@ def collect_rule_domains(rule):
     return domains
 
 
+def find_rule(rules, rule_id):
+    return next(rule for rule in rules if rule["rule_id"] == rule_id)
+
+
+def find_milestone(milestones, milestone_id):
+    for profile in milestones.get("profiles", []):
+        for milestone in profile.get("milestones", []):
+            if milestone["milestone_id"] == milestone_id:
+                return milestone
+    raise AssertionError(f"missing milestone: {milestone_id}")
+
+
+def flatten_predicate_items(value):
+    if isinstance(value, dict):
+        items = []
+        for key, child in value.items():
+            if key in {"all", "any"}:
+                items.extend(flatten_predicate_items(child))
+            else:
+                items.append((key, child))
+        return items
+    if isinstance(value, list):
+        items = []
+        for child in value:
+            items.extend(flatten_predicate_items(child))
+        return items
+    return []
+
+
 def test_contract():
     docs = {name: load(path) for name, path in FILES.items()}
     evidence = docs["evidence"]
@@ -118,6 +147,27 @@ def test_contract():
     }
     unreachable = active_rules - reachable_rules
     assert not unreachable, f"active candidate rules unreachable from profiles/milestones: {sorted(unreachable)}"
+
+    # Evidence-fidelity guards found during exact clinical review.
+    r01 = find_rule(rules, "OST_G2_R01_INITIAL_FORMAL_RISK")
+    r01_predicates = dict(flatten_predicate_items(r01.get("applies_if", {})))
+    assert r01_predicates.get("formal_risk_indicated_is") == "yes"
+    assert r01_predicates.get("nogg_scope_eligible") is True
+
+    r24 = find_rule(rules, "OST_G2_R24_DENOSUMAB_GT7M_REBOUND_ESCALATION")
+    r24_predicates = dict(flatten_predicate_items(r24.get("applies_if", {})))
+    assert r24_predicates.get("reliable_actual_denosumab_administration_count_gte") == 2
+    assert r24_predicates.get("calendar_months_since_last_actual_gt") == 7
+
+    rebound_milestone = find_milestone(milestones, "DENOSUMAB_GT7_MONTH_REBOUND_ESCALATION")
+    rebound_trigger = rebound_milestone["trigger"]
+    assert rebound_trigger.get("reliable_actual_denosumab_administration_count_gte") == 2
+    assert rebound_trigger.get("calendar_months_since_last_actual_gt") == 7
+
+    r15 = find_rule(rules, "OST_G2_R15_DENOSUMAB_EXIT_CTX_FOLLOWUP")
+    r16 = find_rule(rules, "OST_G2_R16_DENOSUMAB_EXIT_NO_CTX_OPTION")
+    assert "blocked" in r15["runtime_state"]
+    assert "blocked" in r16["runtime_state"]
 
     forbidden = {item["id"] for item in rules_doc.get("explicit_non_rules", [])}
     assert "CTX_280_OR_300_AUTOMATIC_SECOND_ZOLEDRONATE" in forbidden
