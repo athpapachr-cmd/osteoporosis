@@ -162,6 +162,7 @@ rules:
         - vertebral_fracture_count_gte: 2
         - minimum_spine_or_hip_t_score_lte: -3.5
         - high_dose_glucocorticoid_gte_7_5_mg_for_gte_3m: true
+    framework_guard: nogg_2024
     guidance_objective: Surface specialist/parenteral/anabolic consideration without choosing an agent automatically.
     why_now: Υπάρχει ρητός δείκτης πολύ υψηλού καταγματικού κινδύνου που αλλάζει το βάθος της θεραπευτικής συζήτησης και μπορεί να απαιτεί specialist strategy.
     source_refs:
@@ -191,8 +192,8 @@ rules:
       selected_or_planned_agent_in: [zoledronate, denosumab, teriparatide, romosozumab, ibandronate_iv]
     guidance_objective: Confirm vitamin D deficiency/insufficiency has been addressed before parenteral osteoporosis therapy.
     why_now: Η προγραμματισμένη παρεντερική θεραπεία απαιτεί έλεγχο/διόρθωση vitamin-D deficiency πριν από την έναρξη.
-    source_refs: [NOGG_2024_SECTION6#calcium_vitamin_d_repletion]
-    strength: strong_recommendation_from_section6_general_treatment_precaution
+    source_refs: [NOGG_2024_FAQ#parenteral_vitamin_d_before_start]
+    strength: nogg_practical_guidance
     runtime_state: active_candidate
 
   - rule_id: OST_G2_R11_DENOSUMAB_START_LONG_TERM_PLAN
@@ -282,7 +283,7 @@ rules:
     applies_if:
       denosumab_exit_with_post_exit_zoledronate_actual_date_exists: true
     guidance_objective: >-
-      Use serum CTX to guide further treatment after sequential zoledronate. NOGG evidence
+      Use serum CTX to guide further treatment after sequential zoledronate. NOGG 2024 evidence
       discussion supports monitoring around 3 and 6 months after zoledronate, but G2 does not
       convert any single CTX value into an automatic retreatment command.
     why_now: Μετά το zoledronate της denosumab-exit στρατηγικής χρειάζεται BTM follow-up επειδή μία έγχυση δεν εξασφαλίζει πλήρη suppression σε όλους.
@@ -412,6 +413,52 @@ rules:
       - NOGG_2024_SECTION5#exercise
     strength: guideline_recommendation
     runtime_state: active_candidate
+
+  - rule_id: OST_G2_R24_DENOSUMAB_GT7M_REBOUND_ESCALATION
+    domains: [administrations, transition_safety, followup_tasks]
+    rule_class: critical_safety
+    priority: 4
+    applies_if:
+      all:
+        - active_or_current_agent_is: denosumab
+        - reliable_last_actual_administration_exists: true
+        - encounter_date_exists: true
+        - calendar_months_since_last_actual_gt: 7
+    guidance_objective: Escalate a >7-month interval from the prior actual denosumab injection as a rebound-risk safety problem, distinct from ordinary 6-month due status.
+    why_now: Έχουν περάσει >7 μήνες από την τελευταία πραγματική denosumab δόση· αυτό αυξάνει ουσιαστικά τον rebound high-turnover/vertebral-fracture κίνδυνο και απαιτεί άμεσο σχέδιο.
+    source_refs: [NOGG_2024_FAQ#denosumab_gt7m_rebound_risk]
+    strength: nogg_practical_guidance
+    runtime_state: active_candidate
+    safeguard: do_not_infer_missing_dose_or_select_rescue_agent_automatically
+
+  - rule_id: OST_G2_R25_ORAL_BISPHOSPHONATE_START_SAFETY_USE
+    domains: [treatment_decision, communication]
+    rule_class: agent_specific
+    priority: 15
+    applies_if:
+      all:
+        - decision_type_is: start
+        - selected_agent_in: [alendronate, risedronate, ibandronate_oral]
+    guidance_objective: Review oral-bisphosphonate suitability and correct administration instructions before starting therapy.
+    why_now: Η έναρξη oral bisphosphonate απαιτεί έλεγχο oesophageal/upright/renal-mineral suitability και σαφείς οδηγίες σωστής λήψης.
+    source_refs: [NOGG_2024_SECTION6#oral_bisphosphonate_use_and_contraindications]
+    strength: product_use_and_safety_guidance
+    runtime_state: active_candidate
+
+  - rule_id: OST_G2_R26_ORAL_BISPHOSPHONATE_EARLY_REVIEW
+    domains: [treatment_history, communication, followup_tasks]
+    rule_class: milestone_due
+    priority: 30
+    applies_if:
+      all:
+        - active_agent_in: [alendronate, risedronate, ibandronate_oral]
+        - reliable_treatment_exposure_weeks_gte: 12
+        - reliable_treatment_exposure_weeks_lte: 16
+    guidance_objective: Review early tolerance, adherence and correct administration after oral bisphosphonate initiation.
+    why_now: Είναι το NOGG 12–16 εβδομάδων early review window για tolerance/adherence και σωστή λήψη oral bisphosphonate.
+    source_refs: [NOGG_2024_FAQ#oral_bp_early_tolerance_adherence_review]
+    strength: nogg_practical_guidance
+    runtime_state: active_candidate_when_exposure_is_reliable
 
 explicit_non_rules:
   - id: CTX_280_OR_300_AUTOMATIC_SECOND_ZOLEDRONATE
