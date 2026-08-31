@@ -1,14 +1,15 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** MODULE 01 — G-2 EVIDENCE-BACKED GUIDANCE RUNTIME IMPLEMENTATION ACTIVE.
+> **STATUS:** MODULE 01 — G-2 EVIDENCE-BACKED GUIDANCE RUNTIME IMPLEMENTED / TESTED; RELEASE REVIEW REQUIRED.
 > **Updated:** 2026-08-31 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Fresh verified remote `main`:** `5182d250e244b2ed9e086138cb3b2edcdb967e25`.
+> **Fresh verified remote `main` before implementation closeout:** `5182d250e244b2ed9e086138cb3b2edcdb967e25`.
 > **Design-complete ancestry:** `design/module01-g2-evidence-backed-guidance-2026-08-31 @ 0395e52ed75f835d49713504df3df4ce51183edf`.
 > **Implementation branch:** `feat/module01-g2-evidence-guidance-runtime-2026-08-31`.
-> **Design contract CI:** run `33358433732` — SUCCESS on the reviewed contract ancestry.
-> **ACTIVE CANONICAL WRITER/LOCK:** THIS SESSION — G-2 runtime slice canonicals only.
-> **ACTIVE RUNTIME WRITER/LOCK:** THIS SESSION — G-2 evidence-guidance runtime integration only.
+> **Exact tested runtime head:** `e0657ba5924db87b38a0e05514613fbadf45bcd9`.
+> **Runtime CI:** `G2 evidence guidance runtime` run `33403182604` — SUCCESS.
+> **ACTIVE CANONICAL WRITER/LOCK:** NONE after G-2 implementation/test closeout.
+> **ACTIVE RUNTIME WRITER/LOCK:** NONE after G-2 implementation/test closeout.
 
 ---
 
@@ -24,59 +25,61 @@ DEPLOYED
 PRODUCTION-SMOKE-VERIFIED
 ```
 
-The G-2 implementation must preserve C1/G-1 ownership, history-availability semantics, live-DOM-over-cache semantics, and existing `Γιατί τώρα:` rendering.
+G-2 has not changed production yet.
 
 ---
 
-# 2. Active slice
+# 2. G-2 current state
+
+Slice:
 
 ```text
 M01-G2-EVIDENCE-GUIDANCE-RUNTIME-v1
 ```
 
-Objective:
+State:
 
 ```text
-existing G-1 longitudinal projection
+DESIGN-COMPLETE = YES
+IMPLEMENTED = YES
+TESTED = YES
+PRODUCT-OWNER RELEASE REVIEW = NO
+PR = NONE
+MERGED = NO
+DEPLOYED = NO
+PRODUCTION-SMOKE-VERIFIED = NO
+PILOT-VALIDATED = NO
+```
+
+Do not collapse these states.
+
+---
+
+# 3. Implemented runtime boundary
+
+The tested runtime preserves the generic G-1 architecture:
+
+```text
+G-1 longitudinal projection
 + live current encounter snapshot
 → G-2 osteoporosis evidence context
 → pure deterministic evidence evaluator
 → evidence contributions
-→ merge with existing G-1 Visit Plan
+→ deterministic merge with G-1 Visit Plan
 → existing Σημερινή ροή / Γιατί τώρα UI
 ```
 
-This is runtime activation of the already reviewed evidence contract, not a new clinical-content design exercise.
+Primary new runtime:
+
+```text
+static/baseline-audit/osteoporosis-evidence-guidance-core.js
+```
+
+`progressive-guidance-ui.js` remains the single guidance render/order owner.
 
 ---
 
-# 3. Allowed mutation scope
-
-Allowed:
-
-- bounded browser-side G-2 evidence context/evaluator;
-- minimal G-1 integration needed to merge evidence contributions;
-- live-state snapshot extensions for fields required by reviewed rules;
-- focused synthetic/unit/wiring regressions;
-- CI workflow for G-2 runtime tests;
-- operational/canonical state updates for this slice.
-
-Not allowed:
-
-- new treatment recommendation semantics;
-- new evidence thresholds or clinic policy;
-- R15/R16 activation;
-- CTX 280/300 automatic retreatment;
-- generic Prolia 4th/8th/10th milestones;
-- PR-1 transcript runtime;
-- PR-2 inline population;
-- database/schema migration unless a REPLAN trigger proves it necessary;
-- physiotherapy/RF mutation;
-- release PR, merge or deploy.
-
----
-
-# 4. Frozen clinical/runtime safeguards
+# 4. Frozen clinical/runtime safeguards preserved
 
 ```text
 GUIDANCE != AUTOMATIC TREATMENT DECISION
@@ -84,58 +87,129 @@ CHECKLIST GUIDANCE != SAFETY CLEARANCE
 MISSING / UNKNOWN != NEGATIVE
 SCHEDULED / PLANNED DOSE != ACTUAL DOSE
 ADMINISTRATION COUNT != ELAPSED EXPOSURE
-LIVE CURRENT CONTROL, INCLUDING BLANK > PERSISTED CACHE
+LIVE CURRENT CONTROL, INCLUDING BLANK > PERSISTED BROWSER CACHE
 ```
 
-Additional first-runtime rules:
+Tested behavior includes:
 
-- NOGG threshold semantics require NOGG framework/scope guard;
-- R01 formal-risk evidence rule requires explicit indication;
-- denosumab six-month due uses reliable exact actual date and is ephemeral;
-- R24 >7-month rebound escalation requires reliable actual denosumab count ≥2;
-- approximate treatment duration must not generate exact timing milestones;
-- safety checklist rules may say verify/review/confirm but must not infer `safe/cleared` from absent or stale data;
-- no automatic selected-agent write or treatment-failure label.
+- R01 only with explicit formal-risk indication and NOGG scope/framework guard;
+- VFA from supported structured triggers such as ≥4 cm height loss;
+- new-fragility-fracture and fracture-on-treatment event overrides;
+- no automatic failure/switch after fracture on treatment;
+- denosumab exact 6-month evidence due from reliable actual administration date only;
+- scheduled-only denosumab does not count as actual;
+- denosumab >7-month NOGG escalation only after ≥2 reliable actual doses;
+- conflicting denosumab history suppresses exact milestone derivation;
+- denosumab exit guidance never writes a selected agent;
+- oral-BP 12–16-week / ≥5-year and zoledronate ≥3-year milestones require exact reliable exposure;
+- medication safety rules render as checklists requiring clinical confirmation, not clearance;
+- concise NOGG/EMA provenance is visible with evidence-backed guidance.
 
-Blocked in runtime v1:
+---
+
+# 5. Explicitly blocked / forbidden
+
+The following remain inactive:
 
 ```text
 OST_G2_R15_DENOSUMAB_EXIT_CTX_FOLLOWUP
 OST_G2_R16_DENOSUMAB_EXIT_NO_CTX_OPTION
 ```
 
----
-
-# 5. Current status
+The runtime still has no:
 
 ```text
-G-2 DESIGN                               COMPLETE / REVIEWED
-G-2 MACHINE CONTRACT                     PASS
-G-2 RUNTIME IMPLEMENTATION               STARTED
-G-2 RUNTIME TESTED                       NO
+automatic CTX 280/300 second-zoledronate command
+mandatory CTX-at-3-month retreatment command
+generic Prolia 4th/8th/10th milestone
+automatic treatment failure/switch label
+automatic selected-agent mutation
+automatic romosozumab cardiology/vascular referral without approved clinic policy
+```
+
+---
+
+# 6. Test / review evidence
+
+Exact tested runtime head:
+
+```text
+e0657ba5924db87b38a0e05514613fbadf45bcd9
+```
+
+CI:
+
+```text
+G2 evidence guidance runtime
+run 33403182604
+COMPLETED / SUCCESS
+```
+
+All job steps passed:
+
+- JS syntax;
+- frozen G-2 contract validation;
+- G-2 core regressions;
+- G-2 live-state regressions;
+- G-2 wiring/ownership regressions;
+- inherited G-1 core/wiring/UI-state/WHY-NOW regressions;
+- authoritative Finish browser regression;
+- server finalization lifecycle regression.
+
+Exact-head compare/review:
+
+```text
+main 5182d250… → e0657ba5…
+status ahead
+behind 0
+merge base exactly main
+```
+
+Design head `0395e52e…` → tested head contains only expected G-2 runtime/test/canonical changes. No PR-1/PR-2 or parked utility leakage.
+
+---
+
+# 7. Status matrix
+
+```text
+G-2 EVIDENCE REGISTRY                    DESIGN-COMPLETE
+G-2 RULE REGISTRY                        DESIGN-COMPLETE
+G-2 VISIT PROFILES                       DESIGN-COMPLETE
+G-2 THERAPY MILESTONES                   DESIGN-COMPLETE
+G-2 MACHINE CONTRACT CI                  PASS
+G-2 HUMAN DESIGN REVIEW                  COMPLETE
+G-2 RUNTIME IMPLEMENTED                  YES
+G-2 RUNTIME TESTED                       YES
+G-2 RELEASE REVIEW                       NOT YET PRODUCT-OWNER AUTHORIZED
+G-2 PR                                   NONE
 G-2 MERGED                               NO
 G-2 DEPLOYED                             NO
 G-2 PRODUCTION-SMOKE-VERIFIED            NO
-PILOT-VALIDATED                          NO
+PR-1 HEIDI                               NOT IMPLEMENTED
+PR-2 INLINE REVIEW/POPULATION             NOT IMPLEMENTED
+REAL 5-CASE SYSTEM-ASSISTED PILOT         NOT STARTED
+MODULE 01 CLOSED                         NO
 ```
-
-No runtime files have yet been changed on this implementation branch at the moment of lock claim.
 
 ---
 
-# 6. Exact next action
+# 8. Exact next action
+
+The bounded runtime implementation authority is exhausted and the writer lock is released.
+
+The next action, **only after a new explicit product-owner instruction to release/proceed with release**, is:
 
 ```text
-inspect exact Step 1/2/3/4 live DOM + persisted runtime seams
-→ confirm every reviewed trigger can obey live-over-cache ownership
-→ implement pure G-2 evidence context/evaluator
-→ merge contributions into the single existing G-1 render owner
-→ add focused G-2 regressions + inherited G-1/C1 regression workflow
-→ exact-head CI
-→ canonical closeout
-→ STOP at IMPLEMENTED / TESTED gate
+fresh verify remote main
+→ fresh six-canonical bootstrap
+→ exact-head release-readiness review of the tested G-2 ancestry
+→ confirm main compatibility / no new blockers
+→ if explicitly authorized, open reviewed release PR
+→ STOP again before merge unless merge authority is separately explicit
 ```
 
-A discovered mismatch that invalidates a frozen trigger, owner, source path or safety assumption is a **REPLAN trigger**. Do not patch around it.
+Do not infer release authority from implementation completion.
 
-No PR/merge/deploy authority is active.
+No PR, merge, deploy or production smoke is currently authorized.
+
+Parked physiotherapy/RF work and PR-1/PR-2 remain outside the closed G-2 implementation slice.
