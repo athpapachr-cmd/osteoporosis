@@ -858,3 +858,83 @@ result SUCCESS
 ```
 
 This milestone means the evidence/content contract is reviewed and frozen for bounded implementation. It does **not** mean G-2 is implemented, runtime-tested, merged, deployed, production-smoke-verified or pilot-validated.
+
+---
+
+## 2026-08-31 — G-2 evidence-backed guidance runtime implemented and tested
+
+The bounded G-2 runtime slice was completed on branch:
+
+```text
+feat/module01-g2-evidence-guidance-runtime-2026-08-31
+```
+
+against the design-complete ancestry:
+
+```text
+0395e52ed75f835d49713504df3df4ce51183edf
+```
+
+The exact runtime head tested by the complete regression gate was:
+
+```text
+e0657ba5924db87b38a0e05514613fbadf45bcd9
+```
+
+The implementation adds a pure deterministic osteoporosis evidence-guidance layer over the existing G-1 mechanics rather than replacing G-1 with a monolithic treatment engine.
+
+Runtime flow is:
+
+```text
+G-1 protected longitudinal projection
++ live current encounter snapshot
+→ G-2 evidence context
+→ deterministic evidence contributions
+→ merge with existing G-1 Visit Plan
+→ existing Σημερινή ροή / Γιατί τώρα renderer
+```
+
+The implementation also extends the live snapshot so current Step 1–4 controls and repeated treatment/administration rows outrank stale browser cache, including explicit blank/empty state. Evidence-backed cards display concise provenance, while medication-specific safety rules classified as `checklist_only` are visibly labelled as requiring clinical confirmation rather than automatic clearance.
+
+Key tested clinical/runtime safeguards include:
+
+- NOGG-specific framework/scope guards;
+- explicit formal-risk indication before the NOGG FRAX evidence rule;
+- exact actual dates for denosumab timing and no counting of scheduled-only doses;
+- six-month denosumab evidence due as an ephemeral derived value;
+- specific >7-month NOGG rebound escalation only after at least two reliable actual doses;
+- fail-closed suppression of exact denosumab milestones when history conflicts;
+- no automatic treatment-failure/switch label after fracture on treatment;
+- no automatic selected-agent write during denosumab exit guidance;
+- exact-start requirements for oral-bisphosphonate 12–16-week / ≥5-year and zoledronate ≥3-year milestones;
+- R15/R16 remaining inactive;
+- no CTX 280/300 automatic retreatment command;
+- no generic Prolia 4th/8th/10th milestone.
+
+GitHub Actions evidence:
+
+```text
+workflow: G2 evidence guidance runtime
+run:      33403182604
+head:     e0657ba5924db87b38a0e05514613fbadf45bcd9
+result:   SUCCESS
+```
+
+The single workflow job passed the frozen G-2 contract validator, focused G-2 core/live-state/wiring regressions, all inherited G-1 core/wiring/UI-state/WHY-NOW regressions, the authoritative Finish browser regression and the server finalization lifecycle regression.
+
+Exact-head comparison found the branch ahead of `main` with merge base exactly `5182d250e244b2ed9e086138cb3b2edcdb967e25`, behind by 0, and no PR-1/PR-2 or parked physiotherapy/RF leakage.
+
+This milestone closes only the bounded implementation/test gate:
+
+```text
+IMPLEMENTED = YES
+TESTED = YES
+PRODUCT-OWNER RELEASE REVIEW = NO
+PR = NONE
+MERGED = NO
+DEPLOYED = NO
+PRODUCTION-SMOKE-VERIFIED = NO
+PILOT-VALIDATED = NO
+```
+
+The runtime/canonical writer lock was released after closeout. A separate fresh release-readiness review and explicit product-owner release authority are required before any PR/merge/deploy action.
