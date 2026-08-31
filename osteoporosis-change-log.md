@@ -75,7 +75,7 @@ COMMUNICATION / SYSTEM GAP
 
 This prevents the system from treating every poor result as an educational deficit.
 
-Positive repeated signals can mature into `SUSTAINED STRENGTH` and should trigger reinforcement, advanced challenge and appropriate external comparison rather than endless basic repetition.
+Positive repeated signals can mature into `SUSTAINED_STRENGTH` and should trigger reinforcement, advanced challenge and appropriate external comparison rather than endless basic repetition.
 
 ---
 
@@ -763,3 +763,54 @@ PRODUCTION-SMOKE-VERIFIED = NO
 ```
 
 An authenticated synthetic production smoke of C1 Finish/reload and G-1 interactive guidance/history-state behavior remains required before the production-readiness gate is considered fully closed. PR-1/PR-2, real pilot collection, new medication-specific milestone rules and parked physiotherapy/RF work remain outside this release.
+
+---
+
+## 2026-08-31 — G-1 production smoke verified after WHY-NOW correction
+
+Authenticated production smoke by the product owner first confirmed that the released C1/G-1 workflow was working but exposed one bounded presentation defect: the deterministic G-1 WHY-NOW explanation existed but was not sufficiently discoverable in the top `Σημερινή ροή` summary.
+
+PR #66 added the explicit summary prefix:
+
+```text
+Γιατί τώρα: <existing deterministic item.why_now>
+```
+
+without changing guidance rules, priorities, treatment logic, taxonomy, persistence, schema or KPI semantics.
+
+The correction passed exact-head G-1 workflow runs:
+
+```text
+33333512964  SUCCESS
+33333526378  SUCCESS
+```
+
+and was squash-merged as:
+
+```text
+d9423f4dcf6bebd056e83407132c6ce3e25d2280
+```
+
+Render auto-deploy `dep-daa93ljncjis739ssef0` reached `LIVE` at that exact runtime correction SHA.
+
+The product owner then directly re-smoked the corrected production path and confirmed:
+
+```text
+`Τύπος σημερινής επίσκεψης`
+→ visible literal `Γιατί τώρα:` in `Σημερινή ροή`
+→ guidance changes dynamically with current visit context
+→ surfaced information is experienced as informative / guiding
+```
+
+Therefore the C1/G-1 production-readiness smoke gate is closed:
+
+```text
+IMPLEMENTED = YES
+TESTED = YES
+MERGED = YES
+DEPLOYED = YES
+PRODUCTION-SMOKE-VERIFIED = YES
+PILOT-VALIDATED = NO
+```
+
+The positive usefulness observation is recorded as product-owner production feedback only. It is not a substitute for the planned real system-assisted pilot or evidence-from-use refinement. No PR-1/PR-2 runtime, new medication-specific milestone content, physiotherapy/RF mutation or real pilot collection was authorized by this smoke closeout.
