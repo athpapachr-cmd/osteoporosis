@@ -1,0 +1,338 @@
+schema: osteoporosis_guidance_evidence_registry_v1
+status: design_candidate_g2
+module: osteoporosis
+reviewed_on: 2026-08-31
+primary_framework: NOGG_2024
+purpose: >-
+  Versioned evidence/provenance registry for clinician-facing osteoporosis guidance.
+  A source being present here does not by itself activate a runtime rule.
+
+principles:
+  - source_a_is_not_silently_hybridized_with_source_b
+  - regulatory_safety_source_may_override_product_flow_convenience
+  - position_statements_and_new_trials_can_supply_context_without_becoming_automatic_rules
+  - exact_thresholds_require_exact_source_support
+  - current_web_access_date_is_recorded_separately_from_publication_or_revision_date
+
+sources:
+  - source_id: NOGG_2024_SECTION3
+    source_class: guideline
+    organization: National Osteoporosis Guideline Group
+    title: Fracture risk assessment and case finding
+    version: NOGG 2024
+    published_or_updated: 2024-12
+    accessed_on: 2026-08-31
+    url: https://www.nogg.org.uk/full-guideline/section-3-fracture-risk-assessment-and-case-finding
+    scope: postmenopausal_women_and_men_age_gte_50
+    framework_role: primary
+    claims:
+      - claim_id: frax_with_clinical_risk_factor
+        summary: Perform FRAX in a postmenopausal woman or man age >=50 with a clinical risk factor for fragility fracture.
+        strength: strong
+      - claim_id: vfa_indications
+        summary: >-
+          Vertebral fracture assessment is indicated with >=4 cm height loss, kyphosis,
+          recent/current long-term oral glucocorticoids, T-score <= -2.5 at spine or hip,
+          or acute back pain with osteoporosis risk factors.
+        strength: strong
+      - claim_id: investigate_underlying_causes
+        summary: Patients with osteoporosis and/or fragility fracture should be investigated for underlying causes including routine blood tests.
+        strength: strong
+    runtime_use: active_candidate
+
+  - source_id: NOGG_2024_SECTION5
+    source_class: guideline
+    organization: National Osteoporosis Guideline Group
+    title: Non-pharmacological management of osteoporosis
+    version: NOGG 2024
+    published_or_updated: 2024-12
+    accessed_on: 2026-08-31
+    url: https://www.nogg.org.uk/full-guideline/section-5-non-pharmacological-management-osteoporosis
+    scope: postmenopausal_women_and_men_age_gte_50
+    framework_role: primary
+    claims:
+      - claim_id: calcium_vitamin_d_repletion
+        summary: Ensure adequate calcium/vitamin D intake and supplement when dietary intake is low or vitamin D insufficiency risk is present.
+        strength: guideline_recommendation
+      - claim_id: exercise
+        summary: Encourage weight-bearing and muscle-strengthening exercise; address falls risk where relevant.
+        strength: guideline_recommendation
+    runtime_use: active_candidate_as_targeted_communication_not_every_visit
+
+  - source_id: NOGG_2024_SECTION6
+    source_class: guideline
+    organization: National Osteoporosis Guideline Group
+    title: Pharmacological treatment options
+    version: NOGG 2024
+    published_or_updated: 2024-12
+    accessed_on: 2026-08-31
+    url: https://www.nogg.org.uk/full-guideline/section-6-pharmacological-treatment-options
+    scope: postmenopausal_women_and_men_age_gte_50
+    framework_role: primary
+    claims:
+      - claim_id: treatment_choice_factors
+        summary: Fracture risk, patient suitability and preference should inform drug choice.
+        strength: strong
+      - claim_id: denosumab_long_term_plan
+        summary: Before denosumab, establish a long-term personalised plan and warn that treatment should not be stopped or delayed without clinical discussion.
+        strength: strong
+      - claim_id: denosumab_stop_zoledronate_6m
+        summary: If denosumab is stopped, IV zoledronate is recommended 6 months after the last denosumab injection, with subsequent serum CTX guiding timing of further treatment.
+        strength: strong
+      - claim_id: denosumab_no_ctx_second_zol
+        summary: If serum CTX monitoring is not possible, consider a further IV zoledronate infusion 6 months after the first zoledronate dose.
+        strength: conditional
+      - claim_id: denosumab_q6m
+        summary: Denosumab is administered as 60 mg subcutaneously once every 6 months.
+        strength: regulatory_and_guideline_fact
+      - claim_id: denosumab_calcium_each_dose
+        summary: Check serum calcium prior to each denosumab dose; correct pre-existing hypocalcaemia/vitamin D deficiency and ensure adequate calcium/vitamin D.
+        strength: product_label_precaution_reproduced_in_guideline
+      - claim_id: zoledronate_renal_hypocalcaemia
+        summary: Zoledronate is contraindicated at GFR <=35 ml/min and in hypocalcaemia; correct vitamin D-related hypocalcaemia before treatment.
+        strength: product_label_precaution_reproduced_in_guideline
+      - claim_id: romosozumab_cv_hypocalcaemia
+        summary: Romosozumab is contraindicated with prior myocardial infarction or stroke and with hypocalcaemia; weigh fracture and cardiovascular risk.
+        strength: regulatory_and_guideline_fact
+      - claim_id: teriparatide_safety
+        summary: Teriparatide is limited to 24 months and has important contraindications including hypercalcaemia, severe renal impairment, skeletal malignancy and prior skeletal radiation; PTH should be normal before initiation.
+        strength: regulatory_and_guideline_fact
+      - claim_id: post_anabolic_antiresorptive
+        summary: After teriparatide, abaloparatide or romosozumab, start alendronate, zoledronate or denosumab without delay.
+        strength: strong
+      - claim_id: very_high_risk_anabolic
+        summary: Consider anabolic/romosozumab first-line in postmenopausal women at very high fracture risk, particularly with vertebral fractures.
+        strength: conditional
+    runtime_use: active_candidate
+
+  - source_id: NOGG_2024_SECTION7
+    source_class: guideline
+    organization: National Osteoporosis Guideline Group
+    title: Strategies for management of osteoporosis and fracture risk
+    version: NOGG 2024
+    published_or_updated: 2024-12
+    accessed_on: 2026-08-31
+    url: https://www.nogg.org.uk/full-guideline/section-7-strategies-management-osteoporosis-and-fracture-risk
+    scope: postmenopausal_women_and_men_age_gte_50
+    framework_role: primary
+    claims:
+      - claim_id: oral_bp_review_5y
+        summary: Plan oral bisphosphonate for at least 5 years then reassess fracture risk; selected higher-risk groups need longer planned treatment.
+        strength: strong
+      - claim_id: iv_zoledronate_review_3y
+        summary: Plan IV zoledronate for at least 3 years then reassess fracture risk; selected higher-risk groups need longer planned treatment.
+        strength: strong
+      - claim_id: fracture_on_treatment_review
+        summary: After fragility fracture during treatment, review adherence and investigate secondary causes, then reassess fracture risk using FRAX with BMD.
+        strength: strong
+      - claim_id: fracture_not_automatic_failure
+        summary: A fracture on treatment triggers reassessment; it is not by itself an automatic treatment-failure or automatic-switch rule.
+        strength: interpretation_of_recommendations
+      - claim_id: no_definitive_btm_offset_threshold
+        summary: No definitive BMD or BTM threshold during bisphosphonate offset is linked to clinically meaningful fracture-risk change.
+        strength: evidence_summary
+    runtime_use: active_candidate
+
+  - source_id: NOGG_2024_SUMMARY
+    source_class: guideline
+    organization: National Osteoporosis Guideline Group
+    title: Summary of main recommendations
+    version: NOGG 2024
+    published_or_updated: 2024-09_to_2024-12
+    accessed_on: 2026-08-31
+    url: https://www.nogg.org.uk/full-guideline/summary-main-recommendations
+    scope: postmenopausal_women_and_men_age_gte_50
+    framework_role: primary_summary
+    claims:
+      - claim_id: prompt_after_fragility_fracture
+        summary: Start treatment promptly after fragility fracture because re-fracture risk is highest immediately after fracture.
+        strength: guideline_main_recommendation
+      - claim_id: very_high_risk_referral
+        summary: Consider specialist referral for very-high-risk patients and consideration of parenteral/anabolic treatment.
+        strength: guideline_main_recommendation
+      - claim_id: falls_assessment
+        summary: Assess falls risk in osteoporosis/fragility fracture and offer exercise to improve balance and muscle strength when at risk.
+        strength: guideline_main_recommendation
+      - claim_id: repeat_risk_after_new_fracture
+        summary: Repeat fracture-risk assessment after any new fracture.
+        strength: guideline_main_recommendation
+    runtime_use: active_candidate
+
+  - source_id: ENDOCRINE_SOCIETY_2020_DENOSUMAB
+    source_class: guideline
+    organization: Endocrine Society
+    title: Pharmacological Management of Osteoporosis in Postmenopausal Women
+    version: 2020 guideline update
+    published_or_updated: 2020
+    accessed_on: 2026-08-31
+    url: https://www.endocrine.org/clinical-practice-guidelines/osteoporosis-in-postmenopausal-women
+    scope: postmenopausal_women
+    framework_role: supporting
+    claims:
+      - claim_id: denosumab_q6m_no_holiday
+        summary: Denosumab 60 mg every 6 months; drug holiday or interruption is not recommended because effects reverse after 6 months if not on schedule.
+        strength: technical_remark
+      - claim_id: denosumab_no_stop_without_followon
+        summary: Do not delay or stop denosumab without subsequent antiresorptive or other therapy to prevent rebound bone turnover, rapid BMD loss and fracture risk.
+        strength: ungraded_good_practice_statement
+    runtime_use: corroborating_active_candidate
+
+  - source_id: ECTS_2020_DENOSUMAB_DISCONTINUATION
+    source_class: position_statement
+    organization: European Calcified Tissue Society
+    title: Fracture risk and management of discontinuation of denosumab therapy
+    version: 2020 position statement
+    published_or_updated: 2020-10-26
+    accessed_on: 2026-08-31
+    url: https://pubmed.ncbi.nlm.nih.gov/33103722/
+    scope: denosumab_discontinuation
+    framework_role: supporting_separate_framework
+    claims:
+      - claim_id: antiresorptive_6m_after_final_denosumab
+        summary: If denosumab is discontinued, initiate alternative antiresorptive treatment 6 months after the final denosumab injection.
+        strength: expert_position_after_systematic_review
+      - claim_id: btm_may_help_regimen
+        summary: Bone turnover markers may help define the optimal regimen; evidence was incomplete and further RCTs were awaited.
+        strength: expert_position
+    runtime_use: supporting_not_hybridized_with_nogg_thresholds
+
+  - source_id: EMA_PROLIA_2026_08_19
+    source_class: regulatory_label_or_safety_source
+    organization: European Medicines Agency
+    title: Prolia EPAR / EU product information
+    version: EU product information updated 2026-08-19
+    published_or_updated: 2026-08-19
+    accessed_on: 2026-08-31
+    url: https://www.ema.europa.eu/en/medicines/human/EPAR/prolia
+    scope: eu_regulatory
+    framework_role: regulatory
+    claims:
+      - claim_id: prolia_q6m
+        summary: Prolia is given as 60 mg subcutaneous injection once every 6 months.
+        strength: regulatory
+      - claim_id: prolia_hypocalcaemia
+        summary: Prolia must not be used in patients with hypocalcaemia.
+        strength: regulatory
+    runtime_use: active_safety_candidate
+
+  - source_id: EMA_ACLASTA_2026_04_20
+    source_class: regulatory_label_or_safety_source
+    organization: European Medicines Agency
+    title: Aclasta EPAR / EU product information
+    version: EU product information updated 2026-04-20
+    published_or_updated: 2026-04-20
+    accessed_on: 2026-08-31
+    url: https://www.ema.europa.eu/en/medicines/human/EPAR/aclasta
+    scope: eu_regulatory
+    framework_role: regulatory
+    claims:
+      - claim_id: aclasta_severe_renal
+        summary: Aclasta must not be used in severe kidney problems.
+        strength: regulatory
+      - claim_id: aclasta_hypocalcaemia
+        summary: Aclasta must not be used in hypocalcaemia.
+        strength: regulatory
+    runtime_use: active_safety_candidate
+
+  - source_id: EMA_EVENITY_CURRENT
+    source_class: regulatory_label_or_safety_source
+    organization: European Medicines Agency
+    title: Evenity EPAR / EU product information
+    version: current EU product information accessed 2026-08-31
+    published_or_updated: current_at_access
+    accessed_on: 2026-08-31
+    url: https://www.ema.europa.eu/en/medicines/human/EPAR/evenity
+    scope: eu_regulatory_postmenopausal_women
+    framework_role: regulatory
+    claims:
+      - claim_id: evenity_12_months
+        summary: Romosozumab 210 mg monthly for 12 months.
+        strength: regulatory
+      - claim_id: evenity_mi_stroke_hypocalcaemia
+        summary: Do not use in patients with prior myocardial infarction or stroke, or hypocalcaemia; cardiovascular risk assessment is required.
+        strength: regulatory
+    runtime_use: active_safety_candidate
+
+  - source_id: EMA_FORSTEO_2026_01_28
+    source_class: regulatory_label_or_safety_source
+    organization: European Medicines Agency
+    title: Forsteo EPAR / EU product information
+    version: EU product information updated 2026-01-28
+    published_or_updated: 2026-01-28
+    accessed_on: 2026-08-31
+    url: https://www.ema.europa.eu/en/medicines/human/EPAR/forsteo
+    scope: eu_regulatory
+    framework_role: regulatory
+    claims:
+      - claim_id: forsteo_course_24m
+        summary: Teriparatide treatment benefit/course is limited to a maximum 24 months.
+        strength: regulatory
+      - claim_id: forsteo_major_restrictions
+        summary: Important restrictions include hypercalcaemia, severe kidney disease, skeletal malignancy/metastases, Paget disease and prior skeletal radiation.
+        strength: regulatory
+    runtime_use: active_safety_candidate
+
+  - source_id: ASBMR_BHOF_2024_GOAL_DIRECTED
+    source_class: position_statement
+    organization: ASBMR / Bone Health and Osteoporosis Foundation Task Force
+    title: Goal-directed osteoporosis treatment: task force position statement 2024
+    version: 2024
+    published_or_updated: 2024-09-26
+    accessed_on: 2026-08-31
+    url: https://pubmed.ncbi.nlm.nih.gov/39073912/
+    scope: goal_directed_long_term_management
+    framework_role: contextual
+    claims:
+      - claim_id: individualize_by_fracture_bmd_risk
+        summary: Treatment goals and strategy should incorporate fracture recency/site/number/severity, BMD and major risk factors; recent fractures imply very high/imminent risk.
+        strength: task_force_position
+    runtime_use: contextual_only_no_automatic_target_rule_in_g2_v1
+
+  - source_id: JAMA_2024_ZOL_AFTER_DENOSUMAB_RCT
+    source_class: key_trial
+    organization: JAMA Network Open
+    title: Zoledronate Sequential Therapy After Denosumab Discontinuation to Prevent Bone Mineral Density Reduction
+    version: randomized clinical trial 2024
+    published_or_updated: 2024-11-11
+    accessed_on: 2026-08-31
+    url: https://jamanetwork.com/journals/jamanetworkopen/fullarticle/2825942
+    scope: denosumab_discontinuation_after_at_least_2_years
+    framework_role: contextual_new_evidence
+    claims:
+      - claim_id: one_zol_not_full_lumbar_protection
+        summary: A single zoledronate infusion 6 months after denosumab did not fully prevent first-year lumbar-spine BMD loss; longer denosumab exposure was associated with greater loss.
+        strength: randomized_trial
+    runtime_use: uncertainty_context_not_automatic_drug_or_threshold_rule
+
+  - source_id: JCEM_2024_REPEAT_ZOL_CTX_280
+    source_class: observational_study
+    organization: Journal of Clinical Endocrinology and Metabolism
+    title: Zoledronate After Denosumab Discontinuation: Is Repeated Administrations More Effective Than Single Infusion?
+    version: retrospective study 2024
+    published_or_updated: 2024
+    accessed_on: 2026-08-31
+    url: https://pubmed.ncbi.nlm.nih.gov/38609157/
+    scope: denosumab_discontinuation_with_ects_style_btm_protocol
+    framework_role: contextual_uncertainty
+    claims:
+      - claim_id: ctx_280_protocol_not_proven_effective
+        summary: In a retrospective cohort using a second zoledronate infusion when CTX was >=280 ng/L, repeated infusions did not prevent BMD loss or fractures in patients with uncontrolled CTX.
+        strength: retrospective_observational
+    runtime_use: explicit_non_activation_of_automatic_ctx_280_or_300_rule
+
+non_activation_decisions:
+  - decision_id: NO_AUTOMATIC_CTX_THRESHOLD_RETREATMENT_G2_V1
+    rationale: >-
+      NOGG recommends CTX-guided further treatment but does not specify a validated automatic
+      CTX threshold. ECTS-derived protocols and the 2024 retrospective study use 280 ng/L,
+      but effectiveness of threshold-triggered repeated zoledronate is not established.
+    prohibited_runtime_semantics:
+      - CTX_gte_280_means_automatic_second_zoledronate
+      - CTX_gte_300_means_automatic_second_zoledronate
+      - CTX_at_3_months_is_by_itself_a_mandatory_retreatment_command
+
+  - decision_id: NO_AUTOMATIC_ASBMR_BMD_TARGET_G2_V1
+    rationale: >-
+      The 2024 ASBMR/BHOF document is a position statement and goal-directed framework.
+      G2 v1 may use it as reasoning context but will not manufacture an automatic BMD target
+      or treatment-switch command.
