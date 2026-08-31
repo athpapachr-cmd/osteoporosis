@@ -1,22 +1,22 @@
 # SLICE_PLAN_CURRENT.md — G-1 Progressive Guidance Runtime Foundation v1
 
-> **STATUS:** IMPLEMENTED / TESTED / MERGED / DEPLOYED — FINAL PRODUCT-OWNER WHY-NOW RE-SMOKE PENDING.
+> **STATUS:** IMPLEMENTED / TESTED / MERGED / DEPLOYED / PRODUCTION-SMOKE-VERIFIED — SLICE PRODUCTION-READINESS GATE CLOSED.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Parent product:** Personal Clinical Excellence System.
 > **Module:** 01 — Osteoporosis.
 > **Slice ID:** M01-G1-PROGRESSIVE-GUIDANCE-RUNTIME-v1.
-> **Current production correction main SHA:** `d9423f4dcf6bebd056e83407132c6ce3e25d2280`.
 > **Original release PR:** `#64`.
 > **WHY-NOW correction PR:** `#66`.
+> **Correction runtime merge SHA:** `d9423f4dcf6bebd056e83407132c6ce3e25d2280`.
 > **Runtime writer:** NONE.
 
 ---
 
 # 1. Objective
 
-G-1 provides the smallest useful runtime foundation for progressive osteoporosis visit guidance without pretending to be a complete treatment-recommendation engine or exhaustive visit taxonomy.
+G-1 provides the minimum reusable runtime foundation for progressive osteoporosis visit guidance without pretending to be a complete treatment-recommendation engine or exhaustive visit taxonomy.
 
-Current runtime flow:
+Runtime flow:
 
 ```text
 coarse clinician-declared visit intent
@@ -30,7 +30,7 @@ Clinical workflow presentation remains distinct from storage/audit schema.
 
 ---
 
-# 2. Existing clinician inputs retained
+# 2. Preserved clinician inputs / invariants
 
 G-1 reuses existing fields including:
 
@@ -47,18 +47,14 @@ step4.close
 
 Rules:
 
-- `encounter_archetype` is coarse clinician-declared intent;
-- `quick_notes` is contextual text, especially for `other` or broad categories;
+- `encounter_archetype` is coarse clinician-declared visit intent;
+- `quick_notes` is contextual fallback text;
 - G-1 does not parse free text into authoritative structured facts;
-- transcript-derived candidates remain future PR-1/PR-2 work.
+- transcript-derived candidates remain future PR-1/PR-2 work;
+- no large visit taxonomy was introduced;
+- `other + quick_notes` remains a valid fallback.
 
----
-
-# 3. Longitudinal projection invariants
-
-G-1 reads completed/amended protected historical encounters and derives read-only ephemeral context for current guidance.
-
-Preserved rules:
+Longitudinal integrity remains:
 
 ```text
 HISTORY UNAVAILABLE != NO HISTORY
@@ -69,20 +65,9 @@ material conflicts remain explicit
 current/draft encounter is not historical authority
 ```
 
-History availability states remain:
-
-```text
-not_loaded
-loading
-loaded
-unavailable
-```
-
-A failed history request must never render as false zero prior encounters.
-
 ---
 
-# 4. Minimal Visit Plan / priority
+# 3. Minimal Visit Plan / priority
 
 Reason classes:
 
@@ -106,30 +91,20 @@ NEW_EVENT
 → CONTEXTUAL
 ```
 
-Representative mechanics already tested:
+Mechanics already tested include:
 
-- first assessment broad core flow;
+- first-assessment core flow;
 - smaller routine treatment-continuation flow;
-- new fracture overrides routine flow;
-- fracture on treatment adds treatment/transition context;
-- unresolved prior tasks resurface;
-- explicit stored due/overdue information can surface administration/follow-up context;
-- longitudinal conflicts remain reviewable;
-- no treatment selection/recommendation is generated.
+- new-fracture override;
+- fracture-on-treatment treatment/transition context;
+- unresolved-prior resurfacing;
+- explicit stored due/overdue plumbing;
+- explicit longitudinal conflicts;
+- no automatic treatment selection/recommendation.
 
 ---
 
-# 5. Progressive-taxonomy invariant
-
-No large new visit enum set was introduced.
-
-The existing `Τύπος σημερινής επίσκεψης` / `encounter_archetype` dropdown remains primary. `other + quick_notes` remains a valid fallback.
-
-Potential future categories such as results/work-up review with management decision remain evidence-from-use candidates and are not silently introduced by G-1.
-
----
-
-# 6. G1-R1 / G1-R2 closed integrity corrections
+# 4. G1-R1 / G1-R2 closed integrity corrections
 
 ## G1-R1 — history availability
 
@@ -137,9 +112,9 @@ Potential future categories such as results/work-up review with management decis
 AUTH/NETWORK/SERVER FAILURE != ZERO PRIOR ENCOUNTERS
 ```
 
-Successful empty history may show zero. Failed/unavailable history must explicitly say it is unavailable/incomplete.
+History states remain `not_loaded / loading / loaded / unavailable`.
 
-## G1-R2 — live UI owns the current snapshot
+## G1-R2 — live UI owns today's snapshot
 
 ```text
 IF A LIVE CONTROL EXISTS
@@ -149,54 +124,41 @@ persisted cache
 → fallback only when corresponding live control/root is absent
 ```
 
-This includes encounter archetype/date/quick notes/interval fracture status and the rendered fracture-event collection.
+This includes encounter archetype/date/quick notes/interval fracture status and rendered fracture events.
 
 ---
 
-# 7. WHY-NOW UX contract and production correction
+# 5. WHY-NOW UX contract / production correction
 
-Normative UX invariant:
+Normative invariant:
 
 > A dynamically surfaced item must make its `WHY NOW?` reason discoverable to the clinician at the point of use.
 
-Original G-1 already generated deterministic `item.why_now` and rendered explicit `Γιατί τώρα:` inside destination cards.
+Original G-1 already generated deterministic `item.why_now` and rendered `Γιατί τώρα:` inside destination cards.
 
-Production smoke found a presentation gap:
+Initial production smoke found a presentation defect in the top `Σημερινή ροή` summary: reason text existed but the explicit `Γιατί τώρα:` label was missing, so the clinician could not reliably identify the WHY-NOW explanation.
 
-```text
-`Σημερινή ροή` summary
-→ reason text present
-→ but explicit `Γιατί τώρα:` label absent
-→ clinician could not identify/find WHY NOW reliably
-```
-
-Bounded correction PR #66 changed only the summary presentation:
+PR #66 changed only summary presentation:
 
 ```text
 Γιατί τώρα: <existing deterministic item.why_now>
 ```
 
-No guidance reason, priority, clinical rule, recommendation, taxonomy, persistence or schema changed.
+No guidance reason, priority, clinical rule, treatment recommendation, taxonomy, persistence or schema changed.
 
-A focused regression now locks both:
-
-```text
-summary explicit `Γιατί τώρα:`
-+
-destination-card explicit `Γιατί τώρα:` retained
-```
+Focused regression locks both summary and destination-card `Γιατί τώρα:` presentation.
 
 ---
 
-# 8. Acceptance / release evidence
+# 6. Exact release evidence
 
-Original G-1+C1 release was squash-merged through PR #64 as:
+Original G-1+C1 release PR #64 was squash-merged as:
 
 ```text
 a6ba9ef1719a18a48a1756bf08bbd157d448a63e
 ```
 
-The production-smoke WHY-NOW correction final PR head was:
+WHY-NOW correction final PR head:
 
 ```text
 e2960454cfa1acf6fa4e2c0735a2e7ba3c267f48
@@ -209,7 +171,7 @@ Exact-head G-1 workflow runs:
 33333526378  SUCCESS
 ```
 
-PR #66 was squash-merged as:
+PR #66 squash merge:
 
 ```text
 d9423f4dcf6bebd056e83407132c6ce3e25d2280
@@ -223,11 +185,32 @@ dep-daa93ljncjis739ssef0
 → exact commit d9423f4dcf6bebd056e83407132c6ce3e25d2280
 ```
 
-No manual duplicate deploy was triggered.
+---
+
+# 7. Product-owner production re-smoke — PASS
+
+On 2026-08-31 Asia/Nicosia, the product owner directly confirmed that in production:
+
+```text
+existing `Τύπος σημερινής επίσκεψης` is used
+→ `Σημερινή ροή` displays explicit `Γιατί τώρα:`
+→ guidance changes dynamically with the current visit context
+→ the surfaced information is experienced as informative / guiding
+```
+
+Therefore:
+
+```text
+WHY-NOW discoverability                    PASS
+G-1 dynamic production interaction         PASS
+PRODUCTION-SMOKE-VERIFIED                  YES
+```
+
+The positive usefulness observation is a **product-owner production observation**, not a real-clinic pilot result and not `PILOT-VALIDATED` evidence.
 
 ---
 
-# 9. Completion matrix
+# 8. Completion matrix
 
 ```text
 coarse dropdown reused                         YES / TESTED / PRODUCTION-SEEN
@@ -241,32 +224,22 @@ unresolved-prior resurfacing                   YES / TESTED
 explicit due-state plumbing                    YES / TESTED
 new-fracture override                          YES / TESTED
 WHY-NOW core generation                        YES / TESTED
-WHY-NOW explicit summary presentation          YES / TESTED / DEPLOYED
+WHY-NOW explicit summary presentation          YES / TESTED / DEPLOYED / PRODUCTION-SEEN
 applicability ownership preserved              YES / TESTED
 C1 regressions preserved                       YES / TESTED
 merged                                         YES
 deployed                                       YES
-final corrected WHY-NOW production re-smoke    PENDING
-production-smoke-verified                      NO
+production-smoke-verified                      YES
+pilot-validated                                NO
 real-clinic pilot                              NO
 ```
 
 ---
 
-# 10. Exact next action
+# 9. Slice stop rule
 
-STOP runtime mutation.
+G-1 production-readiness is closed. STOP runtime mutation for this slice.
 
-Product owner performs only the bounded correction re-smoke:
+Do not reopen G-1 taxonomy, clinical rules or presentation merely for speculative completeness. Further refinement requires a separately authorized slice driven by evidence-backed guidance content or real-use evidence.
 
-```text
-select/use existing `Τύπος σημερινής επίσκεψης`
-→ inspect top `Σημερινή ροή`
-→ confirm each surfaced reason is visibly prefixed `Γιατί τώρα: ...`
-```
-
-If PASS, record `PRODUCTION-SMOKE-VERIFIED`, append final correction/smoke evidence to `osteoporosis-change-log.md`, and close the G-1 production-readiness gate.
-
-If FAIL, reopen only the exact observed presentation seam.
-
-PR-1 Heidi extraction, PR-2 provisional population, new medication-specific milestone content, parked physiotherapy/RF work and real pilot collection remain outside this slice until separately authorized.
+PR-1 Heidi extraction, PR-2 provisional population, medication-specific milestone content, parked physiotherapy/RF work and real pilot collection remain outside this closed slice until separately authorized.
