@@ -75,7 +75,7 @@ COMMUNICATION / SYSTEM GAP
 
 This prevents the system from treating every poor result as an educational deficit.
 
-Positive repeated signals can mature into `SUSTAINED_STRENGTH` and should trigger reinforcement, advanced challenge and appropriate external comparison rather than endless basic repetition.
+Positive repeated signals can mature into `SUSTAINED STRENGTH` and should trigger reinforcement, advanced challenge and appropriate external comparison rather than endless basic repetition.
 
 ---
 
@@ -115,7 +115,7 @@ Data completeness
 
 Progress bars represent current state; run charts represent trajectory.
 
-No composite Clinical Excellence score should be treated as real before an adequate baseline audit exists.
+No composite Clinical Excellence score should be treated as real before an adequate baseline exists.
 
 ---
 
