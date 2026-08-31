@@ -25,6 +25,7 @@
     .then(() => loadScript("./step6.js"))
     .then(() => loadScript("./adaptive-applicability.js"))
     .then(() => loadScript("./progressive-guidance-core.js"))
+    .then(() => loadScript("./osteoporosis-evidence-guidance-core.js"))
     .then(() => loadScript("./finalization-coordinator.js"))
     .then(() => loadScript("./patient-registry.js"))
     .then(() => loadScript("./progressive-guidance-ui.js"))
