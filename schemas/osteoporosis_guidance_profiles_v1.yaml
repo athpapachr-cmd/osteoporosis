@@ -53,6 +53,8 @@ profiles:
       - OST_G2_R04_FALLS_RISK_AFTER_FRACTURE_OR_INITIAL
       - OST_G2_R08_EXPLICIT_VERY_HIGH_RISK_REVIEW
       - OST_G2_R23_TARGETED_LIFESTYLE_COMMUNICATION
+      - OST_G2_R24_DENOSUMAB_GT7M_REBOUND_ESCALATION
+      - OST_G2_R26_ORAL_BISPHOSPHONATE_EARLY_REVIEW
     prior_data_behavior:
       - reuse_prior_fracture_history_when_reliable
       - reuse_prior_secondary_workup_when_explicitly_accepted_as_still_adequate
@@ -74,6 +76,8 @@ profiles:
       - OST_G2_R13_DENOSUMAB_PRE_DOSE_CALCIUM
       - OST_G2_R21_ORAL_BISPHOSPHONATE_5Y_REASSESS
       - OST_G2_R22_ZOLEDRONATE_3Y_REASSESS
+      - OST_G2_R24_DENOSUMAB_GT7M_REBOUND_ESCALATION
+      - OST_G2_R26_ORAL_BISPHOSPHONATE_EARLY_REVIEW
     suppress_by_default:
       - repeat_full_secondary_cause_workup_without_new_signal
       - repeat_full_frax_without_due_or_new_risk_signal
@@ -95,6 +99,7 @@ profiles:
       - OST_G2_R17_ZOLEDRONATE_START_SAFETY
       - OST_G2_R18_ROMOSOZUMAB_START_SAFETY
       - OST_G2_R19_TERIPARATIDE_START_SAFETY
+      - OST_G2_R25_ORAL_BISPHOSPHONATE_START_SAFETY_USE
     note: Medication-specific safety rules are selected by the clinician-selected/planned agent, not by AI treatment choice.
 
   - profile_id: OST_G2_P05_TREATMENT_CONTINUATION_OR_DUE_MONITORING
@@ -113,6 +118,8 @@ profiles:
       - OST_G2_R17_ZOLEDRONATE_START_SAFETY
       - OST_G2_R21_ORAL_BISPHOSPHONATE_5Y_REASSESS
       - OST_G2_R22_ZOLEDRONATE_3Y_REASSESS
+      - OST_G2_R24_DENOSUMAB_GT7M_REBOUND_ESCALATION
+      - OST_G2_R26_ORAL_BISPHOSPHONATE_EARLY_REVIEW
     routine_behavior: >-
       Keep administration visits concise. Full DXA/secondary/risk/treatment-change flow appears
       only when due/milestone/new-event/response/safety context supports it.
@@ -137,6 +144,8 @@ profiles:
       - OST_G2_R18_ROMOSOZUMAB_START_SAFETY
       - OST_G2_R19_TERIPARATIDE_START_SAFETY
       - OST_G2_R20_POST_ANABOLIC_CONSOLIDATION
+      - OST_G2_R24_DENOSUMAB_GT7M_REBOUND_ESCALATION
+      - OST_G2_R25_ORAL_BISPHOSPHONATE_START_SAFETY_USE
 
   - profile_id: OST_G2_P07_POST_FRAGILITY_FRACTURE
     encounter_archetypes: [post_fragility_fracture]
@@ -159,6 +168,7 @@ profiles:
       - OST_G2_R08_EXPLICIT_VERY_HIGH_RISK_REVIEW
       - OST_G2_R09_SHARED_TREATMENT_DECISION_FACTORS
       - OST_G2_R23_TARGETED_LIFESTYLE_COMMUNICATION
+      - OST_G2_R24_DENOSUMAB_GT7M_REBOUND_ESCALATION
 
   - profile_id: OST_G2_P08_FRACTURE_ON_TREATMENT
     encounter_archetypes: [fracture_on_treatment]
@@ -180,6 +190,7 @@ profiles:
       - OST_G2_R07_FRACTURE_ON_TREATMENT_REVIEW
       - OST_G2_R08_EXPLICIT_VERY_HIGH_RISK_REVIEW
       - OST_G2_R09_SHARED_TREATMENT_DECISION_FACTORS
+      - OST_G2_R24_DENOSUMAB_GT7M_REBOUND_ESCALATION
     hard_rule: fracture_on_treatment_does_not_equal_automatic_failure_or_switch
 
   - profile_id: OST_G2_P09_ADVERSE_EFFECT_OR_INTOLERANCE
@@ -196,6 +207,8 @@ profiles:
       - OST_G2_R17_ZOLEDRONATE_START_SAFETY
       - OST_G2_R18_ROMOSOZUMAB_START_SAFETY
       - OST_G2_R19_TERIPARATIDE_START_SAFETY
+      - OST_G2_R24_DENOSUMAB_GT7M_REBOUND_ESCALATION
+      - OST_G2_R25_ORAL_BISPHOSPHONATE_START_SAFETY_USE
     note: Targeted adverse-effect evaluation remains clinician-owned; G2 v1 does not attempt exhaustive drug-monograph symptom logic.
 
   - profile_id: OST_G2_P10_TREATMENT_COMPLETION_OR_CONSOLIDATION
@@ -213,6 +226,7 @@ profiles:
       - OST_G2_R20_POST_ANABOLIC_CONSOLIDATION
       - OST_G2_R21_ORAL_BISPHOSPHONATE_5Y_REASSESS
       - OST_G2_R22_ZOLEDRONATE_3Y_REASSESS
+      - OST_G2_R24_DENOSUMAB_GT7M_REBOUND_ESCALATION
 
 candidate_product_flow_profile:
   profile_id: OST_G2_P11_RESULTS_WORKUP_REVIEW_DECISION
