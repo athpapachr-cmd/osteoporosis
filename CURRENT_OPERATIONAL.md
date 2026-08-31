@@ -1,150 +1,85 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** MODULE 01 — C1 + G-1 PRODUCTION-SMOKE-VERIFIED / G-1 PRODUCTION-READINESS GATE CLOSED.
+> **STATUS:** MODULE 01 — G-2 EVIDENCE-BACKED OSTEOPOROSIS GUIDANCE CONTENT — ACTIVE DESIGN / EVIDENCE REVIEW.
 > **Updated:** 2026-08-31 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Fresh verified remote `main` before closeout:** `de32e7625e87ace8038223934ee88d64c9cdd2e5`.
-> **Original C1 + G-1 release PR:** `#64`.
-> **WHY-NOW correction PR:** `#66`.
-> **WHY-NOW correction runtime merge SHA:** `d9423f4dcf6bebd056e83407132c6ce3e25d2280`.
-> **Correction Render deploy:** `dep-daa93ljncjis739ssef0` — LIVE at exact runtime correction SHA.
-> **ACTIVE CANONICAL WRITER/LOCK:** NONE — smoke closeout complete.
-> **ACTIVE RUNTIME WRITER/LOCK:** NONE.
+> **Fresh verified remote `main`:** `5182d250e244b2ed9e086138cb3b2edcdb967e25`.
+> **Active branch:** `design/module01-g2-evidence-backed-guidance-2026-08-31`.
+> **ACTIVE CANONICAL WRITER/LOCK:** this ChatGPT session — G-2 evidence/content design and exact supporting canonicals only.
+> **ACTIVE RUNTIME WRITER/LOCK:** NONE — runtime activation is not started until the G-2 evidence/rule contract is frozen and reviewed.
 
 ---
 
-# 1. Production smoke — CLOSED
+# 1. Closed production base
 
-The product owner completed the authenticated production smoke across the released C1/G-1 ancestry.
+C1 authoritative Finish and G-1 progressive guidance are IMPLEMENTED / TESTED / MERGED / DEPLOYED / PRODUCTION-SMOKE-VERIFIED.
 
-Initial production smoke showed that the workflow worked but the deterministic WHY-NOW reason was not sufficiently discoverable in the top `Σημερινή ροή` summary.
-
-That bounded presentation defect was corrected by PR #66 so each surfaced summary item renders:
-
-```text
-Γιατί τώρα: <existing deterministic item.why_now>
-```
-
-No guidance reason, priority, treatment rule, clinical recommendation, taxonomy, persistence, database/schema or KPI semantics changed in that correction.
+G-1 production readiness is closed. The product owner directly confirmed visible `Γιατί τώρα:` and dynamic guidance behavior in production.
 
 ---
 
-# 2. Exact release evidence retained
-
-WHY-NOW correction final PR head:
+# 2. Active slice
 
 ```text
-e2960454cfa1acf6fa4e2c0735a2e7ba3c267f48
+M01-G2-EVIDENCE-GUIDANCE-CONTENT-v1
 ```
 
-Exact-head GitHub Actions:
+Objective:
 
-```text
-33333512964  SUCCESS
-33333526378  SUCCESS
-```
+> Define the minimum evidence-backed osteoporosis guidance content needed before transcript-assisted capture and the five-case system-assisted pilot, using explicit source provenance and deterministic triggers without silently turning guidelines into automatic treatment decisions.
 
-PR #66 squash merge:
+Current authorized work:
 
-```text
-d9423f4dcf6bebd056e83407132c6ce3e25d2280
-```
-
-Render auto-deploy:
-
-```text
-deploy:  dep-daa93ljncjis739ssef0
-commit:  d9423f4dcf6bebd056e83407132c6ce3e25d2280
-trigger: new_commit
-status:  LIVE
-```
-
-The focused workflow preserved:
-
-- JavaScript syntax checks;
-- progressive-guidance core regressions;
-- wiring/ownership regression;
-- G1-R1/G1-R2 UI-state regressions;
-- explicit WHY-NOW presentation regression;
-- inherited authoritative Finish browser regression;
-- inherited server finalization lifecycle regression.
+- verify current authoritative guideline/evidence sources;
+- define source/version/freshness registry;
+- define first-pass visit-profile guidance content;
+- define event/safety overrides;
+- define treatment-start / continuation / transition guidance content;
+- define evidence-backed denosumab/time-critical timing rules only where provenance supports an exact rule;
+- map rules to current G-1 domains/cards and current structured context;
+- define machine-readable G-2 content contracts and synthetic acceptance fixtures;
+- update G-2 canonicals.
 
 ---
 
-# 3. Product-owner production re-smoke evidence
-
-On 2026-08-31 Asia/Nicosia, the product owner directly confirmed in production that:
+# 3. Hard invariants
 
 ```text
-existing `Τύπος σημερινής επίσκεψης`
-→ top `Σημερινή ροή` is present
-→ literal `Γιατί τώρα:` is visible
-→ the surfaced guidance changes dynamically with the selected/current visit context
-→ the resulting content is experienced as informative / guiding
+GUIDANCE != AUTOMATIC TREATMENT DECISION
+GUIDELINE A != GUIDELINE B — no silent hybridization
+MISSING/UNKNOWN != NEGATIVE
+SCHEDULED DOSE != ACTUAL DOSE
+ADMINISTRATION COUNT != ELAPSED EXPOSURE
+EXACT MILESTONE REQUIRES EXPLICIT REVIEWED SOURCE OR APPROVED CLINIC POLICY
+EVENT/SAFETY OVERRIDE > ROUTINE VISIT DEFAULT
 ```
 
-Interpretation:
-
-```text
-WHY-NOW discoverability                    PASS
-G-1 dynamic interaction in production      PASS
-G-1 clinician-facing guidance usefulness   positive product-owner observation
-```
-
-The usefulness observation is **not** equivalent to real-clinic pilot validation and must not be represented as such.
+Every material active guidance rule must carry provenance sufficient to identify source, version/year, applicability and strength/certainty where available.
 
 ---
 
-# 4. Status matrix
+# 4. Explicitly out of scope during evidence-design pass
 
-```text
-C1 IMPLEMENTED                              YES
-C1 TESTED                                   YES
-C1 MERGED                                   YES
-C1 DEPLOYED                                 YES
-G-1 IMPLEMENTED                             YES
-G-1 TESTED                                  YES
-G-1 MERGED                                  YES
-G-1 DEPLOYED                                YES
-G1-R1 / G1-R2                               CLOSED / TESTED / DEPLOYED
-WHY-NOW SUMMARY DISCOVERABILITY FIX         MERGED / DEPLOYED
-WHY-NOW PRODUCTION RE-SMOKE                 PASS
-PRODUCTION-SMOKE-VERIFIED                   YES
-PILOT-VALIDATED                             NO
-PR-1 HEIDI                                  NOT IMPLEMENTED
-PR-2 REVIEW/POPULATION                      NOT IMPLEMENTED
-REAL 5-CASE SYSTEM-ASSISTED PILOT           NOT STARTED
-30-CASE SYSTEM-ASSISTED BASELINE            NOT STARTED
-MODULE 01 CLOSED                            NO
-```
+- PR-1 Heidi provider/API runtime;
+- PR-2 provisional Accept/Edit/Reject population;
+- real patient/transcript fixtures;
+- real five-case pilot collection;
+- KPI/performance feedback or Practice Review runtime;
+- medication-specific rules unsupported by reviewed evidence;
+- arbitrary Prolia 4th/8th/10th-dose rules;
+- physiotherapy/RF mutation;
+- merge/deploy of new clinical runtime before exact G-2 review.
 
 ---
 
-# 5. Closed gate / next action
-
-The G-1 production-readiness gate is closed.
-
-Do not reopen G-1 runtime or taxonomy merely because later product expansion is planned. Future G-1 refinement should be driven by evidence-backed guidance content or real-use evidence and handled as a separately authorized slice.
-
-No new runtime mutation is authorized by this smoke closeout alone.
-
-Before the next substantial Module-01 task:
+# 5. Exact next action
 
 ```text
-fresh six-canonical bootstrap
-→ confirm next product-owner-authorized slice
-→ claim writer/lock only for that bounded scope
+fresh evidence review
+→ inspect existing G-1 domain/context seams
+→ freeze G-2 source + rule + profile contracts
+→ independent internal consistency/relevance review
+→ only then decide whether bounded runtime activation can start under this authorization
 ```
 
-Broad remaining order remains:
-
-```text
-evidence-backed minimum osteoporosis guidance content
-→ PR-1 transcript extraction
-→ PR-2 inline provisional population
-→ 5-case real system-assisted pilot
-→ one deliberate refinement
-→ later scored baseline / Practice Review / improvement loop
-```
-
-Parked physiotherapy/RF work remains outside this closeout unless separately authorized.
+If an evidence source conflicts with another framework, preserve both positions explicitly and do not manufacture a combined threshold.
