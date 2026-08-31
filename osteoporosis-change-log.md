@@ -75,7 +75,7 @@ COMMUNICATION / SYSTEM GAP
 
 This prevents the system from treating every poor result as an educational deficit.
 
-Positive repeated signals can mature into `SUSTAINED STRENGTH` and should trigger reinforcement, advanced challenge and appropriate external comparison rather than endless basic repetition.
+Positive repeated signals can mature into `SUSTAINED_STRENGTH` and should trigger reinforcement, advanced challenge and appropriate external comparison rather than endless basic repetition.
 
 ---
 
@@ -814,3 +814,47 @@ PILOT-VALIDATED = NO
 ```
 
 The positive usefulness observation is recorded as product-owner production feedback only. It is not a substitute for the planned real system-assisted pilot or evidence-from-use refinement. No PR-1/PR-2 runtime, new medication-specific milestone content, physiotherapy/RF mutation or real pilot collection was authorized by this smoke closeout.
+
+---
+
+## 2026-08-31 — G-2 evidence-backed osteoporosis guidance design completed
+
+The first evidence-backed clinical-content layer for the G-1 dynamic visit engine reached **DESIGN-COMPLETE** on branch `design/module01-g2-evidence-backed-guidance-2026-08-31`.
+
+The frozen design adds versioned machine contracts for:
+
+```text
+evidence registry
+→ guidance rules
+→ visit profiles
+→ therapy milestones
+→ normative activation manifest
+```
+
+with NOGG 2024 as the primary clinical framework, current EMA/EU regulatory safety sources where applicable, and explicitly separate supporting/context evidence including Endocrine Society, ECTS, ASBMR/BHOF and recent denosumab-discontinuation studies.
+
+Final clinical review corrected two important applicability details before runtime work:
+
+- the NOGG-specific `>7 months` denosumab rebound-risk escalation now requires at least **two reliable actual denosumab doses**, rather than firing after a first dose;
+- the NOGG FRAX evidence rule now requires explicit formal-risk indication and NOGG scope, rather than treating every initial visit as evidence that FRAX is mandatory.
+
+The design also freezes explicit non-rules:
+
+```text
+no automatic CTX 280/300 ng/L → second zoledronate command
+no generic Prolia 4th/8th/10th dose milestone
+no automatic treatment-failure label after fracture on treatment
+no automatic cardiology/vascular referral for romosozumab without approved clinic policy
+```
+
+Medication safety content is classified as checklist guidance when the existing data model cannot prove full/current safety clearance. Two denosumab-exit rules remain evidence-valid but blocked from first runtime activation: post-exit CTX follow-up until reliable denosumab-exit→zoledronate linkage exists, and the no-CTX fallback until CTX-monitoring availability is explicitly represented.
+
+The G-2 machine contract passed GitHub Actions at:
+
+```text
+run   33358433732
+head  6a40a4a87882a4531c69ce9dff5e0ecd46011d84
+result SUCCESS
+```
+
+This milestone means the evidence/content contract is reviewed and frozen for bounded implementation. It does **not** mean G-2 is implemented, runtime-tested, merged, deployed, production-smoke-verified or pilot-validated.
