@@ -1,0 +1,194 @@
+schema: osteoporosis_therapy_milestones_v1
+status: design_candidate_g2
+module: osteoporosis
+reviewed_on: 2026-08-31
+evidence_registry: schemas/osteoporosis_guidance_evidence_registry_v1.yaml
+rules_registry: schemas/osteoporosis_guidance_rules_v1.yaml
+purpose: >-
+  Evidence-backed treatment milestones using reliable actual dates/exposure. Milestones create
+  guidance attention states; they do not silently write due dates into the clinical record or
+  choose the next treatment.
+
+hard_rules:
+  - actual_administration_date_is_authoritative_over_appointment_label
+  - evidence_derived_due_date_is_ephemeral_and_separate_from_stored_next_due_date
+  - calendar_months_not_fixed_day_counts
+  - administration_count_and_elapsed_exposure_are_separate
+  - do_not_reconstruct_missing_administrations_from_expected_cadence
+  - unreliable_or_conflicting_timeline_means_no_exact_milestone_derivation
+  - milestone_match_surfaces_review_not_automatic_treatment_decision
+
+profiles:
+  - profile_id: OST_TM_DENOSUMAB_V1
+    agent: denosumab
+    status: active_candidate
+    sources:
+      - NOGG_2024_SECTION6
+      - ENDOCRINE_SOCIETY_2020_DENOSUMAB
+      - EMA_PROLIA_2026_08_19
+    milestones:
+      - milestone_id: DENOSUMAB_EVERY_ADMINISTRATION
+        trigger:
+          every_administration: true
+        guidance_rule_ids:
+          - OST_G2_R13_DENOSUMAB_PRE_DOSE_CALCIUM
+        rationale: Calcium/mineral safety is relevant before each dose.
+
+      - milestone_id: DENOSUMAB_EXPECTED_6_MONTH_DUE
+        trigger:
+          reliable_last_actual_administration: required
+          calendar_months_after_last_actual: 6
+        derived_fields:
+          - evidence_expected_due_date
+          - evidence_due_state
+        guidance_rule_ids:
+          - OST_G2_R12_DENOSUMAB_EVIDENCE_DUE
+        rationale: Denosumab is administered every 6 months and interruption/drug holiday is not recommended.
+        persistence: ephemeral_only
+
+      - milestone_id: DENOSUMAB_LONG_TERM_REASSESSMENT_FROM_5Y
+        trigger:
+          reliable_elapsed_exposure_years_gte: 5
+        guidance_domains:
+          - formal_risk
+          - dxa
+          - treatment_decision
+        rationale: Endocrine Society suggests reassessing fracture risk after 5-10 years; this is a review point, not a stop point.
+        source_refs:
+          - ENDOCRINE_SOCIETY_2020_DENOSUMAB#denosumab_reassess_5_10y
+        status: candidate_requires_source_registry_claim
+        forbidden_semantics:
+          - automatic_stop_at_5_years
+          - automatic_switch_at_5_years
+
+      - milestone_id: DENOSUMAB_EXIT_SEQUENTIAL_6M
+        trigger:
+          transition_type: denosumab_exit
+          reliable_last_actual_denosumab_date: required
+          calendar_months_after_last_actual: 6
+        guidance_rule_ids:
+          - OST_G2_R14_DENOSUMAB_EXIT_6M_SEQUENTIAL
+        rationale: NOGG 2024 strong recommendation for IV zoledronate 6 months after last denosumab injection when stopping denosumab, subject to clinical suitability.
+        persistence: guidance_only
+
+      - milestone_id: DENOSUMAB_EXIT_POST_ZOL_CTX_3M
+        trigger:
+          denosumab_exit: true
+          reliable_first_post_exit_zoledronate_actual_date: required
+          calendar_months_after_zoledronate: 3
+        guidance_rule_ids:
+          - OST_G2_R15_DENOSUMAB_EXIT_CTX_FOLLOWUP
+        rationale: NOGG evidence summary states BTM monitoring at 3 and 6 months post-zoledronate can guide subsequent infusion timing.
+        strength: evidence_summary_not_threshold_command
+
+      - milestone_id: DENOSUMAB_EXIT_POST_ZOL_CTX_6M
+        trigger:
+          denosumab_exit: true
+          reliable_first_post_exit_zoledronate_actual_date: required
+          calendar_months_after_zoledronate: 6
+        guidance_rule_ids:
+          - OST_G2_R15_DENOSUMAB_EXIT_CTX_FOLLOWUP
+          - OST_G2_R16_DENOSUMAB_EXIT_NO_CTX_OPTION
+        rationale: CTX-guided further treatment is recommended; if CTX monitoring is unavailable NOGG conditionally suggests another zoledronate infusion at 6 months.
+        safeguard: no_ctx_value_threshold_is_encoded
+
+  - profile_id: OST_TM_ORAL_BISPHOSPHONATE_V1
+    agents: [alendronate, risedronate, ibandronate_oral]
+    status: active_candidate
+    sources: [NOGG_2024_SECTION7]
+    milestones:
+      - milestone_id: ORAL_BP_5Y_REASSESSMENT
+        trigger:
+          reliable_elapsed_exposure_years_gte: 5
+        guidance_rule_ids:
+          - OST_G2_R21_ORAL_BISPHOSPHONATE_5Y_REASSESS
+        rationale: NOGG strong recommendation to reassess fracture risk after at least 5 years of oral bisphosphonate treatment.
+        forbidden_semantics:
+          - automatic_holiday
+          - automatic_continue
+
+  - profile_id: OST_TM_ZOLEDRONATE_V1
+    agent: zoledronate
+    status: active_candidate
+    sources:
+      - NOGG_2024_SECTION7
+      - EMA_ACLASTA_2026_04_20
+    milestones:
+      - milestone_id: ZOLEDRONATE_EVERY_ADMINISTRATION
+        trigger:
+          every_administration: true
+        guidance_rule_ids:
+          - OST_G2_R17_ZOLEDRONATE_START_SAFETY
+        rationale: Renal/mineral safety prerequisites apply to planned zoledronate administration.
+      - milestone_id: ZOLEDRONATE_3Y_REASSESSMENT
+        trigger:
+          reliable_elapsed_exposure_years_gte: 3
+        guidance_rule_ids:
+          - OST_G2_R22_ZOLEDRONATE_3Y_REASSESS
+        rationale: NOGG strong recommendation to reassess fracture risk after at least 3 years of IV zoledronate.
+        forbidden_semantics:
+          - automatic_holiday
+          - automatic_continue
+
+  - profile_id: OST_TM_ROMOSOZUMAB_V1
+    agent: romosozumab
+    status: active_candidate
+    sources:
+      - NOGG_2024_SECTION6
+      - EMA_EVENITY_CURRENT
+    milestones:
+      - milestone_id: ROMOSOZUMAB_START
+        trigger:
+          decision_type: start
+          selected_agent: romosozumab
+        guidance_rule_ids:
+          - OST_G2_R18_ROMOSOZUMAB_START_SAFETY
+        rationale: CV/hypocalcaemia safety review is required before initiation.
+      - milestone_id: ROMOSOZUMAB_12M_COMPLETION
+        trigger:
+          any:
+            - explicit_transition_type: post_romosozumab
+            - reliable_course_exposure_months_gte: 12
+        guidance_rule_ids:
+          - OST_G2_R20_POST_ANABOLIC_CONSOLIDATION
+        rationale: Approved romosozumab course is 12 months and NOGG recommends antiresorptive follow-on without delay.
+        safeguard: reliable_course_data_or_explicit_completion_required
+
+  - profile_id: OST_TM_TERIPARATIDE_V1
+    agent: teriparatide
+    status: active_candidate
+    sources:
+      - NOGG_2024_SECTION6
+      - EMA_FORSTEO_2026_01_28
+    milestones:
+      - milestone_id: TERIPARATIDE_START
+        trigger:
+          decision_type: start
+          selected_agent: teriparatide
+        guidance_rule_ids:
+          - OST_G2_R19_TERIPARATIDE_START_SAFETY
+        rationale: Metabolic/renal/contraindication review is required before initiation.
+      - milestone_id: TERIPARATIDE_24M_COMPLETION
+        trigger:
+          any:
+            - explicit_transition_type: post_teriparatide
+            - reliable_course_exposure_months_gte: 24
+        guidance_rule_ids:
+          - OST_G2_R20_POST_ANABOLIC_CONSOLIDATION
+        rationale: Teriparatide course is limited to 24 months and NOGG recommends antiresorptive follow-on without delay.
+        safeguard: reliable_course_data_or_explicit_completion_required
+
+explicitly_absent_milestones:
+  - prolia_4th_dose_generic_review
+  - prolia_8th_dose_generic_review
+  - prolia_10th_dose_generic_review
+  - ctx_280_automatic_second_zoledronate
+  - ctx_300_automatic_second_zoledronate
+
+uncertainty_notes:
+  - >-
+    Post-denosumab zoledronate does not guarantee complete lumbar-spine BMD preservation,
+    especially after longer denosumab exposure; the 2024 RCT is retained as contextual evidence.
+  - >-
+    The exact optimal repeat-zoledronate regimen after denosumab remains uncertain; G2 uses
+    NOGG/ECTS timing guidance but does not claim a validated universal CTX retreatment threshold.
