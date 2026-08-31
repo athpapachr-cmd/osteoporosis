@@ -103,7 +103,7 @@ No real pilot before the full intended guided/capture workflow is ready.
 - [x] Product-owner re-smoke confirms literal `Γιατί τώρα: ...` is visible in top `Σημερινή ροή` after the correction deploy.
 - [x] Product-owner observed that surfaced guidance changes dynamically with visit context and is informative/guiding; this remains a production observation, not pilot validation.
 
-## 1.4 Osteoporosis guidance-content profiles — DESIGN COMPLETE / RUNTIME NEXT
+## 1.4 Osteoporosis guidance-content profiles — IMPLEMENTED / TESTED; RELEASE REVIEW NEXT
 
 - [x] Review evidence/approved clinic-policy boundary for clinically active dynamic rules.
 - [x] Define first-assessment guidance profile.
@@ -120,16 +120,16 @@ No real pilot before the full intended guided/capture workflow is ready.
 - [x] Explicitly forbid generic “4th/8th/10th Prolia” rules without reviewed rationale/provenance.
 - [x] Freeze machine-readable evidence/rules/profiles/milestones contract and human design review.
 - [x] Pass G-2 machine-contract validation on the final contract ancestry.
-- [ ] Implement the reviewed G-2 runtime activation boundary over G-1.
-- [ ] Pass focused G-2 runtime regressions plus inherited G-1/C1 regressions.
+- [x] Implement the reviewed G-2 runtime activation boundary over G-1.
+- [x] Pass focused G-2 runtime regressions plus inherited G-1/C1 regressions.
 - [ ] Separate product-owner release review before any PR/merge/deploy.
 - [ ] Production smoke after an explicitly authorized release.
 
-Important first-runtime exclusions:
+Important first-runtime exclusions remain:
 
 - `OST_G2_R15_DENOSUMAB_EXIT_CTX_FOLLOWUP` remains blocked until reliable denosumab-exit → specific zoledronate-event linkage exists;
 - `OST_G2_R16_DENOSUMAB_EXIT_NO_CTX_OPTION` remains blocked until CTX-monitoring availability is explicitly represented;
-- checklist-only medication safety guidance must not be presented as automated safety clearance.
+- checklist-only medication safety guidance is visibly identified as verification/checklist content and not automated safety clearance.
 
 ## 1.5 Heidi-first capture — BEFORE REAL PILOT
 
@@ -161,7 +161,7 @@ Only after:
 
 ```text
 G-1 production-readiness gate closed
-+ evidence-backed minimum osteoporosis guidance content
++ evidence-backed minimum osteoporosis guidance content released/smoked
 + PR-1 extraction
 + PR-2 inline review/population
 ```
@@ -248,7 +248,8 @@ Permanent requirements:
 - [x] Explicit WHY-NOW summary presentation regression.
 - [x] Final product-owner correction re-smoke.
 - [x] Evidence-backed osteoporosis guidance-content registry and activation contract designed/reviewed.
-- [ ] G-2 evidence-backed guidance runtime implemented/tested.
+- [x] G-2 evidence-backed guidance runtime implemented/tested on its bounded branch.
+- [ ] G-2 release review / merge / deploy / production smoke.
 - [ ] Real-clinic usability validation and evidence-from-use card/taxonomy refinement.
 
 ---
@@ -287,7 +288,7 @@ Osteoporosis domains remain:
 
 - [x] G-2 material Clinical Guidance rules carry source/version/applicability/strength/freshness where relevant.
 - [ ] Material Practice Review claims link to explicit standards/evidence.
-- [x] No silent framework hybridization in the G-2 guidance contract.
+- [x] No silent framework hybridization in the G-2 guidance contract/runtime.
 - [ ] Evidence-impact classification and renewal lifecycle.
 
 Comprehensive curriculum/registry breadth is not a Module 01 closure blocker beyond what is required for safe guidance/review.
@@ -303,8 +304,8 @@ Comprehensive curriculum/registry breadth is not a Module 01 closure blocker bey
 - [ ] Retention/deletion/data-minimization policy.
 - [ ] GDPR/privacy review appropriate to identifiable transcript use.
 - [ ] Provider data-control/privacy gate before real identifiable transcripts.
-- [ ] Safety/event guidance outranks routine visit convenience in G-2 runtime.
-- [ ] Denosumab/time-critical therapy runtime rules use exact actual timelines and reviewed provenance.
+- [x] Safety/event guidance outranks routine visit convenience in tested G-2 runtime.
+- [x] Denosumab/time-critical therapy runtime rules use exact actual timelines and reviewed provenance in tested G-2 runtime.
 
 ---
 
@@ -347,7 +348,7 @@ Do not mutate/merge/deploy during Module 01 closure without separate authorizati
 ```text
 1. C1 authoritative Finish release/smoke — closed
 2. G-1 dynamic-guidance mechanics — production-smoke-verified / closed
-3. evidence-backed osteoporosis guidance profiles — design complete; runtime implementation next
+3. evidence-backed osteoporosis guidance profiles — implemented/tested; release review next
 4. PR-1 transcript extraction
 5. PR-2 inline provisional population
 6. guided card UX sufficient for real use
