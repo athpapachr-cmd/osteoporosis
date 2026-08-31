@@ -1,85 +1,164 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** MODULE 01 — G-2 EVIDENCE-BACKED OSTEOPOROSIS GUIDANCE CONTENT — ACTIVE DESIGN / EVIDENCE REVIEW.
+> **STATUS:** MODULE 01 — G-2 EVIDENCE-BACKED GUIDANCE CONTENT DESIGN-COMPLETE / RUNTIME IMPLEMENTATION NEXT.
 > **Updated:** 2026-08-31 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Fresh verified remote `main`:** `5182d250e244b2ed9e086138cb3b2edcdb967e25`.
-> **Active branch:** `design/module01-g2-evidence-backed-guidance-2026-08-31`.
-> **ACTIVE CANONICAL WRITER/LOCK:** this ChatGPT session — G-2 evidence/content design and exact supporting canonicals only.
-> **ACTIVE RUNTIME WRITER/LOCK:** NONE — runtime activation is not started until the G-2 evidence/rule contract is frozen and reviewed.
+> **Fresh verified remote `main` before G-2 closeout:** `5182d250e244b2ed9e086138cb3b2edcdb967e25`.
+> **Design branch:** `design/module01-g2-evidence-backed-guidance-2026-08-31`.
+> **Design contract CI:** run `33358433732` — SUCCESS at `6a40a4a87882a4531c69ce9dff5e0ecd46011d84`.
+> **ACTIVE CANONICAL WRITER/LOCK:** NONE after design closeout; next bounded runtime branch must claim the lock.
+> **ACTIVE RUNTIME WRITER/LOCK:** NONE — G-2 runtime has not started yet.
 
 ---
 
 # 1. Closed production base
 
-C1 authoritative Finish and G-1 progressive guidance are IMPLEMENTED / TESTED / MERGED / DEPLOYED / PRODUCTION-SMOKE-VERIFIED.
+C1 authoritative Finish and G-1 progressive guidance are:
 
-G-1 production readiness is closed. The product owner directly confirmed visible `Γιατί τώρα:` and dynamic guidance behavior in production.
+```text
+IMPLEMENTED
+TESTED
+MERGED
+DEPLOYED
+PRODUCTION-SMOKE-VERIFIED
+```
+
+G-1 production readiness remains closed. The product owner confirmed visible `Γιατί τώρα:` and dynamic guidance behavior in production.
 
 ---
 
-# 2. Active slice
+# 2. G-2 evidence/content design — COMPLETE
+
+Slice:
 
 ```text
 M01-G2-EVIDENCE-GUIDANCE-CONTENT-v1
 ```
 
-Objective:
+Design artifacts:
 
-> Define the minimum evidence-backed osteoporosis guidance content needed before transcript-assisted capture and the five-case system-assisted pilot, using explicit source provenance and deterministic triggers without silently turning guidelines into automatic treatment decisions.
+```text
+schemas/osteoporosis_guidance_evidence_registry_v1.yaml
+schemas/osteoporosis_guidance_rules_v1.yaml
+schemas/osteoporosis_guidance_profiles_v1.yaml
+schemas/osteoporosis_therapy_milestones_v1.yaml
+schemas/osteoporosis_guidance_contract_manifest_v1.yaml
+M01_G2_EVIDENCE_GUIDANCE_REVIEW_V1.md
+```
 
-Current authorized work:
-
-- verify current authoritative guideline/evidence sources;
-- define source/version/freshness registry;
-- define first-pass visit-profile guidance content;
-- define event/safety overrides;
-- define treatment-start / continuation / transition guidance content;
-- define evidence-backed denosumab/time-critical timing rules only where provenance supports an exact rule;
-- map rules to current G-1 domains/cards and current structured context;
-- define machine-readable G-2 content contracts and synthetic acceptance fixtures;
-- update G-2 canonicals.
+The machine contract passed exact contract CI and the human clinical/runtime review closed the remaining evidence-fidelity issues.
 
 ---
 
-# 3. Hard invariants
+# 3. Frozen G-2 clinical boundaries
 
 ```text
 GUIDANCE != AUTOMATIC TREATMENT DECISION
-GUIDELINE A != GUIDELINE B — no silent hybridization
+GUIDELINE A != GUIDELINE B
 MISSING/UNKNOWN != NEGATIVE
-SCHEDULED DOSE != ACTUAL DOSE
+SCHEDULED/PLANNED DOSE != ACTUAL DOSE
 ADMINISTRATION COUNT != ELAPSED EXPOSURE
-EXACT MILESTONE REQUIRES EXPLICIT REVIEWED SOURCE OR APPROVED CLINIC POLICY
-EVENT/SAFETY OVERRIDE > ROUTINE VISIT DEFAULT
+CHECKLIST GUIDANCE != SAFETY CLEARANCE
 ```
 
-Every material active guidance rule must carry provenance sufficient to identify source, version/year, applicability and strength/certainty where available.
+Specific frozen rules include:
+
+- NOGG-specific thresholds require NOGG framework/scope guard;
+- FRAX evidence rule requires explicit indication rather than initial-visit status alone;
+- denosumab six-month due uses reliable exact actual dose date and remains ephemeral;
+- specific >7-month NOGG rebound escalation requires ≥2 reliable actual denosumab doses;
+- denosumab exit guidance does not silently write an agent choice;
+- no automatic CTX 280/300 second-zoledronate rule;
+- no generic Prolia 4th/8th/10th milestone;
+- no automatic cardiology/vascular referral for romosozumab without approved clinic policy.
 
 ---
 
-# 4. Explicitly out of scope during evidence-design pass
+# 4. Runtime activation classes
 
-- PR-1 Heidi provider/API runtime;
-- PR-2 provisional Accept/Edit/Reject population;
-- real patient/transcript fixtures;
-- real five-case pilot collection;
-- KPI/performance feedback or Practice Review runtime;
-- medication-specific rules unsupported by reviewed evidence;
-- arbitrary Prolia 4th/8th/10th-dose rules;
-- physiotherapy/RF mutation;
-- merge/deploy of new clinical runtime before exact G-2 review.
-
----
-
-# 5. Exact next action
+The reviewed contract distinguishes:
 
 ```text
-fresh evidence review
-→ inspect existing G-1 domain/context seams
-→ freeze G-2 source + rule + profile contracts
-→ independent internal consistency/relevance review
-→ only then decide whether bounded runtime activation can start under this authorization
+activate_v1
+checklist_only
+blocked_missing_structured_input
+blocked_missing_reliable_linkage
+design_only
 ```
 
-If an evidence source conflicts with another framework, preserve both positions explicitly and do not manufacture a combined threshold.
+Notably:
+
+- `OST_G2_R15_DENOSUMAB_EXIT_CTX_FOLLOWUP` is evidence-valid but blocked for first runtime activation until the specific post-exit zoledronate actual event can be linked reliably to the denosumab-exit sequence;
+- `OST_G2_R16_DENOSUMAB_EXIT_NO_CTX_OPTION` is evidence-valid but blocked until CTX-monitoring availability has an explicit structured representation.
+
+Blank CTX data must not be interpreted as monitoring unavailable.
+
+---
+
+# 5. Runtime implementation boundary
+
+The next bounded implementation should preserve the generic G-1 architecture:
+
+```text
+G-1 longitudinal projection
++ live current encounter snapshot
+→ G-2 evidence context
+→ pure deterministic G-2 rule evaluator
+→ evidence contributions
+→ merge with G-1 Visit Plan precedence
+→ existing `Σημερινή ροή` / `Γιατί τώρα:` UI
+```
+
+Do not rewrite G-1 into a monolithic treatment-recommendation engine.
+
+G1-R2 remains mandatory:
+
+```text
+LIVE CONTROL VALUE, INCLUDING BLANK
+>
+PERSISTED BROWSER CACHE
+```
+
+for every G-2 trigger field that has a live UI control.
+
+---
+
+# 6. Status matrix
+
+```text
+G-2 EVIDENCE REGISTRY                    DESIGN-COMPLETE
+G-2 RULE REGISTRY                        DESIGN-COMPLETE
+G-2 VISIT PROFILES                       DESIGN-COMPLETE
+G-2 THERAPY MILESTONES                   DESIGN-COMPLETE
+G-2 MACHINE CONTRACT CI                  PASS
+G-2 HUMAN DESIGN REVIEW                  COMPLETE
+G-2 RUNTIME IMPLEMENTED                  NO
+G-2 RUNTIME TESTED                       NO
+G-2 MERGED                               NO
+G-2 DEPLOYED                             NO
+G-2 PRODUCTION-SMOKE-VERIFIED            NO
+PR-1 HEIDI                               NOT IMPLEMENTED
+PR-2 INLINE REVIEW/POPULATION             NOT IMPLEMENTED
+REAL 5-CASE SYSTEM-ASSISTED PILOT         NOT STARTED
+MODULE 01 CLOSED                         NO
+```
+
+---
+
+# 7. Exact next authorized action
+
+The product owner instructed this session to proceed with evidence-backed osteoporosis guidance content. With the design contract now complete, the next bounded action under that authorization is:
+
+```text
+fresh verify remote main remains compatible
+→ create `feat/module01-g2-evidence-guidance-runtime-2026-08-31`
+   from the exact G-2 design-complete ancestry
+→ claim canonical + runtime writer lock on that implementation branch
+→ implement only the reviewed activation boundary
+→ add focused synthetic/runtime tests + inherited G-1/C1 regressions
+→ STOP at IMPLEMENTED / TESTED gate
+```
+
+Do **not** open a release PR, merge to `main`, deploy or claim production smoke without separate explicit release authorization.
+
+Parked physiotherapy/RF work remains outside this slice.
