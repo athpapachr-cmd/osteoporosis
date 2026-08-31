@@ -312,7 +312,7 @@ sources:
   - source_id: ASBMR_BHOF_2024_GOAL_DIRECTED
     source_class: position_statement
     organization: ASBMR / Bone Health and Osteoporosis Foundation Task Force
-    title: Goal-directed osteoporosis treatment: task force position statement 2024
+    title: "Goal-directed osteoporosis treatment: task force position statement 2024"
     version: 2024
     published_or_updated: 2024-09-26
     accessed_on: 2026-08-31
@@ -344,7 +344,7 @@ sources:
   - source_id: JCEM_2024_REPEAT_ZOL_CTX_280
     source_class: observational_study
     organization: Journal of Clinical Endocrinology and Metabolism
-    title: Zoledronate After Denosumab Discontinuation: Is Repeated Administrations More Effective Than Single Infusion?
+    title: "Zoledronate After Denosumab Discontinuation: Is Repeated Administrations More Effective Than Single Infusion?"
     version: retrospective study 2024
     published_or_updated: 2024
     accessed_on: 2026-08-31
