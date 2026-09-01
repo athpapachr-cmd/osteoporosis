@@ -1,6 +1,6 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** MODULE 01 — G-3 PR #70 OPEN / MERGE HOLD; C2 IMPLEMENTED / TESTED / RELEASE REVIEW IN PROGRESS.
+> **STATUS:** MODULE 01 — G-3 PR #70 OPEN / MERGE HOLD; C2 IMPLEMENTED / TESTED / PRE-RELEASE TECHNICAL REVIEW PASS / PREDECESSOR HOLD.
 > **Updated:** 2026-09-01 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Fresh verified remote `main`:** `9cfad82d1258a44e71080e0aa4d6d644e581cfbf`.
@@ -8,7 +8,8 @@
 > **C2 branch:** `feat/module01-c2-server-authoritative-patient-workspace-2026-09-01`.
 > **C2 exact tested runtime head:** `27d5248e51daaa61bf29c70d3bebf5d73b93d6a2`.
 > **C2 test workflow:** `C2 server-authoritative patient workspace` run `33544223692` — SUCCESS.
-> **ACTIVE CANONICAL WRITER/LOCK:** this session — C2 closeout/release-readiness docs only.
+> **C2 post-test branch ancestry:** runtime head followed only by canonical documentation closeout commits; no runtime mutation after the tested head.
+> **ACTIVE CANONICAL WRITER/LOCK:** NONE.
 > **ACTIVE RUNTIME WRITER/LOCK:** NONE.
 
 ---
@@ -77,7 +78,7 @@ Cross-device continuity in C2 v1 means server autosave + later open/reload from 
 
 ---
 
-# 4. C2 test / review evidence
+# 4. C2 test / technical review evidence
 
 Workflow:
 
@@ -104,6 +105,10 @@ Passed:
 
 The exact tested runtime delta from the required G-3 predecessor is ahead-only with merge base equal to `f12b32d...` and contains only the bounded C2 workspace/runtime/test/canonical files. No PR-1/PR-2, physiotherapy/RF, or osteoporosis evidence-rule leakage was found.
 
+Post-test inspection confirms all subsequent C2 branch changes are canonical documentation closeout only; the tested runtime ancestry has not changed.
+
+Technical release review therefore passes on code/test/delta integrity. Formal C2 release-readiness remains predecessor-blocked until G-3 is merged to `main` and the ancestry is freshly revalidated against that new production base.
+
 ---
 
 # 5. Safety/data-integrity invariants
@@ -122,19 +127,34 @@ Broader authentication/authorization review, access audit trail, retention/data-
 
 ---
 
-# 6. Current authority / exact next action
+# 6. Exact next authorized action
 
-The product owner authorized continuation after C2 implementation/test completion. This authorizes canonical closeout and fresh release-readiness review; it does **not** by itself authorize merge or deploy.
-
-Current sequence:
+Current state:
 
 ```text
-finish C2 canonical closeout
-→ exact-head C2 release-readiness review
-→ preserve G-3 → C2 release ordering
-→ STOP before merge/deploy without separate explicit authority
+C2 IMPLEMENTED                         YES
+C2 TESTED                              YES
+C2 EXACT-HEAD TECHNICAL REVIEW         PASS
+C2 FORMAL RELEASE-READINESS            BLOCKED BY G-3 PREDECESSOR HOLD
+C2 RELEASE PR                          NONE
+C2 MERGED                              NO
+C2 DEPLOYED                            NO
+C2 PRODUCTION-SMOKE-VERIFIED           NO
+ACTIVE WRITER                          NONE
 ```
 
-If C2 release-readiness passes while G-3 remains unmerged, retain predecessor HOLD. Do not silently bypass G-3 by releasing C2 directly to `main`.
+The next release sequence is strictly:
 
-No runtime mutation is authorized in this closeout/review step unless a release blocker is discovered that requires a new bounded implementation decision.
+```text
+separate explicit product-owner merge authority for G-3
+→ merge G-3 PR #70
+→ allow/verify normal Render auto-deploy
+→ production smoke G-3
+→ fresh main + six-canonical bootstrap
+→ revalidate C2 ancestry against released G-3
+→ complete formal C2 release-readiness review
+→ open C2 release PR only with explicit release-PR authority
+→ STOP again before C2 merge unless separately authorized
+```
+
+The current `Προχωρά` instruction authorized this canonical closeout and technical release review. It did not authorize G-3 merge, C2 PR creation, merge or deploy.
