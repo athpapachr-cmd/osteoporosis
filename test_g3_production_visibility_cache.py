@@ -27,6 +27,7 @@ class G3ProductionVisibilityCacheTest(unittest.TestCase):
             "/static/baseline-audit/",
             "/static/baseline-audit/app.js",
             "/static/baseline-audit/progressive-guidance-ui.js",
+            "/static/baseline-audit/g3-production-visibility-guard.js",
             "/static/baseline-audit/osteoporosis-longitudinal-summary-core.js",
             "/static/baseline-audit/progressive-guidance.css",
         ):
@@ -40,6 +41,7 @@ class G3ProductionVisibilityCacheTest(unittest.TestCase):
         self.assertEqual(app_js.status_code, 200)
         self.assertIn("osteoporosis-longitudinal-summary-core.js", app_js.text)
         self.assertIn("progressive-guidance-ui.js", app_js.text)
+        self.assertIn("g3-production-visibility-guard.js", app_js.text)
 
         ui_js = self.client.get("/static/baseline-audit/progressive-guidance-ui.js")
         self.assertEqual(ui_js.status_code, 200)
@@ -47,6 +49,12 @@ class G3ProductionVisibilityCacheTest(unittest.TestCase):
         self.assertIn('badge.textContent = "Νέο"', ui_js.text)
         self.assertIn("patientLongitudinalSummary", ui_js.text)
         self.assertIn("is-newly-surfaced", ui_js.text)
+
+        guard_js = self.client.get("/static/baseline-audit/g3-production-visibility-guard.js")
+        self.assertEqual(guard_js.status_code, 200)
+        self.assertIn('title.textContent = "Σύνοψη ασθενούς"', guard_js.text)
+        self.assertIn("Δεν έχει επιλεγεί protected patient", guard_js.text)
+        self.assertIn("root.hidden = false", guard_js.text)
 
 
 if __name__ == "__main__":
