@@ -1,12 +1,14 @@
 # SLICE_PLAN_CURRENT.md — G-3 Guidance Salience + Longitudinal Patient Summary v1
 
-> **STATUS:** ACTIVE DESIGN / IMPLEMENTATION.
+> **STATUS:** IMPLEMENTED / TESTED — RELEASE REVIEW REQUIRED BEFORE PR/MERGE/DEPLOY.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Module:** 01 — Osteoporosis.
 > **Slice ID:** `M01-G3-GUIDANCE-SALIENCE-LONGITUDINAL-SUMMARY-v1`.
 > **Fresh base main:** `9cfad82d1258a44e71080e0aa4d6d644e581cfbf`.
 > **Implementation branch:** `feat/module01-g3-guidance-salience-longitudinal-summary-2026-09-01`.
-> **Runtime writer:** this session, bounded to G-3 files/seams.
+> **Exact tested runtime head:** `dab45baf9f80632ee6e58f03fa4d5005c68e0ac5`.
+> **Test workflow:** `G3 guidance salience longitudinal summary` run `33486322905` — SUCCESS.
+> **Runtime writer:** NONE after implementation/test closeout.
 
 ---
 
@@ -23,61 +25,78 @@ This is a product-UX/read-only longitudinal slice. It does not reopen G-2 eviden
 
 ---
 
-# 2. Objectives
+# 2. Implemented G3-A — newly surfaced guidance salience
 
-## G3-A — newly surfaced guidance salience
+The runtime now maintains a per-active-patient/case Visit Plan baseline and detects canonical card/domain additions after current-state/history changes.
 
-When the deterministic Visit Plan gains a card/domain after a current-state or history update, mark it as newly surfaced for the active patient/case.
-
-Requirements:
-
-- initial plan on page load is baseline and is **not** labelled new;
-- plan diff is by canonical card/domain identity, not DOM position;
-- newly surfaced item gets a visible `Νέο` marker plus stronger border/background emphasis;
-- color must not be the only signal;
-- critical/event content may keep its stronger semantic styling;
-- salience is ephemeral browser state only; no authoritative patient persistence;
-- salience disappears when the item stops applying; optional acknowledgement may clear it during the current page session;
-- changing unrelated fields must not repeatedly recreate `Νέο` for an already surfaced card.
-
-Primary example fixture:
+Implemented semantics:
 
 ```text
-height loss <4 cm
-→ VFA guidance absent
-→ current live height/reference values cross to >=4 cm
-→ VFA guidance appears
-→ VFA card + top summary item visibly marked Νέο
+initial Visit Plan
+→ establishes baseline
+→ no blanket NEW labels
+
+previous stable card/domain absent
++ current plan adds evidence/event/unresolved/due/treatment-context item
+→ newly surfaced
+→ textual `Νέο` badge
+→ stronger card + top-flow visual emphasis
+
+item ceases to apply
+→ newly-surfaced state cleared
+
+patient/case changes
+→ baseline reset
 ```
 
-## G3-B — always-visible longitudinal patient summary
+Pure base-flow `VISIT_TYPE_CORE` additions are not treated as new-item noise unless a higher-value trigger/evidence state is also present.
 
-Render a compact `Σύνοψη ασθενούς` above the dynamic visit flow whenever a protected patient is active.
+The salience state is ephemeral/in-memory only and does not create authoritative patient persistence.
 
-Authoritative inputs:
+Primary product-owner example is explicitly regression-tested:
+
+```text
+height loss = 3.9 cm
+→ OST_G2_R02_VFA_STRUCTURED_TRIGGER absent
+
+height loss = 4.0 cm
+→ OST_G2_R02_VFA_STRUCTURED_TRIGGER present
+→ VFA enters newly-surfaced set
+→ top summary item and destination VFA card receive `Νέο`
+```
+
+Color is not the only cue: `Νέο` is rendered textually.
+
+---
+
+# 3. Implemented G3-B — always-visible longitudinal patient summary
+
+A compact `Σύνοψη ασθενούς` is rendered above `Σημερινή ροή` whenever a protected patient is active.
+
+Derived inputs:
 
 ```text
 completed/amended protected encounters
 + protected lab snapshots
 + existing LongitudinalGuidanceProjectionV1
-+ current visit snapshot clearly labelled as current/non-historical
++ current visit snapshot clearly marked current/non-historical
 ```
 
-Minimum visible domains:
+Visible domains:
 
-1. **Πορεία** — first encounter date, latest completed/amended encounter date, encounter count.
-2. **Κατάγματα / κίνδυνος** — known fracture burden/most recent reliable event and latest explicit formal risk state when available.
+1. **Πορεία** — first completed/amended encounter date, latest date, encounter count.
+2. **Κατάγματα / κίνδυνος** — deduplicated stable fracture events/most recent reliable event plus latest explicit formal risk state where available.
 3. **DXA** — latest reliable DXA date and key T-scores; no significance claim without comparability/LSC.
-4. **Θεραπεία** — active/latest reliable treatment episode, actual administration history, reliable last actual dose and count when available.
-5. **Εργαστηριακά** — latest protected lab date and concise clinically useful key values when present.
-6. **Τελευταία απόφαση** — latest explicit reliable management decision/selected agent when present, without treating a discussed option as final decision.
-7. **Εκκρεμότητες / conflicts** — unresolved tasks, unresolved critical close state and longitudinal conflicts.
+4. **Θεραπεία** — active/latest reliable treatment episode plus actual-administration timeline/count from existing G-1 semantics.
+5. **Εργαστηριακά** — latest protected laboratory snapshot and selected concise key values.
+6. **Τελευταία απόφαση** — latest explicit Step-4 final management decision/selected agent when present.
+7. **Εκκρεμότητες / conflicts** — unresolved tasks, unresolved-critical close state and longitudinal conflicts.
 
-The summary must be useful at a glance but must not become a second editable form.
+The current visit is visually described as current context and does not become completed longitudinal fact until authoritative Finish.
 
 ---
 
-# 3. Truth / conflict rules
+# 4. Truth / conflict rules preserved
 
 ```text
 READ-ONLY SUMMARY != NEW SOURCE OF CLINICAL TRUTH
@@ -89,51 +108,55 @@ DISCUSSION/OPTION != FINAL DECISION
 CURRENT DRAFT != HISTORICAL COMPLETED FACT
 ```
 
-When history is unavailable, render an explicit unavailable/partial state and never say `0 prior visits` as if proven.
+Additional behavior:
 
-Fracture events, DXA snapshots and treatment/admin history must use stable/exact identities where available and avoid double counting repeated snapshots.
-
-No AI free-text summarization in v1.
+- history unavailable is an explicit unavailable state, never `0 prior visits`;
+- lab availability is tracked separately from encounter-history availability;
+- repeated fracture snapshots are deduplicated by stable event identity where possible;
+- actual administration semantics reuse the existing G-1 projection rather than implementing a second dosing timeline;
+- treatment/admin conflicts are displayed as conflicts, not silently resolved;
+- no AI free-text summary is used in v1.
 
 ---
 
-# 4. Runtime ownership
+# 5. Runtime ownership / API boundary
 
-Existing owners remain:
-
-- protected history fetching and top guidance rendering: `static/baseline-audit/progressive-guidance-ui.js`;
-- generic longitudinal treatment/admin/task projection: `static/baseline-audit/progressive-guidance-core.js` + `schemas/longitudinal_guidance_projection_v1.yaml`;
-- G-2 evidence evaluation: `static/baseline-audit/osteoporosis-evidence-guidance-core.js`;
-- patient registry/authenticated server access: `static/baseline-audit/patient-registry.js`.
-
-G-3 may add one **pure deterministic summary core** but must not create a second network/history owner or second Visit Plan renderer.
-
-Preferred new pure module:
+New pure module:
 
 ```text
 static/baseline-audit/osteoporosis-longitudinal-summary-core.js
 ```
 
-It receives data; it does not fetch, render, persist, or mutate patient truth.
+It receives structured data and performs deterministic summary/salience calculations. It does **not** own:
 
----
+```text
+network fetch
+DOM rendering
+localStorage/sessionStorage
+patient writes
+Finish
+```
 
-# 5. Data seam / API boundary
+Existing owner retained:
 
-Existing protected endpoints are sufficient:
+```text
+static/baseline-audit/progressive-guidance-ui.js
+```
+
+It remains the single protected encounter/lab history and top guidance rendering owner.
+
+Existing protected endpoints are reused:
 
 ```text
 GET /clinical/patient/{patient_id}/encounters
 GET /clinical/patient/{patient_id}/labs
 ```
 
-No DB migration or new API endpoint is authorized for v1.
-
-The guidance UI may extend its current history refresh to fetch encounters + labs once for the active patient and pass them to the pure summary core.
+No DB migration, new API route, authoritative write or alternate history store was introduced.
 
 ---
 
-# 6. UI contract
+# 6. UI contract implemented
 
 Top order:
 
@@ -144,57 +167,97 @@ Patient Registry / active patient
 → step tabs / clinical cards
 ```
 
-`Σύνοψη ασθενούς` is always present for an active protected patient and does not depend on encounter archetype.
+Summary states explicitly distinguish:
 
-Recommended presentation:
+```text
+τεκμηριωμένο
+δεν έχει τεκμηριωθεί
+μη διαθέσιμο
+ασυμφωνία / attention
+```
 
-- compact header with first→latest dates and count;
-- responsive grid of concise domain tiles;
-- explicit muted `Δεν έχει τεκμηριωθεί` / `Μη διαθέσιμο` / `Ασυμφωνία` states;
-- no hidden claim that a missing element is normal;
-- no color-only semantics.
+New guidance salience uses:
 
-New guidance salience:
+```text
+is-newly-surfaced
++ explicit `Νέο` badge
++ stronger border/background/outline
+```
 
-- summary item class `is-newly-surfaced`;
-- destination card/WHY-NOW class `is-newly-surfaced`;
-- text badge `Νέο`;
-- accessible contrast and no required animation.
+No animation is required and no clinical meaning depends only on color.
 
 ---
 
-# 7. Acceptance tests
+# 7. Acceptance evidence
 
-## Salience
+New focused tests:
 
-- initial render does not mark all cards new;
-- <4 cm → ≥4 cm live height-loss transition newly surfaces VFA and marks it `Νέο`;
-- repeat render with unchanged plan does not create a duplicate new transition;
-- item removal clears new state;
-- switching patient/case resets baseline correctly;
-- G-1/G-2 WHY-NOW/provenance remains intact.
+```text
+test_g3_guidance_summary_node.js
+test_g3_guidance_summary_wiring.js
+```
 
-## Summary
+Workflow:
 
-- chronological first/latest encounter dates and count correct;
+```text
+G3 guidance salience longitudinal summary
+run:      33486322905
+job:      99787125415
+head:     dab45baf9f80632ee6e58f03fa4d5005c68e0ac5
+result:   SUCCESS
+```
+
+Passed:
+
+### Salience
+- initial render baseline produces no blanket new state;
+- `<4 cm → >=4 cm` transition activates R02/VFA and marks VFA new;
+- unchanged plan does not create a second transition;
+- new state persists while the newly surfaced item remains applicable;
+- item removal clears salience;
+- base-flow-only content does not create salience noise.
+
+### Longitudinal summary
+- chronological first/latest encounter dates and count;
+- current `internal_uuid` excluded from historical completed course;
 - history unavailable != zero visits;
-- later blank does not erase prior DXA/treatment/risk fact;
-- latest reliable DXA and risk state selected deterministically;
-- scheduled-only administration not counted as actual;
-- treatment conflict shown as conflict rather than invented current agent;
-- latest lab snapshot displayed from protected labs;
-- current draft is visually distinct from completed/amended historical facts;
-- no authoritative write occurs from rendering.
+- later blank does not erase prior DXA/risk state;
+- repeated stable fracture event is not double-counted;
+- scheduled-only administration is not counted as actual;
+- treatment/admin conflict is surfaced;
+- latest protected lab snapshot selected deterministically;
+- latest explicit management decision selected deterministically;
+- current visit remains non-historical.
 
-## Inherited gates
-
-- G-2 evidence guidance contract/runtime regressions pass;
-- G-1 progressive guidance regressions pass;
-- C1 authoritative Finish/finalization regressions pass.
+### Inherited gates
+- frozen G-2 evidence contract PASS;
+- G-2 evidence-core/live-state/wiring PASS;
+- G-1 core/wiring/UI-state/WHY-NOW PASS;
+- C1 authoritative Finish browser PASS;
+- server finalization lifecycle PASS.
 
 ---
 
-# 8. Out of scope
+# 8. Exact-head review
+
+At exact tested runtime head `dab45baf…`:
+
+```text
+base main: 9cfad82d1258a44e71080e0aa4d6d644e581cfbf
+status: ahead
+behind: 0
+merge base: exactly base main
+```
+
+Only expected G-3 runtime/test/canonical files changed. No PR-1, PR-2, physiotherapy or RF leakage was found.
+
+No REPLAN trigger occurred.
+
+A small duplicated salience state-transition implementation remains between the pure helper and browser integration. Exact regression semantics currently match and this is classified as non-blocking maintainability debt, not a safety/data-integrity or ownership blocker. Avoid speculative refactoring unless later review demonstrates divergence.
+
+---
+
+# 9. Out of scope retained
 
 - new G-2 clinical rules or thresholds;
 - AI-generated narrative summary;
@@ -207,28 +270,38 @@ New guidance salience:
 
 ---
 
-# 9. REPLAN triggers
+# 10. Completion matrix
 
-Stop and redesign if inspection shows any of:
-
-- protected historical encounter payloads do not contain enough reliable structured information for a safe summary;
-- summary requires silently reconciling materially conflicting values;
-- obtaining labs would create duplicate network ownership or bypass protected auth;
-- new-guidance detection cannot be based on stable Visit Plan/card identity;
-- requested always-visible placement interferes with authoritative Finish/card ownership.
-
-No such trigger has been found in the initial seam inspection.
+```text
+G-3 design                                  COMPLETE
+G-3 implementation                         YES
+G-3 focused regressions                    PASS
+G-2 inherited contract/runtime gates       PASS
+G-1 inherited regressions                  PASS
+C1 inherited finalization gates            PASS
+Exact-head source/delta review             PASS
+Product-owner release review               NO
+PR opened                                  NO
+Merged                                     NO
+Deployed                                   NO
+Production-smoke-verified                  NO
+Pilot-validated                            NO
+```
 
 ---
 
-# 10. Stop gate
+# 11. Stop gate
 
-Authorized work may proceed through:
+This bounded implementation slice is closed at `IMPLEMENTED / TESTED`.
+
+Next possible release action requires a separate fresh release-readiness bootstrap/review and explicit product-owner release authority.
+
+Until then:
 
 ```text
-IMPLEMENTED
-→ TESTED
-→ exact-head review
+NO ACTIVE WRITER
+NO RELEASE PR
+NO MERGE
+NO DEPLOY
+NO PRODUCTION-SMOKE CLAIM FOR G-3
 ```
-
-STOP before PR/merge/deploy unless separately authorized by the product owner.
