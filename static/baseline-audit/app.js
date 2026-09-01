@@ -1,6 +1,18 @@
 (() => {
   "use strict";
 
+  const preloadGuard = document.createElement("style");
+  preloadGuard.id = "clinicalWorkspacePreloadGuard";
+  preloadGuard.textContent = `
+    #pilotPill,
+    #caseIdDisplay,
+    #privacyStrip,
+    [data-nav-action="new-case"],
+    [data-nav-action="cases"] { visibility: hidden; }
+    .sampling-box { display: none !important; }
+  `;
+  document.head.appendChild(preloadGuard);
+
   function loadScript(src) {
     return new Promise((resolve, reject) => {
       const script = document.createElement("script");
@@ -34,5 +46,8 @@
     .then(() => loadScript("./whole-form-progress.js"))
     .then(() => loadScript("./lab-history-ui.js"))
     .then(() => loadScript("./calendar-link.js"))
-    .catch((error) => console.error("Baseline Audit bootstrap failed", error));
+    .catch((error) => {
+      document.querySelector("#clinicalWorkspacePreloadGuard")?.remove();
+      console.error("Baseline Audit bootstrap failed", error);
+    });
 })();
