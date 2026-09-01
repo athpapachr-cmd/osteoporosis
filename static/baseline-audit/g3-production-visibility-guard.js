@@ -3,11 +3,10 @@
 
   const ACTIVE_PATIENT_KEY = "osteoporosis.clinical.activePatient.v1";
   const ACTIVE_CASE_KEY = "osteoporosis.baselineAuditPilot.activeCase.v1_1";
-  const HIGH_VALUE_REASONS = new Set(["NEW_EVENT", "UNRESOLVED_PRIOR", "EXPLICIT_DUE_STATE", "TREATMENT_CONTEXT"]);
 
   let baselineKey = "";
   let previousTokens = null;
-  let activeNewTokens = new Set();
+  let retainedNewTokens = [];
   let reconcileTimer = null;
 
   function activePatientId() {
@@ -58,31 +57,6 @@
     root.append(head, status);
   }
 
-  function itemTokens(item) {
-    const domain = String(item?.card_id || "").trim();
-    if (!domain) return [];
-    const tokens = [];
-    (Array.isArray(item?.evidence_rules) ? item.evidence_rules : []).forEach(rule => {
-      const ruleId = String(rule?.rule_id || "").trim();
-      if (ruleId) tokens.push(`E|${domain}|${ruleId}`);
-    });
-    (Array.isArray(item?.reason_codes) ? item.reason_codes : []).forEach(reason => {
-      if (HIGH_VALUE_REASONS.has(reason)) tokens.push(`R|${domain}|${reason}`);
-    });
-    return tokens;
-  }
-
-  function tokenDomain(token) {
-    return String(token || "").split("|")[1] || "";
-  }
-
-  function deriveTokenState(plan) {
-    const items = Array.isArray(plan?.ordered_cards) ? plan.ordered_cards : [];
-    const tokens = new Set(items.flatMap(itemTokens));
-    const domains = new Set(items.map(item => String(item?.card_id || "").trim()).filter(Boolean));
-    return { tokens, domains };
-  }
-
   function newBadge() {
     const badge = document.createElement("span");
     badge.className = "progressive-guidance-new-badge g3-visibility-guard-badge";
@@ -98,19 +72,9 @@
     });
   }
 
-  function decorateDomains(domains) {
+  function decorateDomains(domains, plan) {
     clearGuardDecoration();
     domains.forEach(domain => {
-      document.querySelectorAll(`.progressive-guidance-item`).forEach(item => {
-        const name = item.querySelector("strong");
-        const text = String(name?.firstChild?.textContent || name?.textContent || "").trim();
-        const domainNode = document.querySelector(`article.card[data-guidance-domain="${CSS.escape(domain)}"]`);
-        const domainLabel = domainNode?.dataset?.guidanceDomain || "";
-        if (domainLabel === domain && !item.querySelector(".progressive-guidance-new-badge")) {
-          // The top list is ordered identically to the plan; match by current guidance domain label when possible below.
-        }
-      });
-
       document.querySelectorAll(`article.card[data-guidance-domain="${CSS.escape(domain)}"]`).forEach(card => {
         card.classList.add("g3-visibility-guard-new", "is-newly-surfaced");
         const why = card.querySelector(":scope > .progressive-why-now");
@@ -118,7 +82,6 @@
       });
     });
 
-    const plan = window.ProgressiveGuidanceUI?.getLastPlan?.();
     const items = Array.isArray(plan?.ordered_cards) ? plan.ordered_cards : [];
     const topItems = Array.from(document.querySelectorAll("#progressiveGuidanceSummary .progressive-guidance-item"));
     items.slice(0, topItems.length).forEach((item, index) => {
@@ -132,28 +95,22 @@
 
   function reconcileSalience() {
     const plan = window.ProgressiveGuidanceUI?.getLastPlan?.();
-    if (!plan) return;
+    const core = window.G3SalienceTokenCore;
+    if (!plan || !core) return;
 
     const key = currentKey();
-    const { tokens, domains } = deriveTokenState(plan);
-    if (baselineKey !== key || previousTokens === null) {
-      baselineKey = key;
-      previousTokens = tokens;
-      activeNewTokens = new Set();
-      clearGuardDecoration();
-      return;
-    }
-
-    tokens.forEach(token => {
-      if (!previousTokens.has(token)) activeNewTokens.add(token);
+    const initialize = baselineKey !== key || previousTokens === null;
+    const state = core.advance({
+      previousTokens,
+      retainedNewTokens,
+      items: Array.isArray(plan.ordered_cards) ? plan.ordered_cards : [],
+      initialize
     });
-    Array.from(activeNewTokens).forEach(token => {
-      const domain = tokenDomain(token);
-      if (!tokens.has(token) || !domains.has(domain)) activeNewTokens.delete(token);
-    });
-    previousTokens = tokens;
 
-    decorateDomains(new Set(Array.from(activeNewTokens).map(tokenDomain).filter(Boolean)));
+    baselineKey = key;
+    previousTokens = state.current_tokens;
+    retainedNewTokens = state.retained_new_tokens;
+    decorateDomains(new Set(state.newly_surfaced_domains), plan);
   }
 
   function scheduleReconcile(delay = 140) {
