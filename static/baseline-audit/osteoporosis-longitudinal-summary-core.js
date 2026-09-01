@@ -246,6 +246,36 @@
     };
   }
 
+  function salienceEligible(item) {
+    if (asArray(item?.evidence_rules).length) return true;
+    return asArray(item?.reason_codes).some(code => ["NEW_EVENT", "UNRESOLVED_PRIOR", "EXPLICIT_DUE_STATE", "TREATMENT_CONTEXT"].includes(code));
+  }
+
+  function advanceSalienceState({ previousDomains = [], retainedNewDomains = [], items = [], initialize = false } = {}) {
+    const previous = new Set(asArray(previousDomains).filter(Boolean));
+    const retained = new Set(asArray(retainedNewDomains).filter(Boolean));
+    const normalizedItems = asArray(items).filter(item => clean(item?.card_id));
+    const current = new Set(normalizedItems.map(item => clean(item.card_id)));
+
+    if (!initialize) {
+      normalizedItems.forEach(item => {
+        const domain = clean(item.card_id);
+        if (!previous.has(domain) && salienceEligible(item)) retained.add(domain);
+      });
+    } else {
+      retained.clear();
+    }
+
+    Array.from(retained).forEach(domain => {
+      if (!current.has(domain)) retained.delete(domain);
+    });
+
+    return {
+      current_domains: Array.from(current),
+      newly_surfaced_domains: Array.from(retained)
+    };
+  }
+
   function buildSummary({ encounters = [], labs = [], projection = {}, currentCase = {}, historyStatus = "loaded" } = {}) {
     if (historyStatus === "unavailable") {
       return {
@@ -283,6 +313,7 @@
   }
 
   window.BaselineOsteoporosisLongitudinalSummary = Object.freeze({
-    buildSummary
+    buildSummary,
+    advanceSalienceState
   });
 })();
