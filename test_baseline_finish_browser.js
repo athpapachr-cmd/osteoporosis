@@ -7,12 +7,12 @@ const vm = require("vm");
 
 const ROOT = __dirname;
 const coordinatorPath = path.join(ROOT, "static/baseline-audit/finalization-coordinator.js");
-const pilotPath = path.join(ROOT, "static/baseline-audit/pilot-completion.js");
+const completionPath = path.join(ROOT, "static/baseline-audit/pilot-completion.js");
 const registryPath = path.join(ROOT, "static/baseline-audit/patient-registry.js");
 const appPath = path.join(ROOT, "static/baseline-audit/app.js");
 
 const coordinatorSource = fs.readFileSync(coordinatorPath, "utf8");
-const pilotSource = fs.readFileSync(pilotPath, "utf8");
+const completionSource = fs.readFileSync(completionPath, "utf8");
 const registrySource = fs.readFileSync(registryPath, "utf8");
 const appSource = fs.readFileSync(appPath, "utf8");
 
@@ -62,8 +62,8 @@ function assertRuntimeOwnershipContract() {
 
   const coordinatorIndex = appSource.indexOf('loadScript("./finalization-coordinator.js")');
   const registryIndex = appSource.indexOf('loadScript("./patient-registry.js")');
-  const pilotIndex = appSource.indexOf('loadScript("./pilot-completion.js")');
-  assert.ok(coordinatorIndex >= 0 && registryIndex > coordinatorIndex && pilotIndex > registryIndex,
+  const completionIndex = appSource.indexOf('loadScript("./pilot-completion.js")');
+  assert.ok(coordinatorIndex >= 0 && registryIndex > coordinatorIndex && completionIndex > registryIndex,
     "load order must be coordinator -> registry -> single Finish owner");
 }
 
@@ -73,8 +73,9 @@ function createHarness({ finalizeImpl }) {
   const caseId = "case-1";
   const initialCase = {
     internal_uuid: caseId,
-    baseline_phase: "pilot",
-    encounter_date: "2026-08-30",
+    workflow_mode: "clinical",
+    baseline_phase: "clinical",
+    encounter_date: "2026-09-01",
     step6: { capture_quality: { ready_for_audit: "yes", completion_time_minutes: 4 } }
   };
   const localStorage = createStorage({
@@ -87,7 +88,6 @@ function createHarness({ finalizeImpl }) {
   const finish = new FakeButton();
   const next = new FakeButton();
   const draftStatus = { textContent: "" };
-  const pilotPill = { textContent: "" };
   const step6Panel = { hidden: false };
   const alerts = [];
   let draftSyncCount = 0;
@@ -102,7 +102,6 @@ function createHarness({ finalizeImpl }) {
         "#finishVisitBtn": finish,
         "#nextBtn": next,
         "#draftStatus": draftStatus,
-        "#pilotPill": pilotPill,
         '[data-step-panel="6"]': step6Panel
       })[selector] || null;
     }
@@ -151,7 +150,7 @@ function createHarness({ finalizeImpl }) {
     }
   };
 
-  vm.runInContext(pilotSource, context, { filename: "pilot-completion.js" });
+  vm.runInContext(completionSource, context, { filename: "pilot-completion.js" });
 
   return {
     finish,
@@ -172,9 +171,11 @@ async function testSuccessfulAuthoritativeFinish() {
   assert.strictEqual(h.draftSyncCount, 0, "ordinary draft sync must be suppressed during authoritative Finish");
   assert.strictEqual(h.finalizeCallCount, 1, "server finalization must run exactly once");
   assert.strictEqual(h.serverPayloadSnapshot.step6.final_marker, "saved-before-server-finalization", "final module state must persist before server finalization");
-  assert.strictEqual(h.serverPayloadSnapshot.pilot_completion.status, "complete", "server final payload must include pilot completion");
+  assert.strictEqual(h.serverPayloadSnapshot.encounter_completion.status, "complete", "server final payload must include generic encounter completion");
+  assert.strictEqual(h.serverPayloadSnapshot.workflow_mode, "clinical");
   assert.match(h.draftStatus.textContent, /protected server ως completed/);
   assert.strictEqual(h.alerts.length, 1);
+  assert.doesNotMatch(h.alerts[0], /pilot/i, "clinician-facing Finish alert must not use pilot language");
   assert.strictEqual(h.context.window.BaselineFinalizationCoordinator.isAuthoritativeFinishInProgress(), false);
 }
 
@@ -187,7 +188,7 @@ async function testFailedProtectedCompletionIsExplicit() {
   assert.match(h.draftStatus.textContent, /δεν επιβεβαιώθηκε protected completion/);
   assert.doesNotMatch(h.draftStatus.textContent, /protected server ως completed/);
   const cases = JSON.parse(h.localStorage.getItem("osteoporosis.baselineAuditPilot.v1_1"));
-  assert.strictEqual(cases[0].pilot_completion.status, "complete", "local data should remain intact for retry");
+  assert.strictEqual(cases[0].encounter_completion.status, "complete", "local encounter data should remain intact for retry");
   assert.strictEqual(h.context.window.BaselineFinalizationCoordinator.isAuthoritativeFinishInProgress(), false);
 }
 
@@ -195,7 +196,7 @@ async function testFailedProtectedCompletionIsExplicit() {
   assertRuntimeOwnershipContract();
   await testSuccessfulAuthoritativeFinish();
   await testFailedProtectedCompletionIsExplicit();
-  console.log("baseline authoritative Finish browser regression: OK");
+  console.log("authoritative Finish browser regression: OK");
 })().catch((error) => {
   console.error(error);
   process.exitCode = 1;
