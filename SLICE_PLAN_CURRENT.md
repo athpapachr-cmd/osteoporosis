@@ -1,281 +1,284 @@
-# SLICE_PLAN_CURRENT.md — G-2 Evidence-backed Guidance Runtime v1
+# SLICE_PLAN_CURRENT.md — G-3 Guidance Salience + Longitudinal Patient Summary v1
 
 > **STATUS:** IMPLEMENTED / TESTED — RELEASE REVIEW REQUIRED BEFORE PR/MERGE/DEPLOY.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Module:** 01 — Osteoporosis.
-> **Slice ID:** `M01-G2-EVIDENCE-GUIDANCE-RUNTIME-v1`.
-> **Fresh base main:** `5182d250e244b2ed9e086138cb3b2edcdb967e25`.
-> **Design-complete ancestry:** `0395e52ed75f835d49713504df3df4ce51183edf`.
-> **Implementation branch:** `feat/module01-g2-evidence-guidance-runtime-2026-08-31`.
-> **Exact tested runtime head:** `e0657ba5924db87b38a0e05514613fbadf45bcd9`.
-> **Runtime test workflow:** `G2 evidence guidance runtime` run `33403182604` — SUCCESS.
+> **Slice ID:** `M01-G3-GUIDANCE-SALIENCE-LONGITUDINAL-SUMMARY-v1`.
+> **Fresh base main:** `9cfad82d1258a44e71080e0aa4d6d644e581cfbf`.
+> **Implementation branch:** `feat/module01-g3-guidance-salience-longitudinal-summary-2026-09-01`.
+> **Exact tested runtime head:** `dab45baf9f80632ee6e58f03fa4d5005c68e0ac5`.
+> **Test workflow:** `G3 guidance salience longitudinal summary` run `33486322905` — SUCCESS.
 > **Runtime writer:** NONE after implementation/test closeout.
 
 ---
 
-# 1. Objective / result
+# 1. Trigger / evidence from use
 
-The reviewed G-2 evidence content is now implemented over the production-proven G-1 guidance mechanics while preserving one render owner and the existing finalization/state-integrity boundaries.
+Product-owner authenticated G-2 production smoke passed on the deployed exact runtime ancestry.
 
-Runtime composition:
+During that smoke the product owner identified two concrete workflow needs:
 
-```text
-G-1 LongitudinalGuidanceProjection
-+ live current encounter state
-→ OsteoporosisEvidenceContextV1
-→ deterministic G-2 evidence-rule evaluation
-→ evidence contributions per existing domain/card
-→ deterministic merge with G-1 Visit Plan
-→ existing Σημερινή ροή / Γιατί τώρα presentation
-```
+1. newly applicable guidance should become visibly more salient at the moment it appears; example: VFA/vertebral-imaging guidance after current height loss reaches the evidence trigger of at least 4 cm;
+2. a concise patient-level longitudinal summary should remain visible throughout the encounter and summarize authoritative history from first completed/amended encounter through the latest reliable state.
 
-No automatic treatment decision or authoritative treatment write was introduced.
+This is a product-UX/read-only longitudinal slice. It does not reopen G-2 evidence content.
 
 ---
 
-# 2. Normative design authority preserved
+# 2. Implemented G3-A — newly surfaced guidance salience
 
-Implementation conforms to:
+The runtime now maintains a per-active-patient/case Visit Plan baseline and detects canonical card/domain additions after current-state/history changes.
+
+Implemented semantics:
 
 ```text
-schemas/osteoporosis_guidance_contract_manifest_v1.yaml
-schemas/osteoporosis_guidance_evidence_registry_v1.yaml
-schemas/osteoporosis_guidance_rules_v1.yaml
-schemas/osteoporosis_guidance_profiles_v1.yaml
-schemas/osteoporosis_therapy_milestones_v1.yaml
-M01_G2_EVIDENCE_GUIDANCE_REVIEW_V1.md
+initial Visit Plan
+→ establishes baseline
+→ no blanket NEW labels
+
+previous stable card/domain absent
++ current plan adds evidence/event/unresolved/due/treatment-context item
+→ newly surfaced
+→ textual `Νέο` badge
+→ stronger card + top-flow visual emphasis
+
+item ceases to apply
+→ newly-surfaced state cleared
+
+patient/case changes
+→ baseline reset
 ```
 
-The frozen design remains the clinical-content authority. Runtime implementation did not reopen evidence thresholds/policy.
+Pure base-flow `VISIT_TYPE_CORE` additions are not treated as new-item noise unless a higher-value trigger/evidence state is also present.
+
+The salience state is ephemeral/in-memory only and does not create authoritative patient persistence.
+
+Primary product-owner example is explicitly regression-tested:
+
+```text
+height loss = 3.9 cm
+→ OST_G2_R02_VFA_STRUCTURED_TRIGGER absent
+
+height loss = 4.0 cm
+→ OST_G2_R02_VFA_STRUCTURED_TRIGGER present
+→ VFA enters newly-surfaced set
+→ top summary item and destination VFA card receive `Νέο`
+```
+
+Color is not the only cue: `Νέο` is rendered textually.
 
 ---
 
-# 3. Implemented runtime
+# 3. Implemented G3-B — always-visible longitudinal patient summary
 
-Primary runtime file:
+A compact `Σύνοψη ασθενούς` is rendered above `Σημερινή ροή` whenever a protected patient is active.
 
-```text
-static/baseline-audit/osteoporosis-evidence-guidance-core.js
-```
-
-Export:
+Derived inputs:
 
 ```text
-window.BaselineOsteoporosisEvidenceGuidance
+completed/amended protected encounters
++ protected lab snapshots
++ existing LongitudinalGuidanceProjectionV1
++ current visit snapshot clearly marked current/non-historical
 ```
 
-The G-2 core is pure deterministic browser-domain logic and does not own DOM rendering, local/session storage, network fetch or Finish listeners.
+Visible domains:
 
-Implemented capabilities include:
+1. **Πορεία** — first completed/amended encounter date, latest date, encounter count.
+2. **Κατάγματα / κίνδυνος** — deduplicated stable fracture events/most recent reliable event plus latest explicit formal risk state where available.
+3. **DXA** — latest reliable DXA date and key T-scores; no significance claim without comparability/LSC.
+4. **Θεραπεία** — active/latest reliable treatment episode plus actual-administration timeline/count from existing G-1 semantics.
+5. **Εργαστηριακά** — latest protected laboratory snapshot and selected concise key values.
+6. **Τελευταία απόφαση** — latest explicit Step-4 final management decision/selected agent when present.
+7. **Εκκρεμότητες / conflicts** — unresolved tasks, unresolved-critical close state and longitudinal conflicts.
 
-- G-2 evidence-context projection from current structured state + G-1 longitudinal projection;
-- exact calendar-month/year calculations;
-- current/historical actual-administration timeline with fail-closed conflict handling;
-- NOGG scope/framework guards;
-- evidence contributions carrying rule ID, rule class, priority, domains, WHY NOW, objective, provenance, strength and activation mode;
-- deterministic merge into existing G-1 card states and rule trace;
-- evidence-derived timing values kept ephemeral.
+The current visit is visually described as current context and does not become completed longitudinal fact until authoritative Finish.
 
 ---
 
-# 4. G-1 integration / single render owner
-
-Bootstrap order is now:
+# 4. Truth / conflict rules preserved
 
 ```text
-adaptive applicability
-→ progressive-guidance-core.js
-→ osteoporosis-evidence-guidance-core.js
-→ finalization-coordinator.js
-→ patient-registry.js
-→ progressive-guidance-ui.js
-→ pilot-completion.js
+READ-ONLY SUMMARY != NEW SOURCE OF CLINICAL TRUTH
+LATEST BLANK != ERASE PRIOR AUTHORITATIVE FACT
+MISSING != NEGATIVE
+CONFLICT != CHOOSE LATEST SILENTLY
+SCHEDULED DOSE != ACTUAL DOSE
+DISCUSSION/OPTION != FINAL DECISION
+CURRENT DRAFT != HISTORICAL COMPLETED FACT
 ```
 
-`progressive-guidance-ui.js` remains the only guidance renderer/order owner.
+Additional behavior:
 
-Its compute path is:
-
-```text
-G1 projection
-→ G1 encounter context
-→ G1 base plan
-→ G2 evidence context
-→ G2 deterministic contributions
-→ merged Visit Plan
-→ existing card + Σημερινή ροή rendering
-```
-
-C1 Finish ownership remains unchanged.
+- history unavailable is an explicit unavailable state, never `0 prior visits`;
+- lab availability is tracked separately from encounter-history availability;
+- repeated fracture snapshots are deduplicated by stable event identity where possible;
+- actual administration semantics reuse the existing G-1 projection rather than implementing a second dosing timeline;
+- treatment/admin conflicts are displayed as conflicts, not silently resolved;
+- no AI free-text summary is used in v1.
 
 ---
 
-# 5. Live-state invariant implemented
+# 5. Runtime ownership / API boundary
 
-For G-2 trigger seams the current in-memory snapshot now reads live controls/roots before persisted browser cache.
-
-Covered current-state seams include:
-
-- encounter archetype/date/age;
-- sex / menopause / patient relationship / osteoporosis status segmented choices;
-- current/reference height with live derived height loss;
-- glucocorticoid flag/dose/duration;
-- falls count;
-- formal-risk indication/framework/resulting category;
-- live fracture-event rows;
-- Step-3 DXA use/T-scores and prior-workup adequacy;
-- live Step-4 treatment episodes;
-- live Step-4 administrations;
-- decision type/selected agent;
-- transition type/next agent/timing fields.
-
-Hard behavior:
+New pure module:
 
 ```text
-LIVE CURRENT CONTROL/ROOT, INCLUDING BLANK OR EMPTY LIST
->
-PERSISTED BROWSER CACHE
+static/baseline-audit/osteoporosis-longitudinal-summary-core.js
 ```
 
-The protected longitudinal projection remains a distinct authoritative prior-data source and is not silently rewritten by current local UI state.
+It receives structured data and performs deterministic summary/salience calculations. It does **not** own:
+
+```text
+network fetch
+DOM rendering
+localStorage/sessionStorage
+patient writes
+Finish
+```
+
+Existing owner retained:
+
+```text
+static/baseline-audit/progressive-guidance-ui.js
+```
+
+It remains the single protected encounter/lab history and top guidance rendering owner.
+
+Existing protected endpoints are reused:
+
+```text
+GET /clinical/patient/{patient_id}/encounters
+GET /clinical/patient/{patient_id}/labs
+```
+
+No DB migration, new API route, authoritative write or alternate history store was introduced.
 
 ---
 
-# 6. Timeline semantics implemented/tested
+# 6. UI contract implemented
 
-- actual administration requires exact `actual_date`;
-- scheduled/planned-only events never count as actual doses;
-- duplicate actual events use existing G-1 identity semantics;
-- conflicting administration history suppresses exact G-2 denosumab timing derivation;
-- denosumab evidence due = 6 calendar months from reliable last actual dose, ephemeral only;
-- specific denosumab >7-month rebound escalation requires reliable actual count ≥2;
-- treatment-exposure milestones require exact reliable episode start date;
-- approximate duration does not create exact milestones;
-- oral-bisphosphonate early review = 12–16 weeks from exact start;
-- oral-BP ≥5y and zoledronate ≥3y use calendar anniversaries;
-- administration count and elapsed exposure remain distinct.
+Top order:
+
+```text
+Patient Registry / active patient
+→ Σύνοψη ασθενούς
+→ Σημερινή ροή
+→ step tabs / clinical cards
+```
+
+Summary states explicitly distinguish:
+
+```text
+τεκμηριωμένο
+δεν έχει τεκμηριωθεί
+μη διαθέσιμο
+ασυμφωνία / attention
+```
+
+New guidance salience uses:
+
+```text
+is-newly-surfaced
++ explicit `Νέο` badge
++ stronger border/background/outline
+```
+
+No animation is required and no clinical meaning depends only on color.
 
 ---
 
-# 7. Framework / safety semantics implemented/tested
-
-NOGG-specific rules are guarded against silent application under an explicitly non-NOGG framework.
-
-Medication-specific safety content classified `checklist_only` is visibly presented as:
-
-```text
-Safety checklist — requires clinical confirmation, not automatic clearance.
-```
-
-The UI also surfaces concise evidence provenance such as NOGG/EMA source labels.
-
-The runtime does not infer:
-
-```text
-safe
-cleared
-no contraindication
-ready for administration
-```
-
-from missing/stale data.
-
----
-
-# 8. Blocked / forbidden semantics preserved
-
-Not activated:
-
-```text
-OST_G2_R15_DENOSUMAB_EXIT_CTX_FOLLOWUP
-OST_G2_R16_DENOSUMAB_EXIT_NO_CTX_OPTION
-```
-
-Still explicitly absent:
-
-```text
-CTX >=280 ng/L → automatic second zoledronate
-CTX >=300 ng/L → automatic second zoledronate
-CTX at 3 months → mandatory retreatment command
-Prolia 4th/8th/10th dose → generic milestone
-fracture on treatment → automatic failure/switch
-romosozumab → automatic cardiology/vascular referral without approved clinic policy
-automatic selected-agent mutation
-```
-
----
-
-# 9. Test evidence
+# 7. Acceptance evidence
 
 New focused tests:
 
 ```text
-test_g2_evidence_guidance_node.js
-test_g2_guidance_live_state.js
-test_g2_evidence_guidance_wiring.js
+test_g3_guidance_summary_node.js
+test_g3_guidance_summary_wiring.js
 ```
 
-Runtime workflow:
+Workflow:
 
 ```text
-G2 evidence guidance runtime
-run: 33403182604
-head: e0657ba5924db87b38a0e05514613fbadf45bcd9
-status: COMPLETED
-conclusion: SUCCESS
+G3 guidance salience longitudinal summary
+run:      33486322905
+job:      99787125415
+head:     dab45baf9f80632ee6e58f03fa4d5005c68e0ac5
+result:   SUCCESS
 ```
 
-The single `g2-runtime` job passed all steps, including:
+Passed:
 
-- JavaScript syntax checks;
-- frozen G-2 contract validation;
-- G-2 evidence-core regressions;
-- G-2 live-state regressions;
-- G-2 wiring/ownership regressions;
-- inherited G-1 core regression;
-- inherited G-1 wiring regression;
-- inherited G-1 UI-state regressions;
-- inherited G-1 WHY-NOW presentation regression;
-- authoritative Finish browser regression;
-- server finalization lifecycle regression.
+### Salience
+- initial render baseline produces no blanket new state;
+- `<4 cm → >=4 cm` transition activates R02/VFA and marks VFA new;
+- unchanged plan does not create a second transition;
+- new state persists while the newly surfaced item remains applicable;
+- item removal clears salience;
+- base-flow-only content does not create salience noise.
+
+### Longitudinal summary
+- chronological first/latest encounter dates and count;
+- current `internal_uuid` excluded from historical completed course;
+- history unavailable != zero visits;
+- later blank does not erase prior DXA/risk state;
+- repeated stable fracture event is not double-counted;
+- scheduled-only administration is not counted as actual;
+- treatment/admin conflict is surfaced;
+- latest protected lab snapshot selected deterministically;
+- latest explicit management decision selected deterministically;
+- current visit remains non-historical.
+
+### Inherited gates
+- frozen G-2 evidence contract PASS;
+- G-2 evidence-core/live-state/wiring PASS;
+- G-1 core/wiring/UI-state/WHY-NOW PASS;
+- C1 authoritative Finish browser PASS;
+- server finalization lifecycle PASS.
 
 ---
 
-# 10. Exact-head review
+# 8. Exact-head review
 
-At tested head `e0657ba5…`:
+At exact tested runtime head `dab45baf…`:
 
 ```text
-main 5182d250… → tested head
+base main: 9cfad82d1258a44e71080e0aa4d6d644e581cfbf
 status: ahead
-merge base: exactly main
 behind: 0
+merge base: exactly base main
 ```
 
-From design-complete head `0395e52e…` to tested runtime head there are 10 commits and only expected G-2 runtime/test/canonical files.
+Only expected G-3 runtime/test/canonical files changed. No PR-1, PR-2, physiotherapy or RF leakage was found.
 
-No physiotherapy/RF, PR-1 or PR-2 leakage was found.
+No REPLAN trigger occurred.
 
-Source review confirmed:
-
-- R15/R16 have no evaluator activation branch;
-- G-2 core has no DOM/storage/fetch/listener ownership;
-- single G-1 render owner is preserved;
-- C1 Finish owner/load order is preserved;
-- checklist≠clearance is visible in UI;
-- no prohibited automatic treatment semantics were introduced.
+A small duplicated salience state-transition implementation remains between the pure helper and browser integration. Exact regression semantics currently match and this is classified as non-blocking maintainability debt, not a safety/data-integrity or ownership blocker. Avoid speculative refactoring unless later review demonstrates divergence.
 
 ---
 
-# 11. Completion matrix
+# 9. Out of scope retained
+
+- new G-2 clinical rules or thresholds;
+- AI-generated narrative summary;
+- patient-level canonical treatment DB table;
+- transcript extraction / PR-1;
+- inline transcript population / PR-2;
+- Practice Review scoring;
+- real 5-case pilot;
+- physiotherapy/RF work.
+
+---
+
+# 10. Completion matrix
 
 ```text
-G-2 evidence/content design                DESIGN-COMPLETE / REVIEWED
-G-2 runtime implementation                 YES
-G-2 focused runtime tests                  PASS
-G-2 frozen contract validation             PASS
-Inherited G-1 regressions                  PASS
-Inherited C1 regressions                   PASS
+G-3 design                                  COMPLETE
+G-3 implementation                         YES
+G-3 focused regressions                    PASS
+G-2 inherited contract/runtime gates       PASS
+G-1 inherited regressions                  PASS
+C1 inherited finalization gates            PASS
 Exact-head source/delta review             PASS
 Product-owner release review               NO
 PR opened                                  NO
@@ -285,24 +288,20 @@ Production-smoke-verified                  NO
 Pilot-validated                            NO
 ```
 
-`IMPLEMENTED / TESTED` does not imply release readiness has been authorized by the product owner.
-
 ---
 
-# 12. Next action / stop gate
+# 11. Stop gate
 
-This bounded implementation slice is closed at its authorized stop gate.
+This bounded implementation slice is closed at `IMPLEMENTED / TESTED`.
 
-Next possible action requires a **separate fresh release-readiness bootstrap/review and explicit product-owner release authority** before any release PR/merge/deploy action.
+Next possible release action requires a separate fresh release-readiness bootstrap/review and explicit product-owner release authority.
 
 Until then:
 
 ```text
-NO ACTIVE RUNTIME WRITER
+NO ACTIVE WRITER
 NO RELEASE PR
 NO MERGE
 NO DEPLOY
-NO PRODUCTION-SMOKE CLAIM
+NO PRODUCTION-SMOKE CLAIM FOR G-3
 ```
-
-PR-1/PR-2 and parked physiotherapy/RF work remain outside this completed slice.

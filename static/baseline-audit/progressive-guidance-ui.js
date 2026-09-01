@@ -48,13 +48,47 @@
     documentation_capture: ["#s6Sources", "#s6GesyAvailable", "#s6HeidiFinalNote", "#s6Reliability"]
   });
 
+  const AGENT_LABELS = Object.freeze({
+    alendronate: "Alendronate",
+    risedronate: "Risedronate",
+    ibandronate_oral: "Ibandronate oral",
+    zoledronate: "Zoledronate",
+    ibandronate_iv: "Ibandronate IV",
+    denosumab: "Denosumab",
+    teriparatide: "Teriparatide",
+    romosozumab: "Romosozumab",
+    raloxifene: "Raloxifene",
+    hormone_therapy: "Hormone therapy",
+    none: "Καμία"
+  });
+
+  const DECISION_LABELS = Object.freeze({
+    start: "Έναρξη",
+    continue: "Συνέχιση",
+    stop: "Διακοπή",
+    switch: "Αλλαγή",
+    defer: "Αναβολή",
+    no_drug_treatment: "Χωρίς φαρμακευτική θεραπεία",
+    complete_course: "Ολοκλήρωση course",
+    consolidate: "Consolidation",
+    refer: "Παραπομπή",
+    uncertain: "Αβέβαιο"
+  });
+
   let historyPatientId = "";
   let historicalEncounters = [];
+  let historicalLabs = [];
   let historyLoadState = "not_loaded";
   let historyLoadError = "";
+  let labLoadState = "not_loaded";
+  let labLoadError = "";
   let lastPlan = null;
   let lastEvidenceContext = null;
   let lastEvidenceContributions = [];
+  let lastPatientSummary = null;
+  let planBaselineKey = "";
+  let previousPlanDomains = null;
+  let newlySurfacedDomains = new Set();
   let refreshTimer = null;
 
   function getCases() {
@@ -213,16 +247,25 @@
     };
   }
 
-  async function fetchHistoricalEncounters(patientId) {
-    if (!patientId) return [];
-    const res = await fetch(`/clinical/patient/${encodeURIComponent(patientId)}/encounters`, {
+  async function fetchProtectedList(path, unavailableLabel) {
+    const res = await fetch(path, {
       method: "GET",
       credentials: "same-origin",
       headers: { "Content-Type": "application/json" }
     });
-    if (!res.ok) throw new Error(`Historical encounters unavailable (${res.status})`);
+    if (!res.ok) throw new Error(`${unavailableLabel} unavailable (${res.status})`);
     const body = await res.json();
     return Array.isArray(body) ? body : [];
+  }
+
+  function fetchHistoricalEncounters(patientId) {
+    if (!patientId) return Promise.resolve([]);
+    return fetchProtectedList(`/clinical/patient/${encodeURIComponent(patientId)}/encounters`, "Historical encounters");
+  }
+
+  function fetchHistoricalLabs(patientId) {
+    if (!patientId) return Promise.resolve([]);
+    return fetchProtectedList(`/clinical/patient/${encodeURIComponent(patientId)}/labs`, "Historical labs");
   }
 
   function historyStateSnapshot() {
@@ -230,7 +273,10 @@
       status: historyLoadState,
       patient_id: historyPatientId || null,
       encounter_count: historicalEncounters.length,
-      error_present: Boolean(historyLoadError)
+      lab_status: labLoadState,
+      lab_snapshot_count: historicalLabs.length,
+      error_present: Boolean(historyLoadError),
+      lab_error_present: Boolean(labLoadError)
     };
   }
 
@@ -309,9 +355,43 @@
     root.appendChild(wrap);
   }
 
+  function salienceEligible(item) {
+    if ((item?.evidence_rules || []).length) return true;
+    return (item?.reason_codes || []).some(code => ["NEW_EVENT", "UNRESOLVED_PRIOR", "EXPLICIT_DUE_STATE", "TREATMENT_CONTEXT"].includes(code));
+  }
+
+  function updateNewlySurfacedState(plan) {
+    const key = `${activePatientId() || "local"}|${activeUuid() || "no-case"}`;
+    const items = Array.isArray(plan?.ordered_cards) ? plan.ordered_cards : [];
+    const currentDomains = new Set(items.map(item => item.card_id).filter(Boolean));
+
+    if (key !== planBaselineKey || previousPlanDomains === null) {
+      planBaselineKey = key;
+      previousPlanDomains = currentDomains;
+      newlySurfacedDomains = new Set();
+      return;
+    }
+
+    items.forEach(item => {
+      if (!previousPlanDomains.has(item.card_id) && salienceEligible(item)) newlySurfacedDomains.add(item.card_id);
+    });
+    Array.from(newlySurfacedDomains).forEach(domain => {
+      if (!currentDomains.has(domain)) newlySurfacedDomains.delete(domain);
+    });
+    previousPlanDomains = currentDomains;
+  }
+
+  function newBadge() {
+    const badge = document.createElement("span");
+    badge.className = "progressive-guidance-new-badge";
+    badge.textContent = "Νέο";
+    badge.setAttribute("aria-label", "Νέα guidance ένδειξη");
+    return badge;
+  }
+
   function clearGuidanceFromCards() {
     $$('article.card.guidance-surfaced').forEach(card => {
-      card.classList.remove("guidance-surfaced");
+      card.classList.remove("guidance-surfaced", "is-newly-surfaced");
       card.style.removeProperty("order");
       card.removeAttribute("data-guidance-priority");
       card.removeAttribute("data-guidance-domain");
@@ -322,19 +402,23 @@
   function applyPlanToCards(plan) {
     clearGuidanceFromCards();
     (plan?.ordered_cards || []).forEach(item => {
+      const isNew = newlySurfacedDomains.has(item.card_id);
       cardsForDomain(item.card_id).forEach(card => {
         card.classList.add("guidance-surfaced");
+        if (isNew) card.classList.add("is-newly-surfaced");
         card.dataset.guidancePriority = String(item.priority);
         card.dataset.guidanceDomain = item.card_id;
         card.style.order = String(-1000 + Number(item.priority || 999));
 
         const reason = document.createElement("div");
         reason.className = "progressive-why-now";
+        if (isNew) reason.classList.add("is-newly-surfaced");
         if ((item.reason_codes || []).includes("NEW_EVENT") || (item.evidence_rules || []).some(rule => ["event_triggered", "critical_safety"].includes(rule.rule_class))) reason.classList.add("is-event");
         const strong = document.createElement("strong");
         strong.textContent = "Γιατί τώρα: ";
         reason.appendChild(strong);
         reason.appendChild(document.createTextNode(item.why_now || "Σχετικό με τη σημερινή επίσκεψη."));
+        if (isNew) reason.appendChild(newBadge());
         if ((item.reason_codes || []).length) {
           const badge = document.createElement("span");
           badge.className = "progressive-guidance-live-badge";
@@ -360,6 +444,17 @@
     return root;
   }
 
+  function ensurePatientSummary() {
+    let root = $("#patientLongitudinalSummary");
+    if (root) return root;
+    root = document.createElement("section");
+    root.id = "patientLongitudinalSummary";
+    root.className = "patient-longitudinal-summary";
+    const flow = ensureSummary();
+    if (flow?.parentNode) flow.parentNode.insertBefore(root, flow);
+    return root;
+  }
+
   function addTextRow(root, className, label, value) {
     const row = document.createElement("div");
     row.className = className;
@@ -368,6 +463,159 @@
     row.appendChild(strong);
     row.appendChild(document.createTextNode(value));
     root.appendChild(row);
+  }
+
+  function humanize(value, labels = {}) {
+    const raw = String(value || "");
+    return labels[raw] || raw.replaceAll("_", " ") || "—";
+  }
+
+  function formatNumber(value) {
+    if (value === null || value === undefined || value === "") return "—";
+    const number = Number(value);
+    return Number.isFinite(number) ? String(Math.round(number * 100) / 100) : String(value);
+  }
+
+  function summaryTile(root, label, body, { state = "documented", detail = "" } = {}) {
+    const tile = document.createElement("div");
+    tile.className = `patient-summary-tile state-${state}`;
+    const heading = document.createElement("strong");
+    heading.textContent = label;
+    const value = document.createElement("div");
+    value.className = "patient-summary-value";
+    value.textContent = body || "Δεν έχει τεκμηριωθεί";
+    tile.append(heading, value);
+    if (detail) {
+      const small = document.createElement("small");
+      small.textContent = detail;
+      tile.appendChild(small);
+    }
+    root.appendChild(tile);
+  }
+
+  function renderPatientSummary(summary) {
+    const root = ensurePatientSummary();
+    const patientId = activePatientId();
+    if (!patientId) {
+      root.hidden = true;
+      root.innerHTML = "";
+      return;
+    }
+    root.hidden = false;
+    root.innerHTML = "";
+
+    const head = document.createElement("div");
+    head.className = "patient-summary-head";
+    const title = document.createElement("h2");
+    title.textContent = "Σύνοψη ασθενούς";
+    const badge = document.createElement("span");
+    badge.className = "patient-summary-readonly";
+    badge.textContent = "Read-only longitudinal";
+    head.append(title, badge);
+    root.appendChild(head);
+
+    if (!summary || summary.state !== "ready") {
+      const status = document.createElement("div");
+      status.className = summary?.state === "unavailable" ? "progressive-guidance-conflict" : "progressive-guidance-meta";
+      status.textContent = summary?.message || "Φορτώνεται το protected longitudinal ιστορικό.";
+      root.appendChild(status);
+      return;
+    }
+
+    if (summary.current_visit?.state === "current_non_historical") {
+      const current = document.createElement("div");
+      current.className = "patient-summary-current";
+      current.textContent = `Τρέχουσα επίσκεψη${summary.current_visit.encounter_date ? ` ${summary.current_visit.encounter_date}` : ""}: εμφανίζεται ως current context και δεν μετατρέπεται σε ιστορικό completed fact πριν από authoritative Finish.`;
+      root.appendChild(current);
+    }
+
+    const grid = document.createElement("div");
+    grid.className = "patient-summary-grid";
+
+    const course = summary.course || {};
+    summaryTile(
+      grid,
+      "Πορεία",
+      course.state === "documented" ? `${course.first_date || "—"} → ${course.latest_date || "—"}` : "Δεν υπάρχει ακόμη completed/amended ιστορικό",
+      { state: course.state === "documented" ? "documented" : "absent", detail: `${course.encounter_count || 0} ολοκληρωμένες/τροποποιημένες επισκέψεις` }
+    );
+
+    const fractures = summary.fractures || {};
+    const fractureLatest = fractures.most_recent;
+    let fractureBody = "Δεν έχει τεκμηριωθεί";
+    if (fractures.state === "documented") {
+      const countText = fractures.documented_count ? `${fractures.documented_count} μοναδικά τεκμηριωμένα event(s)` : "Ιστορικό fragility fracture τεκμηριωμένο";
+      const latestText = fractureLatest ? ` · τελευταίο ${fractureLatest.site || "site μη καταγεγραμμένο"}${fractureLatest.month ? ` (${fractureLatest.month})` : ""}` : "";
+      fractureBody = `${countText}${latestText}`;
+    }
+    const risk = summary.risk || {};
+    const riskDetail = risk.state === "documented"
+      ? `Risk: ${risk.category ? humanize(risk.category) : "κατηγορία μη καταγεγραμμένη"}${risk.framework ? ` · ${humanize(risk.framework)}` : ""}${risk.mof !== null && risk.mof !== undefined ? ` · MOF ${formatNumber(risk.mof)}%` : ""}${risk.hip !== null && risk.hip !== undefined ? ` · Hip ${formatNumber(risk.hip)}%` : ""}`
+      : "Formal risk: δεν έχει τεκμηριωθεί";
+    summaryTile(grid, "Κατάγματα / κίνδυνος", fractureBody, { state: fractures.state === "documented" || risk.state === "documented" ? "documented" : "absent", detail: riskDetail });
+
+    const dxa = summary.dxa || {};
+    const dxaValues = [];
+    if (dxa.spine_t !== null && dxa.spine_t !== undefined) dxaValues.push(`LS ${formatNumber(dxa.spine_t)}`);
+    if (dxa.total_hip_t !== null && dxa.total_hip_t !== undefined) dxaValues.push(`TH ${formatNumber(dxa.total_hip_t)}`);
+    if (dxa.femoral_neck_t !== null && dxa.femoral_neck_t !== undefined) dxaValues.push(`FN ${formatNumber(dxa.femoral_neck_t)}`);
+    summaryTile(
+      grid,
+      "DXA",
+      dxa.state === "documented" ? `${dxa.date || dxa.source_encounter_date || "ημερομηνία μη καταγεγραμμένη"}${dxaValues.length ? ` · T-score ${dxaValues.join(" · ")}` : ""}` : "Δεν έχει τεκμηριωθεί",
+      { state: dxa.state === "documented" ? "documented" : "absent", detail: dxa.state === "documented" ? "Χωρίς αυτόματο χαρακτηρισμό μεταβολής χωρίς comparability/LSC." : "" }
+    );
+
+    const treatment = summary.treatment || {};
+    const active = treatment.active_episode;
+    const latestActual = treatment.latest_actual;
+    let treatmentBody = "Δεν έχει τεκμηριωθεί";
+    if (treatment.state === "conflicting") {
+      treatmentBody = "Υπάρχει longitudinal ασυμφωνία — έλεγξε Treatment history / Administrations";
+    } else if (active || latestActual || treatment.actual_event_count) {
+      treatmentBody = active
+        ? `Ενεργό: ${humanize(active.agent, AGENT_LABELS)}${active.start_date ? ` από ${active.start_date}` : ""}`
+        : "Δεν τεκμηριώνεται μοναδικό ενεργό episode";
+      if (latestActual) treatmentBody += ` · τελευταία actual ${humanize(latestActual.agent, AGENT_LABELS)} ${latestActual.actual_date}`;
+    }
+    const countParts = Object.entries(treatment.administration_count_by_agent || {}).map(([agent, count]) => `${humanize(agent, AGENT_LABELS)} ×${count}`);
+    summaryTile(grid, "Θεραπεία", treatmentBody, { state: treatment.state === "conflicting" ? "conflict" : treatment.state === "documented" ? "documented" : "absent", detail: countParts.length ? `Reliable/declared actual counts: ${countParts.join(" · ")}` : "" });
+
+    const labs = summary.labs || {};
+    let labState = labs.state;
+    let labBody = "Δεν έχει τεκμηριωθεί";
+    let labDetail = "";
+    if (labLoadState === "unavailable") {
+      labState = "unavailable";
+      labBody = "Μη διαθέσιμο — αποτυχία φόρτωσης protected laboratory history";
+    } else if (labs.state === "documented") {
+      labBody = labs.date || "Ημερομηνία μη καταγεγραμμένη";
+      labDetail = (labs.values || []).map(item => `${item.label} ${formatNumber(item.value)}`).join(" · ");
+      if (!labDetail) labDetail = "Υπάρχει snapshot χωρίς selected key numeric values.";
+    }
+    summaryTile(grid, "Εργαστηριακά", labBody, { state: labState === "unavailable" ? "conflict" : labState === "documented" ? "documented" : "absent", detail: labDetail });
+
+    const decision = summary.decision || {};
+    summaryTile(
+      grid,
+      "Τελευταία απόφαση",
+      decision.state === "documented"
+        ? `${humanize(decision.type, DECISION_LABELS)}${decision.selected_agent ? ` · ${humanize(decision.selected_agent, AGENT_LABELS)}` : ""}`
+        : "Δεν έχει τεκμηριωθεί explicit final management decision",
+      { state: decision.state === "documented" ? "documented" : "absent", detail: decision.source_encounter_date ? `Επίσκεψη ${decision.source_encounter_date}` : "" }
+    );
+
+    const unresolved = summary.unresolved || {};
+    const unresolvedCount = (unresolved.tasks || []).length;
+    const conflictCount = (unresolved.conflicts || []).length;
+    let unresolvedBody = "Δεν υπάρχουν γνωστές ενεργές εκκρεμότητες από το projection";
+    if (unresolved.unresolved_critical === "yes") unresolvedBody = "Υπάρχει unresolved critical item";
+    else if (unresolvedCount) unresolvedBody = `${unresolvedCount} ενεργές εκκρεμότητες`;
+    if (conflictCount) unresolvedBody += `${unresolvedBody ? " · " : ""}${conflictCount} longitudinal conflict(s)`;
+    const taskDetail = (unresolved.tasks || []).slice(0, 3).map(task => `${humanize(task.task_type)}${task.due_date ? ` ${task.due_date}` : task.timeframe_text ? ` (${task.timeframe_text})` : ""}`).join(" · ");
+    summaryTile(grid, "Εκκρεμότητες / conflicts", unresolvedBody, { state: conflictCount ? "conflict" : unresolvedCount || unresolved.unresolved_critical === "yes" ? "attention" : "documented", detail: taskDetail });
+
+    root.appendChild(grid);
   }
 
   function renderSummary(context, plan, projection) {
@@ -406,10 +654,13 @@
       const list = document.createElement("div");
       list.className = "progressive-guidance-list";
       cards.slice(0, 12).forEach(item => {
+        const isNew = newlySurfacedDomains.has(item.card_id);
         const box = document.createElement("div");
         box.className = "progressive-guidance-item";
+        if (isNew) box.classList.add("is-newly-surfaced");
         const name = document.createElement("strong");
         name.textContent = DOMAIN_LABELS[item.card_id] || item.card_id;
+        if (isNew) name.appendChild(newBadge());
         const why = document.createElement("span");
         why.textContent = `Γιατί τώρα: ${item.why_now || "Σχετικό με τη σημερινή επίσκεψη."}`;
         box.append(name, why);
@@ -456,7 +707,22 @@
       lastEvidenceContributions = g2.evaluateEvidenceGuidance(lastEvidenceContext);
       plan = g2.mergeEvidenceContributions(basePlan, lastEvidenceContributions);
     }
+
+    updateNewlySurfacedState(plan);
     lastPlan = plan;
+
+    const summaryCore = window.BaselineOsteoporosisLongitudinalSummary;
+    lastPatientSummary = summaryCore
+      ? summaryCore.buildSummary({
+          encounters: historicalEncounters,
+          labs: historicalLabs,
+          projection,
+          currentCase: current,
+          historyStatus: historyLoadState
+        })
+      : null;
+
+    renderPatientSummary(lastPatientSummary);
     applyPlanToCards(plan);
     renderSummary(context, plan, projection);
   }
@@ -474,13 +740,19 @@
     if (!patientId) {
       historyPatientId = "";
       historicalEncounters = [];
+      historicalLabs = [];
       historyLoadState = "not_loaded";
       historyLoadError = "";
+      labLoadState = "not_loaded";
+      labLoadError = "";
+      planBaselineKey = "";
+      previousPlanDomains = null;
+      newlySurfacedDomains = new Set();
       scheduleRender(0);
       return;
     }
 
-    if (!force && patientId === historyPatientId && historyLoadState === "loaded") {
+    if (!force && patientId === historyPatientId && historyLoadState === "loaded" && ["loaded", "unavailable"].includes(labLoadState)) {
       scheduleRender(0);
       return;
     }
@@ -488,21 +760,40 @@
     const requestedPatientId = patientId;
     historyPatientId = requestedPatientId;
     historicalEncounters = [];
+    historicalLabs = [];
     historyLoadState = "loading";
     historyLoadError = "";
+    labLoadState = "loading";
+    labLoadError = "";
+    planBaselineKey = "";
+    previousPlanDomains = null;
+    newlySurfacedDomains = new Set();
     scheduleRender(0);
 
-    try {
-      const rows = await fetchHistoricalEncounters(requestedPatientId);
-      if (activePatientId() !== requestedPatientId || historyPatientId !== requestedPatientId) return;
-      historicalEncounters = rows;
+    const [encountersResult, labsResult] = await Promise.allSettled([
+      fetchHistoricalEncounters(requestedPatientId),
+      fetchHistoricalLabs(requestedPatientId)
+    ]);
+    if (activePatientId() !== requestedPatientId || historyPatientId !== requestedPatientId) return;
+
+    if (encountersResult.status === "fulfilled") {
+      historicalEncounters = encountersResult.value;
       historyLoadState = "loaded";
       historyLoadError = "";
-    } catch (error) {
-      if (activePatientId() !== requestedPatientId || historyPatientId !== requestedPatientId) return;
+    } else {
       historicalEncounters = [];
       historyLoadState = "unavailable";
-      historyLoadError = error?.message || "history unavailable";
+      historyLoadError = encountersResult.reason?.message || "history unavailable";
+    }
+
+    if (labsResult.status === "fulfilled") {
+      historicalLabs = labsResult.value;
+      labLoadState = "loaded";
+      labLoadError = "";
+    } else {
+      historicalLabs = [];
+      labLoadState = "unavailable";
+      labLoadError = labsResult.reason?.message || "labs unavailable";
     }
     scheduleRender(0);
   }
@@ -523,7 +814,12 @@
     document.addEventListener("click", event => {
       if (event.target.closest?.("[data-field][data-value]")) scheduleRender(0);
       if (event.target.closest?.("#s4AddEpisode, #s4AddAdministration, [data-remove-episode], [data-remove-admin], #addFractureEventBtn, [data-remove-event]")) scheduleRender(20);
-      if (event.target.closest?.("[data-load-case]") || event.target.closest?.('[data-nav-action="new-case"]')) scheduleRender(60);
+      if (event.target.closest?.("[data-load-case]") || event.target.closest?.('[data-nav-action="new-case"]')) {
+        planBaselineKey = "";
+        previousPlanDomains = null;
+        newlySurfacedDomains = new Set();
+        scheduleRender(60);
+      }
       if (event.target.closest?.("#clinicalSearchResults .btn") || event.target.closest?.("#clinicalCreatePatientBtn")) setTimeout(() => refreshHistory({ force: true }), 180);
     });
 
@@ -539,6 +835,8 @@
     getLastPlan: () => lastPlan,
     getLastEvidenceContext: () => lastEvidenceContext,
     getLastEvidenceContributions: () => lastEvidenceContributions.slice(),
+    getLastPatientSummary: () => lastPatientSummary,
+    getNewlySurfacedDomains: () => Array.from(newlySurfacedDomains),
     getHistoryLoadState: () => historyStateSnapshot(),
     getLongitudinalMetaText: context => longitudinalMetaText(context),
     getCurrentCaseSnapshot: () => currentCaseSnapshot()
