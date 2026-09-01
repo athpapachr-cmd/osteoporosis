@@ -104,7 +104,7 @@ No real pilot before the full intended guided/capture workflow is ready.
 - [x] Production smoke confirmed G-1 loads and existing `Τύπος σημερινής επίσκεψης` is usable.
 - [x] Correct the production-smoke WHY-NOW discoverability defect without changing guidance semantics.
 - [x] Product-owner re-smoke confirms literal `Γιατί τώρα: ...` is visible in top `Σημερινή ροή` after the correction deploy.
-- [x] Product-owner observed that surfaced guidance changes dynamically with visit context and is informative/guiding; this remains a production observation, not pilot validation.
+- [x] Product-owner observed that surfaced guidance changes dynamically with current visit context and is informative/guiding; this remains a production observation, not pilot validation.
 
 ## 1.4 Osteoporosis guidance-content profiles — PRODUCTION-SMOKE-VERIFIED / CLOSED
 
@@ -136,7 +136,7 @@ Important first-runtime exclusions remain:
 - `OST_G2_R16_DENOSUMAB_EXIT_NO_CTX_OPTION` remains blocked until CTX-monitoring availability is explicitly represented;
 - checklist-only medication safety guidance is visibly identified as verification/checklist content and not automated safety clearance.
 
-## 1.5 G-3 Guidance salience + longitudinal patient summary — IMPLEMENTED / TESTED; RELEASE REVIEW NEXT
+## 1.5 G-3 Guidance salience + longitudinal patient summary — RELEASE REVIEW PASS / PR #70 OPEN / MERGE HOLD
 
 Triggered by product-owner production interaction after G-2 smoke.
 
@@ -150,10 +150,33 @@ Triggered by product-owner production interaction after G-2 smoke.
 - [x] Preserve `missing != negative`, `scheduled != actual`, conflict fail-closed and later-blank-does-not-erase-prior semantics.
 - [x] Reuse existing protected encounter/lab endpoints and existing G-1 treatment/admin projection; no DB migration/new write path.
 - [x] Pass focused G-3 tests plus inherited G-2/G-1/C1 regression gate at exact head `dab45baf9f80632ee6e58f03fa4d5005c68e0ac5`, run `33486322905`.
-- [ ] Fresh product-owner release review before PR/merge/deploy.
+- [x] Complete release-readiness review and open PR #70 with explicit MERGE HOLD.
+- [ ] Merge/deploy only after separate explicit product-owner merge authority.
 - [ ] Production smoke after explicitly authorized G-3 release.
 
-## 1.6 Heidi-first capture — BEFORE REAL PILOT
+## 1.6 C2 Server-authoritative Patient / Encounter Workspace — IMPLEMENTED / TESTED; RELEASE REVIEW NEXT
+
+Triggered by the product-owner requirement for reliable work across three computers and removal of the clinician-facing pilot-case shell.
+
+- [x] Make protected `patient_id + encounter_id + updated_at` the authoritative working identity/version after server creation/load.
+- [x] Create a protected server draft immediately for a new visit under an active protected patient.
+- [x] Hydrate complete encounter payload from the server when opening/reloading an encounter on another device.
+- [x] Add debounced serialized autosave while retaining localStorage only as disposable working cache.
+- [x] Add optimistic concurrency: stale expected version → HTTP 409 → no silent overwrite.
+- [x] Preserve local unsynced edits after conflict and require explicit clinician-triggered server reload; no v1 auto-merge.
+- [x] Add retry de-duplication for a lost create response using stable payload `internal_uuid` within the active patient.
+- [x] Retire ordinary clinician-facing `PILOT CASE`, `PILOT-nnn`, `Νέο Case`, local `Cases`, pilot-only privacy/Finish copy and baseline-sample completion requirement.
+- [x] Preserve one authoritative Finish owner and completed/amended lifecycle.
+- [x] Preserve G-3/G-2/G-1/C1 regressions.
+- [x] Pass exact C2 gate at runtime head `27d5248e51daaa61bf29c70d3bebf5d73b93d6a2`, run `33544223692`.
+- [ ] Complete fresh C2 release-readiness review after canonical closeout and with G-3 predecessor state verified.
+- [ ] Open C2 release PR only after explicit release-PR authority and without bypassing G-3 predecessor ordering.
+- [ ] Merge/deploy only after separate explicit product-owner merge authority.
+- [ ] Production cross-device/conflict smoke after release.
+
+C2 v1 cross-device continuity means protected server autosave + later open/reload from another device. It does not claim realtime push/websocket mirroring between already-open tabs.
+
+## 1.7 Heidi-first capture — BEFORE REAL PILOT
 
 - [ ] Restart corrected archived PR-1 v3 design as bounded implementation slice.
 - [ ] Protected transcript paste/intake.
@@ -166,7 +189,7 @@ Triggered by product-owner production interaction after G-2 smoke.
 - [ ] No exact-date invention from vague timing.
 - [ ] No authoritative PR-1 write.
 
-## 1.7 PR-2 Inline provisional population — BEFORE REAL PILOT
+## 1.8 PR-2 Inline provisional population — BEFORE REAL PILOT
 
 - [ ] Show mapped candidates inside destination clinical cards.
 - [ ] `proposed` values are visually populated but non-authoritative.
@@ -177,7 +200,7 @@ Triggered by product-owner production interaction after G-2 smoke.
 - [ ] Keep clinically meaningful unmapped candidates visible for review.
 - [ ] Show compact applicable-visit extraction coverage without treating unmentioned as negative.
 
-## 1.8 Five-case real system-assisted pilot
+## 1.9 Five-case real system-assisted pilot
 
 Only after:
 
@@ -185,6 +208,7 @@ Only after:
 G-1 production-readiness gate closed
 + G-2 evidence-backed minimum osteoporosis guidance released/smoked
 + G-3 guided UX refinements released/smoked
++ C2 server-authoritative patient workspace released/smoked
 + PR-1 extraction
 + PR-2 inline review/population
 ```
@@ -203,7 +227,7 @@ G-1 production-readiness gate closed
 - [ ] After all five, make one deliberate refinement.
 - [ ] Freeze Guidance/Capture/KPI applicability/denominator contracts.
 
-## 1.9 Quick Practice Review shadow capability
+## 1.10 Quick Practice Review shadow capability
 
 - [ ] `PracticeReviewV1`.
 - [ ] `PracticeObservationV1` with direction, importance, confidence, provenance, evidence, suggested change and clinician disposition.
@@ -218,7 +242,7 @@ G-1 production-readiness gate closed
 - [ ] Review follow-up execution.
 - [ ] Keep routine clinician-facing Practice Review hidden during scored baseline by default.
 
-## 1.10 Thirty-case scored system-assisted baseline
+## 1.11 Thirty-case scored system-assisted baseline
 
 - [ ] Run 30 consecutive unique eligible osteoporosis encounters under frozen guidance/capture contracts.
 - [ ] Clinical Guidance remains active.
@@ -231,7 +255,7 @@ G-1 production-readiness gate closed
 - [ ] Label cohort accurately as `system-assisted baseline`.
 - [ ] Lock denominators/baseline and run-chart/reliability conventions.
 
-## 1.11 Close one real improvement loop
+## 1.12 Close one real improvement loop
 
 - [ ] Clinician dispositions on important PracticeObservations.
 - [ ] Aggregate repeated observations longitudinally.
@@ -242,7 +266,7 @@ G-1 production-readiness gate closed
 - [ ] Record improved / unchanged / worsened / insufficient evidence.
 - [ ] Where feasible, assess whether correct behavior becomes less prompt-dependent over time without overstating causality.
 
-## 1.12 Final Module 01 closure
+## 1.13 Final Module 01 closure
 
 - [ ] No unresolved critical safety/data-integrity defect.
 - [ ] Dynamic visit flow validated in real use.
@@ -274,7 +298,8 @@ Permanent requirements:
 - [x] G-2 evidence-backed guidance runtime implemented/tested/merged/deployed/production-smoke-verified.
 - [x] G-3 newly-surfaced guidance salience implemented/tested.
 - [x] G-3 deterministic always-visible longitudinal patient summary implemented/tested.
-- [ ] G-3 release review / merge / deploy / production smoke.
+- [x] G-3 release-readiness review / PR #70 opening.
+- [ ] G-3 merge / deploy / production smoke.
 - [ ] Real-clinic usability validation and evidence-from-use card/taxonomy refinement.
 
 ---
@@ -324,6 +349,8 @@ Comprehensive curriculum/registry breadth is not a Module 01 closure blocker bey
 
 - [x] Protected clinical route/session auth foundation.
 - [x] PostgreSQL clinical encounter/lab storage.
+- [x] C2 optimistic encounter concurrency implemented/tested so stale device writes fail closed rather than silently overwrite.
+- [x] C2 browser cache explicitly treated as non-authoritative working cache with server reload/open for cross-device continuity.
 - [ ] Complete broader legacy-route/CORS hardening before whole-service privacy claims.
 - [ ] Sensitive-action/data-access audit trail.
 - [ ] Retention/deletion/data-minimization policy.
@@ -375,20 +402,21 @@ Do not mutate/merge/deploy during Module 01 closure without separate authorizati
 1. C1 authoritative Finish release/smoke — closed
 2. G-1 dynamic-guidance mechanics — production-smoke-verified / closed
 3. G-2 evidence-backed osteoporosis guidance — production-smoke-verified / closed
-4. G-3 guidance salience + longitudinal patient summary — implemented/tested; release review next
-5. PR-1 transcript extraction
-6. PR-2 inline provisional population
-7. guided card UX sufficient for real use
-8. 5-case system-assisted pilot
-9. one refinement + contract freeze
-10. Quick Practice Review shadow capability
-11. 30-case system-assisted scored baseline
-12. baseline lock
-13. clinician-facing reviewed Signals/interventions
-14. one longitudinal closed improvement loop
-15. re-measurement / prompt-dependence trend where valid
-16. final Module 01 closure review
-17. later breadth/generalization
+4. G-3 guidance salience + longitudinal patient summary — release review PASS / PR #70 OPEN / MERGE HOLD
+5. C2 server-authoritative patient/encounter workspace — implemented/tested; release review next; depends on G-3
+6. PR-1 transcript extraction
+7. PR-2 inline provisional population
+8. guided card UX sufficient for real use
+9. 5-case system-assisted pilot
+10. one refinement + contract freeze
+11. Quick Practice Review shadow capability
+12. 30-case system-assisted scored baseline
+13. baseline lock
+14. clinician-facing reviewed Signals/interventions
+15. one longitudinal closed improvement loop
+16. re-measurement / prompt-dependence trend where valid
+17. final Module 01 closure review
+18. later breadth/generalization
 ```
 
 Safety/data-integrity defects always outrank this order.
