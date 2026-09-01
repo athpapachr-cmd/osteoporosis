@@ -11,11 +11,13 @@ on:
       - 'static/baseline-audit/osteoporosis-evidence-guidance-core.js'
       - 'static/baseline-audit/progressive-guidance-core.js'
       - 'static/baseline-audit/progressive-guidance-ui.js'
+      - 'static/baseline-audit/g3-salience-token-core.js'
       - 'static/baseline-audit/g3-production-visibility-guard.js'
       - 'static/baseline-audit/progressive-guidance.css'
       - 'static/baseline-audit/app.js'
       - 'test_g3_guidance_summary_node.js'
       - 'test_g3_guidance_summary_wiring.js'
+      - 'test_g3_salience_token_core.js'
       - 'test_g3_production_visibility_cache.py'
       - 'test_g2_guidance_contract.py'
       - 'test_g2_evidence_guidance_node.js'
@@ -35,11 +37,13 @@ on:
       - 'static/baseline-audit/osteoporosis-evidence-guidance-core.js'
       - 'static/baseline-audit/progressive-guidance-core.js'
       - 'static/baseline-audit/progressive-guidance-ui.js'
+      - 'static/baseline-audit/g3-salience-token-core.js'
       - 'static/baseline-audit/g3-production-visibility-guard.js'
       - 'static/baseline-audit/progressive-guidance.css'
       - 'static/baseline-audit/app.js'
       - 'test_g3_guidance_summary_node.js'
       - 'test_g3_guidance_summary_wiring.js'
+      - 'test_g3_salience_token_core.js'
       - 'test_g3_production_visibility_cache.py'
       - 'test_g2_guidance_contract.py'
       - 'test_g2_evidence_guidance_node.js'
@@ -72,10 +76,12 @@ jobs:
           node --check static/baseline-audit/osteoporosis-evidence-guidance-core.js
           node --check static/baseline-audit/osteoporosis-longitudinal-summary-core.js
           node --check static/baseline-audit/progressive-guidance-ui.js
+          node --check static/baseline-audit/g3-salience-token-core.js
           node --check static/baseline-audit/g3-production-visibility-guard.js
           node --check static/baseline-audit/app.js
           node --check test_g3_guidance_summary_node.js
           node --check test_g3_guidance_summary_wiring.js
+          node --check test_g3_salience_token_core.js
           node --check test_g2_evidence_guidance_node.js
           node --check test_g2_guidance_live_state.js
           node --check test_g2_evidence_guidance_wiring.js
@@ -88,6 +94,8 @@ jobs:
         run: node test_g3_guidance_summary_node.js
       - name: Run G3 wiring and ownership regressions
         run: node test_g3_guidance_summary_wiring.js
+      - name: Prove new evidence trigger on existing card is salient
+        run: node test_g3_salience_token_core.js
       - name: Prove G3 production visibility and cache coherency
         run: python -m unittest -v test_g3_production_visibility_cache.py
       - name: Preserve frozen G2 evidence contract
