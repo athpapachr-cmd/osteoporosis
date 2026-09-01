@@ -30,7 +30,6 @@
     add(items, true, choice("sex"));
     add(items, true, choice("patient_relationship_status"));
     add(items, true, explicit(val("#encounterArchetype")));
-    add(items, true, choice("first_core_baseline_encounter_for_patient"));
     add(items, true, choice("osteoporosis_status"));
     add(items, true, choice("heidi_used"));
     if ($('[data-field="sex"][data-value="female"].selected')) add(items, true, choice("menopause_status"));
@@ -70,7 +69,7 @@
     add(items, cardActive("#s5UnderstandCondition"), explicit(val("#s5UnderstandPlan")) && explicit(val("#s5InformationGiven")));
     add(items, cardActive("#s5WentWell"), explicit(val("#s5MissedUncertain")));
 
-    // Step 6 — provenance/capture quality is always part of pilot completion.
+    // Step 6 — provenance/capture quality remains part of encounter completion.
     add(items, cardActive("#s6Sources"), checkedAny("#s6Sources input[type=checkbox]") && explicit(val("#s6PrimarySource")));
     add(items, cardActive("#s6GesyAvailable"), explicit(val("#s6GesyAvailable")) && explicit(val("#s6GesyStatus")));
     add(items, cardActive("#s6HeidiFinalNote"), explicit(val("#s6HeidiFinalNote")));
