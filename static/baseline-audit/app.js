@@ -25,7 +25,11 @@
   }
 
   loadScript("./app-core.js")
-    .then(() => loadScript("./bmi-behavior.js"))
+    .then(() => loadScript("./clinical-workspace-shell.js"))
+    .then(() => {
+      document.querySelector("#clinicalWorkspacePreloadGuard")?.remove();
+      return loadScript("./bmi-behavior.js");
+    })
     .then(() => loadScript("./step3.js"))
     .then(() => loadScript("./dxa-machine-select.js"))
     .then(() => loadScript("./shared-risk-source.js"))
@@ -41,16 +45,13 @@
     .then(() => loadScript("./osteoporosis-longitudinal-summary-core.js"))
     .then(() => loadScript("./finalization-coordinator.js"))
     .then(() => loadScript("./patient-registry.js"))
-    .then(() => {
-      document.querySelector("#clinicalWorkspacePreloadGuard")?.remove();
-      return loadScript("./progressive-guidance-ui.js");
-    })
+    .then(() => loadScript("./progressive-guidance-ui.js"))
     .then(() => loadScript("./pilot-completion.js"))
     .then(() => loadScript("./whole-form-progress.js"))
     .then(() => loadScript("./lab-history-ui.js"))
     .then(() => loadScript("./calendar-link.js"))
     .catch((error) => {
       document.querySelector("#clinicalWorkspacePreloadGuard")?.remove();
-      console.error("Baseline Audit bootstrap failed", error);
+      console.error("Clinical workspace bootstrap failed", error);
     });
 })();
