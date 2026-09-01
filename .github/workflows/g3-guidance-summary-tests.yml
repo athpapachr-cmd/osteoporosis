@@ -1,0 +1,102 @@
+name: G3 guidance salience longitudinal summary
+
+on:
+  push:
+    branches:
+      - feat/module01-g3-guidance-salience-longitudinal-summary-2026-09-01
+    paths:
+      - 'static/baseline-audit/osteoporosis-longitudinal-summary-core.js'
+      - 'static/baseline-audit/osteoporosis-evidence-guidance-core.js'
+      - 'static/baseline-audit/progressive-guidance-core.js'
+      - 'static/baseline-audit/progressive-guidance-ui.js'
+      - 'static/baseline-audit/progressive-guidance.css'
+      - 'static/baseline-audit/app.js'
+      - 'test_g3_guidance_summary_node.js'
+      - 'test_g3_guidance_summary_wiring.js'
+      - 'test_g2_guidance_contract.py'
+      - 'test_g2_evidence_guidance_node.js'
+      - 'test_g2_guidance_live_state.js'
+      - 'test_g2_evidence_guidance_wiring.js'
+      - 'test_progressive_guidance_node.js'
+      - 'test_progressive_guidance_wiring.js'
+      - 'test_progressive_guidance_ui_state.js'
+      - 'test_progressive_guidance_why_now_ui.js'
+      - 'test_baseline_finish_browser.js'
+      - 'test_baseline_finalization_api.py'
+      - '.github/workflows/g3-guidance-summary-tests.yml'
+  pull_request:
+    paths:
+      - 'static/baseline-audit/osteoporosis-longitudinal-summary-core.js'
+      - 'static/baseline-audit/osteoporosis-evidence-guidance-core.js'
+      - 'static/baseline-audit/progressive-guidance-core.js'
+      - 'static/baseline-audit/progressive-guidance-ui.js'
+      - 'static/baseline-audit/progressive-guidance.css'
+      - 'static/baseline-audit/app.js'
+      - 'test_g3_guidance_summary_node.js'
+      - 'test_g3_guidance_summary_wiring.js'
+      - 'test_g2_guidance_contract.py'
+      - 'test_g2_evidence_guidance_node.js'
+      - 'test_g2_guidance_live_state.js'
+      - 'test_g2_evidence_guidance_wiring.js'
+      - 'test_progressive_guidance_node.js'
+      - 'test_progressive_guidance_wiring.js'
+      - 'test_progressive_guidance_ui_state.js'
+      - 'test_progressive_guidance_why_now_ui.js'
+      - 'test_baseline_finish_browser.js'
+      - 'test_baseline_finalization_api.py'
+      - '.github/workflows/g3-guidance-summary-tests.yml'
+  workflow_dispatch:
+
+jobs:
+  g3-runtime:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -r requirements.txt
+          python -m pip install --disable-pip-version-check pyyaml
+      - name: Check JavaScript syntax
+        run: |
+          node --check static/baseline-audit/progressive-guidance-core.js
+          node --check static/baseline-audit/osteoporosis-evidence-guidance-core.js
+          node --check static/baseline-audit/osteoporosis-longitudinal-summary-core.js
+          node --check static/baseline-audit/progressive-guidance-ui.js
+          node --check static/baseline-audit/app.js
+          node --check test_g3_guidance_summary_node.js
+          node --check test_g3_guidance_summary_wiring.js
+          node --check test_g2_evidence_guidance_node.js
+          node --check test_g2_guidance_live_state.js
+          node --check test_g2_evidence_guidance_wiring.js
+          node --check test_progressive_guidance_node.js
+          node --check test_progressive_guidance_wiring.js
+          node --check test_progressive_guidance_ui_state.js
+          node --check test_progressive_guidance_why_now_ui.js
+          node --check test_baseline_finish_browser.js
+      - name: Run G3 salience and longitudinal summary regressions
+        run: node test_g3_guidance_summary_node.js
+      - name: Run G3 wiring and ownership regressions
+        run: node test_g3_guidance_summary_wiring.js
+      - name: Preserve frozen G2 evidence contract
+        run: python test_g2_guidance_contract.py
+      - name: Preserve G2 evidence core regressions
+        run: node test_g2_evidence_guidance_node.js
+      - name: Preserve G2 live-state regressions
+        run: node test_g2_guidance_live_state.js
+      - name: Preserve G2 wiring/ownership regressions
+        run: node test_g2_evidence_guidance_wiring.js
+      - name: Preserve G1 core regressions
+        run: node test_progressive_guidance_node.js
+      - name: Preserve G1 wiring regression
+        run: node test_progressive_guidance_wiring.js
+      - name: Preserve G1 UI state regressions
+        run: node test_progressive_guidance_ui_state.js
+      - name: Preserve G1 WHY-NOW presentation regression
+        run: node test_progressive_guidance_why_now_ui.js
+      - name: Preserve authoritative Finish browser regression
+        run: node test_baseline_finish_browser.js
+      - name: Preserve server finalization lifecycle regression
+        run: python -m unittest -v test_baseline_finalization_api.py
