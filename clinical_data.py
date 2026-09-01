@@ -74,6 +74,7 @@ class EncounterUpdate(BaseModel):
     encounter_date: Optional[str] = Field(default=None, pattern=r"^\d{4}-\d{2}-\d{2}$")
     status: Optional[str] = Field(default=None, pattern=r"^(draft|completed|amended)$")
     payload: Optional[Dict[str, Any]] = None
+    expected_updated_at: Optional[datetime] = None
 
 
 class EncounterRecord(BaseModel):
@@ -109,6 +110,13 @@ class ClinicalStatus(BaseModel):
 
 def utcnow() -> datetime:
     return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
+def normalize_version(value: datetime) -> datetime:
+    """Normalize API version timestamps to the DB's naive-UTC representation."""
+    if value.tzinfo is None:
+        return value
+    return value.astimezone(timezone.utc).replace(tzinfo=None)
 
 
 def resolve_encounter_status(
@@ -301,6 +309,14 @@ def build_clinical_router(engine: Engine) -> APIRouter:
             row = session.get(EncounterORM, encounter_id)
             if row is None:
                 raise HTTPException(status_code=404, detail="Encounter not found")
+
+            if req.expected_updated_at is not None:
+                expected_version = normalize_version(req.expected_updated_at)
+                if row.updated_at != expected_version:
+                    raise HTTPException(
+                        status_code=409,
+                        detail="Encounter changed on another device. Reload before saving.",
+                    )
 
             current_status = row.status or "draft"
             content_changed = False
