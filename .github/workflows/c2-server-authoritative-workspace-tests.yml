@@ -7,6 +7,7 @@ on:
     paths:
       - 'clinical_data.py'
       - 'static/baseline-audit/app.js'
+      - 'static/baseline-audit/clinical-workspace-shell.js'
       - 'static/baseline-audit/patient-registry.js'
       - 'static/baseline-audit/pilot-completion.js'
       - 'static/baseline-audit/whole-form-progress.js'
@@ -31,6 +32,7 @@ on:
     paths:
       - 'clinical_data.py'
       - 'static/baseline-audit/app.js'
+      - 'static/baseline-audit/clinical-workspace-shell.js'
       - 'static/baseline-audit/patient-registry.js'
       - 'static/baseline-audit/pilot-completion.js'
       - 'static/baseline-audit/whole-form-progress.js'
@@ -69,6 +71,7 @@ jobs:
         run: |
           python -m py_compile clinical_data.py test_c2_server_authoritative_workspace.py
           node --check static/baseline-audit/app.js
+          node --check static/baseline-audit/clinical-workspace-shell.js
           node --check static/baseline-audit/patient-registry.js
           node --check static/baseline-audit/pilot-completion.js
           node --check static/baseline-audit/whole-form-progress.js
