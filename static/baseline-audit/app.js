@@ -41,7 +41,10 @@
     .then(() => loadScript("./osteoporosis-longitudinal-summary-core.js"))
     .then(() => loadScript("./finalization-coordinator.js"))
     .then(() => loadScript("./patient-registry.js"))
-    .then(() => loadScript("./progressive-guidance-ui.js"))
+    .then(() => {
+      document.querySelector("#clinicalWorkspacePreloadGuard")?.remove();
+      return loadScript("./progressive-guidance-ui.js");
+    })
     .then(() => loadScript("./pilot-completion.js"))
     .then(() => loadScript("./whole-form-progress.js"))
     .then(() => loadScript("./lab-history-ui.js"))
