@@ -1,6 +1,8 @@
 (() => {
   "use strict";
 
+  // Compatibility filename retained so the production-proven single Finish
+  // ownership/load-order seam does not change during C2.
   const STORAGE_KEY = "osteoporosis.baselineAuditPilot.v1_1";
   const ACTIVE_KEY = "osteoporosis.baselineAuditPilot.activeCase.v1_1";
 
@@ -22,29 +24,23 @@
     if (status) status.textContent = text;
   }
 
-  function updatePilotPill() {
-    const cases = getCases();
-    const completed = cases.filter((c) => c.baseline_phase === "pilot" && c.pilot_completion?.status === "complete").length;
-    const pill = document.querySelector("#pilotPill");
-    if (pill && completed > 0) pill.textContent = `PILOT · ${Math.min(completed, 5)}/5 COMPLETE`;
-  }
-
-  function markPilotComplete() {
+  function markEncounterComplete() {
     const id = activeId();
-    if (!id) throw new Error("Δεν υπάρχει ενεργό pilot case.");
+    if (!id) throw new Error("Δεν υπάρχει ενεργή επίσκεψη.");
     const cases = getCases();
     const index = cases.findIndex((c) => c.internal_uuid === id);
-    if (index < 0) throw new Error("Το ενεργό pilot case δεν βρέθηκε στο local store.");
+    if (index < 0) throw new Error("Η ενεργή επίσκεψη δεν βρέθηκε στο προσωρινό browser cache.");
     const step6 = cases[index].step6 || {};
-    cases[index].pilot_completion = {
+    cases[index].encounter_completion = {
       status: "complete",
       completed_at: new Date().toISOString(),
       ready_for_audit_at_completion: step6.capture_quality?.ready_for_audit || "",
       completion_time_minutes: step6.capture_quality?.completion_time_minutes ?? null
     };
-    cases[index].implementation_slice = "steps_1_6_pilot_complete";
+    cases[index].workflow_mode = "clinical";
+    if (!cases[index].baseline_phase || cases[index].baseline_phase === "pilot") cases[index].baseline_phase = "clinical";
+    cases[index].implementation_slice = "clinical_encounter_complete";
     setCases(cases);
-    updatePilotPill();
     return cases[index];
   }
 
@@ -76,12 +72,12 @@
     if (finish) finish.disabled = true;
     try {
       const saver = saveDraft || saveTop;
-      if (!saver) throw new Error("Δεν βρέθηκε local Save control.");
+      if (!saver) throw new Error("Δεν βρέθηκε Save control.");
 
       saver.click();
       await flushLocalPersistence();
-      markPilotComplete();
-      setDraftStatus("Pilot case αποθηκεύτηκε τοπικά · επιβεβαιώνεται το protected completion…");
+      markEncounterComplete();
+      setDraftStatus("Η επίσκεψη διατηρήθηκε στο προσωρινό browser cache · επιβεβαιώνεται το protected completion…");
 
       const row = await registry.finalizeActiveEncounter();
       if (!row || !["completed", "amended"].includes(row.status)) {
@@ -89,15 +85,15 @@
       }
 
       if (row.status === "completed") {
-        setDraftStatus("Pilot case ολοκληρώθηκε και συγχρονίστηκε στον protected server ως completed.");
+        setDraftStatus("Η επίσκεψη ολοκληρώθηκε και συγχρονίστηκε στον protected server ως completed.");
       } else {
         setDraftStatus("Η ολοκλήρωση συγχρονίστηκε στον protected server ως amended.");
       }
-      window.alert("Το pilot case αποθηκεύτηκε και ο protected server επιβεβαίωσε το τελικό status. Τα KPI παραμένουν κρυφά μέχρι το baseline lock.");
+      window.alert("Η επίσκεψη αποθηκεύτηκε και ο protected server επιβεβαίωσε το τελικό status.");
     } catch (error) {
       const message = error?.message || "Άγνωστο σφάλμα συγχρονισμού";
-      setDraftStatus(`Τα δεδομένα διατηρήθηκαν τοπικά, αλλά δεν επιβεβαιώθηκε protected completion: ${message}`);
-      window.alert("Τα δεδομένα διατηρήθηκαν τοπικά, αλλά το protected completion δεν επιβεβαιώθηκε. Διόρθωσε τη σύνδεση και ξαναπάτησε Finish.");
+      setDraftStatus(`Οι τοπικές αλλαγές διατηρήθηκαν, αλλά δεν επιβεβαιώθηκε protected completion: ${message}`);
+      window.alert("Οι τοπικές αλλαγές διατηρήθηκαν, αλλά το protected completion δεν επιβεβαιώθηκε. Έλεγξε τη σύνδεση ή πιθανό cross-device conflict και ξαναπάτησε Τέλος επίσκεψης.");
     } finally {
       coordinator.endAuthoritativeFinish();
       if (finish) finish.disabled = false;
@@ -115,6 +111,4 @@
       finish?.click();
     }, true);
   }
-
-  updatePilotPill();
 })();
