@@ -938,3 +938,80 @@ PILOT-VALIDATED = NO
 ```
 
 The runtime/canonical writer lock was released after closeout. A separate fresh release-readiness review and explicit product-owner release authority are required before any PR/merge/deploy action.
+
+---
+
+## 2026-09-01 — G-2 released and production-smoke-verified; G-3 release PR opened
+
+G-2 evidence-backed osteoporosis guidance completed its separate release path through PR #69 and was squash-merged to `main` as:
+
+```text
+9cfad82d1258a44e71080e0aa4d6d644e581cfbf
+```
+
+Render auto-deploy `dep-daaph5vlk1mc73940g60` reached `live` at that exact SHA. The product owner then completed the authenticated production smoke; the result closes G-2 at `PRODUCTION-SMOKE-VERIFIED`, not `PILOT-VALIDATED`.
+
+The subsequent G-3 bounded UX/read-only longitudinal slice implemented newly-surfaced guidance salience and the always-visible deterministic `Σύνοψη ασθενούς`. Its exact tested runtime head is:
+
+```text
+dab45baf9f80632ee6e58f03fa4d5005c68e0ac5
+```
+
+with workflow run `33486322905` — SUCCESS. Release-readiness review passed and PR #70 was opened against `main` with explicit MERGE HOLD. G-3 remains unmerged, undeployed and not production-smoke-verified.
+
+---
+
+## 2026-09-01 — C2 server-authoritative patient workspace implemented and tested
+
+The bounded C2 Core workspace/data-integrity slice was implemented on:
+
+```text
+feat/module01-c2-server-authoritative-patient-workspace-2026-09-01
+```
+
+C2 intentionally branches from the exact G-3 PR #70 head `f12b32d06b2c48e4566c2653c437c86ac6f55e7f`, preserving mandatory release ordering `G-3 → C2`.
+
+The exact C2 runtime head tested by the complete regression gate is:
+
+```text
+27d5248e51daaa61bf29c70d3bebf5d73b93d6a2
+```
+
+Workflow evidence:
+
+```text
+C2 server-authoritative patient workspace
+run 33544223692
+job 99977647943
+result SUCCESS
+```
+
+Implemented behavior includes:
+
+- protected `patient_id + encounter_id + updated_at` as authoritative working encounter identity/version after server create/load;
+- immediate server draft creation for a new visit under an active protected patient;
+- debounced serialized server autosave;
+- server hydration when the same encounter is opened/reloaded from another device;
+- optimistic concurrency so a stale device write returns HTTP 409 and cannot silently overwrite newer server state;
+- explicit conflict presentation with clinician-triggered server reload and no automatic field merge;
+- retry de-duplication for a lost create response using stable payload `internal_uuid` within the active patient;
+- retirement of ordinary clinician-facing `PILOT CASE` / local `Cases` workflow in favor of protected patients and server-backed `Επισκέψεις`;
+- generic encounter completion while preserving the single production-proven authoritative Finish owner and completed/amended lifecycle.
+
+Cross-device continuity in C2 v1 is server autosave plus open/reload from another device; it is not realtime websocket mirroring between already-open tabs.
+
+The C2 gate passed its focused server/browser regressions plus inherited G-3/G-2/G-1/C1 gates. No G-2 evidence rule, DB migration, PR-1/PR-2 runtime, physiotherapy/RF work or real patient data was added.
+
+Current state at this milestone:
+
+```text
+C2 IMPLEMENTED = YES
+C2 TESTED = YES
+C2 EXACT-HEAD REVIEW = PASS
+C2 MERGED = NO
+C2 DEPLOYED = NO
+C2 PRODUCTION-SMOKE-VERIFIED = NO
+G-3 PR #70 = OPEN / MERGE HOLD
+```
+
+A separate release-readiness step must preserve the G-3 predecessor hold. C2 must not be released directly to `main` ahead of G-3.
