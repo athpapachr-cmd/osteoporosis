@@ -1,88 +1,91 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** MODULE 01 — G-3 MERGED / DEPLOYED / PRODUCTION SMOKE FAILED; VISIBILITY HOTFIX ACTIVE.
+> **STATUS:** MODULE 01 — G-3 MERGED / DEPLOYED / PRODUCTION SMOKE FAILED; HOTFIX IMPLEMENTED / TESTED / PR NEXT.
 > **Updated:** 2026-09-01 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Fresh verified remote `main`:** `ef17367c7b8959f51e05b80909226804951d1bc7`.
 > **G-3 release PR:** `#70` — squash merged.
-> **G-3 merge/runtime SHA:** `ef17367c7b8959f51e05b80909226804951d1bc7`.
 > **G-3 Render deploy:** `dep-dabj38s9v7es73fmq800` — `live`, exact commit `ef17367c...`.
-> **Production smoke result:** FAIL — product owner reports neither the `Νέο` salience nor `Σύνοψη ασθενούς` is visible.
+> **G-3 production smoke:** FAILED — neither `Νέο` nor `Σύνοψη ασθενούς` visible.
 > **Hotfix branch:** `fix/module01-g3-production-visibility-cache-2026-09-01`.
-> **ACTIVE CANONICAL WRITER/LOCK:** this session — G-3 production-smoke visibility correction only.
-> **ACTIVE RUNTIME WRITER/LOCK:** this session — baseline static cache/bootstrap visibility + focused regressions only.
+> **Exact tested hotfix runtime head:** `3287e511cc6e9023552442283c0cc4b9117aaa4f`.
+> **Hotfix workflow:** `G3 guidance salience longitudinal summary` run `33556354517` — SUCCESS.
+> **ACTIVE CANONICAL WRITER/LOCK:** NONE after hotfix closeout.
+> **ACTIVE RUNTIME WRITER/LOCK:** NONE.
 
 ---
 
-# 1. Proven state before defect
-
-C1 / G-1 / G-2 remain implemented, tested, merged, deployed and production-smoke-verified.
-
-G-3 state is deliberately separated:
+# 1. Production state
 
 ```text
-G-3 IMPLEMENTED = YES
-G-3 TESTED = YES
-G-3 MERGED = YES
-G-3 DEPLOYED = YES
-G-3 PRODUCTION-SMOKE-VERIFIED = NO
-G-3 PRODUCTION SMOKE = FAILED
+C1 / G-1 / G-2                  PRODUCTION-SMOKE-VERIFIED
+G-3 IMPLEMENTED                 YES
+G-3 TESTED                      YES
+G-3 MERGED                      YES
+G-3 DEPLOYED                    YES
+G-3 PRODUCTION-SMOKE-VERIFIED   NO
+G-3 PRODUCTION SMOKE            FAILED
 ```
 
-Do not proceed to C2 release while the G-3 production acceptance criteria are not visible.
+C2 remains implemented/tested but must not release until the G-3 production defect is corrected and re-smoked.
 
 ---
 
-# 2. Failed acceptance criteria
+# 2. Production failure and confirmed defects
 
-Product-owner production observation on exact deployed G-3 ancestry:
+The failed smoke exposed three delivery/presentation defects, not a G-2 clinical-rule defect:
 
-1. newly applicable guidance does not visibly show the explicit `Νέο` salience;
-2. `Σύνοψη ασθενούς` is not visible.
+1. baseline workspace static assets had no explicit release-coherency cache policy;
+2. `Σύνοψη ασθενούς` was hidden entirely before an active protected patient existed, conflicting with the requested always-visible summary area;
+3. browser `Νέο` logic compared only card IDs, so a new R02 evidence trigger on an already-visible VFA card was not treated as newly surfaced.
 
-Repository inspection confirms the merged/deployed source contains both G-3 implementations and the expected bootstrap ordering. Therefore this is treated as a production integration/delivery defect rather than a missing merge.
+No evidence threshold or clinical treatment semantics were changed.
 
 ---
 
-# 3. Current root-cause hypothesis / bounded correction
+# 3. Hotfix implemented/tested
 
-The baseline workspace currently uses Starlette `StaticFiles` with stable unversioned JS/CSS paths. The G-3 source-presence tests did not prove deployed browser bundle freshness or end-to-end authenticated visibility.
+Implemented:
 
-Bounded hotfix scope:
+- explicit `no-store/no-cache` headers for `/static/baseline-audit/*` and the workspace root redirect;
+- visible `Σύνοψη ασθενούς` placeholder when no protected patient is selected;
+- pure material-trigger salience token core;
+- compatibility visibility layer that marks a domain new when a new evidence/high-value reason token appears even if the card was already visible;
+- exact regression for `VFA base card → R02 appears → VFA = Νέο`;
+- served-bundle/cache coherency regression.
+
+Exact tested runtime head:
 
 ```text
-baseline-audit static responses → explicit no-store/no-cache policy
-+ focused server regression proving cache headers on HTML/JS
-+ preserve G3 bootstrap/load-order regression
-+ rerun full inherited G3/G2/G1/C1 gates
+3287e511cc6e9023552442283c0cc4b9117aaa4f
 ```
 
-No G-2 rule/evidence semantics, patient data model, C2 workflow, transcript PR-1/PR-2, DB migration or treatment logic is in scope.
+Workflow `33556354517` passed the new hotfix regressions and the full inherited G3/G2/G1/C1 gate.
 
 ---
 
-# 4. Safety / release rules
+# 4. Release discipline
 
-```text
-PRODUCTION SMOKE FAILURE != PRODUCTION-SMOKE-VERIFIED
-HOTFIX != C2 RELEASE
-NO MANUAL RENDER DEPLOY AFTER NORMAL MERGE
-NO CLINICAL RULE CHANGE
-NO REAL PATIENT DATA IN REPOSITORY
-```
+The hotfix delta is based directly on deployed G-3 `main` and contains only bounded delivery/presentation/test/canonical changes. C2, PR-1/PR-2, clinical evidence rules, treatment thresholds and DB schema are excluded.
 
-The browser may require one hard refresh after the hotfix deployment to discard an already-resident pre-hotfix bundle; after that, the explicit no-store policy must prevent this deployment-coherence failure from recurring on baseline workspace assets.
+A normal merge of a hotfix PR will trigger Render auto-deploy. Do not trigger a second manual deploy.
 
 ---
 
-# 5. Exact next action
+# 5. Exact next action / authority
 
 ```text
-implement cache-coherency hotfix
-→ focused regression + inherited full gate
-→ exact-head review
-→ open bounded hotfix PR only if clean
-→ STOP before merge unless product-owner merge authority is explicit
+open bounded G-3 production-visibility hotfix PR
+→ verify exact PR-head checks
+→ STOP before merge
 ```
 
-C2 remains implemented/tested but release-blocked until G-3 production smoke passes.
+A separate explicit product-owner merge instruction is required before the hotfix may be squash-merged.
+
+After a successful merge/auto-deploy, production smoke must specifically verify:
+
+1. `Σύνοψη ασθενούς` is visible even before patient selection, then populates when a protected patient is opened;
+2. VFA already present in the visit flow + a transition from height loss <4 cm to >=4 cm causes explicit `Νέο` salience;
+3. existing G-2 `Γιατί τώρα`/provenance remains intact.
+
+Only after that may G-3 be marked production-smoke-verified and C2 release revalidation resume.
