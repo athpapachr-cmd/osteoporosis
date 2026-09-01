@@ -6,6 +6,7 @@ on:
       - feat/module01-c2-server-authoritative-patient-workspace-2026-09-01
     paths:
       - 'clinical_data.py'
+      - 'static/baseline-audit/app.js'
       - 'static/baseline-audit/patient-registry.js'
       - 'static/baseline-audit/pilot-completion.js'
       - 'static/baseline-audit/whole-form-progress.js'
@@ -29,6 +30,7 @@ on:
   pull_request:
     paths:
       - 'clinical_data.py'
+      - 'static/baseline-audit/app.js'
       - 'static/baseline-audit/patient-registry.js'
       - 'static/baseline-audit/pilot-completion.js'
       - 'static/baseline-audit/whole-form-progress.js'
@@ -66,6 +68,7 @@ jobs:
       - name: Check syntax
         run: |
           python -m py_compile clinical_data.py test_c2_server_authoritative_workspace.py
+          node --check static/baseline-audit/app.js
           node --check static/baseline-audit/patient-registry.js
           node --check static/baseline-audit/pilot-completion.js
           node --check static/baseline-audit/whole-form-progress.js
