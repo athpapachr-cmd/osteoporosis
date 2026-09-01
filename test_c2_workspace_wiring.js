@@ -6,6 +6,7 @@ const path = require("path");
 
 const ROOT = __dirname;
 const registry = fs.readFileSync(path.join(ROOT, "static/baseline-audit/patient-registry.js"), "utf8");
+const shell = fs.readFileSync(path.join(ROOT, "static/baseline-audit/clinical-workspace-shell.js"), "utf8");
 const completion = fs.readFileSync(path.join(ROOT, "static/baseline-audit/pilot-completion.js"), "utf8");
 const progress = fs.readFileSync(path.join(ROOT, "static/baseline-audit/whole-form-progress.js"), "utf8");
 const app = fs.readFileSync(path.join(ROOT, "static/baseline-audit/app.js"), "utf8");
@@ -38,10 +39,17 @@ function assertNewVisitAndRecoverySemantics() {
 }
 
 function assertPilotShellRetiredWithoutSecondFinishOwner() {
-  assert.match(registry, /Νέα επίσκεψη/, "navigation must present visit language");
-  assert.match(registry, /Επισκέψεις/, "navigation must present visits instead of local Cases");
-  assert.match(registry, /Protected clinical mode:/, "privacy copy must reflect protected server mode");
-  assert.match(registry, /sampleBox\.hidden = true/, "manual baseline-sample control must be removed from normal workflow");
+  assert.match(shell, /Νέα επίσκεψη/, "early shell must present visit language");
+  assert.match(shell, /Επισκέψεις/, "early shell must replace local Cases language");
+  assert.match(shell, /Protected clinical mode:/, "privacy strip must reflect protected server mode");
+  assert.match(shell, /sampleBox\.hidden = true/, "manual baseline-sample control must be removed from normal workflow");
+  assert.match(shell, /cancel\.hidden = true/, "legacy local-case cancel control must not remain in the normal clinical workflow");
+  assert.match(shell, /Privacy — clinical workspace/, "privacy modal must no longer describe pilot/local-only workflow");
+  assert.match(shell, /browser cache είναι προσωρινό working cache/, "privacy modal must state that browser cache is not authoritative");
+  assert.match(app, /clinicalWorkspacePreloadGuard/, "legacy pilot identifiers must be hidden before shell rewrite");
+  assert.match(app, /loadScript\("\.\/clinical-workspace-shell\.js"\)/, "clinical shell rewrite must run immediately after app core");
+  assert.ok(app.indexOf('loadScript("./clinical-workspace-shell.js")') < app.indexOf('loadScript("./bmi-behavior.js")'), "shell rewrite must precede later runtime modules");
+
   assert.match(completion, /encounter_completion/, "new completion metadata must be encounter-centric");
   assert.doesNotMatch(completion, /Pilot case|pilot case/, "clinician-facing Finish text must not mention pilot cases");
   assert.doesNotMatch(progress, /choice\("first_core_baseline_encounter_for_patient"\)/, "hidden baseline-sample field must not remain a completion requirement");
