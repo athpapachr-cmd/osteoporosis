@@ -6,8 +6,10 @@ on:
       - feat/module01-g3-guidance-salience-longitudinal-summary-2026-09-01
       - fix/module01-g3-production-visibility-cache-2026-09-01
       - feat/module01-g4-collapsible-sticky-summary-rf-utility-2026-09-02
+      - fix/module01-g4-rf-auth-gateway-2026-09-02
     paths:
       - 'main.py'
+      - 'clinic_utilities/rf_gateway.py'
       - 'static/baseline-audit/osteoporosis-longitudinal-summary-core.js'
       - 'static/baseline-audit/osteoporosis-evidence-guidance-core.js'
       - 'static/baseline-audit/progressive-guidance-core.js'
@@ -22,6 +24,7 @@ on:
       - 'test_g3_salience_token_core.js'
       - 'test_g3_production_visibility_cache.py'
       - 'test_g4_workspace_ergonomics.js'
+      - 'test_g4_rf_auth_gateway.py'
       - 'test_g2_guidance_contract.py'
       - 'test_g2_evidence_guidance_node.js'
       - 'test_g2_guidance_live_state.js'
@@ -36,6 +39,7 @@ on:
   pull_request:
     paths:
       - 'main.py'
+      - 'clinic_utilities/rf_gateway.py'
       - 'static/baseline-audit/osteoporosis-longitudinal-summary-core.js'
       - 'static/baseline-audit/osteoporosis-evidence-guidance-core.js'
       - 'static/baseline-audit/progressive-guidance-core.js'
@@ -50,6 +54,7 @@ on:
       - 'test_g3_salience_token_core.js'
       - 'test_g3_production_visibility_cache.py'
       - 'test_g4_workspace_ergonomics.js'
+      - 'test_g4_rf_auth_gateway.py'
       - 'test_g2_guidance_contract.py'
       - 'test_g2_evidence_guidance_node.js'
       - 'test_g2_guidance_live_state.js'
@@ -97,6 +102,10 @@ jobs:
           node --check test_progressive_guidance_ui_state.js
           node --check test_progressive_guidance_why_now_ui.js
           node --check test_baseline_finish_browser.js
+      - name: Check RF gateway Python syntax
+        run: python -m py_compile clinic_utilities/rf_gateway.py test_g4_rf_auth_gateway.py
+      - name: Run G4 RF authenticated-gateway regression
+        run: python -m unittest -v test_g4_rf_auth_gateway.py
       - name: Run G4 workspace ergonomics and RF utility regression
         run: node test_g4_workspace_ergonomics.js
       - name: Run G3 salience and longitudinal summary regressions
