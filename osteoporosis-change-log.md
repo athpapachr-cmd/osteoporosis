@@ -1108,3 +1108,70 @@ G-4 PILOT-VALIDATED              NO
 ```
 
 The implementation/runtime writer lock was released during canonical closeout. Product-owner authority in this step covered canonical closeout and final docs-only drift verification only. A later release requires separate authorization for PR, merge and production configuration/deployment. No manual Render deploy, reception-backend mutation, production secret mutation or production RF smoke occurred in this closeout.
+
+---
+
+## 2026-09-02 — RF auth hotfix PR #73 merged and auto-deployed; configuration/smoke pending
+
+The bounded RF authorization gateway hotfix was released through PR #73 after final-head pull-request checks passed.
+
+Final PR head:
+
+```text
+63ad2f5f392bc4d6dadec84704757ba4520ea83f
+```
+
+Final PR-triggered evidence at that exact head:
+
+```text
+CU-1 focused tests
+run 33648758303
+SUCCESS
+
+G3 guidance salience longitudinal summary
+run 33648758293
+SUCCESS
+```
+
+The G3/G4 gate included RF gateway Python syntax, authenticated-gateway regression, POST-only RF history privacy regression, G-4 workspace regression, G-3 salience/summary/visibility, frozen G-2 contract/runtime, G-1 core/wiring/UI/WHY-NOW and C1 authoritative Finish/finalization regressions.
+
+The product owner then explicitly authorized merge. PR #73 was squash-merged with an expected-head guard as:
+
+```text
+8aa8b38e3fa9a8f8ba0618868b452b1835be0d47
+```
+
+Fresh GitHub verification confirmed `main` at that exact SHA.
+
+Render auto-deploy followed the new `main` commit without a manual trigger:
+
+```text
+deploy  dep-dac43leq1p3s73a04s00
+source  8aa8b38e3fa9a8f8ba0618868b452b1835be0d47
+trigger new_commit
+status  live
+```
+
+No RF backend runtime/configuration was changed, and no production RF credential was placed in GitHub, browser code or chat.
+
+The released gateway remains fail-closed until the separately governed server-side configuration is supplied on the Osteoporosis service:
+
+```text
+RF_GATEWAY_ACCESS_KEY
+```
+
+Accordingly the post-release state is:
+
+```text
+HOTFIX IMPLEMENTED                    YES
+HOTFIX TESTED                         YES
+HOTFIX REVIEWED                       YES
+HOTFIX PR                             #73
+HOTFIX MERGED                         YES
+HOTFIX DEPLOYED                       YES
+RF_GATEWAY_ACCESS_KEY CONFIGURED      NO / NOT VERIFIED
+HOTFIX PRODUCTION-SMOKE-VERIFIED      NO
+G-4 PILOT-VALIDATED                   NO
+```
+
+The next possible action is a separately authorized production secret/config mutation followed by bounded authenticated RF production smoke. No manual Render redeploy, no RF-backend mutation and no production-smoke claim occurred in this merge/deploy step.
