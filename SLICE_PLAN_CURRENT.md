@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — G-4 Workspace Ergonomics + RF Utility Integration v1
 
-> **STATUS:** IMPLEMENTED / TESTED — RELEASE REVIEW REQUIRED BEFORE PR/MERGE/DEPLOY.
+> **STATUS:** IMPLEMENTED / TESTED / RELEASE REVIEW PASS — RELEASE PR ALLOWED; MERGE HOLD.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Module:** Clinical Excellence workspace + cross-module Clinic Utilities.
 > **Slice ID:** `M01-G4-WORKSPACE-ERGONOMICS-RF-UTILITY-v1`.
@@ -8,7 +8,7 @@
 > **Branch:** `feat/module01-g4-collapsible-sticky-summary-rf-utility-2026-09-02`.
 > **Exact tested runtime head:** `942d4e06944ebd6de97891cb8e2739c88ba85a38`.
 > **Test workflow:** `G3 guidance salience longitudinal summary` run `33599860151` — SUCCESS.
-> **Runtime writer:** NONE after implementation/test closeout.
+> **Runtime writer:** NONE.
 
 ---
 
@@ -182,19 +182,26 @@ Inherited gates also passed:
 
 ---
 
-# 7. Exact-head review
+# 7. Release-readiness review
 
-Compare production `ab94c628...` → exact tested runtime `942d4e06...`:
+Fresh production base remained:
 
 ```text
-status: ahead
-ahead_by: 8
-behind_by: 0
-merge_base: exactly production main
-changed_files: 7
+ab94c6286bdc49cb8304b072e557c5eb0a96b0c6
 ```
 
-Only expected G-4 runtime/test/workflow/canonical files were present. No C2, PR-1/PR-2, clinical-evidence, treatment-threshold or DB-schema leakage was found.
+The code/test review passed with no runtime defect or scope leakage. The first review identified stale G-3 roadmap/history state in `TODO.md` / changelog; those were reconciled docs-only. The changelog reconciliation was append-only.
+
+Post-reconciliation exact-head checks must satisfy:
+
+```text
+branch behind production main = 0
+merge base = exact production main
+post-tested-runtime changes = canonical docs only
+no runtime/test/workflow drift after 942d4e06...
+```
+
+The external RF host could not be independently HTTP-probed from the assistant execution environment during review, so successful navigation to the protected RF page remains an explicit production-smoke criterion rather than an assumed fact.
 
 ---
 
@@ -209,7 +216,8 @@ G-2 inherited contract/runtime              PASS
 G-1 inherited regressions                   PASS
 C1 inherited finalization                   PASS
 Exact-head delta review                     PASS
-Product-owner release review                NO
+Canonical reconciliation                    PASS
+Product-owner release review                PASS
 PR opened                                   NO
 Merged                                      NO
 Deployed                                    NO
@@ -220,15 +228,19 @@ Production-smoke-verified                   NO
 
 # 9. Stop gate
 
-G-4 is closed at `IMPLEMENTED / TESTED` and the writer lock is released.
+G-4 is release-ready for a bounded PR, with no active writer.
 
-Next action requires fresh release-readiness bootstrap/review and product-owner release authority.
-
-Until then:
+Next allowed action:
 
 ```text
-NO ACTIVE WRITER
-NO RELEASE PR
+open G-4 release PR
+→ verify exact PR-head checks
+→ STOP before merge unless product owner explicitly authorizes merge
+```
+
+Until explicit merge authority:
+
+```text
 NO MERGE
 NO DEPLOY
 ```
