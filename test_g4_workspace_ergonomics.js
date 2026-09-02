@@ -34,16 +34,19 @@ assert(css.includes('.patient-longitudinal-summary.g4-collapsed > :not(.patient-
 assert(css.includes('.progressive-guidance-summary.g4-collapsed > :not(.progressive-guidance-head)'), "collapsed flow must retain its header");
 assert(css.includes('.g4-collapse-control'), "collapse-control styling missing");
 
-// Clinic Utilities integration: RF remains an external protected utility owner, not duplicated clinical state.
-assert(helper.includes('https://ortho-reception-backend-v2.onrender.com/rf'), "RF utility target must be the existing protected RF page");
+// Clinic Utilities integration: RF browser navigation stays same-origin and protected.
+assert(helper.includes('/clinical/clinic-utilities/rf'), "RF utility target must use the protected same-origin gateway");
+assert(!helper.includes('https://ortho-reception-backend-v2.onrender.com/rf'), "browser must not navigate directly to the protected RF backend");
+assert(!helper.includes('RF_ACCESS_KEY'), "RF credential must never be embedded in browser JavaScript");
+assert(!helper.includes('?key='), "RF credential must never be passed through a browser query string");
 assert(helper.includes('/clinical/clinic-utilities/physio-referral'), "existing CU-1 utility should remain reachable alongside RF");
 assert(helper.includes('Ραδιοκύματα — PDF'), "RF utility must be clinician-visible in Cockpit navigation");
-assert(helper.includes('target = "_blank"'), "external RF utility should open without replacing the active encounter workspace");
-assert(helper.includes('noopener noreferrer'), "external utility link must use safe opener isolation");
+assert(helper.includes('target = "_blank"'), "RF utility should still open without replacing the active encounter workspace");
+assert(helper.includes('noopener noreferrer'), "new-tab utility link must use safe opener isolation");
 
 // Dynamic G3 re-renders must be tolerated by re-applying controls, not by creating a second summary renderer.
 assert(helper.includes('MutationObserver'), "G4 must tolerate G3 DOM re-renders");
 assert(!helper.includes('Σύνοψη ασθενούς'), "G4 must not render a second patient-summary content owner");
 assert(!helper.includes('Γιατί τώρα'), "G4 must not own guidance content");
 
-console.log("G4 workspace ergonomics and RF utility integration regressions: PASS");
+console.log("G4 workspace ergonomics and RF authenticated-gateway integration regressions: PASS");
