@@ -2,7 +2,7 @@
   "use strict";
 
   const PREF_PREFIX = "osteoporosis.workspace.ui.v1.";
-  const RF_URL = "https://ortho-reception-backend-v2.onrender.com/rf";
+  const RF_URL = "/clinical/clinic-utilities/rf";
   const PHYSIO_URL = "/clinical/clinic-utilities/physio-referral";
 
   function readCollapsed(key) {
