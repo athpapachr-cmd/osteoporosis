@@ -43,6 +43,18 @@ def _gateway_access_key() -> str:
     return key
 
 
+def _upstream_headers(access_key: str, content_type: str | None = None) -> dict[str, str]:
+    """Build the only headers allowed to cross the service boundary."""
+
+    headers = {
+        "X-RF-Key": access_key,
+        "Accept": "*/*",
+    }
+    if content_type:
+        headers["Content-Type"] = content_type
+    return headers
+
+
 async def _send_upstream(
     method: str,
     path: str,
@@ -52,13 +64,6 @@ async def _send_upstream(
     content: bytes | None = None,
     content_type: str | None = None,
 ) -> httpx.Response:
-    headers = {
-        "X-RF-Key": access_key,
-        "Accept": "*/*",
-    }
-    if content_type:
-        headers["Content-Type"] = content_type
-
     try:
         async with httpx.AsyncClient(
             timeout=RF_GATEWAY_TIMEOUT_SECONDS,
@@ -69,7 +74,7 @@ async def _send_upstream(
                 RF_UPSTREAM_ORIGIN + path,
                 params=params,
                 content=content,
-                headers=headers,
+                headers=_upstream_headers(access_key, content_type),
             )
     except httpx.TimeoutException as exc:
         raise HTTPException(
@@ -250,7 +255,7 @@ def build_rf_gateway_router() -> APIRouter:
 
 
 __all__ = [
-    "RF_GATEWAY_ACCESS_KEY" if False else "RF_GATEWAY_KEY_ENV",
+    "RF_GATEWAY_KEY_ENV",
     "RF_GATEWAY_PREFIX",
     "RF_UPSTREAM_ORIGIN",
     "build_rf_gateway_router",
