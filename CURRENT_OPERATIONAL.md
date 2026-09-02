@@ -1,6 +1,6 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** MODULE 01 — G-3 PRODUCTION-SMOKE-VERIFIED / G-4 IMPLEMENTED + TESTED / RELEASE REVIEW NEXT.
+> **STATUS:** MODULE 01 — G-3 PRODUCTION-SMOKE-VERIFIED / G-4 RELEASE REVIEW PASS / PR NEXT.
 > **Updated:** 2026-09-02 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Fresh verified remote `main`:** `ab94c6286bdc49cb8304b072e557c5eb0a96b0c6`.
@@ -10,7 +10,8 @@
 > **G-4 branch:** `feat/module01-g4-collapsible-sticky-summary-rf-utility-2026-09-02`.
 > **G-4 exact tested runtime head:** `942d4e06944ebd6de97891cb8e2739c88ba85a38`.
 > **G-4 workflow:** `G3 guidance salience longitudinal summary` run `33599860151` — SUCCESS.
-> **ACTIVE CANONICAL WRITER/LOCK:** NONE after G-4 implementation/test closeout.
+> **G-4 release-readiness review:** PASS after canonical reconciliation and exact-head verification.
+> **ACTIVE CANONICAL WRITER/LOCK:** NONE.
 > **ACTIVE RUNTIME WRITER/LOCK:** NONE.
 
 ---
@@ -61,7 +62,7 @@ The RF PDF generator remains owned by the existing clinic reception backend. G-4
 
 ---
 
-# 3. G-4 test evidence
+# 3. G-4 test/review evidence
 
 Exact tested runtime head:
 
@@ -87,17 +88,17 @@ Passed:
 6. G-1 core/wiring/UI/WHY-NOW regressions;
 7. C1 authoritative Finish browser and server-finalization regressions.
 
-Exact delta review against production `ab94c628...`:
+Release-readiness review confirmed:
 
 ```text
-status: ahead
-behind_by: 0
-merge_base: exactly production main
-ahead_by: 8
-changed files: 7
+runtime/code review                 PASS
+clinical/data-integrity review      PASS
+scope/leakage review                PASS
+canonical reconciliation            PASS
+post-tested-runtime drift            NONE
 ```
 
-Only expected G-4 UI/test/workflow/canonical files changed. No C2, PR-1/PR-2, evidence-rule, treatment-threshold or DB-schema leakage occurred.
+The RF external target is preserved as a production-smoke criterion because assistant-side independent HTTP probing of that separate service was not available during review.
 
 ---
 
@@ -108,6 +109,7 @@ G-4 DESIGN                         COMPLETE
 G-4 IMPLEMENTED                    YES
 G-4 TESTED                         YES
 G-4 EXACT-HEAD REVIEW              PASS
+G-4 RELEASE-READINESS REVIEW       PASS
 G-4 PR                             NONE
 G-4 MERGED                         NO
 G-4 DEPLOYED                       NO
@@ -121,12 +123,10 @@ C2 remains separately implemented/tested and unreleased. Its revalidation/releas
 
 # 5. Exact next action / STOP gate
 
-The active G-4 writer is released.
-
 ```text
-fresh release-readiness bootstrap/review
-→ optionally open bounded G-4 release PR if product owner authorizes release progression
-→ STOP before merge/deploy without separate explicit authority
+open bounded G-4 release PR after product-owner release progression authority
+→ verify exact PR-head checks
+→ STOP before merge/deploy without separate explicit merge authority
 ```
 
 No manual Render deploy.
