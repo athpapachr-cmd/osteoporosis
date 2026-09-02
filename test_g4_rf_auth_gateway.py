@@ -73,7 +73,10 @@ class G4RFAuthGatewayTests(unittest.TestCase):
         self.login()
         form = (
             '<form method="post" action="/rf/create">'
-            "<script>fetch('/rf/history?' + 'x')</script>"
+            "<script>"
+            "const query = new URLSearchParams({ identity_number: 'I', gesy_number: 'G', application_location: 'L' });"
+            "const response = await fetch('/rf/history?' + query.toString(), { credentials: 'same-origin' });"
+            "</script>"
             "</form>"
         )
         send = AsyncMock(
@@ -88,7 +91,10 @@ class G4RFAuthGatewayTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertIn(f'action="{rf_gateway.RF_GATEWAY_PREFIX}/create"', response.text)
-        self.assertIn(f"fetch('{rf_gateway.RF_GATEWAY_PREFIX}/history?", response.text)
+        self.assertIn(f"fetch('{rf_gateway.RF_GATEWAY_PREFIX}/history',", response.text)
+        self.assertIn("method: 'POST'", response.text)
+        self.assertIn("body: query.toString()", response.text)
+        self.assertNotIn("/history?' + query.toString()", response.text)
         self.assertNotIn("https://ortho-reception-backend-v2.onrender.com", response.text)
         self.assertNotIn(RF_KEY, response.text)
         self.assertEqual(response.headers.get("cache-control"), "no-store")
@@ -105,7 +111,21 @@ class G4RFAuthGatewayTests(unittest.TestCase):
         self.assertNotIn("Authorization", upstream_headers)
         self.assertNotIn("X-Clinical-Key", upstream_headers)
 
-    def test_history_forwards_only_named_query_fields(self) -> None:
+    def test_unexpected_upstream_form_seam_fails_closed(self) -> None:
+        self.login()
+        send = AsyncMock(
+            return_value=upstream_response(
+                200,
+                '<form method="post" action="/rf/create"></form>',
+                headers={"content-type": "text/html; charset=utf-8"},
+            )
+        )
+        with patch.object(rf_gateway, "_send_upstream", new=send):
+            response = self.client.get(rf_gateway.RF_GATEWAY_PREFIX)
+        self.assertEqual(response.status_code, 502)
+        self.assertNotIn(RF_KEY, response.text)
+
+    def test_history_posts_identifiers_locally_and_forwards_only_named_fields(self) -> None:
         self.login()
         send = AsyncMock(
             return_value=upstream_response(
@@ -115,9 +135,9 @@ class G4RFAuthGatewayTests(unittest.TestCase):
             )
         )
         with patch.object(rf_gateway, "_send_upstream", new=send):
-            response = self.client.get(
+            response = self.client.post(
                 rf_gateway.RF_GATEWAY_PREFIX + "/history",
-                params={
+                data={
                     "gesy_number": "G-1",
                     "identity_number": "I-1",
                     "application_location": "Γόνατο",
@@ -126,7 +146,8 @@ class G4RFAuthGatewayTests(unittest.TestCase):
             )
 
         self.assertEqual(response.status_code, 200)
-        _, kwargs = send.await_args
+        args, kwargs = send.await_args
+        self.assertEqual(args[:2], ("GET", "/rf/history"))
         self.assertEqual(
             kwargs["params"],
             {
@@ -135,6 +156,16 @@ class G4RFAuthGatewayTests(unittest.TestCase):
                 "application_location": "Γόνατο",
             },
         )
+
+    def test_history_get_is_not_supported_and_never_reaches_upstream(self) -> None:
+        self.login()
+        with patch.object(rf_gateway, "_send_upstream", new=AsyncMock()) as send:
+            response = self.client.get(
+                rf_gateway.RF_GATEWAY_PREFIX + "/history",
+                params={"identity_number": "identifier-must-not-be-supported-in-local-url"},
+            )
+        self.assertEqual(response.status_code, 405)
+        send.assert_not_awaited()
 
     def test_create_forwards_multipart_and_rewrites_pdf_redirect(self) -> None:
         self.login()
