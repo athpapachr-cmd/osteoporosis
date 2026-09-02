@@ -184,8 +184,9 @@ class G4RFAuthGatewayTests(unittest.TestCase):
         self.assertEqual(response.content, b"%PDF-result")
         self.assertEqual(response.headers["content-type"], "application/pdf")
         self.assertEqual(response.headers["content-disposition"], 'attachment; filename="rf.pdf"')
-        _, kwargs = send.await_args
-        self.assertEqual(kwargs["path"], f"/rf/pdf/{VALID_APPLICATION_ID}")
+        args, kwargs = send.await_args
+        self.assertEqual(args[1], f"/rf/pdf/{VALID_APPLICATION_ID}")
+        self.assertEqual(kwargs["access_key"], RF_KEY)
 
     def test_invalid_pdf_id_never_reaches_upstream(self) -> None:
         self.login()
