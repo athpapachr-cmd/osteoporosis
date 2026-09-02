@@ -8,8 +8,14 @@
 }
 
 .patient-longitudinal-summary {
+  position: sticky;
+  top: 8px;
+  z-index: 30;
+  max-height: calc(100vh - 16px);
+  overflow: auto;
   border-color: #cbd5e1;
   background: #fbfdff;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
 }
 
 .patient-summary-head,
@@ -39,6 +45,39 @@
   color: #334155;
   font-size: 12px;
   font-weight: 700;
+}
+
+.g4-collapse-control {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: 4px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #334155;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.g4-collapse-control:hover,
+.g4-collapse-control:focus-visible {
+  border-color: #94a3b8;
+  background: #f8fafc;
+}
+
+.patient-longitudinal-summary.g4-collapsed,
+.progressive-guidance-summary.g4-collapsed {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.patient-longitudinal-summary.g4-collapsed > :not(.patient-summary-head),
+.progressive-guidance-summary.g4-collapsed > :not(.progressive-guidance-head) {
+  display: none !important;
 }
 
 .patient-summary-current {
@@ -248,9 +287,33 @@ article.card.guidance-surfaced .adaptive-use-domain {
   color: #7c4a03;
 }
 
+.g4-utility-group {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(148, 163, 184, 0.28);
+}
+
+.g4-utility-label {
+  padding: 0 12px 5px;
+  color: #94a3b8;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.g4-utility-link {
+  text-decoration: none;
+}
+
 @media (max-width: 720px) {
   .patient-summary-grid,
   .progressive-guidance-list {
     grid-template-columns: 1fr;
+  }
+
+  .patient-longitudinal-summary {
+    top: 4px;
+    max-height: 62vh;
   }
 }

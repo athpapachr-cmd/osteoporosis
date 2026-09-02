@@ -938,3 +938,101 @@ PILOT-VALIDATED = NO
 ```
 
 The runtime/canonical writer lock was released after closeout. A separate fresh release-readiness review and explicit product-owner release authority are required before any PR/merge/deploy action.
+
+---
+
+## 2026-09-02 — G-3 released, production visibility hotfix deployed, re-smoke verified
+
+G-3 guidance salience and deterministic longitudinal patient summary were released through PR #70 after exact-head regression review. PR #70 was squash-merged to `main` as:
+
+```text
+ef17367c7b8959f51e05b80909226804951d1bc7
+```
+
+Render auto-deploy `dep-dabj38s9v7es73fmq800` reached `live` at that exact commit. Initial product-owner production smoke then failed both new presentation acceptance criteria: explicit `Νέο` salience and `Σύνοψη ασθενούς` were not visible.
+
+Investigation identified three bounded presentation/delivery defects rather than a clinical-rule defect:
+
+1. static baseline assets lacked explicit no-store release-coherency headers;
+2. the summary root was hidden before an active protected patient existed;
+3. `Νέο` presentation compared only card IDs, so a new material evidence trigger on an already-visible card was not treated as newly surfaced.
+
+PR #71 corrected those defects without changing G-2 evidence rules, treatment thresholds, patient persistence, DB schema or C1 Finish semantics. It was squash-merged as:
+
+```text
+ab94c6286bdc49cb8304b072e557c5eb0a96b0c6
+```
+
+Render auto-deploy:
+
+```text
+dep-dabolap5efls739s9am0
+```
+
+reached `live` at the exact hotfix merge SHA. The product owner then re-smoked production and reported that all intended G-3 elements were visible and working well, specifically including `Νέο` and `Σύνοψη ασθενούς`.
+
+Therefore:
+
+```text
+G-3 IMPLEMENTED = YES
+G-3 TESTED = YES
+G-3 MERGED = YES
+G-3 DEPLOYED = YES
+G-3 PRODUCTION-SMOKE-VERIFIED = YES
+G-3 PILOT-VALIDATED = NO
+```
+
+The successful re-smoke is production validation of the released UI behavior only; it is not the planned real-clinic system-assisted pilot.
+
+---
+
+## 2026-09-02 — G-4 workspace ergonomics and RF utility navigation implemented and tested
+
+Product-owner evidence from use after successful G-3 re-smoke identified three bounded workspace needs: collapse/expand for the longitudinal patient summary and current visit flow, sticky access to the patient summary while scrolling, and Cockpit access to the existing radiofrequency-treatment PDF utility.
+
+G-4 was implemented on branch:
+
+```text
+feat/module01-g4-collapsible-sticky-summary-rf-utility-2026-09-02
+```
+
+The runtime adds only presentation/navigation behavior:
+
+- native accessible `Σύμπτυξη / Ανάπτυξη` controls for `Σύνοψη ασθενούς` and `Σημερινή ροή`;
+- sticky positioning for the existing single patient-summary surface;
+- per-browser `sessionStorage` UI preference only, with no clinical-data write;
+- a Cockpit `Clinic Utilities` group retaining the existing physiotherapy referral route and adding `Ραδιοκύματα — PDF` navigation to the existing protected RF utility in a new tab.
+
+The RF PDF engine, templates, request state and authentication remain owned by the existing clinic reception service; G-4 does not duplicate them into osteoporosis encounter state.
+
+Exact tested runtime head:
+
+```text
+942d4e06944ebd6de97891cb8e2739c88ba85a38
+```
+
+GitHub Actions:
+
+```text
+workflow: G3 guidance salience longitudinal summary
+run:      33599860151
+result:   SUCCESS
+```
+
+The gate passed the focused G-4 ergonomics/RF-navigation regression plus inherited G-3, G-2, G-1 and C1 finalization regressions.
+
+Exact-head review against production `ab94c628...` found the tested runtime branch ahead with merge base exactly production `main`, behind by 0 and no C2, PR-1/PR-2, evidence-rule, treatment-threshold or DB-schema leakage. Subsequent branch commits before release review are canonical documentation only.
+
+This milestone closes only the implementation/test gate:
+
+```text
+G-4 DESIGN = COMPLETE
+G-4 IMPLEMENTED = YES
+G-4 TESTED = YES
+G-4 EXACT-HEAD REVIEW = PASS
+G-4 MERGED = NO
+G-4 DEPLOYED = NO
+G-4 PRODUCTION-SMOKE-VERIFIED = NO
+```
+
+A final canonical reconciliation and exact-head release-readiness check are required before a release PR may be opened. Merge/deploy still require separate explicit product-owner authority.

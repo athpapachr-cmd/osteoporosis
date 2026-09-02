@@ -32,6 +32,7 @@
     .then(() => loadScript("./progressive-guidance-ui.js"))
     .then(() => loadScript("./g3-salience-token-core.js"))
     .then(() => loadScript("./g3-production-visibility-guard.js"))
+    .then(() => loadScript("./g4-workspace-ergonomics.js"))
     .then(() => loadScript("./pilot-completion.js"))
     .then(() => loadScript("./whole-form-progress.js"))
     .then(() => loadScript("./lab-history-ui.js"))

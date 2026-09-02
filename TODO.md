@@ -39,8 +39,12 @@ This file answers **where the product is going and in what broad order**. It is 
 - [x] Release G-2 evidence-backed osteoporosis guidance through PR #69.
 - [x] Verify Render auto-deploy `dep-daaph5vlk1mc73940g60` is live at exact G-2 merge SHA `9cfad82d1258a44e71080e0aa4d6d644e581cfbf`.
 - [x] Complete authenticated product-owner G-2 production smoke.
+- [x] Release G-3 guidance salience + longitudinal patient summary through PR #70.
+- [x] Correct the bounded G-3 production-visibility/salience defects through PR #71.
+- [x] Verify Render hotfix auto-deploy `dep-dabolap5efls739s9am0` live at exact `ab94c6286bdc49cb8304b072e557c5eb0a96b0c6`.
+- [x] Complete product-owner G-3 production re-smoke confirming visible `Νέο` and `Σύνοψη ασθενούς`.
 
-C1, G-1 and G-2 are now **implemented / tested / merged / deployed / production-smoke-verified**. G-2 real-clinic usefulness/refinement remains distinct from production smoke and is not `PILOT-VALIDATED`.
+C1, G-1, G-2 and G-3 are now **implemented / tested / merged / deployed / production-smoke-verified**. Real-clinic usefulness/refinement remains distinct from production smoke and is not `PILOT-VALIDATED`.
 
 ---
 
@@ -97,7 +101,7 @@ No real pilot before the full intended guided/capture workflow is ready.
 - [x] Prove new-event override of routine flow.
 - [x] Prove unresolved-prior item resurfacing.
 - [x] Prove explicit due/overdue/treatment timeline plumbing without invented cadence.
-- [x] Expand prior authoritative data reuse into richer read-only longitudinal summary after real-use evidence demonstrated the need; implemented/tested in G-3, release pending.
+- [x] Expand prior authoritative data reuse into richer read-only longitudinal summary after real-use evidence demonstrated the need; released and production-smoke-verified in G-3.
 - [x] Keep G-1 generic: no medication-specific milestone content invented.
 - [x] Preserve coarse applicability ownership and authoritative Finish regressions.
 - [x] Merge/deploy through reviewed release path.
@@ -136,7 +140,7 @@ Important first-runtime exclusions remain:
 - `OST_G2_R16_DENOSUMAB_EXIT_NO_CTX_OPTION` remains blocked until CTX-monitoring availability is explicitly represented;
 - checklist-only medication safety guidance is visibly identified as verification/checklist content and not automated safety clearance.
 
-## 1.5 G-3 Guidance salience + longitudinal patient summary — IMPLEMENTED / TESTED; RELEASE REVIEW NEXT
+## 1.5 G-3 Guidance salience + longitudinal patient summary — PRODUCTION-SMOKE-VERIFIED / CLOSED
 
 Triggered by product-owner production interaction after G-2 smoke.
 
@@ -149,11 +153,32 @@ Triggered by product-owner production interaction after G-2 smoke.
 - [x] Keep current visit distinct from completed historical truth.
 - [x] Preserve `missing != negative`, `scheduled != actual`, conflict fail-closed and later-blank-does-not-erase-prior semantics.
 - [x] Reuse existing protected encounter/lab endpoints and existing G-1 treatment/admin projection; no DB migration/new write path.
-- [x] Pass focused G-3 tests plus inherited G-2/G-1/C1 regression gate at exact head `dab45baf9f80632ee6e58f03fa4d5005c68e0ac5`, run `33486322905`.
-- [ ] Fresh product-owner release review before PR/merge/deploy.
-- [ ] Production smoke after explicitly authorized G-3 release.
+- [x] Pass focused G-3 tests plus inherited G-2/G-1/C1 regression gate.
+- [x] Release through PR #70; Render auto-deploy reached live at exact merge SHA `ef17367c7b8959f51e05b80909226804951d1bc7`.
+- [x] Correct production visibility/cache and same-card/new-evidence salience defects through PR #71.
+- [x] Render auto-deploy `dep-dabolap5efls739s9am0` reached live at exact hotfix merge SHA `ab94c6286bdc49cb8304b072e557c5eb0a96b0c6`.
+- [x] Product-owner production re-smoke confirmed both `Νέο` and `Σύνοψη ασθενούς` visible and working well.
 
-## 1.6 Heidi-first capture — BEFORE REAL PILOT
+G-3 is production-smoke-verified, not pilot-validated. Subsequent evidence-from-use UX refinements are handled as bounded slices rather than reopening G-3 clinical semantics.
+
+## 1.6 G-4 Workspace ergonomics + RF utility navigation — IMPLEMENTED / TESTED; RELEASE REVIEW ACTIVE
+
+Triggered by product-owner evidence from use after successful G-3 re-smoke.
+
+- [x] Add accessible independent collapse/expand controls to `Σύνοψη ασθενούς` and `Σημερινή ροή`.
+- [x] Make `Σύνοψη ασθενούς` sticky at the top of the encounter scroll context.
+- [x] Keep collapse state as UI-only browser preference, not patient/clinical data.
+- [x] Preserve the existing G-3 summary/guidance renderer as the single clinical owner.
+- [x] Add `Clinic Utilities` navigation with existing physiotherapy referral and `Ραδιοκύματα — PDF` entry.
+- [x] Keep the existing RF generator as the PDF/template/request source of truth; do not duplicate RF persistence/templates into osteoporosis encounter state.
+- [x] Pass G-4 focused regression plus inherited G-3/G-2/G-1/C1 gate at exact tested runtime head `942d4e06944ebd6de97891cb8e2739c88ba85a38`, run `33599860151`.
+- [x] Exact-head code/scope review passed; only canonical closeout commits followed the tested runtime head.
+- [ ] Complete canonical reconciliation and final exact-head release-readiness check.
+- [ ] Open release PR only after release review PASS.
+- [ ] Merge/deploy only with separate explicit product-owner authority.
+- [ ] Production smoke after release must include collapse/expand, sticky summary and RF navigation target.
+
+## 1.7 Heidi-first capture — BEFORE REAL PILOT
 
 - [ ] Restart corrected archived PR-1 v3 design as bounded implementation slice.
 - [ ] Protected transcript paste/intake.
@@ -166,7 +191,7 @@ Triggered by product-owner production interaction after G-2 smoke.
 - [ ] No exact-date invention from vague timing.
 - [ ] No authoritative PR-1 write.
 
-## 1.7 PR-2 Inline provisional population — BEFORE REAL PILOT
+## 1.8 PR-2 Inline provisional population — BEFORE REAL PILOT
 
 - [ ] Show mapped candidates inside destination clinical cards.
 - [ ] `proposed` values are visually populated but non-authoritative.
@@ -177,7 +202,7 @@ Triggered by product-owner production interaction after G-2 smoke.
 - [ ] Keep clinically meaningful unmapped candidates visible for review.
 - [ ] Show compact applicable-visit extraction coverage without treating unmentioned as negative.
 
-## 1.8 Five-case real system-assisted pilot
+## 1.9 Five-case real system-assisted pilot
 
 Only after:
 
@@ -185,6 +210,7 @@ Only after:
 G-1 production-readiness gate closed
 + G-2 evidence-backed minimum osteoporosis guidance released/smoked
 + G-3 guided UX refinements released/smoked
++ G-4 workspace ergonomics released/smoked
 + PR-1 extraction
 + PR-2 inline review/population
 ```
@@ -203,7 +229,7 @@ G-1 production-readiness gate closed
 - [ ] After all five, make one deliberate refinement.
 - [ ] Freeze Guidance/Capture/KPI applicability/denominator contracts.
 
-## 1.9 Quick Practice Review shadow capability
+## 1.10 Quick Practice Review shadow capability
 
 - [ ] `PracticeReviewV1`.
 - [ ] `PracticeObservationV1` with direction, importance, confidence, provenance, evidence, suggested change and clinician disposition.
@@ -218,7 +244,7 @@ G-1 production-readiness gate closed
 - [ ] Review follow-up execution.
 - [ ] Keep routine clinician-facing Practice Review hidden during scored baseline by default.
 
-## 1.10 Thirty-case scored system-assisted baseline
+## 1.11 Thirty-case scored system-assisted baseline
 
 - [ ] Run 30 consecutive unique eligible osteoporosis encounters under frozen guidance/capture contracts.
 - [ ] Clinical Guidance remains active.
@@ -231,7 +257,7 @@ G-1 production-readiness gate closed
 - [ ] Label cohort accurately as `system-assisted baseline`.
 - [ ] Lock denominators/baseline and run-chart/reliability conventions.
 
-## 1.11 Close one real improvement loop
+## 1.12 Close one real improvement loop
 
 - [ ] Clinician dispositions on important PracticeObservations.
 - [ ] Aggregate repeated observations longitudinally.
@@ -242,7 +268,7 @@ G-1 production-readiness gate closed
 - [ ] Record improved / unchanged / worsened / insufficient evidence.
 - [ ] Where feasible, assess whether correct behavior becomes less prompt-dependent over time without overstating causality.
 
-## 1.12 Final Module 01 closure
+## 1.13 Final Module 01 closure
 
 - [ ] No unresolved critical safety/data-integrity defect.
 - [ ] Dynamic visit flow validated in real use.
@@ -272,9 +298,10 @@ Permanent requirements:
 - [x] Final product-owner correction re-smoke.
 - [x] Evidence-backed osteoporosis guidance-content registry and activation contract designed/reviewed.
 - [x] G-2 evidence-backed guidance runtime implemented/tested/merged/deployed/production-smoke-verified.
-- [x] G-3 newly-surfaced guidance salience implemented/tested.
-- [x] G-3 deterministic always-visible longitudinal patient summary implemented/tested.
-- [ ] G-3 release review / merge / deploy / production smoke.
+- [x] G-3 newly-surfaced guidance salience implemented/tested/merged/deployed/production-smoke-verified.
+- [x] G-3 deterministic always-visible longitudinal patient summary implemented/tested/merged/deployed/production-smoke-verified.
+- [x] G-4 collapsible/sticky top-workspace ergonomics implemented/tested.
+- [ ] G-4 release PR / merge / deploy / production smoke.
 - [ ] Real-clinic usability validation and evidence-from-use card/taxonomy refinement.
 
 ---
@@ -343,7 +370,7 @@ Unless later evidence elevates one to a safety/data-integrity dependency:
 - [ ] External Benchmark Registry.
 - [ ] Full Clinical Excellence Home/analytics polish.
 - [ ] Calendar/Setmore/Zadarma/CareTask live integration.
-- [ ] Radiofrequency utility runtime.
+- [ ] Radiofrequency utility runtime migration into this repository.
 - [ ] Patient leaflets/posters/materials.
 - [ ] New physiotherapy disease routes.
 - [ ] Module 02/generalization.
@@ -365,7 +392,9 @@ IMPLEMENTED / TESTED / PRODUCT-OWNER REVIEWED
 MERGED NO / DEPLOYED NO
 ```
 
-Do not mutate/merge/deploy during Module 01 closure without separate authorization.
+G-4 adds Cockpit navigation to the existing protected RF PDF generator but does not migrate or duplicate that generator's backend/templates/persistence into this repository.
+
+Do not mutate/merge/deploy later rich-referral or RF-engine migration work during Module 01 closure without separate authorization.
 
 ---
 
@@ -375,20 +404,21 @@ Do not mutate/merge/deploy during Module 01 closure without separate authorizati
 1. C1 authoritative Finish release/smoke — closed
 2. G-1 dynamic-guidance mechanics — production-smoke-verified / closed
 3. G-2 evidence-backed osteoporosis guidance — production-smoke-verified / closed
-4. G-3 guidance salience + longitudinal patient summary — implemented/tested; release review next
-5. PR-1 transcript extraction
-6. PR-2 inline provisional population
-7. guided card UX sufficient for real use
-8. 5-case system-assisted pilot
-9. one refinement + contract freeze
-10. Quick Practice Review shadow capability
-11. 30-case system-assisted scored baseline
-12. baseline lock
-13. clinician-facing reviewed Signals/interventions
-14. one longitudinal closed improvement loop
-15. re-measurement / prompt-dependence trend where valid
-16. final Module 01 closure review
-17. later breadth/generalization
+4. G-3 guidance salience + longitudinal patient summary — production-smoke-verified / closed
+5. G-4 workspace ergonomics + RF utility navigation — implemented/tested; release review active
+6. PR-1 transcript extraction
+7. PR-2 inline provisional population
+8. guided card UX sufficient for real use
+9. 5-case system-assisted pilot
+10. one refinement + contract freeze
+11. Quick Practice Review shadow capability
+12. 30-case system-assisted scored baseline
+13. baseline lock
+14. clinician-facing reviewed Signals/interventions
+15. one longitudinal closed improvement loop
+16. re-measurement / prompt-dependence trend where valid
+17. final Module 01 closure review
+18. later breadth/generalization
 ```
 
 Safety/data-integrity defects always outrank this order.
