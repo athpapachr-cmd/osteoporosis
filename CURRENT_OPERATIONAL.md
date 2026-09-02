@@ -1,20 +1,21 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** MODULE 01 — G-3 PRODUCTION-SMOKE-VERIFIED / G-4 WORKSPACE UX + RF UTILITY INTEGRATION ACTIVE.
+> **STATUS:** MODULE 01 — G-3 PRODUCTION-SMOKE-VERIFIED / G-4 IMPLEMENTED + TESTED / RELEASE REVIEW NEXT.
 > **Updated:** 2026-09-02 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Fresh verified remote `main`:** `ab94c6286bdc49cb8304b072e557c5eb0a96b0c6`.
 > **G-3 hotfix PR:** `#71` — squash merged.
-> **G-3 hotfix merge/runtime SHA:** `ab94c6286bdc49cb8304b072e557c5eb0a96b0c6`.
-> **G-3 Render deploy:** `dep-dabolap5efls739s9am0` — `live`, trigger `new_commit`, exact commit `ab94c628...`.
-> **G-3 product-owner production re-smoke:** PASS — `Νέο` and `Σύνοψη ασθενούς` visible and reported working well.
+> **G-3 Render deploy:** `dep-dabolap5efls739s9am0` — `live`, exact commit `ab94c628...`.
+> **G-3 product-owner production re-smoke:** PASS.
 > **G-4 branch:** `feat/module01-g4-collapsible-sticky-summary-rf-utility-2026-09-02`.
-> **ACTIVE CANONICAL WRITER/LOCK:** G-4 workspace UX + RF utility integration.
-> **ACTIVE RUNTIME WRITER/LOCK:** G-4 workspace UX + RF utility integration.
+> **G-4 exact tested runtime head:** `942d4e06944ebd6de97891cb8e2739c88ba85a38`.
+> **G-4 workflow:** `G3 guidance salience longitudinal summary` run `33599860151` — SUCCESS.
+> **ACTIVE CANONICAL WRITER/LOCK:** NONE after G-4 implementation/test closeout.
+> **ACTIVE RUNTIME WRITER/LOCK:** NONE.
 
 ---
 
-# 1. Closed production state
+# 1. Production state
 
 ```text
 C1 / G-1 / G-2                    PRODUCTION-SMOKE-VERIFIED
@@ -26,75 +27,106 @@ G-3 PRODUCTION-SMOKE-VERIFIED     YES
 G-3 PILOT-VALIDATED               NO
 ```
 
-The successful re-smoke closes the G-3 production visibility defect. It is production smoke, not real-clinic pilot validation.
+The G-3 hotfix deployment at exact `ab94c628...` was product-owner re-smoked successfully: `Νέο` and `Σύνοψη ασθενούς` are visible and working well. This remains production smoke, not pilot validation.
 
 ---
 
-# 2. Active G-4 product-owner requirements
+# 2. G-4 implemented boundary
 
-The product owner requested three bounded workspace changes after successful G-3 re-smoke:
+G-4 is presentation/navigation only.
 
-1. `Σύνοψη ασθενούς` must be collapsible because it occupies substantial vertical space;
-2. `Σημερινή ροή` must also be collapsible;
-3. at least the patient summary must remain available at the top while scrolling;
-4. integrate the existing radiofrequency-treatment PDF creation page into the Cockpit.
+## Workspace ergonomics
 
----
+- `Σύνοψη ασθενούς` has a native accessible `Σύμπτυξη / Ανάπτυξη` control;
+- `Σημερινή ροή` has the same independent control;
+- collapse state uses `sessionStorage` only as per-browser UI preference and is never clinical data;
+- patient summary is sticky at the top of the encounter scroll context;
+- no second summary renderer or guidance owner was introduced;
+- dynamic G-3 re-renders are tolerated by a small decoration helper that reapplies controls when needed.
 
-# 3. G-4 implementation boundary
+## Clinic Utilities navigation
 
-## A. Workspace ergonomics
-
-- add accessible expand/collapse controls to patient summary and current flow;
-- preserve dynamic G-2/G-3 content and `Νέο` semantics while collapsed/expanded;
-- make the patient-summary surface sticky at the top of the encounter workspace while scrolling;
-- do not create new clinical truth, rules, writes or treatment decisions;
-- collapse state is UI preference only and must not become authoritative patient data.
-
-## B. Radiofrequency Clinic Utility integration
-
-The previous RF PDF workflow belongs to Clinic Utilities / Clinical Operations, not Osteoporosis clinical state.
-
-Recovered prior implementation evidence identifies a protected RF utility at `/rf` in the clinic reception backend, with `/rf/create` and PDF routes, official Medikey/DIROS/Thermedico templates and tested PDF generation. The first G-4 integration must therefore expose the existing protected RF utility from the Cockpit without copying its PDF engine, templates or patient/request persistence into osteoporosis encounter payloads.
-
-Initial integration target:
+A `Clinic Utilities` group is injected into the existing Cockpit sidebar with:
 
 ```text
-Cockpit Clinic Utilities navigation
-→ Radiofrequency PDF utility
+Φυσιοθεραπεία
+→ /clinical/clinic-utilities/physio-referral
+
+Ραδιοκύματα — PDF
 → https://ortho-reception-backend-v2.onrender.com/rf
+→ opens in a new tab with noopener/noreferrer
 ```
 
-The original RF service remains the PDF-generation source of truth in this slice. A future deliberate migration into this repository would require the complete source/templates/auth/storage contract, not reconstruction from changelog notes.
+The RF PDF generator remains owned by the existing clinic reception backend. G-4 does not copy RF templates, coordinates, request persistence, authentication or patient history into the osteoporosis repository or encounter payload.
 
 ---
 
-# 4. Invariants / exclusions
+# 3. G-4 test evidence
+
+Exact tested runtime head:
 
 ```text
-RF UTILITY != OSTEOPOROSIS ENCOUNTER STATE
-UI COLLAPSE STATE != CLINICAL DATA
-STICKY SUMMARY != SECOND SUMMARY OWNER
-NO CHANGE TO G-2 EVIDENCE RULES OR THRESHOLDS
-NO CHANGE TO C1 FINISH
-NO C2 PERSISTENCE RELEASE IN THIS SLICE
-NO PR-1 / PR-2
-NO MANUAL RENDER DEPLOY
+942d4e06944ebd6de97891cb8e2739c88ba85a38
 ```
 
-C2 remains implemented/tested on its existing branch but is not being released inside G-4.
+Workflow:
+
+```text
+G3 guidance salience longitudinal summary
+run 33599860151
+SUCCESS
+```
+
+Passed:
+
+1. JavaScript syntax;
+2. G-4 collapsible/sticky/RF utility integration regression;
+3. original G-3 salience/summary regressions;
+4. G-3 production visibility/cache regressions;
+5. frozen G-2 evidence contract and G-2 runtime regressions;
+6. G-1 core/wiring/UI/WHY-NOW regressions;
+7. C1 authoritative Finish browser and server-finalization regressions.
+
+Exact delta review against production `ab94c628...`:
+
+```text
+status: ahead
+behind_by: 0
+merge_base: exactly production main
+ahead_by: 8
+changed files: 7
+```
+
+Only expected G-4 UI/test/workflow/canonical files changed. No C2, PR-1/PR-2, evidence-rule, treatment-threshold or DB-schema leakage occurred.
 
 ---
 
-# 5. Exact next action
+# 4. State matrix
 
 ```text
-freeze G-4 slice design
-→ inspect current G-3 summary/flow renderer + CSS and Cockpit navigation
-→ implement collapsible/sticky behavior through existing render owner
-→ add isolated RF Clinic Utility navigation entry
-→ add focused regressions + inherited G3/G2/G1/C1 gates
-→ exact-head review
-→ close writer lock at IMPLEMENTED / TESTED
-→ STOP before PR/merge/deploy without separate release authority
+G-4 DESIGN                         COMPLETE
+G-4 IMPLEMENTED                    YES
+G-4 TESTED                         YES
+G-4 EXACT-HEAD REVIEW              PASS
+G-4 PR                             NONE
+G-4 MERGED                         NO
+G-4 DEPLOYED                       NO
+G-4 PRODUCTION-SMOKE-VERIFIED      NO
+ACTIVE WRITER                      NONE
 ```
+
+C2 remains separately implemented/tested and unreleased. Its revalidation/release sequencing is not part of G-4.
+
+---
+
+# 5. Exact next action / STOP gate
+
+The active G-4 writer is released.
+
+```text
+fresh release-readiness bootstrap/review
+→ optionally open bounded G-4 release PR if product owner authorizes release progression
+→ STOP before merge/deploy without separate explicit authority
+```
+
+No manual Render deploy.
