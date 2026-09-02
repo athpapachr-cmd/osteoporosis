@@ -15,7 +15,10 @@
 
   function writeCollapsed(key, collapsed) {
     try {
-      sessionStorage.setItem(PREF_PREFIX + key, collapsed ? "collapsed" : "expanded");
+      const next = collapsed ? "collapsed" : "expanded";
+      if (sessionStorage.getItem(PREF_PREFIX + key) !== next) {
+        sessionStorage.setItem(PREF_PREFIX + key, next);
+      }
     } catch {
       // UI preference persistence is optional and never clinical data.
     }
@@ -23,9 +26,12 @@
 
   function setCollapsed(root, button, key, collapsed) {
     root.classList.toggle("g4-collapsed", collapsed);
-    button.setAttribute("aria-expanded", collapsed ? "false" : "true");
-    button.textContent = collapsed ? "Ανάπτυξη" : "Σύμπτυξη";
-    button.title = collapsed ? "Εμφάνιση περιεχομένου" : "Απόκρυψη περιεχομένου";
+    const expanded = collapsed ? "false" : "true";
+    const text = collapsed ? "Ανάπτυξη" : "Σύμπτυξη";
+    const title = collapsed ? "Εμφάνιση περιεχομένου" : "Απόκρυψη περιεχομένου";
+    if (button.getAttribute("aria-expanded") !== expanded) button.setAttribute("aria-expanded", expanded);
+    if (button.textContent !== text) button.textContent = text;
+    if (button.title !== title) button.title = title;
     writeCollapsed(key, collapsed);
   }
 
