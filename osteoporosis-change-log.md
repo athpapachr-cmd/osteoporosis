@@ -1036,3 +1036,75 @@ G-4 PRODUCTION-SMOKE-VERIFIED = NO
 ```
 
 A final canonical reconciliation and exact-head release-readiness check are required before a release PR may be opened. Merge/deploy still require separate explicit product-owner authority.
+
+---
+
+## 2026-09-02 — G-4 released/deployed; RF auth gap isolated; bounded gateway hotfix implemented/tested
+
+The original G-4 release completed after bounded PR #72 exact-head checks passed. PR #72 was squash-merged to `main` as:
+
+```text
+338830340f6fed2ae1a3f08f6fdb0b8059932a66
+```
+
+Render auto-deploy:
+
+```text
+dep-dac27kojo6nc739biu80
+```
+
+was reported `live` by the product owner at that exact merge source. Production smoke verified the G-4 workspace behavior: independent collapse/expand for `Σύνοψη ασθενούς` and `Σημερινή ροή`, sticky patient summary and physiotherapy utility navigation all passed. RF navigation reached the intended existing service but the protected RF page correctly rejected the unauthenticated cross-origin browser with `401` / `Απαιτείται εξουσιοδοτημένη πρόσβαση.`
+
+The failure was classified as:
+
+```text
+CROSS-SERVICE AUTHENTICATION INTEGRATION GAP
+```
+
+not as RF PDF/template/business-rule failure.
+
+A fresh control-plane inspection showed that `ortho-reception-backend-v2` was independently frozen by its own governed active slice, so the hotfix did not mutate that runtime, its authorization code or its secrets/configuration. The selected correction remained entirely in `athpapachr-cmd/osteoporosis`:
+
+```text
+authenticated clinical_session browser
+→ same-origin /clinical/clinic-utilities/rf gateway
+→ server-only RF_GATEWAY_ACCESS_KEY
+→ X-RF-Key to fixed existing RF service
+```
+
+The existing RF service remains source of truth for form HTML, history/persistence, validation, PDF templates/coordinates and generated PDFs. No RF payload enters osteoporosis encounter state and no RF credential is exposed to JavaScript or browser URLs.
+
+Independent review of the first gateway candidate identified one material privacy problem before release: keeping RF history lookup as a local GET would create an additional Osteoporosis URL/access-log surface containing identity/GeSY identifiers. The final runtime changed the local browser contract to bounded `POST application/x-www-form-urlencoded`; only `identity_number`, `gesy_number` and `application_location` are accepted and translated server-side to the existing upstream GET. Local GET `/history` is not implemented. The gateway also fails closed if the upstream form's expected create/history transport seams change.
+
+Final exact tested runtime head:
+
+```text
+29140a6cd4c9f57b454daa6e4a2883ec0345b53f
+```
+
+Exact GitHub Actions evidence:
+
+```text
+workflow: G3 guidance salience longitudinal summary
+run:      33640110048
+result:   SUCCESS
+```
+
+That run passed RF gateway Python syntax, the focused authenticated-gateway and POST-only history privacy regressions, the G-4 workspace regression and all inherited G-3/G-2/G-1/C1 gates. Final source/security/scope review found no remaining release-blocking defect in the bounded hotfix.
+
+Closeout state:
+
+```text
+HOTFIX DESIGN                    COMPLETE
+HOTFIX IMPLEMENTED               YES
+HOTFIX TESTED                    YES
+HOTFIX EXACT-HEAD REVIEW         PASS
+HOTFIX PR                        NONE
+HOTFIX MERGED                    NO
+RF_GATEWAY_ACCESS_KEY CONFIGURED NO / NOT VERIFIED
+HOTFIX DEPLOYED                  NO
+HOTFIX PRODUCTION-SMOKE-VERIFIED NO
+G-4 PILOT-VALIDATED              NO
+```
+
+The implementation/runtime writer lock was released during canonical closeout. Product-owner authority in this step covered canonical closeout and final docs-only drift verification only. A later release requires separate authorization for PR, merge and production configuration/deployment. No manual Render deploy, reception-backend mutation, production secret mutation or production RF smoke occurred in this closeout.
