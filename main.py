@@ -15,6 +15,7 @@ from clinical_data import build_clinical_router
 from clinical_data_ext import build_clinical_ext_router
 from clinical_status import build_clinical_status_router
 from clinic_utilities.physio_referral_api import build_cu1_physio_referral_router
+from clinic_utilities.rf_gateway import build_rf_gateway_router
 
 # The legacy app still owns a historical GET / route. Keep the old Cockpit
 # available at /static/index.html, but make the public service root enter the
@@ -61,5 +62,6 @@ app.include_router(build_clinical_router(engine))
 app.include_router(build_clinical_ext_router(engine))
 app.include_router(build_clinical_calendar_router(engine))
 app.include_router(build_cu1_physio_referral_router())
+app.include_router(build_rf_gateway_router())
 
 __all__ = ["app", "engine"]
