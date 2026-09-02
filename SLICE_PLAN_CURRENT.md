@@ -1,65 +1,44 @@
 # SLICE_PLAN_CURRENT.md — G-4 RF Authorized Gateway Hotfix v1
 
-> **STATUS:** IMPLEMENTED / TESTED / EXACT-HEAD REVIEW PASS — CANONICAL CLOSEOUT COMPLETE; RELEASE HOLD.
+> **STATUS:** IMPLEMENTED / TESTED / REVIEWED / MERGED / AUTO-DEPLOYED — PRODUCTION CONFIG + SMOKE PENDING.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Module:** Clinical Excellence workspace + cross-module Clinic Utilities.
 > **Slice ID:** `M01-G4-RF-AUTH-GATEWAY-HOTFIX-v1`.
-> **Production base:** `338830340f6fed2ae1a3f08f6fdb0b8059932a66`.
-> **Branch:** `fix/module01-g4-rf-auth-gateway-2026-09-02`.
+> **Original production base:** `338830340f6fed2ae1a3f08f6fdb0b8059932a66`.
+> **Implementation branch:** `fix/module01-g4-rf-auth-gateway-2026-09-02`.
 > **Exact tested runtime head:** `29140a6cd4c9f57b454daa6e4a2883ec0345b53f`.
-> **Exact test workflow:** `G3 guidance salience longitudinal summary`, run `33640110048` — SUCCESS.
+> **Final PR head:** `63ad2f5f392bc4d6dadec84704757ba4520ea83f`.
+> **Release PR:** `#73`.
+> **Merge SHA / current production code source:** `8aa8b38e3fa9a8f8ba0618868b452b1835be0d47`.
+> **Render auto-deploy:** `dep-dac43leq1p3s73a04s00` — `live`.
 > **Runtime writer:** NONE.
-> **Product-owner implementation authority:** consumed.
-> **PR / merge / config / deploy authority:** NONE unless separately granted.
+> **Config/secret authority:** NONE unless separately granted.
 
 ---
 
-# 1. Trigger / first real failure
+# 1. Trigger / failure class
 
-G-4 PR #72 was squash-merged to `main` as:
-
-```text
-338830340f6fed2ae1a3f08f6fdb0b8059932a66
-```
-
-and Render auto-deploy:
-
-```text
-dep-dac27kojo6nc739biu80
-```
-
-reached `live` at that exact source according to product-owner production evidence.
-
-The same smoke verified the workspace ergonomics and physiotherapy utility path, but direct RF navigation returned:
+Original G-4 PR #72 was merged/deployed and workspace smoke passed collapse/expand, sticky summary and physiotherapy navigation. Direct RF navigation reached the intended existing RF service but returned:
 
 ```text
 {"detail":"Απαιτείται εξουσιοδοτημένη πρόσβαση."}
 ```
 
-Observed causal chain:
-
-```text
-Cockpit authenticated on Osteoporosis origin
-→ browser opens external RF origin
-→ browser has no RF-service session/access credential
-→ existing RF authorization correctly rejects with 401
-```
-
-Generalized failure class:
+Causal class:
 
 ```text
 CROSS-SERVICE AUTHENTICATION INTEGRATION GAP
 ```
 
-This was not evidence of RF PDF/template/business-rule failure and was not solved by weakening RF authorization.
+The Osteoporosis browser session did not authorize the separately protected RF service. This was not evidence of RF PDF/template/business-rule failure and was not solved by weakening RF authorization.
 
 ---
 
 # 2. Cross-repository authority boundary
 
-The RF runtime lives in `athpapachr-cmd/ortho-reception-backend-v2`, whose mandatory operational control plane is `athpapachr-cmd/ortho-reception-ops`.
+The RF runtime remains owned by `athpapachr-cmd/ortho-reception-backend-v2`, governed through `athpapachr-cmd/ortho-reception-ops`.
 
-The implementation investigation bootstrapped that control plane and found an independently governed active Backend slice with no authority for an unrelated RF runtime/config/secret mutation. Therefore this hotfix deliberately did **not** change:
+This hotfix does **not** change:
 
 ```text
 ortho-reception-backend-v2 runtime
@@ -68,13 +47,11 @@ RF backend configuration/secrets
 RF templates/PDF engine/persistence
 ```
 
-A cross-repository short-lived token/session handoff remains architecturally possible later, but it was not authorized or required for this bounded correction.
+The existing RF service remains source of truth for form HTML/content, history/persistence, validation, official PDF templates/coordinates and generated PDF output.
 
 ---
 
-# 3. Final implemented architecture
-
-Chosen design:
+# 3. Released architecture
 
 ```text
 authenticated Cockpit browser
@@ -92,17 +69,7 @@ fixed upstream https://ortho-reception-backend-v2.onrender.com
 existing protected RF implementation
 ```
 
-The browser never receives the RF credential and never needs an RF-service cookie.
-
-The RF backend remains the source of truth for:
-
-- live form HTML/content;
-- indications/consumables/application locations;
-- repeat-use validation;
-- upload validation;
-- RF request/history persistence;
-- official PDF templates/coordinates;
-- generated PDF output.
+The browser never receives the RF credential and does not require an RF-service cookie.
 
 The gateway owns only bounded transport/auth adaptation.
 
@@ -110,7 +77,7 @@ The gateway owns only bounded transport/auth adaptation.
 
 # 4. Final route contract
 
-Browser-facing gateway routes:
+Browser-facing routes:
 
 ```text
 GET  /clinical/clinic-utilities/rf
@@ -122,17 +89,17 @@ GET  /clinical/clinic-utilities/rf/pdf/{application_id}
 Fixed upstream mappings:
 
 ```text
-GET  local /rf
-→ GET  upstream /rf
+GET local root
+→ GET upstream /rf
 
-POST local /rf/history
+POST local /history
 → parse exactly three form-urlencoded fields
-→ GET upstream /rf/history with those named query params
+→ GET upstream /rf/history with those named params
 
-POST local /rf/create
-→ POST upstream /rf/create with raw multipart body + Content-Type only
+POST local /create
+→ POST upstream /rf/create with raw multipart body + Content-Type
 
-GET local /rf/pdf/{id}
+GET local /pdf/{id}
 → GET upstream /rf/pdf/{validated-id}
 ```
 
@@ -160,120 +127,74 @@ Server-side credential source:
 RF_GATEWAY_ACCESS_KEY
 ```
 
-The upstream origin is a code constant:
+Upstream origin is fixed in code:
 
 ```text
 https://ortho-reception-backend-v2.onrender.com
 ```
 
-The gateway injects only:
-
-```text
-X-RF-Key: <server-side value>
-Accept: */*
-Content-Type only when required
-```
-
-The key is fail-closed when absent and is never deliberately returned in browser-visible response content/headers.
+The gateway injects only the server-side `X-RF-Key`, `Accept`, and required `Content-Type`. Missing key fails closed with local 503 before upstream access.
 
 ---
 
-# 6. POST-only RF history privacy correction
+# 6. POST-only history privacy correction
 
-Independent review identified a material privacy issue in the first gateway candidate: retaining a local browser `GET /history?...` would create a second Osteoporosis access-log/URL surface containing identity and GeSY identifiers.
+Independent review identified that a browser-facing local `GET /history?...` would create an additional Osteoporosis URL/access-log surface containing identity and GeSY identifiers.
 
-The final runtime therefore changed the **browser-facing history transport** to POST:
+The final runtime therefore uses:
 
 ```text
 browser
 → POST /clinical/clinic-utilities/rf/history
 → application/x-www-form-urlencoded
 → maximum body 4096 bytes
-→ accepted names only:
+→ accepted fields only:
    identity_number
    gesy_number
    application_location
 ```
 
-The gateway then performs the existing RF backend's required upstream GET server-to-server.
+The gateway converts that request server-to-server to the existing upstream GET contract.
 
 Consequences:
 
-- identifier values do not appear in the Osteoporosis browser URL/history;
-- local GET `/history` is not implemented and therefore returns framework 405;
+- identifiers do not appear in the Osteoporosis browser URL/history;
+- local GET `/history` is not implemented;
 - duplicate values, oversized fields/body, malformed encoding and wrong content type fail closed;
-- unexpected form fields are ignored and are never forwarded upstream.
-
-This is transport privacy hardening, not new RF business logic.
+- unexpected fields are not forwarded upstream.
 
 ---
 
-# 7. Form adaptation contract
+# 7. Form adaptation / failure behavior
 
-The existing upstream RF form owns the HTML. The gateway adapts only two expected transport seams:
+The upstream RF form remains authoritative. The gateway adapts only the expected create/history transport seams. If either expected seam changes, the gateway fails closed with sanitized 502 rather than serving a silently broken or privacy-unsafe form.
+
+Failure contract:
 
 ```text
-action="/rf/create"
-→ action="/clinical/clinic-utilities/rf/create"
-
-fetch('/rf/history?' + query.toString(), { credentials: 'same-origin' })
-→ same-origin POST /clinical/clinic-utilities/rf/history
-   with application/x-www-form-urlencoded body
+missing RF_GATEWAY_ACCESS_KEY → 503, no upstream request
+upstream 401/403             → sanitized 502
+upstream 5xx                 → sanitized 502
+network failure              → sanitized 502
+timeout                      → sanitized 504
+invalid PDF application id   → rejected; no arbitrary upstream path
 ```
 
-If either expected upstream form seam disappears or changes, the gateway fails closed with a sanitized 502 compatibility error instead of serving a silently broken/privacy-unsafe form.
-
-No RF form/template copy is stored in this repository.
+Create bodies are bounded to 24 MiB. Successful generated-PDF redirects are rewritten to the protected same-origin gateway PDF route.
 
 ---
 
-# 8. Response/failure behavior
+# 8. Implemented surface
 
-Successful behavior:
-
-- form HTML returned with `Cache-Control: no-store`;
-- history JSON/status relayed without credential headers;
-- upstream `303 /rf/pdf/{id}` rewritten to same-origin protected gateway PDF URL;
-- PDF bytes, media type and `Content-Disposition` relayed.
-
-Fail-closed behavior:
-
-```text
-missing RF_GATEWAY_ACCESS_KEY
-→ local 503
-→ no upstream request
-
-upstream 401/403
-→ sanitized 502
-
-upstream 5xx
-→ sanitized 502
-
-network failure
-→ sanitized 502
-
-timeout
-→ sanitized 504
-
-invalid PDF application id/path
-→ no arbitrary upstream path
-```
-
-Create requests are bounded to 24 MiB around the existing RF upload requirement.
-
----
-
-# 9. Implemented surface
-
-Runtime/test changes are bounded to:
+Runtime/test changes were bounded to:
 
 ```text
 clinic_utilities/rf_gateway.py                    NEW
 main.py                                           include RF gateway router
 static/baseline-audit/g4-workspace-ergonomics.js  RF link → same-origin gateway
 test_g4_rf_auth_gateway.py                        NEW focused gateway regression
-test_g4_workspace_ergonomics.js                   updated RF ownership/navigation assertions
-.github/workflows/g3-guidance-summary-tests.yml    run focused RF Python gate on branch/PR
+test_g4_workspace_ergonomics.js                   updated ownership/navigation assertions
+.github/workflows/g3-guidance-summary-tests.yml    focused RF Python gate
 ```
 
 Explicitly unchanged:
@@ -292,9 +213,9 @@ Ortho-Reception configuration/secrets
 
 ---
 
-# 10. Exact executable evidence
+# 9. Exact executable evidence
 
-Exact tested runtime head:
+Pre-PR exact tested runtime head:
 
 ```text
 29140a6cd4c9f57b454daa6e4a2883ec0345b53f
@@ -308,59 +229,63 @@ run 33640110048
 SUCCESS
 ```
 
-Passed on that exact head:
-
-1. JavaScript syntax;
-2. RF gateway Python syntax;
-3. focused G4 RF authenticated-gateway regression;
-4. POST-only history privacy regression;
-5. G4 workspace ergonomics/RF navigation regression;
-6. G3 salience and longitudinal-summary regressions;
-7. G3 production visibility/cache regression;
-8. frozen G2 evidence contract + G2 runtime regressions;
-9. G1 core/wiring/UI/WHY-NOW regressions;
-10. C1 authoritative Finish browser regression;
-11. server finalization lifecycle regression.
-
-Synthetic tests use no identifiable patient data and make no real RF patient request.
-
----
-
-# 11. Independent exact-head review
-
-The final source/security/scope review of `29140a6c...` found no remaining release-blocking defect in the bounded hotfix surface.
-
-Verified properties include:
+Final PR head:
 
 ```text
-fixed upstream host/path family
-server-only RF credential
-no browser credential propagation upstream
-POST-only local identifier history transport
-bounded request bodies / application ids
-sanitized auth/config/network failure behavior
-no RF business/template duplication
-no osteoporosis clinical-state write
-no G1/G2/G3/C1 semantic leakage
+63ad2f5f392bc4d6dadec84704757ba4520ea83f
 ```
 
-The privacy finding discovered during review was corrected **before** the final tested runtime head and is covered by the successful exact-head workflow.
+Final-head PR-triggered checks:
+
+```text
+CU-1 focused tests
+run 33648758303
+SUCCESS
+
+G3 guidance salience longitudinal summary
+run 33648758293
+SUCCESS
+```
+
+The final G3/G4 gate passed JavaScript syntax, RF gateway Python syntax, authenticated-gateway regression, POST-only history privacy regression, G4 workspace regression, G3 salience/summary/visibility gates, frozen G2 contract/runtime, G1 core/wiring/UI/WHY-NOW and C1 Finish/finalization regressions.
+
+No runtime/test/workflow change occurred after that final checked head before merge.
 
 ---
 
-# 12. Completion / release matrix
+# 10. Release evidence
+
+PR #73 was squash-merged with expected-head guard at:
+
+```text
+8aa8b38e3fa9a8f8ba0618868b452b1835be0d47
+```
+
+Render auto-deployed that exact commit without a manual deploy:
+
+```text
+deploy  dep-dac43leq1p3s73a04s00
+trigger new_commit
+status  live
+```
+
+This proves code deployment only. It does not prove production RF authorization/usability because `RF_GATEWAY_ACCESS_KEY` is not configured or verified on the Osteoporosis service.
+
+---
+
+# 11. Completion matrix
 
 ```text
 HOTFIX DESIGN                         COMPLETE
 HOTFIX IMPLEMENTED                    YES
 HOTFIX TESTED                         YES
 HOTFIX EXACT-HEAD REVIEW              PASS
-HOTFIX CANONICAL CLOSEOUT             PASS
-FINAL POST-RUNTIME DOCS-ONLY DRIFT    PASS subject to immediate branch compare verification
-PR                                    NONE
-MERGED                                NO
+HOTFIX PR                             #73
+HOTFIX PR FINAL-HEAD CHECKS           PASS
+HOTFIX MERGED                         YES
+HOTFIX MERGE SHA                      8aa8b38e3fa9a8f8ba0618868b452b1835be0d47
+HOTFIX DEPLOYED                       YES — dep-dac43leq1p3s73a04s00 LIVE
 RF_GATEWAY_ACCESS_KEY CONFIGURED      NO / NOT VERIFIED
-DEPLOYED                              NO
 PRODUCTION-SMOKE-VERIFIED             NO
 G-4 PILOT-VALIDATED                   NO
 ACTIVE RUNTIME WRITER                 NONE
@@ -370,19 +295,21 @@ ACTIVE RUNTIME WRITER                 NONE
 
 ---
 
-# 13. Release/config gate
+# 12. Current config/smoke gate
 
-The hotfix implementation/test writer is closed.
+The release code is merged and live. The only unresolved product blocker in this slice is production configuration + end-to-end verification.
 
-Next possible release sequence requires new explicit product-owner authority:
+Next possible sequence requires separate product-owner authority for the production secret/config mutation:
 
 ```text
-open bounded RF-auth hotfix PR
-→ verify exact PR-head checks
-→ separate merge decision
-→ securely configure RF_GATEWAY_ACCESS_KEY on Osteoporosis Render service
-→ allow normal Render auto-deploy from merged main
-→ production smoke RF form/history/create/PDF path
+securely configure RF_GATEWAY_ACCESS_KEY on Osteoporosis Render
+→ verify service remains healthy
+→ authenticated production smoke:
+   form render
+   POST-only history lookup
+   create/PDF path
+   credential non-exposure
+   inherited G4 workspace behavior
 ```
 
 No RF credential value belongs in GitHub, chat output or client-side code.
@@ -390,26 +317,11 @@ No RF credential value belongs in GitHub, chat output or client-side code.
 Until separately authorized:
 
 ```text
-NO PR
-NO MERGE
-NO production config mutation
+NO production secret/config mutation
 NO manual deploy
-NO claim of production smoke completion
 NO mutation of ortho-reception-backend-v2
+NO claim of production-smoke completion
+NO pilot claim
 ```
 
----
-
-# 14. Production-smoke acceptance after future release
-
-A later authorized production smoke must establish at minimum:
-
-1. authenticated Cockpit RF navigation opens the same-origin gateway rather than the external unauthenticated page;
-2. the live RF form renders;
-3. history lookup works without identifier-bearing local URL/query strings;
-4. create flow reaches existing RF validation/PDF generation;
-5. generated PDF route/download works through the gateway;
-6. no RF credential appears in browser-visible URL/content;
-7. existing G4 collapse/sticky/physiotherapy behavior remains intact.
-
-Only then may the RF blocker be marked production-smoke-verified. This remains distinct from pilot validation.
+Only after successful production smoke may the RF blocker and G-4 whole-slice production-smoke gate be closed.
