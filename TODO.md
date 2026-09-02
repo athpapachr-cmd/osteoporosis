@@ -47,8 +47,11 @@ This file answers **where the product is going and in what broad order**. It is 
 - [x] Verify G-4 Render auto-deploy `dep-dac27kojo6nc739biu80` live at exact merge SHA `338830340f6fed2ae1a3f08f6fdb0b8059932a66` from product-owner evidence.
 - [x] Complete product-owner G-4 workspace smoke confirming collapse/expand, sticky summary and physiotherapy utility behavior; direct RF form access exposed a cross-service authorization blocker.
 - [x] Implement/test the bounded Osteoporosis-side RF authenticated gateway hotfix at exact runtime head `29140a6cd4c9f57b454daa6e4a2883ec0345b53f`, workflow run `33640110048` SUCCESS.
+- [x] Release the RF authenticated-gateway hotfix through PR #73 after final-head PR checks passed at `63ad2f5f392bc4d6dadec84704757ba4520ea83f`.
+- [x] Squash-merge PR #73 as `8aa8b38e3fa9a8f8ba0618868b452b1835be0d47`.
+- [x] Verify Render auto-deploy `dep-dac43leq1p3s73a04s00` reached `live` at exact hotfix merge SHA `8aa8b38e3fa9a8f8ba0618868b452b1835be0d47`.
 
-C1, G-1, G-2 and G-3 are **implemented / tested / merged / deployed / production-smoke-verified**. G-4 is **merged/deployed with workspace smoke passed**, but its RF authorized workflow is not production-smoke-verified until the tested gateway hotfix is separately released/configured/smoked. Real-clinic usefulness/refinement remains distinct from production smoke and is not `PILOT-VALIDATED`.
+C1, G-1, G-2 and G-3 are **implemented / tested / merged / deployed / production-smoke-verified**. G-4 workspace behavior is released/deployed and its RF authenticated-gateway code is now also **merged/deployed**. The RF authorized workflow is still **not production-smoke-verified** because the server-side `RF_GATEWAY_ACCESS_KEY` has not been configured or verified and the end-to-end RF smoke has not run. Real-clinic usefulness/refinement remains distinct from production smoke and is not `PILOT-VALIDATED`.
 
 ---
 
@@ -165,7 +168,7 @@ Triggered by product-owner production interaction after G-2 smoke.
 
 G-3 is production-smoke-verified, not pilot-validated. Subsequent evidence-from-use UX refinements are handled as bounded slices rather than reopening G-3 clinical semantics.
 
-## 1.6 G-4 Workspace ergonomics + RF utility navigation — DEPLOYED / WORKSPACE SMOKE PASS; RF AUTH HOTFIX IMPLEMENTED / TESTED / RELEASE HOLD
+## 1.6 G-4 Workspace ergonomics + RF utility navigation — RF HOTFIX MERGED / DEPLOYED; CONFIG + SMOKE PENDING
 
 Triggered by product-owner evidence from use after successful G-3 re-smoke.
 
@@ -186,13 +189,15 @@ Triggered by product-owner evidence from use after successful G-3 re-smoke.
 - [x] Fail closed if the upstream RF form's expected create/history transport seams change.
 - [x] Pass exact final hotfix workflow at runtime head `29140a6cd4c9f57b454daa6e4a2883ec0345b53f`, run `33640110048` SUCCESS, including RF gateway/privacy plus inherited G-4/G-3/G-2/G-1/C1 regressions.
 - [x] Complete independent exact-head source/security/scope review with no remaining release-blocking finding.
-- [x] Complete canonical closeout and release the hotfix runtime writer lock.
-- [ ] Open bounded RF-auth hotfix release PR only with separate product-owner release authority.
+- [x] Complete pre-release canonical closeout and release the hotfix runtime writer lock.
+- [x] Open bounded RF-auth hotfix release PR #73 with separate product-owner release authority.
+- [x] Pass final PR-head checks at `63ad2f5f392bc4d6dadec84704757ba4520ea83f`: CU-1 run `33648758303` and G3/G4 run `33648758293`, both SUCCESS.
+- [x] Merge PR #73 with separate explicit product-owner authority and allow normal Render auto-deploy; merge SHA `8aa8b38e3fa9a8f8ba0618868b452b1835be0d47`.
+- [x] Verify Render auto-deploy `dep-dac43leq1p3s73a04s00` is `live` at the exact merge SHA; no redundant manual deploy.
 - [ ] Configure `RF_GATEWAY_ACCESS_KEY` on the Osteoporosis production service only with separate config/secret authority.
-- [ ] Merge/deploy only with separate explicit product-owner authority; no redundant manual Render deploy after normal auto-deploy.
 - [ ] Production smoke the deployed gateway end-to-end: form render, POST-only history, create/PDF path and credential non-exposure.
 
-G-4 remains **not production-smoke-verified as a whole** until the RF authorized workflow blocker is released and verified. It remains not pilot-validated.
+G-4 remains **not production-smoke-verified as a whole** until the server-only RF credential is configured and the authorized RF workflow is verified. It remains not pilot-validated.
 
 ## 1.7 Heidi-first capture — BEFORE REAL PILOT
 
@@ -318,7 +323,8 @@ Permanent requirements:
 - [x] G-3 deterministic always-visible longitudinal patient summary implemented/tested/merged/deployed/production-smoke-verified.
 - [x] G-4 collapsible/sticky top-workspace ergonomics released/deployed and production-smoked.
 - [x] G-4 RF authenticated-gateway hotfix implemented/tested/reviewed with server-only credential and POST-only local history transport.
-- [ ] G-4 RF hotfix PR / merge / production config / deploy / end-to-end production smoke.
+- [x] G-4 RF hotfix PR / merge / auto-deploy completed.
+- [ ] G-4 RF production config + end-to-end production smoke.
 - [ ] Real-clinic usability validation and evidence-from-use card/taxonomy refinement.
 
 ---
@@ -376,7 +382,7 @@ Comprehensive curriculum/registry breadth is not a Module 01 closure blocker bey
 - [x] Safety/event guidance outranks routine visit convenience in G-2/G-3 tested runtime.
 - [x] Denosumab/time-critical therapy runtime rules use exact actual timelines and reviewed provenance.
 - [x] G-3 longitudinal summary keeps current draft distinct, scheduled doses non-actual, and conflicts explicit.
-- [x] G-4 RF gateway design keeps the RF credential server-only and prevents local history identifiers from entering the Osteoporosis browser URL/query string.
+- [x] G-4 RF gateway keeps the RF credential server-only and prevents local history identifiers from entering the Osteoporosis browser URL/query string.
 
 ---
 
@@ -423,7 +429,7 @@ Do not mutate/merge/deploy later rich-referral or RF-engine migration work durin
 2. G-1 dynamic-guidance mechanics — production-smoke-verified / closed
 3. G-2 evidence-backed osteoporosis guidance — production-smoke-verified / closed
 4. G-3 guidance salience + longitudinal patient summary — production-smoke-verified / closed
-5. G-4 workspace ergonomics — released/deployed/workspace-smoked; RF auth hotfix implemented/tested, release/config/smoke pending
+5. G-4 workspace ergonomics — released/deployed/workspace-smoked; RF auth gateway merged/deployed, production config + smoke pending
 6. PR-1 transcript extraction
 7. PR-2 inline provisional population
 8. guided card UX sufficient for real use
