@@ -5,6 +5,7 @@ This thin wrapper composes the existing FastAPI app with the protected,
 patient-centric clinical-data routers used by the Clinical Excellence baseline UI.
 """
 
+from fastapi import Request
 from fastapi.responses import RedirectResponse
 
 from legacy_main import app, engine
@@ -28,9 +29,29 @@ app.router.routes = [
 ]
 
 
+@app.middleware("http")
+async def prevent_stale_clinical_workspace_assets(request: Request, call_next):
+    """Keep the actively deployed baseline workspace coherent across releases.
+
+    The workspace bootstraps many relative JS/CSS files from stable URLs. A browser
+    retaining an older asset can therefore run a mixed release even when Render is
+    live at the new commit. Baseline workspace assets are small and clinician-facing,
+    so correctness is more important than client-side caching here.
+    """
+
+    response = await call_next(request)
+    if request.url.path.startswith("/static/baseline-audit/"):
+        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+    return response
+
+
 @app.get("/", include_in_schema=False)
 def clinical_workspace_root() -> RedirectResponse:
-    return RedirectResponse(url="/static/baseline-audit/", status_code=307)
+    response = RedirectResponse(url="/static/baseline-audit/", status_code=307)
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    return response
 
 
 app.add_middleware(ClinicalCookieMiddleware)

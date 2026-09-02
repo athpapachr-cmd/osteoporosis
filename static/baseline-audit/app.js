@@ -30,6 +30,8 @@
     .then(() => loadScript("./finalization-coordinator.js"))
     .then(() => loadScript("./patient-registry.js"))
     .then(() => loadScript("./progressive-guidance-ui.js"))
+    .then(() => loadScript("./g3-salience-token-core.js"))
+    .then(() => loadScript("./g3-production-visibility-guard.js"))
     .then(() => loadScript("./pilot-completion.js"))
     .then(() => loadScript("./whole-form-progress.js"))
     .then(() => loadScript("./lab-history-ui.js"))
