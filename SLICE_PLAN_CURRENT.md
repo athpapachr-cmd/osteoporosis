@@ -1,166 +1,169 @@
-# SLICE_PLAN_CURRENT.md — G-3 Production Visibility Hotfix v1
+# SLICE_PLAN_CURRENT.md — G-4 Workspace Ergonomics + RF Utility Integration v1
 
-> **STATUS:** IMPLEMENTED / TESTED — RELEASE PR ALLOWED; MERGE HOLD.
+> **STATUS:** DESIGN-COMPLETE / IMPLEMENTATION ACTIVE.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Module:** 01 — Osteoporosis.
-> **Slice ID:** `M01-G3-PRODUCTION-VISIBILITY-HOTFIX-v1`.
-> **Production base:** `ef17367c7b8959f51e05b80909226804951d1bc7`.
-> **Failed production deploy:** `dep-dabj38s9v7es73fmq800` — live at exact G-3 merge SHA.
-> **Hotfix branch:** `fix/module01-g3-production-visibility-cache-2026-09-01`.
-> **Exact tested runtime head:** `3287e511cc6e9023552442283c0cc4b9117aaa4f`.
-> **Test workflow:** `G3 guidance salience longitudinal summary` run `33556354517` — SUCCESS.
-> **Runtime writer:** NONE after hotfix implementation/test closeout.
+> **Module:** Clinical Excellence workspace + cross-module Clinic Utilities.
+> **Slice ID:** `M01-G4-WORKSPACE-ERGONOMICS-RF-UTILITY-v1`.
+> **Production base:** `ab94c6286bdc49cb8304b072e557c5eb0a96b0c6`.
+> **Branch:** `feat/module01-g4-collapsible-sticky-summary-rf-utility-2026-09-02`.
+> **Runtime writer:** ACTIVE — bounded files listed below.
 
 ---
 
-# 1. Production-smoke failure
+# 1. Trigger / evidence from use
 
-Product-owner smoke on the deployed G-3 ancestry found both new acceptance criteria absent from the visible UI:
+After the G-3 hotfix was deployed, the product owner reported that all intended G-3 elements were visible and working well. Real production interaction then produced three ergonomics/integration needs:
 
-```text
-explicit `Νέο` salience = NOT VISIBLE
-`Σύνοψη ασθενούς` = NOT VISIBLE
-```
+1. `Σύνοψη ασθενούς` occupies too much vertical space and must be collapsible;
+2. `Σημερινή ροή` must be collapsible for the same reason;
+3. the patient summary should remain available at the top while scrolling;
+4. the previously built radiofrequency-treatment PDF page should be accessible from the Cockpit.
 
-Therefore G-3 remains merged/deployed but **not production-smoke-verified**.
-
----
-
-# 2. Root causes found
-
-## A. Deployment/cache coherency
-
-The baseline workspace used stable unversioned JS/CSS paths under Starlette `StaticFiles` without an explicit no-store policy. A browser could therefore continue running a pre-G3 asset bundle after the server itself had deployed the new commit.
-
-Hotfix:
-
-```text
-/static/baseline-audit/*
-→ Cache-Control: no-store, no-cache, must-revalidate, max-age=0
-→ Pragma: no-cache
-→ Expires: 0
-```
-
-The root redirect is also non-cacheable.
-
-## B. Summary discoverability contract
-
-The G-3 renderer hid the whole patient-summary root when no protected patient was active. This contradicted the product-owner requirement that the summary area remain visible.
-
-Hotfix behavior:
-
-```text
-no protected patient selected
-→ `Σύνοψη ασθενούς` remains visible
-→ explicit instruction to open a protected patient
-
-protected patient selected
-→ existing deterministic longitudinal summary remains authoritative/read-only
-```
-
-## C. `Νέο` semantics on an already-visible card
-
-The original browser salience implementation compared only `card_id` presence. If VFA was already present as base-flow content and R02 evidence later activated on that same card, no new card ID appeared and the UI failed to mark it `Νέο`.
-
-Corrected semantics track **material trigger tokens**, not only cards:
-
-```text
-E|<card_id>|<evidence_rule_id>
-R|<card_id>|<high-value reason code>
-```
-
-Thus:
-
-```text
-VFA already visible as VISIT_TYPE_CORE
-+ new OST_G2_R02_VFA_STRUCTURED_TRIGGER
-→ new evidence token
-→ VFA marked `Νέο`
-```
-
-Initial render still establishes a baseline and does not mark everything new. Base-flow-only changes remain non-salient noise. A marker clears when its material trigger ceases to apply.
+This slice changes presentation/navigation only. It does not add or alter osteoporosis clinical rules.
 
 ---
 
-# 3. Runtime boundary
+# 2. G4-A — collapsible summary and current flow
 
-Hotfix files:
+Both dynamic top surfaces remain owned by the existing G-3 guidance UI.
+
+Required behavior:
 
 ```text
-main.py
-static/baseline-audit/app.js
-static/baseline-audit/g3-salience-token-core.js
-static/baseline-audit/g3-production-visibility-guard.js
-test_g3_salience_token_core.js
-test_g3_production_visibility_cache.py
-.github/workflows/g3-guidance-summary-tests.yml
+Σύνοψη ασθενούς
+→ accessible expand/collapse control
+→ body hidden when collapsed
+→ heading remains visible
+→ no loss/recomputation of clinical state caused by collapse
+
+Σημερινή ροή
+→ accessible expand/collapse control
+→ body hidden when collapsed
+→ heading remains visible
+→ underlying VisitPlan continues updating while collapsed
 ```
 
-No G-2 evidence/rule/threshold, treatment decision, patient-data schema, DB migration, C2 persistence logic, PR-1/PR-2 or utility code is changed.
+Accessibility contract:
 
-The compatibility visibility guard is a bounded production hotfix layer. It does not write patient data or own clinical rule evaluation. A later cleanup may consolidate presentation ownership after production verification, but no speculative refactor is required before correcting the failed smoke.
+- native button control;
+- `aria-expanded` reflects state;
+- `aria-controls` targets the collapsible body;
+- keyboard activation works through native button behavior;
+- collapse state is UI-only and never patient data.
+
+Default v1 state: expanded on first load. Per-browser UI preference may be retained locally but is not authoritative clinical persistence.
 
 ---
 
-# 4. Test evidence
+# 3. G4-B — sticky patient summary
 
-Exact tested runtime head:
+`Σύνοψη ασθενούς` remains the single existing summary surface and becomes sticky within the main encounter scroll context.
 
 ```text
-3287e511cc6e9023552442283c0cc4b9117aaa4f
+scroll down encounter
+→ patient summary header/surface remains available at top
+→ collapse control remains reachable
 ```
 
-Workflow:
+Constraints:
+
+- no duplicate/floating second summary renderer;
+- sticky surface must preserve background, z-index and readability over underlying cards;
+- responsive layout must not obscure the full viewport on smaller screens;
+- collapsed sticky state is the compact fallback if the user wants maximal workspace.
+
+---
+
+# 4. G4-C — Radiofrequency PDF Clinic Utility integration
+
+The prior RF workflow is a Clinic Utilities / Clinical Operations tool, not osteoporosis encounter state.
+
+Recovered prior source evidence establishes an existing protected utility with:
 
 ```text
-G3 guidance salience longitudinal summary
-run 33556354517
-SUCCESS
+/rf
+/rf/create
+/rf/pdf/{application_id}
+/rf/debug-grid/{template_key}
 ```
 
-The complete gate passed:
+and official Medikey / DIROS / Thermedico PDF templates. The original implementation generated PDFs with its calibrated source/templates and maintained its own request/history semantics.
 
-1. JavaScript syntax;
-2. original G-3 summary/salience regressions;
-3. G-3 wiring/ownership regressions;
-4. **new same-card/new-evidence salience regression**;
-5. **production static cache/served-bundle visibility regression**;
-6. frozen G-2 evidence contract;
-7. G-2 core/live-state/wiring;
-8. G-1 core/wiring/UI-state/WHY-NOW;
-9. authoritative Finish browser regression;
-10. server finalization lifecycle regression.
-
-Exact production fixture added:
+G4 v1 therefore integrates by navigation rather than duplicating the RF engine:
 
 ```text
-prior: vfa card + VISIT_TYPE_CORE only
-next:  same vfa card + OST_G2_R02_VFA_STRUCTURED_TRIGGER
-expect: newly_surfaced_domains contains `vfa`
+Cockpit sidebar
+→ Clinic Utilities section
+→ Φυσιοθεραπεία
+→ Ραδιοκύματα — PDF
+```
+
+RF target for v1:
+
+```text
+https://ortho-reception-backend-v2.onrender.com/rf
+```
+
+The RF link opens the existing protected utility in a new tab/window. This avoids mixing external RF authentication, PDF templates, request persistence or patient-history ownership into the osteoporosis encounter payload.
+
+A later migration into this repository is explicitly out of scope unless the complete RF source/templates/auth/storage contract is recovered and reviewed.
+
+---
+
+# 5. Runtime files allowed
+
+Expected bounded mutation:
+
+```text
+static/baseline-audit/progressive-guidance-ui.js
+static/baseline-audit/progressive-guidance.css
+static/baseline-audit/index.html
+optional small UI helper only if needed
+test_g4_workspace_ergonomics.js
+existing G3 workflow extended to run G4 regression
+canonicals for slice state
+```
+
+No clinical API or DB mutation is required.
+
+---
+
+# 6. Acceptance tests
+
+Must prove at minimum:
+
+1. patient summary has accessible collapse/expand control;
+2. current flow has accessible collapse/expand control;
+3. collapse changes visibility only, not VisitPlan/summary calculation state;
+4. patient summary has sticky presentation contract;
+5. RF utility navigation exists under Clinic Utilities and points exactly to the existing protected `/rf` page;
+6. no RF URL/content is written into encounter state;
+7. G-3 `Νέο`, patient summary and production visibility/cache regressions remain green;
+8. G-2/G-1/C1 inherited regressions remain green.
+
+---
+
+# 7. Explicit exclusions
+
+```text
+NO NEW OSTEOPOROSIS CLINICAL RULES
+NO RF PDF ENGINE REIMPLEMENTATION
+NO RF TEMPLATE COPYING FROM MEMORY
+NO RF DATA IN OSTEOPOROSIS ENCOUNTER PAYLOAD
+NO C2 RELEASE / REBASE IN THIS SLICE
+NO PR-1 / PR-2
+NO MERGE / DEPLOY WITHOUT SEPARATE AUTHORITY
 ```
 
 ---
 
-# 5. State / stop gate
+# 8. Stop gate
+
+Implementation may proceed on the active branch through focused/full regression and exact-head review.
+
+After `IMPLEMENTED / TESTED` closeout:
 
 ```text
-G-3 MERGED                         YES
-G-3 DEPLOYED                       YES
-G-3 ORIGINAL PRODUCTION SMOKE      FAILED
-HOTFIX IMPLEMENTED                 YES
-HOTFIX TESTED                      YES
-HOTFIX EXACT-HEAD REVIEW           PASS
-HOTFIX PR                          PENDING
-HOTFIX MERGED                      NO
-HOTFIX DEPLOYED                    NO
-G-3 PRODUCTION-SMOKE-VERIFIED      NO
-C2 RELEASE                         BLOCKED
-```
-
-Next allowed action:
-
-```text
-open bounded hotfix PR
-→ verify exact PR-head checks
-→ STOP before merge unless product owner explicitly authorizes merge
+release writer lock
+→ STOP before PR/merge/deploy unless separately authorized
 ```
