@@ -1,21 +1,23 @@
 # SLICE_PLAN_CURRENT.md — G-4 Workspace Ergonomics + RF Utility Integration v1
 
-> **STATUS:** DESIGN-COMPLETE / IMPLEMENTATION ACTIVE.
+> **STATUS:** IMPLEMENTED / TESTED — RELEASE REVIEW REQUIRED BEFORE PR/MERGE/DEPLOY.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Module:** Clinical Excellence workspace + cross-module Clinic Utilities.
 > **Slice ID:** `M01-G4-WORKSPACE-ERGONOMICS-RF-UTILITY-v1`.
 > **Production base:** `ab94c6286bdc49cb8304b072e557c5eb0a96b0c6`.
 > **Branch:** `feat/module01-g4-collapsible-sticky-summary-rf-utility-2026-09-02`.
-> **Runtime writer:** ACTIVE — bounded files listed below.
+> **Exact tested runtime head:** `942d4e06944ebd6de97891cb8e2739c88ba85a38`.
+> **Test workflow:** `G3 guidance salience longitudinal summary` run `33599860151` — SUCCESS.
+> **Runtime writer:** NONE after implementation/test closeout.
 
 ---
 
 # 1. Trigger / evidence from use
 
-After the G-3 hotfix was deployed, the product owner reported that all intended G-3 elements were visible and working well. Real production interaction then produced three ergonomics/integration needs:
+After the G-3 hotfix was deployed, the product owner reported that all intended G-3 elements were visible and working well. Production interaction then produced the following ergonomics/integration needs:
 
-1. `Σύνοψη ασθενούς` occupies too much vertical space and must be collapsible;
-2. `Σημερινή ροή` must be collapsible for the same reason;
+1. `Σύνοψη ασθενούς` occupies too much vertical space and should be collapsible;
+2. `Σημερινή ροή` should also be collapsible;
 3. the patient summary should remain available at the top while scrolling;
 4. the previously built radiofrequency-treatment PDF page should be accessible from the Cockpit.
 
@@ -23,62 +25,65 @@ This slice changes presentation/navigation only. It does not add or alter osteop
 
 ---
 
-# 2. G4-A — collapsible summary and current flow
+# 2. Implemented G4-A — collapsible summary and current flow
 
-Both dynamic top surfaces remain owned by the existing G-3 guidance UI.
+A small UI-only module decorates the existing G-3 surfaces rather than replacing their renderer:
 
-Required behavior:
+```text
+static/baseline-audit/g4-workspace-ergonomics.js
+```
+
+Implemented behavior:
 
 ```text
 Σύνοψη ασθενούς
-→ accessible expand/collapse control
-→ body hidden when collapsed
-→ heading remains visible
-→ no loss/recomputation of clinical state caused by collapse
+→ native Σύμπτυξη / Ανάπτυξη button
+→ heading remains visible when collapsed
+→ summary calculation continues unchanged
 
 Σημερινή ροή
-→ accessible expand/collapse control
-→ body hidden when collapsed
-→ heading remains visible
-→ underlying VisitPlan continues updating while collapsed
+→ independent native Σύμπτυξη / Ανάπτυξη button
+→ heading remains visible when collapsed
+→ VisitPlan calculation continues unchanged
 ```
 
-Accessibility contract:
+Accessibility:
 
-- native button control;
-- `aria-expanded` reflects state;
-- `aria-controls` targets the collapsible body;
-- keyboard activation works through native button behavior;
-- collapse state is UI-only and never patient data.
+- native `button`;
+- `aria-expanded` reflects current state;
+- `aria-controls` targets the dynamic root;
+- keyboard activation is native;
+- default first-load state is expanded.
 
-Default v1 state: expanded on first load. Per-browser UI preference may be retained locally but is not authoritative clinical persistence.
+Per-browser collapse preference uses `sessionStorage` under `osteoporosis.workspace.ui.v1.*`. It is explicitly UI-only state, not clinical or patient persistence.
+
+The helper observes G-3 DOM replacement and reapplies the controls when the existing renderer refreshes the summary/flow. It does not render clinical content itself.
 
 ---
 
-# 3. G4-B — sticky patient summary
+# 3. Implemented G4-B — sticky patient summary
 
-`Σύνοψη ασθενούς` remains the single existing summary surface and becomes sticky within the main encounter scroll context.
+`Σύνοψη ασθενούς` remains the single existing summary surface and now uses sticky positioning:
 
 ```text
-scroll down encounter
-→ patient summary header/surface remains available at top
-→ collapse control remains reachable
+position: sticky
+top: 8px
+z-index: 30
+max-height: calc(100vh - 16px)
+overflow: auto
 ```
 
-Constraints:
+The existing summary background and a light shadow preserve readability over underlying content. On narrower screens the sticky surface uses a bounded viewport height.
 
-- no duplicate/floating second summary renderer;
-- sticky surface must preserve background, z-index and readability over underlying cards;
-- responsive layout must not obscure the full viewport on smaller screens;
-- collapsed sticky state is the compact fallback if the user wants maximal workspace.
+Collapsed sticky state provides a compact header-only surface when maximal vertical workspace is desired.
+
+No duplicate/floating summary owner was created.
 
 ---
 
-# 4. G4-C — Radiofrequency PDF Clinic Utility integration
+# 4. Implemented G4-C — Radiofrequency PDF Clinic Utility navigation
 
-The prior RF workflow is a Clinic Utilities / Clinical Operations tool, not osteoporosis encounter state.
-
-Recovered prior source evidence establishes an existing protected utility with:
+Recovered prior implementation evidence identifies the original RF utility as a protected Clinic Operations workflow with:
 
 ```text
 /rf
@@ -87,83 +92,143 @@ Recovered prior source evidence establishes an existing protected utility with:
 /rf/debug-grid/{template_key}
 ```
 
-and official Medikey / DIROS / Thermedico PDF templates. The original implementation generated PDFs with its calibrated source/templates and maintained its own request/history semantics.
+and official Medikey / DIROS / Thermedico PDF templates.
 
-G4 v1 therefore integrates by navigation rather than duplicating the RF engine:
-
-```text
-Cockpit sidebar
-→ Clinic Utilities section
-→ Φυσιοθεραπεία
-→ Ραδιοκύματα — PDF
-```
-
-RF target for v1:
+G4 intentionally does not clone that PDF engine. Instead the Cockpit sidebar receives a `Clinic Utilities` group with:
 
 ```text
-https://ortho-reception-backend-v2.onrender.com/rf
+Φυσιοθεραπεία
+→ /clinical/clinic-utilities/physio-referral
+
+Ραδιοκύματα — PDF
+→ https://ortho-reception-backend-v2.onrender.com/rf
 ```
 
-The RF link opens the existing protected utility in a new tab/window. This avoids mixing external RF authentication, PDF templates, request persistence or patient-history ownership into the osteoporosis encounter payload.
+The RF utility opens in a new tab with `noopener noreferrer`, preserving the active clinical encounter in the Cockpit. The original service remains the RF PDF/request source of truth.
 
-A later migration into this repository is explicitly out of scope unless the complete RF source/templates/auth/storage contract is recovered and reviewed.
+No RF URL, template content, request state or patient-history content enters the osteoporosis encounter payload.
+
+A later full migration of the RF engine into this repository remains out of scope unless its complete source/templates/auth/storage contract is deliberately recovered and reviewed.
 
 ---
 
-# 5. Runtime files allowed
+# 5. Runtime boundary
 
-Expected bounded mutation:
+Changed runtime/test files:
 
 ```text
-static/baseline-audit/progressive-guidance-ui.js
+static/baseline-audit/app.js
+static/baseline-audit/g4-workspace-ergonomics.js
 static/baseline-audit/progressive-guidance.css
-static/baseline-audit/index.html
-optional small UI helper only if needed
 test_g4_workspace_ergonomics.js
-existing G3 workflow extended to run G4 regression
-canonicals for slice state
+.github/workflows/g3-guidance-summary-tests.yml
 ```
 
-No clinical API or DB mutation is required.
+Canonical state files changed separately for the slice lifecycle.
 
----
-
-# 6. Acceptance tests
-
-Must prove at minimum:
-
-1. patient summary has accessible collapse/expand control;
-2. current flow has accessible collapse/expand control;
-3. collapse changes visibility only, not VisitPlan/summary calculation state;
-4. patient summary has sticky presentation contract;
-5. RF utility navigation exists under Clinic Utilities and points exactly to the existing protected `/rf` page;
-6. no RF URL/content is written into encounter state;
-7. G-3 `Νέο`, patient summary and production visibility/cache regressions remain green;
-8. G-2/G-1/C1 inherited regressions remain green.
-
----
-
-# 7. Explicit exclusions
+No changes to:
 
 ```text
-NO NEW OSTEOPOROSIS CLINICAL RULES
-NO RF PDF ENGINE REIMPLEMENTATION
-NO RF TEMPLATE COPYING FROM MEMORY
-NO RF DATA IN OSTEOPOROSIS ENCOUNTER PAYLOAD
-NO C2 RELEASE / REBASE IN THIS SLICE
-NO PR-1 / PR-2
-NO MERGE / DEPLOY WITHOUT SEPARATE AUTHORITY
+G-2 evidence rules or thresholds
+G-3 clinical summary derivation
+G-1 VisitPlan semantics
+C1 Finish/finalization
+patient APIs / DB schema
+C2 persistence runtime
+PR-1 / PR-2
+RF PDF engine/templates
 ```
 
 ---
 
-# 8. Stop gate
+# 6. Acceptance evidence
 
-Implementation may proceed on the active branch through focused/full regression and exact-head review.
-
-After `IMPLEMENTED / TESTED` closeout:
+Exact tested runtime head:
 
 ```text
-release writer lock
-→ STOP before PR/merge/deploy unless separately authorized
+942d4e06944ebd6de97891cb8e2739c88ba85a38
+```
+
+Workflow:
+
+```text
+G3 guidance salience longitudinal summary
+run 33599860151
+SUCCESS
+```
+
+Passed G-4 assertions:
+
+- summary root has accessible collapse-control wiring;
+- current-flow root has independent accessible collapse-control wiring;
+- collapse state is session UI preference only;
+- helper owns no clinical fetch or encounter write;
+- patient summary has sticky CSS contract;
+- collapsed CSS retains the relevant heading;
+- `Clinic Utilities` navigation includes the existing CU-1 physiotherapy utility;
+- RF target is exactly the recovered protected `/rf` utility URL;
+- RF opens with safe new-tab isolation;
+- G-4 does not implement a second clinical summary/guidance owner.
+
+Inherited gates also passed:
+
+- original G-3 salience/summary;
+- G-3 same-card/new-evidence salience;
+- G-3 production visibility/cache;
+- frozen G-2 evidence contract/runtime;
+- G-1 core/wiring/UI/WHY-NOW;
+- C1 authoritative Finish browser;
+- server finalization lifecycle.
+
+---
+
+# 7. Exact-head review
+
+Compare production `ab94c628...` → exact tested runtime `942d4e06...`:
+
+```text
+status: ahead
+ahead_by: 8
+behind_by: 0
+merge_base: exactly production main
+changed_files: 7
+```
+
+Only expected G-4 runtime/test/workflow/canonical files were present. No C2, PR-1/PR-2, clinical-evidence, treatment-threshold or DB-schema leakage was found.
+
+---
+
+# 8. Completion matrix
+
+```text
+G-4 design                                  COMPLETE
+G-4 implementation                          YES
+G-4 focused regression                      PASS
+G-3 inherited regression                    PASS
+G-2 inherited contract/runtime              PASS
+G-1 inherited regressions                   PASS
+C1 inherited finalization                   PASS
+Exact-head delta review                     PASS
+Product-owner release review                NO
+PR opened                                   NO
+Merged                                      NO
+Deployed                                    NO
+Production-smoke-verified                   NO
+```
+
+---
+
+# 9. Stop gate
+
+G-4 is closed at `IMPLEMENTED / TESTED` and the writer lock is released.
+
+Next action requires fresh release-readiness bootstrap/review and product-owner release authority.
+
+Until then:
+
+```text
+NO ACTIVE WRITER
+NO RELEASE PR
+NO MERGE
+NO DEPLOY
 ```
