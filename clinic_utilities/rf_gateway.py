@@ -4,9 +4,10 @@ import os
 import re
 import secrets
 from typing import Mapping
+from urllib.parse import parse_qs
 
 import httpx
-from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 
 
@@ -15,7 +16,11 @@ RF_GATEWAY_PREFIX = "/clinical/clinic-utilities/rf"
 RF_GATEWAY_KEY_ENV = "RF_GATEWAY_ACCESS_KEY"
 RF_APPLICATION_ID_RE = re.compile(r"^[A-Za-z0-9_-]{16,80}$")
 RF_GATEWAY_MAX_BODY_BYTES = 24 * 1024 * 1024
+RF_HISTORY_MAX_BODY_BYTES = 4096
 RF_GATEWAY_TIMEOUT_SECONDS = 45.0
+
+_RF_FORM_ACTION = 'action="/rf/create"'
+_RF_HISTORY_FETCH = "fetch('/rf/history?' + query.toString(), { credentials: 'same-origin' })"
 
 
 def _require_clinical_key(x_clinical_key: str = Header(default="")) -> None:
@@ -121,14 +126,33 @@ def _raise_for_upstream_service_failure(response: httpx.Response) -> None:
 
 
 def _rewrite_form_routes(html: str) -> str:
-    """Keep browser traffic on the protected same-origin gateway.
+    """Adapt only the RF transport seams needed by this gateway.
 
-    This is deliberately a route rewrite only. The RF service remains the live
-    owner of every byte of form content and every RF business/PDF rule.
+    History identifiers are intentionally moved from a browser GET query string
+    into a same-origin POST body so they do not create an additional identifier-
+    bearing URL/access-log surface in the Osteoporosis service.
     """
 
-    return html.replace('"/rf/', f'"{RF_GATEWAY_PREFIX}/').replace(
-        "'/rf/", f"'{RF_GATEWAY_PREFIX}/"
+    if _RF_FORM_ACTION not in html or _RF_HISTORY_FETCH not in html:
+        raise HTTPException(
+            status_code=502,
+            detail="Η φόρμα ραδιοκυμάτων δεν είναι συμβατή με την ασφαλή πύλη.",
+        )
+
+    history_post = (
+        f"fetch('{RF_GATEWAY_PREFIX}/history', {{ method: 'POST', "
+        "credentials: 'same-origin', "
+        "headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' }, "
+        "body: query.toString() })"
+    )
+    return html.replace(
+        _RF_FORM_ACTION,
+        f'action="{RF_GATEWAY_PREFIX}/create"',
+        1,
+    ).replace(
+        _RF_HISTORY_FETCH,
+        history_post,
+        1,
     )
 
 
@@ -151,6 +175,44 @@ def _bounded_application_id(application_id: str) -> str:
     if not RF_APPLICATION_ID_RE.fullmatch(application_id):
         raise HTTPException(status_code=404, detail="Η αίτηση δεν βρέθηκε.")
     return application_id
+
+
+def _history_value(values: dict[str, list[str]], name: str, max_length: int) -> str:
+    items = values.get(name, [""])
+    if len(items) != 1:
+        raise HTTPException(status_code=400, detail="Μη έγκυρο αίτημα ιστορικού RF.")
+    value = items[0].strip()
+    if len(value) > max_length:
+        raise HTTPException(status_code=422, detail="Μη έγκυρο αίτημα ιστορικού RF.")
+    return value
+
+
+async def _parse_history_body(request: Request) -> dict[str, str]:
+    content_type = request.headers.get("content-type", "").split(";", 1)[0].strip().lower()
+    if content_type != "application/x-www-form-urlencoded":
+        raise HTTPException(status_code=415, detail="Απαιτείται form-urlencoded αίτημα ιστορικού RF.")
+
+    declared_length = request.headers.get("content-length", "").strip()
+    if declared_length:
+        try:
+            if int(declared_length) > RF_HISTORY_MAX_BODY_BYTES:
+                raise HTTPException(status_code=413, detail="Το αίτημα ιστορικού RF είναι πολύ μεγάλο.")
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Μη έγκυρο Content-Length.")
+
+    body = await request.body()
+    if len(body) > RF_HISTORY_MAX_BODY_BYTES:
+        raise HTTPException(status_code=413, detail="Το αίτημα ιστορικού RF είναι πολύ μεγάλο.")
+    try:
+        values = parse_qs(body.decode("utf-8"), keep_blank_values=True, max_num_fields=8)
+    except (UnicodeDecodeError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail="Μη έγκυρο αίτημα ιστορικού RF.") from exc
+
+    return {
+        "gesy_number": _history_value(values, "gesy_number", 128),
+        "identity_number": _history_value(values, "identity_number", 128),
+        "application_location": _history_value(values, "application_location", 256),
+    }
 
 
 def build_rf_gateway_router() -> APIRouter:
@@ -177,20 +239,13 @@ def build_rf_gateway_router() -> APIRouter:
             headers={"Cache-Control": "no-store"},
         )
 
-    @router.get("/history")
-    async def rf_history_gateway(
-        gesy_number: str = Query(default="", max_length=128),
-        identity_number: str = Query(default="", max_length=128),
-        application_location: str = Query(default="", max_length=256),
-    ) -> Response:
+    @router.post("/history")
+    async def rf_history_gateway(request: Request) -> Response:
+        params = await _parse_history_body(request)
         upstream = await _request_upstream(
             "GET",
             "/rf/history",
-            params={
-                "gesy_number": gesy_number,
-                "identity_number": identity_number,
-                "application_location": application_location,
-            },
+            params=params,
         )
         _raise_for_upstream_service_failure(upstream)
         return _relay_response(upstream)
