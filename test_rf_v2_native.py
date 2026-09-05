@@ -176,7 +176,7 @@ class RFPersistenceTests(unittest.TestCase):
         self.assertEqual(first, second)
         rows = list_procedure_history(engine, "ID 123", site_key="knee", laterality="left")
         self.assertEqual(len(rows), 1)
-        self.assertEqual(rows[0]["provenance"], "legacy_manual")
+        self.assertEqual(rows[0]["provenance"], "clinician_manual")
 
 
 class RFPdfTests(unittest.TestCase):

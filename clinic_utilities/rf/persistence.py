@@ -42,7 +42,7 @@ class RFProcedureHistoryORM(RFBase):
     vas_after = Column(Integer, nullable=False)
     last_followup_date = Column(String, nullable=False)
     last_followup_vas = Column(Integer, nullable=False)
-    provenance = Column(String, nullable=False, default="legacy_manual")
+    provenance = Column(String, nullable=False, default="clinician_manual")
     dedupe_key = Column(String, nullable=False, unique=True, index=True)
     created_at = Column(DateTime, nullable=False, index=True)
     updated_at = Column(DateTime, nullable=False, index=True)
@@ -100,9 +100,9 @@ def get_procedure_history(engine: Engine, history_id: str, identity_number: str)
         return {"procedure_history_id":row.id,"indication_code":row.indication_code,"site_key":row.site_key,"laterality":row.laterality,"exact_location":row.exact_location,"actual_procedure_date":row.actual_procedure_date,"vas_before":row.vas_before,"vas_after":row.vas_after,"last_followup_date":row.last_followup_date,"last_followup_vas":row.last_followup_vas,"provenance":row.provenance}
 
 def record_legacy_procedure(engine: Engine, data: dict[str, Any]) -> str:
-    normalized={**data,"patient_identity_key":normalize_identity(data["identity_number"]),"provenance":"legacy_manual"}; dedupe_key=_history_dedupe_key(normalized)
+    normalized={**data,"patient_identity_key":normalize_identity(data["identity_number"]),"provenance":"clinician_manual"}; dedupe_key=_history_dedupe_key(normalized)
     with Session(engine) as session:
         existing=session.scalar(select(RFProcedureHistoryORM).where(RFProcedureHistoryORM.dedupe_key==dedupe_key))
         if existing is not None: return existing.id
-        now=utcnow(); row=RFProcedureHistoryORM(id=str(uuid4()),patient_identity_key=normalized["patient_identity_key"],indication_code=str(data["indication_code"]),site_key=str(data["site_key"]),laterality=str(data.get("laterality") or "none"),exact_location=str(data["exact_location"]).strip(),actual_procedure_date=str(data["actual_procedure_date"]),vas_before=int(data["vas_before"]),vas_after=int(data["vas_after"]),last_followup_date=str(data["last_followup_date"]),last_followup_vas=int(data["last_followup_vas"]),provenance="legacy_manual",dedupe_key=dedupe_key,created_at=now,updated_at=now)
+        now=utcnow(); row=RFProcedureHistoryORM(id=str(uuid4()),patient_identity_key=normalized["patient_identity_key"],indication_code=str(data["indication_code"]),site_key=str(data["site_key"]),laterality=str(data.get("laterality") or "none"),exact_location=str(data["exact_location"]).strip(),actual_procedure_date=str(data["actual_procedure_date"]),vas_before=int(data["vas_before"]),vas_after=int(data["vas_after"]),last_followup_date=str(data["last_followup_date"]),last_followup_vas=int(data["last_followup_vas"]),provenance="clinician_manual",dedupe_key=dedupe_key,created_at=now,updated_at=now)
         session.add(row); session.commit(); return row.id
