@@ -1,4 +1,4 @@
-name: RF v2 canonical pre-PR closeout
+name: RF v2 canonical docs closeout
 
 on:
   push:
@@ -22,25 +22,62 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
-          import base64
+          import re
 
-          def dec(value):
-              return base64.b64decode(value).decode('utf-8')
-
-          # TODO roadmap reconciliation.
+          # TODO: replace stale G4/RF release state with native RF v2 truth.
           p = Path('TODO.md')
           s = p.read_text(encoding='utf-8')
-          old_summary = "C1, G-1, G-2 and G-3 are **implemented / tested / merged / deployed / production-smoke-verified**. G-4 is **merged/deployed with workspace smoke passed**, but its RF authorized workflow is not production-smoke-verified until the tested gateway hotfix is separately released/configured/smoked. Real-clinic usefulness/refinement remains distinct from production smoke and is not `PILOT-VALIDATED`."
-          new_summary = dec('QzEsIEctMSwgRy0yIGFuZCBHLTMgYXJlICoqaW1wbGVtZW50ZWQgLyB0ZXN0ZWQgLyBtZXJnZWQgLyBkZXBsb3llZCAvIHByb2R1Y3Rpb24tc21va2UtdmVyaWZpZWQqKi4gRy00IHdvcmtzcGFjZSBlcmdvbm9taWNzIGFyZSBtZXJnZWQvZGVwbG95ZWQgd2l0aCB3b3Jrc3BhY2Ugc21va2UgcGFzc2VkLiBUaGUgb2xkIFJGIGdhdGV3YXkgYXV0aC9mb3JtIGxlZyBhbHNvIHJlYWNoZWQgYSBwcm9kdWN0aW9uIGAyMDBgIGFmdGVyIHNlcnZlci1zaWRlIGtleSBjb25maWd1cmF0aW9uLCBidXQgdGhlIGF1dGhvcml0YXRpdmUgUkYgZm9ybSB0aGVuIGNoYW5nZWQgYmVmb3JlIGZ1bGwgb2xkIGNyZWF0ZS9QREYgc21va2UuIFRoYXQgb2xkIFJGIGJ1c2luZXNzL2Zvcm0gY29udHJhY3QgaXMgbm93IG9ic29sZXRlLiBOYXRpdmUgUkYgdjIgaXMgaW1wbGVtZW50ZWQgYW5kIHJlbGVhc2UtY2FuZGlkYXRlIHRlc3RlZCBhdCBgYWEyZjkyY2NlNWQ0Y2QyY2ZkMDJjYWZjNTk0MTNiZTdiZGMwZDVmYmAgLyBydW4gYDMzOTg4NjQyMDAyYDsgaXQgcmVtYWlucyB1bm1lcmdlZCwgdW5kZXBsb3llZCwgbm90IHByb2R1Y3Rpb24tc21va2UtdmVyaWZpZWQgYW5kIG5vdCBwaWxvdC12YWxpZGF0ZWQu')
-          if old_summary not in s:
-              raise SystemExit('TODO summary anchor not found')
-          s = s.replace(old_summary, new_summary, 1)
+          old = "C1, G-1, G-2 and G-3 are **implemented / tested / merged / deployed / production-smoke-verified**. G-4 is **merged/deployed with workspace smoke passed**, but its RF authorized workflow is not production-smoke-verified until the tested gateway hotfix is separately released/configured/smoked. Real-clinic usefulness/refinement remains distinct from production smoke and is not `PILOT-VALIDATED`."
+          new = "C1, G-1, G-2 and G-3 are **implemented / tested / merged / deployed / production-smoke-verified**. G-4 workspace ergonomics are merged/deployed with workspace smoke passed. The old RF gateway/auth leg also reached production and later returned `200`, but full old-form create/PDF smoke was deliberately stopped when the authoritative RF form changed. The replacement native RF v2 Clinic Utility is **implemented / release-candidate tested / exact-head reviewed**, but is not merged, deployed, production-smoke-verified or pilot-validated."
+          if old not in s:
+              raise SystemExit('TODO top summary anchor not found')
+          s = s.replace(old, new, 1)
+
           start = s.index('## 1.6 G-4 Workspace ergonomics + RF utility navigation')
-          end = s.index('## 1.7 Heidi-first capture', start)
-          s = s[:start] + dec('IyMgMS42IEctNCBXb3Jrc3BhY2UgZXJnb25vbWljcyArIFJGIHV0aWxpdHkg4oCUIFdPUktTUEFDRSBTTU9LRSBQQVNTOyBOQVRJVkUgUkYgdjIgUkVMRUFTRS1DQU5ESURBVEUgVEVTVEVEIC8gUFIgQVVUSE9SSVpFRAoKVHJpZ2dlcmVkIGJ5IHByb2R1Y3Qtb3duZXIgZXZpZGVuY2UgZnJvbSB1c2UgYWZ0ZXIgc3VjY2Vzc2Z1bCBHLTMgcmUtc21va2UgYW5kIHRoZW4gc3VwZXJzZWRlZCBieSB0aGUgYXV0aG9yaXRhdGl2ZSBSRi1mb3JtIGNoYW5nZS4KCi0gW3hdIFJlbGVhc2UgRy00IHdvcmtzcGFjZSBlcmdvbm9taWNzICsgQ2xpbmljIFV0aWxpdGllcyBuYXZpZ2F0aW9uIHRocm91Z2ggUFIgIzcyLgotIFt4XSBSZWxlYXNlIHRoZSBib3VuZGVkIGF1dGhlbnRpY2F0ZWQgUkYgZ2F0ZXdheSBob3RmaXggdGhyb3VnaCBQUiAjNzM7IHNxdWFzaCBtZXJnZSBgOGFhOGIzOGUzZmE5YThmOGJhMDYxODg2OGI0NTJiMTgzNWJlMGQ0N2AuCi0gW3hdIFZlcmlmeSB0aGUgb2xkIGdhdGV3YXkgYXV0aC9mb3JtIGxlZyBpbiBwcm9kdWN0aW9uIGFmdGVyIHNlcnZlci1zaWRlIGtleSBjb25maWd1cmF0aW9uOiBDb2NrcGl0IFJGIHJvdXRlIGAyMDBgIOKGkiB1cHN0cmVhbSBgL3JmYCBgMjAwYCDihpIgZm9ybSByZW5kZXJlZC4KLSBbeF0gU3RvcCB0aGUgb2xkIGNyZWF0ZS9QREYgc21va2Ugd2hlbiB0aGUgYXV0aG9yaXRhdGl2ZSBSRiBmb3JtIGNoYW5nZWQ7IGRvIG5vdCB2YWxpZGF0ZSBhbiBvYnNvbGV0ZSBidXNpbmVzcy9mb3JtIGNvbnRyYWN0IGFzIHByb2R1Y3Rpb24tcmVhZHkuCi0gW3hdIEFwcHJvdmUgUkVQTEFOIGZyb20gZXh0ZXJuYWwgUkYgb3duZXJzaGlwIHRvIG5hdGl2ZSBDbGluaWNhbCBFeGNlbGxlbmNlIENsaW5pYyBVdGlsaXRpZXMgb3duZXJzaGlwLgotIFt4XSBJbXBsZW1lbnQgQ2F0ZWdvcnktQS1vbmx5IEEuMS9BLjIgbmF0aXZlIFJGIHdvcmtmbG93LCBDbGluaWNhbCBFeGNlbGxlbmNlIFVJLCBzZXBhcmF0ZSBSRiBwZXJzaXN0ZW5jZSwgb2ZmaWNpYWwtUERGIHN0YW1waW5nIGFuZCBpbWFnaW5nIGFwcGVuZC4KLSBbeF0gUGFja2FnZSB0aGUgZXhhY3QgYXV0aG9yaXRhdGl2ZSAxMi1wYWdlIFJGIFBERiBiaW5hcnkgYW5kIHZlcmlmeSBieXRlIGlkZW50aXR5IChgMzEwMjM4YCBieXRlczsgU0hBLTI1NiBgOTk4ZTk5ZTZiMGE1MWQ0YTE5NDMxZGQyZTMxZTU5NTI4MmQ3YWRmMTdlYjI5ZjVmOTFlZWFiOTRlMzY0NzI1MmA7IEdpdCBibG9iIGBjNmMyMzRlOTkwOTViZTM4YzQ3YTFjNmYwNzhkYWNkZDQ3ZjQxOTlmYCkuCi0gW3hdIFByZXNlcnZlIGBSRiBBUFBMSUNBVElPTiBSRVFVRVNUICE9IEFDVFU�TCBSRiBQUk9DRURVUkVgOyBtYW51YWwgYWN0dWFsLXByb2NlZHVyZSBlbnRyaWVzIHVzZSBgY2xpbmljaWFuX21hbnVhbGAgcHJvdmVuYW5jZS4KLSBbeF0gRmFpbCBjbG9zZWQgZm9yIEEuMSB1bmxlc3MgZXhhY3RseSAzIE5TQUlEIHRyaWFscyArIDMgb3RoZXIgYW5hbGdlc2ljIHRyaWFscyBhcmUgcmVzb2x2ZWQ7IGRvIG5vdCBwZXJzaXN0IHJhdyBwYXN0ZWQgbWVkaWNhdGlvbi9waHlzaW90aGVyYXB5IHRleHQgb3IgbWVkaWNhdGlvbiBzb3VyY2UgbGluZXMuCi0gW3hdIFBhc3MgdGhlIGZ1bGwgbmF0aXZlIFJGIHYyIHJlbGVhc2UtY2FuZGlkYXRlIGdhdGUgYXQgZXhhY3QgcnVudGltZSBoZWFkIGBhYTJmOTJjY2U1ZDRjZDJjZmQwMmNhZmM1OTQxM2JlN2JkYzBkNWZiYCwgd29ya2Zsb3cgcnVuIGAzMzk4ODY0MjAwMmAg4oCUIFNVQ0NFU1MsIGluY2x1ZGluZyBvZmZpY2lhbC10ZW1wbGF0ZSBBLjEvQS4yIGdlbmVyYXRpb24gYW5kIGluaGVyaXRlZCBDVS0xL0c0L0czL0cyL0cxL0MxIHJlZ3Jlc3Npb25zLgotIFt4XSBDb21wbGV0ZSBleGFjdC1oZWFkIHNvdXJjZS9zZWN1cml0eS9zY29wZSByZXZpZXcgd2l0aCBubyByZW1haW5pbmcgcmVsZWFzZS1ibG9ja2luZyBmaW5kaW5nLgotIFt4XSBDbG9zZSBzdGFsZSBkb2NzLW9ubHkgUFIgIzc0IHVubWVyZ2VkIGFzIHN1cGVyc2VkZWQgYnkgdGhlIGF1dGhvcml0YXRpdmUtZm9ybS9uYXRpdmUtb3duZXJzaGlwIHJlcGxhbi4KLSBbIF0gT3BlbiBib3VuZGVkIG5hdGl2ZSBSRiB2MiByZWxlYXNlIFBSIGZyb20gYGZlYXQvY2xpbmljLXV0aWxpdGllcy1yZi12Mi1uYXRpdmUtMjAyNi0wOS0wNWAgdG8gYG1haW5gLgotIFsgXSBNZXJnZSBvbmx5IHdpdGggYSBzZXBhcmF0ZSBleHBsaWNpdCBwcm9kdWN0LW93bmVyIGRlY2lzaW9uLgotIFsgXSBBZnRlciBtZXJnZSwgYWxsb3cgbm9ybWFsIFJlbmRlciBhdXRvLWRlcGxveSBhbmQgY29tcGxldGUgYXV0aGVudGljYXRlZCBwcm9kdWN0aW9uIHNtb2tlIG9mIEEuMS9BLjIsIHBlcnNpc3RlbmNlL2hpc3RvcnksIG9mZmljaWFsIFBERiBvdXRwdXQgYW5kIGFkamFjZW50IENsaW5pYyBVdGlsaXRpZXMgYmVoYXZpb3IuCgpUaGUgbmF0aXZlIFJGIHYyIGNhbmRpZGF0ZSBpcyAqKmltcGxlbWVudGVkIC8gcmVsZWFzZS1jYW5kaWRhdGUgdGVzdGVkIC8gZXhhY3QtaGVhZCByZXZpZXdlZCoqLCBidXQgaXMgbm90IG1lcmdlZCwgZGVwbG95ZWQsIHByb2R1Y3Rpb24tc21va2UtdmVyaWZpZWQgb3IgcGlsb3QtdmFsaWRhdGVkLgoK') + s[end:]
+          end = s.index('\n## 1.7 Heidi-first capture', start)
+          section = '''## 1.6 G-4 Workspace ergonomics + RF utility navigation / native RF v2 — RELEASE-CANDIDATE TESTED / PR AUTHORIZED
+
+The original G-4 workspace slice and RF navigation were released through PR #72. The bounded authenticated gateway correction was then released through PR #73 and is the current production RF route on `main`.
+
+- [x] Release G-4 workspace ergonomics through PR #72 and complete product-owner workspace smoke.
+- [x] Release the bounded authenticated RF gateway hotfix through PR #73 to production `main` `8aa8b38e3fa9a8f8ba0618868b452b1835be0d47`.
+- [x] After server-side RF-key configuration, verify the gateway/auth/form leg returned `200` through Osteoporosis and the upstream RF service.
+- [x] Stop old-form create/PDF smoke when a materially changed authoritative 12-page RF form was supplied; do not validate an obsolete administrative contract.
+- [x] Replan RF ownership into native Clinical Excellence Clinic Utilities; Category A only, A.1 new treatment and A.2 continuation.
+- [x] Implement native RF UI/API/PDF/history without writing RF payloads into osteoporosis encounters.
+- [x] Package the exact authoritative 12-page PDF and verify byte identity, page geometry and real A.1/A.2 generation.
+- [x] Enforce A.1 fail-closed resolution of exactly 3 NSAID trials + 3 other analgesic trials.
+- [x] Minimize persisted application data by excluding raw medication paste, raw physiotherapy-date paste and medication source lines.
+- [x] Preserve `RF APPLICATION REQUEST != ACTUAL RF PROCEDURE`; manual actual-procedure history uses `clinician_manual` provenance.
+- [x] Pass the full native RF v2 release-candidate gate at exact runtime head `aa2f92cce5d4cd2cfd02cafc59413be7bdc0d5fb`, run `33988642002` SUCCESS, including official-template A.1/A.2 generation and inherited CU-1/G4/G3/G2/G1/C1 regressions.
+- [x] Complete exact-head source/security/scope review with no remaining release-blocking finding.
+- [x] Close stale docs-only PR #74 unmerged because it predates the authoritative-form/native-ownership replan.
+- [ ] Open the bounded native RF v2 release PR to `main` under explicit product-owner PR authority.
+- [ ] Merge only with a separate explicit product-owner decision.
+- [ ] Configure/verify native RF server-side doctor/product values only with separate production-config authority.
+- [ ] After merge, allow normal Render auto-deploy and complete authenticated production smoke with separate authority.
+
+Native RF v2 is **implemented / release-candidate tested / exact-head reviewed**, not merged, deployed, production-smoke-verified or pilot-validated.
+'''
+          s = s[:start] + section + s[end:]
+          s = s.replace(
+              '- [x] G-4 RF authenticated-gateway hotfix implemented/tested/reviewed with server-only credential and POST-only local history transport.\n- [ ] G-4 RF hotfix PR / merge / production config / deploy / end-to-end production smoke.',
+              '- [x] G-4 authenticated-gateway hotfix released through PR #73; later auth/form production leg returned `200`.\n- [x] Native RF v2 replacement implemented/release-candidate-tested after authoritative form change.\n- [ ] Native RF v2 PR / merge / production config verification / deploy / end-to-end production smoke.',
+              1,
+          )
+          s = s.replace(
+              '- [ ] Radiofrequency utility **engine/runtime migration** into this repository beyond the bounded gateway; the existing RF service remains source of truth.',
+              '- [x] Native RF Clinic Utility ownership migration implemented/release-candidate-tested; remaining release lifecycle is tracked in §1.6.',
+              1,
+          )
+          s = s.replace(
+              '5. G-4 workspace ergonomics — released/deployed/workspace-smoked; RF auth hotfix implemented/tested, release/config/smoke pending',
+              '5. G-4 workspace ergonomics + gateway — released; native RF v2 replacement implemented/release-candidate-tested, PR/merge/deploy/smoke pending',
+              1,
+          )
           p.write_text(s, encoding='utf-8')
 
-          # Slice design closeout.
+          # SLICE_PLAN_CURRENT: freeze actual release-candidate state and remove obsolete binary blocker/provenance wording.
           p = Path('SLICE_PLAN_CURRENT.md')
           s = p.read_text(encoding='utf-8')
           s = s.replace(
@@ -49,13 +86,13 @@ jobs:
               1,
           )
           s = s.replace(
-              '> **Implementation authority:** YES — bounded to this frozen slice.',
-              '> **Implementation/test authority:** CONSUMED — release-candidate phase closed.\n> **PR authority:** GRANTED — bounded native RF v2 release PR only.',
+              '> **Implementation authority:** YES — bounded to this frozen slice.\n> **Merge / deploy / production config / production smoke authority:** NONE unless separately granted.',
+              '> **Implementation/test authority:** CONSUMED — release-candidate phase closed.\n> **PR authority:** GRANTED — bounded native RF v2 release PR only.\n> **Merge / deploy / production config / production smoke authority:** NONE unless separately granted.',
               1,
           )
           s = s.replace(
               '→ automatically select up to 3 NSAID trials\n→ automatically select up to 3 other analgesic trials',
-              '→ automatically resolve/select exactly 3 NSAID trials\n→ automatically resolve/select exactly 3 other analgesic trials\n→ fail closed if 3 + 3 cannot be resolved without invention',
+              '→ deterministically resolve/select exactly 3 NSAID trials\n→ deterministically resolve/select exactly 3 other analgesic trials\n→ fail closed if 3 + 3 cannot be resolved without invention',
               1,
           )
           s = s.replace(
@@ -63,5 +100,157 @@ jobs:
               '→ persist as `clinician_manual` actual-procedure provenance',
               1,
           )
-          if '# Release-candidate closeout — 2026-09-05' not in s:
-              s = s.rstrip() + '\n\n' + dec('LS0tCgojIFJlbGVhc2UtY2FuZGlkYXRlIGNsb3Nlb3V0IOKAlCAyMDI2LTA5LTA1CgpUaGUgZnJvemVuIHNsaWNlIGhhcyBiZWVuIGltcGxlbWVudGVkIGFuZCByZWxlYXNlLWNhbmRpZGF0ZSB0ZXN0ZWQuCgpgYGB0ZXh0CmV4YWN0IHJ1bnRpbWUgaGVhZDoKYWEyZjkyY2NlNWQ0Y2QyY2ZkMDJjYWZjNTk0MTNiZTdiZGMwZDVmYgoKd29ya2Zsb3c6ClJGIHYyIG5hdGl2ZSBjbGluaWMgdXRpbGl0eQpydW4gMzM5ODg2NDIwMDIKU1VDQ0VTUwpgYGAKClJlbGVhc2UtY2FuZGlkYXRlIGV2aWRlbmNlIGluY2x1ZGVzIGV4YWN0IGF1dGhvcml0YXRpdmUtdGVtcGxhdGUgaWRlbnRpdHkvZ2VvbWV0cnksIHJlYWwgcGFja2FnZWQtdGVtcGxhdGUgQS4xL0EuMiBnZW5lcmF0aW9uLCBmb2N1c2VkIG5hdGl2ZSBSRiByZWdyZXNzaW9ucywgdGhlIGZhaWwtY2xvc2VkIDMrMyBtZWRpY2F0aW9uIGludmFyaWFudCwgYXBwbGljYXRpb24tcGF5bG9hZCBkYXRhIG1pbmltaXphdGlvbiwgbmF0aXZlIFVJL3JvdXRlIG93bmVyc2hpcCwgYWRqYWNlbnQgQ1UtMSByZWdyZXNzaW9ucywgbGVnYWN5IGdhdGV3YXkgcm9sbGJhY2sgY292ZXJhZ2UgYW5kIGluaGVyaXRlZCBHNC9HMy9HMi9HMS9DMSByZWdyZXNzaW9ucy4KCkR1cmFibGUgcnVudGltZSBpbnZhcmlhbnRzIGFmdGVyIHJldmlldzoKCmBgYHRleHQKQS4xIHJlcXVpcmVzIGV4YWN0bHkgMyBOU0FJRCArIDMgb3RoZXIgYW5hbGdlc2ljIGRvY3VtZW50ZWQgdHJpYWxzCnJhdyBtZWRpY2F0aW9uIHBhc3RlICE9IHBlcnNpc3RlZCBhcHBsaWNhdGlvbiBldmlkZW5jZQpyYXcgcGh5c2lvdGhlcmFweSBkYXRlIHBhc3RlICE9IHBlcnNpc3RlZCBhcHBsaWNhdGlvbiBldmlkZW5jZQpSRiBBUFBMSUNBVElPTiBSRVFVRVNUICE9IEFDVFVBTCBSRiBQUk9DRURVUkUKbWFudWFsIGFjdHVhbC1wcm9jZWR1cmUgcHJvdmVuYW5jZSA9IGNsaW5pY2lhbl9tYW51YWwKYGBgCgpUaGUgZXhhY3Qgb2ZmaWNpYWwgdGVtcGxhdGUgcGFja2FnZWQgaW4gdGhlIGJyYW5jaCBpcyAzMTAyMzggYnl0ZXMsIFNIQS0yNTYgYDk5OGU5OWU2YjBhNTFkNGExOTQzMWRkMmUzMWU1OTUyODJkN2FkZjE3ZWIyOWY1ZjkxZWVhYjk0ZTM2NDcyNTJgLCBHaXQgYmxvYiBgYzZjMjM0ZTk5MDk1YmUzOGM0N2ExYzZmMDc4ZGFjZGQ0N2Y0MTk5ZmAuCgpTdGFsZSBkb2NzLW9ubHkgUFIgIzc0IHdhcyBjbG9zZWQgdW5tZXJnZWQgYXMgc3VwZXJzZWRlZC4gUHJvZHVjdC1vd25lciBQUiBhdXRob3JpdHkgaXMgbm93IGdyYW50ZWQgZm9yIHRoZSBib3VuZGVkIG5hdGl2ZSBSRiB2MiByZWxlYXNlIFBSIG9ubHkuIE1lcmdlLCBkZXBsb3y, production config/secret, deploy and production smoke remain separately gated.
+          s = s.replace(
+              '4. medication parser selects max 3 NSAIDs + max 3 other analgesics, deduplicates active ingredient and never invents missing dose/duration;',
+              '4. medication parser resolves exactly 3 NSAIDs + exactly 3 other analgesics, deduplicates active ingredient, never invents missing dose/duration and fails closed if 3+3 cannot be resolved;',
+              1,
+          )
+          s = s.replace(
+              '6. A.2 lookup supports multiple episodes and legacy manual backfill;',
+              '6. A.2 lookup supports multiple episodes and clinician-manual actual-procedure backfill;',
+              1,
+          )
+          bstart = s.index('# 16. Binary-template constraint')
+          bend = s.index('\n# 17. Definition of Done', bstart)
+          binary = '''# 16. Authoritative binary-template evidence
+
+The exact product-owner-supplied 12-page official PDF is packaged at:
+
+```text
+clinic_utilities/rf/templates/rf_official_form_v2.pdf
+```
+
+Release-candidate identity is frozen and gate-checked:
+
+```text
+size: 310238 bytes
+SHA-256: 998e99e6b0a51d4a19431dd2e31e595282d7adf17eb29f5f91eeab94e3647252
+Git blob: c6c234e99095be38c47a1c6f078dacdd47f4199f
+pages: 12
+```
+
+The final gate exercises real A.1 and A.2 generation against that packaged binary. The prior binary-packaging blocker is closed.
+'''
+          s = s[:bstart] + binary + s[bend:]
+          astart = s.index('# 19. Current authorization / exact next action')
+          auth = '''# 19. Current authorization / exact next action
+
+```text
+PRODUCT-OWNER DESIGN APPROVAL      YES
+IMPLEMENTATION/TEST AUTHORITY      CONSUMED
+CANONICAL WRITER                   NONE after closeout commit
+RUNTIME WRITER                     NONE
+PR AUTHORITY                       YES — bounded native RF v2 release PR only
+MERGE AUTHORITY                    NONE
+DEPLOY AUTHORITY                   NONE
+PRODUCTION CONFIG AUTHORITY        NONE
+PRODUCTION SMOKE AUTHORITY         NONE
+```
+
+Exact release-candidate evidence:
+
+```text
+runtime head: aa2f92cce5d4cd2cfd02cafc59413be7bdc0d5fb
+workflow: RF v2 native clinic utility
+run: 33988642002
+result: SUCCESS
+```
+
+Next sequence:
+
+```text
+final canonical drift verification
+→ open bounded native RF v2 release PR
+→ verify PR-head checks
+→ HOLD for separate merge decision
+```
+
+Opening the PR does not authorize merge, production configuration, deploy or production smoke.
+'''
+          s = s[:astart] + auth
+          p.write_text(s, encoding='utf-8')
+
+          # CURRENT_OPERATIONAL: PR authority granted, but no merge/deploy/config/smoke authority.
+          p = Path('CURRENT_OPERATIONAL.md')
+          s = p.read_text(encoding='utf-8')
+          s = s.replace(
+              '> **STATUS:** RF v2 NATIVE CLINIC UTILITY — IMPLEMENTED / RELEASE-CANDIDATE TESTED / EXACT-HEAD REVIEW PASS / RELEASE HOLD',
+              '> **STATUS:** RF v2 NATIVE CLINIC UTILITY — IMPLEMENTED / RELEASE-CANDIDATE TESTED / EXACT-HEAD REVIEW PASS / PR AUTHORIZED — PRE-PR HOLD',
+              1,
+          )
+          s = s.replace(
+              '> **ACTIVE CANONICAL WRITER/LOCK:** ChatGPT — docs-only closeout only until this commit lands.',
+              '> **ACTIVE CANONICAL WRITER/LOCK:** NONE — canonical pre-PR closeout complete.',
+              1,
+          )
+          s = s.replace('> **PR authority:** NONE.', '> **PR authority:** GRANTED — bounded native RF v2 release PR only.', 1)
+          s = s.replace('PR                                   NO', 'PR                                   AUTHORIZED / NOT YET OPEN', 1)
+          s = s.replace(
+              'Next possible release sequence requires separate product-owner authority:',
+              'Product owner has granted authority through opening the bounded native RF v2 release PR. Remaining lifecycle steps remain separately gated:',
+              1,
+          )
+          s = s.replace(
+              'optional final docs-only drift verification\n→ open bounded RF v2 release PR',
+              'final docs-only drift verification\n→ open bounded RF v2 release PR',
+              1,
+          )
+          s = s.replace(
+              'The stale docs-only PR #74 predates the authoritative-form change/native ownership replan and must be dispositioned separately; do not use it as release truth.',
+              'The stale docs-only PR #74 was closed unmerged as superseded because it predates the authoritative-form change/native ownership replan.',
+              1,
+          )
+          s = s.replace('NO PR\nNO merge', 'NO merge', 1)
+          p.write_text(s, encoding='utf-8')
+
+          # Append-only durable history.
+          p = Path('osteoporosis-change-log.md')
+          s = p.read_text(encoding='utf-8')
+          marker = '## 2026-09-05 — Native RF v2 release candidate completed; PR path authorized'
+          if marker not in s:
+              entry = '''
+
+---
+
+## 2026-09-05 — Native RF v2 release candidate completed; PR path authorized
+
+The authoritative RF eligibility form changed materially before the old G-4 gateway create/PDF path was fully production-smoked. The obsolete external RF form contract was therefore not validated further. Product-owner REPLAN approval moved RF UI/business/PDF/history ownership into native Clinical Excellence Clinic Utilities for this clinician's Category-A workflow: A.1 new treatment and A.2 continuation.
+
+Release-candidate runtime evidence:
+
+```text
+branch: feat/clinic-utilities-rf-v2-native-2026-09-05
+exact tested runtime head: aa2f92cce5d4cd2cfd02cafc59413be7bdc0d5fb
+workflow: RF v2 native clinic utility
+run: 33988642002
+result: SUCCESS
+```
+
+The exact supplied 12-page official PDF is packaged at `clinic_utilities/rf/templates/rf_official_form_v2.pdf` and guarded by byte identity: 310238 bytes, SHA-256 `998e99e6b0a51d4a19431dd2e31e595282d7adf17eb29f5f91eeab94e3647252`, Git blob `c6c234e99095be38c47a1c6f078dacdd47f4199f`. The final gate generated real A.1/A.2 packages against that binary and preserved inherited CU-1/G4/G3/G2/G1/C1 regressions.
+
+Exact-head review corrected three release-relevant issues before the final tested runtime: A.1 now fails closed unless exactly 3 NSAID trials + 3 other analgesic trials are resolved; raw medication paste, raw physiotherapy-date paste and medication `source_text` are not persisted; and manual actual-procedure history uses `clinician_manual` provenance rather than `legacy_manual`.
+
+The persistence boundary remains explicit:
+
+```text
+RF APPLICATION REQUEST
+!=
+ACTUAL RF PROCEDURE
+```
+
+Generating an approval/request PDF does not infer that treatment occurred.
+
+Stale docs-only PR #74 was closed unmerged as superseded by the authoritative-form/native-ownership replan. Product-owner authority was then granted to proceed through opening one bounded native RF v2 release PR. Merge, production configuration, deploy and production smoke remain separate decisions.
+'''
+              s = s.rstrip() + entry
+          p.write_text(s, encoding='utf-8')
+          PY
+
+      - name: Commit docs-only canonical closeout
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add TODO.md SLICE_PLAN_CURRENT.md CURRENT_OPERATIONAL.md osteoporosis-change-log.md
+          git diff --cached --check
+          git commit -m 'Close RF v2 canonicals for release PR'
+          git push origin HEAD:feat/clinic-utilities-rf-v2-native-2026-09-05
