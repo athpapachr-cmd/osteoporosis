@@ -1,0 +1,177 @@
+name: RF v2 review hardening patch
+
+on:
+  push:
+    branches:
+      - feat/clinic-utilities-rf-v2-native-2026-09-05
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/clinic-utilities-rf-v2-native-2026-09-05
+          fetch-depth: 0
+
+      - name: Apply review hardening
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          api_path = Path('clinic_utilities/rf/api.py')
+          api = api_path.read_text(encoding='utf-8')
+          old = '''    parsed = parse_medications(draft.full_medication_text)\n    nsaid = [x.model_dump() for x in draft.nsaid_trials]\n    other = [x.model_dump() for x in draft.other_analgesic_trials]\n    return (nsaid or parsed["auto_selected_nsaids"])[:3], (other or parsed["auto_selected_others"])[:3]\n'''
+          new = '''    parsed = parse_medications(draft.full_medication_text)\n    nsaid = ( [x.model_dump() for x in draft.nsaid_trials] or parsed["auto_selected_nsaids"] )[:3]\n    other = ( [x.model_dump() for x in draft.other_analgesic_trials] or parsed["auto_selected_others"] )[:3]\n    if len(nsaid) != 3 or len(other) != 3:\n        raise HTTPException(\n            status_code=422,\n            detail="Το A.1 απαιτεί 3 ΜΣΑΦ και 3 άλλα αναλγητικά με τεκμηριωμένη αγωγή.",\n        )\n    return nsaid, other\n'''
+          if old not in api:
+              raise SystemExit('api medication anchor not found')
+          api_path.write_text(api.replace(old, new, 1), encoding='utf-8')
+
+          persistence_path = Path('clinic_utilities/rf/persistence.py')
+          persistence = persistence_path.read_text(encoding='utf-8')
+          start = persistence.index('def record_application(engine: Engine, data: dict[str, Any]) -> str:')
+          end = persistence.index('\ndef list_procedure_history', start)
+          replacement = '''def _minimal_application_payload(data: dict[str, Any]) -> dict[str, Any]:\n    persisted = dict(data)\n    persisted.pop("full_medication_text", None)\n    persisted.pop("physio_dates_text", None)\n    for key in ("nsaid_trials", "other_analgesic_trials"):\n        trials = persisted.get(key)\n        if isinstance(trials, list):\n            persisted[key] = [\n                {item_key: item_value for item_key, item_value in item.items() if item_key != "source_text"}\n                if isinstance(item, dict) else item\n                for item in trials\n            ]\n    return persisted\n\ndef record_application(engine: Engine, data: dict[str, Any]) -> str:\n    application_id=str(uuid4())\n    row=RFApplicationORM(id=application_id,patient_identity_key=normalize_identity(data["identity_number"]),patient_name=str(data["patient_name"]).strip(),gesy_number=str(data["gesy_number"]).strip(),patient_age=int(data["age"]),pathway=str(data["pathway"]),indication_code=str(data["indication_code"]),site_key=str(data["site_key"]),laterality=str(data.get("laterality") or "none"),exact_location=str(data["exact_location"]).strip(),product_key=str(data["product_key"]),payload_json=_minimal_application_payload(data),created_at=utcnow())\n    with Session(engine) as session:\n        session.add(row); session.commit()\n    return application_id\n'''
+          persistence_path.write_text(persistence[:start] + replacement + persistence[end:], encoding='utf-8')
+
+          test_path = Path('test_rf_v2_release_hardening.py')
+          test_path.write_text(r'''from __future__ import annotations
+
+import unittest
+
+from fastapi import HTTPException
+from sqlalchemy import create_engine, select
+from sqlalchemy.orm import Session
+from sqlalchemy.pool import StaticPool
+
+from clinic_utilities.rf.api import RFApplicationDraft, _resolve_medications
+from clinic_utilities.rf.persistence import (
+    RFApplicationORM,
+    initialize_rf_tables,
+    record_application,
+)
+
+
+def memory_engine():
+    return create_engine(
+        "sqlite+pysqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+
+
+def draft_with_medication(text: str) -> RFApplicationDraft:
+    return RFApplicationDraft(
+        pathway="A1",
+        patient_name="Synthetic Patient",
+        identity_number="SYN-3PLUS3",
+        gesy_number="GESY-SYN",
+        age=67,
+        product_key="medikey",
+        indication_code="KNEE_OA_KL34",
+        laterality="left",
+        exact_location="Αριστερό γόνατο",
+        full_medication_text=text,
+    )
+
+
+class RFThreePlusThreeTests(unittest.TestCase):
+    def test_a1_rejects_fewer_than_three_plus_three(self):
+        draft = draft_with_medication(
+            "Arcoxia 90 mg για 3 μήνες\n"
+            "Brufen 600 mg για 2 μήνες\n"
+            "Panadol 1 g για 3 μήνες\n"
+            "Tramadex 100 mg για 1 μήνα"
+        )
+        with self.assertRaises(HTTPException) as caught:
+            _resolve_medications(draft)
+        self.assertEqual(caught.exception.status_code, 422)
+        self.assertIn("3 ΜΣΑΦ", caught.exception.detail)
+        self.assertIn("3 άλλα", caught.exception.detail)
+
+    def test_a1_accepts_exact_three_plus_three(self):
+        draft = draft_with_medication(
+            "Arcoxia 90 mg για 3 μήνες\n"
+            "Brufen 600 mg για 2 μήνες\n"
+            "Voltaren 75 mg για 1 μήνα\n"
+            "Panadol 1 g για 3 μήνες\n"
+            "Parcoten 1 g για 2 μήνες\n"
+            "Tramadex 100 mg για 1 μήνα"
+        )
+        nsaid, other = _resolve_medications(draft)
+        self.assertEqual(len(nsaid), 3)
+        self.assertEqual(len(other), 3)
+
+
+class RFApplicationDataMinimizationTests(unittest.TestCase):
+    def test_raw_paste_and_source_lines_are_not_persisted(self):
+        engine = memory_engine()
+        initialize_rf_tables(engine)
+        application_id = record_application(
+            engine,
+            {
+                "identity_number": "SYN-RAW-1",
+                "patient_name": "Synthetic Patient",
+                "gesy_number": "GESY-SYN",
+                "age": 67,
+                "pathway": "A1",
+                "indication_code": "KNEE_OA_KL34",
+                "site_key": "knee",
+                "laterality": "left",
+                "exact_location": "Αριστερό γόνατο",
+                "product_key": "medikey",
+                "full_medication_text": "RAW MEDICATION PASTE MUST NOT PERSIST",
+                "physio_dates_text": "01/02/2026\n08/02/2026",
+                "nsaid_trials": [
+                    {"source_text": "Arcoxia raw line", "drug_name": "Etoricoxib", "dose": "90 mg", "duration": "3 μήνες"}
+                ],
+                "other_analgesic_trials": [
+                    {"source_text": "Panadol raw line", "drug_name": "Παρακεταμόλη", "dose": "1 g", "duration": "3 μήνες"}
+                ],
+                "physio": {"start_date": "2026-02-01", "end_date": "2026-02-08", "treatment_count": 2},
+            },
+        )
+        with Session(engine) as session:
+            row = session.scalar(select(RFApplicationORM).where(RFApplicationORM.id == application_id))
+            payload = row.payload_json
+        self.assertNotIn("full_medication_text", payload)
+        self.assertNotIn("physio_dates_text", payload)
+        self.assertNotIn("source_text", payload["nsaid_trials"][0])
+        self.assertNotIn("source_text", payload["other_analgesic_trials"][0])
+        self.assertEqual(payload["physio"]["treatment_count"], 2)
+
+
+if __name__ == "__main__":
+    unittest.main()
+''', encoding='utf-8')
+
+          workflow_path = Path('.github/workflows/rf-v2-native-tests.yml')
+          workflow = workflow_path.read_text(encoding='utf-8')
+          workflow = workflow.replace(
+              '            test_rf_v2_native.py\n',
+              '            test_rf_v2_native.py \\\n            test_rf_v2_release_hardening.py\n',
+              1,
+          )
+          anchor = '      - name: Run native RF v2 UI integrity regression\n'
+          if anchor not in workflow:
+              raise SystemExit('workflow anchor not found')
+          workflow = workflow.replace(
+              anchor,
+              '      - name: Run RF v2 release hardening regressions\n        run: python -m unittest -v test_rf_v2_release_hardening.py\n\n' + anchor,
+              1,
+          )
+          workflow_path.write_text(workflow, encoding='utf-8')
+          PY
+
+      - name: Commit review corrections
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add clinic_utilities/rf/api.py clinic_utilities/rf/persistence.py test_rf_v2_release_hardening.py .github/workflows/rf-v2-native-tests.yml
+          git diff --cached --check
+          git commit -m 'Harden RF v2 medication and persistence invariants'
+          git push origin HEAD:feat/clinic-utilities-rf-v2-native-2026-09-05
