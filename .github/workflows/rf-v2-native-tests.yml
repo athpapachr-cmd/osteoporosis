@@ -1,0 +1,123 @@
+name: RF v2 native clinic utility
+
+on:
+  push:
+    branches:
+      - feat/clinic-utilities-rf-v2-native-2026-09-05
+  workflow_dispatch:
+
+jobs:
+  rf-v2-native:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -r requirements.txt
+
+      - name: Check native RF Python syntax
+        run: |
+          python -m py_compile \
+            clinic_utilities/rf/api.py \
+            clinic_utilities/rf/catalog.py \
+            clinic_utilities/rf/parsers.py \
+            clinic_utilities/rf/pdf.py \
+            clinic_utilities/rf/persistence.py \
+            test_rf_v2_native.py
+
+      - name: Check RF JavaScript syntax
+        run: |
+          node --check static/clinic-utilities/rf/app.js
+          node --check test_rf_v2_ui.js
+
+      - name: Run native RF v2 focused regression
+        run: python -m unittest -v test_rf_v2_native.py
+
+      - name: Run native RF v2 UI integrity regression
+        run: node test_rf_v2_ui.js
+
+      - name: Verify native route ownership and dependency declarations
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          main = Path('main.py').read_text(encoding='utf-8')
+          req = Path('requirements.txt').read_text(encoding='utf-8')
+          assert 'app.include_router(build_rf_router(engine))' in main
+          assert 'app.include_router(build_rf_gateway_router())' not in main
+          assert 'PyMuPDF' in req and 'pypdf' in req
+          print('Native RF ownership/dependencies: PASS')
+          PY
+
+      - name: Preserve adjacent CU-1 regressions
+        run: |
+          python -m unittest -v \
+            test_cu1_dynamic_ui.py \
+            test_cu1_formatter_el.py \
+            test_cu1_gateway_guard.py \
+            test_cu1_gateway_registry.py \
+            test_cu1_physio_referral.py \
+            test_cu1_safety_trust_boundary.py
+
+      - name: Preserve legacy RF gateway rollback regressions
+        run: python -m unittest -v test_g4_rf_auth_gateway.py
+
+      - name: Preserve G4 workspace ergonomics
+        run: node test_g4_workspace_ergonomics.js
+
+      - name: Preserve G3 salience and longitudinal summary regressions
+        run: node test_g3_guidance_summary_node.js
+
+      - name: Preserve G3 wiring and ownership regressions
+        run: node test_g3_guidance_summary_wiring.js
+
+      - name: Preserve G3 salience token regression
+        run: node test_g3_salience_token_core.js
+
+      - name: Preserve G3 production visibility/cache regression
+        run: python -m unittest -v test_g3_production_visibility_cache.py
+
+      - name: Preserve frozen G2 evidence contract
+        run: python test_g2_guidance_contract.py
+
+      - name: Preserve G2 evidence core regressions
+        run: node test_g2_evidence_guidance_node.js
+
+      - name: Preserve G2 live-state regressions
+        run: node test_g2_guidance_live_state.js
+
+      - name: Preserve G2 wiring/ownership regressions
+        run: node test_g2_evidence_guidance_wiring.js
+
+      - name: Preserve G1 core regressions
+        run: node test_progressive_guidance_node.js
+
+      - name: Preserve G1 wiring regression
+        run: node test_progressive_guidance_wiring.js
+
+      - name: Preserve G1 UI-state regressions
+        run: node test_progressive_guidance_ui_state.js
+
+      - name: Preserve G1 WHY-NOW presentation regression
+        run: node test_progressive_guidance_why_now_ui.js
+
+      - name: Preserve authoritative Finish browser regression
+        run: node test_baseline_finish_browser.js
+
+      - name: Preserve server finalization lifecycle regression
+        run: python -m unittest -v test_baseline_finalization_api.py
+
+      - name: Report official template packaging state
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('clinic_utilities/rf/templates/rf_official_form_v2.pdf')
+          if path.is_file():
+              print(f'Official RF v2 binary template packaged: YES ({path.stat().st_size} bytes)')
+          else:
+              print('Official RF v2 binary template packaged: NO — release packaging blocker remains')
+          PY
