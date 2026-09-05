@@ -1,13 +1,14 @@
 # SLICE_PLAN_CURRENT.md — Clinic Utilities RF v2 Native Ownership
 
-> **STATUS:** APPROVED / FROZEN — IMPLEMENTATION AUTHORIZED / ACTIVE
+> **STATUS:** APPROVED / FROZEN — IMPLEMENTED / RELEASE-CANDIDATE TESTED / EXACT-HEAD REVIEW PASS — PR AUTHORIZED / PRE-PR HOLD
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Scope:** reusable Clinical Excellence Clinic Utilities, not osteoporosis clinical encounter semantics.
 > **Slice ID:** `CU-RF-V2-NATIVE-2026-09-05`.
 > **Production base:** `8aa8b38e3fa9a8f8ba0618868b452b1835be0d47`.
 > **Branch:** `feat/clinic-utilities-rf-v2-native-2026-09-05`.
 > **Product-owner architecture approval:** explicit agreement to migrate RF ownership into the Clinical Excellence runtime.
-> **Implementation authority:** YES — bounded to this frozen slice.
+> **Implementation/test authority:** CONSUMED — release-candidate phase closed.
+> **PR authority:** GRANTED — bounded native RF v2 release PR only.
 > **Merge / deploy / production config / production smoke authority:** NONE unless separately granted.
 
 ---
@@ -286,8 +287,9 @@ paste complete medication history
 → deterministic entry parsing
 → medication classification
 → canonical ingredient/brand deduplication
-→ automatically select up to 3 NSAID trials
-→ automatically select up to 3 other analgesic trials
+→ deterministically resolve/select exactly 3 NSAID trials
+→ deterministically resolve/select exactly 3 other analgesic trials
+→ fail closed if 3 + 3 cannot be resolved without invention
 → extract dose/duration only when explicitly present
 → clinician intervenes only for missing/ambiguous values or corrections
 ```
@@ -414,7 +416,7 @@ identity lookup
 → no matching history
    → `Καταχώρηση προηγούμενης εφαρμογής`
    → clinician enters the five A.2 historical values once
-   → persist as `legacy_manual` / retrospective provenance
+   → persist as `clinician_manual` actual-procedure provenance
    → reuse on later applications
 ```
 
@@ -547,9 +549,9 @@ Required focused evidence before PR review:
 1. native root route protected and renders Clinical Excellence RF UI;
 2. B/Γ absent from clinician workflow; only approved A indications exposed;
 3. A.1 validation including imaging, >=3-month pain evidence and conditional SI/hip requirements;
-4. medication parser selects max 3 NSAIDs + max 3 other analgesics, deduplicates active ingredient and never invents missing dose/duration;
+4. medication parser resolves exactly 3 NSAIDs + exactly 3 other analgesics, deduplicates active ingredient, never invents missing dose/duration and fails closed if 3+3 cannot be resolved;
 5. physiotherapy date parser derives first/last/count and flags ambiguity;
-6. A.2 lookup supports multiple episodes and legacy manual backfill;
+6. A.2 lookup supports multiple episodes and clinician-manual actual-procedure backfill;
 7. application-request row never auto-creates an actual-procedure row;
 8. identity/GeSY never required in browser URL;
 9. correct A.1 page package and A.2 page package generated from supplied official template;
@@ -562,15 +564,24 @@ Do not create a broad generic validation program.
 
 ---
 
-# 16. Binary-template constraint
+# 16. Authoritative binary-template evidence
 
-The official PDF supplied by the product owner is the authoritative template. The current GitHub connector can mutate UTF-8 source but cannot directly publish binary PDF bytes.
+The exact product-owner-supplied 12-page official PDF is packaged at:
 
-Implementation may proceed around this, but the candidate cannot be declared fully tested/merge-ready until the exact official PDF is present at the frozen repository path and coordinate/render checks run against it.
+```text
+clinic_utilities/rf/templates/rf_official_form_v2.pdf
+```
 
-If no connected binary-upload mechanism is available, the product owner will be asked for exactly one mechanical GitHub upload of the supplied PDF to the specified path. No secret or patient data is involved.
+Release-candidate identity is frozen and gate-checked:
 
----
+```text
+size: 310238 bytes
+SHA-256: 998e99e6b0a51d4a19431dd2e31e595282d7adf17eb29f5f91eeab94e3647252
+Git blob: c6c234e99095be38c47a1c6f078dacdd47f4199f
+pages: 12
+```
+
+The final gate exercises real A.1 and A.2 generation against that packaged binary. The prior binary-packaging blocker is closed.
 
 # 17. Definition of Done
 
@@ -617,22 +628,32 @@ STOP and REPLAN if implementation proves any of the following necessary:
 
 ```text
 PRODUCT-OWNER DESIGN APPROVAL      YES
-IMPLEMENTATION AUTHORITY           YES / ACTIVE
-CANONICAL WRITER                   ChatGPT — this RF v2 branch only
-RUNTIME WRITER                     ChatGPT — this RF v2 branch only
+IMPLEMENTATION/TEST AUTHORITY      CONSUMED
+CANONICAL WRITER                   NONE after closeout commit
+RUNTIME WRITER                     NONE
+PR AUTHORITY                       YES — bounded native RF v2 release PR only
 MERGE AUTHORITY                    NONE
 DEPLOY AUTHORITY                   NONE
 PRODUCTION CONFIG AUTHORITY        NONE
 PRODUCTION SMOKE AUTHORITY         NONE
 ```
 
+Exact release-candidate evidence:
+
+```text
+runtime head: aa2f92cce5d4cd2cfd02cafc59413be7bdc0d5fb
+workflow: RF v2 native clinic utility
+run: 33988642002
+result: SUCCESS
+```
+
 Next sequence:
 
 ```text
-complete canonical replan on this branch
-→ implement native RF utility
-→ add exact official binary template
-→ focused tests + PDF render verification
-→ independent exact-head review
+final canonical drift verification
+→ open bounded native RF v2 release PR
+→ verify PR-head checks
 → HOLD for separate merge decision
 ```
+
+Opening the PR does not authorize merge, production configuration, deploy or production smoke.

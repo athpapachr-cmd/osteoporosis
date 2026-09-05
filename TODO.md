@@ -48,7 +48,7 @@ This file answers **where the product is going and in what broad order**. It is 
 - [x] Complete product-owner G-4 workspace smoke confirming collapse/expand, sticky summary and physiotherapy utility behavior; direct RF form access exposed a cross-service authorization blocker.
 - [x] Implement/test the bounded Osteoporosis-side RF authenticated gateway hotfix at exact runtime head `29140a6cd4c9f57b454daa6e4a2883ec0345b53f`, workflow run `33640110048` SUCCESS.
 
-C1, G-1, G-2 and G-3 are **implemented / tested / merged / deployed / production-smoke-verified**. G-4 is **merged/deployed with workspace smoke passed**, but its RF authorized workflow is not production-smoke-verified until the tested gateway hotfix is separately released/configured/smoked. Real-clinic usefulness/refinement remains distinct from production smoke and is not `PILOT-VALIDATED`.
+C1, G-1, G-2 and G-3 are **implemented / tested / merged / deployed / production-smoke-verified**. G-4 workspace ergonomics are merged/deployed with workspace smoke passed. The old RF gateway/auth leg also reached production and later returned `200`, but full old-form create/PDF smoke was deliberately stopped when the authoritative RF form changed. The replacement native RF v2 Clinic Utility is **implemented / release-candidate tested / exact-head reviewed**, but is not merged, deployed, production-smoke-verified or pilot-validated.
 
 ---
 
@@ -165,34 +165,29 @@ Triggered by product-owner production interaction after G-2 smoke.
 
 G-3 is production-smoke-verified, not pilot-validated. Subsequent evidence-from-use UX refinements are handled as bounded slices rather than reopening G-3 clinical semantics.
 
-## 1.6 G-4 Workspace ergonomics + RF utility navigation — DEPLOYED / WORKSPACE SMOKE PASS; RF AUTH HOTFIX IMPLEMENTED / TESTED / RELEASE HOLD
+## 1.6 G-4 Workspace ergonomics + RF utility navigation / native RF v2 — RELEASE-CANDIDATE TESTED / PR AUTHORIZED
 
-Triggered by product-owner evidence from use after successful G-3 re-smoke.
+The original G-4 workspace slice and RF navigation were released through PR #72. The bounded authenticated gateway correction was then released through PR #73 and is the current production RF route on `main`.
 
-- [x] Add accessible independent collapse/expand controls to `Σύνοψη ασθενούς` and `Σημερινή ροή`.
-- [x] Make `Σύνοψη ασθενούς` sticky at the top of the encounter scroll context.
-- [x] Keep collapse state as UI-only browser preference, not patient/clinical data.
-- [x] Preserve the existing G-3 summary/guidance renderer as the single clinical owner.
-- [x] Add `Clinic Utilities` navigation with existing physiotherapy referral and `Ραδιοκύματα — PDF` entry.
-- [x] Keep the existing RF generator as the PDF/template/request source of truth; do not duplicate RF persistence/templates into osteoporosis encounter state.
-- [x] Pass original G-4 focused regression plus inherited G-3/G-2/G-1/C1 gate at exact runtime head `942d4e06944ebd6de97891cb8e2739c88ba85a38`, run `33599860151`.
-- [x] Complete original G-4 release review and release through PR #72.
-- [x] Squash merge PR #72 to `main` as `338830340f6fed2ae1a3f08f6fdb0b8059932a66` and allow normal Render auto-deploy.
-- [x] Product-owner smoke confirms collapse/expand, sticky patient summary and physiotherapy utility behavior.
-- [x] Product-owner smoke identifies direct external RF authorization failure as `CROSS-SERVICE AUTHENTICATION INTEGRATION GAP`; do not weaken RF authorization.
-- [x] Design an Osteoporosis-side fixed authenticated RF gateway so the RF credential remains server-only and the existing RF service remains source of truth.
-- [x] Implement server-only `RF_GATEWAY_ACCESS_KEY` injection, fixed upstream route mapping, sanitized upstream failures and same-origin Cockpit RF navigation.
-- [x] Correct local RF history lookup to POST-only form-urlencoded transport so identity/GeSY identifiers do not create an additional Osteoporosis URL/access-log surface.
-- [x] Fail closed if the upstream RF form's expected create/history transport seams change.
-- [x] Pass exact final hotfix workflow at runtime head `29140a6cd4c9f57b454daa6e4a2883ec0345b53f`, run `33640110048` SUCCESS, including RF gateway/privacy plus inherited G-4/G-3/G-2/G-1/C1 regressions.
-- [x] Complete independent exact-head source/security/scope review with no remaining release-blocking finding.
-- [x] Complete canonical closeout and release the hotfix runtime writer lock.
-- [ ] Open bounded RF-auth hotfix release PR only with separate product-owner release authority.
-- [ ] Configure `RF_GATEWAY_ACCESS_KEY` on the Osteoporosis production service only with separate config/secret authority.
-- [ ] Merge/deploy only with separate explicit product-owner authority; no redundant manual Render deploy after normal auto-deploy.
-- [ ] Production smoke the deployed gateway end-to-end: form render, POST-only history, create/PDF path and credential non-exposure.
+- [x] Release G-4 workspace ergonomics through PR #72 and complete product-owner workspace smoke.
+- [x] Release the bounded authenticated RF gateway hotfix through PR #73 to production `main` `8aa8b38e3fa9a8f8ba0618868b452b1835be0d47`.
+- [x] After server-side RF-key configuration, verify the gateway/auth/form leg returned `200` through Osteoporosis and the upstream RF service.
+- [x] Stop old-form create/PDF smoke when a materially changed authoritative 12-page RF form was supplied; do not validate an obsolete administrative contract.
+- [x] Replan RF ownership into native Clinical Excellence Clinic Utilities; Category A only, A.1 new treatment and A.2 continuation.
+- [x] Implement native RF UI/API/PDF/history without writing RF payloads into osteoporosis encounters.
+- [x] Package the exact authoritative 12-page PDF and verify byte identity, page geometry and real A.1/A.2 generation.
+- [x] Enforce A.1 fail-closed resolution of exactly 3 NSAID trials + 3 other analgesic trials.
+- [x] Minimize persisted application data by excluding raw medication paste, raw physiotherapy-date paste and medication `source_text` lines.
+- [x] Preserve `RF APPLICATION REQUEST != ACTUAL RF PROCEDURE`; manual actual-procedure history uses `clinician_manual` provenance.
+- [x] Pass the full native RF v2 release-candidate gate at exact runtime head `aa2f92cce5d4cd2cfd02cafc59413be7bdc0d5fb`, run `33988642002` SUCCESS, including official-template A.1/A.2 generation and inherited CU-1/G4/G3/G2/G1/C1 regressions.
+- [x] Complete exact-head source/security/scope review with no remaining release-blocking finding.
+- [x] Close stale docs-only PR #74 unmerged because it predates the authoritative-form/native-ownership replan.
+- [ ] Open the bounded native RF v2 release PR to `main` under explicit product-owner PR authority.
+- [ ] Merge only with a separate explicit product-owner decision.
+- [ ] Configure/verify native RF server-side doctor/product values only with separate production-config authority.
+- [ ] After merge, allow normal Render auto-deploy and complete authenticated production smoke with separate authority.
 
-G-4 remains **not production-smoke-verified as a whole** until the RF authorized workflow blocker is released and verified. It remains not pilot-validated.
+Native RF v2 is **implemented / release-candidate tested / exact-head reviewed**, not merged, deployed, production-smoke-verified or pilot-validated.
 
 ## 1.7 Heidi-first capture — BEFORE REAL PILOT
 
@@ -317,8 +312,9 @@ Permanent requirements:
 - [x] G-3 newly-surfaced guidance salience implemented/tested/merged/deployed/production-smoke-verified.
 - [x] G-3 deterministic always-visible longitudinal patient summary implemented/tested/merged/deployed/production-smoke-verified.
 - [x] G-4 collapsible/sticky top-workspace ergonomics released/deployed and production-smoked.
-- [x] G-4 RF authenticated-gateway hotfix implemented/tested/reviewed with server-only credential and POST-only local history transport.
-- [ ] G-4 RF hotfix PR / merge / production config / deploy / end-to-end production smoke.
+- [x] G-4 authenticated-gateway hotfix released through PR #73; later auth/form production leg returned `200`.
+- [x] Native RF v2 replacement implemented/release-candidate-tested after authoritative form change.
+- [ ] Native RF v2 PR / merge / production config verification / deploy / end-to-end production smoke.
 - [ ] Real-clinic usability validation and evidence-from-use card/taxonomy refinement.
 
 ---
@@ -388,7 +384,7 @@ Unless later evidence elevates one to a safety/data-integrity dependency:
 - [ ] External Benchmark Registry.
 - [ ] Full Clinical Excellence Home/analytics polish.
 - [ ] Calendar/Setmore/Zadarma/CareTask live integration.
-- [ ] Radiofrequency utility **engine/runtime migration** into this repository beyond the bounded gateway; the existing RF service remains source of truth.
+- [x] Native RF Clinic Utility ownership migration implemented/release-candidate-tested; remaining release lifecycle is tracked in §1.6.
 - [ ] Patient leaflets/posters/materials.
 - [ ] New physiotherapy disease routes.
 - [ ] Module 02/generalization.
@@ -423,7 +419,7 @@ Do not mutate/merge/deploy later rich-referral or RF-engine migration work durin
 2. G-1 dynamic-guidance mechanics — production-smoke-verified / closed
 3. G-2 evidence-backed osteoporosis guidance — production-smoke-verified / closed
 4. G-3 guidance salience + longitudinal patient summary — production-smoke-verified / closed
-5. G-4 workspace ergonomics — released/deployed/workspace-smoked; RF auth hotfix implemented/tested, release/config/smoke pending
+5. G-4 workspace ergonomics + gateway — released; native RF v2 replacement implemented/release-candidate-tested, PR/merge/deploy/smoke pending
 6. PR-1 transcript extraction
 7. PR-2 inline provisional population
 8. guided card UX sufficient for real use

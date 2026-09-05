@@ -1,6 +1,6 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** RF v2 NATIVE CLINIC UTILITY — IMPLEMENTED / RELEASE-CANDIDATE TESTED / EXACT-HEAD REVIEW PASS / RELEASE HOLD
+> **STATUS:** RF v2 NATIVE CLINIC UTILITY — IMPLEMENTED / RELEASE-CANDIDATE TESTED / EXACT-HEAD REVIEW PASS / PR AUTHORIZED — PRE-PR HOLD
 > **Updated:** 2026-09-05 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Fresh verified production `main`:** `8aa8b38e3fa9a8f8ba0618868b452b1835be0d47`.
@@ -10,9 +10,9 @@
 > **Exact tested runtime head before docs-only closeout:** `aa2f92cce5d4cd2cfd02cafc59413be7bdc0d5fb`.
 > **Exact workflow:** `RF v2 native clinic utility`, run `33988642002` — SUCCESS.
 > **ACTIVE RUNTIME WRITER/LOCK:** NONE — implementation/test phase closed.
-> **ACTIVE CANONICAL WRITER/LOCK:** ChatGPT — docs-only closeout only until this commit lands.
+> **ACTIVE CANONICAL WRITER/LOCK:** NONE — canonical pre-PR closeout complete.
 > **Implementation/test authority:** CONSUMED.
-> **PR authority:** NONE.
+> **PR authority:** GRANTED — bounded native RF v2 release PR only.
 > **Merge authority:** NONE.
 > **Production config/secret authority:** NONE.
 > **Deploy authority:** NONE.
@@ -188,7 +188,7 @@ RF v2 IMPLEMENTATION                 COMPLETE
 OFFICIAL TEMPLATE PACKAGED           YES — exact byte identity verified
 RF v2 RELEASE-CANDIDATE TESTED       YES @ aa2f92cc... / run 33988642002
 RF v2 EXACT-HEAD REVIEW              PASS
-PR                                   NO
+PR                                   AUTHORIZED / NOT YET OPEN
 MERGED                               NO
 DEPLOYED                             NO
 PRODUCTION-SMOKE-VERIFIED            NO
@@ -204,10 +204,10 @@ ACTIVE RUNTIME WRITER                NONE
 
 The implementation/test phase is closed.
 
-Next possible release sequence requires separate product-owner authority:
+Product owner has granted authority through opening the bounded native RF v2 release PR. Remaining lifecycle steps remain separately gated:
 
 ```text
-optional final docs-only drift verification
+final docs-only drift verification
 → open bounded RF v2 release PR
 → verify exact PR-head checks
 → separate merge decision
@@ -215,12 +215,11 @@ optional final docs-only drift verification
 → authenticated production smoke
 ```
 
-The stale docs-only PR #74 predates the authoritative-form change/native ownership replan and must be dispositioned separately; do not use it as release truth.
+The stale docs-only PR #74 was closed unmerged as superseded because it predates the authoritative-form change/native ownership replan.
 
 Forbidden under current authority:
 
 ```text
-NO PR
 NO merge
 NO production config/secret mutation
 NO deploy
