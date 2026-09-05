@@ -108,13 +108,14 @@ class RFMedicationParserTests(unittest.TestCase):
         self.assertEqual(len(result["auto_selected_others"]), 3)
         arcoxia = next(item for item in result["nsaid_candidates"] if item["canonical_key"] == "etoricoxib")
         self.assertEqual(arcoxia["dose"], "90 mg")
-        self.assertEqual(arcoxia["duration"], "3 μηνες")
+        self.assertEqual(arcoxia["duration"], "3 μήνες")
 
-    def test_duplicate_brand_same_active_family_is_deduplicated(self):
+    def test_duplicate_brand_same_active_family_prefers_longer_documented_trial(self):
         result = parse_medications("Tramadex 100 mg για 1 μήνα\nMabron 50 mg για 2 μήνες")
         tramadol = [item for item in result["other_candidates"] if item["canonical_key"] == "tramadol"]
         self.assertEqual(len(tramadol), 1)
-        self.assertEqual(tramadol[0]["duration"], "2 μηνες")
+        self.assertEqual(tramadol[0]["duration"], "2 μήνες")
+        self.assertEqual(tramadol[0]["source_text"], "Mabron 50 mg για 2 μήνες")
 
 
 class RFPhysioParserTests(unittest.TestCase):
@@ -218,8 +219,8 @@ class RFPdfTests(unittest.TestCase):
             "pain_onset_vas": 8,
             "last_assessment_date": "2026-04-01",
             "last_assessment_vas": 7,
-            "nsaid_trials": [{"drug_name": "Etoricoxib", "dose": "90 mg", "duration": "3 μηνες"}],
-            "other_analgesic_trials": [{"drug_name": "Παρακεταμόλη", "dose": "1 g", "duration": "3 μηνες"}],
+            "nsaid_trials": [{"drug_name": "Etoricoxib", "dose": "90 mg", "duration": "3 μήνες"}],
+            "other_analgesic_trials": [{"drug_name": "Παρακεταμόλη", "dose": "1 g", "duration": "3 μήνες"}],
             "adverse_effects": [],
             "physio": {"start_date": "2026-02-01", "end_date": "2026-02-15", "treatment_count": 3},
             "additional_notes": "",
