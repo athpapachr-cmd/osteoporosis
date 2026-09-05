@@ -28,7 +28,8 @@ jobs:
             clinic_utilities/rf/parsers.py \
             clinic_utilities/rf/pdf.py \
             clinic_utilities/rf/persistence.py \
-            test_rf_v2_native.py
+            test_rf_v2_native.py \
+            test_rf_v2_release_hardening.py
 
       - name: Check RF JavaScript syntax
         run: |
@@ -109,6 +110,9 @@ jobs:
 
       - name: Run native RF v2 focused regression
         run: python -m unittest -v test_rf_v2_native.py
+
+      - name: Run RF v2 release hardening regressions
+        run: python -m unittest -v test_rf_v2_release_hardening.py
 
       - name: Run native RF v2 UI integrity regression
         run: node test_rf_v2_ui.js

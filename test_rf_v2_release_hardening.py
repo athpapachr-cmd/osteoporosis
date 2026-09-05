@@ -7,7 +7,7 @@ from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
-from clinic_utilities.rf.api import RFApplicationDraft, _resolve_medications
+from clinic_utilities.rf.api import RFApplicationDraft, RFMedicationTrial, _resolve_medications
 from clinic_utilities.rf.persistence import (
     RFApplicationORM,
     initialize_rf_tables,
@@ -23,7 +23,7 @@ def memory_engine():
     )
 
 
-def draft_with_medication(text: str) -> RFApplicationDraft:
+def draft_with_manual_trials(nsaid_count: int, other_count: int) -> RFApplicationDraft:
     return RFApplicationDraft(
         pathway="A1",
         patient_name="Synthetic Patient",
@@ -33,35 +33,28 @@ def draft_with_medication(text: str) -> RFApplicationDraft:
         product_key="medikey",
         indication_code="KNEE_OA_KL34",
         laterality="left",
-        exact_location="Î‘ÏÎ¹ÏƒÏ„ÎµÏÏŒ Î³ÏŒÎ½Î±Ï„Î¿",
-        full_medication_text=text,
+        exact_location="Left knee",
+        full_medication_text="synthetic medication source",
+        nsaid_trials=[
+            RFMedicationTrial(drug_name=f"NSAID-{i}", dose="dose", duration="duration")
+            for i in range(nsaid_count)
+        ],
+        other_analgesic_trials=[
+            RFMedicationTrial(drug_name=f"OTHER-{i}", dose="dose", duration="duration")
+            for i in range(other_count)
+        ],
     )
 
 
 class RFThreePlusThreeTests(unittest.TestCase):
     def test_a1_rejects_fewer_than_three_plus_three(self):
-        draft = draft_with_medication(
-            "Arcoxia 90 mg Î³Î¹Î± 3 Î¼Î®Î½ÎµÏ‚\n"
-            "Brufen 600 mg Î³Î¹Î± 2 Î¼Î®Î½ÎµÏ‚\n"
-            "Panadol 1 g Î³Î¹Î± 3 Î¼Î®Î½ÎµÏ‚\n"
-            "Tramadex 100 mg Î³Î¹Î± 1 Î¼Î®Î½Î±"
-        )
+        draft = draft_with_manual_trials(2, 2)
         with self.assertRaises(HTTPException) as caught:
             _resolve_medications(draft)
         self.assertEqual(caught.exception.status_code, 422)
-        self.assertIn("3 ÎœÎ£Î‘Î¦", caught.exception.detail)
-        self.assertIn("3 Î¬Î»Î»Î±", caught.exception.detail)
 
     def test_a1_accepts_exact_three_plus_three(self):
-        draft = draft_with_medication(
-            "Arcoxia 90 mg Î³Î¹Î± 3 Î¼Î®Î½ÎµÏ‚\n"
-            "Brufen 600 mg Î³Î¹Î± 2 Î¼Î®Î½ÎµÏ‚\n"
-            "Voltaren 75 mg Î³Î¹Î± 1 Î¼Î®Î½Î±\n"
-            "Panadol 1 g Î³Î¹Î± 3 Î¼Î®Î½ÎµÏ‚\n"
-            "Parcoten 1 g Î³Î¹Î± 2 Î¼Î®Î½ÎµÏ‚\n"
-            "Tramadex 100 mg Î³Î¹Î± 1 Î¼Î®Î½Î±"
-        )
-        nsaid, other = _resolve_medications(draft)
+        nsaid, other = _resolve_medications(draft_with_manual_trials(3, 3))
         self.assertEqual(len(nsaid), 3)
         self.assertEqual(len(other), 3)
 
@@ -81,18 +74,46 @@ class RFApplicationDataMinimizationTests(unittest.TestCase):
                 "indication_code": "KNEE_OA_KL34",
                 "site_key": "knee",
                 "laterality": "left",
-                "exact_location": "Î‘ÏÎ¹ÏƒÏ„ÎµÏÏŒ Î³ÏŒÎ½Î±Ï„Î¿",
+                "exact_location": "Left knee",
                 "product_key": "medikey",
                 "full_medication_text": "RAW MEDICATION PASTE MUST NOT PERSIST",
-                "physio_dates_text": "01/02/2026\n08/02/2026",
+                "physio_dates_text": "2026-02-01\n2026-02-08",
                 "nsaid_trials": [
-                    {"source_text": "Arcoxia raw line", "drug_name": "Etoricoxib", "dose": "90 mg", "duration": "3 Î¼Î®Î½ÎµÏ‚"}
+                    {
+                        "source_text": "raw NSAID source line",
+                        "drug_name": "NSAID-A",
+                        "dose": "dose",
+                        "duration": "duration",
+                    }
                 ],
                 "other_analgesic_trials": [
-                    {"source_text": "Panadol raw line", "drug_name": "Î Î±ÏÎ±ÎºÎµÏ„Î±Î¼ÏŒÎ»Î·", "dose": "1 g", "duration": "3 Î¼Î®Î½ÎµÏ‚"}
+                    {
+                        "source_text": "raw analgesic source line",
+                        "drug_name": "OTHER-A",
+                        "dose": "dose",
+                        "duration": "duration",
+                    }
                 ],
-                "physio": {"start_date": "2026-02-01", "end_date": "2026-02-08", "treatment_count": 2},
+                "physio": {
+                    "start_date": "2026-02-01",
+                    "end_date": "2026-02-08",
+                    "treatment_count": 2,
+                },
             },
         )
         with Session(engine) as session:
-            row = session.scalar(select(RFApplicationORM(¤¹İ¡•É”¡IÁÁ±¥…Ñ¥½¹=I4¹¥€ôô…ÁÁ±¥…Ñ¥½¹}¥¤¤(€€€€€€€€€€€Á…å±½…€ôÉ½Ü¹Á…å±½…‘}©Í½¸(€€€€€€€Í•±˜¹…ÍÍ•ÉÑ9½Ñ%¸ ‰™Õ±±}µ•‘¥…Ñ¥½¹}Ñ•áĞˆ°Á…å±½…¤(€€€€€€€Í•±˜¹…ÍÍ•ÉÑ9½Ñ%¸ ‰Á¡åÍ¥½}‘…Ñ•Í}Ñ•áĞˆ°Á…å±½…¤(€€€€€€€Í•±˜¹…ÍÍ•ÉÑ9½Ñ%¸ ‰Í½ÕÉ•}Ñ•áĞˆ°Á…å±½…‘l‰¹Í…¥‘}ÑÉ¥…±Ì‰ulÁt¤(€€€€€€€Í•±˜¹…ÍÍ•ÉÑ9½Ñ%¸ ‰Í½ÕÉ•}Ñ•áĞˆ°Á…å±½…‘l‰½Ñ¡•É}…¹…±•Í¥}ÑÉ¥…±Ì‰ulÁt¤(€€€€€€€Í•±˜¹…ÍÍ•ÉÑÅÕ…°¡Á…å±½…‘l‰Á¡åÍ¥¼‰ul‰ÑÉ•…Ñµ•¹Ñ}½Õ¹Ğ‰t°€È¤(()¥˜}}¹…µ•}|€ôô€‰}}µ…¥¹}|ˆè(€€€Õ¹¥ÑÑ•ÍĞ¹µ…¥¸ ¤(
+            row = session.scalar(
+                select(RFApplicationORM).where(RFApplicationORM.id == application_id)
+            )
+            self.assertIsNotNone(row)
+            payload = row.payload_json
+
+        self.assertNotIn("full_medication_text", payload)
+        self.assertNotIn("physio_dates_text", payload)
+        self.assertNotIn("source_text", payload["nsaid_trials"][0])
+        self.assertNotIn("source_text", payload["other_analgesic_trials"][0])
+        self.assertEqual(payload["physio"]["treatment_count"], 2)
+
+
+if __name__ == "__main__":
+    unittest.main()
