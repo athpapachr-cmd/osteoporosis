@@ -1,0 +1,4 @@
+# temporary packaging manifest
+source=Radiotherapy Eligibility Form.pdf
+size=310238
+sha256=998e99e6b0a51d4a19431dd2e31e595282d7adf17eb29f5f91eeab94e3647252
