@@ -1,202 +1,229 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** MODULE 01 — G-4 DEPLOYED / PRODUCTION SMOKE PARTIAL; RF AUTH GATEWAY HOTFIX PR #73 OPEN / PR CHECKS PASS / MERGE HOLD.
-> **Updated:** 2026-09-02 Asia/Nicosia.
+> **STATUS:** RF v2 NATIVE CLINIC UTILITY — IMPLEMENTED / RELEASE-CANDIDATE TESTED / EXACT-HEAD REVIEW PASS / PR AUTHORIZED — PRE-PR HOLD
+> **Updated:** 2026-09-05 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Fresh verified remote `main`:** `338830340f6fed2ae1a3f08f6fdb0b8059932a66`.
-> **G-4 release PR:** `#72` — squash merged.
-> **G-4 merge/deployed source:** `338830340f6fed2ae1a3f08f6fdb0b8059932a66`.
-> **G-4 Render deploy:** `dep-dac27kojo6nc739biu80` — product-owner supplied `live` evidence at exact merge source.
-> **Hotfix branch:** `fix/module01-g4-rf-auth-gateway-2026-09-02`.
-> **Hotfix exact tested runtime head:** `29140a6cd4c9f57b454daa6e4a2883ec0345b53f`.
-> **Pre-PR canonical-closeout head:** `97f9ffd05637d838ae5c93a85f9be8bd15bc0247`.
-> **PR #73 exact checked head:** `1c2533616e1606b6d9fe005afbe3b45be12aac01`.
-> **PR #73 CU-1 workflow:** run `33648573608` — SUCCESS.
-> **PR #73 G3/G4 inherited workflow:** run `33648573632` — SUCCESS.
-> **ACTIVE CANONICAL WRITER/LOCK:** NONE.
-> **ACTIVE RUNTIME WRITER/LOCK:** NONE.
-> **PR authority:** GRANTED AND CONSUMED.
+> **Fresh verified production `main`:** `8aa8b38e3fa9a8f8ba0618868b452b1835be0d47`.
+> **Active branch:** `feat/clinic-utilities-rf-v2-native-2026-09-05`.
+> **Implementation base / merge base:** `8aa8b38e3fa9a8f8ba0618868b452b1835be0d47`.
+> **Current frozen slice:** `CU-RF-V2-NATIVE-2026-09-05`.
+> **Exact tested runtime head before docs-only closeout:** `aa2f92cce5d4cd2cfd02cafc59413be7bdc0d5fb`.
+> **Exact workflow:** `RF v2 native clinic utility`, run `33988642002` — SUCCESS.
+> **ACTIVE RUNTIME WRITER/LOCK:** NONE — implementation/test phase closed.
+> **ACTIVE CANONICAL WRITER/LOCK:** NONE — canonical pre-PR closeout complete.
+> **Implementation/test authority:** CONSUMED.
+> **PR authority:** GRANTED — bounded native RF v2 release PR only.
 > **Merge authority:** NONE.
 > **Production config/secret authority:** NONE.
 > **Deploy authority:** NONE.
+> **Production-smoke authority:** NONE.
 
 ---
 
-# 1. Verified G-4 production state
+# 1. Production baseline
+
+Production remains on the old G4 authenticated RF gateway at:
 
 ```text
-G-4 DESIGN                         COMPLETE
-G-4 IMPLEMENTED                    YES
-G-4 TESTED                         YES
-G-4 RELEASE-READINESS REVIEW       PASS
-G-4 PR                             #72
-G-4 MERGED                         YES
-G-4 DEPLOYED                       YES
-G-4 PRODUCTION-SMOKE-VERIFIED      NO — RF authorized usability blocker remains unresolved in production
-G-4 PILOT-VALIDATED                NO
+main:
+8aa8b38e3fa9a8f8ba0618868b452b1835be0d47
+
+release origin:
+PR #73 — G4 hotfix: authenticated RF gateway
 ```
 
-Product-owner production smoke after G-4 deployment verified collapse/expand, independent current-flow collapse, sticky patient summary, physiotherapy navigation and navigation to the intended RF service. RF authorized form usability failed with the protected service returning `{"detail":"Απαιτείται εξουσιοδοτημένη πρόσβαση."}`.
+The old gateway auth/form leg was later proven in production after server-side RF key configuration:
+
+```text
+Cockpit RF route 200
+→ upstream RF /rf 200
+→ old form rendered
+```
+
+Full old history/create/PDF smoke was not completed before the authoritative RF form changed. The old RF form contract is now obsolete for the requested workflow.
 
 ---
 
-# 2. Bounded RF-auth hotfix final runtime boundary
+# 2. Approved native RF ownership
 
-Implemented architecture:
+Product owner approved moving RF ownership from `ortho-reception-backend-v2` into the Clinical Excellence runtime.
+
+Target/implemented active architecture:
 
 ```text
-authenticated Cockpit browser
+authenticated Clinical Excellence browser
 → /clinical/clinic-utilities/rf
-→ existing ClinicalCookieMiddleware / clinical-key gate
-→ Osteoporosis server-side RF gateway
-→ X-RF-Key from RF_GATEWAY_ACCESS_KEY
-→ fixed existing RF service
+→ native RF router
+→ existing clinical auth boundary
+→ separate RF persistence tables
+→ official RF v2 PDF stamping + imaging append
 ```
 
-Final browser-facing routes:
+The legacy gateway code is retained unmounted as rollback/reference only.
 
-```text
-GET  /clinical/clinic-utilities/rf
-POST /clinical/clinic-utilities/rf/history
-POST /clinical/clinic-utilities/rf/create
-GET  /clinical/clinic-utilities/rf/pdf/{application_id}
-```
-
-The local history route is POST-only so identity/GeSY identifiers are carried in a bounded form-urlencoded body rather than an Osteoporosis query-string/browser-history URL. The gateway maps only the allowed fields server-to-server to the existing RF history contract.
-
-Preserved boundaries:
-
-```text
-NO RF secret in JS / HTML / URL
-NO clinical_session forwarding upstream
-NO browser Authorization/X-Clinical-Key forwarding upstream
-NO user-controlled upstream host/path family
-NO RF data persisted into osteoporosis encounter state
-NO RF template/PDF/business-rule duplication
-NO RF backend auth weakening
-NO ortho-reception runtime/config mutation
-```
+RF remains a reusable Clinic Utility and is not written into osteoporosis encounter payloads.
 
 ---
 
-# 3. Pre-PR executable evidence
+# 3. Release-candidate implementation proven at aa2f92cc...
 
-Exact tested runtime head:
+The exact tested runtime head implements:
+
+- Category-A-only A.1/A.2 workflow for this clinician;
+- fixed server-side doctor/product configuration without exposing values to the browser/repo;
+- user-specific indication subset plus dynamic Other;
+- required imaging PDF upload;
+- A.1 pain/date validation and SI/hip intervention requirements;
+- deterministic medication parsing/deduplication;
+- fail-closed requirement for exactly 3 NSAID trials + 3 other analgesic trials before A.1 create;
+- deterministic physiotherapy-date parsing;
+- separate RF application-request and actual-procedure-history persistence;
+- A.2 lookup by patient identity plus site/laterality;
+- manual actual-procedure backfill with `clinician_manual` provenance for transition-period or later missing records;
+- no obsolete hard-coded 10-week repeat rule;
+- data minimization: raw pasted medication text, raw pasted physiotherapy dates and medication `source_text` lines are not persisted in application JSON;
+- native Clinical Excellence UI;
+- official PDF page assembly using the exact supplied template.
+
+Hard invariant:
 
 ```text
-29140a6cd4c9f57b454daa6e4a2883ec0345b53f
+RF APPLICATION REQUEST
+!=
+ACTUAL RF PROCEDURE
 ```
+
+A generated approval/request never creates actual-procedure history by inference.
+
+---
+
+# 4. Authoritative official PDF identity
+
+Packaged release template:
+
+```text
+clinic_utilities/rf/templates/rf_official_form_v2.pdf
+```
+
+Exact identity:
+
+```text
+source upload: Radiotherapy Eligibility Form.pdf
+size: 310238 bytes
+SHA-256: 998e99e6b0a51d4a19431dd2e31e595282d7adf17eb29f5f91eeab94e3647252
+Git blob SHA: c6c234e99095be38c47a1c6f078dacdd47f4199f
+pages: 12
+geometry: approximately 595 x 842 pt per page
+```
+
+The gate verifies those values and exercises real A.1 and A.2 generation against the packaged official binary.
+
+---
+
+# 5. Exact automated evidence
 
 Workflow:
 
 ```text
-G3 guidance salience longitudinal summary
-run 33640110048
-SUCCESS
+RF v2 native clinic utility
+run: 33988642002
+head: aa2f92cce5d4cd2cfd02cafc59413be7bdc0d5fb
+result: SUCCESS
 ```
 
-This gate passed RF gateway syntax/security/privacy regressions plus inherited G4/G3/G2/G1/C1 regressions. No identifiable patient data was used.
+Successful exact-head evidence includes:
 
-Canonical closeout after that runtime head changed only `CURRENT_OPERATIONAL.md`, `SLICE_PLAN_CURRENT.md`, `TODO.md` and append-only `osteoporosis-change-log.md`. Pre-PR compare showed branch behind `main` by 0 with merge-base exactly `338830340f6fed2ae1a3f08f6fdb0b8059932a66`.
+```text
+Python syntax                              PASS
+JavaScript syntax                          PASS
+Official template size/hash/blob/page gate PASS
+Real packaged-template A.1 generation      PASS
+Real packaged-template A.2 generation      PASS
+Native RF focused regressions              PASS
+3+3 / data-minimization hardening tests    PASS
+Native RF UI integrity                     PASS
+Native route/dependency ownership          PASS
+Adjacent CU-1 regressions                  PASS
+Legacy RF gateway rollback regressions     PASS
+G4 workspace regression                    PASS
+G3 regressions                             PASS
+G2 regressions                             PASS
+G1 regressions                             PASS
+C1 finalization regressions                PASS
+```
+
+Synthetic tests contain no identifiable patient data.
 
 ---
 
-# 4. PR #73 exact-head evidence
+# 6. Exact-head review
 
-PR:
+Final source/security/scope review found and corrected before the final tested head:
+
+1. A.1 previously allowed fewer than the required 3+3 medication rows.
+   - corrected to fail closed unless 3 NSAIDs + 3 other analgesics are resolved;
+2. application JSON previously retained raw pasted medication/physio text and selected medication source lines.
+   - corrected to persist normalized evidence only;
+3. manual actual-procedure history was labelled `legacy_manual`.
+   - corrected to `clinician_manual` so provenance remains true for both transition-period and later clinician-entered missing procedure records.
+
+Post-correction compare remains:
 
 ```text
-#73 — G4 hotfix: authenticated RF gateway
-base main @ 338830340f6fed2ae1a3f08f6fdb0b8059932a66
-checked head 1c2533616e1606b6d9fe005afbe3b45be12aac01
-mergeable YES
+branch ahead of production main
+behind: 0
+merge base: exact production main
+scope: RF v2 + canonical slice files only
 ```
 
-PR-triggered checks at that exact checked head:
-
-```text
-CU-1 focused tests
-run 33648573608
-SUCCESS
-
-G3 guidance salience longitudinal summary
-run 33648573632
-SUCCESS
-```
-
-The G3/G4 workflow passed:
-
-- JavaScript syntax;
-- RF gateway Python syntax;
-- G4 RF authenticated-gateway regression;
-- POST-only RF history privacy regression;
-- G4 workspace ergonomics/RF utility regression;
-- G3 salience/longitudinal summary and ownership regressions;
-- G3 production visibility/cache;
-- frozen G2 contract/core/live-state/wiring regressions;
-- G1 core/wiring/UI/WHY-NOW regressions;
-- C1 authoritative Finish browser regression;
-- server finalization lifecycle regression.
-
-CU-1 focused tests also passed, preserving the adjacent Clinic Utilities package boundary.
+No Ortho-Reception runtime/config/secret mutation occurred.
 
 ---
 
-# 5. Hotfix release state
+# 7. Lifecycle matrix
 
 ```text
-HOTFIX DESIGN                         COMPLETE
-HOTFIX IMPLEMENTED                    YES
-HOTFIX TESTED                         YES
-HOTFIX EXACT-HEAD REVIEW              PASS
-HOTFIX CANONICAL CLOSEOUT             PASS
-FINAL POST-RUNTIME DOCS-ONLY DRIFT    PASS
-HOTFIX PR                             #73 OPEN
-HOTFIX PR CHECKS                      PASS @ 1c2533616e1606b6d9fe005afbe3b45be12aac01
-HOTFIX MERGED                         NO
-RF_GATEWAY_ACCESS_KEY CONFIGURED      NO / NOT VERIFIED
-HOTFIX DEPLOYED                       NO
-HOTFIX PRODUCTION-SMOKE-VERIFIED      NO
-HOTFIX PILOT-VALIDATED                NO
-ACTIVE WRITER                         NONE
+RF v2 DESIGN                         APPROVED / FROZEN
+RF v2 IMPLEMENTATION                 COMPLETE
+OFFICIAL TEMPLATE PACKAGED           YES — exact byte identity verified
+RF v2 RELEASE-CANDIDATE TESTED       YES @ aa2f92cc... / run 33988642002
+RF v2 EXACT-HEAD REVIEW              PASS
+PR                                   AUTHORIZED / NOT YET OPEN
+MERGED                               NO
+DEPLOYED                             NO
+PRODUCTION-SMOKE-VERIFIED            NO
+PILOT-VALIDATED                      NO
+ACTIVE RUNTIME WRITER                NONE
 ```
 
-`IMPLEMENTED != TESTED != PR-CHECKED != MERGED != CONFIGURED != DEPLOYED != PRODUCTION-SMOKE-VERIFIED != PILOT-VALIDATED`.
-
-C2 remains separately implemented/tested and unreleased. PR-1/PR-2 and later rich physiotherapy work are outside this hotfix.
+`IMPLEMENTED != TESTED != PR != MERGED != DEPLOYED != PRODUCTION-SMOKE-VERIFIED != PILOT-VALIDATED`.
 
 ---
 
-# 6. Cross-repository / configuration constraint
+# 8. Exact next action / HOLD
 
-The RF backend remains governed independently by `athpapachr-cmd/ortho-reception-ops`. No RF backend runtime, config or secret was mutated.
+The implementation/test phase is closed.
 
-Future production enablement requires separately authorized server-side configuration on the Osteoporosis Render service:
+Product owner has granted authority through opening the bounded native RF v2 release PR. Remaining lifecycle steps remain separately gated:
 
 ```text
-RF_GATEWAY_ACCESS_KEY
+final docs-only drift verification
+→ open bounded RF v2 release PR
+→ verify exact PR-head checks
+→ separate merge decision
+→ normal Render auto-deploy after merge
+→ authenticated production smoke
 ```
 
-No credential value belongs in GitHub or chat.
+The stale docs-only PR #74 was closed unmerged as superseded because it predates the authoritative-form change/native ownership replan.
 
----
-
-# 7. Exact next action / STOP gate
+Forbidden under current authority:
 
 ```text
-PR #73 OPEN + exact checked head PASS
-→ STOP for separate product-owner merge decision
-```
-
-Forbidden without new explicit authority:
-
-```text
-NO MERGE
+NO merge
 NO production config/secret mutation
-NO manual Render deploy
-NO mutation of ortho-reception-backend-v2
-NO claim of RF production-smoke verification
-NO pilot claim
+NO deploy
+NO production smoke
+NO Ortho-Reception mutation
+NO claim of production validation
 ```
-
-After any future authorized merge/config/deploy, production smoke must confirm RF form rendering, POST-only history lookup, create/PDF flow and credential non-exposure while the already-passed G4 ergonomics remain intact.

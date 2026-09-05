@@ -1108,3 +1108,35 @@ G-4 PILOT-VALIDATED              NO
 ```
 
 The implementation/runtime writer lock was released during canonical closeout. Product-owner authority in this step covered canonical closeout and final docs-only drift verification only. A later release requires separate authorization for PR, merge and production configuration/deployment. No manual Render deploy, reception-backend mutation, production secret mutation or production RF smoke occurred in this closeout.
+
+
+---
+## 2026-09-05 — Native RF v2 release candidate completed; PR path authorized
+
+The authoritative RF eligibility form changed materially before the old G-4 gateway create/PDF path was fully production-smoked. The obsolete external RF form contract was therefore not validated further. Product-owner REPLAN approval moved RF UI/business/PDF/history ownership into native Clinical Excellence Clinic Utilities for this clinician's Category-A workflow: A.1 new treatment and A.2 continuation.
+
+Release-candidate runtime evidence:
+
+```text
+branch: feat/clinic-utilities-rf-v2-native-2026-09-05
+exact tested runtime head: aa2f92cce5d4cd2cfd02cafc59413be7bdc0d5fb
+workflow: RF v2 native clinic utility
+run: 33988642002
+result: SUCCESS
+```
+
+The exact supplied 12-page official PDF is packaged at `clinic_utilities/rf/templates/rf_official_form_v2.pdf` and guarded by byte identity: 310238 bytes, SHA-256 `998e99e6b0a51d4a19431dd2e31e595282d7adf17eb29f5f91eeab94e3647252`, Git blob `c6c234e99095be38c47a1c6f078dacdd47f4199f`. The final gate generated real A.1/A.2 packages against that binary and preserved inherited CU-1/G4/G3/G2/G1/C1 regressions.
+
+Exact-head review corrected three release-relevant issues before the final tested runtime: A.1 now fails closed unless exactly 3 NSAID trials + 3 other analgesic trials are resolved; raw medication paste, raw physiotherapy-date paste and medication `source_text` are not persisted; and manual actual-procedure history uses `clinician_manual` provenance rather than `legacy_manual`.
+
+The persistence boundary remains explicit:
+
+```text
+RF APPLICATION REQUEST
+!=
+ACTUAL RF PROCEDURE
+```
+
+Generating an approval/request PDF does not infer that treatment occurred.
+
+Stale docs-only PR #74 was closed unmerged as superseded by the authoritative-form/native-ownership replan. Product-owner authority was then granted to proceed through opening one bounded native RF v2 release PR. Merge, production configuration, deploy and production smoke remain separate decisions.

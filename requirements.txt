@@ -6,3 +6,5 @@ sqlalchemy>=2.0
 psycopg[binary]
 psycopg2-binary
 PyYAML>=6.0
+PyMuPDF>=1.24
+pypdf>=5.0

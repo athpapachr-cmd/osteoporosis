@@ -15,7 +15,7 @@ from clinical_data import build_clinical_router
 from clinical_data_ext import build_clinical_ext_router
 from clinical_status import build_clinical_status_router
 from clinic_utilities.physio_referral_api import build_cu1_physio_referral_router
-from clinic_utilities.rf_gateway import build_rf_gateway_router
+from clinic_utilities.rf.api import build_rf_router
 
 # The legacy app still owns a historical GET / route. Keep the old Cockpit
 # available at /static/index.html, but make the public service root enter the
@@ -32,16 +32,12 @@ app.router.routes = [
 
 @app.middleware("http")
 async def prevent_stale_clinical_workspace_assets(request: Request, call_next):
-    """Keep the actively deployed baseline workspace coherent across releases.
-
-    The workspace bootstraps many relative JS/CSS files from stable URLs. A browser
-    retaining an older asset can therefore run a mixed release even when Render is
-    live at the new commit. Baseline workspace assets are small and clinician-facing,
-    so correctness is more important than client-side caching here.
-    """
+    """Keep actively deployed Clinical Excellence assets coherent across releases."""
 
     response = await call_next(request)
-    if request.url.path.startswith("/static/baseline-audit/"):
+    if request.url.path.startswith("/static/baseline-audit/") or request.url.path.startswith(
+        "/static/clinic-utilities/"
+    ):
         response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
         response.headers["Pragma"] = "no-cache"
         response.headers["Expires"] = "0"
@@ -62,6 +58,8 @@ app.include_router(build_clinical_router(engine))
 app.include_router(build_clinical_ext_router(engine))
 app.include_router(build_clinical_calendar_router(engine))
 app.include_router(build_cu1_physio_referral_router())
-app.include_router(build_rf_gateway_router())
+# RF v2 is now a native protected Clinic Utility. The old rf_gateway module is
+# deliberately left in the repository as rollback-only code but is not mounted.
+app.include_router(build_rf_router(engine))
 
 __all__ = ["app", "engine"]
