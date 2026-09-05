@@ -1,0 +1,67 @@
+name: RF v2 canonical pre-PR closeout
+
+on:
+  push:
+    branches:
+      - feat/clinic-utilities-rf-v2-native-2026-09-05
+
+permissions:
+  contents: write
+
+jobs:
+  closeout:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/clinic-utilities-rf-v2-native-2026-09-05
+          fetch-depth: 0
+
+      - name: Reconcile RF v2 canonicals
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import base64
+
+          def dec(value):
+              return base64.b64decode(value).decode('utf-8')
+
+          # TODO roadmap reconciliation.
+          p = Path('TODO.md')
+          s = p.read_text(encoding='utf-8')
+          old_summary = "C1, G-1, G-2 and G-3 are **implemented / tested / merged / deployed / production-smoke-verified**. G-4 is **merged/deployed with workspace smoke passed**, but its RF authorized workflow is not production-smoke-verified until the tested gateway hotfix is separately released/configured/smoked. Real-clinic usefulness/refinement remains distinct from production smoke and is not `PILOT-VALIDATED`."
+          new_summary = dec('QzEsIEctMSwgRy0yIGFuZCBHLTMgYXJlICoqaW1wbGVtZW50ZWQgLyB0ZXN0ZWQgLyBtZXJnZWQgLyBkZXBsb3llZCAvIHByb2R1Y3Rpb24tc21va2UtdmVyaWZpZWQqKi4gRy00IHdvcmtzcGFjZSBlcmdvbm9taWNzIGFyZSBtZXJnZWQvZGVwbG95ZWQgd2l0aCB3b3Jrc3BhY2Ugc21va2UgcGFzc2VkLiBUaGUgb2xkIFJGIGdhdGV3YXkgYXV0aC9mb3JtIGxlZyBhbHNvIHJlYWNoZWQgYSBwcm9kdWN0aW9uIGAyMDBgIGFmdGVyIHNlcnZlci1zaWRlIGtleSBjb25maWd1cmF0aW9uLCBidXQgdGhlIGF1dGhvcml0YXRpdmUgUkYgZm9ybSB0aGVuIGNoYW5nZWQgYmVmb3JlIGZ1bGwgb2xkIGNyZWF0ZS9QREYgc21va2UuIFRoYXQgb2xkIFJGIGJ1c2luZXNzL2Zvcm0gY29udHJhY3QgaXMgbm93IG9ic29sZXRlLiBOYXRpdmUgUkYgdjIgaXMgaW1wbGVtZW50ZWQgYW5kIHJlbGVhc2UtY2FuZGlkYXRlIHRlc3RlZCBhdCBgYWEyZjkyY2NlNWQ0Y2QyY2ZkMDJjYWZjNTk0MTNiZTdiZGMwZDVmYmAgLyBydW4gYDMzOTg4NjQyMDAyYDsgaXQgcmVtYWlucyB1bm1lcmdlZCwgdW5kZXBsb3llZCwgbm90IHByb2R1Y3Rpb24tc21va2UtdmVyaWZpZWQgYW5kIG5vdCBwaWxvdC12YWxpZGF0ZWQu')
+          if old_summary not in s:
+              raise SystemExit('TODO summary anchor not found')
+          s = s.replace(old_summary, new_summary, 1)
+          start = s.index('## 1.6 G-4 Workspace ergonomics + RF utility navigation')
+          end = s.index('## 1.7 Heidi-first capture', start)
+          s = s[:start] + dec('IyMgMS42IEctNCBXb3Jrc3BhY2UgZXJnb25vbWljcyArIFJGIHV0aWxpdHkg4oCUIFdPUktTUEFDRSBTTU9LRSBQQVNTOyBOQVRJVkUgUkYgdjIgUkVMRUFTRS1DQU5ESURBVEUgVEVTVEVEIC8gUFIgQVVUSE9SSVpFRAoKVHJpZ2dlcmVkIGJ5IHByb2R1Y3Qtb3duZXIgZXZpZGVuY2UgZnJvbSB1c2UgYWZ0ZXIgc3VjY2Vzc2Z1bCBHLTMgcmUtc21va2UgYW5kIHRoZW4gc3VwZXJzZWRlZCBieSB0aGUgYXV0aG9yaXRhdGl2ZSBSRi1mb3JtIGNoYW5nZS4KCi0gW3hdIFJlbGVhc2UgRy00IHdvcmtzcGFjZSBlcmdvbm9taWNzICsgQ2xpbmljIFV0aWxpdGllcyBuYXZpZ2F0aW9uIHRocm91Z2ggUFIgIzcyLgotIFt4XSBSZWxlYXNlIHRoZSBib3VuZGVkIGF1dGhlbnRpY2F0ZWQgUkYgZ2F0ZXdheSBob3RmaXggdGhyb3VnaCBQUiAjNzM7IHNxdWFzaCBtZXJnZSBgOGFhOGIzOGUzZmE5YThmOGJhMDYxODg2OGI0NTJiMTgzNWJlMGQ0N2AuCi0gW3hdIFZlcmlmeSB0aGUgb2xkIGdhdGV3YXkgYXV0aC9mb3JtIGxlZyBpbiBwcm9kdWN0aW9uIGFmdGVyIHNlcnZlci1zaWRlIGtleSBjb25maWd1cmF0aW9uOiBDb2NrcGl0IFJGIHJvdXRlIGAyMDBgIOKGkiB1cHN0cmVhbSBgL3JmYCBgMjAwYCDihpIgZm9ybSByZW5kZXJlZC4KLSBbeF0gU3RvcCB0aGUgb2xkIGNyZWF0ZS9QREYgc21va2Ugd2hlbiB0aGUgYXV0aG9yaXRhdGl2ZSBSRiBmb3JtIGNoYW5nZWQ7IGRvIG5vdCB2YWxpZGF0ZSBhbiBvYnNvbGV0ZSBidXNpbmVzcy9mb3JtIGNvbnRyYWN0IGFzIHByb2R1Y3Rpb24tcmVhZHkuCi0gW3hdIEFwcHJvdmUgUkVQTEFOIGZyb20gZXh0ZXJuYWwgUkYgb3duZXJzaGlwIHRvIG5hdGl2ZSBDbGluaWNhbCBFeGNlbGxlbmNlIENsaW5pYyBVdGlsaXRpZXMgb3duZXJzaGlwLgotIFt4XSBJbXBsZW1lbnQgQ2F0ZWdvcnktQS1vbmx5IEEuMS9BLjIgbmF0aXZlIFJGIHdvcmtmbG93LCBDbGluaWNhbCBFeGNlbGxlbmNlIFVJLCBzZXBhcmF0ZSBSRiBwZXJzaXN0ZW5jZSwgb2ZmaWNpYWwtUERGIHN0YW1waW5nIGFuZCBpbWFnaW5nIGFwcGVuZC4KLSBbeF0gUGFja2FnZSB0aGUgZXhhY3QgYXV0aG9yaXRhdGl2ZSAxMi1wYWdlIFJGIFBERiBiaW5hcnkgYW5kIHZlcmlmeSBieXRlIGlkZW50aXR5IChgMzEwMjM4YCBieXRlczsgU0hBLTI1NiBgOTk4ZTk5ZTZiMGE1MWQ0YTE5NDMxZGQyZTMxZTU5NTI4MmQ3YWRmMTdlYjI5ZjVmOTFlZWFiOTRlMzY0NzI1MmA7IEdpdCBibG9iIGBjNmMyMzRlOTkwOTViZTM4YzQ3YTFjNmYwNzhkYWNkZDQ3ZjQxOTlmYCkuCi0gW3hdIFByZXNlcnZlIGBSRiBBUFBMSUNBVElPTiBSRVFVRVNUICE9IEFDVFU�TCBSRiBQUk9DRURVUkVgOyBtYW51YWwgYWN0dWFsLXByb2NlZHVyZSBlbnRyaWVzIHVzZSBgY2xpbmljaWFuX21hbnVhbGAgcHJvdmVuYW5jZS4KLSBbeF0gRmFpbCBjbG9zZWQgZm9yIEEuMSB1bmxlc3MgZXhhY3RseSAzIE5TQUlEIHRyaWFscyArIDMgb3RoZXIgYW5hbGdlc2ljIHRyaWFscyBhcmUgcmVzb2x2ZWQ7IGRvIG5vdCBwZXJzaXN0IHJhdyBwYXN0ZWQgbWVkaWNhdGlvbi9waHlzaW90aGVyYXB5IHRleHQgb3IgbWVkaWNhdGlvbiBzb3VyY2UgbGluZXMuCi0gW3hdIFBhc3MgdGhlIGZ1bGwgbmF0aXZlIFJGIHYyIHJlbGVhc2UtY2FuZGlkYXRlIGdhdGUgYXQgZXhhY3QgcnVudGltZSBoZWFkIGBhYTJmOTJjY2U1ZDRjZDJjZmQwMmNhZmM1OTQxM2JlN2JkYzBkNWZiYCwgd29ya2Zsb3cgcnVuIGAzMzk4ODY0MjAwMmAg4oCUIFNVQ0NFU1MsIGluY2x1ZGluZyBvZmZpY2lhbC10ZW1wbGF0ZSBBLjEvQS4yIGdlbmVyYXRpb24gYW5kIGluaGVyaXRlZCBDVS0xL0c0L0czL0cyL0cxL0MxIHJlZ3Jlc3Npb25zLgotIFt4XSBDb21wbGV0ZSBleGFjdC1oZWFkIHNvdXJjZS9zZWN1cml0eS9zY29wZSByZXZpZXcgd2l0aCBubyByZW1haW5pbmcgcmVsZWFzZS1ibG9ja2luZyBmaW5kaW5nLgotIFt4XSBDbG9zZSBzdGFsZSBkb2NzLW9ubHkgUFIgIzc0IHVubWVyZ2VkIGFzIHN1cGVyc2VkZWQgYnkgdGhlIGF1dGhvcml0YXRpdmUtZm9ybS9uYXRpdmUtb3duZXJzaGlwIHJlcGxhbi4KLSBbIF0gT3BlbiBib3VuZGVkIG5hdGl2ZSBSRiB2MiByZWxlYXNlIFBSIGZyb20gYGZlYXQvY2xpbmljLXV0aWxpdGllcy1yZi12Mi1uYXRpdmUtMjAyNi0wOS0wNWAgdG8gYG1haW5gLgotIFsgXSBNZXJnZSBvbmx5IHdpdGggYSBzZXBhcmF0ZSBleHBsaWNpdCBwcm9kdWN0LW93bmVyIGRlY2lzaW9uLgotIFsgXSBBZnRlciBtZXJnZSwgYWxsb3cgbm9ybWFsIFJlbmRlciBhdXRvLWRlcGxveSBhbmQgY29tcGxldGUgYXV0aGVudGljYXRlZCBwcm9kdWN0aW9uIHNtb2tlIG9mIEEuMS9BLjIsIHBlcnNpc3RlbmNlL2hpc3RvcnksIG9mZmljaWFsIFBERiBvdXRwdXQgYW5kIGFkamFjZW50IENsaW5pYyBVdGlsaXRpZXMgYmVoYXZpb3IuCgpUaGUgbmF0aXZlIFJGIHYyIGNhbmRpZGF0ZSBpcyAqKmltcGxlbWVudGVkIC8gcmVsZWFzZS1jYW5kaWRhdGUgdGVzdGVkIC8gZXhhY3QtaGVhZCByZXZpZXdlZCoqLCBidXQgaXMgbm90IG1lcmdlZCwgZGVwbG95ZWQsIHByb2R1Y3Rpb24tc21va2UtdmVyaWZpZWQgb3IgcGlsb3QtdmFsaWRhdGVkLgoK') + s[end:]
+          p.write_text(s, encoding='utf-8')
+
+          # Slice design closeout.
+          p = Path('SLICE_PLAN_CURRENT.md')
+          s = p.read_text(encoding='utf-8')
+          s = s.replace(
+              '> **STATUS:** APPROVED / FROZEN — IMPLEMENTATION AUTHORIZED / ACTIVE',
+              '> **STATUS:** APPROVED / FROZEN — IMPLEMENTED / RELEASE-CANDIDATE TESTED / EXACT-HEAD REVIEW PASS — PR AUTHORIZED / PRE-PR HOLD',
+              1,
+          )
+          s = s.replace(
+              '> **Implementation authority:** YES — bounded to this frozen slice.',
+              '> **Implementation/test authority:** CONSUMED — release-candidate phase closed.\n> **PR authority:** GRANTED — bounded native RF v2 release PR only.',
+              1,
+          )
+          s = s.replace(
+              '→ automatically select up to 3 NSAID trials\n→ automatically select up to 3 other analgesic trials',
+              '→ automatically resolve/select exactly 3 NSAID trials\n→ automatically resolve/select exactly 3 other analgesic trials\n→ fail closed if 3 + 3 cannot be resolved without invention',
+              1,
+          )
+          s = s.replace(
+              '→ persist as `legacy_manual` / retrospective provenance',
+              '→ persist as `clinician_manual` actual-procedure provenance',
+              1,
+          )
+          if '# Release-candidate closeout — 2026-09-05' not in s:
+              s = s.rstrip() + '\n\n' + dec('LS0tCgojIFJlbGVhc2UtY2FuZGlkYXRlIGNsb3Nlb3V0IOKAlCAyMDI2LTA5LTA1CgpUaGUgZnJvemVuIHNsaWNlIGhhcyBiZWVuIGltcGxlbWVudGVkIGFuZCByZWxlYXNlLWNhbmRpZGF0ZSB0ZXN0ZWQuCgpgYGB0ZXh0CmV4YWN0IHJ1bnRpbWUgaGVhZDoKYWEyZjkyY2NlNWQ0Y2QyY2ZkMDJjYWZjNTk0MTNiZTdiZGMwZDVmYgoKd29ya2Zsb3c6ClJGIHYyIG5hdGl2ZSBjbGluaWMgdXRpbGl0eQpydW4gMzM5ODg2NDIwMDIKU1VDQ0VTUwpgYGAKClJlbGVhc2UtY2FuZGlkYXRlIGV2aWRlbmNlIGluY2x1ZGVzIGV4YWN0IGF1dGhvcml0YXRpdmUtdGVtcGxhdGUgaWRlbnRpdHkvZ2VvbWV0cnksIHJlYWwgcGFja2FnZWQtdGVtcGxhdGUgQS4xL0EuMiBnZW5lcmF0aW9uLCBmb2N1c2VkIG5hdGl2ZSBSRiByZWdyZXNzaW9ucywgdGhlIGZhaWwtY2xvc2VkIDMrMyBtZWRpY2F0aW9uIGludmFyaWFudCwgYXBwbGljYXRpb24tcGF5bG9hZCBkYXRhIG1pbmltaXphdGlvbiwgbmF0aXZlIFVJL3JvdXRlIG93bmVyc2hpcCwgYWRqYWNlbnQgQ1UtMSByZWdyZXNzaW9ucywgbGVnYWN5IGdhdGV3YXkgcm9sbGJhY2sgY292ZXJhZ2UgYW5kIGluaGVyaXRlZCBHNC9HMy9HMi9HMS9DMSByZWdyZXNzaW9ucy4KCkR1cmFibGUgcnVudGltZSBpbnZhcmlhbnRzIGFmdGVyIHJldmlldzoKCmBgYHRleHQKQS4xIHJlcXVpcmVzIGV4YWN0bHkgMyBOU0FJRCArIDMgb3RoZXIgYW5hbGdlc2ljIGRvY3VtZW50ZWQgdHJpYWxzCnJhdyBtZWRpY2F0aW9uIHBhc3RlICE9IHBlcnNpc3RlZCBhcHBsaWNhdGlvbiBldmlkZW5jZQpyYXcgcGh5c2lvdGhlcmFweSBkYXRlIHBhc3RlICE9IHBlcnNpc3RlZCBhcHBsaWNhdGlvbiBldmlkZW5jZQpSRiBBUFBMSUNBVElPTiBSRVFVRVNUICE9IEFDVFVBTCBSRiBQUk9DRURVUkUKbWFudWFsIGFjdHVhbC1wcm9jZWR1cmUgcHJvdmVuYW5jZSA9IGNsaW5pY2lhbl9tYW51YWwKYGBgCgpUaGUgZXhhY3Qgb2ZmaWNpYWwgdGVtcGxhdGUgcGFja2FnZWQgaW4gdGhlIGJyYW5jaCBpcyAzMTAyMzggYnl0ZXMsIFNIQS0yNTYgYDk5OGU5OWU2YjBhNTFkNGExOTQzMWRkMmUzMWU1OTUyODJkN2FkZjE3ZWIyOWY1ZjkxZWVhYjk0ZTM2NDcyNTJgLCBHaXQgYmxvYiBgYzZjMjM0ZTk5MDk1YmUzOGM0N2ExYzZmMDc4ZGFjZGQ0N2Y0MTk5ZmAuCgpTdGFsZSBkb2NzLW9ubHkgUFIgIzc0IHdhcyBjbG9zZWQgdW5tZXJnZWQgYXMgc3VwZXJzZWRlZC4gUHJvZHVjdC1vd25lciBQUiBhdXRob3JpdHkgaXMgbm93IGdyYW50ZWQgZm9yIHRoZSBib3VuZGVkIG5hdGl2ZSBSRiB2MiByZWxlYXNlIFBSIG9ubHkuIE1lcmdlLCBkZXBsb3y, production config/secret, deploy and production smoke remain separately gated.
