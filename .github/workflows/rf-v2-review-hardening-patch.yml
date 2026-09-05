@@ -22,11 +22,12 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
+          import base64
 
           api_path = Path('clinic_utilities/rf/api.py')
           api = api_path.read_text(encoding='utf-8')
-          old = '''    parsed = parse_medications(draft.full_medication_text)\n    nsaid = [x.model_dump() for x in draft.nsaid_trials]\n    other = [x.model_dump() for x in draft.other_analgesic_trials]\n    return (nsaid or parsed["auto_selected_nsaids"])[:3], (other or parsed["auto_selected_others"])[:3]\n'''
-          new = '''    parsed = parse_medications(draft.full_medication_text)\n    nsaid = ( [x.model_dump() for x in draft.nsaid_trials] or parsed["auto_selected_nsaids"] )[:3]\n    other = ( [x.model_dump() for x in draft.other_analgesic_trials] or parsed["auto_selected_others"] )[:3]\n    if len(nsaid) != 3 or len(other) != 3:\n        raise HTTPException(\n            status_code=422,\n            detail="Το A.1 απαιτεί 3 ΜΣΑΦ και 3 άλλα αναλγητικά με τεκμηριωμένη αγωγή.",\n        )\n    return nsaid, other\n'''
+          old = '    parsed = parse_medications(draft.full_medication_text)\n    nsaid = [x.model_dump() for x in draft.nsaid_trials]\n    other = [x.model_dump() for x in draft.other_analgesic_trials]\n    return (nsaid or parsed["auto_selected_nsaids"])[:3], (other or parsed["auto_selected_others"])[:3]\n'
+          new = '    parsed = parse_medications(draft.full_medication_text)\n    nsaid = ([x.model_dump() for x in draft.nsaid_trials] or parsed["auto_selected_nsaids"])[:3]\n    other = ([x.model_dump() for x in draft.other_analgesic_trials] or parsed["auto_selected_others"])[:3]\n    if len(nsaid) != 3 or len(other) != 3:\n        raise HTTPException(\n            status_code=422,\n            detail="Το A.1 απαιτεί 3 ΜΣΑΦ και 3 άλλα αναλγητικά με τεκμηριωμένη αγωγή.",\n        )\n    return nsaid, other\n'
           if old not in api:
               raise SystemExit('api medication anchor not found')
           api_path.write_text(api.replace(old, new, 1), encoding='utf-8')
@@ -35,135 +36,39 @@ jobs:
           persistence = persistence_path.read_text(encoding='utf-8')
           start = persistence.index('def record_application(engine: Engine, data: dict[str, Any]) -> str:')
           end = persistence.index('\ndef list_procedure_history', start)
-          replacement = '''def _minimal_application_payload(data: dict[str, Any]) -> dict[str, Any]:\n    persisted = dict(data)\n    persisted.pop("full_medication_text", None)\n    persisted.pop("physio_dates_text", None)\n    for key in ("nsaid_trials", "other_analgesic_trials"):\n        trials = persisted.get(key)\n        if isinstance(trials, list):\n            persisted[key] = [\n                {item_key: item_value for item_key, item_value in item.items() if item_key != "source_text"}\n                if isinstance(item, dict) else item\n                for item in trials\n            ]\n    return persisted\n\ndef record_application(engine: Engine, data: dict[str, Any]) -> str:\n    application_id=str(uuid4())\n    row=RFApplicationORM(id=application_id,patient_identity_key=normalize_identity(data["identity_number"]),patient_name=str(data["patient_name"]).strip(),gesy_number=str(data["gesy_number"]).strip(),patient_age=int(data["age"]),pathway=str(data["pathway"]),indication_code=str(data["indication_code"]),site_key=str(data["site_key"]),laterality=str(data.get("laterality") or "none"),exact_location=str(data["exact_location"]).strip(),product_key=str(data["product_key"]),payload_json=_minimal_application_payload(data),created_at=utcnow())\n    with Session(engine) as session:\n        session.add(row); session.commit()\n    return application_id\n'''
+          replacement = '''def _minimal_application_payload(data: dict[str, Any]) -> dict[str, Any]:
+    persisted = dict(data)
+    persisted.pop("full_medication_text", None)
+    persisted.pop("physio_dates_text", None)
+    for key in ("nsaid_trials", "other_analgesic_trials"):
+        trials = persisted.get(key)
+        if isinstance(trials, list):
+            persisted[key] = [
+                {item_key: item_value for item_key, item_value in item.items() if item_key != "source_text"}
+                if isinstance(item, dict) else item
+                for item in trials
+            ]
+    return persisted
+
+def record_application(engine: Engine, data: dict[str, Any]) -> str:
+    application_id=str(uuid4())
+    row=RFApplicationORM(id=application_id,patient_identity_key=normalize_identity(data["identity_number"]),patient_name=str(data["patient_name"]).strip(),gesy_number=str(data["gesy_number"]).strip(),patient_age=int(data["age"]),pathway=str(data["pathway"]),indication_code=str(data["indication_code"]),site_key=str(data["site_key"]),laterality=str(data.get("laterality") or "none"),exact_location=str(data["exact_location"]).strip(),product_key=str(data["product_key"]),payload_json=_minimal_application_payload(data),created_at=utcnow())
+    with Session(engine) as session:
+        session.add(row); session.commit()
+    return application_id
+'''
           persistence_path.write_text(persistence[:start] + replacement + persistence[end:], encoding='utf-8')
 
-          test_path = Path('test_rf_v2_release_hardening.py')
-          test_path.write_text(r'''from __future__ import annotations
-
-import unittest
-
-from fastapi import HTTPException
-from sqlalchemy import create_engine, select
-from sqlalchemy.orm import Session
-from sqlalchemy.pool import StaticPool
-
-from clinic_utilities.rf.api import RFApplicationDraft, _resolve_medications
-from clinic_utilities.rf.persistence import (
-    RFApplicationORM,
-    initialize_rf_tables,
-    record_application,
-)
-
-
-def memory_engine():
-    return create_engine(
-        "sqlite+pysqlite:///:memory:",
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
-
-
-def draft_with_medication(text: str) -> RFApplicationDraft:
-    return RFApplicationDraft(
-        pathway="A1",
-        patient_name="Synthetic Patient",
-        identity_number="SYN-3PLUS3",
-        gesy_number="GESY-SYN",
-        age=67,
-        product_key="medikey",
-        indication_code="KNEE_OA_KL34",
-        laterality="left",
-        exact_location="Αριστερό γόνατο",
-        full_medication_text=text,
-    )
-
-
-class RFThreePlusThreeTests(unittest.TestCase):
-    def test_a1_rejects_fewer_than_three_plus_three(self):
-        draft = draft_with_medication(
-            "Arcoxia 90 mg για 3 μήνες\n"
-            "Brufen 600 mg για 2 μήνες\n"
-            "Panadol 1 g για 3 μήνες\n"
-            "Tramadex 100 mg για 1 μήνα"
-        )
-        with self.assertRaises(HTTPException) as caught:
-            _resolve_medications(draft)
-        self.assertEqual(caught.exception.status_code, 422)
-        self.assertIn("3 ΜΣΑΦ", caught.exception.detail)
-        self.assertIn("3 άλλα", caught.exception.detail)
-
-    def test_a1_accepts_exact_three_plus_three(self):
-        draft = draft_with_medication(
-            "Arcoxia 90 mg για 3 μήνες\n"
-            "Brufen 600 mg για 2 μήνες\n"
-            "Voltaren 75 mg για 1 μήνα\n"
-            "Panadol 1 g για 3 μήνες\n"
-            "Parcoten 1 g για 2 μήνες\n"
-            "Tramadex 100 mg για 1 μήνα"
-        )
-        nsaid, other = _resolve_medications(draft)
-        self.assertEqual(len(nsaid), 3)
-        self.assertEqual(len(other), 3)
-
-
-class RFApplicationDataMinimizationTests(unittest.TestCase):
-    def test_raw_paste_and_source_lines_are_not_persisted(self):
-        engine = memory_engine()
-        initialize_rf_tables(engine)
-        application_id = record_application(
-            engine,
-            {
-                "identity_number": "SYN-RAW-1",
-                "patient_name": "Synthetic Patient",
-                "gesy_number": "GESY-SYN",
-                "age": 67,
-                "pathway": "A1",
-                "indication_code": "KNEE_OA_KL34",
-                "site_key": "knee",
-                "laterality": "left",
-                "exact_location": "Αριστερό γόνατο",
-                "product_key": "medikey",
-                "full_medication_text": "RAW MEDICATION PASTE MUST NOT PERSIST",
-                "physio_dates_text": "01/02/2026\n08/02/2026",
-                "nsaid_trials": [
-                    {"source_text": "Arcoxia raw line", "drug_name": "Etoricoxib", "dose": "90 mg", "duration": "3 μήνες"}
-                ],
-                "other_analgesic_trials": [
-                    {"source_text": "Panadol raw line", "drug_name": "Παρακεταμόλη", "dose": "1 g", "duration": "3 μήνες"}
-                ],
-                "physio": {"start_date": "2026-02-01", "end_date": "2026-02-08", "treatment_count": 2},
-            },
-        )
-        with Session(engine) as session:
-            row = session.scalar(select(RFApplicationORM).where(RFApplicationORM.id == application_id))
-            payload = row.payload_json
-        self.assertNotIn("full_medication_text", payload)
-        self.assertNotIn("physio_dates_text", payload)
-        self.assertNotIn("source_text", payload["nsaid_trials"][0])
-        self.assertNotIn("source_text", payload["other_analgesic_trials"][0])
-        self.assertEqual(payload["physio"]["treatment_count"], 2)
-
-
-if __name__ == "__main__":
-    unittest.main()
-''', encoding='utf-8')
+          test_b64 = 'ZnJvbSBfX2Z1dHVyZV9fIGltcG9ydCBhbm5vdGF0aW9ucwoKaW1wb3J0IHVuaXR0ZXN0Cgpmcm9tIGZhc3RhcGkgaW1wb3J0IEhUVFBFeGNlcHRpb24KZnJvbSBzcWxhbGNoZW15IGltcG9ydCBjcmVhdGVfZW5naW5lLCBzZWxlY3QKZnJvbSBzcWxhbGNoZW15Lm9ybSBpbXBvcnQgU2Vzc2lvbgpmcm9tIHNxbGFsY2hlbXkucG9vbCBpbXBvcnQgU3RhdGljUG9vbAoKZnJvbSBjbGluaWNfdXRpbGl0aWVzLnJmLmFwaSBpbXBvcnQgUkZBcHBsaWNhdGlvbkRyYWZ0LCBfcmVzb2x2ZV9tZWRpY2F0aW9ucwpmcm9tIGNsaW5pY191dGlsaXRpZXMucmYucGVyc2lzdGVuY2UgaW1wb3J0ICgKICAgIFJGQXBwbGljYXRpb25PUk0sCiAgICBpbml0aWFsaXplX3JmX3RhYmxlcywKICAgIHJlY29yZF9hcHBsaWNhdGlvbiwKKQoKCmRlZiBtZW1vcnlfZW5naW5lKCk6CiAgICByZXR1cm4gY3JlYXRlX2VuZ2luZSgKICAgICAgICAic3FsaXRlK3B5c3FsaXRlOi8vLzptZW1vcnk6IiwKICAgICAgICBjb25uZWN0X2FyZ3M9eyJjaGVja19zYW1lX3RocmVhZCI6IEZhbHNlfSwKICAgICAgICBwb29sY2xhc3M9U3RhdGljUG9vbCwKICAgICkKCgpkZWYgZHJhZnRfd2l0aF9tZWRpY2F0aW9uKHRleHQ6IHN0cikgLT4gUkZBcHBsaWNhdGlvbkRyYWZ0OgogICAgcmV0dXJuIFJGQXBwbGljYXRpb25EcmFmdCgKICAgICAgICBwYXRod2F5PSJBMSIsCiAgICAgICAgcGF0aWVudF9uYW1lPSJTeW50aGV0aWMgUGF0aWVudCIsCiAgICAgICAgaWRlbnRpdHlfbnVtYmVyPSJTWU4tM1BMVVMzIiwKICAgICAgICBnZXN5X251bWJlcj0iR0VTWS1TWU4iLAogICAgICAgIGFnZT02NywKICAgICAgICBwcm9kdWN0X2tleT0ibWVkaWtleSIsCiAgICAgICAgaW5kaWNhdGlvbl9jb2RlPSJLTkVFX09BX0tMMzQiLAogICAgICAgIGxhdGVyYWxpdHk9ImxlZnQiLAogICAgICAgIGV4YWN0X2xvY2F0aW9uPSLOkc+BzrnPg8+EzrXPgc+MIM6zz4zOvc6xz4TOvyIsCiAgICAgICAgZnVsbF9tZWRpY2F0aW9uX3RleHQ9dGV4dCwKICAgICkKCgpjbGFzcyBSRlRocmVlUGx1c1RocmVlVGVzdHModW5pdHRlc3QuVGVzdENhc2UpOgogICAgZGVmIHRlc3RfYTFfcmVqZWN0c19mZXdlcl90aGFuX3RocmVlX3BsdXNfdGhyZWUoc2VsZik6CiAgICAgICAgZHJhZnQgPSBkcmFmdF93aXRoX21lZGljYXRpb24oCiAgICAgICAgICAgICJBcmNveGlhIDkwIG1nIM6zzrnOsSAzIM68zq7Ovc61z4JcbiIKICAgICAgICAgICAgIkJydWZlbiA2MDAgbWcgzrPOuc6xIDIgzrzOrs69zrXPglxuIgogICAgICAgICAgICAiUGFuYWRvbCAxIGcgzrPOuc6xIDMgzrzOrs69zrXPglxuIgogICAgICAgICAgICAiVHJhbWFkZXggMTAwIG1nIM6zzrnOsSAxIM68zq7Ovc6xIgogICAgICAgICkKICAgICAgICB3aXRoIHNlbGYuYXNzZXJ0UmFpc2VzKEhUVFBFeGNlcHRpb24pIGFzIGNhdWdodDoKICAgICAgICAgICAgX3Jlc29sdmVfbWVkaWNhdGlvbnMoZHJhZnQpCiAgICAgICAgc2VsZi5hc3NlcnRFcXVhbChjYXVnaHQuZXhjZXB0aW9uLnN0YXR1c19jb2RlLCA0MjIpCiAgICAgICAgc2VsZi5hc3NlcnRJbigiMyDOnM6jzpHOpiIsIGNhdWdodC5leGNlcHRpb24uZGV0YWlsKQogICAgICAgIHNlbGYuYXNzZXJ0SW4oIjMgzqzOu867zrEiLCBjYXVnaHQuZXhjZXB0aW9uLmRldGFpbCkKCiAgICBkZWYgdGVzdF9hMV9hY2NlcHRzX2V4YWN0X3RocmVlX3BsdXNfdGhyZWUoc2VsZik6CiAgICAgICAgZHJhZnQgPSBkcmFmdF93aXRoX21lZGljYXRpb24oCiAgICAgICAgICAgICJBcmNveGlhIDkwIG1nIM6zzrnOsSAzIM68zq7Ovc61z4JcbiIKICAgICAgICAgICAgIkJydWZlbiA2MDAgbWcgzrPOuc6xIDIgzrzOrs69zrXPglxuIgogICAgICAgICAgICAiVm9sdGFyZW4gNzUgbWcgzrPOuc6xIDEgzrzOrs69zrFcbiIKICAgICAgICAgICAgIlBhbmFkb2wgMSBnIM6zzrnOsSAzIM68zq7Ovc61z4JcbiIKICAgICAgICAgICAgIlBhcmNvdGVuIDEgZyDOs865zrEgMiDOvM6uzr3Otc+CXG4iCiAgICAgICAgICAgICJUcmFtYWRleCAxMDAgbWcgzrPOuc6xIDEgzrzOrs69zrEiCiAgICAgICAgKQogICAgICAgIG5zYWlkLCBvdGhlciA9IF9yZXNvbHZlX21lZGljYXRpb25zKGRyYWZ0KQogICAgICAgIHNlbGYuYXNzZXJ0RXF1YWwobGVuKG5zYWlkKSwgMykKICAgICAgICBzZWxmLmFzc2VydEVxdWFsKGxlbihvdGhlciksIDMpCgoKY2xhc3MgUkZBcHBsaWNhdGlvbkRhdGFNaW5pbWl6YXRpb25UZXN0cyh1bml0dGVzdC5UZXN0Q2FzZSk6CiAgICBkZWYgdGVzdF9yYXdfcGFzdGVfYW5kX3NvdXJjZV9saW5lc19hcmVfbm90X3BlcnNpc3RlZChzZWxmKToKICAgICAgICBlbmdpbmUgPSBtZW1vcnlfZW5naW5lKCkKICAgICAgICBpbml0aWFsaXplX3JmX3RhYmxlcyhlbmdpbmUpCiAgICAgICAgYXBwbGljYXRpb25faWQgPSByZWNvcmRfYXBwbGljYXRpb24oCiAgICAgICAgICAgIGVuZ2luZSwKICAgICAgICAgICAgewogICAgICAgICAgICAgICAgImlkZW50aXR5X251bWJlciI6ICJTWU4tUkFXLTEiLAogICAgICAgICAgICAgICAgInBhdGllbnRfbmFtZSI6ICJTeW50aGV0aWMgUGF0aWVudCIsCiAgICAgICAgICAgICAgICAiZ2VzeV9udW1iZXIiOiAiR0VTWS1TWU4iLAogICAgICAgICAgICAgICAgImFnZSI6IDY3LAogICAgICAgICAgICAgICAgInBhdGh3YXkiOiAiQTEiLAogICAgICAgICAgICAgICAgImluZGljYXRpb25fY29kZSI6ICJLTkVFX09BX0tMMzQiLAogICAgICAgICAgICAgICAgInNpdGVfa2V5IjogImtuZWUiLAogICAgICAgICAgICAgICAgImxhdGVyYWxpdHkiOiAibGVmdCIsCiAgICAgICAgICAgICAgICAiZXhhY3RfbG9jYXRpb24iOiAizpHPgc65z4PPhM61z4HPjCDOs8+Mzr3Osc+Ezr8iLAogICAgICAgICAgICAgICAgInByb2R1Y3Rfa2V5IjogIm1lZGlrZXkiLAogICAgICAgICAgICAgICAgImZ1bGxfbWVkaWNhdGlvbl90ZXh0IjogIlJBVyBNRURJQ0FUSU9OIFBBU1RFIE1VU1QgTk9UIFBFUlNJU1QiLAogICAgICAgICAgICAgICAgInBoeXNpb19kYXRlc190ZXh0IjogIjAxLzAyLzIwMjZcbjA4LzAyLzIwMjYiLAogICAgICAgICAgICAgICAgIm5zYWlkX3RyaWFscyI6IFsKICAgICAgICAgICAgICAgICAgICB7InNvdXJjZV90ZXh0IjogIkFyY294aWEgcmF3IGxpbmUiLCAiZHJ1Z19uYW1lIjogIkV0b3JpY294aWIiLCAiZG9zZSI6ICI5MCBtZyIsICJkdXJhdGlvbiI6ICIzIM68zq7Ovc61z4IifQogICAgICAgICAgICAgICAgXSwKICAgICAgICAgICAgICAgICJvdGhlcl9hbmFsZ2VzaWNfdHJpYWxzIjogWwogICAgICAgICAgICAgICAgICAgIHsic291cmNlX3RleHQiOiAiUGFuYWRvbCByYXcgbGluZSIsICJkcnVnX25hbWUiOiAizqDOsc+BzrHOus61z4TOsc68z4zOu863IiwgImRvc2UiOiAiMSBnIiwgImR1cmF0aW9uIjogIjMgzrzOrs69zrXPgiJ9CiAgICAgICAgICAgICAgICBdLAogICAgICAgICAgICAgICAgInBoeXNpbyI6IHsic3RhcnRfZGF0ZSI6ICIyMDI2LTAyLTAxIiwgImVuZF9kYXRlIjogIjIwMjYtMDItMDgiLCAidHJlYXRtZW50X2NvdW50IjogMn0sCiAgICAgICAgICAgIH0sCiAgICAgICAgKQogICAgICAgIHdpdGggU2Vzc2lvbihlbmdpbmUpIGFzIHNlc3Npb246CiAgICAgICAgICAgIHJvdyA9IHNlc3Npb24uc2NhbGFyKHNlbGVjdChSRkFwcGxpY2F0aW9uT1JNKS53aGVyZShSRkFwcGxpY2F0aW9uT1JNLmlkID09IGFwcGxpY2F0aW9uX2lkKSkKICAgICAgICAgICAgcGF5bG9hZCA9IHJvdy5wYXlsb2FkX2pzb24KICAgICAgICBzZWxmLmFzc2VydE5vdEluKCJmdWxsX21lZGljYXRpb25fdGV4dCIsIHBheWxvYWQpCiAgICAgICAgc2VsZi5hc3NlcnROb3RJbigicGh5c2lvX2RhdGVzX3RleHQiLCBwYXlsb2FkKQogICAgICAgIHNlbGYuYXNzZXJ0Tm90SW4oInNvdXJjZV90ZXh0IiwgcGF5bG9hZFsibnNhaWRfdHJpYWxzIl1bMF0pCiAgICAgICAgc2VsZi5hc3NlcnROb3RJbigic291cmNlX3RleHQiLCBwYXlsb2FkWyJvdGhlcl9hbmFsZ2VzaWNfdHJpYWxzIl1bMF0pCiAgICAgICAgc2VsZi5hc3NlcnRFcXVhbChwYXlsb2FkWyJwaHlzaW8iXVsidHJlYXRtZW50X2NvdW50Il0sIDIpCgoKaWYgX19uYW1lX18gPT0gIl9fbWFpbl9fIjoKICAgIHVuaXR0ZXN0Lm1haW4oKQo='
+          Path('test_rf_v2_release_hardening.py').write_bytes(base64.b64decode(test_b64))
 
           workflow_path = Path('.github/workflows/rf-v2-native-tests.yml')
           workflow = workflow_path.read_text(encoding='utf-8')
-          workflow = workflow.replace(
-              '            test_rf_v2_native.py\n',
-              '            test_rf_v2_native.py \\\n            test_rf_v2_release_hardening.py\n',
-              1,
-          )
+          workflow = workflow.replace('            test_rf_v2_native.py\n', '            test_rf_v2_native.py \\\n            test_rf_v2_release_hardening.py\n', 1)
           anchor = '      - name: Run native RF v2 UI integrity regression\n'
           if anchor not in workflow:
               raise SystemExit('workflow anchor not found')
-          workflow = workflow.replace(
-              anchor,
-              '      - name: Run RF v2 release hardening regressions\n        run: python -m unittest -v test_rf_v2_release_hardening.py\n\n' + anchor,
-              1,
-          )
+          workflow = workflow.replace(anchor, '      - name: Run RF v2 release hardening regressions\n        run: python -m unittest -v test_rf_v2_release_hardening.py\n\n' + anchor, 1)
           workflow_path.write_text(workflow, encoding='utf-8')
           PY
 
