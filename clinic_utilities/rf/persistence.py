@@ -62,9 +62,23 @@ def _history_dedupe_key(data: dict[str, Any]) -> str:
     material="|".join(str(data.get(key) or "").strip().casefold() for key in ("patient_identity_key","site_key","laterality","actual_procedure_date","provenance"))
     return hashlib.sha256(material.encode("utf-8")).hexdigest()
 
+def _minimal_application_payload(data: dict[str, Any]) -> dict[str, Any]:
+    persisted = dict(data)
+    persisted.pop("full_medication_text", None)
+    persisted.pop("physio_dates_text", None)
+    for key in ("nsaid_trials", "other_analgesic_trials"):
+        trials = persisted.get(key)
+        if isinstance(trials, list):
+            persisted[key] = [
+                {item_key: item_value for item_key, item_value in item.items() if item_key != "source_text"}
+                if isinstance(item, dict) else item
+                for item in trials
+            ]
+    return persisted
+
 def record_application(engine: Engine, data: dict[str, Any]) -> str:
     application_id=str(uuid4())
-    row=RFApplicationORM(id=application_id,patient_identity_key=normalize_identity(data["identity_number"]),patient_name=str(data["patient_name"]).strip(),gesy_number=str(data["gesy_number"]).strip(),patient_age=int(data["age"]),pathway=str(data["pathway"]),indication_code=str(data["indication_code"]),site_key=str(data["site_key"]),laterality=str(data.get("laterality") or "none"),exact_location=str(data["exact_location"]).strip(),product_key=str(data["product_key"]),payload_json=dict(data),created_at=utcnow())
+    row=RFApplicationORM(id=application_id,patient_identity_key=normalize_identity(data["identity_number"]),patient_name=str(data["patient_name"]).strip(),gesy_number=str(data["gesy_number"]).strip(),patient_age=int(data["age"]),pathway=str(data["pathway"]),indication_code=str(data["indication_code"]),site_key=str(data["site_key"]),laterality=str(data.get("laterality") or "none"),exact_location=str(data["exact_location"]).strip(),product_key=str(data["product_key"]),payload_json=_minimal_application_payload(data),created_at=utcnow())
     with Session(engine) as session:
         session.add(row); session.commit()
     return application_id

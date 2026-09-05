@@ -139,9 +139,14 @@ def _resolve_medications(draft: RFApplicationDraft):
     if not draft.full_medication_text.strip():
         raise HTTPException(status_code=422, detail="Απαιτείται η πλήρης φαρμακευτική αγωγή")
     parsed = parse_medications(draft.full_medication_text)
-    nsaid = [x.model_dump() for x in draft.nsaid_trials]
-    other = [x.model_dump() for x in draft.other_analgesic_trials]
-    return (nsaid or parsed["auto_selected_nsaids"])[:3], (other or parsed["auto_selected_others"])[:3]
+    nsaid = ([x.model_dump() for x in draft.nsaid_trials] or parsed["auto_selected_nsaids"])[:3]
+    other = ([x.model_dump() for x in draft.other_analgesic_trials] or parsed["auto_selected_others"])[:3]
+    if len(nsaid) != 3 or len(other) != 3:
+        raise HTTPException(
+            status_code=422,
+            detail="Το A.1 απαιτεί 3 ΜΣΑΦ και 3 άλλα αναλγητικά με τεκμηριωμένη αγωγή.",
+        )
+    return nsaid, other
 
 
 def _validate_a1(draft: RFApplicationDraft, indication: dict):
