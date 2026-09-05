@@ -41,8 +41,6 @@ _MEDICATION_PATTERNS = (
     ("other", "duloxetine", "Duloxetine", ("duloxetine", "ντουλοξετινη", "cymbalta")),
 )
 _DOSE_RE = re.compile(r"(?<!\w)(\d+(?:[.,]\d+)?)\s*(mg|g|mcg|µg)(?!\w)", re.I)
-# Run against accent-normalized text so routine Greek entries such as "3 μήνες"
-# are parsed instead of silently losing the documented duration.
 _DURATION_RE = re.compile(
     r"(?:για\s*)?(\d+)\s*(ημερ(?:α|ες|ων)?|days?|εβδομ(?:αδα|αδες)?|weeks?|μην(?:α|ες|ων)?|months?)(?:\b|$)",
     re.I,
@@ -71,9 +69,52 @@ def _dose(entry: str) -> str:
     return match.group(1).replace(",", ".") + " " + match.group(2) if match else ""
 
 
-def _duration(entry: str) -> str:
+def _duration_components(entry: str) -> tuple[int, str] | None:
     match = _DURATION_RE.search(_norm(entry))
-    return f"{match.group(1)} {match.group(2)}" if match else ""
+    if not match:
+        return None
+    amount = int(match.group(1))
+    unit = match.group(2)
+    if unit.startswith("μην") or unit.startswith("month"):
+        family = "month"
+    elif unit.startswith("εβδομ") or unit.startswith("week"):
+        family = "week"
+    else:
+        family = "day"
+    return amount, family
+
+
+def _duration(entry: str) -> str:
+    parsed = _duration_components(entry)
+    if not parsed:
+        return ""
+    amount, family = parsed
+    if family == "month":
+        unit = "μήνας" if amount == 1 else "μήνες"
+    elif family == "week":
+        unit = "εβδομάδα" if amount == 1 else "εβδομάδες"
+    else:
+        unit = "ημέρα" if amount == 1 else "ημέρες"
+    return f"{amount} {unit}"
+
+
+def _duration_weight(value: str) -> int:
+    parsed = _duration_components(value)
+    if not parsed:
+        return 0
+    amount, family = parsed
+    return amount * {"day": 1, "week": 7, "month": 30}[family]
+
+
+def _candidate_score(candidate: MedicationCandidate) -> tuple[int, int, int]:
+    # Prefer a documented duration, then a documented dose, then the longer
+    # documented trial. This keeps automation deterministic while selecting the
+    # most useful evidence when multiple brands map to one active-drug family.
+    return (
+        1 if candidate.duration else 0,
+        1 if candidate.dose else 0,
+        _duration_weight(candidate.duration),
+    )
 
 
 def parse_medications(text: str) -> dict:
@@ -87,11 +128,9 @@ def parse_medications(text: str) -> dict:
 
     best = {}
     for idx, candidate in enumerate(candidates):
-        score = (1 if candidate.dose else 0) + (2 if candidate.duration else 0)
         key = (candidate.category, candidate.canonical_key)
         current = best.get(key)
-        current_score = -1 if current is None else (1 if current[1].dose else 0) + (2 if current[1].duration else 0)
-        if current is None or score > current_score:
+        if current is None or _candidate_score(candidate) > _candidate_score(current[1]):
             best[key] = (idx, candidate)
 
     deduped = [item for _, item in sorted(best.values(), key=lambda pair: pair[0])]
@@ -102,7 +141,14 @@ def parse_medications(text: str) -> dict:
     def ranked(items: Iterable[MedicationCandidate]):
         items = list(items)
         indexed = list(enumerate(items))
-        indexed.sort(key=lambda p: (-(1 if p[1].duration else 0), -(1 if p[1].dose else 0), p[0]))
+        indexed.sort(
+            key=lambda p: (
+                -_candidate_score(p[1])[0],
+                -_candidate_score(p[1])[1],
+                -_candidate_score(p[1])[2],
+                p[0],
+            )
+        )
         chosen = {id(c) for _, c in indexed[:3]}
         return [MedicationCandidate(**{**c.to_dict(), "auto_selected": id(c) in chosen}) for c in items]
 
