@@ -1,0 +1,58 @@
+name: RF and Learning canonical tail reconciliation
+
+on:
+  push:
+    branches:
+      - docs/clinical-learning-hub-rf-post-merge-2026-09-06
+
+permissions:
+  contents: write
+
+jobs:
+  reconcile:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: docs/clinical-learning-hub-rf-post-merge-2026-09-06
+          fetch-depth: 0
+      - name: Reconcile slice, roadmap drift, and durable history
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import base64
+          dec=lambda x: base64.b64decode(x).decode('utf-8')
+          rf=dec('IyMgMjAyNi0wOS0wNSDigJQgTmF0aXZlIFJGIHYyIG1lcmdlZCBhbmQgUmVuZGVyIGF1dG8tZGVwbG95ZWQ7IHNtb2tlIHBlbmRpbmcKClBSICM3NSB3YXMgc3F1YXNoLW1lcmdlZCB0byBgbWFpbmAgYXMgYDUxNzE0ZjljNzRlOTZlYzRmZGY2MjQ5M2EwNzcyZWEwN2ZjYzhjMWFgIGFmdGVyIGV4cGxpY2l0IHByb2R1Y3Qtb3duZXIgbWVyZ2UvZGVwbG95IGF1dGhvcml6YXRpb24uIE5vcm1hbCBSZW5kZXIgYXV0by1kZXBsb3kgYGRlcC1kYWU4ZG9lcTFwM3M3M2NzcXZiZ2AgcmVhY2hlZCBgTElWRWAgYXQgdGhhdCBzb3VyY2U7IG5vIHJlZHVuZGFudCBtYW51YWwgZGVwbG95IHdhcyB0cmlnZ2VyZWQgYW5kIG5vIHByb2R1Y3Rpb24gc2VjcmV0L2NvbmZpZyB2YWx1ZSB3YXMgY2hhbmdlZC4KClRoaXMgY2xvc2VzIG1lcmdlL2RlcGxveSBvbmx5LiBOYXRpdmUgYXV0aGVudGljYXRlZCBwcm9kdWN0aW9uIHNtb2tlLCBBLjEvQS4yIGVuZC10by1lbmQgcHJvZHVjdGlvbiBiZWhhdmlvciBhbmQgcHJvZHVjdGlvbiBjb25maWd1cmF0aW9uIHN1ZmZpY2llbmN5IHJlbWFpbiB1bnZlcmlmaWVkIHVudGlsIHRoZSBjbGluaWNpYW4gY29tcGxldGVzIHRoZSBpbnRlcmFjdGl2ZSBzbW9rZS4K')
+          learn=dec('IyMgMjAyNi0wOS0wNiDigJQgQ2xpbmljYWwgTGVhcm5pbmcgSHViIGRpcmVjdGlvbiBhcHByb3ZlZAoKVGhlIHByb2R1Y3Qgb3duZXIgYXBwcm92ZWQgYSByZXVzYWJsZSBDb3JlIENsaW5pY2FsIExlYXJuaW5nIEh1YiB3aXRoIE9zdGVvcG9yb3NpcyBhcyBNb2R1bGUgMDEgY29udGVudC4gVGhlIGFwcHJvdmVkIGluc3RydW1lbnRzIGFyZSBGb3VuZGF0aW9uIE1hcCwgd2Vla2x5IENsaW5pY2FsIENoYWxsZW5nZXMsIERhaWx5IEhlaWRpLWJhY2tlZCBSZWFsLUNhc2UgUmV2aWV3LCBTaWduYWxzIGFuZCBhIHRhcmdldGVkIExlYXJuaW5nIFBsYW4vc3BhY2VkLXJlcGV0aXRpb24gbGF5ZXIuCgpBIENoYWxsZW5nZSBGYWN0IExlZGdlciBtdXN0IGtlZXAgcmVhbCBjYXNlIGZhY3RzLCBzeW50aGV0aWMvcHJvZ3Jlc3NpdmUtZGlzY2xvc3VyZSBmYWN0cywgY2xpbmljaWFuIGh5cG90aGVzZXMsIEFJIGluZmVyZW5jZSBhbmQgdGVhY2hpbmcgY291bnRlcmZhY3R1YWxzIHNlcGFyYXRlLiBEYWlseSBDYXNlIFJldmlldyB1c2VzIG9uZSBlbGlnaWJsZSByZWFsIG9zdGVvcG9yb3NpcyBlbmNvdW50ZXIgd2hlbiBhdmFpbGFibGUsIGNhcHR1cmVzIGNsaW5pY2lhbiBzZWxmLXJldmlldyBiZWZvcmUgQUkgY3JpdGlxdWUsIHJldXNlcyB0aGUgcHJvdGVjdGVkIGVwaGVtZXJhbCB0cmFuc2NyaXB0IGFyY2hpdGVjdHVyZSBhbmQgcGVyc2lzdHMgcmV2aWV3ZWQgc3RydWN0dXJlZCBsZWFybmluZyBldmlkZW5jZSByYXRoZXIgdGhhbiByYXcgSGVpZGkgdHJhbnNjcmlwdHMgYnkgZGVmYXVsdC4KCkZvdW5kYXRpb24gc3RhdGVzIGFyZSBgRk9STUFMX1NPTElEYCwgYElOVFVJVElWRV9VTlNUUlVDVFVSRURgLCBgRlJBR01FTlRFRGAgYW5kIGBVTktOT1dOX1VOVEVTVEVEYDsgZGlhZ25vc3RpYyBtYXBwaW5nIHByZWNlZGVzIHRlYWNoaW5nLiBWaXNpYmxlIHN5c3RlbWF0aWMgZGFpbHkgQUkgY2FzZS1yZXZpZXcgY29hY2hpbmcgaXMgY2xhc3NpZmllZCBhcyBhbiBpbnRlcnZlbnRpb24gYW5kIHJlbWFpbnMgc2hhZG93L2hpZGRlbiBkdXJpbmcgdGhlIHNjb3JlZCAzMC1jYXNlIHN5c3RlbS1hc3Npc3RlZCBiYXNlbGluZSBieSBkZWZhdWx0IHVubGVzcyBtZXRob2RvbG9neSBpcyBleHBsaWNpdGx5IHJlcGxhbm5lZC4KCkRldGFpbGVkIHByZS1pbXBsZW1lbnRhdGlvbiBkZXNpZ24gaXMgcmVjb3JkZWQgaW4gYENMSU5JQ0FMX0xFQVJOSU5HX0hVQl9ERVNJR05fVjEubWRgLiBObyBsZWFybmluZyBydW50aW1lIGF1dGhvcml0eSBpcyBncmFudGVkIGJ5IHRoaXMgcGxhbm5pbmcgZGVjaXNpb24uCg==')
+          p=Path('SLICE_PLAN_CURRENT.md'); s=p.read_text(encoding='utf-8')
+          s=s.replace('> **STATUS:** APPROVED / FROZEN — IMPLEMENTED / RELEASE-CANDIDATE TESTED / EXACT-HEAD REVIEW PASS — PR AUTHORIZED / PRE-PR HOLD','> **STATUS:** APPROVED / FROZEN — IMPLEMENTED / TESTED / MERGED / DEPLOYED — PRODUCTION SMOKE PENDING',1)
+          s=s.replace('> **Production base:** `8aa8b38e3fa9a8f8ba0618868b452b1835be0d47`.','> **Implementation base:** `8aa8b38e3fa9a8f8ba0618868b452b1835be0d47`.\n> **Released production source:** `51714f9c74e96ec4fdf62493a0772ea07fcc8c1a` via PR #75.\n> **Render deploy:** `dep-dae8doeq1p3s73csqvbg` — LIVE.',1)
+          s=s.replace('> **Branch:** `feat/clinic-utilities-rf-v2-native-2026-09-05`.','> **Implementation branch:** `feat/clinic-utilities-rf-v2-native-2026-09-05` — merged.',1)
+          s=s.replace('> **PR authority:** GRANTED — bounded native RF v2 release PR only.\n> **Merge / deploy / production config / production smoke authority:** NONE unless separately granted.','> **PR / merge / deploy authority:** CONSUMED — PR #75 merged and normal Render auto-deploy is LIVE.\n> **Production config authority:** NONE unless separately granted.\n> **Production smoke state:** PENDING clinician-run authenticated verification.',1)
+          s=s.replace('PR                                OPEN / REVIEWABLE','PR                                #75 MERGED',1)
+          s=s.replace('Production config, merge, deploy and smoke require separate product-owner authority.','Merge and auto-deploy are complete. Production config remains separately gated; authenticated production smoke is the remaining release-validation step.',1)
+          p.write_text(s.rstrip()+'\n',encoding='utf-8')
+
+          p=Path('TODO.md'); s=p.read_text(encoding='utf-8')
+          s=s.replace('5. G-4 workspace ergonomics + gateway — released; native RF v2 replacement implemented/release-candidate-tested, PR/merge/deploy/smoke pending','5. G-4 workspace ergonomics + gateway — released; native RF v2 merged/deployed, authenticated production smoke pending',1)
+          old='G-4 keeps the RF generator in its existing service and integrates it through a bounded authenticated same-origin gateway. The gateway is transport/auth adaptation only; it does not migrate or duplicate RF templates, PDF rules, persistence or history into the osteoporosis encounter model.\n\nDo not mutate/merge/deploy later rich-referral or RF-engine migration work during Module 01 closure without separate authorization.'
+          new='Native RF v2 now owns RF UI/business/PDF/history inside Clinical Excellence Clinic Utilities after PR #75. RF persistence remains separate from osteoporosis encounter data; the legacy external gateway is rollback/reference only.\n\nDo not mutate/merge/deploy the preserved rich-referral work or further RF expansion during Module 01 closure without separate authorization.'
+          s=s.replace(old,new,1)
+          p.write_text(s.rstrip()+'\n',encoding='utf-8')
+
+          p=Path('osteoporosis-change-log.md'); s=p.read_text(encoding='utf-8').rstrip()
+          if '## 2026-09-05 — Native RF v2 merged and Render auto-deployed; smoke pending' not in s:
+              s+='\n\n---\n\n'+rf.rstrip()
+          if '## 2026-09-06 — Clinical Learning Hub direction approved' not in s:
+              s+='\n\n---\n\n'+learn.rstrip()
+          p.write_text(s+'\n',encoding='utf-8')
+          PY
+      - name: Commit final docs reconciliation
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add SLICE_PLAN_CURRENT.md TODO.md osteoporosis-change-log.md
+          git diff --cached --check
+          git commit -m 'Reconcile RF release and Learning Hub canonical tail'
+          git push origin HEAD:docs/clinical-learning-hub-rf-post-merge-2026-09-06
