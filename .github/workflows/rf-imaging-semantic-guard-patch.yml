@@ -1,0 +1,159 @@
+name: RF imaging semantic guard patch
+
+on:
+  push:
+    branches:
+      - fix/rf-imaging-attachment-semantic-guard-2026-09-06
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/rf-imaging-attachment-semantic-guard-2026-09-06
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: python -m pip install --disable-pip-version-check -r requirements.txt
+      - name: Apply bounded RF imaging semantic guard
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path, old, new):
+              p = Path(path)
+              s = p.read_text(encoding='utf-8')
+              if old not in s:
+                  raise SystemExit(f'anchor not found in {path}: {old[:80]!r}')
+              p.write_text(s.replace(old, new, 1), encoding='utf-8')
+
+          # API: imports + draft confirmation field.
+          replace_once(
+              'clinic_utilities/rf/api.py',
+              'from calendar import monthrange\nfrom datetime import date\nfrom typing import Literal\n',
+              'from calendar import monthrange\nfrom datetime import date\nimport re\nfrom typing import Literal\nimport unicodedata\n',
+          )
+          replace_once(
+              'clinic_utilities/rf/api.py',
+              'from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile\n',
+              'import fitz\nfrom fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile\n',
+          )
+          replace_once(
+              'clinic_utilities/rf/api.py',
+              '    additional_notes: str = Field(default="", max_length=4000)\n    procedure_history_id: str = Field(default="", max_length=80)\n',
+              '    additional_notes: str = Field(default="", max_length=4000)\n    imaging_review_confirmed: bool = False\n    procedure_history_id: str = Field(default="", max_length=80)\n',
+          )
+
+          old_reader = '''async def _read_imaging_pdf(upload: UploadFile) -> bytes:\n    filename = str(upload.filename or "").lower()\n    content_type = str(upload.content_type or "").lower()\n    if not filename.endswith(".pdf") or content_type not in {"application/pdf", "application/octet-stream"}:\n        raise HTTPException(status_code=415, detail="Η απεικονιστική έκθεση πρέπει να είναι PDF")\n    content = await upload.read(MAX_IMAGING_BYTES + 1)\n    if len(content) > MAX_IMAGING_BYTES:\n        raise HTTPException(status_code=413, detail="Το PDF της απεικόνισης υπερβαίνει τα 20 MB")\n    if not content.startswith(b"%PDF"):\n        raise HTTPException(status_code=422, detail="Το αρχείο απεικόνισης δεν είναι έγκυρο PDF")\n    return content\n'''
+          new_reader = '''_IMAGING_TERMS = (\n    "radiolog", "ακτινολογ", "ακτινογραφ", "x-ray", "x ray",\n    "magnetic resonance", "μαγνητικ", "computed tomography", "αξονικ",\n    "ultrasound", "υπερηχο", "densitometr", "οστικη πυκνοτητα",\n)\n_IMAGING_WORD_TERMS = ("mri", "ct", "dxa")\n_LAB_TERMS = (\n    "biochemistry", "haematology", "hematology", "serum", "plasma",\n    "reference range", "τιμες αναφορας", "laboratory", "εργαστηρ",\n    "validator", "mg/dl", "mmol/l", "calcium", "magnesium", "phosphate",\n)\n\n\ndef _normalize_document_text(value: str) -> str:\n    decomposed = unicodedata.normalize("NFKD", str(value or ""))\n    without_marks = "".join(ch for ch in decomposed if not unicodedata.combining(ch))\n    return re.sub(r"\\s+", " ", without_marks.casefold()).strip()\n\n\ndef _contains_word(text: str, word: str) -> bool:\n    return re.search(rf"(?<!\\w){re.escape(word)}(?!\\w)", text) is not None\n\n\ndef _extract_pdf_text(content: bytes) -> str:\n    try:\n        doc = fitz.open(stream=content, filetype="pdf")\n    except Exception as exc:\n        raise HTTPException(status_code=422, detail="Το αρχείο απεικόνισης δεν είναι έγκυρο PDF") from exc\n    try:\n        if doc.page_count < 1:\n            raise HTTPException(status_code=422, detail="Το αρχείο απεικόνισης δεν περιέχει σελίδες")\n        parts = []\n        total = 0\n        for page in doc:\n            try:\n                text = page.get_text("text") or ""\n            except Exception:\n                text = ""\n            if text:\n                parts.append(text)\n                total += len(text)\n            if total >= 50000:\n                break\n        return "\\n".join(parts)[:50000]\n    finally:\n        doc.close()\n\n\ndef _assess_imaging_pdf(content: bytes) -> dict:\n    text = _normalize_document_text(_extract_pdf_text(content))\n    imaging_hits = sum(term in text for term in _IMAGING_TERMS)\n    imaging_hits += sum(_contains_word(text, term) for term in _IMAGING_WORD_TERMS)\n    lab_hits = sum(term in text for term in _LAB_TERMS)\n\n    if imaging_hits:\n        return {\n            "status": "imaging_supported",\n            "requires_confirmation": False,\n            "message": "Αναγνωρίστηκε απεικονιστική έκθεση. Ελέγξτε ότι αφορά το συγκεκριμένο αίτημα.",\n        }\n    if lab_hits >= 3:\n        return {\n            "status": "clearly_non_imaging",\n            "requires_confirmation": False,\n            "message": "Το PDF φαίνεται να είναι εργαστηριακή ή άλλη μη απεικονιστική εξέταση και δεν μπορεί να χρησιμοποιηθεί για το σημείο 3.",\n        }\n    return {\n        "status": "ambiguous_or_unreadable",\n        "requires_confirmation": True,\n        "message": "Δεν μπορεί να επιβεβαιωθεί αυτόματα ο τύπος του PDF. Απαιτείται ρητή επιβεβαίωση ιατρού ότι είναι η απεικονιστική έκθεση του σημείου 3.",\n    }\n\n\nasync def _read_imaging_pdf(upload: UploadFile) -> bytes:\n    filename = str(upload.filename or "").lower()\n    content_type = str(upload.content_type or "").lower()\n    if not filename.endswith(".pdf") or content_type not in {"application/pdf", "application/octet-stream"}:\n        raise HTTPException(status_code=415, detail="Η απεικονιστική έκθεση πρέπει να είναι PDF")\n    content = await upload.read(MAX_IMAGING_BYTES + 1)\n    if len(content) > MAX_IMAGING_BYTES:\n        raise HTTPException(status_code=413, detail="Το PDF της απεικόνισης υπερβαίνει τα 20 MB")\n    if not content.startswith(b"%PDF"):\n        raise HTTPException(status_code=422, detail="Το αρχείο απεικόνισης δεν είναι έγκυρο PDF")\n    # Do not trust the magic bytes alone: require a parseable PDF with pages.\n    _extract_pdf_text(content)\n    return content\n'''
+          replace_once('clinic_utilities/rf/api.py', old_reader, new_reader)
+
+          replace_once(
+              'clinic_utilities/rf/api.py',
+              '    @router.post("/api/create")\n    async def rf_create(draft_json: str = Form(...), imaging_report: UploadFile = File(...)):\n',
+              '''    @router.post("/api/validate-imaging")\n    async def rf_validate_imaging(imaging_report: UploadFile = File(...)):\n        imaging_bytes = await _read_imaging_pdf(imaging_report)\n        assessment = _assess_imaging_pdf(imaging_bytes)\n        return {\n            "status": assessment["status"],\n            "requires_confirmation": assessment["requires_confirmation"],\n            "message": assessment["message"],\n        }\n\n    @router.post("/api/create")\n    async def rf_create(draft_json: str = Form(...), imaging_report: UploadFile = File(...)):\n''',
+          )
+
+          replace_once(
+              'clinic_utilities/rf/api.py',
+              '''        imaging_bytes = await _read_imaging_pdf(imaging_report)\n        payload = {\n            **draft.model_dump(exclude={"legacy_history"}),\n            "site_key": indication["site_key"],\n''',
+              '''        imaging_bytes = await _read_imaging_pdf(imaging_report)\n        imaging_assessment = _assess_imaging_pdf(imaging_bytes)\n        if imaging_assessment["status"] == "clearly_non_imaging":\n            raise HTTPException(status_code=422, detail=imaging_assessment["message"])\n        if imaging_assessment["requires_confirmation"] and not draft.imaging_review_confirmed:\n            raise HTTPException(status_code=422, detail=imaging_assessment["message"])\n        imaging_review = (\n            "auto_supported"\n            if imaging_assessment["status"] == "imaging_supported"\n            else "clinician_confirmed"\n        )\n        payload = {\n            **draft.model_dump(exclude={"legacy_history", "imaging_review_confirmed"}),\n            "site_key": indication["site_key"],\n            "imaging_attachment_review": imaging_review,\n''',
+          )
+
+          # UI: fix stale medication-copy drift and add attachment semantic status/confirmation.
+          p = Path('static/clinic-utilities/rf/index.html')
+          s = p.read_text(encoding='utf-8')
+          s = s.replace(
+              'Paste όλη την αγωγή → αυτόματα 3 ΜΣΑΦ + 3 άλλα αναλγητικά· αν δεν τεκμηριώνονται, η αίτηση σταματά.',
+              'Paste όλη την αγωγή → αναγνώριση και επιλογή έως 3 ΜΣΑΦ + έως 3 άλλα αναλγητικά. Επιτρέπονται και 0.',
+              1,
+          )
+          s = s.replace('ΜΣΑΦ <span class="muted">(απαιτούνται 3)</span>', 'ΜΣΑΦ <span class="muted">(έως 3)</span>', 1)
+          s = s.replace('Άλλη αναλγητική αγωγή <span class="muted">(απαιτούνται 3)</span>', 'Άλλη αναλγητική αγωγή <span class="muted">(έως 3)</span>', 1)
+          old_imaging = '<article class="card"><div class="card-title"><span class="step">9</span><div><h2>Απεικόνιση & πρόσθετες πληροφορίες</h2><p>Το επίσημο checkbox τικάρεται μόνο με πραγματικό PDF.</p></div></div><label class="upload">Απεικονιστική έκθεση PDF<input id="imagingReport" type="file" accept="application/pdf,.pdf"></label><label class="full-width">Πρόσθετες πληροφορίες<textarea id="additionalNotes" rows="4"></textarea></label></article>'
+          new_imaging = '<article class="card"><div class="card-title"><span class="step">9</span><div><h2>Απεικόνιση & πρόσθετες πληροφορίες</h2><p>Το PDF ελέγχεται ως προς τον τύπο εγγράφου πριν ενεργοποιηθεί η δήλωση του σημείου 3.</p></div></div><label class="upload">Απεικονιστική έκθεση PDF<input id="imagingReport" type="file" accept="application/pdf,.pdf"></label><div id="imagingStatus" class="validation-panel" hidden></div><label id="imagingConfirmWrap" class="check-item full-width" hidden><input id="imagingConfirm" type="checkbox">Επιβεβαιώνω ότι το επιλεγμένο PDF είναι η απεικονιστική έκθεση που απαιτεί το σημείο 3.</label><label class="full-width">Πρόσθετες πληροφορίες<textarea id="additionalNotes" rows="4"></textarea></label></article>'
+          if old_imaging not in s:
+              raise SystemExit('imaging card anchor not found')
+          p.write_text(s.replace(old_imaging, new_imaging, 1), encoding='utf-8')
+
+          # Browser behavior.
+          replace_once(
+              'static/clinic-utilities/rf/app.js',
+              "  const state = { contract: null, pathway: 'A1', selectedHistoryId: '', nsaids: [], others: [], physio: null };\n",
+              "  const state = { contract: null, pathway: 'A1', selectedHistoryId: '', nsaids: [], others: [], physio: null, imagingValidation: '' };\n",
+          )
+          replace_once(
+              'static/clinic-utilities/rf/app.js',
+              "      additional_notes: $('additionalNotes').value.trim()\n",
+              "      additional_notes: $('additionalNotes').value.trim(),\n      imaging_review_confirmed: $('imagingConfirm').checked\n",
+          )
+          imaging_fn = '''  async function validateImaging() {\n    const file = $('imagingReport').files[0];\n    const status = $('imagingStatus');\n    const confirmWrap = $('imagingConfirmWrap');\n    const confirm = $('imagingConfirm');\n    state.imagingValidation = '';\n    confirm.checked = false;\n    confirmWrap.hidden = true;\n    if (!file) {\n      status.hidden = true;\n      status.textContent = '';\n      return;\n    }\n    status.hidden = false;\n    status.className = 'validation-panel';\n    status.textContent = 'Έλεγχος τύπου εγγράφου…';\n    const form = new FormData();\n    form.append('imaging_report', file, file.name);\n    try {\n      const response = await api('/api/validate-imaging', {method:'POST', body:form});\n      const result = await response.json();\n      state.imagingValidation = result.status;\n      status.textContent = result.message;\n      status.className = `validation-panel ${result.status === 'imaging_supported' ? 'ok' : result.status === 'clearly_non_imaging' ? 'error' : ''}`;\n      confirmWrap.hidden = !result.requires_confirmation;\n    } catch (error) {\n      state.imagingValidation = 'validation_error';\n      status.className = 'validation-panel error';\n      status.textContent = error.message;\n    }\n  }\n\n'''
+          replace_once(
+              'static/clinic-utilities/rf/app.js',
+              '  async function createPdf() {\n',
+              imaging_fn + '  async function createPdf() {\n',
+          )
+          replace_once(
+              'static/clinic-utilities/rf/app.js',
+              '''    if (!file) {\n      showError('Απαιτείται η απεικονιστική έκθεση PDF.');\n      return;\n    }\n    try {\n''',
+              '''    if (!file) {\n      showError('Απαιτείται η απεικονιστική έκθεση PDF.');\n      return;\n    }\n    if (state.imagingValidation === 'clearly_non_imaging') {\n      showError('Το επιλεγμένο PDF έχει αναγνωριστεί ως μη απεικονιστικό.');\n      return;\n    }\n    if (state.imagingValidation === 'ambiguous_or_unreadable' && !$('imagingConfirm').checked) {\n      showError('Επιβεβαίωσε ότι το PDF είναι η απαιτούμενη απεικονιστική έκθεση.');\n      return;\n    }\n    try {\n''',
+          )
+          replace_once(
+              'static/clinic-utilities/rf/app.js',
+              "    $('createPdfBtn').addEventListener('click', createPdf);\n",
+              "    $('imagingReport').addEventListener('change', validateImaging);\n    $('createPdfBtn').addEventListener('click', createPdf);\n",
+          )
+
+          # Python regressions live in the already-gated RF native test file.
+          replace_once(
+              'test_rf_v2_native.py',
+              'from clinic_utilities.rf.api import RFApplicationDraft, _validate_a1, build_rf_router\n',
+              'from clinic_utilities.rf.api import RFApplicationDraft, _assess_imaging_pdf, _validate_a1, build_rf_router\n',
+          )
+          replace_once(
+              'test_rf_v2_native.py',
+              '''def make_pdf(page_count: int) -> bytes:\n    doc = fitz.open()\n    try:\n        for _ in range(page_count):\n            doc.new_page(width=595, height=842)\n        return doc.tobytes()\n    finally:\n        doc.close()\n\n\n''',
+              '''def make_pdf(page_count: int) -> bytes:\n    doc = fitz.open()\n    try:\n        for _ in range(page_count):\n            doc.new_page(width=595, height=842)\n        return doc.tobytes()\n    finally:\n        doc.close()\n\n\ndef make_text_pdf(text: str) -> bytes:\n    doc = fitz.open()\n    try:\n        page = doc.new_page(width=595, height=842)\n        page.insert_text((72, 72), text, fontsize=10)\n        return doc.tobytes()\n    finally:\n        doc.close()\n\n\n''',
+          )
+          replace_once(
+              'test_rf_v2_native.py',
+              '            "exact_location": "Αριστερό γόνατο",\n            "legacy_history": {\n',
+              '            "exact_location": "Αριστερό γόνατο",\n            "imaging_review_confirmed": True,\n            "legacy_history": {\n',
+          )
+          imaging_tests = '''\n\nclass RFImagingSemanticGuardTests(unittest.TestCase):\n    def setUp(self):\n        self.engine = memory_engine()\n        self.env = patch.dict(\n            os.environ,\n            {\n                "CLINICAL_DATA_KEY": CLINICAL_KEY,\n                "RF_DOCTOR_PROFILE_JSON": DOCTOR_JSON,\n                "RF_PRODUCT_CATALOG_JSON": PRODUCT_JSON,\n            },\n            clear=False,\n        )\n        self.env.start()\n        app = FastAPI()\n        app.include_router(build_rf_router(self.engine))\n        self.client = TestClient(app)\n        self.headers = {"X-Clinical-Key": CLINICAL_KEY}\n\n    def tearDown(self):\n        self.client.close()\n        self.env.stop()\n\n    def _preview(self, content: bytes):\n        return self.client.post(\n            "/clinical/clinic-utilities/rf/api/validate-imaging",\n            headers=self.headers,\n            files={"imaging_report": ("report.pdf", content, "application/pdf")},\n        )\n\n    def _create(self, content: bytes, confirmed: bool):\n        draft = make_a1_draft(imaging_review_confirmed=confirmed).model_dump(mode="json")\n        with patch("clinic_utilities.rf.api.build_official_rf_pdf", return_value=b"%PDF-synthetic"):\n            return self.client.post(\n                "/clinical/clinic-utilities/rf/api/create",\n                headers=self.headers,\n                data={"draft_json": json.dumps(draft)},\n                files={"imaging_report": ("report.pdf", content, "application/pdf")},\n            )\n\n    def test_radiology_text_is_supported_without_confirmation(self):\n        pdf = make_text_pdf("Radiology report MRI right knee. Findings and conclusion.")\n        assessment = _assess_imaging_pdf(pdf)\n        self.assertEqual(assessment["status"], "imaging_supported")\n        response = self._preview(pdf)\n        self.assertEqual(response.status_code, 200)\n        self.assertEqual(response.json()["status"], "imaging_supported")\n        self.assertFalse(response.json()["requires_confirmation"])\n        self.assertNotIn("Findings and conclusion", response.text)\n        self.assertEqual(self._create(pdf, confirmed=False).status_code, 200)\n\n    def test_clear_laboratory_report_is_rejected_even_if_confirmed(self):\n        pdf = make_text_pdf(\n            "BIOCHEMISTRY blood serum plasma reference range laboratory validator "\n            "Calcium 9.0 mg/dL Magnesium 2.0 mg/dL Phosphate 4.0 mg/dL"\n        )\n        assessment = _assess_imaging_pdf(pdf)\n        self.assertEqual(assessment["status"], "clearly_non_imaging")\n        response = self._preview(pdf)\n        self.assertEqual(response.status_code, 200)\n        self.assertEqual(response.json()["status"], "clearly_non_imaging")\n        created = self._create(pdf, confirmed=True)\n        self.assertEqual(created.status_code, 422)\n        self.assertIn("μη απεικονιστική", created.json()["detail"])\n\n    def test_textless_pdf_requires_explicit_clinician_confirmation(self):\n        pdf = make_pdf(1)\n        response = self._preview(pdf)\n        self.assertEqual(response.status_code, 200)\n        self.assertEqual(response.json()["status"], "ambiguous_or_unreadable")\n        self.assertTrue(response.json()["requires_confirmation"])\n        self.assertEqual(self._create(pdf, confirmed=False).status_code, 422)\n        self.assertEqual(self._create(pdf, confirmed=True).status_code, 200)\n\n    def test_fake_pdf_magic_bytes_are_not_accepted(self):\n        response = self._preview(b"%PDF-not-a-real-document")\n        self.assertEqual(response.status_code, 422)\n\n'''
+          replace_once(
+              'test_rf_v2_native.py',
+              '\n\nclass RFIntegrationSourceTests(unittest.TestCase):\n',
+              imaging_tests + '\nclass RFIntegrationSourceTests(unittest.TestCase):\n',
+          )
+
+          # Browser source assertions in an already-gated JS test.
+          p = Path('test_rf_v2_unilateral_ui.js')
+          s = p.read_text(encoding='utf-8')
+          marker = "assert(html.includes('Συμπληρώνεται από ένδειξη + πλευρά'), 'exact-location field must explain automatic suggestion');\n"
+          additions = marker + "assert(app.includes(\"api('/api/validate-imaging'\"), 'RF UI must preview-check imaging attachment type');\nassert(app.includes('imaging_review_confirmed'), 'RF draft must carry explicit ambiguous-attachment confirmation');\nassert(app.includes(\"imagingReport').addEventListener('change', validateImaging)\"), 'changing imaging file must reset/re-run semantic validation');\nassert(html.includes('Επιβεβαιώνω ότι το επιλεγμένο PDF είναι η απεικονιστική έκθεση'), 'ambiguous attachment must expose explicit clinician confirmation');\nassert(html.includes('έως 3'), 'medication copy must reflect maximum capacity, not a minimum requirement');\n"
+          if marker not in s:
+              raise SystemExit('UI test anchor not found')
+          p.write_text(s.replace(marker, additions, 1), encoding='utf-8')
+          PY
+      - name: Validate bounded patch before commit
+        run: |
+          python -m py_compile clinic_utilities/rf/api.py test_rf_v2_native.py
+          node --check static/clinic-utilities/rf/app.js
+          python -m unittest -v test_rf_v2_native.py
+          node test_rf_v2_unilateral_ui.js
+          git diff --check
+      - name: Commit source and regression corrections
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add clinic_utilities/rf/api.py static/clinic-utilities/rf/index.html static/clinic-utilities/rf/app.js test_rf_v2_native.py test_rf_v2_unilateral_ui.js
+          git commit -m 'Guard RF imaging attachment semantics'
+          git push origin HEAD:fix/rf-imaging-attachment-semantic-guard-2026-09-06
