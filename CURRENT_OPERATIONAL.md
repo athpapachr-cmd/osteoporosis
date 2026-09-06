@@ -1,82 +1,49 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** RF v2 PRODUCTION — IMAGING-ATTACHMENT SEMANTIC GUARD TESTED / EXACT-HEAD REVIEW PASS — PR + SQUASH MERGE + DEPLOY AUTHORIZED
+> **STATUS:** RF v2 PRODUCTION — IMAGING-ATTACHMENT SEMANTIC GUARD MERGED / DEPLOYED — PRODUCTION RE-SMOKE PENDING
 > **Updated:** 2026-09-06 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Fresh verified production `main`:** `e8bf4bac16eff5e0c2101ec891483b81b14765e1`.
-> **Production deploy:** `dep-daei1sh42hec73ccthr0` — LIVE.
-> **Hotfix branch:** `fix/rf-imaging-attachment-semantic-guard-2026-09-06`.
-> **Implementation base / merge base:** `e8bf4bac16eff5e0c2101ec891483b81b14765e1`.
-> **Exact tested runtime head before release-authority docs commit:** `814a62d3b31ae76d19c6f5da3f824e9137011e96`.
-> **Exact successful gate:** `RF v2 hotfix regression gate`, run `34031607422` — SUCCESS.
+> **Fresh verified production `main`:** `1d26195c77e186cff98086283252af2eb499dd17`.
+> **Release origin:** PR #77 — squash merged.
+> **Production deploy:** `dep-daeliaks728c7384f3fg` — LIVE.
 > **Current frozen slice:** `CU-RF-IMAGING-SEMANTIC-GUARD-2026-09-06`.
-> **ACTIVE RUNTIME WRITER/LOCK:** NONE — implementation/test/review closed.
-> **ACTIVE CANONICAL WRITER/LOCK:** release closeout only.
+> **ACTIVE RUNTIME WRITER/LOCK:** NONE — release complete.
+> **ACTIVE CANONICAL WRITER/LOCK:** docs-only post-deploy closeout branch pending smoke evidence.
 > **Implementation/test authority:** CONSUMED.
-> **PR authority:** GRANTED by product owner on 2026-09-06 for this bounded hotfix.
-> **Merge authority:** GRANTED by product owner on 2026-09-06; squash merge required by repository discipline.
-> **Deploy authority:** GRANTED by product owner on 2026-09-06; normal Render auto-deploy from `main`, no redundant manual deploy.
-> **Production config authority:** NONE; no config change is required for this hotfix.
-> **Production-smoke authority:** not implied by merge/deploy; smoke remains a separate post-deploy verification step.
+> **PR/merge/deploy authority:** CONSUMED for PR #77 release.
+> **Production config authority:** NONE; no config mutation occurred.
+> **Production-smoke authority:** not yet exercised for this release.
 
 ---
 
-# 1. Production truth before this release
+# 1. Production truth
 
-Native RF v2 was released through PR #75 and correction PR #76.
-
-Current production identity before the imaging-guard release:
+Native RF v2 is now live with the imaging-attachment semantic guard.
 
 ```text
-main: e8bf4bac16eff5e0c2101ec891483b81b14765e1
-PR #76: merged by squash
-Render: dep-daei1sh42hec73ccthr0
-status: LIVE
+main:    1d26195c77e186cff98086283252af2eb499dd17
+PR:      #77 — merged by squash
+Render:  dep-daeliaks728c7384f3fg
+status:  LIVE
+trigger: new_commit
 ```
 
-Server-side production configuration is already present for:
+The prior #76 production deploy `dep-daei1sh42hec73ccthr0` was superseded normally by the #77 auto-deploy.
+
+Existing server-side configuration remains unchanged and present:
 
 ```text
 RF_PRODUCT_CATALOG_JSON
 RF_DOCTOR_PROFILE_JSON
 ```
 
-No environment/config mutation is part of the imaging semantic-guard release.
+No environment/config mutation was part of PR #77.
 
 ---
 
-# 2. Product-owner smoke evidence that triggered the hotfix
+# 2. Released semantic-guard contract
 
-Product-owner smoke established:
-
-```text
-clinical authentication/session                    PASS
-native RF v2 UI visible                             PASS
-Category A A.1/A.2 UI                               PASS
-product catalog                                     PASS
-doctor profile                                      PASS
-single-side rule / derived target                   MERGED + DEPLOYED; re-smoke pending
-medication capacity 0..3                            MERGED + DEPLOYED; re-smoke pending
-Narox/Melox/Panadol/Parcoten parser corrections     MERGED + DEPLOYED; re-smoke pending
-A.1 official form generation                        PASS on earlier smoke
-uploaded PDF concatenation                          PASS on earlier smoke
-attachment semantic suitability                     DEFECT FOUND / HOTFIX TESTED
-full A.1 end-to-end production smoke                NOT YET PASS
-full A.2 end-to-end production smoke                NOT YET PASS
-PILOT-VALIDATED                                     NO
-```
-
-The deliberately unrelated smoke attachment was a laboratory report. Production accepted it merely because it was a valid PDF. This proved:
-
-```text
-PDF PRESENT != IMAGING-REPORT EVIDENCE PRESENT
-```
-
----
-
-# 3. Frozen imaging semantic-guard behavior
-
-The bounded hotfix implements deterministic in-memory classification:
+The production RF create path now distinguishes:
 
 ```text
 IMAGING_SUPPORTED
@@ -91,117 +58,106 @@ AMBIGUOUS_OR_UNREADABLE
 → intended for scanned/image-only or otherwise unclassifiable PDFs
 ```
 
-Server authority and privacy invariants:
+Server-side invariants:
 
 - PDF must parse and contain at least one page; `%PDF` magic bytes alone are insufficient;
 - extracted text is bounded and ephemeral;
-- `POST /clinical/clinic-utilities/rf/api/validate-imaging` returns only bounded status/confirmation/message fields;
-- `/api/create` independently repeats semantic assessment;
-- browser state cannot override `CLEARLY_NON_IMAGING`;
-- persistence may retain only bounded provenance (`auto_supported` or `clinician_confirmed`), never extracted attachment text;
-- the classifier establishes document-type suitability only and does not interpret imaging findings or prove the selected diagnosis.
+- protected preview returns only bounded status / confirmation requirement / message;
+- `/api/create` independently repeats the semantic assessment;
+- browser state cannot override a clearly non-imaging classification;
+- persistence may retain only bounded review provenance (`auto_supported` or `clinician_confirmed`), never extracted attachment text;
+- classifier establishes document-type suitability only; it does not interpret imaging findings or prove the selected RF diagnosis.
 
-The same hotfix corrects stale medication UI copy to `έως 3` / `0..3`, matching the already-authoritative backend rule.
+The same release also corrects stale medication UI copy to `0..3` / `έως 3`, matching the already-authoritative backend contract.
 
 ---
 
-# 4. Exact automated evidence and review
+# 3. Release evidence
 
-Substantive tested clean head:
+Exact PR head:
 
 ```text
-814a62d3b31ae76d19c6f5da3f824e9137011e96
+aa6ebc1d2df83a1638d7070a33f4173773bbe00a
 ```
 
-Full gate:
+Pre-PR exact-head gate:
 
 ```text
 workflow: RF v2 hotfix regression gate
-run: 34031607422
+run: 34032436268
 result: SUCCESS
 ```
 
-Final canonical-closeout head before this authority update:
+PR-triggered adjacent gate:
 
 ```text
-4fb623e7afe15cac502333d69d6d44c7f648e45b
-run: 34031820267
+workflow: CU-1 focused tests
+run: 34032485051
 result: SUCCESS
 ```
 
-Passed evidence includes:
+Squash merge:
 
 ```text
-Python / JavaScript syntax                          PASS
-Official 12-page RF template identity/geometry      PASS
-Real packaged-template A.1 generation               PASS
-Real packaged-template A.2 generation               PASS
-Existing RF v2 focused regressions                  PASS
-Synthetic radiology attachment → supported          PASS
-Synthetic laboratory attachment → rejected          PASS
-Textless valid PDF → confirmation required          PASS
-Ambiguous without confirmation → rejected           PASS
-Ambiguous with confirmation → accepted               PASS
-Clearly non-imaging even if confirmed → rejected    PASS
-Fake %PDF bytes → rejected                          PASS
-Preview endpoint does not return extracted text     PASS
-UI semantic-validation wiring                       PASS
-Adjacent CU-1 regressions                           PASS
-Legacy RF gateway rollback regressions              PASS
-G4/G3/G2/G1/C1 regression ancestry                  PASS
-Full branch-vs-production diff hygiene              PASS
+PR #77
+merge SHA: 1d26195c77e186cff98086283252af2eb499dd17
+merged: true
 ```
 
-Exact-head review found no release-blocking scope, privacy, trust-boundary or dependency issue. The branch was `behind_by: 0` with merge base exactly equal to current production `main`.
+Render auto-deploy:
+
+```text
+dep-daeliaks728c7384f3fg
+source SHA: 1d26195c77e186cff98086283252af2eb499dd17
+trigger: new_commit
+status: LIVE
+finished: 2026-09-06T12:16:20Z
+```
+
+No redundant manual deploy was triggered.
 
 ---
 
-# 5. Lifecycle matrix
+# 4. Lifecycle matrix
 
 ```text
-RF #76 CORRECTION IMPLEMENTED/TESTED/MERGED/DEPLOYED  YES
-RF #76 PRODUCTION RE-SMOKE                            PENDING
 IMAGING SEMANTIC-GUARD DESIGN                         FROZEN
 IMAGING SEMANTIC-GUARD IMPLEMENTED                    YES
 IMAGING SEMANTIC-GUARD TESTED                         YES
 IMAGING SEMANTIC-GUARD EXACT-HEAD REVIEW              PASS
-IMAGING SEMANTIC-GUARD PR                             AUTHORIZED / TO OPEN
-IMAGING SEMANTIC-GUARD MERGE                          AUTHORIZED / PENDING
-IMAGING SEMANTIC-GUARD DEPLOY                         AUTHORIZED / PENDING AUTO-DEPLOY
-FULL RF A.1 PRODUCTION-SMOKE-VERIFIED                 NO
-FULL RF A.2 PRODUCTION-SMOKE-VERIFIED                 NO
-PILOT-VALIDATED                                       NO
+PR #77                                                 MERGED
+MERGED                                                  YES
+DEPLOYED                                                YES
+PRODUCTION-SMOKE-VERIFIED                               NO
+FULL RF A.1 PRODUCTION-SMOKE-VERIFIED                  NO
+FULL RF A.2 PRODUCTION-SMOKE-VERIFIED                  NO
+PILOT-VALIDATED                                        NO
 ```
+
+`IMPLEMENTED != TESTED != MERGED != DEPLOYED != PRODUCTION-SMOKE-VERIFIED != PILOT-VALIDATED`.
 
 ---
 
-# 6. Exact next action
+# 5. Exact next action
 
-Product owner explicitly authorized **merge and deploy** on 2026-09-06. Repository discipline requires the bounded branch to pass through PR and squash merge.
+Production re-smoke is now the only release gate still open for this RF slice.
 
-Execute now:
-
-```text
-rerun exact-head RF hotfix gate after this docs-only authority commit
-→ open bounded PR to main
-→ verify PR is mergeable and exact head has green checks
-→ squash merge using expected head SHA
-→ allow normal Render auto-deploy from main
-→ verify Render reaches LIVE on the exact merge SHA
-→ HOLD for production re-smoke
-```
-
-Do not manually trigger an additional Render deploy if auto-deploy succeeds.
-
-Post-deploy smoke still must separately establish:
+Verify in the live UI:
 
 ```text
-#76 single-side/derived-location behavior
-#76 medication parser/capacity behavior
-obvious laboratory PDF rejected
-real imaging PDF accepted OR scanned report explicitly clinician-confirmed
-final A.1 PDF inspected
-A.2 path exercised
+1. single-side + system-derived exact location behaves correctly
+2. medication capacity shows 0..3 and parser corrections remain intact
+3. obvious laboratory PDF is rejected
+4. real imaging PDF is accepted, OR scanned/textless imaging requires explicit clinician confirmation
+5. inspect generated A.1 official PDF
+6. exercise A.2 continuation path and inspect its PDF
 ```
 
-No production configuration change and no claim of full production-smoke verification are authorized by this release action.
+Until those checks pass:
+
+```text
+NO claim of full RF production-smoke verification
+NO pilot validation claim
+```
+
+This docs-only post-deploy closeout branch should be reconciled with final smoke evidence before any later canonical merge, avoiding an unnecessary production redeploy merely to record interim release state.
