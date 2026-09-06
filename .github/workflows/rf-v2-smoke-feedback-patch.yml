@@ -1,0 +1,162 @@
+name: RF v2 smoke feedback patch
+
+on:
+  push:
+    branches:
+      - fix/rf-single-side-autolocation-2026-09-06
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/rf-single-side-autolocation-2026-09-06
+          fetch-depth: 0
+
+      - name: Apply clinician smoke feedback
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace1(text, old, new, label):
+              if old not in text:
+                  raise SystemExit(f'anchor not found: {label}')
+              return text.replace(old, new, 1)
+
+          # Medication parser: brands, gr/tablet dose forms, and explicit strength warnings.
+          p = Path('clinic_utilities/rf/parsers.py')
+          s = p.read_text(encoding='utf-8')
+          s = replace1(s,
+              '    duration: str\n    auto_selected: bool = False',
+              '    duration: str\n    warning: str = ""\n    auto_selected: bool = False',
+              'candidate warning field')
+          s = replace1(s,
+              '("nsaid", "etoricoxib", "Etoricoxib", ("etoricoxib", "arcoxia")),',
+              '("nsaid", "etoricoxib", "Etoricoxib", ("etoricoxib", "arcoxia", "narox")),',
+              'Narox alias')
+          s = replace1(s,
+              '("nsaid", "meloxicam", "Μελοξικάμη", ("meloxicam", "μελοξικαμη", "mobic")),',
+              '("nsaid", "meloxicam", "Μελοξικάμη", ("meloxicam", "μελοξικαμη", "mobic", "melox")),',
+              'Melox alias')
+          s = replace1(s,
+              '("other", "parcoten", "Parcoten", ("parcoten",)),',
+              '("other", "parcoten", "Parcoten (παρακεταμόλη + κωδεΐνη)", ("parcoten",)),',
+              'Parcoten composition')
+          s = replace1(s,
+              '_DOSE_RE = re.compile(r"(?<!\\w)(\\d+(?:[.,]\\d+)?)\\s*(mg|g|mcg|µg)(?!\\w)", re.I)',
+              '_DOSE_RE = re.compile(r"(?<!\\w)(\\d+(?:[.,]\\d+)?)\\s*(mg|g|gr|mcg|µg)(?!\\w)", re.I)\n_TABLET_DOSE_RE = re.compile(r"(?<!\\w)(\\d+(?:[.,]\\d+)?)\\s*(χάπια?|χαπια?|δισκία|δισκια|tabs?|tablets?)(?!\\w)", re.I)',
+              'dose regex')
+          old_dose = '''def _dose(entry: str) -> str:\n    match = _DOSE_RE.search(entry)\n    return match.group(1).replace(",", ".") + " " + match.group(2) if match else ""\n'''
+          new_dose = '''def _dose(entry: str) -> str:\n    match = _DOSE_RE.search(entry)\n    if match:\n        unit = match.group(2)\n        if unit.casefold() == "gr":\n            unit = "g"\n        return match.group(1).replace(",", ".") + " " + unit\n    tablet = _TABLET_DOSE_RE.search(entry)\n    return tablet.group(0).strip() if tablet else ""\n\n\ndef _dose_mg_value(dose: str) -> float | None:\n    match = _DOSE_RE.search(str(dose or ""))\n    if not match:\n        return None\n    value = float(match.group(1).replace(",", "."))\n    unit = match.group(2).casefold()\n    if unit in {"g", "gr"}:\n        return value * 1000\n    if unit in {"mcg", "µg"}:\n        return value / 1000\n    return value\n\n\ndef _dose_warning(entry: str, canonical_key: str, dose: str) -> str:\n    normalized = _norm(entry)\n    value_mg = _dose_mg_value(dose)\n    if value_mg is None:\n        return ""\n    # Cyprus product strengths verified from the corresponding product information.\n    if canonical_key == "meloxicam" and "melox" in normalized and value_mg not in {7.5, 15.0}:\n        return "Melox: αναμενόμενη περιεκτικότητα δισκίου 7.5 mg ή 15 mg — έλεγξε την καταχώρηση."\n    if canonical_key == "etoricoxib" and "narox" in normalized and value_mg not in {30.0, 60.0, 90.0, 120.0}:\n        return "Narox: η καταχωρημένη περιεκτικότητα δεν αντιστοιχεί στις γνωστές περιεκτικότητες — έλεγξε την καταχώρηση."\n    return ""\n'''
+          s = replace1(s, old_dose, new_dose, 'dose parser functions')
+          s = replace1(s,
+              '        category, key, display = matched\n        candidates.append(MedicationCandidate(entry, category, key, display, _dose(entry), _duration(entry)))',
+              '        category, key, display = matched\n        dose = _dose(entry)\n        candidates.append(MedicationCandidate(entry, category, key, display, dose, _duration(entry), _dose_warning(entry, key, dose)))',
+              'candidate construction')
+          p.write_text(s, encoding='utf-8')
+
+          # API: 0..3 medication trials, and server-side exact-location consistency.
+          p = Path('clinic_utilities/rf/api.py')
+          s = p.read_text(encoding='utf-8')
+          old_resolve = '''def _resolve_medications(draft: RFApplicationDraft):\n    if not draft.full_medication_text.strip():\n        raise HTTPException(status_code=422, detail="Απαιτείται η πλήρης φαρμακευτική αγωγή")\n    parsed = parse_medications(draft.full_medication_text)\n    nsaid = ([x.model_dump() for x in draft.nsaid_trials] or parsed["auto_selected_nsaids"])[:3]\n    other = ([x.model_dump() for x in draft.other_analgesic_trials] or parsed["auto_selected_others"])[:3]\n    if len(nsaid) != 3 or len(other) != 3:\n        raise HTTPException(\n            status_code=422,\n            detail="Το A.1 απαιτεί 3 ΜΣΑΦ και 3 άλλα αναλγητικά με τεκμηριωμένη αγωγή.",\n        )\n    return nsaid, other\n'''
+          new_resolve = '''def _resolve_medications(draft: RFApplicationDraft):\n    # The official table provides capacity for up to three NSAIDs and up to\n    # three other analgesics. It is not a minimum-treatment requirement.\n    parsed = parse_medications(draft.full_medication_text) if draft.full_medication_text.strip() else {\n        "auto_selected_nsaids": [],\n        "auto_selected_others": [],\n    }\n    nsaid = ([x.model_dump() for x in draft.nsaid_trials] or parsed["auto_selected_nsaids"])[:3]\n    other = ([x.model_dump() for x in draft.other_analgesic_trials] or parsed["auto_selected_others"])[:3]\n    return nsaid, other\n'''
+          s = replace1(s, old_resolve, new_resolve, '0..3 medication contract')
+          insert_after = '''def _resolve_other(draft: RFApplicationDraft, indication: dict):\n    if not indication.get("official_other"):\n        return "", ""\n    area = str(indication.get("other_area") or draft.other_area).strip()\n    diagnosis = str(indication.get("other_diagnosis") or draft.other_diagnosis).strip()\n    if not area or not diagnosis:\n        raise HTTPException(status_code=422, detail="Για το Άλλο απαιτούνται περιοχή και διάγνωση")\n    return area, diagnosis\n\n\n'''
+          location_fn = '''def _location_mode(indication_code: str) -> str:\n    if indication_code == "OTHER_CUSTOM":\n        return "custom"\n    if indication_code == "MORTON_NEUROMA":\n        return "refine"\n    return "derived"\n\n\ndef _validate_exact_location(draft: RFApplicationDraft, indication: dict) -> str:\n    actual = draft.exact_location.strip()\n    expected = str((indication.get("location_labels") or {}).get(draft.laterality) or "").strip()\n    mode = _location_mode(draft.indication_code)\n    if mode == "derived":\n        if not expected or actual != expected:\n            raise HTTPException(\n                status_code=422,\n                detail="Η ακριβής εντόπιση προκύπτει αυτόματα από την ένδειξη και την πλευρά και δεν μπορεί να αλλάξει.",\n            )\n        return expected\n    if mode == "refine":\n        if not expected or not actual.startswith(expected):\n            raise HTTPException(\n                status_code=422,\n                detail="Η εξειδίκευση της εντόπισης πρέπει να παραμένει στην επιλεγμένη πλευρά/περιοχή.",\n            )\n    return actual\n\n\n'''
+          s = replace1(s, insert_after, insert_after + location_fn, 'exact location validator')
+          s = replace1(s,
+              '                    "location_labels": dict(item.get("location_labels") or {}),',
+              '                    "location_labels": dict(item.get("location_labels") or {}),\n                    "location_mode": _location_mode(code),',
+              'contract location mode')
+          s = replace1(s,
+              '        other_area, other_diagnosis = _resolve_other(draft, indication)\n        imaging_bytes = await _read_imaging_pdf(imaging_report)',
+              '        other_area, other_diagnosis = _resolve_other(draft, indication)\n        exact_location = _validate_exact_location(draft, indication)\n        imaging_bytes = await _read_imaging_pdf(imaging_report)',
+              'create location validation')
+          s = replace1(s,
+              '            "other_diagnosis": other_diagnosis,\n            "application_date": date.today().isoformat(),',
+              '            "other_diagnosis": other_diagnosis,\n            "exact_location": exact_location,\n            "application_date": date.today().isoformat(),',
+              'normalized payload location')
+          s = replace1(s,
+              '                    "exact_location": draft.exact_location,',
+              '                    "exact_location": exact_location,',
+              'legacy normalized location')
+          p.write_text(s, encoding='utf-8')
+
+          # Browser: derived locations are read-only; medication warnings visible.
+          p = Path('static/clinic-utilities/rf/app.js')
+          s = p.read_text(encoding='utf-8')
+          s = replace1(s,
+              "    $('exactLocation').value = suggested;\n    updateSummary();",
+              "    const exact = $('exactLocation');\n    exact.value = suggested;\n    exact.readOnly = item?.location_mode === 'derived';\n    exact.title = exact.readOnly ? 'Η εντόπιση προκύπτει αυτόματα από ένδειξη + πλευρά.' : '';\n    updateSummary();",
+              'read-only derived location')
+          s = replace1(s,
+              "      row.title = item.source_text || '';\n      row.append(check, drug, dose, duration);\n      container.append(row);",
+              "      row.title = item.source_text || '';\n      row.append(check, drug, dose, duration);\n      container.append(row);\n      if (item.warning) {\n        const warning = document.createElement('div');\n        warning.className = 'trial-warning';\n        warning.textContent = item.warning;\n        container.append(warning);\n      }",
+              'visible medication warning')
+          s = replace1(s,
+              "      $('medicationStatus').textContent = `Αυτόματη επιλογή ${result.auto_selected_nsaids.length + result.auto_selected_others.length} γραμμών · έλεγξε μόνο αν χρειάζεται.`;",
+              "      $('medicationStatus').textContent = `Αναγνωρίστηκαν ${result.nsaid_candidates.length + result.other_candidates.length} γραμμές · επιλέγονται έως 3 ΜΣΑΦ + έως 3 άλλα αναλγητικά.`;",
+              'medication status copy')
+          p.write_text(s, encoding='utf-8')
+
+          # Minimal warning styling.
+          p = Path('static/clinic-utilities/rf/styles.css')
+          s = p.read_text(encoding='utf-8')
+          if '.trial-warning' not in s:
+              s = s.rstrip() + '\n\n.trial-warning {\n  margin: -2px 0 8px 38px;\n  color: #b42318;\n  font-size: 0.86rem;\n  font-weight: 650;\n}\n'
+          p.write_text(s, encoding='utf-8')
+
+          # Replace the obsolete 3+3-minimum regression with 0..3 capacity tests
+          # and the exact clinician-entered parser examples from production smoke.
+          p = Path('test_rf_v2_release_hardening.py')
+          s = p.read_text(encoding='utf-8')
+          s = replace1(s,
+              'from clinic_utilities.rf.api import RFApplicationDraft, RFMedicationTrial, _resolve_medications',
+              'from clinic_utilities.rf.api import RFApplicationDraft, RFMedicationTrial, _resolve_medications\nfrom clinic_utilities.rf.parsers import parse_medications',
+              'parser test import')
+          old_class = '''class RFThreePlusThreeTests(unittest.TestCase):\n    def test_a1_rejects_fewer_than_three_plus_three(self):\n        draft = draft_with_manual_trials(2, 2)\n        with self.assertRaises(HTTPException) as caught:\n            _resolve_medications(draft)\n        self.assertEqual(caught.exception.status_code, 422)\n\n    def test_a1_accepts_exact_three_plus_three(self):\n        nsaid, other = _resolve_medications(draft_with_manual_trials(3, 3))\n        self.assertEqual(len(nsaid), 3)\n        self.assertEqual(len(other), 3)\n\n\n'''
+          new_class = '''class RFMedicationCapacityTests(unittest.TestCase):\n    def test_a1_accepts_zero_medication_trials(self):\n        draft = draft_with_manual_trials(0, 0)\n        draft.full_medication_text = ""\n        nsaid, other = _resolve_medications(draft)\n        self.assertEqual(nsaid, [])\n        self.assertEqual(other, [])\n\n    def test_a1_accepts_fewer_than_three(self):\n        nsaid, other = _resolve_medications(draft_with_manual_trials(2, 1))\n        self.assertEqual(len(nsaid), 2)\n        self.assertEqual(len(other), 1)\n\n    def test_a1_accepts_capacity_of_three_plus_three(self):\n        nsaid, other = _resolve_medications(draft_with_manual_trials(3, 3))\n        self.assertEqual(len(nsaid), 3)\n        self.assertEqual(len(other), 3)\n\n\nclass RFMedicationSmokeParserTests(unittest.TestCase):\n    def test_clinician_smoke_examples_are_recognized_without_inventing_corrections(self):\n        parsed = parse_medications(\n            "Voltaren 75 mg 3 μήνες\\n"\n            "Narox 90 mg 10 ημέρες\\n"\n            "Melox 1 gr 10 ημέρες\\n"\n            "Panadol 1 gr 3 μήνες\\n"\n            "Parcoten 2 χάπια 2 μήνες\\n"\n            "Tramadex 50 mg 1 μήνας"\n        )\n        nsaids = {x["canonical_key"]: x for x in parsed["nsaid_candidates"]}\n        others = {x["canonical_key"]: x for x in parsed["other_candidates"]}\n        self.assertEqual(nsaids["etoricoxib"]["dose"], "90 mg")\n        self.assertEqual(nsaids["meloxicam"]["dose"], "1 g")\n        self.assertIn("7.5 mg", nsaids["meloxicam"]["warning"])\n        self.assertIn("15 mg", nsaids["meloxicam"]["warning"])\n        self.assertEqual(others["paracetamol"]["dose"], "1 g")\n        self.assertEqual(others["parcoten"]["dose"], "2 χάπια")\n        self.assertIn("παρακεταμόλη", others["parcoten"]["drug_name"].casefold())\n        self.assertIn("κωδεΐνη", others["parcoten"]["drug_name"].casefold())\n        self.assertEqual(others["tramadol"]["dose"], "50 mg")\n\n\n'''
+          s = replace1(s, old_class, new_class, 'medication capacity/parser tests')
+          p.write_text(s, encoding='utf-8')
+
+          # Exact-location mismatch regression.
+          p = Path('test_rf_v2_unilateral.py')
+          s = p.read_text(encoding='utf-8')
+          s = replace1(s,
+              'from pydantic import ValidationError\n\nfrom clinic_utilities.rf.api import RFApplicationDraft',
+              'from fastapi import HTTPException\nfrom pydantic import ValidationError\n\nfrom clinic_utilities.rf.api import RFApplicationDraft, _validate_exact_location',
+              'location validator test import')
+          anchor = '''    def test_knee_location_suggestion_is_side_specific(self):\n        labels = INDICATIONS["KNEE_OA_KL34"]["location_labels"]\n        self.assertEqual(labels["left"], "Αριστερό γόνατο")\n        self.assertEqual(labels["right"], "Δεξί γόνατο")\n        self.assertEqual(set(labels), {"left", "right"})\n\n'''
+          addition = '''    def test_fixed_location_must_match_selected_side(self):\n        indication = INDICATIONS["KNEE_OA_KL34"]\n        good = draft(laterality="right", exact_location="Δεξί γόνατο")\n        self.assertEqual(_validate_exact_location(good, indication), "Δεξί γόνατο")\n        bad = draft(laterality="right", exact_location="Αριστερό γόνατο")\n        with self.assertRaises(HTTPException) as caught:\n            _validate_exact_location(bad, indication)\n        self.assertEqual(caught.exception.status_code, 422)\n\n'''
+          s = replace1(s, anchor, anchor + addition, 'location mismatch regression')
+          p.write_text(s, encoding='utf-8')
+
+          p = Path('test_rf_v2_unilateral_ui.js')
+          s = p.read_text(encoding='utf-8')
+          s = replace1(s,
+              "assert(app.includes(\"item.location_labels?.[side]\"), 'RF UI must use server-provided location labels');",
+              "assert(app.includes(\"item.location_labels?.[side]\"), 'RF UI must use server-provided location labels');\nassert(app.includes(\"exact.readOnly = item?.location_mode === 'derived'\"), 'fixed RF locations must be system-derived and read-only');",
+              'UI read-only regression')
+          p.write_text(s, encoding='utf-8')
+          PY
+
+      - name: Validate patch syntax and focused tests
+        run: |
+          python -m py_compile clinic_utilities/rf/api.py clinic_utilities/rf/parsers.py test_rf_v2_release_hardening.py test_rf_v2_unilateral.py
+          node --check static/clinic-utilities/rf/app.js
+          python -m unittest -v test_rf_v2_release_hardening.py test_rf_v2_unilateral.py
+          node test_rf_v2_unilateral_ui.js
+          git diff --check
+
+      - name: Commit source/test corrections
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add clinic_utilities/rf/api.py clinic_utilities/rf/parsers.py static/clinic-utilities/rf/app.js static/clinic-utilities/rf/styles.css test_rf_v2_release_hardening.py test_rf_v2_unilateral.py test_rf_v2_unilateral_ui.js
+          git commit -m 'Correct RF medication capacity parsing and location consistency'
+          git push origin HEAD:fix/rf-single-side-autolocation-2026-09-06
