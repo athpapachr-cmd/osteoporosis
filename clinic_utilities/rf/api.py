@@ -68,7 +68,7 @@ class RFApplicationDraft(BaseModel):
     age: int = Field(ge=1, le=130)
     product_key: str
     indication_code: str
-    laterality: str = "none"
+    laterality: Literal["left", "right"]
     exact_location: str = Field(min_length=1, max_length=300)
     other_area: str = Field(default="", max_length=160)
     other_diagnosis: str = Field(default="", max_length=240)
@@ -92,7 +92,7 @@ class RFApplicationDraft(BaseModel):
 class RFHistoryLookup(BaseModel):
     identity_number: str = Field(min_length=1, max_length=128)
     site_key: str = Field(default="", max_length=80)
-    laterality: str = Field(default="", max_length=40)
+    laterality: Literal["left", "right"]
 
 
 class RFTextRequest(BaseModel):
@@ -248,12 +248,14 @@ def build_rf_router(engine: Engine) -> APIRouter:
         return {
             "version": "rf-v2-category-a-2026-09",
             "category": "A",
+            "application_target_rule": "single_unilateral",
             "pathways": {"A1": "Νέα θεραπεία", "A2": "Συνέχιση θεραπείας"},
             "indications": {
                 code: {
                     "label": item["label"],
                     "site_key": item["site_key"],
                     "requires_intervention": bool(item.get("requires_intervention")),
+                    "location_labels": dict(item.get("location_labels") or {}),
                 }
                 for code, item in INDICATIONS.items()
             },
@@ -329,7 +331,7 @@ def build_rf_router(engine: Engine) -> APIRouter:
                     raise HTTPException(status_code=404, detail="Η προηγούμενη εφαρμογή δεν βρέθηκε")
                 if prior["site_key"] != indication["site_key"]:
                     raise HTTPException(status_code=422, detail="Η προηγούμενη εφαρμογή αφορά διαφορετική περιοχή")
-                if draft.laterality not in {"none", prior.get("laterality") or "none"}:
+                if draft.laterality != prior.get("laterality"):
                     raise HTTPException(status_code=422, detail="Η προηγούμενη εφαρμογή αφορά διαφορετική πλευρά")
             elif draft.legacy_history is not None:
                 prior = _validate_legacy(draft.legacy_history)

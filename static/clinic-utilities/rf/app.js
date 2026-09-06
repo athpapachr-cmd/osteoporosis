@@ -35,8 +35,10 @@
       $('productSelect').add(option);
     });
     Object.entries(c.indications).forEach(([key, item]) => $('indicationSelect').add(new Option(item.label, key)));
-    Object.entries(c.laterality).forEach(([key, label]) => $('lateralitySelect').add(new Option(label, key)));
-    $('lateralitySelect').value = 'none';
+    const sideSelect = $('lateralitySelect');
+    sideSelect.replaceChildren(new Option('Επιλέξτε…', ''));
+    Object.entries(c.laterality).forEach(([key, label]) => sideSelect.add(new Option(label, key)));
+    sideSelect.value = '';
     $('reasonOptions').replaceChildren(...Object.entries(c.rf_reasons).map(([key, label]) => checkboxItem(key, label)));
   }
 
@@ -86,8 +88,25 @@
       $('interventionTitle').textContent = 'Ισχίο — διαγνωστικό block';
       $('interventionHelp').textContent = 'Το νέο επίσημο έντυπο απαιτεί στοιχεία διαγνωστικού block για RF στο ισχίο.';
     }
+    applySuggestedLocation();
     state.selectedHistoryId = '';
     $('historyChoices').replaceChildren();
+    updateSummary();
+  }
+
+  function applySuggestedLocation() {
+    const code = $('indicationSelect').value;
+    const side = $('lateralitySelect').value;
+    const item = state.contract?.indications?.[code];
+    let suggested = '';
+    if (item && (side === 'left' || side === 'right')) {
+      suggested = item.location_labels?.[side] || '';
+      if (!suggested && code === 'OTHER_CUSTOM') {
+        const area = $('otherArea').value.trim();
+        if (area) suggested = `${side === 'left' ? 'Αριστερά' : 'Δεξιά'} — ${area}`;
+      }
+    }
+    $('exactLocation').value = suggested;
     updateSummary();
   }
 
@@ -190,8 +209,8 @@
 
   async function lookupHistory() {
     const item = state.contract?.indications?.[$('indicationSelect').value];
-    if (!$('identityNumber').value.trim() || !item) {
-      showError('Συμπλήρωσε ταυτότητα και ένδειξη πριν την αναζήτηση.');
+    if (!$('identityNumber').value.trim() || !item || !['left','right'].includes($('lateralitySelect').value)) {
+      showError('Συμπλήρωσε ταυτότητα, ένδειξη και μία πλευρά (δεξιά ή αριστερά) πριν την αναζήτηση.');
       return;
     }
     try {
@@ -322,6 +341,14 @@
   }
 
   async function createPdf() {
+    if (!['left','right'].includes($('lateralitySelect').value)) {
+      showError('Επίλεξε μία πλευρά: δεξιά ή αριστερά.');
+      return;
+    }
+    if (!$('exactLocation').value.trim()) {
+      showError('Απαιτείται μία ακριβής εντόπιση RF.');
+      return;
+    }
     const file = $('imagingReport').files[0];
     if (!file) {
       showError('Απαιτείται η απεικονιστική έκθεση PDF.');
@@ -375,6 +402,10 @@
     loadContract();
     document.querySelectorAll('.segment').forEach(btn => btn.addEventListener('click', () => setPathway(btn.dataset.pathway)));
     $('indicationSelect').addEventListener('change', indicationChanged);
+    $('lateralitySelect').addEventListener('change', applySuggestedLocation);
+    $('otherArea').addEventListener('input', () => {
+      if ($('indicationSelect').value === 'OTHER_CUSTOM') applySuggestedLocation();
+    });
     $('parseMedicationBtn').addEventListener('click', parseMedication);
     let medTimer;
     $('medicationText').addEventListener('input', () => {
