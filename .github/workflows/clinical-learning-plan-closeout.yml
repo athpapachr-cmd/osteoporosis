@@ -1,0 +1,1059 @@
+name: Clinical Learning Hub planning reconciliation
+
+on:
+  push:
+    branches:
+      - docs/clinical-learning-hub-rf-post-merge-2026-09-06
+
+permissions:
+  contents: write
+
+jobs:
+  reconcile:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: docs/clinical-learning-hub-rf-post-merge-2026-09-06
+          fetch-depth: 0
+
+      - name: Reconcile RF release state and add Clinical Learning Hub architecture
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          # ---- CLINICAL_EXCELLENCE_PLAN.md ----
+          p = Path('CLINICAL_EXCELLENCE_PLAN.md')
+          s = p.read_text(encoding='utf-8')
+          s = s.replace('> **UPDATED:** 2026-08-30 Asia/Nicosia.', '> **UPDATED:** 2026-09-06 Asia/Nicosia.', 1)
+
+          marker = '\n---\n\n# 31. Patient Voice\n'
+          if '# 30A. Clinical Learning Hub' not in s:
+              section = r'''
+
+---
+
+# 30A. Clinical Learning Hub — foundations + challenges + real-case deliberate practice
+
+The learning layer is a reusable **Core** capability. Osteoporosis is the first content module, not the permanent data-model boundary.
+
+The clinician-facing Module-01 surface is named:
+
+```text
+Osteoporosis Clinical Learning
+```
+
+Core structure:
+
+```text
+CLINICAL LEARNING HUB
+│
+├── Foundation Map
+│   ├── concept/dependency map
+│   ├── diagnostic assessment
+│   └── mastery / retention state
+│
+├── Clinical Challenges
+│   ├── synthetic or de-identified cases
+│   ├── progressive disclosure
+│   ├── clinician reasoning before debrief
+│   └── evidence-calibrated debrief
+│
+├── Daily Case Review
+│   ├── real eligible osteoporosis encounter
+│   ├── Heidi transcript as ephemeral evidence source
+│   ├── clinician self-review before AI critique
+│   ├── Practice Review / evidence review
+│   └── reviewed learning artifact
+│
+├── Signals
+│   ├── recurrent gaps
+│   ├── strengths
+│   ├── uncertainty/calibration patterns
+│   └── prompt-dependence / transfer observations where valid
+│
+└── Learning Plan
+    ├── targeted foundation blocks
+    ├── papers/guidelines
+    ├── deliberate-practice cases
+    ├── spaced repetition
+    └── re-assessment
+```
+
+The purpose is not to collect transcripts or CME activity. It is to convert repeated reasoning/knowledge evidence into a structured map of what the clinician understands, where performance is intuitive but under-theorized, what repeatedly fails, and what intervention should happen next.
+
+## 30A.1 Three different learning instruments
+
+The system must keep these instruments distinct:
+
+```text
+FOUNDATION MAP
+What do I actually understand and how well is it structurally connected?
+
+CLINICAL CHALLENGE
+Can I apply the model to a controlled novel problem without hindsight?
+
+DAILY REAL-CASE REVIEW
+Did I apply it correctly in an actual patient encounter under real constraints?
+```
+
+They may feed the same Signals but must not be collapsed into one generic score.
+
+## 30A.2 Core object — `ClinicalLearningChallengeV1`
+
+Candidate contract:
+
+```text
+challenge_id
+schema_version
+module
+created_at
+title
+challenge_mode: synthetic / deidentified_real_case / mixed
+topics[]
+learning_domains[]
+difficulty_optional
+
+initial_case
+fact_ledger[]
+progressive_disclosures[]
+clinician_initial_response
+clinician_followup_responses[]
+clinician_confidence_optional
+final_clinician_decision_optional
+
+debrief:
+  strengths[]
+  clear_errors[]
+  defensible_disagreements[]
+  evidence_gaps[]
+  blind_spots[]
+  reasoning_patterns[]
+  clinical_insights[]
+
+references[]:
+  title
+  evidence_type
+  framework_or_guideline_optional
+  PMID_optional
+  DOI_optional
+  url_optional
+  supports_or_challenges
+
+gap_classes[]
+learning_actions[]
+next_challenge_topic_optional
+spaced_repetition_due_optional
+linked_signal_ids[]
+clinician_review_state
+revision
+```
+
+A challenge is a **learning artifact**, not a patient chart and not a transcript archive.
+
+## 30A.3 Fact Ledger — hard provenance boundary
+
+The progressive-disclosure error demonstrated that case facts require explicit truth/provenance semantics. A later summary must never convert an educational hypothetical into a real patient fact.
+
+Candidate `LearningFactV1`:
+
+```text
+fact_id
+statement
+fact_scope:
+  real_deidentified_case_fact
+  synthetic_case_fact
+  clinician_hypothesis
+  ai_inference
+  counterfactual_teaching_point
+introduced_via:
+  initial_case
+  progressive_disclosure
+  heidi_transcript
+  clinician_entry
+  evidence_review
+authoritative_for_patient: true / false
+source
+certainty_optional
+introduced_at_stage
+status: active / corrected / withdrawn
+supersedes_fact_id_optional
+```
+
+Hard invariant:
+
+```text
+REAL PATIENT FACT
+!= SYNTHETIC / PROGRESSIVE-DISCLOSURE FACT
+!= CLINICIAN HYPOTHESIS
+!= AI INFERENCE
+!= EDUCATIONAL COUNTERFACTUAL
+```
+
+No learning artifact may write a hypothetical/counterfactual fact into authoritative patient data.
+
+## 30A.4 Core object — `DailyCaseReviewV1`
+
+A daily real-case review is a Practice-Review-derived learning artifact for one actual osteoporosis encounter.
+
+Candidate contract:
+
+```text
+review_id
+schema_version
+module
+review_date
+opaque_encounter_reference_optional
+eligibility_state
+source_set
+
+clinician_self_review:
+  key_decisions[]
+  uncertainty_points[]
+  what_might_be_done_differently_optional
+  confidence_by_decision_optional
+
+decision_reconstruction
+practice_observation_ids[]
+strengths[]
+clear_errors[]
+uncertainties[]
+evidence_based_disagreements[]
+missed_opportunities[]
+gap_classes[]
+reasoning_patterns[]
+communication_patterns[]
+evidence_refs[]
+learning_actions[]
+linked_signal_ids[]
+clinician_disposition
+created_at
+```
+
+The persisted object stores reviewed structured learning evidence. It does **not** persist the raw Heidi transcript by default.
+
+## 30A.5 Daily scheduled procedure
+
+Desired operating cadence:
+
+```text
+once per clinic day
+→ if at least one eligible osteoporosis encounter has a usable Heidi transcript
+→ surface `Daily Case Review due`
+→ clinician selects one case or accepts a system recommendation with visible rationale
+→ transcript enters the existing protected ephemeral transcript boundary
+→ reconstruct actual encounter evidence
+→ clinician completes self-review BEFORE seeing AI critique
+→ AI/Practice Review evaluates reasoning, decision, safety, communication and close
+→ material claims are linked to evidence/standards where applicable
+→ clinician Accept / Modify / Dismiss on important observations
+→ persist only the structured reviewed learning artifact
+→ update candidate Signals / Foundation Map evidence
+```
+
+If no eligible real case/transcript exists that day:
+
+```text
+state = no_eligible_case
+```
+
+The system must not fabricate a case to satisfy a daily quota.
+
+The first scheduling implementation may be a deterministic Cockpit due-state rather than a background cron job. Notification channels are optional later work. No exact clock time is frozen until the product owner chooses one.
+
+## 30A.6 Eligibility and case selection
+
+A Daily Case Review must use a real osteoporosis encounter and an available transcript or another explicitly approved evidence set. Multiple eligible cases may be shown with a recommended review candidate based on learning value, uncertainty, safety relevance or major decision content, but the recommendation must show its reason and retain clinician override.
+
+The selector must not silently equate complexity with poor performance and must not cherry-pick only failures; sustained strengths need evidence too.
+
+## 30A.7 Self-review before AI critique — anti-anchoring requirement
+
+Before the model reveals its debrief, capture a short clinician self-assessment:
+
+```text
+What were the 2–3 critical issues?
+Which decision was least certain?
+Would I change anything now?
+Confidence in the main decision(s), if useful
+```
+
+This preserves calibration evidence and avoids measuring only agreement with an AI-generated framing.
+
+## 30A.8 Heidi transcript boundary
+
+Daily Case Review must reuse the protected transcript architecture rather than create a second transcript ingestion stack.
+
+Canonical flow:
+
+```text
+Heidi transcript
+→ protected ephemeral intake
+→ semantic evidence/candidates with provenance
+→ encounter/decision reconstruction
+→ Practice Review
+→ reviewed learning artifact
+→ raw transcript discarded by default
+```
+
+Hard rules:
+
+- no raw transcript in repository, localStorage, routine logs or learning tables by default;
+- identifiable transcript use requires the same provider/privacy/data-control gate as PR-1;
+- no autonomous patient-record write from the learning review;
+- learning review inference is not patient truth;
+- transcript absence is not a negative finding;
+- exact dates, diagnoses, medication exposure or outcomes are never invented.
+
+## 30A.9 Core object — `FoundationDomainStateV1`
+
+The Foundation Map addresses the pattern where reasoning is often stronger than the clinician's explicitly structured theoretical model.
+
+A domain/concept is not scored simply as pass/fail. Candidate states:
+
+```text
+FORMAL_SOLID
+  can explain from first principles, apply, identify exceptions and transfer to a novel case
+
+INTUITIVE_UNSTRUCTURED
+  usually uses the concept correctly but cannot yet articulate a complete formal model
+
+FRAGMENTED
+  knows components but dependencies/causal model are incomplete or inconsistent
+
+UNKNOWN_UNTESTED
+  insufficient evidence of current understanding
+```
+
+Candidate fields:
+
+```text
+foundation_node_id
+module
+domain
+concept
+prerequisite_node_ids[]
+state
+evidence_attempt_ids[]
+last_assessed_at
+assessment_methods[]
+confidence_calibration_optional
+strength_or_gap_signal_ids[]
+next_review_due_optional
+clinician_note_optional
+```
+
+State changes require assessment evidence; they are not inferred from one model opinion or one self-rating.
+
+## 30A.10 Module-01 initial Foundation Map
+
+Initial osteoporosis/metabolic-bone domains:
+
+```text
+1. Bone remodeling / cell biology / physiology
+2. DXA physics, BMD/T-score, artifacts, precision and LSC
+3. VFA / vertebral-fracture identification and interpretation
+4. Fracture epidemiology, absolute risk and FRAX/FRAXplus reasoning
+5. Secondary osteoporosis
+6. Glucocorticoid-induced osteoporosis
+7. Antiresorptive pharmacology
+8. Anabolic pharmacology
+9. Sequential / combination treatment
+10. Denosumab discontinuation / rebound physiology and management
+11. Bone-turnover markers and treatment-response interpretation
+12. Treatment safety / contraindications / transitions
+13. Evidence appraisal: directness, surrogate endpoints, guideline disagreement and uncertainty
+14. Communication / shared decision making / continuity
+```
+
+This is a dependency map, not a reading list. Nodes may be split/merged during the design slice if diagnostic assessment shows a better structure.
+
+## 30A.11 Diagnostic mapping before teaching
+
+For each foundation domain, the system should first establish what is already known.
+
+Assessment methods include:
+
+```text
+explain the mechanism without notes
+explain why the rule works
+apply it to a novel clinical case
+identify when the rule fails or evidence is indirect
+compare competing explanations/options
+separate evidence from inference
+connect mechanism → evidence → clinical decision
+```
+
+The output is a map of:
+
+```text
+solid
+intuitive but under-structured
+fragmented
+unknown/untested
+```
+
+The default intervention is **not** "read more".
+
+## 30A.12 Foundation prescriptions
+
+When a gap is structural, prescribe a bounded foundation block:
+
+```text
+prerequisite concept(s)
+→ mechanism / formal model
+→ one or two authoritative sources
+→ short retrieval test
+→ transfer case
+→ retention check
+```
+
+Example pattern:
+
+```text
+clinical denosumab management strong
++ rebound recognition strong
++ osteoclast/RANKL/reversible-suppression model fragmented
+→ targeted mechanism block
+→ return to timing/CTX/zoledronate case reasoning
+```
+
+This converts isolated knowledge islands into a connected model instead of accumulating unrelated papers.
+
+## 30A.13 Mastery evidence
+
+`MASTERED` cannot mean "read" or "answered one question correctly".
+
+Evidence should include several of:
+
+```text
+accurate explanation without prompts
+mechanistic explanation
+novel-case transfer
+exception/boundary recognition
+evidence-directness calibration
+retention on later assessment
+consistent real-case execution where observable
+```
+
+No fixed numeric mastery threshold is frozen before real data establish a useful denominator/reliability rule.
+
+## 30A.14 Learning Signals from multiple sources
+
+Challenges, Daily Case Reviews, later audit/Practice Review and Foundation assessments feed the existing Signal engine.
+
+Example:
+
+```text
+Challenge → overstates indirect evidence
+Daily Case Review → same calibration pattern
+Later Challenge → repeats the pattern
+↓
+Candidate recurrent Signal:
+EVIDENCE DIRECTNESS / CALIBRATION
+↓
+root cause = reasoning and/or knowledge
+↓
+foundation intervention + contrasting cases
+↓
+spaced reassessment
+```
+
+A single error may be clinically important but does not automatically become a stable trait. Recurrent patterns require denominator/reliability context. Positive repeated observations may become `SUSTAINED_STRENGTH`.
+
+## 30A.15 Learning cadence
+
+Target cadence after the relevant runtime exists:
+
+```text
+DAILY
+one real osteoporosis case review when an eligible transcript-backed case exists
+
+WEEKLY
+one deliberately designed Clinical Challenge with progressive disclosure
+
+EVERY 3–4 WEEKS OR AFTER A SMALL BLOCK OF COMPLETED RECORDS
+Foundation / progress review:
+  what stabilized
+  what remains intuitive-unstructured
+  what remains fragmented
+  recurrent gap/strength signals
+  next foundation target
+
+SPACED REPETITION
+per-node/per-topic due dates based on prior learning evidence
+```
+
+This cadence is a product target, not permission to invent a case when none exists.
+
+## 30A.16 Baseline-methodology protection
+
+Systematic clinician-facing Daily Case Review is an **intervention** and can change practice. It must therefore not silently contaminate the frozen 30-case system-assisted baseline.
+
+Default policy:
+
+```text
+before scored baseline:
+  design/test the learning machinery and record any learning exposure explicitly
+
+during 30-case scored baseline:
+  Practice Review / Daily Case Review may run in shadow to validate machinery
+  routine AI critique/coaching is hidden by default
+  no daily feedback loop is counted as baseline-neutral
+
+after baseline lock:
+  activate clinician-facing daily case review as a formal improvement intervention
+```
+
+If the product owner wants visible daily AI case-review coaching **during** the scored baseline, that is a methodology REPLAN and the cohort must be relabelled/redefined before collection continues.
+
+## 30A.17 MVP ingestion from external ChatGPT conversations
+
+The first practical Challenge ingestion path should not require direct cross-service AI write access.
+
+MVP:
+
+```text
+assistant produces natural-language debrief
++
+validated `ClinicalLearningChallengeV1` JSON
+→ Cockpit Import Challenge
+→ schema validation
+→ PHI/identifier guard
+→ duplicate detection by challenge_id
+→ preview
+→ clinician confirm/edit
+→ protected persistence
+```
+
+Required user actions:
+
+```text
+view record
+edit
+approve/save
+delete
+export Markdown / JSON
+```
+
+PDF export is optional later and must not be confused with patient documentation.
+
+## 30A.18 Later direct authenticated ingestion
+
+A later connector/API may allow an external ChatGPT agent to write a learning record directly, but it must use a narrowly scoped credential/capability rather than reusing the browser's broad clinical session as an external bearer token.
+
+Candidate scopes:
+
+```text
+learning.challenge.write
+learning.case_review.write
+learning.read_optional
+```
+
+Explicitly not implied:
+
+```text
+patient.read
+patient.write
+encounter.write
+rf.write
+admin/config
+```
+
+The server owns schema validation, duplicate handling, PHI checks and persistence. The external agent must not know internal database details.
+
+## 30A.19 PHI firewall and patient/learning separation
+
+Hard boundary:
+
+```text
+LEARNING RECORD
+!= PATIENT RECORD
+```
+
+Challenge imports must reject or block obvious direct identifiers such as patient name, identity/GeSY number, phone/email/address and full DOB unless a future separately approved private linkage design requires them.
+
+De-identified clinical descriptors such as age band/age, sex, diagnosis, medication exposure and fracture phenotype may be retained when they are necessary for the learning case and privacy policy permits.
+
+A real-case learning artifact may carry an internal opaque encounter reference inside protected storage, but the learning object must never become an alternate patient chart or a source of unreviewed clinical truth.
+
+## 30A.20 Clinician-facing progress view
+
+The Learning Hub should answer:
+
+```text
+What have I worked on?
+What repeatedly fails?
+Where do I disagree defensibly with evidence/guidelines?
+Which strengths are stable?
+What remains intuitive rather than formally understood?
+What is due for repetition?
+What should the next challenge/foundation block be?
+```
+
+Useful displays include topic counts, domain evidence history, recurring Signals, retention-due items and strengths. Do not introduce a stable-looking composite "Clinical Knowledge Score" without adequate denominator, reliability and validated interpretation.
+
+## 30A.21 Planned implementation seams
+
+No runtime implementation is authorized by this architecture entry. When activated, use bounded slices.
+
+Proposed sequence:
+
+```text
+L-0 — Clinical Learning Hub contract/design freeze
+  ClinicalLearningChallengeV1
+  DailyCaseReviewV1
+  LearningFactV1
+  FoundationDomainStateV1
+  LearningDueStateV1
+  persistence/privacy/import contracts
+
+L-1 — Challenge + Foundation MVP
+  protected learning persistence
+  JSON import/preview/edit/delete
+  challenge history/filtering
+  Foundation Map skeleton
+  spaced-repetition due state
+  NO new transcript ingestion stack
+
+PR-1 / PR-2 — existing transcript extraction + clinician review path
+  remains authoritative for transcript intake/capture mechanics
+
+PR-3 / Practice Review shadow
+  provides reviewed real-encounter observations
+
+L-2 — Daily Case Review activation
+  reuse PR-1 transcript boundary
+  self-review-before-AI
+  decision reconstruction / Practice Review
+  reviewed learning artifact
+  Signal/Foundation integration
+  daily due-state
+
+post-baseline intervention phase
+  clinician-facing daily coaching
+  adaptive foundation prescriptions
+  recurring Signal intervention
+  re-measurement
+```
+
+REPLAN if implementation would require a second transcript ingestion owner, raw-transcript persistence by default, learning artifacts to become patient truth, or visible daily coaching during the scored baseline without methodology revision.
+'''
+              if marker not in s:
+                  raise SystemExit('Clinical plan insertion marker not found')
+              s = s.replace(marker, section + marker, 1)
+
+          # Add learning stages to implementation stage list without renumbering existing stage identifiers.
+          stage_marker = '## Stage PILOT — Five real system-assisted encounters\n'
+          if '## Stage L-0/L-1 — Clinical Learning Hub contract + Challenge/Foundation MVP' not in s:
+              insert = r'''## Stage L-0/L-1 — Clinical Learning Hub contract + Challenge/Foundation MVP
+
+Deliverables:
+
+- freeze reusable learning/fact/foundation/due-state contracts;
+- protected learning persistence and PHI-safe JSON import;
+- challenge history/progress UI;
+- Foundation Map skeleton and spaced-repetition due state;
+- no duplicate transcript ingestion owner.
+
+This stage may be designed before PR-1, but real Heidi-backed Daily Case Review reuses PR-1/PR-3 seams rather than creating a parallel transcript/review stack.
+
+'''
+              if stage_marker not in s:
+                  raise SystemExit('Stage PILOT marker not found')
+              s = s.replace(stage_marker, insert + stage_marker, 1)
+
+          later_marker = '## Stage RE-MEASURE\n'
+          if '## Stage L-2 — Daily real-case review intervention' not in s:
+              insert = r'''## Stage L-2 — Daily real-case review intervention
+
+Deliverables:
+
+- one due real-case review per clinic day when an eligible transcript-backed osteoporosis case exists;
+- self-review before AI critique;
+- evidence/provenance-aware Practice Review;
+- clinician disposition;
+- structured reviewed learning artifact;
+- Signal/Foundation Map integration;
+- no raw transcript persistence by default.
+
+During the scored 30-case baseline this capability remains shadow/feedback-hidden unless the baseline methodology is explicitly replanned. Clinician-facing daily coaching becomes a formal post-baseline intervention by default.
+
+'''
+              if later_marker not in s:
+                  raise SystemExit('Stage RE-MEASURE marker not found')
+              s = s.replace(later_marker, insert + later_marker, 1)
+
+          p.write_text(s, encoding='utf-8')
+
+          # ---- TODO.md ----
+          p = Path('TODO.md')
+          s = p.read_text(encoding='utf-8')
+          s = s.replace(
+              'The replacement native RF v2 Clinic Utility is **implemented / release-candidate tested / exact-head reviewed**, but is not merged, deployed, production-smoke-verified or pilot-validated.',
+              'The replacement native RF v2 Clinic Utility is **implemented / tested / merged / deployed** at `51714f9c74e96ec4fdf62493a0772ea07fcc8c1a`; authenticated production smoke is still pending, and it is not pilot-validated.',
+              1,
+          )
+          s = s.replace(
+              '## 1.6 G-4 Workspace ergonomics + RF utility navigation / native RF v2 — RELEASE-CANDIDATE TESTED / PR AUTHORIZED',
+              '## 1.6 G-4 Workspace ergonomics + RF utility navigation / native RF v2 — MERGED / DEPLOYED / PRODUCTION SMOKE PENDING',
+              1,
+          )
+          s = s.replace('- [ ] Open the bounded native RF v2 release PR to `main` under explicit product-owner PR authority.', '- [x] Open native RF v2 release PR #75 to `main`.', 1)
+          s = s.replace('- [ ] Merge only with a separate explicit product-owner decision.', '- [x] Product owner separately authorized merge; PR #75 squash-merged as `51714f9c74e96ec4fdf62493a0772ea07fcc8c1a`.', 1)
+          s = s.replace('- [ ] After merge, allow normal Render auto-deploy and complete authenticated production smoke with separate authority.', '- [x] Render auto-deploy `dep-dae8doeq1p3s73csqvbg` reached `LIVE` from merge SHA `51714f9c74e96ec4fdf62493a0772ea07fcc8c1a`.\n- [ ] Complete authenticated native RF v2 production smoke; no production config mutation is implied.', 1)
+          s = s.replace('Native RF v2 is **implemented / release-candidate tested / exact-head reviewed**, not merged, deployed, production-smoke-verified or pilot-validated.', 'Native RF v2 is **implemented / tested / merged / deployed**, but is not yet production-smoke-verified or pilot-validated.', 1)
+          s = s.replace('- [ ] Native RF v2 PR / merge / production config verification / deploy / end-to-end production smoke.', '- [x] Native RF v2 PR #75 / merge / Render auto-deploy completed.\n- [ ] Native RF v2 authenticated end-to-end production smoke and any separately authorized production-config verification.', 1)
+          s = s.replace('5. G-4 workspace ergonomics + gateway — released; native RF v2 replacement implemented/release-candidate-tested, PR/merge/deploy/smoke pending', '5. G-4 workspace ergonomics + gateway — released; native RF v2 merged/deployed, authenticated smoke pending', 1)
+
+          learning_marker = '\n## 1.11 Thirty-case scored system-assisted baseline\n'
+          if '## 1.10A Clinical Learning Hub — planned Core capability' not in s:
+              learning_todo = r'''
+
+## 1.10A Clinical Learning Hub — planned Core capability
+
+Architecture approved for a reusable Core learning layer with Osteoporosis as Module 01 content.
+
+- [x] Define three distinct instruments: Foundation Map / Clinical Challenge / Daily Real-Case Review.
+- [x] Require fact-level provenance so synthetic/progressive-disclosure facts can never masquerade as real patient facts.
+- [x] Define daily real-case review principle: one eligible Heidi-backed osteoporosis encounter per clinic day when available; no fabricated quota case.
+- [x] Require clinician self-review before AI critique to preserve calibration and reduce anchoring.
+- [x] Preserve raw Heidi transcript as ephemeral by default and reuse PR-1 transcript infrastructure; no second transcript ingestion owner.
+- [x] Define Foundation states: `FORMAL_SOLID`, `INTUITIVE_UNSTRUCTURED`, `FRAGMENTED`, `UNKNOWN_UNTESTED`.
+- [x] Define initial Module-01 foundation domains including bone biology, DXA/LSC, VFA, FRAX/risk, secondary causes, GIOP, antiresorptives, anabolics, sequencing, denosumab rebound, BTMs, safety and evidence calibration.
+- [x] Define learning cadence target: daily eligible real-case review + weekly challenge + 3–4-week Foundation review + spaced repetition.
+- [x] Preserve baseline integrity: clinician-facing daily AI critique is an intervention and remains shadow/hidden during the scored 30-case baseline unless methodology is explicitly replanned.
+- [ ] Freeze `ClinicalLearningChallengeV1`, `DailyCaseReviewV1`, `LearningFactV1`, `FoundationDomainStateV1` and `LearningDueStateV1` in a bounded L-0 design slice.
+- [ ] Implement L-1 protected JSON challenge import with schema validation, PHI guard, duplicate detection, preview/edit/delete and history/filtering.
+- [ ] Implement Foundation Map diagnostic assessment and evidence-based state transitions without a black-box composite score.
+- [ ] Reuse PR-1/PR-3 transcript/Practice-Review seams for L-2 Daily Case Review rather than creating a parallel AI stack.
+- [ ] After baseline lock, activate clinician-facing daily real-case review as a formal improvement intervention and re-measure recurrent Signals.
+- [ ] Later add narrowly scoped external ingestion capability such as `learning.challenge.write`; do not reuse broad browser clinical-session authority as an external bearer credential.
+'''
+              if learning_marker not in s:
+                  raise SystemExit('TODO learning insertion marker not found')
+              s = s.replace(learning_marker, learning_todo + learning_marker, 1)
+
+          practice_marker = '# 3. CLINICAL PRACTICE REVIEW / LEARNING\n\n'
+          if '- [x] Clinical Learning Hub architecture approved' not in s:
+              s = s.replace(practice_marker, practice_marker + '- [x] Clinical Learning Hub architecture approved: Foundation Map + Clinical Challenges + Daily Heidi-backed Real-Case Review + shared Signal/Learning Plan.\n- [ ] L-0 contract freeze and L-1 Challenge/Foundation MVP.\n- [ ] L-2 Daily Case Review integration after reusable transcript/Practice-Review seams exist; shadow during scored baseline by default.\n', 1)
+
+          p.write_text(s, encoding='utf-8')
+
+          # ---- SLICE_PLAN_CURRENT.md ----
+          p = Path('SLICE_PLAN_CURRENT.md')
+          s = p.read_text(encoding='utf-8')
+          s = s.replace(
+              '> **STATUS:** APPROVED / FROZEN — IMPLEMENTED / RELEASE-CANDIDATE TESTED / EXACT-HEAD REVIEW PASS — PR AUTHORIZED / PRE-PR HOLD',
+              '> **STATUS:** APPROVED / FROZEN — IMPLEMENTED / TESTED / MERGED / DEPLOYED — PRODUCTION SMOKE PENDING',
+              1,
+          )
+          s = s.replace('> **Production base:** `8aa8b38e3fa9a8f8ba0618868b452b1835be0d47`.', '> **Implementation base:** `8aa8b38e3fa9a8f8ba0618868b452b1835be0d47`.\n> **Released production source:** `51714f9c74e96ec4fdf62493a0772ea07fcc8c1a` via PR #75.\n> **Render deploy:** `dep-dae8doeq1p3s73csqvbg` — LIVE.', 1)
+          s = s.replace('> **Branch:** `feat/clinic-utilities-rf-v2-native-2026-09-05`.', '> **Implementation branch:** `feat/clinic-utilities-rf-v2-native-2026-09-05` — merged.', 1)
+          s = s.replace('> **PR authority:** GRANTED — bounded native RF v2 release PR only.\n> **Merge / deploy / production config / production smoke authority:** NONE unless separately granted.', '> **PR / merge / deploy authority:** CONSUMED — PR #75 merged and Render auto-deployed.\n> **Production config authority:** NONE unless separately granted.\n> **Production smoke:** PENDING clinician-run authenticated verification.', 1)
+          s = s.replace('PR                                OPEN / REVIEWABLE', 'PR                                #75 MERGED', 1)
+          s = s.replace('Production config, merge, deploy and smoke require separate product-owner authority.', 'Merge and auto-deploy are complete. Production config remains separately gated; authenticated production smoke is the remaining release-validation step.', 1)
+          auth_start = s.find('# 19. Current authorization / exact next action')
+          if auth_start >= 0:
+              s = s[:auth_start] + r'''# 19. Current authorization / exact next action
+
+```text
+PRODUCT-OWNER DESIGN APPROVAL      YES
+IMPLEMENTATION/TEST AUTHORITY      CONSUMED
+PR AUTHORITY                       CONSUMED — PR #75
+MERGE AUTHORITY                    CONSUMED — squash merge complete
+DEPLOY AUTHORITY                   CONSUMED — normal Render auto-deploy LIVE
+PRODUCTION CONFIG AUTHORITY        NONE
+PRODUCTION SMOKE                   PENDING clinician-run authenticated verification
+RUNTIME WRITER                     NONE
+```
+
+Released source:
+
+```text
+main: 51714f9c74e96ec4fdf62493a0772ea07fcc8c1a
+PR: #75
+Render deploy: dep-dae8doeq1p3s73csqvbg
+status: LIVE
+```
+
+Exact next sequence:
+
+```text
+restore clinical browser session if needed
+→ open native /clinical/clinic-utilities/rf
+→ authenticated production smoke of native UI / A.1 / A.2 / official PDF path as authorized
+→ record PASS or bounded blocker
+→ post-smoke canonical closeout
+```
+
+The previous `8aa8b38e...` gateway release remains the rollback reference until the native RF production smoke closes successfully. No production configuration/secret mutation is authorized by this state.
+'''
+          p.write_text(s, encoding='utf-8')
+
+          # ---- CURRENT_OPERATIONAL.md ----
+          p = Path('CURRENT_OPERATIONAL.md')
+          current = r'''# CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
+
+> **STATUS:** RF v2 NATIVE CLINIC UTILITY — MERGED / DEPLOYED — AUTHENTICATED PRODUCTION SMOKE PENDING
+> **Updated:** 2026-09-06 Asia/Nicosia.
+> **Canonical home:** `athpapachr-cmd/osteoporosis`.
+> **Fresh verified production `main`:** `51714f9c74e96ec4fdf62493a0772ea07fcc8c1a`.
+> **Release PR:** #75 — merged.
+> **Render deploy:** `dep-dae8doeq1p3s73csqvbg` — LIVE.
+> **Current frozen slice:** `CU-RF-V2-NATIVE-2026-09-05`.
+> **Exact accepted runtime before squash merge:** `aa2f92cce5d4cd2cfd02cafc59413be7bdc0d5fb`.
+> **Exact final branch gate:** `91136c2fabf68edb74ce3a6b586baa02e508d9dc`, workflow run `33992246398` — SUCCESS.
+> **ACTIVE RUNTIME WRITER/LOCK:** NONE.
+> **ACTIVE CANONICAL WRITER/LOCK:** NONE after docs-planning branch reconciliation; branch remains unmerged until RF smoke result is known.
+> **Production config/secret authority:** NONE.
+> **Production-smoke state:** PENDING clinician-run authenticated verification.
+
+---
+
+# 1. Production release now live
+
+Native RF v2 was squash-merged through PR #75 as:
+
+```text
+51714f9c74e96ec4fdf62493a0772ea07fcc8c1a
+```
+
+Render auto-deploy followed the normal `main` commit path without a redundant manual deploy:
+
+```text
+dep-dae8doeq1p3s73csqvbg
+status: LIVE
+source: 51714f9c74e96ec4fdf62493a0772ea07fcc8c1a
+```
+
+The active browser seam is now native:
+
+```text
+authenticated Clinical Excellence browser
+→ /clinical/clinic-utilities/rf
+→ native RF router
+→ existing clinical auth boundary
+→ RF-specific protected persistence
+→ official RF v2 PDF stamping + imaging append
+```
+
+The legacy gateway remains unmounted rollback/reference code only.
+
+---
+
+# 2. Proven before release
+
+The accepted candidate proved:
+
+- Category-A A.1/A.2 native workflow;
+- exact supplied 12-page official PDF identity and real A.1/A.2 generation;
+- required imaging append path;
+- exact 3 NSAID + 3 other analgesic fail-closed rule;
+- deterministic medication/physiotherapy parsing;
+- separate application-request vs actual-procedure history;
+- `clinician_manual` provenance for manually entered actual-procedure history;
+- no obsolete 10-week rule;
+- raw medication/physiotherapy paste minimization;
+- protected same-origin route ownership;
+- inherited CU-1/G4/G3/G2/G1/C1 regressions.
+
+Hard invariant:
+
+```text
+RF APPLICATION REQUEST
+!=
+ACTUAL RF PROCEDURE
+```
+
+---
+
+# 3. What is NOT yet proven
+
+```text
+AUTHENTICATED NATIVE RF PRODUCTION UI SMOKE     NO
+A.1 END-TO-END PRODUCTION CREATE/PDF            NO
+A.2 HISTORY/CONTINUATION PRODUCTION PATH         NO
+OFFICIAL GENERATED PDF VISUAL CHECK IN PROD     NO
+PRODUCTION CONFIG SUFFICIENCY                    NOT YET VERIFIED BY SMOKE
+PILOT VALIDATION                                 NO
+```
+
+Do not infer these states from the successful automated gate or LIVE deploy status.
+
+---
+
+# 4. Browser-session recovery after storage/cookie clear
+
+Clinical auth is browser-cookie based. Clearing browser data removes `clinical_session`.
+
+Recovery path:
+
+```text
+open Clinical Excellence root
+→ Patient Registry shows `Clinical access key`
+→ enter the existing CLINICAL_DATA_KEY value locally in the browser
+→ POST /clinical/login
+→ secure HttpOnly same-site clinical_session is restored
+→ open /clinical/clinic-utilities/rf
+```
+
+Never place the clinical key in a URL, repo, chat or screenshot.
+
+---
+
+# 5. Exact next action — RF authenticated production smoke
+
+Minimum first smoke:
+
+```text
+1. restore clinical_session through the existing Cockpit login UI;
+2. open /clinical/clinic-utilities/rf;
+3. confirm the native Clinical Excellence RF UI renders, not the old beige/serif external form;
+4. confirm NEW / CONTINUATION surface and approved Category-A indication set;
+5. confirm no authentication/upstream-gateway error is shown.
+```
+
+Then, using synthetic/non-identifiable production-smoke data only unless a real administrative workflow is intentionally being performed:
+
+```text
+A.1 path
+→ imaging PDF
+→ 3+3 medication evidence
+→ conditional site/intervention requirements
+→ create official PDF
+→ visually inspect selected official pages and imaging append
+
+A.2 path
+→ history lookup / clinician-manual actual-procedure entry as appropriate
+→ continuation PDF
+→ verify APPLICATION != ACTUAL PROCEDURE behavior
+```
+
+If production doctor/product server-side configuration is missing, treat that as a bounded production-config blocker. Do not invent values or mutate config without separate authority.
+
+---
+
+# 6. Approved future architecture — Clinical Learning Hub
+
+Product-owner planning approval on 2026-09-06 adds a future reusable Core learning program:
+
+```text
+Foundation Map
++ weekly Clinical Challenges
++ scheduled Daily Heidi-backed Real-Case Review
++ longitudinal Signals
++ targeted Learning Plan / spaced repetition
+```
+
+Detailed architecture is owned by `CLINICAL_EXCELLENCE_PLAN.md §30A` and roadmap tasks by `TODO.md §1.10A` on the docs planning branch.
+
+This planning decision does **not** start a runtime learning writer and does not supersede the current RF smoke gate.
+
+Baseline integrity remains explicit: clinician-facing daily AI case-review coaching is an intervention and is shadow/hidden during the scored 30-case baseline by default unless the baseline methodology is explicitly replanned.
+
+---
+
+# 7. Current writer / authority matrix
+
+```text
+RF runtime writer                     NONE
+Learning runtime writer               NONE
+Docs planning branch                  docs/clinical-learning-hub-rf-post-merge-2026-09-06
+Main mutation from this planning work  NO — hold until RF smoke result
+Production config/secret mutation      NO
+Ortho-Reception mutation               NO
+```
+
+Exact sequence:
+
+```text
+RF production smoke
+→ record PASS / bounded blocker
+→ merge one docs-only canonical reconciliation after smoke
+→ then consider bounded L-0 Clinical Learning Hub design slice
+```
+'''
+          p.write_text(current, encoding='utf-8')
+
+          # ---- osteoporosis-change-log.md (append-only) ----
+          p = Path('osteoporosis-change-log.md')
+          s = p.read_text(encoding='utf-8')
+          if '## 2026-09-05 — Native RF v2 merged and Render auto-deployed; smoke pending' not in s:
+              s = s.rstrip() + r'''
+
+---
+
+## 2026-09-05 — Native RF v2 merged and Render auto-deployed; smoke pending
+
+After the product owner explicitly authorized merge and deploy following the successful exact-head review, PR #75 was squash-merged to `main` as:
+
+```text
+51714f9c74e96ec4fdf62493a0772ea07fcc8c1a
+```
+
+The production Render service has normal `main` auto-deploy enabled, so no redundant manual deploy was triggered. Auto-deploy:
+
+```text
+dep-dae8doeq1p3s73csqvbg
+```
+
+reached `LIVE` at the exact merge source.
+
+This closes merge/deploy only. Native RF authenticated production smoke, A.1/A.2 end-to-end production behavior and production configuration sufficiency remain unverified until the clinician completes the interactive smoke. No production secret/config value was changed as part of merge/deploy.
+'''
+          if '## 2026-09-06 — Clinical Learning Hub direction approved for detailed roadmap' not in s:
+              s = s.rstrip() + r'''
+
+---
+
+## 2026-09-06 — Clinical Learning Hub direction approved for detailed roadmap
+
+The product owner approved expanding the existing Learning/Mastery/Practice-Review architecture into an explicit reusable **Clinical Learning Hub** with Osteoporosis as Module 01 content.
+
+Approved instruments are distinct but connected:
+
+```text
+Foundation Map
+Clinical Challenges
+Daily Heidi-backed Real-Case Review
+Signals
+Learning Plan / spaced repetition
+```
+
+The design specifically addresses two needs:
+
+1. preserve completed weekly case challenges as structured learning artifacts rather than losing them in chat transcripts;
+2. add a scheduled daily review of one eligible real osteoporosis encounter from Heidi evidence when such a case exists.
+
+The Daily Case Review requires clinician self-review before AI critique, reuses the protected ephemeral transcript architecture, persists only reviewed structured learning evidence by default and never treats AI inference/hypothetical/counterfactual content as patient truth.
+
+A Fact Ledger is required for Challenge records so real patient facts, synthetic case facts, progressive-disclosure content, clinician hypotheses, AI inference and teaching counterfactuals remain separable.
+
+The Foundation Map is intended to convert strong but sometimes intuitive/fragmented reasoning into a more explicit theoretical structure. Candidate states are:
+
+```text
+FORMAL_SOLID
+INTUITIVE_UNSTRUCTURED
+FRAGMENTED
+UNKNOWN_UNTESTED
+```
+
+The first osteoporosis map covers bone remodeling, DXA/LSC, VFA, fracture-risk/FRAX reasoning, secondary causes, GIOP, antiresorptive/anabolic pharmacology, sequencing, denosumab rebound, BTMs, safety and evidence calibration.
+
+Baseline methodology is preserved: systematic clinician-facing daily AI critique is an intervention. During the scored 30-case system-assisted baseline it remains shadow/hidden by default unless the methodology is explicitly replanned and the cohort relabelled.
+
+No learning runtime implementation or external API authority was granted by this planning decision. Detailed architecture is recorded in `CLINICAL_EXCELLENCE_PLAN.md §30A`; the next runtime step after RF smoke/canonical closeout is a separately bounded L-0 contract/design slice.
+'''
+          p.write_text(s, encoding='utf-8')
+          PY
+
+      - name: Commit docs-only planning reconciliation
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add CLINICAL_EXCELLENCE_PLAN.md TODO.md SLICE_PLAN_CURRENT.md CURRENT_OPERATIONAL.md osteoporosis-change-log.md
+          git diff --cached --check
+          git commit -m 'Plan Clinical Learning Hub and reconcile RF release state'
+          git push origin HEAD:docs/clinical-learning-hub-rf-post-merge-2026-09-06
