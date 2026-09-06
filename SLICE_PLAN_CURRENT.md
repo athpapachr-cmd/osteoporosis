@@ -1,15 +1,18 @@
 # SLICE_PLAN_CURRENT.md — Clinic Utilities RF v2 Native Ownership
 
-> **STATUS:** APPROVED / FROZEN — IMPLEMENTED / RELEASE-CANDIDATE TESTED / EXACT-HEAD REVIEW PASS — PR AUTHORIZED / PRE-PR HOLD
+> **STATUS:** APPROVED / FROZEN — IMPLEMENTED / TESTED / MERGED / DEPLOYED — PRODUCTION SMOKE PENDING
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Scope:** reusable Clinical Excellence Clinic Utilities, not osteoporosis clinical encounter semantics.
 > **Slice ID:** `CU-RF-V2-NATIVE-2026-09-05`.
-> **Production base:** `8aa8b38e3fa9a8f8ba0618868b452b1835be0d47`.
-> **Branch:** `feat/clinic-utilities-rf-v2-native-2026-09-05`.
+> **Implementation base:** `8aa8b38e3fa9a8f8ba0618868b452b1835be0d47`.
+> **Released production source:** `51714f9c74e96ec4fdf62493a0772ea07fcc8c1a` via PR #75.
+> **Render deploy:** `dep-dae8doeq1p3s73csqvbg` — LIVE.
+> **Implementation branch:** `feat/clinic-utilities-rf-v2-native-2026-09-05` — merged.
 > **Product-owner architecture approval:** explicit agreement to migrate RF ownership into the Clinical Excellence runtime.
 > **Implementation/test authority:** CONSUMED — release-candidate phase closed.
-> **PR authority:** GRANTED — bounded native RF v2 release PR only.
-> **Merge / deploy / production config / production smoke authority:** NONE unless separately granted.
+> **PR / merge / deploy authority:** CONSUMED — PR #75 merged and normal Render auto-deploy is LIVE.
+> **Production config authority:** NONE unless separately granted.
+> **Production smoke state:** PENDING clinician-run authenticated verification.
 
 ---
 
@@ -594,7 +597,7 @@ PDF VISUAL VERIFICATION           PASS
 EXACT-HEAD REVIEW                 PASS
 OLD GATEWAY NOT ACTIVE            YES
 CANONICAL CONTRADICTIONS CLOSED   YES
-PR                                OPEN / REVIEWABLE
+PR                                #75 MERGED
 ```
 
 Release states remain separate:
@@ -603,7 +606,7 @@ Release states remain separate:
 MERGED != DEPLOYED != PRODUCTION-SMOKE-VERIFIED != PILOT-VALIDATED
 ```
 
-Production config, merge, deploy and smoke require separate product-owner authority.
+Merge and auto-deploy are complete. Production config remains separately gated; authenticated production smoke is the remaining release-validation step.
 
 ---
 

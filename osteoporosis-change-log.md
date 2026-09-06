@@ -1140,3 +1140,23 @@ ACTUAL RF PROCEDURE
 Generating an approval/request PDF does not infer that treatment occurred.
 
 Stale docs-only PR #74 was closed unmerged as superseded by the authoritative-form/native-ownership replan. Product-owner authority was then granted to proceed through opening one bounded native RF v2 release PR. Merge, production configuration, deploy and production smoke remain separate decisions.
+
+---
+
+## 2026-09-05 — Native RF v2 merged and Render auto-deployed; smoke pending
+
+PR #75 was squash-merged to `main` as `51714f9c74e96ec4fdf62493a0772ea07fcc8c1a` after explicit product-owner merge/deploy authorization. Normal Render auto-deploy `dep-dae8doeq1p3s73csqvbg` reached `LIVE` at that source; no redundant manual deploy was triggered and no production secret/config value was changed.
+
+This closes merge/deploy only. Native authenticated production smoke, A.1/A.2 end-to-end production behavior and production configuration sufficiency remain unverified until the clinician completes the interactive smoke.
+
+---
+
+## 2026-09-06 — Clinical Learning Hub direction approved
+
+The product owner approved a reusable Core Clinical Learning Hub with Osteoporosis as Module 01 content. The approved instruments are Foundation Map, weekly Clinical Challenges, Daily Heidi-backed Real-Case Review, Signals and a targeted Learning Plan/spaced-repetition layer.
+
+A Challenge Fact Ledger must keep real case facts, synthetic/progressive-disclosure facts, clinician hypotheses, AI inference and teaching counterfactuals separate. Daily Case Review uses one eligible real osteoporosis encounter when available, captures clinician self-review before AI critique, reuses the protected ephemeral transcript architecture and persists reviewed structured learning evidence rather than raw Heidi transcripts by default.
+
+Foundation states are `FORMAL_SOLID`, `INTUITIVE_UNSTRUCTURED`, `FRAGMENTED` and `UNKNOWN_UNTESTED`; diagnostic mapping precedes teaching. Visible systematic daily AI case-review coaching is classified as an intervention and remains shadow/hidden during the scored 30-case system-assisted baseline by default unless methodology is explicitly replanned.
+
+Detailed pre-implementation design is recorded in `CLINICAL_LEARNING_HUB_DESIGN_V1.md`. No learning runtime authority is granted by this planning decision.

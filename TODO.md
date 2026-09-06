@@ -426,9 +426,9 @@ IMPLEMENTED / TESTED / PRODUCT-OWNER REVIEWED
 MERGED NO / DEPLOYED NO
 ```
 
-G-4 keeps the RF generator in its existing service and integrates it through a bounded authenticated same-origin gateway. The gateway is transport/auth adaptation only; it does not migrate or duplicate RF templates, PDF rules, persistence or history into the osteoporosis encounter model.
+Native RF v2 now owns RF UI/business/PDF/history inside Clinical Excellence Clinic Utilities after PR #75. RF persistence remains separate from osteoporosis encounter data; the legacy external gateway is rollback/reference only.
 
-Do not mutate/merge/deploy later rich-referral or RF-engine migration work during Module 01 closure without separate authorization.
+Do not mutate/merge/deploy the preserved rich-referral work or further RF expansion during Module 01 closure without separate authorization.
 
 ---
 
@@ -439,7 +439,7 @@ Do not mutate/merge/deploy later rich-referral or RF-engine migration work durin
 2. G-1 dynamic-guidance mechanics — production-smoke-verified / closed
 3. G-2 evidence-backed osteoporosis guidance — production-smoke-verified / closed
 4. G-3 guidance salience + longitudinal patient summary — production-smoke-verified / closed
-5. G-4 workspace ergonomics + gateway — released; native RF v2 replacement implemented/release-candidate-tested, PR/merge/deploy/smoke pending
+5. G-4 workspace ergonomics + gateway — released; native RF v2 merged/deployed, authenticated production smoke pending
 6. PR-1 transcript extraction
 7. PR-2 inline provisional population
 8. guided card UX sufficient for real use
