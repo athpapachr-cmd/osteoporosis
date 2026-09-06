@@ -16,7 +16,7 @@ from pypdf import PdfReader
 from sqlalchemy import create_engine
 from sqlalchemy.pool import StaticPool
 
-from clinic_utilities.rf.api import RFApplicationDraft, _validate_a1, build_rf_router
+from clinic_utilities.rf.api import RFApplicationDraft, _assess_imaging_pdf, _validate_a1, build_rf_router
 from clinic_utilities.rf.catalog import INDICATIONS, DoctorProfile, ProductProfile
 from clinic_utilities.rf.parsers import parse_medications, parse_physio_dates
 from clinic_utilities.rf.pdf import build_official_rf_pdf
@@ -60,6 +60,16 @@ def make_pdf(page_count: int) -> bytes:
     try:
         for _ in range(page_count):
             doc.new_page(width=595, height=842)
+        return doc.tobytes()
+    finally:
+        doc.close()
+
+
+def make_text_pdf(text: str) -> bytes:
+    doc = fitz.open()
+    try:
+        page = doc.new_page(width=595, height=842)
+        page.insert_text((72, 72), text, fontsize=10)
         return doc.tobytes()
     finally:
         doc.close()
@@ -315,6 +325,7 @@ class RFNativeApiTests(unittest.TestCase):
             "indication_code": "KNEE_OA_KL34",
             "laterality": "left",
             "exact_location": "Αριστερό γόνατο",
+            "imaging_review_confirmed": True,
             "legacy_history": {
                 "actual_procedure_date": "2026-09-04",
                 "vas_before": 8,
@@ -340,6 +351,84 @@ class RFNativeApiTests(unittest.TestCase):
         self.assertEqual(history.status_code, 200)
         self.assertTrue(history.json()["found"])
         self.assertEqual(history.json()["procedures"][0]["actual_procedure_date"], "2026-09-04")
+
+
+class RFImagingSemanticGuardTests(unittest.TestCase):
+    def setUp(self):
+        self.engine = memory_engine()
+        self.env = patch.dict(
+            os.environ,
+            {
+                "CLINICAL_DATA_KEY": CLINICAL_KEY,
+                "RF_DOCTOR_PROFILE_JSON": DOCTOR_JSON,
+                "RF_PRODUCT_CATALOG_JSON": PRODUCT_JSON,
+            },
+            clear=False,
+        )
+        self.env.start()
+        app = FastAPI()
+        app.include_router(build_rf_router(self.engine))
+        self.client = TestClient(app)
+        self.headers = {"X-Clinical-Key": CLINICAL_KEY}
+
+    def tearDown(self):
+        self.client.close()
+        self.env.stop()
+
+    def _preview(self, content: bytes):
+        return self.client.post(
+            "/clinical/clinic-utilities/rf/api/validate-imaging",
+            headers=self.headers,
+            files={"imaging_report": ("report.pdf", content, "application/pdf")},
+        )
+
+    def _create(self, content: bytes, confirmed: bool):
+        draft = make_a1_draft(imaging_review_confirmed=confirmed).model_dump(mode="json")
+        with patch("clinic_utilities.rf.api.build_official_rf_pdf", return_value=b"%PDF-synthetic"):
+            return self.client.post(
+                "/clinical/clinic-utilities/rf/api/create",
+                headers=self.headers,
+                data={"draft_json": json.dumps(draft)},
+                files={"imaging_report": ("report.pdf", content, "application/pdf")},
+            )
+
+    def test_radiology_text_is_supported_without_confirmation(self):
+        pdf = make_text_pdf("Radiology report MRI right knee. Findings and conclusion.")
+        assessment = _assess_imaging_pdf(pdf)
+        self.assertEqual(assessment["status"], "imaging_supported")
+        response = self._preview(pdf)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["status"], "imaging_supported")
+        self.assertFalse(response.json()["requires_confirmation"])
+        self.assertNotIn("Findings and conclusion", response.text)
+        self.assertEqual(self._create(pdf, confirmed=False).status_code, 200)
+
+    def test_clear_laboratory_report_is_rejected_even_if_confirmed(self):
+        pdf = make_text_pdf(
+            "BIOCHEMISTRY blood serum plasma reference range laboratory validator "
+            "Calcium 9.0 mg/dL Magnesium 2.0 mg/dL Phosphate 4.0 mg/dL"
+        )
+        assessment = _assess_imaging_pdf(pdf)
+        self.assertEqual(assessment["status"], "clearly_non_imaging")
+        response = self._preview(pdf)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["status"], "clearly_non_imaging")
+        created = self._create(pdf, confirmed=True)
+        self.assertEqual(created.status_code, 422)
+        self.assertIn("μη απεικονιστική", created.json()["detail"])
+
+    def test_textless_pdf_requires_explicit_clinician_confirmation(self):
+        pdf = make_pdf(1)
+        response = self._preview(pdf)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["status"], "ambiguous_or_unreadable")
+        self.assertTrue(response.json()["requires_confirmation"])
+        self.assertEqual(self._create(pdf, confirmed=False).status_code, 422)
+        self.assertEqual(self._create(pdf, confirmed=True).status_code, 200)
+
+    def test_fake_pdf_magic_bytes_are_not_accepted(self):
+        response = self._preview(b"%PDF-not-a-real-document")
+        self.assertEqual(response.status_code, 422)
 
 
 class RFIntegrationSourceTests(unittest.TestCase):

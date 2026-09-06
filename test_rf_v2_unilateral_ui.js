@@ -13,5 +13,10 @@ assert(app.includes("exact.readOnly = item?.location_mode === 'derived'"), 'fixe
 assert(app.includes("!['left','right'].includes($('lateralitySelect').value)"), 'RF UI must fail closed unless side is left/right');
 assert(html.includes('Μία αίτηση = μία πλευρά και μία εντόπιση'), 'RF UI must explain one-side/one-target rule');
 assert(html.includes('Συμπληρώνεται από ένδειξη + πλευρά'), 'exact-location field must explain automatic suggestion');
+assert(app.includes("api('/api/validate-imaging'"), 'RF UI must preview-check imaging attachment type');
+assert(app.includes('imaging_review_confirmed'), 'RF draft must carry explicit ambiguous-attachment confirmation');
+assert(app.includes("imagingReport').addEventListener('change', validateImaging)"), 'changing imaging file must reset/re-run semantic validation');
+assert(html.includes('Επιβεβαιώνω ότι το επιλεγμένο PDF είναι η απεικονιστική έκθεση'), 'ambiguous attachment must expose explicit clinician confirmation');
+assert(html.includes('έως 3'), 'medication copy must reflect maximum capacity, not a minimum requirement');
 
 console.log('RF unilateral target UI regression: PASS');

@@ -1,6 +1,6 @@
 (() => {
   const $ = id => document.getElementById(id);
-  const state = { contract: null, pathway: 'A1', selectedHistoryId: '', nsaids: [], others: [], physio: null };
+  const state = { contract: null, pathway: 'A1', selectedHistoryId: '', nsaids: [], others: [], physio: null, imagingValidation: '' };
 
   async function api(path, options = {}) {
     const response = await fetch(`/clinical/clinic-utilities/rf${path}`, { credentials: 'same-origin', ...options });
@@ -310,7 +310,8 @@
       exact_location: $('exactLocation').value.trim(),
       other_area: $('otherArea').value.trim(),
       other_diagnosis: $('otherDiagnosis').value.trim(),
-      additional_notes: $('additionalNotes').value.trim()
+      additional_notes: $('additionalNotes').value.trim(),
+      imaging_review_confirmed: $('imagingConfirm').checked
     };
 
     if (state.pathway === 'A1') {
@@ -349,6 +350,38 @@
     return draft;
   }
 
+  async function validateImaging() {
+    const file = $('imagingReport').files[0];
+    const status = $('imagingStatus');
+    const confirmWrap = $('imagingConfirmWrap');
+    const confirm = $('imagingConfirm');
+    state.imagingValidation = '';
+    confirm.checked = false;
+    confirmWrap.hidden = true;
+    if (!file) {
+      status.hidden = true;
+      status.textContent = '';
+      return;
+    }
+    status.hidden = false;
+    status.className = 'validation-panel';
+    status.textContent = 'Έλεγχος τύπου εγγράφου…';
+    const form = new FormData();
+    form.append('imaging_report', file, file.name);
+    try {
+      const response = await api('/api/validate-imaging', {method:'POST', body:form});
+      const result = await response.json();
+      state.imagingValidation = result.status;
+      status.textContent = result.message;
+      status.className = `validation-panel ${result.status === 'imaging_supported' ? 'ok' : result.status === 'clearly_non_imaging' ? 'error' : ''}`;
+      confirmWrap.hidden = !result.requires_confirmation;
+    } catch (error) {
+      state.imagingValidation = 'validation_error';
+      status.className = 'validation-panel error';
+      status.textContent = error.message;
+    }
+  }
+
   async function createPdf() {
     if (!['left','right'].includes($('lateralitySelect').value)) {
       showError('Επίλεξε μία πλευρά: δεξιά ή αριστερά.');
@@ -361,6 +394,14 @@
     const file = $('imagingReport').files[0];
     if (!file) {
       showError('Απαιτείται η απεικονιστική έκθεση PDF.');
+      return;
+    }
+    if (state.imagingValidation === 'clearly_non_imaging') {
+      showError('Το επιλεγμένο PDF έχει αναγνωριστεί ως μη απεικονιστικό.');
+      return;
+    }
+    if (state.imagingValidation === 'ambiguous_or_unreadable' && !$('imagingConfirm').checked) {
+      showError('Επιβεβαίωσε ότι το PDF είναι η απαιτούμενη απεικονιστική έκθεση.');
       return;
     }
     try {
@@ -429,6 +470,7 @@
     $('usualReasonBtn').addEventListener('click', () => document.querySelectorAll('.rf-reason').forEach(x => x.checked = ['FAILED_PHARMACOLOGIC','FAILED_CONSERVATIVE'].includes(x.value)));
     $('addAdverseBtn').addEventListener('click', addAdverse);
     $('historyLookupBtn').addEventListener('click', lookupHistory);
+    $('imagingReport').addEventListener('change', validateImaging);
     $('createPdfBtn').addEventListener('click', createPdf);
     $('clearBtn').addEventListener('click', () => location.reload());
     ['patientName','productSelect','exactLocation'].forEach(id => $(id).addEventListener('input', updateSummary));

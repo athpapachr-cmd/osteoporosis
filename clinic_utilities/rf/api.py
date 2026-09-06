@@ -2,8 +2,11 @@ from __future__ import annotations
 
 from calendar import monthrange
 from datetime import date
+import re
 from typing import Literal
+import unicodedata
 
+import fitz
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel, Field
@@ -85,6 +88,7 @@ class RFApplicationDraft(BaseModel):
     intervention: RFIntervention | None = None
     physio_dates_text: str = Field(default="", max_length=12000)
     additional_notes: str = Field(default="", max_length=4000)
+    imaging_review_confirmed: bool = False
     procedure_history_id: str = Field(default="", max_length=80)
     legacy_history: RFLegacyHistory | None = None
 
@@ -232,6 +236,79 @@ def _validate_legacy(history: RFLegacyHistory):
     }
 
 
+_IMAGING_TERMS = (
+    "radiolog", "ακτινολογ", "ακτινογραφ", "x-ray", "x ray",
+    "magnetic resonance", "μαγνητικ", "computed tomography", "αξονικ",
+    "ultrasound", "υπερηχο", "densitometr", "οστικη πυκνοτητα",
+)
+_IMAGING_WORD_TERMS = ("mri", "ct", "dxa")
+_LAB_TERMS = (
+    "biochemistry", "haematology", "hematology", "serum", "plasma",
+    "reference range", "τιμες αναφορας", "laboratory", "εργαστηρ",
+    "validator", "mg/dl", "mmol/l", "calcium", "magnesium", "phosphate",
+)
+
+
+def _normalize_document_text(value: str) -> str:
+    decomposed = unicodedata.normalize("NFKD", str(value or ""))
+    without_marks = "".join(ch for ch in decomposed if not unicodedata.combining(ch))
+    return re.sub(r"\s+", " ", without_marks.casefold()).strip()
+
+
+def _contains_word(text: str, word: str) -> bool:
+    return re.search(rf"(?<!\w){re.escape(word)}(?!\w)", text) is not None
+
+
+def _extract_pdf_text(content: bytes) -> str:
+    try:
+        doc = fitz.open(stream=content, filetype="pdf")
+    except Exception as exc:
+        raise HTTPException(status_code=422, detail="Το αρχείο απεικόνισης δεν είναι έγκυρο PDF") from exc
+    try:
+        if doc.page_count < 1:
+            raise HTTPException(status_code=422, detail="Το αρχείο απεικόνισης δεν περιέχει σελίδες")
+        parts = []
+        total = 0
+        for page in doc:
+            try:
+                text = page.get_text("text") or ""
+            except Exception:
+                text = ""
+            if text:
+                parts.append(text)
+                total += len(text)
+            if total >= 50000:
+                break
+        return "\n".join(parts)[:50000]
+    finally:
+        doc.close()
+
+
+def _assess_imaging_pdf(content: bytes) -> dict:
+    text = _normalize_document_text(_extract_pdf_text(content))
+    imaging_hits = sum(term in text for term in _IMAGING_TERMS)
+    imaging_hits += sum(_contains_word(text, term) for term in _IMAGING_WORD_TERMS)
+    lab_hits = sum(term in text for term in _LAB_TERMS)
+
+    if imaging_hits:
+        return {
+            "status": "imaging_supported",
+            "requires_confirmation": False,
+            "message": "Αναγνωρίστηκε απεικονιστική έκθεση. Ελέγξτε ότι αφορά το συγκεκριμένο αίτημα.",
+        }
+    if lab_hits >= 3:
+        return {
+            "status": "clearly_non_imaging",
+            "requires_confirmation": False,
+            "message": "Το PDF φαίνεται να είναι εργαστηριακή ή άλλη μη απεικονιστική εξέταση και δεν μπορεί να χρησιμοποιηθεί για το σημείο 3.",
+        }
+    return {
+        "status": "ambiguous_or_unreadable",
+        "requires_confirmation": True,
+        "message": "Δεν μπορεί να επιβεβαιωθεί αυτόματα ο τύπος του PDF. Απαιτείται ρητή επιβεβαίωση ιατρού ότι είναι η απεικονιστική έκθεση του σημείου 3.",
+    }
+
+
 async def _read_imaging_pdf(upload: UploadFile) -> bytes:
     filename = str(upload.filename or "").lower()
     content_type = str(upload.content_type or "").lower()
@@ -242,6 +319,8 @@ async def _read_imaging_pdf(upload: UploadFile) -> bytes:
         raise HTTPException(status_code=413, detail="Το PDF της απεικόνισης υπερβαίνει τα 20 MB")
     if not content.startswith(b"%PDF"):
         raise HTTPException(status_code=422, detail="Το αρχείο απεικόνισης δεν είναι έγκυρο PDF")
+    # Do not trust the magic bytes alone: require a parseable PDF with pages.
+    _extract_pdf_text(content)
     return content
 
 
@@ -317,6 +396,16 @@ def build_rf_router(engine: Engine) -> APIRouter:
     def rf_parse_physio(req: RFTextRequest):
         return parse_physio_dates(req.text)
 
+    @router.post("/api/validate-imaging")
+    async def rf_validate_imaging(imaging_report: UploadFile = File(...)):
+        imaging_bytes = await _read_imaging_pdf(imaging_report)
+        assessment = _assess_imaging_pdf(imaging_bytes)
+        return {
+            "status": assessment["status"],
+            "requires_confirmation": assessment["requires_confirmation"],
+            "message": assessment["message"],
+        }
+
     @router.post("/api/create")
     async def rf_create(draft_json: str = Form(...), imaging_report: UploadFile = File(...)):
         try:
@@ -335,9 +424,20 @@ def build_rf_router(engine: Engine) -> APIRouter:
         other_area, other_diagnosis = _resolve_other(draft, indication)
         exact_location = _validate_exact_location(draft, indication)
         imaging_bytes = await _read_imaging_pdf(imaging_report)
+        imaging_assessment = _assess_imaging_pdf(imaging_bytes)
+        if imaging_assessment["status"] == "clearly_non_imaging":
+            raise HTTPException(status_code=422, detail=imaging_assessment["message"])
+        if imaging_assessment["requires_confirmation"] and not draft.imaging_review_confirmed:
+            raise HTTPException(status_code=422, detail=imaging_assessment["message"])
+        imaging_review = (
+            "auto_supported"
+            if imaging_assessment["status"] == "imaging_supported"
+            else "clinician_confirmed"
+        )
         payload = {
-            **draft.model_dump(exclude={"legacy_history"}),
+            **draft.model_dump(exclude={"legacy_history", "imaging_review_confirmed"}),
             "site_key": indication["site_key"],
+            "imaging_attachment_review": imaging_review,
             "other_area": other_area,
             "other_diagnosis": other_diagnosis,
             "exact_location": exact_location,
