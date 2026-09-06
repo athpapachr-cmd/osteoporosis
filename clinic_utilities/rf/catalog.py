@@ -8,15 +8,78 @@ from typing import Any
 PRODUCT_LABELS = {"medikey": "Medikey", "diros": "DIROS", "thermedico": "Thermedico"}
 
 INDICATIONS: dict[str, dict[str, Any]] = {
-    "KNEE_OA_KL34": {"label": "Γόνατο — Οστεοαρθρίτιδα 3ου/4ου βαθμού Kellgren-Lawrence", "site_key": "knee", "official_other": False, "requires_intervention": False},
-    "SI_DEGENERATIVE": {"label": "Ιερολαγόνια — Εκφυλιστική παθολογία", "site_key": "si", "official_other": False, "requires_intervention": True, "intervention_kind": "si_injection"},
-    "HIP_OA_KL34": {"label": "Ισχίο — Οστεοαρθρίτιδα 3ου/4ου βαθμού Kellgren-Lawrence", "site_key": "hip", "official_other": False, "requires_intervention": True, "intervention_kind": "hip_diagnostic_block"},
-    "MORTON_NEUROMA": {"label": "Νευρίνωμα Morton", "site_key": "morton", "official_other": False, "requires_intervention": False},
-    "SHOULDER_OA_KL34": {"label": "Ώμος — Οστεοαρθρίτιδα 3ου/4ου βαθμού Kellgren-Lawrence", "site_key": "shoulder", "official_other": False, "requires_intervention": False},
-    "SHOULDER_IRREPARABLE_CUFF": {"label": "Ώμος — Εκτεταμένη μη χειρουργικά αποκαταστάσιμη ρήξη στροφικού πετάλου", "site_key": "shoulder", "official_other": False, "requires_intervention": False},
-    "OTHER_LATERAL_EPICONDYLITIS": {"label": "Άλλο — Αγκώνας / Έξω επικονδυλίτιδα", "site_key": "elbow", "official_other": True, "other_area": "Αγκώνας", "other_diagnosis": "Έξω επικονδυλίτιδα", "requires_intervention": False},
-    "OTHER_DEQUERVAIN": {"label": "Άλλο — Καρπός / De Quervain", "site_key": "wrist", "official_other": True, "other_area": "Καρπός", "other_diagnosis": "De Quervain", "requires_intervention": False},
-    "OTHER_CUSTOM": {"label": "Άλλο — Προσαρμοσμένη περιοχή / διάγνωση", "site_key": "other", "official_other": True, "requires_intervention": False},
+    "KNEE_OA_KL34": {
+        "label": "Γόνατο — Οστεοαρθρίτιδα 3ου/4ου βαθμού Kellgren-Lawrence",
+        "site_key": "knee",
+        "official_other": False,
+        "requires_intervention": False,
+        "location_labels": {"left": "Αριστερό γόνατο", "right": "Δεξί γόνατο"},
+    },
+    "SI_DEGENERATIVE": {
+        "label": "Ιερολαγόνια — Εκφυλιστική παθολογία",
+        "site_key": "si",
+        "official_other": False,
+        "requires_intervention": True,
+        "intervention_kind": "si_injection",
+        "location_labels": {
+            "left": "Αριστερή ιερολαγόνια άρθρωση",
+            "right": "Δεξιά ιερολαγόνια άρθρωση",
+        },
+    },
+    "HIP_OA_KL34": {
+        "label": "Ισχίο — Οστεοαρθρίτιδα 3ου/4ου βαθμού Kellgren-Lawrence",
+        "site_key": "hip",
+        "official_other": False,
+        "requires_intervention": True,
+        "intervention_kind": "hip_diagnostic_block",
+        "location_labels": {"left": "Αριστερό ισχίο", "right": "Δεξί ισχίο"},
+    },
+    "MORTON_NEUROMA": {
+        "label": "Νευρίνωμα Morton",
+        "site_key": "morton",
+        "official_other": False,
+        "requires_intervention": False,
+        "location_labels": {"left": "Αριστερό άκρο πόδι", "right": "Δεξί άκρο πόδι"},
+    },
+    "SHOULDER_OA_KL34": {
+        "label": "Ώμος — Οστεοαρθρίτιδα 3ου/4ου βαθμού Kellgren-Lawrence",
+        "site_key": "shoulder",
+        "official_other": False,
+        "requires_intervention": False,
+        "location_labels": {"left": "Αριστερός ώμος", "right": "Δεξιός ώμος"},
+    },
+    "SHOULDER_IRREPARABLE_CUFF": {
+        "label": "Ώμος — Εκτεταμένη μη χειρουργικά αποκαταστάσιμη ρήξη στροφικού πετάλου",
+        "site_key": "shoulder",
+        "official_other": False,
+        "requires_intervention": False,
+        "location_labels": {"left": "Αριστερός ώμος", "right": "Δεξιός ώμος"},
+    },
+    "OTHER_LATERAL_EPICONDYLITIS": {
+        "label": "Άλλο — Αγκώνας / Έξω επικονδυλίτιδα",
+        "site_key": "elbow",
+        "official_other": True,
+        "other_area": "Αγκώνας",
+        "other_diagnosis": "Έξω επικονδυλίτιδα",
+        "requires_intervention": False,
+        "location_labels": {"left": "Αριστερός αγκώνας", "right": "Δεξιός αγκώνας"},
+    },
+    "OTHER_DEQUERVAIN": {
+        "label": "Άλλο — Καρπός / De Quervain",
+        "site_key": "wrist",
+        "official_other": True,
+        "other_area": "Καρπός",
+        "other_diagnosis": "De Quervain",
+        "requires_intervention": False,
+        "location_labels": {"left": "Αριστερός καρπός", "right": "Δεξιός καρπός"},
+    },
+    "OTHER_CUSTOM": {
+        "label": "Άλλο — Προσαρμοσμένη περιοχή / διάγνωση",
+        "site_key": "other",
+        "official_other": True,
+        "requires_intervention": False,
+        "location_labels": {},
+    },
 }
 
 RF_REASON_LABELS = {
@@ -26,7 +89,9 @@ RF_REASON_LABELS = {
     "HIGH_SURGICAL_RISK": "Σοβαρά συνοδά προβλήματα υγείας / αυξημένος χειρουργικός κίνδυνος",
 }
 
-LATERALITY_LABELS = {"left": "Αριστερά", "right": "Δεξιά", "bilateral": "Αμφοτερόπλευρα", "midline": "Κεντρικά", "none": "Χωρίς πλευρά"}
+# GeSY RF applications are unilateral: exactly one left or right target per application.
+LATERALITY_LABELS = {"left": "Αριστερά", "right": "Δεξιά"}
+
 
 @dataclass(frozen=True)
 class DoctorProfile:
@@ -52,6 +117,7 @@ class DoctorProfile:
             raise ValueError("RF_DOCTOR_PROFILE_JSON is incomplete")
         return cls(**values)
 
+
 @dataclass(frozen=True)
 class ProductProfile:
     key: str
@@ -59,6 +125,7 @@ class ProductProfile:
     code: str
     description: str
     quantity: str
+
 
 def product_catalog_from_environment() -> dict[str, ProductProfile]:
     raw = os.getenv("RF_PRODUCT_CATALOG_JSON", "").strip()

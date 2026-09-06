@@ -68,7 +68,7 @@ class RFApplicationDraft(BaseModel):
     age: int = Field(ge=1, le=130)
     product_key: str
     indication_code: str
-    laterality: str = "none"
+    laterality: Literal["left", "right"]
     exact_location: str = Field(min_length=1, max_length=300)
     other_area: str = Field(default="", max_length=160)
     other_diagnosis: str = Field(default="", max_length=240)
@@ -92,7 +92,7 @@ class RFApplicationDraft(BaseModel):
 class RFHistoryLookup(BaseModel):
     identity_number: str = Field(min_length=1, max_length=128)
     site_key: str = Field(default="", max_length=80)
-    laterality: str = Field(default="", max_length=40)
+    laterality: Literal["left", "right"]
 
 
 class RFTextRequest(BaseModel):
@@ -135,17 +135,43 @@ def _resolve_other(draft: RFApplicationDraft, indication: dict):
     return area, diagnosis
 
 
+def _location_mode(indication_code: str) -> str:
+    if indication_code == "OTHER_CUSTOM":
+        return "custom"
+    if indication_code == "MORTON_NEUROMA":
+        return "refine"
+    return "derived"
+
+
+def _validate_exact_location(draft: RFApplicationDraft, indication: dict) -> str:
+    actual = draft.exact_location.strip()
+    expected = str((indication.get("location_labels") or {}).get(draft.laterality) or "").strip()
+    mode = _location_mode(draft.indication_code)
+    if mode == "derived":
+        if not expected or actual != expected:
+            raise HTTPException(
+                status_code=422,
+                detail="Η ακριβής εντόπιση προκύπτει αυτόματα από την ένδειξη και την πλευρά και δεν μπορεί να αλλάξει.",
+            )
+        return expected
+    if mode == "refine":
+        if not expected or not actual.startswith(expected):
+            raise HTTPException(
+                status_code=422,
+                detail="Η εξειδίκευση της εντόπισης πρέπει να παραμένει στην επιλεγμένη πλευρά/περιοχή.",
+            )
+    return actual
+
+
 def _resolve_medications(draft: RFApplicationDraft):
-    if not draft.full_medication_text.strip():
-        raise HTTPException(status_code=422, detail="Απαιτείται η πλήρης φαρμακευτική αγωγή")
-    parsed = parse_medications(draft.full_medication_text)
+    # The official table provides capacity for up to three NSAIDs and up to
+    # three other analgesics. It is not a minimum-treatment requirement.
+    parsed = parse_medications(draft.full_medication_text) if draft.full_medication_text.strip() else {
+        "auto_selected_nsaids": [],
+        "auto_selected_others": [],
+    }
     nsaid = ([x.model_dump() for x in draft.nsaid_trials] or parsed["auto_selected_nsaids"])[:3]
     other = ([x.model_dump() for x in draft.other_analgesic_trials] or parsed["auto_selected_others"])[:3]
-    if len(nsaid) != 3 or len(other) != 3:
-        raise HTTPException(
-            status_code=422,
-            detail="Το A.1 απαιτεί 3 ΜΣΑΦ και 3 άλλα αναλγητικά με τεκμηριωμένη αγωγή.",
-        )
     return nsaid, other
 
 
@@ -248,12 +274,15 @@ def build_rf_router(engine: Engine) -> APIRouter:
         return {
             "version": "rf-v2-category-a-2026-09",
             "category": "A",
+            "application_target_rule": "single_unilateral",
             "pathways": {"A1": "Νέα θεραπεία", "A2": "Συνέχιση θεραπείας"},
             "indications": {
                 code: {
                     "label": item["label"],
                     "site_key": item["site_key"],
                     "requires_intervention": bool(item.get("requires_intervention")),
+                    "location_labels": dict(item.get("location_labels") or {}),
+                    "location_mode": _location_mode(code),
                 }
                 for code, item in INDICATIONS.items()
             },
@@ -304,12 +333,14 @@ def build_rf_router(engine: Engine) -> APIRouter:
             raise HTTPException(status_code=422, detail="Μη έγκυρη πλευρά")
 
         other_area, other_diagnosis = _resolve_other(draft, indication)
+        exact_location = _validate_exact_location(draft, indication)
         imaging_bytes = await _read_imaging_pdf(imaging_report)
         payload = {
             **draft.model_dump(exclude={"legacy_history"}),
             "site_key": indication["site_key"],
             "other_area": other_area,
             "other_diagnosis": other_diagnosis,
+            "exact_location": exact_location,
             "application_date": date.today().isoformat(),
         }
         prior = None
@@ -329,7 +360,7 @@ def build_rf_router(engine: Engine) -> APIRouter:
                     raise HTTPException(status_code=404, detail="Η προηγούμενη εφαρμογή δεν βρέθηκε")
                 if prior["site_key"] != indication["site_key"]:
                     raise HTTPException(status_code=422, detail="Η προηγούμενη εφαρμογή αφορά διαφορετική περιοχή")
-                if draft.laterality not in {"none", prior.get("laterality") or "none"}:
+                if draft.laterality != prior.get("laterality"):
                     raise HTTPException(status_code=422, detail="Η προηγούμενη εφαρμογή αφορά διαφορετική πλευρά")
             elif draft.legacy_history is not None:
                 prior = _validate_legacy(draft.legacy_history)
@@ -339,7 +370,7 @@ def build_rf_router(engine: Engine) -> APIRouter:
                     "indication_code": draft.indication_code,
                     "site_key": indication["site_key"],
                     "laterality": draft.laterality,
-                    "exact_location": draft.exact_location,
+                    "exact_location": exact_location,
                 }
             else:
                 raise HTTPException(status_code=422, detail="Το A.2 απαιτεί προηγούμενη πραγματική εφαρμογή RF")

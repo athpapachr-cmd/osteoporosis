@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
 from clinic_utilities.rf.api import RFApplicationDraft, RFMedicationTrial, _resolve_medications
+from clinic_utilities.rf.parsers import parse_medications
 from clinic_utilities.rf.persistence import (
     RFApplicationORM,
     initialize_rf_tables,
@@ -46,17 +47,46 @@ def draft_with_manual_trials(nsaid_count: int, other_count: int) -> RFApplicatio
     )
 
 
-class RFThreePlusThreeTests(unittest.TestCase):
-    def test_a1_rejects_fewer_than_three_plus_three(self):
-        draft = draft_with_manual_trials(2, 2)
-        with self.assertRaises(HTTPException) as caught:
-            _resolve_medications(draft)
-        self.assertEqual(caught.exception.status_code, 422)
+class RFMedicationCapacityTests(unittest.TestCase):
+    def test_a1_accepts_zero_medication_trials(self):
+        draft = draft_with_manual_trials(0, 0)
+        draft.full_medication_text = ""
+        nsaid, other = _resolve_medications(draft)
+        self.assertEqual(nsaid, [])
+        self.assertEqual(other, [])
 
-    def test_a1_accepts_exact_three_plus_three(self):
+    def test_a1_accepts_fewer_than_three(self):
+        nsaid, other = _resolve_medications(draft_with_manual_trials(2, 1))
+        self.assertEqual(len(nsaid), 2)
+        self.assertEqual(len(other), 1)
+
+    def test_a1_accepts_capacity_of_three_plus_three(self):
         nsaid, other = _resolve_medications(draft_with_manual_trials(3, 3))
         self.assertEqual(len(nsaid), 3)
         self.assertEqual(len(other), 3)
+
+
+class RFMedicationSmokeParserTests(unittest.TestCase):
+    def test_clinician_smoke_examples_are_recognized_without_inventing_corrections(self):
+        parsed = parse_medications(
+            "Voltaren 75 mg 3 μήνες\n"
+            "Narox 90 mg 10 ημέρες\n"
+            "Melox 1 gr 10 ημέρες\n"
+            "Panadol 1 gr 3 μήνες\n"
+            "Parcoten 2 χάπια 2 μήνες\n"
+            "Tramadex 50 mg 1 μήνας"
+        )
+        nsaids = {x["canonical_key"]: x for x in parsed["nsaid_candidates"]}
+        others = {x["canonical_key"]: x for x in parsed["other_candidates"]}
+        self.assertEqual(nsaids["etoricoxib"]["dose"], "90 mg")
+        self.assertEqual(nsaids["meloxicam"]["dose"], "1 g")
+        self.assertIn("7.5 mg", nsaids["meloxicam"]["warning"])
+        self.assertIn("15 mg", nsaids["meloxicam"]["warning"])
+        self.assertEqual(others["paracetamol"]["dose"], "1 g")
+        self.assertEqual(others["parcoten"]["dose"], "2 χάπια")
+        self.assertIn("παρακεταμόλη", others["parcoten"]["drug_name"].casefold())
+        self.assertIn("κωδει", others["parcoten"]["drug_name"].casefold())
+        self.assertEqual(others["tramadol"]["dose"], "50 mg")
 
 
 class RFApplicationDataMinimizationTests(unittest.TestCase):

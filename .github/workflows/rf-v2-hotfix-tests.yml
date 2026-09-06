@@ -1,0 +1,164 @@
+name: RF v2 hotfix regression gate
+
+on:
+  push:
+    branches:
+      - 'fix/rf-*'
+
+jobs:
+  rf-v2-hotfix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: python -m pip install --disable-pip-version-check -r requirements.txt
+
+      - name: Check RF Python and JavaScript syntax
+        run: |
+          python -m py_compile \
+            clinic_utilities/rf/api.py \
+            clinic_utilities/rf/catalog.py \
+            clinic_utilities/rf/parsers.py \
+            clinic_utilities/rf/pdf.py \
+            clinic_utilities/rf/persistence.py \
+            test_rf_v2_native.py \
+            test_rf_v2_release_hardening.py \
+            test_rf_v2_unilateral.py
+          node --check static/clinic-utilities/rf/app.js
+          node --check test_rf_v2_ui.js
+          node --check test_rf_v2_unilateral_ui.js
+
+      - name: Verify authoritative RF v2 template identity
+        run: |
+          set -euo pipefail
+          TEMPLATE='clinic_utilities/rf/templates/rf_official_form_v2.pdf'
+          test -f "$TEMPLATE"
+          test "$(stat -c%s "$TEMPLATE")" = '310238'
+          echo '998e99e6b0a51d4a19431dd2e31e595282d7adf17eb29f5f91eeab94e3647252  clinic_utilities/rf/templates/rf_official_form_v2.pdf' | sha256sum -c -
+          test "$(git hash-object "$TEMPLATE")" = 'c6c234e99095be38c47a1c6f078dacdd47f4199f'
+          python - <<'PY'
+          import fitz
+          from pathlib import Path
+          path = Path('clinic_utilities/rf/templates/rf_official_form_v2.pdf')
+          doc = fitz.open(path)
+          try:
+              assert doc.page_count == 12, doc.page_count
+              for page in doc:
+                  rect = page.rect
+                  assert abs(rect.width - 595) < 1.0, rect
+                  assert abs(rect.height - 842) < 1.0, rect
+          finally:
+              doc.close()
+          print('Authoritative RF v2 template identity/geometry: PASS')
+          PY
+
+      - name: Exercise A1 and A2 generation on packaged official template
+        run: |
+          python - <<'PY'
+          import io
+          import fitz
+          from pypdf import PdfReader
+          from clinic_utilities.rf.catalog import DoctorProfile, ProductProfile
+          from clinic_utilities.rf.pdf import build_official_rf_pdf
+
+          imaging = fitz.open()
+          imaging.new_page(width=595, height=842)
+          imaging_bytes = imaging.tobytes()
+          imaging.close()
+
+          doctor = DoctorProfile(
+              name='Synthetic Doctor', gesy_code='SYN', specialty='Synthetic',
+              medical_center='Synthetic Center', phone='000', email='synthetic@example.invalid'
+          )
+          product = ProductProfile(
+              key='medikey', label='Medikey', code='SYN-M',
+              description='Synthetic product', quantity='1'
+          )
+          common = {
+              'application_date':'2026-09-06', 'patient_name':'Synthetic Patient',
+              'age':67, 'identity_number':'SYN123', 'gesy_number':'GESY-SYN',
+              'indication_code':'KNEE_OA_KL34', 'site_key':'knee',
+              'laterality':'left', 'exact_location':'Αριστερό γόνατο', 'additional_notes':''
+          }
+          a1 = dict(common, pathway='A1', rf_reason_text='Synthetic reason',
+                    pain_onset_date='2026-01-01', pain_onset_vas=8,
+                    last_assessment_date='2026-04-01', last_assessment_vas=7,
+                    nsaid_trials=[{'drug_name':'Etoricoxib','dose':'90 mg','duration':'3 μήνες'}],
+                    other_analgesic_trials=[{'drug_name':'Παρακεταμόλη','dose':'1 g','duration':'3 μήνες'}],
+                    adverse_effects=[], physio={'start_date':'2026-02-01','end_date':'2026-02-15','treatment_count':3})
+          out1 = build_official_rf_pdf(a1, doctor=doctor, product=product, radiology_pdf_bytes=imaging_bytes)
+          assert out1.startswith(b'%PDF')
+          assert len(PdfReader(io.BytesIO(out1)).pages) == 5
+
+          prior = {'actual_procedure_date':'2026-01-10','vas_before':8,'vas_after':3,
+                   'last_followup_date':'2026-06-01','last_followup_vas':6}
+          a2 = dict(common, pathway='A2')
+          out2 = build_official_rf_pdf(a2, doctor=doctor, product=product,
+                                       radiology_pdf_bytes=imaging_bytes, prior_history=prior)
+          assert out2.startswith(b'%PDF')
+          assert len(PdfReader(io.BytesIO(out2)).pages) == 4
+          print('Packaged official-template A1/A2 generation: PASS')
+          PY
+
+      - name: Run RF v2 focused regressions
+        run: |
+          python -m unittest -v test_rf_v2_native.py
+          python -m unittest -v test_rf_v2_release_hardening.py
+          python -m unittest -v test_rf_v2_unilateral.py
+          node test_rf_v2_ui.js
+          node test_rf_v2_unilateral_ui.js
+
+      - name: Verify native route ownership and dependencies
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          main = Path('main.py').read_text(encoding='utf-8')
+          req = Path('requirements.txt').read_text(encoding='utf-8')
+          assert 'app.include_router(build_rf_router(engine))' in main
+          assert 'app.include_router(build_rf_gateway_router())' not in main
+          assert 'PyMuPDF' in req and 'pypdf' in req
+          print('Native RF ownership/dependencies: PASS')
+          PY
+
+      - name: Preserve adjacent CU-1 regressions
+        run: |
+          python -m unittest -v \
+            test_cu1_dynamic_ui.py \
+            test_cu1_formatter_el.py \
+            test_cu1_gateway_guard.py \
+            test_cu1_gateway_registry.py \
+            test_cu1_physio_referral.py \
+            test_cu1_safety_trust_boundary.py
+
+      - name: Preserve legacy RF gateway rollback regressions
+        run: python -m unittest -v test_g4_rf_auth_gateway.py
+
+      - name: Preserve G4/G3/G2/G1/C1 regression ancestry
+        run: |
+          node test_g4_workspace_ergonomics.js
+          node test_g3_guidance_summary_node.js
+          node test_g3_guidance_summary_wiring.js
+          node test_g3_salience_token_core.js
+          python -m unittest -v test_g3_production_visibility_cache.py
+          python test_g2_guidance_contract.py
+          node test_g2_evidence_guidance_node.js
+          node test_g2_guidance_live_state.js
+          node test_g2_evidence_guidance_wiring.js
+          node test_progressive_guidance_node.js
+          node test_progressive_guidance_wiring.js
+          node test_progressive_guidance_ui_state.js
+          node test_progressive_guidance_why_now_ui.js
+          node test_baseline_finish_browser.js
+          python -m unittest -v test_baseline_finalization_api.py
+
+      - name: Diff hygiene
+        run: |
+          BASE="$(git merge-base origin/main HEAD)"
+          git diff --check "$BASE" HEAD
