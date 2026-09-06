@@ -48,7 +48,7 @@ This file answers **where the product is going and in what broad order**. It is 
 - [x] Complete product-owner G-4 workspace smoke confirming collapse/expand, sticky summary and physiotherapy utility behavior; direct RF form access exposed a cross-service authorization blocker.
 - [x] Implement/test the bounded Osteoporosis-side RF authenticated gateway hotfix at exact runtime head `29140a6cd4c9f57b454daa6e4a2883ec0345b53f`, workflow run `33640110048` SUCCESS.
 
-C1, G-1, G-2 and G-3 are **implemented / tested / merged / deployed / production-smoke-verified**. G-4 workspace ergonomics are merged/deployed with workspace smoke passed. The old RF gateway/auth leg also reached production and later returned `200`, but full old-form create/PDF smoke was deliberately stopped when the authoritative RF form changed. The replacement native RF v2 Clinic Utility is **implemented / release-candidate tested / exact-head reviewed**, but is not merged, deployed, production-smoke-verified or pilot-validated.
+C1, G-1, G-2 and G-3 are **implemented / tested / merged / deployed / production-smoke-verified**. G-4 workspace ergonomics are merged/deployed with workspace smoke passed. The old RF gateway/auth leg also reached production and later returned `200`, but full old-form create/PDF smoke was deliberately stopped when the authoritative RF form changed. The replacement native RF v2 Clinic Utility is **implemented / tested / merged / deployed** at `51714f9c74e96ec4fdf62493a0772ea07fcc8c1a`; authenticated production smoke is still pending, and it is not pilot-validated.
 
 ---
 
@@ -165,7 +165,7 @@ Triggered by product-owner production interaction after G-2 smoke.
 
 G-3 is production-smoke-verified, not pilot-validated. Subsequent evidence-from-use UX refinements are handled as bounded slices rather than reopening G-3 clinical semantics.
 
-## 1.6 G-4 Workspace ergonomics + RF utility navigation / native RF v2 — RELEASE-CANDIDATE TESTED / PR AUTHORIZED
+## 1.6 G-4 Workspace ergonomics + RF utility navigation / native RF v2 — MERGED / DEPLOYED / PRODUCTION SMOKE PENDING
 
 The original G-4 workspace slice and RF navigation were released through PR #72. The bounded authenticated gateway correction was then released through PR #73 and is the current production RF route on `main`.
 
@@ -182,12 +182,13 @@ The original G-4 workspace slice and RF navigation were released through PR #72.
 - [x] Pass the full native RF v2 release-candidate gate at exact runtime head `aa2f92cce5d4cd2cfd02cafc59413be7bdc0d5fb`, run `33988642002` SUCCESS, including official-template A.1/A.2 generation and inherited CU-1/G4/G3/G2/G1/C1 regressions.
 - [x] Complete exact-head source/security/scope review with no remaining release-blocking finding.
 - [x] Close stale docs-only PR #74 unmerged because it predates the authoritative-form/native-ownership replan.
-- [ ] Open the bounded native RF v2 release PR to `main` under explicit product-owner PR authority.
-- [ ] Merge only with a separate explicit product-owner decision.
+- [x] Open native RF v2 release PR #75 to `main`.
+- [x] Product owner separately authorized merge; PR #75 squash-merged as `51714f9c74e96ec4fdf62493a0772ea07fcc8c1a`.
 - [ ] Configure/verify native RF server-side doctor/product values only with separate production-config authority.
-- [ ] After merge, allow normal Render auto-deploy and complete authenticated production smoke with separate authority.
+- [x] Render auto-deploy `dep-dae8doeq1p3s73csqvbg` reached `LIVE` from merge SHA `51714f9c74e96ec4fdf62493a0772ea07fcc8c1a`.
+- [ ] Complete authenticated native RF v2 production smoke; no production config mutation is implied.
 
-Native RF v2 is **implemented / release-candidate tested / exact-head reviewed**, not merged, deployed, production-smoke-verified or pilot-validated.
+Native RF v2 is **implemented / tested / merged / deployed**, but is not yet production-smoke-verified or pilot-validated.
 
 ## 1.7 Heidi-first capture — BEFORE REAL PILOT
 
@@ -255,6 +256,24 @@ G-1 production-readiness gate closed
 - [ ] Review follow-up execution.
 - [ ] Keep routine clinician-facing Practice Review hidden during scored baseline by default.
 
+## 1.10A Clinical Learning Hub — planned Core capability
+
+- [x] Approve Foundation Map + Clinical Challenges + Daily Heidi-backed Real-Case Review as one reusable learning architecture.
+- [x] Require a Fact Ledger so progressive-disclosure/synthetic facts cannot be mistaken for real patient facts.
+- [x] Require clinician self-review before AI critique in Daily Case Review.
+- [x] Preserve raw Heidi transcript as ephemeral and reuse PR-1/PR-3 owners rather than create a parallel AI stack.
+- [x] Define Foundation states: `FORMAL_SOLID`, `INTUITIVE_UNSTRUCTURED`, `FRAGMENTED`, `UNKNOWN_UNTESTED`.
+- [x] Define daily/weekly/periodic learning cadence and baseline-intervention boundary.
+- [ ] L-0: freeze learning object, provenance, privacy, due-state, revision and Signal contracts.
+- [ ] L-1: protected Challenge JSON import/history + Foundation Map skeleton + spaced-repetition due state.
+- [ ] PR-1/PR-2/PR-3: establish reusable transcript and Practice Review seams.
+- [ ] L-2: activate Daily Case Review using real eligible Heidi-backed encounters.
+- [ ] After baseline lock, activate clinician-facing daily coaching as a formal improvement intervention and re-measure.
+- [ ] Later: narrow external ingestion capability (`learning.challenge.write`) without broad patient/encounter/RF authority.
+
+Detailed design: `CLINICAL_LEARNING_HUB_DESIGN_V1.md`.
+
+
 ## 1.11 Thirty-case scored system-assisted baseline
 
 - [ ] Run 30 consecutive unique eligible osteoporosis encounters under frozen guidance/capture contracts.
@@ -314,7 +333,8 @@ Permanent requirements:
 - [x] G-4 collapsible/sticky top-workspace ergonomics released/deployed and production-smoked.
 - [x] G-4 authenticated-gateway hotfix released through PR #73; later auth/form production leg returned `200`.
 - [x] Native RF v2 replacement implemented/release-candidate-tested after authoritative form change.
-- [ ] Native RF v2 PR / merge / production config verification / deploy / end-to-end production smoke.
+- [x] Native RF v2 PR #75 / merge / Render auto-deploy completed.
+- [ ] Native RF v2 authenticated end-to-end production smoke and any separately authorized production-config verification.
 - [ ] Real-clinic usability validation and evidence-from-use card/taxonomy refinement.
 
 ---
