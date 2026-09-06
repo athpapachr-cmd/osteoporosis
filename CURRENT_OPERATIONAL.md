@@ -1,31 +1,31 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** RF v2 PRODUCTION — PARTIAL SMOKE PASS / IMAGING-ATTACHMENT SEMANTIC GUARD TESTED / EXACT-HEAD REVIEW PASS / RELEASE HOLD
+> **STATUS:** RF v2 PRODUCTION — IMAGING-ATTACHMENT SEMANTIC GUARD TESTED / EXACT-HEAD REVIEW PASS — PR + SQUASH MERGE + DEPLOY AUTHORIZED
 > **Updated:** 2026-09-06 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Fresh verified production `main`:** `e8bf4bac16eff5e0c2101ec891483b81b14765e1`.
 > **Production deploy:** `dep-daei1sh42hec73ccthr0` — LIVE.
 > **Hotfix branch:** `fix/rf-imaging-attachment-semantic-guard-2026-09-06`.
 > **Implementation base / merge base:** `e8bf4bac16eff5e0c2101ec891483b81b14765e1`.
-> **Exact tested clean hotfix head:** `814a62d3b31ae76d19c6f5da3f824e9137011e96`.
-> **Exact workflow:** `RF v2 hotfix regression gate`, run `34031607422` — SUCCESS.
+> **Exact tested runtime head before release-authority docs commit:** `814a62d3b31ae76d19c6f5da3f824e9137011e96`.
+> **Exact successful gate:** `RF v2 hotfix regression gate`, run `34031607422` — SUCCESS.
 > **Current frozen slice:** `CU-RF-IMAGING-SEMANTIC-GUARD-2026-09-06`.
-> **ACTIVE RUNTIME WRITER/LOCK:** NONE — bounded implementation/test/review phase closed.
-> **ACTIVE CANONICAL WRITER/LOCK:** NONE after this closeout commit.
+> **ACTIVE RUNTIME WRITER/LOCK:** NONE — implementation/test/review closed.
+> **ACTIVE CANONICAL WRITER/LOCK:** release closeout only.
 > **Implementation/test authority:** CONSUMED.
-> **PR authority:** NONE unless separately granted.
-> **Merge authority:** NONE unless separately granted.
-> **Production config authority:** NONE.
-> **Deploy authority:** NONE unless separately granted.
-> **Production-smoke authority:** separate after any separately authorized release.
+> **PR authority:** GRANTED by product owner on 2026-09-06 for this bounded hotfix.
+> **Merge authority:** GRANTED by product owner on 2026-09-06; squash merge required by repository discipline.
+> **Deploy authority:** GRANTED by product owner on 2026-09-06; normal Render auto-deploy from `main`, no redundant manual deploy.
+> **Production config authority:** NONE; no config change is required for this hotfix.
+> **Production-smoke authority:** not implied by merge/deploy; smoke remains a separate post-deploy verification step.
 
 ---
 
-# 1. Production truth
+# 1. Production truth before this release
 
 Native RF v2 was released through PR #75 and correction PR #76.
 
-Current production identity:
+Current production identity before the imaging-guard release:
 
 ```text
 main: e8bf4bac16eff5e0c2101ec891483b81b14765e1
@@ -34,43 +34,47 @@ Render: dep-daei1sh42hec73ccthr0
 status: LIVE
 ```
 
-Server-side production configuration is present for:
+Server-side production configuration is already present for:
 
 ```text
 RF_PRODUCT_CATALOG_JSON
 RF_DOCTOR_PROFILE_JSON
 ```
 
-The imaging semantic guard described below is **not yet in production**.
+No environment/config mutation is part of the imaging semantic-guard release.
 
 ---
 
-# 2. Production smoke evidence so far
+# 2. Product-owner smoke evidence that triggered the hotfix
 
-Product-owner smoke has established:
+Product-owner smoke established:
 
 ```text
 clinical authentication/session                    PASS
 native RF v2 UI visible                             PASS
 Category A A.1/A.2 UI                               PASS
-product catalog                                     PASS after server config
-doctor profile                                      PASS after server config
+product catalog                                     PASS
+doctor profile                                      PASS
 single-side rule / derived target                   MERGED + DEPLOYED; re-smoke pending
 medication capacity 0..3                            MERGED + DEPLOYED; re-smoke pending
 Narox/Melox/Panadol/Parcoten parser corrections     MERGED + DEPLOYED; re-smoke pending
-A.1 official form generation                        PASS on pre-#76 production smoke
-uploaded PDF concatenation                          PASS on pre-#76 production smoke
+A.1 official form generation                        PASS on earlier smoke
+uploaded PDF concatenation                          PASS on earlier smoke
 attachment semantic suitability                     DEFECT FOUND / HOTFIX TESTED
 full A.1 end-to-end production smoke                NOT YET PASS
 full A.2 end-to-end production smoke                NOT YET PASS
 PILOT-VALIDATED                                     NO
 ```
 
-The smoke attachment was deliberately unrelated to imaging. The generated A.1 package nevertheless checked the official item-3 declaration and appended it, proving that production currently validates PDF presence/structure rather than attachment semantic suitability.
+The deliberately unrelated smoke attachment was a laboratory report. Production accepted it merely because it was a valid PDF. This proved:
+
+```text
+PDF PRESENT != IMAGING-REPORT EVIDENCE PRESENT
+```
 
 ---
 
-# 3. Tested imaging semantic-guard behavior
+# 3. Frozen imaging semantic-guard behavior
 
 The bounded hotfix implements deterministic in-memory classification:
 
@@ -87,26 +91,23 @@ AMBIGUOUS_OR_UNREADABLE
 → intended for scanned/image-only or otherwise unclassifiable PDFs
 ```
 
-Server authority:
+Server authority and privacy invariants:
 
-- existing extension/content-type/20 MB guards remain;
-- PDF must actually parse and contain pages; `%PDF` magic bytes alone are insufficient;
+- PDF must parse and contain at least one page; `%PDF` magic bytes alone are insufficient;
 - extracted text is bounded and ephemeral;
-- `POST /clinical/clinic-utilities/rf/api/validate-imaging` returns only status / confirmation requirement / bounded message;
+- `POST /clinical/clinic-utilities/rf/api/validate-imaging` returns only bounded status/confirmation/message fields;
 - `/api/create` independently repeats semantic assessment;
-- the browser cannot override a clearly non-imaging classification;
-- only bounded provenance (`auto_supported` or `clinician_confirmed`) may enter the RF application payload;
-- extracted attachment text is never returned or persisted.
+- browser state cannot override `CLEARLY_NON_IMAGING`;
+- persistence may retain only bounded provenance (`auto_supported` or `clinician_confirmed`), never extracted attachment text;
+- the classifier establishes document-type suitability only and does not interpret imaging findings or prove the selected diagnosis.
 
-This classifies document **type suitability only**. It does not claim that imaging findings clinically prove the selected RF diagnosis.
-
-The same branch also corrects stale UI copy so medication capacity is displayed as `0..3` / `έως 3`, matching the already-released backend contract.
+The same hotfix corrects stale medication UI copy to `έως 3` / `0..3`, matching the already-authoritative backend rule.
 
 ---
 
-# 4. Exact automated evidence
+# 4. Exact automated evidence and review
 
-Clean exact head:
+Substantive tested clean head:
 
 ```text
 814a62d3b31ae76d19c6f5da3f824e9137011e96
@@ -117,6 +118,14 @@ Full gate:
 ```text
 workflow: RF v2 hotfix regression gate
 run: 34031607422
+result: SUCCESS
+```
+
+Final canonical-closeout head before this authority update:
+
+```text
+4fb623e7afe15cac502333d69d6d44c7f648e45b
+run: 34031820267
 result: SUCCESS
 ```
 
@@ -143,64 +152,22 @@ G4/G3/G2/G1/C1 regression ancestry                  PASS
 Full branch-vs-production diff hygiene              PASS
 ```
 
-All committed test documents/data are synthetic.
-
-A private, non-persisted verification using the deliberately unrelated smoke PDF also produced zero imaging signals and multiple independent laboratory signals, so that exact smoke document would be rejected by the hotfix. No content or identifier from that document was committed.
+Exact-head review found no release-blocking scope, privacy, trust-boundary or dependency issue. The branch was `behind_by: 0` with merge base exactly equal to current production `main`.
 
 ---
 
-# 5. Exact-head review
-
-Compare against current production main:
-
-```text
-base / merge base: e8bf4bac16eff5e0c2101ec891483b81b14765e1
-head:              814a62d3b31ae76d19c6f5da3f824e9137011e96
-behind_by:         0
-```
-
-Expected changed files only:
-
-```text
-CURRENT_OPERATIONAL.md
-SLICE_PLAN_CURRENT.md
-clinic_utilities/rf/api.py
-static/clinic-utilities/rf/app.js
-static/clinic-utilities/rf/index.html
-test_rf_v2_native.py
-test_rf_v2_unilateral_ui.js
-```
-
-Temporary patch workflow is absent from the final diff.
-
-Review result:
-
-```text
-scope drift                         NONE
-PHI in committed tests/source       NONE
-extracted attachment text returned  NO
-extracted attachment text persisted NO
-OCR / LLM dependency                NO
-browser-only enforcement            NO — server independently enforces
-release-blocking finding            NONE
-```
-
-Known deliberate limitation: a readable document with a strong imaging token is treated as document-type supported even if other text is present. This is a conservative deterministic MVP guard, not clinical report interpretation; deeper content validation would require a separate REPLAN.
-
----
-
-# 6. Lifecycle matrix
+# 5. Lifecycle matrix
 
 ```text
 RF #76 CORRECTION IMPLEMENTED/TESTED/MERGED/DEPLOYED  YES
 RF #76 PRODUCTION RE-SMOKE                            PENDING
 IMAGING SEMANTIC-GUARD DESIGN                         FROZEN
 IMAGING SEMANTIC-GUARD IMPLEMENTED                    YES
-IMAGING SEMANTIC-GUARD TESTED                         YES @ 814a62d3... / 34031607422
+IMAGING SEMANTIC-GUARD TESTED                         YES
 IMAGING SEMANTIC-GUARD EXACT-HEAD REVIEW              PASS
-IMAGING SEMANTIC-GUARD PR                             NO
-IMAGING SEMANTIC-GUARD MERGED                         NO
-IMAGING SEMANTIC-GUARD DEPLOYED                       NO
+IMAGING SEMANTIC-GUARD PR                             AUTHORIZED / TO OPEN
+IMAGING SEMANTIC-GUARD MERGE                          AUTHORIZED / PENDING
+IMAGING SEMANTIC-GUARD DEPLOY                         AUTHORIZED / PENDING AUTO-DEPLOY
 FULL RF A.1 PRODUCTION-SMOKE-VERIFIED                 NO
 FULL RF A.2 PRODUCTION-SMOKE-VERIFIED                 NO
 PILOT-VALIDATED                                       NO
@@ -208,32 +175,33 @@ PILOT-VALIDATED                                       NO
 
 ---
 
-# 7. Release hold / exact next action
+# 6. Exact next action
 
-Implementation/test/review authority is consumed.
+Product owner explicitly authorized **merge and deploy** on 2026-09-06. Repository discipline requires the bounded branch to pass through PR and squash merge.
 
-Next possible sequence requires separate product-owner authority:
-
-```text
-open bounded imaging semantic-guard PR
-→ verify PR-head checks
-→ separate merge decision
-→ normal Render auto-deploy
-→ product-owner re-smoke:
-   1. #76 single-side/derived-location behavior
-   2. #76 medication parser/capacity behavior
-   3. obvious laboratory PDF rejected
-   4. real imaging PDF accepted or scanned report explicitly confirmed
-   5. inspect final A.1 PDF
-   6. exercise A.2 path
-```
-
-Until then production remains `e8bf4bac...` / `dep-daei1sh42hec73ccthr0`.
+Execute now:
 
 ```text
-NO PR
-NO merge
-NO deploy
-NO production config mutation
-NO claim of full RF production-smoke verification
+rerun exact-head RF hotfix gate after this docs-only authority commit
+→ open bounded PR to main
+→ verify PR is mergeable and exact head has green checks
+→ squash merge using expected head SHA
+→ allow normal Render auto-deploy from main
+→ verify Render reaches LIVE on the exact merge SHA
+→ HOLD for production re-smoke
 ```
+
+Do not manually trigger an additional Render deploy if auto-deploy succeeds.
+
+Post-deploy smoke still must separately establish:
+
+```text
+#76 single-side/derived-location behavior
+#76 medication parser/capacity behavior
+obvious laboratory PDF rejected
+real imaging PDF accepted OR scanned report explicitly clinician-confirmed
+final A.1 PDF inspected
+A.2 path exercised
+```
+
+No production configuration change and no claim of full production-smoke verification are authorized by this release action.
