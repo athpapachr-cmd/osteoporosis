@@ -1,6 +1,6 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** RF v2 NATIVE CLINIC UTILITY — MERGED / DEPLOYED — AUTHENTICATED PRODUCTION SMOKE PENDING
+> **STATUS:** RF v2 NATIVE CLINIC UTILITY — MERGED / DEPLOYED — AUTH/UI SMOKE PARTIAL PASS / CONFIG + UX BLOCKERS
 > **Updated:** 2026-09-06 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Fresh verified production `main`:** `51714f9c74e96ec4fdf62493a0772ea07fcc8c1a`.
@@ -10,9 +10,9 @@
 > **Exact accepted runtime before squash merge:** `aa2f92cce5d4cd2cfd02cafc59413be7bdc0d5fb`.
 > **Exact final branch gate:** `91136c2fabf68edb74ce3a6b586baa02e508d9dc`, workflow run `33992246398` — SUCCESS.
 > **ACTIVE RUNTIME WRITER/LOCK:** NONE.
-> **ACTIVE CANONICAL WRITER/LOCK:** NONE on `main`; docs reconciliation is staged on `docs/clinical-learning-hub-rf-post-merge-2026-09-06` and intentionally held unmerged until RF smoke result is known.
+> **ACTIVE CANONICAL WRITER/LOCK:** NONE on `main`; docs reconciliation is staged on `docs/clinical-learning-hub-rf-post-merge-2026-09-06` and intentionally held unmerged until RF smoke closeout is known.
 > **Production config/secret authority:** NONE.
-> **Production-smoke state:** PENDING clinician-run authenticated verification.
+> **Production-smoke state:** PARTIAL PASS — authenticated native UI confirmed; end-to-end A.1/A.2 PDF paths not yet proven.
 
 ---
 
@@ -47,7 +47,48 @@ Legacy `rf_gateway.py` remains unmounted rollback/reference code only.
 
 ---
 
-# 2. Proven before release
+# 2. Production smoke evidence observed 2026-09-06
+
+Clinician-run smoke after browser-session restoration confirmed:
+
+```text
+AUTHENTICATED SESSION RESTORED                         PASS
+NATIVE CLINICAL EXCELLENCE RF UI VISIBLE              PASS
+OLD EXTERNAL / GATEWAY UI NOT SHOWN                   PASS
+NEW / CONTINUATION WORKFLOW PRESENT                    PASS
+CATEGORY-A INDICATION WORKFLOW PRESENT                 PASS
+SERVER-CONFIG WARNING VISIBLE                          PASS / EXPECTED FAIL-CLOSED
+PRODUCT CONFIGURATION SUFFICIENT                       NO
+A.1 END-TO-END CREATE/PDF                              NOT TESTED
+A.2 HISTORY/CONTINUATION                               NOT TESTED
+```
+
+The observed server-config warning is not an auth failure. At least the product catalog remains missing/incomplete in production. Do not infer doctor-profile configuration state unless contract output or a later smoke proves it separately.
+
+A second finding is a real UI/ergonomics defect, not a browser artifact: after selecting a standard anatomical indication plus laterality, `exact_location` remains manual. The current production JavaScript reads `exactLocation` but contains no deterministic autofill from indication/laterality.
+
+Product-owner requirement from smoke:
+
+```text
+STANDARD INDICATION + LATERALITY
+→ prefill exact_location deterministically
+→ keep exact_location clinician-editable
+→ later manual edit must not be silently overwritten
+```
+
+Minimum explicit example:
+
+```text
+KNEE_OA_KL34 + right  → Δεξί γόνατο
+KNEE_OA_KL34 + left   → Αριστερό γόνατο
+KNEE_OA_KL34 + bilateral → Αμφότερα γόνατα
+```
+
+For sites where laterality does not fully specify the anatomical target (for example Morton neuroma), any autofill must remain a partial suggestion and the more specific site must remain clinician-entered/reviewed.
+
+---
+
+# 3. Proven before release
 
 The accepted candidate proved Category-A A.1/A.2 workflow, exact official PDF identity and A.1/A.2 generation, required imaging append, exact 3+3 medication fail-closed validation, deterministic medication/physio parsing, separate application-request versus actual-procedure history, `clinician_manual` provenance, data minimization and inherited CU-1/G4/G3/G2/G1/C1 regressions.
 
@@ -61,14 +102,15 @@ ACTUAL RF PROCEDURE
 
 ---
 
-# 3. What remains unproven
+# 4. What remains unproven / blocked
 
 ```text
-AUTHENTICATED NATIVE RF PRODUCTION UI SMOKE     NO
 A.1 END-TO-END PRODUCTION CREATE/PDF            NO
 A.2 HISTORY/CONTINUATION PRODUCTION PATH         NO
 OFFICIAL GENERATED PDF VISUAL CHECK IN PROD     NO
-PRODUCTION CONFIG SUFFICIENCY                    NOT YET VERIFIED BY SMOKE
+PRODUCT CATALOG CONFIG SUFFICIENCY               BLOCKED / MISSING OR INCOMPLETE
+DOCTOR PROFILE CONFIG SUFFICIENCY                NOT YET SEPARATELY VERIFIED
+EXACT-LOCATION AUTOFILL UX                       MISSING IN RELEASED UI
 PILOT VALIDATION                                 NO
 ```
 
@@ -76,52 +118,41 @@ Do not infer these states from automated tests or LIVE deploy status.
 
 ---
 
-# 4. Browser-session recovery
+# 5. Configuration source discipline
 
-Clearing browser data removes `clinical_session`.
+Native RF intentionally fails closed unless exact server-side configuration is present:
 
 ```text
-open Clinical Excellence root
-→ Patient Registry shows `Clinical access key`
-→ enter existing CLINICAL_DATA_KEY locally
-→ POST /clinical/login
-→ secure HttpOnly SameSite clinical_session restored
-→ open /clinical/clinic-utilities/rf
+RF_DOCTOR_PROFILE_JSON
+RF_PRODUCT_CATALOG_JSON
 ```
 
-Never place the clinical key in URL, repository, chat or screenshot.
+The prior Reception implementation contains explicit Medikey/DIROS/Thermedico code/description/quantity values and can be used as a candidate migration source, but they must be reviewed as still-current before production config is changed. Do not invent or silently infer configuration values.
+
+No production config mutation is authorized by this operational record.
 
 ---
 
-# 5. Exact next action — authenticated RF production smoke
-
-Minimum first smoke:
+# 6. Exact next sequence
 
 ```text
-restore clinical_session
-→ open native RF route
-→ confirm Clinical Excellence RF UI, not old external form
-→ confirm NEW / CONTINUATION and Category-A indication set
-→ confirm no auth/upstream-gateway error
+1. confirm current Medikey / DIROS / Thermedico code-description-quantity values
+2. separately authorize and set RF_PRODUCT_CATALOG_JSON (and doctor profile only if still missing)
+3. bounded exact-location autofill hotfix from production main
+4. regression test: autofill + clinician override + no overwrite
+5. merge/deploy only under explicit release authority
+6. repeat authenticated A.1/A.2 production smoke
+7. visually inspect generated official PDF
+8. record PASS / remaining bounded blocker
+9. merge docs-only canonical reconciliation
 ```
 
-Then test A.1/A.2 end-to-end with synthetic/non-identifiable smoke data unless a real administrative workflow is intentionally being performed. Missing doctor/product configuration is a bounded config blocker; do not invent/mutate values without authority.
+The configuration fix and UI hotfix are distinct changes and should remain distinguishable in evidence.
 
 ---
 
-# 6. Approved future Clinical Learning Hub
+# 7. Approved future Clinical Learning Hub
 
 Detailed future architecture is recorded in `CLINICAL_LEARNING_HUB_DESIGN_V1.md` and the phase plan. It combines Foundation Map, weekly Clinical Challenges, Daily Heidi-backed Real-Case Review, longitudinal Signals and targeted/spaced learning. Planning only; no learning runtime writer is active.
 
 Visible daily AI coaching is an intervention and remains shadow/hidden during the scored 30-case baseline by default unless methodology is explicitly replanned.
-
----
-
-# 7. Exact sequence
-
-```text
-RF production smoke
-→ record PASS / bounded blocker
-→ merge one docs-only canonical reconciliation after smoke
-→ then consider bounded L-0 Clinical Learning Hub design slice
-```
