@@ -1,229 +1,177 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** RF v2 NATIVE CLINIC UTILITY — IMPLEMENTED / RELEASE-CANDIDATE TESTED / EXACT-HEAD REVIEW PASS / PR AUTHORIZED — PRE-PR HOLD
-> **Updated:** 2026-09-05 Asia/Nicosia.
+> **STATUS:** RF v2 PRODUCTION — PARTIAL SMOKE PASS / IMAGING-ATTACHMENT SEMANTIC GUARD HOTFIX ACTIVE
+> **Updated:** 2026-09-06 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Fresh verified production `main`:** `8aa8b38e3fa9a8f8ba0618868b452b1835be0d47`.
-> **Active branch:** `feat/clinic-utilities-rf-v2-native-2026-09-05`.
-> **Implementation base / merge base:** `8aa8b38e3fa9a8f8ba0618868b452b1835be0d47`.
-> **Current frozen slice:** `CU-RF-V2-NATIVE-2026-09-05`.
-> **Exact tested runtime head before docs-only closeout:** `aa2f92cce5d4cd2cfd02cafc59413be7bdc0d5fb`.
-> **Exact workflow:** `RF v2 native clinic utility`, run `33988642002` — SUCCESS.
-> **ACTIVE RUNTIME WRITER/LOCK:** NONE — implementation/test phase closed.
-> **ACTIVE CANONICAL WRITER/LOCK:** NONE — canonical pre-PR closeout complete.
-> **Implementation/test authority:** CONSUMED.
-> **PR authority:** GRANTED — bounded native RF v2 release PR only.
-> **Merge authority:** NONE.
-> **Production config/secret authority:** NONE.
-> **Deploy authority:** NONE.
-> **Production-smoke authority:** NONE.
+> **Fresh verified production `main`:** `e8bf4bac16eff5e0c2101ec891483b81b14765e1`.
+> **Production deploy:** `dep-daei1sh42hec73ccthr0` — LIVE.
+> **Active branch:** `fix/rf-imaging-attachment-semantic-guard-2026-09-06`.
+> **Implementation base / merge base:** `e8bf4bac16eff5e0c2101ec891483b81b14765e1`.
+> **Current frozen slice:** `CU-RF-IMAGING-SEMANTIC-GUARD-2026-09-06`.
+> **ACTIVE RUNTIME WRITER/LOCK:** ChatGPT — bounded RF imaging-attachment validation only.
+> **ACTIVE CANONICAL WRITER/LOCK:** ChatGPT — bounded operational/slice reconciliation for this hotfix.
+> **Implementation/test authority:** GRANTED by product owner in current smoke session.
+> **PR authority:** NONE unless separately granted.
+> **Merge authority:** NONE unless separately granted.
+> **Production config authority:** NONE for this hotfix.
+> **Deploy authority:** NONE unless separately granted.
+> **Production-smoke authority:** current product-owner smoke session only after any separately authorized release.
 
 ---
 
-# 1. Production baseline
+# 1. Production truth
 
-Production remains on the old G4 authenticated RF gateway at:
+Native RF v2 was released through PR #75 and correction PR #76.
 
-```text
-main:
-8aa8b38e3fa9a8f8ba0618868b452b1835be0d47
-
-release origin:
-PR #73 — G4 hotfix: authenticated RF gateway
-```
-
-The old gateway auth/form leg was later proven in production after server-side RF key configuration:
+Current production identity:
 
 ```text
-Cockpit RF route 200
-→ upstream RF /rf 200
-→ old form rendered
+main: e8bf4bac16eff5e0c2101ec891483b81b14765e1
+PR #76: merged by squash
+Render: dep-daei1sh42hec73ccthr0
+status: LIVE
 ```
 
-Full old history/create/PDF smoke was not completed before the authoritative RF form changed. The old RF form contract is now obsolete for the requested workflow.
+Server-side production configuration is present for:
+
+```text
+RF_PRODUCT_CATALOG_JSON
+RF_DOCTOR_PROFILE_JSON
+```
+
+No config mutation is part of the current imaging hotfix.
 
 ---
 
-# 2. Approved native RF ownership
+# 2. Production smoke evidence so far
 
-Product owner approved moving RF ownership from `ortho-reception-backend-v2` into the Clinical Excellence runtime.
-
-Target/implemented active architecture:
+Product-owner smoke has established:
 
 ```text
-authenticated Clinical Excellence browser
-→ /clinical/clinic-utilities/rf
-→ native RF router
-→ existing clinical auth boundary
-→ separate RF persistence tables
-→ official RF v2 PDF stamping + imaging append
+clinical authentication/session                    PASS
+native RF v2 UI visible                             PASS
+Category A A.1/A.2 UI                               PASS
+product catalog                                     PASS after server config
+doctor profile                                      PASS after server config
+single-side rule / derived target                   MERGED + DEPLOYED; re-smoke pending
+medication capacity 0..3                            MERGED + DEPLOYED; re-smoke pending
+Narox/Melox/Panadol/Parcoten parser corrections     MERGED + DEPLOYED; re-smoke pending
+A.1 official form generation                        PASS on pre-#76 production smoke
+uploaded PDF concatenation                          PASS on pre-#76 production smoke
+attachment semantic suitability                     DEFECT FOUND
+full A.1 end-to-end production smoke                NOT YET PASS
+full A.2 end-to-end production smoke                NOT YET PASS
+PILOT-VALIDATED                                     NO
 ```
 
-The legacy gateway code is retained unmounted as rollback/reference only.
+The test attachment used during smoke was deliberately unrelated to imaging. It was a laboratory report. The generated A.1 package nevertheless checked the official declaration that an imaging report was attached and appended that laboratory PDF.
 
-RF remains a reusable Clinic Utility and is not written into osteoporosis encounter payloads.
+Therefore current production only proves:
+
+```text
+valid PDF exists
+```
+
+not:
+
+```text
+valid imaging-report evidence exists
+```
 
 ---
 
-# 3. Release-candidate implementation proven at aa2f92cc...
+# 3. Current defect / invariant
 
-The exact tested runtime head implements:
+Official A.1/A.2 item 3 must not be marked solely because an arbitrary PDF exists.
 
-- Category-A-only A.1/A.2 workflow for this clinician;
-- fixed server-side doctor/product configuration without exposing values to the browser/repo;
-- user-specific indication subset plus dynamic Other;
-- required imaging PDF upload;
-- A.1 pain/date validation and SI/hip intervention requirements;
-- deterministic medication parsing/deduplication;
-- fail-closed requirement for exactly 3 NSAID trials + 3 other analgesic trials before A.1 create;
-- deterministic physiotherapy-date parsing;
-- separate RF application-request and actual-procedure-history persistence;
-- A.2 lookup by patient identity plus site/laterality;
-- manual actual-procedure backfill with `clinician_manual` provenance for transition-period or later missing records;
-- no obsolete hard-coded 10-week repeat rule;
-- data minimization: raw pasted medication text, raw pasted physiotherapy dates and medication `source_text` lines are not persisted in application JSON;
-- native Clinical Excellence UI;
-- official PDF page assembly using the exact supplied template.
-
-Hard invariant:
+Required invariant:
 
 ```text
-RF APPLICATION REQUEST
-!=
-ACTUAL RF PROCEDURE
+PDF STRUCTURE VALID
++
+ATTACHMENT SEMANTICALLY SUITABLE OR EXPLICITLY CLINICIAN-CONFIRMED
+→ official imaging-attached declaration may be checked
 ```
 
-A generated approval/request never creates actual-procedure history by inference.
+Hard safety/privacy rules:
+
+- attachment text is processed ephemerally in memory;
+- extracted attachment text is not persisted in PostgreSQL, logs, source or public fixtures;
+- clearly non-imaging documents such as laboratory reports are rejected;
+- readable documents with strong imaging/radiology evidence may pass automatically;
+- scanned/image-only or otherwise ambiguous PDFs require explicit clinician confirmation;
+- confirmation never converts a clearly classified laboratory/non-imaging document into acceptable imaging evidence;
+- generated application persistence may retain only bounded review provenance, not extracted document text.
 
 ---
 
-# 4. Authoritative official PDF identity
+# 4. Current bounded implementation scope
 
-Packaged release template:
-
-```text
-clinic_utilities/rf/templates/rf_official_form_v2.pdf
-```
-
-Exact identity:
+Allowed mutation:
 
 ```text
-source upload: Radiotherapy Eligibility Form.pdf
-size: 310238 bytes
-SHA-256: 998e99e6b0a51d4a19431dd2e31e595282d7adf17eb29f5f91eeab94e3647252
-Git blob SHA: c6c234e99095be38c47a1c6f078dacdd47f4199f
-pages: 12
-geometry: approximately 595 x 842 pt per page
+clinic_utilities/rf/api.py
+static/clinic-utilities/rf/index.html
+static/clinic-utilities/rf/app.js
+static/clinic-utilities/rf/styles.css
+focused synthetic RF imaging-validation tests
+CURRENT_OPERATIONAL.md
+SLICE_PLAN_CURRENT.md
 ```
 
-The gate verifies those values and exercises real A.1 and A.2 generation against the packaged official binary.
+Expected behavior:
+
+```text
+upload PDF
+→ structural validation
+→ ephemeral text extraction
+→ classify:
+   imaging_supported
+   clearly_non_imaging
+   ambiguous_or_unreadable
+
+imaging_supported
+→ create allowed without extra confirmation
+
+clearly_non_imaging
+→ reject fail-closed
+
+ambiguous_or_unreadable
+→ require explicit clinician checkbox
+→ create allowed only when confirmed
+```
+
+The create endpoint independently repeats the semantic assessment. Browser validation alone is not authoritative.
 
 ---
 
-# 5. Exact automated evidence
-
-Workflow:
+# 5. Explicitly out of scope
 
 ```text
-RF v2 native clinic utility
-run: 33988642002
-head: aa2f92cce5d4cd2cfd02cafc59413be7bdc0d5fb
-result: SUCCESS
-```
-
-Successful exact-head evidence includes:
-
-```text
-Python syntax                              PASS
-JavaScript syntax                          PASS
-Official template size/hash/blob/page gate PASS
-Real packaged-template A.1 generation      PASS
-Real packaged-template A.2 generation      PASS
-Native RF focused regressions              PASS
-3+3 / data-minimization hardening tests    PASS
-Native RF UI integrity                     PASS
-Native route/dependency ownership          PASS
-Adjacent CU-1 regressions                  PASS
-Legacy RF gateway rollback regressions     PASS
-G4 workspace regression                    PASS
-G3 regressions                             PASS
-G2 regressions                             PASS
-G1 regressions                             PASS
-C1 finalization regressions                PASS
-```
-
-Synthetic tests contain no identifiable patient data.
-
----
-
-# 6. Exact-head review
-
-Final source/security/scope review found and corrected before the final tested head:
-
-1. A.1 previously allowed fewer than the required 3+3 medication rows.
-   - corrected to fail closed unless 3 NSAIDs + 3 other analgesics are resolved;
-2. application JSON previously retained raw pasted medication/physio text and selected medication source lines.
-   - corrected to persist normalized evidence only;
-3. manual actual-procedure history was labelled `legacy_manual`.
-   - corrected to `clinician_manual` so provenance remains true for both transition-period and later clinician-entered missing procedure records.
-
-Post-correction compare remains:
-
-```text
-branch ahead of production main
-behind: 0
-merge base: exact production main
-scope: RF v2 + canonical slice files only
-```
-
-No Ortho-Reception runtime/config/secret mutation occurred.
-
----
-
-# 7. Lifecycle matrix
-
-```text
-RF v2 DESIGN                         APPROVED / FROZEN
-RF v2 IMPLEMENTATION                 COMPLETE
-OFFICIAL TEMPLATE PACKAGED           YES — exact byte identity verified
-RF v2 RELEASE-CANDIDATE TESTED       YES @ aa2f92cc... / run 33988642002
-RF v2 EXACT-HEAD REVIEW              PASS
-PR                                   AUTHORIZED / NOT YET OPEN
-MERGED                               NO
-DEPLOYED                             NO
-PRODUCTION-SMOKE-VERIFIED            NO
-PILOT-VALIDATED                      NO
-ACTIVE RUNTIME WRITER                NONE
-```
-
-`IMPLEMENTED != TESTED != PR != MERGED != DEPLOYED != PRODUCTION-SMOKE-VERIFIED != PILOT-VALIDATED`.
-
----
-
-# 8. Exact next action / HOLD
-
-The implementation/test phase is closed.
-
-Product owner has granted authority through opening the bounded native RF v2 release PR. Remaining lifecycle steps remain separately gated:
-
-```text
-final docs-only drift verification
-→ open bounded RF v2 release PR
-→ verify exact PR-head checks
-→ separate merge decision
-→ normal Render auto-deploy after merge
-→ authenticated production smoke
-```
-
-The stale docs-only PR #74 was closed unmerged as superseded because it predates the authoritative-form change/native ownership replan.
-
-Forbidden under current authority:
-
-```text
-NO merge
-NO production config/secret mutation
-NO deploy
-NO production smoke
+NO OCR service
+NO LLM document classifier
+NO persistence of raw/extracted attachment text
+NO patient-record mutation
+NO RF procedure-history semantic changes
+NO product/doctor config changes
 NO Ortho-Reception mutation
-NO claim of production validation
+NO PR / merge / deploy without separate authority
+```
+
+---
+
+# 6. Exact next action
+
+```text
+implement semantic attachment assessment
+→ add synthetic radiology / laboratory / scanned-like regressions
+→ run full RF gate + inherited regressions
+→ exact-head review
+→ HOLD for product-owner PR/release decision
+```
+
+Lifecycle distinction remains:
+
+```text
+IMPLEMENTED != TESTED != PR != MERGED != DEPLOYED != PRODUCTION-SMOKE-VERIFIED != PILOT-VALIDATED
 ```
