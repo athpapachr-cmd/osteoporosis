@@ -1,659 +1,281 @@
-# SLICE_PLAN_CURRENT.md — Clinic Utilities RF v2 Native Ownership
+# SLICE_PLAN_CURRENT.md — RF imaging-attachment semantic guard
 
-> **STATUS:** APPROVED / FROZEN — IMPLEMENTED / RELEASE-CANDIDATE TESTED / EXACT-HEAD REVIEW PASS — PR AUTHORIZED / PRE-PR HOLD
+> **STATUS:** APPROVED / FROZEN — IMPLEMENTED / TESTED / EXACT-HEAD REVIEW PASS — RELEASE HOLD
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Scope:** reusable Clinical Excellence Clinic Utilities, not osteoporosis clinical encounter semantics.
-> **Slice ID:** `CU-RF-V2-NATIVE-2026-09-05`.
-> **Production base:** `8aa8b38e3fa9a8f8ba0618868b452b1835be0d47`.
-> **Branch:** `feat/clinic-utilities-rf-v2-native-2026-09-05`.
-> **Product-owner architecture approval:** explicit agreement to migrate RF ownership into the Clinical Excellence runtime.
-> **Implementation/test authority:** CONSUMED — release-candidate phase closed.
-> **PR authority:** GRANTED — bounded native RF v2 release PR only.
-> **Merge / deploy / production config / production smoke authority:** NONE unless separately granted.
+> **Scope:** reusable Clinical Excellence Clinic Utilities RF attachment validation; not osteoporosis encounter semantics.
+> **Slice ID:** `CU-RF-IMAGING-SEMANTIC-GUARD-2026-09-06`.
+> **Production base:** `e8bf4bac16eff5e0c2101ec891483b81b14765e1`.
+> **Production deploy:** `dep-daei1sh42hec73ccthr0` — LIVE.
+> **Branch:** `fix/rf-imaging-attachment-semantic-guard-2026-09-06`.
+> **Exact tested clean head:** `814a62d3b31ae76d19c6f5da3f824e9137011e96`.
+> **Test evidence:** `RF v2 hotfix regression gate`, run `34031607422` — SUCCESS.
+> **Implementation/test authority:** CONSUMED.
+> **PR / merge / deploy / production-config authority:** NONE unless separately granted.
 
 ---
 
-# 1. Trigger / new evidence / REPLAN reason
+# 1. Trigger
 
-The prior G-4 RF hotfix solved only the cross-service authentication transport problem. It was merged and deployed from PR #73, and production evidence later proved the authenticated RF form path could return `200 OK` through the gateway.
+Production smoke demonstrated that RF v2 validated only that an attachment was a PDF. A deliberately unrelated laboratory report was accepted, appended to an A.1 package and caused the official item-3 imaging declaration to be checked.
 
-Before full create/PDF smoke completed, the external authoritative RF form changed materially. The new official form is a 12-page non-fillable PDF with Category A/B/Γ and separate A.1/A.2 workflows. The existing external RF implementation still models the old form and therefore no longer represents the requested clinical-administrative workflow.
-
-Product-owner use is narrower than the complete official form:
+Required correction:
 
 ```text
-Category A only
-→ A.1 new treatment
-OR
-→ A.2 continuation after a previous actual RF treatment
-```
-
-B and Γ are not part of this clinician's ordinary RF workflow.
-
-A second product problem also became explicit: the external RF page has a separate visual language and feels like a different application rather than a native Clinical Excellence Clinic Utility.
-
-The product owner approved the architecture change:
-
-```text
-RF business/UI/PDF/history ownership
-FROM ortho-reception-backend-v2
-TO   osteoporosis / Clinical Excellence Clinic Utilities
-```
-
-This is a REPLAN because it changes the runtime owner, persistence boundary and release dependency. It is not an authorization to mutate Ortho-Reception.
-
----
-
-# 2. Desired clinician outcome
-
-From the Clinical Excellence Cockpit the clinician can complete the current official Category-A RF pre-approval form quickly, with minimal duplicate typing:
-
-```text
-same protected Clinical Excellence session
-→ native RF utility
-→ choose NEW or CONTINUATION
-→ enter/paste only variable patient/treatment evidence
-→ deterministic automation for medication and physiotherapy history
-→ generate the correct official A.1 or A.2 PDF pages
-→ append the required imaging report
-→ retain RF history needed for later A.2 use
-```
-
-The utility should reduce clicks and transcription work without inventing clinical facts, treatments, doses, durations, dates or treatment outcomes.
-
----
-
-# 3. Chosen architecture
-
-Final target:
-
-```text
-authenticated Clinical Excellence browser
-→ /clinical/clinic-utilities/rf
-→ native RF router/service
-→ separate RF persistence tables on the existing protected database engine
-→ official RF PDF stamping + imaging-report append
-```
-
-The active route no longer requires:
-
-```text
-RF_GATEWAY_ACCESS_KEY
-X-RF-Key
-external RF cookie/session
-HTML transport rewriting
-fixed upstream RF service
-cross-service error translation
-```
-
-The old gateway implementation may remain in source during the candidate as rollback/reference, but `main.py` must mount exactly one RF owner. Native and gateway writers must never be active simultaneously on the same browser route.
-
-Rollback before/after release remains the previous known-good production SHA `8aa8b38e...` until a later release proves a newer known-good identity.
-
----
-
-# 4. Alternatives considered
-
-## A. Keep RF in Ortho-Reception and rebuild it there
-
-Rejected for this slice because RF is not appointment/voice/reception semantics, would remain coupled to an unrelated runtime/release train, would still require cross-service authentication and would make visual integration harder.
-
-## B. Native Clinical Excellence Clinic Utility — CHOSEN
-
-Advantages:
-
-- same authentication/session boundary as the Cockpit;
-- same Clinic Utilities package and visual language as physiotherapy;
-- one runtime owner for UI/API/PDF/history;
-- no RF credential in the active path;
-- no dependency on the active Ortho-Reception implementation writer;
-- easier future addition of other clinic utilities without misusing osteoporosis encounter storage.
-
-## C. Create a third standalone RF service
-
-Rejected as unnecessary infrastructure. It would reproduce the cross-service auth/deploy problem without a demonstrated product need.
-
----
-
-# 5. Ownership and data boundaries
-
-Canonical owner after this slice:
-
-```text
-Clinical Excellence Clinic Utilities RF module
-```
-
-It owns:
-
-- RF web UI;
-- Category-A workflow contract;
-- deterministic validation;
-- deterministic medication/physiotherapy parsing;
-- RF-specific protected persistence;
-- official PDF page selection/stamping;
-- generated PDF response.
-
-It does NOT own or modify:
-
-- osteoporosis Clinical Guidance rules;
-- osteoporosis encounter payload semantics;
-- G1/G2/G3 clinical guidance state;
-- C1 finalization semantics;
-- Ortho-Reception appointment/voice semantics;
-- Ortho-Reception runtime/config/secrets;
-- B/Γ workflow implementation in this first release.
-
-Hard data separation:
-
-```text
-RF application / RF procedure history
+PDF PRESENT
 !=
-osteoporosis clinical encounter data
-```
-
-RF records may share the protected SQLAlchemy engine but use RF-specific tables/models.
-
----
-
-# 6. Official-form scope
-
-The authoritative input is the newly supplied official non-fillable RF eligibility PDF.
-
-First release supports only:
-
-```text
-Page 1 common clinician/patient/product/category data
-A.1 pages 2-4
-A.2 pages 5-6
-```
-
-Generated packages:
-
-```text
-A.1 → official pages 1-4 + uploaded imaging-report PDF
-A.2 → official pages 1,5,6 + uploaded imaging-report PDF
-```
-
-Omitting unused B/Γ pages is an approved workflow/output decision for this clinician-facing utility; the underlying official pages themselves are not recreated or rewritten.
-
-PDF form has no AcroForm fields, so implementation uses calibrated non-fillable stamping. Exact coordinates must be derived and visually verified against the supplied PDF before the candidate can be considered tested.
-
----
-
-# 7. Fixed clinician and product data
-
-Doctor details are invariant for this user and must not require repeat entry.
-
-Because the repository is public, personal clinician identifiers/contact details are not committed. Runtime obtains them from one protected server-side configuration object, e.g. `RF_DOCTOR_PROFILE_JSON`. PDF generation fails closed if required doctor fields are absent.
-
-Products remain exactly the three established choices:
-
-```text
-Medikey
-DIROS
-Thermedico
-```
-
-Product code / required description-supplier text / quantity must be supplied from one authoritative protected server-side product catalog (e.g. `RF_PRODUCT_CATALOG_JSON`) or an equally bounded server-side config. The UI selects the provider/product once; known product metadata is auto-filled. Unknown product metadata must not be invented.
-
-Production config values require separate config authority and are outside implementation authority.
-
----
-
-# 8. A.1 new-treatment workflow
-
-## 8.1 Allowed indications
-
-Routine UI presents only the clinician's actual use:
-
-```text
-KNEE_OA_KL34
-  Γόνατο → OA Kellgren-Lawrence 3ου/4ου βαθμού
-
-SI_DEGENERATIVE
-  Ιερολαγόνια → εκφυλιστική παθολογία
-
-HIP_OA_KL34
-  Ισχίο → OA Kellgren-Lawrence 3ου/4ου βαθμού
-
-MORTON_NEUROMA
-  Νευρίνωμα Morton
-
-SHOULDER_OA_KL34
-  Ώμος → OA Kellgren-Lawrence 3ου/4ου βαθμού
-
-SHOULDER_IRREPARABLE_CUFF
-  Ώμος → μη χειρουργικά αποκαταστάσιμη εκτεταμένη ρήξη στροφικού πετάλου
-
-OTHER_LATERAL_EPICONDYLITIS
-  Άλλο → αγκώνας / έξω επικονδυλίτιδα
-
-OTHER_DEQUERVAIN
-  Άλλο → καρπός / De Quervain
-
-OTHER_CUSTOM
-  Άλλο → clinician-entered περιοχή + διάγνωση
-```
-
-Chronic-postoperative options and the A.1 item-2 operation/date fields are hidden and unsupported in this first workflow because the product owner does not use them.
-
-## 8.2 Imaging item 3
-
-The official imaging-attached declaration is derived from a real required uploaded PDF. The generated official form is checked only after valid PDF upload succeeds.
-
-No synthetic `yes` without an attachment.
-
-## 8.3 Item 4a — RF rationale
-
-Clinician-controlled multi-select presets:
-
-```text
-failed pharmacologic treatment
-failed conservative treatment
-patient does not want surgery
-major comorbidity / high surgical risk
-other free text
-```
-
-The UI may offer a fast combined preset for the common `failed pharmacologic + conservative treatment` case, but it must remain an explicit clinician action rather than a silently asserted default.
-
-Selected reasons are deterministically composed into the official free-text field.
-
-## 8.4 Item 4b — exact site
-
-Structured laterality + anatomical site generates an editable exact phrase, e.g. `Αριστερός ώμος`, `Δεξιός αγκώνας`, `Αριστερός καρπός`.
-
-The final text field remains editable because the official form requests exact application location.
-
-## 8.5 Item 5 — pain
-
-Required structured fields:
-
-```text
-pain_onset_date
-pain_onset_vas 0..10
-last_assessment_date
-last_assessment_vas 0..10
-```
-
-The official >=3-month persistence requirement is validated deterministically from entered dates. No date or VAS value is inferred.
-
-## 8.6 Item 6 — medication automation
-
-Primary time-saving contract:
-
-```text
-paste complete medication history
-→ deterministic entry parsing
-→ medication classification
-→ canonical ingredient/brand deduplication
-→ deterministically resolve/select exactly 3 NSAID trials
-→ deterministically resolve/select exactly 3 other analgesic trials
-→ fail closed if 3 + 3 cannot be resolved without invention
-→ extract dose/duration only when explicitly present
-→ clinician intervenes only for missing/ambiguous values or corrections
-```
-
-The first release uses one deterministic server-side classifier/catalog. No LLM is required.
-
-Selection ranking favors entries with explicit usable evidence such as dose/duration while preserving source truth. It must not invent medication, dose, frequency or duration.
-
-Corticosteroid/local-anesthetic injection is not one of the 3+3 medication rows; it belongs to item 8 where applicable.
-
-## 8.7 Item 7 — adverse effects
-
-Optional, collapsed by default. Clinician may add treatment + adverse effect only when relevant. Never auto-write `none` or fabricate an adverse effect.
-
-## 8.8 Item 8 — interventions
-
-Routine SI path:
-
-```text
-laterality / exact application site
-injection date
-VAS before
-VAS after
-```
-
-Official intervention is corticosteroid/local anaesthetic injection.
-
-Hip remains selectable because it is an official A.1 indication, but the clinician usually refers these cases to a pain clinic. If HIP is selected for an RF application, the official diagnostic-block data become required. The utility must block final PDF creation rather than silently leave the official requirement incomplete.
-
-Facet is not offered in this clinician's first-release indication list.
-
-## 8.9 Item 9 — physiotherapy
-
-Primary input is pasted session dates.
-
-Deterministic parser:
-
-```text
-extract supported dates
-→ normalize
-→ reject/flag malformed ambiguity
-→ deduplicate
-→ sort
-→ derive first date
-→ derive last date
-→ count sessions
-```
-
-Derived values remain reviewable/editable before PDF generation.
-
-## 8.10 Item 10
-
-Free clinician text only.
-
----
-
-# 9. A.2 continuation workflow
-
-A.2 uses the same supported indication/site model as A.1.
-
-The official prior-treatment fields are:
-
-```text
-previous_actual_application_date
-previous_vas_before
-previous_vas_after
-last_followup_date
-last_followup_vas
-```
-
-The legacy hard-coded `10 week remission` rule from the old RF implementation is explicitly NOT carried forward because the new supplied A.2 form does not contain that requirement.
-
-Item 3 imaging is again derived from a valid required upload.
-
-A.2 item 4 is free text.
-
----
-
-# 10. RF history / transition-period data model
-
-Identity is the primary patient lookup key, but never the unique key of a procedure episode.
-
-Required model distinction:
-
-```text
-RF APPLICATION REQUEST
-!=
-ACTUAL RF PROCEDURE
-```
-
-Creating a PDF/application does not prove a procedure happened.
-
-Use separate RF persistence domains such as:
-
-```text
-clinic_rf_applications
-clinic_rf_procedure_history
-```
-
-`clinic_rf_applications` records generated requests/application evidence.
-
-`clinic_rf_procedure_history` records actual prior treatment evidence needed by A.2, including at least:
-
-```text
-patient identity key
-site / laterality / exact location
-indication
-actual procedure date
-VAS before
-VAS after
-last follow-up date
-last follow-up VAS
-provenance
-created/updated timestamps
-```
-
-Transition behavior:
-
-```text
-identity lookup
-→ matching procedure histories found
-   → show/select relevant episode, preferring recent compatible site/side
-
-→ no matching history
-   → `Καταχώρηση προηγούμενης εφαρμογής`
-   → clinician enters the five A.2 historical values once
-   → persist as `clinician_manual` actual-procedure provenance
-   → reuse on later applications
-```
-
-No bulk import from Ortho-Reception is required for this first release. The old external RF database remains untouched. A later one-time import is separate work only if it becomes useful.
-
----
-
-# 11. Privacy/security invariants
-
-```text
-existing clinical_session / X-Clinical-Key protection retained
-no identity/GeSY in browser URL/query string
-no RF payload in public logs/source fixtures
-no patient data in repo
-no personal doctor profile in repo
-no RF provider catalog values invented
-no external RF credential required by active path after cutover
-no Ortho-Reception secret/config/runtime mutation
-uploaded imaging kept only as long as needed to assemble the response unless a separately approved retention design exists
-```
-
-Generated PDF/application identifiers must be opaque/bounded and protected by the existing clinical auth boundary.
-
----
-
-# 12. UI / Clinical Excellence design contract
-
-RF is visually native to Clinic Utilities and reuses the established physiotherapy/Cockpit language:
-
-```text
-Inter/system sans
-#f4f7fb workspace background
-white clinical cards
-#213b58 / #233a55 primary/nav accents
-compact form controls
-responsive desktop/mobile layout
-clear progress/workflow sections
-sticky review/output panel where useful
-```
-
-The RF page must not retain the old beige/serif editorial design.
-
-The UI should optimize default common paths for speed:
-
-```text
-NEW | CONTINUATION
-patient
-product
-indication/site
-rationale
-pain
-paste medication → auto 3+3
-conditional intervention
-paste physio dates → auto summary
-imaging
-notes
-review → PDF
+IMAGING-REPORT EVIDENCE PRESENT
 ```
 
 ---
 
-# 13. Implementation seams
+# 2. Frozen semantic contract
 
-Expected bounded code surface:
+Exactly three outcomes:
 
 ```text
-clinic_utilities/rf/
-  __init__.py
-  api.py
-  models.py
-  catalog.py
-  medications.py
-  physio_dates.py
-  persistence.py
-  pdf.py
-  validation.py as needed
-  templates/rf_official_form_v2.pdf  [binary authoritative template]
-
-static/clinic-utilities/rf/
-  index.html
-  styles.css
-  app.js
-
-main.py
-requirements.txt
-focused RF tests
-canonical closeout files
+IMAGING_SUPPORTED
+CLEARLY_NON_IMAGING
+AMBIGUOUS_OR_UNREADABLE
 ```
 
-The exact module split may remain smaller if fewer files preserve clear ownership; do not add abstraction for its own sake.
+## IMAGING_SUPPORTED
 
-Current `clinic_utilities/rf_gateway.py` is not the semantic owner after cutover. It may remain unmounted for rollback/reference in this slice. Do not keep both routers mounted on the same prefix.
+Readable extracted text contains strong imaging/radiology vocabulary.
+
+```text
+automatic document-type acceptance
+no extra confirmation required
+```
+
+This does **not** mean the system clinically interprets the report or proves that its findings support the chosen RF diagnosis.
+
+## CLEARLY_NON_IMAGING
+
+Readable text contains multiple strong laboratory/non-imaging markers and no strong imaging signal.
+
+```text
+fail closed
+HTTP 422 on create
+clinician confirmation cannot override
+```
+
+## AMBIGUOUS_OR_UNREADABLE
+
+PDF is structurally valid but text is absent/too limited or cannot be safely classified, including scanned/image-only reports.
+
+```text
+explicit clinician confirmation required
+```
+
+No OCR or LLM document classifier is introduced in this slice.
 
 ---
 
-# 14. Pre-implementation regression-threat / capability-preservation gate
+# 3. Server-authoritative implementation
 
-Existing working capabilities to preserve:
+The server now:
 
-| Capability | Current path | Post-slice path | Preservation invariant |
-| --- | --- | --- | --- |
-| Protected RF navigation | Cockpit → same-origin gateway | Cockpit → native same-origin RF | same URL and clinical auth |
-| G4 Clinic Utilities nav | G4 JS | unchanged | physio + RF links remain functional |
-| Physiotherapy utility | native CU-1 router | unchanged | no route/style/runtime regression |
-| G1/G2/G3/C1 clinical workflow | existing app | unchanged | no clinical semantic/persistence change |
-| Identifier URL privacy | POST local history body | POST/JSON native history body | no identity/GeSY query URL |
-| RF access control | clinical auth + gateway + RF key | clinical auth only | never weaken protected clinical boundary |
-| Official imaging append | external RF PDF assembly | native PDF assembly | uploaded PDF validated and appended |
+1. retains existing extension/content-type/20 MB checks;
+2. opens the PDF with PyMuPDF and requires a real parseable document with at least one page;
+3. extracts a bounded amount of text in memory only;
+4. normalizes text deterministically;
+5. classifies using conservative imaging/laboratory phrase sets;
+6. rejects `CLEARLY_NON_IMAGING`;
+7. requires `imaging_review_confirmed=true` for `AMBIGUOUS_OR_UNREADABLE`;
+8. permits `IMAGING_SUPPORTED` without confirmation;
+9. persists only bounded review provenance, not extracted text.
 
-Invalid cutover:
+Protected preview endpoint:
 
 ```text
-old gateway unmounted
-+
-native root/history/create/pdf path not complete
-=
-RELEASE BLOCK
+POST /clinical/clinic-utilities/rf/api/validate-imaging
+multipart: imaging_report
 ```
 
-No new infrastructure/runtime service is required.
+Response is bounded to:
+
+```text
+status
+requires_confirmation
+message
+```
+
+Extracted document text is never returned.
+
+The create endpoint independently repeats the assessment. Browser state is not authoritative.
 
 ---
 
-# 15. Smallest sufficient evidence plan
+# 4. Deterministic classifier boundary
 
-Design broad; test narrow.
+Strong imaging vocabulary includes normalized Greek/English variants for radiology/radiograph/X-ray, MRI/magnetic resonance, CT/computed tomography, ultrasound and DXA/densitometry.
 
-Required focused evidence before PR review:
+Strong laboratory vocabulary includes normalized variants for biochemistry/haematology, serum/plasma, reference ranges, laboratory/validator, common laboratory units and representative analytes.
 
-1. native root route protected and renders Clinical Excellence RF UI;
-2. B/Γ absent from clinician workflow; only approved A indications exposed;
-3. A.1 validation including imaging, >=3-month pain evidence and conditional SI/hip requirements;
-4. medication parser resolves exactly 3 NSAIDs + exactly 3 other analgesics, deduplicates active ingredient, never invents missing dose/duration and fails closed if 3+3 cannot be resolved;
-5. physiotherapy date parser derives first/last/count and flags ambiguity;
-6. A.2 lookup supports multiple episodes and clinician-manual actual-procedure backfill;
-7. application-request row never auto-creates an actual-procedure row;
-8. identity/GeSY never required in browser URL;
-9. correct A.1 page package and A.2 page package generated from supplied official template;
-10. visual render verification of stamped fields/checkmarks with no clipping/overlap;
-11. imaging PDF appended after selected official pages;
-12. existing G4 physio navigation and relevant inherited G3/G2/G1/C1 smoke/regression seam remains intact;
-13. `py_compile` / syntax and `git diff --check` or equivalent exact-head checks.
+A clearly non-imaging rejection requires multiple laboratory markers and no strong imaging signal. A single incidental laboratory word is insufficient.
 
-Do not create a broad generic validation program.
+Known limitation deliberately accepted for this MVP: a strong imaging token is sufficient for document-type support even if other content exists. This is a guard against obvious attachment-type mistakes, not semantic interpretation of the medical findings.
 
 ---
 
-# 16. Authoritative binary-template evidence
+# 5. Browser UX
 
-The exact product-owner-supplied 12-page official PDF is packaged at:
-
-```text
-clinic_utilities/rf/templates/rf_official_form_v2.pdf
-```
-
-Release-candidate identity is frozen and gate-checked:
+After file selection the browser calls the protected preview endpoint and shows one of:
 
 ```text
-size: 310238 bytes
-SHA-256: 998e99e6b0a51d4a19431dd2e31e595282d7adf17eb29f5f91eeab94e3647252
-Git blob: c6c234e99095be38c47a1c6f078dacdd47f4199f
-pages: 12
+✓ imaging document type supported
+✕ clearly non-imaging / laboratory document
+? ambiguous/unreadable — explicit clinician confirmation required
 ```
 
-The final gate exercises real A.1 and A.2 generation against that packaged binary. The prior binary-packaging blocker is closed.
+Changing the file resets prior confirmation.
 
-# 17. Definition of Done
+Only the ambiguous state exposes:
 
 ```text
-DESIGN/FROZEN                     YES
-NATIVE RF IMPLEMENTED             YES
-OFFICIAL TEMPLATE PRESENT         YES
-FOCUSED TESTS                     PASS
-PDF VISUAL VERIFICATION           PASS
-EXACT-HEAD REVIEW                 PASS
-OLD GATEWAY NOT ACTIVE            YES
-CANONICAL CONTRADICTIONS CLOSED   YES
-PR                                OPEN / REVIEWABLE
+Επιβεβαιώνω ότι το επιλεγμένο PDF είναι η απεικονιστική έκθεση που απαιτεί το σημείο 3.
 ```
 
-Release states remain separate:
+The same implementation also corrects stale medication UI copy to reflect the already-authoritative capacity:
 
 ```text
-MERGED != DEPLOYED != PRODUCTION-SMOKE-VERIFIED != PILOT-VALIDATED
+0..3 NSAIDs
+0..3 other analgesics
 ```
 
-Production config, merge, deploy and smoke require separate product-owner authority.
+not a minimum 3+3 requirement.
 
 ---
 
-# 18. REPLAN triggers
+# 6. Privacy / data minimization
 
-STOP and REPLAN if implementation proves any of the following necessary:
+```text
+raw uploaded PDF               ephemeral for response assembly
+extracted attachment text      ephemeral only
+extracted text in logs          FORBIDDEN
+extracted text in database      FORBIDDEN
+extracted text in API response  FORBIDDEN
+public test documents           synthetic only
+```
 
-- B or Γ must be supported for the accepted outcome;
-- a separate runtime/service is required;
-- Ortho-Reception must be mutated for correctness;
-- a second source of RF procedure truth is unavoidable;
-- the new official PDF cannot be safely stamped/assembled as designed;
-- medication automation requires probabilistic/LLM inference to meet the accepted outcome;
-- patient identifiers would need URL transport;
-- RF history must be mixed into osteoporosis encounter payloads;
-- a generated application must be treated as evidence of actual procedure;
-- scope materially expands beyond one coherent native RF utility PR.
+`imaging_review_confirmed` is not persisted as raw browser state. Application persistence retains only bounded provenance:
+
+```text
+auto_supported
+clinician_confirmed
+```
 
 ---
 
-# 19. Current authorization / exact next action
+# 7. Acceptance evidence — PASS
+
+Exact clean head:
 
 ```text
-PRODUCT-OWNER DESIGN APPROVAL      YES
-IMPLEMENTATION/TEST AUTHORITY      CONSUMED
-CANONICAL WRITER                   NONE after closeout commit
-RUNTIME WRITER                     NONE
-PR AUTHORITY                       YES — bounded native RF v2 release PR only
-MERGE AUTHORITY                    NONE
-DEPLOY AUTHORITY                   NONE
-PRODUCTION CONFIG AUTHORITY        NONE
-PRODUCTION SMOKE AUTHORITY         NONE
+814a62d3b31ae76d19c6f5da3f824e9137011e96
 ```
 
-Exact release-candidate evidence:
+Workflow:
 
 ```text
-runtime head: aa2f92cce5d4cd2cfd02cafc59413be7bdc0d5fb
-workflow: RF v2 native clinic utility
-run: 33988642002
-result: SUCCESS
+RF v2 hotfix regression gate
+run 34031607422
+SUCCESS
 ```
 
-Next sequence:
+Proven scenarios:
 
 ```text
-final canonical drift verification
-→ open bounded native RF v2 release PR
-→ verify PR-head checks
-→ HOLD for separate merge decision
+synthetic radiology-text PDF                 IMAGING_SUPPORTED / PASS
+synthetic multi-marker laboratory PDF        CLEARLY_NON_IMAGING / PASS
+textless valid PDF                           AMBIGUOUS_OR_UNREADABLE / PASS
+ambiguous without confirmation               BLOCKED / PASS
+ambiguous with confirmation                  ALLOWED / PASS
+clearly non-imaging even when confirmed      BLOCKED / PASS
+fake %PDF magic bytes                        BLOCKED / PASS
+preview extracted-text leakage               NONE / PASS
+official-template A.1/A.2 assembly           PASS
+RF focused regressions                       PASS
+CU-1 regressions                             PASS
+legacy RF rollback regressions               PASS
+G4/G3/G2/G1/C1 ancestry                      PASS
+branch-vs-main diff hygiene                  PASS
 ```
 
-Opening the PR does not authorize merge, production configuration, deploy or production smoke.
+All repository fixtures are synthetic.
+
+---
+
+# 8. Exact-head review — PASS
+
+Compared with production main:
+
+```text
+base / merge base: e8bf4bac16eff5e0c2101ec891483b81b14765e1
+head:              814a62d3b31ae76d19c6f5da3f824e9137011e96
+behind_by:         0
+```
+
+Expected implementation/canonical files only. Temporary patch workflow was removed before the tested clean head.
+
+Review found:
+
+```text
+scope drift                         NONE
+committed PHI                       NONE
+raw/extracted attachment persistence NONE
+API extracted-text disclosure       NONE
+browser-only trust                   NONE
+external OCR/LLM dependency          NONE
+release-blocking finding             NONE
+```
+
+---
+
+# 9. Out of scope
+
+```text
+OCR
+LLM/vision document classification
+clinical interpretation of imaging findings
+validation that imaging proves the chosen diagnosis
+attachment retention/archive
+new patient-record writes
+RF procedure-history redesign
+product/doctor config changes
+Ortho-Reception changes
+```
+
+---
+
+# 10. Lifecycle / release hold
+
+```text
+DESIGN                 FROZEN
+IMPLEMENTATION         COMPLETE
+TESTED                 YES
+EXACT-HEAD REVIEW      PASS
+PR                     NO
+MERGED                 NO
+DEPLOYED               NO
+PRODUCTION SMOKE       NO for this hotfix
+```
+
+Current production remains:
+
+```text
+e8bf4bac16eff5e0c2101ec891483b81b14765e1
+dep-daei1sh42hec73ccthr0 — LIVE
+```
+
+Next possible sequence requires separate product-owner authority:
+
+```text
+open bounded PR
+→ PR-head verification
+→ separate merge decision
+→ normal Render auto-deploy
+→ production re-smoke with obvious lab PDF + real/scanned imaging PDF
+```
+
+Opening a PR, merge, deploy or production config mutation is not authorized by this slice closeout.
