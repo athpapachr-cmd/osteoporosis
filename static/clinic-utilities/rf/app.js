@@ -106,7 +106,10 @@
         if (area) suggested = `${side === 'left' ? 'Αριστερά' : 'Δεξιά'} — ${area}`;
       }
     }
-    $('exactLocation').value = suggested;
+    const exact = $('exactLocation');
+    exact.value = suggested;
+    exact.readOnly = item?.location_mode === 'derived';
+    exact.title = exact.readOnly ? 'Η εντόπιση προκύπτει αυτόματα από ένδειξη + πλευρά.' : '';
     updateSummary();
   }
 
@@ -129,7 +132,7 @@
       state.nsaids = result.nsaid_candidates;
       state.others = result.other_candidates;
       renderTrials();
-      $('medicationStatus').textContent = `Αυτόματη επιλογή ${result.auto_selected_nsaids.length + result.auto_selected_others.length} γραμμών · έλεγξε μόνο αν χρειάζεται.`;
+      $('medicationStatus').textContent = `Αναγνωρίστηκαν ${result.nsaid_candidates.length + result.other_candidates.length} γραμμές · επιλέγονται έως 3 ΜΣΑΦ + έως 3 άλλα αναλγητικά.`;
     } catch (error) {
       showError(error.message);
     }
@@ -173,6 +176,12 @@
       row.title = item.source_text || '';
       row.append(check, drug, dose, duration);
       container.append(row);
+      if (item.warning) {
+        const warning = document.createElement('div');
+        warning.className = 'trial-warning';
+        warning.textContent = item.warning;
+        container.append(warning);
+      }
     });
   }
 

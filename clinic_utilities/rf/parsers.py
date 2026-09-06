@@ -15,6 +15,7 @@ class MedicationCandidate:
     drug_name: str
     dose: str
     duration: str
+    warning: str = ""
     auto_selected: bool = False
 
     def to_dict(self) -> dict:
@@ -25,14 +26,14 @@ _MEDICATION_PATTERNS = (
     ("nsaid", "ibuprofen", "Ιβουπροφαίνη", ("ibuprofen", "ιβουπροφαινη", "brufen", "nurofen")),
     ("nsaid", "diclofenac", "Δικλοφενάκη", ("diclofenac", "δικλοφενακη", "dicloduo", "voltaren")),
     ("nsaid", "naproxen", "Ναπροξένη", ("naproxen", "ναπροξενη", "naprosyn")),
-    ("nsaid", "etoricoxib", "Etoricoxib", ("etoricoxib", "arcoxia")),
+    ("nsaid", "etoricoxib", "Etoricoxib", ("etoricoxib", "arcoxia", "narox")),
     ("nsaid", "celecoxib", "Celecoxib", ("celecoxib", "celebrex")),
-    ("nsaid", "meloxicam", "Μελοξικάμη", ("meloxicam", "μελοξικαμη", "mobic")),
+    ("nsaid", "meloxicam", "Μελοξικάμη", ("meloxicam", "μελοξικαμη", "mobic", "melox")),
     ("nsaid", "aceclofenac", "Aceclofenac", ("aceclofenac", "aertal")),
     ("nsaid", "dexketoprofen", "Dexketoprofen", ("dexketoprofen", "arveles")),
     ("nsaid", "lornoxicam", "Lornoxicam", ("lornoxicam", "xefo")),
     ("other", "paracetamol", "Παρακεταμόλη", ("paracetamol", "παρακεταμολ", "panadol", "depon")),
-    ("other", "parcoten", "Parcoten", ("parcoten",)),
+    ("other", "parcoten", "Parcoten (παρακεταμόλη + κωδεΐνη)", ("parcoten",)),
     ("other", "tramadol", "Tramadol", ("tramadol", "τραμαδολ", "tramadex", "mabron")),
     ("other", "codeine", "Codeine", ("codeine", "κωδεινη")),
     ("other", "tapentadol", "Tapentadol", ("tapentadol", "palexia")),
@@ -40,7 +41,8 @@ _MEDICATION_PATTERNS = (
     ("other", "gabapentin", "Gabapentin", ("gabapentin", "γκαμπαπεντινη", "neurontin")),
     ("other", "duloxetine", "Duloxetine", ("duloxetine", "ντουλοξετινη", "cymbalta")),
 )
-_DOSE_RE = re.compile(r"(?<!\w)(\d+(?:[.,]\d+)?)\s*(mg|g|mcg|µg)(?!\w)", re.I)
+_DOSE_RE = re.compile(r"(?<!\w)(\d+(?:[.,]\d+)?)\s*(mg|g|gr|mcg|µg)(?!\w)", re.I)
+_TABLET_DOSE_RE = re.compile(r"(?<!\w)(\d+(?:[.,]\d+)?)\s*(χάπια?|χαπια?|δισκία|δισκια|tabs?|tablets?)(?!\w)", re.I)
 _DURATION_RE = re.compile(
     r"(?:για\s*)?(\d+)\s*(ημερ(?:α|ες|ων)?|days?|εβδομ(?:αδα|αδες)?|weeks?|μην(?:α|ες|ων)?|months?)(?:\b|$)",
     re.I,
@@ -66,7 +68,39 @@ def _match(entry: str):
 
 def _dose(entry: str) -> str:
     match = _DOSE_RE.search(entry)
-    return match.group(1).replace(",", ".") + " " + match.group(2) if match else ""
+    if match:
+        unit = match.group(2)
+        if unit.casefold() == "gr":
+            unit = "g"
+        return match.group(1).replace(",", ".") + " " + unit
+    tablet = _TABLET_DOSE_RE.search(entry)
+    return tablet.group(0).strip() if tablet else ""
+
+
+def _dose_mg_value(dose: str) -> float | None:
+    match = _DOSE_RE.search(str(dose or ""))
+    if not match:
+        return None
+    value = float(match.group(1).replace(",", "."))
+    unit = match.group(2).casefold()
+    if unit in {"g", "gr"}:
+        return value * 1000
+    if unit in {"mcg", "µg"}:
+        return value / 1000
+    return value
+
+
+def _dose_warning(entry: str, canonical_key: str, dose: str) -> str:
+    normalized = _norm(entry)
+    value_mg = _dose_mg_value(dose)
+    if value_mg is None:
+        return ""
+    # Cyprus product strengths verified from the corresponding product information.
+    if canonical_key == "meloxicam" and "melox" in normalized and value_mg not in {7.5, 15.0}:
+        return "Melox: αναμενόμενη περιεκτικότητα δισκίου 7.5 mg ή 15 mg — έλεγξε την καταχώρηση."
+    if canonical_key == "etoricoxib" and "narox" in normalized and value_mg not in {30.0, 60.0, 90.0, 120.0}:
+        return "Narox: η καταχωρημένη περιεκτικότητα δεν αντιστοιχεί στις γνωστές περιεκτικότητες — έλεγξε την καταχώρηση."
+    return ""
 
 
 def _duration_components(entry: str) -> tuple[int, str] | None:
@@ -124,7 +158,8 @@ def parse_medications(text: str) -> dict:
         if not matched:
             continue
         category, key, display = matched
-        candidates.append(MedicationCandidate(entry, category, key, display, _dose(entry), _duration(entry)))
+        dose = _dose(entry)
+        candidates.append(MedicationCandidate(entry, category, key, display, dose, _duration(entry), _dose_warning(entry, key, dose)))
 
     best = {}
     for idx, candidate in enumerate(candidates):
