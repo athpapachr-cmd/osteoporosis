@@ -1,0 +1,56 @@
+name: Clinical Learning Hub canonical plan integration
+
+on:
+  push:
+    branches:
+      - docs/clinical-learning-hub-rf-post-merge-2026-09-06
+
+permissions:
+  contents: write
+
+jobs:
+  plan:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: docs/clinical-learning-hub-rf-post-merge-2026-09-06
+          fetch-depth: 0
+      - name: Update phase plan and roadmap
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import base64
+          dec=lambda x: base64.b64decode(x).decode('utf-8')
+          clinical=dec('LS0tCiMgMzBBLiBDbGluaWNhbCBMZWFybmluZyBIdWIg4oCUIHJldXNhYmxlIGxlYXJuaW5nIGFyY2hpdGVjdHVyZQoKVGhlIGFwcHJvdmVkIGRldGFpbGVkIGRlc2lnbiBpcyBgQ0xJTklDQUxfTEVBUk5JTkdfSFVCX0RFU0lHTl9WMS5tZGAuIEl0IGlzIGEgcmV1c2FibGUgQ29yZSBjYXBhYmlsaXR5IHdpdGggT3N0ZW9wb3Jvc2lzIGFzIE1vZHVsZSAwMSBjb250ZW50LgoKVGhlIEh1YiBrZWVwcyB0aHJlZSBsZWFybmluZyBpbnN0cnVtZW50cyBkaXN0aW5jdDoKCmBgYHRleHQKRm91bmRhdGlvbiBNYXAKICDihpIgd2hhdCB0aGUgY2xpbmljaWFuIHVuZGVyc3RhbmRzIHN0cnVjdHVyYWxseQoKQ2xpbmljYWwgQ2hhbGxlbmdlCiAg4oaSIGNvbnRyb2xsZWQgbm92ZWwtY2FzZSByZWFzb25pbmcgd2l0aCBwcm9ncmVzc2l2ZSBkaXNjbG9zdXJlCgpEYWlseSBSZWFsLUNhc2UgUmV2aWV3CiAg4oaSIGFjdHVhbCBvc3Rlb3Bvcm9zaXMgZW5jb3VudGVyIHJldmlld2VkIGZyb20gSGVpZGkvYXBwcm92ZWQgZXZpZGVuY2UKYGBgCgpBbGwgdGhyZWUgZmVlZCB0aGUgZXhpc3RpbmcgU2lnbmFsL3Jvb3QtY2F1c2UvaW50ZXJ2ZW50aW9uIGxvb3AgYnV0IG11c3Qgbm90IGJlIGNvbGxhcHNlZCBpbnRvIG9uZSBvcGFxdWUgc2NvcmUuCgpOb3JtYXRpdmUgZGVzaWduIHJlcXVpcmVtZW50cyBmb3IgdGhlIGZ1dHVyZSBMLTAgc2xpY2U6CgotIGBDbGluaWNhbExlYXJuaW5nQ2hhbGxlbmdlVjFgIHN0b3JlcyBzdHJ1Y3R1cmVkIGNoYWxsZW5nZSByZWFzb25pbmcvZGVicmllZi9ldmlkZW5jZSByYXRoZXIgdGhhbiBhIGNoYXQgdHJhbnNjcmlwdC4KLSBgTGVhcm5pbmdGYWN0VjFgIHByb3ZpZGVzIGEgRmFjdCBMZWRnZXIgdGhhdCBkaXN0aW5ndWlzaGVzIHJlYWwgZGUtaWRlbnRpZmllZCBjYXNlIGZhY3RzLCBzeW50aGV0aWMvcHJvZ3Jlc3NpdmUtZGlzY2xvc3VyZSBmYWN0cywgY2xpbmljaWFuIGh5cG90aGVzZXMsIEFJIGluZmVyZW5jZSBhbmQgdGVhY2hpbmcgY291bnRlcmZhY3R1YWxzLgotIGBEYWlseUNhc2VSZXZpZXdWMWAgcmVwcmVzZW50cyBvbmUgZWxpZ2libGUgcmVhbCBvc3Rlb3Bvcm9zaXMgZW5jb3VudGVyIGFuZCBwZXJzaXN0cyBvbmx5IHJldmlld2VkIHN0cnVjdHVyZWQgbGVhcm5pbmcgZXZpZGVuY2UgYnkgZGVmYXVsdC4KLSBEYWlseSBDYXNlIFJldmlldyByZXVzZXMgdGhlIFBSLTEgcHJvdGVjdGVkIGVwaGVtZXJhbCBIZWlkaSB0cmFuc2NyaXB0IGJvdW5kYXJ5OyBpdCBtdXN0IG5vdCBjcmVhdGUgYSBzZWNvbmQgdHJhbnNjcmlwdCBpbmdlc3Rpb24gb3duZXIuCi0gVGhlIGNsaW5pY2lhbiBjb21wbGV0ZXMgYSBzaG9ydCBzZWxmLXJldmlldyBiZWZvcmUgQUkgY3JpdGlxdWUgdG8gcHJlc2VydmUgY2FsaWJyYXRpb24gZXZpZGVuY2UgYW5kIHJlZHVjZSBhbmNob3JpbmcuCi0gSWYgbm8gZWxpZ2libGUgdHJhbnNjcmlwdC1iYWNrZWQgb3N0ZW9wb3Jvc2lzIGVuY291bnRlciBleGlzdHMgb24gYSBjbGluaWMgZGF5LCB0aGUgZHVlIHN0YXRlIGlzIGBub19lbGlnaWJsZV9jYXNlYDsgbm8gY2FzZSBpcyBmYWJyaWNhdGVkIHRvIHNhdGlzZnkgY2FkZW5jZS4KLSBgRm91bmRhdGlvbkRvbWFpblN0YXRlVjFgIHVzZXMgZXZpZGVuY2UtYmFzZWQgc3RhdGVzIGBGT1JNQUxfU09MSURgLCBgSU5UVUlUSVZFX1VOU1RSVUNUVVJFRGAsIGBGUkFHTUVOVEVEYCwgYFVOS05PV05fVU5URVNURURgLgotIEluaXRpYWwgTW9kdWxlLTAxIGZvdW5kYXRpb25zIGluY2x1ZGUgYm9uZSByZW1vZGVsaW5nLCBEWEEvTFNDLCBWRkEsIGZyYWN0dXJlLXJpc2svRlJBWCByZWFzb25pbmcsIHNlY29uZGFyeSBvc3Rlb3Bvcm9zaXMsIEdJT1AsIGFudGlyZXNvcnB0aXZlL2FuYWJvbGljIHBoYXJtYWNvbG9neSwgc2VxdWVuY2luZywgZGVub3N1bWFiIHJlYm91bmQsIEJUTXMsIHNhZmV0eSBhbmQgZXZpZGVuY2UgY2FsaWJyYXRpb24uCi0gRGlhZ25vc3RpYyBtYXBwaW5nIHByZWNlZGVzIHRlYWNoaW5nLiBNYXN0ZXJ5IHJlcXVpcmVzIGV4cGxhbmF0aW9uL3RyYW5zZmVyL2JvdW5kYXJ5IHJlY29nbml0aW9uL3JldGVudGlvbiBldmlkZW5jZSwgbm90IG1lcmVseSByZWFkaW5nLgotIFRhcmdldCBjYWRlbmNlIGlzIGRhaWx5IGVsaWdpYmxlIHJlYWwtY2FzZSByZXZpZXcgKyB3ZWVrbHkgQ2xpbmljYWwgQ2hhbGxlbmdlICsgcGVyaW9kaWMgRm91bmRhdGlvbiByZXZpZXcgKyBzcGFjZWQgcmVwZXRpdGlvbi4KLSBMZWFybmluZyByZWNvcmQgIT0gcGF0aWVudCByZWNvcmQuIFJhdyB0cmFuc2NyaXB0IHJlbWFpbnMgZXBoZW1lcmFsIGJ5IGRlZmF1bHQ7IGxlYXJuaW5nIGluZmVyZW5jZSBjYW5ub3QgYmVjb21lIHBhdGllbnQgdHJ1dGguCi0gQ2hhbGxlbmdlIE1WUCBpbmdlc3Rpb24gaXMgSlNPTiBpbXBvcnQg4oaSIHNjaGVtYS9QSEkvZHVwbGljYXRlIHZhbGlkYXRpb24g4oaSIHByZXZpZXcvZWRpdCDihpIgY2xpbmljaWFuIGNvbmZpcm0g4oaSIHByb3RlY3RlZCBwZXJzaXN0ZW5jZS4KLSBMYXRlciBleHRlcm5hbCBpbmdlc3Rpb24gdXNlcyBuYXJyb3dseSBzY29wZWQgbGVhcm5pbmcgYXV0aG9yaXR5IHN1Y2ggYXMgYGxlYXJuaW5nLmNoYWxsZW5nZS53cml0ZWA7IGl0IGRvZXMgbm90IGluaGVyaXQgcGF0aWVudC9lbmNvdW50ZXIvUkYgYXV0aG9yaXR5LgotIFZpc2libGUgc3lzdGVtYXRpYyBEYWlseSBDYXNlIFJldmlldyBjb2FjaGluZyBpcyBhbiBpbnRlcnZlbnRpb24uIER1cmluZyB0aGUgc2NvcmVkIDMwLWNhc2Ugc3lzdGVtLWFzc2lzdGVkIGJhc2VsaW5lIGl0IHJlbWFpbnMgc2hhZG93L2ZlZWRiYWNrLWhpZGRlbiBieSBkZWZhdWx0IHVubGVzcyBtZXRob2RvbG9neSBpcyBleHBsaWNpdGx5IHJlcGxhbm5lZCBhbmQgdGhlIGNvaG9ydCByZWxhYmVsbGVkLgoKSW1wbGVtZW50YXRpb24gc2VxdWVuY2U6CgpgYGB0ZXh0CkwtMCBjb250cmFjdC9kZXNpZ24gZnJlZXplCuKGkiBMLTEgQ2hhbGxlbmdlICsgRm91bmRhdGlvbiBNVlAK4oaSIFBSLTEvUFItMiB0cmFuc2NyaXB0IGNhcHR1cmUvcmV2aWV3IHNlYW1zCuKGkiBQUi0zIFByYWN0aWNlIFJldmlldyBzaGFkb3cK4oaSIEwtMiBEYWlseSBSZWFsLUNhc2UgUmV2aWV3CuKGkiBwb3N0LWJhc2VsaW5lIGNsaW5pY2lhbi1mYWNpbmcgbGVhcm5pbmcgaW50ZXJ2ZW50aW9uCuKGkiByZS1tZWFzdXJlbWVudApgYGAKCk5vIGxlYXJuaW5nIHJ1bnRpbWUgaW1wbGVtZW50YXRpb24gaXMgYXV0aG9yaXplZCBieSB0aGlzIHBsYW5uaW5nIGVudHJ5Lgo=')
+          todo=dec('IyMgMS4xMEEgQ2xpbmljYWwgTGVhcm5pbmcgSHViIOKAlCBwbGFubmVkIENvcmUgY2FwYWJpbGl0eQoKLSBbeF0gQXBwcm92ZSBGb3VuZGF0aW9uIE1hcCArIENsaW5pY2FsIENoYWxsZW5nZXMgKyBEYWlseSBIZWlkaS1iYWNrZWQgUmVhbC1DYXNlIFJldmlldyBhcyBvbmUgcmV1c2FibGUgbGVhcm5pbmcgYXJjaGl0ZWN0dXJlLgotIFt4XSBSZXF1aXJlIGEgRmFjdCBMZWRnZXIgc28gcHJvZ3Jlc3NpdmUtZGlzY2xvc3VyZS9zeW50aGV0aWMgZmFjdHMgY2Fubm90IGJlIG1pc3Rha2VuIGZvciByZWFsIHBhdGllbnQgZmFjdHMuCi0gW3hdIFJlcXVpcmUgY2xpbmljaWFuIHNlbGYtcmV2aWV3IGJlZm9yZSBBSSBjcml0aXF1ZSBpbiBEYWlseSBDYXNlIFJldmlldy4KLSBbeF0gUHJlc2VydmUgcmF3IEhlaWRpIHRyYW5zY3JpcHQgYXMgZXBoZW1lcmFsIGFuZCByZXVzZSBQUi0xL1BSLTMgb3duZXJzIHJhdGhlciB0aGFuIGNyZWF0ZSBhIHBhcmFsbGVsIEFJIHN0YWNrLgotIFt4XSBEZWZpbmUgRm91bmRhdGlvbiBzdGF0ZXM6IGBGT1JNQUxfU09MSURgLCBgSU5UVUlUSVZFX1VOU1RSVUNUVVJFRGAsIGBGUkFHTUVOVEVEYCwgYFVOS05PV05fVU5URVNURURgLgotIFt4XSBEZWZpbmUgZGFpbHkvd2Vla2x5L3BlcmlvZGljIGxlYXJuaW5nIGNhZGVuY2UgYW5kIGJhc2VsaW5lLWludGVydmVudGlvbiBib3VuZGFyeS4KLSBbIF0gTC0wOiBmcmVlemUgbGVhcm5pbmcgb2JqZWN0LCBwcm92ZW5hbmNlLCBwcml2YWN5LCBkdWUtc3RhdGUsIHJldmlzaW9uIGFuZCBTaWduYWwgY29udHJhY3RzLgotIFsgXSBMLTE6IHByb3RlY3RlZCBDaGFsbGVuZ2UgSlNPTiBpbXBvcnQvaGlzdG9yeSArIEZvdW5kYXRpb24gTWFwIHNrZWxldG9uICsgc3BhY2VkLXJlcGV0aXRpb24gZHVlIHN0YXRlLgotIFsgXSBQUi0xL1BSLTIvUFItMzogZXN0YWJsaXNoIHJldXNhYmxlIHRyYW5zY3JpcHQgYW5kIFByYWN0aWNlIFJldmlldyBzZWFtcy4KLSBbIF0gTC0yOiBhY3RpdmF0ZSBEYWlseSBDYXNlIFJldmlldyB1c2luZyByZWFsIGVsaWdpYmxlIEhlaWRpLWJhY2tlZCBlbmNvdW50ZXJzLgotIFsgXSBBZnRlciBiYXNlbGluZSBsb2NrLCBhY3RpdmF0ZSBjbGluaWNpYW4tZmFjaW5nIGRhaWx5IGNvYWNoaW5nIGFzIGEgZm9ybWFsIGltcHJvdmVtZW50IGludGVydmVudGlvbiBhbmQgcmUtbWVhc3VyZS4KLSBbIF0gTGF0ZXI6IG5hcnJvdyBleHRlcm5hbCBpbmdlc3Rpb24gY2FwYWJpbGl0eSAoYGxlYXJuaW5nLmNoYWxsZW5nZS53cml0ZWApIHdpdGhvdXQgYnJvYWQgcGF0aWVudC9lbmNvdW50ZXIvUkYgYXV0aG9yaXR5LgoKRGV0YWlsZWQgZGVzaWduOiBgQ0xJTklDQUxfTEVBUk5JTkdfSFVCX0RFU0lHTl9WMS5tZGAuCgo=')
+          p=Path('CLINICAL_EXCELLENCE_PLAN.md'); s=p.read_text(encoding='utf-8')
+          s=s.replace('> **UPDATED:** 2026-08-30 Asia/Nicosia.','> **UPDATED:** 2026-09-06 Asia/Nicosia.',1)
+          if '# 30A. Clinical Learning Hub' not in s:
+              anchor='\n---\n\n# 31. Patient Voice\n'
+              if anchor not in s: raise SystemExit('Clinical plan anchor missing')
+              s=s.replace(anchor,'\n'+clinical+anchor,1)
+          p.write_text(s.rstrip()+'\n',encoding='utf-8')
+          p=Path('TODO.md'); s=p.read_text(encoding='utf-8')
+          s=s.replace('The replacement native RF v2 Clinic Utility is **implemented / release-candidate tested / exact-head reviewed**, but is not merged, deployed, production-smoke-verified or pilot-validated.','The replacement native RF v2 Clinic Utility is **implemented / tested / merged / deployed** at `51714f9c74e96ec4fdf62493a0772ea07fcc8c1a`; authenticated production smoke is still pending, and it is not pilot-validated.',1)
+          s=s.replace('## 1.6 G-4 Workspace ergonomics + RF utility navigation / native RF v2 — RELEASE-CANDIDATE TESTED / PR AUTHORIZED','## 1.6 G-4 Workspace ergonomics + RF utility navigation / native RF v2 — MERGED / DEPLOYED / PRODUCTION SMOKE PENDING',1)
+          s=s.replace('- [ ] Open the bounded native RF v2 release PR to `main` under explicit product-owner PR authority.','- [x] Open native RF v2 release PR #75 to `main`.',1)
+          s=s.replace('- [ ] Merge only with a separate explicit product-owner decision.','- [x] Product owner separately authorized merge; PR #75 squash-merged as `51714f9c74e96ec4fdf62493a0772ea07fcc8c1a`.',1)
+          s=s.replace('- [ ] After merge, allow normal Render auto-deploy and complete authenticated production smoke with separate authority.','- [x] Render auto-deploy `dep-dae8doeq1p3s73csqvbg` reached `LIVE` from merge SHA `51714f9c74e96ec4fdf62493a0772ea07fcc8c1a`.\n- [ ] Complete authenticated native RF v2 production smoke; no production config mutation is implied.',1)
+          s=s.replace('Native RF v2 is **implemented / release-candidate tested / exact-head reviewed**, not merged, deployed, production-smoke-verified or pilot-validated.','Native RF v2 is **implemented / tested / merged / deployed**, but is not yet production-smoke-verified or pilot-validated.',1)
+          s=s.replace('- [ ] Native RF v2 PR / merge / production config verification / deploy / end-to-end production smoke.','- [x] Native RF v2 PR #75 / merge / Render auto-deploy completed.\n- [ ] Native RF v2 authenticated end-to-end production smoke and any separately authorized production-config verification.',1)
+          if '## 1.10A Clinical Learning Hub' not in s:
+              anchor='\n## 1.11 Thirty-case scored system-assisted baseline\n'
+              if anchor not in s: raise SystemExit('TODO learning anchor missing')
+              s=s.replace(anchor,'\n'+todo+anchor,1)
+          p.write_text(s.rstrip()+'\n',encoding='utf-8')
+          PY
+      - name: Commit canonical plan integration
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add CLINICAL_EXCELLENCE_PLAN.md TODO.md
+          git diff --cached --check
+          git commit -m 'Integrate Clinical Learning Hub into phase plan'
+          git push origin HEAD:docs/clinical-learning-hub-rf-post-merge-2026-09-06
