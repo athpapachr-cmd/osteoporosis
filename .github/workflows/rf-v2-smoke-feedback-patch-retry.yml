@@ -1,0 +1,49 @@
+name: RF v2 smoke feedback patch retry
+
+on:
+  push:
+    branches:
+      - fix/rf-single-side-autolocation-2026-09-06
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/rf-single-side-autolocation-2026-09-06
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: python -m pip install --disable-pip-version-check -r requirements.txt
+      - name: Apply patch body from reviewed patch workflow
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          src = Path('.github/workflows/rf-v2-smoke-feedback-patch.yml').read_text(encoding='utf-8')
+          start_marker = "          python - <<'PY'\n"
+          end_marker = "\n          PY\n"
+          body = src.split(start_marker, 1)[1].split(end_marker, 1)[0]
+          body = '\n'.join(line[10:] if line.startswith('          ') else line for line in body.splitlines())
+          exec(compile(body, '<rf-smoke-feedback-patch>', 'exec'))
+          PY
+      - name: Validate patch syntax and focused tests
+        run: |
+          python -m py_compile clinic_utilities/rf/api.py clinic_utilities/rf/parsers.py test_rf_v2_release_hardening.py test_rf_v2_unilateral.py
+          node --check static/clinic-utilities/rf/app.js
+          python -m unittest -v test_rf_v2_release_hardening.py test_rf_v2_unilateral.py
+          node test_rf_v2_unilateral_ui.js
+          git diff --check
+      - name: Commit source/test corrections
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add clinic_utilities/rf/api.py clinic_utilities/rf/parsers.py static/clinic-utilities/rf/app.js static/clinic-utilities/rf/styles.css test_rf_v2_release_hardening.py test_rf_v2_unilateral.py test_rf_v2_unilateral_ui.js
+          git commit -m 'Correct RF medication capacity parsing and location consistency'
+          git push origin HEAD:fix/rf-single-side-autolocation-2026-09-06
