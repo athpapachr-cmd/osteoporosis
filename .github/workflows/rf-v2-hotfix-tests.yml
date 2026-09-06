@@ -159,4 +159,6 @@ jobs:
           python -m unittest -v test_baseline_finalization_api.py
 
       - name: Diff hygiene
-        run: git diff --check HEAD^ HEAD
+        run: |
+          BASE="$(git merge-base origin/main HEAD)"
+          git diff --check "$BASE" HEAD
