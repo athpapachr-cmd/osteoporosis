@@ -1,59 +1,36 @@
 # SLICE_PLAN_CURRENT.md — RF imaging-attachment semantic guard
 
-> **STATUS:** APPROVED / FROZEN — IMPLEMENTATION ACTIVE
+> **STATUS:** APPROVED / FROZEN — IMPLEMENTED / TESTED / EXACT-HEAD REVIEW PASS — RELEASE HOLD
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Scope:** reusable Clinical Excellence Clinic Utilities RF attachment validation; not osteoporosis encounter semantics.
 > **Slice ID:** `CU-RF-IMAGING-SEMANTIC-GUARD-2026-09-06`.
 > **Production base:** `e8bf4bac16eff5e0c2101ec891483b81b14765e1`.
 > **Production deploy:** `dep-daei1sh42hec73ccthr0` — LIVE.
 > **Branch:** `fix/rf-imaging-attachment-semantic-guard-2026-09-06`.
-> **Product-owner approval:** explicit agreement during production smoke to proceed with the bounded attachment-semantic hotfix.
-> **Implementation/test authority:** YES — bounded to this frozen slice.
+> **Exact tested clean head:** `814a62d3b31ae76d19c6f5da3f824e9137011e96`.
+> **Test evidence:** `RF v2 hotfix regression gate`, run `34031607422` — SUCCESS.
+> **Implementation/test authority:** CONSUMED.
 > **PR / merge / deploy / production-config authority:** NONE unless separately granted.
 
 ---
 
 # 1. Trigger
 
-Production smoke demonstrated that the current RF v2 upload path validates only that the attachment is a structurally valid PDF. A deliberately unrelated laboratory report was accepted, appended to the generated A.1 package, and the official item-3 declaration was checked.
+Production smoke demonstrated that RF v2 validated only that an attachment was a PDF. A deliberately unrelated laboratory report was accepted, appended to an A.1 package and caused the official item-3 imaging declaration to be checked.
 
-This means the current behavior proves:
+Required correction:
 
 ```text
 PDF PRESENT
-```
-
-but not:
-
-```text
-IMAGING REPORT PRESENT
-```
-
-The official RF form states that the clinician declares an imaging report confirming the diagnosis is attached. The utility therefore needs a bounded semantic guard before it may automatically stamp that declaration.
-
----
-
-# 2. Desired clinician outcome
-
-The clinician uploads the required report once. The system should prevent obvious mistakes without pretending it can perfectly diagnose arbitrary documents.
-
-Target flow:
-
-```text
-select attachment
-→ validate PDF structure/size
-→ extract available text ephemerally
-→ classify document confidence
-→ show immediate status
-→ create endpoint independently re-validates
-→ stamp item 3 only when allowed
+!=
+IMAGING-REPORT EVIDENCE PRESENT
 ```
 
 ---
 
-# 3. Frozen classification contract
+# 2. Frozen semantic contract
 
-Exactly three semantic outcomes:
+Exactly three outcomes:
 
 ```text
 IMAGING_SUPPORTED
@@ -61,178 +38,201 @@ CLEARLY_NON_IMAGING
 AMBIGUOUS_OR_UNREADABLE
 ```
 
-## 3.1 IMAGING_SUPPORTED
+## IMAGING_SUPPORTED
 
-Readable extracted text contains strong imaging/radiology evidence such as an imaging modality/report vocabulary. Examples include bounded Greek/English terms for radiograph/X-ray, MRI, CT, ultrasound, DXA or radiology.
-
-Behavior:
+Readable extracted text contains strong imaging/radiology vocabulary.
 
 ```text
-automatic acceptance
-no extra clinician checkbox required
+automatic document-type acceptance
+no extra confirmation required
 ```
 
-This is not a diagnostic interpretation of the report and does not validate whether its clinical conclusion actually proves the selected RF indication.
+This does **not** mean the system clinically interprets the report or proves that its findings support the chosen RF diagnosis.
 
-## 3.2 CLEARLY_NON_IMAGING
+## CLEARLY_NON_IMAGING
 
-Readable extracted text strongly indicates a different document class and contains no strong imaging signal. First bounded rejection class is laboratory/biochemistry/haematology evidence, using multiple independent markers rather than one incidental word.
-
-Behavior:
+Readable text contains multiple strong laboratory/non-imaging markers and no strong imaging signal.
 
 ```text
 fail closed
 HTTP 422 on create
-browser shows rejection reason
-clinician confirmation cannot override this class
+clinician confirmation cannot override
 ```
 
-## 3.3 AMBIGUOUS_OR_UNREADABLE
+## AMBIGUOUS_OR_UNREADABLE
 
-PDF is structurally valid but text is absent/too limited or lacks enough evidence to classify safely. This includes scanned/image-only reports without text extraction.
-
-Behavior:
+PDF is structurally valid but text is absent/too limited or cannot be safely classified, including scanned/image-only reports.
 
 ```text
 explicit clinician confirmation required
-confirmation wording: clinician confirms this PDF is the imaging report required for item 3
-create endpoint requires confirmation flag
 ```
 
-No OCR/LLM classifier is introduced in this slice.
+No OCR or LLM document classifier is introduced in this slice.
 
 ---
 
-# 4. Server authority
+# 3. Server-authoritative implementation
 
-Browser feedback is ergonomic only. The create endpoint is authoritative.
+The server now:
 
-Server must:
+1. retains existing extension/content-type/20 MB checks;
+2. opens the PDF with PyMuPDF and requires a real parseable document with at least one page;
+3. extracts a bounded amount of text in memory only;
+4. normalizes text deterministically;
+5. classifies using conservative imaging/laboratory phrase sets;
+6. rejects `CLEARLY_NON_IMAGING`;
+7. requires `imaging_review_confirmed=true` for `AMBIGUOUS_OR_UNREADABLE`;
+8. permits `IMAGING_SUPPORTED` without confirmation;
+9. persists only bounded review provenance, not extracted text.
 
-1. enforce existing PDF extension/content-type/size/header rules;
-2. open the PDF with the existing PDF library;
-3. extract bounded text in memory;
-4. classify with deterministic rules;
-5. reject `CLEARLY_NON_IMAGING`;
-6. reject `AMBIGUOUS_OR_UNREADABLE` unless explicit confirmation is true;
-7. allow `IMAGING_SUPPORTED` without confirmation;
-8. persist only bounded review provenance such as `auto_supported` or `clinician_confirmed`, never extracted attachment text.
-
-Malformed PDFs that merely begin with `%PDF` must fail rather than reaching PDF assembly as if valid.
-
----
-
-# 5. Privacy / data minimization
-
-```text
-raw uploaded PDF               ephemeral for response assembly
-extracted attachment text      ephemeral only
-extracted text in logs          FORBIDDEN
-extracted text in database      FORBIDDEN
-extracted text in repo/tests    synthetic only
-```
-
-No user-uploaded clinical document is committed to the public repository.
-
----
-
-# 6. Browser UX
-
-The imaging card should show one of:
-
-```text
-✓ Αναγνωρίστηκε απεικονιστική έκθεση
-✕ Το PDF φαίνεται να είναι εργαστηριακή/μη απεικονιστική εξέταση
-? Δεν μπορεί να ταξινομηθεί με ασφάλεια — απαιτείται επιβεβαίωση ιατρού
-```
-
-For the ambiguous state only, show an explicit checkbox:
-
-```text
-Επιβεβαιώνω ότι το επιλεγμένο PDF είναι η απεικονιστική έκθεση που απαιτεί το σημείο 3.
-```
-
-Changing the selected file resets prior confirmation and status.
-
-The UI must not claim that the report clinically confirms the diagnosis; it only guards the document type required for attachment.
-
----
-
-# 7. Deterministic classifier boundary
-
-Use conservative token/phrase sets. Strong imaging terms may include normalized Greek/English variants for:
-
-```text
-radiology / radiological / ακτινολογ
-radiograph / x-ray / ακτινογραφ
-MRI / magnetic resonance / μαγνητικ
-CT / computed tomography / αξονικ
-ultrasound / υπερηχο
-DXA / densitometry / οστική πυκνότητα when used as imaging report vocabulary
-```
-
-Strong laboratory markers may include normalized Greek/English variants for:
-
-```text
-biochemistry
-haematology / hematology
-serum / plasma
-reference range / τιμές αναφοράς
-laboratory / εργαστήριο
-validator
-mg/dL / mmol/L
-calcium / magnesium / phosphate and similar analyte table context
-```
-
-Rejection requires multiple laboratory markers and no strong imaging signal. A single incidental laboratory word must not reject an otherwise clear imaging report.
-
----
-
-# 8. API seam
-
-Add a protected preview endpoint, e.g.:
+Protected preview endpoint:
 
 ```text
 POST /clinical/clinic-utilities/rf/api/validate-imaging
 multipart: imaging_report
 ```
 
-Response contains only bounded classification metadata:
+Response is bounded to:
 
-```json
-{
-  "status": "imaging_supported | clearly_non_imaging | ambiguous_or_unreadable",
-  "requires_confirmation": false,
-  "message": "bounded clinician-facing status"
-}
+```text
+status
+requires_confirmation
+message
 ```
 
-Do not return extracted document text.
+Extracted document text is never returned.
 
-`RFApplicationDraft` gains a boolean confirmation field used only for ambiguous attachments.
-
----
-
-# 9. Acceptance evidence
-
-Focused synthetic tests must prove:
-
-1. structurally valid radiology-text PDF → `IMAGING_SUPPORTED`;
-2. synthetic lab report with several laboratory markers and no imaging terms → `CLEARLY_NON_IMAGING`;
-3. scanned-like/textless valid PDF → `AMBIGUOUS_OR_UNREADABLE`;
-4. ambiguous attachment without confirmation → create blocked;
-5. ambiguous attachment with explicit confirmation → create allowed;
-6. clearly non-imaging attachment with confirmation → still blocked;
-7. malformed `%PDF` bytes → blocked;
-8. extracted text is not returned by preview endpoint and not persisted in application payload;
-9. existing official-template A.1/A.2 assembly remains intact;
-10. inherited RF/CU-1/G4/G3/G2/G1/C1 regressions remain green.
-
-All fixtures must be synthetic and contain no identifiable patient data.
+The create endpoint independently repeats the assessment. Browser state is not authoritative.
 
 ---
 
-# 10. Out of scope
+# 4. Deterministic classifier boundary
+
+Strong imaging vocabulary includes normalized Greek/English variants for radiology/radiograph/X-ray, MRI/magnetic resonance, CT/computed tomography, ultrasound and DXA/densitometry.
+
+Strong laboratory vocabulary includes normalized variants for biochemistry/haematology, serum/plasma, reference ranges, laboratory/validator, common laboratory units and representative analytes.
+
+A clearly non-imaging rejection requires multiple laboratory markers and no strong imaging signal. A single incidental laboratory word is insufficient.
+
+Known limitation deliberately accepted for this MVP: a strong imaging token is sufficient for document-type support even if other content exists. This is a guard against obvious attachment-type mistakes, not semantic interpretation of the medical findings.
+
+---
+
+# 5. Browser UX
+
+After file selection the browser calls the protected preview endpoint and shows one of:
+
+```text
+✓ imaging document type supported
+✕ clearly non-imaging / laboratory document
+? ambiguous/unreadable — explicit clinician confirmation required
+```
+
+Changing the file resets prior confirmation.
+
+Only the ambiguous state exposes:
+
+```text
+Επιβεβαιώνω ότι το επιλεγμένο PDF είναι η απεικονιστική έκθεση που απαιτεί το σημείο 3.
+```
+
+The same implementation also corrects stale medication UI copy to reflect the already-authoritative capacity:
+
+```text
+0..3 NSAIDs
+0..3 other analgesics
+```
+
+not a minimum 3+3 requirement.
+
+---
+
+# 6. Privacy / data minimization
+
+```text
+raw uploaded PDF               ephemeral for response assembly
+extracted attachment text      ephemeral only
+extracted text in logs          FORBIDDEN
+extracted text in database      FORBIDDEN
+extracted text in API response  FORBIDDEN
+public test documents           synthetic only
+```
+
+`imaging_review_confirmed` is not persisted as raw browser state. Application persistence retains only bounded provenance:
+
+```text
+auto_supported
+clinician_confirmed
+```
+
+---
+
+# 7. Acceptance evidence — PASS
+
+Exact clean head:
+
+```text
+814a62d3b31ae76d19c6f5da3f824e9137011e96
+```
+
+Workflow:
+
+```text
+RF v2 hotfix regression gate
+run 34031607422
+SUCCESS
+```
+
+Proven scenarios:
+
+```text
+synthetic radiology-text PDF                 IMAGING_SUPPORTED / PASS
+synthetic multi-marker laboratory PDF        CLEARLY_NON_IMAGING / PASS
+textless valid PDF                           AMBIGUOUS_OR_UNREADABLE / PASS
+ambiguous without confirmation               BLOCKED / PASS
+ambiguous with confirmation                  ALLOWED / PASS
+clearly non-imaging even when confirmed      BLOCKED / PASS
+fake %PDF magic bytes                        BLOCKED / PASS
+preview extracted-text leakage               NONE / PASS
+official-template A.1/A.2 assembly           PASS
+RF focused regressions                       PASS
+CU-1 regressions                             PASS
+legacy RF rollback regressions               PASS
+G4/G3/G2/G1/C1 ancestry                      PASS
+branch-vs-main diff hygiene                  PASS
+```
+
+All repository fixtures are synthetic.
+
+---
+
+# 8. Exact-head review — PASS
+
+Compared with production main:
+
+```text
+base / merge base: e8bf4bac16eff5e0c2101ec891483b81b14765e1
+head:              814a62d3b31ae76d19c6f5da3f824e9137011e96
+behind_by:         0
+```
+
+Expected implementation/canonical files only. Temporary patch workflow was removed before the tested clean head.
+
+Review found:
+
+```text
+scope drift                         NONE
+committed PHI                       NONE
+raw/extracted attachment persistence NONE
+API extracted-text disclosure       NONE
+browser-only trust                   NONE
+external OCR/LLM dependency          NONE
+release-blocking finding             NONE
+```
+
+---
+
+# 9. Out of scope
 
 ```text
 OCR
@@ -248,32 +248,34 @@ Ortho-Reception changes
 
 ---
 
-# 11. Release / rollback
-
-Implementation occurs only on:
+# 10. Lifecycle / release hold
 
 ```text
-fix/rf-imaging-attachment-semantic-guard-2026-09-06
+DESIGN                 FROZEN
+IMPLEMENTATION         COMPLETE
+TESTED                 YES
+EXACT-HEAD REVIEW      PASS
+PR                     NO
+MERGED                 NO
+DEPLOYED               NO
+PRODUCTION SMOKE       NO for this hotfix
 ```
 
-No merge/deploy authority is implied by implementation approval.
-
-Production remains the known live SHA:
+Current production remains:
 
 ```text
 e8bf4bac16eff5e0c2101ec891483b81b14765e1
+dep-daei1sh42hec73ccthr0 — LIVE
 ```
 
-until a separately authorized PR/merge/deploy occurs.
+Next possible sequence requires separate product-owner authority:
 
----
+```text
+open bounded PR
+→ PR-head verification
+→ separate merge decision
+→ normal Render auto-deploy
+→ production re-smoke with obvious lab PDF + real/scanned imaging PDF
+```
 
-# 12. REPLAN triggers
-
-Stop and replan if implementation shows that:
-
-- reliable semantic guard requires OCR/LLM or external document storage;
-- browser confirmation cannot be enforced independently server-side;
-- PDF text extraction creates a persistence/logging leak;
-- the official form requires semantic validation beyond document-type suitability;
-- the bounded change would require altering RF procedure-history or osteoporosis encounter ownership.
+Opening a PR, merge, deploy or production config mutation is not authorized by this slice closeout.
