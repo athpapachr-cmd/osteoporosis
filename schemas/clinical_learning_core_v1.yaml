@@ -14,6 +14,7 @@ principles:
   - duplicate_detection_is_stable_id_plus_revision
   - accepted_content_revisions_are_immutable
   - dynamic_signal_links_are_not_authoritatively_owned_by_immutable_learning_payloads
+  - internal_learning_references_fail_closed_on_unresolved_ids
   - no_composite_learning_or_excellence_score
   - missing_assessment_is_not_failure
   - daily_case_cadence_never_fabricates_an_eligible_case
@@ -57,7 +58,7 @@ objects:
       certainty: {enum_ref: value_sets.certainty, optional: true}
       introduced_at_stage: {type: string, min_length: 1}
       status: {enum_ref: value_sets.fact_status}
-      supersedes_fact_id: {type: uuid, nullable: true, rule: required_when_this_fact_corrects_an_earlier_fact}
+      supersedes_fact_id: {type: uuid, nullable: true, rule: if_present_must_resolve_to_a_different_fact_in_same_parent_fact_ledger}
 
   ProgressiveDisclosureV1:
     required: [disclosure_id, sequence, fact_ids]
@@ -67,7 +68,7 @@ objects:
       label: {type: string, nullable: true}
       narrative: {type: string, nullable: true, rule: substantive_new_case_facts_must_also_exist_in_fact_ids}
       fact_ids: {type: array, unique_items: true, items: uuid}
-      released_after_response_id: {type: uuid, nullable: true}
+      released_after_response_id: {type: uuid, nullable: true, rule: if_present_must_resolve_to_reasoning_response_in_same_challenge}
 
   ClinicianReasoningResponseV1:
     required: [response_id, stage, text]
@@ -126,7 +127,7 @@ objects:
       action_type: {enum_ref: value_sets.learning_action_type}
       title: {type: string, min_length: 1}
       rationale: {type: string, nullable: true}
-      foundation_node_ids: {type: array, unique_items: true, items: string}
+      foundation_node_ids: {type: array, unique_items: true, items: string, rule: resolve_through_parent_module_foundation_registry}
       reference_ids: {type: array, unique_items: true, items: uuid}
       due_on: {type: date, nullable: true}
       status: {enum_ref: value_sets.learning_action_status}
@@ -144,7 +145,7 @@ objects:
       title: {type: string, min_length: 1}
       challenge_mode: {enum_ref: value_sets.challenge_mode}
       topics: {type: array, unique_items: true, min_items: 1, items: string}
-      foundation_node_ids: {type: array, unique_items: true, items: string}
+      foundation_node_ids: {type: array, unique_items: true, items: string, rule: resolve_through_module_foundation_registry}
       difficulty_label: {type: string, nullable: true}
       initial_case: {type: string, min_length: 1, rule: substantive_case_facts_must_be_represented_in_fact_ledger}
       fact_ledger: {type: array, items: {$ref: LearningFactV1}}
@@ -172,11 +173,22 @@ objects:
           deidentification_attested: {type: boolean}
           source_case_deidentified: {type: boolean, nullable: true}
     invariants:
+      - fact_ids_are_unique_within_fact_ledger
       - every_fact_authoritative_for_patient_is_false
+      - every_fact_supersedes_fact_id_resolves_within_fact_ledger_and_is_not_self
+      - reasoning_response_ids_are_unique_within_challenge
+      - progressive_disclosure_ids_are_unique_within_challenge
+      - progressive_disclosure_sequences_are_unique_and_contiguous_starting_at_1
       - every_progressive_disclosure_fact_id_resolves_within_fact_ledger
+      - every_nonnull_disclosure_released_after_response_id_resolves_within_reasoning_responses
+      - observation_ids_are_unique_within_challenge
+      - reference_ids_are_unique_within_challenge
+      - learning_action_ids_are_unique_within_challenge
       - every_observation_fact_reference_resolves_within_fact_ledger
       - every_observation_reference_id_resolves_within_references
       - every_learning_action_reference_id_resolves_within_references
+      - every_foundation_node_id_resolves_through_module_foundation_registry
+      - every_learning_action_foundation_node_id_resolves_through_module_foundation_registry
       - revision_1_has_null_supersedes_revision
       - revision_gt_1_supersedes_immediately_previous_revision
       - imported_pending_review_observations_do_not_feed_signals_until_dispositioned
@@ -204,13 +216,14 @@ objects:
       attempt_id: {type: uuid}
       schema_version: {const: foundation_assessment_attempt_v1}
       module: {enum_ref: value_sets.module}
-      foundation_node_id: {type: string, min_length: 1}
+      foundation_node_id: {type: string, min_length: 1, rule: resolve_through_module_foundation_registry}
       assessed_at: {type: datetime}
       evidence: {type: array, min_items: 1, items: {$ref: FoundationAssessmentEvidenceV1}}
       proposed_state: {enum_ref: value_sets.foundation_state}
       clinician_final_state: {enum_ref: value_sets.foundation_state}
       clinician_note: {type: string, nullable: true}
     invariants:
+      - evidence_ids_are_unique_within_attempt
       - self_rating_only_cannot_by_itself_change_foundation_state
       - non_unknown_final_state_requires_clinician_reviewed_non_self_rating_evidence
       - formal_solid_requires_demonstrated_formal_explanation_and_demonstrated_transfer_or_boundary_or_evidence_calibration
@@ -219,7 +232,7 @@ objects:
   FoundationDomainStateV1:
     required: [foundation_node_id, schema_version, module, state, retention_state, evidence_attempt_ids]
     fields:
-      foundation_node_id: {type: string, min_length: 1}
+      foundation_node_id: {type: string, min_length: 1, rule: resolve_through_module_foundation_registry}
       schema_version: {const: foundation_domain_state_v1}
       module: {enum_ref: value_sets.module}
       state: {enum_ref: value_sets.foundation_state}
@@ -280,7 +293,7 @@ objects:
       review_id: {type: uuid, rule: stable_across_revisions}
       schema_version: {const: daily_case_review_v1}
       revision: {type: integer, minimum: 1}
-      supersedes_revision: {type: integer, nullable: true}
+      supersedes_revision: {type: integer, nullable: true, rule: null_for_revision_1_else_exactly_revision_minus_1}
       module: {enum_ref: value_sets.module}
       review_date: {type: date}
       opaque_encounter_reference: {type: string, nullable: true, privacy_rule: protected_storage_only_and_excluded_from_default_export}
@@ -312,10 +325,18 @@ objects:
       record_review_state: {enum_ref: value_sets.record_review_state}
       reviewed_at: {type: datetime, nullable: true}
     invariants:
+      - review_revision_1_has_null_supersedes_revision
+      - review_revision_gt_1_supersedes_immediately_previous_revision
+      - accepted_daily_case_review_revisions_are_immutable_when_L2_is_authorized
       - persisted_daily_case_review_requires_eligibility_state_eligible
       - no_eligible_case_insufficient_review_evidence_and_source_or_privacy_blocked_are_due_or_status_states_not_persisted_review_records
       - raw_heidi_transcript_is_not_persisted_in_this_object
       - review_requires_self_review_before_ai_critique_is_shown
+      - fact_ids_are_unique_within_daily_case_fact_ledger
+      - every_fact_supersedes_fact_id_resolves_within_daily_case_fact_ledger_and_is_not_self
+      - observation_ids_are_unique_within_daily_case_review
+      - reference_ids_are_unique_within_daily_case_review
+      - learning_action_ids_are_unique_within_daily_case_review
       - learning_facts_are_never_authoritative_patient_truth
       - opaque_encounter_reference_does_not_confer_patient_truth_authority
       - protected_source_reference_and_opaque_encounter_reference_are_excluded_from_default_export
@@ -325,6 +346,7 @@ objects:
       - every_observation_fact_reference_resolves_within_fact_ledger
       - every_observation_reference_id_resolves_within_references
       - every_learning_action_reference_id_resolves_within_references
+      - every_learning_action_foundation_node_id_resolves_through_module_foundation_registry
       - decision_reconstruction_ids_are_unique_within_review
       - only_accepted_or_modified_observations_may_feed_signal_candidates
       - linked_signal_ids_do_not_own_authoritative_dynamic_signal_relationships
