@@ -15,7 +15,7 @@ owners:
       - protected_persistence
       - due_state_derivation
       - foundation_state_transition_validation
-      - reference_verification_overlay
+      - reusable_reference_verification_overlay
     does_not_own:
       - patient_record_mutation
       - transcript_provider_extraction
@@ -69,21 +69,26 @@ persistence:
         - dynamic_signal_relationships_are_not_authoritatively_owned_inside_payload_json
 
     clinical_learning_reference_verification:
-      purpose: mutable_server_clinician_owned_overlay_for_reference_verification
+      purpose: reusable_mutable_server_clinician_owned_overlay_for_reference_verification
       columns:
-        challenge_id: uuid_not_null
-        revision: integer_not_null
+        artifact_type: text_not_null
+        artifact_id: uuid_not_null
+        artifact_revision: integer_not_null
         reference_id: uuid_not_null
         verification_state: text_not_null
         verification_note: text_nullable
         verified_at: datetime_nullable
-      primary_key: [challenge_id, revision, reference_id]
+      primary_key: [artifact_type, artifact_id, artifact_revision, reference_id]
+      l1_allowed_artifact_types: [challenge]
+      future_extension_rule: >-
+        Daily Case Review or another immutable learning artifact must reuse this owner by adding
+        its artifact_type after separate phase authorization; no second reference-verification store is created.
       invariants:
-        - challenge_revision_and_reference_id_must_exist
+        - artifact_revision_and_reference_id_must_exist_in_the_immutable_source_artifact
         - imported_state_cannot_create_or_advance_this_overlay
-        - overlay_changes_never_mutate_challenge_payload_or_content_hash
+        - overlay_changes_never_mutate_learning_payload_or_content_hash
         - verified_content_requires_review_of_material_source_content
-        - challenge_delete_purges_overlay_rows_before_tombstone_creation
+        - source_artifact_delete_purges_overlay_rows_before_tombstone_or_delete_completion
 
     clinical_learning_challenge_tombstones:
       purpose: noncontent_deleted_identity_for_privacy_and_referential_integrity
@@ -182,7 +187,7 @@ challenge_revision_semantics:
     input: canonicalized_payload_excluding_server_timestamps_server_hash_and_server_authoritative_review_metadata
     algorithm: sha256
     external_overlays_excluded:
-      - current_reference_verification_overlay
+      - reusable_reference_verification_overlay
       - future_authoritative_signal_relationships
 
 topic_semantics:
@@ -228,7 +233,7 @@ challenge_delete_semantics:
   transactional_steps:
     - identify_all_due_items_whose_target_or_source_artifact_is_the_challenge
     - compute_and_retain_challenge_id_max_revision_deleted_at_only
-    - delete_all_reference_verification_overlay_rows_for_challenge_id
+    - delete_all_reference_verification_overlay_rows_for_artifact_type_challenge_and_artifact_id
     - delete_all_due_items_targeting_or_sourced_from_challenge_id
     - delete_all_challenge_revision_payloads_and_hashes_for_challenge_id
     - insert_noncontent_tombstone
@@ -299,6 +304,8 @@ privacy_guard:
   foundation_assessment_text_scan_paths:
     - evidence[].note
     - clinician_note
+  reference_verification_text_scan_paths:
+    - verification_note
   free_text_hard_reject_patterns:
     - email_address
     - phone_number_like_sequence
@@ -416,12 +423,13 @@ reference_handling:
   imported_verification_state_is_not_trusted: true
   immutable_payload_rule: imported_reference_state_is_unverified_snapshot_at_revision_acceptance
   current_verification_owner: clinical_learning_reference_verification_overlay
+  l1_artifact_type: challenge
   allowed_progression:
     unverified: imported_or_unchecked
     verified_locator: PMID_DOI_or_URL_resolves_to_expected_source
     verified_content: source_content_reviewed_for_material_claim
     invalid_or_unresolved: supplied_reference_cannot_be_resolved_or_is_mismatched
-  rule: reference_verification_is_independent_of_challenge_record_acceptance_and_never_mutates_accepted_revision_payload
+  rule: reference_verification_is_independent_of_learning_record_acceptance_and_never_mutates_accepted_revision_payload
 
 foundation_state_mutation:
   future_candidate_sources:
@@ -470,7 +478,7 @@ l1_exit_evidence_targets:
   - external_import_server_authority_tests
   - duplicate_idempotency_and_conflict_tests
   - revision_append_only_tests
-  - reference_verification_overlay_immutability_tests
+  - reusable_reference_verification_overlay_immutability_tests
   - tombstone_and_content_purge_tests
   - challenge_delete_orphan_due_item_tests
   - PHI_guard_tests_with_synthetic_identifiers_only
