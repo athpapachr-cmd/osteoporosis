@@ -34,6 +34,8 @@ contracts:
       - future_runtime_owners
       - persistence_boundary
       - challenge_duplicate_revision_delete_semantics
+      - reference_verification_overlay
+      - due_item_source_provenance
       - privacy_guard_boundary
       - L1_API_boundary
       - L1_UI_boundary
@@ -47,6 +49,7 @@ contracts:
 ownership_matrix:
   learning_schema_validation: reusable_core
   challenge_persistence: reusable_core_L1_future
+  reference_verification_overlay: reusable_core_L1_future_server_clinician_owned
   foundation_state_persistence: reusable_core_L1_future
   osteoporosis_foundation_content: module_01
   transcript_extraction: PR1_PR2_owner_not_learning
@@ -61,13 +64,21 @@ hard_invariants:
   - progressive_disclosure_fact_provenance_mandatory
   - raw_heidi_transcript_not_persisted_by_learning
   - imported_reference_default_unverified
+  - post_persistence_reference_verification_does_not_mutate_immutable_challenge_revision
   - pending_or_dismissed_observation_has_no_signal_authority
+  - authoritative_dynamic_signal_links_are_not_owned_by_immutable_learning_payloads
   - foundation_state_changes_only_via_clinician_reviewed_assessment_attempt
+  - foundation_state_attempt_references_resolve_to_same_node_and_module
   - missing_assessment_not_failure
   - no_daily_case_fabrication
+  - daily_case_internal_fact_and_reference_links_must_resolve
   - visible_daily_coaching_is_baseline_intervention
   - no_composite_learning_score
   - L1_does_not_implement_transcript_or_PracticeReview_owner
+  - imported_unknown_fields_are_rejected_recursively
+  - every_persistable_untrusted_string_is_privacy_scanned_unless_exact_bibliographic_locator_exclusion
+  - due_items_carry_source_artifact_provenance
+  - challenge_delete_cannot_leave_orphan_learning_action_due_items
 
 l0_exit_evidence:
   required:
@@ -76,10 +87,15 @@ l0_exit_evidence:
     - challenge_revision_semantics_pass
     - fact_ledger_scope_invariants_pass
     - privacy_boundary_review_pass
+    - reference_verification_immutability_pass
+    - challenge_delete_due_referential_integrity_pass
     - foundation_transition_semantics_pass
+    - foundation_attempt_reference_integrity_pass
     - daily_case_review_source_ownership_pass
+    - daily_case_review_internal_reference_integrity_pass
     - due_state_baseline_semantics_pass
     - exact_L1_owner_map_pass
+    - signal_owner_boundary_pass
     - design_completeness_review_no_material_open_finding
   runtime_tests_required: false
   production_smoke_required: false
