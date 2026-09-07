@@ -24,17 +24,14 @@ contracts:
       - LearningDueStateV1
   module_foundation_map:
     path: schemas/osteoporosis_foundation_map_v1.yaml
-    owns:
-      - Module_01_foundation_nodes
-      - learning_dependency_edges
-      - foundation_assessment_policy
+    owns: [Module_01_foundation_nodes, learning_dependency_edges, foundation_assessment_policy]
   l1_boundary:
     path: schemas/clinical_learning_l1_boundary_v1.yaml
     owns:
       - future_runtime_owners
       - persistence_boundary
       - challenge_duplicate_revision_delete_semantics
-      - reference_verification_overlay
+      - reusable_reference_verification_overlay
       - due_item_source_provenance
       - privacy_guard_boundary
       - L1_API_boundary
@@ -62,22 +59,28 @@ hard_invariants:
   - learning_record_not_patient_record
   - every_learning_fact_authoritative_for_patient_false
   - progressive_disclosure_fact_provenance_mandatory
+  - internal_learning_references_fail_closed_on_unresolved_ids
   - raw_heidi_transcript_not_persisted_by_learning
   - imported_reference_default_unverified
-  - post_persistence_reference_verification_does_not_mutate_immutable_challenge_revision
+  - post_persistence_reference_verification_does_not_mutate_immutable_learning_revision
+  - reference_verification_uses_one_reusable_overlay_owner_not_parallel_per_artifact_stores
   - pending_or_dismissed_observation_has_no_signal_authority
   - authoritative_dynamic_signal_links_are_not_owned_by_immutable_learning_payloads
   - foundation_state_changes_only_via_clinician_reviewed_assessment_attempt
   - foundation_state_attempt_references_resolve_to_same_node_and_module
+  - source_artifact_delete_state_does_not_mutate_reviewed_foundation_attempt_content
   - missing_assessment_not_failure
   - no_daily_case_fabrication
   - daily_case_internal_fact_and_reference_links_must_resolve
+  - daily_case_revision_predecessor_semantics_are_explicit
   - visible_daily_coaching_is_baseline_intervention
   - no_composite_learning_score
   - L1_does_not_implement_transcript_or_PracticeReview_owner
   - imported_unknown_fields_are_rejected_recursively
   - every_persistable_untrusted_string_is_privacy_scanned_unless_exact_bibliographic_locator_exclusion
+  - privacy_rejection_errors_and_logs_do_not_echo_rejected_learning_or_PHI_values
   - due_items_carry_source_artifact_provenance
+  - deferred_due_occurrences_have_deterministic_reactivation_semantics
   - challenge_delete_cannot_leave_orphan_learning_action_due_items
 
 l0_exit_evidence:
@@ -85,15 +88,16 @@ l0_exit_evidence:
     - yaml_parse_pass
     - object_reference_integrity_pass
     - challenge_revision_semantics_pass
-    - fact_ledger_scope_invariants_pass
+    - fact_ledger_scope_and_internal_reference_invariants_pass
     - privacy_boundary_review_pass
-    - reference_verification_immutability_pass
+    - sanitized_privacy_error_logging_boundary_pass
+    - reference_verification_immutability_and_single_owner_pass
     - challenge_delete_due_referential_integrity_pass
     - foundation_transition_semantics_pass
-    - foundation_attempt_reference_integrity_pass
+    - foundation_attempt_reference_and_delete_semantics_pass
     - daily_case_review_source_ownership_pass
-    - daily_case_review_internal_reference_integrity_pass
-    - due_state_baseline_semantics_pass
+    - daily_case_review_internal_reference_and_revision_integrity_pass
+    - due_state_baseline_defer_and_occurrence_semantics_pass
     - exact_L1_owner_map_pass
     - signal_owner_boundary_pass
     - design_completeness_review_no_material_open_finding
