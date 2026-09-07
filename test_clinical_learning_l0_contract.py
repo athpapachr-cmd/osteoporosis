@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import re
 import unittest
 from pathlib import Path
 
@@ -54,6 +53,10 @@ def validate_challenge_semantics(payload: dict) -> list[str]:
         for reference_id in observation.get("linked_reference_ids", []):
             if reference_id not in reference_ids:
                 errors.append("observation references missing reference")
+    for action in payload.get("learning_actions", []):
+        for reference_id in action.get("reference_ids", []):
+            if reference_id not in reference_ids:
+                errors.append("learning action references missing reference")
 
     revision = payload.get("revision")
     supersedes = payload.get("supersedes_revision")
@@ -164,23 +167,50 @@ class ClinicalLearningL0ContractTests(unittest.TestCase):
         self.assertIn("accepted_revision_payload_is_never_updated_in_place", rules)
         self.assertIn("tombstoned_challenge_id_cannot_be_recreated_in_L1", rules)
 
-    def test_delete_is_content_purge_with_noncontent_tombstone(self):
+    def test_reference_verification_is_external_to_immutable_revision(self):
+        table = self.boundary["persistence"]["tables"]["clinical_learning_reference_verification"]
+        self.assertEqual(table["primary_key"], ["challenge_id", "revision", "reference_id"])
+        self.assertIn("overlay_changes_never_mutate_challenge_payload_or_content_hash", table["invariants"])
+        ref = self.core["objects"]["LearningReferenceV1"]
+        self.assertIn("post_persistence_reference_verification_does_not_mutate_an_accepted_immutable_learning_revision", ref["invariants"])
+        handling = self.boundary["reference_handling"]
+        self.assertEqual(handling["current_verification_owner"], "clinical_learning_reference_verification_overlay")
+        self.assertIn("never_mutates_accepted_revision_payload", handling["rule"])
+
+    def test_delete_is_content_purge_with_noncontent_tombstone_and_no_orphan_due_items(self):
         deletion = self.boundary["challenge_delete_semantics"]
         self.assertEqual(deletion["operation"], "content_purge_plus_noncontent_tombstone")
         self.assertEqual(set(deletion["retained_tombstone_fields"]), {"challenge_id", "deleted_at", "max_deleted_revision"})
         forbidden = set(deletion["forbidden_tombstone_content"])
         self.assertTrue({"facts", "reasoning", "observations", "references"}.issubset(forbidden))
-        self.assertIn("clinical_learning_challenge_tombstones", self.boundary["persistence"]["tables"])
+        steps = set(deletion["transactional_steps"])
+        self.assertIn("delete_all_due_items_targeting_or_sourced_from_challenge_id", steps)
+        self.assertIn("delete_all_reference_verification_overlay_rows_for_challenge_id", steps)
+        due_table = self.boundary["persistence"]["tables"]["clinical_learning_due_items"]
+        self.assertIn("source_artifact_type", due_table["columns"])
+        self.assertIn("source_artifact_id", due_table["columns"])
 
-    def test_privacy_scanning_is_path_scoped_and_bibliographic_ids_are_excluded(self):
+    def test_privacy_scanning_covers_all_untrusted_strings_and_excludes_only_bibliographic_locators_from_numeric_heuristics(self):
         guard = self.boundary["privacy_guard"]
-        paths = set(guard["free_text_scan_paths"])
-        self.assertIn("fact_ledger[].statement", paths)
-        self.assertIn("reasoning_responses[].text", paths)
+        self.assertEqual(guard["challenge_unknown_field_policy"], "reject_recursively")
+        self.assertIn("Every user/import-supplied string field", guard["untrusted_string_scan_rule"])
+        paths = set(guard["minimum_challenge_free_text_scan_paths"])
+        self.assertTrue({
+            "title",
+            "topics[]",
+            "fact_ledger[].statement",
+            "fact_ledger[].source",
+            "progressive_disclosures[].label",
+            "reasoning_responses[].text",
+            "references[].title",
+            "references[].verification_note",
+            "learning_actions[].rationale",
+        }.issubset(paths))
         excluded = set(guard["bibliographic_paths_excluded_from_numeric_identity_heuristics"])
         self.assertEqual(excluded, {"references[].pmid", "references[].doi", "references[].url"})
         self.assertTrue(guard["clinician_attestation"]["required_for_challenge_import"])
         self.assertTrue(guard["clinician_attestation"]["required_value"])
+        self.assertEqual(set(guard["foundation_assessment_text_scan_paths"]), {"evidence[].note", "clinician_note"})
 
     def test_imported_references_default_unverified(self):
         self.assertEqual(self.boundary["reference_handling"]["imported_reference_default"], "unverified")
@@ -197,11 +227,27 @@ class ClinicalLearningL0ContractTests(unittest.TestCase):
         invariants = self.core["objects"]["FoundationAssessmentAttemptV1"]["invariants"]
         self.assertTrue(any("formal_solid" in item for item in invariants))
 
+    def test_foundation_state_attempt_reference_integrity_is_explicit(self):
+        invariants = self.core["objects"]["FoundationDomainStateV1"]["invariants"]
+        self.assertIn("every_evidence_attempt_id_must_resolve_to_same_module_and_foundation_node", invariants)
+        table = self.boundary["persistence"]["tables"]["clinical_learning_foundation_state"]
+        self.assertIn("every_evidence_attempt_id_resolves_to_same_module_and_foundation_node", table["invariants"])
+
     def test_daily_case_review_is_not_persisted_when_ineligible(self):
         invariants = self.core["objects"]["DailyCaseReviewV1"]["invariants"]
         self.assertIn("persisted_daily_case_review_requires_eligibility_state_eligible", invariants)
         self.assertFalse(self.fixtures["daily_case_no_eligible_case"]["expect_review_record_created"])
         self.assertEqual(self.fixtures["daily_case_no_eligible_case"]["due_state"]["due_status"], "not_applicable")
+
+    def test_daily_case_review_references_must_resolve_within_record(self):
+        invariants = set(self.core["objects"]["DailyCaseReviewV1"]["invariants"])
+        self.assertTrue({
+            "every_decision_linked_fact_id_resolves_within_fact_ledger",
+            "every_observation_fact_reference_resolves_within_fact_ledger",
+            "every_observation_reference_id_resolves_within_references",
+            "every_learning_action_reference_id_resolves_within_references",
+            "decision_reconstruction_ids_are_unique_within_review",
+        }.issubset(invariants))
 
     def test_daily_case_review_does_not_store_raw_transcript(self):
         descriptor = self.core["objects"]["ReviewEvidenceDescriptorV1"]
@@ -216,6 +262,20 @@ class ClinicalLearningL0ContractTests(unittest.TestCase):
         self.assertEqual(fixture["delivery_mode"], "shadow_hidden")
         due_rules = self.core["objects"]["LearningDueStateV1"]["deterministic_rules"]
         self.assertIn("baseline_phase_may_change_delivery_mode_to_shadow_hidden_without_changing_due_status", due_rules)
+
+    def test_due_items_require_source_provenance_and_non_null_l1_targets(self):
+        table = self.boundary["persistence"]["tables"]["clinical_learning_due_items"]
+        self.assertIn("source_artifact_provenance_is_mandatory_for_every_materialized_due_item", table["rules"])
+        self.assertTrue(table["l1_scope"]["target_id_required_for_allowed_item_types"])
+        due = self.boundary["l1_due_semantics"]
+        self.assertEqual(due["source_artifact_fields_required"], ["source_artifact_type", "source_artifact_id"])
+        self.assertTrue(due["target_id_required_for_l1_materialized_items"])
+
+    def test_signal_linkage_has_external_authoritative_owner(self):
+        signal = self.boundary["signal_linkage_boundary"]
+        self.assertEqual(signal["authoritative_owner"], "future_shared_signal_engine")
+        self.assertIn("must not mutate an accepted Challenge or Daily Case Review", signal["immutable_revision_rule"])
+        self.assertIn("dynamic_signal_links_are_not_authoritatively_owned_by_immutable_learning_payloads", self.core["principles"])
 
     def test_l1_scope_excludes_daily_case_transcript_and_signal_runtime(self):
         forbidden = set(self.boundary["api_boundary_l1"]["forbidden_l1_endpoints"])
