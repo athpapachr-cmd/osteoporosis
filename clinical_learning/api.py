@@ -9,6 +9,7 @@ from typing import Any, Optional
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
 from fastapi.responses import FileResponse
 from sqlalchemy.engine import Engine
+from sqlalchemy.exc import IntegrityError
 
 from .contracts import LearningContractError
 from .service import ClinicalLearningService, LearningServiceError, sanitized_issues
@@ -46,6 +47,14 @@ def build_learning_router(engine: Engine) -> APIRouter:
         return HTTPException(
             status_code=422,
             detail={"code": "learning_contract_invalid", "issues": sanitized_issues(exc)},
+        )
+
+    def integrity_conflict() -> HTTPException:
+        # Do not expose driver/constraint details. A retry re-enters the normal
+        # idempotency/conflict path against the newly committed authoritative row.
+        return HTTPException(
+            status_code=409,
+            detail={"code": "learning_write_conflict_retry"},
         )
 
     async def json_object(request: Request) -> dict[str, Any]:
@@ -100,6 +109,8 @@ def build_learning_router(engine: Engine) -> APIRouter:
             raise contract_error(exc) from None
         except LearningServiceError as exc:
             raise service_error(exc) from None
+        except IntegrityError:
+            raise integrity_conflict() from None
 
     @router.put("/api/challenges/{challenge_id}", dependencies=protected)
     async def challenge_revise(challenge_id: str, request: Request) -> dict[str, Any]:
@@ -114,6 +125,8 @@ def build_learning_router(engine: Engine) -> APIRouter:
             raise contract_error(exc) from None
         except LearningServiceError as exc:
             raise service_error(exc) from None
+        except IntegrityError:
+            raise integrity_conflict() from None
 
     @router.get("/api/challenges", dependencies=protected)
     def challenge_history(
@@ -150,6 +163,8 @@ def build_learning_router(engine: Engine) -> APIRouter:
             )
         except LearningServiceError as exc:
             raise service_error(exc) from None
+        except IntegrityError:
+            raise integrity_conflict() from None
 
     @router.post(
         "/api/challenges/{challenge_id}/revisions/{revision}/references/{reference_id}/verification",
@@ -182,6 +197,8 @@ def build_learning_router(engine: Engine) -> APIRouter:
             raise contract_error(exc) from None
         except LearningServiceError as exc:
             raise service_error(exc) from None
+        except IntegrityError:
+            raise integrity_conflict() from None
 
     @router.get("/api/foundation", dependencies=protected)
     def foundation_registry() -> dict[str, Any]:
@@ -242,6 +259,8 @@ def build_learning_router(engine: Engine) -> APIRouter:
             raise contract_error(exc) from None
         except LearningServiceError as exc:
             raise service_error(exc) from None
+        except IntegrityError:
+            raise integrity_conflict() from None
 
     @router.get("/api/due", dependencies=protected)
     def learning_due() -> dict[str, Any]:
