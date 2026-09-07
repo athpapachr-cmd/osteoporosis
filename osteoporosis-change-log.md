@@ -1183,3 +1183,28 @@ L-1 IMPLEMENTATION NOT AUTHORIZED
 ```
 
 Canonical closeout and a final exact-head gate remain required before L-0 is declared complete and placed in design/release HOLD. No runtime/database/API/UI implementation, patient-data mutation, raw-transcript persistence, production configuration or RF mutation occurred in this review.
+
+---
+
+## 2026-09-07 — Clinical Learning Hub L-0 contract frozen; PR #80 opened in HOLD
+
+After the independent L-0 CLOSURE PASS, canonical closeout was completed and all temporary closeout helpers were removed. The clean freeze head was:
+
+```text
+f947b12ce77db2ad1e5ff9117d7a4f794e224b60
+```
+
+The full `Clinical Learning L0 contract gate` passed on that clean head at run `34148333413`. The L-0 field-level learning contracts are therefore **FROZEN / COMPLETE** as a design milestone.
+
+Bounded design PR #80 (`Clinical Learning Hub: freeze L-0 contracts and L-1 boundaries`) was then opened against `main`. It remains unmerged and is in **RELEASE / DESIGN HOLD**. Opening the PR does not authorize merge and does not authorize L-1 runtime implementation.
+
+Lifecycle at this milestone:
+
+```text
+L-0 CONTRACT FROZEN / COMPLETE   YES
+INDEPENDENT REVIEW               CLOSURE PASS
+CLEAN FREEZE GATE                PASS
+PR #80                           OPEN
+MERGED                           NO
+L-1 IMPLEMENTATION               NOT AUTHORIZED
+```

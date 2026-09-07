@@ -1,6 +1,6 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** CLINICAL LEARNING HUB L-0 — INDEPENDENT CLOSURE PASS / CANONICAL CLOSEOUT ACTIVE / FINAL EXACT-HEAD GATE PENDING
+> **STATUS:** CLINICAL LEARNING HUB L-0 — CONTRACT FROZEN / COMPLETE / PR #80 OPEN — RELEASE-DESIGN HOLD
 > **Updated:** 2026-09-07 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Fresh verified `main` / merge base:** `46bbb2fa00ad7c77482aab5fa84ef54e049154c8`.
@@ -12,9 +12,9 @@
 > **Active-writer review:** `CLINICAL_LEARNING_L0_DESIGN_REVIEW_V1.md` — PASS, not independent.
 > **Independent review:** `CLINICAL_LEARNING_L0_INDEPENDENT_REVIEW_V1.md` — CLOSURE PASS / material open finding NONE.
 > **ACTIVE RUNTIME WRITER/LOCK:** NONE.
-> **ACTIVE DESIGN/CANONICAL WRITER:** ChatGPT — canonical closeout only; no material contract mutation authorized without re-review.
+> **ACTIVE DESIGN/CANONICAL WRITER:** NONE — L-0 contract freeze is closed; PR #80 is release-design HOLD.
 > **Learning runtime implementation authority:** NONE.
-> **L-0 merge authority:** NONE in this step; bounded design PR may be opened after final exact-head gate, then HOLD.
+> **L-0 merge authority:** NONE — PR #80 is open and must not be merged without a separate explicit product-owner decision.
 > **Patient-data mutation authority:** NONE.
 > **Production config/secret authority:** NONE.
 > **RF runtime authority:** NONE — RF is production-smoke-verified and closed for now.
@@ -207,24 +207,24 @@ Key corrected ownership/integrity boundaries include reusable reference-verifica
 
 ---
 
-# 6. Final closeout gate still required
+# 6. Final clean freeze gate — PASS
 
-The independent substantive review is complete, but L-0 is not yet declared COMPLETE until the status/canonical closeout commits themselves pass the same exact-head contract gate.
+The clean post-closeout/pre-PR branch head `f947b12ce77db2ad1e5ff9117d7a4f794e224b60` passed the complete `Clinical Learning L0 contract gate`, run `34148333413` — SUCCESS. Temporary closeout helpers were absent from that clean head. This closes the L-0 contract/design freeze evidence gate.
 
-No material contract change may be introduced during closeout. If one is needed, the independent CLOSURE PASS must be reopened.
+Any future material contract change requires reopening review; status-only PR metadata does not authorize semantic mutation.
 
 # 7. Lifecycle
 
 ```text
 PRODUCT DIRECTION                    APPROVED
-L-0 FIELD-LEVEL CONTRACT             CANDIDATE COMPLETE
+L-0 FIELD-LEVEL CONTRACT             FROZEN / COMPLETE
 SUBSTANTIVE CONTRACT GATE            PASS — run 34147429373
 ACTIVE-WRITER EXACT DESIGN REVIEW    PASS
 INDEPENDENT EXACT-HEAD REVIEW        CLOSURE PASS
 MATERIAL OPEN FINDING                NONE
-CANONICAL CLOSEOUT                   IN PROGRESS
-FINAL EXACT-HEAD GATE                PENDING
-L-0 CONTRACT FROZEN / COMPLETE       NO — final gate pending
+CANONICAL CLOSEOUT                   COMPLETE
+CLEAN FREEZE GATE                    PASS — f947b12ce77db2ad1e5ff9117d7a4f794e224b60 / run 34148333413
+PR #80                               OPEN / MERGEABLE / RELEASE-DESIGN HOLD
 L-0 MERGED TO MAIN                   NO
 L-1 RUNTIME IMPLEMENTATION           NOT AUTHORIZED
 ```
@@ -234,18 +234,16 @@ L-1 RUNTIME IMPLEMENTATION           NOT AUTHORIZED
 # 8. Exact next action / HOLD
 
 ```text
-finish canonical closeout
-→ remove temporary closeout helpers
-→ run final exact-head L-0 gate
-→ if PASS: mark L-0 CONTRACT FROZEN / COMPLETE
-→ open bounded design PR to main
-→ RELEASE / DESIGN HOLD
-→ HOLD for separate product-owner L-1 implementation authority
+PR #80 OPEN
+→ HOLD for separate product-owner merge decision
+→ if merged later: docs/design-only Render auto-deploy may follow main
+→ L-1 remains separately unauthorized until explicit product-owner implementation authority
 ```
 
-Forbidden:
+Current hold:
 
 ```text
+NO merge of PR #80
 NO L-1 runtime/database implementation
 NO learning API runtime routes
 NO Learning Hub production UI
