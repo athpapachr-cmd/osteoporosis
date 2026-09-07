@@ -159,6 +159,7 @@ persistence:
         - scheduling_after_completed_occurrence_creates_occurrence_plus_1
         - same_target_and_occurrence_is_materialized_state_not_duplicate_history
         - challenge_delete_removes_rows_whose_target_or_source_is_the_deleted_challenge
+        - deferred_occurrence_requires_future_deferred_until_and_reactivates_when_that_date_arrives
       l1_scope:
         allowed_item_types: [challenge_repetition, foundation_reassessment, learning_action, progress_review]
         excluded_until_l2: [daily_case_review]
@@ -321,6 +322,12 @@ privacy_guard:
     phone/identity-number heuristics, because legitimate PMID/DOI/URL values are numeric.
     They remain subject to normal schema and URL/locator validation. Reference titles, framework
     labels and verification notes are not locator exclusions and remain subject to direct-identifier scanning.
+  sanitized_validation_error_rule: >-
+    Privacy/schema rejection responses expose bounded error codes and field paths only. They must
+    not echo rejected field values, imported payload fragments, candidate clinical values or raw exceptions.
+  logging_rule: >-
+    Routine application logs must not contain imported Challenge/Foundation payloads, rejected PHI-like
+    values, reference-verification notes, or raw validation/provider exceptions containing learning content.
   limitations:
     - free_text_name_detection_is_not_guaranteed_by_deterministic_rules
     - deidentification_is_not_claimed_perfect
@@ -468,13 +475,16 @@ l1_due_semantics:
     foundation_learning_action: foundation_assessment
     progress_review: reviewed_progress_schedule
   reschedule_rule: uncompleted_occurrence_may_change_due_on_from_latest_reviewed_source
-  completion_rule: completed_occurrence_is_immutable_history_for_scheduling_purposes
+  defer_rule: deferred_requires_future_deferred_until_and_null_completed_at
+  defer_reactivation_rule: deferred_until_today_becomes_due_and_deferred_until_past_becomes_overdue
+  completion_rule: completed_occurrence_is_immutable_history_for_scheduling_purposes_and_completed_at_is_terminal
   repeat_rule: new_schedule_after_completion_creates_next_occurrence
 
 l1_exit_evidence_targets:
   - schema_validation_for_valid_and_invalid_challenge_examples
   - unknown_import_field_rejection_tests
   - all_persistable_untrusted_text_privacy_scan_coverage_tests
+  - sanitized_privacy_error_and_logging_boundary_tests
   - external_import_server_authority_tests
   - duplicate_idempotency_and_conflict_tests
   - revision_append_only_tests
@@ -486,10 +496,12 @@ l1_exit_evidence_targets:
   - topic_normalization_without_second_taxonomy_tests
   - fact_ledger_reference_integrity_tests
   - daily_case_review_reference_integrity_contract_tests
+  - daily_case_review_revision_semantics_tests
   - reference_verification_default_tests
   - foundation_transition_guard_tests
   - foundation_state_attempt_reference_integrity_tests
+  - foundation_source_deletion_does_not_mutate_reviewed_attempt_tests
   - foundation_L1_explicit_assessment_only_tests
-  - due_occurrence_reschedule_repeat_and_source_provenance_tests
+  - due_occurrence_reschedule_repeat_defer_and_source_provenance_tests
   - protected_auth_tests
   - no_patient_or_transcript_write_path_tests
