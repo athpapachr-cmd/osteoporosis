@@ -167,6 +167,10 @@ objects:
       - revision_1_has_null_supersedes_revision
       - revision_gt_1_supersedes_immediately_previous_revision
       - imported_pending_review_observations_do_not_feed_signals_until_dispositioned
+      - persisted_import_requires_privacy_deidentification_attested_true
+      - deidentified_real_case_requires_source_case_deidentified_true
+      - mixed_with_any_real_case_component_requires_source_case_deidentified_true
+      - challenge_payload_contains_no_direct_patient_identifiers_after_server_guard_and_clinician_attestation
 
   FoundationAssessmentEvidenceV1:
     required: [evidence_id, method, result, clinician_reviewed]
@@ -178,6 +182,7 @@ objects:
       note: {type: string, nullable: true}
       source_artifact_type: {enum: [foundation_assessment, challenge, daily_case_review, practice_review]}
       source_artifact_id: {type: string, nullable: true}
+      source_artifact_deleted: {type: boolean, default: false}
 
   FoundationAssessmentAttemptV1:
     required: [attempt_id, schema_version, module, foundation_node_id, assessed_at, evidence, proposed_state, clinician_final_state]
@@ -195,6 +200,7 @@ objects:
       - self_rating_only_cannot_by_itself_change_foundation_state
       - non_unknown_final_state_requires_clinician_reviewed_non_self_rating_evidence
       - formal_solid_requires_demonstrated_formal_explanation_and_demonstrated_transfer_or_boundary_or_evidence_calibration
+      - deletion_of_a_source_artifact_does_not_rewrite_historical_foundation_state_or_attempt_content
 
   FoundationDomainStateV1:
     required: [foundation_node_id, schema_version, module, state, retention_state, evidence_attempt_ids]
@@ -270,7 +276,7 @@ objects:
           fields:
             decision_id: {type: uuid}
             summary: {type: string, min_length: 1}
-            evidence_summary: {type: string, nullable: true}
+            evidence_summary: {type: string, nullable: true, rule: normalized_or_paraphrased_review_evidence_not_verbatim_raw_transcript}
             linked_fact_ids: {type: array, unique_items: true, items: uuid}
       fact_ledger: {type: array, items: {$ref: LearningFactV1}}
       observations: {type: array, items: {$ref: LearningObservationV1}}
@@ -281,10 +287,15 @@ objects:
       record_review_state: {enum_ref: value_sets.record_review_state}
       reviewed_at: {type: datetime, nullable: true}
     invariants:
+      - persisted_daily_case_review_requires_eligibility_state_eligible
+      - no_eligible_case_insufficient_review_evidence_and_source_or_privacy_blocked_are_due_or_status_states_not_persisted_review_records
       - raw_heidi_transcript_is_not_persisted_in_this_object
       - review_requires_self_review_before_ai_critique_is_shown
       - learning_facts_are_never_authoritative_patient_truth
       - opaque_encounter_reference_does_not_confer_patient_truth_authority
+      - protected_source_reference_and_opaque_encounter_reference_are_excluded_from_default_export
+      - decision_evidence_summary_must_not_be_verbatim_raw_transcript
+      - persisted_learning_content_contains_no_direct_patient_identifiers
       - only_accepted_or_modified_observations_may_feed_signal_candidates
 
   LearningDueStateV1:
