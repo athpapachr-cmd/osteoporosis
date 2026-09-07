@@ -1,196 +1,313 @@
-# SLICE_PLAN_CURRENT.md — Clinical Learning Hub L-0 exact contract freeze
+# SLICE_PLAN_CURRENT.md — Clinical Learning Hub L-1 Challenge + Foundation MVP
 
-> **STATUS:** CONTRACT FROZEN / COMPLETE / INDEPENDENT CLOSURE PASS / MERGED TO MAIN — SLICE CLOSED
+> **STATUS:** PRODUCT-OWNER AUTHORIZED / IMPLEMENTATION ACTIVE
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Slice ID:** `CORE-LEARNING-HUB-L0-2026-09-07`.
-> **Merged `main`:** `43ed3090c5d4fe849e5f500edf22182fade36cd8` — PR #80 squash merge.
-> **Design branch:** `design/clinical-learning-l0-contract-freeze-2026-09-07`.
-> **Detailed product design:** `CLINICAL_LEARNING_HUB_DESIGN_V1.md`.
-> **Field-level contract manifest:** `schemas/clinical_learning_contract_manifest_v1.yaml`.
-> **Substantive corrected contract head:** `afaf9d5d0c7df9d53f8ec714f74d7b44e3a69f96`.
-> **Substantive machine evidence:** `Clinical Learning L0 contract gate`, run `34147429373` — SUCCESS.
-> **Active-writer design review:** `CLINICAL_LEARNING_L0_DESIGN_REVIEW_V1.md` — PASS, explicitly NOT independent.
-> **Independent review:** `CLINICAL_LEARNING_L0_INDEPENDENT_REVIEW_V1.md` — CLOSURE PASS / material open finding NONE on the corrected substantive contract head.
-> **Runtime implementation authority:** NONE.
-> **Design PR:** #80 MERGED.
-> **Render auto-deploy:** `dep-daffttrbc2fs73d7v45g` LIVE; no learning runtime introduced.
+> **Slice ID:** `CORE-LEARNING-HUB-L1-CHALLENGE-FOUNDATION-MVP-2026-09-07`.
+> **Fresh implementation base:** `5f7749c70c6bb3f36fcfc765088d4d363a6bb1d6`.
+> **Implementation branch:** `feat/clinical-learning-l1-challenge-foundation-mvp-2026-09-07`.
+> **Frozen L-0 contract owner:** `schemas/clinical_learning_contract_manifest_v1.yaml`.
+> **L-1 boundary owner:** `schemas/clinical_learning_l1_boundary_v1.yaml`.
+> **Foundation registry:** `schemas/osteoporosis_foundation_map_v1.yaml`.
+> **Product design:** `CLINICAL_LEARNING_HUB_DESIGN_V1.md`.
+> **Merge/deploy authority:** NONE in this slice activation.
 > **Patient-data mutation authority:** NONE.
 > **Production config/secret authority:** NONE.
 
 ---
 
-# 1. L-0 purpose
+# 1. Objective
 
-Freeze enough field-level semantics, provenance, ownership and safety boundaries that L-1 can later be implemented without inventing architecture during coding.
-
-The Clinical Learning Hub keeps three instruments separate:
+Implement the first protected Clinical Learning runtime without reopening L-0 semantics:
 
 ```text
-FOUNDATION MAP
-→ structural/theoretical understanding
-
-CLINICAL CHALLENGE
-→ controlled novel-case reasoning
-
-DAILY REAL-CASE REVIEW
-→ reasoning/execution in an actual encounter
+Challenge JSON import / preview / review / save
++ immutable Challenge history / revision / delete
++ reusable reference-verification overlay
++ Osteoporosis Foundation Map + explicit assessments
++ deterministic learning due state
++ clinician-facing MVP UI
 ```
 
-They may later feed the shared Signal engine, but they do not measure the same construct and must not collapse into a composite score.
+This slice is learning infrastructure. It is not patient documentation and it does not implement Daily Case Review, transcript intake, Practice Review or Signal promotion.
 
 ---
 
-# 2. Frozen Core learning objects
-
-Machine owner:
-
-```text
-schemas/clinical_learning_core_v1.yaml
-```
-
-Frozen objects:
-
-```text
-LearningFactV1
-ProgressiveDisclosureV1
-ClinicianReasoningResponseV1
-LearningReferenceV1
-LearningObservationV1
-LearningActionV1
-ClinicalLearningChallengeV1
-FoundationAssessmentEvidenceV1
-FoundationAssessmentAttemptV1
-FoundationDomainStateV1
-DailyCaseSelfReviewV1
-ReviewEvidenceDescriptorV1
-DailyCaseReviewV1
-LearningDueStateV1
-```
-
-Hard invariant:
+# 2. Non-negotiable inherited invariants
 
 ```text
 LEARNING RECORD != PATIENT RECORD
+EVERY LearningFactV1.authoritative_for_patient = false
+RAW TRANSCRIPT != L-1 STORAGE
+IMPORTED JSON != CLINICIAN-REVIEW AUTHORITY
+REFERENCE VERIFICATION != IMMUTABLE CHALLENGE PAYLOAD
+FOUNDATION STATE != SELF-RATING
+DUE STATE != COMPETENCE EVIDENCE
 ```
 
-Every `LearningFactV1` has:
+Additional boundaries:
 
-```text
-authoritative_for_patient = false
-```
-
-This remains true even for `real_deidentified_case_fact`. Learning provenance never acquires patient-record authority.
+- no direct patient identifier may be persisted in L-1 learning content;
+- every external/imported unknown field is rejected recursively;
+- privacy/schema failures expose only bounded codes/paths, never rejected values/payload fragments;
+- accepted Challenge revisions are immutable;
+- Challenge deletion purges content and leaves only the frozen non-content tombstone;
+- Foundation state changes only from a valid explicit clinician-reviewed `FoundationAssessmentAttemptV1`;
+- no composite Clinical Knowledge / Clinical Excellence score;
+- no autonomous Signal authority.
 
 ---
 
-# 3. Challenge / Fact Ledger contract
+# 3. Frozen implementation owners
 
-`ClinicalLearningChallengeV1` is a structured learning artifact, not a chat transcript.
-
-Required semantic domains include:
+Allowed runtime owners:
 
 ```text
-stable challenge identity
-immutable revision
-module/date/title/mode
-topics + Foundation linkage
-initial case
-mandatory Fact Ledger
-progressive disclosures
-clinician reasoning responses
-observations
-references
-learning actions
-review/privacy state
+clinical_learning/
+  __init__.py
+  models.py
+  contracts.py
+  privacy.py
+  persistence.py
+  service.py
+  api.py
+
+static/clinical-learning/
+  index.html
+  styles.css
+  app.js
+
+main.py
+L-1-focused tests/workflow
+six canonicals when lifecycle state changes
 ```
 
-Fact scopes are explicitly distinct:
+Normative frozen contracts are read-only during implementation:
 
 ```text
-real_deidentified_case_fact
-synthetic_case_fact
-clinician_hypothesis
-ai_inference
-counterfactual_teaching_point
+schemas/clinical_learning_core_v1.yaml
+schemas/clinical_learning_l1_boundary_v1.yaml
+schemas/clinical_learning_contract_manifest_v1.yaml
+schemas/clinical_learning_design_fixtures_v1.yaml
+schemas/osteoporosis_foundation_map_v1.yaml
 ```
 
-A progressive disclosure may add synthetic teaching facts but those facts can never later be represented as real patient facts merely because they were used in the same challenge.
+If runtime implementation requires a material change to those contracts, STOP and REPLAN; do not patch around them.
 
 ---
 
-# 4. Challenge identity / revision contract
+# 4. Explicit overlap exclusion — Physiotherapy / Clinic Utilities
 
-Stable identity:
-
-```text
-challenge_id
-```
-
-Immutable version:
+A separate conversation has a paused physiotherapy productization branch. L-1 must not modify or merge any physiotherapy/CU-1 owner, including:
 
 ```text
-(challenge_id, revision)
+clinic_utilities/physio_referral_*
+clinic_utilities/contracts/cu1_*
+static/clinic-utilities/physio-referral/*
+physiotherapy design/productization branches
 ```
 
-Frozen behavior:
+L-1 also must not mutate RF owners.
 
-```text
-revision 1
-→ supersedes_revision = null
-
-revision N > 1
-→ supersedes_revision = N - 1
-
-same id + revision + same normalized server hash
-→ idempotent no-op
-
-same id + revision + different content
-→ conflict
-
-new accepted content
-→ latest revision + 1
-
-accepted revision
-→ never updated in place
-```
-
-The server derives the canonical SHA-256 content hash; imported clients do not own it.
+To minimize future branch conflict, this slice does not add Learning navigation into the existing physiotherapy/Clinic Utilities surface or baseline-audit navigation. The protected Learning Hub is directly reachable at `/clinical/learning`; navigation integration can be reconciled later after the paused physiotherapy workstream is resumed/merged.
 
 ---
 
-# 5. External Challenge import authority
+# 5. Protected persistence
 
-External assistant JSON is candidate content, not authority.
-
-Inbound fields that are explicitly untrusted:
+Use the existing protected SQLAlchemy engine with a dedicated `ClinicalLearningBase` and the frozen tables:
 
 ```text
-record_review_state
-reviewed_at
-linked_signal_ids
-references[].verification_state
+clinical_learning_challenge_revisions
+clinical_learning_reference_verification
+clinical_learning_challenge_tombstones
+clinical_learning_foundation_attempts
+clinical_learning_foundation_state
+clinical_learning_due_items
 ```
 
-Preview normalization:
+No patient encounter/lab/RF table is read or written by this L-1 package.
+
+No L-1 tables for:
 
 ```text
-record_review_state = imported_pending_review
-reviewed_at = null
-linked_signal_ids = []
-reference verification = unverified
+Daily Case Review
+review evidence
+Signal candidates/promotions
+raw transcripts
 ```
-
-Final persistence requires explicit clinician confirmation. At final save the server sets the clinician-reviewed state/timestamp. L-1 does not accept authoritative Signal IDs from imported JSON.
-
-Imported observations begin `pending` unless created/dispositioned by the clinician during review. Material observations must be accepted, modified or dismissed before the record is finalized as clinician-reviewed.
 
 ---
 
-# 6. Reference verification contract
+# 6. Authentication / route ownership
 
-Challenge acceptance and bibliographic verification are separate operations.
+Protected base:
 
-Reference states:
+```text
+/clinical/learning
+```
+
+Authentication reuses the existing Clinical Excellence browser session and `X-Clinical-Key` contract. L-1 owns a local learning auth dependency; it must not import auth logic from the physiotherapy utility.
+
+`ClinicalCookieMiddleware` continues to translate a valid `clinical_session` cookie into the protected request header.
+
+`main.py` changes are bounded to:
+
+```text
+mount the Clinical Learning router
++
+apply no-store/no-cache headers to /static/clinical-learning/*
+```
+
+No other application composition change is authorized.
+
+---
+
+# 7. Challenge import / preview runtime profile
+
+Frozen endpoint:
+
+```text
+POST /clinical/learning/api/challenges/preview
+```
+
+MVP request envelope:
+
+```text
+{
+  "challenge": <ClinicalLearningChallengeV1>
+}
+```
+
+Preview is no-write and must:
+
+1. reject malformed JSON/schema and recursive unknown fields;
+2. run the PHI guard;
+3. validate all internal Fact/Disclosure/Observation/Reference/Action/Foundation references;
+4. normalize server-authoritative imported fields:
+   - `record_review_state = imported_pending_review`
+   - `reviewed_at = null`
+   - `linked_signal_ids = []`
+   - imported reference verification = `unverified` with null note;
+   - imported observations default to `pending`;
+5. normalize topics by trim + casefold filter key while preserving the first display label;
+6. calculate duplicate/revision state against persistence;
+7. return only sanitized errors/warnings.
+
+`normalized_summary` may contain the validated normalized structured Challenge needed by the clinician-facing preview. It is learning content only after the PHI guard passes; rejected payload fragments are never echoed.
+
+Duplicate states used by the implementation may include:
+
+```text
+new_identity
+exact_idempotent_duplicate
+same_revision_conflict
+next_revision_candidate
+stale_revision_rejected
+tombstoned_identity_rejected
+```
+
+They are implementations of the frozen revision rules, not new lifecycle semantics.
+
+---
+
+# 8. Challenge save / edit profile
+
+Create:
+
+```text
+POST /clinical/learning/api/challenges
+{
+  "challenge": <reviewed candidate>,
+  "confirm_save": true
+}
+```
+
+Edit:
+
+```text
+PUT /clinical/learning/api/challenges/{challenge_id}
+{
+  "challenge": <edited candidate>,
+  "confirm_save": true
+}
+```
+
+Hard rules:
+
+- server revalidates schema, privacy and internal references immediately before persistence;
+- `confirm_save=true` is mandatory;
+- server owns `record_review_state=clinician_reviewed` and `reviewed_at`;
+- server owns canonical SHA-256 content hash;
+- server owns next revision / `supersedes_revision` on clinician edit;
+- accepted revisions are never updated in place;
+- exact same accepted normalized payload is idempotent;
+- same id+revision with changed content conflicts;
+- tombstoned identities cannot be reused.
+
+L-1 MVP uses the conservative review rule:
+
+```text
+EVERY imported observation is treated as material for finalization
+→ it must be accepted / modified / dismissed before save
+```
+
+This avoids inventing an unreviewed importance threshold. A modified observation requires `clinician_modified_statement`.
+
+Canonical content hashing excludes server timestamps/server hash/server-authoritative review metadata and external mutable overlays. Reference-verification overlay changes never change Challenge payload/hash.
+
+---
+
+# 9. Challenge history / delete / export
+
+Frozen read routes:
+
+```text
+GET /clinical/learning/api/challenges
+GET /clinical/learning/api/challenges/{challenge_id}
+```
+
+History supports the frozen filters:
+
+```text
+topic
+foundation_node
+date
+challenge_mode
+review_state
+```
+
+Detail returns immutable revision history plus current external reference-verification projection and due state.
+
+Delete:
+
+```text
+DELETE /clinical/learning/api/challenges/{challenge_id}
+```
+
+requires explicit confirmation and one transaction:
+
+```text
+purge reference overlay rows
+→ purge due rows where target OR source belongs to challenge
+→ purge all Challenge revisions/hashes
+→ create non-content tombstone
+```
+
+MVP JSON/Markdown export is browser-side from a successfully fetched Challenge revision. It creates learning exports only; protected/internal references are excluded.
+
+---
+
+# 10. Reference-verification overlay
+
+Frozen endpoint:
+
+```text
+POST /clinical/learning/api/challenges/{challenge_id}/revisions/{revision}/references/{reference_id}/verification
+```
+
+Server verifies that artifact/revision/reference exists. Imported state never advances the overlay.
+
+Allowed states:
 
 ```text
 unverified
@@ -199,79 +316,29 @@ verified_content
 invalid_or_unresolved
 ```
 
-Imported references default to `unverified` regardless of an external assistant's supplied claim.
-
-```text
-verified_locator
-→ locator resolves to expected source
-
-verified_content
-→ material source content has actually been reviewed for the relevant claim
-```
-
-No imported citation becomes evidence-authoritative merely because it appears plausible.
+`verified_locator` and `verified_content` require at least one reference locator (`pmid`, `doi` or `url`) in the immutable source reference. The clinician owns the verification action; L-1 does not independently claim source-content verification.
 
 ---
 
-# 7. Challenge deletion / privacy-recovery contract
+# 11. PHI/privacy runtime profile
 
-Deletion is explicit and confirmed.
+The guard runs before preview acceptance and again before persistence.
 
-Frozen behavior:
-
-```text
-DELETE challenge
-→ purge all Challenge revision content/hashes
-→ remove due items targeting that Challenge
-→ retain only non-content tombstone:
-   challenge_id
-   deleted_at
-   max_deleted_revision
-```
-
-The tombstone must not retain:
+Direct structured identifier keys fail closed globally:
 
 ```text
-title
-topics
-facts
-reasoning
-observations
-references
-patient/encounter references
+patient_name
+full_name
+identity_number
+gesy_number
+phone
+email
+address
+date_of_birth
+dob
 ```
 
-A tombstoned `challenge_id` cannot be silently reused in L-1.
-
----
-
-# 8. Privacy / PHI contract
-
-The L-1 privacy guard runs:
-
-```text
-before preview acceptance
-AND
-again before persistence
-```
-
-Global structured direct-identifier field names are rejected.
-
-Deterministic free-text scanning is restricted to clinical/learning content paths such as:
-
-```text
-title
-initial_case
-fact statements
-progressive-disclosure narrative
-clinician reasoning
-final decision
-observations
-learning-action text
-next challenge topic
-```
-
-Bibliographic numeric locator fields are excluded from patient-phone/identity-number heuristics:
+All persistable untrusted strings are scanned unless the exact path is one of:
 
 ```text
 references[].pmid
@@ -279,397 +346,205 @@ references[].doi
 references[].url
 ```
 
-This avoids false positives on legitimate bibliographic identifiers.
-
-Known limitation is explicit:
+Minimum deterministic signals:
 
 ```text
-DETERMINISTIC GUARD != PERFECT DE-IDENTIFICATION ENGINE
+email address
+phone-like sequence
+explicit identity/GeSY-number phrase
+explicit full-DOB phrase
+explicit postal-address phrase
 ```
 
-Free-text person-name detection is not guaranteed. Clinician attestation that direct identifiers have been removed is required for Challenge import. `deidentified_real_case` and `mixed` modes with a real-case component require explicit de-identification confirmation.
+The implementation must not claim perfect name/de-identification detection. Clinician de-identification attestation remains mandatory, and real/mixed cases require the frozen source-case de-identification state.
+
+Routine logs contain no Challenge/Foundation payloads, rejected values or verification notes.
 
 ---
 
-# 9. Osteoporosis Foundation Map v1
+# 12. Foundation Map / assessment profile
 
-Machine owner:
-
-```text
-schemas/osteoporosis_foundation_map_v1.yaml
-```
-
-Initial controlled nodes:
+Frozen routes:
 
 ```text
-ost.foundation.bone_remodeling
-ost.foundation.dxa_lsc
-ost.foundation.vfa
-ost.foundation.fracture_risk_frax
-ost.foundation.secondary_osteoporosis
-ost.foundation.giop
-ost.foundation.antiresorptive_pharmacology
-ost.foundation.anabolic_pharmacology
-ost.foundation.sequencing
-ost.foundation.denosumab_rebound
-ost.foundation.btms
-ost.foundation.treatment_safety_transitions
-ost.foundation.evidence_appraisal
-ost.foundation.communication_sdm_continuity
+GET  /clinical/learning/api/foundation
+POST /clinical/learning/api/foundation/{foundation_node_id}/assessments/preview
+POST /clinical/learning/api/foundation/{foundation_node_id}/assessments
 ```
 
-The graph expresses learning dependencies/relations, not clinical prerequisites.
+The registry comes only from `schemas/osteoporosis_foundation_map_v1.yaml`.
 
-`foundation_node_ids` are the controlled structural classification. Challenge `topics` in L-1 are normalized descriptive tags, not a second mandatory ontology.
+No persisted row means:
+
+```text
+state = UNKNOWN_UNTESTED
+retention_state = not_scheduled
+```
+
+Assessment request envelope:
+
+```text
+{
+  "attempt": <FoundationAssessmentAttemptV1>,
+  "next_review_due": <optional explicit YYYY-MM-DD>,
+  "confirm_save": <required only for persistence>
+}
+```
+
+The server validates:
+
+- node/module consistency;
+- unique evidence IDs;
+- all L-1 evidence has `source_artifact_type=foundation_assessment`;
+- self-rating alone cannot change Foundation state;
+- non-unknown state requires reviewed non-self-rating evidence;
+- `FORMAL_SOLID` requires demonstrated formal/mechanistic evidence plus demonstrated transfer/boundary/evidence-directness evidence.
+
+The server does not invent a state; `proposed_state` and `clinician_final_state` remain explicit clinician-reviewed assessment content.
+
+Retention remains separate. For the MVP, only scheduling state is derived from explicit `next_review_due`:
+
+```text
+null   → not_scheduled
+future → scheduled
+today/past → due
+```
+
+L-1 does not infer `retained` or `needs_refresh` from Challenge performance.
 
 ---
 
-# 10. Foundation assessment / state contract
+# 13. Due-state profile
 
-Allowed states:
-
-```text
-FORMAL_SOLID
-INTUITIVE_UNSTRUCTURED
-FRAGMENTED
-UNKNOWN_UNTESTED
-```
-
-State is not monotonic and `UNKNOWN_UNTESTED` is not failure.
-
-State changes only through a clinician-reviewed `FoundationAssessmentAttemptV1`.
-
-L-1 authoritative Foundation evidence is **explicit Foundation assessment only**. Challenge, Daily Case Review and Practice Review evidence integration is deferred until those owners exist and cross-artifact privacy/deletion semantics are separately activated.
-
-Self-rating alone cannot change state.
-
-`FORMAL_SOLID` requires reviewed evidence of:
+GET:
 
 ```text
-formal/unaided or mechanistic explanation
-+
-novel transfer OR boundary/exception recognition OR evidence-directness calibration
+/clinical/learning/api/due
 ```
 
-Retention is modeled separately from Foundation state.
-
----
-
-# 11. Due-state / spaced-repetition contract
-
-`LearningDueStateV1` is scheduling state, not competence evidence.
-
-L-1 materializes due items for:
+L-1 materializes only contract-authorized due items that have a concrete reviewed source:
 
 ```text
 challenge_repetition
-foundation_reassessment
-learning_action
-progress_review
+learning_action from Challenge revision
+foundation_reassessment from explicit Foundation assessment schedule
 ```
 
-Daily Case Review due-state is L-2 scope.
+`progress_review` remains representable by the schema but is not fabricated without a reviewed progress-schedule owner.
 
-Due items use repeatable `occurrence` semantics:
+Occurrence semantics:
 
-```text
-occurrence starts at 1
-uncompleted occurrence may be rescheduled
-completed occurrence remains historical
-new schedule after completion creates occurrence + 1
-```
+- start at 1;
+- uncompleted occurrence may be rescheduled from a later reviewed revision;
+- completed occurrence is terminal/historical;
+- a later schedule after completion creates occurrence + 1;
+- deferred state requires future `deferred_until` and reactivates deterministically;
+- source-artifact provenance is mandatory.
 
-No adaptive spacing algorithm is invented in L-0. L-1 may use explicit reviewed due dates; adaptive scheduling requires later design authority.
+L-1 exposes due state; it does not invent an adaptive spacing algorithm.
 
 ---
 
-# 12. Daily Case Review target contract
+# 14. Clinician-facing MVP UI
 
-`DailyCaseReviewV1` is defined in L-0 for compatibility with later L-2, but L-1 does not implement its storage/API/UI.
+`static/clinical-learning/` provides four views in one protected workspace:
 
-Persisted Daily Case Review requires:
+1. **Challenge Import** — paste JSON → server preview → clinician review/disposition/edit → confirm save.
+2. **Challenge History** — filters, revision history, delete, JSON/Markdown export, reference verification.
+3. **Foundation Map** — 14 Module-01 nodes, current state, retention state, evidence count, last assessment, next due; explicit assessment preview/save.
+4. **Due / Learning Actions** — due Challenge repetitions, Foundation reassessments and learning actions.
 
-```text
-eligibility_state = eligible
-```
+UI requirements:
 
-These are status/due states, not persisted Review records:
+- visible challenge mode/topics/Foundation nodes;
+- Fact Ledger scope badges;
+- progressive-disclosure provenance;
+- observation category/importance/disposition;
+- reference verification state;
+- privacy/de-identification attestation;
+- server normalization warnings;
+- no composite score.
 
-```text
-no_eligible_case
-insufficient_review_evidence
-source_or_privacy_blocked
-```
-
-Hard rules:
-
-```text
-no fabricated case
-self-review before visible AI critique
-raw Heidi transcript not persisted in learning object
-evidence summary normalized/paraphrased, not verbatim transcript
-opaque encounter/source references excluded from default export
-learning facts remain non-authoritative for patient truth
-```
+No raw transcript upload UI. No Daily Case Review UI. No external connector UI.
 
 ---
 
-# 13. Transcript / Practice Review / Signal ownership
+# 15. Acceptance evidence
 
-Clinical Learning must not create parallel semantic owners.
+Before implementation can be called TESTED, exact-head evidence must cover at minimum:
 
 ```text
-Transcript extraction / candidate provenance
-→ PR-1 / PR-2 owner
-
-Practice Review interpretation / observations
-→ PR-3 owner
-
-Signal promotion / recurrence reliability
-→ shared Signal engine
-
-Patient clinical truth
-→ clinical encounter/longitudinal owner
+valid + invalid Challenge schema
+recursive unknown-field rejection
+all persistable untrusted-string privacy scan coverage
+sanitized privacy/schema errors and non-content logging
+external-import server-authority normalization
+idempotent duplicate / conflict / append-only revision
+reference overlay without immutable-payload mutation
+transactional tombstone/content purge
+nested learning-action due cleanup on Challenge delete
+synthetic PHI guard + bibliographic locator exclusions
+topic normalization without second taxonomy
+Fact Ledger / disclosure / observation / reference integrity
+Foundation transition guards
+Foundation state→attempt reference integrity
+L-1 explicit Foundation assessment only
+Foundation explicit due scheduling without adaptive cadence
+due occurrence/reschedule/repeat/defer/source provenance
+protected session/header auth
+no patient/transcript/Signal/DailyCase write path
+main router/no-store ownership
+browser UI smoke for Import/History/Foundation/Due
+frozen L-0 contract regression
+full branch-vs-main diff hygiene
+NO physiotherapy/CU-1/RF file mutation
 ```
 
-Future Daily Case Review may consume a newly re-provided Heidi transcript through the protected ephemeral transcript boundary or approved structured review evidence. L-1 does neither.
+Public fixtures are synthetic only.
 
 ---
 
-# 14. L-1 persistence boundary
+# 16. REPLAN triggers
 
-Candidate protected tables:
+STOP implementation and return to design if any of these becomes necessary:
 
-```text
-clinical_learning_challenge_revisions
-clinical_learning_challenge_tombstones
-clinical_learning_foundation_attempts
-clinical_learning_foundation_state
-clinical_learning_due_items
-```
-
-They are distinct from patient encounter, laboratory and RF persistence.
-
-Not created in L-1:
-
-```text
-Daily Case Review tables
-review-evidence tables
-Signal candidate/promotion tables
-transcript storage
-```
+- change to a frozen L-0 object or ownership contract;
+- a second transcript ingestion owner;
+- any patient-record read/write required by L-1;
+- raw transcript persistence;
+- identifiable patient content in learning records/tests/repo;
+- autonomous Signal creation/promotion;
+- Daily Case Review runtime;
+- broad external bearer credentials;
+- adaptive repetition algorithm not frozen in L-0;
+- Challenge-derived Foundation state mutation;
+- overlap with the paused physiotherapy/CU-1 productization scope;
+- schema/database ownership that cannot be implemented with the existing protected engine as frozen.
 
 ---
 
-# 15. L-1 API / UI boundary
-
-Future protected base:
+# 17. Lifecycle / next gate
 
 ```text
-/clinical/learning
-```
-
-L-1 API scope is bounded to:
-
-```text
-Challenge preview/import/history/revision/delete
-Foundation registry/state + explicit assessment preview/persist
-learning due-state retrieval
-```
-
-Explicitly forbidden in L-1:
-
-```text
-external bearer ingestion credential
-patient write endpoint
-transcript storage endpoint
-Signal promotion endpoint
-Daily Case Review endpoint
-```
-
-Future UI owner:
-
-```text
-static/clinical-learning/
-```
-
-First views:
-
-```text
-Challenge Import
-Challenge History
-Foundation Map
-Due / Learning Actions
-```
-
-No composite Clinical Knowledge/Excellence score.
-
----
-
-# 16. Baseline methodology invariant
-
-Visible systematic Daily Case Review coaching is an intervention.
-
-During the 30-case scored system-assisted baseline, default behavior remains:
-
-```text
-review may run in shadow
-routine AI critique/coaching hidden
-safety-critical feedback allowed
-```
-
-A real due state can remain `due` while delivery mode is `shadow_hidden`.
-
-If visible daily coaching is desired during the scored baseline, methodology must be explicitly replanned and the cohort relabelled before continuing.
-
----
-
-# 17. Machine contract set
-
-```text
-schemas/clinical_learning_core_v1.yaml
-schemas/osteoporosis_foundation_map_v1.yaml
-schemas/clinical_learning_l1_boundary_v1.yaml
-schemas/clinical_learning_contract_manifest_v1.yaml
-schemas/clinical_learning_design_fixtures_v1.yaml
-```
-
-Validation:
-
-```text
-test_clinical_learning_l0_contract.py
-test_clinical_learning_l0_boundary.py
-.github/workflows/clinical-learning-l0-contract-tests.yml
-```
-
----
-
-# 18. Acceptance evidence / independent closure review
-
-Corrected substantive contract head:
-
-```text
-afaf9d5d0c7df9d53f8ec714f74d7b44e3a69f96
-```
-
-Workflow:
-
-```text
-Clinical Learning L0 contract gate
-run 34147429373
-SUCCESS
-```
-
-Independent review:
-
-```text
-CLINICAL_LEARNING_L0_INDEPENDENT_REVIEW_V1.md
-CLOSURE PASS
-MATERIAL OPEN FINDING NONE
-```
-
-The original pre-independent-review candidate did not receive an automatic pass. Independent review found material but bounded L-0 contract defects; they were corrected within the existing design authority and the full gate was rerun successfully before the CLOSURE PASS.
-
-The corrected contract/gate now covers:
-
-```text
-YAML/object/reference integrity                         PASS
-Foundation graph integrity                              PASS
-Fact Ledger / supersession / disclosure references      PASS
-immutable revision/idempotency/conflict semantics       PASS
-external-import server authority                        PASS
-reusable reference-verification overlay                 PASS
-content purge + non-content tombstone                    PASS
-due-item source provenance / deletion integrity          PASS
-unknown-field rejection + PHI/privacy boundary           PASS
-sanitized errors/logging                                 PASS
-bibliographic PMID/DOI/URL numeric exclusions            PASS
-Foundation transition/evidence authority                 PASS
-Daily Case Review eligible-only + revision integrity     PASS
-Signal authority separation                              PASS
-deferred/completed due occurrence semantics              PASS
-baseline shadow methodology                              PASS
-L-1 owner/exclusion boundary                             PASS
-design-only scope + diff hygiene                         PASS
-```
-
----
-
-# 19. Findings corrected across L-0 reviews
-
-Active-writer review corrected bounded issues including ineligible Daily Case Review persistence, bibliographic-number privacy false positives, Challenge tombstone semantics, external-import authority, topic/ontology ownership, due occurrence semantics and premature Challenge-to-Foundation coupling.
-
-Independent review then found and closed additional material contract defects:
-
-```text
-reference verification vs immutable revision authority
-→ reusable server/clinician-owned verification overlay
-
-Challenge deletion vs nested learning-action due rows
-→ source-artifact provenance + source/target cleanup
-
-incomplete PHI scan surface / unknown imported keys
-→ recursive unknown-field rejection + all persistable untrusted strings scanned
-
-privacy rejection could echo rejected content
-→ sanitized field-path/code errors and non-content routine logs
-
-internal cross-object reference corruption paths
-→ fail-closed uniqueness/resolution/integrity constraints
-
-DailyCaseReview revision predecessor ambiguity
-→ explicit immutable predecessor/revision semantics
-
-embedded linked_signal_ids could duplicate Signal authority
-→ future shared Signal engine remains dynamic authority
-
-source_artifact_deleted conflicted with append-only Foundation attempts
-→ deletion state resolved externally without rewriting reviewed attempts
-
-deferred due state lacked deterministic reactivation
-→ future defer remains deferred; today due; past overdue; completed occurrence terminal
-```
-
-Independent disposition: **CLOSURE PASS / material open finding NONE**.
-
-# 20. Out of scope / deferred
-
-```text
-L-1 ORM/runtime/API/UI implementation
-exact runtime PII-regex implementation
-adaptive spaced-repetition algorithm
-external scoped learning credential
-Challenge-derived Foundation evidence integration
-Signal recurrence/promotion engine
-Daily Case Review runtime
-Practice Review AI implementation
-provider/privacy gate for identifiable Heidi transcript use
-```
-
----
-
-# 21. Lifecycle / exact next gate
-
-```text
-PRODUCT DIRECTION                    APPROVED
-L-0 FIELD-LEVEL CONTRACT             FROZEN / COMPLETE
-SUBSTANTIVE MACHINE GATE             PASS — run 34147429373
-ACTIVE-WRITER EXACT DESIGN REVIEW    PASS
-INDEPENDENT EXACT-HEAD REVIEW        CLOSURE PASS
-MATERIAL OPEN FINDING                NONE
-CLEAN FREEZE GATE                    PASS — f947b12ce77db2ad1e5ff9117d7a4f794e224b60 / run 34148333413
-DESIGN PR #80                        MERGED
-L-0 MERGED TO MAIN                   YES — 43ed3090c5d4fe849e5f500edf22182fade36cd8
-RENDER AUTO-DEPLOY                   LIVE — dep-daffttrbc2fs73d7v45g
-L-1 RUNTIME AUTHORITY                NONE
+L-0 CONTRACT                         FROZEN / COMPLETE / MERGED
+L-1 PRODUCT-OWNER AUTHORITY          GRANTED
+L-1 SLICE DESIGN                     FROZEN BY THIS FILE
+L-1 IMPLEMENTATION                   ACTIVE
+L-1 TESTED                           NO
+L-1 EXACT-HEAD REVIEW                NO
+L-1 PR                               NONE
+L-1 MERGED                           NO
+L-1 DEPLOYED                         NO
+L-1 PRODUCTION-SMOKE-VERIFIED        NO
 ```
 
 Exact next action:
 
 ```text
-L-0 CLOSED / MERGED
-→ HOLD for separate product-owner L-1 runtime implementation authority
-→ when granted, freeze a fresh bounded L-1 implementation slice before coding
+claim CURRENT_OPERATIONAL writer lock
+→ implement only frozen owners/seams
+→ run complete L-1 + inherited L-0 regression gate
+→ exact-head scope/security/privacy review
+→ canonical closeout to IMPLEMENTED / TESTED or REPLAN
+→ HOLD for separate release/merge authority
 ```
-
-Any material contract change after the independently reviewed substantive head invalidates the CLOSURE PASS and requires another substantive review. Status/documentation-only closeout changes do not authorize L-1 implementation.
