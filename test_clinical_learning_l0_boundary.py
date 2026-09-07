@@ -37,8 +37,7 @@ class ClinicalLearningL0BoundaryTests(unittest.TestCase):
         self.assertIn("current_reference_verification_changes_only_through_separate_server_clinician_overlay_action", final)
 
     def test_reference_verification_overlay_is_reusable_and_preserves_revision_immutability(self):
-        tables = self.boundary["persistence"]["tables"]
-        overlay = tables["clinical_learning_reference_verification"]
+        overlay = self.boundary["persistence"]["tables"]["clinical_learning_reference_verification"]
         self.assertEqual(overlay["primary_key"], ["artifact_type", "artifact_id", "artifact_revision", "reference_id"])
         self.assertEqual(overlay["l1_allowed_artifact_types"], ["challenge"])
         self.assertIn("no second reference-verification store", overlay["future_extension_rule"])
@@ -106,6 +105,20 @@ class ClinicalLearningL0BoundaryTests(unittest.TestCase):
         forbidden = set(deletion["forbidden_tombstone_content"])
         self.assertTrue({"title", "topics", "facts", "reasoning", "observations", "references"}.issubset(forbidden))
 
+    def test_challenge_internal_reference_integrity_is_closed(self):
+        invariants = set(self.core["objects"]["ClinicalLearningChallengeV1"]["invariants"])
+        self.assertTrue({
+            "fact_ids_are_unique_within_fact_ledger",
+            "every_fact_supersedes_fact_id_resolves_within_fact_ledger_and_is_not_self",
+            "reasoning_response_ids_are_unique_within_challenge",
+            "progressive_disclosure_ids_are_unique_within_challenge",
+            "progressive_disclosure_sequences_are_unique_and_contiguous_starting_at_1",
+            "every_nonnull_disclosure_released_after_response_id_resolves_within_reasoning_responses",
+            "reference_ids_are_unique_within_challenge",
+            "learning_action_ids_are_unique_within_challenge",
+            "every_foundation_node_id_resolves_through_module_foundation_registry",
+        }.issubset(invariants))
+
     def test_daily_case_record_exists_only_for_eligible_case_and_references_resolve(self):
         invariants = set(self.core["objects"]["DailyCaseReviewV1"]["invariants"])
         self.assertIn("persisted_daily_case_review_requires_eligibility_state_eligible", invariants)
@@ -114,6 +127,17 @@ class ClinicalLearningL0BoundaryTests(unittest.TestCase):
         self.assertIn("every_observation_fact_reference_resolves_within_fact_ledger", invariants)
         self.assertIn("every_observation_reference_id_resolves_within_references", invariants)
         self.assertIn("every_learning_action_reference_id_resolves_within_references", invariants)
+        self.assertIn("every_fact_supersedes_fact_id_resolves_within_daily_case_fact_ledger_and_is_not_self", invariants)
+
+    def test_daily_case_revision_semantics_are_not_left_ambiguous(self):
+        review = self.core["objects"]["DailyCaseReviewV1"]
+        self.assertEqual(review["fields"]["supersedes_revision"]["rule"], "null_for_revision_1_else_exactly_revision_minus_1")
+        invariants = set(review["invariants"])
+        self.assertTrue({
+            "review_revision_1_has_null_supersedes_revision",
+            "review_revision_gt_1_supersedes_immediately_previous_revision",
+            "accepted_daily_case_review_revisions_are_immutable_when_L2_is_authorized",
+        }.issubset(invariants))
 
     def test_signal_links_do_not_mutate_immutable_learning_payloads(self):
         linkage = self.boundary["signal_linkage_boundary"]
