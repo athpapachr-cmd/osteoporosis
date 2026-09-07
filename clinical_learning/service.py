@@ -690,12 +690,23 @@ class ClinicalLearningService:
                     status_code=409,
                 )
 
-            state = session.get(FoundationStateORM, foundation_node_id)
+            # Serialize materialization for an existing Foundation node. SQLite
+            # ignores FOR UPDATE in tests; production Postgres holds the row lock
+            # until commit, so an older concurrent assessment cannot commit over
+            # a newer state that was waiting on the same authoritative row.
+            state = session.execute(
+                select(FoundationStateORM)
+                .where(FoundationStateORM.foundation_node_id == foundation_node_id)
+                .with_for_update()
+            ).scalar_one_or_none()
             if (
                 state is not None
                 and state.last_assessed_at is not None
-                and assessed_at < state.last_assessed_at
+                and assessed_at <= state.last_assessed_at
             ):
+                # Exact same attempt_id returned above as idempotent. A different
+                # assessment at the same instant has no deterministic ordering,
+                # so it fails closed instead of replacing the materialized state.
                 raise LearningServiceError(
                     "foundation_assessment_older_than_current_state",
                     "attempt.assessed_at",
