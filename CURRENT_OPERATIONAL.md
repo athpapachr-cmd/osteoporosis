@@ -1,207 +1,230 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** RF v2 PRODUCTION — IMAGING-ATTACHMENT SEMANTIC GUARD TESTED / EXACT-HEAD REVIEW PASS — PR + SQUASH MERGE + DEPLOY AUTHORIZED
-> **Updated:** 2026-09-06 Asia/Nicosia.
+> **STATUS:** RF v2 PRODUCTION-SMOKE-VERIFIED / CLOSED FOR NOW — CLINICAL LEARNING HUB L-0 DESIGN ACTIVE
+> **Updated:** 2026-09-07 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Fresh verified production `main`:** `e8bf4bac16eff5e0c2101ec891483b81b14765e1`.
-> **Production deploy:** `dep-daei1sh42hec73ccthr0` — LIVE.
-> **Hotfix branch:** `fix/rf-imaging-attachment-semantic-guard-2026-09-06`.
-> **Implementation base / merge base:** `e8bf4bac16eff5e0c2101ec891483b81b14765e1`.
-> **Exact tested runtime head before release-authority docs commit:** `814a62d3b31ae76d19c6f5da3f824e9137011e96`.
-> **Exact successful gate:** `RF v2 hotfix regression gate`, run `34031607422` — SUCCESS.
-> **Current frozen slice:** `CU-RF-IMAGING-SEMANTIC-GUARD-2026-09-06`.
-> **ACTIVE RUNTIME WRITER/LOCK:** NONE — implementation/test/review closed.
-> **ACTIVE CANONICAL WRITER/LOCK:** release closeout only.
-> **Implementation/test authority:** CONSUMED.
-> **PR authority:** GRANTED by product owner on 2026-09-06 for this bounded hotfix.
-> **Merge authority:** GRANTED by product owner on 2026-09-06; squash merge required by repository discipline.
-> **Deploy authority:** GRANTED by product owner on 2026-09-06; normal Render auto-deploy from `main`, no redundant manual deploy.
-> **Production config authority:** NONE; no config change is required for this hotfix.
-> **Production-smoke authority:** not implied by merge/deploy; smoke remains a separate post-deploy verification step.
+> **Fresh verified production `main`:** `1d26195c77e186cff98086283252af2eb499dd17`.
+> **Production deploy:** `dep-daeliaks728c7384f3fg` — LIVE.
+> **Active design branch:** `docs/clinical-learning-hub-l0-main-2026-09-07`.
+> **Current slice:** `CORE-LEARNING-HUB-L0-2026-09-07`.
+> **Detailed design:** `CLINICAL_LEARNING_HUB_DESIGN_V1.md`.
+> **ACTIVE RUNTIME WRITER/LOCK:** NONE.
+> **ACTIVE CANONICAL WRITER/LOCK:** ChatGPT — L-0 design/canonical reconciliation only until design merge completes.
+> **RF runtime authority:** NONE — RF is closed for now unless new evidence demonstrates a material defect.
+> **Learning design authority:** GRANTED by product owner.
+> **Learning runtime implementation authority:** NONE.
+> **Design PR/merge-to-main authority:** GRANTED by product owner for this canonical design step.
+> **Production config/secret authority:** NONE.
 
 ---
 
-# 1. Production truth before this release
+# 1. Production truth — RF v2
 
-Native RF v2 was released through PR #75 and correction PR #76.
-
-Current production identity before the imaging-guard release:
+Native RF v2 is now released through:
 
 ```text
-main: e8bf4bac16eff5e0c2101ec891483b81b14765e1
-PR #76: merged by squash
-Render: dep-daei1sh42hec73ccthr0
+PR #75 — native Category-A A.1/A.2 workflow
+PR #76 — unilateral target + derived location + medication parser/capacity corrections
+PR #77 — imaging-attachment semantic guard
+```
+
+Current production identity:
+
+```text
+main:
+1d26195c77e186cff98086283252af2eb499dd17
+
+Render:
+dep-daeliaks728c7384f3fg
 status: LIVE
 ```
 
-Server-side production configuration is already present for:
-
-```text
-RF_PRODUCT_CATALOG_JSON
-RF_DOCTOR_PROFILE_JSON
-```
-
-No environment/config mutation is part of the imaging semantic-guard release.
+Server-side fixed configuration is present for doctor profile and the confirmed Medikey / DIROS / Thermedico product catalog.
 
 ---
 
-# 2. Product-owner smoke evidence that triggered the hotfix
+# 2. RF production smoke — PASS
 
-Product-owner smoke established:
+Product-owner authenticated production smoke is now sufficient to close the current RF workstream.
+
+Observed/proven in production:
 
 ```text
 clinical authentication/session                    PASS
-native RF v2 UI visible                             PASS
-Category A A.1/A.2 UI                               PASS
+native Clinical Excellence RF UI                   PASS
+Category A / A.1 / A.2                             PASS
 product catalog                                     PASS
 doctor profile                                      PASS
-single-side rule / derived target                   MERGED + DEPLOYED; re-smoke pending
-medication capacity 0..3                            MERGED + DEPLOYED; re-smoke pending
-Narox/Melox/Panadol/Parcoten parser corrections     MERGED + DEPLOYED; re-smoke pending
-A.1 official form generation                        PASS on earlier smoke
-uploaded PDF concatenation                          PASS on earlier smoke
-attachment semantic suitability                     DEFECT FOUND / HOTFIX TESTED
-full A.1 end-to-end production smoke                NOT YET PASS
-full A.2 end-to-end production smoke                NOT YET PASS
-PILOT-VALIDATED                                     NO
+single unilateral target only                       PASS
+derived exact location for fixed indications        PASS
+medication capacity 0..3 per category               PASS
+Narox / Melox / Panadol / Parcoten / Tramadex flow PASS
+A.1 official PDF generation                         PASS
+A.2 continuation flow                               PASS
+uploaded imaging append                             PASS
+obvious laboratory PDF rejection                    PASS
+real imaging PDF path                               PASS
+ambiguous/poorly extractable imaging confirmation   PASS
+imaging semantic guard                              PASS
 ```
 
-The deliberately unrelated smoke attachment was a laboratory report. Production accepted it merely because it was a valid PDF. This proved:
+The clinician reports the workflow is working as intended after the final #77 deploy.
+
+Lifecycle:
 
 ```text
-PDF PRESENT != IMAGING-REPORT EVIDENCE PRESENT
+RF v2 IMPLEMENTED                     YES
+TESTED                                YES
+MERGED                                YES
+DEPLOYED                              YES
+PRODUCTION-SMOKE-VERIFIED             YES
+PILOT-VALIDATED                       NO / not required to resume primary Module-01 roadmap
 ```
+
+No further RF refinement is active.
 
 ---
 
-# 3. Frozen imaging semantic-guard behavior
+# 3. RF signature boundary
 
-The bounded hotfix implements deterministic in-memory classification:
+The official PDF still has a clinician-signature area. This is **not a release blocker** for the RF utility.
+
+Current decision:
 
 ```text
-IMAGING_SUPPORTED
-→ create allowed without extra confirmation
-
-CLEARLY_NON_IMAGING
-→ create rejected fail-closed
-→ clinician confirmation cannot override
-
-AMBIGUOUS_OR_UNREADABLE
-→ explicit clinician confirmation required
-→ intended for scanned/image-only or otherwise unclassifiable PDFs
+automated signature image in public repository  FORBIDDEN
+manual / external signing step                   ACCEPTED FOR NOW
 ```
 
-Server authority and privacy invariants:
+A static signature PNG/SVG must not be committed to the public repository. If online signing is later required, it needs a separate security/e-signature design using protected private storage or an appropriate signing mechanism. It must not be implemented as a public version-controlled image asset.
 
-- PDF must parse and contain at least one page; `%PDF` magic bytes alone are insufficient;
-- extracted text is bounded and ephemeral;
-- `POST /clinical/clinic-utilities/rf/api/validate-imaging` returns only bounded status/confirmation/message fields;
-- `/api/create` independently repeats semantic assessment;
-- browser state cannot override `CLEARLY_NON_IMAGING`;
-- persistence may retain only bounded provenance (`auto_supported` or `clinician_confirmed`), never extracted attachment text;
-- the classifier establishes document-type suitability only and does not interpret imaging findings or prove the selected diagnosis.
-
-The same hotfix corrects stale medication UI copy to `έως 3` / `0..3`, matching the already-authoritative backend rule.
+This is deferred work, not an active RF defect.
 
 ---
 
-# 4. Exact automated evidence and review
+# 4. Stop rule for RF
 
-Substantive tested clean head:
-
-```text
-814a62d3b31ae76d19c6f5da3f824e9137011e96
-```
-
-Full gate:
+The RF workstream is closed unless one of the following occurs:
 
 ```text
-workflow: RF v2 hotfix regression gate
-run: 34031607422
-result: SUCCESS
+new authoritative form change
+material production defect
+safety/data-integrity defect
+new product-owner workflow requirement
 ```
 
-Final canonical-closeout head before this authority update:
-
-```text
-4fb623e7afe15cac502333d69d6d44c7f648e45b
-run: 34031820267
-result: SUCCESS
-```
-
-Passed evidence includes:
-
-```text
-Python / JavaScript syntax                          PASS
-Official 12-page RF template identity/geometry      PASS
-Real packaged-template A.1 generation               PASS
-Real packaged-template A.2 generation               PASS
-Existing RF v2 focused regressions                  PASS
-Synthetic radiology attachment → supported          PASS
-Synthetic laboratory attachment → rejected          PASS
-Textless valid PDF → confirmation required          PASS
-Ambiguous without confirmation → rejected           PASS
-Ambiguous with confirmation → accepted               PASS
-Clearly non-imaging even if confirmed → rejected    PASS
-Fake %PDF bytes → rejected                          PASS
-Preview endpoint does not return extracted text     PASS
-UI semantic-validation wiring                       PASS
-Adjacent CU-1 regressions                           PASS
-Legacy RF gateway rollback regressions              PASS
-G4/G3/G2/G1/C1 regression ancestry                  PASS
-Full branch-vs-production diff hygiene              PASS
-```
-
-Exact-head review found no release-blocking scope, privacy, trust-boundary or dependency issue. The branch was `behind_by: 0` with merge base exactly equal to current production `main`.
+OCR/vision enhancement for poorly encoded imaging reports is explicitly a later refinement. The current fallback — explicit clinician confirmation for ambiguous/unreadable but structurally valid imaging PDFs — is accepted.
 
 ---
 
-# 5. Lifecycle matrix
+# 5. Active program returns to Clinical Excellence learning/capture roadmap
+
+The primary Module-01 objective remains:
 
 ```text
-RF #76 CORRECTION IMPLEMENTED/TESTED/MERGED/DEPLOYED  YES
-RF #76 PRODUCTION RE-SMOKE                            PENDING
-IMAGING SEMANTIC-GUARD DESIGN                         FROZEN
-IMAGING SEMANTIC-GUARD IMPLEMENTED                    YES
-IMAGING SEMANTIC-GUARD TESTED                         YES
-IMAGING SEMANTIC-GUARD EXACT-HEAD REVIEW              PASS
-IMAGING SEMANTIC-GUARD PR                             AUTHORIZED / TO OPEN
-IMAGING SEMANTIC-GUARD MERGE                          AUTHORIZED / PENDING
-IMAGING SEMANTIC-GUARD DEPLOY                         AUTHORIZED / PENDING AUTO-DEPLOY
-FULL RF A.1 PRODUCTION-SMOKE-VERIFIED                 NO
-FULL RF A.2 PRODUCTION-SMOKE-VERIFIED                 NO
-PILOT-VALIDATED                                       NO
+improve today's encounter
++
+reduce duplicate/manual capture
++
+review whether reasoning/decisions/communication were appropriate
++
+improve clinician performance longitudinally
 ```
+
+The next active design work is the reusable **Clinical Learning Hub**.
+
+Approved conceptual architecture:
+
+```text
+Foundation Map
++
+Clinical Challenges
++
+Daily Real-Case Review
++
+Signals
++
+Learning Plan / spaced repetition
+```
+
+Detailed design is now being canonicalized from a fresh branch based on the current production `main`; the older planning branch is not being merged wholesale because it diverged from later RF releases.
 
 ---
 
-# 6. Exact next action
+# 6. L-0 current scope
 
-Product owner explicitly authorized **merge and deploy** on 2026-09-06. Repository discipline requires the bounded branch to pass through PR and squash merge.
-
-Execute now:
+Active slice:
 
 ```text
-rerun exact-head RF hotfix gate after this docs-only authority commit
-→ open bounded PR to main
-→ verify PR is mergeable and exact head has green checks
-→ squash merge using expected head SHA
-→ allow normal Render auto-deploy from main
-→ verify Render reaches LIVE on the exact merge SHA
-→ HOLD for production re-smoke
+CORE-LEARNING-HUB-L0-2026-09-07
 ```
 
-Do not manually trigger an additional Render deploy if auto-deploy succeeds.
+L-0 owns **design/contract freeze only**:
 
-Post-deploy smoke still must separately establish:
+- `ClinicalLearningChallengeV1`;
+- `LearningFactV1` / mandatory Fact Ledger;
+- `DailyCaseReviewV1`;
+- `FoundationDomainStateV1`;
+- due-state / spaced-repetition semantics;
+- challenge duplicate/revision semantics;
+- PHI firewall and learning-record/patient-record separation;
+- self-review-before-AI contract;
+- reuse of the future PR-1 transcript owner rather than a parallel transcript stack;
+- Signal/root-cause integration;
+- baseline-intervention boundary;
+- exact L-1 owner seams.
+
+No learning runtime, API, database or background schedule is authorized by L-0.
+
+---
+
+# 7. Baseline methodology invariant
+
+Visible systematic Daily Case Review coaching is an intervention.
+
+Default sequence remains:
 
 ```text
-#76 single-side/derived-location behavior
-#76 medication parser/capacity behavior
-obvious laboratory PDF rejected
-real imaging PDF accepted OR scanned report explicitly clinician-confirmed
-final A.1 PDF inspected
-A.2 path exercised
+build/test learning machinery
+→ during 30-case scored system-assisted baseline:
+     Practice Review / Daily Case Review may run in shadow
+     routine clinician-facing AI critique hidden by default
+→ baseline lock
+→ activate visible daily coaching as a formal intervention
+→ re-measure
 ```
 
-No production configuration change and no claim of full production-smoke verification are authorized by this release action.
+If product owner later chooses visible daily AI coaching during the scored baseline, that requires explicit methodology REPLAN and cohort relabelling.
+
+---
+
+# 8. Exact next action
+
+Current branch work:
+
+```text
+port approved detailed Learning Hub design onto fresh current main
+→ reconcile TODO / phase plan / current slice / change log
+→ verify docs-only diff and absence of runtime changes
+→ open bounded design PR
+→ squash merge design into main
+→ allow normal Render auto-deploy if triggered by main commit; no manual redeploy
+→ begin L-0 exact contract/design review
+```
+
+After L-0 design freeze:
+
+```text
+HOLD for separate L-1 implementation authority
+```
+
+Forbidden until separately authorized:
+
+```text
+NO learning runtime/database implementation
+NO new external learning credential
+NO patient-record writes from learning artifacts
+NO raw Heidi transcript persistence
+NO production config mutation
+NO RF signature asset in repository
+```
