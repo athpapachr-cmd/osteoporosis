@@ -12,7 +12,6 @@ from sqlalchemy import (
     String,
     UniqueConstraint,
     delete,
-    func,
     or_,
     select,
 )
@@ -108,11 +107,15 @@ def init_learning_storage(engine: Engine) -> None:
 
 
 def latest_challenge_revision(session: Session, challenge_id: str) -> ChallengeRevisionORM | None:
+    # Mutation callers rely on this row lock to serialize revision creation with
+    # delete/reference-overlay mutations. SQLite safely ignores FOR UPDATE; the
+    # production Postgres engine enforces it within the surrounding transaction.
     return session.execute(
         select(ChallengeRevisionORM)
         .where(ChallengeRevisionORM.challenge_id == challenge_id)
         .order_by(ChallengeRevisionORM.revision.desc())
         .limit(1)
+        .with_for_update()
     ).scalar_one_or_none()
 
 
@@ -121,7 +124,14 @@ def challenge_revision(
     challenge_id: str,
     revision: int,
 ) -> ChallengeRevisionORM | None:
-    return session.get(ChallengeRevisionORM, (challenge_id, revision))
+    return session.execute(
+        select(ChallengeRevisionORM)
+        .where(
+            ChallengeRevisionORM.challenge_id == challenge_id,
+            ChallengeRevisionORM.revision == revision,
+        )
+        .with_for_update()
+    ).scalar_one_or_none()
 
 
 def challenge_revisions(session: Session, challenge_id: str) -> list[ChallengeRevisionORM]:
@@ -171,14 +181,20 @@ def due_rows_for_source_or_target_challenge(
 
 
 def purge_challenge_content(session: Session, challenge_id: str) -> int:
-    latest = session.scalar(
-        select(func.max(ChallengeRevisionORM.revision)).where(
-            ChallengeRevisionORM.challenge_id == challenge_id
-        )
+    # Lock the immutable revision rows before any overlay/due/content purge. This
+    # prevents a concurrent revise/reference write from crossing the tombstone
+    # transaction and leaving resurrected content or an orphan mutable overlay.
+    locked_revisions = list(
+        session.execute(
+            select(ChallengeRevisionORM)
+            .where(ChallengeRevisionORM.challenge_id == challenge_id)
+            .order_by(ChallengeRevisionORM.revision.asc())
+            .with_for_update()
+        ).scalars()
     )
-    max_revision = int(latest or 0)
-    if max_revision < 1:
+    if not locked_revisions:
         return 0
+    max_revision = max(int(row.revision) for row in locked_revisions)
 
     session.execute(
         delete(ReferenceVerificationORM).where(
