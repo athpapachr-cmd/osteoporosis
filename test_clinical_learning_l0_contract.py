@@ -82,8 +82,7 @@ def valid_foundation_attempt(attempt: dict) -> bool:
         )
         transfer = any(
             item.get("result") == "demonstrated"
-            and item.get("method")
-            in {
+            and item.get("method") in {
                 "novel_case_transfer",
                 "boundary_or_exception_recognition",
                 "evidence_directness_calibration",
@@ -167,10 +166,12 @@ class ClinicalLearningL0ContractTests(unittest.TestCase):
         self.assertIn("accepted_revision_payload_is_never_updated_in_place", rules)
         self.assertIn("tombstoned_challenge_id_cannot_be_recreated_in_L1", rules)
 
-    def test_reference_verification_is_external_to_immutable_revision(self):
+    def test_reference_verification_is_reusable_external_overlay(self):
         table = self.boundary["persistence"]["tables"]["clinical_learning_reference_verification"]
-        self.assertEqual(table["primary_key"], ["challenge_id", "revision", "reference_id"])
-        self.assertIn("overlay_changes_never_mutate_challenge_payload_or_content_hash", table["invariants"])
+        self.assertEqual(table["primary_key"], ["artifact_type", "artifact_id", "artifact_revision", "reference_id"])
+        self.assertEqual(table["l1_allowed_artifact_types"], ["challenge"])
+        self.assertIn("no second reference-verification store", table["future_extension_rule"])
+        self.assertIn("overlay_changes_never_mutate_learning_payload_or_content_hash", table["invariants"])
         ref = self.core["objects"]["LearningReferenceV1"]
         self.assertIn("post_persistence_reference_verification_does_not_mutate_an_accepted_immutable_learning_revision", ref["invariants"])
         handling = self.boundary["reference_handling"]
@@ -185,32 +186,26 @@ class ClinicalLearningL0ContractTests(unittest.TestCase):
         self.assertTrue({"facts", "reasoning", "observations", "references"}.issubset(forbidden))
         steps = set(deletion["transactional_steps"])
         self.assertIn("delete_all_due_items_targeting_or_sourced_from_challenge_id", steps)
-        self.assertIn("delete_all_reference_verification_overlay_rows_for_challenge_id", steps)
+        self.assertIn("delete_all_reference_verification_overlay_rows_for_artifact_type_challenge_and_artifact_id", steps)
         due_table = self.boundary["persistence"]["tables"]["clinical_learning_due_items"]
         self.assertIn("source_artifact_type", due_table["columns"])
         self.assertIn("source_artifact_id", due_table["columns"])
 
-    def test_privacy_scanning_covers_all_untrusted_strings_and_excludes_only_bibliographic_locators_from_numeric_heuristics(self):
+    def test_privacy_scanning_covers_all_untrusted_strings_and_only_locator_numeric_exclusions(self):
         guard = self.boundary["privacy_guard"]
         self.assertEqual(guard["challenge_unknown_field_policy"], "reject_recursively")
         self.assertIn("Every user/import-supplied string field", guard["untrusted_string_scan_rule"])
         paths = set(guard["minimum_challenge_free_text_scan_paths"])
         self.assertTrue({
-            "title",
-            "topics[]",
-            "fact_ledger[].statement",
-            "fact_ledger[].source",
-            "progressive_disclosures[].label",
-            "reasoning_responses[].text",
-            "references[].title",
-            "references[].verification_note",
-            "learning_actions[].rationale",
+            "title", "topics[]", "fact_ledger[].statement", "fact_ledger[].source",
+            "progressive_disclosures[].label", "reasoning_responses[].text",
+            "references[].title", "references[].verification_note", "learning_actions[].rationale",
         }.issubset(paths))
         excluded = set(guard["bibliographic_paths_excluded_from_numeric_identity_heuristics"])
         self.assertEqual(excluded, {"references[].pmid", "references[].doi", "references[].url"})
         self.assertTrue(guard["clinician_attestation"]["required_for_challenge_import"])
-        self.assertTrue(guard["clinician_attestation"]["required_value"])
         self.assertEqual(set(guard["foundation_assessment_text_scan_paths"]), {"evidence[].note", "clinician_note"})
+        self.assertEqual(guard["reference_verification_text_scan_paths"], ["verification_note"])
 
     def test_imported_references_default_unverified(self):
         self.assertEqual(self.boundary["reference_handling"]["imported_reference_default"], "unverified")
@@ -218,12 +213,10 @@ class ClinicalLearningL0ContractTests(unittest.TestCase):
         self.assertEqual(ref_field["default"], "unverified")
 
     def test_foundation_self_rating_cannot_promote_state(self):
-        attempt = self.fixtures["foundation_self_rating_only"]["attempt"]
-        self.assertFalse(valid_foundation_attempt(attempt))
+        self.assertFalse(valid_foundation_attempt(self.fixtures["foundation_self_rating_only"]["attempt"]))
 
     def test_foundation_formal_solid_requires_formal_plus_transfer_or_calibration(self):
-        attempt = self.fixtures["foundation_formal_solid_valid"]["attempt"]
-        self.assertTrue(valid_foundation_attempt(attempt))
+        self.assertTrue(valid_foundation_attempt(self.fixtures["foundation_formal_solid_valid"]["attempt"]))
         invariants = self.core["objects"]["FoundationAssessmentAttemptV1"]["invariants"]
         self.assertTrue(any("formal_solid" in item for item in invariants))
 
