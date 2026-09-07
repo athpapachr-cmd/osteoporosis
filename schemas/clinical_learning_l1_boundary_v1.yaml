@@ -63,6 +63,17 @@ persistence:
         - accepted_revision_content_is_immutable
         - opaque_patient_or_encounter_reference_is_forbidden_in_challenge_payload
 
+    clinical_learning_challenge_tombstones:
+      purpose: noncontent_deleted_identity_for_privacy_and_referential_integrity
+      columns:
+        challenge_id: uuid_primary_key
+        deleted_at: datetime_not_null
+        max_deleted_revision: integer_not_null
+      invariants:
+        - no_challenge_text_or_clinical_content_is_retained
+        - no_patient_or_encounter_reference_is_retained
+        - tombstone_prevents_silent_reuse_of_deleted_challenge_identity
+
     clinical_learning_foundation_attempts:
       purpose: append_only_reviewed_assessment_attempts
       columns:
@@ -121,31 +132,41 @@ challenge_revision_semantics:
     - older_revision_import_is_rejected_unless_exact_idempotent_duplicate
     - clinician_edit_after_persistence_creates_new_revision
     - accepted_revision_payload_is_never_updated_in_place
+    - tombstoned_challenge_id_cannot_be_recreated_in_L1
   content_hash:
     owner: server
     input: canonicalized_payload_excluding_server_timestamps_and_server_hash
     algorithm: sha256
 
 challenge_delete_semantics:
-  operation: explicit_hard_delete_for_personal_learning_record
+  operation: content_purge_plus_noncontent_tombstone
   requires_confirmation: true
-  transactional_deletes:
-    - all_challenge_revisions_for_challenge_id
-    - due_items_targeting_challenge_id
+  transactional_steps:
+    - compute_and_retain_challenge_id_max_revision_deleted_at_only
+    - delete_all_challenge_revision_payloads_and_hashes_for_challenge_id
+    - delete_due_items_targeting_challenge_id
+    - insert_noncontent_tombstone
+  retained_tombstone_fields: [challenge_id, deleted_at, max_deleted_revision]
+  forbidden_tombstone_content:
+    - title
+    - topics
+    - facts
+    - reasoning
+    - observations
+    - references
+    - patient_or_encounter_reference
+  foundation_history_rule: >-
+    Existing clinician-reviewed FoundationAssessmentAttempt records are not silently deleted
+    or rewritten because a source Challenge is later purged. Their evidence descriptor may
+    retain the opaque challenge_id with source_artifact_deleted=true, while the deleted
+    Challenge content is no longer resolvable.
   rationale: >-
-    Learning records are not patient records and may be deleted completely. This also
-    provides a safe recovery path if an import accidentally contains sensitive material.
-  future_audit_log_rule: may_retain_noncontent_metadata_only_if_separately_designed
+    Content purge is needed for privacy recovery. A non-content tombstone preserves identity
+    and referential integrity without retaining the deleted clinical/learning text.
 
 privacy_guard:
   boundary: before_preview_acceptance_and_again_before_persistence
-  deterministic_hard_reject_patterns:
-    - email_address
-    - phone_number_like_sequence
-    - explicit_identity_or_gesy_number_field
-    - full_date_of_birth_field
-    - explicit_postal_address_field
-  structured_field_reject_names:
+  structured_field_reject_names_global:
     - patient_name
     - full_name
     - identity_number
@@ -155,11 +176,39 @@ privacy_guard:
     - address
     - date_of_birth
     - dob
+  free_text_scan_paths:
+    - initial_case
+    - fact_ledger[].statement
+    - progressive_disclosures[].narrative
+    - reasoning_responses[].text
+    - final_clinician_decision
+    - observations[].statement
+    - observations[].clinician_modified_statement
+    - observations[].disposition_note
+    - learning_actions[].title
+    - learning_actions[].rationale
+    - next_challenge_topic
+  free_text_hard_reject_patterns:
+    - email_address
+    - phone_number_like_sequence
+    - explicit_identity_or_gesy_number_phrase
+    - full_date_of_birth_phrase
+    - explicit_postal_address_phrase
+  bibliographic_paths_excluded_from_numeric_identity_heuristics:
+    - references[].pmid
+    - references[].doi
+    - references[].url
+  bibliographic_rule: >-
+    Reference locator fields are validated as bibliographic metadata and are not scanned by
+    phone/identity-number heuristics, because legitimate PMID/DOI/URL values are numeric.
+    They remain subject to normal schema and URL/locator validation.
   limitations:
     - free_text_name_detection_is_not_guaranteed_by_deterministic_rules
     - deidentification_is_not_claimed_perfect
+    - false_negatives_remain_possible_in_unstructured_text
   clinician_attestation:
     required_for_challenge_import: true
+    required_value: true
     text_intent: clinician_confirms_no_direct_patient_identifiers_remain
   challenge_mode_rules:
     synthetic:
@@ -198,13 +247,13 @@ api_boundary_l1:
       purpose: filtered_history
     - method: GET
       path: /clinical/learning/api/challenges/{challenge_id}
-      purpose: challenge_with_revision_history
+      purpose: challenge_with_revision_history_or_deleted_state
     - method: PUT
       path: /clinical/learning/api/challenges/{challenge_id}
       purpose: create_next_immutable_revision_from_clinician_edit
     - method: DELETE
       path: /clinical/learning/api/challenges/{challenge_id}
-      purpose: explicit_hard_delete
+      purpose: purge_content_and_create_noncontent_tombstone
     - method: GET
       path: /clinical/learning/api/foundation
       purpose: foundation_registry_plus_current_state_and_due_status
@@ -240,6 +289,7 @@ ui_boundary_l1:
     challenge_history:
       filters: [topic, foundation_node, date, challenge_mode, review_state]
       shows: [title, date, topics, linked_foundation_nodes, revision, due_state]
+      deleted_state: show_deleted_record_placeholder_without_content_if_needed_for_referential_context
     foundation_map:
       shows: [node, state, retention_state, evidence_count, last_assessed, next_review_due]
       no_composite_score: true
@@ -271,15 +321,20 @@ foundation_state_mutation:
   later_sources_rule: >-
     Other artifacts may become assessment evidence only through a clinician-reviewed
     FoundationAssessmentAttempt; they never directly mutate FoundationDomainStateV1.
+  deleted_source_rule: >-
+    A later content purge of a source Challenge marks corresponding evidence descriptors as
+    source_artifact_deleted where resolvable but does not retroactively rewrite an already
+    clinician-reviewed assessment attempt or materialized historical state.
 
 l1_exit_evidence_targets:
   - schema_validation_for_valid_and_invalid_challenge_examples
   - duplicate_idempotency_and_conflict_tests
   - revision_append_only_tests
+  - tombstone_and_content_purge_tests
   - PHI_guard_tests_with_synthetic_identifiers_only
+  - bibliographic_numeric_locator_not_misclassified_as_patient_identifier_tests
   - fact_ledger_reference_integrity_tests
   - reference_verification_default_tests
   - foundation_transition_guard_tests
-  - hard_delete_transaction_tests
   - protected_auth_tests
   - no_patient_or_transcript_write_path_tests
