@@ -53,7 +53,7 @@ class ClinicalLearningL0BoundaryTests(unittest.TestCase):
         self.assertEqual(semantics["descriptive_topics"]["type"], "normalized_free_tags")
         self.assertNotIn("osteoporosis_topic_taxonomy", self.boundary["owners"]["module_01"]["owns"])
 
-    def test_privacy_guard_is_fail_closed_for_schema_and_persistable_text(self):
+    def test_privacy_guard_is_fail_closed_and_sanitized(self):
         privacy = self.boundary["privacy_guard"]
         self.assertEqual(privacy["challenge_unknown_field_policy"], "reject_recursively")
         self.assertEqual(privacy["foundation_assessment_unknown_field_policy"], "reject_recursively")
@@ -66,8 +66,10 @@ class ClinicalLearningL0BoundaryTests(unittest.TestCase):
         excluded = set(privacy["bibliographic_paths_excluded_from_numeric_identity_heuristics"])
         self.assertEqual(excluded, {"references[].pmid", "references[].doi", "references[].url"})
         self.assertEqual(privacy["reference_verification_text_scan_paths"], ["verification_note"])
+        self.assertIn("error codes and field paths only", privacy["sanitized_validation_error_rule"])
+        self.assertIn("must not contain imported Challenge/Foundation payloads", privacy["logging_rule"])
 
-    def test_due_items_have_repeatable_occurrence_and_source_provenance(self):
+    def test_due_items_have_repeatable_occurrence_source_and_defer_semantics(self):
         table = self.boundary["persistence"]["tables"]["clinical_learning_due_items"]
         self.assertIn("occurrence", table["columns"])
         self.assertIn("source_artifact_type", table["columns"])
@@ -77,10 +79,13 @@ class ClinicalLearningL0BoundaryTests(unittest.TestCase):
         self.assertIn("completed_occurrence_is_historical_and_not_reopened", rules)
         self.assertIn("scheduling_after_completed_occurrence_creates_occurrence_plus_1", rules)
         self.assertIn("challenge_delete_removes_rows_whose_target_or_source_is_the_deleted_challenge", rules)
+        self.assertIn("deferred_occurrence_requires_future_deferred_until_and_reactivates_when_that_date_arrives", rules)
         due = self.boundary["l1_due_semantics"]
         self.assertEqual(due["occurrence_starts_at"], 1)
         self.assertTrue(due["target_id_required_for_l1_materialized_items"])
         self.assertEqual(due["source_artifact_fields_required"], ["source_artifact_type", "source_artifact_id"])
+        self.assertEqual(due["defer_rule"], "deferred_requires_future_deferred_until_and_null_completed_at")
+        self.assertEqual(due["defer_reactivation_rule"], "deferred_until_today_becomes_due_and_deferred_until_past_becomes_overdue")
 
     def test_challenge_delete_purges_nested_action_due_rows_and_reference_overlay(self):
         deletion = self.boundary["challenge_delete_semantics"]
@@ -97,6 +102,13 @@ class ClinicalLearningL0BoundaryTests(unittest.TestCase):
         table = self.boundary["persistence"]["tables"]["clinical_learning_foundation_attempts"]
         self.assertIn("explicit foundation_assessment evidence only", table["l1_source_rule"])
         self.assertIn("direct patient identifiers are rejected", table["privacy_rule"])
+
+    def test_foundation_source_delete_state_does_not_mutate_reviewed_attempt(self):
+        evidence = self.core["objects"]["FoundationAssessmentEvidenceV1"]
+        self.assertNotIn("source_artifact_deleted", evidence["fields"])
+        self.assertIn("source_artifact_current_delete_state_is_not_stored_as_mutable_evidence_content", evidence["invariants"])
+        attempt = self.core["objects"]["FoundationAssessmentAttemptV1"]
+        self.assertIn("current_source_artifact_deleted_state_is_resolved_from_external_tombstone_or_owner_not_by_mutating_attempt", attempt["invariants"])
 
     def test_delete_tombstone_has_no_learning_content(self):
         deletion = self.boundary["challenge_delete_semantics"]
