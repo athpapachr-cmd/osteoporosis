@@ -1,0 +1,90 @@
+schema: clinical_learning_contract_manifest_v1
+status: l0_contract_candidate
+slice_id: CORE-LEARNING-HUB-L0-2026-09-07
+module_01: osteoporosis
+runtime_authority: none
+
+contracts:
+  core_objects:
+    path: schemas/clinical_learning_core_v1.yaml
+    owns:
+      - LearningFactV1
+      - ProgressiveDisclosureV1
+      - ClinicianReasoningResponseV1
+      - LearningReferenceV1
+      - LearningObservationV1
+      - LearningActionV1
+      - ClinicalLearningChallengeV1
+      - FoundationAssessmentEvidenceV1
+      - FoundationAssessmentAttemptV1
+      - FoundationDomainStateV1
+      - DailyCaseSelfReviewV1
+      - ReviewEvidenceDescriptorV1
+      - DailyCaseReviewV1
+      - LearningDueStateV1
+  module_foundation_map:
+    path: schemas/osteoporosis_foundation_map_v1.yaml
+    owns:
+      - Module_01_foundation_nodes
+      - learning_dependency_edges
+      - foundation_assessment_policy
+  l1_boundary:
+    path: schemas/clinical_learning_l1_boundary_v1.yaml
+    owns:
+      - future_runtime_owners
+      - persistence_boundary
+      - challenge_duplicate_revision_delete_semantics
+      - privacy_guard_boundary
+      - L1_API_boundary
+      - L1_UI_boundary
+  design_direction:
+    path: CLINICAL_LEARNING_HUB_DESIGN_V1.md
+  active_slice:
+    path: SLICE_PLAN_CURRENT.md
+  operational_now:
+    path: CURRENT_OPERATIONAL.md
+
+ownership_matrix:
+  learning_schema_validation: reusable_core
+  challenge_persistence: reusable_core_L1_future
+  foundation_state_persistence: reusable_core_L1_future
+  osteoporosis_foundation_content: module_01
+  transcript_extraction: PR1_PR2_owner_not_learning
+  practice_review_interpretation: PR3_owner_not_L1
+  signal_promotion: shared_signal_engine_future
+  patient_record_truth: clinical_encounter_owner_not_learning
+  external_learning_credential: later_separate_scope_not_L1
+
+hard_invariants:
+  - learning_record_not_patient_record
+  - every_learning_fact_authoritative_for_patient_false
+  - progressive_disclosure_fact_provenance_mandatory
+  - raw_heidi_transcript_not_persisted_by_learning
+  - imported_reference_default_unverified
+  - pending_or_dismissed_observation_has_no_signal_authority
+  - foundation_state_changes_only_via_clinician_reviewed_assessment_attempt
+  - missing_assessment_not_failure
+  - no_daily_case_fabrication
+  - visible_daily_coaching_is_baseline_intervention
+  - no_composite_learning_score
+  - L1_does_not_implement_transcript_or_PracticeReview_owner
+
+l0_exit_evidence:
+  required:
+    - yaml_parse_pass
+    - object_reference_integrity_pass
+    - challenge_revision_semantics_pass
+    - fact_ledger_scope_invariants_pass
+    - privacy_boundary_review_pass
+    - foundation_transition_semantics_pass
+    - daily_case_review_source_ownership_pass
+    - due_state_baseline_semantics_pass
+    - exact_L1_owner_map_pass
+    - design_completeness_review_no_material_open_finding
+  runtime_tests_required: false
+  production_smoke_required: false
+
+next_after_l0:
+  state: HOLD
+  requires_separate_authority: true
+  proposed_slice: CORE-LEARNING-HUB-L1-CHALLENGE-FOUNDATION-MVP
