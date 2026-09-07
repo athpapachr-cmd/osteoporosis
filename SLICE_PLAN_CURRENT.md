@@ -1,9 +1,9 @@
 # SLICE_PLAN_CURRENT.md — Clinical Learning Hub L-0 exact contract freeze
 
-> **STATUS:** CONTRACT FROZEN / COMPLETE / INDEPENDENT CLOSURE PASS / PR #80 OPEN — RELEASE-DESIGN HOLD
+> **STATUS:** CONTRACT FROZEN / COMPLETE / INDEPENDENT CLOSURE PASS / MERGED TO MAIN — SLICE CLOSED
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Slice ID:** `CORE-LEARNING-HUB-L0-2026-09-07`.
-> **Fresh `main` / merge base:** `46bbb2fa00ad7c77482aab5fa84ef54e049154c8`.
+> **Merged `main`:** `43ed3090c5d4fe849e5f500edf22182fade36cd8` — PR #80 squash merge.
 > **Design branch:** `design/clinical-learning-l0-contract-freeze-2026-09-07`.
 > **Detailed product design:** `CLINICAL_LEARNING_HUB_DESIGN_V1.md`.
 > **Field-level contract manifest:** `schemas/clinical_learning_contract_manifest_v1.yaml`.
@@ -12,7 +12,8 @@
 > **Active-writer design review:** `CLINICAL_LEARNING_L0_DESIGN_REVIEW_V1.md` — PASS, explicitly NOT independent.
 > **Independent review:** `CLINICAL_LEARNING_L0_INDEPENDENT_REVIEW_V1.md` — CLOSURE PASS / material open finding NONE on the corrected substantive contract head.
 > **Runtime implementation authority:** NONE.
-> **Design PR:** #80 OPEN; merge authority NONE.
+> **Design PR:** #80 MERGED.
+> **Render auto-deploy:** `dep-daffttrbc2fs73d7v45g` LIVE; no learning runtime introduced.
 > **Patient-data mutation authority:** NONE.
 > **Production config/secret authority:** NONE.
 
@@ -657,18 +658,18 @@ ACTIVE-WRITER EXACT DESIGN REVIEW    PASS
 INDEPENDENT EXACT-HEAD REVIEW        CLOSURE PASS
 MATERIAL OPEN FINDING                NONE
 CLEAN FREEZE GATE                    PASS — f947b12ce77db2ad1e5ff9117d7a4f794e224b60 / run 34148333413
-DESIGN PR #80                        OPEN / RELEASE-DESIGN HOLD
-L-0 MERGED TO MAIN                   NO
+DESIGN PR #80                        MERGED
+L-0 MERGED TO MAIN                   YES — 43ed3090c5d4fe849e5f500edf22182fade36cd8
+RENDER AUTO-DEPLOY                   LIVE — dep-daffttrbc2fs73d7v45g
 L-1 RUNTIME AUTHORITY                NONE
 ```
 
 Exact next action:
 
 ```text
-PR #80 OPEN
-→ RELEASE / DESIGN HOLD
-→ separate product-owner merge decision required
-→ after any later merge, separate product-owner L-1 runtime implementation decision required
+L-0 CLOSED / MERGED
+→ HOLD for separate product-owner L-1 runtime implementation authority
+→ when granted, freeze a fresh bounded L-1 implementation slice before coding
 ```
 
 Any material contract change after the independently reviewed substantive head invalidates the CLOSURE PASS and requires another substantive review. Status/documentation-only closeout changes do not authorize L-1 implementation.

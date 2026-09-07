@@ -248,7 +248,7 @@ G-1 production-readiness gate closed
 - [ ] Review follow-up execution.
 - [ ] Keep routine clinician-facing Practice Review hidden during scored baseline by default.
 
-## 1.10A Clinical Learning Hub — L-0 CONTRACT FROZEN / COMPLETE — PR #80 HOLD
+## 1.10A Clinical Learning Hub — L-0 CONTRACT FROZEN / COMPLETE / MERGED
 
 - [x] Approve Foundation Map + Clinical Challenges + Daily Heidi-backed Real-Case Review as one reusable Core learning architecture.
 - [x] Add canonical detailed design: `CLINICAL_LEARNING_HUB_DESIGN_V1.md`.
@@ -259,7 +259,7 @@ G-1 production-readiness gate closed
 - [x] Define daily/weekly/periodic learning cadence and baseline-intervention boundary.
 - [x] L-0: freeze implementable learning object, provenance, privacy, due-state, revision, persistence and Signal contracts on corrected substantive head `afaf9d5d0c7df9d53f8ec714f74d7b44e3a69f96`.
 - [x] L-0: identify exact L-1 API/database/UI owners and complete independent design review with CLOSURE PASS / material open finding none.
-- [x] L-0: canonical closeout complete; clean freeze head `f947b12ce77db2ad1e5ff9117d7a4f794e224b60` passed run `34148333413`; bounded design PR #80 is OPEN in release-design HOLD.
+- [x] L-0: canonical closeout complete; clean freeze head `f947b12ce77db2ad1e5ff9117d7a4f794e224b60` passed run `34148333413`; bounded design PR #80 squash-merged to `main` as `43ed3090c5d4fe849e5f500edf22182fade36cd8`.
 - [ ] L-1: protected Challenge JSON import/history + Foundation Map skeleton + spaced-repetition due state.
 - [ ] PR-1/PR-2/PR-3: establish reusable transcript and Practice Review seams.
 - [ ] L-2: activate Daily Case Review using real eligible Heidi-backed encounters.

@@ -1208,3 +1208,36 @@ PR #80                           OPEN
 MERGED                           NO
 L-1 IMPLEMENTATION               NOT AUTHORIZED
 ```
+
+---
+
+## 2026-09-07 — Clinical Learning Hub L-0 contracts merged to main
+
+After explicit product-owner merge authority, PR #80 (`Clinical Learning Hub: freeze L-0 contracts and L-1 boundaries`) was squash-merged to `main` as:
+
+```text
+43ed3090c5d4fe849e5f500edf22182fade36cd8
+```
+
+The merge contains the independently reviewed/frozen L-0 learning contracts, machine-validation fixtures/tests, Foundation Map v1, L-1 ownership boundary and canonical closeout. It contains no Learning Hub runtime/database/API/UI implementation and no patient/transcript write path.
+
+Render auto-deploy triggered from the `main` commit and reached `LIVE` as:
+
+```text
+dep-daffttrbc2fs73d7v45g
+```
+
+This deploy is lifecycle evidence for the merged repository state; it does not convert L-0 design contracts into an implemented Learning Hub runtime.
+
+Current lifecycle:
+
+```text
+L-0 CONTRACT FROZEN / COMPLETE   YES
+INDEPENDENT REVIEW               CLOSURE PASS
+PR #80                           MERGED
+MAIN                              43ed3090c5d4fe849e5f500edf22182fade36cd8
+RENDER                            LIVE
+L-1 IMPLEMENTATION               NOT AUTHORIZED
+```
+
+The next gate is a separate product-owner decision to authorize the bounded L-1 Challenge Import + History + Foundation Map MVP implementation slice.
