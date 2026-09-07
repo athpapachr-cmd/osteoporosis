@@ -1,10 +1,11 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** CLINICAL LEARNING HUB L-0 — CONTRACT FROZEN / COMPLETE / PR #80 OPEN — RELEASE-DESIGN HOLD
+> **STATUS:** CLINICAL LEARNING HUB L-0 — CONTRACT FROZEN / COMPLETE / MERGED TO MAIN — L-1 AUTHORIZATION HOLD
 > **Updated:** 2026-09-07 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Fresh verified `main` / merge base:** `46bbb2fa00ad7c77482aab5fa84ef54e049154c8`.
-> **Active branch:** `design/clinical-learning-l0-contract-freeze-2026-09-07`.
+> **Current verified `main`:** `43ed3090c5d4fe849e5f500edf22182fade36cd8` — PR #80 squash merge.
+> **Render auto-deploy:** `dep-daffttrbc2fs73d7v45g` — LIVE; design/contracts/canonical change only, no new learning runtime.
+> **Active branch:** NONE — L-0 merged and closed; no L-1 writer exists.
 > **Current slice:** `CORE-LEARNING-HUB-L0-2026-09-07`.
 > **Detailed design:** `CLINICAL_LEARNING_HUB_DESIGN_V1.md`.
 > **Corrected substantive contract head:** `afaf9d5d0c7df9d53f8ec714f74d7b44e3a69f96`.
@@ -12,9 +13,9 @@
 > **Active-writer review:** `CLINICAL_LEARNING_L0_DESIGN_REVIEW_V1.md` — PASS, not independent.
 > **Independent review:** `CLINICAL_LEARNING_L0_INDEPENDENT_REVIEW_V1.md` — CLOSURE PASS / material open finding NONE.
 > **ACTIVE RUNTIME WRITER/LOCK:** NONE.
-> **ACTIVE DESIGN/CANONICAL WRITER:** NONE — L-0 contract freeze is closed; PR #80 is release-design HOLD.
+> **ACTIVE DESIGN/CANONICAL WRITER:** NONE — L-0 contract freeze is merged/closed.
 > **Learning runtime implementation authority:** NONE.
-> **L-0 merge authority:** NONE — PR #80 is open and must not be merged without a separate explicit product-owner decision.
+> **L-0 merge:** COMPLETE — PR #80 squash-merged by explicit product-owner authority.
 > **Patient-data mutation authority:** NONE.
 > **Production config/secret authority:** NONE.
 > **RF runtime authority:** NONE — RF is production-smoke-verified and closed for now.
@@ -224,8 +225,9 @@ INDEPENDENT EXACT-HEAD REVIEW        CLOSURE PASS
 MATERIAL OPEN FINDING                NONE
 CANONICAL CLOSEOUT                   COMPLETE
 CLEAN FREEZE GATE                    PASS — f947b12ce77db2ad1e5ff9117d7a4f794e224b60 / run 34148333413
-PR #80                               OPEN / MERGEABLE / RELEASE-DESIGN HOLD
-L-0 MERGED TO MAIN                   NO
+PR #80                               MERGED
+L-0 MERGED TO MAIN                   YES — 43ed3090c5d4fe849e5f500edf22182fade36cd8
+RENDER AUTO-DEPLOY                   LIVE — dep-daffttrbc2fs73d7v45g
 L-1 RUNTIME IMPLEMENTATION           NOT AUTHORIZED
 ```
 
@@ -234,19 +236,17 @@ L-1 RUNTIME IMPLEMENTATION           NOT AUTHORIZED
 # 8. Exact next action / HOLD
 
 ```text
-PR #80 OPEN
-→ HOLD for separate product-owner merge decision
-→ if merged later: docs/design-only Render auto-deploy may follow main
-→ L-1 remains separately unauthorized until explicit product-owner implementation authority
+L-0 is complete and merged
+→ HOLD for separate product-owner L-1 implementation authority
+→ when authorized, create a fresh L-1 implementation slice/branch from current main
 ```
 
 Current hold:
 
 ```text
-NO merge of PR #80
-NO L-1 runtime/database implementation
-NO learning API runtime routes
-NO Learning Hub production UI
+NO L-1 runtime/database implementation yet
+NO learning API runtime routes yet
+NO Learning Hub production UI yet
 NO external learning credential
 NO Daily Case Review runtime
 NO raw transcript persistence
