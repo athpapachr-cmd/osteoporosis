@@ -1,10 +1,11 @@
 # SLICE_PLAN_CURRENT.md — Clinical Learning Hub L-1 Challenge + Foundation MVP
 
-> **STATUS:** IMPLEMENTED / TESTED / FINAL EXACT-HEAD REVIEW PASS — PR RELEASE-HOLD CANDIDATE
+> **STATUS:** IMPLEMENTED / TESTED / FINAL EXACT-HEAD REVIEW PASS — PR #82 OPEN / RELEASE HOLD
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Slice ID:** `CORE-LEARNING-HUB-L1-CHALLENGE-FOUNDATION-MVP-2026-09-07`.
 > **Fresh implementation base:** `5f7749c70c6bb3f36fcfc765088d4d363a6bb1d6`.
 > **Implementation branch:** `feat/clinical-learning-l1-challenge-foundation-mvp-2026-09-07`.
+> **Release PR:** `#82` — OPEN / DRAFT / RELEASE HOLD.
 > **Frozen L-0 contract owner:** `schemas/clinical_learning_contract_manifest_v1.yaml`.
 > **L-1 boundary owner:** `schemas/clinical_learning_l1_boundary_v1.yaml`.
 > **Foundation registry:** `schemas/osteoporosis_foundation_map_v1.yaml`.
@@ -531,7 +532,15 @@ run   34158892560
 state SUCCESS
 ```
 
-The final docs-only PR head must also pass the **complete** gate before PR opening.
+Additional release-path evidence before the final canonical HOLD reconciliation:
+
+```text
+417ff3cebb5165f6a11d6f1c99fdfa445dcc36c4  → L1 run 34159116868 SUCCESS
+329f26dd4dd39885b04227ac7321fb4cd71e5675  → L1 run 34159356501 SUCCESS
+65cb74a3308c59c0145fadac6616f79f2ce911bd  → L1 run 34159442964 SUCCESS
+```
+
+The final canonical RELEASE-HOLD head must also pass the **complete L-1 gate exactly at that head** before the HOLD is considered clean.
 
 ---
 
@@ -565,11 +574,11 @@ L-1 SLICE DESIGN                     FROZEN BY THIS FILE
 L-1 CORE IMPLEMENTATION              COMPLETE
 L-1 CLINICIAN-FACING UX HARDENING    COMPLETE
 L-1 SUBSTANTIVE REVIEWED HEAD        ada16afb573609cd555b99c1cc62a4a160d4215f
-L-1 TESTED                           YES — run 34158892560 SUCCESS
+L-1 TESTED                           YES
 L-1 ADJACENT-OWNER ISOLATION         PASS
 L-1 FINAL EXACT-HEAD REVIEW          PASS
 L-1 REPLAN REQUIRED                  NO
-L-1 PR                               NONE — NEXT AFTER FINAL DOCS-HEAD PASS
+L-1 PR                               #82 OPEN / DRAFT / RELEASE HOLD
 L-1 MERGED                           NO
 L-1 DEPLOYED                         NO
 L-1 PRODUCTION-SMOKE-VERIFIED        NO
@@ -578,11 +587,9 @@ L-1 PRODUCTION-SMOKE-VERIFIED        NO
 Exact next action:
 
 ```text
-complete docs-only canonical closeout
-→ verify fresh main + clean final branch-vs-main scope
-→ require full L-1 + inherited L-0 regression gate on exact final docs head
-→ verify no existing PR
-→ open one bounded L-1 PR to main
-→ RELEASE HOLD
-→ STOP for separate product-owner squash-merge/release authority
+require the complete Clinical Learning L1 regression gate SUCCESS on the exact final canonical HOLD head
+→ if SUCCESS: STOP in RELEASE HOLD
+→ await explicit product-owner decision whether to squash-merge/release PR #82
 ```
+
+Do not merge, deploy, start PR-1/PR-2/Daily Case Review/Signal work, or resume physiotherapy/CU-1/RF before separate product-owner authority.
