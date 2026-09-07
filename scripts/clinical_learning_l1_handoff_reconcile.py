@@ -7,7 +7,8 @@ BASE_MAIN = "5f7749c70c6bb3f36fcfc765088d4d363a6bb1d6"
 
 # CURRENT_OPERATIONAL.md
 p = Path("CURRENT_OPERATIONAL.md")
-s = p.read_text(encoding="utf-8")ns = s.replace(
+s = p.read_text(encoding="utf-8")
+s = s.replace(
     "> **STATUS:** CLINICAL LEARNING HUB L-1 — PRODUCT-OWNER AUTHORIZED / IMPLEMENTATION ACTIVE",
     "> **STATUS:** CLINICAL LEARNING HUB L-1 — IMPLEMENTED / TESTED EXACT-HEAD / FINAL REVIEW HANDOFF",
     1,
