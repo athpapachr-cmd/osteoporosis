@@ -1140,3 +1140,15 @@ ACTUAL RF PROCEDURE
 Generating an approval/request PDF does not infer that treatment occurred.
 
 Stale docs-only PR #74 was closed unmerged as superseded by the authoritative-form/native-ownership replan. Product-owner authority was then granted to proceed through opening one bounded native RF v2 release PR. Merge, production configuration, deploy and production smoke remain separate decisions.
+
+---
+
+## 2026-09-07 — RF v2 production smoke closed; Clinical Learning Hub L-0 activated
+
+Native RF v2 reached production through PR #75, correction PR #76 and imaging semantic-guard PR #77. Current production identity after #77 is `1d26195c77e186cff98086283252af2eb499dd17`, Render deploy `dep-daeliaks728c7384f3fg` LIVE.
+
+Product-owner authenticated smoke subsequently confirmed the intended A.1/A.2 flow, unilateral target with system-derived location, 0..3 medication-table semantics and corrected parser behavior, laboratory-PDF rejection, real/poorly extractable imaging fallback with explicit clinician confirmation, and final PDF generation. RF v2 is therefore `PRODUCTION-SMOKE-VERIFIED`, not `PILOT-VALIDATED`, and is closed for now unless new material evidence appears.
+
+The official PDF still contains a clinician-signature area. Automated signature-image storage in the public repository was explicitly rejected. Manual/external signing is accepted for now. Any future online signing requires a separate protected security/e-signature design; a PNG/SVG signature must not become a public version-controlled asset.
+
+The product owner then approved moving the primary roadmap back to the Clinical Excellence learning/capture program. `CLINICAL_LEARNING_HUB_DESIGN_V1.md` was promoted into canonical design direction and slice `CORE-LEARNING-HUB-L0-2026-09-07` activated for contract/design freeze only. L-0 covers Challenge, Fact Ledger, Daily Case Review, Foundation Map, due-state, PHI/provenance, Signal and baseline-intervention contracts. No learning runtime implementation is authorized by this design activation.
