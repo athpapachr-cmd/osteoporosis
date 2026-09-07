@@ -1,19 +1,20 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** CLINICAL LEARNING HUB L-0 — CONTRACT CANDIDATE COMPLETE / MACHINE GATE PASS / ACTIVE-WRITER REVIEW PASS / INDEPENDENT REVIEW PENDING
+> **STATUS:** CLINICAL LEARNING HUB L-0 — INDEPENDENT CLOSURE PASS / CANONICAL CLOSEOUT ACTIVE / FINAL EXACT-HEAD GATE PENDING
 > **Updated:** 2026-09-07 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Fresh verified `main` / merge base:** `46bbb2fa00ad7c77482aab5fa84ef54e049154c8`.
 > **Active branch:** `design/clinical-learning-l0-contract-freeze-2026-09-07`.
 > **Current slice:** `CORE-LEARNING-HUB-L0-2026-09-07`.
 > **Detailed design:** `CLINICAL_LEARNING_HUB_DESIGN_V1.md`.
-> **Substantive exact tested contract head:** `76d5fba68a3c4f289fe0d8438fbb1be3f5689a09`.
-> **Machine evidence:** `Clinical Learning L0 contract gate`, run `34144552849` — SUCCESS.
-> **Exact design review:** `CLINICAL_LEARNING_L0_DESIGN_REVIEW_V1.md` — PASS by active writer, explicitly NOT independent.
+> **Corrected substantive contract head:** `afaf9d5d0c7df9d53f8ec714f74d7b44e3a69f96`.
+> **Substantive machine evidence:** `Clinical Learning L0 contract gate`, run `34147429373` — SUCCESS.
+> **Active-writer review:** `CLINICAL_LEARNING_L0_DESIGN_REVIEW_V1.md` — PASS, not independent.
+> **Independent review:** `CLINICAL_LEARNING_L0_INDEPENDENT_REVIEW_V1.md` — CLOSURE PASS / material open finding NONE.
 > **ACTIVE RUNTIME WRITER/LOCK:** NONE.
-> **ACTIVE DESIGN WRITER/LOCK:** NONE after canonical closeout; branch is review-only pending independent review.
+> **ACTIVE DESIGN/CANONICAL WRITER:** ChatGPT — canonical closeout only; no material contract mutation authorized without re-review.
 > **Learning runtime implementation authority:** NONE.
-> **L-0 merge authority:** HOLD pending independent exact-head review.
+> **L-0 merge authority:** NONE in this step; bounded design PR may be opened after final exact-head gate, then HOLD.
 > **Patient-data mutation authority:** NONE.
 > **Production config/secret authority:** NONE.
 > **RF runtime authority:** NONE — RF is production-smoke-verified and closed for now.
@@ -176,97 +177,73 @@ Free-text person-name detection is not guaranteed. Clinician de-identification a
 
 ---
 
-# 5. Automated evidence
+# 5. Independent closure evidence
 
-Substantive exact contract head:
+Corrected substantive contract head:
 
 ```text
-76d5fba68a3c4f289fe0d8438fbb1be3f5689a09
+afaf9d5d0c7df9d53f8ec714f74d7b44e3a69f96
 ```
 
-Workflow:
+Machine gate:
 
 ```text
 Clinical Learning L0 contract gate
-run 34144552849
+run 34147429373
 SUCCESS
 ```
 
-Passed:
+Independent review:
 
 ```text
-YAML/object-reference integrity                    PASS
-Foundation graph integrity                         PASS
-Fact Ledger fixtures/invariants                    PASS
-revision / duplicate semantics                     PASS
-external-import server authority                   PASS
-content-purge/tombstone semantics                  PASS
-path-scoped privacy contract                       PASS
-bibliographic locator exclusion                    PASS
-Foundation transition guards                       PASS
-L-1 explicit Foundation-assessment source          PASS
-due occurrence/repeat semantics                    PASS
-Daily Case Review eligible-only persistence        PASS
-raw transcript non-persistence                     PASS
-baseline shadow semantics                          PASS
-L-1 owner/exclusion boundaries                     PASS
-design-only scope                                  PASS
-diff hygiene                                       PASS
+CLINICAL_LEARNING_L0_INDEPENDENT_REVIEW_V1.md
+CLOSURE PASS
+MATERIAL OPEN FINDING NONE
 ```
+
+The independent review did not adopt the active-writer review as its conclusion. It identified material bounded contract defects, corrected them within L-0 design authority, and reran the complete machine gate before issuing CLOSURE PASS.
+
+Key corrected ownership/integrity boundaries include reusable reference-verification overlay ownership, due-item source provenance for Challenge deletion, recursive unknown-field/PHI validation with sanitized rejection, fail-closed internal references, Daily Case immutable revision semantics, shared Signal-engine authority, append-only Foundation assessment evidence, and deterministic deferred due-state reactivation.
 
 ---
 
-# 6. Exact design review
+# 6. Final closeout gate still required
 
-`CLINICAL_LEARNING_L0_DESIGN_REVIEW_V1.md` records the active-writer exact-head review.
+The independent substantive review is complete, but L-0 is not yet declared COMPLETE until the status/canonical closeout commits themselves pass the same exact-head contract gate.
 
-Review result:
-
-```text
-FIELD-LEVEL COMPLETENESS        PASS
-OWNER/BOUNDARY REVIEW           PASS
-PRIVACY/DATA-SEPARATION REVIEW  PASS WITH EXPLICIT LIMITATION
-MACHINE GATE                    PASS
-MATERIAL OPEN FINDING           NONE
-INDEPENDENT REVIEW              PENDING
-```
-
-The review explicitly does **not** claim independence.
-
----
+No material contract change may be introduced during closeout. If one is needed, the independent CLOSURE PASS must be reopened.
 
 # 7. Lifecycle
 
 ```text
-PRODUCT DIRECTION                   APPROVED
-L-0 FIELD-LEVEL CONTRACT            CANDIDATE COMPLETE
-L-0 MACHINE GATE                    PASS
-ACTIVE-WRITER EXACT DESIGN REVIEW   PASS
-INDEPENDENT EXACT-HEAD REVIEW       PENDING
-L-0 CONTRACT FROZEN / COMPLETE      NO
-L-0 MERGED TO MAIN                  NO
-L-1 RUNTIME IMPLEMENTATION          NOT AUTHORIZED
+PRODUCT DIRECTION                    APPROVED
+L-0 FIELD-LEVEL CONTRACT             CANDIDATE COMPLETE
+SUBSTANTIVE CONTRACT GATE            PASS — run 34147429373
+ACTIVE-WRITER EXACT DESIGN REVIEW    PASS
+INDEPENDENT EXACT-HEAD REVIEW        CLOSURE PASS
+MATERIAL OPEN FINDING                NONE
+CANONICAL CLOSEOUT                   IN PROGRESS
+FINAL EXACT-HEAD GATE                PENDING
+L-0 CONTRACT FROZEN / COMPLETE       NO — final gate pending
+L-0 MERGED TO MAIN                   NO
+L-1 RUNTIME IMPLEMENTATION           NOT AUTHORIZED
 ```
 
 ---
 
 # 8. Exact next action / HOLD
 
-The branch is now review-only.
-
 ```text
-independent exact-head design review
-→ if CLOSURE PASS:
-   apply only material review corrections if required
-   rerun exact-head contract gate
-   mark L-0 CONTRACT FROZEN / COMPLETE
-   open/merge bounded design PR through normal discipline
+finish canonical closeout
+→ remove temporary closeout helpers
+→ run final exact-head L-0 gate
+→ if PASS: mark L-0 CONTRACT FROZEN / COMPLETE
+→ open bounded design PR to main
+→ RELEASE / DESIGN HOLD
 → HOLD for separate product-owner L-1 implementation authority
 ```
 
-If independent review finds a material ownership, privacy, revision, due-state, Foundation or baseline-methodology issue, that is a contract-correction/REPLAN trigger; do not code around it.
-
-Forbidden now:
+Forbidden:
 
 ```text
 NO L-1 runtime/database implementation

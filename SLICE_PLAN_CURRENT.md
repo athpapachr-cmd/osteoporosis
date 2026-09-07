@@ -1,15 +1,16 @@
 # SLICE_PLAN_CURRENT.md — Clinical Learning Hub L-0 exact contract freeze
 
-> **STATUS:** CONTRACT CANDIDATE COMPLETE / MACHINE GATE PASS / ACTIVE-WRITER EXACT DESIGN REVIEW PASS / INDEPENDENT REVIEW PENDING
+> **STATUS:** INDEPENDENT CLOSURE PASS / CONTRACT FREEZE CLOSEOUT ACTIVE / FINAL EXACT-HEAD GATE PENDING
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Slice ID:** `CORE-LEARNING-HUB-L0-2026-09-07`.
 > **Fresh `main` / merge base:** `46bbb2fa00ad7c77482aab5fa84ef54e049154c8`.
 > **Design branch:** `design/clinical-learning-l0-contract-freeze-2026-09-07`.
 > **Detailed product design:** `CLINICAL_LEARNING_HUB_DESIGN_V1.md`.
 > **Field-level contract manifest:** `schemas/clinical_learning_contract_manifest_v1.yaml`.
-> **Substantive exact tested/reviewed contract head:** `76d5fba68a3c4f289fe0d8438fbb1be3f5689a09`.
-> **Machine evidence:** `Clinical Learning L0 contract gate`, run `34144552849` — SUCCESS.
-> **Exact design review:** `CLINICAL_LEARNING_L0_DESIGN_REVIEW_V1.md` — active-writer PASS, explicitly NOT independent.
+> **Substantive corrected contract head:** `afaf9d5d0c7df9d53f8ec714f74d7b44e3a69f96`.
+> **Substantive machine evidence:** `Clinical Learning L0 contract gate`, run `34147429373` — SUCCESS.
+> **Active-writer design review:** `CLINICAL_LEARNING_L0_DESIGN_REVIEW_V1.md` — PASS, explicitly NOT independent.
+> **Independent review:** `CLINICAL_LEARNING_L0_INDEPENDENT_REVIEW_V1.md` — CLOSURE PASS / material open finding NONE on the corrected substantive contract head.
 > **Runtime implementation authority:** NONE.
 > **Patient-data mutation authority:** NONE.
 > **Production config/secret authority:** NONE.
@@ -541,81 +542,93 @@ test_clinical_learning_l0_boundary.py
 
 ---
 
-# 18. Acceptance evidence so far
+# 18. Acceptance evidence / independent closure review
 
-Substantive exact contract head:
+Corrected substantive contract head:
 
 ```text
-76d5fba68a3c4f289fe0d8438fbb1be3f5689a09
+afaf9d5d0c7df9d53f8ec714f74d7b44e3a69f96
 ```
 
 Workflow:
 
 ```text
 Clinical Learning L0 contract gate
-run 34144552849
+run 34147429373
 SUCCESS
 ```
 
-Evidence includes:
+Independent review:
 
 ```text
-YAML/object-reference integrity                      PASS
-Foundation graph integrity                           PASS
-Fact Ledger valid/invalid fixtures                   PASS
-revision/idempotency/conflict obligations            PASS
-external import server-authority boundary            PASS
-content purge/non-content tombstone                  PASS
-path-scoped privacy boundary                         PASS
-bibliographic numeric locator exclusions             PASS
-Foundation transition guards                         PASS
-L-1 explicit Foundation-assessment source only       PASS
-due occurrence/repetition semantics                  PASS
-Daily Case Review eligible-only persistence          PASS
-raw-transcript non-persistence                       PASS
-baseline shadow delivery semantics                   PASS
-L-1 owner/exclusion contract                         PASS
-design-only scope                                    PASS
-diff hygiene                                         PASS
+CLINICAL_LEARNING_L0_INDEPENDENT_REVIEW_V1.md
+CLOSURE PASS
+MATERIAL OPEN FINDING NONE
 ```
 
-Exact active-writer review:
+The original pre-independent-review candidate did not receive an automatic pass. Independent review found material but bounded L-0 contract defects; they were corrected within the existing design authority and the full gate was rerun successfully before the CLOSURE PASS.
+
+The corrected contract/gate now covers:
 
 ```text
-CLINICAL_LEARNING_L0_DESIGN_REVIEW_V1.md
-PASS — explicitly NOT independent
+YAML/object/reference integrity                         PASS
+Foundation graph integrity                              PASS
+Fact Ledger / supersession / disclosure references      PASS
+immutable revision/idempotency/conflict semantics       PASS
+external-import server authority                        PASS
+reusable reference-verification overlay                 PASS
+content purge + non-content tombstone                    PASS
+due-item source provenance / deletion integrity          PASS
+unknown-field rejection + PHI/privacy boundary           PASS
+sanitized errors/logging                                 PASS
+bibliographic PMID/DOI/URL numeric exclusions            PASS
+Foundation transition/evidence authority                 PASS
+Daily Case Review eligible-only + revision integrity     PASS
+Signal authority separation                              PASS
+deferred/completed due occurrence semantics              PASS
+baseline shadow methodology                              PASS
+L-1 owner/exclusion boundary                             PASS
+design-only scope + diff hygiene                         PASS
 ```
 
 ---
 
-# 19. Findings corrected during L-0 review
+# 19. Findings corrected across L-0 reviews
+
+Active-writer review corrected bounded issues including ineligible Daily Case Review persistence, bibliographic-number privacy false positives, Challenge tombstone semantics, external-import authority, topic/ontology ownership, due occurrence semantics and premature Challenge-to-Foundation coupling.
+
+Independent review then found and closed additional material contract defects:
 
 ```text
-ineligible Daily Case Review persistence ambiguity
-→ fixed
+reference verification vs immutable revision authority
+→ reusable server/clinician-owned verification overlay
 
-PHI heuristic falsely broad for bibliographic numbers
-→ path-scoped; bibliographic locators excluded
+Challenge deletion vs nested learning-action due rows
+→ source-artifact provenance + source/target cleanup
 
-Challenge content deletion/referential ambiguity
-→ content purge + non-content tombstone
+incomplete PHI scan surface / unknown imported keys
+→ recursive unknown-field rejection + all persistable untrusted strings scanned
 
-external JSON self-certifying review/reference/Signal state
-→ server-authoritative normalization
+privacy rejection could echo rejected content
+→ sanitized field-path/code errors and non-content routine logs
 
-premature second topic ontology
-→ topics = normalized tags; Foundation nodes controlled
+internal cross-object reference corruption paths
+→ fail-closed uniqueness/resolution/integrity constraints
 
-repeat due-state overwrite ambiguity
-→ explicit occurrence semantics
+DailyCaseReview revision predecessor ambiguity
+→ explicit immutable predecessor/revision semantics
 
-premature Challenge→Foundation evidence coupling
-→ excluded from L-1
+embedded linked_signal_ids could duplicate Signal authority
+→ future shared Signal engine remains dynamic authority
+
+source_artifact_deleted conflicted with append-only Foundation attempts
+→ deletion state resolved externally without rewriting reviewed attempts
+
+deferred due state lacked deterministic reactivation
+→ future defer remains deferred; today due; past overdue; completed occurrence terminal
 ```
 
-No material finding remains in the active-writer exact review.
-
----
+Independent disposition: **CLOSURE PASS / material open finding NONE**.
 
 # 20. Out of scope / deferred
 
@@ -636,24 +649,27 @@ provider/privacy gate for identifiable Heidi transcript use
 # 21. Lifecycle / exact next gate
 
 ```text
-PRODUCT DIRECTION                 APPROVED
-L-0 FIELD-LEVEL CONTRACT          CANDIDATE COMPLETE
-L-0 MACHINE GATE                  PASS
-ACTIVE-WRITER EXACT DESIGN REVIEW PASS
-INDEPENDENT EXACT-HEAD REVIEW     PENDING
-L-0 CONTRACT FROZEN / COMPLETE    NO — blocked only by independent review
-L-1 RUNTIME AUTHORITY             NONE
+PRODUCT DIRECTION                    APPROVED
+L-0 FIELD-LEVEL CONTRACT             CANDIDATE COMPLETE
+SUBSTANTIVE MACHINE GATE             PASS — run 34147429373
+ACTIVE-WRITER EXACT DESIGN REVIEW    PASS
+INDEPENDENT EXACT-HEAD REVIEW        CLOSURE PASS
+MATERIAL OPEN FINDING                NONE
+L-0 CONTRACT FROZEN / COMPLETE       NO — final canonical exact-head gate pending
+L-0 MERGED TO MAIN                   NO
+L-1 RUNTIME AUTHORITY                NONE
 ```
 
 Exact next action:
 
 ```text
-independent exact-head L-0 review
-→ if CLOSURE PASS:
-   reconcile final exact head
-   mark L-0 CONTRACT FROZEN / COMPLETE
-   merge design contracts through reviewed PR path
-→ HOLD for separate L-1 runtime implementation authority
+canonical closeout
+→ remove temporary closeout helpers
+→ final exact-head L-0 gate
+→ if PASS, mark L-0 CONTRACT FROZEN / COMPLETE
+→ open bounded design PR to main
+→ RELEASE / DESIGN HOLD
+→ HOLD for separate product-owner L-1 runtime implementation decision
 ```
 
-A material finding in independent review is a REPLAN/contract-correction trigger. Do not start L-1 while L-0 remains unfrozen.
+Any material contract change after the independently reviewed substantive head invalidates the CLOSURE PASS and requires another substantive review. Status/documentation-only closeout changes do not authorize L-1 implementation.
