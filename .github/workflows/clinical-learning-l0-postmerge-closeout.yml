@@ -1,0 +1,38 @@
+name: Clinical Learning L0 post-merge closeout
+
+on:
+  push:
+    branches:
+      - docs/clinical-learning-l0-postmerge-closeout-2026-09-07
+
+permissions:
+  contents: write
+
+jobs:
+  closeout:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: docs/clinical-learning-l0-postmerge-closeout-2026-09-07
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Apply post-merge canonical closeout
+        run: python scripts/clinical_learning_l0_postmerge_closeout.py
+      - name: Validate closeout diff
+        run: |
+          set -euo pipefail
+          git diff --check
+          git diff --name-only
+      - name: Commit canonical closeout
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add CURRENT_OPERATIONAL.md SLICE_PLAN_CURRENT.md TODO.md osteoporosis-change-log.md
+          git diff --cached --check
+          git commit -m 'Reconcile Clinical Learning L0 post-merge state'
+          git push origin HEAD:docs/clinical-learning-l0-postmerge-closeout-2026-09-07
