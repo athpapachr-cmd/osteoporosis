@@ -21,11 +21,8 @@ class ClinicalLearningL0BoundaryTests(unittest.TestCase):
         authority = self.boundary["external_challenge_import_authority"]
         untrusted = set(authority["untrusted_inbound_fields"])
         self.assertTrue({
-            "record_review_state",
-            "reviewed_at",
-            "linked_signal_ids",
-            "references[].verification_state",
-            "references[].verification_note",
+            "record_review_state", "reviewed_at", "linked_signal_ids",
+            "references[].verification_state", "references[].verification_note",
         }.issubset(untrusted))
         self.assertEqual(authority["unknown_field_policy"], "reject_recursively")
         normalized = authority["preview_normalization"]
@@ -39,12 +36,13 @@ class ClinicalLearningL0BoundaryTests(unittest.TestCase):
         self.assertIn("linked_signal_ids_remain_empty_in_L1", final)
         self.assertIn("current_reference_verification_changes_only_through_separate_server_clinician_overlay_action", final)
 
-    def test_reference_verification_overlay_preserves_revision_immutability(self):
+    def test_reference_verification_overlay_is_reusable_and_preserves_revision_immutability(self):
         tables = self.boundary["persistence"]["tables"]
-        self.assertIn("clinical_learning_reference_verification", tables)
         overlay = tables["clinical_learning_reference_verification"]
-        self.assertEqual(overlay["primary_key"], ["challenge_id", "revision", "reference_id"])
-        self.assertIn("overlay_changes_never_mutate_challenge_payload_or_content_hash", overlay["invariants"])
+        self.assertEqual(overlay["primary_key"], ["artifact_type", "artifact_id", "artifact_revision", "reference_id"])
+        self.assertEqual(overlay["l1_allowed_artifact_types"], ["challenge"])
+        self.assertIn("no second reference-verification store", overlay["future_extension_rule"])
+        self.assertIn("overlay_changes_never_mutate_learning_payload_or_content_hash", overlay["invariants"])
         endpoints = self.boundary["api_boundary_l1"]["endpoints"]
         verification = [item for item in endpoints if item.get("purpose") == "server_clinician_owned_reference_verification_overlay_without_mutating_revision_payload"]
         self.assertEqual(len(verification), 1)
@@ -63,16 +61,12 @@ class ClinicalLearningL0BoundaryTests(unittest.TestCase):
         self.assertIn("Every user/import-supplied string field", privacy["untrusted_string_scan_rule"])
         paths = set(privacy["minimum_challenge_free_text_scan_paths"])
         self.assertTrue({
-            "title",
-            "topics[]",
-            "fact_ledger[].source",
-            "progressive_disclosures[].label",
-            "references[].title",
-            "references[].framework_or_guideline",
-            "references[].verification_note",
+            "title", "topics[]", "fact_ledger[].source", "progressive_disclosures[].label",
+            "references[].title", "references[].framework_or_guideline", "references[].verification_note",
         }.issubset(paths))
         excluded = set(privacy["bibliographic_paths_excluded_from_numeric_identity_heuristics"])
         self.assertEqual(excluded, {"references[].pmid", "references[].doi", "references[].url"})
+        self.assertEqual(privacy["reference_verification_text_scan_paths"], ["verification_note"])
 
     def test_due_items_have_repeatable_occurrence_and_source_provenance(self):
         table = self.boundary["persistence"]["tables"]["clinical_learning_due_items"]
@@ -94,7 +88,7 @@ class ClinicalLearningL0BoundaryTests(unittest.TestCase):
         steps = set(deletion["transactional_steps"])
         self.assertIn("identify_all_due_items_whose_target_or_source_artifact_is_the_challenge", steps)
         self.assertIn("delete_all_due_items_targeting_or_sourced_from_challenge_id", steps)
-        self.assertIn("delete_all_reference_verification_overlay_rows_for_challenge_id", steps)
+        self.assertIn("delete_all_reference_verification_overlay_rows_for_artifact_type_challenge_and_artifact_id", steps)
         self.assertIn("learning_action due items targeted by nested action_id", deletion["due_referential_rule"])
 
     def test_l1_foundation_assessment_is_explicit_only(self):
@@ -108,8 +102,7 @@ class ClinicalLearningL0BoundaryTests(unittest.TestCase):
     def test_delete_tombstone_has_no_learning_content(self):
         deletion = self.boundary["challenge_delete_semantics"]
         self.assertEqual(deletion["operation"], "content_purge_plus_noncontent_tombstone")
-        retained = set(deletion["retained_tombstone_fields"])
-        self.assertEqual(retained, {"challenge_id", "deleted_at", "max_deleted_revision"})
+        self.assertEqual(set(deletion["retained_tombstone_fields"]), {"challenge_id", "deleted_at", "max_deleted_revision"})
         forbidden = set(deletion["forbidden_tombstone_content"])
         self.assertTrue({"title", "topics", "facts", "reasoning", "observations", "references"}.issubset(forbidden))
 
