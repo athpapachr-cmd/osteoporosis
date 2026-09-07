@@ -1,0 +1,310 @@
+schema: clinical_learning_core_v1
+status: l0_contract_candidate
+scope: reusable_core
+purpose: >-
+  Field-level design contract for durable Clinical Learning artifacts. This is a
+  design contract only and does not authorize runtime persistence or API writes.
+
+principles:
+  - learning_record_is_not_patient_record
+  - raw_transcript_is_ephemeral_by_default
+  - no_learning_fact_is_authoritative_patient_truth
+  - synthetic_and_progressive_disclosure_facts_never_become_real_patient_facts
+  - clinician_review_precedes_signal_authority
+  - duplicate_detection_is_stable_id_plus_revision
+  - accepted_content_revisions_are_immutable
+  - no_composite_learning_or_excellence_score
+  - missing_assessment_is_not_failure
+  - daily_case_cadence_never_fabricates_an_eligible_case
+
+value_sets:
+  module: [osteoporosis]
+  challenge_mode: [synthetic, deidentified_real_case, mixed]
+  fact_scope: [real_deidentified_case_fact, synthetic_case_fact, clinician_hypothesis, ai_inference, counterfactual_teaching_point]
+  fact_introduced_via: [initial_case, progressive_disclosure, clinician_entry, heidi_transcript_candidate, accepted_encounter_data, evidence_review]
+  fact_status: [active, corrected, withdrawn]
+  certainty: [high, moderate, low, unknown]
+  observation_category: [strength, clear_error, defensible_disagreement, evidence_gap, blind_spot, reasoning_pattern, clinical_insight, uncertainty, missed_opportunity, communication_pattern]
+  observation_importance: [low, moderate, high, safety_critical]
+  clinician_disposition: [pending, accepted, modified, dismissed]
+  record_review_state: [imported_pending_review, clinician_reviewed]
+  gap_class: [knowledge, reasoning, execution, communication_system]
+  evidence_type: [randomized_trial, systematic_review_meta_analysis, guideline, consensus_position_statement, cohort, case_control, diagnostic_accuracy, narrative_review, mechanistic_or_translational, other]
+  evidence_relation: [supports, challenges, contextualizes, mixed]
+  reference_verification_state: [unverified, verified_locator, verified_content, invalid_or_unresolved]
+  learning_action_type: [foundation_block, targeted_reading, retrieval_test, transfer_case, clinical_challenge, red_team, deliberate_practice, workflow_change, communication_exercise, reassessment, other]
+  learning_action_status: [planned, completed, dismissed]
+  review_source_kind: [heidi_transcript_reprovided_ephemeral, pr1_pr3_structured_review_evidence, accepted_encounter_data, clinician_context, formal_documentation]
+  daily_case_eligibility: [eligible, no_eligible_case, insufficient_review_evidence, source_or_privacy_blocked]
+  due_status: [not_scheduled, scheduled, due, overdue, completed, deferred, not_applicable]
+  delivery_mode: [visible, shadow_hidden, safety_only]
+  foundation_state: [FORMAL_SOLID, INTUITIVE_UNSTRUCTURED, FRAGMENTED, UNKNOWN_UNTESTED]
+  assessment_method: [unaided_explanation, mechanistic_explanation, novel_case_transfer, boundary_or_exception_recognition, evidence_directness_calibration, retention_retrieval, real_case_execution, self_rating_only]
+  assessment_result: [demonstrated, partial, not_demonstrated, not_assessed]
+  retention_state: [not_scheduled, scheduled, due, retained, needs_refresh, insufficient_evidence]
+
+objects:
+  LearningFactV1:
+    required: [fact_id, statement, fact_scope, introduced_via, source, introduced_at_stage, status, authoritative_for_patient]
+    fields:
+      fact_id: {type: uuid, rule: stable_within_parent_learning_artifact}
+      statement: {type: string, min_length: 1, privacy_rule: must_not_contain_direct_patient_identifiers}
+      fact_scope: {enum_ref: value_sets.fact_scope}
+      introduced_via: {enum_ref: value_sets.fact_introduced_via}
+      authoritative_for_patient: {const: false, rationale: learning_storage_never_confers_patient_truth_authority}
+      source: {type: string, min_length: 1}
+      certainty: {enum_ref: value_sets.certainty, optional: true}
+      introduced_at_stage: {type: string, min_length: 1}
+      status: {enum_ref: value_sets.fact_status}
+      supersedes_fact_id: {type: uuid, nullable: true, rule: required_when_this_fact_corrects_an_earlier_fact}
+
+  ProgressiveDisclosureV1:
+    required: [disclosure_id, sequence, fact_ids]
+    fields:
+      disclosure_id: {type: uuid}
+      sequence: {type: integer, minimum: 1}
+      label: {type: string, nullable: true}
+      narrative: {type: string, nullable: true, rule: substantive_new_case_facts_must_also_exist_in_fact_ids}
+      fact_ids: {type: array, unique_items: true, items: uuid}
+      released_after_response_id: {type: uuid, nullable: true}
+
+  ClinicianReasoningResponseV1:
+    required: [response_id, stage, text]
+    fields:
+      response_id: {type: uuid}
+      stage: {enum: [initial, followup, final]}
+      text: {type: string, min_length: 1}
+      confidence_percent: {type: integer, minimum: 0, maximum: 100, nullable: true}
+      created_at: {type: datetime, nullable: true}
+
+  LearningReferenceV1:
+    required: [reference_id, title, evidence_type, relation, verification_state]
+    fields:
+      reference_id: {type: uuid}
+      title: {type: string, min_length: 1}
+      evidence_type: {enum_ref: value_sets.evidence_type}
+      framework_or_guideline: {type: string, nullable: true}
+      pmid: {type: string, nullable: true}
+      doi: {type: string, nullable: true}
+      url: {type: string, nullable: true}
+      relation: {enum_ref: value_sets.evidence_relation}
+      verification_state: {enum_ref: value_sets.reference_verification_state, default: unverified}
+      verification_note: {type: string, nullable: true}
+    invariants:
+      - imported_reference_is_not_treated_as_verified_without_explicit_verification_state
+      - verified_content_requires_a_resolvable_locator_or_reviewed_source
+
+  LearningObservationV1:
+    required: [observation_id, category, statement, importance, clinician_disposition]
+    fields:
+      observation_id: {type: uuid}
+      category: {enum_ref: value_sets.observation_category}
+      statement: {type: string, min_length: 1}
+      importance: {enum_ref: value_sets.observation_importance}
+      linked_fact_ids: {type: array, unique_items: true, items: uuid}
+      linked_reference_ids: {type: array, unique_items: true, items: uuid}
+      gap_classes: {type: array, unique_items: true, items: {enum_ref: value_sets.gap_class}}
+      clinician_disposition: {enum_ref: value_sets.clinician_disposition}
+      clinician_modified_statement: {type: string, nullable: true}
+      disposition_note: {type: string, nullable: true}
+    invariants:
+      - dismissed_or_pending_observation_cannot_generate_signal_authority
+      - modified_disposition_requires_clinician_modified_statement
+
+  LearningActionV1:
+    required: [action_id, action_type, title, status]
+    fields:
+      action_id: {type: uuid}
+      action_type: {enum_ref: value_sets.learning_action_type}
+      title: {type: string, min_length: 1}
+      rationale: {type: string, nullable: true}
+      foundation_node_ids: {type: array, unique_items: true, items: string}
+      reference_ids: {type: array, unique_items: true, items: uuid}
+      due_on: {type: date, nullable: true}
+      status: {enum_ref: value_sets.learning_action_status}
+      completed_at: {type: datetime, nullable: true}
+
+  ClinicalLearningChallengeV1:
+    required: [challenge_id, schema_version, revision, module, created_at, title, challenge_mode, topics, foundation_node_ids, initial_case, fact_ledger, reasoning_responses, observations, references, learning_actions, record_review_state, privacy]
+    fields:
+      challenge_id: {type: uuid, rule: stable_across_all_revisions}
+      schema_version: {const: clinical_learning_challenge_v1}
+      revision: {type: integer, minimum: 1}
+      supersedes_revision: {type: integer, nullable: true, rule: null_for_revision_1_else_exactly_revision_minus_1}
+      module: {enum_ref: value_sets.module}
+      created_at: {type: datetime}
+      title: {type: string, min_length: 1}
+      challenge_mode: {enum_ref: value_sets.challenge_mode}
+      topics: {type: array, unique_items: true, min_items: 1, items: string}
+      foundation_node_ids: {type: array, unique_items: true, items: string}
+      difficulty_label: {type: string, nullable: true}
+      initial_case: {type: string, min_length: 1, rule: substantive_case_facts_must_be_represented_in_fact_ledger}
+      fact_ledger: {type: array, items: {$ref: LearningFactV1}}
+      progressive_disclosures: {type: array, items: {$ref: ProgressiveDisclosureV1}}
+      reasoning_responses: {type: array, min_items: 1, items: {$ref: ClinicianReasoningResponseV1}}
+      final_clinician_decision: {type: string, nullable: true}
+      observations: {type: array, items: {$ref: LearningObservationV1}}
+      references: {type: array, items: {$ref: LearningReferenceV1}}
+      gap_classes: {type: array, unique_items: true, items: {enum_ref: value_sets.gap_class}}
+      learning_actions: {type: array, items: {$ref: LearningActionV1}}
+      next_challenge_topic: {type: string, nullable: true}
+      spaced_repetition_due: {type: date, nullable: true}
+      linked_signal_ids: {type: array, unique_items: true, items: string}
+      record_review_state: {enum_ref: value_sets.record_review_state}
+      reviewed_at: {type: datetime, nullable: true}
+      privacy:
+        type: object
+        required: [contains_direct_identifiers, deidentification_attested]
+        fields:
+          contains_direct_identifiers: {const: false}
+          deidentification_attested: {type: boolean}
+          source_case_deidentified: {type: boolean, nullable: true}
+    invariants:
+      - every_fact_authoritative_for_patient_is_false
+      - every_progressive_disclosure_fact_id_resolves_within_fact_ledger
+      - every_observation_fact_reference_resolves_within_fact_ledger
+      - every_observation_reference_id_resolves_within_references
+      - revision_1_has_null_supersedes_revision
+      - revision_gt_1_supersedes_immediately_previous_revision
+      - imported_pending_review_observations_do_not_feed_signals_until_dispositioned
+
+  FoundationAssessmentEvidenceV1:
+    required: [evidence_id, method, result, clinician_reviewed]
+    fields:
+      evidence_id: {type: uuid}
+      method: {enum_ref: value_sets.assessment_method}
+      result: {enum_ref: value_sets.assessment_result}
+      clinician_reviewed: {type: boolean}
+      note: {type: string, nullable: true}
+      source_artifact_type: {enum: [foundation_assessment, challenge, daily_case_review, practice_review]}
+      source_artifact_id: {type: string, nullable: true}
+
+  FoundationAssessmentAttemptV1:
+    required: [attempt_id, schema_version, module, foundation_node_id, assessed_at, evidence, proposed_state, clinician_final_state]
+    fields:
+      attempt_id: {type: uuid}
+      schema_version: {const: foundation_assessment_attempt_v1}
+      module: {enum_ref: value_sets.module}
+      foundation_node_id: {type: string, min_length: 1}
+      assessed_at: {type: datetime}
+      evidence: {type: array, min_items: 1, items: {$ref: FoundationAssessmentEvidenceV1}}
+      proposed_state: {enum_ref: value_sets.foundation_state}
+      clinician_final_state: {enum_ref: value_sets.foundation_state}
+      clinician_note: {type: string, nullable: true}
+    invariants:
+      - self_rating_only_cannot_by_itself_change_foundation_state
+      - non_unknown_final_state_requires_clinician_reviewed_non_self_rating_evidence
+      - formal_solid_requires_demonstrated_formal_explanation_and_demonstrated_transfer_or_boundary_or_evidence_calibration
+
+  FoundationDomainStateV1:
+    required: [foundation_node_id, schema_version, module, state, retention_state, evidence_attempt_ids]
+    fields:
+      foundation_node_id: {type: string, min_length: 1}
+      schema_version: {const: foundation_domain_state_v1}
+      module: {enum_ref: value_sets.module}
+      state: {enum_ref: value_sets.foundation_state}
+      retention_state: {enum_ref: value_sets.retention_state}
+      evidence_attempt_ids: {type: array, unique_items: true, items: uuid}
+      last_assessed_at: {type: datetime, nullable: true}
+      next_review_due: {type: date, nullable: true}
+      linked_signal_ids: {type: array, unique_items: true, items: string}
+      clinician_note: {type: string, nullable: true}
+    transition_rules:
+      UNKNOWN_UNTESTED: adequate_reviewed_assessment_evidence_absent_missing_is_not_failure
+      FRAGMENTED: partial_knowledge_with_missing_weak_or_inconsistent_dependencies
+      INTUITIVE_UNSTRUCTURED: useful_application_or_transfer_with_incomplete_formal_model
+      FORMAL_SOLID: reviewed_formal_or_mechanistic_explanation_plus_reviewed_transfer_boundary_or_evidence_calibration
+    invariants:
+      - state_is_not_monotonic_and_may_change_with_new_reviewed_evidence
+      - state_change_requires_a_new_foundation_assessment_attempt
+      - challenge_or_case_review_may_offer_candidate_evidence_but_cannot_directly_mutate_state
+
+  DailyCaseSelfReviewV1:
+    required: [key_decisions, uncertainty_points]
+    fields:
+      key_decisions:
+        type: array
+        min_items: 1
+        items:
+          type: object
+          required: [decision_id, summary]
+          fields:
+            decision_id: {type: uuid}
+            summary: {type: string, min_length: 1}
+            confidence_percent: {type: integer, minimum: 0, maximum: 100, nullable: true}
+      uncertainty_points: {type: array, items: string}
+      would_change_now: {type: string, nullable: true}
+
+  ReviewEvidenceDescriptorV1:
+    required: [source_kind, available]
+    fields:
+      source_kind: {enum_ref: value_sets.review_source_kind}
+      available: {type: boolean}
+      description: {type: string, nullable: true}
+      contains_raw_transcript: {const: false}
+      protected_source_reference: {type: string, nullable: true}
+    invariants:
+      - descriptor_never_contains_transcript_text
+      - protected_source_reference_must_not_be_exported_by_default
+
+  DailyCaseReviewV1:
+    required: [review_id, schema_version, revision, module, review_date, eligibility_state, source_set, self_review, decision_reconstruction, observations, references, learning_actions, record_review_state]
+    fields:
+      review_id: {type: uuid, rule: stable_across_revisions}
+      schema_version: {const: daily_case_review_v1}
+      revision: {type: integer, minimum: 1}
+      supersedes_revision: {type: integer, nullable: true}
+      module: {enum_ref: value_sets.module}
+      review_date: {type: date}
+      opaque_encounter_reference: {type: string, nullable: true, privacy_rule: protected_storage_only_and_excluded_from_default_export}
+      eligibility_state: {enum_ref: value_sets.daily_case_eligibility}
+      eligibility_reason_codes: {type: array, items: string}
+      source_set: {type: array, items: {$ref: ReviewEvidenceDescriptorV1}}
+      self_review: {$ref: DailyCaseSelfReviewV1}
+      decision_reconstruction:
+        type: array
+        min_items: 1
+        items:
+          type: object
+          required: [decision_id, summary]
+          fields:
+            decision_id: {type: uuid}
+            summary: {type: string, min_length: 1}
+            evidence_summary: {type: string, nullable: true}
+            linked_fact_ids: {type: array, unique_items: true, items: uuid}
+      fact_ledger: {type: array, items: {$ref: LearningFactV1}}
+      observations: {type: array, items: {$ref: LearningObservationV1}}
+      references: {type: array, items: {$ref: LearningReferenceV1}}
+      gap_classes: {type: array, unique_items: true, items: {enum_ref: value_sets.gap_class}}
+      learning_actions: {type: array, items: {$ref: LearningActionV1}}
+      linked_signal_ids: {type: array, unique_items: true, items: string}
+      record_review_state: {enum_ref: value_sets.record_review_state}
+      reviewed_at: {type: datetime, nullable: true}
+    invariants:
+      - raw_heidi_transcript_is_not_persisted_in_this_object
+      - review_requires_self_review_before_ai_critique_is_shown
+      - learning_facts_are_never_authoritative_patient_truth
+      - opaque_encounter_reference_does_not_confer_patient_truth_authority
+      - only_accepted_or_modified_observations_may_feed_signal_candidates
+
+  LearningDueStateV1:
+    required: [due_item_id, schema_version, item_type, due_status, delivery_mode, reason_code]
+    fields:
+      due_item_id: {type: uuid}
+      schema_version: {const: learning_due_state_v1}
+      item_type: {enum: [challenge_repetition, foundation_reassessment, daily_case_review, progress_review, learning_action]}
+      target_id: {type: string, nullable: true}
+      due_on: {type: date, nullable: true}
+      due_status: {enum_ref: value_sets.due_status}
+      delivery_mode: {enum_ref: value_sets.delivery_mode}
+      reason_code: {type: string, min_length: 1}
+      completed_at: {type: datetime, nullable: true}
+      deferred_until: {type: date, nullable: true}
+    deterministic_rules:
+      - no_due_on_and_no_cadence_trigger_means_not_scheduled
+      - future_due_on_means_scheduled
+      - due_on_today_means_due
+      - due_on_before_today_means_overdue_unless_completed_or_deferred
+      - completed_at_means_completed
+      - daily_case_review_with_no_eligible_case_uses_not_applicable_not_failure
+      - baseline_phase_may_change_delivery_mode_to_shadow_hidden_without_changing_due_status
