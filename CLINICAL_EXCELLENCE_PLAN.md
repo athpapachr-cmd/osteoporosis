@@ -4,7 +4,7 @@
 > **PHASE:** dynamic guided consultation + transcript-assisted capture → Practice Review → measurement/improvement loop.
 > **CANONICAL HOME:** `athpapachr-cmd/osteoporosis`.
 > **MODULE 01:** Osteoporosis.
-> **UPDATED:** 2026-08-30 Asia/Nicosia.
+> **UPDATED:** 2026-09-06 Asia/Nicosia.
 
 This document owns the **detailed phase architecture and stage sequence**. Operational branch/PR/deploy state belongs in `CURRENT_OPERATIONAL.md`; exact current-slice design belongs in `SLICE_PLAN_CURRENT.md`.
 
@@ -1078,6 +1078,57 @@ Adaptive priority should use:
 - advanced challenge for sustained strengths.
 
 Full learning-product breadth is not required to close Module 01; enough intervention machinery to demonstrate a real closed loop is required.
+
+---
+# 30A. Clinical Learning Hub — reusable learning architecture
+
+The approved detailed design is `CLINICAL_LEARNING_HUB_DESIGN_V1.md`. It is a reusable Core capability with Osteoporosis as Module 01 content.
+
+The Hub keeps three learning instruments distinct:
+
+```text
+Foundation Map
+  → what the clinician understands structurally
+
+Clinical Challenge
+  → controlled novel-case reasoning with progressive disclosure
+
+Daily Real-Case Review
+  → actual osteoporosis encounter reviewed from Heidi/approved evidence
+```
+
+All three feed the existing Signal/root-cause/intervention loop but must not be collapsed into one opaque score.
+
+Normative design requirements for the future L-0 slice:
+
+- `ClinicalLearningChallengeV1` stores structured challenge reasoning/debrief/evidence rather than a chat transcript.
+- `LearningFactV1` provides a Fact Ledger that distinguishes real de-identified case facts, synthetic/progressive-disclosure facts, clinician hypotheses, AI inference and teaching counterfactuals.
+- `DailyCaseReviewV1` represents one eligible real osteoporosis encounter and persists only reviewed structured learning evidence by default.
+- Daily Case Review reuses the PR-1 protected ephemeral Heidi transcript boundary; it must not create a second transcript ingestion owner.
+- The clinician completes a short self-review before AI critique to preserve calibration evidence and reduce anchoring.
+- If no eligible transcript-backed osteoporosis encounter exists on a clinic day, the due state is `no_eligible_case`; no case is fabricated to satisfy cadence.
+- `FoundationDomainStateV1` uses evidence-based states `FORMAL_SOLID`, `INTUITIVE_UNSTRUCTURED`, `FRAGMENTED`, `UNKNOWN_UNTESTED`.
+- Initial Module-01 foundations include bone remodeling, DXA/LSC, VFA, fracture-risk/FRAX reasoning, secondary osteoporosis, GIOP, antiresorptive/anabolic pharmacology, sequencing, denosumab rebound, BTMs, safety and evidence calibration.
+- Diagnostic mapping precedes teaching. Mastery requires explanation/transfer/boundary recognition/retention evidence, not merely reading.
+- Target cadence is daily eligible real-case review + weekly Clinical Challenge + periodic Foundation review + spaced repetition.
+- Learning record != patient record. Raw transcript remains ephemeral by default; learning inference cannot become patient truth.
+- Challenge MVP ingestion is JSON import → schema/PHI/duplicate validation → preview/edit → clinician confirm → protected persistence.
+- Later external ingestion uses narrowly scoped learning authority such as `learning.challenge.write`; it does not inherit patient/encounter/RF authority.
+- Visible systematic Daily Case Review coaching is an intervention. During the scored 30-case system-assisted baseline it remains shadow/feedback-hidden by default unless methodology is explicitly replanned and the cohort relabelled.
+
+Implementation sequence:
+
+```text
+L-0 contract/design freeze
+→ L-1 Challenge + Foundation MVP
+→ PR-1/PR-2 transcript capture/review seams
+→ PR-3 Practice Review shadow
+→ L-2 Daily Real-Case Review
+→ post-baseline clinician-facing learning intervention
+→ re-measurement
+```
+
+No learning runtime implementation is authorized by this planning entry.
 
 ---
 
