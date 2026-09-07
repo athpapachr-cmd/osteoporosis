@@ -208,7 +208,8 @@ objects:
       note: {type: string, nullable: true}
       source_artifact_type: {enum: [foundation_assessment, challenge, daily_case_review, practice_review]}
       source_artifact_id: {type: string, nullable: true}
-      source_artifact_deleted: {type: boolean, default: false}
+    invariants:
+      - source_artifact_current_delete_state_is_not_stored_as_mutable_evidence_content
 
   FoundationAssessmentAttemptV1:
     required: [attempt_id, schema_version, module, foundation_node_id, assessed_at, evidence, proposed_state, clinician_final_state]
@@ -228,6 +229,7 @@ objects:
       - non_unknown_final_state_requires_clinician_reviewed_non_self_rating_evidence
       - formal_solid_requires_demonstrated_formal_explanation_and_demonstrated_transfer_or_boundary_or_evidence_calibration
       - deletion_of_a_source_artifact_does_not_rewrite_historical_foundation_state_or_attempt_content
+      - current_source_artifact_deleted_state_is_resolved_from_external_tombstone_or_owner_not_by_mutating_attempt
 
   FoundationDomainStateV1:
     required: [foundation_node_id, schema_version, module, state, retention_state, evidence_attempt_ids]
@@ -365,10 +367,13 @@ objects:
       completed_at: {type: datetime, nullable: true}
       deferred_until: {type: date, nullable: true}
     deterministic_rules:
-      - no_due_on_and_no_cadence_trigger_means_not_scheduled
-      - future_due_on_means_scheduled
-      - due_on_today_means_due
-      - due_on_before_today_means_overdue_unless_completed_or_deferred
-      - completed_at_means_completed
+      - completed_at_is_terminal_for_occurrence_and_means_completed
+      - deferred_status_requires_nonnull_future_deferred_until_and_null_completed_at
+      - deferred_until_today_reactivates_as_due
+      - deferred_until_before_today_reactivates_as_overdue
+      - no_due_on_and_no_cadence_trigger_and_not_deferred_means_not_scheduled
+      - future_due_on_means_scheduled_unless_completed_or_validly_deferred
+      - due_on_today_means_due_unless_completed_or_validly_deferred
+      - due_on_before_today_means_overdue_unless_completed_or_validly_deferred
       - daily_case_review_with_no_eligible_case_uses_not_applicable_not_failure
       - baseline_phase_may_change_delivery_mode_to_shadow_hidden_without_changing_due_status
