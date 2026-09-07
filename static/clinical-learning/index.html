@@ -76,7 +76,10 @@
       </article>
       <article class="card" id="historyDetailCard" hidden>
         <div class="section-head">
-          <h2>Challenge detail</h2>
+          <div>
+            <h2>Challenge detail</h2>
+            <p class="muted">Επίλεξε revision για inspection. Κανένα accepted revision δεν αλλάζει in place.</p>
+          </div>
           <div class="row">
             <button class="primary" id="newRevision">Νέα revision</button>
             <button class="secondary" id="exportJson">JSON</button>
@@ -97,9 +100,18 @@
 
       <article class="card" id="assessmentCard" hidden>
         <h2 id="assessmentTitle">Foundation assessment</h2>
-        <p class="notice">Δεν είναι self-rating. Καταγράφεις τι αποδείχθηκε στην assessment. Για FORMAL_SOLID απαιτείται formal/mechanistic understanding και επιπλέον transfer, boundary/exception ή evidence-directness calibration.</p>
+        <p class="notice">Δεν είναι self-rating. Καταγράφεις τι αποδείχθηκε στην assessment. Για FORMAL_SOLID απαιτείται demonstrated formal/mechanistic understanding και επιπλέον demonstrated transfer, boundary/exception ή evidence-directness calibration.</p>
 
         <div class="assessment-grid">
+          <label class="field">
+            <span>Proposed state</span>
+            <select id="assessmentProposedState">
+              <option value="UNKNOWN_UNTESTED">UNKNOWN_UNTESTED</option>
+              <option value="FRAGMENTED">FRAGMENTED</option>
+              <option value="INTUITIVE_UNSTRUCTURED">INTUITIVE_UNSTRUCTURED</option>
+              <option value="FORMAL_SOLID">FORMAL_SOLID</option>
+            </select>
+          </label>
           <label class="field">
             <span>Clinician final state</span>
             <select id="assessmentState">
@@ -116,20 +128,45 @@
         </div>
 
         <h3>Observed assessment evidence</h3>
-        <p class="muted">Επίλεξε μόνο ό,τι πράγματι αξιολογήθηκε σε αυτή την προσπάθεια.</p>
-        <div class="evidence-grid" id="assessmentEvidence">
-          <label class="evidence-option"><input type="checkbox" value="unaided_formal_explanation"> Unaided formal explanation</label>
-          <label class="evidence-option"><input type="checkbox" value="mechanistic_explanation"> Mechanistic explanation</label>
-          <label class="evidence-option"><input type="checkbox" value="structured_short_test"> Structured short test</label>
-          <label class="evidence-option"><input type="checkbox" value="novel_case_transfer"> Novel case transfer</label>
-          <label class="evidence-option"><input type="checkbox" value="boundary_or_exception_recognition"> Boundary / exception recognition</label>
-          <label class="evidence-option"><input type="checkbox" value="evidence_directness_calibration"> Evidence-directness calibration</label>
-          <label class="evidence-option"><input type="checkbox" value="self_rating_only"> Self-rating only / not tested</label>
+        <p class="muted">Επίλεξε μόνο methods που πράγματι αξιολογήθηκαν. Για κάθε method δήλωσε το demonstrated status και, προαιρετικά, σύντομο evidence note.</p>
+        <div class="stack" id="assessmentEvidence">
+          <div class="item evidence-row" data-method="unaided_explanation">
+            <label class="check"><input class="evidence-enabled" type="checkbox" value="unaided_explanation"> Unaided explanation</label>
+            <div class="row"><select class="evidence-result" data-method="unaided_explanation" disabled><option value="demonstrated">demonstrated</option><option value="partial">partial</option><option value="not_demonstrated">not_demonstrated</option><option value="not_assessed">not_assessed</option></select><input class="evidence-note" data-method="unaided_explanation" placeholder="evidence note (optional)" disabled></div>
+          </div>
+          <div class="item evidence-row" data-method="mechanistic_explanation">
+            <label class="check"><input class="evidence-enabled" type="checkbox" value="mechanistic_explanation"> Mechanistic explanation</label>
+            <div class="row"><select class="evidence-result" data-method="mechanistic_explanation" disabled><option value="demonstrated">demonstrated</option><option value="partial">partial</option><option value="not_demonstrated">not_demonstrated</option><option value="not_assessed">not_assessed</option></select><input class="evidence-note" data-method="mechanistic_explanation" placeholder="evidence note (optional)" disabled></div>
+          </div>
+          <div class="item evidence-row" data-method="novel_case_transfer">
+            <label class="check"><input class="evidence-enabled" type="checkbox" value="novel_case_transfer"> Novel case transfer</label>
+            <div class="row"><select class="evidence-result" data-method="novel_case_transfer" disabled><option value="demonstrated">demonstrated</option><option value="partial">partial</option><option value="not_demonstrated">not_demonstrated</option><option value="not_assessed">not_assessed</option></select><input class="evidence-note" data-method="novel_case_transfer" placeholder="evidence note (optional)" disabled></div>
+          </div>
+          <div class="item evidence-row" data-method="boundary_or_exception_recognition">
+            <label class="check"><input class="evidence-enabled" type="checkbox" value="boundary_or_exception_recognition"> Boundary / exception recognition</label>
+            <div class="row"><select class="evidence-result" data-method="boundary_or_exception_recognition" disabled><option value="demonstrated">demonstrated</option><option value="partial">partial</option><option value="not_demonstrated">not_demonstrated</option><option value="not_assessed">not_assessed</option></select><input class="evidence-note" data-method="boundary_or_exception_recognition" placeholder="evidence note (optional)" disabled></div>
+          </div>
+          <div class="item evidence-row" data-method="evidence_directness_calibration">
+            <label class="check"><input class="evidence-enabled" type="checkbox" value="evidence_directness_calibration"> Evidence-directness calibration</label>
+            <div class="row"><select class="evidence-result" data-method="evidence_directness_calibration" disabled><option value="demonstrated">demonstrated</option><option value="partial">partial</option><option value="not_demonstrated">not_demonstrated</option><option value="not_assessed">not_assessed</option></select><input class="evidence-note" data-method="evidence_directness_calibration" placeholder="evidence note (optional)" disabled></div>
+          </div>
+          <div class="item evidence-row" data-method="retention_retrieval">
+            <label class="check"><input class="evidence-enabled" type="checkbox" value="retention_retrieval"> Retention retrieval</label>
+            <div class="row"><select class="evidence-result" data-method="retention_retrieval" disabled><option value="demonstrated">demonstrated</option><option value="partial">partial</option><option value="not_demonstrated">not_demonstrated</option><option value="not_assessed">not_assessed</option></select><input class="evidence-note" data-method="retention_retrieval" placeholder="evidence note (optional)" disabled></div>
+          </div>
+          <div class="item evidence-row" data-method="real_case_execution">
+            <label class="check"><input class="evidence-enabled" type="checkbox" value="real_case_execution"> Real-case execution evidence</label>
+            <div class="row"><select class="evidence-result" data-method="real_case_execution" disabled><option value="demonstrated">demonstrated</option><option value="partial">partial</option><option value="not_demonstrated">not_demonstrated</option><option value="not_assessed">not_assessed</option></select><input class="evidence-note" data-method="real_case_execution" placeholder="evidence note (optional; no patient identifiers)" disabled></div>
+          </div>
+          <div class="item evidence-row" data-method="self_rating_only">
+            <label class="check"><input class="evidence-enabled" type="checkbox" value="self_rating_only"> Self-rating only / not tested</label>
+            <div class="row"><select class="evidence-result" data-method="self_rating_only" disabled><option value="not_assessed">not_assessed</option><option value="partial">partial</option><option value="not_demonstrated">not_demonstrated</option><option value="demonstrated">demonstrated</option></select><input class="evidence-note" data-method="self_rating_only" placeholder="evidence note (optional)" disabled></div>
+          </div>
         </div>
 
         <label class="field full">
           <span>Clinician note (optional)</span>
-          <textarea id="assessmentNote" class="short-textarea" placeholder="Σύντομη παρατήρηση για το τι έδειξε η assessment."></textarea>
+          <textarea id="assessmentNote" class="short-textarea" placeholder="Σύντομη παρατήρηση για το τι έδειξε η assessment. Μην καταγράφεις patient identifiers."></textarea>
         </label>
 
         <div class="row"><button class="secondary" id="previewAssessment">Preview assessment</button><button class="primary" id="saveAssessment">Save assessment</button></div>
