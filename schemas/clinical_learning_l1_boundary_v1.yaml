@@ -1,0 +1,507 @@
+schema: clinical_learning_l1_boundary_v1
+status: l0_contract_candidate
+scope: l1_implementation_boundary
+purpose: >-
+  Exact owner, persistence, API and UI boundary for the first Challenge + Foundation MVP.
+  This file does not authorize implementation.
+
+owners:
+  core_package:
+    future_path: clinical_learning/
+    owns:
+      - schema_validation
+      - challenge_revision_semantics
+      - privacy_guard
+      - protected_persistence
+      - due_state_derivation
+      - foundation_state_transition_validation
+      - reusable_reference_verification_overlay
+    does_not_own:
+      - patient_record_mutation
+      - transcript_provider_extraction
+      - practice_review_ai_provider
+      - signal_promotion_engine
+      - rf_or_clinic_utilities
+  module_01:
+    owns:
+      - osteoporosis_foundation_node_registry
+      - osteoporosis_learning_content
+      - module_specific_assessment_content
+    topic_rule: >-
+      In L-1, foundation_node_ids are the controlled structural classification. Challenge
+      topics are normalized descriptive tags, not a second mandatory controlled taxonomy.
+  transcript_owner:
+    owner: PR-1 / PR-2 transcript architecture
+    rule: >-
+      Clinical Learning consumes approved structured evidence or a newly supplied ephemeral
+      transcript through the protected transcript boundary. It never creates a parallel transcript stack.
+  practice_review_owner:
+    owner: PR-3 Practice Review
+    rule: >-
+      Daily Case Review later consumes reviewed Practice Observations / review evidence; L-1 does not implement this owner.
+  signal_owner:
+    owner: future shared Signal engine
+    rule: >-
+      L-1 may store candidate gap metadata but cannot accept, promote or mutate authoritative Signal links from imported Challenge JSON.
+
+persistence:
+  engine: existing_protected_sqlalchemy_engine
+  separation_rule: clinical_learning_tables_are_distinct_from_patient_encounter_and_rf_tables
+  tables:
+    clinical_learning_challenge_revisions:
+      purpose: immutable_accepted_challenge_content_revisions
+      columns:
+        challenge_id: uuid_not_null
+        revision: integer_not_null
+        schema_version: text_not_null
+        module: text_not_null
+        payload_json: json_not_null
+        content_hash: text_not_null_server_derived
+        created_at: datetime_not_null
+        imported_at: datetime_not_null
+      primary_key: [challenge_id, revision]
+      indexes: [module, created_at]
+      invariants:
+        - payload_contains_no_direct_patient_identifiers_after_guard
+        - accepted_revision_content_is_immutable
+        - opaque_patient_or_encounter_reference_is_forbidden_in_challenge_payload
+        - current_reference_verification_is_not_mutated_inside_payload_json
+        - dynamic_signal_relationships_are_not_authoritatively_owned_inside_payload_json
+
+    clinical_learning_reference_verification:
+      purpose: reusable_mutable_server_clinician_owned_overlay_for_reference_verification
+      columns:
+        artifact_type: text_not_null
+        artifact_id: uuid_not_null
+        artifact_revision: integer_not_null
+        reference_id: uuid_not_null
+        verification_state: text_not_null
+        verification_note: text_nullable
+        verified_at: datetime_nullable
+      primary_key: [artifact_type, artifact_id, artifact_revision, reference_id]
+      l1_allowed_artifact_types: [challenge]
+      future_extension_rule: >-
+        Daily Case Review or another immutable learning artifact must reuse this owner by adding
+        its artifact_type after separate phase authorization; no second reference-verification store is created.
+      invariants:
+        - artifact_revision_and_reference_id_must_exist_in_the_immutable_source_artifact
+        - imported_state_cannot_create_or_advance_this_overlay
+        - overlay_changes_never_mutate_learning_payload_or_content_hash
+        - verified_content_requires_review_of_material_source_content
+        - source_artifact_delete_purges_overlay_rows_before_tombstone_or_delete_completion
+
+    clinical_learning_challenge_tombstones:
+      purpose: noncontent_deleted_identity_for_privacy_and_referential_integrity
+      columns:
+        challenge_id: uuid_primary_key
+        deleted_at: datetime_not_null
+        max_deleted_revision: integer_not_null
+      invariants:
+        - no_challenge_text_or_clinical_content_is_retained
+        - no_patient_or_encounter_reference_is_retained
+        - tombstone_prevents_silent_reuse_of_deleted_challenge_identity
+
+    clinical_learning_foundation_attempts:
+      purpose: append_only_reviewed_assessment_attempts
+      columns:
+        attempt_id: uuid_primary_key
+        foundation_node_id: text_not_null
+        module: text_not_null
+        payload_json: json_not_null
+        assessed_at: datetime_not_null
+        created_at: datetime_not_null
+      indexes: [foundation_node_id, assessed_at]
+      l1_source_rule: >-
+        L-1 persists explicit foundation_assessment evidence only. Challenge, Daily Case
+        Review and Practice Review evidence integration is deferred until their owners exist.
+      privacy_rule: >-
+        Foundation assessment text is learning content, not patient documentation. Unknown fields
+        are rejected and direct patient identifiers are rejected before persistence; no patient or
+        encounter reference is accepted in L-1 Foundation assessment payloads.
+
+    clinical_learning_foundation_state:
+      purpose: current_materialized_state_per_foundation_node
+      columns:
+        foundation_node_id: text_primary_key
+        module: text_not_null
+        state: text_not_null
+        retention_state: text_not_null
+        last_assessed_at: datetime_nullable
+        next_review_due: date_nullable
+        evidence_attempt_ids_json: json_not_null
+        updated_at: datetime_not_null
+      mutation_rule: only_from_validated_clinician_reviewed_foundation_attempt
+      invariants:
+        - every_evidence_attempt_id_resolves_to_same_module_and_foundation_node
+
+    clinical_learning_due_items:
+      purpose: materialized_learning_schedule_with_repeatable_occurrences
+      columns:
+        due_item_id: uuid_primary_key
+        item_type: text_not_null
+        target_id: text_nullable
+        occurrence: integer_not_null_minimum_1
+        due_on: date_nullable
+        due_status: text_not_null
+        delivery_mode: text_not_null
+        reason_code: text_not_null
+        source_artifact_type: text_not_null
+        source_artifact_id: text_not_null
+        source_revision: integer_nullable
+        completed_at: datetime_nullable
+        deferred_until: date_nullable
+        updated_at: datetime_not_null
+      unique_logical_occurrence: [item_type, target_id, occurrence]
+      rules:
+        - source_artifact_provenance_is_mandatory_for_every_materialized_due_item
+        - an_uncompleted_occurrence_may_be_rescheduled_by_a_new_reviewed_revision
+        - completed_occurrence_is_historical_and_not_reopened
+        - scheduling_after_completed_occurrence_creates_occurrence_plus_1
+        - same_target_and_occurrence_is_materialized_state_not_duplicate_history
+        - challenge_delete_removes_rows_whose_target_or_source_is_the_deleted_challenge
+        - deferred_occurrence_requires_future_deferred_until_and_reactivates_when_that_date_arrives
+      l1_scope:
+        allowed_item_types: [challenge_repetition, foundation_reassessment, learning_action, progress_review]
+        excluded_until_l2: [daily_case_review]
+        target_id_required_for_allowed_item_types: true
+
+  future_l2_tables_not_created_in_l1:
+    - clinical_learning_daily_case_review_revisions
+    - clinical_learning_review_evidence
+    - clinical_learning_signal_candidates
+
+challenge_revision_semantics:
+  stable_identity: challenge_id
+  unique_version: [challenge_id, revision]
+  rules:
+    - revision_1_requires_supersedes_revision_null
+    - revision_n_gt_1_requires_supersedes_revision_equal_n_minus_1
+    - new_nonduplicate_revision_must_equal_latest_revision_plus_1
+    - same_challenge_id_and_revision_and_same_server_normalized_content_hash_is_idempotent_noop
+    - same_challenge_id_and_revision_but_different_content_is_conflict_and_requires_new_revision
+    - older_revision_import_is_rejected_unless_exact_idempotent_duplicate
+    - clinician_edit_after_persistence_creates_new_revision
+    - accepted_revision_payload_is_never_updated_in_place
+    - tombstoned_challenge_id_cannot_be_recreated_in_L1
+  content_hash:
+    owner: server
+    input: canonicalized_payload_excluding_server_timestamps_server_hash_and_server_authoritative_review_metadata
+    algorithm: sha256
+    external_overlays_excluded:
+      - reusable_reference_verification_overlay
+      - future_authoritative_signal_relationships
+
+topic_semantics:
+  controlled_structure: foundation_node_ids
+  descriptive_topics:
+    type: normalized_free_tags
+    normalization: trim_unicode_whitespace_casefold_for_filter_key_preserve_original_display_label
+    duplicate_rule: duplicate_filter_keys_collapse_with_first_display_label_preserved
+  rationale: >-
+    L-1 needs practical filtering without prematurely creating a second ontology parallel
+    to the Foundation Map.
+
+external_challenge_import_authority:
+  unknown_field_policy: reject_recursively
+  untrusted_inbound_fields:
+    - record_review_state
+    - reviewed_at
+    - linked_signal_ids
+    - references[].verification_state
+    - references[].verification_note
+  preview_normalization:
+    record_review_state: imported_pending_review
+    reviewed_at: null
+    linked_signal_ids: []
+    references_verification_state: unverified
+    references_verification_note: null
+  observation_rule: imported_observations_start_pending_unless_created_by_clinician_during_preview
+  final_save_rules:
+    - explicit_clinician_confirmation_required
+    - all_material_observations_must_be_dispositioned_accepted_modified_or_dismissed
+    - record_review_state_set_by_server_to_clinician_reviewed
+    - reviewed_at_set_by_server
+    - linked_signal_ids_remain_empty_in_L1
+    - imported_reference_verification_state_remains_unverified_in_immutable_payload
+    - current_reference_verification_changes_only_through_separate_server_clinician_overlay_action
+  rationale: >-
+    External assistant output is candidate learning content. It cannot self-certify clinician
+    review, bibliographic verification, or Signal authority.
+
+challenge_delete_semantics:
+  operation: content_purge_plus_noncontent_tombstone
+  requires_confirmation: true
+  transactional_steps:
+    - identify_all_due_items_whose_target_or_source_artifact_is_the_challenge
+    - compute_and_retain_challenge_id_max_revision_deleted_at_only
+    - delete_all_reference_verification_overlay_rows_for_artifact_type_challenge_and_artifact_id
+    - delete_all_due_items_targeting_or_sourced_from_challenge_id
+    - delete_all_challenge_revision_payloads_and_hashes_for_challenge_id
+    - insert_noncontent_tombstone
+  retained_tombstone_fields: [challenge_id, deleted_at, max_deleted_revision]
+  forbidden_tombstone_content:
+    - title
+    - topics
+    - facts
+    - reasoning
+    - observations
+    - references
+    - patient_or_encounter_reference
+  due_referential_rule: >-
+    A Challenge can create a challenge_repetition due item targeted by challenge_id and can also
+    create learning_action due items targeted by nested action_id. Due rows therefore carry
+    source_artifact_type/source_artifact_id and deletion purges both target matches and source
+    matches so content purge cannot leave orphan action schedules.
+  l1_foundation_rule: >-
+    L-1 foundation assessment attempts do not consume Challenge-derived evidence, so Challenge
+    content purge cannot leave copied Challenge content inside L-1 Foundation attempts.
+  future_cross_artifact_rule: >-
+    When later phases allow Challenge-derived Foundation evidence, deletion/referential
+    behavior must use the tombstone without rewriting immutable reviewed attempts and must
+    be re-reviewed for privacy before activation.
+  rationale: >-
+    Content purge is needed for privacy recovery. A non-content tombstone preserves identity
+    and prevents silent ID reuse without retaining deleted learning text.
+
+privacy_guard:
+  boundary: before_preview_acceptance_and_again_before_persistence
+  challenge_unknown_field_policy: reject_recursively
+  foundation_assessment_unknown_field_policy: reject_recursively
+  structured_field_reject_names_global:
+    - patient_name
+    - full_name
+    - identity_number
+    - gesy_number
+    - phone
+    - email
+    - address
+    - date_of_birth
+    - dob
+  untrusted_string_scan_rule: >-
+    Every user/import-supplied string field that can be persisted is scanned with the applicable
+    deterministic direct-identifier heuristics unless that exact path is an explicit bibliographic
+    locator exclusion below. Schema additions cannot silently create an unscanned persistable text path.
+  minimum_challenge_free_text_scan_paths:
+    - title
+    - topics[]
+    - difficulty_label
+    - initial_case
+    - fact_ledger[].statement
+    - fact_ledger[].source
+    - fact_ledger[].introduced_at_stage
+    - progressive_disclosures[].label
+    - progressive_disclosures[].narrative
+    - reasoning_responses[].text
+    - final_clinician_decision
+    - observations[].statement
+    - observations[].clinician_modified_statement
+    - observations[].disposition_note
+    - references[].title
+    - references[].framework_or_guideline
+    - references[].verification_note
+    - learning_actions[].title
+    - learning_actions[].rationale
+    - next_challenge_topic
+  foundation_assessment_text_scan_paths:
+    - evidence[].note
+    - clinician_note
+  reference_verification_text_scan_paths:
+    - verification_note
+  free_text_hard_reject_patterns:
+    - email_address
+    - phone_number_like_sequence
+    - explicit_identity_or_gesy_number_phrase
+    - full_date_of_birth_phrase
+    - explicit_postal_address_phrase
+  bibliographic_paths_excluded_from_numeric_identity_heuristics:
+    - references[].pmid
+    - references[].doi
+    - references[].url
+  bibliographic_rule: >-
+    Reference locator fields are validated as bibliographic metadata and are not scanned by
+    phone/identity-number heuristics, because legitimate PMID/DOI/URL values are numeric.
+    They remain subject to normal schema and URL/locator validation. Reference titles, framework
+    labels and verification notes are not locator exclusions and remain subject to direct-identifier scanning.
+  sanitized_validation_error_rule: >-
+    Privacy/schema rejection responses expose bounded error codes and field paths only. They must
+    not echo rejected field values, imported payload fragments, candidate clinical values or raw exceptions.
+  logging_rule: >-
+    Routine application logs must not contain imported Challenge/Foundation payloads, rejected PHI-like
+    values, reference-verification notes, or raw validation/provider exceptions containing learning content.
+  limitations:
+    - free_text_name_detection_is_not_guaranteed_by_deterministic_rules
+    - deidentification_is_not_claimed_perfect
+    - false_negatives_remain_possible_in_unstructured_text
+  clinician_attestation:
+    required_for_challenge_import: true
+    required_value: true
+    text_intent: clinician_confirms_no_direct_patient_identifiers_remain
+  challenge_mode_rules:
+    synthetic:
+      source_case_deidentified: not_applicable
+    deidentified_real_case:
+      source_case_deidentified: required_true
+    mixed:
+      source_case_deidentified: required_true_if_any_real_case_component
+  export_rule: no_protected_internal_references
+
+api_boundary_l1:
+  auth: existing_clinical_session_or_X_Clinical_Key
+  base_path: /clinical/learning
+  endpoints:
+    - method: GET
+      path: /clinical/learning
+      owner: UI_shell
+      purpose: serve_learning_hub_page
+    - method: POST
+      path: /clinical/learning/api/challenges/preview
+      purpose: validate_normalize_privacy_references_duplicate_state_without_write
+      response: [valid, schema_errors, privacy_errors, duplicate_state, reference_warnings, normalized_summary]
+      no_write: true
+    - method: POST
+      path: /clinical/learning/api/challenges
+      purpose: persist_after_explicit_clinician_confirmation
+      rule: server_revalidates_and_applies_server_authoritative_import_normalization
+    - method: GET
+      path: /clinical/learning/api/challenges
+      purpose: filtered_history
+    - method: GET
+      path: /clinical/learning/api/challenges/{challenge_id}
+      purpose: challenge_with_revision_history_or_deleted_state
+    - method: PUT
+      path: /clinical/learning/api/challenges/{challenge_id}
+      purpose: create_next_immutable_revision_from_clinician_edit
+    - method: DELETE
+      path: /clinical/learning/api/challenges/{challenge_id}
+      purpose: purge_content_overlays_due_items_and_create_noncontent_tombstone
+    - method: POST
+      path: /clinical/learning/api/challenges/{challenge_id}/revisions/{revision}/references/{reference_id}/verification
+      purpose: server_clinician_owned_reference_verification_overlay_without_mutating_revision_payload
+    - method: GET
+      path: /clinical/learning/api/foundation
+      purpose: foundation_registry_plus_current_state_and_due_status
+    - method: POST
+      path: /clinical/learning/api/foundation/{foundation_node_id}/assessments/preview
+      purpose: validate_explicit_assessment_and_proposed_transition_without_write
+    - method: POST
+      path: /clinical/learning/api/foundation/{foundation_node_id}/assessments
+      purpose: persist_explicit_clinician_reviewed_attempt_and_materialize_valid_state
+    - method: GET
+      path: /clinical/learning/api/due
+      purpose: learning_due_items
+  forbidden_l1_endpoints:
+    - external_bearer_ingestion_endpoint
+    - patient_write_endpoint
+    - transcript_storage_endpoint
+    - signal_promotion_endpoint
+    - daily_case_review_endpoint
+
+ui_boundary_l1:
+  future_path: static/clinical-learning/
+  views:
+    challenge_import:
+      stages: [paste_json, validation_and_server_normalization, preview, clinician_disposition_or_edit, save]
+      required_visibility:
+        - challenge_mode
+        - topics
+        - fact_scope_badges
+        - progressive_disclosure_provenance
+        - observation_categories_and_dispositions
+        - reference_verification_state
+        - privacy_attestation
+        - server_normalization_warnings
+    challenge_history:
+      filters: [topic, foundation_node, date, challenge_mode, review_state]
+      shows: [title, date, topics, linked_foundation_nodes, revision, due_state]
+      deleted_state: show_deleted_record_placeholder_without_content_if_needed_for_identity_context
+    foundation_map:
+      shows: [node, state, retention_state, evidence_count, last_assessed, next_review_due]
+      no_composite_score: true
+    due_view:
+      shows: [challenge_repetition, foundation_reassessment, learning_actions, progress_review]
+  explicit_l1_exclusions:
+    - daily_case_review_UI
+    - transcript_upload_UI_for_learning
+    - direct_external_connector
+    - aggregate_clinical_excellence_score
+
+reference_handling:
+  imported_reference_default: unverified
+  imported_verification_state_is_not_trusted: true
+  immutable_payload_rule: imported_reference_state_is_unverified_snapshot_at_revision_acceptance
+  current_verification_owner: clinical_learning_reference_verification_overlay
+  l1_artifact_type: challenge
+  allowed_progression:
+    unverified: imported_or_unchecked
+    verified_locator: PMID_DOI_or_URL_resolves_to_expected_source
+    verified_content: source_content_reviewed_for_material_claim
+    invalid_or_unresolved: supplied_reference_cannot_be_resolved_or_is_mismatched
+  rule: reference_verification_is_independent_of_learning_record_acceptance_and_never_mutates_accepted_revision_payload
+
+foundation_state_mutation:
+  future_candidate_sources:
+    - explicit_foundation_assessment
+    - reviewed_challenge_observation
+    - reviewed_daily_case_review
+    - reviewed_practice_review
+  l1_allowed_assessment_source_artifact_types: [foundation_assessment]
+  l1_authoritative_source: explicit_foundation_assessment
+  later_sources_rule: >-
+    Other artifacts may become assessment evidence only through a clinician-reviewed
+    FoundationAssessmentAttempt after their owners exist and cross-artifact privacy/deletion
+    semantics are separately activated. They never directly mutate FoundationDomainStateV1.
+
+signal_linkage_boundary:
+  authoritative_owner: future_shared_signal_engine
+  l1_challenge_linked_signal_ids: normalized_empty_non_authoritative
+  immutable_revision_rule: >-
+    A later Signal promotion or backlink must not mutate an accepted Challenge or Daily Case Review
+    revision in place. Authoritative dynamic Signal relationships are owned outside immutable learning
+    payloads; any linked_signal_ids field in a learning payload is a non-authoritative snapshot/projection.
+
+l1_due_semantics:
+  materialized_not_evidence_record: true
+  occurrence_starts_at: 1
+  target_id_required_for_l1_materialized_items: true
+  challenge_repetition_target_id: challenge_id
+  foundation_reassessment_target_id: foundation_node_id
+  learning_action_target_id: action_id
+  progress_review_target_id: stable_progress_review_series_id
+  source_artifact_fields_required: [source_artifact_type, source_artifact_id]
+  source_examples:
+    challenge_repetition: challenge_revision
+    challenge_learning_action: challenge_revision
+    foundation_reassessment: foundation_assessment
+    foundation_learning_action: foundation_assessment
+    progress_review: reviewed_progress_schedule
+  reschedule_rule: uncompleted_occurrence_may_change_due_on_from_latest_reviewed_source
+  defer_rule: deferred_requires_future_deferred_until_and_null_completed_at
+  defer_reactivation_rule: deferred_until_today_becomes_due_and_deferred_until_past_becomes_overdue
+  completion_rule: completed_occurrence_is_immutable_history_for_scheduling_purposes_and_completed_at_is_terminal
+  repeat_rule: new_schedule_after_completion_creates_next_occurrence
+
+l1_exit_evidence_targets:
+  - schema_validation_for_valid_and_invalid_challenge_examples
+  - unknown_import_field_rejection_tests
+  - all_persistable_untrusted_text_privacy_scan_coverage_tests
+  - sanitized_privacy_error_and_logging_boundary_tests
+  - external_import_server_authority_tests
+  - duplicate_idempotency_and_conflict_tests
+  - revision_append_only_tests
+  - reusable_reference_verification_overlay_immutability_tests
+  - tombstone_and_content_purge_tests
+  - challenge_delete_orphan_due_item_tests
+  - PHI_guard_tests_with_synthetic_identifiers_only
+  - bibliographic_numeric_locator_not_misclassified_as_patient_identifier_tests
+  - topic_normalization_without_second_taxonomy_tests
+  - fact_ledger_reference_integrity_tests
+  - daily_case_review_reference_integrity_contract_tests
+  - daily_case_review_revision_semantics_tests
+  - reference_verification_default_tests
+  - foundation_transition_guard_tests
+  - foundation_state_attempt_reference_integrity_tests
+  - foundation_source_deletion_does_not_mutate_reviewed_attempt_tests
+  - foundation_L1_explicit_assessment_only_tests
+  - due_occurrence_reschedule_repeat_defer_and_source_provenance_tests
+  - protected_auth_tests
+  - no_patient_or_transcript_write_path_tests

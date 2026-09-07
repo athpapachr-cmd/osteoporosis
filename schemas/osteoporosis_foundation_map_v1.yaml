@@ -1,0 +1,151 @@
+schema: osteoporosis_foundation_map_v1
+status: l0_contract_candidate
+module: osteoporosis
+purpose: >-
+  Initial Module-01 dependency map for structured theoretical understanding. This is
+  a learning map, not a clinical decision tree and not a reading list.
+
+principles:
+  - prerequisite_edges_are_learning_dependencies_not_clinical_prerequisites
+  - node_state_is_evidence_based_not_self_rating_only
+  - challenge_or_case_review_may_supply_candidate_evidence_but_not_directly_set_state
+  - map_can_be_revised_only_by_explicit_design_revision
+
+node_defaults:
+  initial_state: UNKNOWN_UNTESTED
+  initial_retention_state: not_scheduled
+
+nodes:
+  - node_id: ost.foundation.bone_remodeling
+    label: Bone remodeling / cell biology / physiology
+    domain: foundational_biology
+    prerequisites: []
+    related_nodes: [ost.foundation.antiresorptive_pharmacology, ost.foundation.anabolic_pharmacology, ost.foundation.denosumab_rebound, ost.foundation.btms]
+
+  - node_id: ost.foundation.dxa_lsc
+    label: DXA physics, BMD/T-score, artifacts, precision and LSC
+    domain: densitometry
+    prerequisites: []
+    related_nodes: [ost.foundation.vfa, ost.foundation.fracture_risk_frax, ost.foundation.btms]
+
+  - node_id: ost.foundation.vfa
+    label: VFA / vertebral-fracture identification and interpretation
+    domain: imaging
+    prerequisites:
+      - node_id: ost.foundation.dxa_lsc
+        dependency_type: recommended_prerequisite
+    related_nodes: [ost.foundation.fracture_risk_frax, ost.foundation.giop]
+
+  - node_id: ost.foundation.fracture_risk_frax
+    label: Fracture epidemiology, absolute risk and FRAX/FRAXplus reasoning
+    domain: risk_assessment
+    prerequisites: []
+    related_nodes: [ost.foundation.dxa_lsc, ost.foundation.vfa, ost.foundation.giop, ost.foundation.evidence_appraisal]
+
+  - node_id: ost.foundation.secondary_osteoporosis
+    label: Secondary osteoporosis
+    domain: diagnosis
+    prerequisites: []
+    related_nodes: [ost.foundation.giop, ost.foundation.treatment_safety_transitions]
+
+  - node_id: ost.foundation.giop
+    label: Glucocorticoid-induced osteoporosis
+    domain: secondary_osteoporosis
+    prerequisites:
+      - node_id: ost.foundation.secondary_osteoporosis
+        dependency_type: recommended_prerequisite
+      - node_id: ost.foundation.fracture_risk_frax
+        dependency_type: recommended_prerequisite
+    related_nodes: [ost.foundation.antiresorptive_pharmacology, ost.foundation.anabolic_pharmacology, ost.foundation.sequencing, ost.foundation.vfa]
+
+  - node_id: ost.foundation.antiresorptive_pharmacology
+    label: Antiresorptive pharmacology
+    domain: pharmacology
+    prerequisites:
+      - node_id: ost.foundation.bone_remodeling
+        dependency_type: recommended_prerequisite
+    related_nodes: [ost.foundation.sequencing, ost.foundation.denosumab_rebound, ost.foundation.btms, ost.foundation.treatment_safety_transitions]
+
+  - node_id: ost.foundation.anabolic_pharmacology
+    label: Anabolic pharmacology
+    domain: pharmacology
+    prerequisites:
+      - node_id: ost.foundation.bone_remodeling
+        dependency_type: recommended_prerequisite
+    related_nodes: [ost.foundation.sequencing, ost.foundation.btms, ost.foundation.treatment_safety_transitions]
+
+  - node_id: ost.foundation.sequencing
+    label: Sequential / combination treatment
+    domain: treatment_strategy
+    prerequisites:
+      - node_id: ost.foundation.antiresorptive_pharmacology
+        dependency_type: recommended_prerequisite
+      - node_id: ost.foundation.anabolic_pharmacology
+        dependency_type: recommended_prerequisite
+    related_nodes: [ost.foundation.denosumab_rebound, ost.foundation.giop, ost.foundation.treatment_safety_transitions, ost.foundation.evidence_appraisal]
+
+  - node_id: ost.foundation.denosumab_rebound
+    label: Denosumab discontinuation / rebound physiology and management
+    domain: treatment_transition
+    prerequisites:
+      - node_id: ost.foundation.bone_remodeling
+        dependency_type: recommended_prerequisite
+      - node_id: ost.foundation.antiresorptive_pharmacology
+        dependency_type: recommended_prerequisite
+      - node_id: ost.foundation.sequencing
+        dependency_type: recommended_prerequisite
+    related_nodes: [ost.foundation.btms, ost.foundation.treatment_safety_transitions, ost.foundation.evidence_appraisal]
+
+  - node_id: ost.foundation.btms
+    label: Bone-turnover markers and treatment-response interpretation
+    domain: monitoring
+    prerequisites:
+      - node_id: ost.foundation.bone_remodeling
+        dependency_type: recommended_prerequisite
+    related_nodes: [ost.foundation.antiresorptive_pharmacology, ost.foundation.anabolic_pharmacology, ost.foundation.denosumab_rebound, ost.foundation.dxa_lsc]
+
+  - node_id: ost.foundation.treatment_safety_transitions
+    label: Treatment safety / contraindications / transitions
+    domain: safety
+    prerequisites: []
+    related_nodes: [ost.foundation.antiresorptive_pharmacology, ost.foundation.anabolic_pharmacology, ost.foundation.sequencing, ost.foundation.denosumab_rebound]
+
+  - node_id: ost.foundation.evidence_appraisal
+    label: Evidence appraisal — directness, surrogate endpoints, guideline disagreement and uncertainty
+    domain: evidence_reasoning
+    prerequisites: []
+    related_nodes: [ost.foundation.fracture_risk_frax, ost.foundation.giop, ost.foundation.sequencing, ost.foundation.denosumab_rebound]
+
+  - node_id: ost.foundation.communication_sdm_continuity
+    label: Communication / shared decision making / continuity
+    domain: communication
+    prerequisites: []
+    related_nodes: [ost.foundation.treatment_safety_transitions, ost.foundation.evidence_appraisal]
+
+assessment_policy:
+  state_owner: clinician_reviewed_foundation_assessment
+  allowed_states: [FORMAL_SOLID, INTUITIVE_UNSTRUCTURED, FRAGMENTED, UNKNOWN_UNTESTED]
+  prohibited_shortcuts:
+    - self_rating_only_to_state_change
+    - one_ai_judgment_without_clinician_review
+    - challenge_result_directly_mutating_state
+    - daily_case_review_directly_mutating_state
+  formal_solid_minimum_evidence_categories:
+    required_any_of_formal:
+      - unaided_explanation
+      - mechanistic_explanation
+    required_any_of_transfer_boundary:
+      - novel_case_transfer
+      - boundary_or_exception_recognition
+      - evidence_directness_calibration
+    note: >-
+      This is a qualitative evidence-category requirement, not a numerical mastery score.
+      Retention is tracked separately and can later support or weaken confidence.
+
+retention_policy:
+  separate_from_foundation_state: true
+  due_date_owner: LearningDueStateV1
+  no_fixed_spacing_algorithm_in_l0: true
+  rule: >-
+    L-1 may use explicit due dates from reviewed learning actions or assessments. A later
+    adaptive scheduler requires separate design authority.

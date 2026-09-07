@@ -1160,3 +1160,51 @@ The product owner then approved moving the primary roadmap back to the Clinical 
 PR #78 (`Clinical Learning Hub: activate L-0 canonical design`) was squash-merged to `main` as `6fa2099647513e4a6b0e71ec30eb5275164626ed`. Render auto-deploy `dep-dafdb695efls73anlt6g` reached `LIVE`; the PR was documentation/design-only and did not change runtime behavior.
 
 The repository now carries `CLINICAL_LEARNING_HUB_DESIGN_V1.md` as product-owner-approved canonical design direction and activates slice `CORE-LEARNING-HUB-L0-2026-09-07` for contract/design freeze. L-1 runtime implementation remains unauthorized until L-0 field-level contracts, provenance/revision semantics, PHI boundaries, due-state behavior and owner seams pass exact design review.
+
+---
+
+## 2026-09-07 — Clinical Learning Hub L-0 independent review reached CLOSURE PASS
+
+An independent exact-head L-0 review did not accept the prior active-writer PASS as authority. On the original candidate it found material but bounded contract defects involving immutable reference-verification ownership, Challenge-delete/due referential integrity, PHI scan coverage and sanitized rejection, internal cross-object references, Daily Case revision semantics, Signal authority, Foundation source-deletion semantics and deferred due-state reactivation.
+
+Those findings were corrected within the granted L-0 design authority. The corrected substantive contract head is:
+
+```text
+afaf9d5d0c7df9d53f8ec714f74d7b44e3a69f96
+```
+
+The full `Clinical Learning L0 contract gate` then passed at run `34147429373`. `CLINICAL_LEARNING_L0_INDEPENDENT_REVIEW_V1.md` records the independent disposition:
+
+```text
+CLOSURE PASS
+MATERIAL OPEN FINDING NONE
+L-0 CONTRACT ELIGIBLE TO FREEZE / COMPLETE
+L-1 IMPLEMENTATION NOT AUTHORIZED
+```
+
+Canonical closeout and a final exact-head gate remain required before L-0 is declared complete and placed in design/release HOLD. No runtime/database/API/UI implementation, patient-data mutation, raw-transcript persistence, production configuration or RF mutation occurred in this review.
+
+---
+
+## 2026-09-07 — Clinical Learning Hub L-0 contract frozen; PR #80 opened in HOLD
+
+After the independent L-0 CLOSURE PASS, canonical closeout was completed and all temporary closeout helpers were removed. The clean freeze head was:
+
+```text
+f947b12ce77db2ad1e5ff9117d7a4f794e224b60
+```
+
+The full `Clinical Learning L0 contract gate` passed on that clean head at run `34148333413`. The L-0 field-level learning contracts are therefore **FROZEN / COMPLETE** as a design milestone.
+
+Bounded design PR #80 (`Clinical Learning Hub: freeze L-0 contracts and L-1 boundaries`) was then opened against `main`. It remains unmerged and is in **RELEASE / DESIGN HOLD**. Opening the PR does not authorize merge and does not authorize L-1 runtime implementation.
+
+Lifecycle at this milestone:
+
+```text
+L-0 CONTRACT FROZEN / COMPLETE   YES
+INDEPENDENT REVIEW               CLOSURE PASS
+CLEAN FREEZE GATE                PASS
+PR #80                           OPEN
+MERGED                           NO
+L-1 IMPLEMENTATION               NOT AUTHORIZED
+```
