@@ -42,13 +42,14 @@ jobs:
             clinical_learning/service.py \
             clinical_learning/api.py \
             main.py \
-            test_clinical_learning_l1_runtime.py
+            test_clinical_learning_l1_runtime.py \
+            test_clinical_learning_l1_hardening.py
 
       - name: Browser JavaScript syntax
         run: node --check static/clinical-learning/app.js
 
-      - name: L1 runtime tests
-        run: python -m unittest -v test_clinical_learning_l1_runtime.py
+      - name: L1 runtime and hardening tests
+        run: python -m unittest discover -v -p 'test_clinical_learning_l1_*.py'
 
       - name: Inherited L0 contract regression
         run: python -m unittest -v test_clinical_learning_l0_contract.py test_clinical_learning_l0_boundary.py
