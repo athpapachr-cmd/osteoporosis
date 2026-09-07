@@ -86,6 +86,37 @@ class ClinicalLearningL1HardeningTests(unittest.TestCase):
         self.assertEqual(current["state"]["state"], "FORMAL_SOLID")
         self.assertEqual(current["state"]["next_review_due"], "2026-10-08")
 
+    def test_distinct_foundation_attempt_at_same_timestamp_cannot_replace_state(self):
+        first = foundation_attempt(formal=True)
+        first["attempt_id"] = str(uuid4())
+        first["assessed_at"] = "2026-09-08T10:00:00Z"
+        self.service.save_foundation_assessment(
+            FOUNDATION_NODE,
+            first,
+            next_review_due=date(2026, 10, 8),
+            confirm_save=True,
+        )
+
+        tied = foundation_attempt(formal=True)
+        tied["attempt_id"] = str(uuid4())
+        tied["assessed_at"] = "2026-09-08T10:00:00Z"
+        tied["clinician_final_state"] = "FRAGMENTED"
+        tied["proposed_state"] = "FRAGMENTED"
+        with self.assertRaises(LearningServiceError) as caught:
+            self.service.save_foundation_assessment(
+                FOUNDATION_NODE,
+                tied,
+                next_review_due=date(2026, 9, 20),
+                confirm_save=True,
+            )
+        self.assertEqual(caught.exception.code, "foundation_assessment_older_than_current_state")
+        current = next(
+            item for item in self.service.foundation_registry()
+            if item["node"]["node_id"] == FOUNDATION_NODE
+        )
+        self.assertEqual(current["state"]["state"], "FORMAL_SOLID")
+        self.assertEqual(current["state"]["next_review_due"], "2026-10-08")
+
     def test_due_api_materialization_retains_occurrence_and_source_provenance(self):
         self.service.create_challenge(challenge(disposition="accepted"), confirm_save=True)
         due = self.service.list_due()
