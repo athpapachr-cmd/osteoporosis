@@ -13,6 +13,7 @@ principles:
   - clinician_review_precedes_signal_authority
   - duplicate_detection_is_stable_id_plus_revision
   - accepted_content_revisions_are_immutable
+  - dynamic_signal_links_are_not_authoritatively_owned_by_immutable_learning_payloads
   - no_composite_learning_or_excellence_score
   - missing_assessment_is_not_failure
   - daily_case_cadence_never_fabricates_an_eligible_case
@@ -88,11 +89,18 @@ objects:
       doi: {type: string, nullable: true}
       url: {type: string, nullable: true}
       relation: {enum_ref: value_sets.evidence_relation}
-      verification_state: {enum_ref: value_sets.reference_verification_state, default: unverified}
-      verification_note: {type: string, nullable: true}
+      verification_state:
+        enum_ref: value_sets.reference_verification_state
+        default: unverified
+        rule: immutable_payload_snapshot_current_post_persistence_verification_may_be_external_server_overlay
+      verification_note:
+        type: string
+        nullable: true
+        rule: immutable_payload_snapshot_only_current_post_persistence_note_may_be_external_server_overlay
     invariants:
       - imported_reference_is_not_treated_as_verified_without_explicit_verification_state
       - verified_content_requires_a_resolvable_locator_or_reviewed_source
+      - post_persistence_reference_verification_does_not_mutate_an_accepted_immutable_learning_revision
 
   LearningObservationV1:
     required: [observation_id, category, statement, importance, clinician_disposition]
@@ -149,7 +157,11 @@ objects:
       learning_actions: {type: array, items: {$ref: LearningActionV1}}
       next_challenge_topic: {type: string, nullable: true}
       spaced_repetition_due: {type: date, nullable: true}
-      linked_signal_ids: {type: array, unique_items: true, items: string}
+      linked_signal_ids:
+        type: array
+        unique_items: true
+        items: string
+        rule: non_authoritative_snapshot_only_L1_normalizes_empty_authoritative_dynamic_links_owned_by_signal_engine
       record_review_state: {enum_ref: value_sets.record_review_state}
       reviewed_at: {type: datetime, nullable: true}
       privacy:
@@ -164,6 +176,7 @@ objects:
       - every_progressive_disclosure_fact_id_resolves_within_fact_ledger
       - every_observation_fact_reference_resolves_within_fact_ledger
       - every_observation_reference_id_resolves_within_references
+      - every_learning_action_reference_id_resolves_within_references
       - revision_1_has_null_supersedes_revision
       - revision_gt_1_supersedes_immediately_previous_revision
       - imported_pending_review_observations_do_not_feed_signals_until_dispositioned
@@ -171,6 +184,7 @@ objects:
       - deidentified_real_case_requires_source_case_deidentified_true
       - mixed_with_any_real_case_component_requires_source_case_deidentified_true
       - challenge_payload_contains_no_direct_patient_identifiers_after_server_guard_and_clinician_attestation
+      - linked_signal_ids_do_not_own_authoritative_dynamic_signal_relationships
 
   FoundationAssessmentEvidenceV1:
     required: [evidence_id, method, result, clinician_reviewed]
@@ -213,7 +227,11 @@ objects:
       evidence_attempt_ids: {type: array, unique_items: true, items: uuid}
       last_assessed_at: {type: datetime, nullable: true}
       next_review_due: {type: date, nullable: true}
-      linked_signal_ids: {type: array, unique_items: true, items: string}
+      linked_signal_ids:
+        type: array
+        unique_items: true
+        items: string
+        rule: non_authoritative_projection_of_signal_engine_relationships
       clinician_note: {type: string, nullable: true}
     transition_rules:
       UNKNOWN_UNTESTED: adequate_reviewed_assessment_evidence_absent_missing_is_not_failure
@@ -224,6 +242,7 @@ objects:
       - state_is_not_monotonic_and_may_change_with_new_reviewed_evidence
       - state_change_requires_a_new_foundation_assessment_attempt
       - challenge_or_case_review_may_offer_candidate_evidence_but_cannot_directly_mutate_state
+      - every_evidence_attempt_id_must_resolve_to_same_module_and_foundation_node
 
   DailyCaseSelfReviewV1:
     required: [key_decisions, uncertainty_points]
@@ -240,6 +259,8 @@ objects:
             confidence_percent: {type: integer, minimum: 0, maximum: 100, nullable: true}
       uncertainty_points: {type: array, items: string}
       would_change_now: {type: string, nullable: true}
+    invariants:
+      - key_decision_ids_are_unique_within_self_review
 
   ReviewEvidenceDescriptorV1:
     required: [source_kind, available]
@@ -283,7 +304,11 @@ objects:
       references: {type: array, items: {$ref: LearningReferenceV1}}
       gap_classes: {type: array, unique_items: true, items: {enum_ref: value_sets.gap_class}}
       learning_actions: {type: array, items: {$ref: LearningActionV1}}
-      linked_signal_ids: {type: array, unique_items: true, items: string}
+      linked_signal_ids:
+        type: array
+        unique_items: true
+        items: string
+        rule: non_authoritative_snapshot_only_authoritative_dynamic_links_owned_by_signal_engine
       record_review_state: {enum_ref: value_sets.record_review_state}
       reviewed_at: {type: datetime, nullable: true}
     invariants:
@@ -296,7 +321,13 @@ objects:
       - protected_source_reference_and_opaque_encounter_reference_are_excluded_from_default_export
       - decision_evidence_summary_must_not_be_verbatim_raw_transcript
       - persisted_learning_content_contains_no_direct_patient_identifiers
+      - every_decision_linked_fact_id_resolves_within_fact_ledger
+      - every_observation_fact_reference_resolves_within_fact_ledger
+      - every_observation_reference_id_resolves_within_references
+      - every_learning_action_reference_id_resolves_within_references
+      - decision_reconstruction_ids_are_unique_within_review
       - only_accepted_or_modified_observations_may_feed_signal_candidates
+      - linked_signal_ids_do_not_own_authoritative_dynamic_signal_relationships
 
   LearningDueStateV1:
     required: [due_item_id, schema_version, item_type, due_status, delivery_mode, reason_code]
