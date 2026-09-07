@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — Clinical Learning Hub L-1 Challenge + Foundation MVP
 
-> **STATUS:** IMPLEMENTED / TESTED EXACT-HEAD CANDIDATE — FINAL REVIEW HANDOFF
+> **STATUS:** IMPLEMENTED / TESTED / FINAL EXACT-HEAD REVIEW PASS — PR RELEASE-HOLD CANDIDATE
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Slice ID:** `CORE-LEARNING-HUB-L1-CHALLENGE-FOUNDATION-MVP-2026-09-07`.
 > **Fresh implementation base:** `5f7749c70c6bb3f36fcfc765088d4d363a6bb1d6`.
@@ -9,7 +9,9 @@
 > **L-1 boundary owner:** `schemas/clinical_learning_l1_boundary_v1.yaml`.
 > **Foundation registry:** `schemas/osteoporosis_foundation_map_v1.yaml`.
 > **Product design:** `CLINICAL_LEARNING_HUB_DESIGN_V1.md`.
-> **Merge/deploy authority:** NONE in this slice activation.
+> **Reviewed substantive head:** `ada16afb573609cd555b99c1cc62a4a160d4215f`.
+> **Reviewed substantive gate:** `34158892560` — SUCCESS.
+> **Merge/deploy authority:** NONE; separate product-owner release decision required.
 > **Patient-data mutation authority:** NONE.
 > **Production config/secret authority:** NONE.
 
@@ -278,6 +280,8 @@ review_state
 
 Detail returns immutable revision history plus current external reference-verification projection and due state.
 
+Clinician-facing History must allow a prior immutable revision to be inspected explicitly. `Νέα revision` uses the **latest** accepted revision only as a candidate source; it never mutates a stored revision in place and must pass fresh server preview + review/disposition + explicit confirmation before `PUT` appends the next server-owned revision.
+
 Delete:
 
 ```text
@@ -287,13 +291,14 @@ DELETE /clinical/learning/api/challenges/{challenge_id}
 requires explicit confirmation and one transaction:
 
 ```text
-purge reference overlay rows
+lock authoritative Challenge revision rows
+→ purge reference overlay rows
 → purge due rows where target OR source belongs to challenge
 → purge all Challenge revisions/hashes
 → create non-content tombstone
 ```
 
-MVP JSON/Markdown export is browser-side from a successfully fetched Challenge revision. It creates learning exports only; protected/internal references are excluded.
+MVP JSON/Markdown export is browser-side from a successfully fetched selected Challenge revision. It creates learning exports only; protected/internal references are excluded.
 
 ---
 
@@ -317,6 +322,8 @@ invalid_or_unresolved
 ```
 
 `verified_locator` and `verified_content` require at least one reference locator (`pmid`, `doi` or `url`) in the immutable source reference. The clinician owns the verification action; L-1 does not independently claim source-content verification.
+
+Concurrent reference/revision/delete mutations serialize on authoritative Challenge revision rows on the Postgres path; residual constraint races fail closed with a sanitized conflict rather than exposing database details.
 
 ---
 
@@ -402,6 +409,16 @@ The server validates:
 
 The server does not invent a state; `proposed_state` and `clinician_final_state` remain explicit clinician-reviewed assessment content.
 
+The clinician-facing form captures only frozen assessment methods, explicit evidence result, optional evidence note, proposed/final state and optional next-review date. Backend validation remains authoritative.
+
+Materialized state ordering is fail-closed:
+
+- exact same `attempt_id` + payload is idempotent;
+- an existing node state is row-locked before replacement on the production Postgres path;
+- a distinct attempt must be strictly newer than `last_assessed_at`;
+- a distinct equal-timestamp attempt is rejected because it has no deterministic ordering;
+- initial concurrent inserts remain protected by the node-state primary key and sanitized integrity conflict handling.
+
 Retention remains separate. For the MVP, only scheduling state is derived from explicit `next_review_due`:
 
 ```text
@@ -450,19 +467,21 @@ L-1 exposes due state; it does not invent an adaptive spacing algorithm.
 `static/clinical-learning/` provides four views in one protected workspace:
 
 1. **Challenge Import** — paste JSON → server preview → clinician review/disposition/edit → confirm save.
-2. **Challenge History** — filters, revision history, delete, JSON/Markdown export, reference verification.
-3. **Foundation Map** — 14 Module-01 nodes, current state, retention state, evidence count, last assessment, next due; explicit assessment preview/save.
+2. **Challenge History** — filters, immutable revision inspection, new-revision candidate workflow, delete, selected-revision JSON/Markdown export, per-revision reference verification.
+3. **Foundation Map** — 14 Module-01 nodes, current state, retention state, evidence count, last assessment, next due; structured explicit assessment preview/save.
 4. **Due / Learning Actions** — due Challenge repetitions, Foundation reassessments and learning actions.
 
 UI requirements:
 
 - visible challenge mode/topics/Foundation nodes;
 - Fact Ledger scope badges;
-- progressive-disclosure provenance;
-- observation category/importance/disposition;
+- progressive-disclosure provenance (`source`, `introduced_via`, `introduced_at_stage`);
+- observation category/importance/disposition and linked Fact/reference provenance;
 - reference verification state;
 - privacy/de-identification attestation;
 - server normalization warnings;
+- explicit Foundation proposed/final state and per-evidence result/note;
+- visible FORMAL_SOLID qualification rule;
 - no composite score.
 
 No raw transcript upload UI. No Daily Case Review UI. No external connector UI.
@@ -471,7 +490,7 @@ No raw transcript upload UI. No Daily Case Review UI. No external connector UI.
 
 # 15. Acceptance evidence
 
-Before implementation can be called TESTED, exact-head evidence must cover at minimum:
+Before implementation can be called TESTED/REVIEWED, exact-head evidence must cover at minimum:
 
 ```text
 valid + invalid Challenge schema
@@ -490,17 +509,29 @@ Foundation transition guards
 Foundation state→attempt reference integrity
 L-1 explicit Foundation assessment only
 Foundation explicit due scheduling without adaptive cadence
+Foundation stale/equal-timestamp overwrite protection
 due occurrence/reschedule/repeat/defer/source provenance
 protected session/header auth
 no patient/transcript/Signal/DailyCase write path
 main router/no-store ownership
-browser UI smoke for Import/History/Foundation/Due
+browser JavaScript syntax
+clinician UI contract for DOM bindings / new-revision workflow / frozen Foundation methods / provenance
 frozen L-0 contract regression
 full branch-vs-main diff hygiene
 NO physiotherapy/CU-1/RF file mutation
 ```
 
 Public fixtures are synthetic only.
+
+Reviewed substantive evidence:
+
+```text
+head  ada16afb573609cd555b99c1cc62a4a160d4215f
+run   34158892560
+state SUCCESS
+```
+
+The final docs-only PR head must also pass the **complete** gate before PR opening.
 
 ---
 
@@ -521,6 +552,8 @@ STOP implementation and return to design if any of these becomes necessary:
 - overlap with the paused physiotherapy/CU-1 productization scope;
 - schema/database ownership that cannot be implemented with the existing protected engine as frozen.
 
+No REPLAN trigger fired during implementation or final exact-head review.
+
 ---
 
 # 17. Lifecycle / next gate
@@ -531,11 +564,12 @@ L-1 PRODUCT-OWNER AUTHORITY          GRANTED
 L-1 SLICE DESIGN                     FROZEN BY THIS FILE
 L-1 CORE IMPLEMENTATION              COMPLETE
 L-1 CLINICIAN-FACING UX HARDENING    COMPLETE
-L-1 EXACT RUNTIME/UX HEAD            b53a39f12363e08a7be952e1d7a25fbb5511bca8
-L-1 TESTED                           YES — run 34156659908 SUCCESS
+L-1 SUBSTANTIVE REVIEWED HEAD        ada16afb573609cd555b99c1cc62a4a160d4215f
+L-1 TESTED                           YES — run 34158892560 SUCCESS
 L-1 ADJACENT-OWNER ISOLATION         PASS
-L-1 FINAL EXACT-HEAD REVIEW          PENDING
-L-1 PR                               NONE
+L-1 FINAL EXACT-HEAD REVIEW          PASS
+L-1 REPLAN REQUIRED                  NO
+L-1 PR                               NONE — NEXT AFTER FINAL DOCS-HEAD PASS
 L-1 MERGED                           NO
 L-1 DEPLOYED                         NO
 L-1 PRODUCTION-SMOKE-VERIFIED        NO
@@ -544,12 +578,11 @@ L-1 PRODUCTION-SMOKE-VERIFIED        NO
 Exact next action:
 
 ```text
-fresh-bootstrap + claim CURRENT_OPERATIONAL writer lock
-→ final exact-head code/product/security/privacy review
-→ verify clinician-facing revision + Foundation assessment UX
-→ fix bounded findings only if needed
-→ rerun full L-1 + inherited L-0 regression gate after any code change
-→ canonical closeout
-→ open bounded L-1 PR
-→ HOLD for separate release/merge authority
+complete docs-only canonical closeout
+→ verify fresh main + clean final branch-vs-main scope
+→ require full L-1 + inherited L-0 regression gate on exact final docs head
+→ verify no existing PR
+→ open one bounded L-1 PR to main
+→ RELEASE HOLD
+→ STOP for separate product-owner squash-merge/release authority
 ```
