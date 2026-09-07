@@ -1,0 +1,49 @@
+name: Clinical Learning L0 contract gate
+
+on:
+  push:
+    branches:
+      - design/clinical-learning-l0-contract-freeze-2026-09-07
+  pull_request:
+    paths:
+      - 'schemas/clinical_learning_*.yaml'
+      - 'schemas/osteoporosis_foundation_map_v1.yaml'
+      - 'test_clinical_learning_l0_contract.py'
+      - 'CLINICAL_LEARNING_HUB_DESIGN_V1.md'
+      - 'SLICE_PLAN_CURRENT.md'
+      - 'CURRENT_OPERATIONAL.md'
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install YAML dependency
+        run: python -m pip install 'PyYAML>=6.0'
+
+      - name: Validate Clinical Learning L0 contracts
+        run: python -m unittest -v test_clinical_learning_l0_contract.py
+
+      - name: Confirm design-only scope
+        run: |
+          set -euo pipefail
+          base="$(git merge-base origin/main HEAD)"
+          changed="$(git diff --name-only "$base" HEAD)"
+          printf '%s\n' "$changed"
+          if printf '%s\n' "$changed" | grep -Ev '^(schemas/clinical_learning_.*\.yaml|schemas/osteoporosis_foundation_map_v1\.yaml|test_clinical_learning_l0_contract\.py|\.github/workflows/clinical-learning-l0-contract-tests\.yml|CLINICAL_LEARNING_HUB_DESIGN_V1\.md|CLINICAL_LEARNING_L0_DESIGN_REVIEW_V1\.md|SLICE_PLAN_CURRENT\.md|CURRENT_OPERATIONAL\.md|TODO\.md|osteoporosis-change-log\.md)$' ; then
+            echo 'Unexpected non-L0 file in design branch.' >&2
+            exit 1
+          fi
+
+      - name: Diff hygiene
+        run: |
+          set -euo pipefail
+          base="$(git merge-base origin/main HEAD)"
+          git diff --check "$base" HEAD
