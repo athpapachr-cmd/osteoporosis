@@ -1,10 +1,10 @@
 # Clinical Learning Hub — Design v1
 
-> **STATUS:** PRODUCT-OWNER-APPROVED DIRECTION / PRE-IMPLEMENTATION DESIGN INPUT
+> **STATUS:** PRODUCT-OWNER-APPROVED CANONICAL DESIGN DIRECTION / L-0 CONTRACT FREEZE ACTIVE
 > **Canonical home:** `athpapachr-cmd/osteoporosis`
 > **Core scope:** reusable Clinical Excellence learning mechanics
 > **Module 01 content:** Osteoporosis / metabolic bone disease
-> **Runtime authority:** NONE — this document does not start implementation
+> **Runtime authority:** NONE — L-0 design/canonicalization only; implementation requires separate authority
 
 ---
 

@@ -48,7 +48,7 @@ This file answers **where the product is going and in what broad order**. It is 
 - [x] Complete product-owner G-4 workspace smoke confirming collapse/expand, sticky summary and physiotherapy utility behavior; direct RF form access exposed a cross-service authorization blocker.
 - [x] Implement/test the bounded Osteoporosis-side RF authenticated gateway hotfix at exact runtime head `29140a6cd4c9f57b454daa6e4a2883ec0345b53f`, workflow run `33640110048` SUCCESS.
 
-C1, G-1, G-2 and G-3 are **implemented / tested / merged / deployed / production-smoke-verified**. G-4 workspace ergonomics are merged/deployed with workspace smoke passed. The old RF gateway/auth leg also reached production and later returned `200`, but full old-form create/PDF smoke was deliberately stopped when the authoritative RF form changed. The replacement native RF v2 Clinic Utility is **implemented / release-candidate tested / exact-head reviewed**, but is not merged, deployed, production-smoke-verified or pilot-validated.
+C1, G-1, G-2 and G-3 are **implemented / tested / merged / deployed / production-smoke-verified**. G-4 workspace ergonomics are also released. Native RF v2 is now **implemented / tested / merged / deployed / production-smoke-verified** through PRs #75, #76 and #77. Online signature automation is deliberately deferred; no signature image is stored in the public repository. RF remains not pilot-validated and is closed for now unless new material evidence appears.
 
 ---
 
@@ -165,29 +165,22 @@ Triggered by product-owner production interaction after G-2 smoke.
 
 G-3 is production-smoke-verified, not pilot-validated. Subsequent evidence-from-use UX refinements are handled as bounded slices rather than reopening G-3 clinical semantics.
 
-## 1.6 G-4 Workspace ergonomics + RF utility navigation / native RF v2 — RELEASE-CANDIDATE TESTED / PR AUTHORIZED
+## 1.6 G-4 Workspace ergonomics + native RF v2 — PRODUCTION-SMOKE-VERIFIED / CLOSED FOR NOW
 
-The original G-4 workspace slice and RF navigation were released through PR #72. The bounded authenticated gateway correction was then released through PR #73 and is the current production RF route on `main`.
+- [x] Release G-4 workspace ergonomics through PR #72 and complete workspace smoke.
+- [x] Release bounded authenticated RF gateway hotfix through PR #73; later auth/form leg returned `200`.
+- [x] Stop obsolete old-form create/PDF smoke after the authoritative RF form changed.
+- [x] Replan RF ownership into native Clinical Excellence Clinic Utilities.
+- [x] Release native Category-A A.1/A.2 workflow through PR #75.
+- [x] Configure confirmed server-side doctor profile and Medikey / DIROS / Thermedico product catalog.
+- [x] Release unilateral target, system-derived exact location, 0..3 medication capacity and parser corrections through PR #76.
+- [x] Release imaging-attachment semantic guard through PR #77.
+- [x] Product-owner production smoke confirms A.1, A.2, unilateral target/location, medication behavior, obvious laboratory-PDF rejection, real/ambiguous imaging workflow and final PDF generation are working as intended.
+- [x] Preserve `RF APPLICATION REQUEST != ACTUAL RF PROCEDURE` and RF-specific persistence boundaries.
+- [x] Keep signature automation out of the public repository; manual/external signing is accepted for now.
+- [ ] Only reopen RF for a material production defect, authoritative form change, safety/data-integrity issue or explicit new workflow requirement.
 
-- [x] Release G-4 workspace ergonomics through PR #72 and complete product-owner workspace smoke.
-- [x] Release the bounded authenticated RF gateway hotfix through PR #73 to production `main` `8aa8b38e3fa9a8f8ba0618868b452b1835be0d47`.
-- [x] After server-side RF-key configuration, verify the gateway/auth/form leg returned `200` through Osteoporosis and the upstream RF service.
-- [x] Stop old-form create/PDF smoke when a materially changed authoritative 12-page RF form was supplied; do not validate an obsolete administrative contract.
-- [x] Replan RF ownership into native Clinical Excellence Clinic Utilities; Category A only, A.1 new treatment and A.2 continuation.
-- [x] Implement native RF UI/API/PDF/history without writing RF payloads into osteoporosis encounters.
-- [x] Package the exact authoritative 12-page PDF and verify byte identity, page geometry and real A.1/A.2 generation.
-- [x] Enforce A.1 fail-closed resolution of exactly 3 NSAID trials + 3 other analgesic trials.
-- [x] Minimize persisted application data by excluding raw medication paste, raw physiotherapy-date paste and medication `source_text` lines.
-- [x] Preserve `RF APPLICATION REQUEST != ACTUAL RF PROCEDURE`; manual actual-procedure history uses `clinician_manual` provenance.
-- [x] Pass the full native RF v2 release-candidate gate at exact runtime head `aa2f92cce5d4cd2cfd02cafc59413be7bdc0d5fb`, run `33988642002` SUCCESS, including official-template A.1/A.2 generation and inherited CU-1/G4/G3/G2/G1/C1 regressions.
-- [x] Complete exact-head source/security/scope review with no remaining release-blocking finding.
-- [x] Close stale docs-only PR #74 unmerged because it predates the authoritative-form/native-ownership replan.
-- [ ] Open the bounded native RF v2 release PR to `main` under explicit product-owner PR authority.
-- [ ] Merge only with a separate explicit product-owner decision.
-- [ ] Configure/verify native RF server-side doctor/product values only with separate production-config authority.
-- [ ] After merge, allow normal Render auto-deploy and complete authenticated production smoke with separate authority.
-
-Native RF v2 is **implemented / release-candidate tested / exact-head reviewed**, not merged, deployed, production-smoke-verified or pilot-validated.
+RF v2 is **production-smoke-verified**. It is not `PILOT-VALIDATED`, and pilot validation is not required to resume the primary Module-01 roadmap.
 
 ## 1.7 Heidi-first capture — BEFORE REAL PILOT
 
@@ -254,6 +247,26 @@ G-1 production-readiness gate closed
 - [ ] Review consultation flow/efficiency.
 - [ ] Review follow-up execution.
 - [ ] Keep routine clinician-facing Practice Review hidden during scored baseline by default.
+
+## 1.10A Clinical Learning Hub — L-0 DESIGN ACTIVE
+
+- [x] Approve Foundation Map + Clinical Challenges + Daily Heidi-backed Real-Case Review as one reusable Core learning architecture.
+- [x] Add canonical detailed design: `CLINICAL_LEARNING_HUB_DESIGN_V1.md`.
+- [x] Require a Fact Ledger so progressive-disclosure/synthetic facts cannot be mistaken for real patient facts.
+- [x] Require clinician self-review before AI critique in Daily Case Review.
+- [x] Preserve raw Heidi transcript as ephemeral and reuse PR-1/PR-3 owners rather than create a parallel AI stack.
+- [x] Define Foundation states: `FORMAL_SOLID`, `INTUITIVE_UNSTRUCTURED`, `FRAGMENTED`, `UNKNOWN_UNTESTED`.
+- [x] Define daily/weekly/periodic learning cadence and baseline-intervention boundary.
+- [ ] L-0: freeze implementable learning object, provenance, privacy, due-state, revision, persistence and Signal contracts.
+- [ ] L-0: identify exact L-1 API/database/UI owners and complete independent design review.
+- [ ] L-1: protected Challenge JSON import/history + Foundation Map skeleton + spaced-repetition due state.
+- [ ] PR-1/PR-2/PR-3: establish reusable transcript and Practice Review seams.
+- [ ] L-2: activate Daily Case Review using real eligible Heidi-backed encounters.
+- [ ] After baseline lock, activate clinician-facing daily coaching as a formal improvement intervention and re-measure.
+- [ ] Later: narrow external ingestion capability (`learning.challenge.write`) without broad patient/encounter/RF authority.
+
+Daily visible AI coaching remains an intervention and stays hidden by default during the 30-case scored system-assisted baseline unless methodology is explicitly REPLANned and the cohort relabelled.
+
 
 ## 1.11 Thirty-case scored system-assisted baseline
 
@@ -384,7 +397,7 @@ Unless later evidence elevates one to a safety/data-integrity dependency:
 - [ ] External Benchmark Registry.
 - [ ] Full Clinical Excellence Home/analytics polish.
 - [ ] Calendar/Setmore/Zadarma/CareTask live integration.
-- [x] Native RF Clinic Utility ownership migration implemented/release-candidate-tested; remaining release lifecycle is tracked in §1.6.
+- [x] Native RF Clinic Utility ownership migration released and production-smoke-verified; RF is closed for now under §1.6.
 - [ ] Patient leaflets/posters/materials.
 - [ ] New physiotherapy disease routes.
 - [ ] Module 02/generalization.
@@ -419,20 +432,22 @@ Do not mutate/merge/deploy later rich-referral or RF-engine migration work durin
 2. G-1 dynamic-guidance mechanics — production-smoke-verified / closed
 3. G-2 evidence-backed osteoporosis guidance — production-smoke-verified / closed
 4. G-3 guidance salience + longitudinal patient summary — production-smoke-verified / closed
-5. G-4 workspace ergonomics + gateway — released; native RF v2 replacement implemented/release-candidate-tested, PR/merge/deploy/smoke pending
-6. PR-1 transcript extraction
-7. PR-2 inline provisional population
-8. guided card UX sufficient for real use
-9. 5-case system-assisted pilot
-10. one refinement + contract freeze
-11. Quick Practice Review shadow capability
-12. 30-case system-assisted scored baseline
-13. baseline lock
-14. clinician-facing reviewed Signals/interventions
-15. one longitudinal closed improvement loop
-16. re-measurement / prompt-dependence trend where valid
-17. final Module 01 closure review
-18. later breadth/generalization
+5. G-4 / native RF v2 — production-smoke-verified / closed for now
+6. L-0 Clinical Learning Hub contract/design freeze
+7. L-1 Challenge import + Foundation MVP
+8. PR-1 transcript extraction
+9. PR-2 inline provisional population
+10. guided card UX sufficient for real use
+11. 5-case system-assisted pilot
+12. one refinement + contract freeze
+13. Quick Practice Review shadow capability
+14. 30-case system-assisted scored baseline
+15. baseline lock
+16. clinician-facing reviewed Signals/interventions + Daily Case Review activation
+17. one longitudinal closed improvement loop
+18. re-measurement / prompt-dependence trend where valid
+19. final Module 01 closure review
+20. later breadth/generalization
 ```
 
 Safety/data-integrity defects always outrank this order.

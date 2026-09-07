@@ -4,7 +4,7 @@
 > **PHASE:** dynamic guided consultation + transcript-assisted capture → Practice Review → measurement/improvement loop.
 > **CANONICAL HOME:** `athpapachr-cmd/osteoporosis`.
 > **MODULE 01:** Osteoporosis.
-> **UPDATED:** 2026-09-06 Asia/Nicosia.
+> **UPDATED:** 2026-09-07 Asia/Nicosia.
 
 This document owns the **detailed phase architecture and stage sequence**. Operational branch/PR/deploy state belongs in `CURRENT_OPERATIONAL.md`; exact current-slice design belongs in `SLICE_PLAN_CURRENT.md`.
 
