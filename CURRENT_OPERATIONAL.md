@@ -1,6 +1,6 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** CLINICAL LEARNING HUB L-1 — IMPLEMENTED / TESTED / FINAL EXACT-HEAD REVIEW PASS / PR-READY
+> **STATUS:** CLINICAL LEARNING HUB L-1 — IMPLEMENTED / TESTED / FINAL REVIEW PASS / PR #82 OPEN — RELEASE HOLD
 > **Updated:** 2026-09-07 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Fresh verified base / current main:** `5f7749c70c6bb3f36fcfc765088d4d363a6bb1d6`.
@@ -9,10 +9,10 @@
 > **Current slice:** `CORE-LEARNING-HUB-L1-CHALLENGE-FOUNDATION-MVP-2026-09-07`.
 > **Exact slice owner:** `SLICE_PLAN_CURRENT.md`.
 > **Frozen contract owners:** `schemas/clinical_learning_core_v1.yaml`, `schemas/clinical_learning_l1_boundary_v1.yaml`, `schemas/clinical_learning_contract_manifest_v1.yaml`, `schemas/clinical_learning_design_fixtures_v1.yaml`, `schemas/osteoporosis_foundation_map_v1.yaml`.
-> **ACTIVE RUNTIME WRITER/LOCK:** NONE — final review is closed; only canonical closeout, exact-head verification and PR opening are authorized before RELEASE HOLD.
-> **PHYSIOTHERAPY/CU-1 STATUS:** PAUSED by product owner; remains separate/read-only through the L-1 PR checkpoint.
+> **ACTIVE RUNTIME WRITER/LOCK:** NONE — L-1 runtime/review work is closed; PR #82 is in RELEASE HOLD.
+> **PHYSIOTHERAPY/CU-1 STATUS:** PAUSED by product owner; remains separate/read-only through the L-1 release decision.
 > **L-1 implementation authority:** GRANTED / EXERCISED within frozen scope.
-> **PR authority:** AUTHORIZED after exact final docs-head regression PASS.
+> **PR:** #82 OPEN / DRAFT / RELEASE HOLD.
 > **Merge/deploy authority:** NONE until separate explicit product-owner release decision.
 > **Patient-data mutation authority:** NONE.
 > **Raw-transcript authority:** NONE.
@@ -24,7 +24,7 @@
 
 # 1. Production truth
 
-L-0 is frozen/complete and merged. PR #80 carried the independently reviewed contracts; PR #81 reconciled the post-merge canonicals. Fresh `main` remained unchanged throughout the L-1 final review:
+L-0 is frozen/complete and merged. PR #80 carried the independently reviewed contracts; PR #81 reconciled the post-merge canonicals. Fresh `main` remained unchanged throughout the L-1 final review and PR opening:
 
 ```text
 5f7749c70c6bb3f36fcfc765088d4d363a6bb1d6
@@ -154,7 +154,7 @@ Corrections remain inside frozen L-1 semantics:
 - Foundation assessment is structured around only the frozen methods/states/results, explicit proposed/final state, clinician-reviewed evidence, notes and optional next-review date.
 - FORMAL_SOLID requirements are made explicit in the UI while backend validation remains authoritative.
 - Fact Ledger exposes source / introduced-via / stage provenance.
-- UI-contract regression coverage now catches missing DOM bindings and invalid Foundation method values.
+- UI-contract regression coverage catches missing DOM bindings and invalid Foundation method values.
 
 ## Data-integrity / operational findings — corrected
 
@@ -170,11 +170,17 @@ Corrections:
 - a distinct Foundation attempt must have `assessed_at` strictly newer than current state; equal timestamps fail closed because they have no deterministic ordering;
 - exact same Foundation `attempt_id` remains idempotent.
 
+## CI compatibility finding — corrected
+
+The closed L-0 workflow runs `unittest discover` with only PyYAML installed. Adding the runtime `clinical_learning` package initially caused discovery to import the package-level eager FastAPI router and fail before the L-0 tests could complete. L-1 now exposes `build_learning_router` lazily from `clinical_learning/__init__.py`, so package discovery remains dependency-light.
+
+On the corrected head, the L-0 workflow's **Validate Clinical Learning L0 contracts** step passes all L-0 tests. Its later **Confirm design-only scope** step still fails by design on this L-1 runtime PR because that workflow is specifically a closed L-0 design-only guard. That expected guard failure is not a contract regression and is not changed in L-1. The L-1 regression gate separately runs the inherited L-0 contract tests and passes them.
+
 No finding required frozen L-0 contract/schema mutation. No REPLAN trigger fired.
 
 ---
 
-# 6. Reviewed substantive head and regression evidence
+# 6. Reviewed evidence
 
 Final substantive code/review head:
 
@@ -189,7 +195,28 @@ run 34158892560
 SUCCESS
 ```
 
-The run passed all required steps:
+Canonical closeout head before PR:
+
+```text
+417ff3cebb5165f6a11d6f1c99fdfa445dcc36c4
+run 34159116868 — SUCCESS
+```
+
+Append-only final-review changelog head at PR opening:
+
+```text
+329f26dd4dd39885b04227ac7321fb4cd71e5675
+run 34159356501 — L1 SUCCESS
+```
+
+CI-compatibility correction head:
+
+```text
+65cb74a3308c59c0145fadac6616f79f2ce911bd
+run 34159442964 — L1 SUCCESS
+```
+
+The L-1 gate covers:
 
 ```text
 Python syntax
@@ -200,20 +227,20 @@ Scope / adjacent-owner guard
 Diff hygiene
 ```
 
-Fresh branch comparison at review close:
+Fresh branch comparison before PR opening:
 
 ```text
 base / merge-base   5f7749c70c6bb3f36fcfc765088d4d363a6bb1d6
-ahead / behind      35 / 0
+behind              0
 physio/CU1/RF leak  NONE
 frozen-schema diff  NONE
 ```
 
-The canonical closeout commits after this reviewed substantive head are docs-only. The **final PR head must still pass the complete regression gate exactly at that final head** before the PR is opened.
+PR #82 is a draft specifically to enforce RELEASE HOLD. Any canonical-only commit after the evidence above must still pass the full L-1 regression gate before the HOLD is considered exact-head clean.
 
 ---
 
-# 7. Lifecycle at canonical closeout
+# 7. Lifecycle
 
 ```text
 L-0 CONTRACT                         FROZEN / COMPLETE / MERGED
@@ -224,7 +251,7 @@ L-1 TESTED                           YES
 L-1 FINAL EXACT-HEAD REVIEW          PASS
 L-1 PHYSIO/RF ISOLATION              PASS
 L-1 REPLAN REQUIRED                  NO
-L-1 PR                               NONE — NEXT AFTER FINAL DOCS-HEAD PASS
+L-1 PR                               #82 OPEN / DRAFT / RELEASE HOLD
 L-1 MERGED                           NO
 L-1 DEPLOYED                         NO
 L-1 PRODUCTION-SMOKE-VERIFIED        NO
@@ -232,16 +259,23 @@ L-1 PRODUCTION-SMOKE-VERIFIED        NO
 
 ---
 
-# 8. Exact next action / release hold boundary
+# 8. Exact next action / HOLD
 
 ```text
-finish canonical closeout
-→ verify final branch-vs-main diff and fresh main
-→ require complete Clinical Learning L1 regression gate SUCCESS on the exact final docs head
-→ verify no existing L-1 PR
-→ open one bounded PR to main
-→ RELEASE HOLD
-→ STOP for explicit product-owner squash-merge/release authority
+verify the complete Clinical Learning L1 regression gate on this exact canonical HOLD head
+→ if SUCCESS: STOP in RELEASE HOLD
+→ await explicit product-owner decision whether to squash-merge/release PR #82
+```
+
+If later explicitly authorized:
+
+```text
+verify fresh main + exact PR head + required checks
+→ squash merge PR #82
+→ allow normal Render auto-deploy from main
+→ no manual duplicate deploy
+→ authenticated production smoke of /clinical/learning
+→ only then reconcile post-merge/deploy canonicals
 ```
 
 Do **not** merge, deploy, change production configuration/secrets, start PR-1/PR-2/Daily Case Review/Signal work, or resume physiotherapy/CU-1/RF before that separate product-owner decision.
