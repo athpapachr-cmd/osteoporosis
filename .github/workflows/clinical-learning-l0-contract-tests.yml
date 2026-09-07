@@ -41,7 +41,7 @@ jobs:
           base="$(git merge-base origin/main HEAD)"
           changed="$(git diff --name-only "$base" HEAD)"
           printf '%s\n' "$changed"
-          if printf '%s\n' "$changed" | grep -Ev '^(schemas/clinical_learning_.*\.yaml|schemas/osteoporosis_foundation_map_v1\.yaml|test_clinical_learning_l0_.*\.py|\.github/workflows/clinical-learning-l0-contract-tests\.yml|CLINICAL_LEARNING_HUB_DESIGN_V1\.md|CLINICAL_LEARNING_L0_DESIGN_REVIEW_V1\.md|CLINICAL_LEARNING_L0_INDEPENDENT_REVIEW_V1\.md|SLICE_PLAN_CURRENT\.md|CURRENT_OPERATIONAL\.md|TODO\.md|osteoporosis-change-log\.md)$' ; then
+          if printf '%s\n' "$changed" | grep -Ev '^(schemas/clinical_learning_.*\.yaml|schemas/osteoporosis_foundation_map_v1\.yaml|test_clinical_learning_l0_.*\.py|\.github/workflows/clinical-learning-l0-contract-tests\.yml|\.github/workflows/clinical-learning-l0-finalize\.yml|CLINICAL_LEARNING_HUB_DESIGN_V1\.md|CLINICAL_LEARNING_L0_DESIGN_REVIEW_V1\.md|CLINICAL_LEARNING_L0_INDEPENDENT_REVIEW_V1\.md|SLICE_PLAN_CURRENT\.md|CURRENT_OPERATIONAL\.md|TODO\.md|osteoporosis-change-log\.md)$' ; then
             echo 'Unexpected non-L0 file in design branch.' >&2
             exit 1
           fi
