@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="el">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Clinical Learning Hub</title>
+  <link rel="stylesheet" href="/static/clinical-learning/styles.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">Clinical Excellence · Module 01 Osteoporosis</p>
+        <h1>Clinical Learning Hub</h1>
+        <p class="sub">Structured challenges, Foundation Map και learning due state. Learning record ≠ patient record.</p>
+      </div>
+      <div class="status" id="globalStatus">Έτοιμο</div>
+    </header>
+
+    <nav class="tabs" aria-label="Learning views">
+      <button class="tab active" data-view="import">Challenge Import</button>
+      <button class="tab" data-view="history">Challenge History</button>
+      <button class="tab" data-view="foundation">Foundation Map</button>
+      <button class="tab" data-view="due">Due / Learning Actions</button>
+    </nav>
+
+    <section class="view active" id="view-import">
+      <div class="grid two">
+        <article class="card">
+          <h2>1. Επικόλληση Challenge JSON</h2>
+          <p class="notice">Μην επικολλάς όνομα, GeSY/ταυτότητα, τηλέφωνο, email, διεύθυνση ή πλήρη ημερομηνία γέννησης. Το σύστημα κάνει deterministic PHI guard, όχι τέλεια αποταυτοποίηση.</p>
+          <textarea id="challengeJson" spellcheck="false" placeholder='{"challenge_id":"...","schema_version":"clinical_learning_challenge_v1", ...}'></textarea>
+          <div class="row">
+            <button class="primary" id="previewChallenge">Validate & Preview</button>
+            <button class="secondary" id="clearChallenge">Καθαρισμός</button>
+          </div>
+        </article>
+
+        <article class="card" id="previewPanel">
+          <h2>2. Server Preview</h2>
+          <div id="previewEmpty" class="empty">Δεν έχει γίνει ακόμη preview.</div>
+          <div id="previewContent" hidden>
+            <div class="meta-grid" id="challengeMeta"></div>
+            <div id="previewWarnings"></div>
+            <h3>Fact Ledger</h3>
+            <div id="factLedger" class="stack"></div>
+            <h3>Observations — clinician disposition required</h3>
+            <div id="observations" class="stack"></div>
+            <h3>References</h3>
+            <div id="references" class="stack"></div>
+            <label class="check"><input type="checkbox" id="confirmReview"> Επιβεβαιώνω ότι έλεγξα το structured learning artifact και ότι δεν περιέχει άμεσα patient identifiers.</label>
+            <button class="primary" id="saveChallenge">Save reviewed Challenge</button>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="view" id="view-history">
+      <article class="card">
+        <div class="section-head">
+          <div><h2>Challenge History</h2><p>Latest revision ανά challenge. Οι παλαιότερες revisions παραμένουν immutable.</p></div>
+          <button class="secondary" id="refreshHistory">Ανανέωση</button>
+        </div>
+        <div class="filters">
+          <input id="filterTopic" placeholder="topic">
+          <input id="filterFoundation" placeholder="foundation node">
+          <select id="filterMode"><option value="">όλα τα modes</option><option>synthetic</option><option>deidentified_real_case</option><option>mixed</option></select>
+          <button id="applyHistoryFilters">Filter</button>
+        </div>
+        <div id="historyList" class="stack"></div>
+      </article>
+      <article class="card" id="historyDetailCard" hidden>
+        <div class="section-head"><h2>Challenge detail</h2><div class="row"><button class="secondary" id="exportJson">JSON</button><button class="secondary" id="exportMarkdown">Markdown</button><button class="danger" id="deleteChallenge">Delete content</button></div></div>
+        <div id="historyDetail"></div>
+      </article>
+    </section>
+
+    <section class="view" id="view-foundation">
+      <article class="card">
+        <div class="section-head"><div><h2>Osteoporosis Foundation Map</h2><p>State changes μόνο μέσω explicit clinician-reviewed assessment.</p></div><button class="secondary" id="refreshFoundation">Ανανέωση</button></div>
+        <div id="foundationGrid" class="foundation-grid"></div>
+      </article>
+      <article class="card" id="assessmentCard" hidden>
+        <h2 id="assessmentTitle">Foundation assessment</h2>
+        <p class="notice">Self-rating alone δεν αλλάζει Foundation state. Για FORMAL_SOLID απαιτείται formal/mechanistic evidence + transfer/boundary/evidence-directness evidence.</p>
+        <textarea id="assessmentJson" spellcheck="false" placeholder='{"attempt_id":"...","schema_version":"foundation_assessment_attempt_v1", ...}'></textarea>
+        <label>Επόμενο explicit review date <input type="date" id="assessmentDue"></label>
+        <div class="row"><button class="secondary" id="previewAssessment">Preview assessment</button><button class="primary" id="saveAssessment">Save assessment</button></div>
+        <pre id="assessmentResult" class="result"></pre>
+      </article>
+    </section>
+
+    <section class="view" id="view-due">
+      <article class="card">
+        <div class="section-head"><div><h2>Due / Learning Actions</h2><p>Scheduling state, όχι competence score.</p></div><button class="secondary" id="refreshDue">Ανανέωση</button></div>
+        <div id="dueList" class="stack"></div>
+      </article>
+    </section>
+  </main>
+  <script src="/static/clinical-learning/app.js" defer></script>
+</body>
+</html>
