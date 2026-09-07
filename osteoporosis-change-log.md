@@ -1241,3 +1241,40 @@ L-1 IMPLEMENTATION               NOT AUTHORIZED
 ```
 
 The next gate is a separate product-owner decision to authorize the bounded L-1 Challenge Import + History + Foundation Map MVP implementation slice.
+
+---
+
+## 2026-09-07 — Clinical Learning L-1 implementation exact-head regression checkpoint
+
+On branch `feat/clinical-learning-l1-challenge-foundation-mvp-2026-09-07`, the bounded L-1 Clinical Learning runtime was implemented for protected Challenge import/history/revisions/delete, reference-verification overlay, the 14-node Osteoporosis Foundation Map, explicit Foundation assessments/state, reviewed due-state scheduling and the first protected clinician-facing Learning Hub UI.
+
+Hardening corrected timezone-aware UTC normalization and prevented an older Foundation assessment from overwriting a newer materialized state. Clinician-facing UX was then improved for Challenge revision flow and structured Foundation assessment.
+
+Exact runtime/UX head:
+
+```text
+b53a39f12363e08a7be952e1d7a25fbb5511bca8
+```
+
+Full `Clinical Learning L1 regression gate`:
+
+```text
+run 34156659908
+SUCCESS
+```
+
+The gate covered Python/JavaScript syntax, L-1 runtime/hardening tests, inherited L-0 contract regressions, adjacent-owner isolation and diff hygiene. Physiotherapy/CU-1 and RF owners were not mutated.
+
+Lifecycle at this checkpoint:
+
+```text
+L-1 CORE IMPLEMENTED              YES
+L-1 CLINICIAN-FACING UX           IMPLEMENTED
+L-1 EXACT-HEAD REGRESSION GATE    PASS
+FINAL EXACT-HEAD REVIEW           PENDING
+PR                                NONE
+MERGED                            NO
+DEPLOYED                          NO
+```
+
+The product owner paused the separate physiotherapy workstream until this L-1 checkpoint is completed. The next legitimate action is final exact-head review, then canonical closeout and a bounded PR/release HOLD if clean.

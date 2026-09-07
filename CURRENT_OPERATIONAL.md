@@ -1,6 +1,6 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** CLINICAL LEARNING HUB L-1 — PRODUCT-OWNER AUTHORIZED / IMPLEMENTATION ACTIVE
+> **STATUS:** CLINICAL LEARNING HUB L-1 — IMPLEMENTED / TESTED EXACT-HEAD / FINAL REVIEW HANDOFF
 > **Updated:** 2026-09-07 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Fresh verified implementation base:** `5f7749c70c6bb3f36fcfc765088d4d363a6bb1d6`.
@@ -9,8 +9,8 @@
 > **Current slice:** `CORE-LEARNING-HUB-L1-CHALLENGE-FOUNDATION-MVP-2026-09-07`.
 > **Exact slice owner:** `SLICE_PLAN_CURRENT.md`.
 > **Frozen contract owners:** `schemas/clinical_learning_core_v1.yaml`, `schemas/clinical_learning_l1_boundary_v1.yaml`, `schemas/osteoporosis_foundation_map_v1.yaml`.
-> **ACTIVE RUNTIME WRITER/LOCK:** ChatGPT — L-1 `clinical_learning/`, `static/clinical-learning/`, bounded `main.py` composition, L-1 tests/workflow and canonical lifecycle updates only.
-> **ACTIVE PHYSIOTHERAPY/CU-1 WRITER:** NONE for this session; product owner reports the other conversation is paused until this L-1 step is complete.
+> **ACTIVE RUNTIME WRITER/LOCK:** NONE — implementation paused for conversation handoff; the next session must fresh-bootstrap and explicitly claim the same bounded L-1 scope before mutation.
+> **PHYSIOTHERAPY/CU-1 STATUS:** PAUSED by product owner until this L-1 checkpoint is completed; L-1 must continue to avoid all physio/CU-1/RF owners.
 > **L-1 implementation authority:** GRANTED by product owner.
 > **PR/merge/deploy authority:** NONE — separate release decision required.
 > **Patient-data mutation authority:** NONE.
@@ -148,9 +148,12 @@ Frozen schemas are read-only normative inputs. Any material need to change them 
 L-0 CONTRACT                         FROZEN / COMPLETE / MERGED
 L-1 PRODUCT-OWNER AUTHORITY          GRANTED
 L-1 SLICE                            ACTIVE
-L-1 IMPLEMENTED                      NO
-L-1 TESTED                           NO
-L-1 EXACT-HEAD REVIEW                NO
+L-1 CORE IMPLEMENTED                 YES
+L-1 CLINICIAN-FACING UX HARDENING    IMPLEMENTED
+L-1 EXACT RUNTIME/UX HEAD            b53a39f12363e08a7be952e1d7a25fbb5511bca8
+L-1 REGRESSION GATE                  PASS — run 34156659908
+L-1 PHYSIO/RF ISOLATION              PASS
+L-1 FINAL EXACT-HEAD REVIEW          PENDING
 L-1 PR                               NONE
 L-1 MERGED                           NO
 L-1 DEPLOYED                         NO
@@ -159,15 +162,26 @@ L-1 PRODUCTION-SMOKE-VERIFIED        NO
 
 ---
 
-# 7. Exact next action
+# 7. Exact next action / conversation handoff
 
 ```text
-implement the bounded L-1 runtime + UI
-→ synthetic/focused tests
-→ inherited L-0 contract regression
-→ scope/privacy/security/diff review
-→ canonical closeout
-→ HOLD for separate product-owner release decision
+fresh-bootstrap current main + feat/clinical-learning-l1-challenge-foundation-mvp-2026-09-07
+→ verify branch has not moved unexpectedly
+→ claim the bounded L-1 writer lock
+→ perform final exact-head code/product/security/privacy review
+→ specifically review clinician-facing Challenge revision workflow + structured Foundation assessment UX
+→ if any material finding: correct only within frozen L-1 scope and rerun full gate
+→ if clean: canonical closeout to IMPLEMENTED / TESTED / REVIEWED
+→ open bounded L-1 PR to main
+→ HOLD for separate product-owner merge/release authority
 ```
 
-If a frozen contract cannot be implemented without changing semantic ownership, STOP and REPLAN rather than patching the contract during coding.
+Known exact evidence before handoff:
+
+```text
+main/base            5f7749c70c6bb3f36fcfc765088d4d363a6bb1d6
+runtime/UX head      b53a39f12363e08a7be952e1d7a25fbb5511bca8
+L-1 regression gate 34156659908 — SUCCESS
+```
+
+Do not start PR-1, PR-2, Daily Case Review, Signal work, physiotherapy/CU-1 or RF changes during this closeout.

@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — Clinical Learning Hub L-1 Challenge + Foundation MVP
 
-> **STATUS:** PRODUCT-OWNER AUTHORIZED / IMPLEMENTATION ACTIVE
+> **STATUS:** IMPLEMENTED / TESTED EXACT-HEAD CANDIDATE — FINAL REVIEW HANDOFF
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Slice ID:** `CORE-LEARNING-HUB-L1-CHALLENGE-FOUNDATION-MVP-2026-09-07`.
 > **Fresh implementation base:** `5f7749c70c6bb3f36fcfc765088d4d363a6bb1d6`.
@@ -529,9 +529,12 @@ STOP implementation and return to design if any of these becomes necessary:
 L-0 CONTRACT                         FROZEN / COMPLETE / MERGED
 L-1 PRODUCT-OWNER AUTHORITY          GRANTED
 L-1 SLICE DESIGN                     FROZEN BY THIS FILE
-L-1 IMPLEMENTATION                   ACTIVE
-L-1 TESTED                           NO
-L-1 EXACT-HEAD REVIEW                NO
+L-1 CORE IMPLEMENTATION              COMPLETE
+L-1 CLINICIAN-FACING UX HARDENING    COMPLETE
+L-1 EXACT RUNTIME/UX HEAD            b53a39f12363e08a7be952e1d7a25fbb5511bca8
+L-1 TESTED                           YES — run 34156659908 SUCCESS
+L-1 ADJACENT-OWNER ISOLATION         PASS
+L-1 FINAL EXACT-HEAD REVIEW          PENDING
 L-1 PR                               NONE
 L-1 MERGED                           NO
 L-1 DEPLOYED                         NO
@@ -541,10 +544,12 @@ L-1 PRODUCTION-SMOKE-VERIFIED        NO
 Exact next action:
 
 ```text
-claim CURRENT_OPERATIONAL writer lock
-→ implement only frozen owners/seams
-→ run complete L-1 + inherited L-0 regression gate
-→ exact-head scope/security/privacy review
-→ canonical closeout to IMPLEMENTED / TESTED or REPLAN
+fresh-bootstrap + claim CURRENT_OPERATIONAL writer lock
+→ final exact-head code/product/security/privacy review
+→ verify clinician-facing revision + Foundation assessment UX
+→ fix bounded findings only if needed
+→ rerun full L-1 + inherited L-0 regression gate after any code change
+→ canonical closeout
+→ open bounded L-1 PR
 → HOLD for separate release/merge authority
 ```
