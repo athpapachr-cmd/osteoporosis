@@ -27,7 +27,12 @@
     <section class="view active" id="view-import">
       <div class="grid two">
         <article class="card">
-          <h2>1. Επικόλληση Challenge JSON</h2>
+          <div class="section-head">
+            <div>
+              <h2>1. Επικόλληση Challenge JSON</h2>
+              <p id="revisionModeLabel" class="muted">Νέο Challenge</p>
+            </div>
+          </div>
           <p class="notice">Μην επικολλάς όνομα, GeSY/ταυτότητα, τηλέφωνο, email, διεύθυνση ή πλήρη ημερομηνία γέννησης. Το σύστημα κάνει deterministic PHI guard, όχι τέλεια αποταυτοποίηση.</p>
           <textarea id="challengeJson" spellcheck="false" placeholder='{"challenge_id":"...","schema_version":"clinical_learning_challenge_v1", ...}'></textarea>
           <div class="row">
@@ -70,7 +75,16 @@
         <div id="historyList" class="stack"></div>
       </article>
       <article class="card" id="historyDetailCard" hidden>
-        <div class="section-head"><h2>Challenge detail</h2><div class="row"><button class="secondary" id="exportJson">JSON</button><button class="secondary" id="exportMarkdown">Markdown</button><button class="danger" id="deleteChallenge">Delete content</button></div></div>
+        <div class="section-head">
+          <h2>Challenge detail</h2>
+          <div class="row">
+            <button class="primary" id="newRevision">Νέα revision</button>
+            <button class="secondary" id="exportJson">JSON</button>
+            <button class="secondary" id="exportMarkdown">Markdown</button>
+            <button class="danger" id="deleteChallenge">Delete content</button>
+          </div>
+        </div>
+        <div id="revisionSelector" class="revision-selector"></div>
         <div id="historyDetail"></div>
       </article>
     </section>
@@ -80,11 +94,44 @@
         <div class="section-head"><div><h2>Osteoporosis Foundation Map</h2><p>State changes μόνο μέσω explicit clinician-reviewed assessment.</p></div><button class="secondary" id="refreshFoundation">Ανανέωση</button></div>
         <div id="foundationGrid" class="foundation-grid"></div>
       </article>
+
       <article class="card" id="assessmentCard" hidden>
         <h2 id="assessmentTitle">Foundation assessment</h2>
-        <p class="notice">Self-rating alone δεν αλλάζει Foundation state. Για FORMAL_SOLID απαιτείται formal/mechanistic evidence + transfer/boundary/evidence-directness evidence.</p>
-        <textarea id="assessmentJson" spellcheck="false" placeholder='{"attempt_id":"...","schema_version":"foundation_assessment_attempt_v1", ...}'></textarea>
-        <label>Επόμενο explicit review date <input type="date" id="assessmentDue"></label>
+        <p class="notice">Δεν είναι self-rating. Καταγράφεις τι αποδείχθηκε στην assessment. Για FORMAL_SOLID απαιτείται formal/mechanistic understanding και επιπλέον transfer, boundary/exception ή evidence-directness calibration.</p>
+
+        <div class="assessment-grid">
+          <label class="field">
+            <span>Clinician final state</span>
+            <select id="assessmentState">
+              <option value="UNKNOWN_UNTESTED">UNKNOWN_UNTESTED</option>
+              <option value="FRAGMENTED">FRAGMENTED</option>
+              <option value="INTUITIVE_UNSTRUCTURED">INTUITIVE_UNSTRUCTURED</option>
+              <option value="FORMAL_SOLID">FORMAL_SOLID</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Επόμενο explicit review date</span>
+            <input type="date" id="assessmentDue">
+          </label>
+        </div>
+
+        <h3>Observed assessment evidence</h3>
+        <p class="muted">Επίλεξε μόνο ό,τι πράγματι αξιολογήθηκε σε αυτή την προσπάθεια.</p>
+        <div class="evidence-grid" id="assessmentEvidence">
+          <label class="evidence-option"><input type="checkbox" value="unaided_formal_explanation"> Unaided formal explanation</label>
+          <label class="evidence-option"><input type="checkbox" value="mechanistic_explanation"> Mechanistic explanation</label>
+          <label class="evidence-option"><input type="checkbox" value="structured_short_test"> Structured short test</label>
+          <label class="evidence-option"><input type="checkbox" value="novel_case_transfer"> Novel case transfer</label>
+          <label class="evidence-option"><input type="checkbox" value="boundary_or_exception_recognition"> Boundary / exception recognition</label>
+          <label class="evidence-option"><input type="checkbox" value="evidence_directness_calibration"> Evidence-directness calibration</label>
+          <label class="evidence-option"><input type="checkbox" value="self_rating_only"> Self-rating only / not tested</label>
+        </div>
+
+        <label class="field full">
+          <span>Clinician note (optional)</span>
+          <textarea id="assessmentNote" class="short-textarea" placeholder="Σύντομη παρατήρηση για το τι έδειξε η assessment."></textarea>
+        </label>
+
         <div class="row"><button class="secondary" id="previewAssessment">Preview assessment</button><button class="primary" id="saveAssessment">Save assessment</button></div>
         <pre id="assessmentResult" class="result"></pre>
       </article>
