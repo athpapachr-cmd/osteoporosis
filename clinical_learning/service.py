@@ -5,7 +5,7 @@ from datetime import date, datetime, timezone
 from typing import Any
 from uuid import uuid4
 
-from sqlalchemy import delete, select
+from sqlalchemy import select
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
@@ -51,7 +51,20 @@ class LearningServiceError(ValueError):
 
 
 def utcnow() -> datetime:
+    """Naive UTC for SQLAlchemy DateTime columns used by this repository."""
     return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
+def utcnow_iso() -> str:
+    """Offset-aware UTC timestamp for JSON learning artifacts."""
+    return datetime.now(timezone.utc).isoformat()
+
+
+def _naive_utc(value: datetime) -> datetime:
+    """Normalize aware datetimes to UTC before removing tzinfo."""
+    if value.tzinfo is None:
+        return value
+    return value.astimezone(timezone.utc).replace(tzinfo=None)
 
 
 def _today() -> date:
@@ -62,7 +75,12 @@ def sanitized_issues(exc: LearningContractError) -> list[dict[str, str]]:
     return [{"code": issue.code, "path": issue.path} for issue in exc.issues]
 
 
-def _due_status(due_on: date | None, *, completed_at: datetime | None = None, deferred_until: date | None = None) -> str:
+def _due_status(
+    due_on: date | None,
+    *,
+    completed_at: datetime | None = None,
+    deferred_until: date | None = None,
+) -> str:
     if completed_at is not None:
         return "completed"
     today = _today()
@@ -99,11 +117,6 @@ def _find_reference(payload: dict[str, Any], reference_id: str) -> dict[str, Any
 
 
 def _serialize_due(row: DueItemORM) -> dict[str, Any]:
-    effective_status = _due_status(
-        row.due_on,
-        completed_at=row.completed_at,
-        deferred_until=row.deferred_until,
-    )
     return {
         "due_item_id": row.due_item_id,
         "schema_version": "learning_due_state_v1",
@@ -111,7 +124,11 @@ def _serialize_due(row: DueItemORM) -> dict[str, Any]:
         "target_id": row.target_id,
         "occurrence": row.occurrence,
         "due_on": serialize_date(row.due_on),
-        "due_status": effective_status,
+        "due_status": _due_status(
+            row.due_on,
+            completed_at=row.completed_at,
+            deferred_until=row.deferred_until,
+        ),
         "delivery_mode": row.delivery_mode,
         "reason_code": row.reason_code,
         "source_artifact_type": row.source_artifact_type,
@@ -193,9 +210,7 @@ def _deactivate_removed_challenge_due(
     ).scalars().all()
     now = utcnow()
     for row in rows:
-        if row.completed_at is not None:
-            continue
-        if (row.item_type, row.target_id) in active_keys:
+        if row.completed_at is not None or (row.item_type, row.target_id) in active_keys:
             continue
         row.due_on = None
         row.deferred_until = None
@@ -211,13 +226,12 @@ def _materialize_challenge_due(session: Session, payload: dict[str, Any]) -> Non
 
     repetition_due = payload.get("spaced_repetition_due")
     if repetition_due:
-        due_date = date.fromisoformat(str(repetition_due))
         active.add(("challenge_repetition", challenge_id))
         _materialize_due(
             session,
             item_type="challenge_repetition",
             target_id=challenge_id,
-            due_on=due_date,
+            due_on=date.fromisoformat(str(repetition_due)),
             reason_code="challenge_spaced_repetition",
             source_artifact_type="challenge",
             source_artifact_id=challenge_id,
@@ -279,21 +293,30 @@ class ClinicalLearningService:
                         if requested_hash == latest.content_hash
                         else "same_revision_conflict"
                     )
-                elif requested_revision == latest.revision + 1 and normalized.get("supersedes_revision") == latest.revision:
+                elif (
+                    requested_revision == latest.revision + 1
+                    and normalized.get("supersedes_revision") == latest.revision
+                ):
                     duplicate_state = "next_revision_candidate"
                 else:
                     duplicate_state = "stale_revision_rejected"
 
+        imported = challenge.model_dump(mode="json")
         warnings: list[dict[str, str]] = []
-        if any(ref.get("verification_state") != "unverified" for ref in challenge.model_dump(mode="json").get("references") or []):
+        if any(ref.get("verification_state") != "unverified" for ref in imported.get("references") or []):
             warnings.append({"code": "imported_reference_verification_reset", "path": "references"})
         if challenge.record_review_state != "imported_pending_review" or challenge.reviewed_at is not None:
             warnings.append({"code": "imported_review_authority_reset", "path": "record_review_state"})
         if challenge.linked_signal_ids:
             warnings.append({"code": "imported_signal_links_removed", "path": "linked_signal_ids"})
 
+        blocked = {
+            "tombstoned_identity_rejected",
+            "stale_revision_rejected",
+            "same_revision_conflict",
+        }
         return {
-            "valid": duplicate_state not in {"tombstoned_identity_rejected", "stale_revision_rejected", "same_revision_conflict"},
+            "valid": duplicate_state not in blocked,
             "issues": [],
             "duplicate_state": duplicate_state,
             "warnings": warnings,
@@ -307,17 +330,13 @@ class ClinicalLearningService:
         revision: int,
         supersedes_revision: int | None,
     ) -> tuple[ClinicalLearningChallengeV1, dict[str, Any], str]:
-        first = validate_challenge_payload(raw_challenge)
-        material = _as_revision(first.model_dump(mode="json"), revision, supersedes_revision)
+        initial = validate_challenge_payload(raw_challenge)
+        material = _as_revision(initial.model_dump(mode="json"), revision, supersedes_revision)
         reviewed = validate_challenge_payload(material)
-        payload = normalize_for_save(reviewed, reviewed_at_iso=utcnow().isoformat())
-        # Revalidate after server authority normalization and immediately before persistence.
+        payload = normalize_for_save(reviewed, reviewed_at_iso=utcnow_iso())
         checked = validate_challenge_payload(payload)
-        payload = checked.model_dump(mode="json")
-        payload["record_review_state"] = "clinician_reviewed"
-        payload["reviewed_at"] = reviewed.model_dump(mode="json").get("reviewed_at")
-        payload = normalize_for_save(checked, reviewed_at_iso=utcnow().isoformat())
-        return checked, payload, canonical_content_hash(payload)
+        final_payload = checked.model_dump(mode="json")
+        return checked, final_payload, canonical_content_hash(final_payload)
 
     def create_challenge(self, raw_challenge: Any, *, confirm_save: bool) -> dict[str, Any]:
         if confirm_save is not True:
@@ -326,24 +345,27 @@ class ClinicalLearningService:
         challenge_id = str(first.challenge_id)
         with Session(self.engine) as session:
             if challenge_is_tombstoned(session, challenge_id) is not None:
-                raise LearningServiceError("tombstoned_identity_rejected", "challenge.challenge_id", status_code=409)
+                raise LearningServiceError(
+                    "tombstoned_identity_rejected", "challenge.challenge_id", status_code=409
+                )
             latest = latest_challenge_revision(session, challenge_id)
             if latest is not None:
-                _, candidate_same_rev, candidate_hash = self._prepare_reviewed_payload(
+                _, _, candidate_hash = self._prepare_reviewed_payload(
                     raw_challenge,
                     revision=latest.revision,
                     supersedes_revision=latest.revision - 1 if latest.revision > 1 else None,
                 )
                 if candidate_hash == latest.content_hash:
                     return self._challenge_record(session, latest, idempotent=True)
-                raise LearningServiceError("challenge_exists_use_put_for_new_revision", "challenge.challenge_id", status_code=409)
+                raise LearningServiceError(
+                    "challenge_exists_use_put_for_new_revision",
+                    "challenge.challenge_id",
+                    status_code=409,
+                )
 
-            _, payload, content_hash = self._prepare_reviewed_payload(
-                raw_challenge,
-                revision=1,
-                supersedes_revision=None,
+            checked, payload, content_hash = self._prepare_reviewed_payload(
+                raw_challenge, revision=1, supersedes_revision=None
             )
-            now = utcnow()
             row = ChallengeRevisionORM(
                 challenge_id=challenge_id,
                 revision=1,
@@ -351,8 +373,8 @@ class ClinicalLearningService:
                 module=str(payload["module"]),
                 payload_json=payload,
                 content_hash=content_hash,
-                created_at=datetime.fromisoformat(str(payload["created_at"]).replace("Z", "+00:00")).replace(tzinfo=None),
-                imported_at=now,
+                created_at=_naive_utc(checked.created_at),
+                imported_at=utcnow(),
             )
             session.add(row)
             _materialize_challenge_due(session, payload)
@@ -360,7 +382,9 @@ class ClinicalLearningService:
             session.refresh(row)
             return self._challenge_record(session, row, idempotent=False)
 
-    def revise_challenge(self, challenge_id: str, raw_challenge: Any, *, confirm_save: bool) -> dict[str, Any]:
+    def revise_challenge(
+        self, challenge_id: str, raw_challenge: Any, *, confirm_save: bool
+    ) -> dict[str, Any]:
         if confirm_save is not True:
             raise LearningServiceError("confirm_save_required", "confirm_save")
         first = validate_challenge_payload(raw_challenge)
@@ -368,12 +392,14 @@ class ClinicalLearningService:
             raise LearningServiceError("challenge_id_path_mismatch", "challenge.challenge_id")
         with Session(self.engine) as session:
             if challenge_is_tombstoned(session, challenge_id) is not None:
-                raise LearningServiceError("tombstoned_identity_rejected", "challenge.challenge_id", status_code=409)
+                raise LearningServiceError(
+                    "tombstoned_identity_rejected", "challenge.challenge_id", status_code=409
+                )
             latest = latest_challenge_revision(session, challenge_id)
             if latest is None:
                 raise LearningServiceError("challenge_not_found", "challenge_id", status_code=404)
 
-            _, same_payload, same_hash = self._prepare_reviewed_payload(
+            _, _, same_hash = self._prepare_reviewed_payload(
                 raw_challenge,
                 revision=latest.revision,
                 supersedes_revision=latest.revision - 1 if latest.revision > 1 else None,
@@ -382,7 +408,7 @@ class ClinicalLearningService:
                 return self._challenge_record(session, latest, idempotent=True)
 
             next_revision = latest.revision + 1
-            _, payload, content_hash = self._prepare_reviewed_payload(
+            checked, payload, content_hash = self._prepare_reviewed_payload(
                 raw_challenge,
                 revision=next_revision,
                 supersedes_revision=latest.revision,
@@ -394,7 +420,7 @@ class ClinicalLearningService:
                 module=str(payload["module"]),
                 payload_json=payload,
                 content_hash=content_hash,
-                created_at=datetime.fromisoformat(str(payload["created_at"]).replace("Z", "+00:00")).replace(tzinfo=None),
+                created_at=_naive_utc(checked.created_at),
                 imported_at=utcnow(),
             )
             session.add(row)
@@ -403,11 +429,11 @@ class ClinicalLearningService:
             session.refresh(row)
             return self._challenge_record(session, row, idempotent=False)
 
-    def _challenge_record(self, session: Session, row: ChallengeRevisionORM, *, idempotent: bool) -> dict[str, Any]:
+    def _challenge_record(
+        self, session: Session, row: ChallengeRevisionORM, *, idempotent: bool
+    ) -> dict[str, Any]:
         overlays = reference_overlays(
-            session,
-            artifact_id=row.challenge_id,
-            artifact_revision=row.revision,
+            session, artifact_id=row.challenge_id, artifact_revision=row.revision
         )
         return {
             "challenge_id": row.challenge_id,
@@ -451,9 +477,13 @@ class ClinicalLearningService:
             topic_key = topic.casefold().strip() if topic else None
             for row in latest_by_id.values():
                 payload = row.payload_json or {}
-                if topic_key and topic_key not in {str(v).casefold().strip() for v in payload.get("topics") or []}:
+                if topic_key and topic_key not in {
+                    str(v).casefold().strip() for v in payload.get("topics") or []
+                }:
                     continue
-                if foundation_node and foundation_node not in (payload.get("foundation_node_ids") or []):
+                if foundation_node and foundation_node not in (
+                    payload.get("foundation_node_ids") or []
+                ):
                     continue
                 if challenge_date and str(payload.get("created_at", ""))[:10] != challenge_date.isoformat():
                     continue
@@ -494,7 +524,9 @@ class ClinicalLearningService:
             return {
                 "challenge_id": challenge_id,
                 "deleted": False,
-                "revisions": [self._challenge_record(session, row, idempotent=False) for row in revisions],
+                "revisions": [
+                    self._challenge_record(session, row, idempotent=False) for row in revisions
+                ],
                 "due": [
                     _serialize_due(row)
                     for row in session.execute(
@@ -521,12 +553,13 @@ class ClinicalLearningService:
             max_revision = purge_challenge_content(session, challenge_id)
             if max_revision < 1:
                 raise LearningServiceError("challenge_not_found", "challenge_id", status_code=404)
-            row = ChallengeTombstoneORM(
-                challenge_id=challenge_id,
-                deleted_at=utcnow(),
-                max_deleted_revision=max_revision,
+            session.add(
+                ChallengeTombstoneORM(
+                    challenge_id=challenge_id,
+                    deleted_at=utcnow(),
+                    max_deleted_revision=max_revision,
+                )
             )
-            session.add(row)
             session.commit()
             return {
                 "challenge_id": challenge_id,
@@ -544,24 +577,37 @@ class ClinicalLearningService:
         verification_state: str,
         verification_note: str | None,
     ) -> dict[str, Any]:
-        allowed = {"unverified", "verified_locator", "verified_content", "invalid_or_unresolved"}
+        allowed = {
+            "unverified",
+            "verified_locator",
+            "verified_content",
+            "invalid_or_unresolved",
+        }
         if verification_state not in allowed:
-            raise LearningServiceError("invalid_reference_verification_state", "verification_state")
+            raise LearningServiceError(
+                "invalid_reference_verification_state", "verification_state"
+            )
         if verification_note:
             findings = scan_text(verification_note, path="verification_note")
             if findings:
-                raise LearningContractError([ContractIssue(item.code, item.path) for item in findings])
+                raise LearningContractError(
+                    [ContractIssue(item.code, item.path) for item in findings]
+                )
         with Session(self.engine) as session:
             row = challenge_revision(session, challenge_id, revision)
             if row is None:
-                raise LearningServiceError("challenge_revision_not_found", "revision", status_code=404)
+                raise LearningServiceError(
+                    "challenge_revision_not_found", "revision", status_code=404
+                )
             reference = _find_reference(row.payload_json or {}, reference_id)
             if reference is None:
                 raise LearningServiceError("reference_not_found", "reference_id", status_code=404)
             if verification_state in {"verified_locator", "verified_content"} and not any(
                 reference.get(key) for key in ("pmid", "doi", "url")
             ):
-                raise LearningServiceError("verification_requires_reference_locator", "verification_state")
+                raise LearningServiceError(
+                    "verification_requires_reference_locator", "verification_state"
+                )
 
             key = ("challenge", challenge_id, revision, reference_id)
             overlay = session.get(ReferenceVerificationORM, key)
@@ -597,7 +643,9 @@ class ClinicalLearningService:
         next_review_due: date | None,
     ) -> dict[str, Any]:
         try:
-            attempt = validate_foundation_attempt_payload(raw_attempt, expected_node_id=foundation_node_id)
+            attempt = validate_foundation_attempt_payload(
+                raw_attempt, expected_node_id=foundation_node_id
+            )
         except LearningContractError as exc:
             return {"valid": False, "issues": sanitized_issues(exc)}
         return {
@@ -620,30 +668,52 @@ class ClinicalLearningService:
     ) -> dict[str, Any]:
         if confirm_save is not True:
             raise LearningServiceError("confirm_save_required", "confirm_save")
-        attempt = validate_foundation_attempt_payload(raw_attempt, expected_node_id=foundation_node_id)
+        attempt = validate_foundation_attempt_payload(
+            raw_attempt, expected_node_id=foundation_node_id
+        )
         payload = attempt.model_dump(mode="json")
-        # Revalidate immediately before persistence.
-        attempt = validate_foundation_attempt_payload(payload, expected_node_id=foundation_node_id)
+        attempt = validate_foundation_attempt_payload(
+            payload, expected_node_id=foundation_node_id
+        )
         attempt_id = str(attempt.attempt_id)
+        assessed_at = _naive_utc(attempt.assessed_at)
         with Session(self.engine) as session:
             existing = session.get(FoundationAttemptORM, attempt_id)
             if existing is not None:
                 if (existing.payload_json or {}) == payload:
-                    return self._foundation_state_response(session, foundation_node_id, idempotent=True)
-                raise LearningServiceError("foundation_attempt_id_conflict", "attempt.attempt_id", status_code=409)
-
-            now = utcnow()
-            attempt_row = FoundationAttemptORM(
-                attempt_id=attempt_id,
-                foundation_node_id=foundation_node_id,
-                module=attempt.module,
-                payload_json=payload,
-                assessed_at=attempt.assessed_at.replace(tzinfo=None),
-                created_at=now,
-            )
-            session.add(attempt_row)
+                    return self._foundation_state_response(
+                        session, foundation_node_id, idempotent=True
+                    )
+                raise LearningServiceError(
+                    "foundation_attempt_id_conflict",
+                    "attempt.attempt_id",
+                    status_code=409,
+                )
 
             state = session.get(FoundationStateORM, foundation_node_id)
+            if (
+                state is not None
+                and state.last_assessed_at is not None
+                and assessed_at < state.last_assessed_at
+            ):
+                raise LearningServiceError(
+                    "foundation_assessment_older_than_current_state",
+                    "attempt.assessed_at",
+                    status_code=409,
+                )
+
+            now = utcnow()
+            session.add(
+                FoundationAttemptORM(
+                    attempt_id=attempt_id,
+                    foundation_node_id=foundation_node_id,
+                    module=attempt.module,
+                    payload_json=payload,
+                    assessed_at=assessed_at,
+                    created_at=now,
+                )
+            )
+
             ids: list[str] = [] if state is None else list(state.evidence_attempt_ids_json or [])
             ids.append(attempt_id)
             if state is None:
@@ -652,7 +722,7 @@ class ClinicalLearningService:
                     module="osteoporosis",
                     state=attempt.clinician_final_state,
                     retention_state=_retention_state(next_review_due),
-                    last_assessed_at=attempt.assessed_at.replace(tzinfo=None),
+                    last_assessed_at=assessed_at,
                     next_review_due=next_review_due,
                     evidence_attempt_ids_json=ids,
                     updated_at=now,
@@ -661,7 +731,7 @@ class ClinicalLearningService:
             else:
                 state.state = attempt.clinician_final_state
                 state.retention_state = _retention_state(next_review_due)
-                state.last_assessed_at = attempt.assessed_at.replace(tzinfo=None)
+                state.last_assessed_at = assessed_at
                 state.next_review_due = next_review_due
                 state.evidence_attempt_ids_json = ids
                 state.updated_at = now
@@ -689,7 +759,9 @@ class ClinicalLearningService:
                     due.updated_at = now
 
             session.commit()
-            return self._foundation_state_response(session, foundation_node_id, idempotent=False)
+            return self._foundation_state_response(
+                session, foundation_node_id, idempotent=False
+            )
 
     def _foundation_state_response(
         self,
@@ -723,7 +795,11 @@ class ClinicalLearningService:
                 "last_assessed_at": serialize_datetime(state.last_assessed_at),
                 "next_review_due": serialize_date(state.next_review_due),
                 "linked_signal_ids": [],
-                "clinician_note": (attempts[-1].payload_json or {}).get("clinician_note") if attempts else None,
+                "clinician_note": (
+                    (attempts[-1].payload_json or {}).get("clinician_note")
+                    if attempts
+                    else None
+                ),
             }
         return {
             "state": state_payload,
@@ -738,7 +814,9 @@ class ClinicalLearningService:
             out: list[dict[str, Any]] = []
             for node in registry.public_nodes():
                 node_id = str(node["node_id"])
-                state = self._foundation_state_response(session, node_id, idempotent=False)
+                state = self._foundation_state_response(
+                    session, node_id, idempotent=False
+                )
                 out.append({"node": node, **state})
             return out
 
