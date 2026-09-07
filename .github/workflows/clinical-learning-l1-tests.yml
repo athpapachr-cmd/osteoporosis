@@ -43,7 +43,8 @@ jobs:
             clinical_learning/api.py \
             main.py \
             test_clinical_learning_l1_runtime.py \
-            test_clinical_learning_l1_hardening.py
+            test_clinical_learning_l1_hardening.py \
+            test_clinical_learning_l1_ui_contract.py
 
       - name: Browser JavaScript syntax
         run: node --check static/clinical-learning/app.js
