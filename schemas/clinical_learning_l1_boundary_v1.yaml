@@ -1,0 +1,285 @@
+schema: clinical_learning_l1_boundary_v1
+status: l0_contract_candidate
+scope: l1_implementation_boundary
+purpose: >-
+  Exact owner, persistence, API and UI boundary for the first Challenge + Foundation MVP.
+  This file does not authorize implementation.
+
+owners:
+  core_package:
+    future_path: clinical_learning/
+    owns:
+      - schema_validation
+      - challenge_revision_semantics
+      - privacy_guard
+      - protected_persistence
+      - due_state_derivation
+      - foundation_state_transition_validation
+    does_not_own:
+      - patient_record_mutation
+      - transcript_provider_extraction
+      - practice_review_ai_provider
+      - signal_promotion_engine
+      - rf_or_clinic_utilities
+  module_01:
+    owns:
+      - osteoporosis_foundation_node_registry
+      - osteoporosis_topic_taxonomy
+      - osteoporosis_learning_content
+      - module_specific_assessment_content
+  transcript_owner:
+    owner: PR-1 / PR-2 transcript architecture
+    rule: >-
+      Clinical Learning consumes approved structured evidence or a newly supplied ephemeral
+      transcript through the protected transcript boundary. It never creates a parallel transcript stack.
+  practice_review_owner:
+    owner: PR-3 Practice Review
+    rule: >-
+      Daily Case Review later consumes reviewed Practice Observations / review evidence; L-1 does not implement this owner.
+  signal_owner:
+    owner: future shared Signal engine
+    rule: >-
+      L-1 may store linked_signal_ids and candidate gap metadata but cannot promote or mutate durable Signals.
+
+persistence:
+  engine: existing_protected_sqlalchemy_engine
+  separation_rule: clinical_learning_tables_are_distinct_from_patient_encounter_and_rf_tables
+  tables:
+    clinical_learning_challenge_revisions:
+      purpose: immutable accepted challenge content revisions
+      columns:
+        challenge_id: uuid_not_null
+        revision: integer_not_null
+        schema_version: text_not_null
+        module: text_not_null
+        payload_json: json_not_null
+        content_hash: text_not_null_server_derived
+        created_at: datetime_not_null
+        imported_at: datetime_not_null
+      primary_key: [challenge_id, revision]
+      indexes: [module, created_at]
+      invariants:
+        - payload_contains_no_direct_patient_identifiers_after_guard
+        - accepted_revision_content_is_immutable
+        - opaque_patient_or_encounter_reference_is_forbidden_in_challenge_payload
+
+    clinical_learning_foundation_attempts:
+      purpose: append_only_reviewed_assessment_attempts
+      columns:
+        attempt_id: uuid_primary_key
+        foundation_node_id: text_not_null
+        module: text_not_null
+        payload_json: json_not_null
+        assessed_at: datetime_not_null
+        created_at: datetime_not_null
+      indexes: [foundation_node_id, assessed_at]
+
+    clinical_learning_foundation_state:
+      purpose: current_materialized_state_per_foundation_node
+      columns:
+        foundation_node_id: text_primary_key
+        module: text_not_null
+        state: text_not_null
+        retention_state: text_not_null
+        last_assessed_at: datetime_nullable
+        next_review_due: date_nullable
+        evidence_attempt_ids_json: json_not_null
+        updated_at: datetime_not_null
+      mutation_rule: only_from_validated_clinician_reviewed_foundation_attempt
+
+    clinical_learning_due_items:
+      purpose: explicit_due_items_for_challenge_foundation_and_learning_actions
+      columns:
+        due_item_id: uuid_primary_key
+        item_type: text_not_null
+        target_id: text_nullable
+        due_on: date_nullable
+        due_status: text_not_null
+        delivery_mode: text_not_null
+        reason_code: text_not_null
+        completed_at: datetime_nullable
+        deferred_until: date_nullable
+        updated_at: datetime_not_null
+      l1_scope:
+        allowed_item_types: [challenge_repetition, foundation_reassessment, learning_action, progress_review]
+        excluded_until_l2: [daily_case_review]
+
+  future_l2_tables_not_created_in_l1:
+    - clinical_learning_daily_case_review_revisions
+    - clinical_learning_review_evidence
+    - clinical_learning_signal_candidates
+
+challenge_revision_semantics:
+  stable_identity: challenge_id
+  unique_version: [challenge_id, revision]
+  rules:
+    - revision_1_requires_supersedes_revision_null
+    - revision_n_gt_1_requires_supersedes_revision_equal_n_minus_1
+    - new_nonduplicate_revision_must_equal_latest_revision_plus_1
+    - same_challenge_id_and_revision_and_same_server_normalized_content_hash_is_idempotent_noop
+    - same_challenge_id_and_revision_but_different_content_is_conflict_and_requires_new_revision
+    - older_revision_import_is_rejected_unless_exact_idempotent_duplicate
+    - clinician_edit_after_persistence_creates_new_revision
+    - accepted_revision_payload_is_never_updated_in_place
+  content_hash:
+    owner: server
+    input: canonicalized_payload_excluding_server_timestamps_and_server_hash
+    algorithm: sha256
+
+challenge_delete_semantics:
+  operation: explicit_hard_delete_for_personal_learning_record
+  requires_confirmation: true
+  transactional_deletes:
+    - all_challenge_revisions_for_challenge_id
+    - due_items_targeting_challenge_id
+  rationale: >-
+    Learning records are not patient records and may be deleted completely. This also
+    provides a safe recovery path if an import accidentally contains sensitive material.
+  future_audit_log_rule: may_retain_noncontent_metadata_only_if_separately_designed
+
+privacy_guard:
+  boundary: before_preview_acceptance_and_again_before_persistence
+  deterministic_hard_reject_patterns:
+    - email_address
+    - phone_number_like_sequence
+    - explicit_identity_or_gesy_number_field
+    - full_date_of_birth_field
+    - explicit_postal_address_field
+  structured_field_reject_names:
+    - patient_name
+    - full_name
+    - identity_number
+    - gesy_number
+    - phone
+    - email
+    - address
+    - date_of_birth
+    - dob
+  limitations:
+    - free_text_name_detection_is_not_guaranteed_by_deterministic_rules
+    - deidentification_is_not_claimed_perfect
+  clinician_attestation:
+    required_for_challenge_import: true
+    text_intent: clinician_confirms_no_direct_patient_identifiers_remain
+  challenge_mode_rules:
+    synthetic:
+      source_case_deidentified: not_applicable
+    deidentified_real_case:
+      source_case_deidentified: required_true
+    mixed:
+      source_case_deidentified: required_true_if_any_real_case_component
+  export_rule: no_protected_internal_references
+
+api_boundary_l1:
+  auth: existing_clinical_session_or_X_Clinical_Key
+  base_path: /clinical/learning
+  endpoints:
+    - method: GET
+      path: /clinical/learning
+      owner: UI_shell
+      purpose: serve_learning_hub_page
+    - method: POST
+      path: /clinical/learning/api/challenges/preview
+      purpose: validate_schema_privacy_references_duplicate_state_without_write
+      response:
+        - valid
+        - schema_errors
+        - privacy_errors
+        - duplicate_state
+        - reference_warnings
+        - normalized_summary
+      no_write: true
+    - method: POST
+      path: /clinical/learning/api/challenges
+      purpose: persist_after_explicit_clinician_confirmation
+      rule: server_revalidates_every_preview_condition
+    - method: GET
+      path: /clinical/learning/api/challenges
+      purpose: filtered_history
+    - method: GET
+      path: /clinical/learning/api/challenges/{challenge_id}
+      purpose: challenge_with_revision_history
+    - method: PUT
+      path: /clinical/learning/api/challenges/{challenge_id}
+      purpose: create_next_immutable_revision_from_clinician_edit
+    - method: DELETE
+      path: /clinical/learning/api/challenges/{challenge_id}
+      purpose: explicit_hard_delete
+    - method: GET
+      path: /clinical/learning/api/foundation
+      purpose: foundation_registry_plus_current_state_and_due_status
+    - method: POST
+      path: /clinical/learning/api/foundation/{foundation_node_id}/assessments/preview
+      purpose: validate_assessment_and_proposed_transition_without_write
+    - method: POST
+      path: /clinical/learning/api/foundation/{foundation_node_id}/assessments
+      purpose: persist_clinician_reviewed_attempt_and_materialize_valid_state
+    - method: GET
+      path: /clinical/learning/api/due
+      purpose: learning_due_items
+  forbidden_l1_endpoints:
+    - external_bearer_ingestion_endpoint
+    - patient_write_endpoint
+    - transcript_storage_endpoint
+    - signal_promotion_endpoint
+    - daily_case_review_endpoint
+
+ui_boundary_l1:
+  future_path: static/clinical-learning/
+  views:
+    challenge_import:
+      stages: [paste_json, validation, preview, clinician_confirm_or_edit, save]
+      required_visibility:
+        - challenge_mode
+        - topics
+        - fact_scope_badges
+        - progressive_disclosure_provenance
+        - observation_categories_and_dispositions
+        - reference_verification_state
+        - privacy_attestation
+    challenge_history:
+      filters: [topic, foundation_node, date, challenge_mode, review_state]
+      shows: [title, date, topics, linked_foundation_nodes, revision, due_state]
+    foundation_map:
+      shows: [node, state, retention_state, evidence_count, last_assessed, next_review_due]
+      no_composite_score: true
+    due_view:
+      shows: [challenge_repetition, foundation_reassessment, learning_actions, progress_review]
+  explicit_l1_exclusions:
+    - daily_case_review_UI
+    - transcript_upload_UI_for_learning
+    - direct_external_connector
+    - aggregate_clinical_excellence_score
+
+reference_handling:
+  imported_reference_default: unverified
+  allowed_progression:
+    unverified: imported_or_unchecked
+    verified_locator: PMID_DOI_or_URL_resolves_to_expected_source
+    verified_content: source_content_reviewed_for_material_claim
+    invalid_or_unresolved: supplied_reference_cannot_be_resolved_or_is_mismatched
+  rule: reference_verification_is_independent_of_challenge_record_acceptance
+
+foundation_state_mutation:
+  candidate_sources:
+    - explicit_foundation_assessment
+    - reviewed_challenge_observation
+    - reviewed_daily_case_review
+    - reviewed_practice_review
+  l1_authoritative_source:
+    - explicit_foundation_assessment
+  later_sources_rule: >-
+    Other artifacts may become assessment evidence only through a clinician-reviewed
+    FoundationAssessmentAttempt; they never directly mutate FoundationDomainStateV1.
+
+l1_exit_evidence_targets:
+  - schema_validation_for_valid_and_invalid_challenge_examples
+  - duplicate_idempotency_and_conflict_tests
+  - revision_append_only_tests
+  - PHI_guard_tests_with_synthetic_identifiers_only
+  - fact_ledger_reference_integrity_tests
+  - reference_verification_default_tests
+  - foundation_transition_guard_tests
+  - hard_delete_transaction_tests
+  - protected_auth_tests
+  - no_patient_or_transcript_write_path_tests
