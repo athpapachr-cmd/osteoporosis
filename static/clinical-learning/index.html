@@ -12,52 +12,46 @@
       <div>
         <p class="eyebrow">Clinical Excellence · Module 01 Osteoporosis</p>
         <h1>Clinical Learning Hub</h1>
-        <p class="sub">Structured challenges, Foundation Map και learning due state. Learning record ≠ patient record.</p>
+        <p class="sub">Challenge → μελέτη → επαναλαμβανόμενη εμπέδωση → transfer → γεφύρωση γνώσης. Learning record ≠ patient record.</p>
       </div>
       <div class="status" id="globalStatus">Έτοιμο</div>
     </header>
 
     <nav class="tabs" aria-label="Learning views">
-      <button class="tab active" data-view="import">Challenge Import</button>
-      <button class="tab" data-view="history">Challenge History</button>
+      <button class="tab active" data-view="inbox">Inbox</button>
+      <button class="tab" data-view="history">Challenges</button>
+      <button class="tab" data-view="loop">Learning Loop</button>
       <button class="tab" data-view="foundation">Foundation Map</button>
-      <button class="tab" data-view="due">Due / Learning Actions</button>
+      <button class="tab" data-view="due">Due</button>
+      <button class="tab" data-view="import">Advanced</button>
     </nav>
 
-    <section class="view active" id="view-import">
-      <div class="grid two">
-        <article class="card">
-          <div class="section-head">
-            <div>
-              <h2>1. Επικόλληση Challenge JSON</h2>
-              <p id="revisionModeLabel" class="muted">Νέο Challenge</p>
-            </div>
+    <section class="view active" id="view-inbox">
+      <article class="card">
+        <div class="section-head">
+          <div>
+            <h2>Pending Imports</h2>
+            <p>Τα ολοκληρωμένα synthetic Challenges εμφανίζονται εδώ ως candidates. Δεν γίνονται learning record πριν από δικό σου review.</p>
           </div>
-          <p class="notice">Μην επικολλάς όνομα, GeSY/ταυτότητα, τηλέφωνο, email, διεύθυνση ή πλήρη ημερομηνία γέννησης. Το σύστημα κάνει deterministic PHI guard, όχι τέλεια αποταυτοποίηση.</p>
-          <textarea id="challengeJson" spellcheck="false" placeholder='{"challenge_id":"...","schema_version":"clinical_learning_challenge_v1", ...}'></textarea>
-          <div class="row">
-            <button class="primary" id="previewChallenge">Validate & Preview</button>
-            <button class="secondary" id="clearChallenge">Καθαρισμός</button>
-          </div>
-        </article>
+          <button class="secondary" id="refreshInbox">Ανανέωση</button>
+        </div>
+        <div class="notice">Automatic ingress χρησιμοποιεί ξεχωριστή learning-only authority. Δεν μπορεί να γράψει patient record, να πιστοποιήσει references ή να προάγει Signals.</div>
+        <div id="inboxList" class="stack"></div>
+      </article>
 
-        <article class="card" id="previewPanel">
-          <h2>2. Server Preview</h2>
-          <div id="previewEmpty" class="empty">Δεν έχει γίνει ακόμη preview.</div>
-          <div id="previewContent" hidden>
-            <div class="meta-grid" id="challengeMeta"></div>
-            <div id="previewWarnings"></div>
-            <h3>Fact Ledger</h3>
-            <div id="factLedger" class="stack"></div>
-            <h3>Observations — clinician disposition required</h3>
-            <div id="observations" class="stack"></div>
-            <h3>References</h3>
-            <div id="references" class="stack"></div>
-            <label class="check"><input type="checkbox" id="confirmReview"> Επιβεβαιώνω ότι έλεγξα το structured learning artifact και ότι δεν περιέχει άμεσα patient identifiers.</label>
-            <button class="primary" id="saveChallenge">Save reviewed Challenge</button>
+      <article class="card" id="inboxDetailCard" hidden>
+        <div class="section-head">
+          <div>
+            <h2>Learning episode preview</h2>
+            <p class="muted">Case, reasoning trajectory, debrief, learning targets και repetition plan πριν από αποδοχή.</p>
           </div>
-        </article>
-      </div>
+          <div class="row">
+            <button class="primary" id="reviewPendingImport">Review & Save</button>
+            <button class="danger" id="rejectPendingImport">Reject</button>
+          </div>
+        </div>
+        <div id="inboxDetail"></div>
+      </article>
     </section>
 
     <section class="view" id="view-history">
@@ -94,6 +88,28 @@
       </article>
     </section>
 
+    <section class="view" id="view-loop">
+      <article class="card">
+        <div class="section-head">
+          <div>
+            <h2>Learning Loop</h2>
+            <p>Strengths, reinforcement targets, knowledge bridges, fresh resources και επαναλαμβανόμενη εμπέδωση.</p>
+          </div>
+          <button class="secondary" id="refreshLoops">Ανανέωση</button>
+        </div>
+        <div id="loopList" class="stack"></div>
+      </article>
+      <article class="card" id="loopDetailCard" hidden>
+        <div class="section-head">
+          <div>
+            <h2>Learning cycle</h2>
+            <p class="muted">Μία επιτυχία δεν ακυρώνει τις επόμενες επαναλήψεις. Retrieval ≠ transfer ≠ bridge transfer.</p>
+          </div>
+        </div>
+        <div id="loopDetail"></div>
+      </article>
+    </section>
+
     <section class="view" id="view-foundation">
       <article class="card">
         <div class="section-head"><div><h2>Osteoporosis Foundation Map</h2><p>State changes μόνο μέσω explicit clinician-reviewed assessment.</p></div><button class="secondary" id="refreshFoundation">Ανανέωση</button></div>
@@ -105,72 +121,25 @@
         <p class="notice">Δεν είναι self-rating. Καταγράφεις τι αποδείχθηκε στην assessment. Για FORMAL_SOLID απαιτείται demonstrated formal/mechanistic understanding και επιπλέον demonstrated transfer, boundary/exception ή evidence-directness calibration.</p>
 
         <div class="assessment-grid">
-          <label class="field">
-            <span>Proposed state</span>
-            <select id="assessmentProposedState">
-              <option value="UNKNOWN_UNTESTED">UNKNOWN_UNTESTED</option>
-              <option value="FRAGMENTED">FRAGMENTED</option>
-              <option value="INTUITIVE_UNSTRUCTURED">INTUITIVE_UNSTRUCTURED</option>
-              <option value="FORMAL_SOLID">FORMAL_SOLID</option>
-            </select>
-          </label>
-          <label class="field">
-            <span>Clinician final state</span>
-            <select id="assessmentState">
-              <option value="UNKNOWN_UNTESTED">UNKNOWN_UNTESTED</option>
-              <option value="FRAGMENTED">FRAGMENTED</option>
-              <option value="INTUITIVE_UNSTRUCTURED">INTUITIVE_UNSTRUCTURED</option>
-              <option value="FORMAL_SOLID">FORMAL_SOLID</option>
-            </select>
-          </label>
-          <label class="field">
-            <span>Επόμενο explicit review date</span>
-            <input type="date" id="assessmentDue">
-          </label>
+          <label class="field"><span>Proposed state</span><select id="assessmentProposedState"><option value="UNKNOWN_UNTESTED">UNKNOWN_UNTESTED</option><option value="FRAGMENTED">FRAGMENTED</option><option value="INTUITIVE_UNSTRUCTURED">INTUITIVE_UNSTRUCTURED</option><option value="FORMAL_SOLID">FORMAL_SOLID</option></select></label>
+          <label class="field"><span>Clinician final state</span><select id="assessmentState"><option value="UNKNOWN_UNTESTED">UNKNOWN_UNTESTED</option><option value="FRAGMENTED">FRAGMENTED</option><option value="INTUITIVE_UNSTRUCTURED">INTUITIVE_UNSTRUCTURED</option><option value="FORMAL_SOLID">FORMAL_SOLID</option></select></label>
+          <label class="field"><span>Επόμενο explicit review date</span><input type="date" id="assessmentDue"></label>
         </div>
 
         <h3>Observed assessment evidence</h3>
         <p class="muted">Επίλεξε μόνο methods που πράγματι αξιολογήθηκαν. Για κάθε method δήλωσε το demonstrated status και, προαιρετικά, σύντομο evidence note.</p>
         <div class="stack" id="assessmentEvidence">
-          <div class="item evidence-row" data-method="unaided_explanation">
-            <label class="check"><input class="evidence-enabled" type="checkbox" value="unaided_explanation"> Unaided explanation</label>
-            <div class="row"><select class="evidence-result" data-method="unaided_explanation" disabled><option value="demonstrated">demonstrated</option><option value="partial">partial</option><option value="not_demonstrated">not_demonstrated</option><option value="not_assessed">not_assessed</option></select><input class="evidence-note" data-method="unaided_explanation" placeholder="evidence note (optional)" disabled></div>
-          </div>
-          <div class="item evidence-row" data-method="mechanistic_explanation">
-            <label class="check"><input class="evidence-enabled" type="checkbox" value="mechanistic_explanation"> Mechanistic explanation</label>
-            <div class="row"><select class="evidence-result" data-method="mechanistic_explanation" disabled><option value="demonstrated">demonstrated</option><option value="partial">partial</option><option value="not_demonstrated">not_demonstrated</option><option value="not_assessed">not_assessed</option></select><input class="evidence-note" data-method="mechanistic_explanation" placeholder="evidence note (optional)" disabled></div>
-          </div>
-          <div class="item evidence-row" data-method="novel_case_transfer">
-            <label class="check"><input class="evidence-enabled" type="checkbox" value="novel_case_transfer"> Novel case transfer</label>
-            <div class="row"><select class="evidence-result" data-method="novel_case_transfer" disabled><option value="demonstrated">demonstrated</option><option value="partial">partial</option><option value="not_demonstrated">not_demonstrated</option><option value="not_assessed">not_assessed</option></select><input class="evidence-note" data-method="novel_case_transfer" placeholder="evidence note (optional)" disabled></div>
-          </div>
-          <div class="item evidence-row" data-method="boundary_or_exception_recognition">
-            <label class="check"><input class="evidence-enabled" type="checkbox" value="boundary_or_exception_recognition"> Boundary / exception recognition</label>
-            <div class="row"><select class="evidence-result" data-method="boundary_or_exception_recognition" disabled><option value="demonstrated">demonstrated</option><option value="partial">partial</option><option value="not_demonstrated">not_demonstrated</option><option value="not_assessed">not_assessed</option></select><input class="evidence-note" data-method="boundary_or_exception_recognition" placeholder="evidence note (optional)" disabled></div>
-          </div>
-          <div class="item evidence-row" data-method="evidence_directness_calibration">
-            <label class="check"><input class="evidence-enabled" type="checkbox" value="evidence_directness_calibration"> Evidence-directness calibration</label>
-            <div class="row"><select class="evidence-result" data-method="evidence_directness_calibration" disabled><option value="demonstrated">demonstrated</option><option value="partial">partial</option><option value="not_demonstrated">not_demonstrated</option><option value="not_assessed">not_assessed</option></select><input class="evidence-note" data-method="evidence_directness_calibration" placeholder="evidence note (optional)" disabled></div>
-          </div>
-          <div class="item evidence-row" data-method="retention_retrieval">
-            <label class="check"><input class="evidence-enabled" type="checkbox" value="retention_retrieval"> Retention retrieval</label>
-            <div class="row"><select class="evidence-result" data-method="retention_retrieval" disabled><option value="demonstrated">demonstrated</option><option value="partial">partial</option><option value="not_demonstrated">not_demonstrated</option><option value="not_assessed">not_assessed</option></select><input class="evidence-note" data-method="retention_retrieval" placeholder="evidence note (optional)" disabled></div>
-          </div>
-          <div class="item evidence-row" data-method="real_case_execution">
-            <label class="check"><input class="evidence-enabled" type="checkbox" value="real_case_execution"> Real-case execution evidence</label>
-            <div class="row"><select class="evidence-result" data-method="real_case_execution" disabled><option value="demonstrated">demonstrated</option><option value="partial">partial</option><option value="not_demonstrated">not_demonstrated</option><option value="not_assessed">not_assessed</option></select><input class="evidence-note" data-method="real_case_execution" placeholder="evidence note (optional; no patient identifiers)" disabled></div>
-          </div>
-          <div class="item evidence-row" data-method="self_rating_only">
-            <label class="check"><input class="evidence-enabled" type="checkbox" value="self_rating_only"> Self-rating only / not tested</label>
-            <div class="row"><select class="evidence-result" data-method="self_rating_only" disabled><option value="not_assessed">not_assessed</option><option value="partial">partial</option><option value="not_demonstrated">not_demonstrated</option><option value="demonstrated">demonstrated</option></select><input class="evidence-note" data-method="self_rating_only" placeholder="evidence note (optional)" disabled></div>
-          </div>
+          <div class="item evidence-row" data-method="unaided_explanation"><label class="check"><input class="evidence-enabled" type="checkbox" value="unaided_explanation"> Unaided explanation</label><div class="row"><select class="evidence-result" data-method="unaided_explanation" disabled><option value="demonstrated">demonstrated</option><option value="partial">partial</option><option value="not_demonstrated">not_demonstrated</option><option value="not_assessed">not_assessed</option></select><input class="evidence-note" data-method="unaided_explanation" placeholder="evidence note (optional)" disabled></div></div>
+          <div class="item evidence-row" data-method="mechanistic_explanation"><label class="check"><input class="evidence-enabled" type="checkbox" value="mechanistic_explanation"> Mechanistic explanation</label><div class="row"><select class="evidence-result" data-method="mechanistic_explanation" disabled><option value="demonstrated">demonstrated</option><option value="partial">partial</option><option value="not_demonstrated">not_demonstrated</option><option value="not_assessed">not_assessed</option></select><input class="evidence-note" data-method="mechanistic_explanation" placeholder="evidence note (optional)" disabled></div></div>
+          <div class="item evidence-row" data-method="novel_case_transfer"><label class="check"><input class="evidence-enabled" type="checkbox" value="novel_case_transfer"> Novel case transfer</label><div class="row"><select class="evidence-result" data-method="novel_case_transfer" disabled><option value="demonstrated">demonstrated</option><option value="partial">partial</option><option value="not_demonstrated">not_demonstrated</option><option value="not_assessed">not_assessed</option></select><input class="evidence-note" data-method="novel_case_transfer" placeholder="evidence note (optional)" disabled></div></div>
+          <div class="item evidence-row" data-method="boundary_or_exception_recognition"><label class="check"><input class="evidence-enabled" type="checkbox" value="boundary_or_exception_recognition"> Boundary / exception recognition</label><div class="row"><select class="evidence-result" data-method="boundary_or_exception_recognition" disabled><option value="demonstrated">demonstrated</option><option value="partial">partial</option><option value="not_demonstrated">not_demonstrated</option><option value="not_assessed">not_assessed</option></select><input class="evidence-note" data-method="boundary_or_exception_recognition" placeholder="evidence note (optional)" disabled></div></div>
+          <div class="item evidence-row" data-method="evidence_directness_calibration"><label class="check"><input class="evidence-enabled" type="checkbox" value="evidence_directness_calibration"> Evidence-directness calibration</label><div class="row"><select class="evidence-result" data-method="evidence_directness_calibration" disabled><option value="demonstrated">demonstrated</option><option value="partial">partial</option><option value="not_demonstrated">not_demonstrated</option><option value="not_assessed">not_assessed</option></select><input class="evidence-note" data-method="evidence_directness_calibration" placeholder="evidence note (optional)" disabled></div></div>
+          <div class="item evidence-row" data-method="retention_retrieval"><label class="check"><input class="evidence-enabled" type="checkbox" value="retention_retrieval"> Retention retrieval</label><div class="row"><select class="evidence-result" data-method="retention_retrieval" disabled><option value="demonstrated">demonstrated</option><option value="partial">partial</option><option value="not_demonstrated">not_demonstrated</option><option value="not_assessed">not_assessed</option></select><input class="evidence-note" data-method="retention_retrieval" placeholder="evidence note (optional)" disabled></div></div>
+          <div class="item evidence-row" data-method="real_case_execution"><label class="check"><input class="evidence-enabled" type="checkbox" value="real_case_execution"> Real-case execution evidence</label><div class="row"><select class="evidence-result" data-method="real_case_execution" disabled><option value="demonstrated">demonstrated</option><option value="partial">partial</option><option value="not_demonstrated">not_demonstrated</option><option value="not_assessed">not_assessed</option></select><input class="evidence-note" data-method="real_case_execution" placeholder="evidence note (optional; no patient identifiers)" disabled></div></div>
+          <div class="item evidence-row" data-method="self_rating_only"><label class="check"><input class="evidence-enabled" type="checkbox" value="self_rating_only"> Self-rating only / not tested</label><div class="row"><select class="evidence-result" data-method="self_rating_only" disabled><option value="not_assessed">not_assessed</option><option value="partial">partial</option><option value="not_demonstrated">not_demonstrated</option><option value="demonstrated">demonstrated</option></select><input class="evidence-note" data-method="self_rating_only" placeholder="evidence note (optional)" disabled></div></div>
         </div>
 
-        <label class="field full">
-          <span>Clinician note (optional)</span>
-          <textarea id="assessmentNote" class="short-textarea" placeholder="Σύντομη παρατήρηση για το τι έδειξε η assessment. Μην καταγράφεις patient identifiers."></textarea>
-        </label>
-
+        <label class="field full"><span>Clinician note (optional)</span><textarea id="assessmentNote" class="short-textarea" placeholder="Σύντομη παρατήρηση για το τι έδειξε η assessment. Μην καταγράφεις patient identifiers."></textarea></label>
         <div class="row"><button class="secondary" id="previewAssessment">Preview assessment</button><button class="primary" id="saveAssessment">Save assessment</button></div>
         <pre id="assessmentResult" class="result"></pre>
       </article>
@@ -178,9 +147,42 @@
 
     <section class="view" id="view-due">
       <article class="card">
-        <div class="section-head"><div><h2>Due / Learning Actions</h2><p>Scheduling state, όχι competence score.</p></div><button class="secondary" id="refreshDue">Ανανέωση</button></div>
+        <div class="section-head"><div><h2>Due / Learning Actions</h2><p>Scheduling state, όχι competence score. Τα consolidation tests παραμένουν ξεχωριστά occurrences.</p></div><button class="secondary" id="refreshDue">Ανανέωση</button></div>
         <div id="dueList" class="stack"></div>
       </article>
+    </section>
+
+    <section class="view" id="view-import">
+      <article class="card">
+        <h2>Advanced import</h2>
+        <p class="notice">Το JSON είναι fallback/debug surface. Η κανονική ροή είναι Automatic ingress → Inbox → Review. Για δοκιμή ή παλιό export μπορείς να επικολλήσεις εδώ ολόκληρο rich learning episode.</p>
+        <textarea id="episodeJson" spellcheck="false" placeholder='{"schema_type":"ClinicalLearningChallengeV1","schema_version":"1.0", ...}'></textarea>
+        <div class="row"><button class="secondary" id="importEpisode">Convert to Pending Import</button><button class="secondary" id="clearEpisode">Καθαρισμός</button></div>
+        <pre id="episodeImportResult" class="result"></pre>
+      </article>
+
+      <div class="grid two">
+        <article class="card">
+          <div class="section-head"><div><h2>Canonical Challenge JSON</h2><p id="revisionModeLabel" class="muted">Advanced/manual fallback</p></div></div>
+          <p class="notice">Μην επικολλάς όνομα, GeSY/ταυτότητα, τηλέφωνο, email, διεύθυνση ή πλήρη ημερομηνία γέννησης. Το σύστημα κάνει deterministic PHI guard, όχι τέλεια αποταυτοποίηση.</p>
+          <textarea id="challengeJson" spellcheck="false" placeholder='{"challenge_id":"...","schema_version":"clinical_learning_challenge_v1", ...}'></textarea>
+          <div class="row"><button class="primary" id="previewChallenge">Validate & Preview</button><button class="secondary" id="clearChallenge">Καθαρισμός</button></div>
+        </article>
+
+        <article class="card" id="previewPanel">
+          <h2>Server Preview</h2>
+          <div id="previewEmpty" class="empty">Δεν έχει γίνει ακόμη preview.</div>
+          <div id="previewContent" hidden>
+            <div class="meta-grid" id="challengeMeta"></div>
+            <div id="previewWarnings"></div>
+            <h3>Fact Ledger</h3><div id="factLedger" class="stack"></div>
+            <h3>Observations — clinician disposition required</h3><div id="observations" class="stack"></div>
+            <h3>References</h3><div id="references" class="stack"></div>
+            <label class="check"><input type="checkbox" id="confirmReview"> Επιβεβαιώνω ότι έλεγξα το structured learning artifact και ότι δεν περιέχει άμεσα patient identifiers.</label>
+            <button class="primary" id="saveChallenge">Save reviewed Challenge</button>
+          </div>
+        </article>
+      </div>
     </section>
   </main>
   <script src="/static/clinical-learning/app.js" defer></script>
