@@ -1,18 +1,21 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** CLINICAL LEARNING HUB L-1 — MERGED TO MAIN / POST-MERGE DEPLOY VERIFICATION PENDING
+> **STATUS:** CLINICAL LEARNING HUB L-1 — MERGED / DEPLOYED / AUTHENTICATED PRODUCTION SMOKE PENDING
 > **Updated:** 2026-09-08 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Current verified `main`:** `66900c2d50f98446184a92539baab89e9d49514c` — PR #82 squash merge.
+> **Current verified `main`:** `1b7c0fa9443c4fe3376f80e6bc3819473de7e95b` — post-merge docs-only canonical reconciliation descendant.
+> **Runtime squash merge SHA:** `66900c2d50f98446184a92539baab89e9d49514c` — PR #82.
 > **Merged PR:** `#82 Clinical Learning L1: Challenge + Foundation MVP`.
 > **Reviewed source head:** `e73dc7862ecd1084de8e2912f45ae758110a7447`.
 > **Exact pre-merge L-1 gate:** run `34264097408` — SUCCESS.
 > **Independent pre-merge review:** `5144979821` — CHANGES REQUIRED, fully remediated.
 > **Focused closure review:** `5145618117` — PASS.
+> **Render service:** `srv-d5qfk31r0fns73di596g` (`osteoporosis`).
+> **Verified live deploy:** `dep-dag5ld0ae00c738g0370` — LIVE on `1b7c0fa9443c4fe3376f80e6bc3819473de7e95b`, trigger `new_commit`.
 > **ACTIVE RUNTIME WRITER/LOCK:** NONE.
-> **ACTIVE DESIGN/CANONICAL WRITER:** NONE after this post-merge reconciliation.
+> **ACTIVE DESIGN/CANONICAL WRITER:** NONE after deployment reconciliation.
 > **Merge authority:** EXERCISED / COMPLETE.
-> **Deployment authority:** normal Render auto-deploy only; no manual duplicate deploy authorized.
+> **Deployment authority:** normal Render auto-deploy only; no manual duplicate deploy used.
 > **Patient-data mutation authority:** NONE.
 > **Raw-transcript authority:** NONE.
 > **Signal/DailyCase/PracticeReview authority:** NONE.
@@ -27,13 +30,31 @@ PR #82 was squash-merged by explicit product-owner authority.
 
 ```text
 source reviewed head  e73dc7862ecd1084de8e2912f45ae758110a7447
-merge commit          66900c2d50f98446184a92539baab89e9d49514c
+runtime merge commit  66900c2d50f98446184a92539baab89e9d49514c
+post-merge main       1b7c0fa9443c4fe3376f80e6bc3819473de7e95b
 base parent           5f7749c70c6bb3f36fcfc765088d4d363a6bb1d6
 ```
 
-GitHub confirms PR #82 is closed and merged, and `main` points to the squash merge SHA above.
+GitHub confirms PR #82 is closed and merged. `main` then received one docs-only canonical reconciliation commit, `1b7c0fa9443c4fe3376f80e6bc3819473de7e95b`, changing only `CURRENT_OPERATIONAL.md` and `SLICE_PLAN_CURRENT.md` relative to the runtime merge SHA.
 
-The reviewed tree delivered:
+Render auto-deploy is verified:
+
+```text
+service     srv-d5qfk31r0fns73di596g
+name        osteoporosis
+branch      main
+autoDeploy  yes / commit
+url         https://ortho-reception-backend.onrender.com
+deploy      dep-dag5ld0ae00c738g0370
+commit      1b7c0fa9443c4fe3376f80e6bc3819473de7e95b
+status      live
+trigger     new_commit
+finished    2026-09-08T18:59:43.990625Z
+```
+
+No manual duplicate deploy was triggered.
+
+The reviewed runtime tree delivered:
 
 ```text
 protected /clinical/learning route family
@@ -141,9 +162,10 @@ L-1 INDEPENDENT REVIEW               CHANGES REQUIRED → REMEDIATED
 L-1 FOCUSED CLOSURE REVIEW           PASS
 L-1 FINAL EXACT-HEAD GATE            PASS
 L-1 PR #82                           MERGED
-L-1 MAIN MERGE SHA                   66900c2d50f98446184a92539baab89e9d49514c
-L-1 DEPLOYED                         PENDING VERIFICATION
-L-1 PRODUCTION-SMOKE-VERIFIED        NO
+L-1 RUNTIME MERGE SHA                66900c2d50f98446184a92539baab89e9d49514c
+L-1 CURRENT MAIN                     1b7c0fa9443c4fe3376f80e6bc3819473de7e95b
+L-1 DEPLOYED                         YES — dep-dag5ld0ae00c738g0370 LIVE
+L-1 PRODUCTION-SMOKE-VERIFIED        NO — AUTHENTICATED SMOKE PENDING
 ACTIVE WRITER                        NONE
 ```
 
@@ -156,10 +178,10 @@ Do not make another L-1 code change unless production smoke demonstrates a mater
 Next release verification sequence:
 
 ```text
-confirm normal Render auto-deploy picked up main
-→ verify deployed commit corresponds to 66900c2d50f98446184a92539baab89e9d49514c or a later docs-only reconciliation descendant
-→ authenticated production smoke of /clinical/learning
-→ if PASS, mark L-1 DEPLOYED / PRODUCTION-SMOKE-VERIFIED and close the slice completely
+authenticated production smoke of /clinical/learning
+→ verify page loads through existing clinical session / X-Clinical-Key protection
+→ verify Foundation registry and Challenge/Due APIs respond normally
+→ if PASS, mark L-1 PRODUCTION-SMOKE-VERIFIED and close the slice completely
 ```
 
 No manual duplicate deploy, production configuration change, patient-data mutation, or adjacent-workstream mutation is authorized by this closeout.
