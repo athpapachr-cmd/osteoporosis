@@ -287,10 +287,13 @@ class ClinicalLearningService:
             else:
                 requested_revision = int(normalized["revision"])
                 requested_hash = canonical_content_hash(normalized)
+                stored_challenge = validate_challenge_payload(latest.payload_json or {})
+                stored_import_view = normalize_import_preview(stored_challenge)
+                stored_import_hash = canonical_content_hash(stored_import_view)
                 if requested_revision == latest.revision:
                     duplicate_state = (
                         "exact_idempotent_duplicate"
-                        if requested_hash == latest.content_hash
+                        if requested_hash == stored_import_hash
                         else "same_revision_conflict"
                     )
                 elif (
