@@ -8,7 +8,7 @@ from typing import Any
 from uuid import NAMESPACE_URL, UUID, uuid5
 
 from .contracts import ContractIssue, LearningContractError, normalize_import_preview, validate_challenge_payload
-from .learning_loop import build_learning_loop_plan, resource_candidates_from_source, stable_learning_uuid
+from .learning_loop import build_learning_loop_plan, resource_candidates_from_source
 from .privacy import find_forbidden_structured_fields, scan_persistable_strings
 
 
@@ -70,8 +70,9 @@ class AdaptedLearningEpisode:
     warnings: list[str]
 
 
-def _uuid(source_key: str, kind: str, local_id: object) -> str:
-    return str(uuid5(NAMESPACE_URL, f"clinical-learning-ingress|{source_key}|{kind}|{local_id}"))
+def _uuid(source_key: str, kind: str, *local_parts: object) -> str:
+    local = "|".join(str(part) for part in local_parts)
+    return str(uuid5(NAMESPACE_URL, f"clinical-learning-ingress|{source_key}|{kind}|{local}"))
 
 
 def _parse_datetime(value: Any) -> str:
@@ -93,10 +94,7 @@ def _foundation_nodes(values: Any, warnings: list[str]) -> list[str]:
     out: list[str] = []
     for raw in values or []:
         text = str(raw).strip()
-        if text.startswith("ost.foundation."):
-            node = text
-        else:
-            node = FOUNDATION_ALIASES.get(text.casefold())
+        node = text if text.startswith("ost.foundation.") else FOUNDATION_ALIASES.get(text.casefold())
         if not node:
             warnings.append(f"unknown_foundation_alias:{text}")
             continue
@@ -111,9 +109,7 @@ def _gap_class(raw: Any) -> str:
 
 
 def _evidence_type(item: dict[str, Any]) -> str:
-    text = " ".join(
-        str(item.get(key) or "") for key in ("source_type", "evidence_level", "citation")
-    ).casefold()
+    text = " ".join(str(item.get(key) or "") for key in ("source_type", "evidence_level", "citation")).casefold()
     if "systematic" in text or "meta-analysis" in text or "meta analysis" in text:
         return "systematic_review_meta_analysis"
     if "guideline" in text:
@@ -265,13 +261,13 @@ def _rich_to_canonical(raw: dict[str, Any], source_event_id: str) -> tuple[dict[
     observations: list[dict[str, Any]] = []
     mentor = raw.get("mentor_observations") if isinstance(raw.get("mentor_observations"), dict) else {}
 
-    def add_observation(category: str, statement: str, idx: object, gaps: list[str] | None = None) -> None:
+    def add_observation(category: str, statement: str, local_id: object, gaps: list[str] | None = None) -> None:
         text = statement.strip()
         if not text:
             return
         observations.append(
             {
-                "observation_id": _uuid(source_key, "observation", category, idx),
+                "observation_id": _uuid(source_key, "observation", category, local_id),
                 "category": category,
                 "statement": text,
                 "importance": "moderate",
@@ -287,16 +283,18 @@ def _rich_to_canonical(raw: dict[str, Any], source_event_id: str) -> tuple[dict[
     for idx, text in enumerate(mentor.get("strengths") or []):
         add_observation("strength", str(text), idx)
     for idx, item in enumerate(mentor.get("clear_errors") or []):
-        if isinstance(item, dict):
-            statement = f"{item.get('issue', '')} Correction: {item.get('correction', '')}"
-        else:
-            statement = str(item)
+        statement = (
+            f"{item.get('issue', '')} Correction: {item.get('correction', '')}"
+            if isinstance(item, dict)
+            else str(item)
+        )
         add_observation("clear_error", statement, idx, ["knowledge"])
     for idx, item in enumerate(mentor.get("defensible_disagreements") or []):
-        if isinstance(item, dict):
-            statement = f"{item.get('issue', '')} Assessment: {item.get('assessment', '')}"
-        else:
-            statement = str(item)
+        statement = (
+            f"{item.get('issue', '')} Assessment: {item.get('assessment', '')}"
+            if isinstance(item, dict)
+            else str(item)
+        )
         add_observation("defensible_disagreement", statement, idx, ["reasoning"])
     for category, key, default_gap in (
         ("evidence_gap", "evidence_gaps", "reasoning"),
@@ -435,7 +433,13 @@ def adapt_learning_episode(
 
     if raw_episode.get("schema_version") == "clinical_learning_challenge_v1":
         source_format = "canonical_challenge_v1"
-        challenge = validate_challenge_payload(raw_episode)
+        candidate = copy.deepcopy(raw_episode)
+        candidate.setdefault("privacy", {})["contains_direct_identifiers"] = False
+        # External pending imports do not self-certify clinician review. We set
+        # attestation true only for the no-write canonical validator, then reset
+        # the normalized pending candidate to false before any persistence.
+        candidate["privacy"]["deidentification_attested"] = True
+        challenge = validate_challenge_payload(candidate)
         normalized = normalize_import_preview(challenge)
         normalized["privacy"]["deidentification_attested"] = False
         warnings: list[str] = []
