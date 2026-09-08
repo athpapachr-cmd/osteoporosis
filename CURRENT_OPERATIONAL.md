@@ -3,8 +3,8 @@
 > **STATUS:** CLINICAL LEARNING HUB L-1 — MERGED / DEPLOYED / AUTHENTICATED PRODUCTION SMOKE PENDING
 > **Updated:** 2026-09-08 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Current verified `main`:** `1b7c0fa9443c4fe3376f80e6bc3819473de7e95b` — post-merge docs-only canonical reconciliation descendant.
 > **Runtime squash merge SHA:** `66900c2d50f98446184a92539baab89e9d49514c` — PR #82.
+> **Last production-verified deploy commit:** `1b7c0fa9443c4fe3376f80e6bc3819473de7e95b` — docs-only descendant containing the same reviewed runtime tree.
 > **Merged PR:** `#82 Clinical Learning L1: Challenge + Foundation MVP`.
 > **Reviewed source head:** `e73dc7862ecd1084de8e2912f45ae758110a7447`.
 > **Exact pre-merge L-1 gate:** run `34264097408` — SUCCESS.
@@ -29,15 +29,15 @@
 PR #82 was squash-merged by explicit product-owner authority.
 
 ```text
-source reviewed head  e73dc7862ecd1084de8e2912f45ae758110a7447
-runtime merge commit  66900c2d50f98446184a92539baab89e9d49514c
-post-merge main       1b7c0fa9443c4fe3376f80e6bc3819473de7e95b
-base parent           5f7749c70c6bb3f36fcfc765088d4d363a6bb1d6
+source reviewed head      e73dc7862ecd1084de8e2912f45ae758110a7447
+runtime merge commit      66900c2d50f98446184a92539baab89e9d49514c
+verified live descendant  1b7c0fa9443c4fe3376f80e6bc3819473de7e95b
+base parent               5f7749c70c6bb3f36fcfc765088d4d363a6bb1d6
 ```
 
-GitHub confirms PR #82 is closed and merged. `main` then received one docs-only canonical reconciliation commit, `1b7c0fa9443c4fe3376f80e6bc3819473de7e95b`, changing only `CURRENT_OPERATIONAL.md` and `SLICE_PLAN_CURRENT.md` relative to the runtime merge SHA.
+GitHub confirms PR #82 is closed and merged. The reviewed runtime entered `main` at `66900c2d50f98446184a92539baab89e9d49514c`. Subsequent canonical reconciliation commits are documentation-only descendants and do not change the reviewed runtime tree.
 
-Render auto-deploy is verified:
+Render auto-deploy is verified against the first post-merge docs-only descendant:
 
 ```text
 service     srv-d5qfk31r0fns73di596g
@@ -52,7 +52,7 @@ trigger     new_commit
 finished    2026-09-08T18:59:43.990625Z
 ```
 
-No manual duplicate deploy was triggered.
+No manual duplicate deploy was triggered. Later docs-only canonical descendants may advance `main` and trigger further automatic deployments without changing runtime code; they do not invalidate the verified L-1 runtime deployment above.
 
 The reviewed runtime tree delivered:
 
@@ -163,7 +163,7 @@ L-1 FOCUSED CLOSURE REVIEW           PASS
 L-1 FINAL EXACT-HEAD GATE            PASS
 L-1 PR #82                           MERGED
 L-1 RUNTIME MERGE SHA                66900c2d50f98446184a92539baab89e9d49514c
-L-1 CURRENT MAIN                     1b7c0fa9443c4fe3376f80e6bc3819473de7e95b
+L-1 VERIFIED LIVE DEPLOY SHA         1b7c0fa9443c4fe3376f80e6bc3819473de7e95b
 L-1 DEPLOYED                         YES — dep-dag5ld0ae00c738g0370 LIVE
 L-1 PRODUCTION-SMOKE-VERIFIED        NO — AUTHENTICATED SMOKE PENDING
 ACTIVE WRITER                        NONE
