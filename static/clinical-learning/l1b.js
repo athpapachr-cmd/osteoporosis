@@ -4,6 +4,7 @@
   const state = {
     inbox: [],
     selectedImport: null,
+    pendingSaveImportId: null,
     loops: [],
     selectedLoop: null,
   };
@@ -19,6 +20,76 @@
   function setStatus(text) {
     if ($('globalStatus')) $('globalStatus').textContent = text;
   }
+
+  const nativeFetch = window.fetch.bind(window);
+
+  function requestPath(input) {
+    const raw = typeof input === 'string' ? input : input?.url || '';
+    try { return new URL(raw, window.location.origin).pathname; } catch (_) { return String(raw); }
+  }
+
+  function requestMethod(input, options) {
+    return String(options?.method || input?.method || 'GET').toUpperCase();
+  }
+
+  function isChallengePersistenceRequest(input, options) {
+    const path = requestPath(input);
+    const method = requestMethod(input, options);
+    if (method === 'POST' && path === '/clinical/learning/api/challenges') return true;
+    return method === 'PUT'
+      && /^\/clinical\/learning\/api\/challenges\/[^/]+$/.test(path);
+  }
+
+  async function linkSavedChallengeToPending(response) {
+    if (!state.pendingSaveImportId || !response.ok) return;
+    let body = null;
+    try { body = await response.clone().json(); } catch (_) { return; }
+    if (!body?.challenge_id || !body?.revision) return;
+
+    const importId = state.pendingSaveImportId;
+    const linkResponse = await nativeFetch(
+      `/clinical/learning/api/imports/${encodeURIComponent(importId)}/accepted`,
+      {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          challenge_id: body.challenge_id,
+          revision: body.revision,
+          confirm_link: true,
+        }),
+      },
+    );
+    if (!linkResponse.ok) {
+      let detail = {};
+      try { detail = (await linkResponse.json())?.detail || {}; } catch (_) { detail = {}; }
+      setStatus('Challenge saved · Learning Loop link needs retry');
+      window.alert(`Το Challenge αποθηκεύτηκε, αλλά η σύνδεση με το Learning Loop δεν ολοκληρώθηκε (${detail.code || linkResponse.status}). Το pending import παραμένει διαθέσιμο για ασφαλές retry.`);
+      return;
+    }
+
+    state.pendingSaveImportId = null;
+    setStatus(`Saved revision ${body.revision} · Learning Loop activated`);
+    setTimeout(() => {
+      loadInbox();
+      loadLoops();
+    }, 0);
+  }
+
+  // app.js was loaded first and resolves the global fetch at request time. This
+  // narrow wrapper observes only successful Challenge POST/PUT writes that began
+  // from an Inbox review. It never alters the Challenge response or bypasses the
+  // existing clinician-review save path.
+  window.fetch = async (input, options = {}) => {
+    const response = await nativeFetch(input, options);
+    if (state.pendingSaveImportId && isChallengePersistenceRequest(input, options)) {
+      try { await linkSavedChallengeToPending(response); } catch (error) {
+        setStatus('Challenge saved · Learning Loop link needs retry');
+        window.alert(`Το Challenge αποθηκεύτηκε, αλλά η σύνδεση με το Learning Loop χρειάζεται retry (${error?.message || 'link_error'}).`);
+      }
+    }
+    return response;
+  };
 
   async function api(path, options = {}) {
     const response = await fetch(`/clinical/learning${path}`, {
@@ -167,6 +238,7 @@
   $('reviewPendingImport')?.addEventListener('click', () => {
     const item = state.selectedImport;
     if (!item || item.state !== 'pending_review') return;
+    state.pendingSaveImportId = item.import_id;
     const candidate = structuredClone(item.normalized_challenge || {});
     candidate.privacy = candidate.privacy || {};
     // Preview is no-write. Final persistence still requires the explicit checkbox
@@ -188,6 +260,7 @@
         method: 'POST',
         body: JSON.stringify({ confirm_reject: true }),
       });
+      if (state.pendingSaveImportId === item.import_id) state.pendingSaveImportId = null;
       $('inboxDetailCard').hidden = true;
       state.selectedImport = null;
       await loadInbox();
@@ -223,6 +296,13 @@
   $('clearEpisode')?.addEventListener('click', () => {
     $('episodeJson').value = '';
     $('episodeImportResult').textContent = '';
+  });
+
+  $('clearChallenge')?.addEventListener('click', () => {
+    state.pendingSaveImportId = null;
+  });
+  $('newRevision')?.addEventListener('click', () => {
+    state.pendingSaveImportId = null;
   });
 
   function nextOccurrence(loop) {
