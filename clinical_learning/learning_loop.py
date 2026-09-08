@@ -18,6 +18,29 @@ def _today() -> date:
     return datetime.now(timezone.utc).date()
 
 
+def _challenge_anchor_date(challenge_payload: dict[str, Any]) -> date:
+    value = str(challenge_payload.get("created_at") or "").strip()
+    if value:
+        try:
+            return datetime.fromisoformat(value.replace("Z", "+00:00")).date()
+        except ValueError:
+            pass
+    return _today()
+
+
+def _resource_snapshot_timestamp(challenge_payload: dict[str, Any]) -> str:
+    value = str(challenge_payload.get("created_at") or "").strip()
+    if value:
+        try:
+            parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+            if parsed.tzinfo is None:
+                parsed = parsed.replace(tzinfo=timezone.utc)
+            return parsed.isoformat()
+        except ValueError:
+            pass
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+
+
 def _gap_class(value: str | None) -> str:
     folded = str(value or "").casefold()
     if "communication" in folded or "system" in folded:
@@ -197,7 +220,7 @@ def build_learning_loop_plan(
     anchor_date: date | None = None,
 ) -> dict[str, Any]:
     challenge_id = str(challenge_payload["challenge_id"])
-    anchor = anchor_date or _today()
+    anchor = anchor_date or _challenge_anchor_date(challenge_payload)
     objectives = _source_gap_objectives(
         challenge_id=challenge_id,
         challenge_payload=challenge_payload,
@@ -254,7 +277,10 @@ def resource_candidates_from_source(
     source_payload: dict[str, Any] | None = None,
     supplied_resources: list[dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
-    checked_at = datetime.now(timezone.utc).isoformat()
+    # A source-derived recommendation must normalize idempotently. Its fallback
+    # snapshot time therefore comes from the episode itself, not wall-clock now.
+    # Truly fresh supplied resources should carry their own checked_at timestamp.
+    checked_at = _resource_snapshot_timestamp(challenge_payload)
     challenge_id = str(challenge_payload["challenge_id"])
     available_nodes = list(challenge_payload.get("foundation_node_ids") or [])
     out: list[dict[str, Any]] = []
