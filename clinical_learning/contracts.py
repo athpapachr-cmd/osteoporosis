@@ -93,7 +93,10 @@ def _loc_to_path(loc: tuple[Any, ...]) -> str:
 
 def sanitized_schema_issues(exc: ValidationError) -> list[ContractIssue]:
     return [
-        ContractIssue(code=f"schema_{err.get('type', 'invalid')}", path=_loc_to_path(tuple(err.get("loc") or ())))
+        ContractIssue(
+            code=f"schema_{err.get('type', 'invalid')}",
+            path=_loc_to_path(tuple(err.get("loc") or ())),
+        )
         for err in exc.errors(include_url=False, include_context=False, include_input=False)
     ]
 
@@ -112,7 +115,10 @@ def _duplicates(values: Iterable[Any]) -> set[Any]:
     return dupes
 
 
-def _validate_challenge_integrity(challenge: ClinicalLearningChallengeV1, registry: FoundationRegistry) -> list[ContractIssue]:
+def _validate_challenge_integrity(
+    challenge: ClinicalLearningChallengeV1,
+    registry: FoundationRegistry,
+) -> list[ContractIssue]:
     issues: list[ContractIssue] = []
     facts = {str(item.fact_id): item for item in challenge.fact_ledger}
     fact_ids = [str(item.fact_id) for item in challenge.fact_ledger]
@@ -122,7 +128,12 @@ def _validate_challenge_integrity(challenge: ClinicalLearningChallengeV1, regist
         if fact.supersedes_fact_id is not None:
             supersedes = str(fact.supersedes_fact_id)
             if supersedes == str(fact.fact_id) or supersedes not in facts:
-                issues.append(ContractIssue("invalid_fact_supersedes_reference", f"fact_ledger[{idx}].supersedes_fact_id"))
+                issues.append(
+                    ContractIssue(
+                        "invalid_fact_supersedes_reference",
+                        f"fact_ledger[{idx}].supersedes_fact_id",
+                    )
+                )
 
     response_ids = [str(item.response_id) for item in challenge.reasoning_responses]
     if _duplicates(response_ids):
@@ -133,14 +144,36 @@ def _validate_challenge_integrity(challenge: ClinicalLearningChallengeV1, regist
     if _duplicates(disclosure_ids):
         issues.append(ContractIssue("duplicate_disclosure_id", "progressive_disclosures"))
     sequences = [item.sequence for item in challenge.progressive_disclosures]
-    if len(sequences) != len(set(sequences)) or sorted(sequences) != list(range(1, len(sequences) + 1)):
+    if len(sequences) != len(set(sequences)) or sorted(sequences) != list(
+        range(1, len(sequences) + 1)
+    ):
         issues.append(ContractIssue("invalid_disclosure_sequence", "progressive_disclosures"))
     for idx, disclosure in enumerate(challenge.progressive_disclosures):
+        if _duplicates(str(item) for item in disclosure.fact_ids):
+            issues.append(
+                ContractIssue(
+                    "duplicate_disclosure_fact_id",
+                    f"progressive_disclosures[{idx}].fact_ids",
+                )
+            )
         for fact_id in disclosure.fact_ids:
             if str(fact_id) not in facts:
-                issues.append(ContractIssue("unresolved_disclosure_fact_id", f"progressive_disclosures[{idx}].fact_ids"))
-        if disclosure.released_after_response_id is not None and str(disclosure.released_after_response_id) not in response_set:
-            issues.append(ContractIssue("unresolved_disclosure_response_id", f"progressive_disclosures[{idx}].released_after_response_id"))
+                issues.append(
+                    ContractIssue(
+                        "unresolved_disclosure_fact_id",
+                        f"progressive_disclosures[{idx}].fact_ids",
+                    )
+                )
+        if (
+            disclosure.released_after_response_id is not None
+            and str(disclosure.released_after_response_id) not in response_set
+        ):
+            issues.append(
+                ContractIssue(
+                    "unresolved_disclosure_response_id",
+                    f"progressive_disclosures[{idx}].released_after_response_id",
+                )
+            )
 
     reference_ids = [str(item.reference_id) for item in challenge.references]
     reference_set = set(reference_ids)
@@ -151,39 +184,128 @@ def _validate_challenge_integrity(challenge: ClinicalLearningChallengeV1, regist
     if _duplicates(observation_ids):
         issues.append(ContractIssue("duplicate_observation_id", "observations"))
     for idx, observation in enumerate(challenge.observations):
+        if _duplicates(str(item) for item in observation.linked_fact_ids):
+            issues.append(
+                ContractIssue(
+                    "duplicate_observation_fact_id",
+                    f"observations[{idx}].linked_fact_ids",
+                )
+            )
+        if _duplicates(str(item) for item in observation.linked_reference_ids):
+            issues.append(
+                ContractIssue(
+                    "duplicate_observation_reference_id",
+                    f"observations[{idx}].linked_reference_ids",
+                )
+            )
+        if _duplicates(observation.gap_classes):
+            issues.append(
+                ContractIssue(
+                    "duplicate_observation_gap_class",
+                    f"observations[{idx}].gap_classes",
+                )
+            )
         for fact_id in observation.linked_fact_ids:
             if str(fact_id) not in facts:
-                issues.append(ContractIssue("unresolved_observation_fact_id", f"observations[{idx}].linked_fact_ids"))
+                issues.append(
+                    ContractIssue(
+                        "unresolved_observation_fact_id",
+                        f"observations[{idx}].linked_fact_ids",
+                    )
+                )
         for reference_id in observation.linked_reference_ids:
             if str(reference_id) not in reference_set:
-                issues.append(ContractIssue("unresolved_observation_reference_id", f"observations[{idx}].linked_reference_ids"))
-        if observation.clinician_disposition == "modified" and not (observation.clinician_modified_statement or "").strip():
-            issues.append(ContractIssue("modified_observation_requires_statement", f"observations[{idx}].clinician_modified_statement"))
+                issues.append(
+                    ContractIssue(
+                        "unresolved_observation_reference_id",
+                        f"observations[{idx}].linked_reference_ids",
+                    )
+                )
+        if observation.clinician_disposition == "modified" and not (
+            observation.clinician_modified_statement or ""
+        ).strip():
+            issues.append(
+                ContractIssue(
+                    "modified_observation_requires_statement",
+                    f"observations[{idx}].clinician_modified_statement",
+                )
+            )
 
     action_ids = [str(item.action_id) for item in challenge.learning_actions]
     if _duplicates(action_ids):
         issues.append(ContractIssue("duplicate_learning_action_id", "learning_actions"))
     for idx, action in enumerate(challenge.learning_actions):
+        if _duplicates(str(item) for item in action.reference_ids):
+            issues.append(
+                ContractIssue(
+                    "duplicate_action_reference_id",
+                    f"learning_actions[{idx}].reference_ids",
+                )
+            )
+        if _duplicates(action.foundation_node_ids):
+            issues.append(
+                ContractIssue(
+                    "duplicate_action_foundation_node_id",
+                    f"learning_actions[{idx}].foundation_node_ids",
+                )
+            )
         for reference_id in action.reference_ids:
             if str(reference_id) not in reference_set:
-                issues.append(ContractIssue("unresolved_action_reference_id", f"learning_actions[{idx}].reference_ids"))
+                issues.append(
+                    ContractIssue(
+                        "unresolved_action_reference_id",
+                        f"learning_actions[{idx}].reference_ids",
+                    )
+                )
         for node_id in action.foundation_node_ids:
             if not registry.contains(node_id):
-                issues.append(ContractIssue("unknown_foundation_node", f"learning_actions[{idx}].foundation_node_ids"))
+                issues.append(
+                    ContractIssue(
+                        "unknown_foundation_node",
+                        f"learning_actions[{idx}].foundation_node_ids",
+                    )
+                )
+
+    if _duplicates(challenge.foundation_node_ids):
+        issues.append(ContractIssue("duplicate_foundation_node_id", "foundation_node_ids"))
+    if _duplicates(challenge.gap_classes):
+        issues.append(ContractIssue("duplicate_gap_class", "gap_classes"))
+    if _duplicates(challenge.linked_signal_ids):
+        issues.append(ContractIssue("duplicate_linked_signal_id", "linked_signal_ids"))
 
     for idx, node_id in enumerate(challenge.foundation_node_ids):
         if not registry.contains(node_id):
-            issues.append(ContractIssue("unknown_foundation_node", f"foundation_node_ids[{idx}]"))
+            issues.append(
+                ContractIssue("unknown_foundation_node", f"foundation_node_ids[{idx}]")
+            )
 
     if challenge.revision == 1 and challenge.supersedes_revision is not None:
         issues.append(ContractIssue("revision_1_requires_null_supersedes", "supersedes_revision"))
     if challenge.revision > 1 and challenge.supersedes_revision != challenge.revision - 1:
-        issues.append(ContractIssue("revision_must_supersede_immediate_predecessor", "supersedes_revision"))
+        issues.append(
+            ContractIssue(
+                "revision_must_supersede_immediate_predecessor",
+                "supersedes_revision",
+            )
+        )
 
     if not challenge.privacy.deidentification_attested:
-        issues.append(ContractIssue("deidentification_attestation_required", "privacy.deidentification_attested"))
-    if challenge.challenge_mode in {"deidentified_real_case", "mixed"} and challenge.privacy.source_case_deidentified is not True:
-        issues.append(ContractIssue("real_case_requires_source_deidentified", "privacy.source_case_deidentified"))
+        issues.append(
+            ContractIssue(
+                "deidentification_attestation_required",
+                "privacy.deidentification_attested",
+            )
+        )
+    if (
+        challenge.challenge_mode in {"deidentified_real_case", "mixed"}
+        and challenge.privacy.source_case_deidentified is not True
+    ):
+        issues.append(
+            ContractIssue(
+                "real_case_requires_source_deidentified",
+                "privacy.source_case_deidentified",
+            )
+        )
     return issues
 
 
@@ -234,7 +356,11 @@ def normalize_import_preview(challenge: ClinicalLearningChallengeV1) -> dict[str
     return payload
 
 
-def normalize_for_save(challenge: ClinicalLearningChallengeV1, *, reviewed_at_iso: str) -> dict[str, Any]:
+def normalize_for_save(
+    challenge: ClinicalLearningChallengeV1,
+    *,
+    reviewed_at_iso: str,
+) -> dict[str, Any]:
     payload = challenge.model_dump(mode="json")
     payload["topics"] = normalize_topics(payload.get("topics") or [])[0]
     payload["record_review_state"] = "clinician_reviewed"
@@ -245,9 +371,25 @@ def normalize_for_save(challenge: ClinicalLearningChallengeV1, *, reviewed_at_is
         reference["verification_note"] = None
     for idx, observation in enumerate(payload.get("observations") or []):
         if observation.get("clinician_disposition") == "pending":
-            raise LearningContractError([ContractIssue("observation_disposition_required", f"observations[{idx}].clinician_disposition")])
-        if observation.get("clinician_disposition") == "modified" and not str(observation.get("clinician_modified_statement") or "").strip():
-            raise LearningContractError([ContractIssue("modified_observation_requires_statement", f"observations[{idx}].clinician_modified_statement")])
+            raise LearningContractError(
+                [
+                    ContractIssue(
+                        "observation_disposition_required",
+                        f"observations[{idx}].clinician_disposition",
+                    )
+                ]
+            )
+        if observation.get("clinician_disposition") == "modified" and not str(
+            observation.get("clinician_modified_statement") or ""
+        ).strip():
+            raise LearningContractError(
+                [
+                    ContractIssue(
+                        "modified_observation_requires_statement",
+                        f"observations[{idx}].clinician_modified_statement",
+                    )
+                ]
+            )
     findings = scan_persistable_strings(payload)
     if findings:
         raise LearningContractError(_privacy_issues(findings))
@@ -262,11 +404,20 @@ def canonical_content_hash(payload: dict[str, Any]) -> str:
     for reference in material.get("references") or []:
         reference["verification_state"] = "unverified"
         reference["verification_note"] = None
-    encoded = json.dumps(material, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
+    encoded = json.dumps(
+        material,
+        sort_keys=True,
+        ensure_ascii=False,
+        separators=(",", ":"),
+    )
     return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
 
 
-def validate_foundation_attempt_payload(raw_attempt: Any, *, expected_node_id: str) -> FoundationAssessmentAttemptV1:
+def validate_foundation_attempt_payload(
+    raw_attempt: Any,
+    *,
+    expected_node_id: str,
+) -> FoundationAssessmentAttemptV1:
     issues = _privacy_issues(find_forbidden_structured_fields(raw_attempt))
     if issues:
         raise LearningContractError(issues)
@@ -276,24 +427,67 @@ def validate_foundation_attempt_payload(raw_attempt: Any, *, expected_node_id: s
         raise LearningContractError(sanitized_schema_issues(exc)) from None
     issues.extend(_privacy_issues(scan_persistable_strings(attempt.model_dump(mode="json"))))
     registry = get_foundation_registry()
-    if attempt.foundation_node_id != expected_node_id or not registry.contains(attempt.foundation_node_id):
-        issues.append(ContractIssue("foundation_node_mismatch_or_unknown", "foundation_node_id"))
+    if attempt.foundation_node_id != expected_node_id or not registry.contains(
+        attempt.foundation_node_id
+    ):
+        issues.append(
+            ContractIssue(
+                "foundation_node_mismatch_or_unknown",
+                "foundation_node_id",
+            )
+        )
     ids = [str(item.evidence_id) for item in attempt.evidence]
     if _duplicates(ids):
         issues.append(ContractIssue("duplicate_foundation_evidence_id", "evidence"))
     for idx, evidence in enumerate(attempt.evidence):
         if evidence.source_artifact_type != "foundation_assessment":
-            issues.append(ContractIssue("l1_foundation_source_must_be_explicit_assessment", f"evidence[{idx}].source_artifact_type"))
-    non_self_reviewed = [e for e in attempt.evidence if e.method != "self_rating_only" and e.clinician_reviewed]
+            issues.append(
+                ContractIssue(
+                    "l1_foundation_source_must_be_explicit_assessment",
+                    f"evidence[{idx}].source_artifact_type",
+                )
+            )
+    non_self_reviewed = [
+        evidence
+        for evidence in attempt.evidence
+        if evidence.method != "self_rating_only" and evidence.clinician_reviewed
+    ]
     if attempt.clinician_final_state != "UNKNOWN_UNTESTED" and not non_self_reviewed:
-        issues.append(ContractIssue("non_unknown_state_requires_reviewed_evidence", "clinician_final_state"))
+        issues.append(
+            ContractIssue(
+                "non_unknown_state_requires_reviewed_evidence",
+                "clinician_final_state",
+            )
+        )
     if attempt.clinician_final_state == "FORMAL_SOLID":
-        formal = any(e.clinician_reviewed and e.result == "demonstrated" and e.method in {"unaided_explanation", "mechanistic_explanation"} for e in attempt.evidence)
-        transfer = any(e.clinician_reviewed and e.result == "demonstrated" and e.method in {"novel_case_transfer", "boundary_or_exception_recognition", "evidence_directness_calibration"} for e in attempt.evidence)
+        formal = any(
+            evidence.clinician_reviewed
+            and evidence.result == "demonstrated"
+            and evidence.method in {"unaided_explanation", "mechanistic_explanation"}
+            for evidence in attempt.evidence
+        )
+        transfer = any(
+            evidence.clinician_reviewed
+            and evidence.result == "demonstrated"
+            and evidence.method
+            in {
+                "novel_case_transfer",
+                "boundary_or_exception_recognition",
+                "evidence_directness_calibration",
+            }
+            for evidence in attempt.evidence
+        )
         if not formal:
-            issues.append(ContractIssue("formal_solid_requires_formal_evidence", "evidence"))
+            issues.append(
+                ContractIssue("formal_solid_requires_formal_evidence", "evidence")
+            )
         if not transfer:
-            issues.append(ContractIssue("formal_solid_requires_transfer_or_boundary_evidence", "evidence"))
+            issues.append(
+                ContractIssue(
+                    "formal_solid_requires_transfer_or_boundary_evidence",
+                    "evidence",
+                )
+            )
     if issues:
         raise LearningContractError(issues)
     return attempt
