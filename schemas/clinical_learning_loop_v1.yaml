@@ -1,0 +1,184 @@
+schema: clinical_learning_loop_v1
+status: l1b_contract_candidate
+scope: additive_learning_loop
+purpose: >-
+  Additive contract for Challenge ingress, pending review, knowledge-island bridging,
+  repeated consolidation and mutable fresh-resource recommendations. It does not
+  modify the frozen ClinicalLearningChallengeV1 contract.
+
+principles:
+  - external_episode_is_candidate_not_clinician_authority
+  - raw_external_payload_is_ephemeral_after_normalization
+  - accepted_challenge_remains_owned_by_clinical_learning_challenge_v1
+  - needs_reinforcement_is_not_clear_error
+  - one_successful_test_is_not_retention
+  - foundation_node_knowledge_is_not_proven_cross_node_bridge
+  - repeated_retrieval_is_visible_and_nonopaque
+  - online_resource_recommendations_are_mutable_and_outside_challenge_hash
+  - no_composite_mastery_score
+
+value_sets:
+  source_format: [canonical_challenge_v1, rich_challenge_export_v1]
+  pending_import_state: [pending_review, accepted, rejected, invalid]
+  bridge_state: [planned, demonstrated, needs_reinforcement, dismissed]
+  consolidation_kind: [retrieval, discrimination, transfer, bridge_transfer]
+  consolidation_result: [retained, partially_retained, not_retained, improved_beyond_original, not_assessed]
+  consolidation_status: [planned, completed, dismissed]
+  resource_kind: [article, guideline, webinar, course, conference_session, video, podcast, other]
+  resource_access_state: [free, paid, registration_required, unknown]
+  resource_status: [active, completed, dismissed, stale]
+
+objects:
+  LearningEpisodeIngressV1:
+    required: [source_event_id, source_format, module, challenge_mode, source_payload]
+    fields:
+      source_event_id: {type: uuid}
+      source_format: {enum_ref: value_sets.source_format}
+      module: {const: osteoporosis}
+      challenge_mode: {const: synthetic}
+      source_payload: {type: object, persistence: ephemeral_only}
+      loop_plan: {$ref: LearningLoopPlanV1, nullable: true}
+      resources:
+        type: array
+        items: {$ref: LearningResourceRecommendationV1}
+    invariants:
+      - external_ingress_is_synthetic_only_in_l1b
+      - source_payload_is_phi_scanned_before_pending_persistence
+      - raw_source_payload_is_not_persisted_after_normalization
+      - imported_review_reference_and_signal_authority_is_reset
+
+  PendingLearningImportV1:
+    required: [import_id, source_event_id, source_format, state, normalized_challenge, created_at]
+    fields:
+      import_id: {type: uuid}
+      source_event_id: {type: uuid}
+      source_format: {enum_ref: value_sets.source_format}
+      state: {enum_ref: value_sets.pending_import_state}
+      normalized_challenge: {$ref_external: ClinicalLearningChallengeV1}
+      loop_plan: {$ref: LearningLoopPlanV1, nullable: true}
+      adapter_warnings: {type: array, items: string}
+      created_at: {type: datetime}
+      resolved_at: {type: datetime, nullable: true}
+    invariants:
+      - normalized_challenge_record_review_state_is_imported_pending_review
+      - normalized_challenge_linked_signal_ids_is_empty
+      - normalized_reference_verification_is_unverified
+      - state_acceptance_does_not_bypass_existing_challenge_clinician_review
+
+  LearningObjectiveV1:
+    required: [objective_id, title, rationale, foundation_node_ids, gap_classes]
+    fields:
+      objective_id: {type: uuid}
+      title: {type: string, min_length: 1}
+      rationale: {type: string, min_length: 1}
+      foundation_node_ids: {type: array, min_items: 1, unique_items: true, items: string}
+      gap_classes: {type: array, unique_items: true, items: {enum: [knowledge, reasoning, execution, communication_system]}}
+      source_observation_ids: {type: array, unique_items: true, items: uuid}
+
+  BridgeTargetV1:
+    required: [bridge_id, foundation_node_ids, rationale, state]
+    fields:
+      bridge_id: {type: uuid}
+      foundation_node_ids: {type: array, min_items: 2, max_items: 3, unique_items: true, items: string}
+      rationale: {type: string, min_length: 1}
+      source_observation_ids: {type: array, unique_items: true, items: uuid}
+      source_action_ids: {type: array, unique_items: true, items: uuid}
+      state: {enum_ref: value_sets.bridge_state}
+    invariants:
+      - all_foundation_node_ids_resolve_through_module_foundation_registry
+      - listing_related_nodes_does_not_prove_bridge
+      - demonstrated_requires_later_joint_transfer_evidence
+
+  ConsolidationOccurrenceV1:
+    required: [occurrence_id, sequence, kind, due_on, prompt, status]
+    fields:
+      occurrence_id: {type: uuid}
+      sequence: {type: integer, minimum: 1}
+      kind: {enum_ref: value_sets.consolidation_kind}
+      due_on: {type: date}
+      prompt: {type: string, min_length: 1}
+      target_objective_ids: {type: array, unique_items: true, items: uuid}
+      target_bridge_ids: {type: array, unique_items: true, items: uuid}
+      target_foundation_node_ids: {type: array, unique_items: true, items: string}
+      expected_points: {type: array, items: string}
+      status: {enum_ref: value_sets.consolidation_status}
+    invariants:
+      - occurrence_sequences_are_unique_and_contiguous
+      - successful_earlier_occurrence_does_not_delete_later_planned_occurrences
+
+  LearningLoopPlanV1:
+    required: [cycle_id, objectives, bridge_targets, consolidation_occurrences]
+    fields:
+      cycle_id: {type: uuid}
+      objectives: {type: array, items: {$ref: LearningObjectiveV1}}
+      bridge_targets: {type: array, items: {$ref: BridgeTargetV1}}
+      consolidation_occurrences: {type: array, items: {$ref: ConsolidationOccurrenceV1}}
+      default_spacing_days:
+        type: array
+        const: [3, 7, 14, 30]
+        rationale: transparent_product_default_not_claimed_individually_optimal
+    invariants:
+      - no_composite_mastery_score
+      - repeated_occurrences_remain_explicit
+
+  ConsolidationAttemptV1:
+    required: [attempt_id, occurrence_id, answered_at, response_text, result]
+    fields:
+      attempt_id: {type: uuid}
+      occurrence_id: {type: uuid}
+      answered_at: {type: datetime}
+      response_text: {type: string, min_length: 1}
+      result: {enum_ref: value_sets.consolidation_result}
+      evaluator_note: {type: string, nullable: true}
+      clinician_reviewed: {type: boolean, default: false}
+    invariants:
+      - attempts_are_append_only
+      - imported_or_external_evaluation_cannot_self_certify_clinician_review
+
+  LearningResourceRecommendationV1:
+    required: [recommendation_id, kind, title, provider, url, rationale, checked_at, access_state, status]
+    fields:
+      recommendation_id: {type: uuid}
+      kind: {enum_ref: value_sets.resource_kind}
+      title: {type: string, min_length: 1}
+      provider: {type: string, min_length: 1}
+      url: {type: string, min_length: 1}
+      rationale: {type: string, min_length: 1}
+      foundation_node_ids: {type: array, unique_items: true, items: string}
+      gap_classes: {type: array, unique_items: true, items: {enum: [knowledge, reasoning, execution, communication_system]}}
+      checked_at: {type: datetime}
+      access_state: {enum_ref: value_sets.resource_access_state}
+      status: {enum_ref: value_sets.resource_status}
+    invariants:
+      - recommendation_is_not_reference_verification
+      - recommendation_state_is_mutable_overlay
+      - recommendation_update_does_not_mutate_challenge_payload_or_content_hash
+
+persistence:
+  tables:
+    clinical_learning_pending_imports:
+      purpose: normalized_candidates_only_no_raw_external_payload
+      primary_key: import_id
+    clinical_learning_loop_plans:
+      purpose: reviewed_or_pending_learning_loop_plan_per_accepted_challenge_revision
+      primary_key: cycle_id
+    clinical_learning_consolidation_attempts:
+      purpose: append_only_attempt_history
+      primary_key: attempt_id
+    clinical_learning_resource_recommendations:
+      purpose: mutable_fresh_resource_overlay
+      primary_key: recommendation_id
+  due_extension:
+    table: clinical_learning_due_items
+    add_allowed_item_type: consolidation_test
+
+external_ingress:
+  endpoint: /clinical/learning/api/ingress/episodes
+  authentication:
+    header: X-Learning-Ingest-Key
+    environment_variable: CLINICAL_LEARNING_INGEST_KEY
+    must_not_reuse: CLINICAL_DATA_KEY
+  missing_key_behavior: 503_learning_ingress_not_configured
+  invalid_key_behavior: 401_invalid_learning_ingress
+  action: create_pending_import_only
+  direct_accepted_challenge_write: forbidden
