@@ -78,6 +78,23 @@ def _nodes_for_text(text: str, available_nodes: list[str]) -> list[str]:
     return chosen
 
 
+def _matching_reinforcement_observation_ids(
+    title: str,
+    challenge_payload: dict[str, Any],
+) -> list[str]:
+    folded_title = title.casefold().strip()
+    out: list[str] = []
+    for observation in challenge_payload.get("observations") or []:
+        if observation.get("category") != "missed_opportunity":
+            continue
+        statement = str(observation.get("statement") or "").casefold().strip()
+        if folded_title and (statement.endswith(folded_title) or folded_title in statement):
+            observation_id = observation.get("observation_id")
+            if observation_id:
+                out.append(str(observation_id))
+    return list(dict.fromkeys(out))
+
+
 def _source_gap_objectives(
     *,
     challenge_id: str,
@@ -102,7 +119,7 @@ def _source_gap_objectives(
                     "rationale": "Derived from the reviewed Challenge gap analysis.",
                     "foundation_node_ids": _nodes_for_text(title, available_nodes),
                     "gap_classes": [gap_class],
-                    "source_observation_ids": [],
+                    "source_observation_ids": _matching_reinforcement_observation_ids(title, challenge_payload),
                 }
             )
 
@@ -277,9 +294,6 @@ def resource_candidates_from_source(
     source_payload: dict[str, Any] | None = None,
     supplied_resources: list[dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
-    # A source-derived recommendation must normalize idempotently. Its fallback
-    # snapshot time therefore comes from the episode itself, not wall-clock now.
-    # Truly fresh supplied resources should carry their own checked_at timestamp.
     checked_at = _resource_snapshot_timestamp(challenge_payload)
     challenge_id = str(challenge_payload["challenge_id"])
     available_nodes = list(challenge_payload.get("foundation_node_ids") or [])
