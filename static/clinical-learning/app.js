@@ -3,11 +3,14 @@
 
   const state = {
     preview: null,
+    previewInputFingerprint: null,
     detail: null,
     selectedRevision: null,
     revisionChallengeId: null,
     foundationNode: null,
     foundationAttemptId: null,
+    foundationAssessedAt: null,
+    foundationEvidenceIds: {},
   };
 
   const $ = (id) => document.getElementById(id);
@@ -84,9 +87,25 @@
     return parsed && typeof parsed === 'object' && parsed.challenge ? parsed.challenge : parsed;
   }
 
+  function stableValue(value) {
+    if (Array.isArray(value)) return value.map((item) => stableValue(item));
+    if (value && typeof value === 'object') {
+      return Object.keys(value).sort().reduce((out, key) => {
+        out[key] = stableValue(value[key]);
+        return out;
+      }, {});
+    }
+    return value;
+  }
+
+  function stableJson(value) {
+    return JSON.stringify(stableValue(value));
+  }
+
   $('clearChallenge').addEventListener('click', () => {
     $('challengeJson').value = '';
     state.preview = null;
+    state.previewInputFingerprint = null;
     $('previewContent').hidden = true;
     $('previewEmpty').hidden = false;
     resetRevisionMode();
@@ -107,9 +126,12 @@
         body: JSON.stringify({ challenge }),
       });
       state.preview = result;
+      state.previewInputFingerprint = stableJson(challenge);
       renderPreview(result);
       setStatus(result.valid ? 'Preview valid' : 'Preview blocked');
     } catch (error) {
+      state.preview = null;
+      state.previewInputFingerprint = null;
       if (error instanceof SyntaxError) {
         window.alert('Το JSON δεν είναι έγκυρο.');
         setStatus('Invalid JSON');
@@ -205,6 +227,17 @@
       return;
     }
     try {
+      const currentChallenge = parseChallengeTextarea();
+      if (!state.previewInputFingerprint || stableJson(currentChallenge) !== state.previewInputFingerprint) {
+        state.preview = null;
+        state.previewInputFingerprint = null;
+        $('previewContent').hidden = true;
+        $('previewEmpty').hidden = false;
+        window.alert('Το Challenge JSON άλλαξε μετά το server preview. Κάνε ξανά Validate & Preview πριν από Save.');
+        setStatus('Preview stale · revalidate required');
+        return;
+      }
+
       setStatus('Saving…');
       const challenge = reviewedChallengeFromPreview();
       if ((challenge.observations || []).some((x) => x.clinician_disposition === 'pending')) {
@@ -227,9 +260,17 @@
       window.alert(`Αποθηκεύτηκε το Challenge revision ${body.revision}.`);
       $('challengeJson').value = JSON.stringify(body.payload, null, 2);
       state.preview = null;
+      state.previewInputFingerprint = null;
       resetRevisionMode();
       await loadDue();
-    } catch (error) { showError(error); }
+    } catch (error) {
+      if (error instanceof SyntaxError) {
+        window.alert('Το JSON δεν είναι έγκυρο. Κάνε ξανά Validate & Preview.');
+        setStatus('Invalid JSON');
+        return;
+      }
+      showError(error);
+    }
   });
 
   async function loadHistory() {
@@ -238,14 +279,23 @@
       const params = new URLSearchParams();
       if ($('filterTopic').value.trim()) params.set('topic', $('filterTopic').value.trim());
       if ($('filterFoundation').value.trim()) params.set('foundation_node', $('filterFoundation').value.trim());
+      if ($('filterDate').value) params.set('challenge_date', $('filterDate').value);
       if ($('filterMode').value) params.set('challenge_mode', $('filterMode').value);
+      if ($('filterReview').value) params.set('review_state', $('filterReview').value);
       const body = await api(`/api/challenges?${params.toString()}`);
       const items = body.items || [];
-      $('historyList').innerHTML = items.map((item) => `
+      $('historyList').innerHTML = items.map((item) => {
+        const foundation = (item.foundation_node_ids || []).join(' · ') || '—';
+        const dueState = item.due
+          ? `${item.due.due_status}${item.due.due_on ? ` · ${item.due.due_on}` : ''}`
+          : 'not_scheduled';
+        return `
         <button class="item history-item" data-id="${esc(item.challenge_id)}">
           <div class="item-head"><span class="item-title">${esc(item.title)}</span><span class="badge">rev ${esc(item.revision)}</span></div>
           <div class="muted">${esc(String(item.created_at || '').slice(0, 10))} · ${esc(item.challenge_mode)} · ${esc((item.topics || []).join(' · '))}</div>
-        </button>`).join('') || '<div class="empty">Δεν υπάρχουν Challenges με αυτά τα φίλτρα.</div>';
+          <div class="muted">Foundation: ${esc(foundation)} · due: ${esc(dueState)}</div>
+        </button>`;
+      }).join('') || '<div class="empty">Δεν υπάρχουν Challenges με αυτά τα φίλτρα.</div>';
       document.querySelectorAll('.history-item').forEach((button) => button.addEventListener('click', () => loadChallengeDetail(button.dataset.id)));
       setStatus('History loaded');
     } catch (error) { showError(error); }
@@ -346,6 +396,7 @@
     });
     state.revisionChallengeId = state.detail.challenge_id;
     state.preview = null;
+    state.previewInputFingerprint = null;
     $('challengeJson').value = JSON.stringify(candidate, null, 2);
     $('previewContent').hidden = true;
     $('previewEmpty').hidden = false;
@@ -432,6 +483,8 @@
   function openAssessment(nodeId) {
     state.foundationNode = nodeId;
     state.foundationAttemptId = crypto.randomUUID();
+    state.foundationAssessedAt = new Date().toISOString();
+    state.foundationEvidenceIds = {};
     $('assessmentCard').hidden = false;
     $('assessmentTitle').textContent = `Foundation assessment · ${nodeId}`;
     $('assessmentProposedState').value = 'UNKNOWN_UNTESTED';
@@ -461,8 +514,9 @@
       const method = checkbox.value;
       const result = document.querySelector(`.evidence-result[data-method="${CSS.escape(method)}"]`)?.value || 'not_assessed';
       const note = document.querySelector(`.evidence-note[data-method="${CSS.escape(method)}"]`)?.value.trim() || null;
+      if (!state.foundationEvidenceIds[method]) state.foundationEvidenceIds[method] = crypto.randomUUID();
       return {
-        evidence_id: crypto.randomUUID(),
+        evidence_id: state.foundationEvidenceIds[method],
         method,
         result,
         clinician_reviewed: true,
@@ -476,7 +530,7 @@
       schema_version: 'foundation_assessment_attempt_v1',
       module: 'osteoporosis',
       foundation_node_id: state.foundationNode,
-      assessed_at: new Date().toISOString(),
+      assessed_at: state.foundationAssessedAt,
       evidence,
       proposed_state: $('assessmentProposedState').value,
       clinician_final_state: $('assessmentState').value,
@@ -501,6 +555,8 @@
         await loadDue();
         state.foundationNode = null;
         state.foundationAttemptId = null;
+        state.foundationAssessedAt = null;
+        state.foundationEvidenceIds = {};
         $('assessmentCard').hidden = true;
       } else {
         $('assessmentResult').textContent = JSON.stringify({
