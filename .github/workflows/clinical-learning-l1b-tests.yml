@@ -46,7 +46,8 @@ jobs:
             clinical_learning/ingress.py \
             clinical_learning/l1b_runtime.py \
             clinical_learning/api.py \
-            test_clinical_learning_l1b_learning_loop.py
+            test_clinical_learning_l1b_learning_loop.py \
+            test_clinical_learning_l1b_hardening.py
 
       - name: L1B browser syntax
         run: |
@@ -54,7 +55,7 @@ jobs:
           node --check static/clinical-learning/l1b.js
 
       - name: L1B focused tests
-        run: python -m unittest -v test_clinical_learning_l1b_learning_loop.py
+        run: python -m unittest discover -v -p 'test_clinical_learning_l1b_*.py'
 
       - name: Inherited L1 tests
         run: python -m unittest discover -v -p 'test_clinical_learning_l1_*.py'
