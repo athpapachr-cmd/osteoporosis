@@ -1,16 +1,18 @@
 # SLICE_PLAN_CURRENT.md — Clinical Learning Hub L-1 Challenge + Foundation MVP
 
-> **STATUS:** MERGED / POST-MERGE DEPLOY VERIFICATION PENDING
+> **STATUS:** MERGED / DEPLOYED / AUTHENTICATED PRODUCTION SMOKE PENDING
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Slice ID:** `CORE-LEARNING-HUB-L1-CHALLENGE-FOUNDATION-MVP-2026-09-07`.
 > **Implementation branch:** `feat/clinical-learning-l1-challenge-foundation-mvp-2026-09-07`.
 > **Release PR:** `#82` — MERGED.
 > **Reviewed source head:** `e73dc7862ecd1084de8e2912f45ae758110a7447`.
 > **Squash merge SHA:** `66900c2d50f98446184a92539baab89e9d49514c`.
+> **Verified live deploy SHA:** `1b7c0fa9443c4fe3376f80e6bc3819473de7e95b` — docs-only descendant containing the same runtime tree.
+> **Verified Render deploy:** `dep-dag5ld0ae00c738g0370` — LIVE.
 > **Final exact-head L-1 gate:** run `34264097408` — SUCCESS.
 > **Independent pre-merge review:** `5144979821` — findings remediated.
 > **Focused closure review:** `5145618117` — PASS.
-> **Merge/deploy authority:** merge exercised; deployment limited to normal Render auto-deploy.
+> **Merge/deploy authority:** merge exercised; normal Render auto-deploy verified; no manual duplicate deploy used.
 > **Patient-data mutation authority:** NONE.
 > **Production config/secret authority:** NONE.
 
@@ -143,16 +145,34 @@ merged = true
 merge SHA = 66900c2d50f98446184a92539baab89e9d49514c
 ```
 
-Fresh verification confirmed:
-
-```text
-PR #82 state = closed / merged
-main = 66900c2d50f98446184a92539baab89e9d49514c
-```
+Fresh verification confirmed PR #82 closed/merged. The reviewed runtime entered `main` at that squash merge SHA. Subsequent canonical reconciliation commits are docs-only descendants.
 
 ---
 
-# 6. Adjacent-owner isolation
+# 6. Deployment — complete
+
+Render service:
+
+```text
+service     srv-d5qfk31r0fns73di596g
+name        osteoporosis
+branch      main
+autoDeploy  yes / commit
+url         https://ortho-reception-backend.onrender.com
+deploy      dep-dag5ld0ae00c738g0370
+commit      1b7c0fa9443c4fe3376f80e6bc3819473de7e95b
+status      live
+trigger     new_commit
+finished    2026-09-08T18:59:43.990625Z
+```
+
+The deployed commit is a docs-only descendant of the runtime squash merge and therefore contains the exact reviewed L-1 runtime tree. No manual duplicate deploy was triggered.
+
+Later docs-only canonical descendants may trigger additional automatic deploys without changing runtime code; they do not invalidate the verified L-1 deployment above.
+
+---
+
+# 7. Adjacent-owner isolation
 
 The separate physiotherapy/CU-1/RF workstreams remained read-only for the whole L-1 release path.
 
@@ -170,7 +190,7 @@ The L-1 release decision is now complete, so that earlier pause is no longer its
 
 ---
 
-# 7. Lifecycle state
+# 8. Lifecycle state
 
 ```text
 IMPLEMENTED                     YES
@@ -179,20 +199,21 @@ INDEPENDENT REVIEW              CHANGES REQUIRED → REMEDIATED
 FOCUSED CLOSURE REVIEW          PASS
 FINAL EXACT-HEAD REVIEW         PASS
 PR #82                          MERGED
-MAIN MERGE SHA                  66900c2d50f98446184a92539baab89e9d49514c
-DEPLOYED                        PENDING VERIFICATION
-PRODUCTION-SMOKE-VERIFIED       NO
+RUNTIME MERGE SHA               66900c2d50f98446184a92539baab89e9d49514c
+DEPLOYED                        YES — dep-dag5ld0ae00c738g0370 LIVE
+PRODUCTION-SMOKE-VERIFIED       NO — AUTHENTICATED SMOKE PENDING
 ACTIVE WRITER                   NONE
 ```
 
 ---
 
-# 8. Exact next action
+# 9. Exact next action
 
 ```text
-verify normal Render auto-deploy from main
-→ authenticated production smoke /clinical/learning
-→ if PASS, reconcile lifecycle to DEPLOYED / PRODUCTION-SMOKE-VERIFIED
+authenticated production smoke /clinical/learning
+→ verify protected page load through existing clinical session / X-Clinical-Key
+→ verify Foundation registry and Challenge/Due API reads
+→ if PASS, reconcile lifecycle to PRODUCTION-SMOKE-VERIFIED
 → close L-1 completely
 ```
 
