@@ -1,42 +1,39 @@
 # SLICE_PLAN_CURRENT.md — Clinical Learning Hub L-1 Challenge + Foundation MVP
 
-> **STATUS:** IMPLEMENTED / TESTED / INDEPENDENT-REVIEW REMEDIATION CLOSED / FOCUSED REVIEW PASS — PR #82 OPEN / RELEASE HOLD
+> **STATUS:** MERGED / POST-MERGE DEPLOY VERIFICATION PENDING
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Slice ID:** `CORE-LEARNING-HUB-L1-CHALLENGE-FOUNDATION-MVP-2026-09-07`.
-> **Fresh implementation base:** `5f7749c70c6bb3f36fcfc765088d4d363a6bb1d6`.
 > **Implementation branch:** `feat/clinical-learning-l1-challenge-foundation-mvp-2026-09-07`.
-> **Release PR:** `#82` — OPEN / DRAFT / RELEASE HOLD.
-> **Frozen L-0 contract owner:** `schemas/clinical_learning_contract_manifest_v1.yaml`.
-> **L-1 boundary owner:** `schemas/clinical_learning_l1_boundary_v1.yaml`.
-> **Foundation registry:** `schemas/osteoporosis_foundation_map_v1.yaml`.
-> **Product design:** `CLINICAL_LEARNING_HUB_DESIGN_V1.md`.
-> **Remediation substantive head:** `b4b0438e44b8077ce5a9f469b5e4669d083886f0`.
-> **Remediation full gate:** `34263571488` — SUCCESS.
-> **Focused closure review:** PR review `5145618117` — PASS for the five independent-review findings.
-> **Merge/deploy authority:** NONE; separate product-owner release decision required.
+> **Release PR:** `#82` — MERGED.
+> **Reviewed source head:** `e73dc7862ecd1084de8e2912f45ae758110a7447`.
+> **Squash merge SHA:** `66900c2d50f98446184a92539baab89e9d49514c`.
+> **Final exact-head L-1 gate:** run `34264097408` — SUCCESS.
+> **Independent pre-merge review:** `5144979821` — findings remediated.
+> **Focused closure review:** `5145618117` — PASS.
+> **Merge/deploy authority:** merge exercised; deployment limited to normal Render auto-deploy.
 > **Patient-data mutation authority:** NONE.
 > **Production config/secret authority:** NONE.
 
 ---
 
-# 1. Objective
+# 1. Objective — complete
 
-Implement the first protected Clinical Learning runtime without reopening frozen L-0 semantics:
+The L-1 slice implemented the first protected Clinical Learning runtime against frozen L-0 contracts:
 
 ```text
-Challenge JSON import / preview / clinician review / save
+Challenge JSON import / preview / review / save
 + immutable Challenge history / revision / delete
 + reusable reference-verification overlay
-+ Osteoporosis Foundation Map + explicit clinician-reviewed assessments
++ Osteoporosis Foundation Map + explicit assessments
 + deterministic learning due state
-+ clinician-facing four-view MVP
++ clinician-facing MVP UI
 ```
 
-This slice is learning infrastructure. It is not patient documentation.
+This remains learning infrastructure, not patient documentation.
 
 ---
 
-# 2. Non-negotiable inherited invariants
+# 2. Frozen invariants preserved
 
 ```text
 LEARNING RECORD != PATIENT RECORD
@@ -48,23 +45,13 @@ FOUNDATION STATE != SELF-RATING
 DUE STATE != COMPETENCE EVIDENCE
 ```
 
-Additional boundaries:
+No composite Clinical Knowledge / Clinical Excellence score was introduced.
 
-- no direct patient identifier may be persisted in L-1 learning content;
-- unknown imported fields are rejected recursively;
-- privacy/schema failures expose bounded codes/paths only;
-- accepted Challenge revisions are immutable;
-- Challenge deletion purges content and leaves only the frozen non-content tombstone;
-- Foundation state changes only through a valid explicit clinician-reviewed assessment;
-- no adaptive spaced-repetition algorithm;
-- no composite Clinical Knowledge / Clinical Excellence score;
-- no autonomous Signal authority.
+No patient encounter/lab read/write path, Signal promotion, Daily Case Review, Practice Review AI, transcript intake, external bearer learning API, adaptive spaced-repetition algorithm, RF mutation or physiotherapy/CU-1 mutation was added.
 
 ---
 
-# 3. Frozen implementation owners
-
-Allowed L-1 mutation owners:
+# 3. Delivered runtime owners
 
 ```text
 clinical_learning/__init__.py
@@ -78,15 +65,10 @@ static/clinical-learning/index.html
 static/clinical-learning/styles.css
 static/clinical-learning/app.js
 main.py
-test_clinical_learning_l1_*.py
-.github/workflows/clinical-learning-l1-tests.yml
-SLICE_PLAN_CURRENT.md
-CURRENT_OPERATIONAL.md
-TODO.md
-osteoporosis-change-log.md
+L-1-focused tests/workflow
 ```
 
-Frozen semantic/schema owners remain read-only:
+Frozen schema owners remained read-only:
 
 ```text
 schemas/clinical_learning_core_v1.yaml
@@ -96,13 +78,85 @@ schemas/clinical_learning_design_fixtures_v1.yaml
 schemas/osteoporosis_foundation_map_v1.yaml
 ```
 
-No remediation finding required a frozen-contract change. **REPLAN: NO.**
+`REPLAN: NO`.
 
 ---
 
-# 4. Explicit adjacent-owner isolation
+# 4. Independent-review remediation — complete
 
-Physiotherapy/CU-1/RF remain outside this slice and read-only:
+The second independent reviewer found five material pre-merge issues. All were corrected within L-1 owners:
+
+1. frozen nested `unique_items` enforcement;
+2. missing frozen Challenge History date/review-state filters and Foundation/due visibility;
+3. stale browser Challenge preview could otherwise save an older previewed artifact;
+4. exact-duplicate preview classification incorrectly mixed imported authority reset with persisted reviewed authority;
+5. Foundation browser retry regenerated attempt evidence identity/timestamp.
+
+Focused regression file:
+
+```text
+test_clinical_learning_l1_independent_review.py
+```
+
+Remediation evidence:
+
+```text
+substantive remediation head  b4b0438e44b8077ce5a9f469b5e4669d083886f0
+remediation gate             34263571488 — SUCCESS
+focused closure review       5145618117 — PASS
+```
+
+Final reviewed source evidence:
+
+```text
+exact source head            e73dc7862ecd1084de8e2912f45ae758110a7447
+exact source gate            34264097408 — SUCCESS
+```
+
+The final gate passed:
+
+```text
+Python syntax
+Browser JavaScript syntax
+L-1 runtime/hardening/independent-review regressions
+Inherited L-0 contract regression
+Scope / adjacent-owner guard
+Diff hygiene
+```
+
+The separate L-0 design-only workflow still intentionally fails only its runtime-scope guard after passing L-0 contract validation.
+
+---
+
+# 5. Merge — complete
+
+PR #82 was marked ready only after exact-head verification and then squash-merged with an `expected_head_sha` guard against:
+
+```text
+e73dc7862ecd1084de8e2912f45ae758110a7447
+```
+
+GitHub returned:
+
+```text
+merged = true
+merge SHA = 66900c2d50f98446184a92539baab89e9d49514c
+```
+
+Fresh verification confirmed:
+
+```text
+PR #82 state = closed / merged
+main = 66900c2d50f98446184a92539baab89e9d49514c
+```
+
+---
+
+# 6. Adjacent-owner isolation
+
+The separate physiotherapy/CU-1/RF workstreams remained read-only for the whole L-1 release path.
+
+No diff occurred under:
 
 ```text
 clinic_utilities/physio_referral_*
@@ -112,230 +166,34 @@ clinic_utilities/rf/*
 static/clinic-utilities/rf/*
 ```
 
-The paused physiotherapy productization branch remains separate:
-
-```text
-design/physio-referral-product-ux-v1-knee-oa-2026-09-07
-```
-
-The L-1 CI scope guard enforces this isolation.
+The L-1 release decision is now complete, so that earlier pause is no longer itself a blocker. Starting or resuming another workstream still requires an explicit next-work selection.
 
 ---
 
-# 5. Delivered L-1 runtime
-
-Protected base:
+# 7. Lifecycle state
 
 ```text
-/clinical/learning
-```
-
-Delivered capabilities:
-
-- Challenge JSON schema/privacy/reference-integrity preview;
-- recursive unknown-field rejection and deterministic PHI guard;
-- server-authority normalization for review, Signal links and reference verification;
-- Fact Ledger with provenance and progressive-disclosure visibility;
-- clinician Accept / Modify / Dismiss observation workflow;
-- immutable Challenge revisions and tombstone deletion semantics;
-- mutable reference-verification overlay outside immutable Challenge payload/hash;
-- 14-node Osteoporosis Foundation Map;
-- explicit structured clinician-reviewed Foundation assessment/state;
-- stale/equal-timestamp Foundation overwrite protection;
-- explicit next-review and occurrence-based due-state materialization;
-- JSON/Markdown selected-revision export;
-- protected browser session / `X-Clinical-Key` access;
-- no-store/no-cache Clinical Learning assets.
-
-Four clinician-facing views:
-
-1. Challenge Import
-2. Challenge History
-3. Foundation Map
-4. Due / Learning Actions
-
----
-
-# 6. Independent review — findings and closure
-
-A fresh independent review of exact prior HOLD head
-`777647a27fa34a3afdb7ad4d4195be942e720d`
-returned **CHANGES REQUIRED**. User explicitly authorized bounded remediation.
-
-## Finding 1 — frozen nested `unique_items`
-
-Closed by explicit runtime validation and regression tests for:
-
-- progressive disclosure `fact_ids`;
-- observation linked Fact/reference IDs and gap classes;
-- learning-action reference/Foundation IDs;
-- Challenge Foundation IDs, gap classes and linked Signal snapshot IDs.
-
-Topic tags retain their separately frozen trim/casefold/collapse semantics rather than being turned into a new ontology.
-
-## Finding 2 — incomplete Challenge History UI contract
-
-Closed:
-
-- date filter added;
-- review-state filter added;
-- Foundation node links are visible in History rows;
-- Challenge repetition due status/date is visible in History rows.
-
-Backend date/review filtering already existed and is now wired through the UI.
-
-## Finding 3 — stale Challenge preview could be saved
-
-Closed:
-
-- the browser stores a stable semantic fingerprint of the exact textarea artifact sent to server preview;
-- Save reparses the current textarea;
-- any mismatch invalidates the preview and requires a fresh `Validate & Preview`;
-- syntax-invalid post-preview edits also fail closed.
-
-The clinician can no longer unknowingly save a prior preview while looking at changed JSON.
-
-## Finding 4 — false same-revision conflict after authority reset
-
-Closed without changing immutable accepted content hashes:
-
-- imported candidate is still normalized to untrusted/pending authority for preview;
-- persisted accepted payload is projected through the same import-normalization boundary solely for duplicate classification;
-- those two authority-neutral projections are compared for `exact_idempotent_duplicate` vs `same_revision_conflict`;
-- create/revise immutable `content_hash` behavior remains unchanged.
-
-## Finding 5 — Foundation browser retry instability
-
-Closed:
-
-- one open assessment owns one stable `attempt_id`;
-- `assessed_at` is generated once when the assessment opens;
-- each selected assessment method gets one stable `evidence_id` for that open assessment;
-- preview/save/network retry therefore resends the same assessment identity/content unless the clinician actually edits content.
-
----
-
-# 7. Remediation regression evidence
-
-New focused coverage:
-
-```text
-test_clinical_learning_l1_independent_review.py
-```
-
-It proves:
-
-```text
-nested frozen unique-items rejection
-reviewed Challenge reimport → exact_idempotent_duplicate
-same-revision changed content → same_revision_conflict
-History date/review filters + Foundation/due visibility
-stale Challenge preview save guard
-stable Foundation attempt/evidence/timestamp browser identity
-```
-
-Exact substantive remediation head:
-
-```text
-b4b0438e44b8077ce5a9f469b5e4669d083886f0
-```
-
-Exact full L-1 regression gate:
-
-```text
-run 34263571488
-SUCCESS
-```
-
-Successful steps include:
-
-```text
-Python syntax
-Browser JavaScript syntax
-all L-1 runtime / hardening / independent-review regressions
-Inherited L-0 contract regression
-Scope and adjacent-owner guard
-Diff hygiene
-```
-
-The separate closed L-0 design-only workflow on the same head again passed:
-
-```text
-Validate Clinical Learning L0 contracts — SUCCESS
-```
-
-and then failed only:
-
-```text
-Confirm design-only scope — EXPECTED FAILURE on an L-1 runtime PR
-```
-
-That guard is not weakened or changed.
-
-Focused closure review `5145618117` found no residual material issue in the five-item remediation set.
-
----
-
-# 8. Explicit exclusions preserved
-
-```text
-NO patient encounter/lab reads or writes
-NO raw transcript intake/storage
-NO PR-1/PR-2 transcript semantics
-NO Daily Case Review runtime/UI/table
-NO Practice Review AI
-NO Signal promotion/backlink authority
-NO external bearer learning API
-NO adaptive spaced-repetition algorithm
-NO composite knowledge/excellence score
-NO production config/secrets changes
-NO RF mutation
-NO physiotherapy/CU-1 mutation
+IMPLEMENTED                     YES
+TESTED                          YES
+INDEPENDENT REVIEW              CHANGES REQUIRED → REMEDIATED
+FOCUSED CLOSURE REVIEW          PASS
+FINAL EXACT-HEAD REVIEW         PASS
+PR #82                          MERGED
+MAIN MERGE SHA                  66900c2d50f98446184a92539baab89e9d49514c
+DEPLOYED                        PENDING VERIFICATION
+PRODUCTION-SMOKE-VERIFIED       NO
+ACTIVE WRITER                   NONE
 ```
 
 ---
 
-# 9. Lifecycle
+# 8. Exact next action
 
 ```text
-L-0 CONTRACT                         FROZEN / COMPLETE / MERGED
-L-1 PRODUCT-OWNER IMPLEMENTATION     AUTHORIZED / EXERCISED
-L-1 CORE IMPLEMENTED                 YES
-L-1 INITIAL FINAL REVIEW             SUPERSEDED BY INDEPENDENT REVIEW
-L-1 INDEPENDENT REVIEW               CHANGES REQUIRED → REMEDIATED
-L-1 REMEDIATION TESTED               YES
-L-1 FOCUSED CLOSURE REVIEW           PASS
-L-1 REPLAN REQUIRED                  NO
-L-1 PHYSIO/RF ISOLATION              PASS
-L-1 PR                               #82 OPEN / DRAFT / RELEASE HOLD
-L-1 MERGED                           NO
-L-1 DEPLOYED                         NO
-L-1 PRODUCTION-SMOKE-VERIFIED        NO
-```
-
----
-
-# 10. Exact next action / RELEASE HOLD
-
-The final canonical HOLD commit itself must pass the complete Clinical Learning L-1 regression gate.
-
-```text
-final canonical HOLD head
-→ complete L-1 gate SUCCESS
-→ STOP with writer lock NONE
-→ remain PR #82 OPEN / DRAFT / RELEASE HOLD
-→ await separate explicit product-owner squash-merge/release authority
-```
-
-If release is later explicitly authorized:
-
-```text
-fresh main/head/check verification
-→ squash merge PR #82 using exact expected head
-→ normal Render auto-deploy from main
-→ no manual duplicate deploy
+verify normal Render auto-deploy from main
 → authenticated production smoke /clinical/learning
-→ post-merge/deploy canonical reconciliation
+→ if PASS, reconcile lifecycle to DEPLOYED / PRODUCTION-SMOKE-VERIFIED
+→ close L-1 completely
 ```
 
-No merge, deploy, production configuration/secret mutation, PR-1/PR-2/Daily Case/Signal work, or physiotherapy/CU-1/RF resumption is authorized by this remediation.
+Do not manually trigger a duplicate deploy, change production configuration/secrets, or reopen frozen L-0 semantics unless production evidence demonstrates a material defect.
