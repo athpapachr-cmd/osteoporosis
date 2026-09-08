@@ -177,6 +177,17 @@ def rich_episode():
     }
 
 
+def automatic_rich_episode():
+    episode = rich_episode()
+    episode["clinician_reasoning_responses"][0]["text"] = (
+        "I recognise the fragility fracture as treatment-defining and would integrate CKD before selecting therapy."
+    )
+    episode["clinician_reasoning_responses"][1]["text"] = (
+        "The persistent biochemical abnormalities change my disease model and require renal-bone and medication-safety reasoning together."
+    )
+    return episode
+
+
 def reviewed_candidate(pending):
     challenge = copy.deepcopy(pending["normalized_challenge"])
     challenge["privacy"]["deidentification_attested"] = True
@@ -277,15 +288,17 @@ class ClinicalLearningL1BLearningLoopTests(unittest.TestCase):
         bridge_occurrence = cycle["plan"]["consolidation_occurrences"][-1]
         bridge_before = cycle["plan"]["bridge_targets"][0]["state"]
         self.assertEqual(bridge_before, "planned")
-        self.loop.add_consolidation_attempt(
-            cycle["cycle_id"],
-            bridge_occurrence["occurrence_id"],
-            {
-                "response_text": "Synthetic joint transfer response.",
-                "result": "retained",
-                "clinician_reviewed": False,
-            },
-        )
+        with self.assertRaises(LearningLoopRuntimeError) as ctx:
+            self.loop.add_consolidation_attempt(
+                cycle["cycle_id"],
+                bridge_occurrence["occurrence_id"],
+                {
+                    "response_text": "Synthetic joint transfer response.",
+                    "result": "retained",
+                    "clinician_reviewed": False,
+                },
+            )
+        self.assertEqual(ctx.exception.code, "consolidation_result_requires_clinician_review")
         self.assertEqual(self.loop.get_learning_loop(cycle["cycle_id"])["plan"]["bridge_targets"][0]["state"], "planned")
 
     def test_resource_overlay_update_does_not_change_challenge_hash(self):
@@ -320,7 +333,7 @@ class ClinicalLearningL1BLearningLoopTests(unittest.TestCase):
             client = TestClient(app)
             unconfigured = client.post(
                 "/clinical/learning/api/ingress/episodes",
-                json={"episode": rich_episode()},
+                json={"episode": automatic_rich_episode()},
             )
             self.assertEqual(unconfigured.status_code, 503)
             self.assertEqual(unconfigured.json()["detail"]["code"], "learning_ingress_not_configured")
@@ -334,18 +347,18 @@ class ClinicalLearningL1BLearningLoopTests(unittest.TestCase):
             wrong = client.post(
                 "/clinical/learning/api/ingress/episodes",
                 headers={"X-Learning-Ingest-Key": "wrong"},
-                json={"episode": rich_episode()},
+                json={"episode": automatic_rich_episode()},
             )
             self.assertEqual(wrong.status_code, 401)
             ok = client.post(
                 "/clinical/learning/api/ingress/episodes",
                 headers={"X-Learning-Ingest-Key": "ingest-key"},
-                json={"episode": rich_episode()},
+                json={"episode": automatic_rich_episode()},
             )
             self.assertEqual(ok.status_code, 200)
             self.assertEqual(ok.json()["state"], "pending_review")
 
-            real_case = rich_episode()
+            real_case = automatic_rich_episode()
             real_case["challenge_mode"] = "deidentified_real_case"
             blocked = client.post(
                 "/clinical/learning/api/ingress/episodes",
