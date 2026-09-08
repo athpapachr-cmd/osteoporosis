@@ -1241,3 +1241,109 @@ L-1 IMPLEMENTATION               NOT AUTHORIZED
 ```
 
 The next gate is a separate product-owner decision to authorize the bounded L-1 Challenge Import + History + Foundation Map MVP implementation slice.
+
+---
+
+## 2026-09-07 — Clinical Learning L-1 implementation exact-head regression checkpoint
+
+On branch `feat/clinical-learning-l1-challenge-foundation-mvp-2026-09-07`, the bounded L-1 Clinical Learning runtime was implemented for protected Challenge import/history/revisions/delete, reference-verification overlay, the 14-node Osteoporosis Foundation Map, explicit Foundation assessments/state, reviewed due-state scheduling and the first protected clinician-facing Learning Hub UI.
+
+Hardening corrected timezone-aware UTC normalization and prevented an older Foundation assessment from overwriting a newer materialized state. Clinician-facing UX was then improved for Challenge revision flow and structured Foundation assessment.
+
+Exact runtime/UX head:
+
+```text
+b53a39f12363e08a7be952e1d7a25fbb5511bca8
+```
+
+Full `Clinical Learning L1 regression gate`:
+
+```text
+run 34156659908
+SUCCESS
+```
+
+The gate covered Python/JavaScript syntax, L-1 runtime/hardening tests, inherited L-0 contract regressions, adjacent-owner isolation and diff hygiene. Physiotherapy/CU-1 and RF owners were not mutated.
+
+Lifecycle at this checkpoint:
+
+```text
+L-1 CORE IMPLEMENTED              YES
+L-1 CLINICIAN-FACING UX           IMPLEMENTED
+L-1 EXACT-HEAD REGRESSION GATE    PASS
+FINAL EXACT-HEAD REVIEW           PENDING
+PR                                NONE
+MERGED                            NO
+DEPLOYED                          NO
+```
+
+The product owner paused the separate physiotherapy workstream until this L-1 checkpoint is completed. The next legitimate action is final exact-head review, then canonical closeout and a bounded PR/release HOLD if clean.
+
+---
+
+## 2026-09-07 — Clinical Learning L-1 final exact-head review passed; release-candidate closeout
+
+A fresh final review bootstrapped from remote `main` and the six canonicals, verified the exact active branch rather than choosing by recency/name, claimed the bounded L-1 writer lock, and reviewed the **full branch vs current main** across architecture/runtime, privacy/safety, concurrency/integrity and clinician-facing product workflows.
+
+The review found no frozen-contract REPLAN requirement, but did find bounded material defects that were corrected before release closeout.
+
+Clinically meaningful UX findings corrected:
+
+- Challenge History exposed a `Νέα revision` control without a functioning clinician revision workflow;
+- Foundation assessment HTML and JavaScript were mismatched, including a nonexistent `assessmentJson` dependency;
+- Foundation evidence controls contained values outside the frozen assessment-method enum and lacked explicit per-evidence demonstrated result/note capture;
+- prior immutable Challenge revisions were not meaningfully inspectable in History;
+- Fact Ledger progressive-disclosure provenance was insufficiently visible.
+
+The clinician-facing correction now preserves immutable revision semantics end-to-end: History can inspect a selected revision; `Νέα revision` creates a candidate from the latest accepted revision, resets imported/server authority, requires fresh server preview + observation disposition + explicit confirmation, then appends through server-owned `PUT`. Foundation assessment is structured around only frozen methods/states/results, explicit proposed/final state, clinician-reviewed evidence, notes and optional next-review scheduling. UI-contract regression coverage now detects missing DOM bindings, invalid Foundation methods and missing provenance seams.
+
+Data-integrity / concurrency findings corrected:
+
+- Challenge mutation/delete/reference operations now serialize on authoritative revision rows on the production Postgres path; delete locks revisions before purging overlays/due/content and creating the tombstone;
+- residual database races fail closed as sanitized HTTP `409 learning_write_conflict_retry` rather than leaking driver/constraint errors;
+- Foundation state materialization row-locks an existing node before replacement so a concurrently older assessment cannot overwrite newer state;
+- a distinct equal-timestamp Foundation attempt fails closed because no deterministic ordering exists, while an exact same `attempt_id` remains idempotent.
+
+No patient/transcript/Signal/DailyCase/PracticeReview ownership was introduced, no production config/secrets changed, no frozen L-0 schema was modified, and the separate physiotherapy/CU-1/RF owners remained untouched.
+
+Reviewed substantive head:
+
+```text
+ada16afb573609cd555b99c1cc62a4a160d4215f
+```
+
+Complete `Clinical Learning L1 regression gate`:
+
+```text
+run 34158892560
+SUCCESS
+```
+
+That exact run passed Python syntax, browser JavaScript syntax, L-1 runtime/hardening/clinician-UI contract tests, inherited L-0 contract regression, scope/adjacent-owner guard and diff hygiene.
+
+Fresh comparison at substantive review close:
+
+```text
+main / merge-base  5f7749c70c6bb3f36fcfc765088d4d363a6bb1d6
+ahead / behind     35 / 0
+physio/CU1/RF leak NONE
+frozen-schema diff NONE
+REPLAN              NO
+```
+
+Canonical closeout after that reviewed substantive head is documentation-only. The final PR head must still pass the complete L-1 gate exactly at that final docs head before a bounded PR may be opened.
+
+Lifecycle at this closeout entry:
+
+```text
+L-1 IMPLEMENTED                 YES
+L-1 TESTED                      YES
+L-1 FINAL EXACT-HEAD REVIEW     PASS
+L-1 PHYSIO/RF ISOLATION         PASS
+L-1 PR                          NONE — NEXT AFTER FINAL DOCS-HEAD PASS
+L-1 MERGED                      NO
+L-1 DEPLOYED                    NO
+L-1 PRODUCTION-SMOKE            NO
+```
+
+The next legitimate boundary is final docs-head verification → bounded PR to `main` → **RELEASE HOLD** for separate explicit product-owner squash-merge/release authority. PR-1/PR-2, Daily Case Review, Signal work and physiotherapy remain out of scope.

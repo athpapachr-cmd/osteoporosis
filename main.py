@@ -14,6 +14,7 @@ from clinical_calendar import build_clinical_calendar_router
 from clinical_data import build_clinical_router
 from clinical_data_ext import build_clinical_ext_router
 from clinical_status import build_clinical_status_router
+from clinical_learning import build_learning_router
 from clinic_utilities.physio_referral_api import build_cu1_physio_referral_router
 from clinic_utilities.rf.api import build_rf_router
 
@@ -35,8 +36,10 @@ async def prevent_stale_clinical_workspace_assets(request: Request, call_next):
     """Keep actively deployed Clinical Excellence assets coherent across releases."""
 
     response = await call_next(request)
-    if request.url.path.startswith("/static/baseline-audit/") or request.url.path.startswith(
-        "/static/clinic-utilities/"
+    if (
+        request.url.path.startswith("/static/baseline-audit/")
+        or request.url.path.startswith("/static/clinic-utilities/")
+        or request.url.path.startswith("/static/clinical-learning/")
     ):
         response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
         response.headers["Pragma"] = "no-cache"
@@ -57,6 +60,7 @@ app.include_router(build_clinical_status_router(engine))
 app.include_router(build_clinical_router(engine))
 app.include_router(build_clinical_ext_router(engine))
 app.include_router(build_clinical_calendar_router(engine))
+app.include_router(build_learning_router(engine))
 app.include_router(build_cu1_physio_referral_router())
 # RF v2 is now a native protected Clinic Utility. The old rf_gateway module is
 # deliberately left in the repository as rollback-only code but is not mounted.
