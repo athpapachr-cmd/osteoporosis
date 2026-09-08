@@ -21,6 +21,7 @@ from .contracts import (
     validate_challenge_payload,
 )
 from .ingress import adapt_learning_episode
+from .learning_loop import stable_learning_uuid
 from .models import (
     ConsolidationAttemptCreateV1,
     LearningLoopPlanV1,
@@ -275,6 +276,32 @@ def _validate_resources(raw_resources: Any) -> list[dict[str, Any]]:
     return out
 
 
+def _validate_rich_episode_profile(raw_episode: Any) -> None:
+    if not isinstance(raw_episode, dict):
+        return
+    if raw_episode.get("schema_type") != "ClinicalLearningChallengeV1":
+        return
+    if str(raw_episode.get("schema_version")) not in {"1.0", "1"}:
+        return
+    if str(raw_episode.get("challenge_mode") or "") != "synthetic":
+        raise LearningLoopRuntimeError(
+            "rich_learning_episode_synthetic_only",
+            "episode.challenge_mode",
+        )
+    try:
+        revision = int(raw_episode.get("revision") or 1)
+    except (TypeError, ValueError):
+        raise LearningLoopRuntimeError(
+            "rich_learning_episode_revision_invalid",
+            "episode.revision",
+        ) from None
+    if revision != 1:
+        raise LearningLoopRuntimeError(
+            "rich_learning_episode_revision_1_only",
+            "episode.revision",
+        )
+
+
 def _challenge_import_view(payload: dict[str, Any]) -> dict[str, Any]:
     challenge = validate_challenge_payload(payload)
     normalized = normalize_import_preview(challenge)
@@ -327,6 +354,7 @@ class LearningLoopRuntimeService:
         loop_plan: dict[str, Any] | None = None,
         resources: list[dict[str, Any]] | None = None,
     ) -> dict[str, Any]:
+        _validate_rich_episode_profile(raw_episode)
         adapted = adapt_learning_episode(
             raw_episode,
             source_event_id=source_event_id,
@@ -589,10 +617,27 @@ class LearningLoopRuntimeService:
                 "consolidation_attempt_invalid",
                 first.path if first else "attempt",
             ) from None
+        if request.result != "not_assessed" and not request.clinician_reviewed:
+            raise LearningLoopRuntimeError(
+                "consolidation_result_requires_clinician_review",
+                "clinician_reviewed",
+            )
         persistable = request.model_dump(mode="json")
         findings = scan_persistable_strings({"attempt": persistable})
         if findings:
             raise LearningLoopRuntimeError(findings[0].code, findings[0].path)
+
+        response_text = request.response_text.strip()
+        evaluator_note = (request.evaluator_note or "").strip()
+        attempt_id = stable_learning_uuid(
+            "consolidation-attempt",
+            cycle_id,
+            occurrence_id,
+            response_text,
+            request.result,
+            evaluator_note,
+            request.clinician_reviewed,
+        )
 
         with Session(self.engine) as session:
             loop = session.execute(
@@ -611,15 +656,24 @@ class LearningLoopRuntimeService:
             if occurrence is None:
                 raise LearningLoopRuntimeError("consolidation_occurrence_not_found", "occurrence_id", status_code=404)
 
+            existing_attempt = session.get(ConsolidationAttemptORM, attempt_id)
+            if existing_attempt is not None:
+                return {**copy.deepcopy(existing_attempt.payload_json or {}), "idempotent": True}
+            if occurrence.get("status") == "completed":
+                raise LearningLoopRuntimeError(
+                    "consolidation_occurrence_already_completed",
+                    "occurrence_id",
+                    status_code=409,
+                )
+
             now = _utcnow()
-            attempt_id = str(uuid4())
             attempt_payload = {
                 "attempt_id": attempt_id,
                 "occurrence_id": occurrence_id,
                 "answered_at": _utcnow_iso(),
-                "response_text": request.response_text,
+                "response_text": response_text,
                 "result": request.result,
-                "evaluator_note": request.evaluator_note,
+                "evaluator_note": evaluator_note or None,
                 "clinician_reviewed": request.clinician_reviewed,
             }
             session.add(
@@ -651,8 +705,6 @@ class LearningLoopRuntimeService:
                 due.due_status = "completed"
                 due.updated_at = now
 
-            # Bridge state is evidence-governed. Only an explicitly clinician-reviewed
-            # bridge-transfer result can mark a bridge demonstrated/needs reinforcement.
             if occurrence.get("kind") == "bridge_transfer" and request.clinician_reviewed:
                 bridge_ids = {str(value) for value in occurrence.get("target_bridge_ids") or []}
                 for bridge in payload.get("bridge_targets") or []:
@@ -665,7 +717,7 @@ class LearningLoopRuntimeService:
                 loop.payload_json = payload
 
             session.commit()
-            return attempt_payload
+            return {**attempt_payload, "idempotent": False}
 
     def update_resource_status(
         self,
