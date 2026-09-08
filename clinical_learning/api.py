@@ -107,13 +107,52 @@ def build_learning_router(engine: Engine) -> APIRouter:
             )
         return payload
 
+    def require_automatic_ingress_profile(episode: dict[str, Any]) -> None:
+        # Automatic transport is narrower than protected manual import. It may
+        # accept only explicit synthetic learning, never infer synthetic from a
+        # missing/legacy mode field.
+        if episode.get("challenge_mode") != "synthetic":
+            raise HTTPException(
+                status_code=422,
+                detail={
+                    "code": "external_ingress_synthetic_only",
+                    "path": "episode.challenge_mode",
+                },
+            )
+
+        # The rich legacy export the clinician supplied contains useful reasoning
+        # summaries but not the clinician's verbatim responses. Manual Advanced
+        # import may salvage that artifact with a visible warning. New automatic
+        # ingress is stricter: it must carry the actual response text so the
+        # durable learning episode does not replace the clinician's words with an
+        # AI-authored summary.
+        if (
+            episode.get("schema_type") == "ClinicalLearningChallengeV1"
+            and str(episode.get("schema_version")) in {"1.0", "1"}
+        ):
+            responses = episode.get("clinician_reasoning_responses")
+            if not isinstance(responses, list) or not responses:
+                raise HTTPException(
+                    status_code=422,
+                    detail={
+                        "code": "automatic_ingress_requires_verbatim_reasoning",
+                        "path": "episode.clinician_reasoning_responses",
+                    },
+                )
+            for index, response in enumerate(responses):
+                if not isinstance(response, dict) or not str(response.get("text") or "").strip():
+                    raise HTTPException(
+                        status_code=422,
+                        detail={
+                            "code": "automatic_ingress_requires_verbatim_reasoning",
+                            "path": f"episode.clinician_reasoning_responses[{index}].text",
+                        },
+                    )
+
     @router.get("", dependencies=protected, include_in_schema=False)
     def learning_page() -> FileResponse:
         return FileResponse(_ui_index(), media_type="text/html")
 
-    # L-1B external ingress is deliberately separate from the broad clinical key.
-    # It can create only a synthetic pending learning import, never an accepted
-    # Challenge, patient write, Foundation state, Signal or reference verification.
     @router.post("/api/ingress/episodes", dependencies=ingress_protected)
     async def external_episode_ingress(request: Request) -> dict[str, Any]:
         payload = envelope(
@@ -124,14 +163,7 @@ def build_learning_router(engine: Engine) -> APIRouter:
         episode = payload["episode"]
         if not isinstance(episode, dict):
             raise HTTPException(status_code=422, detail={"code": "learning_episode_object_required"})
-        mode = episode.get("challenge_mode")
-        if mode is None and isinstance(episode.get("session"), dict):
-            mode = episode.get("challenge_mode", "synthetic")
-        if mode not in {None, "synthetic"}:
-            raise HTTPException(
-                status_code=422,
-                detail={"code": "external_ingress_synthetic_only", "path": "episode.challenge_mode"},
-            )
+        require_automatic_ingress_profile(episode)
         try:
             return loop_service.ingest_episode(
                 episode,
