@@ -3,7 +3,7 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import Any
 from uuid import uuid4
 
@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 from .contracts import (
     LearningContractError,
     canonical_content_hash,
+    get_foundation_registry,
     normalize_import_preview,
     sanitized_schema_issues,
     validate_challenge_payload,
@@ -98,6 +99,22 @@ def _due_status(due_on: date) -> str:
     return "overdue"
 
 
+def _require_unique(values: list[Any], *, code: str, path: str) -> None:
+    normalized = [str(value) for value in values]
+    if len(normalized) != len(set(normalized)):
+        raise LearningLoopRuntimeError(code, path)
+
+
+def _validate_foundation_nodes(values: list[str], *, path: str) -> None:
+    registry = get_foundation_registry()
+    for index, node_id in enumerate(values):
+        if not registry.contains(node_id):
+            raise LearningLoopRuntimeError(
+                "unknown_foundation_node",
+                f"{path}[{index}]",
+            )
+
+
 def _validate_loop_plan(raw: Any) -> dict[str, Any]:
     try:
         model = LearningLoopPlanV1.model_validate(raw)
@@ -109,36 +126,114 @@ def _validate_loop_plan(raw: Any) -> dict[str, Any]:
             first.path if first else "loop_plan",
         ) from None
     payload = model.model_dump(mode="json")
+
     objective_ids = [str(item["objective_id"]) for item in payload.get("objectives") or []]
-    if len(objective_ids) != len(set(objective_ids)):
-        raise LearningLoopRuntimeError("duplicate_learning_objective_id", "loop_plan.objectives")
+    _require_unique(
+        objective_ids,
+        code="duplicate_learning_objective_id",
+        path="loop_plan.objectives",
+    )
+    for index, objective in enumerate(payload.get("objectives") or []):
+        _require_unique(
+            list(objective.get("foundation_node_ids") or []),
+            code="duplicate_learning_objective_foundation_node",
+            path=f"loop_plan.objectives[{index}].foundation_node_ids",
+        )
+        _validate_foundation_nodes(
+            list(objective.get("foundation_node_ids") or []),
+            path=f"loop_plan.objectives[{index}].foundation_node_ids",
+        )
+        _require_unique(
+            list(objective.get("source_observation_ids") or []),
+            code="duplicate_learning_objective_observation_id",
+            path=f"loop_plan.objectives[{index}].source_observation_ids",
+        )
+
     bridge_ids = [str(item["bridge_id"]) for item in payload.get("bridge_targets") or []]
-    if len(bridge_ids) != len(set(bridge_ids)):
-        raise LearningLoopRuntimeError("duplicate_bridge_id", "loop_plan.bridge_targets")
+    _require_unique(
+        bridge_ids,
+        code="duplicate_bridge_id",
+        path="loop_plan.bridge_targets",
+    )
+    for index, bridge in enumerate(payload.get("bridge_targets") or []):
+        nodes = list(bridge.get("foundation_node_ids") or [])
+        _require_unique(
+            nodes,
+            code="duplicate_bridge_foundation_node",
+            path=f"loop_plan.bridge_targets[{index}].foundation_node_ids",
+        )
+        _validate_foundation_nodes(
+            nodes,
+            path=f"loop_plan.bridge_targets[{index}].foundation_node_ids",
+        )
+        _require_unique(
+            list(bridge.get("source_observation_ids") or []),
+            code="duplicate_bridge_observation_id",
+            path=f"loop_plan.bridge_targets[{index}].source_observation_ids",
+        )
+        _require_unique(
+            list(bridge.get("source_action_ids") or []),
+            code="duplicate_bridge_action_id",
+            path=f"loop_plan.bridge_targets[{index}].source_action_ids",
+        )
+
     occurrence_ids = [str(item["occurrence_id"]) for item in payload.get("consolidation_occurrences") or []]
-    if len(occurrence_ids) != len(set(occurrence_ids)):
-        raise LearningLoopRuntimeError("duplicate_consolidation_occurrence_id", "loop_plan.consolidation_occurrences")
+    _require_unique(
+        occurrence_ids,
+        code="duplicate_consolidation_occurrence_id",
+        path="loop_plan.consolidation_occurrences",
+    )
     sequences = [int(item["sequence"]) for item in payload.get("consolidation_occurrences") or []]
     if sequences != list(range(1, len(sequences) + 1)):
-        raise LearningLoopRuntimeError("invalid_consolidation_sequence", "loop_plan.consolidation_occurrences")
+        raise LearningLoopRuntimeError(
+            "invalid_consolidation_sequence",
+            "loop_plan.consolidation_occurrences",
+        )
+
     objective_set = set(objective_ids)
     bridge_set = set(bridge_ids)
     for index, item in enumerate(payload.get("consolidation_occurrences") or []):
-        if any(str(value) not in objective_set for value in item.get("target_objective_ids") or []):
+        objective_targets = list(item.get("target_objective_ids") or [])
+        bridge_targets = list(item.get("target_bridge_ids") or [])
+        foundation_targets = list(item.get("target_foundation_node_ids") or [])
+        _require_unique(
+            objective_targets,
+            code="duplicate_consolidation_objective_id",
+            path=f"loop_plan.consolidation_occurrences[{index}].target_objective_ids",
+        )
+        _require_unique(
+            bridge_targets,
+            code="duplicate_consolidation_bridge_id",
+            path=f"loop_plan.consolidation_occurrences[{index}].target_bridge_ids",
+        )
+        _require_unique(
+            foundation_targets,
+            code="duplicate_consolidation_foundation_node",
+            path=f"loop_plan.consolidation_occurrences[{index}].target_foundation_node_ids",
+        )
+        _validate_foundation_nodes(
+            foundation_targets,
+            path=f"loop_plan.consolidation_occurrences[{index}].target_foundation_node_ids",
+        )
+        if any(str(value) not in objective_set for value in objective_targets):
             raise LearningLoopRuntimeError(
                 "unresolved_consolidation_objective_id",
                 f"loop_plan.consolidation_occurrences[{index}].target_objective_ids",
             )
-        if any(str(value) not in bridge_set for value in item.get("target_bridge_ids") or []):
+        if any(str(value) not in bridge_set for value in bridge_targets):
             raise LearningLoopRuntimeError(
                 "unresolved_consolidation_bridge_id",
                 f"loop_plan.consolidation_occurrences[{index}].target_bridge_ids",
             )
+
     if payload.get("default_spacing_days") != [3, 7, 14, 30]:
-        raise LearningLoopRuntimeError("unsupported_initial_spacing_profile", "loop_plan.default_spacing_days")
+        raise LearningLoopRuntimeError(
+            "unsupported_initial_spacing_profile",
+            "loop_plan.default_spacing_days",
+        )
     findings = scan_persistable_strings({"loop_plan": payload})
     if findings:
-        raise LearningContractError([] if not findings else [])
+        raise LearningLoopRuntimeError(findings[0].code, findings[0].path)
     return payload
 
 
@@ -164,6 +259,15 @@ def _validate_resources(raw_resources: Any) -> list[dict[str, Any]]:
         if recommendation_id in seen:
             raise LearningLoopRuntimeError("duplicate_resource_recommendation_id", "resources")
         seen.add(recommendation_id)
+        _require_unique(
+            list(payload.get("foundation_node_ids") or []),
+            code="duplicate_resource_foundation_node",
+            path=f"resources[{index}].foundation_node_ids",
+        )
+        _validate_foundation_nodes(
+            list(payload.get("foundation_node_ids") or []),
+            path=f"resources[{index}].foundation_node_ids",
+        )
         out.append(payload)
     findings = scan_persistable_strings({"resources": out})
     if findings:
@@ -176,6 +280,21 @@ def _challenge_import_view(payload: dict[str, Any]) -> dict[str, Any]:
     normalized = normalize_import_preview(challenge)
     normalized["privacy"]["deidentification_attested"] = False
     return normalized
+
+
+def _anchor_loop_at_acceptance(loop_payload: dict[str, Any]) -> dict[str, Any]:
+    anchored = copy.deepcopy(loop_payload)
+    anchor = datetime.now(timezone.utc).date()
+    spacing = list(anchored.get("default_spacing_days") or [])
+    occurrences = anchored.get("consolidation_occurrences") or []
+    if len(spacing) != len(occurrences):
+        raise LearningLoopRuntimeError(
+            "spacing_occurrence_count_mismatch",
+            "loop_plan.consolidation_occurrences",
+        )
+    for index, occurrence in enumerate(occurrences):
+        occurrence["due_on"] = (anchor + timedelta(days=int(spacing[index]))).isoformat()
+    return anchored
 
 
 class LearningLoopRuntimeService:
@@ -317,7 +436,9 @@ class LearningLoopRuntimeService:
                     status_code=409,
                 )
 
-            loop_payload = _validate_loop_plan(pending.loop_plan_json or {})
+            loop_payload = _anchor_loop_at_acceptance(
+                _validate_loop_plan(pending.loop_plan_json or {})
+            )
             cycle_id = str(loop_payload["cycle_id"])
             existing_loop = session.get(LearningLoopPlanORM, cycle_id)
             now = _utcnow()
