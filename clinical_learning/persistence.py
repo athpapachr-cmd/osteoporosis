@@ -11,6 +11,7 @@ from sqlalchemy import (
     Integer,
     String,
     UniqueConstraint,
+    and_,
     delete,
     or_,
     select,
@@ -109,6 +110,7 @@ class PendingImportORM(ClinicalLearningBase):
     source_event_id = Column(String, nullable=False, unique=True, index=True)
     source_format = Column(String, nullable=False)
     state = Column(String, nullable=False, index=True)
+    normalized_hash = Column(String, nullable=False)
     normalized_challenge_json = Column(JSON, nullable=False)
     loop_plan_json = Column(JSON, nullable=False)
     resources_json = Column(JSON, nullable=False, default=list)
@@ -306,23 +308,25 @@ def purge_challenge_content(session: Session, challenge_id: str) -> int:
     )
     cycle_ids = [row.cycle_id for row in loop_rows]
 
+    due_conditions = [
+        DueItemORM.target_id == challenge_id,
+        and_(DueItemORM.source_artifact_type == "challenge", DueItemORM.source_artifact_id == challenge_id),
+    ]
+    if cycle_ids:
+        due_conditions.append(
+            and_(
+                DueItemORM.source_artifact_type == "learning_loop",
+                DueItemORM.source_artifact_id.in_(cycle_ids),
+            )
+        )
+
     session.execute(
         delete(ReferenceVerificationORM).where(
             ReferenceVerificationORM.artifact_type == "challenge",
             ReferenceVerificationORM.artifact_id == challenge_id,
         )
     )
-    session.execute(
-        delete(DueItemORM).where(
-            or_(
-                DueItemORM.target_id == challenge_id,
-                (DueItemORM.source_artifact_type == "challenge")
-                & (DueItemORM.source_artifact_id == challenge_id),
-                (DueItemORM.source_artifact_type == "learning_loop")
-                & (DueItemORM.source_artifact_id.in_(cycle_ids) if cycle_ids else False),
-            )
-        )
-    )
+    session.execute(delete(DueItemORM).where(or_(*due_conditions)))
     if cycle_ids:
         session.execute(
             delete(ConsolidationAttemptORM).where(ConsolidationAttemptORM.cycle_id.in_(cycle_ids))
