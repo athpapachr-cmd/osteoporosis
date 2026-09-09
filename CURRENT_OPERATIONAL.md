@@ -1,14 +1,14 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** CLINICAL LEARNING HUB L-1B — IMPLEMENTED / TESTED / FOCUSED REVIEW PASS / RELEASE HOLD
+> **STATUS:** CLINICAL LEARNING HUB L-1B — MERGED / DEPLOY VERIFICATION PENDING
 > **Updated:** 2026-09-09 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Implementation base:** `95629fead4da5aeb1fcc0146296a9ac0f767d7ea`.
-> **Branch:** `feat/clinical-learning-l1b-learning-loop-2026-09-08`.
 > **Slice:** `CORE-LEARNING-HUB-L1B-LEARNING-LOOP-2026-09-08`.
-> **Reviewed runtime candidate:** `54e881cc512b0de9ad1e9d95a8caffbe8c5d8777`.
+> **PR:** #83 — CLOSED / MERGED.
+> **Reviewed PR head:** `4c225784335228ccba6afd705210cd460ab43e28`.
+> **Runtime squash-merge SHA:** `f15f854bbfca727356531d7b8ea896e3aedba437`.
 > **ACTIVE RUNTIME WRITER/LOCK:** NONE.
-> **Merge/deploy authority:** NONE until separate product-owner release decision.
+> **ACTIVE DESIGN/CANONICAL WRITER:** NONE after this reconciliation commit.
 > **Production config/secret authority:** NONE.
 > **Patient-data mutation authority:** NONE.
 > **Raw-transcript authority:** NONE.
@@ -17,15 +17,11 @@
 
 ---
 
-# 1. Production finding closed by L-1B
+# 1. L-1B product state
 
-The deployed L-1 Hub loaded correctly but exposed a real integration problem: the Challenge conversation produced a clinically rich structured export whose shape did not match the frozen `ClinicalLearningChallengeV1` machine contract. Manual import therefore appeared red/empty despite useful learning content.
+The L-1 production finding is closed at code/release level: the source Challenge conversation can now be adapted into the frozen learning contract without weakening `ClinicalLearningChallengeV1`, and the clinician-facing workflow no longer depends on understanding machine JSON.
 
-L-1B fixes the boundary without weakening the frozen Challenge contract.
-
----
-
-# 2. Delivered L-1B product behavior
+Delivered flow:
 
 ```text
 structured synthetic Challenge episode
@@ -48,36 +44,37 @@ structured synthetic Challenge episode
    D+30 bridge-transfer / retention
 ```
 
-Manual JSON is now an Advanced/debug fallback rather than the intended default workflow.
+Manual JSON remains an Advanced/debug fallback.
 
 ---
 
-# 3. Automatic-ingress safety boundary
+# 2. Automatic-ingress boundary
 
-The code now exposes a narrow synthetic-learning ingress seam using a dedicated learning-only credential:
+The merged code exposes a narrow learning-only ingress seam:
 
 ```text
-CLINICAL_LEARNING_INGEST_KEY
+POST /clinical/learning/api/ingress/episodes
 X-Learning-Ingest-Key
+CLINICAL_LEARNING_INGEST_KEY
 ```
 
-It:
+Permanent boundaries:
 
-- fails closed when the dedicated key is absent;
-- does not reuse `CLINICAL_DATA_KEY`;
-- accepts only explicit synthetic learning episodes;
-- requires verbatim clinician reasoning for automatic rich-export ingress;
-- creates only a pending import candidate;
-- cannot directly create a clinician-reviewed Challenge;
-- cannot verify references, mutate Foundation state, promote Signals or write patient data.
+- explicit synthetic learning only;
+- automatic rich ingress requires verbatim clinician reasoning;
+- external ingress creates only `pending_review` candidates;
+- no direct creation of clinician-reviewed Challenges;
+- no patient/encounter/lab writes;
+- no reference verification authority;
+- no Foundation-state authority;
+- no Signal promotion/backlink authority;
+- no reuse of `CLINICAL_DATA_KEY`.
 
-Production secret configuration and actual ChatGPT/plugin wiring are **not** part of this release candidate and remain a later explicit integration action.
+**The production ingest secret is not configured by this merge. The ChatGPT/plugin connection is not activated by this merge.** Those remain separate explicit integration actions.
 
 ---
 
-# 4. Learning integrity
-
-Permanent L-1B invariants:
+# 3. Learning-integrity invariants
 
 ```text
 LEARNING RECORD != PATIENT RECORD
@@ -92,57 +89,49 @@ DUE STATE != COMPETENCE EVIDENCE
 NO COMPOSITE MASTERY SCORE
 ```
 
-A bridge is demonstrated only by later joint-application evidence. A consolidation result such as `retained` cannot be recorded unless explicitly clinician-reviewed. Same-payload retry of a completed occurrence is idempotent; a materially different second attempt fails closed.
+A bridge is demonstrated only by later joint-application evidence. Any consolidation result other than `not_assessed` requires explicit clinician review. Same-payload retry of a completed occurrence is idempotent; materially different resubmission fails closed.
 
 ---
 
-# 5. Verification evidence
+# 4. Release evidence
 
-Exact reviewed runtime candidate:
+Final reviewed PR head:
 
-`54e881cc512b0de9ad1e9d95a8caffbe8c5d8777`
+`4c225784335228ccba6afd705210cd460ab43e28`
 
 Exact-head gates:
 
-- Clinical Learning L1B regression gate run `34311161485` — **SUCCESS**.
-- Clinical Learning L1 regression gate run `34311161517` — **SUCCESS**.
+- Clinical Learning L1B regression gate run `34311310276` — **SUCCESS**.
+- Clinical Learning L1 regression gate run `34311310300` — **SUCCESS**.
 
-Passed coverage includes:
+Squash merge:
 
-- Python/browser syntax;
-- rich-export → frozen Challenge adapter;
-- deterministic IDs/idempotent pending import;
-- raw external payload non-persistence;
-- PHI guard;
-- dedicated external-ingress key;
-- synthetic-only automatic ingress;
-- verbatim-reasoning requirement for automatic rich ingress;
-- clinician-reviewed retention results;
-- retry-safe consolidation attempts;
-- knowledge-island bridge provenance/evidence semantics;
-- four repeated consolidation occurrences;
-- mutable resource overlay outside immutable Challenge hash;
-- deletion cleanup;
-- inherited L-1/L-0 regression;
-- frozen-owner guard;
-- adjacent-owner scope guard;
-- diff hygiene.
+`f15f854bbfca727356531d7b8ea896e3aedba437`
 
-Focused full-diff review against base found no remaining material blocker after the closure regressions.
+PR #83 is CLOSED / MERGED. Frozen L-0/L-1 schema owners and adjacent physiotherapy/CU-1/RF owners were not mutated.
 
 ---
 
-# 6. Release state
+# 5. Lifecycle state
 
 ```text
 IMPLEMENTED = YES
 TESTED = YES
 FOCUSED REVIEW = PASS
-PR = NEXT / DRAFT
-MERGED = NO
-DEPLOYED = NO
-PRODUCTION INGEST KEY = NOT CONFIGURED BY THIS SLICE
-CHATGPT AUTOMATIC CONNECTION = NOT ACTIVATED BY THIS SLICE
+MERGED = YES
+DEPLOYED = PENDING VERIFICATION
+PRODUCTION-SMOKE-VERIFIED = NO
+PRODUCTION INGEST KEY = NOT CONFIGURED
+CHATGPT AUTOMATIC CONNECTION = NOT ACTIVATED
+WRITER LOCK = NONE
 ```
 
-The next allowed lifecycle action is Draft PR / RELEASE HOLD. No merge, deploy or production secret change is authorized by this canonical state.
+Exact next action:
+
+```text
+verify normal Render auto-deploy of the L-1B runtime tree
+→ authenticated production smoke of Inbox / Learning Loop / Due / Advanced fallback
+→ STOP
+```
+
+Production ingest-key creation and ChatGPT/plugin wiring require a separate explicit integration decision after deployment verification. No manual duplicate deploy is authorized.
