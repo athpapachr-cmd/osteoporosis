@@ -1,76 +1,70 @@
 # SLICE_PLAN_CURRENT.md — Clinical Learning Hub L-1C Challenge Completion Transport
 
-> **STATUS:** DESIGN + IMPLEMENTATION ACTIVE
+> **STATUS:** IMPLEMENTED / TESTED / RELEASE HOLD
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Slice ID:** `CORE-LEARNING-HUB-L1C-CHALLENGE-COMPLETION-TRANSPORT-2026-09-09`.
 > **Base:** `a2af17381eb53de6f1deac4ea1c987e743f6e951`.
 > **Branch:** `feat/clinical-learning-l1c-challenge-completion-transport-2026-09-09`.
+> **Exact tested head before docs-only closeout:** `ffba01a600164122c3ad8dd16d0f48b3e56e1d53`.
+> **Gate:** `34399853207` — SUCCESS.
 > **L-1B:** CLOSED / PRODUCTION-SMOKE-VERIFIED PASS.
-> **Frozen L-0/L-1 schema owners:** READ-ONLY.
+> **Frozen L-0/L-1 schema owners:** READ-ONLY / unchanged.
+> **Writer lock:** NONE.
 
 ---
 
-# 1. Problem
+# 1. Problem closed by this slice
 
-The Cockpit can already accept structured synthetic learning episodes into `Pending Imports`, but a normal Challenge conversation has no durable rule that says:
+The Cockpit already accepts structured synthetic episodes, but Challenge conversations previously depended on remembered prompts to know that they must hand off the completed learning episode.
 
-> when the challenge is finished, hand the complete learning episode to the Cockpit.
-
-Relying on chat memory, prior wording or the clinician remembering to ask for JSON is not acceptable.
+L-1C makes the handoff a durable workflow contract inherited from a ChatGPT Project instruction.
 
 ---
 
-# 2. Objective
-
-Create a durable Challenge Completion Protocol that every Challenge conversation can inherit from a ChatGPT Project instruction.
-
-The protocol must make Cockpit handoff part of the challenge's definition of done:
+# 2. Definition of done
 
 ```text
-CASE
-→ CLINICIAN REASONING
-→ PROGRESSIVE DISCLOSURE
-→ FOLLOW-UP REASONING
-→ FINAL DECISION
-→ DEBRIEF
-→ LEARNING PLAN
-→ FRESH RESOURCE DISCOVERY WHEN APPLICABLE
-→ STRUCTURED EPISODE
-→ COCKPIT HANDOFF
-→ RECEIPT
-→ COMPLETE
+CHALLENGE COMPLETE
+=
+FINAL DEBRIEF COMPLETE
++ STRUCTURED LEARNING EPISODE COMPLETE
++ COCKPIT HANDOFF ATTEMPT COMPLETE
++ RECEIPT OR EXPLICIT TRANSPORT FAILURE
 ```
 
-No receipt means no claim that Cockpit was updated.
+No valid receipt means the conversation must not claim the Cockpit was updated.
 
 ---
 
-# 3. ChatGPT Project instruction strategy
+# 3. Versioned Project instruction
 
-Use one dedicated ChatGPT Project for Osteoporosis Clinical Learning / Challenges.
+Canonical instruction:
 
-All Challenge chats inside that Project inherit one Project instruction. This removes dependence on each individual thread remembering old instructions.
+`clinical_learning/chatgpt_project_instructions_v1.txt`
 
-The Project instruction must require:
+Browser-copy mirror:
 
-- high-level case-based challenge behavior;
-- ask for clinician answer before critique;
-- progressive disclosure;
-- explicit strengths / reinforcement / clear errors / evidence gaps / blind spots;
-- deliberate knowledge-island bridging;
-- learning actions and current high-quality resources where appropriate;
-- repeated consolidation targets;
-- end-of-challenge structured episode generation;
+`static/clinical-learning/chatgpt-project-instructions-v1.txt`
+
+Focused regression requires them to be byte-identical.
+
+The instruction requires:
+
+- clinician answer before critique;
+- progressive disclosure where appropriate;
+- strengths / needs reinforcement / clear errors kept distinct;
+- evidence gaps, blind spots, reasoning patterns and insights;
+- deliberate knowledge-island bridge targets;
+- repeated consolidation rather than one-off quiz;
+- targeted current resources when appropriate;
+- verbatim clinician reasoning in the structured episode;
+- no patient identifiers/raw transcript/imported authority;
 - Cockpit transport attempt as the final workflow step;
-- no success claim without a returned transport receipt.
-
-The Project instruction does **not** create patient-record authority, Foundation-state authority, Signal authority or evidence-verification authority.
+- no success wording without a returned pending-review receipt.
 
 ---
 
-# 4. Completion states
-
-A Challenge conversation has one of these end states:
+# 4. Completion state machine
 
 ```text
 IN_PROGRESS
@@ -79,81 +73,51 @@ HANDOFF_SUCCEEDED_PENDING_COCKPIT_REVIEW
 HANDOFF_FAILED_MANUAL_FALLBACK_READY
 ```
 
-Only `HANDOFF_SUCCEEDED_PENDING_COCKPIT_REVIEW` permits wording equivalent to “sent to Cockpit”.
+Receipt validator owner:
 
-Even then the episode remains `pending_review` in the Cockpit until clinician review.
+`clinical_learning/challenge_completion_protocol.py`
 
----
-
-# 5. Receipt contract
-
-Minimum receipt:
-
-```json
-{
-  "state": "pending_review",
-  "import_id": "uuid",
-  "source_event_id": "uuid",
-  "source_format": "rich_challenge_export_v1"
-}
-```
-
-The Challenge conversation must surface the receipt state concisely and must not reinterpret `pending_review` as accepted/saved/verified.
-
----
-
-# 6. Failure contract
-
-If transport is unavailable or fails:
+Successful transport requires:
 
 ```text
-DO NOT CLAIM COCKPIT UPDATED
-DO NOT DISCARD EPISODE
-DO NOT RETRY WITH DIFFERENT CONTENT UNDER SAME source_event_id
-DO NOT ROUTE THROUGH UNTRUSTED GENERIC WEBHOOK
+state = pending_review
+import_id = valid UUID
+source_event_id = valid UUID
+source_format = canonical_challenge_v1 | rich_challenge_export_v1
 ```
 
-Instead:
+Tool invocation without receipt is not success evidence.
+
+---
+
+# 5. Cockpit setup surface
+
+Static setup page:
+
+`/static/clinical-learning/project-setup.html`
+
+It exposes:
+
+- exact Project instruction;
+- Copy Project Instructions;
+- truthful capability status;
+- explanation of the completion workflow.
+
+Current status intentionally reads:
 
 ```text
-state = DEBRIEF_COMPLETE_HANDOFF_PENDING or HANDOFF_FAILED_MANUAL_FALLBACK_READY
-retain structured episode
-present existing Advanced/manual import fallback
-preserve same stable source_event_id for a same-content retry
+Project instruction = READY
+Native Cockpit write tool = NOT CONNECTED
+Advanced/manual fallback = AVAILABLE
 ```
 
----
-
-# 7. Platform capability boundary
-
-Current OpenAI product documentation supports Project instructions broadly, so the durable conversation rule can be installed now.
-
-Native zero-click write from a ChatGPT conversation requires a write-capable app/MCP tool. Availability depends on the ChatGPT surface/workspace; current OpenAI documentation limits full MCP write actions to Business / Enterprise / Edu, while Pro custom MCP is read/fetch only.
-
-Therefore this slice must not claim zero-click transport is active until an actual trusted write tool is connected and smoke-tested.
+No credential is rendered to the browser.
 
 ---
 
-# 8. Cockpit setup UX
+# 6. Security / privacy
 
-Add a small protected setup surface in the Learning Hub that shows:
-
-- Challenge Completion Protocol status;
-- exact Project instruction text;
-- Copy instructions button;
-- current transport mode:
-  - `project_instruction_ready`
-  - `native_write_tool_not_connected`
-  - later `native_write_tool_connected`;
-- existing manual fallback remains under Advanced.
-
-This setup UX stores no secret and makes no patient/learning write.
-
----
-
-# 9. Security / privacy
-
-Permanent rules:
+Preserved:
 
 ```text
 synthetic learning only for automatic ingress
@@ -164,37 +128,56 @@ no imported clinician-review authority
 no imported reference-verification authority
 no Signal promotion
 no Foundation-state mutation
+no third-party generic webhook bypass
 ```
 
-Do not configure `CLINICAL_LEARNING_INGEST_KEY` until a trusted write-capable consumer is actually being configured in the same bounded integration lifecycle.
+`CLINICAL_LEARNING_INGEST_KEY` remains unconfigured because there is not yet a concrete trusted write-capable ChatGPT consumer ready to receive the same credential.
 
 ---
 
-# 10. Acceptance evidence
+# 7. Platform capability boundary
 
-L-1C is implementation-complete when:
+Durable Project instructions are usable now.
 
-- exact Project instruction is versioned in repo;
-- completion state machine is documented and testable;
-- Cockpit setup UI exposes/copies the exact instruction;
-- UI states that native write tool is not connected rather than implying automatic transport;
-- manual Advanced fallback remains available;
-- no code path can claim handoff success without a receipt object with `state=pending_review` and required IDs;
-- no patient/Signal/Foundation/RF/physio/CU-1 mutation;
-- inherited L-1B/L-1 tests remain green.
+Native zero-click write requires an actual write-capable ChatGPT app/MCP action on a supported surface/workspace. Current OpenAI documentation limits full MCP write actions to Business / Enterprise / Edu, while Pro custom MCP is read/fetch only.
 
-Native zero-click transport activation is a later acceptance criterion only when the account/workspace supports the write-capable app and the app is actually connected.
+Therefore zero-click write activation remains a later integration lifecycle step. L-1C does not mislabel it as connected.
 
 ---
 
-# 11. Release path
+# 8. Verification
+
+Exact tested implementation head:
+
+`ffba01a600164122c3ad8dd16d0f48b3e56e1d53`
+
+GitHub Actions:
+
+`Clinical Learning L1C challenge transport gate` run `34399853207` — **SUCCESS**.
+
+Passed:
+
+- focused L-1C completion/receipt/setup regressions;
+- inherited L-1B;
+- inherited L-1;
+- frozen-owner guard;
+- bounded scope guard;
+- diff hygiene.
+
+---
+
+# 9. Release state
 
 ```text
-project instruction contract
-→ Cockpit setup UX
-→ focused L-1C tests + inherited L-1B/L-1
-→ exact-head review
-→ PR / RELEASE HOLD
+IMPLEMENTED = YES
+TESTED = YES
+PROJECT PROTOCOL = READY
+SETUP SURFACE = READY
+NATIVE WRITE TOOL = NOT CONNECTED
+PRODUCTION INGEST KEY = NOT CONFIGURED
+PR = NEXT / DRAFT
+MERGED = NO
+DEPLOYED = NO
 ```
 
-No production secret/config mutation in this initial L-1C implementation.
+Next allowed action: Draft PR / RELEASE HOLD. Merge/deploy requires separate explicit product-owner authority.
