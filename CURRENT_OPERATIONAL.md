@@ -1,14 +1,15 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** CLINICAL LEARNING HUB L-1B — MERGED / DEPLOY VERIFICATION PENDING
+> **STATUS:** CLINICAL LEARNING HUB L-1B — MERGED / DEPLOYED / PRODUCTION SMOKE PENDING
 > **Updated:** 2026-09-09 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Slice:** `CORE-LEARNING-HUB-L1B-LEARNING-LOOP-2026-09-08`.
 > **PR:** #83 — CLOSED / MERGED.
-> **Reviewed PR head:** `4c225784335228ccba6afd705210cd460ab43e28`.
+> **Final reviewed PR head:** `4c225784335228ccba6afd705210cd460ab43e28`.
 > **Runtime squash-merge SHA:** `f15f854bbfca727356531d7b8ea896e3aedba437`.
-> **ACTIVE RUNTIME WRITER/LOCK:** NONE.
-> **ACTIVE DESIGN/CANONICAL WRITER:** NONE after this reconciliation commit.
+> **Verified live deploy SHA:** `0d86cd3bd5b61a23a0d7a73da29559e35cd335e5`.
+> **Render deploy:** `dep-daghkeek1f9s73ah0fn0` — LIVE.
+> **Writer lock:** NONE.
 > **Production config/secret authority:** NONE.
 > **Patient-data mutation authority:** NONE.
 > **Raw-transcript authority:** NONE.
@@ -17,15 +18,11 @@
 
 ---
 
-# 1. L-1B product state
-
-The L-1 production finding is closed at code/release level: the source Challenge conversation can now be adapted into the frozen learning contract without weakening `ClinicalLearningChallengeV1`, and the clinician-facing workflow no longer depends on understanding machine JSON.
-
-Delivered flow:
+# 1. Released L-1B behavior
 
 ```text
 structured synthetic Challenge episode
-→ bounded adapter + PHI/schema guard
+→ adapter + PHI/schema guard
 → Pending Imports / Inbox
 → clinician review / Accept-Modify-Dismiss
 → immutable ClinicalLearningChallengeV1
@@ -44,13 +41,13 @@ structured synthetic Challenge episode
    D+30 bridge-transfer / retention
 ```
 
-Manual JSON remains an Advanced/debug fallback.
+Manual JSON is an Advanced/debug fallback rather than the intended default workflow.
 
 ---
 
 # 2. Automatic-ingress boundary
 
-The merged code exposes a narrow learning-only ingress seam:
+Merged code exposes:
 
 ```text
 POST /clinical/learning/api/ingress/episodes
@@ -63,14 +60,14 @@ Permanent boundaries:
 - explicit synthetic learning only;
 - automatic rich ingress requires verbatim clinician reasoning;
 - external ingress creates only `pending_review` candidates;
-- no direct creation of clinician-reviewed Challenges;
+- no direct clinician-reviewed Challenge creation;
 - no patient/encounter/lab writes;
-- no reference verification authority;
+- no reference-verification authority;
 - no Foundation-state authority;
 - no Signal promotion/backlink authority;
 - no reuse of `CLINICAL_DATA_KEY`.
 
-**The production ingest secret is not configured by this merge. The ChatGPT/plugin connection is not activated by this merge.** Those remain separate explicit integration actions.
+**Production ingest key is not configured by this release. ChatGPT/plugin automatic connection is not activated by this release.**
 
 ---
 
@@ -89,11 +86,11 @@ DUE STATE != COMPETENCE EVIDENCE
 NO COMPOSITE MASTERY SCORE
 ```
 
-A bridge is demonstrated only by later joint-application evidence. Any consolidation result other than `not_assessed` requires explicit clinician review. Same-payload retry of a completed occurrence is idempotent; materially different resubmission fails closed.
+A bridge is demonstrated only by later joint-application evidence. Any consolidation result other than `not_assessed` requires explicit clinician review. Same-payload retry is idempotent; materially different resubmission fails closed.
 
 ---
 
-# 4. Release evidence
+# 4. Verification evidence
 
 Final reviewed PR head:
 
@@ -108,7 +105,17 @@ Squash merge:
 
 `f15f854bbfca727356531d7b8ea896e3aedba437`
 
-PR #83 is CLOSED / MERGED. Frozen L-0/L-1 schema owners and adjacent physiotherapy/CU-1/RF owners were not mutated.
+Verified Render auto-deploy:
+
+```text
+deploy_id = dep-daghkeek1f9s73ah0fn0
+commit = 0d86cd3bd5b61a23a0d7a73da29559e35cd335e5
+status = live
+trigger = new_commit
+finished_at = 2026-09-09T08:36:42.393912Z
+```
+
+The live SHA is a docs-only descendant of the reviewed runtime merge. Runtime code remains the reviewed PR #83 tree.
 
 ---
 
@@ -119,7 +126,7 @@ IMPLEMENTED = YES
 TESTED = YES
 FOCUSED REVIEW = PASS
 MERGED = YES
-DEPLOYED = PENDING VERIFICATION
+DEPLOYED = YES
 PRODUCTION-SMOKE-VERIFIED = NO
 PRODUCTION INGEST KEY = NOT CONFIGURED
 CHATGPT AUTOMATIC CONNECTION = NOT ACTIVATED
@@ -129,9 +136,8 @@ WRITER LOCK = NONE
 Exact next action:
 
 ```text
-verify normal Render auto-deploy of the L-1B runtime tree
-→ authenticated production smoke of Inbox / Learning Loop / Due / Advanced fallback
+authenticated production smoke of Inbox / Learning Loop / Due / Advanced fallback
 → STOP
 ```
 
-Production ingest-key creation and ChatGPT/plugin wiring require a separate explicit integration decision after deployment verification. No manual duplicate deploy is authorized.
+Production ingest-key creation and ChatGPT/plugin wiring remain a separate explicit integration decision.
