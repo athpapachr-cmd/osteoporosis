@@ -1,15 +1,13 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** CLINICAL LEARNING HUB L-1B — MERGED / DEPLOYED / PRODUCTION SMOKE PENDING
+> **STATUS:** CLINICAL LEARNING HUB L-1B — PRODUCTION SMOKE DEFECT REMEDIATED / TESTED / RELEASE HOLD
 > **Updated:** 2026-09-09 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Slice:** `CORE-LEARNING-HUB-L1B-LEARNING-LOOP-2026-09-08`.
-> **PR:** #83 — CLOSED / MERGED.
-> **Final reviewed PR head:** `4c225784335228ccba6afd705210cd460ab43e28`.
-> **Runtime squash-merge SHA:** `f15f854bbfca727356531d7b8ea896e3aedba437`.
-> **Verified live deploy SHA:** `0d86cd3bd5b61a23a0d7a73da29559e35cd335e5`.
-> **Render deploy:** `dep-daghkeek1f9s73ah0fn0` — LIVE.
-> **Writer lock:** NONE.
+> **Hotfix branch:** `fix/clinical-learning-l1b-reference-title-phi-2026-09-09`.
+> **Hotfix base:** `d83977464578727c0adb8f67e6778409b6d9f97c`.
+> **Hotfix reviewed head before closeout:** `94563b24fd4896c1333e0cdf3c75b2586f056adc`.
+> **PR:** #84 — DRAFT / RELEASE HOLD.
+> **ACTIVE RUNTIME WRITER/LOCK:** NONE.
 > **Production config/secret authority:** NONE.
 > **Patient-data mutation authority:** NONE.
 > **Raw-transcript authority:** NONE.
@@ -18,126 +16,79 @@
 
 ---
 
-# 1. Released L-1B behavior
+# 1. Production-smoke defect
+
+Authenticated L-1B production smoke rejected the rich Challenge export with:
 
 ```text
-structured synthetic Challenge episode
-→ adapter + PHI/schema guard
-→ Pending Imports / Inbox
-→ clinician review / Accept-Modify-Dismiss
-→ immutable ClinicalLearningChallengeV1
-→ Learning Loop
-   strengths
-   needs reinforcement
-   clear errors
-   evidence gaps / blind spots / insights
-   targeted study actions
-   knowledge-island bridge targets
-   fresh-resource overlay
-→ repeated consolidation
-   D+3 retrieval
-   D+7 discrimination
-   D+14 transfer
-   D+30 bridge-transfer / retention
+phone_number_like_sequence_detected @ references[1].title
+phone_number_like_sequence_detected @ references[2].title
+phone_number_like_sequence_detected @ references[3].title
 ```
 
-Manual JSON is an Advanced/debug fallback rather than the intended default workflow.
+Root cause: rich imports store full bibliographic citations in `LearningReferenceV1.title`; year/volume/page/identifier number patterns were being passed through the generic phone-number-like heuristic.
+
+This was a deterministic PHI false positive, not a schema failure and not evidence of patient identifiers.
 
 ---
 
-# 2. Automatic-ingress boundary
+# 2. Bounded remediation
 
-Merged code exposes:
+Implemented only in `clinical_learning/privacy.py`:
+
+- `references[*].title` now receives a **generic numeric phone-heuristic exclusion**;
+- explicit phone/telephone/mobile phrases remain blocked;
+- email, identity/GeSY, DOB and postal-address checks remain active;
+- arbitrary Challenge facts, reasoning, observations and other learning text still use the generic phone-like detector.
+
+Regression owner:
+
+`test_clinical_learning_l1b_bibliographic_privacy.py`
+
+Proves:
 
 ```text
-POST /clinical/learning/api/ingress/episodes
-X-Learning-Ingest-Key
-CLINICAL_LEARNING_INGEST_KEY
+bibliographic citation with year/volume/pages/PMID -> allowed
+reference title with explicit phone phrase -> blocked
+reference title with email -> blocked
+ordinary non-reference phone-like sequence -> blocked
 ```
-
-Permanent boundaries:
-
-- explicit synthetic learning only;
-- automatic rich ingress requires verbatim clinician reasoning;
-- external ingress creates only `pending_review` candidates;
-- no direct clinician-reviewed Challenge creation;
-- no patient/encounter/lab writes;
-- no reference-verification authority;
-- no Foundation-state authority;
-- no Signal promotion/backlink authority;
-- no reuse of `CLINICAL_DATA_KEY`.
-
-**Production ingest key is not configured by this release. ChatGPT/plugin automatic connection is not activated by this release.**
 
 ---
 
-# 3. Learning-integrity invariants
+# 3. Verification
+
+Exact tested runtime head before this docs-only closeout:
+
+`94563b24fd4896c1333e0cdf3c75b2586f056adc`
+
+- L1B regression gate run `34349129649` — **SUCCESS**.
+- inherited L1 regression gate run `34349129608` — **SUCCESS**.
+- L0 contract validation step — **SUCCESS**; overall L0 workflow failure is expected because its `design-only scope` guard correctly rejects this runtime hotfix.
+
+Diff from base contains only:
 
 ```text
-LEARNING RECORD != PATIENT RECORD
-RAW CHAT/TRANSCRIPT != DURABLE LEARNING RECORD
-EXTERNAL ASSISTANT OUTPUT != CLINICIAN REVIEW AUTHORITY
-ONLINE RESOURCE SUGGESTION != IMMUTABLE CHALLENGE CONTENT
-STRENGTH != ABSENCE OF GAP
-NEEDS REINFORCEMENT != CLEAR ERROR
-ONE SUCCESSFUL TEST != RETENTION
-FOUNDATION NODE KNOWLEDGE != PROVEN BRIDGE BETWEEN NODES
-DUE STATE != COMPETENCE EVIDENCE
-NO COMPOSITE MASTERY SCORE
+CURRENT_OPERATIONAL.md
+clinical_learning/privacy.py
+test_clinical_learning_l1b_bibliographic_privacy.py
 ```
 
-A bridge is demonstrated only by later joint-application evidence. Any consolidation result other than `not_assessed` requires explicit clinician review. Same-payload retry is idempotent; materially different resubmission fails closed.
+No schema, patient-data, Signal/Foundation authority, production config/secret or adjacent RF/physio/CU-1 mutation.
 
 ---
 
-# 4. Verification evidence
-
-Final reviewed PR head:
-
-`4c225784335228ccba6afd705210cd460ab43e28`
-
-Exact-head gates:
-
-- Clinical Learning L1B regression gate run `34311310276` — **SUCCESS**.
-- Clinical Learning L1 regression gate run `34311310300` — **SUCCESS**.
-
-Squash merge:
-
-`f15f854bbfca727356531d7b8ea896e3aedba437`
-
-Verified Render auto-deploy:
+# 4. Lifecycle state
 
 ```text
-deploy_id = dep-daghkeek1f9s73ah0fn0
-commit = 0d86cd3bd5b61a23a0d7a73da29559e35cd335e5
-status = live
-trigger = new_commit
-finished_at = 2026-09-09T08:36:42.393912Z
-```
-
-The live SHA is a docs-only descendant of the reviewed runtime merge. Runtime code remains the reviewed PR #83 tree.
-
----
-
-# 5. Lifecycle state
-
-```text
-IMPLEMENTED = YES
-TESTED = YES
+HOTFIX IMPLEMENTED = YES
+HOTFIX TESTED = YES
 FOCUSED REVIEW = PASS
-MERGED = YES
-DEPLOYED = YES
-PRODUCTION-SMOKE-VERIFIED = NO
-PRODUCTION INGEST KEY = NOT CONFIGURED
-CHATGPT AUTOMATIC CONNECTION = NOT ACTIVATED
+PR #84 = DRAFT / RELEASE HOLD
+MERGED = NO
+DEPLOYED = NO
+PRODUCTION SMOKE = BLOCKED UNTIL HOTFIX RELEASE
 WRITER LOCK = NONE
 ```
 
-Exact next action:
-
-```text
-authenticated production smoke of Inbox / Learning Loop / Due / Advanced fallback
-→ STOP
-```
-
-Production ingest-key creation and ChatGPT/plugin wiring remain a separate explicit integration decision.
+Next allowed action: release decision for PR #84. After merge, rely on normal Render auto-deploy and repeat the same Advanced rich-import smoke that exposed this defect.
