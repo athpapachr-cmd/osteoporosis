@@ -1,13 +1,13 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** CLINICAL LEARNING HUB L-1B — PRODUCTION SMOKE DEFECT / BOUNDED PHI HOTFIX ACTIVE
+> **STATUS:** CLINICAL LEARNING HUB L-1B — PRODUCTION SMOKE DEFECT REMEDIATED / TESTED / RELEASE HOLD
 > **Updated:** 2026-09-09 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Hotfix branch:** `fix/clinical-learning-l1b-reference-title-phi-2026-09-09`.
 > **Hotfix base:** `d83977464578727c0adb8f67e6778409b6d9f97c`.
-> **Runtime squash-merge SHA:** `f15f854bbfca727356531d7b8ea896e3aedba437`.
-> **Verified live deploy before smoke defect:** `0d86cd3bd5b61a23a0d7a73da29559e35cd335e5` / `dep-daghkeek1f9s73ah0fn0` LIVE.
-> **ACTIVE RUNTIME WRITER/LOCK:** THIS bounded bibliographic PHI false-positive hotfix only.
+> **Hotfix reviewed head before closeout:** `94563b24fd4896c1333e0cdf3c75b2586f056adc`.
+> **PR:** #84 — DRAFT / RELEASE HOLD.
+> **ACTIVE RUNTIME WRITER/LOCK:** NONE.
 > **Production config/secret authority:** NONE.
 > **Patient-data mutation authority:** NONE.
 > **Raw-transcript authority:** NONE.
@@ -18,7 +18,7 @@
 
 # 1. Production-smoke defect
 
-During authenticated L-1B production smoke, Advanced rich-episode import was rejected with:
+Authenticated L-1B production smoke rejected the rich Challenge export with:
 
 ```text
 phone_number_like_sequence_detected @ references[1].title
@@ -26,58 +26,69 @@ phone_number_like_sequence_detected @ references[2].title
 phone_number_like_sequence_detected @ references[3].title
 ```
 
-The rich adapter intentionally maps a full bibliographic citation into `LearningReferenceV1.title`. Journal/guideline citations can contain year/volume/page/identifier number patterns that trigger the generic phone-like numeric heuristic even though they are bibliographic content.
+Root cause: rich imports store full bibliographic citations in `LearningReferenceV1.title`; year/volume/page/identifier number patterns were being passed through the generic phone-number-like heuristic.
 
-This is a deterministic PHI-guard false positive, not a schema/import failure and not evidence of patient identifiers.
+This was a deterministic PHI false positive, not a schema failure and not evidence of patient identifiers.
 
 ---
 
-# 2. Bounded correction
+# 2. Bounded remediation
 
-Authorized mutation scope:
+Implemented only in `clinical_learning/privacy.py`:
 
-```text
-clinical_learning/privacy.py
-test_clinical_learning_l1b_bibliographic_privacy.py
-CURRENT_OPERATIONAL.md
-```
+- `references[*].title` now receives a **generic numeric phone-heuristic exclusion**;
+- explicit phone/telephone/mobile phrases remain blocked;
+- email, identity/GeSY, DOB and postal-address checks remain active;
+- arbitrary Challenge facts, reasoning, observations and other learning text still use the generic phone-like detector.
 
-Correction rule:
+Regression owner:
 
-- `references[*].title` gets the same **numeric phone-heuristic exclusion** already used for PMID/DOI/URL bibliographic locator fields;
-- email detection, explicit identity/GeSY phrases, DOB phrases, postal-address phrases and explicit phone/telephone/mobile phrases remain active;
-- the exclusion does not apply to arbitrary Challenge text, reasoning, observations, facts or resource rationales.
+`test_clinical_learning_l1b_bibliographic_privacy.py`
 
-Required regression:
+Proves:
 
 ```text
-bibliographic citation with year/volume/pages -> allowed
-reference title containing explicit "phone: 99123456" -> blocked
+bibliographic citation with year/volume/pages/PMID -> allowed
+reference title with explicit phone phrase -> blocked
+reference title with email -> blocked
 ordinary non-reference phone-like sequence -> blocked
 ```
 
 ---
 
-# 3. Release state
+# 3. Verification
+
+Exact tested runtime head before this docs-only closeout:
+
+`94563b24fd4896c1333e0cdf3c75b2586f056adc`
+
+- L1B regression gate run `34349129649` — **SUCCESS**.
+- inherited L1 regression gate run `34349129608` — **SUCCESS**.
+- L0 contract validation step — **SUCCESS**; overall L0 workflow failure is expected because its `design-only scope` guard correctly rejects this runtime hotfix.
+
+Diff from base contains only:
 
 ```text
-L1B MERGED = YES
-L1B DEPLOYED = YES
-PRODUCTION SMOKE = DEFECT FOUND
-HOTFIX IMPLEMENTED = NO
-HOTFIX TESTED = NO
-HOTFIX MERGED = NO
-HOTFIX DEPLOYED = NO
-WRITER LOCK = ACTIVE
+CURRENT_OPERATIONAL.md
+clinical_learning/privacy.py
+test_clinical_learning_l1b_bibliographic_privacy.py
 ```
 
-Exact next action:
+No schema, patient-data, Signal/Foundation authority, production config/secret or adjacent RF/physio/CU-1 mutation.
+
+---
+
+# 4. Lifecycle state
 
 ```text
-implement narrow privacy-path correction
-→ focused regression + inherited L1/L1B gate
-→ exact-head review
-→ PR / RELEASE HOLD
+HOTFIX IMPLEMENTED = YES
+HOTFIX TESTED = YES
+FOCUSED REVIEW = PASS
+PR #84 = DRAFT / RELEASE HOLD
+MERGED = NO
+DEPLOYED = NO
+PRODUCTION SMOKE = BLOCKED UNTIL HOTFIX RELEASE
+WRITER LOCK = NONE
 ```
 
-No production secret/config change, no patient-data authority and no adjacent-owner mutation is authorized.
+Next allowed action: release decision for PR #84. After merge, rely on normal Render auto-deploy and repeat the same Advanced rich-import smoke that exposed this defect.
