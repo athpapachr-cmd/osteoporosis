@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="el">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Clinical Learning · ChatGPT Project Setup</title>
+  <link rel="stylesheet" href="/static/clinical-learning/styles.css">
+  <style>
+    .setup-shell{max-width:980px;margin:0 auto;padding:28px}.setup-status{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:18px 0}.setup-box{border:1px solid #dbe2ea;border-radius:12px;padding:12px;background:#f8fafc}.setup-box b{display:block;margin-bottom:4px}.setup-text{min-height:420px}.ok{color:#285b37}.pending{color:#8a6515}@media(max-width:760px){.setup-status{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <main class="setup-shell">
+    <p class="eyebrow">Clinical Learning Hub · L-1C</p>
+    <h1>ChatGPT Challenge Project Setup</h1>
+    <p class="sub">Η Challenge συζήτηση δεν βασίζεται στη μνήμη της. Κληρονομεί ένα μόνιμο completion protocol από το ChatGPT Project.</p>
+
+    <section class="setup-status">
+      <div class="setup-box"><b>Project instruction</b><span class="ok">READY</span></div>
+      <div class="setup-box"><b>Native Cockpit write tool</b><span class="pending">NOT CONNECTED</span></div>
+      <div class="setup-box"><b>Advanced/manual fallback</b><span class="ok">AVAILABLE</span></div>
+    </section>
+
+    <article class="card">
+      <h2>Μία φορά στο ChatGPT Project</h2>
+      <p>Αντέγραψε το κείμενο και βάλε το στα <b>Project settings → Project instructions</b> του Project όπου θα γίνονται τα Osteoporosis Clinical Learning Challenges.</p>
+      <div class="row">
+        <button class="primary" id="copyInstructions">Copy Project Instructions</button>
+        <button class="secondary" id="reloadInstructions">Reload</button>
+      </div>
+      <p id="copyState" class="muted" aria-live="polite"></p>
+      <textarea id="instructions" class="setup-text" readonly spellcheck="false">Loading…</textarea>
+    </article>
+
+    <article class="card">
+      <h2>Τι θα συμβαίνει στο τέλος κάθε Challenge</h2>
+      <div class="stack">
+        <div class="item"><b>1 · Debrief</b><div>Strengths, reinforcement, clear errors, gaps, blind spots, reasoning patterns και insights.</div></div>
+        <div class="item"><b>2 · Learning loop</b><div>Study actions, knowledge-island bridges και repeated consolidation targets.</div></div>
+        <div class="item"><b>3 · Structured episode</b><div>Το case και οι πραγματικές απαντήσεις σου διατηρούνται στο structured synthetic learning episode.</div></div>
+        <div class="item"><b>4 · Cockpit handoff</b><div>Αν υπάρχει trusted write tool, γίνεται transport. Χωρίς receipt δεν επιτρέπεται να πει ότι ενημερώθηκε το Cockpit.</div></div>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>Σημερινό transport status</h2>
+      <p class="notice">Το completion protocol μπορεί να εγκατασταθεί τώρα. Το zero-click write tool δεν δηλώνεται συνδεδεμένο μέχρι να υπάρχει πραγματικό write-capable ChatGPT app/MCP action και να περάσει smoke. Ως τότε το challenge θα καταλήγει σε <code>DEBRIEF_COMPLETE_HANDOFF_PENDING</code> και θα κρατά το structured artifact για το υπάρχον Advanced import.</p>
+    </article>
+  </main>
+
+  <script>
+    (() => {
+      const textarea = document.getElementById('instructions');
+      const state = document.getElementById('copyState');
+      async function load(){
+        state.textContent = 'Loading instructions…';
+        const response = await fetch('/static/clinical-learning/chatgpt-project-instructions-v1.txt', {cache:'no-store'});
+        if(!response.ok){throw new Error('instructions_load_failed');}
+        textarea.value = await response.text();
+        state.textContent = 'Project instruction v1 loaded.';
+      }
+      async function copy(){
+        if(!textarea.value || textarea.value === 'Loading…') await load();
+        await navigator.clipboard.writeText(textarea.value);
+        state.textContent = 'Copied. Paste it into ChatGPT Project settings → Project instructions.';
+      }
+      document.getElementById('copyInstructions').addEventListener('click', () => copy().catch(() => {state.textContent='Copy failed. Select the text manually.';}));
+      document.getElementById('reloadInstructions').addEventListener('click', () => load().catch(() => {state.textContent='Could not load instructions.';}));
+      load().catch(() => {state.textContent='Could not load instructions.';});
+    })();
+  </script>
+</body>
+</html>
