@@ -47,17 +47,28 @@ def _path(parts: Iterable[str | int]) -> str:
     return out
 
 
-def _is_bibliographic_locator(parts: tuple[str | int, ...]) -> bool:
+def _is_bibliographic_numeric_exclusion(parts: tuple[str | int, ...]) -> bool:
+    """Return True only for fields where numeric citation/locator patterns are expected.
+
+    The exclusion suppresses only the generic phone-number-like heuristic. Explicit
+    phone phrases, email, identity/GeSY, DOB and address detection still run in
+    ``scan_text`` for these fields.
+    """
     if not parts:
         return False
     last = str(parts[-1])
     text_parts = {str(part) for part in parts if not isinstance(part, int)}
-    if last in {"pmid", "doi", "url"} and "references" in text_parts:
+
+    # LearningReferenceV1 stores the source citation in ``title`` for rich imports.
+    # Bibliographic citations commonly contain year/volume/page ranges and other
+    # numeric patterns that resemble phone numbers. Treat title as bibliographic
+    # numeric content while retaining all explicit-identifier phrase checks.
+    if last in {"title", "pmid", "doi", "url"} and "references" in text_parts:
         return True
+
     # L-1B fresh-resource recommendations are mutable learning locators. Only the
     # URL itself gets the numeric-locator exclusion; titles/rationales/providers
-    # remain fully PHI-scanned. This prevents legitimate PubMed/course URLs from
-    # being misclassified as phone-like text without weakening content scanning.
+    # remain fully subject to the generic phone heuristic.
     if last == "url" and ("resources" in text_parts or "resource_recommendations" in text_parts):
         return True
     return False
@@ -138,7 +149,7 @@ def scan_persistable_strings(value: Any, parts: tuple[str | int, ...] = ()) -> l
             scan_text(
                 value,
                 path=path,
-                bibliographic_numeric_exclusion=_is_bibliographic_locator(parts),
+                bibliographic_numeric_exclusion=_is_bibliographic_numeric_exclusion(parts),
             )
         )
     return list(dict.fromkeys(findings))
