@@ -1,18 +1,13 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** CLINICAL LEARNING HUB L-1B — CLOSED / PRODUCTION-SMOKE-VERIFIED PASS
+> **STATUS:** CLINICAL LEARNING HUB L-1C — CHALLENGE COMPLETION TRANSPORT / DESIGN + IMPLEMENTATION ACTIVE
 > **Updated:** 2026-09-09 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Slice:** `CORE-LEARNING-HUB-L1B-LEARNING-LOOP-2026-09-08`.
-> **PR #83:** CLOSED / MERGED — Learning Loop release.
-> **PR #84:** CLOSED / MERGED — bibliographic PHI false-positive hotfix.
-> **L-1B runtime merge SHA:** `f15f854bbfca727356531d7b8ea896e3aedba437`.
-> **Hotfix merge SHA:** `51f7d225eb960cd3a20d9a8ea7e2121fb853e056`.
-> **Verified hotfix Render deploy:** `dep-dagkq56417fc73fl6il0` — LIVE.
-> **PRODUCTION-SMOKE-VERIFIED:** YES / PASS.
-> **ACTIVE RUNTIME WRITER/LOCK:** NONE.
-> **ACTIVE DESIGN/CANONICAL WRITER:** NONE after closeout.
-> **Production config/secret authority:** NONE.
+> **Fresh implementation base:** `a2af17381eb53de6f1deac4ea1c987e743f6e951`.
+> **Branch:** `feat/clinical-learning-l1c-challenge-completion-transport-2026-09-09`.
+> **Slice:** `CORE-LEARNING-HUB-L1C-CHALLENGE-COMPLETION-TRANSPORT-2026-09-09`.
+> **ACTIVE RUNTIME/DESIGN WRITER:** THIS bounded L-1C slice only.
+> **Production config/secret authority:** NOT YET EXERCISED.
 > **Patient-data mutation authority:** NONE.
 > **Raw-transcript authority:** NONE.
 > **DailyCase/PracticeReview/Signal authority:** NONE.
@@ -20,117 +15,137 @@
 
 ---
 
-# 1. Final released learning flow
+# 1. Starting point
+
+L-1B is closed and production-smoke-verified. The Cockpit already owns:
 
 ```text
-structured synthetic Challenge episode
-→ bounded adapter + PHI/schema guard
-→ Pending Imports / Inbox
-→ clinician review / Accept-Modify-Dismiss
-→ immutable ClinicalLearningChallengeV1
-→ Learning Loop
-   strengths
-   needs reinforcement
-   clear errors
-   evidence gaps / blind spots / insights
-   targeted study actions
-   knowledge-island bridge targets
-   fresh-resource overlay
-→ repeated consolidation
-   D+3 retrieval
-   D+7 discrimination
-   D+14 transfer
-   D+30 bridge-transfer / retention
+POST /clinical/learning/api/ingress/episodes
+X-Learning-Ingest-Key
+CLINICAL_LEARNING_INGEST_KEY
 ```
 
-Manual JSON is an Advanced/debug fallback rather than the default clinician workflow.
+That endpoint accepts explicit synthetic structured learning only, requires verbatim clinician reasoning for automatic rich ingress and creates only `pending_review` candidates.
+
+What remains is the **ChatGPT-side completion/transport contract**: a challenge conversation must know that a completed challenge is not finished until the structured learning episode has been handed off to the Cockpit or a transport failure has been made explicit.
 
 ---
 
-# 2. Production-smoke evidence
-
-The authenticated production smoke used the previously problematic rich Challenge export.
-
-Observed production path:
+# 2. L-1C product rule
 
 ```text
-Advanced rich import
-→ rich-export adapter
-→ bibliographic references accepted after bounded PHI hotfix
-→ Server Preview rendered
-→ clinician observation review gate enforced
-→ reviewed Challenge save / Learning Loop activation path completed
+CHALLENGE COMPLETE
+!=
+FINAL ANSWER GIVEN
+
+CHALLENGE COMPLETE
+=
+FINAL DEBRIEF COMPLETE
++ STRUCTURED LEARNING EPISODE COMPLETE
++ COCKPIT TRANSPORT ATTEMPT COMPLETE
++ RECEIPT OR EXPLICIT TRANSPORT FAILURE
 ```
 
-The clinician explicitly confirmed the smoke as **PASS** on 2026-09-09.
-
-The initial smoke correctly exposed a false positive in `references[*].title`; PR #84 fixed only the generic numeric phone heuristic for bibliographic titles while preserving explicit phone/email/identity/DOB/address protections.
+The conversation must never rely on remembered chat habits for this. The rule must be installed as a durable Project instruction / reusable workflow instruction.
 
 ---
 
-# 3. Final verification evidence
+# 3. Required end-of-challenge payload
 
-L-1B final release head before PR #83 merge:
-
-`4c225784335228ccba6afd705210cd460ab43e28`
-
-- L1B gate `34311310276` — **SUCCESS**.
-- inherited L1 gate `34311310300` — **SUCCESS**.
-
-Bibliographic PHI hotfix exact tested runtime head:
-
-`94563b24fd4896c1333e0cdf3c75b2586f056adc`
-
-- L1B gate `34349129649` — **SUCCESS**.
-- inherited L1 gate `34349129608` — **SUCCESS**.
-- L0 contract validation step — **SUCCESS**; its overall workflow failure was the expected design-only scope guard for a runtime hotfix.
-
-Verified hotfix production deploy:
+Before transport, the challenge conversation must preserve:
 
 ```text
-deploy_id = dep-dagkq56417fc73fl6il0
-commit = 51f7d225eb960cd3a20d9a8ea7e2121fb853e056
-status = live
-trigger = new_commit
-finished_at = 2026-09-09T12:13:48.830378Z
+initial hypothetical scenario
+verbatim clinician responses
+progressive disclosures
+follow-up reasoning and final decision
+strengths
+needs reinforcement
+clear errors
+defensible disagreements
+evidence gaps / blind spots / reasoning patterns / insights
+learning objectives / actions
+knowledge-island bridge targets
+fresh resource recommendations when current web research was requested/performed
+repetition / consolidation candidates
+```
+
+No patient identifiers. No raw transcript. No imported clinician-review/reference-verification/Signal authority.
+
+---
+
+# 4. Transport receipt
+
+Successful transport is not inferred from tool invocation. The conversation requires a returned receipt containing at minimum:
+
+```text
+transport_state = pending_review
+import_id
+source_event_id
+source_format
+```
+
+Only then may it tell the clinician that the episode was sent to the Cockpit.
+
+Failure behavior:
+
+```text
+tool unavailable / write action unavailable / endpoint unavailable / auth failure
+→ do not claim success
+→ retain the structured episode in the conversation
+→ label COCKPIT_HANDOFF_PENDING
+→ offer the existing Advanced/manual fallback artifact without weakening privacy/review boundaries
 ```
 
 ---
 
-# 4. Permanent learning-integrity invariants
+# 5. ChatGPT platform constraint discovered during bootstrap
+
+Current OpenAI product documentation supports durable Project instructions across chats. Write-capable custom MCP actions are surface/plan dependent; current OpenAI documentation states full MCP write actions are available on Business / Enterprise / Edu, while Pro custom MCP access is read/fetch only.
+
+Therefore L-1C separates:
 
 ```text
-LEARNING RECORD != PATIENT RECORD
-RAW CHAT/TRANSCRIPT != DURABLE LEARNING RECORD
-EXTERNAL ASSISTANT OUTPUT != CLINICIAN REVIEW AUTHORITY
-ONLINE RESOURCE SUGGESTION != IMMUTABLE CHALLENGE CONTENT
-STRENGTH != ABSENCE OF GAP
-NEEDS REINFORCEMENT != CLEAR ERROR
-ONE SUCCESSFUL TEST != RETENTION
-FOUNDATION NODE KNOWLEDGE != PROVEN BRIDGE BETWEEN NODES
-DUE STATE != COMPETENCE EVIDENCE
-NO COMPOSITE MASTERY SCORE
+A. durable Challenge Completion Protocol — implementable now
+B. native zero-click Cockpit write tool — capability-gated by ChatGPT app/write-action availability
 ```
 
-Automatic rich ingress remains explicit synthetic-only and requires verbatim clinician reasoning. External ingress creates only `pending_review`; it cannot directly create accepted Challenges, verify references, mutate Foundation state, promote Signals or write patient data.
+No clinical-learning data will be routed through an unrelated generic third-party webhook merely to bypass this platform boundary.
 
 ---
 
-# 5. Closed lifecycle state
+# 6. Allowed mutation scope
 
 ```text
-IMPLEMENTED = YES
-TESTED = YES
-FOCUSED REVIEW = PASS
-MERGED = YES
-DEPLOYED = YES
-PRODUCTION-SMOKE-VERIFIED = YES / PASS
-L-1B = CLOSED
-PRODUCTION INGEST KEY = NOT CONFIGURED
-CHATGPT AUTOMATIC CONNECTION = NOT ACTIVATED
-WRITER LOCK = NONE
+CURRENT_OPERATIONAL.md
+SLICE_PLAN_CURRENT.md
+CLINICAL_LEARNING_CHAT_TRANSPORT_V1.md                  # new
+clinical_learning/chatgpt_project_instructions_v1.txt  # new
+clinical_learning/challenge_completion_protocol.py      # optional deterministic helper
+static/clinical-learning/index.html                     # optional setup UX
+static/clinical-learning/l1c.js                         # optional setup UX
+static/clinical-learning/styles.css                     # optional setup UX
+clinical_learning/api.py                                # only if bounded setup/status endpoint needed
+test_clinical_learning_l1c_*.py                         # focused regressions
+.github/workflows/clinical-learning-l1c-tests.yml       # optional additive gate
+TODO.md / CLINICAL_EXCELLENCE_PLAN.md                  # only if durable roadmap architecture changes
+osteoporosis-change-log.md                              # append-only at material milestone
 ```
 
-The automatic ChatGPT → Cockpit transport remains a **separate integration action** because it requires production ingest-key creation / connector wiring. Closing L-1B does not authorize that secret/config change.
+Frozen L-0/L-1 schemas remain read-only. No patient/Signal/Foundation/RF/physio/CU-1 owner mutation.
 
-Any docs-only closeout descendants may auto-deploy because Render tracks `main`; they do not alter the verified runtime behavior and do not require recursive production smoke.
+---
+
+# 7. Exact next action
+
+```text
+freeze Project completion protocol
+→ publish exact Project instructions in repo
+→ define transport receipt/failure semantics
+→ add Cockpit setup surface so clinician can copy/install the Project instruction once
+→ regression-test that completion wording cannot claim Cockpit success without receipt
+→ capability-gate native write-tool activation
+→ exact-head review / RELEASE HOLD
+```
+
+Do not configure a production ingest secret until there is a concrete, trusted write-capable consumer ready to receive the same credential. Do not weaken the existing ingress authentication boundary.
