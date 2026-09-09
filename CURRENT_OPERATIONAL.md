@@ -1,18 +1,15 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** CLINICAL LEARNING HUB L-1B — CLOSED / PRODUCTION-SMOKE-VERIFIED PASS
+> **STATUS:** CLINICAL LEARNING HUB L-1C — IMPLEMENTED / TESTED / RELEASE HOLD
 > **Updated:** 2026-09-09 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Slice:** `CORE-LEARNING-HUB-L1B-LEARNING-LOOP-2026-09-08`.
-> **PR #83:** CLOSED / MERGED — Learning Loop release.
-> **PR #84:** CLOSED / MERGED — bibliographic PHI false-positive hotfix.
-> **L-1B runtime merge SHA:** `f15f854bbfca727356531d7b8ea896e3aedba437`.
-> **Hotfix merge SHA:** `51f7d225eb960cd3a20d9a8ea7e2121fb853e056`.
-> **Verified hotfix Render deploy:** `dep-dagkq56417fc73fl6il0` — LIVE.
-> **PRODUCTION-SMOKE-VERIFIED:** YES / PASS.
-> **ACTIVE RUNTIME WRITER/LOCK:** NONE.
-> **ACTIVE DESIGN/CANONICAL WRITER:** NONE after closeout.
-> **Production config/secret authority:** NONE.
+> **Base:** `a2af17381eb53de6f1deac4ea1c987e743f6e951`.
+> **Branch:** `feat/clinical-learning-l1c-challenge-completion-transport-2026-09-09`.
+> **Slice:** `CORE-LEARNING-HUB-L1C-CHALLENGE-COMPLETION-TRANSPORT-2026-09-09`.
+> **Exact tested head before closeout:** `ffba01a600164122c3ad8dd16d0f48b3e56e1d53`.
+> **Gate:** Clinical Learning L1C challenge transport run `34399853207` — SUCCESS.
+> **ACTIVE RUNTIME/DESIGN WRITER:** NONE.
+> **Production config/secret authority exercised:** NO.
 > **Patient-data mutation authority:** NONE.
 > **Raw-transcript authority:** NONE.
 > **DailyCase/PracticeReview/Signal authority:** NONE.
@@ -20,117 +17,124 @@
 
 ---
 
-# 1. Final released learning flow
+# 1. What L-1C now solves
+
+A Challenge conversation no longer depends on remembering an old prompt to know what happens at the end. The durable owner is a versioned ChatGPT Project instruction:
+
+`clinical_learning/chatgpt_project_instructions_v1.txt`
+
+Its definition of done is:
 
 ```text
-structured synthetic Challenge episode
-→ bounded adapter + PHI/schema guard
-→ Pending Imports / Inbox
-→ clinician review / Accept-Modify-Dismiss
-→ immutable ClinicalLearningChallengeV1
-→ Learning Loop
-   strengths
-   needs reinforcement
-   clear errors
-   evidence gaps / blind spots / insights
-   targeted study actions
-   knowledge-island bridge targets
-   fresh-resource overlay
-→ repeated consolidation
-   D+3 retrieval
-   D+7 discrimination
-   D+14 transfer
-   D+30 bridge-transfer / retention
+final debrief
++ structured learning episode
++ Cockpit handoff attempt
++ returned receipt or explicit transport failure
 ```
 
-Manual JSON is an Advanced/debug fallback rather than the default clinician workflow.
+No receipt means no claim that the Cockpit was updated.
 
 ---
 
-# 2. Production-smoke evidence
-
-The authenticated production smoke used the previously problematic rich Challenge export.
-
-Observed production path:
+# 2. Completion states
 
 ```text
-Advanced rich import
-→ rich-export adapter
-→ bibliographic references accepted after bounded PHI hotfix
-→ Server Preview rendered
-→ clinician observation review gate enforced
-→ reviewed Challenge save / Learning Loop activation path completed
+IN_PROGRESS
+DEBRIEF_COMPLETE_HANDOFF_PENDING
+HANDOFF_SUCCEEDED_PENDING_COCKPIT_REVIEW
+HANDOFF_FAILED_MANUAL_FALLBACK_READY
 ```
 
-The clinician explicitly confirmed the smoke as **PASS** on 2026-09-09.
+A success state requires a receipt with:
 
-The initial smoke correctly exposed a false positive in `references[*].title`; PR #84 fixed only the generic numeric phone heuristic for bibliographic titles while preserving explicit phone/email/identity/DOB/address protections.
+```text
+state = pending_review
+valid import_id
+valid source_event_id
+recognized source_format
+```
+
+`pending_review` remains pending clinician review; it is not accepted/verified learning authority.
 
 ---
 
-# 3. Final verification evidence
-
-L-1B final release head before PR #83 merge:
-
-`4c225784335228ccba6afd705210cd460ab43e28`
-
-- L1B gate `34311310276` — **SUCCESS**.
-- inherited L1 gate `34311310300` — **SUCCESS**.
-
-Bibliographic PHI hotfix exact tested runtime head:
-
-`94563b24fd4896c1333e0cdf3c75b2586f056adc`
-
-- L1B gate `34349129649` — **SUCCESS**.
-- inherited L1 gate `34349129608` — **SUCCESS**.
-- L0 contract validation step — **SUCCESS**; its overall workflow failure was the expected design-only scope guard for a runtime hotfix.
-
-Verified hotfix production deploy:
+# 3. Delivered artifacts
 
 ```text
-deploy_id = dep-dagkq56417fc73fl6il0
-commit = 51f7d225eb960cd3a20d9a8ea7e2121fb853e056
-status = live
-trigger = new_commit
-finished_at = 2026-09-09T12:13:48.830378Z
+CLINICAL_LEARNING_CHAT_TRANSPORT_V1.md
+clinical_learning/chatgpt_project_instructions_v1.txt
+clinical_learning/challenge_completion_protocol.py
+static/clinical-learning/chatgpt-project-instructions-v1.txt
+static/clinical-learning/project-setup.html
+test_clinical_learning_l1c_challenge_completion_transport.py
+.github/workflows/clinical-learning-l1c-tests.yml
 ```
+
+The setup page exposes the exact Project instruction with a Copy button and truthfully reports:
+
+```text
+Project instruction = READY
+Native Cockpit write tool = NOT CONNECTED
+Advanced/manual fallback = AVAILABLE
+```
+
+No secret is exposed or stored by the setup UI.
 
 ---
 
-# 4. Permanent learning-integrity invariants
+# 4. Verification
 
-```text
-LEARNING RECORD != PATIENT RECORD
-RAW CHAT/TRANSCRIPT != DURABLE LEARNING RECORD
-EXTERNAL ASSISTANT OUTPUT != CLINICIAN REVIEW AUTHORITY
-ONLINE RESOURCE SUGGESTION != IMMUTABLE CHALLENGE CONTENT
-STRENGTH != ABSENCE OF GAP
-NEEDS REINFORCEMENT != CLEAR ERROR
-ONE SUCCESSFUL TEST != RETENTION
-FOUNDATION NODE KNOWLEDGE != PROVEN BRIDGE BETWEEN NODES
-DUE STATE != COMPETENCE EVIDENCE
-NO COMPOSITE MASTERY SCORE
-```
+Exact tested implementation head:
 
-Automatic rich ingress remains explicit synthetic-only and requires verbatim clinician reasoning. External ingress creates only `pending_review`; it cannot directly create accepted Challenges, verify references, mutate Foundation state, promote Signals or write patient data.
+`ffba01a600164122c3ad8dd16d0f48b3e56e1d53`
+
+Workflow:
+
+`Clinical Learning L1C challenge transport gate` run `34399853207` — **SUCCESS**.
+
+Passed:
+
+- Python syntax;
+- Project-instruction canonical/static byte equality;
+- completion protocol wording/required states;
+- receipt validation;
+- no success without receipt;
+- no debrief → IN_PROGRESS;
+- no transport → HANDOFF_PENDING;
+- invalid/missing receipt → manual fallback state;
+- valid pending-review receipt → success-pending-review only;
+- setup UI truthful transport status;
+- inherited L-1B tests;
+- inherited L-1 tests;
+- frozen-owner guard;
+- scope guard;
+- diff hygiene.
 
 ---
 
-# 5. Closed lifecycle state
+# 5. Platform boundary / next integration step
+
+Current OpenAI product documentation supports Project instructions, so the conversation-side completion rule can be installed now.
+
+Native zero-click Cockpit write still requires an actual trusted write-capable ChatGPT app/MCP action on a supported workspace/surface. This slice does not pretend that tool is connected.
+
+No unrelated third-party generic webhook is used as a bypass.
+
+---
+
+# 6. Release state
 
 ```text
-IMPLEMENTED = YES
-TESTED = YES
-FOCUSED REVIEW = PASS
-MERGED = YES
-DEPLOYED = YES
-PRODUCTION-SMOKE-VERIFIED = YES / PASS
-L-1B = CLOSED
+L-1C IMPLEMENTED = YES
+L-1C TESTED = YES
+PROJECT COMPLETION PROTOCOL = READY
+COCKPIT SETUP PAGE = READY
+NATIVE WRITE TOOL = NOT CONNECTED
 PRODUCTION INGEST KEY = NOT CONFIGURED
-CHATGPT AUTOMATIC CONNECTION = NOT ACTIVATED
+PR = NEXT / DRAFT
+MERGED = NO
+DEPLOYED = NO
 WRITER LOCK = NONE
 ```
 
-The automatic ChatGPT → Cockpit transport remains a **separate integration action** because it requires production ingest-key creation / connector wiring. Closing L-1B does not authorize that secret/config change.
-
-Any docs-only closeout descendants may auto-deploy because Render tracks `main`; they do not alter the verified runtime behavior and do not require recursive production smoke.
+Exact next action: open bounded Draft PR / RELEASE HOLD. Merge/deploy requires separate product-owner release authority.

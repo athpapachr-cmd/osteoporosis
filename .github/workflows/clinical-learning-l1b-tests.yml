@@ -4,15 +4,19 @@ on:
   push:
     branches:
       - feat/clinical-learning-l1b-learning-loop-2026-09-08
+      - feat/clinical-learning-l1c-challenge-completion-transport-2026-09-09
   pull_request:
     paths:
       - 'clinical_learning/**'
       - 'static/clinical-learning/**'
       - 'test_clinical_learning_l1b_*.py'
+      - 'test_clinical_learning_l1c_*.py'
       - 'schemas/clinical_learning_loop_v1.yaml'
       - 'CLINICAL_LEARNING_LOOP_DESIGN_V1.md'
+      - 'CLINICAL_LEARNING_CHAT_TRANSPORT_V1.md'
       - '.github/workflows/clinical-learning-l1b-tests.yml'
       - '.github/workflows/clinical-learning-l1-tests.yml'
+      - '.github/workflows/clinical-learning-l1c-tests.yml'
       - 'SLICE_PLAN_CURRENT.md'
       - 'CURRENT_OPERATIONAL.md'
       - 'TODO.md'
@@ -81,11 +85,11 @@ jobs:
           changed="$(git diff --name-only "$base" HEAD)"
           printf '%s\n' "$changed"
           if printf '%s\n' "$changed" | grep -E '^(clinic_utilities/physio_referral_|clinic_utilities/contracts/cu1_|static/clinic-utilities/physio-referral/|clinic_utilities/rf/|static/clinic-utilities/rf/)' ; then
-            echo 'L1B adjacent-owner leak.' >&2
+            echo 'L1B/L1C adjacent-owner leak.' >&2
             exit 1
           fi
-          if printf '%s\n' "$changed" | grep -Ev '^(clinical_learning/.*|static/clinical-learning/.*|test_clinical_learning_l1b_.*\.py|\.github/workflows/clinical-learning-l1b-tests\.yml|\.github/workflows/clinical-learning-l1-tests\.yml|schemas/clinical_learning_loop_v1\.yaml|CLINICAL_LEARNING_LOOP_DESIGN_V1\.md|SLICE_PLAN_CURRENT\.md|CURRENT_OPERATIONAL\.md|TODO\.md|CLINICAL_EXCELLENCE_PLAN\.md|osteoporosis-change-log\.md)$' ; then
-            echo 'Unexpected file outside bounded L1B owners.' >&2
+          if printf '%s\n' "$changed" | grep -Ev '^(clinical_learning/.*|static/clinical-learning/.*|test_clinical_learning_l1b_.*\.py|test_clinical_learning_l1c_.*\.py|\.github/workflows/clinical-learning-l1b-tests\.yml|\.github/workflows/clinical-learning-l1-tests\.yml|\.github/workflows/clinical-learning-l1c-tests\.yml|schemas/clinical_learning_loop_v1\.yaml|CLINICAL_LEARNING_LOOP_DESIGN_V1\.md|CLINICAL_LEARNING_CHAT_TRANSPORT_V1\.md|SLICE_PLAN_CURRENT\.md|CURRENT_OPERATIONAL\.md|TODO\.md|CLINICAL_EXCELLENCE_PLAN\.md|osteoporosis-change-log\.md)$' ; then
+            echo 'Unexpected file outside bounded L1B/L1C owners.' >&2
             exit 1
           fi
 

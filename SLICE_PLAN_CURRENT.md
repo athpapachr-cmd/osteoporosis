@@ -1,179 +1,183 @@
-# SLICE_PLAN_CURRENT.md — Clinical Learning Hub L-1B Learning Loop
+# SLICE_PLAN_CURRENT.md — Clinical Learning Hub L-1C Challenge Completion Transport
 
-> **STATUS:** CLOSED / PRODUCTION-SMOKE-VERIFIED PASS
+> **STATUS:** IMPLEMENTED / TESTED / RELEASE HOLD
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Slice ID:** `CORE-LEARNING-HUB-L1B-LEARNING-LOOP-2026-09-08`.
-> **Implementation base:** `95629fead4da5aeb1fcc0146296a9ac0f767d7ea`.
-> **PR #83:** CLOSED / MERGED — L-1B Learning Loop.
-> **PR #84:** CLOSED / MERGED — bibliographic PHI false-positive hotfix.
-> **L-1B runtime merge SHA:** `f15f854bbfca727356531d7b8ea896e3aedba437`.
-> **Hotfix merge SHA:** `51f7d225eb960cd3a20d9a8ea7e2121fb853e056`.
-> **Verified hotfix Render deploy:** `dep-dagkq56417fc73fl6il0` — LIVE.
-> **PRODUCTION-SMOKE-VERIFIED:** YES / PASS.
+> **Slice ID:** `CORE-LEARNING-HUB-L1C-CHALLENGE-COMPLETION-TRANSPORT-2026-09-09`.
+> **Base:** `a2af17381eb53de6f1deac4ea1c987e743f6e951`.
+> **Branch:** `feat/clinical-learning-l1c-challenge-completion-transport-2026-09-09`.
+> **Exact tested head before docs-only closeout:** `ffba01a600164122c3ad8dd16d0f48b3e56e1d53`.
+> **Gate:** `34399853207` — SUCCESS.
+> **L-1B:** CLOSED / PRODUCTION-SMOKE-VERIFIED PASS.
 > **Frozen L-0/L-1 schema owners:** READ-ONLY / unchanged.
 > **Writer lock:** NONE.
 
 ---
 
-# 1. Closed learning loop
+# 1. Problem closed by this slice
 
-```text
-Challenge conversation / structured synthetic export
-→ adapter + PHI/schema guard
-→ Pending Imports / Inbox
-→ clinician review
-→ immutable Challenge
-→ performance debrief
-→ targeted learning objectives
-→ knowledge-island bridge targets
-→ fresh-resource overlay
-→ repeated consolidation
-   D+3 retrieval
-   D+7 discrimination
-   D+14 transfer
-   D+30 bridge-transfer / retention
-```
+The Cockpit already accepts structured synthetic episodes, but Challenge conversations previously depended on remembered prompts to know that they must hand off the completed learning episode.
 
-One successful test does not cancel later repetition. Manual JSON is Advanced/debug fallback only.
+L-1C makes the handoff a durable workflow contract inherited from a ChatGPT Project instruction.
 
 ---
 
-# 2. Final ingestion and safety boundary
-
-The released adapter maps the observed rich Challenge export into the frozen `ClinicalLearningChallengeV1` contract without weakening canonical validation.
-
-It preserves case facts, progressive disclosures, clinician reasoning, debrief, evidence/actions and Foundation provenance while resetting imported clinician-review/reference-verification/Signal authority.
-
-Automatic ingress boundary:
+# 2. Definition of done
 
 ```text
-POST /clinical/learning/api/ingress/episodes
-X-Learning-Ingest-Key
-CLINICAL_LEARNING_INGEST_KEY
+CHALLENGE COMPLETE
+=
+FINAL DEBRIEF COMPLETE
++ STRUCTURED LEARNING EPISODE COMPLETE
++ COCKPIT HANDOFF ATTEMPT COMPLETE
++ RECEIPT OR EXPLICIT TRANSPORT FAILURE
 ```
 
-remains:
-
-- explicit synthetic-only;
-- verbatim clinician reasoning required for automatic rich ingress;
-- pending-import creation only;
-- no direct accepted-Challenge write;
-- no patient record authority;
-- no Foundation state authority;
-- no Signal promotion/backlink authority;
-- no reference-verification authority.
+No valid receipt means the conversation must not claim the Cockpit was updated.
 
 ---
 
-# 3. Knowledge-island bridging and repetition
+# 3. Versioned Project instruction
 
-`BridgeTargetV1` links 2–3 Foundation concepts with provenance to learning observations/actions. A bridge is not demonstrated by co-listing concepts; it requires later joint-application evidence and explicit clinician review.
+Canonical instruction:
 
-Transparent consolidation schedule, anchored to Challenge acceptance:
+`clinical_learning/chatgpt_project_instructions_v1.txt`
 
-```text
-D+3   retrieval
-D+7   discrimination / contrast
-D+14  novel transfer
-D+30  bridge-transfer / retention
-```
+Browser-copy mirror:
 
-Any result other than `not_assessed` requires clinician review. Same-payload retry is idempotent; a materially different second submission after completion fails closed.
+`static/clinical-learning/chatgpt-project-instructions-v1.txt`
 
-No opaque adaptive scheduler or composite mastery score is introduced.
+Focused regression requires them to be byte-identical.
 
----
+The instruction requires:
 
-# 4. Fresh resources
-
-Article/guideline/webinar/course/conference/video/podcast recommendations remain mutable overlays outside immutable Challenge hashing. Resource freshness/status changes do not create Challenge revisions and do not self-certify evidence verification.
-
----
-
-# 5. Production-smoke defect and closure
-
-The first authenticated production smoke exposed a deterministic false positive:
-
-```text
-phone_number_like_sequence_detected @ references[*].title
-```
-
-PR #84 narrowly fixed bibliographic reference titles so year/volume/page/PMID-like number patterns are not treated as generic phone sequences, while explicit phone phrases, email, identity/GeSY, DOB and postal-address detection remain active.
-
-Regression coverage proves:
-
-```text
-bibliographic numeric citation title -> allowed
-explicit phone in reference title -> blocked
-email in reference title -> blocked
-ordinary non-reference phone-like sequence -> blocked
-```
-
-After PR #84 was deployed live, the same authenticated rich-import workflow progressed through conversion, Server Preview, clinician observation review and save/activation flow. The clinician explicitly confirmed **PASS**.
+- clinician answer before critique;
+- progressive disclosure where appropriate;
+- strengths / needs reinforcement / clear errors kept distinct;
+- evidence gaps, blind spots, reasoning patterns and insights;
+- deliberate knowledge-island bridge targets;
+- repeated consolidation rather than one-off quiz;
+- targeted current resources when appropriate;
+- verbatim clinician reasoning in the structured episode;
+- no patient identifiers/raw transcript/imported authority;
+- Cockpit transport attempt as the final workflow step;
+- no success wording without a returned pending-review receipt.
 
 ---
 
-# 6. Verification evidence
-
-L-1B final release head before PR #83 merge:
-
-`4c225784335228ccba6afd705210cd460ab43e28`
-
-- L1B run `34311310276` — **SUCCESS**.
-- inherited L1 run `34311310300` — **SUCCESS**.
-
-Bibliographic PHI hotfix exact tested runtime head:
-
-`94563b24fd4896c1333e0cdf3c75b2586f056adc`
-
-- L1B run `34349129649` — **SUCCESS**.
-- inherited L1 run `34349129608` — **SUCCESS**.
-- L0 contract validation step — **SUCCESS**; overall L0 workflow failure was the expected design-only scope rejection of a runtime hotfix.
-
-Verified hotfix production deploy:
+# 4. Completion state machine
 
 ```text
-deploy_id = dep-dagkq56417fc73fl6il0
-commit = 51f7d225eb960cd3a20d9a8ea7e2121fb853e056
-status = live
-trigger = new_commit
-finished_at = 2026-09-09T12:13:48.830378Z
+IN_PROGRESS
+DEBRIEF_COMPLETE_HANDOFF_PENDING
+HANDOFF_SUCCEEDED_PENDING_COCKPIT_REVIEW
+HANDOFF_FAILED_MANUAL_FALLBACK_READY
 ```
+
+Receipt validator owner:
+
+`clinical_learning/challenge_completion_protocol.py`
+
+Successful transport requires:
+
+```text
+state = pending_review
+import_id = valid UUID
+source_event_id = valid UUID
+source_format = canonical_challenge_v1 | rich_challenge_export_v1
+```
+
+Tool invocation without receipt is not success evidence.
 
 ---
 
-# 7. Explicit exclusions preserved
+# 5. Cockpit setup surface
+
+Static setup page:
+
+`/static/clinical-learning/project-setup.html`
+
+It exposes:
+
+- exact Project instruction;
+- Copy Project Instructions;
+- truthful capability status;
+- explanation of the completion workflow.
+
+Current status intentionally reads:
 
 ```text
-NO patient record mutation
-NO raw ChatGPT/Heidi transcript persistence
-NO Daily Real-Case Review
-NO Practice Review AI runtime
-NO Signal promotion/backlink authority
-NO Foundation state mutation from Challenge result alone
-NO composite mastery/excellence score
-NO opaque adaptive scheduler
-NO direct accepted-Challenge write from external assistant
-NO physiotherapy/CU-1/RF mutation
+Project instruction = READY
+Native Cockpit write tool = NOT CONNECTED
+Advanced/manual fallback = AVAILABLE
 ```
+
+No credential is rendered to the browser.
 
 ---
 
-# 8. Final lifecycle state
+# 6. Security / privacy
+
+Preserved:
+
+```text
+synthetic learning only for automatic ingress
+verbatim clinician responses required
+raw transcript never transported/persisted by this path
+no patient identifiers
+no imported clinician-review authority
+no imported reference-verification authority
+no Signal promotion
+no Foundation-state mutation
+no third-party generic webhook bypass
+```
+
+`CLINICAL_LEARNING_INGEST_KEY` remains unconfigured because there is not yet a concrete trusted write-capable ChatGPT consumer ready to receive the same credential.
+
+---
+
+# 7. Platform capability boundary
+
+Durable Project instructions are usable now.
+
+Native zero-click write requires an actual write-capable ChatGPT app/MCP action on a supported surface/workspace. Current OpenAI documentation limits full MCP write actions to Business / Enterprise / Edu, while Pro custom MCP is read/fetch only.
+
+Therefore zero-click write activation remains a later integration lifecycle step. L-1C does not mislabel it as connected.
+
+---
+
+# 8. Verification
+
+Exact tested implementation head:
+
+`ffba01a600164122c3ad8dd16d0f48b3e56e1d53`
+
+GitHub Actions:
+
+`Clinical Learning L1C challenge transport gate` run `34399853207` — **SUCCESS**.
+
+Passed:
+
+- focused L-1C completion/receipt/setup regressions;
+- inherited L-1B;
+- inherited L-1;
+- frozen-owner guard;
+- bounded scope guard;
+- diff hygiene.
+
+---
+
+# 9. Release state
 
 ```text
 IMPLEMENTED = YES
 TESTED = YES
-FOCUSED REVIEW = PASS
-MERGED = YES
-DEPLOYED = YES
-PRODUCTION-SMOKE-VERIFIED = YES / PASS
-L-1B = CLOSED
+PROJECT PROTOCOL = READY
+SETUP SURFACE = READY
+NATIVE WRITE TOOL = NOT CONNECTED
 PRODUCTION INGEST KEY = NOT CONFIGURED
-CHATGPT AUTOMATIC CONNECTION = NOT ACTIVATED
-WRITER LOCK = NONE
+PR = NEXT / DRAFT
+MERGED = NO
+DEPLOYED = NO
 ```
 
-The next Clinical Learning work, if selected, is not L-1B remediation. Automatic ChatGPT → Cockpit transport activation remains a separate integration slice because it requires production secret/config and connector wiring authority.
-
-Docs-only closeout descendants may auto-deploy under Render `autoDeploy=yes`; they do not alter the verified runtime and do not require recursive smoke.
+Next allowed action: Draft PR / RELEASE HOLD. Merge/deploy requires separate explicit product-owner authority.
