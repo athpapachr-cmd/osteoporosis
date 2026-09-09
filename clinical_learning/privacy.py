@@ -50,7 +50,17 @@ def _path(parts: Iterable[str | int]) -> str:
 def _is_bibliographic_locator(parts: tuple[str | int, ...]) -> bool:
     if not parts:
         return False
-    return str(parts[-1]) in {"pmid", "doi", "url"} and "references" in parts
+    last = str(parts[-1])
+    text_parts = {str(part) for part in parts if not isinstance(part, int)}
+    if last in {"pmid", "doi", "url"} and "references" in text_parts:
+        return True
+    # L-1B fresh-resource recommendations are mutable learning locators. Only the
+    # URL itself gets the numeric-locator exclusion; titles/rationales/providers
+    # remain fully PHI-scanned. This prevents legitimate PubMed/course URLs from
+    # being misclassified as phone-like text without weakening content scanning.
+    if last == "url" and ("resources" in text_parts or "resource_recommendations" in text_parts):
+        return True
+    return False
 
 
 def find_forbidden_structured_fields(value: Any, parts: tuple[str | int, ...] = ()) -> list[PrivacyFinding]:

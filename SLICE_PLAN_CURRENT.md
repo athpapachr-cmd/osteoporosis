@@ -1,220 +1,258 @@
-# SLICE_PLAN_CURRENT.md — Clinical Learning Hub L-1 Challenge + Foundation MVP
+# SLICE_PLAN_CURRENT.md — Clinical Learning Hub L-1B Learning Loop
 
-> **STATUS:** MERGED / DEPLOYED / AUTHENTICATED PRODUCTION SMOKE PENDING
+> **STATUS:** IMPLEMENTED / TESTED / FOCUSED REVIEW PASS / RELEASE HOLD
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Slice ID:** `CORE-LEARNING-HUB-L1-CHALLENGE-FOUNDATION-MVP-2026-09-07`.
-> **Implementation branch:** `feat/clinical-learning-l1-challenge-foundation-mvp-2026-09-07`.
-> **Release PR:** `#82` — MERGED.
-> **Reviewed source head:** `e73dc7862ecd1084de8e2912f45ae758110a7447`.
-> **Squash merge SHA:** `66900c2d50f98446184a92539baab89e9d49514c`.
-> **Verified live deploy SHA:** `1b7c0fa9443c4fe3376f80e6bc3819473de7e95b` — docs-only descendant containing the same runtime tree.
-> **Verified Render deploy:** `dep-dag5ld0ae00c738g0370` — LIVE.
-> **Final exact-head L-1 gate:** run `34264097408` — SUCCESS.
-> **Independent pre-merge review:** `5144979821` — findings remediated.
-> **Focused closure review:** `5145618117` — PASS.
-> **Merge/deploy authority:** merge exercised; normal Render auto-deploy verified; no manual duplicate deploy used.
-> **Patient-data mutation authority:** NONE.
-> **Production config/secret authority:** NONE.
+> **Slice ID:** `CORE-LEARNING-HUB-L1B-LEARNING-LOOP-2026-09-08`.
+> **Base:** `95629fead4da5aeb1fcc0146296a9ac0f767d7ea`.
+> **Branch:** `feat/clinical-learning-l1b-learning-loop-2026-09-08`.
+> **Reviewed runtime candidate:** `54e881cc512b0de9ad1e9d95a8caffbe8c5d8777`.
+> **Prior L-1 release:** PR #82 merged/deployed.
+> **Merge/deploy authority:** NONE for L-1B until separate product-owner decision.
+> **Frozen L-0/L-1 schema owners:** READ-ONLY / unchanged.
 
 ---
 
-# 1. Objective — complete
+# 1. Problem solved
 
-The L-1 slice implemented the first protected Clinical Learning runtime against frozen L-0 contracts:
+L-1 worked as a safe Challenge/Foundation store, but real use exposed that the source Challenge conversation produced a rich human-oriented export rather than the frozen machine schema expected by the Hub. That made import red/empty and forced the clinician to handle JSON manually.
 
-```text
-Challenge JSON import / preview / review / save
-+ immutable Challenge history / revision / delete
-+ reusable reference-verification overlay
-+ Osteoporosis Foundation Map + explicit assessments
-+ deterministic learning due state
-+ clinician-facing MVP UI
-```
-
-This remains learning infrastructure, not patient documentation.
+L-1B adds the missing integration and learning loop while preserving the frozen Challenge contract.
 
 ---
 
-# 2. Frozen invariants preserved
+# 2. Delivered learning loop
 
 ```text
-LEARNING RECORD != PATIENT RECORD
-EVERY LearningFactV1.authoritative_for_patient = false
-RAW TRANSCRIPT != L-1 STORAGE
-IMPORTED JSON != CLINICIAN-REVIEW AUTHORITY
-REFERENCE VERIFICATION != IMMUTABLE CHALLENGE PAYLOAD
-FOUNDATION STATE != SELF-RATING
-DUE STATE != COMPETENCE EVIDENCE
+Challenge conversation / structured synthetic export
+→ adapter + PHI/schema guard
+→ Pending Imports / Inbox
+→ clinician review
+→ immutable Challenge
+→ performance debrief
+→ targeted learning objectives
+→ knowledge-island bridge targets
+→ fresh-resource overlay
+→ repeated consolidation
+   D+3 retrieval
+   D+7 discrimination
+   D+14 transfer
+   D+30 bridge-transfer / retention
 ```
 
-No composite Clinical Knowledge / Clinical Excellence score was introduced.
-
-No patient encounter/lab read/write path, Signal promotion, Daily Case Review, Practice Review AI, transcript intake, external bearer learning API, adaptive spaced-repetition algorithm, RF mutation or physiotherapy/CU-1 mutation was added.
+One successful test does not cancel later repetition.
 
 ---
 
-# 3. Delivered runtime owners
+# 3. Rich episode ingestion
 
-```text
-clinical_learning/__init__.py
-clinical_learning/models.py
-clinical_learning/contracts.py
-clinical_learning/privacy.py
-clinical_learning/persistence.py
-clinical_learning/service.py
-clinical_learning/api.py
-static/clinical-learning/index.html
-static/clinical-learning/styles.css
-static/clinical-learning/app.js
-main.py
-L-1-focused tests/workflow
-```
+Implemented bounded support for:
 
-Frozen schema owners remained read-only:
+- canonical `ClinicalLearningChallengeV1` input; and
+- the observed rich export shape (`schema_type=ClinicalLearningChallengeV1`, `schema_version=1.0`, `session`, `topic_tags`, grouped mentor observations, source-local IDs, evidence/actions/spaced-repetition candidate).
 
-```text
-schemas/clinical_learning_core_v1.yaml
-schemas/clinical_learning_l1_boundary_v1.yaml
-schemas/clinical_learning_contract_manifest_v1.yaml
-schemas/clinical_learning_design_fixtures_v1.yaml
-schemas/osteoporosis_foundation_map_v1.yaml
-```
+The adapter:
 
-`REPLAN: NO`.
+- generates deterministic UUIDs for source-local IDs;
+- maps case facts/disclosures/reasoning/debrief/evidence/actions;
+- maps known Foundation aliases conservatively;
+- resets imported clinician-review/reference-verification/Signal authority;
+- discards the raw source payload after normalization;
+- keeps summary-only legacy exports manually salvageable with an explicit warning;
+- requires verbatim clinician response text for new **automatic** rich-export ingress.
+
+Rich automatic/manual adapter support is initial-revision only (`revision=1`) in this slice. Later rich revision semantics require a separate contract extension rather than guesswork.
 
 ---
 
-# 4. Independent-review remediation — complete
+# 4. Pending Inbox
 
-The second independent reviewer found five material pre-merge issues. All were corrected within L-1 owners:
-
-1. frozen nested `unique_items` enforcement;
-2. missing frozen Challenge History date/review-state filters and Foundation/due visibility;
-3. stale browser Challenge preview could otherwise save an older previewed artifact;
-4. exact-duplicate preview classification incorrectly mixed imported authority reset with persisted reviewed authority;
-5. Foundation browser retry regenerated attempt evidence identity/timestamp.
-
-Focused regression file:
+Implemented protected states:
 
 ```text
-test_clinical_learning_l1_independent_review.py
+pending_review
+accepted
+rejected
+invalid
 ```
 
-Remediation evidence:
-
-```text
-substantive remediation head  b4b0438e44b8077ce5a9f469b5e4669d083886f0
-remediation gate             34263571488 — SUCCESS
-focused closure review       5145618117 — PASS
-```
-
-Final reviewed source evidence:
-
-```text
-exact source head            e73dc7862ecd1084de8e2912f45ae758110a7447
-exact source gate            34264097408 — SUCCESS
-```
-
-The final gate passed:
-
-```text
-Python syntax
-Browser JavaScript syntax
-L-1 runtime/hardening/independent-review regressions
-Inherited L-0 contract regression
-Scope / adjacent-owner guard
-Diff hygiene
-```
-
-The separate L-0 design-only workflow still intentionally fails only its runtime-scope guard after passing L-0 contract validation.
+External ingestion can create only `pending_review`. Accepted Challenge persistence still goes through the existing clinician review flow. Browser save then links the accepted Challenge to the pending learning episode and activates the Learning Loop; a failed link remains retryable rather than silently disappearing.
 
 ---
 
-# 5. Merge — complete
+# 5. Performance debrief
 
-PR #82 was marked ready only after exact-head verification and then squash-merged with an `expected_head_sha` guard against:
-
-```text
-e73dc7862ecd1084de8e2912f45ae758110a7447
-```
-
-GitHub returned:
+The UI and normalized artifact distinguish:
 
 ```text
-merged = true
-merge SHA = 66900c2d50f98446184a92539baab89e9d49514c
+STRENGTHS
+NEEDS REINFORCEMENT / IMPROVEMENT
+CLEAR ERRORS
+DEFENSIBLE DISAGREEMENTS
+EVIDENCE GAPS / BLIND SPOTS
+REASONING PATTERNS / CLINICAL INSIGHTS
 ```
 
-Fresh verification confirmed PR #82 closed/merged. The reviewed runtime entered `main` at that squash merge SHA. Subsequent canonical reconciliation commits are docs-only descendants.
+`needs reinforcement` is not relabelled as `clear_error`.
 
 ---
 
-# 6. Deployment — complete
+# 6. Knowledge-island bridging
 
-Render service:
+`BridgeTargetV1` links 2–3 Foundation nodes plus provenance to source learning observations/actions.
 
-```text
-service     srv-d5qfk31r0fns73di596g
-name        osteoporosis
-branch      main
-autoDeploy  yes / commit
-url         https://ortho-reception-backend.onrender.com
-deploy      dep-dag5ld0ae00c738g0370
-commit      1b7c0fa9443c4fe3376f80e6bc3819473de7e95b
-status      live
-trigger     new_commit
-finished    2026-09-08T18:59:43.990625Z
-```
+A bridge remains `planned` until a later bridge-transfer occurrence tests the concepts jointly. Only an explicitly clinician-reviewed later result can move bridge state to `demonstrated` or `needs_reinforcement`.
 
-The deployed commit is a docs-only descendant of the runtime squash merge and therefore contains the exact reviewed L-1 runtime tree. No manual duplicate deploy was triggered.
-
-Later docs-only canonical descendants may trigger additional automatic deploys without changing runtime code; they do not invalidate the verified L-1 deployment above.
+Graph adjacency or co-listing Foundation nodes is not treated as competence evidence.
 
 ---
 
-# 7. Adjacent-owner isolation
+# 7. Repeated consolidation
 
-The separate physiotherapy/CU-1/RF workstreams remained read-only for the whole L-1 release path.
-
-No diff occurred under:
+Transparent initial schedule anchored to actual Challenge acceptance:
 
 ```text
-clinic_utilities/physio_referral_*
-clinic_utilities/contracts/cu1_*
-static/clinic-utilities/physio-referral/*
-clinic_utilities/rf/*
-static/clinic-utilities/rf/*
+D+3   retrieval
+D+7   discrimination / contrast
+D+14  novel transfer
+D+30  bridge-transfer / retention
 ```
 
-The L-1 release decision is now complete, so that earlier pause is no longer itself a blocker. Starting or resuming another workstream still requires an explicit next-work selection.
+The schedule is a visible product default, not a claim that one timing algorithm is universally optimal.
+
+Allowed reviewed results:
+
+```text
+retained
+partially_retained
+not_retained
+improved_beyond_original
+not_assessed
+```
+
+Any result other than `not_assessed` requires explicit clinician review.
+
+Same-payload retry is idempotent. A materially different second submission after an occurrence is completed fails closed instead of creating ambiguous duplicate history.
 
 ---
 
-# 8. Lifecycle state
+# 8. Fresh resources
+
+Resource recommendations remain mutable overlays outside the immutable Challenge content hash.
+
+Supported categories include article, guideline, webinar, course, conference session, video, podcast and other. Recommendation status/freshness changes do not create Challenge revisions and never self-certify reference verification.
+
+---
+
+# 9. Automatic-ingress seam
+
+Dedicated boundary:
 
 ```text
-IMPLEMENTED                     YES
-TESTED                          YES
-INDEPENDENT REVIEW              CHANGES REQUIRED → REMEDIATED
-FOCUSED CLOSURE REVIEW          PASS
-FINAL EXACT-HEAD REVIEW         PASS
-PR #82                          MERGED
-RUNTIME MERGE SHA               66900c2d50f98446184a92539baab89e9d49514c
-DEPLOYED                        YES — dep-dag5ld0ae00c738g0370 LIVE
-PRODUCTION-SMOKE-VERIFIED       NO — AUTHENTICATED SMOKE PENDING
-ACTIVE WRITER                   NONE
+POST /clinical/learning/api/ingress/episodes
+X-Learning-Ingest-Key
+CLINICAL_LEARNING_INGEST_KEY
+```
+
+It:
+
+- fails closed when not configured;
+- uses constant-time credential comparison;
+- does not reuse `CLINICAL_DATA_KEY`;
+- accepts explicit synthetic learning only;
+- requires verbatim clinician reasoning for automatic rich-export ingress;
+- creates only a pending import;
+- cannot write patient data, accepted Challenges, Foundation state, Signals or verified evidence directly.
+
+Production key creation and ChatGPT/plugin connection are explicitly **outside this implementation/review slice**.
+
+---
+
+# 10. Persistence
+
+Added learning-only owners:
+
+```text
+clinical_learning_pending_imports
+clinical_learning_loop_plans
+clinical_learning_consolidation_attempts
+clinical_learning_resource_recommendations
+```
+
+`clinical_learning_due_items` additionally carries `consolidation_test` occurrences.
+
+Challenge deletion cleans linked loop/attempt/resource/due content. No patient encounter/lab/RF/transcript tables are read or written by the new loop runtime.
+
+---
+
+# 11. Clinician UI
+
+Default surfaces:
+
+1. Inbox
+2. Challenges
+3. Learning Loop
+4. Foundation Map
+5. Due
+6. Advanced
+
+Advanced owns manual JSON fallback. The default learning workflow no longer assumes the clinician understands UUIDs or the machine schema.
+
+---
+
+# 12. Verification evidence
+
+Reviewed runtime candidate:
+
+`54e881cc512b0de9ad1e9d95a8caffbe8c5d8777`
+
+Exact-head gates:
+
+- L1B run `34311161485` — SUCCESS.
+- inherited L1 run `34311161517` — SUCCESS.
+
+The L1B run passed focused tests, inherited L1/L0, Python/browser syntax, frozen-owner guard, adjacent-owner scope guard and diff hygiene.
+
+The final focused review also closed:
+
+- automatic rich-ingress verbatim-reasoning requirement;
+- synthetic-only/revision boundary;
+- clinician-review requirement before retention labels;
+- idempotent retry for consolidation attempts;
+- bridge provenance back to learning observations.
+
+No remaining material blocker was found in the bounded diff.
+
+---
+
+# 13. Explicit exclusions
+
+```text
+NO patient record mutation
+NO raw ChatGPT/Heidi transcript persistence
+NO Daily Real-Case Review
+NO Practice Review AI runtime
+NO Signal promotion/backlink authority
+NO Foundation state mutation from Challenge result alone
+NO composite mastery/excellence score
+NO opaque adaptive scheduler
+NO production secret/config change
+NO direct accepted-Challenge write from external assistant
+NO physiotherapy/CU-1/RF mutation
 ```
 
 ---
 
-# 9. Exact next action
+# 14. Release state
 
 ```text
-authenticated production smoke /clinical/learning
-→ verify protected page load through existing clinical session / X-Clinical-Key
-→ verify Foundation registry and Challenge/Due API reads
-→ if PASS, reconcile lifecycle to PRODUCTION-SMOKE-VERIFIED
-→ close L-1 completely
+IMPLEMENTED = YES
+TESTED = YES
+FOCUSED REVIEW = PASS
+PR = NEXT / DRAFT
+MERGED = NO
+DEPLOYED = NO
+PRODUCTION INGEST KEY = NOT CONFIGURED
+CHATGPT AUTOMATIC CONNECTION = NOT ACTIVATED
 ```
 
-Do not manually trigger a duplicate deploy, change production configuration/secrets, or reopen frozen L-0 semantics unless production evidence demonstrates a material defect.
+Next allowed action: Draft PR / RELEASE HOLD. Merge/deploy requires a separate explicit product-owner decision.

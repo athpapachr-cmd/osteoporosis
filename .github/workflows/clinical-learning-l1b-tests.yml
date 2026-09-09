@@ -1,20 +1,18 @@
-name: Clinical Learning L1 regression gate
+name: Clinical Learning L1B regression gate
 
 on:
   push:
     branches:
-      - feat/clinical-learning-l1-challenge-foundation-mvp-2026-09-07
       - feat/clinical-learning-l1b-learning-loop-2026-09-08
   pull_request:
     paths:
       - 'clinical_learning/**'
       - 'static/clinical-learning/**'
-      - 'main.py'
-      - 'test_clinical_learning_l1*.py'
-      - '.github/workflows/clinical-learning-l1-tests.yml'
-      - '.github/workflows/clinical-learning-l1b-tests.yml'
+      - 'test_clinical_learning_l1b_*.py'
       - 'schemas/clinical_learning_loop_v1.yaml'
       - 'CLINICAL_LEARNING_LOOP_DESIGN_V1.md'
+      - '.github/workflows/clinical-learning-l1b-tests.yml'
+      - '.github/workflows/clinical-learning-l1-tests.yml'
       - 'SLICE_PLAN_CURRENT.md'
       - 'CURRENT_OPERATIONAL.md'
       - 'TODO.md'
@@ -36,10 +34,9 @@ jobs:
       - name: Install dependencies
         run: python -m pip install -r requirements.txt
 
-      - name: Python syntax
+      - name: L1B Python syntax
         run: |
           python -m py_compile \
-            clinical_learning/__init__.py \
             clinical_learning/models.py \
             clinical_learning/privacy.py \
             clinical_learning/contracts.py \
@@ -49,53 +46,46 @@ jobs:
             clinical_learning/ingress.py \
             clinical_learning/l1b_runtime.py \
             clinical_learning/api.py \
-            main.py \
-            test_clinical_learning_l1_runtime.py \
-            test_clinical_learning_l1_hardening.py \
-            test_clinical_learning_l1_ui_contract.py \
-            test_clinical_learning_l1_independent_review.py \
-            test_clinical_learning_l1b_learning_loop.py
+            test_clinical_learning_l1b_learning_loop.py \
+            test_clinical_learning_l1b_hardening.py
 
-      - name: Browser JavaScript syntax
+      - name: L1B browser syntax
         run: |
           node --check static/clinical-learning/app.js
           node --check static/clinical-learning/l1b.js
 
-      - name: L1 runtime and hardening tests
-        run: python -m unittest discover -v -p 'test_clinical_learning_l1*.py'
+      - name: L1B focused tests
+        run: python -m unittest discover -v -p 'test_clinical_learning_l1b_*.py'
 
-      - name: Inherited L0 contract regression
+      - name: Inherited L1 tests
+        run: python -m unittest discover -v -p 'test_clinical_learning_l1_*.py'
+
+      - name: Inherited L0 contracts
         run: python -m unittest -v test_clinical_learning_l0_contract.py test_clinical_learning_l0_boundary.py
 
-      - name: Frozen L0 L1 schema guard
+      - name: Frozen owner guard
         run: |
           set -euo pipefail
           base="$(git merge-base origin/main HEAD)"
-          if ! git diff --quiet "$base" HEAD -- \
+          git diff --quiet "$base" HEAD -- \
             schemas/clinical_learning_core_v1.yaml \
             schemas/clinical_learning_l1_boundary_v1.yaml \
             schemas/clinical_learning_contract_manifest_v1.yaml \
             schemas/clinical_learning_design_fixtures_v1.yaml \
-            schemas/osteoporosis_foundation_map_v1.yaml; then
-            echo 'L1B must not mutate frozen L0/L1 schema owners.' >&2
-            git diff --name-only "$base" HEAD -- schemas/
-            exit 1
-          fi
+            schemas/osteoporosis_foundation_map_v1.yaml
 
-      - name: Scope and adjacent-owner guard
+      - name: Scope guard
         run: |
           set -euo pipefail
           base="$(git merge-base origin/main HEAD)"
           changed="$(git diff --name-only "$base" HEAD)"
           printf '%s\n' "$changed"
-
           if printf '%s\n' "$changed" | grep -E '^(clinic_utilities/physio_referral_|clinic_utilities/contracts/cu1_|static/clinic-utilities/physio-referral/|clinic_utilities/rf/|static/clinic-utilities/rf/)' ; then
-            echo 'Clinical Learning must not mutate physiotherapy/CU-1/RF owners.' >&2
+            echo 'L1B adjacent-owner leak.' >&2
             exit 1
           fi
-
-          if printf '%s\n' "$changed" | grep -Ev '^(clinical_learning/.*|static/clinical-learning/.*|main\.py|test_clinical_learning_l1.*\.py|\.github/workflows/clinical-learning-l1-tests\.yml|\.github/workflows/clinical-learning-l1b-tests\.yml|schemas/clinical_learning_loop_v1\.yaml|CLINICAL_LEARNING_LOOP_DESIGN_V1\.md|SLICE_PLAN_CURRENT\.md|CURRENT_OPERATIONAL\.md|TODO\.md|CLINICAL_EXCELLENCE_PLAN\.md|osteoporosis-change-log\.md)$' ; then
-            echo 'Unexpected file outside Clinical Learning L1/L1B implementation owners.' >&2
+          if printf '%s\n' "$changed" | grep -Ev '^(clinical_learning/.*|static/clinical-learning/.*|test_clinical_learning_l1b_.*\.py|\.github/workflows/clinical-learning-l1b-tests\.yml|\.github/workflows/clinical-learning-l1-tests\.yml|schemas/clinical_learning_loop_v1\.yaml|CLINICAL_LEARNING_LOOP_DESIGN_V1\.md|SLICE_PLAN_CURRENT\.md|CURRENT_OPERATIONAL\.md|TODO\.md|CLINICAL_EXCELLENCE_PLAN\.md|osteoporosis-change-log\.md)$' ; then
+            echo 'Unexpected file outside bounded L1B owners.' >&2
             exit 1
           fi
 

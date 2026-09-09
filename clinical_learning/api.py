@@ -12,6 +12,7 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.exc import IntegrityError
 
 from .contracts import LearningContractError
+from .l1b_runtime import LearningLoopRuntimeError, LearningLoopRuntimeService
 from .service import ClinicalLearningService, LearningServiceError, sanitized_issues
 
 
@@ -21,6 +22,7 @@ def _ui_index() -> Path:
 
 def build_learning_router(engine: Engine) -> APIRouter:
     service = ClinicalLearningService(engine)
+    loop_service = LearningLoopRuntimeService(engine)
     router = APIRouter(prefix="/clinical/learning", tags=["clinical-learning"])
 
     def require_learning_key(
@@ -35,9 +37,28 @@ def build_learning_router(engine: Engine) -> APIRouter:
         if not x_clinical_key or not secrets.compare_digest(x_clinical_key, expected):
             raise HTTPException(status_code=401, detail={"code": "invalid_clinical_access"})
 
+    def require_learning_ingest_key(
+        x_learning_ingest_key: Optional[str] = Header(default=None, alias="X-Learning-Ingest-Key"),
+    ) -> None:
+        expected = os.environ.get("CLINICAL_LEARNING_INGEST_KEY", "")
+        if not expected:
+            raise HTTPException(
+                status_code=503,
+                detail={"code": "learning_ingress_not_configured"},
+            )
+        if not x_learning_ingest_key or not secrets.compare_digest(x_learning_ingest_key, expected):
+            raise HTTPException(status_code=401, detail={"code": "invalid_learning_ingress"})
+
     protected = [Depends(require_learning_key)]
+    ingress_protected = [Depends(require_learning_ingest_key)]
 
     def service_error(exc: LearningServiceError) -> HTTPException:
+        return HTTPException(
+            status_code=exc.status_code,
+            detail={"code": exc.code, "path": exc.path},
+        )
+
+    def loop_error(exc: LearningLoopRuntimeError) -> HTTPException:
         return HTTPException(
             status_code=exc.status_code,
             detail={"code": exc.code, "path": exc.path},
@@ -50,8 +71,6 @@ def build_learning_router(engine: Engine) -> APIRouter:
         )
 
     def integrity_conflict() -> HTTPException:
-        # Do not expose driver/constraint details. A retry re-enters the normal
-        # idempotency/conflict path against the newly committed authoritative row.
         return HTTPException(
             status_code=409,
             detail={"code": "learning_write_conflict_retry"},
@@ -88,9 +107,183 @@ def build_learning_router(engine: Engine) -> APIRouter:
             )
         return payload
 
+    def require_automatic_ingress_profile(episode: dict[str, Any]) -> None:
+        # Automatic transport is narrower than protected manual import. It may
+        # accept only explicit synthetic learning, never infer synthetic from a
+        # missing/legacy mode field.
+        if episode.get("challenge_mode") != "synthetic":
+            raise HTTPException(
+                status_code=422,
+                detail={
+                    "code": "external_ingress_synthetic_only",
+                    "path": "episode.challenge_mode",
+                },
+            )
+
+        # The rich legacy export the clinician supplied contains useful reasoning
+        # summaries but not the clinician's verbatim responses. Manual Advanced
+        # import may salvage that artifact with a visible warning. New automatic
+        # ingress is stricter: it must carry the actual response text so the
+        # durable learning episode does not replace the clinician's words with an
+        # AI-authored summary.
+        if (
+            episode.get("schema_type") == "ClinicalLearningChallengeV1"
+            and str(episode.get("schema_version")) in {"1.0", "1"}
+        ):
+            responses = episode.get("clinician_reasoning_responses")
+            if not isinstance(responses, list) or not responses:
+                raise HTTPException(
+                    status_code=422,
+                    detail={
+                        "code": "automatic_ingress_requires_verbatim_reasoning",
+                        "path": "episode.clinician_reasoning_responses",
+                    },
+                )
+            for index, response in enumerate(responses):
+                if not isinstance(response, dict) or not str(response.get("text") or "").strip():
+                    raise HTTPException(
+                        status_code=422,
+                        detail={
+                            "code": "automatic_ingress_requires_verbatim_reasoning",
+                            "path": f"episode.clinician_reasoning_responses[{index}].text",
+                        },
+                    )
+
     @router.get("", dependencies=protected, include_in_schema=False)
     def learning_page() -> FileResponse:
         return FileResponse(_ui_index(), media_type="text/html")
+
+    @router.post("/api/ingress/episodes", dependencies=ingress_protected)
+    async def external_episode_ingress(request: Request) -> dict[str, Any]:
+        payload = envelope(
+            await json_object(request),
+            required={"episode"},
+            optional={"source_event_id", "loop_plan", "resources"},
+        )
+        episode = payload["episode"]
+        if not isinstance(episode, dict):
+            raise HTTPException(status_code=422, detail={"code": "learning_episode_object_required"})
+        require_automatic_ingress_profile(episode)
+        try:
+            return loop_service.ingest_episode(
+                episode,
+                source_event_id=(str(payload["source_event_id"]) if payload.get("source_event_id") else None),
+                loop_plan=(payload.get("loop_plan") if isinstance(payload.get("loop_plan"), dict) else None),
+                resources=(payload.get("resources") if isinstance(payload.get("resources"), list) else None),
+            )
+        except LearningContractError as exc:
+            raise contract_error(exc) from None
+        except LearningLoopRuntimeError as exc:
+            raise loop_error(exc) from None
+        except IntegrityError:
+            raise integrity_conflict() from None
+
+    @router.post("/api/imports", dependencies=protected)
+    async def pending_import_create(request: Request) -> dict[str, Any]:
+        payload = envelope(
+            await json_object(request),
+            required={"episode"},
+            optional={"source_event_id", "loop_plan", "resources"},
+        )
+        try:
+            return loop_service.ingest_episode(
+                payload["episode"],
+                source_event_id=(str(payload["source_event_id"]) if payload.get("source_event_id") else None),
+                loop_plan=(payload.get("loop_plan") if isinstance(payload.get("loop_plan"), dict) else None),
+                resources=(payload.get("resources") if isinstance(payload.get("resources"), list) else None),
+            )
+        except LearningContractError as exc:
+            raise contract_error(exc) from None
+        except LearningLoopRuntimeError as exc:
+            raise loop_error(exc) from None
+        except IntegrityError:
+            raise integrity_conflict() from None
+
+    @router.get("/api/imports", dependencies=protected)
+    def pending_import_list() -> dict[str, Any]:
+        return {"items": loop_service.list_pending_imports()}
+
+    @router.get("/api/imports/{import_id}", dependencies=protected)
+    def pending_import_detail(import_id: str) -> dict[str, Any]:
+        try:
+            return loop_service.get_pending_import(import_id)
+        except LearningLoopRuntimeError as exc:
+            raise loop_error(exc) from None
+
+    @router.post("/api/imports/{import_id}/reject", dependencies=protected)
+    async def pending_import_reject(import_id: str, request: Request) -> dict[str, Any]:
+        payload = envelope(await json_object(request), required={"confirm_reject"})
+        if payload.get("confirm_reject") is not True:
+            raise HTTPException(status_code=422, detail={"code": "confirm_reject_required"})
+        try:
+            return loop_service.reject_pending_import(import_id)
+        except LearningLoopRuntimeError as exc:
+            raise loop_error(exc) from None
+
+    @router.post("/api/imports/{import_id}/accepted", dependencies=protected)
+    async def pending_import_accepted(import_id: str, request: Request) -> dict[str, Any]:
+        payload = envelope(
+            await json_object(request),
+            required={"challenge_id", "revision", "confirm_link"},
+        )
+        if payload.get("confirm_link") is not True:
+            raise HTTPException(status_code=422, detail={"code": "confirm_link_required"})
+        try:
+            return loop_service.accept_pending_import(
+                import_id,
+                challenge_id=str(payload["challenge_id"]),
+                revision=int(payload["revision"]),
+            )
+        except (ValueError, TypeError):
+            raise HTTPException(
+                status_code=422,
+                detail={"code": "invalid_revision", "path": "revision"},
+            ) from None
+        except LearningLoopRuntimeError as exc:
+            raise loop_error(exc) from None
+        except IntegrityError:
+            raise integrity_conflict() from None
+
+    @router.get("/api/learning-loops", dependencies=protected)
+    def learning_loop_list() -> dict[str, Any]:
+        return {"items": loop_service.list_learning_loops()}
+
+    @router.get("/api/learning-loops/{cycle_id}", dependencies=protected)
+    def learning_loop_detail(cycle_id: str) -> dict[str, Any]:
+        try:
+            return loop_service.get_learning_loop(cycle_id)
+        except LearningLoopRuntimeError as exc:
+            raise loop_error(exc) from None
+
+    @router.post(
+        "/api/learning-loops/{cycle_id}/occurrences/{occurrence_id}/attempts",
+        dependencies=protected,
+    )
+    async def consolidation_attempt(cycle_id: str, occurrence_id: str, request: Request) -> dict[str, Any]:
+        payload = envelope(
+            await json_object(request),
+            required={"response_text", "result"},
+            optional={"evaluator_note", "clinician_reviewed"},
+        )
+        try:
+            return loop_service.add_consolidation_attempt(cycle_id, occurrence_id, payload)
+        except LearningContractError as exc:
+            raise contract_error(exc) from None
+        except LearningLoopRuntimeError as exc:
+            raise loop_error(exc) from None
+        except IntegrityError:
+            raise integrity_conflict() from None
+
+    @router.post(
+        "/api/learning-resources/{recommendation_id}/status",
+        dependencies=protected,
+    )
+    async def learning_resource_status(recommendation_id: str, request: Request) -> dict[str, Any]:
+        payload = envelope(await json_object(request), required={"status"})
+        try:
+            return loop_service.update_resource_status(recommendation_id, payload)
+        except LearningLoopRuntimeError as exc:
+            raise loop_error(exc) from None
 
     @router.post("/api/challenges/preview", dependencies=protected)
     async def challenge_preview(request: Request) -> dict[str, Any]:
