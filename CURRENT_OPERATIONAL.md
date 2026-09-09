@@ -1,13 +1,12 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** CLINICAL LEARNING HUB L-1C — IMPLEMENTED / TESTED / RELEASE HOLD
+> **STATUS:** CLINICAL LEARNING HUB L-1C — MERGED / DEPLOY VERIFICATION PENDING
 > **Updated:** 2026-09-09 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Base:** `a2af17381eb53de6f1deac4ea1c987e743f6e951`.
-> **Branch:** `feat/clinical-learning-l1c-challenge-completion-transport-2026-09-09`.
 > **Slice:** `CORE-LEARNING-HUB-L1C-CHALLENGE-COMPLETION-TRANSPORT-2026-09-09`.
-> **Exact tested head before closeout:** `ffba01a600164122c3ad8dd16d0f48b3e56e1d53`.
-> **Gate:** Clinical Learning L1C challenge transport run `34399853207` — SUCCESS.
+> **PR #85:** CLOSED / MERGED.
+> **Reviewed PR head:** `01522da3985f95729ae693625f28fa5d33f2ead3`.
+> **Squash merge SHA:** `14f0eca07133819cde03685d4db8905417a31b6b`.
 > **ACTIVE RUNTIME/DESIGN WRITER:** NONE.
 > **Production config/secret authority exercised:** NO.
 > **Patient-data mutation authority:** NONE.
@@ -17,13 +16,13 @@
 
 ---
 
-# 1. What L-1C now solves
+# 1. Released L-1C behavior
 
-A Challenge conversation no longer depends on remembering an old prompt to know what happens at the end. The durable owner is a versioned ChatGPT Project instruction:
+Challenge conversations now have a versioned ChatGPT Project completion protocol:
 
 `clinical_learning/chatgpt_project_instructions_v1.txt`
 
-Its definition of done is:
+Definition of done:
 
 ```text
 final debrief
@@ -34,9 +33,7 @@ final debrief
 
 No receipt means no claim that the Cockpit was updated.
 
----
-
-# 2. Completion states
+Completion states:
 
 ```text
 IN_PROGRESS
@@ -45,32 +42,17 @@ HANDOFF_SUCCEEDED_PENDING_COCKPIT_REVIEW
 HANDOFF_FAILED_MANUAL_FALLBACK_READY
 ```
 
-A success state requires a receipt with:
-
-```text
-state = pending_review
-valid import_id
-valid source_event_id
-recognized source_format
-```
-
-`pending_review` remains pending clinician review; it is not accepted/verified learning authority.
+Successful handoff evidence requires a `pending_review` receipt with valid `import_id`, `source_event_id` and recognized `source_format`. `pending_review` is not clinician acceptance or verification authority.
 
 ---
 
-# 3. Delivered artifacts
+# 2. Delivered setup surface
 
-```text
-CLINICAL_LEARNING_CHAT_TRANSPORT_V1.md
-clinical_learning/chatgpt_project_instructions_v1.txt
-clinical_learning/challenge_completion_protocol.py
-static/clinical-learning/chatgpt-project-instructions-v1.txt
-static/clinical-learning/project-setup.html
-test_clinical_learning_l1c_challenge_completion_transport.py
-.github/workflows/clinical-learning-l1c-tests.yml
-```
+The merged runtime includes:
 
-The setup page exposes the exact Project instruction with a Copy button and truthfully reports:
+`/static/clinical-learning/project-setup.html`
+
+It exposes the exact Project instruction with a Copy button and truthfully reports:
 
 ```text
 Project instruction = READY
@@ -78,63 +60,54 @@ Native Cockpit write tool = NOT CONNECTED
 Advanced/manual fallback = AVAILABLE
 ```
 
-No secret is exposed or stored by the setup UI.
+No secret is rendered or stored in the browser.
 
 ---
 
-# 4. Verification
+# 3. Verification evidence
 
-Exact tested implementation head:
+Exact release head:
 
-`ffba01a600164122c3ad8dd16d0f48b3e56e1d53`
+`01522da3985f95729ae693625f28fa5d33f2ead3`
 
-Workflow:
-
-`Clinical Learning L1C challenge transport gate` run `34399853207` — **SUCCESS**.
-
-Passed:
-
-- Python syntax;
-- Project-instruction canonical/static byte equality;
-- completion protocol wording/required states;
-- receipt validation;
-- no success without receipt;
-- no debrief → IN_PROGRESS;
-- no transport → HANDOFF_PENDING;
-- invalid/missing receipt → manual fallback state;
-- valid pending-review receipt → success-pending-review only;
-- setup UI truthful transport status;
-- inherited L-1B tests;
-- inherited L-1 tests;
-- frozen-owner guard;
-- scope guard;
-- diff hygiene.
+- Clinical Learning L1C challenge transport gate `34400362345` — **SUCCESS**.
+- Clinical Learning L1B regression gate `34400362395` — **SUCCESS**.
+- Clinical Learning L1 regression gate `34400362435` — **SUCCESS**.
+- L0 contract validation step — **SUCCESS**; overall L0 workflow failure is the expected design-only scope rejection for a non-L0 runtime/integration PR.
 
 ---
 
-# 5. Platform boundary / next integration step
+# 4. Security / privacy boundary preserved
 
-Current OpenAI product documentation supports Project instructions, so the conversation-side completion rule can be installed now.
+```text
+synthetic learning only for automatic ingress
+verbatim clinician responses required
+raw transcript never transported/persisted by this path
+no patient identifiers
+no imported clinician-review authority
+no imported reference-verification authority
+no Signal promotion
+no Foundation-state mutation
+no third-party generic webhook bypass
+```
 
-Native zero-click Cockpit write still requires an actual trusted write-capable ChatGPT app/MCP action on a supported workspace/surface. This slice does not pretend that tool is connected.
-
-No unrelated third-party generic webhook is used as a bypass.
+`CLINICAL_LEARNING_INGEST_KEY` remains **NOT CONFIGURED** because no trusted write-capable ChatGPT consumer is connected yet.
 
 ---
 
-# 6. Release state
+# 5. Lifecycle state
 
 ```text
 L-1C IMPLEMENTED = YES
 L-1C TESTED = YES
+L-1C REVIEWED = PASS
+L-1C MERGED = YES
+L-1C DEPLOYED = NOT YET VERIFIED
 PROJECT COMPLETION PROTOCOL = READY
-COCKPIT SETUP PAGE = READY
+COCKPIT SETUP PAGE = MERGED
 NATIVE WRITE TOOL = NOT CONNECTED
 PRODUCTION INGEST KEY = NOT CONFIGURED
-PR = NEXT / DRAFT
-MERGED = NO
-DEPLOYED = NO
 WRITER LOCK = NONE
 ```
 
-Exact next action: open bounded Draft PR / RELEASE HOLD. Merge/deploy requires separate product-owner release authority.
+Exact next actions are limited to normal deployment verification and one-time ChatGPT Project instruction installation. Native zero-click ChatGPT → Cockpit write remains a separate capability-gated integration step. No manual deploy or production secret mutation is authorized by this reconciliation.
