@@ -11,6 +11,7 @@ from clinical_learning.models import AssessmentMethod
 ROOT = Path(__file__).resolve().parent
 HTML_PATH = ROOT / "static" / "clinical-learning" / "index.html"
 JS_PATH = ROOT / "static" / "clinical-learning" / "app.js"
+L1B_JS_PATH = ROOT / "static" / "clinical-learning" / "l1b.js"
 
 
 class _LearningHtmlParser(HTMLParser):
@@ -33,6 +34,7 @@ class ClinicalLearningL1UiContractTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.html = HTML_PATH.read_text(encoding="utf-8")
         cls.js = JS_PATH.read_text(encoding="utf-8")
+        cls.l1b_js = L1B_JS_PATH.read_text(encoding="utf-8")
         parser = _LearningHtmlParser()
         parser.feed(cls.html)
         cls.ids = parser.ids
@@ -81,6 +83,35 @@ class ClinicalLearningL1UiContractTests(unittest.TestCase):
         self.assertIn("introduced via:", self.js)
         self.assertIn("fact.introduced_via", self.js)
         self.assertIn("fact.introduced_at_stage", self.js)
+
+    def test_clipboard_handoff_is_visible_and_explicit_user_gesture_only(self) -> None:
+        self.assertIn("Quick Challenge Handoff", self.l1b_js)
+        self.assertIn("Paste & Send Challenge", self.l1b_js)
+        self.assertIn("navigator.clipboard?.readText", self.l1b_js)
+        self.assertIn("$('clipboardImport')?.addEventListener('click', importFromClipboard)", self.l1b_js)
+        self.assertIn("installClipboardHandoffSurface();", self.l1b_js)
+
+    def test_clipboard_handoff_reuses_pending_import_and_preserves_source_event_id(self) -> None:
+        self.assertIn("const envelope = { episode: parsed.episode }", self.l1b_js)
+        self.assertIn("envelope.source_event_id = parsed.source_event_id", self.l1b_js)
+        self.assertIn("envelope.source_event_id = episode.source_event_id.trim()", self.l1b_js)
+        self.assertIn("delete episode.source_event_id", self.l1b_js)
+        self.assertIn("const body = await api('/api/imports'", self.l1b_js)
+        self.assertIn("source_event_id: body.source_event_id", self.l1b_js)
+        self.assertIn("openInboxItem(body.import_id)", self.l1b_js)
+        self.assertIn("Challenge imported · pending review", self.l1b_js)
+
+    def test_clipboard_handoff_accepts_fenced_json_and_has_manual_fallback(self) -> None:
+        self.assertIn("matchAll(/```(?:json)?", self.l1b_js)
+        self.assertIn("clipboardFallback", self.l1b_js)
+        self.assertIn("clipboardManualJson", self.l1b_js)
+        self.assertIn("Send pasted Challenge", self.l1b_js)
+        self.assertIn("importFromManualPaste", self.l1b_js)
+
+    def test_clipboard_handoff_does_not_persist_clipboard_content_in_browser_storage(self) -> None:
+        storage_operation = r"(?:window\.)?(?:localStorage|sessionStorage)\s*\.\s*(?:setItem|getItem|removeItem|clear|key)\s*\("
+        self.assertNotRegex(self.l1b_js, storage_operation)
+        self.assertNotIn("CLINICAL_LEARNING_INGEST_KEY", self.l1b_js)
 
 
 if __name__ == "__main__":

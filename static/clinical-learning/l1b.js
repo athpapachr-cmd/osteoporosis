@@ -123,6 +123,169 @@
     document.querySelector(`.tab[data-view="${CSS.escape(name)}"]`)?.click();
   }
 
+  function extractClipboardJson(rawText) {
+    let text = String(rawText ?? '').trim();
+    if (!text) throw new SyntaxError('clipboard_empty');
+
+    const fences = [...text.matchAll(/```(?:json)?\s*([\s\S]*?)```/gi)];
+    if (fences.length) {
+      const candidate = fences.find((match) => String(match[1] || '').trim().startsWith('{')) || fences[0];
+      text = String(candidate[1] || '').trim();
+    }
+
+    if (!text.startsWith('{')) {
+      const firstBrace = text.indexOf('{');
+      const lastBrace = text.lastIndexOf('}');
+      if (firstBrace >= 0 && lastBrace > firstBrace) text = text.slice(firstBrace, lastBrace + 1);
+    }
+    return text;
+  }
+
+  function clipboardImportEnvelope(rawText) {
+    const parsed = JSON.parse(extractClipboardJson(rawText));
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      throw new SyntaxError('clipboard_object_required');
+    }
+
+    if (parsed.episode !== undefined) {
+      if (!parsed.episode || typeof parsed.episode !== 'object' || Array.isArray(parsed.episode)) {
+        throw new SyntaxError('clipboard_episode_object_required');
+      }
+      const envelope = { episode: parsed.episode };
+      if (parsed.source_event_id !== undefined) envelope.source_event_id = parsed.source_event_id;
+      if (parsed.loop_plan !== undefined) envelope.loop_plan = parsed.loop_plan;
+      if (parsed.resources !== undefined) envelope.resources = parsed.resources;
+      return envelope;
+    }
+
+    const episode = structuredClone(parsed);
+    const envelope = { episode };
+    if (typeof episode.source_event_id === 'string' && episode.source_event_id.trim()) {
+      envelope.source_event_id = episode.source_event_id.trim();
+      delete episode.source_event_id;
+    }
+    return envelope;
+  }
+
+  function showClipboardFallback(message) {
+    const fallback = $('clipboardFallback');
+    if (fallback) fallback.open = true;
+    if ($('clipboardImportResult')) $('clipboardImportResult').textContent = message || '';
+    $('clipboardManualJson')?.focus();
+  }
+
+  function clipboardReceipt(body) {
+    return {
+      state: body.state,
+      import_id: body.import_id,
+      source_event_id: body.source_event_id,
+      source_format: body.source_format,
+      idempotent: Boolean(body.idempotent),
+    };
+  }
+
+  async function submitClipboardArtifact(rawText, { clearManual = false } = {}) {
+    const envelope = clipboardImportEnvelope(rawText);
+    setStatus('Sending Challenge to Inbox…');
+    const body = await api('/api/imports', {
+      method: 'POST',
+      body: JSON.stringify(envelope),
+    });
+    if ($('clipboardImportResult')) {
+      $('clipboardImportResult').textContent = JSON.stringify(clipboardReceipt(body), null, 2);
+    }
+    if (clearManual && $('clipboardManualJson')) $('clipboardManualJson').value = '';
+    await loadInbox();
+    clickView('inbox');
+    openInboxItem(body.import_id);
+    setStatus(body.state === 'pending_review' ? 'Challenge imported · pending review' : `Challenge import · ${body.state}`);
+    return body;
+  }
+
+  async function importFromClipboard() {
+    const button = $('clipboardImport');
+    if (button) button.disabled = true;
+    let text = '';
+    try {
+      if (!navigator.clipboard?.readText) {
+        showClipboardFallback('Το browser δεν επιτρέπει άμεση ανάγνωση clipboard. Κάνε Paste παρακάτω και πάτησε Send pasted Challenge.');
+        setStatus('Clipboard read unavailable · manual paste ready');
+        return;
+      }
+      try {
+        text = await navigator.clipboard.readText();
+      } catch (_) {
+        showClipboardFallback('Η πρόσβαση στο clipboard δεν επιτράπηκε. Κάνε Paste παρακάτω και πάτησε Send pasted Challenge.');
+        setStatus('Clipboard permission unavailable · manual paste ready');
+        return;
+      }
+      if (!String(text).trim()) {
+        showClipboardFallback('Το clipboard είναι κενό. Κάνε Paste το Challenge artifact παρακάτω.');
+        setStatus('Clipboard empty · manual paste ready');
+        return;
+      }
+      try {
+        await submitClipboardArtifact(text);
+      } catch (error) {
+        if ($('clipboardManualJson')) $('clipboardManualJson').value = text;
+        showClipboardFallback('Το artifact δεν εισήχθη. Το κείμενο διατηρήθηκε προσωρινά στο πεδίο για διόρθωση/retry.');
+        if (error instanceof SyntaxError) {
+          setStatus('Clipboard JSON needs correction');
+          window.alert('Το copied Challenge artifact δεν περιέχει έγκυρο JSON object.');
+        } else {
+          showError(error);
+        }
+      }
+    } finally {
+      if (button) button.disabled = false;
+    }
+  }
+
+  async function importFromManualPaste() {
+    const text = $('clipboardManualJson')?.value || '';
+    if (!String(text).trim()) {
+      window.alert('Κάνε πρώτα Paste το Challenge artifact.');
+      return;
+    }
+    try {
+      await submitClipboardArtifact(text, { clearManual: true });
+    } catch (error) {
+      if (error instanceof SyntaxError) {
+        setStatus('Pasted JSON needs correction');
+        window.alert('Το pasted Challenge artifact δεν περιέχει έγκυρο JSON object.');
+        return;
+      }
+      showError(error);
+    }
+  }
+
+  function installClipboardHandoffSurface() {
+    const inboxView = $('view-inbox');
+    if (!inboxView || $('clipboardHandoffCard')) return;
+    const card = document.createElement('article');
+    card.className = 'card';
+    card.id = 'clipboardHandoffCard';
+    card.innerHTML = `
+      <div class="section-head">
+        <div>
+          <h2>Quick Challenge Handoff</h2>
+          <p>Αντέγραψε το structured Challenge artifact από τη συζήτηση και στείλ' το κατευθείαν στο Inbox.</p>
+        </div>
+        <button class="primary" id="clipboardImport">Paste & Send Challenge</button>
+      </div>
+      <div class="notice">Η ανάγνωση του clipboard γίνεται μόνο μετά από δικό σου tap. Δημιουργείται μόνο <b>pending_review</b> candidate· δεν γίνεται αυτόματα accepted learning record.</div>
+      <pre id="clipboardImportResult" class="result"></pre>
+      <details id="clipboardFallback">
+        <summary>Χειροκίνητη επικόλληση</summary>
+        <p class="muted">Αν το iPhone/browser δεν επιτρέψει clipboard read, κάνε Paste εδώ. Το πεδίο δεν αποθηκεύεται σε localStorage/sessionStorage.</p>
+        <textarea id="clipboardManualJson" class="short-textarea" spellcheck="false" placeholder='Paste Challenge JSON or the copied json code block here'></textarea>
+        <div class="row"><button class="secondary" id="clipboardManualSend">Send pasted Challenge</button></div>
+      </details>`;
+    inboxView.prepend(card);
+    $('clipboardImport')?.addEventListener('click', importFromClipboard);
+    $('clipboardManualSend')?.addEventListener('click', importFromManualPaste);
+  }
+
   function observationGroups(challenge) {
     const groups = new Map();
     (challenge?.observations || []).forEach((item) => {
@@ -198,7 +361,7 @@
           <div class="muted">${esc(String(p.created_at || '').slice(0, 10))} · ${esc((p.topics || []).join(' · '))}</div>
           <div class="mini-stats">strengths ${esc((counts.get('strength') || []).length)} · reinforce ${esc((counts.get('missed_opportunity') || []).length)} · errors ${esc((counts.get('clear_error') || []).length)} · bridges ${esc((item.loop_plan?.bridge_targets || []).length)}</div>
         </button>`;
-      }).join('') || '<div class="empty">Δεν υπάρχουν pending imports. Όταν συνδεθεί το automatic ingress, τα ολοκληρωμένα synthetic Challenges θα εμφανίζονται εδώ.</div>';
+      }).join('') || '<div class="empty">Δεν υπάρχουν pending imports. Αντέγραψε το structured Challenge artifact και χρησιμοποίησε το Quick Challenge Handoff παραπάνω.</div>';
       document.querySelectorAll('.inbox-item').forEach((button) => button.addEventListener('click', () => openInboxItem(button.dataset.import)));
       setStatus('Inbox loaded');
     } catch (error) { showError(error); }
@@ -410,5 +573,6 @@
 
   // The default surface is the Inbox. Existing L-1 app.js owns the generic tab
   // activation and Challenge/Foundation/History/Due workflows.
+  installClipboardHandoffSurface();
   loadInbox();
 })();
