@@ -1,11 +1,13 @@
 # SLICE_PLAN_CURRENT.md — Clinical Learning Hub L-1C Challenge Completion Transport
 
-> **STATUS:** MERGED / DEPLOY VERIFICATION PENDING
+> **STATUS:** MERGED / DEPLOYED
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Slice ID:** `CORE-LEARNING-HUB-L1C-CHALLENGE-COMPLETION-TRANSPORT-2026-09-09`.
 > **PR #85:** CLOSED / MERGED.
 > **Reviewed PR head:** `01522da3985f95729ae693625f28fa5d33f2ead3`.
 > **Squash merge SHA:** `14f0eca07133819cde03685d4db8905417a31b6b`.
+> **Production-verified deploy commit:** `6ad977993fa1832f57d0e59ec41e7cd9d154ead3`.
+> **Render deploy:** `dep-dags2tu7bikc73dq15t0` — LIVE.
 > **Frozen L-0/L-1 schema owners:** READ-ONLY / unchanged.
 > **Writer lock:** NONE.
 
@@ -80,7 +82,7 @@ It does not grant patient-record, Foundation, Signal, clinician-review or refere
 
 # 4. Cockpit setup surface
 
-Merged path:
+Deployed path:
 
 `/static/clinical-learning/project-setup.html`
 
@@ -108,6 +110,18 @@ GitHub Actions:
 - inherited L1B gate `34400362395` — **SUCCESS**.
 - inherited L1 gate `34400362435` — **SUCCESS**.
 - L0 contract validation step — **SUCCESS**; the overall L0 workflow fails only its intentional design-only scope check because L-1C is not an L0 design PR.
+
+Production deployment:
+
+```text
+Render deploy = dep-dags2tu7bikc73dq15t0
+commit = 6ad977993fa1832f57d0e59ec41e7cd9d154ead3
+trigger = new_commit
+status = live
+finished = 2026-09-09T20:30:26Z
+```
+
+The deployed commit is a docs-only descendant of the L-1C runtime merge and preserves the reviewed runtime tree.
 
 ---
 
@@ -138,12 +152,14 @@ IMPLEMENTED = YES
 TESTED = YES
 REVIEWED = PASS
 MERGED = YES
-DEPLOYED = NOT YET VERIFIED
+DEPLOYED = YES
 PROJECT PROTOCOL = READY
-SETUP SURFACE = MERGED
+SETUP SURFACE = DEPLOYED
 NATIVE WRITE TOOL = NOT CONNECTED
 PRODUCTION INGEST KEY = NOT CONFIGURED
 WRITER LOCK = NONE
 ```
 
-Next lifecycle actions: verify normal deployment of the merge descendant, then install the Project instruction once in the dedicated ChatGPT Project. Native write activation remains a separate capability-gated integration lifecycle.
+Next lifecycle action: install the Project instruction once in the dedicated ChatGPT Project. Native write activation remains a separate capability-gated integration lifecycle.
+
+Later docs-only canonical descendants may auto-deploy under Render `autoDeploy=yes`; this does not alter the reviewed L-1C runtime and does not require recursive runtime smoke.
