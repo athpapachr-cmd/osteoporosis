@@ -1,11 +1,14 @@
 # SLICE_PLAN_CURRENT.md — Clinical Learning Hub L-1D Clipboard Handoff
 
-> **STATUS:** IMPLEMENTED / TESTED / RELEASE HOLD
+> **STATUS:** MERGED / DEPLOY PENDING
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Slice ID:** `CORE-LEARNING-HUB-L1D-CLIPBOARD-HANDOFF-2026-09-10`.
 > **Base:** `6feb03dbaea101f11828db9b71f57ebb718ccaa6`.
 > **Branch:** `feat/clinical-learning-l1d-clipboard-handoff-2026-09-10`.
+> **PR #86:** CLOSED / MERGED.
+> **Reviewed PR head:** `5e524c552001c2899e5a274e7af103ae575fd669`.
 > **Exact tested runtime head:** `d94b9a17b60299e098a5c58722542b6d8d68827d`.
+> **Squash merge SHA:** `e0ecf43b5c4e96f20be7a777bfec65a87641d339`.
 > **L-1C:** MERGED / DEPLOYED; completion protocol installed in weekly mentoring automation.
 > **Frozen L-0/L-1 schema owners:** READ-ONLY / unchanged.
 > **Writer lock:** NONE.
@@ -28,7 +31,7 @@ It is a convenience layer over the existing protected import path, not a new aut
 
 # 2. UX contract delivered
 
-The Inbox default view gains `Quick Challenge Handoff` with primary action:
+The Inbox default view includes `Quick Challenge Handoff` with primary action:
 
 `Paste & Send Challenge`
 
@@ -116,17 +119,30 @@ no production ingest key configuration
 
 ---
 
-# 6. Verification
+# 6. Verification and release evidence
 
 Exact tested runtime head:
 
 `d94b9a17b60299e098a5c58722542b6d8d68827d`
 
-GitHub Actions:
+Exact PR head:
 
-- L1C challenge transport gate `34431713117` — **SUCCESS**.
-- inherited L1B regression gate `34431712733` — **SUCCESS**.
-- inherited L1 regression gate `34431712837` — **SUCCESS**.
+`5e524c552001c2899e5a274e7af103ae575fd669`
+
+GitHub Actions on the PR head:
+
+- L1C challenge transport gate `34431909196` — **SUCCESS**.
+- inherited L1B regression gate `34431909214` — **SUCCESS**.
+- inherited L1 regression gate `34431909207` — **SUCCESS**.
+- L0 contract validation step — **SUCCESS**; overall L0 workflow failure is the expected design-only scope rejection for a non-L0 runtime slice.
+
+Merge:
+
+```text
+PR #86 = MERGED
+squash merge SHA = e0ecf43b5c4e96f20be7a777bfec65a87641d339
+merged_at = 2026-09-10T03:13:20Z
+```
 
 Verified behaviors include:
 
@@ -147,6 +163,8 @@ Verified behaviors include:
 
 # 7. Bounded changed files
 
+The merged runtime/release diff changed only:
+
 ```text
 CURRENT_OPERATIONAL.md
 SLICE_PLAN_CURRENT.md
@@ -164,13 +182,15 @@ test_clinical_learning_l1_ui_contract.py
 ```text
 IMPLEMENTED = YES
 TESTED = YES
-EXACT-HEAD REVIEW = PASS
-PASTE & SEND UX = READY
-MANUAL FALLBACK = READY
-MERGED = NO
-DEPLOYED = NO
+REVIEWED = PASS
+MERGED = YES
+PASTE & SEND UX = MERGED
+MANUAL FALLBACK = MERGED
+DEPLOYED = PENDING NORMAL RENDER AUTO-DEPLOY
 PRODUCTION CLIPBOARD SMOKE = NO
 WRITER LOCK = NONE
 ```
 
-Next allowed action: Draft PR / RELEASE HOLD. Merge requires separate explicit product-owner authority. After merge, normal Render auto-deploy is expected, followed by one authenticated production clipboard smoke.
+Next lifecycle action: allow normal Render auto-deploy from `main`, verify the auto-created deployment reaches LIVE at the merge commit or a docs-only descendant carrying the same reviewed runtime, then complete one authenticated production clipboard smoke.
+
+MCP/native write transport and Render cron reconciliation remain separate future integration slices.
