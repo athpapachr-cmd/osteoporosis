@@ -6,6 +6,7 @@ on:
       - feat/clinical-learning-l1-challenge-foundation-mvp-2026-09-07
       - feat/clinical-learning-l1b-learning-loop-2026-09-08
       - feat/clinical-learning-l1c-challenge-completion-transport-2026-09-09
+      - feat/clinical-learning-l1d-clipboard-handoff-2026-09-10
   pull_request:
     paths:
       - 'clinical_learning/**'
@@ -80,7 +81,7 @@ jobs:
             schemas/clinical_learning_contract_manifest_v1.yaml \
             schemas/clinical_learning_design_fixtures_v1.yaml \
             schemas/osteoporosis_foundation_map_v1.yaml; then
-            echo 'L1C must not mutate frozen L0/L1 schema owners.' >&2
+            echo 'L1D must not mutate frozen L0/L1 schema owners.' >&2
             git diff --name-only "$base" HEAD -- schemas/
             exit 1
           fi
@@ -98,7 +99,7 @@ jobs:
           fi
 
           if printf '%s\n' "$changed" | grep -Ev '^(clinical_learning/.*|static/clinical-learning/.*|main\.py|test_clinical_learning_l1.*\.py|\.github/workflows/clinical-learning-l1-tests\.yml|\.github/workflows/clinical-learning-l1b-tests\.yml|\.github/workflows/clinical-learning-l1c-tests\.yml|schemas/clinical_learning_loop_v1\.yaml|CLINICAL_LEARNING_LOOP_DESIGN_V1\.md|CLINICAL_LEARNING_CHAT_TRANSPORT_V1\.md|SLICE_PLAN_CURRENT\.md|CURRENT_OPERATIONAL\.md|TODO\.md|CLINICAL_EXCELLENCE_PLAN\.md|osteoporosis-change-log\.md)$' ; then
-            echo 'Unexpected file outside Clinical Learning L1/L1B/L1C implementation owners.' >&2
+            echo 'Unexpected file outside Clinical Learning L1/L1B/L1C/L1D implementation owners.' >&2
             exit 1
           fi
 
