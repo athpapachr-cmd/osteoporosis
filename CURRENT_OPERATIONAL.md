@@ -1,12 +1,14 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** CLINICAL LEARNING HUB L-1D — IMPLEMENTED / TESTED / RELEASE HOLD
+> **STATUS:** CLINICAL LEARNING HUB L-1D — MERGED / DEPLOY PENDING
 > **Updated:** 2026-09-10 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Fresh implementation base:** `6feb03dbaea101f11828db9b71f57ebb718ccaa6`.
-> **Branch:** `feat/clinical-learning-l1d-clipboard-handoff-2026-09-10`.
 > **Slice:** `CORE-LEARNING-HUB-L1D-CLIPBOARD-HANDOFF-2026-09-10`.
+> **PR #86:** CLOSED / MERGED.
+> **Reviewed PR head:** `5e524c552001c2899e5a274e7af103ae575fd669`.
 > **Exact tested runtime head:** `d94b9a17b60299e098a5c58722542b6d8d68827d`.
+> **Squash merge SHA:** `e0ecf43b5c4e96f20be7a777bfec65a87641d339`.
 > **ACTIVE RUNTIME/DESIGN WRITER:** NONE.
 > **L-1C:** MERGED / DEPLOYED; Project completion protocol installed by product owner in weekly Osteoporosis Clinical Mentoring.
 > **Production config/secret authority exercised:** NO.
@@ -17,9 +19,9 @@
 
 ---
 
-# 1. Implemented L-1D workflow
+# 1. Merged L-1D workflow
 
-The default Learning Hub Inbox now receives a clinician-initiated quick handoff surface:
+The default Learning Hub Inbox now includes a clinician-initiated quick handoff surface:
 
 `Paste & Send Challenge`
 
@@ -106,31 +108,33 @@ A `pending_review` receipt proves only that an Inbox candidate exists.
 
 ---
 
-# 5. Exact-head verification
+# 5. Verification and merge evidence
 
 Exact tested runtime head:
 
 `d94b9a17b60299e098a5c58722542b6d8d68827d`
 
-GitHub Actions:
+Exact PR head:
 
-- Clinical Learning L1C challenge transport gate `34431713117` — **SUCCESS**.
-- Clinical Learning L1B regression gate `34431712733` — **SUCCESS**.
-- Clinical Learning L1 regression gate `34431712837` — **SUCCESS**.
+`5e524c552001c2899e5a274e7af103ae575fd669`
 
-The bounded diff versus base changes only:
+GitHub Actions on the PR head:
+
+- Clinical Learning L1C challenge transport gate `34431909196` — **SUCCESS**.
+- Clinical Learning L1B regression gate `34431909214` — **SUCCESS**.
+- Clinical Learning L1 regression gate `34431909207` — **SUCCESS**.
+- L0 contract validation step — **SUCCESS**; overall L0 workflow failure is the expected design-only scope rejection for a non-L0 runtime slice.
+
+Squash merge:
 
 ```text
-.github/workflows/clinical-learning-l1-tests.yml
-.github/workflows/clinical-learning-l1b-tests.yml
-.github/workflows/clinical-learning-l1c-tests.yml
-CURRENT_OPERATIONAL.md
-SLICE_PLAN_CURRENT.md
-static/clinical-learning/l1b.js
-test_clinical_learning_l1_ui_contract.py
+PR = #86
+merged = YES
+merge SHA = e0ecf43b5c4e96f20be7a777bfec65a87641d339
+merged_at = 2026-09-10T03:13:20Z
 ```
 
-No backend, database, schema or adjacent-owner file changed.
+No backend, database, frozen schema or adjacent-owner file changed.
 
 ---
 
@@ -139,13 +143,15 @@ No backend, database, schema or adjacent-owner file changed.
 ```text
 L-1D IMPLEMENTED = YES
 L-1D TESTED = YES
-EXACT-HEAD REVIEW = PASS
-PASTE & SEND UX = READY
-MANUAL INBOX FALLBACK = READY
-MERGED = NO
-DEPLOYED = NO
+L-1D REVIEWED = PASS
+L-1D MERGED = YES
+PASTE & SEND UX = MERGED
+MANUAL INBOX FALLBACK = MERGED
+DEPLOYED = PENDING NORMAL RENDER AUTO-DEPLOY
 PRODUCTION CLIPBOARD SMOKE = NO
 WRITER LOCK = NONE
+PRODUCTION INGEST KEY = NOT CONFIGURED
+NATIVE CHATGPT WRITE TOOL = NOT CONNECTED
 ```
 
-Exact next action: open bounded Draft PR / RELEASE HOLD. Merge requires separate explicit product-owner authority. After merge, allow normal Render auto-deploy and perform one authenticated production clipboard smoke.
+Exact next action: allow normal Render `autoDeploy=yes` behavior from `main`; do not manually trigger a duplicate deployment. Verify the auto-created deployment reaches LIVE at the L-1D merge commit or a docs-only descendant carrying the same runtime, then perform one authenticated production clipboard smoke.
