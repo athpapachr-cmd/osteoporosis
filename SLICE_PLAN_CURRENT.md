@@ -1,70 +1,76 @@
 # SLICE_PLAN_CURRENT.md — Clinical Learning Hub L-1D Clipboard Handoff
 
-> **STATUS:** DESIGN FROZEN / IMPLEMENTATION ACTIVE
+> **STATUS:** IMPLEMENTED / TESTED / RELEASE HOLD
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Slice ID:** `CORE-LEARNING-HUB-L1D-CLIPBOARD-HANDOFF-2026-09-10`.
 > **Base:** `6feb03dbaea101f11828db9b71f57ebb718ccaa6`.
 > **Branch:** `feat/clinical-learning-l1d-clipboard-handoff-2026-09-10`.
-> **L-1C:** MERGED / DEPLOYED; Project completion protocol installed in weekly mentoring automation.
+> **Exact tested runtime head:** `d94b9a17b60299e098a5c58722542b6d8d68827d`.
+> **L-1C:** MERGED / DEPLOYED; completion protocol installed in weekly mentoring automation.
 > **Frozen L-0/L-1 schema owners:** READ-ONLY / unchanged.
-> **Writer lock:** L-1D bounded writer active.
+> **Writer lock:** NONE.
 
 ---
 
-# 1. Product problem
+# 1. Product result
 
-The Challenge completion protocol already produces a structured synthetic learning episode, but native ChatGPT → Cockpit write transport is not connected. The existing Advanced import requires navigating to a debug surface and manually pasting JSON.
-
-The desired clinician workflow is intentionally simpler:
+L-1D reduces Challenge handoff from the Advanced/debug workflow to a normal Inbox action:
 
 ```text
-copy Challenge artifact
-→ open Learning Hub
-→ one explicit Paste & Send Challenge tap
+Copy structured Challenge artifact
+→ Paste & Send Challenge
 → pending_review Inbox candidate
 ```
 
-This is a convenience layer over the existing protected manual import path, not a new authority surface.
+It is a convenience layer over the existing protected import path, not a new authority surface.
 
 ---
 
-# 2. UX contract
+# 2. UX contract delivered
 
-The Inbox default view gets a compact quick-handoff card above Pending Imports.
-
-Primary action:
+The Inbox default view gains `Quick Challenge Handoff` with primary action:
 
 `Paste & Send Challenge`
 
-Behavior:
+Clipboard read is attempted only in that explicit click handler.
 
-- clipboard is read only after the clinician taps the button;
-- successful clipboard read is never stored in localStorage/sessionStorage;
-- supported copied shapes:
-  1. bare canonical `ClinicalLearningChallengeV1`;
-  2. bare bounded rich legacy `ClinicalLearningChallengeV1` with `schema_version=1.0`;
-  3. wrapper `{episode, source_event_id?, loop_plan?, resources?}`;
-  4. the same JSON inside a Markdown `json` code fence;
-- if a bare episode contains a top-level `source_event_id`, L-1D lifts it into the import envelope and removes it from the episode before adapter validation;
-- successful import shows `state`, `import_id`, `source_event_id`, `source_format`, and whether the import was idempotent;
-- Inbox refreshes and opens the returned candidate automatically.
+Supported copied shapes:
+
+1. bare canonical `ClinicalLearningChallengeV1`;
+2. bare bounded rich legacy `ClinicalLearningChallengeV1` with `schema_version=1.0`;
+3. wrapper `{episode, source_event_id?, loop_plan?, resources?}`;
+4. equivalent JSON inside a Markdown `json` code fence.
+
+A top-level `source_event_id` on a bare episode is lifted into the existing request envelope before adapter validation.
+
+Successful import shows:
+
+```text
+state
+import_id
+source_event_id
+source_format
+idempotent
+```
+
+and automatically refreshes/opens the returned Inbox candidate.
 
 ---
 
-# 3. Clipboard failure contract
+# 3. Clipboard failure / manual fallback
 
-Clipboard API support/permission varies by browser surface. Failure must degrade cleanly:
+If Clipboard API access is unavailable, denied, or empty:
 
 ```text
-clipboard unavailable / denied / empty
-→ no network write
-→ reveal manual paste fallback in Inbox
-→ clinician pastes same artifact
+no network write
+→ reveal manual paste field in Inbox
 → Send pasted Challenge
-→ same protected /api/imports flow
+→ same /api/imports path
 ```
 
-The fallback is not the old Advanced workflow; it is a small local input on the Inbox quick-handoff card.
+If parsing or server validation fails after a successful clipboard read, the copied source is retained only in the visible in-memory textarea for correction/retry. It is not written to browser storage.
+
+The Advanced importer remains unchanged.
 
 ---
 
@@ -74,27 +80,26 @@ L-1D sends only to:
 
 `POST /clinical/learning/api/imports`
 
-The server already owns:
+The existing server continues to own:
 
 - rich/canonical adapter validation;
 - PHI scanning;
 - source-event UUID validation/derivation;
-- deterministic normalized-hash conflict behavior;
+- normalized-hash idempotency/conflict behavior;
 - `pending_review` creation;
 - no raw source payload persistence;
-- Inbox → clinician review → accepted Challenge linkage.
+- clinician Inbox review before accepted Challenge persistence.
 
-No endpoint, database table, schema, or environment secret is added.
+No endpoint, database table, schema or environment secret was added.
 
 ---
 
-# 5. Security and authority boundaries
-
-Permanent for this slice:
+# 5. Security / privacy preserved
 
 ```text
 clipboard access requires user gesture
 clipboard content is ephemeral client input
+no browser storage operations for clipboard content
 no patient identifiers
 no raw transcript persistence
 no auto-accept
@@ -107,56 +112,65 @@ no native MCP/write-tool claim
 no production ingest key configuration
 ```
 
-A successful `pending_review` receipt means only that an Inbox candidate exists.
+`pending_review` remains only an Inbox state, not accepted learning authority.
 
 ---
 
-# 6. Acceptance evidence
+# 6. Verification
 
-L-1D is implementation-complete when focused/inherited tests prove:
+Exact tested runtime head:
 
-- Inbox contains the visible `Paste & Send Challenge` control;
-- clipboard read occurs only inside its explicit click handler;
-- Markdown fenced JSON extraction is bounded;
-- bare episode and wrapper normalization both target `/api/imports`;
-- top-level `source_event_id` is lifted into the envelope;
-- success receipt includes pending-review identity and opens Inbox candidate;
-- clipboard failure exposes manual fallback without network write;
-- no local/session storage of clipboard content;
-- Advanced import remains available unchanged;
-- browser JS syntax passes;
-- inherited L-1B/L-1 runtime tests remain green;
+`d94b9a17b60299e098a5c58722542b6d8d68827d`
+
+GitHub Actions:
+
+- L1C challenge transport gate `34431713117` — **SUCCESS**.
+- inherited L1B regression gate `34431712733` — **SUCCESS**.
+- inherited L1 regression gate `34431712837` — **SUCCESS**.
+
+Verified behaviors include:
+
+- browser JavaScript syntax;
+- explicit clipboard user gesture;
+- fenced JSON extraction;
+- bare/wrapper normalization;
+- stable `source_event_id` handoff;
+- same protected `/api/imports` endpoint;
+- pending-review receipt/open-Inbox behavior;
+- manual fallback without automatic network write;
+- no local/session storage operations for clipboard content;
+- Advanced importer preserved;
 - frozen schema owners unchanged;
 - no Clinic Utilities/RF/physio/CU-1 spillover.
 
 ---
 
-# 7. Allowed files
+# 7. Bounded changed files
 
 ```text
 CURRENT_OPERATIONAL.md
 SLICE_PLAN_CURRENT.md
-static/clinical-learning/index.html
 static/clinical-learning/l1b.js
-static/clinical-learning/styles.css                 # only if needed
- test_clinical_learning_l1_ui_contract.py
-.github/workflows/clinical-learning-l1b-tests.yml   # scope-gate maintenance only
-.github/workflows/clinical-learning-l1c-tests.yml   # scope-gate maintenance only
-osteoporosis-change-log.md                          # append-only when materially complete
+test_clinical_learning_l1_ui_contract.py
+.github/workflows/clinical-learning-l1-tests.yml
+.github/workflows/clinical-learning-l1b-tests.yml
+.github/workflows/clinical-learning-l1c-tests.yml
 ```
 
 ---
 
-# 8. Release path
+# 8. Release state
 
 ```text
-bounded UI implementation
-→ focused UI contract + inherited regressions
-→ exact-head review
-→ Draft PR / RELEASE HOLD
-→ explicit product-owner merge authority
-→ normal Render auto-deploy
-→ one authenticated production clipboard smoke
+IMPLEMENTED = YES
+TESTED = YES
+EXACT-HEAD REVIEW = PASS
+PASTE & SEND UX = READY
+MANUAL FALLBACK = READY
+MERGED = NO
+DEPLOYED = NO
+PRODUCTION CLIPBOARD SMOKE = NO
+WRITER LOCK = NONE
 ```
 
-MCP/native write transport and Render cron reconciliation remain separate future integration slices.
+Next allowed action: Draft PR / RELEASE HOLD. Merge requires separate explicit product-owner authority. After merge, normal Render auto-deploy is expected, followed by one authenticated production clipboard smoke.
