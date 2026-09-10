@@ -1,165 +1,162 @@
-# SLICE_PLAN_CURRENT.md — Clinical Learning Hub L-1C Challenge Completion Transport
+# SLICE_PLAN_CURRENT.md — Clinical Learning Hub L-1D Clipboard Handoff
 
-> **STATUS:** MERGED / DEPLOYED
+> **STATUS:** DESIGN FROZEN / IMPLEMENTATION ACTIVE
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Slice ID:** `CORE-LEARNING-HUB-L1C-CHALLENGE-COMPLETION-TRANSPORT-2026-09-09`.
-> **PR #85:** CLOSED / MERGED.
-> **Reviewed PR head:** `01522da3985f95729ae693625f28fa5d33f2ead3`.
-> **Squash merge SHA:** `14f0eca07133819cde03685d4db8905417a31b6b`.
-> **Production-verified deploy commit:** `6ad977993fa1832f57d0e59ec41e7cd9d154ead3`.
-> **Render deploy:** `dep-dags2tu7bikc73dq15t0` — LIVE.
+> **Slice ID:** `CORE-LEARNING-HUB-L1D-CLIPBOARD-HANDOFF-2026-09-10`.
+> **Base:** `6feb03dbaea101f11828db9b71f57ebb718ccaa6`.
+> **Branch:** `feat/clinical-learning-l1d-clipboard-handoff-2026-09-10`.
+> **L-1C:** MERGED / DEPLOYED; Project completion protocol installed in weekly mentoring automation.
 > **Frozen L-0/L-1 schema owners:** READ-ONLY / unchanged.
-> **Writer lock:** NONE.
+> **Writer lock:** L-1D bounded writer active.
 
 ---
 
-# 1. Problem closed by this slice
+# 1. Product problem
 
-Challenge conversations no longer depend on remembered prompts to know that completion requires Cockpit handoff.
+The Challenge completion protocol already produces a structured synthetic learning episode, but native ChatGPT → Cockpit write transport is not connected. The existing Advanced import requires navigating to a debug surface and manually pasting JSON.
 
-The durable owner is the versioned ChatGPT Project instruction:
-
-`clinical_learning/chatgpt_project_instructions_v1.txt`
-
-Definition of done:
+The desired clinician workflow is intentionally simpler:
 
 ```text
-CHALLENGE COMPLETE
-=
-FINAL DEBRIEF COMPLETE
-+ STRUCTURED LEARNING EPISODE COMPLETE
-+ COCKPIT HANDOFF ATTEMPT COMPLETE
-+ RECEIPT OR EXPLICIT TRANSPORT FAILURE
+copy Challenge artifact
+→ open Learning Hub
+→ one explicit Paste & Send Challenge tap
+→ pending_review Inbox candidate
 ```
 
-No valid receipt means the conversation must not claim the Cockpit was updated.
+This is a convenience layer over the existing protected manual import path, not a new authority surface.
 
 ---
 
-# 2. Completion state machine
+# 2. UX contract
+
+The Inbox default view gets a compact quick-handoff card above Pending Imports.
+
+Primary action:
+
+`Paste & Send Challenge`
+
+Behavior:
+
+- clipboard is read only after the clinician taps the button;
+- successful clipboard read is never stored in localStorage/sessionStorage;
+- supported copied shapes:
+  1. bare canonical `ClinicalLearningChallengeV1`;
+  2. bare bounded rich legacy `ClinicalLearningChallengeV1` with `schema_version=1.0`;
+  3. wrapper `{episode, source_event_id?, loop_plan?, resources?}`;
+  4. the same JSON inside a Markdown `json` code fence;
+- if a bare episode contains a top-level `source_event_id`, L-1D lifts it into the import envelope and removes it from the episode before adapter validation;
+- successful import shows `state`, `import_id`, `source_event_id`, `source_format`, and whether the import was idempotent;
+- Inbox refreshes and opens the returned candidate automatically.
+
+---
+
+# 3. Clipboard failure contract
+
+Clipboard API support/permission varies by browser surface. Failure must degrade cleanly:
 
 ```text
-IN_PROGRESS
-DEBRIEF_COMPLETE_HANDOFF_PENDING
-HANDOFF_SUCCEEDED_PENDING_COCKPIT_REVIEW
-HANDOFF_FAILED_MANUAL_FALLBACK_READY
+clipboard unavailable / denied / empty
+→ no network write
+→ reveal manual paste fallback in Inbox
+→ clinician pastes same artifact
+→ Send pasted Challenge
+→ same protected /api/imports flow
 ```
 
-Successful transport requires:
-
-```text
-state = pending_review
-import_id = valid UUID
-source_event_id = valid UUID
-source_format = canonical_challenge_v1 | rich_challenge_export_v1
-```
-
-Tool invocation without a valid receipt is not success evidence.
+The fallback is not the old Advanced workflow; it is a small local input on the Inbox quick-handoff card.
 
 ---
 
-# 3. Learning content contract
+# 4. Existing server authority reused
 
-The Project instruction requires the final structured episode to preserve:
+L-1D sends only to:
 
-- initial hypothetical scenario;
-- verbatim clinician responses;
-- progressive disclosures;
-- follow-up reasoning and final decision;
-- strengths;
-- needs reinforcement;
-- clear errors kept distinct from missed opportunities;
-- defensible disagreements;
-- evidence gaps / blind spots / reasoning patterns / insights;
-- learning objectives and study actions;
-- knowledge-island bridge targets;
-- fresh high-quality resources where appropriate;
-- repeated consolidation targets.
+`POST /clinical/learning/api/imports`
 
-It does not grant patient-record, Foundation, Signal, clinician-review or reference-verification authority.
+The server already owns:
+
+- rich/canonical adapter validation;
+- PHI scanning;
+- source-event UUID validation/derivation;
+- deterministic normalized-hash conflict behavior;
+- `pending_review` creation;
+- no raw source payload persistence;
+- Inbox → clinician review → accepted Challenge linkage.
+
+No endpoint, database table, schema, or environment secret is added.
 
 ---
 
-# 4. Cockpit setup surface
+# 5. Security and authority boundaries
 
-Deployed path:
-
-`/static/clinical-learning/project-setup.html`
-
-It exposes the exact Project instruction, a Copy button and truthful capability state:
+Permanent for this slice:
 
 ```text
-Project instruction = READY
-Native Cockpit write tool = NOT CONNECTED
-Advanced/manual fallback = AVAILABLE
-```
-
-No credential is rendered to the browser.
-
----
-
-# 5. Verification
-
-Exact reviewed release head:
-
-`01522da3985f95729ae693625f28fa5d33f2ead3`
-
-GitHub Actions:
-
-- L1C challenge transport gate `34400362345` — **SUCCESS**.
-- inherited L1B gate `34400362395` — **SUCCESS**.
-- inherited L1 gate `34400362435` — **SUCCESS**.
-- L0 contract validation step — **SUCCESS**; the overall L0 workflow fails only its intentional design-only scope check because L-1C is not an L0 design PR.
-
-Production deployment:
-
-```text
-Render deploy = dep-dags2tu7bikc73dq15t0
-commit = 6ad977993fa1832f57d0e59ec41e7cd9d154ead3
-trigger = new_commit
-status = live
-finished = 2026-09-09T20:30:26Z
-```
-
-The deployed commit is a docs-only descendant of the L-1C runtime merge and preserves the reviewed runtime tree.
-
----
-
-# 6. Security / privacy
-
-Preserved:
-
-```text
-synthetic learning only for automatic ingress
-verbatim clinician responses required
-raw transcript never transported/persisted by this path
+clipboard access requires user gesture
+clipboard content is ephemeral client input
 no patient identifiers
+no raw transcript persistence
+no auto-accept
 no imported clinician-review authority
 no imported reference-verification authority
+no Foundation state mutation
 no Signal promotion
-no Foundation-state mutation
-no third-party generic webhook bypass
+no patient data mutation
+no native MCP/write-tool claim
+no production ingest key configuration
 ```
 
-`CLINICAL_LEARNING_INGEST_KEY` remains unconfigured. Native zero-click transport is not active until an actual trusted write-capable ChatGPT app/action is connected and separately smoke-tested.
+A successful `pending_review` receipt means only that an Inbox candidate exists.
 
 ---
 
-# 7. Lifecycle state
+# 6. Acceptance evidence
+
+L-1D is implementation-complete when focused/inherited tests prove:
+
+- Inbox contains the visible `Paste & Send Challenge` control;
+- clipboard read occurs only inside its explicit click handler;
+- Markdown fenced JSON extraction is bounded;
+- bare episode and wrapper normalization both target `/api/imports`;
+- top-level `source_event_id` is lifted into the envelope;
+- success receipt includes pending-review identity and opens Inbox candidate;
+- clipboard failure exposes manual fallback without network write;
+- no local/session storage of clipboard content;
+- Advanced import remains available unchanged;
+- browser JS syntax passes;
+- inherited L-1B/L-1 runtime tests remain green;
+- frozen schema owners unchanged;
+- no Clinic Utilities/RF/physio/CU-1 spillover.
+
+---
+
+# 7. Allowed files
 
 ```text
-IMPLEMENTED = YES
-TESTED = YES
-REVIEWED = PASS
-MERGED = YES
-DEPLOYED = YES
-PROJECT PROTOCOL = READY
-SETUP SURFACE = DEPLOYED
-NATIVE WRITE TOOL = NOT CONNECTED
-PRODUCTION INGEST KEY = NOT CONFIGURED
-WRITER LOCK = NONE
+CURRENT_OPERATIONAL.md
+SLICE_PLAN_CURRENT.md
+static/clinical-learning/index.html
+static/clinical-learning/l1b.js
+static/clinical-learning/styles.css                 # only if needed
+ test_clinical_learning_l1_ui_contract.py
+.github/workflows/clinical-learning-l1b-tests.yml   # scope-gate maintenance only
+.github/workflows/clinical-learning-l1c-tests.yml   # scope-gate maintenance only
+osteoporosis-change-log.md                          # append-only when materially complete
 ```
 
-Next lifecycle action: install the Project instruction once in the dedicated ChatGPT Project. Native write activation remains a separate capability-gated integration lifecycle.
+---
 
-Later docs-only canonical descendants may auto-deploy under Render `autoDeploy=yes`; this does not alter the reviewed L-1C runtime and does not require recursive runtime smoke.
+# 8. Release path
+
+```text
+bounded UI implementation
+→ focused UI contract + inherited regressions
+→ exact-head review
+→ Draft PR / RELEASE HOLD
+→ explicit product-owner merge authority
+→ normal Render auto-deploy
+→ one authenticated production clipboard smoke
+```
+
+MCP/native write transport and Render cron reconciliation remain separate future integration slices.
