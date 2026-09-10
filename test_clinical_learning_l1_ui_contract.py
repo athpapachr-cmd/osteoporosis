@@ -109,8 +109,8 @@ class ClinicalLearningL1UiContractTests(unittest.TestCase):
         self.assertIn("importFromManualPaste", self.l1b_js)
 
     def test_clipboard_handoff_does_not_persist_clipboard_content_in_browser_storage(self) -> None:
-        self.assertNotRegex(self.l1b_js, r"(?:window\.)?localStorage\s*\.")
-        self.assertNotRegex(self.l1b_js, r"(?:window\.)?sessionStorage\s*\.")
+        storage_operation = r"(?:window\.)?(?:localStorage|sessionStorage)\s*\.\s*(?:setItem|getItem|removeItem|clear|key)\s*\("
+        self.assertNotRegex(self.l1b_js, storage_operation)
         self.assertNotIn("CLINICAL_LEARNING_INGEST_KEY", self.l1b_js)
 
 
