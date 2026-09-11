@@ -1,6 +1,6 @@
 # KNEE_OA_TEMPLATE_DESIGN_V1.md — Physio Referral Step 3
 
-> **STATUS:** DESIGN CANDIDATE — 2026-09-11.
+> **STATUS:** REVIEW-HARDENED DESIGN CANDIDATE — 2026-09-11.
 > **Scope:** Knee Osteoarthritis only.
 > **Parent:** frozen Step-1 UX + frozen Step-2 evidence design.
 > **Existing CU-1 runtime/formatter:** read-only in this slice.
@@ -87,7 +87,7 @@ A more specific selected CU-1 finding suppresses the generic weakness phrase in 
 Routine opening:
 
 ```text
-Παραπομπή για εξατομικευμένη φυσιοθεραπευτική αποκατάσταση για οστεοαρθρίτιδα {laterality_phrase}.
+Παραπομπή για εξατομικευμένη φυσιοθεραπευτική αποκατάσταση λόγω οστεοαρθρίτιδας {laterality_phrase}.
 ```
 
 Natural laterality:
@@ -100,7 +100,9 @@ bilateral  → και των δύο γονάτων
 
 The product does not use `Οστεοαρθρίτιδα γόνατος (δεξιά)` in the final referral.
 
-Copy readiness for this prototype requires one of `right | left | bilateral`.
+The single-diagnosis prototype must not diagnose Knee OA merely because the clinician opened the Knee-OA flow. Copy readiness therefore requires the existing CU-1 formal-diagnosis semantics to be satisfied, including explicit clinician assertion (`formal_assertion_state=yes`) for this route, in addition to laterality `right | left | bilateral`.
+
+Preview may exist before copy readiness, but final Copy must remain blocked until those semantics and inherited validation/safety requirements are satisfied.
 
 ---
 
@@ -268,17 +270,17 @@ If selected and one or more mapped functional limitations are selected:
 λειτουργική επανεκπαίδευση για {task_list}
 ```
 
-Task wording:
+Task wording is grammatically ready for the preposition `για`:
 
 ```text
-stairs       → σκάλες
-sit_to_stand → έγερση από καθιστή θέση
-squat        → βαθύ κάθισμα
-kneeling     → γονάτισμα
-running      → τρέξιμο
-manual_work  → απαιτήσεις χειρωνακτικής εργασίας
-sport_gym    → άθληση ή άσκηση
-patient_priority_activity → δραστηριότητα προτεραιότητας του ασθενούς
+stairs       → τις σκάλες
+sit_to_stand → την έγερση από καθιστή θέση
+squat        → το βαθύ κάθισμα
+kneeling     → το γονάτισμα
+running      → το τρέξιμο
+manual_work  → τις απαιτήσεις χειρωνακτικής εργασίας
+sport_gym    → την άθληση ή την άσκηση
+patient_priority_activity → τη δραστηριότητα προτεραιότητας του ασθενούς
 ```
 
 If no mapped task is selected, use the generic phrase:
@@ -405,9 +407,17 @@ Preview is live for every structured/product-state change.
 
 Copy readiness is separate from preview existence.
 
-Copy is blocked when inherited CU-1 validation/safety blocks generation or when Knee-OA laterality is not `right | left | bilateral`.
+Copy requires:
 
-The template does not create a second safety engine.
+```text
+primary route = knee_osteoarthritis
+formal diagnosis semantics satisfied by explicit clinician assertion
+laterality = right | left | bilateral
+no inherited CU-1 formatter-blocking validation error
+no unresolved inherited blocking/urgent safety state
+```
+
+The template does not create a second diagnosis, validation or safety engine.
 
 ---
 
@@ -438,13 +448,13 @@ A dirty manual buffer must not be silently overwritten by later live projection.
 ## Default right Knee OA
 
 ```text
-Παραπομπή για εξατομικευμένη φυσιοθεραπευτική αποκατάσταση για οστεοαρθρίτιδα δεξιού γόνατος. Παρακαλώ για ενεργητικό, εξατομικευμένο πρόγραμμα με θεραπευτική άσκηση, προοδευτική ενδυνάμωση και εκπαίδευση για αυτοδιαχείριση, προσαρμοσμένο στην κλινική ανταπόκριση και στους λειτουργικούς στόχους.
+Παραπομπή για εξατομικευμένη φυσιοθεραπευτική αποκατάσταση λόγω οστεοαρθρίτιδας δεξιού γόνατος. Παρακαλώ για ενεργητικό, εξατομικευμένο πρόγραμμα με θεραπευτική άσκηση, προοδευτική ενδυνάμωση και εκπαίδευση για αυτοδιαχείριση, προσαρμοσμένο στην κλινική ανταπόκριση και στους λειτουργικούς στόχους.
 ```
 
 ## Pain + stiffness + generic weakness + stairs
 
 ```text
-Παραπομπή για εξατομικευμένη φυσιοθεραπευτική αποκατάσταση για οστεοαρθρίτιδα δεξιού γόνατος. Η κλινική εικόνα περιλαμβάνει πόνο, δυσκαμψία και μυϊκή αδυναμία. Λειτουργικά, υπάρχει δυσχέρεια στις σκάλες. Παρακαλώ για ενεργητικό, εξατομικευμένο πρόγραμμα με θεραπευτική άσκηση, προοδευτική ενδυνάμωση και εκπαίδευση για αυτοδιαχείριση, προσαρμοσμένο στην κλινική ανταπόκριση και στους λειτουργικούς στόχους.
+Παραπομπή για εξατομικευμένη φυσιοθεραπευτική αποκατάσταση λόγω οστεοαρθρίτιδας δεξιού γόνατος. Η κλινική εικόνα περιλαμβάνει πόνο, δυσκαμψία και μυϊκή αδυναμία. Λειτουργικά, υπάρχει δυσχέρεια στις σκάλες. Παρακαλώ για ενεργητικό, εξατομικευμένο πρόγραμμα με θεραπευτική άσκηση, προοδευτική ενδυνάμωση και εκπαίδευση για αυτοδιαχείριση, προσαρμοσμένο στην κλινική ανταπόκριση και στους λειτουργικούς στόχους.
 ```
 
 Machine fixtures own final exact wording for all reviewed scenarios.
@@ -454,6 +464,7 @@ Machine fixtures own final exact wording for all reviewed scenarios.
 # 19. Hard invariants
 
 ```text
+DIAGNOSIS MUST BE CLINICIAN-ASSERTED BEFORE COPY
 SUGGESTION != SELECTION != OUTPUT
 STIFFNESS != ROM RESTRICTION
 GENERIC WEAKNESS != OBJECTIVE WEAKNESS
