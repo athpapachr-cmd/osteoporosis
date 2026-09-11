@@ -6,7 +6,7 @@ fixtures:
   - id: default_right
     input:
       laterality: right
-      formal_assertion_state: yes
+      formal_assertion_state: "yes"
       findings: []
       functional_impairments: []
       rehab_directions: [therapeutic_exercise, progressive_strengthening, education_and_self_management]
@@ -18,7 +18,7 @@ fixtures:
   - id: pain_stiffness_generic_weakness_stairs
     input:
       laterality: right
-      formal_assertion_state: yes
+      formal_assertion_state: "yes"
       findings: [pain]
       functional_impairments: [stairs]
       rehab_directions: [therapeutic_exercise, progressive_strengthening, education_and_self_management]
@@ -30,7 +30,7 @@ fixtures:
   - id: quadriceps_specific_suppresses_generic_and_refines_plan
     input:
       laterality: left
-      formal_assertion_state: yes
+      formal_assertion_state: "yes"
       findings: [pain, quadriceps_weakness]
       functional_impairments: [stairs]
       rehab_directions: [therapeutic_exercise, progressive_strengthening, education_and_self_management, functional_task_retraining]
@@ -42,7 +42,7 @@ fixtures:
   - id: combined_rom_and_selected_mobility
     input:
       laterality: right
-      formal_assertion_state: yes
+      formal_assertion_state: "yes"
       findings: [active_rom_restricted, passive_rom_restricted]
       functional_impairments: []
       rehab_directions: [therapeutic_exercise, progressive_strengthening, education_and_self_management, mobility_exercise_when_restricted]
@@ -54,7 +54,7 @@ fixtures:
   - id: balance_selected_neuromuscular
     input:
       laterality: right
-      formal_assertion_state: yes
+      formal_assertion_state: "yes"
       findings: [balance_deficit]
       functional_impairments: [community_mobility]
       rehab_directions: [therapeutic_exercise, progressive_strengthening, education_and_self_management, neuromuscular_proprioceptive_training, balance_stepping_recovery_training]
@@ -66,7 +66,7 @@ fixtures:
   - id: walking_alias_dedup_endurance_gait
     input:
       laterality: right
-      formal_assertion_state: yes
+      formal_assertion_state: "yes"
       findings: [walking_limitation]
       functional_impairments: [walking_tolerance]
       rehab_directions: [therapeutic_exercise, progressive_strengthening, education_and_self_management, progressive_endurance_or_capacity_work, gait_walking_practice]
@@ -78,7 +78,7 @@ fixtures:
   - id: mixed_guideline_adjunct_does_not_leak_evidence_text
     input:
       laterality: right
-      formal_assertion_state: yes
+      formal_assertion_state: "yes"
       findings: [pain]
       functional_impairments: []
       rehab_directions: [therapeutic_exercise, progressive_strengthening, education_and_self_management]
@@ -91,7 +91,7 @@ fixtures:
   - id: removed_therapeutic_exercise_does_not_render
     input:
       laterality: right
-      formal_assertion_state: yes
+      formal_assertion_state: "yes"
       findings: []
       functional_impairments: []
       rehab_directions: [progressive_strengthening, education_and_self_management]
@@ -104,7 +104,7 @@ fixtures:
   - id: suggestion_without_selection_does_not_render
     input:
       laterality: right
-      formal_assertion_state: yes
+      formal_assertion_state: "yes"
       findings: [stairs_limitation]
       functional_impairments: []
       rehab_directions: [therapeutic_exercise, progressive_strengthening, education_and_self_management]
@@ -118,7 +118,7 @@ fixtures:
   - id: bilateral_grammar
     input:
       laterality: bilateral
-      formal_assertion_state: yes
+      formal_assertion_state: "yes"
       findings: [pain]
       functional_impairments: [walking_tolerance]
       rehab_directions: [therapeutic_exercise, progressive_strengthening, education_and_self_management]
@@ -130,7 +130,7 @@ fixtures:
   - id: objective_weakness_suppresses_generic
     input:
       laterality: left
-      formal_assertion_state: yes
+      formal_assertion_state: "yes"
       findings: [objective_weakness]
       functional_impairments: []
       rehab_directions: [therapeutic_exercise, progressive_strengthening, education_and_self_management]
@@ -143,7 +143,7 @@ fixtures:
   - id: no_visible_plan_items_uses_implicit_fallback
     input:
       laterality: right
-      formal_assertion_state: yes
+      formal_assertion_state: "yes"
       findings: []
       functional_impairments: []
       rehab_directions: []
