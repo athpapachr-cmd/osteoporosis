@@ -1,5 +1,5 @@
 version: knee_oa_template_contract_v1
-status: design_candidate
+status: design_candidate_review_hardened
 language: el
 scope:
   profile_id: knee
@@ -27,6 +27,7 @@ product_overlay:
 
 copy_readiness:
   laterality_allowed: [right, left, bilateral]
+  require_formal_diagnosis_assertion_yes: true
   inherit_cu1_validation_block: true
   inherit_cu1_safety_block: true
   evidence_state_does_not_block_copy_by_itself: true
@@ -47,7 +48,7 @@ output_blocks_order:
   - clinician_note
 
 block_templates:
-  indication: "Παραπομπή για εξατομικευμένη φυσιοθεραπευτική αποκατάσταση για οστεοαρθρίτιδα {laterality_phrase}."
+  indication: "Παραπομπή για εξατομικευμένη φυσιοθεραπευτική αποκατάσταση λόγω οστεοαρθρίτιδας {laterality_phrase}."
   clinical_picture: "Η κλινική εικόνα περιλαμβάνει {clinical_list}."
   functional_impact: "Λειτουργικά, υπάρχει δυσχέρεια {functional_list}."
   active_plan_with_items: "Παρακαλώ για ενεργητικό, εξατομικευμένο πρόγραμμα με {plan_list}, προσαρμοσμένο στην κλινική ανταπόκριση και στους λειτουργικούς στόχους."
@@ -187,14 +188,14 @@ functional_task_retraining:
   trigger_is_selection_of_intervention_not_function: true
   task_order: [stairs, sit_to_stand, squat, kneeling, running, manual_work, sport_gym, patient_priority_activity]
   task_phrases:
-    stairs: σκάλες
-    sit_to_stand: έγερση από καθιστή θέση
-    squat: βαθύ κάθισμα
-    kneeling: γονάτισμα
-    running: τρέξιμο
-    manual_work: απαιτήσεις χειρωνακτικής εργασίας
-    sport_gym: άθληση ή άσκηση
-    patient_priority_activity: δραστηριότητα προτεραιότητας του ασθενούς
+    stairs: τις σκάλες
+    sit_to_stand: την έγερση από καθιστή θέση
+    squat: το βαθύ κάθισμα
+    kneeling: το γονάτισμα
+    running: το τρέξιμο
+    manual_work: τις απαιτήσεις χειρωνακτικής εργασίας
+    sport_gym: την άθληση ή την άσκηση
+    patient_priority_activity: τη δραστηριότητα προτεραιότητας του ασθενούς
   phrase_with_tasks: "λειτουργική επανεκπαίδευση για {task_list}"
   phrase_without_tasks: λειτουργική επανεκπαίδευση
 
@@ -254,6 +255,7 @@ weight_management:
   auto_insert: false
 
 hard_invariants:
+  - diagnosis_must_be_clinician_asserted_before_copy
   - suggestion_is_not_selection
   - selection_is_required_for_plan_phrase
   - stiffness_is_not_rom_restriction
