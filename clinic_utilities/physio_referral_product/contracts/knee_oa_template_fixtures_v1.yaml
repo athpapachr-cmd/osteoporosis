@@ -1,0 +1,141 @@
+version: knee_oa_template_fixtures_v1
+contract: knee_oa_template_contract_v1
+synthetic_only: true
+
+fixtures:
+  - id: default_right
+    input:
+      laterality: right
+      findings: []
+      functional_impairments: []
+      rehab_directions: [therapeutic_exercise, progressive_strengthening, education_and_self_management]
+      adjunct_options: []
+      goals: []
+      phenotype: {stiffness_symptom: false, weakness_symptom_or_context: false}
+    expected_text: "Παραπομπή για εξατομικευμένη φυσιοθεραπευτική αποκατάσταση για οστεοαρθρίτιδα δεξιού γόνατος. Παρακαλώ για ενεργητικό, εξατομικευμένο πρόγραμμα με θεραπευτική άσκηση, προοδευτική ενδυνάμωση και εκπαίδευση και αυτοδιαχείριση, προσαρμοσμένο στην κλινική ανταπόκριση και στους λειτουργικούς στόχους."
+
+  - id: pain_stiffness_generic_weakness_stairs
+    input:
+      laterality: right
+      findings: [pain]
+      functional_impairments: [stairs]
+      rehab_directions: [therapeutic_exercise, progressive_strengthening, education_and_self_management]
+      adjunct_options: []
+      goals: []
+      phenotype: {stiffness_symptom: true, weakness_symptom_or_context: true}
+    expected_text: "Παραπομπή για εξατομικευμένη φυσιοθεραπευτική αποκατάσταση για οστεοαρθρίτιδα δεξιού γόνατος. Η κλινική εικόνα περιλαμβάνει πόνο, δυσκαμψία και μυϊκή αδυναμία. Λειτουργικά, υπάρχει δυσχέρεια στις σκάλες. Παρακαλώ για ενεργητικό, εξατομικευμένο πρόγραμμα με θεραπευτική άσκηση, προοδευτική ενδυνάμωση και εκπαίδευση και αυτοδιαχείριση, προσαρμοσμένο στην κλινική ανταπόκριση και στους λειτουργικούς στόχους."
+
+  - id: quadriceps_specific_suppresses_generic_and_refines_plan
+    input:
+      laterality: left
+      findings: [pain, quadriceps_weakness]
+      functional_impairments: [stairs]
+      rehab_directions: [therapeutic_exercise, progressive_strengthening, education_and_self_management, functional_task_retraining]
+      adjunct_options: []
+      goals: []
+      phenotype: {stiffness_symptom: false, weakness_symptom_or_context: true}
+    expected_text: "Παραπομπή για εξατομικευμένη φυσιοθεραπευτική αποκατάσταση για οστεοαρθρίτιδα αριστερού γόνατος. Η κλινική εικόνα περιλαμβάνει πόνο και αδυναμία τετρακεφάλου. Λειτουργικά, υπάρχει δυσχέρεια στις σκάλες. Παρακαλώ για ενεργητικό, εξατομικευμένο πρόγραμμα με θεραπευτική άσκηση, προοδευτική ενδυνάμωση με έμφαση στον τετρακέφαλο, εκπαίδευση και αυτοδιαχείριση και λειτουργική επανεκπαίδευση για σκάλες, προσαρμοσμένο στην κλινική ανταπόκριση και στους λειτουργικούς στόχους."
+
+  - id: combined_rom_and_selected_mobility
+    input:
+      laterality: right
+      findings: [active_rom_restricted, passive_rom_restricted]
+      functional_impairments: []
+      rehab_directions: [therapeutic_exercise, progressive_strengthening, education_and_self_management, mobility_exercise_when_restricted]
+      adjunct_options: []
+      goals: []
+      phenotype: {stiffness_symptom: true, weakness_symptom_or_context: false}
+    expected_text: "Παραπομπή για εξατομικευμένη φυσιοθεραπευτική αποκατάσταση για οστεοαρθρίτιδα δεξιού γόνατος. Η κλινική εικόνα περιλαμβάνει δυσκαμψία και περιορισμό ενεργητικού και παθητικού εύρους κίνησης. Παρακαλώ για ενεργητικό, εξατομικευμένο πρόγραμμα με θεραπευτική άσκηση, προοδευτική ενδυνάμωση, εκπαίδευση και αυτοδιαχείριση και ασκήσεις κινητικότητας για το περιορισμένο εύρος κίνησης, προσαρμοσμένο στην κλινική ανταπόκριση και στους λειτουργικούς στόχους."
+
+  - id: balance_selected_neuromuscular
+    input:
+      laterality: right
+      findings: [balance_deficit]
+      functional_impairments: [community_mobility]
+      rehab_directions: [therapeutic_exercise, progressive_strengthening, education_and_self_management, neuromuscular_proprioceptive_training, balance_stepping_recovery_training]
+      adjunct_options: []
+      goals: []
+      phenotype: {stiffness_symptom: false, weakness_symptom_or_context: false}
+    expected_text: "Παραπομπή για εξατομικευμένη φυσιοθεραπευτική αποκατάσταση για οστεοαρθρίτιδα δεξιού γόνατος. Η κλινική εικόνα περιλαμβάνει έλλειμμα ισορροπίας. Λειτουργικά, υπάρχει δυσχέρεια στην κοινοτική κινητικότητα. Παρακαλώ για ενεργητικό, εξατομικευμένο πρόγραμμα με θεραπευτική άσκηση, προοδευτική ενδυνάμωση, εκπαίδευση και αυτοδιαχείριση, νευρομυϊκή και ιδιοδεκτική επανεκπαίδευση και εκπαίδευση ισορροπίας και αντιδράσεων ανάκτησης, προσαρμοσμένο στην κλινική ανταπόκριση και στους λειτουργικούς στόχους."
+
+  - id: walking_alias_dedup_endurance_gait
+    input:
+      laterality: right
+      findings: [walking_limitation]
+      functional_impairments: [walking_tolerance]
+      rehab_directions: [therapeutic_exercise, progressive_strengthening, education_and_self_management, progressive_endurance_or_capacity_work, gait_walking_practice]
+      adjunct_options: []
+      goals: []
+      phenotype: {stiffness_symptom: false, weakness_symptom_or_context: false}
+    expected_text: "Παραπομπή για εξατομικευμένη φυσιοθεραπευτική αποκατάσταση για οστεοαρθρίτιδα δεξιού γόνατος. Λειτουργικά, υπάρχει δυσχέρεια στη βάδιση. Παρακαλώ για ενεργητικό, εξατομικευμένο πρόγραμμα με θεραπευτική άσκηση, προοδευτική ενδυνάμωση, εκπαίδευση και αυτοδιαχείριση, προοδευτική βελτίωση αντοχής και λειτουργικής ικανότητας και επανεκπαίδευση βάδισης, προσαρμοσμένο στην κλινική ανταπόκριση και στους λειτουργικούς στόχους."
+
+  - id: mixed_guideline_adjunct_does_not_leak_evidence_text
+    input:
+      laterality: right
+      findings: [pain]
+      functional_impairments: []
+      rehab_directions: [therapeutic_exercise, progressive_strengthening, education_and_self_management]
+      adjunct_options: [acupuncture]
+      goals: []
+      phenotype: {stiffness_symptom: false, weakness_symptom_or_context: false}
+    expected_text: "Παραπομπή για εξατομικευμένη φυσιοθεραπευτική αποκατάσταση για οστεοαρθρίτιδα δεξιού γόνατος. Η κλινική εικόνα περιλαμβάνει πόνο. Παρακαλώ για ενεργητικό, εξατομικευμένο πρόγραμμα με θεραπευτική άσκηση, προοδευτική ενδυνάμωση και εκπαίδευση και αυτοδιαχείριση, προσαρμοσμένο στην κλινική ανταπόκριση και στους λειτουργικούς στόχους. Συμπληρωματικές επιλογές: βελονισμός, ως προσθήκη και όχι υποκατάστατο του ενεργητικού προγράμματος."
+    forbidden_substrings: ["Οι οδηγίες διαφέρουν", "NICE", "AAOS", "ACR", "VA/DoD"]
+
+  - id: removed_therapeutic_exercise_does_not_render
+    input:
+      laterality: right
+      findings: []
+      functional_impairments: []
+      rehab_directions: [progressive_strengthening, education_and_self_management]
+      adjunct_options: []
+      goals: []
+      phenotype: {stiffness_symptom: false, weakness_symptom_or_context: false}
+    expected_text: "Παραπομπή για εξατομικευμένη φυσιοθεραπευτική αποκατάσταση για οστεοαρθρίτιδα δεξιού γόνατος. Παρακαλώ για ενεργητικό, εξατομικευμένο πρόγραμμα με προοδευτική ενδυνάμωση και εκπαίδευση και αυτοδιαχείριση, προσαρμοσμένο στην κλινική ανταπόκριση και στους λειτουργικούς στόχους."
+    forbidden_substrings: ["θεραπευτική άσκηση"]
+
+  - id: suggestion_without_selection_does_not_render
+    input:
+      laterality: right
+      findings: [stairs_limitation]
+      functional_impairments: []
+      rehab_directions: [therapeutic_exercise, progressive_strengthening, education_and_self_management]
+      adjunct_options: []
+      goals: []
+      phenotype: {stiffness_symptom: false, weakness_symptom_or_context: false}
+      ui_suggested_item_ids: [functional_task_retraining]
+    expected_text: "Παραπομπή για εξατομικευμένη φυσιοθεραπευτική αποκατάσταση για οστεοαρθρίτιδα δεξιού γόνατος. Λειτουργικά, υπάρχει δυσχέρεια στις σκάλες. Παρακαλώ για ενεργητικό, εξατομικευμένο πρόγραμμα με θεραπευτική άσκηση, προοδευτική ενδυνάμωση και εκπαίδευση και αυτοδιαχείριση, προσαρμοσμένο στην κλινική ανταπόκριση και στους λειτουργικούς στόχους."
+    forbidden_substrings: ["λειτουργική επανεκπαίδευση"]
+
+  - id: bilateral_grammar
+    input:
+      laterality: bilateral
+      findings: [pain]
+      functional_impairments: [walking_tolerance]
+      rehab_directions: [therapeutic_exercise, progressive_strengthening, education_and_self_management]
+      adjunct_options: []
+      goals: []
+      phenotype: {stiffness_symptom: false, weakness_symptom_or_context: false}
+    expected_text: "Παραπομπή για εξατομικευμένη φυσιοθεραπευτική αποκατάσταση για οστεοαρθρίτιδα και των δύο γονάτων. Η κλινική εικόνα περιλαμβάνει πόνο. Λειτουργικά, υπάρχει δυσχέρεια στη βάδιση. Παρακαλώ για ενεργητικό, εξατομικευμένο πρόγραμμα με θεραπευτική άσκηση, προοδευτική ενδυνάμωση και εκπαίδευση και αυτοδιαχείριση, προσαρμοσμένο στην κλινική ανταπόκριση και στους λειτουργικούς στόχους."
+
+  - id: objective_weakness_suppresses_generic
+    input:
+      laterality: left
+      findings: [objective_weakness]
+      functional_impairments: []
+      rehab_directions: [therapeutic_exercise, progressive_strengthening, education_and_self_management]
+      adjunct_options: []
+      goals: []
+      phenotype: {stiffness_symptom: false, weakness_symptom_or_context: true}
+    expected_text: "Παραπομπή για εξατομικευμένη φυσιοθεραπευτική αποκατάσταση για οστεοαρθρίτιδα αριστερού γόνατος. Η κλινική εικόνα περιλαμβάνει αντικειμενικά διαπιστωμένη μυϊκή αδυναμία. Παρακαλώ για ενεργητικό, εξατομικευμένο πρόγραμμα με θεραπευτική άσκηση, προοδευτική ενδυνάμωση και εκπαίδευση και αυτοδιαχείριση, προσαρμοσμένο στην κλινική ανταπόκριση και στους λειτουργικούς στόχους."
+    forbidden_substrings: ["και μυϊκή αδυναμία"]
+
+  - id: no_visible_plan_items_uses_implicit_fallback
+    input:
+      laterality: right
+      findings: []
+      functional_impairments: []
+      rehab_directions: []
+      adjunct_options: []
+      goals: []
+      phenotype: {stiffness_symptom: false, weakness_symptom_or_context: false}
+    expected_text: "Παραπομπή για εξατομικευμένη φυσιοθεραπευτική αποκατάσταση για οστεοαρθρίτιδα δεξιού γόνατος. Παρακαλώ για φυσιοθεραπευτική αξιολόγηση και εξατομικευμένο ενεργητικό πρόγραμμα, προσαρμοσμένο στην κλινική ανταπόκριση και στους λειτουργικούς στόχους."
