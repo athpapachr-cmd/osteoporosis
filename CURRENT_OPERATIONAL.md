@@ -1,45 +1,73 @@
-# CURRENT_OPERATIONAL.md — Knee-OA independent review ready
+# CURRENT_OPERATIONAL.md — Knee-OA four-review gate ready
 
-> **STATUS:** PRODUCT-OWNER FUNCTIONAL/DESIGN ACCEPTANCE RECORDED / INDEPENDENT MULTI-AXIS REVIEW PACKET READY.
+> **STATUS:** PRODUCT-OWNER FUNCTIONAL/DESIGN ACCEPTANCE RECORDED / FOUR INDEPENDENT REVIEW PROMPTS READY.
 > **Updated:** 2026-09-11 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Verified main:** `d9f312f6d2d596ec0bd4f35f6de56ad98dc34b37`.
 > **Pinned accepted candidate branch/head:** `feat/physio-referral-knee-oa-prototype-v1-2026-09-11` @ `6539351c592c1dc3e49931057b63925dea3cb94d`.
 > **Tested substantive implementation head:** `243095ca9545bd2f96be8986520aeae8c3551c27`.
 > **Review branch:** `review/physio-referral-knee-oa-independent-v1-2026-09-11`.
-> **ACTIVE RUNTIME / DESIGN / CANONICAL WRITER:** NONE; review-preparation writer released.
+> **ACTIVE RUNTIME / DESIGN / CANONICAL WRITER:** NONE.
 > **PR / merge / deploy / production smoke authority:** NONE.
 > **Real-patient use / production integration:** NOT AUTHORIZED.
 
 ## 1. Product-owner acceptance
 
-The product owner reviewed the refined Knee-OA prototype direction and explicitly stated that the design is liked and authorized progression. This records product-owner design/functional-direction acceptance of the pinned candidate.
+The product owner reviewed the refined Knee-OA prototype direction, liked the design and authorized progression to review. This is product-owner design/functional-direction acceptance only; it is not independent clinical, physiotherapy, UX/accessibility, commercial or source-to-claim validation.
 
-This is **not** clinical validation, accessibility validation, commercial validation, source-to-claim validation or release authority.
+## 2. Review architecture corrected to four independent reviews
 
-## 2. Independent review packet now ready
+The former single multi-axis prompt is superseded. The accepted review architecture is:
 
-The exact review artifacts are:
+```text
+A — Clinical / Evidence
+B — Physiotherapy
+C — UX / Product
+D — Commercial / Product-Market
+```
+
+Each review must be performed separately and must not inherit the other reviewers' findings or verdicts before completion.
+
+Active reviewer prompts:
+
+```text
+clinic_utilities/physio_referral_product/KNEE_OA_CLINICAL_EVIDENCE_REVIEW_PROMPT_V1.md
+clinic_utilities/physio_referral_product/KNEE_OA_PHYSIOTHERAPY_REVIEW_PROMPT_V1.md
+clinic_utilities/physio_referral_product/KNEE_OA_UX_PRODUCT_REVIEW_PROMPT_V1.md
+clinic_utilities/physio_referral_product/KNEE_OA_COMMERCIAL_REVIEW_PROMPT_V1.md
+```
+
+Shared candidate/background packet:
 
 ```text
 clinic_utilities/physio_referral_product/KNEE_OA_INDEPENDENT_REVIEW_PACKET_V1.md
+```
+
+The former combined prompt remains only as a superseded redirect:
+
+```text
 clinic_utilities/physio_referral_product/KNEE_OA_INDEPENDENT_REVIEW_PROMPT_V1.md
 ```
 
-The packet forces separate review of:
+## 3. Cross-review rule
+
+Do not synthesize findings until all four independent reviews are complete.
+
+After all four are returned:
 
 ```text
-clinical / evidence integrity
-physiotherapy usefulness / professional autonomy
-UX / accessibility / cognitive load
-commercial differentiation / recurring value / willingness to pay
+four independent outputs
+→ Product Owner cross-review synthesis
+→ identify agreements / contradictions / unique findings
+→ disposition every material finding
+→ authorize bounded corrections only after disposition
 ```
 
-It also requires a distinct source-to-claim integrity audit for material evidence claims.
+A separate source-to-claim integrity audit remains part of the Clinical/Evidence review responsibility and may produce a dedicated appendix; it is not a fifth product review.
 
-## 3. Exact next action
+## 4. Finding severity
 
-Run the independent review against the pinned candidate. The reviewer must not inherit prior PASS conclusions and must classify every finding as:
+All reviewers use the same severity vocabulary:
 
 ```text
 BLOCKER
@@ -49,10 +77,14 @@ IMPROVEMENT
 LATER / OPTIONAL
 ```
 
-The reviewer must explicitly identify what should be **removed**, not only what should be added.
+Every reviewer must explicitly state what should be removed rather than added.
 
-No implementation changes are authorized during the review itself. Findings return to the product owner for disposition first.
+## 5. Exact next action
 
-## 4. HOLD
+Run the **four reviews in four separate fresh conversations** against the same pinned candidate. No reviewer implements fixes.
 
-No new diagnosis, feature expansion, production CU-1 rewrite, public hosting, auth/billing, merge or deployment before the independent-review findings are reviewed and prioritized.
+Only after all four reviews return should this project perform cross-review synthesis and Product Owner disposition.
+
+## 6. HOLD
+
+No new diagnosis, feature expansion, production CU-1 rewrite, public hosting, auth/billing, merge or deployment before the four independent reviews are completed and their material findings are dispositioned.
