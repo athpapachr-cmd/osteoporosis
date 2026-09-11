@@ -1,38 +1,29 @@
 # CURRENT.md — Physio Referral product track
 
-> **STATUS:** STEPS 1–4 FROZEN; STEP 5 PROTOTYPE TECHNICALLY PASSED; STEP 6A QUALIFIER REFINEMENT TECHNICALLY PASSED.
+> **STATUS:** KNEE-OA FUNCTIONAL CANDIDATE ACCEPTED BY PRODUCT OWNER / INDEPENDENT REVIEW PACKET READY.
 > **Updated:** 2026-09-11 Asia/Nicosia.
-> **Branch:** `feat/physio-referral-knee-oa-prototype-v1-2026-09-11`.
-> **Main:** `d9f312f6d2d596ec0bd4f35f6de56ad98dc34b37`.
-> **Step-4 parent:** `4e0e3206dd1e12a2e55a6abd18d2a6f7dbc3f7c6`.
-> **Step-5 tested head:** `6595bf4cc41388dbd796f9ba5b53ae7c49bafdee`.
-> **Step-6A tested substantive head:** `243095ca9545bd2f96be8986520aeae8c3551c27`.
-> **Writer:** NONE. Root `CURRENT_OPERATIONAL.md` remains sole operational authority.
+> **Accepted candidate:** `6539351c592c1dc3e49931057b63925dea3cb94d`.
+> **Tested substantive implementation:** `243095ca9545bd2f96be8986520aeae8c3551c27`.
+> **Review branch:** `review/physio-referral-knee-oa-independent-v1-2026-09-11`.
+> **Writer:** NONE after review-packet preparation. Root `CURRENT_OPERATIONAL.md` remains operational authority.
 > **Production registration / PR / merge / deploy:** NONE.
 
-## What exists now
+## Accepted candidate
 
-A runnable synthetic Knee-OA prototype with a small routine surface plus progressive clinical depth. The actual CU-1 engine remains validation/safety authority; the prototype runs only on `127.0.0.1` and stores no patient draft.
+The product owner has positively accepted the refined design/functional direction of the synthetic Knee-OA prototype and authorized progression to independent review.
 
-Routine phenotype now supports compact on-demand refinement:
+The candidate retains the minimal routine surface while providing progressive clinical depth for pain location, weakness specificity/atrophy, stiffness pattern/duration and advanced examination findings such as fixed flexion deformity.
 
-```text
-Pain       → anatomic location, including pes-anserine region
-Stiffness  → morning / after inactivity → morning duration when relevant
-Weakness   → generic / objective / quadriceps + optional visible atrophy
-More       → examination findings including FFD, effusion, extension lag, focal tenderness
-```
+This acceptance is not clinical validation, source-to-claim validation, accessibility validation, commercial validation or release authority.
 
-Clinical summary text adapts without treatment auto-selection. Pes-anserine location does not become bursitis; generic weakness does not become objective weakness; stiffness does not become fixed flexion deformity; >30-minute morning stiffness generates a non-blocking review clue rather than a treatment rule.
-
-## Proven technical results
+## Technical state already proven
 
 Step-6A substantive workflow `34627436841` at `243095ca...` passed:
 
 ```text
 15 / 15 existing real-CU1/HTTP tests
 8 / 8 qualifier projection tests
-15 inherited exact-output fixtures inside existing suite
+15 inherited exact-output fixtures
 12 / 12 existing Chromium tests
 6 / 6 qualifier Chromium tests
 54 source-position Greek display summaries
@@ -40,22 +31,39 @@ packaged dependency-closure smoke
 scope + syntax gates
 ```
 
-Step-5 frozen outputs remain unchanged when no new qualifier is selected. The result record is `KNEE_OA_STEP6A_QUALIFIER_REFINEMENT_RESULT.md`.
+The final closeout/doc head also passed the prototype gate at `6539351c592c1dc3e49931057b63925dea3cb94d`.
 
-## Not yet proven
+## Independent review artifacts
 
 ```text
-product-owner usability / clinical-copy acceptance       PENDING
-actual iPhone Safari / VoiceOver                          NOT TESTED
-complete accessibility / measured contrast audit          NOT PERFORMED
-independent clinical / physio / UX / commercial review     NOT PERFORMED
-independent source-to-claim audit                          NOT COMPLETED
-willingness to pay / commercial pilot                      NOT VALIDATED
-production release / public preview                       NOT AUTHORIZED
+KNEE_OA_INDEPENDENT_REVIEW_PACKET_V1.md
+KNEE_OA_INDEPENDENT_REVIEW_PROMPT_V1.md
+```
+
+The review is explicitly multi-axis:
+
+```text
+clinical / evidence integrity
+physiotherapy usefulness / autonomy
+UX / accessibility / cognitive load
+commercial differentiation / recurring value / willingness to pay
+```
+
+A separate source-to-claim audit is required where evidence claims are material.
+
+## Still unproven
+
+```text
+independent multi-axis review                              PENDING
+independent source-to-claim audit                          PENDING
+actual iPhone Safari / VoiceOver                           NOT TESTED
+complete accessibility / measured contrast audit           NOT PERFORMED
+commercial willingness-to-pay with real buyers             NOT VALIDATED
+production integration / public preview                    NOT AUTHORIZED
 ```
 
 ## Exact next action
 
-Continue **Step 6 product-owner trial using synthetic cases**, now against the refined qualifier candidate. Judge whether the extra depth is actually useful without slowing the routine flow, whether the wording reads naturally, and especially what should be removed.
+Run the independent review against the pinned candidate without implementing fixes during review. Classify findings by severity and identify what should be removed as well as what should be improved.
 
-Do not add more clinical fields or a second diagnosis before that evidence-from-use step. Independent multi-axis review follows product-owner acceptance of the functional candidate.
+No second diagnosis, feature expansion, production integration, merge or deploy before the independent review findings are reviewed by the product owner.
