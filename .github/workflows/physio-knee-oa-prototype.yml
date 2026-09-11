@@ -1,0 +1,64 @@
+name: Physio Knee OA prototype gate
+
+on:
+  push:
+    branches:
+      - feat/physio-referral-knee-oa-prototype-v1-2026-09-11
+  pull_request:
+    paths:
+      - 'clinic_utilities/physio_referral_product/prototype/**'
+      - '.github/workflows/physio-knee-oa-prototype.yml'
+
+permissions:
+  contents: read
+concurrency:
+  group: physio-prototype-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  prototype:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify bounded Step 5 changed paths
+        run: |
+          python - <<'PY'
+          import subprocess
+          paths = subprocess.check_output(['git','diff','--name-only','4e0e3206dd1e12a2e55a6abd18d2a6f7dbc3f7c6','HEAD'], text=True).splitlines()
+          fixed = {'CURRENT_OPERATIONAL.md','SLICE_PLAN_CURRENT.md','.github/workflows/physio-knee-oa-prototype.yml'}
+          root = 'clinic_utilities/physio_referral_product/'
+          bad = [p for p in paths if p not in fixed and not p.startswith(root+'prototype/') and not (p.startswith(root) and p.endswith('.md'))]
+          assert not bad, bad
+          print('Step-5 scope guard PASS:', len(paths), 'bounded files')
+          PY
+      - name: Install isolated prototype dependencies
+        run: |
+          python -m pip install -r clinic_utilities/physio_referral_product/prototype/requirements.txt
+          python -m pip install 'playwright==1.55.0'
+      - name: Check syntax
+        run: |
+          python -m py_compile clinic_utilities/physio_referral_product/prototype/*.py
+          node --check clinic_utilities/physio_referral_product/prototype/app.js
+      - name: Real CU1 adapter and HTTP boundary tests
+        run: python clinic_utilities/physio_referral_product/prototype/test_server.py
+      - name: Install Chromium for real browser acceptance
+        run: python -m playwright install --with-deps chromium
+      - name: Real browser with actual loopback server and CU1 engine
+        run: python clinic_utilities/physio_referral_product/prototype/test_browser.py
+      - name: Package and smoke standalone dependency closure
+        run: python clinic_utilities/physio_referral_product/prototype/build_bundle.py
+      - name: Publish synthetic prototype and screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: knee-oa-prototype-${{ github.sha }}
+          path: artifacts/
+          if-no-files-found: warn
+          retention-days: 7
