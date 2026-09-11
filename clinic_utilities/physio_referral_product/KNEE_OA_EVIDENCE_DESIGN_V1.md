@@ -1,609 +1,254 @@
 # KNEE_OA_EVIDENCE_DESIGN_V1.md — Physio Referral Step 2
 
-> **STATUS:** DESIGN CANDIDATE — EVIDENCE REVIEWED 2026-09-11.
+> **STATUS:** REVIEW-HARDENED DESIGN CANDIDATE — 2026-09-11.
 > **Scope:** Knee Osteoarthritis only.
 > **Parent route:** `profile_id=knee`, `route_id=knee_osteoarthritis`.
-> **Parent runtime:** CU-1 Physiotherapy Referral v2, read-only in this slice.
+> **Parent runtime:** existing CU-1 Physiotherapy Referral v2 — read-only in this slice.
 > **Machine companion:** `contracts/knee_oa_evidence_contract_v1.yaml`.
-> **Runtime implementation:** NOT AUTHORIZED by this document.
+> **Runtime implementation:** NOT AUTHORIZED.
 
 ---
 
 # 1. Purpose
 
-Define the evidence layer that will later allow the Knee-OA referral product to remain visually simple while still answering, for each clinically relevant option:
+Step 2 defines the evidence layer beneath the minimal Knee-OA referral UX. For each material option the product must be able to answer, without cluttering the routine screen:
 
 ```text
-Is this a core supported intervention?
-Is it useful only in selected contexts?
-Is evidence limited or insufficient?
-Do credible guidelines materially disagree?
-Is there a recommendation against routine use?
-Why is the product suggesting or cautioning about it?
-Which source/year supports that statement?
-When was the product evidence last reviewed?
+what is supported
+what is context-dependent
+what is uncertain
+what is advised against
+where guidelines materially disagree
+why the item is suggested/cautioned
+which source/year supports the statement
+when the product last reviewed that evidence
 ```
 
-The product must never manufacture consensus by averaging incompatible guideline positions.
+The product must not manufacture consensus by averaging incompatible frameworks.
 
 ---
 
-# 2. Reviewed primary source set
+# 2. Reviewed source set
 
-The Step-2 review uses six major guideline/CPG authorities with complementary scopes.
+Six major guideline/CPG authorities were reviewed:
 
-## `VA_DOD_OA_2026`
+1. **VA/DoD Hip & Knee OA CPG v3.0, 2026** — evidence through July 2025; GRADE; current structured PT, weight, bracing and complementary-intervention positions.
+2. **Singapore ACE Knee OA ACG, 24 Apr 2026** — knee-specific; education, exercise and weight management as mainstays; allied-health/walking-aid support; selected adjunct acupuncture.
+3. **EULAR non-pharmacological core management, 2023 update (published 2024)** — individualized multicomponent plan; education/self-management; exercise (strength/aerobic/flexibility/neuromotor); delivery mode; weight; walking aids.
+4. **NICE NG226, 2022** — tailored exercise, weight management, selected walking aids; manual therapy only alongside exercise; no acupuncture/dry needling; supports not routine without specific context.
+5. **AAOS OAK3, 2021** — strong exercise/self-management/education; moderate neuromuscular training and weight loss; limited manual therapy/acupuncture; unclear dry needling.
+6. **ACR/AF 2019 guideline (published 2020)** — strong exercise, weight loss, self-management, cane/tibiofemoral brace; conditional balance/taping/acupuncture; conditional-against manual therapy over exercise alone and massage; TENS strongly against.
 
-**VA/DoD Clinical Practice Guideline for the Non-Surgical Management of Hip & Knee Osteoarthritis, Version 3.0, 2026.**
-
-- provider summary: https://healthquality.va.gov/HEALTHQUALITY/guidelines/CD/OA/Osteoarthritis-CPG_2026-Provider-Summary_final_20260618.pdf
-- evidence window stated by the guideline: through July 2025;
-- uses GRADE direction/strength;
-- especially useful because it is a current 2026 systematic guideline and explicitly separates weak-for, weak-against and insufficient/neither-for-nor-against positions.
-
-Relevant reviewed positions include:
-
-- weight loss for knee OA with overweight/obesity: **Strong for**;
-- tailored education + physical activity for knee-OA self-management: **Weak for**;
-- structured PT for hip/knee OA: **Weak for**;
-- insufficient evidence to prefer one structured PT type/mode over another;
-- bracing in selected knee-OA patients: **Weak for**;
-- TENS: insufficient evidence for or against;
-- acupuncture and dry needling: insufficient evidence for or against.
-
-## `ACE_KNEE_OA_2026`
-
-**Singapore Agency for Care Effectiveness, Management of knee osteoarthritis — a joint effort with patients, 24 April 2026.**
-
-- https://www.ace-hta.gov.sg/healthcare-professionals/ace-repository-for-clinical-guidelines/management-of-knee-osteoarthritis---a-joint-effort-with-patients-acg/
-- knee-specific, current 2026 guidance;
-- mainstay strategies: education, exercise programmes and weight management, individualized to patient profile;
-- consider allied-health referral for additional non-pharmacological strategies such as supervised exercise and walking aids;
-- acupuncture may be considered as an adjunct after inadequate response to conventional therapy or when preferred by the patient.
-
-## `EULAR_CORE_2023_UPDATE`
-
-**EULAR recommendations for the non-pharmacological core management of hip and knee osteoarthritis: 2023 update** (published 2024).
-
-- https://pmc.ncbi.nlm.nih.gov/articles/PMC11103326/
-- individualized multicomponent management plan: LoE 1a / Strength A;
-- information, education and self-management: LoE 1a / Strength A;
-- exercise including strength, aerobic, flexibility or neuromotor exercise with adequate dosage/progression tailored to function/preferences/services: LoE 1a / Strength A;
-- delivery mode individualized, including supervised/unsupervised and land/aquatic modes: LoE 1a / Strength A;
-- healthy weight/weight loss and assistive-device considerations are part of the core non-pharmacological framework.
-
-## `NICE_NG226_2022`
-
-**NICE NG226, Osteoarthritis in over 16s: diagnosis and management, 2022.**
-
-- https://www.nice.org.uk/guidance/ng226/chapter/recommendations
-- exercise tailored to needs should be offered to all people with OA;
-- supervised therapeutic exercise may be considered;
-- long-term exercise adherence is emphasized;
-- weight management is core when overweight/obesity applies;
-- manual therapy should only be considered for hip/knee OA alongside therapeutic exercise and there is insufficient evidence for manual therapy alone;
-- acupuncture and dry needling should not be offered for OA;
-- walking aids may be considered for lower-limb OA;
-- braces/tape/supports should not be offered routinely unless the specified instability/biomechanical/loading and functional criteria apply.
-
-## `AAOS_OAK3_2021`
-
-**AAOS Management of Osteoarthritis of the Knee (Non-Arthroplasty), Third Edition, 2021.**
-
-- https://new.aaos.org/globalassets/quality-and-practice-resources/osteoarthritis-of-the-knee/oak3cpg.pdf
-- supervised, unsupervised and/or aquatic exercise over no exercise: **Strong**;
-- neuromuscular training combined with traditional exercise: **Moderate** for performance-based function/walking speed;
-- self-management: **Strong**;
-- patient education: **Strong**;
-- sustained weight loss in overweight/obese knee-OA patients: **Moderate**;
-- manual therapy in addition to exercise: **Limited**;
-- acupuncture may improve pain/function: **Limited**;
-- dry-needling utility/efficacy unclear; additional evidence needed: **Consensus**.
-
-## `ACR_AF_2019`
-
-**2019 American College of Rheumatology / Arthritis Foundation Guideline, published 2020.**
-
-- https://acrjournals.onlinelibrary.wiley.com/doi/10.1002/art.41142
-- exercise: **Strong**;
-- weight loss when overweight/obese: **Strong**;
-- self-efficacy/self-management: **Strong**;
-- balance exercise: **Conditional**;
-- cane use when impact on ambulation/stability/pain warrants: **Strong**;
-- tibiofemoral bracing in appropriate knee OA: **Strong**; patellofemoral bracing: **Conditional**;
-- acupuncture: **Conditional for**;
-- manual therapy with exercise: **Conditional against** over exercise alone;
-- TENS: **Strong against** in the full guideline framework.
+Every source retains its own recommendation direction and native strength/certainty. A later app summary is only a projection over those source positions.
 
 ---
 
-# 3. REPLAN finding — five evidence states are insufficient
+# 3. Step-1 REPLAN — add an explicit guideline-conflict state
 
-The frozen Step-1 UX contract defined five evidence states:
+The original five evidence states cannot honestly represent material framework disagreement. Acupuncture proves the point:
+
+```text
+NICE 2022      → do not offer
+AAOS 2021      → limited recommendation in favour
+ACR/AF 2019    → conditional recommendation in favour
+ACE 2026       → selected adjunct use
+VA/DoD 2026    → insufficient evidence for or against
+```
+
+Therefore the Step-1 REPLAN trigger is activated and the app evidence model becomes:
 
 ```text
 recommended_or_supported
 conditional_or_context_dependent
 limited_or_insufficient_evidence
+guideline_conflict_or_mixed
 recommendation_against_routine_use
 not_yet_assessed
 ```
 
-This model cannot honestly represent a material source conflict.
-
-## Example: acupuncture
-
-Reviewed sources do not merely differ in strength; they differ in direction:
-
-```text
-NICE 2022        → do not offer
-AAOS 2021        → limited recommendation in favour
-ACR/AF 2019      → conditional recommendation in favour
-ACE 2026         → consider as adjunct in selected patients
-VA/DoD 2026      → insufficient evidence for or against
-```
-
-Classifying this as simply `conditional`, `limited`, or `against` would suppress clinically relevant disagreement.
-
-Therefore Step 2 activates the explicit Step-1 REPLAN trigger and adds:
-
-```text
-guideline_conflict_or_mixed
-```
-
-The app-facing Greek semantic label should be concise:
+Greek surface semantic for the new state:
 
 ```text
 Οι οδηγίες διαφέρουν
 ```
 
-The routine visual cue should be distinct from danger/red and from insufficient-evidence/amber. A restrained indigo/violet or split-state accent plus a second non-colour cue is preferred. Exact cosmetic implementation remains Step 5/prototype scope.
+This state is not a vote, meta-analysis or arithmetic majority. It means that reviewed credible frameworks differ materially enough that hiding the disagreement could alter a clinician's choice.
 
-This sixth state is **not** a statistical meta-analysis or majority vote. It means that reviewed guideline positions materially differ in direction or practical recommendation.
-
----
-
-# 4. Source-position model
-
-Each source keeps its own position.
-
-Normalized direction vocabulary:
+Hard distinctions:
 
 ```text
-strong_for
-for
-conditional_for
-weak_for
-neutral_or_insufficient
-conditional_against
-weak_against
-against
-not_addressed
+INSUFFICIENT EVIDENCE != EVIDENCE AGAINST
+GUIDELINE CONFLICT != CONSENSUS
+SOURCE YEAR != PRODUCT REVIEW DATE
 ```
 
-The source's native strength/wording is also preserved separately. The normalized direction is only for deterministic product logic; it must not overwrite the original framework language.
-
-No arithmetic score is used.
-
 ---
 
-# 5. App-facing evidence-state resolution
+# 4. Source-claim scope — prevent evidence laundering
 
-Deterministic semantic rules:
+A second review finding is that a strong recommendation for a broad category must not silently become a strong recommendation for every narrower component.
 
-## `recommended_or_supported`
-
-Use when major reviewed sources materially align in favour of the intervention/core component and there is no material current source recommending against the same use.
-
-## `conditional_or_context_dependent`
-
-Use when support depends on phenotype, impairment, delivery mode, patient preference, prior response, or another explicit context and there is no material direct conflict that must be shown separately.
-
-## `limited_or_insufficient_evidence`
-
-Use when the reviewed evidence is predominantly insufficient/uncertain/no-recommendation and no material source clearly recommends routine use or routine avoidance.
-
-## `guideline_conflict_or_mixed`
-
-Use when credible reviewed guidelines materially differ in recommendation direction or in a way that could change the clinician's choice.
-
-This state must expose source-specific positions through `i` and must not be collapsed into a fake consensus.
-
-## `recommendation_against_routine_use`
-
-Use when reviewed guidance materially converges against routine use for the same indication/context. The UI rationale must distinguish lack of demonstrated benefit from evidence of harm when that distinction exists.
-
-## `not_yet_assessed`
-
-Use when the product evidence review has not evaluated the item sufficiently. It is not a negative recommendation.
-
----
-
-# 6. Knee-OA core plan
-
-The product should load a reviewed starting plan rather than a blank form.
-
-## 6.1 Implicit core request
-
-`physiotherapy_assessment_and_individualized_active_rehabilitation`
-
-Evidence state:
+Each source position therefore records one of:
 
 ```text
-recommended_or_supported
+direct_item_recommendation
+named_component_of_broader_recommendation
+broader_recommendation_only
+contextual_clinical_mapping
 ```
 
-The referral is itself a request for individualized PT/rehabilitation; this does not need to consume a large visible row in the routine UI.
+Example:
 
-## 6.2 Therapeutic exercise
+- ACR/AF strongly recommends **exercise** and explicitly lists strengthening among exercise modes.
+- The product may therefore support strengthening as part of the exercise programme.
+- It must not claim that ACR/AF issued a separate strong recommendation for one exact progressive-strengthening protocol.
 
-CU-1 ID:
+Likewise, task-specific retraining may be clinically sensible within individualized PT, but the product must not pretend a guideline separately mandates stair retraining merely because stairs are the patient's limitation.
+
+---
+
+# 5. Default Knee-OA starting plan
+
+The default should remain small and defensible.
+
+Implicit:
+
+```text
+physiotherapy_assessment_and_individualized_active_rehabilitation
+```
+
+Visible preselected core:
 
 ```text
 therapeutic_exercise
-```
-
-Evidence state:
-
-```text
-recommended_or_supported
-```
-
-Default:
-
-```text
-selected
-```
-
-Rationale for `i` layer:
-
-> Therapeutic exercise is a core non-surgical treatment for knee OA and improves pain and function. The exact programme should be individualized.
-
-Key sources: NICE 2022, EULAR 2023 update, AAOS 2021, ACR/AF 2019, ACE 2026, VA/DoD 2026.
-
-## 6.3 Progressive strengthening
-
-CU-1 ID:
-
-```text
 progressive_strengthening
-```
-
-Evidence state:
-
-```text
-recommended_or_supported
-```
-
-Default:
-
-```text
-selected
-```
-
-Rationale:
-
-> Strengthening is a well-supported component of therapeutic exercise. Exact exercise selection, dose and progression should be individualized rather than prescribed by the referral tool.
-
-Important nuance: several guidelines support exercise but do not establish one universally superior exercise mode. The product must not convert “strengthening is supported” into an invented exact protocol.
-
-## 6.4 Education and self-management
-
-CU-1 ID:
-
-```text
 education_and_self_management
 ```
 
-Evidence state:
+These three are broadly supported across current reviewed frameworks.
 
-```text
-recommended_or_supported
-```
-
-Default:
-
-```text
-selected
-```
-
-Key sources include EULAR Strength A, AAOS Strong, ACR/AF Strong, NICE core information/support, ACE mainstay strategy and VA/DoD Weak-for tailored education/physical activity.
-
-## 6.5 Graded activity exposure / physical activity
-
-CU-1 ID:
-
-```text
-graded_activity_exposure
-```
-
-Evidence state:
-
-```text
-recommended_or_supported
-```
-
-Default:
-
-```text
-selected
-```
-
-The wording must remain general: progressive physical activity/loading according to tolerance and function. Do not imply that one exact progression schedule is guideline-mandated.
+`graded_activity_exposure` is **not** a default core selection after review. Physical activity/progression is supported, but the CU-1 ID is more specific than the broad evidence statement. It becomes a context-driven option when walking, exercise tolerance or a patient-priority activity is actually relevant.
 
 ---
 
-# 7. Context-driven rehabilitation components
+# 6. Context-driven active rehabilitation
 
-These should not all be visually preselected. They become relevant from phenotype/function.
+The following remain available without appearing as universal defaults:
 
-## `progressive_endurance_or_capacity_work`
+| CU-1 item | App state | Trigger / interpretation |
+|---|---|---|
+| `graded_activity_exposure` | conditional/context-dependent | walking, exercise or patient-priority limitation |
+| `progressive_endurance_or_capacity_work` | conditional/context-dependent | reduced walking/activity capacity |
+| `mobility_exercise_when_restricted` | conditional/context-dependent | actual ROM restriction |
+| `neuromuscular_proprioceptive_training` | conditional/context-dependent | balance/control deficit, relevant giving-way/instability symptom |
+| `balance_stepping_recovery_training` | conditional/context-dependent | assessed balance deficit |
+| `gait_walking_practice` | conditional/context-dependent | walking limitation/tolerance |
+| `functional_task_retraining` | conditional/context-dependent | stairs, sit-to-stand, squat, kneeling or patient-priority task |
+| `home_exercise_programme` | conditional/context-dependent | delivery choice based on needs/preferences/access |
 
-State: `conditional_or_context_dependent`.
+Important interpretation rules:
 
-Relevant when reduced walking/activity/endurance is clinically important. Aerobic exercise is included within supported exercise programmes, but not every patient needs a separately labelled endurance component.
-
-Suggested by:
-
-```text
-walking_limitation
-walking_tolerance
-community_mobility
-```
-
-## `mobility_exercise_when_restricted`
-
-State: `conditional_or_context_dependent`.
-
-Suggested when actual ROM restriction is selected. Flexibility/mobility is an accepted exercise component, but routine mobility emphasis should not be invented when ROM is not restricted.
-
-## `neuromuscular_proprioceptive_training`
-
-State: `conditional_or_context_dependent`.
-
-AAOS gives Moderate support when added to traditional exercise for performance-based function/walking speed; EULAR includes neuromotor exercise within its Strength-A exercise recommendation; ACR/AF makes balance exercise conditional.
-
-Suggested by:
-
-```text
-balance_deficit
-subjective_giving_way
-recurrent_instability_episode
-```
-
-The tool must not convert subjective giving-way into proven structural instability.
-
-## `balance_stepping_recovery_training`
-
-State: `conditional_or_context_dependent`.
-
-Suggested only when balance/postural-control impairment is actually present or a relevant mobility/falls context is explicitly captured.
-
-## `gait_walking_practice`
-
-State: `conditional_or_context_dependent`.
-
-Suggested by walking limitation/tolerance or altered gait context. It is supported as part of individualized functional rehabilitation, not as a universal stand-alone Knee-OA treatment claim.
-
-## `functional_task_retraining`
-
-State: `conditional_or_context_dependent`.
-
-Suggested by selected functional limitations such as:
-
-```text
-stairs
-sit_to_stand
-squat
-kneeling
-patient_priority_activity
-```
-
-The generated referral should name the relevant task rather than add generic functional-training prose.
-
-## `home_exercise_programme`
-
-State: `conditional_or_context_dependent`.
-
-Unsupervised/home exercise can be effective and is compatible with current guideline recommendations, but supervised vs unsupervised mode should be selected according to patient needs/preferences/access. VA/DoD 2026 specifically finds insufficient evidence to prefer one structured PT mode over another.
-
-The product may include a home programme by default later if product-owner usability testing supports that choice, but should not claim that home delivery is uniquely superior.
+- subjective giving-way does not become objective structural instability;
+- missing finding is not a negative finding;
+- no exact exercise dose/protocol is invented by the referral tool;
+- gait/task retraining is described as individualized clinical mapping, not as a stand-alone guideline mandate.
 
 ---
 
-# 8. Supports and assistive devices
+# 7. Supports / power-user options
 
 ## Walking aid
 
-Existing canonical CU-1 ID:
+`walking_aid_assessment_and_training` is supported for selected patients and is `conditional_or_context_dependent`.
 
-```text
-walking_aid_assessment_and_training
-```
+Evidence includes EULAR, NICE, ACE and ACR/AF. ACR/AF strongly recommends cane use when impact on ambulation/stability/pain warrants it.
 
-Evidence state:
-
-```text
-conditional_or_context_dependent
-```
-
-NICE advises considering walking aids for lower-limb OA; ACE 2026 names walking aids as an allied-health strategy; ACR/AF strongly recommends cane use when ambulation/stability/pain impact warrants it.
-
-**Integration seam:** the ID already exists globally but is not currently exposed in the Knee profile's UI relevance list. Step 2 does not change the frozen UI scope. A later product prototype may add it as a context-driven power-user option through a bounded presentation-scope amendment without creating a new clinical ID.
+**Existing integration seam:** the canonical CU-1 ID already exists but is not currently exposed in the Knee UI relevance scope. Step 2 records this only. A later prototype may use a bounded presentation-scope amendment; no new ID is needed.
 
 ## Brace / orthosis
 
-Existing CU-1 adjunct:
+`orthosis_or_brace_context` is `conditional_or_context_dependent`, not a default.
 
-```text
-orthosis_or_brace_context
-```
-
-Evidence state:
-
-```text
-conditional_or_context_dependent
-```
-
-Not default-selected.
-
-Reasoning:
-
-- VA/DoD 2026: bracing weak-for in selected knee-OA patients;
-- ACR/AF: strong support for tibiofemoral brace in appropriate symptomatic tibiofemoral OA; conditional for patellofemoral brace;
-- NICE: do not routinely offer supports unless instability/abnormal biomechanical loading and additional functional criteria apply.
-
-These positions are compatible with a selected-patient/context-dependent state rather than a routine default.
+VA/DoD supports selected bracing; ACR/AF supports tibiofemoral bracing strongly and patellofemoral bracing conditionally in appropriate cases; NICE explicitly advises against routine supports without the relevant instability/loading/function criteria.
 
 ## Taping
 
-Existing CU-1 adjunct:
-
-```text
-taping
-```
-
-Evidence state:
-
-```text
-conditional_or_context_dependent
-```
-
-Not default-selected. NICE restricts routine use of tape/supports to specific contexts; ACR/AF conditionally supports kinesiotaping. The product should not surface taping as a core intervention.
+`taping` remains `conditional_or_context_dependent`, not core. ACR/AF conditionally supports kinesiotaping; NICE restricts tape/support use to selected biomechanical/functional contexts.
 
 ---
 
-# 9. Manual/soft-tissue interventions — explicit mixed guidance
+# 8. Manual therapy and soft tissue — show disagreement
 
-## Manual therapy
-
-CU-1 adjunct:
+`manual_therapy` and `soft_tissue_techniques` are power-user adjuncts with:
 
 ```text
-manual_therapy
+app_state = guideline_conflict_or_mixed
 ```
 
-App state:
+Source logic:
 
-```text
-guideline_conflict_or_mixed
-```
+- NICE: manual therapy only alongside therapeutic exercise; insufficient evidence for manual therapy alone;
+- AAOS: limited support for manual therapy in addition to exercise / massage as adjunct;
+- ACR/AF: manual therapy with exercise conditionally against **over exercise alone**; massage conditionally against for OA symptom reduction.
 
-Not default-selected; no automatic positive suggestion.
-
-Source positions:
-
-- NICE: only consider for hip/knee OA **alongside exercise**, insufficient evidence for use alone;
-- AAOS: may be used in addition to exercise, **Limited** recommendation;
-- ACR/AF: manual therapy with exercise is **conditionally recommended against over exercise alone**.
-
-Routine bubble when selected:
+Selected-state bubble:
 
 ```text
 Οι οδηγίες διαφέρουν
 ```
 
-Concise `i` rationale:
-
-> Manual therapy is considered an adjunct rather than a substitute for active rehabilitation. Guideline positions differ on whether it adds meaningful benefit beyond exercise.
-
-## Soft-tissue techniques
-
-CU-1 adjunct:
-
-```text
-soft_tissue_techniques
-```
-
-App state:
-
-```text
-guideline_conflict_or_mixed
-```
-
-Rationale: soft-tissue techniques overlap with manual therapy/massage evidence. AAOS provides limited support for massage as adjunct/usual care, while ACR/AF conditionally recommends against massage for OA symptom reduction and NICE does not support manual therapy alone. The product must not present soft-tissue work as a core evidence-based Knee-OA treatment.
+They are never allowed to replace active rehabilitation.
 
 ---
 
-# 10. Acupuncture — flagship conflict-state example
+# 9. Acupuncture — flagship conflict example
 
-CU-1 adjunct:
-
-```text
-acupuncture
-```
-
-App state:
+`acupuncture` remains selectable only as a non-default power-user adjunct.
 
 ```text
-guideline_conflict_or_mixed
+app_state = guideline_conflict_or_mixed
+selected bubble = Οι οδηγίες διαφέρουν
 ```
 
-Default:
+The first prototype must not auto-promote it.
 
-```text
-not selected
-```
+The `i` layer should concisely state that major guidelines differ: NICE recommends against, AAOS/ACR/ACE allow selected use with different strengths, and VA/DoD 2026 considers evidence insufficient for or against.
 
-No automatic positive suggestion in the first prototype.
-
-Source-specific positions:
-
-```text
-NICE 2022     against routine use / do not offer
-AAOS 2021     limited in favour for pain/function
-ACR/AF 2019   conditional in favour
-ACE 2026      consider as adjunct after inadequate conventional response or patient preference
-VA/DoD 2026   insufficient evidence for or against
-```
-
-Routine selected-state bubble:
-
-```text
-Οι οδηγίες διαφέρουν
-```
-
-`i` rationale:
-
-> Acupuncture recommendations are not uniform across major guidelines. Some support selected adjunctive use, NICE recommends against its use for OA, and VA/DoD 2026 finds evidence insufficient for or against. It should never replace exercise/self-management in this pathway.
-
-This item demonstrates why the conflict state is necessary.
+The referral must never present acupuncture as a substitute for exercise/self-management.
 
 ---
 
-# 11. Dry needling — preserve existing exclusion
+# 10. Dry needling — excluded and not mislabeled
 
-The frozen Knee v1.1 clinical profile explicitly excludes dry needling from the Knee-OA selectable pathway.
+The existing frozen Knee v1.1 profile excludes dry needling from the Knee-OA selectable surface, and Step 2 preserves that decision.
 
-Evidence review does **not** justify reopening that decision in Step 2:
+Reviewed positions:
 
 ```text
-NICE 2022     do not offer for OA
-AAOS 2021     efficacy unclear; additional evidence required
-VA/DoD 2026   insufficient evidence for or against
+NICE 2022     → against
+AAOS 2021     → efficacy unclear / further evidence
+VA/DoD 2026   → insufficient for or against
 ```
 
-The item therefore remains:
+No reviewed Step-2 source provides a positive recommendation. Therefore the machine contract classifies the evidence state as:
+
+```text
+recommendation_against_routine_use
+```
+
+while retaining:
 
 ```text
 product_selectable = false
-cu1_knee_oa_surface = excluded
 ```
 
-This is not represented to the user as “proven ineffective”; it is simply not an offered Knee-OA option in the current product surface.
+This does **not** mean the product claims dry needling has been proven harmful or universally ineffective; the detailed evidence sheet preserves the against-vs-insufficient distinction.
 
 ---
 
-# 12. Weight management — strong evidence, current machine-seam gap
+# 11. Weight management — strong evidence, current machine seam
 
-Major current frameworks consistently treat weight management as core when overweight/obesity applies:
-
-- VA/DoD 2026: **Strong for** weight loss in knee OA with overweight/obesity;
-- NICE: weight management is a core treatment when applicable;
-- EULAR: healthy weight/weight loss, LoE 1a / Strength A;
-- ACR/AF: **Strong**;
-- AAOS: **Moderate**;
-- ACE 2026: mainstay strategy.
+Weight management is strongly and consistently supported when overweight/obesity applies across VA/DoD, EULAR, NICE, ACR/AF, AAOS and ACE.
 
 Clinical evidence state:
 
@@ -611,160 +256,103 @@ Clinical evidence state:
 recommended_or_supported
 ```
 
-However, the current CU-1 option catalog has no dedicated selectable weight-management rehabilitation/referral ID even though the frozen Knee clinical profile already names weight-management support/referral when clinically relevant.
+But the current CU-1 option catalog has no dedicated selectable weight-management ID, despite the frozen Knee clinical profile already mentioning support/referral when relevant.
 
 Step-2 decision:
 
 ```text
 role = product_advisory_only_for_now
-runtime_auto_trigger = blocked_without_explicit_overweight_obesity_context
-new_CU1_id = NOT AUTHORIZED in Step 2
+product_selectable = false
+auto_trigger = false
+requires future explicit overweight/obesity context
+NO new CU-1 ID in Step 2
 ```
 
-This is a documented integration gap, not permission to infer BMI or body-size status from absent data.
-
-A later Step-3/Step-5 design may decide whether the product needs a small explicit context control and whether the referral should mention support/referral. That decision requires a bounded contract amendment rather than hidden free-text inference.
+The system must not infer overweight/obesity from missing data, appearance, age or indirect context.
 
 ---
 
-# 13. Suggestion policy
+# 12. Suggestion policy
 
 ## Core omission suggestions
 
-If the clinician removes one of the reviewed default core components:
+If the clinician removes one of:
 
 ```text
 therapeutic_exercise
 progressive_strengthening
 education_and_self_management
-graded_activity_exposure
 ```
 
-the product may show a compact evidence-backed suggestion.
-
-The suggestion must include:
-
-```text
-intervention
-app evidence state
-one source/year cue
-one-tap add
-optional i
-```
-
-It must not block the referral.
+the product may show a compact evidence-backed one-tap suggestion. It never blocks the referral.
 
 ## Phenotype/function suggestions
 
-Allowed only when the trigger is present in structured state.
-
-Examples:
+Suggestions are allowed only from explicit structured context, for example:
 
 ```text
-ROM restriction
-→ mobility_exercise_when_restricted
-
-quadriceps/objective weakness or strength-related functional limitation
-→ progressive_strengthening emphasis
-
-balance deficit / relevant instability symptom
-→ neuromuscular_proprioceptive_training
-
-walking limitation
-→ gait_walking_practice
-
-stairs / sit-to-stand
-→ functional_task_retraining with task-specific wording
+ROM restriction       → mobility
+quadriceps weakness   → strengthening emphasis
+balance deficit       → neuromuscular / balance work
+walking limitation    → graded activity/endurance/gait
+stairs/sit-to-stand   → task-specific functional retraining
 ```
-
-Absence of a finding must not be treated as a negative finding.
 
 ## No automatic adjunct promotion
 
-The first Knee-OA prototype must **not** automatically suggest:
+Do not auto-suggest in the first prototype:
 
 ```text
-manual_therapy
-soft_tissue_techniques
+manual therapy
+soft-tissue techniques
 acupuncture
 taping
-brace
+brace/orthosis
+walking aid
+weight management
 ```
 
-unless a later explicit context rule is reviewed and frozen. These remain clinician-selected/power-user options.
+A later rule may add context-sensitive promotion only after separate review.
 
 ---
 
-# 14. Caution/bubble policy
+# 13. Evidence bubbles and `i` layer
 
-The UI is informative, not punitive.
-
-Examples:
+Routine semantic bubbles:
 
 ```text
-limited_or_insufficient_evidence
-→ Περιορισμένη τεκμηρίωση
-
-guideline_conflict_or_mixed
-→ Οι οδηγίες διαφέρουν
-
-recommendation_against_routine_use
-→ Δεν συνιστάται για συνήθη χρήση
+limited_or_insufficient_evidence   → Περιορισμένη τεκμηρίωση
+guideline_conflict_or_mixed        → Οι οδηγίες διαφέρουν
+recommendation_against_routine_use → Δεν συνιστάται για συνήθη χρήση
 ```
 
-The `i` layer must identify which source says what when conflict exists.
+The `i` layer shows:
 
-Do not use one red warning to represent both uncertainty and disagreement.
+```text
+plain-language rationale
+source-specific positions
+source guideline/version year
+native source strength/certainty where supplied
+product Reviewed date
+```
+
+No warning modal and no fake “confidence percentage”.
 
 ---
 
-# 15. Provenance / freshness contract
+# 14. Update governance
 
-Every material evidence item must retain:
-
-```text
-source_id
-source organization/framework
-source version/publication year
-source-native recommendation direction/strength when available
-product-normalized direction
-applicability/context
-reviewed_on
-status
-```
-
-The user-facing product may display, for example:
+There is no autonomous literature-to-live-rule pipeline.
 
 ```text
-VA/DoD · 2026
-Reviewed · Sep 2026
-```
-
-or, for conflicting guidance:
-
-```text
-Οι οδηγίες διαφέρουν
-NICE 2022 · AAOS 2021 · VA/DoD 2026
-Reviewed · Sep 2026
-```
-
-The review date must never be substituted for a guideline publication/version date.
-
----
-
-# 16. Evidence update governance
-
-No autonomous rule mutation.
-
-```text
-surveillance detects possible change
-→ candidate evidence update
+surveillance
+→ candidate evidence change
 → source review
-→ classify impact
+→ impact classification
 → clinician/product-owner approval
 → versioned contract update
 → tests/review
-→ later runtime release
+→ separate runtime release
 ```
 
 Candidate impact classes:
@@ -778,76 +366,44 @@ source_conflict_changed
 source_withdrawn_or_superseded
 ```
 
-A newer source does not automatically erase an older still-relevant framework. Supersession must be explicit.
+A newer source does not silently erase an older still-relevant framework.
 
 ---
 
-# 17. Existing CU-1 compatibility findings
+# 15. CU-1 compatibility result
 
-Compatible without taxonomy rewrite:
+No broad Knee route/taxonomy rewrite is required.
 
-```text
-therapeutic_exercise
-progressive_strengthening
-progressive_endurance_or_capacity_work
-mobility_exercise_when_restricted
-graded_activity_exposure
-graded_loading
-education_and_self_management
-home_exercise_programme
-neuromuscular_proprioceptive_training
-balance_stepping_recovery_training
-gait_walking_practice
-functional_task_retraining
-manual_therapy
-soft_tissue_techniques
-acupuncture
-taping
-orthosis_or_brace_context
-```
+Existing IDs cover the main evidence-aware product surface, including exercise, strengthening, mobility, graded activity, education/self-management, neuromuscular/balance, gait, function, manual/soft tissue, acupuncture, taping and brace.
 
-Presentation seam only:
+Two bounded seams remain:
 
 ```text
-walking_aid_assessment_and_training
+walking aid
 → canonical ID already exists
-→ currently absent from Knee UI relevance scope
+→ absent from current Knee UI relevance scope
+
+weight management
+→ clinically supported and present in Knee profile prose
+→ no dedicated selectable machine ID
+→ advisory-only for Step 2
 ```
 
-Machine-seam gap:
-
-```text
-weight-management support/referral
-→ present in frozen Knee clinical profile
-→ no dedicated current selectable option ID
-→ Step 2 records advisory-only; no hidden taxonomy mutation
-```
-
-Existing exclusion preserved:
-
-```text
-dry needling
-→ excluded from Knee-OA selectable profile
-```
-
-No Step-2 finding requires rewriting the broad CU-1 route taxonomy.
+Existing dry-needling exclusion is preserved.
 
 ---
 
-# 18. Step-2 acceptance decision
+# 16. Step-2 acceptance boundary
 
-The evidence architecture is viable if the machine companion implements:
+Step 2 is eligible to freeze only when machine and human contracts agree on:
 
-```text
-source registry
-+ source-specific positions
-+ six-state app evidence model
-+ deterministic non-arithmetic resolution
-+ default/core plan
-+ context-driven suggestion triggers
-+ explicit conflict explanations
-+ integration-gap metadata
-+ freshness/review metadata
-```
+- six evidence states including explicit guideline conflict;
+- source-specific positions and source-claim scope;
+- three-item visible core default plus implicit individualized PT;
+- context-driven suggestions without inference from missing data;
+- adjunct conflict semantics;
+- walking-aid and weight-management integration seams;
+- evidence freshness/provenance;
+- no runtime, UI, billing or patient-data mutation.
 
-Runtime implementation remains a later, separately authorized step.
+A separate exact design review remains required before declaring Step 2 frozen.
