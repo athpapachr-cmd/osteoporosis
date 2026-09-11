@@ -51,7 +51,21 @@ def validate_product_scope(template: dict[str, Any], state: dict[str, Any]) -> N
         allowed = set(scope[scope_key])
         for item_id in state.get(state_key) or []:
             if item_id not in allowed:
-                raise ValueError(f"unsupported_product_selection:{state_key if state_key != 'adjunct_options' else 'adjuncts'}:{item_id}")
+                output_category = "adjuncts" if state_key == "adjunct_options" else state_key
+                raise ValueError(f"unsupported_product_selection:{output_category}:{item_id}")
+
+
+def copy_readiness_error(template: dict[str, Any], state: dict[str, Any]) -> str | None:
+    errors = template["copy_readiness"]["local_error_ids"]
+    if state.get("formal_assertion_state") != "yes":
+        return errors["formal_assertion_missing_or_not_yes"]
+    if state.get("laterality") not in template["copy_readiness"]["laterality_allowed"]:
+        return errors["laterality_not_copy_ready"]
+    try:
+        validate_product_scope(template, state)
+    except ValueError as exc:
+        return str(exc)
+    return None
 
 
 def render_restrictions(
@@ -82,6 +96,8 @@ def render(template: dict[str, Any], state: dict[str, Any], language: dict[str, 
     validate_product_scope(template, state)
 
     laterality = state["laterality"]
+    if laterality not in template["laterality_phrases"]:
+        raise ValueError("product_laterality_not_renderable")
     laterality_phrase = template["laterality_phrases"][laterality]
     blocks: list[str] = [
         template["block_templates"]["indication"].format(laterality_phrase=laterality_phrase)
@@ -114,10 +130,7 @@ def render(template: dict[str, Any], state: dict[str, Any], language: dict[str, 
         clinical_keys.add(selected_weakness)
 
     swelling_rule = template["clinical_picture"]["precedence"]["swelling"]
-    if (
-        swelling_rule["suppress_generic_when_specific"]
-        and swelling_rule["specific"] in clinical_keys
-    ):
+    if swelling_rule["suppress_generic_when_specific"] and swelling_rule["specific"] in clinical_keys:
         clinical_keys.discard(swelling_rule["generic"])
 
     rom = template["clinical_picture"]["precedence"]["rom"]
@@ -295,6 +308,21 @@ def main() -> None:
     assert set(supported["rehab_directions"]) - {"walking_aid_assessment_and_training"} <= set(knee_ui["rehab_directions"])
     assert set(supported["adjuncts"]) <= set(knee_ui["adjuncts"])
 
+    # Every supported selection has explicit output semantics or explicit documented de-duplication.
+    finding_renderable = set(template["clinical_picture"]["phrases"]) | set(
+        template["clinical_picture"]["routed_to_function_instead_of_clinical_picture"]
+    )
+    assert set(supported["findings"]) <= finding_renderable
+    assert set(supported["functional_impairments"]) <= set(template["functional_impact"]["phrases"])
+    assert set(supported["rehab_directions"]) <= set(template["active_plan"]["phrases"])
+    assert set(supported["adjuncts"]) <= set(template["adjuncts"]["phrases"])
+    redundant_goals = set(template["goals"]["generic_redundant_suppressed_in_standard_output"])
+    rendered_goals = set(template["goals"]["nonredundant_renderable"])
+    assert not (redundant_goals & rendered_goals)
+    assert set(supported["goals"]) == redundant_goals | rendered_goals
+    assert template["goals"]["redundant_suppression_is_output_only"] is True
+    assert template["clinical_picture"]["precedence_is_semantic_merge_not_state_deletion"] is True
+
     evidence_items = evidence["items"]
     for item_id in template["active_plan"]["order"]:
         assert item_id in supported["rehab_directions"]
@@ -335,7 +363,7 @@ def main() -> None:
     hard = set(template["hard_invariants"])
     required = {
         "diagnosis_must_be_clinician_asserted_before_copy",
-        "every_selected_product_item_must_render_or_block",
+        "every_selected_product_item_must_render_block_or_be_explicitly_semantically_deduplicated",
         "true_locking_not_product_exposed_without_safety_mapping",
         "suggestion_is_not_selection",
         "selection_is_required_for_plan_phrase",
@@ -361,9 +389,7 @@ def main() -> None:
         assert fixture_id not in seen
         seen.add(fixture_id)
         fixture_input = fixture["input"]
-        assert fixture_input.get("formal_assertion_state") == "yes", (
-            f"{fixture_id} must be an explicitly clinician-asserted copy-ready OA fixture"
-        )
+        assert copy_readiness_error(template, fixture_input) is None, fixture_id
         rendered = render(template, fixture_input, language)
         expected = fixture["expected_text"]
         assert rendered == expected, f"{fixture_id}\nEXPECTED: {expected}\nACTUAL:   {rendered}"
@@ -381,6 +407,10 @@ def main() -> None:
         else:
             raise AssertionError(f"{fixture_id} should block product projection")
 
+    for fixture in edge_fixtures["copy_blocking_fixtures"]:
+        actual = copy_readiness_error(template, fixture["input"])
+        assert actual == fixture["expected_error"], (fixture["id"], actual)
+
     named_oracles = {
         "suggestion_without_selection_does_not_render",
         "quadriceps_specific_suppresses_generic_and_refines_plan",
@@ -396,8 +426,9 @@ def main() -> None:
 
     print(
         "Knee-OA template contract PASS: "
-        f"{len(render_fixtures)} clinician-asserted deterministic render fixtures, "
-        f"{len(edge_fixtures['blocking_fixtures'])} fail-closed scope fixtures"
+        f"{len(render_fixtures)} deterministic render fixtures, "
+        f"{len(edge_fixtures['blocking_fixtures'])} projection-block fixtures, "
+        f"{len(edge_fixtures['copy_blocking_fixtures'])} copy-readiness block fixtures"
     )
 
 
