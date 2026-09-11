@@ -1,32 +1,29 @@
 # SLICE_PLAN_CURRENT.md — Step 6A Knee-OA qualifier refinement
 
-> **STATUS:** PRODUCT-OWNER FEEDBACK REFINEMENT / ACTIVE.
+> **STATUS:** IMPLEMENTED / FOCUSED TECHNICAL GATE PASS / CLOSED.
 > **Slice:** `CU1-PRODUCT-KNEE-OA-PROTOTYPE-V1-1-QUALIFIERS-20260911`.
 > **Branch:** `feat/physio-referral-knee-oa-prototype-v1-2026-09-11`.
 > **Parent closeout:** `c3f79a192a3fcac9fb11a5245df4e93312c4522a`.
+> **Tested substantive head:** `243095ca9545bd2f96be8986520aeae8c3551c27`.
 > **Verified main:** `d9f312f6d2d596ec0bd4f35f6de56ad98dc34b37`.
-> **Writer:** ACTIVE, bounded to synthetic prototype + supporting canonicals/tests.
+> **Writer:** NONE.
 > **Release / real clinical use:** NOT AUTHORIZED.
 
-## 1. Problem
+## 1. Problem solved
 
-The Step-5 routine phenotype was too coarse. `Pain`, `stiffness` and `weakness` were quick but clinically under-specified. The correction must add discriminating information without returning to a conventional long medical form.
+The Step-5 routine phenotype was clinically too coarse in pain, weakness and stiffness. Step 6A adds depth through progressive disclosure rather than a permanently larger form.
 
-## 2. UX rule
+Frozen UX rule for this candidate:
 
 ```text
 broad first tap
-→ only then reveal the clinically meaningful qualifier
-→ after selection, collapse qualifier controls into a one-line clinical summary
+→ reveal clinically meaningful qualifier only on demand
+→ retain a compact clinical-summary line in the routine flow
 ```
 
-A qualifier is justified only when it changes the referral wording, clinical review state, evidence/suggestion interpretation, or physiotherapy usefulness.
+## 2. Pain refinement
 
-## 3. Pain refinement
-
-Routine row remains `Πόνος`.
-
-When selected, reveal multi-select location:
+`Πόνος` remains one routine choice. Optional location supports:
 
 ```text
 medial_joint_line
@@ -34,114 +31,97 @@ lateral_joint_line
 anterior_peripatellar
 pes_anserine_region
 posterior
- diffuse
+diffuse
 ```
 
-The collapsed summary should read naturally, e.g. `Έσω μεσάρθρια · χήνειος πόδας`.
+Focal locations may coexist; `diffuse` is exclusive.
 
 Hard rule:
 
 ```text
-pes-anserine pain/tenderness location != autonomous pes-anserine bursitis diagnosis
+pes-anserine symptom/tenderness location != autonomous pes-anserine bursitis diagnosis
 ```
 
-## 4. Weakness refinement
+## 3. Weakness refinement
 
-Routine row remains `Αδυναμία`.
-
-Qualifiers:
+Generic weakness remains the product phenotype unless the clinician explicitly qualifies it.
 
 ```text
-subjective_or_generic
 objective
 quadriceps
 visible_atrophy
+atrophy_location: quadriceps | peri_knee_general
 ```
 
-If `visible_atrophy` is selected, optionally specify `quadriceps` or `peri_knee_general`.
+Explicit objective/quadriceps qualifiers map to the existing canonical CU-1 finding IDs. New qualifier state replaces an older weakness-specific finding only when explicitly selected; otherwise legacy explicit findings remain unchanged.
 
-Existing CU-1 finding IDs are used when they already represent the exact clinician-selected meaning (`objective_weakness`, `quadriceps_weakness`). Generic weakness remains the product phenotype and is never upgraded silently.
-
-## 5. Stiffness refinement
-
-Routine row remains `Δυσκαμψία`.
-
-Qualifiers:
+## 4. Stiffness refinement
 
 ```text
 morning
 after_inactivity
+morning duration: ≤30′ | >30′
 ```
 
-If `morning` is selected, reveal:
+`>30′` creates a review clue linked to NICE NG226. It does not create an alternative diagnosis, does not itself block export, and does not automatically change/select treatment.
+
+## 5. Examination / power-user layer
+
+Remain outside the routine surface:
 
 ```text
-≤30 min
->30 min
+extension lag
+joint effusion
+fixed flexion deformity + optional degrees
+focal tenderness + optional anatomic location
 ```
 
-`>30 min` creates a non-blocking clinical-review clue because it is outside the typical NICE NG226 OA diagnostic pattern. It does not infer inflammatory arthritis or any other alternative diagnosis and does not automatically select/alter treatment.
+Fixed flexion deformity is an examination finding, not a synonym for stiffness. An explicitly selected FFD can make the existing mobility suggestion eligible through documented clinical mapping; it still does not select mobility treatment.
 
-## 6. Examination / power-user layer
+## 6. Deterministic referral behavior
 
-Keep these out of the default surface:
+The frozen Step-3 renderer remains the base. Step-6A adds only bounded product-local specificity:
+
+- pain localization;
+- stiffness pattern/duration;
+- atrophy qualifier;
+- localized tenderness;
+- explicit fixed flexion deformity examination prose.
+
+If no new qualifier is selected, Step-5 exact outputs remain unchanged.
+
+## 7. Acceptance obtained
+
+Exact substantive gate:
 
 ```text
-extension_lag            → existing CU-1 finding
-fixed_flexion_deformity  → product-local examination qualifier + optional degrees
-effusion                 → existing CU-1 finding
-focal_tenderness         → optional location, including pes-anserine region
+workflow  Physio Knee OA prototype gate
+run       34627436841
+head      243095ca9545bd2f96be8986520aeae8c3551c27
+result    SUCCESS
 ```
 
-Stiffness symptom remains distinct from passive/fixed extension deficit.
-
-## 7. Referral projection
-
-The existing frozen Step-3 renderer remains the base. A bounded prototype qualifier overlay may make symptom/examination prose more specific but must not:
-
-- create treatment selections;
-- create a diagnosis beyond clinician assertion;
-- change evidence state;
-- bypass inherited CU-1 validation/safety;
-- overwrite manual text;
-- introduce patient persistence.
-
-Examples:
+Coverage at that head:
 
 ```text
-pain + pes_anserine_region
-→ pain in the pes-anserine region
-
-weakness + quadriceps + visible atrophy
-→ quadriceps weakness with visible quadriceps atrophy
-
-stiffness + morning + ≤30 min + after inactivity
-→ morning stiffness up to 30 minutes and stiffness after inactivity
-
-fixed flexion deformity 10°
-→ explicit examination phrase, separate from stiffness
+existing backend/HTTP                         15 / 15 PASS
+new qualifier projection                      8 / 8 PASS
+frozen exact Greek outputs                    15 PASS within existing suite
+existing Chromium                            12 / 12 PASS
+new qualifier Chromium                        6 / 6 PASS
+source-summary display                        54 positions
+package dependency closure                    PASS
+scope/syntax                                  PASS
 ```
 
-## 8. Suggestion boundary
+The tests explicitly cover pes-anserine without auto-bursitis diagnosis, generic weakness without objective inference, explicit quadriceps + atrophy refinement, stiffness >30′ review without treatment/block, fixed flexion deformity distinct from stiffness, focal pes-anserine tenderness, parent-deselect cleanup and mobile reflow.
 
-Symptoms/findings do not automatically select rehabilitation. Existing suggestions remain explicit clinician actions. A more specific selected finding may make an existing suggestion eligible only where the mapping is clinically explicit and traceable.
+## 8. Explicit remaining acceptance
 
-## 9. Acceptance
+The technical gate is not product-owner acceptance or independent review. Still pending: real product-owner synthetic use, final Greek copy judgment, iPhone Safari/VoiceOver, complete accessibility/contrast audit, independent clinical/physio/UX/commercial review and source-to-claim audit.
 
-Focused tests must prove at minimum:
+## 9. Hold / next action
 
-- qualifiers remain hidden until parent symptom selected;
-- collapsed summary updates and survives routine interaction;
-- pes-anserine location does not create a bursitis diagnosis;
-- generic weakness does not become objective weakness;
-- quadriceps/objective options map only when explicitly selected;
-- stiffness >30 min creates review note but does not block export by itself;
-- fixed flexion deformity stays distinct from stiffness and can carry degrees;
-- existing Step-5 exact outputs remain unchanged when no new qualifier is selected;
-- actual CU-1 safety block still outranks all qualifier UI;
-- manual edit/stale/network/export guards remain intact;
-- mobile/forced-colour/focus tests remain green.
+Return to Step-6 product-owner testing of this exact refined candidate. Do not add more fields or a second diagnosis until that testing demonstrates a concrete need.
 
-## 10. Hold
-
-No second diagnosis, production integration, patient persistence, public hosting, billing/auth, autonomous evidence update, PR/merge/deploy/production smoke or real-patient use.
+No production integration, real patient data, persistence, public/LAN hosting, billing/auth, autonomous evidence update, PR/merge/deploy or production smoke is authorized.
