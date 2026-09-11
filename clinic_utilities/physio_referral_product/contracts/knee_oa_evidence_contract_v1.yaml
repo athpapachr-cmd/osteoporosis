@@ -1,0 +1,445 @@
+version: knee_oa_evidence_contract_v1
+status: design_candidate
+reviewed_on: 2026-09-11
+domain: physio_referral_product
+profile_id: knee
+route_id: knee_osteoarthritis
+runtime_authorized: false
+patient_data_persistence: false
+
+evidence_state_enum:
+  - recommended_or_supported
+  - conditional_or_context_dependent
+  - limited_or_insufficient_evidence
+  - guideline_conflict_or_mixed
+  - recommendation_against_routine_use
+  - not_yet_assessed
+
+source_direction_enum:
+  - strong_for
+  - for
+  - conditional_for
+  - weak_for
+  - neutral_or_insufficient
+  - conditional_against
+  - weak_against
+  - against
+  - not_addressed
+
+source_registry:
+  VA_DOD_OA_2026:
+    organization: US Department of Veterans Affairs / Department of Defense
+    title: Clinical Practice Guideline for the Non-Surgical Management of Hip & Knee Osteoarthritis
+    version: "3.0"
+    publication_year: 2026
+    evidence_window_through: 2025-07-31
+    locator: https://healthquality.va.gov/HEALTHQUALITY/guidelines/CD/OA/Osteoarthritis-CPG_2026-Provider-Summary_final_20260618.pdf
+    methodology: GRADE
+    reviewed_on: 2026-09-11
+    status: active_reviewed
+  ACE_KNEE_OA_2026:
+    organization: Singapore Agency for Care Effectiveness
+    title: Management of knee osteoarthritis - a joint effort with patients
+    version: 2026-04
+    publication_year: 2026
+    publication_date: 2026-04-24
+    locator: https://www.ace-hta.gov.sg/healthcare-professionals/ace-repository-for-clinical-guidelines/management-of-knee-osteoarthritis---a-joint-effort-with-patients-acg/
+    reviewed_on: 2026-09-11
+    status: active_reviewed
+  EULAR_CORE_2023_UPDATE:
+    organization: European Alliance of Associations for Rheumatology
+    title: EULAR recommendations for the non-pharmacological core management of hip and knee osteoarthritis - 2023 update
+    guideline_version: "2023 update"
+    publication_year: 2024
+    locator: https://pmc.ncbi.nlm.nih.gov/articles/PMC11103326/
+    methodology: EULAR recommendations with level of evidence and strength
+    reviewed_on: 2026-09-11
+    status: active_reviewed
+  NICE_NG226_2022:
+    organization: National Institute for Health and Care Excellence
+    title: Osteoarthritis in over 16s - diagnosis and management
+    guideline_id: NG226
+    publication_year: 2022
+    publication_date: 2022-10-19
+    locator: https://www.nice.org.uk/guidance/ng226/chapter/recommendations
+    reviewed_on: 2026-09-11
+    status: active_reviewed
+  AAOS_OAK3_2021:
+    organization: American Academy of Orthopaedic Surgeons
+    title: Management of Osteoarthritis of the Knee (Non-Arthroplasty), Third Edition
+    guideline_version: "3rd edition"
+    publication_year: 2021
+    publication_date: 2021-08-31
+    locator: https://new.aaos.org/globalassets/quality-and-practice-resources/osteoarthritis-of-the-knee/oak3cpg.pdf
+    reviewed_on: 2026-09-11
+    status: active_reviewed
+  ACR_AF_2019:
+    organization: American College of Rheumatology / Arthritis Foundation
+    title: 2019 Guideline for the Management of Osteoarthritis of the Hand, Hip, and Knee
+    guideline_version: "2019"
+    publication_year: 2020
+    locator: https://acrjournals.onlinelibrary.wiley.com/doi/10.1002/art.41142
+    methodology: GRADE
+    reviewed_on: 2026-09-11
+    status: active_reviewed
+
+resolution_policy:
+  arithmetic_scoring_forbidden: true
+  source_specific_positions_retained: true
+  framework_conflict_must_surface: true
+  insufficient_is_not_against: true
+  source_year_distinct_from_reviewed_on: true
+  rules:
+    recommended_or_supported: material_alignment_for_without_material_against
+    conditional_or_context_dependent: support_requires_explicit_context_without_material_direction_conflict
+    limited_or_insufficient_evidence: predominant_insufficient_or_uncertain_without_material_for_or_against
+    guideline_conflict_or_mixed: material_direction_or_practical_recommendation_conflict_between_reviewed_sources
+    recommendation_against_routine_use: material_alignment_against_routine_use_without_material_current_support_for_same_context
+    not_yet_assessed: evidence_review_not_completed
+
+default_plan:
+  implicit:
+    - physiotherapy_assessment_and_individualized_active_rehabilitation
+  selected:
+    - therapeutic_exercise
+    - progressive_strengthening
+    - education_and_self_management
+    - graded_activity_exposure
+
+items:
+  physiotherapy_assessment_and_individualized_active_rehabilitation:
+    role: implicit_core_request
+    cu1_target_ids: [physiotherapy_assessment_and_individualized_active_rehabilitation]
+    app_state: recommended_or_supported
+    default_selected: true
+    visible_default_row: false
+    purpose_summary_el: Εξατομικευμένη δομημένη φυσιοθεραπευτική αποκατάσταση με βάση λειτουργία, προτιμήσεις και κλινικό πλαίσιο.
+    positions:
+      - {source_id: VA_DOD_OA_2026, direction: weak_for, native_strength: "Weak for", summary: "Structured physical therapy suggested for hip/knee OA."}
+      - {source_id: ACE_KNEE_OA_2026, direction: for, native_strength: null, summary: "Allied-health referral may support supervised exercise and other non-pharmacological strategies."}
+      - {source_id: EULAR_CORE_2023_UPDATE, direction: for, native_strength: "A; LoE 1a", summary: "Individualised multicomponent non-pharmacological plan."}
+
+  therapeutic_exercise:
+    role: core_visible
+    cu1_target_ids: [therapeutic_exercise]
+    app_state: recommended_or_supported
+    default_selected: true
+    omission_suggestion: true
+    purpose_summary_el: Θεραπευτική άσκηση ως βασικός πυρήνας για βελτίωση πόνου και λειτουργικότητας, προσαρμοσμένη στον ασθενή.
+    positions:
+      - {source_id: NICE_NG226_2022, direction: for, native_strength: null, summary: "Offer tailored therapeutic exercise to all people with OA."}
+      - {source_id: EULAR_CORE_2023_UPDATE, direction: strong_for, native_strength: "A; LoE 1a", summary: "Offer exercise with adequate dosage/progression tailored to function and preferences."}
+      - {source_id: AAOS_OAK3_2021, direction: strong_for, native_strength: Strong, summary: "Supervised, unsupervised and/or aquatic exercise recommended over no exercise for pain/function."}
+      - {source_id: ACR_AF_2019, direction: strong_for, native_strength: Strong, summary: "Exercise strongly recommended for knee OA."}
+      - {source_id: ACE_KNEE_OA_2026, direction: for, native_strength: null, summary: "Exercise programmes are a mainstay strategy."}
+      - {source_id: VA_DOD_OA_2026, direction: weak_for, native_strength: "Weak for", summary: "Structured PT and tailored physical activity supported."}
+
+  progressive_strengthening:
+    role: core_visible
+    cu1_target_ids: [progressive_strengthening]
+    app_state: recommended_or_supported
+    default_selected: true
+    omission_suggestion: true
+    purpose_summary_el: Προοδευτική ενδυνάμωση ως μέρος της θεραπευτικής άσκησης, χωρίς επιβολή ενός καθολικού πρωτοκόλλου δόσης.
+    positions:
+      - {source_id: NICE_NG226_2022, direction: for, native_strength: null, summary: "Local muscle strengthening is an example of tailored therapeutic exercise."}
+      - {source_id: EULAR_CORE_2023_UPDATE, direction: strong_for, native_strength: "A; LoE 1a", summary: "Strength exercise included among recommended exercise modes."}
+      - {source_id: ACR_AF_2019, direction: strong_for, native_strength: Strong, summary: "Exercise strongly recommended; strengthening included among appropriate modes."}
+      - {source_id: AAOS_OAK3_2021, direction: strong_for, native_strength: Strong, summary: "Exercise supported, with no universal superiority of one mode established."}
+      - {source_id: VA_DOD_OA_2026, direction: neutral_or_insufficient, native_strength: "Neither for nor against", summary: "Insufficient evidence to prefer one structured PT type/mode over another."}
+
+  education_and_self_management:
+    role: core_visible
+    cu1_target_ids: [education_and_self_management]
+    app_state: recommended_or_supported
+    default_selected: true
+    omission_suggestion: true
+    purpose_summary_el: Εκπαίδευση και αυτοδιαχείριση για κατανόηση, συνέπεια στην άσκηση και λειτουργική διαχείριση της οστεοαρθρίτιδας.
+    positions:
+      - {source_id: EULAR_CORE_2023_UPDATE, direction: strong_for, native_strength: "A; LoE 1a", summary: "Information, education and self-management recommended and prioritised."}
+      - {source_id: AAOS_OAK3_2021, direction: strong_for, native_strength: Strong, summary: "Self-management and patient education recommended."}
+      - {source_id: ACR_AF_2019, direction: strong_for, native_strength: Strong, summary: "Self-efficacy/self-management strongly recommended."}
+      - {source_id: NICE_NG226_2022, direction: for, native_strength: null, summary: "Provide information/support and consider combining exercise with education/behaviour change."}
+      - {source_id: ACE_KNEE_OA_2026, direction: for, native_strength: null, summary: "Patient education is a mainstay strategy."}
+      - {source_id: VA_DOD_OA_2026, direction: weak_for, native_strength: "Weak for", summary: "Tailored education and physical activity suggested for self-management."}
+
+  graded_activity_exposure:
+    role: core_visible
+    cu1_target_ids: [graded_activity_exposure]
+    app_state: recommended_or_supported
+    default_selected: true
+    omission_suggestion: true
+    purpose_summary_el: Σταδιακή αύξηση δραστηριότητας και φόρτισης με βάση ανοχή και λειτουργικό στόχο.
+    positions:
+      - {source_id: EULAR_CORE_2023_UPDATE, direction: strong_for, native_strength: "A; LoE 1a", summary: "Exercise dosage and progression should be tailored."}
+      - {source_id: NICE_NG226_2022, direction: for, native_strength: null, summary: "Regular consistent exercise and long-term adherence are beneficial."}
+      - {source_id: ACE_KNEE_OA_2026, direction: for, native_strength: null, summary: "Exercise/physical activity is part of mainstay management."}
+      - {source_id: VA_DOD_OA_2026, direction: weak_for, native_strength: "Weak for", summary: "Tailored physical activity suggested."}
+
+  progressive_endurance_or_capacity_work:
+    role: contextual_rehab
+    cu1_target_ids: [progressive_endurance_or_capacity_work]
+    app_state: conditional_or_context_dependent
+    default_selected: false
+    suggestion_triggers: [walking_limitation, walking_tolerance, community_mobility]
+    purpose_summary_el: Αερόβια ή λειτουργική εργασία αντοχής όταν η βάδιση ή η γενική ικανότητα είναι σημαντικός περιορισμός.
+    positions:
+      - {source_id: EULAR_CORE_2023_UPDATE, direction: strong_for, native_strength: "A; LoE 1a", summary: "Aerobic exercise is among recommended exercise modes."}
+      - {source_id: NICE_NG226_2022, direction: for, native_strength: null, summary: "General aerobic fitness is an example of therapeutic exercise."}
+      - {source_id: ACR_AF_2019, direction: strong_for, native_strength: Strong, summary: "Exercise strongly recommended; walking/aquatic and other modes may be used."}
+
+  mobility_exercise_when_restricted:
+    role: contextual_rehab
+    cu1_target_ids: [mobility_exercise_when_restricted]
+    app_state: conditional_or_context_dependent
+    default_selected: false
+    suggestion_triggers: [active_rom_restricted, passive_rom_restricted]
+    purpose_summary_el: Κινητικότητα όταν υπάρχει πραγματικός περιορισμός εύρους κίνησης.
+    positions:
+      - {source_id: EULAR_CORE_2023_UPDATE, direction: strong_for, native_strength: "A; LoE 1a", summary: "Flexibility may be included within a tailored exercise programme."}
+      - {source_id: AAOS_OAK3_2021, direction: for, native_strength: Strong, summary: "Exercise is supported overall; exact mode should be individualized."}
+
+  neuromuscular_proprioceptive_training:
+    role: contextual_rehab
+    cu1_target_ids: [neuromuscular_proprioceptive_training]
+    app_state: conditional_or_context_dependent
+    default_selected: false
+    suggestion_triggers: [balance_deficit, subjective_giving_way, recurrent_instability_episode]
+    purpose_summary_el: Νευρομυϊκή/ιδιοδεκτική εκπαίδευση όταν η ισορροπία ή ο λειτουργικός έλεγχος είναι σχετικό πρόβλημα.
+    positions:
+      - {source_id: AAOS_OAK3_2021, direction: for, native_strength: "Moderate", summary: "Neuromuscular training with traditional exercise may improve performance function and walking speed."}
+      - {source_id: EULAR_CORE_2023_UPDATE, direction: strong_for, native_strength: "A; LoE 1a", summary: "Neuromotor exercise is included among recommended exercise modes."}
+      - {source_id: ACR_AF_2019, direction: conditional_for, native_strength: Conditional, summary: "Balance exercise conditionally recommended."}
+
+  balance_stepping_recovery_training:
+    role: contextual_rehab
+    cu1_target_ids: [balance_stepping_recovery_training]
+    app_state: conditional_or_context_dependent
+    default_selected: false
+    suggestion_triggers: [balance_deficit]
+    purpose_summary_el: Εκπαίδευση ισορροπίας όταν υπάρχει αξιολογημένο σχετικό έλλειμμα.
+    positions:
+      - {source_id: ACR_AF_2019, direction: conditional_for, native_strength: Conditional, summary: "Balance exercise conditionally recommended."}
+      - {source_id: EULAR_CORE_2023_UPDATE, direction: strong_for, native_strength: "A; LoE 1a", summary: "Neuromotor exercise may form part of tailored exercise."}
+      - {source_id: AAOS_OAK3_2021, direction: for, native_strength: Moderate, summary: "Neuromuscular training may improve performance function/walking speed."}
+
+  gait_walking_practice:
+    role: contextual_rehab
+    cu1_target_ids: [gait_walking_practice]
+    app_state: conditional_or_context_dependent
+    default_selected: false
+    suggestion_triggers: [walking_limitation, walking_tolerance]
+    purpose_summary_el: Λειτουργική επανεκπαίδευση βάδισης όταν η βάδιση αποτελεί κύριο περιορισμό.
+    positions:
+      - {source_id: VA_DOD_OA_2026, direction: weak_for, native_strength: "Weak for", summary: "Structured PT and physical activity are supported; treatment should be individualized."}
+      - {source_id: EULAR_CORE_2023_UPDATE, direction: for, native_strength: "A; LoE 1a", summary: "Individualised multicomponent plan should reflect activities and participation."}
+
+  functional_task_retraining:
+    role: contextual_rehab
+    cu1_target_ids: [functional_task_retraining]
+    app_state: conditional_or_context_dependent
+    default_selected: false
+    suggestion_triggers: [stairs, sit_to_stand, squat, kneeling, patient_priority_activity]
+    purpose_summary_el: Στοχευμένη λειτουργική επανεκπαίδευση για το συγκεκριμένο task που περιορίζει τον ασθενή.
+    positions:
+      - {source_id: EULAR_CORE_2023_UPDATE, direction: for, native_strength: "A; LoE 1a", summary: "Individualised management considers activities, participation and patient needs."}
+      - {source_id: VA_DOD_OA_2026, direction: weak_for, native_strength: "Weak for", summary: "Structured PT is suggested."}
+
+  home_exercise_programme:
+    role: contextual_delivery
+    cu1_target_ids: [home_exercise_programme]
+    app_state: conditional_or_context_dependent
+    default_selected: false
+    purpose_summary_el: Πρόγραμμα στο σπίτι ως μία αποδεκτή μορφή παράδοσης, ανάλογα με ανάγκες, προτιμήσεις και πρόσβαση.
+    positions:
+      - {source_id: AAOS_OAK3_2021, direction: strong_for, native_strength: Strong, summary: "Unsupervised exercise is effective compared with no exercise; supervision is not uniformly superior."}
+      - {source_id: EULAR_CORE_2023_UPDATE, direction: strong_for, native_strength: "A; LoE 1a", summary: "Supervised/unsupervised and land/aquatic delivery selected according to availability/preferences."}
+      - {source_id: VA_DOD_OA_2026, direction: neutral_or_insufficient, native_strength: "Neither for nor against", summary: "Insufficient evidence to recommend one structured PT type/mode over another."}
+
+  walking_aid_assessment_and_training:
+    role: contextual_support
+    cu1_target_ids: [walking_aid_assessment_and_training]
+    app_state: conditional_or_context_dependent
+    default_selected: false
+    current_knee_ui_exposed: false
+    integration_status: existing_canonical_id_requires_future_presentation_scope_amendment
+    auto_suggestion: false
+    purpose_summary_el: Αξιολόγηση/εκπαίδευση βοηθήματος βάδισης σε επιλεγμένους ασθενείς με ουσιαστικό περιορισμό.
+    positions:
+      - {source_id: NICE_NG226_2022, direction: conditional_for, native_strength: null, summary: "Consider walking aids for lower-limb OA."}
+      - {source_id: ACE_KNEE_OA_2026, direction: conditional_for, native_strength: null, summary: "Walking aids are an example allied-health strategy."}
+      - {source_id: ACR_AF_2019, direction: strong_for, native_strength: Strong, summary: "Cane use strongly recommended when ambulation, stability or pain impact warrants it."}
+
+  orthosis_or_brace_context:
+    role: contextual_support
+    cu1_target_ids: [orthosis_or_brace_context]
+    app_state: conditional_or_context_dependent
+    default_selected: false
+    auto_suggestion: false
+    purpose_summary_el: Νάρθηκας/brace μόνο σε επιλεγμένο κλινικό πλαίσιο, όχι ως routine default.
+    positions:
+      - {source_id: VA_DOD_OA_2026, direction: weak_for, native_strength: "Weak for", summary: "Bracing suggested in select knee-OA patients."}
+      - {source_id: ACR_AF_2019, direction: strong_for, native_strength: "Strong TF / Conditional PF", summary: "Tibiofemoral brace strongly and patellofemoral brace conditionally recommended in appropriate patients."}
+      - {source_id: NICE_NG226_2022, direction: conditional_for, native_strength: null, summary: "Do not routinely offer; consider only when instability/abnormal loading plus functional criteria apply."}
+
+  taping:
+    role: contextual_adjunct
+    cu1_target_ids: [taping]
+    app_state: conditional_or_context_dependent
+    default_selected: false
+    auto_suggestion: false
+    purpose_summary_el: Taping ως επιλεγμένο συμπληρωματικό μέσο, όχι βασική παρέμβαση.
+    positions:
+      - {source_id: ACR_AF_2019, direction: conditional_for, native_strength: Conditional, summary: "Kinesiotaping conditionally recommended for knee OA."}
+      - {source_id: NICE_NG226_2022, direction: conditional_for, native_strength: null, summary: "Tape/supports not routine; restricted to selected biomechanical/functional contexts."}
+
+  manual_therapy:
+    role: power_user_adjunct
+    cu1_target_ids: [manual_therapy]
+    app_state: guideline_conflict_or_mixed
+    default_selected: false
+    auto_suggestion: false
+    selected_bubble_el: Οι οδηγίες διαφέρουν
+    purpose_summary_el: Συμπληρωματική manual therapy μόνο μαζί με ενεργητική αποκατάσταση· οι οδηγίες διαφέρουν ως προς το πρόσθετο όφελος.
+    positions:
+      - {source_id: NICE_NG226_2022, direction: conditional_for, native_strength: null, summary: "Only consider manual therapy for hip/knee OA alongside therapeutic exercise; insufficient evidence for use alone."}
+      - {source_id: AAOS_OAK3_2021, direction: conditional_for, native_strength: Limited, summary: "Manual therapy in addition to exercise may improve pain/function."}
+      - {source_id: ACR_AF_2019, direction: conditional_against, native_strength: Conditional, summary: "Manual therapy with exercise conditionally recommended against over exercise alone."}
+
+  soft_tissue_techniques:
+    role: power_user_adjunct
+    cu1_target_ids: [soft_tissue_techniques]
+    app_state: guideline_conflict_or_mixed
+    default_selected: false
+    auto_suggestion: false
+    selected_bubble_el: Οι οδηγίες διαφέρουν
+    purpose_summary_el: Τεχνικές μαλακών μορίων ως adjunct, με μη ομοιόμορφη guideline υποστήριξη και χωρίς ρόλο ως υποκατάστατο της άσκησης.
+    positions:
+      - {source_id: NICE_NG226_2022, direction: conditional_for, native_strength: null, summary: "Soft-tissue techniques fall within manual therapy and should only be considered alongside exercise."}
+      - {source_id: AAOS_OAK3_2021, direction: conditional_for, native_strength: Limited, summary: "Massage may be used as adjunct/usual care with limited strength."}
+      - {source_id: ACR_AF_2019, direction: conditional_against, native_strength: Conditional, summary: "Massage conditionally recommended against for OA symptom reduction."}
+
+  acupuncture:
+    role: power_user_adjunct
+    cu1_target_ids: [acupuncture]
+    app_state: guideline_conflict_or_mixed
+    default_selected: false
+    auto_suggestion: false
+    selected_bubble_el: Οι οδηγίες διαφέρουν
+    purpose_summary_el: Οι μεγάλες οδηγίες διαφέρουν ουσιαστικά για τον ρόλο του acupuncture στην οστεοαρθρίτιδα γόνατος.
+    positions:
+      - {source_id: NICE_NG226_2022, direction: against, native_strength: null, summary: "Do not offer acupuncture for OA."}
+      - {source_id: AAOS_OAK3_2021, direction: conditional_for, native_strength: Limited, summary: "Acupuncture may improve pain/function; recommendation downgraded for inconsistency/blinding concerns."}
+      - {source_id: ACR_AF_2019, direction: conditional_for, native_strength: Conditional, summary: "Acupuncture conditionally recommended."}
+      - {source_id: ACE_KNEE_OA_2026, direction: conditional_for, native_strength: null, summary: "Consider as adjunct after inadequate conventional response or patient preference."}
+      - {source_id: VA_DOD_OA_2026, direction: neutral_or_insufficient, native_strength: "Neither for nor against", summary: "Insufficient evidence for or against acupuncture."}
+
+  dry_needling:
+    role: excluded_current_knee_oa_surface
+    cu1_target_ids: [dry_needling]
+    app_state: guideline_conflict_or_mixed
+    default_selected: false
+    product_selectable: false
+    integration_status: preserve_existing_knee_v1_1_exclusion
+    purpose_summary_el: Δεν προσφέρεται ως επιλογή στο τρέχον Knee-OA pathway· οι πηγές κυμαίνονται από σύσταση κατά έως ανεπαρκή evidence.
+    positions:
+      - {source_id: NICE_NG226_2022, direction: against, native_strength: null, summary: "Do not offer dry needling for OA."}
+      - {source_id: AAOS_OAK3_2021, direction: neutral_or_insufficient, native_strength: Consensus, summary: "Utility/efficacy unclear; additional evidence required."}
+      - {source_id: VA_DOD_OA_2026, direction: neutral_or_insufficient, native_strength: "Neither for nor against", summary: "Insufficient evidence for or against dry needling."}
+
+  weight_management:
+    role: product_advisory_only
+    cu1_target_ids: []
+    app_state: recommended_or_supported
+    default_selected: false
+    product_selectable: false
+    integration_status: no_dedicated_current_cu1_machine_id
+    auto_trigger: false
+    required_context_for_future_trigger: explicit_overweight_or_obesity_context
+    purpose_summary_el: Υποστήριξη διαχείρισης βάρους όταν υπάρχει υπέρβαρο/παχυσαρκία· δεν πρέπει να συναχθεί από απουσία ή έμμεσες ενδείξεις.
+    positions:
+      - {source_id: VA_DOD_OA_2026, direction: strong_for, native_strength: "Strong for", summary: "Weight loss recommended for knee OA with co-occurring overweight/obesity."}
+      - {source_id: EULAR_CORE_2023_UPDATE, direction: strong_for, native_strength: "A; LoE 1a", summary: "Healthy weight and support for weight loss recommended."}
+      - {source_id: NICE_NG226_2022, direction: for, native_strength: null, summary: "Weight management is a core treatment when appropriate."}
+      - {source_id: ACR_AF_2019, direction: strong_for, native_strength: Strong, summary: "Weight loss strongly recommended in overweight/obese knee OA."}
+      - {source_id: AAOS_OAK3_2021, direction: for, native_strength: Moderate, summary: "Sustained weight loss recommended in overweight/obese knee OA."}
+      - {source_id: ACE_KNEE_OA_2026, direction: for, native_strength: null, summary: "Weight management is a mainstay strategy."}
+
+suggestion_policy:
+  core_omission_suggestions:
+    - therapeutic_exercise
+    - progressive_strengthening
+    - education_and_self_management
+    - graded_activity_exposure
+  phenotype_suggestions:
+    active_rom_restricted: [mobility_exercise_when_restricted]
+    passive_rom_restricted: [mobility_exercise_when_restricted]
+    quadriceps_weakness: [progressive_strengthening]
+    objective_weakness: [progressive_strengthening]
+    balance_deficit: [neuromuscular_proprioceptive_training, balance_stepping_recovery_training]
+    subjective_giving_way: [neuromuscular_proprioceptive_training]
+    recurrent_instability_episode: [neuromuscular_proprioceptive_training]
+    walking_limitation: [progressive_endurance_or_capacity_work, gait_walking_practice]
+    walking_tolerance: [progressive_endurance_or_capacity_work, gait_walking_practice]
+    stairs: [functional_task_retraining]
+    sit_to_stand: [functional_task_retraining]
+    squat: [functional_task_retraining]
+    kneeling: [functional_task_retraining]
+    patient_priority_activity: [functional_task_retraining]
+  no_auto_promotion:
+    - manual_therapy
+    - soft_tissue_techniques
+    - acupuncture
+    - taping
+    - orthosis_or_brace_context
+    - walking_aid_assessment_and_training
+    - weight_management
+
+bubble_semantics:
+  limited_or_insufficient_evidence: Περιορισμένη τεκμηρίωση
+  guideline_conflict_or_mixed: Οι οδηγίες διαφέρουν
+  recommendation_against_routine_use: Δεν συνιστάται για συνήθη χρήση
+
+integration_findings:
+  walking_aid:
+    canonical_id_exists: true
+    current_knee_ui_scope_exposes: false
+    step2_action: document_only
+    later_possible_action: bounded_ui_relevance_scope_amendment
+  weight_management:
+    clinical_profile_mentions: true
+    dedicated_cu1_machine_id_exists: false
+    step2_action: advisory_only_no_inference
+    later_possible_action: explicit_product_context_and_contract_replan_if_needed
+  dry_needling:
+    global_id_exists: true
+    knee_v1_1_excluded: true
+    step2_action: preserve_exclusion
+
+update_governance:
+  autonomous_live_update: false
+  flow:
+    - surveillance_candidate
+    - source_review
+    - impact_classification
+    - clinician_product_owner_approval
+    - versioned_contract_update
+    - exact_review_and_tests
+    - separate_runtime_release
+  impact_enum:
+    - confirming_no_change
+    - clarifying_no_state_change
+    - potential_state_change
+    - state_change
+    - source_conflict_changed
+    - source_withdrawn_or_superseded
+
+hard_invariants:
+  - insufficient_evidence_is_not_evidence_against
+  - guideline_conflict_is_not_consensus
+  - source_year_is_not_reviewed_on
+  - no_clinician_selection_is_auto_created_by_suggestion
+  - missing_context_is_not_negative_context
+  - no_exact_exercise_dose_is_invented
+  - no_adjunct_replaces_active_rehabilitation
+  - no_patient_identifier_persistence_is_introduced
