@@ -5,3 +5,6 @@
 @media(prefers-reduced-motion:no-preference){button{transition:background-color .12s ease,color .12s ease}dialog[open]{animation:appear .15s ease-out}@keyframes appear{from{opacity:.3;transform:translateY(8px)}to{opacity:1;transform:none}}}
 @media(forced-colors:active){button[aria-pressed=true]{border:2px solid Highlight}.evidence-cue{forced-color-adjust:auto}.e-recommended_or_supported{text-decoration:underline}.selection-mark{border-color:ButtonText}.row-select[aria-pressed=true] .selection-mark,.assertion[aria-pressed=true] .selection-mark{background:Highlight;color:HighlightText}.primary{border:2px solid ButtonText}}
 @media print{body>*{display:none!important}#printArea{display:block!important;white-space:pre-wrap;font:12pt/1.65 sans-serif;color:#000;padding:1cm;overflow-wrap:anywhere}@page{size:A4;margin:1.5cm}}
+
+/* Text enlargement must reflow instead of clipping controls or clinical labels. */
+h1,h2,button,summary,.source-heading{overflow-wrap:anywhere}.topbar{flex-wrap:wrap}.chips button{max-width:100%}.segmented button{min-width:44px}.evidence-cue svg{vertical-align:-2px}.info span{font-size:12px}
