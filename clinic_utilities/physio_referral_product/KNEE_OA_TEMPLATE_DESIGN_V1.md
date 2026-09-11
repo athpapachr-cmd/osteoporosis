@@ -224,6 +224,15 @@ If `quadriceps_weakness` is selected:
 
 Generic product weakness does not justify the quadriceps-specific phrase.
 
+## Education / self-management
+
+```text
+education_and_self_management
+→ εκπαίδευση για αυτοδιαχείριση
+```
+
+The phrase is intentionally concise so it joins naturally with other rehabilitation components.
+
 ## Mobility
 
 Default:
@@ -292,13 +301,11 @@ progressive_strengthening
 education_and_self_management
 ```
 
-Therefore the default plan phrase is:
+Final exact default plan phrase:
 
 ```text
-θεραπευτική άσκηση, προοδευτική ενδυνάμωση και εκπαίδευση και υποστήριξη αυτοδιαχείρισης
+θεραπευτική άσκηση, προοδευτική ενδυνάμωση και εκπαίδευση για αυτοδιαχείριση
 ```
-
-The implementation may polish conjunction repetition without changing semantic ownership; fixtures define the final exact wording.
 
 Removing any one default removes that item's phrase.
 
@@ -431,16 +438,16 @@ A dirty manual buffer must not be silently overwritten by later live projection.
 ## Default right Knee OA
 
 ```text
-Παραπομπή για εξατομικευμένη φυσιοθεραπευτική αποκατάσταση για οστεοαρθρίτιδα δεξιού γόνατος. Παρακαλώ για ενεργητικό, εξατομικευμένο πρόγραμμα με θεραπευτική άσκηση, προοδευτική ενδυνάμωση και εκπαίδευση και υποστήριξη αυτοδιαχείρισης, προσαρμοσμένο στην κλινική ανταπόκριση και στους λειτουργικούς στόχους.
+Παραπομπή για εξατομικευμένη φυσιοθεραπευτική αποκατάσταση για οστεοαρθρίτιδα δεξιού γόνατος. Παρακαλώ για ενεργητικό, εξατομικευμένο πρόγραμμα με θεραπευτική άσκηση, προοδευτική ενδυνάμωση και εκπαίδευση για αυτοδιαχείριση, προσαρμοσμένο στην κλινική ανταπόκριση και στους λειτουργικούς στόχους.
 ```
 
 ## Pain + stiffness + generic weakness + stairs
 
 ```text
-Παραπομπή για εξατομικευμένη φυσιοθεραπευτική αποκατάσταση για οστεοαρθρίτιδα δεξιού γόνατος. Η κλινική εικόνα περιλαμβάνει πόνο, δυσκαμψία και μυϊκή αδυναμία. Λειτουργικά, υπάρχει δυσχέρεια στις σκάλες. Παρακαλώ για ενεργητικό, εξατομικευμένο πρόγραμμα με θεραπευτική άσκηση, προοδευτική ενδυνάμωση και εκπαίδευση και υποστήριξη αυτοδιαχείρισης, προσαρμοσμένο στην κλινική ανταπόκριση και στους λειτουργικούς στόχους.
+Παραπομπή για εξατομικευμένη φυσιοθεραπευτική αποκατάσταση για οστεοαρθρίτιδα δεξιού γόνατος. Η κλινική εικόνα περιλαμβάνει πόνο, δυσκαμψία και μυϊκή αδυναμία. Λειτουργικά, υπάρχει δυσχέρεια στις σκάλες. Παρακαλώ για ενεργητικό, εξατομικευμένο πρόγραμμα με θεραπευτική άσκηση, προοδευτική ενδυνάμωση και εκπαίδευση για αυτοδιαχείριση, προσαρμοσμένο στην κλινική ανταπόκριση και στους λειτουργικούς στόχους.
 ```
 
-A later phrase-polish pass may improve repeated `και`, but exact machine fixtures own any final wording change.
+Machine fixtures own final exact wording for all reviewed scenarios.
 
 ---
 
