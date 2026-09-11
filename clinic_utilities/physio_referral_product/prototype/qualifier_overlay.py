@@ -96,11 +96,19 @@ def clean_qualifiers(raw: Any, state: dict[str, Any]) -> dict[str, Any]:
 def state_with_mapped_findings(state: dict[str, Any]) -> dict[str, Any]:
     result = deepcopy(state)
     q = result.get("qualifiers") or empty_qualifiers()
-    findings = [v for v in result.get("findings", []) if v not in {"objective_weakness", "quadriceps_weakness", "tenderness"}]
-    if q.get("weakness_detail") == "objective":
-        findings.append("objective_weakness")
-    elif q.get("weakness_detail") == "quadriceps":
-        findings.append("quadriceps_weakness")
+    # Preserve pre-existing canonical findings for full Step-5 compatibility.
+    # Only an explicit new qualifier is allowed to take ownership of that
+    # narrow semantic group and replace the prior weakness-specific value.
+    findings = list(result.get("findings", []))
+    weakness_detail = q.get("weakness_detail")
+    if weakness_detail is not None:
+        findings = [v for v in findings if v not in {"objective_weakness", "quadriceps_weakness"}]
+        if weakness_detail == "objective":
+            findings.append("objective_weakness")
+        elif weakness_detail == "quadriceps":
+            findings.append("quadriceps_weakness")
+    # Specific tenderness locations refine prose but retain the existing generic
+    # CU-1 tenderness finding. Without a qualifier, legacy tenderness remains untouched.
     if q.get("focal_tenderness_locations"):
         findings.append("tenderness")
     result["findings"] = list(dict.fromkeys(findings))
