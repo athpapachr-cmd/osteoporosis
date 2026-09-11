@@ -126,12 +126,25 @@ goals
 Hard rule:
 
 ```text
-EVERY SELECTED PRODUCT ITEM MUST RENDER OR BLOCK
+EVERY SELECTED PRODUCT ITEM MUST:
+render
+OR fail closed
+OR be covered by an explicit semantic de-duplication rule that preserves its meaning
 ```
 
-An item outside the bounded product scope causes product projection to fail closed rather than disappearing from the referral.
+Examples of explicit semantic de-duplication include:
 
-The machine contract is normative for the exact supported IDs.
+```text
+specific pain phrase supersedes generic pain phrase
+confirmed effusion supersedes generic swelling phrase
+specific/objective weakness supersedes generic weakness phrase
+active + passive ROM restriction merges into one combined phrase
+generic goal already represented by the active plan is suppressed in prose only
+```
+
+None of these de-duplication rules deletes clinician-selected structured state.
+
+An item outside the bounded product scope causes product projection to fail closed rather than disappearing from the referral. The machine contract is normative for the exact supported IDs.
 
 ---
 
@@ -160,15 +173,6 @@ extension_lag               → υστέρηση έκτασης
 balance_deficit             → έλλειμμα ισορροπίας
 subjective_giving_way       → υποκειμενικό αίσθημα υποχώρησης του γόνατος
 recurrent_instability       → υποτροπιάζοντα επεισόδια αστάθειας
-```
-
-De-duplication rules are semantic, not destructive:
-
-```text
-specific pain selected → suppress generic `pain` prose
-confirmed effusion selected → suppress generic swelling prose
-active + passive ROM restriction → one combined ROM phrase
-specific weakness → suppress generic weakness phrase
 ```
 
 Missing information never generates a negative/reassuring statement.
@@ -275,7 +279,7 @@ The exact deterministic ordering and phrase ownership live in the machine contra
 
 The routine iPhone-like path does not require a separate generic Goals screen.
 
-Generic goals that simply repeat the already-rendered active plan are suppressed from concise prose but remain in structured state.
+Generic goals that simply repeat the already-rendered active plan are explicitly classified as **output-redundant**: they remain in structured state but do not create repetitive prose.
 
 Non-redundant selected goals may render, including:
 
@@ -320,9 +324,7 @@ Optional clinician free text is appended only after existing normalization:
 Κλινική σημείωση: {clinician_note}.
 ```
 
-Neither is reverse-parsed into structured state.
-
-Machine edge fixtures explicitly prove that these selections are not silently lost.
+Neither is reverse-parsed into structured state. Edge fixtures explicitly prove that these selections are not silently lost.
 
 ---
 
@@ -358,7 +360,7 @@ Weight management remains advisory-only in Step 3 because frozen Step 2 found no
 
 # 15. Copy readiness vs live preview
 
-Live preview may update after every valid selection.
+Live preview may update after every valid product selection.
 
 Copy requires:
 
@@ -368,6 +370,13 @@ right/left/bilateral laterality
 all selected items within product-supported scope
 no inherited CU-1 formatter-blocking validation error
 no unresolved inherited blocking/urgent safety state
+```
+
+Negative Copy-readiness fixtures explicitly prove:
+
+```text
+formal_assertion_state != yes → formal_diagnosis_assertion_required
+laterality not copy-ready      → product_laterality_required
 ```
 
 The product does not create a second diagnosis, validation or safety engine.
@@ -421,6 +430,8 @@ plural non-redundant goals
 explicit restriction + clinician note preservation
 unsupported finding fails closed
 true locking fails closed pending safety mapping
+missing clinician diagnosis assertion blocks Copy
+non-copy-ready laterality blocks Copy
 ```
 
 ---
@@ -429,7 +440,7 @@ true locking fails closed pending safety mapping
 
 ```text
 DIAGNOSIS MUST BE CLINICIAN-ASSERTED BEFORE COPY
-EVERY SELECTED PRODUCT ITEM MUST RENDER OR BLOCK
+EVERY SELECTED PRODUCT ITEM MUST RENDER, BLOCK, OR BE EXPLICITLY SEMANTICALLY DE-DUPLICATED
 TRUE LOCKING NOT PRODUCT-EXPOSED WITHOUT SAFETY MAPPING
 SUGGESTION != SELECTION != OUTPUT
 STIFFNESS != ROM RESTRICTION
