@@ -1,7 +1,7 @@
-# SLICE_PLAN_CURRENT.md — Knee-OA independent review slice
+# SLICE_PLAN_CURRENT.md — Knee-OA four independent reviews
 
-> **STATUS:** REVIEW-ONLY / CANDIDATE PINNED / NO IMPLEMENTATION AUTHORITY.
-> **Slice:** `CU1-PRODUCT-KNEE-OA-INDEPENDENT-REVIEW-V1-20260911`.
+> **STATUS:** REVIEW-ONLY / CANDIDATE PINNED / FOUR REVIEW PROMPTS READY / NO IMPLEMENTATION AUTHORITY.
+> **Slice:** `CU1-PRODUCT-KNEE-OA-FOUR-INDEPENDENT-REVIEWS-V1-20260911`.
 > **Review branch:** `review/physio-referral-knee-oa-independent-v1-2026-09-11`.
 > **Pinned accepted candidate:** `6539351c592c1dc3e49931057b63925dea3cb94d`.
 > **Tested substantive implementation:** `243095ca9545bd2f96be8986520aeae8c3551c27`.
@@ -11,33 +11,70 @@
 
 ## 1. Purpose
 
-Obtain an independent, reviewer-neutral assessment of the accepted single-diagnosis Knee-OA Physio Referral candidate before any second diagnosis, commercial pilot or production-integration planning.
+Obtain four separate independent assessments of the accepted single-diagnosis Knee-OA Physio Referral candidate before any second diagnosis, commercial pilot or production-integration planning.
 
-The product owner has accepted the design/functional direction. That acceptance does not replace independent clinical, physiotherapy, UX/accessibility, source-to-claim or commercial review.
+Product-owner design/functional acceptance does not replace any of these independent reviews.
 
-## 2. Exact reviewer inputs
+## 2. Shared candidate packet
+
+All four reviewers inspect the same pinned candidate and may use this common candidate/background packet:
 
 ```text
 clinic_utilities/physio_referral_product/KNEE_OA_INDEPENDENT_REVIEW_PACKET_V1.md
-clinic_utilities/physio_referral_product/KNEE_OA_INDEPENDENT_REVIEW_PROMPT_V1.md
 ```
 
-The reviewer must inspect the pinned functional candidate and current evidence/contracts rather than relying on prior author PASS statements.
+The former combined multi-axis prompt is superseded and is not an active review instruction.
 
-## 3. Required review axes
+## 3. Four independent review prompts
+
+### A — Clinical / Evidence
 
 ```text
-clinical / evidence integrity
-physiotherapy usefulness / professional autonomy
-UX / accessibility / cognitive load
-commercial differentiation / recurring value / willingness to pay
+clinic_utilities/physio_referral_product/KNEE_OA_CLINICAL_EVIDENCE_REVIEW_PROMPT_V1.md
 ```
 
-Material evidence claims also require separate source-to-claim integrity checking.
+Owns clinical correctness, evidence fidelity, safety/non-misleading behavior, guideline disagreement and source-to-claim integrity.
 
-## 4. Required finding severity
+### B — Physiotherapy
 
-Every finding must be classified:
+```text
+clinic_utilities/physio_referral_product/KNEE_OA_PHYSIOTHERAPY_REVIEW_PROMPT_V1.md
+```
+
+Owns usefulness to the receiving physiotherapist, actionability, professional autonomy and referral signal-to-noise.
+
+### C — UX / Product
+
+```text
+clinic_utilities/physio_referral_product/KNEE_OA_UX_PRODUCT_REVIEW_PROMPT_V1.md
+```
+
+Owns routine speed, cognitive load, progressive disclosure, discoverability, state clarity, evidence interaction and accessibility direction.
+
+### D — Commercial / Product-Market
+
+```text
+clinic_utilities/physio_referral_product/KNEE_OA_COMMERCIAL_REVIEW_PROMPT_V1.md
+```
+
+Owns differentiation, recurring value, conversion/retention logic, pricing fit and willingness-to-pay experiment design.
+
+## 4. Independence rule
+
+```text
+review A must not inherit B/C/D
+review B must not inherit A/C/D
+review C must not inherit A/B/D
+review D must not inherit A/B/C
+```
+
+Do not show one completed review to another reviewer before that reviewer finishes.
+
+All four reviewers also must not inherit prior author/Product Owner PASS statements as review conclusions.
+
+## 5. Common finding severity
+
+Every finding is classified:
 
 ```text
 BLOCKER
@@ -47,42 +84,24 @@ IMPROVEMENT
 LATER / OPTIONAL
 ```
 
-The review must explicitly answer what should be removed, not only what could be added.
+Every review must explicitly answer what should be **removed** rather than only what should be added.
 
-## 5. Review invariants
+## 6. Synthesis boundary
 
-```text
-technical PASS != clinical validation
-product-owner acceptance != independent validation
-insufficient evidence != ineffective
-symptom/location != diagnosis
-suggestion != treatment selection
-guideline disagreement must remain visible
-```
-
-No reviewer score may conceal a material safety/evidence finding.
-
-## 6. Review output
-
-Return one verdict only:
+There is no fifth product review. After all four reviews are complete:
 
 ```text
-REVIEW PASS
-CONDITIONAL PASS
-REVIEW HOLD
+A + B + C + D
+→ Product Owner cross-review synthesis
+→ agreements / contradictions / unique findings
+→ material-finding disposition
+→ bounded implementation authority if granted
 ```
 
-and include:
-
-```text
-MATERIAL OPEN FINDINGS: <number>
-BLOCKERS: <number>
-TOP 3 CORRECTIONS
-TOP 3 THINGS NOT TO CHANGE
-```
+The source-to-claim audit is an evidence-integrity responsibility within/alongside the Clinical/Evidence review, not a separate fifth product-review axis.
 
 ## 7. Stop rule
 
-Review is analysis only. Do not implement fixes during review. Findings first return to the product owner for disposition and prioritization.
+Review is analysis only. Do not implement fixes during any of the four reviews.
 
-No second diagnosis, feature expansion, production CU-1 rewrite, public hosting, auth/billing, merge, deployment or commercial pilot before review findings are dispositioned.
+No second diagnosis, feature expansion, production CU-1 rewrite, public hosting, auth/billing, merge, deployment or commercial pilot before all four reviews are completed and material findings are dispositioned by the Product Owner.
