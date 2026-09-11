@@ -1,189 +1,376 @@
-# SLICE_PLAN_CURRENT.md — Physio Referral Knee-OA Evidence Knowledge Module v1
+# SLICE_PLAN_CURRENT.md — Physio Referral Knee-OA Dynamic Referral / Template v1
 
-> **STATUS:** DESIGN FROZEN / STEP 2 COMPLETE / ACTIVE-WRITER REVIEW PASS
+> **STATUS:** DESIGN ACTIVE / STEP 3
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Slice ID:** `CU1-PRODUCT-KNEE-OA-EVIDENCE-V1-2026-09-11`.
-> **Base `main`:** `d9f312f6d2d596ec0bd4f35f6de56ad98dc34b37`.
-> **Branch:** `design/physio-referral-knee-oa-evidence-v1-2026-09-11`.
+> **Slice ID:** `CU1-PRODUCT-KNEE-OA-TEMPLATE-V1-2026-09-11`.
+> **Fresh `main`:** `d9f312f6d2d596ec0bd4f35f6de56ad98dc34b37`.
+> **Frozen Step-2 parent:** `ab4b349223cd4c461837ab3125967a06d169a7e1`.
+> **Branch:** `design/physio-referral-knee-oa-template-v1-2026-09-11`.
 > **Vertical slice:** Knee Osteoarthritis only.
-> **Parent runtime:** existing CU-1 Physiotherapy Referral v2 — unchanged.
 > **Runtime implementation authority:** NONE.
 > **Merge/deploy authority:** NONE.
 
 ---
 
-# 1. Frozen deliverables
+# 1. Problem
 
-```text
-clinic_utilities/physio_referral_product/UX_CONTRACT_CURRENT.md
-clinic_utilities/physio_referral_product/KNEE_OA_EVIDENCE_DESIGN_V1.md
-clinic_utilities/physio_referral_product/contracts/knee_oa_evidence_contract_v1.yaml
-clinic_utilities/physio_referral_product/validate_knee_oa_evidence_contract_v1.py
-clinic_utilities/physio_referral_product/KNEE_OA_EVIDENCE_DESIGN_REVIEW_V1.md
-.github/workflows/physio-knee-oa-evidence-design.yml
-```
+The current CU-1 formatter is deterministic but generic: it joins findings, functions, goals, rehabilitation directions and adjuncts into broad sentences. That is appropriate for the existing utility but not sufficient for the frozen product UX, where the referral must update live and read like one coherent clinical referral rather than a serialized checklist.
 
-Reviewed substantive head:
-
-```text
-6b82691c8431b699d20752c83b443793989f6402
-```
-
-Post-review artifact head:
-
-```text
-f20f01f34abf1796f075640a397d085443834c59
-```
-
-Machine evidence:
-
-```text
-run 34559461372 — SUCCESS on 6b82691...
-run 34559680326 — SUCCESS on f20f01f...
-```
-
-Design review:
-
-```text
-DESIGN PASS
-MATERIAL OPEN FINDING NONE
-```
-
-The review is an active-writer exact design review, not the later independent multi-axis product review.
+Step 3 must create a deterministic product-layer composition contract without rewriting or duplicating the existing CU-1 clinical taxonomy.
 
 ---
 
-# 2. Frozen evidence model
+# 2. Inputs and authority
 
-App-facing states:
-
-```text
-recommended_or_supported
-conditional_or_context_dependent
-limited_or_insufficient_evidence
-guideline_conflict_or_mixed
-recommendation_against_routine_use
-not_yet_assessed
-```
-
-The sixth state `guideline_conflict_or_mixed` was required after real guideline review showed that acupuncture/manual-therapy positions cannot be represented honestly by a single support/against axis.
-
-Greek surface semantic:
+Authoritative inputs remain:
 
 ```text
-Οι οδηγίες διαφέρουν
+ReferralDraftV1 structured selections
++ frozen Step-2 evidence contract
++ bounded Knee-OA product phenotype overlay for concepts not safely representable in current CU-1
 ```
 
-Source claim scope:
+The product overlay may add only presentation-state concepts required by the frozen Knee-OA UX. It must never masquerade as objective CU-1 findings.
+
+Initial product-local phenotype candidates:
 
 ```text
-direct_item_recommendation
-named_component_of_broader_recommendation
-broader_recommendation_only
-contextual_clinical_mapping
+stiffness_symptom
+weakness_symptom_or_context
 ```
 
-This prevents broad evidence strength from being silently transferred to narrower product items.
+Reason:
+
+```text
+stiffness symptom != active/passive ROM restriction
+weakness symptom/context != objectively measured weakness
+```
+
+Existing CU-1 findings such as `pain`, `quadriceps_weakness`, `objective_weakness`, ROM restriction and balance deficit remain authoritative when explicitly selected.
 
 ---
 
-# 3. Frozen Knee-OA default
+# 3. Routine referral structure
 
-Implicit:
+The standard copied referral should normally contain no more than these semantic blocks:
 
 ```text
-individualized physiotherapy assessment / active rehabilitation
+A. indication / laterality
+B. clinical picture + functional impact when selected
+C. active rehabilitation plan
+D. contextual emphasis when selected and not redundant
+E. adjunct/support sentence only when explicitly selected
+F. explicit restriction/clinician note only when present
 ```
 
-Visible selected core:
+Evidence citations, evidence-state labels, recommendation-strength language and `i` explanations remain clinician-facing UI information and do not enter the copied referral by default.
+
+---
+
+# 4. Laterality grammar
+
+The product formatter should use natural Greek rather than generic parenthetical labels.
+
+Candidate canonical phrases:
 
 ```text
-therapeutic exercise
-progressive strengthening
-education & self-management
+right      → δεξιού γόνατος
+left       → αριστερού γόνατος
+bilateral  → και των δύο γονάτων
 ```
 
-Context-driven rather than universal default:
+For the Knee-OA prototype, copy-ready state should require `right`, `left` or `bilateral`; `not_stated`, `midline` and `not_applicable` are not acceptable final Knee-OA laterality states.
+
+This is a product copy-readiness rule and does not change the global CU-1 Laterality enum.
+
+---
+
+# 5. Selection vs suggestion boundary
+
+Hard rule:
 
 ```text
-graded activity
-endurance/capacity work
-mobility if restricted
-neuromuscular/balance work
-gait practice
-functional task retraining
-home programme
+suggested intervention
+!= selected intervention
+!= referral text
+```
+
+A Step-2 evidence-backed suggestion may influence the UI, but it contributes referral wording only after the clinician selects/adds it.
+
+Removing a default intervention removes its corresponding plan phrase from the live referral.
+
+The formatter must not silently restore an evidence-supported intervention merely because it is normally recommended.
+
+---
+
+# 6. Clinical-picture composition
+
+Clinical-picture text may draw from:
+
+```text
+explicit CU-1 findings
++ bounded product phenotype tags
+```
+
+Ordering should favour concise symptom/impairment language and suppress duplicates.
+
+Examples of semantic precedence:
+
+```text
+quadriceps_weakness selected
+→ prefer precise "αδυναμία τετρακεφάλου"
+→ suppress generic product weakness phrase
+
+objective_weakness selected without more specific weakness
+→ use objective weakness phrase
+→ suppress generic product weakness phrase
+
+stiffness_symptom selected
++ active/passive ROM restriction selected
+→ stiffness may remain as symptom
+→ ROM restriction remains a separate assessed finding
+→ never collapse one into the other
+```
+
+The output must never convert an unselected/missing finding into reassurance or a negative statement.
+
+---
+
+# 7. Functional-impact composition
+
+Selected functional impairments describe what is difficult; they do not autonomously prescribe a corresponding rehabilitation component.
+
+Examples:
+
+```text
+stairs selected
+→ referral may state difficulty on stairs
+→ functional-task retraining enters the PLAN only if selected
+
+walking limitation selected
+→ referral may state reduced walking tolerance
+→ gait/endurance work enters the PLAN only if selected
+```
+
+This preserves clinician autonomy and the Step-2 suggestion boundary.
+
+---
+
+# 8. Plan composition and ordering
+
+Plan phrases are emitted only from selected `rehab_directions`/supported product items.
+
+Preferred deterministic ordering:
+
+```text
+1. therapeutic exercise / active rehabilitation
+2. progressive strengthening
+3. education + self-management
+4. mobility / graded activity / endurance
+5. neuromuscular / balance
+6. gait / functional-task retraining
+7. home programme / delivery support
+8. walking-aid/support context
+9. adjuncts
+```
+
+Generic active-rehabilitation wording should not duplicate therapeutic-exercise wording. The implicit physiotherapy-assessment concept may shape the sentence but need not appear as another visible comma-separated item.
+
+No exact sets/repetitions/frequency are invented.
+
+---
+
+# 9. Context-aware phrase refinement
+
+The formatter may refine a selected intervention using an already-selected relevant finding/function, but the refinement must not add a new clinical fact or a new treatment selection.
+
+Examples:
+
+```text
+progressive_strengthening + quadriceps_weakness
+→ may mention emphasis on quadriceps strengthening
+
+mobility_exercise_when_restricted + ROM restriction
+→ may mention mobility directed at the documented ROM restriction
+
+functional_task_retraining + stairs
+→ may mention functional retraining for stairs
+
+functional_task_retraining + sit_to_stand
+→ may mention sit-to-stand retraining
+
+neuromuscular/balance component + balance_deficit
+→ may mention balance/neuromuscular control
+```
+
+If the intervention is not selected, the formatter does not create it from the finding/function.
+
+---
+
+# 10. Goals
+
+The routine product path should not require a separate generic Goals screen.
+
+Existing CU-1 goals remain valid structured data for compatibility/power-user use, but generic goals that merely restate an already rendered plan should be suppressed from the standard concise referral.
+
+Goals that add non-redundant information may render, especially:
+
+```text
+return to work/sport
+patient-priority activity
+mobility independence / walking-aid objective
+```
+
+This is de-duplication, not deletion of clinician-selected structured state.
+
+---
+
+# 11. Adjuncts and evidence boundary
+
+Adjuncts render only when explicitly selected.
+
+For mixed-guideline items such as manual therapy or acupuncture:
+
+```text
+UI → shows evidence-state cue + source detail
+referral → neutral adjunct wording only
+```
+
+The copied referral does not automatically say `guidelines differ` or attach citations.
+
+Every selected adjunct must remain linguistically subordinate to the active rehabilitation plan; it must not become the main treatment sentence.
+
+---
+
+# 12. Weight-management and walking-aid seams
+
+Step 2 found:
+
+```text
+weight management → no dedicated current CU-1 selectable ID
+walking aid       → canonical ID exists but not exposed in current Knee UI scope
+```
+
+Step 3 therefore does not invent hidden selections.
+
+- weight-management content is not auto-inserted into the referral;
+- walking-aid wording may be specified for future bounded UI exposure, but it does not become visible/selectable merely because the template supports it.
+
+---
+
+# 13. Copy-readiness / safety boundary
+
+Live preview may exist before full readiness, but the primary Copy action must respect inherited CU-1 validation/safety authority.
+
+Copy-ready requires at minimum:
+
+```text
+valid Knee-OA primary route
+clinician-established diagnosis semantics satisfied by the product flow
+right/left/bilateral laterality
+no CU-1 formatter-blocking validation error
+no unresolved blocking/urgent safety state
+```
+
+The product template must not bypass the existing CU-1 validation engine.
+
+---
+
+# 14. Manual edit boundary
+
+Default output mode:
+
+```text
+auto_live
+```
+
+An explicit secondary `Επεξεργασία` action may create an ephemeral manual text buffer from the current derived referral.
+
+Hard rules:
+
+```text
+manual text edit does not mutate structured selections
+structured selections do not get reverse-inferred from edited prose
+manual buffer is not patient persistence
+```
+
+The implementation must not silently overwrite a dirty manual buffer after later structured changes. Exact edit-mode interaction may be finalized during Step 5 prototype UX, but semantic ownership is frozen here.
+
+---
+
+# 15. Determinism and de-duplication
+
+For identical structured/product state, output must be identical.
+
+The template contract must define:
+
+```text
+phrase-group ordering
+canonical phrase ownership
+specific-over-generic precedence
+duplicate suppression
+punctuation/conjunction rules
+empty-group omission
+adjunct subordination
+```
+
+No LLM generation is required for routine referral text.
+
+---
+
+# 16. Acceptance evidence
+
+Step 3 is design-complete only when machine fixtures prove at least:
+
+```text
+1. default right Knee-OA referral
+2. pain + stiffness + weakness + stairs
+3. ROM restriction + selected mobility work
+4. balance deficit + selected neuromuscular/balance work
+5. walking limitation + selected gait/endurance work
+6. selected functional-task retraining for stairs/sit-to-stand
+7. selected mixed-guideline adjunct without evidence text leaking into referral
+8. omission of a default core intervention removes its wording
+9. suggestion without selection does not render
+10. bilateral laterality grammar
+11. generic weakness suppressed by specific quadriceps/objective weakness
+12. no machine-ID leak / no duplicate phrase / no invented exact dosage
 ```
 
 ---
 
-# 4. Adjunct and integration decisions
+# 17. Out of scope
 
 ```text
-manual therapy       → guideline_conflict_or_mixed
-soft-tissue work     → guideline_conflict_or_mixed
-acupuncture          → guideline_conflict_or_mixed
-dry needling         → excluded from Knee-OA surface; recommendation-against-routine state with source detail preserved
-walking aid          → canonical ID exists; current Knee UI scope does not expose it
-weight management    → strongly supported when applicable; no dedicated current CU-1 selectable ID; advisory-only for now
-```
-
-No broad CU-1 taxonomy rewrite is required by Step 2.
-
----
-
-# 5. Hard invariants
-
-```text
-INSUFFICIENT EVIDENCE != EVIDENCE AGAINST
-GUIDELINE CONFLICT != CONSENSUS
-SOURCE YEAR != PRODUCT REVIEW DATE
-BROAD RECOMMENDATION != ITEM-SPECIFIC STRONG RECOMMENDATION
-MISSING CONTEXT != NEGATIVE CONTEXT
-SUGGESTION != CLINICIAN SELECTION
-NO exact exercise prescription invented
-NO adjunct replaces active rehabilitation
-NO autonomous literature-to-live-rule mutation
+runtime implementation
+visual prototype code
+second diagnosis
+billing/auth/persistence
+AI-generated referral prose
+autonomous evidence updates
+PR/merge/deploy/production smoke
 ```
 
 ---
 
-# 6. Scope proof
+# 18. REPLAN triggers
 
-Exact diff review against base `main` showed only:
+Replan rather than patch around the contract if:
 
-- root operational/slice canonicals;
-- supporting Physio product-design files;
-- evidence YAML;
-- contract validator;
-- design workflow.
-
-No CU-1 production runtime/API/formatter/static UI/database file changed.
+- the existing `ReferralDraftV1` cannot carry required selected state without semantic falsehood;
+- product-local phenotype tags begin duplicating substantial clinical taxonomy rather than filling bounded UI gaps;
+- safe live generation requires hidden treatment selection;
+- de-duplication would discard clinically material clinician-selected information;
+- the current CU-1 safety/validation engine cannot protect Copy readiness for the product flow.
 
 ---
 
-# 7. Lifecycle
+# 19. Exact next gate
 
 ```text
-STEP 1 UX CONTRACT                  COMPLETE / EVIDENCE REPLAN INCORPORATED
-STEP 2 EVIDENCE DESIGN              FROZEN / COMPLETE
-STEP 2 MACHINE CONTRACT             PASS
-STEP 2 MACHINE GATES                SUCCESS
-STEP 2 ACTIVE-WRITER REVIEW         PASS
-MATERIAL OPEN FINDING               NONE
-RUNTIME IMPLEMENTED                 NO
-PR/MERGE                            NO
-DEPLOYED                            NO
+create human Step-3 design
+→ create machine template contract + deterministic fixtures
+→ validate against CU-1 IDs + frozen Step-2 evidence contract
+→ exact active-writer design review
+→ freeze/release writer if clean
 ```
-
----
-
-# 8. Exact next boundary
-
-```text
-STEP 3 — dynamic Knee-OA referral/template contract
-```
-
-Step 3 must define deterministic live text composition from diagnosis/laterality + phenotype/findings + function + evidence-aware plan + power-user choices while preserving physiotherapist autonomy.
-
-No production runtime implementation is authorized by Step-2 closure.
