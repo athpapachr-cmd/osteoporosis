@@ -1,56 +1,47 @@
-# SLICE_PLAN_CURRENT.md — Physio Referral Step 4
+# SLICE_PLAN_CURRENT.md — Step 5 functional Knee-OA prototype
 
-> **STATUS:** DESIGN FROZEN / CLOSED; runtime NOT IMPLEMENTED.
-> **Slice:** `CU1-PRODUCT-KNEE-OA-INTERACTION-V1-2026-09-11`.
-> **Branch:** `design/physio-referral-knee-oa-interaction-v1-2026-09-11`.
-> **Verified main:** `d9f312f6d2d596ec0bd4f35f6de56ad98dc34b37`.
-> **Frozen Step-3 parent:** `8489e2ee32f7aeae6f678c7db2838930c0759eb4`.
-> **Reviewed substantive head:** `e1039809818ddf4061e6d0350905578ff2ca16aa`.
-> **Writer:** NONE.
-> **Runtime, PR, merge, deploy, production smoke:** NOT AUTHORIZED.
+> **STATUS:** IMPLEMENTATION AUTHORIZED / ACTIVE; SYNTHETIC NON-PRODUCTION ONLY.
+> **Slice:** CU1-PRODUCT-KNEE-OA-PROTOTYPE-V1-20260911.
+> **Branch:** feat/physio-referral-knee-oa-prototype-v1-2026-09-11.
+> **Frozen parent:** 4e0e3206dd1e12a2e55a6abd18d2a6f7dbc3f7c6.
+> **Verified main:** d9f312f6d2d596ec0bd4f35f6de56ad98dc34b37.
+> **Authority:** product-owner progression to the explicitly named Step-5 functional prototype; no release authority.
 
-## Frozen objective
+## Scope and entrypoint
 
-One evidence interaction layer for Knee Osteoarthritis: quiet evidence cues, concise anchored messages, one information sheet, honest source attribution and evidence-backed suggestions. The frozen Step-2 clinical positions and Step-3 deterministic referral behavior remain unchanged.
+Only new files in `clinic_utilities/physio_referral_product/prototype/`, a focused workflow and supporting canonical/progress records. The runnable entrypoint is `python clinic_utilities/physio_referral_product/prototype/server.py`, binding exclusively to `127.0.0.1`. No production FastAPI/router/static registration; existing CU-1, Learning Hub, RF, database and clinical contracts remain read-only.
 
-## Normative owners
+Read-only dependencies: real CU-1 engine validation; its existing Greek label owner; pinned Step-3 template and composition functions; pinned Step-4 evidence/suggestion functions. Reusing design functions is an explicit synthetic-prototype coupling, not a production architecture claim. Later productionization requires a separate bounded extraction/integration review. No silently substituted mock safety clearance is permitted in integration tests or delivered server.
 
-`CURRENT_OPERATIONAL.md` owns the sole writer/operational state. In the product directory:
+## Data contract and isolation
 
-- `UX_CONTRACT_CURRENT.md` owns the inherited product direction.
-- `contracts/knee_oa_evidence_contract_v1.yaml` owns source positions, six evidence states and suggestion eligibility.
-- `contracts/knee_oa_template_contract_v1.yaml` owns supported inputs, referral composition and Copy authority.
-- `KNEE_OA_EVIDENCE_INTERACTION_DESIGN_V1.md` and `contracts/knee_oa_evidence_interaction_v1.yaml` own Step-4 interaction/provenance behavior.
-- `KNEE_OA_EVIDENCE_INTERACTION_REVIEW_V1.md` records the exact active-writer review and limitations.
+`draft_id` UUID + nonnegative `revision` + fixed `package_version` + `synthetic_only=true` + bounded `state` + draft-local `dismissed` identities. Unsupported keys/types/IDs and stale candidates fail closed with sanitized errors. The product phenotype remains exactly stiffness and generic weakness; no inference of measured ROM or objective weakness. Restrictions and clinician note remain ephemeral. No raw request values in logs, URLs, analytics, browser storage or files.
 
-Candidate headers in the reviewed substantive artifacts describe their creation state. This subsequent canonical freeze applies to their exact content at the reviewed head; it does not imply clinical re-review or implemented UI.
+Transport is local JSON POST only with a custom header, bounded body, exact loopback Host and same-origin enforcement. Static GET is allowlisted. No CORS, directory listing, remote backend, credentials or automatic source requests. Source URLs are static reviewed HTTPS links activated explicitly.
 
-## Acceptance obtained
+## UI and projection
 
-Focused workflow `34565131646`, job `103155584052`, passed on the reviewed substantive head:
+Mobile-first Greek interface; neutral selection checks are distinct from the six evidence cues. Laterality and explicit diagnosis assertion remain necessary. Three evidence-backed defaults; small clinical-picture choices and progressive function disclosure; compact advanced groups. Selected optional interventions appear in the visible plan rather than being duplicated in advanced menus. Counts retain unique advanced canonical selections.
 
-```text
-46 synthetic scenario/mutation checks
-3 unchanged parent blob identities
-6 distinct evidence states and non-colour cues
-```
+Server validation precedes text projection. Every clinical state change invalidates export immediately. A response applies only to the same draft/revision/package/request sequence. All exports share one guard; printed/copied text carries an explicit synthetic/non-clinical marker. PDF is browser print-to-PDF, not a separate server PDF generator.
 
-The checked model covers evidence/selection separation, full mixed-source preservation, availability overlay, claim scope, publication/review dates, positive-only triggers, omission/context suggestion order, aliasing/deduplication, explicit add, stale-candidate rejection, draft-local dismissal, quiet disclosure state and export-readiness precedence.
+One non-timed evidence message; one native modal dialog host. Info controls do not toggle selection. The mixed-source first disclosure preserves all source directions and bounded faithful Greek summaries, with original recorded wording and native strength inspectable. Greek display translation does not constitute new clinical source review. Other sources retain original recorded wording beneath explicit source/scope labels.
 
-Static contract assertions and synthetic model transitions are not DOM, VoiceOver, clinical-effectiveness or independent-review tests.
+Manual edited text has an independent in-memory buffer. Structured changes preserve it but disable export until explicit reconciliation. Evidence viewing/dismissal does not edit it. Reset/pagehide/BFCache handling clears draft-scoped state.
 
-## Preserved invariants
+## Focused evidence plan
 
-No indication is inferred merely by opening a flow. Evidence is not clinical safety clearance. Suggestion is not selection. A source's native recommendation strength is not an app evidence verdict or a narrower item's strength. Unknown/absent findings do not become positive trigger facts. A source outage does not turn disagreement into consensus. A hidden selected advanced item is not discarded. Evidence UI never writes back clinical facts or manual text.
+New integration acceptance, not reassurance reruns of unchanged owners:
 
-## Explicit remaining acceptance
+1. Real CU-1 validation adapter: default valid route, absent assertion/laterality, actual safety block, forged gate/ack rejection, unsupported selections, input type/size hygiene.
+2. Every inherited Step-3 supported render fixture through the new adapter, checking exact Greek output; hidden walking-aid/dry-needling/weight-management remain excluded.
+3. Suggestions: explicit add, changed revision/draft/package rejection, deduplication, source captions, no auto-treatment, inactive-source suppression.
+4. Browser against the actual server: routine path, isolated info tap, all-source disagreement, advanced persistence, source-backed add, manual reconciliation, safety and network failure export blocking, reset and no storage.
+5. Layout: 320/390/desktop widths, 200% text sizing, touch targets, focus/modal behavior, reduced motion and forced colours. Distinguish automated Chromium coverage from real Safari/VoiceOver and clinical/product-owner acceptance.
+6. Scope/identity check: frozen inputs unchanged, no production source touched, exact-head focused gate and explicit writer review limitations.
 
-Step 5/6 must implement and verify the actual adapter, neutral selection check, six visible cues, hit targets, focus/inert behavior, one-sheet replacement, review summary, preserved advanced counts, export guards and manual-buffer reconciliation. Verify 320-CSS-pixel reflow, 200% text enlargement, actual contrast, reduced motion and Safari/VoiceOver.
+An isolated mocked transport may help local visual inspection when network access prevents a checkout. Its screenshots/measurements are visual-only and must never be called real CU-1 integration evidence. CI must use the real repository/server.
 
-Clinical source URLs currently have source-level precision. Do not claim exact recommendation/page verification or generate invented locators. Final Greek source-summary copy must preserve the inherited claims. Independent clinical/physio/UX/commercial review follows the functional vertical slice.
+## Completion and HOLD
 
-## Scope and next step
-
-No production runtime/API/formatter/UI/database mutation, second diagnosis, patient persistence, billing/auth, new clinical recommendation, autonomous source updating, PR or release occurred. The root roadmap's parked-utility language is not broad CU-1 authorization; this product-owner-authorized track remains a separate bounded design effort.
-
-Next: a separately authorized and freshly bootstrapped **Step-5 functional Knee-OA prototype implementation gate**. Do not extend this closed Step-4 writer into runtime work.
+Record implemented versus actually tested versus pending. Release writer at a clean checkpoint. Step 6 is product-owner usability/clinical-copy acceptance; Step 7 is independent multi-axis review. Neither is inherited from author tests. No PR, merge, deployment, production smoke, real clinical use, subscription system, second diagnosis, autonomous evidence updates or patient persistence.
