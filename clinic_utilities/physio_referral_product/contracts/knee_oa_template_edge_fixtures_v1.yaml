@@ -68,3 +68,28 @@ blocking_fixtures:
       goals: []
       phenotype: {stiffness_symptom: false, weakness_symptom_or_context: false}
     expected_error: unsupported_product_selection:findings:true_locking_or_major_mechanical_rom_block
+
+copy_blocking_fixtures:
+  - id: diagnosis_not_asserted_blocks_copy
+    input:
+      laterality: right
+      formal_assertion_state: "no"
+      findings: []
+      functional_impairments: []
+      rehab_directions: [therapeutic_exercise, progressive_strengthening, education_and_self_management]
+      adjunct_options: []
+      goals: []
+      phenotype: {stiffness_symptom: false, weakness_symptom_or_context: false}
+    expected_error: formal_diagnosis_assertion_required
+
+  - id: laterality_not_stated_blocks_copy
+    input:
+      laterality: not_stated
+      formal_assertion_state: "yes"
+      findings: []
+      functional_impairments: []
+      rehab_directions: [therapeutic_exercise, progressive_strengthening, education_and_self_management]
+      adjunct_options: []
+      goals: []
+      phenotype: {stiffness_symptom: false, weakness_symptom_or_context: false}
+    expected_error: product_laterality_required
