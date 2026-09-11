@@ -27,7 +27,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Verify bounded Step 5 changed paths
+      - name: Verify bounded Step 5/6A changed paths
         run: |
           python - <<'PY'
           import subprocess
@@ -36,7 +36,7 @@ jobs:
           root = 'clinic_utilities/physio_referral_product/'
           bad = [p for p in paths if p not in fixed and not p.startswith(root+'prototype/') and not (p.startswith(root) and p.endswith('.md'))]
           assert not bad, bad
-          print('Step-5 scope guard PASS:', len(paths), 'bounded files')
+          print('Step-5/6A scope guard PASS:', len(paths), 'bounded files')
           PY
       - name: Install isolated prototype dependencies
         run: |
@@ -46,12 +46,17 @@ jobs:
         run: |
           python -m py_compile clinic_utilities/physio_referral_product/prototype/*.py
           node --check clinic_utilities/physio_referral_product/prototype/app.js
+          node --check clinic_utilities/physio_referral_product/prototype/qualifiers.js
       - name: Real CU1 adapter and HTTP boundary tests
-        run: python clinic_utilities/physio_referral_product/prototype/test_server.py
+        run: |
+          python clinic_utilities/physio_referral_product/prototype/test_server.py
+          python clinic_utilities/physio_referral_product/prototype/test_qualifiers.py
       - name: Install Chromium for real browser acceptance
         run: python -m playwright install --with-deps chromium
       - name: Real browser with actual loopback server and CU1 engine
-        run: python clinic_utilities/physio_referral_product/prototype/test_browser.py
+        run: |
+          python clinic_utilities/physio_referral_product/prototype/test_browser.py
+          python clinic_utilities/physio_referral_product/prototype/test_browser_qualifiers.py
       - name: Package and smoke standalone dependency closure
         run: python clinic_utilities/physio_referral_product/prototype/build_bundle.py
       - name: Publish synthetic prototype and screenshots
