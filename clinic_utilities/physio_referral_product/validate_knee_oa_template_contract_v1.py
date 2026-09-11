@@ -12,6 +12,8 @@ TEMPLATE_PATH = PRODUCT / "contracts" / "knee_oa_template_contract_v1.yaml"
 FIXTURES_PATH = PRODUCT / "contracts" / "knee_oa_template_fixtures_v1.yaml"
 EVIDENCE_PATH = PRODUCT / "contracts" / "knee_oa_evidence_contract_v1.yaml"
 OPTION_CATALOG_PATH = ROOT / "clinic_utilities" / "contracts" / "cu1_option_catalog_v1.yaml"
+REGISTRY_PATH = ROOT / "clinic_utilities" / "contracts" / "cu1_registry_v1.yaml"
+ROUTE_REQUIREMENTS_PATH = ROOT / "clinic_utilities" / "contracts" / "cu1_route_requirements_v1.yaml"
 
 
 def load_yaml(path: Path) -> dict[str, Any]:
@@ -32,11 +34,6 @@ def join_el(items: Iterable[str]) -> str:
     return ", ".join(values[:-1]) + f" και {values[-1]}"
 
 
-def ordered_unique(values: Iterable[str], order: list[str]) -> list[str]:
-    present = set(values)
-    return [item for item in order if item in present]
-
-
 def render(template: dict[str, Any], state: dict[str, Any]) -> str:
     laterality = state["laterality"]
     laterality_phrase = template["laterality_phrases"][laterality]
@@ -49,7 +46,8 @@ def render(template: dict[str, Any], state: dict[str, Any]) -> str:
 
     # Clinical picture is a pure output projection. Functional-like findings route to function.
     clinical_keys: set[str] = {
-        key for key in findings
+        key
+        for key in findings
         if key not in template["clinical_picture"]["routed_to_function_instead_of_clinical_picture"]
     }
     if phenotype.get("stiffness_symptom"):
@@ -163,6 +161,8 @@ def main() -> None:
     fixtures = load_yaml(FIXTURES_PATH)
     evidence = load_yaml(EVIDENCE_PATH)
     options = load_yaml(OPTION_CATALOG_PATH)
+    registry = load_yaml(REGISTRY_PATH)
+    route_requirements = load_yaml(ROUTE_REQUIREMENTS_PATH)
 
     assert template["version"] == "knee_oa_template_contract_v1"
     assert template["language"] == "el"
@@ -181,7 +181,17 @@ def main() -> None:
     }
     assert template["product_overlay"]["persistence"] == "ephemeral_only"
     assert template["copy_readiness"]["laterality_allowed"] == ["right", "left", "bilateral"]
+    assert template["copy_readiness"]["require_formal_diagnosis_assertion_yes"] is True
     assert set(template["laterality_phrases"]) == {"right", "left", "bilateral"}
+    assert template["block_templates"]["indication"].startswith(
+        "Παραπομπή για εξατομικευμένη φυσιοθεραπευτική αποκατάσταση λόγω οστεοαρθρίτιδας"
+    )
+
+    knee_route = registry["profiles"]["knee"]["routes"]["knee_osteoarthritis"]
+    assert "formal_diagnosis" in knee_route["wording_modes"]
+    formal_policy = route_requirements["wording_mode_requirements"]["formal_diagnosis"]
+    assert formal_policy["formal_assertion_policy"] == "required_yes_unless_route_override_defines_context_based_assertion"
+    assert formal_policy["validation_error_if_not_yes"] == "formal_diagnosis_assertion_required"
 
     evidence_items = evidence["items"]
     rehab_ids = set(options["common_rehab_direction_ids"])
@@ -213,9 +223,11 @@ def main() -> None:
         "sit_to_stand_limitation": "sit_to_stand",
         "sport_or_exercise_limitation": "sport_gym",
     }
+    assert template["functional_task_retraining"]["task_phrases"]["stairs"] == "τις σκάλες"
 
     hard = set(template["hard_invariants"])
     required = {
+        "diagnosis_must_be_clinician_asserted_before_copy",
         "suggestion_is_not_selection",
         "selection_is_required_for_plan_phrase",
         "stiffness_is_not_rom_restriction",
@@ -239,7 +251,11 @@ def main() -> None:
         fixture_id = fixture["id"]
         assert fixture_id not in seen
         seen.add(fixture_id)
-        rendered = render(template, fixture["input"])
+        fixture_input = fixture["input"]
+        assert fixture_input.get("formal_assertion_state") == "yes", (
+            f"{fixture_id} must be an explicitly clinician-asserted copy-ready OA fixture"
+        )
+        rendered = render(template, fixture_input)
         expected = fixture["expected_text"]
         assert rendered == expected, f"{fixture_id}\nEXPECTED: {expected}\nACTUAL:   {rendered}"
         assert "_" not in rendered, f"machine id leak in {fixture_id}"
@@ -257,7 +273,7 @@ def main() -> None:
 
     print(
         "Knee-OA template contract PASS: "
-        f"{len(fixture_list)} deterministic fixtures, "
+        f"{len(fixture_list)} clinician-asserted deterministic fixtures, "
         f"{len(template['active_plan']['order'])} rehab phrases, "
         f"{len(template['adjuncts']['order'])} adjunct phrases"
     )
