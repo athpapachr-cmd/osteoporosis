@@ -276,3 +276,42 @@ The tested downloadable artifact `10187149429` contains the runnable source ZIP 
 `KNEE_OA_PROTOTYPE_REVIEW_V1.md` records the author's technical review, including the initial failure and final passing identity. It is not independent clinical, accessibility or commercial review. Greek summaries still require clinical acceptance; source links remain source-level. Actual Safari/VoiceOver, live BFCache, complete accessibility audit, product-owner usability, willingness-to-pay and independent multi-axis review remain open acceptance boundaries.
 
 The bounded Step-5 writer is released. **Next: Step 6 product-owner trial using synthetic cases**, followed by the separate independent review before expansion or release. No second diagnosis, real-patient use, public hosting or subscription implementation is authorized by this milestone.
+
+---
+
+## 2026-09-11 — Step-6A qualifier refinement accepted; independent review packet prepared
+
+Product-owner feedback identified that the first prototype was too summary-level around pain location, weakness specificity/atrophy and stiffness versus fixed extension loss. A bounded Step-6A refinement added progressive qualifiers while preserving the small routine surface.
+
+Tested substantive implementation head:
+
+```text
+243095ca9545bd2f96be8986520aeae8c3551c27
+```
+
+Accepted closeout candidate:
+
+```text
+6539351c592c1dc3e49931057b63925dea3cb94d
+```
+
+The refined candidate passed the full bounded prototype gate, including existing real-CU1/HTTP tests, eight new qualifier projection tests, existing exact-output fixtures, twelve existing Chromium tests, six new qualifier Chromium tests and dependency-closure smoke.
+
+The product owner then explicitly stated that the design is liked and authorized progression. This records **product-owner design/functional-direction acceptance only**; it is not clinical, accessibility, source-to-claim, commercial or release validation.
+
+A reviewer-neutral independent-review branch was created:
+
+```text
+review/physio-referral-knee-oa-independent-v1-2026-09-11
+```
+
+with:
+
+```text
+KNEE_OA_INDEPENDENT_REVIEW_PACKET_V1.md
+KNEE_OA_INDEPENDENT_REVIEW_PROMPT_V1.md
+```
+
+The review packet requires separate clinical/evidence, physiotherapy/autonomy, UX/accessibility and commercial-value review, plus source-to-claim integrity checking. It explicitly requires reviewers to identify what should be removed, not only what should be added, and forbids implementation changes during the review itself.
+
+No second diagnosis, production integration, merge or deployment is authorized before the independent review findings return to the product owner for disposition.
