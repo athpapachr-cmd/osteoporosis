@@ -1,50 +1,58 @@
-# CURRENT_OPERATIONAL.md — Knee-OA independent review preparation
+# CURRENT_OPERATIONAL.md — Knee-OA independent review ready
 
-> **STATUS:** PRODUCT-OWNER FUNCTIONAL/DESIGN ACCEPTANCE RECORDED / INDEPENDENT MULTI-AXIS REVIEW PREPARATION ACTIVE.
+> **STATUS:** PRODUCT-OWNER FUNCTIONAL/DESIGN ACCEPTANCE RECORDED / INDEPENDENT MULTI-AXIS REVIEW PACKET READY.
 > **Updated:** 2026-09-11 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Verified main:** `d9f312f6d2d596ec0bd4f35f6de56ad98dc34b37`.
 > **Pinned accepted candidate branch/head:** `feat/physio-referral-knee-oa-prototype-v1-2026-09-11` @ `6539351c592c1dc3e49931057b63925dea3cb94d`.
 > **Tested substantive implementation head:** `243095ca9545bd2f96be8986520aeae8c3551c27`.
-> **Review-preparation branch:** `review/physio-referral-knee-oa-independent-v1-2026-09-11`.
-> **ACTIVE WRITER:** review-preparation docs only; prototype/runtime/evidence contracts are pinned read-only.
+> **Review branch:** `review/physio-referral-knee-oa-independent-v1-2026-09-11`.
+> **ACTIVE RUNTIME / DESIGN / CANONICAL WRITER:** NONE; review-preparation writer released.
 > **PR / merge / deploy / production smoke authority:** NONE.
 > **Real-patient use / production integration:** NOT AUTHORIZED.
 
-## 1. Product-owner acceptance now recorded
+## 1. Product-owner acceptance
 
-The product owner reviewed the refined Knee-OA prototype direction and explicitly stated that the design is liked and authorized progression. This is accepted as product-owner design/functional-direction approval of the pinned Step-6A candidate, not as clinical validation, accessibility validation, commercial validation or release authority.
+The product owner reviewed the refined Knee-OA prototype direction and explicitly stated that the design is liked and authorized progression. This records product-owner design/functional-direction acceptance of the pinned candidate.
 
-The accepted candidate includes progressive-disclosure pain location (including pes-anserine region), weakness specificity/atrophy context, stiffness pattern/duration, fixed flexion deformity as a separate examination finding, compact summaries, evidence interaction, live deterministic referral and retained CU-1 safety authority.
+This is **not** clinical validation, accessibility validation, commercial validation, source-to-claim validation or release authority.
 
-## 2. Exact next gate
+## 2. Independent review packet now ready
 
-Prepare a reviewer-neutral packet against the pinned candidate above. The reviewer must not inherit the author's conclusions as truth and must independently examine four axes:
+The exact review artifacts are:
+
+```text
+clinic_utilities/physio_referral_product/KNEE_OA_INDEPENDENT_REVIEW_PACKET_V1.md
+clinic_utilities/physio_referral_product/KNEE_OA_INDEPENDENT_REVIEW_PROMPT_V1.md
+```
+
+The packet forces separate review of:
 
 ```text
 clinical / evidence integrity
-physiotherapy usefulness and professional autonomy
+physiotherapy usefulness / professional autonomy
 UX / accessibility / cognitive load
-commercial value / retention / willingness-to-pay logic
+commercial differentiation / recurring value / willingness to pay
 ```
 
-A separate source-to-claim audit is also required for exact evidence fidelity and locator precision.
+It also requires a distinct source-to-claim integrity audit for material evidence claims.
 
-## 3. Review principles
+## 3. Exact next action
 
-The independent reviewer must explicitly answer:
+Run the independent review against the pinned candidate. The reviewer must not inherit prior PASS conclusions and must classify every finding as:
 
-- what is clinically wrong, overstated, missing or potentially misleading;
-- what should be removed rather than added;
-- whether the referral is useful to a physiotherapist without becoming prescriptive;
-- whether progressive disclosure actually preserves speed;
-- whether evidence cues are understandable without training;
-- whether the product creates recurring value at approximately €9.99/month;
-- which findings are blockers before expansion to a second diagnosis;
-- which findings can wait until later productization.
+```text
+BLOCKER
+MATERIAL BEFORE SECOND DIAGNOSIS
+MATERIAL BEFORE COMMERCIAL PILOT
+IMPROVEMENT
+LATER / OPTIONAL
+```
 
-No score may conceal material safety/evidence concerns. Any `PASS` requires a written material-open-finding statement.
+The reviewer must explicitly identify what should be **removed**, not only what should be added.
+
+No implementation changes are authorized during the review itself. Findings return to the product owner for disposition first.
 
 ## 4. HOLD
 
-No new diagnosis, feature expansion, production CU-1 rewrite, public hosting, auth/billing, merge or deployment while the independent review candidate is being pinned and reviewed. Review findings may trigger a bounded replan; they do not authorize implementation automatically.
+No new diagnosis, feature expansion, production CU-1 rewrite, public hosting, auth/billing, merge or deployment before the independent-review findings are reviewed and prioritized.
