@@ -54,6 +54,102 @@ Frozen principles include:
 - normal final state shown simply as `Έτοιμη` rather than a quality score or dashboard of ticks;
 - typical mobile routine path targeted at approximately 5–7 meaningful taps with little or no typing.
 
-The UX contract is design-frozen for the Knee-OA prototype. It is not implemented or tested by this milestone.
+The UX contract was design-frozen for the Knee-OA prototype and later replanned only where Step-2 evidence review proved the five-state evidence model insufficient.
 
-Next step is a separate Knee-OA evidence knowledge-module contract before runtime implementation.
+---
+
+## 2026-09-11 — Step-2 Knee-OA evidence design frozen
+
+The first evidence knowledge module was completed for Knee Osteoarthritis only on branch:
+
+```text
+design/physio-referral-knee-oa-evidence-v1-2026-09-11
+```
+
+Fresh base:
+
+```text
+d9f312f6d2d596ec0bd4f35f6de56ad98dc34b37
+```
+
+Reviewed substantive head:
+
+```text
+6b82691c8431b699d20752c83b443793989f6402
+```
+
+The evidence review used current/relevant positions from VA/DoD 2026, Singapore ACE 2026, EULAR 2023 update, NICE NG226 2022, AAOS OAK3 2021 and ACR/AF 2019.
+
+A material UX-design finding emerged: five evidence states could not honestly represent real guideline disagreement. Acupuncture was the clearest example, with reviewed major frameworks ranging from recommendation against to conditional/limited support and insufficient evidence.
+
+The evidence-state model was therefore expanded to:
+
+```text
+recommended_or_supported
+conditional_or_context_dependent
+limited_or_insufficient_evidence
+guideline_conflict_or_mixed
+recommendation_against_routine_use
+not_yet_assessed
+```
+
+The compact Greek surface semantic for real disagreement is:
+
+```text
+Οι οδηγίες διαφέρουν
+```
+
+A second integrity layer was added to prevent broad evidence strength from being silently transferred to narrower product items. Source positions now distinguish:
+
+```text
+direct_item_recommendation
+named_component_of_broader_recommendation
+broader_recommendation_only
+contextual_clinical_mapping
+```
+
+The reviewed visible Knee-OA smart default is deliberately small:
+
+```text
+therapeutic exercise
+progressive strengthening
+education & self-management
+```
+
+with individualized physiotherapy/active rehabilitation implicit in the referral itself. Graded activity and more specific rehabilitation components are context-driven rather than universal defaults.
+
+Manual therapy, soft-tissue techniques and acupuncture retain explicit mixed-guideline semantics. Dry needling remains excluded from the Knee-OA selectable surface; the evidence detail preserves the distinction between NICE recommendation against and AAOS/VA-DoD uncertainty. Weight management is strongly supported when overweight/obesity applies but remains advisory-only because the current CU-1 machine catalog has no dedicated selectable ID. The existing walking-aid ID is retained but is not yet exposed in the current Knee UI relevance scope.
+
+Machine contract:
+
+```text
+clinic_utilities/physio_referral_product/contracts/knee_oa_evidence_contract_v1.yaml
+```
+
+Human design:
+
+```text
+clinic_utilities/physio_referral_product/KNEE_OA_EVIDENCE_DESIGN_V1.md
+```
+
+Exact design review:
+
+```text
+clinic_utilities/physio_referral_product/KNEE_OA_EVIDENCE_DESIGN_REVIEW_V1.md
+DESIGN PASS / MATERIAL OPEN FINDING NONE
+```
+
+Machine gates:
+
+```text
+run 34559461372 — SUCCESS on substantive head 6b82691...
+run 34559680326 — SUCCESS on review-artifact head f20f01f...
+```
+
+No production CU-1 runtime/API/formatter/static UI/database mutation occurred. Step 2 closes as a design/evidence contract only.
+
+Exact next product-design step:
+
+```text
+STEP 3 — dynamic Knee-OA referral/template contract
+```
