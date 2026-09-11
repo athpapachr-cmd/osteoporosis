@@ -9,6 +9,7 @@ on:
       - 'clinic_utilities/physio_referral_product/KNEE_OA_TEMPLATE_DESIGN_V1.md'
       - 'clinic_utilities/physio_referral_product/contracts/knee_oa_template_contract_v1.yaml'
       - 'clinic_utilities/physio_referral_product/contracts/knee_oa_template_fixtures_v1.yaml'
+      - 'clinic_utilities/physio_referral_product/contracts/knee_oa_template_edge_fixtures_v1.yaml'
       - 'clinic_utilities/physio_referral_product/validate_knee_oa_template_contract_v1.py'
       - '.github/workflows/physio-knee-oa-template-design.yml'
 
