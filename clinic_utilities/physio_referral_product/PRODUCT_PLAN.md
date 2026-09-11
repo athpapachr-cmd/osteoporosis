@@ -1,10 +1,10 @@
 # PRODUCT_PLAN.md — Physio Referral productization
 
-> **STATUS:** PRODUCT-OWNER APPROVED DIRECTION — DESIGN ONLY.
-> **Updated:** 2026-09-07 Asia/Nicosia.
+> **STATUS:** PRODUCT-OWNER APPROVED DIRECTION — STEPS 1–2 DESIGNED.
+> **Updated:** 2026-09-11 Asia/Nicosia.
 > **Parent:** existing CU-1 Physiotherapy Referral v2.
 > **First vertical slice:** Knee Osteoarthritis only.
-> **Runtime implementation authority:** NONE in this design step.
+> **Runtime implementation authority:** NONE at this stage.
 
 ---
 
@@ -14,17 +14,16 @@ Evolve the existing CU-1 referral utility from a capable deterministic referral 
 
 ```text
 €9.99 / month
-or later equivalent annual pricing
 ```
 
-Initial commercial ceiling/target is deliberately modest:
+Initial commercial target is deliberately modest:
 
 ```text
 ~100 subscribers
 → ~€999 MRR
 ```
 
-The first goal is not scale. It is to prove that clinicians repeatedly use and pay for an evidence-aware referral assistant.
+The first goal is product-market usefulness, not scale.
 
 ---
 
@@ -34,64 +33,47 @@ The product is **not** merely a text generator.
 
 Target value proposition:
 
-> Create a clinically useful physiotherapy referral quickly, while the interface quietly keeps the selected plan aligned with current reviewed evidence, shows when evidence is weak or contrary, and preserves clinician autonomy.
+> Create a clinically useful physiotherapy referral quickly, while the interface quietly keeps the selected plan aligned with current reviewed evidence, shows uncertainty or disagreement honestly, and preserves clinician autonomy.
 
-Core value combines:
+Value stack:
 
 ```text
 speed
 + clinical structure
 + evidence transparency
-+ current review state
++ evidence freshness/review state
 + flexible clinician override
 + high-quality referral output
 ```
 
 ---
 
-# 3. First-slice rule — one diagnosis only
+# 3. First-slice rule
 
 The first complete productization slice is:
 
 ```text
-Knee Osteoarthritis
+Knee Osteoarthritis only
 ```
 
-Do **not** add five or twenty diagnoses in parallel.
-
-The Knee-OA slice must prove the complete reusable architecture:
+Do not expand diagnoses until this vertical slice proves the reusable architecture:
 
 ```text
-diagnosis
-→ phenotype / impairments / function
+diagnosis/laterality
+→ phenotype / function
 → evidence-aware defaults
-→ clinician customization
-→ evidence-positive suggestions
-→ limited/against-evidence signals
-→ power-user expansion
-→ live dynamic referral
+→ context-driven suggestions
+→ power-user options
+→ live referral
 → evidence detail on demand
-→ final quality/safety check
+→ final review state
 ```
-
-Only after this vertical slice is accepted should the same architecture be generalized to additional conditions.
 
 ---
 
 # 4. Relationship to existing CU-1
 
-Existing CU-1 remains the clinical/runtime foundation and already provides:
-
-- structured referral state;
-- diagnosis-vs-finding separation;
-- route validation;
-- safety/consistency evaluation;
-- short/detailed formatting;
-- protected ephemeral operation;
-- copy/print workflow;
-- broad frozen physiotherapy taxonomy.
-
-The productization track must reuse that work where valid rather than rebuild from the old standalone HTML.
+Existing CU-1 remains the structured clinical/runtime foundation and already provides route/state IDs, validation, safety/consistency semantics, formatting and ephemeral use.
 
 Hard boundary:
 
@@ -99,102 +81,128 @@ Hard boundary:
 PRODUCTIZATION DOES NOT SILENTLY REWRITE FROZEN CU-1 CLINICAL TAXONOMY
 ```
 
-If the Knee-OA evidence review demonstrates a true contradiction with the frozen CU-1 profile, that becomes an explicit maintenance/replan finding before runtime change.
+Step 2 confirmed no broad taxonomy rewrite is required.
+
+Two bounded seams remain:
+
+```text
+walking aid
+→ canonical CU-1 ID exists
+→ current Knee UI scope does not expose it
+
+weight management
+→ strong Knee-OA evidence when applicable
+→ present in clinical profile prose
+→ no dedicated selectable CU-1 machine ID
+```
+
+These are explicit later design decisions, not hidden mutations.
 
 ---
 
-# 5. Product principles
+# 5. Frozen product principles
 
-## 5.1 Clinical depth without visual complexity
+## Minimal surface
 
-Complex evidence and rule logic live underneath. The surface remains calm and simple.
+Clinical/evidence complexity lives underneath. Routine use should feel direct and mobile-first.
 
-## 5.2 Smart default, not blank form
+## Smart default
 
-Choosing Knee OA immediately creates a sensible reviewed starting plan. The user refines it rather than building from zero.
+The reviewed Knee-OA starting plan is:
 
-## 5.3 Clinician remains authoritative
+```text
+implicit individualized physiotherapy assessment / active rehabilitation
++ therapeutic exercise
++ progressive strengthening
++ education & self-management
+```
 
-The product may recommend, caution and explain. It does not lock a clinician into a guideline choice or silently make a treatment decision.
+Other components are contextual or power-user selected.
 
-## 5.4 Evidence state must be explicit
+## Clinician authority
 
-At minimum the internal model distinguishes:
+Suggestion != clinician selection. The product informs and proposes; it does not silently choose treatment.
+
+## Evidence-state integrity
+
+Step 2 expanded the model to six states:
 
 ```text
 recommended_or_supported
 conditional_or_context_dependent
 limited_or_insufficient_evidence
+guideline_conflict_or_mixed
 recommendation_against_routine_use
 not_yet_assessed
 ```
 
-`insufficient evidence` must never be presented as equivalent to `evidence against`.
-
-## 5.5 Evidence currency is recurring subscription value
-
-Each evidence-backed item should ultimately support:
+Hard distinctions:
 
 ```text
-source / guideline
-version or publication year
-recommendation/rationale
-strength/certainty when source provides it
-reviewed_on
-status/freshness
+INSUFFICIENT != AGAINST
+CONFLICT != CONSENSUS
+SOURCE YEAR != REVIEW DATE
+BROAD RECOMMENDATION != ITEM-SPECIFIC STRONG RECOMMENDATION
 ```
 
-Guideline year and product review date are distinct. Example:
+## Evidence claim scope
+
+Every source claim may distinguish:
 
 ```text
-NICE NG226 · 2022
-Evidence reviewed · Sep 2026
+direct_item_recommendation
+named_component_of_broader_recommendation
+broader_recommendation_only
+contextual_clinical_mapping
 ```
 
-The product must never imply “2026 guideline” merely because the product was reviewed in 2026.
+This prevents a broad recommendation for exercise from being falsely presented as a strong recommendation for every narrower technique.
 
-## 5.6 Update governance
+## Update governance
 
-No autonomous literature-to-live-rule pipeline in the first product.
+No autonomous literature-to-live-rule updates.
 
 ```text
-literature surveillance
+surveillance
 → candidate change
-→ clinical review
-→ approval
-→ versioned release
+→ source review
+→ impact classification
+→ clinician/product-owner approval
+→ versioned contract
+→ tests/review
+→ separate runtime release
 ```
 
 ---
 
 # 6. Privacy/product boundary
 
-Preferred initial commercial architecture remains data-minimizing:
+Preferred first commercial architecture remains data-minimizing:
 
 ```text
 account/preferences may be persisted later
 patient-identifiable referral draft need not be persisted
 ```
 
-The current CU-1 ephemeral principle is a desirable default for the first product unless a later explicit workflow requirement justifies protected patient-data storage.
+The existing ephemeral CU-1 behavior remains a desirable default unless a future explicit workflow requirement justifies protected persistence.
 
 ---
 
-# 7. Future Clinical Cockpit module architecture
+# 7. Future Clinical Cockpit architecture
 
-Physio Referral should be deployable initially as a focused product but architected as one module of a later unified Clinical Cockpit.
+Physio Referral should be commercially usable as a focused product while remaining architecturally compatible with a later modular Clinical Cockpit.
 
-Candidate entitlement model:
+Candidate entitlements may later include:
 
 ```text
-physio_referral = true/false
-patient_education = true/false
-clinical_calculators = true/false
-osteoporosis_tools = true/false
-reception = true/false
+physio_referral
+patient_education
+clinical_calculators
+osteoporosis_tools
+reception
 ```
 
-Do not build the full entitlement/billing system during the Knee-OA prototype.
+Do not build billing/auth/entitlements during the Knee-OA prototype unless separately authorized.
 
 ---
 
@@ -214,13 +222,13 @@ complete one Knee-OA vertical slice
 → ~€1,000 MRR
 ```
 
-The first paid clinician is a stronger validation milestone than speculative large-user projections.
+The first paid clinician is more meaningful than speculative projections.
 
 ---
 
 # 9. Independent review gate
 
-After the complete Knee-OA vertical slice exists, but before diagnosis expansion or commercial release, request independent review across four axes:
+After a functional Knee-OA vertical slice exists, request independent review across:
 
 ```text
 clinical/evidence fidelity
@@ -233,22 +241,22 @@ Review must explicitly ask:
 
 > What should be removed?
 
-The primary product risk is not only missing features; it is destroying simplicity by adding too many correct features.
+The main product risk is not only missing features; it is burying a simple workflow under too many correct ideas.
 
 ---
 
-# 10. Current sequence
+# 10. Product sequence and current state
 
 ```text
-STEP 1 — freeze UX interaction contract
-STEP 2 — define Knee-OA evidence knowledge module
-STEP 3 — define dynamic referral/template behavior
-STEP 4 — define evidence interaction/traceability layer
-STEP 5 — prototype
-STEP 6 — test/review
-STEP 7 — independent multi-axis review
-STEP 8 — bounded refinement
-STEP 9 — external clinician/commercial pilot
+STEP 1 — UX interaction contract                         COMPLETE / REPLANNED WITH SIX-STATE EVIDENCE MODEL
+STEP 2 — Knee-OA evidence knowledge module              DESIGN PASS / ELIGIBLE TO FREEZE
+STEP 3 — dynamic referral/template contract             NEXT DESIGN STEP
+STEP 4 — evidence interaction/traceability contract     PENDING
+STEP 5 — prototype                                      PENDING
+STEP 6 — test/product-owner review                      PENDING
+STEP 7 — independent multi-axis review                  PENDING
+STEP 8 — bounded refinement                             PENDING
+STEP 9 — external clinician/commercial pilot            PENDING
 ```
 
-Current authorized work stops at **STEP 1 design freeze** unless the product owner explicitly continues.
+No runtime implementation, PR merge, deploy or production smoke is authorized merely by completion of Steps 1–2.
