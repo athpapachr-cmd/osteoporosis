@@ -1,0 +1,127 @@
+version: knee_oa_evidence_interaction_fixtures_v1
+contract: knee_oa_evidence_interaction_v1
+synthetic_only: true
+suggestion_cases:
+  - id: default_has_no_omission_suggestion
+    input: {}
+    expected_items: []
+  - id: removed_core_is_suggested_not_selected
+    input: {selected: [progressive_strengthening, education_and_self_management]}
+    expected_items: [therapeutic_exercise]
+    expected_scope: direct_item_recommendation
+  - id: stairs_alias_is_explicit_clinical_mapping
+    input: {facts: {stairs_limitation: present}}
+    expected_items: [functional_task_retraining]
+    expected_scope: contextual_clinical_mapping
+  - id: multiple_rom_triggers_one_candidate
+    input: {facts: {active_rom_restricted: present, passive_rom_restricted: present}}
+    expected_items: [mobility_exercise_when_restricted]
+    expected_scope: named_component_of_broader_recommendation
+  - id: absent_and_unassessed_are_not_positive
+    input: {facts: {active_rom_restricted: absent, balance_deficit: not_assessed}}
+    expected_items: []
+  - id: generic_symptom_tags_are_not_exam_findings
+    input: {facts: {stiffness_symptom: selected, weakness_symptom_or_context: selected}}
+    expected_items: []
+  - id: walking_candidates_have_stable_order
+    input: {facts: {walking_tolerance: selected}}
+    expected_items: [graded_activity_exposure, progressive_endurance_or_capacity_work, gait_walking_practice]
+  - id: core_before_context
+    input:
+      selected: [therapeutic_exercise, progressive_strengthening]
+      facts: {stairs: selected}
+    expected_items: [education_and_self_management, functional_task_retraining]
+  - id: already_selected_context_not_suggested_again
+    input:
+      selected: [therapeutic_exercise, progressive_strengthening, education_and_self_management, functional_task_retraining]
+      facts: {stairs: selected}
+    expected_items: []
+  - id: no_adjunct_auto_promotion
+    input: {facts: {pain: present}}
+    expected_items: []
+  - id: unavailable_material_source_suppresses_new_promotion
+    input:
+      selected: [progressive_strengthening, education_and_self_management]
+      availability: {NICE_NG226_2022: source_unavailable}
+    expected_items: []
+  - id: sport_function_alias_preserved
+    input: {facts: {sport_gym: selected}}
+    expected_items: [graded_activity_exposure]
+  - id: balance_two_candidates_not_two_autoselections
+    input: {facts: {balance_deficit: abnormal}}
+    expected_items: [neuromuscular_proprioceptive_training, balance_stepping_recovery_training]
+evidence_cases:
+  - id: exercise_unselected_can_be_supported
+    item_id: therapeutic_exercise
+    selected: false
+    expected_state: recommended_or_supported
+    expected_endorsement: true
+    expected_source_count: 6
+  - id: selected_acupuncture_remains_mixed
+    item_id: acupuncture
+    selected: true
+    expected_state: guideline_conflict_or_mixed
+    expected_endorsement: false
+    expected_source_count: 5
+    expected_directions: [against, conditional_for, conditional_for, conditional_for, neutral_or_insufficient]
+  - id: unavailable_opposition_is_not_silent_consensus
+    item_id: acupuncture
+    selected: true
+    availability: {NICE_NG226_2022: source_unavailable}
+    expected_state: guideline_conflict_or_mixed
+    expected_endorsement: false
+    expected_source_count: 5
+    expected_directions: [against, conditional_for, conditional_for, conditional_for, neutral_or_insufficient]
+  - id: withdrawn_source_keeps_clinician_selection_without_green_endorsement
+    item_id: therapeutic_exercise
+    selected: true
+    availability: {AAOS_OAK3_2021: source_withdrawn_or_superseded}
+    expected_state: recommended_or_supported
+    expected_endorsement: false
+    expected_source_count: 6
+  - id: manual_therapy_all_three_positions_visible
+    item_id: manual_therapy
+    selected: false
+    expected_state: guideline_conflict_or_mixed
+    expected_endorsement: false
+    expected_source_count: 3
+    expected_directions: [conditional_for, conditional_for, conditional_against]
+  - id: against_is_not_uncertain
+    item_id: dry_needling
+    selected: false
+    expected_state: recommendation_against_routine_use
+    expected_endorsement: false
+    expected_source_count: 3
+    expected_directions: [against, neutral_or_insufficient, neutral_or_insufficient]
+  - id: due_is_availability_not_new_clinical_verdict
+    item_id: progressive_strengthening
+    selected: true
+    availability: {EULAR_CORE_2023_UPDATE: review_due}
+    expected_state: recommended_or_supported
+    expected_endorsement: false
+    expected_source_count: 5
+readiness_cases:
+  - id: missing_gate_is_never_ready
+    input: {draft_revision: 1, projection_revision: 1, gate: null, manual_pending: false, note_items: []}
+    expected: {allowed: false, label: Συμπληρώστε τα απαραίτητα στοιχεία}
+  - id: stale_projection_is_never_copyable
+    input: {draft_revision: 2, projection_revision: 1, gate: {allowed: true, draft_revision: 2}, manual_pending: false, note_items: []}
+    expected: {allowed: false, label: Η παραπομπή ενημερώνεται}
+  - id: stale_gate_is_never_copyable
+    input: {draft_revision: 2, projection_revision: 2, gate: {allowed: true, draft_revision: 1}, manual_pending: false, note_items: []}
+    expected: {allowed: false, label: Η παραπομπή ενημερώνεται}
+  - id: inherited_safety_outranks_quiet_evidence
+    input: {draft_revision: 2, projection_revision: 1, gate: {allowed: false, blocked: true, draft_revision: 2}, manual_pending: false, note_items: [acupuncture]}
+    expected: {allowed: false, label: Απαιτείται κλινικός έλεγχος}
+  - id: manual_buffer_needs_reconciliation
+    input: {draft_revision: 1, projection_revision: 1, gate: {allowed: true, draft_revision: 1}, manual_pending: true, note_items: []}
+    expected: {allowed: false, label: Ελέγξτε τις αλλαγές}
+  - id: evidence_conflict_is_not_a_safety_block
+    input: {draft_revision: 1, projection_revision: 1, gate: {allowed: true, draft_revision: 1}, manual_pending: false, note_items: [acupuncture, acupuncture]}
+    expected: {allowed: true, label: Έτοιμη · 1 σημείο για έλεγχο}
+  - id: ordinary_ready
+    input: {draft_revision: 1, projection_revision: 1, gate: {allowed: true, draft_revision: 1}, manual_pending: false, note_items: []}
+    expected: {allowed: true, label: Έτοιμη}
+  - id: string_boolean_cannot_authorize_copy
+    input: {draft_revision: 1, projection_revision: 1, gate: {allowed: 'true', draft_revision: 1}, manual_pending: false, note_items: []}
+    expected: {allowed: false, label: Συμπληρώστε τα απαραίτητα στοιχεία}
