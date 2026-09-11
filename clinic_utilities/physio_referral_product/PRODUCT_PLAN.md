@@ -1,6 +1,6 @@
 # PRODUCT_PLAN.md — Physio Referral productization
 
-> **STATUS:** PRODUCT-OWNER APPROVED DIRECTION — STEPS 1–2 DESIGNED.
+> **STATUS:** PRODUCT-OWNER APPROVED DIRECTION — STEPS 1–3 DESIGNED / FROZEN.
 > **Updated:** 2026-09-11 Asia/Nicosia.
 > **Parent:** existing CU-1 Physiotherapy Referral v2.
 > **First vertical slice:** Knee Osteoarthritis only.
@@ -81,9 +81,9 @@ Hard boundary:
 PRODUCTIZATION DOES NOT SILENTLY REWRITE FROZEN CU-1 CLINICAL TAXONOMY
 ```
 
-Step 2 confirmed no broad taxonomy rewrite is required.
+Steps 2–3 confirmed that no broad taxonomy rewrite is required.
 
-Two bounded seams remain:
+Explicit bounded seams remain:
 
 ```text
 walking aid
@@ -94,6 +94,11 @@ weight management
 → strong Knee-OA evidence when applicable
 → present in clinical profile prose
 → no dedicated selectable CU-1 machine ID
+
+true locking / major mechanical ROM block
+→ canonical CU-1 finding exists
+→ current rule catalog does not derive a safety trigger from the finding itself
+→ first Knee-OA product surface does not expose it until a bounded safety/reassessment mapping exists
 ```
 
 These are explicit later design decisions, not hidden mutations.
@@ -122,6 +127,8 @@ Other components are contextual or power-user selected.
 ## Clinician authority
 
 Suggestion != clinician selection. The product informs and proposes; it does not silently choose treatment.
+
+Opening a fixed Knee-OA product screen does not itself assert the diagnosis. Final Copy requires the existing CU-1 formal-diagnosis semantics and explicit clinician assertion.
 
 ## Evidence-state integrity
 
@@ -157,6 +164,30 @@ contextual_clinical_mapping
 ```
 
 This prevents a broad recommendation for exercise from being falsely presented as a strong recommendation for every narrower technique.
+
+## Deterministic live referral
+
+Step 3 freezes a deterministic Greek composition layer:
+
+```text
+structured clinician-selected state
++ bounded product phenotype overlay
+→ deterministic semantic projection
+→ deterministic Greek referral
+```
+
+Routine output requires no LLM and no Generate button.
+
+Hard Step-3 boundaries include:
+
+```text
+stiffness symptom != ROM restriction
+generic weakness != objective weakness
+functional limitation != automatic rehabilitation selection
+selected product item must render, fail closed, or be explicitly semantically de-duplicated
+manual edited prose != structured-state writeback
+evidence UI metadata != copied referral prose
+```
 
 ## Update governance
 
@@ -248,10 +279,10 @@ The main product risk is not only missing features; it is burying a simple workf
 # 10. Product sequence and current state
 
 ```text
-STEP 1 — UX interaction contract                         COMPLETE / REPLANNED WITH SIX-STATE EVIDENCE MODEL
-STEP 2 — Knee-OA evidence knowledge module              DESIGN PASS / ELIGIBLE TO FREEZE
-STEP 3 — dynamic referral/template contract             NEXT DESIGN STEP
-STEP 4 — evidence interaction/traceability contract     PENDING
+STEP 1 — UX interaction contract                         COMPLETE / FROZEN
+STEP 2 — Knee-OA evidence knowledge module              COMPLETE / FROZEN / DESIGN PASS
+STEP 3 — dynamic referral/template contract             COMPLETE / FROZEN / DESIGN PASS
+STEP 4 — evidence interaction/traceability contract     NEXT DESIGN STEP
 STEP 5 — prototype                                      PENDING
 STEP 6 — test/product-owner review                      PENDING
 STEP 7 — independent multi-axis review                  PENDING
@@ -259,4 +290,4 @@ STEP 8 — bounded refinement                             PENDING
 STEP 9 — external clinician/commercial pilot            PENDING
 ```
 
-No runtime implementation, PR merge, deploy or production smoke is authorized merely by completion of Steps 1–2.
+No runtime implementation, PR merge, deploy or production smoke is authorized merely by completion of Steps 1–3.
