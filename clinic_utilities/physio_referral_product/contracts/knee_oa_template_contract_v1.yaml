@@ -1,0 +1,269 @@
+version: knee_oa_template_contract_v1
+status: design_candidate
+language: el
+scope:
+  profile_id: knee
+  route_id: knee_osteoarthritis
+  product_slice: knee_oa_only
+runtime_authorized: false
+patient_data_persistence: false
+llm_required: false
+
+owners:
+  structured_state: clinic_utilities/contracts/CU1_CORE_CONTRACT_V1.md
+  cu1_language: clinic_utilities/contracts/cu1_referral_language_el_v1.yaml
+  evidence: clinic_utilities/physio_referral_product/contracts/knee_oa_evidence_contract_v1.yaml
+  ux: clinic_utilities/physio_referral_product/UX_CONTRACT_CURRENT.md
+
+product_overlay:
+  version: knee_oa_product_phenotype_v1
+  allowed_fields:
+    stiffness_symptom: boolean
+    weakness_symptom_or_context: boolean
+  persistence: ephemeral_only
+  invariants:
+    stiffness_symptom_is_not_rom_restriction: true
+    weakness_symptom_is_not_objective_weakness: true
+
+copy_readiness:
+  laterality_allowed: [right, left, bilateral]
+  inherit_cu1_validation_block: true
+  inherit_cu1_safety_block: true
+  evidence_state_does_not_block_copy_by_itself: true
+
+laterality_phrases:
+  right: δεξιού γόνατος
+  left: αριστερού γόνατος
+  bilateral: και των δύο γονάτων
+
+output_blocks_order:
+  - indication
+  - clinical_picture
+  - functional_impact
+  - active_plan
+  - nonredundant_goal_emphasis
+  - adjuncts
+  - restrictions
+  - clinician_note
+
+block_templates:
+  indication: "Παραπομπή για εξατομικευμένη φυσιοθεραπευτική αποκατάσταση για οστεοαρθρίτιδα {laterality_phrase}."
+  clinical_picture: "Η κλινική εικόνα περιλαμβάνει {clinical_list}."
+  functional_impact: "Λειτουργικά, υπάρχει δυσχέρεια {functional_list}."
+  active_plan_with_items: "Παρακαλώ για ενεργητικό, εξατομικευμένο πρόγραμμα με {plan_list}, προσαρμοσμένο στην κλινική ανταπόκριση και στους λειτουργικούς στόχους."
+  active_plan_fallback: "Παρακαλώ για φυσιοθεραπευτική αξιολόγηση και εξατομικευμένο ενεργητικό πρόγραμμα, προσαρμοσμένο στην κλινική ανταπόκριση και στους λειτουργικούς στόχους."
+  nonredundant_goal_emphasis: "Επιπλέον στόχος: {goal_list}."
+  adjuncts: "Συμπληρωματικές επιλογές: {adjunct_list}, ως προσθήκη και όχι υποκατάστατο του ενεργητικού προγράμματος."
+  restrictions: "Να τηρηθούν οι καταγεγραμμένοι περιορισμοί: {restriction_list}."
+  clinician_note: "Κλινική σημείωση: {clinician_note}."
+
+join_policy:
+  zero: ""
+  one: "{0}"
+  two: "{0} και {1}"
+  many: "comma_then_kai"
+  block_separator: " "
+
+clinical_picture:
+  order:
+    - pain
+    - stiffness_symptom
+    - quadriceps_weakness
+    - objective_weakness
+    - weakness_symptom_or_context
+    - effusion
+    - combined_rom_restriction
+    - active_rom_restricted
+    - passive_rom_restricted
+    - balance_deficit
+  phrases:
+    pain: πόνο
+    stiffness_symptom: δυσκαμψία
+    weakness_symptom_or_context: μυϊκή αδυναμία
+    quadriceps_weakness: αδυναμία τετρακεφάλου
+    objective_weakness: αντικειμενικά διαπιστωμένη μυϊκή αδυναμία
+    effusion: ενδαρθρική συλλογή
+    combined_rom_restriction: περιορισμό ενεργητικού και παθητικού εύρους κίνησης
+    active_rom_restricted: περιορισμό ενεργητικού εύρους κίνησης
+    passive_rom_restricted: περιορισμό παθητικού εύρους κίνησης
+    balance_deficit: έλλειμμα ισορροπίας
+  precedence:
+    weakness:
+      priority: [quadriceps_weakness, objective_weakness, weakness_symptom_or_context]
+      emit_highest_only: true
+    rom:
+      when_all: [active_rom_restricted, passive_rom_restricted]
+      emit: combined_rom_restriction
+      suppress: [active_rom_restricted, passive_rom_restricted]
+  routed_to_function_instead_of_clinical_picture:
+    walking_limitation: walking_tolerance
+    stairs_limitation: stairs
+    sit_to_stand_limitation: sit_to_stand
+    sport_or_exercise_limitation: sport_gym
+
+functional_impact:
+  order:
+    - walking_tolerance
+    - standing_tolerance
+    - stairs
+    - sit_to_stand
+    - squat
+    - kneeling
+    - running
+    - sport_gym
+    - manual_work
+    - community_mobility
+    - patient_priority_activity
+  phrases:
+    walking_tolerance: στη βάδιση
+    standing_tolerance: στην παρατεταμένη ορθοστασία
+    stairs: στις σκάλες
+    sit_to_stand: στην έγερση από καθιστή θέση
+    squat: στο βαθύ κάθισμα
+    kneeling: στο γονάτισμα
+    running: στο τρέξιμο
+    sport_gym: στην άθληση ή την άσκηση
+    manual_work: στη χειρωνακτική εργασία
+    community_mobility: στην κοινοτική κινητικότητα
+    patient_priority_activity: στη δραστηριότητα προτεραιότητας του ασθενούς
+  source_aliases:
+    finding.walking_limitation: walking_tolerance
+    finding.stairs_limitation: stairs
+    finding.sit_to_stand_limitation: sit_to_stand
+    finding.sport_or_exercise_limitation: sport_gym
+  deduplicate_after_aliasing: true
+
+active_plan:
+  implicit_core_item: physiotherapy_assessment_and_individualized_active_rehabilitation
+  implicit_core_renders_as_list_item: false
+  order:
+    - therapeutic_exercise
+    - progressive_strengthening
+    - education_and_self_management
+    - mobility_exercise_when_restricted
+    - graded_activity_exposure
+    - progressive_endurance_or_capacity_work
+    - neuromuscular_proprioceptive_training
+    - balance_stepping_recovery_training
+    - gait_walking_practice
+    - functional_task_retraining
+    - home_exercise_programme
+    - walking_aid_assessment_and_training
+  phrases:
+    therapeutic_exercise:
+      default: θεραπευτική άσκηση
+    progressive_strengthening:
+      default: προοδευτική ενδυνάμωση
+      refinements:
+        - when_finding: quadriceps_weakness
+          phrase: προοδευτική ενδυνάμωση με έμφαση στον τετρακέφαλο
+    education_and_self_management:
+      default: εκπαίδευση και αυτοδιαχείριση
+    mobility_exercise_when_restricted:
+      default: ασκήσεις κινητικότητας
+      refinements:
+        - when_any_finding: [active_rom_restricted, passive_rom_restricted]
+          phrase: ασκήσεις κινητικότητας για το περιορισμένο εύρος κίνησης
+    graded_activity_exposure:
+      default: σταδιακή επανέκθεση σε δραστηριότητες
+    progressive_endurance_or_capacity_work:
+      default: προοδευτική βελτίωση αντοχής και λειτουργικής ικανότητας
+    neuromuscular_proprioceptive_training:
+      default: νευρομυϊκή και ιδιοδεκτική επανεκπαίδευση
+    balance_stepping_recovery_training:
+      default: εκπαίδευση ισορροπίας και αντιδράσεων ανάκτησης
+    gait_walking_practice:
+      default: επανεκπαίδευση βάδισης
+    functional_task_retraining:
+      default: λειτουργική επανεκπαίδευση
+      contextual_builder: functional_task_retraining
+    home_exercise_programme:
+      default: πρόγραμμα ασκήσεων στο σπίτι
+    walking_aid_assessment_and_training:
+      default: αξιολόγηση και εκπαίδευση στη χρήση βοηθήματος βάδισης
+      ui_exposure_in_step3: false
+
+functional_task_retraining:
+  trigger_is_selection_of_intervention_not_function: true
+  task_order: [stairs, sit_to_stand, squat, kneeling, running, manual_work, sport_gym, patient_priority_activity]
+  task_phrases:
+    stairs: σκάλες
+    sit_to_stand: έγερση από καθιστή θέση
+    squat: βαθύ κάθισμα
+    kneeling: γονάτισμα
+    running: τρέξιμο
+    manual_work: απαιτήσεις χειρωνακτικής εργασίας
+    sport_gym: άθληση ή άσκηση
+    patient_priority_activity: δραστηριότητα προτεραιότητας του ασθενούς
+  phrase_with_tasks: "λειτουργική επανεκπαίδευση για {task_list}"
+  phrase_without_tasks: λειτουργική επανεκπαίδευση
+
+adjuncts:
+  order: [manual_therapy, soft_tissue_techniques, acupuncture, taping, orthosis_or_brace_context]
+  phrases:
+    manual_therapy: manual therapy
+    soft_tissue_techniques: τεχνικές μαλακών μορίων
+    acupuncture: βελονισμός
+    taping: taping
+    orthosis_or_brace_context: νάρθηκας ή ορθωτικό βοήθημα
+  evidence_state_renders_in_referral: false
+  citations_render_in_referral: false
+  dry_needling_selectable: false
+  must_remain_subordinate_to_active_plan: true
+
+goals:
+  routine_screen_required: false
+  generic_redundant_suppressed_in_standard_output:
+    - reduce_symptom_irritability
+    - restore_safe_functional_rom
+    - improve_strength
+    - improve_endurance
+    - improve_motor_control
+    - improve_neuromuscular_control
+    - improve_balance_postural_control
+    - improve_walking_tolerance
+    - improve_stair_function
+    - improve_sit_to_stand_transfer_function
+    - improve_load_tolerance
+    - improve_self_management
+    - graded_return_to_activity
+  nonredundant_renderable:
+    graded_return_to_work: σταδιακή επιστροφή στην εργασία
+    graded_return_to_sport: σταδιακή επιστροφή στον αθλητισμό
+    optimize_safe_walking_aid_use: ασφαλής και αποτελεσματική χρήση βοηθήματος βάδισης
+    maintain_or_regain_adl_independence: διατήρηση ή ανάκτηση ανεξαρτησίας στις καθημερινές δραστηριότητες
+
+restrictions:
+  use_existing_cu1_labels: true
+  never_infer_from_diagnosis_or_evidence: true
+
+clinician_free_text:
+  append_literal_after_existing_normalization: true
+  reverse_parse_into_structure: false
+
+manual_edit:
+  default_mode: auto_live
+  explicit_secondary_action_required: true
+  buffer_persistence: none
+  reverse_inference: false
+  dirty_buffer_must_not_be_silently_overwritten: true
+
+weight_management:
+  selectable_in_step3: false
+  reason: no_dedicated_current_cu1_machine_id
+  auto_insert: false
+
+hard_invariants:
+  - suggestion_is_not_selection
+  - selection_is_required_for_plan_phrase
+  - stiffness_is_not_rom_restriction
+  - generic_weakness_is_not_objective_weakness
+  - functional_limitation_is_not_automatic_rehab_selection
+  - evidence_cue_is_not_referral_prose
+  - adjunct_is_not_core_rehabilitation
+  - output_projection_is_not_state_mutation
+  - manual_edit_is_not_structured_writeback
+  - missing_is_not_negative
+  - no_exact_exercise_dose_invention
+  - no_machine_id_leak
+  - routine_text_generation_is_deterministic
