@@ -1,94 +1,50 @@
-# CURRENT_OPERATIONAL.md — Step 6A Knee-OA qualifier refinement closeout
+# CURRENT_OPERATIONAL.md — Knee-OA independent review preparation
 
-> **STATUS:** STEP 6A PRODUCT-OWNER QUALIFIER REFINEMENT — IMPLEMENTED / FOCUSED TECHNICAL GATE PASS / CLOSED.
+> **STATUS:** PRODUCT-OWNER FUNCTIONAL/DESIGN ACCEPTANCE RECORDED / INDEPENDENT MULTI-AXIS REVIEW PREPARATION ACTIVE.
 > **Updated:** 2026-09-11 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Verified main:** `d9f312f6d2d596ec0bd4f35f6de56ad98dc34b37`.
-> **Frozen Step-4 parent:** `4e0e3206dd1e12a2e55a6abd18d2a6f7dbc3f7c6`.
-> **Step-5 closeout parent:** `c3f79a192a3fcac9fb11a5245df4e93312c4522a`.
-> **Branch:** `feat/physio-referral-knee-oa-prototype-v1-2026-09-11`.
-> **Closed slice:** `CU1-PRODUCT-KNEE-OA-PROTOTYPE-V1-1-QUALIFIERS-20260911`.
-> **Tested substantive head:** `243095ca9545bd2f96be8986520aeae8c3551c27`.
-> **Result record:** `clinic_utilities/physio_referral_product/KNEE_OA_STEP6A_QUALIFIER_REFINEMENT_RESULT.md`.
-> **ACTIVE RUNTIME / DESIGN / CANONICAL WRITER:** NONE; Step-6A writer released.
+> **Pinned accepted candidate branch/head:** `feat/physio-referral-knee-oa-prototype-v1-2026-09-11` @ `6539351c592c1dc3e49931057b63925dea3cb94d`.
+> **Tested substantive implementation head:** `243095ca9545bd2f96be8986520aeae8c3551c27`.
+> **Review-preparation branch:** `review/physio-referral-knee-oa-independent-v1-2026-09-11`.
+> **ACTIVE WRITER:** review-preparation docs only; prototype/runtime/evidence contracts are pinned read-only.
 > **PR / merge / deploy / production smoke authority:** NONE.
-> **Production API/UI/database/config/secrets/patient-data mutation:** NONE.
+> **Real-patient use / production integration:** NOT AUTHORIZED.
 
-## 1. Product result
+## 1. Product-owner acceptance now recorded
 
-The synthetic Knee-OA prototype now keeps the routine screen small while allowing clinically meaningful qualification on demand.
+The product owner reviewed the refined Knee-OA prototype direction and explicitly stated that the design is liked and authorized progression. This is accepted as product-owner design/functional-direction approval of the pinned Step-6A candidate, not as clinical validation, accessibility validation, commercial validation or release authority.
 
-Implemented and tested:
+The accepted candidate includes progressive-disclosure pain location (including pes-anserine region), weakness specificity/atrophy context, stiffness pattern/duration, fixed flexion deformity as a separate examination finding, compact summaries, evidence interaction, live deterministic referral and retained CU-1 safety authority.
 
-- pain location: medial/lateral joint line, anterior/peripatellar, posterior, diffuse and pes-anserine region;
-- pes-anserine location/tenderness refines wording but never auto-diagnoses bursitis;
-- weakness can remain generic or be explicitly qualified as objective/quadriceps, with optional visible atrophy context;
-- morning / post-inactivity stiffness refinement;
-- morning stiffness `>30′` appears as a non-blocking clinical-review clue, not a treatment command;
-- fixed flexion deformity with optional degrees remains an advanced examination finding, distinct from stiffness;
-- focal tenderness, extension lag and effusion remain compact power-user examination choices;
-- qualifiers change deterministic clinical prose and/or suggestion eligibility only within their documented scope; they do not silently select treatment.
+## 2. Exact next gate
 
-Existing Step-5 behavior is preserved when no new qualifier is selected.
-
-## 2. Exact gate evidence
+Prepare a reviewer-neutral packet against the pinned candidate above. The reviewer must not inherit the author's conclusions as truth and must independently examine four axes:
 
 ```text
-workflow: Physio Knee OA prototype gate
-run: 34627436841
-head: 243095ca9545bd2f96be8986520aeae8c3551c27
-result: SUCCESS
-
-existing real CU-1 / HTTP tests                 15 / 15 PASS
-new qualifier projection tests                   8 / 8 PASS
-existing exact frozen Greek output fixtures     15 PASS within existing suite
-existing Chromium browser tests                 12 / 12 PASS
-new qualifier Chromium browser tests             6 / 6 PASS
-Greek source-summary display coverage            54 positions
-packaged dependency-closure smoke                PASS
-scope + syntax guards                            PASS
+clinical / evidence integrity
+physiotherapy usefulness and professional autonomy
+UX / accessibility / cognitive load
+commercial value / retention / willingness-to-pay logic
 ```
 
-The gate preserved strict CSP. A browser-test harness error caused by string-eval polling was corrected to locator-based waiting rather than weakening CSP. Earlier compatibility failure that removed legacy explicit findings was also corrected; old explicit findings are preserved unless a new explicit qualifier takes ownership of the same narrow semantic group.
+A separate source-to-claim audit is also required for exact evidence fidelity and locator precision.
 
-## 3. Clinical/evidence boundary
+## 3. Review principles
 
-NICE NG226 remains the source for the product clue that morning stiffness longer than 30 minutes is outside its typical clinical OA diagnostic pattern. The clue does not infer an alternative diagnosis and does not block export by itself.
+The independent reviewer must explicitly answer:
 
-Pes-anserine pain/tenderness is represented as anatomical symptom/exam information only. It does not become an automatic diagnosis of pes-anserine bursitis.
+- what is clinically wrong, overstated, missing or potentially misleading;
+- what should be removed rather than added;
+- whether the referral is useful to a physiotherapist without becoming prescriptive;
+- whether progressive disclosure actually preserves speed;
+- whether evidence cues are understandable without training;
+- whether the product creates recurring value at approximately €9.99/month;
+- which findings are blockers before expansion to a second diagnosis;
+- which findings can wait until later productization.
 
-This refinement is not a renewed full Knee-OA literature review and does not alter the frozen Step-2 evidence states.
+No score may conceal material safety/evidence concerns. Any `PASS` requires a written material-open-finding statement.
 
-## 4. Preserved safety/privacy/release boundary
+## 4. HOLD
 
-The prototype remains:
-
-```text
-loopback-only
-synthetic-only
-not production-registered
-no patient persistence
-no analytics
-no AI request
-real inherited CU-1 validation/safety authority retained
-```
-
-No Learning Hub, RF, production CU-1, DB, auth, configuration, secret or deployed UI was mutated.
-
-## 5. Remaining acceptance
-
-```text
-product-owner synthetic usability / clinical-copy acceptance     PENDING
-actual iPhone Safari / VoiceOver                                 NOT TESTED
-complete accessibility/contrast audit                            NOT PERFORMED
-independent clinical / physio / UX / commercial review            NOT PERFORMED
-independent source-to-claim audit                                 NOT COMPLETED
-production integration / public preview                           NOT AUTHORIZED
-commercial pilot / willingness-to-pay                             NOT VALIDATED
-```
-
-## 6. Exact next action
-
-Return to **Step 6 product-owner testing of this refined synthetic candidate**. Evaluate whether the new depth is useful without slowing routine use, whether the Greek referral reads naturally, whether any qualifier should be removed, and whether the compact summary behaves as intended.
-
-Do not add a second diagnosis or more fields before that usability evidence. The agreed independent multi-axis review follows product-owner acceptance of the functional Knee-OA candidate.
+No new diagnosis, feature expansion, production CU-1 rewrite, public hosting, auth/billing, merge or deployment while the independent review candidate is being pinned and reviewed. Review findings may trigger a bounded replan; they do not authorize implementation automatically.
