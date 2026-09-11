@@ -1,127 +1,88 @@
-# SLICE_PLAN_CURRENT.md — Step 6A Knee-OA qualifier refinement
+# SLICE_PLAN_CURRENT.md — Knee-OA independent review slice
 
-> **STATUS:** IMPLEMENTED / FOCUSED TECHNICAL GATE PASS / CLOSED.
-> **Slice:** `CU1-PRODUCT-KNEE-OA-PROTOTYPE-V1-1-QUALIFIERS-20260911`.
-> **Branch:** `feat/physio-referral-knee-oa-prototype-v1-2026-09-11`.
-> **Parent closeout:** `c3f79a192a3fcac9fb11a5245df4e93312c4522a`.
-> **Tested substantive head:** `243095ca9545bd2f96be8986520aeae8c3551c27`.
+> **STATUS:** REVIEW-ONLY / CANDIDATE PINNED / NO IMPLEMENTATION AUTHORITY.
+> **Slice:** `CU1-PRODUCT-KNEE-OA-INDEPENDENT-REVIEW-V1-20260911`.
+> **Review branch:** `review/physio-referral-knee-oa-independent-v1-2026-09-11`.
+> **Pinned accepted candidate:** `6539351c592c1dc3e49931057b63925dea3cb94d`.
+> **Tested substantive implementation:** `243095ca9545bd2f96be8986520aeae8c3551c27`.
 > **Verified main:** `d9f312f6d2d596ec0bd4f35f6de56ad98dc34b37`.
 > **Writer:** NONE.
 > **Release / real clinical use:** NOT AUTHORIZED.
 
-## 1. Problem solved
+## 1. Purpose
 
-The Step-5 routine phenotype was clinically too coarse in pain, weakness and stiffness. Step 6A adds depth through progressive disclosure rather than a permanently larger form.
+Obtain an independent, reviewer-neutral assessment of the accepted single-diagnosis Knee-OA Physio Referral candidate before any second diagnosis, commercial pilot or production-integration planning.
 
-Frozen UX rule for this candidate:
+The product owner has accepted the design/functional direction. That acceptance does not replace independent clinical, physiotherapy, UX/accessibility, source-to-claim or commercial review.
 
-```text
-broad first tap
-→ reveal clinically meaningful qualifier only on demand
-→ retain a compact clinical-summary line in the routine flow
-```
-
-## 2. Pain refinement
-
-`Πόνος` remains one routine choice. Optional location supports:
+## 2. Exact reviewer inputs
 
 ```text
-medial_joint_line
-lateral_joint_line
-anterior_peripatellar
-pes_anserine_region
-posterior
-diffuse
+clinic_utilities/physio_referral_product/KNEE_OA_INDEPENDENT_REVIEW_PACKET_V1.md
+clinic_utilities/physio_referral_product/KNEE_OA_INDEPENDENT_REVIEW_PROMPT_V1.md
 ```
 
-Focal locations may coexist; `diffuse` is exclusive.
+The reviewer must inspect the pinned functional candidate and current evidence/contracts rather than relying on prior author PASS statements.
 
-Hard rule:
+## 3. Required review axes
 
 ```text
-pes-anserine symptom/tenderness location != autonomous pes-anserine bursitis diagnosis
+clinical / evidence integrity
+physiotherapy usefulness / professional autonomy
+UX / accessibility / cognitive load
+commercial differentiation / recurring value / willingness to pay
 ```
 
-## 3. Weakness refinement
+Material evidence claims also require separate source-to-claim integrity checking.
 
-Generic weakness remains the product phenotype unless the clinician explicitly qualifies it.
+## 4. Required finding severity
+
+Every finding must be classified:
 
 ```text
-objective
-quadriceps
-visible_atrophy
-atrophy_location: quadriceps | peri_knee_general
+BLOCKER
+MATERIAL BEFORE SECOND DIAGNOSIS
+MATERIAL BEFORE COMMERCIAL PILOT
+IMPROVEMENT
+LATER / OPTIONAL
 ```
 
-Explicit objective/quadriceps qualifiers map to the existing canonical CU-1 finding IDs. New qualifier state replaces an older weakness-specific finding only when explicitly selected; otherwise legacy explicit findings remain unchanged.
+The review must explicitly answer what should be removed, not only what could be added.
 
-## 4. Stiffness refinement
+## 5. Review invariants
 
 ```text
-morning
-after_inactivity
-morning duration: ≤30′ | >30′
+technical PASS != clinical validation
+product-owner acceptance != independent validation
+insufficient evidence != ineffective
+symptom/location != diagnosis
+suggestion != treatment selection
+guideline disagreement must remain visible
 ```
 
-`>30′` creates a review clue linked to NICE NG226. It does not create an alternative diagnosis, does not itself block export, and does not automatically change/select treatment.
+No reviewer score may conceal a material safety/evidence finding.
 
-## 5. Examination / power-user layer
+## 6. Review output
 
-Remain outside the routine surface:
+Return one verdict only:
 
 ```text
-extension lag
-joint effusion
-fixed flexion deformity + optional degrees
-focal tenderness + optional anatomic location
+REVIEW PASS
+CONDITIONAL PASS
+REVIEW HOLD
 ```
 
-Fixed flexion deformity is an examination finding, not a synonym for stiffness. An explicitly selected FFD can make the existing mobility suggestion eligible through documented clinical mapping; it still does not select mobility treatment.
-
-## 6. Deterministic referral behavior
-
-The frozen Step-3 renderer remains the base. Step-6A adds only bounded product-local specificity:
-
-- pain localization;
-- stiffness pattern/duration;
-- atrophy qualifier;
-- localized tenderness;
-- explicit fixed flexion deformity examination prose.
-
-If no new qualifier is selected, Step-5 exact outputs remain unchanged.
-
-## 7. Acceptance obtained
-
-Exact substantive gate:
+and include:
 
 ```text
-workflow  Physio Knee OA prototype gate
-run       34627436841
-head      243095ca9545bd2f96be8986520aeae8c3551c27
-result    SUCCESS
+MATERIAL OPEN FINDINGS: <number>
+BLOCKERS: <number>
+TOP 3 CORRECTIONS
+TOP 3 THINGS NOT TO CHANGE
 ```
 
-Coverage at that head:
+## 7. Stop rule
 
-```text
-existing backend/HTTP                         15 / 15 PASS
-new qualifier projection                      8 / 8 PASS
-frozen exact Greek outputs                    15 PASS within existing suite
-existing Chromium                            12 / 12 PASS
-new qualifier Chromium                        6 / 6 PASS
-source-summary display                        54 positions
-package dependency closure                    PASS
-scope/syntax                                  PASS
-```
+Review is analysis only. Do not implement fixes during review. Findings first return to the product owner for disposition and prioritization.
 
-The tests explicitly cover pes-anserine without auto-bursitis diagnosis, generic weakness without objective inference, explicit quadriceps + atrophy refinement, stiffness >30′ review without treatment/block, fixed flexion deformity distinct from stiffness, focal pes-anserine tenderness, parent-deselect cleanup and mobile reflow.
-
-## 8. Explicit remaining acceptance
-
-The technical gate is not product-owner acceptance or independent review. Still pending: real product-owner synthetic use, final Greek copy judgment, iPhone Safari/VoiceOver, complete accessibility/contrast audit, independent clinical/physio/UX/commercial review and source-to-claim audit.
-
-## 9. Hold / next action
-
-Return to Step-6 product-owner testing of this exact refined candidate. Do not add more fields or a second diagnosis until that testing demonstrates a concrete need.
-
-No production integration, real patient data, persistence, public/LAN hosting, billing/auth, autonomous evidence update, PR/merge/deploy or production smoke is authorized.
+No second diagnosis, feature expansion, production CU-1 rewrite, public hosting, auth/billing, merge, deployment or commercial pilot before review findings are dispositioned.
