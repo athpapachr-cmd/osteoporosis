@@ -51,7 +51,7 @@ function notice(text) {
 }
 function focusedKey() { return document.activeElement?.getAttribute('data-key'); }
 function restoreKey(key) {
-  if (!key || (document.activeElement !== document.body && document.activeElement?.isConnected)) return;
+  if (!key || (document.activeElement !== document.body && document.activeElement?.isConnected && document.activeElement.getClientRects().length)) return;
   const target=$$('[data-key]').find(n=>n.getAttribute('data-key')===key && n.getClientRects().length);
   target?.focus({preventScroll:true});
 }
@@ -81,7 +81,7 @@ async function refresh(candidate=null) {
     if(token!==seq || oldId!==draftId || oldRevision!==revision) return;
     if(next.draft_id!==draftId || next.package_version!==meta.package_version || next.revision!==revision+(candidate?1:0)) throw new Error('stale_projection');
     if(candidate){ state=next.state; revision=next.revision; bubbleItem=candidate.item_id; }
-    const previousLabel=response?.readiness?.label; response=next; pending=false; paint(); if(previousLabel!==next.readiness.label)announce(next.readiness.label);
+    const previousLabel=response?.readiness?.label; response=next; pending=false; paint(); if(candidate && !sheetView) $$('#plan [data-select]').find(b=>b.dataset.select===candidate.item_id)?.focus({preventScroll:true}); if(previousLabel!==next.readiness.label)announce(next.readiness.label);
   } catch(error) {
     if(error.name==='AbortError' || token!==seq) return;
     response=null; pending=false; paint(); announce('Η παραπομπή δεν είναι διαθέσιμη για εξαγωγή. Ελέγξτε τα στοιχεία ή τη σύνδεση με το τοπικό prototype.');
@@ -93,7 +93,7 @@ function evidenceButton(item) {
 }
 function row(item,category) {
   const view=response?.evidence?.[item]; const code=view?.evidence_state || (meta.defaults.includes(item)?'recommended_or_supported':'conditional_or_context_dependent');
-  const title=make('span',{class:'row-title '+(view?.all_sources_active===false?'unavailable':'e-'+code)},[
+  const title=make('span',{class:'row-title '+(view?.all_sources_active?'e-'+code:'unavailable')},[
     cueNode(code),label(item),
     make('span',{class:'sr-only',text:' · '+meta.states[code].label+(view?.all_sources_active===false?' · η τεκμηρίωση χρειάζεται έλεγχο':'')})]);
   const selected=state[category].includes(item);
@@ -209,7 +209,7 @@ function openSheet(type,item=null,back=null) {
   if(type==='evidence') {
     const view=response?.evidence?.[item]; if(!view) return notice('Η τεκμηρίωση δεν είναι διαθέσιμη ακόμη.');
     title=label(item);
-    body.append(make('p',{class:'sheet-state e-'+view.evidence_state},[cueNode(view.evidence_state),view.evidence_label]));
+    body.append(make('p',{class:'sheet-state '+(view.all_sources_active?'e-'+view.evidence_state:'unavailable')},[cueNode(view.evidence_state),view.all_sources_active?view.evidence_label:'Τελευταία καταγεγραμμένη θέση: '+view.evidence_label]));
     if(!view.all_sources_active) body.append(make('p',{class:'scope-caption',text:'Η τεκμηρίωση χρειάζεται έλεγχο. Διατηρείται η τελευταία καταγεγραμμένη θέση.'}));
     body.append(make('p',{class:'purpose',text:view.purpose}));
     for(const p of view.positions) {
@@ -237,7 +237,7 @@ function openSheet(type,item=null,back=null) {
   } else if(type==='suggestions') {
     title='Προτάσεις';for(const c of response?.suggestions||[]) body.append(suggestionCard(c,true));
   } else if(type==='menu') {
-    title='Παραπομπή';for(const [caption,key] of [['Επεξεργασία κειμένου','data-edit'],['Εκτύπωση / PDF','data-print'],['Νέα παραπομπή','data-new']]) body.append(btn(caption,{class:'menu-action',[key]:''}));
+    title='Παραπομπή';for(const [caption,key] of [['Επεξεργασία κειμένου','data-edit'],['Εκτύπωση / PDF','data-print'],['Νέα παραπομπή','data-new']]) {const action=btn(caption,{class:'menu-action',[key]:''});action.disabled=key!=='data-new'&&(!fresh()||!response.gate.allowed);body.append(action);}
   } else if(type==='manual') {
     title='Επεξεργασία';
     if(!manual){if(!fresh()||!response.gate.allowed)return notice('Συμπλήρωσε πρώτα τα απαραίτητα στοιχεία.');manual={text:response.text,baseRevision:revision};}
