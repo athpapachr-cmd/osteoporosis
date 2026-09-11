@@ -1,124 +1,98 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** CLINICAL LEARNING HUB L-1D — MERGED / DEPLOYED / PRODUCTION-SMOKE-VERIFIED / CLOSED
+> **STATUS:** PHYSIO REFERRAL PRODUCTIZATION — KNEE-OA EVIDENCE MODULE / DESIGN ACTIVE
 > **Updated:** 2026-09-11 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Slice:** `CORE-LEARNING-HUB-L1D-CLIPBOARD-HANDOFF-2026-09-10`.
-> **PR #86:** CLOSED / MERGED.
-> **Reviewed PR head:** `5e524c552001c2899e5a274e7af103ae575fd669`.
-> **Exact tested runtime head:** `d94b9a17b60299e098a5c58722542b6d8d68827d`.
-> **Squash merge SHA:** `e0ecf43b5c4e96f20be7a777bfec65a87641d339`.
-> **Production-verified deploy commit:** `833fddb15f41e78071b25c5807a120c8237377ac`.
-> **Render deploy:** `dep-dah21hpsrm7s7392hu90` — LIVE.
-> **ACTIVE RUNTIME/DESIGN WRITER:** NONE.
-> **Production config/secret authority exercised:** NO.
+> **Fresh base `main`:** `d9f312f6d2d596ec0bd4f35f6de56ad98dc34b37`.
+> **Active branch:** `design/physio-referral-knee-oa-evidence-v1-2026-09-11`.
+> **Active slice:** `CU1-PRODUCT-KNEE-OA-EVIDENCE-V1-2026-09-11`.
+> **ACTIVE DESIGN/CANONICAL WRITER:** this bounded Physio Referral Knee-OA evidence-design slice only.
+> **ACTIVE RUNTIME WRITER:** NONE.
+> **Production config/secret authority:** NONE.
 > **Patient-data mutation authority:** NONE.
-> **Raw-transcript authority:** NONE.
-> **DailyCase/PracticeReview/Signal authority:** NONE.
-> **Physiotherapy/CU-1/RF authority:** NONE.
+> **Deploy/production-smoke authority:** NONE.
 
 ---
 
-# 1. Released L-1D workflow
+# 1. Prior closed state
 
-The default Clinical Learning Hub Inbox includes the clinician-initiated quick handoff action:
+Clinical Learning Hub L-1D is `MERGED / DEPLOYED / PRODUCTION-SMOKE-VERIFIED / CLOSED`. Its frozen/runtime owners are read-only for this slice. No Learning Hub runtime, schema, database, transcript, Practice Review or Signal work is authorized here.
 
-`Paste & Send Challenge`
-
-Production workflow:
-
-```text
-Challenge conversation
-→ Copy structured synthetic Challenge artifact
-→ Clinical Learning Hub / Inbox
-→ explicit Paste & Send Challenge tap
-→ existing protected POST /clinical/learning/api/imports
-→ pending_review candidate
-→ clinician Review & Save
-```
-
-No accepted Challenge is created by the clipboard action itself.
+Existing CU-1 Physiotherapy Referral v2 is already implemented/tested/merged/deployed. Its production runtime and frozen broad taxonomy are not being mutated in this design slice.
 
 ---
 
-# 2. Production verification
+# 2. Product-owner direction
 
-Render auto-deploy completed successfully on the current docs-only descendant carrying the merged L-1D runtime:
+The product owner authorized continuation of the Physio Referral productization work after completion of the separate Learning Hub workstream.
 
-```text
-service = srv-d5qfk31r0fns73di596g
-deploy = dep-dah21hpsrm7s7392hu90
-commit = 833fddb15f41e78071b25c5807a120c8237377ac
-trigger = new_commit
-status = live
-finished = 2026-09-10T03:17:02Z
-```
-
-The product owner then completed an authenticated production smoke and reported that:
+The first commercial/product vertical slice remains deliberately limited to:
 
 ```text
-Copy from Challenge = worked
-Paste & Send Challenge = worked
-Inbox import/review flow = worked
+Knee Osteoarthritis only
 ```
 
-This closes the L-1D acceptance objective. The prior L-1B clinician review / Learning Loop activation path was already production-smoke-verified separately; this smoke specifically verifies the new clipboard handoff layer reaches and works with that existing review path.
+The frozen Step-1 UX contract has been carried forward onto the fresh 2026-09-11 `main` ancestry at:
+
+```text
+clinic_utilities/physio_referral_product/UX_CONTRACT_CURRENT.md
+```
+
+Target product positioning remains an evidence-aware, fast referral assistant suitable for later subscription around the previously selected initial price point of approximately €9.99/month, not a simple text generator.
 
 ---
 
-# 3. Security / authority preserved
+# 3. Current authorized work — Step 2 only
+
+Design and freeze the Knee-OA evidence knowledge module.
+
+Required outputs:
 
 ```text
-LEARNING RECORD != PATIENT RECORD
-clipboard access requires explicit user gesture
-clipboard content is not persisted in browser storage
-raw transcript is not an accepted learning artifact
-existing PHI guard remains authoritative
-pending_review only at handoff
-no auto-accept
-no imported clinician-review authority
-no imported reference-verification authority
-no Foundation state mutation
-no Signal promotion
-no patient reads/writes
-no new backend endpoint/table/schema
-no CLINICAL_LEARNING_INGEST_KEY configuration
-no native MCP/write-tool claim
+reviewed source registry
+per-intervention source positions
+explicit evidence-state semantics
+cross-guideline conflict semantics
+positive suggestion triggers
+caution / limited-evidence triggers
+source-year vs product-reviewed-on separation
+machine-readable Step-2 contract
+human-readable design rationale
 ```
 
-The L-1D convenience surface reuses the existing protected `/clinical/learning/api/imports` path and does not expand write authority.
+Clinical evidence must remain source-specific. Conflicting frameworks must not be silently averaged into a fake consensus.
 
 ---
 
-# 4. Verification evidence
+# 4. Explicit non-authority / hold
 
-Exact tested runtime head:
+Until a later separate product-owner implementation decision:
 
-`d94b9a17b60299e098a5c58722542b6d8d68827d`
+```text
+NO CU-1 runtime code mutation
+NO production UI rewrite
+NO second diagnosis
+NO frozen broad CU-1 taxonomy expansion unless Step-2 review proves a concrete contradiction and triggers REPLAN
+NO patient persistence
+NO billing/auth/entitlement implementation
+NO autonomous literature-to-live-rule updating
+NO PR merge
+NO deploy
+NO production smoke
+```
 
-PR-head gates:
-
-- Clinical Learning L1C challenge transport gate `34431909196` — **SUCCESS**.
-- Clinical Learning L1B regression gate `34431909214` — **SUCCESS**.
-- Clinical Learning L1 regression gate `34431909207` — **SUCCESS**.
-- L0 contract validation step — **SUCCESS**; overall L0 workflow failure was only the expected design-only scope rejection for a non-L0 runtime slice.
+The current branch is design/canonical/evidence-contract work only.
 
 ---
 
-# 5. Lifecycle state
+# 5. Exact next action
 
 ```text
-L-1D IMPLEMENTED = YES
-L-1D TESTED = YES
-L-1D REVIEWED = PASS
-L-1D MERGED = YES
-L-1D DEPLOYED = YES
-PRODUCTION CLIPBOARD SMOKE = PASS
-PASTE & SEND UX = PRODUCTION VERIFIED
-MANUAL INBOX FALLBACK = AVAILABLE
-WRITER LOCK = NONE
-PRODUCTION INGEST KEY = NOT CONFIGURED
-NATIVE CHATGPT WRITE TOOL = NOT CONNECTED
+review current authoritative Knee-OA guidance/evidence
+→ map only interventions relevant to the existing CU-1 Knee-OA state/options
+→ determine whether the frozen five-state UX evidence model is sufficient
+→ if cross-guideline disagreement cannot be represented honestly, record explicit REPLAN rather than hide conflict
+→ create human + machine Step-2 evidence contracts
+→ perform exact design review
+→ freeze/release writer lock if clean
 ```
-
-L-1D is closed. Future zero-click ChatGPT → Cockpit transport, MCP/app integration or cron reconciliation remains a separate explicitly governed integration slice and must not be inferred from this closeout.
