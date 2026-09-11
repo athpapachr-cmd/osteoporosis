@@ -1,5 +1,5 @@
 version: knee_oa_template_contract_v1
-status: design_candidate_review_hardened_v2
+status: design_candidate_review_hardened_v3
 language: el
 scope:
   profile_id: knee
@@ -56,7 +56,6 @@ product_supported_input_scope:
     - balance_deficit
     - joint_line_pain
     - anterior_peripatellar_pain
-    - true_locking_or_major_mechanical_rom_block
     - subjective_giving_way
     - recurrent_instability_episode
     - effusion
@@ -164,7 +163,6 @@ clinical_picture:
     - balance_deficit
     - subjective_giving_way
     - recurrent_instability_episode
-    - true_locking_or_major_mechanical_rom_block
   phrases:
     pain: πόνο
     joint_line_pain: πόνο στη μεσάρθρια γραμμή
@@ -185,7 +183,6 @@ clinical_picture:
     balance_deficit: έλλειμμα ισορροπίας
     subjective_giving_way: υποκειμενικό αίσθημα υποχώρησης του γόνατος
     recurrent_instability_episode: υποτροπιάζοντα επεισόδια αστάθειας
-    true_locking_or_major_mechanical_rom_block: πραγματικό κλείδωμα ή σημαντικό μηχανικό περιορισμό κίνησης
   precedence:
     pain:
       generic: pain
@@ -362,6 +359,14 @@ manual_edit:
   reverse_inference: false
   dirty_buffer_must_not_be_silently_overwritten: true
 
+integration_findings:
+  true_locking_or_major_mechanical_rom_block:
+    current_cu1_finding_exists: true
+    current_rule_catalog_auto_safety_trigger_from_finding: false
+    product_selectable_in_step3: false
+    reason: routine_product_must_not_render_structural_red_flag_like_context_without_explicit_inherited_safety_mapping
+    later_action: bounded_safety_reassessment_mapping_before_product_exposure
+
 weight_management:
   selectable_in_step3: false
   reason: no_dedicated_current_cu1_machine_id
@@ -370,6 +375,7 @@ weight_management:
 hard_invariants:
   - diagnosis_must_be_clinician_asserted_before_copy
   - every_selected_product_item_must_render_or_block
+  - true_locking_not_product_exposed_without_safety_mapping
   - suggestion_is_not_selection
   - selection_is_required_for_plan_phrase
   - stiffness_is_not_rom_restriction
