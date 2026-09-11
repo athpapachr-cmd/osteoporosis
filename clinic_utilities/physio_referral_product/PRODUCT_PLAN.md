@@ -1,10 +1,10 @@
 # PRODUCT_PLAN.md — Physio Referral productization
 
-> **STATUS:** PRODUCT-OWNER APPROVED DIRECTION — STEPS 1–4 DESIGNED / FROZEN.
+> **STATUS:** STEPS 1–4 FROZEN; STEP 5 FUNCTIONAL SYNTHETIC PROTOTYPE IMPLEMENTED / TECHNICAL GATE PASS.
 > **Updated:** 2026-09-11 Asia/Nicosia.
 > **Parent:** existing CU-1 Physiotherapy Referral v2.
 > **First vertical slice:** Knee Osteoarthritis only.
-> **Runtime implementation authority:** NONE at this stage.
+> **Runtime implementation authority:** bounded Step-5 prototype completed; writer closed. No production authority.
 
 ---
 
@@ -195,6 +195,12 @@ Step 4 freezes distinct selection/evidence/availability/safety signals, six visi
 
 The Step-4 design checker is not the production application or an independent clinical review. Current clinical locators have source-level precision. Actual accessibility, final Greek source summaries, usability and independent source-to-claim verification remain later acceptance work.
 
+## Functional prototype boundary
+
+Step 5 implemented the flow in an isolated loopback-only application using the real existing CU-1 validation engine. Its focused technical gate passed 15 backend/HTTP and 12 actual Chromium tests, including exact-output, selection, source, safety, revision, manual-edit and packaging checks. These results do not substitute for the product owner's trial or independent review.
+
+The prototype intentionally reuses frozen design-checker functions for composition and evidence. This temporary dependency must be separately reviewed/extracted before a production implementation. It has no public hosting, production router integration, patient storage or account/billing system. All exports are marked synthetic and non-clinical.
+
 ## Update governance
 
 No autonomous literature-to-live-rule updates.
@@ -289,11 +295,11 @@ STEP 1 — UX interaction contract                         COMPLETE / FROZEN
 STEP 2 — Knee-OA evidence knowledge module              COMPLETE / FROZEN / DESIGN PASS
 STEP 3 — dynamic referral/template contract             COMPLETE / FROZEN / DESIGN PASS
 STEP 4 — evidence interaction/traceability contract     COMPLETE / FROZEN / ACTIVE-WRITER DESIGN PASS
-STEP 5 — prototype                                      NEXT IMPLEMENTATION GATE; NOT AUTHORIZED BY CLOSEOUT
-STEP 6 — test/product-owner review                      PENDING
+STEP 5 — functional synthetic local prototype           IMPLEMENTED / FOCUSED TECHNICAL GATE PASS
+STEP 6 — product-owner usability / clinical-copy review NEXT; NOT YET PERFORMED
 STEP 7 — independent multi-axis review                  PENDING
 STEP 8 — bounded refinement                             PENDING
 STEP 9 — external clinician/commercial pilot            PENDING
 ```
 
-No runtime implementation, PR merge, deploy or production smoke is authorized merely by completion of Steps 1–4.
+The separate Step-5 implementation authorization has been exercised and its writer closed. Completion of the prototype does not authorize production integration, real clinical use, public hosting, PR, merge, deploy or production smoke.

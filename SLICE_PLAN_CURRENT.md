@@ -1,47 +1,56 @@
 # SLICE_PLAN_CURRENT.md — Step 5 functional Knee-OA prototype
 
-> **STATUS:** IMPLEMENTATION AUTHORIZED / ACTIVE; SYNTHETIC NON-PRODUCTION ONLY.
-> **Slice:** CU1-PRODUCT-KNEE-OA-PROTOTYPE-V1-20260911.
-> **Branch:** feat/physio-referral-knee-oa-prototype-v1-2026-09-11.
-> **Frozen parent:** 4e0e3206dd1e12a2e55a6abd18d2a6f7dbc3f7c6.
-> **Verified main:** d9f312f6d2d596ec0bd4f35f6de56ad98dc34b37.
-> **Authority:** product-owner progression to the explicitly named Step-5 functional prototype; no release authority.
+> **STATUS:** IMPLEMENTED / FOCUSED TECHNICAL ACCEPTANCE PASS / CLOSED FOR PRODUCT-OWNER TESTING.
+> **Slice:** `CU1-PRODUCT-KNEE-OA-PROTOTYPE-V1-20260911`.
+> **Branch:** `feat/physio-referral-knee-oa-prototype-v1-2026-09-11`.
+> **Frozen parent:** `4e0e3206dd1e12a2e55a6abd18d2a6f7dbc3f7c6`.
+> **Verified main:** `d9f312f6d2d596ec0bd4f35f6de56ad98dc34b37`.
+> **Tested substantive head:** `6595bf4cc41388dbd796f9ba5b53ae7c49bafdee`.
+> **Writer:** NONE.
+> **Release / real clinical use:** NOT AUTHORIZED.
 
-## Scope and entrypoint
+## 1. Implemented boundary
 
-Only new files in `clinic_utilities/physio_referral_product/prototype/`, a focused workflow and supporting canonical/progress records. The runnable entrypoint is `python clinic_utilities/physio_referral_product/prototype/server.py`, binding exclusively to `127.0.0.1`. No production FastAPI/router/static registration; existing CU-1, Learning Hub, RF, database and clinical contracts remain read-only.
+Only new `clinic_utilities/physio_referral_product/prototype/` code, `.github/workflows/physio-knee-oa-prototype.yml` and supporting canonical/progress documents. No production router/static registration or mutation of existing CU-1, Learning Hub, RF, database, clinical contracts or evidence positions.
 
-Read-only dependencies: real CU-1 engine validation; its existing Greek label owner; pinned Step-3 template and composition functions; pinned Step-4 evidence/suggestion functions. Reusing design functions is an explicit synthetic-prototype coupling, not a production architecture claim. Later productionization requires a separate bounded extraction/integration review. No silently substituted mock safety clearance is permitted in integration tests or delivered server.
+Entrypoint: `python clinic_utilities/physio_referral_product/prototype/server.py`. Bind: `127.0.0.1:8765`, with optional local port override. No public or LAN service is authorized.
 
-## Data contract and isolation
+The actual CU-1 engine owns validation/safety. Existing Greek labels and frozen Step-3 composition / Step-4 evidence and suggestion functions are reused read-only. Reuse of design-checker functions is a deliberate synthetic-prototype dependency, not the approved production architecture. Later extraction/production integration requires a new bounded review.
 
-`draft_id` UUID + nonnegative `revision` + fixed `package_version` + `synthetic_only=true` + bounded `state` + draft-local `dismissed` identities. Unsupported keys/types/IDs and stale candidates fail closed with sanitized errors. The product phenotype remains exactly stiffness and generic weakness; no inference of measured ROM or objective weakness. Restrictions and clinician note remain ephemeral. No raw request values in logs, URLs, analytics, browser storage or files.
+## 2. Data, transport and authority
 
-Transport is local JSON POST only with a custom header, bounded body, exact loopback Host and same-origin enforcement. Static GET is allowlisted. No CORS, directory listing, remote backend, credentials or automatic source requests. Source URLs are static reviewed HTTPS links activated explicitly.
+The ephemeral request contains UUID draft identity, nonnegative revision, fixed package version, `synthetic_only=true`, bounded selected state and draft-local dismissal keys. Unknown keys/types/IDs and stale suggestions are rejected. Neither the browser nor caller may forge validation, safety acknowledgement or clearance.
 
-## UI and projection
+Allowed state preserves two phenotype booleans, positive selected findings/functions, selected rehabilitation/adjuncts/goals, explicit restrictions and normalized literal clinician note. Stiffness is not measured ROM; generic weakness is not objective weakness. No patient identity or history store was added.
 
-Mobile-first Greek interface; neutral selection checks are distinct from the six evidence cues. Laterality and explicit diagnosis assertion remain necessary. Three evidence-backed defaults; small clinical-picture choices and progressive function disclosure; compact advanced groups. Selected optional interventions appear in the visible plan rather than being duplicated in advanced menus. Counts retain unique advanced canonical selections.
+Transport is allowlisted local GET and bounded JSON POST. Exact loopback Host/peer, same-origin policy, custom request header, no CORS, no directory listing, no-store/CSP/referrer headers and silent request logging were implemented. Source links are deliberate static HTTPS navigation only. No analytics or AI requests.
 
-Server validation precedes text projection. Every clinical state change invalidates export immediately. A response applies only to the same draft/revision/package/request sequence. All exports share one guard; printed/copied text carries an explicit synthetic/non-clinical marker. PDF is browser print-to-PDF, not a separate server PDF generator.
+## 3. Clinical flow and export
 
-One non-timed evidence message; one native modal dialog host. Info controls do not toggle selection. The mixed-source first disclosure preserves all source directions and bounded faithful Greek summaries, with original recorded wording and native strength inspectable. Greek display translation does not constitute new clinical source review. Other sources retain original recorded wording beneath explicit source/scope labels.
+Explicit clinician diagnosis assertion and side precede a copy-ready result. Selected state updates the real CU-1 gate and deterministic Greek text. Every change immediately invalidates export until a matching draft/revision/package response arrives. Stale or failing responses cannot preserve an old exportable referral.
 
-Manual edited text has an independent in-memory buffer. Structured changes preserve it but disable export until explicit reconciliation. Evidence viewing/dismissal does not edit it. Reset/pagehide/BFCache handling clears draft-scoped state.
+The UI separates neutral selection from six evidence cues. Advanced options stay compact and retain unique selected IDs; selected optional interventions move to the visible plan rather than creating duplicate visible controls. A suggestion cannot add treatment without an explicit action and current-candidate validation.
 
-## Focused evidence plan
+One evidence message has no timer; one modal host presents summary, source direction, scope, original recorded wording/strength and source links. Mixed guidance preserves all positions at first disclosure. Greek display translations do not renew the clinical-review date. No exact recommendation/page locator is invented.
 
-New integration acceptance, not reassurance reruns of unchanged owners:
+Manual text is a separate ephemeral buffer. Structured changes retain it but require reconciliation before export. Copy and browser print/PDF share the guard and carry the synthetic/non-clinical stamp. Browser print-to-PDF is not a separate server PDF generator or proof of real print-dialog interoperability.
 
-1. Real CU-1 validation adapter: default valid route, absent assertion/laterality, actual safety block, forged gate/ack rejection, unsupported selections, input type/size hygiene.
-2. Every inherited Step-3 supported render fixture through the new adapter, checking exact Greek output; hidden walking-aid/dry-needling/weight-management remain excluded.
-3. Suggestions: explicit add, changed revision/draft/package rejection, deduplication, source captions, no auto-treatment, inactive-source suppression.
-4. Browser against the actual server: routine path, isolated info tap, all-source disagreement, advanced persistence, source-backed add, manual reconciliation, safety and network failure export blocking, reset and no storage.
-5. Layout: 320/390/desktop widths, 200% text sizing, touch targets, focus/modal behavior, reduced motion and forced colours. Distinguish automated Chromium coverage from real Safari/VoiceOver and clinical/product-owner acceptance.
-6. Scope/identity check: frozen inputs unchanged, no production source touched, exact-head focused gate and explicit writer review limitations.
+## 4. Executed focused acceptance
 
-An isolated mocked transport may help local visual inspection when network access prevents a checkout. Its screenshots/measurements are visual-only and must never be called real CU-1 integration evidence. CI must use the real repository/server.
+Run `34569247051`, job `103167619691`, succeeded at the exact substantive head:
 
-## Completion and HOLD
+- 15 real CU-1 adapter/HTTP test methods, including 15 exact inherited Greek output fixtures;
+- 54 source positions with Greek display summaries and preserved source scope;
+- 12 actual Chromium tests against the actual local HTTP server and CU-1 engine;
+- packaged real-CU1 dependency-closure smoke;
+- syntax and changed-path scope checks.
 
-Record implemented versus actually tested versus pending. Release writer at a clean checkpoint. Step 6 is product-owner usability/clinical-copy acceptance; Step 7 is independent multi-axis review. Neither is inherited from author tests. No PR, merge, deployment, production smoke, real clinical use, subscription system, second diagnosis, autonomous evidence updates or patient persistence.
+The preceding run exposed modal keyboard focus escape. The correction changed the UI, retained the failing test, and passed the full focused gate. Local mocked transport was used only for preparatory visual inspection; it is not clinical or integration evidence. Actual CI screenshots are supplied separately.
+
+## 5. Deferred acceptance and stop rule
+
+Real iPhone Safari/VoiceOver, actual browser BFCache navigation, complete contrast/accessibility audit, clinical acceptance of source summaries, external usability, independent clinical/physio/UX/commercial review and willingness-to-pay remain unproven. Simulated lifecycle events and narrow Chromium viewports must not be called real-device tests.
+
+No broad taxonomy change: hidden walking-aid, weight-management, dry-needling and true-locking seams remain as previously scoped. No second diagnosis, real-patient use, persistence, billing, public hosting or production release.
+
+The bounded implementation objective is complete. Next is **Step 6 product-owner trial**, then the independent review. Do not continue adding features under the closed Step-5 writer.

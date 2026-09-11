@@ -254,3 +254,25 @@ No product runtime, API, existing formatter, production UI, database, clinical t
 Remaining acceptance is explicit: actual visual/mobile prototype, Safari/VoiceOver and measured contrast/reflow, final reviewed Greek source summaries, source-to-claim independent verification, product-owner usability and independent clinical/physiotherapy/UX/commercial review. Current clinical locators point to sources, not verified individual recommendation numbers/pages.
 
 Next: **Step 5 bounded functional Knee-OA prototype implementation gate**, requiring its own authorization and writer scope. No second diagnosis or commercial release is inferred from this design closeout.
+
+---
+
+## 2026-09-11 — Step-5 functional synthetic prototype implemented and technically tested
+
+After explicit product-owner progression to Step 5, a new isolated branch was created from the frozen Step-4 parent:
+
+```text
+branch feat/physio-referral-knee-oa-prototype-v1-2026-09-11
+parent 4e0e3206dd1e12a2e55a6abd18d2a6f7dbc3f7c6
+tested substantive head 6595bf4cc41388dbd796f9ba5b53ae7c49bafdee
+```
+
+The prototype is runnable locally on `127.0.0.1` and has not been registered with or deployed into production. The actual CU-1 engine owns validation and safety; frozen Step-3/4 functions are read-only prototype dependencies. The new Greek UI includes live text, source-aware suggestions, distinct evidence/selection state, a single evidence sheet, compact advanced choices, guarded manual-text reconciliation, synthetic copy/print and in-memory-only draft state.
+
+Initial CI run `34568902516` passed the backend suite but failed one of twelve real browser tests because Tab could leave the modal. The application was corrected without weakening the test. Corrected exact-head run `34569247051`, job `103167619691`, passed all 15 backend/HTTP methods, 12 real Chromium tests and packaged dependency-closure smoke. Backend coverage includes 15 exact frozen Greek-output fixtures and 54 Greek source-summary display positions; those counts are not additional independent clinical tests.
+
+The tested downloadable artifact `10187149429` contains the runnable source ZIP and actual desktop/mobile/evidence screenshots. The ZIP includes setup instructions and a build source/file-hash manifest. Seventy-seven packaged file hashes were verified after download; no font binary is supplied. No production code, clinical source recommendation, patient storage, production configuration or secret was changed. No PR, merge, deploy or production smoke occurred.
+
+`KNEE_OA_PROTOTYPE_REVIEW_V1.md` records the author's technical review, including the initial failure and final passing identity. It is not independent clinical, accessibility or commercial review. Greek summaries still require clinical acceptance; source links remain source-level. Actual Safari/VoiceOver, live BFCache, complete accessibility audit, product-owner usability, willingness-to-pay and independent multi-axis review remain open acceptance boundaries.
+
+The bounded Step-5 writer is released. **Next: Step 6 product-owner trial using synthetic cases**, followed by the separate independent review before expansion or release. No second diagnosis, real-patient use, public hosting or subscription implementation is authorized by this milestone.

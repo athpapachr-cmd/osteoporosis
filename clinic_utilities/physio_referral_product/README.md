@@ -1,40 +1,40 @@
 # Physio Referral Productization — supporting control plane
 
-> **Status:** Steps 1–4 design frozen; functional prototype next, not implemented.
+> **Status:** Steps 1–4 frozen; Step 5 functional synthetic prototype implemented and technically tested; Step 6 owner trial next.
 > **Repository:** `athpapachr-cmd/osteoporosis`.
-> **Parent:** existing Clinic Utilities / CU-1 Physiotherapy Referral.
 > **Scope:** Knee Osteoarthritis only.
-> **Authority:** root six canonicals remain authoritative; this directory is not a seventh root authority.
+> **Authority:** the root six canonicals remain authoritative; this directory is not a seventh root authority.
+
+## Start with the prototype
+
+`prototype/README.md` contains Greek instructions. Run `prototype/server.py` from a repository checkout or the CI-generated standalone source ZIP using Python 3.12 and `prototype/requirements.txt`. The app binds to `127.0.0.1` only and must be used with invented cases, not real patient data.
+
+`KNEE_OA_PROTOTYPE_REVIEW_V1.md` records exact implemented/tested scope and limitations. It is an author review, not an independent review. Actual CI produces a runnable ZIP with a source/hash manifest and desktop/mobile/evidence screenshots. The prototype is not a static HTML-only download or a publicly hosted website.
 
 ## Navigation
 
 | Document | Purpose |
 |---|---|
-| `PRODUCT_PLAN.md` | Product direction, €9.99 pricing hypothesis, staged commercial validation |
-| `CURRENT.md` | Current product-track status and exact next gate |
+| `PRODUCT_PLAN.md` | Product direction, €9.99 pricing hypothesis and staged commercial validation |
+| `CURRENT.md` | Product-track status and next acceptance gate |
 | `CHANGELOG.md` | Append-only product history |
-| `UX_CONTRACT_CURRENT.md` | Step-1 minimal/mobile-first UX with Step-2 evidence-state replan |
-| `KNEE_OA_EVIDENCE_DESIGN_V1.md` | Step-2 source-specific clinical evidence architecture |
-| `contracts/knee_oa_evidence_contract_v1.yaml` | Evidence states, source positions, defaults and eligibility |
-| `KNEE_OA_EVIDENCE_DESIGN_REVIEW_V1.md` | Step-2 active-writer review |
-| `KNEE_OA_TEMPLATE_DESIGN_V1.md` | Step-3 deterministic Greek composition and ownership |
-| `contracts/knee_oa_template_contract_v1.yaml` | Template and supported-input contract |
-| `KNEE_OA_TEMPLATE_DESIGN_REVIEW_V1.md` | Step-3 active-writer review |
-| `KNEE_OA_EVIDENCE_INTERACTION_DESIGN_V1.md` | Step-4 evidence cues, bubbles, sheet, suggestions, accessibility |
-| `contracts/knee_oa_evidence_interaction_v1.yaml` | Step-4 interaction and provenance contract |
-| `contracts/knee_oa_evidence_interaction_fixtures_v1.yaml` | Synthetic interaction cases |
-| `validate_knee_oa_evidence_interaction_v1.py` | Step-4 design checker, not production code |
-| `KNEE_OA_EVIDENCE_INTERACTION_REVIEW_V1.md` | Exact Step-4 review/freeze and explicit limitations |
+| `UX_CONTRACT_CURRENT.md` | Frozen minimal/mobile-first UX |
+| `KNEE_OA_EVIDENCE_DESIGN_V1.md` | Step-2 source-specific evidence architecture |
+| `contracts/knee_oa_evidence_contract_v1.yaml` | Clinical source positions, six states, defaults and eligibility |
+| `KNEE_OA_EVIDENCE_DESIGN_REVIEW_V1.md` | Step-2 author review |
+| `KNEE_OA_TEMPLATE_DESIGN_V1.md` | Step-3 deterministic Greek composition |
+| `contracts/knee_oa_template_contract_v1.yaml` | Supported input and template contract |
+| `KNEE_OA_TEMPLATE_DESIGN_REVIEW_V1.md` | Step-3 author review |
+| `KNEE_OA_EVIDENCE_INTERACTION_DESIGN_V1.md` | Step-4 evidence disclosure, provenance and interaction |
+| `contracts/knee_oa_evidence_interaction_v1.yaml` | Frozen Step-4 machine contract |
+| `KNEE_OA_EVIDENCE_INTERACTION_REVIEW_V1.md` | Step-4 author review and limitations |
+| `prototype/` | Isolated functional UI/server, tests, Greek summaries and package builder |
+| `KNEE_OA_PROTOTYPE_REVIEW_V1.md` | Step-5 exact technical evidence and remaining acceptance |
 
 ## Current boundary
 
-Step-4 content at `e1039809818ddf4061e6d0350905578ff2ca16aa` passed the focused design gate and is frozen by its review/closeout record. Existing production CU-1 runtime and clinical taxonomy are unchanged. No design branch has been merged by this work.
+The tested substantive prototype head is `6595bf4cc41388dbd796f9ba5b53ae7c49bafdee`; focused run `34569247051` passed 15 backend/HTTP and 12 actual Chromium tests plus packaged dependency closure. Production CU-1, clinical taxonomy and frozen evidence are unchanged. No branch was merged or deployed by this work.
 
-A source-level evidence link is not an independently verified recommendation-level locator. A synthetic design PASS is not clinical revalidation, a browser/accessibility PASS, independent product review or commercial validation.
+Source-level attribution is not independently verified recommendation-level evidence. Technical tests are not clinical certification, complete accessibility compliance, independent product review or commercial validation. Real Safari/VoiceOver and owner acceptance remain pending.
 
-Next is the separately governed Step-5 functional prototype for one diagnosis. Walking-aid exposure, weight-management representation and true-locking safety mapping remain explicit separate seams.
-
-```text
-DESIGNED != IMPLEMENTED != BROWSER-TESTED != INDEPENDENTLY REVIEWED
-!= MERGED != DEPLOYED != COMMERCIAL-PILOT-VALIDATED
-```
+Next is **Step 6 product-owner trial**, then the separately agreed independent review. Walking-aid exposure, weight-management representation and true-locking safety mapping remain explicit separate seams. Do not add a second diagnosis or expose the loopback prototype publicly under this closeout.

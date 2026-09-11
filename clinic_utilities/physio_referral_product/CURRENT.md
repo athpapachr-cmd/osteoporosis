@@ -1,59 +1,45 @@
 # CURRENT.md — Physio Referral product track
 
-> **STATUS:** STEPS 1–4 DESIGN FROZEN; STEP 4 CLOSED.
+> **STATUS:** STEPS 1–4 FROZEN; STEP 5 FUNCTIONAL PROTOTYPE IMPLEMENTED / TECHNICAL GATE PASS.
 > **Updated:** 2026-09-11 Asia/Nicosia.
-> **Branch:** `design/physio-referral-knee-oa-interaction-v1-2026-09-11`.
+> **Branch:** `feat/physio-referral-knee-oa-prototype-v1-2026-09-11`.
 > **Main:** `d9f312f6d2d596ec0bd4f35f6de56ad98dc34b37`.
-> **Step-3 parent:** `8489e2ee32f7aeae6f678c7db2838930c0759eb4`.
-> **Step-4 substantive head:** `e1039809818ddf4061e6d0350905578ff2ca16aa`.
+> **Step-4 parent:** `4e0e3206dd1e12a2e55a6abd18d2a6f7dbc3f7c6`.
+> **Tested substantive head:** `6595bf4cc41388dbd796f9ba5b53ae7c49bafdee`.
 > **Writer:** NONE. Root `CURRENT_OPERATIONAL.md` remains sole operational authority.
-> **Runtime / PR / merge / deploy:** NOT AUTHORIZED.
+> **Production registration / PR / merge / deploy:** NONE.
 
-## Completed design
+## What exists now
 
-Steps 1–3 preserve the minimal/mobile-first UX, six-state source-specific evidence architecture and deterministic Greek referral contract. The explicit clinician diagnosis assertion, laterality, supported-input scope, restriction preservation and safety/export boundaries remain unchanged.
+A real, runnable synthetic Knee-OA prototype, not just design contracts. `prototype/README.md` contains Greek setup and test instructions. `prototype/server.py` runs locally on `127.0.0.1` and uses the real existing CU-1 validation engine. The website cannot be opened as standalone HTML or accessed from another device without a separately designed hosting change.
 
-Step 4 adds the interaction/traceability contract:
+Implemented flow: diagnosis/side, selected phenotype/function, three defaults, compact advanced groups, dynamic Greek referral, evidence cues, explicit suggestions, all-source disagreement, one evidence sheet, preserved manual edits, guarded synthetic copy/print and no draft persistence.
 
-- separate selection, evidence, availability and safety axes;
-- six non-colour evidence cues, one small evidence control and one sheet host;
-- one expanded contextual bubble without a timer;
-- all-source first disclosure for mixed guidance;
-- explicit source scope/version/review-date and source-level locator precision;
-- positive-only, source-backed suggestions with explicit add and stale-candidate rejection;
-- preserved advanced choices and notes on collapse;
-- safety/revision precedence for every export action;
-- ephemeral traceability without patient storage or analytics.
+## Proven technical results
 
-Human specification: `KNEE_OA_EVIDENCE_INTERACTION_DESIGN_V1.md`.
-Machine contract: `contracts/knee_oa_evidence_interaction_v1.yaml`.
-Exact freeze/review: `KNEE_OA_EVIDENCE_INTERACTION_REVIEW_V1.md`.
+GitHub Actions `34569247051` at the substantive head passed: 15 backend/HTTP tests, 15 exact-output fixtures within that suite, 54 source-summary display positions, 12 actual Chromium tests and packaged dependency closure. Actual browser tests use the real server and CU-1 engine. The first run's keyboard containment failure was corrected in the UI, not suppressed in tests.
 
-## Obtained evidence
-
-GitHub Actions run `34565131646`, job `103155584052`, passed on the exact Step-4 substantive head: 46 synthetic scenario/mutation checks plus three parent-blob identity checks. Active-writer design review passed; independent review was not performed.
-
-The reviewed substantive artifacts retain their creation-state candidate headers. Their subsequent frozen lifecycle is owned by the exact review record and root canonicals, not by a silent rewrite of their content.
+The six pinned parent files remain unchanged. Existing production code and clinical evidence positions were not rewritten. The author review is `KNEE_OA_PROTOTYPE_REVIEW_V1.md`, explicitly not independent review.
 
 ## Not yet proven
 
 ```text
-functional Knee-OA prototype              NOT BUILT
-new UI / runtime                          NOT IMPLEMENTED
-actual contrast / Safari / VoiceOver      NOT TESTED
-product-owner usability                   NOT TESTED
-independent multi-axis review             NOT PERFORMED
-independent source-to-claim clinical audit NOT PERFORMED in Step 4
-exact per-recommendation locators          NOT PROVIDED by inherited registry
-willingness to pay / commercial pilot      NOT VALIDATED
+product-owner usability / clinical-copy acceptance      PENDING
+actual iPhone Safari / VoiceOver                         NOT TESTED
+real BFCache lifecycle, full accessibility audit         NOT PROVEN
+independent clinical / physio / UX / commercial review    NOT PERFORMED
+independent source-to-claim audit                         NOT COMPLETED
+exact per-recommendation/page locators                    NOT PROVIDED
+willingness to pay / commercial pilot                     NOT VALIDATED
+production release / public preview                      NOT AUTHORIZED
 ```
 
-Walking-aid UI exposure, weight-management machine representation and true-locking safety mapping remain separate inherited seams. This stage did not reopen them.
+The clinical corpus is inherited. Greek display translations are not a fresh literature review. Manual prose is not automatically evidence-validated. Source-level links are not precise verified recommendation locators.
 
-## Exact next step
+## Exact next action
 
-**STEP 5 — bounded functional Knee-OA prototype implementation gate.**
+**STEP 6 — product-owner trial of the local prototype using synthetic cases.**
 
-Fresh bootstrap → define narrow prototype entrypoint and adapter scope → separate implementation authority/writer → implement one synthetic Knee-OA flow → real browser/product-owner checks → independent review after the functional slice.
+Assess actual ease, text usefulness, clarity of evidence, suggestion burden, extra-option discoverability and what should be removed. Then request the planned separate independent review against a pinned candidate. No second diagnosis or release before those gates.
 
-No second diagnosis, patient persistence, billing/auth/entitlement work, autonomous evidence update or production release is authorized by this closeout.
+No real patient data, production rewrite, public/LAN hosting, persistence, billing/auth/entitlements, autonomous evidence updating, PR/merge/deploy/production smoke is authorized by this closeout.
