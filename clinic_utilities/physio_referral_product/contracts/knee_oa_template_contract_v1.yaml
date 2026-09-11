@@ -1,5 +1,5 @@
 version: knee_oa_template_contract_v1
-status: design_candidate_review_hardened_v3
+status: design_candidate_review_hardened_v4
 language: el
 scope:
   profile_id: knee
@@ -32,6 +32,10 @@ copy_readiness:
   inherit_cu1_validation_block: true
   inherit_cu1_safety_block: true
   evidence_state_does_not_block_copy_by_itself: true
+  local_error_ids:
+    formal_assertion_missing_or_not_yes: formal_diagnosis_assertion_required
+    laterality_not_copy_ready: product_laterality_required
+    unsupported_product_selection: unsupported_product_selection
 
 laterality_phrases:
   right: δεξιού γόνατος
@@ -143,6 +147,7 @@ join_policy:
   block_separator: " "
 
 clinical_picture:
+  precedence_is_semantic_merge_not_state_deletion: true
   order:
     - joint_line_pain
     - anterior_peripatellar_pain
@@ -323,6 +328,7 @@ adjuncts:
 
 goals:
   routine_screen_required: false
+  redundant_suppression_is_output_only: true
   generic_redundant_suppressed_in_standard_output:
     - reduce_symptom_irritability
     - restore_safe_functional_rom
@@ -374,7 +380,7 @@ weight_management:
 
 hard_invariants:
   - diagnosis_must_be_clinician_asserted_before_copy
-  - every_selected_product_item_must_render_or_block
+  - every_selected_product_item_must_render_block_or_be_explicitly_semantically_deduplicated
   - true_locking_not_product_exposed_without_safety_mapping
   - suggestion_is_not_selection
   - selection_is_required_for_plan_phrase
