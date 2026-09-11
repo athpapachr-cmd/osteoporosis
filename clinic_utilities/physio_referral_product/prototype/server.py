@@ -80,6 +80,8 @@ MIXED_COPY = {
     },
 }
 
+MIXED_COPY.update(json.loads((HERE / "source_copy_el.json").read_text(encoding="utf-8")))
+
 
 def check(ok: bool) -> None:
     if not ok:
