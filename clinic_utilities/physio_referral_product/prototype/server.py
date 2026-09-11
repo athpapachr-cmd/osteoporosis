@@ -13,7 +13,6 @@ import sys
 import uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import urlsplit
 
 HERE = Path(__file__).resolve().parent
 PRODUCT = HERE.parent
@@ -28,8 +27,16 @@ from clinic_utilities.physio_referral_product.validate_knee_oa_template_contract
 from clinic_utilities.physio_referral_product.validate_knee_oa_evidence_interaction_v1 import (
     evidence_view, suggestion_candidates, apply_suggestion, export_readiness,
 )
+from clinic_utilities.physio_referral_product.prototype.qualifier_overlay import (
+    apply_referral_overlay,
+    clean_qualifiers,
+    clinical_review_clues,
+    empty_qualifiers,
+    enrich_suggestion_facts,
+    state_with_mapped_findings,
+)
 
-PACKAGE = "knee-oa-prototype-1.0+4e0e3206"
+PACKAGE = "knee-oa-prototype-1.1+step6a"
 PINS = {
     "contracts/knee_oa_evidence_contract_v1.yaml": "8f4c657904ee028bba39d7a0557461a6acafadaf",
     "contracts/knee_oa_template_contract_v1.yaml": "e6c6a285ed4d2d64df1dca7b29630ef5053831e8",
@@ -79,7 +86,6 @@ MIXED_COPY = {
         "VA_DOD_OA_2026": "Ανεπαρκή δεδομένα για σύσταση υπέρ ή κατά.",
     },
 }
-
 MIXED_COPY.update(json.loads((HERE / "source_copy_el.json").read_text(encoding="utf-8")))
 
 
@@ -106,8 +112,8 @@ def clean_request(payload: dict) -> dict:
     check(type(revision) is int and 0 <= revision < 1_000_000_000)
     state = payload.get("state")
     check(isinstance(state, dict))
-    check(set(state) <= set(CATEGORIES) | {"laterality", "formal_assertion_state", "phenotype", "explicit_restrictions", "clinician_free_text_optional", "safety_flags"})
-    clean = {}
+    check(set(state) <= set(CATEGORIES) | {"laterality", "formal_assertion_state", "phenotype", "qualifiers", "explicit_restrictions", "clinician_free_text_optional", "safety_flags"})
+    clean: dict = {}
     for key, category in CATEGORIES.items():
         values = state.get(key, [])
         check(isinstance(values, list) and len(values) <= 40)
@@ -120,6 +126,7 @@ def clean_request(payload: dict) -> dict:
     check(isinstance(phenotype, dict) and set(phenotype) <= set(T["product_overlay"]["allowed_fields"]))
     check(all(type(v) is bool for v in phenotype.values()))
     clean["phenotype"] = dict(phenotype)
+    clean["qualifiers"] = clean_qualifiers(state.get("qualifiers"), {**clean, "findings": clean["findings"]})
     restrictions = state.get("explicit_restrictions", [])
     check(isinstance(restrictions, list) and len(restrictions) <= 6)
     clean["explicit_restrictions"] = []
@@ -133,6 +140,7 @@ def clean_request(payload: dict) -> dict:
     flags = state.get("safety_flags", [])
     check(isinstance(flags, list) and all(isinstance(v, str) and v in FLAGS for v in flags))
     clean["safety_flags"] = list(dict.fromkeys(flags))
+    clean = state_with_mapped_findings(clean)
     dismissed = payload.get("dismissed", [])
     check(isinstance(dismissed, list) and len(dismissed) <= 100)
     check(all(isinstance(v, str) and len(v) < 2000 for v in dismissed))
@@ -146,6 +154,7 @@ def suggestion_draft(req: dict) -> dict:
     s = req["state"]
     facts = {key: "selected" for key in s["findings"] + s["functional_impairments"]}
     facts.update({key: "present" for key, value in s["phenotype"].items() if value})
+    facts = enrich_suggestion_facts(facts, s.get("qualifiers") or empty_qualifiers())
     return {"draft_id": req["draft_id"], "draft_revision": req["revision"], "package_version": PACKAGE,
             "selected": s["rehab_directions"] + s["adjunct_options"], "facts": facts,
             "dismissed": req["dismissed"], "availability": req["availability"]}
@@ -171,11 +180,10 @@ def project(payload: dict) -> dict:
         "safety": {"input_flags": s["safety_flags"], "acknowledged_rule_ids": [], "clinician_disposition": "none_recorded"},
     }
     validation = ENGINE.validate(cu1)
-    # The prototype cannot claim a safety disposition or accept forged acknowledgement.
     local_error = copy_readiness_error(T, s)
     blocked = any(row.formatter_blocked for row in validation.safety_results)
     allowed = not validation.formatter_blocked and local_error is None
-    text = render(T, s, LANG) if allowed else None
+    text = apply_referral_overlay(render(T, s, LANG), s) if allowed else None
     chosen = set(s["rehab_directions"] + s["adjunct_options"])
     views = {item: evidence_view(C, E, item, item in chosen, req["availability"])
              for item in list(SCOPE["rehab_directions"]) + list(SCOPE["adjuncts"]) if item not in HIDDEN}
@@ -189,11 +197,13 @@ def project(payload: dict) -> dict:
     for item in E["suggestion_policy"]["core_omission_suggestions"]:
         if item not in chosen:
             notes.append({"item_id": item, "label": "Βασική επιλογή δεν έχει προστεθεί"})
+    review_clues = clinical_review_clues(s.get("qualifiers") or empty_qualifiers())
     gate = {"allowed": allowed, "blocked": blocked, "draft_revision": req["revision"]}
-    readiness = export_readiness(C, req["revision"], req["revision"], gate, False, [n["item_id"] for n in notes])
+    note_ids = [n["item_id"] for n in notes] + [clue["clue_id"] for clue in review_clues]
+    readiness = export_readiness(C, req["revision"], req["revision"], gate, False, note_ids)
     return {"draft_id": req["draft_id"], "revision": req["revision"], "package_version": PACKAGE,
             "state": s, "text": text, "gate": gate, "readiness": readiness, "evidence": views,
-            "suggestions": candidates, "notes": notes,
+            "suggestions": candidates, "notes": notes, "clinical_review_clues": review_clues,
             "safety": [{"rule_id": row.rule_id, "severity": row.severity, "blocked": row.formatter_blocked}
                        for row in validation.safety_results],
             "validation_errors": [row.error_id for row in validation.validation_errors]}
@@ -212,7 +222,7 @@ class Handler(BaseHTTPRequestHandler):
     server_version = "PhysioPrototype"
 
     def log_message(self, *_args):
-        pass  # Deliberately do not log paths, request values, notes or drafts.
+        pass
 
     def allowed_host(self) -> bool:
         host = f"127.0.0.1:{self.server.server_port}"
@@ -237,7 +247,13 @@ class Handler(BaseHTTPRequestHandler):
             return self.json_reply(403, {"error": "local_access_only"})
         if self.path == "/api/bootstrap":
             return self.json_reply(200, bootstrap())
-        files = {"/": ("index.html", "text/html"), "/app.js": ("app.js", "text/javascript"), "/styles.css": ("styles.css", "text/css")}
+        files = {
+            "/": ("index.html", "text/html"),
+            "/app.js": ("app.js", "text/javascript"),
+            "/qualifiers.js": ("qualifiers.js", "text/javascript"),
+            "/styles.css": ("styles.css", "text/css"),
+            "/qualifiers.css": ("qualifiers.css", "text/css"),
+        }
         if self.path not in files:
             return self.json_reply(404, {"error": "not_found"})
         name, mime = files[self.path]
