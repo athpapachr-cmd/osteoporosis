@@ -297,6 +297,19 @@ document.addEventListener('click',async event=>{
   else if(b.hasAttribute('data-confirm-reset'))newDraft();
   else if(b.hasAttribute('data-hide-notice'))$('#notice').hidden=true;
 });
+// Native dialog implementations can cycle Tab through browser chrome. Keep the
+// intended keyboard sequence inside the current sheet, without trapping Escape
+// or browser tab-switch shortcuts.
+$('#sheet').addEventListener('keydown',event=>{
+  if(event.key!=='Tab'||event.ctrlKey||event.altKey||event.metaKey)return;
+  const dialog=$('#sheet');
+  const targets=[...dialog.querySelectorAll('button:not(:disabled),a[href],textarea:not(:disabled),input:not(:disabled),select:not(:disabled),summary,[tabindex]:not([tabindex="-1"])')]
+    .filter(node=>node.getClientRects().length && !node.closest('[hidden]'));
+  if(!targets.length){event.preventDefault();$('#sheetTitle').focus();return;}
+  const first=targets[0],last=targets[targets.length-1],active=document.activeElement;
+  if(event.shiftKey&&(active===first||active===$('#sheetTitle')||!dialog.contains(active))){event.preventDefault();last.focus();}
+  else if(!event.shiftKey&&active===last){event.preventDefault();first.focus();}
+});
 $('#sheet').addEventListener('cancel',event=>{event.preventDefault();closeSheet();});
 window.addEventListener('beforeprint',preparePrint);
 window.addEventListener('afterprint',()=>{$('#printArea').textContent='';});
