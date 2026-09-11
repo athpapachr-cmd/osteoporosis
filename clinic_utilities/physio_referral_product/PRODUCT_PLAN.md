@@ -1,6 +1,6 @@
 # PRODUCT_PLAN.md — Physio Referral productization
 
-> **STATUS:** PRODUCT-OWNER APPROVED DIRECTION — STEPS 1–3 DESIGNED / FROZEN.
+> **STATUS:** PRODUCT-OWNER APPROVED DIRECTION — STEPS 1–4 DESIGNED / FROZEN.
 > **Updated:** 2026-09-11 Asia/Nicosia.
 > **Parent:** existing CU-1 Physiotherapy Referral v2.
 > **First vertical slice:** Knee Osteoarthritis only.
@@ -189,6 +189,12 @@ manual edited prose != structured-state writeback
 evidence UI metadata != copied referral prose
 ```
 
+## Evidence interaction / traceability
+
+Step 4 freezes distinct selection/evidence/availability/safety signals, six visible non-colour cues, one expanded contextual bubble without a timer, one information-sheet host, full first-disclosure conflict positions, scope-labelled source attribution and draft-local suggestions with stale-candidate rejection. Collapsed advanced choices remain selected and discoverable. Every export follows Step-3 safety/readiness and revision boundaries.
+
+The Step-4 design checker is not the production application or an independent clinical review. Current clinical locators have source-level precision. Actual accessibility, final Greek source summaries, usability and independent source-to-claim verification remain later acceptance work.
+
 ## Update governance
 
 No autonomous literature-to-live-rule updates.
@@ -282,12 +288,12 @@ The main product risk is not only missing features; it is burying a simple workf
 STEP 1 — UX interaction contract                         COMPLETE / FROZEN
 STEP 2 — Knee-OA evidence knowledge module              COMPLETE / FROZEN / DESIGN PASS
 STEP 3 — dynamic referral/template contract             COMPLETE / FROZEN / DESIGN PASS
-STEP 4 — evidence interaction/traceability contract     NEXT DESIGN STEP
-STEP 5 — prototype                                      PENDING
+STEP 4 — evidence interaction/traceability contract     COMPLETE / FROZEN / ACTIVE-WRITER DESIGN PASS
+STEP 5 — prototype                                      NEXT IMPLEMENTATION GATE; NOT AUTHORIZED BY CLOSEOUT
 STEP 6 — test/product-owner review                      PENDING
 STEP 7 — independent multi-axis review                  PENDING
 STEP 8 — bounded refinement                             PENDING
 STEP 9 — external clinician/commercial pilot            PENDING
 ```
 
-No runtime implementation, PR merge, deploy or production smoke is authorized merely by completion of Steps 1–3.
+No runtime implementation, PR merge, deploy or production smoke is authorized merely by completion of Steps 1–4.

@@ -232,3 +232,25 @@ Exact next product-design step:
 ```text
 STEP 4 — Evidence Interaction / Traceability Layer
 ```
+
+---
+
+## 2026-09-11 — Step-4 evidence interaction / traceability design frozen
+
+Branch: `design/physio-referral-knee-oa-interaction-v1-2026-09-11`.
+Parent: `8489e2ee32f7aeae6f678c7db2838930c0759eb4`.
+Reviewed substantive head: `e1039809818ddf4061e6d0350905578ff2ca16aa`.
+
+Step 4 froze six distinct colour/non-colour evidence cues, independent neutral selection state, one untimed expanded contextual bubble, one information-sheet host, full mixed-source first disclosure, faithful source scope/version/review-date presentation, explicit source-level locator precision, positive-only source-backed suggestions with stale-candidate rejection and scoped dismissal, retained advanced selections and all-export safety/revision precedence.
+
+The clinical evidence corpus and deterministic template stayed unchanged. Their exact Git blob identities, together with inherited UX identity, are pinned in the new contract and checked by the focused validator.
+
+GitHub Actions `Physio Knee OA interaction design gate`, run `34565131646`, job `103155584052`, completed successfully on the substantive head. It reported **46 synthetic scenario/mutation checks**, three parent-blob checks and six preserved evidence states. This is design-model evidence, not a browser, clinical-efficacy or independent-review PASS.
+
+`KNEE_OA_EVIDENCE_INTERACTION_REVIEW_V1.md` records the active-writer review and freezes that exact content. This record/root closeout supersedes the creation-state candidate headers without modifying the reviewed substantive artifacts.
+
+No product runtime, API, existing formatter, production UI, database, clinical taxonomy or source recommendation was changed. No PR, merge, deployment or production smoke occurred. The Step-4 writer was released.
+
+Remaining acceptance is explicit: actual visual/mobile prototype, Safari/VoiceOver and measured contrast/reflow, final reviewed Greek source summaries, source-to-claim independent verification, product-owner usability and independent clinical/physiotherapy/UX/commercial review. Current clinical locators point to sources, not verified individual recommendation numbers/pages.
+
+Next: **Step 5 bounded functional Knee-OA prototype implementation gate**, requiring its own authorization and writer scope. No second diagnosis or commercial release is inferred from this design closeout.

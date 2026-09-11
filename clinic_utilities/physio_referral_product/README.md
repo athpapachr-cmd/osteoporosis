@@ -1,75 +1,40 @@
 # Physio Referral Productization — supporting control plane
 
-> **STATUS:** ACTIVE supporting product-design control plane; Steps 1–2 designed, Step 3 next.
+> **Status:** Steps 1–4 design frozen; functional prototype next, not implemented.
 > **Repository:** `athpapachr-cmd/osteoporosis`.
-> **Parent area:** `Clinic Utilities / CU-1 Physiotherapy Referral`.
-> **Vertical slice:** Knee Osteoarthritis only.
-> **Important:** this directory does **not** create a seventh root canonical authority. The repository-wide six canonicals in `AGENTS.md` remain authoritative for repo-wide operational state and writer locks.
+> **Parent:** existing Clinic Utilities / CU-1 Physiotherapy Referral.
+> **Scope:** Knee Osteoarthritis only.
+> **Authority:** root six canonicals remain authoritative; this directory is not a seventh root authority.
 
-This directory preserves the commercial/product-design evolution of the existing CU-1 Physiotherapy Referral runtime so durable decisions are not left only in chat history.
+## Navigation
 
-## Local supporting documents
+| Document | Purpose |
+|---|---|
+| `PRODUCT_PLAN.md` | Product direction, €9.99 pricing hypothesis, staged commercial validation |
+| `CURRENT.md` | Current product-track status and exact next gate |
+| `CHANGELOG.md` | Append-only product history |
+| `UX_CONTRACT_CURRENT.md` | Step-1 minimal/mobile-first UX with Step-2 evidence-state replan |
+| `KNEE_OA_EVIDENCE_DESIGN_V1.md` | Step-2 source-specific clinical evidence architecture |
+| `contracts/knee_oa_evidence_contract_v1.yaml` | Evidence states, source positions, defaults and eligibility |
+| `KNEE_OA_EVIDENCE_DESIGN_REVIEW_V1.md` | Step-2 active-writer review |
+| `KNEE_OA_TEMPLATE_DESIGN_V1.md` | Step-3 deterministic Greek composition and ownership |
+| `contracts/knee_oa_template_contract_v1.yaml` | Template and supported-input contract |
+| `KNEE_OA_TEMPLATE_DESIGN_REVIEW_V1.md` | Step-3 active-writer review |
+| `KNEE_OA_EVIDENCE_INTERACTION_DESIGN_V1.md` | Step-4 evidence cues, bubbles, sheet, suggestions, accessibility |
+| `contracts/knee_oa_evidence_interaction_v1.yaml` | Step-4 interaction and provenance contract |
+| `contracts/knee_oa_evidence_interaction_fixtures_v1.yaml` | Synthetic interaction cases |
+| `validate_knee_oa_evidence_interaction_v1.py` | Step-4 design checker, not production code |
+| `KNEE_OA_EVIDENCE_INTERACTION_REVIEW_V1.md` | Exact Step-4 review/freeze and explicit limitations |
 
-```text
-PRODUCT_PLAN.md
-→ product/commercial direction and staged roadmap
+## Current boundary
 
-UX_CONTRACT_CURRENT.md
-→ approved minimal/mobile-first interaction contract
-→ includes the Step-2 six-state evidence REPLAN
+Step-4 content at `e1039809818ddf4061e6d0350905578ff2ca16aa` passed the focused design gate and is frozen by its review/closeout record. Existing production CU-1 runtime and clinical taxonomy are unchanged. No design branch has been merged by this work.
 
-KNEE_OA_EVIDENCE_DESIGN_V1.md
-→ human-readable Step-2 Knee-OA evidence architecture
+A source-level evidence link is not an independently verified recommendation-level locator. A synthetic design PASS is not clinical revalidation, a browser/accessibility PASS, independent product review or commercial validation.
 
-contracts/knee_oa_evidence_contract_v1.yaml
-→ machine-readable source positions, evidence states, defaults and suggestion rules
-
-validate_knee_oa_evidence_contract_v1.py
-→ machine integrity gate against the existing CU-1 registry/catalog
-
-KNEE_OA_EVIDENCE_DESIGN_REVIEW_V1.md
-→ exact-head active-writer design review / Step-2 PASS
-
-CURRENT.md
-→ local product-track NOW / exact next action
-
-CHANGELOG.md
-→ append-only supporting product-design history
-```
-
-## Current proven state
+Next is the separately governed Step-5 functional prototype for one diagnosis. Walking-aid exposure, weight-management representation and true-locking safety mapping remain explicit separate seams.
 
 ```text
-STEP 1 UX CONTRACT              COMPLETE / six-state evidence replan incorporated
-STEP 2 EVIDENCE DESIGN          FROZEN / COMPLETE
-STEP 2 MACHINE GATE             PASS
-STEP 2 DESIGN REVIEW            PASS / material open finding none
-STEP 3 DYNAMIC REFERRAL DESIGN  NEXT
-RUNTIME PRODUCTIZATION          NOT IMPLEMENTED
-```
-
-## Boundary with existing CU-1
-
-The existing CU-1 clinical taxonomy, machine contract and deployed runtime remain separate unless a later reviewed maintenance finding proves a concrete contradiction.
-
-```text
-existing CU-1 clinical/runtime foundation
-!=
-productization evidence/UX layer
-```
-
-Step 2 found no need for a broad CU-1 taxonomy rewrite. Two explicit future seams remain: walking-aid presentation scope and weight-management machine representation.
-
-No second diagnosis is added until the complete Knee-OA experience has been prototyped, reviewed and accepted.
-
-## Lifecycle vocabulary
-
-```text
-DESIGNED
-!= IMPLEMENTED
-!= TESTED
-!= MERGED
-!= DEPLOYED
-!= PRODUCTION-SMOKE-VERIFIED
-!= COMMERCIAL-PILOT-VALIDATED
+DESIGNED != IMPLEMENTED != BROWSER-TESTED != INDEPENDENTLY REVIEWED
+!= MERGED != DEPLOYED != COMMERCIAL-PILOT-VALIDATED
 ```
