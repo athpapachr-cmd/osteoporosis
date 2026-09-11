@@ -158,7 +158,7 @@ active_plan:
         - when_finding: quadriceps_weakness
           phrase: προοδευτική ενδυνάμωση με έμφαση στον τετρακέφαλο
     education_and_self_management:
-      default: εκπαίδευση και αυτοδιαχείριση
+      default: εκπαίδευση για αυτοδιαχείριση
     mobility_exercise_when_restricted:
       default: ασκήσεις κινητικότητας
       refinements:
