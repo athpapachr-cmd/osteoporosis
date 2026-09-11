@@ -1,71 +1,66 @@
-# UX_CONTRACT_CURRENT.md — Physio Referral Product UX v1
+# UX_CONTRACT_CURRENT.md — Physio Referral Product UX v1.1
 
-> **STATUS:** PRODUCT-OWNER APPROVED / FROZEN FOR KNEE-OA PROTOTYPE.
-> **Date:** 2026-09-07 Asia/Nicosia.
-> **Scope:** Physio Referral productization, Knee Osteoarthritis vertical slice only.
+> **STATUS:** PRODUCT-OWNER APPROVED STEP-1 UX / STEP-2 EVIDENCE-STATE REPLAN INCORPORATED.
+> **Updated:** 2026-09-11 Asia/Nicosia.
+> **Scope:** Knee Osteoarthritis vertical slice only.
 > **Implementation:** NOT IMPLEMENTED by this document.
-> **Design intent:** minimal, modern, mobile-first, direct-manipulation experience with clinical depth hidden beneath a calm surface.
+> **Design intent:** minimal, modern, mobile-first, direct-manipulation experience with clinical/evidence complexity hidden beneath a calm surface.
 
 ---
 
-# 1. North-star interaction principle
+# 1. North star
 
 ```text
 COMPLEXITY LIVES UNDERNEATH.
 CONFIDENCE LIVES ON THE SURFACE.
 ```
 
-The interface should feel closer to a first-party mobile product than to a conventional medical web form.
-
-The user should not experience:
-
-```text
-form completion
-→ validation page
-→ generate
-→ output
-```
-
-The intended mental model is:
+The user should experience:
 
 ```text
 choose
 → refine
 → see the referral adapt immediately
-→ understand evidence only when needed
+→ inspect evidence only when wanted
 → copy
 ```
 
-Hard UX rule:
+Not:
 
-> The interface should explain itself through layout, state and direct manipulation. If routine use requires repeated labels such as “Why?”, “Advanced settings”, “Generate” or instructional paragraphs, the interaction design should be reconsidered.
+```text
+complete long form
+→ validate
+→ generate
+→ inspect warnings
+→ output
+```
+
+Routine use should not depend on labels such as `Why?`, `Advanced settings`, `Generate`, `Keep anyway` or explanatory paragraphs.
 
 ---
 
-# 2. Default surface — what is visible first
+# 2. Default task surface
 
-For the prototype, the product opens directly into the clinical task.
+The prototype opens directly into:
 
 ```text
 Παραπομπή φυσιοθεραπείας
 Οστεοαρθρίτιδα γόνατος
 ```
 
-No dashboard, onboarding carousel or welcome screen is required for the single-diagnosis prototype.
+No dashboard/onboarding is required for the single-diagnosis prototype.
 
-## 2.1 Laterality
+## Laterality
 
-Use a compact segmented control:
+Compact segmented control:
 
 ```text
 Δεξί | Αριστερό | Αμφω
 ```
 
-Large tap targets; no dropdown for the normal path.
+## Clinical picture
 
-## 2.2 Clinical picture
-
-Primary selectable rows, not checkboxes:
+Large selectable rows, not checkbox grids:
 
 ```text
 Πόνος
@@ -74,9 +69,7 @@ Primary selectable rows, not checkboxes:
 Περιορισμός λειτουργικότητας
 ```
 
-A selected row changes state directly.
-
-When `Περιορισμός λειτουργικότητας` is selected, reveal only the relevant secondary choices, for example:
+Selecting functional limitation progressively reveals only relevant subchoices such as:
 
 ```text
 Βάδιση
@@ -85,275 +78,265 @@ When `Περιορισμός λειτουργικότητας` is selected, reve
 Άσκηση
 ```
 
-This is progressive disclosure: the user sees only the complexity created by their own choices.
+The interface expands only in response to the user's choices.
 
 ---
 
-# 3. Smart evidence-based starting plan
+# 3. Smart starting plan
 
-The user does not start from a blank rehabilitation plan.
+Choosing Knee OA loads a reviewed starting plan rather than a blank rehabilitation form.
 
-Choosing Knee OA loads a reviewed default plan. The exact clinical contents are owned by the later Knee-OA evidence knowledge module; the UX contract defines only the behavior.
-
-Each default plan row contains:
+The exact evidence-authoritative contents are owned by:
 
 ```text
-intervention label
-minimal evidence state cue
-optional chevron or direct row affordance
+KNEE_OA_EVIDENCE_DESIGN_V1.md
+contracts/knee_oa_evidence_contract_v1.yaml
 ```
 
-There is no permanent explanatory paragraph beside every intervention.
+Current reviewed starting plan:
 
-The default should make the common evidence-aligned outcome require fewer actions than a poorly supported outcome.
+```text
+implicit: individualized physiotherapy assessment / active rehabilitation
+visible selected: therapeutic exercise
+visible selected: progressive strengthening
+visible selected: education & self-management
+```
 
-The clinician can remove or change any non-safety-locked choice.
+Context-dependent rehabilitation appears only when the phenotype/function makes it relevant.
+
+The clinician may remove/change any non-safety-locked choice.
 
 ---
 
-# 4. Evidence-state visual language
+# 4. Evidence visual language — six states
 
-Color is a first-order cue but must not be the **only** cue.
+Step 2 proved that the original five-state model could not honestly represent material guideline disagreement. The current UX therefore uses six states.
 
-The interface therefore combines color with one subtle non-color signal such as weight, underline/accent rule, dot or compact symbol.
+Color is an important cue but never the only cue. Every state also has a subtle non-colour signal such as weight, underline/accent rule, dot, compact symbol or accessible text equivalent.
 
 ## 4.1 `recommended_or_supported`
 
-Desired surface character:
+Surface character:
 
 ```text
 stronger text weight
 + green accent / fine underline or equivalent
-+ small non-color cue
++ subtle second cue
 ```
 
-Do not display a large permanent badge saying `Recommended` for every supported item.
+No large permanent `Recommended` badge is required.
 
 ## 4.2 `conditional_or_context_dependent`
 
-Desired surface character:
-
 ```text
 neutral / blue-grey accent
-+ restrained secondary cue
++ restrained second cue
 ```
 
-This means the option may be reasonable depending on phenotype, goals, response or context.
+Meaning: reasonable only when the patient's phenotype, impairment, function, preferences or delivery context supports it.
 
 ## 4.3 `limited_or_insufficient_evidence`
-
-Desired surface character:
 
 ```text
 amber accent
 + compact uncertainty cue
 ```
 
-Meaning:
+Meaning: evidence is insufficient/uncertain for routine recommendation.
 
-> Evidence is insufficient/uncertain for routine recommendation.
+This must never imply proven ineffectiveness.
 
-This must **not** visually imply proven ineffectiveness.
+## 4.4 `guideline_conflict_or_mixed`
 
-## 4.4 `recommendation_against_routine_use`
-
-Desired surface character:
+Greek semantic:
 
 ```text
-muted red or clearly distinct caution accent
+Οι οδηγίες διαφέρουν
+```
+
+Use when reviewed credible frameworks materially differ in recommendation direction or practical use.
+
+Visual character should be distinct from green, amber and danger/red. A restrained indigo/violet or split-state accent with a non-colour cue is preferred; exact styling belongs to prototype design.
+
+This is not a vote or arithmetic consensus score.
+
+## 4.5 `recommendation_against_routine_use`
+
+```text
+muted red / caution accent
 + compact caution cue
 ```
 
-Meaning:
+Meaning: reviewed guidance supports avoiding routine use in the relevant indication/context.
 
-> A reviewed guideline/evidence source recommends against routine use for this indication.
+The evidence detail must still distinguish `recommended against` from `proven harmful`.
 
-This is distinct from limited evidence.
-
-## 4.5 `not_yet_assessed`
-
-Desired surface character:
+## 4.6 `not_yet_assessed`
 
 ```text
 grey / unclassified
 + neutral information cue
 ```
 
-Meaning:
-
-> The product has not yet completed an evidence assessment for this intervention/indication.
-
-Never convert `not assessed` into `not recommended`.
+Meaning: the product has not completed an evidence assessment. Never convert `not assessed` to `not recommended`.
 
 ---
 
-# 5. Evidence bubbles — contextual, modern, non-intrusive
+# 5. Contextual evidence bubbles
 
-The default surface should not show warning boxes.
+Do not use large warning boxes for routine evidence states.
 
-When a clinically relevant evidence state needs attention, use a small contextual bubble anchored close to the selected item.
-
-Examples of semantic content:
+When attention is useful, show a compact anchored bubble such as:
 
 ```text
 Περιορισμένη τεκμηρίωση
-```
-
-or
-
-```text
+Οι οδηγίες διαφέρουν
 Δεν συνιστάται για συνήθη χρήση
 ```
 
-The bubble should:
+The bubble:
 
-- be visually compact;
-- avoid modal interruption;
-- not block continuation;
-- disappear/collapse naturally when context changes;
-- provide a small `i` affordance when deeper explanation exists.
+- stays close to the selected item;
+- does not block continuation;
+- collapses when context changes;
+- may expose a small `i` control;
+- never scolds the clinician.
 
 Avoid:
 
 ```text
 WARNING!
 Are you sure?
-Keep anyway?
 Guideline conflict!
+Keep anyway?
 ```
-
-The product informs rather than scolds.
 
 ---
 
-# 6. Evidence detail — `i` is the main disclosure control
+# 6. Evidence detail — small `i`, deep evidence underneath
 
-A small information control may be used, but sparingly.
+The `i` affordance is used sparingly.
 
-The first tap should open a compact sheet/drawer, not navigate away.
-
-Example structure:
+First disclosure opens a compact bottom/side sheet containing:
 
 ```text
-Θεραπευτική άσκηση
-
-[Evidence state in plain language]
-
-1–3 concise lines:
-what the intervention is expected to improve / why it is relevant
-
-Source name · publication/guideline year
-Evidence reviewed · date
-
+intervention
+plain-language evidence state
+1–3 lines: what it is expected to achieve / why it matters
+source name + guideline/version year
+Reviewed · date
 Τεκμηρίωση ›
 ```
 
-`Τεκμηρίωση` may open a deeper layer containing full source details, recommendation wording summary, strength/certainty where available and relevant notes.
+For mixed guidance the sheet must show the source-specific positions instead of a synthesized fake consensus.
+
+Deeper `Τεκμηρίωση` may show full source details, native strength/certainty and concise recommendation summaries.
 
 Information hierarchy:
 
 ```text
 LEVEL 1 — color + subtle cue
-LEVEL 2 — short contextual bubble when needed
-LEVEL 3 — i → concise rationale + source/year + reviewed date
-LEVEL 4 — full evidence details only on explicit request
+LEVEL 2 — contextual bubble only when needed
+LEVEL 3 — i → rationale + source/year + review date
+LEVEL 4 — deeper evidence only on explicit request
 ```
 
-No PubMed-like citation wall on the routine surface.
+No citation wall on the normal surface.
 
 ---
 
-# 7. Suggestions — evidence-backed and easy to accept
+# 7. Evidence-backed suggestions
 
-The product may surface a suggestion when:
+Suggestions may appear when:
 
-- a strongly supported core intervention was removed/omitted;
-- the selected phenotype/function makes an additional intervention relevant;
-- a selected intervention creates an evidence-sensitive alternative worth surfacing.
+- a reviewed core component is omitted;
+- an explicit phenotype/function makes a contextual component relevant.
 
-Suggestion presentation should be a compact contextual bubble/row, for example semantically:
-
-```text
-Πρόταση
-Θεραπευτική άσκηση
-Ισχυρή σύσταση · [source/year]
-+
-```
-
-The exact wording is subject to UI polish; the semantic requirements are frozen:
+A compact suggestion should communicate:
 
 ```text
 what is suggested
-+ evidence-strength/status cue
-+ short source/year cue
++ evidence-state cue
++ one source/year cue where appropriate
 + one-tap add
-+ optional i for rationale
++ optional i
 ```
 
-The suggestion must never cite a source/year that has not been reviewed and linked in the evidence module.
+No suggestion becomes selected clinical truth automatically.
 
-A suggestion does not automatically become selected clinical truth.
+Current Step-2 policy allows omission suggestions for:
+
+```text
+therapeutic exercise
+progressive strengthening
+education & self-management
+```
+
+Context-driven examples:
+
+```text
+ROM restriction       → mobility
+quadriceps weakness   → strengthening emphasis
+balance deficit       → neuromuscular / balance work
+walking limitation    → graded activity/endurance/gait
+stairs / sit-to-stand → task-specific retraining
+```
+
+The first prototype does not automatically promote adjuncts such as manual therapy, soft-tissue techniques, acupuncture, taping, brace, walking aid or weight management.
 
 ---
 
-# 8. Power-user layer — full capability with near-zero default footprint
+# 8. Power-user layer
 
-Power-user options are required.
+Power-user capability is required but should occupy almost no default screen space.
 
-They must not occupy routine screen space before needed.
-
-Default collapsed representation:
+Collapsed:
 
 ```text
-Περισσότερα  ›
+Περισσότερα ›
 ```
 
-This should be a single light row, not a large card.
-
-When expanded, it may reveal context-sensitive advanced options such as:
+Expanded content is context-sensitive and may include:
 
 ```text
 adjuncts
-manual therapy/supports
-balance/gait detail
-return-to-sport/work detail
+manual / soft-tissue options
+supports / brace / taping
+gait/balance detail
+return-to-work/activity detail
 special restrictions
 clinician-entered nuance
-additional measurements/findings
+additional findings/measurements
 ```
 
-Only options relevant to Knee OA and the current phenotype should appear.
-
-If advanced options are active after collapse:
+If active selections remain after collapse:
 
 ```text
-Περισσότερα · 2 ενεργά  ›
+Περισσότερα · 2 ενεργά ›
 ```
 
-The user therefore retains awareness without keeping the advanced panel open.
+No giant “advanced” card.
 
 ---
 
-# 9. Dynamic referral — no Generate button
+# 9. Live referral — no Generate button
 
-The referral is a live projection of current selections.
-
-Every meaningful choice updates the referral immediately.
+Every meaningful selection updates the referral immediately.
 
 Examples:
 
 ```text
 Αδυναμία
-→ strength emphasis appears
+→ strength emphasis changes
 
 Σκάλες
-→ functional stair-training emphasis appears
+→ task-specific functional wording appears
 
 remove intervention
-→ associated referral wording disappears or adjusts
+→ associated referral wording disappears/adjusts
 ```
 
-The user must not have to press:
+Routine flow must not require:
 
 ```text
 Generate
@@ -361,50 +344,46 @@ Validate
 Refresh referral
 ```
 
-to see the current output.
-
-The referral remains editable before copying, but editing text must not silently rewrite structured selections unless a later explicit bidirectional-edit design is approved.
+The final text may be edited before copying, but free-text editing must not silently rewrite structured selections unless a later bidirectional-edit design is explicitly approved.
 
 ---
 
-# 10. Referral template model
+# 10. Referral template principle
 
-The generated referral is built from:
+Generated referral =
 
 ```text
 stable clinical core
 + diagnosis/laterality
 + selected phenotype/findings
-+ functional limitation modifiers
-+ evidence-backed plan components
++ functional modifiers
++ reviewed plan components
 + clinician-selected optional components
-+ safety/restriction context when applicable
++ safety/restriction context when relevant
 ```
 
-The template should preserve physiotherapist autonomy.
+Preserve physiotherapist autonomy.
 
 Prefer:
 
-> progressive strengthening / loading adapted to clinical response
+> progressive strengthening/loading adapted to clinical response
 
-rather than excessively prescriptive dose-level instructions unless a later explicit clinical use case requires them.
-
-The referral is not a hidden attempt to prescribe an entire physiotherapy session.
+rather than prescribing detailed sets/reps or pretending the referral tool replaces physiotherapy assessment.
 
 ---
 
-# 11. Referral preview behavior
+# 11. Preview / actions
 
 ## Mobile
 
-A compact bottom surface remains available:
+Persistent compact bottom surface:
 
 ```text
 Παραπομπή
-Έτοιμη   ↑
+Έτοιμη ↑
 ```
 
-Expanding it reveals the live referral.
+Expanded sheet shows the live referral.
 
 Primary action:
 
@@ -412,7 +391,7 @@ Primary action:
 Αντιγραφή
 ```
 
-Secondary actions live under one compact overflow control, for example:
+Secondary actions under one compact overflow control:
 
 ```text
 •••
@@ -429,93 +408,83 @@ PDF
 
 ## Desktop
 
-Use the larger screen without inflating complexity:
+Use space without adding complexity:
 
 ```text
 left/main ~55%   clinical flow
 right ~45%       live referral
 ```
 
-Evidence detail may open as a compact side sheet/drawer.
+Evidence opens in a compact side sheet/drawer.
 
 ---
 
-# 12. Output-length behavior
+# 12. Output length
 
-Do not keep a permanent `Short / Detailed` mode switch on the default surface.
+Do not keep a permanent Short/Detailed switch on the routine surface.
 
-The default output should simply be good and appropriately concise.
+Default output should simply be useful and concise.
 
-A secondary action such as:
-
-```text
-Συντομότερο κείμενο
-```
-
-may be available in edit/overflow context if needed.
-
-The user should not be asked to make formatting decisions before seeing a useful referral.
+A secondary action such as `Συντομότερο κείμενο` may exist later in edit/overflow context.
 
 ---
 
-# 13. Final quality/safety state
+# 13. Final state
 
-Do not show a numeric quality score.
+No numeric quality score.
 
-Normal state:
+Normal:
 
 ```text
 Έτοιμη
 ```
 
-If a material evidence/safety point requires review:
+If material review remains:
 
 ```text
 Έτοιμη · 1 σημείο για έλεγχο
 ```
 
-Tapping it reveals only the relevant point(s).
-
-Potential checks include:
+Tapping reveals only the relevant issue, such as:
 
 ```text
-strongly supported option omitted
-selected option has limited evidence
-selected option has recommendation against routine use
-required structural/safety context unresolved
+core option omitted
+evidence limited
+reviewed guidelines differ
+option advised against for routine use
+required safety context unresolved
 ```
 
-Do not render a dashboard of green ticks for routine normal state.
+No dashboard of green ticks.
 
 ---
 
 # 14. Visual design language
 
-Design targets:
-
 - generous white space;
 - near-black primary text;
 - calm grey secondary text;
-- one primary interaction accent plus evidence-state semantic accents;
+- one main interaction accent plus restrained semantic evidence accents;
 - system/native-feeling typography;
 - large touch targets;
-- very light dividers;
-- restrained corner radii;
+- light dividers;
+- restrained radii;
 - minimal shadows;
 - no decorative gradients;
 - no card-inside-card proliferation;
-- no small checkbox grids on the routine path;
-- no icon where plain text or direct manipulation is clearer;
-- bottom sheets / side sheets for deeper information;
-- motion only when it explains state transition, never for decoration.
+- no routine checkbox matrix;
+- no unnecessary icons;
+- sheets/drawers for depth;
+- motion only when it explains state transition;
+- respect reduced-motion preferences.
 
-The design should feel deliberate and quiet rather than “medical dashboard”.
+The result should feel quiet and direct, not like a medical dashboard.
 
 ---
 
 # 15. Mobile-first acceptance path
 
-A typical routine referral should be achievable in approximately the conceptual flow:
+Typical routine conceptual flow:
 
 ```text
 Knee OA
@@ -526,28 +495,26 @@ Knee OA
 → Copy
 ```
 
-The prototype should test whether the common case can be completed in roughly 5–7 meaningful taps without typing.
-
-Typing should be optional for normal routine use.
+Target: roughly 5–7 meaningful taps with little or no typing.
 
 ---
 
 # 16. Accessibility invariants
 
-- color is never the only evidence-state signal;
-- touch targets remain comfortably tappable;
-- focus states and keyboard interaction remain supported on desktop;
-- evidence cues retain readable text equivalents for assistive technology;
-- muted warnings must remain sufficiently distinguishable without using aggressive visual alarms;
-- motion respects reduced-motion preferences if implemented.
+- color is never the sole evidence signal;
+- comfortable touch targets;
+- keyboard/focus support on desktop;
+- readable text equivalents for evidence cues;
+- muted cautions remain distinguishable;
+- no evidence meaning depends on animation.
 
 ---
 
 # 17. Language principles
 
-The routine interface uses concise natural Greek.
+Routine UI uses concise natural Greek.
 
-Avoid interface language that sounds like generic SaaS/web tooling:
+Avoid generic SaaS/tool language where structure can communicate the action:
 
 ```text
 Why?
@@ -558,7 +525,7 @@ Keep anyway
 Are you sure?
 ```
 
-Preferred interaction semantics are conveyed by structure or concise local labels such as:
+Useful local labels may include:
 
 ```text
 Περισσότερα
@@ -569,7 +536,7 @@ Preferred interaction semantics are conveyed by structure or concise local label
 Αντιγραφή
 ```
 
-Even these labels should appear only where they materially help the action.
+Use them only when they materially help.
 
 ---
 
@@ -578,82 +545,74 @@ Even these labels should appear only where they materially help the action.
 The Knee-OA prototype includes only:
 
 ```text
-1. Knee OA identity + laterality
+1. Knee OA + laterality
 2. clinical phenotype
 3. functional limitations
-4. evidence-aware default plan
+4. evidence-aware starting plan
 5. context-driven suggestions
 6. compact power-user expansion
-7. evidence-state visual cues
-8. evidence bubbles
+7. six evidence visual states
+8. contextual bubbles
 9. i evidence sheet
-10. live dynamic referral
-11. editable output boundary
-12. quality/safety review state
-13. copy + secondary output actions
-14. evidence reviewed/version metadata
-15. ephemeral patient-draft behavior by default
+10. live referral
+11. editable-output boundary
+12. final review state
+13. copy + secondary actions
+14. source year + Reviewed metadata
+15. ephemeral patient draft by default
 ```
 
 ---
 
-# 19. Explicit Step-1 non-goals
+# 19. Explicit non-goals
 
-This UX contract does **not** yet define or authorize:
+This contract does not authorize:
 
-- exact Knee-OA evidence claims;
-- exact source set;
-- exact evidence-strength mapping;
 - runtime code changes;
-- redesign of other diagnoses;
-- billing/subscription implementation;
-- account/entitlement implementation;
+- second diagnosis;
+- billing/subscription/account work;
 - patient persistence;
-- AI literature updating;
+- autonomous evidence updating;
 - autonomous diagnosis;
-- autonomous treatment decision;
-- second disease vertical slice.
-
-Those remain later steps.
+- autonomous treatment selection;
+- exhaustive modality catalog.
 
 ---
 
-# 20. UX acceptance criteria for implementation/prototype
+# 20. Prototype fail conditions
 
-The later prototype should fail review if any of these occur:
+Fail review if:
 
 ```text
-routine path looks like a long medical form
-common referral requires repeated scrolling through irrelevant choices
-Generate is required before output updates
-advanced options dominate the first screen
+routine path becomes a long form
+irrelevant choices dominate the screen
+Generate is required
+advanced options dominate default view
 bibliography occupies routine surface
-limited evidence and evidence-against are visually/semantically collapsed
-color is the only evidence-state signal
-user cannot override a non-safety evidence suggestion
-suggestions lack traceable evidence provenance
-guideline publication year is confused with product review date
-mobile routine flow requires significant typing
-normal state is cluttered by validation ticks/warnings
+insufficient / against / conflict states are collapsed together
+color is the only evidence signal
+clinician cannot override a non-safety suggestion
+suggestion lacks traceable provenance
+source publication year is confused with product review date
+mobile routine path requires substantial typing
+normal state is cluttered by warnings/ticks
 ```
 
 Positive target:
 
-> A clinician should be able to create a good routine Knee-OA referral quickly without studying the interface, while deeper clinical/evidence information remains one deliberate tap away when wanted.
+> A clinician can create a good routine Knee-OA referral without studying the interface, while evidence depth remains one deliberate tap away.
 
 ---
 
-# 21. Freeze / replan triggers
+# 21. Replan triggers
 
-This contract is frozen for the Knee-OA prototype.
+Material replan is required if later design/testing proves that:
 
-A material change requires explicit replan if evidence/data design later proves that:
-
-- the five-state evidence model is insufficient;
-- required safety logic cannot remain non-intrusive;
-- a clinically essential input cannot fit the progressive-disclosure flow;
-- direct live generation creates unsafe ambiguity;
-- the existing CU-1 structured state cannot support the required UX without a substantive contract change;
-- accessibility requires a different evidence cue architecture.
+- six evidence states remain insufficient;
+- safety logic cannot remain non-intrusive;
+- a clinically essential input cannot fit progressive disclosure;
+- live generation creates unsafe ambiguity;
+- the existing CU-1 state cannot support the product without substantive contract change;
+- accessibility requires a different cue architecture.
 
 Cosmetic tuning within these semantics does not reopen the contract.
