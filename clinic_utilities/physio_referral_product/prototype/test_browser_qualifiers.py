@@ -31,7 +31,9 @@ class QualifierBrowserTests(unittest.TestCase):
         self.page = self.context.new_page(); self.errors=[]
         self.page.on("pageerror", lambda error: self.errors.append(str(error)))
         self.page.goto(self.origin)
-        self.page.wait_for_function("document.querySelector('#reviewStatus').textContent!=='Η παραπομπή ενημερώνεται'")
+        # Use locator assertions instead of string-eval polling so the test itself
+        # obeys the app's strict script-src 'self' CSP.
+        expect(self.page.locator('#reviewStatus')).not_to_have_text('Η παραπομπή ενημερώνεται')
         self.page.locator('#assertion').click(); self.page.locator('[data-side=right]').click()
         expect(self.page.locator('#copy')).to_be_enabled()
 
