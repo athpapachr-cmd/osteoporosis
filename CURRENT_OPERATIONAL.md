@@ -1,98 +1,201 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** PHYSIO REFERRAL PRODUCTIZATION — KNEE-OA EVIDENCE MODULE / DESIGN ACTIVE
+> **STATUS:** PHYSIO REFERRAL PRODUCTIZATION — STEP 2 KNEE-OA EVIDENCE DESIGN FROZEN / CLOSED
 > **Updated:** 2026-09-11 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Fresh base `main`:** `d9f312f6d2d596ec0bd4f35f6de56ad98dc34b37`.
-> **Active branch:** `design/physio-referral-knee-oa-evidence-v1-2026-09-11`.
-> **Active slice:** `CU1-PRODUCT-KNEE-OA-EVIDENCE-V1-2026-09-11`.
-> **ACTIVE DESIGN/CANONICAL WRITER:** this bounded Physio Referral Knee-OA evidence-design slice only.
+> **Base `main`:** `d9f312f6d2d596ec0bd4f35f6de56ad98dc34b37`.
+> **Design branch:** `design/physio-referral-knee-oa-evidence-v1-2026-09-11`.
+> **Closed slice:** `CU1-PRODUCT-KNEE-OA-EVIDENCE-V1-2026-09-11`.
+> **Reviewed substantive head:** `6b82691c8431b699d20752c83b443793989f6402`.
+> **Review artifact head:** `f20f01f34abf1796f075640a397d085443834c59`.
+> **ACTIVE DESIGN/CANONICAL WRITER:** NONE — Step 2 closed.
 > **ACTIVE RUNTIME WRITER:** NONE.
 > **Production config/secret authority:** NONE.
 > **Patient-data mutation authority:** NONE.
-> **Deploy/production-smoke authority:** NONE.
+> **Merge/deploy authority from this closeout:** NONE.
 
 ---
 
-# 1. Prior closed state
+# 1. Prior program state preserved
 
-Clinical Learning Hub L-1D is `MERGED / DEPLOYED / PRODUCTION-SMOKE-VERIFIED / CLOSED`. Its frozen/runtime owners are read-only for this slice. No Learning Hub runtime, schema, database, transcript, Practice Review or Signal work is authorized here.
+Clinical Learning Hub L-1D remains `MERGED / DEPLOYED / PRODUCTION-SMOKE-VERIFIED / CLOSED` and was not modified by this Physio Referral design slice.
 
-Existing CU-1 Physiotherapy Referral v2 is already implemented/tested/merged/deployed. Its production runtime and frozen broad taxonomy are not being mutated in this design slice.
+Existing CU-1 Physiotherapy Referral v2 remains the deployed production runtime. No CU-1 runtime/API/formatter/static production UI/database file was changed in Step 2.
 
 ---
 
-# 2. Product-owner direction
+# 2. Step-2 closure evidence
 
-The product owner authorized continuation of the Physio Referral productization work after completion of the separate Learning Hub workstream.
-
-The first commercial/product vertical slice remains deliberately limited to:
+Human evidence design:
 
 ```text
-Knee Osteoarthritis only
+clinic_utilities/physio_referral_product/KNEE_OA_EVIDENCE_DESIGN_V1.md
 ```
 
-The frozen Step-1 UX contract has been carried forward onto the fresh 2026-09-11 `main` ancestry at:
+Machine evidence contract:
+
+```text
+clinic_utilities/physio_referral_product/contracts/knee_oa_evidence_contract_v1.yaml
+```
+
+UX contract after evidence-state REPLAN:
 
 ```text
 clinic_utilities/physio_referral_product/UX_CONTRACT_CURRENT.md
 ```
 
-Target product positioning remains an evidence-aware, fast referral assistant suitable for later subscription around the previously selected initial price point of approximately €9.99/month, not a simple text generator.
-
----
-
-# 3. Current authorized work — Step 2 only
-
-Design and freeze the Knee-OA evidence knowledge module.
-
-Required outputs:
+Exact design review:
 
 ```text
-reviewed source registry
-per-intervention source positions
-explicit evidence-state semantics
-cross-guideline conflict semantics
-positive suggestion triggers
-caution / limited-evidence triggers
-source-year vs product-reviewed-on separation
-machine-readable Step-2 contract
-human-readable design rationale
+clinic_utilities/physio_referral_product/KNEE_OA_EVIDENCE_DESIGN_REVIEW_V1.md
+DESIGN PASS / MATERIAL OPEN FINDING NONE
 ```
 
-Clinical evidence must remain source-specific. Conflicting frameworks must not be silently averaged into a fake consensus.
+Machine gates:
+
+```text
+run 34559461372
+head 6b82691c8431b699d20752c83b443793989f6402
+SUCCESS
+
+run 34559680326
+head f20f01f34abf1796f075640a397d085443834c59
+SUCCESS
+```
+
+Exact ancestry review showed merge base exactly fresh `main` `d9f312f6...`, `behind_by = 0` at the substantive review point, and no runtime leakage.
 
 ---
 
-# 4. Explicit non-authority / hold
+# 3. Frozen Step-2 decisions
 
-Until a later separate product-owner implementation decision:
+## Evidence-state model
 
 ```text
-NO CU-1 runtime code mutation
+recommended_or_supported
+conditional_or_context_dependent
+limited_or_insufficient_evidence
+guideline_conflict_or_mixed
+recommendation_against_routine_use
+not_yet_assessed
+```
+
+`guideline_conflict_or_mixed` was added after real source review showed that five states could not honestly represent acupuncture/manual-therapy disagreement.
+
+Greek surface semantic:
+
+```text
+Οι οδηγίες διαφέρουν
+```
+
+## Evidence claim scope
+
+Source positions retain:
+
+```text
+direct_item_recommendation
+named_component_of_broader_recommendation
+broader_recommendation_only
+contextual_clinical_mapping
+```
+
+A broad strong recommendation cannot silently become an item-specific strong recommendation.
+
+## Reviewed Knee-OA smart default
+
+```text
+implicit individualized PT / active rehabilitation
++ therapeutic exercise
++ progressive strengthening
++ education & self-management
+```
+
+`graded_activity_exposure` is context-dependent rather than a universal default.
+
+## Adjuncts
+
+```text
+manual therapy       → guidelines differ
+soft-tissue work     → guidelines differ
+acupuncture          → guidelines differ
+dry needling         → excluded from Knee-OA surface; no positive Step-2 guideline position
+```
+
+## Integration seams
+
+```text
+walking aid
+→ existing canonical CU-1 ID
+→ not currently exposed in Knee UI relevance
+
+weight management
+→ strongly supported when overweight/obesity applies
+→ no dedicated current selectable CU-1 ID
+→ advisory-only in Step 2; no inference
+```
+
+---
+
+# 4. Hard evidence/product invariants
+
+```text
+INSUFFICIENT EVIDENCE != EVIDENCE AGAINST
+GUIDELINE CONFLICT != CONSENSUS
+SOURCE YEAR != PRODUCT REVIEW DATE
+BROAD RECOMMENDATION != ITEM-SPECIFIC STRONG RECOMMENDATION
+MISSING CONTEXT != NEGATIVE CONTEXT
+SUGGESTION != CLINICIAN SELECTION
+NO exact exercise prescription invented
+NO adjunct replaces active rehabilitation
+NO autonomous literature-to-live-rule mutation
+```
+
+---
+
+# 5. Lifecycle
+
+```text
+STEP 1 UX CONTRACT                         COMPLETE / EVIDENCE REPLAN INCORPORATED
+STEP 2 HUMAN EVIDENCE DESIGN              PASS
+STEP 2 MACHINE CONTRACT                   PASS
+STEP 2 MACHINE GATES                      SUCCESS
+STEP 2 EXACT DESIGN REVIEW                PASS
+MATERIAL OPEN FINDING                     NONE
+STEP 2 DESIGN FROZEN                      YES
+RUNTIME IMPLEMENTED                       NO
+PR/MERGE                                  NO
+DEPLOYED                                  NO
+```
+
+---
+
+# 6. Exact next action
+
+```text
+STEP 3 — dynamic Knee-OA referral/template contract
+```
+
+Define deterministically how:
+
+```text
+diagnosis + laterality
++ phenotype/findings
++ functional limitations
++ selected evidence-aware plan
++ optional power-user selections
+→ live concise referral text
+```
+
+Step 3 remains a design task unless separately authorized for runtime implementation.
+
+Current hold:
+
+```text
 NO production UI rewrite
+NO CU-1 runtime mutation
 NO second diagnosis
-NO frozen broad CU-1 taxonomy expansion unless Step-2 review proves a concrete contradiction and triggers REPLAN
+NO billing/auth/entitlements
 NO patient persistence
-NO billing/auth/entitlement implementation
-NO autonomous literature-to-live-rule updating
-NO PR merge
-NO deploy
-NO production smoke
-```
-
-The current branch is design/canonical/evidence-contract work only.
-
----
-
-# 5. Exact next action
-
-```text
-review current authoritative Knee-OA guidance/evidence
-→ map only interventions relevant to the existing CU-1 Knee-OA state/options
-→ determine whether the frozen five-state UX evidence model is sufficient
-→ if cross-guideline disagreement cannot be represented honestly, record explicit REPLAN rather than hide conflict
-→ create human + machine Step-2 evidence contracts
-→ perform exact design review
-→ freeze/release writer lock if clean
+NO autonomous evidence updates
+NO merge/deploy/production smoke from Step-2 authority
 ```
