@@ -153,3 +153,82 @@ Exact next product-design step:
 ```text
 STEP 3 — dynamic Knee-OA referral/template contract
 ```
+
+---
+
+## 2026-09-11 — Step-3 dynamic Knee-OA referral/template design frozen
+
+Step 3 defined the deterministic live referral composition layer without modifying the deployed CU-1 runtime.
+
+Branch:
+
+```text
+design/physio-referral-knee-oa-template-v1-2026-09-11
+```
+
+Frozen Step-2 parent:
+
+```text
+ab4b349223cd4c461837ab3125967a06d169a7e1
+```
+
+Reviewed substantive head:
+
+```text
+cd4a42b4582921df7eb64d6ff3fb7c718a141c3a
+```
+
+Review-artifact head:
+
+```text
+11f04d9ea316ba7fc30a03f4aaa13b60ea5c1e65
+```
+
+The product now has a machine-defined live composition model:
+
+```text
+clinician-selected CU-1 state
++ bounded ephemeral Knee-OA phenotype overlay
+→ deterministic semantic projection
+→ deterministic Greek referral text
+```
+
+No LLM is required for routine referral generation.
+
+Material review findings corrected before closure include:
+
+- explicit clinician OA assertion is required before Copy; opening the fixed Knee-OA screen does not itself establish the diagnosis;
+- laterality must be `right | left | bilateral` for Copy;
+- `stiffness symptom != ROM restriction` and `generic weakness != objective weakness` are preserved through a tiny product-local phenotype overlay;
+- exact Greek laterality and task grammar were polished and frozen in fixtures;
+- a bounded Knee-OA power-user subset was defined so unsupported selections fail closed instead of silently disappearing;
+- selected items must render, block, or be covered by explicit semantic de-duplication that preserves structured state;
+- restrictions and clinician notes have deterministic output ownership;
+- evidence labels/citations remain UI-only and do not leak into copied referral prose;
+- mixed-guideline adjuncts remain subordinate to active rehabilitation;
+- `true_locking_or_major_mechanical_rom_block` is deliberately not exposed in the first product surface because the existing CU-1 rule catalog does not derive a safety trigger from that finding itself; future exposure requires a bounded safety/reassessment mapping rather than a second hidden product safety engine;
+- manual edited prose remains an ephemeral output buffer and does not reverse-write structured clinical state.
+
+Exact design review:
+
+```text
+clinic_utilities/physio_referral_product/KNEE_OA_TEMPLATE_DESIGN_REVIEW_V1.md
+DESIGN PASS / MATERIAL OPEN FINDING NONE
+```
+
+Machine evidence:
+
+```text
+run 34561575795 — SUCCESS on substantive head cd4a42b...
+run 34561638107 — SUCCESS on review-artifact head 11f04d9...
+```
+
+The validated fixture set covers routine exact-output cases, power-user preservation, semantic de-duplication, unsupported-selection fail-closed behavior and negative Copy-readiness cases.
+
+No production CU-1 runtime/API/formatter/static UI/database mutation occurred.
+
+Exact next product-design step:
+
+```text
+STEP 4 — Evidence Interaction / Traceability Layer
+```
