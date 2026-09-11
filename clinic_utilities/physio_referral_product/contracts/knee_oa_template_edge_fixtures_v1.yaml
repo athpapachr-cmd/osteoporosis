@@ -1,0 +1,70 @@
+version: knee_oa_template_edge_fixtures_v1
+contract: knee_oa_template_contract_v1
+synthetic_only: true
+
+render_fixtures:
+  - id: power_user_findings_and_functions_preserved
+    input:
+      laterality: right
+      formal_assertion_state: "yes"
+      findings: [joint_line_pain, tenderness, extension_lag]
+      functional_impairments: [jumping_landing, pivot_change_of_direction]
+      rehab_directions: [therapeutic_exercise, progressive_strengthening, education_and_self_management]
+      adjunct_options: []
+      goals: []
+      phenotype: {stiffness_symptom: false, weakness_symptom_or_context: false}
+    expected_text: "Παραπομπή για εξατομικευμένη φυσιοθεραπευτική αποκατάσταση λόγω οστεοαρθρίτιδας δεξιού γόνατος. Η κλινική εικόνα περιλαμβάνει πόνο στη μεσάρθρια γραμμή, ευαισθησία στην ψηλάφηση και υστέρηση έκτασης. Λειτουργικά, υπάρχει δυσχέρεια σε άλματα και προσγειώσεις και σε στροφές και αλλαγές κατεύθυνσης. Παρακαλώ για ενεργητικό, εξατομικευμένο πρόγραμμα με θεραπευτική άσκηση, προοδευτική ενδυνάμωση και εκπαίδευση για αυτοδιαχείριση, προσαρμοσμένο στην κλινική ανταπόκριση και στους λειτουργικούς στόχους."
+
+  - id: nonredundant_goal_plural_preserved
+    input:
+      laterality: right
+      formal_assertion_state: "yes"
+      findings: []
+      functional_impairments: []
+      rehab_directions: [therapeutic_exercise, progressive_strengthening, education_and_self_management]
+      adjunct_options: []
+      goals: [graded_return_to_work, maintain_or_regain_adl_independence]
+      phenotype: {stiffness_symptom: false, weakness_symptom_or_context: false}
+    expected_text: "Παραπομπή για εξατομικευμένη φυσιοθεραπευτική αποκατάσταση λόγω οστεοαρθρίτιδας δεξιού γόνατος. Παρακαλώ για ενεργητικό, εξατομικευμένο πρόγραμμα με θεραπευτική άσκηση, προοδευτική ενδυνάμωση και εκπαίδευση για αυτοδιαχείριση, προσαρμοσμένο στην κλινική ανταπόκριση και στους λειτουργικούς στόχους. Επιπλέον στόχοι: σταδιακή επιστροφή στην εργασία και διατήρηση ή ανάκτηση ανεξαρτησίας στις καθημερινές δραστηριότητες."
+
+  - id: restriction_and_clinician_note_preserved
+    input:
+      laterality: left
+      formal_assertion_state: "yes"
+      findings: [pain]
+      functional_impairments: []
+      rehab_directions: [therapeutic_exercise, progressive_strengthening, education_and_self_management]
+      adjunct_options: []
+      goals: []
+      explicit_restrictions:
+        - restriction_id: sport_or_work_restriction
+          state_or_value: αποφυγή τρεξίματος μέχρι επανεκτίμηση
+          source: clinician_entered
+      clinician_free_text_optional: Σταδιακή επιστροφή στις καθημερινές δραστηριότητες σύμφωνα με την ανοχή
+      phenotype: {stiffness_symptom: false, weakness_symptom_or_context: false}
+    expected_text: "Παραπομπή για εξατομικευμένη φυσιοθεραπευτική αποκατάσταση λόγω οστεοαρθρίτιδας αριστερού γόνατος. Η κλινική εικόνα περιλαμβάνει πόνο. Παρακαλώ για ενεργητικό, εξατομικευμένο πρόγραμμα με θεραπευτική άσκηση, προοδευτική ενδυνάμωση και εκπαίδευση για αυτοδιαχείριση, προσαρμοσμένο στην κλινική ανταπόκριση και στους λειτουργικούς στόχους. Να τηρηθούν οι καταγεγραμμένοι περιορισμοί: περιορισμός αθλητισμού ή εργασίας: αποφυγή τρεξίματος μέχρι επανεκτίμηση. Κλινική σημείωση: Σταδιακή επιστροφή στις καθημερινές δραστηριότητες σύμφωνα με την ανοχή."
+
+blocking_fixtures:
+  - id: unsupported_bruising_blocks_product_projection
+    input:
+      laterality: right
+      formal_assertion_state: "yes"
+      findings: [bruising]
+      functional_impairments: []
+      rehab_directions: [therapeutic_exercise, progressive_strengthening, education_and_self_management]
+      adjunct_options: []
+      goals: []
+      phenotype: {stiffness_symptom: false, weakness_symptom_or_context: false}
+    expected_error: unsupported_product_selection:findings:bruising
+
+  - id: true_locking_blocks_until_safety_mapping_exists
+    input:
+      laterality: right
+      formal_assertion_state: "yes"
+      findings: [true_locking_or_major_mechanical_rom_block]
+      functional_impairments: []
+      rehab_directions: [therapeutic_exercise, progressive_strengthening, education_and_self_management]
+      adjunct_options: []
+      goals: []
+      phenotype: {stiffness_symptom: false, weakness_symptom_or_context: false}
+    expected_error: unsupported_product_selection:findings:true_locking_or_major_mechanical_rom_block
