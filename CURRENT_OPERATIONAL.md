@@ -1,16 +1,16 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** CLINICAL LEARNING HUB L-1D — MERGED / DEPLOY PENDING
-> **Updated:** 2026-09-10 Asia/Nicosia.
+> **STATUS:** CLINICAL LEARNING HUB L-1D — MERGED / DEPLOYED / PRODUCTION-SMOKE-VERIFIED / CLOSED
+> **Updated:** 2026-09-11 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Fresh implementation base:** `6feb03dbaea101f11828db9b71f57ebb718ccaa6`.
 > **Slice:** `CORE-LEARNING-HUB-L1D-CLIPBOARD-HANDOFF-2026-09-10`.
 > **PR #86:** CLOSED / MERGED.
 > **Reviewed PR head:** `5e524c552001c2899e5a274e7af103ae575fd669`.
 > **Exact tested runtime head:** `d94b9a17b60299e098a5c58722542b6d8d68827d`.
 > **Squash merge SHA:** `e0ecf43b5c4e96f20be7a777bfec65a87641d339`.
+> **Production-verified deploy commit:** `833fddb15f41e78071b25c5807a120c8237377ac`.
+> **Render deploy:** `dep-dah21hpsrm7s7392hu90` — LIVE.
 > **ACTIVE RUNTIME/DESIGN WRITER:** NONE.
-> **L-1C:** MERGED / DEPLOYED; Project completion protocol installed by product owner in weekly Osteoporosis Clinical Mentoring.
 > **Production config/secret authority exercised:** NO.
 > **Patient-data mutation authority:** NONE.
 > **Raw-transcript authority:** NONE.
@@ -19,13 +19,13 @@
 
 ---
 
-# 1. Merged L-1D workflow
+# 1. Released L-1D workflow
 
-The default Learning Hub Inbox now includes a clinician-initiated quick handoff surface:
+The default Clinical Learning Hub Inbox includes the clinician-initiated quick handoff action:
 
 `Paste & Send Challenge`
 
-Workflow:
+Production workflow:
 
 ```text
 Challenge conversation
@@ -41,50 +41,32 @@ No accepted Challenge is created by the clipboard action itself.
 
 ---
 
-# 2. Supported copied artifact shapes
+# 2. Production verification
 
-The client accepts:
-
-1. bare canonical `ClinicalLearningChallengeV1`;
-2. bare bounded rich legacy `ClinicalLearningChallengeV1` with `schema_version=1.0`;
-3. wrapper `{episode, source_event_id?, loop_plan?, resources?}`;
-4. the same JSON inside a Markdown `json` code fence.
-
-For a bare episode carrying top-level `source_event_id`, the client lifts that identifier into the existing import envelope before server validation.
-
-A successful server response is surfaced with:
+Render auto-deploy completed successfully on the current docs-only descendant carrying the merged L-1D runtime:
 
 ```text
-state
-import_id
-source_event_id
-source_format
-idempotent
+service = srv-d5qfk31r0fns73di596g
+deploy = dep-dah21hpsrm7s7392hu90
+commit = 833fddb15f41e78071b25c5807a120c8237377ac
+trigger = new_commit
+status = live
+finished = 2026-09-10T03:17:02Z
 ```
 
-The Inbox then refreshes and opens the returned candidate.
+The product owner then completed an authenticated production smoke and reported that:
+
+```text
+Copy from Challenge = worked
+Paste & Send Challenge = worked
+Inbox import/review flow = worked
+```
+
+This closes the L-1D acceptance objective. The prior L-1B clinician review / Learning Loop activation path was already production-smoke-verified separately; this smoke specifically verifies the new clipboard handoff layer reaches and works with that existing review path.
 
 ---
 
-# 3. iPhone / browser fallback
-
-Clipboard access occurs only after the clinician taps the primary button.
-
-If the browser does not expose Clipboard API access, permission is denied, or the clipboard is empty:
-
-```text
-NO network write
-→ reveal compact manual paste fallback in Inbox
-→ clinician pastes the same artifact
-→ Send pasted Challenge
-→ same protected /api/imports flow
-```
-
-The Advanced importer remains available unchanged.
-
----
-
-# 4. Security / authority preserved
+# 3. Security / authority preserved
 
 ```text
 LEARNING RECORD != PATIENT RECORD
@@ -92,7 +74,7 @@ clipboard access requires explicit user gesture
 clipboard content is not persisted in browser storage
 raw transcript is not an accepted learning artifact
 existing PHI guard remains authoritative
-pending_review only
+pending_review only at handoff
 no auto-accept
 no imported clinician-review authority
 no imported reference-verification authority
@@ -101,57 +83,42 @@ no Signal promotion
 no patient reads/writes
 no new backend endpoint/table/schema
 no CLINICAL_LEARNING_INGEST_KEY configuration
-no MCP/cron transport claim
+no native MCP/write-tool claim
 ```
 
-A `pending_review` receipt proves only that an Inbox candidate exists.
+The L-1D convenience surface reuses the existing protected `/clinical/learning/api/imports` path and does not expand write authority.
 
 ---
 
-# 5. Verification and merge evidence
+# 4. Verification evidence
 
 Exact tested runtime head:
 
 `d94b9a17b60299e098a5c58722542b6d8d68827d`
 
-Exact PR head:
-
-`5e524c552001c2899e5a274e7af103ae575fd669`
-
-GitHub Actions on the PR head:
+PR-head gates:
 
 - Clinical Learning L1C challenge transport gate `34431909196` — **SUCCESS**.
 - Clinical Learning L1B regression gate `34431909214` — **SUCCESS**.
 - Clinical Learning L1 regression gate `34431909207` — **SUCCESS**.
-- L0 contract validation step — **SUCCESS**; overall L0 workflow failure is the expected design-only scope rejection for a non-L0 runtime slice.
-
-Squash merge:
-
-```text
-PR = #86
-merged = YES
-merge SHA = e0ecf43b5c4e96f20be7a777bfec65a87641d339
-merged_at = 2026-09-10T03:13:20Z
-```
-
-No backend, database, frozen schema or adjacent-owner file changed.
+- L0 contract validation step — **SUCCESS**; overall L0 workflow failure was only the expected design-only scope rejection for a non-L0 runtime slice.
 
 ---
 
-# 6. Lifecycle state
+# 5. Lifecycle state
 
 ```text
 L-1D IMPLEMENTED = YES
 L-1D TESTED = YES
 L-1D REVIEWED = PASS
 L-1D MERGED = YES
-PASTE & SEND UX = MERGED
-MANUAL INBOX FALLBACK = MERGED
-DEPLOYED = PENDING NORMAL RENDER AUTO-DEPLOY
-PRODUCTION CLIPBOARD SMOKE = NO
+L-1D DEPLOYED = YES
+PRODUCTION CLIPBOARD SMOKE = PASS
+PASTE & SEND UX = PRODUCTION VERIFIED
+MANUAL INBOX FALLBACK = AVAILABLE
 WRITER LOCK = NONE
 PRODUCTION INGEST KEY = NOT CONFIGURED
 NATIVE CHATGPT WRITE TOOL = NOT CONNECTED
 ```
 
-Exact next action: allow normal Render `autoDeploy=yes` behavior from `main`; do not manually trigger a duplicate deployment. Verify the auto-created deployment reaches LIVE at the L-1D merge commit or a docs-only descendant carrying the same runtime, then perform one authenticated production clipboard smoke.
+L-1D is closed. Future zero-click ChatGPT → Cockpit transport, MCP/app integration or cron reconciliation remains a separate explicitly governed integration slice and must not be inferred from this closeout.

@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — Clinical Learning Hub L-1D Clipboard Handoff
 
-> **STATUS:** MERGED / DEPLOY PENDING
+> **STATUS:** MERGED / DEPLOYED / PRODUCTION-SMOKE-VERIFIED / CLOSED
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Slice ID:** `CORE-LEARNING-HUB-L1D-CLIPBOARD-HANDOFF-2026-09-10`.
 > **Base:** `6feb03dbaea101f11828db9b71f57ebb718ccaa6`.
@@ -9,7 +9,8 @@
 > **Reviewed PR head:** `5e524c552001c2899e5a274e7af103ae575fd669`.
 > **Exact tested runtime head:** `d94b9a17b60299e098a5c58722542b6d8d68827d`.
 > **Squash merge SHA:** `e0ecf43b5c4e96f20be7a777bfec65a87641d339`.
-> **L-1C:** MERGED / DEPLOYED; completion protocol installed in weekly mentoring automation.
+> **Production-verified deploy commit:** `833fddb15f41e78071b25c5807a120c8237377ac`.
+> **Render deploy:** `dep-dah21hpsrm7s7392hu90` — LIVE.
 > **Frozen L-0/L-1 schema owners:** READ-ONLY / unchanged.
 > **Writer lock:** NONE.
 
@@ -17,12 +18,13 @@
 
 # 1. Product result
 
-L-1D reduces Challenge handoff from the Advanced/debug workflow to a normal Inbox action:
+L-1D reduced Challenge handoff from the Advanced/debug workflow to a normal Inbox action:
 
 ```text
 Copy structured Challenge artifact
 → Paste & Send Challenge
 → pending_review Inbox candidate
+→ clinician Review & Save
 ```
 
 It is a convenience layer over the existing protected import path, not a new authority surface.
@@ -35,9 +37,9 @@ The Inbox default view includes `Quick Challenge Handoff` with primary action:
 
 `Paste & Send Challenge`
 
-Clipboard read is attempted only in that explicit click handler.
+Clipboard read occurs only after an explicit clinician tap.
 
-Supported copied shapes:
+Supported copied shapes remain:
 
 1. bare canonical `ClinicalLearningChallengeV1`;
 2. bare bounded rich legacy `ClinicalLearningChallengeV1` with `schema_version=1.0`;
@@ -46,7 +48,7 @@ Supported copied shapes:
 
 A top-level `source_event_id` on a bare episode is lifted into the existing request envelope before adapter validation.
 
-Successful import shows:
+Successful import surfaces:
 
 ```text
 state
@@ -56,7 +58,7 @@ source_format
 idempotent
 ```
 
-and automatically refreshes/opens the returned Inbox candidate.
+and refreshes/opens the returned Inbox candidate.
 
 ---
 
@@ -71,9 +73,9 @@ no network write
 → same /api/imports path
 ```
 
-If parsing or server validation fails after a successful clipboard read, the copied source is retained only in the visible in-memory textarea for correction/retry. It is not written to browser storage.
+If parsing or server validation fails after a successful clipboard read, source text is retained only in the visible in-memory textarea for correction/retry and is not written to browser storage.
 
-The Advanced importer remains unchanged.
+The Advanced importer remains available unchanged.
 
 ---
 
@@ -119,22 +121,18 @@ no production ingest key configuration
 
 ---
 
-# 6. Verification and release evidence
+# 6. Verification and production evidence
 
 Exact tested runtime head:
 
 `d94b9a17b60299e098a5c58722542b6d8d68827d`
 
-Exact PR head:
-
-`5e524c552001c2899e5a274e7af103ae575fd669`
-
-GitHub Actions on the PR head:
+PR-head GitHub Actions:
 
 - L1C challenge transport gate `34431909196` — **SUCCESS**.
 - inherited L1B regression gate `34431909214` — **SUCCESS**.
 - inherited L1 regression gate `34431909207` — **SUCCESS**.
-- L0 contract validation step — **SUCCESS**; overall L0 workflow failure is the expected design-only scope rejection for a non-L0 runtime slice.
+- L0 contract validation step — **SUCCESS**; overall L0 workflow failure was only the expected design-only scope rejection for a non-L0 runtime slice.
 
 Merge:
 
@@ -144,53 +142,38 @@ squash merge SHA = e0ecf43b5c4e96f20be7a777bfec65a87641d339
 merged_at = 2026-09-10T03:13:20Z
 ```
 
-Verified behaviors include:
-
-- browser JavaScript syntax;
-- explicit clipboard user gesture;
-- fenced JSON extraction;
-- bare/wrapper normalization;
-- stable `source_event_id` handoff;
-- same protected `/api/imports` endpoint;
-- pending-review receipt/open-Inbox behavior;
-- manual fallback without automatic network write;
-- no local/session storage operations for clipboard content;
-- Advanced importer preserved;
-- frozen schema owners unchanged;
-- no Clinic Utilities/RF/physio/CU-1 spillover.
-
----
-
-# 7. Bounded changed files
-
-The merged runtime/release diff changed only:
+Production deployment:
 
 ```text
-CURRENT_OPERATIONAL.md
-SLICE_PLAN_CURRENT.md
-static/clinical-learning/l1b.js
-test_clinical_learning_l1_ui_contract.py
-.github/workflows/clinical-learning-l1-tests.yml
-.github/workflows/clinical-learning-l1b-tests.yml
-.github/workflows/clinical-learning-l1c-tests.yml
+Render service = srv-d5qfk31r0fns73di596g
+deploy = dep-dah21hpsrm7s7392hu90
+commit = 833fddb15f41e78071b25c5807a120c8237377ac
+status = live
+finished = 2026-09-10T03:17:02Z
+```
+
+Product-owner authenticated production smoke on the deployed L-1D surface:
+
+```text
+Copy structured Challenge artifact = PASS
+Paste & Send Challenge = PASS
+Inbox import + review flow = PASS
 ```
 
 ---
 
-# 8. Release state
+# 7. Release state
 
 ```text
 IMPLEMENTED = YES
 TESTED = YES
 REVIEWED = PASS
 MERGED = YES
-PASTE & SEND UX = MERGED
-MANUAL FALLBACK = MERGED
-DEPLOYED = PENDING NORMAL RENDER AUTO-DEPLOY
-PRODUCTION CLIPBOARD SMOKE = NO
+DEPLOYED = YES
+PRODUCTION CLIPBOARD SMOKE = PASS
+PASTE & SEND UX = PRODUCTION VERIFIED
+MANUAL FALLBACK = AVAILABLE
 WRITER LOCK = NONE
 ```
 
-Next lifecycle action: allow normal Render auto-deploy from `main`, verify the auto-created deployment reaches LIVE at the merge commit or a docs-only descendant carrying the same reviewed runtime, then complete one authenticated production clipboard smoke.
-
-MCP/native write transport and Render cron reconciliation remain separate future integration slices.
+L-1D is closed. MCP/native write transport and any Render cron reconciliation remain separate future integration slices with separate authority.
