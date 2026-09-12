@@ -1,129 +1,73 @@
-# SLICE_PLAN_CURRENT.md — Knee-OA Cockpit integration + release
+# SLICE_PLAN_CURRENT.md — Knee-OA v1 release closed
 
-> **STATUS:** IMPLEMENTED / EXACT-HEAD TESTED / RELEASE REVIEW PASS / PR NEXT.
-> **Slice:** `CU1-PRODUCT-KNEE-OA-COCKPIT-INTEGRATION-V1-20260912`.
-> **Branch:** `feat/physio-knee-oa-cockpit-integration-v1-2026-09-12`.
-> **Parent closed v3:** `b7f2db6fd86f90a32875d9b9cfd356cfa6129c69`.
-> **Fresh main / merge base:** `d9f312f6d2d596ec0bd4f35f6de56ad98dc34b37`.
-> **Reviewed/tested RC head:** `57d879b072fcaf2bef350d5dbb0547ce465764e1`.
-> **Writer:** ACTIVE only through PR / merge / deploy / smoke closeout.
-> **Release / real clinical pilot validation:** release path authorized; pilot validation remains separate.
+> **STATUS:** CLOSED — runtime merged and deployed; live public-asset/auth-boundary smoke passed; archive/closeout recorded.
+> **Closed runtime slice:** `CU1-PRODUCT-KNEE-OA-COCKPIT-INTEGRATION-V1-20260912`.
+> **Runtime release PR:** `#87`.
+> **Runtime release SHA:** `eeec7f82b4f5a9054e7df51354803dd75e7dc9eb`.
+> **Render deploy:** `dep-daifjt0jo6nc73biqhpg` — LIVE at exact runtime release SHA.
+> **External live boundary-smoke:** `34680029691` — SUCCESS.
+> **Writer:** NONE after this bounded archival closeout merges.
+> **Next implementation slice:** NONE SELECTED.
 
-## 1. Delivered architecture
+## 1. Completed
 
-```text
-six root canonicals
-→ repo-wide operational authority
-
-commercial_products/physio_referral/
-→ product/commercial strategy, current state, product history, reviews/market/releases
-
-clinic_utilities/physio_referral_product/
-→ clinical/UX technical contracts, shared Knee-OA projection, validators/tests
-
-static/clinic-utilities/physio-referral/
-+ clinic_utilities/physio_referral_api.py
-+ clinic_utilities/physio_referral_product/production_api.py
-→ authenticated Cockpit production surface
-```
-
-Old product-canonical paths under the implementation tree are redirect-only compatibility files.
-
-## 2. Production UI contract delivered
-
-The existing protected Cockpit route `/clinical/clinic-utilities/physio-referral` now carries the reviewed Knee-OA product surface:
-
-- explicit OA diagnosis assertion and laterality;
-- live deterministic referral, no routine Generate button;
-- direct `✎ Επεξεργασία` + safe manual reconciliation;
-- evidence-aware defaults/suggestions;
-- `Άλλες n προτάσεις` discoverability;
-- `★ Συχνά / Σχετικά τώρα / Όλα` scan-first advanced architecture;
-- qualifier semantics and FFD/weakness/pes-anserine safeguards;
-- evidence conflict transparency;
-- export/readiness safety precedence;
-- no patient draft persistence.
-
-## 3. Server/runtime ownership delivered
-
-`knee_oa_projection.py` is the shared server-authoritative deterministic projection. Production and local prototype both use it.
-
-The local `prototype/server.py` is only loopback transport and is never mounted in production.
-
-The protected production boundary truthfully identifies Cockpit use as non-synthetic before adapting internally to the frozen compatibility envelope.
-
-No database migration or patient write path was added.
-
-## 4. Commercial canonical split delivered
-
-Product authorities live under:
-
-`commercial_products/physio_referral/`
-
-Current key authorities:
-
-- `CURRENT.md`
-- `PRODUCT_CONTEXT_CURRENT.md`
-- `PRODUCT_PLAN.md`
-- `PRODUCT_CHANGELOG.md`
-- `releases/KNEE_OA_V1_CURRENT.md`
-- `releases/KNEE_OA_V1_RELEASE_REVIEW.md`
-
-This subtree is not a seventh root canonical authority.
-
-## 5. Exact acceptance evidence
-
-At release-candidate head `57d879b072fcaf2bef350d5dbb0547ce465764e1`:
+The Knee-OA product has completed:
 
 ```text
-Cockpit integration gate   34679427725   SUCCESS
-Inherited product gate     34679427741   SUCCESS
-CU-1 focused gate          34679427822   SUCCESS
+design/evidence contract
+→ deterministic referral contract
+→ interaction/traceability contract
+→ functional prototype
+→ qualifier refinement
+→ four specialist reviews + supplementary combined review
+→ cross-review amendment
+→ usability refinement
+→ scan-first advanced redesign
+→ protected Cockpit production integration
+→ final release review
+→ PR #87
+→ squash merge
+→ exact-SHA Render deploy
+→ external live public-asset + auth-boundary smoke
+→ immutable 4+1 review archive
 ```
 
-The full release/red-team review is PASS with no open blocker. Its two material technical findings were corrected before the reviewed head.
+## 2. Production state
 
-Acceptance proven includes:
+The deployed production route is:
 
-1. production route/API requires existing clinical authentication;
-2. projection/safety remains server authoritative and real-CU1-backed;
-3. all reviewed advanced/evidence/safety behavior remains reachable;
-4. no browser storage/analytics/patient persistence was introduced;
-5. production FastAPI + Chromium flow works at the exact RC head;
-6. inherited CU-1 and Knee-OA regressions pass;
-7. adjacent Learning Hub and RF regression smoke passes;
-8. production clipboard export contains the clean referral rather than prototype markings;
-9. mobile 390px reflow remains within viewport;
-10. synthetic-marked requests are rejected at the production boundary.
+`/clinical/clinic-utilities/physio-referral`
 
-## 6. Explicit non-claims
+Existing authentication and real CU-1 validation/safety remain authoritative. The local loopback prototype is not mounted in production.
+
+No database migration, patient persistence, analytics, billing, new GeSY clinical rule or second diagnosis was added by the release.
+
+## 3. Smoke precision
+
+The live smoke proved deployment visibility and the unauthenticated protection boundary. It did not use or retrieve production credentials.
+
+Therefore full authenticated live end-to-end smoke remains a separate future verification step and must not be silently inferred from local/authenticated FastAPI + Chromium release tests.
+
+## 4. Historical review archive
+
+Immutable review originals and checksums:
+
+`commercial_products/physio_referral/reviews/archive/2026-09-11-knee-oa-candidate-6539351c/`
+
+The archive contains four specialist sources plus one supplementary combined source. The supplementary file is not a fifth specialist axis.
+
+## 5. Deferred validation, not release blockers retroactively
 
 ```text
-actual iPhone Safari / VoiceOver acceptance    NOT YET PROVEN
-receiving-physiotherapist field validation     NOT YET PROVEN
-paid conversion / retention                    NOT YET PROVEN
-GeSY item-level overlay audit                   NOT ACTIVATED
-real clinical pilot                            NOT YET PROVEN
+actual iPhone Safari / VoiceOver
+authorized authenticated live E2E smoke
+receiving-physiotherapist field validation
+real clinical pilot
+paid conversion / retention
+Cyprus/GeSY item-level activation
+second-diagnosis selection
 ```
 
-None of these are silently converted into release evidence.
+## 6. Exact next governance state
 
-## 7. PR / merge / deploy acceptance
-
-Before squash merge:
-
-- PR head must equal the reviewed/re-gated intended head;
-- relevant PR-triggered workflows must settle cleanly;
-- fresh compare to `main` must remain behind by 0 and bounded;
-- no new material review finding may remain open.
-
-After merge:
-
-- verify exact new `main` SHA;
-- verify normal Render auto-deploy source commit equals that merge SHA;
-- production smoke must use no identifiable patient data;
-- close canonicals with exact deploy/smoke evidence and writer `NONE`.
-
-## 8. Exact next action
-
-Open the bounded PR to current `main`, verify exact PR-head checks, then follow the already-authorized squash-merge/deploy/smoke path if clean.
+No active engineering writer. Future work requires a fresh bounded slice and explicit writer claim. A second diagnosis should be chosen only after product/receiver/market evidence justifies it.
