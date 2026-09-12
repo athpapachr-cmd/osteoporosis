@@ -5,16 +5,15 @@ from typing import Any, Dict
 from fastapi import APIRouter, Depends, HTTPException
 
 from clinic_utilities.physio_referral_runtime import _require_clinical_key
-from clinic_utilities.physio_referral_product.prototype import server as knee_oa
+from clinic_utilities.physio_referral_product import knee_oa_projection
 
 
 def build_knee_oa_product_router() -> APIRouter:
     """Protected Cockpit transport for the reviewed Knee-OA product projection.
 
-    The loopback prototype HTTP server is never mounted. Only its deterministic,
-    real-CU1-backed bootstrap/project functions are reused so the production UI
-    and the reviewed synthetic candidate cannot silently diverge in clinical
-    meaning during this first integration slice.
+    Clinical meaning is owned by the shared deterministic projection module.
+    The local prototype is only an alternate loopback transport over that same
+    projection and is never mounted in production.
     """
 
     router = APIRouter(
@@ -25,14 +24,14 @@ def build_knee_oa_product_router() -> APIRouter:
 
     @router.get("/bootstrap", dependencies=protected)
     def product_bootstrap() -> Dict[str, Any]:
-        payload = dict(knee_oa.bootstrap())
+        payload = dict(knee_oa_projection.bootstrap())
         payload["deployment_context"] = "clinical_excellence_cockpit"
         return payload
 
     @router.post("/project", dependencies=protected)
     def product_project(payload: Dict[str, Any]) -> Dict[str, Any]:
         try:
-            return knee_oa.project(payload)
+            return knee_oa_projection.project(payload)
         except (ValueError, TypeError, KeyError, AssertionError, UnicodeError) as exc:
             raise HTTPException(status_code=400, detail="invalid_or_stale_physio_product_request") from exc
 
