@@ -146,4 +146,16 @@ document.addEventListener('click',event=>{
   }
 });
 
+// The base app starts bootstrap as soon as app.js executes. On a very fast
+// loopback response that can finish before the qualifier/v4 wrappers install,
+// leaving the initial prerequisite styling painted by the older base layer.
+// Reconcile exactly once as soon as state exists; subsequent changes use the
+// normal wrapped paint pipeline.
+let v4InitialPaintFrames=0;
+function v4ReconcileInitialPaint(){
+  if(state){paintStatus();v4RenderGrid();return;}
+  if(v4InitialPaintFrames++<120) requestAnimationFrame(v4ReconcileInitialPaint);
+}
+queueMicrotask(v4ReconcileInitialPaint);
+
 window.addEventListener('pagehide',()=>{$('#sheet')?.classList.remove('clinical-v4-sheet');});
