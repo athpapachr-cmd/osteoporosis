@@ -10,9 +10,11 @@ on:
       - 'static/clinic-utilities/physio-referral/**'
       - 'commercial_products/physio_referral/**'
       - 'test_physio_knee_oa_cockpit_browser.py'
+      - 'test_physio_knee_oa_jurisdiction_overlay.py'
       - '.github/workflows/physio-knee-oa-v4.yml'
       - '.github/workflows/physio-knee-oa-prototype.yml'
       - '.github/workflows/physio-knee-oa-cockpit-integration.yml'
+      - '.github/workflows/physio-knee-oa-jurisdiction-v1.yml'
 
 permissions:
   contents: read
@@ -41,9 +43,12 @@ jobs:
             'SLICE_PLAN_CURRENT.md',
             'osteoporosis-change-log.md',
             'test_physio_knee_oa_cockpit_browser.py',
+            'test_physio_knee_oa_cockpit_integration.py',
+            'test_physio_knee_oa_jurisdiction_overlay.py',
             '.github/workflows/physio-knee-oa-v4.yml',
             '.github/workflows/physio-knee-oa-prototype.yml',
             '.github/workflows/physio-knee-oa-cockpit-integration.yml',
+            '.github/workflows/physio-knee-oa-jurisdiction-v1.yml',
           }
           bad=[p for p in paths if p not in exact and not p.startswith(allowed)]
           assert not bad,bad
@@ -55,15 +60,16 @@ jobs:
           python -m pip install 'playwright==1.55.0'
       - name: Syntax
         run: |
-          python -m py_compile clinic_utilities/physio_referral_product/knee_oa_presentation_v4.py clinic_utilities/physio_referral_product/production_api.py clinic_utilities/physio_referral_product/prototype/server.py clinic_utilities/physio_referral_product/prototype/test_browser_qualifiers.py test_physio_knee_oa_cockpit_browser.py
+          python -m py_compile clinic_utilities/physio_referral_product/knee_oa_presentation_v4.py clinic_utilities/physio_referral_product/production_api.py clinic_utilities/physio_referral_product/jurisdiction_overlay.py clinic_utilities/physio_referral_product/prototype/server.py clinic_utilities/physio_referral_product/prototype/test_browser_qualifiers.py test_physio_knee_oa_cockpit_browser.py test_physio_knee_oa_cockpit_integration.py test_physio_knee_oa_jurisdiction_overlay.py
           node --check clinic_utilities/physio_referral_product/prototype/clinical_sheet_v4.js
           node --check static/clinic-utilities/physio-referral/product-clinical-sheet-v4.js
+          node --check static/clinic-utilities/physio-referral/product-jurisdiction-v1.js
           node --check static/clinic-utilities/physio-referral/production-finalize.js
       - name: Server and clinical invariants
         run: |
           python clinic_utilities/physio_referral_product/prototype/test_server.py
           python clinic_utilities/physio_referral_product/prototype/test_qualifiers.py
-          python -m unittest -v test_physio_knee_oa_cockpit_integration.py
+          python -m unittest -v test_physio_knee_oa_jurisdiction_overlay.py test_physio_knee_oa_cockpit_integration.py
       - name: Install Chromium
         run: python -m playwright install --with-deps chromium
       - name: V4 and inherited browser acceptance
