@@ -5,6 +5,7 @@ on:
     branches:
       - feat/physio-referral-knee-oa-prototype-v1-2026-09-11
       - feat/physio-knee-oa-review-amendments-v1-2026-09-12
+      - feat/physio-knee-oa-usability-refine-v2-2026-09-12
   pull_request:
     paths:
       - 'clinic_utilities/physio_referral_product/prototype/**'
@@ -28,7 +29,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Verify bounded Step 5/6A/review-amendment changed paths
+      - name: Verify bounded Step 5/6A/review/usability changed paths
         run: |
           python - <<'PY'
           import subprocess
@@ -58,6 +59,7 @@ jobs:
         run: |
           python clinic_utilities/physio_referral_product/prototype/test_browser.py
           python clinic_utilities/physio_referral_product/prototype/test_browser_qualifiers.py
+          python clinic_utilities/physio_referral_product/prototype/test_browser_usability_v2.py
       - name: Package and smoke standalone dependency closure
         run: python clinic_utilities/physio_referral_product/prototype/build_bundle.py
       - name: Publish synthetic prototype and screenshots
