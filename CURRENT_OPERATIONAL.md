@@ -1,85 +1,73 @@
-# CURRENT_OPERATIONAL.md — Knee-OA v1 authenticated live smoke closed / v5 review HOLD
+# CURRENT_OPERATIONAL.md — Cyprus / GeSY OA jurisdiction-overlay audit active
 
-> **STATUS:** PHYSIO REFERRAL KNEE-OA V1 — V4 RELEASED / DEPLOYED / AUTHENTICATED LIVE PRODUCT SMOKE PASS; V5 TESTED CANDIDATE AWAITS PRODUCT OWNER REVIEW.
+> **STATUS:** DESIGN / EVIDENCE AUDIT ACTIVE — NO UI/RUNTIME MUTATION AUTHORIZED.
 > **Updated:** 2026-09-12 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
+> **Bootstrap main:** `a2fa27c7ff26d1dd22cd6f726656ca0532daab75`.
 > **Current production runtime SHA:** `bf527e3836a18491b2758fd293b42f82e0924382`.
-> **Render deploy:** `dep-daiivp0jo6nc73bl6pug` — LIVE at exact production runtime SHA.
-> **Public/auth-boundary smoke:** `34689920602` — SUCCESS.
 > **Authenticated live smoke:** run `34681808255`, attempt `3` — SUCCESS.
-> **Authenticated smoke closeout:** `commercial_products/physio_referral/releases/KNEE_OA_V1_AUTH_LIVE_SMOKE_CLOSEOUT.md`.
-> **V5 tested candidate branch:** `fix/physio-knee-oa-v5-optional-refinement-prose-2026-09-12`.
-> **V5 tested substantive head:** `a47357c602120d3678e8f2f23b99775e616c79e1`.
-> **V5 gate:** `34693751545` — SUCCESS.
-> **ACTIVE RUNTIME / DESIGN WRITER:** NONE.
-> **PR / MERGE / DEPLOY AUTHORITY:** NONE for v5; Product Owner review HOLD.
-> **Real-patient data:** NOT USED in smoke or v5 technical validation.
+> **ACTIVE DESIGN WRITER:** `design/physio-cy-gesy-oa-overlay-v1-2026-09-12`.
+> **Mutation scope:** documentation + machine-design artifacts for Cyprus/GeSY OA source audit, difference matrix, jurisdiction schema and UX policy only.
+> **RUNTIME / UI WRITER:** NONE.
+> **V5 tested candidate:** remains separately in Product Owner review HOLD; no merge/deploy authority is implied here.
+> **Real-patient data:** NOT USED.
 
-## 1. Production lifecycle boundary
+## 1. Active bounded task
 
-The previously open authenticated-production verification boundary is now closed.
+`CYPRUS / GESY OA JURISDICTION OVERLAY V1`
 
-GitHub Actions run `34681808255`, attempt `3`, used the authorized production credential only through the protected repository secret `CLINICAL_DATA_KEY`; the value was not printed. The run completed `SUCCESS` and proved:
+Purpose:
 
 ```text
-authenticated protected product page           PASS
-authenticated product bootstrap                PASS
-authenticated deterministic Knee-OA projection PASS
-authenticated safety fail-closed projection    PASS
-synthetic/non-identifiable smoke-data boundary PASS
+international evidence core
++
+optional jurisdiction / local-system overlay
 ```
 
-No patient identifier, patient history, patient persistence or production credential value was written by the smoke.
+The first target market is Cyprus / GeSY, but the product core must remain internationally reusable.
 
-Current released v4 lifecycle:
+## 2. Hard boundaries
 
 ```text
-MERGED                              YES
-DEPLOYED                            YES
-PUBLIC-ASSET LIVE SMOKE             PASS
-UNAUTHENTICATED AUTH BOUNDARY       PASS
-AUTHENTICATED LIVE PRODUCT SMOKE    PASS
-PILOT-VALIDATED                     NO
-RECEIVER-VALIDATED                  NO
-COMMERCIAL/PAID VALIDATED           NO
+international evidence position != local policy
+Cyprus clinical adaptation != GeSY administrative/reimbursement rule
+resource/cost policy != stronger clinical evidence
+published guideline != proven active IT enforcement
+planned GeSY integration != active system rule
+local recommendation != permission to overwrite international state
+source count != evidence resolution
+Product Owner request != evidence != implementation authority
 ```
 
-## 2. V5 tested candidate discovered from prior Product Owner session
+No patient persistence, second diagnosis, autonomous literature update, new clinical default, UI change or runtime activation is authorized in this slice.
 
-A prior conversation had already completed the bounded post-use v5 refinement on:
+## 3. Primary-source audit state
 
-`fix/physio-knee-oa-v5-optional-refinement-prose-2026-09-12`
+Official HIO/GeSY sources identified include:
 
-Exact substantive head `a47357c602120d3678e8f2f23b99775e616c79e1` passed run `34693751545`.
+- Cyprus adaptation of NICE NG226 for OA;
+- HIO adaptation-summary document describing characteristic changes;
+- HIO 25-May-2026 implementation announcement;
+- current GeSY adult-guideline and OA pages;
+- GeSY allied-health access and physiotherapy service/reimbursement rules.
 
-V5 addresses only Product Owner usability/prose findings:
+Important source-status nuance already established:
 
-- first inactive tap on `Πόνος`, `Δυσκαμψία`, `Αδυναμία` selects the generic symptom without forcing a modal;
-- second tap opens optional detail;
-- `Λειτουργικότητα` still opens its chooser because no honest generic function-only state exists;
-- weakness refinement surface is reduced to explicit objective weakness, quadriceps weakness on examination and quadriceps atrophy;
-- bare `Περιαρθρικά` is removed from routine/advanced UI while backward-compatible state acceptance remains;
-- pain qualifiers own location specificity and remove overlapping legacy pain-location prose;
-- rich referrals use a paragraph boundary before physiotherapy assessment/plan;
-- machine-like `Επιπλέον στόχος:` labels become connected human prose.
+- HIO's May-2026 announcement states that the Cyprus adaptation process is complete and informs providers of guideline implementation;
+- the same announcement says HIO **will** integrate the guideline into the GeSY information system, so IT integration is planned rather than proven active;
+- the currently linked public OA PDF still carries `ΠΡΟΣΧΕΔΙΟ / Δεκέμβριος 2025` metadata, creating a publication-version inconsistency that must remain visible rather than silently normalized away.
 
-V5 is not merged or deployed. V4 remains production authority until separate Product Owner release approval.
+## 4. Exact deliverables before any implementation
 
-## 3. Hard product boundaries remain unchanged
+1. `CYPRUS_GESY_OA_SOURCE_AUDIT_V1`
+2. `CYPRUS_GESY_OA_DIFFERENCE_MATRIX_V1`
+3. proposed jurisdiction-overlay machine schema
+4. proposed UX behavior for agreement / difference / administrative-resource rule / unknown local status
+5. explicit routine-surface exclusions
+6. bounded recommendation: `NO CHANGE`, `LOCAL INFO ONLY`, or `IMPLEMENT JURISDICTION OVERLAY V1`
 
-```text
-international evidence core + optional jurisdiction overlay
-suggestion != clinician selection
-clinical adaptation != reimbursement/admin rule
-resource policy != stronger clinical evidence
-```
+## 5. Exact next action
 
-No new evidence state, GeSY item-level rule, second diagnosis, persistence, analytics, autonomous literature update or treatment-decision automation is active.
+Complete the recommendation-by-recommendation primary-source audit, compare verified local positions only against the existing reviewed Knee-OA international evidence contract, then freeze the design artifacts for Product Owner review.
 
-## 4. Exact next legitimate actions
-
-1. Product Owner reviews the exact tested v5 behavior/prose before any release decision.
-2. Cyprus/GeSY OA primary-source audit may now proceed because the authenticated production lifecycle gate is closed.
-3. Jurisdiction audit/design remains separate from v5 and must not mutate live evidence/UI merely because a local difference exists.
-
-No active writer exists at this canonical state.
+Do not implement UI/runtime changes in this slice.
