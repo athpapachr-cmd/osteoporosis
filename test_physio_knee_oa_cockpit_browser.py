@@ -12,6 +12,7 @@ from playwright.sync_api import expect, sync_playwright
 
 
 KEY = "physio-knee-oa-browser-test-key"
+PROFILE_ENV = "PHYSIO_REFERRAL_JURISDICTION_PROFILE"
 ARTIFACTS = Path("artifacts/knee-oa-cockpit")
 
 
@@ -19,7 +20,11 @@ class KneeOACockpitBrowserTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         ARTIFACTS.mkdir(parents=True, exist_ok=True)
-        cls.env = patch.dict(os.environ, {"CLINICAL_DATA_KEY": KEY}, clear=False)
+        cls.env = patch.dict(
+            os.environ,
+            {"CLINICAL_DATA_KEY": KEY, PROFILE_ENV: "CY_GESY"},
+            clear=False,
+        )
         cls.env.start()
         from main import app
 
@@ -93,6 +98,24 @@ class KneeOACockpitBrowserTests(unittest.TestCase):
         expect(self.page.locator("#referralText")).to_contain_text("αδυναμία του τετρακεφάλου κατά την εξέταση")
         expect(self.page.locator("#referralText")).to_contain_text("με έμφαση σε")
 
+    def test_cyprus_difference_is_progressive_and_preserves_international_state(self):
+        self.ready()
+        referral_before = self.page.locator("#referralText").inner_text()
+        self.assertEqual(self.page.get_by_text("Κύπρος · διαφέρει", exact=True).count(), 0)
+        self.page.locator("#advancedToggle").click()
+        self.page.locator("#advanced [data-v3-category=adjuncts]").click()
+        expect(self.page.locator("#sheet")).to_be_visible()
+        self.page.locator("#sheet [data-evidence=acupuncture]").click()
+        expect(self.page.locator("#sheet .sheet-state")).to_contain_text("Οι οδηγίες διαφέρουν")
+        local = self.page.locator("#sheet [data-jurisdiction-position]")
+        expect(local).to_be_visible()
+        expect(local).to_contain_text("Κύπρος · διαφέρει")
+        expect(local).to_contain_text("Δεν συνιστάται βελονισμός")
+        expect(local).to_contain_text("η διεθνής κατάσταση δεν αλλάζει")
+        self.assertEqual(self.page.get_by_text("Πληροφορία ΓεΣΥ", exact=True).count(), 0)
+        self.assertEqual(self.page.locator("#referralText").inner_text(), referral_before)
+        self.assertEqual(self.page.locator("#plan [data-select=acupuncture][aria-pressed=true]").count(), 0)
+
     def test_manual_edit_reconciliation_remains_fail_closed(self):
         self.ready(); self.page.locator("#directEditV2").click(); self.page.locator("#manualText").fill("Χειροκίνητο κείμενο παραπομπής.")
         self.page.locator("[data-confirm-manual]").click(); expect(self.page.locator("#referralText")).to_have_text("Χειροκίνητο κείμενο παραπομπής.")
@@ -101,7 +124,7 @@ class KneeOACockpitBrowserTests(unittest.TestCase):
 
     def test_no_browser_storage_and_mobile_reflow(self):
         self.ready(); self.assertEqual(self.page.evaluate("localStorage.length"), 0); self.assertEqual(self.page.evaluate("sessionStorage.length"), 0)
-        self.page.set_viewport_size({"width": 390, "height": 900})
+        self.page.set_viewport_size({"width": 390,"height": 900})
         columns=self.page.evaluate("getComputedStyle(document.querySelector('.clinical-grid-v4')).gridTemplateColumns.split(' ').length")
         self.assertEqual(columns,2); self.page.locator("#advancedToggle").click(); self.assertTrue(self.page.evaluate("document.documentElement.scrollWidth<=innerWidth"))
         expect(self.page.locator("#advanced .v3-category-row")).to_have_count(6)

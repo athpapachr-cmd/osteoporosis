@@ -13,6 +13,8 @@ on:
       - 'clinic_utilities/physio_referral_product/**'
       - '.github/workflows/physio-knee-oa-prototype.yml'
       - '.github/workflows/physio-knee-oa-v4.yml'
+      - '.github/workflows/physio-knee-oa-jurisdiction-v1.yml'
+      - 'test_physio_knee_oa_jurisdiction_overlay.py'
 
 permissions:
   contents: read
@@ -41,9 +43,11 @@ jobs:
             'CURRENT_OPERATIONAL.md','SLICE_PLAN_CURRENT.md','osteoporosis-change-log.md','main.py',
             'clinic_utilities/physio_referral_api.py',
             'test_physio_knee_oa_cockpit_integration.py','test_physio_knee_oa_cockpit_browser.py',
+            'test_physio_knee_oa_jurisdiction_overlay.py',
             '.github/workflows/physio-knee-oa-prototype.yml',
             '.github/workflows/physio-knee-oa-cockpit-integration.yml',
             '.github/workflows/physio-knee-oa-v4.yml',
+            '.github/workflows/physio-knee-oa-jurisdiction-v1.yml',
             '.github/workflows/cu1-tests.yml',
           }
           prefixes = (
@@ -61,7 +65,7 @@ jobs:
           python -m pip install 'playwright==1.55.0'
       - name: Check syntax
         run: |
-          python -m py_compile clinic_utilities/physio_referral_product/prototype/*.py
+          python -m py_compile clinic_utilities/physio_referral_product/prototype/*.py clinic_utilities/physio_referral_product/jurisdiction_overlay.py test_physio_knee_oa_jurisdiction_overlay.py
           node --check clinic_utilities/physio_referral_product/prototype/app.js
           node --check clinic_utilities/physio_referral_product/prototype/qualifiers.js
           node --check clinic_utilities/physio_referral_product/prototype/more_v3.js
@@ -70,6 +74,7 @@ jobs:
         run: |
           python clinic_utilities/physio_referral_product/prototype/test_server.py
           python clinic_utilities/physio_referral_product/prototype/test_qualifiers.py
+          python -m unittest -v test_physio_knee_oa_jurisdiction_overlay.py
       - name: Install Chromium for real browser acceptance
         run: python -m playwright install --with-deps chromium
       - name: Real browser with actual loopback server and CU1 engine

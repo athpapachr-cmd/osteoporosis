@@ -1,0 +1,132 @@
+name: Physio Knee OA jurisdiction overlay v1 gate
+
+on:
+  push:
+    branches:
+      - feat/physio-cy-gesy-overlay-v1-runtime-2026-09-12
+  pull_request:
+    paths:
+      - 'clinic_utilities/physio_referral_product/**'
+      - 'static/clinic-utilities/physio-referral/**'
+      - 'commercial_products/physio_referral/jurisdictions/**'
+      - 'test_physio_knee_oa_jurisdiction_overlay.py'
+      - 'test_physio_knee_oa_cockpit_integration.py'
+      - 'test_physio_knee_oa_cockpit_browser.py'
+      - 'CURRENT_OPERATIONAL.md'
+      - 'SLICE_PLAN_CURRENT.md'
+      - '.github/workflows/physio-knee-oa-jurisdiction-v1.yml'
+      - '.github/workflows/physio-knee-oa-cockpit-integration.yml'
+      - '.github/workflows/physio-knee-oa-prototype.yml'
+      - '.github/workflows/physio-knee-oa-v4.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  jurisdiction-v1:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Verify bounded overlay scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import subprocess
+          base=subprocess.check_output(['git','merge-base','origin/main','HEAD'],text=True).strip()
+          paths=subprocess.check_output(['git','diff','--name-only',base,'HEAD'],text=True).splitlines()
+          allowed_prefixes=(
+              'clinic_utilities/physio_referral_product/',
+              'static/clinic-utilities/physio-referral/',
+              'commercial_products/physio_referral/jurisdictions/',
+          )
+          allowed_exact={
+              'CURRENT_OPERATIONAL.md',
+              'SLICE_PLAN_CURRENT.md',
+              'test_physio_knee_oa_jurisdiction_overlay.py',
+              'test_physio_knee_oa_cockpit_integration.py',
+              'test_physio_knee_oa_cockpit_browser.py',
+              '.github/workflows/physio-knee-oa-jurisdiction-v1.yml',
+              '.github/workflows/physio-knee-oa-cockpit-integration.yml',
+              '.github/workflows/physio-knee-oa-prototype.yml',
+              '.github/workflows/physio-knee-oa-v4.yml',
+          }
+          bad=[p for p in paths if p not in allowed_exact and not p.startswith(allowed_prefixes)]
+          assert not bad,bad
+          forbidden='clinic_utilities/physio_referral_product/contracts/knee_oa_evidence_contract_v1.yaml'
+          assert forbidden not in paths, 'international evidence contract must remain unchanged'
+          print('Jurisdiction v1 bounded scope PASS:',len(paths),'files')
+          PY
+
+      - name: Install dependencies
+        run: |
+          python -m pip install -r requirements.txt
+          python -m pip install 'playwright==1.55.0'
+
+      - name: Syntax and machine profile
+        run: |
+          python -m py_compile \
+            clinic_utilities/physio_referral_product/jurisdiction_overlay.py \
+            clinic_utilities/physio_referral_product/production_api.py \
+            test_physio_knee_oa_jurisdiction_overlay.py \
+            test_physio_knee_oa_cockpit_integration.py \
+            test_physio_knee_oa_cockpit_browser.py
+          node --check static/clinic-utilities/physio-referral/product-jurisdiction-v1.js
+          python - <<'PY'
+          from clinic_utilities.physio_referral_product.jurisdiction_overlay import load_profile
+          p=load_profile('CY_GESY')
+          assert p and p['profile']['profile_status']=='active'
+          assert p['profile']['selection_source']=='explicit_account_configuration'
+          print('CY_GESY machine profile PASS:',len(p['positions']),'positions')
+          PY
+
+      - name: Overlay and full protected integration regressions
+        run: |
+          python -m unittest -v \
+            test_cu1_physio_referral.py \
+            test_cu1_formatter_el.py \
+            test_cu1_dynamic_ui.py \
+            test_cu1_gateway_guard.py \
+            test_cu1_gateway_registry.py \
+            test_cu1_safety_trust_boundary.py \
+            test_physio_knee_oa_jurisdiction_overlay.py \
+            test_physio_knee_oa_cockpit_integration.py
+          python clinic_utilities/physio_referral_product/prototype/test_server.py
+          python clinic_utilities/physio_referral_product/prototype/test_qualifiers.py
+
+      - name: Install Chromium
+        run: python -m playwright install --with-deps chromium
+
+      - name: Full product and production browser acceptance
+        run: |
+          python clinic_utilities/physio_referral_product/prototype/test_browser.py
+          python clinic_utilities/physio_referral_product/prototype/test_browser_qualifiers.py
+          python clinic_utilities/physio_referral_product/prototype/test_browser_usability_v2.py
+          python clinic_utilities/physio_referral_product/prototype/test_browser_more_v3.py
+          python test_physio_knee_oa_cockpit_browser.py
+
+      - name: Adjacent-owner isolation smoke
+        run: |
+          python -m unittest -v test_clinical_learning_l1_ui_contract.py
+          node test_g4_workspace_ergonomics.js
+          node test_rf_v2_ui.js
+
+      - name: Package closure
+        run: python clinic_utilities/physio_referral_product/prototype/build_bundle.py
+
+      - name: Publish screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: physio-cy-gesy-overlay-v1-${{ github.sha }}
+          path: artifacts/
+          if-no-files-found: warn
+          retention-days: 7

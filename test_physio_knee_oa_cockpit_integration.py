@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 
 
 KEY = "physio-knee-oa-integration-test-key"
+PROFILE_ENV = "PHYSIO_REFERRAL_JURISDICTION_PROFILE"
 
 
 def _payload(package_version: str) -> dict:
@@ -41,7 +42,11 @@ def _payload(package_version: str) -> dict:
 class KneeOACockpitIntegrationTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.env = patch.dict(os.environ, {"CLINICAL_DATA_KEY": KEY}, clear=False)
+        cls.env = patch.dict(
+            os.environ,
+            {"CLINICAL_DATA_KEY": KEY, PROFILE_ENV: "CY_GESY"},
+            clear=False,
+        )
         cls.env.start()
         from main import app
         cls.client = TestClient(app)
@@ -64,6 +69,7 @@ class KneeOACockpitIntegrationTests(unittest.TestCase):
         self.assertIn('id="advancedToggle"', html)
         self.assertIn('id="referralText"', html)
         self.assertIn("product-more-v3.js", html)
+        self.assertIn("product-jurisdiction-v1.js", html)
         self.assertNotIn("Δημιουργία παραπεμπτικού", html)
         self.assertNotIn("ΔΟΚΙΜΑΣΤΙΚΟ ΚΕΙΜΕΝΟ", html)
 
@@ -84,6 +90,8 @@ class KneeOACockpitIntegrationTests(unittest.TestCase):
             "progressive_strengthening",
             "education_and_self_management",
         ])
+        self.assertEqual(meta["jurisdiction_profile"]["profile_id"], "CY_GESY")
+        self.assertEqual(meta["jurisdiction_profile"]["selection_source"], "explicit_account_configuration")
 
         projected = self.client.post(
             "/clinical/clinic-utilities/physio-referral/api/product/project",
@@ -96,6 +104,54 @@ class KneeOACockpitIntegrationTests(unittest.TestCase):
         self.assertFalse(body["gate"]["blocked"])
         self.assertIn("δεξιού γόνατος", body["text"])
         self.assertNotIn("NICE", body["text"])
+        self.assertEqual(body["jurisdiction_profile"]["profile_id"], "CY_GESY")
+        self.assertEqual(body["evidence"]["acupuncture"]["evidence_state"], "guideline_conflict_or_mixed")
+        self.assertEqual(body["evidence"]["acupuncture"]["jurisdiction"]["local_direction"], "against")
+        self.assertEqual(body["evidence"]["manual_therapy"]["evidence_state"], "guideline_conflict_or_mixed")
+        self.assertEqual(body["evidence"]["manual_therapy"]["jurisdiction"]["local_direction"], "conditional_for")
+
+    def test_jurisdiction_overlay_does_not_change_referral_or_selection(self):
+        meta = self.client.get(
+            "/clinical/clinic-utilities/physio-referral/api/product/bootstrap",
+            headers=self.headers,
+        ).json()
+        payload = _payload(meta["package_version"])
+        with patch.dict(os.environ, {PROFILE_ENV: ""}, clear=False):
+            without_local = self.client.post(
+                "/clinical/clinic-utilities/physio-referral/api/product/project",
+                headers=self.headers,
+                json=payload,
+            ).json()
+        with patch.dict(os.environ, {PROFILE_ENV: "CY_GESY"}, clear=False):
+            with_local = self.client.post(
+                "/clinical/clinic-utilities/physio-referral/api/product/project",
+                headers=self.headers,
+                json=payload,
+            ).json()
+        self.assertEqual(with_local["text"], without_local["text"])
+        self.assertEqual(with_local["state"], without_local["state"])
+        self.assertEqual(with_local["gate"], without_local["gate"])
+        self.assertEqual(with_local["suggestions"], without_local["suggestions"])
+        for item, view in without_local["evidence"].items():
+            self.assertEqual(with_local["evidence"][item]["evidence_state"], view["evidence_state"])
+            self.assertEqual(with_local["evidence"][item]["positions"], view["positions"])
+
+    def test_unknown_profile_fails_closed_to_no_overlay(self):
+        with patch.dict(os.environ, {PROFILE_ENV: "GR"}, clear=False):
+            meta = self.client.get(
+                "/clinical/clinic-utilities/physio-referral/api/product/bootstrap",
+                headers=self.headers,
+            ).json()
+            self.assertIsNone(meta["jurisdiction_profile"])
+            response = self.client.post(
+                "/clinical/clinic-utilities/physio-referral/api/product/project",
+                headers=self.headers,
+                json=_payload(meta["package_version"]),
+            )
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        self.assertIsNone(body["jurisdiction_profile"])
+        self.assertFalse(any("jurisdiction" in view for view in body["evidence"].values()))
 
     def test_production_endpoint_rejects_synthetic_usage_marker(self):
         meta = self.client.get(
@@ -132,6 +188,7 @@ class KneeOACockpitIntegrationTests(unittest.TestCase):
             "product-app.js",
             "product-qualifiers.js",
             "product-more-v3.js",
+            "product-jurisdiction-v1.js",
             "production-env.js",
             "production-finalize.js",
         ]:

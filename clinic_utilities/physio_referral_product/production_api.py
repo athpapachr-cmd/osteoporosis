@@ -7,6 +7,11 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from clinic_utilities.physio_referral_runtime import _require_clinical_key
 from clinic_utilities.physio_referral_product import knee_oa_projection
+from clinic_utilities.physio_referral_product.jurisdiction_overlay import (
+    apply_evidence_overlay,
+    configured_profile,
+    profile_public_view,
+)
 from clinic_utilities.physio_referral_product.knee_oa_presentation_v4 import present_project_result
 
 
@@ -14,8 +19,10 @@ def build_knee_oa_product_router() -> APIRouter:
     """Protected Cockpit transport for the reviewed Knee-OA product projection.
 
     Clinical meaning is owned by the shared deterministic projection module.
-    The local prototype is only an alternate loopback transport over that same
-    projection and is never mounted in production.
+    A configured jurisdiction profile can add reviewed display-only local context
+    beside evidence views, but cannot alter core evidence or referral semantics.
+    The local prototype is only an alternate loopback transport over the same
+    core projection and is never mounted in production.
     """
 
     router = APIRouter(
@@ -29,6 +36,7 @@ def build_knee_oa_product_router() -> APIRouter:
         payload = dict(knee_oa_projection.bootstrap())
         payload["synthetic_only"] = False
         payload["deployment_context"] = "clinical_excellence_cockpit"
+        payload["jurisdiction_profile"] = profile_public_view(configured_profile())
         return payload
 
     @router.post("/project", dependencies=protected)
@@ -43,7 +51,8 @@ def build_knee_oa_product_router() -> APIRouter:
             internal = copy.deepcopy(payload)
             internal["synthetic_only"] = True
             projected = knee_oa_projection.project(internal)
-            return present_project_result(projected, payload)
+            presented = present_project_result(projected, payload)
+            return apply_evidence_overlay(presented, configured_profile())
         except (ValueError, TypeError, KeyError, AssertionError, UnicodeError) as exc:
             raise HTTPException(status_code=400, detail="invalid_or_stale_physio_product_request") from exc
 
