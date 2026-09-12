@@ -23,6 +23,9 @@ from .sick_leave import (
 )
 
 
+MAX_DRAFT_JSON_BYTES = 16 * 1024
+
+
 async def _read_signature(upload: UploadFile | None) -> bytes | None:
     if upload is None:
         return None
@@ -35,6 +38,11 @@ async def _read_signature(upload: UploadFile | None) -> bytes | None:
 
 
 def _parse_draft(draft_json: str) -> SickLeaveDraftV1:
+    if len(str(draft_json or "").encode("utf-8")) > MAX_DRAFT_JSON_BYTES:
+        raise HTTPException(
+            status_code=413,
+            detail="Το draft αναρρωτικής άδειας υπερβαίνει το επιτρεπτό μέγεθος",
+        )
     try:
         raw = json.loads(draft_json)
     except json.JSONDecodeError as exc:
@@ -131,6 +139,7 @@ def build_clinical_documents_router() -> APIRouter:
                 "signature_persisted": False,
             },
             "limits": {
+                "draft_json_bytes": MAX_DRAFT_JSON_BYTES,
                 "signature_bytes": MAX_SIGNATURE_BYTES,
                 "previous_pdf_bytes": MAX_PREVIOUS_PDF_BYTES,
             },
@@ -182,4 +191,4 @@ def build_clinical_documents_router() -> APIRouter:
     return router
 
 
-__all__ = ["build_clinical_documents_router"]
+__all__ = ["MAX_DRAFT_JSON_BYTES", "build_clinical_documents_router"]
