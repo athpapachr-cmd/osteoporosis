@@ -1,21 +1,20 @@
 # SLICE_PLAN_CURRENT.md — Knee-OA usability refinement v2
 
-> **STATUS:** IMPLEMENTATION ACTIVE / SYNTHETIC PROTOTYPE ONLY.
+> **STATUS:** IMPLEMENTED / FOCUSED TECHNICAL GATE PASS / PRODUCT-OWNER VISUAL REVIEW NEXT.
 > **Slice:** `CU1-PRODUCT-KNEE-OA-USABILITY-REFINE-V2-20260912`.
 > **Branch:** `feat/physio-knee-oa-usability-refine-v2-2026-09-12`.
 > **Parent closeout head:** `0f38f4d411146667d854c32c9f5f639f344d7c7f`.
-> **Parent tested substantive head:** `83a5acd4e5b25413708bbda1715c58b5c78bce08`.
+> **Tested substantive head:** `a87dccc90dab9f50f70505f2565e3405d48de109`.
+> **Successful substantive run:** `34675038243`.
 > **Fresh main:** `d9f312f6d2d596ec0bd4f35f6de56ad98dc34b37`.
-> **Writer:** ACTIVE, bounded to prototype UX/tests/workflow/canonicals.
+> **Writer:** NONE.
 > **Release / real clinical use:** NOT AUTHORIZED.
 
 ## 1. Design objective
 
 Improve discoverability and personalization without increasing routine clinical complexity.
 
-The slice deliberately changes **interaction presentation**, not clinical semantics.
-
-Preserve:
+Preserved invariants:
 
 ```text
 selection != suggestion != evidence != safety
@@ -24,132 +23,117 @@ favorite != selection
 clinically interesting != worth adding
 ```
 
-## 2. Additional-suggestion discoverability
-
-Current problem: the highest-priority suggestion is visible, while the remaining count can be visually lost.
-
-Design:
+## 2. Implemented additional-suggestion design
 
 ```text
 primary suggestion
 → compact actionable line
 
-if additional_count > 0
-→ restrained bordered summary panel
-→ heading: Άλλες {additional_count} προτάσεις ›
-→ preview: short titles only
-→ activate anywhere → existing suggestions sheet
+additional_count > 0
+→ restrained bordered summary
+→ Άλλες {additional_count} προτάσεις ›
+→ short current titles only
+→ activate → full suggestions sheet
 ```
+
+The count excludes the already visible primary suggestion. Activating the summary does not select/dismiss anything. Individual Add, evidence and dismissal remain in the full sheet.
+
+## 3. Implemented direct-edit design
+
+Desktop live preview exposes a visible `✎ Επεξεργασία` action. Mobile preview sheet exposes the same direct action. The overflow menu remains a secondary route.
+
+Safety invariant:
+
+```text
+manual edit
+→ clinician-owned manual buffer
+
+later structured change
+→ preserve manual text
+→ export stale/blocked
+→ explicit clinician reconciliation
+```
+
+No reverse parsing, bidirectional synchronization or merge engine was added.
+
+## 4. Implemented Favorites / pin-to-top
+
+Advanced selectable content supports `☆` / `★` pinning. Pinned items appear in `★ Συχνά` at the top of `Περισσότερα`.
 
 Rules:
 
-- count means suggestions **in addition to** the primary visible suggestion;
-- preview titles are generated from the current eligible candidate list and cannot become stale authority;
-- no Add/dismiss/evidence mutation occurs from tapping the summary itself;
-- the sheet remains the place for individual Add, evidence and dismissal controls;
-- no full rationale/citation stack on the routine surface.
+- pinning changes ordering/discoverability only;
+- pinning never selects a clinical item;
+- favorite representation writes the same underlying structured state only when explicitly selected;
+- unpinning preserves clinical selection;
+- no Hide control exists;
+- favorites are ephemeral in the synthetic prototype;
+- reset/pagehide/BFCache clears them;
+- localStorage/sessionStorage/server persistence remain absent.
 
-## 3. Direct referral-text editing
+Future persistence is a separate clinician-account preference decision.
 
-Current problem: manual edit is a major clinician action but is hidden in the overflow menu.
+## 5. Technical acceptance
 
-Design:
-
-- desktop referral preview exposes a visible `Επεξεργασία` action in the preview heading;
-- mobile preview sheet also exposes a visible `Επεξεργασία` action;
-- activation uses the existing manual-edit buffer/reconciliation architecture;
-- the overflow menu can retain secondary actions but is not required to discover editing.
-
-Safety invariants:
+First usability-v2 run:
 
 ```text
-manual edit occurs
-→ manual buffer becomes clinician-owned text
-
-structured state later changes
-→ manual buffer is preserved
-→ export becomes stale/blocked
-→ explicit reconciliation required
-→ no silent overwrite
+run     34674925907
+head    b9889f85a1f4ad6f4da6050b6ebf34eefeb2bcb3
+result  FAILURE
+reason  inherited generic [data-edit] test locator became ambiguous after adding the direct edit route
 ```
 
-Do not build bidirectional free-text-to-structured parsing or merge/diff machinery.
+Correction: the inherited regression now explicitly exercises the legacy menu edit route. The new usability-v2 suite independently exercises the direct route. Manual-text safety expectations were not relaxed.
 
-## 4. Favorites / pin-to-top inside Περισσότερα
-
-Current problem: advanced content can be long, while different clinicians repeatedly use different subsets.
-
-Design intentionally chooses **pin/favorite**, not Hide.
-
-### Behavior
-
-- advanced controls that represent selectable findings/goals/interventions/adjuncts may expose a small `☆` / `★` pin control where technically appropriate;
-- pinned items appear in a compact `★ Συχνά` group at the top of `Περισσότερα`;
-- original category remains authoritative and available; pinning must not erase the item from discoverability;
-- duplicate interactive selectors must not create conflicting selection state: the pinned surface may either reference the same action semantics safely or use a single rendered control ownership pattern;
-- unpin returns the item to normal ordering with no clinical state mutation.
-
-### Persistence boundary
-
-For this synthetic slice:
+Successful substantive gate:
 
 ```text
-favorites = ephemeral UI preference only
-reset/pagehide/BFCache → cleared
-localStorage = none
-sessionStorage = none
-server persistence = none
+run                                       34675038243
+head                                      a87dccc90dab9f50f70505f2565e3405d48de109
+scope + syntax                            PASS
+real CU-1 / HTTP                          15 / 15 PASS
+frozen Step-3 exact-output fixtures       15 PASS
+post-review clinical/output               11 / 11 PASS
+inherited Chromium                        12 / 12 PASS
+post-review qualifier Chromium             9 / 9 PASS
+usability-v2 Chromium                      5 / 5 PASS
+Greek source-summary coverage             54 positions
+packaged dependency closure               PASS
 ```
 
-Later product architecture may persist favorites as **clinician account preference**, explicitly separate from patient/referral state.
+The five new browser tests cover additional-suggestion count/titles/sheet behavior, single-suggestion absence of extra panel, direct edit/reconciliation on desktop/mobile, favorite semantics/no Hide/no storage, and reset/BFCache clearing.
 
-### No Hide yet
+## 6. Visual inspection
 
-No permanent hide/archive control is introduced. Hide remains a future hypothesis requiring usage evidence and an always-recoverable design.
+CI screenshots inspected:
 
-## 5. Accessibility and cognitive-load rules
+- `desktop.png`
+- `mobile.png`
+- `evidence-conflict.png`
+- `suggestions-v2.png`
+- `favorites-v2.png`
 
-- additional-suggestion panel is a native button with descriptive accessible name/count;
-- favorites controls have accessible names such as `Προσθήκη στα Συχνά: {item}` / `Αφαίρεση από τα Συχνά: {item}`;
-- star icon is never the only meaning;
-- touch targets remain ≥44 CSS px;
-- direct edit remains keyboard-reachable;
-- mobile reflow and large-text behavior must not regress;
-- no colour-only state.
+The additional-suggestions summary is visible without expanding secondary details. The favorites surface stays inside `Περισσότερα`. Direct edit remains visually secondary to Copy. No obvious screenshot clipping was observed.
 
-## 6. Out of scope
+This inspection does not prove iPhone Safari/VoiceOver or full measured accessibility acceptance.
+
+## 7. Out of scope remains
 
 ```text
 clinical/evidence rule changes
 new clinical fields
 permanent Hide
-favorites account persistence
-preference backend
+favorite/account persistence
 analytics
 second diagnosis
-local guideline expansion
+jurisdiction expansion
 PR/merge/deploy
+real-patient use
 ```
-
-## 7. Acceptance
-
-Focused tests must cover:
-
-1. 1 suggestion → no additional panel.
-2. 5 suggestions → primary line + `Άλλες 4 προτάσεις` with four current titles.
-3. Additional panel → opens full suggestions sheet without selecting anything.
-4. Add/dismiss in sheet → count/title preview refreshes deterministically.
-5. Direct desktop edit action → manual editor reachable without overflow menu.
-6. Mobile preview → edit action directly visible.
-7. Manual edit + laterality/finding change → clinician text preserved + stale reconciliation + export blocked.
-8. Favorite item → appears in `★ Συχνά` and selection state is unchanged.
-9. Selecting through favorite representation → same structured state as normal item, no duplicate/double toggle.
-10. Unfavorite → clinical selection preserved.
-11. Reset/BFCache → favorites cleared.
-12. local/session storage remain empty.
-13. No Hide control exists.
-14. Inherited safety/evidence/privacy/network/mobile regressions remain green.
 
 ## 8. Exact next action
 
-Implement only this bounded usability slice, run the exact prototype gate plus new browser coverage, inspect screenshots and return the tested candidate to the Product Owner for visual/use review.
+Product Owner reviews the exact tested synthetic usability-v2 candidate and provides keep/change/remove feedback.
+
+No release or expansion action is inferred from the technical PASS.
