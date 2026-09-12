@@ -1,88 +1,87 @@
-# SLICE_PLAN_CURRENT.md — Knee-OA v1 v5 optional refinement + prose correction
+# SLICE_PLAN_CURRENT.md — Knee-OA v1 v5 tested candidate
 
-> **STATUS:** ACTIVE / BOUNDED IMPLEMENTATION.
+> **STATUS:** IMPLEMENTED / EXACT-HEAD TECHNICAL GATE PASS / PRODUCT OWNER REVIEW NEXT.
 > **Slice:** `CU1-PRODUCT-KNEE-OA-POSTUSE-V5-20260912`.
 > **Parent production runtime:** `bf527e3836a18491b2758fd293b42f82e0924382`.
 > **Branch:** `fix/physio-knee-oa-v5-optional-refinement-prose-2026-09-12`.
-> **Writer:** bounded v5 correction only.
-> **PR / MERGE / DEPLOY:** HOLD.
+> **Tested substantive head:** `a47357c602120d3678e8f2f23b99775e616c79e1`.
+> **Successful gate:** `34693751545`.
+> **Artifact:** `10298267537`, digest `sha256:a22fd402c49efcf3a9db20cc7751ed74363264437b911cd62c9de772fd520315`.
+> **Writer:** NONE.
+> **PR / MERGE / DEPLOY:** HOLD pending Product Owner review.
 
-## 1. Product findings to correct
+## 1. Implemented bounded corrections
 
-### A. Optional refinement must feel optional
+### Optional refinement interaction
 
-For routine symptom parents (`Πόνος`, `Δυσκαμψία`, `Αδυναμία`):
+For routine symptom parents:
 
 ```text
-first tap while inactive
-→ select generic symptom
-→ remain on main surface
-
-second tap while active
-→ open focused refinement sheet
+Πόνος / Δυσκαμψία / Αδυναμία
+first inactive tap → select generic symptom, no sheet
+second active tap   → open optional focused refinement sheet
 ```
 
-No qualifier is required. A generic symptom remains valid structured input. `Λειτουργικότητα` continues to open its chooser because the product has no generic function-only state.
+No qualifier is required for export. `Λειτουργικότητα` keeps its explicit chooser on first tap because the model has no useful generic function-only state.
 
-### B. Weakness / atrophy clarity
+### Weakness / atrophy simplification
 
-New UI must distinguish concepts explicitly:
+Visible exam choices are now semantically explicit:
 
 - `Μυϊκή αδυναμία στην εξέταση`
 - `Αδυναμία τετρακεφάλου στην εξέταση`
 - `Ατροφία τετρακεφάλου`
 
-Do not expose bare `Τετρακέφαλος` and bare `Περιαρθρικά` as sibling controls. Existing `peri_knee_general` payload acceptance may remain for backward compatibility, but v5 must not create it through the routine/advanced UI.
+The UI no longer exposes bare `Τετρακέφαλος` or bare `Περιαρθρικά`. Existing legacy `peri_knee_general` validation remains backward-compatible but is not newly created by v5 UI.
 
-### C. Pain prose deduplication
+### Pain prose deduplication
 
-If structured pain-location qualifiers exist, they own pain-location specificity for product prose. Older overlapping `joint_line_pain` / `anterior_peripatellar_pain` findings must not generate a second location phrase in the same sentence.
+Structured pain-location qualifiers own location specificity. Legacy overlapping pain-location findings cannot add a second location phrase to the same referral sentence.
 
-### D. Referral readability
+### Referral readability
 
-Generated referral should use two human-readable paragraphs when a clinical/functional section and a physiotherapy plan are both present:
-
-```text
-[indication + clinical picture + functional impact]
-
-[physiotherapy assessment / active plan + additional goal emphasis]
-```
-
-Replace machine-like labels:
-
-```text
-Επιπλέον στόχος: ...
-Επιπλέον στόχοι: ...
-```
-
-with connected natural prose, preferably `Παράλληλα, επιδιώκεται ...` unless exact grammar requires a narrower variant.
+The deterministic referral uses a paragraph break between clinical/functional information and the physiotherapy plan when both exist. Machine-like `Επιπλέον στόχος:` / `Επιπλέον στόχοι:` labels are replaced by connected human prose.
 
 ## 2. Preserved invariants
 
-- symptom != objective finding != diagnosis;
-- qualifier refinement remains optional;
-- explicit quadriceps weakness requires examination semantics;
-- atrophy is a distinct examination finding, not a synonym for weakness;
-- evidence/suggestion/safety state unchanged;
-- no hidden stale dependent data;
-- manual text reconciliation unchanged;
-- More-v3/Favorites behavior unchanged except for label simplification inside Examination;
-- no new patient persistence.
+```text
+symptom != objective finding != diagnosis
+atrophy != weakness
+suggestion != clinician selection
+evidence state != selection state
+manual text != structured state
+```
 
-## 3. Acceptance
+Preserved unchanged:
 
-Must prove at exact head:
+- CU-1 taxonomy and safety authority;
+- evidence-state model;
+- suggestion semantics;
+- More-v3 / Favorites architecture apart from exam-label simplification;
+- manual-text reconciliation;
+- jurisdiction strategy;
+- single Knee-OA diagnosis vertical;
+- no patient persistence / analytics.
 
-- inactive Pain/Stiffness/Weakness first tap does not open the sheet;
-- second tap opens the correct sheet;
-- generic symptom can be exported without any qualifier;
-- Function chooser remains explicit;
-- no ambiguous duplicate quadriceps/periarticular controls in routine or advanced exam UI;
-- pain qualifiers do not duplicate `joint line` wording;
-- two-paragraph referral formatting survives clipboard/manual-edit paths;
-- no literal `Επιπλέον στόχος:` / `Επιπλέον στόχοι:` in generated Knee-OA output;
-- inherited v2/v3/v4, CU-1 and protected Cockpit regressions pass.
+## 3. Exact acceptance evidence
 
-## 4. Release boundary
+Run `34693751545` at substantive head `a47357c602120d3678e8f2f23b99775e616c79e1` completed `SUCCESS` with:
 
-Implementation/test only. Product Owner reviews exact tested candidate before any PR/merge/deploy decision.
+- focused v5 projection/prose tests 3/3 PASS;
+- real server/HTTP tests 15 PASS;
+- frozen Step-3 exact-output fixtures 15 PASS;
+- qualifier/clinical tests 11/11 PASS;
+- protected Cockpit integration 6/6 PASS;
+- focused v5 Chromium PASS;
+- inherited browser suites v2/v3/v4 PASS;
+- protected Cockpit Chromium PASS;
+- adjacent-owner isolation PASS;
+- package closure PASS.
+
+The tested rich-case referral has no `κυρίως`, no duplicated `στη μεσάρθρια γραμμή` tail, contains the clinical/plan paragraph break, and contains no literal `Επιπλέον στόχος:` label.
+
+## 4. Exact next action
+
+Product Owner visually/use-tests the exact tested v5 candidate and returns concrete `keep / change / remove` feedback.
+
+Do not open a PR, merge, deploy, activate a second diagnosis or broaden scope until that review is complete and explicit release authority is granted.
