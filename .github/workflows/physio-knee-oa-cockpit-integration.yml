@@ -1,0 +1,128 @@
+name: Physio Knee OA Cockpit integration gate
+
+on:
+  push:
+    branches:
+      - feat/physio-knee-oa-cockpit-integration-v1-2026-09-12
+  pull_request:
+    paths:
+      - 'commercial_products/physio_referral/**'
+      - 'clinic_utilities/physio_referral_product/**'
+      - 'clinic_utilities/physio_referral_api.py'
+      - 'static/clinic-utilities/physio-referral/**'
+      - 'main.py'
+      - 'test_physio_knee_oa_cockpit_integration.py'
+      - 'test_physio_knee_oa_cockpit_browser.py'
+      - '.github/workflows/physio-knee-oa-cockpit-integration.yml'
+      - '.github/workflows/physio-knee-oa-prototype.yml'
+      - '.github/workflows/cu1-tests.yml'
+      - 'CURRENT_OPERATIONAL.md'
+      - 'SLICE_PLAN_CURRENT.md'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: physio-knee-oa-cockpit-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Verify bounded integration scope
+        run: |
+          python - <<'PY'
+          import subprocess
+          base = subprocess.check_output(['git','merge-base','origin/main','HEAD'], text=True).strip()
+          paths = subprocess.check_output(['git','diff','--name-only',base,'HEAD'], text=True).splitlines()
+          exact = {
+            'CURRENT_OPERATIONAL.md','SLICE_PLAN_CURRENT.md','main.py',
+            'clinic_utilities/physio_referral_api.py',
+            'test_physio_knee_oa_cockpit_integration.py','test_physio_knee_oa_cockpit_browser.py',
+            '.github/workflows/physio-knee-oa-cockpit-integration.yml',
+            '.github/workflows/physio-knee-oa-prototype.yml','.github/workflows/cu1-tests.yml',
+          }
+          prefixes = (
+            'clinic_utilities/physio_referral_product/',
+            'commercial_products/physio_referral/',
+            'static/clinic-utilities/physio-referral/',
+          )
+          bad = [p for p in paths if p not in exact and not p.startswith(prefixes)]
+          assert not bad, bad
+          print('Cockpit integration bounded-scope PASS:', len(paths), 'files')
+          PY
+
+      - name: Install dependencies
+        run: |
+          python -m pip install -r requirements.txt
+          python -m pip install 'playwright==1.55.0'
+
+      - name: Syntax and canonical split checks
+        run: |
+          python -m py_compile main.py clinic_utilities/physio_referral_product/production_api.py test_physio_knee_oa_cockpit_integration.py test_physio_knee_oa_cockpit_browser.py clinic_utilities/physio_referral_product/prototype/*.py
+          node --check static/clinic-utilities/physio-referral/product-app.js
+          node --check static/clinic-utilities/physio-referral/product-qualifiers.js
+          node --check static/clinic-utilities/physio-referral/product-more-v3.js
+          node --check static/clinic-utilities/physio-referral/production-env.js
+          node --check static/clinic-utilities/physio-referral/production-finalize.js
+          python - <<'PY'
+          from pathlib import Path
+          root=Path('.')
+          assert (root/'commercial_products/physio_referral/PRODUCT_CONTEXT_CURRENT.md').stat().st_size > 10000
+          for name in ['PHYSIO_REFERRAL_PRODUCT_CONTEXT_CURRENT.md','PRODUCT_PLAN.md','CURRENT.md','CHANGELOG.md']:
+              text=(root/'clinic_utilities/physio_referral_product'/name).read_text(encoding='utf-8')
+              assert 'commercial_products/physio_referral/' in text, name
+          print('Commercial canonical split PASS')
+          PY
+
+      - name: Real CU1 and protected Cockpit integration tests
+        run: |
+          python -m unittest -v \
+            test_cu1_physio_referral.py \
+            test_cu1_formatter_el.py \
+            test_cu1_dynamic_ui.py \
+            test_cu1_gateway_guard.py \
+            test_cu1_gateway_registry.py \
+            test_cu1_safety_trust_boundary.py \
+            test_physio_knee_oa_cockpit_integration.py
+          python clinic_utilities/physio_referral_product/prototype/test_server.py
+          python clinic_utilities/physio_referral_product/prototype/test_qualifiers.py
+
+      - name: Install Chromium
+        run: python -m playwright install --with-deps chromium
+
+      - name: Inherited product and production browser acceptance
+        run: |
+          python clinic_utilities/physio_referral_product/prototype/test_browser.py
+          python clinic_utilities/physio_referral_product/prototype/test_browser_qualifiers.py
+          python clinic_utilities/physio_referral_product/prototype/test_browser_usability_v2.py
+          python clinic_utilities/physio_referral_product/prototype/test_browser_more_v3.py
+          python test_physio_knee_oa_cockpit_browser.py
+
+      - name: Adjacent-owner isolation smoke
+        run: |
+          python -m unittest -v test_clinical_learning_l1_ui_contract.py
+          node test_g4_workspace_ergonomics.js
+          node test_rf_v2_ui.js
+
+      - name: Package inherited synthetic dependency closure
+        run: python clinic_utilities/physio_referral_product/prototype/build_bundle.py
+
+      - name: Publish integration screenshots and prototype package
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: physio-knee-oa-cockpit-${{ github.sha }}
+          path: artifacts/
+          if-no-files-found: warn
+          retention-days: 7

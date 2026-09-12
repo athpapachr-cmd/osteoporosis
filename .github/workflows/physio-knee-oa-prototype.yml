@@ -7,9 +7,10 @@ on:
       - feat/physio-knee-oa-review-amendments-v1-2026-09-12
       - feat/physio-knee-oa-usability-refine-v2-2026-09-12
       - feat/physio-knee-oa-more-redesign-v3-2026-09-12
+      - feat/physio-knee-oa-cockpit-integration-v1-2026-09-12
   pull_request:
     paths:
-      - 'clinic_utilities/physio_referral_product/prototype/**'
+      - 'clinic_utilities/physio_referral_product/**'
       - '.github/workflows/physio-knee-oa-prototype.yml'
 
 permissions:
@@ -30,16 +31,27 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Verify bounded Step 5/6A/review/usability changed paths
+      - name: Verify bounded Knee-OA product lineage
         run: |
           python - <<'PY'
           import subprocess
           paths = subprocess.check_output(['git','diff','--name-only','4e0e3206dd1e12a2e55a6abd18d2a6f7dbc3f7c6','HEAD'], text=True).splitlines()
-          fixed = {'CURRENT_OPERATIONAL.md','SLICE_PLAN_CURRENT.md','.github/workflows/physio-knee-oa-prototype.yml'}
-          root = 'clinic_utilities/physio_referral_product/'
-          bad = [p for p in paths if p not in fixed and not p.startswith(root+'prototype/') and not (p.startswith(root) and p.endswith('.md'))]
+          exact = {
+            'CURRENT_OPERATIONAL.md','SLICE_PLAN_CURRENT.md','main.py',
+            'clinic_utilities/physio_referral_api.py',
+            'test_physio_knee_oa_cockpit_integration.py','test_physio_knee_oa_cockpit_browser.py',
+            '.github/workflows/physio-knee-oa-prototype.yml',
+            '.github/workflows/physio-knee-oa-cockpit-integration.yml',
+            '.github/workflows/cu1-tests.yml',
+          }
+          prefixes = (
+            'clinic_utilities/physio_referral_product/',
+            'commercial_products/physio_referral/',
+            'static/clinic-utilities/physio-referral/',
+          )
+          bad = [p for p in paths if p not in exact and not p.startswith(prefixes)]
           assert not bad, bad
-          print('Knee-OA bounded prototype scope guard PASS:', len(paths), 'bounded files')
+          print('Knee-OA bounded product lineage PASS:', len(paths), 'files')
           PY
       - name: Install isolated prototype dependencies
         run: |
