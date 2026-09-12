@@ -1,20 +1,56 @@
 # CURRENT.md — Physio Referral commercial product track
 
-> **STATUS:** KNEE-OA V1 RUNTIME RELEASED / DEPLOYED / LIVE PUBLIC-ASSET + AUTH-BOUNDARY SMOKE PASS.
+> **STATUS:** KNEE-OA V1 V4 RELEASED / DEPLOYED / AUTHENTICATED LIVE PRODUCT SMOKE PASS; V5 TESTED CANDIDATE IN PRODUCT OWNER REVIEW HOLD.
 > **Updated:** 2026-09-12 Asia/Nicosia.
 > **Diagnosis vertical:** Knee Osteoarthritis only.
-> **Runtime release PR:** `#87`.
-> **Runtime release SHA:** `eeec7f82b4f5a9054e7df51354803dd75e7dc9eb`.
-> **Render deploy:** `dep-daifjt0jo6nc73biqhpg` — LIVE.
-> **Release closeout:** `releases/KNEE_OA_V1_RELEASE_CLOSEOUT.md`.
-> **Review archive:** `reviews/archive/2026-09-11-knee-oa-candidate-6539351c/`.
+> **Current production runtime SHA:** `bf527e3836a18491b2758fd293b42f82e0924382`.
+> **Render deploy:** `dep-daiivp0jo6nc73bl6pug` — LIVE.
+> **Authenticated live smoke:** `34681808255`, attempt `3` — SUCCESS.
+> **V5 tested candidate:** `fix/physio-knee-oa-v5-optional-refinement-prose-2026-09-12` @ `a47357c602120d3678e8f2f23b99775e616c79e1`.
+> **V5 gate:** `34693751545` — SUCCESS.
 > **Root operational authority:** `CURRENT_OPERATIONAL.md`.
 
 ## Product state
 
-The reviewed Knee-OA experience is now the deployed Clinical Excellence Cockpit physiotherapy surface. The product keeps the accepted interaction philosophy: live deterministic referral, few meaningful routine actions, evidence complexity under progressive disclosure, direct editing with fail-closed reconciliation, and scan-first advanced access rather than a comprehensive visible form.
+The released Knee-OA product remains deployed in the authenticated Clinical Excellence physiotherapy utility. The routine experience remains deterministic, evidence-aware and intentionally sparse: few meaningful clinician decisions on the main surface, progressive disclosure underneath, direct editing with fail-closed reconciliation, and no routine LLM-generated referral prose.
 
 Commercial/product authority lives under `commercial_products/physio_referral/`; technical contracts/runtime/tests remain under `clinic_utilities/physio_referral_product/`.
+
+## Production lifecycle
+
+Supported current claims:
+
+```text
+merged production v4                       yes
+deployed production v4                     yes
+public-asset live smoke                    pass
+unauthenticated auth boundary              pass
+authenticated protected product smoke      pass
+real clinical pilot                        no
+receiver field validation                  no
+commercial/paid validation                 no
+```
+
+Authenticated run `34681808255`, attempt `3`, used the protected GitHub Actions secret `CLINICAL_DATA_KEY`, never printed the credential and sent only synthetic/non-identifiable Knee-OA state. It proved protected page/bootstrap access, deterministic projection and safety fail-closed behavior against live production.
+
+## V5 review candidate
+
+A bounded post-use v5 refinement has already been implemented and technically validated on a separate branch. It is **not production yet**.
+
+The candidate changes only workflow/presentation:
+
+- first tap on inactive `Πόνος`, `Δυσκαμψία`, `Αδυναμία` selects the generic symptom without a popup;
+- second tap exposes optional detail;
+- Function keeps its first-tap chooser;
+- weakness detail is reduced to clear explicit examination concepts;
+- bare `Περιαρθρικά` is removed from routine/advanced UI while historical compatibility remains underneath;
+- pain-location duplication is reconciled;
+- rich clinical handoff and physiotherapy plan use separate paragraphs;
+- `Επιπλέον στόχος:` becomes connected human prose.
+
+Exact tested candidate head `a47357c602120d3678e8f2f23b99775e616c79e1` passed full gate `34693751545`.
+
+No PR/merge/deploy authority exists until Product Owner review accepts that candidate.
 
 ## Review history
 
@@ -25,25 +61,9 @@ The four specialist review axes remain:
 3. UX / Product
 4. Commercial / Product-Market
 
-A fifth source file is archived as a supplementary combined / multi-axis review, not a second specialist physiotherapy review.
-
-All five original uploads are now preserved byte-for-byte in the review archive with exact hashes.
-
-## Release state
-
-Supported lifecycle claims:
-
-- merged: yes;
-- deployed: yes;
-- live public product assets: verified;
-- unauthenticated auth boundary: verified;
-- full authenticated live end-to-end smoke: not yet performed.
-
-The last distinction is deliberate. Release-code authenticated behavior passed protected FastAPI and Chromium tests, but no production credential/session was used in the external live smoke.
+The archived fifth upload remains a supplementary combined/multi-axis review, not an additional specialist vote.
 
 ## Product truth still unproven
-
-A released technical feature is not yet a validated business or clinical pilot:
 
 - no receiving-physiotherapist field validation yet;
 - no actual iPhone Safari/VoiceOver acceptance yet;
@@ -52,6 +72,15 @@ A released technical feature is not yet a validated business or clinical pilot:
 - Cyprus/GeSY recommendation-by-recommendation overlay is not activated;
 - no second diagnosis has been selected.
 
-## Next product boundary
+## Next product boundaries
 
-Do not expand diagnosis count automatically. The next product-learning step should come from real receiver/device/market evidence, plus an authorized authenticated live verification when operationally safe.
+1. Product Owner disposition of the exact tested v5 candidate before any release.
+2. Primary-source Cyprus/GeSY OA audit and jurisdiction-overlay design may now proceed independently because the authenticated production lifecycle gate is closed.
+3. Do not expand diagnosis count merely to make the product look larger.
+
+Permanent rule:
+
+```text
+CLINICALLY INTERESTING != WORKFLOW-USEFUL != RECEIVER-USEFUL != WORTH ADDING
+PRODUCT OWNER REQUEST != EVIDENCE != IMPLEMENTATION AUTHORITY
+```
