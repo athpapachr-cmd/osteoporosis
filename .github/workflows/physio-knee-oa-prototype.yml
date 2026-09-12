@@ -12,6 +12,7 @@ on:
     paths:
       - 'clinic_utilities/physio_referral_product/**'
       - '.github/workflows/physio-knee-oa-prototype.yml'
+      - '.github/workflows/physio-knee-oa-v4.yml'
 
 permissions:
   contents: read
@@ -42,6 +43,7 @@ jobs:
             'test_physio_knee_oa_cockpit_integration.py','test_physio_knee_oa_cockpit_browser.py',
             '.github/workflows/physio-knee-oa-prototype.yml',
             '.github/workflows/physio-knee-oa-cockpit-integration.yml',
+            '.github/workflows/physio-knee-oa-v4.yml',
             '.github/workflows/cu1-tests.yml',
           }
           prefixes = (
@@ -63,6 +65,7 @@ jobs:
           node --check clinic_utilities/physio_referral_product/prototype/app.js
           node --check clinic_utilities/physio_referral_product/prototype/qualifiers.js
           node --check clinic_utilities/physio_referral_product/prototype/more_v3.js
+          node --check clinic_utilities/physio_referral_product/prototype/clinical_sheet_v4.js
       - name: Real CU1 adapter and HTTP boundary tests
         run: |
           python clinic_utilities/physio_referral_product/prototype/test_server.py
