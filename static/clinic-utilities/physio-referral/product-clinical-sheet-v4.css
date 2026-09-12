@@ -15,7 +15,7 @@
 #sheet.clinical-v4-sheet{width:min(620px,calc(100vw - 32px))}
 @media(max-width:700px){
   .clinical-grid-v4{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
-  .clinical-card-v4{min-height:42px;padding:8px 9px}
+  .clinical-card-v4{min-height:44px;padding:8px 9px}
   #sheet.clinical-v4-sheet{position:fixed;inset:auto 0 0 0;margin:0;width:100%;max-width:none;max-height:78dvh;border-radius:20px 20px 0 0}
   .clinical-options-v4{grid-template-columns:1fr}
 }
