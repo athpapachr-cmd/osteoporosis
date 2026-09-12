@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from clinic_utilities.physio_referral_runtime import _require_clinical_key
 from clinic_utilities.physio_referral_product import knee_oa_projection
-from clinic_utilities.physio_referral_product.knee_oa_presentation_v4 import present_project_result
+from clinic_utilities.physio_referral_product.knee_oa_presentation_v5 import present_project_result
 
 
 def build_knee_oa_product_router() -> APIRouter:
