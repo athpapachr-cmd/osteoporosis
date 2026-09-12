@@ -30,6 +30,7 @@ def _payload(package_version: str) -> dict:
             "adjunct_options": [],
             "goals": [],
             "phenotype": {},
+            "qualifiers": {},
             "explicit_restrictions": [],
             "clinician_free_text_optional": "",
             "safety_flags": [],
@@ -97,6 +98,30 @@ class KneeOACockpitIntegrationTests(unittest.TestCase):
         self.assertIn("δεξιού γόνατος", body["text"])
         self.assertNotIn("NICE", body["text"])
 
+    def test_v5_production_presentation_separates_plan_and_reconciles_pain_overlap(self):
+        meta = self.client.get(
+            "/clinical/clinic-utilities/physio-referral/api/product/bootstrap",
+            headers=self.headers,
+        ).json()
+        payload = _payload(meta["package_version"])
+        payload["state"]["findings"] = ["pain", "joint_line_pain"]
+        payload["state"]["functional_impairments"] = ["stairs"]
+        payload["state"]["goals"] = ["maintain_or_regain_adl_independence"]
+        payload["state"]["qualifiers"] = {"pain_locations": ["medial_joint_line", "pes_anserine_region"]}
+        response = self.client.post(
+            "/clinical/clinic-utilities/physio-referral/api/product/project",
+            headers=self.headers,
+            json=payload,
+        )
+        self.assertEqual(response.status_code, 200, response.text)
+        text = response.json()["text"]
+        self.assertIn("έσω μεσάρθρια περιοχή", text)
+        self.assertIn("περιοχή του χηνείου ποδός", text)
+        self.assertNotIn("χηνείου ποδός στη μεσάρθρια γραμμή", text)
+        self.assertIn("\n\nΠαρακαλώ για φυσιοθεραπευτική αξιολόγηση", text)
+        self.assertIn("Επιπρόσθετη λειτουργική προτεραιότητα:", text)
+        self.assertNotIn("Επιπλέον στόχος:", text)
+
     def test_production_endpoint_rejects_synthetic_usage_marker(self):
         meta = self.client.get(
             "/clinical/clinic-utilities/physio-referral/api/product/bootstrap",
@@ -132,6 +157,7 @@ class KneeOACockpitIntegrationTests(unittest.TestCase):
             "product-app.js",
             "product-qualifiers.js",
             "product-more-v3.js",
+            "product-clinical-sheet-v5.js",
             "production-env.js",
             "production-finalize.js",
         ]:
@@ -140,6 +166,7 @@ class KneeOACockpitIntegrationTests(unittest.TestCase):
             self.assertNotIn("localStorage", response.text, path)
             self.assertNotIn("sessionStorage", response.text, path)
         finalizer = self.client.get("/static/clinic-utilities/physio-referral/production-finalize.js").text
+        self.assertIn("product-clinical-sheet-v5.js", finalizer)
         self.assertIn("navigator.clipboard.writeText(effectiveText())", finalizer)
         self.assertNotIn("DEMO+effectiveText", finalizer)
         bridge = self.client.get("/static/clinic-utilities/physio-referral/production-env.js").text
