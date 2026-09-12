@@ -37,6 +37,9 @@ jobs:
           paths=subprocess.check_output(['git','diff','--name-only',base,'HEAD'],text=True).splitlines()
           allowed=('clinic_utilities/physio_referral_product/','static/clinic-utilities/physio-referral/','commercial_products/physio_referral/')
           exact={
+            'CURRENT_OPERATIONAL.md',
+            'SLICE_PLAN_CURRENT.md',
+            'osteoporosis-change-log.md',
             'test_physio_knee_oa_cockpit_browser.py',
             '.github/workflows/physio-knee-oa-v4.yml',
             '.github/workflows/physio-knee-oa-prototype.yml',
