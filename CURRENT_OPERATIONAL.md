@@ -1,81 +1,84 @@
-# CURRENT_OPERATIONAL.md — Cyprus / GeSY OA overlay design complete / review HOLD
+# CURRENT_OPERATIONAL.md — Cyprus / GeSY OA jurisdiction overlay v1 runtime implementation
 
-> **STATUS:** CYPRUS / GESY OA JURISDICTION OVERLAY V1 — PRIMARY-SOURCE AUDIT + DESIGN COMPLETE / PRODUCT OWNER REVIEW HOLD / NO RUNTIME IMPLEMENTATION.
+> **STATUS:** CYPRUS / GESY OA JURISDICTION OVERLAY V1 — PRODUCT OWNER ACCEPTED DESIGN / RUNTIME IMPLEMENTATION ACTIVE.
 > **Updated:** 2026-09-12 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Bootstrap main:** `a2fa27c7ff26d1dd22cd6f726656ca0532daab75`.
-> **Design branch:** `design/physio-cy-gesy-oa-overlay-v1-2026-09-12`.
+> **Bootstrap main:** `2eb9c9c21c17537d8827c5ecf9aedb3a802f4193`.
+> **Accepted design PR:** `#92` / squash merge `2eb9c9c21c17537d8827c5ecf9aedb3a802f4193`.
+> **Active runtime branch:** `feat/physio-cy-gesy-overlay-v1-runtime-2026-09-12`.
+> **ACTIVE DESIGN / RUNTIME WRITER:** `feat/physio-cy-gesy-overlay-v1-runtime-2026-09-12`.
+> **Mutation scope:** Knee-OA jurisdiction-overlay runtime/data/tests + exact supporting canonicals only.
 > **Current production runtime SHA:** `bf527e3836a18491b2758fd293b42f82e0924382`.
-> **Authenticated live smoke:** run `34681808255`, attempt `3` — SUCCESS.
-> **ACTIVE DESIGN / RUNTIME WRITER:** NONE.
-> **RUNTIME / UI IMPLEMENTATION AUTHORITY:** NONE.
-> **V5 tested candidate:** remains separately in Product Owner review HOLD; no merge/deploy authority is implied here.
+> **Authenticated v4 live smoke:** run `34681808255`, attempt `3` — SUCCESS.
+> **V5 tested candidate:** remains separately in Product Owner review HOLD and is not part of this slice.
 > **Real-patient data:** NOT USED.
 
-## 1. Completed design deliverables
+## 1. Product Owner implementation authority
 
-The bounded Cyprus/GeSY audit/design slice produced:
-
-1. `commercial_products/physio_referral/jurisdictions/CY_GESY/CYPRUS_GESY_OA_SOURCE_AUDIT_V1.md`
-2. `commercial_products/physio_referral/jurisdictions/CY_GESY/CYPRUS_GESY_OA_DIFFERENCE_MATRIX_V1.md`
-3. `commercial_products/physio_referral/jurisdictions/JURISDICTION_OVERLAY_SCHEMA_V1.yaml`
-4. `commercial_products/physio_referral/jurisdictions/CY_GESY/CYPRUS_GESY_OA_OVERLAY_UX_DESIGN_V1.md`
-5. `commercial_products/physio_referral/jurisdictions/CY_GESY/CYPRUS_GESY_OA_OVERLAY_DESIGN_REVIEW_V1.md`
-
-Design review disposition:
-
-```text
-PRIMARY-SOURCE AUDIT          PASS
-DIFFERENCE MATRIX             PASS
-MACHINE SCHEMA                PASS AS PROPOSED DESIGN
-UX / ROUTINE-EXCLUSION POLICY PASS
-RUNTIME CHANGE                NONE
-PRODUCT OWNER REVIEW          NEXT
-```
-
-## 2. Evidence conclusions
-
-Verified Cyprus/HIO clinical differences/additions exist, including electrotherapy, radiofrequency nerve ablation, podiatry, glucosamine/chondroitin, hyaluronan, PRP-related positions and imaging implementation detail.
-
-The current routine Knee-OA referral core remains compatible with Cyprus on the product's routine defaults:
-
-```text
-therapeutic exercise
-progressive strengthening
-education / self-management
-individualized active rehabilitation
-```
-
-No current international evidence state requires mutation.
-
-International conflict remains international conflict. A definite Cyprus position on acupuncture/manual therapy is local context only and cannot collapse the global `guideline_conflict_or_mixed` state.
-
-## 3. Operational-policy separation
-
-GeSY physiotherapy access/referral/session/documentation/provider-unit rules were audited separately as administrative/reimbursement policy.
-
-They do not strengthen, weaken or replace clinical evidence.
-
-The HIO May-2026 announcement supports active guideline publication/implementation but describes OA-guideline integration into the GeSY information system as a future action. The currently linked OA PDF still carries draft/December-2025 metadata. Both facts remain explicit.
-
-## 4. Bounded recommendation
+On 2026-09-12 the Product Owner explicitly accepted the reviewed design with:
 
 `IMPLEMENT JURISDICTION OVERLAY V1`
 
-Meaning only:
+That authorizes this new bounded runtime slice only. It does not authorize unrelated v5 merge/deploy, second diagnosis, patient persistence, or expansion into Greece/England.
 
-- accept a separate machine/provenance layer after Product Owner review;
-- keep the international evidence core unchanged;
-- keep the current routine Knee-OA main UI unchanged initially;
-- surface local differences progressively in evidence detail when relevant;
-- keep GeSY administrative/reimbursement rules in a separate operational class;
-- use explicit clinician/account jurisdiction configuration, not patient-location inference;
-- do not implement Greece/England until real market/workflow need exists.
+## 2. Runtime target
 
-This recommendation is **not runtime implementation authority**.
+Implement the smallest useful reviewed architecture:
 
-## 5. Exact next lifecycle boundary
+```text
+international evidence core
++
+JurisdictionOverlayV1 resolver
++
+reviewed CY_GESY Knee-OA local-position data
++
+progressive evidence-detail presentation only where relevant
+```
 
-Product Owner reviews the audit, difference matrix, proposed schema, UX policy and bounded recommendation.
+Hard invariants:
 
-Only if accepted may a later fresh slice define the minimum runtime implementation contract. No UI/runtime/evidence mutation, PR/merge/deploy, second diagnosis or patient persistence is authorized by this design closeout.
+- international evidence state is never mutated by local overlay;
+- local position never auto-selects/deselects an intervention;
+- local position never rewrites referral prose;
+- local clinical guidance remains separate from GeSY admin/reimbursement/system-lifecycle rules;
+- planned GeSY IT integration remains planned, never active by inference;
+- no source voting;
+- no patient-location inference;
+- no patient persistence;
+- no autonomous literature-to-live update;
+- no second diagnosis.
+
+## 3. Exact implementation scope
+
+1. Add validated generic jurisdiction-overlay runtime loader/resolver.
+2. Add reviewed machine-readable `CY_GESY` Knee-OA profile derived only from the accepted audit/matrix.
+3. Activate the profile only from explicit deployment/account configuration; no patient-location inference.
+4. Attach local-position views to existing evidence-detail payloads without changing international `evidence_state`.
+5. Keep local agreement silent on the routine surface.
+6. Permit a restrained local-difference cue/detail only for an existing item already being inspected/relevant.
+7. Keep administrative/reimbursement rules machine-representable but out of clinical evidence resolution and routine UI.
+8. Add exact contract, resolver, integration and browser regressions.
+9. Preserve current routine referral prose and no-persistence behavior.
+
+## 4. Explicit exclusions
+
+No new routine controls for electrotherapy, RF ablation, podiatry, glucosamine/chondroitin, hyaluronan, PRP, injections or imaging.
+
+No country selector, badge wall, GeSY reimbursement panel, provider-unit mechanics, or automatic local-rule enforcement.
+
+No mutation of `knee_oa_evidence_contract_v1.yaml` merely because Cyprus differs.
+
+## 5. Release gates
+
+Implementation may proceed to PR only after:
+
+- machine/profile validation PASS;
+- proof overlay cannot mutate core evidence state;
+- proof local clinical/admin classes remain separate;
+- proof inactive/unknown profile fails closed;
+- proof routine main UI/referral prose unchanged;
+- focused evidence-detail browser acceptance PASS;
+- inherited Knee-OA/CU-1 regressions PASS;
+- branch remains current with `main` and bounded in scope.
+
+Merge/deploy requires exact-head PR evidence. Post-deploy authenticated production smoke is required before calling overlay production-smoke-verified.
