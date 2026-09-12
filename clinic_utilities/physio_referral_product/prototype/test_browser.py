@@ -46,10 +46,16 @@ class BrowserTests(unittest.TestCase):
         expect(self.page.locator('#copy')).to_be_enabled()
     def group(self,title):
         if self.page.locator('#advancedToggle').get_attribute('aria-expanded')!='true':self.page.locator('#advancedToggle').click()
+        mapping={'Εξέταση':'exam','Λειτουργία':'function','Στόχοι':'function','Παρεμβάσεις':'rehab','Συμπληρωματικά':'adjuncts','Περιορισμοί':'notes','Κλινική σημείωση':'notes','Κλινικός έλεγχος':'safety'}
+        category=mapping.get(title)
+        if category and self.page.locator(f'#advanced [data-v3-category={category}]').count():
+            self.page.locator(f'#advanced [data-v3-category={category}]').click();expect(self.page.locator('#sheet')).to_be_visible();return
         self.page.locator('#advanced summary').filter(has_text=title).click()
     def select_adjunct(self,item):
         self.group('Συμπληρωματικά')
-        self.page.locator(f'#advanced [data-select={item}]').click()
+        scope='#sheet' if self.page.locator('#sheet').is_visible() else '#advanced'
+        self.page.locator(f'{scope} [data-select={item}]').click()
+        if self.page.locator('#sheet').is_visible():self.page.keyboard.press('Escape')
         expect(self.page.locator(f'#plan [data-select={item}]')).to_be_visible()
         expect(self.page.locator('#copy')).to_be_enabled()
     def test_01_routine_flow_and_clipboard(self):
@@ -121,7 +127,9 @@ class BrowserTests(unittest.TestCase):
         expect(self.page.locator('#copy')).to_be_enabled()
     def test_07_real_safety_blocks_copy_and_print(self):
         self.ready();self.group('Κλινικός έλεγχος')
-        self.page.locator('[data-select=infection_or_septic_joint_concern]').click()
+        scope='#sheet' if self.page.locator('#sheet').is_visible() else '#advanced'
+        self.page.locator(f'{scope} [data-select=infection_or_septic_joint_concern]').click()
+        if self.page.locator('#sheet').is_visible():self.page.keyboard.press('Escape')
         expect(self.page.locator('#reviewStatus')).to_have_text('Απαιτείται κλινικός έλεγχος')
         expect(self.page.locator('#copy')).to_be_disabled()
         self.page.locator('#plan [data-evidence=therapeutic_exercise]').click()
