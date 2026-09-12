@@ -33,6 +33,7 @@ from clinic_utilities.physio_referral_product.knee_oa_projection import (
     project,
     bootstrap,
 )
+from clinic_utilities.physio_referral_product.knee_oa_presentation_v4 import present_project_result
 
 HERE = Path(__file__).resolve().parent
 
@@ -79,8 +80,10 @@ class Handler(BaseHTTPRequestHandler):
         data = (HERE / name).read_bytes()
         if name == "qualifiers.js":
             data += b"\n" + (HERE / "more_v3.js").read_bytes()
+            data += b"\n" + (HERE / "clinical_sheet_v4.js").read_bytes()
         elif name == "qualifiers.css":
             data += b"\n" + (HERE / "more_v3.css").read_bytes()
+            data += b"\n" + (HERE / "clinical_sheet_v4.css").read_bytes()
         self.reply(200, data, mime + "; charset=utf-8")
 
     def do_POST(self):
@@ -94,7 +97,8 @@ class Handler(BaseHTTPRequestHandler):
         try:
             length = int(self.headers.get("Content-Length", "0"))
             check(0 < length <= 32768)
-            result = project(json.loads(self.rfile.read(length)))
+            payload = json.loads(self.rfile.read(length))
+            result = present_project_result(project(payload), payload)
             self.json_reply(200, result)
         except (ValueError, TypeError, KeyError, AssertionError, UnicodeError):
             self.json_reply(400, {"error": "invalid_or_stale_prototype_request"})

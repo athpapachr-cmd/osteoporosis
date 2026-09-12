@@ -44,6 +44,11 @@ class BrowserTests(unittest.TestCase):
     def ready(self):
         self.page.locator('#assertion').click();self.page.locator('[data-side=right]').click()
         expect(self.page.locator('#copy')).to_be_enabled()
+    def clinical(self,kind):
+        self.page.locator(f'[data-clinical-v4={kind}]').click();expect(self.page.locator('#sheet')).to_be_visible()
+        return self.page.locator('#sheet')
+    def close_clinical(self):
+        self.page.locator('#closeSheet').click();expect(self.page.locator('#sheet')).to_be_hidden()
     def group(self,title):
         if self.page.locator('#advancedToggle').get_attribute('aria-expanded')!='true':self.page.locator('#advancedToggle').click()
         mapping={'Εξέταση':'exam','Λειτουργία':'function','Στόχοι':'function','Παρεμβάσεις':'rehab','Συμπληρωματικά':'adjuncts','Περιορισμοί':'notes','Κλινική σημείωση':'notes','Κλινικός έλεγχος':'safety'}
@@ -60,9 +65,10 @@ class BrowserTests(unittest.TestCase):
         expect(self.page.locator('#copy')).to_be_enabled()
     def test_01_routine_flow_and_clipboard(self):
         expect(self.page.locator('#copy')).to_be_disabled()
-        self.ready();self.page.locator('[data-finding=pain]').click()
-        self.page.locator('[data-phenotype=weakness_symptom_or_context]').click()
-        self.page.locator('#functionToggle').click();self.page.locator('[data-function=stairs]').click()
+        self.ready()
+        self.clinical('pain');self.close_clinical()
+        self.clinical('weakness');self.close_clinical()
+        self.clinical('function');self.page.locator('#sheet [data-function=stairs]').click();self.close_clinical()
         expect(self.page.locator('#referralText')).to_contain_text('δυσχέρεια στις σκάλες')
         expect(self.page.locator('#copy')).to_be_enabled()
         self.page.screenshot(path=str(ARTIFACTS/'desktop.png'),full_page=True)
@@ -83,7 +89,7 @@ class BrowserTests(unittest.TestCase):
         self.page.keyboard.press('Escape');expect(control).to_be_focused()
         self.assertEqual(self.page.locator('#referralText').inner_text(),before)
     def test_03_suggestion_is_explicit_and_traceable(self):
-        self.ready();self.page.locator('#functionToggle').click();self.page.locator('[data-function=stairs]').click()
+        self.ready();self.clinical('function');self.page.locator('#sheet [data-function=stairs]').click();self.close_clinical()
         expect(self.page.locator('#suggestions')).to_contain_text('Κλινική προσαρμογή')
         expect(self.page.locator('#referralText')).not_to_contain_text('λειτουργική επανεκπαίδευση')
         self.page.locator('#suggestions [data-add=functional_task_retraining]').click()
@@ -145,7 +151,7 @@ class BrowserTests(unittest.TestCase):
         expect(self.page.locator('#reviewStatus')).to_contain_text('τοπική σύνδεση')
         expect(self.page.locator('#referralText')).not_to_contain_text('δεξιού γόνατος')
     def test_09_mobile_reflow_targets_and_text_enlargement(self):
-        self.ready();self.page.locator('[data-finding=pain]').click()
+        self.ready();self.clinical('pain');self.close_clinical()
         expect(self.page.locator('#copy')).to_be_enabled()
         for width in [320,390,800,1280]:
             self.page.set_viewport_size({'width':width,'height':900})
@@ -173,7 +179,7 @@ class BrowserTests(unittest.TestCase):
         self.assertEqual(self.page.evaluate('sessionStorage.length'),0)
         self.assertTrue(all(url.startswith(self.origin+'/') or url==self.origin for url in self.requests),self.requests)
     def test_12_reset_and_simulated_bfcache_clear_state(self):
-        self.ready();self.page.locator('[data-finding=pain]').click()
+        self.ready();self.clinical('pain');self.close_clinical()
         self.page.locator('#reset').click();self.page.locator('[data-confirm-reset]').click()
         expect(self.page.locator('#assertion')).to_have_attribute('aria-pressed','false')
         expect(self.page.locator('#copy')).to_be_disabled()

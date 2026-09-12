@@ -1,0 +1,81 @@
+name: Physio Knee OA clinical-sheet v4 gate
+
+on:
+  push:
+    branches:
+      - fix/physio-knee-oa-clinical-sheet-v4-2026-09-12
+  pull_request:
+    paths:
+      - 'clinic_utilities/physio_referral_product/**'
+      - 'static/clinic-utilities/physio-referral/**'
+      - 'commercial_products/physio_referral/**'
+      - 'test_physio_knee_oa_cockpit_browser.py'
+      - '.github/workflows/physio-knee-oa-v4.yml'
+      - '.github/workflows/physio-knee-oa-prototype.yml'
+      - '.github/workflows/physio-knee-oa-cockpit-integration.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  v4:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify bounded v4 scope
+        run: |
+          python - <<'PY'
+          import subprocess
+          base=subprocess.check_output(['git','merge-base','origin/main','HEAD'],text=True).strip()
+          paths=subprocess.check_output(['git','diff','--name-only',base,'HEAD'],text=True).splitlines()
+          allowed=('clinic_utilities/physio_referral_product/','static/clinic-utilities/physio-referral/','commercial_products/physio_referral/')
+          exact={
+            'test_physio_knee_oa_cockpit_browser.py',
+            '.github/workflows/physio-knee-oa-v4.yml',
+            '.github/workflows/physio-knee-oa-prototype.yml',
+            '.github/workflows/physio-knee-oa-cockpit-integration.yml',
+          }
+          bad=[p for p in paths if p not in exact and not p.startswith(allowed)]
+          assert not bad,bad
+          print('Knee OA v4 bounded scope PASS:',len(paths),'files')
+          PY
+      - name: Install dependencies
+        run: |
+          python -m pip install -r requirements.txt
+          python -m pip install 'playwright==1.55.0'
+      - name: Syntax
+        run: |
+          python -m py_compile clinic_utilities/physio_referral_product/knee_oa_presentation_v4.py clinic_utilities/physio_referral_product/production_api.py clinic_utilities/physio_referral_product/prototype/server.py clinic_utilities/physio_referral_product/prototype/test_browser_qualifiers.py test_physio_knee_oa_cockpit_browser.py
+          node --check clinic_utilities/physio_referral_product/prototype/clinical_sheet_v4.js
+          node --check static/clinic-utilities/physio-referral/product-clinical-sheet-v4.js
+          node --check static/clinic-utilities/physio-referral/production-finalize.js
+      - name: Server and clinical invariants
+        run: |
+          python clinic_utilities/physio_referral_product/prototype/test_server.py
+          python clinic_utilities/physio_referral_product/prototype/test_qualifiers.py
+          python -m unittest -v test_physio_knee_oa_cockpit_integration.py
+      - name: Install Chromium
+        run: python -m playwright install --with-deps chromium
+      - name: V4 and inherited browser acceptance
+        run: |
+          python clinic_utilities/physio_referral_product/prototype/test_browser_qualifiers.py
+          python clinic_utilities/physio_referral_product/prototype/test_browser_usability_v2.py
+          python clinic_utilities/physio_referral_product/prototype/test_browser_more_v3.py
+          python test_physio_knee_oa_cockpit_browser.py
+      - name: Package closure
+        run: python clinic_utilities/physio_referral_product/prototype/build_bundle.py
+      - name: Publish screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: physio-knee-oa-v4-${{ github.sha }}
+          path: artifacts/
+          if-no-files-found: warn
+          retention-days: 7
