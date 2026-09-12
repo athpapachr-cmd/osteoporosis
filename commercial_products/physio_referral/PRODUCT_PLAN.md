@@ -1,29 +1,27 @@
 # PRODUCT_PLAN.md — Physio Referral productization
 
-> **STATUS:** STEPS 1–4 FROZEN; STEP 5 FUNCTIONAL SYNTHETIC PROTOTYPE IMPLEMENTED / TECHNICAL GATE PASS.
-> **Updated:** 2026-09-11 Asia/Nicosia.
-> **Parent:** existing CU-1 Physiotherapy Referral v2.
-> **First vertical slice:** Knee Osteoarthritis only.
-> **Runtime implementation authority:** bounded Step-5 prototype completed; writer closed. No production authority.
+> **STATUS:** KNEE-OA V1 RELEASED; CY_GESY OVERLAY RELEASED; V5 TESTED CANDIDATE AWAITS PRODUCT OWNER DISPOSITION.
+> **Updated:** 2026-09-12 Asia/Nicosia.
+> **Parent:** existing CU-1 Physiotherapy Referral foundation.
+> **Current diagnosis vertical:** Knee Osteoarthritis only.
+> **Current canonical main:** `273e22a0ea2bc9b2e5a996fac22a0a88eb54d30e`.
+> **Current writer:** none.
 
 ---
 
 # 1. Product objective
 
-Evolve the existing CU-1 referral utility from a capable deterministic referral form into a small subscription clinical product that a clinician can reasonably value at approximately:
+Build a small clinician-facing paid product that creates a concise, clinically credible and evidence-aware physiotherapy referral quickly, while preserving clinician autonomy and keeping complexity under the surface.
+
+Initial commercial hypothesis remains approximately:
 
 ```text
 €9.99 / month
 ```
 
-Initial commercial target is deliberately modest:
+This is a commercial hypothesis, not validated willingness-to-pay.
 
-```text
-~100 subscribers
-→ ~€999 MRR
-```
-
-The first goal is product-market usefulness, not scale.
+The first goal remains product usefulness, not feature count.
 
 ---
 
@@ -33,75 +31,68 @@ The product is **not** merely a text generator.
 
 Target value proposition:
 
-> Create a clinically useful physiotherapy referral quickly, while the interface quietly keeps the selected plan aligned with current reviewed evidence, shows uncertainty or disagreement honestly, and preserves clinician autonomy.
+> Create a clinically useful physiotherapy referral quickly while the interface quietly keeps the selected plan aligned with reviewed evidence, shows uncertainty or disagreement honestly, incorporates reviewed local-system context when useful, and preserves clinician authority.
 
 Value stack:
 
 ```text
 speed
 + clinical structure
-+ evidence transparency
-+ evidence freshness/review state
++ deterministic referral output
++ international evidence transparency
++ jurisdiction/local-system context
 + flexible clinician override
-+ high-quality referral output
++ low cognitive load
 ```
 
 ---
 
-# 3. First-slice rule
+# 3. Current released architecture
 
-The first complete productization slice is:
+The released Knee-OA product now uses:
+
+```text
+CU-1 clinical/runtime foundation
++
+Knee-OA deterministic projection
++
+international evidence core
++
+JurisdictionOverlayV1
++
+CY_GESY explicit production profile
++
+progressive evidence disclosure
+```
+
+The jurisdiction layer is deliberately separate from international evidence.
+
+Hard rules:
+
+```text
+local clinical guidance != international evidence state
+administrative/reimbursement rule != clinical-efficacy evidence
+local difference != silent overwrite
+planned != active
+suggestion != clinician selection
+manual text != structured state
+```
+
+The released Cyprus/GeSY overlay does not silently change defaults, selections, referral prose or safety behavior.
+
+---
+
+# 4. Single-diagnosis rule
+
+The active product vertical remains:
 
 ```text
 Knee Osteoarthritis only
 ```
 
-Do not expand diagnoses until this vertical slice proves the reusable architecture:
+A second diagnosis is **not automatically authorized** by completion of Knee-OA or the jurisdiction overlay.
 
-```text
-diagnosis/laterality
-→ phenotype / function
-→ evidence-aware defaults
-→ context-driven suggestions
-→ power-user options
-→ live referral
-→ evidence detail on demand
-→ final review state
-```
-
----
-
-# 4. Relationship to existing CU-1
-
-Existing CU-1 remains the structured clinical/runtime foundation and already provides route/state IDs, validation, safety/consistency semantics, formatting and ephemeral use.
-
-Hard boundary:
-
-```text
-PRODUCTIZATION DOES NOT SILENTLY REWRITE FROZEN CU-1 CLINICAL TAXONOMY
-```
-
-Steps 2–3 confirmed that no broad taxonomy rewrite is required.
-
-Explicit bounded seams remain:
-
-```text
-walking aid
-→ canonical CU-1 ID exists
-→ current Knee UI scope does not expose it
-
-weight management
-→ strong Knee-OA evidence when applicable
-→ present in clinical profile prose
-→ no dedicated selectable CU-1 machine ID
-
-true locking / major mechanical ROM block
-→ canonical CU-1 finding exists
-→ current rule catalog does not derive a safety trigger from the finding itself
-→ first Knee-OA product surface does not expose it until a bounded safety/reassessment mapping exists
-```
-
-These are explicit later design decisions, not hidden mutations.
+Do not add another diagnosis merely to make the product look larger. A second diagnosis requires a fresh bounded Product Owner decision based on workflow/product value.
 
 ---
 
@@ -109,30 +100,30 @@ These are explicit later design decisions, not hidden mutations.
 
 ## Minimal surface
 
-Clinical/evidence complexity lives underneath. Routine use should feel direct and mobile-first.
+Routine use should feel direct and mobile-first. Clinical and evidence complexity belongs underneath progressive disclosure.
 
-## Smart default
+## Smart reviewed defaults
 
-The reviewed Knee-OA starting plan is:
+The Knee-OA starting plan remains:
 
 ```text
-implicit individualized physiotherapy assessment / active rehabilitation
+individualized physiotherapy assessment / active rehabilitation
 + therapeutic exercise
 + progressive strengthening
 + education & self-management
 ```
 
-Other components are contextual or power-user selected.
+Other components remain contextual or clinician-selected.
 
 ## Clinician authority
 
-Suggestion != clinician selection. The product informs and proposes; it does not silently choose treatment.
+Suggestion != clinician selection.
 
-Opening a fixed Knee-OA product screen does not itself assert the diagnosis. Final Copy requires the existing CU-1 formal-diagnosis semantics and explicit clinician assertion.
+The product informs and proposes. It does not silently choose treatment.
 
 ## Evidence-state integrity
 
-Step 2 expanded the model to six states:
+International evidence states remain:
 
 ```text
 recommended_or_supported
@@ -143,74 +134,39 @@ recommendation_against_routine_use
 not_yet_assessed
 ```
 
-Hard distinctions:
+Hard distinctions remain:
 
 ```text
 INSUFFICIENT != AGAINST
 CONFLICT != CONSENSUS
 SOURCE YEAR != REVIEW DATE
 BROAD RECOMMENDATION != ITEM-SPECIFIC STRONG RECOMMENDATION
+LOCAL POLICY != STRONGER INTERNATIONAL EVIDENCE
 ```
-
-## Evidence claim scope
-
-Every source claim may distinguish:
-
-```text
-direct_item_recommendation
-named_component_of_broader_recommendation
-broader_recommendation_only
-contextual_clinical_mapping
-```
-
-This prevents a broad recommendation for exercise from being falsely presented as a strong recommendation for every narrower technique.
 
 ## Deterministic live referral
 
-Step 3 freezes a deterministic Greek composition layer:
+Routine output remains deterministic:
 
 ```text
 structured clinician-selected state
-+ bounded product phenotype overlay
++ bounded phenotype/product context
 → deterministic semantic projection
 → deterministic Greek referral
 ```
 
-Routine output requires no LLM and no Generate button.
-
-Hard Step-3 boundaries include:
-
-```text
-stiffness symptom != ROM restriction
-generic weakness != objective weakness
-functional limitation != automatic rehabilitation selection
-selected product item must render, fail closed, or be explicitly semantically de-duplicated
-manual edited prose != structured-state writeback
-evidence UI metadata != copied referral prose
-```
-
-## Evidence interaction / traceability
-
-Step 4 freezes distinct selection/evidence/availability/safety signals, six visible non-colour cues, one expanded contextual bubble without a timer, one information-sheet host, full first-disclosure conflict positions, scope-labelled source attribution and draft-local suggestions with stale-candidate rejection. Collapsed advanced choices remain selected and discoverable. Every export follows Step-3 safety/readiness and revision boundaries.
-
-The Step-4 design checker is not the production application or an independent clinical review. Current clinical locators have source-level precision. Actual accessibility, final Greek source summaries, usability and independent source-to-claim verification remain later acceptance work.
-
-## Functional prototype boundary
-
-Step 5 implemented the flow in an isolated loopback-only application using the real existing CU-1 validation engine. Its focused technical gate passed 15 backend/HTTP and 12 actual Chromium tests, including exact-output, selection, source, safety, revision, manual-edit and packaging checks. These results do not substitute for the product owner's trial or independent review.
-
-The prototype intentionally reuses frozen design-checker functions for composition and evidence. This temporary dependency must be separately reviewed/extracted before a production implementation. It has no public hosting, production router integration, patient storage or account/billing system. All exports are marked synthetic and non-clinical.
+No routine LLM generation is required.
 
 ## Update governance
 
-No autonomous literature-to-live-rule updates.
+No autonomous literature-to-live updates:
 
 ```text
 surveillance
 → candidate change
 → source review
 → impact classification
-→ clinician/product-owner approval
+→ clinician/Product Owner approval
 → versioned contract
 → tests/review
 → separate runtime release
@@ -220,43 +176,104 @@ surveillance
 
 # 6. Privacy/product boundary
 
-Preferred first commercial architecture remains data-minimizing:
+Preferred architecture remains data-minimizing:
 
 ```text
-account/preferences may be persisted later
+account/preferences may be persisted later if justified
 patient-identifiable referral draft need not be persisted
 ```
 
-The existing ephemeral CU-1 behavior remains a desirable default unless a future explicit workflow requirement justifies protected persistence.
+Current product release retains no patient-draft persistence.
+
+Any future persistence, analytics, billing or entitlement work requires separate authority.
 
 ---
 
-# 7. Future Clinical Cockpit architecture
+# 7. Released lifecycle state
 
-Physio Referral should be commercially usable as a focused product while remaining architecturally compatible with a later modular Clinical Cockpit.
-
-Candidate entitlements may later include:
+Current verified state:
 
 ```text
-physio_referral
-patient_education
-clinical_calculators
-osteoporosis_tools
-reception
+Knee-OA product released                         yes
+CY_GESY overlay released                         yes
+explicit production jurisdiction configuration   yes
+authenticated production smoke                    pass
+real clinical pilot                               no
+paid conversion / retention validation            no
+second diagnosis                                  no
 ```
 
-Do not build billing/auth/entitlements during the Knee-OA prototype unless separately authorized.
+The final canonical production smoke is run `34703453615` — SUCCESS.
 
 ---
 
-# 8. Commercial validation sequence
+# 8. V5 tested candidate
+
+A bounded post-use UI/prose refinement exists at:
 
 ```text
-complete one Knee-OA vertical slice
-→ product-owner use
-→ independent clinical / physiotherapy / UX / commercial review
-→ bounded refinement
-→ first external clinician pilot
+branch  fix/physio-knee-oa-v5-optional-refinement-prose-2026-09-12
+head    a47357c602120d3678e8f2f23b99775e616c79e1
+gate    34693751545 — SUCCESS
+```
+
+V5 addresses observed workflow friction without changing evidence semantics:
+
+- first tap on `Πόνος`, `Δυσκαμψία`, `Αδυναμία` selects the generic symptom without a forced popup;
+- second tap opens optional detail;
+- `Λειτουργικότητα` retains its chooser;
+- weakness choices become clearer and less duplicative;
+- bare `Περιαρθρικά` leaves the routine surface;
+- overlapping pain wording is reconciled;
+- clinical picture and physiotherapy plan become separate paragraphs;
+- the trailing `Επιπλέον στόχος:` label becomes natural prose.
+
+V5 is implemented/tested but not merged/deployed. Product Owner disposition is the next bounded product decision.
+
+---
+
+# 9. External feedback policy
+
+External feedback remains useful, but its role is now explicit.
+
+On 2026-09-12 the Product Owner decided that formal physiotherapist/receiver evaluation is **not a blocking prerequisite** for current progress.
+
+The Product Owner intends to ask clinician colleagues for feedback later, but not now.
+
+Therefore:
+
+```text
+receiver / physiotherapist feedback
+= optional later external evidence
+!= V5 release gate
+!= mandatory immediate acceptance step
+!= automatic implementation authority
+```
+
+Absence of that feedback must not be misrepresented as proof of receiver utility. Equally, the product must not be frozen waiting for feedback the Product Owner has deliberately deferred.
+
+Any later colleague feedback should be triaged through the permanent utility rule:
+
+```text
+CLINICALLY INTERESTING
+!= WORKFLOW-USEFUL
+!= RECEIVER-USEFUL
+!= WORTH ADDING
+```
+
+---
+
+# 10. Commercial validation sequence
+
+The current sequence is intentionally lightweight:
+
+```text
+released Knee-OA + CY_GESY foundation
+→ Product Owner disposition of V5
+→ if accepted: V5 release + authenticated smoke
+→ Product Owner real-device/use acceptance
+→ explicit decision whether to run a small clinical/workflow pilot
+→ explicit commercial validation
 → first paying clinician
 → 5
 → 10
@@ -265,41 +282,51 @@ complete one Knee-OA vertical slice
 → ~€1,000 MRR
 ```
 
-The first paid clinician is more meaningful than speculative projections.
+External colleague/receiver feedback may be inserted later wherever the Product Owner finds it useful. It is not a fixed gate in this sequence.
+
+The first paying clinician remains more meaningful than speculative projections.
 
 ---
 
-# 9. Independent review gate
+# 11. Review governance
 
-After a functional Knee-OA vertical slice exists, request independent review across:
+Major product changes may still benefit from separate review axes:
 
-```text
-clinical/evidence fidelity
-physiotherapy usefulness/autonomy
-UX/product simplicity
-commercial willingness-to-pay / retention value
-```
+1. Clinical / Evidence
+2. Receiving-professional / workflow utility
+3. UX / Product
+4. Commercial / Product-Market
 
-Review must explicitly ask:
+These are review lenses, not mandatory sequential bureaucratic gates for every small bounded refinement.
 
-> What should be removed?
+Technical PASS never proves product value. Conversely, absence of formal receiver review does not prohibit a Product Owner-approved bounded release when clinical/evidence/safety contracts remain unchanged and the change is appropriately tested.
 
-The main product risk is not only missing features; it is burying a simple workflow under too many correct ideas.
+Every substantial review should still ask:
+
+> What should be removed or simplified?
+
+The main product risk remains burying a simple workflow under too many correct ideas.
 
 ---
 
-# 10. Product sequence and current state
+# 12. Current next action
 
 ```text
-STEP 1 — UX interaction contract                         COMPLETE / FROZEN
-STEP 2 — Knee-OA evidence knowledge module              COMPLETE / FROZEN / DESIGN PASS
-STEP 3 — dynamic referral/template contract             COMPLETE / FROZEN / DESIGN PASS
-STEP 4 — evidence interaction/traceability contract     COMPLETE / FROZEN / ACTIVE-WRITER DESIGN PASS
-STEP 5 — functional synthetic local prototype           IMPLEMENTED / FOCUSED TECHNICAL GATE PASS
-STEP 6 — product-owner usability / clinical-copy review NEXT; NOT YET PERFORMED
-STEP 7 — independent multi-axis review                  PENDING
-STEP 8 — bounded refinement                             PENDING
-STEP 9 — external clinician/commercial pilot            PENDING
+NEXT BOUNDED PRODUCT DECISION
+= Product Owner disposition of exact tested V5 candidate
 ```
 
-The separate Step-5 implementation authorization has been exercised and its writer closed. Completion of the prototype does not authorize production integration, real clinical use, public hosting, PR, merge, deploy or production smoke.
+If V5 is accepted, use the normal lifecycle:
+
+```text
+exact candidate verification
+→ PR / merge
+→ Render deploy
+→ authenticated production smoke
+→ Product Owner real-device acceptance
+→ canonical closeout
+```
+
+Do **not** start a second diagnosis, analytics, billing, patient persistence, Greece/England profile work or a new recommendation surface by default.
+
+No active implementation writer exists until the Product Owner explicitly authorizes the next slice.
