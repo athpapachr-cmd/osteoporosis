@@ -15,6 +15,7 @@ on:
       - 'test_physio_knee_oa_cockpit_browser.py'
       - '.github/workflows/physio-knee-oa-cockpit-integration.yml'
       - '.github/workflows/physio-knee-oa-prototype.yml'
+      - '.github/workflows/physio-knee-oa-v4.yml'
       - '.github/workflows/cu1-tests.yml'
       - 'CURRENT_OPERATIONAL.md'
       - 'SLICE_PLAN_CURRENT.md'
@@ -50,7 +51,7 @@ jobs:
             'clinic_utilities/physio_referral_api.py',
             'test_physio_knee_oa_cockpit_integration.py','test_physio_knee_oa_cockpit_browser.py',
             '.github/workflows/physio-knee-oa-cockpit-integration.yml',
-            '.github/workflows/physio-knee-oa-prototype.yml','.github/workflows/cu1-tests.yml',
+            '.github/workflows/physio-knee-oa-prototype.yml','.github/workflows/physio-knee-oa-v4.yml','.github/workflows/cu1-tests.yml',
             '.github/workflows/physio-knee-oa-evidence-design.yml',
             '.github/workflows/physio-knee-oa-template-design.yml',
             '.github/workflows/physio-knee-oa-interaction-design.yml',
@@ -76,6 +77,7 @@ jobs:
           node --check static/clinic-utilities/physio-referral/product-app.js
           node --check static/clinic-utilities/physio-referral/product-qualifiers.js
           node --check static/clinic-utilities/physio-referral/product-more-v3.js
+          node --check static/clinic-utilities/physio-referral/product-clinical-sheet-v4.js
           node --check static/clinic-utilities/physio-referral/production-env.js
           node --check static/clinic-utilities/physio-referral/production-finalize.js
           python - <<'PY'
