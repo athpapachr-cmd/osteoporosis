@@ -3,24 +3,24 @@
 // exported text as synthetic; the protected Cockpit surface must not. Clinical
 // projection/state remains owned by the same deterministic server path.
 
-// Load the bounded v4 clinical-picture presentation after the inherited product
-// scripts. Keep the old qualifier DOM as a hidden compatibility backing surface;
-// v4 only changes how those same fields are reached and displayed.
+// Load the bounded v5 clinical-picture interaction after the inherited product
+// scripts. The v4 layout CSS and legacy qualifier DOM remain compatibility
+// backing surfaces; v5 only changes how the same structured fields are reached.
 const v4ClinicalHost = $('#phenotype');
 if (v4ClinicalHost) v4ClinicalHost.style.visibility = 'hidden';
 const v4Style = document.createElement('link');
 v4Style.rel = 'stylesheet';
 v4Style.href = '/static/clinic-utilities/physio-referral/product-clinical-sheet-v4.css';
 document.head.append(v4Style);
-const v4Script = document.createElement('script');
-v4Script.src = '/static/clinic-utilities/physio-referral/product-clinical-sheet-v4.js';
-v4Script.async = false;
-v4Script.onload = () => { if (v4ClinicalHost) v4ClinicalHost.style.visibility = ''; };
-v4Script.onerror = () => {
+const v5Script = document.createElement('script');
+v5Script.src = '/static/clinic-utilities/physio-referral/product-clinical-sheet-v5.js';
+v5Script.async = false;
+v5Script.onload = () => { if (v4ClinicalHost) v4ClinicalHost.style.visibility = ''; };
+v5Script.onerror = () => {
   if (v4ClinicalHost) v4ClinicalHost.style.visibility = '';
   notice('Η συμπαγής κλινική εικόνα δεν φορτώθηκε. Ανανέωσε τη σελίδα.');
 };
-document.head.append(v4Script);
+document.head.append(v5Script);
 
 const productionOpenSheet = openSheet;
 openSheet = function(type, item = null, back = null) {
@@ -46,6 +46,4 @@ copyReferral = async function() {
 preparePrint = function() {
   $('#printArea').textContent = canExport() ? effectiveText() : 'Η παραπομπή δεν είναι διαθέσιμη για εξαγωγή.';
 };
-// app.js registered its prototype beforeprint handler first; this later handler
-// deliberately overwrites the print area with production text at the same event.
 window.addEventListener('beforeprint', preparePrint);
