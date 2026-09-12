@@ -11,7 +11,12 @@ from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
 from clinic_utilities.clinical_documents import build_clinical_documents_router
-from clinic_utilities.clinical_documents.models import ClinicianProfile, SickLeaveDraftV1
+from clinic_utilities.clinical_documents.api import MAX_DRAFT_JSON_BYTES
+from clinic_utilities.clinical_documents.models import (
+    ClinicianProfile,
+    SickLeaveDocumentMetadataV1,
+    SickLeaveDraftV1,
+)
 from clinic_utilities.clinical_documents.sick_leave import (
     MAX_SIGNATURE_BYTES,
     build_sick_leave_pdf,
@@ -162,6 +167,33 @@ def test_pdf_metadata_round_trip_and_reuse_modes():
     assert new_reason["relation"] == "new_leave_same_patient"
 
 
+def test_imported_metadata_rejects_inverted_dates_and_orphan_relation():
+    common = {
+        "schema": "sick_leave_certificate_v1",
+        "version": "1.0",
+        "document_id": "00000000-0000-4000-8000-000000000000",
+        "patient_name": SYNTHETIC_PATIENT,
+        "id_type": "ADT",
+        "id_number": "TEST-123",
+        "diagnosis": SYNTHETIC_DIAGNOSIS,
+        "issued_on": "2026-09-12",
+    }
+    with pytest.raises(ValidationError):
+        SickLeaveDocumentMetadataV1.model_validate(
+            {**common, "leave_from": "2026-09-15", "leave_to": "2026-09-14"}
+        )
+    with pytest.raises(ValidationError):
+        SickLeaveDocumentMetadataV1.model_validate(
+            {
+                **common,
+                "leave_from": "2026-09-12",
+                "leave_to": "2026-09-14",
+                "relation": "extension",
+                "derived_from_document_id": "",
+            }
+        )
+
+
 def test_unknown_pdf_fails_without_visible_text_or_ocr_guessing():
     doc = fitz.open()
     page = doc.new_page()
@@ -215,6 +247,7 @@ def test_protected_contract_and_pdf_api(monkeypatch: pytest.MonkeyPatch):
         "autosave": False,
         "signature_persisted": False,
     }
+    assert body["limits"]["draft_json_bytes"] == MAX_DRAFT_JSON_BYTES
 
     draft_json = json.dumps(_draft().model_dump(mode="json"), ensure_ascii=False)
     pdf_response = client.post(
@@ -236,6 +269,16 @@ def test_protected_contract_and_pdf_api(monkeypatch: pytest.MonkeyPatch):
     )
     assert previous.status_code == 200
     assert previous.json()["extension"]["leave_from"] == "2026-09-15"
+
+
+def test_oversized_draft_payload_is_rejected_before_json_parse(monkeypatch: pytest.MonkeyPatch):
+    client = _router_client(monkeypatch)
+    response = client.post(
+        "/clinical/clinic-utilities/sick-leave/api/pdf",
+        headers={"X-Clinical-Key": SYNTHETIC_KEY},
+        data={"draft_json": "x" * (MAX_DRAFT_JSON_BYTES + 1)},
+    )
+    assert response.status_code == 413
 
 
 def test_page_and_contract_fail_closed_without_clinical_key(monkeypatch: pytest.MonkeyPatch):
