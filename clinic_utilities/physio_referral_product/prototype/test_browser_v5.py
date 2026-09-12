@@ -88,7 +88,7 @@ class V5BrowserTests(unittest.TestCase):
     def test_more_exam_does_not_reintroduce_ambiguous_atrophy_labels(self):
         self.page.locator('[data-clinical-v4=weakness]').click()
         self.page.locator('#advancedToggle').click()
-        self.page.locator('#advanced [data-v3-category=exam]').click()
+        self.page.locator('#advanced .v3-category-row[data-v3-category=exam]').click()
         expect(self.page.locator('#sheet')).to_be_visible()
         expect(self.page.get_by_role('button', name='Μυϊκή αδυναμία στην εξέταση', exact=True)).to_have_count(1)
         expect(self.page.get_by_role('button', name='Αδυναμία τετρακεφάλου στην εξέταση', exact=True)).to_have_count(1)
