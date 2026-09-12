@@ -1,6 +1,6 @@
 # CURRENT_OPERATIONAL.md — Clinical Documents Engine Phase 1
 
-> **STATUS:** MERGED / DEPLOYED — PRODUCTION FUNCTIONAL SMOKE PENDING.
+> **STATUS:** PRODUCTION-SMOKE-VERIFIED / CLOSED.
 > **Updated:** 2026-09-12 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Slice:** `CU-CLINICAL-DOCUMENTS-P1-SICK-LEAVE-2026-09-12`.
@@ -9,10 +9,10 @@
 > **Clinical Documents PR gate:** run `34717351567` — SUCCESS.
 > **Release commit:** `a3ae5dd792a715a8306f5c279cc4bdbec4ca5b5e`.
 > **Render deploy:** `dep-dairee0jo6nc73bt03b0` — LIVE.
-> **Writer:** none — release mutation complete.
+> **Production functional smoke:** PASS — Product Owner reported all Sick Leave smoke checks working on 2026-09-12.
+> **Writer:** none — Phase 1 slice closed.
 > **Production config/secrets mutation:** NONE.
 > **Patient persistence authority:** NONE.
-> **Production-smoke label:** NOT YET CLAIMED.
 
 ## 1. Product Owner authority and release
 
@@ -24,11 +24,13 @@ PR #97 was squash merged to `main` as:
 
 `a3ae5dd792a715a8306f5c279cc4bdbec4ca5b5e`
 
-The existing Render `autoDeploy=yes` pipeline then deployed that exact release commit automatically. No duplicate manual deploy was triggered. Deploy `dep-dairee0jo6nc73bt03b0` reached `LIVE` at 2026-09-12T20:35:36Z.
+The existing Render `autoDeploy=yes` pipeline deployed that exact release commit automatically. No duplicate manual deploy was triggered. Deploy `dep-dairee0jo6nc73bt03b0` reached `LIVE` at 2026-09-12T20:35:36Z.
+
+The Product Owner then performed the agreed production smoke and reported that all smoke checks were working correctly. This closes the production functional validation gate for Sick Leave V1.
 
 ## 2. Released scope
 
-Phase 1 now deployed contains only:
+Phase 1 contains only:
 
 ```text
 Common Clinical Documents Core
@@ -97,20 +99,23 @@ Production Render service:
 
 No Clinical Documents-specific environment variable or secret was added or changed for this release.
 
-## 6. What is not yet proven
+## 6. Production smoke evidence
 
-`DEPLOYED != PRODUCTION-SMOKE-VERIFIED`.
+The Product Owner reports the agreed production Sick Leave smoke as fully successful.
 
-An authenticated end-to-end production use of the new Sick Leave workflow has not yet been evidenced in this release conversation. Therefore the canonical state intentionally remains **production functional smoke pending** rather than pretending that a green deploy is the same thing as successful clinician use, a distinction software occasionally resents but medicine rather sensibly requires.
+This satisfies the release-validation distinction:
 
-A valid production functional smoke should use synthetic/non-identifiable data and verify at minimum:
+```text
+IMPLEMENTED                 YES
+TESTED                      YES
+EXACT-HEAD REVIEW           PASS
+MERGED                      YES
+DEPLOYED                    YES
+PRODUCTION-SMOKE-VERIFIED   YES
+PILOT-VALIDATED             NOT APPLICABLE TO THIS UTILITY RELEASE
+```
 
-1. authenticated Sick Leave page opens;
-2. contract reports clinician profile configured;
-3. PDF preview or download succeeds;
-4. generated PDF is readable and contains expected synthetic Greek content;
-5. re-import offers extension and same-patient/new-leave modes;
-6. no patient persistence is introduced.
+This smoke verifies the released Sick Leave V1 workflow in production. It does not authorize or validate the later Accident/Medico-Legal phases.
 
 ## 7. Explicit exclusions retained
 
@@ -130,4 +135,6 @@ Not authorized by this release:
 
 ## 8. Next legitimate action
 
-Writer lock is released. The next release-validation action is an authenticated synthetic/product-owner Sick Leave smoke. Phase 2 requires a fresh bounded slice and fresh Product Owner authority; it is not implied by this deployment.
+Phase 1 is closed and no writer lock is active.
+
+Any move to Accident/Medico-Legal Report implementation, AI-assisted drafting/literature, billing, persistent cases or user-uploaded templates requires a fresh six-canonical bootstrap, a new bounded slice and explicit Product Owner implementation authority.
