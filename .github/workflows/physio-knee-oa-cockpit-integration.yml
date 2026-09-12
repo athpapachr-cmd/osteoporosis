@@ -51,6 +51,9 @@ jobs:
             'test_physio_knee_oa_cockpit_integration.py','test_physio_knee_oa_cockpit_browser.py',
             '.github/workflows/physio-knee-oa-cockpit-integration.yml',
             '.github/workflows/physio-knee-oa-prototype.yml','.github/workflows/cu1-tests.yml',
+            '.github/workflows/physio-knee-oa-evidence-design.yml',
+            '.github/workflows/physio-knee-oa-template-design.yml',
+            '.github/workflows/physio-knee-oa-interaction-design.yml',
           }
           prefixes = (
             'clinic_utilities/physio_referral_product/',
