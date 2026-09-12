@@ -395,3 +395,120 @@ document.addEventListener('click', event => {
 });
 
 window.addEventListener('pagehide',()=>{qualifierState=qualifierDefaults();});
+
+// Usability refinement v2: discoverable secondary suggestions, direct referral
+// editing and ephemeral doctor-facing favorites. None of these controls mutate
+// clinical meaning unless the clinician explicitly activates the underlying
+// selection control.
+const V2_FAVORITE_CATEGORIES = new Set(['findings','functional_impairments','goals','rehab_directions','adjunct_options']);
+let v2Favorites = [];
+
+function v2FavoriteKey(category,item) { return category+':'+item; }
+function v2IsFavorite(category,item) { return v2Favorites.includes(v2FavoriteKey(category,item)); }
+function v2FavoriteToggle(category,item) {
+  const active=v2IsFavorite(category,item);
+  return btn(active?'★':'☆',{class:'favorite-toggle','data-favorite-v2':'','data-favorite-category':category,'data-favorite-item':item,
+    'aria-pressed':String(active),'aria-label':(active?'Αφαίρεση από τα Συχνά: ':'Προσθήκη στα Συχνά: ')+label(item)});
+}
+function v2SyncFavoriteToggles() {
+  $$('[data-favorite-v2]').forEach(b=>{
+    const active=v2IsFavorite(b.dataset.favoriteCategory,b.dataset.favoriteItem);
+    b.textContent=active?'★':'☆'; b.setAttribute('aria-pressed',String(active));
+    b.setAttribute('aria-label',(active?'Αφαίρεση από τα Συχνά: ':'Προσθήκη στα Συχνά: ')+label(b.dataset.favoriteItem));
+  });
+}
+function v2RenderFavorites() {
+  const host=$('#advancedFavoritesV2'); if(!host || !state) return;
+  const items=v2Favorites.map(key=>{
+    const split=key.indexOf(':'); if(split<1)return null;
+    const category=key.slice(0,split),item=key.slice(split+1);
+    return V2_FAVORITE_CATEGORIES.has(category)&&Array.isArray(state[category])?{category,item}:null;
+  }).filter(Boolean);
+  if(!items.length){host.hidden=true;host.replaceChildren();return;}
+  host.hidden=false;
+  host.replaceChildren(
+    make('div',{class:'favorites-heading'},[
+      make('strong',{text:'★ Συχνά'}),
+      make('span',{class:'small subtle',text:'Συντομεύσεις · δεν επιλέγουν τίποτα από μόνες τους'}),
+    ]),
+    make('div',{class:'favorite-items'},items.map(({category,item})=>make('span',{class:'favorite-item'},[
+      btn(label(item),{'data-select':item,'data-category':category,'aria-pressed':String(state[category].includes(item))}),
+      v2FavoriteToggle(category,item),
+    ])))
+  );
+}
+function v2InstallFavoriteControls() {
+  const advanced=$('#advanced'); if(!advanced)return;
+  let host=$('#advancedFavoritesV2');
+  if(!host){host=make('div',{id:'advancedFavoritesV2',class:'advanced-favorites',hidden:''});advanced.prepend(host);}
+  const controls=[...advanced.querySelectorAll('[data-select][data-category]')];
+  for(const select of controls){
+    const category=select.dataset.category,item=select.dataset.select;
+    if(!V2_FAVORITE_CATEGORIES.has(category)||select.closest('#advancedFavoritesV2')||select.dataset.favoriteDecorated==='1'||select.hidden)continue;
+    select.dataset.favoriteDecorated='1';
+    const star=v2FavoriteToggle(category,item);
+    const rowMain=select.closest('.row-main');
+    if(rowMain){rowMain.append(star);continue;}
+    const wrapper=make('span',{class:'advanced-choice'});
+    select.replaceWith(wrapper); wrapper.append(select,star);
+  }
+  v2RenderFavorites(); v2SyncFavoriteToggles();
+}
+function v2InstallDirectEdit() {
+  const heading=$('.preview-heading'); const menu=heading?.querySelector('[data-menu]');
+  if(!heading||!menu||$('#directEditV2'))return;
+  const actions=make('div',{class:'preview-quick-actions'});
+  menu.replaceWith(actions);
+  const edit=btn('✎ Επεξεργασία',{id:'directEditV2',class:'quiet direct-edit','data-edit':'','aria-label':'Επεξεργασία κειμένου παραπομπής'});
+  edit.disabled=true; actions.append(edit,menu);
+}
+function v2SyncDirectEdit() {
+  const enabled=!!(fresh()&&response?.gate?.allowed);
+  $$('[data-edit].direct-edit').forEach(b=>b.disabled=!enabled);
+}
+
+// Preserve one compact primary suggestion, but make the remaining candidates
+// visually obvious without turning the routine surface into a recommendation feed.
+renderSuggestions = function() {
+  const box=$('#suggestions'); const candidates=response?.suggestions||[];
+  if(!candidates.length){box.replaceChildren();return;}
+  box.replaceChildren(suggestionCard(candidates[0]));
+  const additional=candidates.slice(1);
+  if(additional.length){
+    box.append(make('button',{type:'button',class:'suggestions-more-panel','data-all-suggestions':'',
+      'aria-label':'Άλλες '+additional.length+' προτάσεις. Άνοιγμα λίστας.'},[
+      make('span',{class:'suggestions-more-heading',text:'Άλλες '+additional.length+' προτάσεις ›'}),
+      make('span',{class:'suggestions-more-titles',text:additional.map(c=>label(c.item_id)).join(' · ')}),
+    ]));
+  }
+};
+
+const v2BaseBuildAdvanced=buildAdvanced;
+buildAdvanced=function(){v2BaseBuildAdvanced();v2InstallFavoriteControls();};
+const v2BasePaint=paint;
+paint=function(){v2BasePaint();v2RenderFavorites();v2SyncFavoriteToggles();v2SyncDirectEdit();};
+const v2BasePaintStatus=paintStatus;
+paintStatus=function(){v2BasePaintStatus();v2SyncDirectEdit();};
+const v2BaseNewDraft=newDraft;
+newDraft=function(){v2Favorites=[];v2BaseNewDraft();queueMicrotask(()=>{v2RenderFavorites();v2SyncFavoriteToggles();v2SyncDirectEdit();});};
+const v2BaseOpenSheet=openSheet;
+openSheet=function(type,item=null,back=null){
+  v2BaseOpenSheet(type,item,back);
+  if(type==='preview'&&$('#sheet')?.open){
+    const body=$('#sheetBody');
+    if(body&&!body.querySelector('[data-edit].direct-edit')){
+      const edit=btn('✎ Επεξεργασία',{class:'quiet direct-edit','data-edit':'','aria-label':'Επεξεργασία κειμένου παραπομπής'});
+      edit.disabled=!(fresh()&&response?.gate?.allowed);
+      body.prepend(make('div',{class:'sheet-preview-actions'},[edit]));
+    }
+  }
+};
+
+v2InstallDirectEdit();
+document.addEventListener('click',event=>{
+  const b=event.target.closest('[data-favorite-v2]'); if(!b||!state)return;
+  const key=v2FavoriteKey(b.dataset.favoriteCategory,b.dataset.favoriteItem);
+  v2Favorites=v2Favorites.includes(key)?v2Favorites.filter(v=>v!==key):[...v2Favorites,key];
+  v2RenderFavorites();v2SyncFavoriteToggles();
+});
+window.addEventListener('pagehide',()=>{v2Favorites=[];});
