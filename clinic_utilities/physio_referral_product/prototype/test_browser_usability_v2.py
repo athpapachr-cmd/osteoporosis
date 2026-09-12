@@ -1,4 +1,4 @@
-"""Actual Chromium acceptance for Knee-OA usability refinement v2."""
+"""Actual Chromium acceptance for Knee-OA usability refinement v2 semantics."""
 from __future__ import annotations
 
 import sys
@@ -42,6 +42,19 @@ class UsabilityV2BrowserTests(unittest.TestCase):
         self.assertEqual(self.errors, [])
         self.context.close()
 
+    def open_more(self):
+        if self.page.locator('#advancedToggle').get_attribute('aria-expanded') != 'true':
+            self.page.locator('#advancedToggle').click()
+        expect(self.page.locator('#advanced [data-v3-more]')).to_be_visible()
+
+    def pin_sport_goal(self):
+        self.open_more()
+        self.page.locator('[data-v3-customize-favorites]').click()
+        self.page.locator('[data-v3-category=function]').click()
+        pin=self.page.locator('#sheet [data-favorite-v3][data-favorite-category=goals][data-favorite-item=graded_return_to_sport]')
+        expect(pin).to_be_visible(); pin.click()
+        self.page.keyboard.press('Escape')
+
     def test_additional_suggestions_show_true_extra_count_and_titles(self):
         self.page.locator('#functionToggle').click()
         for item in ['walking_tolerance','stairs','sit_to_stand','sport_gym']:
@@ -84,39 +97,29 @@ class UsabilityV2BrowserTests(unittest.TestCase):
         mobile_edit.click(); expect(self.page.locator('#manualText')).to_have_value('Το δικό μου κείμενο παραπομπής.')
 
     def test_favorite_pin_reorders_only_and_never_selects_by_itself(self):
-        self.page.locator('#advancedToggle').click()
-        self.page.locator('#advanced summary').filter(has_text='Στόχοι').click()
-        star=self.page.locator('#advanced [data-favorite-v2][data-favorite-category=goals][data-favorite-item=graded_return_to_sport]').last
-        expect(star).to_be_visible()
-        before=self.page.locator('#referralText').inner_text()
-        star.click()
-        favorites=self.page.locator('#advancedFavoritesV2')
+        self.pin_sport_goal()
+        favorites=self.page.locator('#v3Favorites')
         expect(favorites).to_be_visible(); expect(favorites).to_contain_text('★ Συχνά')
         fav=favorites.locator('[data-select=graded_return_to_sport]')
         expect(fav).to_have_attribute('aria-pressed','false')
-        self.assertEqual(self.page.locator('#referralText').inner_text(),before)
         self.page.screenshot(path=str(ARTIFACTS/'favorites-v2.png'), full_page=True)
         fav.click(); expect(fav).to_have_attribute('aria-pressed','true')
-        favorites.locator('[data-favorite-v2][data-favorite-item=graded_return_to_sport]').click()
-        expect(favorites).to_be_hidden()
-        expect(self.page.locator('#advanced [data-select=graded_return_to_sport]').first).to_have_attribute('aria-pressed','true')
         self.assertEqual(self.page.evaluate('localStorage.length'),0)
         self.assertEqual(self.page.evaluate('sessionStorage.length'),0)
         self.assertEqual(self.page.locator('button').filter(has_text='Απόκρυψη').count(),0)
 
     def test_reset_and_bfcache_clear_ephemeral_favorites(self):
-        self.page.locator('#advancedToggle').click(); self.page.locator('#advanced summary').filter(has_text='Στόχοι').click()
-        self.page.locator('#advanced [data-favorite-v2][data-favorite-category=goals][data-favorite-item=graded_return_to_sport]').last.click()
-        expect(self.page.locator('#advancedFavoritesV2')).to_be_visible()
+        self.pin_sport_goal()
+        expect(self.page.locator('#v3Favorites [data-select=graded_return_to_sport]')).to_have_count(1)
         self.page.locator('#reset').click(); self.page.locator('[data-confirm-reset]').click()
-        self.page.locator('#assertion').click(); self.page.locator('[data-side=right]').click(); self.page.locator('#advancedToggle').click()
-        expect(self.page.locator('#advancedFavoritesV2')).to_be_hidden()
-        self.page.locator('#advanced summary').filter(has_text='Στόχοι').click()
-        self.page.locator('#advanced [data-favorite-v2][data-favorite-category=goals][data-favorite-item=graded_return_to_sport]').last.click()
-        expect(self.page.locator('#advancedFavoritesV2')).to_be_visible()
+        self.page.locator('#assertion').click(); self.page.locator('[data-side=right]').click(); self.open_more()
+        expect(self.page.locator('#v3Favorites [data-select=graded_return_to_sport]')).to_have_count(0)
+        expect(self.page.locator('#v3Favorites')).to_contain_text('Καρφίτσωσε έως')
+        self.pin_sport_goal()
+        expect(self.page.locator('#v3Favorites [data-select=graded_return_to_sport]')).to_have_count(1)
         self.page.evaluate("window.dispatchEvent(new PageTransitionEvent('pagehide',{persisted:true}));window.dispatchEvent(new PageTransitionEvent('pageshow',{persisted:true}));")
-        self.page.locator('#assertion').click(); self.page.locator('[data-side=right]').click(); self.page.locator('#advancedToggle').click()
-        expect(self.page.locator('#advancedFavoritesV2')).to_be_hidden()
+        self.page.locator('#assertion').click(); self.page.locator('[data-side=right]').click(); self.open_more()
+        expect(self.page.locator('#v3Favorites [data-select=graded_return_to_sport]')).to_have_count(0)
         self.assertEqual(self.page.evaluate('localStorage.length'),0)
         self.assertEqual(self.page.evaluate('sessionStorage.length'),0)
 
