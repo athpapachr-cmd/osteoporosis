@@ -1,1 +1,0 @@
-Documentation-only canonical reconciliation after authenticated production smoke PASS. No runtime behavior change.
