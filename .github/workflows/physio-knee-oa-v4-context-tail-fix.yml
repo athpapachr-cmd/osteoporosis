@@ -1,0 +1,40 @@
+name: Temporary Knee OA v4 product-context tail fix
+
+on:
+  push:
+    branches:
+      - docs/physio-knee-oa-v4-release-closeout-2026-09-12
+    paths:
+      - '.github/workflows/physio-knee-oa-v4-context-tail-fix.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: docs/physio-knee-oa-v4-release-closeout-2026-09-12
+      - name: Replace stale current-action tail
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('commercial_products/physio_referral/PRODUCT_CONTEXT_CURRENT.md')
+          text=p.read_text(encoding='utf-8')
+          old='''# 17. Exact next product action at this handoff\n\n**Product Owner visually/use-tests the exact tested More-v3 synthetic artifact and gives concrete keep/change/remove feedback.**\n\nAfter Product Owner acceptance, the next decision is deliberate: either close/freeze Knee-OA for real receiver/user validation, or authorize a bounded remaining correction. Do not automatically add a second diagnosis or release to production.'''
+          new='''# 17. Exact next product action at this handoff\n\n**No implementation action is active. Hold Knee-OA v1/v4 as the released single-diagnosis product and gather real device, receiver, workflow and market evidence before selecting another bounded product slice.**\n\nA second diagnosis is not authorized by this release. Full authenticated live E2E remains distinct from the completed public-asset/auth-boundary smoke and should be performed only with an explicitly authorized production session when operationally useful.'''
+          assert text.count(old)==1, f'expected one stale tail, found {text.count(old)}'
+          p.write_text(text.replace(old,new,1), encoding='utf-8')
+          PY
+          git diff --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add commercial_products/physio_referral/PRODUCT_CONTEXT_CURRENT.md
+          git commit -m 'Reconcile Knee-OA product context next action'
+          git push origin HEAD:docs/physio-knee-oa-v4-release-closeout-2026-09-12
