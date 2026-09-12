@@ -3,11 +3,9 @@
 > **STATUS:** KNEE-OA V1 RELEASED / CY_GESY JURISDICTION OVERLAY RELEASED / V5 TESTED CANDIDATE IN PRODUCT OWNER REVIEW HOLD.
 > **Updated:** 2026-09-12 Asia/Nicosia.
 > **Diagnosis vertical:** Knee Osteoarthritis only.
-> **Canonical main:** `273e22a0ea2bc9b2e5a996fac22a0a88eb54d30e`.
 > **Released jurisdiction runtime:** `e52a4851b504476c1e361575d08664c05467ff53`.
-> **Final canonical Render deploy:** `dep-dain8hqjnfac73ed65a0` — LIVE.
 > **Production jurisdiction profile:** `CY_GESY` via explicit server-side configuration.
-> **Final authenticated canonical live smoke:** `34703453615` — SUCCESS.
+> **Authenticated CY_GESY production smoke evidence:** `34703453615` — SUCCESS.
 > **V5 tested candidate:** `fix/physio-knee-oa-v5-optional-refinement-prose-2026-09-12` @ `a47357c602120d3678e8f2f23b99775e616c79e1`.
 > **V5 gate:** `34693751545` — SUCCESS.
 > **Root operational authority:** `CURRENT_OPERATIONAL.md`.
@@ -41,13 +39,12 @@ Knee-OA production release                    yes
 CY_GESY jurisdiction overlay                  yes
 explicit production jurisdiction config       yes
 authenticated protected product smoke         pass
-final canonical post-closeout smoke            pass
 real clinical pilot                            no
 paid/commercial validation                     no
 second diagnosis                               no
 ```
 
-Final authenticated run `34703453615` used the protected GitHub Actions `CLINICAL_DATA_KEY`, never printed the credential and sent only a generated UUID plus non-identifiable smoke state. It verified the final canonical production state after the docs-only closeout.
+Authenticated run `34703453615` used the protected GitHub Actions `CLINICAL_DATA_KEY`, never printed the credential and sent only a generated UUID plus non-identifiable smoke state. It verified the released CY_GESY production behavior after the jurisdiction closeout.
 
 The local Cyprus/GeSY layer remains display-only context beside the international evidence core. It does not silently rewrite international evidence state, clinician selection, referral prose or safety semantics.
 
