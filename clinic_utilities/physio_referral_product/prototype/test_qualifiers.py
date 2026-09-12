@@ -146,6 +146,24 @@ class QualifierProjectionTests(unittest.TestCase):
         self.assertIn("εντοπισμένη ευαισθησία στην ψηλάφηση στην περιοχή του χηνείου ποδός", result["text"])
         self.assertNotIn("θυλακ", result["text"].lower())
 
+    def test_v5_presented_referral_separates_plan_renames_goal_and_reconciles_pain_overlap(self):
+        req = request()
+        req["state"]["findings"] = ["pain", "joint_line_pain"]
+        req["state"]["functional_impairments"] = ["stairs"]
+        req["state"]["goals"] = ["maintain_or_regain_adl_independence"]
+        req["state"]["qualifiers"] = {
+            "pain_locations": ["medial_joint_line", "pes_anserine_region"],
+        }
+        presented = p.present_project_result(p.project(req), req)
+        text = presented["text"]
+        self.assertIn("έσω μεσάρθρια περιοχή", text)
+        self.assertIn("περιοχή του χηνείου ποδός", text)
+        self.assertNotIn("χηνείου ποδός στη μεσάρθρια γραμμή", text)
+        self.assertIn("\n\nΠαρακαλώ για φυσιοθεραπευτική αξιολόγηση", text)
+        self.assertIn("Επιπρόσθετη λειτουργική προτεραιότητα: διατήρηση ή ανάκτηση ανεξαρτησίας στις καθημερινές δραστηριότητες.", text)
+        self.assertNotIn("Επιπλέον στόχος:", text)
+        self.assertNotIn("Επιπλέον στόχοι:", text)
+
     def test_inconsistent_or_impossible_qualifiers_fail_closed(self):
         mutations = [
             {"pain_locations": ["diffuse", "pes_anserine_region"]},
