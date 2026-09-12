@@ -1347,3 +1347,15 @@ L-1 PRODUCTION-SMOKE            NO
 ```
 
 The next legitimate boundary is final docs-head verification → bounded PR to `main` → **RELEASE HOLD** for separate explicit product-owner squash-merge/release authority. PR-1/PR-2, Daily Case Review, Signal work and physiotherapy remain out of scope.
+
+---
+
+## 2026-09-12 — Knee-OA v4 post-smoke refinement released
+
+The released Knee-OA physiotherapy referral received a bounded post-release v4 correction after Product Owner use exposed weak visual linkage between the four clinical-picture parents and their dependent qualifiers.
+
+The v4 release uses a four-column desktop / 2×2 mobile clinical-picture surface with focused contextual sheets, preserves dependent-state hygiene, corrects deterministic Greek referral prose, and retains the existing CU-1/evidence/safety authority. During final PR gating, inherited test paths were migrated and two real accessibility defects were caught before merge: 42 px mobile touch targets and horizontal overflow under large text enlargement. Both were corrected without weakening acceptance criteria.
+
+Exact tested PR head `602740d12da0de8ad9a6134f8adf48f4b6f7c691` passed the v4, inherited prototype, Cockpit integration, CU-1 and evidence gates. PR `#89` was squash-merged as `bf527e3836a18491b2758fd293b42f82e0924382`. Render auto-deploy `dep-daiivp0jo6nc73bl6pug` became live at that exact runtime SHA.
+
+Temporary no-secret external smoke run `34689920602` passed: current/v4 assets returned `200`, the live CSS contained the ≥44 px + large-text wrapping correction, production transport remained non-synthetic, and the protected physiotherapy route/bootstrap returned `401` without authentication. No credential, session or patient data was supplied. Full authenticated live E2E, receiver validation, clinical pilot, paid validation, Cyprus/GeSY item-level activation and second-diagnosis expansion remain unproven/deferred.

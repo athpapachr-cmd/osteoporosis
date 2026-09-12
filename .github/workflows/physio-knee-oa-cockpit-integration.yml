@@ -47,7 +47,7 @@ jobs:
           base = subprocess.check_output(['git','merge-base','origin/main','HEAD'], text=True).strip()
           paths = subprocess.check_output(['git','diff','--name-only',base,'HEAD'], text=True).splitlines()
           exact = {
-            'CURRENT_OPERATIONAL.md','SLICE_PLAN_CURRENT.md','main.py',
+            'CURRENT_OPERATIONAL.md','SLICE_PLAN_CURRENT.md','osteoporosis-change-log.md','main.py',
             'clinic_utilities/physio_referral_api.py',
             'test_physio_knee_oa_cockpit_integration.py','test_physio_knee_oa_cockpit_browser.py',
             '.github/workflows/physio-knee-oa-cockpit-integration.yml',
