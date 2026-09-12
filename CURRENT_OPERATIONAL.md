@@ -1,21 +1,30 @@
 # CURRENT_OPERATIONAL.md — Clinical Documents Engine Phase 1
 
-> **STATUS:** IMPLEMENTATION ACTIVE — COMMON CORE + SICK LEAVE V1.
+> **STATUS:** IMPLEMENTED / TESTED / REVIEWED — RELEASE AUTHORIZED.
 > **Updated:** 2026-09-12 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Fresh bootstrap main:** `bbfa26f3820f520d7f3ea312e6793fa55f399f01`.
 > **Active branch:** `feat/clinic-documents-p1-sick-leave-2026-09-12`.
+> **PR:** `#97` — `Clinical Documents Phase 1: Sick Leave V1`.
 > **Active slice:** `CU-CLINICAL-DOCUMENTS-P1-SICK-LEAVE-2026-09-12`.
-> **Writer:** this implementation conversation — bounded to Clinical Documents Phase 1 owners and required Clinic Utilities navigation/composition seams.
-> **Production config/secrets authority:** NONE.
+> **Exact reviewed/tested runtime head:** `fd88fa3b7ebce8aa9d97dfea12e2f2667495ed39`.
+> **Clinical Documents PR gate:** run `34717351567` — SUCCESS.
+> **Writer:** this release conversation, bounded through merge/deploy verification and canonical closeout.
+> **Production config/secrets authority:** NONE; no config mutation required.
 > **Patient persistence authority:** NONE.
-> **Real-patient data in code/tests:** FORBIDDEN.
+> **Real-patient data in code/tests:** FORBIDDEN / NOT USED.
 
 ## 1. Product Owner authority
 
-On 2026-09-12 the Product Owner explicitly authorized implementation after the Clinical Documents Engine design was frozen in the design conversation.
+On 2026-09-12 the Product Owner first authorized bounded implementation of Clinical Documents Phase 1 and later explicitly instructed:
 
-Implementation is intentionally phased. This active writer lock covers **Phase 1 only**:
+`Merge και deploy`
+
+This authorizes the reviewed Phase-1 PR to follow the normal release path. It does not authorize Phase 2, new production secrets/configuration, patient persistence, medico-legal AI drafting, billing persistence, or unrelated RF/physio changes.
+
+## 2. Released candidate scope
+
+Phase 1 contains only:
 
 ```text
 Common Clinical Documents Core
@@ -25,115 +34,93 @@ Sick Leave Certificate V1
 protected Clinic Utilities navigation/integration
 ```
 
-Accident/medico-legal multi-document ingestion, Evidence Ledger, live AI provider integration, literature retrieval, billing persistence and commercial user-template upload remain later separately reviewable implementation phases.
-
-## 2. Frozen Phase-1 product contract
-
-Sick Leave V1 fields:
+Implemented Sick Leave V1 behavior:
 
 - patient full name;
-- ID type: `ADT` or `ARC`;
-- ID number;
+- ID type `ADT` or `ARC` and bounded free-format ID number;
 - diagnosis;
-- leave from;
-- leave through inclusive;
-- issue date, defaulted in the browser to today but editable.
-
-Actions:
-
-- Preview;
-- Download PDF;
-- Clear;
-- Load signature for current browser session;
-- Import a previously generated Sick Leave V1 PDF.
-
-Previous-PDF reuse modes:
-
-```text
-Extension
-→ keep identity + diagnosis
-→ next start = prior leave-through + 1 day
-→ clear new end date
-
-New leave, same patient
-→ keep identity only
-→ clear diagnosis and leave dates
-```
+- leave from / through inclusive;
+- editable issue date;
+- deterministic inclusive-duration display;
+- Greek A4 PDF preview/download;
+- optional bounded PNG/JPEG signature held only in current browser memory;
+- explicit re-import of a previously generated V1 PDF through embedded application metadata;
+- extension flow retaining identity + diagnosis and starting on prior leave-through + 1 day;
+- same-patient/new-leave flow retaining identity only;
+- fail-closed rejection of unknown/malformed previous PDFs with no OCR guessing.
 
 ## 3. Privacy / persistence boundary
 
-Hard Phase-1 rules:
+Hard Phase-1 rules remain satisfied:
 
 - no patient PostgreSQL write;
-- no patient history registry;
-- no localStorage/sessionStorage patient data;
+- no patient/document history registry;
+- no localStorage/sessionStorage/indexedDB patient state;
 - no autosave;
-- no automatic reopening of prior patient/document;
-- previous-document reuse only after explicit clinician file selection;
-- signature is browser-session memory only and is never committed or persisted server-side;
-- PDF generation/parsing is request-scoped/in-memory;
-- unknown/non-V1 PDFs fail safely; no OCR guessing;
-- no identifiable patient data or signature asset in repository fixtures/tests.
+- no automatic prior-document reopening;
+- signature never persisted server-side;
+- PDF generation/parsing request-scoped/in-memory;
+- no patient data in query strings;
+- no identifiable patient data or signature assets in repository tests/fixtures.
 
-## 4. PDF/document contract
+The package has no SQLAlchemy/database owner. Existing protected clinical authentication remains the access boundary.
 
-Generated PDF must be A4 portrait and contain:
+## 4. Exact-head review and hardening
 
-- clinician identity/header;
-- `ΒΕΒΑΙΩΣΗ ΑΣΘΕΝΕΙΑΣ`;
-- patient name;
-- the selected identity label (`ΑΔΤ` or `ARC`) and number;
-- diagnosis;
-- leave range;
-- issue date;
-- signature block.
+Exact PR review identified and corrected two bounded validation gaps before release:
 
-Filename keeps Greek patient name and issue date but excludes diagnosis and identity number.
+1. imported V1 metadata now rejects `leave_to < leave_from` and rejects a declared relation without `derived_from_document_id`;
+2. `draft_json` now has an explicit 16 KiB server-side request bound before JSON parsing, exposed by the contract endpoint and regression-tested.
 
-Generated PDFs carry machine-readable application metadata sufficient for reliable V1 re-import. The metadata must not become a separate server-side patient store.
+The exact reviewed/tested runtime head is:
 
-## 5. Validation
+`fd88fa3b7ebce8aa9d97dfea12e2f2667495ed39`
 
-Server remains authoritative for:
+Clinical Documents workflow run `34717351567` completed SUCCESS on that head, including Python syntax, JavaScript syntax, deterministic Sick Leave tests and existing Clinic Utilities navigation regression.
 
-- required fields;
-- allowed identity type;
-- valid ISO dates;
-- leave-through >= leave-from;
-- bounded field lengths;
-- accepted signature file type/size;
-- recognized previous-PDF metadata/version.
+Inherited evidence on the same head:
 
-No arbitrary numeric-format restriction is imposed on ADT/ARC values.
+- CU-1 focused tests: SUCCESS (`34717351536`);
+- G3 guidance salience/longitudinal summary: SUCCESS (`34717351537`);
+- Clinical Learning L1 substantive runtime/contracts/schema steps: SUCCESS before its expected scope/adjacent-owner guard rejected this non-Learning slice (`34717351566`);
+- corresponding red checks from Clinical Learning/physio owner workflows are scope-owner guard failures, not demonstrated runtime regressions in their substantive owners.
 
-## 6. Common-core boundary
+## 5. Production release contract
 
-Phase 1 should establish reusable owners for:
+Render service `osteoporosis` remains:
+
+- branch `main`;
+- auto-deploy `yes`;
+- trigger `commit`;
+- Frankfurt runtime;
+- no Clinical Documents-specific production config required because Phase 1 can use the already-configured server-side clinician profile fallback.
+
+Therefore the release rule is:
 
 ```text
-ClinicianProfile
-PatientIdentity
-SignatureAsset (ephemeral)
-DocumentTemplate identity
-DocumentMetadata
-PDF renderer
+squash merge PR #97 to main
+→ Render auto-deploy from merge commit
+→ monitor only; DO NOT manually trigger a duplicate deploy
+→ verify LIVE release
+→ authenticated/product-owner functional smoke remains separately evidenced
 ```
 
-The implementation must not prematurely introduce Evidence Ledger, causation, prognosis, billing database or generic AI authority into Sick Leave V1.
+## 6. Explicit exclusions retained
 
-## 7. Adjacent-owner isolation
+Not authorized by this release:
 
-Do not modify:
+- Accident Report intake;
+- medico-legal Evidence Ledger;
+- AI drafting/provider calls;
+- targeted literature retrieval;
+- causation/prognosis engine;
+- billing/fee-note/receipt persistence;
+- persistent Clinical Documents case store;
+- reusable uploaded templates;
+- Siri/Gemini;
+- RF/physio clinical-rule mutation;
+- production secret/environment mutation.
 
-- Clinical Learning contracts/runtime;
-- osteoporosis guidance rules/evidence;
-- RF request/PDF semantics;
-- physiotherapy referral clinical taxonomy/evidence;
-- current CY_GESY jurisdiction overlay semantics;
-- patient/encounter/lab persistence schemas.
+## 7. Next legitimate action
 
-Navigation/composition-only edits to expose the new protected Clinic Utility are allowed.
-
-## 8. Next legitimate action
-
-Implement the bounded Phase-1 runtime and deterministic tests on the active branch, then run exact-head review/gates before any PR. No merge/deploy/config change is authorized merely by implementation completion.
+Squash merge PR #97, allow the existing Render auto-deploy to run, verify the merge commit reaches LIVE, then write the release closeout canonicals. Production-smoke verification must not be claimed unless actually performed.
