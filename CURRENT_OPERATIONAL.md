@@ -1,30 +1,34 @@
 # CURRENT_OPERATIONAL.md — Clinical Documents Engine Phase 1
 
-> **STATUS:** IMPLEMENTED / TESTED / REVIEWED — RELEASE AUTHORIZED.
+> **STATUS:** MERGED / DEPLOYED — PRODUCTION FUNCTIONAL SMOKE PENDING.
 > **Updated:** 2026-09-12 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Fresh bootstrap main:** `bbfa26f3820f520d7f3ea312e6793fa55f399f01`.
-> **Active branch:** `feat/clinic-documents-p1-sick-leave-2026-09-12`.
-> **PR:** `#97` — `Clinical Documents Phase 1: Sick Leave V1`.
-> **Active slice:** `CU-CLINICAL-DOCUMENTS-P1-SICK-LEAVE-2026-09-12`.
+> **Slice:** `CU-CLINICAL-DOCUMENTS-P1-SICK-LEAVE-2026-09-12`.
+> **PR:** `#97` — SQUASH MERGED.
 > **Exact reviewed/tested runtime head:** `fd88fa3b7ebce8aa9d97dfea12e2f2667495ed39`.
 > **Clinical Documents PR gate:** run `34717351567` — SUCCESS.
-> **Writer:** this release conversation, bounded through merge/deploy verification and canonical closeout.
-> **Production config/secrets authority:** NONE; no config mutation required.
+> **Release commit:** `a3ae5dd792a715a8306f5c279cc4bdbec4ca5b5e`.
+> **Render deploy:** `dep-dairee0jo6nc73bt03b0` — LIVE.
+> **Writer:** none — release mutation complete.
+> **Production config/secrets mutation:** NONE.
 > **Patient persistence authority:** NONE.
-> **Real-patient data in code/tests:** FORBIDDEN / NOT USED.
+> **Production-smoke label:** NOT YET CLAIMED.
 
-## 1. Product Owner authority
+## 1. Product Owner authority and release
 
-On 2026-09-12 the Product Owner first authorized bounded implementation of Clinical Documents Phase 1 and later explicitly instructed:
+On 2026-09-12 the Product Owner explicitly authorized:
 
 `Merge και deploy`
 
-This authorizes the reviewed Phase-1 PR to follow the normal release path. It does not authorize Phase 2, new production secrets/configuration, patient persistence, medico-legal AI drafting, billing persistence, or unrelated RF/physio changes.
+PR #97 was squash merged to `main` as:
 
-## 2. Released candidate scope
+`a3ae5dd792a715a8306f5c279cc4bdbec4ca5b5e`
 
-Phase 1 contains only:
+The existing Render `autoDeploy=yes` pipeline then deployed that exact release commit automatically. No duplicate manual deploy was triggered. Deploy `dep-dairee0jo6nc73bt03b0` reached `LIVE` at 2026-09-12T20:35:36Z.
+
+## 2. Released scope
+
+Phase 1 now deployed contains only:
 
 ```text
 Common Clinical Documents Core
@@ -34,27 +38,27 @@ Sick Leave Certificate V1
 protected Clinic Utilities navigation/integration
 ```
 
-Implemented Sick Leave V1 behavior:
+Released Sick Leave V1 behavior:
 
 - patient full name;
-- ID type `ADT` or `ARC` and bounded free-format ID number;
+- ID type `ADT` or `ARC` with bounded free-format ID number;
 - diagnosis;
 - leave from / through inclusive;
 - editable issue date;
 - deterministic inclusive-duration display;
 - Greek A4 PDF preview/download;
-- optional bounded PNG/JPEG signature held only in current browser memory;
-- explicit re-import of a previously generated V1 PDF through embedded application metadata;
-- extension flow retaining identity + diagnosis and starting on prior leave-through + 1 day;
+- optional bounded PNG/JPEG signature retained only in current browser memory;
+- explicit re-import of a previously generated V1 PDF using embedded application metadata;
+- extension flow retaining identity + diagnosis and setting next start to prior leave-through + 1 day;
 - same-patient/new-leave flow retaining identity only;
 - fail-closed rejection of unknown/malformed previous PDFs with no OCR guessing.
 
 ## 3. Privacy / persistence boundary
 
-Hard Phase-1 rules remain satisfied:
+The release preserves the Phase-1 hard boundary:
 
 - no patient PostgreSQL write;
-- no patient/document history registry;
+- no Clinical Documents patient/document history registry;
 - no localStorage/sessionStorage/indexedDB patient state;
 - no autosave;
 - no automatic prior-document reopening;
@@ -65,47 +69,50 @@ Hard Phase-1 rules remain satisfied:
 
 The package has no SQLAlchemy/database owner. Existing protected clinical authentication remains the access boundary.
 
-## 4. Exact-head review and hardening
+## 4. Exact-head review and verification
 
-Exact PR review identified and corrected two bounded validation gaps before release:
+Before merge, exact review found and corrected two bounded validation gaps:
 
-1. imported V1 metadata now rejects `leave_to < leave_from` and rejects a declared relation without `derived_from_document_id`;
-2. `draft_json` now has an explicit 16 KiB server-side request bound before JSON parsing, exposed by the contract endpoint and regression-tested.
+1. imported V1 metadata rejects `leave_to < leave_from` and rejects a declared relation without `derived_from_document_id`;
+2. `draft_json` has an explicit 16 KiB server-side request bound before JSON parsing, exposed by the contract endpoint and regression-tested.
 
-The exact reviewed/tested runtime head is:
+The exact reviewed/tested runtime head was:
 
 `fd88fa3b7ebce8aa9d97dfea12e2f2667495ed39`
 
-Clinical Documents workflow run `34717351567` completed SUCCESS on that head, including Python syntax, JavaScript syntax, deterministic Sick Leave tests and existing Clinic Utilities navigation regression.
+Clinical Documents PR workflow `34717351567` completed SUCCESS. On the same runtime head, CU-1 focused tests (`34717351536`) and G3 guidance/longitudinal summary (`34717351537`) also completed SUCCESS. Clinical Learning red checks passed their substantive runtime/contracts/schema steps and failed only their expected scope/adjacent-owner guards for this non-Learning slice.
 
-Inherited evidence on the same head:
+## 5. Deployment evidence
 
-- CU-1 focused tests: SUCCESS (`34717351536`);
-- G3 guidance salience/longitudinal summary: SUCCESS (`34717351537`);
-- Clinical Learning L1 substantive runtime/contracts/schema steps: SUCCESS before its expected scope/adjacent-owner guard rejected this non-Learning slice (`34717351566`);
-- corresponding red checks from Clinical Learning/physio owner workflows are scope-owner guard failures, not demonstrated runtime regressions in their substantive owners.
+Production Render service:
 
-## 5. Production release contract
+- service: `osteoporosis`;
+- branch: `main`;
+- auto-deploy: `yes`;
+- trigger: `new_commit`;
+- release commit: `a3ae5dd792a715a8306f5c279cc4bdbec4ca5b5e`;
+- deploy: `dep-dairee0jo6nc73bt03b0`;
+- status: `LIVE`;
+- finished: `2026-09-12T20:35:36.691525Z`.
 
-Render service `osteoporosis` remains:
+No Clinical Documents-specific environment variable or secret was added or changed for this release.
 
-- branch `main`;
-- auto-deploy `yes`;
-- trigger `commit`;
-- Frankfurt runtime;
-- no Clinical Documents-specific production config required because Phase 1 can use the already-configured server-side clinician profile fallback.
+## 6. What is not yet proven
 
-Therefore the release rule is:
+`DEPLOYED != PRODUCTION-SMOKE-VERIFIED`.
 
-```text
-squash merge PR #97 to main
-→ Render auto-deploy from merge commit
-→ monitor only; DO NOT manually trigger a duplicate deploy
-→ verify LIVE release
-→ authenticated/product-owner functional smoke remains separately evidenced
-```
+An authenticated end-to-end production use of the new Sick Leave workflow has not yet been evidenced in this release conversation. Therefore the canonical state intentionally remains **production functional smoke pending** rather than pretending that a green deploy is the same thing as successful clinician use, a distinction software occasionally resents but medicine rather sensibly requires.
 
-## 6. Explicit exclusions retained
+A valid production functional smoke should use synthetic/non-identifiable data and verify at minimum:
+
+1. authenticated Sick Leave page opens;
+2. contract reports clinician profile configured;
+3. PDF preview or download succeeds;
+4. generated PDF is readable and contains expected synthetic Greek content;
+5. re-import offers extension and same-patient/new-leave modes;
+6. no patient persistence is introduced.
+
+## 7. Explicit exclusions retained
 
 Not authorized by this release:
 
@@ -121,6 +128,6 @@ Not authorized by this release:
 - RF/physio clinical-rule mutation;
 - production secret/environment mutation.
 
-## 7. Next legitimate action
+## 8. Next legitimate action
 
-Squash merge PR #97, allow the existing Render auto-deploy to run, verify the merge commit reaches LIVE, then write the release closeout canonicals. Production-smoke verification must not be claimed unless actually performed.
+Writer lock is released. The next release-validation action is an authenticated synthetic/product-owner Sick Leave smoke. Phase 2 requires a fresh bounded slice and fresh Product Owner authority; it is not implied by this deployment.
