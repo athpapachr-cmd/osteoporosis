@@ -1,0 +1,33 @@
+name: Physio Knee OA interaction design gate
+
+on:
+  push:
+    branches:
+      - design/physio-referral-knee-oa-interaction-v1-2026-09-11
+  pull_request:
+    paths:
+      - 'clinic_utilities/physio_referral_product/KNEE_OA_EVIDENCE_INTERACTION*'
+      - 'clinic_utilities/physio_referral_product/contracts/knee_oa_evidence_interaction*'
+      - 'clinic_utilities/physio_referral_product/validate_knee_oa_evidence_interaction_v1.py'
+      - '.github/workflows/physio-knee-oa-interaction-design.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate-interaction-design:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned design validator dependency
+        run: python -m pip install 'PyYAML==6.0.2'
+      - name: Check validator syntax
+        run: python -m py_compile clinic_utilities/physio_referral_product/validate_knee_oa_evidence_interaction_v1.py
+      - name: Validate evidence interaction design and synthetic scenarios
+        run: python clinic_utilities/physio_referral_product/validate_knee_oa_evidence_interaction_v1.py

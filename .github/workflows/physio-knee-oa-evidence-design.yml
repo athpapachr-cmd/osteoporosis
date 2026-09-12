@@ -1,0 +1,31 @@
+name: Physio Knee OA evidence design gate
+
+on:
+  push:
+    branches:
+      - design/physio-referral-knee-oa-evidence-v1-2026-09-11
+    paths:
+      - 'clinic_utilities/physio_referral_product/**'
+      - 'clinic_utilities/contracts/cu1_option_catalog_v1.yaml'
+      - 'clinic_utilities/contracts/cu1_registry_v1.yaml'
+      - 'clinic_utilities/contracts/cu1_ui_relevance_scope_v1.yaml'
+      - '.github/workflows/physio-knee-oa-evidence-design.yml'
+  pull_request:
+    paths:
+      - 'clinic_utilities/physio_referral_product/**'
+      - 'clinic_utilities/contracts/cu1_option_catalog_v1.yaml'
+      - 'clinic_utilities/contracts/cu1_registry_v1.yaml'
+      - 'clinic_utilities/contracts/cu1_ui_relevance_scope_v1.yaml'
+
+jobs:
+  validate-evidence-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install validator dependency
+        run: python -m pip install 'PyYAML>=6.0'
+      - name: Validate Knee-OA evidence contract
+        run: python clinic_utilities/physio_referral_product/validate_knee_oa_evidence_contract_v1.py

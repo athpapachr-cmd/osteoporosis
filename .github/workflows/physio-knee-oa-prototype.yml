@@ -1,0 +1,87 @@
+name: Physio Knee OA prototype gate
+
+on:
+  push:
+    branches:
+      - feat/physio-referral-knee-oa-prototype-v1-2026-09-11
+      - feat/physio-knee-oa-review-amendments-v1-2026-09-12
+      - feat/physio-knee-oa-usability-refine-v2-2026-09-12
+      - feat/physio-knee-oa-more-redesign-v3-2026-09-12
+      - feat/physio-knee-oa-cockpit-integration-v1-2026-09-12
+  pull_request:
+    paths:
+      - 'clinic_utilities/physio_referral_product/**'
+      - '.github/workflows/physio-knee-oa-prototype.yml'
+
+permissions:
+  contents: read
+concurrency:
+  group: physio-prototype-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  prototype:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify bounded Knee-OA product lineage
+        run: |
+          python - <<'PY'
+          import subprocess
+          paths = subprocess.check_output(['git','diff','--name-only','4e0e3206dd1e12a2e55a6abd18d2a6f7dbc3f7c6','HEAD'], text=True).splitlines()
+          exact = {
+            'CURRENT_OPERATIONAL.md','SLICE_PLAN_CURRENT.md','main.py',
+            'clinic_utilities/physio_referral_api.py',
+            'test_physio_knee_oa_cockpit_integration.py','test_physio_knee_oa_cockpit_browser.py',
+            '.github/workflows/physio-knee-oa-prototype.yml',
+            '.github/workflows/physio-knee-oa-cockpit-integration.yml',
+            '.github/workflows/cu1-tests.yml',
+          }
+          prefixes = (
+            'clinic_utilities/physio_referral_product/',
+            'commercial_products/physio_referral/',
+            'static/clinic-utilities/physio-referral/',
+          )
+          bad = [p for p in paths if p not in exact and not p.startswith(prefixes)]
+          assert not bad, bad
+          print('Knee-OA bounded product lineage PASS:', len(paths), 'files')
+          PY
+      - name: Install isolated prototype dependencies
+        run: |
+          python -m pip install -r clinic_utilities/physio_referral_product/prototype/requirements.txt
+          python -m pip install 'playwright==1.55.0'
+      - name: Check syntax
+        run: |
+          python -m py_compile clinic_utilities/physio_referral_product/prototype/*.py
+          node --check clinic_utilities/physio_referral_product/prototype/app.js
+          node --check clinic_utilities/physio_referral_product/prototype/qualifiers.js
+          node --check clinic_utilities/physio_referral_product/prototype/more_v3.js
+      - name: Real CU1 adapter and HTTP boundary tests
+        run: |
+          python clinic_utilities/physio_referral_product/prototype/test_server.py
+          python clinic_utilities/physio_referral_product/prototype/test_qualifiers.py
+      - name: Install Chromium for real browser acceptance
+        run: python -m playwright install --with-deps chromium
+      - name: Real browser with actual loopback server and CU1 engine
+        run: |
+          python clinic_utilities/physio_referral_product/prototype/test_browser.py
+          python clinic_utilities/physio_referral_product/prototype/test_browser_qualifiers.py
+          python clinic_utilities/physio_referral_product/prototype/test_browser_usability_v2.py
+          python clinic_utilities/physio_referral_product/prototype/test_browser_more_v3.py
+      - name: Package and smoke standalone dependency closure
+        run: python clinic_utilities/physio_referral_product/prototype/build_bundle.py
+      - name: Publish synthetic prototype and screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: knee-oa-prototype-${{ github.sha }}
+          path: artifacts/
+          if-no-files-found: warn
+          retention-days: 7

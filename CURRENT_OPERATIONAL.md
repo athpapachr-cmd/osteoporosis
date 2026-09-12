@@ -1,124 +1,83 @@
-# CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
+# CURRENT_OPERATIONAL.md — Knee-OA Cockpit release candidate
 
-> **STATUS:** CLINICAL LEARNING HUB L-1D — MERGED / DEPLOYED / PRODUCTION-SMOKE-VERIFIED / CLOSED
-> **Updated:** 2026-09-11 Asia/Nicosia.
+> **STATUS:** PHYSIO REFERRAL KNEE-OA — IMPLEMENTED / EXACT-HEAD TESTED / FINAL RELEASE REVIEW PASS / PR NEXT.
+> **Updated:** 2026-09-12 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Slice:** `CORE-LEARNING-HUB-L1D-CLIPBOARD-HANDOFF-2026-09-10`.
-> **PR #86:** CLOSED / MERGED.
-> **Reviewed PR head:** `5e524c552001c2899e5a274e7af103ae575fd669`.
-> **Exact tested runtime head:** `d94b9a17b60299e098a5c58722542b6d8d68827d`.
-> **Squash merge SHA:** `e0ecf43b5c4e96f20be7a777bfec65a87641d339`.
-> **Production-verified deploy commit:** `833fddb15f41e78071b25c5807a120c8237377ac`.
-> **Render deploy:** `dep-dah21hpsrm7s7392hu90` — LIVE.
-> **ACTIVE RUNTIME/DESIGN WRITER:** NONE.
-> **Production config/secret authority exercised:** NO.
-> **Patient-data mutation authority:** NONE.
-> **Raw-transcript authority:** NONE.
-> **DailyCase/PracticeReview/Signal authority:** NONE.
-> **Physiotherapy/CU-1/RF authority:** NONE.
+> **Fresh verified main / merge base:** `d9f312f6d2d596ec0bd4f35f6de56ad98dc34b37`.
+> **Parent closed v3 head:** `b7f2db6fd86f90a32875d9b9cfd356cfa6129c69`.
+> **Integration branch:** `feat/physio-knee-oa-cockpit-integration-v1-2026-09-12`.
+> **Active slice:** `CU1-PRODUCT-KNEE-OA-COCKPIT-INTEGRATION-V1-20260912`.
+> **Exact reviewed/tested release-candidate head:** `57d879b072fcaf2bef350d5dbb0547ce465764e1`.
+> **Release review:** `commercial_products/physio_referral/releases/KNEE_OA_V1_RELEASE_REVIEW.md` — PASS / no open blocker.
+> **ACTIVE RUNTIME / DESIGN / CANONICAL WRITER:** this bounded release session until merge/deploy/smoke closeout.
+> **Product-owner authority:** PR, squash merge, Render auto-deploy verification and bounded production smoke already granted for this slice.
+> **Real-patient data:** NOT AUTHORIZED for release smoke; synthetic/non-identifiable state only.
 
----
+## 1. Release candidate delivered
 
-# 1. Released L-1D workflow
+The reviewed Knee-OA product is integrated into the existing authenticated Clinical Excellence physiotherapy utility:
 
-The default Clinical Learning Hub Inbox includes the clinician-initiated quick handoff action:
+`/clinical/clinic-utilities/physio-referral`
 
-`Paste & Send Challenge`
+The prior large Generate-form surface is replaced by the reviewed live-referral product experience while preserving existing Clinical Excellence authentication and real CU-1 validation/safety authority.
 
-Production workflow:
+Commercial/product authorities are separated under:
 
-```text
-Challenge conversation
-→ Copy structured synthetic Challenge artifact
-→ Clinical Learning Hub / Inbox
-→ explicit Paste & Send Challenge tap
-→ existing protected POST /clinical/learning/api/imports
-→ pending_review candidate
-→ clinician Review & Save
-```
+`commercial_products/physio_referral/`
 
-No accepted Challenge is created by the clipboard action itself.
+Technical contracts/runtime/tests remain under:
 
----
+`clinic_utilities/physio_referral_product/`
 
-# 2. Production verification
-
-Render auto-deploy completed successfully on the current docs-only descendant carrying the merged L-1D runtime:
+## 2. Production architecture
 
 ```text
-service = srv-d5qfk31r0fns73di596g
-deploy = dep-dah21hpsrm7s7392hu90
-commit = 833fddb15f41e78071b25c5807a120c8237377ac
-trigger = new_commit
-status = live
-finished = 2026-09-10T03:17:02Z
+ClinicalCookieMiddleware / X-Clinical-Key authority
+→ protected physiotherapy Cockpit route
+→ production product transport
+→ shared deterministic knee_oa_projection.py
+→ real CU-1 validation/safety + reviewed evidence/template interaction
+→ live Greek referral UI
 ```
 
-The product owner then completed an authenticated production smoke and reported that:
+The local loopback prototype is not mounted in production. It is only an alternate test transport over the same shared projection.
+
+No new database, patient persistence, analytics, billing system or unauthenticated public product endpoint is introduced.
+
+## 3. Exact release-candidate gates
+
+At head `57d879b072fcaf2bef350d5dbb0547ce465764e1`:
 
 ```text
-Copy from Challenge = worked
-Paste & Send Challenge = worked
-Inbox import/review flow = worked
+Physio Knee OA Cockpit integration gate   34679427725   SUCCESS
+Physio Knee OA prototype gate             34679427741   SUCCESS
+CU-1 focused tests                        34679427822   SUCCESS
 ```
 
-This closes the L-1D acceptance objective. The prior L-1B clinician review / Learning Loop activation path was already production-smoke-verified separately; this smoke specifically verifies the new clipboard handoff layer reaches and works with that existing review path.
+The integration gate protects the authenticated page/API, real CU-1 path, full inherited product browser behavior, production Chromium flow, no-storage boundary, mobile reflow, adjacent Learning Hub/RF isolation and package closure.
 
----
+## 4. Release review findings closed before PASS
 
-# 3. Security / authority preserved
+Two material technical release findings were corrected before PASS:
+
+1. production transport initially imported `prototype.server`; projection ownership was extracted to shared production-owned `knee_oa_projection.py`, with the prototype reduced to loopback transport only;
+2. production requests initially inherited `synthetic_only:true`; the Cockpit boundary now reports/sends `synthetic_only:false`, rejects synthetic-marked production requests and only then adapts internally to the frozen reviewed compatibility envelope.
+
+No clinical rule or evidence state changed in those corrections.
+
+## 5. Hard boundaries still active
 
 ```text
-LEARNING RECORD != PATIENT RECORD
-clipboard access requires explicit user gesture
-clipboard content is not persisted in browser storage
-raw transcript is not an accepted learning artifact
-existing PHI guard remains authoritative
-pending_review only at handoff
-no auto-accept
-no imported clinician-review authority
-no imported reference-verification authority
-no Foundation state mutation
-no Signal promotion
-no patient reads/writes
-no new backend endpoint/table/schema
-no CLINICAL_LEARNING_INGEST_KEY configuration
-no native MCP/write-tool claim
+NO second diagnosis
+NO new GeSY item-level recommendation activation
+NO patient draft persistence
+NO analytics/billing/account system
+NO LLM-generated referral text
+NO real-patient smoke data
+NO claim of iPhone VoiceOver acceptance
+NO claim of receiving-physiotherapist or commercial/pilot validation
 ```
 
-The L-1D convenience surface reuses the existing protected `/clinical/learning/api/imports` path and does not expand write authority.
+## 6. Exact next action
 
----
-
-# 4. Verification evidence
-
-Exact tested runtime head:
-
-`d94b9a17b60299e098a5c58722542b6d8d68827d`
-
-PR-head gates:
-
-- Clinical Learning L1C challenge transport gate `34431909196` — **SUCCESS**.
-- Clinical Learning L1B regression gate `34431909214` — **SUCCESS**.
-- Clinical Learning L1 regression gate `34431909207` — **SUCCESS**.
-- L0 contract validation step — **SUCCESS**; overall L0 workflow failure was only the expected design-only scope rejection for a non-L0 runtime slice.
-
----
-
-# 5. Lifecycle state
-
-```text
-L-1D IMPLEMENTED = YES
-L-1D TESTED = YES
-L-1D REVIEWED = PASS
-L-1D MERGED = YES
-L-1D DEPLOYED = YES
-PRODUCTION CLIPBOARD SMOKE = PASS
-PASTE & SEND UX = PRODUCTION VERIFIED
-MANUAL INBOX FALLBACK = AVAILABLE
-WRITER LOCK = NONE
-PRODUCTION INGEST KEY = NOT CONFIGURED
-NATIVE CHATGPT WRITE TOOL = NOT CONNECTED
-```
-
-L-1D is closed. Future zero-click ChatGPT → Cockpit transport, MCP/app integration or cron reconciliation remains a separate explicitly governed integration slice and must not be inferred from this closeout.
+Open one bounded PR from `feat/physio-knee-oa-cockpit-integration-v1-2026-09-12` to current `main`. Require exact PR-head checks/review to settle cleanly. If clean, squash-merge using the exact expected head, verify Render auto-deploy at the resulting merge SHA, perform bounded production smoke without patient data, update final canonicals/changelogs and release the writer to `NONE`.

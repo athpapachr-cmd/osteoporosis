@@ -1,0 +1,185 @@
+version: knee_oa_evidence_interaction_v1
+status: design_candidate
+language: el
+scope: {profile_id: knee, route_id: knee_osteoarthritis}
+runtime_authorized: false
+patient_data_persistence: false
+clinical_re_review_performed: false
+parents:
+  knee_oa_evidence_contract_v1.yaml: 8f4c657904ee028bba39d7a0557461a6acafadaf
+  knee_oa_template_contract_v1.yaml: e6c6a285ed4d2d64df1dca7b29630ef5053831e8
+  ../UX_CONTRACT_CURRENT.md: f65343c0bc9652c715075853d3fc42c1910ff212
+states:
+  recommended_or_supported: {label: Συνιστάται, colour: evidence_green, cue: solid_dot, weight: 600, underline: short_solid}
+  conditional_or_context_dependent: {label: Υπό προϋποθέσεις, colour: evidence_blue_grey, cue: outlined_diamond, weight: 400, underline: none}
+  limited_or_insufficient_evidence: {label: Περιορισμένη τεκμηρίωση, colour: evidence_amber, cue: question_circle, weight: 400, underline: none}
+  guideline_conflict_or_mixed: {label: Οι οδηγίες διαφέρουν, colour: evidence_violet, cue: opposing_arrows, weight: 400, underline: none}
+  recommendation_against_routine_use: {label: Δεν συνιστάται για συνήθη χρήση, colour: evidence_muted_red, cue: minus_octagon, weight: 400, underline: none}
+  not_yet_assessed: {label: Δεν έχει αξιολογηθεί, colour: evidence_grey, cue: dotted_ring, weight: 400, underline: none}
+selection:
+  cue: neutral_check
+  independent_of_evidence: true
+  row_toggle_and_evidence_button_are_siblings: true
+  evidence_open_mutates_selection: false
+  weight_is_not_certainty: true
+disclosure:
+  per_item_control_count: 1
+  visible_control: i
+  accessible_name: 'Τεκμηρίωση για {item}'
+  target_css_px: 44
+  sheet_host_count: 1
+  sheet_role: dialog
+  sheet_modal: true
+  keyboard: [Enter, Space, Tab, ShiftTab, Escape]
+  focus_on_open: heading
+  focus_on_close: invoker_or_surviving_row
+  background_inert: true
+  deep_detail: expand_in_same_sheet
+  hover_only_forbidden: true
+  legend: inside_sheet_only
+bubbles:
+  max_expanded: 1
+  auto_dismiss_ms: null
+  focus_steal: false
+  live_region: polite
+  covers_other_controls: false
+  narrow_viewport: inline
+  dismiss_is_safety_ack: false
+  dismiss_removes_row_cue: false
+  initial_default_stack: false
+  selected_trigger_states: [limited_or_insufficient_evidence, guideline_conflict_or_mixed, recommendation_against_routine_use, not_yet_assessed]
+  conditional_message_requires_explicit_context_issue: true
+  note_dedup_key: [item_id, reason_code]
+sheet:
+  order: [item, evidence_state, reviewed_purpose, source_positions, clinical_reviewed_on, deeper_evidence]
+  mixed_first_disclosure: all_source_positions
+  purpose_owner: frozen_step2_purpose_summary_el
+  new_effect_sizes_or_doses: false
+  strength_owner: source_native_strength
+  direction_independent_of_strength: true
+  composite_strength_forbidden: true
+  source_position_key: item_id/source_id
+  missing_native_strength_label: Δεν διαβαθμίζεται στην καταγεγραμμένη πηγή
+  locator_precision: source_level
+  source_link_label: Παραπομπή στην πηγή
+  recommendation_locator_invention: false
+scope_labels:
+  direct_item_recommendation: Άμεση σύσταση
+  named_component_of_broader_recommendation: Μέρος ευρύτερης σύστασης
+  broader_recommendation_only: Ευρύτερη σύσταση
+  contextual_clinical_mapping: Κλινική προσαρμογή
+source_labels:
+  VA_DOD_OA_2026: 'VA/DoD · 2026'
+  ACE_KNEE_OA_2026: 'ACE · 2026'
+  EULAR_CORE_2023_UPDATE: 'EULAR · ενημέρωση 2023 (δημ. 2024)'
+  NICE_NG226_2022: 'NICE NG226 · 2022'
+  AAOS_OAK3_2021: 'AAOS · 2021'
+  ACR_AF_2019: 'ACR/AF · 2019 (δημ. 2020)'
+dates:
+  clinical_review_owner: frozen_step2_reviewed_on
+  label: 'Κλινική ανασκόπηση'
+  source_year_distinct_from_review_date: true
+  ui_review_or_link_check_refreshes_clinical_date: false
+  implicit_review_interval: null
+  latest_guidelines_claim: false
+availability:
+  states: [active_reviewed, unverified, source_unavailable, review_due, source_withdrawn_or_superseded]
+  last_reviewed_evidence_state_retained: true
+  any_material_source_not_active_suppresses_endorsement: true
+  inactive_suppresses_suggestions_and_new_defaults: true
+  existing_clinician_selection_retained: true
+  dropping_opposing_source_to_recompute_consensus: false
+  evidence_issue_alone_blocks_copy: false
+  labels:
+    unverified: Η τεκμηρίωση χρειάζεται έλεγχο
+    source_unavailable: Η πηγή δεν είναι διαθέσιμη
+    review_due: Εκκρεμεί κλινική ανασκόπηση
+    source_withdrawn_or_superseded: Η πηγή αποσύρθηκε ή αντικαταστάθηκε
+suggestions:
+  owner: frozen_step2_suggestion_policy
+  max_inline: 1
+  expand_label: Προτάσεις
+  auto_select: false
+  revalidate_on_add: [draft_revision, package_version, item_id, reason_signature]
+  core_omissions_before_context: true
+  tie_order: frozen_step2_item_order
+  dedup: item_id_with_all_reasons
+  dismiss_scope: draft_item_reason_signature_package
+  dismiss_is_contraindication: false
+  positive_facts_only: true
+  absent_or_not_assessed_trigger: false
+  trigger_aliases:
+    stairs_limitation: stairs
+    sit_to_stand_limitation: sit_to_stand
+    sport_gym: sport_or_exercise_limitation
+  allowed_states: [recommended_or_supported, conditional_or_context_dependent]
+  primary_source:
+    therapeutic_exercise: NICE_NG226_2022
+    progressive_strengthening: NICE_NG226_2022
+    education_and_self_management: AAOS_OAK3_2021
+    mobility_exercise_when_restricted: EULAR_CORE_2023_UPDATE
+    graded_activity_exposure: EULAR_CORE_2023_UPDATE
+    progressive_endurance_or_capacity_work: NICE_NG226_2022
+    neuromuscular_proprioceptive_training: AAOS_OAK3_2021
+    balance_stepping_recovery_training: ACR_AF_2019
+    gait_walking_practice: EULAR_CORE_2023_UPDATE
+    functional_task_retraining: EULAR_CORE_2023_UPDATE
+power_users:
+  collapsed_label: Περισσότερα
+  active_count: unique_selected_advanced_item_ids
+  collapse_mutates_selection: false
+  selected_note_remains_discoverable: true
+  selected_context_invalid: inherit_step3_fail_closed
+  hidden_items: [walking_aid_assessment_and_training, weight_management, dry_needling]
+readiness:
+  owner: frozen_step3_copy_readiness
+  applies_to: [copy, print, pdf, share]
+  explicit_gate_required: true
+  gate_revision_must_equal_draft_revision: true
+  projection_revision_must_equal_draft_revision: true
+  evidence_interaction_can_clear_safety: false
+  safety_block_label: Απαιτείται κλινικός έλεγχος
+  incomplete_label: Συμπληρώστε τα απαραίτητα στοιχεία
+  stale_label: Η παραπομπή ενημερώνεται
+  manual_reconciliation_label: Ελέγξτε τις αλλαγές
+  ready_label: Έτοιμη
+  ready_notes_label: 'Έτοιμη · {n} σημεία για έλεγχο'
+  note_count: unique_items_not_sources
+traceability:
+  fields: [package_version, draft_revision, item_id, reason_codes, source_position_refs, support_scope, template_version]
+  persistence: none
+  referral_text_changed_by_evidence_disclosure: false
+  patient_text_in_trace_or_logs: false
+  mid_draft_package_auto_swap: false
+  mismatched_parent_bundle: reject_evidence_projection
+privacy:
+  patient_draft_storage: none
+  analytics: none
+  external_requests: explicit_static_source_link_only
+  allowed_link_scheme: https
+  patient_query_parameters: forbidden
+  reset_and_bfcache: clear_patient_scoped_state
+accessibility_acceptance:
+  standard_text_contrast_ratio: 4.5
+  meaningful_nontext_contrast_ratio: 3
+  text_resize_percent: 200
+  reflow_css_px: 320
+  reduced_motion: true
+  forced_colours_distinct_cues: true
+  actual_browser_checks_performed: false
+hard_invariants:
+  - selection_is_not_evidence
+  - evidence_is_not_safety_clearance
+  - insufficient_is_not_against
+  - conflict_is_not_consensus
+  - unavailable_is_not_not_assessed
+  - native_strength_is_not_app_state
+  - narrow_item_does_not_inherit_broad_strength
+  - source_year_is_not_review_date
+  - suggestion_is_not_selection
+  - stale_suggestion_cannot_be_added
+  - dismissal_is_not_safety_acknowledgement
+  - colour_is_not_the_only_visible_cue
+  - hidden_selected_items_remain_discoverable
+  - disclosure_never_mutates_clinical_state_or_referral
+  - design_gate_is_not_visual_or_independent_review

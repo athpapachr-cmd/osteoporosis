@@ -4,17 +4,11 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light"><meta name="referrer" content="no-referrer">
 <title>Παραπομπή · Φυσιοθεραπεία</title>
-<link rel="stylesheet" href="/static/clinic-utilities/physio-referral/product-styles.css">
-<link rel="stylesheet" href="/static/clinic-utilities/physio-referral/product-qualifiers.css">
-<link rel="stylesheet" href="/static/clinic-utilities/physio-referral/product-more-v3.css">
-<script src="/static/clinic-utilities/physio-referral/production-env.js" defer></script>
-<script src="/static/clinic-utilities/physio-referral/product-app.js" defer></script>
-<script src="/static/clinic-utilities/physio-referral/product-qualifiers.js" defer></script>
-<script src="/static/clinic-utilities/physio-referral/product-more-v3.js" defer></script>
-<script src="/static/clinic-utilities/physio-referral/production-finalize.js" defer></script>
+<link rel="stylesheet" href="/styles.css"><link rel="stylesheet" href="/qualifiers.css"><script src="/app.js" defer></script><script src="/qualifiers.js" defer></script>
 </head>
 <body>
-<header class="topbar"><span class="wordmark">Παραπομπή<span class="wordmark-dot">.</span></span><div><a href="/" class="quiet">Clinical Excellence</a><button id="reset" class="quiet" type="button">Νέα παραπομπή</button></div></header>
+<div class="prototype-note">Πρωτότυπο · Μόνο δοκιμαστικά περιστατικά, χωρίς στοιχεία ασθενών</div>
+<header class="topbar"><span class="wordmark">Παραπομπή<span class="wordmark-dot">.</span></span><button id="reset" class="quiet" type="button">Νέα παραπομπή</button></header>
 <main id="workspace" class="workspace">
 <div class="flow">
 <div class="intro"><p class="eyebrow">ΦΥΣΙΟΘΕΡΑΠΕΙΑ</p><h1>Οστεοαρθρίτιδα γόνατος</h1><button id="assertion" type="button" class="assertion" aria-pressed="false"><span class="selection-mark" aria-hidden="true"></span>Διάγνωση επιβεβαιωμένη</button></div>
@@ -39,7 +33,7 @@
 <section class="advanced-section"><button id="advancedToggle" type="button" class="disclosure" aria-expanded="false" aria-controls="advanced"><span id="advancedLabel">Περισσότερα</span><span aria-hidden="true">⌄</span></button><div id="advanced" hidden></div></section>
 <p class="footnote">Οι επιλογές αφορούν μόνο αυτή την παραπομπή. Δεν αποθηκεύονται.</p>
 </div>
-<aside class="preview" aria-labelledby="previewTitle"><div class="preview-heading"><div><p class="eyebrow">ΖΩΝΤΑΝΗ ΠΡΟΕΠΙΣΚΟΠΗΣΗ</p><h2 id="previewTitle">Η παραπομπή σου</h2></div><button type="button" class="icon-button" data-menu aria-label="Ενέργειες παραπομπής">•••</button></div><div class="preview-paper"><p id="referralText" class="referral-text placeholder">Επιβεβαίωσε τη διάγνωση και επίλεξε πλευρά.</p><p id="manualBadge" class="small subtle" hidden>Επεξεργασμένο κείμενο · δεν ελέγχεται βιβλιογραφικά</p></div><button type="button" id="reviewStatus" class="review-status" data-review>Συμπληρώστε τα απαραίτητα στοιχεία</button><div id="manualReconcile" class="reconcile" hidden><p>Οι επιλογές άλλαξαν. Το δικό σου κείμενο διατηρήθηκε.</p><button type="button" data-manual-review class="quiet">Έλεγχος κειμένου</button><button type="button" data-use-generated class="quiet">Χρήση νέου κειμένου</button></div><button id="copy" type="button" class="primary" data-copy disabled>Αντιγραφή</button></aside>
+<aside class="preview" aria-labelledby="previewTitle"><div class="preview-heading"><div><p class="eyebrow">ΖΩΝΤΑΝΗ ΠΡΟΕΠΙΣΚΟΠΗΣΗ</p><h2 id="previewTitle">Η παραπομπή σου</h2></div><button type="button" class="icon-button" data-menu aria-label="Ενέργειες παραπομπής">•••</button></div><div class="preview-paper"><p class="demo-stamp">ΔΟΚΙΜΑΣΤΙΚΟ ΚΕΙΜΕΝΟ</p><p id="referralText" class="referral-text placeholder">Επιβεβαίωσε τη διάγνωση και επίλεξε πλευρά.</p><p id="manualBadge" class="small subtle" hidden>Επεξεργασμένο κείμενο · δεν ελέγχεται βιβλιογραφικά</p></div><button type="button" id="reviewStatus" class="review-status" data-review>Συμπληρώστε τα απαραίτητα στοιχεία</button><div id="manualReconcile" class="reconcile" hidden><p>Οι επιλογές άλλαξαν. Το δικό σου κείμενο διατηρήθηκε.</p><button type="button" data-manual-review class="quiet">Έλεγχος κειμένου</button><button type="button" data-use-generated class="quiet">Χρήση νέου κειμένου</button></div><button id="copy" type="button" class="primary" data-copy disabled>Αντιγραφή</button><p class="export-note">Τα εξαγόμενα δείγματα φέρουν ένδειξη μη κλινικής χρήσης.</p></aside>
 </main>
 <div id="mobileDock" class="mobile-dock"><button type="button" id="openPreview" class="dock-preview"><strong>Παραπομπή <span aria-hidden="true">⌃</span></strong><span id="mobileStatus">Συμπληρώστε τα στοιχεία</span></button><button type="button" class="primary" data-copy disabled>Αντιγραφή</button></div>
 <dialog id="sheet" aria-labelledby="sheetTitle"><div class="sheet-bar"><h2 id="sheetTitle" tabindex="-1"></h2><button id="closeSheet" type="button" class="icon-button" aria-label="Κλείσιμο">×</button></div><div id="sheetSafety" class="sheet-safety" hidden>Απαιτείται κλινικός έλεγχος. Η εξαγωγή έχει διακοπεί.</div><div id="sheetBody" class="sheet-body"></div></dialog>
