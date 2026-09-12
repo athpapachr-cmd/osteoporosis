@@ -1,0 +1,76 @@
+name: Temporary Knee OA v4 canonical patch
+
+on:
+  push:
+    branches:
+      - docs/physio-knee-oa-v4-release-closeout-2026-09-12
+    paths:
+      - '.github/workflows/physio-knee-oa-v4-canonical-patch.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: docs/physio-knee-oa-v4-release-closeout-2026-09-12
+          fetch-depth: 0
+      - name: Patch large canonicals safely
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          product = Path('commercial_products/physio_referral/PRODUCT_CONTEXT_CURRENT.md')
+          text = product.read_text(encoding='utf-8')
+          replacements = {
+              '> **CURRENT PRODUCT STATE:** synthetic prototype, technically gated, not merged/deployed/real-patient validated.':
+              '> **CURRENT PRODUCT STATE:** Knee-OA v1 released; v4 refinement merged/deployed/live boundary-smoke passed; not pilot/receiver/commercial validated.',
+              '> **LATEST TESTED SUBSTANTIVE V3 HEAD:** `9deafa2db43d3498c5becf20f77a804b03849d53`.':
+              '> **LATEST RELEASED V4 RUNTIME SHA:** `bf527e3836a18491b2758fd293b42f82e0924382`.',
+              '> **LATEST V3 BRANCH:** `feat/physio-knee-oa-more-redesign-v3-2026-09-12`.':
+              '> **LATEST TESTED V4 PR HEAD:** `602740d12da0de8ad9a6134f8adf48f4b6f7c691`.\n> **LATEST V4 REFINEMENT PR:** `#89`.',
+              'Prototype is synthetic and loopback-only.':
+              'The synthetic prototype remains loopback-only. The reviewed Knee-OA product is also released inside the existing authenticated Clinical Excellence Cockpit.',
+              '- no real patient data;':
+              '- no real patient data was used in release/smoke evidence;',
+              '- no production credentials;':
+              '- no production credentials are stored in the public repository or synthetic prototype;',
+              '- no public preview;':
+              '- no unauthenticated public clinical route;',
+              '- no production FastAPI registration;':
+              '- production route/API registration exists only behind the existing Clinical Excellence authentication boundary;',
+              'Real-patient production integration requires a separate privacy/auth/hosting design and authorization.':
+              'Production hosting/auth integration is released; real-patient pilot use and any new persistence/analytics remain separately governed and unvalidated by the release smoke.',
+          }
+          for old, new in replacements.items():
+              count = text.count(old)
+              assert count == 1, f'Expected exactly one product-context match for {old!r}, found {count}'
+              text = text.replace(old, new, 1)
+
+          addendum_marker = '# Release status addendum — 2026-09-12 v4'
+          if addendum_marker not in text:
+              text += '''\n\n---\n\n# Release status addendum — 2026-09-12 v4\n\nThe bounded post-release v4 clinical-picture/prose refinement was tested at exact PR head `602740d12da0de8ad9a6134f8adf48f4b6f7c691`, squash-merged through PR `#89` as `bf527e3836a18491b2758fd293b42f82e0924382`, auto-deployed by Render as `dep-daiivp0jo6nc73bl6pug`, and externally live-smoked by no-secret run `34689920602` (SUCCESS).\n\nThe live smoke proved public v4 assets and the unauthenticated auth boundary; it did not prove a full authenticated production session, receiver utility, real-patient pilot value, paid conversion, or readiness for a second diagnosis.\n'''
+          product.write_text(text, encoding='utf-8')
+
+          log = Path('osteoporosis-change-log.md')
+          log_text = log.read_text(encoding='utf-8')
+          marker = '## 2026-09-12 — Knee-OA v4 post-smoke refinement released'
+          if marker not in log_text:
+              log_text += '''\n\n---\n\n## 2026-09-12 — Knee-OA v4 post-smoke refinement released\n\nThe released Knee-OA physiotherapy referral received a bounded post-release v4 correction after Product Owner use exposed weak visual linkage between the four clinical-picture parents and their dependent qualifiers.\n\nThe v4 release uses a four-column desktop / 2×2 mobile clinical-picture surface with focused contextual sheets, preserves dependent-state hygiene, corrects deterministic Greek referral prose, and retains the existing CU-1/evidence/safety authority. During final PR gating, inherited test paths were migrated and two real accessibility defects were caught before merge: 42 px mobile touch targets and horizontal overflow under large text enlargement. Both were corrected without weakening acceptance criteria.\n\nExact tested PR head `602740d12da0de8ad9a6134f8adf48f4b6f7c691` passed the v4, inherited prototype, Cockpit integration, CU-1 and evidence gates. PR `#89` was squash-merged as `bf527e3836a18491b2758fd293b42f82e0924382`. Render auto-deploy `dep-daiivp0jo6nc73bl6pug` became live at that exact runtime SHA.\n\nTemporary no-secret external smoke run `34689920602` passed: current/v4 assets returned `200`, the live CSS contained the ≥44 px + large-text wrapping correction, production transport remained non-synthetic, and the protected physiotherapy route/bootstrap returned `401` without authentication. No credential, session or patient data was supplied. Full authenticated live E2E, receiver validation, clinical pilot, paid validation, Cyprus/GeSY item-level activation and second-diagnosis expansion remain unproven/deferred.\n'''
+              log.write_text(log_text, encoding='utf-8')
+          PY
+
+          git diff --check
+          git diff -- commercial_products/physio_referral/PRODUCT_CONTEXT_CURRENT.md osteoporosis-change-log.md
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add commercial_products/physio_referral/PRODUCT_CONTEXT_CURRENT.md osteoporosis-change-log.md
+          git commit -m 'Record Knee-OA v4 closeout in product context and log'
+          git push origin HEAD:docs/physio-knee-oa-v4-release-closeout-2026-09-12
