@@ -3,9 +3,10 @@
 > **ROLE:** durable product-context authority for the physiotherapy-referral product track.
 > **ROOT CANONICALS STILL GOVERN:** always bootstrap `AGENTS.md`, `TODO.md`, `CLINICAL_EXCELLENCE_PLAN.md`, `SLICE_PLAN_CURRENT.md`, `CURRENT_OPERATIONAL.md`, `osteoporosis-change-log.md` first.
 > **CURRENT ACTIVE DIAGNOSIS VERTICAL:** Knee Osteoarthritis only.
-> **CURRENT PRODUCT STATE:** synthetic prototype, technically gated, not merged/deployed/real-patient validated.
-> **LATEST TESTED SUBSTANTIVE V3 HEAD:** `9deafa2db43d3498c5becf20f77a804b03849d53`.
-> **LATEST V3 BRANCH:** `feat/physio-knee-oa-more-redesign-v3-2026-09-12`.
+> **CURRENT PRODUCT STATE:** Knee-OA v1 released; v4 refinement merged/deployed/live boundary-smoke passed; not pilot/receiver/commercial validated.
+> **LATEST RELEASED V4 RUNTIME SHA:** `bf527e3836a18491b2758fd293b42f82e0924382`.
+> **LATEST TESTED V4 PR HEAD:** `602740d12da0de8ad9a6134f8adf48f4b6f7c691`.
+> **LATEST V4 REFINEMENT PR:** `#89`.
 
 ---
 
@@ -363,22 +364,22 @@ Search is intentionally absent. If a Knee-OA referral needs a search field, the 
 
 # 10. Safety/privacy/product boundaries
 
-Prototype is synthetic and loopback-only.
+The synthetic prototype remains loopback-only. The reviewed Knee-OA product is also released inside the existing authenticated Clinical Excellence Cockpit.
 
 Current invariants:
 
-- no real patient data;
+- no real patient data was used in release/smoke evidence;
 - no patient draft persistence;
 - no analytics;
-- no production credentials;
-- no public preview;
+- no production credentials are stored in the public repository or synthetic prototype;
+- no unauthenticated public clinical route;
 - no autonomous evidence updating;
-- no production FastAPI registration;
+- production route/API registration exists only behind the existing Clinical Excellence authentication boundary;
 - no `localStorage`/`sessionStorage` for clinical draft or synthetic Favorites;
 - inherited unresolved/urgent safety can block export;
 - safety-critical behavior must not depend on the clinician browsing `Περισσότερα`.
 
-Real-patient production integration requires a separate privacy/auth/hosting design and authorization.
+Production hosting/auth integration is released; real-patient pilot use and any new persistence/analytics remain separately governed and unvalidated by the release smoke.
 
 ---
 
@@ -572,3 +573,12 @@ If this context file conflicts with a newer root `CURRENT_OPERATIONAL.md` or `SL
 **Product Owner visually/use-tests the exact tested More-v3 synthetic artifact and gives concrete keep/change/remove feedback.**
 
 After Product Owner acceptance, the next decision is deliberate: either close/freeze Knee-OA for real receiver/user validation, or authorize a bounded remaining correction. Do not automatically add a second diagnosis or release to production.
+
+
+---
+
+# Release status addendum — 2026-09-12 v4
+
+The bounded post-release v4 clinical-picture/prose refinement was tested at exact PR head `602740d12da0de8ad9a6134f8adf48f4b6f7c691`, squash-merged through PR `#89` as `bf527e3836a18491b2758fd293b42f82e0924382`, auto-deployed by Render as `dep-daiivp0jo6nc73bl6pug`, and externally live-smoked by no-secret run `34689920602` (SUCCESS).
+
+The live smoke proved public v4 assets and the unauthenticated auth boundary; it did not prove a full authenticated production session, receiver utility, real-patient pilot value, paid conversion, or readiness for a second diagnosis.
