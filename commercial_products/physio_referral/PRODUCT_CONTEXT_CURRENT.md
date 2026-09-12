@@ -570,9 +570,9 @@ If this context file conflicts with a newer root `CURRENT_OPERATIONAL.md` or `SL
 
 # 17. Exact next product action at this handoff
 
-**Product Owner visually/use-tests the exact tested More-v3 synthetic artifact and gives concrete keep/change/remove feedback.**
+**No implementation action is active. Hold Knee-OA v1/v4 as the released single-diagnosis product and gather real device, receiver, workflow and market evidence before selecting another bounded product slice.**
 
-After Product Owner acceptance, the next decision is deliberate: either close/freeze Knee-OA for real receiver/user validation, or authorize a bounded remaining correction. Do not automatically add a second diagnosis or release to production.
+A second diagnosis is not authorized by this release. Full authenticated live E2E remains distinct from the completed public-asset/auth-boundary smoke and should be performed only with an explicitly authorized production session when operationally useful.
 
 
 ---
