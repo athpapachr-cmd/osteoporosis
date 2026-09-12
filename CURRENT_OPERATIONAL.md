@@ -1,132 +1,85 @@
-# CURRENT_OPERATIONAL.md — Knee-OA v1 v4 runtime refinement released / closeout
+# CURRENT_OPERATIONAL.md — Knee-OA v1 authenticated live smoke closed / v5 review HOLD
 
-> **STATUS:** PHYSIO REFERRAL KNEE-OA V1 — V4 REFINEMENT MERGED / DEPLOYED / LIVE PUBLIC-ASSET + AUTH-BOUNDARY SMOKE PASS / FULL AUTHENTICATED LIVE E2E NOT PROVEN BY THIS CLOSEOUT.
+> **STATUS:** PHYSIO REFERRAL KNEE-OA V1 — V4 RELEASED / DEPLOYED / AUTHENTICATED LIVE PRODUCT SMOKE PASS; V5 TESTED CANDIDATE AWAITS PRODUCT OWNER REVIEW.
 > **Updated:** 2026-09-12 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Original runtime release PR / SHA:** `#87` / `eeec7f82b4f5a9054e7df51354803dd75e7dc9eb` — historical baseline.
-> **Current runtime refinement PR:** `#89`.
-> **Exact tested v4 PR head:** `602740d12da0de8ad9a6134f8adf48f4b6f7c691`.
-> **Current v4 squash-merge SHA:** `bf527e3836a18491b2758fd293b42f82e0924382`.
-> **Render deploy:** `dep-daiivp0jo6nc73bl6pug` — `live`, exact source commit `bf527e3836a18491b2758fd293b42f82e0924382`, finished 2026-09-12 10:58:27 UTC.
-> **External v4 live boundary-smoke:** run `34689920602` — SUCCESS.
-> **Exact-head v4 artifact:** `10297161518`, digest `sha256:3ca3d329148752adc2764781e48e6ca189359b6fbd3f69c423b4d51770e06b0b`.
-> **V4 release closeout:** `commercial_products/physio_referral/releases/KNEE_OA_V1_V4_RELEASE_CLOSEOUT.md`.
-> **Review archive:** `commercial_products/physio_referral/reviews/archive/2026-09-11-knee-oa-candidate-6539351c/`.
+> **Current production runtime SHA:** `bf527e3836a18491b2758fd293b42f82e0924382`.
+> **Render deploy:** `dep-daiivp0jo6nc73bl6pug` — LIVE at exact production runtime SHA.
+> **Public/auth-boundary smoke:** `34689920602` — SUCCESS.
+> **Authenticated live smoke:** run `34681808255`, attempt `3` — SUCCESS.
+> **Authenticated smoke closeout:** `commercial_products/physio_referral/releases/KNEE_OA_V1_AUTH_LIVE_SMOKE_CLOSEOUT.md`.
+> **V5 tested candidate branch:** `fix/physio-knee-oa-v5-optional-refinement-prose-2026-09-12`.
+> **V5 tested substantive head:** `a47357c602120d3678e8f2f23b99775e616c79e1`.
+> **V5 gate:** `34693751545` — SUCCESS.
 > **ACTIVE RUNTIME / DESIGN WRITER:** NONE.
-> **CANONICAL WRITER:** bounded v4 release-closeout branch only until closeout PR merges; NONE thereafter.
-> **Real-patient data:** NOT USED for release smoke.
+> **PR / MERGE / DEPLOY AUTHORITY:** NONE for v5; Product Owner review HOLD.
+> **Real-patient data:** NOT USED in smoke or v5 technical validation.
 
-## 1. Released production surface
+## 1. Production lifecycle boundary
 
-The reviewed Knee-OA product remains deployed in the existing authenticated Clinical Excellence physiotherapy utility:
+The previously open authenticated-production verification boundary is now closed.
 
-`/clinical/clinic-utilities/physio-referral`
-
-The production architecture remains:
+GitHub Actions run `34681808255`, attempt `3`, used the authorized production credential only through the protected repository secret `CLINICAL_DATA_KEY`; the value was not printed. The run completed `SUCCESS` and proved:
 
 ```text
-existing Clinical Excellence authentication
-→ protected physiotherapy Cockpit route/API
-→ shared deterministic Knee-OA projection
-→ real CU-1 validation/safety authority
-→ reviewed evidence/template/interaction contracts
-→ v4 compact clinical-picture presentation
-→ live Greek referral UI
+authenticated protected product page           PASS
+authenticated product bootstrap                PASS
+authenticated deterministic Knee-OA projection PASS
+authenticated safety fail-closed projection    PASS
+synthetic/non-identifiable smoke-data boundary PASS
 ```
 
-V4 changes the presentation/referral-prose layer only. It does not create a new clinical authority layer.
+No patient identifier, patient history, patient persistence or production credential value was written by the smoke.
 
-No new patient persistence, analytics, billing system, unauthenticated public clinical endpoint, second diagnosis, jurisdiction rule or LLM-generated routine referral was introduced.
-
-## 2. V4 product refinement now live
-
-The released v4 correction addresses the Product Owner's post-release finding that parent clinical-picture selections and their qualifiers were visually disconnected.
-
-Current production behavior:
-
-- desktop clinical picture: four equal parent controls in one row;
-- mobile clinical picture: compact 2×2 grid;
-- `Πόνος`, `Δυσκαμψία`, `Αδυναμία`, `Λειτουργικότητα` each open a focused contextual sheet;
-- re-tapping an active parent reopens its sheet;
-- removal is explicit and clears dependent qualifier meaning;
-- mobile controls retain at least 44 px target height;
-- large text enlargement may wrap labels rather than causing horizontal overflow;
-- deterministic Greek prose avoids unsupported ranking language such as `κυρίως` when no ranking exists;
-- explicit quadriceps examination remains an examination finding;
-- passive extension deficit remains distinct from stiffness;
-- treatment wording preserves physiotherapist autonomy.
-
-The `Περισσότερα` v3, Favorites, contextual suggestions, direct editing, stale-text reconciliation, evidence model and safety behavior remain preserved.
-
-## 3. Exact release evidence
-
-Exact PR head `602740d12da0de8ad9a6134f8adf48f4b6f7c691` completed all relevant gates successfully before merge:
+Current released v4 lifecycle:
 
 ```text
-Physio Knee OA clinical-sheet v4 gate    34689630421   SUCCESS
-Physio Knee OA prototype gate            34689630422   SUCCESS
-Physio Knee OA Cockpit integration gate  34689630419   SUCCESS
-CU-1 focused tests                        34689630432   SUCCESS
-Physio Knee OA evidence design gate       34689630440   SUCCESS
+MERGED                              YES
+DEPLOYED                            YES
+PUBLIC-ASSET LIVE SMOKE             PASS
+UNAUTHENTICATED AUTH BOUNDARY       PASS
+AUTHENTICATED LIVE PRODUCT SMOKE    PASS
+PILOT-VALIDATED                     NO
+RECEIVER-VALIDATED                  NO
+COMMERCIAL/PAID VALIDATED           NO
 ```
 
-The final gate sequence identified and corrected both inherited test-path drift and real accessibility defects before merge, including 42 px mobile targets and large-text horizontal overflow.
+## 2. V5 tested candidate discovered from prior Product Owner session
 
-Immediately before squash merge, PR `#89` was mergeable, had zero unresolved review threads and was `0` commits behind `main`.
+A prior conversation had already completed the bounded post-use v5 refinement on:
 
-## 4. Deployment and external live smoke
+`fix/physio-knee-oa-v5-optional-refinement-prose-2026-09-12`
 
-Render auto-deploy was enabled on `main`; no duplicate manual deploy was triggered.
+Exact substantive head `a47357c602120d3678e8f2f23b99775e616c79e1` passed run `34693751545`.
 
-Deployment `dep-daiivp0jo6nc73bl6pug` became `live` at exact source commit:
+V5 addresses only Product Owner usability/prose findings:
 
-`bf527e3836a18491b2758fd293b42f82e0924382`
+- first inactive tap on `Πόνος`, `Δυσκαμψία`, `Αδυναμία` selects the generic symptom without forcing a modal;
+- second tap opens optional detail;
+- `Λειτουργικότητα` still opens its chooser because no honest generic function-only state exists;
+- weakness refinement surface is reduced to explicit objective weakness, quadriceps weakness on examination and quadriceps atrophy;
+- bare `Περιαρθρικά` is removed from routine/advanced UI while backward-compatible state acceptance remains;
+- pain qualifiers own location specificity and remove overlapping legacy pain-location prose;
+- rich referrals use a paragraph boundary before physiotherapy assessment/plan;
+- machine-like `Επιπλέον στόχος:` labels become connected human prose.
 
-Temporary no-secret external smoke run `34689920602` then confirmed:
+V5 is not merged or deployed. V4 remains production authority until separate Product Owner release approval.
+
+## 3. Hard product boundaries remain unchanged
 
 ```text
-200 index.html
-200 production-env.js
-200 production-finalize.js
-200 product-more-v3.js
-200 product-clinical-sheet-v4.js
-200 product-clinical-sheet-v4.css
-401 protected physiotherapy route without auth
-401 protected product bootstrap without auth
+international evidence core + optional jurisdiction overlay
+suggestion != clinician selection
+clinical adaptation != reimbursement/admin rule
+resource policy != stronger clinical evidence
 ```
 
-The smoke also asserted that the deployed production loader references the v4 assets, the v4 surface is present, the live CSS contains the 44 px target + large-text wrapping correction, and the production transport carries `synthetic_only = false`.
+No new evidence state, GeSY item-level rule, second diagnosis, persistence, analytics, autonomous literature update or treatment-decision automation is active.
 
-No secret/session/patient data was supplied. The temporary smoke workflow was removed after the successful run.
+## 4. Exact next legitimate actions
 
-## 5. Lifecycle boundary
+1. Product Owner reviews the exact tested v5 behavior/prose before any release decision.
+2. Cyprus/GeSY OA primary-source audit may now proceed because the authenticated production lifecycle gate is closed.
+3. Jurisdiction audit/design remains separate from v5 and must not mutate live evidence/UI merely because a local difference exists.
 
-Do **not** rewrite the current state as full authenticated `PRODUCTION-SMOKE-VERIFIED` end-to-end behavior.
-
-No authorized production credential/session was used during this v4 live smoke. Therefore:
-
-```text
-V4 MERGED                                    yes
-V4 DEPLOYED                                  yes
-public-asset live smoke                      pass
-unauthenticated auth-boundary live smoke     pass
-authenticated live end-to-end smoke          not performed by this closeout
-pilot validated                              no
-receiver validated                           no
-commercially validated                       no
-```
-
-## 6. Current hold / next legitimate work
-
-There is no active implementation slice and no active writer.
-
-Before a second diagnosis or meaningful commercial scale-up, prioritize evidence from:
-
-- actual iPhone Safari / VoiceOver use;
-- authorized authenticated live-session verification when operationally safe and useful;
-- receiving physiotherapists;
-- real referral-volume and workflow timing;
-- willingness-to-pay / retention discovery;
-- item-level Cyprus/GeSY verification if local overlay is activated.
-
-No automatic second-diagnosis expansion is authorized by this release.
+No active writer exists at this canonical state.
