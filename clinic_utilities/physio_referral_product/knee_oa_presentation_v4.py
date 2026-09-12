@@ -42,6 +42,14 @@ def present_project_result(result: dict[str, Any], request_payload: dict[str, An
         1,
     )
 
+    if " Επιπλέον στόχος: " in text:
+        text = text.replace(" Επιπλέον στόχος: ", " Παράλληλα, στους λειτουργικούς στόχους περιλαμβάνεται και η ", 1)
+    if " Επιπλέον στόχοι: " in text:
+        text = text.replace(" Επιπλέον στόχοι: ", " Παράλληλα, στους λειτουργικούς στόχους περιλαμβάνονται επίσης ", 1)
+
+    if ("Η κλινική εικόνα" in text or "Λειτουργικά," in text) and " Παρακαλώ για φυσιοθεραπευτική αξιολόγηση" in text:
+        text = text.replace(" Παρακαλώ για φυσιοθεραπευτική αξιολόγηση", "\n\nΠαρακαλώ για φυσιοθεραπευτική αξιολόγηση", 1)
+
     presented["text"] = text
     return presented
 

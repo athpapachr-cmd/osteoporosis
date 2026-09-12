@@ -30,9 +30,9 @@ const QLABELS = {
   },
   stiffness: {morning: 'Πρωινή', after_inactivity: 'Μετά από ακινησία'},
   duration: {le_30: '≤30′', gt_30: '>30′'},
-  weakness: {objective: 'Αντικειμενική στην εξέταση', quadriceps_exam: 'Τετρακέφαλος στην εξέταση'},
-  weakness_summary: {objective: 'Αντικειμενική', quadriceps_exam: 'Τετρακέφαλος · εξέταση'},
-  atrophy: {quadriceps: 'Τετρακέφαλος', peri_knee_general: 'Περιαρθρικά'},
+  weakness: {objective: 'Μυϊκή αδυναμία στην εξέταση', quadriceps_exam: 'Αδυναμία τετρακεφάλου στην εξέταση'},
+  weakness_summary: {objective: 'Αδυναμία · εξέταση', quadriceps_exam: 'Αδυναμία τετρακεφάλου'},
+  atrophy: {quadriceps: 'Ατροφία τετρακεφάλου', peri_knee_general: 'Γενική περιαρθρική μυϊκή ατροφία'},
   tenderness: {medial_joint_line: 'Έσω μεσάρθρια', lateral_joint_line: 'Έξω μεσάρθρια', pes_anserine_region: 'Χήνειος πόδας'},
 };
 

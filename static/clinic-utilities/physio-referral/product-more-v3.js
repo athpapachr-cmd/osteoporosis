@@ -4,7 +4,7 @@
 // clinical semantics, evidence, safety, suggestions or persistence.
 
 const V3_ROUTINE_FUNCTIONS = new Set(['walking_tolerance','stairs','sit_to_stand','sport_gym']);
-const V3_DUPLICATED_FINDINGS = new Set(['pain','objective_weakness','quadriceps_weakness','extension_lag','effusion','tenderness']);
+const V3_DUPLICATED_FINDINGS = new Set(['pain','joint_line_pain','anterior_peripatellar_pain','objective_weakness','quadriceps_weakness','extension_lag','effusion','tenderness']);
 const V3_MAX_FAVORITES = 6;
 const V3_CATEGORY_DEFS = Object.freeze([
   {id:'exam', title:'Εξέταση', icon:'⊙', hint:'Αντικειμενικά ευρήματα'},
@@ -53,6 +53,7 @@ function v3SelectedForCategory(id) {
   const values=[];
   if(id==='exam') {
     if(qualifierState.weakness_detail) values.push(QLABELS.weakness_summary[qualifierState.weakness_detail] || 'Αδυναμία στην εξέταση');
+    if(qualifierState.visible_atrophy) values.push(qualifierState.atrophy_location==='quadriceps'?'Ατροφία τετρακεφάλου':'Μυϊκή ατροφία');
     if(state.findings.includes('extension_lag')) values.push(label('extension_lag'));
     if(state.findings.includes('effusion')) values.push(label('effusion'));
     if(qualifierState.fixed_flexion_deformity) values.push('Παθητικό έλλειμμα έκτασης');
@@ -183,9 +184,8 @@ function v3ExamSheet() {
       make('div',{class:'v3-inline-choices'},[
         btn(QLABELS.weakness.objective,{class:'v3-qualifier-choice','data-q-weakness':'objective','aria-pressed':String(qualifierState.weakness_detail==='objective')}),
         btn(QLABELS.weakness.quadriceps_exam,{class:'v3-qualifier-choice','data-q-weakness':'quadriceps_exam','aria-pressed':String(qualifierState.weakness_detail==='quadriceps_exam')}),
-        btn('Ατροφία',{class:'v3-qualifier-choice','data-q-atrophy':'','aria-pressed':String(qualifierState.visible_atrophy)}),
+        btn('Ατροφία τετρακεφάλου',{class:'v3-qualifier-choice','data-v3-atrophy-quadriceps':'','aria-pressed':String(qualifierState.visible_atrophy&&qualifierState.atrophy_location==='quadriceps')}),
       ]),
-      make('div',{id:'v3AtrophyLocation',class:'v3-inline-choices v3-nested'},Object.entries(QLABELS.atrophy).map(([id,name])=>btn(name,{class:'v3-qualifier-choice','data-q-atrophy-location':id,'aria-pressed':String(qualifierState.atrophy_location===id)}))),
     ]));
   }
   sections.push(v3SheetSection('Βασικά ευρήματα',[
@@ -266,7 +266,7 @@ function v3SyncSheetState() {
   const ffd=$('#sheet [data-q-ffd]');if(ffd){ffd.setAttribute('aria-pressed',String(qualifierState.fixed_flexion_deformity));const mark=ffd.querySelector('.v3-option-mark');if(mark)mark.textContent=qualifierState.fixed_flexion_deformity?'✓':'';}
   const wrap=$('#v3FfdDegreesWrap');if(wrap)wrap.hidden=!qualifierState.fixed_flexion_deformity;
   const input=$('#v3FfdDegrees');if(input&&document.activeElement!==input)input.value=qualifierState.fixed_flexion_deformity_deg??'';
-  const atrophy=$('#v3AtrophyLocation');if(atrophy)atrophy.hidden=!qualifierState.visible_atrophy;
+  const quadAtrophy=$('#sheet [data-v3-atrophy-quadriceps]');if(quadAtrophy)quadAtrophy.setAttribute('aria-pressed',String(qualifierState.visible_atrophy&&qualifierState.atrophy_location==='quadriceps'));
   v3SyncFavoriteButtons();
 }
 function v3OpenCategorySheet(id,focus='') {
@@ -316,6 +316,14 @@ document.addEventListener('click',event=>{
     event.stopImmediatePropagation();v3ToggleFavorite(b.dataset.favoriteCategory,b.dataset.favoriteItem);return;
   }
   if(b.dataset.v3Category){v3OpenCategorySheet(b.dataset.v3Category,b.dataset.v3Focus||'');return;}
+  if(b.hasAttribute('data-v3-atrophy-quadriceps')&&sheetView?.type==='advanced-v3'){
+    const active=qualifierState.visible_atrophy&&qualifierState.atrophy_location==='quadriceps';
+    qualifierState.visible_atrophy=!active;
+    qualifierState.atrophy_location=!active?'quadriceps':null;
+    changed('quadriceps_atrophy_exam');
+    queueMicrotask(v3SyncSheetState);
+    return;
+  }
   if(b.closest('#sheet')&&sheetView?.type==='advanced-v3')queueMicrotask(v3SyncSheetState);
 });
 window.addEventListener('pagehide',()=>{v3CustomizeFavorites=false;});
