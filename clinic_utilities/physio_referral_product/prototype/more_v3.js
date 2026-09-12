@@ -16,6 +16,8 @@ const V3_CATEGORY_DEFS = Object.freeze([
 ]);
 let v3CustomizeFavorites = false;
 
+const v3Button = (attrs, children) => make('button',{type:'button',...attrs},children);
+
 function v3EligibleFavorite(category,item) {
   return V2_FAVORITE_CATEGORIES.has(category) && Array.isArray(state?.[category]) && !!label(item);
 }
@@ -90,7 +92,7 @@ function v3RelevantNow() {
 
 function v3FavoriteShortcut(category,item) {
   const selected=state[category].includes(item);
-  return btn('',{class:'v3-favorite-shortcut','data-select':item,'data-category':category,'aria-pressed':String(selected),'data-key':'v3fav:'+category+':'+item},[
+  return v3Button({class:'v3-favorite-shortcut','data-select':item,'data-category':category,'aria-pressed':String(selected),'data-key':'v3fav:'+category+':'+item},[
     make('span',{class:'v3-favorite-check','aria-hidden':'true',text:selected?'✓':'○'}),
     make('span',{class:'v3-favorite-label',text:label(item)}),
   ]);
@@ -116,14 +118,14 @@ function v3RenderRelevantSection() {
   host.hidden=false;
   host.replaceChildren(
     make('div',{class:'v3-section-head'},[make('div',{},[make('p',{class:'v3-kicker',text:'ΜΕ ΒΑΣΗ ΟΣΑ ΕΧΕΙΣ ΗΔΗ ΔΗΛΩΣΕΙ'}),make('h3',{text:'Σχετικά τώρα'})])]),
-    make('div',{class:'v3-relevant-list'},items.map(x=>btn('',{class:'v3-relevant-row','data-v3-category':x.category,'data-v3-focus':x.focus},[
+    make('div',{class:'v3-relevant-list'},items.map(x=>v3Button({class:'v3-relevant-row','data-v3-category':x.category,'data-v3-focus':x.focus},[
       make('span',{class:'v3-relevant-copy'},[make('strong',{text:x.title}),make('span',{text:x.detail})]),make('span',{class:'v3-chevron','aria-hidden':'true',text:'›'})
     ])))
   );
 }
 function v3CategoryRow(def) {
   const selected=v3SelectedForCategory(def.id); const count=selected.length;
-  return btn('',{class:'v3-category-row','data-v3-category':def.id,'aria-label':def.title+(count?' · '+count+' ενεργά':'')},[
+  return v3Button({class:'v3-category-row','data-v3-category':def.id,'aria-label':def.title+(count?' · '+count+' ενεργά':'')},[
     make('span',{class:'v3-category-icon','aria-hidden':'true',text:def.icon}),
     make('span',{class:'v3-category-copy'},[
       make('strong',{text:def.title}),
@@ -158,7 +160,7 @@ function v3UpdateAdvancedOverview() {
 
 function v3OptionRow(item,category,{evidence=false,pinnable=true}={}) {
   const selected=state[category].includes(item);
-  const select=btn('',{class:'v3-option-button','data-select':item,'data-category':category,'data-key':'v3select:'+item,'aria-pressed':String(selected)},[
+  const select=v3Button({class:'v3-option-button','data-select':item,'data-category':category,'data-key':'v3select:'+item,'aria-pressed':String(selected)},[
     make('span',{class:'v3-option-mark','aria-hidden':'true',text:selected?'✓':''}),make('span',{text:label(item)})
   ]);
   const actions=[];
@@ -189,16 +191,15 @@ function v3ExamSheet() {
   sections.push(v3SheetSection('Βασικά ευρήματα',[
     v3OptionRow('extension_lag','findings'),v3OptionRow('effusion','findings')
   ],'Μόνο όσα έχουν πράγματι εξεταστεί.'));
-  const ffd=make('section',{class:'v3-sheet-section','data-v3-focus-target':'ffd'},[
+  sections.push(make('section',{class:'v3-sheet-section','data-v3-focus-target':'ffd'},[
     make('h3',{class:'v3-sheet-subtitle',text:'Έκταση γόνατος'}),
     make('div',{class:'v3-option-list'},[make('div',{class:'v3-option-row'},[
-      btn('',{class:'v3-option-button','data-q-ffd':'','aria-pressed':String(qualifierState.fixed_flexion_deformity)},[
+      v3Button({class:'v3-option-button','data-q-ffd':'','aria-pressed':String(qualifierState.fixed_flexion_deformity)},[
         make('span',{class:'v3-option-mark','aria-hidden':'true',text:qualifierState.fixed_flexion_deformity?'✓':''}),make('span',{text:'Παθητικό έλλειμμα έκτασης'})
       ])
     ])]),
     make('label',{class:'field v3-ffd-field',id:'v3FfdDegreesWrap'},['Έλλειμμα σε μοίρες (αν μετρήθηκε)',make('input',{id:'v3FfdDegrees',type:'number',min:'1',max:'60',step:'1',inputmode:'numeric','aria-label':'Παθητικό έλλειμμα έκτασης σε μοίρες'})]),
-  ]);
-  sections.push(ffd);
+  ]));
   sections.push(make('section',{class:'v3-sheet-section','data-v3-focus-target':'tenderness'},[
     make('h3',{class:'v3-sheet-subtitle',text:'Εστιακή ευαισθησία'}),make('p',{class:'v3-sheet-note',text:'Περιγράφει εύρημα ψηλάφησης, όχι ξεχωριστή διάγνωση.'}),
     make('div',{class:'v3-inline-choices'},Object.entries(QLABELS.tenderness).map(([id,name])=>btn(name,{class:'v3-qualifier-choice','data-q-tenderness':id,'aria-pressed':String(qualifierState.focal_tenderness_locations.includes(id))})))
@@ -240,7 +241,7 @@ function v3NotesSheet() {
 function v3SafetySheet() {
   return [v3SheetSection('Ανεπίλυτες ανησυχίες',Object.entries(meta.safety_labels).map(([id,name])=>{
     const selected=state.safety_flags.includes(id);
-    return make('div',{class:'v3-option-row'},[btn('',{class:'v3-option-button','data-select':id,'data-category':'safety_flags','aria-pressed':String(selected)},[
+    return make('div',{class:'v3-option-row'},[v3Button({class:'v3-option-button','data-select':id,'data-category':'safety_flags','aria-pressed':String(selected)},[
       make('span',{class:'v3-option-mark','aria-hidden':'true',text:selected?'✓':''}),make('span',{text:name})
     ])]);
   }),'Η μη επιλογή δεν αποτελεί φυσιολογικό έλεγχο.')];
