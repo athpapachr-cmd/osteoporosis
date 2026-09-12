@@ -99,7 +99,6 @@ class MoreV3BrowserTests(unittest.TestCase):
         self.assertEqual(self.page.locator('#referralText').inner_text(),before)
         self.page.keyboard.press('Escape')
         favorites=self.page.locator('#v3Favorites')
-        expect(favorites).to_contain_text('graded_return_to_sport') if False else None
         expect(favorites).to_contain_text('επιστροφή')
         self.assertEqual(self.page.locator('#advanced .v3-pin:visible').count(),0)
         shortcut=favorites.locator('[data-select=graded_return_to_sport]')
@@ -112,6 +111,7 @@ class MoreV3BrowserTests(unittest.TestCase):
 
     def test_relevant_now_is_contextual_and_never_selects_by_appearing(self):
         self.page.locator('[data-phenotype=weakness_symptom_or_context]').click()
+        expect(self.page.locator('#referralText')).to_contain_text('μυϊκή αδυναμία')
         self.open_more()
         relevant=self.page.locator('#v3Relevant')
         expect(relevant).to_be_visible(); expect(relevant).to_contain_text('Αδυναμία στην εξέταση')
