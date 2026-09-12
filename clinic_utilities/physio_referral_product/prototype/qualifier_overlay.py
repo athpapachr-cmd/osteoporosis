@@ -18,9 +18,17 @@ PAIN_LOCATIONS = {
 }
 STIFFNESS_PATTERNS = {"morning", "after_inactivity"}
 STIFFNESS_DURATIONS = {None, "le_30", "gt_30"}
-WEAKNESS_DETAILS = {None, "objective", "quadriceps"}
+# `quadriceps_exam` is deliberately explicit: this product-local value means
+# the clinician is asserting an examination finding, not localising a reported
+# feeling of weakness.
+WEAKNESS_DETAILS = {None, "objective", "quadriceps_exam"}
 ATROPHY_LOCATIONS = {None, "quadriceps", "peri_knee_general"}
 TENDERNESS_LOCATIONS = {"medial_joint_line", "lateral_joint_line", "pes_anserine_region"}
+CORE_DEFAULT_REHAB = {
+    "therapeutic_exercise",
+    "progressive_strengthening",
+    "education_and_self_management",
+}
 
 
 def empty_qualifiers() -> dict[str, Any]:
@@ -77,7 +85,9 @@ def clean_qualifiers(raw: Any, state: dict[str, Any]) -> dict[str, Any]:
     _check(type(ffd) is bool)
     q["fixed_flexion_deformity"] = ffd
     deg = raw.get("fixed_flexion_deformity_deg")
-    _check(deg is None or (type(deg) is int and 0 <= deg <= 60))
+    # If a degree is supplied, it must describe a real positive deficit. An
+    # unmeasured/unknown degree remains None rather than being invented as zero.
+    _check(deg is None or (type(deg) is int and 1 <= deg <= 60))
     _check(deg is None or ffd)
     q["fixed_flexion_deformity_deg"] = deg
 
@@ -97,15 +107,15 @@ def state_with_mapped_findings(state: dict[str, Any]) -> dict[str, Any]:
     result = deepcopy(state)
     q = result.get("qualifiers") or empty_qualifiers()
     # Preserve pre-existing canonical findings for full Step-5 compatibility.
-    # Only an explicit new qualifier is allowed to take ownership of that
-    # narrow semantic group and replace the prior weakness-specific value.
+    # Only an explicit new examination qualifier is allowed to take ownership
+    # of this narrow semantic group and replace a prior weakness-specific value.
     findings = list(result.get("findings", []))
     weakness_detail = q.get("weakness_detail")
     if weakness_detail is not None:
         findings = [v for v in findings if v not in {"objective_weakness", "quadriceps_weakness"}]
         if weakness_detail == "objective":
             findings.append("objective_weakness")
-        elif weakness_detail == "quadriceps":
+        elif weakness_detail == "quadriceps_exam":
             findings.append("quadriceps_weakness")
     # Specific tenderness locations refine prose but retain the existing generic
     # CU-1 tenderness finding. Without a qualifier, legacy tenderness remains untouched.
@@ -118,9 +128,9 @@ def state_with_mapped_findings(state: dict[str, Any]) -> dict[str, Any]:
 def enrich_suggestion_facts(facts: dict[str, str], qualifiers: dict[str, Any]) -> dict[str, str]:
     result = dict(facts)
     if qualifiers.get("fixed_flexion_deformity"):
-        # Explicit clinician-selected fixed flexion deformity necessarily conveys
-        # a passive extension restriction; this only makes an existing mobility
-        # suggestion eligible and does not select treatment.
+        # An explicitly examined fixed/passive extension deficit conveys passive
+        # ROM restriction. This can make the existing mobility suggestion
+        # eligible, but it never selects treatment.
         result["passive_rom_restricted"] = "abnormal"
     return result
 
@@ -193,6 +203,57 @@ def _tenderness_phrase(q: dict[str, Any]) -> str | None:
     return "εντοπισμένη ευαισθησία στην ψηλάφηση " + _join_el([phrases[v] for v in values])
 
 
+def _has_product_specific_signal(state: dict[str, Any]) -> bool:
+    phenotype = state.get("phenotype") or {}
+    qualifiers = state.get("qualifiers") or empty_qualifiers()
+    qualifier_signal = any(
+        value not in (None, False, [], {})
+        for value in qualifiers.values()
+    )
+    return any((
+        state.get("findings"),
+        state.get("functional_impairments"),
+        state.get("adjunct_options"),
+        state.get("goals"),
+        state.get("explicit_restrictions"),
+        str(state.get("clinician_free_text_optional") or "").strip(),
+        any(bool(v) for v in phenotype.values()),
+        qualifier_signal,
+        set(state.get("rehab_directions") or []) != CORE_DEFAULT_REHAB,
+    ))
+
+
+def _reframe_plan_as_priorities(text: str) -> str:
+    prefix = "Παρακαλώ για ενεργητικό, εξατομικευμένο πρόγραμμα με "
+    suffix = ", προσαρμοσμένο στην κλινική ανταπόκριση και στους λειτουργικούς στόχους."
+    start = text.find(prefix)
+    if start >= 0:
+        end = text.find(suffix, start + len(prefix))
+        if end >= 0:
+            plan_list = text[start + len(prefix):end]
+            replacement = (
+                "Παρακαλώ για φυσιοθεραπευτική αξιολόγηση και εξατομικευμένο ενεργητικό πρόγραμμα, "
+                f"με ενδεικτικές προτεραιότητες {plan_list}, ανάλογα με τα ευρήματα της αξιολόγησης "
+                "και τους λειτουργικούς στόχους."
+            )
+            text = text[:start] + replacement + text[end + len(suffix):]
+    return text.replace(
+        "Συμπληρωματικές επιλογές: ",
+        "Πρόσθετες επιλογές προς φυσιοθεραπευτική αξιολόγηση: ",
+    )
+
+
+def _compact_low_information_output(text: str, state: dict[str, Any]) -> str:
+    if _has_product_specific_signal(state):
+        return text
+    indication = text.split(". ", 1)[0].rstrip(".") + "."
+    return (
+        indication
+        + " Παρακαλώ για φυσιοθεραπευτική αξιολόγηση και εξατομικευμένο ενεργητικό πρόγραμμα, "
+        + "με αρχικές προτεραιότητες θεραπευτική άσκηση, προοδευτική ενδυνάμωση και εκπαίδευση για αυτοδιαχείριση."
+    )
+
+
 def apply_referral_overlay(text: str, state: dict[str, Any]) -> str:
     q = state.get("qualifiers") or empty_qualifiers()
     result = text
@@ -218,10 +279,10 @@ def apply_referral_overlay(text: str, state: dict[str, Any]) -> str:
 
     if q.get("fixed_flexion_deformity"):
         degrees = q.get("fixed_flexion_deformity_deg")
-        exam = "Κατά την εξέταση καταγράφεται μόνιμο έλλειμμα έκτασης"
+        exam = "Κατά την εξέταση καταγράφεται παθητικό έλλειμμα έκτασης"
         if degrees is not None:
             exam += f" {degrees}°"
-        exam += " (fixed flexion deformity)."
+        exam += "."
         marker = " Λειτουργικά,"
         if marker in result:
             result = result.replace(marker, " " + exam + marker, 1)
@@ -231,7 +292,9 @@ def apply_referral_overlay(text: str, state: dict[str, Any]) -> str:
                 result = result.replace(marker, " " + exam + marker, 1)
             else:
                 result = result.rstrip() + " " + exam
-    return result
+
+    result = _compact_low_information_output(result, state)
+    return _reframe_plan_as_priorities(result)
 
 
 def clinical_review_clues(qualifiers: dict[str, Any]) -> list[dict[str, str]]:
