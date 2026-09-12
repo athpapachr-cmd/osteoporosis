@@ -1,17 +1,22 @@
-# SLICE_PLAN_CURRENT.md — CYPRUS / GESY OA JURISDICTION OVERLAY V1 runtime
+# SLICE_PLAN_CURRENT.md — CYPRUS / GESY OA JURISDICTION OVERLAY V1
 
-> **STATUS:** IMPLEMENTATION ACTIVE — REVIEWED DESIGN ACCEPTED BY PRODUCT OWNER.
-> **Branch:** `feat/physio-cy-gesy-overlay-v1-runtime-2026-09-12`.
+> **STATUS:** RELEASE COMPLETE — PRODUCTION-SMOKE-VERIFIED.
+> **Closed:** 2026-09-12 Asia/Nicosia.
 > **Bootstrap main:** `2eb9c9c21c17537d8827c5ecf9aedb3a802f4193`.
-> **Writer:** `feat/physio-cy-gesy-overlay-v1-runtime-2026-09-12`.
+> **Implementation PR:** `#93`.
+> **Exact reviewed runtime head:** `6df3fcb8a2d4eb73306945e5fefb6d4375786f96`.
+> **Release commit:** `e52a4851b504476c1e361575d08664c05467ff53`.
+> **Production profile:** `CY_GESY` via explicit server-side configuration only.
+> **Authenticated production smoke:** run `34703101478` — SUCCESS.
+> **Writer:** none — slice closed.
 > **Diagnosis vertical:** Knee Osteoarthritis only.
 > **Accepted design authority:** PR `#92` + `CYPRUS_GESY_OA_OVERLAY_DESIGN_REVIEW_V1.md`.
 
-## 1. Objective
+## 1. Objective — achieved
 
-Implement the reviewed first real jurisdiction capability without contaminating the international Knee-OA evidence core or expanding the routine referral UI.
+The reviewed first real jurisdiction capability is now released without contaminating the international Knee-OA evidence core or expanding the routine referral UI.
 
-Architecture:
+Released architecture:
 
 ```text
 InternationalEvidenceItem
@@ -25,13 +30,13 @@ ResolvedEvidenceView
     + optional jurisdiction context for display
 ```
 
-## 2. Runtime ownership
+## 2. Runtime ownership — released
 
-### New generic runtime owner
+### Generic runtime owner
 
 `clinic_utilities/physio_referral_product/jurisdiction_overlay.py`
 
-Responsibilities:
+Released responsibilities:
 
 - validate profile and local-position machine data;
 - resolve only reviewed active profile configured explicitly for the deployment/account;
@@ -40,7 +45,7 @@ Responsibilities:
 - keep clinical guidance separate from admin/reimbursement/system-lifecycle rules;
 - fail closed for malformed, inactive or unknown profile data.
 
-Forbidden responsibilities:
+Forbidden responsibilities remain:
 
 - changing international evidence state;
 - source voting;
@@ -53,117 +58,87 @@ Forbidden responsibilities:
 
 `clinic_utilities/physio_referral_product/jurisdictions/CY_GESY/knee_oa_overlay_v1.yaml`
 
-Contains reviewed local positions only, derived from the accepted primary-source audit and difference matrix. The machine file must preserve provenance, local/core relationship, policy class, operational status and display policy.
+The released machine profile preserves provenance, local/core relationship, policy class, operational status and display policy from the accepted primary-source audit/difference matrix.
 
-## 3. Activation contract
+## 3. Activation contract — active in production
 
-Profile activation must come from explicit deployment/account configuration.
+Profile activation comes only from explicit deployment/account configuration.
 
-For this single-clinic production deployment the server-side configuration key is:
+Production key:
 
-`PHYSIO_REFERRAL_JURISDICTION_PROFILE`
+`PHYSIO_REFERRAL_JURISDICTION_PROFILE=CY_GESY`
 
-Allowed first-runtime values:
+Contract remains:
 
 - unset / empty -> no jurisdiction overlay;
-- `CY_GESY` -> reviewed Cyprus/GeSY profile.
+- `CY_GESY` -> reviewed Cyprus/GeSY profile;
+- any other value -> fail closed to no overlay.
 
-Any other value fails closed to no overlay and must not create a patient-facing or clinician-facing error during routine referral generation.
+No workstation/IP/geolocation inference is permitted.
 
-Tests must never rely on workstation/IP/geolocation.
+## 4. Released data scope
 
-## 4. First-runtime data scope
+Mapped existing clinical items may receive local context without creating new routine product items.
 
-Machine representation may include all audited local positions needed to prove class separation, but visible item mapping is initially bounded to existing product items.
+Released mapped items include:
 
-Existing mapped clinical items with useful on-demand context:
+- therapeutic_exercise;
+- progressive_strengthening;
+- education_and_self_management;
+- manual_therapy;
+- soft_tissue_techniques;
+- acupuncture;
+- dry_needling;
+- walking_aid_assessment_and_training;
+- orthosis_or_brace_context;
+- weight_management.
 
-- therapeutic_exercise — local agreement, silent routine;
-- progressive_strengthening — local agreement, silent routine;
-- education_and_self_management — local agreement, silent routine;
-- manual_therapy — local position within international conflict;
-- soft_tissue_techniques — local position within international conflict;
-- acupuncture — local position within international conflict / local difference;
-- dry_needling — local agreement, current item excluded from routine Knee-OA surface;
-- walking_aid_assessment_and_training — local agreement, current Knee-OA UI not exposed;
-- orthosis_or_brace_context — local agreement/contextual;
-- weight_management — local agreement, product advisory only.
+Local-only additions/differences such as electrotherapy, RF ablation, podiatry, glucosamine/chondroitin, hyaluronan and PRP remain machine-representable only and do not create new routine controls.
 
-Local-only clinical additions/differences such as electrotherapy, RF ablation, podiatry, glucosamine/chondroitin, hyaluronan and PRP remain machine-representable but create no new routine product item or selector.
+## 5. Evidence payload contract — verified
 
-## 5. Evidence payload contract
+A mapped item may receive a separate `jurisdiction` field while existing international evidence fields remain authoritative.
 
-Existing international evidence payload remains authoritative and byte/semantic-compatible for its current fields.
+Verified invariants:
 
-A mapped item may receive an additional field:
+- `evidence_state` unchanged with overlay on/off;
+- source-specific international positions unchanged;
+- no local row inserted into international source list;
+- admin/reimbursement entries excluded from clinical evidence positions;
+- bootstrap exposes only non-patient profile metadata required by UI.
 
-```json
-"jurisdiction": {
-  "profile_id": "CY_GESY",
-  "label": "Κύπρος · ΓεΣΥ",
-  "relationship_to_core": "local_position_within_international_conflict",
-  "policy_class": "clinical_guidance",
-  "local_direction": "against",
-  "normalized_local_position": "...",
-  "display_policy": {...},
-  "operational_status": {...},
-  "source_provenance": {...}
-}
-```
+## 6. UX behavior — verified
 
-Invariants:
+Routine screen remains unchanged:
 
-- `evidence_state` is unchanged whether jurisdiction is active or not;
-- source-specific international positions are unchanged;
-- no local row is inserted into the international source list;
-- admin/reimbursement entries never appear as clinical evidence positions.
-
-Bootstrap may expose non-patient profile metadata needed by UI:
-
-```text
-jurisdiction_profile: null | {profile_id,label,selection_source}
-```
-
-## 6. UX behavior
-
-Routine screen:
-
-- no new country selector;
+- no country selector;
 - no badge beside every item;
 - local agreement silent;
 - routine referral text unchanged.
 
-Evidence detail:
+Evidence detail may show restrained local context, including `Κύπρος · διαφέρει`, only for already-existing relevant items.
 
-- if mapped local context is `local_difference` or `local_position_within_international_conflict`, show one restrained `Κύπρος · διαφέρει` / local-position section;
-- keep existing international state and source rows intact;
-- clearly label local row `Κύπρος · ΓεΣΥ`;
-- local agreement may remain hidden or appear only in deep detail;
-- source/status/rationale remain progressive disclosure.
+Operational GeSY information remains outside routine display.
 
-Operational GeSY information:
+## 7. Test and release evidence
 
-- no routine display in this slice;
-- machine data must remain separately queryable/testable for future workflow seams.
+Exact-head runtime verification on `6df3fcb8a2d4eb73306945e5fefb6d4375786f96` passed the focused jurisdiction gate plus inherited Knee-OA/CU-1/browser/integration coverage.
 
-## 7. Test contract
+PR `#93` merged as `e52a4851b504476c1e361575d08664c05467ff53`.
 
-Required focused tests:
+Render deploy `dep-dain5cdg1s2s7380u260` completed LIVE with explicit `CY_GESY` configuration.
 
-1. schema/profile validation accepts exact reviewed `CY_GESY` data;
-2. malformed policy class/direction/status/review state fails closed;
-3. unknown/inactive profile produces no overlay;
-4. mapped local clinical position attaches without changing `evidence_state`;
-5. local-only position does not invent an international product item;
-6. admin/reimbursement positions never attach to clinical evidence view;
-7. acupuncture international state remains `guideline_conflict_or_mixed` while Cyprus local direction remains separately `against`;
-8. manual therapy international mixed state remains mixed with local conditional adjunct context;
-9. routine referral text is identical with overlay on/off for same clinical state;
-10. no storage/persistence introduced;
-11. browser evidence sheet shows separate Cyprus detail only when relevant;
-12. existing v4 Knee-OA, CU-1 integration and safety tests remain PASS.
+Authenticated production smoke run `34703101478` completed SUCCESS and verified:
 
-## 8. Scope exclusions
+1. protected page/bootstrap active with `CY_GESY` from explicit account configuration;
+2. acupuncture international state remains `guideline_conflict_or_mixed` while local direction remains separately `against`;
+3. manual therapy international state remains mixed while local direction is separately `conditional_for`;
+4. local-only/admin rows do not become clinical evidence items;
+5. selection and referral prose remain unchanged by jurisdiction context;
+6. safety behavior remains fail-closed;
+7. only synthetic/non-identifiable smoke state was sent and no secret value was printed.
+
+## 8. Scope exclusions retained
 
 - no v5 post-use merge or edits;
 - no second diagnosis;
@@ -175,19 +150,10 @@ Required focused tests:
 - no automated local recommendation activation;
 - no evidence-contract reclassification.
 
-## 9. REPLAN triggers
+## 9. Closure
 
-Stop and replan if implementation would require:
+All implementation and release exit gates are satisfied.
 
-- modifying international evidence semantics;
-- adding a routine clinical control solely because a local source mentions it;
-- treating GeSY reimbursement/admin status as efficacy evidence;
-- patient/location-derived jurisdiction selection;
-- changing referral prose to mention GeSY without receiver/workflow evidence;
-- overlapping mutation with the held v5 branch that cannot be isolated cleanly.
+**Jurisdiction Overlay V1 is closed.**
 
-## 10. Exit gate
-
-Implementation-complete means exact-head focused + inherited tests PASS and branch diff remains bounded.
-
-Release-complete later requires reviewed PR, merge, Render auto-deploy verification and authenticated production smoke with `CY_GESY` explicitly configured.
+Any further jurisdiction capability, new local control, second diagnosis, or policy automation requires a fresh bounded slice and fresh Product Owner authority.
