@@ -4,6 +4,7 @@
   const PREF_PREFIX = "osteoporosis.workspace.ui.v1.";
   const RF_URL = "/clinical/clinic-utilities/rf";
   const PHYSIO_URL = "/clinical/clinic-utilities/physio-referral";
+  const SICK_LEAVE_URL = "/clinical/clinic-utilities/sick-leave";
 
   function readCollapsed(key) {
     try {
@@ -102,6 +103,7 @@
     group.append(
       label,
       utilityLink({ href: PHYSIO_URL, label: "Φυσιοθεραπεία", icon: "↗" }),
+      utilityLink({ href: SICK_LEAVE_URL, label: "Αναρρωτική άδεια", icon: "✚", external: true }),
       utilityLink({ href: RF_URL, label: "Ραδιοκύματα — PDF", icon: "⌁", external: true })
     );
 
@@ -133,6 +135,7 @@
 
   window.G4WorkspaceErgonomics = Object.freeze({
     refresh: refreshUi,
-    rfUtilityUrl: RF_URL
+    rfUtilityUrl: RF_URL,
+    sickLeaveUtilityUrl: SICK_LEAVE_URL
   });
 })();
