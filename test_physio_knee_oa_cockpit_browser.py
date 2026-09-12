@@ -59,6 +59,15 @@ class KneeOACockpitBrowserTests(unittest.TestCase):
         self.page.locator("#assertion").click(); self.page.locator("[data-side=right]").click()
         expect(self.page.locator("#copy")).to_be_enabled(); expect(self.page.locator("#referralText")).to_contain_text("δεξιού γόνατος")
 
+    def open_optional_symptom_detail(self, kind):
+        button=self.page.locator(f"[data-clinical-v4={kind}]")
+        if button.get_attribute("aria-pressed") != "true":
+            button.click()
+            expect(button).to_have_attribute("aria-pressed", "true")
+            expect(self.page.locator("#sheet")).not_to_be_visible()
+        button.click()
+        expect(self.page.locator("#sheet")).to_be_visible()
+
     def test_live_production_surface_has_no_generate_or_synthetic_stamp(self):
         self.assertEqual(self.page.get_by_text("Δημιουργία παραπεμπτικού", exact=True).count(), 0)
         self.assertEqual(self.page.get_by_text("ΔΟΚΙΜΑΣΤΙΚΟ ΚΕΙΜΕΝΟ", exact=True).count(), 0)
@@ -72,11 +81,20 @@ class KneeOACockpitBrowserTests(unittest.TestCase):
         self.ready(); self.page.locator("#copy").click(); copied = self.page.evaluate("navigator.clipboard.readText()")
         self.assertIn("δεξιού γόνατος", copied); self.assertFalse(copied.startswith("ΔΟΚΙΜΑΣΤΙΚΟ"), copied[:80]); self.assertNotIn("ΟΧΙ ΓΙΑ ΚΛΙΝΙΚΗ ΧΡΗΣΗ", copied)
 
-    def test_compact_clinical_sheet_and_more_context_do_not_auto_select(self):
-        self.ready(); self.page.locator("[data-clinical-v4=weakness]").click()
-        expect(self.page.locator("#sheetTitle")).to_have_text("Αδυναμία")
+    def test_compact_clinical_parent_selects_first_and_detail_opens_second(self):
+        self.ready(); weakness=self.page.locator("[data-clinical-v4=weakness]")
+        weakness.click()
+        expect(weakness).to_have_attribute("aria-pressed", "true")
+        expect(self.page.locator("#sheet")).not_to_be_visible()
         expect(self.page.locator("#referralText")).to_contain_text("μυϊκή αδυναμία")
-        before = self.page.locator("#referralText").inner_text(); self.page.locator("#closeSheet").click()
+        expect(weakness.locator("[data-clinical-count-v4]")).to_have_text("· λεπτομέρειες")
+        before = self.page.locator("#referralText").inner_text()
+        weakness.click()
+        expect(self.page.locator("#sheetTitle")).to_have_text("Αδυναμία")
+        expect(self.page.locator("#sheet [data-q-weakness]")).to_have_count(2)
+        expect(self.page.locator("#sheet [data-q-atrophy-quadriceps-v5]")).to_have_count(1)
+        self.assertEqual(self.page.get_by_text("Περιαρθρικά", exact=True).count(), 0)
+        self.page.locator("#closeSheet").click()
         self.page.locator("#advancedToggle").click(); relevant = self.page.locator("#v3Relevant")
         expect(relevant).to_be_visible(); expect(relevant).to_contain_text("Αδυναμία στην εξέταση")
         self.assertEqual(self.page.locator("[data-q-weakness][aria-pressed=true]").count(), 0)
@@ -85,12 +103,14 @@ class KneeOACockpitBrowserTests(unittest.TestCase):
         self.assertEqual(self.page.locator("#referralText").inner_text(), before)
 
     def test_specific_quadriceps_and_pain_prose_on_production_transport(self):
-        self.ready(); self.page.locator("[data-clinical-v4=pain]").click()
+        self.ready(); self.open_optional_symptom_detail("pain")
         self.page.locator("#sheet [data-q-pain=medial_joint_line]").click(); self.page.locator("#sheet [data-q-pain=pes_anserine_region]").click()
         expect(self.page.locator("#referralText")).not_to_contain_text("κυρίως")
-        self.page.locator("#closeSheet").click(); self.page.locator("[data-clinical-v4=weakness]").click()
+        self.page.locator("#closeSheet").click(); self.open_optional_symptom_detail("weakness")
         self.page.locator("#sheet [data-q-weakness=quadriceps_exam]").click()
+        self.page.locator("#sheet [data-q-atrophy-quadriceps-v5]").click()
         expect(self.page.locator("#referralText")).to_contain_text("αδυναμία του τετρακεφάλου κατά την εξέταση")
+        expect(self.page.locator("#referralText")).to_contain_text("εμφανή ατροφία τετρακεφάλου")
         expect(self.page.locator("#referralText")).to_contain_text("με έμφαση σε")
 
     def test_manual_edit_reconciliation_remains_fail_closed(self):
