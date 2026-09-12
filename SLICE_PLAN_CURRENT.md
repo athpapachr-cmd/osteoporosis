@@ -1,159 +1,274 @@
-# SLICE_PLAN_CURRENT.md — CYPRUS / GESY OA JURISDICTION OVERLAY V1
+# SLICE_PLAN_CURRENT.md — CLINICAL DOCUMENTS PHASE 1 / SICK LEAVE V1
 
-> **STATUS:** RELEASE COMPLETE — PRODUCTION-SMOKE-VERIFIED.
-> **Closed:** 2026-09-12 Asia/Nicosia.
-> **Bootstrap main:** `2eb9c9c21c17537d8827c5ecf9aedb3a802f4193`.
-> **Implementation PR:** `#93`.
-> **Exact reviewed runtime head:** `6df3fcb8a2d4eb73306945e5fefb6d4375786f96`.
-> **Release commit:** `e52a4851b504476c1e361575d08664c05467ff53`.
-> **Production profile:** `CY_GESY` via explicit server-side configuration only.
-> **Authenticated production smoke:** run `34703101478` — SUCCESS.
-> **Writer:** none — slice closed.
-> **Diagnosis vertical:** Knee Osteoarthritis only.
-> **Accepted design authority:** PR `#92` + `CYPRUS_GESY_OA_OVERLAY_DESIGN_REVIEW_V1.md`.
+> **STATUS:** IMPLEMENTED / TESTED / REVIEWED — RELEASE AUTHORIZED.
+> **Activated:** 2026-09-12 Asia/Nicosia.
+> **Slice:** `CU-CLINICAL-DOCUMENTS-P1-SICK-LEAVE-2026-09-12`.
+> **Bootstrap main:** `bbfa26f3820f520d7f3ea312e6793fa55f399f01`.
+> **Branch:** `feat/clinic-documents-p1-sick-leave-2026-09-12`.
+> **PR:** `#97`.
+> **Exact reviewed/tested runtime head:** `fd88fa3b7ebce8aa9d97dfea12e2f2667495ed39`.
+> **Clinical Documents PR gate:** `34717351567` — SUCCESS.
+> **Writer:** current release conversation through merge/deploy closeout.
+> **Scope:** common document primitives + Sick Leave V1 + protected Clinic Utilities integration.
+> **Persistence:** NONE for patient/document/signature state.
 
-## 1. Objective — achieved
+## 1. Objective
 
-The reviewed first real jurisdiction capability is now released without contaminating the international Knee-OA evidence core or expanding the routine referral UI.
-
-Released architecture:
+Deliver the first bounded runtime slice of the frozen Clinical Documents Engine:
 
 ```text
-InternationalEvidenceItem
-  = global reviewed evidence truth
-
-JurisdictionOverlayV1
-  = separate local clinical / admin / reimbursement / lifecycle truth
-
-ResolvedEvidenceView
-  = international view unchanged
-    + optional jurisdiction context for display
+ClinicianProfile
++ PatientIdentity
++ ephemeral SignatureAsset
++ DocumentMetadata
++ PDF rendering/re-import seam
+→ Sick Leave Certificate V1
+→ protected Clinic Utilities page
 ```
 
-## 2. Runtime ownership — released
+This is deliberately not the Accident/Medico-Legal AI report phase.
 
-### Generic runtime owner
+## 2. Runtime owners
 
-`clinic_utilities/physio_referral_product/jurisdiction_overlay.py`
+Preferred owners implemented:
 
-Released responsibilities:
+```text
+clinic_utilities/clinical_documents/__init__.py
+clinic_utilities/clinical_documents/models.py
+clinic_utilities/clinical_documents/sick_leave.py
+clinic_utilities/clinical_documents/api.py
+static/clinic-utilities/sick-leave/index.html
+static/clinic-utilities/sick-leave/app.js
+static/clinic-utilities/sick-leave/styles.css
+```
 
-- validate profile and local-position machine data;
-- resolve only reviewed active profile configured explicitly for the deployment/account;
-- map local positions to existing product items when a reviewed mapping exists;
-- return display-only local context;
-- keep clinical guidance separate from admin/reimbursement/system-lifecycle rules;
-- fail closed for malformed, inactive or unknown profile data.
+Required composition/navigation seams:
 
-Forbidden responsibilities remain:
+```text
+main.py
+static/baseline-audit/g4-workspace-ergonomics.js
+```
 
-- changing international evidence state;
-- source voting;
-- selecting treatment;
-- changing referral prose;
-- inferring jurisdiction from patient location;
-- persisting patient data.
+Tests/workflow:
 
-### Cyprus profile data
+```text
+test_clinical_documents_sick_leave.py
+.github/workflows/clinical-documents-p1-tests.yml
+```
 
-`clinic_utilities/physio_referral_product/jurisdictions/CY_GESY/knee_oa_overlay_v1.yaml`
+No existing RF/physio business-rule owner was rewritten.
 
-The released machine profile preserves provenance, local/core relationship, policy class, operational status and display policy from the accepted primary-source audit/difference matrix.
+## 3. Clinician profile
 
-## 3. Activation contract — active in production
+Phase 1 clinician identity is server-side. The Clinical Documents-specific environment variable is preferred if later configured; otherwise Phase 1 deliberately falls back to the already-configured RF doctor profile so this release requires no production config/secret mutation.
 
-Profile activation comes only from explicit deployment/account configuration.
+Expected production clinician identity remains the reviewed current clinic identity. Clinic/address are optional presentation fields.
 
-Production key:
+## 4. Draft contract
 
-`PHYSIO_REFERRAL_JURISDICTION_PROFILE=CY_GESY`
+`SickLeaveDraftV1`:
 
-Contract remains:
+```text
+patient_name: required string
+id_type: ADT | ARC
+id_number: required string
+diagnosis: required string
+leave_from: ISO date
+leave_to: ISO date
+issued_on: ISO date
+derived_from_document_id: optional bounded string
+relation: extension | new_leave_same_patient | null
+```
 
-- unset / empty -> no jurisdiction overlay;
-- `CY_GESY` -> reviewed Cyprus/GeSY profile;
-- any other value -> fail closed to no overlay.
+Rules:
 
-No workstation/IP/geolocation inference is permitted.
+- trim user text;
+- `leave_to >= leave_from`;
+- inclusive duration derived, not user-authored;
+- no arbitrary numeric-only validation for ID;
+- bounded text lengths;
+- relation requires a derived document id;
+- whole `draft_json` request body is bounded to 16 KiB before JSON parsing;
+- no patient state written to database/browser storage.
 
-## 4. Released data scope
+## 5. Browser workflow
 
-Mapped existing clinical items may receive local context without creating new routine product items.
+### New
 
-Released mapped items include:
+Form → Preview → Download PDF → Clear.
 
-- therapeutic_exercise;
-- progressive_strengthening;
-- education_and_self_management;
-- manual_therapy;
-- soft_tissue_techniques;
-- acupuncture;
-- dry_needling;
-- walking_aid_assessment_and_training;
-- orthosis_or_brace_context;
-- weight_management.
+### Signature
 
-Local-only additions/differences such as electrotherapy, RF ablation, podiatry, glucosamine/chondroitin, hyaluronan and PRP remain machine-representable only and do not create new routine controls.
+Explicit file chooser accepts bounded PNG/JPEG only.
 
-## 5. Evidence payload contract — verified
+Signature is retained only in JavaScript memory for the current page lifetime. `Clear` clears patient/document fields but keeps the in-memory signature. Refresh/close removes it.
 
-A mapped item may receive a separate `jurisdiction` field while existing international evidence fields remain authoritative.
+### Previous PDF
 
-Verified invariants:
+Explicit `Χρήση προηγούμενης άδειας` file selection posts the selected PDF for metadata-only V1 import.
 
-- `evidence_state` unchanged with overlay on/off;
-- source-specific international positions unchanged;
-- no local row inserted into international source list;
-- admin/reimbursement entries excluded from clinical evidence positions;
-- bootstrap exposes only non-patient profile metadata required by UI.
+On successful import, show a compact previous-document summary before reuse.
 
-## 6. UX behavior — verified
+Then expose:
 
-Routine screen remains unchanged:
+- `Επέκταση ίδιας άδειας`;
+- `Νέα άδεια στον ίδιο ασθενή`.
 
-- no country selector;
-- no badge beside every item;
-- local agreement silent;
-- routine referral text unchanged.
+Unknown/legacy PDF without recognized V1 metadata returns a safe validation error. No OCR/text guessing.
 
-Evidence detail may show restrained local context, including `Κύπρος · διαφέρει`, only for already-existing relevant items.
+## 6. PDF contract
 
-Operational GeSY information remains outside routine display.
+A4 portrait professional Greek certificate.
 
-## 7. Test and release evidence
+Content hierarchy:
 
-Exact-head runtime verification on `6df3fcb8a2d4eb73306945e5fefb6d4375786f96` passed the focused jurisdiction gate plus inherited Knee-OA/CU-1/browser/integration coverage.
+```text
+clinician header
+thin rule
+ΒΕΒΑΙΩΣΗ ΑΣΘΕΝΕΙΑΣ
+patient identity block
+diagnosis block
+prominent leave-range block
+issue date
+signature / clinician closing block
+```
 
-PR `#93` merged as `e52a4851b504476c1e361575d08664c05467ff53`.
+Requirements:
 
-Render deploy `dep-dain5cdg1s2s7380u260` completed LIVE with explicit `CY_GESY` configuration.
+- Unicode Greek font available in runtime;
+- no clipped text for accepted bounded input;
+- signature aspect ratio preserved;
+- certificate remains usable without uploaded signature;
+- generated bytes parse as PDF;
+- no source patient data outside generated PDF response.
 
-Authenticated production smoke run `34703101478` completed SUCCESS and verified:
+## 7. Metadata / re-import contract
 
-1. protected page/bootstrap active with `CY_GESY` from explicit account configuration;
-2. acupuncture international state remains `guideline_conflict_or_mixed` while local direction remains separately `against`;
-3. manual therapy international state remains mixed while local direction is separately `conditional_for`;
-4. local-only/admin rows do not become clinical evidence items;
-5. selection and referral prose remain unchanged by jurisdiction context;
-6. safety behavior remains fail-closed;
-7. only synthetic/non-identifiable smoke state was sent and no secret value was printed.
+Generated V1 PDFs embed a private application metadata payload containing at least:
 
-## 8. Scope exclusions retained
+```text
+schema = sick_leave_certificate_v1
+version = 1.0
+document_id
+patient_name
+id_type
+id_number
+diagnosis
+leave_from
+leave_to
+issued_on
+derived_from_document_id?
+relation? = extension | new_leave_same_patient
+```
 
-- no v5 post-use merge or edits;
-- no second diagnosis;
-- no Greece/England content;
-- no electrotherapy selector;
-- no billing/session calculator;
-- no provider-unit UI;
-- no planned-IT enforcement;
-- no automated local recommendation activation;
-- no evidence-contract reclassification.
+The metadata is solely for clinician-selected PDF round-trip. It is not a database.
 
-## 9. Closure
+Re-import:
 
-All implementation and release exit gates are satisfied.
+- parses PDF safely;
+- validates schema/version and typed values;
+- validates `leave_to >= leave_from`;
+- rejects a declared relation without `derived_from_document_id`;
+- rejects malformed or unknown metadata;
+- never infers missing values from visible PDF text.
 
-**Jurisdiction Overlay V1 is closed.**
+## 8. API surface
 
-Any further jurisdiction capability, new local control, second diagnosis, or policy automation requires a fresh bounded slice and fresh Product Owner authority.
+Protected by existing Clinical Excellence auth boundary:
+
+```text
+GET  /clinical/clinic-utilities/sick-leave
+GET  /clinical/clinic-utilities/sick-leave/api/contract
+POST /clinical/clinic-utilities/sick-leave/api/preview
+POST /clinical/clinic-utilities/sick-leave/api/pdf
+POST /clinical/clinic-utilities/sick-leave/api/import-previous
+```
+
+Preview and PDF rendering are request-scoped. The contract exposes non-patient configuration/persistence state and request/file limits.
+
+## 9. Security / privacy
+
+- existing protected clinical dependency required for every page/API route;
+- no logging owner introduced for request bodies/signature bytes;
+- draft/signature/previous-PDF sizes bounded server-side;
+- signature only PNG/JPEG with parse validation and dimension cap;
+- previous PDF only valid PDF with bounded size;
+- no patient data in query strings;
+- no GET carrying patient identifiers;
+- no database mutations;
+- no browser persistence APIs for patient/signature data.
+
+## 10. Acceptance gates — satisfied
+
+Tests prove:
+
+1. valid ADT draft;
+2. valid ARC draft;
+3. Unicode Greek patient name/diagnosis;
+4. inclusive duration;
+5. `leave_to < leave_from` rejected;
+6. blank required fields rejected;
+7. arbitrary non-numeric ARC/ADT value accepted within bounds;
+8. PDF produced and parseable;
+9. expected Greek certificate text extractable from PDF;
+10. metadata round-trip preserves identity/diagnosis/dates;
+11. extension mode computes previous `leave_to + 1 day` and clears new end date;
+12. same-patient/new-reason mode retains identity only;
+13. unknown PDF fails without OCR guessing;
+14. signature optional;
+15. valid signature embedded without persistence;
+16. invalid/oversize signature rejected;
+17. filename contains Greek patient name/date and excludes diagnosis/ID;
+18. routes use existing clinical auth dependency;
+19. no DB/persistence call in Phase-1 package;
+20. browser source contains no localStorage/sessionStorage/indexedDB patient persistence;
+21. imported metadata rejects inverted leave dates;
+22. imported relation metadata requires a derived document id;
+23. oversized `draft_json` is rejected with `413` before JSON parsing.
+
+Exact reviewed/tested runtime head:
+
+`fd88fa3b7ebce8aa9d97dfea12e2f2667495ed39`
+
+Clinical Documents PR workflow run `34717351567` completed SUCCESS. CU-1 and G3 adjacent substantive gates also completed SUCCESS on the same runtime head. Clinical Learning red checks reached and passed their substantive tests/contracts/schema guards before expected scope-owner guards rejected this non-Learning slice; physio-specific red checks are likewise owner/scope guards rather than evidence of Clinical Documents failure.
+
+## 11. Explicit exclusions
+
+Not in this slice:
+
+- Accident Report intake;
+- medico-legal Evidence Ledger;
+- AI drafting/provider call;
+- targeted literature retrieval;
+- causation matrix;
+- prognosis engine;
+- billing/fee-note/receipt runtime;
+- persistent case store;
+- user-uploaded reusable templates;
+- Siri/Gemini;
+- RF/physio changes beyond navigation exposure;
+- production environment/secret mutation.
+
+## 12. Exit and release boundary
+
+Implementation exit is satisfied:
+
+```text
+implemented
++ deterministic tests pass
++ exact-head review pass
+```
+
+The Product Owner has now separately authorized `Merge και deploy`.
+
+Release path:
+
+```text
+PR #97 squash merge
+→ existing Render auto-deploy from main
+→ no manual duplicate deploy
+→ verify LIVE runtime deploy
+→ record closeout
+```
+
+`DEPLOYED` must remain distinct from `PRODUCTION-SMOKE-VERIFIED`. An authenticated/product-owner functional smoke is required before the latter label is used.

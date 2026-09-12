@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="el">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>Αναρρωτική Άδεια · Clinic Utilities</title>
+  <link rel="stylesheet" href="/static/clinic-utilities/sick-leave/styles.css" />
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div>
+        <a class="back" href="/static/baseline-audit/">← Clinical Excellence</a>
+        <p class="eyebrow">Clinic Utilities · Clinical Documents</p>
+        <h1>Βεβαίωση Ασθένειας</h1>
+        <p class="subtitle">Γρήγορη έκδοση PDF χωρίς αποθήκευση στοιχείων ασθενούς.</p>
+      </div>
+      <div id="privacyPill" class="pill">Χωρίς αποθήκευση</div>
+    </header>
+
+    <section id="configWarning" class="notice warning" hidden>
+      Δεν έχει ρυθμιστεί προφίλ ιατρού στον server. Η δημιουργία PDF παραμένει κλειδωμένη μέχρι να υπάρχει έγκυρο clinician profile.
+    </section>
+
+    <section class="grid-main">
+      <div class="stack">
+        <section class="card">
+          <div class="section-head">
+            <div>
+              <p class="step">01</p>
+              <h2>Στοιχεία ασθενούς</h2>
+            </div>
+            <button id="importPreviousButton" class="button ghost" type="button">Χρήση προηγούμενης άδειας</button>
+            <input id="previousPdfInput" type="file" accept="application/pdf,.pdf" hidden />
+          </div>
+
+          <div id="previousCard" class="previous-card" hidden>
+            <div>
+              <strong>Προηγούμενη άδεια</strong>
+              <p id="previousSummary"></p>
+            </div>
+            <div class="inline-actions">
+              <button id="extendButton" class="button secondary" type="button">Επέκταση ίδιας άδειας</button>
+              <button id="samePatientButton" class="button secondary" type="button">Νέα άδεια στον ίδιο ασθενή</button>
+            </div>
+          </div>
+
+          <div class="form-grid patient-grid">
+            <label class="field span-2">
+              <span>Όνομα ασθενούς</span>
+              <input id="patientName" autocomplete="off" maxlength="160" placeholder="Ονοματεπώνυμο" />
+            </label>
+            <label class="field">
+              <span>Έγγραφο</span>
+              <select id="idType">
+                <option value="ADT">ΑΔΤ</option>
+                <option value="ARC">ARC</option>
+              </select>
+            </label>
+            <label class="field">
+              <span id="idNumberLabel">Αριθμός ΑΔΤ</span>
+              <input id="idNumber" autocomplete="off" maxlength="64" />
+            </label>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="section-head">
+            <div>
+              <p class="step">02</p>
+              <h2>Διάγνωση & περίοδος</h2>
+            </div>
+            <div id="durationPill" class="duration-pill">Διάρκεια: —</div>
+          </div>
+          <div class="form-grid">
+            <label class="field span-3">
+              <span>Διάγνωση</span>
+              <textarea id="diagnosis" rows="4" maxlength="600" placeholder="Σύντομη κλινική διάγνωση"></textarea>
+            </label>
+            <label class="field">
+              <span>Άδεια από</span>
+              <input id="leaveFrom" type="date" />
+            </label>
+            <label class="field">
+              <span>Έως και</span>
+              <input id="leaveTo" type="date" />
+            </label>
+            <label class="field">
+              <span>Ημερομηνία έκδοσης</span>
+              <input id="issuedOn" type="date" />
+            </label>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="section-head">
+            <div>
+              <p class="step">03</p>
+              <h2>Υπογραφή</h2>
+            </div>
+            <button id="signatureButton" class="button ghost" type="button">Εισαγωγή υπογραφής</button>
+            <input id="signatureInput" type="file" accept="image/png,image/jpeg,.png,.jpg,.jpeg" hidden />
+          </div>
+          <div class="signature-row">
+            <div id="signatureStatus" class="signature-status">Δεν έχει φορτωθεί υπογραφή. Το PDF μπορεί να εκδοθεί και για χειρόγραφη υπογραφή.</div>
+            <button id="removeSignatureButton" class="text-button" type="button" hidden>Αφαίρεση</button>
+          </div>
+          <p class="microcopy">Η εικόνα της υπογραφής παραμένει μόνο στη μνήμη αυτής της σελίδας. Με refresh ή κλείσιμο χάνεται.</p>
+        </section>
+      </div>
+
+      <aside class="card summary-card">
+        <p class="step">Έλεγχος</p>
+        <h2>Πριν την έκδοση</h2>
+        <dl class="summary-list">
+          <div><dt>Ασθενής</dt><dd id="summaryPatient">—</dd></div>
+          <div><dt>Ταυτοποίηση</dt><dd id="summaryId">—</dd></div>
+          <div><dt>Άδεια</dt><dd id="summaryDates">—</dd></div>
+          <div><dt>Έκδοση</dt><dd id="summaryIssued">—</dd></div>
+          <div><dt>Υπογραφή</dt><dd id="summarySignature">Χειρόγραφη</dd></div>
+        </dl>
+        <div class="privacy-box">
+          <strong>Privacy boundary</strong>
+          <span>Δεν υπάρχει patient history, autosave, localStorage ή sessionStorage για αυτή τη φόρμα.</span>
+        </div>
+        <div class="action-stack">
+          <button id="previewButton" class="button secondary wide" type="button">Προεπισκόπηση PDF</button>
+          <button id="downloadButton" class="button primary wide" type="button">Λήψη PDF</button>
+          <button id="clearButton" class="button quiet wide" type="button">Καθαρισμός φόρμας</button>
+        </div>
+      </aside>
+    </section>
+
+    <div id="errorBox" class="notice error" hidden></div>
+    <div id="workingBox" class="working" hidden>Δημιουργία εγγράφου…</div>
+  </main>
+
+  <script src="/static/clinic-utilities/sick-leave/app.js" defer></script>
+</body>
+</html>

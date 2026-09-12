@@ -1,110 +1,126 @@
-# CURRENT_OPERATIONAL.md — Cyprus / GeSY OA jurisdiction overlay v1
+# CURRENT_OPERATIONAL.md — Clinical Documents Engine Phase 1
 
-> **STATUS:** RELEASE COMPLETE — PRODUCTION-SMOKE-VERIFIED.
+> **STATUS:** IMPLEMENTED / TESTED / REVIEWED — RELEASE AUTHORIZED.
 > **Updated:** 2026-09-12 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Accepted design PR:** `#92` / squash merge `2eb9c9c21c17537d8827c5ecf9aedb3a802f4193`.
-> **Runtime implementation PR:** `#93` / merge commit `e52a4851b504476c1e361575d08664c05467ff53`.
-> **Exact reviewed runtime head:** `6df3fcb8a2d4eb73306945e5fefb6d4375786f96`.
-> **Current production runtime SHA:** `e52a4851b504476c1e361575d08664c05467ff53`.
-> **Production jurisdiction profile:** `CY_GESY`, selected only by explicit server-side configuration `PHYSIO_REFERRAL_JURISDICTION_PROFILE=CY_GESY`.
-> **Render deploy:** `dep-dain5cdg1s2s7380u260` — LIVE.
-> **Authenticated jurisdiction-overlay live smoke:** run `34703101478` — SUCCESS.
-> **Writer:** none — implementation slice closed.
-> **V5 tested candidate:** remains separately in Product Owner review HOLD and is not part of this slice.
-> **Real-patient data:** NOT USED.
+> **Fresh bootstrap main:** `bbfa26f3820f520d7f3ea312e6793fa55f399f01`.
+> **Active branch:** `feat/clinic-documents-p1-sick-leave-2026-09-12`.
+> **PR:** `#97` — `Clinical Documents Phase 1: Sick Leave V1`.
+> **Active slice:** `CU-CLINICAL-DOCUMENTS-P1-SICK-LEAVE-2026-09-12`.
+> **Exact reviewed/tested runtime head:** `fd88fa3b7ebce8aa9d97dfea12e2f2667495ed39`.
+> **Clinical Documents PR gate:** run `34717351567` — SUCCESS.
+> **Writer:** this release conversation, bounded through merge/deploy verification and canonical closeout.
+> **Production config/secrets authority:** NONE; no config mutation required.
+> **Patient persistence authority:** NONE.
+> **Real-patient data in code/tests:** FORBIDDEN / NOT USED.
 
-## 1. Product Owner authority and closure
+## 1. Product Owner authority
 
-On 2026-09-12 the Product Owner explicitly accepted the reviewed design with:
+On 2026-09-12 the Product Owner first authorized bounded implementation of Clinical Documents Phase 1 and later explicitly instructed:
 
-`IMPLEMENT JURISDICTION OVERLAY V1`
+`Merge και deploy`
 
-The bounded implementation was completed, reviewed, merged, explicitly configured for Cyprus/GeSY, deployed and authenticated-smoke-verified on the same release commit. The slice is therefore closed.
+This authorizes the reviewed Phase-1 PR to follow the normal release path. It does not authorize Phase 2, new production secrets/configuration, patient persistence, medico-legal AI drafting, billing persistence, or unrelated RF/physio changes.
 
-This closure does not authorize unrelated v5 merge/deploy, second diagnosis, patient persistence, Greece/England expansion, or autonomous local-guideline activation.
+## 2. Released candidate scope
 
-## 2. Released architecture
+Phase 1 contains only:
 
 ```text
-international evidence core
+Common Clinical Documents Core
 +
-JurisdictionOverlayV1 resolver
+Sick Leave Certificate V1
 +
-reviewed CY_GESY Knee-OA local-position data
-+
-progressive evidence-detail presentation only where relevant
+protected Clinic Utilities navigation/integration
 ```
 
-Hard invariants preserved in implementation and live smoke:
+Implemented Sick Leave V1 behavior:
 
-- international evidence state is never mutated by local overlay;
-- local position never auto-selects/deselects an intervention;
-- local position never rewrites referral prose;
-- local clinical guidance remains separate from GeSY admin/reimbursement/system-lifecycle rules;
-- planned GeSY IT integration remains planned, never active by inference;
-- no source voting;
-- no patient-location inference;
-- no patient persistence;
-- no autonomous literature-to-live update;
-- no second diagnosis.
+- patient full name;
+- ID type `ADT` or `ARC` and bounded free-format ID number;
+- diagnosis;
+- leave from / through inclusive;
+- editable issue date;
+- deterministic inclusive-duration display;
+- Greek A4 PDF preview/download;
+- optional bounded PNG/JPEG signature held only in current browser memory;
+- explicit re-import of a previously generated V1 PDF through embedded application metadata;
+- extension flow retaining identity + diagnosis and starting on prior leave-through + 1 day;
+- same-patient/new-leave flow retaining identity only;
+- fail-closed rejection of unknown/malformed previous PDFs with no OCR guessing.
 
-## 3. Released implementation scope
+## 3. Privacy / persistence boundary
 
-1. Validated generic jurisdiction-overlay runtime loader/resolver.
-2. Reviewed machine-readable `CY_GESY` Knee-OA profile derived only from the accepted audit/matrix.
-3. Explicit deployment/account activation only; no patient-location inference.
-4. Local-position views attached beside existing evidence-detail payloads without changing international `evidence_state`.
-5. Local agreement silent on the routine surface.
-6. Restrained local-difference cue/detail only for an existing item already being inspected/relevant.
-7. Administrative/reimbursement rules machine-representable but excluded from clinical evidence resolution and routine UI.
-8. Exact contract, resolver, integration and browser regressions.
-9. Existing routine referral prose and no-persistence behavior preserved.
+Hard Phase-1 rules remain satisfied:
 
-## 4. Explicit exclusions retained
+- no patient PostgreSQL write;
+- no patient/document history registry;
+- no localStorage/sessionStorage/indexedDB patient state;
+- no autosave;
+- no automatic prior-document reopening;
+- signature never persisted server-side;
+- PDF generation/parsing request-scoped/in-memory;
+- no patient data in query strings;
+- no identifiable patient data or signature assets in repository tests/fixtures.
 
-No new routine controls for electrotherapy, RF ablation, podiatry, glucosamine/chondroitin, hyaluronan, PRP, injections or imaging.
+The package has no SQLAlchemy/database owner. Existing protected clinical authentication remains the access boundary.
 
-No country selector, badge wall, GeSY reimbursement panel, provider-unit mechanics, or automatic local-rule enforcement.
+## 4. Exact-head review and hardening
 
-No mutation of `knee_oa_evidence_contract_v1.yaml` merely because Cyprus differs.
+Exact PR review identified and corrected two bounded validation gaps before release:
 
-## 5. Exact-head verification
+1. imported V1 metadata now rejects `leave_to < leave_from` and rejects a declared relation without `derived_from_document_id`;
+2. `draft_json` now has an explicit 16 KiB server-side request bound before JSON parsing, exposed by the contract endpoint and regression-tested.
 
-Runtime exact-head physio-owned gates on `6df3fcb8a2d4eb73306945e5fefb6d4375786f96` completed successfully, including:
+The exact reviewed/tested runtime head is:
 
-- jurisdiction overlay v1 gate;
-- Knee-OA Cockpit integration gate;
-- clinical-sheet v4 gate;
-- prototype gate;
-- evidence-design gate;
-- CU-1 focused tests.
+`fd88fa3b7ebce8aa9d97dfea12e2f2667495ed39`
 
-Clinical Learning red checks were adjacent-owner/scope-guard failures only; their substantive owner tests passed before those guards failed.
+Clinical Documents workflow run `34717351567` completed SUCCESS on that head, including Python syntax, JavaScript syntax, deterministic Sick Leave tests and existing Clinic Utilities navigation regression.
 
-## 6. Production verification
+Inherited evidence on the same head:
 
-Production service `osteoporosis` was configured with:
+- CU-1 focused tests: SUCCESS (`34717351536`);
+- G3 guidance salience/longitudinal summary: SUCCESS (`34717351537`);
+- Clinical Learning L1 substantive runtime/contracts/schema steps: SUCCESS before its expected scope/adjacent-owner guard rejected this non-Learning slice (`34717351566`);
+- corresponding red checks from Clinical Learning/physio owner workflows are scope-owner guard failures, not demonstrated runtime regressions in their substantive owners.
 
-`PHYSIO_REFERRAL_JURISDICTION_PROFILE=CY_GESY`
+## 5. Production release contract
 
-Render deploy `dep-dain5cdg1s2s7380u260` completed LIVE on release commit `e52a4851b504476c1e361575d08664c05467ff53`.
+Render service `osteoporosis` remains:
 
-Authenticated production smoke run `34703101478` completed SUCCESS and verified with protected `CLINICAL_DATA_KEY` plus synthetic/non-identifiable Knee-OA state only:
+- branch `main`;
+- auto-deploy `yes`;
+- trigger `commit`;
+- Frankfurt runtime;
+- no Clinical Documents-specific production config required because Phase 1 can use the already-configured server-side clinician profile fallback.
 
-- protected page and jurisdiction JS served successfully;
-- bootstrap exposed `CY_GESY` from explicit account configuration;
-- acupuncture remained internationally `guideline_conflict_or_mixed` while Cyprus remained separately `against`;
-- manual therapy international mixed state remained unchanged with separate local `conditional_for` context;
-- local-only/admin items did not become clinical evidence items;
-- selected rehabilitation directions remained unchanged;
-- referral prose did not gain Cyprus/GeSY/source contamination;
-- safety fail-closed behavior remained active.
+Therefore the release rule is:
 
-No patient identifiers, patient history, password, session cookie, or secret value were used or printed.
+```text
+squash merge PR #97 to main
+→ Render auto-deploy from merge commit
+→ monitor only; DO NOT manually trigger a duplicate deploy
+→ verify LIVE release
+→ authenticated/product-owner functional smoke remains separately evidenced
+```
 
-## 7. Current state
+## 6. Explicit exclusions retained
 
-Jurisdiction Overlay V1 is **released, explicitly active for `CY_GESY`, and production-smoke-verified**.
+Not authorized by this release:
 
-Any further jurisdiction work requires a fresh bounded slice and fresh authority.
+- Accident Report intake;
+- medico-legal Evidence Ledger;
+- AI drafting/provider calls;
+- targeted literature retrieval;
+- causation/prognosis engine;
+- billing/fee-note/receipt persistence;
+- persistent Clinical Documents case store;
+- reusable uploaded templates;
+- Siri/Gemini;
+- RF/physio clinical-rule mutation;
+- production secret/environment mutation.
+
+## 7. Next legitimate action
+
+Squash merge PR #97, allow the existing Render auto-deploy to run, verify the merge commit reaches LIVE, then write the release closeout canonicals. Production-smoke verification must not be claimed unless actually performed.
