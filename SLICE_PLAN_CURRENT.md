@@ -1,139 +1,130 @@
-# SLICE_PLAN_CURRENT.md — Knee-OA usability refinement v2
+# SLICE_PLAN_CURRENT.md — Knee-OA `Περισσότερα` visual + IA redesign v3
 
-> **STATUS:** IMPLEMENTED / FOCUSED TECHNICAL GATE PASS / PRODUCT-OWNER VISUAL REVIEW NEXT.
-> **Slice:** `CU1-PRODUCT-KNEE-OA-USABILITY-REFINE-V2-20260912`.
-> **Branch:** `feat/physio-knee-oa-usability-refine-v2-2026-09-12`.
-> **Parent closeout head:** `0f38f4d411146667d854c32c9f5f639f344d7c7f`.
-> **Tested substantive head:** `a87dccc90dab9f50f70505f2565e3405d48de109`.
-> **Successful substantive run:** `34675038243`.
+> **STATUS:** IMPLEMENTATION ACTIVE / SYNTHETIC PROTOTYPE ONLY.
+> **Slice:** `CU1-PRODUCT-KNEE-OA-MORE-REDESIGN-V3-20260912`.
+> **Branch:** `feat/physio-knee-oa-more-redesign-v3-2026-09-12`.
+> **Parent closed head:** `2c19eb7283c96af7868690a892d7e61155674d6b`.
 > **Fresh main:** `d9f312f6d2d596ec0bd4f35f6de56ad98dc34b37`.
-> **Writer:** NONE.
+> **Writer:** ACTIVE, bounded to prototype UI/tests/workflow/canonicals.
 > **Release / real clinical use:** NOT AUTHORIZED.
 
-## 1. Design objective
+## 1. Problem
 
-Improve discoverability and personalization without increasing routine clinical complexity.
+The v2 `Περισσότερα` retains too many simultaneously visible controls. Favorites help frequent access but do not solve the underlying scanning cost because categories/items still compete with similar visual weight.
 
-Preserved invariants:
+The redesign must preserve the full capability set while reducing routine visual decisions.
+
+## 2. Design principle
 
 ```text
-selection != suggestion != evidence != safety
-manual text != structured state
-favorite != selection
-clinically interesting != worth adding
+CAPABILITY DEPTH UNDERNEATH
++
+CALM SURFACE ABOVE
 ```
 
-## 2. Implemented additional-suggestion design
+The user should not need to visually parse the entire advanced clinical vocabulary to find one item.
+
+## 3. Routine surface
+
+### `★ Συχνά`
+
+- shown only when one or more items are pinned;
+- intended for a small number of clinician shortcuts;
+- compact card/row treatment, not full duplicate category rendering;
+- pinning never changes clinical selection;
+- normal mode does not spray star icons across all controls;
+- `Προσαρμογή Συχνών` explicitly enters pin-management mode.
+
+### `Σχετικά τώρα`
+
+- maximum small set (target <=3 visible shortcuts);
+- deterministic from already-known structured state only;
+- each shortcut maps to an existing advanced option;
+- contextual surfacing never auto-selects or infers a finding;
+- absent context simply means the section is absent.
+
+### `Όλα`
+
+The complete advanced vocabulary remains available through collapsed category rows. Candidate category structure:
 
 ```text
-primary suggestion
-→ compact actionable line
-
-additional_count > 0
-→ restrained bordered summary
-→ Άλλες {additional_count} προτάσεις ›
-→ short current titles only
-→ activate → full suggestions sheet
+Εξέταση
+Λειτουργία
+Αποκατάσταση
+Συμπληρωματικά
+Κλινικός έλεγχος
 ```
 
-The count excludes the already visible primary suggestion. Activating the summary does not select/dismiss anything. Individual Add, evidence and dismissal remain in the full sheet.
+Each row shows:
 
-## 3. Implemented direct-edit design
+- category name;
+- restrained icon;
+- selected count if >0;
+- short summary of selected items where useful;
+- chevron.
 
-Desktop live preview exposes a visible `✎ Επεξεργασία` action. Mobile preview sheet exposes the same direct action. The overflow menu remains a secondary route.
+Activating a category opens its full controls in the existing modal/sheet host. Do not show every advanced chip on the routine surface.
 
-Safety invariant:
+## 4. Visual grammar
+
+- section headers are typographic anchors, not bordered cards;
+- category rows use larger hit areas and generous vertical spacing;
+- selected summary text is muted and truncates gracefully;
+- counts are textual/quiet rather than bright badges;
+- avoid card-inside-card-inside-card nesting;
+- one accent color remains enough for selection/action;
+- clinical evidence colours retain their existing semantics and are not reused decoratively;
+- iconography is supporting, never the only label;
+- desktop and mobile use the same conceptual hierarchy.
+
+## 5. Selected-state visibility
+
+A collapsed category must still answer “what have I already chosen?” without opening it.
+
+Example:
 
 ```text
-manual edit
-→ clinician-owned manual buffer
-
-later structured change
-→ preserve manual text
-→ export stale/blocked
-→ explicit clinician reconciliation
+Εξέταση
+Effusion · Extension lag
+2 ενεργά                                  ›
 ```
 
-No reverse parsing, bidirectional synchronization or merge engine was added.
+This summary is derived from current structured state. It never becomes a second source of truth.
 
-## 4. Implemented Favorites / pin-to-top
+## 6. Preserve all content
 
-Advanced selectable content supports `☆` / `★` pinning. Pinned items appear in `★ Συχνά` at the top of `Περισσότερα`.
+No existing supported advanced clinical option is removed from reachability. The redesign may relocate controls into category detail sheets but not delete/rename clinical IDs or silently suppress selected state.
 
-Rules:
+Safety and readiness remain governed outside browsing convenience. Safety-critical blocking behavior cannot depend on whether a category is open.
 
-- pinning changes ordering/discoverability only;
-- pinning never selects a clinical item;
-- favorite representation writes the same underlying structured state only when explicitly selected;
-- unpinning preserves clinical selection;
-- no Hide control exists;
-- favorites are ephemeral in the synthetic prototype;
-- reset/pagehide/BFCache clears them;
-- localStorage/sessionStorage/server persistence remain absent.
-
-Future persistence is a separate clinician-account preference decision.
-
-## 5. Technical acceptance
-
-First usability-v2 run:
+## 7. Explicit exclusions
 
 ```text
-run     34674925907
-head    b9889f85a1f4ad6f4da6050b6ebf34eefeb2bcb3
-result  FAILURE
-reason  inherited generic [data-edit] test locator became ambiguous after adding the direct edit route
-```
-
-Correction: the inherited regression now explicitly exercises the legacy menu edit route. The new usability-v2 suite independently exercises the direct route. Manual-text safety expectations were not relaxed.
-
-Successful substantive gate:
-
-```text
-run                                       34675038243
-head                                      a87dccc90dab9f50f70505f2565e3405d48de109
-scope + syntax                            PASS
-real CU-1 / HTTP                          15 / 15 PASS
-frozen Step-3 exact-output fixtures       15 PASS
-post-review clinical/output               11 / 11 PASS
-inherited Chromium                        12 / 12 PASS
-post-review qualifier Chromium             9 / 9 PASS
-usability-v2 Chromium                      5 / 5 PASS
-Greek source-summary coverage             54 positions
-packaged dependency closure               PASS
-```
-
-The five new browser tests cover additional-suggestion count/titles/sheet behavior, single-suggestion absence of extra panel, direct edit/reconciliation on desktop/mobile, favorite semantics/no Hide/no storage, and reset/BFCache clearing.
-
-## 6. Visual inspection
-
-CI screenshots inspected:
-
-- `desktop.png`
-- `mobile.png`
-- `evidence-conflict.png`
-- `suggestions-v2.png`
-- `favorites-v2.png`
-
-The additional-suggestions summary is visible without expanding secondary details. The favorites surface stays inside `Περισσότερα`. Direct edit remains visually secondary to Copy. No obvious screenshot clipping was observed.
-
-This inspection does not prove iPhone Safari/VoiceOver or full measured accessibility acceptance.
-
-## 7. Out of scope remains
-
-```text
-clinical/evidence rule changes
-new clinical fields
+search
 permanent Hide
-favorite/account persistence
-analytics
+recent-items system
+multiple preference tabs
+favorite persistence
+AI-generated relevance
+clinical/evidence rule edits
 second diagnosis
-jurisdiction expansion
 PR/merge/deploy
-real-patient use
 ```
 
-## 8. Exact next action
+## 8. Test acceptance
 
-Product Owner reviews the exact tested synthetic usability-v2 candidate and provides keep/change/remove feedback.
+Focused browser tests must verify:
 
-No release or expansion action is inferred from the technical PASS.
+1. routine advanced surface renders category rows rather than all advanced controls;
+2. all existing advanced controls remain reachable through category detail;
+3. selected category summary/count updates after selection and survives closing/reopening;
+4. favorites are bounded shortcuts and normal mode has no star wall;
+5. customization mode can pin/unpin without selecting/deselecting;
+6. contextual `Σχετικά τώρα` appears only under defined deterministic conditions and never mutates state merely by appearing;
+7. no local/session storage is introduced;
+8. inherited manual edit, safety, evidence, qualifier and mobile tests stay green;
+9. desktop/mobile screenshots show the intended calmer scanning hierarchy.
+
+## 9. Exact next action
+
+Implement, test and visually inspect this bounded redesign. Stop after a tested synthetic artifact for Product Owner review.
