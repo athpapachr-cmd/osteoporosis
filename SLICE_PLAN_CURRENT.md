@@ -1,8 +1,9 @@
 # SLICE_PLAN_CURRENT.md — CLINICAL DOCUMENTS PHASE 1 / SICK LEAVE V1
 
-> **STATUS:** MERGED / DEPLOYED — PRODUCTION FUNCTIONAL SMOKE PENDING.
+> **STATUS:** PRODUCTION-SMOKE-VERIFIED / CLOSED.
 > **Activated:** 2026-09-12 Asia/Nicosia.
 > **Release:** 2026-09-12 Asia/Nicosia.
+> **Closed:** 2026-09-12 Asia/Nicosia after Product Owner production smoke PASS.
 > **Slice:** `CU-CLINICAL-DOCUMENTS-P1-SICK-LEAVE-2026-09-12`.
 > **Bootstrap main:** `bbfa26f3820f520d7f3ea312e6793fa55f399f01`.
 > **Implementation branch:** `feat/clinic-documents-p1-sick-leave-2026-09-12`.
@@ -11,12 +12,13 @@
 > **Clinical Documents PR gate:** `34717351567` — SUCCESS.
 > **Release commit:** `a3ae5dd792a715a8306f5c279cc4bdbec4ca5b5e`.
 > **Render deploy:** `dep-dairee0jo6nc73bt03b0` — LIVE.
+> **Production smoke:** PASS — Product Owner reported all agreed Sick Leave checks working.
 > **Writer:** none.
 > **Persistence:** NONE for patient/document/signature state.
 
 ## 1. Objective — achieved
 
-The first bounded Clinical Documents runtime slice is released:
+The first bounded Clinical Documents runtime slice is released and production-smoke-verified:
 
 ```text
 ClinicianProfile
@@ -60,7 +62,7 @@ diagnosis
 leave_from
 leave_to
 issued_on
-derived_from_document_id? 
+derived_from_document_id?
 relation? = extension | new_leave_same_patient
 ```
 
@@ -159,7 +161,7 @@ Adjacent same-head evidence:
 - G3 guidance/longitudinal summary `34717351537`: SUCCESS;
 - Clinical Learning L1 substantive runtime/contracts/schema steps passed before its expected scope/adjacent-owner guard failed for this non-Learning slice.
 
-## 9. Release evidence
+## 9. Release and production-smoke evidence
 
 Product Owner explicitly authorized `Merge και deploy`.
 
@@ -174,6 +176,17 @@ Render service `osteoporosis` has `autoDeploy=yes` on `main`, so no manual dupli
 reached `LIVE` for the exact release commit.
 
 No production environment variable or secret was changed.
+
+The Product Owner then performed the agreed Sick Leave production functional smoke and reported that all checks were working correctly. Therefore:
+
+```text
+IMPLEMENTED                 YES
+TESTED                      YES
+EXACT-HEAD REVIEW           PASS
+MERGED                      YES
+DEPLOYED                    YES
+PRODUCTION-SMOKE-VERIFIED   YES
+```
 
 ## 10. Explicit exclusions retained
 
@@ -194,8 +207,6 @@ Not in this slice:
 
 ## 11. Closure boundary
 
-Implementation, test, review, merge and deployment gates are satisfied.
+Clinical Documents Phase 1 / Sick Leave V1 is **CLOSED**.
 
-`DEPLOYED != PRODUCTION-SMOKE-VERIFIED`.
-
-An authenticated synthetic/product-owner functional smoke is still required before adding the production-smoke-verified label. Writer lock is released. Any Phase 2 implementation requires a fresh bounded slice and fresh Product Owner authority.
+This closure does not activate Phase 2. Any Accident/Medico-Legal Report implementation requires a fresh six-canonical bootstrap, new bounded slice, explicit scope/privacy/provider decisions and fresh Product Owner implementation authority.
