@@ -110,7 +110,13 @@ class MoreV3BrowserTests(unittest.TestCase):
         self.assertEqual(self.page.locator('button').filter(has_text='Απόκρυψη').count(),0)
 
     def test_relevant_now_is_contextual_and_never_selects_by_appearing(self):
-        self.page.locator('[data-phenotype=weakness_symptom_or_context]').click()
+        # v4 activates the reported weakness parent through its compact clinical
+        # sheet. Merely opening/closing that sheet must not invent an objective
+        # examination finding, preserving the original More-v3 invariant.
+        self.page.locator('[data-clinical-v4=weakness]').click()
+        expect(self.page.locator('#sheetTitle')).to_have_text('Αδυναμία')
+        self.assertEqual(self.page.locator('#sheet [data-q-weakness][aria-pressed=true]').count(),0)
+        self.page.locator('#closeSheet').click()
         expect(self.page.locator('#referralText')).to_contain_text('μυϊκή αδυναμία')
         self.open_more()
         relevant=self.page.locator('#v3Relevant')
