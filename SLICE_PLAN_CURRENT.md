@@ -1,77 +1,110 @@
-# SLICE_PLAN_CURRENT.md — Knee-OA v5 Product Owner review HOLD
+# SLICE_PLAN_CURRENT.md — CYPRUS / GESY OA JURISDICTION OVERLAY V1 review HOLD
 
-> **STATUS:** REVIEW HOLD — v4 remains released/live; authenticated live product smoke passed; v5 is implemented/tested but unmerged/unreleased.
-> **Production runtime:** `bf527e3836a18491b2758fd293b42f82e0924382`.
-> **Authenticated live smoke:** run `34681808255`, attempt `3` — SUCCESS.
-> **V5 branch:** `fix/physio-knee-oa-v5-optional-refinement-prose-2026-09-12`.
-> **V5 exact tested substantive head:** `a47357c602120d3678e8f2f23b99775e616c79e1`.
-> **V5 full gate:** `34693751545` — SUCCESS.
+> **STATUS:** DESIGN-COMPLETE / PRODUCT OWNER REVIEW HOLD.
+> **Branch:** `design/physio-cy-gesy-oa-overlay-v1-2026-09-12`.
+> **Bootstrap main:** `a2fa27c7ff26d1dd22cd6f726656ca0532daab75`.
 > **Writer:** NONE.
-> **Next implementation slice:** NONE ACTIVE.
+> **Runtime/UI implementation:** NOT AUTHORIZED.
+> **Diagnosis vertical:** Knee Osteoarthritis only.
 
-## 1. Closed production boundary
+## 1. Frozen design problem
 
-The v4 production lifecycle now has authenticated verification in addition to the earlier public-asset and unauthenticated auth-boundary smoke.
+The product needs to represent real local clinical differences and GeSY operational rules without collapsing them into the international evidence core.
 
-Authenticated run `34681808255`, attempt `3`, proved protected page/bootstrap access, deterministic Knee-OA projection and safety fail-closed behavior using only synthetic/non-identifiable smoke state. No patient persistence or patient identifiers were used.
-
-## 2. Tested v5 candidate under Product Owner review
-
-The prior Product Owner session produced a bounded v5 candidate addressing post-use friction only.
-
-### Optional symptom refinement
+Frozen architecture:
 
 ```text
-Πόνος / Δυσκαμψία / Αδυναμία inactive first tap
-→ select generic symptom only
-→ no forced popup
-
-second tap while active
-→ optional focused detail sheet
+international evidence core
++
+optional jurisdiction clinical overlay
++
+separately classified local-system/admin policy
 ```
 
-`Λειτουργικότητα` opens its chooser on first tap because the meaningful state is the chosen functional limitation, not a generic function flag.
+## 2. Completed artifacts
 
-### Weakness clarity
+- `CYPRUS_GESY_OA_SOURCE_AUDIT_V1.md`
+- `CYPRUS_GESY_OA_DIFFERENCE_MATRIX_V1.md`
+- `JURISDICTION_OVERLAY_SCHEMA_V1.yaml`
+- `CYPRUS_GESY_OA_OVERLAY_UX_DESIGN_V1.md`
+- `CYPRUS_GESY_OA_OVERLAY_DESIGN_REVIEW_V1.md`
 
-Visible focused options become:
+## 3. Frozen evidence findings
 
-- `Μυϊκή αδυναμία στην εξέταση`
-- `Αδυναμία τετρακεφάλου στην εξέταση`
-- `Ατροφία τετρακεφάλου`
+- current Cyprus/HIO OA guidance contains genuine differences/additions relative to NICE;
+- electrotherapy is the clearest physiotherapy-adjacent genuine difference;
+- manual therapy and acupuncture show why a local position must coexist with, not replace, an international mixed state;
+- radiofrequency ablation, podiatry, glucosamine/chondroitin, hyaluronan, PRP and additional imaging detail are clinically relevant local content but are not automatically routine physio-referral content;
+- GeSY access/reimbursement/documentation/provider-unit rules are operational policy, not clinical evidence;
+- HIO guideline implementation is announced, but GeSY information-system integration is planned/not verified active;
+- current linked OA PDF still has stale draft metadata, so final-document version identity remains explicitly imperfect.
 
-Bare `Τετρακέφαλος` / `Περιαρθρικά` sibling choices are not exposed. Backward-compatible acceptance of historical `peri_knee_general` state remains below the presentation layer.
+## 4. Frozen product behavior
 
-### Referral prose
+### Local agreement
 
-- richer pain qualifier owns location specificity and prevents duplicated/fused legacy location wording;
-- clinical/functional handoff and physiotherapy assessment/plan are separated by a blank line;
-- `Επιπλέον στόχος:` / `Επιπλέον στόχοι:` become connected prose rather than generated labels;
-- physiotherapist autonomy and the existing deterministic active-plan semantics remain unchanged.
+Normally silent. Optional source detail only.
 
-## 3. Exact v5 evidence
+### Local difference
 
-At head `a47357c602120d3678e8f2f23b99775e616c79e1`, run `34693751545` passed bounded scope, syntax, focused v5 prose/state tests, inherited real CU-1/HTTP tests, frozen Step-3 fixtures, qualifier tests, protected Cockpit integration, focused/inherited Chromium acceptance, adjacent-owner isolation and package closure.
+International evidence remains visible and unchanged. A restrained `Κύπρος · διαφέρει`-type cue may appear only when the item is already relevant/inspected, with separate international and Cyprus rows in detail.
 
-The candidate is therefore `IMPLEMENTED / TESTED`, not `MERGED / DEPLOYED / PRODUCTION-SMOKE-VERIFIED` as v5.
+### Administrative/resource/reimbursement rule
 
-## 4. Out of scope / forbidden inference
+Separate `Πληροφορία ΓεΣΥ` operational layer. Never styled as evidence strength.
 
-V5 does not authorize or contain:
+### Local status unknown/planned
 
-- evidence changes;
-- Cyprus/GeSY clinical or administrative semantics;
-- jurisdiction-overlay runtime activation;
-- safety-rule changes;
-- second diagnosis;
-- patient persistence;
-- analytics;
-- autonomous evidence updates.
+Explicitly label as unknown/planned. Never infer active enforcement.
 
-Cyprus/GeSY audit can proceed as a separate read-only evidence/design slice now that the production-auth boundary is closed.
+## 5. Routine-surface exclusions
 
-## 5. Next decision
+Do not routinely show:
 
-Product Owner review of the tested v5 candidate is the only release decision pending for that refinement. Any PR/merge/deploy requires separate explicit authority.
+- jurisdiction selector or badges on every item;
+- full source tables;
+- radiofrequency ablation;
+- podiatry;
+- glucosamine/chondroitin;
+- hyaluronan;
+- PRP;
+- injection guidance;
+- imaging algorithms;
+- electrotherapy controls merely because Cyprus mentions them;
+- session/reimbursement tables;
+- provider unit caps;
+- planned IT integration as active;
+- inferred cost motives;
+- another checkbox section named GeSY.
 
-Jurisdiction work may proceed independently through audit/design only. No live product mutation is authorized merely by finding local differences.
+## 6. Current live-product decision
+
+```text
+international evidence states    NO CHANGE
+routine Knee-OA main UI           NO CHANGE from jurisdiction evidence
+routine referral prose            NO CHANGE from jurisdiction evidence
+patient persistence               NO CHANGE / none
+second diagnosis                  NO
+```
+
+The already-tested v5 post-use candidate remains a separate Product Owner review matter and is not part of this overlay design.
+
+## 7. Bounded recommendation
+
+`IMPLEMENT JURISDICTION OVERLAY V1`
+
+This means implement the separate machine/provenance capability **only after Product Owner review in a new bounded runtime slice**. It does not mean adding routine visible controls.
+
+## 8. Exit / next gate
+
+Design slice is complete and writer released.
+
+Next legitimate action:
+
+```text
+Product Owner review
+→ accept / modify / reject design
+→ only if accepted: fresh runtime implementation slice
+```
+
+No runtime/UI PR, merge, deploy or activation is authorized by this design freeze.

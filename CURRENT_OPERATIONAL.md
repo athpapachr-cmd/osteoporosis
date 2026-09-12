@@ -1,85 +1,81 @@
-# CURRENT_OPERATIONAL.md — Knee-OA v1 authenticated live smoke closed / v5 review HOLD
+# CURRENT_OPERATIONAL.md — Cyprus / GeSY OA overlay design complete / review HOLD
 
-> **STATUS:** PHYSIO REFERRAL KNEE-OA V1 — V4 RELEASED / DEPLOYED / AUTHENTICATED LIVE PRODUCT SMOKE PASS; V5 TESTED CANDIDATE AWAITS PRODUCT OWNER REVIEW.
+> **STATUS:** CYPRUS / GESY OA JURISDICTION OVERLAY V1 — PRIMARY-SOURCE AUDIT + DESIGN COMPLETE / PRODUCT OWNER REVIEW HOLD / NO RUNTIME IMPLEMENTATION.
 > **Updated:** 2026-09-12 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
+> **Bootstrap main:** `a2fa27c7ff26d1dd22cd6f726656ca0532daab75`.
+> **Design branch:** `design/physio-cy-gesy-oa-overlay-v1-2026-09-12`.
 > **Current production runtime SHA:** `bf527e3836a18491b2758fd293b42f82e0924382`.
-> **Render deploy:** `dep-daiivp0jo6nc73bl6pug` — LIVE at exact production runtime SHA.
-> **Public/auth-boundary smoke:** `34689920602` — SUCCESS.
 > **Authenticated live smoke:** run `34681808255`, attempt `3` — SUCCESS.
-> **Authenticated smoke closeout:** `commercial_products/physio_referral/releases/KNEE_OA_V1_AUTH_LIVE_SMOKE_CLOSEOUT.md`.
-> **V5 tested candidate branch:** `fix/physio-knee-oa-v5-optional-refinement-prose-2026-09-12`.
-> **V5 tested substantive head:** `a47357c602120d3678e8f2f23b99775e616c79e1`.
-> **V5 gate:** `34693751545` — SUCCESS.
-> **ACTIVE RUNTIME / DESIGN WRITER:** NONE.
-> **PR / MERGE / DEPLOY AUTHORITY:** NONE for v5; Product Owner review HOLD.
-> **Real-patient data:** NOT USED in smoke or v5 technical validation.
+> **ACTIVE DESIGN / RUNTIME WRITER:** NONE.
+> **RUNTIME / UI IMPLEMENTATION AUTHORITY:** NONE.
+> **V5 tested candidate:** remains separately in Product Owner review HOLD; no merge/deploy authority is implied here.
+> **Real-patient data:** NOT USED.
 
-## 1. Production lifecycle boundary
+## 1. Completed design deliverables
 
-The previously open authenticated-production verification boundary is now closed.
+The bounded Cyprus/GeSY audit/design slice produced:
 
-GitHub Actions run `34681808255`, attempt `3`, used the authorized production credential only through the protected repository secret `CLINICAL_DATA_KEY`; the value was not printed. The run completed `SUCCESS` and proved:
+1. `commercial_products/physio_referral/jurisdictions/CY_GESY/CYPRUS_GESY_OA_SOURCE_AUDIT_V1.md`
+2. `commercial_products/physio_referral/jurisdictions/CY_GESY/CYPRUS_GESY_OA_DIFFERENCE_MATRIX_V1.md`
+3. `commercial_products/physio_referral/jurisdictions/JURISDICTION_OVERLAY_SCHEMA_V1.yaml`
+4. `commercial_products/physio_referral/jurisdictions/CY_GESY/CYPRUS_GESY_OA_OVERLAY_UX_DESIGN_V1.md`
+5. `commercial_products/physio_referral/jurisdictions/CY_GESY/CYPRUS_GESY_OA_OVERLAY_DESIGN_REVIEW_V1.md`
 
-```text
-authenticated protected product page           PASS
-authenticated product bootstrap                PASS
-authenticated deterministic Knee-OA projection PASS
-authenticated safety fail-closed projection    PASS
-synthetic/non-identifiable smoke-data boundary PASS
-```
-
-No patient identifier, patient history, patient persistence or production credential value was written by the smoke.
-
-Current released v4 lifecycle:
+Design review disposition:
 
 ```text
-MERGED                              YES
-DEPLOYED                            YES
-PUBLIC-ASSET LIVE SMOKE             PASS
-UNAUTHENTICATED AUTH BOUNDARY       PASS
-AUTHENTICATED LIVE PRODUCT SMOKE    PASS
-PILOT-VALIDATED                     NO
-RECEIVER-VALIDATED                  NO
-COMMERCIAL/PAID VALIDATED           NO
+PRIMARY-SOURCE AUDIT          PASS
+DIFFERENCE MATRIX             PASS
+MACHINE SCHEMA                PASS AS PROPOSED DESIGN
+UX / ROUTINE-EXCLUSION POLICY PASS
+RUNTIME CHANGE                NONE
+PRODUCT OWNER REVIEW          NEXT
 ```
 
-## 2. V5 tested candidate discovered from prior Product Owner session
+## 2. Evidence conclusions
 
-A prior conversation had already completed the bounded post-use v5 refinement on:
+Verified Cyprus/HIO clinical differences/additions exist, including electrotherapy, radiofrequency nerve ablation, podiatry, glucosamine/chondroitin, hyaluronan, PRP-related positions and imaging implementation detail.
 
-`fix/physio-knee-oa-v5-optional-refinement-prose-2026-09-12`
-
-Exact substantive head `a47357c602120d3678e8f2f23b99775e616c79e1` passed run `34693751545`.
-
-V5 addresses only Product Owner usability/prose findings:
-
-- first inactive tap on `Πόνος`, `Δυσκαμψία`, `Αδυναμία` selects the generic symptom without forcing a modal;
-- second tap opens optional detail;
-- `Λειτουργικότητα` still opens its chooser because no honest generic function-only state exists;
-- weakness refinement surface is reduced to explicit objective weakness, quadriceps weakness on examination and quadriceps atrophy;
-- bare `Περιαρθρικά` is removed from routine/advanced UI while backward-compatible state acceptance remains;
-- pain qualifiers own location specificity and remove overlapping legacy pain-location prose;
-- rich referrals use a paragraph boundary before physiotherapy assessment/plan;
-- machine-like `Επιπλέον στόχος:` labels become connected human prose.
-
-V5 is not merged or deployed. V4 remains production authority until separate Product Owner release approval.
-
-## 3. Hard product boundaries remain unchanged
+The current routine Knee-OA referral core remains compatible with Cyprus on the product's routine defaults:
 
 ```text
-international evidence core + optional jurisdiction overlay
-suggestion != clinician selection
-clinical adaptation != reimbursement/admin rule
-resource policy != stronger clinical evidence
+therapeutic exercise
+progressive strengthening
+education / self-management
+individualized active rehabilitation
 ```
 
-No new evidence state, GeSY item-level rule, second diagnosis, persistence, analytics, autonomous literature update or treatment-decision automation is active.
+No current international evidence state requires mutation.
 
-## 4. Exact next legitimate actions
+International conflict remains international conflict. A definite Cyprus position on acupuncture/manual therapy is local context only and cannot collapse the global `guideline_conflict_or_mixed` state.
 
-1. Product Owner reviews the exact tested v5 behavior/prose before any release decision.
-2. Cyprus/GeSY OA primary-source audit may now proceed because the authenticated production lifecycle gate is closed.
-3. Jurisdiction audit/design remains separate from v5 and must not mutate live evidence/UI merely because a local difference exists.
+## 3. Operational-policy separation
 
-No active writer exists at this canonical state.
+GeSY physiotherapy access/referral/session/documentation/provider-unit rules were audited separately as administrative/reimbursement policy.
+
+They do not strengthen, weaken or replace clinical evidence.
+
+The HIO May-2026 announcement supports active guideline publication/implementation but describes OA-guideline integration into the GeSY information system as a future action. The currently linked OA PDF still carries draft/December-2025 metadata. Both facts remain explicit.
+
+## 4. Bounded recommendation
+
+`IMPLEMENT JURISDICTION OVERLAY V1`
+
+Meaning only:
+
+- accept a separate machine/provenance layer after Product Owner review;
+- keep the international evidence core unchanged;
+- keep the current routine Knee-OA main UI unchanged initially;
+- surface local differences progressively in evidence detail when relevant;
+- keep GeSY administrative/reimbursement rules in a separate operational class;
+- use explicit clinician/account jurisdiction configuration, not patient-location inference;
+- do not implement Greece/England until real market/workflow need exists.
+
+This recommendation is **not runtime implementation authority**.
+
+## 5. Exact next lifecycle boundary
+
+Product Owner reviews the audit, difference matrix, proposed schema, UX policy and bounded recommendation.
+
+Only if accepted may a later fresh slice define the minimum runtime implementation contract. No UI/runtime/evidence mutation, PR/merge/deploy, second diagnosis or patient persistence is authorized by this design closeout.
