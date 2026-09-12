@@ -13,9 +13,11 @@ on:
       - 'main.py'
       - 'test_physio_knee_oa_cockpit_integration.py'
       - 'test_physio_knee_oa_cockpit_browser.py'
+      - 'test_physio_knee_oa_jurisdiction_overlay.py'
       - '.github/workflows/physio-knee-oa-cockpit-integration.yml'
       - '.github/workflows/physio-knee-oa-prototype.yml'
       - '.github/workflows/physio-knee-oa-v4.yml'
+      - '.github/workflows/physio-knee-oa-jurisdiction-v1.yml'
       - '.github/workflows/cu1-tests.yml'
       - 'CURRENT_OPERATIONAL.md'
       - 'SLICE_PLAN_CURRENT.md'
@@ -50,8 +52,10 @@ jobs:
             'CURRENT_OPERATIONAL.md','SLICE_PLAN_CURRENT.md','osteoporosis-change-log.md','main.py',
             'clinic_utilities/physio_referral_api.py',
             'test_physio_knee_oa_cockpit_integration.py','test_physio_knee_oa_cockpit_browser.py',
+            'test_physio_knee_oa_jurisdiction_overlay.py',
             '.github/workflows/physio-knee-oa-cockpit-integration.yml',
             '.github/workflows/physio-knee-oa-prototype.yml','.github/workflows/physio-knee-oa-v4.yml','.github/workflows/cu1-tests.yml',
+            '.github/workflows/physio-knee-oa-jurisdiction-v1.yml',
             '.github/workflows/physio-knee-oa-evidence-design.yml',
             '.github/workflows/physio-knee-oa-template-design.yml',
             '.github/workflows/physio-knee-oa-interaction-design.yml',
@@ -73,11 +77,12 @@ jobs:
 
       - name: Syntax and canonical split checks
         run: |
-          python -m py_compile main.py clinic_utilities/physio_referral_product/production_api.py test_physio_knee_oa_cockpit_integration.py test_physio_knee_oa_cockpit_browser.py clinic_utilities/physio_referral_product/prototype/*.py
+          python -m py_compile main.py clinic_utilities/physio_referral_product/production_api.py clinic_utilities/physio_referral_product/jurisdiction_overlay.py test_physio_knee_oa_cockpit_integration.py test_physio_knee_oa_cockpit_browser.py test_physio_knee_oa_jurisdiction_overlay.py clinic_utilities/physio_referral_product/prototype/*.py
           node --check static/clinic-utilities/physio-referral/product-app.js
           node --check static/clinic-utilities/physio-referral/product-qualifiers.js
           node --check static/clinic-utilities/physio-referral/product-more-v3.js
           node --check static/clinic-utilities/physio-referral/product-clinical-sheet-v4.js
+          node --check static/clinic-utilities/physio-referral/product-jurisdiction-v1.js
           node --check static/clinic-utilities/physio-referral/production-env.js
           node --check static/clinic-utilities/physio-referral/production-finalize.js
           python - <<'PY'
@@ -99,6 +104,7 @@ jobs:
             test_cu1_gateway_guard.py \
             test_cu1_gateway_registry.py \
             test_cu1_safety_trust_boundary.py \
+            test_physio_knee_oa_jurisdiction_overlay.py \
             test_physio_knee_oa_cockpit_integration.py
           python clinic_utilities/physio_referral_product/prototype/test_server.py
           python clinic_utilities/physio_referral_product/prototype/test_qualifiers.py
