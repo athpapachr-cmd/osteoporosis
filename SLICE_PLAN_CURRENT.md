@@ -1,17 +1,18 @@
 # SLICE_PLAN_CURRENT.md — Knee-OA post-review bounded amendments v1
 
-> **STATUS:** IMPLEMENTATION ACTIVE / SYNTHETIC PROTOTYPE ONLY.
+> **STATUS:** IMPLEMENTED / FOCUSED TECHNICAL GATE PASS / PRODUCT-OWNER VISUAL REVIEW NEXT.
 > **Slice:** `CU1-PRODUCT-KNEE-OA-POST-REVIEW-AMENDMENTS-V1-20260912`.
 > **Branch:** `feat/physio-knee-oa-review-amendments-v1-2026-09-12`.
 > **Parent synthesis head:** `554ecfa30bf8d0c04a19510a5db0276e6844edd5`.
 > **Reviewed candidate ancestry:** `6539351c592c1dc3e49931057b63925dea3cb94d`.
+> **Tested substantive amendment head:** `83a5acd4e5b25413708bbda1715c58b5c78bce08`.
 > **Fresh main:** `d9f312f6d2d596ec0bd4f35f6de56ad98dc34b37`.
-> **Writer:** ACTIVE, bounded to prototype + supporting contracts/tests/canonicals.
+> **Writer:** NONE.
 > **Release / real clinical use:** NOT AUTHORIZED.
 
-## 1. General utility rule
+## 1. General clinical-utility rule
 
-For this and future product slices:
+For this product track:
 
 ```text
 clinically interesting
@@ -20,143 +21,123 @@ clinically interesting
 != worth adding
 ```
 
-Any proposed field, qualifier, alert, sentence, intervention or local-guideline cue must identify its downstream management/safety/handoff/workflow value, its actual consumer, whether the referring clinician is expected to know it, and whether that incremental value justifies cognitive/evidence-maintenance cost. Product Owner, author, assistant and reviewer proposals are hypotheses until checked.
+Any proposed field, qualifier, intervention, alert, evidence cue, output sentence or Product Owner/reviewer/author suggestion must identify the downstream management/safety/handoff/workflow value, intended consumer, expected accuracy at referral time and incremental UI/evidence-maintenance burden. If incremental value is uncertain, default to progressive disclosure, test, defer or remove rather than expand.
 
-## 2. Diagnosis assertion and readiness
-
-The product should not require a second checkbox after the clinician explicitly selects the diagnosis.
-
-For the single-diagnosis prototype:
+Hard governance rule:
 
 ```text
-explicit tap/select on Knee OA diagnosis
-→ formal clinician assertion
-→ diagnosis appears automatically in referral
+PRODUCT OWNER REQUEST
+!= CLINICAL EVIDENCE
+!= RECEIVER VALUE
+!= IMPLEMENTATION AUTHORITY
 ```
 
-Opening/reloading the prototype alone is not assertion.
+## 2. Implemented bounded amendments
 
-Missing diagnosis or side:
+### Diagnosis / readiness
 
-- exact local missing-state text;
-- restrained red/error outline;
-- non-colour cue/text;
-- concise contextual hint;
-- export remains blocked.
+- explicit tap on the Knee-OA diagnosis is the clinician assertion in the standalone prototype;
+- opening/reloading alone does not assert diagnosis;
+- diagnosis then appears automatically in live referral;
+- the checkbox-like diagnosis-confirmation presentation is removed from the intended UX;
+- missing diagnosis and side are named specifically and highlighted locally/accessibly;
+- only the next unresolved prerequisite is emphasized.
 
-No modal warning, stepper or checklist dashboard.
+### Weakness
 
-## 3. Weakness semantics
+- generic weakness remains reported/contextual;
+- the old ambiguous quadriceps localization value fails closed;
+- `quadriceps_exam` explicitly means an examination finding before mapping to canonical `quadriceps_weakness`;
+- no MRC/dynamometry workflow was added.
 
-Routine weakness remains reported/contextual unless explicitly converted to an examination finding.
+### FFD / passive extension deficit
 
-Allowed semantic path:
+- remains advanced / optional;
+- expressed as passive extension deficit, distinct from active extension lag;
+- if a degree is supplied it must be positive (`1–60°` in the prototype); unknown remains unknown;
+- `0° FFD`, invented degree, permanence wording and unnecessary English parenthetical are rejected/removed;
+- FFD can make an existing mobility suggestion eligible but never selects treatment.
 
-```text
-Αδυναμία
-→ αναφερόμενο αίσθημα αδυναμίας
+### Functional detail
 
-Αδυναμία στην εξέταση
-→ objective_weakness
-→ optional quadriceps specificity
-```
+No new structured main-activity / functional-baseline field was added. Current functional categories and free-text note remain the available physician-side capture until receiving-physiotherapist testing proves additional receiver value.
 
-Quadriceps specificity must not silently transform subjective localization into canonical `quadriceps_weakness`.
+### Referral / autonomy
 
-No MRC/dynamometry module is added.
+- diagnosis+side-only input produces proportionally shorter output;
+- patient-specific findings/function produce richer output;
+- selected rehab is framed as **indicative priorities after physiotherapy assessment**, not technique/dose/progression mandate;
+- selected structured clinical information is not silently discarded.
 
-## 4. FFD / passive extension deficit
+### Evidence / suggestion UX
 
-Evidence supports real physiotherapy relevance of passive extension loss/contracture when present, but does not justify routine physician measurement.
+- routine supported/conditional source detail moves behind deliberate deeper disclosure;
+- mixed guidance keeps all material opposing/neutral source positions visible immediately;
+- suggestion presentation is flattened while Add, evidence access, dismissal and stale-candidate guards remain;
+- qualifier groups collapse predictably when another group is opened;
+- parent deselection synchronizes visible and ARIA expansion state;
+- pain location remains multiselect-capable;
+- mobile manual reconciliation has a direct path.
 
-Keep only in advanced examination.
+## 3. Jurisdiction architecture
 
-```text
-fixed/passive extension deficit
-!= active extension lag
-!= permanent/irreversible deformity
-```
-
-If degrees are supplied, they must be positive; unknown measurement remains unknown. No 0° FFD.
-
-Referral Greek should be natural, e.g. `παθητικό έλλειμμα έκτασης 10°`, without unnecessary English label.
-
-## 5. Functional detail
-
-No new structured main-activity / functional-baseline field in this slice.
-
-Reason: rehabilitation literature supports baseline/function/goals within physiotherapy, but incremental value of asking the referring physician to encode another structured field is not yet proven. Current categories and existing free-text note remain the escape hatch until receiving-physiotherapist testing.
-
-## 6. Receiver-facing output
-
-Low-information input should not create verbose pseudo-personalized treatment prose.
-
-- diagnosis + side only → concise referral / request for physiotherapy assessment and individualized active rehabilitation;
-- patient-specific finding/function → richer clinical picture and relevant selected rehabilitation priorities;
-- plan language must preserve physiotherapist choice of technique, dose and progression;
-- no explicit selected clinician item may silently disappear without a reviewed ownership change.
-
-## 7. Evidence and suggestion UX
-
-Preserve:
-
-```text
-selection != suggestion != evidence != safety
-```
-
-Amendments:
-
-- supported/conditional evidence first view: state + concise rationale + provenance/review date;
-- mixed guidance: all material opposing/neutral positions remain visible on first disclosure;
-- evidence symbols gain contextual semantic text rather than becoming a permanent badge wall;
-- suggestion card chrome becomes a compact contextual line with explicit Add + evidence access;
-- stale-candidate, dismissal and no-auto-selection guards remain.
-
-## 8. Qualifier lifecycle / accessibility
-
-- qualifier controls remain inline and multiselect-capable;
-- switching to another qualifier group may collapse the prior completed group;
-- parent deselect/reset clears hidden qualifier state and sets visible/ARIA expansion consistently;
-- do not auto-collapse after first pain-location tap when multiple focal locations may be valid;
-- missing-field error states use text/non-colour semantics as well as colour.
-
-Actual Safari/VoiceOver and measured contrast remain later acceptance beyond Chromium regression.
-
-## 9. Jurisdiction adaptation architecture
-
-Introduce reusable `jurisdiction_profile` semantics:
+Reusable model:
 
 ```text
 international clinical-evidence core
 +
-optional local-system guidance overlay
+optional jurisdiction/local-system guidance overlay
 ```
 
-First prototype profile:
+Current prototype context:
 
 ```text
 id: CY_GESY
 label: Κύπρος · ΓεΣΥ
 ```
 
-Rules:
+This label does not yet import any local recommendation or policy. Local guidance may influence item-level product behavior only after exact authoritative source audit and explicit review. Local feasibility/reimbursement/resource policy may not be represented as stronger clinical-efficacy evidence.
 
-- profile is explicit configuration/account preference later, not location inference;
-- no routine country selector required in the current Knee-OA screen;
-- local guidance is labelled separately and can conflict with international evidence;
-- local feasibility/reimbursement/resource policy must not masquerade as stronger efficacy evidence;
-- item-level HIO/GeSY recommendations require exact final-source audit before they influence evidence states/defaults/suggestions;
-- announcement of IT integration != verified live production integration.
+Future Greece/England profiles are dormant. No routine country selector and no device-location inference are added in this slice.
 
-Future `GR` or `UK_ENGLAND` profiles remain dormant until market/workflow validation. England is specifically not assumed to need a doctor-centric physio-referral generator because NHS MSK self-referral/FCP pathways may substantially reduce that job-to-be-done.
+## 4. Technical acceptance obtained
 
-## 10. Out of scope
+The first run `34672583682` failed because the existing adapter regression asserted product output must remain byte-identical to Step-3 even though post-review prose was intentionally amended. The fix preserved the frozen Step-3 renderer regression and moved amended product behavior into separate tests.
+
+Successful substantive gate:
+
+```text
+run                                       34672654522
+head                                      83a5acd4e5b25413708bbda1715c58b5c78bce08
+scope + syntax                            PASS
+real CU-1 / HTTP                          15 / 15 PASS
+frozen Step-3 exact-output fixtures       15 PASS
+post-review clinical/output               11 / 11 PASS
+inherited Chromium                        12 / 12 PASS
+post-review Chromium                       9 / 9 PASS
+Greek source-summary coverage             54 positions
+packaged dependency closure               PASS
+```
+
+## 5. Explicitly not proven
+
+```text
+actual iPhone Safari / VoiceOver
+full measured accessibility/contrast acceptance
+receiving-physiotherapist real-user usefulness
+Cyprus/GeSY item-level recommendation fidelity
+Greece/England product-market need
+real-patient workflow/privacy readiness
+paid conversion / retention
+```
+
+## 6. Out of scope remains
 
 ```text
 second diagnosis
-new baseline/goal form
+new functional-baseline field
 routine FFD measurement
-Cyprus item-level evidence import before audit
+unaudited Cyprus item-level evidence
 UK/GR localized content
 analytics
 billing/auth
@@ -165,6 +146,8 @@ production routing/database
 PR/merge/deploy
 ```
 
-## 11. Acceptance
+## 7. Exact next action
 
-Focused server/browser tests must prove the amended semantics and all inherited safety/export/privacy behaviors. A fresh runnable artifact/screenshots must be produced for Product Owner visual review before any further product decision.
+Product Owner reviews the exact tested synthetic artifact and screenshots and gives concrete keep/remove/change feedback.
+
+No release or expansion action is inferred from the technical PASS.
