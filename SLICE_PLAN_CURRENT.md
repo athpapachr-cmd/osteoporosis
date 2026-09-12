@@ -1,20 +1,22 @@
 # SLICE_PLAN_CURRENT.md — CLINICAL DOCUMENTS PHASE 1 / SICK LEAVE V1
 
-> **STATUS:** IMPLEMENTED / TESTED / REVIEWED — RELEASE AUTHORIZED.
+> **STATUS:** MERGED / DEPLOYED — PRODUCTION FUNCTIONAL SMOKE PENDING.
 > **Activated:** 2026-09-12 Asia/Nicosia.
+> **Release:** 2026-09-12 Asia/Nicosia.
 > **Slice:** `CU-CLINICAL-DOCUMENTS-P1-SICK-LEAVE-2026-09-12`.
 > **Bootstrap main:** `bbfa26f3820f520d7f3ea312e6793fa55f399f01`.
-> **Branch:** `feat/clinic-documents-p1-sick-leave-2026-09-12`.
-> **PR:** `#97`.
+> **Implementation branch:** `feat/clinic-documents-p1-sick-leave-2026-09-12`.
+> **PR:** `#97` — squash merged.
 > **Exact reviewed/tested runtime head:** `fd88fa3b7ebce8aa9d97dfea12e2f2667495ed39`.
 > **Clinical Documents PR gate:** `34717351567` — SUCCESS.
-> **Writer:** current release conversation through merge/deploy closeout.
-> **Scope:** common document primitives + Sick Leave V1 + protected Clinic Utilities integration.
+> **Release commit:** `a3ae5dd792a715a8306f5c279cc4bdbec4ca5b5e`.
+> **Render deploy:** `dep-dairee0jo6nc73bt03b0` — LIVE.
+> **Writer:** none.
 > **Persistence:** NONE for patient/document/signature state.
 
-## 1. Objective
+## 1. Objective — achieved
 
-Deliver the first bounded runtime slice of the frozen Clinical Documents Engine:
+The first bounded Clinical Documents runtime slice is released:
 
 ```text
 ClinicianProfile
@@ -26,11 +28,9 @@ ClinicianProfile
 → protected Clinic Utilities page
 ```
 
-This is deliberately not the Accident/Medico-Legal AI report phase.
+This release does not include Accident/Medico-Legal AI report functionality.
 
-## 2. Runtime owners
-
-Preferred owners implemented:
+## 2. Runtime owners released
 
 ```text
 clinic_utilities/clinical_documents/__init__.py
@@ -40,111 +40,69 @@ clinic_utilities/clinical_documents/api.py
 static/clinic-utilities/sick-leave/index.html
 static/clinic-utilities/sick-leave/app.js
 static/clinic-utilities/sick-leave/styles.css
-```
-
-Required composition/navigation seams:
-
-```text
 main.py
 static/baseline-audit/g4-workspace-ergonomics.js
-```
-
-Tests/workflow:
-
-```text
 test_clinical_documents_sick_leave.py
 .github/workflows/clinical-documents-p1-tests.yml
 ```
 
 No existing RF/physio business-rule owner was rewritten.
 
-## 3. Clinician profile
+## 3. Released Sick Leave V1 contract
 
-Phase 1 clinician identity is server-side. The Clinical Documents-specific environment variable is preferred if later configured; otherwise Phase 1 deliberately falls back to the already-configured RF doctor profile so this release requires no production config/secret mutation.
-
-Expected production clinician identity remains the reviewed current clinic identity. Clinic/address are optional presentation fields.
-
-## 4. Draft contract
-
-`SickLeaveDraftV1`:
+`SickLeaveDraftV1` contains:
 
 ```text
-patient_name: required string
+patient_name
 id_type: ADT | ARC
-id_number: required string
-diagnosis: required string
-leave_from: ISO date
-leave_to: ISO date
-issued_on: ISO date
-derived_from_document_id: optional bounded string
-relation: extension | new_leave_same_patient | null
+id_number
+diagnosis
+leave_from
+leave_to
+issued_on
+derived_from_document_id? 
+relation? = extension | new_leave_same_patient
 ```
 
-Rules:
+Rules released:
 
-- trim user text;
+- user text trimmed and bounded;
 - `leave_to >= leave_from`;
-- inclusive duration derived, not user-authored;
+- inclusive duration derived;
 - no arbitrary numeric-only validation for ID;
-- bounded text lengths;
-- relation requires a derived document id;
-- whole `draft_json` request body is bounded to 16 KiB before JSON parsing;
+- relation requires derived document id;
+- whole `draft_json` bounded to 16 KiB before parsing;
 - no patient state written to database/browser storage.
 
-## 5. Browser workflow
+## 4. Browser workflow released
 
-### New
+New document:
 
-Form → Preview → Download PDF → Clear.
+`Form → Preview → Download PDF → Clear`
 
-### Signature
+Signature:
 
-Explicit file chooser accepts bounded PNG/JPEG only.
+- explicit PNG/JPEG chooser;
+- bounded size and parsed image validation;
+- held only in JavaScript memory for current page lifetime;
+- not persisted server-side;
+- PDF remains usable without uploaded signature.
 
-Signature is retained only in JavaScript memory for the current page lifetime. `Clear` clears patient/document fields but keeps the in-memory signature. Refresh/close removes it.
+Previous PDF:
 
-### Previous PDF
+- explicit clinician-selected V1 PDF upload only;
+- metadata-only application round-trip;
+- no OCR/text guessing;
+- `Επέκταση ίδιας άδειας`: retains identity + diagnosis and next start = prior leave-through + 1 day;
+- `Νέα άδεια στον ίδιο ασθενή`: retains identity only and clears diagnosis/dates.
 
-Explicit `Χρήση προηγούμενης άδειας` file selection posts the selected PDF for metadata-only V1 import.
+## 5. PDF / metadata contract released
 
-On successful import, show a compact previous-document summary before reuse.
+Generated certificate is A4 portrait with Greek Unicode text, clinician header, `ΒΕΒΑΙΩΣΗ ΑΣΘΕΝΕΙΑΣ`, identity, diagnosis, leave range, issue date and signature/closing block.
 
-Then expose:
+Filename includes Greek patient name and issue date but excludes diagnosis and identity number.
 
-- `Επέκταση ίδιας άδειας`;
-- `Νέα άδεια στον ίδιο ασθενή`.
-
-Unknown/legacy PDF without recognized V1 metadata returns a safe validation error. No OCR/text guessing.
-
-## 6. PDF contract
-
-A4 portrait professional Greek certificate.
-
-Content hierarchy:
-
-```text
-clinician header
-thin rule
-ΒΕΒΑΙΩΣΗ ΑΣΘΕΝΕΙΑΣ
-patient identity block
-diagnosis block
-prominent leave-range block
-issue date
-signature / clinician closing block
-```
-
-Requirements:
-
-- Unicode Greek font available in runtime;
-- no clipped text for accepted bounded input;
-- signature aspect ratio preserved;
-- certificate remains usable without uploaded signature;
-- generated bytes parse as PDF;
-- no source patient data outside generated PDF response.
-
-## 7. Metadata / re-import contract
-
-Generated V1 PDFs embed a private application metadata payload containing at least:
+Embedded V1 metadata includes:
 
 ```text
 schema = sick_leave_certificate_v1
@@ -158,23 +116,12 @@ leave_from
 leave_to
 issued_on
 derived_from_document_id?
-relation? = extension | new_leave_same_patient
+relation?
 ```
 
-The metadata is solely for clinician-selected PDF round-trip. It is not a database.
+Imported metadata is schema/type/value validated, including date-order consistency and relation provenance. It is solely a clinician-selected PDF round-trip mechanism, not a server patient database.
 
-Re-import:
-
-- parses PDF safely;
-- validates schema/version and typed values;
-- validates `leave_to >= leave_from`;
-- rejects a declared relation without `derived_from_document_id`;
-- rejects malformed or unknown metadata;
-- never infers missing values from visible PDF text.
-
-## 8. API surface
-
-Protected by existing Clinical Excellence auth boundary:
+## 6. Released protected API
 
 ```text
 GET  /clinical/clinic-utilities/sick-leave
@@ -184,55 +131,51 @@ POST /clinical/clinic-utilities/sick-leave/api/pdf
 POST /clinical/clinic-utilities/sick-leave/api/import-previous
 ```
 
-Preview and PDF rendering are request-scoped. The contract exposes non-patient configuration/persistence state and request/file limits.
+Every page/API route uses the existing protected clinical access dependency.
 
-## 9. Security / privacy
+## 7. Security / privacy boundary preserved
 
-- existing protected clinical dependency required for every page/API route;
-- no logging owner introduced for request bodies/signature bytes;
-- draft/signature/previous-PDF sizes bounded server-side;
-- signature only PNG/JPEG with parse validation and dimension cap;
-- previous PDF only valid PDF with bounded size;
-- no patient data in query strings;
-- no GET carrying patient identifiers;
-- no database mutations;
-- no browser persistence APIs for patient/signature data.
+- no Clinical Documents database mutation;
+- no localStorage/sessionStorage/indexedDB patient/signature state;
+- no autosave;
+- no patient identifiers in query strings;
+- request/file sizes bounded;
+- signature only validated PNG/JPEG;
+- previous PDF bounded and parsed as PDF;
+- unknown/malformed metadata fails closed;
+- repository tests use synthetic/non-identifiable data only.
 
-## 10. Acceptance gates — satisfied
-
-Tests prove:
-
-1. valid ADT draft;
-2. valid ARC draft;
-3. Unicode Greek patient name/diagnosis;
-4. inclusive duration;
-5. `leave_to < leave_from` rejected;
-6. blank required fields rejected;
-7. arbitrary non-numeric ARC/ADT value accepted within bounds;
-8. PDF produced and parseable;
-9. expected Greek certificate text extractable from PDF;
-10. metadata round-trip preserves identity/diagnosis/dates;
-11. extension mode computes previous `leave_to + 1 day` and clears new end date;
-12. same-patient/new-reason mode retains identity only;
-13. unknown PDF fails without OCR guessing;
-14. signature optional;
-15. valid signature embedded without persistence;
-16. invalid/oversize signature rejected;
-17. filename contains Greek patient name/date and excludes diagnosis/ID;
-18. routes use existing clinical auth dependency;
-19. no DB/persistence call in Phase-1 package;
-20. browser source contains no localStorage/sessionStorage/indexedDB patient persistence;
-21. imported metadata rejects inverted leave dates;
-22. imported relation metadata requires a derived document id;
-23. oversized `draft_json` is rejected with `413` before JSON parsing.
+## 8. Acceptance evidence
 
 Exact reviewed/tested runtime head:
 
 `fd88fa3b7ebce8aa9d97dfea12e2f2667495ed39`
 
-Clinical Documents PR workflow run `34717351567` completed SUCCESS. CU-1 and G3 adjacent substantive gates also completed SUCCESS on the same runtime head. Clinical Learning red checks reached and passed their substantive tests/contracts/schema guards before expected scope-owner guards rejected this non-Learning slice; physio-specific red checks are likewise owner/scope guards rather than evidence of Clinical Documents failure.
+Clinical Documents PR workflow `34717351567` completed SUCCESS and covers the Phase-1 deterministic acceptance contract, including ADT/ARC handling, Greek PDF generation, date validation, metadata round-trip/reuse, unknown-PDF failure, signature handling, filename safety, authentication boundary, no persistence APIs, malformed metadata and oversized draft rejection.
 
-## 11. Explicit exclusions
+Adjacent same-head evidence:
+
+- CU-1 focused tests `34717351536`: SUCCESS;
+- G3 guidance/longitudinal summary `34717351537`: SUCCESS;
+- Clinical Learning L1 substantive runtime/contracts/schema steps passed before its expected scope/adjacent-owner guard failed for this non-Learning slice.
+
+## 9. Release evidence
+
+Product Owner explicitly authorized `Merge και deploy`.
+
+PR #97 was squash merged as:
+
+`a3ae5dd792a715a8306f5c279cc4bdbec4ca5b5e`
+
+Render service `osteoporosis` has `autoDeploy=yes` on `main`, so no manual duplicate deploy was triggered. Automatic deploy:
+
+`dep-dairee0jo6nc73bt03b0`
+
+reached `LIVE` for the exact release commit.
+
+No production environment variable or secret was changed.
+
+## 10. Explicit exclusions retained
 
 Not in this slice:
 
@@ -249,26 +192,10 @@ Not in this slice:
 - RF/physio changes beyond navigation exposure;
 - production environment/secret mutation.
 
-## 12. Exit and release boundary
+## 11. Closure boundary
 
-Implementation exit is satisfied:
+Implementation, test, review, merge and deployment gates are satisfied.
 
-```text
-implemented
-+ deterministic tests pass
-+ exact-head review pass
-```
+`DEPLOYED != PRODUCTION-SMOKE-VERIFIED`.
 
-The Product Owner has now separately authorized `Merge και deploy`.
-
-Release path:
-
-```text
-PR #97 squash merge
-→ existing Render auto-deploy from main
-→ no manual duplicate deploy
-→ verify LIVE runtime deploy
-→ record closeout
-```
-
-`DEPLOYED` must remain distinct from `PRODUCTION-SMOKE-VERIFIED`. An authenticated/product-owner functional smoke is required before the latter label is used.
+An authenticated synthetic/product-owner functional smoke is still required before adding the production-smoke-verified label. Writer lock is released. Any Phase 2 implementation requires a fresh bounded slice and fresh Product Owner authority.
