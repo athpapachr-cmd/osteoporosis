@@ -1,0 +1,21 @@
+.legacy-qualifiers-v4-hidden{display:none!important}
+.clinical-grid-v4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.clinical-card-v4{min-height:44px;padding:9px 10px;border:1px solid var(--border,#d8dde3);border-radius:12px;background:var(--surface,#fff);color:inherit;font:inherit;font-weight:650;display:flex;align-items:center;justify-content:center;gap:5px;white-space:nowrap}
+.clinical-card-v4[aria-pressed="true"]{border-color:currentColor;background:color-mix(in srgb,currentColor 7%,white)}
+.clinical-card-count-v4{font-size:.82em;font-weight:700;opacity:.72}
+.clinical-v4-sheet .sheet-body{display:flex;flex-direction:column;gap:14px}
+.clinical-sheet-prompt-v4{margin:0;font-weight:650}
+.clinical-options-v4{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.clinical-option-v4{min-height:44px;text-align:left;padding:10px 12px;border:1px solid var(--border,#d8dde3);border-radius:12px;background:var(--surface,#fff);color:inherit;font:inherit}
+.clinical-option-v4[aria-pressed="true"]{border-color:currentColor;background:color-mix(in srgb,currentColor 8%,white);font-weight:650}
+.clinical-nested-v4{padding-top:2px}
+.clinical-nested-v4[hidden],#v4StiffnessClue[hidden]{display:none!important}
+.clinical-sheet-footer-v4{display:flex;gap:8px;justify-content:space-between;align-items:center;padding-top:6px}
+.danger-quiet-v4{opacity:.78}
+#sheet.clinical-v4-sheet{width:min(620px,calc(100vw - 32px))}
+@media(max-width:700px){
+  .clinical-grid-v4{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+  .clinical-card-v4{min-height:42px;padding:8px 9px}
+  #sheet.clinical-v4-sheet{position:fixed;inset:auto 0 0 0;margin:0;width:100%;max-width:none;max-height:78dvh;border-radius:20px 20px 0 0}
+  .clinical-options-v4{grid-template-columns:1fr}
+}
