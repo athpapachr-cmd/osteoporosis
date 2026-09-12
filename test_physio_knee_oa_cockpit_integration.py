@@ -16,7 +16,7 @@ def _payload(package_version: str) -> dict:
         "draft_id": str(uuid.uuid4()),
         "revision": 0,
         "package_version": package_version,
-        "synthetic_only": True,
+        "synthetic_only": False,
         "state": {
             "laterality": "right",
             "formal_assertion_state": "yes",
@@ -77,6 +77,7 @@ class KneeOACockpitIntegrationTests(unittest.TestCase):
         )
         self.assertEqual(bootstrap.status_code, 200)
         meta = bootstrap.json()
+        self.assertFalse(meta["synthetic_only"])
         self.assertEqual(meta["deployment_context"], "clinical_excellence_cockpit")
         self.assertEqual(meta["defaults"], [
             "therapeutic_exercise",
@@ -95,6 +96,21 @@ class KneeOACockpitIntegrationTests(unittest.TestCase):
         self.assertFalse(body["gate"]["blocked"])
         self.assertIn("δεξιού γόνατος", body["text"])
         self.assertNotIn("NICE", body["text"])
+
+    def test_production_endpoint_rejects_synthetic_usage_marker(self):
+        meta = self.client.get(
+            "/clinical/clinic-utilities/physio-referral/api/product/bootstrap",
+            headers=self.headers,
+        ).json()
+        payload = _payload(meta["package_version"])
+        payload["synthetic_only"] = True
+        response = self.client.post(
+            "/clinical/clinic-utilities/physio-referral/api/product/project",
+            headers=self.headers,
+            json=payload,
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["detail"], "invalid_or_stale_physio_product_request")
 
     def test_invalid_or_forged_product_state_fails_closed(self):
         meta = self.client.get(
@@ -126,6 +142,8 @@ class KneeOACockpitIntegrationTests(unittest.TestCase):
         finalizer = self.client.get("/static/clinic-utilities/physio-referral/production-finalize.js").text
         self.assertIn("navigator.clipboard.writeText(effectiveText())", finalizer)
         self.assertNotIn("DEMO+effectiveText", finalizer)
+        bridge = self.client.get("/static/clinic-utilities/physio-referral/production-env.js").text
+        self.assertIn("body.synthetic_only = false", bridge)
 
 
 if __name__ == "__main__":
