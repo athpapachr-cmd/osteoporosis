@@ -1,68 +1,83 @@
-# CURRENT_OPERATIONAL.md — Knee-OA Cockpit production integration
+# CURRENT_OPERATIONAL.md — Knee-OA Cockpit release candidate
 
-> **STATUS:** PHYSIO REFERRAL KNEE-OA — PRODUCTION INTEGRATION ACTIVE / RELEASE AUTHORIZED THROUGH PR + MERGE + DEPLOY VERIFICATION.
+> **STATUS:** PHYSIO REFERRAL KNEE-OA — IMPLEMENTED / EXACT-HEAD TESTED / FINAL RELEASE REVIEW PASS / PR NEXT.
 > **Updated:** 2026-09-12 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Fresh verified main:** `d9f312f6d2d596ec0bd4f35f6de56ad98dc34b37`.
+> **Fresh verified main / merge base:** `d9f312f6d2d596ec0bd4f35f6de56ad98dc34b37`.
 > **Parent closed v3 head:** `b7f2db6fd86f90a32875d9b9cfd356cfa6129c69`.
-> **Implementation branch:** `feat/physio-knee-oa-cockpit-integration-v1-2026-09-12`.
+> **Integration branch:** `feat/physio-knee-oa-cockpit-integration-v1-2026-09-12`.
 > **Active slice:** `CU1-PRODUCT-KNEE-OA-COCKPIT-INTEGRATION-V1-20260912`.
-> **ACTIVE RUNTIME / DESIGN / CANONICAL WRITER:** this bounded integration/release session.
-> **Product-owner authority:** commercial-canonical reorganization, Cockpit integration, final review, PR, squash merge, Render auto-deploy verification and bounded production smoke.
-> **Real-patient data:** NOT AUTHORIZED for smoke; use synthetic/non-identifiable test state only.
+> **Exact reviewed/tested release-candidate head:** `57d879b072fcaf2bef350d5dbb0547ce465764e1`.
+> **Release review:** `commercial_products/physio_referral/releases/KNEE_OA_V1_RELEASE_REVIEW.md` — PASS / no open blocker.
+> **ACTIVE RUNTIME / DESIGN / CANONICAL WRITER:** this bounded release session until merge/deploy/smoke closeout.
+> **Product-owner authority:** PR, squash merge, Render auto-deploy verification and bounded production smoke already granted for this slice.
+> **Real-patient data:** NOT AUTHORIZED for release smoke; synthetic/non-identifiable state only.
 
-## 1. Release objective
+## 1. Release candidate delivered
 
-Finish the Knee-OA product track cleanly before the next conversation:
-
-```text
-commercial product canonicals reorganized
-→ tested Knee-OA product UI integrated into existing authenticated Cockpit physiotherapy utility
-→ full inherited + production-integration regression
-→ final release/red-team review
-→ PR
-→ squash merge
-→ Render auto-deploy verification
-→ bounded synthetic production smoke
-→ canonical closeout / writer NONE
-```
-
-The existing production route is:
+The reviewed Knee-OA product is integrated into the existing authenticated Clinical Excellence physiotherapy utility:
 
 `/clinical/clinic-utilities/physio-referral`
 
-It currently serves the older large CU-1 form. The new Knee-OA product must integrate into that protected utility rather than create a parallel public service.
+The prior large Generate-form surface is replaced by the reviewed live-referral product experience while preserving existing Clinical Excellence authentication and real CU-1 validation/safety authority.
 
-## 2. Hard integration boundaries
+Commercial/product authorities are separated under:
 
-- existing CU-1 validation/safety remains authoritative;
-- existing Clinical Excellence authentication remains authoritative;
-- no new patient persistence;
-- no analytics/billing/account system in this slice;
-- no second diagnosis;
-- no unaudited Cyprus/GeSY recommendation changes;
-- no LLM-generated routine referral;
-- manual text reconciliation remains explicit and fail-closed;
-- evidence/selection/safety/provenance states remain distinct;
-- commercial product canonicals move under `commercial_products/physio_referral/`;
-- technical contracts/runtime/tests remain under `clinic_utilities/physio_referral_product/`.
+`commercial_products/physio_referral/`
 
-## 3. Current validated product lineage
+Technical contracts/runtime/tests remain under:
 
-Latest closed synthetic v3 substantive head:
+`clinic_utilities/physio_referral_product/`
 
-`9deafa2db43d3498c5becf20f77a804b03849d53`
+## 2. Production architecture
 
-Final v3 closeout head:
+```text
+ClinicalCookieMiddleware / X-Clinical-Key authority
+→ protected physiotherapy Cockpit route
+→ production product transport
+→ shared deterministic knee_oa_projection.py
+→ real CU-1 validation/safety + reviewed evidence/template interaction
+→ live Greek referral UI
+```
 
-`b7f2db6fd86f90a32875d9b9cfd356cfa6129c69`
+The local loopback prototype is not mounted in production. It is only an alternate test transport over the same shared projection.
 
-Substantive run `34677022119` and closeout run `34677243751` both succeeded.
+No new database, patient persistence, analytics, billing system or unauthenticated public product endpoint is introduced.
 
-## 4. Release rule
+## 3. Exact release-candidate gates
 
-Do not merge merely because the synthetic v3 was green. Production integration must prove the protected Cockpit route, static assets/API behavior, CU-1 safety, privacy/no-storage boundary, mobile behavior and adjacent-owner regressions on the exact release head.
+At head `57d879b072fcaf2bef350d5dbb0547ce465764e1`:
 
-## 5. Exact next action
+```text
+Physio Knee OA Cockpit integration gate   34679427725   SUCCESS
+Physio Knee OA prototype gate             34679427741   SUCCESS
+CU-1 focused tests                        34679427822   SUCCESS
+```
 
-Reorganize commercial canonicals, implement the protected Cockpit integration on this branch, run the full gate, perform a fresh final release review, then proceed through the explicitly authorized PR/merge/deploy path only if clean.
+The integration gate protects the authenticated page/API, real CU-1 path, full inherited product browser behavior, production Chromium flow, no-storage boundary, mobile reflow, adjacent Learning Hub/RF isolation and package closure.
+
+## 4. Release review findings closed before PASS
+
+Two material technical release findings were corrected before PASS:
+
+1. production transport initially imported `prototype.server`; projection ownership was extracted to shared production-owned `knee_oa_projection.py`, with the prototype reduced to loopback transport only;
+2. production requests initially inherited `synthetic_only:true`; the Cockpit boundary now reports/sends `synthetic_only:false`, rejects synthetic-marked production requests and only then adapts internally to the frozen reviewed compatibility envelope.
+
+No clinical rule or evidence state changed in those corrections.
+
+## 5. Hard boundaries still active
+
+```text
+NO second diagnosis
+NO new GeSY item-level recommendation activation
+NO patient draft persistence
+NO analytics/billing/account system
+NO LLM-generated referral text
+NO real-patient smoke data
+NO claim of iPhone VoiceOver acceptance
+NO claim of receiving-physiotherapist or commercial/pilot validation
+```
+
+## 6. Exact next action
+
+Open one bounded PR from `feat/physio-knee-oa-cockpit-integration-v1-2026-09-12` to current `main`. Require exact PR-head checks/review to settle cleanly. If clean, squash-merge using the exact expected head, verify Render auto-deploy at the resulting merge SHA, perform bounded production smoke without patient data, update final canonicals/changelogs and release the writer to `NONE`.

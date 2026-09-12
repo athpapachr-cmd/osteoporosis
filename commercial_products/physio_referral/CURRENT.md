@@ -1,30 +1,53 @@
-# CURRENT.md — Physio Referral product track
+# CURRENT.md — Physio Referral commercial product track
 
-> **STATUS:** FOUR SPECIALIST REVIEWS + ONE SUPPLEMENTARY COMBINED REVIEW RECEIVED / CROSS-REVIEW SYNTHESIS RECORDED / PRODUCT OWNER DISPOSITION PENDING.
-> **Updated:** 2026-09-11 Asia/Nicosia.
-> **Reviewed candidate, unchanged:** `6539351c592c1dc3e49931057b63925dea3cb94d`.
-> **Historical tested implementation:** `243095ca9545bd2f96be8986520aeae8c3551c27`.
-> **Synthesis branch:** `docs/physio-knee-oa-review-synthesis-v1-2026-09-11`.
-> **Parent review-doc head:** `4bebd79fa4a34a04bf1341b4bd89f811ce071397`.
-> **Writer:** NONE after this documentation step. Root `CURRENT_OPERATIONAL.md` remains operational authority.
-> **Runtime / clinical-contract / PR / merge / deploy authority:** NONE.
+> **STATUS:** KNEE-OA V1 COCKPIT RELEASE CANDIDATE — IMPLEMENTED / EXACT-HEAD TESTED / RELEASE REVIEW PASS / PR NEXT.
+> **Updated:** 2026-09-12 Asia/Nicosia.
+> **Diagnosis vertical:** Knee Osteoarthritis only.
+> **Release-candidate head:** `57d879b072fcaf2bef350d5dbb0547ce465764e1`.
+> **Integration branch:** `feat/physio-knee-oa-cockpit-integration-v1-2026-09-12`.
+> **Root operational authority:** `CURRENT_OPERATIONAL.md`.
 
-## Current records
+## Product state
 
-- `KNEE_OA_CROSS_REVIEW_SYNTHESIS_V1.md`
-- `KNEE_OA_REVIEW_FINDING_DISPOSITION_PROPOSED_V1.md`
-- `KNEE_OA_REVIEW_SOURCE_REGISTER_V1.md`
+The reviewed Knee-OA experience has moved from a synthetic-only prototype into the existing authenticated Clinical Excellence Cockpit physiotherapy utility. The product philosophy and interaction contract remain intact: live deterministic referral, few meaningful routine actions, evidence complexity under progressive disclosure, direct editing with fail-closed reconciliation, and scan-first advanced access rather than a comprehensive visible form.
 
-The four specialist verdicts are Clinical, Physiotherapy, UX and Commercial CONDITIONAL PASS, each with zero reported blockers at the synthetic-review stage. The supplementary combined review is also CONDITIONAL PASS. These verdicts do not establish clinical release readiness, professional-user validation or willingness to pay.
+Commercial/product authority now lives under `commercial_products/physio_referral/`; technical contracts/runtime/tests remain under `clinic_utilities/physio_referral_product/`.
 
-All 36 original finding records are retained. Nineteen material records belong to the four specialist reports; seven further material records belong to the supplementary report. Overlaps are mapped, not counted as independent votes or closed issues.
+## Review state
 
-## Next action
+The four independent specialist reviews remain:
 
-Product Owner reviews and dispositions the proposed correction packages. No correction plan is approved merely because reports were uploaded. The likely next engineering work is a small correction of this same Knee-OA slice, not immediate diagnostic expansion or a new cockpit.
+1. Clinical / Evidence
+2. Physiotherapy / receiving-professional utility
+3. UX / Product
+4. Commercial / Product-Market
 
-## Open evidence boundary
+Their material findings were synthesized and amended through the reviewed Knee-OA lineage. A separate final release/red-team review at the Cockpit integration stage is recorded at:
 
-No new primary-source audit, code reproduction or test execution took place in this synthesis. ACE metadata, intervention scope, default-availability behavior and the commercial report's Cyprus-guideline claim require verification. Actual Safari/VoiceOver, receiving-physiotherapist feedback, target-buyer frequency, maintenance economics and real payment/retention remain unproven.
+`releases/KNEE_OA_V1_RELEASE_REVIEW.md`
 
-The original five uploads are in the companion conversation archive; GitHub stores their hashes/register and this synthesis, not their full original contents. The former combined reviewer prompt remains superseded; the four separate prompts are preserved unchanged.
+Verdict: **PASS / no open release blocker**.
+
+## Exact release-candidate evidence
+
+At `57d879b072fcaf2bef350d5dbb0547ce465764e1`:
+
+- Cockpit integration gate `34679427725` — SUCCESS
+- inherited Knee-OA product gate `34679427741` — SUCCESS
+- CU-1 focused gate `34679427822` — SUCCESS
+
+Underlying v3 product candidate remains anchored by substantive run `34677022119` and exact-head closeout run `34677243751`, both SUCCESS.
+
+## Product truth that remains unproven
+
+A technically releasable authenticated Cockpit feature is not the same thing as a validated business:
+
+- no receiving-physiotherapist field validation yet;
+- no actual iPhone Safari/VoiceOver acceptance yet;
+- no paid conversion/retention evidence yet;
+- no real clinical pilot validation yet;
+- Cyprus/GeSY recommendation-by-recommendation overlay is not yet activated.
+
+## Exact next product boundary
+
+Complete PR → squash merge → exact Render deploy verification → bounded non-identifiable production smoke → canonical closeout. After that, do not automatically add another diagnosis. The next commercial/product learning step should be chosen from real receiver/device/market evidence rather than feature-count pressure.
