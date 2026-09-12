@@ -54,10 +54,12 @@ class QualifierBrowserTests(unittest.TestCase):
         page = self.context.new_page(); errors=[]
         page.on('pageerror', lambda error: errors.append(str(error)))
         page.goto(self.origin)
+        # A second page starts from static HTML; wait for the async bootstrap to
+        # paint the actual first unresolved prerequisite before asserting copy.
+        expect(page.locator('#diagnosisRequiredHint')).to_be_visible()
         expect(page.locator('#reviewStatus')).to_have_text('Επίλεξε διάγνωση')
         expect(page.locator('#assertion')).to_have_class('diagnosis-choice required-missing')
         self.assertEqual(page.locator('#assertion .selection-mark').count(), 0)
-        expect(page.locator('#diagnosisRequiredHint')).to_be_visible()
         expect(page.locator('#jurisdictionProfile')).to_contain_text('Κύπρος · ΓεΣΥ')
         page.locator('#assertion').click(); expect(page.locator('#reviewStatus')).to_have_text('Επίλεξε πλευρά')
         page.locator('[data-side=left]').click(); expect(page.locator('#copy')).to_be_enabled()
