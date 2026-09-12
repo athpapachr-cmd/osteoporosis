@@ -257,7 +257,12 @@ class Handler(BaseHTTPRequestHandler):
         if self.path not in files:
             return self.json_reply(404, {"error": "not_found"})
         name, mime = files[self.path]
-        self.reply(200, (HERE / name).read_bytes(), mime + "; charset=utf-8")
+        data = (HERE / name).read_bytes()
+        if name == "qualifiers.js":
+            data += b"\n" + (HERE / "more_v3.js").read_bytes()
+        elif name == "qualifiers.css":
+            data += b"\n" + (HERE / "more_v3.css").read_bytes()
+        self.reply(200, data, mime + "; charset=utf-8")
 
     def do_POST(self):
         expected_origin = f"http://127.0.0.1:{self.server.server_port}"
