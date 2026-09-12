@@ -4,9 +4,8 @@
 > **ROOT CANONICALS STILL GOVERN:** always bootstrap `AGENTS.md`, `TODO.md`, `CLINICAL_EXCELLENCE_PLAN.md`, `SLICE_PLAN_CURRENT.md`, `CURRENT_OPERATIONAL.md`, `osteoporosis-change-log.md` first.
 > **CURRENT ACTIVE DIAGNOSIS VERTICAL:** Knee Osteoarthritis only.
 > **CURRENT PRODUCT STATE:** Knee-OA released; `CY_GESY` jurisdiction overlay released and production-smoke-verified; V5 UI/prose refinement implemented/tested and awaiting Product Owner disposition.
-> **CURRENT CANONICAL MAIN:** `273e22a0ea2bc9b2e5a996fac22a0a88eb54d30e`.
 > **RELEASED JURISDICTION RUNTIME:** `e52a4851b504476c1e361575d08664c05467ff53`.
-> **FINAL CANONICAL AUTHENTICATED SMOKE:** `34703453615` — SUCCESS.
+> **AUTHENTICATED CY_GESY PRODUCTION SMOKE EVIDENCE:** `34703453615` — SUCCESS.
 > **V5 TESTED CANDIDATE:** `a47357c602120d3678e8f2f23b99775e616c79e1`; gate `34693751545` — SUCCESS.
 > **CURRENT WRITER:** none.
 
