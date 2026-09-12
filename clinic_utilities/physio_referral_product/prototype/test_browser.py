@@ -107,7 +107,7 @@ class BrowserTests(unittest.TestCase):
         expect(self.page.locator('#referralText')).to_contain_text('βελονισμός')
         self.assertEqual(self.page.locator('[data-evidence=acupuncture]:visible').count(),1)
     def test_06_manual_edit_reconciliation(self):
-        self.ready();self.page.locator('[data-menu]').first.click();self.page.locator('[data-edit]').click()
+        self.ready();self.page.locator('[data-menu]').first.click();self.page.locator('#sheet .menu-action[data-edit]').click()
         self.page.locator('#manualText').fill('Δοκιμαστική χειροκίνητη παραπομπή.')
         self.page.locator('[data-confirm-manual]').click()
         expect(self.page.locator('#referralText')).to_have_text('Δοκιμαστική χειροκίνητη παραπομπή.')
