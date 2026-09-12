@@ -113,3 +113,11 @@ class SickLeaveDocumentMetadataV1(BaseModel):
     @classmethod
     def _strip_metadata_text(cls, value):
         return str(value or "").strip()
+
+    @model_validator(mode="after")
+    def _validate_metadata_consistency(self):
+        if self.leave_to < self.leave_from:
+            raise ValueError("Τα metadata έχουν λήξη άδειας πριν από την έναρξη")
+        if self.relation and not self.derived_from_document_id:
+            raise ValueError("Τα metadata σχέσης απαιτούν derived document id")
+        return self
