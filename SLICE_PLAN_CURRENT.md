@@ -1,11 +1,14 @@
 # SLICE_PLAN_CURRENT.md — CLINICAL DOCUMENTS PHASE 1 / SICK LEAVE V1
 
-> **STATUS:** IMPLEMENTATION ACTIVE.
+> **STATUS:** IMPLEMENTED / TESTED / REVIEWED — RELEASE AUTHORIZED.
 > **Activated:** 2026-09-12 Asia/Nicosia.
 > **Slice:** `CU-CLINICAL-DOCUMENTS-P1-SICK-LEAVE-2026-09-12`.
 > **Bootstrap main:** `bbfa26f3820f520d7f3ea312e6793fa55f399f01`.
 > **Branch:** `feat/clinic-documents-p1-sick-leave-2026-09-12`.
-> **Writer:** current Clinical Documents implementation conversation.
+> **PR:** `#97`.
+> **Exact reviewed/tested runtime head:** `fd88fa3b7ebce8aa9d97dfea12e2f2667495ed39`.
+> **Clinical Documents PR gate:** `34717351567` — SUCCESS.
+> **Writer:** current release conversation through merge/deploy closeout.
 > **Scope:** common document primitives + Sick Leave V1 + protected Clinic Utilities integration.
 > **Persistence:** NONE for patient/document/signature state.
 
@@ -27,7 +30,7 @@ This is deliberately not the Accident/Medico-Legal AI report phase.
 
 ## 2. Runtime owners
 
-New preferred owners:
+Preferred owners implemented:
 
 ```text
 clinic_utilities/clinical_documents/__init__.py
@@ -39,11 +42,10 @@ static/clinic-utilities/sick-leave/app.js
 static/clinic-utilities/sick-leave/styles.css
 ```
 
-Required composition/navigation seams may include:
+Required composition/navigation seams:
 
 ```text
 main.py
-static/baseline-audit/index.html
 static/baseline-audit/g4-workspace-ergonomics.js
 ```
 
@@ -54,19 +56,13 @@ test_clinical_documents_sick_leave.py
 .github/workflows/clinical-documents-p1-tests.yml
 ```
 
-No existing RF/physio business-rule owner is to be rewritten.
+No existing RF/physio business-rule owner was rewritten.
 
 ## 3. Clinician profile
 
-Phase 1 clinician defaults may be represented server-side from reviewed current clinic identity:
+Phase 1 clinician identity is server-side. The Clinical Documents-specific environment variable is preferred if later configured; otherwise Phase 1 deliberately falls back to the already-configured RF doctor profile so this release requires no production config/secret mutation.
 
-- name: Αθανάσιος Παπαχρήστου;
-- specialty: Ορθοπαιδικός Χειρουργός;
-- phone: +357 96 286326;
-- email: ortho.papachristou@icloud.com;
-- clinic/address may be optional presentation fields.
-
-The runtime should support environment/config override later, but this slice must not introduce or mutate production secrets/configuration.
+Expected production clinician identity remains the reviewed current clinic identity. Clinic/address are optional presentation fields.
 
 ## 4. Draft contract
 
@@ -80,6 +76,8 @@ diagnosis: required string
 leave_from: ISO date
 leave_to: ISO date
 issued_on: ISO date
+derived_from_document_id: optional bounded string
+relation: extension | new_leave_same_patient | null
 ```
 
 Rules:
@@ -89,6 +87,8 @@ Rules:
 - inclusive duration derived, not user-authored;
 - no arbitrary numeric-only validation for ID;
 - bounded text lengths;
+- relation requires a derived document id;
+- whole `draft_json` request body is bounded to 16 KiB before JSON parsing;
 - no patient state written to database/browser storage.
 
 ## 5. Browser workflow
@@ -157,24 +157,24 @@ diagnosis
 leave_from
 leave_to
 issued_on
-derived_from_document_id? 
+derived_from_document_id?
 relation? = extension | new_leave_same_patient
 ```
 
 The metadata is solely for clinician-selected PDF round-trip. It is not a database.
 
-Re-import must:
+Re-import:
 
-- parse PDF safely;
-- validate schema/version and values;
-- reject malformed or unknown metadata;
-- never infer missing values from visible PDF text.
+- parses PDF safely;
+- validates schema/version and typed values;
+- validates `leave_to >= leave_from`;
+- rejects a declared relation without `derived_from_document_id`;
+- rejects malformed or unknown metadata;
+- never infers missing values from visible PDF text.
 
 ## 8. API surface
 
-Protected by existing Clinical Excellence auth boundary.
-
-Candidate routes:
+Protected by existing Clinical Excellence auth boundary:
 
 ```text
 GET  /clinical/clinic-utilities/sick-leave
@@ -184,25 +184,23 @@ POST /clinical/clinic-utilities/sick-leave/api/pdf
 POST /clinical/clinic-utilities/sick-leave/api/import-previous
 ```
 
-Preview may return deterministic sanitized structured/display data rather than persisting a server draft.
-
-PDF endpoint may accept optional signature upload and must return an attachment response with safe Greek-capable filename semantics.
+Preview and PDF rendering are request-scoped. The contract exposes non-patient configuration/persistence state and request/file limits.
 
 ## 9. Security / privacy
 
 - existing protected clinical dependency required for every page/API route;
-- no logging of request bodies/signature bytes;
-- max request/file sizes enforced;
-- signature only PNG/JPEG with parse validation;
+- no logging owner introduced for request bodies/signature bytes;
+- draft/signature/previous-PDF sizes bounded server-side;
+- signature only PNG/JPEG with parse validation and dimension cap;
 - previous PDF only valid PDF with bounded size;
 - no patient data in query strings;
 - no GET carrying patient identifiers;
 - no database mutations;
 - no browser persistence APIs for patient/signature data.
 
-## 10. Acceptance gates
+## 10. Acceptance gates — satisfied
 
-At minimum tests must prove:
+Tests prove:
 
 1. valid ADT draft;
 2. valid ARC draft;
@@ -223,7 +221,16 @@ At minimum tests must prove:
 17. filename contains Greek patient name/date and excludes diagnosis/ID;
 18. routes use existing clinical auth dependency;
 19. no DB/persistence call in Phase-1 package;
-20. browser source contains no localStorage/sessionStorage patient persistence.
+20. browser source contains no localStorage/sessionStorage/indexedDB patient persistence;
+21. imported metadata rejects inverted leave dates;
+22. imported relation metadata requires a derived document id;
+23. oversized `draft_json` is rejected with `413` before JSON parsing.
+
+Exact reviewed/tested runtime head:
+
+`fd88fa3b7ebce8aa9d97dfea12e2f2667495ed39`
+
+Clinical Documents PR workflow run `34717351567` completed SUCCESS. CU-1 and G3 adjacent substantive gates also completed SUCCESS on the same runtime head. Clinical Learning red checks reached and passed their substantive tests/contracts/schema guards before expected scope-owner guards rejected this non-Learning slice; physio-specific red checks are likewise owner/scope guards rather than evidence of Clinical Documents failure.
 
 ## 11. Explicit exclusions
 
@@ -239,18 +246,29 @@ Not in this slice:
 - persistent case store;
 - user-uploaded reusable templates;
 - Siri/Gemini;
-- RF/physio changes beyond navigation exposure.
+- RF/physio changes beyond navigation exposure;
+- production environment/secret mutation.
 
-## 12. Exit boundary
+## 12. Exit and release boundary
 
-Implementation completion means:
+Implementation exit is satisfied:
 
 ```text
 implemented
 + deterministic tests pass
-+ exact-head review passes
++ exact-head review pass
 ```
 
-It does **not** mean merged/deployed/production-smoke-verified.
+The Product Owner has now separately authorized `Merge και deploy`.
 
-Any PR/merge/deploy remains a separate release gate after implementation review.
+Release path:
+
+```text
+PR #97 squash merge
+→ existing Render auto-deploy from main
+→ no manual duplicate deploy
+→ verify LIVE runtime deploy
+→ record closeout
+```
+
+`DEPLOYED` must remain distinct from `PRODUCTION-SMOKE-VERIFIED`. An authenticated/product-owner functional smoke is required before the latter label is used.
