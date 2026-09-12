@@ -47,6 +47,11 @@ class UsabilityV2BrowserTests(unittest.TestCase):
             self.page.locator('#advancedToggle').click()
         expect(self.page.locator('#advanced [data-v3-more]')).to_be_visible()
 
+    def open_function_sheet(self):
+        self.page.locator('[data-clinical-v4=function]').click()
+        expect(self.page.locator('#sheet')).to_be_visible()
+        expect(self.page.locator('#sheetTitle')).to_have_text('Λειτουργικότητα')
+
     def pin_sport_goal(self):
         self.open_more()
         self.page.locator('[data-v3-customize-favorites]').click()
@@ -56,9 +61,10 @@ class UsabilityV2BrowserTests(unittest.TestCase):
         self.page.keyboard.press('Escape')
 
     def test_additional_suggestions_show_true_extra_count_and_titles(self):
-        self.page.locator('#functionToggle').click()
+        self.open_function_sheet()
         for item in ['walking_tolerance','stairs','sit_to_stand','sport_gym']:
-            self.page.locator(f'[data-function={item}]').click()
+            self.page.locator(f'#sheet [data-function={item}]').click()
+        self.page.locator('#closeSheet').click()
         self.page.locator('#plan [data-select=therapeutic_exercise]').click()
         panel=self.page.locator('#suggestions .suggestions-more-panel')
         expect(panel).to_be_visible()
@@ -75,7 +81,9 @@ class UsabilityV2BrowserTests(unittest.TestCase):
         self.page.screenshot(path=str(ARTIFACTS/'suggestions-v2.png'), full_page=True)
 
     def test_single_suggestion_has_no_secondary_panel(self):
-        self.page.locator('#functionToggle').click(); self.page.locator('[data-function=stairs]').click()
+        self.open_function_sheet()
+        self.page.locator('#sheet [data-function=stairs]').click()
+        self.page.locator('#closeSheet').click()
         expect(self.page.locator('#suggestions .suggestion')).to_have_count(1)
         expect(self.page.locator('#suggestions .suggestions-more-panel')).to_have_count(0)
 
@@ -118,6 +126,7 @@ class UsabilityV2BrowserTests(unittest.TestCase):
         self.pin_sport_goal()
         expect(self.page.locator('#v3Favorites [data-select=graded_return_to_sport]')).to_have_count(1)
         self.page.evaluate("window.dispatchEvent(new PageTransitionEvent('pagehide',{persisted:true}));window.dispatchEvent(new PageTransitionEvent('pageshow',{persisted:true}));")
+        expect(self.page.locator('#diagnosisRequiredHint')).to_be_visible()
         self.page.locator('#assertion').click(); self.page.locator('[data-side=right]').click(); self.open_more()
         expect(self.page.locator('#v3Favorites [data-select=graded_return_to_sport]')).to_have_count(0)
         self.assertEqual(self.page.evaluate('localStorage.length'),0)
