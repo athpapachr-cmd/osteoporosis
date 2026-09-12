@@ -11,6 +11,8 @@ on:
       - 'commercial_products/physio_referral/**'
       - 'test_physio_knee_oa_cockpit_browser.py'
       - '.github/workflows/physio-knee-oa-v4.yml'
+      - '.github/workflows/physio-knee-oa-prototype.yml'
+      - '.github/workflows/physio-knee-oa-cockpit-integration.yml'
 
 permissions:
   contents: read
@@ -34,7 +36,12 @@ jobs:
           base=subprocess.check_output(['git','merge-base','origin/main','HEAD'],text=True).strip()
           paths=subprocess.check_output(['git','diff','--name-only',base,'HEAD'],text=True).splitlines()
           allowed=('clinic_utilities/physio_referral_product/','static/clinic-utilities/physio-referral/','commercial_products/physio_referral/')
-          exact={'test_physio_knee_oa_cockpit_browser.py','.github/workflows/physio-knee-oa-v4.yml'}
+          exact={
+            'test_physio_knee_oa_cockpit_browser.py',
+            '.github/workflows/physio-knee-oa-v4.yml',
+            '.github/workflows/physio-knee-oa-prototype.yml',
+            '.github/workflows/physio-knee-oa-cockpit-integration.yml',
+          }
           bad=[p for p in paths if p not in exact and not p.startswith(allowed)]
           assert not bad,bad
           print('Knee OA v4 bounded scope PASS:',len(paths),'files')
