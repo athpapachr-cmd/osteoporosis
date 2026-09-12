@@ -20,202 +20,69 @@ jobs:
         with:
           ref: fix/physio-knee-oa-v5-optional-refinement-prose-2026-09-12
           fetch-depth: 0
-      - name: Apply exact bounded v5 edits
+      - name: Patch remaining v5 files
         shell: bash
         run: |
           set -euo pipefail
           python - <<'PY'
           from pathlib import Path
 
-          def replace_once(path, old, new):
+          def rep(path, old, new):
               p=Path(path); text=p.read_text(encoding='utf-8')
-              count=text.count(old)
-              assert count==1, f'{path}: expected 1 match, found {count}'
+              n=text.count(old)
+              assert n==1, f'{path}: expected one match, found {n}: {old[:80]!r}'
               p.write_text(text.replace(old,new,1),encoding='utf-8')
 
-          clinical_paths=[
-              'clinic_utilities/physio_referral_product/prototype/clinical_sheet_v4.js',
-              'static/clinic-utilities/physio-referral/product-clinical-sheet-v4.js',
-          ]
-          for path in clinical_paths:
-              replace_once(path,
-          """function v4ClinicalButton(kind) {
-            const b=btn('',{class:'clinical-card-v4','data-clinical-v4':kind,'aria-pressed':'false','aria-label':V4_CLINICAL[kind].label});
-            b.append(make('span',{class:'clinical-card-label-v4',text:V4_CLINICAL[kind].label}),make('span',{class:'clinical-card-count-v4','data-clinical-count-v4':kind,hidden:''}));
-            return b;
-          }""",
-          """function v4ClinicalButton(kind) {
-            const b=btn('',{class:'clinical-card-v4','data-clinical-v4':kind,'aria-pressed':'false','aria-label':V4_CLINICAL[kind].label});
-            b.append(
-              make('span',{class:'clinical-card-label-v4',text:V4_CLINICAL[kind].label}),
-              make('span',{class:'clinical-card-count-v4','data-clinical-count-v4':kind,hidden:''}),
-              make('span',{class:'clinical-card-detail-v4','data-clinical-detail-v4':kind,'aria-hidden':'true',text:'›',hidden:''})
-            );
-            return b;
-          }""")
-              replace_once(path,
-          """    const badge=b.querySelector('[data-clinical-count-v4]');
-            if(badge){badge.hidden=count===0;badge.textContent=count?`· ${count}`:'';}
-            b.setAttribute('aria-label',V4_CLINICAL[kind].label+(count?` · ${count} ενεργοί προσδιορισμοί`:''));""",
-          """    const badge=b.querySelector('[data-clinical-count-v4]');
-            if(badge){badge.hidden=count===0;badge.textContent=count?`· ${count}`:'';}
-            const detail=b.querySelector('[data-clinical-detail-v4]');
-            if(detail) detail.hidden=!(kind==='function'||active);
-            const ariaDetail=count?` · ${count} ενεργοί προσδιορισμοί`:(active&&kind!=='function'?' · επιλεγμένο · πάτησε ξανά για λεπτομέρειες':kind==='function'?' · άνοιγμα επιλογών':'');
-            b.setAttribute('aria-label',V4_CLINICAL[kind].label+ariaDetail);""")
-              replace_once(path,
-          """  } else if(kind==='weakness') {
-            nodes.push(make('div',{class:'clinical-options-v4'},[
-              v4Option('Αντικειμενική στην εξέταση',{'data-q-weakness':'objective'}),
-              v4Option('Τετρακέφαλος στην εξέταση',{'data-q-weakness':'quadriceps_exam'}),
-              v4Option('Ατροφία',{'data-q-atrophy':''}),
-            ]),make('div',{id:'v4AtrophyLocation',class:'clinical-nested-v4'},[
-              make('p',{class:'subtle small',text:'Εντόπιση ατροφίας'}),make('div',{class:'clinical-options-v4'},[
-                v4Option('Τετρακέφαλος',{'data-q-atrophy-location':'quadriceps'}),v4Option('Περιαρθρικά',{'data-q-atrophy-location':'peri_knee_general'}),
-              ])
-            ]));
-          } else {""",
-          """  } else if(kind==='weakness') {
-            nodes.push(make('div',{class:'clinical-options-v4'},[
-              v4Option('Μυϊκή αδυναμία στην εξέταση',{'data-q-weakness':'objective'}),
-              v4Option('Αδυναμία τετρακεφάλου στην εξέταση',{'data-q-weakness':'quadriceps_exam'}),
-              v4Option('Ατροφία τετρακεφάλου',{'data-v4-atrophy-quadriceps':'','aria-pressed':String(qualifierState.visible_atrophy&&qualifierState.atrophy_location==='quadriceps')}),
-            ]));
-          } else {""")
-              replace_once(path,
-          """  $$(`#sheetBody [data-q-weakness]`).forEach(b=>b.setAttribute('aria-pressed',String(qualifierState.weakness_detail===b.dataset.qWeakness)));
-            $$(`#sheetBody [data-q-atrophy]`).forEach(b=>b.setAttribute('aria-pressed',String(qualifierState.visible_atrophy)));
-            $$(`#sheetBody [data-q-atrophy-location]`).forEach(b=>b.setAttribute('aria-pressed',String(qualifierState.atrophy_location===b.dataset.qAtrophyLocation)));
-            $$(`#sheetBody [data-function]`).forEach(b=>b.setAttribute('aria-pressed',String(state.functional_impairments.includes(b.dataset.function))));""",
-          """  $$(`#sheetBody [data-q-weakness]`).forEach(b=>b.setAttribute('aria-pressed',String(qualifierState.weakness_detail===b.dataset.qWeakness)));
-            const quadAtrophy=$('#sheetBody [data-v4-atrophy-quadriceps]');
-            if(quadAtrophy) quadAtrophy.setAttribute('aria-pressed',String(qualifierState.visible_atrophy&&qualifierState.atrophy_location==='quadriceps'));
-            $$(`#sheetBody [data-function]`).forEach(b=>b.setAttribute('aria-pressed',String(state.functional_impairments.includes(b.dataset.function))));""")
-              replace_once(path,
-          """  const clue=$('#v4StiffnessClue');if(clue)clue.hidden=qualifierState.morning_stiffness_duration!=='gt_30';
-            const atrophy=$('#v4AtrophyLocation');if(atrophy)atrophy.hidden=!qualifierState.visible_atrophy;
-            v4RenderGrid();""",
-          """  const clue=$('#v4StiffnessClue');if(clue)clue.hidden=qualifierState.morning_stiffness_duration!=='gt_30';
-            v4RenderGrid();""")
-              replace_once(path,
-          """  if(b.dataset.clinicalV4){v4OpenClinicalSheet(b.dataset.clinicalV4,b);return;}
-            if(b.dataset.clinicalRemoveV4){v4RemoveParent(b.dataset.clinicalRemoveV4);return;}""",
-          """  if(b.dataset.clinicalV4){
-              const kind=b.dataset.clinicalV4;
-              if(kind!=='function'&&!v4Active(kind)){
-                if(v4EnsureParent(kind)) changed('clinical_picture_'+kind+'_selected');
-                return;
-              }
-              v4OpenClinicalSheet(kind,b);return;
-            }
-            if(b.hasAttribute('data-v4-atrophy-quadriceps')){
-              const active=qualifierState.visible_atrophy&&qualifierState.atrophy_location==='quadriceps';
-              qualifierState.visible_atrophy=!active;
-              qualifierState.atrophy_location=!active?'quadriceps':null;
-              changed('quadriceps_atrophy_exam');
-              queueMicrotask(v4SyncClinicalSheet);
-              return;
-            }
-            if(b.dataset.clinicalRemoveV4){v4RemoveParent(b.dataset.clinicalRemoveV4);return;}""")
-
-          qualifier_paths=[
+          for path in [
               'clinic_utilities/physio_referral_product/prototype/qualifiers.js',
               'static/clinic-utilities/physio-referral/product-qualifiers.js',
-          ]
-          for path in qualifier_paths:
-              replace_once(path,
-          """  weakness: {objective: 'Αντικειμενική στην εξέταση', quadriceps_exam: 'Τετρακέφαλος στην εξέταση'},
-            weakness_summary: {objective: 'Αντικειμενική', quadriceps_exam: 'Τετρακέφαλος · εξέταση'},
-            atrophy: {quadriceps: 'Τετρακέφαλος', peri_knee_general: 'Περιαρθρικά'},""",
-          """  weakness: {objective: 'Μυϊκή αδυναμία στην εξέταση', quadriceps_exam: 'Αδυναμία τετρακεφάλου στην εξέταση'},
-            weakness_summary: {objective: 'Αδυναμία · εξέταση', quadriceps_exam: 'Αδυναμία τετρακεφάλου'},
-            atrophy: {quadriceps: 'Ατροφία τετρακεφάλου', peri_knee_general: 'Γενική περιαρθρική μυϊκή ατροφία'},""")
+          ]:
+              rep(path,
+                  "  weakness: {objective: 'Αντικειμενική στην εξέταση', quadriceps_exam: 'Τετρακέφαλος στην εξέταση'},\n  weakness_summary: {objective: 'Αντικειμενική', quadriceps_exam: 'Τετρακέφαλος · εξέταση'},\n  atrophy: {quadriceps: 'Τετρακέφαλος', peri_knee_general: 'Περιαρθρικά'},",
+                  "  weakness: {objective: 'Μυϊκή αδυναμία στην εξέταση', quadriceps_exam: 'Αδυναμία τετρακεφάλου στην εξέταση'},\n  weakness_summary: {objective: 'Αδυναμία · εξέταση', quadriceps_exam: 'Αδυναμία τετρακεφάλου'},\n  atrophy: {quadriceps: 'Ατροφία τετρακεφάλου', peri_knee_general: 'Γενική περιαρθρική μυϊκή ατροφία'},")
 
-          more_paths=[
+          for path in [
               'clinic_utilities/physio_referral_product/prototype/more_v3.js',
               'static/clinic-utilities/physio-referral/product-more-v3.js',
-          ]
-          for path in more_paths:
-              replace_once(path,
-          "const V3_DUPLICATED_FINDINGS = new Set(['pain','objective_weakness','quadriceps_weakness','extension_lag','effusion','tenderness']);",
-          "const V3_DUPLICATED_FINDINGS = new Set(['pain','joint_line_pain','anterior_peripatellar_pain','objective_weakness','quadriceps_weakness','extension_lag','effusion','tenderness']);")
-              replace_once(path,
-          """    if(qualifierState.weakness_detail) values.push(QLABELS.weakness_summary[qualifierState.weakness_detail] || 'Αδυναμία στην εξέταση');
-              if(state.findings.includes('extension_lag')) values.push(label('extension_lag'));""",
-          """    if(qualifierState.weakness_detail) values.push(QLABELS.weakness_summary[qualifierState.weakness_detail] || 'Αδυναμία στην εξέταση');
-              if(qualifierState.visible_atrophy) values.push(qualifierState.atrophy_location==='quadriceps'?'Ατροφία τετρακεφάλου':'Μυϊκή ατροφία');
-              if(state.findings.includes('extension_lag')) values.push(label('extension_lag'));""")
-              replace_once(path,
-          """      make('div',{class:'v3-inline-choices'},[
-                btn(QLABELS.weakness.objective,{class:'v3-qualifier-choice','data-q-weakness':'objective','aria-pressed':String(qualifierState.weakness_detail==='objective')}),
-                btn(QLABELS.weakness.quadriceps_exam,{class:'v3-qualifier-choice','data-q-weakness':'quadriceps_exam','aria-pressed':String(qualifierState.weakness_detail==='quadriceps_exam')}),
-                btn('Ατροφία',{class:'v3-qualifier-choice','data-q-atrophy':'','aria-pressed':String(qualifierState.visible_atrophy)}),
-              ]),
-              make('div',{id:'v3AtrophyLocation',class:'v3-inline-choices v3-nested'},Object.entries(QLABELS.atrophy).map(([id,name])=>btn(name,{class:'v3-qualifier-choice','data-q-atrophy-location':id,'aria-pressed':String(qualifierState.atrophy_location===id)}))),""",
-          """      make('div',{class:'v3-inline-choices'},[
-                btn(QLABELS.weakness.objective,{class:'v3-qualifier-choice','data-q-weakness':'objective','aria-pressed':String(qualifierState.weakness_detail==='objective')}),
-                btn(QLABELS.weakness.quadriceps_exam,{class:'v3-qualifier-choice','data-q-weakness':'quadriceps_exam','aria-pressed':String(qualifierState.weakness_detail==='quadriceps_exam')}),
-                btn('Ατροφία τετρακεφάλου',{class:'v3-qualifier-choice','data-v3-atrophy-quadriceps':'','aria-pressed':String(qualifierState.visible_atrophy&&qualifierState.atrophy_location==='quadriceps')}),
-              ]),""")
-              replace_once(path,
-          """  const input=$('#v3FfdDegrees');if(input&&document.activeElement!==input)input.value=qualifierState.fixed_flexion_deformity_deg??'';
-            const atrophy=$('#v3AtrophyLocation');if(atrophy)atrophy.hidden=!qualifierState.visible_atrophy;
-            v3SyncFavoriteButtons();""",
-          """  const input=$('#v3FfdDegrees');if(input&&document.activeElement!==input)input.value=qualifierState.fixed_flexion_deformity_deg??'';
-            const quadAtrophy=$('#sheet [data-v3-atrophy-quadriceps]');if(quadAtrophy)quadAtrophy.setAttribute('aria-pressed',String(qualifierState.visible_atrophy&&qualifierState.atrophy_location==='quadriceps'));
-            v3SyncFavoriteButtons();""")
-              replace_once(path,
-          """  if(b.dataset.v3Category){v3OpenCategorySheet(b.dataset.v3Category,b.dataset.v3Focus||'');return;}
-            if(b.closest('#sheet')&&sheetView?.type==='advanced-v3')queueMicrotask(v3SyncSheetState);""",
-          """  if(b.dataset.v3Category){v3OpenCategorySheet(b.dataset.v3Category,b.dataset.v3Focus||'');return;}
-            if(b.hasAttribute('data-v3-atrophy-quadriceps')&&sheetView?.type==='advanced-v3'){
-              const active=qualifierState.visible_atrophy&&qualifierState.atrophy_location==='quadriceps';
-              qualifierState.visible_atrophy=!active;
-              qualifierState.atrophy_location=!active?'quadriceps':null;
-              changed('quadriceps_atrophy_exam');
-              queueMicrotask(v3SyncSheetState);
-              return;
-            }
-            if(b.closest('#sheet')&&sheetView?.type==='advanced-v3')queueMicrotask(v3SyncSheetState);""")
+          ]:
+              rep(path,
+                  "const V3_DUPLICATED_FINDINGS = new Set(['pain','objective_weakness','quadriceps_weakness','extension_lag','effusion','tenderness']);",
+                  "const V3_DUPLICATED_FINDINGS = new Set(['pain','joint_line_pain','anterior_peripatellar_pain','objective_weakness','quadriceps_weakness','extension_lag','effusion','tenderness']);")
+              rep(path,
+                  "    if(qualifierState.weakness_detail) values.push(QLABELS.weakness_summary[qualifierState.weakness_detail] || 'Αδυναμία στην εξέταση');\n    if(state.findings.includes('extension_lag')) values.push(label('extension_lag'));",
+                  "    if(qualifierState.weakness_detail) values.push(QLABELS.weakness_summary[qualifierState.weakness_detail] || 'Αδυναμία στην εξέταση');\n    if(qualifierState.visible_atrophy) values.push(qualifierState.atrophy_location==='quadriceps'?'Ατροφία τετρακεφάλου':'Μυϊκή ατροφία');\n    if(state.findings.includes('extension_lag')) values.push(label('extension_lag'));")
+              rep(path,
+                  "      make('div',{class:'v3-inline-choices'},[\n        btn(QLABELS.weakness.objective,{class:'v3-qualifier-choice','data-q-weakness':'objective','aria-pressed':String(qualifierState.weakness_detail==='objective')}),\n        btn(QLABELS.weakness.quadriceps_exam,{class:'v3-qualifier-choice','data-q-weakness':'quadriceps_exam','aria-pressed':String(qualifierState.weakness_detail==='quadriceps_exam')}),\n        btn('Ατροφία',{class:'v3-qualifier-choice','data-q-atrophy':'','aria-pressed':String(qualifierState.visible_atrophy)}),\n      ]),\n      make('div',{id:'v3AtrophyLocation',class:'v3-inline-choices v3-nested'},Object.entries(QLABELS.atrophy).map(([id,name])=>btn(name,{class:'v3-qualifier-choice','data-q-atrophy-location':id,'aria-pressed':String(qualifierState.atrophy_location===id)}))),",
+                  "      make('div',{class:'v3-inline-choices'},[\n        btn(QLABELS.weakness.objective,{class:'v3-qualifier-choice','data-q-weakness':'objective','aria-pressed':String(qualifierState.weakness_detail==='objective')}),\n        btn(QLABELS.weakness.quadriceps_exam,{class:'v3-qualifier-choice','data-q-weakness':'quadriceps_exam','aria-pressed':String(qualifierState.weakness_detail==='quadriceps_exam')}),\n        btn('Ατροφία τετρακεφάλου',{class:'v3-qualifier-choice','data-v3-atrophy-quadriceps':'','aria-pressed':String(qualifierState.visible_atrophy&&qualifierState.atrophy_location==='quadriceps')}),\n      ]),")
+              rep(path,
+                  "  const input=$('#v3FfdDegrees');if(input&&document.activeElement!==input)input.value=qualifierState.fixed_flexion_deformity_deg??'';\n  const atrophy=$('#v3AtrophyLocation');if(atrophy)atrophy.hidden=!qualifierState.visible_atrophy;\n  v3SyncFavoriteButtons();",
+                  "  const input=$('#v3FfdDegrees');if(input&&document.activeElement!==input)input.value=qualifierState.fixed_flexion_deformity_deg??'';\n  const quadAtrophy=$('#sheet [data-v3-atrophy-quadriceps]');if(quadAtrophy)quadAtrophy.setAttribute('aria-pressed',String(qualifierState.visible_atrophy&&qualifierState.atrophy_location==='quadriceps'));\n  v3SyncFavoriteButtons();")
+              rep(path,
+                  "  if(b.dataset.v3Category){v3OpenCategorySheet(b.dataset.v3Category,b.dataset.v3Focus||'');return;}\n  if(b.closest('#sheet')&&sheetView?.type==='advanced-v3')queueMicrotask(v3SyncSheetState);",
+                  "  if(b.dataset.v3Category){v3OpenCategorySheet(b.dataset.v3Category,b.dataset.v3Focus||'');return;}\n  if(b.hasAttribute('data-v3-atrophy-quadriceps')&&sheetView?.type==='advanced-v3'){\n    const active=qualifierState.visible_atrophy&&qualifierState.atrophy_location==='quadriceps';\n    qualifierState.visible_atrophy=!active;\n    qualifierState.atrophy_location=!active?'quadriceps':null;\n    changed('quadriceps_atrophy_exam');\n    queueMicrotask(v3SyncSheetState);\n    return;\n  }\n  if(b.closest('#sheet')&&sheetView?.type==='advanced-v3')queueMicrotask(v3SyncSheetState);")
 
-          qpath='clinic_utilities/physio_referral_product/prototype/qualifier_overlay.py'
-          replace_once(qpath,
-          """    findings = list(result.get(\"findings\", []))
-              weakness_detail = q.get(\"weakness_detail\")""",
-          """    findings = list(result.get(\"findings\", []))
-              if q.get(\"pain_locations\"):
-                  findings = [v for v in findings if v not in {\"joint_line_pain\", \"anterior_peripatellar_pain\"}]
-                  if \"pain\" not in findings:
-                      findings.append(\"pain\")
-              weakness_detail = q.get(\"weakness_detail\")""")
-          replace_once(qpath,
-          "return \"πόνο κυρίως \" + _join_el([phrases[v] for v in values if v in phrases])",
-          "return \"πόνο \" + _join_el([phrases[v] for v in values if v in phrases])")
+          q='clinic_utilities/physio_referral_product/prototype/qualifier_overlay.py'
+          rep(q,
+              '    findings = list(result.get("findings", []))\n    weakness_detail = q.get("weakness_detail")',
+              '    findings = list(result.get("findings", []))\n    if q.get("pain_locations"):\n        findings = [v for v in findings if v not in {"joint_line_pain", "anterior_peripatellar_pain"}]\n        if "pain" not in findings:\n            findings.append("pain")\n    weakness_detail = q.get("weakness_detail")')
+          rep(q,
+              '    return "πόνο κυρίως " + _join_el([phrases[v] for v in values if v in phrases])',
+              '    return "πόνο " + _join_el([phrases[v] for v in values if v in phrases])')
 
-          ppath='clinic_utilities/physio_referral_product/knee_oa_presentation_v4.py'
-          replace_once(ppath,
-          """    presented[\"text\"] = text
-              return presented""",
-          """    if \"Επιπλέον στόχος: \" in text:
-                  text = text.replace(\" Επιπλέον στόχος: \", \" Παράλληλα, στους λειτουργικούς στόχους περιλαμβάνεται και η \", 1)
-              if \"Επιπλέον στόχοι: \" in text:
-                  text = text.replace(\" Επιπλέον στόχοι: \", \" Παράλληλα, στους λειτουργικούς στόχους περιλαμβάνονται επίσης \", 1)
-
-              if (\"Η κλινική εικόνα\" in text or \"Λειτουργικά,\" in text) and \" Παρακαλώ για φυσιοθεραπευτική αξιολόγηση\" in text:
-                  text = text.replace(\" Παρακαλώ για φυσιοθεραπευτική αξιολόγηση\", \"\\n\\nΠαρακαλώ για φυσιοθεραπευτική αξιολόγηση\", 1)
-
-              presented[\"text\"] = text
-              return presented""")
+          p='clinic_utilities/physio_referral_product/knee_oa_presentation_v4.py'
+          rep(p,
+              '    presented["text"] = text\n    return presented',
+              '    if " Επιπλέον στόχος: " in text:\n        text = text.replace(" Επιπλέον στόχος: ", " Παράλληλα, στους λειτουργικούς στόχους περιλαμβάνεται και η ", 1)\n    if " Επιπλέον στόχοι: " in text:\n        text = text.replace(" Επιπλέον στόχοι: ", " Παράλληλα, στους λειτουργικούς στόχους περιλαμβάνονται επίσης ", 1)\n\n    if ("Η κλινική εικόνα" in text or "Λειτουργικά," in text) and " Παρακαλώ για φυσιοθεραπευτική αξιολόγηση" in text:\n        text = text.replace(" Παρακαλώ για φυσιοθεραπευτική αξιολόγηση", "\\n\\nΠαρακαλώ για φυσιοθεραπευτική αξιολόγηση", 1)\n\n    presented["text"] = text\n    return presented')
           PY
 
-          node --check clinic_utilities/physio_referral_product/prototype/clinical_sheet_v4.js
           node --check clinic_utilities/physio_referral_product/prototype/more_v3.js
-          node --check static/clinic-utilities/physio-referral/product-clinical-sheet-v4.js
           node --check static/clinic-utilities/physio-referral/product-more-v3.js
+          node --check clinic_utilities/physio_referral_product/prototype/qualifiers.js
+          node --check static/clinic-utilities/physio-referral/product-qualifiers.js
           python -m py_compile clinic_utilities/physio_referral_product/prototype/qualifier_overlay.py clinic_utilities/physio_referral_product/knee_oa_presentation_v4.py
           git diff --check
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add clinic_utilities/physio_referral_product static/clinic-utilities/physio-referral
-          git commit -m 'Refine optional clinical details and referral prose'
+          git commit -m 'Simplify Knee-OA exam choices and referral prose'
           git push origin HEAD:fix/physio-knee-oa-v5-optional-refinement-prose-2026-09-12
