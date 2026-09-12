@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from clinic_utilities.physio_referral_runtime import _require_clinical_key
 from clinic_utilities.physio_referral_product import knee_oa_projection
+from clinic_utilities.physio_referral_product.knee_oa_presentation_v4 import present_project_result
 
 
 def build_knee_oa_product_router() -> APIRouter:
@@ -41,7 +42,8 @@ def build_knee_oa_product_router() -> APIRouter:
                 raise ValueError("production_usage_context_required")
             internal = copy.deepcopy(payload)
             internal["synthetic_only"] = True
-            return knee_oa_projection.project(internal)
+            projected = knee_oa_projection.project(internal)
+            return present_project_result(projected, payload)
         except (ValueError, TypeError, KeyError, AssertionError, UnicodeError) as exc:
             raise HTTPException(status_code=400, detail="invalid_or_stale_physio_product_request") from exc
 
