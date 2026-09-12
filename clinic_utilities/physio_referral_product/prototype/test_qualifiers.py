@@ -1,4 +1,4 @@
-"""Step 6A focused tests for product-owner qualifier refinement."""
+"""Focused tests for post-review Knee-OA amendments."""
 from __future__ import annotations
 
 import copy
@@ -37,11 +37,28 @@ def request() -> dict:
 
 
 class QualifierProjectionTests(unittest.TestCase):
-    def test_empty_overlay_preserves_step5_output(self):
+    def test_low_information_output_is_compact_and_preserves_core_priorities(self):
         req = request()
-        before = p.render(p.T, p.clean_request(req)["state"], p.LANG)
+        base = p.render(p.T, p.clean_request(req)["state"], p.LANG)
         result = p.project(req)
-        self.assertEqual(result["text"], before)
+        self.assertLess(len(result["text"]), len(base))
+        self.assertIn("φυσιοθεραπευτική αξιολόγηση", result["text"])
+        self.assertIn("θεραπευτική άσκηση", result["text"])
+        self.assertIn("προοδευτική ενδυνάμωση", result["text"])
+        self.assertIn("εκπαίδευση για αυτοδιαχείριση", result["text"])
+        self.assertNotIn("Η κλινική εικόνα περιλαμβάνει", result["text"])
+
+    def test_patient_specific_output_is_richer_than_low_information_output(self):
+        minimal = p.project(request())["text"]
+        req = request()
+        req["state"]["findings"] = ["pain"]
+        req["state"]["functional_impairments"] = ["stairs"]
+        rich = p.project(req)["text"]
+        self.assertGreater(len(rich), len(minimal))
+        self.assertIn("Η κλινική εικόνα περιλαμβάνει", rich)
+        self.assertIn("Λειτουργικά", rich)
+        self.assertIn("ενδεικτικές προτεραιότητες", rich)
+        self.assertIn("ανάλογα με τα ευρήματα της αξιολόγησης", rich)
 
     def test_pes_anserine_is_location_not_bursitis_diagnosis(self):
         req = request()
@@ -69,11 +86,11 @@ class QualifierProjectionTests(unittest.TestCase):
         self.assertEqual(result["clinical_review_clues"][0]["clue_id"], "morning_stiffness_over_30")
         self.assertIn("σημείο για έλεγχο", result["readiness"]["label"])
 
-    def test_quadriceps_atrophy_is_explicit_and_refines_strengthening(self):
+    def test_quadriceps_exam_and_atrophy_are_explicit_and_refine_strengthening(self):
         req = request()
         req["state"]["phenotype"] = {"weakness_symptom_or_context": True}
         req["state"]["qualifiers"] = {
-            "weakness_detail": "quadriceps",
+            "weakness_detail": "quadriceps_exam",
             "visible_atrophy": True,
             "atrophy_location": "quadriceps",
         }
@@ -91,15 +108,35 @@ class QualifierProjectionTests(unittest.TestCase):
         self.assertIn("μυϊκή αδυναμία", result["text"])
         self.assertNotIn("αντικειμενικά", result["text"])
 
-    def test_fixed_flexion_is_exam_finding_and_only_suggests_mobility(self):
+    def test_old_quadriceps_localisation_value_fails_closed(self):
+        req = request()
+        req["state"]["phenotype"] = {"weakness_symptom_or_context": True}
+        req["state"]["qualifiers"] = {"weakness_detail": "quadriceps"}
+        with self.assertRaises(ValueError):
+            p.project(req)
+
+    def test_fixed_flexion_is_passive_exam_finding_and_only_suggests_mobility(self):
         req = request()
         req["state"]["qualifiers"] = {"fixed_flexion_deformity": True, "fixed_flexion_deformity_deg": 10}
         result = p.project(req)
-        self.assertIn("μόνιμο έλλειμμα έκτασης 10° (fixed flexion deformity)", result["text"])
+        self.assertIn("παθητικό έλλειμμα έκτασης 10°", result["text"])
+        self.assertNotIn("μόνιμο", result["text"])
+        self.assertNotIn("fixed flexion deformity", result["text"].lower())
         self.assertNotIn("δυσκαμψία", result["text"])
         mobility = [c for c in result["suggestions"] if c["item_id"] == "mobility_exercise_when_restricted"]
         self.assertEqual(len(mobility), 1)
         self.assertNotIn("mobility_exercise_when_restricted", result["state"]["rehab_directions"])
+
+    def test_fixed_flexion_degree_zero_is_rejected_but_unknown_degree_is_allowed(self):
+        req = request()
+        req["state"]["qualifiers"] = {"fixed_flexion_deformity": True, "fixed_flexion_deformity_deg": 0}
+        with self.assertRaises(ValueError):
+            p.project(req)
+        req = request()
+        req["state"]["qualifiers"] = {"fixed_flexion_deformity": True, "fixed_flexion_deformity_deg": None}
+        result = p.project(req)
+        self.assertIn("παθητικό έλλειμμα έκτασης", result["text"])
+        self.assertNotIn(" 0°", result["text"])
 
     def test_pes_anserine_tenderness_is_specific_without_diagnosis(self):
         req = request()
