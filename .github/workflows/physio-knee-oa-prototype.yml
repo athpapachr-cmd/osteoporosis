@@ -38,7 +38,7 @@ jobs:
           import subprocess
           paths = subprocess.check_output(['git','diff','--name-only','4e0e3206dd1e12a2e55a6abd18d2a6f7dbc3f7c6','HEAD'], text=True).splitlines()
           exact = {
-            'CURRENT_OPERATIONAL.md','SLICE_PLAN_CURRENT.md','main.py',
+            'CURRENT_OPERATIONAL.md','SLICE_PLAN_CURRENT.md','osteoporosis-change-log.md','main.py',
             'clinic_utilities/physio_referral_api.py',
             'test_physio_knee_oa_cockpit_integration.py','test_physio_knee_oa_cockpit_browser.py',
             '.github/workflows/physio-knee-oa-prototype.yml',
