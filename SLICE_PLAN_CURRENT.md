@@ -1,17 +1,17 @@
-# SLICE_PLAN_CURRENT.md — CYPRUS / GESY OA JURISDICTION OVERLAY V1
+# SLICE_PLAN_CURRENT.md — CYPRUS / GESY OA JURISDICTION OVERLAY V1 review HOLD
 
-> **STATUS:** ACTIVE — PRIMARY-SOURCE AUDIT + DESIGN ONLY.
+> **STATUS:** DESIGN-COMPLETE / PRODUCT OWNER REVIEW HOLD.
 > **Branch:** `design/physio-cy-gesy-oa-overlay-v1-2026-09-12`.
 > **Bootstrap main:** `a2fa27c7ff26d1dd22cd6f726656ca0532daab75`.
-> **Writer:** bounded design branch above.
+> **Writer:** NONE.
 > **Runtime/UI implementation:** NOT AUTHORIZED.
 > **Diagnosis vertical:** Knee Osteoarthritis only.
 
-## 1. Problem
+## 1. Frozen design problem
 
-The product already has a reviewed international Knee-OA evidence contract and a dormant `CY_GESY` context seam. Cyprus now has an HIO-adapted OA guideline based on NICE NG226, plus separate GeSY access/reimbursement rules. Treating all of these as one source of "local evidence" would corrupt both clinical truth and product simplicity.
+The product needs to represent real local clinical differences and GeSY operational rules without collapsing them into the international evidence core.
 
-The design must support:
+Frozen architecture:
 
 ```text
 international evidence core
@@ -21,98 +21,90 @@ optional jurisdiction clinical overlay
 separately classified local-system/admin policy
 ```
 
-without silently hybridising them.
+## 2. Completed artifacts
 
-## 2. Audit rules
+- `CYPRUS_GESY_OA_SOURCE_AUDIT_V1.md`
+- `CYPRUS_GESY_OA_DIFFERENCE_MATRIX_V1.md`
+- `JURISDICTION_OVERLAY_SCHEMA_V1.yaml`
+- `CYPRUS_GESY_OA_OVERLAY_UX_DESIGN_V1.md`
+- `CYPRUS_GESY_OA_OVERLAY_DESIGN_REVIEW_V1.md`
 
-For every product-relevant local recommendation preserve at minimum:
+## 3. Frozen evidence findings
 
-- local recommendation ID;
-- identifying short verbatim excerpt and exact source locator;
-- faithful normalized local position;
-- source/version/publication metadata;
-- scope/intervention;
-- direction;
-- strength/certainty only when explicitly available from source conventions;
-- relationship to NICE;
-- whether Cyprus changes/adds to NICE;
-- stated rationale when available;
-- rationale class: clinical/evidence-based / resource-feasibility / administrative / reimbursement / mixed / unclear;
-- operational publication status;
-- GeSY IT-system integration status separately;
-- reviewed-on date.
+- current Cyprus/HIO OA guidance contains genuine differences/additions relative to NICE;
+- electrotherapy is the clearest physiotherapy-adjacent genuine difference;
+- manual therapy and acupuncture show why a local position must coexist with, not replace, an international mixed state;
+- radiofrequency ablation, podiatry, glucosamine/chondroitin, hyaluronan, PRP and additional imaging detail are clinically relevant local content but are not automatically routine physio-referral content;
+- GeSY access/reimbursement/documentation/provider-unit rules are operational policy, not clinical evidence;
+- HIO guideline implementation is announced, but GeSY information-system integration is planned/not verified active;
+- current linked OA PDF still has stale draft metadata, so final-document version identity remains explicitly imperfect.
 
-Do not infer unstated cost or reimbursement motives. Use `unclear` where the source does not state the rationale.
+## 4. Frozen product behavior
 
-Because the public HIO-linked OA PDF still carries draft metadata while the May-2026 HIO announcement says adaptation is completed and implemented, preserve both facts. Do not invent a final document version/date that HIO has not exposed clearly.
+### Local agreement
 
-## 3. Comparison authority
+Normally silent. Optional source detail only.
 
-Compare verified Cyprus positions only against:
+### Local difference
 
-`clinic_utilities/physio_referral_product/contracts/knee_oa_evidence_contract_v1.yaml`
+International evidence remains visible and unchanged. A restrained `Κύπρος · διαφέρει`-type cue may appear only when the item is already relevant/inspected, with separate international and Cyprus rows in detail.
 
-Current international evidence resolution remains authoritative for the core and forbids source voting/arithmetic scoring.
+### Administrative/resource/reimbursement rule
 
-A local position may be:
+Separate `Πληροφορία ΓεΣΥ` operational layer. Never styled as evidence strength.
+
+### Local status unknown/planned
+
+Explicitly label as unknown/planned. Never infer active enforcement.
+
+## 5. Routine-surface exclusions
+
+Do not routinely show:
+
+- jurisdiction selector or badges on every item;
+- full source tables;
+- radiofrequency ablation;
+- podiatry;
+- glucosamine/chondroitin;
+- hyaluronan;
+- PRP;
+- injection guidance;
+- imaging algorithms;
+- electrotherapy controls merely because Cyprus mentions them;
+- session/reimbursement tables;
+- provider unit caps;
+- planned IT integration as active;
+- inferred cost motives;
+- another checkbox section named GeSY.
+
+## 6. Current live-product decision
 
 ```text
-agreement
-local_difference
-local_addition
-administrative_only
-reimbursement_or_access_only
-status_unknown
-not_comparable
+international evidence states    NO CHANGE
+routine Knee-OA main UI           NO CHANGE from jurisdiction evidence
+routine referral prose            NO CHANGE from jurisdiction evidence
+patient persistence               NO CHANGE / none
+second diagnosis                  NO
 ```
 
-None of these states may overwrite the international evidence state.
+The already-tested v5 post-use candidate remains a separate Product Owner review matter and is not part of this overlay design.
 
-## 4. UX design target
+## 7. Bounded recommendation
 
-Routine surface must remain minimal.
+`IMPLEMENT JURISDICTION OVERLAY V1`
 
-- local agreement: normally silent;
-- genuine local difference: small contextual jurisdiction cue, detail on demand;
-- local admin/resource rule: separate operational information, never styled as clinical efficacy evidence;
-- local status unknown/planned: explicit uncertainty/planned wording;
-- full source tables, reimbursement mechanics and guideline bureaucracy stay out of routine referral creation.
+This means implement the separate machine/provenance capability **only after Product Owner review in a new bounded runtime slice**. It does not mean adding routine visible controls.
 
-## 5. Explicit non-goals
+## 8. Exit / next gate
 
-- no live UI/runtime change;
-- no evidence-state mutation;
-- no second diagnosis;
-- no country selector;
-- no Greece/England content;
-- no billing/analytics/persistence;
-- no patient data;
-- no automatic literature ingestion;
-- no automatic local recommendation activation;
-- no merging of v5 Product Owner review work into this slice.
+Design slice is complete and writer released.
 
-## 6. Acceptance criteria
+Next legitimate action:
 
-The slice is design-complete only if:
+```text
+Product Owner review
+→ accept / modify / reject design
+→ only if accepted: fresh runtime implementation slice
+```
 
-1. official Cyprus/HIO clinical guidance is auditable recommendation-by-recommendation for current product-relevant domains;
-2. GeSY administrative/reimbursement/access rules are separately classified;
-3. NICE relationship is explicit for every material local difference/addition;
-4. ambiguous rationale/status stays `unclear` rather than inferred;
-5. the schema is jurisdiction-generic enough for future profiles without implementing them;
-6. UX preserves progressive disclosure and clinician autonomy;
-7. final recommendation is bounded to `NO CHANGE`, `LOCAL INFO ONLY`, or `IMPLEMENT JURISDICTION OVERLAY V1` with evidence;
-8. no runtime/UI code is changed.
-
-## 7. REPLAN triggers
-
-Replan if:
-
-- an authoritative final Cyprus source contradicts the currently linked HIO artifact materially;
-- a GeSY rule is found to be enforced differently from its published status;
-- the overlay would require changing core evidence semantics rather than representing local context separately;
-- a routine-surface addition cannot demonstrate workflow or receiver utility.
-
-## 8. Exact next action
-
-Finish the primary-source audit and freeze source-audit, difference-matrix, machine-schema and UX-policy artifacts for Product Owner review.
+No runtime/UI PR, merge, deploy or activation is authorized by this design freeze.
