@@ -39,6 +39,12 @@ class QualifierBrowserTests(unittest.TestCase):
         self.assertEqual(self.errors, [])
         self.context.close()
 
+    def open_v3_category(self, category):
+        if self.page.locator('#advancedToggle').get_attribute('aria-expanded') != 'true':
+            self.page.locator('#advancedToggle').click()
+        self.page.locator(f'#advanced [data-v3-category={category}]').click()
+        expect(self.page.locator('#sheet')).to_be_visible()
+
     def test_diagnosis_is_selection_not_checkbox_and_missing_state_is_specific(self):
         page = self.context.new_page(); errors=[]
         page.on('pageerror', lambda error: errors.append(str(error)))
@@ -120,17 +126,18 @@ class QualifierBrowserTests(unittest.TestCase):
         expect(self.page.locator('#referralText')).to_contain_text('ενδεικτικές προτεραιότητες')
 
     def test_fixed_flexion_is_advanced_passive_exam_not_stiffness(self):
-        self.page.locator('#advancedToggle').click()
-        self.page.locator('#examQualifierGroup summary').click()
-        expect(self.page.locator('[data-q-ffd]')).to_have_text('Παθητικό έλλειμμα έκτασης')
-        self.page.locator('[data-q-ffd]').click()
-        expect(self.page.locator('#ffdDegreesWrap')).to_be_visible()
-        self.page.locator('#ffdDegrees').fill('10')
-        expect(self.page.locator('#ffdDegrees')).to_have_attribute('min','1')
+        self.open_v3_category('exam')
+        ffd=self.page.locator('#sheet [data-q-ffd]')
+        expect(ffd).to_contain_text('Παθητικό έλλειμμα έκτασης')
+        ffd.click()
+        expect(self.page.locator('#v3FfdDegreesWrap')).to_be_visible()
+        self.page.locator('#v3FfdDegrees').fill('10')
+        expect(self.page.locator('#v3FfdDegrees')).to_have_attribute('min','1')
         expect(self.page.locator('#referralText')).to_contain_text('παθητικό έλλειμμα έκτασης 10°')
         expect(self.page.locator('#referralText')).not_to_contain_text('μόνιμο')
         expect(self.page.locator('#referralText')).not_to_contain_text('fixed flexion deformity')
         expect(self.page.locator('#referralText')).not_to_contain_text('δυσκαμψία')
+        self.page.keyboard.press('Escape')
         expect(self.page.locator('#suggestions')).to_contain_text('Κινητικότητα')
         self.assertEqual(self.page.locator('#plan [data-select=mobility_exercise_when_restricted][aria-pressed=true]').count(), 0)
 
@@ -139,8 +146,9 @@ class QualifierBrowserTests(unittest.TestCase):
         expect(self.page.locator('#sheet .evidence-deep')).to_have_count(1)
         expect(self.page.locator('#sheet .evidence-deep')).not_to_have_attribute('open','')
         self.page.keyboard.press('Escape')
-        self.page.locator('#advancedToggle').click(); self.page.locator('#advanced summary').filter(has_text='Συμπληρωματικά').click()
-        self.page.locator('#advanced [data-select=acupuncture]').click()
+        self.open_v3_category('adjuncts')
+        self.page.locator('#sheet [data-select=acupuncture]').click()
+        self.page.keyboard.press('Escape')
         self.page.locator('#plan [data-evidence=acupuncture]').click()
         expect(self.page.locator('#sheet .evidence-deep')).to_have_count(0)
         expect(self.page.locator('#sheet .source-position')).to_have_count(5)
@@ -148,11 +156,12 @@ class QualifierBrowserTests(unittest.TestCase):
         expect(self.page.locator('#sheetBody')).to_contain_text('Ανεπαρκή δεδομένα')
 
     def test_pes_anserine_tenderness_and_mobile_reflow(self):
-        self.page.locator('#advancedToggle').click(); self.page.locator('#examQualifierGroup summary').click()
-        self.page.locator('[data-q-tenderness=pes_anserine_region]').click()
+        self.open_v3_category('exam')
+        self.page.locator('#sheet [data-q-tenderness=pes_anserine_region]').click()
         expect(self.page.locator('#referralText')).to_contain_text('εντοπισμένη ευαισθησία')
         expect(self.page.locator('#referralText')).to_contain_text('χηνείου ποδός')
         expect(self.page.locator('#referralText')).not_to_contain_text('θυλακ')
+        self.page.keyboard.press('Escape')
         for width in [320, 390, 800]:
             self.page.set_viewport_size({"width": width, "height": 900})
             self.assertTrue(self.page.evaluate('document.documentElement.scrollWidth<=innerWidth'), width)
