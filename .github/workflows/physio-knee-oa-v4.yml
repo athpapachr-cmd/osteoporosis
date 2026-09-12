@@ -1,15 +1,17 @@
-name: Physio Knee OA clinical-sheet v4 gate
+name: Physio Knee OA clinical-sheet v5 gate
 
 on:
   push:
     branches:
       - fix/physio-knee-oa-clinical-sheet-v4-2026-09-12
+      - fix/physio-knee-oa-usability-v5-2026-09-12
   pull_request:
     paths:
       - 'clinic_utilities/physio_referral_product/**'
       - 'static/clinic-utilities/physio-referral/**'
       - 'commercial_products/physio_referral/**'
       - 'test_physio_knee_oa_cockpit_browser.py'
+      - 'test_physio_knee_oa_cockpit_integration.py'
       - '.github/workflows/physio-knee-oa-v4.yml'
       - '.github/workflows/physio-knee-oa-prototype.yml'
       - '.github/workflows/physio-knee-oa-cockpit-integration.yml'
@@ -18,7 +20,7 @@ permissions:
   contents: read
 
 jobs:
-  v4:
+  v5:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -29,7 +31,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Verify bounded v4 scope
+      - name: Verify bounded v5 scope
         run: |
           python - <<'PY'
           import subprocess
@@ -41,13 +43,14 @@ jobs:
             'SLICE_PLAN_CURRENT.md',
             'osteoporosis-change-log.md',
             'test_physio_knee_oa_cockpit_browser.py',
+            'test_physio_knee_oa_cockpit_integration.py',
             '.github/workflows/physio-knee-oa-v4.yml',
             '.github/workflows/physio-knee-oa-prototype.yml',
             '.github/workflows/physio-knee-oa-cockpit-integration.yml',
           }
           bad=[p for p in paths if p not in exact and not p.startswith(allowed)]
           assert not bad,bad
-          print('Knee OA v4 bounded scope PASS:',len(paths),'files')
+          print('Knee OA v5 bounded scope PASS:',len(paths),'files')
           PY
       - name: Install dependencies
         run: |
@@ -55,9 +58,9 @@ jobs:
           python -m pip install 'playwright==1.55.0'
       - name: Syntax
         run: |
-          python -m py_compile clinic_utilities/physio_referral_product/knee_oa_presentation_v4.py clinic_utilities/physio_referral_product/production_api.py clinic_utilities/physio_referral_product/prototype/server.py clinic_utilities/physio_referral_product/prototype/test_browser_qualifiers.py test_physio_knee_oa_cockpit_browser.py
-          node --check clinic_utilities/physio_referral_product/prototype/clinical_sheet_v4.js
-          node --check static/clinic-utilities/physio-referral/product-clinical-sheet-v4.js
+          python -m py_compile clinic_utilities/physio_referral_product/knee_oa_presentation_v4.py clinic_utilities/physio_referral_product/knee_oa_presentation_v5.py clinic_utilities/physio_referral_product/production_api.py clinic_utilities/physio_referral_product/prototype/server.py clinic_utilities/physio_referral_product/prototype/test_browser_qualifiers.py test_physio_knee_oa_cockpit_browser.py test_physio_knee_oa_cockpit_integration.py
+          node --check clinic_utilities/physio_referral_product/prototype/clinical_sheet_v5.js
+          node --check static/clinic-utilities/physio-referral/product-clinical-sheet-v5.js
           node --check static/clinic-utilities/physio-referral/production-finalize.js
       - name: Server and clinical invariants
         run: |
@@ -66,7 +69,7 @@ jobs:
           python -m unittest -v test_physio_knee_oa_cockpit_integration.py
       - name: Install Chromium
         run: python -m playwright install --with-deps chromium
-      - name: V4 and inherited browser acceptance
+      - name: V5 and inherited browser acceptance
         run: |
           python clinic_utilities/physio_referral_product/prototype/test_browser_qualifiers.py
           python clinic_utilities/physio_referral_product/prototype/test_browser_usability_v2.py
@@ -78,7 +81,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: physio-knee-oa-v4-${{ github.sha }}
+          name: physio-knee-oa-v5-${{ github.sha }}
           path: artifacts/
           if-no-files-found: warn
           retention-days: 7
