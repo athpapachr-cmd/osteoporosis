@@ -4,7 +4,6 @@
 > **Updated:** 2026-09-12 Asia/Nicosia.
 > **Parent:** existing CU-1 Physiotherapy Referral foundation.
 > **Current diagnosis vertical:** Knee Osteoarthritis only.
-> **Current canonical main:** `273e22a0ea2bc9b2e5a996fac22a0a88eb54d30e`.
 > **Current writer:** none.
 
 ---
@@ -203,7 +202,7 @@ paid conversion / retention validation            no
 second diagnosis                                  no
 ```
 
-The final canonical production smoke is run `34703453615` — SUCCESS.
+The authenticated CY_GESY production smoke evidence is run `34703453615` — SUCCESS.
 
 ---
 
