@@ -1,53 +1,57 @@
 # CURRENT.md — Physio Referral commercial product track
 
-> **STATUS:** KNEE-OA V1 COCKPIT RELEASE CANDIDATE — IMPLEMENTED / EXACT-HEAD TESTED / RELEASE REVIEW PASS / PR NEXT.
+> **STATUS:** KNEE-OA V1 RUNTIME RELEASED / DEPLOYED / LIVE PUBLIC-ASSET + AUTH-BOUNDARY SMOKE PASS.
 > **Updated:** 2026-09-12 Asia/Nicosia.
 > **Diagnosis vertical:** Knee Osteoarthritis only.
-> **Release-candidate head:** `57d879b072fcaf2bef350d5dbb0547ce465764e1`.
-> **Integration branch:** `feat/physio-knee-oa-cockpit-integration-v1-2026-09-12`.
+> **Runtime release PR:** `#87`.
+> **Runtime release SHA:** `eeec7f82b4f5a9054e7df51354803dd75e7dc9eb`.
+> **Render deploy:** `dep-daifjt0jo6nc73biqhpg` — LIVE.
+> **Release closeout:** `releases/KNEE_OA_V1_RELEASE_CLOSEOUT.md`.
+> **Review archive:** `reviews/archive/2026-09-11-knee-oa-candidate-6539351c/`.
 > **Root operational authority:** `CURRENT_OPERATIONAL.md`.
 
 ## Product state
 
-The reviewed Knee-OA experience has moved from a synthetic-only prototype into the existing authenticated Clinical Excellence Cockpit physiotherapy utility. The product philosophy and interaction contract remain intact: live deterministic referral, few meaningful routine actions, evidence complexity under progressive disclosure, direct editing with fail-closed reconciliation, and scan-first advanced access rather than a comprehensive visible form.
+The reviewed Knee-OA experience is now the deployed Clinical Excellence Cockpit physiotherapy surface. The product keeps the accepted interaction philosophy: live deterministic referral, few meaningful routine actions, evidence complexity under progressive disclosure, direct editing with fail-closed reconciliation, and scan-first advanced access rather than a comprehensive visible form.
 
-Commercial/product authority now lives under `commercial_products/physio_referral/`; technical contracts/runtime/tests remain under `clinic_utilities/physio_referral_product/`.
+Commercial/product authority lives under `commercial_products/physio_referral/`; technical contracts/runtime/tests remain under `clinic_utilities/physio_referral_product/`.
 
-## Review state
+## Review history
 
-The four independent specialist reviews remain:
+The four specialist review axes remain:
 
 1. Clinical / Evidence
 2. Physiotherapy / receiving-professional utility
 3. UX / Product
 4. Commercial / Product-Market
 
-Their material findings were synthesized and amended through the reviewed Knee-OA lineage. A separate final release/red-team review at the Cockpit integration stage is recorded at:
+A fifth source file is archived as a supplementary combined / multi-axis review, not a second specialist physiotherapy review.
 
-`releases/KNEE_OA_V1_RELEASE_REVIEW.md`
+All five original uploads are now preserved byte-for-byte in the review archive with exact hashes.
 
-Verdict: **PASS / no open release blocker**.
+## Release state
 
-## Exact release-candidate evidence
+Supported lifecycle claims:
 
-At `57d879b072fcaf2bef350d5dbb0547ce465764e1`:
+- merged: yes;
+- deployed: yes;
+- live public product assets: verified;
+- unauthenticated auth boundary: verified;
+- full authenticated live end-to-end smoke: not yet performed.
 
-- Cockpit integration gate `34679427725` — SUCCESS
-- inherited Knee-OA product gate `34679427741` — SUCCESS
-- CU-1 focused gate `34679427822` — SUCCESS
+The last distinction is deliberate. Release-code authenticated behavior passed protected FastAPI and Chromium tests, but no production credential/session was used in the external live smoke.
 
-Underlying v3 product candidate remains anchored by substantive run `34677022119` and exact-head closeout run `34677243751`, both SUCCESS.
+## Product truth still unproven
 
-## Product truth that remains unproven
-
-A technically releasable authenticated Cockpit feature is not the same thing as a validated business:
+A released technical feature is not yet a validated business or clinical pilot:
 
 - no receiving-physiotherapist field validation yet;
 - no actual iPhone Safari/VoiceOver acceptance yet;
 - no paid conversion/retention evidence yet;
 - no real clinical pilot validation yet;
-- Cyprus/GeSY recommendation-by-recommendation overlay is not yet activated.
+- Cyprus/GeSY recommendation-by-recommendation overlay is not activated;
+- no second diagnosis has been selected.
 
-## Exact next product boundary
+## Next product boundary
 
-Complete PR → squash merge → exact Render deploy verification → bounded non-identifiable production smoke → canonical closeout. After that, do not automatically add another diagnosis. The next commercial/product learning step should be chosen from real receiver/device/market evidence rather than feature-count pressure.
+Do not expand diagnosis count automatically. The next product-learning step should come from real receiver/device/market evidence, plus an authorized authenticated live verification when operationally safe.

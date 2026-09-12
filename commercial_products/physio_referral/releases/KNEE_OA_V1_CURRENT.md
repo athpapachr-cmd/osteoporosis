@@ -1,14 +1,16 @@
 # Knee OA v1 — current commercial release record
 
-> **STATUS:** RELEASE CANDIDATE / EXACT-HEAD TESTED / FINAL RELEASE REVIEW PASS / PR NEXT.
+> **STATUS:** RUNTIME RELEASED / MERGED / DEPLOYED / LIVE PUBLIC-ASSET + AUTH-BOUNDARY SMOKE PASS.
 > **Diagnosis:** Knee Osteoarthritis only.
-> **Parent closed product candidate:** `b7f2db6fd86f90a32875d9b9cfd356cfa6129c69`.
-> **Synthetic substantive candidate:** `9deafa2db43d3498c5becf20f77a804b03849d53`.
-> **Cockpit release-candidate head:** `57d879b072fcaf2bef350d5dbb0547ce465764e1`.
-> **Integration branch:** `feat/physio-knee-oa-cockpit-integration-v1-2026-09-12`.
-> **Release review:** `KNEE_OA_V1_RELEASE_REVIEW.md` — PASS / no open blocker.
+> **Runtime release PR:** `#87`.
+> **Runtime squash-merge SHA:** `eeec7f82b4f5a9054e7df51354803dd75e7dc9eb`.
+> **Render deploy:** `dep-daifjt0jo6nc73biqhpg` — LIVE at exact runtime release SHA.
+> **External live boundary-smoke:** `34680029691` — SUCCESS.
+> **Release review:** `KNEE_OA_V1_RELEASE_REVIEW.md` — PASS / no open blocker before merge.
+> **Release/deploy closeout:** `KNEE_OA_V1_RELEASE_CLOSEOUT.md`.
+> **Review archive:** `../reviews/archive/2026-09-11-knee-oa-candidate-6539351c/`.
 
-## Product surface retained
+## Product surface released
 
 - explicit OA diagnosis assertion + laterality;
 - live deterministic Greek referral, no routine Generate button;
@@ -18,39 +20,37 @@
 - pain/stiffness/weakness qualifiers with symptom/finding/diagnosis separation;
 - advanced examination only on demand;
 - `★ Συχνά / Σχετικά τώρα / Όλα` scan-first advanced UI;
-- Cyprus/GeSY shown as local context only until item-level audit;
+- Cyprus/GeSY local-context seam without item-level activation;
 - ephemeral patient draft; no analytics/patient persistence.
 
-## Cockpit production integration
+## Production architecture
 
-The product is integrated into the existing protected Clinical Excellence route:
+The product is deployed at:
 
 `/clinical/clinic-utilities/physio-referral`
 
-Authentication and real CU-1 validation/safety remain server-owned. Shared product projection is owned by `clinic_utilities/physio_referral_product/knee_oa_projection.py`; the local prototype is only a loopback test transport.
+Existing authentication and real CU-1 validation/safety remain server-owned. Shared product projection is owned by `clinic_utilities/physio_referral_product/knee_oa_projection.py`; the local prototype remains loopback-only.
 
-Production network requests are explicitly non-synthetic. The protected adapter rejects synthetic-marked Cockpit requests before adapting internally to the frozen shared projection compatibility envelope.
+## Deployment and smoke
 
-## Exact release-candidate gates
+Render auto-deployed the exact runtime merge SHA and reported the deployment live.
 
-At `57d879b072fcaf2bef350d5dbb0547ce465764e1`:
+External live smoke verified current product assets (`200`) and the unauthenticated protection boundary (`401` for protected page/API). Render logs corroborated those requests. No production credential, session cookie or patient data was used.
+
+Consequently, a full authenticated live end-to-end production smoke remains **not yet performed** and is not silently claimed by this record.
+
+## Historical reviews
+
+Four specialist reviews plus one supplementary combined review are archived byte-for-byte with exact SHA-256 hashes. The supplementary `Knee OA Physiotherapy Review.txt` is not a second specialist PT vote.
+
+## Remaining validation
 
 ```text
-Cockpit integration gate   34679427725   SUCCESS
-Inherited product gate     34679427741   SUCCESS
-CU-1 focused gate          34679427822   SUCCESS
+actual iPhone Safari / VoiceOver                    NOT YET PROVEN
+authenticated live production E2E                  NOT YET PERFORMED
+receiving-physiotherapist field validation         NOT YET PROVEN
+paid conversion / retention                        NOT YET PROVEN
+real clinical pilot                                NOT YET PROVEN
+Cyprus/GeSY item-level overlay                     NOT ACTIVATED
+second diagnosis                                   NOT SELECTED
 ```
-
-## Release acceptance remaining
-
-```text
-bounded PR to current main
-PR-head workflows clean
-fresh behind=0 / scope check
-squash merge
-Render exact-merge deploy verification
-bounded synthetic/non-identifiable production smoke
-final canonical closeout
-```
-
-A release PASS does not establish receiving-physiotherapist validation, paid conversion/retention, actual iPhone VoiceOver acceptance or clinical pilot validation.
