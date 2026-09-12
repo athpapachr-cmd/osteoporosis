@@ -46,7 +46,13 @@ class QualifierBrowserTests(unittest.TestCase):
         expect(self.page.locator('#sheet')).to_be_visible()
 
     def open_clinical(self, kind):
-        self.page.locator(f'[data-clinical-v4={kind}]').click()
+        button = self.page.locator(f'[data-clinical-v4={kind}]')
+        if kind != 'function' and button.get_attribute('aria-pressed') != 'true':
+            button.click()
+            expect(button).to_have_attribute('aria-pressed', 'true')
+            expect(self.page.locator('#sheet')).not_to_be_visible()
+            expect(button.locator('[data-clinical-count-v4]')).to_have_text('· λεπτομέρειες')
+        button.click()
         expect(self.page.locator('#sheet')).to_be_visible()
         expect(self.page.locator('#sheetTitle')).to_have_text({'pain':'Πόνος','stiffness':'Δυσκαμψία','weakness':'Αδυναμία','function':'Λειτουργικότητα'}[kind])
 
@@ -54,8 +60,6 @@ class QualifierBrowserTests(unittest.TestCase):
         page = self.context.new_page(); errors=[]
         page.on('pageerror', lambda error: errors.append(str(error)))
         page.goto(self.origin)
-        # Specific inline validation owns the unresolved-field wording; the
-        # global review status may remain intentionally generic.
         expect(page.locator('#diagnosisRequiredHint')).to_be_visible()
         expect(page.locator('#diagnosisRequiredHint')).to_have_text('Απαιτείται επιλογή διάγνωσης.')
         expect(page.locator('#assertion')).to_have_class('diagnosis-choice required-missing')
@@ -68,6 +72,23 @@ class QualifierBrowserTests(unittest.TestCase):
         page.locator('[data-side=left]').click(); expect(page.locator('#copy')).to_be_enabled()
         expect(page.locator('#referralText')).to_contain_text('αριστερού γόνατος')
         self.assertEqual(errors, []); page.close()
+
+    def test_first_symptom_tap_selects_without_forcing_detail_sheet(self):
+        for kind, phrase in [('pain','πόνο'),('stiffness','δυσκαμψία'),('weakness','μυϊκή αδυναμία')]:
+            with self.subTest(kind=kind):
+                page = self.context.new_page(); errors=[]
+                page.on('pageerror', lambda error: errors.append(str(error)))
+                page.goto(self.origin)
+                expect(page.locator('#reviewStatus')).not_to_have_text('Η παραπομπή ενημερώνεται')
+                page.locator('#assertion').click(); page.locator('[data-side=right]').click()
+                button=page.locator(f'[data-clinical-v4={kind}]')
+                button.click()
+                expect(button).to_have_attribute('aria-pressed','true')
+                expect(page.locator('#sheet')).not_to_be_visible()
+                expect(page.locator('#referralText')).to_contain_text(phrase)
+                button.click()
+                expect(page.locator('#sheet')).to_be_visible()
+                self.assertEqual(errors, []); page.close()
 
     def test_compact_grid_and_pain_sheet_keep_parent_child_link_obvious(self):
         expect(self.page.locator('#phenotype [data-clinical-v4]')).to_have_count(4)
@@ -93,13 +114,19 @@ class QualifierBrowserTests(unittest.TestCase):
         self.page.locator('#reviewStatus').click()
         expect(self.page.locator('#sheetBody')).to_contain_text('NICE NG226 · 2022')
 
-    def test_quadriceps_exam_atrophy_stays_specific_and_human(self):
+    def test_weakness_sheet_is_reduced_and_quadriceps_atrophy_stays_explicit(self):
         self.open_clinical('weakness')
+        options=self.page.locator('#sheet .clinical-options-v4').first.locator('button')
+        expect(options).to_have_count(3)
+        expect(options.nth(0)).to_have_text('Μυϊκή αδυναμία στην εξέταση')
+        expect(options.nth(1)).to_have_text('Αδυναμία τετρακεφάλου')
+        expect(options.nth(2)).to_have_text('Εμφανής ατροφία τετρακεφάλου')
+        self.assertEqual(self.page.get_by_text('Περιαρθρικά', exact=True).count(), 0)
+        self.assertEqual(self.page.get_by_text('Εντόπιση ατροφίας', exact=True).count(), 0)
+
         quad=self.page.locator('#sheet [data-q-weakness=quadriceps_exam]')
-        expect(quad).to_have_text('Τετρακέφαλος στην εξέταση'); quad.click()
-        self.page.locator('#sheet [data-q-atrophy]').click()
-        expect(self.page.locator('#v4AtrophyLocation')).to_be_visible()
-        self.page.locator('#sheet [data-q-atrophy-location=quadriceps]').click()
+        quad.click()
+        self.page.locator('#sheet [data-q-atrophy-quadriceps-v5]').click()
         expect(self.page.locator('[data-clinical-v4=weakness] [data-clinical-count-v4]')).to_have_text('· 2')
         expect(self.page.locator('#referralText')).to_contain_text('αδυναμία του τετρακεφάλου κατά την εξέταση')
         expect(self.page.locator('#referralText')).to_contain_text('εμφανή ατροφία τετρακεφάλου')
