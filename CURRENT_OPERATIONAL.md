@@ -1,105 +1,109 @@
-# CURRENT_OPERATIONAL.md — Knee-OA usability refinement v2 closeout
+# CURRENT_OPERATIONAL.md — Knee-OA More redesign v3
 
-> **STATUS:** KNEE-OA USABILITY REFINEMENT V2 — IMPLEMENTED / FOCUSED TECHNICAL GATE PASS / PRODUCT-OWNER VISUAL REVIEW NEXT.
+> **STATUS:** KNEE-OA `ΠΕΡΙΣΣΟΤΕΡΑ` REDESIGN V3 — IMPLEMENTATION ACTIVE / SYNTHETIC PROTOTYPE ONLY.
 > **Updated:** 2026-09-12 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Freshly verified `main`:** `d9f312f6d2d596ec0bd4f35f6de56ad98dc34b37`.
-> **Parent closed candidate:** `0f38f4d411146667d854c32c9f5f639f344d7c7f`.
-> **Implementation branch:** `feat/physio-knee-oa-usability-refine-v2-2026-09-12`.
-> **Closed slice:** `CU1-PRODUCT-KNEE-OA-USABILITY-REFINE-V2-20260912`.
-> **Tested substantive head:** `a87dccc90dab9f50f70505f2565e3405d48de109`.
-> **Successful substantive run:** `34675038243`.
-> **Result record:** `clinic_utilities/physio_referral_product/KNEE_OA_USABILITY_REFINE_V2_RESULT.md`.
-> **ACTIVE RUNTIME / DESIGN / CANONICAL WRITER:** NONE; usability-refinement writer released.
+> **Parent closed candidate:** `2c19eb7283c96af7868690a892d7e61155674d6b`.
+> **Implementation branch:** `feat/physio-knee-oa-more-redesign-v3-2026-09-12`.
+> **Active slice:** `CU1-PRODUCT-KNEE-OA-MORE-REDESIGN-V3-20260912`.
+> **ACTIVE RUNTIME / DESIGN / CANONICAL WRITER:** this bounded visual/IA refinement session.
 > **PR / merge / deploy / production smoke authority:** NONE.
 > **Real-patient use / production integration:** NOT AUTHORIZED.
 
-## 1. Implemented Product Owner refinements
+## 1. Product Owner feedback being implemented
 
-### Additional suggestions
+The v2 Favorites idea is accepted, but the Product Owner correctly identified that the `Περισσότερα` surface remains overpopulated. The problem is not feature count alone; the UI presents too many controls with similar visual weight and makes scanning expensive.
 
-The primary suggestion remains directly actionable. When additional candidates exist, the routine surface now shows a restrained bordered `Άλλες {n} προτάσεις ›` summary with short current titles. Activating it opens the full existing suggestions sheet. The summary itself does not select treatment.
-
-### Direct referral editing
-
-The desktop live preview now shows `✎ Επεξεργασία` directly. The mobile preview sheet exposes the same action. The overflow menu remains a secondary route.
-
-Manual-text safety remains unchanged:
+Approved direction:
 
 ```text
-manual text != structured state
-structured change after manual edit
-→ clinician text preserved
-→ stale reconciliation
-→ export blocked
-→ explicit resolution required
+preserve capability
++ reduce simultaneous decisions
++ make visual hierarchy obvious at a glance
 ```
 
-### Favorites / pin-to-top
+## 2. Authorized redesign scope
 
-`Περισσότερα` now supports doctor-facing `☆` / `★` pinning. Pinned items appear in `★ Συχνά` at the top of the advanced surface.
+### Information architecture
 
-Hard boundaries:
-
-- favorite/pin does not select anything;
-- favorites do not change clinical output, evidence, suggestion eligibility or safety;
-- unpinning does not clear clinical selection;
-- no Hide control exists;
-- synthetic favorites are ephemeral only and cleared on reset/pagehide/BFCache;
-- no localStorage/sessionStorage/server preference persistence was introduced.
-
-Future persistence, if justified, belongs to clinician/account preference state, not patient/referral state.
-
-## 2. Gate history
-
-Initial run `34674925907` failed because the new direct edit and the legacy overflow edit both matched the inherited generic `[data-edit]` browser locator. The old regression was made explicit about the legacy menu route while the new suite independently tests the direct route. Manual-buffer behavior itself was not weakened.
-
-Successful substantive gate:
+`Περισσότερα` becomes:
 
 ```text
-run                                       34675038243
-head                                      a87dccc90dab9f50f70505f2565e3405d48de109
-result                                    SUCCESS
-scope + syntax                            PASS
-real CU-1 / HTTP                          15 / 15 PASS
-frozen Step-3 exact-output fixtures       15 PASS
-post-review clinical/output               11 / 11 PASS
-inherited Chromium                        12 / 12 PASS
-post-review qualifier Chromium             9 / 9 PASS
-usability-v2 Chromium                      5 / 5 PASS
-Greek source-summary coverage             54 positions
-packaged dependency closure               PASS
+★ Συχνά
+→ only pinned shortcuts, compact and bounded
+
+Σχετικά τώρα
+→ at most a small deterministic set of context-relevant shortcuts
+→ no auto-selection
+
+Όλα
+→ collapsed category rows
+→ selected-item summaries/counts remain visible without opening
+→ one category opens at a time into the existing sheet/modal host
 ```
 
-CI produced desktop/mobile/mixed-evidence screenshots plus new `suggestions-v2` and `favorites-v2` screenshots. They were visually inspected; no obvious clipping or routine-surface crowding was observed. This is not Safari/VoiceOver acceptance.
+No clinical option may be removed merely to simplify the surface.
 
-## 3. Product boundaries unchanged
+### Visual design
 
-The general utility rule still applies:
+The redesign is not only hierarchical. It must improve eye-scanning through:
+
+- stronger section typography and spacing;
+- large calm category rows rather than dense chip walls;
+- restrained iconography with one visual grammar;
+- selected summaries in muted secondary text;
+- clear active-count treatment without badge clutter;
+- more white space and fewer simultaneously visible outlines;
+- Favorites shown as shortcuts, not a second complete clinical form;
+- `Σχετικά τώρα` visually distinct but not alarm-like;
+- category sheets that expose full detail only after deliberate entry.
+
+### Favorites
+
+- pin-to-top only; no permanent Hide;
+- normal mode does not show a star on every row;
+- a deliberate `Προσαρμογή Συχνών` mode reveals pin controls;
+- a practical soft cap keeps the routine Favorites block small;
+- favorite != clinical selection;
+- still ephemeral in the synthetic prototype.
+
+### Contextual relevance
+
+`Σχετικά τώρα` is deterministic progressive disclosure only. It may surface an existing option when current structured state gives that option genuine workflow/receiver relevance. It cannot invent a finding, select treatment, change safety, or become an AI guess layer.
+
+## 3. Hard boundaries
 
 ```text
-clinically meaningful
-!= workflow-useful
-!= receiver-useful
-!= worth adding
+NO clinical/evidence semantic changes
+NO deletion of existing selectable capabilities
+NO search box
+NO tabs for Favorites/Hidden/Recent
+NO permanent Hide
+NO preference persistence
+NO second diagnosis
+NO jurisdiction expansion
+NO PR/merge/deploy
 ```
 
-No clinical/evidence semantics, jurisdiction guidance, diagnosis scope, patient persistence or production runtime were expanded in this slice.
+Safety-critical content must not become harder to discover because of the redesign. If a safety item requires proactive surfacing, it remains governed by existing safety/readiness behavior rather than relying on the clinician to browse `Περισσότερα`.
 
-## 4. Still unproven
+## 4. Acceptance gate
 
-```text
-Product Owner visual/use acceptance of this exact candidate
-actual iPhone Safari / VoiceOver
-complete measured accessibility/contrast acceptance
-receiving-physiotherapist real-user validation
-whether favorites deserve future cross-device persistence
-production integration / real-patient use
-commercial willingness-to-pay / retention
-```
+Fresh exact-head tests/screenshots must prove at minimum:
+
+- all prior selectable advanced items remain reachable;
+- routine `Περισσότερα` no longer opens as a dense all-controls list;
+- `★ Συχνά` remains pin-only and does not mutate selection;
+- normal mode avoids stars on every row; customization mode reveals them;
+- `Σχετικά τώρα` is bounded, deterministic and non-selecting by itself;
+- collapsed `Όλα` category rows show useful selected summaries/counts;
+- opening a category exposes the same underlying controls/state;
+- closing/reopening categories preserves selection;
+- no new storage/persistence;
+- inherited clinical/safety/evidence/manual-edit/mobile regressions remain green;
+- desktop/mobile screenshots show no clipping or routine-surface crowding.
 
 ## 5. Exact next action
 
-**Product Owner visually/use-tests the exact tested synthetic usability-v2 artifact and records concrete keep/change/remove feedback.**
-
-No PR, merge, deploy, second diagnosis, permanent Hide or preference-persistence work follows automatically.
+Implement the bounded hierarchy + visual redesign in the synthetic Knee-OA prototype, add focused Chromium coverage, run the full inherited gate, create a fresh artifact/screenshots for Product Owner visual review, then release the writer.
