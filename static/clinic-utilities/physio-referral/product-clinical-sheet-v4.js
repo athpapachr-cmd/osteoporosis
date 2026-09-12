@@ -30,6 +30,10 @@ function v4InstallClinicalGrid() {
   const box=$('#phenotype'); if(!box || box.dataset.v4Installed==='1') return;
   box.dataset.v4Installed='1'; box.className='clinical-grid-v4';
   box.replaceChildren(...['pain','stiffness','weakness','function'].map(v4ClinicalButton));
+  // Base draft/reset/BFCache lifecycle code still addresses this legacy anchor.
+  // Keep it hidden so v4 can replace the visible interaction without breaking
+  // lifecycle cleanup or reinitialisation semantics.
+  box.append(btn('',{id:'functionToggle',class:'legacy-qualifiers-v4-hidden',hidden:'','aria-hidden':'true','aria-expanded':'false','aria-controls':'functionChoices',tabindex:'-1'}));
   document.querySelector('.smart-qualifiers')?.classList.add('legacy-qualifiers-v4-hidden');
   $('#functionChoices')?.classList.add('legacy-qualifiers-v4-hidden');
 }
