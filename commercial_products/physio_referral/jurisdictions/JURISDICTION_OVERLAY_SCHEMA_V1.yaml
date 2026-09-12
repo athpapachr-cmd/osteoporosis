@@ -1,0 +1,320 @@
+schema_id: JurisdictionOverlayV1
+schema_version: 1
+status: proposed_design_only
+reviewed_on: 2026-09-12
+runtime_authority: false
+
+principles:
+  international_core_is_authoritative_and_independent: true
+  local_overlay_may_silently_override_core: false
+  source_voting_allowed: false
+  clinician_autonomy_unchanged: true
+  autonomous_literature_to_live_update: false
+  patient_persistence: false
+  jurisdiction_profile_may_be_inferred_from_patient_location: false
+
+jurisdiction_profile:
+  required:
+    - profile_id
+    - country_code
+    - health_system_id
+    - label
+    - profile_status
+  properties:
+    profile_id:
+      type: string
+      example: CY_GESY
+    country_code:
+      type: string
+      example: CY
+    health_system_id:
+      type: string
+      example: GESY
+    label:
+      type: string
+      example: Κύπρος · ΓεΣΥ
+    profile_status:
+      enum:
+        - design_only
+        - reviewed_inactive
+        - active
+        - retired
+    selection_source:
+      enum:
+        - explicit_account_configuration
+        - explicit_clinician_configuration
+      note: "No silent patient-location inference."
+
+local_position:
+  required:
+    - local_position_id
+    - jurisdiction_profile_id
+    - domain
+    - policy_class
+    - local_scope
+    - local_direction
+    - relationship_to_core
+    - source_provenance
+    - operational_status
+    - review_state
+  properties:
+    local_position_id:
+      type: string
+      example: CY_GESY_OA_1_3_9_ELECTROTHERAPY
+    jurisdiction_profile_id:
+      type: string
+    diagnosis_vertical:
+      type: string
+      example: knee_oa
+    domain:
+      type: string
+    intervention_id:
+      type: [string, 'null']
+      note: "May map to an existing international product item; null for local-only or administrative rules."
+    policy_class:
+      enum:
+        - clinical_guidance
+        - administrative_access
+        - reimbursement
+        - resource_feasibility
+        - reimbursement_documentation
+        - system_lifecycle
+        - mixed
+        - unclear
+    local_scope:
+      type: object
+      additionalProperties: true
+    local_direction:
+      enum:
+        - for
+        - conditional_for
+        - against
+        - against_routine_use
+        - neutral_or_insufficient
+        - informational
+        - not_applicable
+    local_strength:
+      enum:
+        - mandatory
+        - strong
+        - weak
+        - not_explicit
+        - not_applicable
+    certainty_or_evidence_quality:
+      type: [string, 'null']
+      note: "Populate only when explicitly stated by the local source."
+    normalized_local_position:
+      type: string
+    exact_source_recommendation_id:
+      type: [string, 'null']
+    exact_wording_locator:
+      type: string
+      note: "Stable source URL + section/page/recommendation; full wording remains source-owned."
+    identifying_verbatim_excerpt:
+      type: [string, 'null']
+      note: "Short excerpt only; never used as machine clinical logic."
+
+    core_reference:
+      type: object
+      properties:
+        international_item_id:
+          type: [string, 'null']
+        international_evidence_state:
+          enum:
+            - recommended_or_supported
+            - conditional_or_context_dependent
+            - limited_or_insufficient_evidence
+            - guideline_conflict_or_mixed
+            - recommendation_against_routine_use
+            - not_yet_assessed
+            - not_in_current_contract
+        core_source_contract:
+          type: string
+          example: clinic_utilities/physio_referral_product/contracts/knee_oa_evidence_contract_v1.yaml
+        core_state_mutated_by_overlay:
+          const: false
+
+    relationship_to_core:
+      enum:
+        - agreement
+        - local_difference
+        - local_addition
+        - local_position_within_international_conflict
+        - administrative_only
+        - reimbursement_or_access_only
+        - status_unknown
+        - not_comparable
+
+    relationship_to_source_guideline:
+      type: object
+      properties:
+        source_framework:
+          type: [string, 'null']
+          example: NICE_NG226_2022
+        source_recommendation_id:
+          type: [string, 'null']
+        relationship:
+          enum:
+            - unchanged
+            - modified
+            - local_addition
+            - no_direct_source_recommendation
+            - not_comparable
+        local_change_rationale:
+          type: [string, 'null']
+        rationale_class:
+          enum:
+            - clinical_evidence_based
+            - clinical_practice_context
+            - clinical_workflow
+            - resource_feasibility
+            - administrative
+            - reimbursement
+            - mixed
+            - unclear
+            - not_applicable
+        cost_or_reimbursement_motive_explicit:
+          type: boolean
+          note: "False does not prove absence; it means the audited source did not explicitly state it."
+
+    operational_status:
+      type: object
+      required:
+        guideline_status
+        information_system_status
+      properties:
+        guideline_status:
+          enum:
+            - draft_consultation
+            - published_active
+            - published_status_unclear
+            - superseded
+            - unknown
+        public_artifact_finality:
+          enum:
+            - final_versioned
+            - draft_labelled
+            - metadata_conflict
+            - unknown
+        information_system_status:
+          enum:
+            - active_verified
+            - planned
+            - not_applicable
+            - unknown
+        reimbursement_enforcement_status:
+          enum:
+            - active_verified
+            - published_rule_only
+            - not_applicable
+            - unknown
+        status_note:
+          type: [string, 'null']
+
+    source_provenance:
+      type: object
+      required:
+        source_owner
+        source_url
+        source_type
+        reviewed_on
+      properties:
+        source_owner:
+          type: string
+        source_title:
+          type: string
+        source_url:
+          type: string
+        source_type:
+          enum:
+            - official_guideline
+            - official_adaptation_summary
+            - official_implementation_announcement
+            - official_access_rule
+            - official_reimbursement_rule
+            - official_catalogue
+        source_version_or_date:
+          type: [string, 'null']
+        recommendation_page_or_section:
+          type: [string, 'null']
+        reviewed_on:
+          type: string
+          format: date
+
+    display_policy:
+      type: object
+      required:
+        routine_visibility
+        display_semantic
+      properties:
+        routine_visibility:
+          enum:
+            - silent
+            - context_cue_only
+            - detail_only
+            - operational_detail_only
+            - never_routine
+        display_semantic:
+          enum:
+            - local_agreement
+            - local_difference
+            - local_administrative_rule
+            - local_reimbursement_rule
+            - local_status_unknown
+        local_label:
+          type: [string, 'null']
+        show_source_on_demand:
+          type: boolean
+        show_rationale_on_demand:
+          type: boolean
+        may_change_selection_automatically:
+          const: false
+        may_change_referral_text_automatically:
+          const: false
+        may_change_international_evidence_badge:
+          const: false
+
+    review_state:
+      enum:
+        - audit_candidate
+        - clinically_reviewed
+        - product_reviewed
+        - approved_inactive
+        - approved_active
+        - retired
+
+activation_contract:
+  all_required: true
+  requirements:
+    - primary_source_verified
+    - relationship_to_core_reviewed
+    - operational_status_reviewed
+    - product_owner_disposition_recorded
+    - exact_machine_contract_tested
+    - separate_runtime_release_authority
+  forbidden_shortcuts:
+    - activate_because_local_source_exists
+    - activate_because_product_owner_requested
+    - activate_by_source_majority
+    - activate_from_unreviewed_literature_update
+    - infer_reimbursement_from_clinical_guideline
+    - infer_clinical_efficacy_from_reimbursement_rule
+
+profiles:
+  CY_GESY:
+    profile_id: CY_GESY
+    country_code: CY
+    health_system_id: GESY
+    label: Κύπρος · ΓεΣΥ
+    profile_status: reviewed_inactive
+    selection_source: explicit_account_configuration
+    notes:
+      - "First audited jurisdiction profile."
+      - "No current runtime activation is authorized by this design file."
+
+future_profile_capability:
+  supported_by_schema: true
+  profiles_not_implemented:
+    - GR
+    - UK_ENGLAND
+  rule: "Do not create country content or selectors until real market/workflow need exists."
