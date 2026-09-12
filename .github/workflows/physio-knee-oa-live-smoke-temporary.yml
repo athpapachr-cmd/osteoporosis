@@ -1,0 +1,51 @@
+name: Temporary Knee OA live deployment smoke
+
+on:
+  push:
+    branches:
+      - docs/physio-knee-oa-v1-release-closeout-2026-09-12
+
+permissions:
+  contents: read
+
+jobs:
+  live-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      BASE_URL: https://ortho-reception-backend.onrender.com
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Verify public deployed Knee-OA assets
+        run: |
+          set -euo pipefail
+          curl --retry 4 --retry-delay 3 --fail-with-body -sS "$BASE_URL/static/clinic-utilities/physio-referral/index.html" -o /tmp/physio.html
+          grep -q 'Οστεοαρθρίτιδα γόνατος' /tmp/physio.html
+          grep -q 'product-more-v3.js' /tmp/physio.html
+          ! grep -q 'Δημιουργία παραπεμπτικού' /tmp/physio.html
+          ! grep -q 'ΔΟΚΙΜΑΣΤΙΚΟ ΚΕΙΜΕΝΟ' /tmp/physio.html
+
+          curl --retry 4 --retry-delay 3 --fail-with-body -sS "$BASE_URL/static/clinic-utilities/physio-referral/production-env.js" -o /tmp/env.js
+          grep -q 'body.synthetic_only = false' /tmp/env.js
+
+          curl --retry 4 --retry-delay 3 --fail-with-body -sS "$BASE_URL/static/clinic-utilities/physio-referral/product-more-v3.js" -o /tmp/more.js
+          grep -q 'Σχετικά τώρα' /tmp/more.js
+          grep -q '★ Συχνά' /tmp/more.js
+          echo 'LIVE STATIC KNEE-OA PRODUCT ASSETS PASS'
+
+      - name: Verify protected live route and API fail closed without auth
+        run: |
+          set -euo pipefail
+          code=$(curl --retry 4 --retry-delay 3 -sS -o /tmp/protected-page -w '%{http_code}' "$BASE_URL/clinical/clinic-utilities/physio-referral")
+          test "$code" = '401'
+          code=$(curl --retry 4 --retry-delay 3 -sS -o /tmp/protected-api -w '%{http_code}' "$BASE_URL/clinical/clinic-utilities/physio-referral/api/product/bootstrap")
+          test "$code" = '401'
+          echo 'LIVE AUTH BOUNDARY PASS: page=401 product_api=401'
+
+      - name: Assert no patient or secret input was used
+        run: |
+          echo 'Smoke used only public static GETs and unauthenticated boundary GETs.'
+          echo 'No clinical key, login password, session cookie, or patient data was supplied.'
