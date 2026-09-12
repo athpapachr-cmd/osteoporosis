@@ -1,126 +1,77 @@
-# SLICE_PLAN_CURRENT.md — Knee-OA v1 post-smoke v4 refinement closed
+# SLICE_PLAN_CURRENT.md — Knee-OA v5 Product Owner review HOLD
 
-> **STATUS:** CLOSED — v4 runtime refinement merged and deployed; live public-asset/auth-boundary smoke passed; release closeout recorded.
-> **Bounded refinement:** post-release Knee-OA v4 clinical-picture UX + referral-prose correction.
-> **Refinement branch:** `fix/physio-knee-oa-clinical-sheet-v4-2026-09-12`.
-> **Refinement PR:** `#89`.
-> **Exact tested PR head:** `602740d12da0de8ad9a6134f8adf48f4b6f7c691`.
-> **Runtime refinement SHA:** `bf527e3836a18491b2758fd293b42f82e0924382`.
-> **Render deploy:** `dep-daiivp0jo6nc73bl6pug` — LIVE at exact runtime refinement SHA.
-> **External live boundary-smoke:** `34689920602` — SUCCESS.
-> **Writer:** NONE after the bounded release-closeout PR merges.
-> **Next implementation slice:** NONE SELECTED.
+> **STATUS:** REVIEW HOLD — v4 remains released/live; authenticated live product smoke passed; v5 is implemented/tested but unmerged/unreleased.
+> **Production runtime:** `bf527e3836a18491b2758fd293b42f82e0924382`.
+> **Authenticated live smoke:** run `34681808255`, attempt `3` — SUCCESS.
+> **V5 branch:** `fix/physio-knee-oa-v5-optional-refinement-prose-2026-09-12`.
+> **V5 exact tested substantive head:** `a47357c602120d3678e8f2f23b99775e616c79e1`.
+> **V5 full gate:** `34693751545` — SUCCESS.
+> **Writer:** NONE.
+> **Next implementation slice:** NONE ACTIVE.
 
-## 1. Completed
+## 1. Closed production boundary
 
-The Knee-OA product lineage now includes:
+The v4 production lifecycle now has authenticated verification in addition to the earlier public-asset and unauthenticated auth-boundary smoke.
 
-```text
-design/evidence contract
-→ deterministic referral contract
-→ interaction/traceability contract
-→ functional prototype
-→ qualifier refinement
-→ four specialist reviews + supplementary combined review
-→ cross-review amendment
-→ usability refinement
-→ scan-first advanced redesign
-→ protected Cockpit production integration
-→ initial release PR #87 / deploy / live boundary smoke
-→ Product Owner post-release finding
-→ v4 compact clinical-picture redesign + prose correction
-→ inherited browser-path migration
-→ mobile 44 px target correction
-→ large-text reflow correction
-→ exact-head full PR gates
-→ PR #89 squash merge
-→ exact-SHA Render auto-deploy
-→ external v4 public-asset + auth-boundary smoke
-→ v4 release closeout
-```
+Authenticated run `34681808255`, attempt `3`, proved protected page/bootstrap access, deterministic Knee-OA projection and safety fail-closed behavior using only synthetic/non-identifiable smoke state. No patient persistence or patient identifiers were used.
 
-## 2. V4 scope that is now closed
+## 2. Tested v5 candidate under Product Owner review
 
-V4 changed only the bounded presentation/referral-prose layer:
+The prior Product Owner session produced a bounded v5 candidate addressing post-use friction only.
 
-- four equal clinical parent controls on desktop;
-- 2×2 clinical grid on mobile;
-- focused sheets for pain, stiffness, weakness and function;
-- explicit reopen/remove behavior while preserving dependent-state hygiene;
-- deterministic Greek prose corrections;
-- ≥44 px mobile targets;
-- no horizontal overflow under large text enlargement.
-
-Preserved unchanged:
+### Optional symptom refinement
 
 ```text
-CU-1 taxonomy and safety authority
-evidence-state model
-suggestion semantics
-More-v3 / Favorites behavior
-manual-text reconciliation
-jurisdiction strategy
-single Knee-OA diagnosis vertical
+Πόνος / Δυσκαμψία / Αδυναμία inactive first tap
+→ select generic symptom only
+→ no forced popup
+
+second tap while active
+→ optional focused detail sheet
 ```
 
-No second diagnosis, evidence update, new Cyprus/GeSY rule, patient persistence, analytics or autonomous recommendation behavior was added.
+`Λειτουργικότητα` opens its chooser on first tap because the meaningful state is the chosen functional limitation, not a generic function flag.
 
-## 3. Exact pre-merge gate evidence
+### Weakness clarity
 
-At exact PR head `602740d12da0de8ad9a6134f8adf48f4b6f7c691`:
+Visible focused options become:
 
-```text
-34689630421  Physio Knee OA clinical-sheet v4 gate    SUCCESS
-34689630422  Physio Knee OA prototype gate            SUCCESS
-34689630419  Physio Knee OA Cockpit integration gate  SUCCESS
-34689630432  CU-1 focused tests                        SUCCESS
-34689630440  Physio Knee OA evidence design gate       SUCCESS
-```
+- `Μυϊκή αδυναμία στην εξέταση`
+- `Αδυναμία τετρακεφάλου στην εξέταση`
+- `Ατροφία τετρακεφάλου`
 
-Exact-head v4 artifact:
+Bare `Τετρακέφαλος` / `Περιαρθρικά` sibling choices are not exposed. Backward-compatible acceptance of historical `peri_knee_general` state remains below the presentation layer.
 
-`10297161518`
+### Referral prose
 
-Digest:
+- richer pain qualifier owns location specificity and prevents duplicated/fused legacy location wording;
+- clinical/functional handoff and physiotherapy assessment/plan are separated by a blank line;
+- `Επιπλέον στόχος:` / `Επιπλέον στόχοι:` become connected prose rather than generated labels;
+- physiotherapist autonomy and the existing deterministic active-plan semantics remain unchanged.
 
-`sha256:3ca3d329148752adc2764781e48e6ca189359b6fbd3f69c423b4d51770e06b0b`
+## 3. Exact v5 evidence
 
-## 4. Deployment state
+At head `a47357c602120d3678e8f2f23b99775e616c79e1`, run `34693751545` passed bounded scope, syntax, focused v5 prose/state tests, inherited real CU-1/HTTP tests, frozen Step-3 fixtures, qualifier tests, protected Cockpit integration, focused/inherited Chromium acceptance, adjacent-owner isolation and package closure.
 
-Production route remains:
+The candidate is therefore `IMPLEMENTED / TESTED`, not `MERGED / DEPLOYED / PRODUCTION-SMOKE-VERIFIED` as v5.
 
-`/clinical/clinic-utilities/physio-referral`
+## 4. Out of scope / forbidden inference
 
-Render auto-deploy `dep-daiivp0jo6nc73bl6pug` reached `live` at exact runtime refinement SHA `bf527e3836a18491b2758fd293b42f82e0924382` on 2026-09-12 10:58:27 UTC.
+V5 does not authorize or contain:
 
-Existing authentication and real CU-1 validation/safety remain authoritative. The local loopback prototype is not mounted as a public clinical endpoint.
+- evidence changes;
+- Cyprus/GeSY clinical or administrative semantics;
+- jurisdiction-overlay runtime activation;
+- safety-rule changes;
+- second diagnosis;
+- patient persistence;
+- analytics;
+- autonomous evidence updates.
 
-## 5. Smoke precision
+Cyprus/GeSY audit can proceed as a separate read-only evidence/design slice now that the production-auth boundary is closed.
 
-Temporary no-secret run `34689920602` passed against the live Render service.
+## 5. Next decision
 
-It proved:
+Product Owner review of the tested v5 candidate is the only release decision pending for that refinement. Any PR/merge/deploy requires separate explicit authority.
 
-- current Knee-OA and v4 assets are externally visible and return `200`;
-- the production loader references the v4 JS/CSS;
-- the live v4 CSS contains the 44 px target and large-text wrapping correction;
-- production transport remains non-synthetic;
-- protected page and product bootstrap reject unauthenticated access with `401`.
-
-It did **not** use an authorized production credential/session. Full authenticated live end-to-end smoke therefore remains a separate future verification step and must not be silently inferred from the exact-head protected FastAPI/Chromium tests.
-
-## 6. Deferred validation, not retroactive release blockers
-
-```text
-actual iPhone Safari / VoiceOver
-authorized authenticated live E2E smoke
-receiving-physiotherapist field validation
-real clinical pilot
-paid conversion / retention
-Cyprus/GeSY item-level activation
-second-diagnosis selection
-```
-
-## 7. Exact next governance state
-
-No active engineering writer. No second diagnosis is authorized. Future work requires a fresh bounded slice and explicit writer claim, preferably driven by actual clinician/receiver/device/market evidence rather than feature-count pressure.
+Jurisdiction work may proceed independently through audit/design only. No live product mutation is authorized merely by finding local differences.
