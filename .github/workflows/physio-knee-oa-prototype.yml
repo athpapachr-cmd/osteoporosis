@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feat/physio-referral-knee-oa-prototype-v1-2026-09-11
+      - feat/physio-knee-oa-review-amendments-v1-2026-09-12
   pull_request:
     paths:
       - 'clinic_utilities/physio_referral_product/prototype/**'
@@ -27,7 +28,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Verify bounded Step 5/6A changed paths
+      - name: Verify bounded Step 5/6A/review-amendment changed paths
         run: |
           python - <<'PY'
           import subprocess
@@ -36,7 +37,7 @@ jobs:
           root = 'clinic_utilities/physio_referral_product/'
           bad = [p for p in paths if p not in fixed and not p.startswith(root+'prototype/') and not (p.startswith(root) and p.endswith('.md'))]
           assert not bad, bad
-          print('Step-5/6A scope guard PASS:', len(paths), 'bounded files')
+          print('Knee-OA bounded prototype scope guard PASS:', len(paths), 'bounded files')
           PY
       - name: Install isolated prototype dependencies
         run: |
