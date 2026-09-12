@@ -1,153 +1,155 @@
-# SLICE_PLAN_CURRENT.md — Knee-OA post-review bounded amendments v1
+# SLICE_PLAN_CURRENT.md — Knee-OA usability refinement v2
 
-> **STATUS:** IMPLEMENTED / FOCUSED TECHNICAL GATE PASS / PRODUCT-OWNER VISUAL REVIEW NEXT.
-> **Slice:** `CU1-PRODUCT-KNEE-OA-POST-REVIEW-AMENDMENTS-V1-20260912`.
-> **Branch:** `feat/physio-knee-oa-review-amendments-v1-2026-09-12`.
-> **Parent synthesis head:** `554ecfa30bf8d0c04a19510a5db0276e6844edd5`.
-> **Reviewed candidate ancestry:** `6539351c592c1dc3e49931057b63925dea3cb94d`.
-> **Tested substantive amendment head:** `83a5acd4e5b25413708bbda1715c58b5c78bce08`.
+> **STATUS:** IMPLEMENTATION ACTIVE / SYNTHETIC PROTOTYPE ONLY.
+> **Slice:** `CU1-PRODUCT-KNEE-OA-USABILITY-REFINE-V2-20260912`.
+> **Branch:** `feat/physio-knee-oa-usability-refine-v2-2026-09-12`.
+> **Parent closeout head:** `0f38f4d411146667d854c32c9f5f639f344d7c7f`.
+> **Parent tested substantive head:** `83a5acd4e5b25413708bbda1715c58b5c78bce08`.
 > **Fresh main:** `d9f312f6d2d596ec0bd4f35f6de56ad98dc34b37`.
-> **Writer:** NONE.
+> **Writer:** ACTIVE, bounded to prototype UX/tests/workflow/canonicals.
 > **Release / real clinical use:** NOT AUTHORIZED.
 
-## 1. General clinical-utility rule
+## 1. Design objective
 
-For this product track:
+Improve discoverability and personalization without increasing routine clinical complexity.
+
+The slice deliberately changes **interaction presentation**, not clinical semantics.
+
+Preserve:
 
 ```text
-clinically interesting
-!= workflow-useful
-!= receiver-useful
-!= worth adding
+selection != suggestion != evidence != safety
+manual text != structured state
+favorite != selection
+clinically interesting != worth adding
 ```
 
-Any proposed field, qualifier, intervention, alert, evidence cue, output sentence or Product Owner/reviewer/author suggestion must identify the downstream management/safety/handoff/workflow value, intended consumer, expected accuracy at referral time and incremental UI/evidence-maintenance burden. If incremental value is uncertain, default to progressive disclosure, test, defer or remove rather than expand.
+## 2. Additional-suggestion discoverability
 
-Hard governance rule:
+Current problem: the highest-priority suggestion is visible, while the remaining count can be visually lost.
+
+Design:
 
 ```text
-PRODUCT OWNER REQUEST
-!= CLINICAL EVIDENCE
-!= RECEIVER VALUE
-!= IMPLEMENTATION AUTHORITY
+primary suggestion
+→ compact actionable line
+
+if additional_count > 0
+→ restrained bordered summary panel
+→ heading: Άλλες {additional_count} προτάσεις ›
+→ preview: short titles only
+→ activate anywhere → existing suggestions sheet
 ```
 
-## 2. Implemented bounded amendments
+Rules:
 
-### Diagnosis / readiness
+- count means suggestions **in addition to** the primary visible suggestion;
+- preview titles are generated from the current eligible candidate list and cannot become stale authority;
+- no Add/dismiss/evidence mutation occurs from tapping the summary itself;
+- the sheet remains the place for individual Add, evidence and dismissal controls;
+- no full rationale/citation stack on the routine surface.
 
-- explicit tap on the Knee-OA diagnosis is the clinician assertion in the standalone prototype;
-- opening/reloading alone does not assert diagnosis;
-- diagnosis then appears automatically in live referral;
-- the checkbox-like diagnosis-confirmation presentation is removed from the intended UX;
-- missing diagnosis and side are named specifically and highlighted locally/accessibly;
-- only the next unresolved prerequisite is emphasized.
+## 3. Direct referral-text editing
 
-### Weakness
+Current problem: manual edit is a major clinician action but is hidden in the overflow menu.
 
-- generic weakness remains reported/contextual;
-- the old ambiguous quadriceps localization value fails closed;
-- `quadriceps_exam` explicitly means an examination finding before mapping to canonical `quadriceps_weakness`;
-- no MRC/dynamometry workflow was added.
+Design:
 
-### FFD / passive extension deficit
+- desktop referral preview exposes a visible `Επεξεργασία` action in the preview heading;
+- mobile preview sheet also exposes a visible `Επεξεργασία` action;
+- activation uses the existing manual-edit buffer/reconciliation architecture;
+- the overflow menu can retain secondary actions but is not required to discover editing.
 
-- remains advanced / optional;
-- expressed as passive extension deficit, distinct from active extension lag;
-- if a degree is supplied it must be positive (`1–60°` in the prototype); unknown remains unknown;
-- `0° FFD`, invented degree, permanence wording and unnecessary English parenthetical are rejected/removed;
-- FFD can make an existing mobility suggestion eligible but never selects treatment.
-
-### Functional detail
-
-No new structured main-activity / functional-baseline field was added. Current functional categories and free-text note remain the available physician-side capture until receiving-physiotherapist testing proves additional receiver value.
-
-### Referral / autonomy
-
-- diagnosis+side-only input produces proportionally shorter output;
-- patient-specific findings/function produce richer output;
-- selected rehab is framed as **indicative priorities after physiotherapy assessment**, not technique/dose/progression mandate;
-- selected structured clinical information is not silently discarded.
-
-### Evidence / suggestion UX
-
-- routine supported/conditional source detail moves behind deliberate deeper disclosure;
-- mixed guidance keeps all material opposing/neutral source positions visible immediately;
-- suggestion presentation is flattened while Add, evidence access, dismissal and stale-candidate guards remain;
-- qualifier groups collapse predictably when another group is opened;
-- parent deselection synchronizes visible and ARIA expansion state;
-- pain location remains multiselect-capable;
-- mobile manual reconciliation has a direct path.
-
-## 3. Jurisdiction architecture
-
-Reusable model:
+Safety invariants:
 
 ```text
-international clinical-evidence core
-+
-optional jurisdiction/local-system guidance overlay
+manual edit occurs
+→ manual buffer becomes clinician-owned text
+
+structured state later changes
+→ manual buffer is preserved
+→ export becomes stale/blocked
+→ explicit reconciliation required
+→ no silent overwrite
 ```
 
-Current prototype context:
+Do not build bidirectional free-text-to-structured parsing or merge/diff machinery.
+
+## 4. Favorites / pin-to-top inside Περισσότερα
+
+Current problem: advanced content can be long, while different clinicians repeatedly use different subsets.
+
+Design intentionally chooses **pin/favorite**, not Hide.
+
+### Behavior
+
+- advanced controls that represent selectable findings/goals/interventions/adjuncts may expose a small `☆` / `★` pin control where technically appropriate;
+- pinned items appear in a compact `★ Συχνά` group at the top of `Περισσότερα`;
+- original category remains authoritative and available; pinning must not erase the item from discoverability;
+- duplicate interactive selectors must not create conflicting selection state: the pinned surface may either reference the same action semantics safely or use a single rendered control ownership pattern;
+- unpin returns the item to normal ordering with no clinical state mutation.
+
+### Persistence boundary
+
+For this synthetic slice:
 
 ```text
-id: CY_GESY
-label: Κύπρος · ΓεΣΥ
+favorites = ephemeral UI preference only
+reset/pagehide/BFCache → cleared
+localStorage = none
+sessionStorage = none
+server persistence = none
 ```
 
-This label does not yet import any local recommendation or policy. Local guidance may influence item-level product behavior only after exact authoritative source audit and explicit review. Local feasibility/reimbursement/resource policy may not be represented as stronger clinical-efficacy evidence.
+Later product architecture may persist favorites as **clinician account preference**, explicitly separate from patient/referral state.
 
-Future Greece/England profiles are dormant. No routine country selector and no device-location inference are added in this slice.
+### No Hide yet
 
-## 4. Technical acceptance obtained
+No permanent hide/archive control is introduced. Hide remains a future hypothesis requiring usage evidence and an always-recoverable design.
 
-The first run `34672583682` failed because the existing adapter regression asserted product output must remain byte-identical to Step-3 even though post-review prose was intentionally amended. The fix preserved the frozen Step-3 renderer regression and moved amended product behavior into separate tests.
+## 5. Accessibility and cognitive-load rules
 
-Successful substantive gate:
+- additional-suggestion panel is a native button with descriptive accessible name/count;
+- favorites controls have accessible names such as `Προσθήκη στα Συχνά: {item}` / `Αφαίρεση από τα Συχνά: {item}`;
+- star icon is never the only meaning;
+- touch targets remain ≥44 CSS px;
+- direct edit remains keyboard-reachable;
+- mobile reflow and large-text behavior must not regress;
+- no colour-only state.
 
-```text
-run                                       34672654522
-head                                      83a5acd4e5b25413708bbda1715c58b5c78bce08
-scope + syntax                            PASS
-real CU-1 / HTTP                          15 / 15 PASS
-frozen Step-3 exact-output fixtures       15 PASS
-post-review clinical/output               11 / 11 PASS
-inherited Chromium                        12 / 12 PASS
-post-review Chromium                       9 / 9 PASS
-Greek source-summary coverage             54 positions
-packaged dependency closure               PASS
-```
-
-## 5. Explicitly not proven
+## 6. Out of scope
 
 ```text
-actual iPhone Safari / VoiceOver
-full measured accessibility/contrast acceptance
-receiving-physiotherapist real-user usefulness
-Cyprus/GeSY item-level recommendation fidelity
-Greece/England product-market need
-real-patient workflow/privacy readiness
-paid conversion / retention
-```
-
-## 6. Out of scope remains
-
-```text
-second diagnosis
-new functional-baseline field
-routine FFD measurement
-unaudited Cyprus item-level evidence
-UK/GR localized content
+clinical/evidence rule changes
+new clinical fields
+permanent Hide
+favorites account persistence
+preference backend
 analytics
-billing/auth
-patient persistence
-production routing/database
+second diagnosis
+local guideline expansion
 PR/merge/deploy
 ```
 
-## 7. Exact next action
+## 7. Acceptance
 
-Product Owner reviews the exact tested synthetic artifact and screenshots and gives concrete keep/remove/change feedback.
+Focused tests must cover:
 
-No release or expansion action is inferred from the technical PASS.
+1. 1 suggestion → no additional panel.
+2. 5 suggestions → primary line + `Άλλες 4 προτάσεις` with four current titles.
+3. Additional panel → opens full suggestions sheet without selecting anything.
+4. Add/dismiss in sheet → count/title preview refreshes deterministically.
+5. Direct desktop edit action → manual editor reachable without overflow menu.
+6. Mobile preview → edit action directly visible.
+7. Manual edit + laterality/finding change → clinician text preserved + stale reconciliation + export blocked.
+8. Favorite item → appears in `★ Συχνά` and selection state is unchanged.
+9. Selecting through favorite representation → same structured state as normal item, no duplicate/double toggle.
+10. Unfavorite → clinical selection preserved.
+11. Reset/BFCache → favorites cleared.
+12. local/session storage remain empty.
+13. No Hide control exists.
+14. Inherited safety/evidence/privacy/network/mobile regressions remain green.
+
+## 8. Exact next action
+
+Implement only this bounded usability slice, run the exact prototype gate plus new browser coverage, inspect screenshots and return the tested candidate to the Product Owner for visual/use review.
