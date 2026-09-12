@@ -1,176 +1,106 @@
-# SLICE_PLAN_CURRENT.md — Knee-OA `Περισσότερα` visual + IA redesign v3
+# SLICE_PLAN_CURRENT.md — Knee-OA Cockpit integration + commercial-product canonical split
 
-> **STATUS:** IMPLEMENTED / FULL INHERITED + V3 TECHNICAL GATE PASS / PRODUCT-OWNER VISUAL REVIEW NEXT.
-> **Slice:** `CU1-PRODUCT-KNEE-OA-MORE-REDESIGN-V3-20260912`.
-> **Branch:** `feat/physio-knee-oa-more-redesign-v3-2026-09-12`.
-> **Parent closed head:** `2c19eb7283c96af7868690a892d7e61155674d6b`.
-> **Tested substantive head:** `9deafa2db43d3498c5becf20f77a804b03849d53`.
-> **Successful substantive run:** `34677022119`.
+> **STATUS:** IMPLEMENTATION ACTIVE.
+> **Slice:** `CU1-PRODUCT-KNEE-OA-COCKPIT-INTEGRATION-V1-20260912`.
+> **Branch:** `feat/physio-knee-oa-cockpit-integration-v1-2026-09-12`.
+> **Parent closed v3:** `b7f2db6fd86f90a32875d9b9cfd356cfa6129c69`.
 > **Fresh main:** `d9f312f6d2d596ec0bd4f35f6de56ad98dc34b37`.
-> **Writer:** NONE; v3 implementation writer released.
-> **Release / real clinical use:** NOT AUTHORIZED.
-> **Durable product context:** `clinic_utilities/physio_referral_product/PHYSIO_REFERRAL_PRODUCT_CONTEXT_CURRENT.md`.
+> **Writer:** ACTIVE for bounded commercial-canonical reorganization + physiotherapy Cockpit integration + release verification.
 
-## 1. Problem addressed
+## 1. Problem
 
-The v2 `Περισσότερα` preserved too many simultaneously visible controls. Favorites improved frequent access but did not solve the underlying scanning cost because categories/items still competed with similar visual weight.
+The Knee-OA product is technically mature as a synthetic loopback prototype but is not yet the actual Cockpit physiotherapy experience. Product/commercial canonicals are also mixed into the implementation directory.
 
-The accepted redesign preserves capability while reducing routine visual decisions.
-
-## 2. Product/design principle
+## 2. Target architecture
 
 ```text
-CAPABILITY DEPTH UNDERNEATH
-+
-CALM SURFACE ABOVE
+six root canonicals
+→ repo-wide operational authority
+
+commercial_products/physio_referral/
+→ product/commercial strategy, current state, product history, review/market/release navigation
+
+clinic_utilities/physio_referral_product/
+→ clinical/UX technical contracts, validators, implementation tests and product runtime
+
+static/clinic-utilities/physio-referral/
++ clinic_utilities/physio_referral_api.py
+→ authenticated Cockpit production surface
 ```
 
-The user should not visually parse the full advanced clinical vocabulary to find one item.
+## 3. Production UI contract
 
-This slice explicitly implements the Product Owner's request for a **visual redesign**, not merely a hierarchy rename.
+The existing protected Cockpit route `/clinical/clinic-utilities/physio-referral` becomes the Knee-OA product surface.
 
-## 3. Implemented routine surface
+Preserve from the tested candidate:
 
-### `★ Συχνά`
+- explicit OA diagnosis assertion and laterality;
+- live deterministic referral, no Generate button;
+- direct `✎ Επεξεργασία` + safe manual reconciliation;
+- evidence-aware defaults/suggestions;
+- `Άλλες n προτάσεις` discoverability;
+- `★ Συχνά / Σχετικά τώρα / Όλα` scan-first advanced architecture;
+- qualifier semantics and FFD/weakness/pes-anserine safeguards;
+- evidence conflict transparency;
+- export/readiness safety precedence;
+- no patient draft persistence.
 
-- personal shortcuts only;
-- bounded to six in the synthetic prototype;
-- pinning never changes clinical selection;
-- normal mode does not display a star on every option;
-- `Προσαρμογή Συχνών` deliberately reveals pin controls;
-- no Hide;
-- no persistence.
+## 4. Server/runtime ownership
 
-### `Σχετικά τώρα`
+Production must reuse authenticated Clinical Excellence and real CU-1 authority. Any Knee-OA product projection helper extracted from the synthetic prototype must be server-owned, deterministic and testable; do not register the loopback HTTP server itself in production.
 
-- at most three deterministic shortcuts;
-- derived only from already-declared structured state;
-- each maps to an existing field/control;
-- appearing/opening never auto-selects or infers a finding/treatment/safety state;
-- absent relevant context means the section is absent.
+No new database or patient write path.
 
-### `Όλα`
+## 5. Canonical split
 
-The complete advanced vocabulary remains reachable through six scan-friendly category rows:
+Product canonicals move to:
 
-```text
-Εξέταση
-Λειτουργία & στόχοι
-Αποκατάσταση
-Συμπληρωματικά
-Περιορισμοί & σημείωση
-Κλινικός έλεγχος
-```
+`commercial_products/physio_referral/`
 
-Each row provides:
+At minimum:
 
-- category name;
-- restrained supporting icon;
-- selected count when >0;
-- short selected-item summary when useful;
-- chevron/navigation affordance.
+- `CURRENT.md`
+- `PRODUCT_CONTEXT_CURRENT.md`
+- `PRODUCT_PLAN.md`
+- `PRODUCT_CHANGELOG.md`
+- `releases/KNEE_OA_V1_CURRENT.md`
+- navigation for reviews/market records.
 
-Activating a category opens its full controls in the existing sheet/modal host.
+Old product-canonical paths become redirects/pointers rather than competing authorities.
 
-## 4. Visual grammar implemented
+## 6. Acceptance
 
-- stronger section typography and whitespace;
-- large calm rows instead of dense chip walls;
-- one restrained icon grammar;
-- muted secondary summaries;
-- quiet textual active counts rather than badge clutter;
-- no card-inside-card proliferation;
-- evidence colours remain evidence semantics, not decoration;
-- icon is never the only label;
-- desktop/mobile share the same conceptual hierarchy.
+Before PR:
 
-Collapsed rows still answer “what have I selected?” without becoming a second source of truth.
+1. exact production route requires existing authentication;
+2. Knee-OA bootstrap/projection is server authoritative;
+3. all prior supported selections/evidence/safety behavior remains reachable;
+4. no storage/analytics/patient persistence introduced;
+5. protected route and static assets work with production-style tests;
+6. inherited CU-1 and Knee-OA clinical/browser gates pass;
+7. adjacent Learning Hub/RF/Osteoporosis owners unchanged except root operational docs;
+8. fresh final release/red-team review reports no blocker;
+9. exact PR head is tested.
 
-## 5. Capability/safety preservation
+After merge:
 
-No supported advanced clinical option was deleted merely to simplify the UI. Controls were relocated into category sheets while the underlying state and clinical IDs remained authoritative.
+- verify Render auto-deploy corresponds to exact merge SHA;
+- bounded production smoke with synthetic/non-identifiable state only;
+- update canonicals to MERGED/DEPLOYED/SMOKE state and release writer.
 
-Safety/readiness remain independent of browsing convenience. A safety block cannot depend on whether `Περισσότερα` or a category sheet is open.
-
-Core invariants remain:
+## 7. Out of scope
 
 ```text
-selection != suggestion != evidence != safety
-favorite != selection
-contextual shortcut != inference
-manual text != structured state
-symptom != finding != diagnosis
-```
-
-## 6. Implementation defects caught and corrected
-
-### Compound-button rendering defect
-
-The first v3 browser gate exposed that compound v3 buttons were created through a helper that accepted plain text only, causing a blank FFD button. The v3 compound-button primitive was corrected globally rather than patching one control.
-
-### Relevant-Now test race
-
-A later test captured the referral before the previous weakness projection completed, comparing a placeholder against the actual referral. The test was corrected to wait for the true projected text before proving that `Σχετικά τώρα` does not mutate state/text merely by appearing or opening.
-
-No clinical semantics were weakened to make tests pass.
-
-## 7. Technical acceptance
-
-Successful substantive gate:
-
-```text
-workflow                                  Physio Knee OA prototype gate
-run                                       34677022119
-head                                      9deafa2db43d3498c5becf20f77a804b03849d53
-scope + syntax                            PASS
-real CU-1 / HTTP                          15 / 15 PASS
-frozen Step-3 exact-output fixtures       15 PASS
-post-review clinical/output               11 / 11 PASS
-inherited Chromium                        12 / 12 PASS
-post-review qualifier Chromium             9 / 9 PASS
-usability-v2 Chromium                      5 / 5 PASS
-More-v3 Chromium                           5 / 5 PASS
-Greek source-summary coverage             54 positions
-packaged dependency closure               PASS
-```
-
-Artifact:
-
-```text
-id      10292822525
-name    knee-oa-prototype-9deafa2db43d3498c5becf20f77a804b03849d53
-digest  sha256:1cc6156d5de37e2ef1fcc15de68e6df7811535e10dfec86c20ed1723ba81fb0e
-```
-
-Visual evidence inspected:
-
-- `more-v3-overview.png`
-- `more-v3-favorites.png`
-- `more-v3-mobile.png`
-- inherited desktop/mobile/evidence/suggestion screenshots.
-
-No obvious horizontal clipping or reversion to the previous control wall was observed. This does not prove actual iPhone Safari/VoiceOver or measured accessibility acceptance.
-
-## 8. Explicit exclusions remain
-
-```text
-search
-permanent Hide
-recent-items system
-multiple preference tabs
-favorite/account persistence
-AI-generated relevance
-clinical/evidence semantic edits
-new structured functional-baseline field
-routine FFD measurement
 second diagnosis
-unaudited jurisdiction guidance
-PR / merge / deploy
-real-patient use
+billing/subscription engine
+analytics
+patient persistence
+favorites account persistence
+new GeSY clinical recommendations
+new evidence surveillance pipeline
+public unauthenticated physio product
 ```
 
-## 9. Exact next action
+## 8. Exact next action
 
-**Product Owner visually/use-tests the exact tested More-v3 synthetic artifact and gives concrete keep/change/remove feedback.**
-
-After Product Owner acceptance, deliberately decide whether Knee-OA is ready to freeze for receiving-physiotherapist/real-user validation or needs one bounded correction. Do not automatically expand to another diagnosis or production release.
+Move the commercial product authorities, then adapt the tested Knee-OA runtime/UI to the existing protected Cockpit physiotherapy route and add production-integration regressions.
