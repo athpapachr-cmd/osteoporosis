@@ -1,93 +1,105 @@
-# CURRENT_OPERATIONAL.md — Knee-OA usability refinement v2
+# CURRENT_OPERATIONAL.md — Knee-OA usability refinement v2 closeout
 
-> **STATUS:** PRODUCT-OWNER USABILITY REFINEMENT — IMPLEMENTATION ACTIVE / SYNTHETIC PROTOTYPE ONLY.
+> **STATUS:** KNEE-OA USABILITY REFINEMENT V2 — IMPLEMENTED / FOCUSED TECHNICAL GATE PASS / PRODUCT-OWNER VISUAL REVIEW NEXT.
 > **Updated:** 2026-09-12 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Freshly verified `main`:** `d9f312f6d2d596ec0bd4f35f6de56ad98dc34b37`.
 > **Parent closed candidate:** `0f38f4d411146667d854c32c9f5f639f344d7c7f`.
-> **Parent tested substantive amendment:** `83a5acd4e5b25413708bbda1715c58b5c78bce08`.
 > **Implementation branch:** `feat/physio-knee-oa-usability-refine-v2-2026-09-12`.
-> **Active slice:** `CU1-PRODUCT-KNEE-OA-USABILITY-REFINE-V2-20260912`.
-> **ACTIVE RUNTIME / DESIGN / CANONICAL WRITER:** this bounded usability-refinement session.
+> **Closed slice:** `CU1-PRODUCT-KNEE-OA-USABILITY-REFINE-V2-20260912`.
+> **Tested substantive head:** `a87dccc90dab9f50f70505f2565e3405d48de109`.
+> **Successful substantive run:** `34675038243`.
+> **Result record:** `clinic_utilities/physio_referral_product/KNEE_OA_USABILITY_REFINE_V2_RESULT.md`.
+> **ACTIVE RUNTIME / DESIGN / CANONICAL WRITER:** NONE; usability-refinement writer released.
 > **PR / merge / deploy / production smoke authority:** NONE.
 > **Real-patient use / production integration:** NOT AUTHORIZED.
 
-## 1. Product Owner authority
-
-After visually reviewing the tested post-review amendment, the Product Owner authorized three bounded usability changes:
-
-1. make additional suggestions materially more discoverable without expanding every suggestion inline;
-2. expose referral-text editing directly instead of hiding it behind the overflow menu, while preserving manual-text reconciliation safety;
-3. add Favorites / Pin-to-top inside `Περισσότερα`, without permanent Hide in this slice.
-
-No clinical/evidence rule change is authorized by this feedback.
-
-## 2. Exact implementation scope
+## 1. Implemented Product Owner refinements
 
 ### Additional suggestions
 
-Keep the highest-priority suggestion visible as a compact actionable line. When more suggestions exist, show a visually distinct but restrained `Άλλες {n} προτάσεις` summary panel containing only short item titles. Activating the panel opens the existing suggestions sheet where Add / evidence / dismissal remain explicit.
-
-Do not render all secondary suggestion rationales, citations or controls on the routine surface.
+The primary suggestion remains directly actionable. When additional candidates exist, the routine surface now shows a restrained bordered `Άλλες {n} προτάσεις ›` summary with short current titles. Activating it opens the full existing suggestions sheet. The summary itself does not select treatment.
 
 ### Direct referral editing
 
-Expose a visible `Επεξεργασία` action in the referral preview rather than requiring the `•••` menu.
+The desktop live preview now shows `✎ Επεξεργασία` directly. The mobile preview sheet exposes the same action. The overflow menu remains a secondary route.
 
-The existing safety invariant remains:
+Manual-text safety remains unchanged:
 
 ```text
 manual text != structured state
+structured change after manual edit
+→ clinician text preserved
+→ stale reconciliation
+→ export blocked
+→ explicit resolution required
 ```
 
-After manual editing, a later structured change must never overwrite the clinician's text silently. It must enter explicit reconciliation state; export remains guarded until the clinician chooses which version is authoritative.
+### Favorites / pin-to-top
 
-The overflow menu may remain for secondary actions but is no longer the sole route to editing.
+`Περισσότερα` now supports doctor-facing `☆` / `★` pinning. Pinned items appear in `★ Συχνά` at the top of the advanced surface.
 
-### Favorites / Pin to top
+Hard boundaries:
 
-Inside `Περισσότερα`, allow optional doctor-facing pin/favorite state for useful advanced controls.
+- favorite/pin does not select anything;
+- favorites do not change clinical output, evidence, suggestion eligibility or safety;
+- unpinning does not clear clinical selection;
+- no Hide control exists;
+- synthetic favorites are ephemeral only and cleared on reset/pagehide/BFCache;
+- no localStorage/sessionStorage/server preference persistence was introduced.
 
-First-slice rules:
+Future persistence, if justified, belongs to clinician/account preference state, not patient/referral state.
 
-- favorite/pin changes ordering/discoverability only;
-- favorite/pin never selects a clinical item;
-- favorite/pin never changes referral output, evidence state, suggestion eligibility or safety;
-- no permanent Hide in this slice;
-- no patient data is attached to favorite state;
-- the synthetic prototype keeps favorites draft/session-local only: no localStorage/sessionStorage/server persistence;
-- future account-level persistence is a separate preference-storage decision.
+## 2. Gate history
 
-## 3. Hard exclusions
+Initial run `34674925907` failed because the new direct edit and the legacy overflow edit both matched the inherited generic `[data-edit]` browser locator. The old regression was made explicit about the legacy menu route while the new suite independently tests the direct route. Manual-buffer behavior itself was not weakened.
+
+Successful substantive gate:
 
 ```text
-NO clinical finding/evidence changes
-NO permanent Hide
-NO patient-state persistence
-NO localStorage/sessionStorage
-NO account/preferences backend
-NO second diagnosis
-NO jurisdiction expansion
-NO billing/auth/analytics
-NO production integration
-NO PR/merge/deploy
+run                                       34675038243
+head                                      a87dccc90dab9f50f70505f2565e3405d48de109
+result                                    SUCCESS
+scope + syntax                            PASS
+real CU-1 / HTTP                          15 / 15 PASS
+frozen Step-3 exact-output fixtures       15 PASS
+post-review clinical/output               11 / 11 PASS
+inherited Chromium                        12 / 12 PASS
+post-review qualifier Chromium             9 / 9 PASS
+usability-v2 Chromium                      5 / 5 PASS
+Greek source-summary coverage             54 positions
+packaged dependency closure               PASS
 ```
 
-## 4. Acceptance gate
+CI produced desktop/mobile/mixed-evidence screenshots plus new `suggestions-v2` and `favorites-v2` screenshots. They were visually inspected; no obvious clipping or routine-surface crowding was observed. This is not Safari/VoiceOver acceptance.
 
-Fresh exact-head tests must prove at minimum:
+## 3. Product boundaries unchanged
 
-- one primary suggestion remains actionable inline;
-- additional suggestions are conspicuous, correctly counted and title-previewed, and open the full suggestions sheet;
-- no secondary suggestion is auto-selected by the summary panel;
-- `Επεξεργασία` is directly visible in desktop preview and reachable in mobile preview;
-- manual edited text survives subsequent structured changes and enters explicit reconciliation rather than being overwritten;
-- Copy/Print remain blocked for stale manual text until reconciliation;
-- favorites reorder advanced content without changing structured clinical selection;
-- favorites do not survive reset/BFCache in the synthetic prototype and create no storage entries;
-- no Hide control exists;
-- inherited safety, evidence-conflict, network-failure, mobile-reflow and privacy tests remain green.
+The general utility rule still applies:
+
+```text
+clinically meaningful
+!= workflow-useful
+!= receiver-useful
+!= worth adding
+```
+
+No clinical/evidence semantics, jurisdiction guidance, diagnosis scope, patient persistence or production runtime were expanded in this slice.
+
+## 4. Still unproven
+
+```text
+Product Owner visual/use acceptance of this exact candidate
+actual iPhone Safari / VoiceOver
+complete measured accessibility/contrast acceptance
+receiving-physiotherapist real-user validation
+whether favorites deserve future cross-device persistence
+production integration / real-patient use
+commercial willingness-to-pay / retention
+```
 
 ## 5. Exact next action
 
-Implement these three bounded UX changes in the synthetic Knee-OA prototype, run focused real-CU1/browser regression, inspect generated screenshots, produce a tested artifact for Product Owner review, then release the writer.
+**Product Owner visually/use-tests the exact tested synthetic usability-v2 artifact and records concrete keep/change/remove feedback.**
+
+No PR, merge, deploy, second diagnosis, permanent Hide or preference-persistence work follows automatically.
