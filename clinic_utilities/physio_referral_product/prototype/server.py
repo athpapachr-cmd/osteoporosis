@@ -33,7 +33,7 @@ from clinic_utilities.physio_referral_product.knee_oa_projection import (
     project,
     bootstrap,
 )
-from clinic_utilities.physio_referral_product.knee_oa_presentation_v4 import present_project_result
+from clinic_utilities.physio_referral_product.knee_oa_presentation_v5 import present_project_result
 
 HERE = Path(__file__).resolve().parent
 
@@ -80,7 +80,7 @@ class Handler(BaseHTTPRequestHandler):
         data = (HERE / name).read_bytes()
         if name == "qualifiers.js":
             data += b"\n" + (HERE / "more_v3.js").read_bytes()
-            data += b"\n" + (HERE / "clinical_sheet_v4.js").read_bytes()
+            data += b"\n" + (HERE / "clinical_sheet_v5.js").read_bytes()
         elif name == "qualifiers.css":
             data += b"\n" + (HERE / "more_v3.css").read_bytes()
             data += b"\n" + (HERE / "clinical_sheet_v4.css").read_bytes()
