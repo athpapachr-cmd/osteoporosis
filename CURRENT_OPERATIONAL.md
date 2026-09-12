@@ -1,103 +1,93 @@
-# CURRENT_OPERATIONAL.md — Knee-OA post-review amendment closeout
+# CURRENT_OPERATIONAL.md — Knee-OA usability refinement v2
 
-> **STATUS:** KNEE-OA POST-REVIEW BOUNDED AMENDMENT — IMPLEMENTED / FOCUSED TECHNICAL GATE PASS / PRODUCT-OWNER VISUAL REVIEW NEXT.
+> **STATUS:** PRODUCT-OWNER USABILITY REFINEMENT — IMPLEMENTATION ACTIVE / SYNTHETIC PROTOTYPE ONLY.
 > **Updated:** 2026-09-12 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Freshly verified `main`:** `d9f312f6d2d596ec0bd4f35f6de56ad98dc34b37`.
-> **Previously accepted reviewed candidate:** `6539351c592c1dc3e49931057b63925dea3cb94d`.
-> **Synthesis/disposition parent:** `554ecfa30bf8d0c04a19510a5db0276e6844edd5`.
-> **Implementation branch:** `feat/physio-knee-oa-review-amendments-v1-2026-09-12`.
-> **Closed slice:** `CU1-PRODUCT-KNEE-OA-POST-REVIEW-AMENDMENTS-V1-20260912`.
-> **Tested substantive amendment head:** `83a5acd4e5b25413708bbda1715c58b5c78bce08`.
-> **Result record:** `clinic_utilities/physio_referral_product/KNEE_OA_POST_REVIEW_AMENDMENT_RESULT_V1.md`.
-> **ACTIVE RUNTIME / DESIGN / CANONICAL WRITER:** NONE; amendment writer released.
+> **Parent closed candidate:** `0f38f4d411146667d854c32c9f5f639f344d7c7f`.
+> **Parent tested substantive amendment:** `83a5acd4e5b25413708bbda1715c58b5c78bce08`.
+> **Implementation branch:** `feat/physio-knee-oa-usability-refine-v2-2026-09-12`.
+> **Active slice:** `CU1-PRODUCT-KNEE-OA-USABILITY-REFINE-V2-20260912`.
+> **ACTIVE RUNTIME / DESIGN / CANONICAL WRITER:** this bounded usability-refinement session.
 > **PR / merge / deploy / production smoke authority:** NONE.
 > **Real-patient use / production integration:** NOT AUTHORIZED.
 
-## 1. Product result
+## 1. Product Owner authority
 
-The post-review synthetic candidate now implements the approved bounded corrections without expanding the clinical surface indiscriminately.
+After visually reviewing the tested post-review amendment, the Product Owner authorized three bounded usability changes:
 
-Implemented:
+1. make additional suggestions materially more discoverable without expanding every suggestion inline;
+2. expose referral-text editing directly instead of hiding it behind the overflow menu, while preserving manual-text reconciliation safety;
+3. add Favorites / Pin-to-top inside `Περισσότερα`, without permanent Hide in this slice.
 
-- explicit Knee-OA diagnosis selection acts as clinician assertion and auto-projects diagnosis; the checkbox-like confirmation presentation is removed from the intended UX;
-- exact local missing-state guidance for diagnosis then laterality;
-- generic weakness remains reported/contextual, while quadriceps-specific canonical weakness requires explicit examination semantics;
-- FFD remains advanced/optional and is expressed as passive extension deficit, distinct from active lag, with no numeric `0°` or permanence wording;
-- no new main-activity / functional-baseline structured field was added;
-- low-information referrals are proportionally shorter;
-- richer plan prose is framed as physiotherapy assessment plus indicative priorities rather than a fixed technique/dose/progression order;
-- qualifier visible/ARIA lifecycle is synchronized while multi-location pain selection remains possible;
-- routine evidence first disclosure is lighter, while mixed guidance still shows all material source positions immediately;
-- suggestion presentation is flatter without weakening Add/evidence/dismissal/stale-candidate guards;
-- mobile manual reconciliation is more direct;
-- a visible `CY_GESY` / `Κύπρος · ΓεΣΥ` jurisdiction context seam is present without importing unaudited local recommendations.
+No clinical/evidence rule change is authorized by this feedback.
 
-## 2. General utility rule retained
+## 2. Exact implementation scope
 
-```text
-clinically meaningful
-!= workflow-useful
-!= receiver-useful
-!= worth adding
-```
+### Additional suggestions
 
-Product Owner, author, assistant and reviewer suggestions remain hypotheses until the relevant utility/evidence/receiver gate supports them.
+Keep the highest-priority suggestion visible as a compact actionable line. When more suggestions exist, show a visually distinct but restrained `Άλλες {n} προτάσεις` summary panel containing only short item titles. Activating the panel opens the existing suggestions sheet where Add / evidence / dismissal remain explicit.
 
-## 3. Exact gate evidence
+Do not render all secondary suggestion rationales, citations or controls on the routine surface.
 
-First run `34672583682` failed because an inherited regression still required amended product prose to be byte-for-byte identical to frozen Step-3 output. The test ownership was corrected rather than deleting frozen protection.
+### Direct referral editing
 
-Successful substantive run:
+Expose a visible `Επεξεργασία` action in the referral preview rather than requiring the `•••` menu.
+
+The existing safety invariant remains:
 
 ```text
-workflow                                  Physio Knee OA prototype gate
-run                                       34672654522
-head                                      83a5acd4e5b25413708bbda1715c58b5c78bce08
-result                                    SUCCESS
-real CU-1 / HTTP tests                    15 / 15 PASS
-frozen Step-3 exact-output fixtures       15 PASS
-post-review clinical/output tests         11 / 11 PASS
-inherited Chromium tests                  12 / 12 PASS
-post-review Chromium tests                 9 / 9 PASS
-Greek source-summary coverage             54 positions
-packaged dependency closure               PASS
-scope + syntax guards                     PASS
+manual text != structured state
 ```
 
-The successful run produced a runnable synthetic ZIP plus desktop/mobile/conflict-evidence screenshots.
+After manual editing, a later structured change must never overwrite the clinician's text silently. It must enter explicit reconciliation state; export remains guarded until the clinician chooses which version is authoritative.
 
-## 4. Jurisdiction architecture boundary
+The overflow menu may remain for secondary actions but is no longer the sole route to editing.
 
-The intended reusable model is:
+### Favorites / Pin to top
+
+Inside `Περισσότερα`, allow optional doctor-facing pin/favorite state for useful advanced controls.
+
+First-slice rules:
+
+- favorite/pin changes ordering/discoverability only;
+- favorite/pin never selects a clinical item;
+- favorite/pin never changes referral output, evidence state, suggestion eligibility or safety;
+- no permanent Hide in this slice;
+- no patient data is attached to favorite state;
+- the synthetic prototype keeps favorites draft/session-local only: no localStorage/sessionStorage/server persistence;
+- future account-level persistence is a separate preference-storage decision.
+
+## 3. Hard exclusions
 
 ```text
-international clinical-evidence core
-+
-optional jurisdiction/local-system guidance overlay
+NO clinical finding/evidence changes
+NO permanent Hide
+NO patient-state persistence
+NO localStorage/sessionStorage
+NO account/preferences backend
+NO second diagnosis
+NO jurisdiction expansion
+NO billing/auth/analytics
+NO production integration
+NO PR/merge/deploy
 ```
 
-The current `CY_GESY` label is context only. It cannot change evidence states, defaults, suggestions or copied clinical prose until the exact final Cyprus/HIO recommendation content is audited and separately authorized.
+## 4. Acceptance gate
 
-Future `GR` or `UK_ENGLAND` profiles remain dormant until actual market/workflow need is established. Country must later come from explicit configuration/account preference, not silent device-location inference.
+Fresh exact-head tests must prove at minimum:
 
-## 5. Remaining acceptance
+- one primary suggestion remains actionable inline;
+- additional suggestions are conspicuous, correctly counted and title-previewed, and open the full suggestions sheet;
+- no secondary suggestion is auto-selected by the summary panel;
+- `Επεξεργασία` is directly visible in desktop preview and reachable in mobile preview;
+- manual edited text survives subsequent structured changes and enters explicit reconciliation rather than being overwritten;
+- Copy/Print remain blocked for stale manual text until reconciliation;
+- favorites reorder advanced content without changing structured clinical selection;
+- favorites do not survive reset/BFCache in the synthetic prototype and create no storage entries;
+- no Hide control exists;
+- inherited safety, evidence-conflict, network-failure, mobile-reflow and privacy tests remain green.
 
-Still unproven:
+## 5. Exact next action
 
-```text
-Product Owner visual/use acceptance of this amended candidate
-actual receiving-physiotherapist user validation
-actual iPhone Safari / VoiceOver
-complete measured contrast/accessibility acceptance
-Cyprus/GeSY recommendation-by-recommendation audit
-production privacy/auth/hosting
-Greece/England market need
-commercial willingness-to-pay / retention
-```
-
-## 6. Exact next action
-
-**Product Owner visually/use-tests the exact tested synthetic amendment artifact.** Record concrete keep/remove/change findings only after interacting with this candidate.
-
-No second diagnosis, jurisdiction expansion, PR, merge, deploy or production integration follows automatically from the technical PASS.
+Implement these three bounded UX changes in the synthetic Knee-OA prototype, run focused real-CU1/browser regression, inspect generated screenshots, produce a tested artifact for Product Owner review, then release the writer.
