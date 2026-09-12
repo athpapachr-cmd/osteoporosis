@@ -1,0 +1,43 @@
+name: Clinical Documents P1 tests
+
+on:
+  push:
+    paths:
+      - "clinic_utilities/clinical_documents/**"
+      - "static/clinic-utilities/sick-leave/**"
+      - "static/baseline-audit/g4-workspace-ergonomics.js"
+      - "main.py"
+      - "test_clinical_documents_sick_leave.py"
+      - ".github/workflows/clinical-documents-p1-tests.yml"
+  pull_request:
+    paths:
+      - "clinic_utilities/clinical_documents/**"
+      - "static/clinic-utilities/sick-leave/**"
+      - "static/baseline-audit/g4-workspace-ergonomics.js"
+      - "main.py"
+      - "test_clinical_documents_sick_leave.py"
+      - ".github/workflows/clinical-documents-p1-tests.yml"
+
+jobs:
+  sick-leave-v1:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+      - name: Install system font dependency
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y fonts-dejavu-core
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+      - name: Python syntax
+        run: python -m py_compile clinic_utilities/clinical_documents/*.py test_clinical_documents_sick_leave.py
+      - name: JavaScript syntax
+        run: node --check static/clinic-utilities/sick-leave/app.js
+      - name: Sick Leave V1 deterministic tests
+        run: pytest -q test_clinical_documents_sick_leave.py
+      - name: Existing Clinic Utilities navigation regression
+        run: node test_g4_workspace_ergonomics.js
