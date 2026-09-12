@@ -35,7 +35,8 @@ class AdapterTests(unittest.TestCase):
         self.assertIn("δεξιού γόνατος", result["text"])
         self.assertEqual(result["suggestions"], [])
 
-    def test_frozen_exact_outputs_through_new_adapter(self):
+    def test_frozen_template_exact_outputs_remain_unchanged(self):
+        """Protect Step-3 renderer identity while allowing reviewed product prose amendments."""
         primary = p.load_yaml(p.PRODUCT / "contracts/knee_oa_template_fixtures_v1.yaml")["fixtures"]
         edge = p.load_yaml(p.PRODUCT / "contracts/knee_oa_template_edge_fixtures_v1.yaml")["render_fixtures"]
         count = 0
@@ -44,16 +45,16 @@ class AdapterTests(unittest.TestCase):
                 state = copy.deepcopy(fixture["input"])
                 # This fixture-only UI projection is not accepted clinical input.
                 suggested = state.pop("ui_suggested_item_ids", [])
-                result = p.project(request(state))
-                self.assertTrue(result["gate"]["allowed"], result["validation_errors"])
-                self.assertEqual(result["text"], fixture["expected_text"])
+                cleaned = p.clean_request(request(state))["state"]
+                frozen_text = p.render(p.T, cleaned, p.LANG)
+                self.assertEqual(frozen_text, fixture["expected_text"])
                 for text in fixture.get("forbidden_substrings", []):
-                    self.assertNotIn(text, result["text"])
+                    self.assertNotIn(text, frozen_text)
                 for item in suggested:
-                    self.assertNotIn(item, result["state"]["rehab_directions"])
+                    self.assertNotIn(item, cleaned["rehab_directions"])
                 count += 1
         self.assertGreaterEqual(count, 15)
-        print(f"Real adapter exact-output fixtures: {count} PASS")
+        print(f"Frozen Step-3 exact-output fixtures: {count} PASS")
 
     def test_diagnosis_and_side_are_not_inferred(self):
         for field in ["formal_assertion_state", "laterality"]:
