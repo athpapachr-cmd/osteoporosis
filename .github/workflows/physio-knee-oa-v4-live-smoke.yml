@@ -1,0 +1,47 @@
+name: Temporary Knee OA v4 live boundary smoke
+
+on:
+  push:
+    branches:
+      - ops/physio-knee-oa-v4-live-smoke-2026-09-12
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: External production smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE='https://ortho-reception-backend.onrender.com'
+
+          fetch_status() {
+            local path="$1" out="$2" expected="$3"
+            local code
+            code=$(curl --retry 2 --retry-delay 1 --max-time 20 -sS -L -o "$out" -w '%{http_code}' "$BASE$path")
+            printf '%s %s\n' "$code" "$path"
+            test "$code" = "$expected"
+          }
+
+          fetch_status '/static/clinic-utilities/physio-referral/index.html' /tmp/index.html 200
+          fetch_status '/static/clinic-utilities/physio-referral/production-env.js' /tmp/production-env.js 200
+          fetch_status '/static/clinic-utilities/physio-referral/production-finalize.js' /tmp/production-finalize.js 200
+          fetch_status '/static/clinic-utilities/physio-referral/product-more-v3.js' /tmp/product-more-v3.js 200
+          fetch_status '/static/clinic-utilities/physio-referral/product-clinical-sheet-v4.js' /tmp/product-clinical-sheet-v4.js 200
+          fetch_status '/static/clinic-utilities/physio-referral/product-clinical-sheet-v4.css' /tmp/product-clinical-sheet-v4.css 200
+          fetch_status '/clinical/clinic-utilities/physio-referral' /tmp/protected-route 401
+          fetch_status '/clinical/clinic-utilities/physio-referral/api/product/bootstrap' /tmp/protected-bootstrap 401
+
+          grep -Fq 'Οστεοαρθρίτιδα γόνατος' /tmp/index.html
+          grep -Fq "body.synthetic_only = false" /tmp/production-env.js
+          grep -Fq 'product-clinical-sheet-v4.js' /tmp/production-finalize.js
+          grep -Fq 'product-clinical-sheet-v4.css' /tmp/production-finalize.js
+          grep -Fq 'clinical-card-v4' /tmp/product-clinical-sheet-v4.js
+          grep -Fq 'min-height:44px' /tmp/product-clinical-sheet-v4.css
+          grep -Fq 'white-space:normal;overflow-wrap:anywhere' /tmp/product-clinical-sheet-v4.css
+
+          echo 'KNEE OA V4 LIVE BOUNDARY SMOKE PASS'
