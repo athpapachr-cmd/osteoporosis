@@ -1,0 +1,335 @@
+schema_id: JurisdictionOverlayV1
+schema_version: 1
+diagnosis_vertical: knee_oa
+reviewed_on: '2026-09-12'
+profile:
+  profile_id: CY_GESY
+  country_code: CY
+  health_system_id: GESY
+  label: 'Κύπρος · ΓεΣΥ'
+  profile_status: active
+  selection_source: explicit_account_configuration
+
+positions:
+  - local_position_id: CY_GESY_OA_EXERCISE
+    jurisdiction_profile_id: CY_GESY
+    diagnosis_vertical: knee_oa
+    domain: non_pharmacological_core
+    intervention_id: therapeutic_exercise
+    policy_class: clinical_guidance
+    local_scope: {population: osteoarthritis, context: routine_management}
+    local_direction: for
+    local_strength: strong
+    certainty_or_evidence_quality: null
+    normalized_local_position: 'Προσφέρεται εξατομικευμένη θεραπευτική άσκηση, συμπεριλαμβανομένης ενδυνάμωσης και αερόβιας άσκησης.'
+    relationship_to_core: agreement
+    core_reference:
+      international_item_id: therapeutic_exercise
+      international_evidence_state: recommended_or_supported
+      core_state_mutated_by_overlay: false
+    relationship_to_source_guideline: {source_framework: NICE_NG226_2022, source_recommendation_id: '1.3.1', relationship: unchanged, rationale_class: not_applicable, cost_or_reimbursement_motive_explicit: false}
+    operational_status: {guideline_status: published_active, public_artifact_finality: metadata_conflict, information_system_status: planned, reimbursement_enforcement_status: not_applicable, status_note: 'Ο ΟΑΥ ανακοίνωσε εφαρμογή τον Μάιο 2026· το δημόσιο PDF εξακολουθεί να φέρει μεταδεδομένα προσχεδίου.'}
+    source_provenance: {source_owner: 'HIO/OAY', source_title: 'Adapted NICE NG226 — Osteoarthritis in over 16s', source_url: 'https://www.gesy.org.cy/el-gr/annualreport/greek-translated-oa-19-12-2025-hio-circ-0.pdf', source_type: official_guideline, source_version_or_date: 'implementation announced 2026-05-25; linked text draft-labelled Dec 2025', recommendation_page_or_section: '1.3.1, p5', reviewed_on: '2026-09-12'}
+    display_policy: {routine_visibility: silent, display_semantic: local_agreement, local_label: null, show_source_on_demand: true, show_rationale_on_demand: false, may_change_selection_automatically: false, may_change_referral_text_automatically: false, may_change_international_evidence_badge: false}
+    review_state: approved_active
+
+  - local_position_id: CY_GESY_OA_STRENGTHENING
+    jurisdiction_profile_id: CY_GESY
+    diagnosis_vertical: knee_oa
+    domain: non_pharmacological_core
+    intervention_id: progressive_strengthening
+    policy_class: clinical_guidance
+    local_scope: {population: osteoarthritis, context: therapeutic_exercise}
+    local_direction: for
+    local_strength: strong
+    certainty_or_evidence_quality: null
+    normalized_local_position: 'Η τοπική μυϊκή ενδυνάμωση αναφέρεται ρητά ως μορφή εξατομικευμένης θεραπευτικής άσκησης.'
+    relationship_to_core: agreement
+    core_reference: {international_item_id: progressive_strengthening, international_evidence_state: recommended_or_supported, core_state_mutated_by_overlay: false}
+    relationship_to_source_guideline: {source_framework: NICE_NG226_2022, source_recommendation_id: '1.3.1', relationship: unchanged, rationale_class: not_applicable, cost_or_reimbursement_motive_explicit: false}
+    operational_status: {guideline_status: published_active, public_artifact_finality: metadata_conflict, information_system_status: planned, reimbursement_enforcement_status: not_applicable, status_note: null}
+    source_provenance: {source_owner: 'HIO/OAY', source_title: 'Adapted NICE NG226 — Osteoarthritis in over 16s', source_url: 'https://www.gesy.org.cy/el-gr/annualreport/greek-translated-oa-19-12-2025-hio-circ-0.pdf', source_type: official_guideline, source_version_or_date: '2026 implementation announcement', recommendation_page_or_section: '1.3.1, p5', reviewed_on: '2026-09-12'}
+    display_policy: {routine_visibility: silent, display_semantic: local_agreement, local_label: null, show_source_on_demand: true, show_rationale_on_demand: false, may_change_selection_automatically: false, may_change_referral_text_automatically: false, may_change_international_evidence_badge: false}
+    review_state: approved_active
+
+  - local_position_id: CY_GESY_OA_EDUCATION_SELF_MANAGEMENT
+    jurisdiction_profile_id: CY_GESY
+    diagnosis_vertical: knee_oa
+    domain: non_pharmacological_core
+    intervention_id: education_and_self_management
+    policy_class: clinical_guidance
+    local_scope: {population: osteoarthritis, context: exercise_adherence_and_behaviour_change}
+    local_direction: for
+    local_strength: strong
+    certainty_or_evidence_quality: null
+    normalized_local_position: 'Υποστηρίζεται εκπαίδευση για προσδοκίες, μακροχρόνια προσήλωση στην άσκηση και δομημένες παρεμβάσεις εκπαίδευσης ή αλλαγής συμπεριφοράς.'
+    relationship_to_core: agreement
+    core_reference: {international_item_id: education_and_self_management, international_evidence_state: recommended_or_supported, core_state_mutated_by_overlay: false}
+    relationship_to_source_guideline: {source_framework: NICE_NG226_2022, source_recommendation_id: '1.3.3-1.3.4', relationship: unchanged, rationale_class: not_applicable, cost_or_reimbursement_motive_explicit: false}
+    operational_status: {guideline_status: published_active, public_artifact_finality: metadata_conflict, information_system_status: planned, reimbursement_enforcement_status: not_applicable, status_note: null}
+    source_provenance: {source_owner: 'HIO/OAY', source_title: 'Adapted NICE NG226 — Osteoarthritis in over 16s', source_url: 'https://www.gesy.org.cy/el-gr/annualreport/greek-translated-oa-19-12-2025-hio-circ-0.pdf', source_type: official_guideline, source_version_or_date: '2026 implementation announcement', recommendation_page_or_section: '1.3.3-1.3.4, p5', reviewed_on: '2026-09-12'}
+    display_policy: {routine_visibility: silent, display_semantic: local_agreement, local_label: null, show_source_on_demand: true, show_rationale_on_demand: false, may_change_selection_automatically: false, may_change_referral_text_automatically: false, may_change_international_evidence_badge: false}
+    review_state: approved_active
+
+  - local_position_id: CY_GESY_OA_MANUAL_THERAPY
+    jurisdiction_profile_id: CY_GESY
+    diagnosis_vertical: knee_oa
+    domain: adjunctive_non_pharmacological
+    intervention_id: manual_therapy
+    policy_class: clinical_guidance
+    local_scope: {population: hip_or_knee_oa, context: adjunct_only_with_therapeutic_exercise}
+    local_direction: conditional_for
+    local_strength: weak
+    certainty_or_evidence_quality: 'Insufficient evidence for manual therapy alone.'
+    normalized_local_position: 'Να εξετάζεται μόνο μαζί με θεραπευτική άσκηση· ανεπαρκή δεδομένα για χρήση ως μεμονωμένη παρέμβαση.'
+    relationship_to_core: local_position_within_international_conflict
+    core_reference: {international_item_id: manual_therapy, international_evidence_state: guideline_conflict_or_mixed, core_state_mutated_by_overlay: false}
+    relationship_to_source_guideline: {source_framework: NICE_NG226_2022, source_recommendation_id: '1.3.6-1.3.7', relationship: unchanged, rationale_class: not_applicable, cost_or_reimbursement_motive_explicit: false}
+    operational_status: {guideline_status: published_active, public_artifact_finality: metadata_conflict, information_system_status: planned, reimbursement_enforcement_status: not_applicable, status_note: null}
+    source_provenance: {source_owner: 'HIO/OAY', source_title: 'Adapted NICE NG226 — Osteoarthritis in over 16s', source_url: 'https://www.gesy.org.cy/el-gr/annualreport/greek-translated-oa-19-12-2025-hio-circ-0.pdf', source_type: official_guideline, source_version_or_date: '2026 implementation announcement', recommendation_page_or_section: '1.3.6-1.3.7, p6', reviewed_on: '2026-09-12'}
+    display_policy: {routine_visibility: detail_only, display_semantic: local_difference, local_label: 'Κύπρος · τοπική θέση', show_source_on_demand: true, show_rationale_on_demand: true, may_change_selection_automatically: false, may_change_referral_text_automatically: false, may_change_international_evidence_badge: false}
+    review_state: approved_active
+
+  - local_position_id: CY_GESY_OA_SOFT_TISSUE
+    jurisdiction_profile_id: CY_GESY
+    diagnosis_vertical: knee_oa
+    domain: adjunctive_non_pharmacological
+    intervention_id: soft_tissue_techniques
+    policy_class: clinical_guidance
+    local_scope: {population: hip_or_knee_oa, context: manual_therapy_component_with_exercise}
+    local_direction: conditional_for
+    local_strength: weak
+    certainty_or_evidence_quality: null
+    normalized_local_position: 'Οι τεχνικές μαλακών μορίων εντάσσονται στη manual therapy και εξετάζονται μόνο μαζί με θεραπευτική άσκηση.'
+    relationship_to_core: local_position_within_international_conflict
+    core_reference: {international_item_id: soft_tissue_techniques, international_evidence_state: guideline_conflict_or_mixed, core_state_mutated_by_overlay: false}
+    relationship_to_source_guideline: {source_framework: NICE_NG226_2022, source_recommendation_id: '1.3.6-1.3.7', relationship: unchanged, rationale_class: not_applicable, cost_or_reimbursement_motive_explicit: false}
+    operational_status: {guideline_status: published_active, public_artifact_finality: metadata_conflict, information_system_status: planned, reimbursement_enforcement_status: not_applicable, status_note: null}
+    source_provenance: {source_owner: 'HIO/OAY', source_title: 'Adapted NICE NG226 — Osteoarthritis in over 16s', source_url: 'https://www.gesy.org.cy/el-gr/annualreport/greek-translated-oa-19-12-2025-hio-circ-0.pdf', source_type: official_guideline, source_version_or_date: '2026 implementation announcement', recommendation_page_or_section: '1.3.6-1.3.7, p6', reviewed_on: '2026-09-12'}
+    display_policy: {routine_visibility: detail_only, display_semantic: local_difference, local_label: 'Κύπρος · τοπική θέση', show_source_on_demand: true, show_rationale_on_demand: false, may_change_selection_automatically: false, may_change_referral_text_automatically: false, may_change_international_evidence_badge: false}
+    review_state: approved_active
+
+  - local_position_id: CY_GESY_OA_ACUPUNCTURE
+    jurisdiction_profile_id: CY_GESY
+    diagnosis_vertical: knee_oa
+    domain: adjunctive_non_pharmacological
+    intervention_id: acupuncture
+    policy_class: clinical_guidance
+    local_scope: {population: osteoarthritis, context: symptom_management}
+    local_direction: against
+    local_strength: strong
+    certainty_or_evidence_quality: null
+    normalized_local_position: 'Δεν συνιστάται βελονισμός για τη διαχείριση της οστεοαρθρίτιδας.'
+    relationship_to_core: local_position_within_international_conflict
+    core_reference: {international_item_id: acupuncture, international_evidence_state: guideline_conflict_or_mixed, core_state_mutated_by_overlay: false}
+    relationship_to_source_guideline: {source_framework: NICE_NG226_2022, source_recommendation_id: '1.3.8', relationship: unchanged, rationale_class: not_applicable, cost_or_reimbursement_motive_explicit: false}
+    operational_status: {guideline_status: published_active, public_artifact_finality: metadata_conflict, information_system_status: planned, reimbursement_enforcement_status: not_applicable, status_note: null}
+    source_provenance: {source_owner: 'HIO/OAY', source_title: 'Adapted NICE NG226 — Osteoarthritis in over 16s', source_url: 'https://www.gesy.org.cy/el-gr/annualreport/greek-translated-oa-19-12-2025-hio-circ-0.pdf', source_type: official_guideline, source_version_or_date: '2026 implementation announcement', recommendation_page_or_section: '1.3.8, p6', reviewed_on: '2026-09-12'}
+    display_policy: {routine_visibility: detail_only, display_semantic: local_difference, local_label: 'Κύπρος · διαφέρει', show_source_on_demand: true, show_rationale_on_demand: false, may_change_selection_automatically: false, may_change_referral_text_automatically: false, may_change_international_evidence_badge: false}
+    review_state: approved_active
+
+  - local_position_id: CY_GESY_OA_DRY_NEEDLING
+    jurisdiction_profile_id: CY_GESY
+    diagnosis_vertical: knee_oa
+    domain: adjunctive_non_pharmacological
+    intervention_id: dry_needling
+    policy_class: clinical_guidance
+    local_scope: {population: osteoarthritis, context: symptom_management}
+    local_direction: against
+    local_strength: strong
+    certainty_or_evidence_quality: null
+    normalized_local_position: 'Δεν συνιστάται dry needling για τη διαχείριση της οστεοαρθρίτιδας.'
+    relationship_to_core: agreement
+    core_reference: {international_item_id: dry_needling, international_evidence_state: recommendation_against_routine_use, core_state_mutated_by_overlay: false}
+    relationship_to_source_guideline: {source_framework: NICE_NG226_2022, source_recommendation_id: '1.3.8', relationship: unchanged, rationale_class: not_applicable, cost_or_reimbursement_motive_explicit: false}
+    operational_status: {guideline_status: published_active, public_artifact_finality: metadata_conflict, information_system_status: planned, reimbursement_enforcement_status: not_applicable, status_note: null}
+    source_provenance: {source_owner: 'HIO/OAY', source_title: 'Adapted NICE NG226 — Osteoarthritis in over 16s', source_url: 'https://www.gesy.org.cy/el-gr/annualreport/greek-translated-oa-19-12-2025-hio-circ-0.pdf', source_type: official_guideline, source_version_or_date: '2026 implementation announcement', recommendation_page_or_section: '1.3.8, p6', reviewed_on: '2026-09-12'}
+    display_policy: {routine_visibility: silent, display_semantic: local_agreement, local_label: null, show_source_on_demand: true, show_rationale_on_demand: false, may_change_selection_automatically: false, may_change_referral_text_automatically: false, may_change_international_evidence_badge: false}
+    review_state: approved_active
+
+  - local_position_id: CY_GESY_OA_WALKING_AIDS
+    jurisdiction_profile_id: CY_GESY
+    diagnosis_vertical: knee_oa
+    domain: assistive_devices
+    intervention_id: walking_aid_assessment_and_training
+    policy_class: clinical_guidance
+    local_scope: {population: lower_limb_oa, context: selected_patients}
+    local_direction: conditional_for
+    local_strength: weak
+    certainty_or_evidence_quality: null
+    normalized_local_position: 'Να εξετάζεται η χρήση βοηθημάτων βάδισης σε οστεοαρθρίτιδα κάτω άκρου.'
+    relationship_to_core: agreement
+    core_reference: {international_item_id: walking_aid_assessment_and_training, international_evidence_state: conditional_or_context_dependent, core_state_mutated_by_overlay: false}
+    relationship_to_source_guideline: {source_framework: NICE_NG226_2022, source_recommendation_id: '1.3.10', relationship: unchanged, rationale_class: not_applicable, cost_or_reimbursement_motive_explicit: false}
+    operational_status: {guideline_status: published_active, public_artifact_finality: metadata_conflict, information_system_status: planned, reimbursement_enforcement_status: not_applicable, status_note: null}
+    source_provenance: {source_owner: 'HIO/OAY', source_title: 'Adapted NICE NG226 — Osteoarthritis in over 16s', source_url: 'https://www.gesy.org.cy/el-gr/annualreport/greek-translated-oa-19-12-2025-hio-circ-0.pdf', source_type: official_guideline, source_version_or_date: '2026 implementation announcement', recommendation_page_or_section: '1.3.12, p8', reviewed_on: '2026-09-12'}
+    display_policy: {routine_visibility: silent, display_semantic: local_agreement, local_label: null, show_source_on_demand: true, show_rationale_on_demand: false, may_change_selection_automatically: false, may_change_referral_text_automatically: false, may_change_international_evidence_badge: false}
+    review_state: approved_active
+
+  - local_position_id: CY_GESY_OA_ORTHOSIS_SUPPORTS
+    jurisdiction_profile_id: CY_GESY
+    diagnosis_vertical: knee_oa
+    domain: assistive_devices
+    intervention_id: orthosis_or_brace_context
+    policy_class: clinical_guidance
+    local_scope: {population: osteoarthritis, context: selected_biomechanical_or_functional_exception}
+    local_direction: against_routine_use
+    local_strength: strong
+    certainty_or_evidence_quality: null
+    normalized_local_position: 'Δεν προσφέρονται ρουτίνα νάρθηκες/υποστηρίξεις· εξετάζονται μόνο σε επιλεγμένο πλαίσιο αστάθειας ή μη φυσιολογικής φόρτισης με αναμενόμενο λειτουργικό όφελος.'
+    relationship_to_core: agreement
+    core_reference: {international_item_id: orthosis_or_brace_context, international_evidence_state: conditional_or_context_dependent, core_state_mutated_by_overlay: false}
+    relationship_to_source_guideline: {source_framework: NICE_NG226_2022, source_recommendation_id: '1.3.11', relationship: unchanged, rationale_class: not_applicable, cost_or_reimbursement_motive_explicit: false}
+    operational_status: {guideline_status: published_active, public_artifact_finality: metadata_conflict, information_system_status: planned, reimbursement_enforcement_status: not_applicable, status_note: null}
+    source_provenance: {source_owner: 'HIO/OAY', source_title: 'Adapted NICE NG226 — Osteoarthritis in over 16s', source_url: 'https://www.gesy.org.cy/el-gr/annualreport/greek-translated-oa-19-12-2025-hio-circ-0.pdf', source_type: official_guideline, source_version_or_date: '2026 implementation announcement', recommendation_page_or_section: '1.3.13, p8', reviewed_on: '2026-09-12'}
+    display_policy: {routine_visibility: silent, display_semantic: local_agreement, local_label: null, show_source_on_demand: true, show_rationale_on_demand: false, may_change_selection_automatically: false, may_change_referral_text_automatically: false, may_change_international_evidence_badge: false}
+    review_state: approved_active
+
+  - local_position_id: CY_GESY_OA_WEIGHT_MANAGEMENT
+    jurisdiction_profile_id: CY_GESY
+    diagnosis_vertical: knee_oa
+    domain: non_pharmacological_core
+    intervention_id: weight_management
+    policy_class: clinical_guidance
+    local_scope: {population: overweight_or_obesity_with_oa, context: when_explicitly_applicable}
+    local_direction: for
+    local_strength: strong
+    certainty_or_evidence_quality: null
+    normalized_local_position: 'Όταν υπάρχει υπέρβαρο ή παχυσαρκία, συνιστάται υποστήριξη για απώλεια βάρους χωρίς να συνάγεται η ένδειξη από ελλιπή δεδομένα.'
+    relationship_to_core: agreement
+    core_reference: {international_item_id: weight_management, international_evidence_state: recommended_or_supported, core_state_mutated_by_overlay: false}
+    relationship_to_source_guideline: {source_framework: NICE_NG226_2022, source_recommendation_id: '1.3.5', relationship: unchanged, rationale_class: not_applicable, cost_or_reimbursement_motive_explicit: false}
+    operational_status: {guideline_status: published_active, public_artifact_finality: metadata_conflict, information_system_status: planned, reimbursement_enforcement_status: not_applicable, status_note: null}
+    source_provenance: {source_owner: 'HIO/OAY', source_title: 'Adapted NICE NG226 — Osteoarthritis in over 16s', source_url: 'https://www.gesy.org.cy/el-gr/annualreport/greek-translated-oa-19-12-2025-hio-circ-0.pdf', source_type: official_guideline, source_version_or_date: '2026 implementation announcement', recommendation_page_or_section: '1.3.5, p6', reviewed_on: '2026-09-12'}
+    display_policy: {routine_visibility: silent, display_semantic: local_agreement, local_label: null, show_source_on_demand: true, show_rationale_on_demand: false, may_change_selection_automatically: false, may_change_referral_text_automatically: false, may_change_international_evidence_badge: false}
+    review_state: approved_active
+
+  - local_position_id: CY_GESY_OA_ELECTROTHERAPY
+    jurisdiction_profile_id: CY_GESY
+    diagnosis_vertical: knee_oa
+    domain: local_only_adjunct
+    intervention_id: null
+    policy_class: clinical_guidance
+    local_scope: {population: osteoarthritis, context: short_term_pain_adjunct_with_active_care}
+    local_direction: conditional_for
+    local_strength: weak
+    certainty_or_evidence_quality: 'Moderate-quality evidence for short-term pain relief; no demonstrated functional improvement.'
+    normalized_local_position: 'Επιλεγμένες μορφές ηλεκτροθεραπείας μπορούν να εξεταστούν μόνο για βραχυπρόθεσμη μείωση πόνου μαζί με ενεργητική φροντίδα, χωρίς ισχυρισμό λειτουργικού οφέλους.'
+    relationship_to_core: local_addition
+    core_reference: {international_item_id: null, international_evidence_state: not_in_current_contract, core_state_mutated_by_overlay: false}
+    relationship_to_source_guideline: {source_framework: NICE_NG226_2022, source_recommendation_id: '1.3.9', relationship: modified, rationale_class: clinical_evidence_based, cost_or_reimbursement_motive_explicit: false}
+    operational_status: {guideline_status: published_active, public_artifact_finality: metadata_conflict, information_system_status: planned, reimbursement_enforcement_status: not_applicable, status_note: null}
+    source_provenance: {source_owner: 'HIO/OAY', source_title: 'Cyprus OA adaptation summary', source_url: 'https://www.gesy.org.cy/el-gr/annualreport/oa-%CF%83%CF%8D%CE%BD%CF%84%CE%BF%CE%BC%CE%BF-%CE%AD%CE%BD%CF%84%CF%85%CF%80%CE%BF-%CF%80%CE%B1%CF%81%CE%BF%CF%87%CE%AE%CF%82-%CF%80%CE%BB%CE%B7%CF%81%CE%BF%CF%86%CE%BF%CF%81%CE%B9%CF%8E%CE%BD-%CE%B4%CE%B7%CE%BC%CF%8C%CF%83%CE%B9%CE%B1-%CE%B4%CE%B9%CE%B1%CE%B2%CE%BF%CF%8D%CE%BB%CE%B5%CF%85%CF%83%CE%B7-19.12.2025-gr-0.pdf', source_type: official_adaptation_summary, source_version_or_date: '2025-12/2026 adaptation cycle', recommendation_page_or_section: 'change summary row 1; recs 1.3.9-1.3.10', reviewed_on: '2026-09-12'}
+    display_policy: {routine_visibility: never_routine, display_semantic: local_difference, local_label: 'Κύπρος · διαφέρει', show_source_on_demand: true, show_rationale_on_demand: true, may_change_selection_automatically: false, may_change_referral_text_automatically: false, may_change_international_evidence_badge: false}
+    review_state: approved_active
+
+  - local_position_id: CY_GESY_OA_RF_ABLATION
+    jurisdiction_profile_id: CY_GESY
+    diagnosis_vertical: knee_oa
+    domain: local_only_late_pathway
+    intervention_id: null
+    policy_class: clinical_guidance
+    local_scope: {population: selected_oa_with_severe_localised_pain, context: after_non_surgical_failure_before_surgery}
+    local_direction: conditional_for
+    local_strength: weak
+    certainty_or_evidence_quality: null
+    normalized_local_position: 'Η νευρική κατάλυση με ραδιοσυχνότητες μπορεί να εξεταστεί ως προσωρινή επιλογή σε επιλεγμένο σοβαρό εντοπισμένο πόνο μετά από αποτυχία μη χειρουργικής αντιμετώπισης και πριν από χειρουργείο.'
+    relationship_to_core: local_addition
+    core_reference: {international_item_id: null, international_evidence_state: not_in_current_contract, core_state_mutated_by_overlay: false}
+    relationship_to_source_guideline: {source_framework: NICE_NG226_2022, source_recommendation_id: null, relationship: local_addition, rationale_class: clinical_practice_context, cost_or_reimbursement_motive_explicit: false}
+    operational_status: {guideline_status: published_active, public_artifact_finality: metadata_conflict, information_system_status: planned, reimbursement_enforcement_status: not_applicable, status_note: null}
+    source_provenance: {source_owner: 'HIO/OAY', source_title: 'Cyprus OA adaptation summary', source_url: 'https://www.gesy.org.cy/el-gr/annualreport/oa-%CF%83%CF%8D%CE%BD%CF%84%CE%BF%CE%BC%CE%BF-%CE%AD%CE%BD%CF%84%CF%85%CF%80%CE%BF-%CF%80%CE%B1%CF%81%CE%BF%CF%87%CE%AE%CF%82-%CF%80%CE%BB%CE%B7%CF%81%CE%BF%CF%86%CE%BF%CF%81%CE%B9%CF%8E%CE%BD-%CE%B4%CE%B7%CE%BC%CF%8C%CF%83%CE%B9%CE%B1-%CE%B4%CE%B9%CE%B1%CE%B2%CE%BF%CF%8D%CE%BB%CE%B5%CF%85%CF%83%CE%B7-19.12.2025-gr-0.pdf', source_type: official_adaptation_summary, source_version_or_date: '2025-12/2026 adaptation cycle', recommendation_page_or_section: 'change summary row 2; rec 1.3.11', reviewed_on: '2026-09-12'}
+    display_policy: {routine_visibility: never_routine, display_semantic: local_difference, local_label: null, show_source_on_demand: true, show_rationale_on_demand: true, may_change_selection_automatically: false, may_change_referral_text_automatically: false, may_change_international_evidence_badge: false}
+    review_state: approved_active
+
+  - local_position_id: CY_GESY_OA_HYALURONAN
+    jurisdiction_profile_id: CY_GESY
+    diagnosis_vertical: knee_oa
+    domain: local_only_injection
+    intervention_id: null
+    policy_class: clinical_guidance
+    local_scope: {population: selected_mild_to_moderate_knee_oa, context: after_other_options_fail_or_unsuitable}
+    local_direction: conditional_for
+    local_strength: weak
+    certainty_or_evidence_quality: null
+    normalized_local_position: 'Σε επιλεγμένη ήπια έως μέτρια οστεοαρθρίτιδα γόνατος μπορούν να εξεταστούν ενδαρθρικές ενέσεις υαλουρονικού όταν άλλες επιλογές απέτυχαν ή είναι ακατάλληλες.'
+    relationship_to_core: local_addition
+    core_reference: {international_item_id: null, international_evidence_state: not_in_current_contract, core_state_mutated_by_overlay: false}
+    relationship_to_source_guideline: {source_framework: NICE_NG226_2022, source_recommendation_id: '1.4.9', relationship: modified, rationale_class: clinical_evidence_based, cost_or_reimbursement_motive_explicit: false}
+    operational_status: {guideline_status: published_active, public_artifact_finality: metadata_conflict, information_system_status: planned, reimbursement_enforcement_status: not_applicable, status_note: null}
+    source_provenance: {source_owner: 'HIO/OAY', source_title: 'Adapted NICE NG226 — Osteoarthritis in over 16s', source_url: 'https://www.gesy.org.cy/el-gr/annualreport/greek-translated-oa-19-12-2025-hio-circ-0.pdf', source_type: official_guideline, source_version_or_date: '2026 implementation announcement', recommendation_page_or_section: '1.4.9, p10; rationale p29', reviewed_on: '2026-09-12'}
+    display_policy: {routine_visibility: never_routine, display_semantic: local_difference, local_label: null, show_source_on_demand: true, show_rationale_on_demand: true, may_change_selection_automatically: false, may_change_referral_text_automatically: false, may_change_international_evidence_badge: false}
+    review_state: approved_active
+
+  - local_position_id: CY_GESY_OA_PRP
+    jurisdiction_profile_id: CY_GESY
+    diagnosis_vertical: knee_oa
+    domain: local_only_injection
+    intervention_id: null
+    policy_class: clinical_guidance
+    local_scope: {population: selected_knee_oa, context: after_unsuccessful_hyaluronan}
+    local_direction: conditional_for
+    local_strength: weak
+    certainty_or_evidence_quality: null
+    normalized_local_position: 'Μετά από ανεπαρκές όφελος από υαλουρονικό μπορεί να εξεταστεί PRP για βραχυπρόθεσμη ανακούφιση πόνου.'
+    relationship_to_core: local_addition
+    core_reference: {international_item_id: null, international_evidence_state: not_in_current_contract, core_state_mutated_by_overlay: false}
+    relationship_to_source_guideline: {source_framework: NICE_NG226_2022, source_recommendation_id: null, relationship: local_addition, rationale_class: unclear, cost_or_reimbursement_motive_explicit: false}
+    operational_status: {guideline_status: published_active, public_artifact_finality: metadata_conflict, information_system_status: planned, reimbursement_enforcement_status: not_applicable, status_note: null}
+    source_provenance: {source_owner: 'HIO/OAY', source_title: 'Adapted NICE NG226 — Osteoarthritis in over 16s', source_url: 'https://www.gesy.org.cy/el-gr/annualreport/greek-translated-oa-19-12-2025-hio-circ-0.pdf', source_type: official_guideline, source_version_or_date: '2026 implementation announcement', recommendation_page_or_section: '1.4.10, p10', reviewed_on: '2026-09-12'}
+    display_policy: {routine_visibility: never_routine, display_semantic: local_difference, local_label: null, show_source_on_demand: true, show_rationale_on_demand: true, may_change_selection_automatically: false, may_change_referral_text_automatically: false, may_change_international_evidence_badge: false}
+    review_state: approved_active
+
+  - local_position_id: GESY_ADMIN_PHYSIO_ACCESS
+    jurisdiction_profile_id: CY_GESY
+    diagnosis_vertical: knee_oa
+    domain: physio_access
+    intervention_id: null
+    policy_class: administrative_access
+    local_scope: {service: physiotherapy, context: gesy_covered_access}
+    local_direction: informational
+    local_strength: not_applicable
+    certainty_or_evidence_quality: null
+    normalized_local_position: 'Η πρόσβαση σε φυσιοθεραπεία εντός ΓεΣΥ απαιτεί παραπεμπτικό από συμμετέχοντα προσωπικό ή ειδικό ιατρό και επιλέξιμη διάγνωση.'
+    relationship_to_core: administrative_only
+    core_reference: {international_item_id: null, international_evidence_state: not_in_current_contract, core_state_mutated_by_overlay: false}
+    operational_status: {guideline_status: unknown, public_artifact_finality: final_versioned, information_system_status: active_verified, reimbursement_enforcement_status: active_verified, status_note: 'Operational access rule; not clinical evidence.'}
+    source_provenance: {source_owner: 'HIO/OAY', source_title: 'Access to nurses, midwives and allied health professionals', source_url: 'https://www.gesy.org.cy/el-gr/hionurses-midwives-alliedhealthprofessionalsaccess', source_type: official_access_rule, source_version_or_date: null, recommendation_page_or_section: 'physiotherapy access', reviewed_on: '2026-09-12'}
+    display_policy: {routine_visibility: operational_detail_only, display_semantic: local_administrative_rule, local_label: 'Πληροφορία ΓεΣΥ', show_source_on_demand: true, show_rationale_on_demand: false, may_change_selection_automatically: false, may_change_referral_text_automatically: false, may_change_international_evidence_badge: false}
+    review_state: approved_active
+
+  - local_position_id: GESY_ADMIN_PHYS02
+    jurisdiction_profile_id: CY_GESY
+    diagnosis_vertical: knee_oa
+    domain: physiotherapy_service_rule
+    intervention_id: null
+    policy_class: reimbursement_documentation
+    local_scope: {service: physiotherapy, context: provider_service_and_documentation}
+    local_direction: informational
+    local_strength: mandatory
+    certainty_or_evidence_quality: null
+    normalized_local_position: 'Το PHYS02 ορίζει απαιτήσεις συνεδρίας και κλινικής τεκμηρίωσης για τον πάροχο φυσιοθεραπείας· πρόκειται για λειτουργικό/αποζημιωτικό κανόνα και όχι για evidence efficacy.'
+    relationship_to_core: reimbursement_or_access_only
+    core_reference: {international_item_id: null, international_evidence_state: not_in_current_contract, core_state_mutated_by_overlay: false}
+    operational_status: {guideline_status: unknown, public_artifact_finality: final_versioned, information_system_status: active_verified, reimbursement_enforcement_status: active_verified, status_note: 'Provider/service rule; never an evidence-strength signal.'}
+    source_provenance: {source_owner: 'HIO/OAY', source_title: 'Allied health rules — physiotherapy', source_url: 'https://www.gesy.org.cy/el-gr/annualreport/rules-allied-sep-2025.pdf', source_type: official_reimbursement_rule, source_version_or_date: '2025-09', recommendation_page_or_section: 'PHYS02 physiotherapy section', reviewed_on: '2026-09-12'}
+    display_policy: {routine_visibility: never_routine, display_semantic: local_reimbursement_rule, local_label: 'Πληροφορία ΓεΣΥ', show_source_on_demand: true, show_rationale_on_demand: false, may_change_selection_automatically: false, may_change_referral_text_automatically: false, may_change_international_evidence_badge: false}
+    review_state: approved_active
+
+  - local_position_id: GESY_OA_IT_INTEGRATION
+    jurisdiction_profile_id: CY_GESY
+    diagnosis_vertical: knee_oa
+    domain: system_lifecycle
+    intervention_id: null
+    policy_class: system_lifecycle
+    local_scope: {system: gesy_information_system, context: oa_guideline_integration}
+    local_direction: informational
+    local_strength: not_applicable
+    certainty_or_evidence_quality: null
+    normalized_local_position: 'Η ενσωμάτωση της οδηγίας οστεοαρθρίτιδας στο Σύστημα Πληροφορικής του ΓεΣΥ έχει ανακοινωθεί ως μελλοντική ενέργεια και δεν θεωρείται ενεργή enforcement rule.'
+    relationship_to_core: status_unknown
+    core_reference: {international_item_id: null, international_evidence_state: not_in_current_contract, core_state_mutated_by_overlay: false}
+    operational_status: {guideline_status: published_active, public_artifact_finality: metadata_conflict, information_system_status: planned, reimbursement_enforcement_status: not_applicable, status_note: 'Planned integration only.'}
+    source_provenance: {source_owner: 'HIO/OAY', source_title: 'OA guideline implementation announcement 052026INP08064', source_url: 'https://www.gesy.org.cy/sites/Sites?d=Desktop&locale=el_GR&lookuphost=%2Fel-gr%2F&lookuppage=announcementdef%2Fann-osteoarthirtis-guideline-20260521.pdf', source_type: official_implementation_announcement, source_version_or_date: '2026-05-25', recommendation_page_or_section: 'implementation lifecycle announcement', reviewed_on: '2026-09-12'}
+    display_policy: {routine_visibility: operational_detail_only, display_semantic: local_status_unknown, local_label: null, show_source_on_demand: true, show_rationale_on_demand: false, may_change_selection_automatically: false, may_change_referral_text_automatically: false, may_change_international_evidence_badge: false}
+    review_state: approved_active
