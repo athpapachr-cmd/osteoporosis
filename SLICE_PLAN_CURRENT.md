@@ -1,77 +1,118 @@
-# SLICE_PLAN_CURRENT.md — Knee-OA v5 Product Owner review HOLD
+# SLICE_PLAN_CURRENT.md — CYPRUS / GESY OA JURISDICTION OVERLAY V1
 
-> **STATUS:** REVIEW HOLD — v4 remains released/live; authenticated live product smoke passed; v5 is implemented/tested but unmerged/unreleased.
-> **Production runtime:** `bf527e3836a18491b2758fd293b42f82e0924382`.
-> **Authenticated live smoke:** run `34681808255`, attempt `3` — SUCCESS.
-> **V5 branch:** `fix/physio-knee-oa-v5-optional-refinement-prose-2026-09-12`.
-> **V5 exact tested substantive head:** `a47357c602120d3678e8f2f23b99775e616c79e1`.
-> **V5 full gate:** `34693751545` — SUCCESS.
-> **Writer:** NONE.
-> **Next implementation slice:** NONE ACTIVE.
+> **STATUS:** ACTIVE — PRIMARY-SOURCE AUDIT + DESIGN ONLY.
+> **Branch:** `design/physio-cy-gesy-oa-overlay-v1-2026-09-12`.
+> **Bootstrap main:** `a2fa27c7ff26d1dd22cd6f726656ca0532daab75`.
+> **Writer:** bounded design branch above.
+> **Runtime/UI implementation:** NOT AUTHORIZED.
+> **Diagnosis vertical:** Knee Osteoarthritis only.
 
-## 1. Closed production boundary
+## 1. Problem
 
-The v4 production lifecycle now has authenticated verification in addition to the earlier public-asset and unauthenticated auth-boundary smoke.
+The product already has a reviewed international Knee-OA evidence contract and a dormant `CY_GESY` context seam. Cyprus now has an HIO-adapted OA guideline based on NICE NG226, plus separate GeSY access/reimbursement rules. Treating all of these as one source of "local evidence" would corrupt both clinical truth and product simplicity.
 
-Authenticated run `34681808255`, attempt `3`, proved protected page/bootstrap access, deterministic Knee-OA projection and safety fail-closed behavior using only synthetic/non-identifiable smoke state. No patient persistence or patient identifiers were used.
-
-## 2. Tested v5 candidate under Product Owner review
-
-The prior Product Owner session produced a bounded v5 candidate addressing post-use friction only.
-
-### Optional symptom refinement
+The design must support:
 
 ```text
-Πόνος / Δυσκαμψία / Αδυναμία inactive first tap
-→ select generic symptom only
-→ no forced popup
-
-second tap while active
-→ optional focused detail sheet
+international evidence core
++
+optional jurisdiction clinical overlay
++
+separately classified local-system/admin policy
 ```
 
-`Λειτουργικότητα` opens its chooser on first tap because the meaningful state is the chosen functional limitation, not a generic function flag.
+without silently hybridising them.
 
-### Weakness clarity
+## 2. Audit rules
 
-Visible focused options become:
+For every product-relevant local recommendation preserve at minimum:
 
-- `Μυϊκή αδυναμία στην εξέταση`
-- `Αδυναμία τετρακεφάλου στην εξέταση`
-- `Ατροφία τετρακεφάλου`
+- local recommendation ID;
+- identifying short verbatim excerpt and exact source locator;
+- faithful normalized local position;
+- source/version/publication metadata;
+- scope/intervention;
+- direction;
+- strength/certainty only when explicitly available from source conventions;
+- relationship to NICE;
+- whether Cyprus changes/adds to NICE;
+- stated rationale when available;
+- rationale class: clinical/evidence-based / resource-feasibility / administrative / reimbursement / mixed / unclear;
+- operational publication status;
+- GeSY IT-system integration status separately;
+- reviewed-on date.
 
-Bare `Τετρακέφαλος` / `Περιαρθρικά` sibling choices are not exposed. Backward-compatible acceptance of historical `peri_knee_general` state remains below the presentation layer.
+Do not infer unstated cost or reimbursement motives. Use `unclear` where the source does not state the rationale.
 
-### Referral prose
+Because the public HIO-linked OA PDF still carries draft metadata while the May-2026 HIO announcement says adaptation is completed and implemented, preserve both facts. Do not invent a final document version/date that HIO has not exposed clearly.
 
-- richer pain qualifier owns location specificity and prevents duplicated/fused legacy location wording;
-- clinical/functional handoff and physiotherapy assessment/plan are separated by a blank line;
-- `Επιπλέον στόχος:` / `Επιπλέον στόχοι:` become connected prose rather than generated labels;
-- physiotherapist autonomy and the existing deterministic active-plan semantics remain unchanged.
+## 3. Comparison authority
 
-## 3. Exact v5 evidence
+Compare verified Cyprus positions only against:
 
-At head `a47357c602120d3678e8f2f23b99775e616c79e1`, run `34693751545` passed bounded scope, syntax, focused v5 prose/state tests, inherited real CU-1/HTTP tests, frozen Step-3 fixtures, qualifier tests, protected Cockpit integration, focused/inherited Chromium acceptance, adjacent-owner isolation and package closure.
+`clinic_utilities/physio_referral_product/contracts/knee_oa_evidence_contract_v1.yaml`
 
-The candidate is therefore `IMPLEMENTED / TESTED`, not `MERGED / DEPLOYED / PRODUCTION-SMOKE-VERIFIED` as v5.
+Current international evidence resolution remains authoritative for the core and forbids source voting/arithmetic scoring.
 
-## 4. Out of scope / forbidden inference
+A local position may be:
 
-V5 does not authorize or contain:
+```text
+agreement
+local_difference
+local_addition
+administrative_only
+reimbursement_or_access_only
+status_unknown
+not_comparable
+```
 
-- evidence changes;
-- Cyprus/GeSY clinical or administrative semantics;
-- jurisdiction-overlay runtime activation;
-- safety-rule changes;
-- second diagnosis;
-- patient persistence;
-- analytics;
-- autonomous evidence updates.
+None of these states may overwrite the international evidence state.
 
-Cyprus/GeSY audit can proceed as a separate read-only evidence/design slice now that the production-auth boundary is closed.
+## 4. UX design target
 
-## 5. Next decision
+Routine surface must remain minimal.
 
-Product Owner review of the tested v5 candidate is the only release decision pending for that refinement. Any PR/merge/deploy requires separate explicit authority.
+- local agreement: normally silent;
+- genuine local difference: small contextual jurisdiction cue, detail on demand;
+- local admin/resource rule: separate operational information, never styled as clinical efficacy evidence;
+- local status unknown/planned: explicit uncertainty/planned wording;
+- full source tables, reimbursement mechanics and guideline bureaucracy stay out of routine referral creation.
 
-Jurisdiction work may proceed independently through audit/design only. No live product mutation is authorized merely by finding local differences.
+## 5. Explicit non-goals
+
+- no live UI/runtime change;
+- no evidence-state mutation;
+- no second diagnosis;
+- no country selector;
+- no Greece/England content;
+- no billing/analytics/persistence;
+- no patient data;
+- no automatic literature ingestion;
+- no automatic local recommendation activation;
+- no merging of v5 Product Owner review work into this slice.
+
+## 6. Acceptance criteria
+
+The slice is design-complete only if:
+
+1. official Cyprus/HIO clinical guidance is auditable recommendation-by-recommendation for current product-relevant domains;
+2. GeSY administrative/reimbursement/access rules are separately classified;
+3. NICE relationship is explicit for every material local difference/addition;
+4. ambiguous rationale/status stays `unclear` rather than inferred;
+5. the schema is jurisdiction-generic enough for future profiles without implementing them;
+6. UX preserves progressive disclosure and clinician autonomy;
+7. final recommendation is bounded to `NO CHANGE`, `LOCAL INFO ONLY`, or `IMPLEMENT JURISDICTION OVERLAY V1` with evidence;
+8. no runtime/UI code is changed.
+
+## 7. REPLAN triggers
+
+Replan if:
+
+- an authoritative final Cyprus source contradicts the currently linked HIO artifact materially;
+- a GeSY rule is found to be enforced differently from its published status;
+- the overlay would require changing core evidence semantics rather than representing local context separately;
+- a routine-surface addition cannot demonstrate workflow or receiver utility.
+
+## 8. Exact next action
+
+Finish the primary-source audit and freeze source-audit, difference-matrix, machine-schema and UX-policy artifacts for Product Owner review.
