@@ -1,21 +1,21 @@
 # Knee OA v1 — current commercial release record
 
-> **STATUS:** RELEASED PRODUCTION FOUNDATION + CY_GESY OVERLAY; V5 FRESH-MAIN INTEGRATED/TESTED CANDIDATE UNDER RELEASE HOLD.
+> **STATUS:** V5 MERGED / DEPLOYED ON RELEASED KNEE-OA + CY_GESY FOUNDATION; AUTHENTICATED V5 LIVE SMOKE PENDING EXECUTION.
 > **Diagnosis:** Knee Osteoarthritis only.
-> **Released jurisdiction runtime:** `e52a4851b504476c1e361575d08664c05467ff53`.
+> **V5 release runtime:** `8cfb22fd2478e7832b9b8642f7ae5241d7e1a267`.
+> **Release PR:** `#101`.
+> **Render deploy:** `dep-daj2398u01pc738ojvkg` — LIVE at exact V5 runtime SHA.
 > **Production jurisdiction profile:** `CY_GESY` via explicit server-side configuration.
-> **Authenticated CY_GESY production smoke:** `34703453615` — SUCCESS.
-> **Original reviewed V5:** `a47357c602120d3678e8f2f23b99775e616c79e1`, gate `34693751545` — SUCCESS.
-> **Current integrated V5 candidate:** `9a7f360745710deacb0ff82f03249723bdfe87d6`, gate `34736389860` — SUCCESS.
-> **V5 release:** NOT MERGED / NOT DEPLOYED.
+> **Prior authenticated CY_GESY production smoke:** `34703453615` — SUCCESS.
+> **Authenticated V5 smoke:** `34737351354` — QUEUED / NOT YET EXECUTED at this reconciliation.
 
-## Product surface currently released
+## Product surface now deployed
 
-The production product currently includes:
+The production product includes:
 
 - explicit Knee-OA diagnosis assertion + laterality;
 - live deterministic Greek referral, no routine Generate button;
-- compact clinical-picture surface;
+- V5 compact clinical-picture interaction;
 - direct manual editing with stale-text reconciliation;
 - reviewed active-rehab defaults;
 - international evidence-aware suggestions and mixed-guideline disclosure;
@@ -23,13 +23,48 @@ The production product currently includes:
 - `★ Συχνά / Σχετικά τώρα / Όλα` scan-first advanced UI;
 - Cyprus/GeSY jurisdiction overlay as separate progressive evidence context;
 - explicit server-side `CY_GESY` activation, no patient-location inference;
-- ephemeral patient/referral draft; no analytics/patient persistence.
+- ephemeral patient/referral draft with no product-level patient persistence.
 
-The current release does **not** yet include V5 because the fresh-main integrated candidate remains under Product Owner release HOLD.
+## V5 interaction now deployed
+
+- inactive `Πόνος`, `Δυσκαμψία`, `Αδυναμία`: first tap selects generic symptom without forced popup;
+- second tap opens optional detail;
+- `Λειτουργικότητα`: first-tap chooser retained;
+- weakness second-tap contains only explicit weakness examination options;
+- duplicated `Ατροφία τετρακεφάλου` removed from weakness second-tap;
+- quadriceps atrophy retained at `Περισσότερα → Εξέταση` as objective examination finding;
+- weakness badge/count excludes separately selected atrophy;
+- bare ambiguous `Περιαρθρικά` remains absent from visible routine/advanced UI;
+- pain qualifier prose owns location specificity without legacy duplicate tails;
+- richer referrals use a paragraph boundary before physiotherapy assessment/priorities;
+- `Επιπλέον στόχος:` wording is replaced by connected prose;
+- low-information output remains compact.
+
+## Pre-release exact-head evidence
+
+Exact reviewed PR head:
+
+`4e4bd2ae40c606562a982b3e38f9f859b49986eb`
+
+Successful gates:
+
+```text
+V5 integration                  34736919952  SUCCESS
+CY_GESY jurisdiction            34736920005  SUCCESS
+clinical-sheet v4               34736920059  SUCCESS
+prototype                       34736919984  SUCCESS
+protected Cockpit integration   34736920081  SUCCESS
+evidence design                 34736919959  SUCCESS
+CU-1 focused                    34736919945  SUCCESS
+```
+
+Final PR-head artifact `10311660626`, digest `sha256:003311ab6d45297211d9c5e24bfb26768d26d6c435c9b9069e7fff5acf140277`.
+
+Clinical Learning red checks were scope-only adjacent-owner failures after substantive regressions/frozen-owner guards passed; they are not product regressions.
 
 ## Production architecture
 
-The product is deployed at:
+The product remains deployed at:
 
 `/clinical/clinic-utilities/physio-referral`
 
@@ -44,99 +79,65 @@ international evidence core
 +
 separate CY_GESY jurisdiction overlay
 +
+V5 interaction/prose layer
++
 protected Clinical Excellence transport
 ```
 
-No unauthenticated clinical endpoint, autonomous treatment decision or patient-draft persistence is introduced.
+No unauthenticated clinical endpoint, autonomous treatment decision, second diagnosis or patient-draft persistence is introduced by V5.
 
-## Current jurisdiction verification
+## Evidence / jurisdiction invariants
 
-Authenticated production smoke `34703453615` proved the released `CY_GESY` behavior with protected credentials and non-identifiable synthetic smoke state only.
+V5 does not alter:
 
-Verified release invariants include:
+- international evidence states/source positions;
+- Cyprus local directions;
+- explicit `CY_GESY` activation semantics;
+- default rehab selection;
+- suggestion vs selection behavior;
+- referral safety gating;
+- GeSY admin/reimbursement separation from clinical evidence.
 
-```text
-CY_GESY explicit configuration              PASS
-international acupuncture state unchanged  PASS
-separate Cyprus acupuncture direction       PASS
-manual/default clinical selection unchanged PASS
-referral prose free of Cyprus/GeSY leakage  PASS
-safety fail-closed                          PASS
-```
+Local context still cannot silently overwrite international evidence or routine referral prose.
 
-Therefore the previous statement that Cyprus/GeSY item-level overlay was not activated is superseded: **the reviewed `CY_GESY` overlay is released and active in production.**
+## Merge and deployment evidence
 
-## V5 independent review and integration
+PR #101 was squash-merged to:
 
-Independent review accepted the V5 product/UX/clinical-copy direction but found the historical exact V5 head was no longer release-ready against current production ancestry because `CY_GESY` and shared integrations landed later.
+`8cfb22fd2478e7832b9b8642f7ae5241d7e1a267`
 
-Disposition:
+Render auto-deploy `dep-daj2398u01pc738ojvkg` checked out that exact commit and reached `live`. Startup logs confirm application startup complete and configured clinical authentication. No redundant manual deploy occurred.
 
-```text
-ACCEPT WITH REQUIRED CHANGES
-PATCH V5 THEN MERGE
-```
+## Authenticated V5 production verification
 
-The required integration patch has now been implemented/tested from fresh main `8aeb91ae37b83caaa188054128db98e04b638fd8`.
+Temporary ops branch:
 
-Current exact candidate:
+`ops/physio-knee-oa-v5-live-smoke-2026-09-13`
 
-```text
-branch   feat/physio-knee-oa-v5-integration-2026-09-13
-head     9a7f360745710deacb0ff82f03249723bdfe87d6
-gate     34736389860 — SUCCESS
-artifact 10311108002
-```
+Workflow commit:
 
-## V5 candidate behavior — not yet released
+`b46c948c38181336d23f90899cdd331dffe09f4c`
 
-The integrated candidate provides:
+Run:
 
-- generic Pain/Stiffness/Weakness first tap without forced optional refinement;
-- second tap opens focused optional detail;
-- Function remains a first-tap chooser;
-- weakness second-tap contains only explicit weakness exam options;
-- duplicated `Ατροφία τετρακεφάλου` is removed from weakness second-tap and retained at `Περισσότερα → Εξέταση`;
-- weakness badge/count does not count the separate atrophy finding;
-- ambiguous bare `Περιαρθρικά` remains absent from visible routine/advanced UI;
-- pain qualifier prose owns location specificity without legacy duplicate tails;
-- rich referral uses a paragraph boundary before physiotherapy assessment/priorities;
-- generated `Επιπλέον στόχος:` wording is replaced by connected prose;
-- low-information output remains compact.
+`34737351354`
 
-## Exact integrated candidate evidence
+The smoke is designed to verify the protected production API, `CY_GESY`, international/local evidence separation, unchanged default selection/referral semantics, live V5 atrophy routing and no browser-storage markers using a generated UUID plus non-identifiable state. The credential remains in GitHub Actions secrets and is not printed.
 
-Run `34736389860` passed on exact head `9a7f3607...`:
+At this reconciliation the run is queued awaiting a GitHub runner. The older successful authenticated jurisdiction smoke was also re-run and is likewise queued, supporting classification as runner scheduling rather than observed application failure.
+
+## Current lifecycle
 
 ```text
-bounded-scope / no-cache guard             PASS
-syntax                                     PASS
-V5 focused server/prose                    PASS
-current jurisdiction regressions           PASS
-protected Cockpit integration              PASS
-V5 + inherited + CY_GESY Chromium          PASS
-atrophy route de-duplication               PASS
-manual-edit fail-closed                    PASS
-no browser patient/referral storage        PASS
-adjacent-owner isolation                   PASS
-package closure                            PASS
+V5 merged                                    YES
+V5 deployed                                  YES
+Render exact release runtime                 LIVE
+V5 authenticated production smoke            PENDING EXECUTION
+actual iPhone Safari / VoiceOver              NOT YET PROVEN
+formal receiver validation                    DEFERRED / NON-BLOCKING
+paid conversion / retention                   NOT YET PROVEN
+real clinical pilot                           NOT YET PROVEN
+second diagnosis                              NOT AUTHORIZED
 ```
 
-Thus the independent-review integration blocker is resolved at the tested-candidate level.
-
-## Remaining validation / release boundary
-
-```text
-V5 PR / merge                                  PENDING
-V5 Render deployment                           NOT DONE
-V5 authenticated production smoke              NOT DONE
-actual iPhone Safari / VoiceOver               NOT YET PROVEN
-formal receiving-physiotherapist validation    DEFERRED / NON-BLOCKING
-paid conversion / retention                    NOT YET PROVEN
-real clinical pilot                            NOT YET PROVEN
-second diagnosis                               NOT SELECTED / NOT AUTHORIZED
-```
-
-Formal physiotherapist/receiver feedback is optional later external evidence, not a V5 release gate.
-
-Production authority remains the current released Knee-OA + CY_GESY state until an explicit Product Owner release decision permits V5 merge/deploy.
+A final `PRODUCTION-SMOKE-VERIFIED` closeout requires an actually successful authenticated smoke run.
