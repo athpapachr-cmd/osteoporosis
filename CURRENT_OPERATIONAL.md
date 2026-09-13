@@ -1,14 +1,15 @@
 # CURRENT_OPERATIONAL.md — Physiotherapy Referral Knee-OA V5 release
 
-> **STATUS:** V5 MERGED / DEPLOYED — AUTHENTICATED PRODUCTION SMOKE PENDING EXECUTION.
+> **STATUS:** V5 RELEASED / DEPLOYED / AUTHENTICATED PRODUCTION SMOKE VERIFIED.
 > **Updated:** 2026-09-13 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Slice:** `CU-PHYSIO-KNEE-OA-V5-RELEASE-2026-09-13`.
+> **Slice:** `CU-PHYSIO-KNEE-OA-V5-RELEASE-2026-09-13` — CLOSED.
 > **Release PR:** `#101` — squash-merged.
 > **Release runtime SHA:** `8cfb22fd2478e7832b9b8642f7ae5241d7e1a267`.
 > **Render deploy:** `dep-daj2398u01pc738ojvkg` — LIVE at the exact release runtime SHA.
 > **Production jurisdiction profile:** `CY_GESY` via explicit server-side configuration.
-> **Authenticated V5 smoke:** `34737351354` — QUEUED / NOT YET EXECUTED at this canonical draft.
+> **Authenticated V5 smoke:** `34737943402` — SUCCESS.
+> **Temporary smoke PR:** `#103` — CLOSED UNMERGED after successful verification.
 > **Writer:** none.
 > **Patient/referral persistence authority:** NONE.
 
@@ -18,11 +19,11 @@ On 2026-09-13 the Product Owner explicitly instructed:
 
 `RELEASE V5`
 
-This authorized the previously reviewed and exact-head-tested fresh-main V5 integration to proceed through squash merge, Render auto-deploy, authenticated production verification and canonical release closeout.
+This authorized the reviewed fresh-main V5 integration to proceed through squash merge, Render deployment, authenticated production verification and canonical release closeout.
 
-It did **not** authorize a second diagnosis, evidence reclassification, new local-rule automation, patient persistence, analytics/billing, Greece/England localization or unrelated Medical Report mutation.
+It did **not** authorize a second diagnosis, evidence reclassification, local-rule automation, patient persistence, analytics/billing, Greece/England localization or unrelated Medical Report mutation.
 
-## 2. Merge and deployment — complete
+## 2. Merge and deployment — verified
 
 PR #101 was squash-merged using exact expected head:
 
@@ -32,20 +33,20 @@ The resulting release runtime commit is:
 
 `8cfb22fd2478e7832b9b8642f7ae5241d7e1a267`
 
-Render auto-deploy `dep-daj2398u01pc738ojvkg` checked out that exact commit and reached `live`. The previous deploy was deactivated automatically. No redundant manual deploy was triggered.
+Render auto-deploy `dep-daj2398u01pc738ojvkg` checked out that exact commit and reached `live`. No redundant manual deploy was triggered.
 
-Render startup evidence shows:
+Render evidence confirms:
 
 - exact release commit checkout;
 - application startup complete;
 - Uvicorn serving on the expected port;
-- PostgreSQL online storage still configured for the wider Clinical Excellence service;
-- clinical authentication key configured;
+- wider Clinical Excellence storage remained PostgreSQL/online;
+- clinical authentication remained configured;
 - service marked live at the production URL.
 
 ## 3. Released V5 interaction
 
-The production code now carries the reviewed V5 behavior:
+The production product now uses the reviewed V5 behavior:
 
 1. first tap on inactive `Πόνος`, `Δυσκαμψία`, `Αδυναμία` selects the generic symptom without forcing a detail sheet;
 2. second tap opens optional focused refinement;
@@ -53,8 +54,8 @@ The production code now carries the reviewed V5 behavior:
 4. weakness second-tap contains only:
    - `Μυϊκή αδυναμία στην εξέταση`
    - `Αδυναμία τετρακεφάλου στην εξέταση`;
-5. `Ατροφία τετρακεφάλου` is not duplicated in that second-tap sheet and remains available at `Περισσότερα → Εξέταση` as an objective examination finding;
-6. the weakness count reflects weakness refinement only and does not count separately selected atrophy;
+5. `Ατροφία τετρακεφάλου` is absent from weakness second-tap and remains available at `Περισσότερα → Εξέταση` as an objective examination finding;
+6. weakness count reflects weakness refinement only and does not count separately selected atrophy;
 7. bare ambiguous `Περιαρθρικά` remains absent from visible routine/advanced UI;
 8. overlapping pain-location prose is reconciled;
 9. richer referrals separate clinical picture/function from physiotherapy assessment/priorities;
@@ -77,7 +78,50 @@ PR-head artifact: `10311660626`, digest `sha256:003311ab6d45297211d9c5e24bfb2676
 
 Clinical Learning red checks were adjacent-owner scope-only after substantive tests/frozen-owner guards passed; their isolation contract was not weakened.
 
-## 5. Preserved invariants
+## 5. Authenticated production verification — PASS
+
+The initial branch-push smoke run `34737351354` remained queued without a runner. A rerun of the previously successful jurisdiction smoke was likewise queued. No application failure occurred in those queued jobs.
+
+To obtain executable release evidence without weakening credentials or exposing secrets, the same temporary smoke workflow was allowed to run through a same-repository draft pull-request trigger where runners were available.
+
+Temporary ops PR:
+
+`#103` — `TEMP: authenticated Knee OA V5 production smoke`
+
+Temporary ops workflow head:
+
+`784f8319339b33b1749275fcb309521da3ba95ea`
+
+Authenticated production smoke:
+
+`34737943402` — **SUCCESS**
+
+Job:
+
+`103672560340` — **SUCCESS**
+
+The run verified against the live production service:
+
+- unauthenticated product bootstrap remains rejected with `401`;
+- authenticated bootstrap succeeds;
+- `synthetic_only == false` and production deployment context are intact;
+- jurisdiction profile remains `CY_GESY` with `explicit_account_configuration`;
+- authenticated deterministic Knee-OA projection succeeds;
+- export gate remains allowed for a valid non-identifiable state;
+- international acupuncture state remains `guideline_conflict_or_mixed` while Cyprus direction remains `against`;
+- international manual-therapy state remains mixed while Cyprus direction remains `conditional_for`;
+- local-only `electrotherapy` is absent from international clinical evidence items;
+- default rehabilitation selections remain exactly unchanged;
+- referral prose contains the expected Knee-OA/laterality content without silent Cyprus/GeSY wording;
+- live `product-clinical-sheet-v4.js` contains only the two explicit weakness exam options and **does not contain `Ατροφία τετρακεφάλου`**;
+- live `product-more-v3.js` retains `data-v3-atrophy-quadriceps` and `Ατροφία τετρακεφάλου` under More/Exam;
+- those live V5 assets contain no `localStorage` or `sessionStorage` patient/referral persistence markers.
+
+The GitHub Actions secret was masked throughout the log. Only a generated UUID plus non-identifiable smoke state was sent. No patient identifiers or real patient history were used.
+
+Temporary PR #103 was closed unmerged immediately after successful smoke verification.
+
+## 6. Preserved invariants
 
 V5 does not change:
 
@@ -94,43 +138,28 @@ V5 does not change:
 
 No local-only/admin jurisdiction row becomes a clinical evidence item and Cyprus context does not silently rewrite referral prose.
 
-## 6. Authenticated production verification — pending runner
-
-Temporary ops branch:
-
-`ops/physio-knee-oa-v5-live-smoke-2026-09-13`
-
-Workflow branch commit:
-
-`b46c948c38181336d23f90899cdd331dffe09f4c`
-
-Authenticated smoke run:
-
-`34737351354`
-
-The workflow uses the protected GitHub Actions `CLINICAL_DATA_KEY` without printing it and sends only a generated UUID plus non-identifiable Knee-OA state. It verifies protected bootstrap/project behavior, active `CY_GESY`, international evidence integrity, unchanged defaults/referral semantics, V5 live static-asset routing of quadriceps atrophy and the no-browser-storage boundary.
-
-At this draft state GitHub has queued the job but has not assigned a runner. A rerun of the previously successful authenticated jurisdiction smoke is also queued. Therefore there is **no observed application smoke failure**, but there is also **no authenticated V5 smoke PASS claim yet**.
-
-## 7. Current truthful lifecycle
+## 7. Final lifecycle
 
 ```text
-IMPLEMENTED                   YES
-FRESH-MAIN INTEGRATED         YES
-EXACT-HEAD TESTED             YES
-PR #101 MERGED                YES
-RENDER DEPLOYED               YES
-V5 AUTHENTICATED LIVE SMOKE   PENDING EXECUTION
-PRODUCT OWNER DEVICE USE      NOT YET RECORDED
-REAL CLINICAL PILOT           NO
-COMMERCIAL VALIDATION         NO
-SECOND DIAGNOSIS              NO
+IMPLEMENTED                    YES
+FRESH-MAIN INTEGRATED          YES
+EXACT-HEAD TESTED              YES
+PR #101 MERGED                 YES
+RENDER DEPLOYED                YES
+V5 AUTHENTICATED LIVE SMOKE    PASS
+PRODUCTION-SMOKE-VERIFIED      YES
+PRODUCT OWNER DEVICE USE       NOT YET RECORDED
+REAL CLINICAL PILOT            NO
+COMMERCIAL VALIDATION          NO
+SECOND DIAGNOSIS               NO
 ```
 
 ## 8. Parallel project state
 
-V5 release does not mutate the Medical Report product or silently close any independent Medical Report validation gate. Separate product lifecycles remain separate.
+V5 release did not mutate the Medical Report product or silently close any independent Medical Report validation gate. Separate product lifecycles remain separate.
 
-## 9. Exact next action
+## 9. Next bounded product boundary
 
-Execute the queued authenticated production smoke. If it passes, promote V5 to `PRODUCTION-SMOKE-VERIFIED` and merge the docs-only canonical closeout. If it fails, diagnose the bounded production issue and do not claim full release verification.
+The V5 release slice is closed and the writer lock is free.
+
+Product Owner real-device/use acceptance may now provide practical product evidence. Any later clinical/workflow pilot, commercial validation, second diagnosis or new jurisdiction requires a separate bounded decision rather than being inferred from this release.
