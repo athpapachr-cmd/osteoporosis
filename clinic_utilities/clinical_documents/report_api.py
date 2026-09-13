@@ -4,7 +4,7 @@ import json
 
 from fastapi import APIRouter, Body, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse, Response
-from pydantic import ValidationError
+from pydantic import TypeAdapter, ValidationError
 
 from clinic_utilities.physio_referral_runtime import _repo_root, _require_clinical_key
 
@@ -14,6 +14,7 @@ from .report_models import (
     FinalMedicalReportV1,
     MedicalReportCaseV1,
     MedicalReportResearchRequestV1,
+    SourceType,
 )
 from .report_pdf import build_medical_report_pdf, medical_report_filename
 from .report_sources import (
@@ -31,6 +32,25 @@ from .sick_leave import MAX_SIGNATURE_BYTES, content_disposition, validate_signa
 
 MAX_CASE_JSON_BYTES = 32 * 1024
 MAX_FINAL_JSON_BYTES = 256 * 1024
+MAX_SOURCE_TYPES_JSON_BYTES = 8 * 1024
+_SOURCE_TYPES = [
+    "gesy_visit",
+    "clinician_note_self",
+    "clinician_note_other",
+    "specialist_report",
+    "hospital_record",
+    "emergency_record",
+    "admission_note",
+    "discharge_summary",
+    "procedure_note",
+    "imaging_report",
+    "lab_report",
+    "physiotherapy_report",
+    "prior_medical_report",
+    "sick_leave_certificate",
+    "other",
+]
+_SOURCE_TYPES_ADAPTER = TypeAdapter(list[SourceType])
 
 
 def _parse_json_model(raw_text: str, model, *, max_bytes: int, label: str):
@@ -49,6 +69,19 @@ def _parse_json_model(raw_text: str, model, *, max_bytes: int, label: str):
             for item in exc.errors(include_input=False)
         ]
         raise HTTPException(status_code=422, detail=detail) from exc
+
+
+def _parse_source_types(raw_text: str, file_count: int) -> list[SourceType]:
+    if len(raw_text.encode("utf-8")) > MAX_SOURCE_TYPES_JSON_BYTES:
+        raise HTTPException(status_code=413, detail="Η ταξινόμηση πηγών υπερβαίνει το επιτρεπτό μέγεθος")
+    try:
+        raw = json.loads(raw_text)
+        values = _SOURCE_TYPES_ADAPTER.validate_python(raw)
+    except (json.JSONDecodeError, ValidationError) as exc:
+        raise HTTPException(status_code=422, detail="Μη έγκυρη ταξινόμηση πηγών") from exc
+    if values and len(values) != file_count:
+        raise HTTPException(status_code=422, detail="Η ταξινόμηση πηγών δεν αντιστοιχεί στα επιλεγμένα αρχεία")
+    return values or ["other"] * file_count
 
 
 def _clinician_profile() -> ClinicianProfile:
@@ -97,6 +130,7 @@ def build_medical_report_router() -> APIRouter:
         return {
             "version": "medical_report_v1",
             "report_types": ["accident_medical_report", "medico_legal_expert_report"],
+            "source_types": _SOURCE_TYPES,
             "accepted_extensions": [".pdf", ".txt", ".md", ".docx"],
             "limits": {
                 "max_files": MAX_REPORT_FILES,
@@ -121,11 +155,13 @@ def build_medical_report_router() -> APIRouter:
     @router.post("/api/analyze")
     async def analyze_report(
         case_json: str = Form(...),
+        file_source_types_json: str = Form(default="[]"),
         files: list[UploadFile] = File(default=[]),
     ):
         case = _parse_json_model(case_json, MedicalReportCaseV1, max_bytes=MAX_CASE_JSON_BYTES, label="την υπόθεση")
         if len(files) > MAX_REPORT_FILES:
             raise HTTPException(status_code=413, detail=f"Επιτρέπονται έως {MAX_REPORT_FILES} αρχεία")
+        source_types = _parse_source_types(file_source_types_json, len(files))
 
         sources = []
         context_source = build_clinician_context_source(case.clinician_context)
@@ -142,6 +178,7 @@ def build_medical_report_router() -> APIRouter:
                 raise HTTPException(status_code=413, detail="Τα αρχεία υπερβαίνουν συνολικά τα 40 MiB")
             try:
                 source = extract_source_bytes(content, f"src-upload-{index:03d}", upload.filename or f"source-{index}")
+                source.source_type = source_types[index - 1]
             except ValueError as exc:
                 raise HTTPException(status_code=422, detail=f"{upload.filename or index}: {exc}") from exc
             sources.append(source)
