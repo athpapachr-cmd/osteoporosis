@@ -2,7 +2,24 @@
   "use strict";
 
   const API_BASE = "/clinical/clinic-utilities/medical-report";
-  const state = { contract: null, files: [], draft: null, research: null, signatureFile: null };
+  const SOURCE_TYPES = [
+    ["other", "Άλλο / αυτόματη ταξινόμηση"],
+    ["gesy_visit", "Ιστορικό / επίσκεψη ΓεΣΥ"],
+    ["clinician_note_self", "Δική μου ιατρική σημείωση"],
+    ["clinician_note_other", "Σημείωση άλλου ιατρού"],
+    ["specialist_report", "Γνωμάτευση ειδικού"],
+    ["hospital_record", "Νοσοκομειακό αρχείο"],
+    ["emergency_record", "ΤΑΕΠ / επείγοντα"],
+    ["admission_note", "Σημείωμα εισαγωγής"],
+    ["discharge_summary", "Εξιτήριο"],
+    ["procedure_note", "Επέμβαση / procedure note"],
+    ["imaging_report", "Απεικονιστική γνωμάτευση"],
+    ["lab_report", "Εργαστηριακή εξέταση"],
+    ["physiotherapy_report", "Φυσιοθεραπευτική έκθεση"],
+    ["prior_medical_report", "Προηγούμενη ιατρική έκθεση"],
+    ["sick_leave_certificate", "Αναρρωτική άδεια"],
+  ];
+  const state = { contract: null, files: [], fileTypes: [], draft: null, research: null, signatureFile: null };
   const $ = (id) => document.getElementById(id);
   const el = (tag, className, text) => {
     const node = document.createElement(tag);
@@ -78,12 +95,36 @@
     $("fileCounter").textContent = `${state.files.length} αρχεία`;
   }
 
+  function invalidateDraftForSourceChange() {
+    if (!state.draft) return;
+    state.draft = null;
+    state.research = null;
+    $("analysisWorkspace").hidden = true;
+    $("summaryAI").textContent = "Απαιτεί νέα δημιουργία";
+    $("summaryResearch").textContent = "Δεν έγινε";
+    invalidateConfirmation();
+  }
+
   function updateFiles() {
     const list = $("fileList");
     list.replaceChildren();
-    state.files.forEach((file) => {
+    state.files.forEach((file, index) => {
       const li = el("li");
-      li.append(el("span", "", file.name), el("span", "meta", `${(file.size / 1024).toFixed(0)} KB`));
+      const info = el("div");
+      info.append(el("span", "", file.name), el("span", "meta", ` · ${(file.size / 1024).toFixed(0)} KB`));
+      const select = el("select", "source-type-select");
+      select.setAttribute("aria-label", `Τύπος πηγής για ${file.name}`);
+      SOURCE_TYPES.forEach(([value, label]) => {
+        const option = el("option", "", label);
+        option.value = value;
+        option.selected = (state.fileTypes[index] || "other") === value;
+        select.append(option);
+      });
+      select.addEventListener("change", () => {
+        state.fileTypes[index] = select.value;
+        invalidateDraftForSourceChange();
+      });
+      li.append(info, select);
       list.append(li);
     });
     updateSummary();
@@ -107,7 +148,10 @@
       const summary = summaries.get(source.source_id);
       const box = el("div", "source-item");
       box.append(el("strong", "", source.filename));
-      box.append(el("div", "meta", `${source.status} · ${source.page_count} σελ. · ${source.character_count} χαρακτήρες${summary?.proposed_source_type ? ` · ${summary.proposed_source_type}` : ""}`));
+      const typeText = summary?.proposed_source_type && summary.proposed_source_type !== source.source_type
+        ? `${source.source_type} · AI πρόταση: ${summary.proposed_source_type}`
+        : source.source_type;
+      box.append(el("div", "meta", `${source.status} · ${source.page_count} σελ. · ${source.character_count} χαρακτήρες · ${typeText}`));
       if (summary?.summary) box.append(el("p", "", summary.summary));
       if (summary?.author || summary?.specialty || summary?.institution) box.append(el("div", "meta", [summary.author, summary.specialty, summary.institution].filter(Boolean).join(" · ")));
       root.append(box);
@@ -200,6 +244,7 @@
       setWorking(true, "Ανάγνωση πηγών και δημιουργία προσχεδίου…");
       const form = new FormData();
       form.append("case_json", JSON.stringify(caseData));
+      form.append("file_source_types_json", JSON.stringify(state.fileTypes));
       state.files.forEach((file) => form.append("files", file, file.name));
       const response = await api("/api/analyze", { method: "POST", body: form });
       state.draft = await response.json();
@@ -333,7 +378,12 @@
   }
 
   function bind() {
-    $("sourceFiles").addEventListener("change", (event) => { state.files = Array.from(event.target.files || []); updateFiles(); });
+    $("sourceFiles").addEventListener("change", (event) => {
+      state.files = Array.from(event.target.files || []);
+      state.fileTypes = state.files.map(() => "other");
+      invalidateDraftForSourceChange();
+      updateFiles();
+    });
     $("generateButton").addEventListener("click", generateDraft);
     $("researchButton").addEventListener("click", researchLiterature);
     $("previewButton").addEventListener("click", previewPdf);
