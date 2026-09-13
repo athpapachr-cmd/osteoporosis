@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import timedelta
 import io
 import re
 import unicodedata
@@ -14,6 +15,8 @@ MAX_REPORT_FILES = 20
 MAX_REPORT_FILE_BYTES = 12 * 1024 * 1024
 MAX_REPORT_TOTAL_BYTES = 40 * 1024 * 1024
 MAX_EXTRACTED_CHARS = 350_000
+MAX_PDF_PAGES = 5000
+MAX_DOCX_XML_BYTES = 4 * 1024 * 1024
 MIN_PDF_TEXT_CHARS = 20
 
 
@@ -57,6 +60,8 @@ def extract_pdf(content: bytes, source_id: str, filename: str) -> ReportSourceV1
     try:
         if document.page_count < 1:
             raise ValueError("Το PDF δεν περιέχει σελίδες")
+        if document.page_count > MAX_PDF_PAGES:
+            raise ValueError(f"Το PDF υπερβαίνει τις {MAX_PDF_PAGES} σελίδες")
         pages = [
             SourcePageV1(page_number=index + 1, text=(document[index].get_text("text") or "").strip())
             for index in range(document.page_count)
@@ -74,7 +79,12 @@ def extract_text(content: bytes, source_id: str, filename: str) -> ReportSourceV
 def extract_docx(content: bytes, source_id: str, filename: str) -> ReportSourceV1:
     try:
         with zipfile.ZipFile(io.BytesIO(content)) as archive:
-            xml = archive.read("word/document.xml")
+            info = archive.getinfo("word/document.xml")
+            if info.file_size > MAX_DOCX_XML_BYTES:
+                raise ValueError("Το αποσυμπιεσμένο DOCX είναι υπερβολικά μεγάλο")
+            xml = archive.read(info)
+    except ValueError:
+        raise
     except (zipfile.BadZipFile, KeyError) as exc:
         raise ValueError("Το DOCX δεν μπορεί να αναγνωστεί") from exc
     try:
@@ -167,6 +177,13 @@ def validate_analysis_references(analysis: MedicalReportAnalysisV1, sources: lis
         for evidence_id in event.evidence_ids:
             if evidence_id not in evidence_map:
                 raise ValueError(f"Unknown timeline evidence: {evidence_id}")
+    for interval in analysis.work_absence_intervals:
+        for source_id in interval.source_ids:
+            if source_id not in source_map:
+                raise ValueError(f"Unknown work-absence source: {source_id}")
+        for evidence_id in interval.evidence_ids:
+            if evidence_id not in evidence_map:
+                raise ValueError(f"Unknown work-absence evidence: {evidence_id}")
     for diagnosis in analysis.diagnosis_analyses:
         for evidence_id in diagnosis.supporting_evidence_ids:
             if evidence_id not in evidence_map:
@@ -186,6 +203,7 @@ def deterministic_warnings(analysis: MedicalReportAnalysisV1, sources: list[Repo
     unreadable = [source.filename for source in sources if source.status == "no_extractable_text"]
     if unreadable:
         warnings.append("Χωρίς εξαγώγιμο κείμενο: " + ", ".join(unreadable))
+
     conflict_counts: dict[str, int] = {}
     for item in analysis.evidence_items:
         if item.conflict_key:
@@ -193,4 +211,22 @@ def deterministic_warnings(analysis: MedicalReportAnalysisV1, sources: list[Repo
     for key, count in sorted(conflict_counts.items()):
         if count > 1:
             warnings.append(f"Πιθανή σύγκρουση πηγών: {key} ({count} στοιχεία)")
+
+    intervals = sorted(analysis.work_absence_intervals, key=lambda item: (item.leave_from, item.leave_to, item.interval_id))
+    previous = None
+    for interval in intervals:
+        if previous is not None:
+            if interval.leave_from <= previous.leave_to:
+                warnings.append(
+                    "Επικάλυψη αναρρωτικών περιόδων: "
+                    f"{previous.leave_from.strftime('%d/%m/%Y')}–{previous.leave_to.strftime('%d/%m/%Y')} και "
+                    f"{interval.leave_from.strftime('%d/%m/%Y')}–{interval.leave_to.strftime('%d/%m/%Y')}"
+                )
+            elif interval.leave_from > previous.leave_to + timedelta(days=1):
+                gap = (interval.leave_from - previous.leave_to).days - 1
+                warnings.append(
+                    f"Κενό {gap} ημερών μεταξύ αναρρωτικών περιόδων μετά τις {previous.leave_to.strftime('%d/%m/%Y')}"
+                )
+        if previous is None or interval.leave_to > previous.leave_to:
+            previous = interval
     return warnings
