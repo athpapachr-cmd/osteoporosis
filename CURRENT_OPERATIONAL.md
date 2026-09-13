@@ -1,140 +1,186 @@
-# CURRENT_OPERATIONAL.md — Clinical Documents Engine Phase 1
+# CURRENT_OPERATIONAL.md — Clinical Documents Engine Phase 2 / Medical Report V1
 
-> **STATUS:** PRODUCTION-SMOKE-VERIFIED / CLOSED.
-> **Updated:** 2026-09-12 Asia/Nicosia.
+> **STATUS:** IMPLEMENTATION ACTIVE — EPHEMERAL MEDICAL REPORT WORKSPACE V1.
+> **Updated:** 2026-09-13 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Slice:** `CU-CLINICAL-DOCUMENTS-P1-SICK-LEAVE-2026-09-12`.
-> **PR:** `#97` — SQUASH MERGED.
-> **Exact reviewed/tested runtime head:** `fd88fa3b7ebce8aa9d97dfea12e2f2667495ed39`.
-> **Clinical Documents PR gate:** run `34717351567` — SUCCESS.
-> **Release commit:** `a3ae5dd792a715a8306f5c279cc4bdbec4ca5b5e`.
-> **Render deploy:** `dep-dairee0jo6nc73bt03b0` — LIVE.
-> **Production functional smoke:** PASS — Product Owner reported all Sick Leave smoke checks working on 2026-09-12.
-> **Writer:** none — Phase 1 slice closed.
-> **Production config/secrets mutation:** NONE.
-> **Patient persistence authority:** NONE.
+> **Fresh bootstrap main:** `8993a1c4b585c590a543c907ea6b2eba32bbccdc`.
+> **Active branch:** `feat/clinical-documents-p2-medical-report-v1-2026-09-13`.
+> **Active slice:** `CU-CLINICAL-DOCUMENTS-P2-MEDICAL-REPORT-V1-2026-09-13`.
+> **Writer:** current Clinical Documents implementation conversation, bounded to the owners listed in `SLICE_PLAN_CURRENT.md`.
+> **Production config/secrets authority:** NONE in this implementation slice.
+> **Patient/case persistence authority:** NONE.
+> **Real-patient data in repository/tests:** FORBIDDEN.
 
-## 1. Product Owner authority and release
+## 1. Product Owner authority
 
-On 2026-09-12 the Product Owner explicitly authorized:
-
-`Merge και deploy`
-
-PR #97 was squash merged to `main` as:
-
-`a3ae5dd792a715a8306f5c279cc4bdbec4ca5b5e`
-
-The existing Render `autoDeploy=yes` pipeline deployed that exact release commit automatically. No duplicate manual deploy was triggered. Deploy `dep-dairee0jo6nc73bt03b0` reached `LIVE` at 2026-09-12T20:35:36Z.
-
-The Product Owner then performed the agreed production smoke and reported that all smoke checks were working correctly. This closes the production functional validation gate for Sick Leave V1.
-
-## 2. Released scope
-
-Phase 1 contains only:
+On 2026-09-13 the Product Owner explicitly authorized development of the medical-report workflow and clarified the intended operating model:
 
 ```text
-Common Clinical Documents Core
-+
-Sick Leave Certificate V1
-+
-protected Clinic Utilities navigation/integration
+clinician supplies the history/instructions
++ uploads relevant GeSY/clinical/specialist/imaging/procedure/discharge documents
+→ system extracts source-bounded evidence and chronology
+→ AI-assisted report draft
+→ prognosis/future-needs research layer
+→ clinician review/edit/confirmation
+→ final signed PDF
 ```
 
-Released Sick Leave V1 behavior:
+This activates Phase 2 implementation only. Merge/deploy, production OpenAI key/config mutation, persistent case storage, billing runtime and user-uploaded template marketplace remain separate gates.
 
-- patient full name;
-- ID type `ADT` or `ARC` with bounded free-format ID number;
-- diagnosis;
-- leave from / through inclusive;
-- editable issue date;
-- deterministic inclusive-duration display;
-- Greek A4 PDF preview/download;
-- optional bounded PNG/JPEG signature retained only in current browser memory;
-- explicit re-import of a previously generated V1 PDF using embedded application metadata;
-- extension flow retaining identity + diagnosis and setting next start to prior leave-through + 1 day;
-- same-patient/new-leave flow retaining identity only;
-- fail-closed rejection of unknown/malformed previous PDFs with no OCR guessing.
+## 2. Active product scope
 
-## 3. Privacy / persistence boundary
+Implement a protected **Medical Report V1** workspace inside Clinic Utilities for:
 
-The release preserves the Phase-1 hard boundary:
+- `accident_medical_report`;
+- `medico_legal_expert_report`.
 
-- no patient PostgreSQL write;
-- no Clinical Documents patient/document history registry;
-- no localStorage/sessionStorage/indexedDB patient state;
+The clinician may provide:
+
+- a pasted history / own synthesis / special instructions;
+- GeSY visit history;
+- own notes;
+- other doctors' notes;
+- specialist reports;
+- hospital/emergency records;
+- imaging reports;
+- procedure/operation notes;
+- admission/discharge summaries;
+- laboratory or physiotherapy reports;
+- prior reports / sick-leave certificates.
+
+V1 source files are explicitly selected by the clinician for the active browser session only.
+
+## 3. Authority model
+
+Hard invariant:
+
+```text
+SOURCE FACT
+!= PATIENT-REPORTED FACT
+!= CLINICIAN FINDING
+!= SPECIALIST OPINION
+!= LITERATURE EVIDENCE
+!= AI INFERENCE
+!= FINAL CLINICIAN OPINION
+```
+
+The AI may extract, summarize, organize and draft. It may not silently promote inference to fact, causation, diagnosis, permanence or prognosis. Consequential opinion text remains marked for clinician review until explicitly confirmed.
+
+## 4. V1 workflow
+
+```text
+Case details
+→ clinician pasted history/instructions
+→ upload source documents
+→ local server text extraction
+→ AI source classification + Evidence Ledger + Timeline + structured report draft
+→ clinician review/edit
+→ targeted prognosis/literature research (generalized, identity-free query)
+→ clinician review/edit of prognosis/future needs
+→ final confirmation
+→ signed multi-page PDF
+```
+
+## 5. Privacy / persistence boundary
+
+V1 is request/session scoped:
+
+- no Clinical Documents patient/case database;
+- no automatic patient history;
+- no localStorage/sessionStorage/indexedDB case or PHI state;
 - no autosave;
-- no automatic prior-document reopening;
-- signature never persisted server-side;
-- PDF generation/parsing request-scoped/in-memory;
-- no patient data in query strings;
-- no identifiable patient data or signature assets in repository tests/fixtures.
+- uploaded source bytes are parsed in memory and are not persisted by this package;
+- no source files are committed to the public repository;
+- no request body or extracted source text is deliberately logged by the feature;
+- browser refresh/close loses the working case unless a future explicit export feature is separately added.
 
-The package has no SQLAlchemy/database owner. Existing protected clinical authentication remains the access boundary.
+## 6. AI provider boundary
 
-## 4. Exact-head review and verification
+Runtime must support an OpenAI provider behind explicit server-side gates:
 
-Before merge, exact review found and corrected two bounded validation gaps:
+- `OPENAI_API_KEY` present;
+- `CLINICAL_DOCUMENTS_AI_ENABLED=true`;
+- identifiable-record processing additionally requires `CLINICAL_DOCUMENTS_PHI_PROVIDER_APPROVED=true`.
 
-1. imported V1 metadata rejects `leave_to < leave_from` and rejects a declared relation without `derived_from_document_id`;
-2. `draft_json` has an explicit 16 KiB server-side request bound before JSON parsing, exposed by the contract endpoint and regression-tested.
+No provider secret or production flag is authorized to be added/changed in this slice.
 
-The exact reviewed/tested runtime head was:
+Provider calls use `store=false` and do not use OpenAI Files/Vector Store persistence. Identifiable source text is not sent unless the explicit PHI-provider approval gate is active.
 
-`fd88fa3b7ebce8aa9d97dfea12e2f2667495ed39`
+Literature/web research is built from generalized clinical questions and must exclude direct patient identifiers.
 
-Clinical Documents PR workflow `34717351567` completed SUCCESS. On the same runtime head, CU-1 focused tests (`34717351536`) and G3 guidance/longitudinal summary (`34717351537`) also completed SUCCESS. Clinical Learning red checks passed their substantive runtime/contracts/schema steps and failed only their expected scope/adjacent-owner guards for this non-Learning slice.
+## 7. V1 source/file boundary
 
-## 5. Deployment evidence
+Initial accepted file types:
 
-Production Render service:
+- PDF with extractable text;
+- TXT;
+- Markdown;
+- DOCX via local XML extraction.
 
-- service: `osteoporosis`;
-- branch: `main`;
-- auto-deploy: `yes`;
-- trigger: `new_commit`;
-- release commit: `a3ae5dd792a715a8306f5c279cc4bdbec4ca5b5e`;
-- deploy: `dep-dairee0jo6nc73bt03b0`;
-- status: `LIVE`;
-- finished: `2026-09-12T20:35:36.691525Z`.
+No OCR guessing in this slice. Image-only/scanned PDFs must be surfaced as `no_extractable_text` and require clinician-provided text or a later separately approved vision/OCR path.
 
-No Clinical Documents-specific environment variable or secret was added or changed for this release.
+Files/count/bytes/extracted-character totals must be bounded server-side.
 
-## 6. Production smoke evidence
+## 8. V1 report structure
 
-The Product Owner reports the agreed production Sick Leave smoke as fully successful.
+Default editable sections:
 
-This satisfies the release-validation distinction:
+1. Patient / Case Details
+2. Purpose and Instructions
+3. Sources and Documents Reviewed
+4. History of the Incident
+5. Initial Medical Management
+6. Chronological Clinical Course
+7. Current / Reported Symptoms
+8. Objective Clinical Findings
+9. Investigations
+10. Treatment / Procedures
+11. Diagnoses
+12. Pre-existing Conditions
+13. Causation
+14. Functional Consequences
+15. Work Incapacity
+16. Prognosis
+17. Future Needs
+18. Summary of Opinion
+19. Bibliography
+20. Signature / optional declaration
 
-```text
-IMPLEMENTED                 YES
-TESTED                      YES
-EXACT-HEAD REVIEW           PASS
-MERGED                      YES
-DEPLOYED                    YES
-PRODUCTION-SMOKE-VERIFIED   YES
-PILOT-VALIDATED             NOT APPLICABLE TO THIS UTILITY RELEASE
-```
+Irrelevant sections may remain empty/hidden. Formal jurisdiction-specific declaration text is not auto-inserted in V1.
 
-This smoke verifies the released Sick Leave V1 workflow in production. It does not authorize or validate the later Accident/Medico-Legal phases.
+## 9. Literature / prognosis rule
 
-## 7. Explicit exclusions retained
+The AI first proposes targeted prognosis questions from the case. A separate research action may use hosted web search to gather current sources.
 
-Not authorized by this release:
+The UI must expose source links/citations and keep literature separate from patient facts. Research text is AI draft and must remain editable/reviewable before final PDF inclusion.
 
-- Accident Report intake;
-- medico-legal Evidence Ledger;
-- AI drafting/provider calls;
-- targeted literature retrieval;
-- causation/prognosis engine;
-- billing/fee-note/receipt persistence;
-- persistent Clinical Documents case store;
-- reusable uploaded templates;
-- Siri/Gemini;
-- RF/physio clinical-rule mutation;
-- production secret/environment mutation.
+## 10. Finalization gate
 
-## 8. Next legitimate action
+Final PDF generation requires explicit clinician confirmation that:
 
-Phase 1 is closed and no writer lock is active.
+- the report text has been reviewed;
+- diagnosis/causation/prognosis/future-needs wording is clinician-approved;
+- bibliography/research content has been reviewed where included.
 
-Any move to Accident/Medico-Legal Report implementation, AI-assisted drafting/literature, billing, persistent cases or user-uploaded templates requires a fresh six-canonical bootstrap, a new bounded slice and explicit Product Owner implementation authority.
+No unreviewed AI draft should enter the final PDF by default.
+
+## 11. Explicit exclusions
+
+Not authorized in this slice:
+
+- persistent patient/case database;
+- automatic GeSY integration;
+- OCR/vision for image-only documents;
+- autonomous diagnosis/causation/prognosis;
+- permanent-impairment scoring;
+- compensation/damages estimation;
+- billing / Fee Note / Receipt runtime;
+- tax/VAT logic;
+- user-uploaded reusable template platform;
+- Siri/Gemini/native app;
+- RF/physio/osteoporosis-guidance/Clinical-Learning business-rule mutation;
+- production environment/secret mutation.
+
+## 12. Next legitimate action
+
+Implement the bounded Medical Report V1 runtime, browser workspace, provider abstraction, deterministic source parsing, structured AI contract, literature-research seam, PDF renderer and focused synthetic regression suite on the active branch. Then run exact-head review/gates. No PR/merge/deploy is implied by implementation completion.
