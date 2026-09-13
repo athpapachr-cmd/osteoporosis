@@ -3,11 +3,16 @@
 
   const API_BASE = "/clinical/clinic-utilities/medical-report";
   const $ = (id) => document.getElementById(id);
-  const state = { draft: null, pending: null };
+  const state = { draft: null, pending: null, researchStale: false };
   const nativeFetch = window.fetch.bind(window);
 
   function requestUrl(input) {
     return typeof input === "string" ? input : String(input?.url || "");
+  }
+
+  function displayDate(value) {
+    const parts = String(value || "").split("-");
+    return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : value;
   }
 
   window.fetch = async (input, init = {}) => {
@@ -20,17 +25,28 @@
         nextInit = { ...init, body: JSON.stringify(payload) };
       } catch (_) {}
     }
+    if (state.researchStale && (url.endsWith("/api/preview") || url.endsWith("/api/pdf")) && init.body instanceof FormData) {
+      try {
+        const raw = init.body.get("report_json");
+        const payload = JSON.parse(String(raw || "{}"));
+        payload.research_text = "";
+        payload.citations = [];
+        init.body.set("report_json", JSON.stringify(payload));
+      } catch (_) {}
+    }
     const response = await nativeFetch(input, nextInit);
     if (response.ok && url.endsWith("/api/analyze")) {
       response.clone().json().then((body) => {
         state.draft = body;
         state.pending = null;
+        state.researchStale = false;
         setTimeout(() => {
           ensureUi();
           annotateVisualSources();
         }, 80);
       }).catch(() => {});
     }
+    if (response.ok && url.endsWith("/api/research")) state.researchStale = false;
     return response;
   };
 
@@ -88,7 +104,7 @@
       const box = document.createElement("div");
       box.className = `timeline-item${(item.conflict_flags || []).length ? " conflict" : ""}`;
       const title = document.createElement("strong");
-      title.textContent = `${item.event_date || item.date_text || "Χωρίς ακριβή ημερομηνία"} · ${item.title}`;
+      title.textContent = `${item.event_date ? displayDate(item.event_date) : item.date_text || "Χωρίς ακριβή ημερομηνία"} · ${item.title}`;
       const body = document.createElement("p");
       body.textContent = item.summary;
       box.append(title, body);
@@ -132,6 +148,7 @@
     state.draft.analysis = state.pending.updated_analysis;
     state.draft.usage = state.pending.usage || state.draft.usage;
     state.pending = null;
+    state.researchStale = true;
     $("v11Proposal").hidden = true;
     renderSections();
     renderTimeline();
@@ -141,6 +158,8 @@
     if (confirmed) confirmed.checked = false;
     const research = $("researchResult");
     if (research) research.hidden = true;
+    if ($("researchText")) $("researchText").value = "";
+    if ($("citationList")) $("citationList").replaceChildren();
     if ($("summaryResearch")) $("summaryResearch").textContent = "Απαιτεί νέο έλεγχο";
   }
 
@@ -159,11 +178,7 @@
         method: "POST",
         credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          case: state.draft.case,
-          analysis: state.draft.analysis,
-          clinician_message: message,
-        }),
+        body: JSON.stringify({ case: state.draft.case, analysis: state.draft.analysis, clinician_message: message }),
       });
       if (!response.ok) {
         const body = await response.json().catch(() => ({}));
@@ -203,8 +218,5 @@
     $("v11Discard").addEventListener("click", () => { state.pending = null; $("v11Proposal").hidden = true; });
   }
 
-  window.MedicalReportV11Refine = Object.freeze({
-    getDraft: () => state.draft,
-    ensureUi,
-  });
+  window.MedicalReportV11Refine = Object.freeze({ getDraft: () => state.draft, ensureUi });
 })();
