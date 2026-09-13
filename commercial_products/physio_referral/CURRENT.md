@@ -1,20 +1,23 @@
 # CURRENT.md — Physio Referral commercial product track
 
-> **STATUS:** KNEE-OA V1 RELEASED / CY_GESY JURISDICTION OVERLAY RELEASED / V5 TESTED CANDIDATE IN PRODUCT OWNER REVIEW HOLD.
-> **Updated:** 2026-09-12 Asia/Nicosia.
+> **STATUS:** KNEE-OA V1 RELEASED / CY_GESY OVERLAY RELEASED / V5 FRESH-MAIN INTEGRATED + TESTED / PRODUCT OWNER RELEASE HOLD.
+> **Updated:** 2026-09-13 Asia/Nicosia.
 > **Diagnosis vertical:** Knee Osteoarthritis only.
 > **Released jurisdiction runtime:** `e52a4851b504476c1e361575d08664c05467ff53`.
 > **Production jurisdiction profile:** `CY_GESY` via explicit server-side configuration.
 > **Authenticated CY_GESY production smoke evidence:** `34703453615` — SUCCESS.
-> **V5 tested candidate:** `fix/physio-knee-oa-v5-optional-refinement-prose-2026-09-12` @ `a47357c602120d3678e8f2f23b99775e616c79e1`.
-> **V5 gate:** `34693751545` — SUCCESS.
+> **Original reviewed V5:** `a47357c602120d3678e8f2f23b99775e616c79e1`, gate `34693751545` — SUCCESS.
+> **Current integrated V5 candidate:** `feat/physio-knee-oa-v5-integration-2026-09-13` @ `9a7f360745710deacb0ff82f03249723bdfe87d6`.
+> **Integrated V5 gate:** `34736389860` — SUCCESS.
+> **Artifact:** `10311108002` / `sha256:c51e3e29c4057b0e90773011d54648703eca5d15c66a9f64e612952f1dd324d6`.
+> **Release state:** NOT MERGED / NOT DEPLOYED.
 > **Root operational authority:** `CURRENT_OPERATIONAL.md`.
 
 ## Product state
 
-The Knee-OA product is released inside the authenticated Clinical Excellence physiotherapy utility.
+The Knee-OA product remains released inside the authenticated Clinical Excellence physiotherapy utility with the reviewed `CY_GESY` jurisdiction overlay active in production.
 
-Current production architecture is:
+The currently released architecture remains:
 
 ```text
 international evidence core
@@ -26,86 +29,111 @@ deterministic Knee-OA referral projection
 progressive evidence disclosure
 ```
 
-The routine experience remains intentionally sparse: few meaningful clinician decisions on the main surface, progressive disclosure underneath, direct editing with fail-closed reconciliation, and no routine LLM-generated referral prose.
+V5 is now a **fresh-main integrated/tested candidate**, not merely the older isolated branch candidate. Production remains on the pre-V5 released behavior until a separate release decision/merge/deploy occurs.
 
-Commercial/product authority lives under `commercial_products/physio_referral/`; technical contracts/runtime/tests remain under `clinic_utilities/physio_referral_product/`.
+## Independent review disposition — resolved at candidate level
+
+Independent review of the historical exact V5 candidate returned:
+
+```text
+ACCEPT WITH REQUIRED CHANGES
+PATCH V5 THEN MERGE
+```
+
+The required change was not clinical redesign. It was integration onto current production ancestry because `CY_GESY` and shared integrations landed after the original V5 test ancestry.
+
+That blocker is now resolved on exact integrated head `9a7f3607...`, where V5, current jurisdiction behavior and protected Cockpit integration passed together.
+
+## Product Owner-approved V5 simplification
+
+The Product Owner additionally accepted the independent review's first simplification:
+
+```text
+Ατροφία τετρακεφάλου
+!= duplicated weakness second-tap option
+
+Ατροφία τετρακεφάλου
+= objective finding under Περισσότερα → Εξέταση
+```
+
+Final integrated behavior:
+
+- first tap on inactive `Πόνος`, `Δυσκαμψία`, `Αδυναμία` selects the generic symptom without a forced popup;
+- second tap exposes optional refinement;
+- `Λειτουργικότητα` keeps its first-tap chooser;
+- weakness second-tap contains only `Μυϊκή αδυναμία στην εξέταση` and `Αδυναμία τετρακεφάλου στην εξέταση`;
+- `Ατροφία τετρακεφάλου` remains available only via `Περισσότερα → Εξέταση` within this compact/duplicate-access question;
+- weakness badge/count does not count the separately selected atrophy finding;
+- bare `Περιαρθρικά` remains absent from visible routine/advanced UI;
+- pain-location duplication is reconciled;
+- clinical picture/function and physiotherapy plan use separate paragraphs;
+- `Επιπλέον στόχος:` becomes connected natural prose;
+- low-information output remains compact.
+
+## Integrated test evidence
+
+Run `34736389860` — SUCCESS on exact head `9a7f360745710deacb0ff82f03249723bdfe87d6`.
+
+It passed:
+
+- V5 focused prose/server tests;
+- inherited deterministic projection/qualifier tests;
+- current `CY_GESY` jurisdiction regressions;
+- current protected Cockpit integration regressions;
+- V5/inherited/CY_GESY Chromium acceptance;
+- atrophy route de-duplication regression;
+- manual-edit fail-closed and no-storage boundaries;
+- adjacent-owner isolation;
+- package closure.
+
+No jurisdiction runtime/data, international evidence semantics, safety rules, treatment defaults, patient persistence, Medical Report runtime, or second diagnosis were changed.
 
 ## Production lifecycle
 
 Supported current claims:
 
 ```text
-Knee-OA production release                    yes
-CY_GESY jurisdiction overlay                  yes
-explicit production jurisdiction config       yes
-authenticated protected product smoke         pass
-real clinical pilot                            no
-paid/commercial validation                     no
-second diagnosis                               no
+Knee-OA production release                       yes
+CY_GESY jurisdiction overlay                     yes
+explicit production jurisdiction config          yes
+authenticated CY_GESY product smoke              pass
+V5 fresh-main integration                        complete
+V5 exact-head integrated gate                    pass
+V5 merged                                        no
+V5 deployed                                      no
+V5 authenticated production smoke                no
+real clinical pilot                              no
+paid/commercial validation                       no
+second diagnosis                                 no
 ```
 
-Authenticated run `34703453615` used the protected GitHub Actions `CLINICAL_DATA_KEY`, never printed the credential and sent only a generated UUID plus non-identifiable smoke state. It verified the released CY_GESY production behavior after the jurisdiction closeout.
+## External feedback policy
 
-The local Cyprus/GeSY layer remains display-only context beside the international evidence core. It does not silently rewrite international evidence state, clinician selection, referral prose or safety semantics.
-
-## Product Owner decision — receiver/physiotherapist feedback
-
-On 2026-09-12 the Product Owner explicitly decided that formal physiotherapist/receiver evaluation is **not required as a blocking gate** for current product progress.
-
-The Product Owner may request informal feedback from clinician colleagues later, at a time of their choosing.
-
-Therefore:
+Formal physiotherapist/receiver evaluation remains optional later external evidence, not a blocking gate for V5.
 
 ```text
-physiotherapist / receiver feedback
-= potentially useful external feedback
-!= prerequisite for V5 release
-!= prerequisite for continued Knee-OA refinement
-!= automatic prerequisite for a bounded clinical/commercial pilot
+external feedback
+!= release prerequisite by default
+!= evidence automatically
+!= implementation authority automatically
 ```
 
-This does not mean receiver utility is assumed or proven. It means it is not a mandatory immediate gate. Any later colleague feedback should be treated as evidence to consider, not as implementation authority by itself.
+Receiver utility is not claimed as proven.
 
-## V5 review candidate
+## Next product boundary
 
-A bounded post-use v5 refinement has already been implemented and technically validated on a separate branch. It is **not production yet**.
+The implementation/testing command has been completed.
 
-The candidate changes workflow/presentation only:
+Next bounded step:
 
-- first tap on inactive `Πόνος`, `Δυσκαμψία`, `Αδυναμία` selects the generic symptom without a popup;
-- second tap exposes optional detail;
-- `Λειτουργικότητα` keeps its first-tap chooser because a generic unqualified Function state is not useful;
-- weakness detail is reduced to clear examination concepts;
-- bare `Περιαρθρικά` is removed from routine/advanced UI while historical compatibility remains underneath;
-- pain-location duplication is reconciled;
-- clinical handoff and physiotherapy plan use separate paragraphs;
-- `Επιπλέον στόχος:` becomes connected human prose rather than a mechanical trailing label.
+```text
+open/review V5 integration PR
+→ preserve RELEASE HOLD
+→ explicit Product Owner release decision
+→ only if accepted: merge / Render deploy / authenticated V5 production smoke
+```
 
-Exact tested candidate head `a47357c602120d3678e8f2f23b99775e616c79e1` passed full gate `34693751545`.
-
-No merge/deploy has occurred for V5 yet. Product Owner disposition remains the next bounded product decision.
-
-## Validation truth still unproven
-
-The following remain unproven and must not be described as completed:
-
-- real clinical pilot value;
-- actual paid conversion / willingness-to-pay / retention;
-- broader external colleague feedback;
-- actual iPhone Safari / VoiceOver acceptance unless separately performed and recorded;
-- usefulness beyond Knee Osteoarthritis;
-- market need for Greece or England profiles.
-
-Receiver/physiotherapist feedback belongs in this list as **optional later external evidence**, not as a required blocker.
-
-## Next product boundaries
-
-1. Product Owner disposition of the exact tested V5 candidate.
-2. If accepted, release V5 through the normal merge → Render deploy → authenticated production smoke lifecycle.
-3. Perform Product Owner real-device/use acceptance after V5 release.
-4. Select any later pilot/commercial-validation slice explicitly; do not imply one automatically.
-5. Colleague/receiver feedback may be collected later when convenient, but it does not block steps 1–4.
-6. Do not expand diagnosis count merely to make the product look larger. A second diagnosis requires a fresh bounded decision and authority.
+Do not infer second-diagnosis, analytics, persistence, billing, Greece/England profile or new treatment-surface authority from V5 completion.
 
 Permanent rule:
 

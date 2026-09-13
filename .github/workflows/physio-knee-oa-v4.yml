@@ -12,6 +12,7 @@ on:
       - 'test_physio_knee_oa_cockpit_browser.py'
       - 'test_physio_knee_oa_jurisdiction_overlay.py'
       - '.github/workflows/physio-knee-oa-v4.yml'
+      - '.github/workflows/physio-knee-oa-v5.yml'
       - '.github/workflows/physio-knee-oa-prototype.yml'
       - '.github/workflows/physio-knee-oa-cockpit-integration.yml'
       - '.github/workflows/physio-knee-oa-jurisdiction-v1.yml'
@@ -46,6 +47,7 @@ jobs:
             'test_physio_knee_oa_cockpit_integration.py',
             'test_physio_knee_oa_jurisdiction_overlay.py',
             '.github/workflows/physio-knee-oa-v4.yml',
+            '.github/workflows/physio-knee-oa-v5.yml',
             '.github/workflows/physio-knee-oa-prototype.yml',
             '.github/workflows/physio-knee-oa-cockpit-integration.yml',
             '.github/workflows/physio-knee-oa-jurisdiction-v1.yml',

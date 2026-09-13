@@ -110,6 +110,10 @@ def state_with_mapped_findings(state: dict[str, Any]) -> dict[str, Any]:
     # Only an explicit new examination qualifier is allowed to take ownership
     # of this narrow semantic group and replace a prior weakness-specific value.
     findings = list(result.get("findings", []))
+    if q.get("pain_locations"):
+        findings = [v for v in findings if v not in {"joint_line_pain", "anterior_peripatellar_pain"}]
+        if "pain" not in findings:
+            findings.append("pain")
     weakness_detail = q.get("weakness_detail")
     if weakness_detail is not None:
         findings = [v for v in findings if v not in {"objective_weakness", "quadriceps_weakness"}]
@@ -159,7 +163,7 @@ def _pain_phrase(q: dict[str, Any]) -> str | None:
         "pes_anserine_region": "στην περιοχή του χηνείου ποδός",
         "posterior": "οπίσθια στο γόνατο",
     }
-    return "πόνο κυρίως " + _join_el([phrases[v] for v in values if v in phrases])
+    return "πόνο " + _join_el([phrases[v] for v in values if v in phrases])
 
 
 def _stiffness_phrase(q: dict[str, Any]) -> str | None:

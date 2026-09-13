@@ -1,105 +1,132 @@
-# CURRENT_OPERATIONAL.md — Clinical Documents Engine Phase 2 / Medical Report V1
+# CURRENT_OPERATIONAL.md — Physiotherapy Referral Knee-OA V5 integration patch
 
-> **STATUS:** MERGED / DEPLOYED / AI RUNTIME ENABLED — AUTHENTICATED PRODUCTION SMOKE PENDING.
+> **STATUS:** IMPLEMENTED / EXACT-HEAD TESTED — PRODUCT OWNER RELEASE HOLD.
 > **Updated:** 2026-09-13 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Slice:** `CU-CLINICAL-DOCUMENTS-P2-MEDICAL-REPORT-V1-2026-09-13`.
-> **PR:** `#99` — SQUASH MERGED.
-> **Implementation review head:** `3a19a09280ff682badfd4866e19d6a4f3cb9c208`.
-> **Release commit:** `261015be5a2921c6d67ad6b48d14196c17b1c34f`.
-> **Clinical Documents implementation gate:** `34733760918` — SUCCESS.
-> **Clinical Documents PR gate:** `34734187010` — SUCCESS.
-> **Release deploy:** `dep-daj11b95efls739bog40` — LIVE.
-> **Configuration deploy:** `dep-daj128u7bikc73acabt0` — LIVE.
-> **Writer:** none.
-> **Patient/case persistence authority:** NONE.
+> **Slice:** `CU-PHYSIO-KNEE-OA-V5-INTEGRATION-2026-09-13`.
+> **Bootstrap main:** `8aeb91ae37b83caaa188054128db98e04b638fd8`.
+> **Integration branch:** `feat/physio-knee-oa-v5-integration-2026-09-13`.
+> **Exact tested integrated head:** `9a7f360745710deacb0ff82f03249723bdfe87d6`.
+> **Integration gate:** run `34736389860` — SUCCESS.
+> **Artifact:** `10311108002` / `sha256:c51e3e29c4057b0e90773011d54648703eca5d15c66a9f64e612952f1dd324d6`.
+> **Writer:** none — implementation/testing slice closed.
+> **Release state:** NOT MERGED / NOT DEPLOYED / NO V5 PRODUCTION-SMOKE CLAIM.
+> **Original reviewed V5 candidate:** `a47357c602120d3678e8f2f23b99775e616c79e1`, gate `34693751545` — SUCCESS.
+> **Independent review:** `ACCEPT WITH REQUIRED CHANGES` / `PATCH V5 THEN MERGE`.
+> **Released jurisdiction runtime:** `e52a4851b504476c1e361575d08664c05467ff53` with production profile `CY_GESY`.
+> **Authenticated CY_GESY production smoke evidence:** `34703453615` — SUCCESS.
+> **Patient/referral persistence authority:** NONE.
 
-## 1. Product Owner authority
+## 1. Product Owner authority exercised
 
-On 2026-09-13, after the implementation checkpoint was placed in release hold, the Product Owner instructed:
+On 2026-09-13 the Product Owner instructed:
 
-`Προχωρά μέχρι τέλους`
+`IMPLEMENT V5 INTEGRATION PATCH`
 
-This authorized completion of the bounded release path: PR, squash merge, normal Render deployment and activation of the already-designed Medical Report AI runtime gates. It did not authorize persistent case storage, OCR, billing, autonomous medico-legal opinion, compensation calculations or unrelated product mutations.
-
-## 2. Released workflow
-
-Medical Report V1 is now on `main` and deployed for accident medical reports and medico-legal expert reports.
-
-```text
-case details
-+ clinician history/instructions
-+ selected source documents
-+ clinician source classification
-→ request-scoped extraction
-→ Evidence Ledger + Timeline + work-incapacity intervals
-→ AI-assisted draft
-→ clinician review/edit
-→ optional targeted literature research
-→ clinician review/edit
-→ explicit final confirmation
-→ optional session-only signature
-→ multi-page Greek PDF
-```
-
-## 3. Safety and authority model
-
-The released runtime preserves the distinction between source fact, patient report, clinician finding, specialist opinion, literature evidence, AI inference and final clinician opinion.
-
-Source/page/evidence references are validated deterministically. Work-absence date order is validated and overlaps/gaps are surfaced. Uploaded records are treated as quoted data rather than executable model instructions. Diagnosis, causation, prognosis and future-needs text remain clinician-review-required. Final PDF generation requires explicit clinician confirmation.
-
-## 4. Privacy / persistence boundary
-
-Still true in production:
-
-- no Clinical Documents patient/case database;
-- no browser PHI/case persistence or autosave;
-- uploaded source bytes are request scoped;
-- no patient identifiers in query strings;
-- signature is session/request scoped only;
-- direct patient identifiers are excluded from external literature-search prompts;
-- no real patient data are present in repository tests or fixtures.
-
-## 5. Runtime configuration and deployment
-
-The Medical Report AI runtime enable and identifiable-record approval gates were activated on the Render `osteoporosis` service. The configuration change triggered deploy `dep-daj128u7bikc73acabt0`, which reached `LIVE` on the exact release commit at `2026-09-13T02:59:14Z`.
-
-No provider credential value was exposed, copied or changed in this release session. The available deployment control plane cannot attest the value or validity of an existing secret credential, and the runtime remains fail-closed if a required provider credential is unavailable.
-
-## 6. Verification evidence
-
-The implementation and PR Clinical Documents gates both passed. Existing Sick Leave, CU-1 and G3 regressions also passed on the release path. Red results from unrelated Clinical Learning / Physio workflows were deliberate scope/adjacent-owner guards for this non-owner slice; inspected substantive Clinical Learning tests passed before the scope guard.
-
-Render startup logs confirm the configured release instance completed application startup and became live. Existing protected clinical authentication remains configured.
-
-## 7. Release-state distinction
+and explicitly accepted the independent-review simplification:
 
 ```text
-IMPLEMENTED                 YES
-TESTED                      YES
-MERGED                      YES
-DEPLOYED                    YES
-AI RUNTIME GATES ENABLED    YES
-RENDER STARTUP/LIVE         YES
-AUTHENTICATED UI SMOKE      PENDING
-LIVE AI DRAFT CALL          PENDING
-LIVE RESEARCH CALL          PENDING
-LIVE FINAL PDF USER FLOW    PENDING
+remove duplicated `Ατροφία τετρακεφάλου`
+from the second-tap `Αδυναμία` refinement sheet
+while retaining it in `Περισσότερα → Εξέταση`
 ```
 
-The remaining validation cannot be performed from the deployment connector because the Medical Report routes correctly require the existing protected user authentication and the connector does not inherit the Product Owner's browser session.
+That bounded implementation authority has now been exercised and the implementation writer is released.
+
+No authority was created for a second diagnosis, evidence reclassification, patient persistence, autonomous recommendation changes, Greece/England localization, billing/analytics, or unrelated product work.
+
+## 2. Independent-review blocker — resolved
+
+The original V5 head `a47357c...` was correctly tested on older v4 ancestry but predated the released `CY_GESY` jurisdiction runtime and later shared integration changes.
+
+The historical branch was **not** merged or cherry-picked wholesale.
+
+Instead, reviewed V5-owned deltas were reconstructed onto fresh main `8aeb91ae...`; shared files were merged against current-main semantics; the released jurisdiction runtime/data were preserved; and all acceptance layers were run on the same integrated exact head `9a7f3607...`.
+
+Therefore the review's only release blocker, lack of evidence for V5 + current CY_GESY/shared production ancestry, is resolved at the implementation/test level.
+
+## 3. Integrated V5 behavior — tested
+
+The integrated candidate provides:
+
+1. First tap on inactive `Πόνος`, `Δυσκαμψία`, `Αδυναμία` selects the generic symptom without a forced sheet.
+2. Second tap on an already-selected symptom opens optional refinement.
+3. `Λειτουργικότητα` remains a first-tap chooser.
+4. The weakness second-tap exposes only:
+   - `Μυϊκή αδυναμία στην εξέταση`
+   - `Αδυναμία τετρακεφάλου στην εξέταση`
+5. `Ατροφία τετρακεφάλου` is absent from the weakness second-tap and remains available through `Περισσότερα → Εξέταση` as an objective examination finding.
+6. Weakness badge/count reflects weakness refinement only; selecting atrophy through Examination does not create a phantom weakness-detail count.
+7. Bare/ambiguous `Περιαρθρικά` remains absent from visible routine/advanced UI.
+8. Pain qualifier ownership prevents legacy joint-line / pes-anserine duplication.
+9. Rich referral separates clinical picture/function from physiotherapy assessment/priorities into distinct paragraphs.
+10. Mechanical `Επιπλέον στόχος:` wording is replaced by connected natural prose.
+11. Low-information referral remains proportionally compact.
+
+## 4. Hard invariants — preserved on exact integrated head
+
+Run `34736389860` verified that V5 integration does not change:
+
+- international evidence states or source positions;
+- `CY_GESY` local-position semantics or explicit-account activation;
+- default rehabilitation selections;
+- suggestion != selection semantics;
+- diagnosis assertion/laterality requirements;
+- safety fail-closed behavior;
+- deterministic referral ownership;
+- manual-edit stale/reconciliation behavior;
+- no-patient-persistence / no-browser-storage boundary;
+- protected Cockpit authentication boundary;
+- clinical guidance vs GeSY admin/reimbursement separation.
+
+Local-only/admin jurisdiction rows still do not become clinical evidence items, and Cyprus context still does not rewrite routine referral prose.
+
+## 5. Exact-head evidence
+
+The final successful gate on `9a7f360745710deacb0ff82f03249723bdfe87d6` passed:
+
+- bounded-scope/no-cache-artifact guard;
+- Python and JavaScript syntax checks;
+- V5 focused prose/server regressions;
+- inherited deterministic projection and qualifier regressions;
+- current jurisdiction-overlay unit regressions;
+- current protected Cockpit integration regressions;
+- V5 Chromium interaction acceptance;
+- inherited prototype / qualifier / usability-v2 / More-v3 Chromium acceptance;
+- protected Cockpit browser acceptance with active `CY_GESY`;
+- explicit atrophy-only-under-Examination regression;
+- adjacent-owner isolation smokes;
+- package closure.
+
+Two earlier integration runs exposed test/integration harness defects and were not used as acceptance evidence:
+
+- `34736082562`: JavaScript syntax typo in the newly reconstructed V5 clinical-sheet file;
+- `34736160407` and `34736298453`: stale/ambiguous inherited browser-test assumptions around the intentionally moved atrophy control.
+
+Those issues were corrected and the full gate was rerun to final SUCCESS.
+
+## 6. Release boundary
+
+The integrated V5 candidate is **implemented and tested**, not released.
+
+Current truthful lifecycle:
+
+```text
+reviewed                  yes
+fresh-main integrated      yes
+exact-head tested          yes
+PR / merge                 pending
+Render deployment          no V5 deployment claim
+V5 authenticated live smoke no
+Product Owner device use   pending after any release
+```
+
+A release decision must remain explicit. Do not infer merge/deploy authority from implementation success.
+
+## 7. Parallel deferred validation retained
+
+Medical Report V1 remains a separate released/deployed slice whose authenticated production smoke was still pending when this Physio slice was opened. This V5 integration did not mutate Medical Report runtime/configuration and does not silently mark that separate validation complete.
 
 ## 8. Exact next action
 
-Run one short authenticated production smoke with a synthetic/non-identifiable test case:
-
-```text
-Clinic Utilities → Ιατρικές εκθέσεις
-→ generate draft
-→ inspect Evidence Ledger / Timeline
-→ run literature research
-→ edit + confirm
-→ preview/download PDF
-```
-
-Until that authenticated smoke passes, Phase 2 is released and live but must not be labelled `PRODUCTION-SMOKE-VERIFIED`.
+Open a bounded PR for the exact tested integrated V5 candidate, preserve Product Owner **release HOLD**, and verify exact-head PR gates/review scope. Merge/deploy require explicit release authority.

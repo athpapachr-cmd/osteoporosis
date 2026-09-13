@@ -45,7 +45,11 @@ class BrowserTests(unittest.TestCase):
         self.page.locator('#assertion').click();self.page.locator('[data-side=right]').click()
         expect(self.page.locator('#copy')).to_be_enabled()
     def clinical(self,kind):
-        self.page.locator(f'[data-clinical-v4={kind}]').click();expect(self.page.locator('#sheet')).to_be_visible()
+        control=self.page.locator(f'[data-clinical-v4={kind}]')
+        if kind in {'pain','stiffness','weakness'} and control.get_attribute('aria-pressed')!='true':
+            control.click();expect(control).to_have_attribute('aria-pressed','true')
+            self.assertFalse(self.page.locator('#sheet').evaluate('el=>el.open'))
+        control.click();expect(self.page.locator('#sheet')).to_be_visible()
         return self.page.locator('#sheet')
     def close_clinical(self):
         self.page.locator('#closeSheet').click();expect(self.page.locator('#sheet')).to_be_hidden()
