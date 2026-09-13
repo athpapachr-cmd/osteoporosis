@@ -26,13 +26,14 @@
     files.forEach((file, i) => { if (i !== index) transfer.items.add(file); });
     input.files = transfer.files;
     input.dispatchEvent(new Event("change", { bubbles: true }));
-    queueMicrotask(() => {
+    setTimeout(() => {
+      enhanceRows();
       Array.from(document.querySelectorAll("#fileList .source-type-select")).forEach((select, i) => {
         if (!types[i]) return;
         select.value = types[i];
         select.dispatchEvent(new Event("change", { bubbles: true }));
       });
-    });
+    }, 0);
   }
 
   function enhanceRows() {
