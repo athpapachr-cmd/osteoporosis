@@ -1,44 +1,32 @@
-# SLICE_PLAN_CURRENT.md — Physiotherapy Referral Knee-OA V5 integration patch
+# SLICE_PLAN_CURRENT.md — Physiotherapy Referral Knee-OA V5 release
 
-> **STATUS:** IMPLEMENTATION COMPLETE / EXACT-HEAD TESTED — RELEASE HOLD.
+> **STATUS:** RELEASE MERGED / DEPLOYED — AUTHENTICATED SMOKE PENDING EXECUTION.
 > **Activated:** 2026-09-13 Asia/Nicosia.
-> **Slice:** `CU-PHYSIO-KNEE-OA-V5-INTEGRATION-2026-09-13`.
-> **Branch:** `feat/physio-knee-oa-v5-integration-2026-09-13`.
-> **Bootstrap main:** `8aeb91ae37b83caaa188054128db98e04b638fd8`.
-> **Exact tested integrated head:** `9a7f360745710deacb0ff82f03249723bdfe87d6`.
-> **Final gate:** `34736389860` — SUCCESS.
-> **Artifact:** `10311108002` / `sha256:c51e3e29c4057b0e90773011d54648703eca5d15c66a9f64e612952f1dd324d6`.
-> **Original reviewed V5 candidate:** `a47357c602120d3678e8f2f23b99775e616c79e1`.
-> **Independent review disposition:** `ACCEPT WITH REQUIRED CHANGES` / `PATCH V5 THEN MERGE`.
-> **Writer:** none — implementation slice closed.
+> **Slice:** `CU-PHYSIO-KNEE-OA-V5-RELEASE-2026-09-13`.
+> **Release PR:** `#101`.
+> **Release runtime SHA:** `8cfb22fd2478e7832b9b8642f7ae5241d7e1a267`.
+> **Render deploy:** `dep-daj2398u01pc738ojvkg` — LIVE.
+> **Authenticated V5 smoke:** run `34737351354` — QUEUED / NOT YET EXECUTED at this draft.
+> **Writer:** none.
 > **Diagnosis vertical:** Knee Osteoarthritis only.
 
-## 1. Objective — achieved
+## 1. Release objective
 
-The reviewed/tested V5 workflow/prose refinement has been re-integrated onto current production ancestry instead of directly merging the stale historical V5 branch.
+Release the accepted fresh-main V5 integration while preserving the current Knee-OA / CU-1 / `CY_GESY` architecture and verifying the resulting protected production behavior.
 
-Integrated result:
+Release sequence:
 
 ```text
-fresh main 8aeb91ae...
-+ current shared integrations
-+ released CY_GESY jurisdiction overlay
-+ bounded reviewed V5 deltas
-+ Product Owner-approved atrophy simplification
-→ exact integrated head 9a7f3607...
+exact tested V5 PR head
+→ squash merge with expected-head guard
+→ Render auto-deploy
+→ authenticated live smoke
+→ docs-only canonical closeout
 ```
 
-No clinical/evidence redesign was required.
+The first three steps through deployment are complete. Authenticated smoke has been submitted but has not yet received a GitHub runner.
 
-## 2. Review blocker — resolved
-
-Historical V5 head `a47357c...` was tested on older v4 ancestry. Fresh-main integration was therefore required before release consideration.
-
-The historical branch was not merged/cherry-picked wholesale. V5 source/test deltas were reconstructed selectively; current-main shared files were merged semantically; generated/cache artifacts were excluded.
-
-Final gate `34736389860` proves V5 + current `CY_GESY` + current protected Cockpit behavior on one exact SHA.
-
-## 3. Final interaction contract — implemented
+## 2. Released interaction contract
 
 ### Pain / Stiffness / Weakness
 
@@ -55,119 +43,125 @@ second tap while selected
 
 `Λειτουργικότητα` remains a first-tap chooser.
 
-### Weakness refinement
+### Weakness / quadriceps atrophy
 
-The second-tap sheet contains only:
+Second-tap `Αδυναμία` contains only:
 
 ```text
 Μυϊκή αδυναμία στην εξέταση
 Αδυναμία τετρακεφάλου στην εξέταση
 ```
 
-`Ατροφία τετρακεφάλου` is not duplicated there.
-
-It remains reachable through:
+`Ατροφία τετρακεφάλου` is not duplicated there. It remains available through:
 
 ```text
-Περισσότερα
-→ Εξέταση
-→ Ατροφία τετρακεφάλου
+Περισσότερα → Εξέταση → Ατροφία τετρακεφάλου
 ```
 
-The weakness count reflects weakness-detail state only. Selecting atrophy through Examination does not create a hidden/phantom weakness-detail count.
+Weakness count reflects weakness-detail state only.
 
-## 4. Semantic/copy contract — implemented
+## 3. Semantic/copy contract
 
-- generic weakness remains symptom/context;
-- objective weakness/quadriceps weakness require explicit examination selections;
-- quadriceps atrophy remains an objective examination finding;
-- bare ambiguous `Περιαρθρικά` remains absent from visible routine/advanced UI;
-- pain qualifier ownership prevents redundant joint-line/pes-anserine prose;
-- rich referral separates clinical picture/functional impact from physiotherapy assessment/priorities;
-- functional goals use connected natural prose rather than `Επιπλέον στόχος:`;
-- low-information output remains compact;
-- no treatment dose/frequency/protocol is invented.
+The released V5 contract preserves:
 
-## 5. Jurisdiction integration contract — verified
+- generic weakness as symptom/context rather than objective finding;
+- explicit examination authority for objective/quadriceps weakness;
+- quadriceps atrophy as an objective examination finding;
+- qualifier-owned pain location without redundant legacy tails;
+- no visible bare `Περιαρθρικά`;
+- paragraph separation between clinical picture/function and physiotherapy assessment/priorities in richer referrals;
+- connected functional-goal prose instead of `Επιπλέον στόχος:`;
+- compact low-information output;
+- no invented physiotherapy dose/frequency/protocol.
 
-The released architecture remains:
+## 4. Jurisdiction contract
+
+V5 remains layered over the released architecture:
 
 ```text
 international evidence core
 +
-separate CY_GESY jurisdiction overlay
+JurisdictionOverlayV1
++
+explicit CY_GESY production profile
 +
 V5 presentation/prose layer
 ```
 
-Verified on the same integrated head:
+Hard requirements remain:
 
-- international evidence state unchanged;
-- local Cyprus context remains separate;
-- jurisdiction does not auto-select treatment;
-- jurisdiction does not rewrite referral prose;
-- GeSY admin/reimbursement rows do not become clinical evidence;
-- local-only interventions do not become product controls;
-- planned GeSY IT status remains planned.
+```text
+international evidence state unchanged
+CY_GESY local context remains separate
+jurisdiction never auto-selects treatment
+jurisdiction never rewrites referral prose
+GeSY admin/reimbursement never becomes clinical evidence
+planned != active
+```
 
-## 6. Exact test evidence
+## 5. Pre-release gates — satisfied
 
-Final run `34736389860` on `9a7f360745710deacb0ff82f03249723bdfe87d6` passed:
+Exact PR head `4e4bd2ae40c606562a982b3e38f9f859b49986eb` passed all Physio-owned exact-head gates plus CU-1 focused tests before merge.
 
-1. bounded-scope + no `.pyc`/`__pycache__` guard;
-2. syntax;
-3. V5 focused prose/server regressions;
-4. inherited server/qualifier regressions;
-5. current jurisdiction-overlay tests;
-6. current protected Cockpit integration tests;
-7. V5 first-tap/second-tap Chromium tests;
-8. explicit weakness-vs-atrophy route regression;
-9. inherited prototype/qualifier/usability/More browser tests;
-10. protected Cockpit browser tests with active `CY_GESY`;
-11. manual-edit fail-closed and no-storage boundaries;
-12. adjacent-owner isolation smoke;
-13. package closure.
+Key V5 gate: `34736919952` — SUCCESS.
 
-Artifact: `10311108002`, digest `sha256:c51e3e29c4057b0e90773011d54648703eca5d15c66a9f64e612952f1dd324d6`.
+Final V5 artifact: `10311660626`, digest `sha256:003311ab6d45297211d9c5e24bfb26768d26d6c435c9b9069e7fff5acf140277`.
 
-Earlier failed integration runs are diagnostic history only and are not acceptance evidence.
+## 6. Merge / deploy — satisfied
 
-## 7. Explicit exclusions retained
+PR #101 was squash-merged to:
+
+`8cfb22fd2478e7832b9b8642f7ae5241d7e1a267`
+
+Render deploy:
+
+`dep-daj2398u01pc738ojvkg`
+
+reached `live` at that exact runtime commit. No manual duplicate deploy was triggered.
+
+## 7. Authenticated production-smoke contract
+
+The temporary non-merged ops workflow must prove, on the live service:
+
+1. unauthenticated product bootstrap remains rejected;
+2. authenticated bootstrap/project remain operational;
+3. production jurisdiction profile remains `CY_GESY` via explicit account configuration;
+4. international acupuncture/manual-therapy evidence states remain unchanged while local directions remain separate;
+5. local-only electrotherapy does not become an international clinical evidence item;
+6. default rehabilitation selection remains unchanged;
+7. referral prose contains no silent Cyprus/GeSY evidence leakage;
+8. live clinical-sheet asset has only the two weakness exam options and no duplicated quadriceps-atropy option;
+9. live More/Exam asset retains quadriceps atrophy;
+10. no browser patient/referral persistence marker is introduced;
+11. only generated UUID/non-identifiable smoke state is sent and the protected key is never printed.
+
+Run `34737351354` is queued but has not yet executed.
+
+## 8. Explicit exclusions
 
 No:
 
 - second diagnosis;
 - new treatment selector;
-- new jurisdiction/country selector;
 - evidence-state reclassification;
+- new country selector;
 - local-rule automation;
-- receiver-validation gate;
 - patient persistence;
 - analytics/billing/entitlements;
-- Medical Report runtime/config mutation;
-- generated/cache artifacts.
+- Greece/England localization;
+- Medical Report runtime/config mutation.
 
-## 8. Exit gate — satisfied
+## 9. Exit gate
 
-The implementation exit gate is satisfied on exact head `9a7f3607...`.
+Final release-closeout requires authenticated production smoke `SUCCESS`.
 
-The slice is now **implementation-complete and tested**.
-
-This does not equal release.
-
-## 9. Release hold
-
-Truthful lifecycle:
+Current state:
 
 ```text
-implementation        complete
-tests                 pass
-PR                     next
-merge                  not authorized yet
-Render deploy          not authorized yet
-V5 production smoke    not performed
+MERGED                    YES
+DEPLOYED                  YES
+AUTHENTICATED SMOKE       PENDING EXECUTION
+CANONICAL FINAL CLOSEOUT  NOT YET MERGED
 ```
 
-## 10. Exact next action
-
-Open a bounded PR preserving Product Owner release HOLD, verify current-main ancestry/diff/review threads/exact-head gates, and wait for explicit release authority before merge/deploy.
+A queued job is not a PASS and is not an application failure.
