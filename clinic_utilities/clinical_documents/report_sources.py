@@ -33,9 +33,9 @@ def _decode_text(content: bytes) -> str:
     raise ValueError("Το αρχείο κειμένου δεν μπορεί να αποκωδικοποιηθεί")
 
 
-def _source(source_id: str, filename: str, pages: list[SourcePageV1], *, source_type: str = "other") -> ReportSourceV1:
+def _source(source_id: str, filename: str, pages: list[SourcePageV1], *, source_type: str = "other", min_chars: int = 1) -> ReportSourceV1:
     text_count = sum(len(page.text) for page in pages)
-    status = "extracted" if text_count >= MIN_PDF_TEXT_CHARS else "no_extractable_text"
+    status = "extracted" if text_count >= min_chars else "no_extractable_text"
     return ReportSourceV1(
         source_id=source_id,
         filename=safe_display_filename(filename),
@@ -61,14 +61,14 @@ def extract_pdf(content: bytes, source_id: str, filename: str) -> ReportSourceV1
             SourcePageV1(page_number=index + 1, text=(document[index].get_text("text") or "").strip())
             for index in range(document.page_count)
         ]
-        return _source(source_id, filename, pages)
+        return _source(source_id, filename, pages, min_chars=MIN_PDF_TEXT_CHARS)
     finally:
         document.close()
 
 
 def extract_text(content: bytes, source_id: str, filename: str) -> ReportSourceV1:
     text = _decode_text(content).strip()
-    return _source(source_id, filename, [SourcePageV1(page_number=1, text=text)])
+    return _source(source_id, filename, [SourcePageV1(page_number=1, text=text)], min_chars=1)
 
 
 def extract_docx(content: bytes, source_id: str, filename: str) -> ReportSourceV1:
@@ -88,7 +88,7 @@ def extract_docx(content: bytes, source_id: str, filename: str) -> ReportSourceV
         line = "".join(pieces).strip()
         if line:
             paragraphs.append(line)
-    return _source(source_id, filename, [SourcePageV1(page_number=1, text="\n".join(paragraphs))])
+    return _source(source_id, filename, [SourcePageV1(page_number=1, text="\n".join(paragraphs))], min_chars=1)
 
 
 def extract_source_bytes(content: bytes, source_id: str, filename: str) -> ReportSourceV1:
