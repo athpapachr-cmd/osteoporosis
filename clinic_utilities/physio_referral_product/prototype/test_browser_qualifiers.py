@@ -46,7 +46,11 @@ class QualifierBrowserTests(unittest.TestCase):
         expect(self.page.locator('#sheet')).to_be_visible()
 
     def open_clinical(self, kind):
-        self.page.locator(f'[data-clinical-v4={kind}]').click()
+        control=self.page.locator(f'[data-clinical-v4={kind}]')
+        if kind in {'pain','stiffness','weakness'} and control.get_attribute('aria-pressed')!='true':
+            control.click(); expect(control).to_have_attribute('aria-pressed','true')
+            self.assertFalse(self.page.locator('#sheet').evaluate('el=>el.open'))
+        control.click()
         expect(self.page.locator('#sheet')).to_be_visible()
         expect(self.page.locator('#sheetTitle')).to_have_text({'pain':'Πόνος','stiffness':'Δυσκαμψία','weakness':'Αδυναμία','function':'Λειτουργικότητα'}[kind])
 
@@ -96,10 +100,8 @@ class QualifierBrowserTests(unittest.TestCase):
     def test_quadriceps_exam_atrophy_stays_specific_and_human(self):
         self.open_clinical('weakness')
         quad=self.page.locator('#sheet [data-q-weakness=quadriceps_exam]')
-        expect(quad).to_have_text('Τετρακέφαλος στην εξέταση'); quad.click()
-        self.page.locator('#sheet [data-q-atrophy]').click()
-        expect(self.page.locator('#v4AtrophyLocation')).to_be_visible()
-        self.page.locator('#sheet [data-q-atrophy-location=quadriceps]').click()
+        expect(quad).to_have_text('Αδυναμία τετρακεφάλου στην εξέταση'); quad.click()
+        self.page.locator('#sheet [data-v4-atrophy-quadriceps]').click()
         expect(self.page.locator('[data-clinical-v4=weakness] [data-clinical-count-v4]')).to_have_text('· 2')
         expect(self.page.locator('#referralText')).to_contain_text('αδυναμία του τετρακεφάλου κατά την εξέταση')
         expect(self.page.locator('#referralText')).to_contain_text('εμφανή ατροφία τετρακεφάλου')

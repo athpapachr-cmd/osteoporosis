@@ -1,5 +1,5 @@
 'use strict';
-// Compact clinical-picture interaction v4. Presentation only: clinical IDs,
+// Compact clinical-picture interaction. Presentation only: clinical IDs,
 // evidence, safety and projection authority remain unchanged.
 const V4_CLINICAL = Object.freeze({
   pain:{label:'Πόνος',prompt:'Πού εντοπίζεται;'},
@@ -11,7 +11,7 @@ const V4_CLINICAL = Object.freeze({
 function v4Count(kind) {
   if(kind==='pain') return qualifierState.pain_locations.length;
   if(kind==='stiffness') return qualifierState.stiffness_patterns.length + (qualifierState.morning_stiffness_duration?1:0);
-  if(kind==='weakness') return (qualifierState.weakness_detail?1:0) + (qualifierState.visible_atrophy?1:0);
+  if(kind==='weakness') return qualifierState.weakness_detail?1:0;
   return state?.functional_impairments?.length || 0;
 }
 function v4Active(kind) {
@@ -23,7 +23,11 @@ function v4Active(kind) {
 }
 function v4ClinicalButton(kind) {
   const b=btn('',{class:'clinical-card-v4','data-clinical-v4':kind,'aria-pressed':'false','aria-label':V4_CLINICAL[kind].label});
-  b.append(make('span',{class:'clinical-card-label-v4',text:V4_CLINICAL[kind].label}),make('span',{class:'clinical-card-count-v4','data-clinical-count-v4':kind,hidden:''}));
+  b.append(
+    make('span',{class:'clinical-card-label-v4',text:V4_CLINICAL[kind].label}),
+    make('span',{class:'clinical-card-count-v4','data-clinical-count-v4':kind,hidden:''}),
+    make('span',{class:'clinical-card-detail-v4','data-clinical-detail-v4':kind,'aria-hidden':'true',text:'›',hidden:'')
+  );
   return b;
 }
 function v4InstallClinicalGrid() {
@@ -31,8 +35,6 @@ function v4InstallClinicalGrid() {
   box.dataset.v4Installed='1'; box.className='clinical-grid-v4';
   box.replaceChildren(...['pain','stiffness','weakness','function'].map(v4ClinicalButton));
   // Base draft/reset/BFCache lifecycle code still addresses this legacy anchor.
-  // Keep it hidden so v4 can replace the visible interaction without breaking
-  // lifecycle cleanup or reinitialisation semantics.
   box.append(btn('',{id:'functionToggle',class:'legacy-qualifiers-v4-hidden',hidden:'','aria-hidden':'true','aria-expanded':'false','aria-controls':'functionChoices',tabindex:'-1'}));
   document.querySelector('.smart-qualifiers')?.classList.add('legacy-qualifiers-v4-hidden');
   $('#functionChoices')?.classList.add('legacy-qualifiers-v4-hidden');
@@ -45,7 +47,14 @@ function v4RenderGrid() {
     b.classList.toggle('is-active',active);
     const badge=b.querySelector('[data-clinical-count-v4]');
     if(badge){badge.hidden=count===0;badge.textContent=count?`· ${count}`:'';}
-    b.setAttribute('aria-label',V4_CLINICAL[kind].label+(count?` · ${count} ενεργοί προσδιορισμοί`:''));
+    const detail=b.querySelector('[data-clinical-detail-v4]');
+    if(detail) detail.hidden=!(kind==='function'||active);
+    const ariaDetail=count
+      ? ` · ${count} ενεργοί προσδιορισμοί`
+      : active&&kind!=='function'
+        ? ' · επιλεγμένο · πάτησε ξανά για λεπτομέρειες'
+        : kind==='function' ? ' · άνοιγμα επιλογών' : '';
+    b.setAttribute('aria-label',V4_CLINICAL[kind].label+ariaDetail);
   });
 }
 function v4EnsureParent(kind) {
@@ -70,7 +79,7 @@ function v4SheetNodes(kind) {
       v4Option('Έσω μεσάρθρια',{'data-q-pain':'medial_joint_line'}),v4Option('Έξω μεσάρθρια',{'data-q-pain':'lateral_joint_line'}),
       v4Option('Πρόσθιος / περιεπιγονατιδικός',{'data-q-pain':'anterior_peripatellar'}),v4Option('Χήνειος πόδας',{'data-q-pain':'pes_anserine_region'}),
       v4Option('Οπίσθιος',{'data-q-pain':'posterior'}),v4Option('Διάχυτος',{'data-q-pain':'diffuse'}),
-    ]),make('p',{class:'footnote',text:'Η εντόπιση περιγράφει το σύμπτωμα και δεν δημιουργεί αυτόματα ξεχωριστή διάγνωση.'}));
+    ]),make('p',{class:'footnote',text:'Η εντόπιση είναι προαιρετική και περιγράφει μόνο το σύμπτωμα.'}));
   } else if(kind==='stiffness') {
     nodes.push(make('div',{class:'clinical-options-v4'},[
       v4Option('Πρωινή',{'data-q-stiffness':'morning'}),v4Option('Μετά από ακινησία',{'data-q-stiffness':'after_inactivity'}),
@@ -84,14 +93,9 @@ function v4SheetNodes(kind) {
     ]));
   } else if(kind==='weakness') {
     nodes.push(make('div',{class:'clinical-options-v4'},[
-      v4Option('Αντικειμενική στην εξέταση',{'data-q-weakness':'objective'}),
-      v4Option('Τετρακέφαλος στην εξέταση',{'data-q-weakness':'quadriceps_exam'}),
-      v4Option('Ατροφία',{'data-q-atrophy':''}),
-    ]),make('div',{id:'v4AtrophyLocation',class:'clinical-nested-v4'},[
-      make('p',{class:'subtle small',text:'Εντόπιση ατροφίας'}),make('div',{class:'clinical-options-v4'},[
-        v4Option('Τετρακέφαλος',{'data-q-atrophy-location':'quadriceps'}),v4Option('Περιαρθρικά',{'data-q-atrophy-location':'peri_knee_general'}),
-      ])
-    ]));
+      v4Option('Μυϊκή αδυναμία στην εξέταση',{'data-q-weakness':'objective'}),
+      v4Option('Αδυναμία τετρακεφάλου στην εξέταση',{'data-q-weakness':'quadriceps_exam'}),
+    ]),make('p',{class:'footnote',text:'Οι επιλογές αυτές είναι προαιρετικά ευρήματα εξέτασης και δεν απαιτούνται για να καταγραφεί απλώς αδυναμία.'}));
   } else {
     nodes.push(make('div',{class:'clinical-options-v4'},[
       v4Option('Βάδιση',{'data-function':'walking_tolerance'}),v4Option('Σκάλες',{'data-function':'stairs'}),
@@ -106,17 +110,13 @@ function v4SheetNodes(kind) {
 }
 function v4SyncClinicalSheet() {
   if(sheetView?.type!=='clinical-v4' || !state) return;
-  const kind=sheetView.item;
   $$(`#sheetBody [data-q-pain]`).forEach(b=>b.setAttribute('aria-pressed',String(qualifierState.pain_locations.includes(b.dataset.qPain))));
   $$(`#sheetBody [data-q-stiffness]`).forEach(b=>b.setAttribute('aria-pressed',String(qualifierState.stiffness_patterns.includes(b.dataset.qStiffness))));
   $$(`#sheetBody [data-q-duration]`).forEach(b=>b.setAttribute('aria-pressed',String(qualifierState.morning_stiffness_duration===b.dataset.qDuration)));
   $$(`#sheetBody [data-q-weakness]`).forEach(b=>b.setAttribute('aria-pressed',String(qualifierState.weakness_detail===b.dataset.qWeakness)));
-  $$(`#sheetBody [data-q-atrophy]`).forEach(b=>b.setAttribute('aria-pressed',String(qualifierState.visible_atrophy)));
-  $$(`#sheetBody [data-q-atrophy-location]`).forEach(b=>b.setAttribute('aria-pressed',String(qualifierState.atrophy_location===b.dataset.qAtrophyLocation)));
   $$(`#sheetBody [data-function]`).forEach(b=>b.setAttribute('aria-pressed',String(state.functional_impairments.includes(b.dataset.function))));
   const duration=$('#v4MorningDuration');if(duration)duration.hidden=!qualifierState.stiffness_patterns.includes('morning');
   const clue=$('#v4StiffnessClue');if(clue)clue.hidden=qualifierState.morning_stiffness_duration!=='gt_30';
-  const atrophy=$('#v4AtrophyLocation');if(atrophy)atrophy.hidden=!qualifierState.visible_atrophy;
   v4RenderGrid();
 }
 function v4OpenClinicalSheet(kind,source) {
@@ -142,19 +142,21 @@ closeSheet=function(){$('#sheet').classList.remove('clinical-v4-sheet');return v
 
 document.addEventListener('click',event=>{
   const b=event.target.closest('button');if(!b||!state)return;
-  if(b.dataset.clinicalV4){v4OpenClinicalSheet(b.dataset.clinicalV4,b);return;}
+  if(b.dataset.clinicalV4){
+    const kind=b.dataset.clinicalV4;
+    if(kind!=='function'&&!v4Active(kind)){
+      if(v4EnsureParent(kind)) changed('clinical_picture_'+kind+'_selected');
+      return;
+    }
+    v4OpenClinicalSheet(kind,b);return;
+  }
   if(b.dataset.clinicalRemoveV4){v4RemoveParent(b.dataset.clinicalRemoveV4);return;}
   if(b.hasAttribute('data-clinical-done-v4')){closeSheet();return;}
-  if(sheetView?.type==='clinical-v4' && (b.dataset.qPain||b.dataset.qStiffness||b.dataset.qDuration||b.dataset.qWeakness||b.hasAttribute('data-q-atrophy')||b.dataset.qAtrophyLocation||b.dataset.function)) {
+  if(sheetView?.type==='clinical-v4' && (b.dataset.qPain||b.dataset.qStiffness||b.dataset.qDuration||b.dataset.qWeakness||b.dataset.function)) {
     queueMicrotask(v4SyncClinicalSheet);
   }
 });
 
-// The base app starts bootstrap as soon as app.js executes. On a very fast
-// loopback response that can finish before the qualifier/v4 wrappers install,
-// leaving the initial prerequisite styling painted by the older base layer.
-// Reconcile exactly once as soon as state exists; subsequent changes use the
-// normal wrapped paint pipeline.
 let v4InitialPaintFrames=0;
 function v4ReconcileInitialPaint(){
   if(state){paintStatus();v4RenderGrid();return;}
