@@ -1,80 +1,72 @@
 # SLICE_PLAN_CURRENT.md — Physiotherapy Referral Knee-OA V5 integration patch
 
-> **STATUS:** IMPLEMENTATION ACTIVE — PRODUCT OWNER AUTHORIZED.
+> **STATUS:** IMPLEMENTATION COMPLETE / EXACT-HEAD TESTED — RELEASE HOLD.
 > **Activated:** 2026-09-13 Asia/Nicosia.
 > **Slice:** `CU-PHYSIO-KNEE-OA-V5-INTEGRATION-2026-09-13`.
 > **Branch:** `feat/physio-knee-oa-v5-integration-2026-09-13`.
 > **Bootstrap main:** `8aeb91ae37b83caaa188054128db98e04b638fd8`.
+> **Exact tested integrated head:** `9a7f360745710deacb0ff82f03249723bdfe87d6`.
+> **Final gate:** `34736389860` — SUCCESS.
+> **Artifact:** `10311108002` / `sha256:c51e3e29c4057b0e90773011d54648703eca5d15c66a9f64e612952f1dd324d6`.
 > **Original reviewed V5 candidate:** `a47357c602120d3678e8f2f23b99775e616c79e1`.
 > **Independent review disposition:** `ACCEPT WITH REQUIRED CHANGES` / `PATCH V5 THEN MERGE`.
-> **Writer:** `feat/physio-knee-oa-v5-integration-2026-09-13`.
+> **Writer:** none — implementation slice closed.
 > **Diagnosis vertical:** Knee Osteoarthritis only.
 
-## 1. Objective
+## 1. Objective — achieved
 
-Integrate the already-reviewed/tested Knee-OA V5 workflow/prose refinement onto the current production ancestry instead of directly merging the stale historical V5 head.
+The reviewed/tested V5 workflow/prose refinement has been re-integrated onto current production ancestry instead of directly merging the stale historical V5 branch.
 
-The integrated target is:
+Integrated result:
 
 ```text
-current main / current shared integrations
+fresh main 8aeb91ae...
++ current shared integrations
 + released CY_GESY jurisdiction overlay
-+ bounded V5 workflow/prose deltas
++ bounded reviewed V5 deltas
 + Product Owner-approved atrophy simplification
+→ exact integrated head 9a7f3607...
 ```
 
-No clinical/evidence redesign is part of this slice.
+No clinical/evidence redesign was required.
 
-## 2. Historical candidate and current-main divergence
+## 2. Review blocker — resolved
 
-Original tested V5 evidence:
+Historical V5 head `a47357c...` was tested on older v4 ancestry. Fresh-main integration was therefore required before release consideration.
 
-```text
-head  a47357c602120d3678e8f2f23b99775e616c79e1
-gate  34693751545 — SUCCESS
-```
+The historical branch was not merged/cherry-picked wholesale. V5 source/test deltas were reconstructed selectively; current-main shared files were merged semantically; generated/cache artifacts were excluded.
 
-Its merge base is the older v4 closeout ancestry `90e4377fc92e76d767a4b911a0dcff523b50b71e`.
+Final gate `34736389860` proves V5 + current `CY_GESY` + current protected Cockpit behavior on one exact SHA.
 
-Current main at activation is `8aeb91ae37b83caaa188054128db98e04b638fd8` and includes later released/shared work, including jurisdiction-overlay runtime/tests and Clinical Documents work.
-
-Direct merge/cherry-pick of the historical branch is forbidden.
-
-## 3. Exact V5 interaction contract
+## 3. Final interaction contract — implemented
 
 ### Pain / Stiffness / Weakness
 
-Inactive first tap:
-
 ```text
-select generic symptom
+first inactive tap
+→ generic symptom selected
 → no forced detail sheet
+
+second tap while selected
+→ optional focused refinement sheet
 ```
-
-Tap again while selected:
-
-```text
-open focused optional refinement sheet
-```
-
-The selected-state control must retain an understandable progressive-disclosure cue and accessible wording.
 
 ### Function
 
-`Λειτουργικότητα` remains a first-tap chooser because an unqualified generic function state is not sufficiently meaningful.
+`Λειτουργικότητα` remains a first-tap chooser.
 
-### Weakness refinement after Product Owner simplification
+### Weakness refinement
 
-Second-tap `Αδυναμία` refinement contains only:
+The second-tap sheet contains only:
 
 ```text
 Μυϊκή αδυναμία στην εξέταση
 Αδυναμία τετρακεφάλου στην εξέταση
 ```
 
-`Ατροφία τετρακεφάλου` is removed from that sheet.
+`Ατροφία τετρακεφάλου` is not duplicated there.
 
-It remains available through:
+It remains reachable through:
 
 ```text
 Περισσότερα
@@ -82,79 +74,65 @@ It remains available through:
 → Ατροφία τετρακεφάλου
 ```
 
-This removes duplicate access while preserving the objective examination capability.
+The weakness count reflects weakness-detail state only. Selecting atrophy through Examination does not create a hidden/phantom weakness-detail count.
 
-## 4. Semantic/copy contract
+## 4. Semantic/copy contract — implemented
 
-- Generic weakness remains symptom/context and does not assert objective weakness.
-- Objective weakness and quadriceps weakness require explicit examination selections.
-- Quadriceps atrophy remains an objective examination finding, not a weakness subtype.
-- Bare ambiguous `Περιαρθρικά` must remain absent from the visible routine/advanced UI.
-- Pain qualifier ownership must prevent redundant location prose.
-- Rich referral separates clinical picture/functional impact from physiotherapy assessment/priorities with a paragraph boundary.
-- Additional functional goals are rendered as connected natural prose rather than `Επιπλέον στόχος:`.
-- No dose/frequency/protocol is invented.
+- generic weakness remains symptom/context;
+- objective weakness/quadriceps weakness require explicit examination selections;
+- quadriceps atrophy remains an objective examination finding;
+- bare ambiguous `Περιαρθρικά` remains absent from visible routine/advanced UI;
+- pain qualifier ownership prevents redundant joint-line/pes-anserine prose;
+- rich referral separates clinical picture/functional impact from physiotherapy assessment/priorities;
+- functional goals use connected natural prose rather than `Επιπλέον στόχος:`;
+- low-information output remains compact;
+- no treatment dose/frequency/protocol is invented.
 
-## 5. Jurisdiction integration contract
+## 5. Jurisdiction integration contract — verified
 
-V5 is layered over the already-released jurisdiction architecture.
-
-Hard requirements:
-
-```text
-international evidence state unchanged
-CY_GESY local context remains separate
-jurisdiction never auto-selects treatment
-jurisdiction never rewrites referral prose
-GeSY admin/reimbursement never becomes clinical evidence
-planned GeSY IT state remains planned
-```
-
-The integrated exact head must prove V5 and jurisdiction behavior together.
-
-## 6. Implementation seams
-
-Expected V5-owned seams from the reviewed candidate:
+The released architecture remains:
 
 ```text
-clinic_utilities/physio_referral_product/knee_oa_presentation_v4.py
-clinic_utilities/physio_referral_product/prototype/clinical_sheet_v4.js
-clinic_utilities/physio_referral_product/prototype/more_v3.js
-clinic_utilities/physio_referral_product/prototype/qualifier_overlay.py
-clinic_utilities/physio_referral_product/prototype/qualifiers.js
-static/clinic-utilities/physio-referral/product-clinical-sheet-v4.js
-static/clinic-utilities/physio-referral/product-more-v3.js
-static/clinic-utilities/physio-referral/product-qualifiers.js
-V5-focused tests/workflow
+international evidence core
++
+separate CY_GESY jurisdiction overlay
++
+V5 presentation/prose layer
 ```
 
-Shared files modified after the historical V5 merge base, especially protected Cockpit tests/workflows/canonicals, must be merged against current main rather than replaced.
+Verified on the same integrated head:
 
-Generated Python cache artifacts are explicitly excluded.
+- international evidence state unchanged;
+- local Cyprus context remains separate;
+- jurisdiction does not auto-select treatment;
+- jurisdiction does not rewrite referral prose;
+- GeSY admin/reimbursement rows do not become clinical evidence;
+- local-only interventions do not become product controls;
+- planned GeSY IT status remains planned.
 
-## 7. Test contract
+## 6. Exact test evidence
 
-Required focused assertions:
+Final run `34736389860` on `9a7f360745710deacb0ff82f03249723bdfe87d6` passed:
 
-1. first tap on inactive Pain/Stiffness/Weakness selects generic state without popup;
-2. second tap opens optional detail;
-3. Function first tap still opens chooser;
-4. weakness second-tap has exactly the two explicit weakness examination concepts and no quadriceps atrophy option;
-5. `Περισσότερα → Εξέταση` still exposes `Ατροφία τετρακεφάλου`;
-6. generic weakness never becomes objective weakness;
-7. pain composition avoids joint-line/pes-anserine duplication;
-8. rich referral has the reviewed paragraph structure;
-9. natural functional-goal prose replaces mechanical label;
-10. low-information output remains proportionally compact;
-11. evidence states/source positions/default selections/suggestions/safety/manual-edit semantics remain unchanged;
-12. `CY_GESY` overlay remains active/separate in protected integration tests;
-13. local-only/admin positions never become clinical evidence items;
-14. no localStorage/sessionStorage patient/referral persistence is introduced;
-15. inherited current-main physio/CU-1/evidence/browser regressions pass.
+1. bounded-scope + no `.pyc`/`__pycache__` guard;
+2. syntax;
+3. V5 focused prose/server regressions;
+4. inherited server/qualifier regressions;
+5. current jurisdiction-overlay tests;
+6. current protected Cockpit integration tests;
+7. V5 first-tap/second-tap Chromium tests;
+8. explicit weakness-vs-atrophy route regression;
+9. inherited prototype/qualifier/usability/More browser tests;
+10. protected Cockpit browser tests with active `CY_GESY`;
+11. manual-edit fail-closed and no-storage boundaries;
+12. adjacent-owner isolation smoke;
+13. package closure.
 
-Non-blocking independent-review suggestions that are cheap and bounded may be added to tests, especially broader goal-prose coverage, provided they do not change product semantics.
+Artifact: `10311108002`, digest `sha256:c51e3e29c4057b0e90773011d54648703eca5d15c66a9f64e612952f1dd324d6`.
 
-## 8. Explicit exclusions
+Earlier failed integration runs are diagnostic history only and are not acceptance evidence.
+
+## 7. Explicit exclusions retained
 
 No:
 
@@ -169,25 +147,27 @@ No:
 - Medical Report runtime/config mutation;
 - generated/cache artifacts.
 
-## 9. REPLAN triggers
+## 8. Exit gate — satisfied
 
-Stop and replan if integration requires any of:
+The implementation exit gate is satisfied on exact head `9a7f3607...`.
 
-- changing international evidence semantics;
-- changing jurisdiction semantics to make V5 work;
-- changing safety/diagnosis authority;
-- introducing patient/referral persistence;
-- overwriting a current-main shared integration with a stale historical file;
-- broad redesign beyond the reviewed V5 interaction/prose scope.
+The slice is now **implementation-complete and tested**.
 
-## 10. Exit gate
+This does not equal release.
 
-Implementation-complete means one exact integrated head has passed:
+## 9. Release hold
 
-- V5 focused tests;
-- current jurisdiction-overlay tests;
-- current protected Cockpit integration/browser tests;
-- inherited v4/prototype/CU-1/evidence/safety coverage;
-- scope/diff hygiene proving no unrelated owner mutation.
+Truthful lifecycle:
 
-Merge/deploy/production smoke remain distinct lifecycle states and must be recorded as such.
+```text
+implementation        complete
+tests                 pass
+PR                     next
+merge                  not authorized yet
+Render deploy          not authorized yet
+V5 production smoke    not performed
+```
+
+## 10. Exact next action
+
+Open a bounded PR preserving Product Owner release HOLD, verify current-main ancestry/diff/review threads/exact-head gates, and wait for explicit release authority before merge/deploy.
