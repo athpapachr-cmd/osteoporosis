@@ -13,6 +13,7 @@ on:
       - 'clinic_utilities/physio_referral_product/**'
       - '.github/workflows/physio-knee-oa-prototype.yml'
       - '.github/workflows/physio-knee-oa-v4.yml'
+      - '.github/workflows/physio-knee-oa-v5.yml'
       - '.github/workflows/physio-knee-oa-jurisdiction-v1.yml'
       - 'test_physio_knee_oa_jurisdiction_overlay.py'
 
@@ -47,6 +48,7 @@ jobs:
             '.github/workflows/physio-knee-oa-prototype.yml',
             '.github/workflows/physio-knee-oa-cockpit-integration.yml',
             '.github/workflows/physio-knee-oa-v4.yml',
+            '.github/workflows/physio-knee-oa-v5.yml',
             '.github/workflows/physio-knee-oa-jurisdiction-v1.yml',
             '.github/workflows/cu1-tests.yml',
           }
