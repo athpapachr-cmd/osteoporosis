@@ -1,0 +1,12 @@
+STATUS: MERGED / DEPLOYED / PRODUCTION SMOKE PENDING
+Release PR: #104
+Release commit: 2b6ccf56f77c646fc475318e4d76396dd95a2bee
+Render deploy: dep-daj3l00ae00c73drs850 LIVE
+Exact tested runtime ancestor: 4c30867e8aea00842772b6df7d624a79bbf3f19e
+Implementation gate: 34740684612 SUCCESS
+PR P2 gate: 34741361420 SUCCESS
+PR P1 gate: 34741361416 SUCCESS
+PR CU-1 gate: 34741361386 SUCCESS
+Writer: none
+
+Medical Report V1.1 is released to production. Next action is authenticated product-owner production smoke. After smoke PASS, mark the slice PRODUCTION-SMOKE-VERIFIED / CLOSED.
