@@ -1,15 +1,15 @@
 # Knee OA v1 — current commercial release record
 
-> **STATUS:** V5 MERGED / DEPLOYED ON RELEASED KNEE-OA + CY_GESY FOUNDATION; AUTHENTICATED V5 LIVE SMOKE PENDING EXECUTION.
+> **STATUS:** V5 RELEASED / DEPLOYED / AUTHENTICATED PRODUCTION-SMOKE-VERIFIED ON KNEE-OA + CY_GESY FOUNDATION.
 > **Diagnosis:** Knee Osteoarthritis only.
 > **V5 release runtime:** `8cfb22fd2478e7832b9b8642f7ae5241d7e1a267`.
 > **Release PR:** `#101`.
 > **Render deploy:** `dep-daj2398u01pc738ojvkg` — LIVE at exact V5 runtime SHA.
 > **Production jurisdiction profile:** `CY_GESY` via explicit server-side configuration.
-> **Prior authenticated CY_GESY production smoke:** `34703453615` — SUCCESS.
-> **Authenticated V5 smoke:** `34737351354` — QUEUED / NOT YET EXECUTED at this reconciliation.
+> **Authenticated V5 production smoke:** `34737943402` — SUCCESS.
+> **Temporary smoke PR:** `#103` — CLOSED UNMERGED.
 
-## Product surface now deployed
+## Product surface released
 
 The production product includes:
 
@@ -25,7 +25,7 @@ The production product includes:
 - explicit server-side `CY_GESY` activation, no patient-location inference;
 - ephemeral patient/referral draft with no product-level patient persistence.
 
-## V5 interaction now deployed
+## V5 interaction released
 
 - inactive `Πόνος`, `Δυσκαμψία`, `Αδυναμία`: first tap selects generic symptom without forced popup;
 - second tap opens optional detail;
@@ -64,7 +64,7 @@ Clinical Learning red checks were scope-only adjacent-owner failures after subst
 
 ## Production architecture
 
-The product remains deployed at:
+The product is deployed at:
 
 `/clinical/clinic-utilities/physio-referral`
 
@@ -98,7 +98,7 @@ V5 does not alter:
 - referral safety gating;
 - GeSY admin/reimbursement separation from clinical evidence.
 
-Local context still cannot silently overwrite international evidence or routine referral prose.
+Local context cannot silently overwrite international evidence or routine referral prose.
 
 ## Merge and deployment evidence
 
@@ -106,25 +106,36 @@ PR #101 was squash-merged to:
 
 `8cfb22fd2478e7832b9b8642f7ae5241d7e1a267`
 
-Render auto-deploy `dep-daj2398u01pc738ojvkg` checked out that exact commit and reached `live`. Startup logs confirm application startup complete and configured clinical authentication. No redundant manual deploy occurred.
+Render auto-deploy `dep-daj2398u01pc738ojvkg` checked out that exact commit and reached `live`. Startup logs confirmed application startup complete and configured clinical authentication. No redundant manual deploy occurred.
 
-## Authenticated V5 production verification
+## Authenticated V5 production verification — PASS
 
-Temporary ops branch:
+The original temporary branch-push smoke remained queued without receiving a runner. The identical authenticated smoke was therefore executed using a temporary same-repository draft PR trigger, preserving the same protected-secret and non-identifiable-data boundaries.
 
-`ops/physio-knee-oa-v5-live-smoke-2026-09-13`
-
-Workflow commit:
-
-`b46c948c38181336d23f90899cdd331dffe09f4c`
+Temporary PR #103 remained unmerged and was closed after verification.
 
 Run:
 
-`34737351354`
+`34737943402` — **SUCCESS**
 
-The smoke is designed to verify the protected production API, `CY_GESY`, international/local evidence separation, unchanged default selection/referral semantics, live V5 atrophy routing and no browser-storage markers using a generated UUID plus non-identifiable state. The credential remains in GitHub Actions secrets and is not printed.
+Job:
 
-At this reconciliation the run is queued awaiting a GitHub runner. The older successful authenticated jurisdiction smoke was also re-run and is likewise queued, supporting classification as runner scheduling rather than observed application failure.
+`103672560340` — **SUCCESS**
+
+Live assertions passed for:
+
+- unauthenticated bootstrap rejection;
+- authenticated bootstrap/project success;
+- explicit active `CY_GESY` profile;
+- unchanged international acupuncture/manual-therapy evidence states with separate local directions;
+- no local-only electrotherapy evidence item;
+- unchanged default rehab selections;
+- referral text free of silent Cyprus/GeSY evidence wording;
+- live weakness second-tap asset containing the two approved weakness exam concepts and no `Ατροφία τετρακεφάλου`;
+- live More/Exam asset retaining quadriceps atrophy;
+- no `localStorage`/`sessionStorage` markers in the tested V5 live assets.
+
+The credential was masked throughout the log. Only a generated UUID plus non-identifiable smoke state was sent.
 
 ## Current lifecycle
 
@@ -132,7 +143,8 @@ At this reconciliation the run is queued awaiting a GitHub runner. The older suc
 V5 merged                                    YES
 V5 deployed                                  YES
 Render exact release runtime                 LIVE
-V5 authenticated production smoke            PENDING EXECUTION
+V5 authenticated production smoke            PASS
+production-smoke-verified                    YES
 actual iPhone Safari / VoiceOver              NOT YET PROVEN
 formal receiver validation                    DEFERRED / NON-BLOCKING
 paid conversion / retention                   NOT YET PROVEN
@@ -140,4 +152,4 @@ real clinical pilot                           NOT YET PROVEN
 second diagnosis                              NOT AUTHORIZED
 ```
 
-A final `PRODUCTION-SMOKE-VERIFIED` closeout requires an actually successful authenticated smoke run.
+The V5 release lifecycle is closed after canonical docs merge. Any next diagnosis/product expansion requires a fresh bounded decision.
