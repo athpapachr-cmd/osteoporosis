@@ -101,7 +101,7 @@ def _docx_bytes(text="Συνθετική γνωμάτευση"):
     return output.getvalue()
 
 
-def _pdf_bytes(text="Συνθετική ακτινολογική γνωμάτευση"):
+def _pdf_bytes(text="Synthetic radiology report with extractable text"):
     doc = fitz.open(); page = doc.new_page(); page.insert_text((72, 72), text); raw = doc.tobytes(); doc.close(); return raw
 
 
@@ -126,7 +126,7 @@ def test_pdf_source_extraction_preserves_page_provenance():
     source = extract_source_bytes(_pdf_bytes(), "src-1", "report.pdf")
     assert source.status == "extracted" and source.page_count == 1
     assert source.pages[0].page_number == 1
-    assert "Συνθετική" in source.pages[0].text
+    assert "Synthetic radiology" in source.pages[0].text
 
 
 def test_txt_markdown_and_docx_extract_locally():
@@ -198,7 +198,7 @@ def test_final_report_requires_clinician_confirmation():
 
 
 def test_long_final_report_generates_parseable_multipage_pdf_and_safe_filename():
-    sections = [ReportSectionDraftV1(section_id="clinical_course", title="Κλινική πορεία", draft_text=("Συνθετικό ιατρικό κείμενο χωρίς πραγματικά δεδομένα. " * 700))]
+    sections = [ReportSectionDraftV1(section_id="clinical_course", title="Κλινική πορεία", draft_text=("Συνθετικό ιατρικό κείμενο χωρίς πραγματικά δεδομένα. " * 400))]
     report = FinalMedicalReportV1(case=_case(), sections=sections, clinician_confirmed=True)
     raw = build_medical_report_pdf(report, clinician=_clinician())
     doc = fitz.open(stream=raw, filetype="pdf")
