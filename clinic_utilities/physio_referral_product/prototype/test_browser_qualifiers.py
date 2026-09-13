@@ -97,18 +97,18 @@ class QualifierBrowserTests(unittest.TestCase):
         self.page.locator('#reviewStatus').click()
         expect(self.page.locator('#sheetBody')).to_contain_text('NICE NG226 · 2022')
 
-    def test_quadriceps_exam_atrophy_stays_specific_and_human(self):
+    def test_extension_weakness_atrophy_stays_specific_and_human(self):
         self.open_clinical('weakness')
-        quad=self.page.locator('#sheet [data-q-weakness=quadriceps_exam]')
-        expect(quad).to_have_text('Αδυναμία τετρακεφάλου στην εξέταση'); quad.click()
+        extension=self.page.locator('#sheet [data-q-weakness=knee_extension_exam]')
+        expect(extension).to_have_text('Αδυναμία έκτασης γόνατος / τετρακεφάλου'); extension.click()
         self.page.locator('#closeSheet').click()
         expect(self.page.locator('[data-clinical-v4=weakness] [data-clinical-count-v4]')).to_have_text('· 1')
         self.open_v3_category('exam')
         expect(self.page.get_by_role('button', name='Ατροφία τετρακεφάλου', exact=True)).to_have_count(1)
         self.page.get_by_role('button', name='Ατροφία τετρακεφάλου', exact=True).click()
         expect(self.page.locator('[data-clinical-v4=weakness] [data-clinical-count-v4]')).to_have_text('· 1')
-        expect(self.page.locator('#referralText')).to_contain_text('αδυναμία του τετρακεφάλου κατά την εξέταση')
-        expect(self.page.locator('#referralText')).to_contain_text('εμφανή ατροφία τετρακεφάλου')
+        expect(self.page.locator('#referralText')).to_contain_text('αδυναμία έκτασης γόνατος / τετρακεφάλου κατά την εξέταση')
+        expect(self.page.locator('#referralText')).to_contain_text('με εμφανή ατροφία τετρακεφάλου')
         expect(self.page.locator('#referralText')).to_contain_text('με έμφαση σε')
         expect(self.page.locator('#referralText')).not_to_contain_text('ενδεικτικές προτεραιότητες')
 
@@ -131,8 +131,11 @@ class QualifierBrowserTests(unittest.TestCase):
         self.open_clinical('pain')
         expect(self.page.locator('#sheet [data-q-pain][aria-pressed=true]')).to_have_count(0)
 
-    def test_fixed_flexion_is_advanced_passive_exam_not_stiffness(self):
+    def test_fixed_flexion_is_progressive_passive_exam_not_stiffness(self):
         self.open_v3_category('exam')
+        rom=self.page.locator('#sheet [data-v51-rom-parent]')
+        expect(rom).to_contain_text('Περιορισμός εύρους κίνησης'); rom.click()
+        expect(self.page.locator('#v51RomDetails')).to_be_visible()
         ffd=self.page.locator('#sheet [data-q-ffd]'); expect(ffd).to_contain_text('Παθητικό έλλειμμα έκτασης'); ffd.click()
         expect(self.page.locator('#v3FfdDegreesWrap')).to_be_visible(); self.page.locator('#v3FfdDegrees').fill('10')
         expect(self.page.locator('#referralText')).to_contain_text('παθητικό έλλειμμα έκτασης 10°')

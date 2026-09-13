@@ -72,12 +72,18 @@ class V5BrowserTests(unittest.TestCase):
         expect(self.page.locator('#sheetTitle')).to_have_text('Λειτουργικότητα')
         expect(self.page.locator('#sheet [data-function]')).to_have_count(4)
 
-    def test_weakness_second_tap_has_only_explicit_weakness_exam_options(self):
+    def test_weakness_second_tap_has_only_explicit_directional_exam_options(self):
         weakness=self.page.locator('[data-clinical-v4=weakness]')
         weakness.click(); weakness.click()
         expect(self.page.locator('#sheet')).to_be_visible()
-        expect(self.page.get_by_role('button', name='Μυϊκή αδυναμία στην εξέταση', exact=True)).to_have_count(1)
-        expect(self.page.get_by_role('button', name='Αδυναμία τετρακεφάλου στην εξέταση', exact=True)).to_have_count(1)
+        for label in (
+            'Αδυναμία έκτασης γόνατος / τετρακεφάλου',
+            'Αδυναμία κάμψης γόνατος / ισχιοκνημιαίων',
+            'Αδυναμία κάμψης και έκτασης γόνατος',
+        ):
+            expect(self.page.get_by_role('button', name=label, exact=True)).to_have_count(1)
+        self.assertEqual(self.page.get_by_role('button', name='Μυϊκή αδυναμία στην εξέταση', exact=True).count(), 0)
+        self.assertEqual(self.page.get_by_role('button', name='Αδυναμία τετρακεφάλου στην εξέταση', exact=True).count(), 0)
         self.assertEqual(self.page.get_by_role('button', name='Ατροφία τετρακεφάλου', exact=True).count(), 0)
         self.assertEqual(self.page.get_by_role('button', name='Τετρακέφαλος', exact=True).count(), 0)
         self.assertEqual(self.page.get_by_role('button', name='Περιαρθρικά', exact=True).count(), 0)
@@ -91,7 +97,7 @@ class V5BrowserTests(unittest.TestCase):
         expect(self.page.locator('#sheet')).to_be_visible()
         expect(self.page.get_by_role('button', name='Ατροφία τετρακεφάλου', exact=True)).to_have_count(1)
         self.page.get_by_role('button', name='Ατροφία τετρακεφάλου', exact=True).click()
-        expect(self.page.locator('#referralText')).to_contain_text('εμφανή ατροφία τετρακεφάλου')
+        expect(self.page.locator('#referralText')).to_contain_text('εμφανής ατροφία τετρακεφάλου')
         expect(weakness.locator('[data-clinical-count-v4]')).to_be_hidden()
 
     def test_more_exam_keeps_unambiguous_exam_labels(self):
@@ -99,9 +105,14 @@ class V5BrowserTests(unittest.TestCase):
         self.page.locator('#advancedToggle').click()
         self.page.locator('#advanced .v3-category-row[data-v3-category=exam]').click()
         expect(self.page.locator('#sheet')).to_be_visible()
-        expect(self.page.get_by_role('button', name='Μυϊκή αδυναμία στην εξέταση', exact=True)).to_have_count(1)
-        expect(self.page.get_by_role('button', name='Αδυναμία τετρακεφάλου στην εξέταση', exact=True)).to_have_count(1)
+        for label in (
+            'Αδυναμία έκτασης γόνατος / τετρακεφάλου',
+            'Αδυναμία κάμψης γόνατος / ισχιοκνημιαίων',
+            'Αδυναμία κάμψης και έκτασης γόνατος',
+        ):
+            expect(self.page.get_by_role('button', name=label, exact=True)).to_have_count(1)
         expect(self.page.get_by_role('button', name='Ατροφία τετρακεφάλου', exact=True)).to_have_count(1)
+        self.assertEqual(self.page.get_by_role('button', name='Μυϊκή αδυναμία στην εξέταση', exact=True).count(), 0)
         self.assertEqual(self.page.get_by_role('button', name='Τετρακέφαλος', exact=True).count(), 0)
         self.assertEqual(self.page.get_by_role('button', name='Περιαρθρικά', exact=True).count(), 0)
 

@@ -63,12 +63,15 @@ class MoreV3BrowserTests(unittest.TestCase):
         self.page.locator('[data-v3-category=exam]').click()
         expect(self.page.locator('#sheetTitle')).to_have_text('Εξέταση')
         expect(self.page.locator('#sheet [data-select=effusion]')).to_be_visible()
-        expect(self.page.locator('#sheet [data-q-ffd]')).to_be_visible()
+        rom=self.page.locator('#sheet [data-v51-rom-parent]')
+        expect(rom).to_be_visible(); expect(rom).to_contain_text('Περιορισμός εύρους κίνησης')
+        expect(self.page.locator('#sheet [data-q-ffd]')).to_be_hidden()
+        rom.click(); expect(self.page.locator('#v51RomDetails')).to_be_visible(); expect(self.page.locator('#sheet [data-q-ffd]')).to_be_visible()
         expect(self.page.locator('#sheet [data-q-tenderness=pes_anserine_region]')).to_be_visible()
         self.page.locator('#sheet [data-select=effusion]').click()
         self.page.keyboard.press('Escape')
         exam=self.page.locator('#advanced [data-v3-category=exam]')
-        expect(exam).to_contain_text('1 ενεργά')
+        expect(exam).to_contain_text('2 ενεργά')
         exam.click(); expect(self.page.locator('#sheet [data-select=effusion]')).to_have_attribute('aria-pressed','true')
         self.page.keyboard.press('Escape')
         for category,title,sample in [
@@ -123,7 +126,8 @@ class MoreV3BrowserTests(unittest.TestCase):
         self.assertEqual(self.page.locator('[data-q-weakness][aria-pressed=true]').count(),0)
         relevant.locator('[data-v3-focus=weakness]').click()
         expect(self.page.locator('#sheetTitle')).to_have_text('Εξέταση')
-        expect(self.page.locator('#sheet [data-q-weakness=objective]')).to_have_attribute('aria-pressed','false')
+        for value in ('knee_extension_exam','knee_flexion_exam','knee_extension_flexion_exam'):
+            expect(self.page.locator(f'#sheet [data-q-weakness={value}]')).to_have_attribute('aria-pressed','false')
         self.assertEqual(self.page.locator('#referralText').inner_text(),before)
 
     def test_mobile_overview_reflows_without_losing_hierarchy(self):
