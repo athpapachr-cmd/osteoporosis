@@ -1,15 +1,17 @@
 # CURRENT_OPERATIONAL.md — Clinical Documents Engine Phase 2 / Medical Report V1
 
-> **STATUS:** IMPLEMENTATION ACTIVE — EPHEMERAL MEDICAL REPORT WORKSPACE V1.
+> **STATUS:** IMPLEMENTED / TESTED / EXACT-HEAD REVIEWED — RELEASE HOLD.
 > **Updated:** 2026-09-13 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Fresh bootstrap main:** `8993a1c4b585c590a543c907ea6b2eba32bbccdc`.
-> **Active branch:** `feat/clinical-documents-p2-medical-report-v1-2026-09-13`.
+> **Fresh bootstrap main / merge base:** `8993a1c4b585c590a543c907ea6b2eba32bbccdc`.
+> **Implementation branch:** `feat/clinical-documents-p2-medical-report-v1-2026-09-13`.
 > **Active slice:** `CU-CLINICAL-DOCUMENTS-P2-MEDICAL-REPORT-V1-2026-09-13`.
-> **Writer:** current Clinical Documents implementation conversation, bounded to the owners listed in `SLICE_PLAN_CURRENT.md`.
-> **Production config/secrets authority:** NONE in this implementation slice.
+> **Exact reviewed/tested runtime head:** `3a19a09280ff682badfd4866e19d6a4f3cb9c208`.
+> **Clinical Documents P2 gate:** run `34733760918` — SUCCESS.
+> **Writer:** none — implementation checkpoint closed in RELEASE HOLD.
+> **Production config/secrets authority:** NONE; no production AI configuration was changed.
 > **Patient/case persistence authority:** NONE.
-> **Real-patient data in repository/tests:** FORBIDDEN.
+> **Real-patient data in repository/tests:** FORBIDDEN / NOT USED.
 
 ## 1. Product Owner authority
 
@@ -25,16 +27,16 @@ clinician supplies the history/instructions
 → final signed PDF
 ```
 
-This activates Phase 2 implementation only. Merge/deploy, production OpenAI key/config mutation, persistent case storage, billing runtime and user-uploaded template marketplace remain separate gates.
+That bounded implementation is now complete and tested on the active branch. This checkpoint does **not** authorize merge/deploy, production OpenAI key/config mutation, persistent case storage, billing runtime or commercial template upload.
 
-## 2. Active product scope
+## 2. Implemented product scope
 
-Implement a protected **Medical Report V1** workspace inside Clinic Utilities for:
+Protected **Medical Report V1** workspace inside Clinic Utilities supports:
 
 - `accident_medical_report`;
 - `medico_legal_expert_report`.
 
-The clinician may provide:
+The clinician can provide:
 
 - a pasted history / own synthesis / special instructions;
 - GeSY visit history;
@@ -48,9 +50,9 @@ The clinician may provide:
 - laboratory or physiotherapy reports;
 - prior reports / sick-leave certificates.
 
-V1 source files are explicitly selected by the clinician for the active browser session only.
+The browser exposes clinician-editable source classification before analysis. Uploaded files remain explicit current-session inputs only.
 
-## 3. Authority model
+## 3. Authority model preserved
 
 Hard invariant:
 
@@ -64,112 +66,160 @@ SOURCE FACT
 != FINAL CLINICIAN OPINION
 ```
 
-The AI may extract, summarize, organize and draft. It may not silently promote inference to fact, causation, diagnosis, permanence or prognosis. Consequential opinion text remains marked for clinician review until explicitly confirmed.
+The AI extracts, summarizes, organizes and drafts. It does not silently promote inference to fact, diagnosis, causation, permanence or prognosis. Diagnosis/causation/pre-existing-condition/prognosis/future-needs outputs remain review-required. Final PDF generation requires explicit clinician confirmation.
 
-## 4. V1 workflow
+Source documents are also treated as untrusted quoted data for prompt-injection purposes: instructions/links/commands embedded in an uploaded record are not model instructions.
+
+## 4. Implemented workflow
 
 ```text
 Case details
 → clinician pasted history/instructions
-→ upload source documents
-→ local server text extraction
-→ AI source classification + Evidence Ledger + Timeline + structured report draft
+→ upload + clinician classification of source documents
+→ local request-scoped text extraction
+→ AI Evidence Ledger + Timeline + structured report draft
+→ deterministic provenance/reference checks
+→ work-incapacity interval overlap/gap checks
 → clinician review/edit
-→ targeted prognosis/literature research (generalized, identity-free query)
-→ clinician review/edit of prognosis/future needs
-→ final confirmation
-→ signed multi-page PDF
+→ targeted prognosis/literature research using generalized identity-free questions
+→ clinician review/edit of prognosis/future needs/research text
+→ explicit final confirmation
+→ optional session-only signature
+→ professional multi-page Greek PDF
 ```
 
-## 5. Privacy / persistence boundary
+## 5. Source/file boundary
 
-V1 is request/session scoped:
+Accepted V1 file types:
+
+- PDF with extractable text;
+- TXT;
+- Markdown;
+- DOCX via local OOXML/XML extraction.
+
+Implemented safety/resource bounds include:
+
+- max 20 uploaded files;
+- max 12 MiB per file;
+- max 40 MiB aggregate uploaded bytes;
+- max 350,000 extracted characters;
+- max 5,000 PDF pages;
+- bounded DOCX decompressed `word/document.xml` size;
+- bounded typed request/final payloads.
+
+Image-only/scanned PDFs are surfaced as `no_extractable_text`; V1 does not OCR or guess their contents.
+
+## 6. Evidence / timeline integrity
+
+AI output is typed and post-validated against deterministic source truth.
+
+Validation rejects or flags:
+
+- nonexistent source IDs;
+- nonexistent page references;
+- duplicate evidence IDs;
+- timeline references to nonexistent sources/evidence;
+- diagnosis/future-needs references to nonexistent evidence;
+- work-incapacity interval references to nonexistent sources/evidence;
+- work-incapacity intervals whose end precedes start;
+- overlapping work-incapacity periods;
+- gaps between extracted work-incapacity periods;
+- repeated conflict keys across source evidence.
+
+The AI instructions require exact work/sick-leave interval boundaries to be extracted only when both dates are source-supported; missing boundaries must not be inferred.
+
+## 7. AI provider boundary
+
+The runtime contains an OpenAI Responses API provider behind explicit server-side gates:
+
+```text
+OPENAI_API_KEY
++ CLINICAL_DOCUMENTS_AI_ENABLED=true
+```
+
+Identifiable-record analysis additionally requires:
+
+```text
+CLINICAL_DOCUMENTS_PHI_PROVIDER_APPROVED=true
+```
+
+Provider calls use `store=false`; no OpenAI Files/Vector Store persistence is introduced. The implementation records token/web-search usage metadata for later cost accounting.
+
+No provider secret, AI enable flag or PHI-approval flag was changed in production during this implementation.
+
+## 8. Literature / prognosis
+
+The case analysis generates targeted prognosis questions rather than invented citations.
+
+The explicit research action:
+
+- builds generalized clinical questions from diagnoses/problems/prognosis/future-needs topics;
+- defensively excludes direct patient name, identity number and instructing reference from the external research prompt;
+- uses hosted web search;
+- returns research prose separately from clickable URL citations;
+- keeps research editable and under final clinician confirmation.
+
+## 9. Privacy / persistence boundary
+
+V1 remains request/session scoped:
 
 - no Clinical Documents patient/case database;
 - no automatic patient history;
 - no localStorage/sessionStorage/indexedDB case or PHI state;
 - no autosave;
-- uploaded source bytes are parsed in memory and are not persisted by this package;
-- no source files are committed to the public repository;
-- no request body or extracted source text is deliberately logged by the feature;
-- browser refresh/close loses the working case unless a future explicit export feature is separately added.
+- uploaded source bytes parsed in memory and not persisted by this package;
+- no source files committed to the public repository;
+- no feature-owned database writes;
+- no patient identifiers in query strings;
+- signature held only in current browser memory and request payload;
+- browser refresh/close loses the working case.
 
-## 6. AI provider boundary
+All test data are synthetic/non-identifiable.
 
-Runtime must support an OpenAI provider behind explicit server-side gates:
+## 10. Final PDF
 
-- `OPENAI_API_KEY` present;
-- `CLINICAL_DOCUMENTS_AI_ENABLED=true`;
-- identifiable-record processing additionally requires `CLINICAL_DOCUMENTS_PHI_PROVIDER_APPROVED=true`.
+The implemented renderer produces professional multi-page A4 Greek reports with:
 
-No provider secret or production flag is authorized to be added/changed in this slice.
+- clinician header;
+- case/patient information;
+- editable report sections;
+- automatic page breaks;
+- page numbering;
+- optional literature synthesis/citations;
+- optional clinician-authored declaration;
+- optional session-only signature.
 
-Provider calls use `store=false` and do not use OpenAI Files/Vector Store persistence. Identifiable source text is not sent unless the explicit PHI-provider approval gate is active.
+Long unbroken references/URLs are wrapped. Filename contains report type + Greek patient name + report date and excludes diagnosis/identity number.
 
-Literature/web research is built from generalized clinical questions and must exclude direct patient identifiers.
+## 11. Exact-head evidence
 
-## 7. V1 source/file boundary
+Exact reviewed/tested runtime head:
 
-Initial accepted file types:
+`3a19a09280ff682badfd4866e19d6a4f3cb9c208`
 
-- PDF with extractable text;
-- TXT;
-- Markdown;
-- DOCX via local XML extraction.
+Clinical Documents P2 workflow run:
 
-No OCR guessing in this slice. Image-only/scanned PDFs must be surfaced as `no_extractable_text` and require clinician-provided text or a later separately approved vision/OCR path.
+`34733760918` — **SUCCESS**.
 
-Files/count/bytes/extracted-character totals must be bounded server-side.
+That exact run passed:
 
-## 8. V1 report structure
+- Python syntax;
+- browser JavaScript syntax;
+- OpenAI Responses SDK contract guard without a live provider call;
+- Medical Report V1 deterministic tests;
+- source classification tests;
+- work-incapacity consistency tests;
+- existing Sick Leave V1 regression;
+- existing Clinic Utilities navigation regression.
 
-Default editable sections:
+Exact branch comparison against fresh `main`/merge-base `8993a1c4b585c590a543c907ea6b2eba32bbccdc` is `ahead 31 / behind 0`. Changed runtime scope is confined to Clinical Documents owners plus `main.py` composition and a four-line Clinic Utilities navigation extension. No RF/physio/Clinical Learning/osteoporosis-guidance business-rule or persistence-schema owner was modified.
 
-1. Patient / Case Details
-2. Purpose and Instructions
-3. Sources and Documents Reviewed
-4. History of the Incident
-5. Initial Medical Management
-6. Chronological Clinical Course
-7. Current / Reported Symptoms
-8. Objective Clinical Findings
-9. Investigations
-10. Treatment / Procedures
-11. Diagnoses
-12. Pre-existing Conditions
-13. Causation
-14. Functional Consequences
-15. Work Incapacity
-16. Prognosis
-17. Future Needs
-18. Summary of Opinion
-19. Bibliography
-20. Signature / optional declaration
+## 12. Explicit exclusions retained
 
-Irrelevant sections may remain empty/hidden. Formal jurisdiction-specific declaration text is not auto-inserted in V1.
-
-## 9. Literature / prognosis rule
-
-The AI first proposes targeted prognosis questions from the case. A separate research action may use hosted web search to gather current sources.
-
-The UI must expose source links/citations and keep literature separate from patient facts. Research text is AI draft and must remain editable/reviewable before final PDF inclusion.
-
-## 10. Finalization gate
-
-Final PDF generation requires explicit clinician confirmation that:
-
-- the report text has been reviewed;
-- diagnosis/causation/prognosis/future-needs wording is clinician-approved;
-- bibliography/research content has been reviewed where included.
-
-No unreviewed AI draft should enter the final PDF by default.
-
-## 11. Explicit exclusions
-
-Not authorized in this slice:
+Not implemented/authorized in this checkpoint:
 
 - persistent patient/case database;
-- automatic GeSY integration;
+- automatic GeSY API integration;
 - OCR/vision for image-only documents;
 - autonomous diagnosis/causation/prognosis;
 - permanent-impairment scoring;
@@ -178,9 +228,12 @@ Not authorized in this slice:
 - tax/VAT logic;
 - user-uploaded reusable template platform;
 - Siri/Gemini/native app;
+- automatic jurisdiction-specific declaration wording;
 - RF/physio/osteoporosis-guidance/Clinical-Learning business-rule mutation;
 - production environment/secret mutation.
 
-## 12. Next legitimate action
+## 13. Next legitimate action
 
-Implement the bounded Medical Report V1 runtime, browser workspace, provider abstraction, deterministic source parsing, structured AI contract, literature-research seam, PDF renderer and focused synthetic regression suite on the active branch. Then run exact-head review/gates. No PR/merge/deploy is implied by implementation completion.
+Implementation is in **RELEASE HOLD**.
+
+A future release requires separate explicit Product Owner authority for PR/merge/deploy and a separate, deliberate production-provider/privacy/config decision before identifiable patient records may be sent to the AI provider. No merge/deploy or production AI configuration is implied by this implementation completion.
