@@ -52,9 +52,9 @@ class V51BrowserTests(unittest.TestCase):
         pain.click();expect(pain).to_have_attribute("aria-pressed","true")
         self.assertFalse(self.page.locator("#sheet").evaluate("el=>el.open"))
         hint=self.page.locator("[data-v51-second-tap-hint=pain]")
-        expect(hint).to_be_visible();expect(hint).to_have_text("Πατήστε ξανά για προαιρετικές λεπτομέρειες")
+        expect(hint).to_be_visible();expect(hint).to_have_text("Λεπτομέρειες ›");expect(hint).to_have_attribute("data-v51-open-details","pain")
         self.assertEqual(self.page.locator("[data-v51-second-tap-hint=function]").count(),0)
-        pain.click();expect(self.page.locator("#sheet")).to_be_visible()
+        hint.click();expect(self.page.locator("#sheet")).to_be_visible()
 
     def test_directional_weakness_choices_replace_generic_objective_wording(self):
         self.ready();weak=self.page.locator("[data-clinical-v4=weakness]")
@@ -73,6 +73,8 @@ class V51BrowserTests(unittest.TestCase):
         expect(self.page.get_by_role("button",name="Περιορισμός εύρους κίνησης",exact=True)).to_have_count(1)
         expect(self.page.get_by_role("heading",name="Ευαισθησία στην ψηλάφηση",exact=True)).to_have_count(1)
         expect(self.page.get_by_role("heading",name="Σταθερότητα άρθρωσης",exact=True)).to_have_count(1)
+        expect(self.page.get_by_role("heading",name="Κλινική επανεκτίμηση",exact=True)).to_have_count(1)
+        expect(self.page.locator("[data-v51-review-content]")).to_contain_text("Η απουσία ένδειξης δεν αποτελεί φυσιολογικό έλεγχο")
         self.page.get_by_role("button",name="Περιορισμός εύρους κίνησης",exact=True).click()
         expect(self.page.locator("#v51RomDetails")).to_be_visible()
         for label in ["Υστέρηση ενεργητικής έκτασης","Παθητικό έλλειμμα έκτασης","Περιορισμός ενεργητικής κάμψης","Περιορισμός παθητικής κάμψης"]:
@@ -112,6 +114,7 @@ class V51BrowserTests(unittest.TestCase):
         expect(self.page.locator("#v51ReviewBubble")).to_be_visible()
         expect(self.page.locator("#v51ReviewBubble")).to_contain_text("Πρωινή δυσκαμψία >30′")
         expect(self.page.locator("#copy")).to_be_enabled()
+        self.open_exam();expect(self.page.locator("[data-v51-review-content]")).to_contain_text("Πρωινή δυσκαμψία >30′")
         href=self.page.locator("#v51ReviewBubble a").get_attribute("href")
         self.assertTrue(href and href.startswith("https://www.nice.org.uk/"),href)
 

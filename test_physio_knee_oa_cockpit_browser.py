@@ -83,7 +83,7 @@ class KneeOACockpitBrowserTests(unittest.TestCase):
     def test_first_tap_hint_is_visible_without_forced_sheet(self):
         self.ready(); pain=self.page.locator("[data-clinical-v4=pain]"); pain.click()
         expect(pain).to_have_attribute("aria-pressed","true"); self.assertFalse(self.page.locator("#sheet").evaluate("el=>el.open"))
-        expect(self.page.locator("[data-v51-second-tap-hint=pain]")).to_have_text("Πατήστε ξανά για προαιρετικές λεπτομέρειες")
+        expect(self.page.locator("[data-v51-second-tap-hint=pain]")).to_have_text("Λεπτομέρειες ›")
         expect(self.page.locator("[data-v51-second-tap-hint=pain]")).to_be_visible()
         self.assertEqual(self.page.locator("[data-v51-second-tap-hint=function]").count(),0)
 
@@ -127,6 +127,19 @@ class KneeOACockpitBrowserTests(unittest.TestCase):
         self.page.locator("[data-v51-stability=posterior_instability_pcl]").click(); expect(self.page.locator("#referralText")).to_contain_text("οπίσθια αστάθεια / ΟΧΣ")
         expect(self.page.locator("#v51ReviewBubble")).to_be_hidden()
 
+
+    def test_cyprus_context_is_visible_for_core_items_without_mutating_selection(self):
+        self.ready(); referral_before=self.page.locator("#referralText").inner_text()
+        for item in ["therapeutic_exercise","progressive_strengthening","education_and_self_management"]:
+            row=self.page.locator(f'#plan [data-row-item="{item}"]')
+            expect(row.locator(".v51-jurisdiction-cue")).to_be_visible();expect(row.locator(".v51-jurisdiction-cue")).to_have_text("Κύπρος")
+            row.locator(f'[data-evidence="{item}"]').click();expect(self.page.locator("#sheet")).to_be_visible()
+            local=self.page.locator("#sheet [data-jurisdiction-position]");expect(local).to_have_count(1);expect(local).to_be_visible()
+            expect(local).to_contain_text("Κύπρος · ΓεΣΥ");expect(local).to_contain_text("συμβατή με τη διεθνή θέση")
+            expect(self.page.locator("#v51SourceShortcuts")).to_contain_text("Κύπρος · ΟΑΥ")
+            self.page.locator("#closeSheet").click()
+        self.assertEqual(self.page.locator("#referralText").inner_text(),referral_before)
+
     def test_cyprus_difference_is_progressive_and_source_links_are_direct(self):
         self.ready(); referral_before = self.page.locator("#referralText").inner_text(); self.assertEqual(self.page.get_by_text("Κύπρος · διαφέρει", exact=True).count(), 0)
         self.page.locator("#advancedToggle").click(); self.page.locator("#advanced [data-v3-category=adjuncts]").click(); expect(self.page.locator("#sheet")).to_be_visible()
@@ -144,7 +157,7 @@ class KneeOACockpitBrowserTests(unittest.TestCase):
         self.ready(); stiff=self.page.locator("[data-clinical-v4=stiffness]"); stiff.click(); stiff.click()
         self.page.locator("#sheet [data-q-stiffness=morning]").click(); self.page.locator("#sheet [data-q-duration=gt_30]").click(); self.page.locator("#closeSheet").click()
         expect(self.page.locator("#v51ReviewBubble")).to_be_visible(); expect(self.page.locator("#v51ReviewBubble")).to_contain_text("Πρωινή δυσκαμψία >30′")
-        expect(self.page.locator("#copy")).to_be_enabled()
+        expect(self.page.locator("#copy")).to_be_enabled();self.open_exam();expect(self.page.get_by_role("heading",name="Κλινική επανεκτίμηση",exact=True)).to_be_visible();expect(self.page.locator("[data-v51-review-content]")).to_contain_text("Πρωινή δυσκαμψία >30′")
 
     def test_manual_edit_reconciliation_remains_fail_closed(self):
         self.ready(); self.page.locator("#directEditV2").click(); self.page.locator("#manualText").fill("Χειροκίνητο κείμενο παραπομπής.")

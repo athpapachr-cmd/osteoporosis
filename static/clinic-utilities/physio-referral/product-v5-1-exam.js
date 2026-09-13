@@ -73,7 +73,7 @@ function v51ToggleQualifierArray(key,value){
 }
 function v51ClinicalHintText(kind){
   if(!['pain','stiffness','weakness'].includes(kind))return '';
-  return 'Πατήστε ξανά για προαιρετικές λεπτομέρειες';
+  return 'Λεπτομέρειες ›';
 }
 function v51InstallClinicalHints(){
   const box=$('#phenotype');if(!box)return false;
@@ -82,7 +82,7 @@ function v51InstallClinicalHints(){
     const kind=button.dataset.clinicalV4;
     const wrap=make('div',{class:'v51-clinical-wrap','data-v51-clinical-wrap':kind});
     button.replaceWith(wrap);wrap.append(button);
-    if(kind!=='function')wrap.append(make('span',{class:'v51-second-tap-hint','data-v51-second-tap-hint':kind,text:v51ClinicalHintText(kind),hidden:''}));
+    if(kind!=='function')wrap.append(btn(v51ClinicalHintText(kind),{class:'v51-second-tap-hint','data-v51-second-tap-hint':kind,'data-v51-open-details':kind,'aria-label':'Άνοιγμα προαιρετικών λεπτομερειών για '+V4_CLINICAL[kind].label,hidden:''}));
   }
   return true;
 }
@@ -107,6 +107,53 @@ function v51SafeLink(href,label,text='Οδηγία ↗'){
     if(url.protocol!=='https:'||url.username||url.password)return null;
     return make('a',{href:url.href,target:'_blank',rel:'noopener noreferrer','aria-label':label,text});
   }catch(_error){return null;}
+}
+function v51LocalCueVisible(local){
+  const visibility=local?.display_policy?.routine_visibility;
+  return !!local&&['context_cue_only','detail_only'].includes(visibility);
+}
+function v51RenderJurisdictionCues(){
+  if(!response)return;
+  for(const node of $$('[data-row-item],[data-v3-item]')){
+    const item=node.dataset.rowItem||node.dataset.v3Item;
+    const local=response?.evidence?.[item]?.jurisdiction;
+    node.querySelector('.v51-jurisdiction-cue')?.remove();
+    if(!v51LocalCueVisible(local))continue;
+    const relation=local.relationship_to_core;
+    const aria=relation==='agreement'?'Κυπριακή οδηγία διαθέσιμη · συμφωνεί με τη διεθνή θέση':'Κυπριακή τοπική θέση διαθέσιμη';
+    const cue=make('span',{class:'v51-jurisdiction-cue',text:'Κύπρος','aria-label':aria});
+    const actions=node.querySelector('.v3-option-actions');
+    if(actions){actions.prepend(cue);continue;}
+    const main=node.querySelector('.row-main');
+    const info=main?.querySelector('.info');
+    if(main){if(info)main.insertBefore(cue,info);else main.append(cue);}
+  }
+}
+function v51ReviewSectionContent(){
+  const clues=response?.clinical_review_clues||[];
+  if(!clues.length){
+    return [make('p',{class:'v3-sheet-note',text:'Εμφανίζεται εδώ όταν καταγραφεί εύρημα που χρειάζεται περαιτέρω κλινική εκτίμηση. Η απουσία ένδειξης δεν αποτελεί φυσιολογικό έλεγχο.'})];
+  }
+  return clues.map(clue=>{
+    const row=make('div',{class:'v51-review-item'},[
+      make('strong',{text:clue.label}),
+      make('span',{text:clue.detail}),
+    ]);
+    const link=v51SafeLink(clue.source_url,'Άνοιγμα πηγής για '+clue.label,'Πηγή ↗');
+    if(link)row.append(link);
+    return row;
+  });
+}
+function v51ExamReviewSection(){
+  return make('section',{class:'v3-sheet-section v51-exam-review-section','data-v51-review-section':''},[
+    make('h3',{class:'v3-sheet-subtitle',text:'Κλινική επανεκτίμηση'}),
+    make('div',{class:'v51-exam-review-content','data-v51-review-content':''},v51ReviewSectionContent()),
+  ]);
+}
+function v51RenderExamReviewSection(){
+  const host=$('#sheet [data-v51-review-content]');
+  if(!host||sheetView?.type!=='advanced-v3'||sheetView.item!=='exam')return;
+  host.replaceChildren(...v51ReviewSectionContent());
 }
 function v51RenderReviewBubble(){
   v51InstallReviewBubble();
@@ -228,6 +275,8 @@ function v51ExamSheet(){
     )),
   ]));
 
+  sections.push(v51ExamReviewSection());
+
   const other=Object.keys(meta.labels.findings).filter(x=>!V3_DUPLICATED_FINDINGS.has(x));
   if(other.length)sections.push(v3SheetSection('Άλλα ευρήματα',other.map(x=>v3OptionRow(x,'findings'))));
   return sections;
@@ -248,6 +297,8 @@ v3SyncSheetState=function(){
   const crepitus=$('#sheet [data-v51-crepitus]');if(crepitus){crepitus.setAttribute('aria-pressed',String(qualifierState.crepitus));const mark=crepitus.querySelector('.v3-option-mark');if(mark)mark.textContent=qualifierState.crepitus?'✓':'';}
   $$('#sheet [data-v51-stability]').forEach(b=>b.setAttribute('aria-pressed',String((qualifierState.stability_findings||[]).includes(b.dataset.v51Stability))));
   const wrap=$('#v3FfdDegreesWrap');if(wrap)wrap.hidden=!qualifierState.fixed_flexion_deformity;
+  v51RenderExamReviewSection();
+  v51RenderJurisdictionCues();
 };
 
 const v51BaseAdvancedCount=advancedCount;
@@ -319,6 +370,8 @@ paint=function(){
   v51RenderClinicalHints();
   v51RenderReviewBubble();
   v3SyncSheetState();
+  v51RenderExamReviewSection();
+  v51RenderJurisdictionCues();
 };
 const v51BaseNewDraft=newDraft;
 newDraft=function(){
@@ -340,6 +393,11 @@ queueMicrotask(v51Install);
 document.addEventListener('click',event=>{
   const b=event.target.closest('button');if(!b||!state)return;
   v51EnsureQualifierState();
+  if(b.dataset.v51OpenDetails){
+    const kind=b.dataset.v51OpenDetails,card=$(`[data-clinical-v4=\"${kind}\"]`);
+    if(card&&v4Active(kind))v4OpenClinicalSheet(kind,card);
+    return;
+  }
   if(b.hasAttribute('data-v51-rom-parent')&&sheetView?.type==='advanced-v3'){
     const active=v51RomActive();
     if(active){

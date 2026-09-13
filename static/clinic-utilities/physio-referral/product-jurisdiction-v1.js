@@ -81,8 +81,12 @@ function appendJurisdictionEvidence(item) {
   const body=$('#sheetBody'); if(!body) return;
   if(body.querySelector('[data-jurisdiction-position]')) return;
   const node=jurisdictionEvidenceNode(item); if(!node) return;
-  const firstSource=body.querySelector('.source-position');
-  if(firstSource) body.insertBefore(node,firstSource); else body.append(node);
+  const directChildren=[...body.children];
+  const firstSource=directChildren.find(child=>child.classList?.contains('source-position'));
+  const deep=directChildren.find(child=>child.classList?.contains('evidence-deep'));
+  const reviewed=directChildren.find(child=>child.classList?.contains('reviewed-date'));
+  const anchor=firstSource||deep||reviewed||null;
+  if(anchor) body.insertBefore(node,anchor); else body.append(node);
 }
 
 const jurisdictionBaseOpenSheet=openSheet;
