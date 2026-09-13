@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="el">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>Ιατρικές Εκθέσεις · Clinical Documents</title>
+  <link rel="stylesheet" href="/static/clinic-utilities/medical-report/styles.css" />
+</head>
+<body>
+  <main class="shell">
+    <header class="hero">
+      <div>
+        <a class="back" href="/static/baseline-audit/">← Clinical Excellence</a>
+        <p class="eyebrow">Clinic Utilities · Clinical Documents</p>
+        <h1>Ιατρικές Εκθέσεις</h1>
+        <p class="subtitle">Ιστορικό + σχετικά ιατρικά αρχεία → τεκμηριωμένο προσχέδιο → δικός σου έλεγχος → τελικό PDF.</p>
+      </div>
+      <div class="privacy-pill">Χωρίς αποθήκευση υπόθεσης</div>
+    </header>
+
+    <section id="providerWarning" class="notice warning" hidden></section>
+    <section id="errorBox" class="notice error" hidden></section>
+
+    <nav class="steps" aria-label="Στάδια έκθεσης">
+      <span class="active">1 · Υπόθεση</span><span>2 · Πηγές</span><span>3 · AI προσχέδιο</span><span>4 · Έλεγχος</span><span>5 · Βιβλιογραφία</span><span>6 · PDF</span>
+    </nav>
+
+    <section class="layout">
+      <div class="main-column">
+        <section class="card">
+          <div class="section-head"><div><p class="step">01</p><h2>Στοιχεία υπόθεσης</h2></div></div>
+          <div class="form-grid">
+            <label class="field span-2"><span>Είδος έκθεσης</span>
+              <select id="reportType">
+                <option value="accident_medical_report">Ιατρική Έκθεση Ατυχήματος</option>
+                <option value="medico_legal_expert_report">Medico-Legal / Expert Report</option>
+              </select>
+            </label>
+            <label class="field span-2"><span>Όνομα ασθενούς</span><input id="patientName" maxlength="160" autocomplete="off" /></label>
+            <label class="field"><span>Ταυτοποίηση</span><select id="idType"><option>ADT</option><option>ARC</option><option>OTHER</option></select></label>
+            <label class="field"><span>Αριθμός</span><input id="idNumber" maxlength="64" autocomplete="off" /></label>
+            <label class="field"><span>Ημερομηνία γέννησης</span><input id="birthDate" type="date" /></label>
+            <label class="field"><span>Επάγγελμα</span><input id="occupation" maxlength="160" /></label>
+            <label class="field"><span>Ημερομηνία συμβάντος</span><input id="incidentDate" type="date" /></label>
+            <label class="field"><span>Ημερομηνία έκθεσης</span><input id="reportDate" type="date" /></label>
+            <label class="field"><span>Εντολέας / Δικηγόρος</span><input id="instructingParty" maxlength="200" /></label>
+            <label class="field"><span>Reference</span><input id="instructingReference" maxlength="120" /></label>
+            <label class="field span-4"><span>Σκοπός / ερωτήματα που πρέπει να απαντήσει η έκθεση</span><textarea id="purposeQuestions" rows="3" maxlength="6000"></textarea></label>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="section-head"><div><p class="step">02</p><h2>Ιστορικό & ιατρικά αρχεία</h2></div><span id="fileCounter" class="counter">0 αρχεία</span></div>
+          <label class="field"><span>Το δικό σου ιστορικό / παρατηρήσεις / οδηγίες προς το AI</span>
+            <textarea id="clinicianContext" rows="9" maxlength="20000" placeholder="Γράψε εδώ το ιστορικό όπως το γνωρίζεις, τι θεωρείς σημαντικό, τι πρέπει να αναλυθεί και τι ερωτήματα θέλεις να απαντηθούν."></textarea>
+          </label>
+          <div class="upload-box">
+            <input id="sourceFiles" type="file" multiple accept=".pdf,.txt,.md,.docx,application/pdf,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+            <div><strong>Πρόσθεσε τα σχετικά έγγραφα</strong><p>ΓεΣΥ, δικές σου σημειώσεις, άλλοι ιατροί, MRI/CT/X-ray reports, εξιτήρια, επεμβάσεις, προηγούμενες εκθέσεις.</p></div>
+          </div>
+          <ul id="fileList" class="file-list"></ul>
+          <p class="microcopy">V1: PDF με εξαγώγιμο κείμενο, TXT, MD, DOCX. Σκαναρισμένο PDF χωρίς κείμενο επισημαίνεται και δεν γίνεται OCR ή μαντεψιά.</p>
+          <div class="actions"><button id="generateButton" class="button primary" type="button">Δημιουργία προσχεδίου</button></div>
+        </section>
+
+        <section id="analysisWorkspace" class="analysis-workspace" hidden>
+          <section class="card review-alert"><strong>AI προσχέδιο · απαιτεί ιατρικό έλεγχο</strong><span>Facts, causation και prognosis δεν γίνονται αυτομάτως τελική ιατρική γνώμη.</span></section>
+
+          <div class="tabs" role="tablist">
+            <button class="tab active" data-tab="sourcesPanel" type="button">Πηγές</button>
+            <button class="tab" data-tab="evidencePanel" type="button">Evidence Ledger</button>
+            <button class="tab" data-tab="timelinePanel" type="button">Χρονολογία</button>
+            <button class="tab" data-tab="diagnosesPanel" type="button">Διαγνώσεις / Causation</button>
+            <button class="tab" data-tab="reportPanel" type="button">Κείμενο έκθεσης</button>
+          </div>
+
+          <section id="sourcesPanel" class="card tab-panel"></section>
+          <section id="evidencePanel" class="card tab-panel" hidden></section>
+          <section id="timelinePanel" class="card tab-panel" hidden></section>
+          <section id="diagnosesPanel" class="card tab-panel" hidden></section>
+          <section id="reportPanel" class="card tab-panel" hidden>
+            <div class="section-head"><div><p class="step">04</p><h2>Κείμενο έκθεσης</h2></div><span class="review-badge">Επεξεργάσιμο</span></div>
+            <div id="reportSections" class="report-sections"></div>
+          </section>
+
+          <section class="card">
+            <div class="section-head"><div><p class="step">05</p><h2>Πρόγνωση & βιβλιογραφία</h2></div><button id="researchButton" class="button secondary" type="button">Έρευνα βιβλιογραφίας</button></div>
+            <div id="prognosisQuestions" class="question-list"></div>
+            <div id="researchResult" hidden>
+              <label class="field"><span>Βιβλιογραφική σύνθεση · επεξεργάσιμη</span><textarea id="researchText" rows="12"></textarea></label>
+              <div><h3>Πηγές</h3><ol id="citationList" class="citation-list"></ol></div>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="section-head"><div><p class="step">06</p><h2>Τελική έκθεση</h2></div></div>
+            <label class="field"><span>Προαιρετική δήλωση / statement</span><textarea id="declarationText" rows="4" placeholder="Μόνο αν θέλεις να συμπεριληφθεί συγκεκριμένο, ελεγμένο κείμενο δήλωσης."></textarea></label>
+            <div class="signature-row">
+              <div><strong>Υπογραφή</strong><p id="signatureStatus">Χειρόγραφη υπογραφή ή φόρτωση εικόνας μόνο για αυτή τη σελίδα.</p></div>
+              <div class="actions"><button id="signatureButton" class="button quiet" type="button">Εισαγωγή υπογραφής</button><button id="removeSignatureButton" class="text-button" type="button" hidden>Αφαίρεση</button></div>
+              <input id="signatureInput" type="file" accept="image/png,image/jpeg,.png,.jpg,.jpeg" hidden />
+            </div>
+            <label class="confirmation"><input id="clinicianConfirmed" type="checkbox" /><span>Έλεγξα το κείμενο, τις διαγνώσεις, την αιτιώδη συνάφεια, την πρόγνωση, τις μελλοντικές ανάγκες και τη βιβλιογραφία που θα συμπεριληφθούν.</span></label>
+            <div class="actions final-actions"><button id="previewButton" class="button secondary" type="button">Προεπισκόπηση PDF</button><button id="downloadButton" class="button primary" type="button">Λήψη τελικής έκθεσης</button></div>
+          </section>
+        </section>
+      </div>
+
+      <aside class="side-column">
+        <section class="card sticky">
+          <p class="step">Κατάσταση</p><h2>Case workspace</h2>
+          <dl class="summary-list"><div><dt>Ασθενής</dt><dd id="summaryPatient">—</dd></div><div><dt>Συμβάν</dt><dd id="summaryIncident">—</dd></div><div><dt>Πηγές</dt><dd id="summarySources">0</dd></div><div><dt>AI</dt><dd id="summaryAI">Αναμονή</dd></div><div><dt>Έρευνα</dt><dd id="summaryResearch">Δεν έγινε</dd></div></dl>
+          <div class="privacy-box"><strong>Session-only V1</strong><span>Δεν δημιουργείται patient/case database από αυτή τη λειτουργία. Refresh ή κλείσιμο χάνει το workspace.</span></div>
+          <div id="warningList" class="warning-list"></div>
+        </section>
+      </aside>
+    </section>
+
+    <div id="workingBox" class="working" hidden>Επεξεργασία ιατρικών πηγών…</div>
+  </main>
+  <script src="/static/clinic-utilities/medical-report/app.js" defer></script>
+</body>
+</html>
