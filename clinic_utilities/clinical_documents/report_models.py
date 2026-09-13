@@ -46,14 +46,14 @@ class ReportSourceV1(StrictModel):
     pages: list[SourcePageV1] = Field(default_factory=list)
 
 class SourceSummaryV1(StrictModel):
-    source_id: str
+    source_id: str = Field(min_length=1, max_length=80)
     proposed_source_type: SourceType = "other"
     document_date: date | None = None
-    date_text: str = ""
-    author: str = ""
-    specialty: str = ""
-    institution: str = ""
-    summary: str = ""
+    date_text: str = Field(default="", max_length=120)
+    author: str = Field(default="", max_length=200)
+    specialty: str = Field(default="", max_length=160)
+    institution: str = Field(default="", max_length=200)
+    summary: str = Field(default="", max_length=5000)
     warnings: list[str] = Field(default_factory=list)
 
 class EvidenceItemV1(StrictModel):
@@ -61,55 +61,71 @@ class EvidenceItemV1(StrictModel):
     source_id: str = Field(min_length=1, max_length=80)
     page_numbers: list[int] = Field(default_factory=list)
     event_date: date | None = None
-    date_text: str = ""
+    date_text: str = Field(default="", max_length=120)
     evidence_type: EvidenceType
     statement: str = Field(min_length=1, max_length=6000)
     certainty: Literal["documented", "probable", "possible", "uncertain"] = "documented"
-    conflict_key: str = ""
+    conflict_key: str = Field(default="", max_length=120)
     requires_clinician_review: bool = True
 
 class TimelineEventV1(StrictModel):
-    event_id: str
+    event_id: str = Field(min_length=1, max_length=100)
     event_date: date | None = None
-    date_text: str = ""
-    title: str
-    summary: str
+    date_text: str = Field(default="", max_length=120)
+    title: str = Field(min_length=1, max_length=300)
+    summary: str = Field(min_length=1, max_length=6000)
     source_ids: list[str] = Field(default_factory=list)
     evidence_ids: list[str] = Field(default_factory=list)
     conflict_flags: list[str] = Field(default_factory=list)
 
+class WorkAbsenceIntervalV1(StrictModel):
+    interval_id: str = Field(min_length=1, max_length=100)
+    leave_from: date
+    leave_to: date
+    source_ids: list[str] = Field(default_factory=list)
+    evidence_ids: list[str] = Field(default_factory=list)
+    note: str = Field(default="", max_length=1000)
+    requires_clinician_review: bool = True
+
+    @model_validator(mode="after")
+    def validate_interval(self):
+        if self.leave_to < self.leave_from:
+            raise ValueError("Work-absence interval ends before it starts")
+        return self
+
 class DiagnosisAnalysisV1(StrictModel):
-    diagnosis: str
+    diagnosis: str = Field(min_length=1, max_length=500)
     supporting_evidence_ids: list[str] = Field(default_factory=list)
-    pre_existing_discussion: str = ""
-    causation_draft: str = ""
+    pre_existing_discussion: str = Field(default="", max_length=5000)
+    causation_draft: str = Field(default="", max_length=6000)
     alternative_causes: list[str] = Field(default_factory=list)
-    uncertainty: str = ""
+    uncertainty: str = Field(default="", max_length=3000)
     requires_clinician_review: Literal[True] = True
 
 class ReportSectionDraftV1(StrictModel):
     section_id: SectionId
-    title: str
+    title: str = Field(min_length=1, max_length=160)
     draft_text: str = Field(default="", max_length=30000)
     supporting_evidence_ids: list[str] = Field(default_factory=list)
     requires_clinician_review: bool = True
 
 class PrognosisQuestionV1(StrictModel):
-    diagnosis_or_problem: str
-    question: str
-    rationale: str = ""
+    diagnosis_or_problem: str = Field(min_length=1, max_length=500)
+    question: str = Field(min_length=1, max_length=1000)
+    rationale: str = Field(default="", max_length=1500)
 
 class FutureNeedDraftV1(StrictModel):
-    problem: str
-    suggested_need: str
+    problem: str = Field(min_length=1, max_length=500)
+    suggested_need: str = Field(min_length=1, max_length=3000)
     basis_evidence_ids: list[str] = Field(default_factory=list)
-    uncertainty: str = ""
+    uncertainty: str = Field(default="", max_length=1500)
     requires_clinician_review: Literal[True] = True
 
 class MedicalReportAnalysisV1(StrictModel):
     source_summaries: list[SourceSummaryV1] = Field(default_factory=list)
     evidence_items: list[EvidenceItemV1] = Field(default_factory=list)
     timeline: list[TimelineEventV1] = Field(default_factory=list)
+    work_absence_intervals: list[WorkAbsenceIntervalV1] = Field(default_factory=list)
     diagnosis_analyses: list[DiagnosisAnalysisV1] = Field(default_factory=list)
     report_sections: list[ReportSectionDraftV1] = Field(default_factory=list)
     prognosis_questions: list[PrognosisQuestionV1] = Field(default_factory=list)
@@ -117,23 +133,23 @@ class MedicalReportAnalysisV1(StrictModel):
     warnings: list[str] = Field(default_factory=list)
 
 class ProviderUsageV1(StrictModel):
-    provider: str = "openai"
-    model: str = ""
-    input_tokens: int = 0
-    output_tokens: int = 0
-    total_tokens: int = 0
-    web_search_calls: int = 0
+    provider: str = Field(default="openai", max_length=80)
+    model: str = Field(default="", max_length=120)
+    input_tokens: int = Field(default=0, ge=0)
+    output_tokens: int = Field(default=0, ge=0)
+    total_tokens: int = Field(default=0, ge=0)
+    web_search_calls: int = Field(default=0, ge=0)
 
 class ResearchCitationV1(StrictModel):
-    title: str = ""
-    url: str
+    title: str = Field(default="", max_length=500)
+    url: str = Field(min_length=1, max_length=3000)
 
 class MedicalReportResearchRequestV1(StrictModel):
     case: MedicalReportCaseV1
     analysis: MedicalReportAnalysisV1
 
 class MedicalReportResearchResultV1(StrictModel):
-    research_text: str = ""
+    research_text: str = Field(default="", max_length=30000)
     citations: list[ResearchCitationV1] = Field(default_factory=list)
     queries: list[str] = Field(default_factory=list)
     usage: ProviderUsageV1
