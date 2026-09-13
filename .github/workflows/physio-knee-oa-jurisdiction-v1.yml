@@ -9,6 +9,11 @@ on:
       - 'clinic_utilities/physio_referral_product/**'
       - 'static/clinic-utilities/physio-referral/**'
       - 'commercial_products/physio_referral/jurisdictions/**'
+      - 'commercial_products/physio_referral/CURRENT.md'
+      - 'commercial_products/physio_referral/PRODUCT_CONTEXT_CURRENT.md'
+      - 'commercial_products/physio_referral/PRODUCT_PLAN.md'
+      - 'commercial_products/physio_referral/releases/KNEE_OA_V1_CURRENT.md'
+      - 'commercial_products/physio_referral/releases/KNEE_OA_V5_INTEGRATION_CANDIDATE.md'
       - 'test_physio_knee_oa_jurisdiction_overlay.py'
       - 'test_physio_knee_oa_cockpit_integration.py'
       - 'test_physio_knee_oa_cockpit_browser.py'
@@ -18,6 +23,7 @@ on:
       - '.github/workflows/physio-knee-oa-cockpit-integration.yml'
       - '.github/workflows/physio-knee-oa-prototype.yml'
       - '.github/workflows/physio-knee-oa-v4.yml'
+      - '.github/workflows/physio-knee-oa-v5.yml'
 
 permissions:
   contents: read
@@ -51,6 +57,11 @@ jobs:
           allowed_exact={
               'CURRENT_OPERATIONAL.md',
               'SLICE_PLAN_CURRENT.md',
+              'commercial_products/physio_referral/CURRENT.md',
+              'commercial_products/physio_referral/PRODUCT_CONTEXT_CURRENT.md',
+              'commercial_products/physio_referral/PRODUCT_PLAN.md',
+              'commercial_products/physio_referral/releases/KNEE_OA_V1_CURRENT.md',
+              'commercial_products/physio_referral/releases/KNEE_OA_V5_INTEGRATION_CANDIDATE.md',
               'test_physio_knee_oa_jurisdiction_overlay.py',
               'test_physio_knee_oa_cockpit_integration.py',
               'test_physio_knee_oa_cockpit_browser.py',
@@ -58,6 +69,7 @@ jobs:
               '.github/workflows/physio-knee-oa-cockpit-integration.yml',
               '.github/workflows/physio-knee-oa-prototype.yml',
               '.github/workflows/physio-knee-oa-v4.yml',
+              '.github/workflows/physio-knee-oa-v5.yml',
           }
           bad=[p for p in paths if p not in allowed_exact and not p.startswith(allowed_prefixes)]
           assert not bad,bad
