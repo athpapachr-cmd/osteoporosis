@@ -87,10 +87,26 @@ class JurisdictionOverlayTests(unittest.TestCase):
             resolved["evidence"]["manual_therapy"]["jurisdiction"]["local_direction"],
             "conditional_for",
         )
+        for item in ("therapeutic_exercise","progressive_strengthening","education_and_self_management"):
+            self.assertEqual(resolved["evidence"][item]["jurisdiction"]["relationship_to_core"],"agreement")
+            self.assertEqual(resolved["evidence"][item]["jurisdiction"]["display_policy"]["routine_visibility"],"context_cue_only")
+        taping=resolved["evidence"]["taping"]["jurisdiction"]
+        self.assertEqual(taping["local_direction"],"against_routine_use")
+        self.assertEqual(taping["relationship_to_core"],"agreement")
+        self.assertEqual(taping["display_policy"]["routine_visibility"],"context_cue_only")
 
         for item, view in before["evidence"].items():
             self.assertEqual(resolved["evidence"][item]["evidence_state"], view["evidence_state"])
             self.assertEqual(resolved["evidence"][item]["positions"], view["positions"])
+
+
+    def test_cyprus_source_locators_match_current_adaptation_sections(self):
+        profile=j.load_profile("CY_GESY")
+        rows={row["local_position_id"]:row for row in profile["positions"]}
+        self.assertEqual(rows["CY_GESY_OA_EXERCISE"]["source_provenance"]["recommendation_page_or_section"],"1.3.1, p6")
+        self.assertEqual(rows["CY_GESY_OA_WALKING_AIDS"]["relationship_to_source_guideline"]["source_recommendation_id"],"1.3.12")
+        self.assertEqual(rows["CY_GESY_OA_ORTHOSIS_SUPPORTS"]["relationship_to_source_guideline"]["source_recommendation_id"],"1.3.13")
+        self.assertEqual(rows["CY_GESY_OA_TAPING"]["source_provenance"]["recommendation_page_or_section"],"1.3.13, p9")
 
     def test_admin_and_local_only_positions_never_become_clinical_evidence_items(self):
         profile = j.load_profile("CY_GESY")

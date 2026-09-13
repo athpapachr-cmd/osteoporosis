@@ -1,6 +1,8 @@
 .v51-clinical-wrap{min-width:0;display:flex;flex-direction:column;gap:4px;align-items:stretch}
 .v51-clinical-wrap .clinical-card-v4{width:100%}
-.v51-second-tap-hint{font-size:.74rem;line-height:1.25;color:var(--muted,#667085);text-align:center;padding:0 4px 2px}
+.v51-second-tap-hint{align-self:center;border:1px solid color-mix(in srgb,currentColor 12%,transparent);border-radius:999px;background:color-mix(in srgb,currentColor 5%,transparent);font:inherit;font-size:.72rem;font-weight:650;line-height:1.2;color:var(--muted,#667085);padding:4px 9px;cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.45)}
+.v51-second-tap-hint:hover{background:color-mix(in srgb,currentColor 8%,transparent)}
+.v51-second-tap-hint:focus-visible{outline:2px solid currentColor;outline-offset:2px}
 .v51-second-tap-hint[hidden]{display:none!important}
 .v51-review-bubble{margin-top:8px;padding:9px 11px;border:1px solid color-mix(in srgb,currentColor 24%,var(--border,#d8dde3));border-radius:12px;background:color-mix(in srgb,currentColor 4%,white);display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:.88rem}
 .v51-review-bubble[hidden]{display:none!important}
@@ -11,11 +13,17 @@
 .v51-source-shortcuts{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;margin:8px 0 12px;padding:8px 10px;border-radius:10px;background:color-mix(in srgb,currentColor 4%,white);font-size:.79rem}
 .v51-source-shortcuts-label{font-weight:700;color:var(--muted,#667085)}
 .v51-source-shortcut{white-space:nowrap}
+.v51-jurisdiction-cue{display:inline-flex;align-items:center;justify-content:center;min-height:22px;padding:2px 7px;border:1px solid color-mix(in srgb,currentColor 14%,transparent);border-radius:999px;background:color-mix(in srgb,currentColor 5%,transparent);font-size:.68rem;font-weight:700;line-height:1;white-space:nowrap;color:var(--muted,#667085)}
+.v51-exam-review-section{border-top:1px solid var(--border,#d8dde3);padding-top:14px}
+.v51-exam-review-content{display:flex;flex-direction:column;gap:8px}
+.v51-review-item{display:flex;flex-direction:column;gap:4px;padding:9px 10px;border:1px solid color-mix(in srgb,currentColor 16%,var(--border,#d8dde3));border-radius:12px;background:color-mix(in srgb,currentColor 4%,white);font-size:.84rem}
+.v51-review-item span{color:var(--muted,#667085);line-height:1.35}
+.v51-review-item a{align-self:flex-start}
 .v51-rom-details{display:flex;flex-direction:column;gap:10px;padding:10px 0 0 10px;border-inline-start:2px solid var(--border,#d8dde3)}
 .v51-rom-details[hidden]{display:none!important}
 .v51-mini-heading{margin:10px 0 6px;font-size:.82rem;font-weight:700;color:var(--muted,#667085)}
 @media(max-width:700px){
-  .v51-second-tap-hint{font-size:.7rem}
+  .v51-second-tap-hint{font-size:.69rem;padding:4px 8px}
   .v51-review-bubble{align-items:flex-start;flex-direction:column}
   .v51-source-link{margin-inline-start:6px}
   .v51-source-shortcuts{align-items:flex-start}

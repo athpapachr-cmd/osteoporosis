@@ -16,6 +16,7 @@ on:
       - 'osteoporosis-change-log.md'
       - 'test_physio_knee_oa_cockpit_browser.py'
       - 'test_physio_knee_oa_cockpit_integration.py'
+      - 'test_physio_knee_oa_jurisdiction_overlay.py'
       - '.github/workflows/physio-knee-oa-v5.yml'
       - '.github/workflows/physio-knee-oa-v4.yml'
       - '.github/workflows/physio-knee-oa-prototype.yml'
@@ -51,6 +52,7 @@ jobs:
           exact={
             'CURRENT_OPERATIONAL.md','SLICE_PLAN_CURRENT.md','osteoporosis-change-log.md',
             'test_physio_knee_oa_cockpit_browser.py','test_physio_knee_oa_cockpit_integration.py',
+            'test_physio_knee_oa_jurisdiction_overlay.py',
             '.github/workflows/physio-knee-oa-v5.yml',
             '.github/workflows/physio-knee-oa-v4.yml',
             '.github/workflows/physio-knee-oa-prototype.yml',
