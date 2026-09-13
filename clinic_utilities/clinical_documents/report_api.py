@@ -9,10 +9,11 @@ from pydantic import TypeAdapter, ValidationError
 from clinic_utilities.physio_referral_runtime import _repo_root, _require_clinical_key
 
 from .models import ClinicianProfile
-from .report_ai import OpenAIReportProvider, provider_status, require_provider
+from .report_ai import OpenAIReportProvider, combine_usage, provider_status, require_provider
 from .report_models import (
     FinalMedicalReportV1,
     MedicalReportCaseV1,
+    MedicalReportRefinementRequestV1,
     MedicalReportResearchRequestV1,
     SourceType,
 )
@@ -22,11 +23,15 @@ from .report_sources import (
     MAX_REPORT_FILES,
     MAX_REPORT_FILE_BYTES,
     MAX_REPORT_TOTAL_BYTES,
+    MAX_VISUAL_PDF_PAGES,
+    apply_deterministic_sick_leave_facts,
     build_clinician_context_source,
     deterministic_warnings,
     enforce_source_totals,
     extract_source_bytes,
+    filter_contextual_warnings,
     validate_analysis_references,
+    validate_refinement_integrity,
 )
 from .sick_leave import MAX_SIGNATURE_BYTES, content_disposition, validate_signature_image
 
@@ -48,6 +53,11 @@ _SOURCE_TYPES = [
     "physiotherapy_report",
     "prior_medical_report",
     "sick_leave_certificate",
+    "prescription",
+    "imaging_referral",
+    "specialist_referral",
+    "lab_or_service_referral",
+    "heidi_transcript",
     "other",
 ]
 _SOURCE_TYPES_ADAPTER = TypeAdapter(list[SourceType])
@@ -113,7 +123,7 @@ def _provider_error(exc: RuntimeError) -> HTTPException:
 def build_medical_report_router() -> APIRouter:
     router = APIRouter(
         prefix="/clinical/clinic-utilities/medical-report",
-        tags=["clinical-documents-medical-report-v1"],
+        tags=["clinical-documents-medical-report-v1-1"],
         dependencies=[Depends(_require_clinical_key)],
     )
     page_path = _repo_root() / "static" / "clinic-utilities" / "medical-report" / "index.html"
@@ -128,7 +138,7 @@ def build_medical_report_router() -> APIRouter:
     def report_contract():
         status = provider_status()
         return {
-            "version": "medical_report_v1",
+            "version": "medical_report_v1_1",
             "report_types": ["accident_medical_report", "medico_legal_expert_report"],
             "source_types": _SOURCE_TYPES,
             "accepted_extensions": [".pdf", ".txt", ".md", ".docx"],
@@ -137,6 +147,7 @@ def build_medical_report_router() -> APIRouter:
                 "max_file_bytes": MAX_REPORT_FILE_BYTES,
                 "max_total_bytes": MAX_REPORT_TOTAL_BYTES,
                 "max_extracted_chars": MAX_EXTRACTED_CHARS,
+                "max_visual_pdf_pages": MAX_VISUAL_PDF_PAGES,
                 "max_case_json_bytes": MAX_CASE_JSON_BYTES,
                 "max_final_json_bytes": MAX_FINAL_JSON_BYTES,
                 "max_signature_bytes": MAX_SIGNATURE_BYTES,
@@ -147,6 +158,7 @@ def build_medical_report_router() -> APIRouter:
                 "autosave": False,
                 "source_files_persisted": False,
                 "signature_persisted": False,
+                "refinement_thread_persisted": False,
             },
             "ai": status,
             "clinician_configured": _contract_clinician_configured(),
@@ -162,8 +174,9 @@ def build_medical_report_router() -> APIRouter:
         if len(files) > MAX_REPORT_FILES:
             raise HTTPException(status_code=413, detail=f"Επιτρέπονται έως {MAX_REPORT_FILES} αρχεία")
         source_types = _parse_source_types(file_source_types_json, len(files))
-
+        provider = _report_provider()
         sources = []
+        visual_usage = []
         context_source = build_clinician_context_source(case.clinician_context)
         if context_source is not None:
             sources.append(context_source)
@@ -176,23 +189,37 @@ def build_medical_report_router() -> APIRouter:
             total_bytes += len(content)
             if total_bytes > MAX_REPORT_TOTAL_BYTES:
                 raise HTTPException(status_code=413, detail="Τα αρχεία υπερβαίνουν συνολικά τα 40 MiB")
+            source_type = source_types[index - 1]
             try:
-                source = extract_source_bytes(content, f"src-upload-{index:03d}", upload.filename or f"source-{index}")
-                source.source_type = source_types[index - 1]
+                source = extract_source_bytes(
+                    content,
+                    f"src-upload-{index:03d}",
+                    upload.filename or f"source-{index}",
+                    source_type=source_type,
+                )
             except ValueError as exc:
                 raise HTTPException(status_code=422, detail=f"{upload.filename or index}: {exc}") from exc
+
+            if source.status == "no_extractable_text" and (upload.filename or "").lower().endswith(".pdf"):
+                try:
+                    source, usage = provider.visual_extract_pdf(content, source)
+                    visual_usage.append(usage)
+                except (RuntimeError, ValueError) as exc:
+                    source.structured_notes.append(f"VISUAL_EXTRACTION_FAILED|{str(exc)[:300]}")
             sources.append(source)
 
         try:
             enforce_source_totals(sources)
         except ValueError as exc:
             raise HTTPException(status_code=413, detail=str(exc)) from exc
-        if not any(source.status == "extracted" for source in sources):
-            raise HTTPException(status_code=422, detail="Δεν υπάρχει εξαγώγιμο κείμενο για δημιουργία έκθεσης")
+        if not any(source.status in {"extracted", "visual_extracted"} for source in sources):
+            raise HTTPException(status_code=422, detail="Δεν υπάρχει αξιοποιήσιμο κείμενο για δημιουργία έκθεσης")
 
         try:
             require_provider(for_identifiable_records=True)
-            analysis, usage = _report_provider().analyze(case, sources)
+            analysis, usage = provider.analyze(case, sources)
+            apply_deterministic_sick_leave_facts(analysis, sources)
+            filter_contextual_warnings(case, analysis)
             validate_analysis_references(analysis, sources)
         except RuntimeError as exc:
             raise _provider_error(exc) from exc
@@ -205,8 +232,11 @@ def build_medical_report_router() -> APIRouter:
                 "filename": source.filename,
                 "source_type": source.source_type,
                 "status": source.status,
+                "extraction_method": source.extraction_method,
+                "review_required": source.review_required,
                 "page_count": source.page_count,
                 "character_count": source.character_count,
+                "structured_notes": source.structured_notes,
             }
             for source in sources
         ]
@@ -215,8 +245,26 @@ def build_medical_report_router() -> APIRouter:
             "sources": manifests,
             "analysis": analysis.model_dump(mode="json"),
             "deterministic_warnings": deterministic_warnings(analysis, sources),
-            "usage": usage.model_dump(mode="json"),
+            "usage": combine_usage(usage, visual_usage).model_dump(mode="json"),
         }
+
+    @router.post("/api/refine")
+    def refine_report(request: MedicalReportRefinementRequestV1 = Body(...)):
+        try:
+            require_provider(for_identifiable_records=True)
+            result = _report_provider().refine(request.case, request.analysis, request.clinician_message)
+            existing_ids = {item.resolution_id for item in result.updated_analysis.clinician_resolutions}
+            for resolution in result.proposed_resolutions:
+                if resolution.resolution_id not in existing_ids:
+                    result.updated_analysis.clinician_resolutions.append(resolution)
+                    existing_ids.add(resolution.resolution_id)
+            filter_contextual_warnings(request.case, result.updated_analysis)
+            validate_refinement_integrity(request.analysis, result.updated_analysis)
+        except RuntimeError as exc:
+            raise _provider_error(exc) from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=502, detail=f"Η διευκρίνιση επέστρεψε μη έγκυρη αλλαγή: {exc}") from exc
+        return result.model_dump(mode="json")
 
     @router.post("/api/research")
     def research_report(request: MedicalReportResearchRequestV1 = Body(...)):

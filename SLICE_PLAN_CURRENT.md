@@ -1,191 +1,110 @@
-# SLICE_PLAN_CURRENT.md — Physiotherapy Referral Knee-OA V5 release
+# SLICE_PLAN_CURRENT.md — Clinical Documents Medical Report V1.1
 
-> **STATUS:** RELEASE COMPLETE / AUTHENTICATED PRODUCTION SMOKE PASS / SLICE CLOSED.
+> **STATUS:** IMPLEMENTED / EXACT-HEAD TESTED — RELEASE HOLD.
 > **Activated:** 2026-09-13 Asia/Nicosia.
-> **Closed:** 2026-09-13 Asia/Nicosia.
-> **Slice:** `CU-PHYSIO-KNEE-OA-V5-RELEASE-2026-09-13`.
-> **Release PR:** `#101`.
-> **Release runtime SHA:** `8cfb22fd2478e7832b9b8642f7ae5241d7e1a267`.
-> **Render deploy:** `dep-daj2398u01pc738ojvkg` — LIVE at exact runtime SHA.
-> **Authenticated V5 smoke:** `34737943402` — SUCCESS.
-> **Temporary smoke PR:** `#103` — CLOSED UNMERGED.
-> **Writer:** none.
-> **Diagnosis vertical:** Knee Osteoarthritis only.
+> **Slice:** `CU-CLINICAL-DOCUMENTS-V1-1-SOURCE-RESOLUTION-2026-09-13`.
+> **Bootstrap main:** `53ea38318d99e81218e5402e3c206ba30c51a8a9`.
+> **Branch:** `fix/clinical-documents-v1-1-source-resolution-r2-2026-09-13`.
+> **Exact tested runtime head:** `4c30867e8aea00842772b6df7d624a79bbf3f19e`.
+> **Focused gate:** `34740684612` — SUCCESS.
+> **Writer:** none — implementation candidate frozen in release HOLD.
 
-## 1. Objective — complete
+## Objective — achieved at implementation level
 
-Release the accepted fresh-main V5 integration while preserving the current Knee-OA / CU-1 / `CY_GESY` architecture and verify the protected production behavior.
+Refine Medical Report V1 from real-use feedback while preserving clinician authority, source provenance and the no-persistent-case boundary.
 
-Completed sequence:
+## Implemented V1.1 scope
 
-```text
-exact tested V5 PR head
-→ squash merge with expected-head guard
-→ Render auto-deploy
-→ authenticated live smoke
-→ docs-only canonical closeout
-```
+- removable uploaded source files;
+- source types `prescription`, `imaging_referral`, `specialist_referral`, `lab_or_service_referral`, `heidi_transcript`;
+- explicit semantics that referral is not completed care, prescription is not medication taken and pending is not a result;
+- bounded controlled visual AI reading for image-only PDFs, explicitly review-required;
+- structured sick-leave start/end extraction from compatible metadata or explicit text, including after visual extraction;
+- provenance-bearing work-absence interval creation;
+- separate `ClinicianResolutionV1` objects without source mutation;
+- protected session-only AI refinement/discussion after the initial draft;
+- explicit Apply / Discard of proposed refinement;
+- refinement integrity guard preventing Evidence Ledger/source-summary rewriting;
+- invalidation of stale literature after an applied refinement;
+- context-sensitive occupation warnings;
+- elapsed-time progress for long AI operations;
+- synthetic-only V1.1 regression coverage.
 
-## 2. Released interaction contract
-
-### Pain / Stiffness / Weakness
-
-```text
-first inactive tap
-→ generic symptom selected
-→ no forced detail sheet
-
-second tap while selected
-→ optional focused refinement sheet
-```
-
-### Function
-
-`Λειτουργικότητα` remains a first-tap chooser.
-
-### Weakness / quadriceps atrophy
-
-Second-tap `Αδυναμία` contains only:
+## Core invariants
 
 ```text
-Μυϊκή αδυναμία στην εξέταση
-Αδυναμία τετρακεφάλου στην εξέταση
+ORIGINAL SOURCE != CLINICIAN RESOLUTION
+REFERRAL != COMPLETED EXAMINATION / CONSULTATION
+PRESCRIPTION != MEDICATION TAKEN / ADMINISTERED
+REQUESTED / PENDING != RESULT AVAILABLE
+VISUAL AI EXTRACTION != DETERMINISTIC TEXT EXTRACTION
+AI DRAFT != FINAL CLINICIAN OPINION
 ```
 
-`Ατροφία τετρακεφάλου` is absent from that sheet and remains available through:
+An erroneous external note remains unchanged. The clinician's resolution is a separate current-workspace object that may guide downstream chronology and report wording.
+
+## Image-only PDF contract
+
+A PDF without usable text may be rendered locally to page images and passed through the existing gated AI provider, up to 12 pages. Successful output is marked:
 
 ```text
-Περισσότερα → Εξέταση → Ατροφία τετρακεφάλου
+status = visual_extracted
+extraction_method = visual_ai
+review_required = true
 ```
 
-Weakness count reflects weakness-detail state only and does not count separately selected atrophy.
+Page provenance is retained. Failure falls back to the original unreadable-source state rather than fabricated text.
 
-## 3. Semantic/copy contract
+## Sick-leave contract
 
-The released V5 contract preserves:
+For `sick_leave_certificate`:
 
-- generic weakness as symptom/context rather than objective finding;
-- explicit examination authority for objective/quadriceps weakness;
-- quadriceps atrophy as an objective examination finding;
-- qualifier-owned pain location without redundant legacy tails;
-- no visible bare `Περιαρθρικά`;
-- paragraph separation between clinical picture/function and physiotherapy assessment/priorities in richer referrals;
-- connected functional-goal prose instead of `Επιπλέον στόχος:`;
-- compact low-information output;
-- no invented physiotherapy dose/frequency/protocol.
+1. compatible embedded application metadata is preferred when available;
+2. otherwise explicit text `from/to` dates are parsed deterministically;
+3. image-only certificates may gain explicit dates after the controlled visual-reading step;
+4. the resulting interval remains review-required and source-linked.
 
-## 4. Jurisdiction contract
+The general AI receives these structured source notes, so it is no longer solely responsible for rediscovering leave dates.
 
-Released architecture:
+## Refinement contract
 
-```text
-international evidence core
-+
-JurisdictionOverlayV1
-+
-explicit CY_GESY production profile
-+
-V5 presentation/prose layer
-```
+The clinician may send a session-only clarification/question after the first analysis. The AI may propose resolutions and revise downstream timeline/report prose, but source summaries and original evidence items must remain byte-for-byte structurally unchanged under server validation.
 
-Hard requirements verified:
+The browser applies a proposed refinement only after an explicit clinician action. Any prior research is marked stale and excluded until research is rerun.
 
-```text
-international evidence state unchanged
-CY_GESY local context remains separate
-jurisdiction never auto-selects treatment
-jurisdiction never rewrites referral prose
-GeSY admin/reimbursement never becomes clinical evidence
-planned != active
-```
+## Privacy / persistence
 
-## 5. Pre-release gates — satisfied
+Unchanged:
 
-Exact reviewed PR head:
+- no Medical Report patient/case database;
+- no localStorage/sessionStorage/indexedDB PHI state;
+- no autosave;
+- request-scoped source processing;
+- session-only refinement discussion;
+- existing protected clinical auth and AI/PHI gates;
+- no real patient files in repository tests/fixtures.
 
-`4e4bd2ae40c606562a982b3e38f9f859b49986eb`
+## Acceptance evidence
 
-Successful gates:
+Exact runtime head `4c30867e8aea00842772b6df7d624a79bbf3f19e`, workflow `34740684612` SUCCESS, covering:
 
-- V5 integration `34736919952`;
-- CY_GESY jurisdiction `34736920005`;
-- clinical-sheet v4 `34736920059`;
-- prototype `34736919984`;
-- protected Cockpit integration `34736920081`;
-- evidence design `34736919959`;
-- CU-1 focused `34736919945`.
+- Python + all Medical Report JavaScript syntax;
+- OpenAI SDK contract guard;
+- inherited Medical Report V1 tests;
+- new source-class semantics;
+- deterministic sick-leave parsing;
+- image-only PDF visual-source semantics;
+- actual synthetic PDF page rendering to JPEG data URLs;
+- fake-provider visual API flow;
+- clinician-resolution and immutable-evidence refinement checks;
+- contextual occupation warnings;
+- V1.1 browser extension order/static privacy checks;
+- inherited Sick Leave V1 and Clinic Utilities navigation regressions.
 
-All completed `SUCCESS`.
+## Owners / exclusions
 
-Final V5 artifact: `10311660626`, digest `sha256:003311ab6d45297211d9c5e24bfb26768d26d6c435c9b9069e7fff5acf140277`.
+Only Clinical Documents runtime/UI/tests/workflow owners were changed. No Physio, RF, Clinical Learning or Osteoporosis clinical-rule owner was modified. No patient persistence, billing, tax/VAT, compensation calculation or autonomous final opinion was added.
 
-Clinical Learning red checks were adjacent-owner scope-only after substantive tests/frozen-owner guards passed.
+## Release boundary
 
-## 6. Merge / deploy — satisfied
-
-PR #101 was squash-merged to:
-
-`8cfb22fd2478e7832b9b8642f7ae5241d7e1a267`
-
-Render deploy:
-
-`dep-daj2398u01pc738ojvkg`
-
-reached `live` at that exact runtime commit. No manual duplicate deploy was triggered.
-
-## 7. Authenticated production smoke — satisfied
-
-The first branch-push smoke was queued without a runner, so the identical smoke was executed via a temporary same-repository draft PR trigger rather than weakening authentication or exposing secrets.
-
-Temporary PR:
-
-`#103` — closed unmerged after verification.
-
-Executed smoke:
-
-`34737943402` — **SUCCESS**
-
-Job:
-
-`103672560340` — **SUCCESS**
-
-Verified live production behavior:
-
-1. unauthenticated bootstrap rejected;
-2. authenticated bootstrap/project operational;
-3. production profile `CY_GESY` via `explicit_account_configuration`;
-4. international acupuncture/manual-therapy evidence states unchanged while local Cyprus directions remain separate;
-5. local-only electrotherapy absent from international clinical evidence items;
-6. default rehab selections unchanged;
-7. no Cyprus/GeSY evidence leakage into referral prose;
-8. live weakness clinical-sheet asset exposes only the two approved weakness exam options and no quadriceps atrophy option;
-9. live More/Exam asset retains quadriceps atrophy;
-10. no `localStorage` / `sessionStorage` persistence marker in the tested live V5 assets;
-11. only generated UUID + non-identifiable state sent; protected key masked throughout logs.
-
-## 8. Explicit exclusions
-
-No:
-
-- second diagnosis;
-- new treatment selector;
-- evidence-state reclassification;
-- new country selector;
-- local-rule automation;
-- patient persistence;
-- analytics/billing/entitlements;
-- Greece/England localization;
-- Medical Report runtime/config mutation.
-
-## 9. Exit gate — PASS
-
-```text
-MERGED                    YES
-DEPLOYED                  YES
-AUTHENTICATED SMOKE       PASS
-PRODUCTION-SMOKE-VERIFIED YES
-CANONICAL CLOSEOUT        READY TO MERGE
-WRITER                     NONE
-```
-
-The release slice is closed after the docs-only closeout merge. Any next product work requires a new bounded decision.
+Implementation exit is satisfied. The candidate is **not merged or deployed**. A fresh-main release review/PR and Render auto-deploy require separate explicit Product Owner release authority.
