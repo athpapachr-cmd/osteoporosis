@@ -6,4 +6,9 @@ def build_clinical_documents_router():
     return _build()
 
 
-__all__ = ["build_clinical_documents_router"]
+def build_medical_report_router():
+    from .report_api import build_medical_report_router as _build
+    return _build()
+
+
+__all__ = ["build_clinical_documents_router", "build_medical_report_router"]

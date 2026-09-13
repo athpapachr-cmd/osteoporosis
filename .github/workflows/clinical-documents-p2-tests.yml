@@ -1,0 +1,60 @@
+name: Clinical Documents P2 tests
+
+on:
+  push:
+    paths:
+      - "clinic_utilities/clinical_documents/**"
+      - "static/clinic-utilities/medical-report/**"
+      - "static/clinic-utilities/sick-leave/**"
+      - "static/baseline-audit/g4-workspace-ergonomics.js"
+      - "main.py"
+      - "test_clinical_documents_medical_report.py"
+      - "test_clinical_documents_medical_report_consistency.py"
+      - "test_clinical_documents_medical_report_source_types.py"
+      - "test_clinical_documents_openai_sdk_contract.py"
+      - "test_clinical_documents_sick_leave.py"
+      - ".github/workflows/clinical-documents-p2-tests.yml"
+  pull_request:
+    paths:
+      - "clinic_utilities/clinical_documents/**"
+      - "static/clinic-utilities/medical-report/**"
+      - "static/clinic-utilities/sick-leave/**"
+      - "static/baseline-audit/g4-workspace-ergonomics.js"
+      - "main.py"
+      - "test_clinical_documents_medical_report.py"
+      - "test_clinical_documents_medical_report_consistency.py"
+      - "test_clinical_documents_medical_report_source_types.py"
+      - "test_clinical_documents_openai_sdk_contract.py"
+      - "test_clinical_documents_sick_leave.py"
+      - ".github/workflows/clinical-documents-p2-tests.yml"
+
+jobs:
+  medical-report-v1:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+      - name: Install system font dependency
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y fonts-dejavu-core
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt pytest
+      - name: Python syntax
+        run: python -m py_compile clinic_utilities/clinical_documents/*.py test_clinical_documents_medical_report.py test_clinical_documents_medical_report_consistency.py test_clinical_documents_medical_report_source_types.py test_clinical_documents_openai_sdk_contract.py test_clinical_documents_sick_leave.py
+      - name: JavaScript syntax
+        run: |
+          node --check static/clinic-utilities/medical-report/app.js
+          node --check static/clinic-utilities/sick-leave/app.js
+          node --check static/baseline-audit/g4-workspace-ergonomics.js
+      - name: OpenAI Responses SDK contract
+        run: pytest -q test_clinical_documents_openai_sdk_contract.py
+      - name: Medical Report V1 deterministic tests
+        run: pytest -q test_clinical_documents_medical_report.py test_clinical_documents_medical_report_consistency.py test_clinical_documents_medical_report_source_types.py
+      - name: Existing Sick Leave V1 regression
+        run: pytest -q test_clinical_documents_sick_leave.py
+      - name: Existing Clinic Utilities navigation regression
+        run: node test_g4_workspace_ergonomics.js
