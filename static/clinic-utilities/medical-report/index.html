@@ -57,10 +57,10 @@
           </label>
           <div class="upload-box">
             <input id="sourceFiles" type="file" multiple accept=".pdf,.txt,.md,.docx,application/pdf,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
-            <div><strong>Πρόσθεσε τα σχετικά έγγραφα</strong><p>ΓεΣΥ, δικές σου σημειώσεις, άλλοι ιατροί, MRI/CT/X-ray reports, εξιτήρια, επεμβάσεις, προηγούμενες εκθέσεις.</p></div>
+            <div><strong>Πρόσθεσε τα σχετικά έγγραφα</strong><p>ΓεΣΥ, σημειώσεις, γνωματεύσεις, MRI/CT/X-ray, συνταγές, παραπεμπτικά, εξιτήρια, αναρρωτικές και Heidi transcript.</p></div>
           </div>
           <ul id="fileList" class="file-list"></ul>
-          <p class="microcopy">V1: PDF με εξαγώγιμο κείμενο, TXT, MD, DOCX. Σκαναρισμένο PDF χωρίς κείμενο επισημαίνεται και δεν γίνεται OCR ή μαντεψιά.</p>
+          <p class="microcopy">V1.1: PDF/TXT/MD/DOCX. Αν PDF δεν έχει usable text layer, γίνεται ελεγχόμενη οπτική ανάγνωση AI και επισημαίνεται ρητά ότι απαιτεί ιατρικό έλεγχο.</p>
           <div class="actions"><button id="generateButton" class="button primary" type="button">Δημιουργία προσχεδίου</button></div>
         </section>
 
@@ -111,7 +111,7 @@
         <section class="card sticky">
           <p class="step">Κατάσταση</p><h2>Case workspace</h2>
           <dl class="summary-list"><div><dt>Ασθενής</dt><dd id="summaryPatient">—</dd></div><div><dt>Συμβάν</dt><dd id="summaryIncident">—</dd></div><div><dt>Πηγές</dt><dd id="summarySources">0</dd></div><div><dt>AI</dt><dd id="summaryAI">Αναμονή</dd></div><div><dt>Έρευνα</dt><dd id="summaryResearch">Δεν έγινε</dd></div></dl>
-          <div class="privacy-box"><strong>Session-only V1</strong><span>Δεν δημιουργείται patient/case database από αυτή τη λειτουργία. Refresh ή κλείσιμο χάνει το workspace.</span></div>
+          <div class="privacy-box"><strong>Session-only V1.1</strong><span>Δεν δημιουργείται patient/case database. Refresh ή κλείσιμο χάνει το workspace και τη συζήτηση διευκρινίσεων.</span></div>
           <div id="warningList" class="warning-list"></div>
         </section>
       </aside>
@@ -119,6 +119,8 @@
 
     <div id="workingBox" class="working" hidden>Επεξεργασία ιατρικών πηγών…</div>
   </main>
+  <script src="/static/clinic-utilities/medical-report/v1-1-sources.js" defer></script>
+  <script src="/static/clinic-utilities/medical-report/v1-1-refine.js" defer></script>
   <script src="/static/clinic-utilities/medical-report/app.js" defer></script>
 </body>
 </html>
