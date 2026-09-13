@@ -4,6 +4,11 @@ on:
   push:
     branches:
       - ops/physio-knee-oa-v5-live-smoke-2026-09-13
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/physio-knee-oa-v5-auth-live-smoke-temporary.yml'
 
 permissions:
   contents: read
