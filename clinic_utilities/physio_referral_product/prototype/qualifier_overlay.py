@@ -119,14 +119,10 @@ def clean_qualifiers(raw: Any, state: dict[str, Any]) -> dict[str, Any]:
     _check(type(ffd) is bool)
     q["fixed_flexion_deformity"] = ffd
     deg = raw.get("fixed_flexion_deformity_deg")
-    # If a degree is supplied, it must describe a real positive deficit. An
-    # unmeasured/unknown degree remains None rather than being invented as zero.
     _check(deg is None or (type(deg) is int and 1 <= deg <= 60))
     _check(deg is None or ffd)
     q["fixed_flexion_deformity_deg"] = deg
 
-    # A specific ROM detail implies that the progressive parent is active. An
-    # extension lag lives in canonical findings rather than the qualifier object.
     findings = set(state.get("findings") or [])
     q["rom_restriction_present"] = bool(
         rom_parent or active_flexion or passive_flexion or ffd or "extension_lag" in findings
@@ -147,15 +143,15 @@ def clean_qualifiers(raw: Any, state: dict[str, Any]) -> dict[str, Any]:
     phenotype = state.get("phenotype") or {}
     _check(not q["pain_locations"] or "pain" in findings)
     _check(not (q["stiffness_patterns"] or duration) or phenotype.get("stiffness_symptom") is True)
-    _check(not (weakness or atrophy or atrophy_location) or phenotype.get("weakness_symptom_or_context") is True)
+    # Objective atrophy is intentionally independent from the reported/generic
+    # weakness parent. Only directional weakness refinement requires that parent.
+    _check(not weakness or phenotype.get("weakness_symptom_or_context") is True)
     return q
 
 
 def state_with_mapped_findings(state: dict[str, Any]) -> dict[str, Any]:
     result = deepcopy(state)
     q = result.get("qualifiers") or empty_qualifiers()
-    # Preserve pre-existing canonical findings. Product-local detail only maps
-    # when an existing CU-1 finding is semantically compatible.
     findings = list(result.get("findings", []))
     if q.get("pain_locations"):
         findings = [v for v in findings if v not in {"joint_line_pain", "anterior_peripatellar_pain"}]
@@ -170,14 +166,8 @@ def state_with_mapped_findings(state: dict[str, Any]) -> dict[str, Any]:
         elif weakness_detail in {"objective", "knee_flexion_exam", "knee_extension_flexion_exam"}:
             findings.append("objective_weakness")
 
-    # Specific tenderness refines prose but retains the existing generic CU-1
-    # tenderness finding. No tenderness location creates a second diagnosis.
     if q.get("focal_tenderness_locations"):
         findings.append("tenderness")
-
-    # Flexion-specific ROM detail maps only to the matching generic active or
-    # passive ROM restriction. Extension lag remains its existing canonical
-    # finding; passive extension deficit remains the reviewed FFD qualifier.
     if q.get("active_flexion_restricted"):
         findings.append("active_rom_restricted")
     if q.get("passive_flexion_restricted"):
@@ -319,6 +309,15 @@ def _extra_exam_phrases(q: dict[str, Any], state: dict[str, Any]) -> list[str]:
         "posterior_instability_pcl": "οπίσθια αστάθεια / ΟΧΣ",
     }
     phrases.extend(stability_labels[v] for v in q.get("stability_findings") or [] if v in stability_labels)
+    # Atrophy is an objective examination finding independent from a reported
+    # weakness symptom. When no weakness phrase is available, render it here.
+    if q.get("visible_atrophy") and not q.get("weakness_detail"):
+        if q.get("atrophy_location") == "quadriceps":
+            phrases.append("εμφανής ατροφία τετρακεφάλου")
+        elif q.get("atrophy_location") == "peri_knee_general":
+            phrases.append("εμφανής περιαρθρική μυϊκή ατροφία")
+        else:
+            phrases.append("εμφανής μυϊκή ατροφία")
     return phrases
 
 
@@ -411,7 +410,7 @@ def apply_referral_overlay(text: str, state: dict[str, Any]) -> str:
                 break
 
     suffix = _atrophy_suffix(q)
-    if suffix:
+    if suffix and q.get("weakness_detail"):
         weakness_phrases = (
             weakness,
             "αδυναμία τετρακεφάλου",
