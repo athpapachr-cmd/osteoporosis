@@ -3,12 +3,11 @@
 > **ROLE:** durable product-context authority for the physiotherapy-referral product track.
 > **ROOT CANONICALS STILL GOVERN:** always bootstrap `AGENTS.md`, `TODO.md`, `CLINICAL_EXCELLENCE_PLAN.md`, `SLICE_PLAN_CURRENT.md`, `CURRENT_OPERATIONAL.md`, `osteoporosis-change-log.md` first.
 > **CURRENT ACTIVE DIAGNOSIS VERTICAL:** Knee Osteoarthritis only.
-> **CURRENT PRODUCT STATE:** Knee-OA V5 merged and deployed; `CY_GESY` overlay active; authenticated post-V5 live smoke queued / not yet executed.
-> **V5 RELEASE RUNTIME:** `8cfb22fd2478e7832b9b8642f7ae5241d7e1a267`.
-> **RENDER DEPLOY:** `dep-daj2398u01pc738ojvkg` — LIVE at exact V5 runtime SHA.
-> **PR:** `#101` — squash-merged.
-> **PR-HEAD V5 GATE:** `34736919952` — SUCCESS.
-> **AUTHENTICATED V5 LIVE SMOKE:** `34737351354` — QUEUED / NOT YET EXECUTED at this reconciliation.
+> **CURRENT PRODUCT STATE:** Knee-OA released; `CY_GESY` jurisdiction overlay released and production-smoke-verified; V5 fresh-main integration implemented/tested; Product Owner release HOLD.
+> **RELEASED JURISDICTION RUNTIME:** `e52a4851b504476c1e361575d08664c05467ff53`.
+> **AUTHENTICATED CY_GESY PRODUCTION SMOKE EVIDENCE:** `34703453615` — SUCCESS.
+> **CURRENT INTEGRATED V5 CANDIDATE:** `9a7f360745710deacb0ff82f03249723bdfe87d6`; gate `34736389860` — SUCCESS.
+> **ORIGINAL REVIEWED V5:** `a47357c602120d3678e8f2f23b99775e616c79e1`; gate `34693751545` — SUCCESS.
 > **CURRENT WRITER:** none.
 
 ---
@@ -19,7 +18,7 @@ Build a clinician-facing paid referral product that turns a few meaningful clini
 
 Initial commercial hypothesis remains approximately `€9.99/month` or similar low-friction pricing. This remains a hypothesis, not validated willingness-to-pay.
 
-The first and only active diagnosis vertical remains **Knee Osteoarthritis**.
+The first vertical remains **Knee Osteoarthritis**.
 
 Core product promise:
 
@@ -35,28 +34,59 @@ reviewed jurisdiction context where useful
 calm/simple surface above
 ```
 
-A second diagnosis is not automatically authorized.
+A second diagnosis is not automatically authorized. It requires a fresh bounded product decision.
 
 ---
 
-# 2. Product philosophy
+# 2. Product philosophy / interaction spirit
 
-The design principle is reduction, not superficial minimalism:
+The intended design philosophy is reduction, not superficial minimalism:
 
 > **Do not remove capability merely to look simple. Remove unnecessary decisions from the user until the moment they matter.**
 
-Operationally:
+Operational translation:
 
 ```text
-power underneath != all controls visible at once
-clinically possible != worth showing now
-more data != better handoff
-feature completeness != product quality
+power underneath
+!= all controls visible at once
+
+clinically possible
+!= worth showing now
+
+more data
+!= better handoff
+
+feature completeness
+!= product quality
 ```
 
-Preferred experience remains modern, calm, mobile-first, direct and deterministic, with progressive disclosure for detail/evidence and no routine Generate button.
+Preferred experience:
 
-Permanent utility rule:
+- modern, calm, native/iPhone-like visual language;
+- direct manipulation rather than long form completion;
+- few meaningful routine taps;
+- live deterministic referral updates;
+- no routine `Generate` button;
+- primary action `Αντιγραφή`;
+- `✎ Επεξεργασία` directly reachable;
+- progressive disclosure for detail/evidence;
+- one restrained interaction grammar rather than badge/checkbox proliferation;
+- mobile-first behavior with coherent desktop hierarchy.
+
+Anti-pattern:
+
+```text
+"this option might occasionally be useful"
+→ therefore keep it permanently visible
+```
+
+That logic is explicitly rejected.
+
+---
+
+# 3. Permanent clinical/product utility gate
+
+Permanent rule:
 
 ```text
 CLINICALLY INTERESTING
@@ -65,7 +95,17 @@ CLINICALLY INTERESTING
 != WORTH ADDING
 ```
 
-And:
+Before adding any field, qualifier, intervention, alert, evidence cue, output sentence, jurisdiction rule or reviewer suggestion, ask:
+
+1. What downstream management/safety/handoff/workflow decision does it change?
+2. Who consumes the information?
+3. Is the referring clinician expected to know/measure it accurately at referral time?
+4. Will the receiving professional simply repeat it anyway?
+5. Does the value justify another tap, visual element and maintenance burden?
+6. Is there evidence of utility or only plausible clinical logic?
+7. Can it remain progressive/on-demand instead of routine?
+
+Hard governance invariant:
 
 ```text
 PRODUCT OWNER REQUEST
@@ -77,11 +117,13 @@ EXTERNAL FEEDBACK
 != AUTOMATIC IMPLEMENTATION AUTHORITY
 ```
 
+The assistant/reviewer is expected to challenge, verify or defer ideas when appropriate rather than implement them mechanically.
+
 ---
 
-# 3. Core semantic invariants
+# 4. Core semantic invariants
 
-Never collapse:
+Never collapse these distinctions:
 
 ```text
 symptom != objective finding != diagnosis
@@ -97,22 +139,38 @@ clinical guidance != reimbursement/admin rule
 planned != active
 ```
 
+Examples:
+
+- pes-anserine pain/tenderness does not auto-diagnose pes-anserine bursitis;
+- generic weakness does not become objective weakness;
+- quadriceps weakness in output requires explicit examination semantics;
+- quadriceps atrophy remains an objective examination finding, not a weakness subtype;
+- morning stiffness >30 minutes is a review clue, not an alternate diagnosis or treatment selector;
+- FFD/passive extension deficit is distinct from subjective stiffness and active extension lag;
+- a suggestion may become visible but never becomes selected until the clinician explicitly adds it;
+- a Cyprus/GeSY local position never silently changes the international evidence state.
+
 Missing information must not be converted into a negative finding.
 
 ---
 
-# 4. Current Knee-OA V5 interaction
+# 5. Current Knee-OA clinical capture and V5 candidate interaction
 
-Routine surface:
+## Routine surface
 
 - explicit `Οστεοαρθρίτιδα γόνατος` clinician assertion;
-- laterality `Δεξί | Αριστερό | Άμφω`;
-- `Πόνος`;
-- `Δυσκαμψία`;
-- `Αδυναμία`;
-- `Λειτουργικότητα`.
+- laterality: `Δεξί | Αριστερό | Άμφω`;
+- core clinical picture:
+  - `Πόνος`
+  - `Δυσκαμψία`
+  - `Αδυναμία`
+  - `Λειτουργικότητα`
 
-V5 interaction:
+Diagnosis/laterality requirements and export readiness remain deterministic and fail closed.
+
+## V5 first-tap / second-tap interaction
+
+In the fresh-main integrated V5 candidate:
 
 ```text
 inactive Pain / Stiffness / Weakness first tap
@@ -123,53 +181,85 @@ second tap while selected
 → optional focused refinement
 ```
 
-`Λειτουργικότητα` remains a first-tap chooser.
+`Λειτουργικότητα` remains a first-tap chooser because an unqualified generic function state is not sufficiently meaningful.
 
-Weakness second-tap contains only:
+## Progressive qualifiers
+
+Pain detail may include medial/lateral joint line, anterior/peripatellar, pes-anserine, posterior or diffuse distribution. Focal locations may coexist; diffuse remains exclusive where defined by the contract.
+
+Stiffness may distinguish morning stiffness, post-immobility stiffness and the reviewed `≤30′` / `>30′` morning-duration context.
+
+Weakness semantics preserve patient/context weakness versus explicit examination findings.
+
+The V5 weakness second-tap contains only:
 
 ```text
 Μυϊκή αδυναμία στην εξέταση
 Αδυναμία τετρακεφάλου στην εξέταση
 ```
 
-`Ατροφία τετρακεφάλου` is deliberately not duplicated there. It remains an objective examination finding under:
+The Product Owner accepted removal of duplicated `Ατροφία τετρακεφάλου` from this sheet. Atrophy remains available under:
 
 ```text
 Περισσότερα → Εξέταση → Ατροφία τετρακεφάλου
 ```
 
-Weakness count represents weakness refinement only and does not count separately selected atrophy.
+The weakness badge/count represents weakness refinement only and does not count separately selected atrophy.
 
-Pain, stiffness and function qualifiers remain optional and bounded by their existing semantic contracts. Bare ambiguous `Περιαρθρικά` remains absent from the visible routine/advanced UI.
+## Advanced examination
+
+Advanced findings remain optional and only if actually examined/measured, including extension lag, effusion, passive extension deficit, focal tenderness and quadriceps atrophy.
+
+Do not promote routine FFD measurement merely because it is clinically possible.
+
+## Functional capture
+
+A dedicated mandatory physician-side structured baseline/main-activity field is still not required. Current functional categories/free text are sufficient unless later workflow evidence justifies another mandatory decision.
+
+External physiotherapist feedback is not required to allow current product progression.
 
 ---
 
-# 5. Referral semantics
+# 6. Referral semantics
 
-Referral output remains deterministic from clinician-selected state plus bounded product context. No LLM generates routine referral prose.
+The referral is deterministic from clinician-selected state plus bounded product context. No LLM generates routine clinical text.
 
 Principles:
 
 - low-information referral → proportionally short output;
 - richer explicit clinical state → richer output;
-- no invented dose/frequency/protocol;
+- treatment wording is framed as physiotherapy assessment plus indicative priorities, not physician-prescribed dose/technique/progression;
+- no invented repetitions/sets/frequency;
 - selected structured information is not silently discarded;
-- evidence/jurisdiction metadata does not leak into routine referral prose.
+- evidence/jurisdiction metadata never gets copied into referral prose merely because it exists.
 
-V5 copy refinements now deployed:
+V5 candidate copy refinements:
 
-- pain qualifier ownership removes redundant location tails;
-- richer referrals separate clinical picture/function from physiotherapy assessment/priorities with a paragraph boundary;
-- `Επιπλέον στόχος:` / `Επιπλέον στόχοι:` becomes connected human prose;
-- low-information output remains compact.
+- pain qualifier ownership removes redundant location prose such as pes-anserine + joint-line tails;
+- clinical picture / functional impact and physiotherapy assessment / priorities use a paragraph boundary;
+- `Επιπλέον στόχος:` / `Επιπλέον στόχοι:` is replaced by connected human prose;
+- low-information output remains compact and does not gain an artificial second paragraph.
 
-Manual editing remains clinician-owned and fail closed on stale reconciliation after later structured changes.
+Manual editing contract remains:
+
+```text
+structured referral
+→ clinician chooses ✎ Επεξεργασία
+→ clinician-owned manual buffer
+
+later structured change
+→ manual text preserved
+→ export becomes stale/blocked
+→ clinician explicitly chooses own text or regenerated text
+```
+
+No reverse parsing and no silent merge of manual prose into structured state.
 
 ---
 
-# 6. Evidence model
+# 7. Evidence model
 
-Six international evidence states remain unchanged:
+Six international evidence states remain:
 
 ```text
 recommended_or_supported
@@ -180,23 +270,26 @@ recommendation_against_routine_use
 not_yet_assessed
 ```
 
-V5 does not reclassify any evidence state or source position.
-
-Hard distinctions remain:
+Hard evidence distinctions:
 
 ```text
 insufficient != ineffective
 conflict != consensus
 source year != reviewed_on
 broad recommendation != narrow strong recommendation
-local policy != stronger international evidence
+missing context != negative context
+suggestion != selection
 ```
+
+Current international source set remains represented through the frozen evidence contract. Mixed guidance remains visible as disagreement rather than being averaged into false consensus.
+
+V5 does not reclassify any evidence state or source position.
 
 ---
 
-# 7. Jurisdiction strategy
+# 8. Jurisdiction strategy — released and preserved in V5 integration
 
-Production architecture remains:
+Architecture:
 
 ```text
 international clinical-evidence core
@@ -204,8 +297,6 @@ international clinical-evidence core
 JurisdictionOverlayV1
 +
 explicit production profile CY_GESY
-+
-V5 presentation/prose layer
 ```
 
 Production profile:
@@ -216,121 +307,165 @@ label: Κύπρος · ΓεΣΥ
 selection_source: explicit_account_configuration
 ```
 
-The overlay remains active and separate:
+The overlay is released and active in production.
 
-- international evidence state unchanged;
-- local agreement silent on routine surface;
-- relevant local difference progressively disclosed;
+Released/current behavior:
+
+- international evidence state remains unchanged;
+- local agreement remains silent on the routine surface;
+- relevant local difference may appear through restrained progressive disclosure;
 - local-only interventions do not automatically become product controls;
 - GeSY administrative/reimbursement/system-lifecycle rows remain separate from clinical evidence;
-- planned GeSY IT integration remains planned unless separately verified active;
+- planned GeSY IT integration is not treated as active by inference;
 - no patient-location/IP/browser inference chooses jurisdiction;
-- no Cyprus/GeSY wording is injected into routine referral prose by activation alone.
+- no Cyprus/GeSY wording is injected into routine referral prose merely because the overlay is active.
 
-Production activation remains `PHYSIO_REFERRAL_JURISDICTION_PROFILE=CY_GESY`.
+Production activation remains:
 
-Future `GR` / `UK_ENGLAND` content remains dormant until separately justified and authorized.
+`PHYSIO_REFERRAL_JURISDICTION_PROFILE=CY_GESY`
+
+Final V5 integration gate `34736389860` explicitly tested V5 and the current jurisdiction behavior together on exact head `9a7f3607...`.
+
+Future `GR` or `UK_ENGLAND` profiles remain dormant until separately justified and authorized.
 
 ---
 
-# 8. Safety / privacy boundaries
+# 9. Suggestions / More / progressive disclosure
 
-Current invariants remain:
+Suggestions remain deterministic, bounded and non-selecting until the clinician explicitly acts.
 
-- no patient/referral draft persistence in this product;
-- no clinical draft state in `localStorage` / `sessionStorage`;
-- no product analytics added by V5;
+The `Περισσότερα` philosophy remains scan-first progressive disclosure rather than a permanent chip/checkbox wall.
+
+Favorites/pins, contextual shortcuts and advanced categories are navigation conveniences, not clinical inference.
+
+Quadriceps atrophy now illustrates this rule directly: capability is preserved under `Περισσότερα → Εξέταση` without duplicating it inside the compact weakness refinement.
+
+Search remains intentionally absent unless future evidence proves the information architecture genuinely needs it.
+
+---
+
+# 10. Safety/privacy/product boundaries
+
+Current invariants:
+
+- no patient-draft persistence;
+- no analytics in this product slice;
 - no autonomous evidence updating;
-- production routes remain behind existing Clinical Excellence authentication;
-- unresolved/urgent safety can block export;
-- safety behavior cannot depend on browsing progressive detail;
-- authenticated smoke uses only generated UUID + non-identifiable state and never prints protected keys.
+- production routes remain behind the existing Clinical Excellence authentication boundary;
+- no clinical draft state in `localStorage`/`sessionStorage`;
+- inherited unresolved/urgent safety can block export;
+- safety-critical behavior cannot depend on browsing `Περισσότερα` or evidence detail;
+- authenticated release smokes use only generated UUID + non-identifiable state and never print protected keys.
+
+The V5 integrated candidate preserves these boundaries. Any future persistence, analytics, billing or entitlement work requires separate authority.
 
 ---
 
-# 9. Release evidence
+# 11. External feedback / receiver-validation policy
 
-The historical V5 candidate was tested before the released `CY_GESY` integration. Independent review therefore required a fresh-main integration patch.
+Formal physiotherapist/receiver evaluation is **not needed now** and is **not a blocking gate** for V5.
 
-The final reviewed PR head was:
-
-`4e4bd2ae40c606562a982b3e38f9f859b49986eb`
-
-Successful exact-head gates:
+The Product Owner may ask clinician colleagues later, at a time of their choosing.
 
 ```text
-V5 integration                  34736919952
-CY_GESY jurisdiction            34736920005
-clinical-sheet v4               34736920059
-prototype                       34736919984
-protected Cockpit integration   34736920081
-evidence design                 34736919959
-CU-1 focused                    34736919945
+physiotherapist / receiver feedback
+= optional later external evidence
+!= current release gate
+!= mandatory next action
+!= automatic implementation authority
 ```
 
-All were `SUCCESS`.
+This is a sequencing decision, not a claim that receiver utility has been scientifically proven.
 
-Final artifact `10311660626`, digest `sha256:003311ab6d45297211d9c5e24bfb26768d26d6c435c9b9069e7fff5acf140277`.
-
-Clinical Learning red checks were adjacent-owner scope-only after substantive tests/frozen-owner guards passed.
-
-PR #101 was squash-merged to:
-
-`8cfb22fd2478e7832b9b8642f7ae5241d7e1a267`
-
-Render auto-deploy `dep-daj2398u01pc738ojvkg` reached `live` at that exact commit. Startup logs confirm application startup complete and configured clinical authentication.
+Do not describe the product as receiver-validated unless actual external evidence is later collected and recorded.
 
 ---
 
-# 10. Authenticated post-V5 verification
+# 12. Review architecture
 
-Temporary non-merged ops branch:
+For major product changes, useful review lenses remain:
 
-`ops/physio-knee-oa-v5-live-smoke-2026-09-13`
+1. Clinical / Evidence
+2. Receiving-professional / workflow utility
+3. UX / Product
+4. Commercial / Product-Market
 
-Workflow commit:
+These are review lenses, not mandatory bureaucratic gates for every small bounded refinement.
 
-`b46c948c38181336d23f90899cdd331dffe09f4c`
-
-Authenticated V5 run:
-
-`34737351354`
-
-It is designed to verify protected bootstrap/project operation, active `CY_GESY`, unchanged international evidence states/default selections/referral semantics, V5 live static-asset routing for quadriceps atrophy and no-browser-storage markers.
-
-At this reconciliation the run is queued awaiting a GitHub runner. A rerun of the previously successful authenticated jurisdiction smoke is also queued. Thus no application smoke failure has been observed, but V5 must not yet be called `PRODUCTION-SMOKE-VERIFIED`.
-
----
-
-# 11. External feedback policy
-
-Formal physiotherapist/receiver evaluation is optional later external evidence, not a blocking release gate.
-
-Do not describe receiver utility as proven unless actual external evidence is collected.
-
----
-
-# 12. Validation truth
+Independent V5 review concluded:
 
 ```text
-Knee-OA V5 merged                         yes
-V5 deployed                               yes
-exact V5 runtime on Render                verified
-CY_GESY active                            yes
-post-V5 authenticated production smoke    pending execution
-real clinical pilot                       not proven
-paid conversion / willingness-to-pay      not proven
-formal receiver validation                not proven / deferred
-actual iPhone Safari / VoiceOver           not proven unless separately recorded
-second diagnosis                          not authorized
-Greece/England market need                not proven
+ACCEPT WITH REQUIRED CHANGES
+PATCH V5 THEN MERGE
+```
+
+The required change was fresh-main integration, not clinical redesign. That blocker is resolved at the candidate/test level on `9a7f3607...`.
+
+Technical PASS never proves product value, but lack of optional receiver feedback does not prohibit a Product Owner-authorized bounded release.
+
+---
+
+# 13. V5 candidate — current state
+
+Historical reviewed/tested candidate:
+
+```text
+head    a47357c602120d3678e8f2f23b99775e616c79e1
+gate    34693751545 — SUCCESS
+```
+
+Fresh-main integrated candidate:
+
+```text
+branch  feat/physio-knee-oa-v5-integration-2026-09-13
+base    8aeb91ae37b83caaa188054128db98e04b638fd8
+head    9a7f360745710deacb0ff82f03249723bdfe87d6
+gate    34736389860 — SUCCESS
+artifact 10311108002
+```
+
+The integration preserved `CY_GESY`, shared protected Cockpit semantics, evidence/safety/default-selection boundaries and no-persistence behavior.
+
+The candidate is implemented/tested but **not merged/deployed**.
+
+Current next bounded action:
+
+```text
+OPEN / REVIEW INTEGRATION PR UNDER RELEASE HOLD
+```
+
+If explicit release authority is later given:
+
+```text
+merge
+→ Render deploy
+→ authenticated V5 production smoke
+→ Product Owner real-device/use acceptance
+→ canonical release closeout
 ```
 
 ---
 
-# 13. What not to do next by default
+# 14. Validation truth still unproven
 
-Do not infer authority for:
+Do not overclaim:
+
+```text
+V5 live production behavior                  not proven until deploy/smoke
+real clinical pilot                          not proven
+paid conversion / willingness-to-pay         not proven
+retention                                    not proven
+formal external receiver validation          not proven and currently deferred
+actual iPhone Safari / VoiceOver              not proven unless separately recorded
+second-diagnosis usefulness                   not proven
+Greece/England market need                    not proven
+```
+
+---
+
+# 15. What not to do next by default
+
+Do not infer authorization for:
 
 ```text
 second diagnosis
@@ -346,36 +481,39 @@ billing/auth expansion
 patient persistence
 ```
 
+Do not redesign after every isolated comment unless there is a real usability, safety, evidence-integrity or workflow reason.
+
 ---
 
-# 14. New-conversation bootstrap
+# 16. New-conversation bootstrap for this product
 
-A fresh conversation working on this product must:
+A fresh ChatGPT/Codex conversation that will work on this product must:
 
-1. fresh-fetch `main` and read the six root canonicals;
+1. fresh-fetch `main` and read all six root canonicals in required order;
 2. read this file completely;
-3. read `CURRENT.md`, `PRODUCT_PLAN.md`, `UX_CONTRACT_CURRENT.md` and current release records;
-4. inspect exact current branch/head before mutation;
+3. read `CURRENT.md`, `PRODUCT_PLAN.md` and `UX_CONTRACT_CURRENT.md`;
+4. inspect the exact current branch/head before mutation;
 5. respect the one-writer lock;
-6. distinguish `DESIGNED / IMPLEMENTED / TESTED / MERGED / DEPLOYED / PRODUCTION-SMOKE-VERIFIED / PILOT-VALIDATED / COMMERCIALLY-VALIDATED`;
+6. distinguish `DESIGNED / IMPLEMENTED / TESTED / PR-REVIEWED / MERGED / DEPLOYED / PILOT-VALIDATED / COMMERCIALLY-VALIDATED`;
 7. never reconstruct product truth from chat memory alone.
 
-If this file conflicts with newer root canonicals, the newer root operational state wins and this file must be reconciled.
+If this context file conflicts with newer root canonicals, the newer root operational state wins and this file must be reconciled before further product mutation.
 
 ---
 
-# 15. Exact handoff state
+# 17. Exact handoff state
 
 ```text
-Knee-OA V5                           merged / deployed
-CY_GESY overlay                      active
-Render runtime                       8cfb22fd... / LIVE
-authenticated V5 smoke               queued / unverified
-formal receiver review               deferred; not a gate
-real clinical pilot                  not started
-commercial validation                not started
-second diagnosis                     not authorized
-active writer                        none
+Knee-OA production foundation          released
+CY_GESY overlay                         released / active / smoke-verified
+V5 fresh-main candidate                 integrated / exact-head tested / HOLD
+V5 merged                               no
+V5 deployed                             no
+formal receiver review                  deferred by Product Owner; not a gate
+real clinical pilot                     not started
+commercial validation                   not started
+second diagnosis                        not authorized
+active writer                           none
 ```
 
-**Exact next action: complete authenticated V5 production smoke, then finalize the canonical smoke closeout.**
+**Exact next action: open/review the fresh-main V5 integration PR while preserving Product Owner release HOLD.**
