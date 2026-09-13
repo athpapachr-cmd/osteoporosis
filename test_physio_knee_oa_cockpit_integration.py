@@ -53,8 +53,16 @@ class KneeOACockpitIntegrationTests(unittest.TestCase):
     def test_protected_page_is_knee_oa_live_product_not_legacy_generate_form(self):
         response = self.client.get("/clinical/clinic-utilities/physio-referral", headers=self.headers); self.assertEqual(response.status_code, 200)
         html = response.text
-        for marker in ["Οστεοαρθρίτιδα γόνατος",'id="advancedToggle"','id="referralText"',"product-more-v3.js","product-jurisdiction-v1.js","product-v5-1-exam.js","product-v5-1-exam.css"]:
+        for marker in [
+            "Οστεοαρθρίτιδα γόνατος",'id="advancedToggle"','id="referralText"',
+            "product-more-v3.js","product-clinical-sheet-v4.js","product-clinical-sheet-v4.css",
+            "product-jurisdiction-v1.js","product-v5-1-exam.js","product-v5-1-exam.css",
+        ]:
             self.assertIn(marker, html)
+        self.assertLess(html.index("product-more-v3.js"), html.index("product-clinical-sheet-v4.js"))
+        self.assertLess(html.index("product-clinical-sheet-v4.js"), html.index("product-jurisdiction-v1.js"))
+        self.assertLess(html.index("product-jurisdiction-v1.js"), html.index("product-v5-1-exam.js"))
+        self.assertLess(html.index("product-v5-1-exam.js"), html.index("production-finalize.js"))
         self.assertNotIn("Δημιουργία παραπεμπτικού", html); self.assertNotIn("ΔΟΚΙΜΑΣΤΙΚΟ ΚΕΙΜΕΝΟ", html)
 
     def test_product_api_is_protected_and_uses_reviewed_real_cu1_projection(self):
@@ -126,14 +134,20 @@ class KneeOACockpitIntegrationTests(unittest.TestCase):
         self.assertEqual(response.status_code, 400); self.assertEqual(response.json()["detail"], "invalid_or_stale_physio_product_request")
 
     def test_production_static_product_source_has_no_storage_or_demo_markup(self):
-        for path in ["product-app.js","product-qualifiers.js","product-more-v3.js","product-jurisdiction-v1.js","product-v5-1-exam.js","production-env.js","production-finalize.js"]:
+        for path in [
+            "product-app.js","product-qualifiers.js","product-more-v3.js","product-clinical-sheet-v4.js",
+            "product-jurisdiction-v1.js","product-v5-1-exam.js","production-env.js","production-finalize.js",
+        ]:
             response = self.client.get(f"/static/clinic-utilities/physio-referral/{path}"); self.assertEqual(response.status_code, 200, path)
             self.assertNotIn("localStorage", response.text, path); self.assertNotIn("sessionStorage", response.text, path)
         v51=self.client.get("/static/clinic-utilities/physio-referral/product-v5-1-exam.js").text
         for marker in ["knee_flexion_exam","data-v51-rom-parent","data-v51-crepitus","data-v51-stability","v51-source-link"]: self.assertIn(marker,v51)
         self.assertEqual(self.client.get("/static/clinic-utilities/physio-referral/product-v5-1-exam.css").status_code,200)
+        self.assertEqual(self.client.get("/static/clinic-utilities/physio-referral/product-clinical-sheet-v4.css").status_code,200)
         finalizer = self.client.get("/static/clinic-utilities/physio-referral/production-finalize.js").text
         self.assertIn("navigator.clipboard.writeText(effectiveText())", finalizer); self.assertNotIn("DEMO+effectiveText", finalizer)
+        self.assertNotIn("product-clinical-sheet-v4.js", finalizer)
+        self.assertNotIn("createElement('script')", finalizer)
         bridge = self.client.get("/static/clinic-utilities/physio-referral/production-env.js").text; self.assertIn("body.synthetic_only = false", bridge)
 
 
