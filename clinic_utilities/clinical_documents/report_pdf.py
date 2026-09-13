@@ -41,10 +41,17 @@ def medical_report_filename(report: FinalMedicalReportV1) -> str:
     return f"{prefix}_{_safe_component(report.case.patient_name)}_{report.case.report_date.strftime('%d-%m-%Y')}.pdf"
 
 
+def _word_chunks(word: str, width: int) -> list[str]:
+    if len(word) <= width:
+        return [word]
+    return [word[index:index + width] for index in range(0, len(word), width)]
+
+
 def _wrap(text: str, *, width: int = 94) -> list[str]:
     lines: list[str] = []
     for paragraph in str(text or "").replace("\r", "").split("\n"):
-        words = paragraph.split()
+        raw_words = paragraph.split()
+        words = [chunk for word in raw_words for chunk in _word_chunks(word, width)]
         if not words:
             lines.append("")
             continue
