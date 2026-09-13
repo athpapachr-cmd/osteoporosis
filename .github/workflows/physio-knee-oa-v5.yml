@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feat/physio-knee-oa-v5-integration-2026-09-13
+      - feat/physio-knee-oa-v5-1-exam-discoverability-2026-09-13
   pull_request:
     paths:
       - 'clinic_utilities/physio_referral_product/**'
@@ -13,6 +14,7 @@ on:
       - 'SLICE_PLAN_CURRENT.md'
       - 'osteoporosis-change-log.md'
       - 'test_physio_knee_oa_cockpit_browser.py'
+      - 'test_physio_knee_oa_cockpit_integration.py'
       - '.github/workflows/physio-knee-oa-v5.yml'
       - '.github/workflows/physio-knee-oa-v4.yml'
       - '.github/workflows/physio-knee-oa-prototype.yml'
@@ -29,7 +31,7 @@ concurrency:
 jobs:
   v5-integration:
     runs-on: ubuntu-latest
-    timeout-minutes: 22
+    timeout-minutes: 24
     steps:
       - uses: actions/checkout@v4
         with:
@@ -47,7 +49,7 @@ jobs:
           paths=subprocess.check_output(['git','diff','--name-only',base,'HEAD'],text=True).splitlines()
           exact={
             'CURRENT_OPERATIONAL.md','SLICE_PLAN_CURRENT.md','osteoporosis-change-log.md',
-            'test_physio_knee_oa_cockpit_browser.py',
+            'test_physio_knee_oa_cockpit_browser.py','test_physio_knee_oa_cockpit_integration.py',
             '.github/workflows/physio-knee-oa-v5.yml',
             '.github/workflows/physio-knee-oa-v4.yml',
             '.github/workflows/physio-knee-oa-prototype.yml',
@@ -62,7 +64,7 @@ jobs:
           bad=[p for p in paths if p not in exact and not p.startswith(prefixes)]
           assert not bad,bad
           assert not any('__pycache__' in p or p.endswith('.pyc') for p in paths),paths
-          print('Knee OA v5 integration bounded scope PASS:',len(paths),'files')
+          print('Knee OA v5/v5.1 bounded scope PASS:',len(paths),'files')
           PY
 
       - name: Install dependencies
@@ -76,7 +78,9 @@ jobs:
             clinic_utilities/physio_referral_product/knee_oa_presentation_v4.py \
             clinic_utilities/physio_referral_product/prototype/qualifier_overlay.py \
             clinic_utilities/physio_referral_product/prototype/test_v5_postuse.py \
+            clinic_utilities/physio_referral_product/prototype/test_v5_1_exam.py \
             clinic_utilities/physio_referral_product/prototype/test_browser_v5.py \
+            clinic_utilities/physio_referral_product/prototype/test_browser_v5_1.py \
             clinic_utilities/physio_referral_product/prototype/test_browser.py \
             clinic_utilities/physio_referral_product/prototype/test_browser_qualifiers.py \
             clinic_utilities/physio_referral_product/prototype/test_browser_more_v3.py \
@@ -86,13 +90,16 @@ jobs:
           node --check clinic_utilities/physio_referral_product/prototype/clinical_sheet_v4.js
           node --check clinic_utilities/physio_referral_product/prototype/more_v3.js
           node --check clinic_utilities/physio_referral_product/prototype/qualifiers.js
+          node --check clinic_utilities/physio_referral_product/prototype/v5_1_exam.js
           node --check static/clinic-utilities/physio-referral/product-clinical-sheet-v4.js
           node --check static/clinic-utilities/physio-referral/product-more-v3.js
           node --check static/clinic-utilities/physio-referral/product-qualifiers.js
+          node --check static/clinic-utilities/physio-referral/product-v5-1-exam.js
 
-      - name: V5 prose, server and jurisdiction regressions
+      - name: V5 and V5.1 prose, server and jurisdiction regressions
         run: |
           python clinic_utilities/physio_referral_product/prototype/test_v5_postuse.py
+          python clinic_utilities/physio_referral_product/prototype/test_v5_1_exam.py
           python clinic_utilities/physio_referral_product/prototype/test_server.py
           python clinic_utilities/physio_referral_product/prototype/test_qualifiers.py
           python -m unittest -v \
@@ -102,8 +109,9 @@ jobs:
       - name: Install Chromium
         run: python -m playwright install --with-deps chromium
 
-      - name: V5, inherited and CY_GESY browser acceptance
+      - name: V5.1, V5, inherited and CY_GESY browser acceptance
         run: |
+          python clinic_utilities/physio_referral_product/prototype/test_browser_v5_1.py
           python clinic_utilities/physio_referral_product/prototype/test_browser_v5.py
           python clinic_utilities/physio_referral_product/prototype/test_browser.py
           python clinic_utilities/physio_referral_product/prototype/test_browser_qualifiers.py
