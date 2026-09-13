@@ -15,7 +15,7 @@ from clinical_data import build_clinical_router
 from clinical_data_ext import build_clinical_ext_router
 from clinical_status import build_clinical_status_router
 from clinical_learning import build_learning_router
-from clinic_utilities.clinical_documents import build_clinical_documents_router
+from clinic_utilities.clinical_documents import build_clinical_documents_router, build_medical_report_router
 from clinic_utilities.physio_referral_api import build_cu1_physio_referral_router
 from clinic_utilities.physio_referral_product.production_api import build_knee_oa_product_router
 from clinic_utilities.rf.api import build_rf_router
@@ -66,6 +66,7 @@ app.include_router(build_learning_router(engine))
 app.include_router(build_cu1_physio_referral_router())
 app.include_router(build_knee_oa_product_router())
 app.include_router(build_clinical_documents_router())
+app.include_router(build_medical_report_router())
 # RF v2 is now a native protected Clinic Utility. The old rf_gateway module is
 # deliberately left in the repository as rollback-only code but is not mounted.
 app.include_router(build_rf_router(engine))
