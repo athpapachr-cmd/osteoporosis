@@ -9,6 +9,7 @@ on:
       - "static/baseline-audit/g4-workspace-ergonomics.js"
       - "main.py"
       - "test_clinical_documents_medical_report.py"
+      - "test_clinical_documents_medical_report_consistency.py"
       - "test_clinical_documents_openai_sdk_contract.py"
       - "test_clinical_documents_sick_leave.py"
       - ".github/workflows/clinical-documents-p2-tests.yml"
@@ -20,6 +21,7 @@ on:
       - "static/baseline-audit/g4-workspace-ergonomics.js"
       - "main.py"
       - "test_clinical_documents_medical_report.py"
+      - "test_clinical_documents_medical_report_consistency.py"
       - "test_clinical_documents_openai_sdk_contract.py"
       - "test_clinical_documents_sick_leave.py"
       - ".github/workflows/clinical-documents-p2-tests.yml"
@@ -40,7 +42,7 @@ jobs:
       - name: Install Python dependencies
         run: pip install -r requirements.txt pytest
       - name: Python syntax
-        run: python -m py_compile clinic_utilities/clinical_documents/*.py test_clinical_documents_medical_report.py test_clinical_documents_openai_sdk_contract.py test_clinical_documents_sick_leave.py
+        run: python -m py_compile clinic_utilities/clinical_documents/*.py test_clinical_documents_medical_report.py test_clinical_documents_medical_report_consistency.py test_clinical_documents_openai_sdk_contract.py test_clinical_documents_sick_leave.py
       - name: JavaScript syntax
         run: |
           node --check static/clinic-utilities/medical-report/app.js
@@ -49,7 +51,7 @@ jobs:
       - name: OpenAI Responses SDK contract
         run: pytest -q test_clinical_documents_openai_sdk_contract.py
       - name: Medical Report V1 deterministic tests
-        run: pytest -q test_clinical_documents_medical_report.py
+        run: pytest -q test_clinical_documents_medical_report.py test_clinical_documents_medical_report_consistency.py
       - name: Existing Sick Leave V1 regression
         run: pytest -q test_clinical_documents_sick_leave.py
       - name: Existing Clinic Utilities navigation regression
