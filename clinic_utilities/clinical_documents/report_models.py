@@ -6,9 +6,27 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 ReportType = Literal["accident_medical_report", "medico_legal_expert_report"]
 ReportIdentityType = Literal["ADT", "ARC", "OTHER"]
-SourceType = Literal["gesy_visit", "clinician_note_self", "clinician_note_other", "specialist_report", "hospital_record", "emergency_record", "admission_note", "discharge_summary", "procedure_note", "imaging_report", "lab_report", "physiotherapy_report", "prior_medical_report", "sick_leave_certificate", "other"]
-EvidenceType = Literal["patient_reported", "clinician_observed", "specialist_opinion", "imaging_finding", "lab_finding", "procedure_performed", "treatment_given", "medication", "diagnosis_recorded", "functional_limitation", "work_absence", "pre_existing_condition", "causation_opinion", "prognostic_opinion", "recommended_future_care", "other"]
-SectionId = Literal["patient_case_details", "purpose_instructions", "sources_reviewed", "incident_history", "initial_management", "clinical_course", "current_symptoms", "objective_findings", "investigations", "treatment_procedures", "diagnoses", "pre_existing_conditions", "causation", "functional_consequences", "work_incapacity", "prognosis", "future_needs", "summary_opinion"]
+SourceType = Literal[
+    "gesy_visit", "clinician_note_self", "clinician_note_other", "specialist_report",
+    "hospital_record", "emergency_record", "admission_note", "discharge_summary",
+    "procedure_note", "imaging_report", "lab_report", "physiotherapy_report",
+    "prior_medical_report", "sick_leave_certificate", "prescription", "imaging_referral",
+    "specialist_referral", "lab_or_service_referral", "heidi_transcript", "other",
+]
+EvidenceType = Literal[
+    "patient_reported", "clinician_observed", "specialist_opinion", "imaging_finding",
+    "lab_finding", "procedure_performed", "treatment_given", "medication",
+    "diagnosis_recorded", "functional_limitation", "work_absence", "pre_existing_condition",
+    "causation_opinion", "prognostic_opinion", "recommended_future_care", "other",
+]
+SectionId = Literal[
+    "patient_case_details", "purpose_instructions", "sources_reviewed", "incident_history",
+    "initial_management", "clinical_course", "current_symptoms", "objective_findings",
+    "investigations", "treatment_procedures", "diagnoses", "pre_existing_conditions",
+    "causation", "functional_consequences", "work_incapacity", "prognosis",
+    "future_needs", "summary_opinion",
+]
+ExtractionMethod = Literal["text", "visual_ai", "clinician_text", "none"]
 
 class StrictModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -40,10 +58,13 @@ class ReportSourceV1(StrictModel):
     source_id: str = Field(min_length=1, max_length=80)
     filename: str = Field(min_length=1, max_length=255)
     source_type: SourceType = "other"
-    status: Literal["extracted", "no_extractable_text"]
+    status: Literal["extracted", "visual_extracted", "no_extractable_text"]
+    extraction_method: ExtractionMethod = "text"
+    review_required: bool = False
     page_count: int = Field(ge=1, le=5000)
     character_count: int = Field(ge=0, le=350000)
     pages: list[SourcePageV1] = Field(default_factory=list)
+    structured_notes: list[str] = Field(default_factory=list)
 
 class SourceSummaryV1(StrictModel):
     source_id: str = Field(min_length=1, max_length=80)
@@ -93,6 +114,13 @@ class WorkAbsenceIntervalV1(StrictModel):
             raise ValueError("Work-absence interval ends before it starts")
         return self
 
+class ClinicianResolutionV1(StrictModel):
+    resolution_id: str = Field(min_length=1, max_length=100)
+    topic_or_conflict_key: str = Field(default="", max_length=160)
+    clinician_statement: str = Field(min_length=1, max_length=6000)
+    related_evidence_ids: list[str] = Field(default_factory=list)
+    status: Literal["confirmed"] = "confirmed"
+
 class DiagnosisAnalysisV1(StrictModel):
     diagnosis: str = Field(min_length=1, max_length=500)
     supporting_evidence_ids: list[str] = Field(default_factory=list)
@@ -126,6 +154,7 @@ class MedicalReportAnalysisV1(StrictModel):
     evidence_items: list[EvidenceItemV1] = Field(default_factory=list)
     timeline: list[TimelineEventV1] = Field(default_factory=list)
     work_absence_intervals: list[WorkAbsenceIntervalV1] = Field(default_factory=list)
+    clinician_resolutions: list[ClinicianResolutionV1] = Field(default_factory=list)
     diagnosis_analyses: list[DiagnosisAnalysisV1] = Field(default_factory=list)
     report_sections: list[ReportSectionDraftV1] = Field(default_factory=list)
     prognosis_questions: list[PrognosisQuestionV1] = Field(default_factory=list)
@@ -140,6 +169,14 @@ class ProviderUsageV1(StrictModel):
     total_tokens: int = Field(default=0, ge=0)
     web_search_calls: int = Field(default=0, ge=0)
 
+class VisualPageExtractionV1(StrictModel):
+    page_number: int = Field(ge=1, le=20)
+    text: str = Field(default="", max_length=30000)
+
+class VisualExtractionResultV1(StrictModel):
+    pages: list[VisualPageExtractionV1] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+
 class ResearchCitationV1(StrictModel):
     title: str = Field(default="", max_length=500)
     url: str = Field(min_length=1, max_length=3000)
@@ -152,6 +189,22 @@ class MedicalReportResearchResultV1(StrictModel):
     research_text: str = Field(default="", max_length=30000)
     citations: list[ResearchCitationV1] = Field(default_factory=list)
     queries: list[str] = Field(default_factory=list)
+    usage: ProviderUsageV1
+
+class MedicalReportRefinementRequestV1(StrictModel):
+    case: MedicalReportCaseV1
+    analysis: MedicalReportAnalysisV1
+    clinician_message: str = Field(min_length=1, max_length=6000)
+
+    @field_validator("clinician_message", mode="before")
+    @classmethod
+    def strip_message(cls, value):
+        return str(value or "").strip()
+
+class MedicalReportRefinementResultV1(StrictModel):
+    assistant_reply: str = Field(min_length=1, max_length=8000)
+    updated_analysis: MedicalReportAnalysisV1
+    proposed_resolutions: list[ClinicianResolutionV1] = Field(default_factory=list)
     usage: ProviderUsageV1
 
 class FinalMedicalReportV1(StrictModel):
