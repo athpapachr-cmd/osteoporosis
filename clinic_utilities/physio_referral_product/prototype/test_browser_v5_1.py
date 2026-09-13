@@ -80,7 +80,7 @@ class V51BrowserTests(unittest.TestCase):
         self.page.get_by_role("button",name="Περιορισμός ενεργητικής κάμψης",exact=True).click()
         expect(self.page.locator("#referralText")).to_contain_text("περιορισμό ενεργητικής κάμψης")
         self.page.get_by_role("button",name="Κριγμός στην κίνηση",exact=True).click()
-        expect(self.page.locator("#referralText")).to_contain_text("κριγμό κατά την κίνηση")
+        expect(self.page.locator("#referralText")).to_contain_text("κριγμός κατά την κίνηση")
         self.page.locator("[data-q-tenderness=medial_bony]").click()
         expect(self.page.locator("#referralText")).to_contain_text("οστική ευαισθησία έσω")
         self.page.locator("[data-q-tenderness=extensor_mechanism]").click()
@@ -92,13 +92,13 @@ class V51BrowserTests(unittest.TestCase):
     def test_atrophy_remains_when_generic_weakness_is_removed(self):
         self.ready();self.open_exam()
         self.page.get_by_role("button",name="Ατροφία τετρακεφάλου",exact=True).click()
-        expect(self.page.locator("#referralText")).to_contain_text("εμφανή ατροφία τετρακεφάλου")
+        expect(self.page.locator("#referralText")).to_contain_text("εμφανής ατροφία τετρακεφάλου")
         self.page.locator("#closeSheet").click()
         weak=self.page.locator("[data-clinical-v4=weakness]");weak.click();weak.click()
         expect(self.page.locator("#sheet")).to_be_visible()
         self.page.locator("[data-clinical-remove-v4=weakness]").click()
         expect(weak).to_have_attribute("aria-pressed","false")
-        expect(self.page.locator("#referralText")).to_contain_text("εμφανή ατροφία τετρακεφάλου")
+        expect(self.page.locator("#referralText")).to_contain_text("εμφανής ατροφία τετρακεφάλου")
 
     def test_bony_tenderness_does_not_create_review_bubble(self):
         self.ready();self.open_exam();self.page.locator("[data-q-tenderness=medial_bony]").click()
