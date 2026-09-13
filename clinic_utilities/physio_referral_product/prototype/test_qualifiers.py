@@ -143,8 +143,9 @@ class QualifierProjectionTests(unittest.TestCase):
         req["state"]["qualifiers"] = {"focal_tenderness_locations": ["pes_anserine_region"]}
         result = p.project(req)
         self.assertIn("tenderness", result["state"]["findings"])
-        self.assertIn("εντοπισμένη ευαισθησία στην ψηλάφηση στην περιοχή του χηνείου ποδός", result["text"])
+        self.assertIn("ευαισθησία στην περιοχή του χηνείου ποδός", result["text"])
         self.assertNotIn("θυλακ", result["text"].lower())
+        self.assertNotIn("burs", result["text"].lower())
 
     def test_inconsistent_or_impossible_qualifiers_fail_closed(self):
         mutations = [
