@@ -1,105 +1,114 @@
-# CURRENT_OPERATIONAL.md — Clinical Documents Engine Phase 2 / Medical Report V1
+# CURRENT_OPERATIONAL.md — Physiotherapy Referral Knee-OA V5 integration patch
 
-> **STATUS:** MERGED / DEPLOYED / AI RUNTIME ENABLED — AUTHENTICATED PRODUCTION SMOKE PENDING.
+> **STATUS:** IMPLEMENTATION ACTIVE — FRESH-MAIN V5 RE-INTEGRATION AFTER INDEPENDENT REVIEW.
 > **Updated:** 2026-09-13 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Slice:** `CU-CLINICAL-DOCUMENTS-P2-MEDICAL-REPORT-V1-2026-09-13`.
-> **PR:** `#99` — SQUASH MERGED.
-> **Implementation review head:** `3a19a09280ff682badfd4866e19d6a4f3cb9c208`.
-> **Release commit:** `261015be5a2921c6d67ad6b48d14196c17b1c34f`.
-> **Clinical Documents implementation gate:** `34733760918` — SUCCESS.
-> **Clinical Documents PR gate:** `34734187010` — SUCCESS.
-> **Release deploy:** `dep-daj11b95efls739bog40` — LIVE.
-> **Configuration deploy:** `dep-daj128u7bikc73acabt0` — LIVE.
-> **Writer:** none.
-> **Patient/case persistence authority:** NONE.
+> **Slice:** `CU-PHYSIO-KNEE-OA-V5-INTEGRATION-2026-09-13`.
+> **Bootstrap main:** `8aeb91ae37b83caaa188054128db98e04b638fd8`.
+> **Implementation branch:** `feat/physio-knee-oa-v5-integration-2026-09-13`.
+> **Writer:** `feat/physio-knee-oa-v5-integration-2026-09-13`.
+> **Mutation scope:** bounded Knee-OA V5 UI/prose integration, exact tests/workflow, and supporting canonicals only.
+> **Original exact tested V5 candidate:** `a47357c602120d3678e8f2f23b99775e616c79e1`.
+> **Original V5 gate:** `34693751545` — SUCCESS.
+> **Independent review:** `ACCEPT WITH REQUIRED CHANGES` / `PATCH V5 THEN MERGE`.
+> **Released jurisdiction runtime:** `e52a4851b504476c1e361575d08664c05467ff53` with production profile `CY_GESY`.
+> **Authenticated CY_GESY production smoke evidence:** `34703453615` — SUCCESS.
+> **Patient/referral persistence authority:** NONE.
 
 ## 1. Product Owner authority
 
-On 2026-09-13, after the implementation checkpoint was placed in release hold, the Product Owner instructed:
+On 2026-09-13 the Product Owner explicitly instructed:
 
-`Προχωρά μέχρι τέλους`
+`IMPLEMENT V5 INTEGRATION PATCH`
 
-This authorized completion of the bounded release path: PR, squash merge, normal Render deployment and activation of the already-designed Medical Report AI runtime gates. It did not authorize persistent case storage, OCR, billing, autonomous medico-legal opinion, compensation calculations or unrelated product mutations.
-
-## 2. Released workflow
-
-Medical Report V1 is now on `main` and deployed for accident medical reports and medico-legal expert reports.
+and additionally required the independent-review simplification:
 
 ```text
-case details
-+ clinician history/instructions
-+ selected source documents
-+ clinician source classification
-→ request-scoped extraction
-→ Evidence Ledger + Timeline + work-incapacity intervals
-→ AI-assisted draft
-→ clinician review/edit
-→ optional targeted literature research
-→ clinician review/edit
-→ explicit final confirmation
-→ optional session-only signature
-→ multi-page Greek PDF
+remove duplicated `Ατροφία τετρακεφάλου`
+from the second-tap `Αδυναμία` refinement sheet
+while retaining it in `Περισσότερα → Εξέταση`
 ```
 
-## 3. Safety and authority model
+This authorizes the bounded fresh-main V5 integration/test slice. It does not authorize a second diagnosis, evidence reclassification, patient persistence, autonomous recommendation changes, Greece/England content, billing/analytics work, or unrelated product mutations.
 
-The released runtime preserves the distinction between source fact, patient report, clinician finding, specialist opinion, literature evidence, AI inference and final clinician opinion.
+## 2. Why an integration patch is required
 
-Source/page/evidence references are validated deterministically. Work-absence date order is validated and overlaps/gaps are surfaced. Uploaded records are treated as quoted data rather than executable model instructions. Diagnosis, causation, prognosis and future-needs text remain clinician-review-required. Final PDF generation requires explicit clinician confirmation.
+The original V5 candidate was correctly tested at exact head `a47357c...`, but its merge base was the older Knee-OA v4 closeout ancestry `90e4377...`.
 
-## 4. Privacy / persistence boundary
+Fresh comparison against current `main 8aeb91ae...` shows the candidate and main have diverged. Main has since added the released `CY_GESY` jurisdiction overlay and other shared integrations.
 
-Still true in production:
-
-- no Clinical Documents patient/case database;
-- no browser PHI/case persistence or autosave;
-- uploaded source bytes are request scoped;
-- no patient identifiers in query strings;
-- signature is session/request scoped only;
-- direct patient identifiers are excluded from external literature-search prompts;
-- no real patient data are present in repository tests or fixtures.
-
-## 5. Runtime configuration and deployment
-
-The Medical Report AI runtime enable and identifiable-record approval gates were activated on the Render `osteoporosis` service. The configuration change triggered deploy `dep-daj128u7bikc73acabt0`, which reached `LIVE` on the exact release commit at `2026-09-13T02:59:14Z`.
-
-No provider credential value was exposed, copied or changed in this release session. The available deployment control plane cannot attest the value or validity of an existing secret credential, and the runtime remains fail-closed if a required provider credential is unavailable.
-
-## 6. Verification evidence
-
-The implementation and PR Clinical Documents gates both passed. Existing Sick Leave, CU-1 and G3 regressions also passed on the release path. Red results from unrelated Clinical Learning / Physio workflows were deliberate scope/adjacent-owner guards for this non-owner slice; inspected substantive Clinical Learning tests passed before the scope guard.
-
-Render startup logs confirm the configured release instance completed application startup and became live. Existing protected clinical authentication remains configured.
-
-## 7. Release-state distinction
+Therefore the old V5 head must not be directly merged/deployed. The approved approach is:
 
 ```text
-IMPLEMENTED                 YES
-TESTED                      YES
-MERGED                      YES
-DEPLOYED                    YES
-AI RUNTIME GATES ENABLED    YES
-RENDER STARTUP/LIVE         YES
-AUTHENTICATED UI SMOKE      PENDING
-LIVE AI DRAFT CALL          PENDING
-LIVE RESEARCH CALL          PENDING
-LIVE FINAL PDF USER FLOW    PENDING
+fresh current main
+→ re-apply only bounded V5-owned runtime/test deltas
+→ apply the approved atrophy simplification
+→ preserve current CY_GESY/runtime/shared integrations
+→ run V5 + jurisdiction + protected Cockpit regressions on one exact integrated SHA
 ```
 
-The remaining validation cannot be performed from the deployment connector because the Medical Report routes correctly require the existing protected user authentication and the connector does not inherit the Product Owner's browser session.
+## 3. Bounded V5 behavior to integrate
 
-## 8. Exact next action
+1. First tap on inactive `Πόνος`, `Δυσκαμψία`, `Αδυναμία` selects the generic symptom without forcing a popup.
+2. Second tap on an already-selected generic symptom opens optional refinement.
+3. `Λειτουργικότητα` keeps its first-tap chooser.
+4. Weakness refinement keeps only the two explicit weakness examination concepts:
+   - `Μυϊκή αδυναμία στην εξέταση`
+   - `Αδυναμία τετρακεφάλου στην εξέταση`
+5. `Ατροφία τετρακεφάλου` is **not** duplicated in the weakness second-tap sheet; it remains reachable through `Περισσότερα → Εξέταση` as an objective examination finding.
+6. Bare/ambiguous `Περιαρθρικά` remains absent from the routine/advanced visible UI while compatibility underneath is preserved where already required.
+7. Pain-location prose must not duplicate/conflict with qualifier-owned location detail.
+8. Rich referral output separates clinical picture/function from physiotherapy assessment/priorities into distinct paragraphs.
+9. Mechanical `Επιπλέον στόχος:` wording is replaced by connected natural prose without changing clinician/treatment authority.
 
-Run one short authenticated production smoke with a synthetic/non-identifiable test case:
+## 4. Hard invariants
 
-```text
-Clinic Utilities → Ιατρικές εκθέσεις
-→ generate draft
-→ inspect Evidence Ledger / Timeline
-→ run literature research
-→ edit + confirm
-→ preview/download PDF
-```
+The integration must not change:
 
-Until that authenticated smoke passes, Phase 2 is released and live but must not be labelled `PRODUCTION-SMOKE-VERIFIED`.
+- international evidence states or source positions;
+- `CY_GESY` overlay semantics or explicit-account activation;
+- default rehabilitation selections;
+- suggestion != selection semantics;
+- diagnosis assertion/laterality requirements;
+- safety fail-closed behavior;
+- deterministic referral ownership;
+- manual-edit stale/reconciliation behavior;
+- no-patient-persistence boundary;
+- protected Cockpit authentication boundary;
+- local clinical guidance vs GeSY admin/reimbursement separation.
+
+## 5. Exact implementation rule
+
+Do not cherry-pick or merge the historical V5 branch wholesale.
+
+Generated/cache artifacts such as `__pycache__` / `.pyc` are explicitly forbidden from the integration.
+
+Only reviewed V5 source/test deltas that remain valid on current main may be re-applied. Shared files changed since the V5 merge base must be merged semantically, never overwritten with stale candidate copies.
+
+## 6. Acceptance evidence required on one exact integrated SHA
+
+Required before implementation can be called tested:
+
+- V5 focused server/prose regressions;
+- V5 browser interaction regressions;
+- current Knee-OA protected Cockpit integration regressions;
+- current `CY_GESY` jurisdiction-overlay regressions;
+- inherited v4/prototype/CU-1/evidence/safety gates that apply;
+- proof `Ατροφία τετρακεφάλου` is absent from weakness second-tap and present under `Περισσότερα → Εξέταση`;
+- proof international/local evidence states and referral selection remain unchanged;
+- proof no new storage/persistence is introduced;
+- branch remains current with `main` and bounded in scope.
+
+## 7. Release boundary
+
+This command authorizes implementation/integration and exact-head testing.
+
+After a clean integrated head exists, the release path must be represented honestly as a separate lifecycle state. No production deployment or production-smoke claim may be inferred merely from implementation success.
+
+## 8. Parallel deferred validation retained
+
+The previously active Medical Report V1 slice is already merged/deployed with AI runtime enabled and **authenticated production smoke still pending**. Activating this Physio writer does not mark that smoke complete and does not mutate Medical Report runtime/configuration.
+
+## 9. Exact next action
+
+Reconstruct the V5 delta from exact candidate `a47357c...`, merge it onto current-main semantics without overwriting the released jurisdiction/shared integration work, apply the atrophy simplification, and run the required exact-head regression set.
