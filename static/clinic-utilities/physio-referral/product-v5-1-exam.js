@@ -37,6 +37,14 @@ Object.assign(QLABELS.tenderness,{
 });
 for(const id of ['active_rom_restricted','passive_rom_restricted']) V3_DUPLICATED_FINDINGS.add(id);
 
+// V5 established atrophy as an objective Examination finding. Removing the
+// reported/generic weakness symptom must therefore clear only weakness detail,
+// not a separately documented atrophy finding.
+qResetWeakness=function(){
+  qualifierState.weakness_detail=null;
+  if(state?.findings)state.findings=state.findings.filter(id=>!['objective_weakness','quadriceps_weakness'].includes(id));
+};
+
 function v51EnsureQualifierState(){
   if(!qualifierState)return;
   for(const [key,value] of Object.entries(V51_QUALIFIER_DEFAULTS)){
@@ -254,9 +262,33 @@ advancedCount=function(){
   return count;
 };
 
+function v51RenderSourceShortcuts(item){
+  if(sheetView?.type!=='evidence'||!item)return;
+  const view=response?.evidence?.[item], body=$('#sheetBody');if(!view||!body)return;
+  body.querySelector('#v51SourceShortcuts')?.remove();
+  const links=[],seen=new Set();
+  for(const position of view.positions||[]){
+    const link=v51SafeLink(position.locator,'Άνοιγμα οδηγίας: '+position.source_label,position.source_label+' ↗');
+    const href=link?.getAttribute('href');
+    if(link&&href&&!seen.has(href)){seen.add(href);link.className='v51-source-shortcut';links.push(link);}
+  }
+  const local=view.jurisdiction;
+  if(local){
+    const link=v51SafeLink(local.source_provenance?.source_url,'Άνοιγμα κυπριακής οδηγίας','Κύπρος · ΟΑΥ ↗');
+    const href=link?.getAttribute('href');
+    if(link&&href&&!seen.has(href)){seen.add(href);link.className='v51-source-shortcut';links.push(link);}
+  }
+  if(!links.length)return;
+  const strip=make('div',{id:'v51SourceShortcuts',class:'v51-source-shortcuts','aria-label':'Άμεσοι σύνδεσμοι οδηγιών'},[
+    make('span',{class:'v51-source-shortcuts-label',text:'Πηγές'}),...links,
+  ]);
+  const stateNode=body.querySelector('.sheet-state');
+  if(stateNode)stateNode.insertAdjacentElement('afterend',strip);else body.prepend(strip);
+}
 function v51PromoteSourceLinks(item){
   if(sheetView?.type!=='evidence'||!item)return;
   const view=response?.evidence?.[item];if(!view)return;
+  v51RenderSourceShortcuts(item);
   const rows=[...$('#sheetBody')?.querySelectorAll('.source-position:not(.jurisdiction-position-v1)')||[]];
   for(const position of view.positions||[]){
     const row=rows.find(node=>node.querySelector('.source-heading span')?.textContent===position.source_label);
