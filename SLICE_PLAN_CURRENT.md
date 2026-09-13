@@ -1,183 +1,193 @@
-# SLICE_PLAN_CURRENT.md — CLINICAL DOCUMENTS PHASE 2 / MEDICAL REPORT V1
+# SLICE_PLAN_CURRENT.md — Physiotherapy Referral Knee-OA V5 integration patch
 
-> **STATUS:** RELEASED / DEPLOYED — AUTHENTICATED PRODUCTION SMOKE PENDING.
+> **STATUS:** IMPLEMENTATION ACTIVE — PRODUCT OWNER AUTHORIZED.
 > **Activated:** 2026-09-13 Asia/Nicosia.
-> **Released:** 2026-09-13 Asia/Nicosia.
-> **Slice:** `CU-CLINICAL-DOCUMENTS-P2-MEDICAL-REPORT-V1-2026-09-13`.
-> **Implementation branch:** `feat/clinical-documents-p2-medical-report-v1-2026-09-13`.
-> **Release PR:** `#99` — squash merged.
-> **Implementation review head:** `3a19a09280ff682badfd4866e19d6a4f3cb9c208`.
-> **Release commit:** `261015be5a2921c6d67ad6b48d14196c17b1c34f`.
-> **Implementation gate:** `34733760918` — SUCCESS.
-> **PR Clinical Documents gate:** `34734187010` — SUCCESS.
-> **Release deploy:** `dep-daj11b95efls739bog40` — LIVE.
-> **Configuration deploy:** `dep-daj128u7bikc73acabt0` — LIVE.
-> **Writer:** none.
-> **Persistence:** NONE for Clinical Documents patient/case/source/report state.
+> **Slice:** `CU-PHYSIO-KNEE-OA-V5-INTEGRATION-2026-09-13`.
+> **Branch:** `feat/physio-knee-oa-v5-integration-2026-09-13`.
+> **Bootstrap main:** `8aeb91ae37b83caaa188054128db98e04b638fd8`.
+> **Original reviewed V5 candidate:** `a47357c602120d3678e8f2f23b99775e616c79e1`.
+> **Independent review disposition:** `ACCEPT WITH REQUIRED CHANGES` / `PATCH V5 THEN MERGE`.
+> **Writer:** `feat/physio-knee-oa-v5-integration-2026-09-13`.
+> **Diagnosis vertical:** Knee Osteoarthritis only.
 
 ## 1. Objective
 
-Medical Report V1 delivers the first released multi-source accident / medico-legal workflow:
+Integrate the already-reviewed/tested Knee-OA V5 workflow/prose refinement onto the current production ancestry instead of directly merging the stale historical V5 head.
+
+The integrated target is:
 
 ```text
-clinician case context
-+ pasted own history/instructions
-+ explicitly selected source documents
-+ clinician-editable source classification
-→ request-scoped text extraction
-→ source/page-bounded Evidence Ledger
-→ chronology / Timeline
-→ structured work-incapacity intervals
-→ AI-assisted report draft
-→ clinician review/edit
-→ optional targeted prognosis/literature research
-→ clinician review/edit
-→ explicit final confirmation
-→ multi-page Greek PDF
+current main / current shared integrations
++ released CY_GESY jurisdiction overlay
++ bounded V5 workflow/prose deltas
++ Product Owner-approved atrophy simplification
 ```
 
-The output is an AI-assisted draft under clinician authority, not an autonomous medico-legal opinion.
+No clinical/evidence redesign is part of this slice.
 
-## 2. Released owners
+## 2. Historical candidate and current-main divergence
+
+Original tested V5 evidence:
 
 ```text
-clinic_utilities/clinical_documents/report_models.py
-clinic_utilities/clinical_documents/report_sources.py
-clinic_utilities/clinical_documents/report_ai.py
-clinic_utilities/clinical_documents/report_pdf.py
-clinic_utilities/clinical_documents/report_api.py
-static/clinic-utilities/medical-report/index.html
-static/clinic-utilities/medical-report/app.js
-static/clinic-utilities/medical-report/styles.css
+head  a47357c602120d3678e8f2f23b99775e616c79e1
+gate  34693751545 — SUCCESS
 ```
 
-Composition/navigation seams are limited to:
+Its merge base is the older v4 closeout ancestry `90e4377fc92e76d767a4b911a0dcff523b50b71e`.
+
+Current main at activation is `8aeb91ae37b83caaa188054128db98e04b638fd8` and includes later released/shared work, including jurisdiction-overlay runtime/tests and Clinical Documents work.
+
+Direct merge/cherry-pick of the historical branch is forbidden.
+
+## 3. Exact V5 interaction contract
+
+### Pain / Stiffness / Weakness
+
+Inactive first tap:
 
 ```text
-clinic_utilities/clinical_documents/__init__.py
-main.py
-static/baseline-audit/g4-workspace-ergonomics.js
+select generic symptom
+→ no forced detail sheet
 ```
 
-Sick Leave V1 is preserved and regression-tested.
-
-## 3. Source and evidence contract
-
-Accepted files:
+Tap again while selected:
 
 ```text
-PDF with extractable text
-TXT
-Markdown
-DOCX
+open focused optional refinement sheet
 ```
 
-V1 deliberately performs no OCR guessing for image-only PDFs.
+The selected-state control must retain an understandable progressive-disclosure cue and accessible wording.
 
-Source processing is bounded by file count, per-file bytes, aggregate bytes, extracted characters, PDF pages and DOCX XML expansion. The clinician's own free-text context is a distinct own-note source.
+### Function
 
-Evidence retains source ID and page provenance. Forged source/page/evidence references and duplicate evidence IDs fail closed.
+`Λειτουργικότητα` remains a first-tap chooser because an unqualified generic function state is not sufficiently meaningful.
 
-## 4. Timeline / work-incapacity contract
+### Weakness refinement after Product Owner simplification
 
-Timeline items preserve source/evidence references and do not silently reconcile conflicts.
-
-Work-incapacity intervals require explicit start/end dates; end before start is rejected. Deterministic processing surfaces overlapping periods and gaps. AI instructions prohibit inferring a missing interval boundary.
-
-## 5. AI authority contract
-
-The provider may extract, summarize, organize and draft, while preserving attribution and uncertainty.
-
-It must not silently invent or promote absent dates, findings, investigations, diagnoses, treatment, causation, permanence or prognosis to fact.
-
-Consequential diagnosis/causation/prognosis/future-needs text remains review-required. Uploaded documents are treated as quoted/untrusted data rather than model instructions.
-
-No compensation value, damages calculation, permanent-impairment percentage or jurisdiction-specific declaration is generated automatically.
-
-## 6. Research contract
-
-Literature/prognosis research is an explicit separate action. The research prompt uses generalized clinical problems/questions and excludes direct patient name, identity number and instructing reference.
-
-Research prose and clickable citations remain separate from patient facts and remain editable before final inclusion.
-
-## 7. Finalization contract
-
-Final PDF requires explicit clinician confirmation.
-
-The PDF supports:
-
-- Greek multi-page A4 output;
-- clinician/case information;
-- editable report sections;
-- page breaks and numbering;
-- optional reviewed bibliography/research text;
-- optional clinician-authored declaration;
-- optional session-only signature.
-
-Filename includes report type, Greek patient name and report date, while excluding diagnosis and patient identity number.
-
-## 8. Privacy / persistence
-
-The release introduces no Clinical Documents case database, browser PHI persistence, autosave or automatic patient history. Uploaded sources are request scoped. Signature remains session/request scoped. No real-patient source files or identifiable fixtures are committed to the public repository.
-
-## 9. Release/config evidence
-
-Product Owner release authority was provided after the implementation hold with `Προχωρά μέχρι τέλους`.
-
-PR #99 was squash merged to `main` as `261015be5a2921c6d67ad6b48d14196c17b1c34f`.
-
-Render auto-deploy `dep-daj11b95efls739bog40` reached LIVE. The already-designed Medical Report AI runtime gates were then enabled and configuration deploy `dep-daj128u7bikc73acabt0` reached LIVE at `2026-09-13T02:59:14Z`.
-
-No provider credential value was exposed or changed by this release session. The runtime remains fail-closed if a required provider credential is unavailable.
-
-## 10. Acceptance evidence
-
-The focused Clinical Documents implementation and PR gates passed, covering:
-
-- Python and JavaScript syntax;
-- OpenAI Responses SDK contract without a live network call;
-- accident + medico-legal typed cases;
-- PDF/TXT/MD/DOCX extraction;
-- page provenance;
-- unsupported/oversize/image-only handling;
-- clinician source classification;
-- referential integrity;
-- work-incapacity validation/overlap/gap checks;
-- review-required consequential opinions;
-- identifier-free research prompt construction;
-- final confirmation requirement;
-- long multi-page Greek PDF generation;
-- no browser case persistence;
-- existing Sick Leave regression;
-- Clinic Utilities navigation.
-
-## 11. Explicit exclusions retained
-
-Not in V1:
-
-- persistent report/case history;
-- direct GeSY API integration;
-- OCR/vision ingestion;
-- automatic permanent-impairment scoring;
-- damages/claim valuation;
-- billing / Fee Note / Receipt runtime;
-- commercial user-uploaded template platform;
-- automatic jurisdiction declaration wording;
-- unrelated RF/physio/Clinical Learning/osteoporosis-guidance mutations.
-
-## 12. Remaining release-validation boundary
-
-The deployed routes intentionally remain protected by existing clinical authentication. The deployment connector does not inherit the Product Owner's authenticated browser session, so a real end-to-end browser smoke cannot honestly be claimed from this release session alone.
-
-Remaining smoke:
+Second-tap `Αδυναμία` refinement contains only:
 
 ```text
-synthetic authenticated case
-→ AI draft
-→ Evidence Ledger / Timeline review
-→ literature research
-→ final clinician confirmation
-→ PDF preview/download
+Μυϊκή αδυναμία στην εξέταση
+Αδυναμία τετρακεφάλου στην εξέταση
 ```
 
-Once that succeeds, this slice may be marked `PRODUCTION-SMOKE-VERIFIED / CLOSED`.
+`Ατροφία τετρακεφάλου` is removed from that sheet.
+
+It remains available through:
+
+```text
+Περισσότερα
+→ Εξέταση
+→ Ατροφία τετρακεφάλου
+```
+
+This removes duplicate access while preserving the objective examination capability.
+
+## 4. Semantic/copy contract
+
+- Generic weakness remains symptom/context and does not assert objective weakness.
+- Objective weakness and quadriceps weakness require explicit examination selections.
+- Quadriceps atrophy remains an objective examination finding, not a weakness subtype.
+- Bare ambiguous `Περιαρθρικά` must remain absent from the visible routine/advanced UI.
+- Pain qualifier ownership must prevent redundant location prose.
+- Rich referral separates clinical picture/functional impact from physiotherapy assessment/priorities with a paragraph boundary.
+- Additional functional goals are rendered as connected natural prose rather than `Επιπλέον στόχος:`.
+- No dose/frequency/protocol is invented.
+
+## 5. Jurisdiction integration contract
+
+V5 is layered over the already-released jurisdiction architecture.
+
+Hard requirements:
+
+```text
+international evidence state unchanged
+CY_GESY local context remains separate
+jurisdiction never auto-selects treatment
+jurisdiction never rewrites referral prose
+GeSY admin/reimbursement never becomes clinical evidence
+planned GeSY IT state remains planned
+```
+
+The integrated exact head must prove V5 and jurisdiction behavior together.
+
+## 6. Implementation seams
+
+Expected V5-owned seams from the reviewed candidate:
+
+```text
+clinic_utilities/physio_referral_product/knee_oa_presentation_v4.py
+clinic_utilities/physio_referral_product/prototype/clinical_sheet_v4.js
+clinic_utilities/physio_referral_product/prototype/more_v3.js
+clinic_utilities/physio_referral_product/prototype/qualifier_overlay.py
+clinic_utilities/physio_referral_product/prototype/qualifiers.js
+static/clinic-utilities/physio-referral/product-clinical-sheet-v4.js
+static/clinic-utilities/physio-referral/product-more-v3.js
+static/clinic-utilities/physio-referral/product-qualifiers.js
+V5-focused tests/workflow
+```
+
+Shared files modified after the historical V5 merge base, especially protected Cockpit tests/workflows/canonicals, must be merged against current main rather than replaced.
+
+Generated Python cache artifacts are explicitly excluded.
+
+## 7. Test contract
+
+Required focused assertions:
+
+1. first tap on inactive Pain/Stiffness/Weakness selects generic state without popup;
+2. second tap opens optional detail;
+3. Function first tap still opens chooser;
+4. weakness second-tap has exactly the two explicit weakness examination concepts and no quadriceps atrophy option;
+5. `Περισσότερα → Εξέταση` still exposes `Ατροφία τετρακεφάλου`;
+6. generic weakness never becomes objective weakness;
+7. pain composition avoids joint-line/pes-anserine duplication;
+8. rich referral has the reviewed paragraph structure;
+9. natural functional-goal prose replaces mechanical label;
+10. low-information output remains proportionally compact;
+11. evidence states/source positions/default selections/suggestions/safety/manual-edit semantics remain unchanged;
+12. `CY_GESY` overlay remains active/separate in protected integration tests;
+13. local-only/admin positions never become clinical evidence items;
+14. no localStorage/sessionStorage patient/referral persistence is introduced;
+15. inherited current-main physio/CU-1/evidence/browser regressions pass.
+
+Non-blocking independent-review suggestions that are cheap and bounded may be added to tests, especially broader goal-prose coverage, provided they do not change product semantics.
+
+## 8. Explicit exclusions
+
+No:
+
+- second diagnosis;
+- new treatment selector;
+- new jurisdiction/country selector;
+- evidence-state reclassification;
+- local-rule automation;
+- receiver-validation gate;
+- patient persistence;
+- analytics/billing/entitlements;
+- Medical Report runtime/config mutation;
+- generated/cache artifacts.
+
+## 9. REPLAN triggers
+
+Stop and replan if integration requires any of:
+
+- changing international evidence semantics;
+- changing jurisdiction semantics to make V5 work;
+- changing safety/diagnosis authority;
+- introducing patient/referral persistence;
+- overwriting a current-main shared integration with a stale historical file;
+- broad redesign beyond the reviewed V5 interaction/prose scope.
+
+## 10. Exit gate
+
+Implementation-complete means one exact integrated head has passed:
+
+- V5 focused tests;
+- current jurisdiction-overlay tests;
+- current protected Cockpit integration/browser tests;
+- inherited v4/prototype/CU-1/evidence/safety coverage;
+- scope/diff hygiene proving no unrelated owner mutation.
+
+Merge/deploy/production smoke remain distinct lifecycle states and must be recorded as such.
