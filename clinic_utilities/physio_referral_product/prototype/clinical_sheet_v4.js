@@ -26,7 +26,7 @@ function v4ClinicalButton(kind) {
   b.append(
     make('span',{class:'clinical-card-label-v4',text:V4_CLINICAL[kind].label}),
     make('span',{class:'clinical-card-count-v4','data-clinical-count-v4':kind,hidden:''}),
-    make('span',{class:'clinical-card-detail-v4','data-clinical-detail-v4':kind,'aria-hidden':'true',text:'›',hidden:'')
+    make('span',{class:'clinical-card-detail-v4','data-clinical-detail-v4':kind,'aria-hidden':'true',text:'›',hidden:''})
   );
   return b;
 }
