@@ -5,6 +5,7 @@ on:
     branches:
       - feat/physio-knee-oa-v5-integration-2026-09-13
       - feat/physio-knee-oa-v5-1-exam-discoverability-2026-09-13
+      - feat/physio-knee-oa-v5-1-fresh-main-2026-09-13
   pull_request:
     paths:
       - 'clinic_utilities/physio_referral_product/**'
