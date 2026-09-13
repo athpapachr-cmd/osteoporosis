@@ -106,7 +106,7 @@ class KneeOACockpitBrowserTests(unittest.TestCase):
         self.page.locator("#closeSheet").click(); self.open_exam()
         expect(self.page.get_by_role("button", name="Ατροφία τετρακεφάλου", exact=True)).to_have_count(1)
         self.page.get_by_role("button", name="Ατροφία τετρακεφάλου", exact=True).click()
-        expect(self.page.locator("#referralText")).to_contain_text("εμφανή ατροφία τετρακεφάλου")
+        expect(self.page.locator("#referralText")).to_contain_text("εμφανής ατροφία τετρακεφάλου")
         expect(weakness.locator("[data-clinical-count-v4]")).to_be_hidden()
 
     def test_specific_directional_weakness_and_pain_prose_on_production_transport(self):
@@ -122,7 +122,7 @@ class KneeOACockpitBrowserTests(unittest.TestCase):
         self.ready(); self.open_exam(); expect(self.page.get_by_role("button",name="Κριγμός στην κίνηση",exact=True)).to_be_visible()
         self.page.get_by_role("button",name="Περιορισμός εύρους κίνησης",exact=True).click(); expect(self.page.locator("#v51RomDetails")).to_be_visible()
         self.page.get_by_role("button",name="Περιορισμός παθητικής κάμψης",exact=True).click(); expect(self.page.locator("#referralText")).to_contain_text("περιορισμό παθητικής κάμψης")
-        self.page.get_by_role("button",name="Κριγμός στην κίνηση",exact=True).click(); expect(self.page.locator("#referralText")).to_contain_text("κριγμό κατά την κίνηση")
+        self.page.get_by_role("button",name="Κριγμός στην κίνηση",exact=True).click(); expect(self.page.locator("#referralText")).to_contain_text("κριγμός κατά την κίνηση")
         self.page.locator("[data-q-tenderness=lateral_bony]").click(); expect(self.page.locator("#referralText")).to_contain_text("οστική ευαισθησία έξω")
         self.page.locator("[data-v51-stability=posterior_instability_pcl]").click(); expect(self.page.locator("#referralText")).to_contain_text("οπίσθια αστάθεια / ΟΧΣ")
         expect(self.page.locator("#v51ReviewBubble")).to_be_hidden()
@@ -131,6 +131,8 @@ class KneeOACockpitBrowserTests(unittest.TestCase):
         self.ready(); referral_before = self.page.locator("#referralText").inner_text(); self.assertEqual(self.page.get_by_text("Κύπρος · διαφέρει", exact=True).count(), 0)
         self.page.locator("#advancedToggle").click(); self.page.locator("#advanced [data-v3-category=adjuncts]").click(); expect(self.page.locator("#sheet")).to_be_visible()
         self.page.locator("#sheet [data-evidence=acupuncture]").click(); expect(self.page.locator("#sheet .sheet-state")).to_contain_text("Οι οδηγίες διαφέρουν")
+        source_strip=self.page.locator("#v51SourceShortcuts"); expect(source_strip).to_be_visible(); expect(source_strip).to_contain_text("Κύπρος · ΟΑΥ")
+        source_links=source_strip.locator("a.v51-source-shortcut"); self.assertGreaterEqual(source_links.count(),2)
         local = self.page.locator("#sheet [data-jurisdiction-position]"); expect(local).to_be_visible(); expect(local).to_contain_text("Κύπρος · διαφέρει")
         expect(local).to_contain_text("Δεν συνιστάται βελονισμός"); expect(local).to_contain_text("η διεθνής κατάσταση δεν αλλάζει")
         local_link=local.locator(".v51-source-link"); expect(local_link).to_have_count(1); self.assertTrue((local_link.get_attribute("href") or "").startswith("https://"))
