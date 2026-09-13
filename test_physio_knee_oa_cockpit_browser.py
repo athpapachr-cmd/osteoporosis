@@ -104,7 +104,7 @@ class KneeOACockpitBrowserTests(unittest.TestCase):
         expect(self.page.get_by_role("button", name="Μυϊκή αδυναμία στην εξέταση", exact=True)).to_have_count(1)
         expect(self.page.get_by_role("button", name="Αδυναμία τετρακεφάλου στην εξέταση", exact=True)).to_have_count(1)
         self.page.locator("#closeSheet").click(); self.page.locator("#advancedToggle").click()
-        self.page.locator("#advanced [data-v3-category=exam]").click()
+        self.page.locator("#advanced .v3-category-row[data-v3-category=exam]").click()
         expect(self.page.get_by_role("button", name="Ατροφία τετρακεφάλου", exact=True)).to_have_count(1)
         self.page.get_by_role("button", name="Ατροφία τετρακεφάλου", exact=True).click()
         expect(self.page.locator("#referralText")).to_contain_text("εμφανή ατροφία τετρακεφάλου")
