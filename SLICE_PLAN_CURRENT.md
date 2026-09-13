@@ -1,20 +1,22 @@
 # SLICE_PLAN_CURRENT.md — Physiotherapy Referral Knee-OA V5 release
 
-> **STATUS:** RELEASE MERGED / DEPLOYED — AUTHENTICATED SMOKE PENDING EXECUTION.
+> **STATUS:** RELEASE COMPLETE / AUTHENTICATED PRODUCTION SMOKE PASS / SLICE CLOSED.
 > **Activated:** 2026-09-13 Asia/Nicosia.
+> **Closed:** 2026-09-13 Asia/Nicosia.
 > **Slice:** `CU-PHYSIO-KNEE-OA-V5-RELEASE-2026-09-13`.
 > **Release PR:** `#101`.
 > **Release runtime SHA:** `8cfb22fd2478e7832b9b8642f7ae5241d7e1a267`.
-> **Render deploy:** `dep-daj2398u01pc738ojvkg` — LIVE.
-> **Authenticated V5 smoke:** run `34737351354` — QUEUED / NOT YET EXECUTED at this draft.
+> **Render deploy:** `dep-daj2398u01pc738ojvkg` — LIVE at exact runtime SHA.
+> **Authenticated V5 smoke:** `34737943402` — SUCCESS.
+> **Temporary smoke PR:** `#103` — CLOSED UNMERGED.
 > **Writer:** none.
 > **Diagnosis vertical:** Knee Osteoarthritis only.
 
-## 1. Release objective
+## 1. Objective — complete
 
-Release the accepted fresh-main V5 integration while preserving the current Knee-OA / CU-1 / `CY_GESY` architecture and verifying the resulting protected production behavior.
+Release the accepted fresh-main V5 integration while preserving the current Knee-OA / CU-1 / `CY_GESY` architecture and verify the protected production behavior.
 
-Release sequence:
+Completed sequence:
 
 ```text
 exact tested V5 PR head
@@ -23,8 +25,6 @@ exact tested V5 PR head
 → authenticated live smoke
 → docs-only canonical closeout
 ```
-
-The first three steps through deployment are complete. Authenticated smoke has been submitted but has not yet received a GitHub runner.
 
 ## 2. Released interaction contract
 
@@ -52,13 +52,13 @@ Second-tap `Αδυναμία` contains only:
 Αδυναμία τετρακεφάλου στην εξέταση
 ```
 
-`Ατροφία τετρακεφάλου` is not duplicated there. It remains available through:
+`Ατροφία τετρακεφάλου` is absent from that sheet and remains available through:
 
 ```text
 Περισσότερα → Εξέταση → Ατροφία τετρακεφάλου
 ```
 
-Weakness count reflects weakness-detail state only.
+Weakness count reflects weakness-detail state only and does not count separately selected atrophy.
 
 ## 3. Semantic/copy contract
 
@@ -76,7 +76,7 @@ The released V5 contract preserves:
 
 ## 4. Jurisdiction contract
 
-V5 remains layered over the released architecture:
+Released architecture:
 
 ```text
 international evidence core
@@ -88,7 +88,7 @@ explicit CY_GESY production profile
 V5 presentation/prose layer
 ```
 
-Hard requirements remain:
+Hard requirements verified:
 
 ```text
 international evidence state unchanged
@@ -101,11 +101,25 @@ planned != active
 
 ## 5. Pre-release gates — satisfied
 
-Exact PR head `4e4bd2ae40c606562a982b3e38f9f859b49986eb` passed all Physio-owned exact-head gates plus CU-1 focused tests before merge.
+Exact reviewed PR head:
 
-Key V5 gate: `34736919952` — SUCCESS.
+`4e4bd2ae40c606562a982b3e38f9f859b49986eb`
+
+Successful gates:
+
+- V5 integration `34736919952`;
+- CY_GESY jurisdiction `34736920005`;
+- clinical-sheet v4 `34736920059`;
+- prototype `34736919984`;
+- protected Cockpit integration `34736920081`;
+- evidence design `34736919959`;
+- CU-1 focused `34736919945`.
+
+All completed `SUCCESS`.
 
 Final V5 artifact: `10311660626`, digest `sha256:003311ab6d45297211d9c5e24bfb26768d26d6c435c9b9069e7fff5acf140277`.
+
+Clinical Learning red checks were adjacent-owner scope-only after substantive tests/frozen-owner guards passed.
 
 ## 6. Merge / deploy — satisfied
 
@@ -119,23 +133,35 @@ Render deploy:
 
 reached `live` at that exact runtime commit. No manual duplicate deploy was triggered.
 
-## 7. Authenticated production-smoke contract
+## 7. Authenticated production smoke — satisfied
 
-The temporary non-merged ops workflow must prove, on the live service:
+The first branch-push smoke was queued without a runner, so the identical smoke was executed via a temporary same-repository draft PR trigger rather than weakening authentication or exposing secrets.
 
-1. unauthenticated product bootstrap remains rejected;
-2. authenticated bootstrap/project remain operational;
-3. production jurisdiction profile remains `CY_GESY` via explicit account configuration;
-4. international acupuncture/manual-therapy evidence states remain unchanged while local directions remain separate;
-5. local-only electrotherapy does not become an international clinical evidence item;
-6. default rehabilitation selection remains unchanged;
-7. referral prose contains no silent Cyprus/GeSY evidence leakage;
-8. live clinical-sheet asset has only the two weakness exam options and no duplicated quadriceps-atropy option;
+Temporary PR:
+
+`#103` — closed unmerged after verification.
+
+Executed smoke:
+
+`34737943402` — **SUCCESS**
+
+Job:
+
+`103672560340` — **SUCCESS**
+
+Verified live production behavior:
+
+1. unauthenticated bootstrap rejected;
+2. authenticated bootstrap/project operational;
+3. production profile `CY_GESY` via `explicit_account_configuration`;
+4. international acupuncture/manual-therapy evidence states unchanged while local Cyprus directions remain separate;
+5. local-only electrotherapy absent from international clinical evidence items;
+6. default rehab selections unchanged;
+7. no Cyprus/GeSY evidence leakage into referral prose;
+8. live weakness clinical-sheet asset exposes only the two approved weakness exam options and no quadriceps atrophy option;
 9. live More/Exam asset retains quadriceps atrophy;
-10. no browser patient/referral persistence marker is introduced;
-11. only generated UUID/non-identifiable smoke state is sent and the protected key is never printed.
-
-Run `34737351354` is queued but has not yet executed.
+10. no `localStorage` / `sessionStorage` persistence marker in the tested live V5 assets;
+11. only generated UUID + non-identifiable state sent; protected key masked throughout logs.
 
 ## 8. Explicit exclusions
 
@@ -151,17 +177,15 @@ No:
 - Greece/England localization;
 - Medical Report runtime/config mutation.
 
-## 9. Exit gate
-
-Final release-closeout requires authenticated production smoke `SUCCESS`.
-
-Current state:
+## 9. Exit gate — PASS
 
 ```text
 MERGED                    YES
 DEPLOYED                  YES
-AUTHENTICATED SMOKE       PENDING EXECUTION
-CANONICAL FINAL CLOSEOUT  NOT YET MERGED
+AUTHENTICATED SMOKE       PASS
+PRODUCTION-SMOKE-VERIFIED YES
+CANONICAL CLOSEOUT        READY TO MERGE
+WRITER                     NONE
 ```
 
-A queued job is not a PASS and is not an application failure.
+The release slice is closed after the docs-only closeout merge. Any next product work requires a new bounded decision.
