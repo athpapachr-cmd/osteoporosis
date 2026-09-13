@@ -89,6 +89,17 @@ class V51BrowserTests(unittest.TestCase):
         expect(self.page.locator("#referralText")).to_contain_text("αστάθεια σε βλαισότητα")
         self.assertNotIn("SIFK",self.page.locator("#referralText").inner_text())
 
+    def test_atrophy_remains_when_generic_weakness_is_removed(self):
+        self.ready();self.open_exam()
+        self.page.get_by_role("button",name="Ατροφία τετρακεφάλου",exact=True).click()
+        expect(self.page.locator("#referralText")).to_contain_text("εμφανή ατροφία τετρακεφάλου")
+        self.page.locator("#closeSheet").click()
+        weak=self.page.locator("[data-clinical-v4=weakness]");weak.click();weak.click()
+        expect(self.page.locator("#sheet")).to_be_visible()
+        self.page.locator("[data-clinical-remove-v4=weakness]").click()
+        expect(weak).to_have_attribute("aria-pressed","false")
+        expect(self.page.locator("#referralText")).to_contain_text("εμφανή ατροφία τετρακεφάλου")
+
     def test_bony_tenderness_does_not_create_review_bubble(self):
         self.ready();self.open_exam();self.page.locator("[data-q-tenderness=medial_bony]").click()
         expect(self.page.locator("#referralText")).to_contain_text("οστική ευαισθησία έσω")
@@ -101,16 +112,19 @@ class V51BrowserTests(unittest.TestCase):
         expect(self.page.locator("#v51ReviewBubble")).to_be_visible()
         expect(self.page.locator("#v51ReviewBubble")).to_contain_text("Πρωινή δυσκαμψία >30′")
         expect(self.page.locator("#copy")).to_be_enabled()
-        expect(self.page.locator("#v51ReviewBubble a")).to_have_attribute("href",lambda value:value.startswith("https://www.nice.org.uk/"))
+        href=self.page.locator("#v51ReviewBubble a").get_attribute("href")
+        self.assertTrue(href and href.startswith("https://www.nice.org.uk/"),href)
 
-    def test_evidence_source_has_direct_reviewed_link(self):
+    def test_evidence_source_has_visible_direct_reviewed_shortcuts(self):
         self.ready();self.page.locator("#plan [data-evidence=therapeutic_exercise]").click()
         expect(self.page.locator("#sheet")).to_be_visible()
-        links=self.page.locator("#sheet .source-position:not(.jurisdiction-position-v1) .v51-source-link")
+        strip=self.page.locator("#v51SourceShortcuts")
+        expect(strip).to_be_visible();expect(strip).to_contain_text("Πηγές")
+        links=strip.locator("a.v51-source-shortcut")
         self.assertGreaterEqual(links.count(),1)
         for index in range(links.count()):
             href=links.nth(index).get_attribute("href")
-            self.assertTrue(href.startswith("https://"),href)
+            self.assertTrue(href and href.startswith("https://"),href)
             self.assertEqual(links.nth(index).get_attribute("target"),"_blank")
             self.assertIn("noopener",links.nth(index).get_attribute("rel") or "")
 
