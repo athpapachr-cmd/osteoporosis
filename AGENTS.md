@@ -128,6 +128,52 @@ new conversation
 
 A meaningful implementation session should claim its scope in `CURRENT_OPERATIONAL.md` before overlapping mutation and release/update that lock when the slice closes or pauses.
 
+## 3.1 Direct-execution-first; Codex is escalation, not default
+
+Treat Codex usage as a scarce implementation resource. A task must **not** be delegated to Codex merely because it involves code, repository changes, implementation or release procedure.
+
+When the current ChatGPT session already has the tools, permissions and context to complete a task **safely, deterministically and verifiably**, it should perform that work directly and preserve Codex capacity for work that materially needs it.
+
+Default decision rule:
+
+```text
+can current session inspect the authoritative source
++ make the bounded change safely
++ obtain adequate verification with available tools/CI
+→ execute directly here
+→ do not spend Codex
+```
+
+Typical direct-session work includes, when the required tooling is available:
+
+- canonical/procedure/rule updates;
+- bounded edits to known files with clear acceptance criteria;
+- GitHub branch / PR / review / merge operations;
+- Render deploy/status/log inspection and ordinary release follow-through;
+- focused repository inspection and evidence gathering;
+- small implementation or corrective patches whose correctness can be established through existing tests/CI or other available verification.
+
+Use Codex only when it materially adds a capability that the current session lacks, for example:
+
+- repo-local shell/build/test/debug loops that cannot be run or adequately verified with current tools;
+- broad or high-risk multi-file refactors where direct connector editing would materially increase implementation risk;
+- substantial codebase navigation or iterative runtime debugging that requires a coding workspace;
+- tooling/environment access unavailable in the current session;
+- explicit Product Owner instruction to use Codex.
+
+If only part of a task requires Codex, complete the safe direct portion here and delegate only the irreducible remainder.
+
+Hard rules:
+
+```text
+IMPLEMENTATION LABEL != CODEX REQUIREMENT
+PROCESS CEREMONY != CODEX REQUIREMENT
+AVAILABLE SAFE DIRECT TOOLING → USE IT FIRST
+CODEX = CAPABILITY ESCALATION, NOT DEFAULT HANDOFF
+```
+
+Do not trade safety, test quality or source-of-truth discipline merely to save Codex usage. Conservation applies only where direct execution is genuinely equivalent or safer.
+
 ---
 
 # 4. Canonical update protocol — continuity after every meaningful step
