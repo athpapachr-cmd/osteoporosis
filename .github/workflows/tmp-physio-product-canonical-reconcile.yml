@@ -316,6 +316,7 @@ jobs:
         run: |
           rm -f .github/workflows/tmp-physio-product-canonical-reconcile.yml
           allowed=(
+            .github/workflows/tmp-physio-product-canonical-reconcile.yml
             commercial_products/physio_referral/CURRENT.md
             commercial_products/physio_referral/PRODUCT_CHANGELOG.md
             commercial_products/physio_referral/PRODUCT_CONTEXT_CURRENT.md
@@ -326,6 +327,6 @@ jobs:
           printf '%s\n' "${allowed[@]}" | sort > /tmp/allowed.txt
           printf '%s\n' "${changed[@]}" > /tmp/changed.txt
           diff -u /tmp/allowed.txt /tmp/changed.txt
-          git add "${allowed[@]}"
+          git add -A -- "${allowed[@]}"
           git commit -m "Reconcile Physio Knee OA production canonicals"
           git push origin HEAD:docs/physio-knee-oa-canonical-reconcile-2026-09-15
