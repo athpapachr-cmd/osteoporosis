@@ -140,6 +140,21 @@ class KneeOACockpitBrowserTests(unittest.TestCase):
         self.page.locator("#closeSheet").click();expect(self.page.locator("#v51ReviewBubble")).to_contain_text("2 χαρακτηριστικά");self.assertEqual(self.page.locator("#referralText").inner_text(),before)
         self.open_safety();infection=self.page.locator('#sheet [data-select="infection_or_septic_joint_concern"]');infection.click();expect(self.page.locator("#copy")).to_be_disabled();expect(self.page.locator("#sheetSafety")).to_be_visible()
 
+
+    def test_receiver_compression_and_optional_chronicity_on_protected_transport(self):
+        self.ready();self.page.locator("#advancedToggle").click()
+        self.page.locator("#advanced [data-v3-category=function]").click()
+        self.page.locator('#sheet [data-select="squat"]').click();self.page.locator('#sheet [data-select="kneeling"]').click();self.page.locator("#closeSheet").click()
+        self.page.locator("#advanced [data-v3-category=rehab]").click();self.page.locator('#sheet [data-select="functional_task_retraining"]').click()
+        expect(self.page.locator("#referralText")).to_contain_text("λειτουργική επανεκπαίδευση με έμφαση στις καταγεγραμμένες λειτουργικές δυσχέρειες")
+        expect(self.page.locator("#referralText")).not_to_contain_text("λειτουργική επανεκπαίδευση για")
+        self.page.locator("#closeSheet").click();self.page.locator("#advanced [data-v3-category=notes]").click()
+        expect(self.page.get_by_role("heading",name="Χρονιότητα συμπτωμάτων",exact=True)).to_have_count(1)
+        self.assertEqual(self.page.get_by_text("Προηγούμενη φυσικοθεραπεία",exact=True).count(),0)
+        self.page.locator("#v51SymptomDurationValue").fill("2");self.page.locator("#v51SymptomDurationUnit").select_option("years")
+        expect(self.page.locator("#referralText")).to_contain_text("Συμπτωματολογία διάρκειας 2 ετών.")
+        expect(self.page.locator("#copy")).to_be_enabled()
+
     def test_cyprus_context_is_visible_for_core_items_without_mutating_selection(self):
         self.ready(); referral_before=self.page.locator("#referralText").inner_text()
         for item in ["therapeutic_exercise","progressive_strengthening","education_and_self_management"]:

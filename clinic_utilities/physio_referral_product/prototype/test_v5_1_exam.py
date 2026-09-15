@@ -161,6 +161,36 @@ class V51ExamSemanticsTests(unittest.TestCase):
         self.assertEqual(rows["orthosis_or_brace_context"]["relationship_to_source_guideline"]["source_recommendation_id"],"1.3.13")
         self.assertEqual(rows["taping"]["source_provenance"]["recommendation_page_or_section"],"1.3.13, p9")
 
+
+    def test_functional_retraining_compresses_duplicate_task_list_for_receiver(self):
+        req=request()
+        req["state"]["functional_impairments"]=["stairs","sit_to_stand","squat","kneeling"]
+        req["state"]["rehab_directions"]=[
+            "therapeutic_exercise","progressive_strengthening","education_and_self_management","functional_task_retraining"
+        ]
+        result=p.present_project_result(p.project(req),req)
+        text=result["text"]
+        self.assertIn("λειτουργική επανεκπαίδευση με έμφαση στις καταγεγραμμένες λειτουργικές δυσχέρειες",text)
+        self.assertNotIn("λειτουργική επανεκπαίδευση για",text)
+        for phrase in ["στις σκάλες","στην έγερση από καθιστή θέση","στο βαθύ κάθισμα","στο γονάτισμα"]:
+            self.assertEqual(text.count(phrase),1,text)
+
+    def test_optional_symptom_duration_is_context_only_and_validated(self):
+        _,result=projected(qualifiers={"symptom_duration_value":8,"symptom_duration_unit":"months"})
+        self.assertIn("Συμπτωματολογία διάρκειας 8 μηνών.",result["text"])
+        self.assertIn("με έμφαση σε θεραπευτική άσκηση, προοδευτική ενδυνάμωση και εκπαίδευση για αυτοδιαχείριση",result["text"])
+        self.assertEqual(result["state"]["rehab_directions"],list(p.E["default_plan"]["selected"]))
+        self.assertNotIn("προηγούμενη φυσικοθεραπεία",result["text"].lower())
+        for invalid in [
+            {"symptom_duration_value":8},
+            {"symptom_duration_unit":"months"},
+            {"symptom_duration_value":0,"symptom_duration_unit":"months"},
+            {"symptom_duration_value":8,"symptom_duration_unit":"days"},
+        ]:
+            with self.subTest(invalid=invalid):
+                req=request();req["state"]["qualifiers"]=invalid
+                with self.assertRaises(ValueError):p.project(req)
+
     def test_new_exam_detail_does_not_auto_select_treatment(self):
         q={
             "rom_restriction_present":True,

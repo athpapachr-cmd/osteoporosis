@@ -9,6 +9,8 @@ const V51_QUALIFIER_DEFAULTS = Object.freeze({
   passive_flexion_restricted:false,
   crepitus:false,
   stability_findings:[],
+  symptom_duration_value:null,
+  symptom_duration_unit:null,
   recent_trauma:false,
   rapid_worsening_or_deformity:false,
   hot_swollen_joint:false,
@@ -45,6 +47,8 @@ Object.assign(QLABELS.tenderness,{
   extensor_mechanism:'Εκτατικός μηχανισμός',
 });
 for(const id of ['active_rom_restricted','passive_rom_restricted']) V3_DUPLICATED_FINDINGS.add(id);
+const v51NotesCategory=V3_CATEGORY_DEFS.find(item=>item.id==='notes');
+if(v51NotesCategory)v51NotesCategory.hint='Χρονιότητα, περιορισμοί και σημείωση';
 
 // V5 established atrophy as an objective Examination finding. Removing the
 // reported/generic weakness symptom must therefore clear only weakness detail,
@@ -59,6 +63,16 @@ function v51EnsureQualifierState(){
   for(const [key,value] of Object.entries(V51_QUALIFIER_DEFAULTS)){
     if(!(key in qualifierState)) qualifierState[key]=Array.isArray(value)?[]:value;
   }
+}
+function v51DurationSummary(){
+  const value=qualifierState?.symptom_duration_value,unit=qualifierState?.symptom_duration_unit;
+  if(!Number.isInteger(value)||!unit)return '';
+  const labels={
+    weeks:value===1?'1 εβδομάδα':value+' εβδομάδες',
+    months:value===1?'1 μήνας':value+' μήνες',
+    years:value===1?'1 έτος':value+' έτη',
+  };
+  return labels[unit]||'';
 }
 function v51RomHasSpecificDetail(){
   return !!(
@@ -222,6 +236,7 @@ v4SheetNodes=function(kind){
 const v51BaseV3SelectedForCategory=v3SelectedForCategory;
 v3SelectedForCategory=function(id){
   const values=v51BaseV3SelectedForCategory(id);
+  if(id==='notes'){const duration=v51DurationSummary();if(duration)values.unshift('Διάρκεια '+duration);return [...new Set(values)];}
   if(id==='safety'){
     for(const [key,text] of Object.entries(V51_ATYPICAL_LABELS))if(qualifierState[key])values.push(text);
     if(qualifierState.morning_stiffness_duration==='gt_30')values.push('Πρωινή δυσκαμψία >30′');
@@ -364,6 +379,34 @@ function v51ExamSheet(){
 v3ExamSheet=v51ExamSheet;
 v3SafetySheet=v51SafetySheet;
 
+const v51BaseV3NotesSheet=v3NotesSheet;
+v3NotesSheet=function(){
+  v51EnsureQualifierState();
+  const value=make('input',{id:'v51SymptomDurationValue',type:'number',min:'1',max:'99',step:'1',inputmode:'numeric',autocomplete:'off','aria-label':'Διάρκεια συμπτωμάτων'});
+  const unit=make('select',{id:'v51SymptomDurationUnit','aria-label':'Μονάδα διάρκειας συμπτωμάτων'});
+  for(const [id,label] of [['weeks','εβδομάδες'],['months','μήνες'],['years','έτη']])unit.append(make('option',{value:id,text:label}));
+  if(Number.isInteger(qualifierState.symptom_duration_value))value.value=String(qualifierState.symptom_duration_value);
+  unit.value=qualifierState.symptom_duration_unit||'months';
+  const sync=()=>{
+    const raw=value.value.trim();
+    if(raw===''){
+      value.setCustomValidity('');value.removeAttribute('aria-invalid');
+      qualifierState.symptom_duration_value=null;qualifierState.symptom_duration_unit=null;changed('symptom_duration');return;
+    }
+    const parsed=Number.parseInt(raw,10);
+    if(!Number.isInteger(parsed)||parsed<1||parsed>99){value.setCustomValidity('Καταχώρισε διάρκεια 1–99 ή άφησέ το κενό.');value.setAttribute('aria-invalid','true');return;}
+    value.setCustomValidity('');value.removeAttribute('aria-invalid');
+    qualifierState.symptom_duration_value=parsed;qualifierState.symptom_duration_unit=unit.value;changed('symptom_duration');
+  };
+  value.addEventListener('input',sync);unit.addEventListener('change',()=>{if(value.value.trim())sync();});
+  const chronicity=make('section',{class:'v3-sheet-section','data-v51-chronicity-section':''},[
+    make('h3',{class:'v3-sheet-subtitle',text:'Χρονιότητα συμπτωμάτων'}),
+    make('p',{class:'v3-sheet-note',text:'Προαιρετική πληροφορία. Καταχώρισε τη διάρκεια μόνο όταν είναι γνωστή.'}),
+    make('div',{class:'v3-inline-choices'},[make('label',{class:'field'},['Διάρκεια',value]),make('label',{class:'field'},['Μονάδα',unit])]),
+  ]);
+  return [chronicity,...v51BaseV3NotesSheet()];
+};
+
 const v51BaseV3SyncSheetState=v3SyncSheetState;
 v3SyncSheetState=function(){
   v51EnsureQualifierState();
@@ -399,6 +442,7 @@ advancedCount=function(){
   if(qualifierState.rom_restriction_present&&!v51RomHasSpecificDetail())count++;
   count+=(qualifierState.stability_findings||[]).length;
   count+=Object.keys(V51_ATYPICAL_LABELS).filter(key=>qualifierState[key]).length;
+  if(qualifierState.symptom_duration_value&&qualifierState.symptom_duration_unit)count++;
   return count;
 };
 
