@@ -49,6 +49,12 @@ CORE_DEFAULT_REHAB = {
     "progressive_strengthening",
     "education_and_self_management",
 }
+ATYPICAL_QUALIFIER_KEYS = {
+    "recent_trauma",
+    "rapid_worsening_or_deformity",
+    "hot_swollen_joint",
+}
+CY_OA_GUIDELINE_URL = "https://www.gesy.org.cy/el-gr/annualreport/greek-translated-oa-19-12-2025-hio-circ-0.pdf"
 
 
 def empty_qualifiers() -> dict[str, Any]:
@@ -67,6 +73,9 @@ def empty_qualifiers() -> dict[str, Any]:
         "crepitus": False,
         "focal_tenderness_locations": [],
         "stability_findings": [],
+        "recent_trauma": False,
+        "rapid_worsening_or_deformity": False,
+        "hot_swollen_joint": False,
     }
 
 
@@ -139,6 +148,11 @@ def clean_qualifiers(raw: Any, state: dict[str, Any]) -> dict[str, Any]:
     stability = raw.get("stability_findings", [])
     _check(isinstance(stability, list) and len(stability) <= 4 and all(v in STABILITY_FINDINGS for v in stability))
     q["stability_findings"] = list(dict.fromkeys(stability))
+
+    for key in ATYPICAL_QUALIFIER_KEYS:
+        value = raw.get(key, False)
+        _check(type(value) is bool)
+        q[key] = value
 
     phenotype = state.get("phenotype") or {}
     _check(not q["pain_locations"] or "pain" in findings)
@@ -340,7 +354,8 @@ def _has_product_specific_signal(state: dict[str, Any]) -> bool:
     qualifiers = state.get("qualifiers") or empty_qualifiers()
     qualifier_signal = any(
         value not in (None, False, [], {})
-        for value in qualifiers.values()
+        for key, value in qualifiers.items()
+        if key not in ATYPICAL_QUALIFIER_KEYS
     )
     return any((
         state.get("findings"),
@@ -434,6 +449,23 @@ def apply_referral_overlay(text: str, state: dict[str, Any]) -> str:
 
 def clinical_review_clues(qualifiers: dict[str, Any]) -> list[dict[str, str]]:
     clues: list[dict[str, str]] = []
+
+    def add_local(clue_id: str, label: str, detail: str) -> None:
+        clues.append({
+            "clue_id": clue_id,
+            "label": label,
+            "detail": detail,
+            "source_label": "Κύπρος · ΟΑΥ · προσαρμογή NICE NG226",
+            "source_url": CY_OA_GUIDELINE_URL,
+            "reviewed_on": "15/09/2026",
+        })
+
+    if qualifiers.get("recent_trauma") is True:
+        add_local(
+            "recent_trauma_atypical",
+            "Πρόσφατο τραύμα · άτυπο χαρακτηριστικό",
+            "Η κυπριακή προσαρμογή της NG226 το αναφέρει ως άτυπο χαρακτηριστικό. Χρειάζεται κλινική επανεκτίμηση για πιθανή πρόσθετη ή εναλλακτική διάγνωση· δεν επιλέγεται αυτόματα απεικόνιση, συγκεκριμένη διάγνωση ή θεραπεία.",
+        )
     if qualifiers.get("morning_stiffness_duration") == "gt_30":
         clues.append({
             "clue_id": "morning_stiffness_over_30",
@@ -441,6 +473,18 @@ def clinical_review_clues(qualifiers: dict[str, Any]) -> list[dict[str, str]]:
             "detail": "Η διάρκεια αυτή βρίσκεται έξω από το τυπικό κλινικό πρότυπο OA που χρησιμοποιεί το NICE. Χρειάζεται περαιτέρω κλινική εκτίμηση για πιθανό πρόσθετο ή εναλλακτικό αίτιο, χωρίς αυτόματη αλλαγή διάγνωσης ή θεραπείας.",
             "source_label": "NICE NG226 · 2022",
             "source_url": "https://www.nice.org.uk/guidance/ng226/chapter/recommendations",
-            "reviewed_on": "13/09/2026",
+            "reviewed_on": "15/09/2026",
         })
+    if qualifiers.get("rapid_worsening_or_deformity") is True:
+        add_local(
+            "rapid_worsening_or_deformity_atypical",
+            "Ταχεία επιδείνωση συμπτωμάτων ή παραμόρφωση · άτυπο χαρακτηριστικό",
+            "Η ταχεία επιδείνωση ή παραμόρφωση δεν πρέπει να εξισώνεται με μια συνήθη έξαρση OA. Χρειάζεται κλινική επανεκτίμηση για πιθανή πρόσθετη ή εναλλακτική διάγνωση, χωρίς αυτόματη επιλογή απεικόνισης.",
+        )
+    if qualifiers.get("hot_swollen_joint") is True:
+        add_local(
+            "hot_swollen_joint_atypical",
+            "Θερμή και διογκωμένη άρθρωση · άτυπο χαρακτηριστικό",
+            "Η κυπριακή οδηγία το κατατάσσει στα άτυπα χαρακτηριστικά. Από μόνο του δεν ισοδυναμεί με σηπτική άρθρωση· ανεπίλυτη ανησυχία για λοίμωξη δηλώνεται ξεχωριστά στον Κλινικό έλεγχο.",
+        )
     return clues

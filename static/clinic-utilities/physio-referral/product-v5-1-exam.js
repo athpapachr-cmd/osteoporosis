@@ -9,7 +9,16 @@ const V51_QUALIFIER_DEFAULTS = Object.freeze({
   passive_flexion_restricted:false,
   crepitus:false,
   stability_findings:[],
+  recent_trauma:false,
+  rapid_worsening_or_deformity:false,
+  hot_swollen_joint:false,
 });
+const V51_ATYPICAL_LABELS=Object.freeze({
+  recent_trauma:'Πρόσφατο τραύμα',
+  rapid_worsening_or_deformity:'Ταχεία επιδείνωση συμπτωμάτων ή παραμόρφωση',
+  hot_swollen_joint:'Θερμή και διογκωμένη άρθρωση',
+});
+const V51_CY_OA_GUIDELINE_URL='https://www.gesy.org.cy/el-gr/annualreport/greek-translated-oa-19-12-2025-hio-circ-0.pdf';
 const V51_STABILITY_LABELS = Object.freeze({
   valgus_instability:'Αστάθεια σε βλαισότητα',
   varus_instability:'Αστάθεια σε ραιβότητα',
@@ -73,7 +82,7 @@ function v51ToggleQualifierArray(key,value){
 }
 function v51ClinicalHintText(kind){
   if(!['pain','stiffness','weakness'].includes(kind))return '';
-  return 'Πατήστε ξανά για προαιρετικές λεπτομέρειες';
+  return 'Λεπτομέρειες ›';
 }
 function v51InstallClinicalHints(){
   const box=$('#phenotype');if(!box)return false;
@@ -82,7 +91,7 @@ function v51InstallClinicalHints(){
     const kind=button.dataset.clinicalV4;
     const wrap=make('div',{class:'v51-clinical-wrap','data-v51-clinical-wrap':kind});
     button.replaceWith(wrap);wrap.append(button);
-    if(kind!=='function')wrap.append(make('span',{class:'v51-second-tap-hint','data-v51-second-tap-hint':kind,text:v51ClinicalHintText(kind),hidden:''}));
+    if(kind!=='function')wrap.append(btn(v51ClinicalHintText(kind),{class:'v51-second-tap-hint','data-v51-second-tap-hint':kind,'data-v51-open-details':kind,'aria-label':'Άνοιγμα προαιρετικών λεπτομερειών για '+V4_CLINICAL[kind].label,hidden:''}));
   }
   return true;
 }
@@ -108,17 +117,87 @@ function v51SafeLink(href,label,text='Οδηγία ↗'){
     return make('a',{href:url.href,target:'_blank',rel:'noopener noreferrer','aria-label':label,text});
   }catch(_error){return null;}
 }
+function v51LocalCueVisible(local){
+  const visibility=local?.display_policy?.routine_visibility;
+  return !!local&&['context_cue_only','detail_only'].includes(visibility);
+}
+function v51RenderJurisdictionCues(){
+  if(!response)return;
+  for(const node of $$('[data-row-item],[data-v3-item]')){
+    const item=node.dataset.rowItem||node.dataset.v3Item;
+    const local=response?.evidence?.[item]?.jurisdiction;
+    node.querySelector('.v51-jurisdiction-cue')?.remove();
+    if(!v51LocalCueVisible(local))continue;
+    const relation=local.relationship_to_core;
+    const aria=relation==='agreement'?'Κυπριακή οδηγία διαθέσιμη · συμφωνεί με τη διεθνή θέση':'Κυπριακή τοπική θέση διαθέσιμη';
+    const cue=make('span',{class:'v51-jurisdiction-cue',text:'Κύπρος','aria-label':aria});
+    const actions=node.querySelector('.v3-option-actions');
+    if(actions){actions.prepend(cue);continue;}
+    const main=node.querySelector('.row-main');
+    const info=main?.querySelector('.info');
+    if(main){if(info)main.insertBefore(cue,info);else main.append(cue);}
+  }
+}
+function v51ReviewSectionContent(){
+  const rows=[];
+  const clues=response?.clinical_review_clues||[];
+  for(const clue of clues){
+    const row=make('div',{class:'v51-review-item'},[
+      make('strong',{text:clue.label}),
+      make('span',{text:clue.detail}),
+    ]);
+    const link=v51SafeLink(clue.source_url,'Άνοιγμα πηγής για '+clue.label,'Πηγή ↗');
+    if(link)row.append(link);
+    rows.push(row);
+  }
+  const safetyReview=[
+    ['acute_unresolved_fracture_or_instability_concern','Ανεπίλυτη ανησυχία για κάταγμα ή οξεία αστάθεια'],
+    ['infection_or_septic_joint_concern','Ανησυχία για λοίμωξη / σηπτική άρθρωση'],
+    ['material_concern_unresolved','Ανησυχία για κακοήθεια ή άλλη σοβαρή εναλλακτική αιτία'],
+    ['dvt_concern_unresolved','Ανεπίλυτη υποψία θρόμβωσης'],
+  ];
+  for(const [id,label] of safetyReview){
+    if(!state?.safety_flags?.includes(id))continue;
+    rows.push(make('div',{class:'v51-review-item v51-review-safety'},[
+      make('strong',{text:'Ανεπίλυτη ανησυχία ασφάλειας · '+label}),
+      make('span',{text:'Η routine εξαγωγή παραμένει μπλοκαρισμένη όσο η ανησυχία δεν έχει κλινικά διευθετηθεί.'}),
+    ]));
+  }
+  if(!rows.length){
+    return [make('p',{class:'v3-sheet-note',text:'Εμφανίζεται εδώ όταν καταγραφεί εύρημα που χρειάζεται περαιτέρω κλινική εκτίμηση. Η απουσία ένδειξης δεν αποτελεί φυσιολογικό έλεγχο.'})];
+  }
+  return rows;
+}
+function v51ExamReviewSection(){
+  return make('section',{class:'v3-sheet-section v51-exam-review-section','data-v51-review-section':''},[
+    make('h3',{class:'v3-sheet-subtitle',text:'Κλινική επανεκτίμηση'}),
+    make('div',{class:'v51-exam-review-content','data-v51-review-content':''},v51ReviewSectionContent()),
+  ]);
+}
+function v51RenderExamReviewSection(){
+  const host=$('#sheet [data-v51-review-content]');
+  if(!host||sheetView?.type!=='advanced-v3'||sheetView.item!=='exam')return;
+  host.replaceChildren(...v51ReviewSectionContent());
+}
 function v51RenderReviewBubble(){
   v51InstallReviewBubble();
   const host=$('#v51ReviewBubble');if(!host)return;
   const clues=response?.clinical_review_clues||[];
   if(!clues.length){host.hidden=true;host.replaceChildren();return;}
-  const clue=clues[0];
-  const children=[
-    make('strong',{text:clue.label}),
-    make('span',{text:'Περαιτέρω κλινική εκτίμηση πριν θεωρηθεί το εύρημα τυπική εικόνα ΟΑ.'}),
-  ];
-  const link=v51SafeLink(clue.source_url,'Άνοιγμα πηγής για '+clue.label,'Πηγή ↗');if(link)children.push(link);
+  const children=[];
+  if(clues.length===1){
+    const clue=clues[0];
+    children.push(make('strong',{text:clue.label}));
+    const link=v51SafeLink(clue.source_url,'Άνοιγμα πηγής για '+clue.label,'Πηγή ↗');
+    children.push(make('span',{text:'Περαιτέρω κλινική εκτίμηση πριν θεωρηθεί το εύρημα τυπική εικόνα ΟΑ.'}));
+    if(link)children.push(link);
+  }else{
+    children.push(
+      make('strong',{text:'Κλινική επανεκτίμηση · '+clues.length+' χαρακτηριστικά'}),
+      make('span',{text:clues.map(clue=>clue.label.replace(' · άτυπο χαρακτηριστικό','').replace(' · μη τυπικό χαρακτηριστικό','')).join(' · ')}),
+      make('span',{class:'v51-review-more',text:'Λεπτομέρειες και πηγές: Περισσότερα → Εξέταση.'}),
+    );
+  }
   host.replaceChildren(...children);host.hidden=false;
 }
 
@@ -143,6 +222,11 @@ v4SheetNodes=function(kind){
 const v51BaseV3SelectedForCategory=v3SelectedForCategory;
 v3SelectedForCategory=function(id){
   const values=v51BaseV3SelectedForCategory(id);
+  if(id==='safety'){
+    for(const [key,text] of Object.entries(V51_ATYPICAL_LABELS))if(qualifierState[key])values.push(text);
+    if(qualifierState.morning_stiffness_duration==='gt_30')values.push('Πρωινή δυσκαμψία >30′');
+    return [...new Set(values)];
+  }
   if(id!=='exam')return values;
   if(qualifierState.crepitus)values.push('Κριγμός');
   if(qualifierState.active_flexion_restricted)values.push('Ενεργητική κάμψη');
@@ -153,6 +237,49 @@ v3SelectedForCategory=function(id){
 };
 
 function v51Choice(text,attrs){return btn(text,{class:'v3-qualifier-choice',...attrs});}
+function v51AtypicalCount(){
+  let count=Object.keys(V51_ATYPICAL_LABELS).filter(key=>qualifierState[key]).length;
+  if(qualifierState.morning_stiffness_duration==='gt_30')count++;
+  return count;
+}
+function v51SafetyOption(id,text){
+  const selected=state.safety_flags.includes(id);
+  return make('div',{class:'v3-option-row'},[v3Button({class:'v3-option-button','data-select':id,'data-category':'safety_flags','aria-pressed':String(selected)},[
+    make('span',{class:'v3-option-mark','aria-hidden':'true',text:selected?'✓':''}),make('span',{text})
+  ])]);
+}
+function v51SafetySheet(){
+  v51EnsureQualifierState();
+  const active=v51AtypicalCount();
+  const attrs={class:'v51-atypical-disclosure','data-v51-atypical-disclosure':''};
+  if(active)attrs.open='';
+  const atypicalNodes=Object.entries(V51_ATYPICAL_LABELS).map(([key,text])=>
+    v51Choice(text,{'data-v51-atypical':key,'aria-pressed':String(qualifierState[key])})
+  );
+  const derived=make('div',{class:'v51-derived-atypical','data-v51-derived-morning':'',hidden:qualifierState.morning_stiffness_duration!=='gt_30'},[
+    make('strong',{text:'Πρωινή δυσκαμψία >30′'}),make('span',{text:'Προκύπτει από την Κλινική εικόνα · δεν χρειάζεται δεύτερη επιλογή.'})
+  ]);
+  const source=v51SafeLink(V51_CY_OA_GUIDELINE_URL,'Άνοιγμα κυπριακής οδηγίας για τα άτυπα χαρακτηριστικά','Κυπριακή οδηγία · ΟΑΥ ↗');
+  const details=make('details',attrs,[
+    make('summary',{class:'v51-atypical-summary'},[make('span',{text:'Άτυπα χαρακτηριστικά'}),make('span',{class:'v51-atypical-count','data-v51-atypical-count':'',text:active?active+' ενεργά':''})]),
+    make('p',{class:'v3-sheet-note',text:'Καταγράφουν απόκλιση από τη συνήθη εικόνα ΟΑ. Δεν επιλέγουν από μόνα τους διάγνωση, απεικόνιση ή θεραπεία.'}),
+    make('div',{class:'v3-inline-choices'},atypicalNodes),derived,
+    ...(source?[source]:[]),
+  ]);
+  return [
+    make('section',{class:'v3-sheet-section'},[details]),
+    make('section',{class:'v3-sheet-section v51-safety-section'},[
+      make('h3',{class:'v3-sheet-subtitle',text:'Ανεπίλυτες ανησυχίες ασφάλειας'}),
+      make('p',{class:'v3-sheet-note',text:'Επίλεξε μόνο όταν έχεις πραγματική ανεπίλυτη κλινική ανησυχία. Η επιλογή μπλοκάρει τη routine εξαγωγή· δεν ενεργοποιείται αυτόματα από τα άτυπα χαρακτηριστικά.'}),
+      make('div',{class:'v3-option-list'},[
+        v51SafetyOption('acute_unresolved_fracture_or_instability_concern','Ανησυχία για κάταγμα ή οξεία αστάθεια'),
+        v51SafetyOption('infection_or_septic_joint_concern','Ανησυχία για λοίμωξη / σηπτική άρθρωση'),
+        v51SafetyOption('material_concern_unresolved','Ανησυχία για κακοήθεια ή άλλη σοβαρή εναλλακτική αιτία'),
+        v51SafetyOption('dvt_concern_unresolved','Ανεπίλυτη υποψία θρόμβωσης'),
+      ]),
+    ]),
+  ];
+}
 function v51ExamSheet(){
   v51EnsureQualifierState();
   const sections=[];
@@ -228,17 +355,27 @@ function v51ExamSheet(){
     )),
   ]));
 
+  sections.push(v51ExamReviewSection());
+
   const other=Object.keys(meta.labels.findings).filter(x=>!V3_DUPLICATED_FINDINGS.has(x));
   if(other.length)sections.push(v3SheetSection('Άλλα ευρήματα',other.map(x=>v3OptionRow(x,'findings'))));
   return sections;
 }
 v3ExamSheet=v51ExamSheet;
+v3SafetySheet=v51SafetySheet;
 
 const v51BaseV3SyncSheetState=v3SyncSheetState;
 v3SyncSheetState=function(){
   v51EnsureQualifierState();
   v51BaseV3SyncSheetState();
-  if(sheetView?.type!=='advanced-v3'||sheetView.item!=='exam')return;
+  if(sheetView?.type!=='advanced-v3')return;
+  if(sheetView.item==='safety'){
+    $$('#sheet [data-v51-atypical]').forEach(b=>b.setAttribute('aria-pressed',String(qualifierState[b.dataset.v51Atypical])));
+    const count=v51AtypicalCount(),badge=$('#sheet [data-v51-atypical-count]');if(badge)badge.textContent=count?count+' ενεργά':'';
+    const derived=$('#sheet [data-v51-derived-morning]');if(derived)derived.hidden=qualifierState.morning_stiffness_duration!=='gt_30';
+    v51RenderJurisdictionCues();return;
+  }
+  if(sheetView.item!=='exam')return;
   const romActive=v51RomActive();
   const parent=$('#sheet [data-v51-rom-parent]');if(parent){parent.setAttribute('aria-pressed',String(romActive));const mark=parent.querySelector('.v3-option-mark');if(mark)mark.textContent=romActive?'✓':'';}
   const details=$('#v51RomDetails');if(details)details.hidden=!romActive;
@@ -248,6 +385,8 @@ v3SyncSheetState=function(){
   const crepitus=$('#sheet [data-v51-crepitus]');if(crepitus){crepitus.setAttribute('aria-pressed',String(qualifierState.crepitus));const mark=crepitus.querySelector('.v3-option-mark');if(mark)mark.textContent=qualifierState.crepitus?'✓':'';}
   $$('#sheet [data-v51-stability]').forEach(b=>b.setAttribute('aria-pressed',String((qualifierState.stability_findings||[]).includes(b.dataset.v51Stability))));
   const wrap=$('#v3FfdDegreesWrap');if(wrap)wrap.hidden=!qualifierState.fixed_flexion_deformity;
+  v51RenderExamReviewSection();
+  v51RenderJurisdictionCues();
 };
 
 const v51BaseAdvancedCount=advancedCount;
@@ -259,6 +398,7 @@ advancedCount=function(){
   if(qualifierState.passive_flexion_restricted)count++;
   if(qualifierState.rom_restriction_present&&!v51RomHasSpecificDetail())count++;
   count+=(qualifierState.stability_findings||[]).length;
+  count+=Object.keys(V51_ATYPICAL_LABELS).filter(key=>qualifierState[key]).length;
   return count;
 };
 
@@ -319,6 +459,8 @@ paint=function(){
   v51RenderClinicalHints();
   v51RenderReviewBubble();
   v3SyncSheetState();
+  v51RenderExamReviewSection();
+  v51RenderJurisdictionCues();
 };
 const v51BaseNewDraft=newDraft;
 newDraft=function(){
@@ -340,6 +482,16 @@ queueMicrotask(v51Install);
 document.addEventListener('click',event=>{
   const b=event.target.closest('button');if(!b||!state)return;
   v51EnsureQualifierState();
+  if(b.dataset.v51OpenDetails){
+    const kind=b.dataset.v51OpenDetails,card=$(`[data-clinical-v4=\"${kind}\"]`);
+    if(card&&v4Active(kind))v4OpenClinicalSheet(kind,card);
+    return;
+  }
+  if(b.dataset.v51Atypical&&sheetView?.type==='advanced-v3'&&sheetView.item==='safety'){
+    const key=b.dataset.v51Atypical;
+    if(Object.prototype.hasOwnProperty.call(V51_ATYPICAL_LABELS,key)){qualifierState[key]=!qualifierState[key];changed('atypical_'+key);queueMicrotask(v3SyncSheetState);}
+    return;
+  }
   if(b.hasAttribute('data-v51-rom-parent')&&sheetView?.type==='advanced-v3'){
     const active=v51RomActive();
     if(active){

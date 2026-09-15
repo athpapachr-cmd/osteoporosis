@@ -54,10 +54,16 @@ SCOPE = T["product_supported_input_scope"]
 HIDDEN = set(C["power_users"]["hidden_items"])
 CATEGORIES = {"findings": "findings", "functional_impairments": "functional_impairments",
               "rehab_directions": "rehab_directions", "adjunct_options": "adjuncts", "goals": "goals"}
-FLAGS = ["material_concern_unresolved", "infection_or_septic_joint_concern", "dvt_concern_unresolved"]
+FLAGS = [
+    "material_concern_unresolved",
+    "acute_unresolved_fracture_or_instability_concern",
+    "infection_or_septic_joint_concern",
+    "dvt_concern_unresolved",
+]
 SAFETY_LABELS = {
-    "material_concern_unresolved": "Ανεπίλυτη κλινική ανησυχία",
-    "infection_or_septic_joint_concern": "Ανησυχία για λοίμωξη ή σηπτική άρθρωση",
+    "material_concern_unresolved": "Ανησυχία για κακοήθεια ή άλλη σοβαρή εναλλακτική αιτία",
+    "acute_unresolved_fracture_or_instability_concern": "Ανεπίλυτη ανησυχία για κάταγμα ή οξεία αστάθεια",
+    "infection_or_septic_joint_concern": "Ανησυχία για λοίμωξη / σηπτική άρθρωση",
     "dvt_concern_unresolved": "Ανεπίλυτη υποψία θρόμβωσης",
 }
 
