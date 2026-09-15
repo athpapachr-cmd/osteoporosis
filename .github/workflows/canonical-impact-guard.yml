@@ -1,0 +1,37 @@
+name: Canonical impact guard
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  canonical-impact:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Fetch base branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin "${GITHUB_BASE_REF}:refs/remotes/origin/${GITHUB_BASE_REF}"
+
+      - name: Guard self-test
+        run: python .github/scripts/check_canonical_impact.py --self-test
+
+      - name: Validate PR canonical impact declaration
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --name-only "origin/${GITHUB_BASE_REF}...HEAD" > /tmp/changed-files.txt
+          python .github/scripts/check_canonical_impact.py \
+            --event "$GITHUB_EVENT_PATH" \
+            --changed-files /tmp/changed-files.txt
