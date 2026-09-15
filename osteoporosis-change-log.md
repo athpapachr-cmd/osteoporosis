@@ -1375,3 +1375,21 @@ Verified sequence:
 Current live smoke preserved the protected `clinical_excellence_cockpit` context, explicit `CY_GESY`, context-only chronicity, compressed functional-retraining wording, no structured previous-physiotherapy/response control and no browser draft persistence.
 
 Root `CURRENT_OPERATIONAL.md` / `SLICE_PLAN_CURRENT.md` were intentionally not rewritten because their active lifecycle remains the parallel Medical Report release/smoke track.
+
+---
+
+## 2026-09-15 — Atomic canonical checkpoint governance adopted
+
+Repository continuity rules were hardened after a real long-conversation failure mode showed that correct runtime work could outpace product-local canonical closeout.
+
+The permanent operating model now treats each material lifecycle transition as an atomic checkpoint barrier: perform one transition, collect its exact evidence, persist the resulting state in the correct canonical/workstream `CURRENT`, verify that durable checkpoint, and only then continue to the next deliberate material action.
+
+Parallel workstreams keep `CURRENT_OPERATIONAL.md` as the single repo-wide writer lock while maintaining their own product-local `CURRENT.md` where one exists. A release-affecting parallel PR must update its applicable workstream current-state file even when root NOW correctly belongs to another lifecycle.
+
+GitHub governance now includes a pull-request Canonical Impact Declaration plus a `Canonical impact guard` Action. The guard validates declared canonical effects against the actual PR diff and requires a workstream current-state update for release-affecting PRs. Because `main` is not currently protected by a required-check rule, a red guard is defined as a merge prohibition by repository policy; the same check can later be made server-enforced through branch protection.
+
+The durable objective is explicit:
+
+```text
+CHAT END / CONTEXT LOSS MUST NEVER BE REQUIRED FOR PROJECT STATE RECOVERY
+```

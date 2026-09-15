@@ -182,6 +182,95 @@ The documentation system exists so a conversation can end at any point and the n
 
 After every material state transition, update the correct canonical owner before moving on.
 
+## 4.1 Atomic canonical checkpoint barrier
+
+Canonical persistence is a **transaction barrier**, not end-of-session housekeeping. A material transition is not operationally complete until the new state has been durably recorded in the correct canonical owner and verified.
+
+Mandatory sequence:
+
+```text
+perform ONE material state transition
+→ collect exact evidence / identity
+→ persist the resulting state in the correct canonical owner
+→ update the relevant workstream CURRENT when one exists
+→ verify the durable checkpoint
+→ only then perform the next material state transition
+```
+
+Material checkpoint transitions include at minimum:
+
+- implementation started or materially replanned;
+- implementation/tested candidate reached;
+- PR opened or moved into HOLD/review;
+- merge completed;
+- deploy identity/status established;
+- production smoke completed or failed;
+- blocker/REPLAN discovered;
+- writer/scope ownership changed or released.
+
+Hard rules:
+
+```text
+STATE TRANSITION != COMPLETE UNTIL CHECKPOINTED
+NEXT MATERIAL ACTION REQUIRES PREVIOUS DURABLE CHECKPOINT
+END-OF-SESSION RECONCILIATION != PRIMARY UPDATE MECHANISM
+CHAT CAPACITY / CHAT SURVIVAL != CONTROL PLANE
+```
+
+Do not intentionally batch multiple unpersisted transitions such as `merge → deploy → smoke → canonical update`. If an automatic external transition occurs before the previous checkpoint can be written, record all already-observed states at the first safe opportunity and do not perform the next **deliberate** material action until that checkpoint is durable.
+
+If context pressure, tool failure or interruption threatens continuity, stop advancing the lifecycle at the last durable checkpoint rather than trying to finish more work first. A new conversation must be able to recover the project from the repository without needing the dying conversation to produce a final summary.
+
+## 4.2 Parallel workstream checkpoint rule
+
+`CURRENT_OPERATIONAL.md` remains the sole repo-wide writer lock and primary operational NOW. A parallel product/workstream must not steal that root NOW merely because it is making progress.
+
+When the root NOW belongs to another lifecycle, any parallel workstream that has a durable product-local current-state file (for example `commercial_products/<product>/CURRENT.md`) must checkpoint its own material state transitions there.
+
+```text
+ROOT CURRENT_OPERATIONAL
+= repo-wide writer lock / primary NOW
+
+PARALLEL WORKSTREAM CURRENT.md
+= durable sidecar state for that workstream
+!= second repo-wide writer lock
+```
+
+For a release-affecting parallel PR, updating the applicable workstream current-state file is mandatory even when `CURRENT_OPERATIONAL.md` correctly remains owned by another slice. A product-local CURRENT must distinguish implementation/test/release/deploy/smoke truth with the same rigor as the root NOW.
+
+## 4.3 Pull-request canonical-impact declaration and CI guard
+
+Every new PR must carry the repository's machine-readable **Canonical Impact Declaration** from `.github/pull_request_template.md`. The `Canonical impact guard` workflow validates that declaration against the actual changed files.
+
+At minimum the declaration states:
+
+```text
+release_affecting
+checkpoint_stage
+root_current
+slice_plan
+todo
+clinical_excellence_plan
+workstream_current
+workstream_current_path
+changelog
+reason
+```
+
+Rules:
+
+- a declaration of `update` must correspond to the declared canonical actually changing in the PR;
+- changing a governed canonical while declaring `none` is a guard failure;
+- `release_affecting: yes` requires `workstream_current: update` and the declared `workstream_current_path` must be part of the PR diff;
+- the workstream path must be `CURRENT_OPERATIONAL.md` or a product/workstream path ending in `/CURRENT.md`;
+- changelog updates/deferment must be declared explicitly;
+- placeholder declarations are invalid;
+- a red `Canonical impact guard` is a **merge prohibition under repository policy**.
+
+The current repository does not have server-side branch protection requiring this check. Therefore the Action currently provides a visible failing CI gate plus the repository rule above; if required-check branch protection is enabled later, the same workflow can become a hard GitHub merge block without changing the declaration contract.
+
+A PR body remains evidence/intent, not canonical truth. After merge/deploy/smoke, the next deliberate lifecycle action still requires the corresponding canonical checkpoint under §4.1.
+
 ### Operational state changes → `CURRENT_OPERATIONAL.md`
 Update when any of these change:
 
@@ -225,6 +314,8 @@ At the end of a substantial session, `CURRENT_OPERATIONAL.md` must be sufficient
 4. What is actively being changed?
 5. What is deferred?
 6. What exactly happens next?
+
+End-of-session reconciliation is a final verification pass only. It must not be the first time material state transitions are persisted.
 
 ---
 
