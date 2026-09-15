@@ -7,6 +7,7 @@ from pathlib import Path
 
 HERE=Path(__file__).resolve().parent
 sys.path.insert(0,str(HERE.parents[2]))
+from clinic_utilities.physio_referral_product import jurisdiction_overlay as j
 from clinic_utilities.physio_referral_product.prototype import server as p
 from clinic_utilities.physio_referral_product.prototype.test_server import request
 
@@ -107,6 +108,58 @@ class V51ExamSemanticsTests(unittest.TestCase):
         self.assertFalse(result["gate"]["blocked"])
         self.assertEqual([c["clue_id"] for c in result["clinical_review_clues"]],["morning_stiffness_over_30"])
         self.assertIn("πιθανό πρόσθετο ή εναλλακτικό αίτιο",result["clinical_review_clues"][0]["detail"])
+
+    def test_atypical_observations_are_nonblocking_clues_without_referral_or_treatment_mutation(self):
+        _,baseline=projected()
+        q={
+            "recent_trauma":True,
+            "rapid_worsening_or_deformity":True,
+            "hot_swollen_joint":True,
+        }
+        _,result=projected(qualifiers=q)
+        self.assertTrue(result["gate"]["allowed"])
+        self.assertFalse(result["gate"]["blocked"])
+        self.assertEqual(
+            [c["clue_id"] for c in result["clinical_review_clues"]],
+            ["recent_trauma_atypical","rapid_worsening_or_deformity_atypical","hot_swollen_joint_atypical"],
+        )
+        self.assertEqual(result["text"],baseline["text"])
+        self.assertEqual(result["state"]["rehab_directions"],list(p.E["default_plan"]["selected"]))
+        self.assertEqual(result["state"]["adjunct_options"],[])
+        self.assertNotIn("infection_or_septic_joint_concern",result["state"]["safety_flags"])
+        self.assertNotIn("acute_unresolved_fracture_or_instability_concern",result["state"]["safety_flags"])
+        for clue in result["clinical_review_clues"]:
+            self.assertTrue(clue["source_url"].startswith("https://www.gesy.org.cy/"),clue)
+            self.assertNotIn("SIFK",clue["detail"])
+
+    def test_explicit_safety_concerns_block_but_are_not_inferred_from_atypical_observations(self):
+        for flag in [
+            "acute_unresolved_fracture_or_instability_concern",
+            "infection_or_septic_joint_concern",
+            "material_concern_unresolved",
+        ]:
+            with self.subTest(flag=flag):
+                req=request();req["state"]["safety_flags"]=[flag]
+                result=p.present_project_result(p.project(req),req)
+                self.assertTrue(result["gate"]["blocked"])
+                self.assertFalse(result["gate"]["allowed"])
+                self.assertIsNone(result["text"])
+        self.assertIn("κακοήθεια",p.SAFETY_LABELS["material_concern_unresolved"])
+
+    def test_cyprus_overlay_core_and_taping_mappings_remain_reviewed(self):
+        profile=j.load_profile("CY_GESY")
+        self.assertIsNotNone(profile)
+        rows={row.get("intervention_id"):row for row in profile["positions"] if row.get("intervention_id")}
+        for item in ("therapeutic_exercise","progressive_strengthening","education_and_self_management"):
+            self.assertEqual(rows[item]["relationship_to_core"],"agreement")
+            self.assertEqual(rows[item]["display_policy"]["routine_visibility"],"context_cue_only")
+        self.assertEqual(rows["taping"]["local_direction"],"against_routine_use")
+        self.assertEqual(rows["taping"]["relationship_to_core"],"agreement")
+        self.assertEqual(rows["taping"]["display_policy"]["routine_visibility"],"context_cue_only")
+        self.assertEqual(rows["therapeutic_exercise"]["source_provenance"]["recommendation_page_or_section"],"1.3.1, p6")
+        self.assertEqual(rows["walking_aid_assessment_and_training"]["relationship_to_source_guideline"]["source_recommendation_id"],"1.3.12")
+        self.assertEqual(rows["orthosis_or_brace_context"]["relationship_to_source_guideline"]["source_recommendation_id"],"1.3.13")
+        self.assertEqual(rows["taping"]["source_provenance"]["recommendation_page_or_section"],"1.3.13, p9")
 
     def test_new_exam_detail_does_not_auto_select_treatment(self):
         q={
