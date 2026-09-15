@@ -315,3 +315,34 @@ KNEE_OA_INDEPENDENT_REVIEW_PROMPT_V1.md
 The review packet requires separate clinical/evidence, physiotherapy/autonomy, UX/accessibility and commercial-value review, plus source-to-claim integrity checking. It explicitly requires reviewers to identify what should be removed, not only what should be added, and forbids implementation changes during the review itself.
 
 No second diagnosis, production integration, merge or deployment is authorized before the independent review findings return to the product owner for disposition.
+
+---
+
+## 2026-09-15 — V5.1 and post-use production truth reconciled
+
+Product canonicals were reconciled against current `main`, merged PR history and authenticated live production evidence.
+
+Release chain now recorded as current truth:
+
+```text
+PR #106 — V5.1 examination / evidence-source UX
+merge 8064999ea70e0a90f6073fc6d66a0c8caaba1538
+
+PR #107 — Cyprus evidence discoverability + clinical-review refinement
+merge a19f4b9d52c3076f715fd864a5f7664d2b140c81
+authenticated live smoke 34957778592 — SUCCESS
+
+PR #109 — receiver prose compression + optional symptom chronicity
+merge b962485c741f558121e8daabfcf1d20c84f31f63
+authenticated live smoke 35019200920 — SUCCESS
+```
+
+The latest receiver refinement compresses duplicated functional-retraining prose, adds optional context-only symptom chronicity, and deliberately does not model previous physiotherapy/response from GeSY administrative activity.
+
+Permanent boundary reaffirmed:
+
+```text
+ADMINISTRATIVE PHYSIO ACTIVITY != KNOWN TREATMENT PROGRAM != KNOWN RESPONSE
+```
+
+No international evidence state, default rehabilitation selection, CU-1 safety taxonomy, diagnosis vertical, imaging inference, patient persistence, billing/analytics/entitlement or Medical Report owner was changed by this closeout.

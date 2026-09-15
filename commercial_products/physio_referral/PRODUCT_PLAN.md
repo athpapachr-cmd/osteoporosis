@@ -1,11 +1,11 @@
 # PRODUCT_PLAN.md — Physio Referral productization
 
-> **STATUS:** KNEE-OA V1 RELEASED; CY_GESY OVERLAY RELEASED; V5 FRESH-MAIN INTEGRATED/TESTED; RELEASE HOLD.
-> **Updated:** 2026-09-13 Asia/Nicosia.
+> **STATUS:** KNEE-OA V5.1 + POST-USE RECEIVER REFINEMENTS RELEASED / LIVE / AUTHENTICATED-SMOKE-VERIFIED; `CY_GESY` ACTIVE.
+> **Updated:** 2026-09-15 Asia/Nicosia.
 > **Parent:** existing CU-1 Physiotherapy Referral foundation.
 > **Current diagnosis vertical:** Knee Osteoarthritis only.
-> **Current integrated V5 candidate:** `9a7f360745710deacb0ff82f03249723bdfe87d6`.
-> **Current integrated V5 gate:** `34736389860` — SUCCESS.
+> **Current main release commit:** `b962485c741f558121e8daabfcf1d20c84f31f63`.
+> **Current authenticated live smoke:** `35019200920` — SUCCESS.
 > **Current writer:** none.
 
 ---
@@ -81,7 +81,7 @@ manual text != structured state
 
 The released Cyprus/GeSY overlay does not silently change defaults, selections, referral prose or safety behavior.
 
-V5 remains a candidate until merge/deploy. Its fresh-main integrated test evidence does not itself alter production.
+V5 and V5.1 are released. The current post-use receiver refinements are also live and authenticated-smoke-verified; the latest release commit is `b962485c741f558121e8daabfcf1d20c84f31f63`.
 
 ---
 
@@ -210,46 +210,27 @@ Authenticated CY_GESY production smoke evidence remains run `34703453615` — SU
 
 ---
 
-# 8. V5 fresh-main integrated candidate
+# 8. Current released V5.1 and post-use state
 
-The historical reviewed V5 candidate was:
+The V5 baseline was released and smoke-verified first. V5.1 then added examination/detail discoverability and production load-order hardening. Two bounded post-use refinements followed without changing the frozen international evidence/default-plan/safety contracts.
 
-```text
-head    a47357c602120d3678e8f2f23b99775e616c79e1
-gate    34693751545 — SUCCESS
-```
-
-Independent review accepted the product/UX/copy direction but required integration onto current production ancestry before release because `CY_GESY` and shared integrations landed later.
-
-That integration has now been completed from fresh main `8aeb91ae37b83caaa188054128db98e04b638fd8`.
-
-Current candidate:
+Current release chain:
 
 ```text
-branch  feat/physio-knee-oa-v5-integration-2026-09-13
-head    9a7f360745710deacb0ff82f03249723bdfe87d6
-gate    34736389860 — SUCCESS
-artifact 10311108002
+PR #106 → V5.1 merge 8064999ea70e0a90f6073fc6d66a0c8caaba1538
+PR #107 → Cyprus / clinical-review refinement a19f4b9d52c3076f715fd864a5f7664d2b140c81
+          authenticated live smoke 34957778592 — SUCCESS
+PR #109 → receiver prose / chronicity refinement b962485c741f558121e8daabfcf1d20c84f31f63
+          authenticated live smoke 35019200920 — SUCCESS
 ```
 
-V5 behavior:
+The current receiver refinement intentionally keeps prior physiotherapy response unstructured and preserves:
 
-- first tap on `Πόνος`, `Δυσκαμψία`, `Αδυναμία` selects generic symptom without forced popup;
-- second tap opens optional detail;
-- `Λειτουργικότητα` retains first-tap chooser;
-- weakness second-tap exposes only explicit weakness examination concepts;
-- Product Owner-approved simplification removes duplicated `Ατροφία τετρακεφάλου` from weakness second-tap;
-- quadriceps atrophy remains available through `Περισσότερα → Εξέταση` as an objective finding;
-- weakness badge/count does not count separately selected atrophy;
-- bare `Περιαρθρικά` remains absent from visible routine/advanced UI;
-- overlapping pain wording is reconciled;
-- clinical picture and physiotherapy plan become separate paragraphs;
-- trailing `Επιπλέον στόχος:` becomes natural connected prose;
-- low-information output remains compact.
+```text
+ADMINISTRATIVE PHYSIO ACTIVITY != KNOWN TREATMENT PROGRAM != KNOWN RESPONSE
+```
 
-The integrated gate proves V5 together with the current jurisdiction overlay and protected Cockpit integration on one exact SHA.
-
-V5 is **not merged/deployed**. Release remains a separate Product Owner decision.
+No second diagnosis, evidence-state reclassification, default-plan change, imaging inference, browser persistence or adjacent-owner mutation is implied by these releases.
 
 ---
 
@@ -284,16 +265,12 @@ CLINICALLY INTERESTING
 
 # 10. Commercial validation sequence
 
-The sequence remains intentionally lightweight:
+The product is now beyond the V5/V5.1 release gate. The lightweight sequence is:
 
 ```text
-released Knee-OA + CY_GESY foundation
-→ fresh-main V5 integration/test
-→ bounded V5 PR review
-→ explicit Product Owner release decision
-→ if accepted: V5 merge/deploy + authenticated smoke
-→ Product Owner real-device/use acceptance
-→ explicit decision whether to run a small clinical/workflow pilot
+released Knee-OA V5.1 + bounded post-use refinements
+→ Product Owner real-device / real-use evidence
+→ explicit decision whether a small clinical/workflow pilot adds value
 → explicit commercial validation
 → first paying clinician
 → 5
@@ -303,9 +280,7 @@ released Knee-OA + CY_GESY foundation
 → ~€1,000 MRR
 ```
 
-External colleague/receiver feedback may be inserted later wherever useful. It is not a fixed gate.
-
-The first paying clinician remains more meaningful than speculative projections.
+External colleague/receiver feedback may be inserted wherever useful. It remains evidence, not automatic implementation authority.
 
 ---
 
@@ -334,21 +309,7 @@ V5 applied that principle by removing duplicate access to quadriceps atrophy fro
 
 ```text
 NEXT BOUNDED ACTION
-= open/review fresh-main V5 integration PR under RELEASE HOLD
+= use Product Owner real-use evidence to decide whether another small Knee-OA refinement, a pilot/commercial-validation step, or a separately authorized next diagnosis is justified
 ```
 
-After exact-head PR verification, an explicit Product Owner release decision is required before merge/deploy.
-
-If release is later accepted:
-
-```text
-merge
-→ Render deploy
-→ authenticated V5 production smoke
-→ Product Owner real-device acceptance
-→ canonical release closeout
-```
-
-Do **not** start a second diagnosis, analytics, billing, patient persistence, Greece/England profile work or a new recommendation surface by default.
-
-No active implementation writer exists.
+No active implementation writer exists. Do not start a second diagnosis, analytics, billing, patient persistence, Greece/England profile work or a new recommendation surface by default.
