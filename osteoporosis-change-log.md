@@ -1359,3 +1359,19 @@ The v4 release uses a four-column desktop / 2×2 mobile clinical-picture surface
 Exact tested PR head `602740d12da0de8ad9a6134f8adf48f4b6f7c691` passed the v4, inherited prototype, Cockpit integration, CU-1 and evidence gates. PR `#89` was squash-merged as `bf527e3836a18491b2758fd293b42f82e0924382`. Render auto-deploy `dep-daiivp0jo6nc73bl6pug` became live at that exact runtime SHA.
 
 Temporary no-secret external smoke run `34689920602` passed: current/v4 assets returned `200`, the live CSS contained the ≥44 px + large-text wrapping correction, production transport remained non-synthetic, and the protected physiotherapy route/bootstrap returned `401` without authentication. No credential, session or patient data was supplied. Full authenticated live E2E, receiver validation, clinical pilot, paid validation, Cyprus/GeSY item-level activation and second-diagnosis expansion remain unproven/deferred.
+
+---
+
+## 2026-09-15 — Physio Knee-OA V5.1/post-use release chain reconciled
+
+The Physio Referral product track was reconciled to current production truth without changing the parallel root Medical Report operational lifecycle.
+
+Verified sequence:
+
+- PR #106 merged V5.1 at `8064999ea70e0a90f6073fc6d66a0c8caaba1538`;
+- PR #107 merged the Cyprus/clinical-review post-use refinement at `a19f4b9d52c3076f715fd864a5f7664d2b140c81`; authenticated live smoke `34957778592` succeeded;
+- PR #109 merged receiver prose compression and optional symptom chronicity at `b962485c741f558121e8daabfcf1d20c84f31f63`; authenticated live smoke `35019200920` succeeded.
+
+Current live smoke preserved the protected `clinical_excellence_cockpit` context, explicit `CY_GESY`, context-only chronicity, compressed functional-retraining wording, no structured previous-physiotherapy/response control and no browser draft persistence.
+
+Root `CURRENT_OPERATIONAL.md` / `SLICE_PLAN_CURRENT.md` were intentionally not rewritten because their active lifecycle remains the parallel Medical Report release/smoke track.
