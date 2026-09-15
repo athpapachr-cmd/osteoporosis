@@ -97,7 +97,9 @@ class BrowserTests(unittest.TestCase):
         expect(self.page.locator('#suggestions')).to_contain_text('Κλινική προσαρμογή')
         expect(self.page.locator('#referralText')).not_to_contain_text('λειτουργική επανεκπαίδευση')
         self.page.locator('#suggestions [data-add=functional_task_retraining]').click()
-        expect(self.page.locator('#referralText')).to_contain_text('λειτουργική επανεκπαίδευση για τις σκάλες')
+        expect(self.page.locator('#referralText')).to_contain_text('δυσχέρεια στις σκάλες')
+        expect(self.page.locator('#referralText')).to_contain_text('λειτουργική επανεκπαίδευση με έμφαση στις καταγεγραμμένες λειτουργικές δυσχέρειες')
+        expect(self.page.locator('#referralText')).not_to_contain_text('λειτουργική επανεκπαίδευση για τις σκάλες')
         expect(self.page.locator('#plan [data-select=functional_task_retraining]')).to_have_attribute('aria-pressed','true')
     def test_04_omission_dismissal_preserves_selection(self):
         self.ready();self.page.locator('#plan [data-select=therapeutic_exercise]').click()

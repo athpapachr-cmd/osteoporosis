@@ -148,6 +148,27 @@ class V51BrowserTests(unittest.TestCase):
         infection=self.page.locator('#sheet [data-select="infection_or_septic_joint_concern"]');expect(infection).to_have_attribute("aria-pressed","false");infection.click()
         expect(infection).to_have_attribute("aria-pressed","true");expect(self.page.locator("#copy")).to_be_disabled();expect(self.page.locator("#sheetSafety")).to_be_visible()
 
+
+    def test_more_notes_has_optional_chronicity_without_prior_physio_fields(self):
+        self.ready()
+        self.page.locator("#advancedToggle").click()
+        self.page.locator("#advanced [data-v3-category=notes]").click();expect(self.page.locator("#sheet")).to_be_visible()
+        expect(self.page.get_by_role("heading",name="Χρονιότητα συμπτωμάτων",exact=True)).to_have_count(1)
+        self.assertEqual(self.page.get_by_text("Προηγούμενη φυσικοθεραπεία",exact=True).count(),0)
+        self.assertEqual(self.page.get_by_text("Ανταπόκριση",exact=True).count(),0)
+        self.page.locator("#v51SymptomDurationValue").fill("8")
+        expect(self.page.locator("#referralText")).to_contain_text("Συμπτωματολογία διάρκειας 8 μηνών.")
+        self.page.locator("#closeSheet").click()
+        expect(self.page.locator('#advanced [data-v3-category="notes"] .v3-category-summary')).to_contain_text("Διάρκεια 8 μήνες")
+
+    def test_functional_retraining_uses_receiver_compressed_wording(self):
+        self.ready();self.page.locator("#advancedToggle").click()
+        self.page.locator("#advanced [data-v3-category=function]").click()
+        self.page.locator('#sheet [data-select="squat"]').click();self.page.locator('#sheet [data-select="kneeling"]').click();self.page.locator("#closeSheet").click()
+        self.page.locator("#advanced [data-v3-category=rehab]").click();self.page.locator('#sheet [data-select="functional_task_retraining"]').click()
+        expect(self.page.locator("#referralText")).to_contain_text("λειτουργική επανεκπαίδευση με έμφαση στις καταγεγραμμένες λειτουργικές δυσχέρειες")
+        expect(self.page.locator("#referralText")).not_to_contain_text("λειτουργική επανεκπαίδευση για")
+
     def test_evidence_source_has_visible_direct_reviewed_shortcuts(self):
         self.ready();self.page.locator("#plan [data-evidence=therapeutic_exercise]").click()
         expect(self.page.locator("#sheet")).to_be_visible()

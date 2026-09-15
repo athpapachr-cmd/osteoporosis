@@ -112,7 +112,7 @@ class AdapterTests(unittest.TestCase):
         self.assertIn("Κλινική προσαρμογή",candidate["source_caption"])
         added=p.project({**req,"candidate":candidate})
         self.assertEqual(added["revision"],req["revision"]+1)
-        self.assertIn("λειτουργική επανεκπαίδευση για τις σκάλες",added["text"])
+        self.assertIn("λειτουργική επανεκπαίδευση με έμφαση στις καταγεγραμμένες λειτουργικές δυσχέρειες",added["text"])
         for change in ["revision","draft_id","package_version","reason_signature"]:
             invalid=copy.deepcopy(req); c=copy.deepcopy(candidate)
             if change=="revision":invalid[change]+=1

@@ -54,6 +54,8 @@ ATYPICAL_QUALIFIER_KEYS = {
     "rapid_worsening_or_deformity",
     "hot_swollen_joint",
 }
+SYMPTOM_DURATION_UNITS = {"weeks", "months", "years"}
+CONTEXT_ONLY_QUALIFIER_KEYS = ATYPICAL_QUALIFIER_KEYS | {"symptom_duration_value", "symptom_duration_unit"}
 CY_OA_GUIDELINE_URL = "https://www.gesy.org.cy/el-gr/annualreport/greek-translated-oa-19-12-2025-hio-circ-0.pdf"
 
 
@@ -73,6 +75,8 @@ def empty_qualifiers() -> dict[str, Any]:
         "crepitus": False,
         "focal_tenderness_locations": [],
         "stability_findings": [],
+        "symptom_duration_value": None,
+        "symptom_duration_unit": None,
         "recent_trauma": False,
         "rapid_worsening_or_deformity": False,
         "hot_swollen_joint": False,
@@ -148,6 +152,14 @@ def clean_qualifiers(raw: Any, state: dict[str, Any]) -> dict[str, Any]:
     stability = raw.get("stability_findings", [])
     _check(isinstance(stability, list) and len(stability) <= 4 and all(v in STABILITY_FINDINGS for v in stability))
     q["stability_findings"] = list(dict.fromkeys(stability))
+
+    symptom_duration_value = raw.get("symptom_duration_value")
+    symptom_duration_unit = raw.get("symptom_duration_unit")
+    _check(symptom_duration_value is None or (type(symptom_duration_value) is int and 1 <= symptom_duration_value <= 99))
+    _check(symptom_duration_unit is None or symptom_duration_unit in SYMPTOM_DURATION_UNITS)
+    _check((symptom_duration_value is None) == (symptom_duration_unit is None))
+    q["symptom_duration_value"] = symptom_duration_value
+    q["symptom_duration_unit"] = symptom_duration_unit
 
     for key in ATYPICAL_QUALIFIER_KEYS:
         value = raw.get(key, False)
@@ -355,7 +367,7 @@ def _has_product_specific_signal(state: dict[str, Any]) -> bool:
     qualifier_signal = any(
         value not in (None, False, [], {})
         for key, value in qualifiers.items()
-        if key not in ATYPICAL_QUALIFIER_KEYS
+        if key not in CONTEXT_ONLY_QUALIFIER_KEYS
     )
     return any((
         state.get("findings"),
@@ -401,6 +413,52 @@ def _compact_low_information_output(text: str, state: dict[str, Any]) -> str:
     )
 
 
+def _compress_functional_retraining(text: str, state: dict[str, Any]) -> str:
+    if "functional_task_retraining" not in set(state.get("rehab_directions") or []):
+        return text
+    marker = "λειτουργική επανεκπαίδευση για "
+    start = text.find(marker)
+    if start < 0:
+        return text
+    anchors = (
+        " και πρόγραμμα ασκήσεων στο σπίτι",
+        ", πρόγραμμα ασκήσεων στο σπίτι",
+        " και αξιολόγηση και εκπαίδευση στη χρήση βοηθήματος βάδισης",
+        ", αξιολόγηση και εκπαίδευση στη χρήση βοηθήματος βάδισης",
+        ", προσαρμοσμένο στην κλινική ανταπόκριση και στους λειτουργικούς στόχους.",
+    )
+    ends = [index for anchor in anchors if (index := text.find(anchor, start)) >= 0]
+    if not ends:
+        return text
+    end = min(ends)
+    replacement = "λειτουργική επανεκπαίδευση με έμφαση στις καταγεγραμμένες λειτουργικές δυσχέρειες"
+    return text[:start] + replacement + text[end:]
+
+
+def _symptom_duration_sentence(q: dict[str, Any]) -> str | None:
+    value = q.get("symptom_duration_value")
+    unit = q.get("symptom_duration_unit")
+    if value is None or unit is None:
+        return None
+    forms = {
+        "weeks": ("εβδομάδας", "εβδομάδων"),
+        "months": ("μήνα", "μηνών"),
+        "years": ("έτους", "ετών"),
+    }
+    singular, plural = forms[unit]
+    return f"Συμπτωματολογία διάρκειας {value} {singular if value == 1 else plural}."
+
+
+def _insert_symptom_duration(text: str, q: dict[str, Any]) -> str:
+    sentence = _symptom_duration_sentence(q)
+    if not sentence:
+        return text
+    if ". " in text:
+        first, rest = text.split(". ", 1)
+        return f"{first}. {sentence} {rest}"
+    return text.rstrip() + " " + sentence
+
+
 def apply_referral_overlay(text: str, state: dict[str, Any]) -> str:
     q = state.get("qualifiers") or empty_qualifiers()
     result = text
@@ -443,7 +501,9 @@ def apply_referral_overlay(text: str, state: dict[str, Any]) -> str:
 
     result = _rom_specificity(result, q)
     result = _insert_exam_sentence(result, _extra_exam_phrases(q, state))
+    result = _compress_functional_retraining(result, state)
     result = _compact_low_information_output(result, state)
+    result = _insert_symptom_duration(result, q)
     return _reframe_plan_as_priorities(result)
 
 
