@@ -1,0 +1,43 @@
+name: Temporary governance content builder
+
+on:
+  push:
+    branches:
+      - chore/atomic-canonical-checkpoints-2026-09-15
+
+permissions:
+  contents: write
+
+jobs:
+  build-content:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply already-validated governance content without workflow mutation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "athpapachr-cmd"
+          git config user.email "athpapachr@gmail.com"
+          git fetch origin main
+          test "$(git merge-base origin/main HEAD)" = "$(git rev-parse origin/main)"
+          python - <<'PY'
+          from pathlib import Path
+          import textwrap
+          p=Path('.github/workflows/tmp-atomic-canonical-checkpoints-builder.yml')
+          s=p.read_text(encoding='utf-8')
+          a=s.index('      - name: Apply permanent canonical checkpoint governance')
+          run=s.index('        run: |\n',a)+len('        run: |\n')
+          b=s.index('\n      - name: Validate governance artifacts',run)
+          Path('/tmp/apply-governance.sh').write_text(textwrap.dedent(s[run:b]),encoding='utf-8')
+          PY
+          bash /tmp/apply-governance.sh
+          rm -f .github/workflows/canonical-impact-guard.yml
+          python -m py_compile .github/scripts/check_canonical_impact.py
+          python .github/scripts/check_canonical_impact.py --self-test
+          git add AGENTS.md osteoporosis-change-log.md .github/pull_request_template.md .github/scripts/check_canonical_impact.py
+          git commit -m "Add atomic canonical checkpoint governance"
+          git push origin HEAD:chore/atomic-canonical-checkpoints-2026-09-15
