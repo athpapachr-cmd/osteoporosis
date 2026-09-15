@@ -1,0 +1,112 @@
+name: Temporary authenticated Knee OA receiver live smoke
+
+on:
+  push:
+    branches:
+      - ops/physio-knee-oa-receiver-live-smoke-2026-09-15
+
+permissions:
+  contents: read
+
+jobs:
+  authenticated-live-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    env:
+      BASE_URL: https://ortho-reception-backend.onrender.com
+      CLINICAL_DATA_KEY: ${{ secrets.CLINICAL_DATA_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Verify protected receiver refinement production state
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${CLINICAL_DATA_KEY:-}"
+
+          unauth_code=$(curl --retry 3 --retry-delay 2 -sS -o /tmp/unauth.json -w '%{http_code}' \
+            "$BASE_URL/clinical/clinic-utilities/physio-referral/api/product/bootstrap")
+          test "$unauth_code" = '401'
+
+          bootstrap_code=$(curl --retry 3 --retry-delay 2 -sS -o /tmp/bootstrap.json -w '%{http_code}' \
+            -H "X-Clinical-Key: ${CLINICAL_DATA_KEY}" \
+            "$BASE_URL/clinical/clinic-utilities/physio-referral/api/product/bootstrap")
+          test "$bootstrap_code" = '200'
+          jq -e '.synthetic_only == false' /tmp/bootstrap.json >/dev/null
+          jq -e '.deployment_context == "clinical_excellence_cockpit"' /tmp/bootstrap.json >/dev/null
+          jq -e '.jurisdiction_profile.profile_id == "CY_GESY"' /tmp/bootstrap.json >/dev/null
+          jq -e '.jurisdiction_profile.selection_source == "explicit_account_configuration"' /tmp/bootstrap.json >/dev/null
+
+          package_version=$(jq -r '.package_version' /tmp/bootstrap.json)
+          draft_id=$(python - <<'PY'
+          import uuid
+          print(uuid.uuid4())
+          PY
+          )
+
+          jq -n \
+            --arg draft_id "$draft_id" \
+            --arg package_version "$package_version" \
+            '{
+              draft_id: $draft_id,
+              revision: 0,
+              package_version: $package_version,
+              synthetic_only: false,
+              state: {
+                laterality: "right",
+                formal_assertion_state: "yes",
+                findings: [],
+                functional_impairments: ["stairs","sit_to_stand","squat","kneeling"],
+                rehab_directions: ["therapeutic_exercise","progressive_strengthening","education_and_self_management","functional_task_retraining"],
+                adjunct_options: [],
+                goals: [],
+                phenotype: {},
+                qualifiers: {
+                  symptom_duration_value: 8,
+                  symptom_duration_unit: "months"
+                },
+                explicit_restrictions: [],
+                clinician_free_text_optional: "",
+                safety_flags: []
+              },
+              dismissed: []
+            }' > /tmp/request.json
+
+          project_code=$(curl --retry 3 --retry-delay 2 -sS -o /tmp/project.json -w '%{http_code}' \
+            -H "X-Clinical-Key: ${CLINICAL_DATA_KEY}" \
+            -H 'Content-Type: application/json' \
+            --data-binary @/tmp/request.json \
+            "$BASE_URL/clinical/clinic-utilities/physio-referral/api/product/project")
+          test "$project_code" = '200'
+          jq -e '.gate.allowed == true and .gate.blocked == false' /tmp/project.json >/dev/null
+          jq -e '.jurisdiction_profile.profile_id == "CY_GESY"' /tmp/project.json >/dev/null
+          jq -e '.state.qualifiers.symptom_duration_value == 8' /tmp/project.json >/dev/null
+          jq -e '.state.qualifiers.symptom_duration_unit == "months"' /tmp/project.json >/dev/null
+
+          python - <<'PY'
+          import json
+          with open('/tmp/project.json', encoding='utf-8') as f:
+              result = json.load(f)
+          text = result['text']
+          assert 'Συμπτωματολογία διάρκειας 8 μηνών.' in text, text
+          assert 'λειτουργική επανεκπαίδευση με έμφαση στις καταγεγραμμένες λειτουργικές δυσχέρειες' in text, text
+          assert 'λειτουργική επανεκπαίδευση για' not in text, text
+          for phrase in ['στις σκάλες','στην έγερση από καθιστή θέση','στο βαθύ κάθισμα','στο γονάτισμα']:
+              assert text.count(phrase) == 1, (phrase, text)
+          lowered = text.lower()
+          assert 'προηγούμενη φυσικοθεραπεία' not in lowered, text
+          PY
+
+          js_code=$(curl --retry 3 --retry-delay 2 -sS -o /tmp/v51.js -w '%{http_code}' \
+            "$BASE_URL/static/clinic-utilities/physio-referral/product-v5-1-exam.js")
+          test "$js_code" = '200'
+          grep -q 'Χρονιότητα συμπτωμάτων' /tmp/v51.js
+          ! grep -q 'Προηγούμενη φυσικοθεραπεία' /tmp/v51.js
+          ! grep -q 'Ανταπόκριση' /tmp/v51.js
+          ! grep -q 'localStorage' /tmp/v51.js
+          ! grep -q 'sessionStorage' /tmp/v51.js
+
+          echo 'AUTHENTICATED KNEE OA RECEIVER REFINEMENT LIVE SMOKE PASS'
+          echo 'Only a generated UUID and non-identifiable smoke state were sent; no secret value was printed.'
