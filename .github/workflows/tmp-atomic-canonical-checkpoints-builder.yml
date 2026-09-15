@@ -1,0 +1,413 @@
+name: Temporary atomic canonical checkpoints builder
+
+on:
+  push:
+    branches:
+      - chore/atomic-canonical-checkpoints-2026-09-15
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure exact-main ancestry
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "athpapachr-cmd"
+          git config user.email "athpapachr@gmail.com"
+          git fetch origin main
+          test "$(git merge-base origin/main HEAD)" = "$(git rev-parse origin/main)"
+
+      - name: Apply permanent canonical checkpoint governance
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .github/scripts .github/workflows
+
+          python - <<'PY'
+          from pathlib import Path
+          import textwrap
+
+          path = Path('AGENTS.md')
+          text = path.read_text(encoding='utf-8')
+          needle = """After every material state transition, update the correct canonical owner before moving on.\n\n### Operational state changes → `CURRENT_OPERATIONAL.md`\n"""
+          insert = """After every material state transition, update the correct canonical owner before moving on.\n\n## 4.1 Atomic canonical checkpoint barrier\n\nCanonical persistence is a **transaction barrier**, not end-of-session housekeeping. A material transition is not operationally complete until the new state has been durably recorded in the correct canonical owner and verified.\n\nMandatory sequence:\n\n```text\nperform ONE material state transition\n→ collect exact evidence / identity\n→ persist the resulting state in the correct canonical owner\n→ update the relevant workstream CURRENT when one exists\n→ verify the durable checkpoint\n→ only then perform the next material state transition\n```\n\nMaterial checkpoint transitions include at minimum:\n\n- implementation started or materially replanned;\n- implementation/tested candidate reached;\n- PR opened or moved into HOLD/review;\n- merge completed;\n- deploy identity/status established;\n- production smoke completed or failed;\n- blocker/REPLAN discovered;\n- writer/scope ownership changed or released.\n\nHard rules:\n\n```text\nSTATE TRANSITION != COMPLETE UNTIL CHECKPOINTED\nNEXT MATERIAL ACTION REQUIRES PREVIOUS DURABLE CHECKPOINT\nEND-OF-SESSION RECONCILIATION != PRIMARY UPDATE MECHANISM\nCHAT CAPACITY / CHAT SURVIVAL != CONTROL PLANE\n```\n\nDo not intentionally batch multiple unpersisted transitions such as `merge → deploy → smoke → canonical update`. If an automatic external transition occurs before the previous checkpoint can be written, record all already-observed states at the first safe opportunity and do not perform the next **deliberate** material action until that checkpoint is durable.\n\nIf context pressure, tool failure or interruption threatens continuity, stop advancing the lifecycle at the last durable checkpoint rather than trying to finish more work first. A new conversation must be able to recover the project from the repository without needing the dying conversation to produce a final summary.\n\n## 4.2 Parallel workstream checkpoint rule\n\n`CURRENT_OPERATIONAL.md` remains the sole repo-wide writer lock and primary operational NOW. A parallel product/workstream must not steal that root NOW merely because it is making progress.\n\nWhen the root NOW belongs to another lifecycle, any parallel workstream that has a durable product-local current-state file (for example `commercial_products/<product>/CURRENT.md`) must checkpoint its own material state transitions there.\n\n```text\nROOT CURRENT_OPERATIONAL\n= repo-wide writer lock / primary NOW\n\nPARALLEL WORKSTREAM CURRENT.md\n= durable sidecar state for that workstream\n!= second repo-wide writer lock\n```\n\nFor a release-affecting parallel PR, updating the applicable workstream current-state file is mandatory even when `CURRENT_OPERATIONAL.md` correctly remains owned by another slice. A product-local CURRENT must distinguish implementation/test/release/deploy/smoke truth with the same rigor as the root NOW.\n\n## 4.3 Pull-request canonical-impact declaration and CI guard\n\nEvery new PR must carry the repository's machine-readable **Canonical Impact Declaration** from `.github/pull_request_template.md`. The `Canonical impact guard` workflow validates that declaration against the actual changed files.\n\nAt minimum the declaration states:\n\n```text\nrelease_affecting\ncheckpoint_stage\nroot_current\nslice_plan\ntodo\nclinical_excellence_plan\nworkstream_current\nworkstream_current_path\nchangelog\nreason\n```\n\nRules:\n\n- a declaration of `update` must correspond to the declared canonical actually changing in the PR;\n- changing a governed canonical while declaring `none` is a guard failure;\n- `release_affecting: yes` requires `workstream_current: update` and the declared `workstream_current_path` must be part of the PR diff;\n- the workstream path must be `CURRENT_OPERATIONAL.md` or a product/workstream path ending in `/CURRENT.md`;\n- changelog updates/deferment must be declared explicitly;\n- placeholder declarations are invalid;\n- a red `Canonical impact guard` is a **merge prohibition under repository policy**.\n\nThe current repository does not have server-side branch protection requiring this check. Therefore the Action currently provides a visible failing CI gate plus the repository rule above; if required-check branch protection is enabled later, the same workflow can become a hard GitHub merge block without changing the declaration contract.\n\nA PR body remains evidence/intent, not canonical truth. After merge/deploy/smoke, the next deliberate lifecycle action still requires the corresponding canonical checkpoint under §4.1.\n\n### Operational state changes → `CURRENT_OPERATIONAL.md`\n"""
+          if needle not in text:
+              raise SystemExit('AGENTS insertion seam not found exactly once')
+          if text.count(needle) != 1:
+              raise SystemExit('AGENTS insertion seam not unique')
+          text = text.replace(needle, insert)
+          tail = """6. What exactly happens next?\n\n---\n\n# 5. Product purpose"""
+          replacement = """6. What exactly happens next?\n\nEnd-of-session reconciliation is a final verification pass only. It must not be the first time material state transitions are persisted.\n\n---\n\n# 5. Product purpose"""
+          if tail not in text:
+              raise SystemExit('AGENTS end-of-section seam not found')
+          text = text.replace(tail, replacement, 1)
+          path.write_text(text, encoding='utf-8')
+
+          changelog = Path('osteoporosis-change-log.md')
+          log = changelog.read_text(encoding='utf-8')
+          marker = '## 2026-09-15 — Atomic canonical checkpoint governance adopted'
+          if marker in log:
+              raise SystemExit('changelog marker already exists')
+          log += textwrap.dedent('''\
+
+          ---
+
+          ## 2026-09-15 — Atomic canonical checkpoint governance adopted
+
+          Repository continuity rules were hardened after a real long-conversation failure mode showed that correct runtime work could outpace product-local canonical closeout.
+
+          The permanent operating model now treats each material lifecycle transition as an atomic checkpoint barrier: perform one transition, collect its exact evidence, persist the resulting state in the correct canonical/workstream `CURRENT`, verify that durable checkpoint, and only then continue to the next deliberate material action.
+
+          Parallel workstreams keep `CURRENT_OPERATIONAL.md` as the single repo-wide writer lock while maintaining their own product-local `CURRENT.md` where one exists. A release-affecting parallel PR must update its applicable workstream current-state file even when root NOW correctly belongs to another lifecycle.
+
+          GitHub governance now includes a pull-request Canonical Impact Declaration plus a `Canonical impact guard` Action. The guard validates declared canonical effects against the actual PR diff and requires a workstream current-state update for release-affecting PRs. Because `main` is not currently protected by a required-check rule, a red guard is defined as a merge prohibition by repository policy; the same check can later be made server-enforced through branch protection.
+
+          The durable objective is explicit:
+
+          ```text
+          CHAT END / CONTEXT LOSS MUST NEVER BE REQUIRED FOR PROJECT STATE RECOVERY
+          ```
+          ''')
+          changelog.write_text(log, encoding='utf-8')
+          PY
+
+          cat > .github/pull_request_template.md <<'EOF'
+          ## Canonical impact declaration
+
+          <!-- Keep this block. The Canonical impact guard parses it. -->
+          <!-- Replace REPLACE_ME and adjust every value to match the actual PR. -->
+          <!-- canonical-impact:start -->
+          release_affecting: no
+          checkpoint_stage: other
+          root_current: none
+          slice_plan: none
+          todo: none
+          clinical_excellence_plan: none
+          workstream_current: not_applicable
+          workstream_current_path: not_applicable
+          changelog: none
+          reason: REPLACE_ME
+          <!-- canonical-impact:end -->
+
+          Allowed values:
+          - `release_affecting`: `yes | no`
+          - `checkpoint_stage`: `design | implementation | implementation_tested | release_hold | post_merge | post_deploy | post_smoke | governance | docs_only | other`
+          - `root_current`, `slice_plan`, `todo`, `clinical_excellence_plan`: `update | none`
+          - `workstream_current`: `update | not_applicable`
+          - `workstream_current_path`: exact repo path to `CURRENT_OPERATIONAL.md` or a workstream `/CURRENT.md`, otherwise `not_applicable`
+          - `changelog`: `update | defer_until_completion | none`
+
+          For `release_affecting: yes`, the PR must set `workstream_current: update` and include the declared current-state path in the diff.
+          EOF
+
+          cat > .github/scripts/check_canonical_impact.py <<'PY'
+          from __future__ import annotations
+
+          import argparse
+          import json
+          from pathlib import Path
+          import sys
+
+          START = '<!-- canonical-impact:start -->'
+          END = '<!-- canonical-impact:end -->'
+          REQUIRED = [
+              'release_affecting',
+              'checkpoint_stage',
+              'root_current',
+              'slice_plan',
+              'todo',
+              'clinical_excellence_plan',
+              'workstream_current',
+              'workstream_current_path',
+              'changelog',
+              'reason',
+          ]
+          ALLOWED = {
+              'release_affecting': {'yes', 'no'},
+              'checkpoint_stage': {
+                  'design', 'implementation', 'implementation_tested', 'release_hold',
+                  'post_merge', 'post_deploy', 'post_smoke', 'governance', 'docs_only', 'other',
+              },
+              'root_current': {'update', 'none'},
+              'slice_plan': {'update', 'none'},
+              'todo': {'update', 'none'},
+              'clinical_excellence_plan': {'update', 'none'},
+              'workstream_current': {'update', 'not_applicable'},
+              'changelog': {'update', 'defer_until_completion', 'none'},
+          }
+          CANONICAL_FILES = {
+              'root_current': 'CURRENT_OPERATIONAL.md',
+              'slice_plan': 'SLICE_PLAN_CURRENT.md',
+              'todo': 'TODO.md',
+              'clinical_excellence_plan': 'CLINICAL_EXCELLENCE_PLAN.md',
+          }
+
+
+          class GuardError(ValueError):
+              pass
+
+
+          def parse_declaration(body: str) -> dict[str, str]:
+              if body.count(START) != 1 or body.count(END) != 1:
+                  raise GuardError('PR body must contain exactly one Canonical Impact Declaration block')
+              before, rest = body.split(START, 1)
+              block, after = rest.split(END, 1)
+              del before, after
+              data: dict[str, str] = {}
+              for raw in block.splitlines():
+                  line = raw.strip()
+                  if not line or line.startswith('#'):
+                      continue
+                  if ':' not in line:
+                      raise GuardError(f'invalid declaration line: {line!r}')
+                  key, value = line.split(':', 1)
+                  key, value = key.strip(), value.strip()
+                  if key in data:
+                      raise GuardError(f'duplicate declaration key: {key}')
+                  data[key] = value
+              missing = [key for key in REQUIRED if key not in data]
+              extra = sorted(set(data) - set(REQUIRED))
+              if missing:
+                  raise GuardError(f'missing declaration keys: {missing}')
+              if extra:
+                  raise GuardError(f'unknown declaration keys: {extra}')
+              for key, allowed in ALLOWED.items():
+                  if data[key] not in allowed:
+                      raise GuardError(f'{key} must be one of {sorted(allowed)}, got {data[key]!r}')
+              reason = data['reason'].strip()
+              if len(reason) < 12 or 'REPLACE_ME' in reason.upper():
+                  raise GuardError('reason must be a real concise explanation, not the template placeholder')
+              return data
+
+
+          def is_changelog(path: str) -> bool:
+              name = Path(path).name
+              return path == 'osteoporosis-change-log.md' or name in {'CHANGELOG.md', 'PRODUCT_CHANGELOG.md'}
+
+
+          def validate(data: dict[str, str], changed_files: set[str]) -> None:
+              errors: list[str] = []
+
+              for key, path in CANONICAL_FILES.items():
+                  declared_update = data[key] == 'update'
+                  actually_changed = path in changed_files
+                  if declared_update != actually_changed:
+                      errors.append(
+                          f'{key}: declaration={data[key]!r} but {path} changed={actually_changed}'
+                      )
+
+              current_mode = data['workstream_current']
+              current_path = data['workstream_current_path']
+              if current_mode == 'update':
+                  if current_path == 'not_applicable':
+                      errors.append('workstream_current=update requires a real workstream_current_path')
+                  elif not (
+                      current_path == 'CURRENT_OPERATIONAL.md' or current_path.endswith('/CURRENT.md')
+                  ):
+                      errors.append(
+                          'workstream_current_path must be CURRENT_OPERATIONAL.md or end with /CURRENT.md'
+                      )
+                  elif current_path not in changed_files:
+                      errors.append(
+                          f'workstream current path {current_path!r} is declared update but is absent from PR diff'
+                      )
+              elif current_path != 'not_applicable':
+                  errors.append(
+                      'workstream_current=not_applicable requires workstream_current_path=not_applicable'
+                  )
+
+              changed_changelogs = sorted(path for path in changed_files if is_changelog(path))
+              if data['changelog'] == 'update' and not changed_changelogs:
+                  errors.append('changelog=update but no recognized changelog file changes')
+              if data['changelog'] != 'update' and changed_changelogs:
+                  errors.append(
+                      f'changelog={data["changelog"]!r} but changelog files changed: {changed_changelogs}'
+                  )
+
+              if data['release_affecting'] == 'yes' and current_mode != 'update':
+                  errors.append(
+                      'release_affecting=yes requires workstream_current=update in the same PR checkpoint'
+                  )
+
+              if data['release_affecting'] == 'no' and data['checkpoint_stage'] in {
+                  'post_merge', 'post_deploy', 'post_smoke'
+              }:
+                  errors.append(
+                      f'checkpoint_stage={data["checkpoint_stage"]} is a release lifecycle stage and requires release_affecting=yes'
+                  )
+
+              if errors:
+                  raise GuardError('\n'.join(f'- {error}' for error in errors))
+
+
+          def run_self_test() -> None:
+              base = {
+                  'release_affecting': 'no',
+                  'checkpoint_stage': 'governance',
+                  'root_current': 'none',
+                  'slice_plan': 'none',
+                  'todo': 'none',
+                  'clinical_excellence_plan': 'none',
+                  'workstream_current': 'not_applicable',
+                  'workstream_current_path': 'not_applicable',
+                  'changelog': 'none',
+                  'reason': 'Governance-only change with no runtime release effect.',
+              }
+              validate(base, {'AGENTS.md'})
+
+              release = dict(base)
+              release.update({
+                  'release_affecting': 'yes',
+                  'checkpoint_stage': 'release_hold',
+                  'workstream_current': 'update',
+                  'workstream_current_path': 'commercial_products/example/CURRENT.md',
+                  'reason': 'Runtime candidate enters release hold with durable workstream state.',
+              })
+              validate(release, {'runtime.py', 'commercial_products/example/CURRENT.md'})
+
+              bad_release = dict(release)
+              bad_release['workstream_current'] = 'not_applicable'
+              bad_release['workstream_current_path'] = 'not_applicable'
+              try:
+                  validate(bad_release, {'runtime.py'})
+              except GuardError:
+                  pass
+              else:
+                  raise AssertionError('release-affecting PR without current update should fail')
+
+              bad_root = dict(base)
+              bad_root['root_current'] = 'update'
+              try:
+                  validate(bad_root, {'AGENTS.md'})
+              except GuardError:
+                  pass
+              else:
+                  raise AssertionError('declared root update without file change should fail')
+
+              body = f'''\n{START}\nrelease_affecting: no\ncheckpoint_stage: governance\nroot_current: none\nslice_plan: none\ntodo: none\nclinical_excellence_plan: none\nworkstream_current: not_applicable\nworkstream_current_path: not_applicable\nchangelog: none\nreason: Governance declaration parser self-test.\n{END}\n'''
+              parsed = parse_declaration(body)
+              assert parsed['checkpoint_stage'] == 'governance'
+              print('canonical-impact self-test PASS')
+
+
+          def main() -> int:
+              parser = argparse.ArgumentParser()
+              parser.add_argument('--event')
+              parser.add_argument('--changed-files')
+              parser.add_argument('--self-test', action='store_true')
+              args = parser.parse_args()
+
+              if args.self_test:
+                  run_self_test()
+                  return 0
+              if not args.event or not args.changed_files:
+                  parser.error('--event and --changed-files are required unless --self-test is used')
+
+              event = json.loads(Path(args.event).read_text(encoding='utf-8'))
+              body = ((event.get('pull_request') or {}).get('body') or '')
+              changed = {
+                  line.strip()
+                  for line in Path(args.changed_files).read_text(encoding='utf-8').splitlines()
+                  if line.strip()
+              }
+              try:
+                  data = parse_declaration(body)
+                  validate(data, changed)
+              except GuardError as exc:
+                  print('CANONICAL IMPACT GUARD FAIL', file=sys.stderr)
+                  print(str(exc), file=sys.stderr)
+                  return 1
+
+              print('CANONICAL IMPACT GUARD PASS')
+              print(f"checkpoint_stage={data['checkpoint_stage']}")
+              print(f"release_affecting={data['release_affecting']}")
+              print(f"changed_files={len(changed)}")
+              return 0
+
+
+          if __name__ == '__main__':
+              raise SystemExit(main())
+          PY
+
+          cat > .github/workflows/canonical-impact-guard.yml <<'EOF'
+          name: Canonical impact guard
+
+          on:
+            pull_request:
+              types: [opened, edited, synchronize, reopened, ready_for_review]
+
+          permissions:
+            contents: read
+            pull-requests: read
+
+          jobs:
+            canonical-impact:
+              runs-on: ubuntu-latest
+              timeout-minutes: 5
+              steps:
+                - uses: actions/checkout@v4
+                  with:
+                    ref: ${{ github.event.pull_request.head.sha }}
+                    fetch-depth: 0
+
+                - name: Fetch base branch
+                  shell: bash
+                  run: |
+                    set -euo pipefail
+                    git fetch origin "${GITHUB_BASE_REF}:refs/remotes/origin/${GITHUB_BASE_REF}"
+
+                - name: Guard self-test
+                  run: python .github/scripts/check_canonical_impact.py --self-test
+
+                - name: Validate PR canonical impact declaration
+                  shell: bash
+                  run: |
+                    set -euo pipefail
+                    git diff --name-only "origin/${GITHUB_BASE_REF}...HEAD" > /tmp/changed-files.txt
+                    python .github/scripts/check_canonical_impact.py \
+                      --event "$GITHUB_EVENT_PATH" \
+                      --changed-files /tmp/changed-files.txt
+          EOF
+
+      - name: Validate governance artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m py_compile .github/scripts/check_canonical_impact.py
+          python .github/scripts/check_canonical_impact.py --self-test
+          grep -q 'Atomic canonical checkpoint barrier' AGENTS.md
+          grep -q 'Parallel workstream checkpoint rule' AGENTS.md
+          grep -q 'release_affecting: no' .github/pull_request_template.md
+          grep -q 'release_affecting=yes requires workstream_current=update' .github/scripts/check_canonical_impact.py
+          grep -q 'pull_request:' .github/workflows/canonical-impact-guard.yml
+
+      - name: Squash to clean bounded candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/workflows/tmp-atomic-canonical-checkpoints-builder.yml
+          git reset --mixed origin/main
+          allowed=(
+            AGENTS.md
+            osteoporosis-change-log.md
+            .github/pull_request_template.md
+            .github/scripts/check_canonical_impact.py
+            .github/workflows/canonical-impact-guard.yml
+          )
+          mapfile -t changed < <(git diff --name-only | sort)
+          printf '%s\n' "${allowed[@]}" | sort > /tmp/allowed.txt
+          printf '%s\n' "${changed[@]}" > /tmp/changed.txt
+          diff -u /tmp/allowed.txt /tmp/changed.txt
+          git add "${allowed[@]}"
+          git commit -m "Enforce atomic canonical checkpoints"
+          git push --force-with-lease origin HEAD:chore/atomic-canonical-checkpoints-2026-09-15
+          git push origin --delete tmp-placeholder noop2 noop3 || true
