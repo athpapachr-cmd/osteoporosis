@@ -1,0 +1,331 @@
+name: Temporary Physio product canonical reconciliation
+
+on:
+  push:
+    branches:
+      - docs/physio-knee-oa-canonical-reconcile-2026-09-15
+
+permissions:
+  contents: write
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure git
+        run: |
+          git config user.name "athpapachr-cmd"
+          git config user.email "athpapachr@gmail.com"
+          git fetch origin main
+          test "$(git merge-base origin/main HEAD)" = "$(git rev-parse origin/main)"
+
+      - name: Reconcile Physio product canonicals
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          import textwrap
+
+          def read(path):
+              return Path(path).read_text(encoding='utf-8')
+
+          def write(path, text):
+              Path(path).write_text(text, encoding='utf-8')
+
+          def replace_exact(path, old, new):
+              text = read(path)
+              count = text.count(old)
+              assert count == 1, (path, 'expected exactly one match', count, old[:120])
+              write(path, text.replace(old, new))
+
+          def replace_regex(path, pattern, replacement):
+              text = read(path)
+              updated, count = re.subn(pattern, replacement, text, count=1, flags=re.S)
+              assert count == 1, (path, 'regex match count', count, pattern)
+              write(path, updated)
+
+          current_path = 'commercial_products/physio_referral/CURRENT.md'
+          current_text = textwrap.dedent('''\
+          # CURRENT.md — Physio Referral commercial product track
+
+          > **STATUS:** KNEE-OA V5.1 + POST-USE RECEIVER REFINEMENTS RELEASED / LIVE / AUTHENTICATED PRODUCTION-SMOKE-VERIFIED; `CY_GESY` ACTIVE.
+          > **Updated:** 2026-09-15 Asia/Nicosia.
+          > **Diagnosis vertical:** Knee Osteoarthritis only.
+          > **Current main release commit:** `b962485c741f558121e8daabfcf1d20c84f31f63`.
+          > **V5.1 release PR:** `#106`; merge commit `8064999ea70e0a90f6073fc6d66a0c8caaba1538`.
+          > **Post-use Cyprus / clinical-review PR:** `#107`; merge commit `a19f4b9d52c3076f715fd864a5f7664d2b140c81`.
+          > **Receiver prose / chronicity PR:** `#109`; merge commit `b962485c741f558121e8daabfcf1d20c84f31f63`.
+          > **Authenticated post-use live smoke:** `34957778592` — SUCCESS.
+          > **Authenticated receiver-refinement live smoke:** `35019200920` — SUCCESS.
+          > **Production context:** protected Clinical Excellence Cockpit with explicit `CY_GESY` server-side configuration.
+          > **Current writer:** none.
+          > **Root operational authority:** `CURRENT_OPERATIONAL.md` continues to track the parallel Medical Report lifecycle and is intentionally not rewritten by this product closeout.
+
+          ## Current production state
+
+          The Knee-OA physiotherapy-referral product is live inside the authenticated Clinical Excellence Cockpit. The current release chain is:
+
+          ```text
+          V5 released / smoke-verified
+          → V5.1 examination + evidence-source UX released
+          → Cyprus / clinical-review post-use refinement released
+          → receiver prose compression + optional symptom chronicity released
+          ```
+
+          Current production architecture remains:
+
+          ```text
+          real CU-1 validation / safety
+          + deterministic Knee-OA projection
+          + international evidence core
+          + reviewed CY_GESY jurisdiction overlay
+          + V5 / V5.1 progressive UI
+          + protected Clinical Excellence transport
+          ```
+
+          ## Current live behavior
+
+          The released workflow preserves the V5 first-tap / second-tap interaction and adds the V5.1 examination/detail layer, including directional knee weakness, progressive ROM detail, crepitus, expanded tenderness localization and objective stability findings.
+
+          The later post-use refinement keeps atypical observations separate from unresolved safety concerns: observations such as recent trauma, rapid worsening/deformity or a hot/swollen joint are review clues and do not themselves infer fracture, septic arthritis, SIFK/SONK, a second diagnosis or automatic imaging. Blocking behavior remains attached only to explicit unresolved safety concerns.
+
+          The current receiver-side refinement additionally:
+
+          - compresses duplicated functional-retraining wording to `λειτουργική επανεκπαίδευση με έμφαση στις καταγεγραμμένες λειτουργικές δυσχέρειες`;
+          - adds optional `Χρονιότητα συμπτωμάτων` under `Περισσότερα → Περιορισμοί & σημείωση` as value `1..99` plus `εβδομάδες / μήνες / έτη`;
+          - renders chronicity as short context such as `Συμπτωματολογία διάρκειας 8 μηνών.`;
+          - keeps chronicity context-only: it does not select treatment, change evidence, trigger imaging, create a review clue or alter safety gating;
+          - adds no structured previous-physiotherapy or response field;
+          - adds no new ADL / patient-centred boilerplate.
+
+          Permanent receiver-history boundary:
+
+          ```text
+          ADMINISTRATIVE PHYSIO ACTIVITY
+          != KNOWN TREATMENT PROGRAM
+          != KNOWN RESPONSE
+          ```
+
+          A GeSY `PHYS01` administrative record therefore must not be converted into a structured claim about the programme delivered or its clinical response. Meaningful known history may remain clinician-entered free text.
+
+          ## Verification
+
+          PR #109 exact-head validation passed all seven protected Physio/Cockpit gates before merge. The authenticated live smoke `35019200920` then verified the production bootstrap and project path, `deployment_context == clinical_excellence_cockpit`, explicit `CY_GESY`, the new chronicity qualifier/output, the compressed functional-retraining wording, absence of structured prior-physiotherapy/response UI, and the no-browser-storage boundary.
+
+          The smoke used only a generated UUID and non-identifiable synthetic state; the protected credential remained masked.
+
+          The preceding PR #107 post-use production state was independently smoke-verified by run `34957778592` — SUCCESS.
+
+          ## Preserved boundaries
+
+          Unchanged:
+
+          - Knee Osteoarthritis only;
+          - no second diagnosis;
+          - no automatic imaging recommendation;
+          - no SIFK/SONK inference;
+          - no international evidence-state reclassification;
+          - no jurisdiction-driven treatment selection or referral-text rewrite;
+          - no default-plan change;
+          - no patient/referral browser persistence;
+          - no billing/analytics/entitlement expansion;
+          - no Medical Report mutation;
+          - frozen CU-1 safety taxonomy remains unchanged.
+
+          ## Current lifecycle
+
+          ```text
+          V5 baseline release                         yes
+          V5.1 release                                yes
+          post-use Cyprus / clinical-review release   yes
+          receiver/chronicity refinement release      yes
+          authenticated current live smoke            pass — 35019200920
+          real clinical pilot                         no
+          commercial validation                       no
+          second diagnosis                            no
+          active writer                               none
+          ```
+
+          ## Next product boundary
+
+          The current Knee-OA refinement lifecycle is closed. Product Owner real-use feedback may justify another small bounded refinement, a deliberate pilot/commercial-validation step or a separately authorized next diagnosis. None is automatically authorized by this closeout.
+
+          Permanent utility rule:
+
+          ```text
+          CLINICALLY INTERESTING != WORKFLOW-USEFUL != RECEIVER-USEFUL != WORTH ADDING
+          PRODUCT OWNER REQUEST != EVIDENCE != IMPLEMENTATION AUTHORITY
+          EXTERNAL FEEDBACK != AUTOMATIC IMPLEMENTATION AUTHORITY
+          ```
+          ''')
+          write(current_path, current_text)
+
+          plan = 'commercial_products/physio_referral/PRODUCT_PLAN.md'
+          old_header = '''> **STATUS:** KNEE-OA V1 RELEASED; CY_GESY OVERLAY RELEASED; V5 FRESH-MAIN INTEGRATED/TESTED; RELEASE HOLD.\n> **Updated:** 2026-09-13 Asia/Nicosia.\n> **Parent:** existing CU-1 Physiotherapy Referral foundation.\n> **Current diagnosis vertical:** Knee Osteoarthritis only.\n> **Current integrated V5 candidate:** `9a7f360745710deacb0ff82f03249723bdfe87d6`.\n> **Current integrated V5 gate:** `34736389860` — SUCCESS.\n> **Current writer:** none.'''
+          new_header = '''> **STATUS:** KNEE-OA V5.1 + POST-USE RECEIVER REFINEMENTS RELEASED / LIVE / AUTHENTICATED-SMOKE-VERIFIED; `CY_GESY` ACTIVE.\n> **Updated:** 2026-09-15 Asia/Nicosia.\n> **Parent:** existing CU-1 Physiotherapy Referral foundation.\n> **Current diagnosis vertical:** Knee Osteoarthritis only.\n> **Current main release commit:** `b962485c741f558121e8daabfcf1d20c84f31f63`.\n> **Current authenticated live smoke:** `35019200920` — SUCCESS.\n> **Current writer:** none.'''
+          replace_exact(plan, old_header, new_header)
+          replace_exact(
+              plan,
+              'V5 remains a candidate until merge/deploy. Its fresh-main integrated test evidence does not itself alter production.',
+              'V5 and V5.1 are released. The current post-use receiver refinements are also live and authenticated-smoke-verified; the latest release commit is `b962485c741f558121e8daabfcf1d20c84f31f63`.'
+          )
+          replace_regex(
+              plan,
+              r'# 8\. V5 fresh-main integrated candidate\n.*?\n---\n\n# 9\. External feedback policy',
+              '''# 8. Current released V5.1 and post-use state\n\nThe V5 baseline was released and smoke-verified first. V5.1 then added examination/detail discoverability and production load-order hardening. Two bounded post-use refinements followed without changing the frozen international evidence/default-plan/safety contracts.\n\nCurrent release chain:\n\n```text\nPR #106 → V5.1 merge 8064999ea70e0a90f6073fc6d66a0c8caaba1538\nPR #107 → Cyprus / clinical-review refinement a19f4b9d52c3076f715fd864a5f7664d2b140c81\n          authenticated live smoke 34957778592 — SUCCESS\nPR #109 → receiver prose / chronicity refinement b962485c741f558121e8daabfcf1d20c84f31f63\n          authenticated live smoke 35019200920 — SUCCESS\n```\n\nThe current receiver refinement intentionally keeps prior physiotherapy response unstructured and preserves:\n\n```text\nADMINISTRATIVE PHYSIO ACTIVITY != KNOWN TREATMENT PROGRAM != KNOWN RESPONSE\n```\n\nNo second diagnosis, evidence-state reclassification, default-plan change, imaging inference, browser persistence or adjacent-owner mutation is implied by these releases.\n\n---\n\n# 9. External feedback policy'''
+          )
+          replace_regex(
+              plan,
+              r'# 10\. Commercial validation sequence\n.*?\n---\n\n# 11\. Review governance',
+              '''# 10. Commercial validation sequence\n\nThe product is now beyond the V5/V5.1 release gate. The lightweight sequence is:\n\n```text\nreleased Knee-OA V5.1 + bounded post-use refinements\n→ Product Owner real-device / real-use evidence\n→ explicit decision whether a small clinical/workflow pilot adds value\n→ explicit commercial validation\n→ first paying clinician\n→ 5\n→ 10\n→ €250 MRR\n→ €500 MRR\n→ ~€1,000 MRR\n```\n\nExternal colleague/receiver feedback may be inserted wherever useful. It remains evidence, not automatic implementation authority.\n\n---\n\n# 11. Review governance'''
+          )
+          replace_regex(
+              plan,
+              r'# 12\. Current next action\n.*\Z',
+              '''# 12. Current next action\n\n```text\nNEXT BOUNDED ACTION\n= use Product Owner real-use evidence to decide whether another small Knee-OA refinement, a pilot/commercial-validation step, or a separately authorized next diagnosis is justified\n```\n\nNo active implementation writer exists. Do not start a second diagnosis, analytics, billing, patient persistence, Greece/England profile work or a new recommendation surface by default.\n'''
+          )
+
+          context = 'commercial_products/physio_referral/PRODUCT_CONTEXT_CURRENT.md'
+          old_ctx_header = '''> **ROLE:** durable product-context authority for the physiotherapy-referral product track.\n> **ROOT CANONICALS STILL GOVERN:** always bootstrap `AGENTS.md`, `TODO.md`, `CLINICAL_EXCELLENCE_PLAN.md`, `SLICE_PLAN_CURRENT.md`, `CURRENT_OPERATIONAL.md`, `osteoporosis-change-log.md` first.\n> **CURRENT ACTIVE DIAGNOSIS VERTICAL:** Knee Osteoarthritis only.\n> **CURRENT PRODUCT STATE:** Knee-OA released; `CY_GESY` jurisdiction overlay released and production-smoke-verified; V5 fresh-main integration implemented/tested; Product Owner release HOLD.\n> **RELEASED JURISDICTION RUNTIME:** `e52a4851b504476c1e361575d08664c05467ff53`.\n> **AUTHENTICATED CY_GESY PRODUCTION SMOKE EVIDENCE:** `34703453615` — SUCCESS.\n> **CURRENT INTEGRATED V5 CANDIDATE:** `9a7f360745710deacb0ff82f03249723bdfe87d6`; gate `34736389860` — SUCCESS.\n> **ORIGINAL REVIEWED V5:** `a47357c602120d3678e8f2f23b99775e616c79e1`; gate `34693751545` — SUCCESS.\n> **CURRENT WRITER:** none.'''
+          new_ctx_header = '''> **ROLE:** durable product-context authority for the physiotherapy-referral product track.\n> **ROOT CANONICALS STILL GOVERN:** always bootstrap `AGENTS.md`, `TODO.md`, `CLINICAL_EXCELLENCE_PLAN.md`, `SLICE_PLAN_CURRENT.md`, `CURRENT_OPERATIONAL.md`, `osteoporosis-change-log.md` first.\n> **CURRENT ACTIVE DIAGNOSIS VERTICAL:** Knee Osteoarthritis only.\n> **CURRENT PRODUCT STATE:** Knee-OA V5.1 plus bounded post-use receiver refinements released / live / authenticated-smoke-verified; `CY_GESY` active.\n> **CURRENT MAIN RELEASE COMMIT:** `b962485c741f558121e8daabfcf1d20c84f31f63`.\n> **LATEST AUTHENTICATED PRODUCTION SMOKE:** `35019200920` — SUCCESS.\n> **PRECEDING POST-USE SMOKE:** `34957778592` — SUCCESS on the PR #107 release state.\n> **CURRENT WRITER:** none.'''
+          replace_exact(context, old_ctx_header, new_ctx_header)
+          replace_regex(
+              context,
+              r'# 5\. Current Knee-OA clinical capture and V5 candidate interaction\n.*?\n---\n\n# 6\. Referral semantics',
+              '''# 5. Current Knee-OA clinical capture and released interaction\n\n## Routine surface\n\n- explicit `Οστεοαρθρίτιδα γόνατος` clinician assertion;\n- laterality: `Δεξί | Αριστερό | Άμφω`;\n- core clinical picture: `Πόνος`, `Δυσκαμψία`, `Αδυναμία`, `Λειτουργικότητα`.\n\nDiagnosis/laterality requirements and export readiness remain deterministic and fail closed.\n\n## Released V5 / V5.1 interaction\n\n```text\ninactive Pain / Stiffness / Weakness first tap\n→ select generic symptom\n→ no forced popup\n\nsecond tap while selected\n→ optional focused refinement\n```\n\n`Λειτουργικότητα` remains a first-tap chooser. V5.1 adds directional knee weakness, progressive ROM detail, crepitus, expanded tenderness localization and objective stability findings while preserving symptom != objective finding != diagnosis.\n\nThe later post-use clinical-review layer treats recent trauma, rapid worsening/deformity and hot/swollen joint as non-blocking review observations. They do not themselves infer fracture, septic arthritis, SIFK/SONK, automatic imaging or a second diagnosis. Separate explicit unresolved safety concerns remain blocking.\n\n## Receiver-side refinement\n\n`Περισσότερα → Περιορισμοί & σημείωση` contains optional `Χρονιότητα συμπτωμάτων` as a numeric duration `1..99` plus `εβδομάδες / μήνες / έτη`. It is context-only and may render, for example, `Συμπτωματολογία διάρκειας 8 μηνών.`\n\nWhen `functional_task_retraining` is selected, the plan uses the compact receiver wording `λειτουργική επανεκπαίδευση με έμφαση στις καταγεγραμμένες λειτουργικές δυσχέρειες` instead of repeating the already-recorded task list.\n\nNo structured previous-physiotherapy/response field exists. Permanent boundary:\n\n```text\nADMINISTRATIVE PHYSIO ACTIVITY != KNOWN TREATMENT PROGRAM != KNOWN RESPONSE\n```\n\nNo extra ADL / patient-centred boilerplate was added.\n\n---\n\n# 6. Referral semantics'''
+          )
+          replace_exact(context, 'V5 candidate copy refinements:', 'Current released copy refinements:')
+          replace_exact(
+              context,
+              'V5 does not reclassify any evidence state or source position.',
+              'The released V5/V5.1 and post-use refinements do not reclassify any evidence state or source position.'
+          )
+          replace_exact(
+              context,
+              '# 8. Jurisdiction strategy — released and preserved in V5 integration',
+              '# 8. Jurisdiction strategy — released and preserved through V5.1/post-use refinements'
+          )
+          replace_exact(
+              context,
+              'Final V5 integration gate `34736389860` explicitly tested V5 and the current jurisdiction behavior together on exact head `9a7f3607...`.',
+              'Current protected Cockpit/jurisdiction semantics were preserved through PR #106, PR #107 and PR #109; authenticated live smokes `34957778592` and `35019200920` both passed with explicit `CY_GESY`.'
+          )
+          replace_exact(
+              context,
+              'The V5 integrated candidate preserves these boundaries. Any future persistence, analytics, billing or entitlement work requires separate authority.',
+              'The released V5/V5.1/post-use workflow preserves these boundaries. Any future persistence, analytics, billing or entitlement work requires separate authority.'
+          )
+          replace_exact(
+              context,
+              'Formal physiotherapist/receiver evaluation is **not needed now** and is **not a blocking gate** for V5.',
+              'Formal physiotherapist/receiver evaluation remains optional external evidence and is **not a blocking gate** for the current released Knee-OA workflow.'
+          )
+          replace_exact(
+              context,
+              'The required change was fresh-main integration, not clinical redesign. That blocker is resolved at the candidate/test level on `9a7f3607...`.',
+              'The required historical change was fresh-main integration, not clinical redesign. That blocker was resolved and V5 subsequently released; V5.1 and the bounded post-use refinements followed under their own tested release cycles.'
+          )
+          replace_regex(
+              context,
+              r'# 13\. V5 candidate — current state\n.*?\n---\n\n# 14\. Validation truth still unproven',
+              '''# 13. Current released state\n\nCurrent release chain:\n\n```text\nV5 baseline release runtime  8cfb22fd2478e7832b9b8642f7ae5241d7e1a267\nV5.1 merge                   8064999ea70e0a90f6073fc6d66a0c8caaba1538  (PR #106)\npost-use clinical review     a19f4b9d52c3076f715fd864a5f7664d2b140c81  (PR #107)\nreceiver/chronicity          b962485c741f558121e8daabfcf1d20c84f31f63  (PR #109)\n```\n\nAuthenticated production evidence:\n\n```text\n34957778592 — SUCCESS — PR #107 post-use live state\n35019200920 — SUCCESS — current receiver/chronicity live state\n```\n\nThe current release preserves `CY_GESY`, shared protected Cockpit semantics, evidence/safety/default-selection boundaries and no-persistence behavior.\n\nCurrent next bounded action is not another automatic feature. Use real-use evidence to decide what, if anything, deserves the next slice.\n\n---\n\n# 14. Validation truth still unproven'''
+          )
+          replace_regex(
+              context,
+              r'# 14\. Validation truth still unproven\n.*?\n---\n\n# 15\. What not to do next by default',
+              '''# 14. Validation truth still unproven\n\nThe current bounded live behavior is proven by authenticated production smoke. Do not overclaim beyond that:\n\n```text\ncurrent protected Cockpit bootstrap / project path   proven\ncurrent chronicity + receiver compression behavior   proven live\nCY_GESY current production profile                    proven live\nreal clinical pilot                                   not proven\npaid conversion / willingness-to-pay                  not proven\nretention                                             not proven\nformal external receiver validation                   not proven and currently deferred\nactual iPhone Safari / VoiceOver                       not proven unless separately recorded\nsecond-diagnosis usefulness                            not proven\nGreece/England market need                             not proven\n```\n\n---\n\n# 15. What not to do next by default'''
+          )
+          replace_regex(
+              context,
+              r'# 17\. Exact handoff state\n.*\Z',
+              '''# 17. Exact handoff state\n\n```text\nKnee-OA production foundation          released\nCY_GESY overlay                         released / active / smoke-verified\nV5                                      released / smoke-verified\nV5.1                                    released\nPR #107 post-use refinement             released / live smoke 34957778592 PASS\nPR #109 receiver/chronicity refinement  released / live smoke 35019200920 PASS\nformal receiver review                  deferred by Product Owner; not a gate\nreal clinical pilot                     not started\ncommercial validation                   not started\nsecond diagnosis                        not authorized\nactive writer                           none\n```\n\n**Exact next action:** do not invent another implementation slice. Use Product Owner real-use evidence to decide whether another bounded Knee-OA refinement, pilot/commercial-validation step or separately authorized next diagnosis is justified.\n'''
+          )
+
+          product_changelog = 'commercial_products/physio_referral/PRODUCT_CHANGELOG.md'
+          pcl = read(product_changelog)
+          marker = '## 2026-09-15 — V5.1 and post-use production truth reconciled'
+          assert marker not in pcl
+          pcl += textwrap.dedent('''\
+
+          ---
+
+          ## 2026-09-15 — V5.1 and post-use production truth reconciled
+
+          Product canonicals were reconciled against current `main`, merged PR history and authenticated live production evidence.
+
+          Release chain now recorded as current truth:
+
+          ```text
+          PR #106 — V5.1 examination / evidence-source UX
+          merge 8064999ea70e0a90f6073fc6d66a0c8caaba1538
+
+          PR #107 — Cyprus evidence discoverability + clinical-review refinement
+          merge a19f4b9d52c3076f715fd864a5f7664d2b140c81
+          authenticated live smoke 34957778592 — SUCCESS
+
+          PR #109 — receiver prose compression + optional symptom chronicity
+          merge b962485c741f558121e8daabfcf1d20c84f31f63
+          authenticated live smoke 35019200920 — SUCCESS
+          ```
+
+          The latest receiver refinement compresses duplicated functional-retraining prose, adds optional context-only symptom chronicity, and deliberately does not model previous physiotherapy/response from GeSY administrative activity.
+
+          Permanent boundary reaffirmed:
+
+          ```text
+          ADMINISTRATIVE PHYSIO ACTIVITY != KNOWN TREATMENT PROGRAM != KNOWN RESPONSE
+          ```
+
+          No international evidence state, default rehabilitation selection, CU-1 safety taxonomy, diagnosis vertical, imaging inference, patient persistence, billing/analytics/entitlement or Medical Report owner was changed by this closeout.
+          ''')
+          write(product_changelog, pcl)
+
+          root_changelog = 'osteoporosis-change-log.md'
+          root = read(root_changelog)
+          root_marker = '## 2026-09-15 — Physio Knee-OA V5.1/post-use release chain reconciled'
+          assert root_marker not in root
+          root += textwrap.dedent('''\
+
+          ---
+
+          ## 2026-09-15 — Physio Knee-OA V5.1/post-use release chain reconciled
+
+          The Physio Referral product track was reconciled to current production truth without changing the parallel root Medical Report operational lifecycle.
+
+          Verified sequence:
+
+          - PR #106 merged V5.1 at `8064999ea70e0a90f6073fc6d66a0c8caaba1538`;
+          - PR #107 merged the Cyprus/clinical-review post-use refinement at `a19f4b9d52c3076f715fd864a5f7664d2b140c81`; authenticated live smoke `34957778592` succeeded;
+          - PR #109 merged receiver prose compression and optional symptom chronicity at `b962485c741f558121e8daabfcf1d20c84f31f63`; authenticated live smoke `35019200920` succeeded.
+
+          Current live smoke preserved the protected `clinical_excellence_cockpit` context, explicit `CY_GESY`, context-only chronicity, compressed functional-retraining wording, no structured previous-physiotherapy/response control and no browser draft persistence.
+
+          Root `CURRENT_OPERATIONAL.md` / `SLICE_PLAN_CURRENT.md` were intentionally not rewritten because their active lifecycle remains the parallel Medical Report release/smoke track.
+          ''')
+          write(root_changelog, root)
+          PY
+
+      - name: Commit clean docs-only candidate
+        shell: bash
+        run: |
+          rm -f .github/workflows/tmp-physio-product-canonical-reconcile.yml
+          allowed=(
+            commercial_products/physio_referral/CURRENT.md
+            commercial_products/physio_referral/PRODUCT_CHANGELOG.md
+            commercial_products/physio_referral/PRODUCT_CONTEXT_CURRENT.md
+            commercial_products/physio_referral/PRODUCT_PLAN.md
+            osteoporosis-change-log.md
+          )
+          mapfile -t changed < <(git diff --name-only | sort)
+          printf '%s\n' "${allowed[@]}" | sort > /tmp/allowed.txt
+          printf '%s\n' "${changed[@]}" > /tmp/changed.txt
+          diff -u /tmp/allowed.txt /tmp/changed.txt
+          git add "${allowed[@]}"
+          git commit -m "Reconcile Physio Knee OA production canonicals"
+          git push origin HEAD:docs/physio-knee-oa-canonical-reconcile-2026-09-15
