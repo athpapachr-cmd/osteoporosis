@@ -37,6 +37,11 @@ RUNTIME_RANGES: dict[str, tuple[float, float]] = {
     "treatment.duration_years": (0.0, 50.0),
 }
 
+NEGATED_PRESENCE_CONCEPTS = {
+    "treatment.agent",
+    "administration.agent",
+}
+
 
 def _component(candidate: ProviderCandidateV1, key: str):
     return next((item for item in candidate.components if item.concept_key == key), None)
@@ -85,11 +90,11 @@ def _guard_range(mapping: TargetMappingV1, component, key: str) -> TargetMapping
 
 
 def map_candidate(candidate: ProviderCandidateV1) -> list[TargetMappingV1]:
-    """Apply exact runtime enum/type/range guards after the base deterministic mapper.
+    """Apply exact runtime enum/type/range/source guards after the base mapper.
 
     Provider semantic output is untrusted. A value is not considered mapped merely
     because its concept key has a runtime destination; it must also fit the exact
-    value and semantic contract of that destination.
+    value, semantic and patient-source contract of that destination.
     """
 
     mappings = _base_map_candidate(candidate)
@@ -104,6 +109,17 @@ def map_candidate(candidate: ProviderCandidateV1) -> list[TargetMappingV1]:
         component = _component(candidate, key)
         if component is None:
             guarded.append(_ambiguous(mapping, "MISSING_COMPONENT"))
+            continue
+
+        # Module-01 targets are patient-card targets. Third-party facts may be
+        # extracted for review but must never be proposed as patient truth.
+        if candidate.source_assertion.speaker == "third_party":
+            guarded.append(_ambiguous(mapping, "THIRD_PARTY_SOURCE_NOT_PATIENT"))
+            continue
+
+        # A negated exposure is not a positive treatment/administration episode.
+        if candidate.source_assertion.polarity == "negative" and key in NEGATED_PRESENCE_CONCEPTS:
+            guarded.append(_ambiguous(mapping, "NEGATED_ASSERTION_NOT_POSITIVE_RUNTIME_VALUE"))
             continue
 
         if key == "fracture.site":
@@ -196,4 +212,5 @@ __all__ = [
     "VFA_ACTIONS",
     "VFA_MODALITIES",
     "RUNTIME_RANGES",
+    "NEGATED_PRESENCE_CONCEPTS",
 ]

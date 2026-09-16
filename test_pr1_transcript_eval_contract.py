@@ -25,32 +25,40 @@ from clinical_excellence.modules.osteoporosis.transcript_target_guard import map
 from evals.transcript_v1.run_provider_eval import _evaluate_case
 
 
+EXPANDED_CASE_IDS = {
+    "fracture_relative_time",
+    "explicit_negative_smoking",
+    "dxa_objective",
+    "labs_objective",
+    "options_one_final",
+    "preference_only",
+    "followup_vague",
+    "garbled_speech",
+    "frax_original_adjusted",
+    "speaker_ambiguity",
+    "negative_history_vs_negative_investigation",
+    "followup_exact",
+    "unrelated_general_clinical_text",
+    "repeated_fracture_event_grouping",
+    "embedded_instruction_untrusted",
+    "referral_not_completed_result",
+    "prescription_not_administration",
+    "self_correction_date",
+    "third_party_treatment_history",
+    "out_of_range_runtime_values",
+    "planned_not_done_administration",
+    "negated_treatment_exposure",
+}
+
+
 def test_eval_fixture_is_synthetic_and_covers_required_cases():
     cases = json.loads(Path("evals/transcript_v1/cases.json").read_text(encoding="utf-8"))
-    assert len(cases) >= 13
+    assert len(cases) >= 22
     ids = {item["id"] for item in cases}
-    assert {
-        "fracture_relative_time",
-        "explicit_negative_smoking",
-        "dxa_objective",
-        "labs_objective",
-        "options_one_final",
-        "preference_only",
-        "followup_vague",
-        "garbled_speech",
-        "frax_original_adjusted",
-        "speaker_ambiguity",
-        "negative_history_vs_negative_investigation",
-        "followup_exact",
-        "unrelated_general_clinical_text",
-    }.issubset(ids)
-    assert all(item.get("required_assertions") for item in cases)
+    assert EXPANDED_CASE_IDS.issubset(ids)
+    assert all(item.get("required_assertions") or item.get("allowed_assertions") for item in cases)
+    assert any(item.get("required_candidate_groups") for item in cases)
     assert any(item.get("forbidden_assertions") or item.get("forbidden_concepts") for item in cases)
-    assert all(
-        any(rule.get("concept_key") for rule in item.get("required_assertions", []))
-        or item.get("allowed_assertions")
-        for item in cases
-    )
     joined = json.dumps(cases, ensure_ascii=False).lower()
     for forbidden in ("gesy id", "@gmail.com", "+357 9"):
         assert forbidden not in joined
@@ -62,6 +70,8 @@ def test_provider_eval_runner_is_fail_closed_and_does_not_print_transcript_conte
     assert 'provider_status("synthetic_eval")' in runner
     assert 'OpenAITranscriptProvider(purpose="synthetic_eval")' in runner
     assert "unexpected_assertion_" in runner
+    assert "required_candidate_groups" in runner
+    assert "low_confidence_output" in runner
     assert "item['transcript']" not in runner
     assert "result.candidates" in runner
     assert "required_assertions" in runner
@@ -70,18 +80,27 @@ def test_provider_eval_runner_is_fail_closed_and_does_not_print_transcript_conte
     assert "non_ephemeral_response_meta" in runner
 
 
-def _candidate(concept_key, value, *, semantic_type="patient_history_fact"):
+def _candidate(
+    concept_key,
+    value,
+    *,
+    semantic_type="patient_history_fact",
+    speaker="clinician",
+    polarity="positive",
+    temporality="current",
+    confidence="high",
+):
     return ProviderCandidateV1.model_validate({
         "semantic_type": semantic_type,
         "components": [{"concept_key": concept_key, "value": value}],
         "source_assertion": {
-            "speaker": "clinician",
-            "polarity": "positive",
-            "temporality": "current",
+            "speaker": speaker,
+            "polarity": polarity,
+            "temporality": temporality,
             "certainty": "explicit",
         },
         "evidence_snippet": "",
-        "confidence": "high",
+        "confidence": confidence,
     })
 
 
@@ -103,23 +122,32 @@ def _enable_provider(monkeypatch):
     monkeypatch.setenv("OPENAI_API_KEY", "synthetic")
 
 
-def test_provider_candidate_rejects_duplicate_concept_keys():
+def test_provider_candidate_rejects_duplicate_concept_keys_but_allows_repeated_events_across_candidates():
+    duplicate = {
+        "semantic_type": "patient_history_fact",
+        "components": [
+            {"concept_key": "fracture.site", "value": {"kind": "code", "code": "hip"}},
+            {"concept_key": "fracture.site", "value": {"kind": "code", "code": "other"}},
+        ],
+        "source_assertion": {
+            "speaker": "patient",
+            "polarity": "positive",
+            "temporality": "past",
+            "certainty": "explicit",
+        },
+        "evidence_snippet": "",
+        "confidence": "high",
+    }
     with pytest.raises(ValidationError):
-        ProviderCandidateV1.model_validate({
-            "semantic_type": "patient_history_fact",
-            "components": [
-                {"concept_key": "fracture.site", "value": {"kind": "code", "code": "hip"}},
-                {"concept_key": "fracture.site", "value": {"kind": "code", "code": "other"}},
-            ],
-            "source_assertion": {
-                "speaker": "patient",
-                "polarity": "positive",
-                "temporality": "past",
-                "certainty": "explicit",
-            },
-            "evidence_snippet": "",
-            "confidence": "high",
-        })
+        ProviderCandidateV1.model_validate(duplicate)
+
+    first = _candidate("fracture.site", {"kind": "code", "code": "distal_radius"}, speaker="patient")
+    second = _candidate("fracture.site", {"kind": "code", "code": "hip"}, speaker="patient")
+    result = ProviderTranscriptExtractionV1.model_validate({
+        "candidates": [first.model_dump(mode="json"), second.model_dump(mode="json")],
+        "warnings": [],
+    })
+    assert len(result.candidates) == 2
 
 
 def test_step4_status_mapping_rejects_provider_codes_outside_runtime_enums():
@@ -195,6 +223,30 @@ def test_original_frax_percentages_require_objective_result_semantics():
     )[0]
     assert objective.status == "mapped"
     assert objective.proposed_value == 18
+
+
+def test_third_party_and_negated_treatment_agents_fail_closed_before_patient_mapping():
+    third_party = map_candidate(
+        _candidate(
+            "treatment.agent",
+            {"kind": "code", "code": "denosumab"},
+            speaker="third_party",
+            polarity="positive",
+        )
+    )[0]
+    assert third_party.status == "ambiguous"
+    assert third_party.reason_code == "THIRD_PARTY_SOURCE_NOT_PATIENT"
+
+    negated = map_candidate(
+        _candidate(
+            "treatment.agent",
+            {"kind": "code", "code": "denosumab"},
+            speaker="patient",
+            polarity="negative",
+        )
+    )[0]
+    assert negated.status == "ambiguous"
+    assert negated.reason_code == "NEGATED_ASSERTION_NOT_POSITIVE_RUNTIME_VALUE"
 
 
 def test_fixed_runtime_code_targets_are_whitelisted_locally():
@@ -293,6 +345,89 @@ def test_provider_eval_default_deny_rejects_unexpected_extra_assertion_without_f
     }
     failures = _evaluate_case(case, result)
     assert "unexpected_assertion_followup.due_date" in failures
+
+
+def test_provider_eval_candidate_grouping_detects_cross_paired_repeated_events():
+    provider_output = ProviderTranscriptExtractionV1.model_validate({
+        "candidates": [
+            {
+                "semantic_type": "patient_history_fact",
+                "components": [
+                    {"concept_key": "fracture.site", "value": {"kind": "code", "code": "distal_radius"}},
+                    {"concept_key": "fracture.date", "value": {"kind": "date", "normalized": "2025-03", "precision": "month", "date_text": "Μάρτιο 2025"}},
+                ],
+                "source_assertion": {"speaker": "patient", "polarity": "positive", "temporality": "past", "certainty": "explicit"},
+                "evidence_snippet": "",
+                "confidence": "high",
+            },
+            {
+                "semantic_type": "patient_history_fact",
+                "components": [
+                    {"concept_key": "fracture.site", "value": {"kind": "code", "code": "hip"}},
+                    {"concept_key": "fracture.date", "value": {"kind": "date", "normalized": "2022-01", "precision": "month", "date_text": "Ιανουάριο 2022"}},
+                ],
+                "source_assertion": {"speaker": "patient", "polarity": "positive", "temporality": "past", "certainty": "explicit"},
+                "evidence_snippet": "",
+                "confidence": "high",
+            },
+        ],
+        "warnings": [],
+    })
+
+    class StaticProvider:
+        def extract(self, request, provider_profile):
+            return provider_output
+
+    result = extract_candidates(_request(), StaticProvider())
+    case = {
+        "required_assertions": [
+            {"semantic_type": "patient_history_fact", "concept_key": "fracture.site", "value": {"kind": "code", "code": "distal_radius"}},
+            {"semantic_type": "patient_history_fact", "concept_key": "fracture.date", "value": {"kind": "date", "normalized": "2022-01"}},
+            {"semantic_type": "patient_history_fact", "concept_key": "fracture.site", "value": {"kind": "code", "code": "hip"}},
+            {"semantic_type": "patient_history_fact", "concept_key": "fracture.date", "value": {"kind": "date", "normalized": "2025-03"}},
+        ],
+        "required_candidate_groups": [
+            {"semantic_type": "patient_history_fact", "components": [
+                {"concept_key": "fracture.site", "value": {"kind": "code", "code": "distal_radius"}},
+                {"concept_key": "fracture.date", "value": {"kind": "date", "normalized": "2022-01"}},
+            ]},
+            {"semantic_type": "patient_history_fact", "components": [
+                {"concept_key": "fracture.site", "value": {"kind": "code", "code": "hip"}},
+                {"concept_key": "fracture.date", "value": {"kind": "date", "normalized": "2025-03"}},
+            ]},
+        ],
+    }
+    failures = _evaluate_case(case, result)
+    assert "required_candidate_group_0_missing" in failures
+    assert "required_candidate_group_1_missing" in failures
+
+
+def test_provider_eval_low_confidence_fails_clean_case_unless_explicitly_allowed():
+    provider_output = ProviderTranscriptExtractionV1.model_validate({
+        "candidates": [
+            {
+                "semantic_type": "patient_history_fact",
+                "components": [{"concept_key": "clinical.unmapped_narrative", "value": {"kind": "text", "text": "synthetic"}}],
+                "source_assertion": {"speaker": "patient", "polarity": "positive", "temporality": "current", "certainty": "explicit"},
+                "evidence_snippet": "",
+                "confidence": "low",
+            }
+        ],
+        "warnings": [],
+    })
+
+    class StaticProvider:
+        def extract(self, request, provider_profile):
+            return provider_output
+
+    result = extract_candidates(_request(), StaticProvider())
+    case = {
+        "required_assertions": [
+            {"semantic_type": "patient_history_fact", "concept_key": "clinical.unmapped_narrative"}
+        ]
+    }
+    assert "low_confidence_output" in _evaluate_case(case, result)
+    assert "low_confidence_output" not in _evaluate_case({**case, "allow_low_confidence": True}, result)
 
 
 def test_synthetic_eval_gate_is_separate_from_identifiable_phi_approval(monkeypatch):

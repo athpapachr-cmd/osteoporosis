@@ -76,6 +76,32 @@ def _candidate_matches(candidate, rule: dict[str, Any]) -> bool:
     return _component_matches_rule(candidate, components[0], rule)
 
 
+def _group_rule_component(group: dict[str, Any], component_rule: dict[str, Any]) -> dict[str, Any]:
+    merged = dict(component_rule)
+    if "semantic_type" in group and "semantic_type" not in merged:
+        merged["semantic_type"] = group["semantic_type"]
+    if "source_assertion" in group and "source_assertion" not in merged:
+        merged["source_assertion"] = group["source_assertion"]
+    return merged
+
+
+def _candidate_group_matches(candidate, group: dict[str, Any]) -> bool:
+    candidate_rule = {
+        key: group[key]
+        for key in ("semantic_type", "source_assertion")
+        if key in group
+    }
+    if not _candidate_matches(candidate, candidate_rule):
+        return False
+    components = group.get("components", [])
+    if not components:
+        return False
+    return all(
+        _candidate_matches(candidate, _group_rule_component(group, component_rule))
+        for component_rule in components
+    )
+
+
 def _evaluate_case(item: dict[str, Any], result) -> list[str]:
     failures: list[str] = []
 
@@ -101,6 +127,11 @@ def _evaluate_case(item: dict[str, Any], result) -> list[str]:
         if not any(_candidate_matches(candidate, rule) for candidate in result.candidates):
             failures.append(f"required_assertion_{index}_missing")
 
+    required_groups = item.get("required_candidate_groups", [])
+    for index, group in enumerate(required_groups):
+        if not any(_candidate_group_matches(candidate, group) for candidate in result.candidates):
+            failures.append(f"required_candidate_group_{index}_missing")
+
     for index, rule in enumerate(item.get("forbidden_assertions", [])):
         if any(_candidate_matches(candidate, rule) for candidate in result.candidates):
             failures.append(f"forbidden_assertion_{index}_present")
@@ -110,10 +141,17 @@ def _evaluate_case(item: dict[str, Any], result) -> list[str]:
             failures.append(f"forbidden_concept_{concept_key}_present")
 
     # Promotion evidence is default-deny. Every returned component must be covered
-    # by an explicit required/allowed rule with a concept key. This prevents a case
-    # from passing simply because expected facts are present alongside hallucinated extras.
+    # by an explicit required/allowed/group rule with a concept key. This prevents
+    # expected facts from masking clinically material hallucinated extras.
     authorization_rules = [rule for rule in required_assertions if rule.get("concept_key")]
     authorization_rules.extend(item.get("allowed_assertions", []))
+    for group in required_groups:
+        authorization_rules.extend(
+            _group_rule_component(group, component_rule)
+            for component_rule in group.get("components", [])
+            if component_rule.get("concept_key")
+        )
+
     for candidate in result.candidates:
         for component in candidate.components:
             if not any(
@@ -138,6 +176,10 @@ def _evaluate_case(item: dict[str, Any], result) -> list[str]:
 
     if "EVIDENCE_NOT_VERIFIABLE" in result.warnings:
         failures.append("evidence_not_verifiable")
+
+    if not item.get("allow_low_confidence", False):
+        if "LOW_SOURCE_CLARITY" in result.warnings or any(candidate.confidence == "low" for candidate in result.candidates):
+            failures.append("low_confidence_output")
 
     for warning in item.get("forbidden_warnings", []):
         if warning in result.warnings:
