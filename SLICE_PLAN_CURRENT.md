@@ -1,224 +1,200 @@
 # SLICE_PLAN_CURRENT.md — PR-1 Heidi-first Transcript Intake + Candidate Extraction v1
 
-> **STATUS:** H-01..H-06 DETERMINISTIC CLOSURE PROVEN / SECOND LIVE 22-CASE SYNTHETIC QUALIFICATION AUTHORIZED — NOT RELEASE READY.
+> **STATUS:** LIVE GPT-5.6 PROMOTION QUALIFICATION EXECUTED / 7 PASS + 15 FAIL / H-07 READ-ONLY TRIAGE REQUIRED — NOT RELEASE READY.
 > **Activated:** 2026-09-16 Asia/Nicosia.
-> **Replanned:** independent READ-ONLY review; then live Structured Outputs schema evidence.
 > **Slice:** `PR-1-TRANSCRIPT-INTAKE-CANDIDATE-EXTRACTION-V1-2026-09-16`.
 > **Activation main:** `0ab5f9770d220c20e8d94544cb64e93a4aa30d00`.
 > **Runtime branch:** `feat/pr1-transcript-capture-v1-2026-09-16`.
-> **Exact H-06 deterministic runtime/eval head:** `d1470ce1c10cd69f6f9e4fe72096527157f084e9`.
-> **Deterministic/inherited gate:** `35139716235` — SUCCESS.
-> **Synthetic qualification suite:** 22 synthetic/de-identified cases.
-> **First live provider run:** `35138694138` — schema failure before case 1; credential boundary proven.
+> **Exact H-06 runtime/eval head:** `d1470ce1c10cd69f6f9e4fe72096527157f084e9`.
+> **H-06 deterministic gate:** `35139716235` — SUCCESS.
+> **Second live wrapper head:** `2714715ee2c14c6a477abd78562685ae1e7ecf0b`.
+> **Wrapper deterministic gate:** `35140165777` — SUCCESS.
+> **Live provider qualification:** `35140165842` — 22 executed; 7 PASS; 15 FAIL.
 > **Writer:** one bounded PR-1 implementation writer; operational owner is `CURRENT_OPERATIONAL.md`.
 
 ## 1. Objective
 
 Add a reusable Clinical Excellence Core capability that accepts a pasted Heidi transcript and returns structured, **non-authoritative** clinical candidates for clinician review, using Osteoporosis Module 01 as the first deterministic mapping profile.
 
-```text
-PASTE HEIDI TRANSCRIPT
-→ protected Core endpoint
-→ ephemeral processing
-→ strict semantic candidates
-→ deterministic Module-01 target mapping
-→ transient preview
-→ NO authoritative write
-```
-
 PR-1 remains extraction/preview only. PR-2 owns later provisional in-card acceptance/edit/reject behavior.
 
-## 2. Preserved safety and privacy contracts
+## 2. Safety/privacy contract remains frozen
 
-- raw transcript is ephemeral and non-authoritative;
-- no transcript/candidate persistence in DB, encounter payload, browser storage or logs;
-- provider emits semantic assertions only and cannot choose runtime/storage paths;
-- deterministic Module-01 code owns runtime mapping;
-- candidates are always `proposed` and `requires_clinician_review=true`;
+- raw transcript ephemeral and non-authoritative;
+- no DB/encounter/browser-storage/log persistence of transcript/candidates;
+- provider cannot author runtime/storage paths;
+- deterministic Module-01 mapping owns target selection;
+- candidates remain `proposed` + clinician-review-required;
 - preserve speaker/source, polarity, temporality, certainty and semantic type;
-- preserve patient/history fact vs objective result vs interpretation;
+- preserve history vs objective result vs interpretation;
 - preserve option vs recommendation vs preference vs acceptance vs final decision;
-- vague/relative timing must not become an invented exact date;
-- no authoritative patient/encounter/lab/task write exists in PR-1;
-- identifiable transcript use remains blocked behind a distinct privacy/provider approval boundary.
+- vague/relative timing never becomes an invented exact date;
+- no authoritative patient write in PR-1;
+- identifiable transcript use remains blocked by a separate privacy/provider approval gate.
 
-## 3. Independent-review findings H-01 through H-04 — CLOSED
+## 3. Deterministic findings H-01..H-06
 
-### H-01 — unexpected assertion default deny
+H-01 through H-06 are closed deterministically on the verified branch history:
 
-Every provider component must be covered by an explicit required/allowed fixture rule. Unexpected assertions fail promotion qualification even if all required facts are also present.
+- H-01 default-deny unexpected assertion oracle;
+- H-02 unique component identity and repeated-event grouping;
+- H-03 synthetic-eval authorization independent from identifiable-PHI approval;
+- H-04 exact reviewed runtime guards;
+- H-06 live-provider-compatible strict Structured Outputs schema plus deterministic HTTP-400 request-contract classification.
 
-### H-02 — deterministic component/event identity
+The H-06 exact runtime head `d1470ce1c10cd69f6f9e4fe72096527157f084e9` passed full deterministic/inherited gate `35139716235`; its canonical checkpoint passed `35140063802`.
 
-Duplicate `concept_key` values inside one provider candidate are invalid. Repeated real-world events use separate candidates, and eval grouping prevents cross-event value/mapping pairing.
+## 4. Frozen 22-case promotion suite
 
-### H-03 — synthetic vs identifiable-PHI authorization
+The synthetic/de-identified suite includes the core semantic/date/result cases plus repeated event grouping, embedded instruction text, referral vs result, prescription vs administration, self-correction, third-party source, out-of-range numeric transcription, planned vs completed administration, negated exposure and low-confidence controls.
 
-Clinical/default purpose requires identifiable-PHI approval. Synthetic evaluation requires the dedicated synthetic gate + credential and does not set or impersonate PHI approval.
+The oracle remains default-deny. Every returned component must be covered by a required or explicitly allowed fixture assertion. This protection must not be weakened globally during remediation.
 
-### H-04 — exact runtime guard surface
+## 5. Live execution evidence
 
-The deterministic mapper enforces current runtime enums, units, semantics/source protections and verified numeric ranges for weight, height, FRAX percentages, DXA BMD/T-score, falls, CFS and treatment duration.
+### Execution boundary
 
-## 4. Promotion suite
-
-The frozen suite contains 22 synthetic/de-identified cases. In addition to the original semantic/date/result distinctions it includes:
-
-- repeated fracture/event grouping;
-- embedded prompt/instruction text treated as untrusted transcript content;
-- referral/request ≠ completed investigation/result;
-- prescription/recommendation ≠ medication actually taken/administered;
-- self-correction;
-- third-party history without patient attribution;
-- out-of-range numeric extraction with fail-closed runtime mapping;
-- planned administration ≠ completed administration;
-- explicit negated treatment exposure;
-- low-confidence failure for clean explicit cases unless explicitly permitted.
-
-The oracle remains default-deny and response metadata must remain ephemeral/non-authoritative.
-
-## 5. Synthetic-only credential boundary — PROVEN
-
-The bounded workflow:
+Run `35140165842` used:
 
 ```text
-.github/workflows/pr1-transcript-live-provider-eval.yml
-```
-
-uses:
-
-```text
-CLINICAL_TRANSCRIPT_AI_ENABLED=true
-CLINICAL_TRANSCRIPT_SYNTHETIC_EVAL_ENABLED=true
+provider=openai
+model=gpt-5.6
+purpose=synthetic_eval
+OPENAI_API_KEY=secure Actions secret / masked
 CLINICAL_TRANSCRIPT_PHI_PROVIDER_APPROVED=false
-CLINICAL_TRANSCRIPT_AI_MODEL=gpt-5.6
-OPENAI_API_KEY from GitHub Actions secret store
+fixture count=22 / IDs unique
 ```
 
-Run `35138694138` proved the credential was available and masked, PHI approval remained false and the 22 fixture IDs were valid/unique. No production configuration changed.
+The H-06 response schema was accepted and the complete 22-case qualification loop executed. Therefore credential/schema setup is no longer the blocker.
 
-## 6. First live request — H-06 discovery
-
-The first provider call in run `35138694138` failed before case 1 with HTTP 400 `invalid_json_schema` because the discriminated Pydantic `CandidateValueV1` generated a `oneOf` schema at the provider response `value` property. The adapter also collapsed that deterministic request/schema failure into `ProviderUnavailable`.
-
-This was adapter-contract evidence, not semantic model evidence.
-
-## 7. H-06 — Structured Outputs schema compatibility — CLOSED deterministically
-
-Exact remediation head:
+### Result
 
 ```text
-d1470ce1c10cd69f6f9e4fe72096527157f084e9
+total=22
+passed=7
+failed=15
+promotion threshold=0 failed
+promotion result=FAIL
 ```
 
-Exact verification:
+PASS IDs:
 
 ```text
-35139716235 — SUCCESS
-52 focused PR-1 tests PASS
-6 inherited protected-clinical tests PASS
-24 inherited Medical Report tests PASS
-workspace navigation PASS
-bounded scope PASS
+explicit_negative_smoking
+dxa_objective
+labs_objective
+preference_only
+garbled_speech
+negative_history_vs_negative_investigation
+embedded_instruction_untrusted
 ```
 
-### Provider schema remediation
-
-`CandidateValueV1` remains a strict union of the seven value models but is no longer represented by a Pydantic discriminator. Every variant still carries a mutually exclusive literal `kind`:
+FAIL IDs:
 
 ```text
-text
-code
-number
-integer
-boolean
-quantity
-date
+fracture_relative_time
+options_one_final
+followup_vague
+frax_original_adjusted
+speaker_ambiguity
+followup_exact
+unrelated_general_clinical_text
+repeated_fracture_event_grouping
+referral_not_completed_result
+prescription_not_administration
+self_correction_date
+third_party_treatment_history
+out_of_range_runtime_values
+planned_not_done_administration
+negated_treatment_exposure
 ```
 
-This preserves the local typed contract while removing the generated `oneOf` keyword that the live provider rejected. The generated `ProviderTranscriptExtractionV1` schema is deterministically checked to contain no `oneOf` keyword.
+This is provider/model + qualification-oracle evidence. It is not infrastructure failure and it is not promotion-ready evidence.
 
-The response path remains strict Structured Outputs through:
+## 6. H-07 — failed-case reconciliation before tuning
+
+### Finding
+
+The coded failures contain mixed signals. Some failures clearly indicate dangerous semantic collapse or unsupported truth; others may indicate that the fixture allowlist is narrower than the intended extraction contract even when an extra assertion is source-supported.
+
+Therefore the 15 failures must be reconciled **case-by-case** before mutation. No blanket prompt tuning and no blanket allowlisting are permitted.
+
+### Required triage taxonomy
+
+Each failed case must be assigned one primary disposition:
 
 ```text
-responses.parse(..., text_format=ProviderTranscriptExtractionV1)
+A — PROVIDER_SEMANTIC_FAILURE
+    model output violates intended semantic/source/temporal contract
+
+B — FIXTURE_ORACLE_OVERCONSTRAINT
+    returned assertion is source-supported and contract-valid but omitted from allowlist
+
+C — ONTOLOGY_PROFILE_AMBIGUITY
+    intended concept representation is under-specified or competing representations are both plausible
+
+D — DETERMINISTIC_CONTRACT_DEFECT
+    mapper/evaluator itself evaluates a valid structured assertion incorrectly
 ```
 
-No permissive JSON mode or free-form text fallback is allowed.
+Mixed cases may carry a secondary category, but remediation must identify the primary safety/quality defect rather than making the case green by convenience.
 
-### Local validation preserved
+### Triage evidence surface
 
-Deterministic H-06 tests prove:
+Read only:
 
-- all seven value payloads validate into the intended concrete Pydantic value class;
-- kind/shape mismatches fail;
-- impossible exact calendar dates fail;
-- duplicate concept keys still fail;
-- existing vague-date, H-01..H-04, mapping and fixture-contract protections remain green.
+- `evals/transcript_v1/cases.json`;
+- `evals/transcript_v1/run_provider_eval.py`;
+- `clinical_excellence/modules/osteoporosis/transcript_profile.py`;
+- `clinical_excellence/modules/osteoporosis/transcript_targets.py`;
+- `clinical_excellence/modules/osteoporosis/transcript_target_guard.py`;
+- coded live run `35140165842`.
 
-### Error classification corrected
+Because the live runner intentionally logs only case IDs, coded checks and candidate counts, triage must not invent hidden candidate values/source assertions that were not captured. Where a coded failure cannot uniquely determine the provider's exact assertion details, mark that uncertainty and remediate only what the evidence supports.
 
-Deterministic provider HTTP 400/request-contract failures, including `invalid_json_schema`, now fail as `ProviderInvalidOutput` rather than retryable `ProviderUnavailable`. Timeout/connection/rate-limit/upstream failures retain the availability classification.
+## 7. Promotion-policy constraints during remediation
 
-## 8. Exact live qualification gate now authorized
+Permitted after canonical triage checkpoint:
 
-After durable canonical verification of H-06, the next deliberate material action is a second synthetic-only selected-model qualification:
+- strengthen provider instructions for semantic distinctions;
+- clarify ontology/profile rules where the intended representation is ambiguous;
+- repair fixture allowlists only for source-supported, contract-valid extras;
+- repair mapper/evaluator defects if demonstrated;
+- add deterministic regressions for every changed rule.
 
-```text
-exact H-06-compatible branch state
-+ secure Actions OPENAI_API_KEY
-+ synthetic eval gate true
-+ PHI approval false
-→ deliberately retrigger bounded workflow
-→ run all 22 cases through gpt-5.6
-→ require failed=0 under default-deny oracle
-→ checkpoint exact live evidence
-→ fresh independent READ-ONLY evidence review
-```
+Forbidden:
 
-If the API rejects another schema construct or any case fails, that exact evidence becomes the next checkpoint before further code/prompt/fixture mutation.
+- wildcard/permissive assertion allowlists;
+- removing hard distinctions merely because GPT-5.6 emitted a different structure;
+- accepting administration truth from prescription/recommendation language;
+- accepting positive treatment truth from explicit negation;
+- weakening third-party/source attribution protections;
+- treating a 7/22 result as a partial promotion pass.
+
+## 8. Exact next action
+
+Perform READ-ONLY H-07 triage of all 15 failures, freeze the per-case disposition + bounded remediation contract in the canonicals, verify that checkpoint, and only then mutate prompt/fixtures/profile/mapper/evaluator as justified.
+
+After deterministic verification of the resulting remediation, a third live 22-case run may be deliberately triggered. Promotion requires `failed=0`.
 
 ## 9. H-05 retained production-release blocker
 
-The FastAPI route is async while the OpenAI adapter is synchronous and the current production command uses a single uvicorn worker. Before production enablement, provider execution must not block the event loop for the full provider timeout.
+The protected FastAPI route remains async while the OpenAI provider client is synchronous in a single-worker web process. H-05 must close before production enablement/deploy regardless of eventual synthetic qualification outcome.
 
-H-05 does not block isolated CLI synthetic qualification, but it must close before release/deploy. Stronger executable browser lifecycle/BFCache/logout cleanup evidence also remains production-release debt.
+Executable browser lifecycle/BFCache/logout cleanup evidence also remains production-release debt.
 
 ## 10. Definition of Done status
 
-Satisfied deterministically:
-
-- protected transcript UI + endpoint;
-- strict request/response/provider contracts locally;
-- provider target-path isolation;
-- transient/non-authoritative preview;
-- no authoritative write path;
-- transcript/candidate non-persistence;
-- H-01..H-06 deterministic remediation;
-- expanded 22-case promotion suite;
-- safe synthetic credential path;
-- exact H-06 SHA/run evidence.
-
-Still unsatisfied:
-
-- successful live semantic execution of all 22 cases through selected GPT-5.6 provider path;
-- independent review of live provider evidence;
-- H-05 production async/blocking remediation;
-- stronger executable browser lifecycle evidence before production release.
-
-Therefore:
-
 ```text
-SAFE CREDENTIAL PATH YES
-H-01..H-06 DETERMINISTIC CLOSURE YES
-LIVE SEMANTIC QUALIFICATION PASS NO
-RELEASE READY NO
-RUNTIME RELEASE PR NO
-DEPLOY NO
-IDENTIFIABLE TRANSCRIPT USE NO
-PR-2 / REAL PILOT NO
+H-01..H-06 deterministic closure          YES
+safe synthetic credential path             YES
+live schema accepted                        YES
+22-case selected-model execution completed  YES
+live promotion gate                         FAIL: 15/22 failed
+H-07 triage                                 OPEN
+release ready                               NO
+runtime release PR                          NO
+deploy                                      NO
+identifiable transcript use                 NO
+PR-2 / real pilot                           NO
 ```
-
-## 11. Release boundary
-
-No runtime release PR, merge/deploy, identifiable transcript use, PR-2 or real-patient pilot may occur until the live 22-case provider qualification passes, its evidence is independently reviewed, and separate production-release blockers are closed.
