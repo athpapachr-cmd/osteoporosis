@@ -1,0 +1,68 @@
+name: PR-1 live synthetic provider eval
+
+on:
+  push:
+    branches:
+      - "feat/pr1-transcript-capture-v1-2026-09-16"
+    paths:
+      - ".github/workflows/pr1-transcript-live-provider-eval.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  synthetic-provider-eval:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    env:
+      CLINICAL_TRANSCRIPT_AI_ENABLED: "true"
+      CLINICAL_TRANSCRIPT_SYNTHETIC_EVAL_ENABLED: "true"
+      CLINICAL_TRANSCRIPT_PHI_PROVIDER_APPROVED: "false"
+      CLINICAL_TRANSCRIPT_AI_MODEL: "gpt-5.6"
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Verify synthetic-only execution boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${OPENAI_API_KEY:-}" ]; then
+            echo "PR1_SYNTHETIC_PROVIDER_EVAL_HOLD: OPENAI_API_KEY unavailable to this Actions job."
+            exit 2
+          fi
+          if [ "${CLINICAL_TRANSCRIPT_PHI_PROVIDER_APPROVED}" != "false" ]; then
+            echo "PR1_SYNTHETIC_PROVIDER_EVAL_BLOCKED: PHI provider approval must remain false for this qualification job."
+            exit 3
+          fi
+          echo "PR1_SYNTHETIC_PROVIDER_EVAL_BOUNDARY_OK"
+          echo "provider=openai model=${CLINICAL_TRANSCRIPT_AI_MODEL} purpose=synthetic_eval phi_approval=false"
+
+      - name: Verify frozen promotion fixture count
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          cases = json.loads(Path("evals/transcript_v1/cases.json").read_text(encoding="utf-8"))
+          if len(cases) != 22:
+              raise SystemExit(f"fixture_count_mismatch:{len(cases)}")
+          ids = [item.get("id") for item in cases]
+          if any(not isinstance(case_id, str) or not case_id for case_id in ids):
+              raise SystemExit("fixture_id_invalid")
+          if len(ids) != len(set(ids)):
+              raise SystemExit("fixture_id_duplicate")
+          print("promotion-fixtures: total=22 ids_unique=true")
+          PY
+
+      - name: Run live 22-case GPT-5.6 synthetic qualification
+        run: python -m evals.transcript_v1.run_provider_eval
