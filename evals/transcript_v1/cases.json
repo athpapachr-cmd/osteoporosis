@@ -1,12 +1,126 @@
 [
-  {"id":"fracture_relative_time","language":"el","transcript":"Ασθενής: Έσπασα το ισχίο πριν από περίπου δύο χρόνια μετά από απλή πτώση.","expect_concepts":["fracture.site","fracture.date","fracture.low_trauma"],"expect_semantics":["patient_history_fact"]},
-  {"id":"explicit_negative_smoking","language":"el","transcript":"Ιατρός: Καπνίζετε; Ασθενής: Όχι, δεν καπνίζω.","expect_concepts":["risk.current_smoking"],"expect_semantics":["patient_history_fact"]},
-  {"id":"dxa_objective","language":"el","transcript":"Ιατρός: Στο DXA της 10/09/2026 το T-score οσφύος ήταν -2.8 και BMD 0.790 g/cm².","expect_concepts":["dxa.date","dxa.spine_t_score","dxa.spine_bmd"],"expect_semantics":["objective_result"]},
-  {"id":"labs_objective","language":"el","transcript":"Ιατρός: Η βιταμίνη D είναι 24 ng/mL και η PTH 78 pg/mL.","expect_concepts":["labs.vitamin_d","labs.pth"],"expect_semantics":["objective_result"]},
-  {"id":"options_one_final","language":"el","transcript":"Ιατρός: Συζητήσαμε denosumab και zoledronate. Προτείνω zoledronate. Ασθενής: Συμφωνώ. Ιατρός: Τελική απόφαση, έναρξη zoledronate.","expect_concepts":["decision.selected_agent","patient.acceptance"],"expect_semantics":["option_discussed","clinician_recommendation","patient_accepted","final_decision"]},
-  {"id":"preference_only","language":"el","transcript":"Ασθενής: Θα προτιμούσα να αποφύγω ενέσεις αν υπάρχει ασφαλής εναλλακτική.","expect_concepts":["patient.preference"],"expect_semantics":["patient_preference"]},
-  {"id":"followup_vague","language":"el","transcript":"Ιατρός: Θα ξαναδούμε τις εξετάσεις σε περίπου έξι μήνες.","expect_concepts":["followup.timeframe_text"],"expect_semantics":["followup_task"]},
-  {"id":"garbled_speech","language":"el","transcript":"Ασθενής: εε... το χάπι... μάλλον Δευτέρα; όχι θυμάμαι...", "expect_concepts":[],"expect_semantics":["uncertain_needs_review"]},
-  {"id":"frax_original_adjusted","language":"el","transcript":"Ιατρός: Το επίσημο FRAX είναι MOF 18% και hip 4%. Με κλινική προσαρμογή εκτιμώ τον κίνδυνο υψηλότερο.","expect_concepts":["frax.mof_percent","frax.hip_percent"],"expect_semantics":["objective_result","clinician_interpretation"]},
-  {"id":"speaker_ambiguity","language":"el","transcript":"Αναφέρθηκε ότι είχε λάβει denosumab, αλλά δεν είναι σαφές από ποιον ούτε αν έγινε πράγματι η χορήγηση.","expect_concepts":["treatment.agent"],"expect_semantics":["uncertain_needs_review"]}
+  {
+    "id": "fracture_relative_time",
+    "language": "el",
+    "transcript": "Ασθενής: Έσπασα το ισχίο πριν από περίπου δύο χρόνια μετά από απλή πτώση.",
+    "expect_concepts": ["fracture.site", "fracture.date", "fracture.low_trauma"],
+    "expect_semantics": ["patient_history_fact"],
+    "required_assertions": [
+      {"semantic_type": "patient_history_fact", "concept_key": "fracture.site", "source_assertion": {"speaker": "patient", "polarity": "positive"}, "value": {"kind": "code", "code": "hip"}, "mapping": {"status": "mapped", "target_path": "fracture_history.events[].site"}},
+      {"semantic_type": "patient_history_fact", "concept_key": "fracture.date", "value": {"kind": "date", "normalized": null, "precision": "relative"}, "mapping": {"status": "ambiguous", "reason_code": "TARGET_SUPPORTS_MONTH_ONLY"}},
+      {"semantic_type": "patient_history_fact", "concept_key": "fracture.low_trauma", "value": {"kind": "boolean", "value": true}, "mapping": {"status": "mapped", "proposed_value": "yes"}}
+    ],
+    "forbid_exact_date_concepts": ["fracture.date"]
+  },
+  {
+    "id": "explicit_negative_smoking",
+    "language": "el",
+    "transcript": "Ιατρός: Καπνίζετε; Ασθενής: Όχι, δεν καπνίζω.",
+    "expect_concepts": ["risk.current_smoking"],
+    "expect_semantics": ["patient_history_fact"],
+    "required_assertions": [
+      {"semantic_type": "patient_history_fact", "concept_key": "risk.current_smoking", "source_assertion": {"speaker": "patient", "polarity": "negative"}, "value": {"kind": "boolean", "value": false}, "mapping": {"status": "ambiguous", "reason_code": "NEGATIVE_DEFAULT_SEMANTICS"}}
+    ]
+  },
+  {
+    "id": "dxa_objective",
+    "language": "el",
+    "transcript": "Ιατρός: Στο DXA της 10/09/2026 το T-score οσφύος ήταν -2.8 και BMD 0.790 g/cm².",
+    "expect_concepts": ["dxa.date", "dxa.spine_t_score", "dxa.spine_bmd"],
+    "expect_semantics": ["objective_result"],
+    "required_assertions": [
+      {"semantic_type": "objective_result", "concept_key": "dxa.date", "source_assertion": {"speaker": "clinician"}, "value": {"kind": "date", "normalized": "2026-09-10", "precision": "day"}, "mapping": {"status": "mapped", "target_path": "step3.dxa.date"}},
+      {"semantic_type": "objective_result", "concept_key": "dxa.spine_t_score", "value": {"kind": "number", "value": -2.8}, "mapping": {"status": "mapped", "target_path": "step3.dxa.spine_t"}},
+      {"semantic_type": "objective_result", "concept_key": "dxa.spine_bmd", "value": {"kind": "quantity", "value": 0.79}, "mapping": {"status": "mapped", "target_path": "step3.dxa.spine_bmd"}}
+    ]
+  },
+  {
+    "id": "labs_objective",
+    "language": "el",
+    "transcript": "Ιατρός: Η βιταμίνη D είναι 24 ng/mL και η PTH 78 pg/mL.",
+    "expect_concepts": ["labs.vitamin_d", "labs.pth"],
+    "expect_semantics": ["objective_result"],
+    "required_assertions": [
+      {"semantic_type": "objective_result", "concept_key": "labs.vitamin_d", "source_assertion": {"speaker": "clinician"}, "value": {"kind": "quantity", "value": 24.0}, "mapping": {"status": "mapped", "target_path": "step3.labs.vitamin_d"}},
+      {"semantic_type": "objective_result", "concept_key": "labs.pth", "value": {"kind": "quantity", "value": 78.0}, "mapping": {"status": "mapped", "target_path": "step3.labs.pth"}}
+    ]
+  },
+  {
+    "id": "options_one_final",
+    "language": "el",
+    "transcript": "Ιατρός: Συζητήσαμε denosumab και zoledronate. Προτείνω zoledronate. Ασθενής: Συμφωνώ. Ιατρός: Τελική απόφαση, έναρξη zoledronate.",
+    "expect_concepts": ["decision.type", "decision.selected_agent", "patient.acceptance"],
+    "expect_semantics": ["option_discussed", "clinician_recommendation", "patient_accepted", "final_decision"],
+    "required_assertions": [
+      {"semantic_type": "option_discussed", "concept_key": "decision.selected_agent", "value": {"kind": "code", "code": "denosumab"}, "mapping": {"status": "ambiguous", "reason_code": "FINAL_DECISION_REQUIRED"}},
+      {"semantic_type": "option_discussed", "concept_key": "decision.selected_agent", "value": {"kind": "code", "code": "zoledronate"}, "mapping": {"status": "ambiguous", "reason_code": "FINAL_DECISION_REQUIRED"}},
+      {"semantic_type": "clinician_recommendation", "concept_key": "decision.selected_agent", "source_assertion": {"speaker": "clinician"}, "value": {"kind": "code", "code": "zoledronate"}, "mapping": {"status": "ambiguous", "reason_code": "FINAL_DECISION_REQUIRED"}},
+      {"semantic_type": "patient_accepted", "concept_key": "patient.acceptance", "source_assertion": {"speaker": "patient"}, "value": {"kind": "code", "code": "accepted"}, "mapping": {"status": "mapped", "target_path": "step4.decision.patient_accepted", "proposed_value": "yes"}},
+      {"semantic_type": "final_decision", "concept_key": "decision.type", "source_assertion": {"speaker": "clinician"}, "value": {"kind": "code", "code": "start"}, "mapping": {"status": "mapped", "target_path": "step4.decision.type"}},
+      {"semantic_type": "final_decision", "concept_key": "decision.selected_agent", "source_assertion": {"speaker": "clinician"}, "value": {"kind": "code", "code": "zoledronate"}, "mapping": {"status": "mapped", "target_path": "step4.decision.selected_agent"}}
+    ],
+    "forbidden_assertions": [
+      {"semantic_type": "final_decision", "concept_key": "decision.selected_agent", "value": {"kind": "code", "code": "denosumab"}}
+    ],
+    "semantic_counts": {"final_decision": 1}
+  },
+  {
+    "id": "preference_only",
+    "language": "el",
+    "transcript": "Ασθενής: Θα προτιμούσα να αποφύγω ενέσεις αν υπάρχει ασφαλής εναλλακτική.",
+    "expect_concepts": ["patient.preference"],
+    "expect_semantics": ["patient_preference"],
+    "required_assertions": [
+      {"semantic_type": "patient_preference", "concept_key": "patient.preference", "source_assertion": {"speaker": "patient"}, "mapping": {"status": "unmapped", "reason_code": "PREFERENCE_CONTENT_HAS_NO_LOSSLESS_RUNTIME_TARGET"}}
+    ],
+    "semantic_counts": {"final_decision": 0, "patient_accepted": 0, "clinician_recommendation": 0}
+  },
+  {
+    "id": "followup_vague",
+    "language": "el",
+    "transcript": "Ιατρός: Θα ξαναδούμε τις εξετάσεις σε περίπου έξι μήνες.",
+    "expect_concepts": ["followup.timeframe_text"],
+    "expect_semantics": ["followup_task"],
+    "required_assertions": [
+      {"semantic_type": "followup_task", "concept_key": "followup.timeframe_text", "source_assertion": {"speaker": "clinician"}, "mapping": {"status": "mapped", "target_path": "step4.tasks[].timeframe_text"}}
+    ],
+    "forbidden_concepts": ["followup.due_date"]
+  },
+  {
+    "id": "garbled_speech",
+    "language": "el",
+    "transcript": "Ασθενής: εε... το χάπι... μάλλον Δευτέρα; όχι θυμάμαι...",
+    "expect_concepts": [],
+    "expect_semantics": ["uncertain_needs_review"],
+    "required_assertions": [
+      {"semantic_type": "uncertain_needs_review", "source_assertion": {"speaker": "patient", "certainty": "uncertain"}}
+    ],
+    "forbidden_concepts": ["administration.actual_date", "administration.status"],
+    "semantic_counts": {"final_decision": 0, "patient_accepted": 0}
+  },
+  {
+    "id": "frax_original_adjusted",
+    "language": "el",
+    "transcript": "Ιατρός: Το επίσημο FRAX είναι MOF 18% και hip 4%. Με κλινική προσαρμογή εκτιμώ τον κίνδυνο υψηλότερο.",
+    "expect_concepts": ["frax.mof_percent", "frax.hip_percent"],
+    "expect_semantics": ["objective_result", "clinician_interpretation"],
+    "required_assertions": [
+      {"semantic_type": "objective_result", "concept_key": "frax.mof_percent", "source_assertion": {"speaker": "clinician"}, "value": {"kind": "number", "value": 18.0}, "mapping": {"status": "mapped", "target_path": "risk_assessment.frax_mof_percent"}},
+      {"semantic_type": "objective_result", "concept_key": "frax.hip_percent", "source_assertion": {"speaker": "clinician"}, "value": {"kind": "number", "value": 4.0}, "mapping": {"status": "mapped", "target_path": "risk_assessment.frax_hip_percent"}},
+      {"semantic_type": "clinician_interpretation", "source_assertion": {"speaker": "clinician"}}
+    ],
+    "forbidden_concepts": ["frax.adjusted_mof_percent", "frax.adjusted_hip_percent"]
+  },
+  {
+    "id": "speaker_ambiguity",
+    "language": "el",
+    "transcript": "Αναφέρθηκε ότι είχε λάβει denosumab, αλλά δεν είναι σαφές από ποιον ούτε αν έγινε πράγματι η χορήγηση.",
+    "expect_concepts": ["treatment.agent"],
+    "expect_semantics": ["uncertain_needs_review"],
+    "required_assertions": [
+      {"semantic_type": "uncertain_needs_review", "concept_key": "treatment.agent", "source_assertion": {"speaker": "unclear", "certainty": "uncertain"}, "value": {"kind": "code", "code": "denosumab"}, "mapping": {"status": "mapped", "target_path": "step4.treatment_episodes[].agent"}}
+    ],
+    "forbidden_concepts": ["administration.actual_date", "administration.status"],
+    "semantic_counts": {"final_decision": 0}
+  }
 ]

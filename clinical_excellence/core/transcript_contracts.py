@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import date
 from typing import Annotated, Any, Literal, Union
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -79,11 +80,11 @@ class DateValueV1(StrictModel):
     def validate_precision(self):
         value = self.normalized or ""
         if self.precision == "day" and not _matches_date(value, 10, (4, 7), "-"):
-            raise ValueError("day precision requires YYYY-MM-DD")
+            raise ValueError("day precision requires valid YYYY-MM-DD")
         if self.precision == "month" and not _matches_date(value, 7, (4,), "-"):
-            raise ValueError("month precision requires YYYY-MM")
-        if self.precision == "year" and not (len(value) == 4 and value.isdigit()):
-            raise ValueError("year precision requires YYYY")
+            raise ValueError("month precision requires valid YYYY-MM")
+        if self.precision == "year" and not _matches_year(value):
+            raise ValueError("year precision requires valid YYYY")
         if self.precision in {"relative", "unclear"} and self.normalized is not None:
             raise ValueError("relative/unclear date must not contain normalized exact date")
         return self
@@ -98,7 +99,19 @@ def _matches_date(value: str, length: int, separator_positions: tuple[int, ...],
                 return False
         elif not char.isdigit():
             return False
+    try:
+        candidate = value if length == 10 else f"{value}-01"
+        date.fromisoformat(candidate)
+    except ValueError:
+        return False
     return True
+
+
+def _matches_year(value: str) -> bool:
+    if len(value) != 4 or not value.isdigit():
+        return False
+    year = int(value)
+    return 1 <= year <= 9999
 
 
 CandidateValueV1 = Annotated[
@@ -132,7 +145,7 @@ class SourceAssertionV1(StrictModel):
             raise ValueError("invalid day date")
         if self.date_precision == "month" and not _matches_date(self.normalized_date, 7, (4,), "-"):
             raise ValueError("invalid month date")
-        if self.date_precision == "year" and not (len(self.normalized_date) == 4 and self.normalized_date.isdigit()):
+        if self.date_precision == "year" and not _matches_year(self.normalized_date):
             raise ValueError("invalid year date")
         if self.date_precision is None:
             raise ValueError("normalized_date requires date_precision")

@@ -2,15 +2,19 @@ import json
 from pathlib import Path
 
 import pytest
+from pydantic import ValidationError
 
 from clinical_excellence.core.providers.openai_transcript import OpenAITranscriptProvider
 from clinical_excellence.core.transcript_contracts import (
+    DateValueV1,
     ProviderCandidateV1,
     ProviderTranscriptExtractionV1,
     TranscriptExtractRequestV1,
 )
 from clinical_excellence.core.transcript_provider import ProviderInvalidOutput, ProviderRefusal, ProviderUnavailable
+from clinical_excellence.core.transcript_service import extract_candidates
 from clinical_excellence.modules.osteoporosis.transcript_target_guard import map_candidate
+from evals.transcript_v1.run_provider_eval import _evaluate_case
 
 
 def test_eval_fixture_is_synthetic_and_covers_required_cases():
@@ -29,6 +33,8 @@ def test_eval_fixture_is_synthetic_and_covers_required_cases():
         "frax_original_adjusted",
         "speaker_ambiguity",
     }.issubset(ids)
+    assert all(item.get("required_assertions") for item in cases)
+    assert any(item.get("forbidden_assertions") or item.get("forbidden_concepts") for item in cases)
     joined = json.dumps(cases, ensure_ascii=False).lower()
     for forbidden in ("gesy id", "@gmail.com", "+357 9"):
         assert forbidden not in joined
@@ -40,6 +46,8 @@ def test_provider_eval_runner_is_fail_closed_and_does_not_print_transcript_conte
     assert 'status["phi_provider_approved"]' in runner
     assert "item['transcript']" not in runner
     assert "result.candidates" in runner
+    assert "required_assertions" in runner
+    assert "forbidden_assertions" in runner
 
 
 def _candidate(concept_key, value):
@@ -143,6 +151,67 @@ def test_vfa_runtime_enums_are_validated_and_boolean_indication_is_normalized():
     bad_modality = map_candidate(_candidate("vfa.modality", {"kind": "code", "code": "ultrasound"}))[0]
     assert bad_modality.status == "ambiguous"
     assert bad_modality.reason_code == "UNSUPPORTED_VFA_MODALITY"
+
+
+def test_exact_date_contract_rejects_impossible_calendar_values():
+    for normalized, precision in (
+        ("2026-02-31", "day"),
+        ("2026-13", "month"),
+        ("0000", "year"),
+    ):
+        with pytest.raises(ValidationError):
+            DateValueV1.model_validate({
+                "kind": "date",
+                "normalized": normalized,
+                "precision": precision,
+                "date_text": normalized,
+            })
+
+    leap_day = DateValueV1.model_validate({
+        "kind": "date",
+        "normalized": "2024-02-29",
+        "precision": "day",
+        "date_text": "29/02/2024",
+    })
+    assert leap_day.normalized == "2024-02-29"
+
+
+def test_provider_eval_gate_rejects_dangerous_extra_assertion_even_when_legacy_sets_match():
+    provider_output = ProviderTranscriptExtractionV1.model_validate({
+        "candidates": [
+            {
+                "semantic_type": "followup_task",
+                "components": [
+                    {"concept_key": "followup.timeframe_text", "value": {"kind": "text", "text": "σε περίπου έξι μήνες"}},
+                    {"concept_key": "followup.due_date", "value": {"kind": "date", "normalized": "2027-03-16", "precision": "day", "date_text": "σε περίπου έξι μήνες"}},
+                ],
+                "source_assertion": {
+                    "speaker": "clinician",
+                    "polarity": "positive",
+                    "temporality": "future",
+                    "certainty": "explicit",
+                },
+                "evidence_snippet": "",
+                "confidence": "high",
+            }
+        ]
+    })
+
+    class StaticProvider:
+        def extract(self, request, provider_profile):
+            return provider_output
+
+    result = extract_candidates(_request(), StaticProvider())
+    case = {
+        "expect_semantics": ["followup_task"],
+        "expect_concepts": ["followup.timeframe_text"],
+        "required_assertions": [
+            {"semantic_type": "followup_task", "concept_key": "followup.timeframe_text"}
+        ],
+        "forbidden_concepts": ["followup.due_date"],
+    }
+    failures = _evaluate_case(case, result)
+    assert "forbidden_concept_followup.due_date_present" in failures
 
 
 def test_openai_adapter_classifies_structured_validation_as_invalid_output(monkeypatch):
