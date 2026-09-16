@@ -42,7 +42,7 @@ def test_h07_provider_profile_preserves_semantic_ownership_and_hard_safety_rules
         "unrelated non-osteoporosis narrative",
         "speaker=third_party",
         "polarity=negative",
-        "do not infer positive treatment status",
+        "Do not emit positive treatment.status",
     )
     for fragment in required_fragments:
         assert fragment in profile
