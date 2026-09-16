@@ -1,6 +1,6 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** PR-1 HEIDI-FIRST TRANSCRIPT CAPTURE — IMPLEMENTED / DETERMINISTIC-TESTED / EVAL-GATE HARDENED; LIVE SYNTHETIC PROVIDER-EVAL HOLD — NOT RELEASE READY.
+> **STATUS:** PR-1 HEIDI-FIRST TRANSCRIPT CAPTURE — IMPLEMENTED / DETERMINISTIC-TESTED / HARDENED MINIMUM EVAL SUITE COMPLETE; LIVE SYNTHETIC PROVIDER-EVAL HOLD — NOT RELEASE READY.
 > **Updated:** 2026-09-16 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Activation main:** `0ab5f9770d220c20e8d94544cb64e93a4aa30d00`.
@@ -8,9 +8,10 @@
 > **Active slice:** `PR-1-TRANSCRIPT-INTAKE-CANDIDATE-EXTRACTION-V1-2026-09-16`.
 > **Active writer:** this bounded PR-1 implementation lifecycle only.
 > **Runtime implementation branch:** `feat/pr1-transcript-capture-v1-2026-09-16`.
-> **Exact tested runtime head:** `f63b2e5d232dcc8923facd54e4c195a046a4a962`.
-> **Latest deterministic/inherited gate:** `35083545256` — SUCCESS.
+> **Exact tested runtime head:** `a79d68915bde230a53bb7b5fd31a4104a491b058`.
+> **Latest deterministic/inherited gate:** `35084122094` — SUCCESS.
 > **Focused PR-1 tests:** 26 PASS.
+> **Synthetic provider minimum suite:** 13 synthetic/de-identified scenarios with structured safety assertions.
 > **Synthetic provider-eval probe:** `35056606836` — HOLD reconfirmed on rerun; GitHub Actions `OPENAI_API_KEY` unavailable, no provider call made.
 > **Medical Report V1.1:** CLOSED; do not reopen without separate authority.
 
@@ -58,30 +59,49 @@ Invalid or non-lossless provider values become `ambiguous` or `unmapped`; they a
 
 ## Independent implementation review hardening — 2026-09-16
 
-A fresh read-only review after the previous chat boundary found two additional deterministic weaknesses and closed them without expanding PR-1 scope.
+A fresh review after the previous chat boundary found two additional deterministic weaknesses and closed them without expanding PR-1 scope.
 
 ### Exact-date contract
 
 The previous date validator verified only the textual shape of `YYYY-MM-DD`, `YYYY-MM` or `YYYY`. It could therefore accept impossible calendar values such as `2026-02-31`, `2026-13` or year `0000`.
 
-Head `f63b2e5d232dcc8923facd54e4c195a046a4a962` now validates normalized day/month/year values as real calendar dates while preserving the existing hard rule that relative/vague timing cannot contain an invented normalized exact date. Deterministic tests include impossible dates plus a valid leap-day control.
+The current exact tested head validates normalized day/month/year values as real calendar dates while preserving the existing hard rule that relative/vague timing cannot contain an invented normalized exact date. Deterministic tests include impossible dates plus a valid leap-day control.
 
 ### Synthetic provider-eval gate
 
 The live synthetic eval runner previously treated a case as PASS when the expected semantic types and concept keys appeared somewhere in the model output. That was insufficient for the frozen v3 safety invariants: a model could theoretically emit those expected sets while also inventing an exact date, adding a wrong final decision, misassigning speaker/polarity, or producing an unsafe target mapping.
 
-The eval harness is now fail-closed on structured case invariants. Fixtures can require and forbid specific assertions and concepts, constrain source semantics and component values, verify deterministic mapping state/target/reason, forbid invented exact dates, constrain semantic counts, and reject unverifiable evidence warnings. Output remains PHI-safe: it reports only case IDs, coded failed checks and candidate counts, never transcript or candidate content.
+The eval harness is now fail-closed on structured case invariants. Fixtures can require and forbid specific assertions and concepts, constrain source semantics and component values, verify deterministic mapping state/target/reason, forbid invented exact dates, constrain semantic counts, reject unverifiable evidence warnings, and assert that the returned response remains ephemeral/non-authoritative. Output remains PHI-safe: it reports only case IDs, coded failed checks and candidate counts, never transcript or candidate content.
 
-The current 10 synthetic cases were upgraded to exercise those stronger assertions. The verified archived v3 design additionally calls for explicit negative-history-vs-investigation, exact follow-up timing and unrelated-clinical-text coverage; completing those remaining minimum-suite cases is the next bounded implementation action before a live provider PASS can be accepted as release evidence.
+## Frozen-v3 minimum synthetic suite — COMPLETE
+
+Head `a79d68915bde230a53bb7b5fd31a4104a491b058` completes the representative minimum synthetic/de-identified suite with 13 explicit scenarios:
+
+1. positive fracture history with vague relative timing;
+2. explicit negative smoking history;
+3. exact DXA objective result;
+4. laboratory objective results;
+5. multiple options + one recommendation + patient acceptance + exactly one final decision;
+6. patient preference without accidental decision/recommendation;
+7. vague follow-up timeframe without fabricated due date;
+8. garbled/uncertain speech without guessed administration truth;
+9. original formal FRAX versus clinician-adjusted interpretation;
+10. ambiguous speaker/treatment history;
+11. explicit negative history versus negative objective investigation, with reciprocal semantic-collapse checks;
+12. exact follow-up date when the source really supports an exact day;
+13. unrelated general musculoskeletal text without osteoporosis-target hallucination.
+
+This closes the deterministic **suite-definition** gap. It does **not** constitute live GPT-5.6 provider performance evidence; that still requires execution of all 13 scenarios through the selected adapter/model.
 
 ## Latest exact-head gate evidence
 
-Workflow `35083545256` passed on exact runtime head `f63b2e5d232dcc8923facd54e4c195a046a4a962`.
+Workflow `35084122094` passed on exact runtime head `a79d68915bde230a53bb7b5fd31a4104a491b058`.
 
 Evidence includes:
 
 - Python and browser syntax — PASS;
 - **26 PR-1 focused privacy/contract/mapping/UI/eval-contract tests — PASS**;
+- all 13 minimum synthetic fixtures validated as de-identified structured gate cases;
 - reusable cookie-session authentication of the protected transcript endpoint;
 - 512 KiB body and 120k-character fail-closed limits;
 - sanitized error responses with no sentinel PHI echo/logging;
@@ -94,12 +114,16 @@ Evidence includes:
 - option-discussed cannot populate final treatment decision;
 - fixed runtime enums and treatment-duration type/range are locally validated;
 - strengthened eval contract rejects dangerous extra assertions even when the older semantic/concept set checks would otherwise pass;
+- negative history and negative objective investigation are represented as distinct assertions in the frozen eval gate;
+- unrelated clinical narrative has explicit forbidden osteoporosis-target assertions;
 - structured-output validation is classified separately from provider unavailability;
 - OpenAI adapter retry/timeout/structured-output contract;
 - inherited protected-clinical regressions — 6 PASS;
 - inherited Medical Report regressions — 24 PASS;
 - inherited workspace navigation regression — PASS;
 - bounded PR-1 scope guard — PASS at the exact runtime head.
+
+The immediately preceding canonical hardening checkpoint was independently verified by workflow `35083865144` — SUCCESS.
 
 ## Earlier canonical-checkpoint guard verification
 
@@ -116,7 +140,7 @@ PR1_SYNTHETIC_PROVIDER_EVAL_HOLD
 No production configuration was changed and no transcript was sent.
 ```
 
-This is not a provider-model PASS and not a provider-model FAIL. The deterministic provider adapter contract is tested, but the selected live GPT-5.6 semantic extraction behavior has not yet been evaluated by this branch.
+This is not a provider-model PASS and not a provider-model FAIL. The deterministic provider adapter contract and the full 13-case minimum suite are tested, but the selected live GPT-5.6 semantic extraction behavior has not yet been evaluated by this branch.
 
 Do not substitute the assistant model, the Medical Report provider path, a fake provider, or production secret/config mutation for this missing live adapter evidence and label it equivalent.
 
@@ -135,19 +159,20 @@ identifiable transcript use: BLOCKED
 
 ## Exact next action
 
-Complete the remaining frozen-v3 minimum synthetic-suite coverage on the current PR-1 branch, specifically:
+Preserve **LIVE SYNTHETIC PROVIDER-EVAL HOLD** until a safe credential path is explicitly available without exposing/copying a secret and without mutating production configuration.
 
-1. explicit negative history versus negative objective investigation;
-2. exact follow-up date versus the already-covered vague timeframe;
-3. unrelated general clinical text without osteoporosis-target hallucination.
+The next authorized execution action is:
 
-Then rerun the full deterministic/inherited gate and checkpoint that exact head.
+```text
+safe non-production credential path becomes available
+→ run the hardened 13-case synthetic/de-identified provider eval through the selected OpenAI adapter/model
+→ require zero failed cases under the frozen promotion invariants
+→ checkpoint exact provider/model/eval evidence
+```
 
-After that, preserve **LIVE SYNTHETIC PROVIDER-EVAL HOLD** until a safe credential path is explicitly available without exposing/copying a secret and without mutating production configuration. Only the hardened synthetic provider suite may establish the missing selected-model evidence.
+Until that provider HOLD is resolved:
 
-Until the provider HOLD is resolved:
-
-- the deterministic implementation may be inspected/reviewed and the frozen eval suite may be completed;
+- the implementation may be inspected/reviewed and a safe credential path may be investigated read-only;
 - the provider/model Definition-of-Done item remains unsatisfied;
 - do **not** open the runtime release PR;
 - do **not** merge/deploy PR-1;
