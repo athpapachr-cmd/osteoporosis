@@ -1,6 +1,6 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** PR-1 HEIDI-FIRST TRANSCRIPT CAPTURE — IMPLEMENTED / EXACT-RUNTIME-HEAD TESTED; SYNTHETIC PROVIDER EVAL PENDING.
+> **STATUS:** PR-1 HEIDI-FIRST TRANSCRIPT CAPTURE — IMPLEMENTED / EXACT-RUNTIME-HEAD TESTED; LIVE SYNTHETIC PROVIDER EVAL HOLD.
 > **Updated:** 2026-09-16 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Activation main:** `0ab5f9770d220c20e8d94544cb64e93a4aa30d00`.
@@ -10,7 +10,7 @@
 > **Runtime implementation branch:** `feat/pr1-transcript-capture-v1-2026-09-16`.
 > **Exact tested runtime head:** `b62a55d9a8d06580cdea6ec42767a94bd1b7aee4`.
 > **PR-1 focused/inherited gate:** `35056516818` — SUCCESS.
-> **Provider eval:** pending — synthetic/de-identified only; identifiable transcript processing remains blocked.
+> **Synthetic provider-eval probe:** `35056606836` — HOLD; GitHub Actions `OPENAI_API_KEY` unavailable, no provider call made.
 > **Medical Report V1.1:** CLOSED; do not reopen without separate authority.
 
 ## Product-owner authority
@@ -59,6 +59,19 @@ Workflow `35056516818` passed on runtime head `b62a55d9a8d06580cdea6ec42767a94bd
 - inherited workspace navigation regression;
 - bounded PR-1 scope guard with no mutation of `app-core.js`, `step3.js`, `step4.js`, `clinical_data.py` or `clinical_data_ext.py`.
 
+## Synthetic provider-eval checkpoint
+
+Temporary GitHub Actions run `35056606836` attempted to start the synthetic/de-identified provider eval. The runner proved that the repository has **no usable `OPENAI_API_KEY` Actions secret** for this path. The workflow therefore recorded:
+
+```text
+PR1_SYNTHETIC_PROVIDER_EVAL_HOLD
+No production configuration was changed and no transcript was sent.
+```
+
+This is not a provider-model PASS and not a provider-model FAIL. The deterministic provider adapter contract is tested, but the selected live GPT-5.6 semantic extraction behavior has not yet been evaluated by this branch.
+
+Do not substitute the assistant model, the Medical Report provider path, or a fake/local provider for this missing live adapter evidence and label it equivalent.
+
 ## Privacy boundary remains fail-closed
 
 ```text
@@ -74,9 +87,9 @@ identifiable transcript use: BLOCKED
 
 ## Exact next action
 
-Run the synthetic/de-identified provider eval harness against the configured OpenAI provider **only if** a usable protected `OPENAI_API_KEY` is available to GitHub Actions. The eval must not print transcript/candidate content. If the secret is unavailable, checkpoint `LIVE PROVIDER EVAL HOLD`; do not fake success or change production configuration.
+The implementation may undergo additional static/deterministic review while provider eval is on HOLD, but it must not be labelled release-ready under the frozen Definition of Done until the selected provider/model passes the synthetic-only eval gate.
 
-After provider-eval evidence is durably checkpointed, prepare the implementation candidate/release hold. Do not merge or deploy the runtime without separate Product Owner release authority.
+Resolve the provider-eval HOLD only through an explicitly available safe credential path that does not expose/copy a secret and does not modify production configuration. Otherwise preserve the HOLD and do not open a runtime release PR.
 
 ## Explicitly deferred / forbidden in PR-1
 
