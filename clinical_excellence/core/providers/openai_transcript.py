@@ -4,6 +4,8 @@ import json
 import os
 from typing import Any
 
+from pydantic import ValidationError
+
 from clinical_excellence.core.transcript_contracts import ProviderTranscriptExtractionV1, TranscriptExtractRequestV1
 from clinical_excellence.core.transcript_provider import ProviderInvalidOutput, ProviderNotConfigured, ProviderRefusal, ProviderUnavailable
 
@@ -85,6 +87,10 @@ class OpenAITranscriptProvider:
                 ],
                 text_format=ProviderTranscriptExtractionV1,
             )
+        except ValidationError as exc:
+            # Structured-output JSON/schema validation is an invalid provider output,
+            # not a transient connectivity failure.
+            raise ProviderInvalidOutput() from exc
         except Exception as exc:
             name = exc.__class__.__name__
             if name in {"APITimeoutError", "APIConnectionError", "RateLimitError", "InternalServerError", "APIStatusError"}:
@@ -98,7 +104,7 @@ class OpenAITranscriptProvider:
         if not isinstance(parsed, ProviderTranscriptExtractionV1):
             try:
                 parsed = ProviderTranscriptExtractionV1.model_validate(parsed)
-            except Exception as exc:
+            except ValidationError as exc:
                 raise ProviderInvalidOutput() from exc
         return parsed
 
