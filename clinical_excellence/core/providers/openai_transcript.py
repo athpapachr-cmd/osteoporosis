@@ -58,6 +58,19 @@ def _has_refusal(response: Any) -> bool:
     return False
 
 
+def _is_deterministic_bad_request(exc: Exception) -> bool:
+    """Return True for non-transient provider request/response-schema failures."""
+    if exc.__class__.__name__ == "BadRequestError":
+        return True
+    status_code = getattr(exc, "status_code", None)
+    if status_code == 400:
+        return True
+    body = getattr(exc, "body", None)
+    if isinstance(body, dict):
+        return body.get("code") == "invalid_json_schema" or body.get("param") == "text.format.schema"
+    return False
+
+
 class OpenAITranscriptProvider:
     def __init__(
         self,
@@ -110,6 +123,11 @@ class OpenAITranscriptProvider:
             # not a transient connectivity failure.
             raise ProviderInvalidOutput() from exc
         except Exception as exc:
+            if _is_deterministic_bad_request(exc):
+                # Invalid response-format/schema and other HTTP 400 request-contract
+                # failures are deterministic. Do not misclassify them as retryable
+                # upstream availability incidents.
+                raise ProviderInvalidOutput() from exc
             name = exc.__class__.__name__
             if name in {"APITimeoutError", "APIConnectionError", "RateLimitError", "InternalServerError", "APIStatusError"}:
                 raise ProviderUnavailable() from exc

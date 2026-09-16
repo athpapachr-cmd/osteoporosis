@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import date
-from typing import Annotated, Any, Literal, Union
+from typing import Any, Literal, Union
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -114,9 +114,18 @@ def _matches_year(value: str) -> bool:
     return 1 <= year <= 9999
 
 
-CandidateValueV1 = Annotated[
-    Union[TextValueV1, CodeValueV1, NumberValueV1, IntegerValueV1, BooleanValueV1, QuantityValueV1, DateValueV1],
-    Field(discriminator="kind"),
+# Provider-facing Structured Outputs cannot use the discriminated-union `oneOf`
+# emitted by Pydantic's discriminator schema. Each variant already carries a
+# mutually exclusive Literal `kind`, so a plain union preserves strict local
+# typed validation while generating an `anyOf` schema instead of `oneOf`.
+CandidateValueV1 = Union[
+    TextValueV1,
+    CodeValueV1,
+    NumberValueV1,
+    IntegerValueV1,
+    BooleanValueV1,
+    QuantityValueV1,
+    DateValueV1,
 ]
 
 
