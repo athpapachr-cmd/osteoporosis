@@ -1,26 +1,27 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** PR-1 HEIDI-FIRST TRANSCRIPT CAPTURE — IMPLEMENTATION ACTIVE.
+> **STATUS:** PR-1 HEIDI-FIRST TRANSCRIPT CAPTURE — RUNTIME IMPLEMENTATION STARTED.
 > **Updated:** 2026-09-16 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Bootstrap main:** `805c4fe4e723dacafc351ccf695ef01b66600079`.
+> **Activation main:** `0ab5f9770d220c20e8d94544cb64e93a4aa30d00`.
+> **Activation PR:** #115 — MERGED.
 > **Active slice:** `PR-1-TRANSCRIPT-INTAKE-CANDIDATE-EXTRACTION-V1-2026-09-16`.
 > **Active writer:** this bounded PR-1 implementation lifecycle only.
-> **Activation branch:** `docs/pr1-transcript-capture-activation-2026-09-16`.
-> **Runtime implementation branch:** not yet created; create only after this activation checkpoint is merged.
+> **Runtime implementation branch:** `feat/pr1-transcript-capture-v1-2026-09-16`.
+> **Implementation/test evidence:** pending — code not yet checkpointed at this branch state.
 > **Medical Report V1.1:** CLOSED; do not reopen without separate authority.
 
 ## Product-owner authority
 
 On 2026-09-16 the Product Owner explicitly instructed `Ok. Go. Ξεκίνησε` after fresh closeout identified Heidi-first capture / PR-1 as the next primary roadmap target. This authorizes bounded implementation of the frozen PR-1 extraction slice, including branch creation, code, tests/evals and implementation-candidate preparation.
 
-This does **not** automatically authorize merge, production deployment, enabling identifiable transcript processing, PR-2 authoritative writes, real-patient pilot use or unrelated product mutations.
+This does **not** automatically authorize merge of the runtime implementation, production deployment, enabling identifiable transcript processing, PR-2 authoritative writes, real-patient pilot use or unrelated product mutations.
 
 ## Fresh verification completed before activation
 
-The archived corrected PR-1 v3 design was re-read from `docs/pr1-replan-v3-clinic-utilities` and checked against current `main`.
+The archived corrected PR-1 v3 design was re-read from `docs/pr1-replan-v3-clinic-utilities` and checked against current runtime before activation.
 
-Current runtime still confirms the required target seams:
+Current runtime confirms the required target seams:
 
 ```text
 encounter_archetype
@@ -35,9 +36,9 @@ step4.decision
 step4.tasks[]
 ```
 
-`patient-registry.js` still persists the complete active encounter object as the protected encounter `payload`, so deterministic mapping must target the actual browser/runtime namespace rather than YAML-only vocabulary.
+`patient-registry.js` persists the complete active encounter object as the protected encounter `payload`, so deterministic mapping targets the actual browser/runtime namespace rather than YAML-only vocabulary.
 
-Current OpenAI verification also supports the frozen provider pattern: Responses API structured parsing with Pydantic is available, GPT-5.6 is available through Responses API, and the current Python SDK still retries selected errors by default unless `max_retries=0` is set.
+Current OpenAI verification also supports the frozen provider pattern: Responses API structured parsing with Pydantic is available, GPT-5.6 is available through Responses API, and the current Python SDK retries selected errors by default unless `max_retries=0` is set.
 
 No material REPLAN blocker was found.
 
@@ -67,15 +68,12 @@ identifiable transcript use: blocked until separate transcript-specific provider
 
 ## Exact next action
 
-After this activation checkpoint is merged:
-
-1. create `feat/pr1-transcript-capture-v1-2026-09-16` from fresh `main`;
-2. implement Core transcript contracts/router/service/provider abstraction;
-3. implement Module-01 osteoporosis profile + deterministic target mapper;
-4. add isolated ephemeral browser transcript UI;
-5. add deterministic privacy/contract/mapping/UI tests and synthetic provider eval harness;
-6. run exact-head regression gate;
-7. checkpoint implementation/test evidence before opening any release PR.
+1. implement Core transcript contracts/router/service/provider abstraction;
+2. implement Module-01 osteoporosis profile + deterministic target mapper;
+3. add isolated ephemeral browser transcript UI;
+4. add deterministic privacy/contract/mapping/UI tests and synthetic provider eval harness;
+5. run exact-head focused regression gate;
+6. checkpoint implementation/test evidence before any runtime release PR.
 
 ## Explicitly deferred / forbidden in PR-1
 
