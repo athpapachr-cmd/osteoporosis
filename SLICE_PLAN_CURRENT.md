@@ -1,15 +1,20 @@
 # SLICE_PLAN_CURRENT.md — Clinical Documents Medical Report V1.1
 
-> **STATUS:** IMPLEMENTED / EXACT-HEAD TESTED — RELEASE HOLD.
+> **STATUS:** RELEASED / DEPLOYED / AUTHENTICATED PRODUCTION-SMOKE-VERIFIED / CLOSED.
 > **Activated:** 2026-09-13 Asia/Nicosia.
+> **Closed:** 2026-09-16 Asia/Nicosia.
 > **Slice:** `CU-CLINICAL-DOCUMENTS-V1-1-SOURCE-RESOLUTION-2026-09-13`.
 > **Bootstrap main:** `53ea38318d99e81218e5402e3c206ba30c51a8a9`.
-> **Branch:** `fix/clinical-documents-v1-1-source-resolution-r2-2026-09-13`.
+> **Implementation branch:** `fix/clinical-documents-v1-1-source-resolution-r2-2026-09-13`.
 > **Exact tested runtime head:** `4c30867e8aea00842772b6df7d624a79bbf3f19e`.
 > **Focused gate:** `34740684612` — SUCCESS.
-> **Writer:** none — implementation candidate frozen in release HOLD.
+> **Release PR:** #104.
+> **Release commit:** `2b6ccf56f77c646fc475318e4d76396dd95a2bee`.
+> **Render deploy:** `dep-daj3l00ae00c73drs850` — LIVE.
+> **Authenticated production evidence:** diagnostic run `35052740386` + targeted research run `35053140054`.
+> **Writer:** none — lifecycle closed.
 
-## Objective — achieved at implementation level
+## Objective — achieved
 
 Refine Medical Report V1 from real-use feedback while preserving clinician authority, source provenance and the no-persistent-case boundary.
 
@@ -84,7 +89,7 @@ Unchanged:
 - existing protected clinical auth and AI/PHI gates;
 - no real patient files in repository tests/fixtures.
 
-## Acceptance evidence
+## Implementation acceptance evidence
 
 Exact runtime head `4c30867e8aea00842772b6df7d624a79bbf3f19e`, workflow `34740684612` SUCCESS, covering:
 
@@ -101,10 +106,33 @@ Exact runtime head `4c30867e8aea00842772b6df7d624a79bbf3f19e`, workflow `3474068
 - V1.1 browser extension order/static privacy checks;
 - inherited Sick Leave V1 and Clinic Utilities navigation regressions.
 
+## Production acceptance evidence
+
+Release path:
+
+```text
+PR #104
+→ release commit 2b6ccf56f77c646fc475318e4d76396dd95a2bee
+→ Render deploy dep-daj3l00ae00c73drs850 LIVE
+```
+
+Authenticated synthetic-only production verification:
+
+- initial run `35052415555` failed inside a combined disposable smoke step and was checkpointed as non-diagnostic rather than mislabelled PASS;
+- diagnostic run `35052740386` established protected auth/contract, privacy flags, deployed V1.1 assets, live GPT-5.6 draft, referral-vs-result semantics, live refinement with immutable evidence/source summaries, and valid preview/final PDFs;
+- the diagnostic run's two usage-check failures were malformed disposable `jq` precedence assertions; emitted metadata showed positive live model/token usage;
+- its referral-only research context produced a non-empty synthesis but no web-search/citation evidence, so that ambiguity was not silently accepted;
+- targeted research run `35053140054` used an explicit generalized diagnosis/prognosis question and passed with HTTP 200, 14,487-character synthesis, 13 URL citations, 8 captured queries, 10 web-search calls and positive GPT-5.6 usage;
+- therefore the web-backed literature research path is production-verified without a runtime correction.
+
+Only synthetic/non-identifiable smoke data were sent. No secret value or real patient file was committed or printed by the production verification harnesses.
+
 ## Owners / exclusions
 
-Only Clinical Documents runtime/UI/tests/workflow owners were changed. No Physio, RF, Clinical Learning or Osteoporosis clinical-rule owner was modified. No patient persistence, billing, tax/VAT, compensation calculation or autonomous final opinion was added.
+Only Clinical Documents runtime/UI/tests/workflow owners were changed by V1.1. No Physio, RF, Clinical Learning or Osteoporosis clinical-rule owner was modified. No patient persistence, billing, tax/VAT, compensation calculation or autonomous final opinion was added.
 
-## Release boundary
+## Release boundary — closed
 
-Implementation exit is satisfied. The candidate is **not merged or deployed**. A fresh-main release review/PR and Render auto-deploy require separate explicit Product Owner release authority.
+Implementation, exact-head testing, merge, deploy and authenticated production verification are complete. The Medical Report V1.1 lifecycle is closed and has no active writer.
+
+Reopen only for a material production defect, authoritative form/requirement change, safety/data-integrity issue or explicit new workflow requirement. Any later work requires fresh canonical grounding and new mutation authority; this closed slice does not authorize further Medical Report changes.
