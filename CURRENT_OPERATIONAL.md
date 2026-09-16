@@ -12,6 +12,7 @@
 > **Final deterministic/inherited gate:** `35057309343` — SUCCESS.
 > **Focused PR-1 tests:** 24 PASS.
 > **Synthetic provider-eval probe:** `35056606836` — HOLD; GitHub Actions `OPENAI_API_KEY` unavailable, no provider call made.
+> **Post-canonical gate:** `35057529756` — HARNESS-ONLY SCOPE FAILURE after all substantive tests passed; `SLICE_PLAN_CURRENT.md` was missing from the PR-1 scope allowlist. Guard correction is part of the current checkpoint and requires a clean rerun.
 > **Medical Report V1.1:** CLOSED; do not reopen without separate authority.
 
 ## Product-owner authority
@@ -79,8 +80,18 @@ Evidence includes:
 - inherited protected-clinical regressions — 6 PASS;
 - inherited Medical Report regressions — 24 PASS;
 - inherited workspace navigation regression — PASS;
-- bounded PR-1 scope guard — PASS;
-- no mutation of `app-core.js`, `step3.js`, `step4.js`, `clinical_data.py` or `clinical_data_ext.py`.
+- bounded PR-1 scope guard — PASS at the exact runtime head.
+
+## Canonical-checkpoint guard correction
+
+Post-canonical run `35057529756` re-executed all substantive legs successfully, including 24 focused PR-1 tests, 6 inherited protected-clinical tests, 24 inherited Medical Report tests and workspace navigation. It failed only because the PR-1 workflow's scope allowlist did not include `SLICE_PLAN_CURRENT.md`, even though the permanent atomic-canonical protocol now requires this slice canonical to be updated with material implementation state.
+
+This checkpoint corrects the PR-1 workflow to:
+
+- trigger when `SLICE_PLAN_CURRENT.md` changes; and
+- allow `SLICE_PLAN_CURRENT.md` inside the bounded PR-1 diff.
+
+No runtime/clinical behavior is changed by that guard correction. A clean post-correction rerun is required before this harness finding is considered closed.
 
 ## Synthetic provider-eval checkpoint
 
@@ -110,9 +121,10 @@ identifiable transcript use: BLOCKED
 
 ## Exact next action
 
-Preserve **LIVE SYNTHETIC PROVIDER-EVAL HOLD** until a safe credential path is explicitly available without exposing/copying a secret and without mutating production configuration.
+1. Require the corrected PR-1 gate to pass cleanly after this canonical/scope-guard checkpoint.
+2. Preserve **LIVE SYNTHETIC PROVIDER-EVAL HOLD** until a safe credential path is explicitly available without exposing/copying a secret and without mutating production configuration.
 
-Until then:
+Until the provider HOLD is resolved:
 
 - the deterministic implementation may be inspected/reviewed;
 - the provider/model Definition-of-Done item remains unsatisfied;

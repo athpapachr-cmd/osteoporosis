@@ -11,6 +11,7 @@ on:
       - "evals/transcript_v1/**"
       - "test_pr1_transcript_*.py"
       - "CURRENT_OPERATIONAL.md"
+      - "SLICE_PLAN_CURRENT.md"
       - ".github/workflows/pr1-transcript-capture-tests.yml"
   pull_request:
     paths:
@@ -22,6 +23,7 @@ on:
       - "evals/transcript_v1/**"
       - "test_pr1_transcript_*.py"
       - "CURRENT_OPERATIONAL.md"
+      - "SLICE_PLAN_CURRENT.md"
       - ".github/workflows/pr1-transcript-capture-tests.yml"
 
 permissions:
@@ -85,6 +87,7 @@ jobs:
           for path in "${changed[@]}"; do
             case "$path" in
               CURRENT_OPERATIONAL.md|\
+              SLICE_PLAN_CURRENT.md|\
               clinical_auth.py|\
               main.py|\
               static/baseline-audit/app.js|\
