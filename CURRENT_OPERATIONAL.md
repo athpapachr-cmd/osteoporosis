@@ -1,14 +1,15 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** PR-1 HEIDI-FIRST TRANSCRIPT CAPTURE — H-01..H-04 DETERMINISTIC CLOSURE PROVEN / PROMOTION-SUITE EXPANSION ACTIVE — NOT YET LIVE-EVAL OR RELEASE READY.
+> **STATUS:** PR-1 HEIDI-FIRST TRANSCRIPT CAPTURE — DETERMINISTIC PROMOTION HARNESS READY / LIVE SYNTHETIC PROVIDER EVAL CREDENTIAL HOLD — NOT RELEASE READY.
 > **Updated:** 2026-09-16 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Fresh verified remote `main`:** `0ab5f9770d220c20e8d94544cb64e93a4aa30d00`.
 > **Active slice:** `PR-1-TRANSCRIPT-INTAKE-CANDIDATE-EXTRACTION-V1-2026-09-16`.
 > **Active writer:** this bounded PR-1 implementation lifecycle only.
 > **Runtime implementation branch:** `feat/pr1-transcript-capture-v1-2026-09-16`.
-> **Exact tested H-01..H-04 runtime head:** `66e575257f6e8ed7f2f08aebad5386e1d9826447`.
-> **Deterministic/inherited gate:** `35090766419` — SUCCESS.
+> **Exact tested runtime/eval head:** `0bb339986d5fc47fba67da941127c29f868f54b5`.
+> **Deterministic/inherited gate:** `35091549349` — SUCCESS.
+> **Expanded synthetic qualification suite:** 22 synthetic/de-identified cases.
 > **Prior live provider probe:** `35056606836` — no Actions credential; no provider call.
 > **Medical Report V1.1:** CLOSED; do not reopen without separate authority.
 
@@ -18,31 +19,29 @@ On 2026-09-16 the Product Owner explicitly authorized bounded PR-1 implementatio
 
 It does **not** authorize runtime release PR merge/deploy, identifiable transcript processing, PR-2 authoritative writes, real-patient pilot use or unrelated product mutation.
 
-## Independent review disposition
+## Independent-review replan — closure status
 
-The independent READ-ONLY review found no Critical privacy breach or authoritative-write escape but identified four High promotion blockers plus one separate production-release blocker.
+A separate fresh-bootstrap independent READ-ONLY review found no Critical privacy breach or authoritative-write escape but identified four High promotion blockers plus a separate production-release blocker.
 
-The canonical replan replaced the previous `credential-only HOLD` with a code/eval hardening lifecycle. The first remediation transition is now complete and deterministically proven on exact runtime head `66e575257f6e8ed7f2f08aebad5386e1d9826447`.
-
-## H-01 through H-04 closure evidence
+The previous `credential-only HOLD` was correctly superseded while those code/eval findings were unresolved. The remediation and expanded deterministic qualification harness are now complete and proven on exact runtime/eval head `0bb339986d5fc47fba67da941127c29f868f54b5`.
 
 ### H-01 — generic unexpected/hallucinated-extra false PASS
 
-**Closed deterministically.**
+**CLOSED deterministically.**
 
-The promotion evaluator is now default-deny at the returned-component level. Every provider component must be covered by an explicit `required_assertions` rule with a concept key or an explicit `allowed_assertions` rule. An otherwise-correct output with an unanticipated extra assertion now fails with a coded `unexpected_assertion_<concept>` failure without requiring fixture authors to predict that hallucination in advance.
+The promotion evaluator is default-deny at returned-component level. Every provider component must be covered by an explicit required/allowed assertion rule. Unexpected clinically material extras fail the case with coded `unexpected_assertion_<concept>` output. The oracle also checks non-ephemeral metadata, forbidden assertions/concepts, invented exact dates, semantic counts and evidence-verification warnings.
 
-### H-02 — duplicate `concept_key` identity defect
+### H-02 — duplicate concept identity / matcher cross-wiring
 
-**Closed deterministically.**
+**CLOSED deterministically.**
 
-`ProviderCandidateV1` now rejects duplicate `components[].concept_key` values within one candidate. Repeated real-world events remain representable as separate candidates. Eval matching binds value and mapping checks to the same candidate/component identity rather than searching same-key values and mappings independently.
+`ProviderCandidateV1` rejects duplicate `components[].concept_key` values inside one candidate. Repeated real-world events use separate candidates. Eval matching binds semantic/source/value/mapping to the same candidate/component identity, and repeated-event fixtures add same-candidate grouping checks so individually correct facts cannot pass when paired to the wrong event.
 
 ### H-03 — synthetic qualification coupled to identifiable-PHI approval
 
-**Closed deterministically.**
+**CLOSED deterministically.**
 
-The clinical/default provider purpose still requires:
+Clinical/default provider purpose remains fail-closed behind:
 
 ```text
 CLINICAL_TRANSCRIPT_AI_ENABLED=true
@@ -50,7 +49,7 @@ OPENAI_API_KEY present
 CLINICAL_TRANSCRIPT_PHI_PROVIDER_APPROVED=true
 ```
 
-A separate `synthetic_eval` purpose now requires:
+Synthetic qualification uses a separate engineering-only purpose requiring:
 
 ```text
 CLINICAL_TRANSCRIPT_AI_ENABLED=true
@@ -58,40 +57,40 @@ OPENAI_API_KEY present
 CLINICAL_TRANSCRIPT_SYNTHETIC_EVAL_ENABLED=true
 ```
 
-and does not require the identifiable-PHI approval flag. The eval runner uses only the explicit synthetic purpose. Deterministic tests prove that clinical use remains blocked while synthetic qualification can be configured independently.
+and does not require identifiable-PHI approval. Deterministic tests prove the two gates remain distinct.
 
 ### H-04 — incomplete runtime-target range/semantic guards
 
-**Closed for the reviewed runtime contracts.**
+**CLOSED for the reviewed runtime contracts.**
 
-The hardened mapper now enforces exact runtime ranges for:
+The deterministic guard enforces the current runtime ranges and types for weight, height, FRAX percentages, DXA BMD/T-score, falls/CFS and treatment duration. Original formal FRAX percentages require `objective_result`. Third-party patient-card facts fail closed as `THIRD_PARTY_SOURCE_NOT_PATIENT`, and negated treatment/administration exposure cannot become a positive runtime episode.
 
-```text
-weight                 20..300 kg
-current height          100..220 cm
-FRAX MOF / hip          0..100%
-DXA BMD                 0.1..3 g/cm²
-DXA T-score             -8..5
-falls / 12 months       integer 0..50
-CFS                      integer 1..9
-treatment duration      0..50 years
-```
+## Expanded promotion suite — deterministic evidence
 
-Original formal FRAX percentage fields additionally require `semantic_type=objective_result`; clinician interpretation cannot map into those original formal-result fields.
+The former 13-case suite has been expanded to **22 synthetic/de-identified cases**. In addition to the previous fracture, negation, DXA, labs, options/final-decision, preference, follow-up, garbled speech, FRAX original-vs-adjusted, speaker ambiguity and unrelated-clinical-text coverage, the suite now explicitly covers:
 
-## Exact deterministic evidence
+1. repeated fracture-event identity/grouping with repeated concept keys across separate candidates;
+2. embedded transcript prompt/instruction text as untrusted material;
+3. referral/request ≠ completed investigation/result;
+4. prescription/recommendation ≠ medication taken/administered;
+5. explicit self-correction without preserving the superseded value as current truth;
+6. third-party treatment history without patient attribution;
+7. out-of-range numeric transcription with deterministic fail-closed mapping;
+8. planned administration ≠ completed administration;
+9. explicit negated treatment exposure;
+10. clean-case low-confidence output as a qualification failure unless ambiguity is explicitly allowed.
 
-GitHub Actions run `35090766419` executed against exact head `66e575257f6e8ed7f2f08aebad5386e1d9826447` and completed SUCCESS across:
+GitHub Actions run `35091549349` executed on exact head `0bb339986d5fc47fba67da941127c29f868f54b5` and completed SUCCESS across:
 
 - Python syntax;
 - browser syntax;
-- focused PR-1 privacy/contract/mapping tests, including new H-01..H-04 tests;
+- focused PR-1 privacy/contract/mapping/eval tests;
 - inherited protected-clinical regressions;
 - inherited Clinical Documents regressions;
 - inherited workspace navigation regression;
 - bounded PR-1 scope verification.
 
-No live provider/model call was used for this closure evidence.
+No live provider/model call was used for this evidence.
 
 ## Preserved PR-1 invariants
 
@@ -100,41 +99,59 @@ No live provider/model call was used for this closure evidence.
 - provider emits semantic assertions, never application/storage paths;
 - deterministic Module-01 code owns runtime mapping;
 - candidates remain `proposed` and require clinician review;
+- speaker/source, polarity, temporality, certainty and semantic distinctions are preserved;
 - vague/relative timing cannot become an invented exact date;
 - no authoritative patient/encounter/lab/task write exists in PR-1;
 - identifiable transcript use remains blocked behind its separate privacy/provider approval gate.
 
-## Remaining promotion work before live selected-model evaluation
+## Current lifecycle state
 
-The old 13-case suite is still not sufficient promotion evidence. The next permitted material transition is expansion/hardening of the synthetic/de-identified qualification suite to cover at least:
+The independent review's H-01/H-02/H-03/H-04 promotion blockers and its requested adversarial/repeated-event suite expansion are now closed deterministically.
 
-1. repeated-event identity/grouping with repeated concept keys across separate candidates;
-2. embedded prompt/instruction text as untrusted transcript material;
-3. referral/request ≠ completed investigation/result;
-4. prescription/recommendation ≠ medication taken/administered;
-5. self-correction;
-6. third-party history without patient attribution;
-7. out-of-range numeric transcription with deterministic fail-closed mapping;
-8. planned administration ≠ completed administration;
-9. explicit negated treatment exposure.
+Therefore the project may return to the external prerequisite for a **decision-bearing live synthetic provider evaluation**, but only through a safe non-production credential path.
 
-Clean explicit cases should also fail promotion qualification on low-confidence output unless ambiguity is part of the fixture contract.
+This is now accurately a:
 
-After that suite transition, run deterministic/inherited CI on the exact new head and checkpoint the evidence before any live provider execution.
+```text
+DETERMINISTIC PROMOTION HARNESS READY
+→ SAFE NON-PRODUCTION CREDENTIAL HOLD
+→ LIVE 22-CASE SELECTED-MODEL PROVIDER EVAL
+→ INDEPENDENT EVIDENCE REVIEW
+→ SEPARATE RELEASE/PRIVACY DECISIONS
+```
 
-## Explicitly blocked
+## Safe credential boundary
 
-- no live provider promotion run yet;
+Current connected GitHub tooling does not expose repository Actions secret management, and no production configuration should be mutated or copied into chat merely to manufacture qualification evidence.
+
+Do **not** paste an API key into conversation text, source code, workflow YAML, logs or public repository content.
+
+When a dedicated non-production credential is safely available to the repository's synthetic-eval execution environment, a bounded synthetic-only workflow wrapper may be introduced. It must:
+
+- use the repository synthetic fixtures only;
+- set `CLINICAL_TRANSCRIPT_AI_ENABLED=true`;
+- set `CLINICAL_TRANSCRIPT_SYNTHETIC_EVAL_ENABLED=true`;
+- leave `CLINICAL_TRANSCRIPT_PHI_PROVIDER_APPROVED` false/unset;
+- obtain the API credential only from the secure execution secret store;
+- execute `evals/transcript_v1/run_provider_eval.py` against the exact selected branch/head;
+- emit only coded case results/summary, never transcript/provider payload contents;
+- require zero failed cases before any promotion claim.
+
+## Explicitly blocked until live qualification evidence exists
+
 - no runtime release PR;
 - no merge/deploy of PR-1;
 - no identifiable transcript processing;
 - no PR-2 or real-patient pilot;
-- no production credential/config mutation to manufacture evidence.
+- no production credential/config mutation to manufacture evidence;
+- no claim that deterministic CI alone qualifies the selected live provider/model.
 
-## Separate production-release blocker
+## Separate production-release blockers/debt
 
-**H-05 remains open:** the async clinical route still invokes a synchronous provider client in the current single-worker web process. This does not block isolated command-line synthetic qualification, but it must be remediated and verified before production enablement/deploy. Stronger executable browser lifecycle evidence also remains release debt.
+**H-05 remains OPEN:** the async clinical route still invokes a synchronous provider client in the current single-worker web process. It does not block isolated command-line synthetic qualification, but it must be remediated and verified before production enablement/deploy.
+
+Stronger executable browser lifecycle/BFCache/logout evidence also remains production-release debt.
 
 ## Exact next action
 
-Expand the synthetic qualification suite and deterministic coverage under the frozen `SLICE_PLAN_CURRENT.md` contract, then execute the full deterministic/inherited gate on the exact new runtime/eval head. Only after that checkpoint may the project return to the safe non-production credential prerequisite for live selected-model provider qualification.
+Preserve this HOLD until a dedicated safe non-production provider credential exists in an execution secret store without exposing the key. Then introduce/verify the bounded synthetic-only workflow wrapper, run the **22-case** suite through the selected OpenAI adapter/model, require zero failed cases under the default-deny oracle, checkpoint exact SHA/run/provider/model evidence, and send that evidence for a fresh independent READ-ONLY review.
