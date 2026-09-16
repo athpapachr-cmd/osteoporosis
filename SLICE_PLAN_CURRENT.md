@@ -1,14 +1,16 @@
 # SLICE_PLAN_CURRENT.md — PR-1 Heidi-first Transcript Intake + Candidate Extraction v1
 
-> **STATUS:** IMPLEMENTED / DETERMINISTIC-TESTED / LIVE SYNTHETIC PROVIDER-EVAL HOLD — NOT RELEASE READY.
+> **STATUS:** IMPLEMENTED / DETERMINISTIC-TESTED / HARDENED MINIMUM EVAL SUITE COMPLETE / LIVE SYNTHETIC PROVIDER-EVAL HOLD — NOT RELEASE READY.
 > **Activated:** 2026-09-16 Asia/Nicosia.
 > **Slice:** `PR-1-TRANSCRIPT-INTAKE-CANDIDATE-EXTRACTION-V1-2026-09-16`.
 > **Activation main:** `0ab5f9770d220c20e8d94544cb64e93a4aa30d00`.
 > **Activation PR:** #115 — MERGED.
 > **Runtime branch:** `feat/pr1-transcript-capture-v1-2026-09-16`.
-> **Exact tested runtime head:** `15d109c4550719e52f0a1bcb4bf11b4cfedba6ac`.
-> **Final deterministic/inherited gate:** `35057309343` — SUCCESS.
-> **Synthetic provider-eval probe:** `35056606836` — HOLD; no Actions `OPENAI_API_KEY`, no provider call.
+> **Exact tested runtime head:** `a79d68915bde230a53bb7b5fd31a4104a491b058`.
+> **Latest deterministic/inherited gate:** `35084122094` — SUCCESS.
+> **Focused PR-1 tests:** 26 PASS.
+> **Synthetic provider minimum suite:** 13 synthetic/de-identified scenarios with structured promotion assertions.
+> **Synthetic provider-eval probe:** `35056606836` — HOLD reconfirmed; no Actions `OPENAI_API_KEY`, no provider call.
 > **Design ancestry:** corrected archived PR-1 v3 on `docs/pr1-replan-v3-clinic-utilities` (`8515dba581a631e28d5bfbfa81e302f6123576b5`).
 > **Writer:** one bounded PR-1 implementation writer; operational owner is `CURRENT_OPERATIONAL.md`.
 
@@ -314,26 +316,27 @@ Not modified:
 
 ## 13. Deterministic acceptance evidence
 
-Final exact tested runtime head:
+Exact tested runtime head:
 
 ```text
-15d109c4550719e52f0a1bcb4bf11b4cfedba6ac
+a79d68915bde230a53bb7b5fd31a4104a491b058
 ```
 
-Final GitHub gate:
+Latest deterministic/inherited GitHub gate:
 
 ```text
-35057309343 — SUCCESS
+35084122094 — SUCCESS
 ```
 
 The gate passed:
 
 - Python + browser syntax;
-- **24 focused PR-1 privacy/contract/mapping/UI/eval-contract tests**;
+- **26 focused PR-1 privacy/contract/mapping/UI/eval-contract tests**;
 - body/character limits and unknown-field rejection;
 - sanitized errors with no sentinel PHI echo/logging;
 - candidate/component strict validation;
 - date precision/relative-date fail-closed behavior;
+- impossible normalized calendar dates rejected;
 - speaker/polarity/temporality/certainty contracts;
 - evidence substring verification;
 - server-forced review/proposed state;
@@ -347,12 +350,29 @@ The gate passed:
 - no transcript/candidate browser persistence;
 - OpenAI adapter structured output, `store=False`, no tools, `max_retries=0`, bounded timeout;
 - structured provider validation failure → `PROVIDER_INVALID_OUTPUT` rather than false provider-unavailable classification;
+- provider-eval case matching now enforces required/forbidden semantic assertions, source semantics, values, deterministic mappings, invented-date prohibitions, semantic counts and ephemeral/non-authoritative response meta;
 - inherited protected-clinical regressions — 6 PASS;
 - inherited Medical Report regressions — 24 PASS;
 - inherited workspace navigation regression — PASS;
 - bounded PR-1 scope guard — PASS.
 
-Synthetic/de-identified provider eval fixture contains representative cases for fracture history, explicit negatives, exact/vague timing, DXA/labs, multiple options with one final decision, patient preference, follow-up timing, garbled speech, original-vs-adjusted risk and speaker ambiguity.
+The synthetic/de-identified provider minimum suite now contains **13** representative scenarios:
+
+1. positive fracture history with vague relative timing;
+2. explicit negative smoking history;
+3. exact DXA objective result;
+4. laboratory objective results;
+5. multiple options + one recommendation + patient acceptance + exactly one final decision;
+6. patient preference without accidental decision/recommendation;
+7. vague follow-up timeframe without fabricated due date;
+8. garbled/uncertain speech without guessed administration truth;
+9. original formal FRAX versus clinician-adjusted interpretation;
+10. ambiguous speaker/treatment history;
+11. explicit negative history versus negative objective investigation with reciprocal collapse checks;
+12. exact follow-up date when the source supports an exact day;
+13. unrelated general musculoskeletal text without osteoporosis-target hallucination.
+
+This completes the frozen-v3 minimum **suite definition**. It is not a substitute for selected-model execution.
 
 ## 14. Live synthetic provider-eval HOLD
 
@@ -362,6 +382,8 @@ Temporary run `35056606836` attempted to execute the selected GPT-5.6 provider e
 PR1_SYNTHETIC_PROVIDER_EVAL_HOLD
 No production configuration was changed and no transcript was sent.
 ```
+
+A safe rerun on 2026-09-16 reconfirmed the same missing Actions credential and again made no provider call.
 
 This is neither PASS nor FAIL for the model/provider behavior. No live provider call occurred. No transcript content was transmitted. The temporary workflow was removed from the branch after the HOLD was checkpointed.
 
@@ -375,16 +397,18 @@ Satisfied:
 - Core/provider/module boundaries implemented;
 - strict structured extraction + local validation active;
 - deterministic current-runtime mapper works and fixed runtime enums fail closed;
+- normalized exact dates are calendar-valid and vague timing remains non-exact;
 - preview is transient/non-authoritative;
 - no authoritative write path exists;
 - transcript/candidates/content are not persisted/logged;
 - deterministic + inherited tests pass;
+- hardened 13-case synthetic/de-identified promotion suite is defined and deterministically validated;
 - transcript-specific identifiable-data gate remains fail-closed;
 - exact tested runtime head and workflow evidence are checkpointed.
 
 **Not yet satisfied:**
 
-- selected provider/model passes the synthetic-only live eval gate.
+- selected provider/model passes the hardened 13-case synthetic-only live eval gate.
 
 Therefore:
 
@@ -392,6 +416,7 @@ Therefore:
 IMPLEMENTED YES
 DETERMINISTIC-TESTED YES
 INHERITED REGRESSIONS PASS
+MINIMUM SYNTHETIC SUITE DEFINED YES
 LIVE SYNTHETIC PROVIDER EVAL HOLD
 RELEASE READY NO
 RUNTIME RELEASE PR NO
