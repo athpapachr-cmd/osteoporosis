@@ -1,0 +1,116 @@
+name: Temporary Medical Report V1.1 targeted research smoke
+
+on:
+  push:
+    branches:
+      - ops/medical-report-v1-1-targeted-research-smoke-2026-09-16
+
+permissions:
+  contents: read
+
+env:
+  BASE_URL: https://ortho-reception-backend.onrender.com
+  CLINICAL_DATA_KEY: ${{ secrets.CLINICAL_DATA_KEY }}
+
+jobs:
+  targeted-research-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Verify live web-backed research path
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${CLINICAL_DATA_KEY:-}"
+          endpoint="$BASE_URL/clinical/clinic-utilities/medical-report/api/research"
+
+          cat > /tmp/research-request.json <<'JSON'
+          {
+            "case": {
+              "report_type": "accident_medical_report",
+              "patient_name": "Synthetic Research Smoke Patient",
+              "id_type": "OTHER",
+              "id_number": "SYNTHETIC-NOT-A-PERSON",
+              "birth_date": null,
+              "occupation": "Synthetic test occupation",
+              "incident_date": "2026-09-01",
+              "report_date": "2026-09-16",
+              "instructing_party": "Synthetic test only",
+              "instructing_reference": "SYNTH-RESEARCH-SMOKE-2026-09-16",
+              "purpose_and_questions": "Synthetic test only: verify current literature research with source links.",
+              "clinician_context": "Synthetic test only. No real patient data."
+            },
+            "analysis": {
+              "source_summaries": [],
+              "evidence_items": [],
+              "timeline": [],
+              "work_absence_intervals": [],
+              "clinician_resolutions": [],
+              "diagnosis_analyses": [
+                {
+                  "diagnosis": "Uncomplicated grade I-II lateral ankle sprain in an adult — synthetic generalized test problem",
+                  "supporting_evidence_ids": [],
+                  "pre_existing_discussion": "",
+                  "causation_draft": "",
+                  "alternative_causes": [],
+                  "uncertainty": "Synthetic generalized research question only.",
+                  "requires_clinician_review": true
+                }
+              ],
+              "report_sections": [],
+              "prognosis_questions": [
+                {
+                  "diagnosis_or_problem": "Uncomplicated grade I-II lateral ankle sprain in adults",
+                  "question": "What do current high-quality guidelines and systematic reviews report about expected recovery time, return to activity, and evidence-based rehabilitation for uncomplicated grade I-II lateral ankle sprain in adults?",
+                  "rationale": "Synthetic production verification of the literature-search path."
+                }
+              ],
+              "future_needs": [
+                {
+                  "problem": "Uncomplicated lateral ankle sprain",
+                  "suggested_need": "Evidence-based rehabilitation and return-to-activity guidance.",
+                  "basis_evidence_ids": [],
+                  "uncertainty": "Generalized synthetic question only.",
+                  "requires_clinician_review": true
+                }
+              ],
+              "warnings": []
+            }
+          }
+          JSON
+
+          code=$(curl --retry 2 --retry-delay 3 --max-time 420 -sS -o /tmp/research.json -w '%{http_code}' \
+            -H "X-Clinical-Key: ${CLINICAL_DATA_KEY}" \
+            -H 'Content-Type: application/json' \
+            --data-binary @/tmp/research-request.json \
+            "$endpoint")
+          echo "STAGE targeted-research HTTP=$code EXPECTED=200"
+          if [ "$code" != '200' ]; then
+            echo -n 'SAFE_DETAIL='
+            jq -r '.detail // .message // "no-detail"' /tmp/research.json 2>/dev/null | head -c 500 || true
+            echo
+            exit 1
+          fi
+
+          text_chars=$(jq '.research_text | length' /tmp/research.json)
+          citations=$(jq '.citations | length' /tmp/research.json)
+          queries=$(jq '.queries | length' /tmp/research.json)
+          web_calls=$(jq '.usage.web_search_calls' /tmp/research.json)
+          tokens=$(jq '.usage.total_tokens' /tmp/research.json)
+          model=$(jq -r '.usage.model' /tmp/research.json)
+          urls=$(jq '[.citations[]? | select((.url // "") | startswith("http"))] | length' /tmp/research.json)
+          echo "INFO targeted-research model=$model text_chars=$text_chars citations=$citations url_citations=$urls queries=$queries web_search_calls=$web_calls tokens=$tokens"
+
+          test "$text_chars" -gt 200
+          test "$citations" -ge 1
+          test "$urls" -ge 1
+          test "$queries" -ge 1
+          test "$web_calls" -ge 1
+          jq -e '(.usage.model | length > 0) and (.usage.total_tokens > 0)' /tmp/research.json >/dev/null
+
+          echo 'TARGETED MEDICAL REPORT V1.1 RESEARCH SMOKE PASS'
+          echo 'Live generalized research used web search and returned URL citation evidence. Only synthetic/non-identifiable data were sent; no secret or full response body was printed.'
