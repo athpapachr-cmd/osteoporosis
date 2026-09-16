@@ -42,7 +42,7 @@
     "expect_semantics": ["objective_result"],
     "required_assertions": [
       {"semantic_type": "objective_result", "concept_key": "labs.vitamin_d", "source_assertion": {"speaker": "clinician"}, "value": {"kind": "quantity", "value": 24.0}, "mapping": {"status": "mapped", "target_path": "step3.labs.vitamin_d"}},
-      {"semantic_type": "objective_result", "concept_key": "labs.pth", "value": {"kind": "quantity", "value": 78.0}, "mapping": {"status": "mapped", "target_path": "step3.labs.pth"}}
+      {"semantic_type": "objective_result", "concept_key": "labs.pth", "source_assertion": {"speaker": "clinician"}, "value": {"kind": "quantity", "value": 78.0}, "mapping": {"status": "mapped", "target_path": "step3.labs.pth"}}
     ]
   },
   {
@@ -122,5 +122,54 @@
     ],
     "forbidden_concepts": ["administration.actual_date", "administration.status"],
     "semantic_counts": {"final_decision": 0}
+  },
+  {
+    "id": "negative_history_vs_negative_investigation",
+    "language": "el",
+    "transcript": "Ασθενής: Δεν είχα καμία πτώση τους τελευταίους δώδεκα μήνες. Ιατρός: Στη VFA δεν βρέθηκε σπονδυλικό κάταγμα.",
+    "expect_concepts": ["risk.falls_last_12_months", "vfa.vertebral_fracture_found"],
+    "expect_semantics": ["patient_history_fact", "objective_result"],
+    "required_assertions": [
+      {"semantic_type": "patient_history_fact", "concept_key": "risk.falls_last_12_months", "source_assertion": {"speaker": "patient", "polarity": "negative"}, "value": {"value": 0}, "mapping": {"status": "mapped", "target_path": "risk_context.falls_last_12_months", "proposed_value": 0}},
+      {"semantic_type": "objective_result", "concept_key": "vfa.vertebral_fracture_found", "source_assertion": {"speaker": "clinician", "polarity": "negative"}, "value": {"kind": "boolean", "value": false}, "mapping": {"status": "mapped", "target_path": "step3.vfa.vertebral_found", "proposed_value": "no"}}
+    ],
+    "forbidden_assertions": [
+      {"semantic_type": "objective_result", "concept_key": "risk.falls_last_12_months"},
+      {"semantic_type": "patient_history_fact", "concept_key": "vfa.vertebral_fracture_found"}
+    ],
+    "semantic_counts": {"final_decision": 0}
+  },
+  {
+    "id": "followup_exact",
+    "language": "el",
+    "transcript": "Ιατρός: Θα σας ξαναδώ στις 15/03/2027 για επανέλεγχο.",
+    "expect_concepts": ["followup.due_date"],
+    "expect_semantics": ["followup_task"],
+    "required_assertions": [
+      {"semantic_type": "followup_task", "concept_key": "followup.due_date", "source_assertion": {"speaker": "clinician", "temporality": "future"}, "value": {"kind": "date", "normalized": "2027-03-15", "precision": "day"}, "mapping": {"status": "mapped", "target_path": "step4.tasks[].due_date", "proposed_value": "2027-03-15"}}
+    ],
+    "semantic_counts": {"final_decision": 0}
+  },
+  {
+    "id": "unrelated_general_clinical_text",
+    "language": "el",
+    "transcript": "Ασθενής: Από χθες με ενοχλεί ο δεξιός ώμος όταν σηκώνω το χέρι. Ιατρός: Θα το εξετάσουμε ξεχωριστά.",
+    "expect_concepts": ["clinical.unmapped_narrative"],
+    "expect_semantics": ["patient_history_fact"],
+    "required_assertions": [
+      {"semantic_type": "patient_history_fact", "concept_key": "clinical.unmapped_narrative", "source_assertion": {"speaker": "patient"}, "mapping": {"status": "unmapped", "reason_code": "NO_CURRENT_RUNTIME_TARGET"}}
+    ],
+    "forbidden_concepts": [
+      "fracture.site",
+      "dxa.date",
+      "frax.mof_percent",
+      "frax.hip_percent",
+      "risk.resulting_category",
+      "treatment.agent",
+      "administration.agent",
+      "decision.type",
+      "decision.selected_agent"
+    ],
+    "semantic_counts": {"final_decision": 0, "clinician_recommendation": 0}
   }
 ]

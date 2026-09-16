@@ -62,6 +62,10 @@ def _candidate_matches(candidate, rule: dict[str, Any]) -> bool:
 
 def _evaluate_case(item: dict[str, Any], result) -> list[str]:
     failures: list[str] = []
+
+    if result.meta.authoritative_write or result.meta.raw_persisted or result.meta.candidates_persisted:
+        failures.append("non_ephemeral_response_meta")
+
     semantics = {candidate.semantic_type for candidate in result.candidates}
     concepts = {
         component.concept_key

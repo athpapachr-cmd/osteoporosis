@@ -19,7 +19,7 @@ from evals.transcript_v1.run_provider_eval import _evaluate_case
 
 def test_eval_fixture_is_synthetic_and_covers_required_cases():
     cases = json.loads(Path("evals/transcript_v1/cases.json").read_text(encoding="utf-8"))
-    assert len(cases) >= 10
+    assert len(cases) >= 13
     ids = {item["id"] for item in cases}
     assert {
         "fracture_relative_time",
@@ -32,6 +32,9 @@ def test_eval_fixture_is_synthetic_and_covers_required_cases():
         "garbled_speech",
         "frax_original_adjusted",
         "speaker_ambiguity",
+        "negative_history_vs_negative_investigation",
+        "followup_exact",
+        "unrelated_general_clinical_text",
     }.issubset(ids)
     assert all(item.get("required_assertions") for item in cases)
     assert any(item.get("forbidden_assertions") or item.get("forbidden_concepts") for item in cases)
@@ -48,6 +51,7 @@ def test_provider_eval_runner_is_fail_closed_and_does_not_print_transcript_conte
     assert "result.candidates" in runner
     assert "required_assertions" in runner
     assert "forbidden_assertions" in runner
+    assert "non_ephemeral_response_meta" in runner
 
 
 def _candidate(concept_key, value):
