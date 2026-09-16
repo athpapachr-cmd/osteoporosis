@@ -1,0 +1,261 @@
+name: Temporary Medical Report V1.1 diagnostic authenticated smoke
+
+on:
+  push:
+    branches:
+      - ops/medical-report-v1-1-diagnostic-auth-smoke-2026-09-16
+
+permissions:
+  contents: read
+
+env:
+  BASE_URL: https://ortho-reception-backend.onrender.com
+  CLINICAL_DATA_KEY: ${{ secrets.CLINICAL_DATA_KEY }}
+
+jobs:
+  diagnostic-medical-report-v11-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Diagnostic Medical Report V1.1 production flow
+        shell: bash
+        run: |
+          set -uo pipefail
+          test -n "${CLINICAL_DATA_KEY:-}" || { echo 'FAIL secret-present'; exit 1; }
+
+          contract="$BASE_URL/clinical/clinic-utilities/medical-report/api/contract"
+          report_root="$BASE_URL/clinical/clinic-utilities/medical-report"
+          failed=0
+
+          pass() { echo "PASS $1"; }
+          fail() { echo "FAIL $1"; failed=1; }
+          require_code() {
+            stage="$1" expected="$2" actual="$3"
+            echo "STAGE $stage HTTP=$actual EXPECTED=$expected"
+            if [ "$actual" = "$expected" ]; then pass "$stage-http"; else fail "$stage-http"; fi
+          }
+          require_jq() {
+            stage="$1" expr="$2" file="$3"
+            if jq -e "$expr" "$file" >/dev/null 2>&1; then pass "$stage"; else fail "$stage"; fi
+          }
+          safe_detail() {
+            file="$1"
+            jq -r 'if type=="object" then (.detail // .message // "no-detail") else "non-object-response" end' "$file" 2>/dev/null | head -c 500 || true
+            echo
+          }
+
+          echo '=== STAGE 1: AUTH + CONTRACT ==='
+          unauth_code=$(curl --retry 3 --retry-delay 2 --max-time 60 -sS -o /tmp/unauth.json -w '%{http_code}' "$contract" || echo CURLFAIL)
+          require_code contract-unauth 401 "$unauth_code"
+
+          contract_code=$(curl --retry 3 --retry-delay 2 --max-time 60 -sS -o /tmp/contract.json -w '%{http_code}' -H "X-Clinical-Key: ${CLINICAL_DATA_KEY}" "$contract" || echo CURLFAIL)
+          require_code contract-auth 200 "$contract_code"
+          if [ "$contract_code" = '200' ]; then
+            require_jq contract-version '.version == "medical_report_v1_1"' /tmp/contract.json
+            require_jq contract-ai-ready '.ai.enabled == true and .ai.api_key_configured == true and .ai.phi_provider_approved == true' /tmp/contract.json
+            require_jq contract-clinician '.clinician_configured == true' /tmp/contract.json
+            require_jq contract-no-persistence '.persistence.patient_case_database == false and .persistence.browser_case_storage == false and .persistence.autosave == false and .persistence.source_files_persisted == false and .persistence.signature_persisted == false and .persistence.refinement_thread_persisted == false' /tmp/contract.json
+            echo "INFO contract analysis_model=$(jq -r '.ai.analysis_model' /tmp/contract.json) research_model=$(jq -r '.ai.research_model' /tmp/contract.json)"
+          else
+            echo -n 'INFO contract-safe-detail='; safe_detail /tmp/contract.json
+          fi
+
+          echo '=== STAGE 2: DEPLOYED UI ASSETS ==='
+          page_code=$(curl --retry 3 --retry-delay 2 --max-time 60 -sS -o /tmp/page.html -w '%{http_code}' -H "X-Clinical-Key: ${CLINICAL_DATA_KEY}" "$report_root" || echo CURLFAIL)
+          require_code page 200 "$page_code"
+          if [ "$page_code" = '200' ]; then
+            grep -q 'v1-1-sources.js' /tmp/page.html && pass page-v11-sources || fail page-v11-sources
+            grep -q 'v1-1-refine.js' /tmp/page.html && pass page-v11-refine || fail page-v11-refine
+          fi
+
+          sources_code=$(curl --retry 3 --retry-delay 2 --max-time 60 -sS -o /tmp/sources.js -w '%{http_code}' "$BASE_URL/static/clinic-utilities/medical-report/v1-1-sources.js" || echo CURLFAIL)
+          refine_js_code=$(curl --retry 3 --retry-delay 2 --max-time 60 -sS -o /tmp/refine.js -w '%{http_code}' "$BASE_URL/static/clinic-utilities/medical-report/v1-1-refine.js" || echo CURLFAIL)
+          require_code sources-js 200 "$sources_code"
+          require_code refine-js 200 "$refine_js_code"
+          if [ "$sources_code" = '200' ]; then
+            grep -q 'imaging_referral' /tmp/sources.js && pass sources-imaging-referral || fail sources-imaging-referral
+            grep -q 'heidi_transcript' /tmp/sources.js && pass sources-heidi || fail sources-heidi
+            grep -q 'Αφαίρεση' /tmp/sources.js && pass sources-remove || fail sources-remove
+            ! grep -Eq 'localStorage|sessionStorage|indexedDB' /tmp/sources.js && pass sources-no-browser-persistence || fail sources-no-browser-persistence
+          fi
+          if [ "$refine_js_code" = '200' ]; then
+            grep -q '/api/refine' /tmp/refine.js && pass refine-endpoint-wired || fail refine-endpoint-wired
+            ! grep -Eq 'localStorage|sessionStorage|indexedDB' /tmp/refine.js && pass refine-no-browser-persistence || fail refine-no-browser-persistence
+          fi
+
+          cat > /tmp/case.json <<'JSON'
+          {
+            "report_type": "accident_medical_report",
+            "patient_name": "Synthetic Production Smoke Patient",
+            "id_type": "OTHER",
+            "id_number": "SYNTHETIC-NOT-A-PERSON",
+            "birth_date": null,
+            "occupation": "Synthetic test occupation",
+            "incident_date": "2026-09-01",
+            "report_date": "2026-09-16",
+            "instructing_party": "Synthetic test only",
+            "instructing_reference": "SYNTH-SMOKE-2026-09-16",
+            "purpose_and_questions": "Synthetic production smoke: summarize only documented facts and preserve referral versus completed investigation semantics.",
+            "clinician_context": "Synthetic test only. No real patient data. The purpose is to verify the deployed Medical Report workflow."
+          }
+          JSON
+          cat > /tmp/source.txt <<'TXT'
+          SYNTHETIC TEST ONLY — NO REAL PATIENT DATA.
+          Date: 2026-09-01.
+          An MRI of the synthetic right knee was requested because of synthetic knee pain.
+          This document is a referral/request only. The MRI has not been documented as completed and no imaging result is available.
+          TXT
+
+          echo '=== STAGE 3: LIVE AI DRAFT ==='
+          analyze_code=$(curl --retry 2 --retry-delay 3 --max-time 420 -sS -o /tmp/analyze.json -w '%{http_code}' \
+            -H "X-Clinical-Key: ${CLINICAL_DATA_KEY}" \
+            -F 'case_json=</tmp/case.json' \
+            -F 'file_source_types_json=["imaging_referral"]' \
+            -F 'files=@/tmp/source.txt;type=text/plain;filename=synthetic-imaging-referral.txt' \
+            "$report_root/api/analyze" || echo CURLFAIL)
+          require_code analyze 200 "$analyze_code"
+          analyze_ready=0
+          if [ "$analyze_code" = '200' ]; then
+            analyze_ready=1
+            require_jq analyze-case '.case.patient_name == "Synthetic Production Smoke Patient"' /tmp/analyze.json
+            require_jq analyze-referral-source '[.sources[] | select(.source_type == "imaging_referral" and .status == "extracted")] | length == 1' /tmp/analyze.json
+            require_jq analyze-source-summary '.analysis.source_summaries | length >= 1' /tmp/analyze.json
+            require_jq analyze-evidence-array '.analysis.evidence_items | type == "array"' /tmp/analyze.json
+            require_jq analyze-timeline-array '.analysis.timeline | type == "array"' /tmp/analyze.json
+            require_jq analyze-sections '.analysis.report_sections | length >= 1' /tmp/analyze.json
+            require_jq analyze-usage '.usage.model | length > 0' /tmp/analyze.json
+            require_jq analyze-token-use '.usage.total_tokens > 0' /tmp/analyze.json
+            imaging_findings=$(jq '[.analysis.evidence_items[]? | select(.evidence_type == "imaging_finding")] | length' /tmp/analyze.json)
+            echo "INFO analyze source_summaries=$(jq '.analysis.source_summaries|length' /tmp/analyze.json) evidence_items=$(jq '.analysis.evidence_items|length' /tmp/analyze.json) timeline=$(jq '.analysis.timeline|length' /tmp/analyze.json) sections=$(jq '.analysis.report_sections|length' /tmp/analyze.json) imaging_findings=$imaging_findings model=$(jq -r '.usage.model' /tmp/analyze.json) tokens=$(jq '.usage.total_tokens' /tmp/analyze.json)"
+            if [ "$imaging_findings" = '0' ]; then pass referral-not-imaging-result; else fail referral-not-imaging-result; fi
+          else
+            echo -n 'INFO analyze-safe-detail='; safe_detail /tmp/analyze.json
+          fi
+
+          echo '=== STAGE 4: LIVE LITERATURE RESEARCH ==='
+          research_ready=0
+          if [ "$analyze_ready" = '1' ]; then
+            jq '{case:.case, analysis:.analysis}' /tmp/analyze.json > /tmp/research-request.json
+            research_code=$(curl --retry 2 --retry-delay 3 --max-time 420 -sS -o /tmp/research.json -w '%{http_code}' \
+              -H "X-Clinical-Key: ${CLINICAL_DATA_KEY}" -H 'Content-Type: application/json' \
+              --data-binary @/tmp/research-request.json "$report_root/api/research" || echo CURLFAIL)
+            require_code research 200 "$research_code"
+            if [ "$research_code" = '200' ]; then
+              research_ready=1
+              research_len=$(jq -r '.research_text | length' /tmp/research.json)
+              citation_count=$(jq '.citations | length' /tmp/research.json)
+              query_count=$(jq '.queries | length' /tmp/research.json)
+              research_tokens=$(jq '.usage.total_tokens' /tmp/research.json)
+              echo "INFO research text_chars=$research_len citations=$citation_count queries=$query_count model=$(jq -r '.usage.model' /tmp/research.json) tokens=$research_tokens"
+              [ "$research_len" -gt 0 ] && pass research-text || fail research-text
+              [ "$citation_count" -ge 1 ] && pass research-citations || fail research-citations
+              require_jq research-usage '.usage.model | length > 0 and .usage.total_tokens > 0' /tmp/research.json
+            else
+              echo -n 'INFO research-safe-detail='; safe_detail /tmp/research.json
+            fi
+          else
+            echo 'SKIP research because analyze did not return HTTP 200'
+            failed=1
+          fi
+
+          echo '=== STAGE 5: SESSION-ONLY REFINEMENT ==='
+          refine_ready=0
+          if [ "$analyze_ready" = '1' ]; then
+            jq '{case:.case, analysis:.analysis, clinician_message:"Synthetic smoke clarification: this MRI entry is only a referral/request; no completed MRI or imaging result is established. Preserve the original evidence and update only downstream interpretation if needed."}' /tmp/analyze.json > /tmp/refine-request.json
+            refine_code=$(curl --retry 2 --retry-delay 3 --max-time 420 -sS -o /tmp/refined.json -w '%{http_code}' \
+              -H "X-Clinical-Key: ${CLINICAL_DATA_KEY}" -H 'Content-Type: application/json' \
+              --data-binary @/tmp/refine-request.json "$report_root/api/refine" || echo CURLFAIL)
+            require_code refine 200 "$refine_code"
+            if [ "$refine_code" = '200' ]; then
+              refine_ready=1
+              require_jq refine-reply '.assistant_reply | length > 0' /tmp/refined.json
+              require_jq refine-sections '.updated_analysis.report_sections | length >= 1' /tmp/refined.json
+              require_jq refine-usage '.usage.model | length > 0 and .usage.total_tokens > 0' /tmp/refined.json
+              jq -S '.analysis.evidence_items' /tmp/analyze.json > /tmp/evidence-before.json
+              jq -S '.updated_analysis.evidence_items' /tmp/refined.json > /tmp/evidence-after.json
+              cmp -s /tmp/evidence-before.json /tmp/evidence-after.json && pass refine-evidence-immutable || fail refine-evidence-immutable
+              jq -S '.analysis.source_summaries' /tmp/analyze.json > /tmp/source-summaries-before.json
+              jq -S '.updated_analysis.source_summaries' /tmp/refined.json > /tmp/source-summaries-after.json
+              cmp -s /tmp/source-summaries-before.json /tmp/source-summaries-after.json && pass refine-source-summaries-immutable || fail refine-source-summaries-immutable
+              echo "INFO refine proposed_resolutions=$(jq '.proposed_resolutions|length' /tmp/refined.json) clinician_resolutions=$(jq '.updated_analysis.clinician_resolutions|length' /tmp/refined.json) model=$(jq -r '.usage.model' /tmp/refined.json) tokens=$(jq '.usage.total_tokens' /tmp/refined.json)"
+            else
+              echo -n 'INFO refine-safe-detail='; safe_detail /tmp/refined.json
+            fi
+          else
+            echo 'SKIP refine because analyze did not return HTTP 200'
+            failed=1
+          fi
+
+          echo '=== STAGE 6: CLINICIAN EDIT + PREVIEW/FINAL PDF ==='
+          if [ "$analyze_ready" = '1' ] && [ "$refine_ready" = '1' ]; then
+            python - <<'PY'
+          import json
+          from pathlib import Path
+          analyzed = json.loads(Path('/tmp/analyze.json').read_text(encoding='utf-8'))
+          refined = json.loads(Path('/tmp/refined.json').read_text(encoding='utf-8'))
+          research = json.loads(Path('/tmp/research.json').read_text(encoding='utf-8')) if Path('/tmp/research.json').exists() else {}
+          sections = refined['updated_analysis']['report_sections']
+          if not sections or not any((item.get('draft_text') or '').strip() for item in sections):
+              sections = [{
+                  'section_id': 'clinical_course',
+                  'title': 'Synthetic production smoke',
+                  'draft_text': 'Synthetic Medical Report production smoke. No real patient data.',
+                  'supporting_evidence_ids': [],
+                  'requires_clinician_review': True,
+              }]
+          else:
+              for item in sections:
+                  if (item.get('draft_text') or '').strip():
+                      item['draft_text'] = item['draft_text'].rstrip() + '\n\nSynthetic clinician edit confirmed for production smoke.'
+                      break
+          final = {
+              'case': analyzed['case'],
+              'sections': sections,
+              'research_text': research.get('research_text', ''),
+              'citations': research.get('citations', []),
+              'declaration_text': 'Synthetic production smoke only; no real patient data.',
+              'clinician_confirmed': True,
+          }
+          Path('/tmp/final.json').write_text(json.dumps(final, ensure_ascii=False), encoding='utf-8')
+          PY
+            preview_code=$(curl --retry 2 --retry-delay 3 --max-time 180 -sS -D /tmp/preview.headers -o /tmp/preview.pdf -w '%{http_code}' -H "X-Clinical-Key: ${CLINICAL_DATA_KEY}" -F 'report_json=</tmp/final.json' "$report_root/api/preview" || echo CURLFAIL)
+            require_code preview 200 "$preview_code"
+            if [ "$preview_code" = '200' ]; then
+              grep -qi '^content-type: application/pdf' /tmp/preview.headers && pass preview-content-type || fail preview-content-type
+              [ "$(head -c 4 /tmp/preview.pdf)" = '%PDF' ] && pass preview-pdf-signature || fail preview-pdf-signature
+              preview_size=$(stat -c %s /tmp/preview.pdf)
+              echo "INFO preview bytes=$preview_size"
+              [ "$preview_size" -gt 1000 ] && pass preview-size || fail preview-size
+            else
+              echo -n 'INFO preview-safe-detail='; safe_detail /tmp/preview.pdf
+            fi
+
+            pdf_code=$(curl --retry 2 --retry-delay 3 --max-time 180 -sS -D /tmp/pdf.headers -o /tmp/final.pdf -w '%{http_code}' -H "X-Clinical-Key: ${CLINICAL_DATA_KEY}" -F 'report_json=</tmp/final.json' "$report_root/api/pdf" || echo CURLFAIL)
+            require_code final-pdf 200 "$pdf_code"
+            if [ "$pdf_code" = '200' ]; then
+              grep -qi '^content-type: application/pdf' /tmp/pdf.headers && pass final-content-type || fail final-content-type
+              [ "$(head -c 4 /tmp/final.pdf)" = '%PDF' ] && pass final-pdf-signature || fail final-pdf-signature
+              final_size=$(stat -c %s /tmp/final.pdf)
+              echo "INFO final-pdf bytes=$final_size"
+              [ "$final_size" -gt 1000 ] && pass final-size || fail final-size
+            else
+              echo -n 'INFO final-pdf-safe-detail='; safe_detail /tmp/final.pdf
+            fi
+          else
+            echo 'SKIP PDF because prerequisite analyze/refine stage failed'
+            failed=1
+          fi
+
+          echo '=== DIAGNOSTIC SUMMARY ==='
+          if [ "$failed" -eq 0 ]; then
+            echo 'DIAGNOSTIC MEDICAL REPORT V1.1 LIVE SMOKE PASS'
+            echo 'Only synthetic/non-identifiable smoke data were sent; no secret or full response body was printed.'
+            exit 0
+          fi
+          echo 'DIAGNOSTIC MEDICAL REPORT V1.1 LIVE SMOKE FAIL'
+          echo 'See PASS/FAIL and INFO markers above for the exact failing acceptance stage.'
+          exit 1
