@@ -84,6 +84,9 @@
     "required_assertions": [
       {"semantic_type": "followup_task", "concept_key": "followup.timeframe_text", "source_assertion": {"speaker": "clinician"}, "mapping": {"status": "mapped", "target_path": "step4.tasks[].timeframe_text"}}
     ],
+    "allowed_assertions": [
+      {"semantic_type": "followup_task", "concept_key": "followup.task_type", "source_assertion": {"speaker": "clinician"}, "value": {"kind": "code", "code": "followup_visit"}, "mapping": {"status": "mapped", "target_path": "step4.tasks[].type", "proposed_value": "followup_visit"}}
+    ],
     "forbidden_concepts": ["followup.due_date"]
   },
   {
@@ -115,7 +118,8 @@
     ],
     "allowed_assertions": [
       {"semantic_type": "clinician_interpretation", "concept_key": "clinical.unmapped_narrative", "source_assertion": {"speaker": "clinician"}},
-      {"semantic_type": "clinician_interpretation", "concept_key": "risk.resulting_category", "source_assertion": {"speaker": "clinician"}}
+      {"semantic_type": "clinician_interpretation", "concept_key": "risk.resulting_category", "source_assertion": {"speaker": "clinician"}},
+      {"semantic_type": "objective_result", "concept_key": "frax.tool_name", "source_assertion": {"speaker": "clinician"}, "value": {"kind": "code", "code": "frax"}, "mapping": {"status": "mapped", "target_path": "risk_assessment.tool_name", "proposed_value": "frax"}}
     ],
     "forbidden_concepts": ["frax.adjusted_mof_percent", "frax.adjusted_hip_percent"]
   },
@@ -156,6 +160,9 @@
     "expect_semantics": ["followup_task"],
     "required_assertions": [
       {"semantic_type": "followup_task", "concept_key": "followup.due_date", "source_assertion": {"speaker": "clinician", "temporality": "future"}, "value": {"kind": "date", "normalized": "2027-03-15", "precision": "day"}, "mapping": {"status": "mapped", "target_path": "step4.tasks[].due_date", "proposed_value": "2027-03-15"}}
+    ],
+    "allowed_assertions": [
+      {"semantic_type": "followup_task", "concept_key": "followup.task_type", "source_assertion": {"speaker": "clinician"}, "value": {"kind": "code", "code": "followup_visit"}, "mapping": {"status": "mapped", "target_path": "step4.tasks[].type", "proposed_value": "followup_visit"}}
     ],
     "semantic_counts": {"final_decision": 0}
   },
@@ -277,6 +284,9 @@
       {"semantic_type": "objective_result", "concept_key": "anthropometrics.weight", "source_assertion": {"speaker": "clinician"}, "value": {"kind": "quantity", "value": 450.0, "unit": "kg"}, "mapping": {"status": "ambiguous", "reason_code": "OUT_OF_RUNTIME_RANGE"}},
       {"semantic_type": "objective_result", "concept_key": "frax.mof_percent", "source_assertion": {"speaker": "clinician"}, "value": {"kind": "number", "value": 180.0}, "mapping": {"status": "ambiguous", "reason_code": "OUT_OF_RUNTIME_RANGE"}},
       {"semantic_type": "objective_result", "concept_key": "dxa.spine_t_score", "source_assertion": {"speaker": "clinician"}, "value": {"kind": "number", "value": -20.0}, "mapping": {"status": "ambiguous", "reason_code": "OUT_OF_RUNTIME_RANGE"}}
+    ],
+    "allowed_assertions": [
+      {"semantic_type": "objective_result", "concept_key": "frax.tool_name", "source_assertion": {"speaker": "clinician"}, "value": {"kind": "code", "code": "frax"}, "mapping": {"status": "mapped", "target_path": "risk_assessment.tool_name", "proposed_value": "frax"}}
     ]
   },
   {
