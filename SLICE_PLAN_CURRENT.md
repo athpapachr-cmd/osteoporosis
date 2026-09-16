@@ -1,22 +1,18 @@
 # SLICE_PLAN_CURRENT.md — PR-1 Heidi-first Transcript Intake + Candidate Extraction v1
 
-> **STATUS:** IMPLEMENTED / DETERMINISTIC-TESTED / HARDENED MINIMUM EVAL SUITE COMPLETE / LIVE SYNTHETIC PROVIDER-EVAL HOLD — NOT RELEASE READY.
+> **STATUS:** INDEPENDENT-REVIEW REPLAN / CODE+EVAL HARDENING HOLD — NOT READY FOR LIVE PROMOTION EVAL OR RELEASE.
 > **Activated:** 2026-09-16 Asia/Nicosia.
+> **Replanned:** 2026-09-16 Asia/Nicosia after independent READ-ONLY review.
 > **Slice:** `PR-1-TRANSCRIPT-INTAKE-CANDIDATE-EXTRACTION-V1-2026-09-16`.
 > **Activation main:** `0ab5f9770d220c20e8d94544cb64e93a4aa30d00`.
-> **Activation PR:** #115 — MERGED.
 > **Runtime branch:** `feat/pr1-transcript-capture-v1-2026-09-16`.
-> **Exact tested runtime head:** `a79d68915bde230a53bb7b5fd31a4104a491b058`.
-> **Latest deterministic/inherited gate:** `35084122094` — SUCCESS.
-> **Focused PR-1 tests:** 26 PASS.
-> **Synthetic provider minimum suite:** 13 synthetic/de-identified scenarios with structured promotion assertions.
-> **Synthetic provider-eval probe:** `35056606836` — HOLD reconfirmed; no Actions `OPENAI_API_KEY`, no provider call.
-> **Design ancestry:** corrected archived PR-1 v3 on `docs/pr1-replan-v3-clinic-utilities` (`8515dba581a631e28d5bfbfa81e302f6123576b5`).
+> **Last pre-replan tested runtime head:** `a79d68915bde230a53bb7b5fd31a4104a491b058`.
+> **Last pre-replan deterministic gate:** `35084122094` — SUCCESS.
 > **Writer:** one bounded PR-1 implementation writer; operational owner is `CURRENT_OPERATIONAL.md`.
 
 ## 1. Objective
 
-Add a reusable Clinical Excellence Core capability that accepts a pasted Heidi transcript and returns structured, **non-authoritative** clinical candidates for immediate clinician review, using Osteoporosis Module 01 as the first deterministic mapping profile.
+Add a reusable Clinical Excellence Core capability that accepts a pasted Heidi transcript and returns structured, **non-authoritative** clinical candidates for clinician review, using Osteoporosis Module 01 as the first deterministic mapping profile.
 
 ```text
 PASTE HEIDI TRANSCRIPT
@@ -24,73 +20,28 @@ PASTE HEIDI TRANSCRIPT
 → ephemeral processing
 → strict semantic candidates
 → deterministic Module-01 target mapping
-→ transient grouped preview
+→ transient preview
 → NO authoritative write
 ```
 
-The raw transcript is not patient truth, is not persisted by PR-1, and must not silently mutate the encounter.
+PR-1 remains extraction/preview only. PR-2 owns later provisional in-card acceptance/edit/reject behavior.
 
-## 2. Final verification disposition
+## 2. Independent-review disposition and REPLAN scope
 
-The corrected archived v3 design was rechecked against current runtime before activation.
+The original implementation remains architecturally viable, but independent review found four High promotion blockers that invalidate the previous `credential-only HOLD` state:
 
-### Runtime seam verification
+- **H-01:** provider-eval oracle lacks generic default-deny protection against unsupported extra clinical assertions;
+- **H-02:** duplicate `concept_key` values can break deterministic component identity and allow matcher cross-wiring;
+- **H-03:** synthetic qualification is incorrectly coupled to the identifiable-PHI approval gate;
+- **H-04:** deterministic mapping does not yet enforce all actual runtime numeric ranges and formal-result semantic requirements.
 
-Current persisted/browser paths support the v3 mapping design:
+A separate **H-05** remains a production-release blocker: synchronous provider execution currently runs inside a single-worker async web process. H-05 does not block isolated command-line synthetic provider qualification, but it must close before production enablement/deploy.
 
-- `encounter_archetype`;
-- `anthropometrics.weight_kg`, `anthropometrics.current_height_cm`;
-- `fracture_history.events[]` with `site`, `month`, `low_trauma`, `occurred_on_treatment`, `vertebral_level`;
-- `risk_context.glucocorticoids`, dose/duration, falls and frailty fields;
-- `risk_assessment` formal FRAX/context fields;
-- `step3.dxa.*`, `step3.vfa.*`, `step3.labs.*`;
-- `step4.treatment_episodes[]`, `step4.administrations[]`, `step4.decision.*`, `step4.tasks[]`.
+This replan does not broaden PR-1 into authoritative write, PR-2, pilot activation or unrelated product work.
 
-The Patient Registry still sends the complete active encounter object as protected encounter `payload`, so the mapper is anchored to **actual runtime paths**, not documentation-only schema names.
+## 3. Preserved contracts and privacy invariants
 
-### Provider/API verification
-
-Current official OpenAI SDK sources support the selected adapter pattern:
-
-- Responses API + Python `responses.parse(..., text_format=<Pydantic model>)` structured parsing;
-- GPT-5.6 availability through Responses API;
-- SDK automatic retries remain enabled by default for selected failures unless explicitly set to `max_retries=0`;
-- bounded client timeout remains configurable;
-- Responses structured parsing runs the returned text through local Pydantic parsing, so structured validation failures are correctly classified separately from transport/upstream failures.
-
-No material REPLAN trigger was found.
-
-## 3. Hard scope
-
-PR-1 includes:
-
-- protected `POST /clinical/transcript/extract`;
-- request body ceiling **512 KiB**;
-- transcript stripped, non-empty, max **120,000 Unicode characters**;
-- controlled JSON parse + sanitized validation boundary;
-- Core semantic candidate/component/source-assertion contracts;
-- provider-neutral extraction protocol;
-- isolated OpenAI adapter with `store=False`, no tools, `max_retries=0`, bounded timeout and strict structured output;
-- generic module registry;
-- Osteoporosis Module-01 concept profile and deterministic runtime-target mapper;
-- mapped / ambiguous / unmapped candidate states;
-- bounded evidence-snippet verification against the supplied transcript;
-- ephemeral clinician-readable browser preview;
-- deterministic tests plus synthetic/de-identified provider eval harness.
-
-PR-1 excludes:
-
-- candidate Accept/Edit/Reject into authoritative record;
-- any patient/encounter/lab/task mutation;
-- transcript or candidate persistence;
-- PR-2 inline population;
-- Practice Review coaching;
-- KPI or audit changes;
-- treatment recommendation;
-- pilot activation;
-- unrelated product mutations.
-
-## 4. Request contract
+### Request contract
 
 ```json
 {
@@ -100,15 +51,13 @@ PR-1 excludes:
   "encounter_phase": "during_visit",
   "language": "el",
   "transcript": "<string>",
-  "context": {
-    "encounter_archetype": null
-  }
+  "context": {"encounter_archetype": null}
 }
 ```
 
-Unknown fields are rejected. No patient ID, encounter ID, name, DOB or authoritative encounter payload is required merely to extract candidates.
+Unknown fields are rejected. Request body ceiling remains 512 KiB; transcript ceiling remains 120,000 Unicode characters.
 
-## 5. Success contract
+### Success contract
 
 ```json
 {
@@ -130,302 +79,235 @@ Unknown fields are rejected. No patient ID, encounter ID, name, DOB or authorita
 }
 ```
 
-Warnings are coded server-owned values, including `LOW_SOURCE_CLARITY`, `UNMAPPED_CANDIDATE`, `AMBIGUOUS_TARGET`, `EVIDENCE_NOT_VERIFIABLE`, `PARTIAL_EXTRACTION`.
+### Hard invariants
 
-## 6. Sanitized error boundary
+- raw transcript is ephemeral and non-authoritative;
+- no transcript/candidate persistence in DB, encounter payload, browser storage or logs;
+- provider emits semantic assertions only and cannot choose runtime/storage paths;
+- deterministic Module-01 code owns runtime mapping;
+- candidates are always `proposed` and `requires_clinician_review=true`;
+- preserve speaker/source, polarity, temporality, certainty and semantic type;
+- preserve patient/history fact vs objective result vs interpretation;
+- preserve option vs recommendation vs preference vs acceptance vs final decision;
+- vague/relative timing must not become an invented exact date;
+- no authoritative patient/encounter/lab/task write exists in PR-1;
+- identifiable transcript use remains blocked behind a distinct privacy/provider approval boundary.
 
-Sensitive request errors must never echo transcript content, Pydantic input payloads, candidate values, provider prompts/output or raw provider exception/response bodies.
+## 4. H-01 remediation — promotion evaluator must default-deny unexpected assertions
 
-Required failure classes:
+The provider qualification oracle must no longer pass a case merely because required facts exist and selected forbidden facts do not.
 
-| Condition | HTTP | Public code |
-|---|---:|---|
-| auth failure | 401 | `UNAUTHORIZED` |
-| provider not enabled/configured | 503 | `PROVIDER_NOT_CONFIGURED` |
-| malformed/invalid request | 422 | `INVALID_REQUEST` |
-| empty transcript | 422 | `EMPTY_TRANSCRIPT` |
-| body >512 KiB | 413 | `REQUEST_TOO_LARGE` |
-| transcript >120k chars | 413 | `TRANSCRIPT_TOO_LARGE` |
-| unsupported module | 422 | `UNSUPPORTED_MODULE` |
-| timeout/rate-limit/upstream unavailable | 503 | `PROVIDER_UNAVAILABLE` |
-| refusal | 422 | `PROVIDER_REFUSAL` |
-| invalid structured provider output | 502 | `PROVIDER_INVALID_OUTPUT` |
-| internal mapper failure | 500 | `INTERNAL_PROCESSING_ERROR` |
+### Required behavior
 
-## 7. Candidate semantic contract
+Each promotion fixture defines its expected/allowed assertion surface. For every returned candidate component, the evaluator must prove that the component is covered by either:
 
-One candidate is one semantic assertion with one or more related `components[]`.
+- a `required_assertions` rule with an explicit `concept_key`; or
+- an explicit `allowed_assertions` rule.
 
-Core semantic types:
-
-```text
-patient_history_fact
-objective_result
-clinician_interpretation
-option_discussed
-clinician_recommendation
-patient_preference
-final_decision
-patient_accepted
-patient_declined
-patient_undecided
-followup_task
-uncertain_needs_review
-```
-
-Source assertion preserves:
+Coverage matching must use the same candidate identity and may constrain:
 
 ```text
-speaker: patient | clinician | third_party | unclear
-polarity: positive | negative | not_applicable | unclear
-temporality: current | past | planned | future | relative | unclear
-normalized_date: exact supported day/month/year only or null
-date_precision: day | month | year | null
-date_text: original vague wording when needed
-certainty: explicit | probable | uncertain
+semantic_type
+source_assertion
+concept_key
+value
+mapping
 ```
 
-Hard distinctions:
+Any returned component that is not covered by the fixture allowlist fails the case with a coded `unexpected_assertion`/equivalent failure. Promotion fixtures must not use a permissive wildcard for clinically material mapped concepts.
+
+The evaluator must continue to reject:
+
+- forbidden assertions/concepts;
+- invented exact dates;
+- semantic count violations;
+- unverifiable evidence warnings;
+- authoritative/non-ephemeral response metadata.
+
+A deterministic test must prove that an otherwise-correct case fails if an unrelated hallucinated mapped treatment/fact is added.
+
+## 5. H-02 remediation — component identity must be unique and matcher-local
+
+### Provider contract
+
+Within one `ProviderCandidateV1`, `components[].concept_key` values must be unique. Duplicate concept keys are invalid structured provider output and fail closed before mapping.
+
+Repeated real-world events remain supported by using **separate candidates**, not duplicate same-key components inside one candidate.
+
+### Mapper/guard behavior
+
+The hardened mapper may assume candidate-local concept-key uniqueness only after schema validation. It must never resolve a mapping against a different same-key component.
+
+### Eval matcher behavior
+
+When matching an expected concept, value and mapping, the evaluator must bind them to the same candidate/component identity. A value from one component/candidate must not be combined with a mapping from another to satisfy one rule.
+
+Deterministic tests must cover:
+
+- duplicate key in one provider candidate → schema rejection;
+- repeated same concept across separate candidates/events → allowed and independently evaluated;
+- matcher cannot cross-wire value and mapping identities.
+
+## 6. H-03 remediation — synthetic qualification and identifiable-PHI approval are separate gates
+
+The default clinical provider path remains fail-closed for identifiable transcript use.
+
+### Clinical runtime purpose
+
+The protected clinical route continues to require:
 
 ```text
-OPTION DISCUSSED != CLINICIAN RECOMMENDATION != FINAL DECISION
-PATIENT PREFERENCE != PATIENT ACCEPTED
-PATIENT/HISTORY FACT != OBJECTIVE INVESTIGATION RESULT
-OBJECTIVE RESULT != CLINICIAN INTERPRETATION
-VAGUE TIME != INVENTED EXACT DATE
+CLINICAL_TRANSCRIPT_AI_ENABLED=true
+OPENAI_API_KEY present
+CLINICAL_TRANSCRIPT_PHI_PROVIDER_APPROVED=true
 ```
 
-Every candidate is server-forced `requires_clinician_review=true` and `status=proposed`.
+No production/clinical caller gets a bypass.
 
-## 8. Deterministic Module-01 mapping boundary
+### Synthetic-eval purpose
 
-The provider may emit concept semantics and components only. It must never emit or choose application target paths.
+The provider adapter gains an explicit synthetic-evaluation purpose/mode available only to the engineering eval harness. Synthetic mode requires:
 
 ```text
-provider semantic assertion
-→ local validation
-→ deterministic osteoporosis mapper
-→ target_mappings[]
+CLINICAL_TRANSCRIPT_AI_ENABLED=true
+OPENAI_API_KEY present
+CLINICAL_TRANSCRIPT_SYNTHETIC_EVAL_ENABLED=true
 ```
 
-Initial mapped families:
+and must **not** require `CLINICAL_TRANSCRIPT_PHI_PROVIDER_APPROVED=true`.
 
-- encounter archetype;
-- weight/current height;
-- fracture event composite;
-- smoking/alcohol/RA;
-- glucocorticoid context, dose and duration;
-- falls/frailty context;
-- formal FRAX tool/model/FN-BMD/original MOF/hip results;
-- stated risk category;
-- DXA date/BMD/T-scores;
-- VFA indication/action/modality/objective vertebral-fracture result;
-- supported Ca/phosphate/Vit-D/PTH/CTX/P1NP values;
-- treatment episode composite;
-- actual/scheduled/next-due administration dates;
-- final treatment decision type + selected agent;
-- patient accepted/declined/undecided;
-- follow-up task type, exact due date or vague timeframe text.
+The synthetic runner uses only repository fixtures marked/validated as synthetic/de-identified. The identifiable-PHI flag remains false/independent during qualification.
 
-Provider-supplied values are locally validated against exact current runtime contracts. Fixed enums for fracture site, FRAX tool/risk category, VFA indication/action/modality, treatment episode status and administration status must match current UI-supported values before they can be marked `mapped`. Treatment duration must be numeric and within the runtime 0–50-year range.
+Deterministic tests must prove both directions:
 
-Explicit ambiguous/unmapped examples:
+- clinical/default provider remains blocked without PHI approval;
+- synthetic-eval provider can be considered configured with the synthetic gate + credential while PHI approval remains false.
 
-- checkbox-like explicit negative where current runtime cannot distinguish false from untouched/default;
-- adjusted/contextual FRAX-like values that could overwrite original formal FRAX;
-- route where current Step-4 has no authoritative field;
-- option-discussed / recommendation / free preference content where current runtime has no lossless target;
-- unsupported units or fixed-enum values;
-- clinically meaningful narrative that has no current target.
+## 7. H-04 remediation — exact runtime target validation
 
-Unmapped candidates remain visible. PR-1 does not expand the encounter schema just to make extraction convenient.
+Provider output is untrusted. A concept key with a valid target path is not `mapped` unless its value and semantic type satisfy the actual current runtime contract.
 
-## 9. Evidence snippet
-
-A short evidence snippet may be returned for immediate review, target max ~320 characters. The Core verifies that it exists in the submitted transcript after whitespace normalization. If verification fails, the quote is not rewritten; candidate gets `EVIDENCE_NOT_VERIFIABLE`.
-
-Evidence snippets are never logged or persisted.
-
-## 10. Privacy and provider gate
+Verified runtime ranges to enforce locally:
 
 ```text
-raw transcript → no DB
-raw transcript → no encounter payload
-raw transcript → no localStorage/sessionStorage
-raw transcript → no logs
-provider response/candidates → no server persistence
-candidate preview → transient JS/DOM only
+anthropometrics.weight              20..300 kg
+anthropometrics.current_height      100..220 cm
+frax.mof_percent                    0..100
+frax.hip_percent                    0..100
+dxa.*_bmd                           0.1..3 g/cm²
+dxa.*_t_score                       -8..5
+risk.falls_last_12_months           integer 0..50
+risk.cfs_score                      integer 1..9
+treatment.duration_years            0..50 years
 ```
 
-`store=False` does not itself establish Zero Data Retention.
+Existing fixed enums remain guarded for fracture site, FRAX tool, risk category, VFA indication/action/modality, treatment status and administration status.
 
-Therefore identifiable transcript use remains **blocked** behind a transcript-specific configuration/privacy gate. Deterministic CI, provider eval and engineering smoke use synthetic/de-identified transcripts only until that separate gate is explicitly closed.
+### Formal-result semantic protection
 
-## 11. Browser lifecycle
+Original formal FRAX percentage fields may be mapped only from `semantic_type=objective_result`. A clinician interpretation using the same formal concept key must fail closed rather than overwrite original formal FRAX truth.
 
-Transcript/candidate state is isolated from `currentCase`.
+DXA BMD/T-score and supported laboratory values continue to require `objective_result` as already designed.
+
+Out-of-range, wrong-type, unsupported-unit or wrong-semantic values become `ambiguous` or `unmapped`; they are never silently coerced into authoritative-looking runtime values.
+
+## 8. Promotion suite expansion
+
+The existing 13 scenarios remain useful but are no longer sufficient promotion evidence by themselves.
+
+Before live qualification, the synthetic/de-identified suite must include the existing scenarios plus explicit cases for at least:
+
+1. repeated fracture/event identity with repeated concept keys across separate candidates;
+2. embedded transcript instruction/prompt-injection text ignored as untrusted material;
+3. referral/request for an investigation ≠ completed investigation/result;
+4. prescription/recommendation ≠ medication actually taken/administered;
+5. self-correction of timing/content (`June... no, May`) preserving the corrected assertion without inventing a second fact;
+6. third-party treatment history not attributed to the patient;
+7. out-of-range numeric transcription that extracts but fails deterministic runtime mapping;
+8. planned administration ≠ completed administration;
+9. explicit negated treatment exposure without creating positive administration/treatment truth.
+
+Clean, explicit cases should also reject low-confidence output unless the fixture explicitly represents ambiguity/uncertainty.
+
+Every live promotion case must use the H-01 default-deny unexpected-assertion check.
+
+## 9. H-05 retained production-release blocker
+
+The FastAPI route is async while the OpenAI adapter is synchronous and the current production command uses a single uvicorn worker. Before production enablement, provider execution must not be allowed to block the event loop for the full provider timeout.
+
+Acceptable implementation must preserve the same sanitized error/timeout contract and should use a bounded thread/off-loop mechanism or an async provider path. This remediation is **not required before isolated CLI synthetic provider qualification**, but it is required before release/deploy.
+
+## 10. Deterministic acceptance gate after H-01..H-04
+
+The exact new runtime head must pass:
+
+- Python/browser syntax;
+- all existing PR-1 privacy/contract/mapping/UI tests;
+- new duplicate-concept schema tests;
+- new exact numeric-range and formal-FRAX semantic tests;
+- new eval default-deny unexpected-assertion tests;
+- new synthetic-vs-PHI authorization tests;
+- expanded fixture-contract validation;
+- inherited protected-clinical regressions;
+- inherited Medical Report regressions;
+- inherited workspace/navigation regression;
+- bounded PR-1 scope guard.
+
+The resulting exact SHA + workflow run must be checkpointed in `CURRENT_OPERATIONAL.md` before any live provider execution.
+
+## 11. Live selected-model qualification gate
+
+Only after H-01 through H-04 close deterministically:
 
 ```text
-open panel → empty
-paste → textarea DOM only
-submit → in-memory request only
-success → clear textarea, retain candidate preview transiently
-close/discard → clear textarea + candidates
-pagehide/logout/navigation → explicit clear
-pageshow/BFCache → defensive reset
-failure → textarea may remain only for explicit immediate retry
+safe non-production credential path exists
++ CLINICAL_TRANSCRIPT_SYNTHETIC_EVAL_ENABLED=true
++ identifiable PHI approval remains independent
+→ run expanded synthetic/de-identified suite through selected OpenAI adapter/model
+→ require zero failed cases under default-deny promotion oracle
+→ checkpoint exact provider/model/eval evidence
+→ independent evidence review
 ```
 
-UI states clearly:
+A run of the old 13-case suite under the old oracle is exploratory only and cannot be used as promotion evidence.
 
-> AI-extracted candidate ≠ clinician-confirmed clinical record.
+## 12. Definition of Done status
 
-No red/green audit-performance styling is added.
+Currently satisfied from the pre-replan implementation:
 
-## 12. Implemented seams
+- protected transcript UI + endpoint;
+- strict request/response contracts;
+- provider target-path isolation;
+- transient/non-authoritative preview;
+- no authoritative write path;
+- transcript/candidate non-persistence;
+- calendar-valid normalized exact dates and vague-date fail-closed behavior;
+- prior deterministic/inherited CI baseline.
 
-```text
-clinical_excellence/
-  core/
-    transcript_contracts.py
-    transcript_provider.py
-    transcript_service.py
-    transcript_router.py
-    providers/openai_transcript.py
-  modules/
-    registry.py
-    osteoporosis/transcript_profile.py
-    osteoporosis/transcript_targets.py
-    osteoporosis/transcript_target_guard.py
-```
+Currently unsatisfied:
 
-Minimal existing-owner changes:
-
-- `clinical_auth.py`: reusable protected dependency without broad auth refactor;
-- `main.py`: transcript router mount;
-- `static/baseline-audit/app.js`: isolated transcript asset load;
-- new `static/baseline-audit/transcript-capture.js`.
-
-Not modified:
-
-- `app-core.js`;
-- `step3.js`;
-- `step4.js`;
-- `clinical_data.py`;
-- `clinical_data_ext.py`.
-
-## 13. Deterministic acceptance evidence
-
-Exact tested runtime head:
-
-```text
-a79d68915bde230a53bb7b5fd31a4104a491b058
-```
-
-Latest deterministic/inherited GitHub gate:
-
-```text
-35084122094 — SUCCESS
-```
-
-The gate passed:
-
-- Python + browser syntax;
-- **26 focused PR-1 privacy/contract/mapping/UI/eval-contract tests**;
-- body/character limits and unknown-field rejection;
-- sanitized errors with no sentinel PHI echo/logging;
-- candidate/component strict validation;
-- date precision/relative-date fail-closed behavior;
-- impossible normalized calendar dates rejected;
-- speaker/polarity/temporality/certainty contracts;
-- evidence substring verification;
-- server-forced review/proposed state;
-- provider target-path injection impossible;
-- module registry dispatch;
-- actual osteoporosis mapped/ambiguous/unmapped behavior;
-- adjusted risk cannot overwrite original FRAX;
-- unsupported units and fixed runtime enums fail closed;
-- protected endpoint auth + cookie-session auth;
-- one provider call per extraction;
-- no transcript/candidate browser persistence;
-- OpenAI adapter structured output, `store=False`, no tools, `max_retries=0`, bounded timeout;
-- structured provider validation failure → `PROVIDER_INVALID_OUTPUT` rather than false provider-unavailable classification;
-- provider-eval case matching now enforces required/forbidden semantic assertions, source semantics, values, deterministic mappings, invented-date prohibitions, semantic counts and ephemeral/non-authoritative response meta;
-- inherited protected-clinical regressions — 6 PASS;
-- inherited Medical Report regressions — 24 PASS;
-- inherited workspace navigation regression — PASS;
-- bounded PR-1 scope guard — PASS.
-
-The synthetic/de-identified provider minimum suite now contains **13** representative scenarios:
-
-1. positive fracture history with vague relative timing;
-2. explicit negative smoking history;
-3. exact DXA objective result;
-4. laboratory objective results;
-5. multiple options + one recommendation + patient acceptance + exactly one final decision;
-6. patient preference without accidental decision/recommendation;
-7. vague follow-up timeframe without fabricated due date;
-8. garbled/uncertain speech without guessed administration truth;
-9. original formal FRAX versus clinician-adjusted interpretation;
-10. ambiguous speaker/treatment history;
-11. explicit negative history versus negative objective investigation with reciprocal collapse checks;
-12. exact follow-up date when the source supports an exact day;
-13. unrelated general musculoskeletal text without osteoporosis-target hallucination.
-
-This completes the frozen-v3 minimum **suite definition**. It is not a substitute for selected-model execution.
-
-## 14. Live synthetic provider-eval HOLD
-
-Temporary run `35056606836` attempted to execute the selected GPT-5.6 provider eval through GitHub Actions. The Actions environment had no usable `OPENAI_API_KEY`, so the harness exited deliberately with:
-
-```text
-PR1_SYNTHETIC_PROVIDER_EVAL_HOLD
-No production configuration was changed and no transcript was sent.
-```
-
-A safe rerun on 2026-09-16 reconfirmed the same missing Actions credential and again made no provider call.
-
-This is neither PASS nor FAIL for the model/provider behavior. No live provider call occurred. No transcript content was transmitted. The temporary workflow was removed from the branch after the HOLD was checkpointed.
-
-Do not use the Medical Report production credential path, change Render configuration, expose/copy a secret, or substitute a different execution path merely to manufacture equivalent evidence.
-
-## 15. Definition of Done status
-
-Satisfied:
-
-- protected transcript UI + endpoint exist;
-- Core/provider/module boundaries implemented;
-- strict structured extraction + local validation active;
-- deterministic current-runtime mapper works and fixed runtime enums fail closed;
-- normalized exact dates are calendar-valid and vague timing remains non-exact;
-- preview is transient/non-authoritative;
-- no authoritative write path exists;
-- transcript/candidates/content are not persisted/logged;
-- deterministic + inherited tests pass;
-- hardened 13-case synthetic/de-identified promotion suite is defined and deterministically validated;
-- transcript-specific identifiable-data gate remains fail-closed;
-- exact tested runtime head and workflow evidence are checkpointed.
-
-**Not yet satisfied:**
-
-- selected provider/model passes the hardened 13-case synthetic-only live eval gate.
+- H-01 generic unexpected-assertion default-deny evaluator;
+- H-02 candidate concept-key identity contract + matcher-local proof;
+- H-03 separate synthetic-eval authorization boundary;
+- H-04 complete actual-runtime range/semantic validation;
+- expanded promotion suite deterministic validation;
+- selected provider/model live qualification;
+- H-05 production async/blocking remediation;
+- stronger executable browser lifecycle evidence before production release.
 
 Therefore:
 
 ```text
-IMPLEMENTED YES
-DETERMINISTIC-TESTED YES
-INHERITED REGRESSIONS PASS
-MINIMUM SYNTHETIC SUITE DEFINED YES
-LIVE SYNTHETIC PROVIDER EVAL HOLD
+IMPLEMENTATION BASELINE EXISTS
+REPLAN ACTIVE
+LIVE PROMOTION EVAL READY NO
 RELEASE READY NO
 RUNTIME RELEASE PR NO
 DEPLOY NO
 IDENTIFIABLE TRANSCRIPT USE NO
+PR-2 / REAL PILOT NO
 ```
 
-## 16. Release boundary
+## 13. Release boundary
 
-PR-1 is not release-ready while the provider-eval HOLD remains. Do not open the runtime release PR, merge/deploy PR-1, enable identifiable transcript processing, begin PR-2, or start real-patient use from this state.
-
-The next permitted material transition is resolution of the synthetic provider-eval HOLD through a safe credential path that does not expose/copy a secret and does not mutate production configuration, followed immediately by a durable canonical checkpoint of PASS/FAIL.
+The next permitted runtime mutation is the bounded H-01/H-02/H-03/H-04 remediation defined above. No live provider promotion run, release PR, merge/deploy, identifiable transcript use, PR-2 or real-patient pilot may occur until the corresponding prior gate is durably checkpointed.
