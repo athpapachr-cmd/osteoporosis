@@ -1,0 +1,194 @@
+name: Temporary Medical Report V1.1 authenticated live smoke
+
+on:
+  push:
+    branches:
+      - ops/medical-report-v1-1-auth-live-smoke-2026-09-16
+
+permissions:
+  contents: read
+
+env:
+  BASE_URL: https://ortho-reception-backend.onrender.com
+  CLINICAL_DATA_KEY: ${{ secrets.CLINICAL_DATA_KEY }}
+
+jobs:
+  authenticated-medical-report-v11-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Verify Medical Report V1.1 production flow
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${CLINICAL_DATA_KEY:-}"
+
+          contract="$BASE_URL/clinical/clinic-utilities/medical-report/api/contract"
+          report_root="$BASE_URL/clinical/clinic-utilities/medical-report"
+
+          unauth_code=$(curl --retry 3 --retry-delay 2 --max-time 60 -sS -o /tmp/unauth.json -w '%{http_code}' "$contract")
+          test "$unauth_code" = '401'
+
+          contract_code=$(curl --retry 3 --retry-delay 2 --max-time 60 -sS -o /tmp/contract.json -w '%{http_code}' \
+            -H "X-Clinical-Key: ${CLINICAL_DATA_KEY}" "$contract")
+          test "$contract_code" = '200'
+          jq -e '.version == "medical_report_v1_1"' /tmp/contract.json >/dev/null
+          jq -e '.ai.enabled == true and .ai.api_key_configured == true and .ai.phi_provider_approved == true' /tmp/contract.json >/dev/null
+          jq -e '.clinician_configured == true' /tmp/contract.json >/dev/null
+          jq -e '.persistence.patient_case_database == false and .persistence.browser_case_storage == false and .persistence.autosave == false and .persistence.source_files_persisted == false and .persistence.signature_persisted == false and .persistence.refinement_thread_persisted == false' /tmp/contract.json >/dev/null
+
+          page_code=$(curl --retry 3 --retry-delay 2 --max-time 60 -sS -o /tmp/page.html -w '%{http_code}' \
+            -H "X-Clinical-Key: ${CLINICAL_DATA_KEY}" "$report_root")
+          test "$page_code" = '200'
+          grep -q 'v1-1-sources.js' /tmp/page.html
+          grep -q 'v1-1-refine.js' /tmp/page.html
+
+          curl --retry 3 --retry-delay 2 --max-time 60 -sS -o /tmp/sources.js \
+            "$BASE_URL/static/clinic-utilities/medical-report/v1-1-sources.js"
+          curl --retry 3 --retry-delay 2 --max-time 60 -sS -o /tmp/refine.js \
+            "$BASE_URL/static/clinic-utilities/medical-report/v1-1-refine.js"
+          grep -q 'imaging_referral' /tmp/sources.js
+          grep -q 'heidi_transcript' /tmp/sources.js
+          grep -q 'Αφαίρεση' /tmp/sources.js
+          grep -q '/api/refine' /tmp/refine.js
+          ! grep -q 'localStorage' /tmp/sources.js
+          ! grep -q 'sessionStorage' /tmp/sources.js
+          ! grep -q 'indexedDB' /tmp/sources.js
+          ! grep -q 'localStorage' /tmp/refine.js
+          ! grep -q 'sessionStorage' /tmp/refine.js
+          ! grep -q 'indexedDB' /tmp/refine.js
+
+          cat > /tmp/case.json <<'JSON'
+          {
+            "report_type": "accident_medical_report",
+            "patient_name": "Synthetic Production Smoke Patient",
+            "id_type": "OTHER",
+            "id_number": "SYNTHETIC-NOT-A-PERSON",
+            "birth_date": null,
+            "occupation": "Synthetic test occupation",
+            "incident_date": "2026-09-01",
+            "report_date": "2026-09-16",
+            "instructing_party": "Synthetic test only",
+            "instructing_reference": "SYNTH-SMOKE-2026-09-16",
+            "purpose_and_questions": "Synthetic production smoke: summarize only documented facts and preserve referral versus completed investigation semantics.",
+            "clinician_context": "Synthetic test only. No real patient data. The purpose is to verify the deployed Medical Report workflow."
+          }
+          JSON
+
+          cat > /tmp/source.txt <<'TXT'
+          SYNTHETIC TEST ONLY — NO REAL PATIENT DATA.
+          Date: 2026-09-01.
+          An MRI of the synthetic right knee was requested because of synthetic knee pain.
+          This document is a referral/request only. The MRI has not been documented as completed and no imaging result is available.
+          TXT
+
+          analyze_code=$(curl --retry 2 --retry-delay 3 --max-time 420 -sS -o /tmp/analyze.json -w '%{http_code}' \
+            -H "X-Clinical-Key: ${CLINICAL_DATA_KEY}" \
+            -F 'case_json=</tmp/case.json' \
+            -F 'file_source_types_json=["imaging_referral"]' \
+            -F 'files=@/tmp/source.txt;type=text/plain;filename=synthetic-imaging-referral.txt' \
+            "$report_root/api/analyze")
+          test "$analyze_code" = '200'
+          jq -e '.case.patient_name == "Synthetic Production Smoke Patient"' /tmp/analyze.json >/dev/null
+          jq -e '.sources | length >= 1' /tmp/analyze.json >/dev/null
+          jq -e '.sources[] | select(.source_type == "imaging_referral") | .status == "extracted"' /tmp/analyze.json >/dev/null
+          jq -e '.analysis.source_summaries | length >= 1' /tmp/analyze.json >/dev/null
+          jq -e '.analysis.evidence_items | type == "array"' /tmp/analyze.json >/dev/null
+          jq -e '.analysis.timeline | type == "array"' /tmp/analyze.json >/dev/null
+          jq -e '.analysis.report_sections | length >= 1' /tmp/analyze.json >/dev/null
+          jq -e '.usage.model | length > 0' /tmp/analyze.json >/dev/null
+          jq -e '.usage.total_tokens > 0' /tmp/analyze.json >/dev/null
+          jq -e '[.analysis.evidence_items[]? | select(.evidence_type == "imaging_finding")] | length == 0' /tmp/analyze.json >/dev/null
+
+          jq '{case:.case, analysis:.analysis}' /tmp/analyze.json > /tmp/research-request.json
+          research_code=$(curl --retry 2 --retry-delay 3 --max-time 420 -sS -o /tmp/research.json -w '%{http_code}' \
+            -H "X-Clinical-Key: ${CLINICAL_DATA_KEY}" \
+            -H 'Content-Type: application/json' \
+            --data-binary @/tmp/research-request.json \
+            "$report_root/api/research")
+          test "$research_code" = '200'
+          jq -e '.research_text | length > 0' /tmp/research.json >/dev/null
+          jq -e '.citations | type == "array" and length >= 1' /tmp/research.json >/dev/null
+          jq -e '.usage.model | length > 0' /tmp/research.json >/dev/null
+          jq -e '.usage.total_tokens > 0' /tmp/research.json >/dev/null
+
+          jq '{case:.case, analysis:.analysis, clinician_message:"Synthetic smoke clarification: this MRI entry is only a referral/request; no completed MRI or imaging result is established. Preserve the original evidence and update only downstream interpretation if needed."}' \
+            /tmp/analyze.json > /tmp/refine-request.json
+          refine_code=$(curl --retry 2 --retry-delay 3 --max-time 420 -sS -o /tmp/refined.json -w '%{http_code}' \
+            -H "X-Clinical-Key: ${CLINICAL_DATA_KEY}" \
+            -H 'Content-Type: application/json' \
+            --data-binary @/tmp/refine-request.json \
+            "$report_root/api/refine")
+          test "$refine_code" = '200'
+          jq -e '.assistant_reply | length > 0' /tmp/refined.json >/dev/null
+          jq -e '.updated_analysis.report_sections | length >= 1' /tmp/refined.json >/dev/null
+          jq -e '.usage.model | length > 0' /tmp/refined.json >/dev/null
+          jq -S '.analysis.evidence_items' /tmp/analyze.json > /tmp/evidence-before.json
+          jq -S '.updated_analysis.evidence_items' /tmp/refined.json > /tmp/evidence-after.json
+          cmp /tmp/evidence-before.json /tmp/evidence-after.json
+          jq -S '.analysis.source_summaries' /tmp/analyze.json > /tmp/source-summaries-before.json
+          jq -S '.updated_analysis.source_summaries' /tmp/refined.json > /tmp/source-summaries-after.json
+          cmp /tmp/source-summaries-before.json /tmp/source-summaries-after.json
+
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          analyzed = json.loads(Path('/tmp/analyze.json').read_text(encoding='utf-8'))
+          refined = json.loads(Path('/tmp/refined.json').read_text(encoding='utf-8'))
+          research = json.loads(Path('/tmp/research.json').read_text(encoding='utf-8'))
+          sections = refined['updated_analysis']['report_sections']
+          if not sections or not any((item.get('draft_text') or '').strip() for item in sections):
+              sections = [{
+                  'section_id': 'clinical_course',
+                  'title': 'Synthetic production smoke',
+                  'draft_text': 'Synthetic Medical Report production smoke. No real patient data.',
+                  'supporting_evidence_ids': [],
+                  'requires_clinician_review': True,
+              }]
+          else:
+              for item in sections:
+                  if (item.get('draft_text') or '').strip():
+                      item['draft_text'] = item['draft_text'].rstrip() + '\n\nSynthetic clinician edit confirmed for production smoke.'
+                      break
+          final = {
+              'case': analyzed['case'],
+              'sections': sections,
+              'research_text': research.get('research_text', ''),
+              'citations': research.get('citations', []),
+              'declaration_text': 'Synthetic production smoke only; no real patient data.',
+              'clinician_confirmed': True,
+          }
+          Path('/tmp/final.json').write_text(json.dumps(final, ensure_ascii=False), encoding='utf-8')
+          PY
+
+          preview_code=$(curl --retry 2 --retry-delay 3 --max-time 180 -sS -D /tmp/preview.headers -o /tmp/preview.pdf -w '%{http_code}' \
+            -H "X-Clinical-Key: ${CLINICAL_DATA_KEY}" \
+            -F 'report_json=</tmp/final.json' \
+            "$report_root/api/preview")
+          test "$preview_code" = '200'
+          grep -qi '^content-type: application/pdf' /tmp/preview.headers
+          test "$(head -c 4 /tmp/preview.pdf)" = '%PDF'
+          test "$(stat -c %s /tmp/preview.pdf)" -gt 1000
+
+          pdf_code=$(curl --retry 2 --retry-delay 3 --max-time 180 -sS -D /tmp/pdf.headers -o /tmp/final.pdf -w '%{http_code}' \
+            -H "X-Clinical-Key: ${CLINICAL_DATA_KEY}" \
+            -F 'report_json=</tmp/final.json' \
+            "$report_root/api/pdf")
+          test "$pdf_code" = '200'
+          grep -qi '^content-type: application/pdf' /tmp/pdf.headers
+          test "$(head -c 4 /tmp/final.pdf)" = '%PDF'
+          test "$(stat -c %s /tmp/final.pdf)" -gt 1000
+
+          analysis_model=$(jq -r '.usage.model' /tmp/analyze.json)
+          research_model=$(jq -r '.usage.model' /tmp/research.json)
+          analysis_tokens=$(jq -r '.usage.total_tokens' /tmp/analyze.json)
+          research_tokens=$(jq -r '.usage.total_tokens' /tmp/research.json)
+          echo "AUTHENTICATED MEDICAL REPORT V1.1 LIVE SMOKE PASS"
+          echo "Draft model=${analysis_model}; research model=${research_model}; draft tokens=${analysis_tokens}; research tokens=${research_tokens}."
+          echo 'Contract/auth/privacy, V1.1 UI, live AI draft, live literature research, immutable-evidence refinement, preview and final PDF all passed.'
+          echo 'Only synthetic/non-identifiable smoke data were sent; no secret value or response body was printed.'
