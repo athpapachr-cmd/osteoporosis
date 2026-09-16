@@ -1,7 +1,15 @@
 import json
 from pathlib import Path
 
-from clinical_excellence.core.transcript_contracts import ProviderCandidateV1
+import pytest
+
+from clinical_excellence.core.providers.openai_transcript import OpenAITranscriptProvider
+from clinical_excellence.core.transcript_contracts import (
+    ProviderCandidateV1,
+    ProviderTranscriptExtractionV1,
+    TranscriptExtractRequestV1,
+)
+from clinical_excellence.core.transcript_provider import ProviderInvalidOutput, ProviderRefusal, ProviderUnavailable
 from clinical_excellence.modules.osteoporosis.transcript_target_guard import map_candidate
 
 
@@ -47,6 +55,24 @@ def _candidate(concept_key, value):
         "evidence_snippet": "",
         "confidence": "high",
     })
+
+
+def _request():
+    return TranscriptExtractRequestV1.model_validate({
+        "schema_version": "clinical_transcript_extract_request_v1",
+        "source_type": "heidi_transcript",
+        "module": "osteoporosis",
+        "encounter_phase": "during_visit",
+        "language": "el",
+        "transcript": "SYNTHETIC ONLY",
+        "context": {"encounter_archetype": None},
+    })
+
+
+def _enable_provider(monkeypatch):
+    monkeypatch.setenv("CLINICAL_TRANSCRIPT_AI_ENABLED", "true")
+    monkeypatch.setenv("CLINICAL_TRANSCRIPT_PHI_PROVIDER_APPROVED", "true")
+    monkeypatch.setenv("OPENAI_API_KEY", "synthetic")
 
 
 def test_step4_status_mapping_rejects_provider_codes_outside_runtime_enums():
@@ -117,3 +143,44 @@ def test_vfa_runtime_enums_are_validated_and_boolean_indication_is_normalized():
     bad_modality = map_candidate(_candidate("vfa.modality", {"kind": "code", "code": "ultrasound"}))[0]
     assert bad_modality.status == "ambiguous"
     assert bad_modality.reason_code == "UNSUPPORTED_VFA_MODALITY"
+
+
+def test_openai_adapter_classifies_structured_validation_as_invalid_output(monkeypatch):
+    _enable_provider(monkeypatch)
+
+    class InvalidResponses:
+        def parse(self, **kwargs):
+            return ProviderTranscriptExtractionV1.model_validate({
+                "candidates": [{"semantic_type": "not-a-real-semantic-type"}],
+                "warnings": [],
+            })
+
+    client = type("Client", (), {"responses": InvalidResponses()})()
+    with pytest.raises(ProviderInvalidOutput):
+        OpenAITranscriptProvider(client=client).extract(_request(), "PROFILE")
+
+
+def test_openai_adapter_preserves_refusal_and_unavailable_failure_classes(monkeypatch):
+    _enable_provider(monkeypatch)
+
+    refusal_content = type("Content", (), {"type": "refusal"})()
+    refusal_item = type("Item", (), {"output": None, "content": [refusal_content]})()
+    refusal_response = type("Response", (), {"output": [refusal_item], "output_parsed": None})()
+
+    class RefusalResponses:
+        def parse(self, **kwargs):
+            return refusal_response
+
+    refusal_client = type("Client", (), {"responses": RefusalResponses()})()
+    with pytest.raises(ProviderRefusal):
+        OpenAITranscriptProvider(client=refusal_client).extract(_request(), "PROFILE")
+
+    APITimeoutError = type("APITimeoutError", (Exception,), {})
+
+    class TimeoutResponses:
+        def parse(self, **kwargs):
+            raise APITimeoutError("synthetic timeout")
+
+    timeout_client = type("Client", (), {"responses": TimeoutResponses()})()
+    with pytest.raises(ProviderUnavailable):
+        OpenAITranscriptProvider(client=timeout_client).extract(_request(), "PROFILE")
