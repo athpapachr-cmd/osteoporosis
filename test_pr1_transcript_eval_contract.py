@@ -79,3 +79,41 @@ def test_treatment_duration_requires_numeric_runtime_range():
     out_of_range = map_candidate(_candidate("treatment.duration_years", {"kind": "number", "value": 51}))[0]
     assert out_of_range.status == "ambiguous"
     assert out_of_range.reason_code == "OUT_OF_RUNTIME_RANGE"
+
+
+def test_fixed_runtime_code_targets_are_whitelisted_locally():
+    assert map_candidate(_candidate("fracture.site", {"kind": "code", "code": "hip"}))[0].status == "mapped"
+    bad_site = map_candidate(_candidate("fracture.site", {"kind": "code", "code": "ankle"}))[0]
+    assert bad_site.status == "ambiguous"
+    assert bad_site.reason_code == "UNSUPPORTED_FRACTURE_SITE"
+
+    assert map_candidate(_candidate("frax.tool_name", {"kind": "code", "code": "fraxplus"}))[0].status == "mapped"
+    bad_tool = map_candidate(_candidate("frax.tool_name", {"kind": "code", "code": "magic_score"}))[0]
+    assert bad_tool.status == "ambiguous"
+    assert bad_tool.reason_code == "UNSUPPORTED_FRAX_TOOL"
+
+    assert map_candidate(_candidate("risk.resulting_category", {"kind": "code", "code": "very_high"}))[0].status == "mapped"
+    bad_risk = map_candidate(_candidate("risk.resulting_category", {"kind": "code", "code": "extreme"}))[0]
+    assert bad_risk.status == "ambiguous"
+    assert bad_risk.reason_code == "UNSUPPORTED_RISK_CATEGORY"
+
+
+def test_vfa_runtime_enums_are_validated_and_boolean_indication_is_normalized():
+    indicated = map_candidate(_candidate("vfa.indicated", {"kind": "boolean", "value": True}))[0]
+    assert indicated.status == "mapped"
+    assert indicated.proposed_value == "yes"
+
+    uncertain = map_candidate(_candidate("vfa.indicated", {"kind": "code", "code": "uncertain"}))[0]
+    assert uncertain.status == "mapped"
+    assert uncertain.proposed_value == "uncertain"
+
+    bad_action = map_candidate(_candidate("vfa.action", {"kind": "code", "code": "probably_later"}))[0]
+    assert bad_action.status == "ambiguous"
+    assert bad_action.reason_code == "UNSUPPORTED_VFA_ACTION"
+
+    modality = map_candidate(_candidate("vfa.modality", {"kind": "code", "code": "MRI"}))[0]
+    assert modality.status == "mapped"
+
+    bad_modality = map_candidate(_candidate("vfa.modality", {"kind": "code", "code": "ultrasound"}))[0]
+    assert bad_modality.status == "ambiguous"
+    assert bad_modality.reason_code == "UNSUPPORTED_VFA_MODALITY"
