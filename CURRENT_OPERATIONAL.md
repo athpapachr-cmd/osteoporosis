@@ -10,9 +10,11 @@
 > **Runtime implementation branch:** `feat/pr1-transcript-capture-v1-2026-09-16`.
 > **Exact tested runtime head:** `a79d68915bde230a53bb7b5fd31a4104a491b058`.
 > **Latest deterministic/inherited gate:** `35084122094` — SUCCESS.
+> **Latest slice-canonical reconciliation gate:** `35084479897` — SUCCESS.
 > **Focused PR-1 tests:** 26 PASS.
 > **Synthetic provider minimum suite:** 13 synthetic/de-identified scenarios with structured safety assertions.
 > **Synthetic provider-eval probe:** `35056606836` — HOLD reconfirmed on rerun; GitHub Actions `OPENAI_API_KEY` unavailable, no provider call made.
+> **Credential-path verification:** current connected GitHub/Render tooling exposes no safe non-production secret-inheriting execution path; production config remains untouched.
 > **Medical Report V1.1:** CLOSED; do not reopen without separate authority.
 
 ## Product-owner authority
@@ -123,7 +125,7 @@ Evidence includes:
 - inherited workspace navigation regression — PASS;
 - bounded PR-1 scope guard — PASS at the exact runtime head.
 
-The immediately preceding canonical hardening checkpoint was independently verified by workflow `35083865144` — SUCCESS.
+The immediately preceding canonical hardening checkpoint was independently verified by workflow `35083865144` — SUCCESS. The subsequent `SLICE_PLAN_CURRENT.md` evidence reconciliation was independently verified by workflow `35084479897` — SUCCESS.
 
 ## Earlier canonical-checkpoint guard verification
 
@@ -144,6 +146,22 @@ This is not a provider-model PASS and not a provider-model FAIL. The determinist
 
 Do not substitute the assistant model, the Medical Report provider path, a fake provider, or production secret/config mutation for this missing live adapter evidence and label it equivalent.
 
+## Safe credential-path verification — 2026-09-16
+
+A read-only inspection was performed after completion of the hardened 13-case suite to determine whether the missing provider evidence could be executed without exposing/copying a secret or mutating production configuration.
+
+Current connected tooling establishes:
+
+- the GitHub Actions environment used by the probe has no usable `OPENAI_API_KEY` for this path;
+- the connected GitHub interface does not expose repository/organization secrets APIs, so it cannot safely read, copy or create the missing secret from this workflow;
+- the connected Render interface can inspect the deployed service/deploy/log state but exposes no one-off shell/job action that inherits the existing service environment;
+- creating a new Render service/cron or updating environment variables would require an explicit configuration mutation and/or supplying the secret value, which is outside the authorized path;
+- the production Render service remains untouched and continues to track `main` with auto-deploy; no PR-1 branch deployment or configuration mutation occurred.
+
+Therefore there is **no safe non-production secret-inheriting execution path available from the current connected tool surface**. The HOLD is an external credential prerequisite, not an unresolved code/test harness problem.
+
+The provider eval entrypoint remains ready in `evals/transcript_v1/run_provider_eval.py`; the temporary Actions provider-eval workflow was deliberately removed after the original HOLD checkpoint. Reintroducing an execution wrapper is permitted only when a safe non-production credential is actually available, so that the wrapper executes the frozen synthetic suite rather than manufacturing a different form of evidence.
+
 ## Privacy boundary remains fail-closed
 
 ```text
@@ -161,10 +179,13 @@ identifiable transcript use: BLOCKED
 
 Preserve **LIVE SYNTHETIC PROVIDER-EVAL HOLD** until a safe credential path is explicitly available without exposing/copying a secret and without mutating production configuration.
 
-The next authorized execution action is:
+The exact external prerequisite is a dedicated safe non-production credential path available to a synthetic-only execution job without revealing the credential value in chat, repository content or logs.
+
+Once that prerequisite exists, the next authorized execution action is:
 
 ```text
-safe non-production credential path becomes available
+safe non-production credential becomes available
+→ attach it only to a synthetic-only provider-eval execution wrapper
 → run the hardened 13-case synthetic/de-identified provider eval through the selected OpenAI adapter/model
 → require zero failed cases under the frozen promotion invariants
 → checkpoint exact provider/model/eval evidence
