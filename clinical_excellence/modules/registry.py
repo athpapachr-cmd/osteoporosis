@@ -20,5 +20,5 @@ def get_transcript_module(module: str) -> TranscriptModuleAdapter:
     if module != "osteoporosis":
         raise UnsupportedModuleError(module)
     from .osteoporosis.transcript_profile import provider_profile
-    from .osteoporosis.transcript_targets import map_candidate
+    from .osteoporosis.transcript_target_guard import map_candidate
     return TranscriptModuleAdapter(provider_profile=provider_profile, map_candidate=map_candidate)
