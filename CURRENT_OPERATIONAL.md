@@ -1,213 +1,108 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** PR-1 HEIDI-FIRST TRANSCRIPT CAPTURE — IMPLEMENTED / DETERMINISTIC-TESTED / HARDENED MINIMUM EVAL SUITE COMPLETE; LIVE SYNTHETIC PROVIDER-EVAL HOLD — NOT RELEASE READY.
+> **STATUS:** PR-1 HEIDI-FIRST TRANSCRIPT CAPTURE — INDEPENDENT REVIEW REPLAN / CODE+EVAL HARDENING HOLD — NOT READY FOR LIVE PROMOTION EVAL OR RELEASE.
 > **Updated:** 2026-09-16 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Activation main:** `0ab5f9770d220c20e8d94544cb64e93a4aa30d00`.
-> **Activation PR:** #115 — MERGED.
+> **Fresh verified remote `main`:** `0ab5f9770d220c20e8d94544cb64e93a4aa30d00`.
 > **Active slice:** `PR-1-TRANSCRIPT-INTAKE-CANDIDATE-EXTRACTION-V1-2026-09-16`.
 > **Active writer:** this bounded PR-1 implementation lifecycle only.
 > **Runtime implementation branch:** `feat/pr1-transcript-capture-v1-2026-09-16`.
-> **Exact tested runtime head:** `a79d68915bde230a53bb7b5fd31a4104a491b058`.
-> **Latest deterministic/inherited gate:** `35084122094` — SUCCESS.
-> **Latest slice-canonical reconciliation gate:** `35084479897` — SUCCESS.
-> **Focused PR-1 tests:** 26 PASS.
-> **Synthetic provider minimum suite:** 13 synthetic/de-identified scenarios with structured safety assertions.
-> **Synthetic provider-eval probe:** `35056606836` — HOLD reconfirmed on rerun; GitHub Actions `OPENAI_API_KEY` unavailable, no provider call made.
-> **Credential-path verification:** current connected GitHub/Render tooling exposes no safe non-production secret-inheriting execution path; production config remains untouched.
+> **Branch head before this checkpoint:** `d1c3f0371e46b4a17c16654ab0b5127c8dc1c7af`.
+> **Last exact tested runtime head before independent review:** `a79d68915bde230a53bb7b5fd31a4104a491b058`.
+> **Last deterministic/inherited gate:** `35084122094` — SUCCESS on that older runtime head.
+> **Focused PR-1 tests before replan:** 26 PASS.
+> **Prior synthetic suite:** 13 synthetic/de-identified scenarios.
+> **Prior live provider probe:** `35056606836` — no Actions credential; no provider call.
 > **Medical Report V1.1:** CLOSED; do not reopen without separate authority.
 
 ## Product-owner authority
 
-On 2026-09-16 the Product Owner explicitly instructed `Ok. Go. Ξεκίνησε` after fresh closeout identified Heidi-first capture / PR-1 as the next primary roadmap target. This authorizes bounded implementation of the frozen PR-1 extraction slice, including branch creation, code, tests/evals and implementation-candidate preparation.
+On 2026-09-16 the Product Owner explicitly authorized bounded PR-1 implementation. That authority covers code, deterministic tests/evals and implementation-candidate preparation inside this slice.
 
-This does **not** automatically authorize merge of the runtime implementation, production deployment, enabling identifiable transcript processing, PR-2 authoritative writes, real-patient pilot use or unrelated product mutations.
+It does **not** authorize runtime release PR merge/deploy, identifiable transcript processing, PR-2 authoritative writes, real-patient pilot use or unrelated product mutation.
 
-## Implemented PR-1 boundary
+## Independent READ-ONLY review — material REPLAN trigger
 
-The exact tested runtime head implements:
+A separate fresh-bootstrap independent review evaluated the current branch and hardened 13-case suite without mutation. It found no Critical privacy breach or authoritative-write escape, but it invalidated the previous operational statement that the only remaining blocker was an external credential prerequisite.
 
-```text
-protected POST /clinical/transcript/extract
-→ 512 KiB body ceiling + 120k transcript character ceiling
-→ sanitized strict request/response contracts
-→ provider-neutral semantic extraction
-→ server-owned deterministic osteoporosis target mapping
-→ mapped / ambiguous / unmapped candidate preview
-→ no authoritative write
-```
+The review identified four High findings that must close before a live synthetic provider run can be treated as promotion evidence:
 
-Core semantics preserve speaker, polarity, temporality, certainty and the required distinctions between patient/history fact, objective result, clinician interpretation, option discussed, recommendation, preference, final decision and patient disposition. Relative/vague timing cannot be normalized into an invented exact date.
+1. **H-01 — generic unexpected/hallucinated-extra false-PASS path.** The eval oracle can accept required facts while allowing additional clinically material unsupported assertions unless those extras are explicitly forbidden case-by-case.
+2. **H-02 — duplicate `concept_key` identity defect.** Provider candidates do not currently require component-key uniqueness; the guard resolves by first matching component and the eval matcher can mix same-key value/mapping evidence.
+3. **H-03 — synthetic eval coupled to identifiable-PHI approval.** The provider/eval path currently requires `CLINICAL_TRANSCRIPT_PHI_PROVIDER_APPROVED` even for synthetic/de-identified qualification, conflating two authorization boundaries.
+4. **H-04 — incomplete deterministic runtime-target guards.** Current mapping does not fully enforce actual runtime numeric ranges and semantic-type requirements for several mapped targets, including weight/height, FRAX percentages, DXA BMD/T-score, falls/CFS and original formal FRAX semantics.
 
-The OpenAI adapter is isolated behind transcript-specific configuration gates and uses structured Responses parsing, `store=False`, no tools, `max_retries=0` and a bounded timeout. Provider output cannot supply application target paths. Structured Pydantic/schema failures are classified as `PROVIDER_INVALID_OUTPUT`; refusal remains `PROVIDER_REFUSAL`; transport/rate-limit/timeout/upstream failures remain `PROVIDER_UNAVAILABLE`.
+The review also identified:
 
-The browser Heidi panel is isolated from `currentCase`: transcript/candidates live only in textarea/JS/DOM memory, use no localStorage/sessionStorage/indexedDB, have no Accept/Edit/Reject-to-record control, clear on close/pagehide/pageshow, and render provider-derived text with `textContent`.
+- **H-05 — synchronous provider call in the single-worker async web process.** This is a production-release blocker but not an isolated command-line synthetic provider-eval blocker.
+- Medium coverage debt for repeated-event identity/grouping, adversarial semantic distinctions, low-confidence qualification behavior and executable browser lifecycle evidence.
 
-## Deterministic runtime hardening completed
-
-Static review against the actual current Step-3/Step-4 UI contracts found and corrected one class of mapper defect: a provider concept key with a real target must **not** be treated as mapped unless its value also satisfies that runtime target's exact enum/type contract.
-
-The final mapper therefore fails closed for:
-
-- treatment episode status outside `planned / active / completed / stopped / holiday / unknown`;
-- administration status outside `done / due / overdue / missed / planned / not_applicable`;
-- fracture sites outside the current runtime set;
-- FRAX tool and resulting-risk category outside current runtime enums;
-- VFA indication/action/modality outside current runtime enums;
-- treatment duration that is non-numeric or outside the runtime 0–50-year range;
-- unsupported units and legacy-negative/default semantics already identified by the frozen design.
-
-Invalid or non-lossless provider values become `ambiguous` or `unmapped`; they are never silently coerced into authoritative-looking runtime values.
-
-## Independent implementation review hardening — 2026-09-16
-
-A fresh review after the previous chat boundary found two additional deterministic weaknesses and closed them without expanding PR-1 scope.
-
-### Exact-date contract
-
-The previous date validator verified only the textual shape of `YYYY-MM-DD`, `YYYY-MM` or `YYYY`. It could therefore accept impossible calendar values such as `2026-02-31`, `2026-13` or year `0000`.
-
-The current exact tested head validates normalized day/month/year values as real calendar dates while preserving the existing hard rule that relative/vague timing cannot contain an invented normalized exact date. Deterministic tests include impossible dates plus a valid leap-day control.
-
-### Synthetic provider-eval gate
-
-The live synthetic eval runner previously treated a case as PASS when the expected semantic types and concept keys appeared somewhere in the model output. That was insufficient for the frozen v3 safety invariants: a model could theoretically emit those expected sets while also inventing an exact date, adding a wrong final decision, misassigning speaker/polarity, or producing an unsafe target mapping.
-
-The eval harness is now fail-closed on structured case invariants. Fixtures can require and forbid specific assertions and concepts, constrain source semantics and component values, verify deterministic mapping state/target/reason, forbid invented exact dates, constrain semantic counts, reject unverifiable evidence warnings, and assert that the returned response remains ephemeral/non-authoritative. Output remains PHI-safe: it reports only case IDs, coded failed checks and candidate counts, never transcript or candidate content.
-
-## Frozen-v3 minimum synthetic suite — COMPLETE
-
-Head `a79d68915bde230a53bb7b5fd31a4104a491b058` completes the representative minimum synthetic/de-identified suite with 13 explicit scenarios:
-
-1. positive fracture history with vague relative timing;
-2. explicit negative smoking history;
-3. exact DXA objective result;
-4. laboratory objective results;
-5. multiple options + one recommendation + patient acceptance + exactly one final decision;
-6. patient preference without accidental decision/recommendation;
-7. vague follow-up timeframe without fabricated due date;
-8. garbled/uncertain speech without guessed administration truth;
-9. original formal FRAX versus clinician-adjusted interpretation;
-10. ambiguous speaker/treatment history;
-11. explicit negative history versus negative objective investigation, with reciprocal semantic-collapse checks;
-12. exact follow-up date when the source really supports an exact day;
-13. unrelated general musculoskeletal text without osteoporosis-target hallucination.
-
-This closes the deterministic **suite-definition** gap. It does **not** constitute live GPT-5.6 provider performance evidence; that still requires execution of all 13 scenarios through the selected adapter/model.
-
-## Latest exact-head gate evidence
-
-Workflow `35084122094` passed on exact runtime head `a79d68915bde230a53bb7b5fd31a4104a491b058`.
-
-Evidence includes:
-
-- Python and browser syntax — PASS;
-- **26 PR-1 focused privacy/contract/mapping/UI/eval-contract tests — PASS**;
-- all 13 minimum synthetic fixtures validated as de-identified structured gate cases;
-- reusable cookie-session authentication of the protected transcript endpoint;
-- 512 KiB body and 120k-character fail-closed limits;
-- sanitized error responses with no sentinel PHI echo/logging;
-- one provider call per extraction;
-- provider target-path injection rejection;
-- relative/vague timing cannot acquire an invented exact date;
-- impossible normalized calendar dates are rejected;
-- adjusted FRAX cannot overwrite original formal FRAX;
-- unsupported units/legacy-negative semantics become ambiguous rather than silently authoritative;
-- option-discussed cannot populate final treatment decision;
-- fixed runtime enums and treatment-duration type/range are locally validated;
-- strengthened eval contract rejects dangerous extra assertions even when the older semantic/concept set checks would otherwise pass;
-- negative history and negative objective investigation are represented as distinct assertions in the frozen eval gate;
-- unrelated clinical narrative has explicit forbidden osteoporosis-target assertions;
-- structured-output validation is classified separately from provider unavailability;
-- OpenAI adapter retry/timeout/structured-output contract;
-- inherited protected-clinical regressions — 6 PASS;
-- inherited Medical Report regressions — 24 PASS;
-- inherited workspace navigation regression — PASS;
-- bounded PR-1 scope guard — PASS at the exact runtime head.
-
-The immediately preceding canonical hardening checkpoint was independently verified by workflow `35083865144` — SUCCESS. The subsequent `SLICE_PLAN_CURRENT.md` evidence reconciliation was independently verified by workflow `35084479897` — SUCCESS.
-
-## Earlier canonical-checkpoint guard verification
-
-Post-canonical run `35057529756` re-executed all substantive legs successfully but exposed one workflow-only defect: `SLICE_PLAN_CURRENT.md` was absent from the PR-1 scope allowlist. That conflicted with the permanent atomic-canonical protocol, which requires the active slice canonical to be checkpointed when material implementation state changes.
-
-The PR-1 workflow was corrected to trigger on and allow `SLICE_PLAN_CURRENT.md`. Clean verification run `35057627424` then passed **all** steps. The harness-only finding is closed. No runtime or clinical behavior changed as part of that correction.
-
-## Synthetic provider-eval checkpoint
-
-Temporary GitHub Actions run `35056606836` attempted to start the synthetic/de-identified provider eval. The runner established that the repository has **no usable `OPENAI_API_KEY` Actions secret** for this path. A safe rerun on 2026-09-16 reconfirmed the same condition. The workflow recorded:
+Therefore the previous label:
 
 ```text
-PR1_SYNTHETIC_PROVIDER_EVAL_HOLD
-No production configuration was changed and no transcript was sent.
+credential-only HOLD
 ```
 
-This is not a provider-model PASS and not a provider-model FAIL. The deterministic provider adapter contract and the full 13-case minimum suite are tested, but the selected live GPT-5.6 semantic extraction behavior has not yet been evaluated by this branch.
-
-Do not substitute the assistant model, the Medical Report provider path, a fake provider, or production secret/config mutation for this missing live adapter evidence and label it equivalent.
-
-## Safe credential-path verification — 2026-09-16
-
-A read-only inspection was performed after completion of the hardened 13-case suite to determine whether the missing provider evidence could be executed without exposing/copying a secret or mutating production configuration.
-
-Current connected tooling establishes:
-
-- the GitHub Actions environment used by the probe has no usable `OPENAI_API_KEY` for this path;
-- the connected GitHub interface does not expose repository/organization secrets APIs, so it cannot safely read, copy or create the missing secret from this workflow;
-- the connected Render interface can inspect the deployed service/deploy/log state but exposes no one-off shell/job action that inherits the existing service environment;
-- creating a new Render service/cron or updating environment variables would require an explicit configuration mutation and/or supplying the secret value, which is outside the authorized path;
-- the production Render service remains untouched and continues to track `main` with auto-deploy; no PR-1 branch deployment or configuration mutation occurred.
-
-Therefore there is **no safe non-production secret-inheriting execution path available from the current connected tool surface**. The HOLD is an external credential prerequisite, not an unresolved code/test harness problem.
-
-The provider eval entrypoint remains ready in `evals/transcript_v1/run_provider_eval.py`; the temporary Actions provider-eval workflow was deliberately removed after the original HOLD checkpoint. Reintroducing an execution wrapper is permitted only when a safe non-production credential is actually available, so that the wrapper executes the frozen synthetic suite rather than manufacturing a different form of evidence.
-
-## Privacy boundary remains fail-closed
+is superseded by:
 
 ```text
-raw transcript: ephemeral only
-candidate preview: ephemeral only
-DB write: none
-browser persistence: none
-provider retries: disabled
-identifiable transcript use: BLOCKED
+CODE/EVAL HARDENING HOLD
+→ deterministic evidence on exact new runtime head
+→ safe synthetic-only credential path
+→ live expanded provider evaluation
+→ independent evidence review
+→ separate release/privacy decision
 ```
 
-`CLINICAL_TRANSCRIPT_PHI_PROVIDER_APPROVED` remains a separate transcript-specific gate. PR-1 testing does not treat `store=False` as Zero Data Retention or as provider/privacy approval.
+## Preserved PR-1 invariants
+
+The following remain mandatory during replan/hardening:
+
+- raw transcript is ephemeral and non-authoritative;
+- no transcript/candidate DB, encounter, localStorage/sessionStorage/indexedDB or log persistence;
+- provider emits semantic assertions, never application/storage paths;
+- deterministic Module-01 code owns target mapping;
+- preserve negation, temporality, speaker/source, certainty and semantic distinctions;
+- vague/relative timing must not become an invented exact date;
+- candidates remain `proposed` and require clinician review;
+- no PR-1 authoritative patient/encounter/lab/task write;
+- identifiable transcript use remains blocked behind a separate privacy/provider approval gate;
+- synthetic/de-identified provider qualification must not require pretending that identifiable-PHI approval is already granted.
+
+## Current proven evidence that remains valid
+
+The older exact runtime head `a79d68915bde230a53bb7b5fd31a4104a491b058` still has deterministic gate `35084122094` SUCCESS and demonstrates the pre-review implementation baseline, including strict structured contracts, calendar-valid dates, provider-path isolation, transient browser preview, no authoritative write and the then-current mapper/eval safeguards.
+
+That evidence does **not** close H-01 through H-04 and must not be represented as promotion-quality live-eval readiness.
 
 ## Exact next action
 
-Preserve **LIVE SYNTHETIC PROVIDER-EVAL HOLD** until a safe credential path is explicitly available without exposing/copying a secret and without mutating production configuration.
+Before any runtime mutation, reconcile `SLICE_PLAN_CURRENT.md` to this independent-review disposition and freeze the remediation contract for H-01/H-02/H-03/H-04 plus the expanded synthetic qualification suite.
 
-The exact external prerequisite is a dedicated safe non-production credential path available to a synthetic-only execution job without revealing the credential value in chat, repository content or logs.
-
-Once that prerequisite exists, the next authorized execution action is:
+After that canonical design checkpoint is durable, the authorized implementation sequence is:
 
 ```text
-safe non-production credential becomes available
-→ attach it only to a synthetic-only provider-eval execution wrapper
-→ run the hardened 13-case synthetic/de-identified provider eval through the selected OpenAI adapter/model
-→ require zero failed cases under the frozen promotion invariants
-→ checkpoint exact provider/model/eval evidence
+H-01 evaluator default-deny unexpected-assertion protection
+→ H-02 unique concept identity + matcher hardening
+→ H-03 synthetic-only provider authorization separated from identifiable-PHI approval
+→ H-04 exact runtime numeric/semantic guards
+→ expand deterministic/eval coverage for repeated events + adversarial semantic cases + range failures
+→ deterministic/inherited CI on exact new runtime head
+→ canonical checkpoint
 ```
 
-Until that provider HOLD is resolved:
+Only after those blockers are closed may a safe non-production credential path be attached to a synthetic-only execution wrapper and a live selected-model provider evaluation be considered promotion evidence.
 
-- the implementation may be inspected/reviewed and a safe credential path may be investigated read-only;
-- the provider/model Definition-of-Done item remains unsatisfied;
-- do **not** open the runtime release PR;
-- do **not** merge/deploy PR-1;
-- do **not** enable identifiable transcript processing;
-- do **not** advance to PR-2 or real-patient pilot use.
+## Explicitly blocked until the hardening gate closes
 
-## Explicitly deferred / forbidden in PR-1
+- no runtime release PR;
+- no merge/deploy of PR-1;
+- no identifiable transcript processing;
+- no PR-2 or real-patient pilot;
+- no production credential/config mutation to manufacture evidence;
+- no use of the Medical Report credential path as a substitute;
+- no claim that the existing 13-case suite is currently sufficient promotion evidence.
 
-- Accept/Edit/Reject-to-record or any authoritative patient write;
-- PR-2 inline population/persistence;
-- real identifiable Heidi transcript transmission before separate privacy/data-control approval;
-- persistence of transcript, evidence snippets or candidates;
-- provider-authored application target paths;
-- exact-date invention from vague timing;
-- collapsing option/recommendation/preference/final decision semantics;
-- Practice Review coaching, KPI changes, treatment recommendation, pilot activation;
-- unrelated Medical Report, Physio, RF, Calendar or Clinical Learning mutation.
+## Production-release debt retained separately
+
+H-05 remains open after live-eval readiness unless separately fixed and verified: synchronous provider execution must not be allowed to block the single async server worker for the full provider timeout. Browser lifecycle evidence also needs stronger executable coverage before production release.
