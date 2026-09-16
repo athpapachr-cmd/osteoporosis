@@ -1,6 +1,6 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** PR-1 HEIDI-FIRST TRANSCRIPT CAPTURE — LIVE GPT-5.6 22-CASE QUALIFICATION EXECUTED: 7 PASS / 15 FAIL — PROMOTION HOLD / READ-ONLY FAILURE TRIAGE REQUIRED — NOT RELEASE READY.
+> **STATUS:** PR-1 HEIDI-FIRST TRANSCRIPT CAPTURE — LIVE QUALIFICATION 7/22 PASS; H-07 READ-ONLY TRIAGE COMPLETE / BOUNDED REMEDIATION AUTHORIZED — NOT RELEASE READY.
 > **Updated:** 2026-09-16 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Fresh verified remote `main`:** `0ab5f9770d220c20e8d94544cb64e93a4aa30d00`.
@@ -8,147 +8,159 @@
 > **Active writer:** this bounded PR-1 implementation lifecycle only.
 > **Runtime implementation branch:** `feat/pr1-transcript-capture-v1-2026-09-16`.
 > **Exact H-06 runtime/eval head:** `d1470ce1c10cd69f6f9e4fe72096527157f084e9`.
-> **H-06 deterministic/inherited gate:** `35139716235` — SUCCESS.
-> **H-06 canonical checkpoint:** `0167a28df071d5c2714800e8f740d34c24a08b9f`; verification `35140063802` — SUCCESS.
-> **Second live execution wrapper head:** `2714715ee2c14c6a477abd78562685ae1e7ecf0b`.
-> **Wrapper-head deterministic gate:** `35140165777` — SUCCESS.
-> **Live GPT-5.6 qualification:** `35140165842` — 22 executed / 7 PASS / 15 FAIL.
-> **Synthetic credential + schema boundary:** CLOSED; Actions secret available/masked, PHI approval false, H-06 schema accepted by live API.
+> **Live execution wrapper head:** `2714715ee2c14c6a477abd78562685ae1e7ecf0b`.
+> **Live qualification:** `35140165842` — 22 executed / 7 PASS / 15 FAIL.
+> **Live-failure canonical checkpoint:** `5498f88ce8e9a67090863a7a5c9c272d3cced23e`; verification `35140838915` — SUCCESS.
+> **H-07 triage:** COMPLETE read-only; 5 A / 4 B / 6 C / 0 demonstrated D.
 > **Medical Report V1.1:** CLOSED; do not reopen without separate authority.
 
 ## Product-owner authority
 
-On 2026-09-16 the Product Owner authorized bounded PR-1 implementation and confirmed that a repository Actions `OPENAI_API_KEY` had been added. This authorizes the designed synthetic-only qualification path, not production/PHI use.
+The Product Owner authorized bounded PR-1 implementation and supplied the safe Actions credential prerequisite. Authority remains limited to synthetic qualification, bounded remediation and implementation-candidate preparation. It does not authorize production/PHI use, merge/deploy, PR-2 or real-patient pilot activity.
 
-This does **not** authorize runtime release PR merge/deploy, identifiable transcript processing, PR-2 authoritative writes, real-patient pilot use or unrelated product mutation.
+## Proven baseline retained
 
-## Deterministic hardening status
+H-01 through H-06 remain deterministically closed. The H-06 runtime head `d1470ce1c10cd69f6f9e4fe72096527157f084e9` passed gate `35139716235`; its canonical checkpoint passed `35140063802`. The workflow-only live trigger head passed deterministic gate `35140165777`.
 
-H-01 through H-06 remain closed deterministically:
-
-- **H-01:** default-deny unexpected/hallucinated assertion oracle;
-- **H-02:** unique candidate-local concept identity + repeated-event grouping protection;
-- **H-03:** synthetic qualification separated from identifiable-PHI approval;
-- **H-04:** reviewed runtime ranges/types/semantic/source guards;
-- **H-06:** OpenAI Structured Outputs schema compatibility + deterministic HTTP 400 contract-error classification.
-
-Exact H-06 runtime head `d1470ce1c10cd69f6f9e4fe72096527157f084e9` passed run `35139716235` with 52 focused PR-1 tests, 6 protected-clinical regressions, 24 Medical Report regressions, workspace navigation and bounded scope all green.
-
-Canonical H-06 checkpoint `0167a28df071d5c2714800e8f740d34c24a08b9f` passed verification `35140063802`. The workflow-only trigger head `2714715ee2c14c6a477abd78562685ae1e7ecf0b` then passed full deterministic gate `35140165777`, so the live run did not execute on an unverified runtime mutation.
-
-## Live qualification boundary — proven
-
-Run `35140165842` proved the selected live path can execute the frozen promotion suite:
+Live run `35140165842` then proved:
 
 ```text
 provider=openai
 model=gpt-5.6
 purpose=synthetic_eval
-OPENAI_API_KEY=Actions secret / masked
-CLINICAL_TRANSCRIPT_PHI_PROVIDER_APPROVED=false
-fixture count=22
-fixture IDs unique
-Structured Outputs schema accepted
-all 22 provider calls reached the qualification loop
+secure Actions key available/masked
+PHI approval=false
+strict Structured Outputs schema accepted
+22/22 cases executed
+7 PASS
+15 FAIL
 ```
 
-No production configuration changed. No identifiable transcript/PHI authorization was enabled.
+No production configuration changed and no identifiable transcript use was enabled.
 
-This closes the earlier credential/schema execution uncertainty. The remaining failure is now qualification behavior/oracle alignment, not infrastructure setup.
+## H-07 read-only triage — COMPLETE
 
-## Exact live result — 7 PASS / 15 FAIL
+The 15 failures were reconciled against the frozen fixtures, provider profile, evaluator and deterministic mapper/guard without changing code, prompt or fixtures.
 
-### PASS cases
+### A — PROVIDER_SEMANTIC_FAILURE (5)
 
-1. `explicit_negative_smoking`
-2. `dxa_objective`
-3. `labs_objective`
-4. `preference_only`
-5. `garbled_speech`
-6. `negative_history_vs_negative_investigation`
-7. `embedded_instruction_untrusted`
+These cases violate an intended semantic/source/scope distinction already present in the product contract:
 
-### FAIL cases and coded checks
+1. `speaker_ambiguity`
+   - provider emitted administration truth where the source explicitly says actual administration is uncertain;
+   - live evidence includes forbidden `administration.status` plus unexpected `administration.agent/status`.
 
-- `fracture_relative_time`: `required_assertion_0_missing`, `unexpected_assertion_fracture.site`.
-- `options_one_final`: required assertions 0..4 missing; unexpected `treatment.agent`, `patient.acceptance`, `decision.type`, `treatment.status`.
-- `followup_vague`: unexpected `followup.task_type`.
-- `frax_original_adjusted`: unexpected `frax.tool_name`.
-- `speaker_ambiguity`: missing expected concept / required assertion; forbidden `administration.status`; unexpected `administration.agent`, `administration.status`.
-- `followup_exact`: unexpected `followup.task_type`.
-- `unrelated_general_clinical_text`: unexpected `followup.task_type`.
-- `repeated_fracture_event_grouping`: required assertions 0 and 2 missing; both required candidate groups missing; unexpected `fracture.site`.
-- `referral_not_completed_result`: required assertion 0 missing; unexpected `followup.task_type`, `clinical.unmapped_narrative`.
-- `prescription_not_administration`: forbidden `administration.agent` and `administration.status`; unexpected `treatment.status`, `administration.agent`, `administration.status`.
-- `self_correction_date`: required assertion 0 and candidate group 0 missing; unexpected `fracture.site`.
-- `third_party_treatment_history`: required assertions 0 and 1 missing; unexpected `treatment.agent`, `treatment.status`.
-- `out_of_range_runtime_values`: unexpected `frax.tool_name`.
-- `planned_not_done_administration`: required assertion 1 missing; unexpected `administration.agent`, `administration.status`.
-- `negated_treatment_exposure`: required assertion 0 missing; unexpected `treatment.agent`, `treatment.status`.
+2. `unrelated_general_clinical_text`
+   - generic shoulder narrative was correctly represented as unmapped narrative but additionally produced a mapped `followup.task_type` in the osteoporosis module;
+   - module-scoped unrelated narrative must not silently create an osteoporosis Step-4 task.
 
-Exact summary emitted by the hardened runner:
+3. `prescription_not_administration`
+   - the required clinician-recommendation treatment agent was present, but provider also emitted forbidden administration agent/status despite explicit statement that administration was not documented.
+
+4. `third_party_treatment_history`
+   - two patient-history candidates were produced, but neither satisfied the required third-party-positive / patient-negative source-polarity contracts and extra treatment status was inferred;
+   - the profile already requires third-party and negation preservation.
+
+5. `negated_treatment_exposure`
+   - treatment-agent concept was emitted but did not satisfy the explicit patient-negative contract, and extra treatment status was inferred from a statement of never having received treatment.
+
+Primary remediation: strengthen explicit semantic/scope rules in the provider profile. Do not weaken source/negation/administration guards.
+
+### B — FIXTURE_ORACLE_OVERCONSTRAINT (4)
+
+These failures consist only of additional concepts that are directly supported by the synthetic source and are valid under the intended ontology, while the required assertions otherwise passed:
+
+1. `followup_vague` — extra `followup.task_type`; a future review in ~6 months can validly carry a constrained follow-up-visit task type in addition to timeframe text.
+2. `followup_exact` — extra `followup.task_type`; an explicitly dated return visit can validly carry `followup_visit` in addition to due date.
+3. `frax_original_adjusted` — extra `frax.tool_name`; the source explicitly says the formal tool is FRAX.
+4. `out_of_range_runtime_values` — extra `frax.tool_name`; the source explicitly identifies the formal FRAX result while the deliberately implausible numeric values are correctly left to deterministic range validation.
+
+Primary remediation: add narrowly constrained `allowed_assertions` rules only for the source-supported value. H-01 default deny remains intact; no wildcard permission is allowed.
+
+### C — ONTOLOGY / PROVIDER-PROFILE AMBIGUITY (6)
+
+The provider returned the relevant concept family but did not satisfy the exact required value/type/mapping contract. The live runner intentionally did not log candidate payloads, so the exact mismatch is not recoverable after the run. The repository profile currently lists concept keys but does not fully specify all provider-facing value kinds/code sets or preferred concept usage by semantic role.
+
+1. `fracture_relative_time` — `fracture.site` exists but does not match exact expected hip/source/mapping rule; date + low-trauma assertions passed.
+2. `options_one_final` — all expected semantic classes exist, but options/recommendation/acceptance/decision components are represented using competing `treatment.*` / `decision.*` structures; only the final selected-agent assertion clearly satisfied its frozen rule.
+3. `repeated_fracture_event_grouping` — two event candidates and dates exist, but both site assertions fail exact expected site contracts, preventing same-event grouping proof.
+4. `referral_not_completed_result` — provider avoided false DXA result fields but its `followup.task_type` did not satisfy the exact `DXA` task contract and it also emitted redundant unmapped narrative.
+5. `self_correction_date` — corrected May date appears to have been preserved, but `fracture.site` fails the exact site rule, so the grouped event cannot pass.
+6. `planned_not_done_administration` — scheduled date passes, but administration agent/status do not satisfy the exact provider-facing code contract despite the candidate remaining a future follow-up task.
+
+Primary remediation: make the provider profile explicit about value kinds, allowed code sets and concept ownership by semantic role. Do not infer hidden live values that were not logged.
+
+### D — DETERMINISTIC_CONTRACT_DEFECT (0 demonstrated)
+
+No current live evidence proves that the deterministic mapper/evaluator incorrectly handled a provider assertion that exactly satisfied the frozen contract. The duplicate `unexpected_assertion_*` signal can accompany a required-rule mismatch because the default-deny authorization rule deliberately includes semantic/source/value/mapping constraints; this is noisy but not, by itself, a correctness defect.
+
+## Bounded remediation contract
+
+The next mutation may change only the PR-1 provider profile, the four demonstrated overconstrained fixtures, and focused deterministic tests unless a new deterministic finding proves another file is required.
+
+### Provider-profile hardening
+
+Add explicit provider-facing value contracts for at least:
+
+- `fracture.site` code set: `vertebral / hip / distal_radius / proximal_humerus / pelvis / other`;
+- treatment/administration agent codes;
+- treatment status and administration status code sets;
+- decision type codes;
+- patient acceptance codes;
+- follow-up task type codes including exact `DXA` casing;
+- required value `kind` for date, code, boolean, number/integer and quantity concepts used by the 22-case suite.
+
+Clarify semantic ownership:
 
 ```text
-provider-eval summary: total=22 failed=15
+actual/historical treatment episode → treatment.*
+option / recommendation / final selected plan → decision.selected_agent with its semantic_type preserved
+administration.* → actual or explicitly planned administration event only
+prescription/recommendation alone → never administration.*
+uncertain administration occurrence → uncertain_needs_review; no administration status/actual truth
+unrelated non-osteoporosis narrative → clinical.unmapped_narrative; no osteoporosis follow-up task unless explicitly osteoporosis-related
+third-party fact → speaker=third_party
+explicit never/not received → polarity=negative; no positive treatment status
 ```
 
-## H-07 — live qualification mismatch / triage boundary
+### Fixture corrections
 
-**OPEN.**
+Narrowly allow only:
 
-The 15 failures must not be treated as one undifferentiated “model failure”. The coded evidence shows at least two possible classes that require read-only reconciliation against the frozen fixtures/provider profile/mapper before mutation:
+- `followup.task_type=followup_visit` for `followup_vague` and `followup_exact`;
+- `frax.tool_name=frax` for `frax_original_adjusted` and `out_of_range_runtime_values`.
 
-1. **likely semantic/provider failures**, where required distinctions are missing or explicitly forbidden treatment/administration truth appears;
-2. **possible fixture/oracle overconstraint**, where the model emits an additional assertion that may be source-supported but was omitted from the fixture allowlist, e.g. `followup.task_type` or `frax.tool_name`.
+No other live failure is authorized to be made green by fixture relaxation at this stage.
 
-No prompt, fixture, ontology, mapper or evaluator mutation is authorized until each failed case is classified from repository evidence as one of:
+### Deterministic evidence before next live run
 
-```text
-A. provider semantic failure against intended contract
-B. fixture/default-deny allowlist overconstraint
-C. ontology/provider-profile ambiguity
-D. deterministic mapping/evaluator contract defect
-```
+Add focused tests that prove:
 
-The triage must preserve H-01 default-deny behavior. A case must never be made green by blanket-permitting extras. Any allowlist change requires evidence that the additional assertion is source-supported and semantically acceptable under the product contract.
+- provider profile exposes the exact required code/value contracts and semantic ownership rules;
+- the four B fixture additions are narrow and value-constrained;
+- hard A safety distinctions remain forbidden;
+- all H-01..H-06 tests remain green;
+- all 22 fixtures remain valid under default deny;
+- inherited protected-clinical, Medical Report, navigation and scope checks remain green.
 
-## Preserved PR-1 invariants
-
-- raw transcript remains ephemeral and non-authoritative;
-- no transcript/candidate DB, encounter, browser-storage or log persistence;
-- provider emits semantic assertions, never application/storage paths;
-- deterministic Module-01 code owns runtime mapping;
-- candidates remain `proposed` and require clinician review;
-- speaker/source, polarity, temporality, certainty and semantic distinctions are preserved;
-- vague/relative timing cannot become an invented exact date;
-- no authoritative patient/encounter/lab/task write exists in PR-1;
-- identifiable transcript use remains blocked behind its separate privacy/provider approval gate.
+Then checkpoint the exact remediation SHA/run before any third live evaluation.
 
 ## Exact next action
 
-Perform a **READ-ONLY H-07 triage** of all 15 failed live cases against:
-
-- `evals/transcript_v1/cases.json`;
-- `evals/transcript_v1/run_provider_eval.py`;
-- `clinical_excellence/modules/osteoporosis/transcript_profile.py`;
-- deterministic mapper/guard contracts.
-
-Freeze the per-case classification and bounded remediation contract canonically before any prompt/fixture/code mutation or third live run.
+Implement the bounded H-07 remediation above, run deterministic/inherited CI, checkpoint exact evidence, then deliberately execute a third frozen 22-case GPT-5.6 qualification. Promotion still requires `failed=0`.
 
 ## Explicitly blocked
 
-Until H-07 is reconciled, a revised qualification passes with zero failures, and that evidence receives fresh independent READ-ONLY review:
-
-- no third live provider run;
+- no third live run before deterministic + canonical checkpoint;
+- no wildcard fixture permissions;
+- no weakening of administration/source/negation safety rules;
 - no runtime release PR;
-- no merge/deploy of PR-1;
-- no identifiable transcript processing;
-- no PR-2 or real-patient pilot;
-- no blanket weakening of the default-deny oracle;
-- no claim that 7/22 constitutes promotion readiness.
+- no merge/deploy;
+- no identifiable transcript use;
+- no PR-2 or real-patient pilot.
 
 ## Separate production-release blockers/debt
 
-**H-05 remains OPEN:** the async clinical route still invokes a synchronous provider client in the current single-worker web process. It does not block isolated CLI synthetic qualification, but it must be remediated and verified before production enablement/deploy.
+**H-05 remains OPEN:** synchronous provider execution inside the async single-worker web process must be remediated before production enablement/deploy.
 
-Stronger executable browser lifecycle/BFCache/logout evidence also remains production-release debt.
+Executable browser lifecycle/BFCache/logout cleanup evidence also remains release debt.
