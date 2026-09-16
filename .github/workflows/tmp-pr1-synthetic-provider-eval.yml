@@ -1,0 +1,45 @@
+name: Temporary PR-1 synthetic provider eval
+
+on:
+  push:
+    branches:
+      - feat/pr1-transcript-capture-v1-2026-09-16
+    paths:
+      - ".github/workflows/tmp-pr1-synthetic-provider-eval.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  synthetic-provider-eval:
+    runs-on: ubuntu-latest
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      CLINICAL_TRANSCRIPT_AI_ENABLED: "true"
+      CLINICAL_TRANSCRIPT_PHI_PROVIDER_APPROVED: "true"
+      CLINICAL_TRANSCRIPT_AI_MODEL: "gpt-5.6"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run synthetic-only provider eval when secret is available
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${OPENAI_API_KEY:-}" ]; then
+            echo "PR1_SYNTHETIC_PROVIDER_EVAL_HOLD: OPENAI_API_KEY GitHub Actions secret is unavailable."
+            echo "No production configuration was changed and no transcript was sent."
+            exit 0
+          fi
+          python evals/transcript_v1/run_provider_eval.py
+          echo "PR1_SYNTHETIC_PROVIDER_EVAL_PASS"
+          echo "Only repository synthetic/de-identified fixtures were sent; transcript/candidate content was not printed."
