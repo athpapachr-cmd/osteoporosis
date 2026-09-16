@@ -1,163 +1,128 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** PR-1 HEIDI-FIRST TRANSCRIPT CAPTURE — LIVE QUALIFICATION 7/22 PASS; H-07 READ-ONLY TRIAGE COMPLETE / BOUNDED REMEDIATION AUTHORIZED — NOT RELEASE READY.
+> **STATUS:** PR-1 HEIDI-FIRST TRANSCRIPT CAPTURE — H-07 BOUNDED REMEDIATION DETERMINISTICALLY PROVEN / THIRD LIVE 22-CASE GPT-5.6 QUALIFICATION AUTHORIZED — NOT RELEASE READY.
 > **Updated:** 2026-09-16 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Fresh verified remote `main`:** `0ab5f9770d220c20e8d94544cb64e93a4aa30d00`.
 > **Active slice:** `PR-1-TRANSCRIPT-INTAKE-CANDIDATE-EXTRACTION-V1-2026-09-16`.
 > **Active writer:** this bounded PR-1 implementation lifecycle only.
 > **Runtime implementation branch:** `feat/pr1-transcript-capture-v1-2026-09-16`.
-> **Exact H-06 runtime/eval head:** `d1470ce1c10cd69f6f9e4fe72096527157f084e9`.
-> **Live execution wrapper head:** `2714715ee2c14c6a477abd78562685ae1e7ecf0b`.
-> **Live qualification:** `35140165842` — 22 executed / 7 PASS / 15 FAIL.
-> **Live-failure canonical checkpoint:** `5498f88ce8e9a67090863a7a5c9c272d3cced23e`; verification `35140838915` — SUCCESS.
-> **H-07 triage:** COMPLETE read-only; 5 A / 4 B / 6 C / 0 demonstrated D.
+> **Exact H-07 deterministic head:** `e066c87bf6b42c2c56c80b2b71b43bc909510d39`.
+> **H-07 deterministic/inherited gate:** `35142115023` — SUCCESS.
+> **Focused PR-1 tests:** 56 PASS.
+> **Frozen synthetic qualification suite:** 22 synthetic/de-identified cases.
+> **Previous live qualification:** `35140165842` — 7 PASS / 15 FAIL; evidence triaged and checkpointed.
+> **Safe credential/schema boundary:** CLOSED; Actions secret available/masked, PHI approval false, strict Structured Outputs accepted.
 > **Medical Report V1.1:** CLOSED; do not reopen without separate authority.
 
 ## Product-owner authority
 
-The Product Owner authorized bounded PR-1 implementation and supplied the safe Actions credential prerequisite. Authority remains limited to synthetic qualification, bounded remediation and implementation-candidate preparation. It does not authorize production/PHI use, merge/deploy, PR-2 or real-patient pilot activity.
+The Product Owner authorized bounded PR-1 implementation and supplied the safe repository Actions credential prerequisite. Authority remains limited to synthetic qualification, bounded remediation and implementation-candidate preparation. It does not authorize production/PHI use, merge/deploy, PR-2 or real-patient pilot activity.
 
-## Proven baseline retained
+## Proven engineering baseline
 
-H-01 through H-06 remain deterministically closed. The H-06 runtime head `d1470ce1c10cd69f6f9e4fe72096527157f084e9` passed gate `35139716235`; its canonical checkpoint passed `35140063802`. The workflow-only live trigger head passed deterministic gate `35140165777`.
+H-01 through H-06 remain closed deterministically. Live run `35140165842` then executed all 22 cases and returned 7 PASS / 15 FAIL. That result was checkpointed at `5498f88ce8e9a67090863a7a5c9c272d3cced23e` and verified by `35140838915`.
 
-Live run `35140165842` then proved:
+A read-only H-07 triage classified those failures as:
 
 ```text
-provider=openai
-model=gpt-5.6
-purpose=synthetic_eval
-secure Actions key available/masked
-PHI approval=false
-strict Structured Outputs schema accepted
-22/22 cases executed
-7 PASS
-15 FAIL
+A provider semantic failures       5
+B fixture/oracle overconstraints   4
+C ontology/profile ambiguities     6
+D demonstrated deterministic bugs  0
 ```
 
-No production configuration changed and no identifiable transcript use was enabled.
+The triage contract was frozen at `71cb10a21551ad2da356990cc74a02153b7e3fb2` and verified by `35141347844`.
 
-## H-07 read-only triage — COMPLETE
+## H-07 bounded remediation — COMPLETE deterministically
 
-The 15 failures were reconciled against the frozen fixtures, provider profile, evaluator and deterministic mapper/guard without changing code, prompt or fixtures.
+The remediation is intentionally narrow. It changes provider-facing ontology/profile guidance, only four source-supported fixture permissions, and focused deterministic tests. It does not change endpoint behavior, mapper/evaluator logic, authoritative-write boundaries or production configuration.
 
-### A — PROVIDER_SEMANTIC_FAILURE (5)
+### Provider profile hardening
 
-These cases violate an intended semantic/source/scope distinction already present in the product contract:
+The osteoporosis provider profile now explicitly defines exact provider-facing value kinds and code sets for the mapped concepts exercised by the promotion suite, including:
 
-1. `speaker_ambiguity`
-   - provider emitted administration truth where the source explicitly says actual administration is uncertain;
-   - live evidence includes forbidden `administration.status` plus unexpected `administration.agent/status`.
-
-2. `unrelated_general_clinical_text`
-   - generic shoulder narrative was correctly represented as unmapped narrative but additionally produced a mapped `followup.task_type` in the osteoporosis module;
-   - module-scoped unrelated narrative must not silently create an osteoporosis Step-4 task.
-
-3. `prescription_not_administration`
-   - the required clinician-recommendation treatment agent was present, but provider also emitted forbidden administration agent/status despite explicit statement that administration was not documented.
-
-4. `third_party_treatment_history`
-   - two patient-history candidates were produced, but neither satisfied the required third-party-positive / patient-negative source-polarity contracts and extra treatment status was inferred;
-   - the profile already requires third-party and negation preservation.
-
-5. `negated_treatment_exposure`
-   - treatment-agent concept was emitted but did not satisfy the explicit patient-negative contract, and extra treatment status was inferred from a statement of never having received treatment.
-
-Primary remediation: strengthen explicit semantic/scope rules in the provider profile. Do not weaken source/negation/administration guards.
-
-### B — FIXTURE_ORACLE_OVERCONSTRAINT (4)
-
-These failures consist only of additional concepts that are directly supported by the synthetic source and are valid under the intended ontology, while the required assertions otherwise passed:
-
-1. `followup_vague` — extra `followup.task_type`; a future review in ~6 months can validly carry a constrained follow-up-visit task type in addition to timeframe text.
-2. `followup_exact` — extra `followup.task_type`; an explicitly dated return visit can validly carry `followup_visit` in addition to due date.
-3. `frax_original_adjusted` — extra `frax.tool_name`; the source explicitly says the formal tool is FRAX.
-4. `out_of_range_runtime_values` — extra `frax.tool_name`; the source explicitly identifies the formal FRAX result while the deliberately implausible numeric values are correctly left to deterministic range validation.
-
-Primary remediation: add narrowly constrained `allowed_assertions` rules only for the source-supported value. H-01 default deny remains intact; no wildcard permission is allowed.
-
-### C — ONTOLOGY / PROVIDER-PROFILE AMBIGUITY (6)
-
-The provider returned the relevant concept family but did not satisfy the exact required value/type/mapping contract. The live runner intentionally did not log candidate payloads, so the exact mismatch is not recoverable after the run. The repository profile currently lists concept keys but does not fully specify all provider-facing value kinds/code sets or preferred concept usage by semantic role.
-
-1. `fracture_relative_time` — `fracture.site` exists but does not match exact expected hip/source/mapping rule; date + low-trauma assertions passed.
-2. `options_one_final` — all expected semantic classes exist, but options/recommendation/acceptance/decision components are represented using competing `treatment.*` / `decision.*` structures; only the final selected-agent assertion clearly satisfied its frozen rule.
-3. `repeated_fracture_event_grouping` — two event candidates and dates exist, but both site assertions fail exact expected site contracts, preventing same-event grouping proof.
-4. `referral_not_completed_result` — provider avoided false DXA result fields but its `followup.task_type` did not satisfy the exact `DXA` task contract and it also emitted redundant unmapped narrative.
-5. `self_correction_date` — corrected May date appears to have been preserved, but `fracture.site` fails the exact site rule, so the grouped event cannot pass.
-6. `planned_not_done_administration` — scheduled date passes, but administration agent/status do not satisfy the exact provider-facing code contract despite the candidate remaining a future follow-up task.
-
-Primary remediation: make the provider profile explicit about value kinds, allowed code sets and concept ownership by semantic role. Do not infer hidden live values that were not logged.
-
-### D — DETERMINISTIC_CONTRACT_DEFECT (0 demonstrated)
-
-No current live evidence proves that the deterministic mapper/evaluator incorrectly handled a provider assertion that exactly satisfied the frozen contract. The duplicate `unexpected_assertion_*` signal can accompany a required-rule mismatch because the default-deny authorization rule deliberately includes semantic/source/value/mapping constraints; this is noisy but not, by itself, a correctness defect.
-
-## Bounded remediation contract
-
-The next mutation may change only the PR-1 provider profile, the four demonstrated overconstrained fixtures, and focused deterministic tests unless a new deterministic finding proves another file is required.
-
-### Provider-profile hardening
-
-Add explicit provider-facing value contracts for at least:
-
-- `fracture.site` code set: `vertebral / hip / distal_radius / proximal_humerus / pelvis / other`;
-- treatment/administration agent codes;
-- treatment status and administration status code sets;
-- decision type codes;
+- fracture-site codes;
+- treatment/administration/decision agent codes;
+- treatment and administration statuses;
+- decision types;
 - patient acceptance codes;
-- follow-up task type codes including exact `DXA` casing;
-- required value `kind` for date, code, boolean, number/integer and quantity concepts used by the 22-case suite.
+- follow-up task codes with exact `DXA` casing and `followup_visit`;
+- boolean/integer/number/quantity/date expectations.
 
-Clarify semantic ownership:
+It also freezes semantic ownership:
 
 ```text
-actual/historical treatment episode → treatment.*
-option / recommendation / final selected plan → decision.selected_agent with its semantic_type preserved
-administration.* → actual or explicitly planned administration event only
-prescription/recommendation alone → never administration.*
-uncertain administration occurrence → uncertain_needs_review; no administration status/actual truth
-unrelated non-osteoporosis narrative → clinical.unmapped_narrative; no osteoporosis follow-up task unless explicitly osteoporosis-related
+actual/historical treatment → treatment.*
+option discussed → decision.selected_agent + option_discussed
+clinician recommendation → decision.selected_agent + clinician_recommendation
+final selected plan → decision.selected_agent + final_decision
+administration.* → only explicit actual/planned administration event
+prescription/recommendation alone → never administration truth
+uncertain administration occurrence → uncertain_needs_review, no administration status
 third-party fact → speaker=third_party
-explicit never/not received → polarity=negative; no positive treatment status
+explicit never/not received → polarity=negative, no positive treatment status
+unrelated non-osteoporosis narrative → no osteoporosis task creation
 ```
 
-### Fixture corrections
+### Four narrow fixture corrections only
 
-Narrowly allow only:
+The default-deny oracle remains intact. Only these source-supported extras are now allowed, with exact semantic/source/value/mapping constraints:
 
-- `followup.task_type=followup_visit` for `followup_vague` and `followup_exact`;
-- `frax.tool_name=frax` for `frax_original_adjusted` and `out_of_range_runtime_values`.
+- `followup_vague`: `followup.task_type=followup_visit`;
+- `followup_exact`: `followup.task_type=followup_visit`;
+- `frax_original_adjusted`: `frax.tool_name=frax`;
+- `out_of_range_runtime_values`: `frax.tool_name=frax`.
 
-No other live failure is authorized to be made green by fixture relaxation at this stage.
+No wildcard permission and no blanket relaxation were introduced. Hard administration/source/negation cases remain fail-closed.
 
-### Deterministic evidence before next live run
+## Exact deterministic evidence
 
-Add focused tests that prove:
+The H-07 remediation lifecycle contained two harness-only wording corrections before the gate could close. Neither changed provider profile, fixtures or runtime behavior. The final exact head is:
 
-- provider profile exposes the exact required code/value contracts and semantic ownership rules;
-- the four B fixture additions are narrow and value-constrained;
-- hard A safety distinctions remain forbidden;
-- all H-01..H-06 tests remain green;
-- all 22 fixtures remain valid under default deny;
-- inherited protected-clinical, Medical Report, navigation and scope checks remain green.
+```text
+e066c87bf6b42c2c56c80b2b71b43bc909510d39
+```
 
-Then checkpoint the exact remediation SHA/run before any third live evaluation.
+Workflow `35142115023` passed:
+
+- Python syntax — PASS;
+- browser syntax — PASS;
+- **56 focused PR-1 tests — PASS**;
+- inherited protected-clinical regressions — 6 PASS;
+- inherited Medical Report regressions — 24 PASS;
+- inherited workspace/navigation regression — PASS;
+- bounded PR-1 scope verification — PASS.
+
+Therefore the bounded H-07 remediation is deterministically proven and the canonical barrier may advance to the next live qualification attempt.
 
 ## Exact next action
 
-Implement the bounded H-07 remediation above, run deterministic/inherited CI, checkpoint exact evidence, then deliberately execute a third frozen 22-case GPT-5.6 qualification. Promotion still requires `failed=0`.
+Deliberately trigger the bounded synthetic-only workflow against this verified H-07 branch state and execute the same frozen 22-case suite through `gpt-5.6`.
+
+Promotion rule remains:
+
+```text
+22 frozen cases
+→ strict Structured Outputs
+→ default-deny oracle
+→ failed=0 required
+→ checkpoint exact live evidence
+→ fresh independent READ-ONLY evidence review
+```
+
+If any case fails, checkpoint the exact coded evidence before further mutation. Do not tune repeatedly against hidden provider payloads or relax fixtures beyond the frozen H-07 contract without a new canonical finding.
 
 ## Explicitly blocked
 
-- no third live run before deterministic + canonical checkpoint;
-- no wildcard fixture permissions;
-- no weakening of administration/source/negation safety rules;
+Until a live 22-case qualification passes and its evidence receives fresh independent review:
+
 - no runtime release PR;
-- no merge/deploy;
-- no identifiable transcript use;
-- no PR-2 or real-patient pilot.
+- no merge/deploy of PR-1;
+- no identifiable transcript processing;
+- no PR-2 or real-patient pilot;
+- no production credential/config mutation;
+- no claim that deterministic H-07 closure equals live promotion PASS.
 
 ## Separate production-release blockers/debt
 
