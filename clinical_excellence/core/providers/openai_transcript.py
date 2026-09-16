@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import os
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import ValidationError
 
@@ -12,18 +12,29 @@ from clinical_excellence.core.transcript_provider import ProviderInvalidOutput, 
 DEFAULT_MODEL = "gpt-5.6"
 DEFAULT_TIMEOUT_SECONDS = 120.0
 MAX_OUTPUT_TOKENS = 20_000
+ProviderPurpose = Literal["clinical", "synthetic_eval"]
 
 
 def _truthy(name: str) -> bool:
     return os.getenv(name, "").strip().lower() in {"1", "true", "yes", "on"}
 
 
-def provider_status() -> dict[str, Any]:
+def provider_status(purpose: ProviderPurpose = "clinical") -> dict[str, Any]:
+    enabled = _truthy("CLINICAL_TRANSCRIPT_AI_ENABLED")
+    api_key_configured = bool(os.getenv("OPENAI_API_KEY", "").strip())
+    phi_provider_approved = _truthy("CLINICAL_TRANSCRIPT_PHI_PROVIDER_APPROVED")
+    synthetic_eval_enabled = _truthy("CLINICAL_TRANSCRIPT_SYNTHETIC_EVAL_ENABLED")
+    configured = enabled and api_key_configured and (
+        phi_provider_approved if purpose == "clinical" else synthetic_eval_enabled
+    )
     return {
         "provider": "openai",
-        "enabled": _truthy("CLINICAL_TRANSCRIPT_AI_ENABLED"),
-        "api_key_configured": bool(os.getenv("OPENAI_API_KEY", "").strip()),
-        "phi_provider_approved": _truthy("CLINICAL_TRANSCRIPT_PHI_PROVIDER_APPROVED"),
+        "purpose": purpose,
+        "enabled": enabled,
+        "api_key_configured": api_key_configured,
+        "phi_provider_approved": phi_provider_approved,
+        "synthetic_eval_enabled": synthetic_eval_enabled,
+        "configured": configured,
         "model": os.getenv("CLINICAL_TRANSCRIPT_AI_MODEL", DEFAULT_MODEL).strip() or DEFAULT_MODEL,
     }
 
@@ -48,9 +59,16 @@ def _has_refusal(response: Any) -> bool:
 
 
 class OpenAITranscriptProvider:
-    def __init__(self, client: Any | None = None, *, timeout_seconds: float = DEFAULT_TIMEOUT_SECONDS):
+    def __init__(
+        self,
+        client: Any | None = None,
+        *,
+        timeout_seconds: float = DEFAULT_TIMEOUT_SECONDS,
+        purpose: ProviderPurpose = "clinical",
+    ):
         self._client = client
         self._timeout_seconds = timeout_seconds
+        self._purpose = purpose
 
     def _client_or_create(self):
         if self._client is not None:
@@ -63,8 +81,8 @@ class OpenAITranscriptProvider:
         return self._client
 
     def extract(self, request: TranscriptExtractRequestV1, provider_profile: str) -> ProviderTranscriptExtractionV1:
-        status = provider_status()
-        if not status["enabled"] or not status["api_key_configured"] or not status["phi_provider_approved"]:
+        status = provider_status(self._purpose)
+        if not status["configured"]:
             raise ProviderNotConfigured()
         client = self._client_or_create()
         payload = {
@@ -109,4 +127,4 @@ class OpenAITranscriptProvider:
         return parsed
 
 
-__all__ = ["OpenAITranscriptProvider", "provider_status"]
+__all__ = ["OpenAITranscriptProvider", "provider_status", "ProviderPurpose"]

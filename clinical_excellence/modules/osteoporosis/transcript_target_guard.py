@@ -6,6 +6,7 @@ from clinical_excellence.core.transcript_contracts import (
     IntegerValueV1,
     NumberValueV1,
     ProviderCandidateV1,
+    QuantityValueV1,
     TargetMappingV1,
 )
 
@@ -19,6 +20,22 @@ RISK_CATEGORIES = {"low", "intermediate", "high", "very_high", "uncertain", "not
 VFA_INDICATION_CODES = {"yes", "no", "uncertain"}
 VFA_ACTIONS = {"performed", "already_available_reviewed", "arranged", "reasoned_not_done", "missed", "not_applicable"}
 VFA_MODALITIES = {"VFA", "spine_xray", "CT", "MRI", "other"}
+
+RUNTIME_RANGES: dict[str, tuple[float, float]] = {
+    "anthropometrics.weight": (20.0, 300.0),
+    "anthropometrics.current_height": (100.0, 220.0),
+    "frax.mof_percent": (0.0, 100.0),
+    "frax.hip_percent": (0.0, 100.0),
+    "dxa.spine_bmd": (0.1, 3.0),
+    "dxa.total_hip_bmd": (0.1, 3.0),
+    "dxa.femoral_neck_bmd": (0.1, 3.0),
+    "dxa.spine_t_score": (-8.0, 5.0),
+    "dxa.total_hip_t_score": (-8.0, 5.0),
+    "dxa.femoral_neck_t_score": (-8.0, 5.0),
+    "risk.falls_last_12_months": (0.0, 50.0),
+    "risk.cfs_score": (1.0, 9.0),
+    "treatment.duration_years": (0.0, 50.0),
+}
 
 
 def _component(candidate: ProviderCandidateV1, key: str):
@@ -51,12 +68,28 @@ def _guard_code(mapping: TargetMappingV1, component, allowed: set[str], reason: 
     return mapping
 
 
+def _numeric_value(component) -> float | None:
+    if isinstance(component.value, (NumberValueV1, IntegerValueV1, QuantityValueV1)):
+        return float(component.value.value)
+    return None
+
+
+def _guard_range(mapping: TargetMappingV1, component, key: str) -> TargetMappingV1:
+    value = _numeric_value(component)
+    if value is None:
+        return _ambiguous(mapping, "TYPE_MISMATCH")
+    lower, upper = RUNTIME_RANGES[key]
+    if value < lower or value > upper:
+        return _ambiguous(mapping, "OUT_OF_RUNTIME_RANGE")
+    return mapping
+
+
 def map_candidate(candidate: ProviderCandidateV1) -> list[TargetMappingV1]:
-    """Apply exact runtime enum/type guards after the base deterministic mapper.
+    """Apply exact runtime enum/type/range guards after the base deterministic mapper.
 
     Provider semantic output is untrusted. A value is not considered mapped merely
     because its concept key has a runtime destination; it must also fit the exact
-    value contract of that destination.
+    value and semantic contract of that destination.
     """
 
     mappings = _base_map_candidate(candidate)
@@ -110,14 +143,42 @@ def map_candidate(candidate: ProviderCandidateV1) -> list[TargetMappingV1]:
             guarded.append(_guard_code(mapping, component, ADMINISTRATION_STATUSES, "UNSUPPORTED_ADMINISTRATION_STATUS"))
             continue
 
+        if key in {"frax.mof_percent", "frax.hip_percent"}:
+            if candidate.semantic_type != "objective_result":
+                guarded.append(_ambiguous(mapping, "OBJECTIVE_RESULT_REQUIRED"))
+                continue
+            if not isinstance(component.value, NumberValueV1):
+                guarded.append(_ambiguous(mapping, "TYPE_MISMATCH"))
+                continue
+            guarded.append(_guard_range(mapping, component, key))
+            continue
+
+        if key in {"risk.falls_last_12_months", "risk.cfs_score"}:
+            if not isinstance(component.value, IntegerValueV1):
+                guarded.append(_ambiguous(mapping, "TYPE_MISMATCH"))
+                continue
+            guarded.append(_guard_range(mapping, component, key))
+            continue
+
+        if key in {
+            "anthropometrics.weight",
+            "anthropometrics.current_height",
+            "dxa.spine_bmd",
+            "dxa.total_hip_bmd",
+            "dxa.femoral_neck_bmd",
+            "dxa.spine_t_score",
+            "dxa.total_hip_t_score",
+            "dxa.femoral_neck_t_score",
+        }:
+            guarded.append(_guard_range(mapping, component, key))
+            continue
+
         if key == "treatment.duration_years":
             if not isinstance(component.value, (NumberValueV1, IntegerValueV1)):
                 guarded.append(_ambiguous(mapping, "TYPE_MISMATCH"))
                 continue
-            value = float(component.value.value)
-            if value < 0 or value > 50:
-                guarded.append(_ambiguous(mapping, "OUT_OF_RUNTIME_RANGE"))
-                continue
+            guarded.append(_guard_range(mapping, component, key))
+            continue
 
         guarded.append(mapping)
 
@@ -134,4 +195,5 @@ __all__ = [
     "VFA_INDICATION_CODES",
     "VFA_ACTIONS",
     "VFA_MODALITIES",
+    "RUNTIME_RANGES",
 ]

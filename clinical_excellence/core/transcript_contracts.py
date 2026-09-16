@@ -161,6 +161,13 @@ class ProviderCandidateV1(StrictModel):
     evidence_snippet: str = Field(default="", max_length=320)
     confidence: Literal["high", "medium", "low"] = "medium"
 
+    @model_validator(mode="after")
+    def validate_unique_concept_keys(self):
+        keys = [component.concept_key for component in self.components]
+        if len(keys) != len(set(keys)):
+            raise ValueError("concept_key values must be unique within one provider candidate")
+        return self
+
 
 class ProviderTranscriptExtractionV1(StrictModel):
     schema_version: Literal["clinical_transcript_provider_output_v1"] = "clinical_transcript_provider_output_v1"

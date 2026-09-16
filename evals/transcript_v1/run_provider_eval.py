@@ -24,6 +24,39 @@ def _dict_subset(actual: dict[str, Any], expected: dict[str, Any]) -> bool:
     return True
 
 
+def _component_matches_rule(candidate, component, rule: dict[str, Any]) -> bool:
+    semantic_type = rule.get("semantic_type")
+    if semantic_type is not None and candidate.semantic_type != semantic_type:
+        return False
+
+    source_rule = rule.get("source_assertion")
+    if source_rule is not None and not _dict_subset(candidate.source_assertion.model_dump(mode="json"), source_rule):
+        return False
+
+    concept_key = rule.get("concept_key")
+    if concept_key is not None and component.concept_key != concept_key:
+        return False
+
+    value_rule = rule.get("value")
+    if value_rule is not None and not _dict_subset(component.value.model_dump(mode="json"), value_rule):
+        return False
+
+    mapping_rule = rule.get("mapping")
+    if mapping_rule is not None:
+        mappings = [
+            mapping
+            for mapping in candidate.target_mappings
+            if component.concept_key in mapping.component_keys
+        ]
+        if not mappings or not any(
+            _dict_subset(mapping.model_dump(mode="json"), mapping_rule)
+            for mapping in mappings
+        ):
+            return False
+
+    return True
+
+
 def _candidate_matches(candidate, rule: dict[str, Any]) -> bool:
     semantic_type = rule.get("semantic_type")
     if semantic_type is not None and candidate.semantic_type != semantic_type:
@@ -34,30 +67,13 @@ def _candidate_matches(candidate, rule: dict[str, Any]) -> bool:
         return False
 
     concept_key = rule.get("concept_key")
-    components = list(candidate.components)
-    if concept_key is not None:
-        components = [component for component in components if component.concept_key == concept_key]
-        if not components:
-            return False
-        value_rule = rule.get("value")
-        if value_rule is not None and not any(
-            _dict_subset(component.value.model_dump(mode="json"), value_rule)
-            for component in components
-        ):
-            return False
+    if concept_key is None:
+        return True
 
-    mapping_rule = rule.get("mapping")
-    if mapping_rule is not None:
-        mappings = list(candidate.target_mappings)
-        if concept_key is not None:
-            mappings = [mapping for mapping in mappings if concept_key in mapping.component_keys]
-        if not mappings or not any(
-            _dict_subset(mapping.model_dump(mode="json"), mapping_rule)
-            for mapping in mappings
-        ):
-            return False
-
-    return True
+    components = [component for component in candidate.components if component.concept_key == concept_key]
+    if len(components) != 1:
+        return False
+    return _component_matches_rule(candidate, components[0], rule)
 
 
 def _evaluate_case(item: dict[str, Any], result) -> list[str]:
@@ -80,7 +96,8 @@ def _evaluate_case(item: dict[str, Any], result) -> list[str]:
     if missing_concepts:
         failures.append("missing_expected_concepts")
 
-    for index, rule in enumerate(item.get("required_assertions", [])):
+    required_assertions = item.get("required_assertions", [])
+    for index, rule in enumerate(required_assertions):
         if not any(_candidate_matches(candidate, rule) for candidate in result.candidates):
             failures.append(f"required_assertion_{index}_missing")
 
@@ -91,6 +108,19 @@ def _evaluate_case(item: dict[str, Any], result) -> list[str]:
     for concept_key in item.get("forbidden_concepts", []):
         if concept_key in concepts:
             failures.append(f"forbidden_concept_{concept_key}_present")
+
+    # Promotion evidence is default-deny. Every returned component must be covered
+    # by an explicit required/allowed rule with a concept key. This prevents a case
+    # from passing simply because expected facts are present alongside hallucinated extras.
+    authorization_rules = [rule for rule in required_assertions if rule.get("concept_key")]
+    authorization_rules.extend(item.get("allowed_assertions", []))
+    for candidate in result.candidates:
+        for component in candidate.components:
+            if not any(
+                rule.get("concept_key") and _component_matches_rule(candidate, component, rule)
+                for rule in authorization_rules
+            ):
+                failures.append(f"unexpected_assertion_{component.concept_key}")
 
     exact_date_forbidden = set(item.get("forbid_exact_date_concepts", []))
     for candidate in result.candidates:
@@ -117,13 +147,13 @@ def _evaluate_case(item: dict[str, Any], result) -> list[str]:
 
 
 def main() -> int:
-    status = provider_status()
-    if not (status["enabled"] and status["api_key_configured"] and status["phi_provider_approved"]):
-        print("provider-eval BLOCKED: transcript provider/privacy gate not configured")
+    status = provider_status("synthetic_eval")
+    if not status["configured"]:
+        print("provider-eval BLOCKED: synthetic transcript provider gate not configured")
         return 2
 
     cases = json.loads(CASES.read_text(encoding="utf-8"))
-    provider = OpenAITranscriptProvider()
+    provider = OpenAITranscriptProvider(purpose="synthetic_eval")
     failed = 0
     for item in cases:
         request = TranscriptExtractRequestV1.model_validate({

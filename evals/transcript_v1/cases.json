@@ -95,6 +95,9 @@
     "required_assertions": [
       {"semantic_type": "uncertain_needs_review", "source_assertion": {"speaker": "patient", "certainty": "uncertain"}}
     ],
+    "allowed_assertions": [
+      {"semantic_type": "uncertain_needs_review", "concept_key": "clinical.unmapped_narrative", "source_assertion": {"speaker": "patient", "certainty": "uncertain"}}
+    ],
     "forbidden_concepts": ["administration.actual_date", "administration.status"],
     "semantic_counts": {"final_decision": 0, "patient_accepted": 0}
   },
@@ -108,6 +111,10 @@
       {"semantic_type": "objective_result", "concept_key": "frax.mof_percent", "source_assertion": {"speaker": "clinician"}, "value": {"kind": "number", "value": 18.0}, "mapping": {"status": "mapped", "target_path": "risk_assessment.frax_mof_percent"}},
       {"semantic_type": "objective_result", "concept_key": "frax.hip_percent", "source_assertion": {"speaker": "clinician"}, "value": {"kind": "number", "value": 4.0}, "mapping": {"status": "mapped", "target_path": "risk_assessment.frax_hip_percent"}},
       {"semantic_type": "clinician_interpretation", "source_assertion": {"speaker": "clinician"}}
+    ],
+    "allowed_assertions": [
+      {"semantic_type": "clinician_interpretation", "concept_key": "clinical.unmapped_narrative", "source_assertion": {"speaker": "clinician"}},
+      {"semantic_type": "clinician_interpretation", "concept_key": "risk.resulting_category", "source_assertion": {"speaker": "clinician"}}
     ],
     "forbidden_concepts": ["frax.adjusted_mof_percent", "frax.adjusted_hip_percent"]
   },
@@ -130,7 +137,7 @@
     "expect_concepts": ["risk.falls_last_12_months", "vfa.vertebral_fracture_found"],
     "expect_semantics": ["patient_history_fact", "objective_result"],
     "required_assertions": [
-      {"semantic_type": "patient_history_fact", "concept_key": "risk.falls_last_12_months", "source_assertion": {"speaker": "patient", "polarity": "negative"}, "value": {"value": 0}, "mapping": {"status": "mapped", "target_path": "risk_context.falls_last_12_months", "proposed_value": 0}},
+      {"semantic_type": "patient_history_fact", "concept_key": "risk.falls_last_12_months", "source_assertion": {"speaker": "patient", "polarity": "negative"}, "value": {"kind": "integer", "value": 0}, "mapping": {"status": "mapped", "target_path": "risk_context.falls_last_12_months", "proposed_value": 0}},
       {"semantic_type": "objective_result", "concept_key": "vfa.vertebral_fracture_found", "source_assertion": {"speaker": "clinician", "polarity": "negative"}, "value": {"kind": "boolean", "value": false}, "mapping": {"status": "mapped", "target_path": "step3.vfa.vertebral_found", "proposed_value": "no"}}
     ],
     "forbidden_assertions": [

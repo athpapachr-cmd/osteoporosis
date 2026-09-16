@@ -4,14 +4,22 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from clinical_excellence.core.providers.openai_transcript import OpenAITranscriptProvider
+from clinical_excellence.core.providers.openai_transcript import (
+    OpenAITranscriptProvider,
+    provider_status,
+)
 from clinical_excellence.core.transcript_contracts import (
     DateValueV1,
     ProviderCandidateV1,
     ProviderTranscriptExtractionV1,
     TranscriptExtractRequestV1,
 )
-from clinical_excellence.core.transcript_provider import ProviderInvalidOutput, ProviderRefusal, ProviderUnavailable
+from clinical_excellence.core.transcript_provider import (
+    ProviderInvalidOutput,
+    ProviderNotConfigured,
+    ProviderRefusal,
+    ProviderUnavailable,
+)
 from clinical_excellence.core.transcript_service import extract_candidates
 from clinical_excellence.modules.osteoporosis.transcript_target_guard import map_candidate
 from evals.transcript_v1.run_provider_eval import _evaluate_case
@@ -38,6 +46,11 @@ def test_eval_fixture_is_synthetic_and_covers_required_cases():
     }.issubset(ids)
     assert all(item.get("required_assertions") for item in cases)
     assert any(item.get("forbidden_assertions") or item.get("forbidden_concepts") for item in cases)
+    assert all(
+        any(rule.get("concept_key") for rule in item.get("required_assertions", []))
+        or item.get("allowed_assertions")
+        for item in cases
+    )
     joined = json.dumps(cases, ensure_ascii=False).lower()
     for forbidden in ("gesy id", "@gmail.com", "+357 9"):
         assert forbidden not in joined
@@ -46,17 +59,20 @@ def test_eval_fixture_is_synthetic_and_covers_required_cases():
 def test_provider_eval_runner_is_fail_closed_and_does_not_print_transcript_content():
     runner = Path("evals/transcript_v1/run_provider_eval.py").read_text(encoding="utf-8")
     assert "provider-eval BLOCKED" in runner
-    assert 'status["phi_provider_approved"]' in runner
+    assert 'provider_status("synthetic_eval")' in runner
+    assert 'OpenAITranscriptProvider(purpose="synthetic_eval")' in runner
+    assert "unexpected_assertion_" in runner
     assert "item['transcript']" not in runner
     assert "result.candidates" in runner
     assert "required_assertions" in runner
+    assert "allowed_assertions" in runner
     assert "forbidden_assertions" in runner
     assert "non_ephemeral_response_meta" in runner
 
 
-def _candidate(concept_key, value):
+def _candidate(concept_key, value, *, semantic_type="patient_history_fact"):
     return ProviderCandidateV1.model_validate({
-        "semantic_type": "patient_history_fact",
+        "semantic_type": semantic_type,
         "components": [{"concept_key": concept_key, "value": value}],
         "source_assertion": {
             "speaker": "clinician",
@@ -85,6 +101,25 @@ def _enable_provider(monkeypatch):
     monkeypatch.setenv("CLINICAL_TRANSCRIPT_AI_ENABLED", "true")
     monkeypatch.setenv("CLINICAL_TRANSCRIPT_PHI_PROVIDER_APPROVED", "true")
     monkeypatch.setenv("OPENAI_API_KEY", "synthetic")
+
+
+def test_provider_candidate_rejects_duplicate_concept_keys():
+    with pytest.raises(ValidationError):
+        ProviderCandidateV1.model_validate({
+            "semantic_type": "patient_history_fact",
+            "components": [
+                {"concept_key": "fracture.site", "value": {"kind": "code", "code": "hip"}},
+                {"concept_key": "fracture.site", "value": {"kind": "code", "code": "other"}},
+            ],
+            "source_assertion": {
+                "speaker": "patient",
+                "polarity": "positive",
+                "temporality": "past",
+                "certainty": "explicit",
+            },
+            "evidence_snippet": "",
+            "confidence": "high",
+        })
 
 
 def test_step4_status_mapping_rejects_provider_codes_outside_runtime_enums():
@@ -117,6 +152,49 @@ def test_treatment_duration_requires_numeric_runtime_range():
     out_of_range = map_candidate(_candidate("treatment.duration_years", {"kind": "number", "value": 51}))[0]
     assert out_of_range.status == "ambiguous"
     assert out_of_range.reason_code == "OUT_OF_RUNTIME_RANGE"
+
+
+@pytest.mark.parametrize(
+    ("concept", "value", "semantic_type"),
+    [
+        ("anthropometrics.weight", {"kind": "quantity", "value": 301, "unit": "kg"}, "patient_history_fact"),
+        ("anthropometrics.current_height", {"kind": "quantity", "value": 99, "unit": "cm"}, "patient_history_fact"),
+        ("frax.mof_percent", {"kind": "number", "value": 101}, "objective_result"),
+        ("frax.hip_percent", {"kind": "number", "value": -0.1}, "objective_result"),
+        ("dxa.spine_bmd", {"kind": "quantity", "value": 3.1, "unit": "g/cm²"}, "objective_result"),
+        ("dxa.total_hip_t_score", {"kind": "number", "value": -8.1}, "objective_result"),
+        ("risk.falls_last_12_months", {"kind": "integer", "value": 51}, "patient_history_fact"),
+        ("risk.cfs_score", {"kind": "integer", "value": 10}, "patient_history_fact"),
+    ],
+)
+def test_runtime_numeric_targets_fail_closed_outside_exact_ranges(concept, value, semantic_type):
+    mapping = map_candidate(_candidate(concept, value, semantic_type=semantic_type))[0]
+    assert mapping.status == "ambiguous"
+    assert mapping.reason_code == "OUT_OF_RUNTIME_RANGE"
+
+
+def test_integer_runtime_targets_reject_fractional_provider_values():
+    falls = map_candidate(_candidate("risk.falls_last_12_months", {"kind": "number", "value": 2.5}))[0]
+    assert falls.status == "ambiguous"
+    assert falls.reason_code == "TYPE_MISMATCH"
+
+    cfs = map_candidate(_candidate("risk.cfs_score", {"kind": "number", "value": 4.5}))[0]
+    assert cfs.status == "ambiguous"
+    assert cfs.reason_code == "TYPE_MISMATCH"
+
+
+def test_original_frax_percentages_require_objective_result_semantics():
+    interpretation = map_candidate(
+        _candidate("frax.mof_percent", {"kind": "number", "value": 18}, semantic_type="clinician_interpretation")
+    )[0]
+    assert interpretation.status == "ambiguous"
+    assert interpretation.reason_code == "OBJECTIVE_RESULT_REQUIRED"
+
+    objective = map_candidate(
+        _candidate("frax.mof_percent", {"kind": "number", "value": 18}, semantic_type="objective_result")
+    )[0]
+    assert objective.status == "mapped"
+    assert objective.proposed_value == 18
 
 
 def test_fixed_runtime_code_targets_are_whitelisted_locally():
@@ -180,7 +258,7 @@ def test_exact_date_contract_rejects_impossible_calendar_values():
     assert leap_day.normalized == "2024-02-29"
 
 
-def test_provider_eval_gate_rejects_dangerous_extra_assertion_even_when_legacy_sets_match():
+def test_provider_eval_default_deny_rejects_unexpected_extra_assertion_without_fixture_foreknowledge():
     provider_output = ProviderTranscriptExtractionV1.model_validate({
         "candidates": [
             {
@@ -212,10 +290,32 @@ def test_provider_eval_gate_rejects_dangerous_extra_assertion_even_when_legacy_s
         "required_assertions": [
             {"semantic_type": "followup_task", "concept_key": "followup.timeframe_text"}
         ],
-        "forbidden_concepts": ["followup.due_date"],
     }
     failures = _evaluate_case(case, result)
-    assert "forbidden_concept_followup.due_date_present" in failures
+    assert "unexpected_assertion_followup.due_date" in failures
+
+
+def test_synthetic_eval_gate_is_separate_from_identifiable_phi_approval(monkeypatch):
+    monkeypatch.setenv("CLINICAL_TRANSCRIPT_AI_ENABLED", "true")
+    monkeypatch.setenv("CLINICAL_TRANSCRIPT_SYNTHETIC_EVAL_ENABLED", "true")
+    monkeypatch.setenv("CLINICAL_TRANSCRIPT_PHI_PROVIDER_APPROVED", "false")
+    monkeypatch.setenv("OPENAI_API_KEY", "synthetic")
+
+    assert provider_status()["configured"] is False
+    assert provider_status("synthetic_eval")["configured"] is True
+
+    parsed = ProviderTranscriptExtractionV1.model_validate({"candidates": [], "warnings": []})
+
+    class SyntheticResponses:
+        def parse(self, **kwargs):
+            return type("Response", (), {"output_parsed": parsed, "output": []})()
+
+    client = type("Client", (), {"responses": SyntheticResponses()})()
+    with pytest.raises(ProviderNotConfigured):
+        OpenAITranscriptProvider(client=client).extract(_request(), "PROFILE")
+
+    result = OpenAITranscriptProvider(client=client, purpose="synthetic_eval").extract(_request(), "PROFILE")
+    assert result == parsed
 
 
 def test_openai_adapter_classifies_structured_validation_as_invalid_output(monkeypatch):
