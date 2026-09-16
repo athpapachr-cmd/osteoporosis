@@ -1,30 +1,90 @@
-STATUS: MEDICAL REPORT V1.1 RELEASED / DEPLOYED / AUTHENTICATED PRODUCTION-SMOKE-VERIFIED / CLOSED
-PR: 104
-Release commit: 2b6ccf56f77c646fc475318e4d76396dd95a2bee
-Render deploy: dep-daj3l00ae00c73drs850 LIVE
-Implementation gate: 34740684612 — SUCCESS
-Initial smoke run: 35052415555 — FAILURE, non-diagnostic harness
-Diagnostic smoke run: 35052740386 — product flow verified; harness/research-context findings isolated
-Targeted research smoke run: 35053140054 — SUCCESS
-Writer: none — Medical Report V1.1 lifecycle closed.
+# CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-Production verification established:
-- protected Medical Report V1.1 contract/auth: unauthenticated 401, authenticated 200;
-- `medical_report_v1_1` contract live with configured clinician and approved/configured AI provider;
-- no Medical Report patient-case DB, browser case storage, autosave, source-file persistence, signature persistence or refinement-thread persistence;
-- V1.1 source/removal/refinement assets live with no tested browser persistence API use;
-- live GPT-5.6 structured draft returned source summaries, Evidence Ledger, timeline and report sections;
-- a synthetic MRI referral/request did not become a completed imaging finding;
-- session-only refinement returned clinician-resolution output while preserving original evidence items and source summaries;
-- preview and final report endpoints returned valid PDFs;
-- generalized targeted literature research used live web search and returned 13 URL citations from 8 captured queries / 10 web-search calls;
-- only synthetic/non-identifiable smoke data were sent in these production checks; no secret or real patient file was committed or printed.
+> **STATUS:** PR-1 HEIDI-FIRST TRANSCRIPT CAPTURE — IMPLEMENTATION ACTIVE.
+> **Updated:** 2026-09-16 Asia/Nicosia.
+> **Canonical home:** `athpapachr-cmd/osteoporosis`.
+> **Bootstrap main:** `805c4fe4e723dacafc351ccf695ef01b66600079`.
+> **Active slice:** `PR-1-TRANSCRIPT-INTAKE-CANDIDATE-EXTRACTION-V1-2026-09-16`.
+> **Active writer:** this bounded PR-1 implementation lifecycle only.
+> **Activation branch:** `docs/pr1-transcript-capture-activation-2026-09-16`.
+> **Runtime implementation branch:** not yet created; create only after this activation checkpoint is merged.
+> **Medical Report V1.1:** CLOSED; do not reopen without separate authority.
 
-Interpretation of prior red runs:
-- run 35052415555 was non-diagnostic because the disposable harness lacked stage markers;
-- run 35052740386 proved the end-to-end product legs and isolated two malformed disposable jq usage assertions plus a referral-only research context with no material prognosis question;
-- run 35053140054 verified that the actual web-backed research path works when an explicit researchable question exists.
+## Product-owner authority
 
-No runtime correction is required from this verification sequence.
+On 2026-09-16 the Product Owner explicitly instructed `Ok. Go. Ξεκίνησε` after fresh closeout identified Heidi-first capture / PR-1 as the next primary roadmap target. This authorizes bounded implementation of the frozen PR-1 extraction slice, including branch creation, code, tests/evals and implementation-candidate preparation.
 
-Next: fresh-bootstrap before selecting or authorizing the next primary program slice. Medical Report V1.1 remains closed unless a material production defect, authoritative form/requirement change, safety/data-integrity issue or explicit new workflow requirement reopens it.
+This does **not** automatically authorize merge, production deployment, enabling identifiable transcript processing, PR-2 authoritative writes, real-patient pilot use or unrelated product mutations.
+
+## Fresh verification completed before activation
+
+The archived corrected PR-1 v3 design was re-read from `docs/pr1-replan-v3-clinic-utilities` and checked against current `main`.
+
+Current runtime still confirms the required target seams:
+
+```text
+encounter_archetype
+anthropometrics.weight_kg / current_height_cm
+fracture_history.events[]
+risk_context.*
+risk_assessment.*
+step3.dxa / step3.vfa / step3.labs
+step4.treatment_episodes[]
+step4.administrations[]
+step4.decision
+step4.tasks[]
+```
+
+`patient-registry.js` still persists the complete active encounter object as the protected encounter `payload`, so deterministic mapping must target the actual browser/runtime namespace rather than YAML-only vocabulary.
+
+Current OpenAI verification also supports the frozen provider pattern: Responses API structured parsing with Pydantic is available, GPT-5.6 is available through Responses API, and the current Python SDK still retries selected errors by default unless `max_retries=0` is set.
+
+No material REPLAN blocker was found.
+
+## Active implementation scope
+
+Implement only PR-1:
+
+```text
+protected transcript paste/intake
+→ explicit size + sanitized validation boundary
+→ provider-neutral structured semantic extraction
+→ deterministic osteoporosis target mapping
+→ mapped / ambiguous / unmapped ephemeral candidate preview
+→ no authoritative write
+```
+
+Required privacy boundary:
+
+```text
+raw transcript: ephemeral only
+candidate preview: ephemeral only
+DB write: none
+localStorage/sessionStorage transcript/candidates: none
+provider retries: disabled
+identifiable transcript use: blocked until separate transcript-specific provider/privacy gate is explicitly closed
+```
+
+## Exact next action
+
+After this activation checkpoint is merged:
+
+1. create `feat/pr1-transcript-capture-v1-2026-09-16` from fresh `main`;
+2. implement Core transcript contracts/router/service/provider abstraction;
+3. implement Module-01 osteoporosis profile + deterministic target mapper;
+4. add isolated ephemeral browser transcript UI;
+5. add deterministic privacy/contract/mapping/UI tests and synthetic provider eval harness;
+6. run exact-head regression gate;
+7. checkpoint implementation/test evidence before opening any release PR.
+
+## Explicitly deferred / forbidden in PR-1
+
+- Accept/Edit/Reject-to-record or any authoritative patient write;
+- PR-2 inline population/persistence;
+- real identifiable Heidi transcript transmission before separate privacy/data-control approval;
+- persistence of transcript, evidence snippets or candidates;
+- provider-authored application target paths;
+- exact-date invention from vague timing;
+- collapsing option/recommendation/preference/final decision semantics;
+- Practice Review coaching, KPI changes, treatment recommendation, pilot activation;
+- unrelated Medical Report, Physio, RF, Calendar or Clinical Learning mutation.
