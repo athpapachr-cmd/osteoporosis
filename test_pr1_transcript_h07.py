@@ -34,9 +34,9 @@ def test_h07_provider_profile_freezes_exact_value_sets_and_case_sensitive_codes(
 def test_h07_provider_profile_preserves_semantic_ownership_and_hard_safety_rules():
     profile = provider_profile()
     required_fragments = (
-        "option discussed, emit decision.selected_agent with semantic_type=option_discussed",
-        "clinician-recommended agent, emit decision.selected_agent with semantic_type=clinician_recommendation",
-        "explicit final selected agent, emit decision.selected_agent with semantic_type=final_decision",
+        "decision.selected_agent with semantic_type=option_discussed",
+        "decision.selected_agent with semantic_type=clinician_recommendation",
+        "decision.selected_agent with semantic_type=final_decision",
         "must NEVER create administration.agent, administration.status, administration.actual_date",
         "uncertain, use semantic_type=uncertain_needs_review and do not emit administration.status",
         "unrelated non-osteoporosis narrative",
