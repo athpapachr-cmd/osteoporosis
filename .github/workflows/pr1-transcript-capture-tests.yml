@@ -1,0 +1,118 @@
+name: PR-1 transcript capture gate
+
+on:
+  push:
+    paths:
+      - "clinical_excellence/**"
+      - "clinical_auth.py"
+      - "main.py"
+      - "static/baseline-audit/app.js"
+      - "static/baseline-audit/transcript-capture.js"
+      - "evals/transcript_v1/**"
+      - "test_pr1_transcript_*.py"
+      - "CURRENT_OPERATIONAL.md"
+      - ".github/workflows/pr1-transcript-capture-tests.yml"
+  pull_request:
+    paths:
+      - "clinical_excellence/**"
+      - "clinical_auth.py"
+      - "main.py"
+      - "static/baseline-audit/app.js"
+      - "static/baseline-audit/transcript-capture.js"
+      - "evals/transcript_v1/**"
+      - "test_pr1_transcript_*.py"
+      - "CURRENT_OPERATIONAL.md"
+      - ".github/workflows/pr1-transcript-capture-tests.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  pr1-transcript-capture:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt pytest
+
+      - name: Python syntax
+        run: |
+          python -m py_compile \
+            clinical_auth.py \
+            main.py \
+            clinical_excellence/core/*.py \
+            clinical_excellence/core/providers/*.py \
+            clinical_excellence/modules/*.py \
+            clinical_excellence/modules/osteoporosis/*.py \
+            evals/transcript_v1/run_provider_eval.py \
+            test_pr1_transcript_core.py \
+            test_pr1_transcript_ui_contract.py \
+            test_pr1_transcript_eval_contract.py
+
+      - name: Browser syntax
+        run: |
+          node --check static/baseline-audit/app.js
+          node --check static/baseline-audit/transcript-capture.js
+
+      - name: PR-1 focused privacy, contract and mapping tests
+        run: pytest -q test_pr1_transcript_core.py test_pr1_transcript_ui_contract.py test_pr1_transcript_eval_contract.py
+
+      - name: Inherited protected-clinical regressions
+        run: pytest -q test_baseline_finalization_api.py test_clinical_calendar.py
+
+      - name: Inherited Clinical Documents regressions
+        run: pytest -q test_clinical_documents_medical_report.py test_clinical_documents_medical_report_v11.py test_clinical_documents_openai_sdk_contract.py
+
+      - name: Inherited workspace navigation regression
+        run: node test_g4_workspace_ergonomics.js
+
+      - name: Verify bounded PR-1 scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main --depth=1
+          mapfile -t changed < <(git diff --name-only origin/main...HEAD)
+          printf 'Changed files:\n%s\n' "${changed[*]}"
+
+          for path in "${changed[@]}"; do
+            case "$path" in
+              CURRENT_OPERATIONAL.md|\
+              clinical_auth.py|\
+              main.py|\
+              static/baseline-audit/app.js|\
+              static/baseline-audit/transcript-capture.js|\
+              test_pr1_transcript_core.py|\
+              test_pr1_transcript_ui_contract.py|\
+              test_pr1_transcript_eval_contract.py|\
+              .github/workflows/pr1-transcript-capture-tests.yml|\
+              clinical_excellence/*|clinical_excellence/**|\
+              evals/transcript_v1/*|evals/transcript_v1/**)
+                ;;
+              *)
+                echo "Out-of-scope PR-1 change: $path"
+                exit 1
+                ;;
+            esac
+          done
+
+          forbidden=(
+            static/baseline-audit/app-core.js
+            static/baseline-audit/step3.js
+            static/baseline-audit/step4.js
+            clinical_data.py
+            clinical_data_ext.py
+          )
+          for path in "${forbidden[@]}"; do
+            if printf '%s\n' "${changed[@]}" | grep -Fxq "$path"; then
+              echo "Forbidden existing-owner mutation: $path"
+              exit 1
+            fi
+          done

@@ -1,0 +1,12 @@
+[
+  {"id":"fracture_relative_time","language":"el","transcript":"Ασθενής: Έσπασα το ισχίο πριν από περίπου δύο χρόνια μετά από απλή πτώση.","expect_concepts":["fracture.site","fracture.date","fracture.low_trauma"],"expect_semantics":["patient_history_fact"]},
+  {"id":"explicit_negative_smoking","language":"el","transcript":"Ιατρός: Καπνίζετε; Ασθενής: Όχι, δεν καπνίζω.","expect_concepts":["risk.current_smoking"],"expect_semantics":["patient_history_fact"]},
+  {"id":"dxa_objective","language":"el","transcript":"Ιατρός: Στο DXA της 10/09/2026 το T-score οσφύος ήταν -2.8 και BMD 0.790 g/cm².","expect_concepts":["dxa.date","dxa.spine_t_score","dxa.spine_bmd"],"expect_semantics":["objective_result"]},
+  {"id":"labs_objective","language":"el","transcript":"Ιατρός: Η βιταμίνη D είναι 24 ng/mL και η PTH 78 pg/mL.","expect_concepts":["labs.vitamin_d","labs.pth"],"expect_semantics":["objective_result"]},
+  {"id":"options_one_final","language":"el","transcript":"Ιατρός: Συζητήσαμε denosumab και zoledronate. Προτείνω zoledronate. Ασθενής: Συμφωνώ. Ιατρός: Τελική απόφαση, έναρξη zoledronate.","expect_concepts":["decision.selected_agent","patient.acceptance"],"expect_semantics":["option_discussed","clinician_recommendation","patient_accepted","final_decision"]},
+  {"id":"preference_only","language":"el","transcript":"Ασθενής: Θα προτιμούσα να αποφύγω ενέσεις αν υπάρχει ασφαλής εναλλακτική.","expect_concepts":["patient.preference"],"expect_semantics":["patient_preference"]},
+  {"id":"followup_vague","language":"el","transcript":"Ιατρός: Θα ξαναδούμε τις εξετάσεις σε περίπου έξι μήνες.","expect_concepts":["followup.timeframe_text"],"expect_semantics":["followup_task"]},
+  {"id":"garbled_speech","language":"el","transcript":"Ασθενής: εε... το χάπι... μάλλον Δευτέρα; όχι θυμάμαι...", "expect_concepts":[],"expect_semantics":["uncertain_needs_review"]},
+  {"id":"frax_original_adjusted","language":"el","transcript":"Ιατρός: Το επίσημο FRAX είναι MOF 18% και hip 4%. Με κλινική προσαρμογή εκτιμώ τον κίνδυνο υψηλότερο.","expect_concepts":["frax.mof_percent","frax.hip_percent"],"expect_semantics":["objective_result","clinician_interpretation"]},
+  {"id":"speaker_ambiguity","language":"el","transcript":"Αναφέρθηκε ότι είχε λάβει denosumab, αλλά δεν είναι σαφές από ποιον ούτε αν έγινε πράγματι η χορήγηση.","expect_concepts":["treatment.agent"],"expect_semantics":["uncertain_needs_review"]}
+]

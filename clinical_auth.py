@@ -4,7 +4,7 @@ import hashlib
 import os
 import secrets
 
-from fastapi import APIRouter, HTTPException, Response
+from fastapi import APIRouter, Header, HTTPException, Response
 from pydantic import BaseModel, Field
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
@@ -19,6 +19,18 @@ def _expected_key() -> str:
 
 def _session_token(key: str) -> str:
     return hashlib.sha256(("osteoporosis-clinical-session-v1:" + key).encode("utf-8")).hexdigest()
+
+
+def require_clinical_key(
+    x_clinical_key: str | None = Header(default=None, alias="X-Clinical-Key"),
+) -> None:
+    """Reusable protected-route dependency compatible with browser cookie injection."""
+
+    expected = _expected_key()
+    if not expected:
+        raise HTTPException(status_code=503, detail={"code": "CLINICAL_AUTH_NOT_CONFIGURED"})
+    if not x_clinical_key or not secrets.compare_digest(x_clinical_key, expected):
+        raise HTTPException(status_code=401, detail={"code": "UNAUTHORIZED"})
 
 
 class ClinicalLoginRequest(BaseModel):
