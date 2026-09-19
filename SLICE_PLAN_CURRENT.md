@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — PR-1 Heidi-first Transcript Intake + Candidate Extraction v1
 
-> **STATUS:** H-08 FOUR-CASE REMEDIATION DETERMINISTICALLY PROVEN / FOURTH LIVE 22-CASE GPT-5.6 QUALIFICATION AUTHORIZED — NOT RELEASE READY.
+> **STATUS:** LIVE GPT-5.6 PROMOTION GATE PASS 22/22 / FRESH INDEPENDENT READ-ONLY EVIDENCE REVIEW REQUIRED — NOT RELEASE READY.
 > **Activated:** 2026-09-16 Asia/Nicosia.
 > **Slice:** `PR-1-TRANSCRIPT-INTAKE-CANDIDATE-EXTRACTION-V1-2026-09-16`.
 > **Activation main:** `0ab5f9770d220c20e8d94544cb64e93a4aa30d00`.
@@ -9,7 +9,7 @@
 > **Deterministic/inherited gate:** `35446869081` — SUCCESS.
 > **Focused PR-1 tests:** 60 PASS.
 > **Frozen live suite:** 22 synthetic/de-identified cases.
-> **Third live qualification:** `35142415250` — 18 PASS / 4 FAIL.
+> **Fourth live qualification:** `35446962808` — **22 PASS / 0 FAIL**.
 > **Writer:** one bounded PR-1 implementation writer; operational owner is `CURRENT_OPERATIONAL.md`.
 
 ## 1. Objective
@@ -208,19 +208,53 @@ Workflow `35446869081` completed SUCCESS:
 
 Therefore H-08 is deterministically proven.
 
-Required next sequence:
+## 9. Fourth live qualification — PASS
+
+Workflow-only trigger head:
 
 ```text
-canonical checkpoint verification
-→ fourth live frozen 22-case GPT-5.6 qualification
-→ failed=0 required
-→ checkpoint exact live evidence
-→ fresh independent READ-ONLY evidence review
+85d3a11ddff676a4569d1951af79aa2c28175e5d
 ```
 
-H-05 production execution remediation and executable browser lifecycle evidence remain subsequent release blockers.
+Trigger-head deterministic workflow `35446962951` completed SUCCESS.
 
-## 9. Release boundary
+Live synthetic qualification workflow `35446962808` passed the secure boundary and frozen fixture-count checks, then returned:
+
+```text
+22 PASS
+0 FAIL
+provider-eval summary: total=22 failed=0
+```
+
+All 22 frozen case IDs passed under strict Structured Outputs and the default-deny oracle. The provider declaration remained `openai / gpt-5.6 / synthetic_eval / phi_approval=false`.
+
+The selected-model synthetic promotion gate is therefore satisfied.
+
+## 10. Independent evidence review gate
+
+Before any production-release engineering, a fresh independent READ-ONLY review must inspect the exact branch/evidence and determine whether the H-01..H-08 closure and 22/22 live result are sufficient to advance.
+
+The reviewer may not mutate code/canonicals, merge/deploy, process identifiable transcripts, or start PR-2.
+
+Only after that evidence review is checkpointed may work proceed to the separate production-release blockers:
+
+- H-05 synchronous provider execution inside the async single-worker web process;
+- executable browser lifecycle/BFCache/logout cleanup evidence.
+
+These remain open even after 22/22.
+
+Required sequence:
+
+```text
+22/22 live PASS
+→ canonical evidence checkpoint
+→ fresh independent READ-ONLY review
+→ author checkpoint of disposition
+→ H-05 + browser lifecycle release engineering
+→ release-candidate review
+```
+
+## 11. Release boundary
 
 A future 22/22 selected-model PASS still does not by itself authorize production. H-05 synchronous-provider blocking and executable browser lifecycle evidence remain production-release blockers/debt, and identifiable transcript processing retains its separate privacy/provider gate.
 

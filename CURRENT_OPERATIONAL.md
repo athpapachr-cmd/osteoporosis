@@ -1,6 +1,6 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** PR-1 HEIDI-FIRST TRANSCRIPT CAPTURE — H-08 BOUNDED REMEDIATION DETERMINISTICALLY PROVEN / FOURTH LIVE 22-CASE GPT-5.6 QUALIFICATION AUTHORIZED — NOT RELEASE READY.
+> **STATUS:** PR-1 HEIDI-FIRST TRANSCRIPT CAPTURE — LIVE GPT-5.6 PROMOTION GATE PASS 22/22 / FRESH INDEPENDENT READ-ONLY EVIDENCE REVIEW REQUIRED — NOT RELEASE READY.
 > **Updated:** 2026-09-16 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Fresh verified remote `main`:** `0ab5f9770d220c20e8d94544cb64e93a4aa30d00`.
@@ -11,7 +11,7 @@
 > **H-08 deterministic/inherited gate:** `35446869081` — SUCCESS.
 > **Focused PR-1 tests:** 60 PASS.
 > **Frozen synthetic qualification suite:** 22 synthetic/de-identified cases.
-> **Third live qualification:** `35142415250` — 18 PASS / 4 FAIL; credential/schema/fixture-count boundaries passed; exact coded failures checkpointed.
+> **Fourth live qualification:** `35446962808` — **22 PASS / 0 FAIL**; secure synthetic-only boundary and frozen 22-case fixture count passed.
 > **Safe credential/schema boundary:** CLOSED; Actions secret available/masked, PHI approval false, strict Structured Outputs accepted.
 > **Medical Report V1.1:** CLOSED; do not reopen without separate authority.
 
@@ -167,22 +167,41 @@ Workflow `35446869081` completed SUCCESS with:
 
 No mapper/evaluator relaxation, production configuration change or PHI processing occurred.
 
-## Exact next action
+## Fourth live GPT-5.6 qualification — PASS
 
-After this canonical checkpoint itself verifies, deliberately trigger the synthetic-only workflow against the verified H-08 branch state and execute the same frozen 22-case suite through `gpt-5.6`.
-
-Promotion rule:
+The workflow-only trigger head is:
 
 ```text
-22 frozen cases
-→ strict Structured Outputs
-→ default-deny oracle
-→ failed=0 required
-→ checkpoint exact live evidence
-→ fresh independent READ-ONLY evidence review
+85d3a11ddff676a4569d1951af79aa2c28175e5d
 ```
 
-On any failure, checkpoint coded evidence before mutation. Do not start H-05 remediation or browser lifecycle work in parallel while the semantic/provider qualification remains unresolved.
+The trigger-head deterministic gate `35446962951` completed SUCCESS across syntax, focused PR-1 tests, inherited clinical regressions, Clinical Documents regressions, navigation and bounded scope.
+
+Live synthetic provider workflow `35446962808` then passed:
+
+- synthetic-only execution boundary — PASS;
+- provider/model declaration — `openai / gpt-5.6 / purpose=synthetic_eval / phi_approval=false`;
+- frozen promotion fixtures — `total=22 ids_unique=true`;
+- all 22 case-level oracle checks — PASS;
+- final summary — `total=22 failed=0`.
+
+Therefore the selected-model synthetic promotion gate is satisfied for the frozen 22-case suite.
+
+This does **not** authorize production, PHI use, release PR, merge/deploy or PR-2.
+
+## Exact next action
+
+Perform a **fresh independent READ-ONLY evidence review** from current remote `main` and the exact PR-1 branch state. The reviewer must independently inspect:
+
+- the H-01..H-08 safety/semantic closure;
+- exact deterministic evidence;
+- live run `35446962808` and coded 22/22 result;
+- fixture/oracle adequacy and false-PASS risk;
+- whether any unresolved semantic blocker remains before release engineering begins.
+
+The reviewer must not mutate repository/canonicals, merge/deploy, or start H-05/browser remediation.
+
+Only after an independent disposition is checkpointed may the author lifecycle advance to the separate production-release blockers: H-05 async/provider execution remediation and executable browser lifecycle/BFCache/logout cleanup evidence.
 
 ## Explicitly blocked
 
