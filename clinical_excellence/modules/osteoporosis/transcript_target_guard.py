@@ -37,10 +37,40 @@ RUNTIME_RANGES: dict[str, tuple[float, float]] = {
     "treatment.duration_years": (0.0, 50.0),
 }
 
-NEGATED_PRESENCE_CONCEPTS = {
+TREATMENT_EPISODE_CONCEPTS = {
     "treatment.agent",
-    "administration.agent",
+    "treatment.status",
+    "treatment.start_date",
+    "treatment.end_date",
+    "treatment.duration_years",
 }
+
+ADMINISTRATION_EVENT_CONCEPTS = {
+    "administration.agent",
+    "administration.scheduled_date",
+    "administration.actual_date",
+    "administration.next_due_date",
+    "administration.status",
+}
+
+# These concepts assert the presence/state/timing of a real fracture, treatment
+# episode or administration event. A negated source assertion must not be
+# converted into positive runtime truth merely because its value is otherwise
+# schema-valid.
+NEGATED_PRESENCE_CONCEPTS = {
+    "fracture.site",
+    "fracture.date",
+    "fracture.vertebral_level",
+    *TREATMENT_EPISODE_CONCEPTS,
+    *ADMINISTRATION_EVENT_CONCEPTS,
+}
+
+# Provider output is untrusted. Treatment episodes represent actual/historical
+# exposure, while administration events may represent actual history/objective
+# evidence or an explicit follow-up/scheduled event. Options, recommendations,
+# preferences and decisions use their dedicated decision semantics instead.
+TREATMENT_RUNTIME_SEMANTICS = {"patient_history_fact"}
+ADMINISTRATION_RUNTIME_SEMANTICS = {"patient_history_fact", "objective_result", "followup_task"}
 
 
 def _component(candidate: ProviderCandidateV1, key: str):
@@ -117,9 +147,24 @@ def map_candidate(candidate: ProviderCandidateV1) -> list[TargetMappingV1]:
             guarded.append(_ambiguous(mapping, "THIRD_PARTY_SOURCE_NOT_PATIENT"))
             continue
 
-        # A negated exposure is not a positive treatment/administration episode.
+        # A negated event/presence assertion must never become positive runtime
+        # truth. Preserve it for clinician review as ambiguous instead.
         if candidate.source_assertion.polarity == "negative" and key in NEGATED_PRESENCE_CONCEPTS:
             guarded.append(_ambiguous(mapping, "NEGATED_ASSERTION_NOT_POSITIVE_RUNTIME_VALUE"))
+            continue
+
+        # Semantic ownership is enforced locally, not merely requested from the
+        # provider prompt. Recommendations/options/final decisions must use
+        # decision.* concepts and cannot manufacture treatment episodes.
+        if key in TREATMENT_EPISODE_CONCEPTS and candidate.semantic_type not in TREATMENT_RUNTIME_SEMANTICS:
+            guarded.append(_ambiguous(mapping, "SEMANTIC_TYPE_NOT_ALLOWED_FOR_TREATMENT_EPISODE"))
+            continue
+
+        # administration.* is reserved for a real administration event or an
+        # explicit scheduled/follow-up event. Recommendation/option/decision
+        # semantics cannot create administration truth.
+        if key in ADMINISTRATION_EVENT_CONCEPTS and candidate.semantic_type not in ADMINISTRATION_RUNTIME_SEMANTICS:
+            guarded.append(_ambiguous(mapping, "SEMANTIC_TYPE_NOT_ALLOWED_FOR_ADMINISTRATION_EVENT"))
             continue
 
         if key == "fracture.site":
@@ -213,4 +258,8 @@ __all__ = [
     "VFA_MODALITIES",
     "RUNTIME_RANGES",
     "NEGATED_PRESENCE_CONCEPTS",
+    "TREATMENT_EPISODE_CONCEPTS",
+    "ADMINISTRATION_EVENT_CONCEPTS",
+    "TREATMENT_RUNTIME_SEMANTICS",
+    "ADMINISTRATION_RUNTIME_SEMANTICS",
 ]
