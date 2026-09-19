@@ -1,6 +1,6 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** PR-1 HEIDI-FIRST TRANSCRIPT CAPTURE — H-07 BOUNDED REMEDIATION DETERMINISTICALLY PROVEN / THIRD LIVE 22-CASE GPT-5.6 QUALIFICATION AUTHORIZED — NOT RELEASE READY.
+> **STATUS:** PR-1 HEIDI-FIRST TRANSCRIPT CAPTURE — H-08 THIRD LIVE QUALIFICATION CHECKPOINTED AT 18/22 / BOUNDED FOUR-CASE REMEDIATION AUTHORIZED — NOT RELEASE READY.
 > **Updated:** 2026-09-16 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Fresh verified remote `main`:** `0ab5f9770d220c20e8d94544cb64e93a4aa30d00`.
@@ -11,7 +11,7 @@
 > **H-07 deterministic/inherited gate:** `35142115023` — SUCCESS.
 > **Focused PR-1 tests:** 56 PASS.
 > **Frozen synthetic qualification suite:** 22 synthetic/de-identified cases.
-> **Previous live qualification:** `35140165842` — 7 PASS / 15 FAIL; evidence triaged and checkpointed.
+> **Third live qualification:** `35142415250` — 18 PASS / 4 FAIL; credential/schema/fixture-count boundaries passed; exact coded failures checkpointed.
 > **Safe credential/schema boundary:** CLOSED; Actions secret available/masked, PHI approval false, strict Structured Outputs accepted.
 > **Medical Report V1.1:** CLOSED; do not reopen without separate authority.
 
@@ -96,22 +96,62 @@ Workflow `35142115023` passed:
 
 Therefore the bounded H-07 remediation is deterministically proven and the canonical barrier may advance to the next live qualification attempt.
 
-## Exact next action
+## H-08 third live qualification — CHECKPOINTED
 
-Deliberately trigger the bounded synthetic-only workflow against this verified H-07 branch state and execute the same frozen 22-case suite through `gpt-5.6`.
+Workflow `35142415250` executed the same frozen 22-case synthetic/de-identified suite through `gpt-5.6`.
 
-Promotion rule remains:
+Boundary checks passed before provider execution:
+
+- Actions `OPENAI_API_KEY` available and masked;
+- `CLINICAL_TRANSCRIPT_PHI_PROVIDER_APPROVED=false`;
+- frozen fixture count = 22;
+- strict Structured Outputs/provider schema path accepted.
+
+Live result:
 
 ```text
-22 frozen cases
-→ strict Structured Outputs
-→ default-deny oracle
-→ failed=0 required
-→ checkpoint exact live evidence
-→ fresh independent READ-ONLY evidence review
+18 PASS
+4 FAIL
 ```
 
-If any case fails, checkpoint the exact coded evidence before further mutation. Do not tune repeatedly against hidden provider payloads or relax fixtures beyond the frozen H-07 contract without a new canonical finding.
+Exact coded failures:
+
+```text
+negative_history_vs_negative_investigation
+  unexpected_assertion_vfa.modality
+
+referral_not_completed_result
+  unexpected_assertion_clinical.unmapped_narrative
+
+prescription_not_administration
+  missing_expected_concepts
+  required_assertion_0_missing
+  unexpected_assertion_decision.selected_agent
+
+planned_not_done_administration
+  unexpected_assertion_followup.task_type
+```
+
+Read-only triage against the frozen H-07 profile/fixtures found:
+
+- three source-supported extras are fixture/oracle overconstraints: `vfa.modality=VFA`, `clinical.unmapped_narrative` for the explicit absence-of-result statement, and `followup.task_type=administration` for an explicitly scheduled administration;
+- `prescription_not_administration` exposes an ontology/profile ambiguity: the profile generally assigns clinician recommendation to `decision.selected_agent`, while a later special clause also permits `treatment.agent`. Because `treatment.agent` maps to a treatment episode and `decision.selected_agent` remains ambiguous unless final_decision, the safer canonical recommendation representation is `clinician_recommendation + decision.selected_agent`.
+
+No mapper/evaluator defect is demonstrated by these four coded failures.
+
+## Exact next action
+
+Perform one bounded H-08 remediation only:
+
+1. allow the three exact source-supported extras above with full semantic/source/value constraints; no wildcard/default-deny relaxation;
+2. remove the contradictory recommendation/prescription `treatment.agent` permission and make clinician recommendation use `decision.selected_agent`;
+3. update the `prescription_not_administration` fixture to require `clinician_recommendation + decision.selected_agent=denosumab`, while retaining the hard prohibition on administration truth;
+4. add focused deterministic regressions for all four H-08 findings;
+5. run the full PR-1 deterministic/inherited gate and checkpoint the exact SHA/run before any fourth live provider qualification.
+
+After deterministic PASS, deliberately trigger the same frozen 22-case suite through `gpt-5.6`. Promotion still requires `failed=0` and then a fresh independent READ-ONLY evidence review.
+
+Do not begin H-05 remediation or browser lifecycle work until this semantic/provider gate is resolved.
 
 ## Explicitly blocked
 

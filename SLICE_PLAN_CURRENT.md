@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — PR-1 Heidi-first Transcript Intake + Candidate Extraction v1
 
-> **STATUS:** H-07 BOUNDED PROFILE/FIXTURE REMEDIATION DETERMINISTICALLY PROVEN / THIRD LIVE 22-CASE GPT-5.6 QUALIFICATION AUTHORIZED — NOT RELEASE READY.
+> **STATUS:** H-08 THIRD LIVE QUALIFICATION CHECKPOINTED AT 18/22 / BOUNDED FOUR-CASE REMEDIATION AUTHORIZED — NOT RELEASE READY.
 > **Activated:** 2026-09-16 Asia/Nicosia.
 > **Slice:** `PR-1-TRANSCRIPT-INTAKE-CANDIDATE-EXTRACTION-V1-2026-09-16`.
 > **Activation main:** `0ab5f9770d220c20e8d94544cb64e93a4aa30d00`.
@@ -9,7 +9,7 @@
 > **Deterministic/inherited gate:** `35142115023` — SUCCESS.
 > **Focused PR-1 tests:** 56 PASS.
 > **Frozen live suite:** 22 synthetic/de-identified cases.
-> **Previous live qualification:** `35140165842` — 7 PASS / 15 FAIL.
+> **Third live qualification:** `35142415250` — 18 PASS / 4 FAIL.
 > **Writer:** one bounded PR-1 implementation writer; operational owner is `CURRENT_OPERATIONAL.md`.
 
 ## 1. Objective
@@ -157,25 +157,52 @@ Two preceding failed deterministic attempts were harness-only string-matching fi
 
 Therefore H-07 bounded remediation is now deterministically proven.
 
-## 7. Third live qualification gate
+## 7. Third live qualification evidence
 
-The next deliberate material action is authorized only after this checkpoint itself is verified:
+Workflow `35142415250` passed the secure synthetic-only boundary and fixture-count checks, then executed all 22 cases through `gpt-5.6`.
 
 ```text
-verified H-07 branch state
-+ secure Actions OPENAI_API_KEY
-+ synthetic_eval enabled
-+ PHI approval=false
-+ same frozen 22-case suite
-→ GPT-5.6 live qualification
-→ failed=0 required
+18 PASS
+4 FAIL
 ```
 
-On PASS, checkpoint exact run/model/evidence and route the evidence through a fresh independent READ-ONLY review before release decisions.
+The four coded failures were:
 
-On FAIL, checkpoint exact coded evidence before any further mutation. Do not loosen the default-deny oracle or alter fixtures beyond a newly justified canonical finding.
+- `negative_history_vs_negative_investigation`: unexpected `vfa.modality`;
+- `referral_not_completed_result`: unexpected `clinical.unmapped_narrative`;
+- `prescription_not_administration`: expected recommendation concept missing and `decision.selected_agent` returned instead;
+- `planned_not_done_administration`: unexpected `followup.task_type`.
 
-## 8. Release boundary
+Read-only source/profile triage classifies the first, second and fourth as narrow fixture/oracle overconstraints because the extras are directly source-supported and already valid under the provider ontology. The prescription case instead demonstrates conflicting provider guidance: general recommendation ownership points to `decision.selected_agent`, while a later special clause also permits `treatment.agent`.
+
+For safety, recommendation/prescription semantics should converge on `decision.selected_agent`, because it remains non-authoritative/ambiguous unless the candidate is an explicit `final_decision`; `treatment.agent` targets a treatment episode.
+
+## 8. H-08 bounded remediation gate
+
+Authorized changes are limited to:
+
+- exact allowance of `vfa.modality=VFA` in the negative-history-vs-investigation case;
+- exact allowance of `clinical.unmapped_narrative` in the referral-with-no-result case;
+- exact allowance of `followup.task_type=administration` in the planned-administration case;
+- canonical recommendation/prescription ownership via `decision.selected_agent`, with no administration truth;
+- focused deterministic tests for these four findings.
+
+The default-deny oracle remains intact. No wildcard fixture permission, mapper relaxation or evaluator relaxation is authorized.
+
+Required sequence:
+
+```text
+H-08 bounded patch
+→ full deterministic/inherited gate
+→ canonical exact-SHA checkpoint
+→ fourth live frozen 22-case GPT-5.6 qualification
+→ failed=0 required
+→ fresh independent READ-ONLY evidence review
+```
+
+H-05 production execution remediation and executable browser lifecycle evidence remain subsequent release blockers, not parallel work while H-08 is unresolved.
+
+## 9. Release boundary
 
 A future 22/22 selected-model PASS still does not by itself authorize production. H-05 synchronous-provider blocking and executable browser lifecycle evidence remain production-release blockers/debt, and identifiable transcript processing retains its separate privacy/provider gate.
 
