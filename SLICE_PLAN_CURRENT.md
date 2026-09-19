@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — PR-1 Heidi-first Transcript Intake + Candidate Extraction v1
 
-> **STATUS:** H-11 SOURCE-SEMANTIC NORMALIZATION DETERMINISTICALLY PROVEN / NEW 22-CASE GPT-5.6 QUALIFICATION AUTHORIZED — NOT RELEASE READY.
+> **STATUS:** POST-H11 LIVE GPT-5.6 PROMOTION PASS 22/22 / FRESH INDEPENDENT READ-ONLY PROMOTION REVIEW REQUIRED — NOT RELEASE READY.
 > **Activated:** 2026-09-16 Asia/Nicosia.
 > **Slice:** `PR-1-TRANSCRIPT-INTAKE-CANDIDATE-EXTRACTION-V1-2026-09-16`.
 > **Activation main:** `0ab5f9770d220c20e8d94544cb64e93a4aa30d00`.
@@ -17,7 +17,8 @@
 > **Frozen live suite:** 22 synthetic/de-identified cases.
 > **Pre-H09 live qualification:** `35446962808` — 22 PASS / 0 FAIL.
 > **Post-H09 live qualification:** `35448273993` — 19 PASS / 3 FAIL.
-> **Post-H10 live qualification:** `35455512992` — **20 PASS / 2 FAIL**.
+> **Post-H10 live qualification:** `35455512992` — 20 PASS / 2 FAIL.
+> **Post-H11 live qualification:** `35455986630` — **22 PASS / 0 FAIL**.
 > **Writer:** one bounded PR-1 implementation writer; operational owner is `CURRENT_OPERATIONAL.md`.
 
 ## 1. Objective
@@ -533,12 +534,46 @@ verify H-11 canonical checkpoint
 
 H-05 and browser lifecycle remediation remain blocked.
 
-## 20. Release boundary
+## 20. Post-H11 live promotion PASS and review gate
+
+Execution head:
+
+```text
+e0522220caf54857d6ac14e91c0aa255619f3b62
+```
+
+Deterministic trigger gate `35455986818` completed SUCCESS.
+
+Live run `35455986630` completed SUCCESS with the same 22 synthetic/de-identified transcript inputs:
+
+```text
+model gpt-5.6
+synthetic evaluation
+identifiable-transcript approval false
+22 PASS
+0 FAIL
+provider-eval summary: total=22 failed=0
+```
+
+The current promotion evidence includes:
+
+- H-09 local semantic/polarity fail-closed mapping;
+- H-10 source-bound optional narrative authorization;
+- H-10 duplicate-candidate promotion rejection;
+- H-11 reviewed-VFA versus performed-VFA source semantics;
+- H-11 absence-of-administration-documentation semantics;
+- 75 focused deterministic PR-1 tests.
+
+Before release engineering, a fresh independent READ-ONLY reviewer must re-check the prior HIGH and MEDIUM findings plus this post-H11 live evidence.
+
+Only `PASS_TO_RELEASE_ENGINEERING` authorizes the subsequent H-05 / executable browser-lifecycle engineering phase.
+
+## 21. Release boundary
 
 A future 22/22 selected-model PASS still does not by itself authorize production. H-05 synchronous-provider blocking and executable browser lifecycle evidence remain production-release blockers/debt, and identifiable transcript processing retains its separate privacy/provider gate.
 
 ```text
-latest live qualification: 20/22 on run 35455512992; historical pre-H09 22/22 does not satisfy post-change promotion
+latest live qualification: 22/22 on post-H11 run 35455986630; fresh independent promotion review still required
 release ready: NO
 release PR: NO
 merge/deploy: NO
