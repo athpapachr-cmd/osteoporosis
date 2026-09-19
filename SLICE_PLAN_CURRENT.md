@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — PR-1 Heidi-first Transcript Intake + Candidate Extraction v1
 
-> **STATUS:** POST-H10 LIVE GPT-5.6 QUALIFICATION 20/22 FAIL CHECKPOINTED / READ-ONLY TWO-CASE TRIAGE REQUIRED — NOT RELEASE READY.
+> **STATUS:** POST-H10 TWO-CASE TRIAGE COMPLETE / H-11 BOUNDED SOURCE-SEMANTIC NORMALIZATION AUTHORIZED — NOT RELEASE READY.
 > **Activated:** 2026-09-16 Asia/Nicosia.
 > **Slice:** `PR-1-TRANSCRIPT-INTAKE-CANDIDATE-EXTRACTION-V1-2026-09-16`.
 > **Activation main:** `0ab5f9770d220c20e8d94544cb64e93a4aa30d00`.
@@ -456,18 +456,50 @@ prescription_not_administration
   unexpected_assertion_clinical.unmapped_narrative
 ```
 
-Required next sequence:
+## 17. Post-H10 two-case triage
+
+The failure checkpoint was verified by `35455697350`.
+
+Disposition:
 
 ```text
-checkpoint verification
-→ read-only two-case triage
-→ canonical disposition
-→ bounded remediation only if source/contract evidence justifies it
+negative_history_vs_negative_investigation
+  source says VFA result exists/is referenced
+  safest action = already_available_reviewed
+  do not infer current-encounter performed
+
+prescription_not_administration
+  "no administration is mentioned"
+  = absence-of-documentation narrative
+  != administration event
+  != negative administration truth
+```
+
+## 18. H-11 bounded normalization
+
+Authorized changes:
+
+- provider rule for referenced VFA result → `vfa.action=already_available_reviewed` unless explicit performance;
+- exact source-bound `vfa.action` allowance in the VFA case;
+- provider rule for no-administration-mentioned wording → `clinician_interpretation + clinical.unmapped_narrative`;
+- exact source-bound narrative allowance in the prescription case;
+- focused deterministic regressions.
+
+H-09 target guards and H-10 source-bound/default-deny/duplicate protections remain unchanged.
+
+Required sequence:
+
+```text
+H-11 patch
+→ full deterministic/inherited gate
+→ canonical checkpoint
+→ live 22-case GPT-5.6 qualification
+→ fresh independent promotion review
 ```
 
 H-05 and browser lifecycle remediation remain blocked.
 
-## 17. Release boundary
+## 19. Release boundary
 
 A future 22/22 selected-model PASS still does not by itself authorize production. H-05 synchronous-provider blocking and executable browser lifecycle evidence remain production-release blockers/debt, and identifiable transcript processing retains its separate privacy/provider gate.
 

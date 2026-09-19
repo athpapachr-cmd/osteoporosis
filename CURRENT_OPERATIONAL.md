@@ -1,6 +1,6 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** PR-1 HEIDI-FIRST TRANSCRIPT CAPTURE — POST-H10 LIVE GPT-5.6 QUALIFICATION 20/22 FAIL CHECKPOINTED / READ-ONLY TWO-CASE TRIAGE REQUIRED — NOT RELEASE READY.
+> **STATUS:** PR-1 HEIDI-FIRST TRANSCRIPT CAPTURE — POST-H10 TWO-CASE TRIAGE COMPLETE / H-11 BOUNDED SOURCE-SEMANTIC NORMALIZATION AUTHORIZED — NOT RELEASE READY.
 > **Updated:** 2026-09-16 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Fresh verified remote `main`:** `0ab5f9770d220c20e8d94544cb64e93a4aa30d00`.
@@ -436,11 +436,70 @@ prescription_not_administration
 
 No provider/schema/credential failure occurred. H-09 runtime hardening and H-10 stricter evaluator remained active.
 
+## Post-H10 two-case read-only triage — COMPLETE
+
+The 20/22 failure checkpoint `c54a43bdf1075f4243f9c7cb809be0606b8de64c` was verified by workflow `35455697350` before triage.
+
+### negative_history_vs_negative_investigation
+
+Source:
+
+```text
+Ιατρός: Στη VFA δεν βρέθηκε σπονδυλικό κάταγμα.
+```
+
+The required negative vertebral-fracture result passed. The only extra was `vfa.action`.
+
+The source supports that VFA evidence exists and is being referenced/reviewed. It does **not** establish that the VFA was performed during the current encounter. Therefore the safest canonical action code is:
+
+```text
+vfa.action = already_available_reviewed
+semantic_type = objective_result
+speaker = clinician
+evidence anchored to "Στη VFA"
+```
+
+Do not infer `performed` unless the transcript explicitly states performance.
+
+### prescription_not_administration
+
+Source:
+
+```text
+Συνταγογραφήθηκε denosumab ως προτεινόμενη θεραπεία.
+Δεν αναφέρεται ότι έγινε χορήγηση.
+```
+
+The required `clinician_recommendation + decision.selected_agent=denosumab` passed. No forbidden administration concept was emitted. The only extra was `clinical.unmapped_narrative`.
+
+“Δεν αναφέρεται ότι έγινε χορήγηση” is absence-of-documentation wording. It is neither evidence of a completed administration nor a negative administration event. If retained, it may exist only as:
+
+```text
+clinician_interpretation
++ clinical.unmapped_narrative
++ source-bound evidence
++ unmapped / NO_CURRENT_RUNTIME_TARGET
+```
+
+It must not create `administration.*`, `treatment.agent`, or positive/negative administration truth.
+
+## H-11 bounded remediation contract
+
+Authorized H-11 changes are limited to provider profile, these two exact fixture permissions and focused regressions:
+
+1. normalize referenced VFA-result wording to `vfa.action=already_available_reviewed` unless explicit performance is stated;
+2. permit that exact source-supported VFA action in `negative_history_vs_negative_investigation`;
+3. normalize absence-of-administration-documentation wording to source-bound `clinician_interpretation + clinical.unmapped_narrative`;
+4. permit that exact non-runtime narrative in `prescription_not_administration`;
+5. preserve all H-09 target guards and H-10 evidence/duplicate/default-deny hardening.
+
+No wildcard permission, no evaluator relaxation, no runtime-target relaxation and no production/PHI changes.
+
 ## Exact next action
 
-After this failure checkpoint itself verifies, perform read-only triage of the two extras against source text, current provider profile and deterministic mapper.
+Implement H-11, run the full deterministic/inherited gate, checkpoint the exact SHA/run, then rerun the same 22 transcript inputs through `gpt-5.6`.
 
-Do not mutate fixtures/profile/evaluator or start H-05/browser work before that triage is frozen.
+H-05 and browser lifecycle work remain blocked until a fresh independent promotion review passes.
 
 ## Explicitly blocked
 
