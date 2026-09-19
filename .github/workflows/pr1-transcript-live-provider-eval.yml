@@ -1,5 +1,5 @@
 name: PR-1 live synthetic provider eval
-# Qualification trigger: H-07 profile/fixture remediation attempt 3
+# Qualification trigger: H-08 bounded remediation attempt 4
 
 on:
   push:
