@@ -1,13 +1,13 @@
 # SLICE_PLAN_CURRENT.md — PR-1 Heidi-first Transcript Intake + Candidate Extraction v1
 
-> **STATUS:** H-08 THIRD LIVE QUALIFICATION CHECKPOINTED AT 18/22 / BOUNDED FOUR-CASE REMEDIATION AUTHORIZED — NOT RELEASE READY.
+> **STATUS:** H-08 FOUR-CASE REMEDIATION DETERMINISTICALLY PROVEN / FOURTH LIVE 22-CASE GPT-5.6 QUALIFICATION AUTHORIZED — NOT RELEASE READY.
 > **Activated:** 2026-09-16 Asia/Nicosia.
 > **Slice:** `PR-1-TRANSCRIPT-INTAKE-CANDIDATE-EXTRACTION-V1-2026-09-16`.
 > **Activation main:** `0ab5f9770d220c20e8d94544cb64e93a4aa30d00`.
 > **Runtime branch:** `feat/pr1-transcript-capture-v1-2026-09-16`.
-> **Exact H-07 deterministic head:** `e066c87bf6b42c2c56c80b2b71b43bc909510d39`.
-> **Deterministic/inherited gate:** `35142115023` — SUCCESS.
-> **Focused PR-1 tests:** 56 PASS.
+> **Exact H-08 deterministic head:** `5eeddeba664814b38d55bad8231afb5b33448eae`.
+> **Deterministic/inherited gate:** `35446869081` — SUCCESS.
+> **Focused PR-1 tests:** 60 PASS.
 > **Frozen live suite:** 22 synthetic/de-identified cases.
 > **Third live qualification:** `35142415250` — 18 PASS / 4 FAIL.
 > **Writer:** one bounded PR-1 implementation writer; operational owner is `CURRENT_OPERATIONAL.md`.
@@ -177,30 +177,48 @@ Read-only source/profile triage classifies the first, second and fourth as narro
 
 For safety, recommendation/prescription semantics should converge on `decision.selected_agent`, because it remains non-authoritative/ambiguous unless the candidate is an explicit `final_decision`; `treatment.agent` targets a treatment episode.
 
-## 8. H-08 bounded remediation gate
+## 8. H-08 bounded remediation — deterministic PASS
 
-Authorized changes are limited to:
+The authorized H-08 changes are now implemented:
 
-- exact allowance of `vfa.modality=VFA` in the negative-history-vs-investigation case;
-- exact allowance of `clinical.unmapped_narrative` in the referral-with-no-result case;
-- exact allowance of `followup.task_type=administration` in the planned-administration case;
-- canonical recommendation/prescription ownership via `decision.selected_agent`, with no administration truth;
-- focused deterministic tests for these four findings.
+- exact `vfa.modality=VFA` allowance;
+- exact clinician `clinical.unmapped_narrative` allowance for the explicit absence-of-result statement;
+- exact `followup.task_type=administration` allowance for the scheduled administration task;
+- prescription/recommendation canonicalized to `clinician_recommendation + decision.selected_agent`;
+- prescription-only `treatment.agent` blocked;
+- focused H-08 regressions added without weakening default-deny.
 
-The default-deny oracle remains intact. No wildcard fixture permission, mapper relaxation or evaluator relaxation is authorized.
+The first run after implementation, `35446828051`, had one harness-only H-07 wording assertion failure after 59 other focused tests passed. No provider-facing or fixture behavior changed in the correction.
 
-Required sequence:
+Final exact deterministic head:
 
 ```text
-H-08 bounded patch
-→ full deterministic/inherited gate
-→ canonical exact-SHA checkpoint
+5eeddeba664814b38d55bad8231afb5b33448eae
+```
+
+Workflow `35446869081` completed SUCCESS:
+
+- Python syntax PASS;
+- browser syntax PASS;
+- **60 focused PR-1 tests PASS**;
+- 6 inherited protected-clinical tests PASS;
+- 24 inherited Medical Report tests PASS;
+- workspace/navigation PASS;
+- bounded scope PASS.
+
+Therefore H-08 is deterministically proven.
+
+Required next sequence:
+
+```text
+canonical checkpoint verification
 → fourth live frozen 22-case GPT-5.6 qualification
 → failed=0 required
+→ checkpoint exact live evidence
 → fresh independent READ-ONLY evidence review
 ```
 
-H-05 production execution remediation and executable browser lifecycle evidence remain subsequent release blockers, not parallel work while H-08 is unresolved.
+H-05 production execution remediation and executable browser lifecycle evidence remain subsequent release blockers.
 
 ## 9. Release boundary
 

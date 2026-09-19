@@ -1,15 +1,15 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** PR-1 HEIDI-FIRST TRANSCRIPT CAPTURE — H-08 THIRD LIVE QUALIFICATION CHECKPOINTED AT 18/22 / BOUNDED FOUR-CASE REMEDIATION AUTHORIZED — NOT RELEASE READY.
+> **STATUS:** PR-1 HEIDI-FIRST TRANSCRIPT CAPTURE — H-08 BOUNDED REMEDIATION DETERMINISTICALLY PROVEN / FOURTH LIVE 22-CASE GPT-5.6 QUALIFICATION AUTHORIZED — NOT RELEASE READY.
 > **Updated:** 2026-09-16 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Fresh verified remote `main`:** `0ab5f9770d220c20e8d94544cb64e93a4aa30d00`.
 > **Active slice:** `PR-1-TRANSCRIPT-INTAKE-CANDIDATE-EXTRACTION-V1-2026-09-16`.
 > **Active writer:** this bounded PR-1 implementation lifecycle only.
 > **Runtime implementation branch:** `feat/pr1-transcript-capture-v1-2026-09-16`.
-> **Exact H-07 deterministic head:** `e066c87bf6b42c2c56c80b2b71b43bc909510d39`.
-> **H-07 deterministic/inherited gate:** `35142115023` — SUCCESS.
-> **Focused PR-1 tests:** 56 PASS.
+> **Exact H-08 deterministic head:** `5eeddeba664814b38d55bad8231afb5b33448eae`.
+> **H-08 deterministic/inherited gate:** `35446869081` — SUCCESS.
+> **Focused PR-1 tests:** 60 PASS.
 > **Frozen synthetic qualification suite:** 22 synthetic/de-identified cases.
 > **Third live qualification:** `35142415250` — 18 PASS / 4 FAIL; credential/schema/fixture-count boundaries passed; exact coded failures checkpointed.
 > **Safe credential/schema boundary:** CLOSED; Actions secret available/masked, PHI approval false, strict Structured Outputs accepted.
@@ -139,19 +139,50 @@ Read-only triage against the frozen H-07 profile/fixtures found:
 
 No mapper/evaluator defect is demonstrated by these four coded failures.
 
+## H-08 bounded remediation — COMPLETE deterministically
+
+The bounded H-08 patch made only the authorized changes:
+
+- exact source-supported permission for `vfa.modality=VFA` in `negative_history_vs_negative_investigation`;
+- exact source-supported `clinical.unmapped_narrative` permission for the explicit no-result statement in `referral_not_completed_result`;
+- exact `followup.task_type=administration` permission for the explicitly scheduled administration task;
+- prescription/recommendation semantics canonicalized to `clinician_recommendation + decision.selected_agent`, with `treatment.agent` forbidden for prescription-only wording;
+- focused H-08 regressions added; default-deny remains intact.
+
+An initial deterministic run `35446828051` reached 59 PASS / 1 FAIL in the focused suite. The sole failure was a brittle pre-existing H-07 string assertion (`must NEVER` vs `and NEVER`) after the safety sentence was reworded without semantic relaxation. A harness-only assertion correction produced exact head:
+
+```text
+5eeddeba664814b38d55bad8231afb5b33448eae
+```
+
+Workflow `35446869081` completed SUCCESS with:
+
+- Python syntax PASS;
+- browser syntax PASS;
+- **60 focused PR-1 tests PASS**;
+- inherited protected-clinical regressions PASS;
+- inherited Clinical Documents regressions PASS;
+- inherited workspace/navigation regression PASS;
+- bounded PR-1 scope PASS.
+
+No mapper/evaluator relaxation, production configuration change or PHI processing occurred.
+
 ## Exact next action
 
-Perform one bounded H-08 remediation only:
+After this canonical checkpoint itself verifies, deliberately trigger the synthetic-only workflow against the verified H-08 branch state and execute the same frozen 22-case suite through `gpt-5.6`.
 
-1. allow the three exact source-supported extras above with full semantic/source/value constraints; no wildcard/default-deny relaxation;
-2. remove the contradictory recommendation/prescription `treatment.agent` permission and make clinician recommendation use `decision.selected_agent`;
-3. update the `prescription_not_administration` fixture to require `clinician_recommendation + decision.selected_agent=denosumab`, while retaining the hard prohibition on administration truth;
-4. add focused deterministic regressions for all four H-08 findings;
-5. run the full PR-1 deterministic/inherited gate and checkpoint the exact SHA/run before any fourth live provider qualification.
+Promotion rule:
 
-After deterministic PASS, deliberately trigger the same frozen 22-case suite through `gpt-5.6`. Promotion still requires `failed=0` and then a fresh independent READ-ONLY evidence review.
+```text
+22 frozen cases
+→ strict Structured Outputs
+→ default-deny oracle
+→ failed=0 required
+→ checkpoint exact live evidence
+→ fresh independent READ-ONLY evidence review
+```
 
-Do not begin H-05 remediation or browser lifecycle work until this semantic/provider gate is resolved.
+On any failure, checkpoint coded evidence before mutation. Do not start H-05 remediation or browser lifecycle work in parallel while the semantic/provider qualification remains unresolved.
 
 ## Explicitly blocked
 
