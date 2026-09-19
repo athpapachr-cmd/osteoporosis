@@ -1,5 +1,5 @@
 name: PR-1 live synthetic provider eval
-# Qualification trigger: H-09 deterministic semantic boundary attempt 5
+# Qualification trigger: H-10 semantic+oracle stabilization attempt 6
 
 on:
   push:
