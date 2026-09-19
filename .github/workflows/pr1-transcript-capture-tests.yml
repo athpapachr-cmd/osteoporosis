@@ -61,7 +61,8 @@ jobs:
             test_pr1_transcript_ui_contract.py \
             test_pr1_transcript_eval_contract.py \
             test_pr1_transcript_h06.py \
-            test_pr1_transcript_h07.py
+            test_pr1_transcript_h07.py \
+            test_pr1_transcript_h08.py
 
       - name: Browser syntax
         run: |
@@ -69,7 +70,7 @@ jobs:
           node --check static/baseline-audit/transcript-capture.js
 
       - name: PR-1 focused privacy, contract and mapping tests
-        run: pytest -q test_pr1_transcript_core.py test_pr1_transcript_ui_contract.py test_pr1_transcript_eval_contract.py test_pr1_transcript_h06.py test_pr1_transcript_h07.py
+        run: pytest -q test_pr1_transcript_core.py test_pr1_transcript_ui_contract.py test_pr1_transcript_eval_contract.py test_pr1_transcript_h06.py test_pr1_transcript_h07.py test_pr1_transcript_h08.py
 
       - name: Inherited protected-clinical regressions
         run: pytest -q test_baseline_finalization_api.py test_clinical_calendar.py
@@ -101,6 +102,7 @@ jobs:
               test_pr1_transcript_eval_contract.py|\
               test_pr1_transcript_h06.py|\
               test_pr1_transcript_h07.py|\
+              test_pr1_transcript_h08.py|\
               .github/workflows/pr1-transcript-capture-tests.yml|\
               .github/workflows/pr1-transcript-live-provider-eval.yml|\
               clinical_excellence/*|clinical_excellence/**|\

@@ -167,7 +167,7 @@ SEMANTIC OWNERSHIP FOR THERAPY / DECISIONS
 - For a clinician-recommended agent, emit decision.selected_agent with semantic_type=clinician_recommendation. Do not add treatment.status from recommendation wording.
 - For an explicit final selected agent, emit decision.selected_agent with semantic_type=final_decision. If the clinician explicitly says the final decision is to start it, also emit decision.type code=start in that final_decision assertion/candidate.
 - Patient agreement such as "I agree" after a recommendation/decision must be a separate patient_accepted assertion with patient.acceptance code=accepted and speaker=patient.
-- A prescription/recommendation alone may use a clinician_recommendation treatment.agent only when the transcript frames it as the prescribed/recommended treatment entity, but it must NEVER create administration.agent, administration.status, administration.actual_date or an inferred treatment.status.
+- A prescription/recommendation alone is a clinician_recommendation using decision.selected_agent for the named agent. Do NOT use treatment.agent solely from prescription/recommendation wording, and NEVER create administration.agent, administration.status, administration.actual_date or an inferred treatment.status.
 
 ADMINISTRATION SAFETY
 - administration.* is reserved for an actual or explicitly scheduled administration event, never for a treatment option/prescription alone.
