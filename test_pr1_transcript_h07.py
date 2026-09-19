@@ -37,7 +37,7 @@ def test_h07_provider_profile_preserves_semantic_ownership_and_hard_safety_rules
         "decision.selected_agent with semantic_type=option_discussed",
         "decision.selected_agent with semantic_type=clinician_recommendation",
         "decision.selected_agent with semantic_type=final_decision",
-        "must NEVER create administration.agent, administration.status, administration.actual_date",
+        "NEVER create administration.agent, administration.status, administration.actual_date",
         "uncertain, use semantic_type=uncertain_needs_review and do not emit administration.status",
         "unrelated non-osteoporosis narrative",
         "speaker=third_party",
