@@ -174,30 +174,28 @@ def test_h09_valid_actual_and_scheduled_administration_events_remain_mapped():
     assert actual.target_path == "step4.administrations[].actual_date"
     assert actual.proposed_value == "2026-09-01"
 
-    scheduled = map_candidate(
-        _multi_candidate(
-            [
-                {
-                    "concept_key": "administration.agent",
-                    "value": {"kind": "code", "code": "denosumab"},
+    scheduled = _multi_candidate(
+        [
+            {
+                "concept_key": "administration.agent",
+                "value": {"kind": "code", "code": "denosumab"},
+            },
+            {
+                "concept_key": "administration.scheduled_date",
+                "value": {
+                    "kind": "date",
+                    "normalized": "2026-10-20",
+                    "precision": "day",
+                    "date_text": "20/10/2026",
                 },
-                {
-                    "concept_key": "administration.scheduled_date",
-                    "value": {
-                        "kind": "date",
-                        "normalized": "2026-10-20",
-                        "precision": "day",
-                        "date_text": "20/10/2026",
-                    },
-                },
-                {
-                    "concept_key": "administration.status",
-                    "value": {"kind": "code", "code": "planned"},
-                },
-            ],
-            semantic_type="followup_task",
-            temporality="future",
-        )
+            },
+            {
+                "concept_key": "administration.status",
+                "value": {"kind": "code", "code": "planned"},
+            },
+        ],
+        semantic_type="followup_task",
+        temporality="future",
     )
     mappings = {item.component_keys[0]: item for item in map_candidate(scheduled)}
     assert mappings["administration.agent"].status == "mapped"
