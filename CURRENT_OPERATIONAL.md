@@ -1,6 +1,6 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** PR-1 HEIDI-FIRST TRANSCRIPT CAPTURE — H-10 SEMANTIC+ORACLE STABILIZATION DETERMINISTICALLY PROVEN / NEW 22-CASE GPT-5.6 QUALIFICATION AUTHORIZED — NOT RELEASE READY.
+> **STATUS:** PR-1 HEIDI-FIRST TRANSCRIPT CAPTURE — POST-H10 LIVE GPT-5.6 QUALIFICATION 20/22 FAIL CHECKPOINTED / READ-ONLY TWO-CASE TRIAGE REQUIRED — NOT RELEASE READY.
 > **Updated:** 2026-09-16 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Fresh verified remote `main`:** `0ab5f9770d220c20e8d94544cb64e93a4aa30d00`.
@@ -16,7 +16,8 @@
 > **Focused PR-1 tests:** 70 PASS.
 > **Frozen synthetic qualification suite:** 22 synthetic/de-identified cases.
 > **Pre-H09 live qualification:** `35446962808` — 22 PASS / 0 FAIL.
-> **Post-H09 live qualification:** `35448273993` — **19 PASS / 3 FAIL**; secure synthetic-only boundary and frozen 22-case fixture count passed.
+> **Post-H09 live qualification:** `35448273993` — 19 PASS / 3 FAIL.
+> **Post-H10 live qualification:** `35455512992` — **20 PASS / 2 FAIL**; secure synthetic-only boundary and 22-case fixture count passed.
 > **Safe credential/schema boundary:** CLOSED; Actions secret available/masked, PHI approval false, strict Structured Outputs accepted.
 > **Medical Report V1.1:** CLOSED; do not reopen without separate authority.
 
@@ -399,24 +400,47 @@ Workflow `35455400599` completed SUCCESS:
 
 No H-09 target-guard relaxation, endpoint/persistence change, production config mutation or PHI processing occurred.
 
-## Exact next action
+## Post-H10 live GPT-5.6 qualification — FAIL CHECKPOINT
 
-After this canonical checkpoint itself verifies, deliberately trigger the synthetic-only workflow against the verified H-10 branch state and execute the same 22 transcript inputs through `gpt-5.6`.
-
-Promotion still requires:
+Workflow-only trigger head:
 
 ```text
-22 cases
-→ strict Structured Outputs
-→ H-09 fail-closed runtime guard
-→ H-10 source-bound/default-deny oracle
-→ exact duplicate detection
-→ failed=0
-→ canonical evidence checkpoint
-→ fresh independent promotion review
+9d77df8569a0037ec51204e6724a0c62c4bcc552
 ```
 
-Do not begin H-05 or browser lifecycle remediation until the post-H10 independent review allows advancement.
+Trigger-head deterministic gate `35455512998` completed SUCCESS with the H-10 70-test gate and all inherited checks.
+
+Live synthetic workflow `35455512992` passed:
+
+- synthetic-only boundary;
+- `provider=openai / model=gpt-5.6 / purpose=synthetic_eval / phi_approval=false`;
+- fixture count `total=22 ids_unique=true`.
+
+Live semantic result:
+
+```text
+20 PASS
+2 FAIL
+provider-eval summary: total=22 failed=2
+```
+
+Exact coded failures:
+
+```text
+negative_history_vs_negative_investigation
+  unexpected_assertion_vfa.action
+
+prescription_not_administration
+  unexpected_assertion_clinical.unmapped_narrative
+```
+
+No provider/schema/credential failure occurred. H-09 runtime hardening and H-10 stricter evaluator remained active.
+
+## Exact next action
+
+After this failure checkpoint itself verifies, perform read-only triage of the two extras against source text, current provider profile and deterministic mapper.
+
+Do not mutate fixtures/profile/evaluator or start H-05/browser work before that triage is frozen.
 
 ## Explicitly blocked
 

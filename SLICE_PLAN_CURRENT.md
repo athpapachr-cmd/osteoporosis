@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — PR-1 Heidi-first Transcript Intake + Candidate Extraction v1
 
-> **STATUS:** H-10 SEMANTIC+ORACLE STABILIZATION DETERMINISTICALLY PROVEN / NEW 22-CASE GPT-5.6 QUALIFICATION AUTHORIZED — NOT RELEASE READY.
+> **STATUS:** POST-H10 LIVE GPT-5.6 QUALIFICATION 20/22 FAIL CHECKPOINTED / READ-ONLY TWO-CASE TRIAGE REQUIRED — NOT RELEASE READY.
 > **Activated:** 2026-09-16 Asia/Nicosia.
 > **Slice:** `PR-1-TRANSCRIPT-INTAKE-CANDIDATE-EXTRACTION-V1-2026-09-16`.
 > **Activation main:** `0ab5f9770d220c20e8d94544cb64e93a4aa30d00`.
@@ -14,7 +14,8 @@
 > **Focused PR-1 tests:** 70 PASS.
 > **Frozen live suite:** 22 synthetic/de-identified cases.
 > **Pre-H09 live qualification:** `35446962808` — 22 PASS / 0 FAIL.
-> **Post-H09 live qualification:** `35448273993` — **19 PASS / 3 FAIL**.
+> **Post-H09 live qualification:** `35448273993` — 19 PASS / 3 FAIL.
+> **Post-H10 live qualification:** `35455512992` — **20 PASS / 2 FAIL**.
 > **Writer:** one bounded PR-1 implementation writer; operational owner is `CURRENT_OPERATIONAL.md`.
 
 ## 1. Objective
@@ -431,20 +432,42 @@ navigation PASS
 bounded scope PASS
 ```
 
+## 16. Post-H10 live qualification — FAIL CHECKPOINT
+
+Trigger head `9d77df8569a0037ec51204e6724a0c62c4bcc552`.
+
+Trigger-head deterministic gate `35455512998` completed SUCCESS.
+
+Live run `35455512992` passed the synthetic-only/provider/fixture-count boundaries, then returned:
+
+```text
+20 PASS
+2 FAIL
+provider-eval summary: total=22 failed=2
+```
+
+Failures:
+
+```text
+negative_history_vs_negative_investigation
+  unexpected_assertion_vfa.action
+
+prescription_not_administration
+  unexpected_assertion_clinical.unmapped_narrative
+```
+
 Required next sequence:
 
 ```text
-verify H-10 canonical checkpoint
-→ trigger synthetic-only live evaluation
-→ same 22 transcript inputs through GPT-5.6
-→ failed=0 required
-→ checkpoint exact live evidence
-→ fresh independent promotion review
+checkpoint verification
+→ read-only two-case triage
+→ canonical disposition
+→ bounded remediation only if source/contract evidence justifies it
 ```
 
 H-05 and browser lifecycle remediation remain blocked.
 
-## 16. Release boundary
+## 17. Release boundary
 
 A future 22/22 selected-model PASS still does not by itself authorize production. H-05 synchronous-provider blocking and executable browser lifecycle evidence remain production-release blockers/debt, and identifiable transcript processing retains its separate privacy/provider gate.
 
