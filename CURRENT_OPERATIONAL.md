@@ -1,6 +1,6 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** PR-1 HEIDI-FIRST TRANSCRIPT CAPTURE — POST-H10 TWO-CASE TRIAGE COMPLETE / H-11 BOUNDED SOURCE-SEMANTIC NORMALIZATION AUTHORIZED — NOT RELEASE READY.
+> **STATUS:** PR-1 HEIDI-FIRST TRANSCRIPT CAPTURE — H-11 SOURCE-SEMANTIC NORMALIZATION DETERMINISTICALLY PROVEN / NEW 22-CASE GPT-5.6 QUALIFICATION AUTHORIZED — NOT RELEASE READY.
 > **Updated:** 2026-09-16 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Fresh verified remote `main`:** `0ab5f9770d220c20e8d94544cb64e93a4aa30d00`.
@@ -13,7 +13,9 @@
 > **H-09 deterministic/inherited gate:** `35448153136` — SUCCESS.
 > **H-10 exact deterministic head:** `eee45f9bab1fa0eba9fc36dea8fdcbf61dd89d5a`.
 > **H-10 deterministic/inherited gate:** `35455400599` — SUCCESS.
-> **Focused PR-1 tests:** 70 PASS.
+> **H-11 exact deterministic head:** `a6bb0b2a8897f83c6584106e03c26b59aa9c266b`.
+> **H-11 deterministic/inherited gate:** `35455876663` — SUCCESS.
+> **Focused PR-1 tests:** 75 PASS.
 > **Frozen synthetic qualification suite:** 22 synthetic/de-identified cases.
 > **Pre-H09 live qualification:** `35446962808` — 22 PASS / 0 FAIL.
 > **Post-H09 live qualification:** `35448273993` — 19 PASS / 3 FAIL.
@@ -495,11 +497,40 @@ Authorized H-11 changes are limited to provider profile, these two exact fixture
 
 No wildcard permission, no evaluator relaxation, no runtime-target relaxation and no production/PHI changes.
 
+## H-11 source-semantic normalization — COMPLETE deterministically
+
+H-11 implemented only the frozen two-case triage contract:
+
+- referenced VFA-result wording without explicit current performance now instructs `vfa.action=already_available_reviewed`;
+- the VFA fixture allows that exact objective-result action only when source evidence contains `Στη VFA`;
+- `vfa.action=performed` is explicitly forbidden for that source because current-encounter performance is not stated;
+- “Δεν αναφέρεται ότι έγινε χορήγηση” is classified as absence-of-documentation, not administration truth or negative administration truth;
+- the prescription fixture permits only source-bound `clinician_interpretation + clinical.unmapped_narrative` for that sentence;
+- all H-09 target guards and H-10 evidence/default-deny/duplicate protections remain unchanged.
+
+Exact H-11 head:
+
+```text
+a6bb0b2a8897f83c6584106e03c26b59aa9c266b
+```
+
+Workflow `35455876663` completed SUCCESS:
+
+- Python syntax PASS;
+- browser syntax PASS;
+- **75 focused PR-1 tests PASS**;
+- 6 inherited protected-clinical tests PASS;
+- 24 inherited Clinical Documents / Medical Report tests PASS;
+- workspace/navigation PASS;
+- bounded scope PASS.
+
 ## Exact next action
 
-Implement H-11, run the full deterministic/inherited gate, checkpoint the exact SHA/run, then rerun the same 22 transcript inputs through `gpt-5.6`.
+After this canonical checkpoint itself verifies, trigger the synthetic-only workflow against the verified H-11 branch state and execute the same 22 transcript inputs through `gpt-5.6`.
 
-H-05 and browser lifecycle work remain blocked until a fresh independent promotion review passes.
+Promotion still requires `failed=0`, a durable live-evidence checkpoint and a fresh independent READ-ONLY promotion review.
+
+H-05 and browser lifecycle remediation remain blocked pending that review.
 
 ## Explicitly blocked
 

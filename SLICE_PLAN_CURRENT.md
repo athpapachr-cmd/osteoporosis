@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — PR-1 Heidi-first Transcript Intake + Candidate Extraction v1
 
-> **STATUS:** POST-H10 TWO-CASE TRIAGE COMPLETE / H-11 BOUNDED SOURCE-SEMANTIC NORMALIZATION AUTHORIZED — NOT RELEASE READY.
+> **STATUS:** H-11 SOURCE-SEMANTIC NORMALIZATION DETERMINISTICALLY PROVEN / NEW 22-CASE GPT-5.6 QUALIFICATION AUTHORIZED — NOT RELEASE READY.
 > **Activated:** 2026-09-16 Asia/Nicosia.
 > **Slice:** `PR-1-TRANSCRIPT-INTAKE-CANDIDATE-EXTRACTION-V1-2026-09-16`.
 > **Activation main:** `0ab5f9770d220c20e8d94544cb64e93a4aa30d00`.
@@ -11,7 +11,9 @@
 > **H-09 deterministic/inherited gate:** `35448153136` — SUCCESS.
 > **H-10 exact deterministic head:** `eee45f9bab1fa0eba9fc36dea8fdcbf61dd89d5a`.
 > **H-10 deterministic/inherited gate:** `35455400599` — SUCCESS.
-> **Focused PR-1 tests:** 70 PASS.
+> **H-11 exact deterministic head:** `a6bb0b2a8897f83c6584106e03c26b59aa9c266b`.
+> **H-11 deterministic/inherited gate:** `35455876663` — SUCCESS.
+> **Focused PR-1 tests:** 75 PASS.
 > **Frozen live suite:** 22 synthetic/de-identified cases.
 > **Pre-H09 live qualification:** `35446962808` — 22 PASS / 0 FAIL.
 > **Post-H09 live qualification:** `35448273993` — 19 PASS / 3 FAIL.
@@ -487,24 +489,56 @@ Authorized changes:
 
 H-09 target guards and H-10 source-bound/default-deny/duplicate protections remain unchanged.
 
-Required sequence:
+## 19. H-11 deterministic acceptance — PASS
+
+H-11 preserves source strength rather than over-interpreting it:
 
 ```text
-H-11 patch
-→ full deterministic/inherited gate
-→ canonical checkpoint
+"Στη VFA ..."
+  → existing/reviewed evidence
+  → vfa.action=already_available_reviewed
+  → performed forbidden unless explicit
+
+"Δεν αναφέρεται ότι έγινε χορήγηση"
+  → absence-of-documentation
+  → optional clinician_interpretation + clinical.unmapped_narrative
+  → no administration.* truth
+```
+
+Exact deterministic head:
+
+```text
+a6bb0b2a8897f83c6584106e03c26b59aa9c266b
+```
+
+Workflow `35455876663` completed SUCCESS with:
+
+```text
+75 focused PASS
+6 protected-clinical PASS
+24 Clinical Documents / Medical Report PASS
+navigation PASS
+bounded scope PASS
+```
+
+Required next sequence:
+
+```text
+verify H-11 canonical checkpoint
 → live 22-case GPT-5.6 qualification
+→ failed=0 required
+→ checkpoint exact live evidence
 → fresh independent promotion review
 ```
 
 H-05 and browser lifecycle remediation remain blocked.
 
-## 19. Release boundary
+## 20. Release boundary
 
 A future 22/22 selected-model PASS still does not by itself authorize production. H-05 synchronous-provider blocking and executable browser lifecycle evidence remain production-release blockers/debt, and identifiable transcript processing retains its separate privacy/provider gate.
 
 ```text
-current live promotion PASS: YES, 22/22 on run 35446962808; independent review HOLD_FOR_SEMANTIC_REMEDIATION
+latest live qualification: 20/22 on run 35455512992; historical pre-H09 22/22 does not satisfy post-change promotion
 release ready: NO
 release PR: NO
 merge/deploy: NO
