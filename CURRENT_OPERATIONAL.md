@@ -1,6 +1,6 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** PR-1 HEIDI-FIRST TRANSCRIPT CAPTURE — INDEPENDENT REVIEW HOLD_FOR_SEMANTIC_REMEDIATION / H-09 DETERMINISTIC SEMANTIC BOUNDARY HARDENING AUTHORIZED — NOT RELEASE READY.
+> **STATUS:** PR-1 HEIDI-FIRST TRANSCRIPT CAPTURE — H-09 DETERMINISTIC SEMANTIC BOUNDARY HARDENING PROVEN / NEW 22-CASE GPT-5.6 QUALIFICATION AUTHORIZED — NOT RELEASE READY.
 > **Updated:** 2026-09-16 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Fresh verified remote `main`:** `0ab5f9770d220c20e8d94544cb64e93a4aa30d00`.
@@ -9,7 +9,9 @@
 > **Runtime implementation branch:** `feat/pr1-transcript-capture-v1-2026-09-16`.
 > **Exact H-08 deterministic head:** `5eeddeba664814b38d55bad8231afb5b33448eae`.
 > **H-08 deterministic/inherited gate:** `35446869081` — SUCCESS.
-> **Focused PR-1 tests:** 60 PASS.
+> **H-09 exact deterministic head:** `00985996fe7c32a9596c5440d27223552d290d06`.
+> **H-09 deterministic/inherited gate:** `35448153136` — SUCCESS.
+> **Focused PR-1 tests:** 65 PASS.
 > **Frozen synthetic qualification suite:** 22 synthetic/de-identified cases.
 > **Fourth live qualification:** `35446962808` — **22 PASS / 0 FAIL**; secure synthetic-only boundary and frozen 22-case fixture count passed.
 > **Safe credential/schema boundary:** CLOSED; Actions secret available/masked, PHI approval false, strict Structured Outputs accepted.
@@ -221,23 +223,52 @@ Authorized H-09 mutation is limited to the deterministic Module-01 target bounda
 
 Use deterministic `ambiguous` mappings with explicit reason codes rather than silently discarding provider assertions.
 
+## H-09 deterministic semantic boundary — COMPLETE deterministically
+
+The bounded H-09 patch now enforces the previously missing local semantic boundary:
+
+- all `treatment.*` episode concepts are mapped only for `patient_history_fact`; incompatible option/recommendation/decision semantics become `ambiguous` with `SEMANTIC_TYPE_NOT_ALLOWED_FOR_TREATMENT_EPISODE`;
+- all `administration.*` event concepts are mapped only for `patient_history_fact`, `objective_result` or `followup_task`; recommendation/option/decision semantics become `ambiguous` with `SEMANTIC_TYPE_NOT_ALLOWED_FOR_ADMINISTRATION_EVENT`;
+- negated fracture presence, treatment episode and administration event concepts become `ambiguous` with `NEGATED_ASSERTION_NOT_POSITIVE_RUNTIME_VALUE`;
+- legitimate actual treatment history, actual administration and scheduled follow-up administration remain mapped.
+
+The first H-09 gate `35448114022` reached 64 focused PASS / 1 FAIL. The sole failure was a test-harness double-mapping error in the newly added scheduled-administration regression; runtime code was unchanged by the correction.
+
+Final exact H-09 head:
+
+```text
+00985996fe7c32a9596c5440d27223552d290d06
+```
+
+Workflow `35448153136` completed SUCCESS:
+
+- Python syntax PASS;
+- browser syntax PASS;
+- **65 focused PR-1 tests PASS**;
+- 6 inherited protected-clinical tests PASS;
+- 24 inherited Clinical Documents / Medical Report tests PASS;
+- workspace/navigation PASS;
+- bounded PR-1 scope PASS.
+
+The independent HIGH deterministic semantic-boundary finding is therefore closed deterministically. This does not yet restore promotion PASS because runtime semantic code changed after the previously recorded 22/22 provider qualification.
+
 ## Exact next action
 
-Implement the bounded H-09 target-guard patch and focused adversarial mapper tests, then run the full PR-1 deterministic/inherited gate.
+After this checkpoint itself verifies, rerun the same frozen 22-case synthetic/de-identified suite through `gpt-5.6` on the H-09 branch state.
 
 Required sequence:
 
 ```text
-independent HOLD checkpoint
-→ verify canonical checkpoint
-→ H-09 target-guard patch + adversarial tests
-→ full deterministic/inherited gate
-→ canonical exact-SHA checkpoint
-→ new frozen 22-case live GPT-5.6 qualification
+H-09 canonical checkpoint
+→ checkpoint verification PASS
+→ workflow-only live trigger
+→ frozen 22-case GPT-5.6 qualification
+→ failed=0 required
+→ canonical live evidence checkpoint
 → fresh independent promotion review
 ```
 
-Do not begin H-05 or browser lifecycle remediation while H-09 remains unresolved.
+Do not begin H-05 or browser lifecycle remediation until the post-H-09 independent promotion review allows advancement.
 
 ## Explicitly blocked
 

@@ -1,13 +1,15 @@
 # SLICE_PLAN_CURRENT.md — PR-1 Heidi-first Transcript Intake + Candidate Extraction v1
 
-> **STATUS:** INDEPENDENT REVIEW HOLD_FOR_SEMANTIC_REMEDIATION / H-09 DETERMINISTIC SEMANTIC BOUNDARY HARDENING AUTHORIZED — NOT RELEASE READY.
+> **STATUS:** H-09 DETERMINISTIC SEMANTIC BOUNDARY HARDENING PROVEN / NEW 22-CASE GPT-5.6 QUALIFICATION AUTHORIZED — NOT RELEASE READY.
 > **Activated:** 2026-09-16 Asia/Nicosia.
 > **Slice:** `PR-1-TRANSCRIPT-INTAKE-CANDIDATE-EXTRACTION-V1-2026-09-16`.
 > **Activation main:** `0ab5f9770d220c20e8d94544cb64e93a4aa30d00`.
 > **Runtime branch:** `feat/pr1-transcript-capture-v1-2026-09-16`.
 > **Exact H-08 deterministic head:** `5eeddeba664814b38d55bad8231afb5b33448eae`.
 > **Deterministic/inherited gate:** `35446869081` — SUCCESS.
-> **Focused PR-1 tests:** 60 PASS.
+> **H-09 exact deterministic head:** `00985996fe7c32a9596c5440d27223552d290d06`.
+> **H-09 deterministic/inherited gate:** `35448153136` — SUCCESS.
+> **Focused PR-1 tests:** 65 PASS.
 > **Frozen live suite:** 22 synthetic/de-identified cases.
 > **Fourth live qualification:** `35446962808` — **22 PASS / 0 FAIL**.
 > **Writer:** one bounded PR-1 implementation writer; operational owner is `CURRENT_OPERATIONAL.md`.
@@ -256,35 +258,63 @@ Disposition:
 HOLD_FOR_SEMANTIC_REMEDIATION
 ```
 
-## 11. H-09 deterministic semantic boundary
+## 11. H-09 deterministic semantic boundary — PASS
 
-Authorized H-09 scope:
+H-09 adds local fail-closed enforcement at the Module-01 target boundary rather than relying on provider prompt obedience.
 
-- enforce semantic-type ownership for all mapped `treatment.*` episode concepts;
-- enforce semantic-type ownership for mapped `administration.*` event concepts;
-- prevent negated fracture/treatment/administration event-presence assertions from becoming positive mapped runtime truth;
-- preserve legitimate `followup_task` planned-administration mappings;
-- add focused adversarial mapper regressions.
-
-The guard must retain provider assertions for clinician review by returning `ambiguous` with explicit reason codes. It must not relax provider schema, evaluator/default-deny behavior or authoritative-write boundaries.
-
-Medium review debts remain visible but are not mixed into this blocking patch:
-
-- authorized free-text allowance can match arbitrary text content when metadata matches;
-- duplicate authorized candidates are not globally cardinality-limited;
-- unknown adapter exceptions are broadly classified as unavailable.
-
-Required sequence:
+Deterministic ownership now is:
 
 ```text
-H-09 patch
-→ full deterministic/inherited gate
-→ canonical exact-head checkpoint
-→ rerun frozen 22-case GPT-5.6 qualification
-→ fresh independent review
+treatment.* runtime truth
+  → patient_history_fact only
+
+administration.* runtime truth
+  → patient_history_fact | objective_result | followup_task only
+
+negative polarity
+  + fracture presence / treatment episode / administration event concept
+  → ambiguous, never positive mapped runtime truth
 ```
 
-H-05 and browser lifecycle remediation remain blocked until this semantic gate is resolved.
+Incompatible semantic combinations remain visible for clinician review as `ambiguous` with explicit reason codes.
+
+Focused adversarial coverage proves at minimum:
+
+- clinician recommendation cannot create `treatment.agent` runtime truth;
+- option semantics cannot create `treatment.status` runtime truth;
+- recommendation/final-decision semantics cannot create `administration.*` truth;
+- negated fracture/treatment/administration presence fails closed;
+- valid historical treatment remains mapped;
+- valid actual administration remains mapped;
+- valid planned follow-up administration remains mapped.
+
+The first run `35448114022` had one new-test harness defect after 64 other focused tests passed. A test-only correction yielded final exact head:
+
+```text
+00985996fe7c32a9596c5440d27223552d290d06
+```
+
+Workflow `35448153136` completed SUCCESS with **65 focused tests**, all inherited protected-clinical and Clinical Documents regressions, navigation and scope guard PASS.
+
+Medium independent-review debts remain recorded and unchanged:
+
+- authorized free-text content is not value-constrained by the promotion oracle;
+- duplicate authorized candidates are not globally cardinality-limited;
+- unknown adapter exceptions have broad availability classification.
+
+These were not part of the blocking HIGH H-09 patch.
+
+Required next sequence:
+
+```text
+verify H-09 canonical checkpoint
+→ rerun frozen 22-case GPT-5.6 qualification
+→ failed=0 required
+→ checkpoint exact live evidence
+→ fresh independent promotion review
+```
+
+H-05 and browser lifecycle remediation remain blocked pending that review.
 
 ## 12. Release boundary
 
