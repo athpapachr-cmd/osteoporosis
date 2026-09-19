@@ -1,6 +1,6 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** PR-1 HEIDI-FIRST TRANSCRIPT CAPTURE — H-11 SOURCE-SEMANTIC NORMALIZATION DETERMINISTICALLY PROVEN / NEW 22-CASE GPT-5.6 QUALIFICATION AUTHORIZED — NOT RELEASE READY.
+> **STATUS:** PR-1 HEIDI-FIRST TRANSCRIPT CAPTURE — POST-H11 LIVE GPT-5.6 PROMOTION PASS 22/22 / FRESH INDEPENDENT READ-ONLY PROMOTION REVIEW REQUIRED — NOT RELEASE READY.
 > **Updated:** 2026-09-16 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Fresh verified remote `main`:** `0ab5f9770d220c20e8d94544cb64e93a4aa30d00`.
@@ -19,7 +19,8 @@
 > **Frozen synthetic qualification suite:** 22 synthetic/de-identified cases.
 > **Pre-H09 live qualification:** `35446962808` — 22 PASS / 0 FAIL.
 > **Post-H09 live qualification:** `35448273993` — 19 PASS / 3 FAIL.
-> **Post-H10 live qualification:** `35455512992` — **20 PASS / 2 FAIL**; secure synthetic-only boundary and 22-case fixture count passed.
+> **Post-H10 live qualification:** `35455512992` — 20 PASS / 2 FAIL.
+> **Post-H11 live qualification:** `35455986630` — **22 PASS / 0 FAIL**.
 > **Safe credential/schema boundary:** CLOSED; Actions secret available/masked, PHI approval false, strict Structured Outputs accepted.
 > **Medical Report V1.1:** CLOSED; do not reopen without separate authority.
 
@@ -110,8 +111,8 @@ Workflow `35142415250` executed the same frozen 22-case synthetic/de-identified 
 
 Boundary checks passed before provider execution:
 
-- Actions `OPENAI_API_KEY` available and masked;
-- `CLINICAL_TRANSCRIPT_PHI_PROVIDER_APPROVED=false`;
+- secure Actions credential available and masked;
+- identifiable-transcript provider approval remained false;
 - frozen fixture count = 22;
 - strict Structured Outputs/provider schema path accepted.
 
@@ -524,13 +525,27 @@ Workflow `35455876663` completed SUCCESS:
 - workspace/navigation PASS;
 - bounded scope PASS.
 
+## Post-H11 live qualification — PASS
+
+Exact trigger head: `e0522220caf54857d6ac14e91c0aa255619f3b62`.
+
+Deterministic trigger gate `35455986818` — SUCCESS.
+
+Live selected-model qualification `35455986630`:
+
+```text
+gpt-5.6 synthetic evaluation
+identifiable-transcript approval=false
+22 fixtures / unique IDs
+22 PASS / 0 FAIL
+provider-eval summary: total=22 failed=0
+```
+
+This evidence includes the H-09 semantic/polarity guard, H-10 source-bound and duplicate-candidate oracle hardening, and H-11 source-semantic normalization.
+
 ## Exact next action
 
-After this canonical checkpoint itself verifies, trigger the synthetic-only workflow against the verified H-11 branch state and execute the same 22 transcript inputs through `gpt-5.6`.
-
-Promotion still requires `failed=0`, a durable live-evidence checkpoint and a fresh independent READ-ONLY promotion review.
-
-H-05 and browser lifecycle remediation remain blocked pending that review.
+After this checkpoint verifies, perform a fresh independent READ-ONLY promotion review. Only `PASS_TO_RELEASE_ENGINEERING` may advance to H-05 and executable browser lifecycle evidence.
 
 ## Explicitly blocked
 
