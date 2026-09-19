@@ -1,6 +1,6 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** PR-1 HEIDI-FIRST TRANSCRIPT CAPTURE — H-09 DETERMINISTIC SEMANTIC BOUNDARY HARDENING PROVEN / NEW 22-CASE GPT-5.6 QUALIFICATION AUTHORIZED — NOT RELEASE READY.
+> **STATUS:** PR-1 HEIDI-FIRST TRANSCRIPT CAPTURE — POST-H09 LIVE GPT-5.6 QUALIFICATION 19/22 FAIL CHECKPOINTED / READ-ONLY TRIAGE REQUIRED — NOT RELEASE READY.
 > **Updated:** 2026-09-16 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Fresh verified remote `main`:** `0ab5f9770d220c20e8d94544cb64e93a4aa30d00`.
@@ -13,7 +13,8 @@
 > **H-09 deterministic/inherited gate:** `35448153136` — SUCCESS.
 > **Focused PR-1 tests:** 65 PASS.
 > **Frozen synthetic qualification suite:** 22 synthetic/de-identified cases.
-> **Fourth live qualification:** `35446962808` — **22 PASS / 0 FAIL**; secure synthetic-only boundary and frozen 22-case fixture count passed.
+> **Pre-H09 live qualification:** `35446962808` — 22 PASS / 0 FAIL.
+> **Post-H09 live qualification:** `35448273993` — **19 PASS / 3 FAIL**; secure synthetic-only boundary and frozen 22-case fixture count passed.
 > **Safe credential/schema boundary:** CLOSED; Actions secret available/masked, PHI approval false, strict Structured Outputs accepted.
 > **Medical Report V1.1:** CLOSED; do not reopen without separate authority.
 
@@ -252,23 +253,62 @@ Workflow `35448153136` completed SUCCESS:
 
 The independent HIGH deterministic semantic-boundary finding is therefore closed deterministically. This does not yet restore promotion PASS because runtime semantic code changed after the previously recorded 22/22 provider qualification.
 
+## Post-H09 live GPT-5.6 qualification — FAIL CHECKPOINT
+
+Workflow-only trigger head:
+
+```text
+d2c878cc036b656b273a3684d3726c2fb8ae8353
+```
+
+Trigger-head deterministic workflow `35448274111` completed SUCCESS with the H-09 65-test gate and all inherited checks.
+
+Live synthetic qualification workflow `35448273993` passed:
+
+- synthetic-only execution boundary;
+- `provider=openai / model=gpt-5.6 / purpose=synthetic_eval / phi_approval=false`;
+- frozen fixture count `total=22 ids_unique=true`.
+
+The 22-case semantic qualification then returned:
+
+```text
+19 PASS
+3 FAIL
+provider-eval summary: total=22 failed=3
+```
+
+Exact coded failures:
+
+```text
+speaker_ambiguity
+  required_assertion_0_missing
+  unexpected_assertion_treatment.agent
+
+unrelated_general_clinical_text
+  unexpected_assertion_clinical.unmapped_narrative
+  semantic_count_clinician_recommendation_mismatch
+
+referral_not_completed_result
+  unexpected_assertion_clinical.unmapped_narrative
+```
+
+No provider/schema/credential/PHI boundary failure occurred. No runtime or fixture mutation is authorized from this result until read-only triage determines whether each failure represents provider variability, a demonstrated oracle/fixture defect, or an additional semantic contract issue.
+
 ## Exact next action
 
-After this checkpoint itself verifies, rerun the same frozen 22-case synthetic/de-identified suite through `gpt-5.6` on the H-09 branch state.
+After this failure checkpoint itself verifies, perform read-only triage of the three failed cases against the exact frozen fixtures, H-09 target guard and provider profile.
 
 Required sequence:
 
 ```text
-H-09 canonical checkpoint
+19/22 live failure checkpoint
 → checkpoint verification PASS
-→ workflow-only live trigger
-→ frozen 22-case GPT-5.6 qualification
-→ failed=0 required
-→ canonical live evidence checkpoint
-→ fresh independent promotion review
+→ read-only three-case triage
+→ canonical disposition
+→ only then any bounded remediation
 ```
 
-Do not begin H-05 or browser lifecycle remediation until the post-H-09 independent promotion review allows advancement.
+Do not tune prompts/fixtures, start H-05/browser work, or rerun repeatedly before that triage is frozen.
 
 ## Explicitly blocked
 

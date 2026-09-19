@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — PR-1 Heidi-first Transcript Intake + Candidate Extraction v1
 
-> **STATUS:** H-09 DETERMINISTIC SEMANTIC BOUNDARY HARDENING PROVEN / NEW 22-CASE GPT-5.6 QUALIFICATION AUTHORIZED — NOT RELEASE READY.
+> **STATUS:** POST-H09 LIVE GPT-5.6 QUALIFICATION 19/22 FAIL CHECKPOINTED / READ-ONLY THREE-CASE TRIAGE REQUIRED — NOT RELEASE READY.
 > **Activated:** 2026-09-16 Asia/Nicosia.
 > **Slice:** `PR-1-TRANSCRIPT-INTAKE-CANDIDATE-EXTRACTION-V1-2026-09-16`.
 > **Activation main:** `0ab5f9770d220c20e8d94544cb64e93a4aa30d00`.
@@ -11,7 +11,8 @@
 > **H-09 deterministic/inherited gate:** `35448153136` — SUCCESS.
 > **Focused PR-1 tests:** 65 PASS.
 > **Frozen live suite:** 22 synthetic/de-identified cases.
-> **Fourth live qualification:** `35446962808` — **22 PASS / 0 FAIL**.
+> **Pre-H09 live qualification:** `35446962808` — 22 PASS / 0 FAIL.
+> **Post-H09 live qualification:** `35448273993` — **19 PASS / 3 FAIL**.
 > **Writer:** one bounded PR-1 implementation writer; operational owner is `CURRENT_OPERATIONAL.md`.
 
 ## 1. Objective
@@ -304,19 +305,56 @@ Medium independent-review debts remain recorded and unchanged:
 
 These were not part of the blocking HIGH H-09 patch.
 
+## 12. Post-H09 live qualification — FAIL CHECKPOINT
+
+The workflow-only trigger head was:
+
+```text
+d2c878cc036b656b273a3684d3726c2fb8ae8353
+```
+
+Trigger-head deterministic gate `35448274111` completed SUCCESS.
+
+Live synthetic run `35448273993` passed the secure synthetic-only boundary and frozen fixture-count checks, then returned:
+
+```text
+19 PASS
+3 FAIL
+provider-eval summary: total=22 failed=3
+```
+
+Failures:
+
+```text
+speaker_ambiguity
+  required_assertion_0_missing
+  unexpected_assertion_treatment.agent
+
+unrelated_general_clinical_text
+  unexpected_assertion_clinical.unmapped_narrative
+  semantic_count_clinician_recommendation_mismatch
+
+referral_not_completed_result
+  unexpected_assertion_clinical.unmapped_narrative
+```
+
+The post-H09 provider call itself was healthy; this is semantic/evaluator evidence, not infrastructure failure.
+
+The prior pre-H09 22/22 remains valid historical evidence but cannot substitute for post-runtime-change qualification.
+
 Required next sequence:
 
 ```text
-verify H-09 canonical checkpoint
-→ rerun frozen 22-case GPT-5.6 qualification
-→ failed=0 required
-→ checkpoint exact live evidence
-→ fresh independent promotion review
+checkpoint verification
+→ read-only three-case triage
+→ classify provider variability vs oracle/fixture gap vs semantic defect
+→ canonical disposition
+→ bounded remediation only if justified
 ```
 
-H-05 and browser lifecycle remediation remain blocked pending that review.
+H-05 and browser lifecycle remediation remain blocked.
 
-## 12. Release boundary
+## 13. Release boundary
 
 A future 22/22 selected-model PASS still does not by itself authorize production. H-05 synchronous-provider blocking and executable browser lifecycle evidence remain production-release blockers/debt, and identifiable transcript processing retains its separate privacy/provider gate.
 
