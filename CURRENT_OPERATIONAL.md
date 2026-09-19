@@ -1,6 +1,6 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** PR-1 HEIDI-FIRST TRANSCRIPT CAPTURE — POST-H09 19/22 TRIAGED / H-10 BOUNDED SEMANTIC+ORACLE STABILIZATION AUTHORIZED — NOT RELEASE READY.
+> **STATUS:** PR-1 HEIDI-FIRST TRANSCRIPT CAPTURE — H-10 SEMANTIC+ORACLE STABILIZATION DETERMINISTICALLY PROVEN / NEW 22-CASE GPT-5.6 QUALIFICATION AUTHORIZED — NOT RELEASE READY.
 > **Updated:** 2026-09-16 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Fresh verified remote `main`:** `0ab5f9770d220c20e8d94544cb64e93a4aa30d00`.
@@ -11,7 +11,9 @@
 > **H-08 deterministic/inherited gate:** `35446869081` — SUCCESS.
 > **H-09 exact deterministic head:** `00985996fe7c32a9596c5440d27223552d290d06`.
 > **H-09 deterministic/inherited gate:** `35448153136` — SUCCESS.
-> **Focused PR-1 tests:** 65 PASS.
+> **H-10 exact deterministic head:** `eee45f9bab1fa0eba9fc36dea8fdcbf61dd89d5a`.
+> **H-10 deterministic/inherited gate:** `35455400599` — SUCCESS.
+> **Focused PR-1 tests:** 70 PASS.
 > **Frozen synthetic qualification suite:** 22 synthetic/de-identified cases.
 > **Pre-H09 live qualification:** `35446962808` — 22 PASS / 0 FAIL.
 > **Post-H09 live qualification:** `35448273993` — **19 PASS / 3 FAIL**; secure synthetic-only boundary and frozen 22-case fixture count passed.
@@ -366,11 +368,55 @@ Authorized mutation is limited to:
 
 No H-09 target-guard relaxation, no general default-deny relaxation, no new wildcard fixture permission, no endpoint/persistence/production configuration change.
 
+## H-10 semantic + promotion-oracle stabilization — COMPLETE deterministically
+
+H-10 implemented only the frozen triage contract:
+
+- `speaker_ambiguity` now expects H-09 ambiguous treatment mapping rather than mapped episode truth;
+- generic unrelated clinician deferral is explicitly not `clinician_recommendation` and not an osteoporosis follow-up task;
+- referral + explicit no-result wording may retain only `clinician_interpretation + clinical.unmapped_narrative`, never DXA result truth;
+- optional free-text narrative allowances are source-bound through `evidence_contains`;
+- exact structurally duplicate authorized candidates produce `duplicate_candidate` promotion failure;
+- focused H-10 regressions cover the new contracts.
+
+The first H-10 deterministic attempt `35455364544` reached 69 focused PASS / 1 FAIL. The single failure was a stale H-08 exact-dict test that did not include the new stricter `evidence_contains` field. The correction changed only the test expectation.
+
+Final exact H-10 head:
+
+```text
+eee45f9bab1fa0eba9fc36dea8fdcbf61dd89d5a
+```
+
+Workflow `35455400599` completed SUCCESS:
+
+- Python syntax PASS;
+- browser syntax PASS;
+- **70 focused PR-1 tests PASS**;
+- 6 inherited protected-clinical tests PASS;
+- 24 inherited Clinical Documents / Medical Report tests PASS;
+- workspace/navigation PASS;
+- bounded PR-1 scope PASS.
+
+No H-09 target-guard relaxation, endpoint/persistence change, production config mutation or PHI processing occurred.
+
 ## Exact next action
 
-Implement H-10, run the full deterministic/inherited gate, checkpoint exact evidence, then rerun the unchanged 22 transcript inputs through `gpt-5.6`.
+After this canonical checkpoint itself verifies, deliberately trigger the synthetic-only workflow against the verified H-10 branch state and execute the same 22 transcript inputs through `gpt-5.6`.
 
-Do not start H-05/browser work before post-H10 live qualification and fresh independent review.
+Promotion still requires:
+
+```text
+22 cases
+→ strict Structured Outputs
+→ H-09 fail-closed runtime guard
+→ H-10 source-bound/default-deny oracle
+→ exact duplicate detection
+→ failed=0
+→ canonical evidence checkpoint
+→ fresh independent promotion review
+```
+
+Do not begin H-05 or browser lifecycle remediation until the post-H10 independent review allows advancement.
 
 ## Explicitly blocked
 

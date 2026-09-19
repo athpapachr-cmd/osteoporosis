@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — PR-1 Heidi-first Transcript Intake + Candidate Extraction v1
 
-> **STATUS:** POST-H09 19/22 TRIAGED / H-10 BOUNDED SEMANTIC+ORACLE STABILIZATION AUTHORIZED — NOT RELEASE READY.
+> **STATUS:** H-10 SEMANTIC+ORACLE STABILIZATION DETERMINISTICALLY PROVEN / NEW 22-CASE GPT-5.6 QUALIFICATION AUTHORIZED — NOT RELEASE READY.
 > **Activated:** 2026-09-16 Asia/Nicosia.
 > **Slice:** `PR-1-TRANSCRIPT-INTAKE-CANDIDATE-EXTRACTION-V1-2026-09-16`.
 > **Activation main:** `0ab5f9770d220c20e8d94544cb64e93a4aa30d00`.
@@ -9,7 +9,9 @@
 > **Deterministic/inherited gate:** `35446869081` — SUCCESS.
 > **H-09 exact deterministic head:** `00985996fe7c32a9596c5440d27223552d290d06`.
 > **H-09 deterministic/inherited gate:** `35448153136` — SUCCESS.
-> **Focused PR-1 tests:** 65 PASS.
+> **H-10 exact deterministic head:** `eee45f9bab1fa0eba9fc36dea8fdcbf61dd89d5a`.
+> **H-10 deterministic/inherited gate:** `35455400599` — SUCCESS.
+> **Focused PR-1 tests:** 70 PASS.
 > **Frozen live suite:** 22 synthetic/de-identified cases.
 > **Pre-H09 live qualification:** `35446962808` — 22 PASS / 0 FAIL.
 > **Post-H09 live qualification:** `35448273993` — **19 PASS / 3 FAIL**.
@@ -401,19 +403,48 @@ exact duplicate candidate
 
 Default-deny remains intact. No H-09 guard relaxation and no wildcard allowances.
 
-Required sequence:
+## 15. H-10 deterministic acceptance — PASS
+
+H-10 closes the triaged stale fixture/profile/evaluator gaps without relaxing H-09.
+
+Implemented contracts:
+
+- uncertain treatment mention remains `uncertain_needs_review` but maps `ambiguous`, never to a treatment episode;
+- generic unrelated clinician deferral does not become `clinician_recommendation` or osteoporosis `followup_task`;
+- optional no-result narrative is clinician interpretation only and source-bound;
+- optional free-text narrative authorization requires `evidence_contains` match against the candidate evidence snippet;
+- exact duplicate provider candidates fail promotion.
+
+The first H-10 run `35455364544` had one test-only H-08 expected-dict mismatch after 69 focused PASS. A test-only correction produced:
 
 ```text
-H-10 patch
-→ full deterministic/inherited gate
-→ canonical checkpoint
-→ new live 22-case GPT-5.6 qualification
+eee45f9bab1fa0eba9fc36dea8fdcbf61dd89d5a
+```
+
+Workflow `35455400599` completed SUCCESS with:
+
+```text
+70 focused PASS
+6 protected-clinical PASS
+24 Clinical Documents / Medical Report PASS
+navigation PASS
+bounded scope PASS
+```
+
+Required next sequence:
+
+```text
+verify H-10 canonical checkpoint
+→ trigger synthetic-only live evaluation
+→ same 22 transcript inputs through GPT-5.6
+→ failed=0 required
+→ checkpoint exact live evidence
 → fresh independent promotion review
 ```
 
 H-05 and browser lifecycle remediation remain blocked.
 
-## 15. Release boundary
+## 16. Release boundary
 
 A future 22/22 selected-model PASS still does not by itself authorize production. H-05 synchronous-provider blocking and executable browser lifecycle evidence remain production-release blockers/debt, and identifiable transcript processing retains its separate privacy/provider gate.
 
