@@ -1,6 +1,6 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** PR-1 HEIDI-FIRST TRANSCRIPT CAPTURE — LIVE GPT-5.6 PROMOTION GATE PASS 22/22 / FRESH INDEPENDENT READ-ONLY EVIDENCE REVIEW REQUIRED — NOT RELEASE READY.
+> **STATUS:** PR-1 HEIDI-FIRST TRANSCRIPT CAPTURE — INDEPENDENT REVIEW HOLD_FOR_SEMANTIC_REMEDIATION / H-09 DETERMINISTIC SEMANTIC BOUNDARY HARDENING AUTHORIZED — NOT RELEASE READY.
 > **Updated:** 2026-09-16 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Fresh verified remote `main`:** `0ab5f9770d220c20e8d94544cb64e93a4aa30d00`.
@@ -189,19 +189,55 @@ Therefore the selected-model synthetic promotion gate is satisfied for the froze
 
 This does **not** authorize production, PHI use, release PR, merge/deploy or PR-2.
 
+## Independent promotion review — HOLD_FOR_SEMANTIC_REMEDIATION
+
+A fresh independent READ-ONLY review verified the exact ancestry, deterministic chain and live GPT-5.6 evidence. It independently confirmed that workflow `35446962808` is genuine selected-model evidence with all 22 frozen cases PASS and `failed=0`.
+
+The review did **not** invalidate that live result. It found one material deterministic-boundary defect before PR-1 semantic promotion can close:
+
+- schema-valid provider output may still map `treatment.*` / `administration.*` into runtime targets under semantically incompatible states such as `clinician_recommendation`;
+- a negated fracture/event presence assertion such as `polarity=negative + fracture.site=hip` can still become positive mapped runtime truth;
+- the Module-01 target guard therefore does not yet fully enforce the provider-as-untrusted architecture.
+
+Independent disposition:
+
+```text
+HOLD_FOR_SEMANTIC_REMEDIATION
+```
+
+Separate non-semantic release blockers remain unchanged: H-05 async/provider execution, executable browser lifecycle/BFCache/logout evidence, and the identifiable-transcript privacy/provider gate.
+
+The review also noted two medium evaluator-hardening debts (unconstrained authorized free-text content and duplicate authorized candidate cardinality) and one low adapter diagnostic-classification weakness. These are recorded but are not the smallest blocking remediation action.
+
+## H-09 bounded remediation contract
+
+Authorized H-09 mutation is limited to the deterministic Module-01 target boundary plus focused adversarial tests:
+
+1. `treatment.*` runtime mapping must fail closed when the candidate semantic type is not an actual/history treatment state;
+2. `administration.*` runtime mapping must fail closed outside actual/history/objective/follow-up administration-event semantics;
+3. negated fracture/treatment/administration presence/event assertions must not become positive mapped runtime truth;
+4. existing valid scheduled-administration follow-up behavior must remain mapped;
+5. no provider prompt/profile relaxation, evaluator/default-deny relaxation, endpoint behavior change, persistence change or production configuration change is authorized.
+
+Use deterministic `ambiguous` mappings with explicit reason codes rather than silently discarding provider assertions.
+
 ## Exact next action
 
-Perform a **fresh independent READ-ONLY evidence review** from current remote `main` and the exact PR-1 branch state. The reviewer must independently inspect:
+Implement the bounded H-09 target-guard patch and focused adversarial mapper tests, then run the full PR-1 deterministic/inherited gate.
 
-- the H-01..H-08 safety/semantic closure;
-- exact deterministic evidence;
-- live run `35446962808` and coded 22/22 result;
-- fixture/oracle adequacy and false-PASS risk;
-- whether any unresolved semantic blocker remains before release engineering begins.
+Required sequence:
 
-The reviewer must not mutate repository/canonicals, merge/deploy, or start H-05/browser remediation.
+```text
+independent HOLD checkpoint
+→ verify canonical checkpoint
+→ H-09 target-guard patch + adversarial tests
+→ full deterministic/inherited gate
+→ canonical exact-SHA checkpoint
+→ new frozen 22-case live GPT-5.6 qualification
+→ fresh independent promotion review
+```
 
-Only after an independent disposition is checkpointed may the author lifecycle advance to the separate production-release blockers: H-05 async/provider execution remediation and executable browser lifecycle/BFCache/logout cleanup evidence.
+Do not begin H-05 or browser lifecycle remediation while H-09 remains unresolved.
 
 ## Explicitly blocked
 

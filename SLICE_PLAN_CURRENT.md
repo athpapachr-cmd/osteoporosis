@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — PR-1 Heidi-first Transcript Intake + Candidate Extraction v1
 
-> **STATUS:** LIVE GPT-5.6 PROMOTION GATE PASS 22/22 / FRESH INDEPENDENT READ-ONLY EVIDENCE REVIEW REQUIRED — NOT RELEASE READY.
+> **STATUS:** INDEPENDENT REVIEW HOLD_FOR_SEMANTIC_REMEDIATION / H-09 DETERMINISTIC SEMANTIC BOUNDARY HARDENING AUTHORIZED — NOT RELEASE READY.
 > **Activated:** 2026-09-16 Asia/Nicosia.
 > **Slice:** `PR-1-TRANSCRIPT-INTAKE-CANDIDATE-EXTRACTION-V1-2026-09-16`.
 > **Activation main:** `0ab5f9770d220c20e8d94544cb64e93a4aa30d00`.
@@ -230,36 +230,68 @@ All 22 frozen case IDs passed under strict Structured Outputs and the default-de
 
 The selected-model synthetic promotion gate is therefore satisfied.
 
-## 10. Independent evidence review gate
+## 10. Independent promotion review — HOLD
 
-Before any production-release engineering, a fresh independent READ-ONLY review must inspect the exact branch/evidence and determine whether the H-01..H-08 closure and 22/22 live result are sufficient to advance.
+The fresh independent READ-ONLY review verified:
 
-The reviewer may not mutate code/canonicals, merge/deploy, process identifiable transcripts, or start PR-2.
+- clean branch ancestry from current `main`;
+- H-08 deterministic head and all exact workflow evidence;
+- genuine live `gpt-5.6` execution with synthetic-only purpose and `phi_approval=false`;
+- all 22 frozen case IDs PASS and `failed=0`;
+- bounded H-07/H-08 fixture changes rather than blanket default-deny relaxation.
 
-Only after that evidence review is checkpointed may work proceed to the separate production-release blockers:
+It nevertheless found a HIGH deterministic semantic-boundary defect: known runtime concepts can still map under incompatible semantic/polarity states because `transcript_target_guard.py` does not fully enforce the provider profile's semantic ownership.
 
-- H-05 synchronous provider execution inside the async single-worker web process;
-- executable browser lifecycle/BFCache/logout cleanup evidence.
+Examples that must fail closed include:
 
-These remain open even after 22/22.
+```text
+clinician_recommendation + treatment.agent
+clinician_recommendation + administration.status=done
+negative polarity + fracture.site=hip
+```
+
+Disposition:
+
+```text
+HOLD_FOR_SEMANTIC_REMEDIATION
+```
+
+## 11. H-09 deterministic semantic boundary
+
+Authorized H-09 scope:
+
+- enforce semantic-type ownership for all mapped `treatment.*` episode concepts;
+- enforce semantic-type ownership for mapped `administration.*` event concepts;
+- prevent negated fracture/treatment/administration event-presence assertions from becoming positive mapped runtime truth;
+- preserve legitimate `followup_task` planned-administration mappings;
+- add focused adversarial mapper regressions.
+
+The guard must retain provider assertions for clinician review by returning `ambiguous` with explicit reason codes. It must not relax provider schema, evaluator/default-deny behavior or authoritative-write boundaries.
+
+Medium review debts remain visible but are not mixed into this blocking patch:
+
+- authorized free-text allowance can match arbitrary text content when metadata matches;
+- duplicate authorized candidates are not globally cardinality-limited;
+- unknown adapter exceptions are broadly classified as unavailable.
 
 Required sequence:
 
 ```text
-22/22 live PASS
-→ canonical evidence checkpoint
-→ fresh independent READ-ONLY review
-→ author checkpoint of disposition
-→ H-05 + browser lifecycle release engineering
-→ release-candidate review
+H-09 patch
+→ full deterministic/inherited gate
+→ canonical exact-head checkpoint
+→ rerun frozen 22-case GPT-5.6 qualification
+→ fresh independent review
 ```
 
-## 11. Release boundary
+H-05 and browser lifecycle remediation remain blocked until this semantic gate is resolved.
+
+## 12. Release boundary
 
 A future 22/22 selected-model PASS still does not by itself authorize production. H-05 synchronous-provider blocking and executable browser lifecycle evidence remain production-release blockers/debt, and identifiable transcript processing retains its separate privacy/provider gate.
 
 ```text
-current live promotion PASS: NO, pending third run
+current live promotion PASS: YES, 22/22 on run 35446962808; independent review HOLD_FOR_SEMANTIC_REMEDIATION
 release ready: NO
 release PR: NO
 merge/deploy: NO
