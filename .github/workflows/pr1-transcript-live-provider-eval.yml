@@ -1,5 +1,5 @@
 name: PR-1 live synthetic provider eval
-# Qualification trigger: H-08 bounded remediation attempt 4
+# Qualification trigger: H-09 deterministic semantic boundary attempt 5
 
 on:
   push:
