@@ -400,7 +400,8 @@
         "source_assertion": {
           "speaker": "patient",
           "certainty": "uncertain"
-        }
+        },
+        "evidence_contains": "το χάπι"
       }
     ],
     "forbidden_concepts": [
@@ -469,7 +470,8 @@
         "concept_key": "clinical.unmapped_narrative",
         "source_assertion": {
           "speaker": "clinician"
-        }
+        },
+        "evidence_contains": "Με κλινική προσαρμογή εκτιμώ τον κίνδυνο υψηλότερο"
       },
       {
         "semantic_type": "clinician_interpretation",
@@ -523,8 +525,10 @@
           "code": "denosumab"
         },
         "mapping": {
-          "status": "mapped",
-          "target_path": "step4.treatment_episodes[].agent"
+          "status": "ambiguous",
+          "reason_code": "SEMANTIC_TYPE_NOT_ALLOWED_FOR_TREATMENT_EPISODE",
+          "target_path": "step4.treatment_episodes[].agent",
+          "proposed_value": "denosumab"
         }
       }
     ],
@@ -706,7 +710,24 @@
     "semantic_counts": {
       "final_decision": 0,
       "clinician_recommendation": 0
-    }
+    },
+    "allowed_assertions": [
+      {
+        "semantic_type": "clinician_interpretation",
+        "concept_key": "clinical.unmapped_narrative",
+        "source_assertion": {
+          "speaker": "clinician"
+        },
+        "value": {
+          "kind": "text"
+        },
+        "mapping": {
+          "status": "unmapped",
+          "reason_code": "NO_CURRENT_RUNTIME_TARGET"
+        },
+        "evidence_contains": "Θα το εξετάσουμε ξεχωριστά"
+      }
+    ]
   },
   {
     "id": "repeated_fracture_event_grouping",
@@ -850,7 +871,8 @@
         "concept_key": "clinical.unmapped_narrative",
         "source_assertion": {
           "speaker": "patient"
-        }
+        },
+        "evidence_contains": "Δεν αφορά το ιατρικό μου ιστορικό"
       }
     ],
     "forbidden_concepts": [
@@ -909,7 +931,8 @@
         "mapping": {
           "status": "unmapped",
           "reason_code": "NO_CURRENT_RUNTIME_TARGET"
-        }
+        },
+        "evidence_contains": "Δεν υπάρχει ακόμη αποτέλεσμα DXA"
       }
     ],
     "forbidden_concepts": [

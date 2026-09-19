@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -9,6 +10,25 @@ from clinical_excellence.core.transcript_contracts import TranscriptExtractReque
 from clinical_excellence.core.transcript_service import extract_candidates
 
 CASES = Path(__file__).with_name("cases.json")
+
+
+def _norm_text(value: str) -> str:
+    return re.sub(r"\s+", " ", value or "").strip().casefold()
+
+
+def _candidate_signature(candidate) -> str:
+    return json.dumps(
+        {
+            "semantic_type": candidate.semantic_type,
+            "components": [component.model_dump(mode="json") for component in candidate.components],
+            "source_assertion": candidate.source_assertion.model_dump(mode="json"),
+            "evidence_snippet": candidate.evidence_snippet,
+            "confidence": candidate.confidence,
+        },
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
 
 
 def _dict_subset(actual: dict[str, Any], expected: dict[str, Any]) -> bool:
@@ -52,6 +72,12 @@ def _component_matches_rule(candidate, component, rule: dict[str, Any]) -> bool:
             _dict_subset(mapping.model_dump(mode="json"), mapping_rule)
             for mapping in mappings
         ):
+            return False
+
+    evidence_contains = rule.get("evidence_contains")
+    if evidence_contains is not None:
+        snippet = _norm_text(candidate.evidence_snippet)
+        if not snippet or _norm_text(str(evidence_contains)) not in snippet:
             return False
 
     return True
@@ -159,6 +185,14 @@ def _evaluate_case(item: dict[str, Any], result) -> list[str]:
                 for rule in authorization_rules
             ):
                 failures.append(f"unexpected_assertion_{component.concept_key}")
+
+    seen_signatures: set[str] = set()
+    for candidate in result.candidates:
+        signature = _candidate_signature(candidate)
+        if signature in seen_signatures:
+            failures.append("duplicate_candidate")
+            break
+        seen_signatures.add(signature)
 
     exact_date_forbidden = set(item.get("forbid_exact_date_concepts", []))
     for candidate in result.candidates:

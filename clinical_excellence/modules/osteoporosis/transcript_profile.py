@@ -79,6 +79,8 @@ GENERAL SEMANTIC RULES
 - Preserve explicitly stated numeric values even when they appear clinically implausible; downstream deterministic validation, not the model, decides runtime compatibility.
 - An explicit affirmative occurrence such as "I had a fracture" uses polarity=positive unless the source explicitly negates it or leaves occurrence unclear.
 - Do not create osteoporosis follow-up/task truth from unrelated non-osteoporosis narrative. Use clinical.unmapped_narrative for clinically meaningful unrelated content unless an osteoporosis-related task is explicitly stated.
+- A generic unrelated clinician deferral such as "we will examine it separately" is NOT a clinician_recommendation and NOT an osteoporosis followup_task. If retained, represent it only as clinician_interpretation + clinical.unmapped_narrative.
+- For an explicit referral/request followed by a statement that no result exists yet, emit the referral as followup_task. If the no-result statement is retained, represent it only as clinician_interpretation + clinical.unmapped_narrative; never emit DXA objective-result concepts from absence-of-result wording.
 
 EXACT VALUE-KIND AND CODE CONTRACTS
 Use the exact kind and exact case-sensitive code strings below. Do not substitute synonyms, labels or free text when a code contract exists.
