@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — PR-1 Heidi-first Transcript Intake + Candidate Extraction v1
 
-> **STATUS:** POST-H09 LIVE GPT-5.6 QUALIFICATION 19/22 FAIL CHECKPOINTED / READ-ONLY THREE-CASE TRIAGE REQUIRED — NOT RELEASE READY.
+> **STATUS:** POST-H09 19/22 TRIAGED / H-10 BOUNDED SEMANTIC+ORACLE STABILIZATION AUTHORIZED — NOT RELEASE READY.
 > **Activated:** 2026-09-16 Asia/Nicosia.
 > **Slice:** `PR-1-TRANSCRIPT-INTAKE-CANDIDATE-EXTRACTION-V1-2026-09-16`.
 > **Activation main:** `0ab5f9770d220c20e8d94544cb64e93a4aa30d00`.
@@ -342,19 +342,78 @@ The post-H09 provider call itself was healthy; this is semantic/evaluator eviden
 
 The prior pre-H09 22/22 remains valid historical evidence but cannot substitute for post-runtime-change qualification.
 
-Required next sequence:
+## 13. Post-H09 three-case triage
+
+The failure checkpoint was verified by workflow `35448460778` before triage.
+
+Classification:
 
 ```text
-checkpoint verification
-→ read-only three-case triage
-→ classify provider variability vs oracle/fixture gap vs semantic defect
-→ canonical disposition
-→ bounded remediation only if justified
+speaker_ambiguity
+  → STALE FIXTURE MAPPING AFTER H-09
+
+unrelated_general_clinical_text
+  → PROVIDER/PROFILE SEMANTIC AMBIGUITY
+
+referral_not_completed_result
+  → PROVIDER/PROFILE OPTIONAL-NARRATIVE METADATA AMBIGUITY
+```
+
+The H-09 target guard itself is not implicated by the latter two failures.
+
+H-10 must keep the existing safety meaning:
+
+- uncertain treatment mention is review-only/ambiguous, not a mapped episode;
+- unrelated generic clinician deferral does not create recommendation/task truth;
+- DXA referral remains a follow-up task and “no result yet” never becomes completed-result truth.
+
+Because the two narrative cases intersect the independent evaluator findings, H-10 also closes:
+
+- blank/unbound evidence authorization for optional free-text assertions;
+- exact duplicate authorized candidate false-PASS behavior.
+
+## 14. H-10 bounded remediation
+
+Authorized files/behavior may cover provider profile, the exact affected fixtures, promotion evaluator and focused tests only.
+
+Required contracts:
+
+```text
+speaker_ambiguity treatment.agent
+  → ambiguous / SEMANTIC_TYPE_NOT_ALLOWED_FOR_TREATMENT_EPISODE
+
+generic unrelated clinician deferral
+  → no clinician_recommendation
+  → no osteoporosis followup_task
+
+DXA referral + no result yet
+  → followup_task for referral
+  → optional clinician_interpretation + clinical.unmapped_narrative only
+  → source-bound evidence
+  → no DXA result concept
+
+authorized free-text allowance
+  → evidence_contains must match candidate evidence snippet
+
+exact duplicate candidate
+  → promotion failure
+```
+
+Default-deny remains intact. No H-09 guard relaxation and no wildcard allowances.
+
+Required sequence:
+
+```text
+H-10 patch
+→ full deterministic/inherited gate
+→ canonical checkpoint
+→ new live 22-case GPT-5.6 qualification
+→ fresh independent promotion review
 ```
 
 H-05 and browser lifecycle remediation remain blocked.
 
-## 13. Release boundary
+## 15. Release boundary
 
 A future 22/22 selected-model PASS still does not by itself authorize production. H-05 synchronous-provider blocking and executable browser lifecycle evidence remain production-release blockers/debt, and identifiable transcript processing retains its separate privacy/provider gate.
 

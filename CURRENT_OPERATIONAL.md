@@ -1,6 +1,6 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** PR-1 HEIDI-FIRST TRANSCRIPT CAPTURE — POST-H09 LIVE GPT-5.6 QUALIFICATION 19/22 FAIL CHECKPOINTED / READ-ONLY TRIAGE REQUIRED — NOT RELEASE READY.
+> **STATUS:** PR-1 HEIDI-FIRST TRANSCRIPT CAPTURE — POST-H09 19/22 TRIAGED / H-10 BOUNDED SEMANTIC+ORACLE STABILIZATION AUTHORIZED — NOT RELEASE READY.
 > **Updated:** 2026-09-16 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Fresh verified remote `main`:** `0ab5f9770d220c20e8d94544cb64e93a4aa30d00`.
@@ -294,21 +294,83 @@ referral_not_completed_result
 
 No provider/schema/credential/PHI boundary failure occurred. No runtime or fixture mutation is authorized from this result until read-only triage determines whether each failure represents provider variability, a demonstrated oracle/fixture defect, or an additional semantic contract issue.
 
-## Exact next action
+## Read-only three-case triage — COMPLETE
 
-After this failure checkpoint itself verifies, perform read-only triage of the three failed cases against the exact frozen fixtures, H-09 target guard and provider profile.
+The post-H09 failure checkpoint `d85ca94e4fa86f7ea4c98761e2451910b81f3109` was verified by workflow `35448460778` before triage.
 
-Required sequence:
+### 1. speaker_ambiguity — deterministic fixture regression
+
+The frozen fixture still expects:
 
 ```text
-19/22 live failure checkpoint
-→ checkpoint verification PASS
-→ read-only three-case triage
-→ canonical disposition
-→ only then any bounded remediation
+uncertain_needs_review + treatment.agent
+→ mapped step4.treatment_episodes[].agent
 ```
 
-Do not tune prompts/fixtures, start H-05/browser work, or rerun repeatedly before that triage is frozen.
+H-09 intentionally changed that semantic combination to fail closed:
+
+```text
+uncertain_needs_review + treatment.agent
+→ ambiguous
+→ SEMANTIC_TYPE_NOT_ALLOWED_FOR_TREATMENT_EPISODE
+```
+
+Therefore `required_assertion_0_missing` plus `unexpected_assertion_treatment.agent` is caused by a stale fixture mapping expectation, not by a new provider semantic defect.
+
+### 2. unrelated_general_clinical_text — provider/profile semantic ambiguity
+
+The required patient shoulder complaint remains `patient_history_fact + clinical.unmapped_narrative`.
+
+The new live run also emitted a second `clinical.unmapped_narrative` under `clinician_recommendation`, producing both the unexpected assertion and the recommendation-count mismatch.
+
+The source phrase “Θα το εξετάσουμε ξεχωριστά” is a generic cross-domain deferral, not a concrete osteoporosis recommendation/task. The provider profile currently says to retain clinically meaningful unrelated content as `clinical.unmapped_narrative` but does not explicitly forbid turning such a generic deferral into `clinician_recommendation`.
+
+The fixture's no-recommendation safety intent is retained. Provider guidance must be made explicit rather than loosening the fixture to accept an osteoporosis recommendation semantic.
+
+### 3. referral_not_completed_result — provider/profile metadata ambiguity
+
+The required DXA follow-up task passed. No forbidden DXA result concept was emitted.
+
+Only an extra `clinical.unmapped_narrative` failed authorization. The frozen optional rule currently accepts it only as `clinician_interpretation` from the clinician. The coded logs do not retain provider payload metadata, so the exact mismatching semantic/source field cannot be reconstructed without a new provider call.
+
+The safe contract is:
+
+```text
+explicit referral/request
+→ followup_task
+
+explicit “no result yet”
+→ may be retained only as non-runtime clinical.unmapped_narrative
+→ clinician_interpretation
+→ source-anchored evidence
+→ never DXA objective-result fields
+```
+
+### Independent MEDIUM evaluator findings now in scope
+
+Because both failed cases exercise `clinical.unmapped_narrative`, H-10 also closes the two previously demonstrated evaluator debts directly relevant to promotion confidence:
+
+- allowed free-text assertions must be source-bound through an explicit evidence rule; blank evidence must not authorize arbitrary text metadata;
+- exact duplicate authorized candidates must produce a deterministic promotion failure.
+
+## H-10 bounded remediation contract
+
+Authorized mutation is limited to:
+
+1. update `speaker_ambiguity` fixture mapping expectation from mapped treatment truth to H-09 ambiguous/reason-code truth;
+2. harden provider profile so a generic unrelated “we will examine it separately” statement does not become `clinician_recommendation` or an osteoporosis follow-up task;
+3. harden referral/no-result profile semantics so optional no-result narrative is `clinician_interpretation + clinical.unmapped_narrative`, never objective result/task truth;
+4. add evaluator support for explicit source-bound `evidence_contains` rules and apply it to optional free-text narrative allowances where needed;
+5. fail exact structurally duplicate provider candidates in the promotion evaluator;
+6. add focused deterministic regressions.
+
+No H-09 target-guard relaxation, no general default-deny relaxation, no new wildcard fixture permission, no endpoint/persistence/production configuration change.
+
+## Exact next action
+
+Implement H-10, run the full deterministic/inherited gate, checkpoint exact evidence, then rerun the unchanged 22 transcript inputs through `gpt-5.6`.
+
+Do not start H-05/browser work before post-H10 live qualification and fresh independent review.
 
 ## Explicitly blocked
 
