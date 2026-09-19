@@ -44,6 +44,7 @@ def test_h08_three_source_supported_extras_are_narrowly_allowed():
         "source_assertion": {"speaker": "clinician"},
         "value": {"kind": "text"},
         "mapping": {"status": "unmapped", "reason_code": "NO_CURRENT_RUNTIME_TARGET"},
+        "evidence_contains": "Δεν υπάρχει ακόμη αποτέλεσμα DXA",
     }
     assert _has_exact_rule(by_id["referral_not_completed_result"].get("allowed_assertions", []), narrative_rule)
 
