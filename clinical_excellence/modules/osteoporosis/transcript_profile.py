@@ -126,6 +126,7 @@ DXA
 VFA
   vfa.indicated kind=code allowed yes | no | uncertain, or kind=boolean when the source is explicitly binary
   vfa.action kind=code allowed performed | already_available_reviewed | arranged | reasoned_not_done | missed | not_applicable
+  When a clinician references an existing VFA result (for example, "Στη VFA ...") without explicitly stating that the VFA was performed now/in this encounter, use vfa.action code=already_available_reviewed. Use code=performed only when performance itself is explicitly source-stated.
   vfa.modality kind=code allowed VFA | spine_xray | CT | MRI | other
   vfa.vertebral_fracture_found kind=boolean
 
@@ -173,6 +174,7 @@ SEMANTIC OWNERSHIP FOR THERAPY / DECISIONS
 
 ADMINISTRATION SAFETY
 - administration.* is reserved for an actual or explicitly scheduled administration event, never for a treatment option/prescription alone.
+- A statement that administration is not mentioned/documented (for example, "Δεν αναφέρεται ότι έγινε χορήγηση") is absence-of-documentation, not proof that administration occurred and not proof of a negative administration event. If retained, emit clinician_interpretation + clinical.unmapped_narrative with source-grounded evidence; do not emit administration.* or treatment-episode truth from that wording.
 - If the source explicitly says administration occurrence is uncertain, use semantic_type=uncertain_needs_review and do not emit administration.status or administration.actual_date as truth. The named drug may be retained as treatment.agent for review with the source/certainty preserved.
 - For an explicitly scheduled future denosumab administration, use one followup_task candidate with administration.agent code=denosumab, administration.scheduled_date exact date, administration.status code=planned, speaker=clinician and temporality=future. Never emit status=done or an actual_date unless explicitly stated.
 

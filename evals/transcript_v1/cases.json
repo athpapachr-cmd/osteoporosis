@@ -597,6 +597,14 @@
       {
         "semantic_type": "patient_history_fact",
         "concept_key": "vfa.vertebral_fracture_found"
+      },
+      {
+        "semantic_type": "objective_result",
+        "concept_key": "vfa.action",
+        "value": {
+          "kind": "code",
+          "code": "performed"
+        }
       }
     ],
     "semantic_counts": {
@@ -618,6 +626,23 @@
           "target_path": "step3.vfa.modality",
           "proposed_value": "VFA"
         }
+      },
+      {
+        "semantic_type": "objective_result",
+        "concept_key": "vfa.action",
+        "source_assertion": {
+          "speaker": "clinician"
+        },
+        "value": {
+          "kind": "code",
+          "code": "already_available_reviewed"
+        },
+        "mapping": {
+          "status": "mapped",
+          "target_path": "step3.vfa.action",
+          "proposed_value": "already_available_reviewed"
+        },
+        "evidence_contains": "Στη VFA"
       }
     ]
   },
@@ -983,6 +1008,23 @@
       "administration.actual_date",
       "administration.status",
       "treatment.agent"
+    ],
+    "allowed_assertions": [
+      {
+        "semantic_type": "clinician_interpretation",
+        "concept_key": "clinical.unmapped_narrative",
+        "source_assertion": {
+          "speaker": "clinician"
+        },
+        "value": {
+          "kind": "text"
+        },
+        "mapping": {
+          "status": "unmapped",
+          "reason_code": "NO_CURRENT_RUNTIME_TARGET"
+        },
+        "evidence_contains": "Δεν αναφέρεται ότι έγινε χορήγηση"
+      }
     ]
   },
   {
