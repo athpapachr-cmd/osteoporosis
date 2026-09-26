@@ -75,16 +75,77 @@ def normalize_medication_alias(value: str) -> str:
     return re.sub(r"\s+", " ", cleaned).strip()
 
 
+# Metadata that may surround a medication name but must never be sufficient,
+# on its own, to become a learned medication identity.
+_MEDICATION_METADATA_TOKENS = {
+    # Dose / units / strength.
+    "mg", "g", "gr", "mcg", "ug", "µg", "μg", "ml", "l", "iu", "unit", "units",
+    # Dosage forms.
+    "tab", "tabs", "tablet", "tablets", "χαπι", "χαπια", "δισκιο", "δισκια",
+    "cap", "caps", "capsule", "capsules", "καψουλα", "καψουλες",
+    "syrup", "σιροπι", "solution", "suspension", "cream", "κρεμα",
+    "ointment", "gel", "γελη", "patch", "patches", "εμπλαστρο", "εμπλαστρα",
+    "injection", "injectable", "ampoule", "ampoules", "ενεση", "ενεσεις",
+    "αμπουλα", "αμπουλες", "spray", "drops", "drop", "σταγονες", "σταγονα",
+    "suppository", "suppositories",
+    # Release / formulation modifiers.
+    "xr", "sr", "mr", "cr", "er", "ir", "xl", "la", "ec", "retard",
+    "extended", "prolonged", "modified", "immediate", "release",
+    "enteric", "gastroresistant", "forte", "plus", "extra", "max",
+    # Route markers.
+    "po", "oral", "orally", "iv", "im", "sc", "subcutaneous", "subcut",
+    "topical", "transdermal", "inhaled", "inhalation", "rectal",
+    "sublingual", "sl",
+    # Frequency / regimen markers.
+    "prn", "daily", "once", "twice", "bid", "bd", "tid", "tds", "qid", "qds",
+    "qd", "qod", "od", "nocte", "mane", "morning", "evening", "night",
+    "weekly", "monthly", "hourly", "every", "hour", "hours", "day", "days",
+    "καθημερινα", "ημερησιως", "πρωι", "βραδυ", "νυχτα", "εβδομαδιαια",
+    "μηνιαια",
+    # Generic administration/instruction words.
+    "dose", "dosage", "strength", "take", "use", "one", "two", "three",
+}
+
+
+def medication_alias_identity_tokens(value: str) -> list[str]:
+    normalized = normalize_medication_alias(value)
+    tokens = [token for token in normalized.split() if token]
+    return [
+        token
+        for token in tokens
+        if not token.isdigit() and token not in _MEDICATION_METADATA_TOKENS
+    ]
+
+
+def is_medication_identity_alias(value: str) -> bool:
+    """True only when the alias contains at least one medication-identity token."""
+    return bool(medication_alias_identity_tokens(value))
+
+
+def _learned_match_prefix(entry: str) -> str:
+    """Normalize the medication identity prefix used for learned alias matching.
+
+    Leading list numbers and generic medication metadata are ignored, but an
+    alias may only match at the beginning of the remaining identity text.
+    """
+    tokens = normalize_medication_alias(entry).split()
+    while tokens and (tokens[0].isdigit() or tokens[0] in _MEDICATION_METADATA_TOKENS):
+        tokens.pop(0)
+    return " ".join(tokens)
+
+
 def _entries(text: str) -> list[str]:
     return list(dict.fromkeys(part.strip() for part in re.split(r"[\n;]+", str(text or "")) if part.strip()))
 
 
 def _entry_contains_alias(entry: str, alias: str) -> bool:
-    normalized_entry = normalize_medication_alias(entry)
     normalized_alias = normalize_medication_alias(alias)
-    if not normalized_alias:
+    if not normalized_alias or not is_medication_identity_alias(alias):
         return False
-    return re.search(rf"(?<!\w){re.escape(normalized_alias)}(?!\w)", normalized_entry) is not None
+    identity_prefix = _learned_match_prefix(entry)
+    if not identity_prefix:
+        return False
+    return re.match(rf"^{re.escape(normalized_alias)}(?:\s|$)", identity_prefix) is not None
 
 
 def _match(entry: str, learned_aliases: Iterable[dict] = ()):
