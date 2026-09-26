@@ -66,9 +66,22 @@ jobs:
             'commercial_products/physio_referral/',
             'static/clinic-utilities/physio-referral/',
           )
-          bad = [p for p in paths if p not in exact and not p.startswith(prefixes)]
-          assert not bad, bad
-          print('Cockpit integration bounded-scope PASS:', len(paths), 'files')
+          product_exact = {
+            'clinic_utilities/physio_referral_api.py',
+            'test_physio_knee_oa_cockpit_integration.py',
+            'test_physio_knee_oa_cockpit_browser.py',
+            'test_physio_knee_oa_jurisdiction_overlay.py',
+          }
+          physio_product_touched = any(
+            p in product_exact or p.startswith(prefixes)
+            for p in paths
+          )
+          if physio_product_touched:
+              bad = [p for p in paths if p not in exact and not p.startswith(prefixes)]
+              assert not bad, bad
+              print('Cockpit integration bounded-scope PASS:', len(paths), 'files')
+          else:
+              print('Physio product scope unchanged; running integration regressions without Physio-only scope assertion.')
           PY
 
       - name: Install dependencies
