@@ -1,6 +1,6 @@
 # RF CURRENT — learned medication dictionary
 
-> **STATUS:** ORTHOGRAPHIC/STRUCTURED ALIAS REMEDIATION IMPLEMENTED / TESTED / CHECKPOINT VERIFIED / INDEPENDENT RE-REVIEW REQUIRED.
+> **STATUS:** INDEPENDENT PASS_TO_RF_RELEASE_PR / RELEASE PR AUTHORIZED / NOT MERGED / NOT DEPLOYED.
 > **Workstream:** native RF v2 Clinic Utility.
 > **Branch:** `feat/rf-learned-medication-dictionary-2026-09-26`.
 > **Base main:** `0ab5f9770d220c20e8d94544cb64e93a4aa30d00`.
@@ -317,6 +317,30 @@ All native RF, release-hardening, unilateral, UI, CU-1, gateway, inherited G4/G3
 
 No PR, merge or deploy occurred.
 
+## Final independent bounded release re-review — PASS
+
+Fresh independent READ-ONLY re-review verified:
+
+- current `main = 0ab5f9770d220c20e8d94544cb64e93a4aa30d00`;
+- current RF branch head `58df7260d405a831426cb75919668e85408f0565`;
+- merge-base = current main;
+- ahead/behind = 27 / 0;
+- no RF release PR existed at review time;
+- the prior generic/orthographic learned-alias poisoning HIGH is **CLOSED** at both persistence/API validation and parser-side stale-entry defense;
+- no BLOCKER/HIGH/MEDIUM/LOW finding was demonstrated;
+- product gate `36231015466` SUCCESS with 28 medication-learning tests;
+- checkpoint verification `36231071391` SUCCESS;
+- final full verification `36231122209` SUCCESS;
+- no product-code mutation occurred after the tested product head `ab21527aee526b43f1907574d8fddcd354c90387`.
+
+Independent disposition:
+
+```text
+PASS_TO_RF_RELEASE_PR
+```
+
+This authorizes only the controlled release-PR transition. It does not authorize merge, deploy or production smoke claims.
+
 ## Exact next action
 
-Obtain a fresh independent READ-ONLY bounded re-review of the current orthographic/structured alias-safety boundary and evidence. Do not open an RF release PR unless that review returns `PASS_TO_RF_RELEASE_PR`.
+After this PASS checkpoint verifies, fresh-verify `main` and branch identity and open one bounded RF release PR from `feat/rf-learned-medication-dictionary-2026-09-26` to fresh current `main`, including the required Canonical Impact Declaration. Then checkpoint PR identity/status and stop before merge/deploy.
