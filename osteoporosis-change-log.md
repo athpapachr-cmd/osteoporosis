@@ -1455,3 +1455,18 @@ Medical Report V1.1 is closed. Reopen only for a material production defect, aut
 - PR #117 checks passed Canonical impact, P1, P2 and CU-1 before squash merge.
 - Render auto-deploy `dep-das28crtqb8s739ddpkg` deployed the exact merge commit and reached `live`; no manual redeploy was triggered.
 - Authenticated/browser production user-flow smoke remains to be observed during normal clinical use.
+
+
+## 2026-09-27 — Global Cockpit Home v1 released
+
+- Released PR #118 as squash merge `b7b8779d943eb1d8db1f8966a81796bc69647c3b`.
+- The service root now enters the reusable Clinical Excellence Cockpit Home instead of routing directly into Osteoporosis Module 01.
+- Cockpit Home exposes Today/Clinical Calendar, Clinical Modules, Learning & Improvement, one global Clinic Utilities surface, and a link to the separately-owned Reception/call dashboard.
+- Osteoporosis navigation is now module-specific: the general Clinic Utilities group and top-level Heidi AI navigation item were removed; Heidi remains an in-encounter capture/exposure concept inside Module 01.
+- The physiotherapy referral has one global Cockpit entry rather than duplicate Module-01/global entries.
+- Home calendar presentation is privacy-minimized to aggregate category counts and does not render patient identity fields.
+- Release hardening also corrected stale CI ownership guards/tests that incorrectly treated global `main.py`/navigation changes as Physio- or Learning-only work; inherited product regressions continue to run while strict product-only scope assertions apply only when the corresponding product owner is actually mutated.
+- Final PR head `ba2de644f4fd16e70d12f04831b28f5fd42730ec` passed all 16 checks.
+- Render auto-deploy `dep-das41frncjis73e6q47g` reached `live` for the exact merge commit.
+- Production smoke verified `GET /` -> 307 and `GET /static/cockpit/` -> 200.
+- Cal.com visit-reason ingestion into Clinical Calendar remains a separate next integration slice.

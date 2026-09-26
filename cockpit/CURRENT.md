@@ -1,6 +1,6 @@
 # Cockpit Home CURRENT
 
-> **STATUS:** RELEASE PR #118 OPEN / HOLD BEFORE MERGE / NOT DEPLOYED.
+> **STATUS:** COCKPIT HOME V1 RELEASE COMPLETE / PR #118 MERGED / RENDER LIVE / ROOT SMOKE VERIFIED.
 > **Workstream:** Clinical Excellence Cockpit Home v1.
 > **Branch:** feat/cockpit-home-v1-2026-09-27.
 > **Base main:** 88ad125f0a25a471b0151eeb26e68b8b8a93c84f.
@@ -86,6 +86,52 @@ draft: NO
 merged: NO
 deploy: NO
 
+## Release completion
+
+```text
+PR: #118
+merge method: squash
+merge commit: b7b8779d943eb1d8db1f8966a81796bc69647c3b
+merged: YES
+Render service: osteoporosis / srv-d5qfk31r0fns73di596g
+deploy: dep-das41frncjis73e6q47g
+deploy trigger: new_commit
+deploy status: live
+manual redeploy: NO
+```
+
+Final PR exact head `ba2de644f4fd16e70d12f04831b28f5fd42730ec` passed all 16 checks, including Cockpit Home, Canonical Impact, G3/G2/G1, Clinical Learning L1/L1B/L1C, Clinical Documents, CU-1 and Physio inherited browser gates.
+
+Production smoke from Render logs:
+
+```text
+GET /                 -> 307 Temporary Redirect
+GET /static/cockpit/  -> 200 OK
+Application startup   -> complete
+Clinical storage      -> PostgreSQL online
+```
+
+Released navigation ownership:
+
+- global Clinic Utilities live only on Cockpit Home;
+- Osteoporosis remains Module 01 and no longer owns the general utilities group;
+- top-level Heidi AI navigation is absent from the Osteoporosis sidebar;
+- Heidi capture/exposure content remains inside the Module-01 encounter workflow;
+- exactly one global physiotherapy referral entry is exposed on Home;
+- Reception remains a linked separately-owned system.
+
+## Current release state
+
+```text
+IMPLEMENTED: YES
+TESTED: YES
+PR #118: MERGED
+DEPLOYED: YES / LIVE
+ROOT -> COCKPIT HOME: VERIFIED
+MODULE-01 SIDEBAR CLEANUP: VERIFIED
+CAL.COM REASON BRIDGE: NOT YET IMPLEMENTED
+```
+
 ## Exact next action
 
-Verify PR #118 checks on the current head. If all required checks succeed, squash-merge with exact-head protection and allow the normal Render auto-deploy; then verify the live root/Home behavior and checkpoint release completion.
+HOLD this completed Home release. The next separate integration slice is Cal.com visit-reason normalization into the Clinical Calendar; do not reopen Cockpit Home unless post-use evidence shows a presentation/navigation defect.
