@@ -1,6 +1,6 @@
 # Cockpit Home CURRENT
 
-> **STATUS:** IMPLEMENTED / TESTED / RELEASE PR AUTHORIZED.
+> **STATUS:** RELEASE PR #118 OPEN / HOLD BEFORE MERGE / NOT DEPLOYED.
 > **Workstream:** Clinical Excellence Cockpit Home v1.
 > **Branch:** feat/cockpit-home-v1-2026-09-27.
 > **Base main:** 88ad125f0a25a471b0151eeb26e68b8b8a93c84f.
@@ -74,6 +74,18 @@ Behavior proven:
 - one global physiotherapy referral entry exists;
 - Home calendar summary uses aggregate counts only and does not render patient identity fields.
 
+## Release PR
+
+PR: #118
+URL: https://github.com/athpapachr-cmd/osteoporosis/pull/118
+base: main
+base_sha: 88ad125f0a25a471b0151eeb26e68b8b8a93c84f
+head: feat/cockpit-home-v1-2026-09-27
+head_sha at PR creation: f0f252dfaef9c08146c636e5d10fbf7ede97d553
+draft: NO
+merged: NO
+deploy: NO
+
 ## Exact next action
 
-Fresh-verify main, open one bounded release PR with Canonical Impact Declaration, then if PR checks succeed squash-merge and allow normal Render auto-deploy.
+Verify PR #118 checks on the current head. If all required checks succeed, squash-merge with exact-head protection and allow the normal Render auto-deploy; then verify the live root/Home behavior and checkpoint release completion.
