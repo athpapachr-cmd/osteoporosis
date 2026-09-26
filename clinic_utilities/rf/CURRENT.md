@@ -1,6 +1,6 @@
 # RF CURRENT — learned medication dictionary
 
-> **STATUS:** SECOND ALIAS-SAFETY REMEDIATION IMPLEMENTED / TESTED / CHECKPOINTING BEFORE INDEPENDENT RE-REVIEW.
+> **STATUS:** SECOND ALIAS-SAFETY REMEDIATION IMPLEMENTED / TESTED / CHECKPOINT VERIFIED / INDEPENDENT RE-REVIEW REQUIRED.
 > **Workstream:** native RF v2 Clinic Utility.
 > **Branch:** `feat/rf-learned-medication-dictionary-2026-09-26`.
 > **Base main:** `0ab5f9770d220c20e8d94544cb64e93a4aa30d00`.
@@ -13,6 +13,8 @@
 > **Alias-remediation regression workflow:** `36228138003` — SUCCESS.
 > **Corrected checkpoint verification workflow:** `36228202897` — SUCCESS.
 > **Final corrected sidecar verification:** `36228254994` — SUCCESS.
+> **Structural alias-remediation workflow:** `36229316225` — SUCCESS.
+> **Structural remediation checkpoint verification:** `36229374537` — SUCCESS.
 > **Scope:** medication parsing/classification UX only.
 > **Root writer lock:** unchanged; PR-1 remains the repo-wide CURRENT_OPERATIONAL owner.
 
@@ -270,4 +272,4 @@ No PR, merge or deploy occurred.
 
 ## Exact next action
 
-Verify this structural-remediation checkpoint with the complete RF gate. Then obtain a fresh independent READ-ONLY bounded re-review. Do not open an RF release PR unless that review returns `PASS_TO_RF_RELEASE_PR`.
+Obtain a fresh independent READ-ONLY bounded re-review of the current structural alias-identity boundary and evidence. Do not open an RF release PR unless that review returns `PASS_TO_RF_RELEASE_PR`.
