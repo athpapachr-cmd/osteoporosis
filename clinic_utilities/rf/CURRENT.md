@@ -1,6 +1,6 @@
 # RF CURRENT — learned medication dictionary
 
-> **STATUS:** RF RELEASE PR #116 OPEN / HOLD BEFORE MERGE / NOT DEPLOYED.
+> **STATUS:** RF RELEASE PR #116 MERGED / RENDER AUTO-DEPLOY LIVE / RELEASE COMPLETE / AUTHENTICATED RF USER-FLOW SMOKE NOT EXECUTED.
 > **Workstream:** native RF v2 Clinic Utility.
 > **Branch:** `feat/rf-learned-medication-dictionary-2026-09-26`.
 > **Base main:** `0ab5f9770d220c20e8d94544cb64e93a4aa30d00`.
@@ -379,6 +379,58 @@ changelog: defer_until_completion
 
 Opening PR #116 is a release-review transition only. It does not authorize merge, deployment or production smoke.
 
+## Merge and deployment completion
+
+PR #116 completed the controlled release transition.
+
+```text
+PR: #116
+merge method: squash
+merge commit: c0b89f9c49239142e94e0630580771180d6fcadb
+merged: YES
+merged_at: 2026-09-26T17:18:40Z
+```
+
+Render production service:
+
+```text
+service: osteoporosis
+service_id: srv-d5qfk31r0fns73di596g
+branch: main
+autoDeploy: yes
+deploy_id: dep-darvssavcj2c73adg7vg
+deploy_commit: c0b89f9c49239142e94e0630580771180d6fcadb
+trigger: new_commit
+status: live
+finished_at: 2026-09-26T17:20:10Z
+```
+
+No manual redeploy was triggered.
+
+Production startup evidence from Render logs:
+
+- build successful;
+- Uvicorn process started;
+- application startup complete;
+- PostgreSQL clinical storage configured online;
+- clinical key configured;
+- Render reported the service live;
+- root/static service request returned successfully after startup.
+
+The RF routes remain protected by the existing clinical-key boundary. This release session did not retrieve or expose the production clinical key, so an authenticated end-to-end RF medication-learning user-flow smoke was not executed.
+
+Release state:
+
+```text
+IMPLEMENTED: YES
+INDEPENDENT RELEASE REVIEW: PASS
+PR MERGED: YES
+AUTO-DEPLOY: LIVE
+MANUAL REDEPLOY: NO
+SERVICE STARTUP: VERIFIED
+AUTHENTICATED RF FEATURE SMOKE: NOT EXECUTED
+```
+
 ## Exact next action
 
-Verify the post-PR checkpoint and PR #116 CI/release checks. Then HOLD for a separate controlled merge decision. Do not merge or deploy from this checkpoint.
+HOLD. No further repository or deployment mutation is required for this release. If an authenticated production RF medication-learning smoke is performed later through the normal clinical UI, record that evidence here; otherwise keep the current release state as deployed/live with authenticated feature smoke not executed.
