@@ -1,6 +1,6 @@
 # RF CURRENT — learned medication dictionary
 
-> **STATUS:** ORTHOGRAPHIC/STRUCTURED ALIAS REMEDIATION IMPLEMENTED / TESTED / CHECKPOINTING BEFORE INDEPENDENT RE-REVIEW.
+> **STATUS:** ORTHOGRAPHIC/STRUCTURED ALIAS REMEDIATION IMPLEMENTED / TESTED / CHECKPOINT VERIFIED / INDEPENDENT RE-REVIEW REQUIRED.
 > **Workstream:** native RF v2 Clinic Utility.
 > **Branch:** `feat/rf-learned-medication-dictionary-2026-09-26`.
 > **Base main:** `0ab5f9770d220c20e8d94544cb64e93a4aa30d00`.
@@ -298,6 +298,8 @@ ab21527aee526b43f1907574d8fddcd354c90387
 
 Workflow `36231015466` completed SUCCESS across the complete RF gate.
 
+Checkpoint verification workflow `36231071391` also completed SUCCESS.
+
 The medication-learning suite now reports **28 PASS** and proves, among other things:
 
 - dotted metadata aliases `I.V.`, `P.O.`, `B.I.D.`, `Q.I.D.` are canonicalized and rejected as identities;
@@ -317,4 +319,4 @@ No PR, merge or deploy occurred.
 
 ## Exact next action
 
-Verify this orthographic/structured remediation checkpoint with the complete RF gate. Then obtain a fresh independent READ-ONLY bounded re-review. Do not open an RF release PR unless that review returns `PASS_TO_RF_RELEASE_PR`.
+Obtain a fresh independent READ-ONLY bounded re-review of the current orthographic/structured alias-safety boundary and evidence. Do not open an RF release PR unless that review returns `PASS_TO_RF_RELEASE_PR`.
