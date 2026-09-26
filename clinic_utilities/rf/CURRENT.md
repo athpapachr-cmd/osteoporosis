@@ -1,11 +1,12 @@
 # RF CURRENT — learned medication dictionary
 
-> **STATUS:** SECOND INDEPENDENT HOLD_FOR_RF_REMEDIATION / STRUCTURAL ALIAS-IDENTITY HARDENING AUTHORIZED.
+> **STATUS:** SECOND ALIAS-SAFETY REMEDIATION IMPLEMENTED / TESTED / CHECKPOINTING BEFORE INDEPENDENT RE-REVIEW.
 > **Workstream:** native RF v2 Clinic Utility.
 > **Branch:** `feat/rf-learned-medication-dictionary-2026-09-26`.
 > **Base main:** `0ab5f9770d220c20e8d94544cb64e93a4aa30d00`.
 > **Original tested implementation head:** `6ebd1667ce2640076c84a5b81ad031614f654385`.
-> **Corrected remediation head:** `f345b0bf557ea5079d49793512cf550ab614988d`.
+> **First corrected remediation head:** `f345b0bf557ea5079d49793512cf550ab614988d`.
+> **Structural alias-safety head:** `946d464829406718305ade9f4019314e2a64b497`.
 > **Implementation regression workflow:** `36222611828` — SUCCESS.
 > **Checkpoint verification workflow:** `36222684337` — SUCCESS.
 > **Independent HOLD checkpoint workflow:** `36228058129` — SUCCESS.
@@ -226,6 +227,47 @@ Authorized mutation is limited to the learned-alias identity/matching boundary a
 
 No PR, merge, deploy or unrelated RF change is authorized.
 
+## Structural alias-identity remediation — COMPLETE deterministically
+
+The second independent HIGH finding was closed with two complementary fail-closed controls:
+
+1. **Identity-bearing alias validation**
+   - an alias must contain at least one token that is not numeric and not medication metadata;
+   - release, route, frequency, dose-unit and formulation-only aliases are rejected;
+   - examples rejected include `XR`, `SR`, `MR`, `PRN`, `PO`, `daily`, `oral`, `IV`, `BID`, `night`, `forte`;
+   - valid names such as `Xefo` remain learnable;
+   - valid compound aliases such as `Mysteron XR` remain learnable because they contain the identity token `Mysteron`.
+
+2. **Prefix-only learned matching**
+   - learned aliases no longer match arbitrary interior tokens in a medication line;
+   - generic leading metadata/list markers may be skipped;
+   - the learned medication identity must then match at the beginning of the remaining line;
+   - unsafe/stale learned entries are ignored defensively by the parser even if they somehow exist outside the normal storage validator.
+
+Exact tested structural-remediation head:
+
+```text
+946d464829406718305ade9f4019314e2a64b497
+```
+
+Workflow `36229316225` completed SUCCESS across the complete RF gate.
+
+The medication-learning suite now contains **20 PASS** and proves, among other things:
+
+- release/route/frequency metadata-only aliases fail closed;
+- API rejects those aliases;
+- `XR → nsaid` cannot be learned;
+- `Mysteron XR 50 mg` remains unrecognized after that poisoning attempt;
+- an unsafe stale `XR` learned entry is ignored by the parser;
+- a learned `Mysteron` matches `Mysteron XR 50 mg`;
+- that same alias does not match an interior occurrence such as `OtherDrug Mysteron 50 mg`;
+- `Tablet Mysteron 50 mg` still recognizes the learned `Mysteron` after stripping leading generic form metadata;
+- `Mysteron XR` itself remains a valid learnable medication alias.
+
+All native RF, PDF, UI, CU-1, gateway, inherited G4/G3/G2/G1/C1 and diff-hygiene checks also passed.
+
+No PR, merge or deploy occurred.
+
 ## Exact next action
 
-Verify this second HOLD checkpoint. Then implement only the structural alias-identity hardening and focused regressions, rerun the complete RF gate, checkpoint the corrected head, and require another fresh independent READ-ONLY re-review before any release PR.
+Verify this structural-remediation checkpoint with the complete RF gate. Then obtain a fresh independent READ-ONLY bounded re-review. Do not open an RF release PR unless that review returns `PASS_TO_RF_RELEASE_PR`.
