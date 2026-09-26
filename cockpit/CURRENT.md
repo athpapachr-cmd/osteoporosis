@@ -1,9 +1,10 @@
 # Cockpit Home CURRENT
 
-> **STATUS:** ACTIVE / IMPLEMENTATION AUTHORIZED.
+> **STATUS:** IMPLEMENTED / TESTED / RELEASE PR AUTHORIZED.
 > **Workstream:** Clinical Excellence Cockpit Home v1.
 > **Branch:** feat/cockpit-home-v1-2026-09-27.
 > **Base main:** 88ad125f0a25a471b0151eeb26e68b8b8a93c84f.
+> **Exact tested head:** 7744e2142b54ba0b7c8b92c87e4e511cffffc26b.
 > **Root writer lock:** unchanged; PR-1 Heidi-first transcript capture remains the repo-wide CURRENT_OPERATIONAL owner.
 > **Overlap:** none; this slice is limited to global Cockpit navigation/home presentation and Osteoporosis sidebar cleanup.
 
@@ -46,6 +47,33 @@ Module 02+ appear as future placeholders only; no fake runtime is implied.
 - no new browser patient persistence;
 - root Clinical Auth boundary remains unchanged.
 
+## Verification
+
+Cockpit Home gate:
+
+```text
+run: 36273987676
+head: 7744e2142b54ba0b7c8b92c87e4e511cffffc26b
+result: SUCCESS
+```
+
+Verified:
+
+- Python syntax PASS;
+- Cockpit browser JavaScript syntax PASS;
+- 4 deterministic Cockpit Home tests PASS;
+- Osteoporosis G4 workspace/navigation regression PASS;
+- diff hygiene PASS.
+
+Behavior proven:
+
+- / enters /static/cockpit/;
+- global Cockpit Home contains Modules, Calendar, Learning, Clinic Utilities and Reception;
+- Clinic Utilities are absent from the Osteoporosis sidebar;
+- top-level Heidi AI is absent from the Osteoporosis sidebar;
+- one global physiotherapy referral entry exists;
+- Home calendar summary uses aggregate counts only and does not render patient identity fields.
+
 ## Exact next action
 
-Implement Home v1 + Osteoporosis sidebar cleanup + deterministic navigation tests. Then run focused/current regression gates and checkpoint the tested head before release PR.
+Fresh-verify main, open one bounded release PR with Canonical Impact Declaration, then if PR checks succeed squash-merge and allow normal Render auto-deploy.
