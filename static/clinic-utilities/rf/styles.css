@@ -6,3 +6,19 @@
   font-size: 0.86rem;
   font-weight: 650;
 }
+
+.med-add{margin-top:10px;width:100%}
+.unknown-medications{margin-top:14px;padding:12px;border:1px solid #e4d8a8;border-radius:12px;background:#fffaf0}
+.unknown-head h3{margin:0 0 4px;font-size:14px}
+.unknown-head p{margin:0 0 10px}
+.unknown-list,.dictionary-list{display:grid;gap:8px}
+.unknown-medication{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(130px,.8fr) auto;gap:8px;align-items:center;padding:9px;border:1px solid #eadfb9;border-radius:10px;background:#fff}
+.unknown-source{font-size:12px;color:#4d5c70;overflow-wrap:anywhere}
+.unknown-actions,.dictionary-actions{display:flex;gap:6px;flex-wrap:wrap}
+.med-dictionary{margin-top:12px;border-top:1px dashed #dbe3ed;padding-top:12px}
+.med-dictionary summary{cursor:pointer}
+.dictionary-note{margin:10px 0;color:#66768a;font-size:12px}
+.dictionary-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 9px;border:1px solid #e1e7ef;border-radius:10px;background:#fbfcfe}
+.learned-badge,.trial-actions{margin:-3px 0 7px 38px;font-size:11px}
+.learned-badge{color:#286341;font-weight:700}
+@media(max-width:760px){.unknown-medication{grid-template-columns:1fr}.dictionary-row{align-items:stretch;flex-direction:column}}

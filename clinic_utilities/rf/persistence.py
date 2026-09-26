@@ -6,6 +6,10 @@ from datetime import datetime, timezone
 from typing import Any
 from uuid import uuid4
 
+from .parsers import (
+    is_medication_identity_alias,
+    normalize_medication_alias,
+)
 from sqlalchemy import Column, DateTime, Integer, JSON, String, select
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, Session
@@ -28,6 +32,18 @@ class RFApplicationORM(RFBase):
     product_key = Column(String, nullable=False)
     payload_json = Column(JSON, nullable=False, default=dict)
     created_at = Column(DateTime, nullable=False, index=True)
+
+class RFMedicationAliasORM(RFBase):
+    __tablename__ = "clinic_rf_medication_aliases"
+    id = Column(String, primary_key=True)
+    normalized_alias = Column(String, nullable=False, unique=True, index=True)
+    alias = Column(String, nullable=False)
+    display_name = Column(String, nullable=False)
+    active_ingredient = Column(String, nullable=False, default="")
+    category = Column(String, nullable=False, index=True)
+    provenance = Column(String, nullable=False, default="clinician_confirmed")
+    created_at = Column(DateTime, nullable=False, index=True)
+    updated_at = Column(DateTime, nullable=False, index=True)
 
 class RFProcedureHistoryORM(RFBase):
     __tablename__ = "clinic_rf_procedure_history"
@@ -57,6 +73,103 @@ def normalize_identity(value: str) -> str:
 
 def initialize_rf_tables(engine: Engine) -> None:
     RFBase.metadata.create_all(bind=engine)
+
+_ALIAS_DOSE_RE = re.compile(r"(?i)(?<!\w)\d+(?:[.,]\d+)?\s*(?:mg|g|gr|mcg|µg|χάπια?|χαπια?|δισκία|δισκια|tabs?|tablets?)(?!\w)")
+
+
+def _validate_medication_alias_identity(alias_text: str) -> str:
+    normalized = normalize_medication_alias(alias_text)
+    if len(normalized) < 2:
+        raise ValueError("Medication alias is too short")
+    if not is_medication_identity_alias(alias_text):
+        raise ValueError("Medication alias must identify a medicine, not regimen or formulation metadata")
+    return normalized
+
+
+def list_medication_aliases(engine: Engine) -> list[dict[str, Any]]:
+    with Session(engine) as session:
+        rows = session.execute(
+            select(RFMedicationAliasORM).order_by(RFMedicationAliasORM.display_name.asc())
+        ).scalars().all()
+    return [
+        {
+            "id": row.id,
+            "normalized_alias": row.normalized_alias,
+            "alias": row.alias,
+            "display_name": row.display_name,
+            "active_ingredient": row.active_ingredient,
+            "category": row.category,
+            "provenance": row.provenance,
+        }
+        for row in rows
+    ]
+
+
+def upsert_medication_alias(
+    engine: Engine,
+    *,
+    alias: str,
+    category: str,
+    display_name: str = "",
+    active_ingredient: str = "",
+) -> dict[str, Any]:
+    alias_text = str(alias or "").strip()
+    if category not in {"nsaid", "other"}:
+        raise ValueError("Unsupported medication category")
+    if not alias_text or len(alias_text) > 120:
+        raise ValueError("Medication alias is required")
+    if "\n" in alias_text or ";" in alias_text or _ALIAS_DOSE_RE.search(alias_text):
+        raise ValueError("Medication alias must contain the medicine name only")
+    normalized = _validate_medication_alias_identity(alias_text)
+
+    display = str(display_name or alias_text).strip()[:160]
+    active = str(active_ingredient or "").strip()[:160]
+    now = utcnow()
+    with Session(engine) as session:
+        row = session.scalar(
+            select(RFMedicationAliasORM).where(RFMedicationAliasORM.normalized_alias == normalized)
+        )
+        if row is None:
+            row = RFMedicationAliasORM(
+                id=str(uuid4()),
+                normalized_alias=normalized,
+                alias=alias_text,
+                display_name=display,
+                active_ingredient=active,
+                category=category,
+                provenance="clinician_confirmed",
+                created_at=now,
+                updated_at=now,
+            )
+            session.add(row)
+        else:
+            row.alias = alias_text
+            row.display_name = display
+            row.active_ingredient = active
+            row.category = category
+            row.updated_at = now
+        session.commit()
+        session.refresh(row)
+        return {
+            "id": row.id,
+            "normalized_alias": row.normalized_alias,
+            "alias": row.alias,
+            "display_name": row.display_name,
+            "active_ingredient": row.active_ingredient,
+            "category": row.category,
+            "provenance": row.provenance,
+        }
+
+
+def delete_medication_alias(engine: Engine, alias_id: str) -> bool:
+    with Session(engine) as session:
+        row = session.get(RFMedicationAliasORM, alias_id)
+        if row is None:
+            return False
+        session.delete(row)
+        session.commit()
+        return True
+
 
 def _history_dedupe_key(data: dict[str, Any]) -> str:
     material="|".join(str(data.get(key) or "").strip().casefold() for key in ("patient_identity_key","site_key","laterality","actual_procedure_date","provenance"))
