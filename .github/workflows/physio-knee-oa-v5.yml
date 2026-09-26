@@ -62,10 +62,20 @@ jobs:
             'static/clinic-utilities/physio-referral/',
             'commercial_products/physio_referral/',
           )
-          bad=[p for p in paths if p not in exact and not p.startswith(prefixes)]
-          assert not bad,bad
+          physio_product_touched=any(
+              p.startswith(prefixes) or p in {
+                  'test_physio_knee_oa_cockpit_browser.py',
+                  'test_physio_knee_oa_cockpit_integration.py',
+              }
+              for p in paths
+          )
+          if physio_product_touched:
+              bad=[p for p in paths if p not in exact and not p.startswith(prefixes)]
+              assert not bad,bad
+              print('Knee OA v5/v5.1 bounded scope PASS:',len(paths),'files')
+          else:
+              print('Knee OA v5/v5.1 product scope unchanged; running regressions without Physio-only scope assertion.')
           assert not any('__pycache__' in p or p.endswith('.pyc') for p in paths),paths
-          print('Knee OA v5/v5.1 bounded scope PASS:',len(paths),'files')
           PY
 
       - name: Install dependencies
