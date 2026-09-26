@@ -1443,3 +1443,15 @@ ACTIVE WRITER                  none
 Production verification used only synthetic/non-identifiable data. No real patient file or secret value was committed or printed. The no-persistent-case boundary remains unchanged.
 
 Medical Report V1.1 is closed. Reopen only for a material production defect, authoritative form/requirement change, safety/data-integrity issue or explicit new workflow requirement.
+
+
+## 2026-09-26 — Sick Leave selectable templates and color themes released
+
+- Released PR #117 (`ad68935750e7ab3101b253fad4d3b94725204461`) for the Clinical Documents Sick Leave generator.
+- Added five presentation-only layouts: Classic Medical, Modern Clinic, Minimal, Compact and Formal.
+- Added six controlled professional color themes: Navy, Teal, Graphite, Burgundy, Forest and Monochrome.
+- Preserved the existing SickLeaveDraftV1 clinical/document model, PDF metadata schema, previous-document reuse, signature semantics and no-patient-browser-storage boundary.
+- Exact implementation evidence: Clinical Documents P1 `36267760233` SUCCESS with 32 sick-leave tests; Clinical Documents P2 `36267760213` SUCCESS.
+- PR #117 checks passed Canonical impact, P1, P2 and CU-1 before squash merge.
+- Render auto-deploy `dep-das28crtqb8s739ddpkg` deployed the exact merge commit and reached `live`; no manual redeploy was triggered.
+- Authenticated/browser production user-flow smoke remains to be observed during normal clinical use.

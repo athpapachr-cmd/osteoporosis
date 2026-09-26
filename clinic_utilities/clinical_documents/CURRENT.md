@@ -1,6 +1,6 @@
 # Clinical Documents CURRENT — Sick Leave template themes
 
-> **STATUS:** RELEASE PR #117 OPEN / HOLD BEFORE MERGE / NOT DEPLOYED.
+> **STATUS:** RELEASE COMPLETE / PR #117 MERGED / RENDER AUTO-DEPLOY LIVE / USER-FLOW SMOKE PENDING.
 > **Workstream:** Clinical Documents — Sick Leave visual templates.
 > **Branch:** `feat/sick-leave-template-themes-2026-09-26`.
 > **Base main:** `c0b89f9c49239142e94e0630580771180d6fcadb`.
@@ -130,6 +130,42 @@ workstream_current_path: clinic_utilities/clinical_documents/CURRENT.md
 changelog: defer_until_completion
 ```
 
+## Release completion
+
+```text
+PR: #117
+merge method: squash
+merge commit: ad68935750e7ab3101b253fad4d3b94725204461
+merged: YES
+Render service: osteoporosis / srv-d5qfk31r0fns73di596g
+deploy: dep-das28crtqb8s739ddpkg
+deploy trigger: new_commit
+deploy status: live
+manual redeploy: NO
+```
+
+PR checks on the final pre-merge head succeeded:
+
+- Canonical impact guard: SUCCESS;
+- Clinical Documents P1: SUCCESS;
+- Clinical Documents P2: SUCCESS;
+- CU-1 focused tests: SUCCESS.
+
+Render deployed exactly merge commit `ad68935750e7ab3101b253fad4d3b94725204461`.
+
+A direct authenticated/browser user-flow smoke was not executed by the assistant because the production Sick Leave route is protected and the available external HTTP fetchers could not resolve/access the Render endpoint from this environment. This is an evidence limitation only; Render reports the exact deployment live.
+
+## Current release state
+
+```text
+IMPLEMENTED: YES
+TESTED: YES
+PR: #117 MERGED
+DEPLOYED: YES / LIVE
+MANUAL REDEPLOY: NO
+PRODUCTION USER-FLOW SMOKE: PENDING
+```
+
 ## Exact next action
 
-Verify PR #117 checks on the current head. If all required checks succeed, squash-merge with exact-head protection and allow the normal Render auto-deploy; then verify the live deploy and smoke evidence without requesting another Product Owner confirmation.
+HOLD. No further code or deployment mutation is required. The next real-user use of the Sick Leave form can serve as production smoke; if any visual issue is observed, treat it as a bounded presentation follow-up.
