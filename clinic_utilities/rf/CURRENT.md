@@ -1,12 +1,13 @@
 # RF CURRENT — learned medication dictionary
 
-> **STATUS:** SECOND ALIAS-SAFETY REMEDIATION IMPLEMENTED / TESTED / CHECKPOINT VERIFIED / INDEPENDENT RE-REVIEW REQUIRED.
+> **STATUS:** ORTHOGRAPHIC/STRUCTURED ALIAS REMEDIATION IMPLEMENTED / TESTED / CHECKPOINTING BEFORE INDEPENDENT RE-REVIEW.
 > **Workstream:** native RF v2 Clinic Utility.
 > **Branch:** `feat/rf-learned-medication-dictionary-2026-09-26`.
 > **Base main:** `0ab5f9770d220c20e8d94544cb64e93a4aa30d00`.
 > **Original tested implementation head:** `6ebd1667ce2640076c84a5b81ad031614f654385`.
 > **First corrected remediation head:** `f345b0bf557ea5079d49793512cf550ab614988d`.
 > **Structural alias-safety head:** `946d464829406718305ade9f4019314e2a64b497`.
+> **Orthographic/structured alias-safety head:** `ab21527aee526b43f1907574d8fddcd354c90387`.
 > **Implementation regression workflow:** `36222611828` — SUCCESS.
 > **Checkpoint verification workflow:** `36222684337` — SUCCESS.
 > **Independent HOLD checkpoint workflow:** `36228058129` — SUCCESS.
@@ -270,6 +271,50 @@ All native RF, PDF, UI, CU-1, gateway, inherited G4/G3/G2/G1/C1 and diff-hygiene
 
 No PR, merge or deploy occurred.
 
+## Orthographic / structured alias remediation — COMPLETE deterministically
+
+The third independent HIGH finding identified representation-sensitive metadata aliases such as dotted routes, dotted frequencies, structured regimens and numeric ranges.
+
+The current implementation now canonicalizes medication alias text before both storage validation and learned matching:
+
+```text
+I.V.            → iv
+P.O.            → po
+B.I.D.          → bid
+Q.I.D.          → qid
+extended-release→ extended release
+50-100          → 50 100
+```
+
+Medication identity requires an alphabetic non-metadata identity token at the beginning of the alias. Tokens containing digits are treated as regimen/strength metadata rather than medication identity.
+
+The same canonical tokenization is used by parser-side defensive matching, so stale/bypassed metadata-only rows are not trusted.
+
+Exact tested product head:
+
+```text
+ab21527aee526b43f1907574d8fddcd354c90387
+```
+
+Workflow `36231015466` completed SUCCESS across the complete RF gate.
+
+The medication-learning suite now reports **28 PASS** and proves, among other things:
+
+- dotted metadata aliases `I.V.`, `P.O.`, `B.I.D.`, `Q.I.D.` are canonicalized and rejected as identities;
+- structured regimens `q8h`, `q12h`, `2x`, `2xday` are not medication identities;
+- numeric composite/range forms `50-100`, `50/100` are rejected;
+- `extended-release` is not a medication identity;
+- API rejection mirrors persistence validation;
+- attempted `I.V. → nsaid` learning leaves the dictionary empty;
+- `I.V. Mysteron 50 mg` remains unrecognized after that poisoning attempt;
+- an unsafe stale dotted-route learned entry is ignored by the parser;
+- a valid learned `Mysteron` still matches after a dotted route prefix;
+- hyphenated valid alias `Mysteron-XR` canonicalizes to `mysteron xr` and remains usable.
+
+All native RF, release-hardening, unilateral, UI, CU-1, gateway, inherited G4/G3/G2/G1/C1 and diff-hygiene checks passed.
+
+No PR, merge or deploy occurred.
+
 ## Exact next action
 
-Obtain a fresh independent READ-ONLY bounded re-review of the current structural alias-identity boundary and evidence. Do not open an RF release PR unless that review returns `PASS_TO_RF_RELEASE_PR`.
+Verify this orthographic/structured remediation checkpoint with the complete RF gate. Then obtain a fresh independent READ-ONLY bounded re-review. Do not open an RF release PR unless that review returns `PASS_TO_RF_RELEASE_PR`.
