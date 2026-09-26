@@ -1,11 +1,12 @@
 # RF CURRENT — learned medication dictionary
 
-> **STATUS:** IMPLEMENTED / TESTED / HOLD BEFORE RELEASE PR.
+> **STATUS:** IMPLEMENTED / TESTED / CHECKPOINT VERIFIED / HOLD BEFORE RELEASE PR.
 > **Workstream:** native RF v2 Clinic Utility.
 > **Branch:** `feat/rf-learned-medication-dictionary-2026-09-26`.
 > **Base main:** `0ab5f9770d220c20e8d94544cb64e93a4aa30d00`.
 > **Exact tested implementation head:** `6ebd1667ce2640076c84a5b81ad031614f654385`.
-> **Regression workflow:** `36222611828` — SUCCESS.
+> **Implementation regression workflow:** `36222611828` — SUCCESS.
+> **Checkpoint verification workflow:** `36222684337` — SUCCESS.
 > **Scope:** medication parsing/classification UX only.
 > **Root writer lock:** unchanged; PR-1 remains the repo-wide CURRENT_OPERATIONAL owner.
 
@@ -105,4 +106,4 @@ PRODUCTION-SMOKE-VERIFIED: NO
 
 ## Exact next action
 
-Verify this checkpoint head with the RF regression gate. Then hold for a separate release decision/review before opening a PR, merge or deploy. The frozen PR-1 transcript branch remains untouched.
+HOLD. The implementation and its canonical checkpoint are verified. A separate release decision/review is required before opening a PR, merge or deploy. The frozen PR-1 transcript branch remains untouched.
