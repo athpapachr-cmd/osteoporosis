@@ -74,6 +74,51 @@ class RFMedicationLearningParserTests(unittest.TestCase):
         self.assertFalse(result["nsaid_candidates"][0]["learned"])
         self.assertEqual(result["other_candidates"], [])
 
+    def test_learned_alias_matches_identity_prefix_not_arbitrary_interior_token(self):
+        learned = [{
+            "id": "L1",
+            "normalized_alias": "mysteron",
+            "alias": "Mysteron",
+            "display_name": "Mysteron",
+            "active_ingredient": "",
+            "category": "nsaid",
+            "provenance": "clinician_confirmed",
+        }]
+        correct = parse_medications("Mysteron XR 50 mg", learned)
+        self.assertEqual(correct["nsaid_candidates"][0]["canonical_key"], "learned:mysteron")
+
+        interior = parse_medications("OtherDrug Mysteron 50 mg", learned)
+        self.assertEqual(interior["nsaid_candidates"], [])
+        self.assertEqual(len(interior["unrecognized_candidates"]), 1)
+
+    def test_parser_defensively_ignores_unsafe_stale_metadata_alias(self):
+        learned = [{
+            "id": "STALE",
+            "normalized_alias": "xr",
+            "alias": "XR",
+            "display_name": "XR",
+            "active_ingredient": "",
+            "category": "nsaid",
+            "provenance": "clinician_confirmed",
+        }]
+        parsed = parse_medications("Mysteron XR 50 mg", learned)
+        self.assertEqual(parsed["nsaid_candidates"], [])
+        self.assertEqual(parsed["other_candidates"], [])
+        self.assertEqual(len(parsed["unrecognized_candidates"]), 1)
+
+    def test_learned_alias_tolerates_leading_generic_form_marker_but_not_interior_match(self):
+        learned = [{
+            "id": "L2",
+            "normalized_alias": "mysteron",
+            "alias": "Mysteron",
+            "display_name": "Mysteron",
+            "active_ingredient": "",
+            "category": "other",
+            "provenance": "clinician_confirmed",
+        }]
+        parsed = parse_medications("Tablet Mysteron 50 mg", learned)
+        self.assertEqual(parsed["other_candidates"][0]["canonical_key"], "learned:mysteron")
+
 
 class RFMedicationLearningPersistenceTests(unittest.TestCase):
     def setUp(self):
@@ -150,6 +195,47 @@ class RFMedicationLearningPersistenceTests(unittest.TestCase):
         self.assertEqual(entry["normalized_alias"], "xefo")
         self.assertEqual(entry["category"], "nsaid")
 
+    def test_release_route_frequency_metadata_only_aliases_are_rejected(self):
+        invalid_aliases = [
+            "XR",
+            "SR",
+            "MR",
+            "PRN",
+            "PO",
+            "daily",
+            "oral",
+            "IV",
+            "BID",
+            "night",
+            "forte",
+        ]
+        for alias in invalid_aliases:
+            with self.subTest(alias=alias):
+                with self.assertRaises(ValueError):
+                    upsert_medication_alias(self.engine, alias=alias, category="nsaid")
+
+    def test_valid_brand_plus_release_modifier_remains_learnable(self):
+        entry = upsert_medication_alias(
+            self.engine,
+            alias="Mysteron XR",
+            category="nsaid",
+            display_name="Mysteron XR",
+        )
+        self.assertEqual(entry["normalized_alias"], "mysteron xr")
+        parsed = parse_medications("Mysteron XR 50 mg", list_medication_aliases(self.engine))
+        self.assertEqual(parsed["nsaid_candidates"][0]["canonical_key"], "learned:mysteron xr")
+
+    def test_xr_poisoning_attempt_cannot_classify_future_unknown_line(self):
+        with self.assertRaises(ValueError):
+            upsert_medication_alias(self.engine, alias="XR", category="nsaid")
+        self.assertEqual(list_medication_aliases(self.engine), [])
+
+        parsed = parse_medications("Mysteron XR 50 mg", list_medication_aliases(self.engine))
+        self.assertEqual(parsed["nsaid_candidates"], [])
+        self.assertEqual(parsed["other_candidates"], [])
+        self.assertEqual(len(parsed["unrecognized_candidates"]), 1)
+        self.assertTrue(parsed["unrecognized_candidates"][0]["source_text"].startswith("Mysteron XR"))
+
 
 class RFMedicationLearningApiTests(unittest.TestCase):
     def setUp(self):
@@ -223,6 +309,16 @@ class RFMedicationLearningApiTests(unittest.TestCase):
 
     def test_api_rejects_generic_alias_tokens(self):
         for alias in ("50", "mg", "mcg", "tablet", "δισκίο"):
+            with self.subTest(alias=alias):
+                response = self.client.post(
+                    "/clinical/clinic-utilities/rf/api/medication-dictionary",
+                    headers=self.headers,
+                    json={"alias": alias, "category": "nsaid"},
+                )
+                self.assertEqual(response.status_code, 422, response.text)
+
+    def test_api_rejects_release_route_frequency_metadata_aliases(self):
+        for alias in ("XR", "SR", "MR", "PRN", "PO", "daily", "oral", "BID"):
             with self.subTest(alias=alias):
                 response = self.client.post(
                     "/clinical/clinic-utilities/rf/api/medication-dictionary",
