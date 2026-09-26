@@ -67,18 +67,45 @@ def _norm(value: str) -> str:
     return "".join(ch for ch in decomposed if not unicodedata.combining(ch))
 
 
-def normalize_medication_alias(value: str) -> str:
-    """Normalize a clinician-confirmed medication alias for stable matching/storage."""
+def _fold_medication_text(value: str) -> str:
     decomposed = unicodedata.normalize("NFD", str(value or "").casefold())
-    without_marks = "".join(ch for ch in decomposed if not unicodedata.combining(ch))
-    cleaned = re.sub(r"[^\w+\-]+", " ", without_marks, flags=re.UNICODE)
-    return re.sub(r"\s+", " ", cleaned).strip()
+    return "".join(ch for ch in decomposed if not unicodedata.combining(ch))
 
 
-# Metadata that may surround a medication name but must never be sufficient,
-# on its own, to become a learned medication identity.
+def _canonical_medication_tokens(value: str) -> list[str]:
+    """Canonical lexical tokens shared by storage validation and learned matching.
+
+    Punctuation is a separator. Consecutive single-letter alphabetic tokens are
+    collapsed so dotted abbreviations normalize predictably:
+    I.V. -> iv, P.O. -> po, B.I.D. -> bid.
+    """
+    raw = re.findall(r"[^\W_]+", _fold_medication_text(value), flags=re.UNICODE)
+    tokens: list[str] = []
+    idx = 0
+    while idx < len(raw):
+        token = raw[idx]
+        if len(token) == 1 and token.isalpha():
+            run = [token]
+            nxt = idx + 1
+            while nxt < len(raw) and len(raw[nxt]) == 1 and raw[nxt].isalpha():
+                run.append(raw[nxt])
+                nxt += 1
+            tokens.append("".join(run) if len(run) >= 2 else run[0])
+            idx = nxt
+            continue
+        tokens.append(token)
+        idx += 1
+    return tokens
+
+
+def normalize_medication_alias(value: str) -> str:
+    """Canonical clinician-confirmed alias used for storage and matching."""
+    return " ".join(_canonical_medication_tokens(value))
+
+
+# Metadata may surround a medicine name, but can never be medication identity.
 _MEDICATION_METADATA_TOKENS = {
-    # Dose / units / strength.
+    # Dose / concentration units.
     "mg", "g", "gr", "mcg", "ug", "µg", "μg", "ml", "l", "iu", "unit", "units",
     # Dosage forms.
     "tab", "tabs", "tablet", "tablets", "χαπι", "χαπια", "δισκιο", "δισκια",
@@ -88,10 +115,12 @@ _MEDICATION_METADATA_TOKENS = {
     "injection", "injectable", "ampoule", "ampoules", "ενεση", "ενεσεις",
     "αμπουλα", "αμπουλες", "spray", "drops", "drop", "σταγονες", "σταγονα",
     "suppository", "suppositories",
-    # Release / formulation modifiers.
+    # Release / formulation modifiers and joined variants.
     "xr", "sr", "mr", "cr", "er", "ir", "xl", "la", "ec", "retard",
     "extended", "prolonged", "modified", "immediate", "release",
-    "enteric", "gastroresistant", "forte", "plus", "extra", "max",
+    "extendedrelease", "prolongedrelease", "modifiedrelease", "immediaterelease",
+    "enteric", "coated", "entericcoated", "gastroresistant",
+    "forte", "plus", "extra", "max",
     # Route markers.
     "po", "oral", "orally", "iv", "im", "sc", "subcutaneous", "subcut",
     "topical", "transdermal", "inhaled", "inhalation", "rectal",
@@ -107,31 +136,48 @@ _MEDICATION_METADATA_TOKENS = {
 }
 
 
+def _is_medication_metadata_token(token: str) -> bool:
+    if not token:
+        return True
+    if token in _MEDICATION_METADATA_TOKENS:
+        return True
+    if token.isdigit():
+        return True
+    # Structured regimen/strength tokens such as q8h, 2x or 50mg are metadata.
+    if any(ch.isdigit() for ch in token):
+        return True
+    return False
+
+
 def medication_alias_identity_tokens(value: str) -> list[str]:
-    normalized = normalize_medication_alias(value)
-    tokens = [token for token in normalized.split() if token]
     return [
         token
-        for token in tokens
-        if not token.isdigit() and token not in _MEDICATION_METADATA_TOKENS
+        for token in _canonical_medication_tokens(value)
+        if token.isalpha()
+        and len(token) >= 2
+        and not _is_medication_metadata_token(token)
     ]
 
 
 def is_medication_identity_alias(value: str) -> bool:
-    """True only when the alias contains at least one medication-identity token."""
-    return bool(medication_alias_identity_tokens(value))
+    """A learnable alias must begin with an identity-bearing medicine token."""
+    tokens = _canonical_medication_tokens(value)
+    if not tokens:
+        return False
+    first = tokens[0]
+    return (
+        first.isalpha()
+        and len(first) >= 2
+        and not _is_medication_metadata_token(first)
+        and bool(medication_alias_identity_tokens(value))
+    )
 
 
-def _learned_match_prefix(entry: str) -> str:
-    """Normalize the medication identity prefix used for learned alias matching.
-
-    Leading list numbers and generic medication metadata are ignored, but an
-    alias may only match at the beginning of the remaining identity text.
-    """
-    tokens = normalize_medication_alias(entry).split()
-    while tokens and (tokens[0].isdigit() or tokens[0] in _MEDICATION_METADATA_TOKENS):
+def _learned_match_prefix_tokens(entry: str) -> list[str]:
+    tokens = _canonical_medication_tokens(entry)
+    while tokens and _is_medication_metadata_token(tokens[0]):
         tokens.pop(0)
-    return " ".join(tokens)
+    return tokens
 
 
 def _entries(text: str) -> list[str]:
@@ -139,13 +185,13 @@ def _entries(text: str) -> list[str]:
 
 
 def _entry_contains_alias(entry: str, alias: str) -> bool:
-    normalized_alias = normalize_medication_alias(alias)
-    if not normalized_alias or not is_medication_identity_alias(alias):
+    if not is_medication_identity_alias(alias):
         return False
-    identity_prefix = _learned_match_prefix(entry)
-    if not identity_prefix:
+    alias_tokens = _canonical_medication_tokens(alias)
+    entry_tokens = _learned_match_prefix_tokens(entry)
+    if not alias_tokens or len(entry_tokens) < len(alias_tokens):
         return False
-    return re.match(rf"^{re.escape(normalized_alias)}(?:\s|$)", identity_prefix) is not None
+    return entry_tokens[: len(alias_tokens)] == alias_tokens
 
 
 def _match(entry: str, learned_aliases: Iterable[dict] = ()):
