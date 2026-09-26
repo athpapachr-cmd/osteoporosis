@@ -1,6 +1,6 @@
 # RF CURRENT — learned medication dictionary
 
-> **STATUS:** IMPLEMENTED / TESTED / CHECKPOINT VERIFIED / HOLD BEFORE RELEASE PR.
+> **STATUS:** INDEPENDENT REVIEW HOLD_FOR_RF_REMEDIATION / BOUNDED ALIAS-VALIDATION FIX AUTHORIZED.
 > **Workstream:** native RF v2 Clinic Utility.
 > **Branch:** `feat/rf-learned-medication-dictionary-2026-09-26`.
 > **Base main:** `0ab5f9770d220c20e8d94544cb64e93a4aa30d00`.
@@ -104,6 +104,42 @@ DEPLOYED: NO
 PRODUCTION-SMOKE-VERIFIED: NO
 ```
 
+## Independent release review — HOLD_FOR_RF_REMEDIATION
+
+The fresh independent READ-ONLY review verified branch isolation, ancestry, CI evidence, API/auth/privacy behavior and the intended medication-learning design, but found one HIGH release blocker:
+
+```text
+generic/non-medication aliases such as:
+50
+mg
+mcg
+tablet/formulation markers
+can currently be stored as clinician-learned aliases
+```
+
+Because learned matching uses whole-token matching, a mistaken alias such as `mg → nsaid` can match an unrelated unknown line such as `Mysteron 50 mg 2 μήνες` and silently move it from UNKNOWN into a learned category.
+
+Independent disposition:
+
+```text
+HOLD_FOR_RF_REMEDIATION
+```
+
+No other demonstrated finding was reported.
+
+## Bounded remediation contract
+
+Authorized mutation is limited to medication-alias validation and focused regression coverage:
+
+1. reject aliases that are pure numeric;
+2. reject standalone dose-unit tokens;
+3. reject standalone tablet/formulation generic markers;
+4. retain valid clinician-confirmed medication-name learning;
+5. prove attempted invalid learning cannot cause an unknown medication line to become classified;
+6. preserve built-in precedence, server-side storage minimization, auth and all existing RF behavior.
+
+No parser category fallback, UI auto-classification, RF indication/PDF/imaging/history change, PR, merge or deploy is authorized.
+
 ## Exact next action
 
-HOLD. The implementation and its canonical checkpoint are verified. A separate release decision/review is required before opening a PR, merge or deploy. The frozen PR-1 transcript branch remains untouched.
+After this HOLD checkpoint verifies, implement the bounded alias validator fix and focused tests, then rerun the complete RF exact-head regression gate.
