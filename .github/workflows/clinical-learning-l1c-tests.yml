@@ -72,9 +72,19 @@ jobs:
             echo 'L1C/L1D must not mutate Clinic Utilities / RF / physio owners.' >&2
             exit 1
           fi
-          if printf '%s\n' "$changed" | grep -Ev '^(clinical_learning/challenge_completion_protocol\.py|clinical_learning/chatgpt_project_instructions_v1\.txt|static/clinical-learning/project-setup\.html|static/clinical-learning/chatgpt-project-instructions-v1\.txt|static/clinical-learning/l1b\.js|test_clinical_learning_l1_ui_contract\.py|test_clinical_learning_l1c_.*\.py|\.github/workflows/clinical-learning-l1-tests\.yml|\.github/workflows/clinical-learning-l1b-tests\.yml|\.github/workflows/clinical-learning-l1c-tests\.yml|CLINICAL_LEARNING_CHAT_TRANSPORT_V1\.md|SLICE_PLAN_CURRENT\.md|CURRENT_OPERATIONAL\.md)$' ; then
-            echo 'Unexpected file outside bounded L1C/L1D continuation owners.' >&2
-            exit 1
+          if printf '%s\n' "$changed" | grep -Eq '^(clinical_learning/challenge_completion_protocol\.py$|clinical_learning/chatgpt_project_instructions_v1\.txt$|static/clinical-learning/project-setup\.html$|static/clinical-learning/chatgpt-project-instructions-v1\.txt$|static/clinical-learning/l1b\.js$|test_clinical_learning_l1_ui_contract\.py$|test_clinical_learning_l1c_.*\.py$|CLINICAL_LEARNING_CHAT_TRANSPORT_V1\.md$)' ; then
+            if printf '%s\n' "$changed" | grep -Ev '^(clinical_learning/challenge_completion_protocol\.py|clinical_learning/chatgpt_project_instructions_v1\.txt|static/clinical-learning/project-setup\.html|static/clinical-learning/chatgpt-project-instructions-v1\.txt|static/clinical-learning/l1b\.js|test_clinical_learning_l1_ui_contract\.py|test_clinical_learning_l1c_.*\.py|\.github/workflows/clinical-learning-l1-tests\.yml|\.github/workflows/clinical-learning-l1b-tests\.yml|\.github/workflows/clinical-learning-l1c-tests\.yml|CLINICAL_LEARNING_CHAT_TRANSPORT_V1\.md|SLICE_PLAN_CURRENT\.md|CURRENT_OPERATIONAL\.md)
+      - name: Diff hygiene
+        run: |
+          set -euo pipefail
+          base="$(git merge-base origin/main HEAD)"
+          git diff --check "$base" HEAD
+ ; then
+              echo 'Unexpected file outside bounded L1C/L1D continuation owners.' >&2
+              exit 1
+            fi
+          else
+            echo 'L1C/L1D product scope unchanged; running inherited regressions without Learning-only scope assertion.'
           fi
 
       - name: Diff hygiene
