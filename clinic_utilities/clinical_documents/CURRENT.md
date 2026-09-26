@@ -1,6 +1,6 @@
 # Clinical Documents CURRENT — Sick Leave template themes
 
-> **STATUS:** IMPLEMENTED / TESTED / RELEASE PR AUTHORIZED.
+> **STATUS:** RELEASE PR #117 OPEN / HOLD BEFORE MERGE / NOT DEPLOYED.
 > **Workstream:** Clinical Documents — Sick Leave visual templates.
 > **Branch:** `feat/sick-leave-template-themes-2026-09-26`.
 > **Base main:** `c0b89f9c49239142e94e0630580771180d6fcadb`.
@@ -106,6 +106,30 @@ DEPLOYED: NO
 PRODUCTION SMOKE: NO
 ```
 
+## Release PR
+
+```text
+PR: #117
+URL: https://github.com/athpapachr-cmd/osteoporosis/pull/117
+base: main
+base_sha: c0b89f9c49239142e94e0630580771180d6fcadb
+head: feat/sick-leave-template-themes-2026-09-26
+head_sha at PR creation: a6cfc04771311ba1781deeebd97150fb40ce020f
+draft: NO
+merged: NO
+deploy: NO
+```
+
+The PR includes the required Canonical Impact Declaration with:
+
+```text
+release_affecting: yes
+checkpoint_stage: release_hold
+workstream_current: update
+workstream_current_path: clinic_utilities/clinical_documents/CURRENT.md
+changelog: defer_until_completion
+```
+
 ## Exact next action
 
-Fresh-verify current `main`, open one bounded release PR with the required Canonical Impact Declaration, run PR checks, and if successful squash-merge and allow the normal Render auto-deploy.
+Verify PR #117 checks on the current head. If all required checks succeed, squash-merge with exact-head protection and allow the normal Render auto-deploy; then verify the live deploy and smoke evidence without requesting another Product Owner confirmation.
