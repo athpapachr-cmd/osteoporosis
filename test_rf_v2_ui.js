@@ -29,6 +29,22 @@ assert(html.includes('Νέα θεραπεία'), 'A1 workflow must be visible');
 assert(html.includes('Συνέχιση θεραπείας'), 'A2 workflow must be visible');
 assert(!html.includes('Καρκινικός πόνος'), 'Category G workflow must not be exposed in this clinician-specific utility');
 assert(!html.includes('Νευροπαθητικός πόνος'), 'Category B workflow must not be exposed in this clinician-specific utility');
+for (const token of [
+  'unknownMedicationPanel',
+  'unknownMedicationRows',
+  'addNsaidBtn',
+  'addOtherBtn',
+  'learnedMedicationDetails',
+  '/api/medication-dictionary',
+  'ΜΣΑΦ + μάθηση',
+  'Άλλο + μάθηση',
+  '✓ learned · clinician-confirmed',
+]) {
+  assert(html.includes(token) || app.includes(token), `RF medication-learning UI missing ${token}`);
+}
+assert(!app.includes('localStorage'), 'RF learned medication dictionary must not use localStorage');
+assert(!app.includes('sessionStorage'), 'RF learned medication dictionary must not use sessionStorage');
+
 assert(main.includes('app.include_router(build_rf_router(engine))'), 'main.py must mount the native RF router');
 assert(!main.includes('app.include_router(build_rf_gateway_router())'), 'legacy RF gateway must not be mounted');
 
