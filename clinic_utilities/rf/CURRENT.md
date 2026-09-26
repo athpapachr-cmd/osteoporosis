@@ -1,12 +1,15 @@
 # RF CURRENT — learned medication dictionary
 
-> **STATUS:** INDEPENDENT REVIEW HOLD_FOR_RF_REMEDIATION / BOUNDED ALIAS-VALIDATION FIX AUTHORIZED.
+> **STATUS:** ALIAS-VALIDATION REMEDIATION IMPLEMENTED / TESTED / CHECKPOINTING BEFORE INDEPENDENT RE-REVIEW.
 > **Workstream:** native RF v2 Clinic Utility.
 > **Branch:** `feat/rf-learned-medication-dictionary-2026-09-26`.
 > **Base main:** `0ab5f9770d220c20e8d94544cb64e93a4aa30d00`.
-> **Exact tested implementation head:** `6ebd1667ce2640076c84a5b81ad031614f654385`.
+> **Original tested implementation head:** `6ebd1667ce2640076c84a5b81ad031614f654385`.
+> **Corrected remediation head:** `f345b0bf557ea5079d49793512cf550ab614988d`.
 > **Implementation regression workflow:** `36222611828` — SUCCESS.
 > **Checkpoint verification workflow:** `36222684337` — SUCCESS.
+> **Independent HOLD checkpoint workflow:** `36228058129` — SUCCESS.
+> **Alias-remediation regression workflow:** `36228138003` — SUCCESS.
 > **Scope:** medication parsing/classification UX only.
 > **Root writer lock:** unchanged; PR-1 remains the repo-wide CURRENT_OPERATIONAL owner.
 
@@ -127,19 +130,64 @@ HOLD_FOR_RF_REMEDIATION
 
 No other demonstrated finding was reported.
 
-## Bounded remediation contract
+## Alias-validation remediation — COMPLETE deterministically
 
-Authorized mutation is limited to medication-alias validation and focused regression coverage:
+The independent HIGH finding was remediated without changing parser category fallback or UI learning semantics.
 
-1. reject aliases that are pure numeric;
-2. reject standalone dose-unit tokens;
-3. reject standalone tablet/formulation generic markers;
-4. retain valid clinician-confirmed medication-name learning;
-5. prove attempted invalid learning cannot cause an unknown medication line to become classified;
-6. preserve built-in precedence, server-side storage minimization, auth and all existing RF behavior.
+Corrected validator behavior:
 
-No parser category fallback, UI auto-classification, RF indication/PDF/imaging/history change, PR, merge or deploy is authorized.
+```text
+pure numeric alias
+→ reject
+
+standalone dose-unit alias
+→ reject
+
+generic formulation/tablet/capsule/syrup/gel/patch/injection marker
+→ reject
+
+valid medication name
+→ clinician learning still allowed
+```
+
+Examples now rejected include:
+
+```text
+50
+50.0
+mg
+mcg
+tablet
+tablets
+δισκίο
+χάπια
+capsule
+syrup
+gel
+patch
+injection
+```
+
+Exact corrected implementation head:
+
+```text
+f345b0bf557ea5079d49793512cf550ab614988d
+```
+
+Workflow `36228138003` completed SUCCESS across the complete RF gate.
+
+The medication-learning suite expanded from 9 to **13 tests** and now proves:
+
+- pure numeric aliases fail closed;
+- generic dose/form aliases fail closed;
+- API rejects generic aliases;
+- attempted `mg → nsaid` learning leaves the dictionary empty;
+- after that attempted poisoning, `Mysteron 50 mg 2 μήνες` remains in `unrecognized_candidates`;
+- valid medication names such as `Xefo` remain learnable;
+- all original learning, reclassification, deletion, privacy and built-in precedence tests continue to pass.
+
+No PR, merge or deploy occurred.
 
 ## Exact next action
 
-After this HOLD checkpoint verifies, implement the bounded alias validator fix and focused tests, then rerun the complete RF exact-head regression gate.
+Verify this corrected checkpoint head with the complete RF gate. Then obtain a fresh independent READ-ONLY bounded release re-review before opening any RF release PR.
