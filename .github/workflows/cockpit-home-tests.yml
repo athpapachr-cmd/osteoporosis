@@ -1,0 +1,47 @@
+name: Cockpit Home tests
+
+on:
+  push:
+    paths:
+      - "main.py"
+      - "static/cockpit/**"
+      - "static/baseline-audit/index.html"
+      - "static/baseline-audit/g4-workspace-ergonomics.js"
+      - "test_cockpit_home.py"
+      - "test_g4_workspace_ergonomics.js"
+      - ".github/workflows/cockpit-home-tests.yml"
+  pull_request:
+    paths:
+      - "main.py"
+      - "static/cockpit/**"
+      - "static/baseline-audit/index.html"
+      - "static/baseline-audit/g4-workspace-ergonomics.js"
+      - "test_cockpit_home.py"
+      - "test_g4_workspace_ergonomics.js"
+      - ".github/workflows/cockpit-home-tests.yml"
+
+jobs:
+  cockpit-home:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt pytest
+      - name: Python syntax
+        run: python -m py_compile main.py test_cockpit_home.py
+      - name: Browser JavaScript syntax
+        run: |
+          node --check static/cockpit/app.js
+          node --check static/baseline-audit/g4-workspace-ergonomics.js
+      - name: Cockpit Home deterministic tests
+        run: pytest -q test_cockpit_home.py
+      - name: Osteoporosis workspace navigation regressions
+        run: node test_g4_workspace_ergonomics.js
+      - name: Diff hygiene
+        run: git diff --check HEAD^ HEAD

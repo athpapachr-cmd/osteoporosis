@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="el">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>Clinical Excellence Cockpit</title>
+  <meta name="description" content="Κεντρική αρχική σελίδα του Clinical Excellence Cockpit." />
+  <link rel="stylesheet" href="/static/cockpit/styles.css" />
+</head>
+<body>
+  <main class="shell">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">Clinical Excellence</p>
+        <h1>Cockpit</h1>
+        <p class="subtitle">Η κεντρική επιφάνεια για κλινικά modules, σημερινές ενέργειες, learning και εργαλεία.</p>
+      </div>
+      <span class="core-pill">Core · Module-ready</span>
+    </header>
+
+    <section class="section">
+      <div class="section-heading">
+        <div>
+          <p class="section-kicker">Σήμερα</p>
+          <h2 id="todayHeading">Η σημερινή εικόνα</h2>
+        </div>
+      </div>
+
+      <div class="top-grid">
+        <article class="panel today-panel">
+          <div class="panel-head">
+            <div>
+              <span class="icon-badge">◷</span>
+              <h3>Clinical Calendar</h3>
+            </div>
+            <span id="calendarState" class="status-chip">Φόρτωση…</span>
+          </div>
+          <div class="metrics">
+            <div><strong id="todayOsteoporosisCount">—</strong><span>Οστεοπόρωση</span></div>
+            <div><strong id="todayTreatmentCount">—</strong><span>Prolia / Aclasta</span></div>
+          </div>
+          <p id="calendarNote" class="panel-note">Διαβάζονται μόνο τα κλινικά ραντεβού που έχουν ήδη εισαχθεί στο Clinical Calendar.</p>
+          <a class="button secondary" href="/static/clinical-calendar/">Άνοιγμα ημερολογίου</a>
+        </article>
+
+        <article class="panel reception-panel">
+          <div class="panel-head">
+            <div>
+              <span class="icon-badge">☎</span>
+              <h3>Reception</h3>
+            </div>
+            <span class="status-chip external">Ξεχωριστό σύστημα</span>
+          </div>
+          <p>Κλήσεις, εκκρεμότητες, callbacks, audit και το πλήρες ημερήσιο πρόγραμμα παραμένουν στο Reception dashboard, όπου ανήκει το source of truth.</p>
+          <a class="button secondary" href="https://ortho-reception-backend-v2.onrender.com/dashboard" target="_blank" rel="noopener noreferrer">Άνοιγμα Reception dashboard ↗</a>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-heading">
+        <div>
+          <p class="section-kicker">Clinical Modules</p>
+          <h2>Κλινική εργασία</h2>
+        </div>
+        <p>Η Οστεοπόρωση είναι το πρώτο ενεργό module του reusable Clinical Excellence Core.</p>
+      </div>
+
+      <div class="module-grid">
+        <article class="module-card active-module">
+          <div class="module-top">
+            <span class="module-number">01</span>
+            <span class="live-pill">ACTIVE</span>
+          </div>
+          <div>
+            <span class="module-icon" aria-hidden="true">◒</span>
+            <h3>Οστεοπόρωση</h3>
+            <p>Guided encounter, longitudinal clinical state, evidence-backed guidance και Module-01 workflow.</p>
+          </div>
+          <a class="button primary" href="/static/baseline-audit/">Άνοιγμα Module 01</a>
+        </article>
+
+        <article class="module-card future-module">
+          <div class="module-top">
+            <span class="module-number">02+</span>
+            <span class="future-pill">FUTURE</span>
+          </div>
+          <div>
+            <span class="module-icon muted" aria-hidden="true">＋</span>
+            <h3>Επόμενα clinical modules</h3>
+            <p>Το Cockpit είναι ήδη δομημένο ώστε νέα κλινικά domains να προστεθούν χωρίς να ξαναχτιστεί η αρχική.</p>
+          </div>
+          <span class="disabled-action">Δεν έχει ενεργοποιηθεί ακόμη</span>
+        </article>
+      </div>
+    </section>
+
+    <section class="section split-section">
+      <article class="panel learning-panel">
+        <div class="panel-head">
+          <div>
+            <span class="icon-badge">✦</span>
+            <h3>Learning & Improvement</h3>
+          </div>
+        </div>
+        <p>Clinical Challenges, Foundation Map και η reusable learning architecture. Δεν εμφανίζουμε τεχνητό συνολικό score πριν επαρκούν τα baseline data contracts.</p>
+        <a class="button secondary" href="/static/clinical-learning/">Άνοιγμα Learning Hub</a>
+      </article>
+
+      <article class="panel principle-panel">
+        <p class="section-kicker">Cockpit principle</p>
+        <h3>Core πρώτα · modules από πάνω</h3>
+        <p>Calendar, learning, reception και Clinic Utilities είναι οριζόντιες δυνατότητες. Τα disease-specific στοιχεία μένουν μέσα στο αντίστοιχο module.</p>
+      </article>
+    </section>
+
+    <section class="section">
+      <div class="section-heading">
+        <div>
+          <p class="section-kicker">Clinic Utilities</p>
+          <h2>Εργαλεία</h2>
+        </div>
+        <p>Κοινά εργαλεία ιατρείου — όχι navigation της Οστεοπόρωσης.</p>
+      </div>
+
+      <div class="tools-grid">
+        <a class="tool-card" href="/clinical/clinic-utilities/physio-referral">
+          <span class="tool-icon">↗</span>
+          <strong>Παραπεμπτικό Φυσιοθεραπείας</strong>
+          <small>Ένα ενιαίο entry point</small>
+        </a>
+        <a class="tool-card" href="/clinical/clinic-utilities/sick-leave">
+          <span class="tool-icon">✚</span>
+          <strong>Αναρρωτική άδεια</strong>
+          <small>PDF με selectable templates</small>
+        </a>
+        <a class="tool-card" href="/clinical/clinic-utilities/medical-report">
+          <span class="tool-icon">▤</span>
+          <strong>Ιατρικές εκθέσεις</strong>
+          <small>Clinical Documents</small>
+        </a>
+        <a class="tool-card" href="/clinical/clinic-utilities/rf">
+          <span class="tool-icon">⌁</span>
+          <strong>Ραδιοκύματα</strong>
+          <small>RF application / PDF</small>
+        </a>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <span>Clinical Excellence Cockpit</span>
+      <span>Osteoporosis = Module 01 · όχι όλο το σύστημα</span>
+    </footer>
+  </main>
+
+  <script src="/static/cockpit/app.js" defer></script>
+</body>
+</html>

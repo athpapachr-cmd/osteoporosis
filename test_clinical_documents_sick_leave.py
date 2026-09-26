@@ -429,11 +429,11 @@ def test_browser_workspace_exposes_five_templates_and_six_controlled_themes():
 
 def test_runtime_is_mounted_and_navigation_exposes_sick_leave():
     main = Path("main.py").read_text(encoding="utf-8")
-    helper = Path("static/baseline-audit/g4-workspace-ergonomics.js").read_text(encoding="utf-8")
+    home = Path("static/cockpit/index.html").read_text(encoding="utf-8")
     assert "build_clinical_documents_router" in main
     assert "app.include_router(build_clinical_documents_router())" in main
-    assert "/clinical/clinic-utilities/sick-leave" in helper
-    assert "Αναρρωτική άδεια" in helper
+    assert "/clinical/clinic-utilities/sick-leave" in home
+    assert "Αναρρωτική άδεια" in home
 
 
 def test_phase1_package_has_no_database_or_patient_persistence_owner():

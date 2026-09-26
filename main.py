@@ -39,7 +39,8 @@ async def prevent_stale_clinical_workspace_assets(request: Request, call_next):
 
     response = await call_next(request)
     if (
-        request.url.path.startswith("/static/baseline-audit/")
+        request.url.path.startswith("/static/cockpit/")
+        or request.url.path.startswith("/static/baseline-audit/")
         or request.url.path.startswith("/static/clinic-utilities/")
         or request.url.path.startswith("/static/clinical-learning/")
     ):
@@ -51,7 +52,7 @@ async def prevent_stale_clinical_workspace_assets(request: Request, call_next):
 
 @app.get("/", include_in_schema=False)
 def clinical_workspace_root() -> RedirectResponse:
-    response = RedirectResponse(url="/static/baseline-audit/", status_code=307)
+    response = RedirectResponse(url="/static/cockpit/", status_code=307)
     response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
     return response
 
