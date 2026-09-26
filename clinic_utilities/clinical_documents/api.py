@@ -18,6 +18,7 @@ from .sick_leave import (
     content_disposition,
     read_previous_sick_leave_pdf,
     reuse_options,
+    sick_leave_appearance_contract,
     sick_leave_filename,
     validate_signature_image,
 )
@@ -74,9 +75,17 @@ def _pdf_response(
     clinician: ClinicianProfile,
     signature_bytes: bytes | None,
     inline: bool,
+    template_id: str = "classic",
+    color_theme: str = "navy",
 ) -> Response:
     try:
-        pdf_bytes, _ = build_sick_leave_pdf(draft, clinician=clinician, signature_bytes=signature_bytes)
+        pdf_bytes, _ = build_sick_leave_pdf(
+            draft,
+            clinician=clinician,
+            signature_bytes=signature_bytes,
+            template_id=template_id,
+            color_theme=color_theme,
+        )
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except RuntimeError as exc:
@@ -143,11 +152,14 @@ def build_clinical_documents_router() -> APIRouter:
                 "signature_bytes": MAX_SIGNATURE_BYTES,
                 "previous_pdf_bytes": MAX_PREVIOUS_PDF_BYTES,
             },
+            "appearance": sick_leave_appearance_contract(),
         }
 
     @router.post("/api/preview")
     async def sick_leave_preview(
         draft_json: str = Form(...),
+        template_id: str = Form(default="classic"),
+        color_theme: str = Form(default="navy"),
         signature: UploadFile | None = File(default=None),
     ):
         draft = _parse_draft(draft_json)
@@ -157,11 +169,15 @@ def build_clinical_documents_router() -> APIRouter:
             clinician=_clinician_profile(),
             signature_bytes=signature_bytes,
             inline=True,
+            template_id=template_id,
+            color_theme=color_theme,
         )
 
     @router.post("/api/pdf")
     async def sick_leave_pdf(
         draft_json: str = Form(...),
+        template_id: str = Form(default="classic"),
+        color_theme: str = Form(default="navy"),
         signature: UploadFile | None = File(default=None),
     ):
         draft = _parse_draft(draft_json)
@@ -171,6 +187,8 @@ def build_clinical_documents_router() -> APIRouter:
             clinician=_clinician_profile(),
             signature_bytes=signature_bytes,
             inline=False,
+            template_id=template_id,
+            color_theme=color_theme,
         )
 
     @router.post("/api/import-previous")
