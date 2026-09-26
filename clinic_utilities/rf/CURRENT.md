@@ -1,6 +1,6 @@
 # RF CURRENT — learned medication dictionary
 
-> **STATUS:** ALIAS-VALIDATION REMEDIATION IMPLEMENTED / TESTED / CHECKPOINT VERIFIED / INDEPENDENT RE-REVIEW REQUIRED.
+> **STATUS:** SECOND INDEPENDENT HOLD_FOR_RF_REMEDIATION / STRUCTURAL ALIAS-IDENTITY HARDENING AUTHORIZED.
 > **Workstream:** native RF v2 Clinic Utility.
 > **Branch:** `feat/rf-learned-medication-dictionary-2026-09-26`.
 > **Base main:** `0ab5f9770d220c20e8d94544cb64e93a4aa30d00`.
@@ -11,6 +11,7 @@
 > **Independent HOLD checkpoint workflow:** `36228058129` — SUCCESS.
 > **Alias-remediation regression workflow:** `36228138003` — SUCCESS.
 > **Corrected checkpoint verification workflow:** `36228202897` — SUCCESS.
+> **Final corrected sidecar verification:** `36228254994` — SUCCESS.
 > **Scope:** medication parsing/classification UX only.
 > **Root writer lock:** unchanged; PR-1 remains the repo-wide CURRENT_OPERATIONAL owner.
 
@@ -189,6 +190,42 @@ The medication-learning suite expanded from 9 to **13 tests** and now proves:
 
 No PR, merge or deploy occurred.
 
+## Second independent release re-review — HOLD_FOR_RF_REMEDIATION
+
+The fresh re-review confirmed the first poisoning example was closed but found the same safety class remained possible through generic regimen/form/route/frequency aliases such as:
+
+```text
+XR
+SR
+MR
+PRN
+PO
+daily
+```
+
+A learned alias such as `XR → nsaid` could still match the interior token in `Mysteron XR 50 mg` and silently classify an otherwise unknown medicine.
+
+Independent disposition:
+
+```text
+HOLD_FOR_RF_REMEDIATION
+```
+
+No other demonstrated finding was reported.
+
+## Second bounded remediation contract
+
+Authorized mutation is limited to the learned-alias identity/matching boundary and focused tests:
+
+1. reject aliases composed only of medication metadata tokens such as release modifiers, route, frequency, dose-unit or formulation markers;
+2. learned aliases must match the medication-identity prefix of a line, not an arbitrary interior token;
+3. preserve valid multi-word/single-word medication aliases and curated built-in matching;
+4. prove `XR → nsaid` and equivalent metadata learning fails closed;
+5. prove `Mysteron XR 50 mg` remains unrecognized after attempted invalid learning;
+6. preserve all existing RF behavior and storage/privacy rules.
+
+No PR, merge, deploy or unrelated RF change is authorized.
+
 ## Exact next action
 
-Obtain a fresh independent READ-ONLY bounded re-review of the corrected alias-validation delta and current branch evidence. Do not open an RF release PR unless that review returns `PASS_TO_RF_RELEASE_PR`.
+Verify this second HOLD checkpoint. Then implement only the structural alias-identity hardening and focused regressions, rerun the complete RF gate, checkpoint the corrected head, and require another fresh independent READ-ONLY re-review before any release PR.
