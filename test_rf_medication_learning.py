@@ -11,7 +11,11 @@ from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
 from clinic_utilities.rf.api import build_rf_router
-from clinic_utilities.rf.parsers import parse_medications
+from clinic_utilities.rf.parsers import (
+    is_medication_identity_alias,
+    normalize_medication_alias,
+    parse_medications,
+)
 from clinic_utilities.rf.persistence import (
     RFMedicationAliasORM,
     delete_medication_alias,
@@ -105,6 +109,53 @@ class RFMedicationLearningParserTests(unittest.TestCase):
         self.assertEqual(parsed["nsaid_candidates"], [])
         self.assertEqual(parsed["other_candidates"], [])
         self.assertEqual(len(parsed["unrecognized_candidates"]), 1)
+
+    def test_orthographic_metadata_variants_are_canonicalized_and_not_identity(self):
+        expected = {
+            "I.V.": "iv",
+            "P.O.": "po",
+            "B.I.D.": "bid",
+            "Q.I.D.": "qid",
+            "extended-release": "extended release",
+            "50-100": "50 100",
+        }
+        for raw, canonical in expected.items():
+            with self.subTest(raw=raw):
+                self.assertEqual(normalize_medication_alias(raw), canonical)
+                self.assertFalse(is_medication_identity_alias(raw))
+
+    def test_structured_regimen_aliases_are_not_identity(self):
+        for alias in ("q8h", "q12h", "50-100", "50/100", "2x", "2xday"):
+            with self.subTest(alias=alias):
+                self.assertFalse(is_medication_identity_alias(alias))
+
+    def test_parser_defensively_ignores_dotted_route_stale_alias(self):
+        learned = [{
+            "id": "STALE-IV",
+            "normalized_alias": "iv",
+            "alias": "I.V.",
+            "display_name": "I.V.",
+            "active_ingredient": "",
+            "category": "nsaid",
+            "provenance": "clinician_confirmed",
+        }]
+        parsed = parse_medications("I.V. Mysteron 50 mg", learned)
+        self.assertEqual(parsed["nsaid_candidates"], [])
+        self.assertEqual(parsed["other_candidates"], [])
+        self.assertEqual(len(parsed["unrecognized_candidates"]), 1)
+
+    def test_learned_medicine_still_matches_after_dotted_route_prefix(self):
+        learned = [{
+            "id": "L3",
+            "normalized_alias": "mysteron",
+            "alias": "Mysteron",
+            "display_name": "Mysteron",
+            "active_ingredient": "",
+            "category": "nsaid",
+            "provenance": "clinician_confirmed",
+        }]
+        parsed = parse_medications("I.V. Mysteron 50 mg", learned)
+        self.assertEqual(parsed["nsaid_candidates"][0]["canonical_key"], "learned:mysteron")
 
     def test_learned_alias_tolerates_leading_generic_form_marker_but_not_interior_match(self):
         learned = [{
@@ -214,6 +265,46 @@ class RFMedicationLearningPersistenceTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     upsert_medication_alias(self.engine, alias=alias, category="nsaid")
 
+    def test_orthographic_and_structured_metadata_aliases_are_rejected(self):
+        invalid_aliases = [
+            "I.V.",
+            "P.O.",
+            "B.I.D.",
+            "Q.I.D.",
+            "q8h",
+            "q12h",
+            "extended-release",
+            "50-100",
+            "50/100",
+            "2x",
+            "2xday",
+        ]
+        for alias in invalid_aliases:
+            with self.subTest(alias=alias):
+                with self.assertRaises(ValueError):
+                    upsert_medication_alias(self.engine, alias=alias, category="nsaid")
+
+    def test_dotted_route_poisoning_attempt_cannot_classify_future_unknown_line(self):
+        with self.assertRaises(ValueError):
+            upsert_medication_alias(self.engine, alias="I.V.", category="nsaid")
+        self.assertEqual(list_medication_aliases(self.engine), [])
+
+        parsed = parse_medications("I.V. Mysteron 50 mg", list_medication_aliases(self.engine))
+        self.assertEqual(parsed["nsaid_candidates"], [])
+        self.assertEqual(parsed["other_candidates"], [])
+        self.assertEqual(len(parsed["unrecognized_candidates"]), 1)
+
+    def test_hyphenated_valid_brand_modifier_normalizes_to_same_identity_key(self):
+        entry = upsert_medication_alias(
+            self.engine,
+            alias="Mysteron-XR",
+            category="nsaid",
+            display_name="Mysteron-XR",
+        )
+        self.assertEqual(entry["normalized_alias"], "mysteron xr")
+        parsed = parse_medications("Mysteron XR 50 mg", list_medication_aliases(self.engine))
+        self.assertEqual(parsed["nsaid_candidates"][0]["canonical_key"], "learned:mysteron xr")
+
     def test_valid_brand_plus_release_modifier_remains_learnable(self):
         entry = upsert_medication_alias(
             self.engine,
@@ -319,6 +410,16 @@ class RFMedicationLearningApiTests(unittest.TestCase):
 
     def test_api_rejects_release_route_frequency_metadata_aliases(self):
         for alias in ("XR", "SR", "MR", "PRN", "PO", "daily", "oral", "BID"):
+            with self.subTest(alias=alias):
+                response = self.client.post(
+                    "/clinical/clinic-utilities/rf/api/medication-dictionary",
+                    headers=self.headers,
+                    json={"alias": alias, "category": "nsaid"},
+                )
+                self.assertEqual(response.status_code, 422, response.text)
+
+    def test_api_rejects_orthographic_and_structured_metadata_aliases(self):
+        for alias in ("I.V.", "P.O.", "B.I.D.", "Q.I.D.", "q8h", "extended-release", "50-100"):
             with self.subTest(alias=alias):
                 response = self.client.post(
                     "/clinical/clinic-utilities/rf/api/medication-dictionary",
