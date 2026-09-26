@@ -17,6 +17,19 @@ class MedicationCandidate:
     duration: str
     warning: str = ""
     auto_selected: bool = False
+    learned: bool = False
+    active_ingredient: str = ""
+
+    def to_dict(self) -> dict:
+        return asdict(self)
+
+
+@dataclass(frozen=True)
+class UnrecognizedMedicationCandidate:
+    source_text: str
+    suggested_name: str
+    dose: str
+    duration: str
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -54,15 +67,49 @@ def _norm(value: str) -> str:
     return "".join(ch for ch in decomposed if not unicodedata.combining(ch))
 
 
+def normalize_medication_alias(value: str) -> str:
+    """Normalize a clinician-confirmed medication alias for stable matching/storage."""
+    decomposed = unicodedata.normalize("NFD", str(value or "").casefold())
+    without_marks = "".join(ch for ch in decomposed if not unicodedata.combining(ch))
+    cleaned = re.sub(r"[^\w+\-]+", " ", without_marks, flags=re.UNICODE)
+    return re.sub(r"\s+", " ", cleaned).strip()
+
+
 def _entries(text: str) -> list[str]:
     return list(dict.fromkeys(part.strip() for part in re.split(r"[\n;]+", str(text or "")) if part.strip()))
 
 
-def _match(entry: str):
+def _entry_contains_alias(entry: str, alias: str) -> bool:
+    normalized_entry = normalize_medication_alias(entry)
+    normalized_alias = normalize_medication_alias(alias)
+    if not normalized_alias:
+        return False
+    return re.search(rf"(?<!\w){re.escape(normalized_alias)}(?!\w)", normalized_entry) is not None
+
+
+def _match(entry: str, learned_aliases: Iterable[dict] = ()):
     normalized = _norm(entry)
+    # Curated built-in mappings always win over clinician-learned aliases.
     for category, key, display, aliases in _MEDICATION_PATTERNS:
         if any(_norm(alias) in normalized for alias in aliases):
-            return category, key, display
+            return category, key, display, False, ""
+
+    learned = sorted(
+        (item for item in learned_aliases if str(item.get("alias") or "").strip()),
+        key=lambda item: len(normalize_medication_alias(item.get("alias") or "")),
+        reverse=True,
+    )
+    for item in learned:
+        alias = str(item.get("alias") or "").strip()
+        if _entry_contains_alias(entry, alias):
+            normalized_alias = str(item.get("normalized_alias") or normalize_medication_alias(alias))
+            return (
+                str(item.get("category") or ""),
+                f"learned:{normalized_alias}",
+                str(item.get("display_name") or alias).strip(),
+                True,
+                str(item.get("active_ingredient") or "").strip(),
+            )
     return None
 
 
@@ -132,6 +179,13 @@ def _duration(entry: str) -> str:
     return f"{amount} {unit}"
 
 
+def _suggested_name(entry: str) -> str:
+    # Shown for clinician confirmation only; never persisted automatically.
+    prefix = re.split(r"(?<!\w)\d", str(entry or "").strip(), maxsplit=1)[0]
+    suggested = re.sub(r"[,;:\-]+$", "", prefix).strip()
+    return suggested[:160] or str(entry or "").strip()[:160]
+
+
 def _duration_weight(value: str) -> int:
     parsed = _duration_components(value)
     if not parsed:
@@ -151,15 +205,37 @@ def _candidate_score(candidate: MedicationCandidate) -> tuple[int, int, int]:
     )
 
 
-def parse_medications(text: str) -> dict:
+def parse_medications(text: str, learned_aliases: Iterable[dict] = ()) -> dict:
     candidates = []
+    unrecognized = []
+    learned_aliases = list(learned_aliases)
     for entry in _entries(text):
-        matched = _match(entry)
+        matched = _match(entry, learned_aliases)
         if not matched:
+            unrecognized.append(
+                UnrecognizedMedicationCandidate(
+                    source_text=entry,
+                    suggested_name=_suggested_name(entry),
+                    dose=_dose(entry),
+                    duration=_duration(entry),
+                )
+            )
             continue
-        category, key, display = matched
+        category, key, display, learned, active_ingredient = matched
         dose = _dose(entry)
-        candidates.append(MedicationCandidate(entry, category, key, display, dose, _duration(entry), _dose_warning(entry, key, dose)))
+        candidates.append(
+            MedicationCandidate(
+                entry,
+                category,
+                key,
+                display,
+                dose,
+                _duration(entry),
+                _dose_warning(entry, key, dose),
+                learned=learned,
+                active_ingredient=active_ingredient,
+            )
+        )
 
     best = {}
     for idx, candidate in enumerate(candidates):
@@ -194,6 +270,7 @@ def parse_medications(text: str) -> dict:
         "other_candidates": [x.to_dict() for x in others],
         "auto_selected_nsaids": [x.to_dict() for x in nsaids if x.auto_selected][:3],
         "auto_selected_others": [x.to_dict() for x in others if x.auto_selected][:3],
+        "unrecognized_candidates": [x.to_dict() for x in unrecognized],
     }
 
 
