@@ -8,6 +8,8 @@
     previous: null,
     derivedFromDocumentId: "",
     relation: null,
+    templateId: "classic",
+    colorTheme: "navy",
   };
 
   const $ = (id) => document.getElementById(id);
@@ -92,6 +94,7 @@
     $("summaryDates").textContent = start && end ? `${formatGreekDate(start)} → ${formatGreekDate(end)}${days ? ` · ${days} ημέρες` : ""}` : "—";
     $("summaryIssued").textContent = formatGreekDate($("issuedOn").value);
     $("summarySignature").textContent = state.signatureFile ? "Ψηφιακή εικόνα · τρέχουσα συνεδρία" : "Χειρόγραφη";
+    if ($("summaryAppearance")) $("summaryAppearance").textContent = appearanceLabel();
   }
 
   function gatherDraft() {
@@ -121,8 +124,40 @@
   function formDataForDraft() {
     const form = new FormData();
     form.append("draft_json", JSON.stringify(gatherDraft()));
+    form.append("template_id", state.templateId);
+    form.append("color_theme", state.colorTheme);
     if (state.signatureFile) form.append("signature", state.signatureFile, state.signatureFile.name);
     return form;
+  }
+
+  function appearanceLabel() {
+    const template = state.contract?.appearance?.templates?.find((item) => item.id === state.templateId);
+    const theme = state.contract?.appearance?.color_themes?.find((item) => item.id === state.colorTheme);
+    return `${template?.label || state.templateId} · ${theme?.label || state.colorTheme}`;
+  }
+
+  function selectTemplate(templateId) {
+    const allowed = state.contract?.appearance?.templates?.map((item) => item.id) || ["classic", "modern", "minimal", "compact", "formal"];
+    if (!allowed.includes(templateId)) return;
+    state.templateId = templateId;
+    document.querySelectorAll("[data-template]").forEach((button) => {
+      const selected = button.dataset.template === templateId;
+      button.classList.toggle("selected", selected);
+      button.setAttribute("aria-pressed", selected ? "true" : "false");
+    });
+    updateSummary();
+  }
+
+  function selectColorTheme(colorTheme) {
+    const allowed = state.contract?.appearance?.color_themes?.map((item) => item.id) || ["navy", "teal", "graphite", "burgundy", "forest", "monochrome"];
+    if (!allowed.includes(colorTheme)) return;
+    state.colorTheme = colorTheme;
+    document.querySelectorAll("[data-theme]").forEach((button) => {
+      const selected = button.dataset.theme === colorTheme;
+      button.classList.toggle("selected", selected);
+      button.setAttribute("aria-pressed", selected ? "true" : "false");
+    });
+    updateSummary();
   }
 
   function filenameFromDisposition(header) {
@@ -266,6 +301,9 @@
       $("configWarning").hidden = Boolean(state.contract.clinician_configured);
       $("downloadButton").disabled = !state.contract.clinician_configured;
       $("previewButton").disabled = !state.contract.clinician_configured;
+      const appearance = state.contract.appearance || {};
+      selectTemplate(appearance.default_template || "classic");
+      selectColorTheme(appearance.default_color_theme || "navy");
     } catch (error) {
       showError(error.message);
       $("downloadButton").disabled = true;
@@ -289,6 +327,12 @@
     $("previousPdfInput").addEventListener("change", (event) => importPrevious(event.target.files?.[0]));
     $("extendButton").addEventListener("click", () => applyReuse("extension"));
     $("samePatientButton").addEventListener("click", () => applyReuse("new_leave_same_patient"));
+    document.querySelectorAll("[data-template]").forEach((button) => {
+      button.addEventListener("click", () => selectTemplate(button.dataset.template));
+    });
+    document.querySelectorAll("[data-theme]").forEach((button) => {
+      button.addEventListener("click", () => selectColorTheme(button.dataset.theme));
+    });
   }
 
   $("issuedOn").value = localToday();
