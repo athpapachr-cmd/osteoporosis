@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - 'fix/rf-*'
+      - 'feat/rf-*'
 
 jobs:
   rf-v2-hotfix:
@@ -30,7 +31,8 @@ jobs:
             clinic_utilities/rf/persistence.py \
             test_rf_v2_native.py \
             test_rf_v2_release_hardening.py \
-            test_rf_v2_unilateral.py
+            test_rf_v2_unilateral.py \
+            test_rf_medication_learning.py
           node --check static/clinic-utilities/rf/app.js
           node --check test_rf_v2_ui.js
           node --check test_rf_v2_unilateral_ui.js
@@ -112,6 +114,7 @@ jobs:
           python -m unittest -v test_rf_v2_native.py
           python -m unittest -v test_rf_v2_release_hardening.py
           python -m unittest -v test_rf_v2_unilateral.py
+          python -m unittest -v test_rf_medication_learning.py
           node test_rf_v2_ui.js
           node test_rf_v2_unilateral_ui.js
 
