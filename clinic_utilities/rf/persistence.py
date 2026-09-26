@@ -6,7 +6,10 @@ from datetime import datetime, timezone
 from typing import Any
 from uuid import uuid4
 
-from .parsers import normalize_medication_alias
+from .parsers import (
+    is_medication_identity_alias,
+    normalize_medication_alias,
+)
 from sqlalchemy import Column, DateTime, Integer, JSON, String, select
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, Session
@@ -73,33 +76,13 @@ def initialize_rf_tables(engine: Engine) -> None:
 
 _ALIAS_DOSE_RE = re.compile(r"(?i)(?<!\w)\d+(?:[.,]\d+)?\s*(?:mg|g|gr|mcg|µg|χάπια?|χαπια?|δισκία|δισκια|tabs?|tablets?)(?!\w)")
 
-_NON_MEDICATION_ALIAS_TOKENS = {
-    # Dose / concentration units.
-    "mg", "g", "gr", "mcg", "ug", "µg", "μg", "ml", "l", "iu",
-    # Generic dosage forms / formulation markers.
-    "tab", "tabs", "tablet", "tablets",
-    "χαπι", "χαπια", "δισκιο", "δισκια",
-    "cap", "caps", "capsule", "capsules",
-    "καψουλα", "καψουλες",
-    "syrup", "σιροπι",
-    "cream", "κρεμα",
-    "gel", "γελη",
-    "patch", "patches", "εμπλαστρο", "εμπλαστρα",
-    "injection", "injectable", "ampoule", "ampoules",
-    "ενεση", "ενεσεις", "αμπουλα", "αμπουλες",
-    "spray", "drops", "drop", "σταγονες", "σταγονα",
-}
-
 
 def _validate_medication_alias_identity(alias_text: str) -> str:
     normalized = normalize_medication_alias(alias_text)
-    tokens = [token for token in normalized.split() if token]
     if len(normalized) < 2:
         raise ValueError("Medication alias is too short")
-    if tokens and all(token.isdigit() for token in tokens):
-        raise ValueError("Medication alias must identify a medicine, not a number")
-    if any(token in _NON_MEDICATION_ALIAS_TOKENS for token in tokens):
-        raise ValueError("Medication alias must contain the medicine name only")
+    if not is_medication_identity_alias(alias_text):
+        raise ValueError("Medication alias must identify a medicine, not regimen or formulation metadata")
     return normalized
 
 
