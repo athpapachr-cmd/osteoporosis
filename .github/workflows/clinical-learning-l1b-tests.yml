@@ -90,9 +90,19 @@ jobs:
             echo 'L1B/L1C/L1D adjacent-owner leak.' >&2
             exit 1
           fi
-          if printf '%s\n' "$changed" | grep -Ev '^(clinical_learning/.*|static/clinical-learning/.*|test_clinical_learning_l1_.*\.py|test_clinical_learning_l1b_.*\.py|test_clinical_learning_l1c_.*\.py|\.github/workflows/clinical-learning-l1b-tests\.yml|\.github/workflows/clinical-learning-l1-tests\.yml|\.github/workflows/clinical-learning-l1c-tests\.yml|schemas/clinical_learning_loop_v1\.yaml|CLINICAL_LEARNING_LOOP_DESIGN_V1\.md|CLINICAL_LEARNING_CHAT_TRANSPORT_V1\.md|SLICE_PLAN_CURRENT\.md|CURRENT_OPERATIONAL\.md|TODO\.md|CLINICAL_EXCELLENCE_PLAN\.md|osteoporosis-change-log\.md)$' ; then
-            echo 'Unexpected file outside bounded L1B/L1C/L1D owners.' >&2
-            exit 1
+          if printf '%s\n' "$changed" | grep -Eq '^(clinical_learning/|static/clinical-learning/|test_clinical_learning_l1_.*\.py$|test_clinical_learning_l1b_.*\.py$|test_clinical_learning_l1c_.*\.py$|schemas/clinical_learning_loop_v1\.yaml$|CLINICAL_LEARNING_LOOP_DESIGN_V1\.md$|CLINICAL_LEARNING_CHAT_TRANSPORT_V1\.md$)' ; then
+            if printf '%s\n' "$changed" | grep -Ev '^(clinical_learning/.*|static/clinical-learning/.*|test_clinical_learning_l1_.*\.py|test_clinical_learning_l1b_.*\.py|test_clinical_learning_l1c_.*\.py|\.github/workflows/clinical-learning-l1b-tests\.yml|\.github/workflows/clinical-learning-l1-tests\.yml|\.github/workflows/clinical-learning-l1c-tests\.yml|schemas/clinical_learning_loop_v1\.yaml|CLINICAL_LEARNING_LOOP_DESIGN_V1\.md|CLINICAL_LEARNING_CHAT_TRANSPORT_V1\.md|SLICE_PLAN_CURRENT\.md|CURRENT_OPERATIONAL\.md|TODO\.md|CLINICAL_EXCELLENCE_PLAN\.md|osteoporosis-change-log\.md)
+      - name: Diff hygiene
+        run: |
+          set -euo pipefail
+          base="$(git merge-base origin/main HEAD)"
+          git diff --check "$base" HEAD
+ ; then
+              echo 'Unexpected file outside bounded L1B/L1C/L1D owners.' >&2
+              exit 1
+            fi
+          else
+            echo 'L1B/L1C/L1D product scope unchanged; running inherited regressions without Learning-only scope assertion.'
           fi
 
       - name: Diff hygiene
