@@ -112,16 +112,3 @@ jobs:
           set -euo pipefail
           base="$(git merge-base origin/main HEAD)"
           git diff --check "$base" HEAD
- ; then
-              echo 'Unexpected file outside Clinical Learning L1/L1B/L1C/L1D implementation owners.' >&2
-              exit 1
-            fi
-          else
-            echo 'Clinical Learning product scope unchanged; running inherited regressions without Learning-only scope assertion.'
-          fi
-
-      - name: Diff hygiene
-        run: |
-          set -euo pipefail
-          base="$(git merge-base origin/main HEAD)"
-          git diff --check "$base" HEAD
