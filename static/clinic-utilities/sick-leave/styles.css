@@ -83,3 +83,45 @@ input:focus, textarea:focus, select:focus { border-color: #6da0ce; box-shadow: 0
   .card { padding: 17px; border-radius: 13px; }
   .pill { align-self: flex-start; }
 }
+
+.appearance-head{align-items:end}
+.template-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.template-option{display:grid;gap:9px;min-width:0;padding:10px;border:1px solid #d7e0e9;border-radius:12px;background:#fff;color:var(--ink);text-align:left;transition:border-color .15s,box-shadow .15s,transform .15s}
+.template-option:hover{transform:translateY(-1px);border-color:#aebfd0}
+.template-option.selected{border-color:var(--blue);box-shadow:0 0 0 2px rgba(45,110,167,.13)}
+.template-option strong{display:block;font-size:12px;color:var(--navy)}
+.template-option small{display:block;margin-top:3px;color:var(--muted);font-size:10px;line-height:1.3}
+.template-preview{position:relative;display:block;width:100%;aspect-ratio:.72;border:1px solid #d8e1ea;background:#fff;border-radius:5px;overflow:hidden;box-shadow:0 3px 10px rgba(20,45,72,.05)}
+.template-preview::before,.template-preview::after,.template-preview i,.template-preview b,.template-preview em{content:"";position:absolute;display:block}
+.preview-classic::before{left:12%;right:12%;top:14%;height:3%;background:var(--navy)}
+.preview-classic i{left:12%;right:12%;top:32%;height:18%;background:#eef6fd;border:1px solid #d8e1ea}
+.preview-classic b{left:12%;right:12%;top:58%;height:18%;border:1px solid #d8e1ea}
+.preview-classic em{left:12%;right:12%;top:81%;height:10%;background:#eef6fd;border:1px solid #c9dff2}
+.preview-modern::before{left:10%;top:11%;width:4%;height:20%;background:var(--blue)}
+.preview-modern::after{left:19%;right:12%;top:13%;height:4%;background:var(--navy)}
+.preview-modern i{left:10%;right:10%;top:37%;height:17%;background:#f4f8fc}
+.preview-modern b{left:10%;right:10%;top:60%;height:15%;background:#f4f8fc}
+.preview-modern em{left:10%;right:10%;top:81%;height:9%;background:#eef6fd}
+.preview-minimal::before{left:12%;right:12%;top:15%;height:1px;background:#9aaaba}
+.preview-minimal i{left:12%;right:35%;top:35%;height:1px;background:#bdc8d4}
+.preview-minimal b{left:12%;right:12%;top:56%;height:1px;background:#bdc8d4}
+.preview-minimal em{left:12%;top:72%;width:3px;height:17%;background:var(--navy)}
+.preview-compact::before{left:10%;right:10%;top:12%;height:2%;background:var(--navy)}
+.preview-compact i{left:10%;right:10%;top:27%;height:13%;background:#f0f4f8}
+.preview-compact b{left:10%;right:10%;top:47%;height:20%;border:1px solid #d8e1ea}
+.preview-compact em{left:10%;right:10%;top:72%;height:11%;background:#eef6fd}
+.preview-formal::before{left:0;right:0;top:0;height:25%;background:var(--navy)}
+.preview-formal i{left:12%;right:12%;top:38%;height:15%;background:#f4f7fa;border:1px solid #c5d1dc}
+.preview-formal b{left:12%;right:12%;top:60%;height:14%;border:1px solid #d8e1ea}
+.preview-formal em{left:12%;right:12%;top:80%;height:11%;background:var(--navy)}
+.theme-picker{display:flex;justify-content:space-between;gap:18px;align-items:center;margin-top:18px;padding-top:16px;border-top:1px solid #e5ebf1}
+.theme-picker>div:first-child{max-width:340px}
+.theme-picker p{margin:4px 0 0}
+.theme-swatches{display:flex;gap:9px;flex-wrap:wrap;justify-content:flex-end}
+.theme-swatch{display:grid;gap:4px;justify-items:center;border:1px solid transparent;background:transparent;color:var(--muted);padding:5px;border-radius:9px}
+.theme-swatch span{width:28px;height:28px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px #cbd5df;background:var(--swatch)}
+.theme-swatch small{font-size:9px}
+.theme-swatch.selected{background:#f3f7fb;border-color:#cbd9e6;color:var(--navy);font-weight:700}
+.theme-navy{--swatch:#153b63}.theme-teal{--swatch:#0d5557}.theme-graphite{--swatch:#292e38}.theme-burgundy{--swatch:#611426}.theme-forest{--swatch:#1a4d33}.theme-monochrome{--swatch:#1a1a1a}
+@media(max-width:900px){.template-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.theme-picker{align-items:flex-start;flex-direction:column}.theme-swatches{justify-content:flex-start}}
+@media(max-width:600px){.template-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
