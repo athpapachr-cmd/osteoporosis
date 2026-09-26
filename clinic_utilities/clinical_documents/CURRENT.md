@@ -1,9 +1,10 @@
 # Clinical Documents CURRENT — Sick Leave template themes
 
-> **STATUS:** ACTIVE / IMPLEMENTATION AUTHORIZED.
+> **STATUS:** IMPLEMENTED / TESTED / RELEASE PR AUTHORIZED.
 > **Workstream:** Clinical Documents — Sick Leave visual templates.
 > **Branch:** `feat/sick-leave-template-themes-2026-09-26`.
 > **Base main:** `c0b89f9c49239142e94e0630580771180d6fcadb`.
+> **Exact tested head:** `256cc6c1d5c20ffad6c8575cde240ce3060ca465`.
 > **Root writer lock:** unchanged; PR-1 transcript capture remains the repo-wide CURRENT_OPERATIONAL owner.
 > **Overlap:** none; this slice is limited to sick-leave presentation/rendering and focused tests.
 
@@ -65,18 +66,46 @@ Preview and Download must use the same selected layout and color.
 
 ## Verification
 
-Required focused evidence:
+Exact tested head:
 
-- all 5 layouts render parseable A4 PDFs with required Greek clinical text;
-- all 6 palettes are accepted;
-- invalid layout/theme fails closed;
-- clinical metadata round-trip is invariant across layouts/colors;
-- signature rendering remains supported;
-- preview/download API forwards appearance selection;
-- UI exposes 5 template choices and 6 controlled themes;
-- no browser storage is introduced;
-- existing Clinical Documents P1/P2 and navigation regressions remain green.
+`256cc6c1d5c20ffad6c8575cde240ce3060ca465`
+
+Workflow evidence:
+
+- Clinical Documents P1: `36267760233` — SUCCESS;
+  - Python syntax PASS;
+  - JavaScript syntax PASS;
+  - **32 sick-leave deterministic tests PASS**;
+  - Clinic Utilities navigation regression PASS.
+- Clinical Documents P2: `36267760213` — SUCCESS;
+  - Clinical Documents syntax PASS;
+  - OpenAI Responses SDK contract PASS;
+  - Medical Report V1/V1.1 deterministic regressions PASS;
+  - Sick Leave regressions PASS;
+  - Clinic Utilities navigation regression PASS.
+
+Proven behavior:
+
+- all 5 layouts render one-page parseable A4 PDFs with the required Greek clinical content;
+- all 6 controlled color themes render;
+- unsupported template/theme IDs fail closed;
+- PDF clinical metadata round-trip is unchanged across layouts;
+- signature rendering remains supported on non-default appearance;
+- preview/download API use the same selected appearance;
+- UI exposes exactly 5 template choices and 6 color themes;
+- no localStorage/sessionStorage/patient persistence was introduced.
+
+## Current release state
+
+```text
+IMPLEMENTED: YES
+TESTED: YES
+PR: NO
+MERGED: NO
+DEPLOYED: NO
+PRODUCTION SMOKE: NO
+```
 
 ## Exact next action
 
-Implement the bounded renderer/API/UI/test slice on this branch, run the existing Clinical Documents P1/P2 gates, then checkpoint the exact tested head before release review.
+Fresh-verify current `main`, open one bounded release PR with the required Canonical Impact Declaration, run PR checks, and if successful squash-merge and allow the normal Render auto-deploy.
