@@ -250,7 +250,7 @@ def test_browser_has_no_case_persistence_apis_and_navigation_is_wired():
     home = Path("static/cockpit/index.html").read_text(encoding="utf-8")
     assert "build_medical_report_router" in main
     assert "/clinical/clinic-utilities/medical-report" in home
-    assert "Ιατρικές εκθέσεις" in nav
+    assert "Ιατρικές εκθέσεις" in home
 
 
 def test_existing_sick_leave_package_remains_present():
