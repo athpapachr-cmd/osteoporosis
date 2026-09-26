@@ -73,6 +73,35 @@ def initialize_rf_tables(engine: Engine) -> None:
 
 _ALIAS_DOSE_RE = re.compile(r"(?i)(?<!\w)\d+(?:[.,]\d+)?\s*(?:mg|g|gr|mcg|µg|χάπια?|χαπια?|δισκία|δισκια|tabs?|tablets?)(?!\w)")
 
+_NON_MEDICATION_ALIAS_TOKENS = {
+    # Dose / concentration units.
+    "mg", "g", "gr", "mcg", "ug", "µg", "μg", "ml", "l", "iu",
+    # Generic dosage forms / formulation markers.
+    "tab", "tabs", "tablet", "tablets",
+    "χαπι", "χαπια", "δισκιο", "δισκια",
+    "cap", "caps", "capsule", "capsules",
+    "καψουλα", "καψουλες",
+    "syrup", "σιροπι",
+    "cream", "κρεμα",
+    "gel", "γελη",
+    "patch", "patches", "εμπλαστρο", "εμπλαστρα",
+    "injection", "injectable", "ampoule", "ampoules",
+    "ενεση", "ενεσεις", "αμπουλα", "αμπουλες",
+    "spray", "drops", "drop", "σταγονες", "σταγονα",
+}
+
+
+def _validate_medication_alias_identity(alias_text: str) -> str:
+    normalized = normalize_medication_alias(alias_text)
+    tokens = [token for token in normalized.split() if token]
+    if len(normalized) < 2:
+        raise ValueError("Medication alias is too short")
+    if tokens and all(token.isdigit() for token in tokens):
+        raise ValueError("Medication alias must identify a medicine, not a number")
+    if any(token in _NON_MEDICATION_ALIAS_TOKENS for token in tokens):
+        raise ValueError("Medication alias must contain the medicine name only")
+    return normalized
+
 
 def list_medication_aliases(engine: Engine) -> list[dict[str, Any]]:
     with Session(engine) as session:
@@ -108,9 +137,7 @@ def upsert_medication_alias(
         raise ValueError("Medication alias is required")
     if "\n" in alias_text or ";" in alias_text or _ALIAS_DOSE_RE.search(alias_text):
         raise ValueError("Medication alias must contain the medicine name only")
-    normalized = normalize_medication_alias(alias_text)
-    if len(normalized) < 2:
-        raise ValueError("Medication alias is too short")
+    normalized = _validate_medication_alias_identity(alias_text)
 
     display = str(display_name or alias_text).strip()[:160]
     active = str(active_ingredient or "").strip()[:160]
