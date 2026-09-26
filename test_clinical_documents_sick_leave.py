@@ -19,11 +19,15 @@ from clinic_utilities.clinical_documents.models import (
 )
 from clinic_utilities.clinical_documents.sick_leave import (
     MAX_SIGNATURE_BYTES,
+    SICK_LEAVE_COLOR_THEMES,
+    SICK_LEAVE_TEMPLATES,
     build_sick_leave_pdf,
     read_previous_sick_leave_pdf,
     reuse_options,
+    sick_leave_appearance_contract,
     sick_leave_filename,
     validate_signature_image,
+    validate_sick_leave_appearance,
 )
 
 
@@ -129,6 +133,96 @@ def test_pdf_is_a4_parseable_and_contains_expected_greek_text():
         assert "12/09/2026" in text
         assert "14/09/2026" in text
         assert metadata.patient_name == SYNTHETIC_PATIENT
+    finally:
+        doc.close()
+
+
+@pytest.mark.parametrize("template_id", [item["id"] for item in SICK_LEAVE_TEMPLATES])
+def test_all_sick_leave_templates_render_a4_and_preserve_clinical_metadata(template_id):
+    pdf_bytes, metadata = build_sick_leave_pdf(
+        _draft(),
+        clinician=_clinician(),
+        template_id=template_id,
+        color_theme="navy",
+    )
+    doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+    try:
+        assert doc.page_count == 1
+        page = doc[0]
+        assert abs(page.rect.width - 595) < 2
+        assert abs(page.rect.height - 842) < 2
+        text = page.get_text("text")
+        assert "ΒΕΒΑΙΩΣΗ ΑΣΘΕΝΕΙΑΣ" in text
+        assert SYNTHETIC_PATIENT in text
+        assert SYNTHETIC_DIAGNOSIS in text
+        assert "12/09/2026" in text
+        assert "14/09/2026" in text
+    finally:
+        doc.close()
+
+    imported = read_previous_sick_leave_pdf(pdf_bytes)
+    assert imported.patient_name == metadata.patient_name
+    assert imported.id_number == metadata.id_number
+    assert imported.diagnosis == metadata.diagnosis
+    assert imported.leave_from == metadata.leave_from
+    assert imported.leave_to == metadata.leave_to
+    assert imported.issued_on == metadata.issued_on
+
+
+@pytest.mark.parametrize("color_theme", [item["id"] for item in SICK_LEAVE_COLOR_THEMES])
+def test_all_controlled_color_themes_render_parseable_pdf(color_theme):
+    pdf_bytes, _ = build_sick_leave_pdf(
+        _draft(),
+        clinician=_clinician(),
+        template_id="modern",
+        color_theme=color_theme,
+    )
+    doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+    try:
+        assert doc.page_count == 1
+        assert SYNTHETIC_PATIENT in doc[0].get_text("text")
+    finally:
+        doc.close()
+
+
+def test_sick_leave_appearance_contract_is_five_layouts_and_six_palettes():
+    contract = sick_leave_appearance_contract()
+    assert contract["default_template"] == "classic"
+    assert contract["default_color_theme"] == "navy"
+    assert [item["id"] for item in contract["templates"]] == [
+        "classic", "modern", "minimal", "compact", "formal"
+    ]
+    assert [item["id"] for item in contract["color_themes"]] == [
+        "navy", "teal", "graphite", "burgundy", "forest", "monochrome"
+    ]
+
+
+def test_invalid_template_and_color_theme_fail_closed():
+    with pytest.raises(ValueError, match="template"):
+        validate_sick_leave_appearance("unknown-layout", "navy")
+    with pytest.raises(ValueError, match="χρωματικό"):
+        validate_sick_leave_appearance("classic", "neon")
+    with pytest.raises(ValueError):
+        build_sick_leave_pdf(
+            _draft(),
+            clinician=_clinician(),
+            template_id="unknown-layout",
+            color_theme="navy",
+        )
+
+
+def test_signature_remains_supported_across_nondefault_template_and_theme():
+    pdf_bytes, _ = build_sick_leave_pdf(
+        _draft(),
+        clinician=_clinician(),
+        signature_bytes=_png_signature(),
+        template_id="formal",
+        color_theme="burgundy",
+    )
+    doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+    try:
+        assert doc.page_count == 1
+        assert SYNTHETIC_PATIENT in doc[0].get_text("text")
     finally:
         doc.close()
 
@@ -248,12 +342,20 @@ def test_protected_contract_and_pdf_api(monkeypatch: pytest.MonkeyPatch):
         "signature_persisted": False,
     }
     assert body["limits"]["draft_json_bytes"] == MAX_DRAFT_JSON_BYTES
+    assert len(body["appearance"]["templates"]) == 5
+    assert len(body["appearance"]["color_themes"]) == 6
+    assert body["appearance"]["default_template"] == "classic"
+    assert body["appearance"]["default_color_theme"] == "navy"
 
     draft_json = json.dumps(_draft().model_dump(mode="json"), ensure_ascii=False)
     pdf_response = client.post(
         "/clinical/clinic-utilities/sick-leave/api/pdf",
         headers=headers,
-        data={"draft_json": draft_json},
+        data={
+            "draft_json": draft_json,
+            "template_id": "formal",
+            "color_theme": "forest",
+        },
     )
     assert pdf_response.status_code == 200
     assert pdf_response.headers["content-type"].startswith("application/pdf")
@@ -261,6 +363,17 @@ def test_protected_contract_and_pdf_api(monkeypatch: pytest.MonkeyPatch):
     assert "filename*=UTF-8''" in disposition
     assert "TEST-123" not in disposition
     assert "Θλάση" not in disposition
+
+    invalid_appearance = client.post(
+        "/clinical/clinic-utilities/sick-leave/api/preview",
+        headers=headers,
+        data={
+            "draft_json": draft_json,
+            "template_id": "not-a-template",
+            "color_theme": "navy",
+        },
+    )
+    assert invalid_appearance.status_code == 422
 
     previous = client.post(
         "/clinical/clinic-utilities/sick-leave/api/import-previous",
@@ -297,6 +410,21 @@ def test_browser_workspace_has_no_patient_or_signature_storage_api():
     assert "indexedDB" not in js
     assert "/api/import-previous" in js
     assert "signatureFile" in js
+
+
+def test_browser_workspace_exposes_five_templates_and_six_controlled_themes():
+    html = Path("static/clinic-utilities/sick-leave/index.html").read_text(encoding="utf-8")
+    js = Path("static/clinic-utilities/sick-leave/app.js").read_text(encoding="utf-8")
+    assert html.count('data-template="') == 5
+    assert html.count('data-theme="') == 6
+    for template_id in ("classic", "modern", "minimal", "compact", "formal"):
+        assert f'data-template="{template_id}"' in html
+    for theme_id in ("navy", "teal", "graphite", "burgundy", "forest", "monochrome"):
+        assert f'data-theme="{theme_id}"' in html
+    assert 'form.append("template_id", state.templateId)' in js
+    assert 'form.append("color_theme", state.colorTheme)' in js
+    assert "localStorage" not in js
+    assert "sessionStorage" not in js
 
 
 def test_runtime_is_mounted_and_navigation_exposes_sick_leave():
