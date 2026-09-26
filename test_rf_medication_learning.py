@@ -108,6 +108,48 @@ class RFMedicationLearningPersistenceTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             upsert_medication_alias(self.engine, alias="Mysteron 50 mg", category="nsaid")
 
+    def test_pure_numeric_and_generic_form_aliases_are_rejected(self):
+        invalid_aliases = [
+            "50",
+            "50.0",
+            "mg",
+            "mcg",
+            "tablet",
+            "tablets",
+            "δισκίο",
+            "χάπια",
+            "capsule",
+            "syrup",
+            "gel",
+            "patch",
+            "injection",
+        ]
+        for alias in invalid_aliases:
+            with self.subTest(alias=alias):
+                with self.assertRaises(ValueError):
+                    upsert_medication_alias(self.engine, alias=alias, category="nsaid")
+
+    def test_generic_token_cannot_poison_future_unknown_medication_matching(self):
+        with self.assertRaises(ValueError):
+            upsert_medication_alias(self.engine, alias="mg", category="nsaid")
+
+        learned = list_medication_aliases(self.engine)
+        self.assertEqual(learned, [])
+
+        parsed = parse_medications("Mysteron 50 mg 2 μήνες", learned)
+        self.assertEqual(parsed["nsaid_candidates"], [])
+        self.assertEqual(parsed["other_candidates"], [])
+        self.assertEqual(len(parsed["unrecognized_candidates"]), 1)
+        self.assertEqual(
+            parsed["unrecognized_candidates"][0]["suggested_name"],
+            "Mysteron",
+        )
+
+    def test_valid_short_medication_names_are_not_rejected_by_generic_guard(self):
+        entry = upsert_medication_alias(self.engine, alias="Xefo", category="nsaid")
+        self.assertEqual(entry["normalized_alias"], "xefo")
+        self.assertEqual(entry["category"], "nsaid")
+
 
 class RFMedicationLearningApiTests(unittest.TestCase):
     def setUp(self):
@@ -178,6 +220,16 @@ class RFMedicationLearningApiTests(unittest.TestCase):
             json={"alias": "Mysteron 50 mg", "category": "nsaid"},
         )
         self.assertEqual(response.status_code, 422)
+
+    def test_api_rejects_generic_alias_tokens(self):
+        for alias in ("50", "mg", "mcg", "tablet", "δισκίο"):
+            with self.subTest(alias=alias):
+                response = self.client.post(
+                    "/clinical/clinic-utilities/rf/api/medication-dictionary",
+                    headers=self.headers,
+                    json={"alias": alias, "category": "nsaid"},
+                )
+                self.assertEqual(response.status_code, 422, response.text)
 
 
 if __name__ == "__main__":
