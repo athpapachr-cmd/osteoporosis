@@ -433,7 +433,7 @@ def test_runtime_is_mounted_and_navigation_exposes_sick_leave():
     assert "build_clinical_documents_router" in main
     assert "app.include_router(build_clinical_documents_router())" in main
     assert "/clinical/clinic-utilities/sick-leave" in home
-    assert "Αναρρωτική άδεια" in helper
+    assert "Αναρρωτική άδεια" in home
 
 
 def test_phase1_package_has_no_database_or_patient_persistence_owner():
