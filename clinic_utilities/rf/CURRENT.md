@@ -1,6 +1,6 @@
 # RF CURRENT — learned medication dictionary
 
-> **STATUS:** INDEPENDENT PASS_TO_RF_RELEASE_PR / RELEASE PR AUTHORIZED / NOT MERGED / NOT DEPLOYED.
+> **STATUS:** RF RELEASE PR #116 OPEN / HOLD BEFORE MERGE / NOT DEPLOYED.
 > **Workstream:** native RF v2 Clinic Utility.
 > **Branch:** `feat/rf-learned-medication-dictionary-2026-09-26`.
 > **Base main:** `0ab5f9770d220c20e8d94544cb64e93a4aa30d00`.
@@ -341,6 +341,44 @@ PASS_TO_RF_RELEASE_PR
 
 This authorizes only the controlled release-PR transition. It does not authorize merge, deploy or production smoke claims.
 
+## RF release PR opened
+
+Release PR:
+
+```text
+#116
+https://github.com/athpapachr-cmd/osteoporosis/pull/116
+```
+
+PR transition identity:
+
+```text
+base: main
+base_sha: 0ab5f9770d220c20e8d94544cb64e93a4aa30d00
+head: feat/rf-learned-medication-dictionary-2026-09-26
+head_sha at PR creation: c6725a72f3ce1733fe1227cf48378c8ec5194a9f
+state: OPEN
+draft: NO
+merged: NO
+deploy: NOT AUTHORIZED
+```
+
+The PR body includes the repository-required Canonical Impact Declaration:
+
+```text
+release_affecting: yes
+checkpoint_stage: release_hold
+root_current: none
+slice_plan: none
+todo: none
+clinical_excellence_plan: none
+workstream_current: update
+workstream_current_path: clinic_utilities/rf/CURRENT.md
+changelog: defer_until_completion
+```
+
+Opening PR #116 is a release-review transition only. It does not authorize merge, deployment or production smoke.
+
 ## Exact next action
 
-After this PASS checkpoint verifies, fresh-verify `main` and branch identity and open one bounded RF release PR from `feat/rf-learned-medication-dictionary-2026-09-26` to fresh current `main`, including the required Canonical Impact Declaration. Then checkpoint PR identity/status and stop before merge/deploy.
+Verify the post-PR checkpoint and PR #116 CI/release checks. Then HOLD for a separate controlled merge decision. Do not merge or deploy from this checkpoint.
