@@ -1,81 +1,45 @@
 # OST-LIFECOURSE CURRENT
 
-> **STATUS:** PHASE 0 COMPLETE / PROGRAMME RECONCILED / P1 DESIGN READY.
+> **STATUS:** P1 SEMANTIC-OWNERSHIP RECONCILIATION COMPLETE / INDEPENDENT REVIEW READY.
 > **Workstream:** OST-LIFECOURSE — longitudinal clinical care trajectory.
 > **Branch:** `docs/ost-programme-lifecourse-bootstrap-2026-09-27`.
 > **Base main:** `2ae9f01ded14bd2106ee09f47acb3fea4d72bc4b`.
-> **Root writer lock:** unchanged. `CURRENT_OPERATIONAL.md` remains owned by the active PR-1 Heidi-first transcript-capture lifecycle.
-> **Overlap:** none. This workstream remains documentation/design only.
+> **Root writer lock:** unchanged. `CURRENT_OPERATIONAL.md` remains owned by OST-CAPTURE / PR-1.
+> **Runtime/schema/database/UI mutation:** none.
 
-## Product-owner / programme direction
+## Durable results
 
-Product Constitution v0.2 is conceptually approved. The Phase-0 reuse-before-new-path inventory has returned and been accepted by the programme coordinator.
+- Product Constitution: `programme/PRODUCT-CONSTITUTION-V0.2.md`
+- Phase-0 reconciliation: `programme/OST-LIFECOURSE/PHASE0-PROGRAMME-RECONCILIATION.md`
+- P1 task brief: `programme/OST-LIFECOURSE/P1-SEMANTIC-OWNERSHIP-BRIEF.md`
+- P1 programme reconciliation: `programme/OST-LIFECOURSE/P1-PROGRAMME-RECONCILIATION.md`
+- P1 independent review brief: `programme/OST-LIFECOURSE/P1-INDEPENDENT-REVIEW-BRIEF.md`
+- S1 routing brief: `programme/OST-LIFECOURSE/S1-FRACTURE-FRAGILITY-ROUTING-BRIEF.md`
 
-## Phase-0 disposition
+## P1 accepted direction
 
-```text
-PHASE 0 INVENTORY: COMPLETE
-PROGRAMME RECONCILIATION: ACCEPTED
-NEW LONGITUDINAL STACK: NOT JUSTIFIED
-RUNTIME CHANGE: NO
-SCHEMA CHANGE: NO
-ROOT WRITER TRANSFER: NO
-12 PARKED QUESTIONS RESOLVED: ZERO
-```
-
-Durable programme reconciliation:
-- `programme/OST-LIFECOURSE/PHASE0-PROGRAMME-RECONCILIATION.md`
-
-Core Phase-0 conclusion:
+Current longitudinal mechanisms are to be reused / extended / consolidated before any new longitudinal architecture is proposed.
 
 ```text
-reuse / extend / consolidate current owners first
-!= build replacement patient/event/timeline/obligation/evidence stacks
+NEW PATIENT STORE: NO
+NEW EVENT/TIMELINE STORE: NO
+NEW TREATMENT STORE: NO
+NEW OBLIGATION ENGINE: NO
+SECOND EVIDENCE ENGINE: NO
+Q1–Q12 RESOLVED: ZERO
+S1 RUNTIME CORRECTION: SEPARATELY ROUTED
 ```
-
-## Material routed finding
-
-`S1 FRACTURE / FRAGILITY SEMANTIC CONTAMINATION` is independently confirmed as a current runtime safety/data-integrity defect under the existing Module-01 clinical/fracture semantics owner.
-
-OST-LIFECOURSE does not fix S1. It is to be routed as a separate bounded correction.
-
-## Accepted successor
-
-```text
-OST-LIFECOURSE-P1
-CURRENT TRAJECTORY TRUTH / SEMANTIC-OWNERSHIP RECONCILIATION
-```
-
-P1 is documentation/design only and must reconcile current owner semantics before any new life-course architecture is proposed.
 
 ## Exact next action
 
-1. prepare a self-contained P1 design brief;
-2. separately prepare an S1 safety-correction brief for the existing clinical owner;
-3. keep PR #121 draft until those organisational artifacts are checkpointed;
-4. do not merge, implement, deploy or activate Product Constitution Q1–Q12 automatically.
+Start one fresh **independent READ-ONLY P1 review** using:
+
+`programme/OST-LIFECOURSE/P1-INDEPENDENT-REVIEW-BRIEF.md`
+
+The reviewer returns PASS or BLOCK and STOP.
+
+Do not start implementation, P2 target architecture, migration, schema work, S1 code correction or PR #121 merge automatically.
 
 ## Registry sync
 
-`UPDATED` — local state advanced from Phase-0 inventory pending to Phase-0 COMPLETE / P1 READY. Programme registry requires matching state update.
-
-
-## Successor briefs checkpoint
-
-Prepared:
-
-- `programme/OST-LIFECOURSE/P1-SEMANTIC-OWNERSHIP-BRIEF.md`
-- `programme/OST-LIFECOURSE/S1-FRACTURE-FRAGILITY-ROUTING-BRIEF.md`
-
-Checkpoint commits:
-
-- `33aead7ab54cebd8b26a73d942899a982469eec2` — OST-LIFECOURSE-P1 design brief;
-- `2f3c3fc27c2259290f7014dd01e422afce4be0b9` — separate S1 safety-routing brief.
-
-### Exact next action
-
-Start a fresh separate OST-LIFECOURSE-P1 coordinator using the P1 brief and return its design handback here.
-
-In parallel, the S1 brief is ready for a separate Module-01 fracture/fragility correction coordinator, but code implementation remains separately authorised; the first S1 task is pre-code source/contract/test-boundary reconciliation only.
-
-PR #121 remains DRAFT and MUST NOT be merged automatically.
+`UPDATED` — P1 reconciliation is COMPLETE / INDEPENDENT REVIEW READY.
