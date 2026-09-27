@@ -13,7 +13,7 @@ This registry exists to let multiple bounded workstreams proceed in parallel wit
 | **OST-CAPTURE** | Heidi/transcript → semantic clinical candidates | **ACTIVE under root PR-1 lifecycle** | Root `CURRENT_OPERATIONAL.md` / `SLICE_PLAN_CURRENT.md`; not mutated by this programme bootstrap |
 | **OST-LIFECOURSE** | Shared longitudinal patient truth, care trajectory, events/state/goals/decisions/obligations | **P1 RECONCILIATION COMPLETE / INDEPENDENT REVIEW READY** | `programme/OST-LIFECOURSE/CURRENT.md` |
 | **OST-CLINICAL** | Osteoporosis evidence, pathways, guidance rules and treatment logic | **S1 P6B BLOCK / ONE RESIDUAL R1 CORRECTION READY** | PR #123 remains draft at blocked head `f4fe36bcfbd0ca475768844387536ec71e2fd38d`; D1–D6 closed; raw `low_trauma` no-edit preservation residual routed; root PR-1 lock unchanged |
-| **OST-UI** | Osteoporosis product reconstruction: longitudinal product model, workflow/UX, information architecture and reuse | **BOOTSTRAPPED IN PARALLEL DRAFT PR #122 / R1 READY** | Activates the former `OST-PRODUCT` placeholder; local sidecar is `programme/OST-UI/CURRENT.md` on PR #122; no root-writer or clinical-semantic authority |
+| **OST-UI** | Osteoporosis product reconstruction: longitudinal product model, workflow/UX, information architecture and reuse | **R1 COMPLETE / COORDINATOR ACCEPTED / R2 AUTHORIZED** | Former `OST-PRODUCT` placeholder activated as OST-UI; R1 exact reviewed head `4d4991ee617e72c3a943601864ba3c3c1d8062a6`; no root-writer or clinical-semantic authority |
 | **OST-REVIEW** | Practice Review, decision audit, Signals and improvement loop | **QUEUED** | Existing Practice Review architecture preserved; no new mutation authority |
 | **OST-LEARNING** | Clinical Learning Hub / challenges / longitudinal clinician learning | **EXISTING PARALLEL TRACK** | Existing learning contracts and release state remain separately authoritative |
 | **OST-SAFETY** | Privacy, provenance, CDS/regulatory and data-governance guardrails | **CROSS-CUTTING / NOT YET A STANDALONE WRITER** | Must be consulted when relevant; does not own product truth |
@@ -45,9 +45,9 @@ OST-LIFECOURSE-P1 current-owner reconciliation — COMPLETE
 independent P1 review — READY
         ├── OST-LIFECOURSE successor work remains gated on P1 disposition
         ├── OST-CLINICAL S1 proceeds on its separately authorized correction/review lifecycle
-        └── OST-UI R1 current-product audit may proceed in parallel under PR #122
+        └── OST-UI R1 current-product audit — COMPLETE / ACCEPTED
                 ↓
-           OST-UI R2/R3 must fresh-resolve authoritative clinical/lifecourse semantics
+           OST-UI R2 — AUTHORIZED; must fresh-resolve authoritative clinical/lifecourse semantics
                 ↓
            R4 → one synthesis → Product Owner decisions
         ↓
