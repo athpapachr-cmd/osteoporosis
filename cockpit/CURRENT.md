@@ -141,7 +141,7 @@ HOLD this completed Home release. The next separate integration slice is Cal.com
 
 # Clinical Calendar reason bridge — bounded follow-up slice
 
-> **STATUS:** CONSUMER SNAPSHOT IMPLEMENTED / FOCUSED TESTS CODED / EXECUTION PENDING.
+> **STATUS:** CONSUMER SNAPSHOT IMPLEMENTED / FOCUSED CI PASS / DRAFT PR #119 OPEN.
 > **Workstream:** Cal.com visit-reason normalization into the Clinical Calendar.
 > **Branch:** `feat/calendar-reason-snapshot-v1-2026-09-27`.
 > **Base main:** `a0cf912b0fcb5caf54f4a48f8f8a698908fbb0a4`.
@@ -163,8 +163,9 @@ HOLD this completed Home release. The next separate integration slice is Cal.com
 ## Current implementation order
 
 1. **DONE IN BRANCH:** bounded server-to-server snapshot ingest contract, shared import path, exact source/window validation, stale-row reconciliation, contract YAML, and focused deterministic tests.
-2. **NOW:** execute focused consumer evidence and reconcile the exact result before opening the producer work.
-3. Then: add the Reception-side producer against the proven consumer contract, reusing existing Cal.com read/normalization work rather than adding another provider reader.
+2. **DONE:** focused consumer CI passed on implementation head `5d6fb963f33491c43fc856fb4473a42fce76e1de`.
+3. **NOW:** hold PR #119 as the proven consumer boundary while preparing the separately-owned Reception producer contract; do not merge #119 yet.
+4. Then: add the Reception-side producer against this proven consumer contract, reusing existing Cal.com read/normalization work rather than adding another provider reader.
 3. Then: cross-repo review/evidence.
 4. Merge/deploy/smoke remain separately gated and are **not** authorized by this checkpoint.
 
@@ -179,8 +180,16 @@ IMPLEMENTATION COMMITS:
 - 426a4037687d83179d8df5639957f621a579cfa2 — focused snapshot tests
 - 3bfba4c9d13b0a4a955ed3d470e80115c75c7d84 — current snapshot/reason integration contract
 - c07daaf75359b071ec2f5b51d5864127965d122a — path-scoped Clinical Calendar CI gate
-VERIFICATION: NOT YET EXECUTED; local repository checkout unavailable in this environment, so CI is the selected executable evidence
-LAST SAFE RESUME POINT: consumer implementation + tests + contract are durable on branch; no Reception backend files changed
-EXACT NEXT ACTION: execute focused Clinical Calendar evidence, checkpoint result, then prepare review/PR
+VERIFICATION:
+- Clinical Calendar snapshot workflow run 36294743431 / job 108551384222: PASS
+- Python syntax: PASS
+- deterministic Clinical Calendar tests: 10 passed in 0.80s
+- diff hygiene: PASS
+- Canonical impact guard run 36294743389: PASS
+DRAFT PR: #119 — Clinical Calendar: add source snapshot reconciliation
+PR URL: https://github.com/athpapachr-cmd/osteoporosis/pull/119
+EVIDENCE HEAD: 5d6fb963f33491c43fc856fb4473a42fce76e1de
+LAST SAFE RESUME POINT: consumer snapshot boundary is implemented and executable-evidence PASS; PR #119 remains draft/unmerged; no Reception backend files changed
+EXACT NEXT ACTION: preserve #119 as consumer boundary and design/canonicalize the separate Reception producer before any backend mutation
 FORBIDDEN ON RESUME: PR-1 mutation, Reception reason/availability/booking behavior change, merge, deploy, provider/business mutation
 ```
