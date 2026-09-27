@@ -117,3 +117,17 @@ The PR is a governance/design checkpoint only. Do not merge or begin implementat
 ### Exact next action
 
 Verify the updated PR head and governance/Canonical Impact checks. Then the programme coordinator may issue the bounded OST-LIFECOURSE Phase-0 **read-only inventory** task. That inventory must STOP with a handback; it must not mutate runtime or resolve the 12 parked questions.
+
+
+## Phase-0 handoff checkpoint
+
+Prepared durable separate-coordinator brief:
+
+- `programme/OST-LIFECOURSE/PHASE0-INVENTORY-BRIEF.md`
+- commit `d244eaf0327bba89684fb51d6159f609444e8161`
+
+### Exact next action
+
+Start a **fresh separate OST-LIFECOURSE coordinator conversation** using the Phase-0 brief. That coordinator performs the read-only inventory and returns a handback here for programme-level reconciliation.
+
+Do not execute the inventory in the programme-coordinator conversation unless the Product Owner explicitly changes the coordination model.
