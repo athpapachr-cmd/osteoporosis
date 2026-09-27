@@ -58,3 +58,24 @@ P1 is documentation/design only and must reconcile current owner semantics befor
 ## Registry sync
 
 `UPDATED` — local state advanced from Phase-0 inventory pending to Phase-0 COMPLETE / P1 READY. Programme registry requires matching state update.
+
+
+## Successor briefs checkpoint
+
+Prepared:
+
+- `programme/OST-LIFECOURSE/P1-SEMANTIC-OWNERSHIP-BRIEF.md`
+- `programme/OST-LIFECOURSE/S1-FRACTURE-FRAGILITY-ROUTING-BRIEF.md`
+
+Checkpoint commits:
+
+- `33aead7ab54cebd8b26a73d942899a982469eec2` — OST-LIFECOURSE-P1 design brief;
+- `2f3c3fc27c2259290f7014dd01e422afce4be0b9` — separate S1 safety-routing brief.
+
+### Exact next action
+
+Start a fresh separate OST-LIFECOURSE-P1 coordinator using the P1 brief and return its design handback here.
+
+In parallel, the S1 brief is ready for a separate Module-01 fracture/fragility correction coordinator, but code implementation remains separately authorised; the first S1 task is pre-code source/contract/test-boundary reconciliation only.
+
+PR #121 remains DRAFT and MUST NOT be merged automatically.
