@@ -13,7 +13,7 @@ This registry exists to let multiple bounded workstreams proceed in parallel wit
 | **OST-CAPTURE** | Heidi/transcript → semantic clinical candidates | **ACTIVE under root PR-1 lifecycle** | Root `CURRENT_OPERATIONAL.md` / `SLICE_PLAN_CURRENT.md`; not mutated by this programme bootstrap |
 | **OST-LIFECOURSE** | Shared longitudinal patient truth, care trajectory, events/state/goals/decisions/obligations | **P1 RECONCILIATION COMPLETE / INDEPENDENT REVIEW READY** | `programme/OST-LIFECOURSE/CURRENT.md` |
 | **OST-CLINICAL** | Osteoporosis evidence, pathways, guidance rules and treatment logic | **S1 IMPLEMENTATION TESTED / INDEPENDENT POST-CODE REVIEW READY** | Draft PR #123 at exact head `f4fe36bcfbd0ca475768844387536ec71e2fd38d`; root PR-1 lock unchanged; merge/deploy not authorized |
-| **OST-PRODUCT** | Commercial-product consolidation, workflow/UX/information architecture | **QUEUED** | Activate after first OST-LIFECOURSE inventory/synthesis |
+| **OST-UI** | Osteoporosis product reconstruction: longitudinal product model, workflow/UX, information architecture and reuse | **BOOTSTRAPPED IN PARALLEL DRAFT PR #122 / R1 READY** | Activates the former `OST-PRODUCT` placeholder; local sidecar is `programme/OST-UI/CURRENT.md` on PR #122; no root-writer or clinical-semantic authority |
 | **OST-REVIEW** | Practice Review, decision audit, Signals and improvement loop | **QUEUED** | Existing Practice Review architecture preserved; no new mutation authority |
 | **OST-LEARNING** | Clinical Learning Hub / challenges / longitudinal clinician learning | **EXISTING PARALLEL TRACK** | Existing learning contracts and release state remain separately authoritative |
 | **OST-SAFETY** | Privacy, provenance, CDS/regulatory and data-governance guardrails | **CROSS-CUTTING / NOT YET A STANDALONE WRITER** | Must be consulted when relevant; does not own product truth |
@@ -43,20 +43,20 @@ programme synthesis — COMPLETE
 OST-LIFECOURSE-P1 current-owner reconciliation — COMPLETE
         ↓
 independent P1 review — READY
-        ↓
-activate later bounded product/clinical reviews only after P1 disposition
-        ├── longitudinal/lifecourse architecture
-        ├── clinical/evidence/decision support
-        └── commercial workflow/UX
-        ↓
-Product Owner decisions
+        ├── OST-LIFECOURSE successor work remains gated on P1 disposition
+        ├── OST-CLINICAL S1 proceeds on its separately authorized correction/review lifecycle
+        └── OST-UI R1 current-product audit may proceed in parallel under PR #122
+                ↓
+           OST-UI R2/R3 must fresh-resolve authoritative clinical/lifecourse semantics
+                ↓
+           R4 → one synthesis → Product Owner decisions
         ↓
 target architecture
         ↓
 bounded implementation slices
 ```
 
-In parallel, PHYSIO may proceed under a separate coordinator and return shared-Core findings to programme level.
+In parallel, PHYSIO may proceed under a separate coordinator and return shared-Core findings to programme level. `OST-UI` is not an additional owner beside `OST-PRODUCT`; it is the activated name/scope of that previously queued placeholder.
 
 ## Explicit current non-goals
 
