@@ -1,7 +1,7 @@
 # OST-CLINICAL CURRENT — S1 Fracture / Fragility Semantics
 
 > **TASK:** `S1-FRACTURE-FRAGILITY-SEMANTICS-CORRECTION`
-> **STATUS:** IMPLEMENTATION TESTED / DRAFT PR #123 OPEN / FINAL CI VERIFICATION
+> **STATUS:** IMPLEMENTATION TESTED / DRAFT PR #123 OPEN / INDEPENDENT REVIEW HANDOFF PREPARED
 > **Date:** 2026-09-27 Asia/Nicosia.
 > **Fresh base main:** `2ae9f01ded14bd2106ee09f47acb3fea4d72bc4b`.
 > **Implementation branch:** `fix/ost-clinical-s1-fracture-fragility-semantics-2026-09-27`.
@@ -62,7 +62,20 @@ Exact-head deterministic execution at `bca37aa824e524ac8c2f7783cdf763f19cdcc656`
 - branch merge base = current implementation base, behind = 0 at verification;
 - `progressive-guidance-core.js` unchanged.
 
-The existing G3 combined workflow was minimally extended so `app-core.js` and `test_s1_fracture_fragility_app_core.js` are path-triggered, syntax-checked and executed. Full PR-triggered CI remains the next gate.
+The existing G3 combined workflow was minimally extended so `app-core.js` and `test_s1_fracture_fragility_app_core.js` are path-triggered, syntax-checked and executed.
+
+## PR-triggered CI evidence
+
+Exact implementation/checkpoint head `442e1e9636ae1e125bda04a5d5123fa124254d17` on draft PR #123:
+
+- G3 guidance salience longitudinal summary — run `36329072458`: **SUCCESS**;
+  - step 10 `Run S1 fracture / fragility writer and load-render regressions`: **SUCCESS**;
+  - G3 wiring/ownership, G2 contract/core/live/wiring, G1 core/wiring/UI/WHY-NOW, Finish browser and server finalization regressions: **SUCCESS** in the same job;
+- G2 evidence guidance runtime — run `36329072454`: **SUCCESS**;
+- G1 progressive guidance foundation — run `36329072465`: **SUCCESS**;
+- Canonical impact guard — run `36329072455`: **SUCCESS**.
+
+This CURRENT update is documentation-only over that green head; no runtime/test/workflow file changes are introduced by this checkpoint.
 
 ## Draft PR
 
@@ -75,7 +88,7 @@ The existing G3 combined workflow was minimally extended so `app-core.js` and `t
 
 ## Exact next action
 
-Reverify the exact branch head containing this PR-identity checkpoint and require relevant PR-triggered CI to pass. If green, hand the exact head to a fresh independent post-code S1 reviewer and STOP.
+Fresh-verify the resulting docs-only branch head and its canonical-impact gate. Because the only delta after the green implementation head is this workstream CURRENT checkpoint, preserve the already-green runtime CI evidence above. If the final canonical/head checks remain clean, hand the exact head to a fresh independent post-code S1 reviewer and STOP.
 
 ## Explicitly forbidden
 
