@@ -129,19 +129,19 @@ PR #118: MERGED
 DEPLOYED: YES / LIVE
 ROOT -> COCKPIT HOME: VERIFIED
 MODULE-01 SIDEBAR CLEANUP: VERIFIED
-CAL.COM REASON BRIDGE: NOT YET IMPLEMENTED
+CAL.COM REASON BRIDGE: CONSUMER MERGED / PRODUCER PENDING
 ```
 
 ## Exact next action
 
-HOLD this completed Home release. The next separate integration slice is Cal.com visit-reason normalization into the Clinical Calendar; do not reopen Cockpit Home unless post-use evidence shows a presentation/navigation defect.
+HOLD this completed Home release. The Clinical Calendar consumer side of the separate Cal.com visit-reason integration is now merged; the Reception producer remains separately gated. Do not reopen Cockpit Home unless post-use evidence shows a presentation/navigation defect.
 
 
 ---
 
 # Clinical Calendar reason bridge — bounded follow-up slice
 
-> **STATUS:** CONSUMER SNAPSHOT IMPLEMENTED / FOCUSED CI PASS / DRAFT PR #119 OPEN.
+> **STATUS:** CONSUMER SNAPSHOT MERGED / CROSS-REPO COMPATIBILITY PASS / PRODUCER PR #152 PENDING.
 > **Workstream:** Cal.com visit-reason normalization into the Clinical Calendar.
 > **Branch:** `feat/calendar-reason-snapshot-v1-2026-09-27`.
 > **Base main:** `a0cf912b0fcb5caf54f4a48f8f8a698908fbb0a4`.
@@ -162,34 +162,38 @@ HOLD this completed Home release. The next separate integration slice is Cal.com
 
 ## Current implementation order
 
-1. **DONE IN BRANCH:** bounded server-to-server snapshot ingest contract, shared import path, exact source/window validation, stale-row reconciliation, contract YAML, and focused deterministic tests.
-2. **DONE:** focused consumer CI passed on implementation head `5d6fb963f33491c43fc856fb4473a42fce76e1de`.
-3. **NOW:** hold PR #119 as the proven consumer boundary while preparing the separately-owned Reception producer contract; do not merge #119 yet.
-4. Then: add the Reception-side producer against this proven consumer contract, reusing existing Cal.com read/normalization work rather than adding another provider reader.
-3. Then: cross-repo review/evidence.
-4. Merge/deploy/smoke remain separately gated and are **not** authorized by this checkpoint.
+1. **DONE / MERGED:** bounded server-to-server snapshot ingest contract, stale-row reconciliation, normalized reason transport, and source/window validation.
+2. **DONE / VERIFIED:** consumer exact head `bbd5c7bca0fd109797fac5a03c15a51f0f53af21` passed workflow `36308943111` with 12 tests plus canonical-impact guard `36308943000`.
+3. **DONE:** cross-repository compatibility review against producer PR #152; the DST and snapshot-cardinality blockers were corrected in the consumer and closed PASS.
+4. **DONE / MERGED:** PR #119 merged to `main` as `08251120a1743a1ac629e38626d04747a8fda1e9`.
+5. **NOW:** preserve the merged consumer contract and proceed only with the separately gated producer #152 release/merge step.
+6. Deployment, Cal.com field-key configuration and runtime smoke remain later, separately authorized actions.
 
 ## Recovery checkpoint
 
 ```text
 RECOVERY CHECKPOINT ID: COCKPIT-CALENDAR-REASON-BRIDGE-20260927-A
-STATUS: IN_PROGRESS
+STATUS: CONSUMER MERGED / PRODUCER RELEASE PENDING
 IMPLEMENTATION COMMITS:
 - 20e5687fc4283318966fca7e680b3e62eaede43f — snapshot reconciliation endpoint + shared import path
 - 83da6339c8e4c4841e910a8e6135a91bf00380e5 — canonical source / exact window validation
 - 426a4037687d83179d8df5639957f621a579cfa2 — focused snapshot tests
 - 3bfba4c9d13b0a4a955ed3d470e80115c75c7d84 — current snapshot/reason integration contract
 - c07daaf75359b071ec2f5b51d5864127965d122a — path-scoped Clinical Calendar CI gate
+- c28ba8c5901e43801ab5998781b45521dd3495e5 — DST/cardinality acceptance correction
+- cb0752d770d2afc2b6828c6fa4e7c48f25c12754 — deterministic compatibility boundary tests
+- bbd5c7bca0fd109797fac5a03c15a51f0f53af21 — schema contract alignment / final reviewed consumer head
 VERIFICATION:
-- Clinical Calendar snapshot workflow run 36294743431 / job 108551384222: PASS
+- Clinical Calendar snapshot workflow run 36308943111 / job 108590995955: PASS
 - Python syntax: PASS
-- deterministic Clinical Calendar tests: 10 passed in 0.80s
+- deterministic Clinical Calendar tests: 12 passed in 1.29s
 - diff hygiene: PASS
-- Canonical impact guard run 36294743389: PASS
-DRAFT PR: #119 — Clinical Calendar: add source snapshot reconciliation
+- Canonical impact guard run 36308943000: PASS
+PR #119: MERGED — Clinical Calendar: add source snapshot reconciliation
 PR URL: https://github.com/athpapachr-cmd/osteoporosis/pull/119
-EVIDENCE HEAD: 5d6fb963f33491c43fc856fb4473a42fce76e1de
-LAST SAFE RESUME POINT: consumer snapshot boundary is implemented and executable-evidence PASS; PR #119 remains draft/unmerged; no Reception backend files changed
-EXACT NEXT ACTION: preserve #119 as consumer boundary and design/canonicalize the separate Reception producer before any backend mutation
-FORBIDDEN ON RESUME: PR-1 mutation, Reception reason/availability/booking behavior change, merge, deploy, provider/business mutation
+EVIDENCE HEAD: bbd5c7bca0fd109797fac5a03c15a51f0f53af21
+MERGE COMMIT: 08251120a1743a1ac629e38626d04747a8fda1e9
+LAST SAFE RESUME POINT: consumer snapshot contract is merged on main at 08251120a1743a1ac629e38626d04747a8fda1e9; compatibility with producer #152 exact head 96a53bde6d7f2b57738cdc35b3145c567c975f29 is PASS; no deploy/config/provider/business mutation
+EXACT NEXT ACTION: fresh-verify producer PR #152 and execute only its bounded release/merge step if its exact head/checks remain unchanged
+FORBIDDEN ON RESUME: PR-1 mutation, Reception reason/availability/booking behavior change, deploy, provider configuration, phone/SIP, booking/business mutation
 ```
