@@ -1,0 +1,67 @@
+# Clinical Excellence programme — workstream registry
+
+> **ROLE:** navigation and coordination only.
+> **NOT AN ACTIVE CANONICAL AUTHORITY:** the repository's six canonical authorities remain unchanged.
+> **Root operational owner:** `CURRENT_OPERATIONAL.md`.
+
+This registry exists to let multiple bounded workstreams proceed in parallel without turning the repository into one undifferentiated project.
+
+## Workstreams
+
+| Workstream | Purpose | Current state | Authority boundary |
+|---|---|---|---|
+| **OST-CAPTURE** | Heidi/transcript → semantic clinical candidates | **ACTIVE under root PR-1 lifecycle** | Root `CURRENT_OPERATIONAL.md` / `SLICE_PLAN_CURRENT.md`; not mutated by this programme bootstrap |
+| **OST-LIFECOURSE** | Shared longitudinal patient truth, care trajectory, events/state/goals/decisions/obligations | **ACTIVATED — Phase 0 read-only inventory** | `programme/OST-LIFECOURSE/CURRENT.md` |
+| **OST-CLINICAL** | Osteoporosis evidence, pathways, guidance rules and treatment logic | **EXISTING CAPABILITY / NO NEW WRITER CLAIMED HERE** | Existing canonical/runtime owners remain authoritative |
+| **OST-PRODUCT** | Commercial-product consolidation, workflow/UX/information architecture | **QUEUED** | Activate after first OST-LIFECOURSE inventory/synthesis |
+| **OST-REVIEW** | Practice Review, decision audit, Signals and improvement loop | **QUEUED** | Existing Practice Review architecture preserved; no new mutation authority |
+| **OST-LEARNING** | Clinical Learning Hub / challenges / longitudinal clinician learning | **EXISTING PARALLEL TRACK** | Existing learning contracts and release state remain separately authoritative |
+| **OST-SAFETY** | Privacy, provenance, CDS/regulatory and data-governance guardrails | **CROSS-CUTTING / NOT YET A STANDALONE WRITER** | Must be consulted when relevant; does not own product truth |
+| **OST-LIVE** | Future live in-consultation Clinical Copilot | **PARKED / FUTURE** | Architecture constraint only; no runtime implementation |
+| **PHYSIO** | Physiotherapy product evolution using Knee OA as reference implementation | **READY FOR SEPARATE COORDINATOR** | May run in parallel; must not mutate Osteoporosis workstreams unless shared-Core change is explicitly coordinated |
+| **COCKPIT HOME** | Global navigation/home and shared-surface presentation | **RELEASED / separate sidecar state** | `cockpit/CURRENT.md` |
+
+## Coordination rules
+
+1. **One patient truth, no duplicated owner.**
+2. **Reuse before new path.** Before proposing a new mechanism, inspect whether current runtime/Core already owns the responsibility.
+3. **Coordinator != implementation author != independent reviewer.**
+4. A workstream may inspect another workstream's outputs, but may not silently mutate its owned scope.
+5. Cross-cutting changes that alter shared patient/Core semantics return to programme-level synthesis before implementation.
+6. Workstream CURRENT files are sidecars for local continuity; they do not replace the root writer lock.
+7. Product Constitution principles are product intent, not permission to bypass current runtime/safety gates.
+
+## Programme sequencing — current
+
+```text
+Product Constitution v0.2
+        ↓
+OST-LIFECOURSE Phase 0 reuse/gap inventory
+        ↓
+programme synthesis
+        ↓
+activate bounded independent reviews
+        ├── longitudinal/lifecourse architecture
+        ├── clinical/evidence/decision support
+        └── commercial workflow/UX
+        ↓
+Product Owner decisions
+        ↓
+target architecture
+        ↓
+bounded implementation slices
+```
+
+In parallel, PHYSIO may proceed under a separate coordinator and return shared-Core findings to programme level.
+
+## Explicit current non-goals
+
+This registry does not:
+
+- change the root PR-1 writer lock;
+- authorize schema/runtime/UI mutation;
+- resolve the 12 parked Product Constitution questions;
+- activate Live Copilot;
+- activate a patient app;
+- create a new clinical recommendation engine;
+- merge physiotherapy and osteoporosis into one module.
