@@ -93,18 +93,27 @@ snapshot_reconciliation:
 reason_transport:
   normalized_field: comment
   clinician_output: reason
+  source_contract:
+    secretary_created_booking: Cal.com metadata.notes
+    missing_or_blank_metadata_notes: empty reason
+    booking_fields_responses_reason_fallback: forbidden
   rule: >-
     The Digital Secretary producer places only the normalized human visit reason
-    in the existing comment field. Raw Cal.com bookingFieldsResponses are not
-    persisted in the Clinical Excellence database.
-  field_discovery: >-
-    The configured Cal.com identifier/slug for the human visit-reason booking
-    field must be inspected from provider configuration/runtime evidence and
-    must not be guessed from its display label.
+    in the existing comment field. Current provider evidence shows no dedicated
+    visit-reason custom booking field on event types 341357 or 341358. The
+    Secretary booking schemas define notes as the short visit reason and the
+    Cal.com create path stores that value at metadata.notes. Raw provider
+    metadata and bookingFieldsResponses are not persisted in the Clinical
+    Excellence database.
+  provider_evidence_2026_09_27: >-
+    Structural inspection of existing Cal.com booking responses for the
+    Limassol and Evrychou event types found only standard/identity keys in
+    bookingFieldsResponses and observed metadata.notes on bookings from both
+    event types. Therefore no custom reason-field slug is required or guessed.
   out_of_scope:
     - changing Reception reason triage
     - changing duration allocation
-    - writing canonical visit_reason into Cal.com booking fields
+    - adding or writing a new Cal.com custom visit-reason booking field
     - AC-4B booking mutation/provider propagation
 
 data_minimization:
@@ -137,7 +146,7 @@ security:
 next_integration_slice:
   - add the Digital Secretary producer only after this snapshot consumer contract is fixed
   - reuse the existing Cal.com read/normalization path; do not add a second provider reader
-  - discover the configured visit-reason booking-field identifier without guessing
+  - use source-proven metadata.notes for Secretary-created booking reasons; do not guess generic bookingFieldsResponses fields
   - post only complete bounded snapshots and fail closed on partial provider retrieval
   - add optional patient linking by stable identifier/phone matching with clinician review
   - add CareTask engine separately after appointment feed is live
