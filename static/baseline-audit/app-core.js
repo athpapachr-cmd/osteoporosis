@@ -193,9 +193,9 @@
   }
 
   function collectFractureEventsFromDom() {
-    $(".fracture-event", el.fractureEvents).forEach(row => {
+    Array.from(el.fractureEvents.querySelectorAll(".fracture-event")).forEach(row => {
       const event = currentCase.fracture_history.events.find(e => e.id === row.dataset.eventId); if (!event) return;
-      $('[data-event-field]', row).forEach(field => event[field.dataset.eventField] = field.value);
+      Array.from(row.querySelectorAll('[data-event-field]')).forEach(field => event[field.dataset.eventField] = field.value);
     });
   }
 
