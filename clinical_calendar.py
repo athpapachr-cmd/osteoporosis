@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 import os
 import re
@@ -401,17 +401,19 @@ def build_clinical_calendar_router(engine: Engine) -> APIRouter:
         window_end = _naive_utc(snapshot.window_end)
         if window_end <= window_start:
             raise HTTPException(status_code=422, detail="window_end must be after window_start")
-        if (window_end - window_start).days > 31:
+        if (window_end - window_start) > timedelta(days=31):
             raise HTTPException(status_code=422, detail="snapshot window is limited to 31 days")
 
         source = snapshot.source.strip()
         if not source:
             raise HTTPException(status_code=422, detail="source is required")
+        if snapshot.source != source:
+            raise HTTPException(status_code=422, detail="snapshot source must be canonical")
 
         seen_ids: set[str] = set()
         for item in snapshot.appointments:
-            if item.source.strip() != source:
-                raise HTTPException(status_code=422, detail="all snapshot appointments must use snapshot.source")
+            if item.source != source:
+                raise HTTPException(status_code=422, detail="all snapshot appointments must exactly match snapshot.source")
             if item.source_appointment_id in seen_ids:
                 raise HTTPException(status_code=422, detail="duplicate source_appointment_id in snapshot")
             seen_ids.add(item.source_appointment_id)
