@@ -1,6 +1,6 @@
 # CURRENT.md — OST-UI / Osteoporosis Product Reconstruction
 
-> **STATUS:** CONTROL PLANE BOOTSTRAPPED / DRAFT PR #122 OPEN / R1 NOT STARTED.
+> **STATUS:** BOOTSTRAP RECONCILED / DRAFT PR #122 OPEN / R1 AUTHORIZED — NOT STARTED.
 > **Updated:** 2026-09-27 Asia/Nicosia.
 > **Workstream:** `OST-UI`.
 > **Bootstrap main:** `2ae9f01ded14bd2106ee09f47acb3fea4d72bc4b`.
@@ -227,7 +227,28 @@ Current PR-1 is an active root lifecycle and read-only architecture input for OS
 
 ---
 
-## 6. Next action
+## 6. Programme coordinator reconciliation
+
+The programme coordinator fresh-verified current `main`, draft PR #122 identity/diff and this local control plane.
+
+Disposition:
+
+```text
+OST-UI BOOTSTRAP: ACCEPTED
+DRAFT PR #122: OPEN / DOCS-ONLY / NOT MERGED
+ROOT PR-1 LOCK: UNCHANGED
+RUNTIME/SCHEMA/CLINICAL MUTATION: NONE
+R1: AUTHORIZED / NOT STARTED
+R2/R3/R4/SYNTHESIS: NOT AUTOMATICALLY AUTHORIZED
+```
+
+Duplicate-workstream prevention:
+
+`OST-UI` is the activated/specialized product-reconstruction workstream previously represented by the queued `OST-PRODUCT` placeholder in the draft programme registry. They are **not** two parallel owners. The draft registry on PR #121 is being reconciled accordingly.
+
+R1 may proceed before OST-LIFECOURSE P1 disposition because R1 is a current-product/runtime reality audit and must not decide unsettled clinical semantics. R2/R3 must fresh-resolve the authoritative LifeCourse/clinical owner state at execution time and fail closed on unresolved semantics.
+
+## 7. Next action
 
 Bootstrap durable checkpoint:
 
@@ -248,7 +269,7 @@ R2/R3/R4/synthesis do not start automatically.
 
 ---
 
-## 7. Explicit stop / hold
+## 8. Explicit stop / hold
 
 Do not:
 
