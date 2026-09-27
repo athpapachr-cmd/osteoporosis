@@ -1,6 +1,6 @@
 # CURRENT.md — OST-UI / Osteoporosis Product Reconstruction
 
-> **STATUS:** R1 COMPLETE / AWAITING PROGRAMME-COORDINATOR RECONCILIATION / R2 NOT STARTED.
+> **STATUS:** R1 RECONCILED / R2 AUTHORIZED — NOT STARTED.
 > **Updated:** 2026-09-27 Asia/Nicosia.
 > **Workstream:** OST-UI.
 > **Fresh runtime main audited:** **2ae9f01ded14bd2106ee09f47acb3fea4d72bc4b**.
@@ -169,8 +169,8 @@ No final R4 KEEP/REPLACE classification was made.
 
 | Review | Status | Output |
 |---|---|---|
-| R1 — Current Product vs Constitution | **COMPLETE / AWAITING COORDINATOR RECONCILIATION** | R1-CURRENT-PRODUCT-CONSTITUTION-AUDIT.md |
-| R2 — Longitudinal Clinical Trajectory | **NOT STARTED** | R2-LONGITUDINAL-CLINICAL-TRAJECTORY-REVIEW.md |
+| R1 — Current Product vs Constitution | **COMPLETE / COORDINATOR ACCEPTED** | R1-CURRENT-PRODUCT-CONSTITUTION-AUDIT.md |
+| R2 — Longitudinal Clinical Trajectory | **AUTHORIZED / NOT STARTED** | R2-LONGITUDINAL-CLINICAL-TRAJECTORY-REVIEW.md |
 | R3 — Point-of-Care Interaction | **NOT STARTED** | R3-POINT-OF-CARE-INTERACTION-REVIEW.md |
 | R4 — Shared Core / Module Architecture / Reuse | **NOT STARTED** | R4-SHARED-CORE-MODULE-ARCHITECTURE-REUSE.md |
 | Synthesis — Product Reconstruction Decision | **BLOCKED ON R1-R4** | OST-PRODUCT-RECONSTRUCTION-DECISION.md |
@@ -209,7 +209,57 @@ PR #121 remains unmerged supporting context. No OST-LIFECOURSE or OST-CLINICAL c
 
 ---
 
-## 7. R1 disposition and exact next action
+## 7. Programme coordinator reconciliation
+
+Fresh programme reconciliation verified:
+
+- runtime `main` remained `2ae9f01ded14bd2106ee09f47acb3fea4d72bc4b`;
+- governing PR #122 remained exactly `9363ad5dbb5f7c059f351421599bd6ede4db6438`;
+- R1 branch head was exactly `4d4991ee617e72c3a943601864ba3c3c1d8062a6`;
+- the R1 branch was exactly two commits ahead of the governing head;
+- the delta was limited to this `CURRENT.md` plus the R1 artifact;
+- no runtime, schema, root-canonical or clinical-semantic mutation occurred.
+
+Coordinator disposition:
+
+```text
+R1: ACCEPTED / COMPLETE
+REPLAN REQUIRED: NO
+R2: AUTHORIZED / NOT STARTED
+R3/R4/SYNTHESIS: NOT AUTOMATICALLY AUTHORIZED
+ROOT PR-1 WRITER: UNCHANGED
+```
+
+Accepted R1 diagnosis:
+
+- the current product contains a real longitudinal substrate and history-sensitive decision-support layer;
+- the clinician-facing Module-01 shell remains encounter/audit-first and therefore only partially expresses the longitudinal Product Constitution;
+- existing persistence, projection, guidance, provenance, summary and workspace mechanisms are preservation/reuse candidates rather than presumptive rewrite targets;
+- deeper questions about durable treatment epochs, obligations, goals, shared patient/Core ownership, overlapping longitudinal representations and historical evidence context remain questions for R2/R4, not R1-proven defects.
+
+Current dependency state at reconciliation:
+
+- OST-LIFECOURSE P1 semantic-ownership reconciliation is complete, but independent P1 review remains pending;
+- OST-CLINICAL S1 has a tested implementation candidate in draft PR #123; independent post-code review remains pending;
+- R2 may proceed because it is a bounded trajectory-capability review, but it must fresh-resolve these owners at execution time and must not promote pending/unmerged conclusions into authoritative clinical truth.
+
+## 8. R2 authority and exact next action
+
+R2 is now authorized as the only next substantive OST-UI action.
+
+It must:
+
+- consume R1 as established current-product evidence;
+- inspect the current longitudinal runtime/persistence mechanisms directly;
+- test representative longitudinal journeys across time;
+- distinguish EVENT / STATE / DERIVED STATE / DECISION / PLAN / FUTURE OBLIGATION / OUTCOME / UNCERTAINTY;
+- determine what is durable truth versus reconstructed/projection/transient state;
+- mark unresolved fracture/fragility or other clinical semantics as dependencies rather than resolving them inside OST-UI;
+- treat unmerged LIFECOURSE/S1 material as supporting/pending context only unless a fresh authoritative disposition exists when R2 starts.
+
+R2 must STOP after its artifact + local checkpoint and return to the programme coordinator.
+
+## 9. Explicit stop / hold
 
 Disposition:
 
@@ -225,7 +275,7 @@ R1 itself must now STOP.
 
 ---
 
-## 8. Explicit stop / hold
+## 9. Explicit stop / hold
 
 Do not:
 
