@@ -41,6 +41,9 @@ assert(css.includes(".progressive-guidance-new-badge"), "text badge styling miss
 assert(ui.includes("Δεν έχει τεκμηριωθεί"), "explicit not-documented state missing");
 assert(ui.includes("Μη διαθέσιμο — αποτυχία φόρτωσης protected laboratory history"), "lab unavailable state missing");
 assert(ui.includes("Υπάρχει longitudinal ασυμφωνία"), "treatment conflict presentation missing");
+assert(!ui.includes("Ιστορικό fragility fracture τεκμηριωμένο"), "generic/legacy fracture state must not be labelled confirmed fragility");
+assert(ui.includes("legacy fragility δήλωση χωρίς επιβεβαιωμένο low-trauma event"), "legacy unconfirmed fragility wording missing");
+assert(ui.includes("επιβεβαιωμένο low-trauma/fragility event"), "confirmed event-level fragility wording missing");
 
 // No new treatment selection/write path in G3 UI.
 assert(!ui.includes("selected_agent ="), "G3 UI must not write treatment selection");
