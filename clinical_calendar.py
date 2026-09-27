@@ -71,6 +71,13 @@ class AppointmentImport(BaseModel):
     status: str = Field(default="scheduled", max_length=40)
 
 
+class AppointmentSnapshotImport(BaseModel):
+    source: str = Field(min_length=1, max_length=40)
+    window_start: datetime
+    window_end: datetime
+    appointments: List[AppointmentImport]
+
+
 class AppointmentRecord(BaseModel):
     appointment_id: str
     source: str
@@ -98,6 +105,10 @@ class AppointmentImportResult(BaseModel):
     skipped_unrelated: int
     removed_unrelated: int
     skipped_invalid: int
+
+
+class AppointmentSnapshotImportResult(AppointmentImportResult):
+    removed_missing: int
 
 
 def utcnow() -> datetime:
@@ -279,74 +290,86 @@ def build_clinical_calendar_router(engine: Engine) -> APIRouter:
             rows = session.execute(stmt).scalars().all()
             return [_record(row) for row in rows]
 
+    def _apply_import_item(
+        session: Session,
+        item: AppointmentImport,
+        *,
+        now: datetime,
+    ) -> tuple[int, int, int, int, int]:
+        """Apply one normalized source appointment.
+
+        Returns: inserted, updated, skipped_unrelated, removed_unrelated,
+        skipped_invalid.
+        """
+        start_at = _naive_utc(item.start_at)
+        end_at = _naive_utc(item.end_at)
+        if end_at <= start_at:
+            return 0, 0, 0, 0, 1
+
+        duration_minutes = max(int((end_at - start_at).total_seconds() // 60), 0)
+        if item.category in RELEVANT_CATEGORIES:
+            category = item.category
+        else:
+            category = classify_appointment(
+                item.label,
+                item.comment,
+                duration_minutes,
+            )
+
+        record_id = f"{item.source}:{item.source_appointment_id}"
+        row = session.get(ClinicalAppointmentORM, record_id)
+
+        if category not in RELEVANT_CATEGORIES:
+            removed_unrelated = 0
+            if row is not None:
+                # If a previously relevant source appointment is later
+                # reclassified as unrelated, remove the stale clinical copy.
+                session.delete(row)
+                removed_unrelated = 1
+            return 0, 0, 1, removed_unrelated, 0
+
+        inserted = 0
+        updated = 0
+        if row is None:
+            row = ClinicalAppointmentORM(
+                id=record_id,
+                source=item.source,
+                source_appointment_id=item.source_appointment_id,
+            )
+            session.add(row)
+            inserted = 1
+        else:
+            updated = 1
+
+        row.start_at = start_at
+        row.end_at = end_at
+        row.duration_minutes = duration_minutes
+        row.clinic = item.clinic.strip()
+        row.category = category
+        row.patient_display_name = item.patient_display_name.strip()
+        row.phone_e164 = item.phone_e164.strip()
+        row.linked_patient_id = item.linked_patient_id.strip() if item.linked_patient_id else None
+        row.label = item.label.strip()
+        row.comment = item.comment.strip()
+        row.status = item.status.strip() or "scheduled"
+        row.updated_at = now
+        return inserted, updated, 0, 0, 0
+
     @router.post("/appointments/import", response_model=AppointmentImportResult, dependencies=ingest_protected)
     def import_appointments(rows: List[AppointmentImport]) -> AppointmentImportResult:
         if len(rows) > 500:
             raise HTTPException(status_code=422, detail="maximum 500 appointments per import")
 
-        inserted = 0
-        updated = 0
-        skipped_unrelated = 0
-        removed_unrelated = 0
-        skipped_invalid = 0
+        counters = [0, 0, 0, 0, 0]
         now = utcnow()
 
         with Session(engine) as session:
             for item in rows:
-                start_at = _naive_utc(item.start_at)
-                end_at = _naive_utc(item.end_at)
-                if end_at <= start_at:
-                    skipped_invalid += 1
-                    continue
-
-                duration_minutes = max(int((end_at - start_at).total_seconds() // 60), 0)
-                if item.category in RELEVANT_CATEGORIES:
-                    category = item.category
-                else:
-                    category = classify_appointment(
-                        item.label,
-                        item.comment,
-                        duration_minutes,
-                    )
-
-                record_id = f"{item.source}:{item.source_appointment_id}"
-                row = session.get(ClinicalAppointmentORM, record_id)
-
-                if category not in RELEVANT_CATEGORIES:
-                    skipped_unrelated += 1
-                    # If a previously relevant source appointment is later
-                    # reclassified as unrelated, remove the stale clinical copy.
-                    if row is not None:
-                        session.delete(row)
-                        removed_unrelated += 1
-                    continue
-
-                if row is None:
-                    row = ClinicalAppointmentORM(
-                        id=record_id,
-                        source=item.source,
-                        source_appointment_id=item.source_appointment_id,
-                    )
-                    session.add(row)
-                    inserted += 1
-                else:
-                    updated += 1
-
-                row.start_at = start_at
-                row.end_at = end_at
-                row.duration_minutes = duration_minutes
-                row.clinic = item.clinic.strip()
-                row.category = category
-                row.patient_display_name = item.patient_display_name.strip()
-                row.phone_e164 = item.phone_e164.strip()
-                row.linked_patient_id = item.linked_patient_id.strip() if item.linked_patient_id else None
-                row.label = item.label.strip()
-                row.comment = item.comment.strip()
-                row.status = item.status.strip() or "scheduled"
-                row.updated_at = now
-
+                delta = _apply_import_item(session, item, now=now)
+                counters = [left + right for left, right in zip(counters, delta)]
             session.commit()
 
+        inserted, updated, skipped_unrelated, removed_unrelated, skipped_invalid = counters
         return AppointmentImportResult(
             received=len(rows),
             imported=inserted + updated,
@@ -355,6 +378,83 @@ def build_clinical_calendar_router(engine: Engine) -> APIRouter:
             skipped_unrelated=skipped_unrelated,
             removed_unrelated=removed_unrelated,
             skipped_invalid=skipped_invalid,
+        )
+
+    @router.post(
+        "/appointments/snapshot",
+        response_model=AppointmentSnapshotImportResult,
+        dependencies=ingest_protected,
+    )
+    def import_appointment_snapshot(snapshot: AppointmentSnapshotImport) -> AppointmentSnapshotImportResult:
+        """Reconcile a complete source snapshot for one bounded time window.
+
+        The producer MUST send the complete source view for the declared window,
+        including appointments that the clinical classifier may later ignore.
+        Stored rows from the same source/window that are absent from the snapshot
+        are removed, which prevents cancelled or rescheduled appointments from
+        remaining as phantom clinical-calendar entries.
+        """
+        if len(snapshot.appointments) > 500:
+            raise HTTPException(status_code=422, detail="maximum 500 appointments per snapshot")
+
+        window_start = _naive_utc(snapshot.window_start)
+        window_end = _naive_utc(snapshot.window_end)
+        if window_end <= window_start:
+            raise HTTPException(status_code=422, detail="window_end must be after window_start")
+        if (window_end - window_start).days > 31:
+            raise HTTPException(status_code=422, detail="snapshot window is limited to 31 days")
+
+        source = snapshot.source.strip()
+        if not source:
+            raise HTTPException(status_code=422, detail="source is required")
+
+        seen_ids: set[str] = set()
+        for item in snapshot.appointments:
+            if item.source.strip() != source:
+                raise HTTPException(status_code=422, detail="all snapshot appointments must use snapshot.source")
+            if item.source_appointment_id in seen_ids:
+                raise HTTPException(status_code=422, detail="duplicate source_appointment_id in snapshot")
+            seen_ids.add(item.source_appointment_id)
+
+            start_at = _naive_utc(item.start_at)
+            if start_at < window_start or start_at >= window_end:
+                raise HTTPException(
+                    status_code=422,
+                    detail="all snapshot appointments must start inside the declared window",
+                )
+
+        counters = [0, 0, 0, 0, 0]
+        removed_missing = 0
+        now = utcnow()
+
+        with Session(engine) as session:
+            for item in snapshot.appointments:
+                delta = _apply_import_item(session, item, now=now)
+                counters = [left + right for left, right in zip(counters, delta)]
+
+            stale_stmt = (
+                select(ClinicalAppointmentORM)
+                .where(ClinicalAppointmentORM.source == source)
+                .where(ClinicalAppointmentORM.start_at >= window_start)
+                .where(ClinicalAppointmentORM.start_at < window_end)
+            )
+            for row in session.execute(stale_stmt).scalars().all():
+                if row.source_appointment_id not in seen_ids:
+                    session.delete(row)
+                    removed_missing += 1
+
+            session.commit()
+
+        inserted, updated, skipped_unrelated, removed_unrelated, skipped_invalid = counters
+        return AppointmentSnapshotImportResult(
+            received=len(snapshot.appointments),
+            imported=inserted + updated,
+            inserted=inserted,
+            updated=updated,
+            skipped_unrelated=skipped_unrelated,
+            removed_unrelated=removed_unrelated,
+            skipped_invalid=skipped_invalid,
+            removed_missing=removed_missing,
         )
 
     return router
