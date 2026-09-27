@@ -141,7 +141,7 @@ HOLD this completed Home release. The next separate integration slice is Cal.com
 
 # Clinical Calendar reason bridge — bounded follow-up slice
 
-> **STATUS:** IMPLEMENTATION STARTED / CONSUMER SNAPSHOT CONTRACT FIRST.
+> **STATUS:** CONSUMER SNAPSHOT IMPLEMENTED / FOCUSED TESTS CODED / EXECUTION PENDING.
 > **Workstream:** Cal.com visit-reason normalization into the Clinical Calendar.
 > **Branch:** `feat/calendar-reason-snapshot-v1-2026-09-27`.
 > **Base main:** `a0cf912b0fcb5caf54f4a48f8f8a698908fbb0a4`.
@@ -162,8 +162,9 @@ HOLD this completed Home release. The next separate integration slice is Cal.com
 
 ## Current implementation order
 
-1. **NOW:** add a bounded server-to-server snapshot ingest contract to the Clinical Calendar and deterministic tests for upsert + stale-row reconciliation.
-2. Then: add the Reception-side producer against that frozen consumer contract, reusing existing Cal.com read/normalization work rather than adding another provider reader.
+1. **DONE IN BRANCH:** bounded server-to-server snapshot ingest contract, shared import path, exact source/window validation, stale-row reconciliation, contract YAML, and focused deterministic tests.
+2. **NOW:** execute focused consumer evidence and reconcile the exact result before opening the producer work.
+3. Then: add the Reception-side producer against the proven consumer contract, reusing existing Cal.com read/normalization work rather than adding another provider reader.
 3. Then: cross-repo review/evidence.
 4. Merge/deploy/smoke remain separately gated and are **not** authorized by this checkpoint.
 
@@ -172,7 +173,13 @@ HOLD this completed Home release. The next separate integration slice is Cal.com
 ```text
 RECOVERY CHECKPOINT ID: COCKPIT-CALENDAR-REASON-BRIDGE-20260927-A
 STATUS: IN_PROGRESS
-LAST SAFE RESUME POINT: branch created from a0cf912b0fcb5caf54f4a48f8f8a698908fbb0a4; no runtime files changed yet
-EXACT NEXT ACTION: implement Clinical Calendar snapshot ingest + tests
+IMPLEMENTATION COMMITS:
+- 20e5687fc4283318966fca7e680b3e62eaede43f — snapshot reconciliation endpoint + shared import path
+- 83da6339c8e4c4841e910a8e6135a91bf00380e5 — canonical source / exact window validation
+- 426a4037687d83179d8df5639957f621a579cfa2 — focused snapshot tests
+- 3bfba4c9d13b0a4a955ed3d470e80115c75c7d84 — current snapshot/reason integration contract
+VERIFICATION: NOT YET EXECUTED
+LAST SAFE RESUME POINT: consumer implementation + tests + contract are durable on branch; no Reception backend files changed
+EXACT NEXT ACTION: execute focused Clinical Calendar evidence, checkpoint result, then prepare review/PR
 FORBIDDEN ON RESUME: PR-1 mutation, Reception reason/availability/booking behavior change, merge, deploy, provider/business mutation
 ```
