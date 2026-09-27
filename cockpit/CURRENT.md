@@ -135,3 +135,44 @@ CAL.COM REASON BRIDGE: NOT YET IMPLEMENTED
 ## Exact next action
 
 HOLD this completed Home release. The next separate integration slice is Cal.com visit-reason normalization into the Clinical Calendar; do not reopen Cockpit Home unless post-use evidence shows a presentation/navigation defect.
+
+
+---
+
+# Clinical Calendar reason bridge — bounded follow-up slice
+
+> **STATUS:** IMPLEMENTATION STARTED / CONSUMER SNAPSHOT CONTRACT FIRST.
+> **Workstream:** Cal.com visit-reason normalization into the Clinical Calendar.
+> **Branch:** `feat/calendar-reason-snapshot-v1-2026-09-27`.
+> **Base main:** `a0cf912b0fcb5caf54f4a48f8f8a698908fbb0a4`.
+> **Product-owner resume:** 2026-09-27 — continue the exact follow-up slice named above after recovery from the interrupted PR1 Βελτιώσεις Eval conversation.
+> **Root writer lock:** unchanged; PR-1 Heidi-first transcript capture remains the repo-wide CURRENT_OPERATIONAL owner.
+> **Overlap:** none; this branch is limited to the Clinical Calendar integration contract and its tests/docs. It does not mutate PR-1 transcript runtime.
+
+## Accepted boundary
+
+- Cal.com remains the appointment-source truth for the feed.
+- Reception/Digital Secretary remains the external integration owner; no Cal API credential is added to this repository.
+- Clinical Calendar remains the normalized clinical consumer.
+- This slice is read-only with respect to bookings: it must not create, cancel, reschedule or authorize appointments.
+- Reception reason-triage / availability / booking semantics are explicitly out of scope.
+- The existing Clinical Calendar classifier is reused; no second semantic reason owner is introduced.
+- Snapshot reconciliation must remove stale source rows inside the declared source/time window so cancellations/reschedules do not remain as phantom appointments.
+- Raw provider payloads are not persisted; only the existing normalized appointment fields are stored.
+
+## Current implementation order
+
+1. **NOW:** add a bounded server-to-server snapshot ingest contract to the Clinical Calendar and deterministic tests for upsert + stale-row reconciliation.
+2. Then: add the Reception-side producer against that frozen consumer contract, reusing existing Cal.com read/normalization work rather than adding another provider reader.
+3. Then: cross-repo review/evidence.
+4. Merge/deploy/smoke remain separately gated and are **not** authorized by this checkpoint.
+
+## Recovery checkpoint
+
+```text
+RECOVERY CHECKPOINT ID: COCKPIT-CALENDAR-REASON-BRIDGE-20260927-A
+STATUS: IN_PROGRESS
+LAST SAFE RESUME POINT: branch created from a0cf912b0fcb5caf54f4a48f8f8a698908fbb0a4; no runtime files changed yet
+EXACT NEXT ACTION: implement Clinical Calendar snapshot ingest + tests
+FORBIDDEN ON RESUME: PR-1 mutation, Reception reason/availability/booking behavior change, merge, deploy, provider/business mutation
+```
