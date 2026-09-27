@@ -1,10 +1,11 @@
 # CURRENT.md — OST-UI / Osteoporosis Product Reconstruction
 
-> **STATUS:** CONTROL PLANE BOOTSTRAPPED / DRAFT PR PENDING / R1 NOT STARTED.
+> **STATUS:** CONTROL PLANE BOOTSTRAPPED / DRAFT PR #122 OPEN / R1 NOT STARTED.
 > **Updated:** 2026-09-27 Asia/Nicosia.
 > **Workstream:** `OST-UI`.
 > **Bootstrap main:** `2ae9f01ded14bd2106ee09f47acb3fea4d72bc4b`.
 > **Branch:** `docs/ost-ui-product-reconstruction-bootstrap-2026-09-27`.
+> **Draft PR:** `#122` — OPEN / NOT MERGED.
 > **Root operational writer:** unchanged — PR-1 Heidi-first transcript capture lifecycle.
 > **OST-UI runtime writer:** none.
 > **Release affecting:** no.
@@ -228,16 +229,16 @@ Current PR-1 is an active root lifecycle and read-only architecture input for OS
 
 ## 6. Next action
 
-Immediate next durable transition:
+Bootstrap durable checkpoint:
 
 ```text
-open one docs-only DRAFT PR
-→ checkpoint PR identity in this CURRENT.md
-→ verify OST-UI diff is limited to programme/OST-UI/*
+draft PR #122 OPEN
+→ PR identity checkpointed here
+→ verify final diff remains limited to programme/OST-UI/*
 → STOP bootstrap
 ```
 
-After bootstrap stop, the next substantive phase action is:
+Next substantive phase action, only after a fresh coordinator resume:
 
 ```text
 R1 — CURRENT PRODUCT VS PRODUCT CONSTITUTION AUDIT
