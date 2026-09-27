@@ -69,7 +69,10 @@ snapshot_reconciliation:
       - source
       - window_start
       - window_end
-    maximum_days: 31
+    nominal_local_days: 31
+    maximum_elapsed: 31d1h
+    timezone_compatibility: Asia/Nicosia autumn DST fallback may add one elapsed UTC hour
+  maximum_appointments: 2000
   producer_contract:
     - send the complete source view for the declared window, not a partial page
     - include unrelated source appointments in the snapshot so absence has one meaning: no longer present in source truth
