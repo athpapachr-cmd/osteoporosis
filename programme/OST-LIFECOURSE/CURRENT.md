@@ -1,0 +1,75 @@
+# OST-LIFECOURSE CURRENT
+
+> **STATUS:** ACTIVATED / PHASE 0 READ-ONLY PRODUCT-ARCHITECTURE INVENTORY.
+> **Workstream:** OST-LIFECOURSE — longitudinal clinical care trajectory.
+> **Branch:** `docs/ost-programme-lifecourse-bootstrap-2026-09-27`.
+> **Base main:** `2ae9f01ded14bd2106ee09f47acb3fea4d72bc4b`.
+> **Root writer lock:** unchanged. `CURRENT_OPERATIONAL.md` remains owned by the active PR-1 Heidi-first transcript-capture lifecycle.
+> **Overlap:** none. This workstream is documentation/design only and must not mutate PR-1 runtime, active encounter schemas, database/persistence, production UI or existing clinical guidance rules.
+
+## Product-owner authority
+
+On 2026-09-27 the Product Owner approved the Product Constitution v0.2 direction and explicitly instructed the programme coordinator to proceed to the next organisational step.
+
+The approved direction includes:
+
+- one canonical factual patient reality across modules;
+- longitudinal care trajectory spanning past, present and intended future;
+- multiple provenance-preserving module interpretations of shared facts/events;
+- one actual timeline, with planned/possible future states kept non-authoritative until they occur;
+- treatment/intervention epochs, goals/target states, decisions, outcomes and advisory obligations;
+- obligations require disposition, not obedience;
+- general → patient-aware → decision-aware clinical tools using one clinical/evidence engine;
+- provider-agnostic capture and future live-copilot compatibility;
+- future patient communication through a provider-agnostic Care Communication Layer;
+- cohort intelligence for audit/learning/research without automatic conversion into clinical rules.
+
+## Phase 0 hard scope
+
+Execute **read-only inventory and conceptual reconciliation only**:
+
+1. map existing longitudinal/state concepts in current canonicals/runtime to the Product Constitution;
+2. identify reusable owners/mechanisms before proposing any new path;
+3. identify gaps, duplicate responsibilities and incompatible semantics;
+4. distinguish shared patient fact/event ownership from module-specific interpretation;
+5. produce a bounded inventory handback for programme-coordinator synthesis.
+
+## Explicitly out of scope
+
+- runtime/schema/database mutation;
+- timeline UI design or implementation;
+- cross-module event-bus implementation;
+- Quick Tool implementation;
+- Care Communication/Zadarma implementation;
+- patient app implementation;
+- PR-1/PR-2 mutation;
+- Practice Review implementation;
+- Live Copilot implementation;
+- resolving the 12 parked downstream design questions;
+- changing the six active canonical authorities.
+
+## Exact next action
+
+Fresh-bootstrap current `main`, then perform the OST-LIFECOURSE Phase-0 reuse-before-new-path inventory against:
+
+- existing encounter/patient persistence;
+- longitudinal guidance projection / EncounterContext;
+- treatment episodes and administrations;
+- VisitPlan / GuidanceRule / GuidedCardState;
+- follow-up tasks and current due-state mechanics;
+- Clinical Learning / Practice Review seams where relevant;
+- cross-module/global Cockpit ownership already present.
+
+Produce one read-only design inventory artifact and STOP for programme-coordinator reconciliation.
+
+## State semantics
+
+```text
+PRODUCT CONSTITUTION: CONCEPTUALLY APPROVED
+OST-LIFECOURSE: ACTIVATED
+PHASE 0 INVENTORY: NOT YET EXECUTED
+RUNTIME CHANGE: NO
+SCHEMA CHANGE: NO
+ROOT WRITER TRANSFER: NO
+12 PARKED QUESTIONS: STILL PARKED
+```
