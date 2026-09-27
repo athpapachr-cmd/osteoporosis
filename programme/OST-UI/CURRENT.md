@@ -1,11 +1,13 @@
 # CURRENT.md — OST-UI / Osteoporosis Product Reconstruction
 
-> **STATUS:** BOOTSTRAP RECONCILED / DRAFT PR #122 OPEN / R1 AUTHORIZED — NOT STARTED.
+> **STATUS:** R1 COMPLETE / AWAITING PROGRAMME-COORDINATOR RECONCILIATION / R2 NOT STARTED.
 > **Updated:** 2026-09-27 Asia/Nicosia.
-> **Workstream:** `OST-UI`.
-> **Bootstrap main:** `2ae9f01ded14bd2106ee09f47acb3fea4d72bc4b`.
-> **Branch:** `docs/ost-ui-product-reconstruction-bootstrap-2026-09-27`.
-> **Draft PR:** `#122` — OPEN / NOT MERGED.
+> **Workstream:** OST-UI.
+> **Fresh runtime main audited:** **2ae9f01ded14bd2106ee09f47acb3fea4d72bc4b**.
+> **Governing bootstrap PR:** **#122** — OPEN / DRAFT / NOT MERGED.
+> **Governing contract head:** **9363ad5dbb5f7c059f351421599bd6ede4db6438**.
+> **R1 review branch:** **docs/ost-ui-r1-current-product-audit-2026-09-27**.
+> **R1 artifact commit:** **7b23f224cef0c9b721d89c84e431a4582efab2af**.
 > **Root operational writer:** unchanged — PR-1 Heidi-first transcript capture lifecycle.
 > **OST-UI runtime writer:** none.
 > **Release affecting:** no.
@@ -14,258 +16,212 @@
 
 ## 1. Canonical Bootstrap Manifest
 
-Fresh remote `athpapachr-cmd/osteoporosis/main` was verified at:
+Fresh remote athpapachr-cmd/osteoporosis/main was verified at:
 
-```text
-2ae9f01ded14bd2106ee09f47acb3fea4d72bc4b
-```
+**2ae9f01ded14bd2106ee09f47acb3fea4d72bc4b**
 
-The six active root canonicals were read in the required order:
+The six active root canonicals were consumed in the required AGENTS.md order:
 
-1. `AGENTS.md`
-2. `TODO.md`
-3. `CLINICAL_EXCELLENCE_PLAN.md`
-4. `SLICE_PLAN_CURRENT.md`
-5. `CURRENT_OPERATIONAL.md`
-6. `osteoporosis-change-log.md`
+1. AGENTS.md
+2. TODO.md
+3. CLINICAL_EXCELLENCE_PLAN.md
+4. SLICE_PLAN_CURRENT.md
+5. CURRENT_OPERATIONAL.md
+6. osteoporosis-change-log.md
 
-### Current major phase
+### Root phase / writer lock
 
 The root product remains in Module-01 closure / dynamic guided consultation + transcript-assisted capture → Practice Review → measurement/improvement-loop architecture.
 
-### Active root slice
+The active root slice remains:
 
-`SLICE_PLAN_CURRENT.md` identifies:
+**PR-1-TRANSCRIPT-INTAKE-CANDIDATE-EXTRACTION-V1-2026-09-16 — ACTIVE / DESIGN VERIFIED / IMPLEMENTATION AUTHORIZED**
 
-```text
-PR-1-TRANSCRIPT-INTAKE-CANDIDATE-EXTRACTION-V1-2026-09-16
-ACTIVE / DESIGN VERIFIED / IMPLEMENTATION AUTHORIZED
-```
+CURRENT_OPERATIONAL.md remains the sole repo-wide NOW/writer lock for that PR-1 lifecycle.
 
-### Active writer / lock
+OST-UI did not take or alter the root writer lock.
 
-`CURRENT_OPERATIONAL.md` remains the sole repo-wide operational NOW/writer lock and owns the bounded PR-1 transcript implementation lifecycle.
-
-OST-UI does **not** take or alter that lock.
-
-### Relevant permanent invariants
+### Permanent invariants preserved during R1
 
 - one root operational writer for overlapping mutation scope;
-- parallel workstreams may maintain local `CURRENT.md` state without replacing root NOW;
+- OST-UI is a parallel documentation/review workstream only;
 - clinical guidance != transcript capture != audit != Practice Review;
-- patient truth must not be silently invented from missing data;
-- scheduled/planned treatment != actual treatment;
+- patient truth is not invented from missing data;
+- scheduled/planned treatment != actual administration;
 - clinical semantics are not changed for UI convenience;
-- raw identifiable transcript/privacy boundaries remain owned outside OST-UI;
-- current reviewed evidence/clinical contracts remain authoritative in their own scope;
-- historical chat or draft PR content is not canonical truth.
-
-### Exact current OST-UI authority
-
-Allowed now:
-
-```text
-read current product/runtime/source
-+ maintain programme/OST-UI/PROJECT-INDEX.md
-+ maintain programme/OST-UI/CURRENT.md
-+ define R1-R4 + one synthesis
-+ open documentation-only draft PR
-```
-
-Not authorized now:
-
-```text
-UI redesign
-prototype code
-runtime/schema/database mutation
-root canonical mutation
-clinical-semantic mutation
-merge/deploy
-extra review lanes
-root writer transfer
-```
+- draft PR material is not silently promoted to current-main authority;
+- raw transcript/privacy ownership remains outside OST-UI.
 
 ---
 
-## 2. Current-state inspection completed for bootstrap
+## 2. Exact R1 authority and source identity
 
-The bootstrap inspected enough current source to define bounded review inputs. These are **seed observations for review scoping**, not final R1 findings.
+### Governing OST-UI contract
 
-### OBSERVED seed — global shell exists
+Draft PR #122 was fresh-verified at exact head:
 
-Current `static/cockpit/` provides a reusable Clinical Excellence Home with:
+**9363ad5dbb5f7c059f351421599bd6ede4db6438**
 
-- Today / Clinical Calendar;
-- Clinical Modules;
-- Learning & Improvement;
-- global Clinic Utilities;
-- separate Reception link.
+Consumed fully:
 
-The Osteoporosis entry is presented as Module 01 rather than the whole Cockpit.
+- programme/OST-UI/PROJECT-INDEX.md
+- programme/OST-UI/CURRENT.md
 
-### OBSERVED seed — current Osteoporosis surface retains baseline-form heritage
+PR #122 remains open, draft and unmerged.
 
-Current `static/baseline-audit/index.html` still presents:
+### Supporting product intent
 
-- `Osteoporosis Cockpit`;
-- `Baseline Audit v1 · prospective encounter capture`;
-- pilot/baseline messaging;
-- New Case / Cases / disabled KPI Overview / disabled Library sidebar entries;
-- six Step tabs from encounter summary through documentation/Heidi.
+Draft PR #121 was fresh-verified at exact supporting head:
 
-This is an observed presentation fact only. It does not by itself establish that a rebuild is required.
+**80851762f39105628ab9009406cc7828b3e9be19**
 
-### OBSERVED seed — protected durable patient/encounter/lab storage exists
+programme/PRODUCT-CONSTITUTION-V0.2.md was used only as supporting Product Constitution intent, not current-main runtime authority.
 
-Current server persistence in `clinical_data.py` stores:
+### R1 output identity
 
-```text
-clinical_patients
-clinical_encounters
-clinical_lab_snapshots
-```
+Artifact:
 
-Encounter clinical content is persisted primarily in `payload_json`; labs also have dedicated dated snapshots. Completed/amended finalization semantics are protected server-side.
+**programme/OST-UI/R1-CURRENT-PRODUCT-CONSTITUTION-AUDIT.md**
 
-### OBSERVED seed — longitudinal state is already partially derived from history
+Artifact commit:
 
-Current browser mechanisms include:
+**7b23f224cef0c9b721d89c84e431a4582efab2af**
 
-- `progressive-guidance-core.js`;
-- `progressive-guidance-ui.js`;
-- `osteoporosis-longitudinal-summary-core.js`;
-- `osteoporosis-evidence-guidance-core.js`.
+Review branch:
 
-They read completed/amended historical encounters, derive treatment/administration context, detect selected conflicts, produce longitudinal summaries and influence current guidance/Visit Plan behavior.
-
-### REVIEW QUESTION — durable semantic state vs derived projection
-
-The current backend persistence is encounter/payload centric while important longitudinal current-state interpretation is derived by browser/runtime projection.
-
-R2/R4 must determine, from complete evidence, whether this is sufficient for the target product model or whether some clinically meaningful state/event/obligation concepts require deeper durable representation.
-
-This is deliberately **not pre-classified as a defect**.
-
-### OBSERVED seed — current guidance/evidence machinery is reusable evidence
-
-G-1/G-2/G-3/G-4 already provide reviewed mechanics for:
-
-- encounter-context-sensitive flow;
-- `why now`;
-- evidence-backed guidance;
-- longitudinal summary;
-- salience of newly surfaced guidance;
-- collapsible/sticky workspace behavior.
-
-R1/R4 must classify these mechanisms rather than assuming replacement.
-
-### OBSERVED seed — Physio provides interaction/reuse evidence
-
-The current Knee-OA Physio product carries an explicit UX contract and live product implementation with patterns including:
-
-- progressive disclosure;
-- direct manipulation;
-- live downstream output without a Generate step;
-- compact evidence-on-demand;
-- upstream changes updating downstream prose;
-- projection separated from underlying evidence/safety ownership.
-
-OST-UI may reuse these interaction patterns as hypotheses/evidence only. It must not copy the Physio clinical model into Osteoporosis.
+**docs/ost-ui-r1-current-product-audit-2026-09-27**
 
 ---
 
-## 3. Parallel-workstream coexistence
+## 3. R1 current-state disposition
 
-Draft PR #121 is currently open and unmerged.
+R1 established the current Osteoporosis product as a **hybrid**:
 
-It contains proposed `programme/OST-LIFECOURSE/`, `programme/OST-CLINICAL/`, Product Constitution and workstream-registry artifacts.
+- genuine protected longitudinal patient/encounter/lab substrate;
+- real history-sensitive G1/G2/G3/G4 decision-support behavior;
+- read-only patient longitudinal summary;
+- current Visit Plan / “Γιατί τώρα” / evidence provenance;
+- actual-administration and unresolved-task projection;
+- but still presented primarily through the visible Baseline Audit / six-step encounter shell.
 
-For OST-UI:
+R1 therefore found:
 
-```text
-PR #121 draft content = coexistence context
-PR #121 draft content != current-main authority
-```
+**current longitudinal substrate: materially present**
 
-OST-UI therefore does not modify those files and does not create a second global workstream registry.
+and simultaneously:
 
-If PR #121 merges later, OST-UI navigation can be reconciled in a bounded documentation step without changing R1-R4 decision questions.
+**longitudinal Product Constitution: only partially expressed as the primary clinician-facing product model**
+
+This is a current-state diagnosis only. R1 does not decide redesign scope.
+
+### Material OBSERVED findings checkpointed
+
+1. Global Clinical Excellence Home correctly exists and Osteoporosis is Module 01.
+2. Protected server persistence exists for patients, encounters and laboratory snapshots.
+3. Completed/amended history materially changes current guidance.
+4. Scheduled-only treatment is not counted as actual administration.
+5. Prior tasks, explicit due states and longitudinal conflicts can resurface.
+6. G3 exposes course/fracture-risk/DXA/treatment/labs/last-decision/unresolved summary.
+7. Current draft is kept distinct from completed historical truth.
+8. The visible Module-01 identity remains Baseline Audit / pilot / six-step encounter capture.
+9. Local “Case” vocabulary and protected patient/encounter vocabulary coexist.
+10. The static Privacy dialog retains older prototype/localStorage wording despite protected clinical-mode sync.
+11. Global/module separation is materially improved but not complete: calendar-link.js still dynamically inserts the Physio referral into the Osteoporosis sidebar even though Physio already exists as a global Clinic Utility.
+12. The full patient trajectory is partly visible but still substantially reconstructable across summary, encounter history, trends and step-specific state.
+
+### R1 boundary on deeper questions
+
+R1 did **not** classify the following as defects:
+
+- encounter payloads vs first-class durable events/state;
+- treatment-epoch sufficiency;
+- obligation identity/disposition sufficiency;
+- shared patient/Core ownership;
+- overlapping longitudinal DXA/FRAX representations;
+- historical evidence-at-decision persistence.
+
+Those are routed to R2/R4 according to the existing programme contract.
 
 ---
 
-## 4. Phase-1 review state
+## 4. Preservation / reuse checkpoint
+
+R1 identified the following existing mechanisms for explicit later R4 KEEP/ADAPT investigation:
+
+- protected patient/encounter/lab persistence;
+- completed/amended finalization semantics;
+- fail-closed historical loading;
+- G1 longitudinal projection;
+- actual-vs-scheduled administration semantics;
+- EncounterContext → VisitPlan → “Γιατί τώρα”;
+- G2 evidence/rule/provenance layer;
+- G3 longitudinal patient summary and salience;
+- G4 sticky/collapsible workspace mechanics;
+- longitudinal lab and DXA/FRAX trend mechanisms;
+- Global Cockpit shell;
+- selected Physio interaction primitives such as progressive disclosure, direct manipulation, live downstream output and evidence-on-demand.
+
+No final R4 KEEP/REPLACE classification was made.
+
+---
+
+## 5. Phase-1 review state
 
 | Review | Status | Output |
 |---|---|---|
-| R1 — Current Product vs Constitution | NOT STARTED | `R1-CURRENT-PRODUCT-CONSTITUTION-AUDIT.md` |
-| R2 — Longitudinal Clinical Trajectory | NOT STARTED | `R2-LONGITUDINAL-CLINICAL-TRAJECTORY-REVIEW.md` |
-| R3 — Point-of-Care Interaction | NOT STARTED | `R3-POINT-OF-CARE-INTERACTION-REVIEW.md` |
-| R4 — Shared Core / Module Architecture / Reuse | NOT STARTED | `R4-SHARED-CORE-MODULE-ARCHITECTURE-REUSE.md` |
-| Synthesis — Product Reconstruction Decision | BLOCKED ON R1-R4 | `OST-PRODUCT-RECONSTRUCTION-DECISION.md` |
+| R1 — Current Product vs Constitution | **COMPLETE / AWAITING COORDINATOR RECONCILIATION** | R1-CURRENT-PRODUCT-CONSTITUTION-AUDIT.md |
+| R2 — Longitudinal Clinical Trajectory | **NOT STARTED** | R2-LONGITUDINAL-CLINICAL-TRAJECTORY-REVIEW.md |
+| R3 — Point-of-Care Interaction | **NOT STARTED** | R3-POINT-OF-CARE-INTERACTION-REVIEW.md |
+| R4 — Shared Core / Module Architecture / Reuse | **NOT STARTED** | R4-SHARED-CORE-MODULE-ARCHITECTURE-REUSE.md |
+| Synthesis — Product Reconstruction Decision | **BLOCKED ON R1-R4** | OST-PRODUCT-RECONSTRUCTION-DECISION.md |
 
 No additional review lane is authorized.
 
 ---
 
-## 5. Dependency state
+## 6. Dependency state
 
 ### Fracture / fragility
 
-External to OST-UI clinical authority. At execution time, R2/R3 must fresh-resolve the current authoritative owner/artifact. Missing semantics become a bounded dependency/referral, not a UI assumption.
+Outside OST-UI clinical authority.
+
+R1 inspected how current fracture fields/events affect UI/projection only. R2/R3 must fresh-resolve the authoritative LifeCourse/clinical semantic owner before relying on unsettled fracture/fragility meaning.
 
 ### Treatment / evidence
 
-Existing reviewed G-2 / clinical contracts remain authoritative. OST-UI reviews their product projection only.
+Existing reviewed G2 / clinical contracts remain authoritative. OST-UI does not redefine treatment or guideline semantics.
 
 ### Shared Core / patient state
 
-R4 may recommend ownership movement/generalization but cannot perform it.
+R4 may assess ownership movement/generalization. R1 made no Core ownership decision.
 
 ### PR-1 / transcript / future Live Copilot
 
-Current PR-1 is an active root lifecycle and read-only architecture input for OST-UI. Live Copilot remains a future compatibility constraint, not an implementation target.
+PR-1 remains the active root lifecycle and read-only architecture context for OST-UI.
+
+No PR-1 change was made.
+
+Live Copilot remains a future compatibility constraint only.
+
+### PR #121 Product Constitution / parallel programme
+
+PR #121 remains unmerged supporting context. No OST-LIFECOURSE or OST-CLINICAL conclusion was promoted to current-main clinical truth by R1.
 
 ---
 
-## 6. Programme coordinator reconciliation
-
-The programme coordinator fresh-verified current `main`, draft PR #122 identity/diff and this local control plane.
+## 7. R1 disposition and exact next action
 
 Disposition:
 
-```text
-OST-UI BOOTSTRAP: ACCEPTED
-DRAFT PR #122: OPEN / DOCS-ONLY / NOT MERGED
-ROOT PR-1 LOCK: UNCHANGED
-RUNTIME/SCHEMA/CLINICAL MUTATION: NONE
-R1: AUTHORIZED / NOT STARTED
-R2/R3/R4/SYNTHESIS: NOT AUTOMATICALLY AUTHORIZED
-```
+**R1 COMPLETE / R2 ELIGIBLE FOR COORDINATOR RECONCILIATION**
 
-Duplicate-workstream prevention:
+This means **eligible for coordinator reconciliation**, not automatic R2 activation.
 
-`OST-UI` is the activated/specialized product-reconstruction workstream previously represented by the queued `OST-PRODUCT` placeholder in the draft programme registry. They are **not** two parallel owners. The draft registry on PR #121 is being reconciled accordingly.
+Exact next action:
 
-R1 may proceed before OST-LIFECOURSE P1 disposition because R1 is a current-product/runtime reality audit and must not decide unsettled clinical semantics. R2/R3 must fresh-resolve the authoritative LifeCourse/clinical owner state at execution time and fail closed on unresolved semantics.
+**Programme coordinator fresh-resumes OST-UI → verifies R1 branch/head/artifact → reconciles the R1 disposition into the local control plane → only then decides whether to authorize R2.**
 
-## 7. Next action
-
-Bootstrap durable checkpoint:
-
-```text
-draft PR #122 OPEN
-→ PR identity checkpointed here
-→ verify final diff remains limited to programme/OST-UI/*
-→ STOP bootstrap
-```
-
-Next substantive phase action, only after a fresh coordinator resume:
-
-```text
-R1 — CURRENT PRODUCT VS PRODUCT CONSTITUTION AUDIT
-```
-
-R2/R3/R4/synthesis do not start automatically.
+R1 itself must now STOP.
 
 ---
 
@@ -273,13 +229,17 @@ R2/R3/R4/synthesis do not start automatically.
 
 Do not:
 
-- implement redesign;
-- create prototype code;
+- start R2 from this R1 reviewer;
+- perform synthesis;
+- redesign screens;
+- create mockups/prototype code;
+- mutate runtime/schema/database;
 - change root canonicals;
-- change runtime/schema/database;
-- change fracture/fragility or treatment semantics;
-- create extra reviews;
-- merge this bootstrap PR;
-- deploy;
-- transfer the root writer lock.
+- change PR-1;
+- change fracture/fragility semantics;
+- define new treatment/guideline rules;
+- create a new patient/event/obligation store;
+- decide rebuild scope;
+- create an extra review lane;
+- merge/deploy.
 
