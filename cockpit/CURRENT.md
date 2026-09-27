@@ -141,7 +141,7 @@ HOLD this completed Home release. The Clinical Calendar consumer side of the sep
 
 # Clinical Calendar reason bridge — bounded follow-up slice
 
-> **STATUS:** CONSUMER SNAPSHOT MERGED / CROSS-REPO COMPATIBILITY PASS / PRODUCER PR #152 PENDING.
+> **STATUS:** CONSUMER + PROVIDER-CORRECTED PRODUCER LIVE / FIRST SNAPSHOT DELIVERY EVIDENCE PENDING.
 > **Workstream:** Cal.com visit-reason normalization into the Clinical Calendar.
 > **Branch:** `feat/calendar-reason-snapshot-v1-2026-09-27`.
 > **Base main:** `a0cf912b0fcb5caf54f4a48f8f8a698908fbb0a4`.
@@ -162,18 +162,19 @@ HOLD this completed Home release. The Clinical Calendar consumer side of the sep
 
 ## Current implementation order
 
-1. **DONE / MERGED:** bounded server-to-server snapshot ingest contract, stale-row reconciliation, normalized reason transport, and source/window validation.
-2. **DONE / VERIFIED:** consumer exact head `bbd5c7bca0fd109797fac5a03c15a51f0f53af21` passed workflow `36308943111` with 12 tests plus canonical-impact guard `36308943000`.
-3. **DONE:** cross-repository compatibility review against producer PR #152; the DST and snapshot-cardinality blockers were corrected in the consumer and closed PASS.
-4. **DONE / MERGED:** PR #119 merged to `main` as `08251120a1743a1ac629e38626d04747a8fda1e9`.
-5. **NOW:** preserve the merged consumer contract and proceed only with the separately gated producer #152 release/merge step.
-6. Deployment, Cal.com field-key configuration and runtime smoke remain later, separately authorized actions.
+1. **DONE / MERGED / LIVE:** consumer snapshot endpoint and reconciliation contract via PR #119.
+2. **DONE:** initial producer PR #152 merged after exact-head compatibility PASS.
+3. **DONE / SOURCE-CORRECTED:** provider evidence showed no dedicated visit-reason `bookingFieldsResponses` field on current Limassol/Evrychou Cal.com event types. The Digital Secretary's own booking schema/create path and provider logs establish `metadata.notes` as the Secretary-created booking reason source.
+4. **DONE / MERGED / LIVE:** producer correction PR #153 binds the clinical feed strictly to `metadata.notes`; missing notes stay blank and generic reason-like booking-field fallbacks remain forbidden.
+5. **DONE / CONFIGURED:** consumer shared ingest authentication and producer snapshot URL/shared ingest key are live. No Cal.com custom-field configuration was added.
+6. **NOW:** observe the first lawful existing scheduled sync and verify an actual Clinical Calendar snapshot delivery.
+7. **SEPARATE AFTERWARD:** reconcile Render cron cadence drift. Actual Render schedule is daily `0 4 * * *`; repository manifest says hourly `0 * * * *`. Do not create a second cron.
 
 ## Recovery checkpoint
 
 ```text
 RECOVERY CHECKPOINT ID: COCKPIT-CALENDAR-REASON-BRIDGE-20260927-A
-STATUS: CONSUMER MERGED / PRODUCER RELEASE PENDING
+STATUS: RUNTIME ACTIVE / FIRST DELIVERY EVIDENCE PENDING
 IMPLEMENTATION COMMITS:
 - 20e5687fc4283318966fca7e680b3e62eaede43f — snapshot reconciliation endpoint + shared import path
 - 83da6339c8e4c4841e910a8e6135a91bf00380e5 — canonical source / exact window validation
@@ -193,7 +194,13 @@ PR #119: MERGED — Clinical Calendar: add source snapshot reconciliation
 PR URL: https://github.com/athpapachr-cmd/osteoporosis/pull/119
 EVIDENCE HEAD: bbd5c7bca0fd109797fac5a03c15a51f0f53af21
 MERGE COMMIT: 08251120a1743a1ac629e38626d04747a8fda1e9
-LAST SAFE RESUME POINT: consumer snapshot contract is merged on main at 08251120a1743a1ac629e38626d04747a8fda1e9; compatibility with producer #152 exact head 96a53bde6d7f2b57738cdc35b3145c567c975f29 is PASS; no deploy/config/provider/business mutation
-EXACT NEXT ACTION: fresh-verify producer PR #152 and execute only its bounded release/merge step if its exact head/checks remain unchanged
-FORBIDDEN ON RESUME: PR-1 mutation, Reception reason/availability/booking behavior change, deploy, provider configuration, phone/SIP, booking/business mutation
+PRODUCER INITIAL MERGE: PR #152 / 4923cc83a1a57a844be5c713b83af125f7c86f61
+PROVIDER-EVIDENCE CORRECTION: PR #153 / d99738940ed439fedbcadde100c3993177aa556d / workflow 36310831720 / 16 tests PASS
+PROVIDER REASON SOURCE: metadata.notes for Secretary-created bookings; no current custom reason-field slug observed on event types 341357/341358
+CONSUMER AUTH DEPLOY: dep-daseid97lnhs738rkd1g / LIVE
+PRODUCER ACTIVATION DEPLOY: dep-dasejdgjo6nc73bf2keg / LIVE
+POST-ACTIVATION MANUAL SYNC: 0
+LAST SAFE RESUME POINT: consumer and corrected producer are live and mutually configured; first real snapshot delivery has not yet been observed and must not be inferred from configuration alone
+EXACT NEXT ACTION: verify the first existing scheduled /admin/trigger-sync produces clinical_calendar configured=true / attempted=true / sent=true; then reconcile the separate cron cadence drift
+FORBIDDEN ON RESUME: PR-1 mutation, Reception reason/availability/booking behavior change, second sync cron, guessed Cal.com reason field, phone/SIP or booking/business mutation
 ```
