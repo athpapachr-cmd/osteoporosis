@@ -1,0 +1,37 @@
+name: Clinical Calendar snapshot tests
+
+on:
+  push:
+    paths:
+      - "clinical_calendar.py"
+      - "schemas/clinical_calendar_contract_v1.yaml"
+      - "test_clinical_calendar.py"
+      - "test_clinical_calendar_snapshot.py"
+      - ".github/workflows/clinical-calendar-snapshot-tests.yml"
+  pull_request:
+    paths:
+      - "clinical_calendar.py"
+      - "schemas/clinical_calendar_contract_v1.yaml"
+      - "test_clinical_calendar.py"
+      - "test_clinical_calendar_snapshot.py"
+      - ".github/workflows/clinical-calendar-snapshot-tests.yml"
+
+jobs:
+  clinical-calendar-snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+      - name: Install dependencies
+        run: pip install -r requirements.txt pytest
+      - name: Python syntax
+        run: python -m py_compile clinical_calendar.py test_clinical_calendar.py test_clinical_calendar_snapshot.py
+      - name: Clinical Calendar deterministic tests
+        run: pytest -q test_clinical_calendar.py test_clinical_calendar_snapshot.py
+      - name: Diff hygiene
+        run: git diff --check HEAD^ HEAD
