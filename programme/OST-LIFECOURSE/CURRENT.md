@@ -73,3 +73,26 @@ SCHEMA CHANGE: NO
 ROOT WRITER TRANSFER: NO
 12 PARKED QUESTIONS: STILL PARKED
 ```
+
+
+## Organisational bootstrap checkpoint
+
+Created on this branch:
+
+- `programme/PRODUCT-CONSTITUTION-V0.2.md`
+- `programme/WORKSTREAM-REGISTRY.md`
+- `programme/OST-LIFECOURSE/PROJECT-INDEX.md`
+- `programme/OST-LIFECOURSE/CURRENT.md`
+
+Checkpoint commits:
+
+- `37487c4d6d92eb0a6bcd4b4df604563c5f3fe8a2` — activate OST-LIFECOURSE Phase 0 CURRENT;
+- `5070e0a8cf4bc34d8bdf12f78c8e40a6c9f3a58c` — record Product Constitution v0.2;
+- `1892aa0622301b341c53faff7b2ad0ae8ae5a64c` — add programme workstream registry;
+- `14592904baed5054b49d7d70141d2828153c0639` — define Phase-0 project charter.
+
+The branch remains documentation/design only.
+
+### Exact next material action after this checkpoint
+
+Open a **draft organisational PR** for review/visibility only. Do not merge it yet and do not execute the Phase-0 inventory until the programme coordinator has verified the PR identity and canonical-impact declaration.
