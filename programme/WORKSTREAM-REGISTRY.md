@@ -12,7 +12,7 @@ This registry exists to let multiple bounded workstreams proceed in parallel wit
 |---|---|---|---|
 | **OST-CAPTURE** | Heidi/transcript → semantic clinical candidates | **ACTIVE under root PR-1 lifecycle** | Root `CURRENT_OPERATIONAL.md` / `SLICE_PLAN_CURRENT.md`; not mutated by this programme bootstrap |
 | **OST-LIFECOURSE** | Shared longitudinal patient truth, care trajectory, events/state/goals/decisions/obligations | **P1 RECONCILIATION COMPLETE / INDEPENDENT REVIEW READY** | `programme/OST-LIFECOURSE/CURRENT.md` |
-| **OST-CLINICAL** | Osteoporosis evidence, pathways, guidance rules and treatment logic | **EXISTING CAPABILITY / NO NEW WRITER CLAIMED HERE** | Existing canonical/runtime owners remain authoritative |
+| **OST-CLINICAL** | Osteoporosis evidence, pathways, guidance rules and treatment logic | **S1 PRE-CODE COMPLETE / IMPLEMENTATION AUTHOR READY** | Existing clinical/runtime owners remain authoritative; implementation must create `programme/OST-CLINICAL/CURRENT.md` on its own branch without taking the root PR-1 lock |
 | **OST-PRODUCT** | Commercial-product consolidation, workflow/UX/information architecture | **QUEUED** | Activate after first OST-LIFECOURSE inventory/synthesis |
 | **OST-REVIEW** | Practice Review, decision audit, Signals and improvement loop | **QUEUED** | Existing Practice Review architecture preserved; no new mutation authority |
 | **OST-LEARNING** | Clinical Learning Hub / challenges / longitudinal clinician learning | **EXISTING PARALLEL TRACK** | Existing learning contracts and release state remain separately authoritative |
