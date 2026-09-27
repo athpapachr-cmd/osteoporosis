@@ -5,7 +5,7 @@
 > **Date:** 2026-09-27 Asia/Nicosia.
 > **Fresh base main:** `2ae9f01ded14bd2106ee09f47acb3fea4d72bc4b`.
 > **Implementation branch:** `fix/ost-clinical-s1-fracture-fragility-semantics-2026-09-27`.
-> **Tested substantive head before this checkpoint:** `6c616d8064a8355487a100046b4426f74628c3c5`.
+> **Tested substantive head before this checkpoint:** `bca37aa824e524ac8c2f7783cdf763f19cdcc656`.
 > **Root operational owner:** unchanged — `CURRENT_OPERATIONAL.md` remains OST-CAPTURE / PR-1-owned.
 
 ## Governing semantic invariant
@@ -53,12 +53,12 @@ No schema, DB, migration or raw-record backfill was introduced.
 
 ## Verification completed at substantive head
 
-Exact-head deterministic execution at `6c616d8064a8355487a100046b4426f74628c3c5`:
+Exact-head deterministic execution at `bca37aa824e524ac8c2f7783cdf763f19cdcc656`:
 
 - existing G1 progressive-guidance suite: PASS;
 - existing G2 suite + full S1 current-fragility / fracture-on-treatment / vertebral / stale-field / stable-ID matrix: PASS;
 - existing G3 suite + full S1 generic-vs-confirmed / legacy-zero-event / stale-field / conflict matrix: PASS;
-- app-core S1 source contract: PASS;
+- app-core S1 runtime-equivalent load/render/writer harness: PASS;
 - branch merge base = current implementation base, behind = 0 at verification;
 - `progressive-guidance-core.js` unchanged.
 
