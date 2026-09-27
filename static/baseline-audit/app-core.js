@@ -177,9 +177,7 @@
   }
 
   function makeFractureEvent(seed = {}) { return { id: seed.id || createUuid(), site: seed.site || "", month: seed.month || "", low_trauma: seed.low_trauma || "", occurred_on_treatment: seed.occurred_on_treatment || "", vertebral_level: seed.vertebral_level || "" }; }
-  function ensureStep1FractureSeed() { if (!currentCase.fracture_history.events.length && currentCase.risk_context.prior_fragility_fracture) currentCase.fracture_history.events.push(makeFractureEvent({ site: currentCase.risk_context.last_fracture_site, month: currentCase.risk_context.last_fracture_month })); }
   function renderFractureEvents() {
-    ensureStep1FractureSeed();
     const events = currentCase.fracture_history.events;
     el.fractureEventsEmpty.hidden = events.length > 0;
     el.fractureEvents.innerHTML = events.map((event, idx) => `
@@ -195,17 +193,10 @@
   }
 
   function collectFractureEventsFromDom() {
-    $$(".fracture-event", el.fractureEvents).forEach(row => {
+    $(".fracture-event", el.fractureEvents).forEach(row => {
       const event = currentCase.fracture_history.events.find(e => e.id === row.dataset.eventId); if (!event) return;
-      $$('[data-event-field]', row).forEach(field => event[field.dataset.eventField] = field.value);
+      $('[data-event-field]', row).forEach(field => event[field.dataset.eventField] = field.value);
     });
-    if (currentCase.fracture_history.events.length) {
-      currentCase.risk_context.prior_fragility_fracture = true;
-      const dated = currentCase.fracture_history.events.filter(e => e.month).sort((a, b) => b.month.localeCompare(a.month));
-      const latest = dated[0] || currentCase.fracture_history.events[0];
-      currentCase.risk_context.last_fracture_site = latest.site || currentCase.risk_context.last_fracture_site;
-      currentCase.risk_context.last_fracture_month = latest.month || currentCase.risk_context.last_fracture_month;
-    }
   }
 
   function updateStep2ContextNote() {
