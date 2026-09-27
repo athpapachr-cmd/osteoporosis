@@ -178,7 +178,8 @@ IMPLEMENTATION COMMITS:
 - 83da6339c8e4c4841e910a8e6135a91bf00380e5 — canonical source / exact window validation
 - 426a4037687d83179d8df5639957f621a579cfa2 — focused snapshot tests
 - 3bfba4c9d13b0a4a955ed3d470e80115c75c7d84 — current snapshot/reason integration contract
-VERIFICATION: NOT YET EXECUTED
+- c07daaf75359b071ec2f5b51d5864127965d122a — path-scoped Clinical Calendar CI gate
+VERIFICATION: NOT YET EXECUTED; local repository checkout unavailable in this environment, so CI is the selected executable evidence
 LAST SAFE RESUME POINT: consumer implementation + tests + contract are durable on branch; no Reception backend files changed
 EXACT NEXT ACTION: execute focused Clinical Calendar evidence, checkpoint result, then prepare review/PR
 FORBIDDEN ON RESUME: PR-1 mutation, Reception reason/availability/booking behavior change, merge, deploy, provider/business mutation
