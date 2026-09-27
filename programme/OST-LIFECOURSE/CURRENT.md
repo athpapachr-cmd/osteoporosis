@@ -43,3 +43,23 @@ Do not start implementation, P2 target architecture, migration, schema work, S1 
 ## Registry sync
 
 `UPDATED` — P1 reconciliation is COMPLETE / INDEPENDENT REVIEW READY.
+
+## Parallel S1 routing checkpoint
+
+The separate Module-01 S1 pre-code result has been accepted by the programme coordinator.
+
+Durable S1 artifacts now available:
+- `programme/OST-CLINICAL/S1-PRECODE-PROGRAMME-RECONCILIATION.md`
+- `programme/OST-CLINICAL/S1-IMPLEMENTATION-BRIEF.md`
+
+Disposition:
+
+```text
+S1 PRE-CODE: COMPLETE
+S1 IMPLEMENTATION AUTHOR: READY
+S1 CODE: NOT YET STARTED
+S1 MERGE/DEPLOY: NOT AUTHORIZED
+ROOT PR-1 LOCK: UNCHANGED
+```
+
+S1 proceeds independently under OST-CLINICAL. OST-LIFECOURSE remains on its own P1 independent-review path.
