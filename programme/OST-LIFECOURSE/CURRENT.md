@@ -96,3 +96,24 @@ The branch remains documentation/design only.
 ### Exact next material action after this checkpoint
 
 Open a **draft organisational PR** for review/visibility only. Do not merge it yet and do not execute the Phase-0 inventory until the programme coordinator has verified the PR identity and canonical-impact declaration.
+
+
+## Draft PR checkpoint
+
+```text
+PR: #121
+URL: https://github.com/athpapachr-cmd/osteoporosis/pull/121
+STATE: OPEN / DRAFT
+BASE: main
+BASE SHA AT CREATION: 2ae9f01ded14bd2106ee09f47acb3fea4d72bc4b
+HEAD AT CREATION: aad50e75119ac566c4d20559d672b398d3f8117c
+RELEASE AFFECTING: NO
+ROOT CURRENT MUTATION: NO
+RUNTIME MUTATION: NO
+```
+
+The PR is a governance/design checkpoint only. Do not merge or begin implementation from it automatically.
+
+### Exact next action
+
+Verify the updated PR head and governance/Canonical Impact checks. Then the programme coordinator may issue the bounded OST-LIFECOURSE Phase-0 **read-only inventory** task. That inventory must STOP with a handback; it must not mutate runtime or resolve the 12 parked questions.
