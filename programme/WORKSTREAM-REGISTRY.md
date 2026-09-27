@@ -11,7 +11,7 @@ This registry exists to let multiple bounded workstreams proceed in parallel wit
 | Workstream | Purpose | Current state | Authority boundary |
 |---|---|---|---|
 | **OST-CAPTURE** | Heidi/transcript → semantic clinical candidates | **ACTIVE under root PR-1 lifecycle** | Root `CURRENT_OPERATIONAL.md` / `SLICE_PLAN_CURRENT.md`; not mutated by this programme bootstrap |
-| **OST-LIFECOURSE** | Shared longitudinal patient truth, care trajectory, events/state/goals/decisions/obligations | **PHASE 0 COMPLETE / P1 DESIGN READY** | `programme/OST-LIFECOURSE/CURRENT.md` |
+| **OST-LIFECOURSE** | Shared longitudinal patient truth, care trajectory, events/state/goals/decisions/obligations | **P1 RECONCILIATION COMPLETE / INDEPENDENT REVIEW READY** | `programme/OST-LIFECOURSE/CURRENT.md` |
 | **OST-CLINICAL** | Osteoporosis evidence, pathways, guidance rules and treatment logic | **EXISTING CAPABILITY / NO NEW WRITER CLAIMED HERE** | Existing canonical/runtime owners remain authoritative |
 | **OST-PRODUCT** | Commercial-product consolidation, workflow/UX/information architecture | **QUEUED** | Activate after first OST-LIFECOURSE inventory/synthesis |
 | **OST-REVIEW** | Practice Review, decision audit, Signals and improvement loop | **QUEUED** | Existing Practice Review architecture preserved; no new mutation authority |
@@ -40,9 +40,11 @@ OST-LIFECOURSE Phase 0 reuse/gap inventory — COMPLETE
         ↓
 programme synthesis — COMPLETE
         ↓
-OST-LIFECOURSE-P1 current-owner reconciliation
+OST-LIFECOURSE-P1 current-owner reconciliation — COMPLETE
         ↓
-activate bounded independent reviews
+independent P1 review — READY
+        ↓
+activate later bounded product/clinical reviews only after P1 disposition
         ├── longitudinal/lifecourse architecture
         ├── clinical/evidence/decision support
         └── commercial workflow/UX
