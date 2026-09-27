@@ -259,6 +259,82 @@ def test_snapshot_rejects_incomplete_or_ambiguous_scope_before_deleting(monkeypa
         assert [row.source_appointment_id for row in rows] == ["cal-keep"]
 
 
+def test_snapshot_accepts_cyprus_dst_fallback_31_local_day_window(monkeypatch):
+    client, _ = _client(monkeypatch)
+
+    # 2026-09-28 00:00 Asia/Nicosia -> 2026-10-29 00:00 Asia/Nicosia.
+    # Cyprus leaves DST during this interval, so UTC elapsed time is 31d + 1h.
+    start = datetime(2026, 9, 27, 21, 0, tzinfo=timezone.utc)
+    dst_compatible_end = datetime(2026, 10, 28, 22, 0, tzinfo=timezone.utc)
+
+    accepted = client.post(
+        "/clinical/calendar/appointments/snapshot",
+        headers=HEADERS,
+        json=_snapshot(start, dst_compatible_end, []),
+    )
+    assert accepted.status_code == 200
+    assert accepted.json()["received"] == 0
+
+    too_long = client.post(
+        "/clinical/calendar/appointments/snapshot",
+        headers=HEADERS,
+        json=_snapshot(start, dst_compatible_end + timedelta(seconds=1), []),
+    )
+    assert too_long.status_code == 422
+
+
+def test_snapshot_accepts_producer_complete_cardinality_ceiling(monkeypatch):
+    client, engine = _client(monkeypatch)
+    start = datetime(2026, 9, 28, 8, 0, tzinfo=timezone.utc)
+    end = start + timedelta(days=1)
+
+    # Producer bound is 20 pages × 100 rows. Use unrelated synthetic rows so
+    # this test exercises snapshot acceptance without populating clinical data.
+    rows = [
+        _appointment(
+            f"bounded-{index}",
+            start=start + timedelta(hours=1),
+            minutes=20,
+            label="Synthetic unrelated visit",
+        )
+        for index in range(2000)
+    ]
+
+    accepted = client.post(
+        "/clinical/calendar/appointments/snapshot",
+        headers=HEADERS,
+        json=_snapshot(start, end, rows),
+    )
+    assert accepted.status_code == 200
+    assert accepted.json()["received"] == 2000
+    assert accepted.json()["skipped_unrelated"] == 2000
+
+    with Session(engine) as session:
+        assert session.execute(select(ClinicalAppointmentORM)).scalars().all() == []
+
+    rejected = client.post(
+        "/clinical/calendar/appointments/snapshot",
+        headers=HEADERS,
+        json=_snapshot(
+            start,
+            end,
+            rows
+            + [
+                _appointment(
+                    "bounded-overflow",
+                    start=start + timedelta(hours=1),
+                    minutes=20,
+                    label="Synthetic unrelated visit",
+                )
+            ],
+        ),
+    )
+    assert rejected.status_code == 422
+
+    with Session(engine) as session:
+        assert session.execute(select(ClinicalAppointmentORM)).scalars().all() == []
+
+
 def test_snapshot_requires_ingest_key_and_canonical_source(monkeypatch):
     client, _ = _client(monkeypatch)
     start = datetime(2026, 9, 28, 8, 0, tzinfo=timezone.utc)
