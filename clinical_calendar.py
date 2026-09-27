@@ -55,6 +55,16 @@ RELEVANT_CATEGORIES = {
     "aclasta",
 }
 
+# Producer compatibility bounds.
+# The Cal.com producer uses a 30-day local-date lookahead plus the current day,
+# ending at the following local midnight. Across Cyprus autumn DST fallback,
+# that valid 31-local-day window can span 31 days + 1 hour in UTC elapsed time.
+MAX_SNAPSHOT_WINDOW = timedelta(days=31, hours=1)
+
+# The producer is bounded to 20 booking pages × 100 rows/page. A complete
+# snapshot must therefore be accepted up to that same bounded source ceiling.
+MAX_SNAPSHOT_APPOINTMENTS = 2000
+
 
 class AppointmentImport(BaseModel):
     source: str = Field(default="setmore", max_length=40)
@@ -394,15 +404,21 @@ def build_clinical_calendar_router(engine: Engine) -> APIRouter:
         are removed, which prevents cancelled or rescheduled appointments from
         remaining as phantom clinical-calendar entries.
         """
-        if len(snapshot.appointments) > 500:
-            raise HTTPException(status_code=422, detail="maximum 500 appointments per snapshot")
+        if len(snapshot.appointments) > MAX_SNAPSHOT_APPOINTMENTS:
+            raise HTTPException(
+                status_code=422,
+                detail=f"maximum {MAX_SNAPSHOT_APPOINTMENTS} appointments per snapshot",
+            )
 
         window_start = _naive_utc(snapshot.window_start)
         window_end = _naive_utc(snapshot.window_end)
         if window_end <= window_start:
             raise HTTPException(status_code=422, detail="window_end must be after window_start")
-        if (window_end - window_start) > timedelta(days=31):
-            raise HTTPException(status_code=422, detail="snapshot window is limited to 31 days")
+        if (window_end - window_start) > MAX_SNAPSHOT_WINDOW:
+            raise HTTPException(
+                status_code=422,
+                detail="snapshot window exceeds the 31-local-day compatibility bound",
+            )
 
         source = snapshot.source.strip()
         if not source:
