@@ -1,7 +1,7 @@
 # OST-CLINICAL CURRENT — S1 Fracture / Fragility Semantics
 
 > **TASK:** `S1-FRACTURE-FRAGILITY-SEMANTICS-CORRECTION`
-> **STATUS:** IMPLEMENTATION TESTED / DRAFT PR NEXT
+> **STATUS:** IMPLEMENTATION TESTED / DRAFT PR #123 OPEN / FINAL CI VERIFICATION
 > **Date:** 2026-09-27 Asia/Nicosia.
 > **Fresh base main:** `2ae9f01ded14bd2106ee09f47acb3fea4d72bc4b`.
 > **Implementation branch:** `fix/ost-clinical-s1-fracture-fragility-semantics-2026-09-27`.
@@ -66,11 +66,16 @@ The existing G3 combined workflow was minimally extended so `app-core.js` and `t
 
 ## Draft PR
 
-Not opened yet. Open only after this docs-only checkpoint head is reverified exactly.
+- Draft implementation PR: #123
+- URL: https://github.com/athpapachr-cmd/osteoporosis/pull/123
+- Base: `main` at `2ae9f01ded14bd2106ee09f47acb3fea4d72bc4b`
+- Opened head: `a6165279a481603bf6b1440a90131137ab3d88cf`
+- Canonical Impact Declaration: `release_affecting=yes`, `checkpoint_stage=implementation_tested`, root canonicals `none`, this workstream CURRENT `update`, changelog deferred until completion.
+- State: draft / not merged.
 
 ## Exact next action
 
-Reverify this checkpoint head, fresh-check main ancestry, then open one draft implementation PR with the required Canonical Impact Declaration. After the PR identity is known, update this workstream CURRENT with that identity and re-run exact-head/PR CI on the final docs head.
+Reverify the exact branch head containing this PR-identity checkpoint and require relevant PR-triggered CI to pass. If green, hand the exact head to a fresh independent post-code S1 reviewer and STOP.
 
 ## Explicitly forbidden
 
