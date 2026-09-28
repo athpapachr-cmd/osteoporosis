@@ -195,7 +195,11 @@
   function collectFractureEventsFromDom() {
     Array.from(el.fractureEvents.querySelectorAll(".fracture-event")).forEach(row => {
       const event = currentCase.fracture_history.events.find(e => e.id === row.dataset.eventId); if (!event) return;
-      Array.from(row.querySelectorAll('[data-event-field]')).forEach(field => event[field.dataset.eventField] = field.value);
+      Array.from(row.querySelectorAll('[data-event-field]')).forEach(field => {
+        const fieldName = field.dataset.eventField;
+        if (fieldName === "low_trauma" && field.dataset.lowTraumaEdited !== "true") return;
+        event[fieldName] = field.value;
+      });
     });
   }
 
@@ -308,8 +312,8 @@
     el.contextualAdjustment.addEventListener("change", () => { currentCase.risk_assessment.contextual_adjustment = el.contextualAdjustment.value; el.adjustmentDetails.hidden = el.contextualAdjustment.value !== "yes"; markDirty(); });
     $$('#adjustmentReasonChecks input').forEach(c => c.addEventListener("change", markDirty));
     el.addFractureEventBtn.addEventListener("click", () => { snapshotStep1(); collectFractureEventsFromDom(); currentCase.fracture_history.events.push(makeFractureEvent()); renderFractureEvents(); markDirty(); });
-    el.fractureEvents.addEventListener("input", event => { const row = event.target.closest(".fracture-event"); if (!row) return; collectFractureEventsFromDom(); if (event.target.dataset.eventField === "site") renderFractureEvents(); markDirty(); });
-    el.fractureEvents.addEventListener("change", event => { const row = event.target.closest(".fracture-event"); if (!row) return; collectFractureEventsFromDom(); if (event.target.dataset.eventField === "site") renderFractureEvents(); markDirty(); });
+    el.fractureEvents.addEventListener("input", event => { const row = event.target.closest(".fracture-event"); if (!row) return; if (event.target.dataset.eventField === "low_trauma") event.target.dataset.lowTraumaEdited = "true"; collectFractureEventsFromDom(); if (event.target.dataset.eventField === "site") renderFractureEvents(); markDirty(); });
+    el.fractureEvents.addEventListener("change", event => { const row = event.target.closest(".fracture-event"); if (!row) return; if (event.target.dataset.eventField === "low_trauma") event.target.dataset.lowTraumaEdited = "true"; collectFractureEventsFromDom(); if (event.target.dataset.eventField === "site") renderFractureEvents(); markDirty(); });
     el.fractureEvents.addEventListener("click", event => { const btn = event.target.closest("[data-remove-event]"); if (!btn) return; collectFractureEventsFromDom(); currentCase.fracture_history.events = currentCase.fracture_history.events.filter(e => e.id !== btn.dataset.removeEvent); renderFractureEvents(); markDirty(); });
   }
 
