@@ -1,12 +1,35 @@
 # OST-CLINICAL CURRENT — S1 Fracture / Fragility Semantics
 
-> **TASK:** `S1-FRACTURE-FRAGILITY-SEMANTICS-CORRECTION`
-> **STATUS:** IMPLEMENTATION TESTED / DRAFT PR #123 OPEN / INDEPENDENT REVIEW HANDOFF PREPARED
+> **TASK:** `S1-FRACTURE-FRAGILITY-P6B-R1-RAW-VALUE-PRESERVATION-CORRECTION`
+> **STATUS:** R1 CORRECTION IMPLEMENTED / EXACT-HEAD CI PENDING / DRAFT PR #123 OPEN
 > **Date:** 2026-09-27 Asia/Nicosia.
 > **Fresh base main:** `2ae9f01ded14bd2106ee09f47acb3fea4d72bc4b`.
 > **Implementation branch:** `fix/ost-clinical-s1-fracture-fragility-semantics-2026-09-27`.
-> **Tested substantive head before this checkpoint:** `bca37aa824e524ac8c2f7783cdf763f19cdcc656`.
+> **Original S1 tested substantive head:** `bca37aa824e524ac8c2f7783cdf763f19cdcc656`.
+> **Blocked P6B predecessor head:** `f4fe36bcfbd0ca475768844387536ec71e2fd38d`.
+> **R1 correction implementation commit:** `daea6a9e5b430106b84f8e9c7ef526c65efcb4b0`.
 > **Root operational owner:** unchanged — `CURRENT_OPERATIONAL.md` remains OST-CAPTURE / PR-1-owned.
+
+## P6B R1 residual correction checkpoint
+
+Independent P6B reviewed exact head `f4fe36bcfbd0ca475768844387536ec71e2fd38d` and returned **BLOCK** for one residual only: a noncanonical raw `fracture_history.events[].low_trauma` value could render as the blank select option and then be silently rewritten to `""` by an ordinary no-edit save.
+
+The bounded correction at `daea6a9e5b430106b84f8e9c7ef526c65efcb4b0` keeps source preservation separate from clinical interpretation:
+
+- ordinary load → render → save does not write the `low_trauma` DOM value back unless the clinician actually fired an `input/change` on that control;
+- exact raw source such as `"unknown"`, `" YES "`, mixed-case/whitespace variants or another legacy token therefore remains byte-for-byte unchanged on no-edit save;
+- an explicit clinician edit marks only that rendered control as edited and permits the selected canonical `yes/no/uncertain/""` value to replace the prior raw source;
+- the existing normalized G2 semantic interpretation remains unchanged and unknown/unrecognised values remain fail-closed;
+- no event, UUID, schema value, migration/backfill, G2 rule or G3 semantic was added or changed.
+
+Correction delta so far:
+- `static/baseline-audit/app-core.js`;
+- `test_s1_fracture_fragility_app_core.js`;
+- this workstream checkpoint.
+
+The focused regression now covers canonical yes/no/uncertain/empty no-edit preservation, exact preservation of `unknown`, `" YES "` and another unrecognised token through the actual load/render/save path, explicit edits to yes/no, semantic interpretation stability before/after no-edit save, and legacy prior=true + zero events through load/render/save.
+
+Repo-local execution is not claimed: the execution container could not resolve `github.com` for a fresh checkout. The executable gate is therefore the PR-triggered GitHub Actions workflow on the exact corrected head.
 
 ## Governing semantic invariant
 
@@ -88,7 +111,7 @@ This CURRENT update is documentation-only over that green head; no runtime/test/
 
 ## Exact next action
 
-Fresh-verify the resulting docs-only branch head and its canonical-impact gate. Because the only delta after the green implementation head is this workstream CURRENT checkpoint, preserve the already-green runtime CI evidence above. If the final canonical/head checks remain clean, hand the exact head to a fresh independent post-code S1 reviewer and STOP.
+Fresh-verify the PR #123 head containing this R1 checkpoint and require exact-head CI for the focused S1 app-core regression, inherited G1/G2/G3 regression gates, affected syntax/workflow checks and Canonical Impact guard. If green, checkpoint the exact evidence here and hand the resulting head to a **fresh delta+cumulative independent P6B reviewer**. No merge/deploy/smoke.
 
 ## Explicitly forbidden
 
