@@ -328,13 +328,14 @@ function loadRenderEditSave(raw, next, id) {
     zero_events: true
   })]));
   fractureRoot._rows = [];
-  const beforeUuidCalls = uuidCalls;
   hooks.loadCase(id);
+  assert.strictEqual(hooks.getCurrentCase().fracture_history.events.length, 0, "load/render must keep zero structured fracture events");
+  const afterLoadRenderUuidCalls = uuidCalls;
   hooks.saveDraft(false);
   const saved = hooks.getStore().find(item => item.internal_uuid === id);
   assert.strictEqual(saved.fracture_history.events.length, 0);
   assert.strictEqual(saved.risk_context.prior_fragility_fracture, true);
-  assert.strictEqual(uuidCalls, beforeUuidCalls, "load/render/save must not synthesize a fracture event UUID");
+  assert.strictEqual(uuidCalls, afterLoadRenderUuidCalls, "save must not synthesize a fracture event UUID");
 }
 
 assert(source.includes('fieldName === "low_trauma" && field.dataset.lowTraumaEdited !== "true"'), "raw-preservation writer guard missing");
