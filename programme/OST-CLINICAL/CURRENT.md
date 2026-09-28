@@ -1,7 +1,7 @@
 # OST-CLINICAL CURRENT — S1 Fracture / Fragility Semantics
 
 > **TASK:** `S1-FRACTURE-FRAGILITY-P6B-R1-RAW-VALUE-PRESERVATION-CORRECTION`
-> **STATUS:** R1 CORRECTION IMPLEMENTED / EXACT-HEAD CI PENDING / DRAFT PR #123 OPEN
+> **STATUS:** R1 CORRECTION IMPLEMENTED / FIRST EXACT-HEAD CI BLOCKED BY TEST-HARNESS ASSERTION / DRAFT PR #123 OPEN
 > **Date:** 2026-09-27 Asia/Nicosia.
 > **Fresh base main:** `2ae9f01ded14bd2106ee09f47acb3fea4d72bc4b`.
 > **Implementation branch:** `fix/ost-clinical-s1-fracture-fragility-semantics-2026-09-27`.
@@ -30,6 +30,18 @@ Correction delta so far:
 The focused regression now covers canonical yes/no/uncertain/empty no-edit preservation, exact preservation of `unknown`, `" YES "` and another unrecognised token through the actual load/render/save path, explicit edits to yes/no, semantic interpretation stability before/after no-edit save, and legacy prior=true + zero events through load/render/save.
 
 Repo-local execution is not claimed: the execution container could not resolve `github.com` for a fresh checkout. The executable gate is therefore the PR-triggered GitHub Actions workflow on the exact corrected head.
+
+## First R1 exact-head CI attempt
+
+Checkpoint head `023cbe84335741bc37c289229d77d43fb3ed0e1c` produced:
+- Canonical impact guard run `36477246661`: **SUCCESS**;
+- G1 progressive guidance run `36477246694`: **SUCCESS**;
+- G2 evidence guidance run `36477246759`: **SUCCESS**;
+- G3 run `36477246797`: **FAILURE** only at the newly expanded S1 app-core regression.
+
+The failing assertion was test-harness-specific: the zero-event load/render/save case compared the global UUID counter from before `loadCase()`, but `normalizeLoadedCase()` always constructs a base case and therefore calls `createUuid()` twice for non-fracture base identifiers before overlaying the stored case. The stored/loaded/saved fracture-event count remained zero. This does not demonstrate an R1 runtime defect.
+
+Bounded next correction: adjust only the focused S1 regression so load/render is proven by zero structured events and UUID stability is measured from **after load/render to after save**, while retaining the earlier explicit render-no-event-UUID regression. Then rerun the exact-head cumulative gate.
 
 ## Governing semantic invariant
 
