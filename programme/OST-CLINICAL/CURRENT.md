@@ -1,7 +1,7 @@
 # OST-CLINICAL CURRENT — S1 Fracture / Fragility Semantics
 
 > **TASK:** `S1-FRACTURE-FRAGILITY-P6B-R1-RAW-VALUE-PRESERVATION-CORRECTION`
-> **STATUS:** R1 CORRECTION IMPLEMENTED / FIRST EXACT-HEAD CI BLOCKED BY TEST-HARNESS ASSERTION / DRAFT PR #123 OPEN
+> **STATUS:** R1 CORRECTION IMPLEMENTED / TEST-HARNESS ASSERTION CORRECTED / EXACT-HEAD CI RE-RUN PENDING / DRAFT PR #123 OPEN
 > **Date:** 2026-09-27 Asia/Nicosia.
 > **Fresh base main:** `2ae9f01ded14bd2106ee09f47acb3fea4d72bc4b`.
 > **Implementation branch:** `fix/ost-clinical-s1-fracture-fragility-semantics-2026-09-27`.
@@ -41,7 +41,9 @@ Checkpoint head `023cbe84335741bc37c289229d77d43fb3ed0e1c` produced:
 
 The failing assertion was test-harness-specific: the zero-event load/render/save case compared the global UUID counter from before `loadCase()`, but `normalizeLoadedCase()` always constructs a base case and therefore calls `createUuid()` twice for non-fracture base identifiers before overlaying the stored case. The stored/loaded/saved fracture-event count remained zero. This does not demonstrate an R1 runtime defect.
 
-Bounded next correction: adjust only the focused S1 regression so load/render is proven by zero structured events and UUID stability is measured from **after load/render to after save**, while retaining the earlier explicit render-no-event-UUID regression. Then rerun the exact-head cumulative gate.
+The focused harness was corrected in test commit `191bc6eed17a9503af2cfc99ae02293dc3ecc118`: load/render is now proved by zero structured events, and UUID stability is measured from **after load/render to after save**, while retaining the earlier explicit render-no-event-UUID regression.
+
+Exact next gate: rerun exact-head CI for the corrected branch and require the full S1 + inherited G1/G2/G3 chain plus Canonical Impact guard to pass before independent review handoff.
 
 ## Governing semantic invariant
 
