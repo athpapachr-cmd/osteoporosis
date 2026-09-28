@@ -1,7 +1,7 @@
 # OST-CLINICAL CURRENT — S1 Fracture / Fragility Semantics
 
 > **TASK:** `S1-FRACTURE-FRAGILITY-P6B-R1-RAW-VALUE-PRESERVATION-CORRECTION`
-> **STATUS:** R1 CORRECTION IMPLEMENTED / TEST-HARNESS ASSERTION CORRECTED / EXACT-HEAD CI RE-RUN PENDING / DRAFT PR #123 OPEN
+> **STATUS:** R1 CORRECTION TESTED / EXACT-HEAD CI PASS / FINAL DOCS CHECKPOINT / DRAFT PR #123 OPEN
 > **Date:** 2026-09-27 Asia/Nicosia.
 > **Fresh base main:** `2ae9f01ded14bd2106ee09f47acb3fea4d72bc4b`.
 > **Implementation branch:** `fix/ost-clinical-s1-fracture-fragility-semantics-2026-09-27`.
@@ -44,6 +44,26 @@ The failing assertion was test-harness-specific: the zero-event load/render/save
 The focused harness was corrected in test commit `191bc6eed17a9503af2cfc99ae02293dc3ecc118`: load/render is now proved by zero structured events, and UUID stability is measured from **after load/render to after save**, while retaining the earlier explicit render-no-event-UUID regression.
 
 Exact next gate: rerun exact-head CI for the corrected branch and require the full S1 + inherited G1/G2/G3 chain plus Canonical Impact guard to pass before independent review handoff.
+
+## R1 correction green evidence
+
+Exact tested/checkpoint head: `7e6765520b3ce19fba9e87295a329685e0e9b8e0`.
+
+PR-triggered GitHub Actions on that exact head:
+- G3 guidance salience longitudinal summary — run `36477440700`: **SUCCESS**;
+  - JavaScript syntax: **SUCCESS**;
+  - focused `Run S1 fracture / fragility writer and load-render regressions`: **SUCCESS**;
+  - G3 salience/summary + wiring/ownership + production-visibility regressions: **SUCCESS**;
+  - frozen G2 contract/core/live/wiring regressions: **SUCCESS**;
+  - inherited G1 core/wiring/UI/WHY-NOW regressions: **SUCCESS**;
+  - authoritative Finish browser + server-finalization regressions: **SUCCESS**;
+- G2 evidence guidance runtime — run `36477439960`: **SUCCESS**;
+- G1 progressive guidance foundation — run `36477440106`: **SUCCESS**;
+- Canonical impact guard — run `36477439970`: **SUCCESS**.
+
+The R1 correction itself remains limited to the existing app-core owner plus its focused regression. G2/G3 semantic files were not changed by the residual correction. The prior independent P6B closures D1–D6 therefore remain exercised by the inherited S1/G2/G3 regression matrix rather than being redesigned.
+
+This final CURRENT mutation is documentation-only over the green corrected head. After it lands, the resulting PR head must be fresh-verified and its PR-triggered checks allowed to complete; no further product/runtime mutation is authorized if those checks remain green.
 
 ## Governing semantic invariant
 
@@ -125,7 +145,7 @@ This CURRENT update is documentation-only over that green head; no runtime/test/
 
 ## Exact next action
 
-Fresh-verify the PR #123 head containing this R1 checkpoint and require exact-head CI for the focused S1 app-core regression, inherited G1/G2/G3 regression gates, affected syntax/workflow checks and Canonical Impact guard. If green, checkpoint the exact evidence here and hand the resulting head to a **fresh delta+cumulative independent P6B reviewer**. No merge/deploy/smoke.
+Fresh-verify the resulting documentation-only PR #123 head and its PR-triggered checks. If the focused S1 regression, inherited G1/G2/G3 gates, affected syntax/workflow checks and Canonical Impact guard remain green, hand that exact head to a **fresh delta+cumulative independent P6B reviewer** and STOP. No implementation-author review, merge, deploy or production smoke.
 
 ## Explicitly forbidden
 
