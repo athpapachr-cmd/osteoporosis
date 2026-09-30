@@ -280,3 +280,16 @@ FORBIDDEN ON RESUME: PR-1 mutation, Reception reason/availability/booking behavi
 ## Exact next action
 
 Use the live Pending Surgery Queue in the Cockpit. Further additions (for example surgeon, hospital, insurer/GESY authorization, pre-op checklist, priority reason, or archive/history view) are separate product increments, not blockers for v1.
+
+
+## Pending Surgery Queue v1.1 — delete action
+
+> **STATUS:** CODED / CI PENDING.
+
+- Adds visible `Διαγραφή` action with explicit confirmation.
+- Protected `DELETE /clinical/surgeries/{surgery_id}`.
+- Removes the case from the active pending queue while preserving an audit record as `status=deleted`.
+- Remaining pending positions are normalized automatically.
+- No Reception/Calendar behavior change.
+
+**Next:** focused CI, then exact-head merge/deploy if green.
