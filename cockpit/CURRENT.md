@@ -211,7 +211,7 @@ FORBIDDEN ON RESUME: PR-1 mutation, Reception reason/availability/booking behavi
 
 # Pending Surgery Queue — bounded Cockpit follow-up slice
 
-> **STATUS:** V1 MERGED / AUTO-DEPLOY IN PROGRESS.
+> **STATUS:** V1 MERGED / LIVE.
 > **Workstream:** global Clinical Excellence Cockpit / pending surgery coordination.
 > **Branch:** `feat/cockpit-surgery-queue-v1-2026-09-30`.
 > **Base main:** `2ae9f01ded14bd2106ee09f47acb3fea4d72bc4b`.
@@ -264,8 +264,19 @@ FORBIDDEN ON RESUME: PR-1 mutation, Reception reason/availability/booking behavi
 - corrected Canonical Impact `36715409552`: PASS.
 - corrected Cockpit Home, Clinical Documents P1/P2, Learning L1, CU-1, G3 and Physio Cockpit browser/integration gates: PASS.
 - PR #124 merge: `3ab6a0fe0dc83047ab37925a8dddde2c032ba8fe`.
-- Render auto-deploy: `dep-daug4j49v7es73bjk910` / build in progress at checkpoint time.
+- initial merge deploy `dep-daug4j49v7es73bjk910` was superseded by the required post-merge checkpoint deploy;
+- final Render deploy `dep-daug4tnf3r2c73fr2h30`: **LIVE** / source `205ca3369abf5b0dcec5a8db30b945e1748bce98`.
+
+## Release state
+
+- PR #124: MERGED.
+- merge commit: `3ab6a0fe0dc83047ab37925a8dddde2c032ba8fe`.
+- final deployed source/checkpoint: `205ca3369abf5b0dcec5a8db30b945e1748bce98`.
+- Render deploy: `dep-daug4tnf3r2c73fr2h30` / **LIVE**.
+- focused surgery queue evidence: 10 tests PASS.
+- inherited Cockpit/Clinical Documents/Learning/CU-1/G3/Physio browser integration gates: PASS.
+- patient identity remains protected in the surgery queue's server-side table; no browser storage and no implicit mutation of `clinical_patients`.
 
 ## Exact next action
 
-Observe the automatic Render deployment for the merged Surgery Queue. Record LIVE/startup truth before production smoke or declaring the feature released.
+Use the live Pending Surgery Queue in the Cockpit. Further additions (for example surgeon, hospital, insurer/GESY authorization, pre-op checklist, priority reason, or archive/history view) are separate product increments, not blockers for v1.
