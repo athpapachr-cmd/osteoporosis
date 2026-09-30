@@ -267,20 +267,4 @@ def build_surgery_queue_router(engine: Engine) -> APIRouter:
             session.refresh(row)
             return record(row)
 
-    @router.delete("/{surgery_id}", response_model=SurgeryRecord, dependencies=protected)
-    def remove_pending_surgery(surgery_id: str) -> SurgeryRecord:
-        now = utcnow()
-        with Session(engine) as session:
-            row = get_row(session, surgery_id)
-            if row.status != "pending":
-                raise HTTPException(status_code=409, detail="Only pending surgeries can be removed")
-            row.status = "deleted"
-            row.updated_at = now
-            row.queue_position = 0
-            session.add(row)
-            normalize_pending_positions(session)
-            session.commit()
-            session.refresh(row)
-            return record(row)
-
     return router
