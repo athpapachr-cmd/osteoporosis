@@ -1,0 +1,50 @@
+name: Cockpit surgery queue
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "clinical_surgery_queue.py"
+      - "main.py"
+      - "static/cockpit/**"
+      - "test_clinical_surgery_queue.py"
+      - "test_cockpit_surgery_queue_ui.py"
+      - "cockpit/CURRENT.md"
+      - ".github/workflows/cockpit-surgery-queue-tests.yml"
+  push:
+    paths:
+      - "clinical_surgery_queue.py"
+      - "main.py"
+      - "static/cockpit/**"
+      - "test_clinical_surgery_queue.py"
+      - "test_cockpit_surgery_queue_ui.py"
+      - ".github/workflows/cockpit-surgery-queue-tests.yml"
+
+jobs:
+  surgery-queue:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt pytest
+
+      - name: Python syntax
+        run: python -m py_compile clinical_surgery_queue.py main.py test_clinical_surgery_queue.py test_cockpit_surgery_queue_ui.py
+
+      - name: Cockpit JavaScript syntax
+        run: node --check static/cockpit/app.js
+
+      - name: Surgery queue deterministic tests
+        run: pytest -q test_clinical_surgery_queue.py test_cockpit_surgery_queue_ui.py
+
+      - name: Diff hygiene
+        run: git diff --check HEAD^ HEAD

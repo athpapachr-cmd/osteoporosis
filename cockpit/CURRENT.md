@@ -129,19 +129,19 @@ PR #118: MERGED
 DEPLOYED: YES / LIVE
 ROOT -> COCKPIT HOME: VERIFIED
 MODULE-01 SIDEBAR CLEANUP: VERIFIED
-CAL.COM REASON BRIDGE: CONSUMER MERGED / PRODUCER PENDING
+CAL.COM REASON BRIDGE: CLOSED / DAILY 04:00 UTC
 ```
 
 ## Exact next action
 
-HOLD this completed Home release. The Clinical Calendar consumer side of the separate Cal.com visit-reason integration is now merged; the Reception producer remains separately gated. Do not reopen Cockpit Home unless post-use evidence shows a presentation/navigation defect.
+HOLD the completed Home v1 release. The Cal.com → Clinical Calendar bridge is now CLOSED on a daily 04:00 UTC cadence; do not reopen that integration without new production failure evidence. The active Cockpit follow-up is the separately bounded Pending Surgery Queue v1.
 
 
 ---
 
 # Clinical Calendar reason bridge — bounded follow-up slice
 
-> **STATUS:** CONSUMER + PROVIDER-CORRECTED PRODUCER LIVE / FIRST SNAPSHOT DELIVERY EVIDENCE PENDING.
+> **STATUS:** CLOSED / DAILY RUNTIME + REPO CADENCE ALIGNED.
 > **Workstream:** Cal.com visit-reason normalization into the Clinical Calendar.
 > **Branch:** `feat/calendar-reason-snapshot-v1-2026-09-27`.
 > **Base main:** `a0cf912b0fcb5caf54f4a48f8f8a698908fbb0a4`.
@@ -167,14 +167,15 @@ HOLD this completed Home release. The Clinical Calendar consumer side of the sep
 3. **DONE / SOURCE-CORRECTED:** provider evidence showed no dedicated visit-reason `bookingFieldsResponses` field on current Limassol/Evrychou Cal.com event types. The Digital Secretary's own booking schema/create path and provider logs establish `metadata.notes` as the Secretary-created booking reason source.
 4. **DONE / MERGED / LIVE:** producer correction PR #153 binds the clinical feed strictly to `metadata.notes`; missing notes stay blank and generic reason-like booking-field fallbacks remain forbidden.
 5. **DONE / CONFIGURED:** consumer shared ingest authentication and producer snapshot URL/shared ingest key are live. No Cal.com custom-field configuration was added.
-6. **NOW:** observe the first lawful existing scheduled sync and verify an actual Clinical Calendar snapshot delivery.
-7. **SEPARATE AFTERWARD:** reconcile Render cron cadence drift. Actual Render schedule is daily `0 4 * * *`; repository manifest says hourly `0 * * * *`. Do not create a second cron.
+6. **DONE / PRODUCTION EVIDENCE:** lawful daily runs on 28–30/9 reached the bridge but exposed a 20-second free-service cold-start timeout, not an auth/provider-field defect.
+7. **DONE / CORRECTED / LIVE:** Backend PR #154 raised only the Clinical Calendar delivery timeout to 90 seconds and aligned `render.yaml` to the final daily `0 4 * * *` cadence. The existing Render cron is daily and no second cron exists.
+8. **CLOSED:** the next normal daily run is post-close monitoring only and may reopen the slice only on new failure evidence.
 
 ## Recovery checkpoint
 
 ```text
 RECOVERY CHECKPOINT ID: COCKPIT-CALENDAR-REASON-BRIDGE-20260927-A
-STATUS: RUNTIME ACTIVE / FIRST DELIVERY EVIDENCE PENDING
+STATUS: CLOSED / DAILY 04:00 UTC
 IMPLEMENTATION COMMITS:
 - 20e5687fc4283318966fca7e680b3e62eaede43f — snapshot reconciliation endpoint + shared import path
 - 83da6339c8e4c4841e910a8e6135a91bf00380e5 — canonical source / exact window validation
@@ -204,3 +205,61 @@ LAST SAFE RESUME POINT: consumer and corrected producer are live and mutually co
 EXACT NEXT ACTION: verify the first existing scheduled /admin/trigger-sync produces clinical_calendar configured=true / attempted=true / sent=true; then reconcile the separate cron cadence drift
 FORBIDDEN ON RESUME: PR-1 mutation, Reception reason/availability/booking behavior change, second sync cron, guessed Cal.com reason field, phone/SIP or booking/business mutation
 ```
+
+
+---
+
+# Pending Surgery Queue — bounded Cockpit follow-up slice
+
+> **STATUS:** V1 IDENTITY CONTRACT CORRECTED / EXACT-HEAD CI RERUN PENDING.
+> **Workstream:** global Clinical Excellence Cockpit / pending surgery coordination.
+> **Branch:** `feat/cockpit-surgery-queue-v1-2026-09-30`.
+> **Base main:** `2ae9f01ded14bd2106ee09f47acb3fea4d72bc4b`.
+> **Product-owner direction:** 2026-09-30 — add a pending surgery list to the dashboard with patient identity/contact data, procedure/laterality, manual ordering/sorting and surgery date.
+> **Root writer lock:** unchanged; this workstream uses `cockpit/CURRENT.md` under AGENTS §4.2.
+
+## V1 product contract
+
+- Global Cockpit feature; not Osteoporosis-specific and not Reception booking logic.
+- Reuse the existing protected Clinical Auth browser session and the existing PostgreSQL engine.
+- Patient identity stays server-side; no localStorage/sessionStorage persistence.
+- Pending list fields:
+  - ονοματεπώνυμο;
+  - ΑΔΤ / stable patient identity;
+  - ημερομηνία γέννησης;
+  - τύπος επέμβασης;
+  - πλευρά;
+  - τηλέφωνο;
+  - ημερομηνία χειρουργείου.
+- Manual persisted queue order supports move up/down.
+- Table supports non-persistent sorting by displayed columns without silently changing the manual queue order.
+- Marking a case completed removes it from the default pending list but preserves the record.
+- Surgery Queue stores the requested identity/contact snapshot in its own protected server-side table. It does **not** assume generic `clinical_patients.patient_id` equals ΑΔΤ and does not silently mutate the longitudinal patient registry. Explicit future patient-linking is a separate product slice.
+- Synthetic test data only; no identifiable patient data in repository or CI.
+
+## Implementation checkpoint
+
+- protected `clinical_surgery_queue.py` API with PostgreSQL persistence;
+- protected queue-owned identity/contact fields; no implicit `clinical_patients` mutation or ΑΔΤ→generic patient-id assumption;
+- create/update/list/move/complete lifecycle;
+- Cockpit table with sortable columns, inline surgery date, ↑/↓ manual order, edit and complete controls;
+- no browser storage of patient identity;
+- focused synthetic API/UI tests + dedicated CI workflow;
+- no Reception/Cal.com/booking behavior change.
+
+## Prior evidence and source-driven correction
+
+- PR #124: `Cockpit: add protected pending surgery queue`.
+- exact implementation head before this checkpoint: `a4feb0aeec452677b2b07cc283bd5c16aa2e0ec4`.
+- focused workflow `36714622069`: PASS.
+- Python syntax: PASS.
+- Cockpit JavaScript syntax: PASS.
+- surgery queue API/UI tests: **10 passed in 0.64s**.
+- diff hygiene: PASS.
+- Canonical impact guard `36714622173`: PASS.
+- inherited Cockpit Home, Clinical Documents P1/P2, Learning L1, CU-1, Physio integration and G3 regression gates: PASS.
+- **Source-driven correction after that head:** existing `clinical_patients.patient_id` is generic, not canonically ΑΔΤ. The queue contract was corrected to keep identity fields in the protected surgery row and avoid hidden mutation/duplication of longitudinal patient identity.
+
+## Exact next action
+
+Rerun the same focused/inherited gates on the corrected exact head. Merge only if that head is green. Deployment/smoke follows as a separate checkpoint.

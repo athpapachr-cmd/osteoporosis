@@ -58,6 +58,94 @@
       </div>
     </section>
 
+    <section class="section surgery-section">
+      <div class="section-heading">
+        <div>
+          <p class="section-kicker">Χειρουργεία</p>
+          <h2>Pending χειρουργεία</h2>
+        </div>
+        <p>Προστατευμένη λίστα προγραμματισμού με manual σειρά προτεραιότητας και ημερομηνία χειρουργείου.</p>
+      </div>
+
+      <article class="panel surgery-panel">
+        <div class="panel-head surgery-panel-head">
+          <div>
+            <span class="icon-badge">✚</span>
+            <h3>Λίστα αναμονής</h3>
+          </div>
+          <span id="surgeryQueueState" class="status-chip">Φόρτωση…</span>
+        </div>
+
+        <details id="surgeryEditorDetails" class="surgery-editor">
+          <summary class="button secondary">Νέο pending χειρουργείο</summary>
+          <form id="surgeryForm" class="surgery-form">
+            <input id="surgeryId" type="hidden" />
+            <label>
+              <span>Ονοματεπώνυμο</span>
+              <input id="surgeryFullName" name="full_name" required maxlength="200" autocomplete="off" />
+            </label>
+            <label>
+              <span>ΑΔΤ</span>
+              <input id="surgeryIdentityNumber" name="identity_number" required maxlength="80" autocomplete="off" />
+            </label>
+            <label>
+              <span>Ημ. γέννησης</span>
+              <input id="surgeryDateOfBirth" name="date_of_birth" type="date" required />
+            </label>
+            <label>
+              <span>Τηλέφωνο</span>
+              <input id="surgeryPhone" name="phone" type="tel" required maxlength="40" autocomplete="off" />
+            </label>
+            <label class="surgery-form-wide">
+              <span>Τύπος επέμβασης</span>
+              <input id="surgeryProcedureType" name="procedure_type" required maxlength="240" autocomplete="off" />
+            </label>
+            <label>
+              <span>Πλευρά</span>
+              <select id="surgeryLaterality" name="laterality" required>
+                <option value="unspecified">Δεν έχει καθοριστεί</option>
+                <option value="left">Αριστερά</option>
+                <option value="right">Δεξιά</option>
+                <option value="bilateral">Αμφοτερόπλευρα</option>
+                <option value="not_applicable">Δεν εφαρμόζεται</option>
+              </select>
+            </label>
+            <label>
+              <span>Ημερομηνία χειρουργείου</span>
+              <input id="surgeryDate" name="surgery_date" type="date" />
+            </label>
+            <div class="surgery-form-actions surgery-form-wide">
+              <button id="surgerySubmit" class="button primary" type="submit">Προσθήκη</button>
+              <button id="surgeryCancelEdit" class="button secondary" type="button" hidden>Ακύρωση επεξεργασίας</button>
+            </div>
+          </form>
+        </details>
+
+        <p id="surgeryQueueNote" class="panel-note">Τα στοιχεία εμφανίζονται μόνο σε authenticated clinical session και δεν αποθηκεύονται στον browser.</p>
+
+        <div class="surgery-table-wrap">
+          <table class="surgery-table">
+            <thead>
+              <tr>
+                <th><button type="button" class="surgery-sort" data-sort="queue_position">#</button></th>
+                <th><button type="button" class="surgery-sort" data-sort="full_name">Ονοματεπώνυμο</button></th>
+                <th><button type="button" class="surgery-sort" data-sort="identity_number">ΑΔΤ</button></th>
+                <th><button type="button" class="surgery-sort" data-sort="date_of_birth">Ημ. γέννησης</button></th>
+                <th><button type="button" class="surgery-sort" data-sort="procedure_type">Επέμβαση</button></th>
+                <th><button type="button" class="surgery-sort" data-sort="laterality">Πλευρά</button></th>
+                <th><button type="button" class="surgery-sort" data-sort="phone">Τηλέφωνο</button></th>
+                <th><button type="button" class="surgery-sort" data-sort="surgery_date">Ημ. χειρουργείου</button></th>
+                <th>Ενέργειες</th>
+              </tr>
+            </thead>
+            <tbody id="surgeryTableBody">
+              <tr><td colspan="9" class="surgery-empty">Φόρτωση…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+
     <section class="section">
       <div class="section-heading">
         <div>
