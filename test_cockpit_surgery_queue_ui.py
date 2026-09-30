@@ -37,6 +37,8 @@ def test_cockpit_surgery_queue_exposes_required_fields_and_controls():
         assert f'data-sort="{sort_key}"' in HTML
 
     assert "Ολοκληρώθηκε" in JS
+    assert 'actionButton("🗑", "delete"' in JS
+    assert 'actionButton("Διαγραφή", "delete"' not in JS
     assert "Διαγραφή" in JS
     assert 'method: "DELETE"' in JS
     assert '"up"' in JS
