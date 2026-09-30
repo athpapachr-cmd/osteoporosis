@@ -284,25 +284,23 @@ Use the live Pending Surgery Queue in the Cockpit. Further additions (for exampl
 
 ## Pending Surgery Queue v1.1 — delete action
 
-> **STATUS:** CODED / CI PENDING.
+> **STATUS:** MERGED / LIVE.
 
-- Adds visible `Διαγραφή` action with explicit confirmation.
-- Protected `DELETE /clinical/surgeries/{surgery_id}`.
-- Removes the case from the active pending queue while preserving an audit record as `status=deleted`.
-- Remaining pending positions are normalized automatically.
-- No Reception/Calendar behavior change.
-
-**Next:** focused CI, then exact-head merge/deploy if green.
+- PR #126 merged as `3ed0c9a52083eed6151c3e880eac2aad71d0cf4c`.
+- Adds protected pending-row deletion with confirmation and soft-delete audit semantics.
+- The visible control is now refined to a compact trash icon in the next combined UX release.
 
 ## Clinical Calendar manual classification + Surgery Queue icon — 2026-09-30
 
-> **STATUS:** CODED / CI PENDING.
+> **STATUS:** MERGED / AUTO-DEPLOY PENDING.
 
+- PR #127 merged as `fb5e8596334372d7f5e9bc3ae6ccd8dfb4be43ea`.
 - `osteoporosis_unspecified` remains the safe automatic result when the reason establishes osteoporosis but duration does not establish first/review.
-- Appointment cards now expose explicit choices: Πρώτη επίσκεψη / Επανέλεγχος / Prolia / Aclasta.
+- Appointment cards expose explicit choices: Πρώτη επίσκεψη / Επανέλεγχος / Prolia / Aclasta.
 - Manual classification is stored in a separate protected consumer-side override table and survives future Cal.com snapshots.
 - Selecting «Αυτόματο» clears the override and returns to classifier-derived behavior.
 - No manual classification writes back to Cal.com or Reception.
 - Surgery Queue delete is displayed as a compact trash icon while preserving confirmation + soft-delete behavior.
+- Canonical impact, Clinical Calendar snapshot, Surgery Queue and Cockpit Home gates: PASS.
 
-**Next:** focused Clinical Calendar + Surgery Queue/Cockpit gates, then exact-head merge/deploy if green.
+**Next:** observe the automatic Render deploy and then use the live controls.
