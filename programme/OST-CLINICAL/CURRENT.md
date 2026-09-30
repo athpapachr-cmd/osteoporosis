@@ -1,7 +1,7 @@
 # OST-CLINICAL CURRENT — S1 Fracture / Fragility Semantics
 
 > **TASK:** `S1-FRACTURE-FRAGILITY-P6B-R1-RAW-VALUE-PRESERVATION-CORRECTION`
-> **STATUS:** P6B PASS / RELEASE RECONCILIATION PASS / PRODUCT OWNER MERGE AUTHORITY GRANTED / PR READY
+> **STATUS:** S1 MERGED / P6B PASS / DEPLOY STATUS PENDING OBSERVATION
 > **Date:** 2026-09-27 Asia/Nicosia.
 > **Fresh base main:** `2ae9f01ded14bd2106ee09f47acb3fea4d72bc4b`.
 > **Implementation branch:** `fix/ost-clinical-s1-fracture-fragility-semantics-2026-09-27`.
@@ -255,6 +255,32 @@ SQUASH MERGE PR #123
 → no production smoke unless separately authorized / procedure clearly permits it
 ```
 
+## Merge checkpoint — 2026-09-30
+
+Product Owner merge authority was exercised only after exact-head release gates were green.
+
+```text
+PR:                         #123
+final PR head:              737a0e90899a0cfc991be3fe5192f8249f4c5631
+independent reviewed target: ba2f8635372f85cd94409fa66e08c3d8b428bcba
+post-review semantic delta:  NONE
+merge method:               squash
+merge commit:               dd16a505662606f588a2adc8b1ae0ddddd884d19
+PR state:                   MERGED
+```
+
+Exact final-head checks before merge:
+
+- Canonical impact guard — SUCCESS;
+- G1 progressive guidance foundation — SUCCESS;
+- G2 evidence guidance runtime — SUCCESS;
+- G3 guidance salience longitudinal summary — SUCCESS;
+- focused S1 fracture/fragility writer + load/render regression inside G3 — SUCCESS.
+
+Fresh main immediately after merge was verified at the exact merge commit `dd16a505...`.
+
+This checkpoint records the merge only. Normal Render auto-deploy may follow from `main`; no manual redeploy is authorized or required. Production smoke remains a separate action unless clearly authorized by procedure/Product Owner.
+
 ## Explicitly forbidden
 
 - modifying root `CURRENT_OPERATIONAL.md`;
@@ -264,4 +290,4 @@ SQUASH MERGE PR #123
 - Product Constitution or OST-LIFECOURSE architecture changes;
 - resolving Q1–Q12;
 - independent post-code review by this author;
-- merge, deploy or production smoke.
+- manual redeploy or production smoke without separate authority.
