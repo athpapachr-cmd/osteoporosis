@@ -31,8 +31,8 @@ class _LearningHtmlParser(HTMLParser):
 
 class ClinicalLearningL1UiContractTests(unittest.TestCase):
     def test_learning_hub_has_direct_cockpit_backlink(self):
-        self.assertIn('href="/static/cockpit/"', HTML)
-        self.assertIn('← Cockpit', HTML)
+        self.assertIn('href="/static/cockpit/"', self.html)
+        self.assertIn('← Cockpit', self.html)
 
 
     @classmethod
