@@ -544,9 +544,16 @@
     const fractureLatest = fractures.most_recent;
     let fractureBody = "Δεν έχει τεκμηριωθεί";
     if (fractures.state === "documented") {
-      const countText = fractures.documented_count ? `${fractures.documented_count} μοναδικά τεκμηριωμένα event(s)` : "Ιστορικό fragility fracture τεκμηριωμένο";
+      const countText = Number(fractures.documented_count || 0) > 0
+        ? `${fractures.documented_count} μοναδικά τεκμηριωμένα κάταγμα/event(s)`
+        : "Legacy fracture-history στοιχεία χωρίς structured fracture event";
+      const fragilityText = fractures.fragility_confirmation === "confirmed_event"
+        ? ` · επιβεβαιωμένο low-trauma/fragility event: ${Number(fractures.confirmed_fragility_count || 0)}`
+        : fractures.fragility_confirmation === "legacy_claim_unconfirmed"
+          ? " · legacy fragility δήλωση χωρίς επιβεβαιωμένο low-trauma event"
+          : " · χωρίς επιβεβαιωμένο low-trauma event";
       const latestText = fractureLatest ? ` · τελευταίο ${fractureLatest.site || "site μη καταγεγραμμένο"}${fractureLatest.month ? ` (${fractureLatest.month})` : ""}` : "";
-      fractureBody = `${countText}${latestText}`;
+      fractureBody = `${countText}${fragilityText}${latestText}`;
     }
     const risk = summary.risk || {};
     const riskDetail = risk.state === "documented"

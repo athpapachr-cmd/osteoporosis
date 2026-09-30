@@ -11,6 +11,7 @@ on:
       - 'main.py'
       - 'clinic_utilities/rf_gateway.py'
       - 'static/baseline-audit/osteoporosis-longitudinal-summary-core.js'
+      - 'static/baseline-audit/app-core.js'
       - 'static/baseline-audit/osteoporosis-evidence-guidance-core.js'
       - 'static/baseline-audit/progressive-guidance-core.js'
       - 'static/baseline-audit/progressive-guidance-ui.js'
@@ -20,6 +21,7 @@ on:
       - 'static/baseline-audit/progressive-guidance.css'
       - 'static/baseline-audit/app.js'
       - 'test_g3_guidance_summary_node.js'
+      - 'test_s1_fracture_fragility_app_core.js'
       - 'test_g3_guidance_summary_wiring.js'
       - 'test_g3_salience_token_core.js'
       - 'test_g3_production_visibility_cache.py'
@@ -41,6 +43,7 @@ on:
       - 'main.py'
       - 'clinic_utilities/rf_gateway.py'
       - 'static/baseline-audit/osteoporosis-longitudinal-summary-core.js'
+      - 'static/baseline-audit/app-core.js'
       - 'static/baseline-audit/osteoporosis-evidence-guidance-core.js'
       - 'static/baseline-audit/progressive-guidance-core.js'
       - 'static/baseline-audit/progressive-guidance-ui.js'
@@ -50,6 +53,7 @@ on:
       - 'static/baseline-audit/progressive-guidance.css'
       - 'static/baseline-audit/app.js'
       - 'test_g3_guidance_summary_node.js'
+      - 'test_s1_fracture_fragility_app_core.js'
       - 'test_g3_guidance_summary_wiring.js'
       - 'test_g3_salience_token_core.js'
       - 'test_g3_production_visibility_cache.py'
@@ -85,12 +89,14 @@ jobs:
           node --check static/baseline-audit/progressive-guidance-core.js
           node --check static/baseline-audit/osteoporosis-evidence-guidance-core.js
           node --check static/baseline-audit/osteoporosis-longitudinal-summary-core.js
+          node --check static/baseline-audit/app-core.js
           node --check static/baseline-audit/progressive-guidance-ui.js
           node --check static/baseline-audit/g3-salience-token-core.js
           node --check static/baseline-audit/g3-production-visibility-guard.js
           node --check static/baseline-audit/g4-workspace-ergonomics.js
           node --check static/baseline-audit/app.js
           node --check test_g3_guidance_summary_node.js
+          node --check test_s1_fracture_fragility_app_core.js
           node --check test_g3_guidance_summary_wiring.js
           node --check test_g3_salience_token_core.js
           node --check test_g4_workspace_ergonomics.js
@@ -110,6 +116,8 @@ jobs:
         run: node test_g4_workspace_ergonomics.js
       - name: Run G3 salience and longitudinal summary regressions
         run: node test_g3_guidance_summary_node.js
+      - name: Run S1 fracture / fragility writer and load-render regressions
+        run: node test_s1_fracture_fragility_app_core.js
       - name: Run G3 wiring and ownership regressions
         run: node test_g3_guidance_summary_wiring.js
       - name: Prove new evidence trigger on existing card is salient
