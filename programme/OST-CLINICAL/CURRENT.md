@@ -1,7 +1,7 @@
 # OST-CLINICAL CURRENT — S1 Fracture / Fragility Semantics
 
 > **TASK:** `S1-FRACTURE-FRAGILITY-P6B-R1-RAW-VALUE-PRESERVATION-CORRECTION`
-> **STATUS:** P6B PASS / RELEASE RECONCILIATION PASS / AWAITING PRODUCT OWNER MERGE AUTHORITY
+> **STATUS:** P6B PASS / RELEASE RECONCILIATION PASS / PRODUCT OWNER MERGE AUTHORITY GRANTED / PR READY
 > **Date:** 2026-09-27 Asia/Nicosia.
 > **Fresh base main:** `2ae9f01ded14bd2106ee09f47acb3fea4d72bc4b`.
 > **Implementation branch:** `fix/ost-clinical-s1-fracture-fragility-semantics-2026-09-27`.
@@ -203,8 +203,8 @@ POST-REVIEW RUNTIME DELTA: NONE
 FRESH-MAIN DIRECT-PATH OVERLAP: NONE
 PR MERGEABLE: YES
 RELEASE RECONCILIATION: PASS
-MERGE AUTHORITY: NOT YET GRANTED
-DEPLOY/SMOKE AUTHORITY: NOT YET GRANTED
+MERGE AUTHORITY: GRANTED BY PRODUCT OWNER
+DEPLOY/SMOKE AUTHORITY: NOT IMPLIED BY MERGE AUTHORITY
 ```
 
 The independently reviewed substantive target remains `ba2f863...`. This checkpoint is documentation-only and does not create a new independently reviewed runtime target.
@@ -230,6 +230,30 @@ Do not open another independent S1 review unless runtime/test semantics change.
 6. production-smoke only after the merge/deploy checkpoint.
 
 Do NOT open another independent S1 review unless the runtime/test delta changes or release reconciliation reveals a material interaction requiring it.
+
+## Product Owner merge authority checkpoint — 2026-09-30
+
+The Product Owner explicitly instructed: `merge`.
+
+PR #123 was then fresh-verified at head `a4d414bb05ffce00ad401ff661133b7c5a6c4458` with:
+
+- Canonical impact guard: SUCCESS;
+- G1 progressive guidance foundation: SUCCESS;
+- G2 evidence guidance runtime: SUCCESS;
+- G3 guidance salience longitudinal summary: SUCCESS;
+- post-independent-review delta limited to this workstream CURRENT documentation;
+- PR mergeable: YES.
+
+The PR has been moved from DRAFT to READY FOR REVIEW. No code/runtime/test mutation occurred in that transition.
+
+Exact next action after this documentation checkpoint and green checks on the resulting head:
+
+```text
+SQUASH MERGE PR #123
+→ checkpoint exact merge SHA
+→ observe normal Render auto-deploy
+→ no production smoke unless separately authorized / procedure clearly permits it
+```
 
 ## Explicitly forbidden
 
