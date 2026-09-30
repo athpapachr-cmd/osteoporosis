@@ -129,19 +129,19 @@ PR #118: MERGED
 DEPLOYED: YES / LIVE
 ROOT -> COCKPIT HOME: VERIFIED
 MODULE-01 SIDEBAR CLEANUP: VERIFIED
-CAL.COM REASON BRIDGE: CONSUMER MERGED / PRODUCER PENDING
+CAL.COM REASON BRIDGE: CLOSED / DAILY 04:00 UTC
 ```
 
 ## Exact next action
 
-HOLD this completed Home release. The Clinical Calendar consumer side of the separate Cal.com visit-reason integration is now merged; the Reception producer remains separately gated. Do not reopen Cockpit Home unless post-use evidence shows a presentation/navigation defect.
+HOLD the completed Home v1 release. The Cal.com → Clinical Calendar bridge is now CLOSED on a daily 04:00 UTC cadence; do not reopen that integration without new production failure evidence. The active Cockpit follow-up is the separately bounded Pending Surgery Queue v1.
 
 
 ---
 
 # Clinical Calendar reason bridge — bounded follow-up slice
 
-> **STATUS:** CONSUMER + PROVIDER-CORRECTED PRODUCER LIVE / FIRST SNAPSHOT DELIVERY EVIDENCE PENDING.
+> **STATUS:** CLOSED / DAILY RUNTIME + REPO CADENCE ALIGNED.
 > **Workstream:** Cal.com visit-reason normalization into the Clinical Calendar.
 > **Branch:** `feat/calendar-reason-snapshot-v1-2026-09-27`.
 > **Base main:** `a0cf912b0fcb5caf54f4a48f8f8a698908fbb0a4`.
@@ -167,14 +167,15 @@ HOLD this completed Home release. The Clinical Calendar consumer side of the sep
 3. **DONE / SOURCE-CORRECTED:** provider evidence showed no dedicated visit-reason `bookingFieldsResponses` field on current Limassol/Evrychou Cal.com event types. The Digital Secretary's own booking schema/create path and provider logs establish `metadata.notes` as the Secretary-created booking reason source.
 4. **DONE / MERGED / LIVE:** producer correction PR #153 binds the clinical feed strictly to `metadata.notes`; missing notes stay blank and generic reason-like booking-field fallbacks remain forbidden.
 5. **DONE / CONFIGURED:** consumer shared ingest authentication and producer snapshot URL/shared ingest key are live. No Cal.com custom-field configuration was added.
-6. **NOW:** observe the first lawful existing scheduled sync and verify an actual Clinical Calendar snapshot delivery.
-7. **SEPARATE AFTERWARD:** reconcile Render cron cadence drift. Actual Render schedule is daily `0 4 * * *`; repository manifest says hourly `0 * * * *`. Do not create a second cron.
+6. **DONE / PRODUCTION EVIDENCE:** lawful daily runs on 28–30/9 reached the bridge but exposed a 20-second free-service cold-start timeout, not an auth/provider-field defect.
+7. **DONE / CORRECTED / LIVE:** Backend PR #154 raised only the Clinical Calendar delivery timeout to 90 seconds and aligned `render.yaml` to the final daily `0 4 * * *` cadence. The existing Render cron is daily and no second cron exists.
+8. **CLOSED:** the next normal daily run is post-close monitoring only and may reopen the slice only on new failure evidence.
 
 ## Recovery checkpoint
 
 ```text
 RECOVERY CHECKPOINT ID: COCKPIT-CALENDAR-REASON-BRIDGE-20260927-A
-STATUS: RUNTIME ACTIVE / FIRST DELIVERY EVIDENCE PENDING
+STATUS: CLOSED / DAILY 04:00 UTC
 IMPLEMENTATION COMMITS:
 - 20e5687fc4283318966fca7e680b3e62eaede43f — snapshot reconciliation endpoint + shared import path
 - 83da6339c8e4c4841e910a8e6135a91bf00380e5 — canonical source / exact window validation
