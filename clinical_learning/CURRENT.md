@@ -1,6 +1,6 @@
 # Clinical Learning — CURRENT
 
-STATUS: NAVIGATION FIX IMPLEMENTED / REGRESSION GATES PASS / PRE-MERGE
+STATUS: NAVIGATION FIX MERGED / AUTO-DEPLOY IN PROGRESS
 
 Task: add a direct return path from Clinical Learning Hub to the global Clinical Excellence Cockpit.
 
@@ -26,5 +26,11 @@ Evidence:
 - Scope/adjacent-owner guards: PASS.
 - Diff hygiene: PASS.
 
+Release:
+- PR #125 merged as `d8252e4bd39d0c8ecbc2c1a42e17a00415cb3a4e`.
+- final reviewed head `bac70baf956870a8d39d6216dd035b1cdcc36b17`.
+- L1, L1B and canonical-impact gates: PASS.
+- Render auto-deploy triggered after merge.
+
 Exact next action:
-Fresh-verify PR #125 exact head/base and merge if unchanged/mergeable.
+No further code change. Confirm the normal auto-deploy reaches LIVE; then this navigation defect is closed.
