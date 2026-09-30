@@ -6,7 +6,6 @@ from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
-from clinical_data import PatientORM
 from clinical_surgery_queue import SurgeryQueueORM, build_surgery_queue_router
 
 
@@ -57,7 +56,7 @@ def test_surgery_queue_requires_clinical_auth(monkeypatch):
     ).status_code == 401
 
 
-def test_create_list_reuses_patient_and_preserves_pending_order(monkeypatch):
+def test_create_list_preserves_identity_fields_and_pending_order(monkeypatch):
     client, engine = _client(monkeypatch)
 
     first = client.post(
@@ -91,9 +90,11 @@ def test_create_list_reuses_patient_and_preserves_pending_order(monkeypatch):
     assert rows[1]["surgery_date"] == "2026-10-15"
 
     with Session(engine) as session:
-        patients = session.execute(select(PatientORM).order_by(PatientORM.patient_id)).scalars().all()
-        assert [patient.patient_id for patient in patients] == ["ID-SYN-001", "ID-SYN-002"]
-        assert patients[0].demographics_json["full_name"] == "Synthetic Patient One"
+        stored = session.execute(
+            select(SurgeryQueueORM).order_by(SurgeryQueueORM.queue_position)
+        ).scalars().all()
+        assert [row.identity_number for row in stored] == ["ID-SYN-001", "ID-SYN-002"]
+        assert stored[0].full_name == "Synthetic Patient One"
 
 
 def test_update_patient_details_and_surgery_date(monkeypatch):
@@ -131,10 +132,11 @@ def test_update_patient_details_and_surgery_date(monkeypatch):
     assert row["surgery_date"] == "2026-11-04"
 
     with Session(engine) as session:
-        patient = session.get(PatientORM, "ID-SYN-010")
-        assert patient is not None
-        assert patient.demographics_json["full_name"] == "Synthetic Patient Updated"
-        assert patient.demographics_json["phone"] == "+35799111111"
+        stored = session.get(SurgeryQueueORM, created["surgery_id"])
+        assert stored is not None
+        assert stored.identity_number == "ID-SYN-010"
+        assert stored.full_name == "Synthetic Patient Updated"
+        assert stored.phone == "+35799111111"
 
 
 def test_move_up_down_persists_manual_queue_order(monkeypatch):
