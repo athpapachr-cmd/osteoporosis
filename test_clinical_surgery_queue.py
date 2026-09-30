@@ -229,6 +229,48 @@ def test_complete_removes_case_from_default_pending_but_preserves_record(monkeyp
         assert stored.completed_at is not None
 
 
+def test_delete_pending_removes_from_queue_and_preserves_record(monkeypatch):
+    client, engine = _client(monkeypatch)
+
+    first = client.post(
+        "/clinical/surgeries",
+        headers=HEADERS,
+        json=_payload(
+            identity_number="ID-SYN-DEL-1",
+            full_name="Synthetic Delete One",
+            procedure_type="Procedure A",
+            laterality="left",
+        ),
+    ).json()
+    second = client.post(
+        "/clinical/surgeries",
+        headers=HEADERS,
+        json=_payload(
+            identity_number="ID-SYN-DEL-2",
+            full_name="Synthetic Delete Two",
+            procedure_type="Procedure B",
+            laterality="right",
+        ),
+    ).json()
+
+    response = client.delete(
+        f"/clinical/surgeries/{first['surgery_id']}",
+        headers=HEADERS,
+    )
+    assert response.status_code == 200
+    assert response.json()["status"] == "deleted"
+
+    pending = client.get("/clinical/surgeries", headers=HEADERS).json()
+    assert [row["surgery_id"] for row in pending] == [second["surgery_id"]]
+    assert pending[0]["queue_position"] == 1
+
+    with Session(engine) as session:
+        stored = session.get(SurgeryQueueORM, first["surgery_id"])
+        assert stored is not None
+        assert stored.status == "deleted"
+        assert stored.queue_position == 0
+
+
 def test_invalid_status_and_nonpending_move_fail_closed(monkeypatch):
     client, _ = _client(monkeypatch)
 

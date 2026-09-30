@@ -169,7 +169,8 @@
         actionButton("↑", "up", row.surgery_id, "Μετακίνηση πάνω"),
         actionButton("↓", "down", row.surgery_id, "Μετακίνηση κάτω"),
         actionButton("✎", "edit", row.surgery_id, "Επεξεργασία"),
-        actionButton("✓", "complete", row.surgery_id, "Ολοκληρώθηκε")
+        actionButton("✓", "complete", row.surgery_id, "Ολοκληρώθηκε"),
+        actionButton("Διαγραφή", "delete", row.surgery_id, "Διαγραφή pending χειρουργείου")
       );
       tr.appendChild(actions);
       tbody.appendChild(tr);
@@ -291,6 +292,19 @@
         await loadSurgeryQueue();
       } catch (error) {
         $("surgeryQueueNote").textContent = error.detail || "Δεν ολοκληρώθηκε η ενημέρωση.";
+      }
+      return;
+    }
+
+    if (action === "delete") {
+      if (!window.confirm(`Να διαγραφεί από τα pending το χειρουργείο για ${row.full_name};`)) return;
+      try {
+        await apiJson(`/clinical/surgeries/${encodeURIComponent(row.surgery_id)}`, {
+          method: "DELETE"
+        });
+        await loadSurgeryQueue();
+      } catch (error) {
+        $("surgeryQueueNote").textContent = error.detail || "Δεν ήταν δυνατή η διαγραφή.";
       }
       return;
     }
