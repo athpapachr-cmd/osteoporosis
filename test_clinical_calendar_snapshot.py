@@ -360,8 +360,9 @@ def test_manual_classification_survives_future_snapshot_and_can_return_to_auto(m
     assert first.status_code == 200
 
     listed = client.get(
-        f"/clinical/calendar/appointments?start={start.isoformat()}&end={end.isoformat()}",
+        "/clinical/calendar/appointments",
         headers=CLINICAL_HEADERS,
+        params={"start": start.isoformat(), "end": end.isoformat()},
     )
     assert listed.status_code == 200
     assert listed.json()[0]["category"] == "osteoporosis_unspecified"
@@ -381,8 +382,9 @@ def test_manual_classification_survives_future_snapshot_and_can_return_to_auto(m
     assert repeated.status_code == 200
 
     after_sync = client.get(
-        f"/clinical/calendar/appointments?start={start.isoformat()}&end={end.isoformat()}",
+        "/clinical/calendar/appointments",
         headers=CLINICAL_HEADERS,
+        params={"start": start.isoformat(), "end": end.isoformat()},
     ).json()[0]
     assert after_sync["category"] == "osteoporosis_review"
     assert after_sync["manual_category"] == "osteoporosis_review"
