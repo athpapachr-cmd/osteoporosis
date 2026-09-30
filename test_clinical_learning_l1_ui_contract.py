@@ -30,6 +30,11 @@ class _LearningHtmlParser(HTMLParser):
 
 
 class ClinicalLearningL1UiContractTests(unittest.TestCase):
+    def test_learning_hub_has_direct_cockpit_backlink(self):
+        self.assertIn('href="/static/cockpit/"', HTML)
+        self.assertIn('← Cockpit', HTML)
+
+
     @classmethod
     def setUpClass(cls) -> None:
         cls.html = HTML_PATH.read_text(encoding="utf-8")
