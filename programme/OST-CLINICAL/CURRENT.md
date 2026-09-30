@@ -1,7 +1,7 @@
 # OST-CLINICAL CURRENT — S1 Fracture / Fragility Semantics
 
 > **TASK:** `S1-FRACTURE-FRAGILITY-P6B-R1-RAW-VALUE-PRESERVATION-CORRECTION`
-> **STATUS:** R1 CORRECTION TESTED / EXACT-HEAD CI PASS / FINAL DOCS CHECKPOINT / DRAFT PR #123 OPEN
+> **STATUS:** P6B R1 DELTA+CUMULATIVE PASS / COORDINATOR RECONCILIATION CHECKPOINT / RELEASE HOLD
 > **Date:** 2026-09-27 Asia/Nicosia.
 > **Fresh base main:** `2ae9f01ded14bd2106ee09f47acb3fea4d72bc4b`.
 > **Implementation branch:** `fix/ost-clinical-s1-fracture-fragility-semantics-2026-09-27`.
@@ -143,9 +143,40 @@ This CURRENT update is documentation-only over that green head; no runtime/test/
 - Canonical Impact Declaration: `release_affecting=yes`, `checkpoint_stage=implementation_tested`, root canonicals `none`, this workstream CURRENT `update`, changelog deferred until completion.
 - State: draft / not merged.
 
+## Independent P6B R1 review disposition
+
+Fresh separate independent delta+cumulative P6B reviewed the exact corrected substantive target:
+
+`ba2f8635372f85cd94409fa66e08c3d8b428bcba`
+
+and returned:
+
+```text
+VERDICT: PASS
+TARGET DRIFT: NO
+D1–D6: PASS / PRESERVED
+RAW SOURCE PRESERVATION: PASS
+EXPLICIT EDIT PERSISTENCE: PASS
+SEMANTIC STABILITY: PASS
+PRESERVED G1/G2/G3/VFA/R07/DENOSUMAB BEHAVIOR: PASS
+MATERIAL RESIDUAL: NONE
+```
+
+The review made no repository mutation and did not authorize merge/deploy/smoke.
+
+Coordinator reconciliation preserves `ba2f863...` as the exact independently reviewed runtime/test target. This CURRENT update is documentation-only and must not be represented as a new independently reviewed runtime head.
+
+Fresh programme check on 2026-09-30 found current `main` at `cbe8d10891d21af2c48da9fabe8bd475f53e584a`, advanced from the original S1 base. The current-main changes inspected from the original base do not directly modify the bounded S1 product/test paths, but release remains a separate lifecycle decision.
+
 ## Exact next action
 
-Fresh-verify the resulting documentation-only PR #123 head and its PR-triggered checks. If the focused S1 regression, inherited G1/G2/G3 gates, affected syntax/workflow checks and Canonical Impact guard remain green, hand that exact head to a **fresh delta+cumulative independent P6B reviewer** and STOP. No implementation-author review, merge, deploy or production smoke.
+1. verify the post-reconciliation PR #123 head differs from the reviewed target only by coordinator documentation;
+2. allow the PR-triggered checks to complete and require them green;
+3. perform one bounded release reconciliation against fresh current `main` (mergeability / ancestry / direct-path overlap);
+4. obtain explicit Product Owner merge authority before merge;
+5. if merged, checkpoint merge → auto-deploy → production smoke atomically under repository procedure.
+
+Do NOT open another independent S1 review unless the runtime/test delta changes or release reconciliation reveals a material interaction requiring it.
 
 ## Explicitly forbidden
 
