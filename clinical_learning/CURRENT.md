@@ -1,6 +1,6 @@
 # Clinical Learning — CURRENT
 
-STATUS: NAVIGATION FIX IMPLEMENTED / CI PENDING
+STATUS: NAVIGATION FIX IMPLEMENTED / REGRESSION GATES PENDING
 
 Task: add a direct return path from Clinical Learning Hub to the global Clinical Excellence Cockpit.
 
@@ -8,7 +8,6 @@ Scope:
 - visible `← Cockpit` link in the Learning Hub header;
 - target `/static/cockpit/`;
 - responsive styling;
-- regression test locks the backlink.
 
 Out of scope:
 - learning data contracts;
