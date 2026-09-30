@@ -204,3 +204,38 @@ LAST SAFE RESUME POINT: consumer and corrected producer are live and mutually co
 EXACT NEXT ACTION: verify the first existing scheduled /admin/trigger-sync produces clinical_calendar configured=true / attempted=true / sent=true; then reconcile the separate cron cadence drift
 FORBIDDEN ON RESUME: PR-1 mutation, Reception reason/availability/booking behavior change, second sync cron, guessed Cal.com reason field, phone/SIP or booking/business mutation
 ```
+
+
+---
+
+# Pending Surgery Queue — bounded Cockpit follow-up slice
+
+> **STATUS:** ACTIVATED / DESIGN FROZEN FOR V1 IMPLEMENTATION.
+> **Workstream:** global Clinical Excellence Cockpit / pending surgery coordination.
+> **Branch:** `feat/cockpit-surgery-queue-v1-2026-09-30`.
+> **Base main:** `2ae9f01ded14bd2106ee09f47acb3fea4d72bc4b`.
+> **Product-owner direction:** 2026-09-30 — add a pending surgery list to the dashboard with patient identity/contact data, procedure/laterality, manual ordering/sorting and surgery date.
+> **Root writer lock:** unchanged; this workstream uses `cockpit/CURRENT.md` under AGENTS §4.2.
+
+## V1 product contract
+
+- Global Cockpit feature; not Osteoporosis-specific and not Reception booking logic.
+- Reuse the existing protected Clinical Auth browser session and the existing PostgreSQL engine.
+- Patient identity stays server-side; no localStorage/sessionStorage persistence.
+- Pending list fields:
+  - ονοματεπώνυμο;
+  - ΑΔΤ / stable patient identity;
+  - ημερομηνία γέννησης;
+  - τύπος επέμβασης;
+  - πλευρά;
+  - τηλέφωνο;
+  - ημερομηνία χειρουργείου.
+- Manual persisted queue order supports move up/down.
+- Table supports non-persistent sorting by displayed columns without silently changing the manual queue order.
+- Marking a case completed removes it from the default pending list but preserves the record.
+- Patient demographics reuse `clinical_patients`; surgery-specific state uses a separate protected surgery-queue table.
+- Synthetic test data only; no identifiable patient data in repository or CI.
+
+## Exact next action
+
+Implement the protected surgery-queue API + Cockpit dashboard UI + focused deterministic tests on this branch. Do not change Reception/Cal.com/booking behavior.
