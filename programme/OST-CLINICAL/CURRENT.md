@@ -1,7 +1,7 @@
 # OST-CLINICAL CURRENT — S1 Fracture / Fragility Semantics
 
 > **TASK:** `S1-FRACTURE-FRAGILITY-P6B-R1-RAW-VALUE-PRESERVATION-CORRECTION`
-> **STATUS:** P6B R1 DELTA+CUMULATIVE PASS / COORDINATOR RECONCILIATION CHECKPOINT / RELEASE HOLD
+> **STATUS:** P6B PASS / RELEASE RECONCILIATION PASS / AWAITING PRODUCT OWNER MERGE AUTHORITY
 > **Date:** 2026-09-27 Asia/Nicosia.
 > **Fresh base main:** `2ae9f01ded14bd2106ee09f47acb3fea4d72bc4b`.
 > **Implementation branch:** `fix/ost-clinical-s1-fracture-fragility-semantics-2026-09-27`.
@@ -168,13 +168,66 @@ Coordinator reconciliation preserves `ba2f863...` as the exact independently rev
 
 Fresh programme check on 2026-09-30 found current `main` at `cbe8d10891d21af2c48da9fabe8bd475f53e584a`, advanced from the original S1 base. The current-main changes inspected from the original base do not directly modify the bounded S1 product/test paths, but release remains a separate lifecycle decision.
 
+## Release reconciliation — 2026-09-30
+
+Fresh programme release reconciliation verified:
+
+```text
+fresh main:                 cbe8d10891d21af2c48da9fabe8bd475f53e584a
+independently reviewed S1:  ba2f8635372f85cd94409fa66e08c3d8b428bcba
+pre-release PR head:        a68ceab003cb58c2ecef36acbbf885b2ee55a157
+PR #123:                    OPEN / DRAFT / MERGEABLE
+```
+
+Post-review delta:
+
+- exactly one commit;
+- only `programme/OST-CLINICAL/CURRENT.md`;
+- no runtime/test/workflow semantic delta after the independently reviewed target.
+
+PR-triggered checks on `a68ceab...`:
+
+- Canonical impact guard: SUCCESS;
+- G1 progressive guidance foundation: SUCCESS;
+- G2 evidence guidance runtime: SUCCESS;
+- G3 guidance salience longitudinal summary: SUCCESS.
+
+Fresh-main advancement from the original S1 base is 52 commits. Direct-path overlap with the bounded S1 product/test/workflow surface is **NONE**. The intervening main changes are in Clinical Calendar, Cockpit Home/Surgery Queue, Clinical Learning presentation and associated tests/workflows; they do not modify the S1 fracture/fragility runtime owners or focused regressions.
+
+Release disposition:
+
+```text
+INDEPENDENT P6B: PASS
+MATERIAL RESIDUAL: NONE
+POST-REVIEW RUNTIME DELTA: NONE
+FRESH-MAIN DIRECT-PATH OVERLAP: NONE
+PR MERGEABLE: YES
+RELEASE RECONCILIATION: PASS
+MERGE AUTHORITY: NOT YET GRANTED
+DEPLOY/SMOKE AUTHORITY: NOT YET GRANTED
+```
+
+The independently reviewed substantive target remains `ba2f863...`. This checkpoint is documentation-only and does not create a new independently reviewed runtime target.
+
+Exact next action:
+
+1. obtain explicit Product Owner merge authority;
+2. if granted, squash-merge PR #123;
+3. checkpoint the exact merge commit before any further deliberate release action;
+4. allow normal Render auto-deploy from `main`;
+5. verify deploy identity/status;
+6. production-smoke only after the merge/deploy checkpoint and within the bounded S1 semantics.
+
+Do not open another independent S1 review unless runtime/test semantics change.
+
 ## Exact next action
 
-1. verify the post-reconciliation PR #123 head differs from the reviewed target only by coordinator documentation;
-2. allow the PR-triggered checks to complete and require them green;
-3. perform one bounded release reconciliation against fresh current `main` (mergeability / ancestry / direct-path overlap);
-4. obtain explicit Product Owner merge authority before merge;
-5. if merged, checkpoint merge → auto-deploy → production smoke atomically under repository procedure.
+1. obtain explicit Product Owner merge authority before merge;
+2. if granted, squash-merge PR #123;
+3. checkpoint the exact merge commit before deploy/smoke follow-through;
+4. allow normal Render auto-deploy from `main`;
+5. verify deploy identity/status;
+6. production-smoke only after the merge/deploy checkpoint.
 
 Do NOT open another independent S1 review unless the runtime/test delta changes or release reconciliation reveals a material interaction requiring it.
 
