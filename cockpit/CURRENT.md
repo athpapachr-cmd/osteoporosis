@@ -210,7 +210,7 @@ FORBIDDEN ON RESUME: PR-1 mutation, Reception reason/availability/booking behavi
 
 # Pending Surgery Queue — bounded Cockpit follow-up slice
 
-> **STATUS:** ACTIVATED / DESIGN FROZEN FOR V1 IMPLEMENTATION.
+> **STATUS:** V1 IMPLEMENTATION CODED / FOCUSED CI PENDING.
 > **Workstream:** global Clinical Excellence Cockpit / pending surgery coordination.
 > **Branch:** `feat/cockpit-surgery-queue-v1-2026-09-30`.
 > **Base main:** `2ae9f01ded14bd2106ee09f47acb3fea4d72bc4b`.
@@ -236,6 +236,16 @@ FORBIDDEN ON RESUME: PR-1 mutation, Reception reason/availability/booking behavi
 - Patient demographics reuse `clinical_patients`; surgery-specific state uses a separate protected surgery-queue table.
 - Synthetic test data only; no identifiable patient data in repository or CI.
 
+## Implementation checkpoint
+
+- protected `clinical_surgery_queue.py` API with PostgreSQL persistence;
+- reuses `clinical_patients` demographics by ΑΔΤ/stable patient identity;
+- create/update/list/move/complete lifecycle;
+- Cockpit table with sortable columns, inline surgery date, ↑/↓ manual order, edit and complete controls;
+- no browser storage of patient identity;
+- focused synthetic API/UI tests + dedicated CI workflow;
+- no Reception/Cal.com/booking behavior change.
+
 ## Exact next action
 
-Implement the protected surgery-queue API + Cockpit dashboard UI + focused deterministic tests on this branch. Do not change Reception/Cal.com/booking behavior.
+Open the bounded release-affecting PR, run focused CI + canonical-impact guard, and correct only source-proven failures. Do not deploy until those gates pass.
