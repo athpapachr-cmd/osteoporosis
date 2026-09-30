@@ -210,7 +210,7 @@ FORBIDDEN ON RESUME: PR-1 mutation, Reception reason/availability/booking behavi
 
 # Pending Surgery Queue — bounded Cockpit follow-up slice
 
-> **STATUS:** V1 IMPLEMENTATION + FOCUSED CI PASS / PRE-MERGE.
+> **STATUS:** V1 IDENTITY CONTRACT CORRECTED / EXACT-HEAD CI RERUN PENDING.
 > **Workstream:** global Clinical Excellence Cockpit / pending surgery coordination.
 > **Branch:** `feat/cockpit-surgery-queue-v1-2026-09-30`.
 > **Base main:** `2ae9f01ded14bd2106ee09f47acb3fea4d72bc4b`.
@@ -233,20 +233,20 @@ FORBIDDEN ON RESUME: PR-1 mutation, Reception reason/availability/booking behavi
 - Manual persisted queue order supports move up/down.
 - Table supports non-persistent sorting by displayed columns without silently changing the manual queue order.
 - Marking a case completed removes it from the default pending list but preserves the record.
-- Patient demographics reuse `clinical_patients`; surgery-specific state uses a separate protected surgery-queue table.
+- Surgery Queue stores the requested identity/contact snapshot in its own protected server-side table. It does **not** assume generic `clinical_patients.patient_id` equals ΑΔΤ and does not silently mutate the longitudinal patient registry. Explicit future patient-linking is a separate product slice.
 - Synthetic test data only; no identifiable patient data in repository or CI.
 
 ## Implementation checkpoint
 
 - protected `clinical_surgery_queue.py` API with PostgreSQL persistence;
-- reuses `clinical_patients` demographics by ΑΔΤ/stable patient identity;
+- protected queue-owned identity/contact fields; no implicit `clinical_patients` mutation or ΑΔΤ→generic patient-id assumption;
 - create/update/list/move/complete lifecycle;
 - Cockpit table with sortable columns, inline surgery date, ↑/↓ manual order, edit and complete controls;
 - no browser storage of patient identity;
 - focused synthetic API/UI tests + dedicated CI workflow;
 - no Reception/Cal.com/booking behavior change.
 
-## Evidence
+## Prior evidence and source-driven correction
 
 - PR #124: `Cockpit: add protected pending surgery queue`.
 - exact implementation head before this checkpoint: `a4feb0aeec452677b2b07cc283bd5c16aa2e0ec4`.
@@ -257,7 +257,8 @@ FORBIDDEN ON RESUME: PR-1 mutation, Reception reason/availability/booking behavi
 - diff hygiene: PASS.
 - Canonical impact guard `36714622173`: PASS.
 - inherited Cockpit Home, Clinical Documents P1/P2, Learning L1, CU-1, Physio integration and G3 regression gates: PASS.
+- **Source-driven correction after that head:** existing `clinical_patients.patient_id` is generic, not canonically ΑΔΤ. The queue contract was corrected to keep identity fields in the protected surgery row and avoid hidden mutation/duplication of longitudinal patient identity.
 
 ## Exact next action
 
-Fresh-verify PR #124/base/head after this canonical checkpoint, rerun affected checks if triggered, then merge only if the exact head remains green. Deployment/smoke follows as a separate checkpoint.
+Rerun the same focused/inherited gates on the corrected exact head. Merge only if that head is green. Deployment/smoke follows as a separate checkpoint.
