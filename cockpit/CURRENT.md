@@ -211,7 +211,7 @@ FORBIDDEN ON RESUME: PR-1 mutation, Reception reason/availability/booking behavi
 
 # Pending Surgery Queue — bounded Cockpit follow-up slice
 
-> **STATUS:** V1 IDENTITY CONTRACT CORRECTED / EXACT-HEAD CI RERUN PENDING.
+> **STATUS:** V1 MERGED / AUTO-DEPLOY IN PROGRESS.
 > **Workstream:** global Clinical Excellence Cockpit / pending surgery coordination.
 > **Branch:** `feat/cockpit-surgery-queue-v1-2026-09-30`.
 > **Base main:** `2ae9f01ded14bd2106ee09f47acb3fea4d72bc4b`.
@@ -247,7 +247,7 @@ FORBIDDEN ON RESUME: PR-1 mutation, Reception reason/availability/booking behavi
 - focused synthetic API/UI tests + dedicated CI workflow;
 - no Reception/Cal.com/booking behavior change.
 
-## Prior evidence and source-driven correction
+## Release evidence and source-driven correction
 
 - PR #124: `Cockpit: add protected pending surgery queue`.
 - exact implementation head before this checkpoint: `a4feb0aeec452677b2b07cc283bd5c16aa2e0ec4`.
@@ -259,7 +259,13 @@ FORBIDDEN ON RESUME: PR-1 mutation, Reception reason/availability/booking behavi
 - Canonical impact guard `36714622173`: PASS.
 - inherited Cockpit Home, Clinical Documents P1/P2, Learning L1, CU-1, Physio integration and G3 regression gates: PASS.
 - **Source-driven correction after that head:** existing `clinical_patients.patient_id` is generic, not canonically ΑΔΤ. The queue contract was corrected to keep identity fields in the protected surgery row and avoid hidden mutation/duplication of longitudinal patient identity.
+- corrected final head: `14707fc79e4941f65b1e180a4ff2510b420420f2`.
+- corrected focused surgery workflow `36715409386`: PASS / **10 tests in 0.81s** / Python + JavaScript syntax + diff hygiene PASS.
+- corrected Canonical Impact `36715409552`: PASS.
+- corrected Cockpit Home, Clinical Documents P1/P2, Learning L1, CU-1, G3 and Physio Cockpit browser/integration gates: PASS.
+- PR #124 merge: `3ab6a0fe0dc83047ab37925a8dddde2c032ba8fe`.
+- Render auto-deploy: `dep-daug4j49v7es73bjk910` / build in progress at checkpoint time.
 
 ## Exact next action
 
-Rerun the same focused/inherited gates on the corrected exact head. Merge only if that head is green. Deployment/smoke follows as a separate checkpoint.
+Observe the automatic Render deployment for the merged Surgery Queue. Record LIVE/startup truth before production smoke or declaring the feature released.
