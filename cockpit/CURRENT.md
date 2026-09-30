@@ -280,14 +280,3 @@ FORBIDDEN ON RESUME: PR-1 mutation, Reception reason/availability/booking behavi
 ## Exact next action
 
 Use the live Pending Surgery Queue in the Cockpit. Further additions (for example surgeon, hospital, insurer/GESY authorization, pre-op checklist, priority reason, or archive/history view) are separate product increments, not blockers for v1.
-
-
----
-
-# Clinical Learning Hub navigation correction — 2026-09-30
-
-> **STATUS:** IMPLEMENTED / CI PENDING.
-> **Scope:** navigation-only bugfix.
-> **Defect:** Clinical Learning Hub had no direct route back to the global Cockpit dashboard.
-> **Correction:** visible `← Cockpit` link in the Hub header pointing to `/static/cockpit/`.
-> **Out of scope:** learning contracts, persistence, challenge logic, patient data, Reception/Calendar behavior.
