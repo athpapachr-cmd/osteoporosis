@@ -12,6 +12,13 @@
     aclasta: "Aclasta",
   };
 
+  const MANUAL_CLASSIFICATION_OPTIONS = [
+    ["osteoporosis_first", "Πρώτη επίσκεψη"],
+    ["osteoporosis_review", "Επανέλεγχος"],
+    ["prolia", "Prolia"],
+    ["aclasta", "Aclasta"],
+  ];
+
   async function api(path, options = {}) {
     const res = await fetch(path, {
       credentials: "same-origin",
@@ -103,6 +110,21 @@
     return String(value ?? "").replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]);
   }
 
+  function classificationControl(row, category) {
+    if (category !== "osteoporosis_unspecified" && !row.manual_category) return "";
+    const placeholder = row.manual_category ? "Αυτόματο" : "Ταξινόμηση…";
+    const options = MANUAL_CLASSIFICATION_OPTIONS.map(([value, label]) =>
+      `<option value="${esc(value)}" ${row.manual_category === value ? "selected" : ""}>${esc(label)}</option>`
+    ).join("");
+    return `<label class="classification-control">
+      <span>${row.manual_category ? "Χειροκίνητη ταξινόμηση" : "Χρειάζεται ταξινόμηση"}</span>
+      <select class="classification-select" data-appointment-id="${esc(row.appointment_id)}">
+        <option value="">${esc(placeholder)}</option>
+        ${options}
+      </select>
+    </label>`;
+  }
+
   function appointmentHtml(row) {
     const start = parseServerDate(row.start_at);
     const category = row.category || "osteoporosis_unspecified";
@@ -116,6 +138,7 @@
       <div class="appt-name">${esc(patient)}</div>
       <div class="appt-meta">${esc(row.status || "scheduled")}${esc(clinic)}</div>
       ${reason ? `<div class="appt-label">${esc(reason)}</div>` : ""}
+      ${classificationControl(row, category)}
     </article>`;
   }
 
@@ -168,6 +191,25 @@
   $("#prevWeek").addEventListener("click", () => { weekOffset -= 1; loadWeek(); });
   $("#thisWeek").addEventListener("click", () => { weekOffset = 0; loadWeek(); });
   $("#nextWeek").addEventListener("click", () => { weekOffset += 1; loadWeek(); });
+
+  $("#weekGrid").addEventListener("change", async (event) => {
+    const select = event.target.closest(".classification-select");
+    if (!select) return;
+    select.disabled = true;
+    try {
+      await api(
+        `/clinical/calendar/appointments/${encodeURIComponent(select.dataset.appointmentId)}/classification`,
+        {
+          method: "PUT",
+          body: JSON.stringify({ category: select.value || null }),
+        }
+      );
+      await loadWeek();
+    } catch (err) {
+      setStatus(err.message, "err");
+      select.disabled = false;
+    }
+  });
 
   checkAuth();
 })();

@@ -10,11 +10,14 @@ from clinical_calendar import ClinicalAppointmentORM, build_clinical_calendar_ro
 
 
 INGEST_KEY = "snapshot-test-key"
+CLINICAL_KEY = "clinical-test-key"
 HEADERS = {"X-Clinical-Ingest-Key": INGEST_KEY}
+CLINICAL_HEADERS = {"X-Clinical-Key": CLINICAL_KEY}
 
 
 def _client(monkeypatch):
     monkeypatch.setenv("CLINICAL_INGEST_KEY", INGEST_KEY)
+    monkeypatch.setenv("CLINICAL_DATA_KEY", CLINICAL_KEY)
     engine = create_engine(
         "sqlite+pysqlite:///:memory:",
         connect_args={"check_same_thread": False},
@@ -334,6 +337,73 @@ def test_snapshot_accepts_producer_complete_cardinality_ceiling(monkeypatch):
     with Session(engine) as session:
         assert session.execute(select(ClinicalAppointmentORM)).scalars().all() == []
 
+
+def test_manual_classification_survives_future_snapshot_and_can_return_to_auto(monkeypatch):
+    client, _ = _client(monkeypatch)
+    start = datetime(2026, 10, 1, 15, 0, tzinfo=timezone.utc)
+    end = start + timedelta(days=1)
+    payload = _snapshot(
+        start,
+        end,
+        [
+            _appointment(
+                "manual-classification",
+                start=start + timedelta(minutes=20),
+                minutes=20,
+                label="",
+                comment="Οστεοπόρωση",
+            )
+        ],
+    )
+
+    first = client.post("/clinical/calendar/appointments/snapshot", headers=HEADERS, json=payload)
+    assert first.status_code == 200
+
+    listed = client.get(
+        "/clinical/calendar/appointments",
+        headers=CLINICAL_HEADERS,
+        params={"start": start.isoformat(), "end": end.isoformat()},
+    )
+    assert listed.status_code == 200
+    assert listed.json()[0]["category"] == "osteoporosis_unspecified"
+    assert listed.json()[0]["manual_category"] is None
+    appointment_id = listed.json()[0]["appointment_id"]
+
+    classified = client.put(
+        f"/clinical/calendar/appointments/{appointment_id}/classification",
+        headers=CLINICAL_HEADERS,
+        json={"category": "osteoporosis_review"},
+    )
+    assert classified.status_code == 200
+    assert classified.json()["category"] == "osteoporosis_review"
+    assert classified.json()["manual_category"] == "osteoporosis_review"
+
+    repeated = client.post("/clinical/calendar/appointments/snapshot", headers=HEADERS, json=payload)
+    assert repeated.status_code == 200
+
+    after_sync = client.get(
+        "/clinical/calendar/appointments",
+        headers=CLINICAL_HEADERS,
+        params={"start": start.isoformat(), "end": end.isoformat()},
+    ).json()[0]
+    assert after_sync["category"] == "osteoporosis_review"
+    assert after_sync["manual_category"] == "osteoporosis_review"
+
+    cleared = client.put(
+        f"/clinical/calendar/appointments/{appointment_id}/classification",
+        headers=CLINICAL_HEADERS,
+        json={"category": None},
+    )
+    assert cleared.status_code == 200
+    assert cleared.json()["category"] == "osteoporosis_unspecified"
+    assert cleared.json()["manual_category"] is None
+
+    invalid = client.put(
+        f"/clinical/calendar/appointments/{appointment_id}/classification",
+        headers=CLINICAL_HEADERS,
+        json={"category": "other"},
+    )
+    assert invalid.status_code == 422
 
 def test_snapshot_requires_ingest_key_and_canonical_source(monkeypatch):
     client, _ = _client(monkeypatch)

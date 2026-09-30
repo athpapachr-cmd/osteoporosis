@@ -38,6 +38,14 @@ class ClinicalAppointmentORM(CalendarBase):
     updated_at = Column(DateTime, nullable=False, index=True)
 
 
+class ClinicalAppointmentClassificationORM(CalendarBase):
+    __tablename__ = "clinical_appointment_classifications"
+
+    appointment_id = Column(String, primary_key=True)
+    category = Column(String, nullable=False, index=True)
+    updated_at = Column(DateTime, nullable=False, index=True)
+
+
 CATEGORY_VALUES = {
     "osteoporosis_first",
     "osteoporosis_review",
@@ -51,6 +59,13 @@ RELEVANT_CATEGORIES = {
     "osteoporosis_first",
     "osteoporosis_review",
     "osteoporosis_unspecified",
+    "prolia",
+    "aclasta",
+}
+
+MANUAL_CLASSIFICATION_CATEGORIES = {
+    "osteoporosis_first",
+    "osteoporosis_review",
     "prolia",
     "aclasta",
 }
@@ -97,6 +112,7 @@ class AppointmentRecord(BaseModel):
     duration_minutes: int
     clinic: str
     category: str
+    manual_category: Optional[str] = None
     patient_display_name: str
     phone_e164: str
     linked_patient_id: Optional[str]
@@ -105,6 +121,10 @@ class AppointmentRecord(BaseModel):
     reason: str
     status: str
     updated_at: datetime
+
+
+class AppointmentClassificationUpdate(BaseModel):
+    category: Optional[str] = None
 
 
 class AppointmentImportResult(BaseModel):
@@ -231,7 +251,10 @@ def classify_appointment(label: str, comment: str, duration_minutes: int) -> str
     return "osteoporosis_unspecified"
 
 
-def _record(row: ClinicalAppointmentORM) -> AppointmentRecord:
+def _record(
+    row: ClinicalAppointmentORM,
+    manual_category: Optional[str] = None,
+) -> AppointmentRecord:
     return AppointmentRecord(
         appointment_id=row.id,
         source=row.source,
@@ -240,7 +263,8 @@ def _record(row: ClinicalAppointmentORM) -> AppointmentRecord:
         end_at=row.end_at,
         duration_minutes=int(row.duration_minutes or 0),
         clinic=row.clinic or "",
-        category=row.category or "other",
+        category=manual_category or row.category or "other",
+        manual_category=manual_category,
         patient_display_name=row.patient_display_name or "",
         phone_e164=row.phone_e164 or "",
         linked_patient_id=row.linked_patient_id,
@@ -298,7 +322,69 @@ def build_clinical_calendar_router(engine: Engine) -> APIRouter:
                 .order_by(ClinicalAppointmentORM.start_at.asc())
             )
             rows = session.execute(stmt).scalars().all()
-            return [_record(row) for row in rows]
+            overrides = {
+                item.appointment_id: item.category
+                for item in session.execute(
+                    select(ClinicalAppointmentClassificationORM).where(
+                        ClinicalAppointmentClassificationORM.appointment_id.in_(
+                            [row.id for row in rows]
+                        )
+                    )
+                ).scalars().all()
+            } if rows else {}
+            return [_record(row, overrides.get(row.id)) for row in rows]
+
+    @router.put(
+        "/appointments/{appointment_id}/classification",
+        response_model=AppointmentRecord,
+        dependencies=protected,
+    )
+    def update_appointment_classification(
+        appointment_id: str,
+        req: AppointmentClassificationUpdate,
+    ) -> AppointmentRecord:
+        with Session(engine) as session:
+            row = session.get(ClinicalAppointmentORM, appointment_id)
+            if row is None:
+                raise HTTPException(status_code=404, detail="Appointment not found")
+
+            category = (req.category or "").strip()
+            existing = session.get(ClinicalAppointmentClassificationORM, appointment_id)
+            now = utcnow()
+
+            if not category:
+                if existing is not None:
+                    session.delete(existing)
+                row.category = classify_appointment(
+                    row.label or "",
+                    row.comment or "",
+                    int(row.duration_minutes or 0),
+                )
+                row.updated_at = now
+                session.add(row)
+                session.commit()
+                session.refresh(row)
+                return _record(row, None)
+
+            if category not in MANUAL_CLASSIFICATION_CATEGORIES:
+                raise HTTPException(status_code=422, detail="Unsupported manual classification")
+
+            if existing is None:
+                existing = ClinicalAppointmentClassificationORM(
+                    appointment_id=appointment_id,
+                    category=category,
+                    updated_at=now,
+                )
+            else:
+                existing.category = category
+                existing.updated_at = now
+            session.add(existing)
+            row.category = category
+            row.updated_at = now
+            session.add(row)
+            session.commit()
+            session.refresh(row)
+            return _record(row, category)
 
     def _apply_import_item(
         session: Session,
@@ -328,6 +414,12 @@ def build_clinical_calendar_router(engine: Engine) -> APIRouter:
 
         record_id = f"{item.source}:{item.source_appointment_id}"
         row = session.get(ClinicalAppointmentORM, record_id)
+        manual_override = session.get(
+            ClinicalAppointmentClassificationORM,
+            record_id,
+        )
+        if manual_override is not None:
+            category = manual_override.category
 
         if category not in RELEVANT_CATEGORIES:
             removed_unrelated = 0

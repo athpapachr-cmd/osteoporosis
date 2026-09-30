@@ -170,7 +170,7 @@
         actionButton("↓", "down", row.surgery_id, "Μετακίνηση κάτω"),
         actionButton("✎", "edit", row.surgery_id, "Επεξεργασία"),
         actionButton("✓", "complete", row.surgery_id, "Ολοκληρώθηκε"),
-        actionButton("Διαγραφή", "delete", row.surgery_id, "Διαγραφή pending χειρουργείου")
+        actionButton("🗑", "delete", row.surgery_id, "Διαγραφή pending χειρουργείου")
       );
       tr.appendChild(actions);
       tbody.appendChild(tr);
