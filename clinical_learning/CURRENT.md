@@ -1,6 +1,6 @@
 # Clinical Learning — CURRENT
 
-STATUS: NAVIGATION FIX IMPLEMENTED / REGRESSION GATES PENDING
+STATUS: NAVIGATION FIX IMPLEMENTED / REGRESSION GATES PASS / PRE-MERGE
 
 Task: add a direct return path from Clinical Learning Hub to the global Clinical Excellence Cockpit.
 
@@ -19,5 +19,12 @@ Out of scope:
 Release candidate branch:
 `fix/clinical-learning-cockpit-backlink-2026-09-30`
 
+Evidence:
+- Canonical impact guard: PASS.
+- Clinical Learning L1 regression gate: PASS.
+- Clinical Learning L1B regression gate: PASS.
+- Scope/adjacent-owner guards: PASS.
+- Diff hygiene: PASS.
+
 Exact next action:
-Run the existing Clinical Learning regressions and canonical-impact guard; merge only if the exact head is green.
+Fresh-verify PR #125 exact head/base and merge if unchanged/mergeable.
