@@ -293,3 +293,16 @@ Use the live Pending Surgery Queue in the Cockpit. Further additions (for exampl
 - No Reception/Calendar behavior change.
 
 **Next:** focused CI, then exact-head merge/deploy if green.
+
+## Clinical Calendar manual classification + Surgery Queue icon — 2026-09-30
+
+> **STATUS:** CODED / CI PENDING.
+
+- `osteoporosis_unspecified` remains the safe automatic result when the reason establishes osteoporosis but duration does not establish first/review.
+- Appointment cards now expose explicit choices: Πρώτη επίσκεψη / Επανέλεγχος / Prolia / Aclasta.
+- Manual classification is stored in a separate protected consumer-side override table and survives future Cal.com snapshots.
+- Selecting «Αυτόματο» clears the override and returns to classifier-derived behavior.
+- No manual classification writes back to Cal.com or Reception.
+- Surgery Queue delete is displayed as a compact trash icon while preserving confirmation + soft-delete behavior.
+
+**Next:** focused Clinical Calendar + Surgery Queue/Cockpit gates, then exact-head merge/deploy if green.
