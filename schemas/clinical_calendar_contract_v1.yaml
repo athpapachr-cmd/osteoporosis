@@ -85,6 +85,8 @@ snapshot_reconciliation:
     - remove a previously relevant row if the same source appointment is now unrelated
     - remove stored same-source rows in the declared window when their source appointment id is absent from a complete snapshot
     - never create, cancel, reschedule, authorize, or otherwise mutate a booking
+    - clinician manual classification is stored as a protected consumer-side override and survives future source snapshots
+    - manual classification never writes back to or mutates the source Cal.com booking
   failure_semantics:
     - invalid or ambiguous snapshot scope is rejected before stale-row reconciliation
     - provider payload completeness remains the producer responsibility
