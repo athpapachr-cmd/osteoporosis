@@ -1,6 +1,6 @@
 # CURRENT.md — OST-UI / Osteoporosis Product Reconstruction
 
-> **STATUS:** R1 RECONCILED / R2 AUTHORIZED — NOT STARTED.
+> **STATUS:** R1 RECONCILED / LIFECOURSE P1 REVIEWED INPUT AVAILABLE / R2 AUTHORIZED — NOT STARTED.
 > **Updated:** 2026-09-27 Asia/Nicosia.
 > **Workstream:** OST-UI.
 > **Fresh runtime main audited:** **2ae9f01ded14bd2106ee09f47acb3fea4d72bc4b**.
@@ -239,8 +239,8 @@ Accepted R1 diagnosis:
 
 Current dependency state at reconciliation:
 
-- OST-LIFECOURSE P1 semantic-ownership reconciliation is complete, but independent P1 review remains pending;
-- OST-CLINICAL S1 has a tested implementation candidate in draft PR #123; independent post-code review remains pending;
+- OST-LIFECOURSE P1 corrected ownership map has now passed fresh independent delta+cumulative review at exact corrected target `b4f917b161f33b0bfb3507328df07cec2d7bd2b6`; DXA/task residuals are closed and the reviewed ownership map is consumable by R2;
+- OST-CLINICAL S1 has completed its independent review/release path and is merged on current `main`; fresh R2 source inspection must use current-main fracture/fragility semantics rather than stale pre-S1 assumptions;
 - R2 may proceed because it is a bounded trajectory-capability review, but it must fresh-resolve these owners at execution time and must not promote pending/unmerged conclusions into authoritative clinical truth.
 
 ## 8. R2 authority and exact next action
@@ -255,9 +255,39 @@ It must:
 - distinguish EVENT / STATE / DERIVED STATE / DECISION / PLAN / FUTURE OBLIGATION / OUTCOME / UNCERTAINTY;
 - determine what is durable truth versus reconstructed/projection/transient state;
 - mark unresolved fracture/fragility or other clinical semantics as dependencies rather than resolving them inside OST-UI;
-- treat unmerged LIFECOURSE/S1 material as supporting/pending context only unless a fresh authoritative disposition exists when R2 starts.
+- consume the independently reviewed LifeCourse P1 ownership boundaries as reviewed current-state semantic input;
+- still fresh-inspect current main for executable truth and do not convert P1 into P2 architecture;
+- keep unresolved future design questions (Q1–Q12) parked.
 
 R2 must STOP after its artifact + local checkpoint and return to the programme coordinator.
+
+## 8A. LifeCourse dependency closure checkpoint
+
+Programme coordinator reconciliation confirms:
+
+```text
+OST-LIFECOURSE P1 CORRECTED TARGET
+b4f917b161f33b0bfb3507328df07cec2d7bd2b6
+
+INDEPENDENT DELTA+CUMULATIVE REVIEW
+PASS
+
+DXA OWNERSHIP RESIDUAL
+CLOSED
+
+TASK CONTINUITY RESIDUAL
+CLOSED
+
+Q1–Q12
+PARKED
+
+R2 CONSUMABLE OWNERSHIP INPUT
+READY
+```
+
+R2 may now rely on the reviewed **current-state ownership distinctions** while still fresh-verifying runtime source.
+
+This does not authorize P2 target architecture, migration, new stores, new obligation engine, or UI implementation.
 
 ## 9. Explicit stop / hold
 
