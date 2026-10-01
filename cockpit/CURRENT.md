@@ -15,6 +15,45 @@ D1 is a small, directly visible, read-only Dashboard projection of **Previous / 
 
 **Accepted D1 semantics:** `Τώρα` means a scheduled row whose interval contains the current time; `Προηγούμενο` is the latest appointment that has ended; `Επόμενο` is the earliest appointment that starts later. This is schedule context, not live patient-presence tracking. The Home may show `patient_display_name` only from the authenticated protected Calendar response for these slots; it must not render `phone_e164` or `linked_patient_id`.
 
+
+### D1 implementation/tested checkpoint — 2026-10-01
+
+```text
+BASE MAIN:             87aedad3ad512e4b17a1eb737f0ff8302857aff2
+BRANCH:                feat/cockpit-today-context-strip-v1-2026-10-01
+SUBSTANTIVE HEAD:      2f4db81d2d35e134e451df21ef1ffb7bf2e6e87b
+PR:                    #130 / DRAFT
+IMPLEMENTED:           YES
+FOCUSED TESTED:        YES
+INDEPENDENT R1 REVIEW: PENDING
+MERGED:                NO
+DEPLOYED:              NO
+```
+
+Implemented behavior:
+
+- Cockpit Home renders **Προηγούμενο / Τώρα / Επόμενο** directly from the existing authenticated Clinical Calendar read endpoint.
+- `Τώρα` uses interval containment; previous/next use deterministic end/start ordering. Multiple simultaneous active intervals fail closed to a visible ambiguity instead of silently choosing one patient.
+- the context refreshes once per minute while the Dashboard remains open;
+- `patient_display_name` is used only as protected appointment display context; D1 does not consume `phone_e164` or `linked_patient_id`;
+- the existing weekly Osteoporosis calendar remains unchanged and reachable through **«Άνοιγμα εβδομαδιαίου ημερολογίου»**;
+- daily-feed freshness remains stated in clinician-facing language without exposing technical sync metadata;
+- no Calendar write, booking lifecycle, Setmore, Secretary, Zadarma, Visit Intelligence, OST-UI or PR-1 behavior changed.
+
+Focused evidence on the substantive head:
+
+- Cockpit Home tests — run `36897402962` — **SUCCESS**;
+- Cockpit surgery queue — run `36897403159` — **SUCCESS**;
+- Canonical impact guard — run `36897403120` — **SUCCESS**;
+- Physio Knee OA Cockpit integration — run `36897403296` — **SUCCESS**;
+- Physio Knee OA V5 integration — run `36897403218` — **SUCCESS**;
+- Physio jurisdiction overlay — run `36897403208` — **SUCCESS**;
+- Clinical Learning L1 / L1B / L1C inherited gates — **SUCCESS**.
+
+Clinical Learning L0 run `36897403005` validated its own contracts but failed only its **design-only scope** assertion because D1 intentionally changes Cockpit runtime files. That scope gate is not applicable evidence for this R1 Cockpit implementation and does not indicate a Clinical Learning contract regression.
+
+**Exact next action:** stop implementation mutation and obtain exactly one fresh independent R1 post-code exact-head implementation-fidelity review. Do not merge or deploy before that review and a separate Product Owner release decision.
+
 **D2 — Relevant Communication Context** is the next bounded concept after D1, not part of this governance implementation. Its bidirectional read boundary and phone-correlation limit live in `cockpit/PRODUCT_CONSTITUTION.md`. D2 needs its own bounded design/authority before any integration or UI work.
 
 **Visit Brief / What Changed** remain product direction, downstream of durable P0-V0 closure/release and the OST-UI coordinator synthesis/Product Owner decision where the Module-01 interaction is affected. The current-problem Osteoporosis workspace also depends on that synthesis. A Next Visit continuity write path remains a separate bounded clinical-authority slice. None of these dependent slices starts from this checkpoint, and OST-UI's R4 completion does not authorize a prototype.
