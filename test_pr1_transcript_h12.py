@@ -126,9 +126,12 @@ def test_h12_authentic_evidence_plus_invented_narrative_fails_promotion():
 
     invented = _evaluate_case(case, result_with("Χορηγήθηκε denosumab σήμερα."))
     assert "unexpected_assertion_clinical.unmapped_narrative" in invented
+    assert "narrative_value_anchor_mismatch" in invented
+    assert "narrative_value_source_span_mismatch" in invented
 
     appended_invention = _evaluate_case(case, result_with("Δεν υπάρχει ακόμη αποτέλεσμα DXA. Χορηγήθηκε denosumab σήμερα."))
     assert "unexpected_assertion_clinical.unmapped_narrative" in appended_invention
+    assert "narrative_value_source_span_mismatch" in appended_invention
 
     supported = _evaluate_case(case, result_with("Δεν υπάρχει ακόμη αποτέλεσμα DXA."))
     assert supported == []

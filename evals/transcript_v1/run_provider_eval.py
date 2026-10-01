@@ -145,6 +145,24 @@ def _candidate_group_matches(candidate, group: dict[str, Any], transcript: str =
     )
 
 
+def _narrative_rule_failure_codes(candidate, component, rule: dict[str, Any], transcript: str) -> list[str]:
+    if component.concept_key != "clinical.unmapped_narrative" or rule.get("concept_key") != component.concept_key:
+        return []
+    independent = ("evidence_contains", "value_text_contains", "value_text_source_span")
+    base = {key: value for key, value in rule.items() if key not in independent}
+    if not _component_matches_rule(candidate, component, base, transcript):
+        return []
+    codes = []
+    for field, code in (
+        ("evidence_contains", "narrative_evidence_anchor_mismatch"),
+        ("value_text_contains", "narrative_value_anchor_mismatch"),
+        ("value_text_source_span", "narrative_value_source_span_mismatch"),
+    ):
+        if field in rule and not _component_matches_rule(candidate, component, {**base, field: rule[field]}, transcript):
+            codes.append(code)
+    return codes
+
+
 def _evaluate_case(item: dict[str, Any], result) -> list[str]:
     failures: list[str] = []
     transcript = item.get("transcript", "")
@@ -203,6 +221,8 @@ def _evaluate_case(item: dict[str, Any], result) -> list[str]:
                 for rule in authorization_rules
             ):
                 failures.append(f"unexpected_assertion_{component.concept_key}")
+                for rule in authorization_rules:
+                    failures.extend(_narrative_rule_failure_codes(candidate, component, rule, transcript))
 
     seen_signatures: set[str] = set()
     for candidate in result.candidates:
