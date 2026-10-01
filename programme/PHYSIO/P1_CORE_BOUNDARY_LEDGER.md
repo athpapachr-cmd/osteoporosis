@@ -28,12 +28,12 @@ CROSS-PROJECT DEPENDENCY
 | safety/disposition engine | CU-1 | KEEP AS CORE | safety probe; no More/evidence dependency |  |  |
 | deterministic Greek formatting boundary | CU-1 + formatter | KEEP AS CORE mechanism | receiver/timing evidence; distinguish generic formatter mechanics from Knee copy |  |  |
 | protected Physio API/transport | CU-1 / Clinical Excellence auth seam | KEEP AS CORE | no P1 transport defect |  |  |
-| evidence interaction/state semantics | Physio product foundation | KEEP AS CORE mechanism | provenance audit + usability |  |  |
+| evidence interaction/state semantics | Physio product foundation | KEEP AS CORE mechanism | provenance audit + usability |  | Lane F found no sampled state/wording defect; exact claim locators need maintenance; usability still pending |
 | suggestion vs clinician selection | Physio product foundation | KEEP AS CORE | device/receiver evidence |  |  |
 | manual text reconciliation / stale state | Physio product foundation | KEEP AS CORE | Case 5 |  |  |
 | progressive disclosure / advanced capability | Physio product foundation | KEEP AS CORE pattern | real-device/accessibility evidence |  |  |
 | no patient browser-draft persistence | CU-1/product boundary | KEEP AS CORE current boundary | real-device observation; no new persistence need |  |  |
-| JurisdictionOverlayV1 architecture | Physio product foundation | KEEP AS CORE mechanism | provenance/local-owner audit |  |  |
+| JurisdictionOverlayV1 architecture | Physio product foundation | KEEP AS CORE mechanism | provenance/local-owner audit |  | Lane F confirms clean international/local/admin ownership; local locator page convention needs normalization |
 | exact-head regression/release/smoke discipline | repository governance | KEEP AS CORE | governance only |  |  |
 
 Important formatter distinction:
@@ -52,14 +52,14 @@ remain vertical content
 
 | Content/mechanism | Current owner | P0 starting disposition | P1 evidence to inspect | Final P1 disposition | Notes |
 |---|---|---|---|---|---|
-| Knee-OA international evidence corpus | Knee-OA contracts/evidence | KEEP VERTICAL-SPECIFIC | Lane F |  |  |
-| item-level OA evidence positions | Knee-OA evidence registry | KEEP VERTICAL-SPECIFIC | Lane F |  |  |
+| Knee-OA international evidence corpus | Knee-OA contracts/evidence | KEEP VERTICAL-SPECIFIC | Lane F |  | Lane F supports current sampled states; item-level source locators need maintenance |
+| item-level OA evidence positions | Knee-OA evidence registry | KEEP VERTICAL-SPECIFIC | Lane F |  | Lane F found no sampled reclassification need; add structured claim locator in future maintenance |
 | Knee pain/stiffness/weakness/function concepts | Knee-OA projection/presentation | KEEP VERTICAL-SPECIFIC | Lane A/B |  |  |
 | Knee qualifiers and examination mappings | Knee-OA projection/presentation | KEEP VERTICAL-SPECIFIC | Lane A/B |  |  |
 | Knee smart starting rehabilitation plan | Knee-OA product content | KEEP VERTICAL-SPECIFIC | Lane B/F |  |  |
 | Knee referral composition / phrases | Knee-OA presentation/formatter content | KEEP VERTICAL-SPECIFIC | Lane B |  |  |
 | Knee-specific clinical review clues | Knee-OA product content | KEEP VERTICAL-SPECIFIC | Case 4 + Lane F |  |  |
-| OA-specific CY_GESY local positions | CY_GESY Knee-OA overlay | KEEP VERTICAL-SPECIFIC | Lane F |  |  |
+| OA-specific CY_GESY local positions | CY_GESY Knee-OA overlay | KEEP VERTICAL-SPECIFIC | Lane F |  | Lane F supports local/international separation; normalize printed-vs-index page convention |
 | Knee-specific deterministic product projection | Knee-OA projection | KEEP VERTICAL-SPECIFIC | Lane A/C |  |  |
 
 ---
@@ -74,7 +74,7 @@ remain vertical content
 | real time/friction comparison | C | OPEN | EVIDENCE GAP until observed |
 | referral diagnosis mix | D | OPEN | EVIDENCE GAP until aggregate denominator exists |
 | willingness-to-pay/value signal | E | OPEN | COMMERCIAL HYPOTHESIS |
-| material evidence locators/provenance maintenance | F | OPEN | EVIDENCE GAP until audited |
+| material evidence locators/provenance maintenance | F | AUDITED 2026-10-01 | NEEDS LOCATOR MAINTENANCE — non-blocking; P1-F001/P1-F002 |
 | second-diagnosis reuse proof | future P2/P3 | DEFERRED | EVIDENCE GAP; do not pre-generalize |
 
 ---

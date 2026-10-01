@@ -1,7 +1,7 @@
 # PHYSIO CURRENT — Knee-OA Reference Implementation / Physio Core Boundary
 
 > **TASK:** `PHYSIO-P1-KNEE-OA-REFERENCE-VALIDATION-CORE-BOUNDARY-20261001`
-> **STATUS:** LOCAL CONTROL PLANE CURRENT / P0 INVENTORY COMPLETE / P1 VALIDATION DESIGN FROZEN / EVIDENCE COLLECTION NEXT.
+> **STATUS:** LOCAL CONTROL PLANE CURRENT / P0 COMPLETE / P1 DESIGN FROZEN / LANE F COMPLETE WITH NON-BLOCKING LOCATOR MAINTENANCE / A-B-C-D-E EVIDENCE PENDING.
 > **Date:** 2026-10-01 Asia/Nicosia.
 > **Fresh bootstrap main for P1 design:** `aedfa3e48e8359a449c2c8d8eb2b9f053a64ce47`.
 > **Reference implementation:** Knee Osteoarthritis physiotherapy referral.
@@ -138,7 +138,8 @@ P1 design is now frozen in:
 - `programme/PHYSIO/P1_VALIDATION_PROTOCOL.md`;
 - `programme/PHYSIO/P1_EVIDENCE_WORKSHEET.md`;
 - `programme/PHYSIO/P1_SYNTHETIC_CASE_SET.md`;
-- `programme/PHYSIO/P1_CORE_BOUNDARY_LEDGER.md`.
+- `programme/PHYSIO/P1_CORE_BOUNDARY_LEDGER.md`;
+- `programme/PHYSIO/P1_EVIDENCE_PROVENANCE_AUDIT.md` — Lane F completed.
 
 Planned evidence work:
 
@@ -155,7 +156,7 @@ Planned evidence work:
    - copy/transfer;
 4. aggregate referral-frequency / diagnosis-mix discovery with no patient identifiers;
 5. bounded willingness-to-pay / product-value discovery;
-6. focused material evidence-provenance/locator maintenance assessment;
+6. focused material evidence-provenance/locator maintenance assessment — **COMPLETE: NEEDS LOCATOR MAINTENANCE; no sampled clinical-state/runtime correction indicated**;
 7. produce a reusable-boundary ledger:
 
 ```text
@@ -217,9 +218,9 @@ The P1 design checkpoint is complete. Execute bounded validation without changin
    - Lane D aggregate referral-frequency / diagnosis-mix evidence;
    - Lane E exploratory clinician product-value / willingness-to-pay evidence.
 2. Lane B requires an actual receiving physiotherapist. If it is deferred, record that explicitly and do not claim receiver validation.
-3. PHYSIO coordinator may execute Lane F material evidence-provenance/locator audit from current owning evidence artifacts; add a separate evidence reviewer only if a material source-to-claim ambiguity appears.
-4. Record every finding in `P1_EVIDENCE_WORKSHEET.md`.
-5. Synthesize Lane G in `P1_CORE_BOUNDARY_LEDGER.md`.
+3. Lane F is complete. Disposition: **NEEDS LOCATOR MAINTENANCE**, with no sampled evidence-state/default-plan/runtime correction indicated. P1-F001/P1-F002 are maintenance findings, not runtime blockers.
+4. Continue recording evidence/findings in `P1_EVIDENCE_WORKSHEET.md`.
+5. Synthesize Lane G in `P1_CORE_BOUNDARY_LEDGER.md` only after enough A–E evidence exists to avoid premature generalization.
 6. A concrete Physio-owned runtime defect may open a separate bounded correction slice only after classification and owner determination.
 7. P2 diagnosis selection may be prepared only after P1 evidence; P2 implementation still requires separate Product Owner authorization.
 
