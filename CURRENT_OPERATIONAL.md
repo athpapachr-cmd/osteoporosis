@@ -2,7 +2,7 @@
 
 > **STATUS:** PR-1 transcript extraction release engineering complete; identifiable-transcript privacy/provider gate OPEN; release HOLD.
 > **Reconciled:** 2026-10-01 Asia/Nicosia from fresh remote `main` and the exact PR-1 remote branch checkpoint.
-> **Verified remote `main`:** `87aedad3ad512e4b17a1eb737f0ff8302857aff2`.
+> **D1 activation/release base `main`:** `87aedad3ad512e4b17a1eb737f0ff8302857aff2`; every fresh session must verify the current remote `main` per `AGENTS.md` before mutation.
 > **Active primary slice:** `PR-1-TRANSCRIPT-INTAKE-CANDIDATE-EXTRACTION-V1-2026-09-16`; design owner: `SLICE_PLAN_CURRENT.md`.
 > **PR-1 branch:** `feat/pr1-transcript-capture-v1-2026-09-16` at `0b45a4c96a7cb9a96893cfa3f14a1708f25e5345` (fresh remote branch check).
 > **Writer lock:** no active Cockpit D1 runtime writer. **COCKPIT TODAY CONTEXT STRIP V1 (D1)** is released: PR #130 squash-merged as `db42903e08b11dfe52d427a410f8b15547fb5507`; Render deploy `dep-davbs48473hc73eust00` is LIVE from source `794d96dc4e0676691a4d6333b8f47bdd335cdb6c`. Runtime/product review is closed and D1 reopens only for a new material defect or explicit new requirement. PR-1 remains on release HOLD with no active PR-1 runtime writer.
@@ -36,7 +36,7 @@ The Product Owner authorized bounded PR-1 implementation and synthetic qualifica
 
 - **Visit Intelligence P0-V0:** `programme/OST-VISIT-INTELLIGENCE/CURRENT.md` exists on local branch head `b22fd5c610d20baf0f8ef3384ca16472cd2d1f92`, not yet on `main`, and owns its contract/projector checkpoint there. A cumulative PASS was reported in the Product Owner handback; its branch-local CURRENT still requests that review, so its coordinator must reconcile the result and make a separate release decision. This root PR-1 HOLD does not grant Visit Intelligence release or UI authority.
 - **OST-UI / Osteoporosis Product Reconstruction:** `programme/OST-UI/PROJECT-INDEX.md` and `CURRENT.md` are on the branch-local R4 lineage, absent from `main`. R4 is complete at `5cf4e98bfeb439c3cef6aecae70d48efd07612b4`; one programme coordinator synthesis is pending. No OST-UI runtime writer or prototype implementation authority exists. The synthesis must reconcile the already expressed Product Owner direction before any prototype decision; it does not replace this PR-1 root NOW.
-- **Cockpit:** `cockpit/CURRENT.md` owns released Home/Calendar/Surgery state and the next bounded Today Context Strip V1 read projection. Visit Brief / What Changed remain downstream of P0-V0 release and affected OST-UI decisions. `cockpit/PRODUCT_CONSTITUTION.md` owns the Cockpit product boundary.
+- **Cockpit:** `cockpit/CURRENT.md` owns released Home/Calendar/Surgery/D1 state. **D2 Relevant Communication Context Product Owner checkpoint** is next; no D2 runtime writer or implementation authority exists yet. Visit Brief / What Changed remain downstream of P0-V0 release and affected OST-UI decisions. `cockpit/PRODUCT_CONSTITUTION.md` owns the Cockpit product boundary.
 - **PHYSIO:** `programme/PHYSIO/PROJECT-INDEX.md` and `programme/PHYSIO/CURRENT.md` own the read-only P1 evidence work; no PHYSIO runtime writer is recorded there.
 - **OST-CLINICAL:** `programme/OST-CLINICAL/CURRENT.md` owns the completed S1 checkpoint and any local follow-through.
 
