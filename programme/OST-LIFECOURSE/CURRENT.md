@@ -1,6 +1,6 @@
 # OST-LIFECOURSE CURRENT
 
-> **STATUS:** P1 INDEPENDENT REVIEW BLOCKED ON TWO OWNERSHIP CLAIMS / CORRECTION PREPARED FOR DELTA REVIEW.
+> **STATUS:** P1 CORRECTED OWNERSHIP MAP / INDEPENDENT DELTA+CUMULATIVE REVIEW PASS / DOWNSTREAM INPUT READY.
 > **Workstream:** OST-LIFECOURSE — longitudinal clinical care trajectory.
 > **Branch:** `docs/ost-programme-lifecourse-bootstrap-2026-09-27`.
 > **Base main:** `2ae9f01ded14bd2106ee09f47acb3fea4d72bc4b`.
@@ -30,19 +30,46 @@ Q1–Q12 RESOLVED: ZERO
 S1 RUNTIME CORRECTION: SEPARATELY ROUTED
 ```
 
+## Independent delta+cumulative review disposition
+
+Corrected exact target:
+
+`b4f917b161f33b0bfb3507328df07cec2d7bd2b6`
+
+Fresh independent delta+cumulative review returned:
+
+```text
+DXA OWNERSHIP FINDING: CLOSED
+TASK CONTINUITY FINDING: CLOSED
+S1 STATE / SEPARATION: PASS
+CUMULATIVE P1 OWNERSHIP: PRESERVED
+Q1–Q12 PARKING: PASS
+MATERIAL RESIDUALS: NONE
+VERDICT: PASS
+```
+
+The corrected P1 ownership map is therefore independently acceptable as reviewed semantic input for downstream coordinator reconciliation and OST-UI R2.
+
 ## Exact next action
 
-Obtain one fresh **independent READ-ONLY delta review** of the corrected P1 ownership map using:
+Do **not** start P2 architecture or implementation.
 
-`programme/OST-LIFECOURSE/P1-INDEPENDENT-REVIEW-BRIEF.md`
+Programme coordinator may now allow OST-UI R2 to consume the reviewed current-state ownership boundaries:
 
-The prior independent review returned BLOCK for DXA factual ownership and task continuity identity. The delta reviewer returns PASS or BLOCK and STOP.
+- fracture fact / event-level `low_trauma` distinction;
+- dual factual DXA representation with provenance/duplicate ambiguity;
+- encounter-vs-longitudinal lab ownership;
+- treatment/admin encounter facts vs derived state;
+- current unstable semantic-tuple task continuity;
+- read-only LGP;
+- EncounterContext contract vs runtime;
+- reviewed rule registry vs executable implementation.
 
-Do not start implementation, P2 target architecture, migration, schema work, reopen S1 or merge PR #121 automatically.
+PR #121 remains draft/unmerged. P1 PASS does not authorize merge, migration, schema work or runtime changes.
 
 ## Registry sync
 
-`UPDATED` — P1 ownership correction is prepared for independent delta review after the returned BLOCK.
+`UPDATED` — corrected P1 ownership map independently PASS; reviewed downstream semantic input ready.
 
 ## Parallel S1 routing checkpoint — current state
 
