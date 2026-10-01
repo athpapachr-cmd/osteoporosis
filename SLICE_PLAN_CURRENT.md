@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — PR-1 Heidi-first Transcript Intake + Candidate Extraction v1
 
-> **STATUS:** H-12 BOUNDED CORRECTION QUALIFIED 22/22 — READY FOR SEPARATE INDEPENDENT DELTA+CUMULATIVE REVIEW; NOT RELEASE READY.
+> **STATUS:** H13 RELATIONAL VALUE-BINDING CORRECTION QUALIFIED 22/22 — READY FOR SEPARATE INDEPENDENT DELTA+CUMULATIVE REVIEW; NOT RELEASE READY.
 > **Activated:** 2026-09-16 Asia/Nicosia.
 > **Slice:** `PR-1-TRANSCRIPT-INTAKE-CANDIDATE-EXTRACTION-V1-2026-09-16`.
 > **Activation main:** `0ab5f9770d220c20e8d94544cb64e93a4aa30d00`.
@@ -13,7 +13,7 @@
 > **H-10 deterministic/inherited gate:** `35455400599` — SUCCESS.
 > **H-11 exact deterministic head:** `a6bb0b2a8897f83c6584106e03c26b59aa9c266b`.
 > **H-11 deterministic/inherited gate:** `35455876663` — SUCCESS.
-> **Focused PR-1 tests:** 75 PASS.
+> **Focused PR-1 tests:** 88 PASS at H13 qualified head.
 > **Frozen live suite:** 22 synthetic/de-identified cases.
 > **Pre-H09 live qualification:** `35446962808` — 22 PASS / 0 FAIL.
 > **Post-H09 live qualification:** `35448273993` — 19 PASS / 3 FAIL.
@@ -32,7 +32,9 @@
 > **Fifth post-H12 live qualification:** `36824997276` — 21 PASS / 1 FAIL; only `garbled_speech` emitted zero candidates.
 > **Exact H-12 qualified head:** `43a501f8c51854e69062c66d9855fbee7cb47259`; complete deterministic gate `36825475834` — SUCCESS (84 focused, 6 protected clinical, 24 Clinical Documents, syntax, navigation and scope).
 > **Sixth post-H12 live qualification:** `36825475846` — **22 PASS / 0 FAIL**, `openai / gpt-5.6 / synthetic_eval / phi_approval=false`, 22 unique frozen cases.
-> **Writer:** one bounded H-12 PR-1 correction author; operational owner is `CURRENT_OPERATIONAL.md`.
+> **H13 qualified head:** `fcaaefebbad12b9a437927969476be47b9dd085d`; complete deterministic gate `36847029909` — SUCCESS (88 focused, 6 protected clinical, 24 Clinical Documents, syntax, navigation and scope).
+> **H13 frozen live qualification:** `36847029827` attempt 2 — **22 PASS / 0 FAIL**, `openai / gpt-5.6 / synthetic_eval / phi_approval=false`, 22 unique unchanged cases.
+> **Writer:** none after H13 evidence checkpoint; operational owner is `CURRENT_OPERATIONAL.md`, then fresh independent READ-ONLY review.
 
 ## 1. Objective
 
@@ -638,3 +640,5 @@ Second comment-only trigger head `3438449b7e6ae9b0879a7993a5507979dcb45dfe` pass
 Third comment-only trigger head `6c887c2365393b4d955d1c50218c48b55f4474c7` passed full deterministic workflow `36845814353`. Live workflow `36845814306` returned 21/22 after passing the same safety/count boundaries: FRAX and unrelated-general-clinical-text passed; only `garbled_speech` failed its existing narrative source-span/anchor checks. The H13 oracle remained unchanged. One further frozen run is required to reach `failed=0`.
 
 Fourth comment-only trigger head `3c420d0481a7720d4b4e525138eec20822d469c5` passed full deterministic workflow `36846284184`. Live workflow `36846284197` returned 21/22 after the same safety/count checks: FRAX passed; only `garbled_speech` again failed the existing narrative anchor/source-span checks. It remains default-denied. No H13 oracle/fixture/input change occurred, and another unchanged run must reach `failed=0` before handback.
+
+Fifth and sixth trigger heads `893ac302f916275930ce8fc70207a54bd8212315` and `fcaaefebbad12b9a437927969476be47b9dd085d` each passed complete deterministic gates `36846680390` and `36847029909`. Live runs `36846680362` and `36847029827` attempt 1 each returned 21/22; only the pre-existing `unrelated_general_clinical_text` source rule failed. Neither the H13 oracle nor frozen inputs changed. The identical `36847029827` attempt 2 at the qualified `fcaaefe` head passed all 22 cases with `failed=0`, including FRAX and both previously variable cases, after the synthetic-only/model/privacy/count checks. The implementation handback is ready for fresh independent delta+cumulative review; release and identifiable transcript use remain on HOLD.

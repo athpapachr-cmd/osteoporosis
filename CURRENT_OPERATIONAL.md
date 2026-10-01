@@ -1,11 +1,11 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** PR-1 H13 DETERMINISTIC GATE PASS / SIXTH LIVE QUALIFICATION 21/22 FAIL; NOT RELEASE READY.
+> **STATUS:** PR-1 H13 IMPLEMENTED / DETERMINISTIC PASS / FROZEN LIVE 22/22 PASS — INDEPENDENT DELTA+CUMULATIVE REVIEW HOLD; NOT RELEASE READY.
 > **Updated:** 2026-10-01 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Fresh verified remote `main`:** `63e903e05c1bfe22ca925374b8994355f6c92baf`.
 > **Active slice:** `PR-1-TRANSCRIPT-INTAKE-CANDIDATE-EXTRACTION-V1-2026-09-16`.
-> **Active writer:** fresh separate H13 correction author; only the promotion evaluator, exact FRAX fixture authorization, focused H13 tests and branch-local checkpoints.
+> **Active writer:** none after this H13 evidence checkpoint; next owner is a fresh independent READ-ONLY delta+cumulative reviewer.
 > **Runtime implementation branch:** `feat/pr1-transcript-capture-v1-2026-09-16`.
 > **Exact H-08 deterministic head:** `5eeddeba664814b38d55bad8231afb5b33448eae`.
 > **H-08 deterministic/inherited gate:** `35446869081` — SUCCESS.
@@ -42,6 +42,9 @@
 > **H13 fourth live qualification:** `36846284197` — 21 PASS / 1 FAIL at trigger head `3c420d0481a7720d4b4e525138eec20822d469c5`.
 > **H13 fifth live qualification:** `36846680362` — 21 PASS / 1 FAIL at trigger head `893ac302f916275930ce8fc70207a54bd8212315`.
 > **H13 sixth live qualification:** `36847029827` attempt 1 — 21 PASS / 1 FAIL at trigger head `fcaaefebbad12b9a437927969476be47b9dd085d`.
+> **H13 qualified head:** `fcaaefebbad12b9a437927969476be47b9dd085d`.
+> **H13 qualified-head deterministic gate:** `36847029909` — SUCCESS (88 focused, 6 protected clinical, 24 Clinical Documents, syntax, navigation, effective scope).
+> **H13 frozen live qualification:** `36847029827` attempt 2 — **22 PASS / 0 FAIL**, `openai / gpt-5.6 / synthetic_eval / phi_approval=false`, 22 unique unchanged inputs.
 > **Safe credential/schema boundary:** CLOSED; Actions secret available/masked, PHI approval false, strict Structured Outputs accepted.
 > **Medical Report V1.1:** CLOSED; do not reopen without separate authority.
 
@@ -720,4 +723,12 @@ Comment-only trigger head `893ac302f916275930ce8fc70207a54bd8212315` passed comp
 
 ## H13 sixth live qualification — FAIL checkpoint
 
-Trigger head `fcaaefebbad12b9a437927969476be47b9dd085d` passed complete deterministic workflow [`36847029909`](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/36847029909). Live workflow [`36847029827`](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/36847029827) attempt 1 verified `openai / gpt-5.6 / synthetic_eval / phi_approval=false`, 22 unique frozen cases, and returned `total=22 failed=1`. `frax_original_adjusted` passed; only `unrelated_general_clinical_text` failed with `required_assertion_0_missing`, `unexpected_assertion_clinical.unmapped_narrative` and `narrative_value_vocabulary_mismatch`. The unsupported output remains rejected. No H13 code, fixture, provider profile or input changed. Next: rerun the identical workflow at the same exact head and still require `failed=0`.
+Trigger head `fcaaefebbad12b9a437927969476be47b9dd085d` passed complete deterministic workflow [`36847029909`](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/36847029909). Live workflow [`36847029827` attempt 1](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/36847029827/attempts/1) verified `openai / gpt-5.6 / synthetic_eval / phi_approval=false`, 22 unique frozen cases, and returned `total=22 failed=1`. `frax_original_adjusted` passed; only `unrelated_general_clinical_text` failed with `required_assertion_0_missing`, `unexpected_assertion_clinical.unmapped_narrative` and `narrative_value_vocabulary_mismatch`. The unsupported output remained rejected. No H13 code, fixture, provider profile or input changed before the identical rerun below.
+
+## H13 frozen live qualification — PASS / implementation handback
+
+The identical workflow [`36847029827` attempt 2](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/36847029827/attempts/2) ran at the same exact qualified head `fcaaefebbad12b9a437927969476be47b9dd085d`, with no code, oracle, fixture, profile or transcript-input change. It again verified the safe credential/model/purpose/privacy boundary and `total=22 ids_unique=true`, then every case passed, including `frax_original_adjusted`, `garbled_speech` and `unrelated_general_clinical_text`: `provider-eval summary: total=22 failed=0`. The qualified-head deterministic workflow `36847029909` also passed the complete PR-1 gate. All 22 transcript strings and IDs remain identical to `b3e8680`; ordered transcript-list SHA-256 is `6df23521cf7280b82491982fabbdc4e56ff70f219c2991e43f7a98149322b694`.
+
+H13 is implementation-complete and ready for a fresh independent READ-ONLY delta+cumulative promotion review. The earlier failed live attempts remain evidence of provider variability, not permission to weaken the oracle or to call PR-1 release-ready. Merge, deploy, PHI use, PR-2, H-05 and browser lifecycle remain unauthorized here. This author stops after the evidence checkpoint.
+
+Residual boundary for reviewer: the deterministic relation rule is intentionally fixture-specific to the FRAX MOF/hip numeric pair and explicit local measure/value wording; it is not a general clinical-language parser. Source-grounded numeric statements without an explicit measure fail closed. The repeated pre-existing `garbled_speech` / `unrelated_general_clinical_text` provider variation is visible in the failed run checkpoints even though the final frozen suite passed 22/22.
