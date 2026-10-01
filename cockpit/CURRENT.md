@@ -56,7 +56,17 @@ Clinical Learning L0 run `36897403005` validated its own contracts but failed on
 
 **Bounded correction applied:** `Previous` now selects the eligible row with the greatest valid `end_at`; a focused overlapping-past regression covers the 09:00–10:00 versus 08:00–11:00 case at 11:30. No D1 product behavior or owner changed beyond the reviewed correction.
 
-**Exact next action:** run the focused/current PR evidence on the corrected head, then obtain exactly **one delta + affected-cumulative closure review** under `PROCEDURES.md` P5. Do not reopen a full architecture review. Do not merge or deploy before closure PASS and a separate Product Owner release decision.
+**Corrected tested head:** `1049f5f6622e5cfaeec34850ba7428cc6bb6ac96`.
+
+Focused correction evidence:
+
+- Cockpit Home — run `36901353130` — **SUCCESS**, including syntax, deterministic D1 tests, inherited workspace navigation and diff hygiene;
+- Cockpit Surgery Queue — run `36901352946` — **SUCCESS**;
+- Canonical Impact — run `36901353157` — **SUCCESS**.
+
+The persistent Clinical Learning L0 red check remains the same non-applicable design-only changed-file scope assertion; its contract validation step passes and D1 does not change Learning contracts.
+
+**Exact next action:** obtain exactly **one delta + affected-cumulative closure review** under `PROCEDURES.md` P5 against the corrected tested candidate. Do not reopen a full architecture review. Do not merge or deploy before closure PASS and a separate Product Owner release decision.
 
 **D2 — Relevant Communication Context** is the next bounded concept after D1, not part of this governance implementation. Its bidirectional read boundary and phone-correlation limit live in `cockpit/PRODUCT_CONSTITUTION.md`. D2 needs its own bounded design/authority before any integration or UI work.
 
