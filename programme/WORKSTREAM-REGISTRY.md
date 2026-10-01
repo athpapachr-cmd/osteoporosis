@@ -10,10 +10,10 @@ This registry exists to let multiple bounded workstreams proceed in parallel wit
 
 | Workstream | Purpose | Current state | Authority boundary |
 |---|---|---|---|
-| **OST-CAPTURE** | Heidi/transcript → semantic clinical candidates | **PR-1 H13 INDEPENDENT PASS / SEMANTIC PROMOTION CLOSED / RELEASE-ENGINEERING ELIGIBLE** | H13 final reviewed checkpoint `81af6134510cb8ee2fd991cd323cf04b67c6f480`; H09/H10/H11/H12-A preserved; no semantic residual; merge/deploy/PHI/pilot still unauthorized |
+| **OST-CAPTURE** | Heidi/transcript → semantic clinical candidates | **PR-1 RELEASE ENGINEERING VERIFIED / PRIVACY-PROVIDER GATE OPEN / RELEASE HOLD** | Reconciled final branch head `0b45a4c96a7cb9a96893cfa3f14a1708f25e5345`; H-05 and browser lifecycle closed; H09–H13 frozen/preserved; identifiable-transcript approval remains disabled; no merge/deploy/PHI/pilot authority |
 | **OST-LIFECOURSE** | Shared longitudinal patient truth, care trajectory, events/state/goals/decisions/obligations | **P1 CORRECTED OWNERSHIP MAP / INDEPENDENT DELTA+CUMULATIVE PASS / R2 INPUT READY** | Corrected exact target `b4f917b161f33b0bfb3507328df07cec2d7bd2b6`; DXA/task residuals closed; Q1–Q12 remain parked; no P2/runtime authority |
 | **OST-CLINICAL** | Osteoporosis evidence, pathways, guidance rules and treatment logic | **S1 P6B PASS / PR #123 MERGED / AUTO-DEPLOY LIVE / SMOKE NOT RUN** | Independently reviewed substantive target `ba2f8635372f85cd94409fa66e08c3d8b428bcba`; squash merge `dd16a505662606f588a2adc8b1ae0ddddd884d19`; merge checkpoint `3c7e502e29bfbc103dc7838a902f3e7adcfca36f`; Render `dep-daumvhu417fc73ffcgn0` LIVE; production smoke requires separate authority |
-| **OST-UI** | Osteoporosis product reconstruction: longitudinal product model, workflow/UX, information architecture and reuse | **R3 COMPLETE / COORDINATOR ACCEPTED / R4 AUTHORIZED** | R3 exact reviewed head `0290689a2c7ce387e03ee9b64edc68f75cf292e2`; patient/problem-first interaction supported, six-step shell secondary; semantic gaps remain dependencies; no root-writer or clinical-semantic authority |
+| **OST-UI** | Osteoporosis product reconstruction: longitudinal product model, workflow/UX, information architecture and reuse | **R1–R4 COMPLETE / SYNTHESIS ACCEPTED / PROTOTYPE 1 IMPLEMENTATION AUTHORIZED** | Synthesis + Prototype 1 contract branch `docs/ost-ui-synthesis-prototype1-contract-2026-10-01`; exact checkpoint `bc193003972f65df34be54de672ab8a5c4ad75b0`; runtime implementation not yet started; clinical rules unchanged |
 | **OST-REVIEW** | Practice Review, decision audit, Signals and improvement loop | **QUEUED** | Existing Practice Review architecture preserved; no new mutation authority |
 | **OST-LEARNING** | Clinical Learning Hub / challenges / longitudinal clinician learning | **EXISTING PARALLEL TRACK** | Existing learning contracts and release state remain separately authoritative |
 | **OST-SAFETY** | Privacy, provenance, CDS/regulatory and data-governance guardrails | **CROSS-CUTTING / NOT YET A STANDALONE WRITER** | Must be consulted when relevant; does not own product truth |
@@ -51,13 +51,13 @@ independent P1 delta+cumulative review — PASS
                 ↓
            OST-UI R3 point-of-care interaction — COMPLETE / ACCEPTED
                 ↓
-           OST-UI R4 architecture/reuse review — AUTHORIZED
+           OST-UI R4 architecture/reuse review — COMPLETE / ACCEPTED
                 ↓
-           one synthesis → Product Owner decisions
+           single synthesis — COMPLETE / ACCEPTED
+                ↓
+           Prototype 1 Denosumab adaptive visit — IMPLEMENTATION AUTHORIZED
         ↓
-target architecture
-        ↓
-bounded implementation slices
+bounded implementation slice
 ```
 
 In parallel, PHYSIO may proceed under a separate coordinator and return shared-Core findings to programme level. `OST-UI` is not an additional owner beside `OST-PRODUCT`; it is the activated name/scope of that previously queued placeholder.
