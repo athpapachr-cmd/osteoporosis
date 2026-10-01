@@ -52,7 +52,11 @@ Focused evidence on the substantive head:
 
 Clinical Learning L0 run `36897403005` validated its own contracts but failed only its **design-only scope** assertion because D1 intentionally changes Cockpit runtime files. That scope gate is not applicable evidence for this R1 Cockpit implementation and does not indicate a Clinical Learning contract regression.
 
-**Exact next action:** stop implementation mutation and obtain exactly one fresh independent R1 post-code exact-head implementation-fidelity review. Do not merge or deploy before that review and a separate Product Owner release decision.
+**Independent R1 result:** the first exact-head review returned **BLOCK** on one bounded defect only: Previous was selected by the latest start-sorted row rather than by the greatest completed `end_at ≤ now`. Current/Next semantics, weekly Calendar preservation, identity/privacy boundaries and applicable CI were accepted.
+
+**Bounded correction applied:** `Previous` now selects the eligible row with the greatest valid `end_at`; a focused overlapping-past regression covers the 09:00–10:00 versus 08:00–11:00 case at 11:30. No D1 product behavior or owner changed beyond the reviewed correction.
+
+**Exact next action:** run the focused/current PR evidence on the corrected head, then obtain exactly **one delta + affected-cumulative closure review** under `PROCEDURES.md` P5. Do not reopen a full architecture review. Do not merge or deploy before closure PASS and a separate Product Owner release decision.
 
 **D2 — Relevant Communication Context** is the next bounded concept after D1, not part of this governance implementation. Its bidirectional read boundary and phone-correlation limit live in `cockpit/PRODUCT_CONSTITUTION.md`. D2 needs its own bounded design/authority before any integration or UI work.
 
