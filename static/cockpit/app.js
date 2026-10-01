@@ -71,15 +71,39 @@
       .filter(Boolean)
       .sort((left, right) => left.start - right.start);
 
-    const completedItems = items.filter((item) => item.end <= nowMs);
-    const previousItem = completedItems.length ? completedItems[completedItems.length - 1] : null;
+    const startedItems = items.filter((item) => item.start <= nowMs);
+    const latestStartedItem = startedItems.length ? startedItems[startedItems.length - 1] : null;
     const activeItems = items.filter((item) => item.start <= nowMs && nowMs < item.end);
     const nextItem = items.find((item) => item.start > nowMs) || null;
 
+    let currentItem = null;
+    let currentConflictCount = 0;
+
+    if (activeItems.length === 1) {
+      currentItem = activeItems[0];
+    } else if (activeItems.length > 1) {
+      const latestActiveItem = activeItems[activeItems.length - 1];
+      const earlierActiveItems = activeItems.slice(0, -1);
+      const lawfulAclastaOverlap =
+        latestActiveItem.row.category !== "aclasta"
+        && earlierActiveItems.every((item) => item.row.category === "aclasta");
+
+      if (lawfulAclastaOverlap) {
+        currentItem = latestActiveItem;
+      } else {
+        currentConflictCount = activeItems.length;
+      }
+    }
+
+    const currentIndex = currentItem ? items.indexOf(currentItem) : -1;
+    const previousItem = currentIndex > 0
+      ? items[currentIndex - 1]
+      : (!currentItem && latestStartedItem ? latestStartedItem : null);
+
     return {
       previous: previousItem ? previousItem.row : null,
-      current: activeItems.length === 1 ? activeItems[0].row : null,
-      currentCount: activeItems.length,
+      current: currentItem ? currentItem.row : null,
+      currentConflictCount,
       next: nextItem ? nextItem.row : null
     };
   }
@@ -107,9 +131,9 @@
     setAppointmentSlot("previous", context.previous, "Δεν υπάρχει προηγούμενο σήμερα");
     setAppointmentSlot("next", context.next, "Δεν υπάρχει επόμενο σήμερα");
 
-    if (context.currentCount > 1) {
+    if (context.currentConflictCount > 1) {
       $("currentAppointmentTime").textContent = "—";
-      $("currentAppointmentPatient").textContent = `${context.currentCount} ταυτόχρονα ραντεβού`;
+      $("currentAppointmentPatient").textContent = `${context.currentConflictCount} ταυτόχρονα ραντεβού`;
       $("currentAppointmentType").textContent = "Δες το εβδομαδιαίο ημερολόγιο";
     } else {
       setAppointmentSlot("current", context.current, "Χωρίς ενεργό ραντεβού");
