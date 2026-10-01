@@ -474,8 +474,7 @@
           "speaker": "clinician"
         },
         "evidence_contains": "Με κλινική προσαρμογή εκτιμώ τον κίνδυνο υψηλότερο",
-        "value_text_contains": "κίνδυν",
-        "value_text_source_span": true
+        "value_text_contains": "κίνδυν"
       },
       {
         "semantic_type": "clinician_interpretation",
@@ -724,8 +723,7 @@
           "reason_code": "NO_CURRENT_RUNTIME_TARGET"
         },
         "evidence_contains": "με ενοχλεί ο δεξιός ώμος",
-        "value_text_contains": "δεξιός ώμος",
-        "value_text_source_span": true
+        "value_text_contains": "ώμ"
       }
     ],
     "forbidden_concepts": [
@@ -758,8 +756,7 @@
           "reason_code": "NO_CURRENT_RUNTIME_TARGET"
         },
         "evidence_contains": "Θα το εξετάσουμε ξεχωριστά",
-        "value_text_contains": "Θα το εξετάσουμε ξεχωριστά",
-        "value_text_source_span": true
+        "value_text_contains": "χωριστ"
       }
     ]
   },

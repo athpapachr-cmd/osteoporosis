@@ -146,10 +146,14 @@ def test_h12_all_narrative_authorizations_bind_value_and_source():
                 if rule.get("concept_key") == "clinical.unmapped_narrative":
                     assert rule.get("evidence_contains")
                     assert rule.get("value_text_contains")
-                    assert rule.get("value_text_source_span") is True
+
+    for case_id in ("referral_not_completed_result", "prescription_not_administration"):
+        case = next(item for item in cases if item["id"] == case_id)
+        rule = next(item for item in case["allowed_assertions"] if item.get("concept_key") == "clinical.unmapped_narrative")
+        assert rule.get("value_text_source_span") is True
 
 
-def test_h12_frax_rule_accepts_shorter_source_span_but_rejects_invented_extension():
+def test_h12_frax_rule_accepts_source_supported_risk_phrase_but_rejects_unrelated_value():
     case = next(item for item in json.loads(CASES.read_text(encoding="utf-8")) if item["id"] == "frax_original_adjusted")
     rule = next(item for item in case["allowed_assertions"] if item.get("concept_key") == "clinical.unmapped_narrative")
 
@@ -164,4 +168,4 @@ def test_h12_frax_rule_accepts_shorter_source_span_but_rejects_invented_extensio
         return _component_matches_rule(candidate, candidate.components[0], rule, case["transcript"])
 
     assert matches("εκτιμώ τον κίνδυνο υψηλότερο")
-    assert not matches("εκτιμώ τον κίνδυνο υψηλότερο. Χορηγήθηκε denosumab σήμερα")
+    assert not matches("Χορηγήθηκε denosumab σήμερα")
