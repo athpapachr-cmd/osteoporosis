@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — PR-1 Heidi-first Transcript Intake + Candidate Extraction v1
 
-> **STATUS:** H-12 VALUE-CLAIM HARDENING DETERMINISTIC PASS / FIFTH LIVE QUALIFICATION 21/22 — NOT RELEASE READY.
+> **STATUS:** H-12 BOUNDED CORRECTION QUALIFIED 22/22 — READY FOR SEPARATE INDEPENDENT DELTA+CUMULATIVE REVIEW; NOT RELEASE READY.
 > **Activated:** 2026-09-16 Asia/Nicosia.
 > **Slice:** `PR-1-TRANSCRIPT-INTAKE-CANDIDATE-EXTRACTION-V1-2026-09-16`.
 > **Activation main:** `0ab5f9770d220c20e8d94544cb64e93a4aa30d00`.
@@ -30,6 +30,8 @@
 > **Fourth post-H12 live qualification:** `36824150686` — 21 PASS / 1 FAIL; only the unsupported VFA-case falls assertion/missing required assertion.
 > **H-12 hardened exact deterministic head/gate:** `7f97359fc8860f209e18c07e5b76c2ac26f0f100` / `36824814247` — SUCCESS (84 focused).
 > **Fifth post-H12 live qualification:** `36824997276` — 21 PASS / 1 FAIL; only `garbled_speech` emitted zero candidates.
+> **Exact H-12 qualified head:** `43a501f8c51854e69062c66d9855fbee7cb47259`; complete deterministic gate `36825475834` — SUCCESS (84 focused, 6 protected clinical, 24 Clinical Documents, syntax, navigation and scope).
+> **Sixth post-H12 live qualification:** `36825475846` — **22 PASS / 0 FAIL**, `openai / gpt-5.6 / synthetic_eval / phi_approval=false`, 22 unique frozen cases.
 > **Writer:** one bounded H-12 PR-1 correction author; operational owner is `CURRENT_OPERATIONAL.md`.
 
 ## 1. Objective
@@ -620,3 +622,5 @@ Fourth live run `36824150686` at trigger head `51490713a4a57820fa42d1407d411da14
 The hardened H12-B evaluator at `7f97359fc8860f209e18c07e5b76c2ac26f0f100` requires each substantive paraphrase-value token to come from the source transcript or exact fixture-approved source-meaning vocabulary. FRAX/shoulder anchor rules remain explicit, DXA/prescription narratives retain whole-value source-span checks, and default-deny/duplicate/evidence protections remain. Focused tests reject appended invented denosumab statements while accepting source-supported paraphrases. Gate `36824814247` passed 84 focused, 6 protected clinical, 24 Clinical Documents, syntax, navigation and effective scope checks. Live 22/22 still required.
 
 Fifth live run `36824997276` at trigger head `c43ce7ab7a45995f4127f69d4c2fe219f15badb4` passed the privacy, model and frozen-count boundaries but returned 21/22. The only failure was `garbled_speech`: zero candidates and missing required ambiguity assertion. All H-12 semantic cases passed. The frozen oracle remains unchanged; rerun the same suite on the checkpointed code before any handback.
+
+Sixth trigger at exact head `43a501f8c51854e69062c66d9855fbee7cb47259` changed only the live workflow comment after the fifth-result checkpoint; runtime code, evaluator, fixtures and transcript inputs were unchanged. Complete gate `36825475834` passed syntax, 84 focused PR-1, 6 protected clinical, 24 Clinical Documents, navigation and effective scope. Live run `36825475846` verified the `openai / gpt-5.6 / synthetic_eval / phi_approval=false` boundary and 22 unique frozen inputs, then passed 22/22. The correction is ready for separate independent delta+cumulative review. Prior provider-output variation remains visible; no frozen oracle or unrelated source permission was relaxed.
