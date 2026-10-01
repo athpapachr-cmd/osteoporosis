@@ -455,5 +455,6 @@
 
   resetSurgeryForm();
   loadClinicalCalendarSummary();
+  window.setInterval(loadClinicalCalendarSummary, 60000);
   loadSurgeryQueue();
 })();
