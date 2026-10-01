@@ -1,9 +1,9 @@
 # PHYSIO CURRENT — Knee-OA Reference Implementation / Physio Core Boundary
 
 > **TASK:** `PHYSIO-P1-KNEE-OA-REFERENCE-VALIDATION-CORE-BOUNDARY-20261001`
-> **STATUS:** LOCAL CONTROL PLANE INITIALIZED / P0 INVENTORY COMPLETE / P1 DESIGN-ONLY NEXT.
+> **STATUS:** LOCAL CONTROL PLANE CURRENT / P0 INVENTORY COMPLETE / P1 VALIDATION DESIGN FROZEN / EVIDENCE COLLECTION NEXT.
 > **Date:** 2026-10-01 Asia/Nicosia.
-> **Fresh bootstrap main:** `860cac7afaa0eefbabd24118ada35430d1820cef`.
+> **Fresh bootstrap main for P1 design:** `aedfa3e48e8359a449c2c8d8eb2b9f053a64ce47`.
 > **Reference implementation:** Knee Osteoarthritis physiotherapy referral.
 > **Current PHYSIO runtime writer:** none.
 > **Root operational owner:** unchanged — `CURRENT_OPERATIONAL.md` remains the sole repo-wide writer lock and currently records the separate PR-1 transcript lifecycle.
@@ -131,7 +131,14 @@ Purpose:
 
 > Use the existing live Knee-OA product as the reference implementation to validate usefulness and freeze the practical boundary between reusable Physio mechanics and Knee-specific vertical content before opening another diagnosis.
 
-P1 starts **design/read-only with respect to runtime**.
+P1 remains **read-only with respect to runtime** unless a concrete observed finding later receives a separate bounded correction authority.
+
+P1 design is now frozen in:
+
+- `programme/PHYSIO/P1_VALIDATION_PROTOCOL.md`;
+- `programme/PHYSIO/P1_EVIDENCE_WORKSHEET.md`;
+- `programme/PHYSIO/P1_SYNTHETIC_CASE_SET.md`;
+- `programme/PHYSIO/P1_CORE_BOUNDARY_LEDGER.md`.
 
 Planned evidence work:
 
@@ -202,15 +209,21 @@ The Product Owner may later authorize one of these, but authorization should fol
 
 ## 8. Exact next action
 
-After this local control-plane checkpoint is present on `main`:
+The P1 design checkpoint is complete. Execute bounded validation without changing runtime:
 
-1. fresh-bootstrap PHYSIO from `programme/PHYSIO/PROJECT-INDEX.md` + this file;
-2. design the P1 validation protocol/artifact set without changing runtime;
-3. identify which evidence can be collected immediately by the Product Owner and which requires a separate reviewer/receiver;
-4. checkpoint the approved P1 design here;
-5. only then execute the bounded validation.
+1. Product Owner may immediately collect:
+   - Lane A real-device / iPhone Safari / VoiceOver acceptance;
+   - Lane C matched time/friction observations;
+   - Lane D aggregate referral-frequency / diagnosis-mix evidence;
+   - Lane E exploratory clinician product-value / willingness-to-pay evidence.
+2. Lane B requires an actual receiving physiotherapist. If it is deferred, record that explicitly and do not claim receiver validation.
+3. PHYSIO coordinator may execute Lane F material evidence-provenance/locator audit from current owning evidence artifacts; add a separate evidence reviewer only if a material source-to-claim ambiguity appears.
+4. Record every finding in `P1_EVIDENCE_WORKSHEET.md`.
+5. Synthesize Lane G in `P1_CORE_BOUNDARY_LEDGER.md`.
+6. A concrete Physio-owned runtime defect may open a separate bounded correction slice only after classification and owner determination.
+7. P2 diagnosis selection may be prepared only after P1 evidence; P2 implementation still requires separate Product Owner authorization.
 
-Do not start a second diagnosis or runtime refactor as the next action.
+Do not start a second diagnosis, generic Physio refactor or foreign-owner mutation as the next action.
 
 ---
 
