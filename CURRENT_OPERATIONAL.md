@@ -1,6 +1,6 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** PR-1 H13 DETERMINISTIC GATE PASS / FIRST LIVE QUALIFICATION 20/22 FAIL; NOT RELEASE READY.
+> **STATUS:** PR-1 H13 DETERMINISTIC GATE PASS / SECOND LIVE QUALIFICATION 21/22 FAIL; NOT RELEASE READY.
 > **Updated:** 2026-10-01 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Fresh verified remote `main`:** `63e903e05c1bfe22ca925374b8994355f6c92baf`.
@@ -37,6 +37,7 @@
 > **H13 exact implementation head:** `89a3b3d52fa4a2dd59d3b2d30c405555c6d501da`.
 > **H13 complete deterministic gate:** `36844603110` — SUCCESS (88 focused, 6 protected clinical, 24 Clinical Documents, syntax, navigation, effective scope).
 > **H13 first live qualification:** `36844904115` — 20 PASS / 2 FAIL at trigger head `6f2710e74a217f9ecf1f6df97d7157b01cb7b551`.
+> **H13 second live qualification:** `36845374600` — 21 PASS / 1 FAIL at trigger head `3438449b7e6ae9b0879a7993a5507979dcb45dfe`.
 > **Safe credential/schema boundary:** CLOSED; Actions secret available/masked, PHI approval false, strict Structured Outputs accepted.
 > **Medical Report V1.1:** CLOSED; do not reopen without separate authority.
 
@@ -695,4 +696,8 @@ garbled_speech: unexpected_assertion_clinical.unmapped_narrative, narrative_valu
 unrelated_general_clinical_text: required_assertion_0_missing, unexpected_assertion_clinical.unmapped_narrative, narrative_value_vocabulary_mismatch
 ```
 
-`frax_original_adjusted` passed. The two failures concern non-H13 provider output variation previously observed in live qualification; the coded run contains no demonstrated H13 relational mismatch. No fixture, transcript, oracle, provider profile or runtime relaxation is justified. Next action: rerun the same frozen 22-case synthetic qualification unchanged and require `failed=0`.
+`frax_original_adjusted` passed. The two failures concern non-H13 provider output variation previously observed in live qualification; the coded run contains no demonstrated H13 relational mismatch. No fixture, transcript, oracle, provider profile or runtime relaxation was justified. The next action was an unchanged frozen 22-case rerun, again requiring `failed=0`.
+
+## H13 second live qualification — FAIL checkpoint
+
+Comment-only trigger head `3438449b7e6ae9b0879a7993a5507979dcb45dfe` passed complete deterministic workflow [`36845374604`](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/36845374604). Live workflow [`36845374600`](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/36845374600) again verified the synthetic-only provider/model/privacy boundary and 22 unique frozen inputs, then returned `total=22 failed=1`. `frax_original_adjusted` and `garbled_speech` passed. Only `unrelated_general_clinical_text` failed with `required_assertion_0_missing`, `unexpected_assertion_clinical.unmapped_narrative`, `narrative_value_anchor_mismatch` and `narrative_value_vocabulary_mismatch`. This does not justify authorizing its unsupported output. The H13 implementation and oracle remain unchanged. Next: another unchanged 22-case synthetic qualification; `failed=0` is still required.
