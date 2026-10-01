@@ -80,6 +80,7 @@ def test_cockpit_today_context_strip_uses_protected_calendar_without_second_cale
     assert "item.start <= nowMs && nowMs < item.end" in js
     assert "item.start > nowMs" in js
     assert "ταυτόχρονα ραντεβού" in js
+    assert "window.setInterval(loadClinicalCalendarSummary, 60000)" in js
 
     assert "todayOsteoporosisCount" in js
     assert "todayTreatmentCount" in js
