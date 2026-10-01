@@ -140,8 +140,8 @@
       $("calendarState").textContent = rows.length ? `${rows.length} σήμερα` : "0 σήμερα";
       $("calendarState").classList.add("ready");
       $("calendarNote").textContent = rows.length
-        ? "Προβολή προγράμματος από το Clinical Calendar. Το εβδομαδιαίο ημερολόγιο παραμένει η πλήρης προβολή."
-        : "Δεν υπάρχουν ραντεβού οστεοπόρωσης για σήμερα.";
+        ? "Προβολή προγράμματος από το Clinical Calendar. Το εβδομαδιαίο ημερολόγιο παραμένει η πλήρης προβολή. Το πρόγραμμα ενημερώνεται καθημερινά."
+        : "Δεν υπάρχουν ραντεβού οστεοπόρωσης για σήμερα. Το πρόγραμμα ενημερώνεται καθημερινά.";
     } catch (_) {
       clearTodayContext("Μη διαθέσιμο");
       $("todayOsteoporosisCount").textContent = "—";
