@@ -1,6 +1,6 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** PR-1 H13 DETERMINISTIC GATE PASS / FOURTH LIVE QUALIFICATION 21/22 FAIL; NOT RELEASE READY.
+> **STATUS:** PR-1 H13 DETERMINISTIC GATE PASS / FIFTH LIVE QUALIFICATION 21/22 FAIL; NOT RELEASE READY.
 > **Updated:** 2026-10-01 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Fresh verified remote `main`:** `63e903e05c1bfe22ca925374b8994355f6c92baf`.
@@ -40,6 +40,7 @@
 > **H13 second live qualification:** `36845374600` — 21 PASS / 1 FAIL at trigger head `3438449b7e6ae9b0879a7993a5507979dcb45dfe`.
 > **H13 third live qualification:** `36845814306` — 21 PASS / 1 FAIL at trigger head `6c887c2365393b4d955d1c50218c48b55f4474c7`.
 > **H13 fourth live qualification:** `36846284197` — 21 PASS / 1 FAIL at trigger head `3c420d0481a7720d4b4e525138eec20822d469c5`.
+> **H13 fifth live qualification:** `36846680362` — 21 PASS / 1 FAIL at trigger head `893ac302f916275930ce8fc70207a54bd8212315`.
 > **Safe credential/schema boundary:** CLOSED; Actions secret available/masked, PHI approval false, strict Structured Outputs accepted.
 > **Medical Report V1.1:** CLOSED; do not reopen without separate authority.
 
@@ -711,3 +712,7 @@ Comment-only trigger head `6c887c2365393b4d955d1c50218c48b55f4474c7` passed comp
 ## H13 fourth live qualification — FAIL checkpoint
 
 Comment-only trigger head `3c420d0481a7720d4b4e525138eec20822d469c5` passed complete deterministic workflow [`36846284184`](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/36846284184). Live workflow [`36846284197`](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/36846284197) passed provider/model/privacy and 22-unique-fixture boundaries, then returned `total=22 failed=1`. `frax_original_adjusted` passed. Only `garbled_speech` failed its pre-existing optional-narrative anchor/source-span checks; the unsupported candidate remained rejected. The evaluator, fixture authorizations, provider profile and 22 transcript inputs remain unchanged. Qualification requires another unchanged run with `failed=0`.
+
+## H13 fifth live qualification — FAIL checkpoint
+
+Comment-only trigger head `893ac302f916275930ce8fc70207a54bd8212315` passed complete deterministic workflow [`36846680390`](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/36846680390). Live workflow [`36846680362`](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/36846680362) passed the model/privacy/22-unique-fixture boundaries and returned `total=22 failed=1`. `frax_original_adjusted` passed; only `unrelated_general_clinical_text` failed with `required_assertion_0_missing`, `unexpected_assertion_clinical.unmapped_narrative` and `narrative_value_vocabulary_mismatch`. No relaxation or implementation change is justified. Next: another unchanged frozen 22-case GPT-5.6 run, requiring `failed=0`.
