@@ -39,3 +39,13 @@ The Product Owner authorized bounded PR-1 implementation and synthetic qualifica
 - **OST-CLINICAL:** `programme/OST-CLINICAL/CURRENT.md` owns the completed S1 checkpoint and any local follow-through.
 
 `programme/MASTER-PROJECT-REGISTRY.md` provides navigation across these workstreams. It is never an authority for writer locks, releases or product state over the owning CURRENT files.
+
+## Parallel OST-UI Prototype 1 runtime writer — 2026-10-01
+
+Product Owner authorized the bounded Denosumab Longitudinal Adaptive Visit implementation after accepting the OST-UI synthesis/contract at documentation head `fc97c1ffe6743895098d627f2798b50fb166fff4`. Fresh remote `main` is `87aedad3ad512e4b17a1eb737f0ff8302857aff2`. Implementation branch `feat/ost-ui-proto1-denosumab-adaptive-visit-2026-10-01` starts from that exact main.
+
+**Active writer scope:** OST-UI Prototype 1 in-visit read-only projection, adaptive presentation, source-editor navigation, transient assisted reconciliation, focused synthetic tests and this checkpoint. The writer may make bounded changes to the existing G1/G2/G3 UI handoff only to expose already computed state. PR-1 transcript code, clinical rule registries, protected persistence APIs, Cockpit patient disclosure and other workstreams remain outside scope. The PR-1 release HOLD and privacy gate remain unchanged.
+
+**Owner/interface freeze:** protected patient/encounter/lab IDs and completed/amended rows remain authoritative; Step-4 episodes, administrations, decisions and tasks remain source owners. G1 and G2 retain derived chronology/guidance authority. Plans, actual events, derived due, decisions and obligations stay visibly distinct. Historical continuity suggestions are provisional unless an authorized existing owner persists clinician-confirmed links. The aggregate Cockpit Home remains aggregate; only a shared projection interface and synthetic protected-context test are allowed before the separate patient-link/privacy contract.
+
+**Status:** writer claimed; implementation not yet tested. **Next:** inspect the bounded runtime seams, implement the slice and run focused plus adjacent-owner regressions. No merge or deploy.
