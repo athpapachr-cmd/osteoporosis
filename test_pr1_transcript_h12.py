@@ -3,9 +3,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from clinical_excellence.core.transcript_contracts import ProviderTranscriptExtractionV1
 from clinical_excellence.core.transcript_service import extract_candidates
 from clinical_excellence.modules.osteoporosis.transcript_target_guard import map_candidate
-from evals.transcript_v1.run_provider_eval import _evaluate_case
+from evals.transcript_v1.run_provider_eval import _component_matches_rule, _evaluate_case
 from test_pr1_transcript_h09 import _candidate, _multi_candidate
 from test_pr1_transcript_h10 import StaticProvider, _request
 
@@ -143,3 +144,21 @@ def test_h12_all_narrative_authorizations_bind_value_and_source():
                     assert rule.get("evidence_contains")
                     assert rule.get("value_text_contains")
                     assert rule.get("value_text_source_span") is True
+
+
+def test_h12_frax_rule_accepts_shorter_source_span_but_rejects_invented_extension():
+    case = next(item for item in json.loads(CASES.read_text(encoding="utf-8")) if item["id"] == "frax_original_adjusted")
+    rule = next(item for item in case["allowed_assertions"] if item.get("concept_key") == "clinical.unmapped_narrative")
+
+    def matches(value_text: str) -> bool:
+        candidate = ProviderTranscriptExtractionV1.model_validate({"candidates": [{
+            "semantic_type": "clinician_interpretation",
+            "components": [{"concept_key": "clinical.unmapped_narrative", "value": {"kind": "text", "text": value_text}}],
+            "source_assertion": {"speaker": "clinician", "polarity": "positive", "temporality": "current", "certainty": "explicit"},
+            "evidence_snippet": "Με κλινική προσαρμογή εκτιμώ τον κίνδυνο υψηλότερο",
+            "confidence": "high",
+        }]}).candidates[0]
+        return _component_matches_rule(candidate, candidate.components[0], rule, case["transcript"])
+
+    assert matches("εκτιμώ τον κίνδυνο υψηλότερο")
+    assert not matches("εκτιμώ τον κίνδυνο υψηλότερο. Χορηγήθηκε denosumab σήμερα")

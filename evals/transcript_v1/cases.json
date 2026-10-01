@@ -474,7 +474,7 @@
           "speaker": "clinician"
         },
         "evidence_contains": "Με κλινική προσαρμογή εκτιμώ τον κίνδυνο υψηλότερο",
-        "value_text_contains": "Με κλινική προσαρμογή εκτιμώ τον κίνδυνο υψηλότερο",
+        "value_text_contains": "κίνδυν",
         "value_text_source_span": true
       },
       {
