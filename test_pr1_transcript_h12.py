@@ -168,4 +168,25 @@ def test_h12_frax_rule_accepts_source_supported_risk_phrase_but_rejects_unrelate
         return _component_matches_rule(candidate, candidate.components[0], rule, case["transcript"])
 
     assert matches("εκτιμώ τον κίνδυνο υψηλότερο")
+    assert matches("Η κλινική εκτίμηση: κίνδυνος αυξημένος")
     assert not matches("Χορηγήθηκε denosumab σήμερα")
+    assert not matches("εκτιμώ τον κίνδυνο υψηλότερο. Χορηγήθηκε denosumab σήμερα")
+
+
+def test_h12_shoulder_paraphrase_cannot_carry_unrelated_administration_claim():
+    case = next(item for item in json.loads(CASES.read_text(encoding="utf-8")) if item["id"] == "unrelated_general_clinical_text")
+    rule = next(item for item in case["allowed_assertions"] if item.get("concept_key") == "clinical.unmapped_narrative")
+
+    def matches(value_text: str) -> bool:
+        payload = {"candidates": [{
+            "semantic_type": "clinician_interpretation",
+            "components": [{"concept_key": "clinical.unmapped_narrative", "value": {"kind": "text", "text": value_text}}],
+            "source_assertion": {"speaker": "clinician", "polarity": "positive", "temporality": "future", "certainty": "explicit"},
+            "evidence_snippet": "Θα το εξετάσουμε ξεχωριστά",
+            "confidence": "high",
+        }]}
+        candidate = extract_candidates(_request(case["transcript"]), StaticProvider(payload)).candidates[0]
+        return _component_matches_rule(candidate, candidate.components[0], rule, case["transcript"])
+
+    assert matches("Θα το αξιολογήσουμε ξεχωριστά")
+    assert not matches("Θα το αξιολογήσουμε ξεχωριστά και χορηγήθηκε denosumab")

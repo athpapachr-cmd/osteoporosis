@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+import unicodedata
 from pathlib import Path
 from typing import Any
 
@@ -18,6 +19,27 @@ def _norm_text(value: str) -> str:
 
 def _norm_source_span(value: str) -> str:
     return _norm_text(re.sub(r"[^\w]+", " ", value or ""))
+
+
+_NARRATIVE_FUNCTION_WORDS = {
+    "ο", "η", "το", "οι", "τα", "του", "της", "των", "τον", "την", "τους", "τις",
+    "σε", "στο", "στη", "στον", "στην", "στα", "στις", "στους", "και", "με", "για",
+    "ως", "απο", "προς", "κατα", "οτι", "θα", "να", "που", "ειναι", "ηταν",
+    "αυτο", "αυτη", "αυτος", "ενα", "μια", "τουτο", "μας", "μου", "σας",
+    "the", "a", "an", "of", "and", "for", "to", "is", "was", "in", "on", "with",
+}
+
+
+def _narrative_terms(value: str) -> set[str]:
+    unaccented = "".join(
+        char for char in unicodedata.normalize("NFKD", value.casefold())
+        if not unicodedata.combining(char)
+    )
+    words = re.findall(r"[a-zα-ω0-9]+", unaccented)
+    return {
+        word[:5] if len(word) >= 5 else word[:3] if len(word) == 4 else word
+        for word in words if word not in _NARRATIVE_FUNCTION_WORDS
+    }
 
 
 def _candidate_signature(candidate) -> str:
@@ -97,6 +119,15 @@ def _component_matches_rule(candidate, component, rule: dict[str, Any], transcri
         if not text or text not in _norm_source_span(transcript):
             return False
 
+    if rule.get("value_text_source_vocabulary"):
+        if not isinstance(component.value, TextValueV1):
+            return False
+        terms = _narrative_terms(component.value.text)
+        allowed = _narrative_terms(transcript)
+        allowed.update(_narrative_terms(" ".join(rule.get("value_text_allowed_words", []))))
+        if not terms or not terms.issubset(allowed):
+            return False
+
     return True
 
 
@@ -148,7 +179,7 @@ def _candidate_group_matches(candidate, group: dict[str, Any], transcript: str =
 def _narrative_rule_failure_codes(candidate, component, rule: dict[str, Any], transcript: str) -> list[str]:
     if component.concept_key != "clinical.unmapped_narrative" or rule.get("concept_key") != component.concept_key:
         return []
-    independent = ("evidence_contains", "value_text_contains", "value_text_source_span")
+    independent = ("evidence_contains", "value_text_contains", "value_text_source_span", "value_text_source_vocabulary", "value_text_allowed_words")
     base = {key: value for key, value in rule.items() if key not in independent}
     if not _component_matches_rule(candidate, component, base, transcript):
         return []
@@ -157,8 +188,9 @@ def _narrative_rule_failure_codes(candidate, component, rule: dict[str, Any], tr
         ("evidence_contains", "narrative_evidence_anchor_mismatch"),
         ("value_text_contains", "narrative_value_anchor_mismatch"),
         ("value_text_source_span", "narrative_value_source_span_mismatch"),
+        ("value_text_source_vocabulary", "narrative_value_vocabulary_mismatch"),
     ):
-        if field in rule and not _component_matches_rule(candidate, component, {**base, field: rule[field]}, transcript):
+        if field in rule and not _component_matches_rule(candidate, component, {**base, field: rule[field], "value_text_allowed_words": rule.get("value_text_allowed_words", [])}, transcript):
             codes.append(code)
     return codes
 
