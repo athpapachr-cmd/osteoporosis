@@ -1,10 +1,10 @@
 # CURRENT.md — OST-UI / Osteoporosis Product Reconstruction
 
-> **STATUS:** R3 COMPLETE / COORDINATOR ACCEPTED / R4 AUTHORIZED — NOT STARTED.
+> **STATUS:** R4 COMPLETE / LOCAL CHECKPOINT / SYNTHESIS READY FOR COORDINATOR RECONCILIATION.
 > **Updated:** 2026-10-01 Asia/Nicosia.
 > **Workstream:** OST-UI.
-> **Fresh runtime main reviewed for R3:** **63e903e05c1bfe22ca925374b8994355f6c92baf**.
-> **Governing bootstrap PR:** **#122** — OPEN / DRAFT / NOT MERGED.
+> **Fresh runtime main reviewed for R4:** **63e903e05c1bfe22ca925374b8994355f6c92baf**.
+> **Governing bootstrap PR:** **#122** — OPEN / DRAFT / NOT MERGED at the inherited R3 checkpoint; live PR status was not part of R4 source-identity verification.
 > **Governing contract head:** **9363ad5dbb5f7c059f351421599bd6ede4db6438**.
 > **R1 review branch:** **docs/ost-ui-r1-current-product-audit-2026-09-27**.
 > **R1 artifact commit:** **7b23f224cef0c9b721d89c84e431a4582efab2af**.
@@ -13,13 +13,30 @@
 > **R2 coordinator-reconciled head / R3 base:** **c706976820fd0a4eaa45210ca76eae95f661295c**.
 > **R3 review branch:** **docs/ost-ui-r3-point-of-care-interaction-review-2026-10-01**.
 > **R3 artifact commit:** **a0ea86236826cbebbc9c3bb2162c3f4dae87de54**; local checkpoint commit is this branch's final head.
+> **R3 coordinator-reconciled head / R4 base:** **5a2d99bf9180470fb9b7fd1f907d26f2066b3dbb**.
+> **R4 review branch:** **docs/ost-ui-r4-architecture-reuse-review-2026-10-01**.
+> **R4 artifact:** **programme/OST-UI/R4-SHARED-CORE-MODULE-ARCHITECTURE-REUSE.md**.
 > **Root operational writer:** unchanged — PR-1 Heidi-first transcript capture lifecycle.
 > **OST-UI runtime writer:** none.
 > **Release affecting:** no.
 
 ---
 
-## 0. Current R3 checkpoint / exact next action
+## 0. Current R4 checkpoint / exact next action
+
+R4 fresh-verified remote `main` at `63e903e05c1bfe22ca925374b8994355f6c92baf`, the programme registry at `9f505ffc0d5b1460cc2a54dd49bc07d28b138808`, the reviewed LifeCourse P1 target `b4f917b161f33b0bfb3507328df07cec2d7bd2b6` in that ancestry, and the exact remote R3 coordinator-reconciled head `5a2d99bf9180470fb9b7fd1f907d26f2066b3dbb`. All six root canonicals were read in `AGENTS.md` order; the full OST-UI index, current checkpoint and accepted R1/R2/R3 were consumed. The R4 branch starts at the exact reconciled R3 head. Main runtime owner seams and bounded Physio interaction evidence were inspected read-only. The root PR-1 writer and OST-UI documentation-only boundary remain unchanged.
+
+**Local review artifact:** `programme/OST-UI/R4-SHARED-CORE-MODULE-ARCHITECTURE-REUSE.md`.
+
+**R4 disposition: R4 COMPLETE / SYNTHESIS READY.** Keep protected patient/encounter/lab persistence and completed/amended semantics; extend existing Step-4 owners for stable treatment epochs, obligations and distinct decision roles; consolidate sourced DXA/FRAX/lab facts and duplicated factual normalization; keep G1/G2/G3 as separate derived responsibilities; move only genuinely cross-module identity/context, provenance presentation and generic obligation-envelope seams to Shared Core. Keep osteoporosis rules, fracture/fragility meaning, treatment/goal meaning and clinical decision payloads module-local. The patient/current-problem projection becomes primary while Steps 1–6 remain secondary editors. No new store, clinical rule or parallel Live/AI truth is authorized.
+
+**Minimal pre-prototype gate:** freeze the owner/interface contract for identities, source/provenance, actual/planned/derived states, stable epoch/obligation links, decision roles, uncertainty and rule authority. The two downstream prototype candidates remain denosumab longitudinal management and new fragility fracture/treatment reassessment; no prototype starts in R4.
+
+**Exact next action:** publish and verify this R4 branch with only the artifact and this `CURRENT.md` change, then return the exact remote head to the programme coordinator for one synthesis decision. R4 itself stops. Synthesis is eligible for coordinator reconciliation, not executed by this reviewer. No implementation, runtime/schema/database change, root canonical, PR #121, PR-1, clinical-rule, merge or deploy action belongs to R4.
+
+The following R3 material and §§0A–8A are historical context; this §0 and §9 own the present OST-UI NOW.
+
+### Historical R3 checkpoint
 
 R3 independently fresh-verified remote `main` at `63e903e05c1bfe22ca925374b8994355f6c92baf`, remote R2 coordinator branch at `c706976820fd0a4eaa45210ca76eae95f661295c`, and read all six active root canonicals in `AGENTS.md` order. The R3 review branch was created from that exact coordinator-reconciled R2 head. R1 and R2 were consumed as accepted inputs. Current `main` S1 fracture/fragility semantics and bounded Physio interaction evidence were inspected without changing their owners. The root PR-1 writer lock is unchanged; there is no OST-UI runtime writer.
 
@@ -49,7 +66,7 @@ Accepted R3 interaction finding: the justified current point-of-care model is pa
 
 **Exact next action:** execute only the bounded R4 Shared Core / Module Architecture / Reuse review from this coordinator checkpoint. Do not implement or synthesize automatically.
 
-Sections 0A–8A retain R2/R1/coordinator history as context. This §0 and §9 own the present OST-UI NOW.
+Sections 0A–8A retain R2/R1/coordinator history as context. The current R4 checkpoint and §9 own the present OST-UI NOW.
 
 ---
 
@@ -275,9 +292,9 @@ No final R4 KEEP/REPLACE classification was made.
 |---|---|---|
 | R1 — Current Product vs Constitution | **COMPLETE / COORDINATOR ACCEPTED** | R1-CURRENT-PRODUCT-CONSTITUTION-AUDIT.md |
 | R2 — Longitudinal Clinical Trajectory | **COMPLETE / COORDINATOR ACCEPTED** | R2-LONGITUDINAL-CLINICAL-TRAJECTORY-REVIEW.md |
-| R3 — Point-of-Care Interaction | **COMPLETE / LOCAL CHECKPOINT; COORDINATOR RECONCILIATION PENDING** | R3-POINT-OF-CARE-INTERACTION-REVIEW.md |
-| R4 — Shared Core / Module Architecture / Reuse | **NOT STARTED** | R4-SHARED-CORE-MODULE-ARCHITECTURE-REUSE.md |
-| Synthesis — Product Reconstruction Decision | **BLOCKED ON R1-R4** | OST-PRODUCT-RECONSTRUCTION-DECISION.md |
+| R3 — Point-of-Care Interaction | **COMPLETE / COORDINATOR ACCEPTED** | R3-POINT-OF-CARE-INTERACTION-REVIEW.md |
+| R4 — Shared Core / Module Architecture / Reuse | **COMPLETE / LOCAL CHECKPOINT; COORDINATOR RECONCILIATION PENDING** | R4-SHARED-CORE-MODULE-ARCHITECTURE-REUSE.md |
+| Synthesis — Product Reconstruction Decision | **PENDING R4 COORDINATOR RECONCILIATION** | OST-PRODUCT-RECONSTRUCTION-DECISION.md |
 
 No additional review lane is authorized.
 
@@ -395,4 +412,4 @@ This does not authorize P2 target architecture, migration, new stores, new oblig
 
 ## 9. Current stop / hold
 
-R3 is complete on its separate branch and stops after this local checkpoint. The programme coordinator's verification/reconciliation of the exact R3 branch/head/artifact is next. R4 and synthesis remain downstream and were not started by R3. No screen redesign, prototype, implementation, schema/database change, root-canonical or PR #121 mutation, clinical-rule change, new store, PR-1/H-12 mutation, merge or deploy belongs to this R3 lane.
+R4 is complete on its separate branch and stops after the artifact, this local checkpoint and verified remote push. Programme coordinator verification/reconciliation of the exact R4 branch/head/artifact is next; one synthesis is eligible only through that coordinator step. No new review lane, screen redesign, prototype, implementation, schema/database change, root-canonical or PR #121 mutation, clinical-rule change, new store, PR-1 mutation, merge or deploy belongs to R4.
