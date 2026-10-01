@@ -195,6 +195,21 @@ PHYSIO CURRENT != ROOT CURRENT_OPERATIONAL
 
 ---
 
+## 7.1 Review and evidence policy
+
+PHYSIO inherits the root `PROCEDURES.md` task router, evidence reuse, R0/R1/R2 classification and stop rule. `programme/PHYSIO/CURRENT.md` continues to own PHYSIO's local task, evidence and writer scope.
+
+- P1 Lanes A–F collect product, receiver, UX, commercial and provenance evidence. That collection is **not** an independent technical design or post-code review.
+- Record an observed product finding in the owning worksheet and classify plan impact. A concrete runtime defect requires a separately bounded correction and a risk tier; it does not turn every P1 lane into a review chain.
+- No runtime mutation means no post-code review. Evidence/locator maintenance without changed clinical behavior is normally R0.
+- A bounded correction within already-reviewed behavior receives one delta + affected cumulative closure review, then stops when material findings are closed and no new material risk appears.
+- A second-diagnosis vertical using unchanged, proven Physio Core is normally R1, with one post-code exact-head review.
+- A new shared Core mechanism, clinical safety semantic, patient/identity authority or cross-workstream owner is normally R2, with pre-code and post-code reviews at their respective material gates.
+
+These defaults do not grant P2 or runtime mutation authority. The existing P1 read-only boundary and separate Product Owner decision still apply.
+
+---
+
 ## 8. Cross-project dependency protocol
 
 If PHYSIO discovers a required change outside Physio-owned product/runtime scope:

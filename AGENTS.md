@@ -1,9 +1,10 @@
-# AGENTS.md — permanent operating rules for Clinical Excellence / Module 01 Osteoporosis
+# AGENTS.md — permanent operating rules for Clinical Excellence Cockpit
 
 > **STATUS:** permanent project operating authority.
 > **CANONICAL HOME:** `athpapachr-cmd/osteoporosis`.
-> **SCOPE:** reusable Clinical Excellence Core Engine + Module 01 Osteoporosis + every AI/Codex/ChatGPT session working on this repository.
+> **SCOPE:** reusable Clinical Excellence Core Engine, global Cockpit, Module 01 Osteoporosis, PHYSIO and every AI/Codex/ChatGPT session working on this repository.
 > **PRODUCT OWNER:** the clinician using the system.
+> **PROCEDURAL AUTHORITY:** task-mode methods live in `PROCEDURES.md`; it is not a seventh canonical.
 
 ---
 
@@ -31,6 +32,8 @@ Before substantial planning, implementation, review, branch/PR creation, merge, 
    - exact next authorized action;
    - explicit deferred/forbidden actions;
 4. inspect the exact runtime/schema/evidence needed for the requested task only after the bootstrap.
+
+After the six-canonical bootstrap, read the applicable `PROCEDURES.md` mode and the relevant workstream `CURRENT.md` before the task's decisive action. The procedure routes work; it never replaces a canonical or grants a writer/release authority.
 
 Hard rules:
 
@@ -83,6 +86,10 @@ Append-only durable history of completed decisions, releases and validated miles
 `HANDOFF_CURRENT.md` is retained only as a compatibility redirect and is not an active canonical authority.
 
 `README.md` is navigation only.
+
+`PROCEDURES.md` is the separate procedural authority: it owns task-mode routing, the Product Owner step checkpoint, mechanism/evidence reuse, review tier selection, correction closure and plan-impact method. It is **not** a seventh project-state canonical and cannot override these permanent rules or `CURRENT_OPERATIONAL.md`.
+
+`programme/MASTER-PROJECT-REGISTRY.md` is navigation/topology only. Its summaries never override the owning root or workstream `CURRENT.md`.
 
 ## 2.1 Contradiction rule
 
@@ -619,6 +626,19 @@ For the current Render service, auto-deploy follows `main`; do not manually trig
 Do not expand scope for cosmetic cleanup while a safety/data-integrity objective is unresolved.
 
 Public fixtures/tests must be synthetic or fully anonymized.
+
+## 16.1 Material-review stop invariant
+
+`PROCEDURES.md` defines R0/R1/R2 classification and the bounded review method. The permanent rule is:
+
+```text
+ONE MATERIAL GATE → ONE INDEPENDENT REVIEW BY DEFAULT
+BLOCK → bounded correction → ONE delta+cumulative closure review
+ALL MATERIAL FINDINGS CLOSED + NO NEW MATERIAL RISK → STOP REVIEW CHAIN
+CANONICAL SYNC / RECONCILIATION WITHOUT RUNTIME OR DESIGN DELTA → NO NEW REVIEW
+```
+
+**REVIEW EXISTS TO REDUCE A MATERIAL RISK, NOT TO CERTIFY THAT THE PREVIOUS REVIEW WAS CORRECT.** A genuine new material finding may open its own bounded decision. Release and smoke remain separate gates under the existing authority rules.
 
 ---
 

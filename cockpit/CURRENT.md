@@ -1,4 +1,23 @@
-# Cockpit Home CURRENT
+# Cockpit CURRENT — global Home and bounded clinical projections
+
+> **NOW (2026-10-01):** Home v1, Pending Surgery Queue and the bounded Clinical Calendar reason bridge are released according to the checkpoints below. Visit Brief / What Changed / Clinical Inbox are product direction, not released Cockpit UI.
+> **Product boundary:** `cockpit/PRODUCT_CONSTITUTION.md`; cross-programme architecture: `CLINICAL_EXCELLENCE_PLAN.md` §§33–34.
+> **Root lock:** `CURRENT_OPERATIONAL.md` remains the sole repo-wide NOW. Its PR-1 release lifecycle is in HOLD with no active runtime writer at the verified PR-1 branch checkpoint; this Cockpit file does not claim that lock.
+> **Visit Intelligence dependency:** `programme/OST-VISIT-INTELLIGENCE/CURRENT.md`; P0-V0 contract/projector branch `b22fd5c610d20baf0f8ef3384ca16472cd2d1f92` is not on `main`. The external cumulative PASS handback has not yet been reconciled into that workstream CURRENT or released.
+
+## Current bounded action
+
+The next global Cockpit implementation-bearing slice is **COCKPIT TODAY CONTEXT STRIP V1 (D1)**: a small, directly visible, read-only Dashboard projection of **Previous / Current / Next** appointment context from the existing normalized Clinical Calendar. It lets the clinician see who was just seen, who is being seen now and who is next without opening the full calendar. D1 must keep the existing weekly Osteoporosis Clinical Calendar available through a link labelled **«Άνοιγμα εβδομαδιαίου ημερολογίου»**; it does not replace or remove that calendar. Before implementation, record D1's plain-language Product Owner step checkpoint, exact read-only scope and applicable review tier under `PROCEDURES.md`. The Clinical Calendar and its source keep ownership; this slice authorizes no appointment write, booking/cancellation/rescheduling, second calendar, Setmore reminder, Digital Secretary workflow change, messaging transport, Visit Intelligence clinical-state write or patient-matching redesign.
+
+**D2 — Relevant Communication Context** is the next bounded concept after D1, not part of this governance implementation. Its bidirectional read boundary and phone-correlation limit live in `cockpit/PRODUCT_CONSTITUTION.md`. D2 needs its own bounded design/authority before any integration or UI work.
+
+**Visit Brief / What Changed** remain product direction, downstream of durable P0-V0 closure/release and the OST-UI coordinator synthesis/Product Owner decision where the Module-01 interaction is affected. The current-problem Osteoporosis workspace also depends on that synthesis. A Next Visit continuity write path remains a separate bounded clinical-authority slice. None of these dependent slices starts from this checkpoint, and OST-UI's R4 completion does not authorize a prototype.
+
+The release and follow-up records below are as-of checkpoints. Their former “next” text is historical and cannot override this current action or the owning workstream CURRENT.
+
+---
+
+# Cockpit Home v1 release checkpoint
 
 > **STATUS:** COCKPIT HOME V1 RELEASE COMPLETE / PR #118 MERGED / RENDER LIVE / ROOT SMOKE VERIFIED.
 > **Workstream:** Clinical Excellence Cockpit Home v1.
@@ -132,7 +151,7 @@ MODULE-01 SIDEBAR CLEANUP: VERIFIED
 CAL.COM REASON BRIDGE: CLOSED / DAILY 04:00 UTC
 ```
 
-## Exact next action
+## Historical Home v1 follow-up
 
 HOLD the completed Home v1 release. The Cal.com → Clinical Calendar bridge is now CLOSED on a daily 04:00 UTC cadence; do not reopen that integration without new production failure evidence. The active Cockpit follow-up is the separately bounded Pending Surgery Queue v1.
 
@@ -277,7 +296,7 @@ FORBIDDEN ON RESUME: PR-1 mutation, Reception reason/availability/booking behavi
 - inherited Cockpit/Clinical Documents/Learning/CU-1/G3/Physio browser integration gates: PASS.
 - patient identity remains protected in the surgery queue's server-side table; no browser storage and no implicit mutation of `clinical_patients`.
 
-## Exact next action
+## Historical Pending Surgery Queue follow-up
 
 Use the live Pending Surgery Queue in the Cockpit. Further additions (for example surgeon, hospital, insurer/GESY authorization, pre-op checklist, priority reason, or archive/history view) are separate product increments, not blockers for v1.
 
@@ -303,4 +322,4 @@ Use the live Pending Surgery Queue in the Cockpit. Further additions (for exampl
 - Surgery Queue delete is displayed as a compact trash icon while preserving confirmation + soft-delete behavior.
 - Canonical impact, Clinical Calendar snapshot, Surgery Queue and Cockpit Home gates: PASS.
 
-**Next:** observe the automatic Render deploy and then use the live controls.
+**As-of 2026-09-30 follow-up:** observe the automatic Render deploy and then use the live controls. Verify deploy state afresh before making a current-state claim.

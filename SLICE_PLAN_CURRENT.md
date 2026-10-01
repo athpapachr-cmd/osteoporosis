@@ -1,11 +1,11 @@
 # SLICE_PLAN_CURRENT.md — PR-1 Heidi-first Transcript Intake + Candidate Extraction v1
 
-> **STATUS:** ACTIVE / DESIGN VERIFIED / IMPLEMENTATION AUTHORIZED.
+> **STATUS (2026-10-01):** DESIGN FROZEN / PR-1 IMPLEMENTATION + RELEASE ENGINEERING CANDIDATE ON ITS BRANCH / RELEASE HOLD; see `CURRENT_OPERATIONAL.md` for operational truth.
 > **Activated:** 2026-09-16 Asia/Nicosia.
 > **Slice:** `PR-1-TRANSCRIPT-INTAKE-CANDIDATE-EXTRACTION-V1-2026-09-16`.
 > **Bootstrap main:** `805c4fe4e723dacafc351ccf695ef01b66600079`.
 > **Design ancestry:** corrected archived PR-1 v3 on `docs/pr1-replan-v3-clinic-utilities` (`8515dba581a631e28d5bfbfa81e302f6123576b5`).
-> **Writer:** one bounded PR-1 implementation writer; operational owner is `CURRENT_OPERATIONAL.md`.
+> **Writer:** no active PR-1 runtime writer at the verified branch checkpoint; any new overlapping claim belongs in `CURRENT_OPERATIONAL.md`.
 
 ## 1. Objective
 

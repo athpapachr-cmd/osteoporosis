@@ -184,7 +184,8 @@ RF v2 is **production-smoke-verified**. It is not `PILOT-VALIDATED`, and pilot v
 
 ## 1.7 Heidi-first capture — BEFORE REAL PILOT
 
-- [ ] Restart corrected archived PR-1 v3 design as bounded implementation slice.
+- [x] Restart corrected archived PR-1 v3 design as a bounded implementation slice; implementation and release engineering are checkpointed on the separate PR-1 branch, not released on `main`.
+- [ ] Close the identifiable-transcript privacy/provider gate and complete the separate PR-1 release decision before real clinical use.
 - [ ] Protected transcript paste/intake.
 - [ ] Raw transcript ephemeral by default.
 - [ ] PHI-safe request validation/logging.
@@ -397,7 +398,7 @@ Unless later evidence elevates one to a safety/data-integrity dependency:
 - [ ] Patient Voice full program.
 - [ ] External Benchmark Registry.
 - [ ] Full Clinical Excellence Home/analytics polish.
-- [ ] Calendar/Setmore/Zadarma/CareTask live integration.
+- [ ] Further clinically relevant Calendar/Secretary projections and CareTask linkage beyond the released Calendar foundation/reason bridge; keep booking, reminder, communication and messaging ownership external.
 - [x] Native RF Clinic Utility ownership migration released and production-smoke-verified; RF is closed for now under §1.6.
 - [ ] Patient leaflets/posters/materials.
 - [ ] New physiotherapy disease routes.
