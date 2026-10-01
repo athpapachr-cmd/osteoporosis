@@ -1,6 +1,6 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** PR-1 H-12 SECOND GPT-5.6 QUALIFICATION 20/22 FAIL CHECKPOINT — NOT RELEASE READY.
+> **STATUS:** PR-1 H-12 CODED DIAGNOSTIC DETERMINISTIC PASS / FROZEN SYNTHETIC DIAGNOSTIC RUN NEXT — NOT RELEASE READY.
 > **Updated:** 2026-10-01 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Fresh verified remote `main`:** `63e903e05c1bfe22ca925374b8994355f6c92baf`.
@@ -26,6 +26,7 @@
 > **First post-H12 live qualification:** `36822187245` — 21 PASS / 1 FAIL at trigger head `1c201203a60d645595d04613727ff329271b8a96`.
 > **H-12 corrected exact deterministic head:** `864b5a0b389c165f7dfc2a0a4461147d7ffb548d`; gate `36822645627` — SUCCESS (83 focused).
 > **Second post-H12 live qualification:** `36822789808` — 20 PASS / 2 FAIL at trigger head `750338794020c92f2f0bcd18a556231506b0f902`.
+> **Content-free diagnostic head/gate:** `423b53c983d45c43f2c61e98ad4e437001923faa` / `36823179758` — SUCCESS (83 focused).
 > **Safe credential/schema boundary:** CLOSED; Actions secret available/masked, PHI approval false, strict Structured Outputs accepted.
 > **Medical Report V1.1:** CLOSED; do not reopen without separate authority.
 
@@ -550,7 +551,7 @@ This evidence includes the H-09 semantic/polarity guard, H-10 source-bound and d
 
 ## Exact next action
 
-The second post-H12 live synthetic run returned 20/22. Verify this failure checkpoint. Add coded, content-free evaluator diagnostics to distinguish the FRAX narrative value-anchor versus source-span mismatch without logging candidate text; then determine the smallest source-supported correction and rerun the full deterministic gate and frozen 22-case synthetic suite. The VFA case's extra falls assertion/missing required assertion is not source-supported and must not be authorized. Require 22/22 before handback. Do not change transcript inputs, rebase or perform release engineering.
+The content-free narrative rule diagnostics passed the complete deterministic gate at `423b53c983d45c43f2c61e98ad4e437001923faa` / `36823179758`. Verify this checkpoint, run the unchanged frozen synthetic suite again to obtain coded FRAX mismatch classification, then make only a source-supported correction if indicated. The VFA case's extra falls assertion/missing required assertion is not source-supported and must not be authorized. Require 22/22 before handback. Do not change transcript inputs, rebase or perform release engineering.
 
 ## Explicitly blocked
 
@@ -584,3 +585,5 @@ First post-H12 live trigger head `1c201203a60d645595d04613727ff329271b8a96` pass
 The sole narrowly justified fixture correction replaces the FRAX narrative value's full-sentence `value_text_contains` anchor with source-derived `κίνδυν`, allowing a shorter quote of the same source-stated higher-risk interpretation. The separate exact normalized source-span requirement and full-sentence authentic `evidence_contains` remain mandatory, so an invented extension still fails. No frozen transcript input changed. New focused regression proves the shorter genuine quote passes and the invented denosumab extension fails. Corrected exact head `864b5a0b389c165f7dfc2a0a4461147d7ffb548d`; complete deterministic gate `36822645627` SUCCESS with 83 focused, 6 protected-clinical, 24 Clinical Documents, syntax, navigation and effective scope PASS. Live requalification remains pending.
 
 Second trigger head `750338794020c92f2f0bcd18a556231506b0f902` passed complete deterministic gate `36822789835`. Live run `36822789808` passed the same `openai / gpt-5.6 / synthetic_eval / phi_approval=false` and 22-unique-fixture boundaries, then returned 20 PASS / 2 FAIL. `frax_original_adjusted` again had only `unexpected_assertion_clinical.unmapped_narrative`; current coded output cannot distinguish which new narrative value check failed. `negative_history_vs_negative_investigation` had `required_assertion_0_missing` and `unexpected_assertion_risk.falls_last_12_months`, a separate provider-output failure absent in the first H-12 run. There is no source basis to permit the falls assertion. Candidate text was not logged. Neither result is promotion PASS.
+
+The evaluator now emits only additional reason codes for unmatched narrative rules: evidence anchor, value phrase anchor, or whole-value source-span mismatch. It never prints candidate text or evidence. Existing default-deny failure remains. Exact diagnostic head `423b53c983d45c43f2c61e98ad4e437001923faa` passed gate `36823179758`: 83 focused, 6 protected-clinical, 24 Clinical Documents, syntax, navigation and effective scope PASS. The next frozen synthetic run is diagnostic evidence, not permission to weaken unrelated source semantics.

@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — PR-1 Heidi-first Transcript Intake + Candidate Extraction v1
 
-> **STATUS:** H-12 SECOND LIVE REQUALIFICATION 20/22 FAIL CHECKPOINT — NOT RELEASE READY.
+> **STATUS:** H-12 CONTENT-FREE DIAGNOSTIC GATE PASS / FROZEN SYNTHETIC DIAGNOSTIC RUN NEXT — NOT RELEASE READY.
 > **Activated:** 2026-09-16 Asia/Nicosia.
 > **Slice:** `PR-1-TRANSCRIPT-INTAKE-CANDIDATE-EXTRACTION-V1-2026-09-16`.
 > **Activation main:** `0ab5f9770d220c20e8d94544cb64e93a4aa30d00`.
@@ -24,6 +24,7 @@
 > **First post-H12 live qualification:** `36822187245` — 21 PASS / 1 FAIL; only `frax_original_adjusted` optional narrative authorization failed.
 > **H-12 corrected exact deterministic head:** `864b5a0b389c165f7dfc2a0a4461147d7ffb548d`; gate `36822645627` — SUCCESS (83 focused).
 > **Second post-H12 live qualification:** `36822789808` — 20 PASS / 2 FAIL; FRAX narrative and separate VFA-case provider output.
+> **Content-free diagnostic head/gate:** `423b53c983d45c43f2c61e98ad4e437001923faa` / `36823179758` — SUCCESS (83 focused).
 > **Writer:** one bounded H-12 PR-1 correction author; operational owner is `CURRENT_OPERATIONAL.md`.
 
 ## 1. Objective
@@ -602,3 +603,5 @@ The first post-H12 live run at trigger head `1c201203a60d645595d04613727ff329271
 The corrected FRAX rule permits a shorter verbatim source span of the same higher-risk interpretation by changing only `value_text_contains` from the full sentence to source-derived `κίνδυν`; full-sentence `evidence_contains` and exact normalized whole-value source-span binding remain required. An invented extension still fails the focused test. No transcript input changed. Gate `36822645627` passed at exact head `864b5a0b389c165f7dfc2a0a4461147d7ffb548d` with 83 focused, 6 protected clinical and 24 Clinical Documents tests plus syntax/navigation/scope. The next action is frozen live requalification, not independent review or release engineering.
 
 Second live run at `750338794020c92f2f0bcd18a556231506b0f902` returned 20/22 despite deterministic gate PASS. The FRAX optional narrative still failed authorization. Separately, `negative_history_vs_negative_investigation` missed its required assertion and emitted an unsupported falls assertion; that provider-output failure must remain default-denied. The next bounded step is coded, candidate-text-free FRAX rule diagnostics followed only by a source-supported correction and full requalification.
+
+The coded diagnostic change passed the full deterministic gate at `423b53c983d45c43f2c61e98ad4e437001923faa` / `36823179758`. It adds only no-content reasons for narrative evidence, value-phrase and source-span mismatches while retaining default-deny. Run the same 22 frozen synthetic inputs again, then decide a narrow FRAX rule correction from those codes. No candidate/evidence text is logged.
