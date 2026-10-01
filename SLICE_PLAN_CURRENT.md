@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — PR-1 Heidi-first Transcript Intake + Candidate Extraction v1
 
-> **STATUS:** POST-H11 LIVE GPT-5.6 PROMOTION PASS 22/22 / FRESH INDEPENDENT READ-ONLY PROMOTION REVIEW REQUIRED — NOT RELEASE READY.
+> **STATUS:** H-12 BOUNDED SEMANTIC-SAFETY CORRECTION ACTIVE / POST-H11 REVIEW HOLD — NOT RELEASE READY.
 > **Activated:** 2026-09-16 Asia/Nicosia.
 > **Slice:** `PR-1-TRANSCRIPT-INTAKE-CANDIDATE-EXTRACTION-V1-2026-09-16`.
 > **Activation main:** `0ab5f9770d220c20e8d94544cb64e93a4aa30d00`.
@@ -19,7 +19,7 @@
 > **Post-H09 live qualification:** `35448273993` — 19 PASS / 3 FAIL.
 > **Post-H10 live qualification:** `35455512992` — 20 PASS / 2 FAIL.
 > **Post-H11 live qualification:** `35455986630` — **22 PASS / 0 FAIL**.
-> **Writer:** one bounded PR-1 implementation writer; operational owner is `CURRENT_OPERATIONAL.md`.
+> **Writer:** one bounded H-12 PR-1 correction author; operational owner is `CURRENT_OPERATIONAL.md`.
 
 ## 1. Objective
 
@@ -580,3 +580,12 @@ merge/deploy: NO
 identifiable transcript use: NO
 PR-2 / real pilot: NO
 ```
+
+## 22. H-12 bounded correction contract
+
+The fresh independent post-H11 promotion review returned `HOLD_FOR_SEMANTIC_REMEDIATION` at exact branch head `d0844ef4f7bb80c812d7c7856955b7d8694f8553`. H-09/H-10 protections and H-11 exact source cases remain closed; the final GPT-5.6 22/22 evidence is genuine. Two residuals alone are in scope:
+
+- H12-A: fail closed when future/planned assertion semantics conflict with completed administration or active/historical treatment runtime truth, while preserving scheduled follow-up administration mapping;
+- H12-B: bind authorized optional `clinical.unmapped_narrative.value.text` to source-supported fixture meaning in addition to the existing authentic `evidence_contains` check.
+
+The H-12 author may change the existing Module-01 guard, promotion evaluator, exact affected fixtures, focused H-12 tests, and these two branch-local operational documents. Complete deterministic syntax, focused and protected regressions, Clinical Documents regressions, navigation and scope guard, then checkpoint exact tested head. Only after deterministic PASS rerun the unchanged 22 frozen transcript inputs with `openai / gpt-5.6 / synthetic_eval / phi_approval=false`; require 22/22. Separate independent delta+cumulative review follows handback. No rebase, H-05, browser-lifecycle engineering, PHI use, release PR, merge or deploy.

@@ -1,11 +1,11 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** PR-1 HEIDI-FIRST TRANSCRIPT CAPTURE — POST-H11 LIVE GPT-5.6 PROMOTION PASS 22/22 / FRESH INDEPENDENT READ-ONLY PROMOTION REVIEW REQUIRED — NOT RELEASE READY.
-> **Updated:** 2026-09-16 Asia/Nicosia.
+> **STATUS:** PR-1 H-12 BOUNDED SEMANTIC-SAFETY CORRECTION ACTIVE — NOT RELEASE READY.
+> **Updated:** 2026-10-01 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Fresh verified remote `main`:** `0ab5f9770d220c20e8d94544cb64e93a4aa30d00`.
+> **Fresh verified remote `main`:** `63e903e05c1bfe22ca925374b8994355f6c92baf`.
 > **Active slice:** `PR-1-TRANSCRIPT-INTAKE-CANDIDATE-EXTRACTION-V1-2026-09-16`.
-> **Active writer:** this bounded PR-1 implementation lifecycle only.
+> **Active writer:** fresh separate H-12 semantic-safety correction author; only the Module-01 temporal guard, promotion evaluator, exact fixtures, focused tests and branch-local checkpoints.
 > **Runtime implementation branch:** `feat/pr1-transcript-capture-v1-2026-09-16`.
 > **Exact H-08 deterministic head:** `5eeddeba664814b38d55bad8231afb5b33448eae`.
 > **H-08 deterministic/inherited gate:** `35446869081` — SUCCESS.
@@ -545,7 +545,7 @@ This evidence includes the H-09 semantic/polarity guard, H-10 source-bound and d
 
 ## Exact next action
 
-After this checkpoint verifies, perform a fresh independent READ-ONLY promotion review. Only `PASS_TO_RELEASE_ENGINEERING` may advance to H-05 and executable browser lifecycle evidence.
+The fresh independent post-H11 promotion review returned `HOLD_FOR_SEMANTIC_REMEDIATION`: H-09/H-10 are closed and H-11/live 22/22 evidence is genuine, but two material residuals remain. At exact branch head `d0844ef4f7bb80c812d7c7856955b7d8694f8553`, implement only H12-A temporal consistency at the Module-01 guard and H12-B source binding of authorized optional narrative values at the promotion evaluator. Then pass the complete deterministic gate, checkpoint its exact head, rerun the frozen 22-case GPT-5.6 synthetic qualification with PHI approval false, and hand back for separate independent delta+cumulative review. Do not rebase or perform release engineering.
 
 ## Explicitly blocked
 
