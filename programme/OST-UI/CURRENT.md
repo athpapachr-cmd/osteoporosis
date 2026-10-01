@@ -1,22 +1,45 @@
 # CURRENT.md — OST-UI / Osteoporosis Product Reconstruction
 
-> **STATUS:** R2 COMPLETE / COORDINATOR ACCEPTED / R3 AUTHORIZED — NOT STARTED.
+> **STATUS:** R3 COMPLETE / LOCAL REVIEW CHECKPOINT / COORDINATOR RECONCILIATION PENDING.
 > **Updated:** 2026-10-01 Asia/Nicosia.
 > **Workstream:** OST-UI.
-> **Fresh runtime main reviewed for R2:** **63e903e05c1bfe22ca925374b8994355f6c92baf**.
+> **Fresh runtime main reviewed for R3:** **63e903e05c1bfe22ca925374b8994355f6c92baf**.
 > **Governing bootstrap PR:** **#122** — OPEN / DRAFT / NOT MERGED.
 > **Governing contract head:** **9363ad5dbb5f7c059f351421599bd6ede4db6438**.
 > **R1 review branch:** **docs/ost-ui-r1-current-product-audit-2026-09-27**.
 > **R1 artifact commit:** **7b23f224cef0c9b721d89c84e431a4582efab2af**.
 > **R2 branch:** **docs/ost-ui-r2-longitudinal-trajectory-review-2026-10-01**, based on coordinator head **f04af35b5424328f55a11932224becb43521d831**.
 > **R2 artifact introduction commit:** **688b851358dae42b3431aa1fd50c86a077788322**; final artifact is at this branch's published head.
+> **R2 coordinator-reconciled head / R3 base:** **c706976820fd0a4eaa45210ca76eae95f661295c**.
+> **R3 review branch:** **docs/ost-ui-r3-point-of-care-interaction-review-2026-10-01**.
+> **R3 artifact commit:** **a0ea86236826cbebbc9c3bb2162c3f4dae87de54**; local checkpoint commit is this branch's final head.
 > **Root operational writer:** unchanged — PR-1 Heidi-first transcript capture lifecycle.
 > **OST-UI runtime writer:** none.
 > **Release affecting:** no.
 
 ---
 
-## 0. Current R2 checkpoint / exact next action
+## 0. Current R3 checkpoint / exact next action
+
+R3 independently fresh-verified remote `main` at `63e903e05c1bfe22ca925374b8994355f6c92baf`, remote R2 coordinator branch at `c706976820fd0a4eaa45210ca76eae95f661295c`, and read all six active root canonicals in `AGENTS.md` order. The R3 review branch was created from that exact coordinator-reconciled R2 head. R1 and R2 were consumed as accepted inputs. Current `main` S1 fracture/fragility semantics and bounded Physio interaction evidence were inspected without changing their owners. The root PR-1 writer lock is unchanged; there is no OST-UI runtime writer.
+
+Completed review artifact:
+
+`programme/OST-UI/R3-POINT-OF-CARE-INTERACTION-REVIEW.md` at artifact commit `a0ea86236826cbebbc9c3bb2162c3f4dae87de54`.
+
+Disposition:
+
+**R3 COMPLETE / R4 ELIGIBLE FOR COORDINATOR RECONCILIATION**
+
+R3 supports a bounded patient-and-problem entry with source-labelled, decision-changing current state; explicit missing/conflicting information; live derived guidance; evidence on demand; and a secondary six-step detail editor. Reliable present assets support this interaction direction. Treatment-epoch, missed-plan, task-continuity, recommendation/preference, goal, historical-evidence and investigation-provenance gaps remain visible dependencies, not facts that UI can create. R3 did not decide architecture, reconstruction scope, clinical thresholds or implementation.
+
+**Exact next action:** programme coordinator verifies the R3 branch, final head, two-file delta and artifact, then reconciles its disposition. R4 and synthesis remain not started/not authorized by this local review. No UI, clinical-rule, runtime/schema/database, root-canonical, PR #121, PR-1/H-12, merge or deploy action is authorized by this checkpoint.
+
+Sections 0A–8A retain R2/R1/coordinator history as context. This §0 and §9 own the present OST-UI NOW.
+
+---
+
+## 0A. Historical R2 local checkpoint
 
 R2 independently fresh-verified remote `main` at `63e903e05c1bfe22ca925374b8994355f6c92baf` and read all six root canonicals in `AGENTS.md` order. The root phase remains Module-01 closure; the root active slice/writer remains bounded PR-1 implementation. R2 made no overlapping mutation. PR #121 is open at `aa32f7fbd49c02653c11eb35edaf2e24939eb443`; independently reviewed LifeCourse P1 target `b4f917b161f33b0bfb3507328df07cec2d7bd2b6` remains the PASS semantic input. Current-main merged S1 fracture/fragility behavior was inspected directly. Full source identity and the Canonical Bootstrap Manifest are in the R2 artifact.
 
@@ -32,11 +55,11 @@ R2 found a usable protected patient/encounter/lab substrate, reliable captured a
 
 **Exact next action:** programme coordinator verifies this R2 branch, final head and artifact, reconciles its disposition into the OST-UI control plane, and only then decides whether to authorize R3. R3, R4 and synthesis remain not started. R2 stops here. No runtime/schema/database, root canonical, PR #121, clinical-rule, PR-1/H-12, merge or deploy action is authorized by this checkpoint.
 
-Sections 1–8A below retain the prior R1/coordinator history as context. This §0 and §9 own the present OST-UI NOW.
+This prior R2 next action was completed by the coordinator reconciliation at `c706976820fd0a4eaa45210ca76eae95f661295c`. It does not supersede current §0.
 
 ---
 
-## 0A. Programme coordinator reconciliation of R2
+## 0B. Programme coordinator reconciliation of R2
 
 Fresh coordinator verification confirmed:
 
@@ -238,7 +261,7 @@ No final R4 KEEP/REPLACE classification was made.
 |---|---|---|
 | R1 — Current Product vs Constitution | **COMPLETE / COORDINATOR ACCEPTED** | R1-CURRENT-PRODUCT-CONSTITUTION-AUDIT.md |
 | R2 — Longitudinal Clinical Trajectory | **COMPLETE / COORDINATOR ACCEPTED** | R2-LONGITUDINAL-CLINICAL-TRAJECTORY-REVIEW.md |
-| R3 — Point-of-Care Interaction | **AUTHORIZED / NOT STARTED** | R3-POINT-OF-CARE-INTERACTION-REVIEW.md |
+| R3 — Point-of-Care Interaction | **COMPLETE / LOCAL CHECKPOINT; COORDINATOR RECONCILIATION PENDING** | R3-POINT-OF-CARE-INTERACTION-REVIEW.md |
 | R4 — Shared Core / Module Architecture / Reuse | **NOT STARTED** | R4-SHARED-CORE-MODULE-ARCHITECTURE-REUSE.md |
 | Synthesis — Product Reconstruction Decision | **BLOCKED ON R1-R4** | OST-PRODUCT-RECONSTRUCTION-DECISION.md |
 
@@ -252,7 +275,7 @@ No additional review lane is authorized.
 
 Outside OST-UI clinical authority.
 
-R1 inspected how fracture fields/events affect UI/projection only. R2 consumed reviewed LifeCourse P1 current-state ownership and fresh-inspected the merged S1 executable semantics on `main`. R3 must use the reconciled clinical owner and may not invent new fracture/fragility meaning.
+R1 inspected how fracture fields/events affect UI/projection only. R2 consumed reviewed LifeCourse P1 current-state ownership and fresh-inspected the merged S1 executable semantics on `main`. R3 used current-main S1 semantics as interaction evidence and did not invent new fracture/fragility meaning.
 
 ### Treatment / evidence
 
@@ -312,7 +335,7 @@ Dependency state at that reconciliation:
 
 ## 8. Historical R2 authorization, now fulfilled
 
-At that checkpoint, R2 was authorized as the only next substantive OST-UI action. The requirements below were fulfilled in the R2 artifact named in §0.
+At that checkpoint, R2 was authorized as the only next substantive OST-UI action. The requirements below were fulfilled in the R2 artifact named in §0A.
 
 The authorized review had to:
 
@@ -358,4 +381,4 @@ This does not authorize P2 target architecture, migration, new stores, new oblig
 
 ## 9. Current stop / hold
 
-R2 is complete on its separate branch and stops after this local checkpoint. The programme coordinator's review of the exact branch/head/artifact is next; R3 is eligible for coordinator reconciliation, not automatically started. R4 and synthesis remain downstream. No screen redesign, prototype, implementation, schema/database change, root-canonical or PR #121 mutation, clinical-rule change, new store, PR-1/H-12 mutation, merge or deploy belongs to this R2 lane.
+R3 is complete on its separate branch and stops after this local checkpoint. The programme coordinator's verification/reconciliation of the exact R3 branch/head/artifact is next. R4 and synthesis remain downstream and were not started by R3. No screen redesign, prototype, implementation, schema/database change, root-canonical or PR #121 mutation, clinical-rule change, new store, PR-1/H-12 mutation, merge or deploy belongs to this R3 lane.
