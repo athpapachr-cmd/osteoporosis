@@ -54,9 +54,15 @@ Clinical Learning L0 run `36897403005` validated its own contracts but failed on
 
 **Independent R1 result:** the first exact-head review returned **BLOCK** because it interpreted `Previous` as “the completed row with greatest `end_at`” and used an overlapping historical example (08:00–11:00 and 09:00–10:00).
 
-**Product Owner correction of the review assumption:** that overlapping historical example is not a valid normal clinic scenario. D1's clinician-facing meaning is **the previous scheduled appointment in the clinic sequence**, not “the appointment that happened to end latest among overlapping rows”. In normal operation appointments are sequential; e.g. 08:00–09:00 A, 09:00–10:00 B, now 11:30 → **Previous = B**. Concurrent-current rows remain a source/data anomaly and already fail closed visibly rather than being silently resolved.
+**Final Product Owner clarification of D1 scheduling semantics:** normal appointments are sequential, but **Aclasta is a legitimate exception**. Aclasta may occupy a one-hour treatment slot while the patient is in a clinic room and the clinician may start another appointment during the last part of that infusion slot. Therefore clinician attention follows **appointment start order**, not “greatest end time”.
 
-**Bounded implementation alignment:** `Previous` is therefore the last completed row in start-time schedule order. The unrealistic overlapping-past regression was removed and replaced by a focused sequential-clinic regression. Current/Next semantics, weekly Calendar preservation, identity/privacy boundaries and ownership remain unchanged.
+Accepted examples:
+
+- 08:00–09:00 A, 09:00–10:00 B, now 11:30 → **Previous = B**;
+- Aclasta 09:00–10:00 + Review 09:40–10:20, now 09:50 → **Previous = Aclasta / Current = Review**;
+- Aclasta 09:00–10:00 + Review 09:40–09:55, now 10:05 → **Previous = Review**, even though Aclasta ended later.
+
+**Bounded implementation rule:** D1 uses the ordered `start_at` sequence for Previous/Current attention. If multiple appointments are active and all earlier active rows are `aclasta` while the latest-started active row is non-Aclasta, the latest-started row is Current and the immediately preceding scheduled row is Previous. Other concurrent-current overlaps remain ambiguous and fail closed visibly. Next remains the earliest future `start_at`. Weekly Calendar preservation, identity/privacy boundaries and ownership are unchanged.
 
 The persistent Clinical Learning L0 red check remains the same non-applicable design-only changed-file scope assertion; its contract validation step passes and D1 does not change Learning contracts.
 
