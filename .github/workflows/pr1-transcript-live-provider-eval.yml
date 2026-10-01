@@ -1,5 +1,5 @@
 name: PR-1 live synthetic provider eval
-# Qualification trigger: H-12 source-span FRAX correction attempt 2
+# Qualification trigger: H-12 content-free narrative diagnostic attempt 3
 
 on:
   push:
