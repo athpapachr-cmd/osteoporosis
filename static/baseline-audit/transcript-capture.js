@@ -8,6 +8,8 @@
   let statusNode = null;
   let resultsNode = null;
   let submitButton = null;
+  let activeRequest = null;
+  let requestGeneration = 0;
 
   function addStyles() {
     if (document.querySelector("style[data-transcript-capture-style]")) return;
@@ -43,6 +45,7 @@
         <label><span>Heidi transcript</span><textarea data-transcript-input maxlength="120000" autocomplete="off" spellcheck="false" placeholder="Επικόλλησε εδώ transcript για προσωρινή εξαγωγή…"></textarea></label>
         <div class="transcript-capture-actions">
           <button class="btn secondary" type="button" data-transcript-discard>Εκκαθάριση</button>
+          <button class="btn secondary" type="button" data-transcript-logout>Αποσύνδεση</button>
           <button class="btn primary" type="button" data-transcript-submit>Εξαγωγή υποψηφίων</button>
         </div>
         <div class="transcript-status" data-transcript-status role="status" aria-live="polite"></div>
@@ -55,6 +58,7 @@
     submitButton = dialog.querySelector("[data-transcript-submit]");
     dialog.querySelector("[data-transcript-close]").addEventListener("click", closeAndClear);
     dialog.querySelector("[data-transcript-discard]").addEventListener("click", clearState);
+    dialog.querySelector("[data-transcript-logout]").addEventListener("click", logout);
     submitButton.addEventListener("click", submitTranscript);
     dialog.addEventListener("cancel", (event) => { event.preventDefault(); closeAndClear(); });
     dialog.addEventListener("close", clearState);
@@ -62,15 +66,29 @@
   }
 
   function clearState() {
+    requestGeneration += 1;
+    activeRequest?.abort();
+    activeRequest = null;
     candidates = [];
     if (textarea) textarea.value = "";
     if (statusNode) { statusNode.textContent = ""; statusNode.dataset.state = ""; }
     if (resultsNode) resultsNode.replaceChildren();
+    if (submitButton) submitButton.disabled = false;
   }
 
   function closeAndClear() {
     clearState();
     if (dialog?.open) dialog.close();
+  }
+
+  async function logout() {
+    closeAndClear();
+    try {
+      const response = await fetch("/clinical/logout", { method: "POST", credentials: "same-origin" });
+      if (!response.ok) throw new Error("LOGOUT_FAILED");
+    } catch {
+      window.alert("Η αποσύνδεση δεν ολοκληρώθηκε. Δοκιμάστε ξανά.");
+    }
   }
 
   function text(node, value) {
@@ -132,10 +150,15 @@
     statusNode.dataset.state = "busy";
     resultsNode.replaceChildren();
     candidates = [];
+    activeRequest?.abort();
+    const controller = new AbortController();
+    activeRequest = controller;
+    const generation = ++requestGeneration;
     try {
       const response = await fetch(ENDPOINT, {
         method: "POST",
         credentials: "same-origin",
+        signal: controller.signal,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           schema_version: "clinical_transcript_extract_request_v1",
@@ -149,16 +172,21 @@
       });
       let payload = null;
       try { payload = await response.json(); } catch { payload = null; }
+      if (generation !== requestGeneration) return;
       if (!response.ok) throw new Error(safeErrorCode(payload));
       textarea.value = "";
       renderResults(payload);
       statusNode.textContent = `Ολοκληρώθηκε: ${candidates.length} υποψήφια. Τίποτε δεν γράφτηκε στον κλινικό φάκελο.`;
       statusNode.dataset.state = "ok";
     } catch (error) {
+      if (generation !== requestGeneration) return;
       statusNode.textContent = `Η εξαγωγή δεν ολοκληρώθηκε (${error?.message || "REQUEST_FAILED"}). Το transcript παραμένει μόνο για άμεση διόρθωση/επανάληψη.`;
       statusNode.dataset.state = "error";
     } finally {
-      submitButton.disabled = false;
+      if (generation === requestGeneration) {
+        activeRequest = null;
+        submitButton.disabled = false;
+      }
     }
   }
 
@@ -176,6 +204,7 @@
     if (heidi) { event.preventDefault(); openDialog(); return; }
     if (dialog?.open && event.target.closest('.side-item:not([data-nav-action="heidi"])')) closeAndClear();
   });
-  window.addEventListener("pagehide", clearState);
-  window.addEventListener("pageshow", clearState);
+  window.addEventListener("pagehide", closeAndClear);
+  window.addEventListener("pageshow", closeAndClear);
+  window.addEventListener("clinical:logout", closeAndClear);
 })();

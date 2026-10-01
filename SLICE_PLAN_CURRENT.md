@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — PR-1 Heidi-first Transcript Intake + Candidate Extraction v1
 
-> **STATUS:** H13 RELATIONAL VALUE-BINDING CORRECTION QUALIFIED 22/22 — READY FOR SEPARATE INDEPENDENT DELTA+CUMULATIVE REVIEW; NOT RELEASE READY.
+> **STATUS:** H13 INDEPENDENTLY ACCEPTED; RELEASE ENGINEERING CANDIDATE ON CURRENT MAIN; RELEASE GATE HOLD.
 > **Activated:** 2026-09-16 Asia/Nicosia.
 > **Slice:** `PR-1-TRANSCRIPT-INTAKE-CANDIDATE-EXTRACTION-V1-2026-09-16`.
 > **Activation main:** `0ab5f9770d220c20e8d94544cb64e93a4aa30d00`.
@@ -651,3 +651,9 @@ Independent delta+cumulative review returned `PASS_TO_RELEASE_ENGINEERING` at fi
 H13 relational value binding is CLOSED; H09/H10/H11/H12-A protections are PRESERVED; frozen inputs remain unchanged; no material semantic promotion residual remains.
 
 Next work is not another semantic correction. It is a separately bounded release-engineering sequence beginning with fresh-main reconciliation/rebase planning, followed by H-05 and executable browser lifecycle evidence. Merge/deploy/PHI/pilot remain unauthorized.
+
+## 23. Release-engineering candidate boundary
+
+The accepted H13 branch was reconciled with fresh main at merge head `5376482f78c731d24dd4810f796e60398a62ae19`. The only overlapping file was `main.py`; current-main Cockpit and surgery routes and PR-1 transcript routing were retained. H09–H13 semantic files and the 22 frozen transcript inputs/oracle remain unchanged.
+
+The bounded release changes are H-05 async-route worker-thread offload, transient browser request invalidation/abort plus pagehide/pageshow/navigation/logout cleanup, and focused executable regressions. Identifiable transcript processing still requires separate provider/privacy approval and is disabled. Full inherited CI, including Clinical Documents PDF tests, remains the final engineering evidence gate; no merge/deploy/PR-2/pilot is authorized here.

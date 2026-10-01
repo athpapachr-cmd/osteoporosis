@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from collections.abc import Callable
 
+from anyio import to_thread
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import ValidationError
 
@@ -68,7 +69,9 @@ def build_transcript_router(provider_factory: Callable[[], TranscriptProvider] |
         except ValidationError:
             raise _error(422, "INVALID_REQUEST")
         try:
-            result = extract_candidates(parsed, provider_factory())
+            # The provider SDK is synchronous. Run extraction off the ASGI event
+            # loop so a slow provider cannot stall other requests on one worker.
+            result = await to_thread.run_sync(extract_candidates, parsed, provider_factory())
         except UnsupportedModuleError:
             raise _error(422, "UNSUPPORTED_MODULE")
         except ProviderNotConfigured:

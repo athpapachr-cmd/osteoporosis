@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import os
 import sys
+import threading
 import types
 
+import httpx
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -247,6 +250,43 @@ def test_endpoint_auth_sanitized_errors_and_exactly_one_provider_call(caplog):
     assert ok.status_code == 200
     assert fake.calls == 1
     assert ok.json()["meta"]["authoritative_write"] is False
+
+
+def test_slow_provider_does_not_block_other_requests(monkeypatch):
+    entered = threading.Event()
+    release = threading.Event()
+
+    class SlowProvider:
+        def extract(self, request, provider_profile):
+            entered.set()
+            assert release.wait(5)
+            return provider_result([])
+
+    app = FastAPI()
+    app.include_router(build_transcript_router(SlowProvider))
+
+    @app.get("/ping")
+    async def ping():
+        return {"ok": True}
+
+    monkeypatch.setenv("CLINICAL_DATA_KEY", "synth-key")
+
+    async def exercise():
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="https://testserver") as client:
+            extraction = asyncio.create_task(client.post(
+                "/clinical/transcript/extract",
+                headers={"X-Clinical-Key": "synth-key"},
+                json=payload(),
+            ))
+            try:
+                assert await asyncio.to_thread(entered.wait, 2)
+                ping_result = await asyncio.wait_for(client.get("/ping"), timeout=0.5)
+                assert ping_result.json() == {"ok": True}
+            finally:
+                release.set()
+            assert (await extraction).status_code == 200
+
+    asyncio.run(exercise())
 
 
 def test_cookie_session_authenticates_transcript_endpoint_without_browser_key_header():

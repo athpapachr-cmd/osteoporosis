@@ -1,6 +1,6 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** PR-1 H13 INDEPENDENT DELTA+CUMULATIVE PASS / SEMANTIC PROMOTION CLOSED — RELEASE ENGINEERING ELIGIBLE; NOT RELEASE READY.
+> **STATUS:** PR-1 RELEASE ENGINEERING CANDIDATE — H13 FROZEN; H-05 AND TRANSIENT LIFECYCLE LOCALLY VERIFIED; RELEASE GATE HOLD.
 > **Updated:** 2026-10-01 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Fresh verified remote `main`:** `63e903e05c1bfe22ca925374b8994355f6c92baf`.
@@ -768,3 +768,15 @@ fresh-main reconciliation / rebase design
 ```
 
 Do not merge/deploy automatically.
+
+## PR-1 release engineering checkpoint — 2026-10-01
+
+Fresh remote `main` is `63e903e05c1bfe22ca925374b8994355f6c92baf`; accepted H13 branch input is `b21288c230dba9596a1319ed31fc807810dc3e9a`. Their merge base is `0ab5f9770d220c20e8d94544cb64e93a4aa30d00` (main 81 commits ahead, PR-1 107 ahead). The branch was fast-forwarded to accepted H13, its release-engineering writer was claimed, and current main was merged at `5376482f78c731d24dd4810f796e60398a62ae19`.
+
+`main.py` was the sole overlapping changed path. The resolved file retains main's Cockpit root/cache policy and surgery-queue router plus PR-1's protected transcript router. All other current-main changes, including S1 fracture/fragility work, entered without conflict. The H09–H13 target guard, provider profile, frozen 22-case fixture/oracle and evaluator are byte unchanged from accepted H13.
+
+H-05 now offloads synchronous provider extraction from the async route to AnyIO's worker thread. A focused concurrency test holds the provider call open and verifies another request returns before release. Browser transient handling now aborts and invalidates in-flight extraction on clear, close, navigation, pagehide/pageshow, and explicit logout; late responses cannot repopulate the view. A deterministic DOM harness exercises those lifecycle paths. No candidate is written to authoritative data or browser storage.
+
+Local evidence: 89 focused PR-1 tests PASS; 22 runnable inherited protected-clinical/Cockpit/surgery/SDK tests PASS; S1 fracture/fragility, G3 and G4 Node regressions PASS; transient lifecycle harness PASS; Python/browser syntax and changed-file whitespace checks PASS. Two Clinical Documents PDF modules cannot collect in the local Python environment because declared `PyMuPDF` is absent; an isolated install failed due package-index DNS. The full CI gate remains required.
+
+The identifiable-transcript provider/privacy gate remains OPEN. The production provider requires its separate PHI approval flag and stays unconfigured without it. No flag, secret, real transcript, production configuration, PR-2, merge or deploy was enabled by this checkpoint. Release readiness is HOLD pending complete CI evidence and the separate privacy/provider decision.
