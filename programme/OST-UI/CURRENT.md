@@ -1,6 +1,6 @@
 # CURRENT.md — OST-UI / Osteoporosis Product Reconstruction
 
-> **STATUS:** R4 COMPLETE / LOCAL CHECKPOINT / SYNTHESIS READY FOR COORDINATOR RECONCILIATION.
+> **STATUS:** R4 RECONCILED; SINGLE SYNTHESIS COMPLETE; PROTOTYPE 1 CONTRACT NEXT.
 > **Updated:** 2026-10-01 Asia/Nicosia.
 > **Workstream:** OST-UI.
 > **Fresh runtime main reviewed for R4:** **63e903e05c1bfe22ca925374b8994355f6c92baf**.
@@ -19,6 +19,18 @@
 > **Root operational writer:** unchanged — PR-1 Heidi-first transcript capture lifecycle.
 > **OST-UI runtime writer:** none.
 > **Release affecting:** no.
+
+## Current coordinator checkpoint — synthesis
+
+Fresh remote `main` was observed at `87aedad3ad512e4b17a1eb737f0ff8302857aff2` on 2026-10-01. R4 was reconciled from clean local and tracking-branch head `5cf4e98bfeb439c3cef6aecae70d48efd07612b4`, with only this workstream CURRENT and the R4 review changed from the accepted R3 base `5a2d99bf9180470fb9b7fd1f907d26f2066b3dbb`. A later live remote R4 recheck was unavailable because GitHub DNS failed; no divergent local R4 state was found. The newer `main` identity is a freshness observation, not a new runtime review or an OST-UI merge.
+
+The Product Owner explicitly requested the next two documentation steps. The one required Phase-1 synthesis is now `OST-PRODUCT-RECONSTRUCTION-DECISION.md`. It reconciles R1–R4 with the adaptive guided visit, hidden complexity, preserved milestone/visit trajectory, pre-visit Cockpit summary, clinician-confirmed historical reconciliation, dynamic state-aware composition and Steps 1–6 as secondary editors. Scope decision: substantial UI/information-architecture restructuring with bounded longitudinal semantic extensions and factual consolidation; protected persistence and existing reviewed guidance remain owners.
+
+PR-1 was reconciled read-only at clean local head `0b45a4c96a7cb9a96893cfa3f14a1708f25e5345`. Its branch records current-main reconciliation, H-05 offload, browser lifecycle cleanup and released writer lock. The supplied final exact-head gate `36861040681` is reported PASS in the handback; live Actions inspection was unavailable here. Only the identifiable-transcript privacy/provider gate remains identified before the final release gate. No PR-1 file, configuration or permission was changed by OST-UI.
+
+**Exact next action:** write and checkpoint the bounded Prototype 1 denosumab longitudinal adaptive-visit implementation contract, using the synthesis and R4 pre-prototype owner/interface requirements. No runtime, schema, root-canonical, clinical-rule, PR #121, PR-1, merge or deploy mutation is part of this documentation step. Prototype 2 remains a separate later contract.
+
+The R4 checkpoint below is historical context; this section owns current OST-UI status.
 
 ---
 

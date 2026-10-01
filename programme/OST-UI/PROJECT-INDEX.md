@@ -1,6 +1,6 @@
 # PROJECT-INDEX.md — OST-UI / Osteoporosis Product Reconstruction
 
-> **STATUS:** PHASE 1 REVIEW PROGRAMME DEFINED / REVIEWS NOT STARTED.
+> **STATUS:** R1–R4 COMPLETE; SINGLE SYNTHESIS RECORDED; PROTOTYPE CONTRACTING NEXT. The live workstream checkpoint is `CURRENT.md`.
 > **Workstream:** `OST-UI`.
 > **Scope:** Osteoporosis Module product reconstruction review only.
 > **Authority model:** parallel sidecar workstream; the six root canonicals remain authoritative for repo-wide state.
@@ -571,10 +571,9 @@ No review automatically opens its successor. The coordinator checkpoints complet
 
 ## 10. Current-phase stop rule
 
-After this bootstrap is durably recorded:
+The original bootstrap stop rule below governed the first R1 dispatch. It is superseded by the accepted R1–R4 artifacts, the single synthesis and the current Product Owner instruction. For present authority, use `CURRENT.md` and the bounded prototype contract. The continuing boundaries are:
 
-- do not redesign;
-- do not create prototype code;
+- do not start prototype runtime outside its bounded contract and writer claim;
 - do not merge/deploy;
 - do not mutate root canonicals;
 - do not mutate clinical semantics;
@@ -582,4 +581,4 @@ After this bootstrap is durably recorded:
 - do not treat draft PR #121 as merged authority;
 - do not let OST-UI take the root writer lock.
 
-The next authorized substantive action is **R1 only**.
+The authorized documentation sequence is the single synthesis followed by Prototype 1's bounded implementation contract. Neither document alone is a merge, deploy, clinical-rule or identifiable-transcript-use authority.
