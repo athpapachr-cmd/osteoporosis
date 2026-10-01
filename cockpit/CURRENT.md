@@ -1,4 +1,19 @@
-# Cockpit Home CURRENT
+# Cockpit CURRENT — global Home and bounded clinical projections
+
+> **NOW (2026-10-01):** Home v1, Pending Surgery Queue and the bounded Clinical Calendar reason bridge are released according to the checkpoints below. Visit Brief / What Changed / Clinical Inbox are product direction, not released Cockpit UI.
+> **Product boundary:** `cockpit/PRODUCT_CONSTITUTION.md`; cross-programme architecture: `CLINICAL_EXCELLENCE_PLAN.md` §§33–34.
+> **Root lock:** `CURRENT_OPERATIONAL.md` remains the sole repo-wide NOW. Its PR-1 release lifecycle is in HOLD with no active runtime writer at the verified PR-1 branch checkpoint; this Cockpit file does not claim that lock.
+> **Visit Intelligence dependency:** `programme/OST-VISIT-INTELLIGENCE/CURRENT.md`; P0-V0 contract/projector branch `b22fd5c610d20baf0f8ef3384ca16472cd2d1f92` is not on `main`. The external cumulative PASS handback has not yet been reconciled into that workstream CURRENT or released.
+
+## Current bounded action
+
+The Visit Intelligence coordinator first checkpoints the reported cumulative P0-V0 closure in its own CURRENT and completes its separate release decision. After that contract is available on `main`, the next Cockpit implementation-bearing slice is a clinician-first **Visit Brief / What Changed read surface** consuming the validated projection. It requires its own plain-language Product Owner step checkpoint, exact owner/scope and appropriate R1/R2 classification under `PROCEDURES.md`. No Cockpit patient writer, inbox engine, booking engine, communication orchestrator or messaging transport is authorized by this checkpoint. A Next Visit continuity write path is a separate bounded slice with its own clinical authority.
+
+The release and follow-up records below are as-of checkpoints. Their former “next” text is historical and cannot override this current action or the owning workstream CURRENT.
+
+---
+
+# Cockpit Home v1 release checkpoint
 
 > **STATUS:** COCKPIT HOME V1 RELEASE COMPLETE / PR #118 MERGED / RENDER LIVE / ROOT SMOKE VERIFIED.
 > **Workstream:** Clinical Excellence Cockpit Home v1.
@@ -132,7 +147,7 @@ MODULE-01 SIDEBAR CLEANUP: VERIFIED
 CAL.COM REASON BRIDGE: CLOSED / DAILY 04:00 UTC
 ```
 
-## Exact next action
+## Historical Home v1 follow-up
 
 HOLD the completed Home v1 release. The Cal.com → Clinical Calendar bridge is now CLOSED on a daily 04:00 UTC cadence; do not reopen that integration without new production failure evidence. The active Cockpit follow-up is the separately bounded Pending Surgery Queue v1.
 
@@ -277,7 +292,7 @@ FORBIDDEN ON RESUME: PR-1 mutation, Reception reason/availability/booking behavi
 - inherited Cockpit/Clinical Documents/Learning/CU-1/G3/Physio browser integration gates: PASS.
 - patient identity remains protected in the surgery queue's server-side table; no browser storage and no implicit mutation of `clinical_patients`.
 
-## Exact next action
+## Historical Pending Surgery Queue follow-up
 
 Use the live Pending Surgery Queue in the Cockpit. Further additions (for example surgeon, hospital, insurer/GESY authorization, pre-op checklist, priority reason, or archive/history view) are separate product increments, not blockers for v1.
 
@@ -303,4 +318,4 @@ Use the live Pending Surgery Queue in the Cockpit. Further additions (for exampl
 - Surgery Queue delete is displayed as a compact trash icon while preserving confirmation + soft-delete behavior.
 - Canonical impact, Clinical Calendar snapshot, Surgery Queue and Cockpit Home gates: PASS.
 
-**Next:** observe the automatic Render deploy and then use the live controls.
+**As-of 2026-09-30 follow-up:** observe the automatic Render deploy and then use the live controls. Verify deploy state afresh before making a current-state claim.

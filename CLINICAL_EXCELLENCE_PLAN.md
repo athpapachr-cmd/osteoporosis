@@ -1167,45 +1167,38 @@ Safety rules:
 
 ---
 
-# 33. Calendar / CareTasks — independent deferred track
+# 33. Calendar / Secretary projections and CareTasks
 
-Calendar foundation exists, but live Digital Secretary/Setmore feed is paused.
+The Clinical Calendar foundation and a bounded, read-only reason/snapshot bridge exist. `cockpit/CURRENT.md` owns their exact release state. Further Calendar, Setmore and Digital Secretary projections are independently bounded integration work, not a prerequisite for Clinical Guidance, transcript capture, Practice Review, audit, standards or learning.
 
 Permanent architecture:
 
 ```text
-Appointment = scheduled attendance
-CareTask = clinical action that may exist without an appointment
+Appointment = scheduled attendance owned by the appointment source
+Operational task = reception/communication work owned by its operational system
+CareTask = clinician-owned clinical action, with or without an appointment
 ```
 
-Paused Calendar integration must not block Clinical Guidance, transcript capture, Practice Review, audit, standards or learning.
+Operational source truth stays with the appointment provider (the current reason bridge consumes Cal.com) and the Digital Secretary. Cockpit may consume clinically relevant, identity-verified, read-only projections of Previous / Current / Next attendance, relevant communication and unresolved operational context. It must not create a second booking calendar, reception queue, messaging engine or operational task writer. A projected operational item is not silently promoted to a clinical CareTask or confirmed clinical fact. Setmore owns ordinary appointment reminders where used, the Digital Secretary owns communication orchestration, and Zadarma is messaging transport. Cross-system linkage and side effects need a separate bounded contract and authority.
 
 ---
 
-# 34. Clinical Excellence Home
+# 34. Clinician-first Clinical Excellence Home and Visit Intelligence
 
-The eventual Home should answer:
-
-1. Where am I?
-2. What improved?
-3. Biggest current gap?
-4. What needs action today?
-
-Candidate sections:
+The first Home job is to direct the clinician's **attention and next clinical action**. The hierarchy is:
 
 ```text
-safety / overdue care
-Clinical Guidance due/unresolved items
-Practice Review signals
-Audit / run charts
-strengths and gaps
-learning due
-evidence freshness
-active Improvement Projects
-what the system learned this month
+NOW → whom am I seeing and why today?
+WHAT CHANGED → what is different since the last encounter?
+VISIT PREPARATION → what was agreed, awaited, or needs asking/checking?
+NEEDS ATTENTION → a small number of genuinely open, high-attention items
+OPERATIONAL CONTEXT → concise Previous / Current / Next and relevant communication
+THEN → learning, audit, improvement and tools
 ```
 
-Do not build polished summary scores before the data contracts and baseline are sufficient.
+Visit Brief, What Changed and a future Clinical Inbox are clinician-facing views over provenance-preserving Visit Intelligence. Home should normally surface about **3–4** highest-attention incoming items, with deeper detail one step away. External Signals and Candidates, weak/name matching and unresolved conflicts remain non-authoritative until the intended identity and clinician-confirmation boundaries are met. Capture a fact once at its rightful owner and reuse it across clinical views; do not make the clinician re-enter it to populate Home.
+
+Practice Review signals, audit/run charts, strengths/gaps, learning due, evidence freshness, Improvement Projects and longitudinal improvement remain valuable downstream views. Do not place them ahead of today's visit preparation or invent polished summary scores before adequate contracts and baseline evidence. `cockpit/PRODUCT_CONSTITUTION.md` owns the Cockpit-specific product boundaries; this phase plan owns the cross-programme hierarchy.
 
 ---
 
@@ -1316,7 +1309,7 @@ Deliverables:
 
 ## Later stages
 
-Deep Review/Red Team breadth, Patient Voice, full Home, benchmarking, Calendar/Secretary integration and Module 02 generalization remain later unless evidence elevates them.
+Deep Review/Red Team breadth, Patient Voice, the fuller Home/Clinical Inbox beyond released Home v1, benchmarking, further Calendar/Secretary projections beyond the bounded reason bridge, and Module 02 generalization remain later unless evidence elevates them.
 
 ---
 

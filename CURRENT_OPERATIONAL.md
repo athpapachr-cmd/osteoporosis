@@ -1,90 +1,40 @@
-# CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
+# CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / repo-wide writer lock
 
-> **STATUS:** PR-1 HEIDI-FIRST TRANSCRIPT CAPTURE — IMPLEMENTATION ACTIVE.
-> **Updated:** 2026-09-16 Asia/Nicosia.
-> **Canonical home:** `athpapachr-cmd/osteoporosis`.
-> **Bootstrap main:** `805c4fe4e723dacafc351ccf695ef01b66600079`.
-> **Active slice:** `PR-1-TRANSCRIPT-INTAKE-CANDIDATE-EXTRACTION-V1-2026-09-16`.
-> **Active writer:** this bounded PR-1 implementation lifecycle only.
-> **Activation branch:** `docs/pr1-transcript-capture-activation-2026-09-16`.
-> **Runtime implementation branch:** not yet created; create only after this activation checkpoint is merged.
-> **Medical Report V1.1:** CLOSED; do not reopen without separate authority.
+> **STATUS:** PR-1 transcript extraction release engineering complete; identifiable-transcript privacy/provider gate OPEN; release HOLD.
+> **Reconciled:** 2026-10-01 Asia/Nicosia from fresh remote `main` and the exact PR-1 remote branch checkpoint.
+> **Verified remote `main`:** `63e903e05c1bfe22ca925374b8994355f6c92baf`.
+> **Active primary slice:** `PR-1-TRANSCRIPT-INTAKE-CANDIDATE-EXTRACTION-V1-2026-09-16`; design owner: `SLICE_PLAN_CURRENT.md`.
+> **PR-1 branch:** `feat/pr1-transcript-capture-v1-2026-09-16` at `0b45a4c96a7cb9a96893cfa3f14a1708f25e5345` (fresh remote branch check).
+> **Writer lock:** no active overlapping PR-1 runtime writer at that branch checkpoint. The bounded release-engineering writer was released. A new writer must claim an exact scope here before overlap.
+> **Release:** no PR-1 release PR observed among open PRs on 2026-10-01; not merged, deployed or enabled for identifiable transcripts.
 
-## Product-owner authority
+## Current source and evidence
 
-On 2026-09-16 the Product Owner explicitly instructed `Ok. Go. Ξεκίνησε` after fresh closeout identified Heidi-first capture / PR-1 as the next primary roadmap target. This authorizes bounded implementation of the frozen PR-1 extraction slice, including branch creation, code, tests/evals and implementation-candidate preparation.
-
-This does **not** automatically authorize merge, production deployment, enabling identifiable transcript processing, PR-2 authoritative writes, real-patient pilot use or unrelated product mutations.
-
-## Fresh verification completed before activation
-
-The archived corrected PR-1 v3 design was re-read from `docs/pr1-replan-v3-clinic-utilities` and checked against current `main`.
-
-Current runtime still confirms the required target seams:
+The previous root NOW was the 2026-09-16 activation checkpoint and incorrectly said the runtime branch had not been created. PR-1's later branch-local `CURRENT_OPERATIONAL.md` at `0b45a4c` is the detailed PR-1 evidence record. This root reconciliation brings its current state onto the verified `main`-based governance branch without copying its long implementation diary. The branch's full history remains evidence, not a competing repo-wide lock.
 
 ```text
-encounter_archetype
-anthropometrics.weight_kg / current_height_cm
-fracture_history.events[]
-risk_context.*
-risk_assessment.*
-step3.dxa / step3.vfa / step3.labs
-step4.treatment_episodes[]
-step4.administrations[]
-step4.decision
-step4.tasks[]
+H13 semantic promotion review: PASS_TO_RELEASE_ENGINEERING
+H13 qualified synthetic provider run: 22/22 PASS; PHI approval=false
+release-engineering implementation head: c16c81053c8596bb106555b9c8e5ef93bc686034
+complete PR-1 gate on that head: 36860809239 SUCCESS
+final docs checkpoint branch head: 0b45a4c96a7cb9a96893cfa3f14a1708f25e5345
+current blocker: identifiable-transcript privacy/provider decision still OPEN
+release gate: HOLD
 ```
 
-`patient-registry.js` still persists the complete active encounter object as the protected encounter `payload`, so deterministic mapping must target the actual browser/runtime namespace rather than YAML-only vocabulary.
+The implementation branch has reconciled current `main`; `main.py` retained Cockpit root/surgery ownership and PR-1's protected transcript router. Its H-05 provider offload and transient browser lifecycle evidence are branch-local. These facts do not mean PR-1 is in production or authorized for real-patient use.
 
-Current OpenAI verification also supports the frozen provider pattern: Responses API structured parsing with Pydantic is available, GPT-5.6 is available through Responses API, and the current Python SDK still retries selected errors by default unless `max_retries=0` is set.
+## Authority and exact next action
 
-No material REPLAN blocker was found.
+The Product Owner authorized bounded PR-1 implementation and synthetic qualification. That does not authorize identifiable transcript processing, release PR approval, merge, deployment, PR-2 authoritative writes or a real-patient pilot.
 
-## Active implementation scope
+**Next lawful PR-1 lifecycle action:** keep release HOLD while the identifiable-transcript provider/privacy gate is decided with explicit Product Owner authority. Once that gate is closed, fresh-check `main`, PR-1 branch head, applicable CI and merge/release scope; checkpoint the decision here before opening or advancing the release PR. If the gate remains open, do not advance release. No new independent semantic review is required solely for this docs/canonical reconciliation; a material new behavior or risk receives its own bounded classification under `PROCEDURES.md`.
 
-Implement only PR-1:
+## Parallel workstreams — pointers, not lock transfer
 
-```text
-protected transcript paste/intake
-→ explicit size + sanitized validation boundary
-→ provider-neutral structured semantic extraction
-→ deterministic osteoporosis target mapping
-→ mapped / ambiguous / unmapped ephemeral candidate preview
-→ no authoritative write
-```
+- **Visit Intelligence P0-V0:** `programme/OST-VISIT-INTELLIGENCE/CURRENT.md` exists on local branch head `b22fd5c610d20baf0f8ef3384ca16472cd2d1f92`, not yet on `main`, and owns its contract/projector checkpoint there. A cumulative PASS was reported in the Product Owner handback; its branch-local CURRENT still requests that review, so its coordinator must reconcile the result and make a separate release decision. This root PR-1 HOLD does not grant Visit Intelligence release or UI authority.
+- **Cockpit:** `cockpit/CURRENT.md` owns released Home/Calendar/Surgery state and the next bounded Visit Brief read-surface dependency. `cockpit/PRODUCT_CONSTITUTION.md` owns the Cockpit product boundary.
+- **PHYSIO:** `programme/PHYSIO/PROJECT-INDEX.md` and `programme/PHYSIO/CURRENT.md` own the read-only P1 evidence work; no PHYSIO runtime writer is recorded there.
+- **OST-CLINICAL:** `programme/OST-CLINICAL/CURRENT.md` owns the completed S1 checkpoint and any local follow-through.
 
-Required privacy boundary:
-
-```text
-raw transcript: ephemeral only
-candidate preview: ephemeral only
-DB write: none
-localStorage/sessionStorage transcript/candidates: none
-provider retries: disabled
-identifiable transcript use: blocked until separate transcript-specific provider/privacy gate is explicitly closed
-```
-
-## Exact next action
-
-After this activation checkpoint is merged:
-
-1. create `feat/pr1-transcript-capture-v1-2026-09-16` from fresh `main`;
-2. implement Core transcript contracts/router/service/provider abstraction;
-3. implement Module-01 osteoporosis profile + deterministic target mapper;
-4. add isolated ephemeral browser transcript UI;
-5. add deterministic privacy/contract/mapping/UI tests and synthetic provider eval harness;
-6. run exact-head regression gate;
-7. checkpoint implementation/test evidence before opening any release PR.
-
-## Explicitly deferred / forbidden in PR-1
-
-- Accept/Edit/Reject-to-record or any authoritative patient write;
-- PR-2 inline population/persistence;
-- real identifiable Heidi transcript transmission before separate privacy/data-control approval;
-- persistence of transcript, evidence snippets or candidates;
-- provider-authored application target paths;
-- exact-date invention from vague timing;
-- collapsing option/recommendation/preference/final decision semantics;
-- Practice Review coaching, KPI changes, treatment recommendation, pilot activation;
-- unrelated Medical Report, Physio, RF, Calendar or Clinical Learning mutation.
+`programme/MASTER-PROJECT-REGISTRY.md` provides navigation across these workstreams. It is never an authority for writer locks, releases or product state over the owning CURRENT files.
