@@ -1,7 +1,7 @@
 # OST-CLINICAL CURRENT — S1 Fracture / Fragility Semantics
 
 > **TASK:** `S1-FRACTURE-FRAGILITY-P6B-R1-RAW-VALUE-PRESERVATION-CORRECTION`
-> **STATUS:** S1 MERGED / P6B PASS / DEPLOY STATUS PENDING OBSERVATION
+> **STATUS:** S1 MERGED / P6B PASS / AUTO-DEPLOY LIVE / PRODUCTION SMOKE NOT RUN
 > **Date:** 2026-09-27 Asia/Nicosia.
 > **Fresh base main:** `2ae9f01ded14bd2106ee09f47acb3fea4d72bc4b`.
 > **Implementation branch:** `fix/ost-clinical-s1-fracture-fragility-semantics-2026-09-27`.
@@ -279,7 +279,7 @@ Exact final-head checks before merge:
 
 Fresh main immediately after merge was verified at the exact merge commit `dd16a505...`.
 
-This checkpoint records the merge only. Normal Render auto-deploy may follow from `main`; no manual redeploy is authorized or required. Production smoke remains a separate action unless clearly authorized by procedure/Product Owner.
+This checkpoint records the merge. Normal Render auto-deploy followed from `main`. The merge deploy was superseded by the immediate documentation checkpoint deploy, and the resulting deploy `dep-daumvhu417fc73ffcgn0` reached `LIVE` at commit `3c7e502e29bfbc103dc7838a902f3e7adcfca36f`, which contains the same merged S1 runtime plus documentation only. No manual redeploy was triggered. Production smoke has not been run and remains a separate action.
 
 ## Explicitly forbidden
 
