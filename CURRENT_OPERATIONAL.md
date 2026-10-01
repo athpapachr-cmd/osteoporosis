@@ -1,6 +1,6 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** PR-1 H13 DETERMINISTIC GATE PASS / LIVE QUALIFICATION PENDING; NOT RELEASE READY.
+> **STATUS:** PR-1 H13 DETERMINISTIC GATE PASS / FIRST LIVE QUALIFICATION 20/22 FAIL; NOT RELEASE READY.
 > **Updated:** 2026-10-01 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Fresh verified remote `main`:** `63e903e05c1bfe22ca925374b8994355f6c92baf`.
@@ -36,6 +36,7 @@
 > **Sixth post-H12 live qualification:** `36825475846` — **22 PASS / 0 FAIL**, `openai / gpt-5.6 / synthetic_eval / phi_approval=false`, 22 unique frozen cases.
 > **H13 exact implementation head:** `89a3b3d52fa4a2dd59d3b2d30c405555c6d501da`.
 > **H13 complete deterministic gate:** `36844603110` — SUCCESS (88 focused, 6 protected clinical, 24 Clinical Documents, syntax, navigation, effective scope).
+> **H13 first live qualification:** `36844904115` — 20 PASS / 2 FAIL at trigger head `6f2710e74a217f9ecf1f6df97d7157b01cb7b551`.
 > **Safe credential/schema boundary:** CLOSED; Actions secret available/masked, PHI approval false, strict Structured Outputs accepted.
 > **Medical Report V1.1:** CLOSED; do not reopen without separate authority.
 
@@ -683,4 +684,15 @@ Local evidence: 88 focused PR-1 tests PASS, 7 runnable inherited clinical/SDK te
 
 ## H13 exact-head deterministic checkpoint — PASS
 
-At implementation head `89a3b3d52fa4a2dd59d3b2d30c405555c6d501da`, workflow [`36844603110`](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/36844603110) completed SUCCESS: 88 focused PR-1 tests, 6 protected-clinical tests, 24 Clinical Documents tests, Python/browser syntax, workspace navigation and effective branch-scope verification all passed. This resolves the local missing-PDF-dependency limitation. The next material step is to run the same frozen 22-case GPT-5.6 synthetic qualification, with `purpose=synthetic_eval` and PHI approval false, and require `failed=0` without relaxing the H13 oracle.
+At implementation head `89a3b3d52fa4a2dd59d3b2d30c405555c6d501da`, workflow [`36844603110`](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/36844603110) completed SUCCESS: 88 focused PR-1 tests, 6 protected-clinical tests, 24 Clinical Documents tests, Python/browser syntax, workspace navigation and effective branch-scope verification all passed. This resolves the local missing-PDF-dependency limitation. The next material gate was the same frozen 22-case GPT-5.6 synthetic qualification, with `purpose=synthetic_eval` and PHI approval false, requiring `failed=0` without relaxing the H13 oracle.
+
+## H13 first live qualification — FAIL checkpoint
+
+Comment-only trigger head `6f2710e74a217f9ecf1f6df97d7157b01cb7b551` passed the complete deterministic gate [`36844904132`](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/36844904132). Live workflow [`36844904115`](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/36844904115) verified `provider=openai`, `model=gpt-5.6`, `purpose=synthetic_eval`, `phi_approval=false` and 22 unique frozen fixtures, then returned `total=22 failed=2`:
+
+```text
+garbled_speech: unexpected_assertion_clinical.unmapped_narrative, narrative_value_anchor_mismatch, narrative_value_source_span_mismatch
+unrelated_general_clinical_text: required_assertion_0_missing, unexpected_assertion_clinical.unmapped_narrative, narrative_value_vocabulary_mismatch
+```
+
+`frax_original_adjusted` passed. The two failures concern non-H13 provider output variation previously observed in live qualification; the coded run contains no demonstrated H13 relational mismatch. No fixture, transcript, oracle, provider profile or runtime relaxation is justified. Next action: rerun the same frozen 22-case synthetic qualification unchanged and require `failed=0`.
