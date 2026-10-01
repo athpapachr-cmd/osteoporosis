@@ -71,12 +71,16 @@
       .filter(Boolean)
       .sort((left, right) => left.start - right.start);
 
-    const previousItems = items.filter((item) => item.end <= nowMs);
+    const previousItem = items.reduce((latest, item) => {
+      if (item.end > nowMs) return latest;
+      if (!latest || item.end > latest.end) return item;
+      return latest;
+    }, null);
     const activeItems = items.filter((item) => item.start <= nowMs && nowMs < item.end);
     const nextItem = items.find((item) => item.start > nowMs) || null;
 
     return {
-      previous: previousItems.length ? previousItems[previousItems.length - 1].row : null,
+      previous: previousItem ? previousItem.row : null,
       current: activeItems.length === 1 ? activeItems[0].row : null,
       currentCount: activeItems.length,
       next: nextItem ? nextItem.row : null
