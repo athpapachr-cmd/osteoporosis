@@ -1,6 +1,6 @@
 # Module-01 S1 — Fracture / fragility semantics correction routing brief
 
-> **STATUS:** VERIFIED CURRENT-RUNTIME SAFETY / DATA-INTEGRITY FINDING.
+> **STATUS:** HISTORICAL PRE-CORRECTION ROUTING SNAPSHOT; S1 IS MERGED ON CURRENT `main` (AUTO-DEPLOY LIVE, PRODUCTION SMOKE NOT RUN).
 > **MODE:** separate bounded correction task; not an OST-LIFECOURSE implementation.
 > **ROOT LOCK:** PR-1 remains active and must not be mutated.
 

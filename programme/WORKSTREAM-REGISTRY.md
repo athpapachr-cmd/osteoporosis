@@ -11,7 +11,7 @@ This registry exists to let multiple bounded workstreams proceed in parallel wit
 | Workstream | Purpose | Current state | Authority boundary |
 |---|---|---|---|
 | **OST-CAPTURE** | Heidi/transcript → semantic clinical candidates | **ACTIVE under root PR-1 lifecycle** | Root `CURRENT_OPERATIONAL.md` / `SLICE_PLAN_CURRENT.md`; not mutated by this programme bootstrap |
-| **OST-LIFECOURSE** | Shared longitudinal patient truth, care trajectory, events/state/goals/decisions/obligations | **P1 RECONCILIATION COMPLETE / INDEPENDENT REVIEW READY** | `programme/OST-LIFECOURSE/CURRENT.md` |
+| **OST-LIFECOURSE** | Shared longitudinal patient truth, care trajectory, events/state/goals/decisions/obligations | **P1 REVIEW BLOCKED / TWO OWNERSHIP CORRECTIONS PREPARED FOR INDEPENDENT DELTA REVIEW** | `programme/OST-LIFECOURSE/CURRENT.md` |
 | **OST-CLINICAL** | Osteoporosis evidence, pathways, guidance rules and treatment logic | **S1 P6B PASS / PR #123 MERGED / AUTO-DEPLOY LIVE / SMOKE NOT RUN** | Independently reviewed substantive target `ba2f8635372f85cd94409fa66e08c3d8b428bcba`; squash merge `dd16a505662606f588a2adc8b1ae0ddddd884d19`; merge checkpoint `3c7e502e29bfbc103dc7838a902f3e7adcfca36f`; Render `dep-daumvhu417fc73ffcgn0` LIVE; production smoke requires separate authority |
 | **OST-UI** | Osteoporosis product reconstruction: longitudinal product model, workflow/UX, information architecture and reuse | **R1 COMPLETE / COORDINATOR ACCEPTED / R2 AUTHORIZED** | Former `OST-PRODUCT` placeholder activated as OST-UI; R1 exact reviewed head `4d4991ee617e72c3a943601864ba3c3c1d8062a6`; no root-writer or clinical-semantic authority |
 | **OST-REVIEW** | Practice Review, decision audit, Signals and improvement loop | **QUEUED** | Existing Practice Review architecture preserved; no new mutation authority |
@@ -40,11 +40,11 @@ OST-LIFECOURSE Phase 0 reuse/gap inventory — COMPLETE
         ↓
 programme synthesis — COMPLETE
         ↓
-OST-LIFECOURSE-P1 current-owner reconciliation — COMPLETE
+OST-LIFECOURSE-P1 current-owner reconciliation — CORRECTED AFTER REVIEW BLOCK
         ↓
-independent P1 review — READY
+independent P1 delta review — READY
         ├── OST-LIFECOURSE successor work remains gated on P1 disposition
-        ├── OST-CLINICAL S1 proceeds on its separately authorized correction/review lifecycle
+        ├── OST-CLINICAL S1 merged / auto-deploy live; production smoke not run
         └── OST-UI R1 current-product audit — COMPLETE / ACCEPTED
                 ↓
            OST-UI R2 — AUTHORIZED; must fresh-resolve authoritative clinical/lifecourse semantics

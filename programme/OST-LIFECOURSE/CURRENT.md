@@ -1,6 +1,6 @@
 # OST-LIFECOURSE CURRENT
 
-> **STATUS:** P1 SEMANTIC-OWNERSHIP RECONCILIATION COMPLETE / INDEPENDENT REVIEW READY.
+> **STATUS:** P1 INDEPENDENT REVIEW BLOCKED ON TWO OWNERSHIP CLAIMS / CORRECTION PREPARED FOR DELTA REVIEW.
 > **Workstream:** OST-LIFECOURSE — longitudinal clinical care trajectory.
 > **Branch:** `docs/ost-programme-lifecourse-bootstrap-2026-09-27`.
 > **Base main:** `2ae9f01ded14bd2106ee09f47acb3fea4d72bc4b`.
@@ -32,19 +32,19 @@ S1 RUNTIME CORRECTION: SEPARATELY ROUTED
 
 ## Exact next action
 
-Start one fresh **independent READ-ONLY P1 review** using:
+Obtain one fresh **independent READ-ONLY delta review** of the corrected P1 ownership map using:
 
 `programme/OST-LIFECOURSE/P1-INDEPENDENT-REVIEW-BRIEF.md`
 
-The reviewer returns PASS or BLOCK and STOP.
+The prior independent review returned BLOCK for DXA factual ownership and task continuity identity. The delta reviewer returns PASS or BLOCK and STOP.
 
-Do not start implementation, P2 target architecture, migration, schema work, S1 code correction or PR #121 merge automatically.
+Do not start implementation, P2 target architecture, migration, schema work, reopen S1 or merge PR #121 automatically.
 
 ## Registry sync
 
-`UPDATED` — P1 reconciliation is COMPLETE / INDEPENDENT REVIEW READY.
+`UPDATED` — P1 ownership correction is prepared for independent delta review after the returned BLOCK.
 
-## Parallel S1 routing checkpoint
+## Parallel S1 routing checkpoint — current state
 
 The separate Module-01 S1 pre-code result has been accepted by the programme coordinator.
 
@@ -56,10 +56,10 @@ Disposition:
 
 ```text
 S1 PRE-CODE: COMPLETE
-S1 IMPLEMENTATION AUTHOR: READY
-S1 CODE: NOT YET STARTED
-S1 MERGE/DEPLOY: NOT AUTHORIZED
+S1 CODE: MERGED TO MAIN
+S1 AUTO-DEPLOY: LIVE
+S1 PRODUCTION SMOKE: NOT RUN
 ROOT PR-1 LOCK: UNCHANGED
 ```
 
-S1 proceeds independently under OST-CLINICAL. OST-LIFECOURSE remains on its own P1 independent-review path.
+S1 remains separately owned by OST-CLINICAL. OST-LIFECOURSE remains on its own P1 independent-review path.

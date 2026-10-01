@@ -1,6 +1,6 @@
 # OST-LIFECOURSE-P1 — Programme reconciliation result
 
-> **STATUS:** P1 SEMANTIC-OWNERSHIP RECONCILIATION ACCEPTED / INDEPENDENT REVIEW READY.
+> **STATUS:** P1 SEMANTIC-OWNERSHIP CORRECTION AFTER INDEPENDENT BLOCK / DELTA REVIEW READY.
 > **Date:** 2026-09-27.
 > **Scope:** documentation/design reconciliation only.
 > **Root writer:** unchanged — OST-CAPTURE / PR-1.
@@ -17,9 +17,10 @@
 - stale `event.fragility` is non-canonical where current structured events use `low_trauma`.
 
 ### DXA
-- encounter `step3.dxa` is the protected factual encounter record.
-- longitudinal history should be derived from protected dated measurements.
-- `longitudinal_review.dxa_history` is a duplicate/manual history candidate for later demotion, not peer truth.
+- encounter `step3.dxa` is a protected encounter-scoped factual snapshot.
+- `longitudinal_review.dxa_history` contains manually authored historical DXA factual records within encounter payload state. A row may be the only recorded fact for its historical scan, or may duplicate an observation also recorded in `step3.dxa`.
+- overlapping representations of the same scan require provenance-aware duplicate/conflict reconciliation. A manual row without a peer protected encounter observation remains factual recorded history with its existing provenance limitations.
+- deriving longitudinal history from protected dated measurements is a possible future consolidation direction, not grounds to demote current manual facts without separate reconciliation and design.
 
 ### Labs
 - `step3.labs` = encounter-scoped captured/reviewed snapshot.
@@ -30,7 +31,8 @@
 - treatment episodes remain encounter snapshots; LGP derives longitudinal active-treatment state.
 - scheduled/planned administration != actual administration != derived expected due.
 - actual chronology derives only from reliable `actual_date` facts.
-- task UUID is the strongest current continuity identity; semantic tuple matching is fallback/legacy only.
+- task UUID identifies a row in the stored Step-4 representation; current executable cross-encounter unresolved-task reconciliation does not use that UUID for continuity.
+- current reconciliation uses the semantic tuple `type | due_date | timeframe_text`. This is the current continuity mechanism, not a stable longitudinal obligation identity; changing due date or timeframe may leave the prior planned tuple unresolved while the changed task appears as a new tuple.
 
 ### LongitudinalGuidanceProjectionV1
 - remains rebuildable read-only derived projection over completed/amended factual encounters.
@@ -62,15 +64,15 @@
 These are not deletion instructions:
 - `risk_context.prior_fragility_fracture` → compatibility/derived summary;
 - legacy `event.fragility` → non-canonical relative to `low_trauma`;
-- `longitudinal_review.dxa_history` → legacy/backfill-only candidate after separate migration/backfill decision;
-- semantic tuple task identity → fallback only when stable ID unavailable;
+- `longitudinal_review.dxa_history` → possible later consolidation/demotion only after unique historical facts, provenance and duplicates have been reconciled in separately bounded design; no migration or final authority decided here;
+- semantic tuple task continuity → current executable mechanism with unstable obligation semantics; any future replacement/consolidation remains an unresolved bounded design question;
 - `osteoporosis_evidence_context_v1` → execution adapter, not patient-state truth;
 - G-3 direct cross-encounter reconstruction → presentation logic until reconciled projection ownership is available;
 - duplicated G-2 JS predicates/constants → executable implementation, not semantic authority.
 
 ## Safety/data-integrity disposition
 
-- S1 remains separately routed and unimplemented.
+- S1 remains separate from P1; it is merged on current `main` and its auto-deploy is live, with production smoke not run. P1 does not reopen or review S1.
 - DI-2 DXA duplicate truth accepted.
 - DI-3 lab snapshot orphan/staleness risk accepted.
 - DI-4 task continuity/disposition gap accepted.
@@ -89,7 +91,7 @@ None of these findings authorises implementation from this artifact.
 
 ## Programme next action
 
-Open exactly one fresh independent READ-ONLY P1 review covering:
+Request one independent READ-ONLY delta review of the corrected P1 map covering:
 - seven-domain ownership map;
 - S1 separation;
 - no smuggled new store/engine;
