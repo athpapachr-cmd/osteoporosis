@@ -1,6 +1,6 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** PR-1 H13 IMPLEMENTED / DETERMINISTIC PASS / FROZEN LIVE 22/22 PASS — INDEPENDENT DELTA+CUMULATIVE REVIEW HOLD; NOT RELEASE READY.
+> **STATUS:** PR-1 H13 INDEPENDENT DELTA+CUMULATIVE PASS / SEMANTIC PROMOTION CLOSED — RELEASE ENGINEERING ELIGIBLE; NOT RELEASE READY.
 > **Updated:** 2026-10-01 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Fresh verified remote `main`:** `63e903e05c1bfe22ca925374b8994355f6c92baf`.
@@ -732,3 +732,39 @@ The identical workflow [`36847029827` attempt 2](https://github.com/athpapachr-c
 H13 is implementation-complete and ready for a fresh independent READ-ONLY delta+cumulative promotion review. The earlier failed live attempts remain evidence of provider variability, not permission to weaken the oracle or to call PR-1 release-ready. Merge, deploy, PHI use, PR-2, H-05 and browser lifecycle remain unauthorized here. This author stops after the evidence checkpoint.
 
 Residual boundary for reviewer: the deterministic relation rule is intentionally fixture-specific to the FRAX MOF/hip numeric pair and explicit local measure/value wording; it is not a general clinical-language parser. Source-grounded numeric statements without an explicit measure fail closed. The repeated pre-existing `garbled_speech` / `unrelated_general_clinical_text` provider variation is visible in the failed run checkpoints even though the final frozen suite passed 22/22.
+
+
+## Independent H-13 delta+cumulative review — PASS_TO_RELEASE_ENGINEERING
+
+Fresh independent review verified exact H13 base `b3e8680ba1080e28eb7c51e48975852dd5a103eb`, qualified substantive head `fcaaefebbad12b9a437927969476be47b9dd085d`, and final checkpoint head `81af6134510cb8ee2fd991cd323cf04b67c6f480`.
+
+Disposition:
+
+```text
+H13 RELATIONAL VALUE-BINDING: CLOSED
+ORACLE INTEGRITY: RELATIONALLY SOURCE-GROUNDED
+FROZEN INPUTS: UNCHANGED
+H09: PRESERVED
+H10: PRESERVED
+H11: PRESERVED
+H12-A: PRESERVED
+PRIVACY / AUTHORITY BOUNDARY: PASS
+MATERIAL SEMANTIC RESIDUALS: NONE
+VERDICT: PASS_TO_RELEASE_ENGINEERING
+```
+
+The independently reproduced FRAX swap `hip 18%, MOF 4%` now fails while source-supported reordered phrasing preserves `MOF↔18` and `hip↔4`. No general clinical-language guarantee is claimed beyond the bounded H13 relation contract.
+
+This PASS closes the PR-1 semantic-promotion remediation sequence through H13. It does **not** authorize merge, deploy, PHI use, pilot or PR-2.
+
+Remaining release-engineering sequence is separate:
+
+```text
+fresh-main reconciliation / rebase design
+→ H-05 provider-execution remediation
+→ executable browser lifecycle / BFCache / logout cleanup evidence
+→ identifiable-transcript privacy/provider gate
+→ final release gate
+```
+
+Do not merge/deploy automatically.
