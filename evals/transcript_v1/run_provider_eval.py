@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import re
 import unicodedata
+from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
@@ -40,6 +41,38 @@ def _narrative_terms(value: str) -> set[str]:
         word[:5] if len(word) >= 5 else word[:3] if len(word) == 4 else word
         for word in words if word not in _NARRATIVE_FUNCTION_WORDS
     }
+
+
+def _percent_relations(value: str, measures: set[str]) -> list[tuple[str, Decimal]] | None:
+    """Read adjacent measure/numeric-value pairs in either word order."""
+    labels = "|".join(re.escape(measure) for measure in sorted(measures, key=len, reverse=True))
+    tokens = re.findall(rf"(?<!\w)(?:{labels})(?!\w)|(?<!\w)\d+(?:[.,]\d+)?\s*%?", value.casefold())
+    if len(tokens) % 2:
+        return None
+    relations = []
+    for first, second in zip(tokens[::2], tokens[1::2]):
+        if first in measures and second not in measures:
+            measure, percent = first, second
+        elif second in measures and first not in measures:
+            measure, percent = second, first
+        else:
+            return None
+        relations.append((measure, Decimal(percent.rstrip("% ").replace(",", "."))))
+    return relations
+
+
+def _value_percent_relations_match(value: str, transcript: str, bindings: dict[str, int | float]) -> bool:
+    if not bindings:
+        return False
+    expected = {measure.casefold(): Decimal(str(percent)) for measure, percent in bindings.items()}
+    source_relations = _percent_relations(transcript, set(expected))
+    if (source_relations is None or not set(expected.items()).issubset(source_relations)
+            or any(expected[measure] != percent for measure, percent in source_relations)):
+        return False
+    if not re.search(r"\d", value):
+        return True
+    value_relations = _percent_relations(value, set(expected))
+    return bool(value_relations) and all(expected[measure] == percent for measure, percent in value_relations)
 
 
 def _candidate_signature(candidate) -> str:
@@ -128,6 +161,11 @@ def _component_matches_rule(candidate, component, rule: dict[str, Any], transcri
         if not terms or not terms.issubset(allowed):
             return False
 
+    bindings = rule.get("value_text_bound_percentages")
+    if bindings is not None:
+        if not isinstance(component.value, TextValueV1) or not _value_percent_relations_match(component.value.text, transcript, bindings):
+            return False
+
     return True
 
 
@@ -179,7 +217,7 @@ def _candidate_group_matches(candidate, group: dict[str, Any], transcript: str =
 def _narrative_rule_failure_codes(candidate, component, rule: dict[str, Any], transcript: str) -> list[str]:
     if component.concept_key != "clinical.unmapped_narrative" or rule.get("concept_key") != component.concept_key:
         return []
-    independent = ("evidence_contains", "value_text_contains", "value_text_source_span", "value_text_source_vocabulary", "value_text_allowed_words")
+    independent = ("evidence_contains", "value_text_contains", "value_text_source_span", "value_text_source_vocabulary", "value_text_allowed_words", "value_text_bound_percentages")
     base = {key: value for key, value in rule.items() if key not in independent}
     if not _component_matches_rule(candidate, component, base, transcript):
         return []
@@ -189,6 +227,7 @@ def _narrative_rule_failure_codes(candidate, component, rule: dict[str, Any], tr
         ("value_text_contains", "narrative_value_anchor_mismatch"),
         ("value_text_source_span", "narrative_value_source_span_mismatch"),
         ("value_text_source_vocabulary", "narrative_value_vocabulary_mismatch"),
+        ("value_text_bound_percentages", "narrative_value_relation_mismatch"),
     ):
         if field in rule and not _component_matches_rule(candidate, component, {**base, field: rule[field], "value_text_allowed_words": rule.get("value_text_allowed_words", [])}, transcript):
             codes.append(code)

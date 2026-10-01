@@ -1,11 +1,11 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** PR-1 H-12 INDEPENDENT REVIEW HOLD — H12-A CLOSED / H12-B RELATIONAL VALUE-BINDING RESIDUAL / H13 CORRECTION REQUIRED; NOT RELEASE READY.
+> **STATUS:** PR-1 H13 RELATIONAL VALUE-BINDING CORRECTION ACTIVE; NOT RELEASE READY.
 > **Updated:** 2026-10-01 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Fresh verified remote `main`:** `63e903e05c1bfe22ca925374b8994355f6c92baf`.
 > **Active slice:** `PR-1-TRANSCRIPT-INTAKE-CANDIDATE-EXTRACTION-V1-2026-09-16`.
-> **Active writer:** fresh separate H-12 semantic-safety correction author; only the Module-01 temporal guard, promotion evaluator, exact fixtures, focused tests and branch-local checkpoints.
+> **Active writer:** fresh separate H13 correction author; only the promotion evaluator, exact FRAX fixture authorization, focused H13 tests and branch-local checkpoints.
 > **Runtime implementation branch:** `feat/pr1-transcript-capture-v1-2026-09-16`.
 > **Exact H-08 deterministic head:** `5eeddeba664814b38d55bad8231afb5b33448eae`.
 > **H-08 deterministic/inherited gate:** `35446869081` — SUCCESS.
@@ -668,3 +668,13 @@ H13 bounded relational-binding correction
 → fresh independent delta+cumulative review
 → only PASS_TO_RELEASE_ENGINEERING may advance
 ```
+
+## H13 implementation start — 2026-10-01
+
+Fresh remote verification found `main` at `63e903e05c1bfe22ca925374b8994355f6c92baf` and PR-1 at the expected reconciled `b3e8680ba1080e28eb7c51e48975852dd5a103eb`. The two commits since the local H12 checkpoint changed only this operational record and `SLICE_PLAN_CURRENT.md`; no semantic/runtime drift occurred. H13 is active within the bounded evaluator/fixture/test/checkpoint scope above. The frozen 22 transcript inputs remain immutable.
+
+## H13 candidate — local checks complete, CI and live qualification pending
+
+The promotion evaluator now checks the exact FRAX source pairings `MOF ↔ 18` and `hip ↔ 4` whenever the optional interpretation narrative restates numeric risk values. Candidate pairings may be reordered or omit the percent glyph, but each numeric value needs an explicit matching measure. Numeric claims without a measure, swapped values and contradictory source pairings fail closed. Existing H12 evidence, value anchor, source vocabulary, duplicate and default-deny checks remain in force. No runtime mapper, provider profile, transcript input or authoritative-write path changed.
+
+Local evidence: 88 focused PR-1 tests PASS, 7 runnable inherited clinical/SDK tests PASS, Python/browser syntax PASS, workspace navigation PASS, and `git diff --check` PASS. The two local Clinical Documents PDF modules could not collect because this shell lacks the declared `PyMuPDF` dependency; the complete Actions gate installs `requirements.txt` and must prove those tests. All 22 frozen transcript strings and IDs match `b3e8680` byte-for-byte; ordered transcript-list SHA-256 is `6df23521cf7280b82491982fabbdc4e56ff70f219c2991e43f7a98149322b694`. Next: exact-head complete deterministic Actions gate, then unchanged 22-case synthetic GPT-5.6 qualification with PHI approval false. Neither result is yet claimed.

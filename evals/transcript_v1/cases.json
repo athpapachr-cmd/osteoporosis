@@ -476,6 +476,7 @@
         "evidence_contains": "Με κλινική προσαρμογή εκτιμώ τον κίνδυνο υψηλότερο",
         "value_text_contains": "κίνδυν",
         "value_text_source_vocabulary": true,
+        "value_text_bound_percentages": {"mof": 18, "hip": 4},
         "value_text_allowed_words": ["αυξημένος", "μεγαλύτερος", "θεωρώ", "συνολικός"]
       },
       {
