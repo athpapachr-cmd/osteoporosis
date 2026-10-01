@@ -732,6 +732,11 @@
     renderPatientSummary(lastPatientSummary);
     applyPlanToCards(plan);
     renderSummary(context, plan, projection);
+    window.dispatchEvent(new CustomEvent("ost:guidance-rendered", { detail: {
+      patientId: activePatientId(), historicalEncounters, historicalLabs,
+      historyStatus: historyLoadState, projection, summary: lastPatientSummary,
+      plan, current, context
+    } }));
   }
 
   function scheduleRender(delay = 0) {

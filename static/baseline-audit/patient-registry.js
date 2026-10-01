@@ -214,7 +214,7 @@
     return `<table><thead><tr><th>Εξέταση</th>${dates.map(d => `<th>${esc(d)}</th>`).join("")}</tr></thead><tbody>${rows.map(([key,label]) => `<tr><td><strong>${esc(label)}</strong></td>${labs.map(x => `<td>${esc(x.values?.[key] ?? "—")}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
   }
 
-  async function loadEncounter(encounterId) {
+  async function loadEncounter(encounterId, editorStep = "") {
     try {
       const row = await api(`/clinical/encounter/${encodeURIComponent(encounterId)}`, { method: "GET", headers: {} });
       const payload = row.payload && typeof row.payload === "object" ? { ...row.payload } : {};
@@ -224,6 +224,7 @@
       setCases(cases); localStorage.setItem(ACTIVE_KEY, payload.internal_uuid);
       const links = getLinks(); links[payload.internal_uuid] = { patient_id: row.patient_id, encounter_id: row.encounter_id }; setLinks(links);
       setActivePatientId(row.patient_id);
+      if (/^[1-6]$/.test(editorStep)) location.hash = `proto1-editor-${editorStep}`;
       location.reload();
     } catch (err) { setStatus(err.message, "err"); }
   }
@@ -305,7 +306,9 @@
   }
 
   window.ClinicalRegistry = Object.freeze({
-    finalizeActiveEncounter
+    finalizeActiveEncounter,
+    activeEncounterId: () => getLinks()[activeUuid()]?.encounter_id || null,
+    openEncounter: (encounterId, editorStep) => loadEncounter(encounterId, editorStep)
   });
 
   injectUi(); bind(); checkAuth();
