@@ -1470,3 +1470,16 @@ Medical Report V1.1 is closed. Reopen only for a material production defect, aut
 - Render auto-deploy `dep-das41frncjis73e6q47g` reached `live` for the exact merge commit.
 - Production smoke verified `GET /` -> 307 and `GET /static/cockpit/` -> 200.
 - Cal.com visit-reason ingestion into Clinical Calendar remains a separate next integration slice.
+
+
+---
+
+## 2026-10-01 — Cockpit Today Context Strip V1 released
+
+- Released PR #130 as squash merge `db42903e08b11dfe52d427a410f8b15547fb5507`.
+- Cockpit Home now shows protected read-only **Previous / Current / Next** appointment context from the existing Clinical Calendar while preserving **«Άνοιγμα εβδομαδιαίου ημερολογίου»**.
+- Clinician attention follows appointment `start_at` order; Aclasta is the bounded lawful overlap exception, while other simultaneous active overlaps fail closed visibly; Next remains the earliest future `start_at`.
+- D1 does not use phone or protected patient ID for identity/linkage and adds no booking, Calendar write, Secretary, Setmore, Zadarma or clinical-state writer.
+- Final independent closure accepted the runtime/product behavior; the only residual BLOCK was two stale canonical statements, corrected as an R0 docs-only delta with no runtime/test semantic change. The review chain was then stopped under `PROCEDURES.md`.
+- Render deploy `dep-davbs48473hc73eust00` reached **live** from source `794d96dc4e0676691a4d6333b8f47bdd335cdb6c`. No additional production smoke is claimed in this checkpoint.
+- The next Cockpit step is the D2 Relevant Communication Context Product Owner checkpoint; D2 implementation is not yet authorized.
