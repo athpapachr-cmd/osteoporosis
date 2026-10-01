@@ -76,7 +76,8 @@ def test_cockpit_today_context_strip_uses_protected_calendar_without_second_cale
     # message instead of choosing one patient silently.
     assert r"[+-]\d{2}:?\d{2}" in js
     assert r"[+-]\\d{2}:?\\d{2}" not in js
-    assert "item.end <= nowMs" in js
+    assert "item.end > nowMs" in js
+    assert "item.end > latest.end" in js
     assert "item.start <= nowMs && nowMs < item.end" in js
     assert "item.start > nowMs" in js
     assert "ταυτόχρονα ραντεβού" in js
