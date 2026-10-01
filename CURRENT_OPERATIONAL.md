@@ -5,7 +5,7 @@
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Fresh verified remote `main`:** `63e903e05c1bfe22ca925374b8994355f6c92baf`.
 > **Active slice:** `PR-1-TRANSCRIPT-INTAKE-CANDIDATE-EXTRACTION-V1-2026-09-16`.
-> **Active writer:** none after this H13 evidence checkpoint; next owner is a fresh independent READ-ONLY delta+cumulative reviewer.
+> **Active writer:** PR-1 release-engineering executor on this branch, limited to fresh-main reconciliation, H-05 provider execution, browser/transient lifecycle cleanup, privacy-gate verification, and exact-head regression evidence. H09–H13 semantic behavior is frozen.
 > **Runtime implementation branch:** `feat/pr1-transcript-capture-v1-2026-09-16`.
 > **Exact H-08 deterministic head:** `5eeddeba664814b38d55bad8231afb5b33448eae`.
 > **H-08 deterministic/inherited gate:** `35446869081` — SUCCESS.
