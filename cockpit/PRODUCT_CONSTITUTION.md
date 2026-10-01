@@ -14,12 +14,18 @@ Home leads with today's patient/visit, What Changed since the prior contact, Vis
 | Cockpit view | Meaning | Boundary |
 |---|---|---|
 | **Previous / Current / Next** | Brief attendance context around the visit | Read projection, not a full booking calendar or scheduling writer. |
-| **Relevant communication** | What the clinician needs from prior/current patient communication | Read summary with source/time, not a call inbox or communication orchestration console. |
+| **Relevant communication** | Clinically useful clinic → patient and patient → clinic communication around the current/next visit or an unresolved action | Bounded read summary with source/time/status, not an SMS/call inbox or communication orchestration console. |
 | **Visit Brief** | What was known, agreed, awaited and needs checking for this visit | Provenance-preserving read view; unknown, negative, absent and conflict remain distinct. |
 | **What Changed** | Clinically meaningful changes since the last confirmed point | Show source and comparison basis; do not infer a clinical delta from mere message arrival. |
 | **Clinical Inbox** | Candidate incoming items requiring clinical attention/review | Signal/Candidate is not a confirmed clinical fact or automatic task. |
 
 External patient linkage must be verified through an authorized strong mapping before patient-specific content is attached. Name, weak demographic or fuzzy matching may discover **candidates only**. No weak clue, unreviewed message or external Signal may silently write the protected patient record, close an Awaited Item, assert a result or trigger treatment. Clinical confirmation belongs to the clinician and the protected clinical owner.
+
+### D2 — Relevant Communication Context
+
+The read projection is **bidirectional**. Clinic → patient examples include an SMS reminder to complete blood tests before Prolia, a request to bring DXA/imaging/documents, or a clinician-approved result/follow-up message. Patient → clinic examples include confirmation that tests were done, relevant pre-visit information, or a reply to a clinic message. Show only communication relevant to the current/next visit or an unresolved clinically useful action, with direction, source, time, delivery/reply state and any remaining communication obligation. For example, `28/9 · Στείλαμε SMS · εξετάσεις πριν από Prolia · παραδόθηκε` followed by `30/9 · Απάντηση ασθενούς · επιβεβαίωσε ότι έκανε τις εξετάσεις` may end in `καμία εκκρεμής επικοινωνία`. A reply is not proof of a clinical result or authoritative patient fact.
+
+The normalized appointment telephone number may be used as an **operational correlation key** among appointment/contact, Digital Secretary communication and Zadarma message records. Normalize consistently, preferably to international/E.164 form when supported by the source. An exact phone match may establish communication ↔ appointment/contact correlation; it **does not** establish authoritative protected clinical patient identity, and phone is not a primary patient ID. Missing, conflicting, known shared/ambiguous or otherwise insufficient phone evidence fails closed for patient-specific D2 attachment until stronger or human resolution exists. Do not use fuzzy name matching to compensate for a missing phone match. The stronger protected clinical identity boundary above remains in force.
 
 Capture once at the rightful source and reuse everywhere that the contract permits. The clinician should not re-enter a received fact just to make Visit Brief or Home useful. An external communication or an operational task may point to a possible clinical action; a clinical CareTask requires its own deliberate clinical authority.
 
@@ -28,7 +34,7 @@ Capture once at the rightful source and reuse everywhere that the contract permi
 | Responsibility | Owner / Cockpit role |
 |---|---|
 | Appointment source and ordinary appointment reminders | Existing booking provider owns appointments (the current Calendar reason bridge consumes Cal.com); Setmore owns ordinary reminders where used. Cockpit reads bounded attendance projections. |
-| Reception communication workflow and orchestration | Digital Secretary; Cockpit reads only clinically relevant summaries. |
+| Reception communication workflow and orchestration | Digital Secretary; Cockpit reads only clinically relevant bidirectional summaries and does not own the lifecycle. |
 | Messaging transport | Zadarma; Cockpit does not create an SMS transport. |
 | Protected clinical facts, review and CareTasks | Clinical Excellence owner and clinician; Cockpit presents authorized clinical views/actions. |
 | Longitudinal clinical summary | Existing G3/validated clinical projection; Visit Intelligence consumes rather than duplicates it. |
