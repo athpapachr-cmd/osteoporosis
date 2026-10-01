@@ -1,6 +1,6 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** PR-1 H13 RELATIONAL VALUE-BINDING CORRECTION ACTIVE; NOT RELEASE READY.
+> **STATUS:** PR-1 H13 DETERMINISTIC GATE PASS / LIVE QUALIFICATION PENDING; NOT RELEASE READY.
 > **Updated:** 2026-10-01 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Fresh verified remote `main`:** `63e903e05c1bfe22ca925374b8994355f6c92baf`.
@@ -34,6 +34,8 @@
 > **Fifth post-H12 live qualification:** `36824997276` — 21 PASS / 1 FAIL at trigger head `c43ce7ab7a45995f4127f69d4c2fe219f15badb4`; `garbled_speech` emitted zero candidates.
 > **Exact H-12 qualified head:** `43a501f8c51854e69062c66d9855fbee7cb47259`; complete deterministic gate `36825475834` — SUCCESS (84 focused, 6 protected clinical, 24 Clinical Documents, syntax, navigation and scope).
 > **Sixth post-H12 live qualification:** `36825475846` — **22 PASS / 0 FAIL**, `openai / gpt-5.6 / synthetic_eval / phi_approval=false`, 22 unique frozen cases.
+> **H13 exact implementation head:** `89a3b3d52fa4a2dd59d3b2d30c405555c6d501da`.
+> **H13 complete deterministic gate:** `36844603110` — SUCCESS (88 focused, 6 protected clinical, 24 Clinical Documents, syntax, navigation, effective scope).
 > **Safe credential/schema boundary:** CLOSED; Actions secret available/masked, PHI approval false, strict Structured Outputs accepted.
 > **Medical Report V1.1:** CLOSED; do not reopen without separate authority.
 
@@ -677,4 +679,8 @@ Fresh remote verification found `main` at `63e903e05c1bfe22ca925374b8994355f6c92
 
 The promotion evaluator now checks the exact FRAX source pairings `MOF ↔ 18` and `hip ↔ 4` whenever the optional interpretation narrative restates numeric risk values. Candidate pairings may be reordered or omit the percent glyph, but each numeric value needs an explicit matching measure. Numeric claims without a measure, swapped values and contradictory source pairings fail closed. Existing H12 evidence, value anchor, source vocabulary, duplicate and default-deny checks remain in force. No runtime mapper, provider profile, transcript input or authoritative-write path changed.
 
-Local evidence: 88 focused PR-1 tests PASS, 7 runnable inherited clinical/SDK tests PASS, Python/browser syntax PASS, workspace navigation PASS, and `git diff --check` PASS. The two local Clinical Documents PDF modules could not collect because this shell lacks the declared `PyMuPDF` dependency; the complete Actions gate installs `requirements.txt` and must prove those tests. All 22 frozen transcript strings and IDs match `b3e8680` byte-for-byte; ordered transcript-list SHA-256 is `6df23521cf7280b82491982fabbdc4e56ff70f219c2991e43f7a98149322b694`. Next: exact-head complete deterministic Actions gate, then unchanged 22-case synthetic GPT-5.6 qualification with PHI approval false. Neither result is yet claimed.
+Local evidence: 88 focused PR-1 tests PASS, 7 runnable inherited clinical/SDK tests PASS, Python/browser syntax PASS, workspace navigation PASS, and `git diff --check` PASS. The two local Clinical Documents PDF modules could not collect because this shell lacks the declared `PyMuPDF` dependency; the complete Actions gate installs `requirements.txt` and proves those tests below. All 22 frozen transcript strings and IDs match `b3e8680` byte-for-byte; ordered transcript-list SHA-256 is `6df23521cf7280b82491982fabbdc4e56ff70f219c2991e43f7a98149322b694`.
+
+## H13 exact-head deterministic checkpoint — PASS
+
+At implementation head `89a3b3d52fa4a2dd59d3b2d30c405555c6d501da`, workflow [`36844603110`](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/36844603110) completed SUCCESS: 88 focused PR-1 tests, 6 protected-clinical tests, 24 Clinical Documents tests, Python/browser syntax, workspace navigation and effective branch-scope verification all passed. This resolves the local missing-PDF-dependency limitation. The next material step is to run the same frozen 22-case GPT-5.6 synthetic qualification, with `purpose=synthetic_eval` and PHI approval false, and require `failed=0` without relaxing the H13 oracle.
