@@ -23,12 +23,12 @@ BASE MAIN:             87aedad3ad512e4b17a1eb737f0ff8302857aff2
 BRANCH:                feat/cockpit-today-context-strip-v1-2026-10-01
 SUBSTANTIVE HEAD:      b4ce49b6cdb1083d56453abb1e4cbc10c834b294
 R0 DOCS-CORRECTION:    a965cec7c307c354d7a2ef98d7e2ff2937fe46ee
-PR:                    #130 / READY
+PR:                    #130 / MERGED
 IMPLEMENTED:           YES
 FOCUSED TESTED:        YES
 INDEPENDENT R1 REVIEW: CLOSURE PASS / REVIEW CHAIN STOPPED
-MERGED:                NO
-DEPLOYED:              NO
+MERGED:                YES / db42903e08b11dfe52d427a410f8b15547fb5507
+DEPLOYED:              PENDING / NORMAL RENDER AUTO-DEPLOY
 ```
 
 Implemented behavior:
@@ -78,7 +78,7 @@ The persistent Clinical Learning L0 red check remains the same non-applicable de
 
 **Final independent closure disposition:** all runtime/product D1 behavior above was accepted. The only remaining BLOCK was two stale canonical statements that still described the superseded `end_at` semantics. Those two statements were corrected in the R0 canonical-only delta at `a965cec7c307c354d7a2ef98d7e2ff2937fe46ee`; no runtime or test semantics changed. Under `PROCEDURES.md` P4/P5/P7 this requires no new product/implementation review, so the D1 review chain is stopped.
 
-**Exact next action:** the Product Owner has now authorized the lawful PR #130 merge/release step provided the current exact-head state and applicable CI remain clean. PR #130 is READY. Merge it with exact-head protection, checkpoint the merge identity, then observe and durably checkpoint the automatic deploy/release state. Do not start D2 implementation before D1 is durably released.
+**Exact next action:** the Product Owner has now authorized the lawful PR #130 merge/release step provided the current exact-head state and applicable CI remain clean. PR #130 was squash-merged as `db42903e08b11dfe52d427a410f8b15547fb5507`. Observe the normal Render auto-deploy from `main` and durably checkpoint the exact deploy identity/status before releasing the D1 writer or activating any D2 implementation. Do not start D2 implementation before D1 is durably released.
 
 **D2 — Relevant Communication Context** is the next bounded concept after D1, not part of this governance implementation. Its bidirectional read boundary and phone-correlation limit live in `cockpit/PRODUCT_CONSTITUTION.md`. D2 needs its own bounded design/authority before any integration or UI work.
 
