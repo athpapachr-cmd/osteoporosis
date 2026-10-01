@@ -1,6 +1,6 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** PR-1 H-12 DETERMINISTIC CORRECTION PASS / POST-H12 GPT-5.6 QUALIFICATION PENDING — NOT RELEASE READY.
+> **STATUS:** PR-1 H-12 DETERMINISTIC CORRECTION PASS / FIRST POST-H12 GPT-5.6 QUALIFICATION 21/22 FAIL CHECKPOINT — NOT RELEASE READY.
 > **Updated:** 2026-10-01 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Fresh verified remote `main`:** `63e903e05c1bfe22ca925374b8994355f6c92baf`.
@@ -23,6 +23,7 @@
 > **Post-H11 live qualification:** `35455986630` — **22 PASS / 0 FAIL**.
 > **H-12 exact deterministic head:** `b1d57e1c6e9feb6968592f700da7de8113badf96`.
 > **H-12 deterministic/inherited gate:** `36821972100` — SUCCESS (82 focused, 6 protected clinical, 24 Clinical Documents).
+> **First post-H12 live qualification:** `36822187245` — 21 PASS / 1 FAIL at trigger head `1c201203a60d645595d04613727ff329271b8a96`.
 > **Safe credential/schema boundary:** CLOSED; Actions secret available/masked, PHI approval false, strict Structured Outputs accepted.
 > **Medical Report V1.1:** CLOSED; do not reopen without separate authority.
 
@@ -547,7 +548,7 @@ This evidence includes the H-09 semantic/polarity guard, H-10 source-bound and d
 
 ## Exact next action
 
-H-12 implementation and exact-head deterministic gate are complete at `b1d57e1c6e9feb6968592f700da7de8113badf96`. Verify this canonical checkpoint and trigger the frozen 22-case GPT-5.6 synthetic qualification with PHI approval false. Require 22/22, checkpoint the live evidence, then hand back for separate independent delta+cumulative review. Do not rebase or perform release engineering.
+The first post-H12 live synthetic run returned 21/22, with only `frax_original_adjusted` failing `unexpected_assertion_clinical.unmapped_narrative`. Verify this failure checkpoint, determine whether the new narrative-value rule is too narrow for a source-supported FRAX interpretation, make only a justified fixture/evaluator correction if demonstrated, rerun the complete deterministic gate and frozen GPT-5.6 suite, and require 22/22 before handback. Do not change transcript inputs, rebase or perform release engineering.
 
 ## Explicitly blocked
 
@@ -575,3 +576,5 @@ Base branch head `d0844ef4f7bb80c812d7c7856955b7d8694f8553` was fresh-verified w
 - Before correction: focused adversarial tests reproduced 5 failures, including future `done`/`actual_date`, future active treatment and authentic DXA evidence paired with invented denosumab narrative. After correction: all 7 H-12 tests pass, including appended invented text rejection and valid planned/past controls.
 
 Exact implementation/tested head: `b1d57e1c6e9feb6968592f700da7de8113badf96`. Complete GitHub Actions gate `36821972100` SUCCESS: Python/browser syntax, 82 focused PR-1 tests, 6 protected-clinical tests, 24 Clinical Documents tests, workspace navigation and a repaired effective branch-scope check all PASS. The first run `36821826827` passed tests but exposed a pre-existing shallow-fetch false PASS in its scope step; the bounded workflow correction at `b1d57e1` made a real merge base mandatory. No production, PHI, PR-2, H-05 or browser-lifecycle changes were made.
+
+First post-H12 live trigger head `1c201203a60d645595d04613727ff329271b8a96` passed the full deterministic gate `36822187284`. Live synthetic run `36822187245` verified `provider=openai / model=gpt-5.6 / purpose=synthetic_eval / phi_approval=false`, 22 unique frozen inputs, then returned 21 PASS / 1 FAIL. The sole coded failure was `frax_original_adjusted: unexpected_assertion_clinical.unmapped_narrative`; no provider, schema, credential or PHI-boundary failure was reported. This is a failure checkpoint, not promotion PASS. Raw candidate values were not logged.

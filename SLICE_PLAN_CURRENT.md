@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — PR-1 Heidi-first Transcript Intake + Candidate Extraction v1
 
-> **STATUS:** H-12 DETERMINISTIC CORRECTION PASS / LIVE REQUALIFICATION PENDING — NOT RELEASE READY.
+> **STATUS:** H-12 DETERMINISTIC CORRECTION PASS / FIRST LIVE REQUALIFICATION 21/22 FAIL CHECKPOINT — NOT RELEASE READY.
 > **Activated:** 2026-09-16 Asia/Nicosia.
 > **Slice:** `PR-1-TRANSCRIPT-INTAKE-CANDIDATE-EXTRACTION-V1-2026-09-16`.
 > **Activation main:** `0ab5f9770d220c20e8d94544cb64e93a4aa30d00`.
@@ -21,6 +21,7 @@
 > **Post-H11 live qualification:** `35455986630` — **22 PASS / 0 FAIL**.
 > **H-12 exact deterministic head:** `b1d57e1c6e9feb6968592f700da7de8113badf96`.
 > **H-12 deterministic/inherited gate:** `36821972100` — SUCCESS; 82 focused / 6 protected clinical / 24 Clinical Documents PASS.
+> **First post-H12 live qualification:** `36822187245` — 21 PASS / 1 FAIL; only `frax_original_adjusted` optional narrative authorization failed.
 > **Writer:** one bounded H-12 PR-1 correction author; operational owner is `CURRENT_OPERATIONAL.md`.
 
 ## 1. Objective
@@ -593,3 +594,5 @@ The fresh independent post-H11 promotion review returned `HOLD_FOR_SEMANTIC_REME
 The H-12 author may change the existing Module-01 guard, promotion evaluator, exact affected fixtures, focused H-12 tests, and these two branch-local operational documents. Complete deterministic syntax, focused and protected regressions, Clinical Documents regressions, navigation and scope guard, then checkpoint exact tested head. Only after deterministic PASS rerun the unchanged 22 frozen transcript inputs with `openai / gpt-5.6 / synthetic_eval / phi_approval=false`; require 22/22. Separate independent delta+cumulative review follows handback. No rebase, H-05, browser-lifecycle engineering, PHI use, release PR, merge or deploy.
 
 The bounded correction is deterministically complete at `b1d57e1c6e9feb6968592f700da7de8113badf96`; gate `36821972100` passed syntax, 82 focused, 6 protected-clinical, 24 Clinical Documents, navigation and effective scope checks. H12-A fails closed future/planned completed administration and treatment exposure while preserving scheduled follow-up and valid past/current truth. H12-B adds fixture-specific `value_text_contains` plus exact normalized source-span binding to authorized narratives while retaining `evidence_contains`, duplicate rejection and default-deny. Frozen transcript inputs remain byte-identical. The next gate is live GPT-5.6 synthetic requalification; no independent review or release action is part of this author task.
+
+The first post-H12 live run at trigger head `1c201203a60d645595d04613727ff329271b8a96` passed all boundary/count checks but returned 21/22: only `frax_original_adjusted` emitted a narrative that no longer matched its optional authorization rule. This is a failure checkpoint. Read-only rule/source triage is required before any narrowly justified correction; the frozen transcript input and H-09/H-10/H-11 protections cannot be changed to chase a PASS.
