@@ -13,7 +13,7 @@ D1 is a small, directly visible, read-only Dashboard projection of **Previous / 
 
 **R1 classification:** bounded UI/read-only projection using unchanged protected Calendar data, with no new clinical fact authority, patient identity authority, write path or external side effect. Expected implementation scope is `static/cockpit/index.html`, `static/cockpit/app.js`, `static/cockpit/styles.css`, `test_cockpit_home.py` and this workstream checkpoint; root `CURRENT_OPERATIONAL.md` records the bounded writer lock. The Clinical Calendar and its source keep ownership. D1 authorizes no appointment write, booking/cancellation/rescheduling, second calendar, Setmore reminder, Digital Secretary workflow change, messaging transport, Visit Intelligence clinical-state write or patient-matching redesign.
 
-**Accepted D1 semantics:** `Τώρα` means a scheduled row whose interval contains the current time; `Προηγούμενο` is the latest appointment that has ended; `Επόμενο` is the earliest appointment that starts later. This is schedule context, not live patient-presence tracking. The Home may show `patient_display_name` only from the authenticated protected Calendar response for these slots; it must not render `phone_e164` or `linked_patient_id`.
+**Accepted D1 semantics:** clinician attention follows appointment `start_at` order. `Τώρα` is the single active appointment; when an earlier still-active row is an Aclasta infusion slot and a later non-Aclasta appointment has started, the later appointment is Current. Other simultaneous active overlaps fail closed visibly. `Προηγούμενο` is the immediately preceding appointment in start order relative to Current, or the latest-started completed appointment when there is no Current. `Επόμενο` is the earliest appointment whose `start_at` is later than now. This is schedule context, not live patient-presence tracking. The Home may show `patient_display_name` only from the authenticated protected Calendar response for these slots; it must not render `phone_e164` or `linked_patient_id`.
 
 
 ### D1 implementation/tested checkpoint — 2026-10-01
@@ -33,7 +33,7 @@ DEPLOYED:              NO
 Implemented behavior:
 
 - Cockpit Home renders **Προηγούμενο / Τώρα / Επόμενο** directly from the existing authenticated Clinical Calendar read endpoint.
-- `Τώρα` uses interval containment; previous/next use deterministic end/start ordering. Multiple simultaneous active intervals fail closed to a visible ambiguity instead of silently choosing one patient.
+- Previous / Current clinician attention follows deterministic `start_at` order. A later-started non-Aclasta visit may lawfully become Current while an earlier Aclasta infusion slot remains active; other simultaneous active overlaps fail closed visibly. Next remains the earliest future `start_at`.
 - the context refreshes once per minute while the Dashboard remains open;
 - `patient_display_name` is used only as protected appointment display context; D1 does not consume `phone_e164` or `linked_patient_id`;
 - the existing weekly Osteoporosis calendar remains unchanged and reachable through **«Άνοιγμα εβδομαδιαίου ημερολογίου»**;
