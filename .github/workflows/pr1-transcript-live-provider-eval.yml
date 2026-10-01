@@ -1,5 +1,5 @@
 name: PR-1 live synthetic provider eval
-# Qualification trigger: H-11 source-semantic normalization attempt 7
+# Qualification trigger: H-12 temporal and narrative source-binding attempt 1
 
 on:
   push:
