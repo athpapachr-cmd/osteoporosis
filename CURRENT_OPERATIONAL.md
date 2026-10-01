@@ -1,6 +1,6 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** PR-1 H-12 THIRD FROZEN SYNTHETIC RUN 19/22 FAIL CHECKPOINT / NARRATIVE PARAPHRASE TRIAGE — NOT RELEASE READY.
+> **STATUS:** PR-1 H-12 PARAPHRASE RULE DETERMINISTIC PASS / FOURTH LIVE QUALIFICATION PENDING — NOT RELEASE READY.
 > **Updated:** 2026-10-01 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Fresh verified remote `main`:** `63e903e05c1bfe22ca925374b8994355f6c92baf`.
@@ -28,6 +28,7 @@
 > **Second post-H12 live qualification:** `36822789808` — 20 PASS / 2 FAIL at trigger head `750338794020c92f2f0bcd18a556231506b0f902`.
 > **Content-free diagnostic head/gate:** `423b53c983d45c43f2c61e98ad4e437001923faa` / `36823179758` — SUCCESS (83 focused).
 > **Third post-H12 live qualification:** `36823333376` — 19 PASS / 3 FAIL at trigger head `2ccd5a333e64abdb1568ba712f0513d9991143e8`.
+> **Paraphrase-rule exact deterministic head/gate:** `473ada825cd79e69145f01038480be3d111f7d5a` / `36823978604` — SUCCESS (83 focused).
 > **Safe credential/schema boundary:** CLOSED; Actions secret available/masked, PHI approval false, strict Structured Outputs accepted.
 > **Medical Report V1.1:** CLOSED; do not reopen without separate authority.
 
@@ -552,7 +553,7 @@ This evidence includes the H-09 semantic/polarity guard, H-10 source-bound and d
 
 ## Exact next action
 
-The third frozen synthetic run produced coded evidence that the FRAX value contains its source-derived risk anchor but is not a verbatim source span. Verify this failure checkpoint, then make only a narrow deterministic source-meaning rule for legitimate paraphrases; maintain rejection of unrelated/appended clinical claims. The VFA case's extra falls assertion/missing required assertion remains unsupported and must not be authorized. Require 22/22 before handback. Do not change transcript inputs, rebase or perform release engineering.
+The fixture-specific paraphrase rule is deterministically tested at `473ada825cd79e69145f01038480be3d111f7d5a` / `36823978604`. Verify this checkpoint, rerun the unchanged frozen 22-case GPT-5.6 suite, require 22/22, and checkpoint the live outcome. The VFA case's extra falls assertion/missing required assertion remains unsupported and must not be authorized. Do not change transcript inputs, rebase or perform release engineering.
 
 ## Explicitly blocked
 
@@ -576,7 +577,7 @@ Executable browser lifecycle/BFCache/logout cleanup evidence also remains releas
 Base branch head `d0844ef4f7bb80c812d7c7856955b7d8694f8553` was fresh-verified with no runtime/semantic delta after H-11; remote `main` was fresh-verified at `63e903e05c1bfe22ca925374b8994355f6c92baf`. No rebase occurred.
 
 - H12-A: future/planned treatment episodes cannot become current/historical exposure. Future/planned administration assertions containing `status=done` or `actual_date` fail closed as an entire administration candidate, with deterministic temporal reason codes. Valid future follow-up `planned` mapping and past actual administration remain mapped. H-09 semantic and negation guards retain priority.
-- H12-B: authorized narrative rules now require their value text to contain a fixture-specific source phrase and the complete normalized value text to be a contiguous source transcript span. The existing authentic evidence-snippet rule, default-deny and duplicate rejection remain active. The six affected frozen cases changed only oracle rules, never transcript inputs.
+- H12-B initial correction required a fixture-specific source phrase in each narrative value and a contiguous normalized source transcript span. Later live evidence showed source-supported paraphrase variation in FRAX/shoulder cases; the current narrower per-fixture contract is recorded below. Authentic evidence-snippet anchoring, default-deny and duplicate rejection remain active. Frozen transcript inputs did not change.
 - Before correction: focused adversarial tests reproduced 5 failures, including future `done`/`actual_date`, future active treatment and authentic DXA evidence paired with invented denosumab narrative. After correction: all 7 H-12 tests pass, including appended invented text rejection and valid planned/past controls.
 
 Exact implementation/tested head: `b1d57e1c6e9feb6968592f700da7de8113badf96`. Complete GitHub Actions gate `36821972100` SUCCESS: Python/browser syntax, 82 focused PR-1 tests, 6 protected-clinical tests, 24 Clinical Documents tests, workspace navigation and a repaired effective branch-scope check all PASS. The first run `36821826827` passed tests but exposed a pre-existing shallow-fetch false PASS in its scope step; the bounded workflow correction at `b1d57e1` made a real merge base mandatory. No production, PHI, PR-2, H-05 or browser-lifecycle changes were made.
@@ -590,3 +591,5 @@ Second trigger head `750338794020c92f2f0bcd18a556231506b0f902` passed complete d
 The evaluator now emits only additional reason codes for unmatched narrative rules: evidence anchor, value phrase anchor, or whole-value source-span mismatch. It never prints candidate text or evidence. Existing default-deny failure remains. Exact diagnostic head `423b53c983d45c43f2c61e98ad4e437001923faa` passed gate `36823179758`: 83 focused, 6 protected-clinical, 24 Clinical Documents, syntax, navigation and effective scope PASS. The next frozen synthetic run is diagnostic evidence, not permission to weaken unrelated source semantics.
 
 Third trigger head `2ccd5a333e64abdb1568ba712f0513d9991143e8` passed deterministic gate `36823333355`. Live run `36823333376` passed synthetic-only/22-unique-case boundaries but returned 19 PASS / 3 FAIL: `frax_original_adjusted` reported `narrative_value_source_span_mismatch` only (its value anchor passed); `unrelated_general_clinical_text` reported a missing required assertion plus an optional narrative that missed both value and source-span anchors; `negative_history_vs_negative_investigation` again missed its required assertion and emitted unsupported `risk.falls_last_12_months`. These are coded classifications without candidate text. The FRAX code is consistent with paraphrase but does not expose the full claim; a future rule must still reject unsupported additions. The VFA falls claim has no source authorization and remains default-denied.
+
+Narrow fixture-level correction at `473ada825cd79e69145f01038480be3d111f7d5a`: FRAX narrative authorization keeps the full source-evidence anchor and source-derived risk-value anchor `κίνδυν`, while no longer requiring verbatim whole-value text; shoulder patient/clinician narrative rules use source-derived anatomical/separate-review stems to permit inflection/paraphrase. Exact whole-value source-span binding remains mandatory on the reviewer-reproduced DXA no-result and H-11 prescription/no-administration cases. All optional narrative permissions retain explicit value anchors and authentic `evidence_contains`; default-deny and duplicate rejection remain active. The new local test still rejects an unrelated invented denosumab value, while the DXA adversarial test rejects both invented-only and appended denosumab claims. No frozen transcript input changed. Complete gate `36823978604` SUCCESS: 83 focused, 6 protected-clinical, 24 Clinical Documents, syntax, navigation and effective scope PASS. This is deterministic evidence only; live 22/22 remains unproven.

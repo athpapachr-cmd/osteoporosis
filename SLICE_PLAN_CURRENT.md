@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — PR-1 Heidi-first Transcript Intake + Candidate Extraction v1
 
-> **STATUS:** H-12 THIRD FROZEN SYNTHETIC RUN 19/22 FAIL CHECKPOINT / NARRATIVE PARAPHRASE TRIAGE — NOT RELEASE READY.
+> **STATUS:** H-12 PARAPHRASE RULE DETERMINISTIC PASS / FOURTH LIVE QUALIFICATION PENDING — NOT RELEASE READY.
 > **Activated:** 2026-09-16 Asia/Nicosia.
 > **Slice:** `PR-1-TRANSCRIPT-INTAKE-CANDIDATE-EXTRACTION-V1-2026-09-16`.
 > **Activation main:** `0ab5f9770d220c20e8d94544cb64e93a4aa30d00`.
@@ -26,6 +26,7 @@
 > **Second post-H12 live qualification:** `36822789808` — 20 PASS / 2 FAIL; FRAX narrative and separate VFA-case provider output.
 > **Content-free diagnostic head/gate:** `423b53c983d45c43f2c61e98ad4e437001923faa` / `36823179758` — SUCCESS (83 focused).
 > **Third post-H12 live qualification:** `36823333376` — 19 PASS / 3 FAIL; FRAX source-span paraphrase, shoulder narrative variation, unsupported VFA-case falls assertion.
+> **Paraphrase-rule exact deterministic head/gate:** `473ada825cd79e69145f01038480be3d111f7d5a` / `36823978604` — SUCCESS (83 focused).
 > **Writer:** one bounded H-12 PR-1 correction author; operational owner is `CURRENT_OPERATIONAL.md`.
 
 ## 1. Objective
@@ -597,7 +598,7 @@ The fresh independent post-H11 promotion review returned `HOLD_FOR_SEMANTIC_REME
 
 The H-12 author may change the existing Module-01 guard, promotion evaluator, exact affected fixtures, focused H-12 tests, and these two branch-local operational documents. Complete deterministic syntax, focused and protected regressions, Clinical Documents regressions, navigation and scope guard, then checkpoint exact tested head. Only after deterministic PASS rerun the unchanged 22 frozen transcript inputs with `openai / gpt-5.6 / synthetic_eval / phi_approval=false`; require 22/22. Separate independent delta+cumulative review follows handback. No rebase, H-05, browser-lifecycle engineering, PHI use, release PR, merge or deploy.
 
-The bounded correction is deterministically complete at `b1d57e1c6e9feb6968592f700da7de8113badf96`; gate `36821972100` passed syntax, 82 focused, 6 protected-clinical, 24 Clinical Documents, navigation and effective scope checks. H12-A fails closed future/planned completed administration and treatment exposure while preserving scheduled follow-up and valid past/current truth. H12-B adds fixture-specific `value_text_contains` plus exact normalized source-span binding to authorized narratives while retaining `evidence_contains`, duplicate rejection and default-deny. Frozen transcript inputs remain byte-identical. The next gate is live GPT-5.6 synthetic requalification; no independent review or release action is part of this author task.
+The initial bounded correction passed at `b1d57e1c6e9feb6968592f700da7de8113badf96`; gate `36821972100` passed syntax, 82 focused, 6 protected-clinical, 24 Clinical Documents, navigation and effective scope checks. H12-A fails closed future/planned completed administration and treatment exposure while preserving scheduled follow-up and valid past/current truth. The initial H12-B rule used fixture-specific `value_text_contains` plus exact normalized source-span binding; later frozen live evidence required the per-fixture paraphrase adjustment recorded below. `evidence_contains`, duplicate rejection and default-deny remain active. Frozen transcript inputs remain byte-identical. No independent review or release action is part of this author task.
 
 The first post-H12 live run at trigger head `1c201203a60d645595d04613727ff329271b8a96` passed all boundary/count checks but returned 21/22: only `frax_original_adjusted` emitted a narrative that no longer matched its optional authorization rule. This is a failure checkpoint. Read-only rule/source triage is required before any narrowly justified correction; the frozen transcript input and H-09/H-10/H-11 protections cannot be changed to chase a PASS.
 
@@ -608,3 +609,5 @@ Second live run at `750338794020c92f2f0bcd18a556231506b0f902` returned 20/22 des
 The coded diagnostic change passed the full deterministic gate at `423b53c983d45c43f2c61e98ad4e437001923faa` / `36823179758`. It adds only no-content reasons for narrative evidence, value-phrase and source-span mismatches while retaining default-deny. Run the same 22 frozen synthetic inputs again, then decide a narrow FRAX rule correction from those codes. No candidate/evidence text is logged.
 
 The third frozen run `36823333376` at trigger head `2ccd5a333e64abdb1568ba712f0513d9991143e8` returned 19/22. FRAX passed its risk value anchor but failed the exact source-span rule, indicating a paraphrase. The unrelated shoulder case varied in its required/optional narrative and failed exact value/source-span anchors. The VFA case again emitted a source-unsupported falls assertion and missed a required assertion; do not authorize either. The next correction may address only deterministic source-supported narrative paraphrases while retaining rejection of unrelated/appended claims and the frozen transcript inputs.
+
+At `473ada825cd79e69145f01038480be3d111f7d5a`, the FRAX and shoulder narrative rules were narrowed to source-derived value stems plus authentic source-evidence anchors, allowing paraphrase/inflection; the key DXA no-result and prescription/no-administration narratives retain exact normalized whole-value source-span requirements. The adverse invented denosumab value remains rejected, and no transcript input changed. Full deterministic gate `36823978604` passed with 83 focused, 6 protected-clinical, 24 Clinical Documents, syntax, navigation and effective scope. Live qualification remains pending.
