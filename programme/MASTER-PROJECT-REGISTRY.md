@@ -1,6 +1,6 @@
 # Master Project Registry — navigation only
 
-> **Snapshot:** 2026-10-01 Asia/Nicosia, based on verified `osteoporosis/main` `63e903e05c1bfe22ca925374b8994355f6c92baf` and the workstream pointers below.
+> **Snapshot:** 2026-10-01 Asia/Nicosia, refreshed through the Cockpit D1 release closeout and the workstream pointers below. Fresh sessions must verify current `osteoporosis/main` per `AGENTS.md` before mutation.
 > **Authority:** none for product state, writer lock, release or design. Read the six root canonicals, `PROCEDURES.md` for the task mode, then the owning local `CURRENT.md`. `CURRENT_OPERATIONAL.md` is the only repo-wide operational NOW.
 
 | Project | Local CURRENT / index | Coordinator | State / active task | Writer scope | Dependencies | Next bounded action |
