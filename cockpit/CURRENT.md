@@ -1,6 +1,6 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
-> **NOW (2026-10-01):** Home v1, Pending Surgery Queue and the bounded Clinical Calendar reason bridge are released according to the checkpoints below. Visit Brief / What Changed / Clinical Inbox are product direction, not released Cockpit UI.
+> **NOW (2026-10-01):** Home v1, Pending Surgery Queue, the bounded Clinical Calendar reason bridge and **D1 Today Context Strip V1** are released according to the checkpoints below. **D2 Relevant Communication Context** is at Product Owner checkpoint only; Visit Brief / What Changed / Clinical Inbox remain product direction, not released Cockpit UI.
 > **Product boundary:** `cockpit/PRODUCT_CONSTITUTION.md`; cross-programme architecture: `CLINICAL_EXCELLENCE_PLAN.md` §§33–34.
 > **Root lock:** `CURRENT_OPERATIONAL.md` remains the sole repo-wide NOW. Its PR-1 release lifecycle is in HOLD with no active runtime writer at the verified PR-1 branch checkpoint; this Cockpit file does not claim that lock.
 > **Visit Intelligence dependency:** `programme/OST-VISIT-INTELLIGENCE/CURRENT.md`; P0-V0 contract/projector branch `b22fd5c610d20baf0f8ef3384ca16472cd2d1f92` is not on `main`. The external cumulative PASS handback has not yet been reconciled into that workstream CURRENT or released.
