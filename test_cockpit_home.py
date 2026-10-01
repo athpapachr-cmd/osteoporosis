@@ -1,3 +1,5 @@
+import json
+import subprocess
 from pathlib import Path
 
 
@@ -71,13 +73,16 @@ def test_cockpit_today_context_strip_uses_protected_calendar_without_second_cale
     assert "phone_e164" not in js
     assert "linked_patient_id" not in js
 
-    # Schedule-context semantics: ended -> previous, interval-containing -> now,
-    # future start -> next. Overlapping current rows fail closed to an ambiguity
-    # message instead of choosing one patient silently.
+    # Schedule-context semantics are start-order based for clinician attention.
+    # Aclasta may lawfully overlap a later appointment; other concurrent-current
+    # overlaps fail closed rather than choosing one patient silently.
     assert r"[+-]\d{2}:?\d{2}" in js
     assert r"[+-]\\d{2}:?\\d{2}" not in js
-    assert "item.end <= nowMs" in js
-    assert "completedItems[completedItems.length - 1]" in js
+    assert "item.start <= nowMs" in js
+    assert "latestStartedItem" in js
+    assert 'item.row.category === "aclasta"' in js
+    assert "lawfulAclastaOverlap" in js
+    assert "currentConflictCount" in js
     assert "item.start <= nowMs && nowMs < item.end" in js
     assert "item.start > nowMs" in js
     assert "ταυτόχρονα ραντεβού" in js
@@ -89,19 +94,67 @@ def test_cockpit_today_context_strip_uses_protected_calendar_without_second_cale
     assert "sessionStorage" not in js
 
 
-def test_previous_slot_follows_realistic_schedule_order():
-    # Normal clinic schedule is sequential. At 11:30, after 08:00–09:00 and
-    # 09:00–10:00 appointments, Previous must be the 09:00–10:00 slot.
-    rows = [
-        {"patient": "A", "start": 8 * 60, "end": 9 * 60},
-        {"patient": "B", "start": 9 * 60, "end": 10 * 60},
-    ]
-    now_minutes = 11 * 60 + 30
-    completed = [row for row in rows if row["end"] <= now_minutes]
-    previous = completed[-1]
-    assert previous["patient"] == "B"
-
+def _run_d1_context(rows, now_iso):
     js = _read("static/cockpit/app.js")
-    assert "const completedItems = items.filter((item) => item.end <= nowMs);" in js
-    assert "completedItems[completedItems.length - 1]" in js
-    assert "previous: previousItem ? previousItem.row : null" in js
+    start = js.index("  function parseClinicalAppointmentDate")
+    end = js.index("  function setAppointmentSlot", start)
+    context_source = js[start:end]
+    script = f"""
+{context_source}
+const rows = {json.dumps(rows)};
+const result = appointmentContext(rows, new Date({json.dumps(now_iso)}));
+console.log(JSON.stringify(result));
+"""
+    raw = subprocess.check_output(["node", "-e", script], text=True)
+    return json.loads(raw)
+
+
+def _appt(name, start_at, end_at, category="osteoporosis_review"):
+    return {
+        "patient_display_name": name,
+        "start_at": start_at,
+        "end_at": end_at,
+        "category": category,
+    }
+
+
+def test_d1_previous_follows_clinic_start_order():
+    rows = [
+        _appt("A", "2026-10-01T08:00:00Z", "2026-10-01T09:00:00Z"),
+        _appt("B", "2026-10-01T09:00:00Z", "2026-10-01T10:00:00Z"),
+    ]
+    context = _run_d1_context(rows, "2026-10-01T11:30:00Z")
+    assert context["previous"]["patient_display_name"] == "B"
+    assert context["current"] is None
+
+
+def test_d1_aclasta_overlap_hands_current_attention_to_later_started_visit():
+    rows = [
+        _appt("Aclasta", "2026-10-01T09:00:00Z", "2026-10-01T10:00:00Z", "aclasta"),
+        _appt("Review", "2026-10-01T09:40:00Z", "2026-10-01T10:20:00Z"),
+    ]
+    context = _run_d1_context(rows, "2026-10-01T09:50:00Z")
+    assert context["previous"]["patient_display_name"] == "Aclasta"
+    assert context["current"]["patient_display_name"] == "Review"
+    assert context["currentConflictCount"] == 0
+
+
+def test_d1_after_aclasta_overlap_previous_is_the_later_started_patient():
+    rows = [
+        _appt("Aclasta", "2026-10-01T09:00:00Z", "2026-10-01T10:00:00Z", "aclasta"),
+        _appt("Review", "2026-10-01T09:40:00Z", "2026-10-01T09:55:00Z"),
+    ]
+    context = _run_d1_context(rows, "2026-10-01T10:05:00Z")
+    assert context["current"] is None
+    assert context["previous"]["patient_display_name"] == "Review"
+
+
+def test_d1_non_aclasta_current_overlap_fails_closed():
+    rows = [
+        _appt("A", "2026-10-01T09:00:00Z", "2026-10-01T10:00:00Z"),
+        _appt("B", "2026-10-01T09:40:00Z", "2026-10-01T10:20:00Z"),
+    ]
+    context = _run_d1_context(rows, "2026-10-01T09:50:00Z")
+    assert context["current"] is None
+    assert context["currentConflictCount"] == 2
+    assert context["previous"]["patient_display_name"] == "A"
