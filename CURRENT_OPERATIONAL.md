@@ -1,6 +1,6 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** PR-1 H-12 DETERMINISTIC CORRECTION PASS / FIRST POST-H12 GPT-5.6 QUALIFICATION 21/22 FAIL CHECKPOINT — NOT RELEASE READY.
+> **STATUS:** PR-1 H-12 CORRECTED DETERMINISTIC GATE PASS / SECOND GPT-5.6 QUALIFICATION PENDING — NOT RELEASE READY.
 > **Updated:** 2026-10-01 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Fresh verified remote `main`:** `63e903e05c1bfe22ca925374b8994355f6c92baf`.
@@ -24,6 +24,7 @@
 > **H-12 exact deterministic head:** `b1d57e1c6e9feb6968592f700da7de8113badf96`.
 > **H-12 deterministic/inherited gate:** `36821972100` — SUCCESS (82 focused, 6 protected clinical, 24 Clinical Documents).
 > **First post-H12 live qualification:** `36822187245` — 21 PASS / 1 FAIL at trigger head `1c201203a60d645595d04613727ff329271b8a96`.
+> **H-12 corrected exact deterministic head:** `864b5a0b389c165f7dfc2a0a4461147d7ffb548d`; gate `36822645627` — SUCCESS (83 focused).
 > **Safe credential/schema boundary:** CLOSED; Actions secret available/masked, PHI approval false, strict Structured Outputs accepted.
 > **Medical Report V1.1:** CLOSED; do not reopen without separate authority.
 
@@ -548,7 +549,7 @@ This evidence includes the H-09 semantic/polarity guard, H-10 source-bound and d
 
 ## Exact next action
 
-The first post-H12 live synthetic run returned 21/22, with only `frax_original_adjusted` failing `unexpected_assertion_clinical.unmapped_narrative`. Verify this failure checkpoint, determine whether the new narrative-value rule is too narrow for a source-supported FRAX interpretation, make only a justified fixture/evaluator correction if demonstrated, rerun the complete deterministic gate and frozen GPT-5.6 suite, and require 22/22 before handback. Do not change transcript inputs, rebase or perform release engineering.
+The narrowly corrected FRAX source-span rule is tested at `864b5a0b389c165f7dfc2a0a4461147d7ffb548d` and gate `36822645627` passed. Verify this checkpoint, rerun the unchanged 22-case GPT-5.6 synthetic suite with PHI approval false, require 22/22, then checkpoint exact live evidence and hand back for independent delta+cumulative review. Do not change transcript inputs, rebase or perform release engineering.
 
 ## Explicitly blocked
 
@@ -578,3 +579,5 @@ Base branch head `d0844ef4f7bb80c812d7c7856955b7d8694f8553` was fresh-verified w
 Exact implementation/tested head: `b1d57e1c6e9feb6968592f700da7de8113badf96`. Complete GitHub Actions gate `36821972100` SUCCESS: Python/browser syntax, 82 focused PR-1 tests, 6 protected-clinical tests, 24 Clinical Documents tests, workspace navigation and a repaired effective branch-scope check all PASS. The first run `36821826827` passed tests but exposed a pre-existing shallow-fetch false PASS in its scope step; the bounded workflow correction at `b1d57e1` made a real merge base mandatory. No production, PHI, PR-2, H-05 or browser-lifecycle changes were made.
 
 First post-H12 live trigger head `1c201203a60d645595d04613727ff329271b8a96` passed the full deterministic gate `36822187284`. Live synthetic run `36822187245` verified `provider=openai / model=gpt-5.6 / purpose=synthetic_eval / phi_approval=false`, 22 unique frozen inputs, then returned 21 PASS / 1 FAIL. The sole coded failure was `frax_original_adjusted: unexpected_assertion_clinical.unmapped_narrative`; no provider, schema, credential or PHI-boundary failure was reported. This is a failure checkpoint, not promotion PASS. Raw candidate values were not logged.
+
+The sole narrowly justified fixture correction replaces the FRAX narrative value's full-sentence `value_text_contains` anchor with source-derived `κίνδυν`, allowing a shorter quote of the same source-stated higher-risk interpretation. The separate exact normalized source-span requirement and full-sentence authentic `evidence_contains` remain mandatory, so an invented extension still fails. No frozen transcript input changed. New focused regression proves the shorter genuine quote passes and the invented denosumab extension fails. Corrected exact head `864b5a0b389c165f7dfc2a0a4461147d7ffb548d`; complete deterministic gate `36822645627` SUCCESS with 83 focused, 6 protected-clinical, 24 Clinical Documents, syntax, navigation and effective scope PASS. Live requalification remains pending.
