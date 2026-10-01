@@ -7,7 +7,7 @@
 
 ## Current bounded action
 
-The active global Cockpit implementation-bearing slice is **COCKPIT TODAY CONTEXT STRIP V1 (D1)** on branch `feat/cockpit-today-context-strip-v1-2026-10-01`, based on verified main `87aedad3ad512e4b17a1eb737f0ff8302857aff2`. On 2026-10-01 the Product Owner confirmed the plain-language D1 step and instructed **«ξεκίνα με D1»**.
+The next Cockpit product step is the **D2 — Relevant Communication Context Product Owner checkpoint**. D1 is released and no Cockpit runtime writer is active. D2 remains a design/authority checkpoint only until the Product Owner confirms the plain-language behavior; no integration or UI implementation is authorized yet.
 
 D1 is a small, directly visible, read-only Dashboard projection of **Previous / Current / Next** appointment context from the existing normalized Clinical Calendar. It lets the clinician see who was just seen, who is being seen now and who is next without opening the full calendar. The existing weekly Osteoporosis Clinical Calendar remains available through a link labelled **«Άνοιγμα εβδομαδιαίου ημερολογίου»** and is not replaced or removed.
 
@@ -28,7 +28,7 @@ IMPLEMENTED:           YES
 FOCUSED TESTED:        YES
 INDEPENDENT R1 REVIEW: CLOSURE PASS / REVIEW CHAIN STOPPED
 MERGED:                YES / db42903e08b11dfe52d427a410f8b15547fb5507
-DEPLOYED:              PENDING / NORMAL RENDER AUTO-DEPLOY
+DEPLOYED:              YES / LIVE / dep-davbs48473hc73eust00 / source 794d96dc4e0676691a4d6333b8f47bdd335cdb6c
 ```
 
 Implemented behavior:
@@ -78,7 +78,7 @@ The persistent Clinical Learning L0 red check remains the same non-applicable de
 
 **Final independent closure disposition:** all runtime/product D1 behavior above was accepted. The only remaining BLOCK was two stale canonical statements that still described the superseded `end_at` semantics. Those two statements were corrected in the R0 canonical-only delta at `a965cec7c307c354d7a2ef98d7e2ff2937fe46ee`; no runtime or test semantics changed. Under `PROCEDURES.md` P4/P5/P7 this requires no new product/implementation review, so the D1 review chain is stopped.
 
-**Exact next action:** the Product Owner has now authorized the lawful PR #130 merge/release step provided the current exact-head state and applicable CI remain clean. PR #130 was squash-merged as `db42903e08b11dfe52d427a410f8b15547fb5507`. Observe the normal Render auto-deploy from `main` and durably checkpoint the exact deploy identity/status before releasing the D1 writer or activating any D2 implementation. Do not start D2 implementation before D1 is durably released.
+**Exact next action:** the Product Owner has now authorized the lawful PR #130 merge/release step provided the current exact-head state and applicable CI remain clean. PR #130 was squash-merged as `db42903e08b11dfe52d427a410f8b15547fb5507`. Render deploy `dep-davbs48473hc73eust00` reached **LIVE** from source `794d96dc4e0676691a4d6333b8f47bdd335cdb6c`. D1 is released and its bounded writer is released. No production smoke beyond successful deploy health is claimed. **Exact next action:** present the D2 Relevant Communication Context plain-language Product Owner checkpoint with concrete UI examples; do not implement D2 until the Product Owner confirms or corrects it. Do not start D2 implementation before D1 is durably released.
 
 **D2 — Relevant Communication Context** is the next bounded concept after D1, not part of this governance implementation. Its bidirectional read boundary and phone-correlation limit live in `cockpit/PRODUCT_CONSTITUTION.md`. D2 needs its own bounded design/authority before any integration or UI work.
 
