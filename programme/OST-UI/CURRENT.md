@@ -1,20 +1,42 @@
 # CURRENT.md — OST-UI / Osteoporosis Product Reconstruction
 
-> **STATUS:** R1 RECONCILED / LIFECOURSE P1 REVIEWED INPUT AVAILABLE / R2 AUTHORIZED — NOT STARTED.
-> **Updated:** 2026-09-27 Asia/Nicosia.
+> **STATUS:** R2 COMPLETE / COORDINATOR RECONCILIATION PENDING; R3 NOT STARTED.
+> **Updated:** 2026-10-01 Asia/Nicosia.
 > **Workstream:** OST-UI.
-> **Fresh runtime main audited:** **2ae9f01ded14bd2106ee09f47acb3fea4d72bc4b**.
+> **Fresh runtime main reviewed for R2:** **63e903e05c1bfe22ca925374b8994355f6c92baf**.
 > **Governing bootstrap PR:** **#122** — OPEN / DRAFT / NOT MERGED.
 > **Governing contract head:** **9363ad5dbb5f7c059f351421599bd6ede4db6438**.
 > **R1 review branch:** **docs/ost-ui-r1-current-product-audit-2026-09-27**.
 > **R1 artifact commit:** **7b23f224cef0c9b721d89c84e431a4582efab2af**.
+> **R2 branch:** **docs/ost-ui-r2-longitudinal-trajectory-review-2026-10-01**, based on coordinator head **f04af35b5424328f55a11932224becb43521d831**.
+> **R2 artifact commit:** **688b851358dae42b3431aa1fd50c86a077788322**.
 > **Root operational writer:** unchanged — PR-1 Heidi-first transcript capture lifecycle.
 > **OST-UI runtime writer:** none.
 > **Release affecting:** no.
 
 ---
 
-## 1. Canonical Bootstrap Manifest
+## 0. Current R2 checkpoint / exact next action
+
+R2 independently fresh-verified remote `main` at `63e903e05c1bfe22ca925374b8994355f6c92baf` and read all six root canonicals in `AGENTS.md` order. The root phase remains Module-01 closure; the root active slice/writer remains bounded PR-1 implementation. R2 made no overlapping mutation. PR #121 is open at `aa32f7fbd49c02653c11eb35edaf2e24939eb443`; independently reviewed LifeCourse P1 target `b4f917b161f33b0bfb3507328df07cec2d7bd2b6` remains the PASS semantic input. Current-main merged S1 fracture/fragility behavior was inspected directly. Full source identity and the Canonical Bootstrap Manifest are in the R2 artifact.
+
+Completed review artifact:
+
+`programme/OST-UI/R2-LONGITUDINAL-CLINICAL-TRAJECTORY-REVIEW.md` at commit `688b851358dae42b3431aa1fd50c86a077788322`.
+
+Disposition:
+
+**R2 COMPLETE / R3 ELIGIBLE FOR COORDINATOR RECONCILIATION**
+
+R2 found a usable protected patient/encounter/lab substrate, reliable captured actual-administration distinctions, S1-corrected fracture semantics, and helpful read-only history-sensitive projections. It also found that a 10–15-year complete story cannot be guaranteed from the present treatment-epoch, obligation, decision/preference/action, goals, outcome-linkage, investigation-provenance and historical-evidence semantics. The artifact classifies reuse, consolidation, extension, genuine gaps, clinical dependencies and unknowns without selecting an implementation architecture.
+
+**Exact next action:** programme coordinator verifies this R2 branch, final head and artifact, reconciles its disposition into the OST-UI control plane, and only then decides whether to authorize R3. R3, R4 and synthesis remain not started. R2 stops here. No runtime/schema/database, root canonical, PR #121, clinical-rule, PR-1/H-12, merge or deploy action is authorized by this checkpoint.
+
+Sections 1–8A below retain the prior R1/coordinator history as context. This §0 and §9 own the present OST-UI NOW.
+
+---
+
+## 1. R1 Canonical Bootstrap Manifest (historical)
 
 Fresh remote athpapachr-cmd/osteoporosis/main was verified at:
 
@@ -170,7 +192,7 @@ No final R4 KEEP/REPLACE classification was made.
 | Review | Status | Output |
 |---|---|---|
 | R1 — Current Product vs Constitution | **COMPLETE / COORDINATOR ACCEPTED** | R1-CURRENT-PRODUCT-CONSTITUTION-AUDIT.md |
-| R2 — Longitudinal Clinical Trajectory | **AUTHORIZED / NOT STARTED** | R2-LONGITUDINAL-CLINICAL-TRAJECTORY-REVIEW.md |
+| R2 — Longitudinal Clinical Trajectory | **COMPLETE / COORDINATOR RECONCILIATION PENDING** | R2-LONGITUDINAL-CLINICAL-TRAJECTORY-REVIEW.md |
 | R3 — Point-of-Care Interaction | **NOT STARTED** | R3-POINT-OF-CARE-INTERACTION-REVIEW.md |
 | R4 — Shared Core / Module Architecture / Reuse | **NOT STARTED** | R4-SHARED-CORE-MODULE-ARCHITECTURE-REUSE.md |
 | Synthesis — Product Reconstruction Decision | **BLOCKED ON R1-R4** | OST-PRODUCT-RECONSTRUCTION-DECISION.md |
@@ -185,7 +207,7 @@ No additional review lane is authorized.
 
 Outside OST-UI clinical authority.
 
-R1 inspected how current fracture fields/events affect UI/projection only. R2/R3 must fresh-resolve the authoritative LifeCourse/clinical semantic owner before relying on unsettled fracture/fragility meaning.
+R1 inspected how fracture fields/events affect UI/projection only. R2 consumed reviewed LifeCourse P1 current-state ownership and fresh-inspected the merged S1 executable semantics on `main`. R3 must use the reconciled clinical owner and may not invent new fracture/fragility meaning.
 
 ### Treatment / evidence
 
@@ -209,9 +231,9 @@ PR #121 remains unmerged supporting context. No OST-LIFECOURSE or OST-CLINICAL c
 
 ---
 
-## 7. Programme coordinator reconciliation
+## 7. Historical R1 programme coordinator reconciliation
 
-Fresh programme reconciliation verified:
+At the 2026-09-27 R1 checkpoint, programme reconciliation verified:
 
 - runtime `main` remained `2ae9f01ded14bd2106ee09f47acb3fea4d72bc4b`;
 - governing PR #122 remained exactly `9363ad5dbb5f7c059f351421599bd6ede4db6438`;
@@ -237,17 +259,17 @@ Accepted R1 diagnosis:
 - existing persistence, projection, guidance, provenance, summary and workspace mechanisms are preservation/reuse candidates rather than presumptive rewrite targets;
 - deeper questions about durable treatment epochs, obligations, goals, shared patient/Core ownership, overlapping longitudinal representations and historical evidence context remain questions for R2/R4, not R1-proven defects.
 
-Current dependency state at reconciliation:
+Dependency state at that reconciliation:
 
 - OST-LIFECOURSE P1 corrected ownership map has now passed fresh independent delta+cumulative review at exact corrected target `b4f917b161f33b0bfb3507328df07cec2d7bd2b6`; DXA/task residuals are closed and the reviewed ownership map is consumable by R2;
-- OST-CLINICAL S1 has completed its independent review/release path and is merged on current `main`; fresh R2 source inspection must use current-main fracture/fragility semantics rather than stale pre-S1 assumptions;
-- R2 may proceed because it is a bounded trajectory-capability review, but it must fresh-resolve these owners at execution time and must not promote pending/unmerged conclusions into authoritative clinical truth.
+- OST-CLINICAL S1 had completed its independent review/release path and was merged on then-current `main`; the later R2 inspection used the fresh `main` identified in §0;
+- R2 was authorized as a bounded trajectory-capability review, conditional on fresh owner verification and no promotion of pending/unmerged conclusions into current-main clinical truth.
 
-## 8. R2 authority and exact next action
+## 8. Historical R2 authorization, now fulfilled
 
-R2 is now authorized as the only next substantive OST-UI action.
+At that checkpoint, R2 was authorized as the only next substantive OST-UI action. The requirements below were fulfilled in the R2 artifact named in §0.
 
-It must:
+The authorized review had to:
 
 - consume R1 as established current-product evidence;
 - inspect the current longitudinal runtime/persistence mechanisms directly;
@@ -259,7 +281,7 @@ It must:
 - still fresh-inspect current main for executable truth and do not convert P1 into P2 architecture;
 - keep unresolved future design questions (Q1–Q12) parked.
 
-R2 must STOP after its artifact + local checkpoint and return to the programme coordinator.
+The authorization ended at the artifact plus this local checkpoint; R2 now returns to the programme coordinator.
 
 ## 8A. LifeCourse dependency closure checkpoint
 
@@ -285,41 +307,10 @@ R2 CONSUMABLE OWNERSHIP INPUT
 READY
 ```
 
-R2 may now rely on the reviewed **current-state ownership distinctions** while still fresh-verifying runtime source.
+R2 used the reviewed **current-state ownership distinctions** and fresh-verified runtime source.
 
 This does not authorize P2 target architecture, migration, new stores, new obligation engine, or UI implementation.
 
-## 9. Explicit stop / hold
+## 9. Current stop / hold
 
-Disposition:
-
-**R1 COMPLETE / R2 ELIGIBLE FOR COORDINATOR RECONCILIATION**
-
-This means **eligible for coordinator reconciliation**, not automatic R2 activation.
-
-Exact next action:
-
-**Programme coordinator fresh-resumes OST-UI → verifies R1 branch/head/artifact → reconciles the R1 disposition into the local control plane → only then decides whether to authorize R2.**
-
-R1 itself must now STOP.
-
----
-
-## 9. Explicit stop / hold
-
-Do not:
-
-- start R2 from this R1 reviewer;
-- perform synthesis;
-- redesign screens;
-- create mockups/prototype code;
-- mutate runtime/schema/database;
-- change root canonicals;
-- change PR-1;
-- change fracture/fragility semantics;
-- define new treatment/guideline rules;
-- create a new patient/event/obligation store;
-- decide rebuild scope;
-- create an extra review lane;
-- merge/deploy.
-
+R2 is complete on its separate branch and stops after this local checkpoint. The programme coordinator's review of the exact branch/head/artifact is next; R3 is eligible for coordinator reconciliation, not automatically started. R4 and synthesis remain downstream. No screen redesign, prototype, implementation, schema/database change, root-canonical or PR #121 mutation, clinical-rule change, new store, PR-1/H-12 mutation, merge or deploy belongs to this R2 lane.
