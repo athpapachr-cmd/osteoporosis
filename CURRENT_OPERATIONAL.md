@@ -1,6 +1,6 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** PR-1 H-12 VALUE-CLAIM HARDENING DETERMINISTIC PASS / FIFTH LIVE QUALIFICATION PENDING — NOT RELEASE READY.
+> **STATUS:** PR-1 H-12 VALUE-CLAIM HARDENING DETERMINISTIC PASS / FIFTH LIVE QUALIFICATION 21/22 — NOT RELEASE READY.
 > **Updated:** 2026-10-01 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Fresh verified remote `main`:** `63e903e05c1bfe22ca925374b8994355f6c92baf`.
@@ -31,6 +31,7 @@
 > **Paraphrase-rule exact deterministic head/gate:** `473ada825cd79e69145f01038480be3d111f7d5a` / `36823978604` — SUCCESS (83 focused).
 > **Fourth post-H12 live qualification:** `36824150686` — 21 PASS / 1 FAIL at trigger head `51490713a4a57820fa42d1407d411da149d17876`.
 > **H-12 hardened exact deterministic head/gate:** `7f97359fc8860f209e18c07e5b76c2ac26f0f100` / `36824814247` — SUCCESS (84 focused).
+> **Fifth post-H12 live qualification:** `36824997276` — 21 PASS / 1 FAIL at trigger head `c43ce7ab7a45995f4127f69d4c2fe219f15badb4`; `garbled_speech` emitted zero candidates.
 > **Safe credential/schema boundary:** CLOSED; Actions secret available/masked, PHI approval false, strict Structured Outputs accepted.
 > **Medical Report V1.1:** CLOSED; do not reopen without separate authority.
 
@@ -599,3 +600,5 @@ Narrow fixture-level correction at `473ada825cd79e69145f01038480be3d111f7d5a`: F
 Fourth trigger head `51490713a4a57820fa42d1407d411da149d17876` passed complete deterministic gate `36824150739`. Live synthetic run `36824150686` returned 21 PASS / 1 FAIL after all privacy/model/fixture-count boundaries passed. FRAX and shoulder narratives passed; `negative_history_vs_negative_investigation` again had `required_assertion_0_missing` and unsupported `risk.falls_last_12_months`. No oracle permission was added for this fabricated falls claim. The current FRAX/shoulder value stem rule can still authorize an unrelated clause appended to a source-related narrative, so H12-B is not yet considered deterministically closed despite the 21/22 live result.
 
 H12-B hardening at exact head `7f97359fc8860f209e18c07e5b76c2ac26f0f100` adds a deterministic source-vocabulary check to the paraphrase-capable FRAX and shoulder rules. Every substantive value token must occur in the frozen source transcript or a short, explicit fixture list of source-supported inflection/paraphrase terms; source-specific value anchors and authentic `evidence_contains` remain mandatory. Reviewer-class DXA and H-11 prescription narratives retain the stricter whole-value source-span rule. Focused regressions prove legitimate paraphrases pass and appended unrelated denosumab administration claims fail in FRAX and shoulder, as well as DXA. Complete gate `36824814247` SUCCESS: 84 focused PR-1, 6 protected-clinical, 24 Clinical Documents, syntax, navigation and effective scope PASS. This is deterministic evidence; post-hardening live 22/22 remains pending. No frozen transcript input, provider target path or authoritative-write boundary changed.
+
+Fifth trigger head `c43ce7ab7a45995f4127f69d4c2fe219f15badb4` passed complete deterministic gate `36824997233`. Live synthetic run `36824997276` verified `openai / gpt-5.6 / synthetic_eval / phi_approval=false` and 22 unique frozen inputs, then returned 21 PASS / 1 FAIL. All H-12 narrative and temporal cases passed; `garbled_speech` emitted zero candidates and missed its required ambiguity assertion. This is a provider-output failure, not a reason to relax the frozen oracle. The same frozen suite must pass 22/22 before independent review readiness.
