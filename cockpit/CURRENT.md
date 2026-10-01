@@ -21,11 +21,12 @@ D1 is a small, directly visible, read-only Dashboard projection of **Previous / 
 ```text
 BASE MAIN:             87aedad3ad512e4b17a1eb737f0ff8302857aff2
 BRANCH:                feat/cockpit-today-context-strip-v1-2026-10-01
-SUBSTANTIVE HEAD:      2f4db81d2d35e134e451df21ef1ffb7bf2e6e87b
+SUBSTANTIVE HEAD:      b4ce49b6cdb1083d56453abb1e4cbc10c834b294
+R0 DOCS-CORRECTION:    a965cec7c307c354d7a2ef98d7e2ff2937fe46ee
 PR:                    #130 / DRAFT
 IMPLEMENTED:           YES
 FOCUSED TESTED:        YES
-INDEPENDENT R1 REVIEW: PENDING
+INDEPENDENT R1 REVIEW: CLOSURE PASS / REVIEW CHAIN STOPPED
 MERGED:                NO
 DEPLOYED:              NO
 ```
@@ -75,7 +76,9 @@ Focused evidence on that head:
 
 The persistent Clinical Learning L0 red check remains the same non-applicable design-only changed-file scope assertion; its contract validation step passes and D1 does not change Learning contracts.
 
-**Exact next action:** obtain one bounded **delta + affected-cumulative closure review** against the final Product Owner-aligned semantics above. The closure reviewer must verify the actual Aclasta exception and start-order clinician-attention rule, not the superseded greatest-`end_at` assumption. Do not merge or deploy before closure PASS and a separate Product Owner release decision.
+**Final independent closure disposition:** all runtime/product D1 behavior above was accepted. The only remaining BLOCK was two stale canonical statements that still described the superseded `end_at` semantics. Those two statements were corrected in the R0 canonical-only delta at `a965cec7c307c354d7a2ef98d7e2ff2937fe46ee`; no runtime or test semantics changed. Under `PROCEDURES.md` P4/P5/P7 this requires no new product/implementation review, so the D1 review chain is stopped.
+
+**Exact next action:** the Product Owner has now authorized the lawful PR #130 merge/release step provided the current exact-head state and applicable CI remain clean. Persist this closure checkpoint, mark PR #130 ready for review, merge with exact-head protection, then observe and durably checkpoint the automatic deploy/release state. Do not start D2 implementation before D1 is durably released.
 
 **D2 — Relevant Communication Context** is the next bounded concept after D1, not part of this governance implementation. Its bidirectional read boundary and phone-correlation limit live in `cockpit/PRODUCT_CONSTITUTION.md`. D2 needs its own bounded design/authority before any integration or UI work.
 
