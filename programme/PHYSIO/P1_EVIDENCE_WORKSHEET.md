@@ -138,7 +138,7 @@ Do not label this commercial validation unless actual commercial evidence exists
 
 | Evidence item / claim | Source + version | Exact locator present? | reviewed_on present? | International/local owner clear? | UI wording within source? | Disposition |
 |---|---|---|---|---|---|---|
-|  | Core exercise / active rehabilitation | NICE NG226; EULAR 2023 update; ACR/AF; AAOS; VA/DoD | source has precise recommendation/section; machine position does not store it | yes | yes | yes | supported; P1-F001 locator maintenance |
+| Core exercise / active rehabilitation | NICE NG226; EULAR 2023 update; ACR/AF; AAOS; VA/DoD | source has precise recommendation/section; machine position does not store it | yes | yes | yes | supported; P1-F001 locator maintenance |
 | Progressive strengthening scope | NICE 1.3.1; EULAR rec 3; ACR/AF; AAOS; VA/DoD rec 6 | source precise; machine position lacks exact locator | yes | yes | yes | supported; no strength laundering found |
 | Education / self-management | EULAR rec 2; VA/DoD rec 4; NICE/ACR/AAOS | source precise; machine position lacks exact locator | yes | yes | yes | supported |
 | Manual therapy mixed state | NICE 1.3.6–1.3.7; AAOS Manual Therapy; ACR/AF | source precise; machine position lacks exact locator | yes | yes | yes | mixed state supported |
