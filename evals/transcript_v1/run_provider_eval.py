@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from clinical_excellence.core.providers.openai_transcript import OpenAITranscriptProvider, provider_status
-from clinical_excellence.core.transcript_contracts import TranscriptExtractRequestV1
+from clinical_excellence.core.transcript_contracts import TextValueV1, TranscriptExtractRequestV1
 from clinical_excellence.core.transcript_service import extract_candidates
 
 CASES = Path(__file__).with_name("cases.json")
@@ -14,6 +14,10 @@ CASES = Path(__file__).with_name("cases.json")
 
 def _norm_text(value: str) -> str:
     return re.sub(r"\s+", " ", value or "").strip().casefold()
+
+
+def _norm_source_span(value: str) -> str:
+    return _norm_text(re.sub(r"[^\w]+", " ", value or ""))
 
 
 def _candidate_signature(candidate) -> str:
@@ -44,7 +48,7 @@ def _dict_subset(actual: dict[str, Any], expected: dict[str, Any]) -> bool:
     return True
 
 
-def _component_matches_rule(candidate, component, rule: dict[str, Any]) -> bool:
+def _component_matches_rule(candidate, component, rule: dict[str, Any], transcript: str = "") -> bool:
     semantic_type = rule.get("semantic_type")
     if semantic_type is not None and candidate.semantic_type != semantic_type:
         return False
@@ -80,10 +84,23 @@ def _component_matches_rule(candidate, component, rule: dict[str, Any]) -> bool:
         if not snippet or _norm_text(str(evidence_contains)) not in snippet:
             return False
 
+    value_text_contains = rule.get("value_text_contains")
+    if value_text_contains is not None:
+        needle = _norm_text(str(value_text_contains))
+        if not needle or not isinstance(component.value, TextValueV1) or needle not in _norm_text(component.value.text):
+            return False
+
+    if rule.get("value_text_source_span"):
+        if not isinstance(component.value, TextValueV1):
+            return False
+        text = _norm_source_span(component.value.text)
+        if not text or text not in _norm_source_span(transcript):
+            return False
+
     return True
 
 
-def _candidate_matches(candidate, rule: dict[str, Any]) -> bool:
+def _candidate_matches(candidate, rule: dict[str, Any], transcript: str = "") -> bool:
     semantic_type = rule.get("semantic_type")
     if semantic_type is not None and candidate.semantic_type != semantic_type:
         return False
@@ -99,7 +116,7 @@ def _candidate_matches(candidate, rule: dict[str, Any]) -> bool:
     components = [component for component in candidate.components if component.concept_key == concept_key]
     if len(components) != 1:
         return False
-    return _component_matches_rule(candidate, components[0], rule)
+    return _component_matches_rule(candidate, components[0], rule, transcript)
 
 
 def _group_rule_component(group: dict[str, Any], component_rule: dict[str, Any]) -> dict[str, Any]:
@@ -111,25 +128,26 @@ def _group_rule_component(group: dict[str, Any], component_rule: dict[str, Any])
     return merged
 
 
-def _candidate_group_matches(candidate, group: dict[str, Any]) -> bool:
+def _candidate_group_matches(candidate, group: dict[str, Any], transcript: str = "") -> bool:
     candidate_rule = {
         key: group[key]
         for key in ("semantic_type", "source_assertion")
         if key in group
     }
-    if not _candidate_matches(candidate, candidate_rule):
+    if not _candidate_matches(candidate, candidate_rule, transcript):
         return False
     components = group.get("components", [])
     if not components:
         return False
     return all(
-        _candidate_matches(candidate, _group_rule_component(group, component_rule))
+        _candidate_matches(candidate, _group_rule_component(group, component_rule), transcript)
         for component_rule in components
     )
 
 
 def _evaluate_case(item: dict[str, Any], result) -> list[str]:
     failures: list[str] = []
+    transcript = item.get("transcript", "")
 
     if result.meta.authoritative_write or result.meta.raw_persisted or result.meta.candidates_persisted:
         failures.append("non_ephemeral_response_meta")
@@ -150,16 +168,16 @@ def _evaluate_case(item: dict[str, Any], result) -> list[str]:
 
     required_assertions = item.get("required_assertions", [])
     for index, rule in enumerate(required_assertions):
-        if not any(_candidate_matches(candidate, rule) for candidate in result.candidates):
+        if not any(_candidate_matches(candidate, rule, transcript) for candidate in result.candidates):
             failures.append(f"required_assertion_{index}_missing")
 
     required_groups = item.get("required_candidate_groups", [])
     for index, group in enumerate(required_groups):
-        if not any(_candidate_group_matches(candidate, group) for candidate in result.candidates):
+        if not any(_candidate_group_matches(candidate, group, transcript) for candidate in result.candidates):
             failures.append(f"required_candidate_group_{index}_missing")
 
     for index, rule in enumerate(item.get("forbidden_assertions", [])):
-        if any(_candidate_matches(candidate, rule) for candidate in result.candidates):
+        if any(_candidate_matches(candidate, rule, transcript) for candidate in result.candidates):
             failures.append(f"forbidden_assertion_{index}_present")
 
     for concept_key in item.get("forbidden_concepts", []):
@@ -181,7 +199,7 @@ def _evaluate_case(item: dict[str, Any], result) -> list[str]:
     for candidate in result.candidates:
         for component in candidate.components:
             if not any(
-                rule.get("concept_key") and _component_matches_rule(candidate, component, rule)
+                rule.get("concept_key") and _component_matches_rule(candidate, component, rule, transcript)
                 for rule in authorization_rules
             ):
                 failures.append(f"unexpected_assertion_{component.concept_key}")

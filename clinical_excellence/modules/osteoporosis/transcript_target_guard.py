@@ -71,6 +71,7 @@ NEGATED_PRESENCE_CONCEPTS = {
 # preferences and decisions use their dedicated decision semantics instead.
 TREATMENT_RUNTIME_SEMANTICS = {"patient_history_fact"}
 ADMINISTRATION_RUNTIME_SEMANTICS = {"patient_history_fact", "objective_result", "followup_task"}
+FUTURE_TEMPORALITIES = {"future", "planned"}
 
 
 def _component(candidate: ProviderCandidateV1, key: str):
@@ -129,6 +130,13 @@ def map_candidate(candidate: ProviderCandidateV1) -> list[TargetMappingV1]:
 
     mappings = _base_map_candidate(candidate)
     guarded: list[TargetMappingV1] = []
+    future_or_planned = candidate.source_assertion.temporality in FUTURE_TEMPORALITIES
+    administration_status = _component(candidate, "administration.status")
+    asserts_completed_administration = (
+        administration_status is not None
+        and isinstance(administration_status.value, CodeValueV1)
+        and administration_status.value.code == "done"
+    ) or _component(candidate, "administration.actual_date") is not None
 
     for mapping in mappings:
         if mapping.status != "mapped" or len(mapping.component_keys) != 1:
@@ -166,6 +174,21 @@ def map_candidate(candidate: ProviderCandidateV1) -> list[TargetMappingV1]:
         if key in ADMINISTRATION_EVENT_CONCEPTS and candidate.semantic_type not in ADMINISTRATION_RUNTIME_SEMANTICS:
             guarded.append(_ambiguous(mapping, "SEMANTIC_TYPE_NOT_ALLOWED_FOR_ADMINISTRATION_EVENT"))
             continue
+
+        # A future/planned assertion cannot populate an actual treatment episode.
+        # Evaluate the whole candidate so a conflicting status/date cannot leave
+        # its agent or other companion fields mapped as positive runtime truth.
+        if future_or_planned and key in TREATMENT_EPISODE_CONCEPTS:
+            guarded.append(_ambiguous(mapping, "TEMPORAL_TREATMENT_EPISODE_CONFLICT"))
+            continue
+
+        if future_or_planned and key in ADMINISTRATION_EVENT_CONCEPTS:
+            if asserts_completed_administration:
+                guarded.append(_ambiguous(mapping, "TEMPORAL_ADMINISTRATION_CONFLICT"))
+                continue
+            if candidate.semantic_type != "followup_task":
+                guarded.append(_ambiguous(mapping, "TEMPORAL_ADMINISTRATION_SEMANTIC_CONFLICT"))
+                continue
 
         if key == "fracture.site":
             guarded.append(_guard_code(mapping, component, FRACTURE_SITES, "UNSUPPORTED_FRACTURE_SITE"))
@@ -262,4 +285,5 @@ __all__ = [
     "ADMINISTRATION_EVENT_CONCEPTS",
     "TREATMENT_RUNTIME_SEMANTICS",
     "ADMINISTRATION_RUNTIME_SEMANTICS",
+    "FUTURE_TEMPORALITIES",
 ]

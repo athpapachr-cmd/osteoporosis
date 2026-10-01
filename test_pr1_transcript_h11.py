@@ -71,6 +71,8 @@ def test_h11_prescription_case_allows_only_source_bound_nonruntime_absence_narra
         "value": {"kind": "text"},
         "mapping": {"status": "unmapped", "reason_code": "NO_CURRENT_RUNTIME_TARGET"},
         "evidence_contains": "Δεν αναφέρεται ότι έγινε χορήγηση",
+        "value_text_contains": "Δεν αναφέρεται ότι έγινε χορήγηση",
+        "value_text_source_span": True,
     }
     assert _has_exact_rule(case.get("allowed_assertions", []), narrative_rule)
 
