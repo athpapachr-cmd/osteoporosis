@@ -52,21 +52,15 @@ Focused evidence on the substantive head:
 
 Clinical Learning L0 run `36897403005` validated its own contracts but failed only its **design-only scope** assertion because D1 intentionally changes Cockpit runtime files. That scope gate is not applicable evidence for this R1 Cockpit implementation and does not indicate a Clinical Learning contract regression.
 
-**Independent R1 result:** the first exact-head review returned **BLOCK** on one bounded defect only: Previous was selected by the latest start-sorted row rather than by the greatest completed `end_at ≤ now`. Current/Next semantics, weekly Calendar preservation, identity/privacy boundaries and applicable CI were accepted.
+**Independent R1 result:** the first exact-head review returned **BLOCK** because it interpreted `Previous` as “the completed row with greatest `end_at`” and used an overlapping historical example (08:00–11:00 and 09:00–10:00).
 
-**Bounded correction applied:** `Previous` now selects the eligible row with the greatest valid `end_at`; a focused overlapping-past regression covers the 09:00–10:00 versus 08:00–11:00 case at 11:30. No D1 product behavior or owner changed beyond the reviewed correction.
+**Product Owner correction of the review assumption:** that overlapping historical example is not a valid normal clinic scenario. D1's clinician-facing meaning is **the previous scheduled appointment in the clinic sequence**, not “the appointment that happened to end latest among overlapping rows”. In normal operation appointments are sequential; e.g. 08:00–09:00 A, 09:00–10:00 B, now 11:30 → **Previous = B**. Concurrent-current rows remain a source/data anomaly and already fail closed visibly rather than being silently resolved.
 
-**Corrected tested head:** `1049f5f6622e5cfaeec34850ba7428cc6bb6ac96`.
-
-Focused correction evidence:
-
-- Cockpit Home — run `36901353130` — **SUCCESS**, including syntax, deterministic D1 tests, inherited workspace navigation and diff hygiene;
-- Cockpit Surgery Queue — run `36901352946` — **SUCCESS**;
-- Canonical Impact — run `36901353157` — **SUCCESS**.
+**Bounded implementation alignment:** `Previous` is therefore the last completed row in start-time schedule order. The unrealistic overlapping-past regression was removed and replaced by a focused sequential-clinic regression. Current/Next semantics, weekly Calendar preservation, identity/privacy boundaries and ownership remain unchanged.
 
 The persistent Clinical Learning L0 red check remains the same non-applicable design-only changed-file scope assertion; its contract validation step passes and D1 does not change Learning contracts.
 
-**Exact next action:** obtain exactly **one delta + affected-cumulative closure review** under `PROCEDURES.md` P5 against the corrected tested candidate. Do not reopen a full architecture review. Do not merge or deploy before closure PASS and a separate Product Owner release decision.
+**Exact next action:** run the focused/current PR evidence on this Product Owner-aligned candidate, then perform one bounded closure review whose job is to verify implementation fidelity to the clarified D1 product semantics. Do not ask the closure reviewer to re-impose the superseded overlapping-past assumption. Do not merge or deploy before closure PASS and a separate Product Owner release decision.
 
 **D2 — Relevant Communication Context** is the next bounded concept after D1, not part of this governance implementation. Its bidirectional read boundary and phone-correlation limit live in `cockpit/PRODUCT_CONSTITUTION.md`. D2 needs its own bounded design/authority before any integration or UI work.
 
