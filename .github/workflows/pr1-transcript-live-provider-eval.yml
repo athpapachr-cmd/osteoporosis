@@ -1,5 +1,5 @@
 name: PR-1 live synthetic provider eval
-# Qualification trigger: H-12 source-anchored paraphrase attempt 4
+# Qualification trigger: H-12 source-vocabulary value binding attempt 5
 
 on:
   push:
