@@ -64,9 +64,18 @@ Accepted examples:
 
 **Bounded implementation rule:** D1 uses the ordered `start_at` sequence for Previous/Current attention. If multiple appointments are active and all earlier active rows are `aclasta` while the latest-started active row is non-Aclasta, the latest-started row is Current and the immediately preceding scheduled row is Previous. Other concurrent-current overlaps remain ambiguous and fail closed visibly. Next remains the earliest future `start_at`. Weekly Calendar preservation, identity/privacy boundaries and ownership are unchanged.
 
+**Final bounded correction tested candidate:** substantive runtime/test head `b4ce49b6cdb1083d56453abb1e4cbc10c834b294`.
+
+Focused evidence on that head:
+
+- Cockpit Home — run `36904690143` — **SUCCESS**; this executes the production `appointmentContext` logic and covers sequential Previous, lawful Aclasta overlap, post-overlap Previous by later start, non-Aclasta overlap fail-closed, syntax, workspace navigation and diff hygiene;
+- Cockpit Surgery Queue — run `36904690332` — **SUCCESS**;
+- Canonical Impact — run `36904690084` — **SUCCESS**;
+- Clinical Learning L1/L1B/L1C inherited gates — **SUCCESS**.
+
 The persistent Clinical Learning L0 red check remains the same non-applicable design-only changed-file scope assertion; its contract validation step passes and D1 does not change Learning contracts.
 
-**Exact next action:** run the focused/current PR evidence on this Product Owner-aligned candidate, then perform one bounded closure review whose job is to verify implementation fidelity to the clarified D1 product semantics. Do not ask the closure reviewer to re-impose the superseded overlapping-past assumption. Do not merge or deploy before closure PASS and a separate Product Owner release decision.
+**Exact next action:** obtain one bounded **delta + affected-cumulative closure review** against the final Product Owner-aligned semantics above. The closure reviewer must verify the actual Aclasta exception and start-order clinician-attention rule, not the superseded greatest-`end_at` assumption. Do not merge or deploy before closure PASS and a separate Product Owner release decision.
 
 **D2 — Relevant Communication Context** is the next bounded concept after D1, not part of this governance implementation. Its bidirectional read boundary and phone-correlation limit live in `cockpit/PRODUCT_CONSTITUTION.md`. D2 needs its own bounded design/authority before any integration or UI work.
 
