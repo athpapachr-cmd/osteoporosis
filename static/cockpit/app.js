@@ -96,9 +96,16 @@
     }
 
     const currentIndex = currentItem ? items.indexOf(currentItem) : -1;
-    const previousItem = currentIndex > 0
-      ? items[currentIndex - 1]
-      : (!currentItem && latestStartedItem ? latestStartedItem : null);
+    const latestStartedIndex = latestStartedItem ? items.indexOf(latestStartedItem) : -1;
+    let previousItem = null;
+
+    if (currentIndex > 0) {
+      previousItem = items[currentIndex - 1];
+    } else if (currentConflictCount > 1 && latestStartedIndex > 0) {
+      previousItem = items[latestStartedIndex - 1];
+    } else if (!currentItem && currentConflictCount === 0 && latestStartedItem) {
+      previousItem = latestStartedItem;
+    }
 
     return {
       previous: previousItem ? previousItem.row : null,
