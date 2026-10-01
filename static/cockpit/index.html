@@ -32,16 +32,39 @@
           <div class="panel-head">
             <div>
               <span class="icon-badge">◷</span>
-              <h3>Clinical Calendar</h3>
+              <h3>Σημερινά ραντεβού</h3>
             </div>
             <span id="calendarState" class="status-chip">Φόρτωση…</span>
           </div>
-          <div class="metrics">
-            <div><strong id="todayOsteoporosisCount">—</strong><span>Οστεοπόρωση</span></div>
-            <div><strong id="todayTreatmentCount">—</strong><span>Prolia / Aclasta</span></div>
+
+          <div class="today-context-strip" aria-label="Προηγούμενο, τωρινό και επόμενο ραντεβού">
+            <div class="context-slot">
+              <span class="context-label">Προηγούμενο</span>
+              <strong id="previousAppointmentTime" class="context-time">—</strong>
+              <span id="previousAppointmentPatient" class="context-patient">Φόρτωση…</span>
+              <span id="previousAppointmentType" class="context-type"></span>
+            </div>
+            <div class="context-slot current-slot">
+              <span class="context-label">Τώρα</span>
+              <strong id="currentAppointmentTime" class="context-time">—</strong>
+              <span id="currentAppointmentPatient" class="context-patient">Φόρτωση…</span>
+              <span id="currentAppointmentType" class="context-type"></span>
+            </div>
+            <div class="context-slot">
+              <span class="context-label">Επόμενο</span>
+              <strong id="nextAppointmentTime" class="context-time">—</strong>
+              <span id="nextAppointmentPatient" class="context-patient">Φόρτωση…</span>
+              <span id="nextAppointmentType" class="context-type"></span>
+            </div>
           </div>
+
+          <div class="today-summary" aria-label="Σύνοψη σημερινών ραντεβού">
+            <span><strong id="todayOsteoporosisCount">—</strong> επισκέψεις οστεοπόρωσης</span>
+            <span><strong id="todayTreatmentCount">—</strong> Prolia / Aclasta</span>
+          </div>
+
           <p id="calendarNote" class="panel-note">Διαβάζονται μόνο τα κλινικά ραντεβού που έχουν ήδη εισαχθεί στο Clinical Calendar.</p>
-          <a class="button secondary" href="/static/clinical-calendar/">Άνοιγμα ημερολογίου</a>
+          <a class="button secondary" href="/static/clinical-calendar/">Άνοιγμα εβδομαδιαίου ημερολογίου</a>
         </article>
 
         <article class="panel reception-panel">

@@ -59,5 +59,5 @@ def test_surgery_queue_is_wired_into_clinical_core():
 
 
 def test_calendar_note_reflects_daily_feed_not_future_slice():
-    assert "εκτελείται μία φορά ημερησίως" in JS
+    assert "ενημερώνεται καθημερινά" in JS
     assert "θα συνδεθεί στο επόμενο integration slice" not in JS

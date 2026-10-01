@@ -7,7 +7,78 @@
 
 ## Current bounded action
 
-The next global Cockpit implementation-bearing slice is **COCKPIT TODAY CONTEXT STRIP V1 (D1)**: a small, directly visible, read-only Dashboard projection of **Previous / Current / Next** appointment context from the existing normalized Clinical Calendar. It lets the clinician see who was just seen, who is being seen now and who is next without opening the full calendar. D1 must keep the existing weekly Osteoporosis Clinical Calendar available through a link labelled **«Άνοιγμα εβδομαδιαίου ημερολογίου»**; it does not replace or remove that calendar. Before implementation, record D1's plain-language Product Owner step checkpoint, exact read-only scope and applicable review tier under `PROCEDURES.md`. The Clinical Calendar and its source keep ownership; this slice authorizes no appointment write, booking/cancellation/rescheduling, second calendar, Setmore reminder, Digital Secretary workflow change, messaging transport, Visit Intelligence clinical-state write or patient-matching redesign.
+The active global Cockpit implementation-bearing slice is **COCKPIT TODAY CONTEXT STRIP V1 (D1)** on branch `feat/cockpit-today-context-strip-v1-2026-10-01`, based on verified main `87aedad3ad512e4b17a1eb737f0ff8302857aff2`. On 2026-10-01 the Product Owner confirmed the plain-language D1 step and instructed **«ξεκίνα με D1»**.
+
+D1 is a small, directly visible, read-only Dashboard projection of **Previous / Current / Next** appointment context from the existing normalized Clinical Calendar. It lets the clinician see who was just seen, who is being seen now and who is next without opening the full calendar. The existing weekly Osteoporosis Clinical Calendar remains available through a link labelled **«Άνοιγμα εβδομαδιαίου ημερολογίου»** and is not replaced or removed.
+
+**R1 classification:** bounded UI/read-only projection using unchanged protected Calendar data, with no new clinical fact authority, patient identity authority, write path or external side effect. Expected implementation scope is `static/cockpit/index.html`, `static/cockpit/app.js`, `static/cockpit/styles.css`, `test_cockpit_home.py` and this workstream checkpoint; root `CURRENT_OPERATIONAL.md` records the bounded writer lock. The Clinical Calendar and its source keep ownership. D1 authorizes no appointment write, booking/cancellation/rescheduling, second calendar, Setmore reminder, Digital Secretary workflow change, messaging transport, Visit Intelligence clinical-state write or patient-matching redesign.
+
+**Accepted D1 semantics:** clinician attention follows appointment `start_at` order. `Τώρα` is the single active appointment; when an earlier still-active row is an Aclasta infusion slot and a later non-Aclasta appointment has started, the later appointment is Current. Other simultaneous active overlaps fail closed visibly. `Προηγούμενο` is the immediately preceding appointment in start order relative to Current, or the latest-started completed appointment when there is no Current. `Επόμενο` is the earliest appointment whose `start_at` is later than now. This is schedule context, not live patient-presence tracking. The Home may show `patient_display_name` only from the authenticated protected Calendar response for these slots; it must not render `phone_e164` or `linked_patient_id`.
+
+
+### D1 implementation/tested checkpoint — 2026-10-01
+
+```text
+BASE MAIN:             87aedad3ad512e4b17a1eb737f0ff8302857aff2
+BRANCH:                feat/cockpit-today-context-strip-v1-2026-10-01
+SUBSTANTIVE HEAD:      b4ce49b6cdb1083d56453abb1e4cbc10c834b294
+R0 DOCS-CORRECTION:    a965cec7c307c354d7a2ef98d7e2ff2937fe46ee
+PR:                    #130 / READY
+IMPLEMENTED:           YES
+FOCUSED TESTED:        YES
+INDEPENDENT R1 REVIEW: CLOSURE PASS / REVIEW CHAIN STOPPED
+MERGED:                NO
+DEPLOYED:              NO
+```
+
+Implemented behavior:
+
+- Cockpit Home renders **Προηγούμενο / Τώρα / Επόμενο** directly from the existing authenticated Clinical Calendar read endpoint.
+- Previous / Current clinician attention follows deterministic `start_at` order. A later-started non-Aclasta visit may lawfully become Current while an earlier Aclasta infusion slot remains active; other simultaneous active overlaps fail closed visibly. Next remains the earliest future `start_at`.
+- the context refreshes once per minute while the Dashboard remains open;
+- `patient_display_name` is used only as protected appointment display context; D1 does not consume `phone_e164` or `linked_patient_id`;
+- the existing weekly Osteoporosis calendar remains unchanged and reachable through **«Άνοιγμα εβδομαδιαίου ημερολογίου»**;
+- daily-feed freshness remains stated in clinician-facing language without exposing technical sync metadata;
+- no Calendar write, booking lifecycle, Setmore, Secretary, Zadarma, Visit Intelligence, OST-UI or PR-1 behavior changed.
+
+Focused evidence on the substantive head:
+
+- Cockpit Home tests — run `36897402962` — **SUCCESS**;
+- Cockpit surgery queue — run `36897403159` — **SUCCESS**;
+- Canonical impact guard — run `36897403120` — **SUCCESS**;
+- Physio Knee OA Cockpit integration — run `36897403296` — **SUCCESS**;
+- Physio Knee OA V5 integration — run `36897403218` — **SUCCESS**;
+- Physio jurisdiction overlay — run `36897403208` — **SUCCESS**;
+- Clinical Learning L1 / L1B / L1C inherited gates — **SUCCESS**.
+
+Clinical Learning L0 run `36897403005` validated its own contracts but failed only its **design-only scope** assertion because D1 intentionally changes Cockpit runtime files. That scope gate is not applicable evidence for this R1 Cockpit implementation and does not indicate a Clinical Learning contract regression.
+
+**Independent R1 result:** the first exact-head review returned **BLOCK** because it interpreted `Previous` as “the completed row with greatest `end_at`” and used an overlapping historical example (08:00–11:00 and 09:00–10:00).
+
+**Final Product Owner clarification of D1 scheduling semantics:** normal appointments are sequential, but **Aclasta is a legitimate exception**. Aclasta may occupy a one-hour treatment slot while the patient is in a clinic room and the clinician may start another appointment during the last part of that infusion slot. Therefore clinician attention follows **appointment start order**, not “greatest end time”.
+
+Accepted examples:
+
+- 08:00–09:00 A, 09:00–10:00 B, now 11:30 → **Previous = B**;
+- Aclasta 09:00–10:00 + Review 09:40–10:20, now 09:50 → **Previous = Aclasta / Current = Review**;
+- Aclasta 09:00–10:00 + Review 09:40–09:55, now 10:05 → **Previous = Review**, even though Aclasta ended later.
+
+**Bounded implementation rule:** D1 uses the ordered `start_at` sequence for Previous/Current attention. If multiple appointments are active and all earlier active rows are `aclasta` while the latest-started active row is non-Aclasta, the latest-started row is Current and the immediately preceding scheduled row is Previous. Other concurrent-current overlaps remain ambiguous and fail closed visibly. Next remains the earliest future `start_at`. Weekly Calendar preservation, identity/privacy boundaries and ownership are unchanged.
+
+**Final bounded correction tested candidate:** substantive runtime/test head `b4ce49b6cdb1083d56453abb1e4cbc10c834b294`.
+
+Focused evidence on that head:
+
+- Cockpit Home — run `36904690143` — **SUCCESS**; this executes the production `appointmentContext` logic and covers sequential Previous, lawful Aclasta overlap, post-overlap Previous by later start, non-Aclasta overlap fail-closed, syntax, workspace navigation and diff hygiene;
+- Cockpit Surgery Queue — run `36904690332` — **SUCCESS**;
+- Canonical Impact — run `36904690084` — **SUCCESS**;
+- Clinical Learning L1/L1B/L1C inherited gates — **SUCCESS**.
+
+The persistent Clinical Learning L0 red check remains the same non-applicable design-only changed-file scope assertion; its contract validation step passes and D1 does not change Learning contracts.
+
+**Final independent closure disposition:** all runtime/product D1 behavior above was accepted. The only remaining BLOCK was two stale canonical statements that still described the superseded `end_at` semantics. Those two statements were corrected in the R0 canonical-only delta at `a965cec7c307c354d7a2ef98d7e2ff2937fe46ee`; no runtime or test semantics changed. Under `PROCEDURES.md` P4/P5/P7 this requires no new product/implementation review, so the D1 review chain is stopped.
+
+**Exact next action:** the Product Owner has now authorized the lawful PR #130 merge/release step provided the current exact-head state and applicable CI remain clean. PR #130 is READY. Merge it with exact-head protection, checkpoint the merge identity, then observe and durably checkpoint the automatic deploy/release state. Do not start D2 implementation before D1 is durably released.
 
 **D2 — Relevant Communication Context** is the next bounded concept after D1, not part of this governance implementation. Its bidirectional read boundary and phone-correlation limit live in `cockpit/PRODUCT_CONSTITUTION.md`. D2 needs its own bounded design/authority before any integration or UI work.
 

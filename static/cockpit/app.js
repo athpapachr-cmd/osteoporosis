@@ -11,6 +11,20 @@
     unspecified: "Δεν έχει καθοριστεί"
   };
 
+  const appointmentCategoryLabels = {
+    osteoporosis_first: "Πρώτη επίσκεψη",
+    osteoporosis_review: "Επανέλεγχος",
+    osteoporosis_unspecified: "Οστεοπόρωση",
+    prolia: "Prolia",
+    aclasta: "Aclasta"
+  };
+
+  const appointmentTimeFormatter = new Intl.DateTimeFormat("el-CY", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false
+  });
+
   let surgeryRows = [];
   let surgerySortKey = "queue_position";
   let surgerySortDirection = "asc";
@@ -37,6 +51,108 @@
     return `${parts[2]}/${parts[1]}/${parts[0]}`;
   }
 
+  function parseClinicalAppointmentDate(value) {
+    if (!value) return null;
+    const text = String(value);
+    const hasZone = /(?:Z|[+-]\d{2}:?\d{2})$/.test(text);
+    const parsed = new Date(hasZone ? text : `${text}Z`);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  function appointmentContext(rows, now) {
+    const nowMs = now.getTime();
+    const items = (rows || [])
+      .map((row) => {
+        const start = parseClinicalAppointmentDate(row.start_at);
+        const end = parseClinicalAppointmentDate(row.end_at);
+        if (!start || !end || end <= start) return null;
+        return { row, start: start.getTime(), end: end.getTime() };
+      })
+      .filter(Boolean)
+      .sort((left, right) => left.start - right.start);
+
+    const startedItems = items.filter((item) => item.start <= nowMs);
+    const latestStartedItem = startedItems.length ? startedItems[startedItems.length - 1] : null;
+    const activeItems = items.filter((item) => item.start <= nowMs && nowMs < item.end);
+    const nextItem = items.find((item) => item.start > nowMs) || null;
+
+    let currentItem = null;
+    let currentConflictCount = 0;
+
+    if (activeItems.length === 1) {
+      currentItem = activeItems[0];
+    } else if (activeItems.length > 1) {
+      const latestActiveItem = activeItems[activeItems.length - 1];
+      const earlierActiveItems = activeItems.slice(0, -1);
+      const lawfulAclastaOverlap =
+        latestActiveItem.row.category !== "aclasta"
+        && earlierActiveItems.every((item) => item.row.category === "aclasta");
+
+      if (lawfulAclastaOverlap) {
+        currentItem = latestActiveItem;
+      } else {
+        currentConflictCount = activeItems.length;
+      }
+    }
+
+    const currentIndex = currentItem ? items.indexOf(currentItem) : -1;
+    const latestStartedIndex = latestStartedItem ? items.indexOf(latestStartedItem) : -1;
+    let previousItem = null;
+
+    if (currentIndex > 0) {
+      previousItem = items[currentIndex - 1];
+    } else if (currentConflictCount > 1 && latestStartedIndex > 0) {
+      previousItem = items[latestStartedIndex - 1];
+    } else if (!currentItem && currentConflictCount === 0 && latestStartedItem) {
+      previousItem = latestStartedItem;
+    }
+
+    return {
+      previous: previousItem ? previousItem.row : null,
+      current: currentItem ? currentItem.row : null,
+      currentConflictCount,
+      next: nextItem ? nextItem.row : null
+    };
+  }
+
+  function setAppointmentSlot(prefix, row, emptyText) {
+    const timeNode = $(`${prefix}AppointmentTime`);
+    const patientNode = $(`${prefix}AppointmentPatient`);
+    const typeNode = $(`${prefix}AppointmentType`);
+
+    if (!row) {
+      timeNode.textContent = "—";
+      patientNode.textContent = emptyText;
+      typeNode.textContent = "";
+      return;
+    }
+
+    const start = parseClinicalAppointmentDate(row.start_at);
+    timeNode.textContent = start ? appointmentTimeFormatter.format(start) : "—";
+    patientNode.textContent = row.patient_display_name || "Χωρίς καταχωρημένο όνομα";
+    typeNode.textContent = appointmentCategoryLabels[row.category] || "Οστεοπόρωση";
+  }
+
+  function renderTodayContext(rows, now) {
+    const context = appointmentContext(rows, now);
+    setAppointmentSlot("previous", context.previous, "Δεν υπάρχει προηγούμενο σήμερα");
+    setAppointmentSlot("next", context.next, "Δεν υπάρχει επόμενο σήμερα");
+
+    if (context.currentConflictCount > 1) {
+      $("currentAppointmentTime").textContent = "—";
+      $("currentAppointmentPatient").textContent = `${context.currentConflictCount} ταυτόχρονα ραντεβού`;
+      $("currentAppointmentType").textContent = "Δες το εβδομαδιαίο ημερολόγιο";
+    } else {
+      setAppointmentSlot("current", context.current, "Χωρίς ενεργό ραντεβού");
+    }
+  }
+
+  function clearTodayContext(message) {
+    setAppointmentSlot("previous", null, message);
+    setAppointmentSlot("current", null, message);
+    setAppointmentSlot("next", null, message);
+  }
+
   async function loadClinicalCalendarSummary() {
     const { now, start, end } = localDayBounds();
     $("todayHeading").textContent = formatToday(now);
@@ -49,18 +165,22 @@
         ["osteoporosis_first", "osteoporosis_review", "osteoporosis_unspecified"].includes(row.category)
       ).length;
       const treatments = rows.filter((row) => ["prolia", "aclasta"].includes(row.category)).length;
+
+      renderTodayContext(rows, now);
       $("todayOsteoporosisCount").textContent = String(consultations);
       $("todayTreatmentCount").textContent = String(treatments);
       $("calendarState").textContent = rows.length ? `${rows.length} σήμερα` : "0 σήμερα";
       $("calendarState").classList.add("ready");
       $("calendarNote").textContent = rows.length
-        ? "Σύνοψη χωρίς στοιχεία ταυτότητας ασθενών. Άνοιξε το ημερολόγιο για τις λεπτομέρειες."
-        : "Δεν υπάρχουν κλινικά ραντεβού για σήμερα. Η τροφοδοσία Cal.com → Clinical Calendar εκτελείται μία φορά ημερησίως.";
+        ? "Προβολή προγράμματος από το Clinical Calendar. Το εβδομαδιαίο ημερολόγιο παραμένει η πλήρης προβολή. Το πρόγραμμα ενημερώνεται καθημερινά."
+        : "Δεν υπάρχουν ραντεβού οστεοπόρωσης για σήμερα. Το πρόγραμμα ενημερώνεται καθημερινά.";
     } catch (_) {
+      clearTodayContext("Μη διαθέσιμο");
       $("todayOsteoporosisCount").textContent = "—";
       $("todayTreatmentCount").textContent = "—";
       $("calendarState").textContent = "Μη διαθέσιμο";
-      $("calendarNote").textContent = "Άνοιξε το Clinical Calendar για σύνδεση ή έλεγχο της τρέχουσας τροφοδοσίας.";
+      $("calendarState").classList.remove("ready");
+      $("calendarNote").textContent = "Δεν ήταν δυνατή η φόρτωση της σημερινής κλινικής εικόνας. Άνοιξε το εβδομαδιαίο ημερολόγιο για σύνδεση ή έλεγχο.";
     }
   }
 
@@ -367,5 +487,6 @@
 
   resetSurgeryForm();
   loadClinicalCalendarSummary();
+  window.setInterval(loadClinicalCalendarSummary, 60000);
   loadSurgeryQueue();
 })();

@@ -2,10 +2,10 @@
 
 > **STATUS:** PR-1 transcript extraction release engineering complete; identifiable-transcript privacy/provider gate OPEN; release HOLD.
 > **Reconciled:** 2026-10-01 Asia/Nicosia from fresh remote `main` and the exact PR-1 remote branch checkpoint.
-> **Verified remote `main`:** `63e903e05c1bfe22ca925374b8994355f6c92baf`.
+> **Verified remote `main`:** `87aedad3ad512e4b17a1eb737f0ff8302857aff2`.
 > **Active primary slice:** `PR-1-TRANSCRIPT-INTAKE-CANDIDATE-EXTRACTION-V1-2026-09-16`; design owner: `SLICE_PLAN_CURRENT.md`.
 > **PR-1 branch:** `feat/pr1-transcript-capture-v1-2026-09-16` at `0b45a4c96a7cb9a96893cfa3f14a1708f25e5345` (fresh remote branch check).
-> **Writer lock:** no active overlapping PR-1 runtime writer at that branch checkpoint. The bounded release-engineering writer was released. A new writer must claim an exact scope here before overlap.
+> **Writer lock:** bounded parallel **COCKPIT TODAY CONTEXT STRIP V1 (D1)** release closure ACTIVE on `feat/cockpit-today-context-strip-v1-2026-10-01`, base `87aedad3ad512e4b17a1eb737f0ff8302857aff2`. Runtime/product review is closed: the final independent closure accepted the D1 behavior and the only remaining R0 canonical wording defect was corrected at `a965cec7c307c354d7a2ef98d7e2ff2937fe46ee`. Allowed mutation is now limited to closure/release checkpoints through PR #130 merge/deploy. PR-1 remains on release HOLD with no active PR-1 runtime writer; D1 must not touch PR-1, appointment writes, booking, Secretary or messaging ownership.
 > **Release:** no PR-1 release PR observed among open PRs on 2026-10-01; not merged, deployed or enabled for identifiable transcripts.
 
 ## Current source and evidence
@@ -29,6 +29,8 @@ The implementation branch has reconciled current `main`; `main.py` retained Cock
 The Product Owner authorized bounded PR-1 implementation and synthetic qualification. That does not authorize identifiable transcript processing, release PR approval, merge, deployment, PR-2 authoritative writes or a real-patient pilot.
 
 **Next lawful PR-1 lifecycle action:** keep release HOLD while the identifiable-transcript provider/privacy gate is decided with explicit Product Owner authority. Once that gate is closed, fresh-check `main`, PR-1 branch head, applicable CI and merge/release scope; checkpoint the decision here before opening or advancing the release PR. If the gate remains open, do not advance release. No new independent semantic review is required solely for this docs/canonical reconciliation; a material new behavior or risk receives its own bounded classification under `PROCEDURES.md`.
+
+**Parallel Cockpit D1 authority:** on 2026-10-01 the Product Owner confirmed the plain-language D1 step and instructed “ξεκίνα με D1”. D1 is classified **R1** under `PROCEDURES.md`: bounded authenticated read-only Home projection over the existing Clinical Calendar endpoint, with no new clinical/identity/write authority. The required review chain is now CLOSED: final runtime/product behavior was accepted, the two stale `cockpit/CURRENT.md` statements were corrected as an R0 canonical-only delta, and the automatic CI on that docs-only head is clean for every applicable D1/Cockpit gate. The Product Owner has now explicitly instructed lawful PR #130 merge/release if that state remains clean. PR #130 is READY for release. Exact next D1 action: merge with exact-head protection → checkpoint the merge identity → observe and checkpoint the automatic deploy/release state. Do not start D2 implementation before D1 release is durable.
 
 ## Parallel workstreams — pointers, not lock transfer
 
