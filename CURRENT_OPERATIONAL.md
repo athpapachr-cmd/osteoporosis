@@ -1,6 +1,6 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** PR-1 H-12 BOUNDED CORRECTION QUALIFIED 22/22 — READY FOR SEPARATE INDEPENDENT DELTA+CUMULATIVE REVIEW; NOT RELEASE READY.
+> **STATUS:** PR-1 H-12 INDEPENDENT REVIEW HOLD — H12-A CLOSED / H12-B RELATIONAL VALUE-BINDING RESIDUAL / H13 CORRECTION REQUIRED; NOT RELEASE READY.
 > **Updated:** 2026-10-01 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Fresh verified remote `main`:** `63e903e05c1bfe22ca925374b8994355f6c92baf`.
@@ -606,3 +606,65 @@ H12-B hardening at exact head `7f97359fc8860f209e18c07e5b76c2ac26f0f100` adds a 
 Fifth trigger head `c43ce7ab7a45995f4127f69d4c2fe219f15badb4` passed complete deterministic gate `36824997233`. Live synthetic run `36824997276` verified `openai / gpt-5.6 / synthetic_eval / phi_approval=false` and 22 unique frozen inputs, then returned 21 PASS / 1 FAIL. All H-12 narrative and temporal cases passed; `garbled_speech` emitted zero candidates and missed its required ambiguity assertion. This is a provider-output failure, not a reason to relax the frozen oracle. The same frozen suite must pass 22/22 before independent review readiness.
 
 Sixth trigger at exact head `43a501f8c51854e69062c66d9855fbee7cb47259` changed only the qualification workflow comment after the fifth-result checkpoint; implementation, evaluator, fixtures and transcript inputs were unchanged. Complete deterministic gate `36825475834` SUCCESS: syntax, 84 focused PR-1, 6 protected clinical, 24 Clinical Documents, navigation and effective scope. Live run `36825475846` verified the synthetic-only provider boundary and 22 unique frozen fixtures, then returned 22 PASS / 0 FAIL, including all H-09/H-10/H-11 and H-12 cases. Earlier live variation (VFA/falls and garbled speech) remains a residual reliability observation; no oracle, transcript or provider profile was relaxed. The bounded H-12 implementation is ready for a separate independent delta+cumulative promotion review; this author has not performed that review or any release action.
+
+
+## Independent H-12 delta+cumulative review — HOLD
+
+Fresh separate independent review verified the exact H-12 lineage through qualified head `43a501f8c51854e69062c66d9855fbee7cb47259` and final checkpoint `53ad7d6babb9eee9f0c642ac804cc65769c19dfc`.
+
+Disposition:
+
+```text
+H12-A TEMPORALITY: CLOSED
+H12-B FREE-TEXT SOURCE BINDING: PARTIALLY CLOSED
+H09: PRESERVED
+H10: PRESERVED
+H11: PRESERVED
+FROZEN INPUTS: UNCHANGED
+PRIVACY / AUTHORITY BOUNDARY: PASS
+VERDICT: HOLD_FOR_SEMANTIC_REMEDIATION
+```
+
+The remaining material residual is narrow:
+
+- H-12 source-vocabulary / anchor checks can still accept a clinically false relation among authentic source values.
+- Independent adversarial reproduction used the real FRAX source meaning `MOF 18%, hip 4%` and a narrative that preserved source vocabulary/numbers but swapped the relationships: `hip 18%, MOF 4%`.
+- The final H-12 evaluator returned a false PASS because token/stem membership does not prove that each numeric value remains bound to the correct clinical measure.
+
+This is not a provider-output finding from the final 22/22 run; it is a deterministic oracle-integrity finding.
+
+### H13 bounded correction objective
+
+Close only the remaining relational-binding residual:
+
+```text
+AUTHENTIC SOURCE TOKENS / NUMBERS
+!=
+AUTHORIZED CLINICAL RELATIONSHIP
+
+MEASURE ↔ VALUE associations
+must remain source-grounded.
+```
+
+H13 may change only the existing promotion evaluator, exact affected fixture authorization, focused tests, and these branch-local checkpoints unless source evidence proves another bounded owner is necessary.
+
+H13 must not:
+- relax default-deny;
+- alter the 22 transcript inputs;
+- add a second model/judge;
+- reopen H12-A;
+- weaken H09/H10/H11;
+- start H-05 or browser-lifecycle work;
+- rebase to current main;
+- open release PR / merge / deploy / enable PHI.
+
+Exact next sequence:
+
+```text
+H13 bounded relational-binding correction
+→ deterministic adversarial PASS
+→ full inherited gate PASS
+→ rerun unchanged frozen 22-case GPT-5.6 qualification
+→ fresh independent delta+cumulative review
+→ only PASS_TO_RELEASE_ENGINEERING may advance
+```
