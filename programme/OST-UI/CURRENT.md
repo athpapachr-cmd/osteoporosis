@@ -1,6 +1,6 @@
 # CURRENT.md — OST-UI / Osteoporosis Product Reconstruction
 
-> **STATUS:** R4 RECONCILED; SINGLE SYNTHESIS COMPLETE; PROTOTYPE 1 CONTRACT COMPLETE / RUNTIME NOT STARTED.
+> **STATUS:** R1–R4 COMPLETE / SINGLE SYNTHESIS ACCEPTED / PROTOTYPE 1 CONTRACT ACCEPTED / RUNTIME IMPLEMENTATION AUTHORIZED — NOT STARTED.
 > **Updated:** 2026-10-01 Asia/Nicosia.
 > **Workstream:** OST-UI.
 > **Fresh runtime main reviewed for R4:** **63e903e05c1bfe22ca925374b8994355f6c92baf**.
@@ -30,7 +30,17 @@ PR-1 was reconciled read-only at the **verified remote** head `0b45a4c96a7cb9a96
 
 The bounded Prototype 1 contract is `PROTO1-DENOSUMAB-LONGITUDINAL-ADAPTIVE-VISIT-CONTRACT.md`. It freezes the owner/interface meanings required by R4, five denosumab contexts, one adaptive interaction grammar, the source-linked milestone line, a protected pre-visit summary boundary, clinician-confirmed historical reconciliation, implementation order, acceptance evidence and stop/rollback conditions. It authorizes no new clinical cadence, threshold, treatment choice or patient-specific Cockpit disclosure through the current aggregate Home.
 
-**Exact next action:** Product Owner review of the synthesis and bounded Prototype 1 contract. Before any runtime implementation, fresh-bootstrap current `main`, identify source/API owners, claim a non-overlapping implementation writer scope and resolve the protected patient-specific Cockpit privacy/interface boundary. Prototype 2 remains a separate later contract. No runtime, schema, root-canonical, clinical-rule, PR #121, PR-1, merge or deploy mutation occurred in this documentation step.
+**Product Owner disposition:** synthesis direction accepted. Prototype 1 may proceed to bounded runtime implementation.
+
+Exact next action:
+
+1. fresh-bootstrap current `main`;
+2. claim a non-overlapping Prototype 1 runtime writer scope;
+3. implement only the bounded Denosumab longitudinal adaptive-visit slice defined in `PROTO1-DENOSUMAB-LONGITUDINAL-ADAPTIVE-VISIT-CONTRACT.md`;
+4. preserve existing clinical rules, S1 semantics, PR-1 boundaries and protected persistence owners;
+5. keep patient-specific Cockpit pre-visit disclosure behind its existing privacy/authorization boundary until separately proven.
+
+No additional broad product/architecture review is authorized before implementation. Prototype 2 remains a later separate contract.
 
 The R4 checkpoint below is historical context; this section owns current OST-UI status.
 
