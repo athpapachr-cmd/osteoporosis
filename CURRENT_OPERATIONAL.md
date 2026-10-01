@@ -33,7 +33,8 @@ The Product Owner authorized bounded PR-1 implementation and synthetic qualifica
 ## Parallel workstreams — pointers, not lock transfer
 
 - **Visit Intelligence P0-V0:** `programme/OST-VISIT-INTELLIGENCE/CURRENT.md` exists on local branch head `b22fd5c610d20baf0f8ef3384ca16472cd2d1f92`, not yet on `main`, and owns its contract/projector checkpoint there. A cumulative PASS was reported in the Product Owner handback; its branch-local CURRENT still requests that review, so its coordinator must reconcile the result and make a separate release decision. This root PR-1 HOLD does not grant Visit Intelligence release or UI authority.
-- **Cockpit:** `cockpit/CURRENT.md` owns released Home/Calendar/Surgery state and the next bounded Visit Brief read-surface dependency. `cockpit/PRODUCT_CONSTITUTION.md` owns the Cockpit product boundary.
+- **OST-UI / Osteoporosis Product Reconstruction:** `programme/OST-UI/PROJECT-INDEX.md` and `CURRENT.md` are on the branch-local R4 lineage, absent from `main`. R4 is complete at `5cf4e98bfeb439c3cef6aecae70d48efd07612b4`; one programme coordinator synthesis is pending. No OST-UI runtime writer or prototype implementation authority exists. The synthesis must reconcile the already expressed Product Owner direction before any prototype decision; it does not replace this PR-1 root NOW.
+- **Cockpit:** `cockpit/CURRENT.md` owns released Home/Calendar/Surgery state and the next bounded Today Context Strip V1 read projection. Visit Brief / What Changed remain downstream of P0-V0 release and affected OST-UI decisions. `cockpit/PRODUCT_CONSTITUTION.md` owns the Cockpit product boundary.
 - **PHYSIO:** `programme/PHYSIO/PROJECT-INDEX.md` and `programme/PHYSIO/CURRENT.md` own the read-only P1 evidence work; no PHYSIO runtime writer is recorded there.
 - **OST-CLINICAL:** `programme/OST-CLINICAL/CURRENT.md` owns the completed S1 checkpoint and any local follow-through.
 
