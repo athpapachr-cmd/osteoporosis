@@ -642,3 +642,12 @@ Third comment-only trigger head `6c887c2365393b4d955d1c50218c48b55f4474c7` passe
 Fourth comment-only trigger head `3c420d0481a7720d4b4e525138eec20822d469c5` passed full deterministic workflow `36846284184`. Live workflow `36846284197` returned 21/22 after the same safety/count checks: FRAX passed; only `garbled_speech` again failed the existing narrative anchor/source-span checks. It remains default-denied. No H13 oracle/fixture/input change occurred, and another unchanged run must reach `failed=0` before handback.
 
 Fifth and sixth trigger heads `893ac302f916275930ce8fc70207a54bd8212315` and `fcaaefebbad12b9a437927969476be47b9dd085d` each passed complete deterministic gates `36846680390` and `36847029909`. Live runs `36846680362` and `36847029827` attempt 1 each returned 21/22; only the pre-existing `unrelated_general_clinical_text` source rule failed. Neither the H13 oracle nor frozen inputs changed. The identical `36847029827` attempt 2 at the qualified `fcaaefe` head passed all 22 cases with `failed=0`, including FRAX and both previously variable cases, after the synthetic-only/model/privacy/count checks. The implementation handback is ready for fresh independent delta+cumulative review; release and identifiable transcript use remain on HOLD.
+
+
+## H13 independent disposition
+
+Independent delta+cumulative review returned `PASS_TO_RELEASE_ENGINEERING` at final checkpoint `81af6134510cb8ee2fd991cd323cf04b67c6f480`.
+
+H13 relational value binding is CLOSED; H09/H10/H11/H12-A protections are PRESERVED; frozen inputs remain unchanged; no material semantic promotion residual remains.
+
+Next work is not another semantic correction. It is a separately bounded release-engineering sequence beginning with fresh-main reconciliation/rebase planning, followed by H-05 and executable browser lifecycle evidence. Merge/deploy/PHI/pilot remain unauthorized.
