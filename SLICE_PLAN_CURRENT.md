@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — PR-1 Heidi-first Transcript Intake + Candidate Extraction v1
 
-> **STATUS:** H-12 FOURTH LIVE QUALIFICATION 21/22 FAIL CHECKPOINT / VALUE-CLAIM HARDENING REQUIRED — NOT RELEASE READY.
+> **STATUS:** H-12 VALUE-CLAIM HARDENING DETERMINISTIC PASS / FIFTH LIVE QUALIFICATION PENDING — NOT RELEASE READY.
 > **Activated:** 2026-09-16 Asia/Nicosia.
 > **Slice:** `PR-1-TRANSCRIPT-INTAKE-CANDIDATE-EXTRACTION-V1-2026-09-16`.
 > **Activation main:** `0ab5f9770d220c20e8d94544cb64e93a4aa30d00`.
@@ -28,6 +28,7 @@
 > **Third post-H12 live qualification:** `36823333376` — 19 PASS / 3 FAIL; FRAX source-span paraphrase, shoulder narrative variation, unsupported VFA-case falls assertion.
 > **Paraphrase-rule exact deterministic head/gate:** `473ada825cd79e69145f01038480be3d111f7d5a` / `36823978604` — SUCCESS (83 focused).
 > **Fourth post-H12 live qualification:** `36824150686` — 21 PASS / 1 FAIL; only the unsupported VFA-case falls assertion/missing required assertion.
+> **H-12 hardened exact deterministic head/gate:** `7f97359fc8860f209e18c07e5b76c2ac26f0f100` / `36824814247` — SUCCESS (84 focused).
 > **Writer:** one bounded H-12 PR-1 correction author; operational owner is `CURRENT_OPERATIONAL.md`.
 
 ## 1. Objective
@@ -614,3 +615,5 @@ The third frozen run `36823333376` at trigger head `2ccd5a333e64abdb1568ba712f05
 At `473ada825cd79e69145f01038480be3d111f7d5a`, the FRAX and shoulder narrative rules were narrowed to source-derived value stems plus authentic source-evidence anchors, allowing paraphrase/inflection; the key DXA no-result and prescription/no-administration narratives retain exact normalized whole-value source-span requirements. The adverse invented denosumab value remains rejected, and no transcript input changed. Full deterministic gate `36823978604` passed with 83 focused, 6 protected-clinical, 24 Clinical Documents, syntax, navigation and effective scope. Live qualification remains pending.
 
 Fourth live run `36824150686` at trigger head `51490713a4a57820fa42d1407d411da149d17876` returned 21/22 after deterministic PASS. FRAX and shoulder narratives passed. Only the VFA case omitted required negative-fracture evidence and emitted an unsupported falls assertion; do not authorize it. Before another promotion attempt, strengthen paraphrase-capable value rules against an unrelated appended clinical claim; a source-derived stem alone is insufficient for that adversarial class.
+
+The hardened H12-B evaluator at `7f97359fc8860f209e18c07e5b76c2ac26f0f100` requires each substantive paraphrase-value token to come from the source transcript or exact fixture-approved source-meaning vocabulary. FRAX/shoulder anchor rules remain explicit, DXA/prescription narratives retain whole-value source-span checks, and default-deny/duplicate/evidence protections remain. Focused tests reject appended invented denosumab statements while accepting source-supported paraphrases. Gate `36824814247` passed 84 focused, 6 protected clinical, 24 Clinical Documents, syntax, navigation and effective scope checks. Live 22/22 still required.
