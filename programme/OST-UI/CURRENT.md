@@ -1,6 +1,6 @@
 # CURRENT.md — OST-UI / Osteoporosis Product Reconstruction
 
-> **STATUS:** R3 COMPLETE / LOCAL REVIEW CHECKPOINT / COORDINATOR RECONCILIATION PENDING.
+> **STATUS:** R3 COMPLETE / COORDINATOR ACCEPTED / R4 AUTHORIZED — NOT STARTED.
 > **Updated:** 2026-10-01 Asia/Nicosia.
 > **Workstream:** OST-UI.
 > **Fresh runtime main reviewed for R3:** **63e903e05c1bfe22ca925374b8994355f6c92baf**.
@@ -33,7 +33,21 @@ Disposition:
 
 R3 supports a bounded patient-and-problem entry with source-labelled, decision-changing current state; explicit missing/conflicting information; live derived guidance; evidence on demand; and a secondary six-step detail editor. Reliable present assets support this interaction direction. Treatment-epoch, missed-plan, task-continuity, recommendation/preference, goal, historical-evidence and investigation-provenance gaps remain visible dependencies, not facts that UI can create. R3 did not decide architecture, reconstruction scope, clinical thresholds or implementation.
 
-**Exact next action:** programme coordinator verifies the R3 branch, final head, two-file delta and artifact, then reconciles its disposition. R4 and synthesis remain not started/not authorized by this local review. No UI, clinical-rule, runtime/schema/database, root-canonical, PR #121, PR-1/H-12, merge or deploy action is authorized by this checkpoint.
+**Coordinator reconciliation:** exact remote R3 head `0290689a2c7ce387e03ee9b64edc68f75cf292e2` was verified as two commits ahead of R2 coordinator base `c706976820fd0a4eaa45210ca76eae95f661295c`, changing only this CURRENT file and `R3-POINT-OF-CARE-INTERACTION-REVIEW.md`.
+
+Disposition:
+
+```text
+R3: ACCEPTED / COMPLETE
+REPLAN REQUIRED: NO
+R4: AUTHORIZED / NOT STARTED
+SYNTHESIS: NOT AUTHORIZED
+ROOT PR-1 WRITER: UNCHANGED
+```
+
+Accepted R3 interaction finding: the justified current point-of-care model is patient-and-current-problem first, source-labelled, decision-changing and uncertainty-visible; G1/G2/G3/G4 and the protected longitudinal substrate are reusable; the six-step shell is a secondary detail/documentation editor rather than the required primary clinician-facing workflow. Missing treatment-epoch, obligation, recommendation/preference, goal, historical-evidence and investigation-provenance semantics remain dependencies and must not be fabricated in presentation.
+
+**Exact next action:** execute only the bounded R4 Shared Core / Module Architecture / Reuse review from this coordinator checkpoint. Do not implement or synthesize automatically.
 
 Sections 0A–8A retain R2/R1/coordinator history as context. This §0 and §9 own the present OST-UI NOW.
 
