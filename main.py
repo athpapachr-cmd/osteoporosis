@@ -14,6 +14,7 @@ from clinical_calendar import build_clinical_calendar_router
 from clinical_data import build_clinical_router
 from clinical_data_ext import build_clinical_ext_router
 from clinical_status import build_clinical_status_router
+from clinical_surgery_queue import build_surgery_queue_router
 from clinical_learning import build_learning_router
 from clinical_excellence.core.transcript_router import build_transcript_router
 from clinic_utilities.clinical_documents import build_clinical_documents_router, build_medical_report_router
@@ -40,7 +41,8 @@ async def prevent_stale_clinical_workspace_assets(request: Request, call_next):
 
     response = await call_next(request)
     if (
-        request.url.path.startswith("/static/baseline-audit/")
+        request.url.path.startswith("/static/cockpit/")
+        or request.url.path.startswith("/static/baseline-audit/")
         or request.url.path.startswith("/static/clinic-utilities/")
         or request.url.path.startswith("/static/clinical-learning/")
     ):
@@ -52,7 +54,7 @@ async def prevent_stale_clinical_workspace_assets(request: Request, call_next):
 
 @app.get("/", include_in_schema=False)
 def clinical_workspace_root() -> RedirectResponse:
-    response = RedirectResponse(url="/static/baseline-audit/", status_code=307)
+    response = RedirectResponse(url="/static/cockpit/", status_code=307)
     response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
     return response
 
@@ -63,6 +65,7 @@ app.include_router(build_clinical_status_router(engine))
 app.include_router(build_clinical_router(engine))
 app.include_router(build_clinical_ext_router(engine))
 app.include_router(build_clinical_calendar_router(engine))
+app.include_router(build_surgery_queue_router(engine))
 app.include_router(build_learning_router(engine))
 app.include_router(build_transcript_router())
 app.include_router(build_cu1_physio_referral_router())

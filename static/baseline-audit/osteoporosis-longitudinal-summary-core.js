@@ -3,6 +3,7 @@
 
   const asArray = value => Array.isArray(value) ? value : [];
   const clean = value => typeof value === "string" ? value.trim() : "";
+  const normalizeLowTrauma = value => clean(value).toLowerCase();
   const isObject = value => value && typeof value === "object" && !Array.isArray(value);
   const isCompleted = status => status === "completed" || status === "amended";
   const isIsoDate = value => /^\d{4}-\d{2}-\d{2}$/.test(clean(value));
@@ -110,7 +111,7 @@
 
   function buildFractures(rows) {
     const events = new Map();
-    let priorFragilitySeen = false;
+    let compatibilityFragilityClaimSeen = false;
     let fallbackSite = "";
     let fallbackMonth = "";
     let unidentifiedPresent = false;
@@ -118,7 +119,7 @@
     rows.forEach(row => {
       const payload = payloadOf(row);
       const risk = isObject(payload?.risk_context) ? payload.risk_context : {};
-      if (risk.prior_fragility_fracture === true) priorFragilitySeen = true;
+      if (risk.prior_fragility_fracture === true) compatibilityFragilityClaimSeen = true;
       if (clean(risk.last_fracture_site)) fallbackSite = clean(risk.last_fracture_site);
       if (isYearMonth(risk.last_fracture_month)) fallbackMonth = clean(risk.last_fracture_month);
 
@@ -128,32 +129,53 @@
           unidentifiedPresent = true;
           return;
         }
+
+        const incomingLowTrauma = normalizeLowTrauma(event?.low_trauma);
         if (!events.has(key)) {
           events.set(key, {
             id: clean(event?.id) || null,
             site: clean(event?.site) || null,
             month: isYearMonth(event?.month) ? clean(event.month) : null,
-            fragility: clean(event?.fragility) || null,
+            low_trauma: incomingLowTrauma || null,
+            low_trauma_conflict: false,
             occurred_on_treatment: clean(event?.occurred_on_treatment) || null,
             source_encounter_ids: []
           });
+        } else {
+          const stored = events.get(key);
+          if (!stored.low_trauma_conflict && incomingLowTrauma) {
+            if (!stored.low_trauma) stored.low_trauma = incomingLowTrauma;
+            else if (stored.low_trauma !== incomingLowTrauma) {
+              stored.low_trauma = null;
+              stored.low_trauma_conflict = true;
+            }
+          }
         }
+
         const stored = events.get(key);
         if (row?.encounter_id && !stored.source_encounter_ids.includes(row.encounter_id)) stored.source_encounter_ids.push(row.encounter_id);
       });
     });
 
     const unique = Array.from(events.values());
+    const confirmedFragility = unique.filter(event => !event.low_trauma_conflict && normalizeLowTrauma(event.low_trauma) === "yes");
     const dated = unique.filter(event => event.month).sort((a, b) => a.month.localeCompare(b.month));
     const latest = dated.length ? dated[dated.length - 1] : null;
-    const anyKnown = unique.length || priorFragilitySeen || fallbackSite || fallbackMonth;
+    const anyMechanismConflict = unique.some(event => event.low_trauma_conflict);
+    const anyKnown = unique.length || compatibilityFragilityClaimSeen || fallbackSite || fallbackMonth;
     if (!anyKnown) return { state: "not_documented", documented_count: 0, count_reliability: "absent" };
 
     return {
       state: "documented",
       documented_count: unique.length,
-      count_reliability: unidentifiedPresent ? "partial" : "reliable",
-      prior_fragility_fracture: priorFragilitySeen || unique.length > 0,
+      count_reliability: unidentifiedPresent || anyMechanismConflict ? "partial" : "reliable",
+      prior_fragility_fracture: confirmedFragility.length > 0,
+      confirmed_fragility_count: confirmedFragility.length,
+      fragility_confirmation: confirmedFragility.length
+        ? "confirmed_event"
+        : compatibilityFragilityClaimSeen
+          ? "legacy_claim_unconfirmed"
+          : "not_confirmed",
       most_recent: latest || (fallbackSite || fallbackMonth ? { site: fallbackSite || null, month: fallbackMonth || null } : null)
     };
   }

@@ -2,11 +2,6 @@
   "use strict";
 
   const PREF_PREFIX = "osteoporosis.workspace.ui.v1.";
-  const RF_URL = "/clinical/clinic-utilities/rf";
-  const PHYSIO_URL = "/clinical/clinic-utilities/physio-referral";
-  const SICK_LEAVE_URL = "/clinical/clinic-utilities/sick-leave";
-  const MEDICAL_REPORT_URL = "/clinical/clinic-utilities/medical-report";
-
   function readCollapsed(key) {
     try {
       return sessionStorage.getItem(PREF_PREFIX + key) === "collapsed";
@@ -71,49 +66,7 @@
     });
   }
 
-  function utilityLink({ href, label, icon, external = false }) {
-    const anchor = document.createElement("a");
-    anchor.className = "side-item g4-utility-link";
-    anchor.href = href;
-    if (external) {
-      anchor.target = "_blank";
-      anchor.rel = "noopener noreferrer";
-    }
-    const iconNode = document.createElement("span");
-    iconNode.className = "side-icon";
-    iconNode.setAttribute("aria-hidden", "true");
-    iconNode.textContent = icon;
-    const text = document.createElement("span");
-    text.textContent = label;
-    anchor.append(iconNode, text);
-    return anchor;
-  }
-
-  function ensureClinicUtilitiesNavigation() {
-    const nav = document.querySelector(".side-nav");
-    if (!nav || nav.querySelector("[data-g4-clinic-utilities]")) return;
-
-    const group = document.createElement("div");
-    group.className = "g4-utility-group";
-    group.dataset.g4ClinicUtilities = "true";
-
-    const label = document.createElement("div");
-    label.className = "g4-utility-label";
-    label.textContent = "Clinic Utilities";
-
-    group.append(
-      label,
-      utilityLink({ href: PHYSIO_URL, label: "Φυσιοθεραπεία", icon: "↗" }),
-      utilityLink({ href: SICK_LEAVE_URL, label: "Αναρρωτική άδεια", icon: "✚", external: true }),
-      utilityLink({ href: MEDICAL_REPORT_URL, label: "Ιατρικές εκθέσεις", icon: "▤", external: true }),
-      utilityLink({ href: RF_URL, label: "Ραδιοκύματα — PDF", icon: "⌁", external: true })
-    );
-
-    nav.appendChild(group);
-  }
-
   function refreshUi() {
-    ensureClinicUtilitiesNavigation();
     ensureWorkspaceControls();
   }
 
@@ -136,9 +89,6 @@
   setTimeout(refreshUi, 150);
 
   window.G4WorkspaceErgonomics = Object.freeze({
-    refresh: refreshUi,
-    rfUtilityUrl: RF_URL,
-    sickLeaveUtilityUrl: SICK_LEAVE_URL,
-    medicalReportUtilityUrl: MEDICAL_REPORT_URL
+    refresh: refreshUi
   });
 })();

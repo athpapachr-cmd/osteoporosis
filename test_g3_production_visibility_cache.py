@@ -20,7 +20,7 @@ class G3ProductionVisibilityCacheTest(unittest.TestCase):
     def test_workspace_entrypoint_and_assets_are_not_stale_cacheable(self):
         root = self.client.get("/", follow_redirects=False)
         self.assertEqual(root.status_code, 307)
-        self.assertEqual(root.headers.get("location"), "/static/baseline-audit/")
+        self.assertEqual(root.headers.get("location"), "/static/cockpit/")
         self.assertIn("no-store", root.headers.get("cache-control", ""))
 
         for path in (

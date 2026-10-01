@@ -1,6 +1,6 @@
 (() => {
   const $ = id => document.getElementById(id);
-  const state = { contract: null, pathway: 'A1', selectedHistoryId: '', nsaids: [], others: [], physio: null, imagingValidation: '' };
+  const state = { contract: null, pathway: 'A1', selectedHistoryId: '', nsaids: [], others: [], unknowns: [], learnedMedications: [], physio: null, imagingValidation: '' };
 
   async function api(path, options = {}) {
     const response = await fetch(`/clinical/clinic-utilities/rf${path}`, { credentials: 'same-origin', ...options });
@@ -118,7 +118,9 @@
     if (!text) {
       state.nsaids = [];
       state.others = [];
+      state.unknowns = [];
       renderTrials();
+      $('medicationStatus').textContent = 'Δεν έχει γίνει ανάλυση.';
       return;
     }
     try {
@@ -129,21 +131,82 @@
         body: JSON.stringify({text})
       });
       const result = await response.json();
-      state.nsaids = result.nsaid_candidates;
-      state.others = result.other_candidates;
+      state.nsaids = result.nsaid_candidates || [];
+      state.others = result.other_candidates || [];
+      state.unknowns = result.unrecognized_candidates || [];
       renderTrials();
-      $('medicationStatus').textContent = `Αναγνωρίστηκαν ${result.nsaid_candidates.length + result.other_candidates.length} γραμμές · επιλέγονται έως 3 ΜΣΑΦ + έως 3 άλλα αναλγητικά.`;
+      const recognized = state.nsaids.length + state.others.length;
+      const unknown = state.unknowns.length;
+      $('medicationStatus').textContent = unknown
+        ? `Αναγνωρίστηκαν ${recognized} · ${unknown} χρειάζονται ταξινόμηση.`
+        : `Αναγνωρίστηκαν ${recognized} γραμμές · επιλέγονται έως 3 ΜΣΑΦ + έως 3 άλλα αναλγητικά.`;
+    } catch (error) {
+      showError(error.message);
+    }
+  }
+
+  async function saveMedicationAlias(alias, category) {
+    const name = String(alias || '').trim();
+    if (!name) throw new Error('Συμπλήρωσε πρώτα το όνομα/alias του φαρμάκου.');
+    const response = await api('/api/medication-dictionary', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({alias: name, display_name: name, category, active_ingredient: ''})
+    });
+    const result = await response.json();
+    return result.entry;
+  }
+
+  function addManualTrial(category) {
+    const items = category === 'nsaid' ? state.nsaids : state.others;
+    const selectedCount = items.filter(item => item.auto_selected).length;
+    items.push({
+      source_text: '',
+      category,
+      canonical_key: '',
+      drug_name: '',
+      dose: '',
+      duration: '',
+      warning: '',
+      auto_selected: selectedCount < 3,
+      learned: false,
+      manual: true
+    });
+    renderTrials();
+  }
+
+  async function learnManualTrial(item, category) {
+    try {
+      const entry = await saveMedicationAlias(item.drug_name, category);
+      item.learned = true;
+      item.manual = false;
+      item.canonical_key = `learned:${entry.normalized_alias}`;
+      showOk(`${entry.display_name} αποθηκεύτηκε ως ${category === 'nsaid' ? 'ΜΣΑΦ' : 'άλλο αναλγητικό'}.`);
+      renderTrials();
+      await loadMedicationDictionary();
+    } catch (error) {
+      showError(error.message);
+    }
+  }
+
+  async function classifyUnknown(item, category, aliasInput) {
+    try {
+      const entry = await saveMedicationAlias(aliasInput.value, category);
+      showOk(`${entry.display_name} μαθεύτηκε ως ${category === 'nsaid' ? 'ΜΣΑΦ' : 'άλλο αναλγητικό'}.`);
+      await parseMedication();
+      await loadMedicationDictionary();
     } catch (error) {
       showError(error.message);
     }
   }
 
   function renderTrials() {
-    renderTrialGroup('nsaidRows', state.nsaids);
-    renderTrialGroup('otherRows', state.others);
+    renderTrialGroup('nsaidRows', state.nsaids, 'nsaid');
+    renderTrialGroup('otherRows', state.others, 'other');
+    renderUnknownMedications();
   }
 
-  function renderTrialGroup(containerId, items) {
+  function renderTrialGroup(containerId, items, category) {
     const container = $(containerId);
     container.replaceChildren();
     if (!items.length) {
@@ -161,6 +224,7 @@
       check.checked = !!item.auto_selected;
       const drug = document.createElement('input');
       drug.value = item.drug_name || '';
+      drug.placeholder = 'Φάρμακο';
       const dose = document.createElement('input');
       dose.value = item.dose || '';
       dose.placeholder = 'Δόση';
@@ -176,12 +240,138 @@
       row.title = item.source_text || '';
       row.append(check, drug, dose, duration);
       container.append(row);
+
+      if (item.learned) {
+        const badge = document.createElement('div');
+        badge.className = 'learned-badge';
+        badge.textContent = '✓ learned · clinician-confirmed';
+        container.append(badge);
+      }
+      if (item.manual && !item.learned) {
+        const actions = document.createElement('div');
+        actions.className = 'trial-actions';
+        const learn = document.createElement('button');
+        learn.type = 'button';
+        learn.className = 'btn ghost small';
+        learn.textContent = 'Αποθήκευση στο λεξικό';
+        learn.addEventListener('click', () => learnManualTrial(item, category));
+        actions.append(learn);
+        container.append(actions);
+      }
       if (item.warning) {
         const warning = document.createElement('div');
         warning.className = 'trial-warning';
         warning.textContent = item.warning;
         container.append(warning);
       }
+    });
+  }
+
+  function renderUnknownMedications() {
+    const panel = $('unknownMedicationPanel');
+    const container = $('unknownMedicationRows');
+    container.replaceChildren();
+    panel.hidden = !state.unknowns.length;
+    state.unknowns.forEach(item => {
+      const row = document.createElement('div');
+      row.className = 'unknown-medication';
+      const source = document.createElement('div');
+      source.className = 'unknown-source';
+      source.textContent = item.source_text || '';
+      const alias = document.createElement('input');
+      alias.value = item.suggested_name || '';
+      alias.placeholder = 'Όνομα / εμπορικό alias';
+      const actions = document.createElement('div');
+      actions.className = 'unknown-actions';
+      const nsaid = document.createElement('button');
+      nsaid.type = 'button';
+      nsaid.className = 'btn secondary small';
+      nsaid.textContent = 'ΜΣΑΦ + μάθηση';
+      nsaid.addEventListener('click', () => classifyUnknown(item, 'nsaid', alias));
+      const other = document.createElement('button');
+      other.type = 'button';
+      other.className = 'btn secondary small';
+      other.textContent = 'Άλλο + μάθηση';
+      other.addEventListener('click', () => classifyUnknown(item, 'other', alias));
+      actions.append(nsaid, other);
+      row.append(source, alias, actions);
+      container.append(row);
+    });
+  }
+
+  async function loadMedicationDictionary() {
+    try {
+      const response = await api('/api/medication-dictionary');
+      const result = await response.json();
+      state.learnedMedications = result.entries || [];
+      renderMedicationDictionary();
+    } catch (error) {
+      showError(error.message);
+    }
+  }
+
+  async function reclassifyMedication(entry, category) {
+    try {
+      await saveMedicationAlias(entry.alias, category);
+      await loadMedicationDictionary();
+      await parseMedication();
+    } catch (error) {
+      showError(error.message);
+    }
+  }
+
+  async function deleteMedicationAlias(entry) {
+    try {
+      await api(`/api/medication-dictionary/${encodeURIComponent(entry.id)}`, {method:'DELETE'});
+      await loadMedicationDictionary();
+      await parseMedication();
+    } catch (error) {
+      showError(error.message);
+    }
+  }
+
+  function renderMedicationDictionary() {
+    const container = $('learnedMedicationRows');
+    container.replaceChildren();
+    if (!state.learnedMedications.length) {
+      const empty = document.createElement('div');
+      empty.className = 'muted';
+      empty.textContent = 'Δεν υπάρχουν ακόμη εκμαθημένα φάρμακα.';
+      container.append(empty);
+      return;
+    }
+    state.learnedMedications.forEach(entry => {
+      const row = document.createElement('div');
+      row.className = 'dictionary-row';
+      const label = document.createElement('div');
+      const strong = document.createElement('strong');
+      strong.textContent = entry.display_name || entry.alias;
+      const meta = document.createElement('span');
+      meta.className = 'muted';
+      meta.textContent = entry.category === 'nsaid' ? 'ΜΣΑΦ' : 'Άλλο';
+      label.append(strong, document.createTextNode(' · '), meta);
+      const actions = document.createElement('div');
+      actions.className = 'dictionary-actions';
+      const asNsaid = document.createElement('button');
+      asNsaid.type = 'button';
+      asNsaid.className = 'btn ghost small';
+      asNsaid.textContent = 'ΜΣΑΦ';
+      asNsaid.disabled = entry.category === 'nsaid';
+      asNsaid.addEventListener('click', () => reclassifyMedication(entry, 'nsaid'));
+      const asOther = document.createElement('button');
+      asOther.type = 'button';
+      asOther.className = 'btn ghost small';
+      asOther.textContent = 'Άλλο';
+      asOther.disabled = entry.category === 'other';
+      asOther.addEventListener('click', () => reclassifyMedication(entry, 'other'));
+      const remove = document.createElement('button');
+      remove.type = 'button';
+      remove.className = 'btn ghost small';
+      remove.textContent = 'Διαγραφή';
+      remove.addEventListener('click', () => deleteMedicationAlias(entry));
+      actions.append(asNsaid, asOther, remove);
+      row.append(label, actions);
+      container.append(row);
     });
   }
 
@@ -457,6 +647,12 @@
       if ($('indicationSelect').value === 'OTHER_CUSTOM') applySuggestedLocation();
     });
     $('parseMedicationBtn').addEventListener('click', parseMedication);
+    $('addNsaidBtn').addEventListener('click', () => addManualTrial('nsaid'));
+    $('addOtherBtn').addEventListener('click', () => addManualTrial('other'));
+    $('refreshMedicationDictionary').addEventListener('click', loadMedicationDictionary);
+    $('learnedMedicationDetails').addEventListener('toggle', event => {
+      if (event.currentTarget.open) loadMedicationDictionary();
+    });
     let medTimer;
     $('medicationText').addEventListener('input', () => {
       clearTimeout(medTimer);

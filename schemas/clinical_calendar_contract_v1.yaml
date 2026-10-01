@@ -5,7 +5,8 @@ purpose: >-
   without mixing appointment scheduling with clinical CareTasks/reminders.
 
 source_of_truth:
-  booking_system: Setmore
+  clinical_feed_source: Cal.com upcoming-booking snapshot normalized by the Digital Secretary backend
+  operational_mirror: Setmore may remain a separate Reception sync/mirror; it is not the reason source for this clinical feed
   availability_system: Cal.com
   integration_owner: Digital Secretary backend
   clinical_calendar_owner: Osteoporosis Clinical Excellence system
@@ -60,6 +61,63 @@ classification_rules:
   - ambiguous osteoporosis appointments remain osteoporosis_unspecified
   - unknown/unrelated appointments remain other
 
+snapshot_reconciliation:
+  endpoint: POST /clinical/calendar/appointments/snapshot
+  identity: source + source_appointment_id
+  window:
+    required:
+      - source
+      - window_start
+      - window_end
+    nominal_local_days: 31
+    maximum_elapsed: 31d1h
+    timezone_compatibility: Asia/Nicosia autumn DST fallback may add one elapsed UTC hour
+  maximum_appointments: 2000
+  producer_contract:
+    - send the complete source view for the declared window, not a partial page
+    - include unrelated source appointments in the snapshot so absence has one meaning: no longer present in source truth
+    - do not send a snapshot when provider retrieval is partial, failed, or completeness is unknown
+    - all appointment rows must use the exact same canonical source as the snapshot
+    - every appointment start must be inside the declared window
+  consumer_contract:
+    - reuse the existing appointment classifier and normalized storage schema
+    - upsert relevant rows by source appointment identity
+    - remove a previously relevant row if the same source appointment is now unrelated
+    - remove stored same-source rows in the declared window when their source appointment id is absent from a complete snapshot
+    - never create, cancel, reschedule, authorize, or otherwise mutate a booking
+    - clinician manual classification is stored as a protected consumer-side override and survives future source snapshots
+    - manual classification never writes back to or mutates the source Cal.com booking
+  failure_semantics:
+    - invalid or ambiguous snapshot scope is rejected before stale-row reconciliation
+    - provider payload completeness remains the producer responsibility
+    - an empty complete snapshot is allowed and removes all stored rows for that source/window
+
+reason_transport:
+  normalized_field: comment
+  clinician_output: reason
+  source_contract:
+    secretary_created_booking: Cal.com metadata.notes
+    missing_or_blank_metadata_notes: empty reason
+    booking_fields_responses_reason_fallback: forbidden
+  rule: >-
+    The Digital Secretary producer places only the normalized human visit reason
+    in the existing comment field. Current provider evidence shows no dedicated
+    visit-reason custom booking field on event types 341357 or 341358. The
+    Secretary booking schemas define notes as the short visit reason and the
+    Cal.com create path stores that value at metadata.notes. Raw provider
+    metadata and bookingFieldsResponses are not persisted in the Clinical
+    Excellence database.
+  provider_evidence_2026_09_27: >-
+    Structural inspection of existing Cal.com booking responses for the
+    Limassol and Evrychou event types found only standard/identity keys in
+    bookingFieldsResponses and observed metadata.notes on bookings from both
+    event types. Therefore no custom reason-field slug is required or guessed.
+  out_of_scope:
+    - changing Reception reason triage
+    - changing duration allocation
+    - adding or writing a new Cal.com custom visit-reason booking field
+    - AC-4B booking mutation/provider propagation
+
 data_minimization:
   - clinician-facing Calendar returns only relevant_calendar_categories
   - new unrelated appointments are not persisted in the clinical appointment store
@@ -88,8 +146,9 @@ security:
   public_repo_rule: never commit appointment/patient data or secret values
 
 next_integration_slice:
-  - do not modify the Digital Secretary while its current active work is in progress
-  - later expose/send a normalized Setmore appointment feed from the Digital Secretary backend
-  - reconcile source appointment IDs by upsert, never duplicate on refresh
+  - add the Digital Secretary producer only after this snapshot consumer contract is fixed
+  - reuse the existing Cal.com read/normalization path; do not add a second provider reader
+  - use source-proven metadata.notes for Secretary-created booking reasons; do not guess generic bookingFieldsResponses fields
+  - post only complete bounded snapshots and fail closed on partial provider retrieval
   - add optional patient linking by stable identifier/phone matching with clinician review
   - add CareTask engine separately after appointment feed is live

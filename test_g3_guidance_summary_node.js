@@ -143,13 +143,16 @@ function planFor(current, historical = []) {
 
 // 6. Repeated snapshots of the same stable fracture event are not double-counted.
 {
-  const fracture = { id: "fx-1", site: "vertebral", month: "2025-03", fragility: "yes" };
+  const fracture = { id: "fx-1", site: "vertebral", month: "2025-03", low_trauma: "yes" };
   const encounters = [
     encounter("e1", "2025-03-20", { internal_uuid: "old-1", fracture_history: { events: [fracture] }, risk_context: { prior_fragility_fracture: true } }),
     encounter("e2", "2025-06-20", { internal_uuid: "old-2", fracture_history: { events: [fracture] }, risk_context: { prior_fragility_fracture: true } })
   ];
   const summary = g3.buildSummary({ encounters, projection: g1.buildLongitudinalProjection(encounters), currentCase: baseCase(), historyStatus: "loaded" });
   assert.strictEqual(summary.fractures.documented_count, 1);
+  assert.strictEqual(summary.fractures.prior_fragility_fracture, true);
+  assert.strictEqual(summary.fractures.confirmed_fragility_count, 1);
+  assert.strictEqual(summary.fractures.fragility_confirmation, "confirmed_event");
   assert.strictEqual(summary.fractures.most_recent.month, "2025-03");
 }
 
@@ -200,6 +203,110 @@ function planFor(current, historical = []) {
   const summary = g3.buildSummary({ encounters: [], labs: [], projection: {}, currentCase: baseCase(), historyStatus: "unavailable" });
   assert.strictEqual(summary.state, "unavailable");
   assert(!Object.prototype.hasOwnProperty.call(summary, "course"));
+}
+
+// 11. S1: generic traumatic/uncertain/missing fractures remain documented without becoming confirmed fragility.
+{
+  const mechanisms = ["no", "uncertain", "", undefined];
+  mechanisms.forEach((mechanism, index) => {
+    const event = { id: `s1-g3-generic-${index}`, site: "hip", month: "2025-04" };
+    if (mechanism !== undefined) event.low_trauma = mechanism;
+    const encounters = [
+      encounter(`s1-g3-e-${index}`, "2025-04-20", {
+        fracture_history: { events: [event] },
+        risk_context: { prior_fragility_fracture: false }
+      })
+    ];
+    const summary = g3.buildSummary({ encounters, projection: g1.buildLongitudinalProjection(encounters), currentCase: baseCase(), historyStatus: "loaded" });
+    assert.strictEqual(summary.fractures.documented_count, 1);
+    assert.strictEqual(summary.fractures.prior_fragility_fracture, false);
+    assert.strictEqual(summary.fractures.confirmed_fragility_count, 0);
+    assert.strictEqual(summary.fractures.fragility_confirmation, "not_confirmed");
+  });
+}
+
+// 12. S1: legacy compatibility prior=true with zero structured events stays zero and is not upgraded to confirmed fragility.
+{
+  const encounters = [
+    encounter("s1-g3-legacy-zero", "2025-05-20", {
+      risk_context: {
+        prior_fragility_fracture: true,
+        last_fracture_site: "hip",
+        last_fracture_month: "2024-10"
+      },
+      fracture_history: { events: [] }
+    })
+  ];
+  const summary = g3.buildSummary({ encounters, projection: g1.buildLongitudinalProjection(encounters), currentCase: baseCase(), historyStatus: "loaded" });
+  assert.strictEqual(summary.fractures.documented_count, 0);
+  assert.strictEqual(summary.fractures.prior_fragility_fracture, false);
+  assert.strictEqual(summary.fractures.confirmed_fragility_count, 0);
+  assert.strictEqual(summary.fractures.fragility_confirmation, "legacy_claim_unconfirmed");
+  assert.strictEqual(summary.fractures.most_recent.site, "hip");
+}
+
+// 13. S1: a structured low_trauma=yes event controls derived fragility even if compatibility prior=false.
+{
+  const encounters = [
+    encounter("s1-g3-structured-yes", "2025-06-20", {
+      risk_context: { prior_fragility_fracture: false },
+      fracture_history: { events: [{ id: "s1-g3-yes", site: "distal_radius", month: "2025-06", low_trauma: "yes" }] }
+    })
+  ];
+  const summary = g3.buildSummary({ encounters, projection: g1.buildLongitudinalProjection(encounters), currentCase: baseCase(), historyStatus: "loaded" });
+  assert.strictEqual(summary.fractures.documented_count, 1);
+  assert.strictEqual(summary.fractures.prior_fragility_fracture, true);
+  assert.strictEqual(summary.fractures.confirmed_fragility_count, 1);
+  assert.strictEqual(summary.fractures.fragility_confirmation, "confirmed_event");
+}
+
+// 14. S1: stale event.fragility is non-canonical and cannot upgrade an event without low_trauma.
+{
+  const encounters = [
+    encounter("s1-g3-stale-field", "2025-07-20", {
+      risk_context: { prior_fragility_fracture: false },
+      fracture_history: { events: [{ id: "s1-g3-stale", site: "hip", month: "2025-07", fragility: "yes" }] }
+    })
+  ];
+  const summary = g3.buildSummary({ encounters, projection: g1.buildLongitudinalProjection(encounters), currentCase: baseCase(), historyStatus: "loaded" });
+  assert.strictEqual(summary.fractures.documented_count, 1);
+  assert.strictEqual(summary.fractures.prior_fragility_fracture, false);
+  assert.strictEqual(summary.fractures.confirmed_fragility_count, 0);
+}
+
+// 15. S1: conflicting explicit mechanism snapshots for one stable ID fail closed without duplicating the fracture.
+{
+  const encounters = [
+    encounter("s1-g3-conflict-1", "2025-08-01", {
+      fracture_history: { events: [{ id: "s1-g3-conflict", site: "vertebral", month: "2025-07", low_trauma: "yes" }] }
+    }),
+    encounter("s1-g3-conflict-2", "2025-08-15", {
+      fracture_history: { events: [{ id: "s1-g3-conflict", site: "vertebral", month: "2025-07", low_trauma: "no" }] }
+    })
+  ];
+  const summary = g3.buildSummary({ encounters, projection: g1.buildLongitudinalProjection(encounters), currentCase: baseCase(), historyStatus: "loaded" });
+  assert.strictEqual(summary.fractures.documented_count, 1);
+  assert.strictEqual(summary.fractures.prior_fragility_fracture, false);
+  assert.strictEqual(summary.fractures.confirmed_fragility_count, 0);
+  assert.strictEqual(summary.fractures.count_reliability, "partial");
+}
+
+// 16. S1: legacy prior=true plus uncertain/missing structured mechanism remains unconfirmed rather than upgraded.
+{
+  ["uncertain", ""].forEach((mechanism, index) => {
+    const event = { id: `s1-g3-legacy-uncertain-${index}`, site: "hip", month: "2025-09" };
+    if (mechanism) event.low_trauma = mechanism;
+    const encounters = [
+      encounter(`s1-g3-legacy-u-${index}`, "2025-09-20", {
+        risk_context: { prior_fragility_fracture: true },
+        fracture_history: { events: [event] }
+      })
+    ];
+    const summary = g3.buildSummary({ encounters, projection: g1.buildLongitudinalProjection(encounters), currentCase: baseCase(), historyStatus: "loaded" });
+    assert.strictEqual(summary.fractures.documented_count, 1);
+    assert.strictEqual(summary.fractures.prior_fragility_fracture, false);
+    assert.strictEqual(summary.fractures.fragility_confirmation, "legacy_claim_unconfirmed");
+  });
 }
 
 console.log("G3 guidance salience + longitudinal summary regressions: PASS");

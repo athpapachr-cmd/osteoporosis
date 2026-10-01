@@ -27,8 +27,11 @@ from .persistence import (
     get_procedure_history,
     initialize_rf_tables,
     list_procedure_history,
+    list_medication_aliases,
     record_application,
     record_legacy_procedure,
+    upsert_medication_alias,
+    delete_medication_alias,
 )
 
 MAX_IMAGING_BYTES = 20 * 1024 * 1024
@@ -103,6 +106,13 @@ class RFTextRequest(BaseModel):
     text: str = Field(default="", max_length=30000)
 
 
+class RFMedicationDictionaryEntry(BaseModel):
+    alias: str = Field(min_length=1, max_length=120)
+    category: Literal["nsaid", "other"]
+    display_name: str = Field(default="", max_length=160)
+    active_ingredient: str = Field(default="", max_length=160)
+
+
 def _parse_iso_date(value: str, label: str) -> date:
     try:
         return date.fromisoformat(str(value or "").strip())
@@ -167,10 +177,10 @@ def _validate_exact_location(draft: RFApplicationDraft, indication: dict) -> str
     return actual
 
 
-def _resolve_medications(draft: RFApplicationDraft):
+def _resolve_medications(draft: RFApplicationDraft, learned_aliases: list[dict] | None = None):
     # The official table provides capacity for up to three NSAIDs and up to
     # three other analgesics. It is not a minimum-treatment requirement.
-    parsed = parse_medications(draft.full_medication_text) if draft.full_medication_text.strip() else {
+    parsed = parse_medications(draft.full_medication_text, learned_aliases or []) if draft.full_medication_text.strip() else {
         "auto_selected_nsaids": [],
         "auto_selected_others": [],
     }
@@ -179,7 +189,7 @@ def _resolve_medications(draft: RFApplicationDraft):
     return nsaid, other
 
 
-def _validate_a1(draft: RFApplicationDraft, indication: dict):
+def _validate_a1(draft: RFApplicationDraft, indication: dict, learned_aliases: list[dict] | None = None):
     onset = _parse_iso_date(draft.pain_onset_date, "έναρξη πόνου")
     assessment = _parse_iso_date(draft.last_assessment_date, "τελευταία αξιολόγηση")
     if draft.pain_onset_vas is None or draft.last_assessment_vas is None:
@@ -207,7 +217,7 @@ def _validate_a1(draft: RFApplicationDraft, indication: dict):
             status_code=422,
             detail="Υπάρχουν ασαφείς/μη έγκυρες ημερομηνίες φυσιοθεραπείας. Χρειάζεται πλήρες έτος.",
         )
-    nsaid, other = _resolve_medications(draft)
+    nsaid, other = _resolve_medications(draft, learned_aliases)
     return {
         "pain_onset_date": onset.isoformat(),
         "pain_onset_vas": draft.pain_onset_vas,
@@ -388,9 +398,33 @@ def build_rf_router(engine: Engine) -> APIRouter:
         )
         return {"found": bool(rows), "procedures": rows}
 
+    @router.get("/api/medication-dictionary")
+    def rf_medication_dictionary():
+        return {"entries": list_medication_aliases(engine)}
+
+    @router.post("/api/medication-dictionary")
+    def rf_upsert_medication_dictionary(req: RFMedicationDictionaryEntry):
+        try:
+            entry = upsert_medication_alias(
+                engine,
+                alias=req.alias,
+                category=req.category,
+                display_name=req.display_name,
+                active_ingredient=req.active_ingredient,
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        return {"entry": entry}
+
+    @router.delete("/api/medication-dictionary/{alias_id}")
+    def rf_delete_medication_dictionary(alias_id: str):
+        if not delete_medication_alias(engine, alias_id):
+            raise HTTPException(status_code=404, detail="Το εκμαθημένο φάρμακο δεν βρέθηκε")
+        return {"deleted": True}
+
     @router.post("/api/parse-medications")
     def rf_parse_medications(req: RFTextRequest):
-        return parse_medications(req.text)
+        return parse_medications(req.text, list_medication_aliases(engine))
 
     @router.post("/api/parse-physio")
     def rf_parse_physio(req: RFTextRequest):
@@ -447,7 +481,7 @@ def build_rf_router(engine: Engine) -> APIRouter:
         legacy = None
 
         if draft.pathway == "A1":
-            payload.update(_validate_a1(draft, indication))
+            payload.update(_validate_a1(draft, indication, list_medication_aliases(engine)))
         else:
             if draft.procedure_history_id and draft.legacy_history is not None:
                 raise HTTPException(

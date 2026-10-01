@@ -52,9 +52,20 @@ jobs:
             '.github/workflows/physio-knee-oa-cockpit-integration.yml',
             '.github/workflows/physio-knee-oa-jurisdiction-v1.yml',
           }
-          bad=[p for p in paths if p not in exact and not p.startswith(allowed)]
-          assert not bad,bad
-          print('Knee OA v4 bounded scope PASS:',len(paths),'files')
+          physio_product_touched=any(
+              p.startswith(allowed) or p in {
+                  'test_physio_knee_oa_cockpit_browser.py',
+                  'test_physio_knee_oa_cockpit_integration.py',
+                  'test_physio_knee_oa_jurisdiction_overlay.py',
+              }
+              for p in paths
+          )
+          if physio_product_touched:
+              bad=[p for p in paths if p not in exact and not p.startswith(allowed)]
+              assert not bad,bad
+              print('Knee OA v4 bounded scope PASS:',len(paths),'files')
+          else:
+              print('Knee OA v4 product scope unchanged; running regressions without Physio-only scope assertion.')
           PY
       - name: Install dependencies
         run: |

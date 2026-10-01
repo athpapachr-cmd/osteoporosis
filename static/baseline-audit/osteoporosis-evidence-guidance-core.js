@@ -19,6 +19,7 @@
   const numberOrNull = value => value === "" || value === null || value === undefined || Number.isNaN(Number(value)) ? null : Number(value);
   const isIsoDate = value => /^\d{4}-\d{2}-\d{2}$/.test(clean(value));
   const normalizeAgent = value => clean(value).toLowerCase();
+  const normalizeLowTrauma = value => clean(value).toLowerCase();
   const isCompletedStatus = status => status === "completed" || status === "amended";
 
   function parseIsoDate(value) {
@@ -73,19 +74,37 @@
   }
 
   function deduplicateFractureEvents(events) {
-    const seen = new Set();
-    const result = [];
+    const byKey = new Map();
+    const orderedKeys = [];
     asArray(events).forEach(event => {
       if (!event || typeof event !== "object") return;
       const id = clean(event.id);
       const key = id
         ? `id:${id}`
-        : `fact:${clean(event.site)}|${clean(event.month)}|${clean(event.vertebral_level || event.vertebral_level_or_type)}|${clean(event.low_trauma)}`;
-      if (seen.has(key)) return;
-      seen.add(key);
-      result.push({ ...event });
+        : `fact:${clean(event.site)}|${clean(event.month)}|${clean(event.vertebral_level || event.vertebral_level_or_type)}|${normalizeLowTrauma(event.low_trauma)}`;
+      if (!byKey.has(key)) {
+        byKey.set(key, { ...event });
+        orderedKeys.push(key);
+        return;
+      }
+
+      // Stable-ID snapshots can repeat across encounters. Missing later mechanism data
+      // does not erase prior explicit data, but conflicting explicit values fail closed.
+      const stored = byKey.get(key);
+      if (stored.low_trauma_conflict === true) return;
+      const priorMechanism = normalizeLowTrauma(stored.low_trauma);
+      const nextMechanism = normalizeLowTrauma(event.low_trauma);
+      if (!nextMechanism) return;
+      if (!priorMechanism) {
+        stored.low_trauma = event.low_trauma;
+        return;
+      }
+      if (priorMechanism !== nextMechanism) {
+        stored.low_trauma = "";
+        stored.low_trauma_conflict = true;
+      }
     });
-    return result;
+    return orderedKeys.map(key => byKey.get(key));
   }
 
   function collectHistoricalFractures(historicalEncounters, currentInternalUuid) {
@@ -184,10 +203,8 @@
   }
 
   function currentFragilityFracture(currentCase, currentFractures) {
-    const archetype = clean(currentCase?.encounter_archetype);
-    if (archetype === "post_fragility_fracture" || archetype === "fracture_on_treatment") return true;
     if (clean(currentCase?.fracture_history?.interval_fracture_status) !== "yes") return false;
-    return asArray(currentFractures).some(event => clean(event?.low_trauma) === "yes");
+    return asArray(currentFractures).some(event => event?.low_trauma_conflict !== true && normalizeLowTrauma(event?.low_trauma) === "yes");
   }
 
   function activeAgentSet(snapshot) {
@@ -227,7 +244,7 @@
     const projectedAgent = normalizeAgent(projection?.treatment_projection?.active_episode?.agent);
     if (!current?.step4?.treatment_episodes?.length && projectedAgent) activeAgents.add(projectedAgent);
 
-    const vertebralFragility = allFractures.filter(event => clean(event?.site) === "vertebral" && clean(event?.low_trauma) !== "no");
+    const vertebralFragility = allFractures.filter(event => clean(event?.site) === "vertebral" && event?.low_trauma_conflict !== true && normalizeLowTrauma(event?.low_trauma) === "yes");
     const recentVertebral = vertebralFragility.some(event => {
       const months = monthsSinceYearMonth(event?.month, encounterDate);
       return months !== null && months >= 0 && months <= 24;

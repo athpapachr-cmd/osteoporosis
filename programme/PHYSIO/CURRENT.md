@@ -1,0 +1,240 @@
+# PHYSIO CURRENT — Knee-OA Reference Implementation / Physio Core Boundary
+
+> **TASK:** `PHYSIO-P1-KNEE-OA-REFERENCE-VALIDATION-CORE-BOUNDARY-20261001`
+> **STATUS:** LOCAL CONTROL PLANE CURRENT / P0 COMPLETE / P1 DESIGN FROZEN / LANE F COMPLETE WITH NON-BLOCKING LOCATOR MAINTENANCE / A-B-C-D-E EVIDENCE PENDING.
+> **Date:** 2026-10-01 Asia/Nicosia.
+> **Fresh bootstrap main for P1 design:** `aedfa3e48e8359a449c2c8d8eb2b9f053a64ce47`.
+> **Reference implementation:** Knee Osteoarthritis physiotherapy referral.
+> **Current PHYSIO runtime writer:** none.
+> **Root operational owner:** unchanged — `CURRENT_OPERATIONAL.md` remains the sole repo-wide writer lock and currently records the separate PR-1 transcript lifecycle.
+> **Product authority:** `commercial_products/physio_referral/*`.
+> **Technical authority:** existing CU-1 + Knee-OA owners under `clinic_utilities/*`.
+
+---
+
+## 1. Current state
+
+The existing Physiotherapy Referral product is not greenfield.
+
+Current product authority reports:
+
+```text
+Knee OA vertical                         released
+V5.1                                    released
+post-use Cyprus / clinical review        released
+receiver prose / chronicity refinement   released
+CY_GESY                                  active
+authenticated production smoke           PASS
+real clinical pilot                      not proven
+commercial validation                    not proven
+second diagnosis                         not authorized by default
+```
+
+Current release chain owned by the product record:
+
+- PR #106 → `8064999ea70e0a90f6073fc6d66a0c8caaba1538`;
+- PR #107 → `a19f4b9d52c3076f715fd864a5f7664d2b140c81`;
+- PR #109 → `b962485c741f558121e8daabfcf1d20c84f31f63`;
+- authenticated post-use smoke `34957778592` — SUCCESS;
+- authenticated receiver-refinement smoke `35019200920` — SUCCESS.
+
+The current repository may be newer than the last Physio runtime release. Product/release truth must therefore be read from its owning artifacts rather than by assuming the Physio release SHA equals current repository `main`.
+
+---
+
+## 2. P0 reuse-before-new-path inventory disposition
+
+P0 established:
+
+### Reusable Physio Core already present
+
+- CU-1 typed state / canonical registry / normalization.
+- route requirements, ownership and precedence.
+- deterministic validation and safety/disposition.
+- deterministic Greek formatter and protected API.
+- reusable evidence interaction semantics.
+- suggestion-vs-selection boundary.
+- manual-text reconciliation boundary.
+- progressive disclosure / advanced-capability pattern.
+- no-patient-browser-storage boundary.
+- jurisdiction overlay architecture.
+- exact-head regression/release/smoke discipline.
+
+### Knee-OA-specific
+
+- OA evidence corpus and source positions;
+- Knee phenotype/examination/qualifier mappings;
+- Knee smart defaults;
+- Knee-specific referral composition/presentation;
+- Knee-specific clinical review clues;
+- OA-specific Cyprus/GeSY local positions.
+
+### Existing product authorities to reuse
+
+Do not recreate:
+
+- a second safety engine;
+- a second validation pipeline;
+- a second evidence-state model;
+- a second jurisdiction engine;
+- a second patient-draft store;
+- a second Physio product `CURRENT`;
+- duplicate global Cockpit navigation.
+
+---
+
+## 3. Why a separate PHYSIO control plane now exists
+
+The prior Physio work correctly lived in the technical/product owners where it was built.
+
+That remains true.
+
+The new `programme/PHYSIO/*` layer exists only because Physiotherapy is now a **parallel programme workstream**, which needs durable cross-conversation navigation and a local NOW without taking authority over the root Osteoporosis/Cockpit lifecycle.
+
+```text
+programme/PHYSIO
+= workstream coordination
+
+commercial_products/physio_referral
+= product/commercial truth
+
+clinic_utilities
+= technical/runtime/contracts
+
+root six canonicals
+= repo-wide governance
+```
+
+No product or runtime content is migrated merely to make the directory self-contained.
+
+---
+
+## 4. Current gaps
+
+The important current gaps are validation/product gaps, not missing feature count:
+
+1. real clinical/workflow pilot not yet established;
+2. actual receiving-physiotherapist comparative validation not yet established;
+3. actual iPhone Safari / VoiceOver acceptance not yet established;
+4. international material claim provenance/locator maintenance should be explicit before paid clinical use;
+5. willingness-to-pay / conversion / retention remain hypotheses;
+6. actual referral mix/frequency should inform the next diagnosis;
+7. diagnosis-agnostic extraction of Knee mechanisms should wait until a second real use demonstrates the abstraction.
+
+---
+
+## 5. Current bounded next slice — P1
+
+`PHYSIO-P1-KNEE-OA-REFERENCE-VALIDATION-CORE-BOUNDARY-20261001`
+
+Purpose:
+
+> Use the existing live Knee-OA product as the reference implementation to validate usefulness and freeze the practical boundary between reusable Physio mechanics and Knee-specific vertical content before opening another diagnosis.
+
+P1 remains **read-only with respect to runtime** unless a concrete observed finding later receives a separate bounded correction authority.
+
+P1 design is now frozen in:
+
+- `programme/PHYSIO/P1_VALIDATION_PROTOCOL.md`;
+- `programme/PHYSIO/P1_EVIDENCE_WORKSHEET.md`;
+- `programme/PHYSIO/P1_SYNTHETIC_CASE_SET.md`;
+- `programme/PHYSIO/P1_CORE_BOUNDARY_LEDGER.md`;
+- `programme/PHYSIO/P1_EVIDENCE_PROVENANCE_AUDIT.md` — Lane F completed.
+
+Planned evidence work:
+
+1. real-device / iPhone Safari / accessibility acceptance of the current workflow;
+2. small receiving-physiotherapist comparison using synthetic/de-identified referrals:
+   - actionability;
+   - missing information;
+   - autonomy;
+   - comprehension;
+3. end-to-end time/friction comparison:
+   - navigation;
+   - structured selection;
+   - optional editing;
+   - copy/transfer;
+4. aggregate referral-frequency / diagnosis-mix discovery with no patient identifiers;
+5. bounded willingness-to-pay / product-value discovery;
+6. focused material evidence-provenance/locator maintenance assessment — **COMPLETE: NEEDS LOCATOR MAINTENANCE; no sampled clinical-state/runtime correction indicated**;
+7. produce a reusable-boundary ledger:
+
+```text
+KEEP AS CORE
+KEEP VERTICAL-SPECIFIC
+CHANGE
+REMOVE
+EVIDENCE GAP
+COMMERCIAL HYPOTHESIS
+CROSS-PROJECT DEPENDENCY
+```
+
+A runtime correction may be opened only from a concrete observed finding and then requires its own bounded implementation authority/scope.
+
+---
+
+## 6. Cross-project dependencies
+
+Current known dependency classes — **record, do not mutate from PHYSIO without owner decision**:
+
+- global Cockpit Home/navigation;
+- shared Clinical Excellence auth/session;
+- global patient model / patient-history persistence;
+- transcript/capture infrastructure;
+- billing / entitlement / account model;
+- analytics/telemetry;
+- Digital Secretary / GeSY external integration;
+- shared Core evidence objects if later generalization requires them.
+
+No current P1 item requires mutation of those owners.
+
+---
+
+## 7. Explicitly deferred / forbidden by default
+
+Until P1 evidence justifies otherwise:
+
+- no second diagnosis implementation;
+- no broad CU-1 rewrite;
+- no speculative “generic Physio framework” refactor;
+- no new patient persistence;
+- no analytics/billing/entitlements;
+- no new Greece/England profile;
+- no autonomous literature-to-live pipeline;
+- no duplication of global navigation/auth/safety;
+- no root canonical mutation merely to checkpoint PHYSIO progress.
+
+The Product Owner may later authorize one of these, but authorization should follow a bounded problem statement and correct owner determination.
+
+---
+
+## 8. Exact next action
+
+The P1 design checkpoint is complete. Execute bounded validation without changing runtime:
+
+1. Product Owner may immediately collect:
+   - Lane A real-device / iPhone Safari / VoiceOver acceptance;
+   - Lane C matched time/friction observations;
+   - Lane D aggregate referral-frequency / diagnosis-mix evidence;
+   - Lane E exploratory clinician product-value / willingness-to-pay evidence.
+2. Lane B requires an actual receiving physiotherapist. If it is deferred, record that explicitly and do not claim receiver validation.
+3. Lane F is complete. Disposition: **NEEDS LOCATOR MAINTENANCE**, with no sampled evidence-state/default-plan/runtime correction indicated. P1-F001/P1-F002 are maintenance findings, not runtime blockers.
+4. Continue recording evidence/findings in `P1_EVIDENCE_WORKSHEET.md`.
+5. Synthesize Lane G in `P1_CORE_BOUNDARY_LEDGER.md` only after enough A–E evidence exists to avoid premature generalization.
+6. A concrete Physio-owned runtime defect may open a separate bounded correction slice only after classification and owner determination.
+7. P2 diagnosis selection may be prepared only after P1 evidence; P2 implementation still requires separate Product Owner authorization.
+
+Do not start a second diagnosis, generic Physio refactor or foreign-owner mutation as the next action.
+
+---
+
+## 9. Registry sync
+
+```text
+PHYSIO LOCAL CONTROL PLANE     CURRENT
+ROOT CANONICALS               NOT REQUIRED
+GLOBAL PROGRAMME REGISTRY     NOT PRESENT / NOT REQUIRED
+COMMERCIAL PRODUCT CURRENT    CURRENT
+KNEE-OA TECHNICAL OWNERS      CURRENT
+CROSS-PROJECT MUTATION        NOT REQUIRED
+```

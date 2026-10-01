@@ -338,4 +338,134 @@ function contribution(result, id) {
   assert(formalRisk.evidence_rules.length > 0);
 }
 
+// 21. S1 matrix: only explicit low_trauma=yes may create current fragility; generic interval fracture remains generic.
+{
+  const matrix = [
+    ["yes", true],
+    ["no", false],
+    ["uncertain", false],
+    ["", false],
+    [undefined, false]
+  ];
+  matrix.forEach(([mechanism, expectedFragility], index) => {
+    const event = { id: `s1-current-${index}`, site: "hip", month: "2026-08", occurred_on_treatment: "no" };
+    if (mechanism !== undefined) event.low_trauma = mechanism;
+    const result = evaluate(baseCase({
+      fracture_history: { interval_fracture_status: "yes", events: [event] }
+    }));
+    assert.strictEqual(result.baseContext.new_events.fracture, "yes", "generic G1 interval fracture must remain visible");
+    assert.strictEqual(result.evidenceContext.current_fragility_fracture, expectedFragility);
+    assert.strictEqual(result.ids.includes("OST_G2_R05_NEW_FRAGILITY_FRACTURE_PROMPT_REASSESSMENT"), expectedFragility);
+    assert.strictEqual(result.ids.includes("OST_G2_R06_NEW_FRAGILITY_FRACTURE_TREATMENT_PLAN"), expectedFragility);
+  });
+}
+
+// 22. fracture_on_treatment remains independent of fragility classification.
+{
+  const traumatic = evaluate(baseCase({
+    encounter_archetype: "fracture_on_treatment",
+    fracture_history: {
+      interval_fracture_status: "yes",
+      events: [{ id: "s1-fot-no", site: "hip", month: "2026-08", low_trauma: "no", occurred_on_treatment: "yes" }]
+    }
+  }));
+  assert.strictEqual(traumatic.evidenceContext.current_fragility_fracture, false);
+  assert.strictEqual(traumatic.evidenceContext.fracture_on_treatment, true);
+  assert(traumatic.ids.includes("OST_G2_R07_FRACTURE_ON_TREATMENT_REVIEW"));
+  assert(!traumatic.ids.includes("OST_G2_R05_NEW_FRAGILITY_FRACTURE_PROMPT_REASSESSMENT"));
+  assert(!traumatic.ids.includes("OST_G2_R06_NEW_FRAGILITY_FRACTURE_TREATMENT_PLAN"));
+
+  const fragility = evaluate(baseCase({
+    encounter_archetype: "fracture_on_treatment",
+    fracture_history: {
+      interval_fracture_status: "yes",
+      events: [{ id: "s1-fot-yes", site: "hip", month: "2026-08", low_trauma: "yes", occurred_on_treatment: "yes" }]
+    }
+  }));
+  assert(fragility.ids.includes("OST_G2_R07_FRACTURE_ON_TREATMENT_REVIEW"));
+  assert(fragility.ids.includes("OST_G2_R05_NEW_FRAGILITY_FRACTURE_PROMPT_REASSESSMENT"));
+  assert(fragility.ids.includes("OST_G2_R06_NEW_FRAGILITY_FRACTURE_TREATMENT_PLAN"));
+}
+
+// 23. A fragility-labelled encounter archetype is visit intent only and cannot manufacture mechanism evidence.
+{
+  const result = evaluate(baseCase({
+    encounter_archetype: "post_fragility_fracture",
+    fracture_history: { interval_fracture_status: "no", events: [] }
+  }));
+  assert.strictEqual(result.evidenceContext.current_fragility_fracture, false);
+  assert(!result.ids.includes("OST_G2_R05_NEW_FRAGILITY_FRACTURE_PROMPT_REASSESSMENT"));
+  assert(!result.ids.includes("OST_G2_R06_NEW_FRAGILITY_FRACTURE_TREATMENT_PLAN"));
+}
+
+// 24. Vertebral fracture remains a generic VFA trigger, but vertebral fragility count requires explicit yes.
+{
+  const matrix = [
+    ["yes", 1, true],
+    ["no", 0, false],
+    ["uncertain", 0, false],
+    ["", 0, false],
+    [undefined, 0, false]
+  ];
+  matrix.forEach(([mechanism, expectedCount, expectedVeryHigh], index) => {
+    const event = { id: `s1-vf-${index}`, site: "vertebral", month: "2026-08" };
+    if (mechanism !== undefined) event.low_trauma = mechanism;
+    const result = evaluate(baseCase({
+      fracture_history: { interval_fracture_status: "no", events: [event] }
+    }));
+    assert(result.ids.includes("OST_G2_R02_VFA_STRUCTURED_TRIGGER"), "generic vertebral fracture must preserve VFA handling");
+    assert.strictEqual(result.evidenceContext.vertebral_fracture_count, expectedCount);
+    assert.strictEqual(result.evidenceContext.recent_vertebral_fracture_within_24_months, expectedCount === 1);
+    assert.strictEqual(result.ids.includes("OST_G2_R08_EXPLICIT_VERY_HIGH_RISK_REVIEW"), expectedVeryHigh);
+  });
+}
+
+// 25. Stale legacy event.fragility is preserved as raw input but is not canonical fragility evidence.
+{
+  const result = evaluate(baseCase({
+    fracture_history: {
+      interval_fracture_status: "yes",
+      events: [{ id: "s1-legacy-fragility-field", site: "hip", month: "2026-08", fragility: "yes" }]
+    }
+  }));
+  assert.strictEqual(result.evidenceContext.current_fragility_fracture, false);
+  assert(!result.ids.includes("OST_G2_R05_NEW_FRAGILITY_FRACTURE_PROMPT_REASSESSMENT"));
+  assert(!result.ids.includes("OST_G2_R06_NEW_FRAGILITY_FRACTURE_TREATMENT_PLAN"));
+}
+
+// 26. Conflicting explicit low-trauma snapshots for one stable event ID fail closed and stay one event.
+{
+  const historical = [
+    encounter("s1-h1", "2026-07-01", {
+      fracture_history: { events: [{ id: "s1-stable-conflict", site: "vertebral", month: "2026-06", low_trauma: "yes" }] }
+    }),
+    encounter("s1-h2", "2026-07-15", {
+      fracture_history: { events: [{ id: "s1-stable-conflict", site: "vertebral", month: "2026-06", low_trauma: "no" }] }
+    })
+  ];
+  const result = evaluate(baseCase(), historical);
+  assert.strictEqual(result.evidenceContext.fracture_events.length, 1);
+  assert.strictEqual(result.evidenceContext.fracture_events[0].id, "s1-stable-conflict");
+  assert.strictEqual(result.evidenceContext.fracture_events[0].low_trauma_conflict, true);
+  assert.strictEqual(result.evidenceContext.vertebral_fracture_count, 0);
+  assert(!result.ids.includes("OST_G2_R08_EXPLICIT_VERY_HIGH_RISK_REVIEW"));
+  assert(result.ids.includes("OST_G2_R02_VFA_STRUCTURED_TRIGGER"), "conflict must not erase the generic vertebral fact");
+}
+
+// 27. Repeated stable ID with the same explicit mechanism remains one confirmed event.
+{
+  const historical = [
+    encounter("s1-same-1", "2026-07-01", {
+      fracture_history: { events: [{ id: "s1-stable-same", site: "vertebral", month: "2026-06", low_trauma: "yes" }] }
+    }),
+    encounter("s1-same-2", "2026-07-15", {
+      fracture_history: { events: [{ id: "s1-stable-same", site: "vertebral", month: "2026-06", low_trauma: "yes" }] }
+    })
+  ];
+  const result = evaluate(baseCase(), historical);
+  assert.strictEqual(result.evidenceContext.fracture_events.length, 1);
+  assert.strictEqual(result.evidenceContext.fracture_events[0].id, "s1-stable-same");
+  assert.strictEqual(result.evidenceContext.vertebral_fracture_count, 1);
+}
+
 console.log("G2 evidence guidance core regressions: OK");
