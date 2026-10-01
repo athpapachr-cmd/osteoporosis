@@ -74,6 +74,8 @@ def test_cockpit_today_context_strip_uses_protected_calendar_without_second_cale
     # Schedule-context semantics: ended -> previous, interval-containing -> now,
     # future start -> next. Overlapping current rows fail closed to an ambiguity
     # message instead of choosing one patient silently.
+    assert r"[+-]\\d{2}:?\\d{2}" in js
+    assert r"[+-]\\\\d{2}:?\\\\d{2}" not in js
     assert "item.end <= nowMs" in js
     assert "item.start <= nowMs && nowMs < item.end" in js
     assert "item.start > nowMs" in js
