@@ -1,6 +1,6 @@
 # PROJECT-INDEX.md — OST-UI / Osteoporosis Product Reconstruction
 
-> **STATUS:** R1–R4 COMPLETE; SINGLE SYNTHESIS RECORDED; PROTOTYPE CONTRACTING NEXT. The live workstream checkpoint is `CURRENT.md`.
+> **STATUS:** R1–R4 COMPLETE; SINGLE SYNTHESIS AND PROTOTYPE 1 CONTRACT RECORDED; RUNTIME NOT STARTED. The live workstream checkpoint is `CURRENT.md`.
 > **Workstream:** `OST-UI`.
 > **Scope:** Osteoporosis Module product reconstruction review only.
 > **Authority model:** parallel sidecar workstream; the six root canonicals remain authoritative for repo-wide state.
