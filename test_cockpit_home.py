@@ -86,3 +86,22 @@ def test_cockpit_today_context_strip_uses_protected_calendar_without_second_cale
     assert "todayTreatmentCount" in js
     assert "localStorage" not in js
     assert "sessionStorage" not in js
+
+
+def test_previous_slot_prefers_latest_completed_end_over_latest_start():
+    # At 11:30 both visits are completed. The 08:00–11:00 visit is the
+    # correct Previous even though the 09:00–10:00 visit started later.
+    rows = [
+        {"patient": "later start", "start": 9 * 60, "end": 10 * 60},
+        {"patient": "later end", "start": 8 * 60, "end": 11 * 60},
+    ]
+    now_minutes = 11 * 60 + 30
+    eligible = [row for row in rows if row["end"] <= now_minutes]
+    previous = max(eligible, key=lambda row: row["end"])
+    assert previous["patient"] == "later end"
+
+    js = _read("static/cockpit/app.js")
+    assert "const previousItem = items.reduce((latest, item) => {" in js
+    assert "if (item.end > nowMs) return latest;" in js
+    assert "if (!latest || item.end > latest.end) return item;" in js
+    assert "previous: previousItem ? previousItem.row : null" in js
