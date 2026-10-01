@@ -1,6 +1,6 @@
 # CURRENT.md — OST-UI / Osteoporosis Product Reconstruction
 
-> **STATUS:** R2 COMPLETE / COORDINATOR RECONCILIATION PENDING; R3 NOT STARTED.
+> **STATUS:** R2 COMPLETE / COORDINATOR ACCEPTED / R3 AUTHORIZED — NOT STARTED.
 > **Updated:** 2026-10-01 Asia/Nicosia.
 > **Workstream:** OST-UI.
 > **Fresh runtime main reviewed for R2:** **63e903e05c1bfe22ca925374b8994355f6c92baf**.
@@ -35,6 +35,51 @@ R2 found a usable protected patient/encounter/lab substrate, reliable captured a
 Sections 1–8A below retain the prior R1/coordinator history as context. This §0 and §9 own the present OST-UI NOW.
 
 ---
+
+## 0A. Programme coordinator reconciliation of R2
+
+Fresh coordinator verification confirmed:
+
+```text
+R2 BASE
+f04af35b5424328f55a11932224becb43521d831
+
+R2 FINAL HEAD
+75a18ae7bfad1b812f73fbce9e4f82bb56c49dde
+
+R2 DELTA
+3 commits / 2 files only
+
+FILES
+programme/OST-UI/R2-LONGITUDINAL-CLINICAL-TRAJECTORY-REVIEW.md
+programme/OST-UI/CURRENT.md
+
+RUNTIME / SCHEMA / DATABASE / ROOT CANONICAL MUTATION
+NONE
+```
+
+Coordinator disposition:
+
+```text
+R2: ACCEPTED / COMPLETE
+REPLAN REQUIRED: NO
+R3: AUTHORIZED / NOT STARTED
+R4/SYNTHESIS: NOT AUTHORIZED
+ROOT PR-1 WRITER: UNCHANGED
+```
+
+Accepted R2 product finding:
+
+- the protected patient/encounter/lab substrate and current derived guidance/summary mechanisms are real reusable assets;
+- the present system is adequate for a bounded longitudinal current-context product;
+- it does not yet guarantee a coherent 10–15-year trajectory;
+- some limitations are consolidation/presentation problems over already-captured facts;
+- some are genuine persisted-semantic gaps, particularly treatment-epoch continuity, option/recommendation/preference/action separation, stable obligation continuity/dispositions, explicit goals, historical evidence-at-decision context and selected outcome/linkage semantics;
+- R2 does **not** establish that a new store, event-sourcing architecture or total rebuild is required.
+
+R3 is authorized specifically to determine how point-of-care interaction should expose **reliable existing truth** while making missing/ambiguous longitudinal semantics visible rather than hiding them.
+
+R3 must not repair R2 semantic gaps in UI code or presentation.
 
 ## 1. R1 Canonical Bootstrap Manifest (historical)
 
@@ -192,8 +237,8 @@ No final R4 KEEP/REPLACE classification was made.
 | Review | Status | Output |
 |---|---|---|
 | R1 — Current Product vs Constitution | **COMPLETE / COORDINATOR ACCEPTED** | R1-CURRENT-PRODUCT-CONSTITUTION-AUDIT.md |
-| R2 — Longitudinal Clinical Trajectory | **COMPLETE / COORDINATOR RECONCILIATION PENDING** | R2-LONGITUDINAL-CLINICAL-TRAJECTORY-REVIEW.md |
-| R3 — Point-of-Care Interaction | **NOT STARTED** | R3-POINT-OF-CARE-INTERACTION-REVIEW.md |
+| R2 — Longitudinal Clinical Trajectory | **COMPLETE / COORDINATOR ACCEPTED** | R2-LONGITUDINAL-CLINICAL-TRAJECTORY-REVIEW.md |
+| R3 — Point-of-Care Interaction | **AUTHORIZED / NOT STARTED** | R3-POINT-OF-CARE-INTERACTION-REVIEW.md |
 | R4 — Shared Core / Module Architecture / Reuse | **NOT STARTED** | R4-SHARED-CORE-MODULE-ARCHITECTURE-REUSE.md |
 | Synthesis — Product Reconstruction Decision | **BLOCKED ON R1-R4** | OST-PRODUCT-RECONSTRUCTION-DECISION.md |
 
