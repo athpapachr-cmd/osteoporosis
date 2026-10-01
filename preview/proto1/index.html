@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="el">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Prototype 1 · Synthetic demo</title>
+  <link rel="stylesheet" href="./demo.css">
+  <link rel="stylesheet" href="./proto1-visit.css">
+</head>
+<body>
+  <main class="shell">
+    <div class="demo-banner"><strong>DEMO · ΨΕΥΤΙΚΑ ΣΤΟΙΧΕΙΑ</strong><span>Δεν συνδέεται με ασθενείς, API ή βάση δεδομένων. Οι αλλαγές χάνονται όταν κλείσεις τη σελίδα.</span></div>
+    <header class="page-header">
+      <div class="title-block"><h1>Οστεοπόρωση · σημερινή επίσκεψη</h1><p>Prototype 1 — Denosumab Adaptive Visit</p></div>
+      <label class="scenario-label">Δοκίμασε σενάριο
+        <select id="scenario">
+          <option value="due">Χορήγηση στην ώρα της</option>
+          <option value="delayed">Καθυστερημένη χορήγηση</option>
+          <option value="transition">Προηγούμενη διακοπή / μετάβαση</option>
+          <option value="conflict">Αντικρουόμενες ημερομηνίες</option>
+          <option value="continuity">Αβέβαιη συνέχεια σχεδίου / εργασίας</option>
+        </select>
+      </label>
+    </header>
+    <p id="demoStatus" class="demo-status" role="status"></p>
+    <div class="step-tabs" aria-label="Synthetic source editors">
+      <button type="button" class="step-tab" data-step="1">1 · Επίσκεψη</button>
+      <button type="button" class="step-tab" data-step="2">2 · Συμβάν</button>
+      <button type="button" class="step-tab" data-step="3">3 · DXA / εργαστηριακά</button>
+      <button type="button" class="step-tab" data-step="4">4 · Θεραπεία / απόφαση</button>
+    </div>
+    <section class="step-panel" data-step-panel="1"><h2>Πηγή: επίσκεψη</h2><p id="sourceVisit"></p></section>
+    <section class="step-panel" data-step-panel="2"><h2>Πηγή: νέο συμβάν</h2><p id="fractureEvents">Δεν έχει καταγραφεί νέο συμβάν στο synthetic σενάριο.</p></section>
+    <section class="step-panel" data-step-panel="3"><h2>Πηγή: αποτελέσματα</h2><p id="s3DxaUsed">Η DXA και τα εργαστηριακά είναι μόνο ενδεικτικά εδώ.</p><p id="s3LabsDate"></p></section>
+    <section class="step-panel" data-step-panel="4">
+      <h2>Πηγή: θεραπεία και απόφαση</h2>
+      <div class="source-grid"><div><h3 id="s4Episodes">Θεραπευτική πορεία</h3><p id="sourceEpisodes"></p></div>
+      <div><h3 id="s4Administrations">Χορηγήσεις</h3><div id="sourceAdministrations"></div></div>
+      <div><h3 id="s4DecisionType">Απόφαση</h3><p id="sourceDecision"></p></div>
+      <div><h3 id="s4Tasks">Εργασίες</h3><p id="sourceTasks"></p></div></div>
+      <p class="source-note">Αυτή είναι ενδεικτική προβολή των synthetic πηγών. Η επεξεργασία και η μόνιμη καταχώριση του κλινικού συστήματος δεν είναι διαθέσιμες στο demo.</p>
+    </section>
+  </main>
+  <script src="./progressive-guidance-core.js"></script>
+  <script src="./osteoporosis-evidence-guidance-core.js"></script>
+  <script src="./osteoporosis-longitudinal-summary-core.js"></script>
+  <script src="./proto1-visit-core.js"></script>
+  <script src="./proto1-visit-ui.js"></script>
+  <script src="./demo.js"></script>
+</body>
+</html>
