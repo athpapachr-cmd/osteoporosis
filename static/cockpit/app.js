@@ -54,7 +54,7 @@
   function parseClinicalAppointmentDate(value) {
     if (!value) return null;
     const text = String(value);
-    const hasZone = /(?:Z|[+-]\\d{2}:?\\d{2})$/.test(text);
+    const hasZone = /(?:Z|[+-]\d{2}:?\d{2})$/.test(text);
     const parsed = new Date(hasZone ? text : `${text}Z`);
     return Number.isNaN(parsed.getTime()) ? null : parsed;
   }
