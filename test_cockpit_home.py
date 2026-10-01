@@ -76,8 +76,8 @@ def test_cockpit_today_context_strip_uses_protected_calendar_without_second_cale
     # message instead of choosing one patient silently.
     assert r"[+-]\d{2}:?\d{2}" in js
     assert r"[+-]\\d{2}:?\\d{2}" not in js
-    assert "item.end > nowMs" in js
-    assert "item.end > latest.end" in js
+    assert "item.end <= nowMs" in js
+    assert "completedItems[completedItems.length - 1]" in js
     assert "item.start <= nowMs && nowMs < item.end" in js
     assert "item.start > nowMs" in js
     assert "ταυτόχρονα ραντεβού" in js
@@ -89,20 +89,19 @@ def test_cockpit_today_context_strip_uses_protected_calendar_without_second_cale
     assert "sessionStorage" not in js
 
 
-def test_previous_slot_prefers_latest_completed_end_over_latest_start():
-    # At 11:30 both visits are completed. The 08:00–11:00 visit is the
-    # correct Previous even though the 09:00–10:00 visit started later.
+def test_previous_slot_follows_realistic_schedule_order():
+    # Normal clinic schedule is sequential. At 11:30, after 08:00–09:00 and
+    # 09:00–10:00 appointments, Previous must be the 09:00–10:00 slot.
     rows = [
-        {"patient": "later start", "start": 9 * 60, "end": 10 * 60},
-        {"patient": "later end", "start": 8 * 60, "end": 11 * 60},
+        {"patient": "A", "start": 8 * 60, "end": 9 * 60},
+        {"patient": "B", "start": 9 * 60, "end": 10 * 60},
     ]
     now_minutes = 11 * 60 + 30
-    eligible = [row for row in rows if row["end"] <= now_minutes]
-    previous = max(eligible, key=lambda row: row["end"])
-    assert previous["patient"] == "later end"
+    completed = [row for row in rows if row["end"] <= now_minutes]
+    previous = completed[-1]
+    assert previous["patient"] == "B"
 
     js = _read("static/cockpit/app.js")
-    assert "const previousItem = items.reduce((latest, item) => {" in js
-    assert "if (item.end > nowMs) return latest;" in js
-    assert "if (!latest || item.end > latest.end) return item;" in js
+    assert "const completedItems = items.filter((item) => item.end <= nowMs);" in js
+    assert "completedItems[completedItems.length - 1]" in js
     assert "previous: previousItem ? previousItem.row : null" in js
