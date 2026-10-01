@@ -1,7 +1,7 @@
 # R2 — Longitudinal Clinical Trajectory Review
 
-> **Workstream:** OST-UI · **Mode:** fresh separate documentation review · **Date:** 2026-10-01 Asia/Nicosia  
-> **Disposition:** **R2 COMPLETE / R3 ELIGIBLE FOR COORDINATOR RECONCILIATION**  
+> **Workstream:** OST-UI · **Mode:** fresh separate documentation review · **Date:** 2026-10-01 Asia/Nicosia
+> **Disposition:** **R2 COMPLETE / R3 ELIGIBLE FOR COORDINATOR RECONCILIATION**
 > **Scope:** current representation and reconstruction capability; no clinical-rule, runtime, schema, database, PR #121 or root-canonical mutation.
 
 ## A. Exact source identity

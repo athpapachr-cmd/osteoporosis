@@ -9,7 +9,7 @@
 > **R1 review branch:** **docs/ost-ui-r1-current-product-audit-2026-09-27**.
 > **R1 artifact commit:** **7b23f224cef0c9b721d89c84e431a4582efab2af**.
 > **R2 branch:** **docs/ost-ui-r2-longitudinal-trajectory-review-2026-10-01**, based on coordinator head **f04af35b5424328f55a11932224becb43521d831**.
-> **R2 artifact commit:** **688b851358dae42b3431aa1fd50c86a077788322**.
+> **R2 artifact introduction commit:** **688b851358dae42b3431aa1fd50c86a077788322**; final artifact is at this branch's published head.
 > **Root operational writer:** unchanged — PR-1 Heidi-first transcript capture lifecycle.
 > **OST-UI runtime writer:** none.
 > **Release affecting:** no.
@@ -22,7 +22,7 @@ R2 independently fresh-verified remote `main` at `63e903e05c1bfe22ca925374b89943
 
 Completed review artifact:
 
-`programme/OST-UI/R2-LONGITUDINAL-CLINICAL-TRAJECTORY-REVIEW.md` at commit `688b851358dae42b3431aa1fd50c86a077788322`.
+`programme/OST-UI/R2-LONGITUDINAL-CLINICAL-TRAJECTORY-REVIEW.md`, introduced at commit `688b851358dae42b3431aa1fd50c86a077788322` and finalized at this branch's published head.
 
 Disposition:
 
