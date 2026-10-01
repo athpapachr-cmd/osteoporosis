@@ -1,11 +1,11 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** PR-1 RELEASE ENGINEERING CANDIDATE — H13 FROZEN; H-05 AND TRANSIENT LIFECYCLE LOCALLY VERIFIED; RELEASE GATE HOLD.
+> **STATUS:** PR-1 RELEASE ENGINEERING VERIFIED ON CURRENT MAIN; IDENTIFIABLE-TRANSCRIPT PRIVACY/PROVIDER GATE OPEN; RELEASE GATE HOLD.
 > **Updated:** 2026-10-01 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Fresh verified remote `main`:** `63e903e05c1bfe22ca925374b8994355f6c92baf`.
 > **Active slice:** `PR-1-TRANSCRIPT-INTAKE-CANDIDATE-EXTRACTION-V1-2026-09-16`.
-> **Active writer:** PR-1 release-engineering executor on this branch, limited to fresh-main reconciliation, H-05 provider execution, browser/transient lifecycle cleanup, privacy-gate verification, and exact-head regression evidence. H09–H13 semantic behavior is frozen.
+> **Active writer:** none; the bounded PR-1 release-engineering checkpoint is complete and this writer lock is released. H09–H13 semantic behavior remains frozen.
 > **Runtime implementation branch:** `feat/pr1-transcript-capture-v1-2026-09-16`.
 > **Exact H-08 deterministic head:** `5eeddeba664814b38d55bad8231afb5b33448eae`.
 > **H-08 deterministic/inherited gate:** `35446869081` — SUCCESS.
@@ -779,4 +779,6 @@ H-05 now offloads synchronous provider extraction from the async route to AnyIO'
 
 Local evidence: 89 focused PR-1 tests PASS; 22 runnable inherited protected-clinical/Cockpit/surgery/SDK tests PASS; S1 fracture/fragility, G3 and G4 Node regressions PASS; transient lifecycle harness PASS; Python/browser syntax and changed-file whitespace checks PASS. Two Clinical Documents PDF modules cannot collect in the local Python environment because declared `PyMuPDF` is absent; an isolated install failed due package-index DNS. The full CI gate remains required.
 
-The identifiable-transcript provider/privacy gate remains OPEN. The production provider requires its separate PHI approval flag and stays unconfigured without it. No flag, secret, real transcript, production configuration, PR-2, merge or deploy was enabled by this checkpoint. Release readiness is HOLD pending complete CI evidence and the separate privacy/provider decision.
+The identifiable-transcript provider/privacy gate remains OPEN. The production provider requires its separate PHI approval flag and stays unconfigured without it. No flag, secret, real transcript, production configuration, PR-2, merge or deploy was enabled by this checkpoint. Release readiness is HOLD pending the separate privacy/provider decision.
+
+The pushed exact implementation head `c16c81053c8596bb106555b9c8e5ef93bc686034` passed complete GitHub Actions PR-1 gate [`36860809239`](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/36860809239): 89 focused tests, 6 protected-clinical tests, 24 Clinical Documents tests (resolving the local PDF dependency gap), executable transient lifecycle, Python/browser syntax, navigation, and effective scope. At that same head, Clinical Calendar snapshot `36860809202`, Cockpit surgery queue `36860809227`, Cockpit Home `36860809277`, Clinical Documents P2 `36860809317`, and P1 `36860809325` all completed SUCCESS. The release-engineering work is complete; the final docs-only closeout head must retain these exact implementation files and pass its own gate. No release PR, merge, deploy or identifiable transcript use is authorized by this handback.
