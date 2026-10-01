@@ -1,6 +1,6 @@
 # SLICE_PLAN_CURRENT.md — PR-1 Heidi-first Transcript Intake + Candidate Extraction v1
 
-> **STATUS:** H-12 BOUNDED SEMANTIC-SAFETY CORRECTION ACTIVE / POST-H11 REVIEW HOLD — NOT RELEASE READY.
+> **STATUS:** H-12 DETERMINISTIC CORRECTION PASS / LIVE REQUALIFICATION PENDING — NOT RELEASE READY.
 > **Activated:** 2026-09-16 Asia/Nicosia.
 > **Slice:** `PR-1-TRANSCRIPT-INTAKE-CANDIDATE-EXTRACTION-V1-2026-09-16`.
 > **Activation main:** `0ab5f9770d220c20e8d94544cb64e93a4aa30d00`.
@@ -19,6 +19,8 @@
 > **Post-H09 live qualification:** `35448273993` — 19 PASS / 3 FAIL.
 > **Post-H10 live qualification:** `35455512992` — 20 PASS / 2 FAIL.
 > **Post-H11 live qualification:** `35455986630` — **22 PASS / 0 FAIL**.
+> **H-12 exact deterministic head:** `b1d57e1c6e9feb6968592f700da7de8113badf96`.
+> **H-12 deterministic/inherited gate:** `36821972100` — SUCCESS; 82 focused / 6 protected clinical / 24 Clinical Documents PASS.
 > **Writer:** one bounded H-12 PR-1 correction author; operational owner is `CURRENT_OPERATIONAL.md`.
 
 ## 1. Objective
@@ -589,3 +591,5 @@ The fresh independent post-H11 promotion review returned `HOLD_FOR_SEMANTIC_REME
 - H12-B: bind authorized optional `clinical.unmapped_narrative.value.text` to source-supported fixture meaning in addition to the existing authentic `evidence_contains` check.
 
 The H-12 author may change the existing Module-01 guard, promotion evaluator, exact affected fixtures, focused H-12 tests, and these two branch-local operational documents. Complete deterministic syntax, focused and protected regressions, Clinical Documents regressions, navigation and scope guard, then checkpoint exact tested head. Only after deterministic PASS rerun the unchanged 22 frozen transcript inputs with `openai / gpt-5.6 / synthetic_eval / phi_approval=false`; require 22/22. Separate independent delta+cumulative review follows handback. No rebase, H-05, browser-lifecycle engineering, PHI use, release PR, merge or deploy.
+
+The bounded correction is deterministically complete at `b1d57e1c6e9feb6968592f700da7de8113badf96`; gate `36821972100` passed syntax, 82 focused, 6 protected-clinical, 24 Clinical Documents, navigation and effective scope checks. H12-A fails closed future/planned completed administration and treatment exposure while preserving scheduled follow-up and valid past/current truth. H12-B adds fixture-specific `value_text_contains` plus exact normalized source-span binding to authorized narratives while retaining `evidence_contains`, duplicate rejection and default-deny. Frozen transcript inputs remain byte-identical. The next gate is live GPT-5.6 synthetic requalification; no independent review or release action is part of this author task.

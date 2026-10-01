@@ -1,6 +1,6 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / active-work lock
 
-> **STATUS:** PR-1 H-12 BOUNDED SEMANTIC-SAFETY CORRECTION ACTIVE — NOT RELEASE READY.
+> **STATUS:** PR-1 H-12 DETERMINISTIC CORRECTION PASS / POST-H12 GPT-5.6 QUALIFICATION PENDING — NOT RELEASE READY.
 > **Updated:** 2026-10-01 Asia/Nicosia.
 > **Canonical home:** `athpapachr-cmd/osteoporosis`.
 > **Fresh verified remote `main`:** `63e903e05c1bfe22ca925374b8994355f6c92baf`.
@@ -21,6 +21,8 @@
 > **Post-H09 live qualification:** `35448273993` — 19 PASS / 3 FAIL.
 > **Post-H10 live qualification:** `35455512992` — 20 PASS / 2 FAIL.
 > **Post-H11 live qualification:** `35455986630` — **22 PASS / 0 FAIL**.
+> **H-12 exact deterministic head:** `b1d57e1c6e9feb6968592f700da7de8113badf96`.
+> **H-12 deterministic/inherited gate:** `36821972100` — SUCCESS (82 focused, 6 protected clinical, 24 Clinical Documents).
 > **Safe credential/schema boundary:** CLOSED; Actions secret available/masked, PHI approval false, strict Structured Outputs accepted.
 > **Medical Report V1.1:** CLOSED; do not reopen without separate authority.
 
@@ -545,7 +547,7 @@ This evidence includes the H-09 semantic/polarity guard, H-10 source-bound and d
 
 ## Exact next action
 
-The fresh independent post-H11 promotion review returned `HOLD_FOR_SEMANTIC_REMEDIATION`: H-09/H-10 are closed and H-11/live 22/22 evidence is genuine, but two material residuals remain. At exact branch head `d0844ef4f7bb80c812d7c7856955b7d8694f8553`, implement only H12-A temporal consistency at the Module-01 guard and H12-B source binding of authorized optional narrative values at the promotion evaluator. Then pass the complete deterministic gate, checkpoint its exact head, rerun the frozen 22-case GPT-5.6 synthetic qualification with PHI approval false, and hand back for separate independent delta+cumulative review. Do not rebase or perform release engineering.
+H-12 implementation and exact-head deterministic gate are complete at `b1d57e1c6e9feb6968592f700da7de8113badf96`. Verify this canonical checkpoint and trigger the frozen 22-case GPT-5.6 synthetic qualification with PHI approval false. Require 22/22, checkpoint the live evidence, then hand back for separate independent delta+cumulative review. Do not rebase or perform release engineering.
 
 ## Explicitly blocked
 
@@ -563,3 +565,13 @@ Until a live 22-case qualification passes and its evidence receives fresh indepe
 **H-05 remains OPEN:** synchronous provider execution inside the async single-worker web process must be remediated before production enablement/deploy.
 
 Executable browser lifecycle/BFCache/logout cleanup evidence also remains release debt.
+
+## H-12 deterministic semantic-safety checkpoint — PASS
+
+Base branch head `d0844ef4f7bb80c812d7c7856955b7d8694f8553` was fresh-verified with no runtime/semantic delta after H-11; remote `main` was fresh-verified at `63e903e05c1bfe22ca925374b8994355f6c92baf`. No rebase occurred.
+
+- H12-A: future/planned treatment episodes cannot become current/historical exposure. Future/planned administration assertions containing `status=done` or `actual_date` fail closed as an entire administration candidate, with deterministic temporal reason codes. Valid future follow-up `planned` mapping and past actual administration remain mapped. H-09 semantic and negation guards retain priority.
+- H12-B: authorized narrative rules now require their value text to contain a fixture-specific source phrase and the complete normalized value text to be a contiguous source transcript span. The existing authentic evidence-snippet rule, default-deny and duplicate rejection remain active. The six affected frozen cases changed only oracle rules, never transcript inputs.
+- Before correction: focused adversarial tests reproduced 5 failures, including future `done`/`actual_date`, future active treatment and authentic DXA evidence paired with invented denosumab narrative. After correction: all 7 H-12 tests pass, including appended invented text rejection and valid planned/past controls.
+
+Exact implementation/tested head: `b1d57e1c6e9feb6968592f700da7de8113badf96`. Complete GitHub Actions gate `36821972100` SUCCESS: Python/browser syntax, 82 focused PR-1 tests, 6 protected-clinical tests, 24 Clinical Documents tests, workspace navigation and a repaired effective branch-scope check all PASS. The first run `36821826827` passed tests but exposed a pre-existing shallow-fetch false PASS in its scope step; the bounded workflow correction at `b1d57e1` made a real merge base mandatory. No production, PHI, PR-2, H-05 or browser-lifecycle changes were made.
