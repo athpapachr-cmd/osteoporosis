@@ -40,18 +40,46 @@ def test_osteoporosis_sidebar_contains_no_global_tools_or_top_level_heidi():
     assert "/clinical/clinic-utilities/" not in helper
 
 
-def test_cockpit_calendar_summary_is_privacy_minimized():
+def test_cockpit_today_context_strip_uses_protected_calendar_without_second_calendar():
+    html = _read("static/cockpit/index.html")
     js = _read("static/cockpit/app.js")
 
     assert "/clinical/calendar/appointments" in js
-    assert "todayOsteoporosisCount" in js
-    assert "todayTreatmentCount" in js
+    assert "/static/clinical-calendar/" in html
+    assert "Άνοιγμα εβδομαδιαίου ημερολογίου" in html
 
-    # The Home uses aggregate category counts only. It must not render patient
-    # identity fields returned by the detailed Calendar endpoint.
-    assert "patient_display_name" not in js
+    for label in ("Προηγούμενο", "Τώρα", "Επόμενο"):
+        assert label in html
+
+    for required_id in (
+        "previousAppointmentTime",
+        "previousAppointmentPatient",
+        "previousAppointmentType",
+        "currentAppointmentTime",
+        "currentAppointmentPatient",
+        "currentAppointmentType",
+        "nextAppointmentTime",
+        "nextAppointmentPatient",
+        "nextAppointmentType",
+    ):
+        assert f'id="{required_id}"' in html
+
+    # D1 may show the appointment display name only after the authenticated
+    # Clinical Calendar request succeeds. It does not use phone or protected
+    # patient identifiers as a new identity/linkage mechanism.
+    assert "patient_display_name" in js
     assert "phone_e164" not in js
     assert "linked_patient_id" not in js
 
+    # Schedule-context semantics: ended -> previous, interval-containing -> now,
+    # future start -> next. Overlapping current rows fail closed to an ambiguity
+    # message instead of choosing one patient silently.
+    assert "item.end <= nowMs" in js
+    assert "item.start <= nowMs && nowMs < item.end" in js
+    assert "item.start > nowMs" in js
+    assert "ταυτόχρονα ραντεβού" in js
+
+    assert "todayOsteoporosisCount" in js
+    assert "todayTreatmentCount" in js
     assert "localStorage" not in js
     assert "sessionStorage" not in js
