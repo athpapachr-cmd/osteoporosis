@@ -10,6 +10,21 @@
 The active Cockpit step is **D1.1 — Global Appointment Context source/window correction** in **R2 DESIGN / PRE-CODE REVIEW**. Product Owner authorized “D1.1 → Visit Brief” on 2026-10-02. No D1.1 runtime implementation is authorized until one independent pre-code review passes. Visit Brief remains the immediately following product slice.
 
 
+
+### D1.1 pre-code design candidate — 2026-10-02
+
+```text
+BRANCH:                design/cockpit-d1-1-global-context-2026-10-02
+DESIGN:                cockpit/D1_1_GLOBAL_APPOINTMENT_CONTEXT_DESIGN.md
+DESIGN BLOB:           2b438c949e30d00a1d11d9d1431d766954320f15
+R2 PRE-CODE REVIEW:    PENDING
+RUNTIME IMPLEMENTED:   NO
+RECEPTION MUTATION:    NO
+NEXT ACTION:           one independent read-only pre-code review of exact design blob
+```
+
+Source investigation established that the Digital Secretary producer already sends the complete bounded future appointment snapshot. D1.1 therefore requires **no Reception runtime or cross-service-auth change**. The defect is in the Clinical Excellence consumer, which currently discards effective `other` rows. R2 classification remains because the proposed correction broadens protected persistence scope and browser projection of global appointment context.
+
 ### Product Owner correction — 2026-10-02
 
 Production use exposed that the deployed D1 satisfies its tested local semantics but is connected to the wrong product projection for the **global** Cockpit.
