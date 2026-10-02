@@ -7,7 +7,7 @@
 
 ## Current bounded action
 
-The next Cockpit product step is **D1.1 — Global Appointment Context source/window correction**, followed by a **Visit Brief / Patient Context** Product Owner checkpoint. No Cockpit runtime writer is active and no D1.1 or Visit Brief implementation authority is claimed yet.
+The active Cockpit step is **D1.1 — Global Appointment Context source/window correction** in **R2 DESIGN / PRE-CODE REVIEW**. Product Owner authorized “D1.1 → Visit Brief” on 2026-10-02. No D1.1 runtime implementation is authorized until one independent pre-code review passes. Visit Brief remains the immediately following product slice.
 
 
 ### Product Owner correction — 2026-10-02
