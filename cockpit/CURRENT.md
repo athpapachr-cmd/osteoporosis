@@ -1,13 +1,47 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
-> **NOW (2026-10-01):** Home v1, Pending Surgery Queue, the bounded Clinical Calendar reason bridge and **D1 Today Context Strip V1** are released according to the checkpoints below. **D2 Relevant Communication Context** is at Product Owner checkpoint only; Visit Brief / What Changed / Clinical Inbox remain product direction, not released Cockpit UI.
+> **NOW (2026-10-02):** Home v1, Pending Surgery Queue and the bounded Clinical Calendar reason bridge are released. **D1 Today Context Strip V1 is deployed but has a Product Owner source/window defect:** it reads the Osteoporosis Clinical Calendar/day window rather than the Digital Secretary global appointment schedule, so it can show no Previous/Current/Next even while the Reception dashboard has real appointments. The next bounded Cockpit action is a D1.1 source/window correction checkpoint. **D2 Relevant Communication Context is deferred as a supporting input to Visit Brief, not the next standalone Home priority.**
 > **Product boundary:** `cockpit/PRODUCT_CONSTITUTION.md`; cross-programme architecture: `CLINICAL_EXCELLENCE_PLAN.md` §§33–34.
 > **Root lock:** `CURRENT_OPERATIONAL.md` remains the sole repo-wide NOW. Its PR-1 release lifecycle is in HOLD with no active runtime writer at the verified PR-1 branch checkpoint; this Cockpit file does not claim that lock.
 > **Visit Intelligence dependency:** `programme/OST-VISIT-INTELLIGENCE/CURRENT.md`; P0-V0 contract/projector branch `b22fd5c610d20baf0f8ef3384ca16472cd2d1f92` is not on `main`. The external cumulative PASS handback has not yet been reconciled into that workstream CURRENT or released.
 
 ## Current bounded action
 
-The next Cockpit product step is the **D2 — Relevant Communication Context Product Owner checkpoint**. D1 is released and no Cockpit runtime writer is active. D2 remains a design/authority checkpoint only until the Product Owner confirms the plain-language behavior; no integration or UI implementation is authorized yet.
+The next Cockpit product step is **D1.1 — Global Appointment Context source/window correction**, followed by a **Visit Brief / Patient Context** Product Owner checkpoint. No Cockpit runtime writer is active and no D1.1 or Visit Brief implementation authority is claimed yet.
+
+
+### Product Owner correction — 2026-10-02
+
+Production use exposed that the deployed D1 satisfies its tested local semantics but is connected to the wrong product projection for the **global** Cockpit.
+
+Observed behavior:
+- Reception / Digital Secretary already shows real clinic appointments from its existing schedule view;
+- Cockpit D1 reads the Osteoporosis Clinical Calendar endpoint and today's local-day window;
+- therefore a non-osteoporosis appointment — and an immediate next appointment on the following day — may be visible in Reception while Cockpit shows no Previous / Current / Next.
+
+**D1.1 required correction:**
+- Previous / Current / Next on global Cockpit must come from the existing Digital Secretary / appointment schedule truth, not from the Osteoporosis-only Clinical Calendar projection;
+- reuse the Digital Secretary's existing protected schedule mechanism (currently surfaced by its dashboard via `GET /dashboard/schedule`) rather than creating another Cal.com fetcher/calendar;
+- the projection must be global across appointment types/clinics;
+- `Next` must resolve the immediate future appointment across the relevant schedule horizon and must not stop at the local-day boundary merely because the Home is labelled “Today”;
+- the weekly Osteoporosis Clinical Calendar remains a separate Module-01 view and must not be broadened merely to make global Cockpit work;
+- Digital Secretary / booking source remains owner; Cockpit remains read-only;
+- cross-service authentication/data minimization must be designed explicitly rather than reusing a browser dashboard cookie implicitly.
+
+The existing D1 Aclasta-overlap/start-order behavior remains a useful scheduling rule where the required appointment classification is available; D1.1 must preserve it or fail closed if the source cannot support that classification safely.
+
+**Product priority correction:** Relevant Communication Context is not the primary next clinician-facing layer. The next meaningful Home layer after correct appointment context is a compact **Visit Brief / Patient Context** answering, in this order:
+
+1. who is this patient / what is the main problem or reason for today's visit;
+2. what matters from the relevant clinical history;
+3. what was decided/said at the previous visit;
+4. what remains pending or awaited;
+5. what we are expecting/checking today;
+6. only then, any communication that materially changes the visit preparation.
+
+Communication remains bidirectional and Digital Secretary-owned, but it should normally appear as supporting evidence/context inside the Visit Brief rather than as the dominant card.
+
+Where no strongly linked protected clinical patient record exists, Cockpit must not infer one from phone/name alone. It should show only the bounded appointment/operational context and fail closed for patient-specific clinical history until an authorized strong or clinician-confirmed link exists.
 
 D1 is a small, directly visible, read-only Dashboard projection of **Previous / Current / Next** appointment context from the existing normalized Clinical Calendar. It lets the clinician see who was just seen, who is being seen now and who is next without opening the full calendar. The existing weekly Osteoporosis Clinical Calendar remains available through a link labelled **«Άνοιγμα εβδομαδιαίου ημερολογίου»** and is not replaced or removed.
 
