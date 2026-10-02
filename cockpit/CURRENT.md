@@ -30,6 +30,9 @@ Observed behavior:
 
 The existing D1 Aclasta-overlap/start-order behavior remains a useful scheduling rule where the required appointment classification is available; D1.1 must preserve it or fail closed if the source cannot support that classification safely.
 
+
+**Visit Brief interaction decision — Product Owner 2026-10-02:** keep Home compact. Previous / Current / Next should show only concise appointment context by default. Clicking/tapping the patient opens a floating/overlay Visit Brief rather than expanding all history inline. The overlay should prioritize: main problem/reason → relevant history → prior-visit decision/plan → pending/awaited items → what is expected/checking today → relevant communication only when it materially changes preparation. A full-record navigation action may remain available from the overlay. This is a product checkpoint only; no Visit Brief implementation authority is granted yet.
+
 **Product priority correction:** Relevant Communication Context is not the primary next clinician-facing layer. The next meaningful Home layer after correct appointment context is a compact **Visit Brief / Patient Context** answering, in this order:
 
 1. who is this patient / what is the main problem or reason for today's visit;
