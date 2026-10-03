@@ -1,83 +1,58 @@
-# D1.1 Global Appointment Context — Independent Pre-Code Review Request
+# D1.1 — Bounded Independent Pre-Code Closure Request
 
-> **MODE:** fresh independent READ-ONLY R2 pre-code review.
-> **PRODUCT:** Clinical Excellence Cockpit.
-> **REVIEW TARGET:** `cockpit/D1_1_GLOBAL_APPOINTMENT_CONTEXT_DESIGN.md`
-> **EXPECTED DESIGN BLOB:** `2b438c949e30d00a1d11d9d1431d766954320f15`
-> **IMPLEMENTATION:** forbidden in this review.
-> **D1.1 RUNTIME:** not started.
+> MODE: fresh independent READ-ONLY R2 **delta + affected cumulative closure** under `PROCEDURES.md` P5/P5.1.
+> TARGET BRANCH: `design/cockpit-d1-1-global-context-2026-10-02`.
+> TARGET DESIGN: `cockpit/D1_1_GLOBAL_APPOINTMENT_CONTEXT_DESIGN.md`.
+> EXPECTED DESIGN BLOB: `261ee0e7f2fc8b9ebc59310bb1c5e0517439fe33`.
+> ORIGINAL TARGET: head `9b11f722c485247754fa7219e9b0f0d9167f8734`, design blob `2b438c949e30d00a1d11d9d1431d766954320f15`.
+> PRIOR RESULT: BLOCK / COMPLETE_FOR_DECLARED_SCOPE / 0:2:0 / no additional material finding YES / implementation NO.
+> STOP BASIS: answer the three closure questions from the named affected seams, then return the verdict. No time-based substitute for evidence closure.
+> RUNTIME / TEST IMPLEMENTATION / MERGE / DEPLOY: forbidden.
 
-## Product Owner intent to preserve
+## Entry and identity
 
-The global Cockpit must show real Previous / Current / Next appointments rather than only osteoporosis appointments.
+Fresh-verify remote `main`, read the six root canonicals in AGENTS order once, then `PROCEDURES.md`, `cockpit/CURRENT.md`, `cockpit/PRODUCT_CONSTITUTION.md` and this request from the exact target branch. Read the complete design and supplied result in `cockpit/reviews/D1_1_PRECODE_BLOCK_2026-10-03.md`. Verify the expected design blob. The branch may gain checkpoint-only commits; the design blob is the semantic target. If it differs, do not review a guessed/latest candidate: return BLOCK/PARTIAL and identify the mismatch.
 
-Home remains compact. After D1.1, clicking/tapping a patient will later open a floating Visit Brief, but **Visit Brief runtime is not part of D1.1**.
+The original request is archived at `cockpit/reviews/archive/D1_1_PRECODE_REVIEW_REQUEST_2026-10-02.md`. Reuse the supplied complete original coverage; do not repeat its seven-question full review. Read archived request only if an affected contradiction requires it. The writer's corrections are not independent PASS evidence.
 
-The Digital Secretary remains appointment/workflow owner. The weekly Osteoporosis Calendar remains Module-01 specific.
+## Finite review questions and permitted evidence
 
-## Source-grounded fact that motivated this design
+1. **PRE-01 closure:** Does design §5.1 make newly ingested effective-`other` admission snapshot-only through a bounded internal default-off mode? Is only the validated complete snapshot caller allowed to opt in? Does legacy import preserve unrelated discard/removal/counters and relevant behavior without phantom global retention? Are future regressions in §§10/12 explicit?
+2. **PRE-02 closure:** Does §5.2 enforce empty phone/null patient link whenever any affected writer persists effective `other`, including clearing a manual override before commit/response? Does it avoid silent restoration of cleared fields? Is the auto-other/manual-relevant/populated-fields → clear-override regression explicit?
+3. **Affected cumulative check:** Do those corrections preserve a single normalized store/owner, same-source exact-window missing-row reconciliation, existing manual relevant overrides, protected access, weekly osteoporosis filtering and global projection minimization? Does the design still preserve cross-day Next and lawful Aclasta/other-overlap fail-closed semantics without expanding clinical linkage, Reception, Visit Brief, D2 or GESY scope?
 
-The existing Digital Secretary producer already sends a bounded complete future Cal.com snapshot to Clinical Excellence. The Clinical Excellence consumer currently classifies non-osteoporosis rows as `other` and discards them at ingest. The proposed design retains one normalized row per source appointment and keeps the existing osteoporosis endpoint filtered.
+Primary source allow-list after authority/design/result reads:
+- `clinical_calendar.py`: `RELEVANT_CATEGORIES`, `list_appointments`, `update_appointment_classification`, `_apply_import_item`, `import_appointments`, `import_appointment_snapshot` and directly used contracts/helpers.
+- `test_clinical_calendar_snapshot.py`: the two named old snapshot oracles, manual override test and legacy import test.
+- `static/cockpit/app.js` / `test_cockpit_home.py`: only already accepted D1 temporal/minimization consumers if needed to resolve question 3.
 
-## Exact review questions
+Review the design delta against the original blob, then inspect the affected source once. Main/runtime bytes were unchanged at the coordinator's fresh main `5801fbe20cf760eaa9c67e8aa03bc52c5928393b`; check for relevant drift, not unrelated branch history. Follow another file only for a named caller, writer or contradiction that changes one of Q1–Q3; record which question it resolves. If required evidence is unavailable after a targeted retry, mark that question unresolved. No recursive registry/historical review chase, repo-wide audit, web search, dependency installation, full test suite, live patient/portal access, CI/deploy polling or additional reviewers.
 
-Issue **PASS** only if the design is implementable and preserves all material boundaries below.
+This is pre-code closure: source and required future regression oracles are evidence. Do not BLOCK merely because the intended runtime fix/test has not yet been implemented. A reachable design gap or safety/authority contradiction is material; cosmetic alternatives are not.
 
-1. **Single owner / reuse**
-   - Does the design reuse the existing Digital Secretary → Clinical Calendar snapshot rather than creating a second schedule/calendar path?
-   - Does retaining all rows in the existing normalized store avoid a competing appointment owner?
+## Terminal conditions
 
-2. **Privacy / minimization**
-   - Is retaining global patient display name + appointment reason necessary and bounded for clinician scheduling/visit preparation?
-   - Is stripping `phone_e164` and `linked_patient_id` from effective `other` rows sufficient for D1.1?
-   - Does the new browser projection exclude phone/link/raw transport/provider metadata?
+Maintain a disposition for Q1/Q2/Q3 and PRE-01/PRE-02. Stop immediately when all are disposed; do not fill the budget. If a decisive material BLOCK is established, record it and complete only the bounded affected scan if time permits. Target mismatch, unavailable required evidence or a material scope expansion → BLOCK/PARTIAL/implementation NO with the exact remaining question/evidence; do not investigate a newly expanded programme inside this closure. No automatic restart, extension or “review of the review”.
 
-3. **Snapshot reconciliation**
-   - Does changing `_apply_import_item` from “discard unrelated” to “retain as other” preserve complete-snapshot cancellation/reschedule deletion?
-   - Are manual osteoporosis classification overrides preserved?
-   - Is the rollback treatment of candidate-only `other` rows explicit enough?
+PASS requires both findings independently CLOSED, complete affected coverage and no new material risk. On PASS, stop this pre-code chain under P5; any later post-code fidelity gate is separate. Return handback and STOP. No implementation or follow-up after output.
 
-4. **Projection separation**
-   - Does the existing `/clinical/calendar/appointments` remain osteoporosis-only?
-   - Is a separate minimal `/clinical/calendar/cockpit-context` projection the correct boundary?
-   - Is returning only Previous / Current / Next preferable to exposing a 30-day global list to the browser?
-
-5. **Temporal semantics**
-   - Previous and Current remain today-context.
-   - Next crosses the local-day boundary and selects the earliest future stored appointment.
-   - Lawful Aclasta overlap remains allowed only when explicitly classified; all other concurrent active overlaps fail closed.
-
-6. **Freshness**
-   - Does the design accurately state that D1.1 reuses the existing daily snapshot cadence and does not claim live Reception parity?
-   - Is cadence/live-pull/manual-sync correctly deferred?
-
-7. **Scope**
-   - No Reception runtime mutation.
-   - No new secret/config.
-   - No booking/cancel/reschedule write.
-   - No Visit Brief clinical-history implementation.
-   - No GESY/D2 communication scope.
-
-## Existing tests whose oracle changes
-
-Review the design's explicit legacy-oracle disposition for:
-- `test_snapshot_upserts_relevant_rows_filters_unrelated_and_removes_missing`;
-- `test_snapshot_reclassification_removes_previously_relevant_row`.
-
-A finding must distinguish a genuinely stale old oracle from a preserved invariant that the new design would violate.
+The finite evidence map in Q1–Q3 is the stop criterion. Do not search for proof that no other defect exists. `NO ADDITIONAL MATERIAL FINDING=YES` refers only to the declared affected scope.
 
 ## Required output
 
-Return exactly:
-
 ```text
+TARGET DESIGN BLOB = <verified blob | unverified>
 VERDICT = PASS | BLOCK
 COVERAGE = COMPLETE_FOR_DECLARED_SCOPE | PARTIAL
+ORIGINAL FINDINGS = D1.1-PRE-01: CLOSED | OPEN | UNVERIFIED; D1.1-PRE-02: CLOSED | OPEN | UNVERIFIED
+QUESTION DISPOSITIONS = Q1: <disposition + concise evidence>; Q2: <...>; Q3: <...>
 P0:P1:P2 = x:y:z
 MATERIAL FINDINGS =
-- <id / severity / reachable consequence / violated invariant / evidence / smallest correction>
-NO ADDITIONAL MATERIAL FINDING = YES | NO
+- <id / severity / reachable consequence / violated invariant / evidence / smallest correction> | NONE
+NO ADDITIONAL MATERIAL FINDING = YES | NO | NOT_ESTABLISHED
+UNREVIEWED / MISSING EVIDENCE = <precise remainder | NONE>
+STOP REASON = <Q1–Q3 disposed | decisive material block | unavailable evidence | target mismatch | material scope expansion>
 IMPLEMENTATION MAY START = YES | NO
 ```
 
-Do not implement code. Do not merge or deploy. STOP after the review result.
+For PARTIAL, report known findings only; zero known findings is not PASS. Set NO ADDITIONAL MATERIAL FINDING=NOT_ESTABLISHED when required coverage is incomplete. Use YES for implementation only on complete PASS. STOP.

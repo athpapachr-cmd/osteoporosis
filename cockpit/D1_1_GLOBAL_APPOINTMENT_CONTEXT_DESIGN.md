@@ -1,9 +1,9 @@
 # COCKPIT D1.1 — Global Appointment Context correction
 
-> **STATUS:** PRE-CODE R2 DESIGN CANDIDATE.
-> **DATE:** 2026-10-02.
+> **STATUS:** PRE-CODE BLOCK CONSUMED / CORRECTED DESIGN / INDEPENDENT CLOSURE PENDING.
+> **DATE:** 2026-10-03 (bounded correction of the 2026-10-02 candidate).
 > **PRODUCT OWNER:** clinician.
-> **BASE:** `df55c9a5b6e06e8ed04ff85eb5cedf4b68e94ed3`.
+> **BASE:** original design base `df55c9a5b6e06e8ed04ff85eb5cedf4b68e94ed3`; investigation verified main `5801fbe20cf760eaa9c67e8aa03bc52c5928393b`. Original reviewed design blob: `2b438c949e30d00a1d11d9d1431d766954320f15`.
 > **BRANCH:** `design/cockpit-d1-1-global-context-2026-10-02`.
 > **RUNTIME IMPLEMENTATION:** NOT AUTHORIZED pending one independent pre-code review.
 
@@ -72,13 +72,26 @@ Therefore D1.1 remains **R2** under `PROCEDURES.md`: one independent pre-code de
 
 ## 5. Persistence and minimization contract
 
+### 5.1 Snapshot-only admission — D1.1-PRE-01
+
+Retaining a newly ingested effective `other` row is permitted **only** inside the existing validated complete `POST /clinical/calendar/appointments/snapshot` path and its declared source/window reconciliation transaction.
+
+The shared `_apply_import_item` must have an explicit bounded mode, such as `retain_other=False` by default. Only the complete snapshot caller passes `retain_other=True`, after the existing scope/cardinality/source/duplicate/window validation. This mode is internal, not a new client-supplied option.
+
+The still-reachable legacy `POST /clinical/calendar/appointments/import` retains its existing effective-unrelated discard/removal semantics and counters. It must not insert/upsert an effective `other` row as global context, because it does not reconcile missing source rows. Relevant legacy imports remain supported. Manual overrides are resolved before deciding the effective category; an effective relevant row keeps the existing relevant behavior.
+
+A classification mutation may change an already stored row's effective category; that is not a new source ingestion path. The minimization invariant below applies before that mutation commits. No second appointment reader/store, new provenance schema or legacy route removal is introduced.
+
+### 5.2 All mutation paths — D1.1-PRE-02
+
 For every valid snapshot row:
 
 1. classify using the existing classifier/manual override;
 2. upsert one `ClinicalAppointmentORM` row regardless of whether category is osteoporosis-related or `other`;
 3. preserve snapshot reconciliation: same-source rows absent from the complete declared snapshot window are deleted;
 4. preserve manual osteoporosis classification overrides;
-5. no new table / migration.
+5. no new table / migration;
+6. apply the effective-category minimization invariant before every persistence commit, not merely in the snapshot caller.
 
 For rows whose effective category remains `other`:
 
@@ -92,7 +105,11 @@ For rows whose effective category remains `other`:
   - updated timestamp;
   - category=`other`;
 - **do not retain `phone_e164` or `linked_patient_id`** for D1.1. Persist them as empty / null for `other` rows.
-- if a later source snapshot or manual override makes the row osteoporosis-relevant, the next upsert may retain the already-authorized osteoporosis fields as today.
+- if a later source snapshot or manual override makes the row osteoporosis-relevant, a subsequent authorized relevant upsert may retain the already-authorized osteoporosis fields as today. A manual promotion alone does not recover previously cleared phone/link.
+
+Required invariant: **every persisted effective `other` row has `phone_e164=""` and `linked_patient_id=null`**. It applies to snapshot inserts/updates, relevant → other reclassification and **clearing a manual override via `update_appointment_classification(... category=None)`**. Recompute the effective category, clear phone/link if it is `other`, then commit and build the response. Browser field exclusion cannot substitute for server-side minimization. A small shared internal sanitizer may be reused by the affected writers; no broad data-layer refactor is required.
+
+For manual-clear regression: start with a stored appointment whose raw label/comment auto-classifies as `other`, whose manual relevant override is active, and whose phone/link are populated by an authorized relevant snapshot upsert. Clear the override. The row remains as minimized `other`, the override is removed, the weekly view excludes it, and the bounded global view may still show its appointment context.
 
 D1.1 does not activate phone correlation, communication linkage or clinical patient identity linkage.
 
@@ -208,6 +225,8 @@ The top card remains visually compact.
 
 ## 10. Legacy-oracle disposition
 
+The changed storage oracles below apply **only to complete snapshots**. The legacy import's unrelated discard/removal oracle remains current; do not change it to global retention.
+
 The following legacy expectations are **superseded only for storage**, not for the weekly osteoporosis projection:
 
 - `test_snapshot_upserts_relevant_rows_filters_unrelated_and_removes_missing`:
@@ -220,7 +239,7 @@ The following legacy expectations are **superseded only for storage**, not for t
 Still-current oracles:
 - incomplete/ambiguous snapshots fail before destructive reconciliation;
 - stale missing rows are removed inside exact source/window;
-- manual classification survives future snapshots;
+- manual classification survives future snapshots; clearing it must minimize an effective `other` row before commit;
 - weekly osteoporosis classification semantics remain;
 - D1 Aclasta lawful overlap / other overlap fail-closed semantics remain.
 
@@ -267,7 +286,12 @@ Post-code focused tests must prove at minimum:
 10. Aclasta overlap remains lawful; other overlap fails closed;
 11. Cockpit no longer calls the osteoporosis-only list endpoint for D1 context;
 12. weekly Calendar link remains;
-13. no browser localStorage/sessionStorage of appointment identity.
+13. no browser localStorage/sessionStorage of appointment identity;
+14. **PRE-01 regression:** an unrelated legacy import does not create a retained DB/global row; relevant legacy import still works; legacy skip/removal counters and previously relevant → unrelated removal stay compatible;
+15. **PRE-02 regression:** clearing a manual relevant override on an auto-`other` row with populated phone/link removes the override and persists empty/null in the same transaction, excludes the row from the weekly endpoint and keeps any global response minimized;
+16. snapshot relevant → other and repeat `other` updates cannot preserve stale phone/link. Inspect the two import callers and the classification writer as the finite mutation-path set for this change.
+
+These are required future implementation regressions, not executed evidence. This correction changes design only.
 
 ## 13. Rollback
 
@@ -279,7 +303,16 @@ No schema rollback is required.
 
 Rows persisted as `other` during a candidate period are protected server-side data; rollback/release procedure must explicitly decide whether to delete candidate-only `other` rows rather than silently leave them outside the old retention contract.
 
-## 14. REPLAN triggers
+## 14. Review correction disposition
+
+Product Owner handback: **BLOCK / COMPLETE_FOR_DECLARED_SCOPE / P0:P1:P2=0:2:0 / NO ADDITIONAL MATERIAL FINDING=YES / IMPLEMENTATION MAY START=NO**.
+
+- D1.1-PRE-01: CURRENT BLOCKER / in-slice REPLAN; design corrected in §§5.1, 10, 12. Independent closure pending.
+- D1.1-PRE-02: CURRENT BLOCKER / in-slice REPLAN; design corrected in §§5.2, 10, 12. Independent closure pending.
+
+One delta + affected cumulative pre-code closure review is the next gate under `PROCEDURES.md` P5/P5.1. The writer cannot independently certify these corrections. Original request and supplied findings are preserved under `cockpit/reviews/`. No new product owner, data model, external effect or phase order is introduced.
+
+## 14A. REPLAN triggers
 
 REPLAN before implementation if review/source proves any of:
 
