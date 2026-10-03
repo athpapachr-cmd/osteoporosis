@@ -1,35 +1,29 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
-> **NOW (2026-10-03):** Home v1, Pending Surgery Queue and the bounded Clinical Calendar reason bridge are released. **D1 Today Context Strip V1 is deployed but has a Product Owner source/window defect:** it reads the Osteoporosis Clinical Calendar/day window rather than the Digital Secretary global appointment schedule, so it can show no Previous/Current/Next even while the Reception dashboard has real appointments. D1.1 pre-code BLOCK has been consumed; corrected design awaits one bounded independent closure. **D2 Relevant Communication Context is deferred as a supporting input to Visit Brief, not the next standalone Home priority.**
+> **NOW (2026-10-03):** Home v1, Pending Surgery Queue and the bounded Clinical Calendar reason bridge are released. **D1 Today Context Strip V1 is deployed but has a Product Owner source/window defect:** it reads the Osteoporosis Clinical Calendar/day window rather than the Digital Secretary global appointment schedule, so it can show no Previous/Current/Next even while the Reception dashboard has real appointments. D1.1 independent pre-code closure PASS has been consumed; bounded implementation is authorized and starting. **D2 Relevant Communication Context is deferred as a supporting input to Visit Brief, not the next standalone Home priority.**
 > **Product boundary:** `cockpit/PRODUCT_CONSTITUTION.md`; cross-programme architecture: `CLINICAL_EXCELLENCE_PLAN.md` §§33–34.
 > **Root lock:** `CURRENT_OPERATIONAL.md` remains the sole repo-wide NOW. Its PR-1 release lifecycle is in HOLD with no active runtime writer at the verified PR-1 branch checkpoint; this Cockpit file does not claim that lock.
 > **Visit Intelligence dependency:** `programme/OST-VISIT-INTELLIGENCE/CURRENT.md`; P0-V0 contract/projector branch `b22fd5c610d20baf0f8ef3384ca16472cd2d1f92` is not on `main`. The external cumulative PASS handback has not yet been reconciled into that workstream CURRENT or released.
 
 ## Current bounded action
 
-The active Cockpit step is **D1.1 — Global Appointment Context source/window correction** in **R2 PRE-CODE BLOCK / CORRECTED DESIGN / INDEPENDENT CLOSURE HOLD**. Product Owner authorized “D1.1 → Visit Brief” on 2026-10-02 and requested this bounded review investigation/design reconciliation on 2026-10-03. No D1.1 runtime implementation is authorized until independent pre-code closure passes. Visit Brief remains the immediately following product slice.
+The active Cockpit step is **D1.1 — Global Appointment Context source/window correction**, R2, implementation authorized by the Product Owner on 2026-10-03. Root writer scope is `CURRENT_OPERATIONAL.md`. No merge/deploy or Visit Brief implementation authority.
 
-### Corrected D1.1 checkpoint — 2026-10-03
+### D1.1 implementation-start checkpoint — 2026-10-03
 
 ```text
-BRANCH:                design/cockpit-d1-1-global-context-2026-10-02
-DESIGN:                cockpit/D1_1_GLOBAL_APPOINTMENT_CONTEXT_DESIGN.md
-DESIGN BLOB:           261ee0e7f2fc8b9ebc59310bb1c5e0517439fe33
-SUPPLIED PRE-CODE:     BLOCK / COMPLETE_FOR_DECLARED_SCOPE / P0:P1:P2=0:2:0
-CORRECTIONS:           PRE-01 snapshot-only other admission; PRE-02 every other mutation minimized
-INDEPENDENT CLOSURE:   PENDING / NOT LAUNCHED
-CORRECTION WRITER:     RELEASED / NO ACTIVE RUNTIME WRITER
-RUNTIME IMPLEMENTED:  NO
-RUNTIME/TEST DIFF:     NONE
-MERGED/DEPLOYED D1.1:  NO
-NEXT ACTION:          one READ-ONLY delta + affected cumulative pre-code closure with Q1–Q3 evidence stop, then STOP
+BASE MAIN:            d5da6271567a4141b2708d9fa12e673dfce37131
+BRANCH:               feat/cockpit-d1-1-global-context-2026-10-03
+DESIGN BLOB:          261ee0e7f2fc8b9ebc59310bb1c5e0517439fe33
+INDEPENDENT PRE-CODE: PASS / COMPLETE_FOR_DECLARED_SCOPE / 0:0:0
+PRE-01 / PRE-02:      CLOSED / CLOSED
+IMPLEMENTATION:       STARTING / PRODUCT OWNER AUTHORIZED
+POST-CODE REVIEW:     PENDING
+MERGED / DEPLOYED:    NO / NO
+NEXT:                 exact-design implementation + focused §12 checks, checkpoint head, prepare one independent fidelity review
 ```
 
-PRE-01/PRE-02 are CURRENT BLOCKER / in-slice design corrections, not new tasks or phase-order changes. The design now requires internal default-off `other` retention enabled only by the validated complete snapshot caller, preserved legacy unrelated discard/removal, and phone empty/link null before every effective-`other` commit, including manual-override clearing. Required regressions are specified for later implementation; none has been implemented/executed here. Independent closure cannot be certified by the correction writer.
-
-Source investigation established that the existing Digital Secretary complete bounded future snapshot can be reused without Reception/auth/schema changes. General review execution limits live in `PROCEDURES.md` P5.1. The revised request, original request archive, supplied BLOCK and exact chat-prompt notes are on the named design branch under `cockpit/reviews/`. Original request archive blob is `7cd035537d53d93c8063e8ceba9439dd1704faa0`.
-
-The Product Owner reports a >7-hour Work-mode review, but that chat exposes no intermediate trace. A separate Codex run of the same prompt completed in roughly four minutes. The actual cause of the long run is unproven; the source-proven prompt defect is the missing definition of sufficient evidence and resulting search stop. No repeat full pre-code review, review-of-review or reviewer delegation is requested. Only complete independent PASS can release D1.1 implementation; PASS does not grant merge/deploy or Visit Brief runtime authority.
+Supplied closure evidence is retained in `reviews/D1_1_PRECODE_CLOSURE_PASS_2026-10-03.md`. Q1–Q3 were supported, no material findings/missing evidence, stop reason Q1–Q3 disposed. The pre-code chain is stopped under PROCEDURES P5/P5.1. The corrected design is copied byte-for-byte from design branch head `ba1f7eafb500986ad07b2e6b4320ac982896eb77`; its historical pending-review status is superseded by this checkpoint without changing the reviewed blob. Reuse the existing complete snapshot feed; preserve one store, snapshot reconciliation/manual overrides, legacy discard and weekly osteoporosis filtering. No Reception/config/schema/identity/Visit Brief expansion. Review PASS is not release authority. Visit Brief follows only D1.1 closure/release.
 
 ### Product Owner correction — 2026-10-02
 
