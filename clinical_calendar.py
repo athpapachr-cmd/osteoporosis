@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional
+from zoneinfo import ZoneInfo
 import os
 import re
 import secrets
@@ -9,7 +10,7 @@ import unicodedata
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from pydantic import BaseModel, Field
-from sqlalchemy import Column, DateTime, Integer, String, select
+from sqlalchemy import Column, DateTime, Integer, String, func, select
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, Session
 
@@ -125,6 +126,26 @@ class AppointmentRecord(BaseModel):
 
 class AppointmentClassificationUpdate(BaseModel):
     category: Optional[str] = None
+
+
+class CockpitAppointment(BaseModel):
+    appointment_id: str
+    start_at: datetime
+    end_at: datetime
+    clinic: str
+    category: str
+    patient_display_name: str
+    reason: str
+
+
+class CockpitContext(BaseModel):
+    generated_at: datetime
+    source_updated_at: Optional[datetime]
+    today_total: int
+    previous: Optional[CockpitAppointment]
+    current: Optional[CockpitAppointment]
+    current_conflict_count: int
+    next: Optional[CockpitAppointment]
 
 
 class AppointmentImportResult(BaseModel):
@@ -276,6 +297,26 @@ def _record(
     )
 
 
+def _minimize_other(row: ClinicalAppointmentORM) -> None:
+    if row.category == "other":
+        row.phone_e164 = ""
+        row.linked_patient_id = None
+
+
+def _cockpit_appointment(row: Optional[ClinicalAppointmentORM]) -> Optional[CockpitAppointment]:
+    if row is None:
+        return None
+    return CockpitAppointment(
+        appointment_id=row.id,
+        start_at=row.start_at.replace(tzinfo=timezone.utc),
+        end_at=row.end_at.replace(tzinfo=timezone.utc),
+        clinic=row.clinic or "",
+        category=row.category,
+        patient_display_name=row.patient_display_name or "",
+        reason=_clinical_reason(row.comment or ""),
+    )
+
+
 def build_clinical_calendar_router(engine: Engine) -> APIRouter:
     CalendarBase.metadata.create_all(bind=engine)
     router = APIRouter(prefix="/clinical/calendar", tags=["clinical-calendar"])
@@ -300,6 +341,54 @@ def build_clinical_calendar_router(engine: Engine) -> APIRouter:
 
     protected = [Depends(require_clinical_key)]
     ingest_protected = [Depends(require_ingest_key)]
+
+    @router.get("/cockpit-context", response_model=CockpitContext, dependencies=protected)
+    def cockpit_context() -> CockpitContext:
+        now = utcnow()
+        local_now = now.replace(tzinfo=timezone.utc).astimezone(ZoneInfo("Asia/Nicosia"))
+        local_start = local_now.replace(hour=0, minute=0, second=0, microsecond=0)
+        day_start = _naive_utc(local_start)
+        day_end = _naive_utc(local_start + timedelta(days=1))
+        with Session(engine) as session:
+            # Previous is today-only; Current may span midnight. Next uses the
+            # retained bounded source horizon, rather than a browser day window.
+            rows = session.execute(
+                select(ClinicalAppointmentORM)
+                .where((ClinicalAppointmentORM.start_at >= day_start) | (ClinicalAppointmentORM.end_at > now))
+                .order_by(ClinicalAppointmentORM.start_at.asc(), ClinicalAppointmentORM.id.asc())
+            ).scalars().all()
+            source_updated = session.scalar(select(func.max(ClinicalAppointmentORM.updated_at)))
+            active = [row for row in rows if row.start_at <= now < row.end_at]
+            current = None
+            conflict_count = 0
+            if len(active) == 1:
+                current = active[0]
+            elif len(active) > 1:
+                latest = active[-1]
+                if latest.category != "aclasta" and all(
+                    row.category == "aclasta" and row.start_at < latest.start_at
+                    for row in active[:-1]
+                ):
+                    current = latest
+                else:
+                    conflict_count = len(active)
+            today_started = [row for row in rows if day_start <= row.start_at <= now]
+            previous = None
+            if current is not None:
+                earlier = [row for row in today_started if row.start_at < current.start_at]
+                previous = earlier[-1] if earlier else None
+            elif not conflict_count and today_started:
+                previous = today_started[-1]
+            next_row = next((row for row in rows if row.start_at > now), None)
+            return CockpitContext(
+                generated_at=now.replace(tzinfo=timezone.utc),
+                source_updated_at=source_updated.replace(tzinfo=timezone.utc) if source_updated else None,
+                today_total=sum(day_start <= row.start_at < day_end for row in rows),
+                previous=_cockpit_appointment(previous),
+                current=_cockpit_appointment(current),
+                current_conflict_count=conflict_count,
+                next=_cockpit_appointment(next_row),
+            )
 
     @router.get("/appointments", response_model=List[AppointmentRecord], dependencies=protected)
     def list_appointments(
@@ -360,6 +449,7 @@ def build_clinical_calendar_router(engine: Engine) -> APIRouter:
                     row.comment or "",
                     int(row.duration_minutes or 0),
                 )
+                _minimize_other(row)
                 row.updated_at = now
                 session.add(row)
                 session.commit()
@@ -391,6 +481,7 @@ def build_clinical_calendar_router(engine: Engine) -> APIRouter:
         item: AppointmentImport,
         *,
         now: datetime,
+        retain_other: bool = False,
     ) -> tuple[int, int, int, int, int]:
         """Apply one normalized source appointment.
 
@@ -421,7 +512,7 @@ def build_clinical_calendar_router(engine: Engine) -> APIRouter:
         if manual_override is not None:
             category = manual_override.category
 
-        if category not in RELEVANT_CATEGORIES:
+        if category not in RELEVANT_CATEGORIES and not retain_other:
             removed_unrelated = 0
             if row is not None:
                 # If a previously relevant source appointment is later
@@ -455,6 +546,7 @@ def build_clinical_calendar_router(engine: Engine) -> APIRouter:
         row.comment = item.comment.strip()
         row.status = item.status.strip() or "scheduled"
         row.updated_at = now
+        _minimize_other(row)
         return inserted, updated, 0, 0, 0
 
     @router.post("/appointments/import", response_model=AppointmentImportResult, dependencies=ingest_protected)
@@ -527,6 +619,8 @@ def build_clinical_calendar_router(engine: Engine) -> APIRouter:
             seen_ids.add(item.source_appointment_id)
 
             start_at = _naive_utc(item.start_at)
+            if _naive_utc(item.end_at) <= start_at:
+                raise HTTPException(status_code=422, detail="all snapshot appointments must have a valid interval")
             if start_at < window_start or start_at >= window_end:
                 raise HTTPException(
                     status_code=422,
@@ -539,7 +633,7 @@ def build_clinical_calendar_router(engine: Engine) -> APIRouter:
 
         with Session(engine) as session:
             for item in snapshot.appointments:
-                delta = _apply_import_item(session, item, now=now)
+                delta = _apply_import_item(session, item, now=now, retain_other=True)
                 counters = [left + right for left, right in zip(counters, delta)]
 
             stale_stmt = (

@@ -16,31 +16,31 @@
     osteoporosis_review: "Επανέλεγχος",
     osteoporosis_unspecified: "Οστεοπόρωση",
     prolia: "Prolia",
-    aclasta: "Aclasta"
+    aclasta: "Aclasta",
+    other: "Ραντεβού"
   };
 
   const appointmentTimeFormatter = new Intl.DateTimeFormat("el-CY", {
     hour: "2-digit",
     minute: "2-digit",
-    hour12: false
+    hour12: false,
+    timeZone: "Asia/Nicosia"
+  });
+
+  const appointmentDateFormatter = new Intl.DateTimeFormat("el-CY", {
+    day: "numeric", month: "numeric", year: "numeric", timeZone: "Asia/Nicosia"
   });
 
   let surgeryRows = [];
   let surgerySortKey = "queue_position";
   let surgerySortDirection = "asc";
 
-  function localDayBounds() {
-    const now = new Date();
-    const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
-    const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0, 0);
-    return { now, start, end };
-  }
-
   function formatToday(now) {
     return new Intl.DateTimeFormat("el-GR", {
       weekday: "long",
       day: "numeric",
-      month: "long"
+      month: "long",
+      timeZone: "Asia/Nicosia"
     }).format(now);
   }
 
@@ -59,63 +59,7 @@
     return Number.isNaN(parsed.getTime()) ? null : parsed;
   }
 
-  function appointmentContext(rows, now) {
-    const nowMs = now.getTime();
-    const items = (rows || [])
-      .map((row) => {
-        const start = parseClinicalAppointmentDate(row.start_at);
-        const end = parseClinicalAppointmentDate(row.end_at);
-        if (!start || !end || end <= start) return null;
-        return { row, start: start.getTime(), end: end.getTime() };
-      })
-      .filter(Boolean)
-      .sort((left, right) => left.start - right.start);
-
-    const startedItems = items.filter((item) => item.start <= nowMs);
-    const latestStartedItem = startedItems.length ? startedItems[startedItems.length - 1] : null;
-    const activeItems = items.filter((item) => item.start <= nowMs && nowMs < item.end);
-    const nextItem = items.find((item) => item.start > nowMs) || null;
-
-    let currentItem = null;
-    let currentConflictCount = 0;
-
-    if (activeItems.length === 1) {
-      currentItem = activeItems[0];
-    } else if (activeItems.length > 1) {
-      const latestActiveItem = activeItems[activeItems.length - 1];
-      const earlierActiveItems = activeItems.slice(0, -1);
-      const lawfulAclastaOverlap =
-        latestActiveItem.row.category !== "aclasta"
-        && earlierActiveItems.every((item) => item.row.category === "aclasta");
-
-      if (lawfulAclastaOverlap) {
-        currentItem = latestActiveItem;
-      } else {
-        currentConflictCount = activeItems.length;
-      }
-    }
-
-    const currentIndex = currentItem ? items.indexOf(currentItem) : -1;
-    const latestStartedIndex = latestStartedItem ? items.indexOf(latestStartedItem) : -1;
-    let previousItem = null;
-
-    if (currentIndex > 0) {
-      previousItem = items[currentIndex - 1];
-    } else if (currentConflictCount > 1 && latestStartedIndex > 0) {
-      previousItem = items[latestStartedIndex - 1];
-    } else if (!currentItem && currentConflictCount === 0 && latestStartedItem) {
-      previousItem = latestStartedItem;
-    }
-
-    return {
-      previous: previousItem ? previousItem.row : null,
-      current: currentItem ? currentItem.row : null,
-      currentConflictCount,
-      next: nextItem ? nextItem.row : null
-    };
-  }
-
-  function setAppointmentSlot(prefix, row, emptyText) {
+  function setAppointmentSlot(prefix, row, emptyText, now) {
     const timeNode = $(`${prefix}AppointmentTime`);
     const patientNode = $(`${prefix}AppointmentPatient`);
     const typeNode = $(`${prefix}AppointmentType`);
@@ -123,27 +67,34 @@
     if (!row) {
       timeNode.textContent = "—";
       patientNode.textContent = emptyText;
+      delete patientNode.dataset.appointmentId;
       typeNode.textContent = "";
       return;
     }
 
     const start = parseClinicalAppointmentDate(row.start_at);
-    timeNode.textContent = start ? appointmentTimeFormatter.format(start) : "—";
+    const laterDay = start && now
+      && appointmentDateFormatter.format(start) !== appointmentDateFormatter.format(now);
+    timeNode.textContent = start
+      ? `${laterDay ? `${appointmentDateFormatter.format(start)} · ` : ""}${appointmentTimeFormatter.format(start)}`
+      : "—";
     patientNode.textContent = row.patient_display_name || "Χωρίς καταχωρημένο όνομα";
-    typeNode.textContent = appointmentCategoryLabels[row.category] || "Οστεοπόρωση";
+    patientNode.dataset.appointmentId = row.appointment_id;
+    typeNode.textContent = [row.clinic, row.reason || appointmentCategoryLabels[row.category] || "Ραντεβού"]
+      .filter(Boolean).join(" · ");
   }
 
-  function renderTodayContext(rows, now) {
-    const context = appointmentContext(rows, now);
-    setAppointmentSlot("previous", context.previous, "Δεν υπάρχει προηγούμενο σήμερα");
-    setAppointmentSlot("next", context.next, "Δεν υπάρχει επόμενο σήμερα");
+  function renderTodayContext(context, now) {
+    setAppointmentSlot("previous", context.previous, "Δεν υπάρχει προηγούμενο σήμερα", now);
+    setAppointmentSlot("next", context.next, "Δεν υπάρχει επόμενο στο πρόγραμμα", now);
 
-    if (context.currentConflictCount > 1) {
+    if (context.current_conflict_count > 1) {
+      setAppointmentSlot("current", null, "", now);
       $("currentAppointmentTime").textContent = "—";
-      $("currentAppointmentPatient").textContent = `${context.currentConflictCount} ταυτόχρονα ραντεβού`;
-      $("currentAppointmentType").textContent = "Δες το εβδομαδιαίο ημερολόγιο";
+      $("currentAppointmentPatient").textContent = `${context.current_conflict_count} ταυτόχρονα ραντεβού`;
+      $("currentAppointmentType").textContent = "Έλεγξε το πρόγραμμα στο Reception";
     } else {
-      setAppointmentSlot("current", context.current, "Χωρίς ενεργό ραντεβού");
+      setAppointmentSlot("current", context.current, "Χωρίς ενεργό ραντεβού", now);
     }
   }
 
@@ -153,34 +104,30 @@
     setAppointmentSlot("next", null, message);
   }
 
-  async function loadClinicalCalendarSummary() {
-    const { now, start, end } = localDayBounds();
+  async function loadCockpitContext() {
+    const now = new Date();
     $("todayHeading").textContent = formatToday(now);
     try {
-      const url = `/clinical/calendar/appointments?start=${encodeURIComponent(start.toISOString())}&end=${encodeURIComponent(end.toISOString())}`;
-      const response = await fetch(url, { credentials: "same-origin" });
+      const response = await fetch("/clinical/calendar/cockpit-context", { credentials: "same-origin" });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const rows = await response.json();
-      const consultations = rows.filter((row) =>
-        ["osteoporosis_first", "osteoporosis_review", "osteoporosis_unspecified"].includes(row.category)
-      ).length;
-      const treatments = rows.filter((row) => ["prolia", "aclasta"].includes(row.category)).length;
-
-      renderTodayContext(rows, now);
-      $("todayOsteoporosisCount").textContent = String(consultations);
-      $("todayTreatmentCount").textContent = String(treatments);
-      $("calendarState").textContent = rows.length ? `${rows.length} σήμερα` : "0 σήμερα";
-      $("calendarState").classList.add("ready");
-      $("calendarNote").textContent = rows.length
-        ? "Προβολή προγράμματος από το Clinical Calendar. Το εβδομαδιαίο ημερολόγιο παραμένει η πλήρης προβολή. Το πρόγραμμα ενημερώνεται καθημερινά."
-        : "Δεν υπάρχουν ραντεβού οστεοπόρωσης για σήμερα. Το πρόγραμμα ενημερώνεται καθημερινά.";
+      const context = await response.json();
+      const generated = parseClinicalAppointmentDate(context.generated_at);
+      if (!generated || !Number.isInteger(context.today_total)
+          || !Number.isInteger(context.current_conflict_count)) throw new Error("Invalid context");
+      renderTodayContext(context, generated);
+      const updated = parseClinicalAppointmentDate(context.source_updated_at);
+      $("calendarState").textContent = `${context.today_total} σήμερα`;
+      const updatedToday = updated
+        && appointmentDateFormatter.format(updated) === appointmentDateFormatter.format(generated);
+      $("calendarState").classList.toggle("ready", Boolean(updatedToday));
+      $("calendarNote").textContent = updated
+        ? `${updatedToday ? "" : "Το πρόγραμμα δεν έχει ενημερωθεί σήμερα. "}Τελευταία ενημέρωση: ${appointmentDateFormatter.format(updated)} · ${appointmentTimeFormatter.format(updated)}. Το πρόγραμμα ενημερώνεται καθημερινά.`
+        : "Δεν υπάρχει διαθέσιμη ημερομηνία ενημέρωσης. Έλεγξε το πρόγραμμα στο Reception. Το πρόγραμμα ενημερώνεται καθημερινά.";
     } catch (_) {
       clearTodayContext("Μη διαθέσιμο");
-      $("todayOsteoporosisCount").textContent = "—";
-      $("todayTreatmentCount").textContent = "—";
       $("calendarState").textContent = "Μη διαθέσιμο";
       $("calendarState").classList.remove("ready");
-      $("calendarNote").textContent = "Δεν ήταν δυνατή η φόρτωση της σημερινής κλινικής εικόνας. Άνοιξε το εβδομαδιαίο ημερολόγιο για σύνδεση ή έλεγχο.";
+      $("calendarNote").textContent = "Δεν ήταν δυνατή η φόρτωση του προγράμματος. Έλεγξε τη σύνδεση ή άνοιξε το Reception.";
     }
   }
 
@@ -486,7 +433,7 @@
   bindSurgerySorting();
 
   resetSurgeryForm();
-  loadClinicalCalendarSummary();
-  window.setInterval(loadClinicalCalendarSummary, 60000);
+  loadCockpitContext();
+  window.setInterval(loadCockpitContext, 60000);
   loadSurgeryQueue();
 })();

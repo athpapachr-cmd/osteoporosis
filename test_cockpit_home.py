@@ -46,115 +46,89 @@ def test_cockpit_today_context_strip_uses_protected_calendar_without_second_cale
     html = _read("static/cockpit/index.html")
     js = _read("static/cockpit/app.js")
 
-    assert "/clinical/calendar/appointments" in js
+    assert "/clinical/calendar/cockpit-context" in js
+    assert "/clinical/calendar/appointments" not in js
     assert "/static/clinical-calendar/" in html
     assert "Άνοιγμα εβδομαδιαίου ημερολογίου" in html
-
     for label in ("Προηγούμενο", "Τώρα", "Επόμενο"):
         assert label in html
-
-    for required_id in (
-        "previousAppointmentTime",
-        "previousAppointmentPatient",
-        "previousAppointmentType",
-        "currentAppointmentTime",
-        "currentAppointmentPatient",
-        "currentAppointmentType",
-        "nextAppointmentTime",
-        "nextAppointmentPatient",
-        "nextAppointmentType",
-    ):
-        assert f'id="{required_id}"' in html
-
-    # D1 may show the appointment display name only after the authenticated
-    # Clinical Calendar request succeeds. It does not use phone or protected
-    # patient identifiers as a new identity/linkage mechanism.
+    for prefix in ("previous", "current", "next"):
+        for field in ("Time", "Patient", "Type"):
+            assert f'id="{prefix}Appointment{field}"' in html
     assert "patient_display_name" in js
-    assert "phone_e164" not in js
-    assert "linked_patient_id" not in js
-
-    # Schedule-context semantics are start-order based for clinician attention.
-    # Aclasta may lawfully overlap a later appointment; other concurrent-current
-    # overlaps fail closed rather than choosing one patient silently.
-    assert r"[+-]\d{2}:?\d{2}" in js
-    assert r"[+-]\\d{2}:?\\d{2}" not in js
-    assert "item.start <= nowMs" in js
-    assert "latestStartedItem" in js
-    assert 'item.row.category === "aclasta"' in js
-    assert "lawfulAclastaOverlap" in js
-    assert "currentConflictCount" in js
-    assert "item.start <= nowMs && nowMs < item.end" in js
-    assert "item.start > nowMs" in js
+    assert "phone_e164" not in js and "linked_patient_id" not in js
+    assert 'timeZone: "Asia/Nicosia"' in js
+    assert "current_conflict_count" in js
     assert "ταυτόχρονα ραντεβού" in js
-    assert "window.setInterval(loadClinicalCalendarSummary, 60000)" in js
-
-    assert "todayOsteoporosisCount" in js
-    assert "todayTreatmentCount" in js
-    assert "localStorage" not in js
-    assert "sessionStorage" not in js
+    assert "window.setInterval(loadCockpitContext, 60000)" in js
+    for counter in ("todayOsteoporosisCount", "todayTreatmentCount"):
+        assert counter not in js and counter not in html
+    assert "localStorage" not in js and "sessionStorage" not in js
 
 
-def _run_d1_context(rows, now_iso):
+def _run_home_responses(responses):
     js = _read("static/cockpit/app.js")
-    start = js.index("  function parseClinicalAppointmentDate")
-    end = js.index("  function setAppointmentSlot", start)
-    context_source = js[start:end]
+    # Execute the real loader/renderer, with a minimal DOM and transport harness.
+    source = js[js.index('  const $'):js.index('  async function apiJson')]
     script = f"""
-{context_source}
-const rows = {json.dumps(rows)};
-const result = appointmentContext(rows, new Date({json.dumps(now_iso)}));
-console.log(JSON.stringify(result));
+const nodes = {{}};
+const document = {{ getElementById(id) {{
+  return nodes[id] ||= {{textContent: "", dataset: {{}},
+    classList: {{toggle() {{}}, remove() {{}}}}}};
+}}}};
+const responses = {json.dumps(responses)};
+const calls = [];
+async function fetch(url, options) {{
+  calls.push({{url, options}});
+  const response = responses.shift();
+  return {{ok: response.ok !== false, status: response.status || 200,
+    json: async () => response.body}};
+}}
+{source}
+(async () => {{
+  const results = [];
+  while (responses.length) {{
+    await loadCockpitContext();
+    results.push(JSON.parse(JSON.stringify(nodes)));
+  }}
+  console.log(JSON.stringify({{calls, results}}));
+}})();
 """
-    raw = subprocess.check_output(["node", "-e", script], text=True)
-    return json.loads(raw)
+    return json.loads(subprocess.check_output(["node", "-e", script], text=True))
 
 
-def _appt(name, start_at, end_at, category="osteoporosis_review"):
-    return {
-        "patient_display_name": name,
-        "start_at": start_at,
-        "end_at": end_at,
-        "category": category,
-    }
+def _home_context(**overrides):
+    context = {"generated_at": "2026-10-03T20:00:00Z", "source_updated_at": "2026-10-03T04:00:00Z",
+               "today_total": 1, "previous": None, "current": None, "current_conflict_count": 0,
+               "next": {"appointment_id": "synthetic-next", "patient_display_name": "Synthetic Next",
+                        "start_at": "2026-10-04T07:00:00Z", "end_at": "2026-10-04T07:40:00Z",
+                        "category": "other", "clinic": "limassol", "reason": "Πόνος γόνατος"}}
+    return context | overrides
 
 
-def test_d1_previous_follows_clinic_start_order():
-    rows = [
-        _appt("A", "2026-10-01T08:00:00Z", "2026-10-01T09:00:00Z"),
-        _appt("B", "2026-10-01T09:00:00Z", "2026-10-01T10:00:00Z"),
-    ]
-    context = _run_d1_context(rows, "2026-10-01T11:30:00Z")
-    assert context["previous"]["patient_display_name"] == "B"
-    assert context["current"] is None
+def test_global_home_renders_later_day_and_clears_after_auth_failure_without_fallback():
+    result = _run_home_responses([{"body": _home_context()}, {"ok": False, "status": 401}])
+    loaded, failed = result["results"]
+    assert loaded["nextAppointmentPatient"]["textContent"] == "Synthetic Next"
+    assert loaded["nextAppointmentPatient"]["dataset"]["appointmentId"] == "synthetic-next"
+    assert "4/10/2026" in loaded["nextAppointmentTime"]["textContent"]
+    assert "10:00" in loaded["nextAppointmentTime"]["textContent"]
+    assert loaded["nextAppointmentType"]["textContent"] == "limassol · Πόνος γόνατος"
+    assert loaded["calendarState"]["textContent"] == "1 σήμερα"
+    assert "ενημερώνεται καθημερινά" in loaded["calendarNote"]["textContent"]
+    for prefix in ("previous", "current", "next"):
+        assert failed[f"{prefix}AppointmentPatient"]["textContent"] == "Μη διαθέσιμο"
+        assert failed[f"{prefix}AppointmentPatient"]["dataset"] == {}
+    assert all(call == {"url": "/clinical/calendar/cockpit-context",
+                        "options": {"credentials": "same-origin"}} for call in result["calls"])
 
 
-def test_d1_aclasta_overlap_hands_current_attention_to_later_started_visit():
-    rows = [
-        _appt("Aclasta", "2026-10-01T09:00:00Z", "2026-10-01T10:00:00Z", "aclasta"),
-        _appt("Review", "2026-10-01T09:40:00Z", "2026-10-01T10:20:00Z"),
-    ]
-    context = _run_d1_context(rows, "2026-10-01T09:50:00Z")
-    assert context["previous"]["patient_display_name"] == "Aclasta"
-    assert context["current"]["patient_display_name"] == "Review"
-    assert context["currentConflictCount"] == 0
-
-
-def test_d1_after_aclasta_overlap_previous_is_the_later_started_patient():
-    rows = [
-        _appt("Aclasta", "2026-10-01T09:00:00Z", "2026-10-01T10:00:00Z", "aclasta"),
-        _appt("Review", "2026-10-01T09:40:00Z", "2026-10-01T09:55:00Z"),
-    ]
-    context = _run_d1_context(rows, "2026-10-01T10:05:00Z")
-    assert context["current"] is None
-    assert context["previous"]["patient_display_name"] == "Review"
-
-
-def test_d1_non_aclasta_current_overlap_fails_closed():
-    rows = [
-        _appt("A", "2026-10-01T09:00:00Z", "2026-10-01T10:00:00Z"),
-        _appt("B", "2026-10-01T09:40:00Z", "2026-10-01T10:20:00Z"),
-    ]
-    context = _run_d1_context(rows, "2026-10-01T09:50:00Z")
-    assert context["current"] is None
-    assert context["currentConflictCount"] == 2
-    assert context["previous"]["patient_display_name"] == "A"
+def test_global_home_conflict_stale_and_unknown_freshness_visible():
+    results = _run_home_responses([
+        {"body": _home_context(current_conflict_count=2, source_updated_at="2026-10-02T04:00:00Z")},
+        {"body": _home_context(source_updated_at=None, next=None)},
+    ])["results"]
+    assert results[0]["currentAppointmentPatient"]["textContent"] == "2 ταυτόχρονα ραντεβού"
+    assert "δεν έχει ενημερωθεί σήμερα" in results[0]["calendarNote"]["textContent"]
+    assert "Δεν υπάρχει διαθέσιμη ημερομηνία" in results[1]["calendarNote"]["textContent"]
+    assert "Δεν υπάρχει επόμενο στο πρόγραμμα" == results[1]["nextAppointmentPatient"]["textContent"]

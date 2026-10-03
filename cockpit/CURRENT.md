@@ -1,13 +1,13 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
-> **NOW (2026-10-03):** Home v1, Pending Surgery Queue and the bounded Clinical Calendar reason bridge are released. **D1 Today Context Strip V1 is deployed but has a Product Owner source/window defect:** it reads the Osteoporosis Clinical Calendar/day window rather than the Digital Secretary global appointment schedule, so it can show no Previous/Current/Next even while the Reception dashboard has real appointments. D1.1 independent pre-code closure PASS has been consumed; bounded implementation is authorized and starting. **D2 Relevant Communication Context is deferred as a supporting input to Visit Brief, not the next standalone Home priority.**
+> **NOW (2026-10-03):** Home v1, Pending Surgery Queue and the bounded Clinical Calendar reason bridge are released. **D1 Today Context Strip V1 is deployed but has a Product Owner source/window defect:** it reads the Osteoporosis Clinical Calendar/day window rather than the Digital Secretary global appointment schedule, so it can show no Previous/Current/Next even while the Reception dashboard has real appointments. D1.1 independent pre-code closure PASS has been consumed; bounded implementation and focused checks are complete; independent post-code review is pending. **D2 Relevant Communication Context is deferred as a supporting input to Visit Brief, not the next standalone Home priority.**
 > **Product boundary:** `cockpit/PRODUCT_CONSTITUTION.md`; cross-programme architecture: `CLINICAL_EXCELLENCE_PLAN.md` §§33–34.
 > **Root lock:** `CURRENT_OPERATIONAL.md` remains the sole repo-wide NOW. Its PR-1 release lifecycle is in HOLD with no active runtime writer at the verified PR-1 branch checkpoint; this Cockpit file does not claim that lock.
 > **Visit Intelligence dependency:** `programme/OST-VISIT-INTELLIGENCE/CURRENT.md`; P0-V0 contract/projector branch `b22fd5c610d20baf0f8ef3384ca16472cd2d1f92` is not on `main`. The external cumulative PASS handback has not yet been reconciled into that workstream CURRENT or released.
 
 ## Current bounded action
 
-The active Cockpit step is **D1.1 — Global Appointment Context source/window correction**, R2, implementation authorized by the Product Owner on 2026-10-03. Root writer scope is `CURRENT_OPERATIONAL.md`. No merge/deploy or Visit Brief implementation authority.
+The active Cockpit step is **D1.1 — Global Appointment Context source/window correction**, R2, implemented and focused-tested under Product Owner authority on 2026-10-03; post-code review / release HOLD. Root writer scope is `CURRENT_OPERATIONAL.md`. No merge/deploy or Visit Brief implementation authority.
 
 ### D1.1 implementation-start checkpoint — 2026-10-03
 
@@ -17,13 +17,25 @@ BRANCH:               feat/cockpit-d1-1-global-context-2026-10-03
 DESIGN BLOB:          261ee0e7f2fc8b9ebc59310bb1c5e0517439fe33
 INDEPENDENT PRE-CODE: PASS / COMPLETE_FOR_DECLARED_SCOPE / 0:0:0
 PRE-01 / PRE-02:      CLOSED / CLOSED
-IMPLEMENTATION:       STARTING / PRODUCT OWNER AUTHORIZED
+IMPLEMENTATION:       COMPLETE / FOCUSED TESTED / NO POST-CODE PASS
+WRITER:               RELEASED / RUNTIME FROZEN FOR REVIEW
 POST-CODE REVIEW:     PENDING
 MERGED / DEPLOYED:    NO / NO
-NEXT:                 exact-design implementation + focused §12 checks, checkpoint head, prepare one independent fidelity review
+NEXT:                 prepare one independent exact-implementation-head fidelity review; separate release authority afterward
 ```
 
 Supplied closure evidence is retained in `reviews/D1_1_PRECODE_CLOSURE_PASS_2026-10-03.md`. Q1–Q3 were supported, no material findings/missing evidence, stop reason Q1–Q3 disposed. The pre-code chain is stopped under PROCEDURES P5/P5.1. The corrected design is copied byte-for-byte from design branch head `ba1f7eafb500986ad07b2e6b4320ac982896eb77`; its historical pending-review status is superseded by this checkpoint without changing the reviewed blob. Reuse the existing complete snapshot feed; preserve one store, snapshot reconciliation/manual overrides, legacy discard and weekly osteoporosis filtering. No Reception/config/schema/identity/Visit Brief expansion. Review PASS is not release authority. Visit Brief follows only D1.1 closure/release.
+
+### D1.1 implementation/test evidence — 2026-10-03
+
+- Snapshot-only `retain_other=True` after complete scope/interval validation; default-off legacy helper still discards/removes unrelated rows with compatible counters.
+- Shared minimization clears phone/link after effective other upserts and manual override clearing. Manual promotion alone cannot restore discarded fields.
+- Existing weekly filter, overrides, classifier and exact source/window reconciliation preserved; one table, no migration.
+- Protected `/clinical/calendar/cockpit-context` returns an explicit minimal model: today-only Previous, active Current, cross-day Next, strict earlier-Aclasta exception, other/tied-start overlaps fail closed. All timestamps are explicit UTC; day bounds use Asia/Nicosia including DST.
+- Home uses the global projection; no fallback list request, phone/link/raw metadata or browser storage. Global card counters removed; weekly link retained; next-day date and freshness/unavailable notices visible. Patient display slot has a future appointment-ID interaction seam; no Visit Brief handler/history yet.
+- **30 tests PASS in 1.16s:** `test_clinical_calendar.py`, `test_clinical_calendar_snapshot.py`, `test_cockpit_home.py`, `test_cockpit_surgery_queue_ui.py`, Python 3.12.2. Python/JS syntax, `test_g4_workspace_ergonomics.js`, diff hygiene PASS.
+- `source_updated_at` is max retained normalized-row update time, not a new persisted snapshot receipt ledger. Empty storage has unknown freshness; UI says so. Cadence/producer unchanged. Global other rows populate through the next existing complete snapshot after release; no live parity or production smoke claimed.
+- Candidate identity is this implementation checkpoint commit; the next docs-only checkpoint records its exact SHA and prepares the sole independent review request. No implementation or release PASS is inferred from author checks.
 
 ### Product Owner correction — 2026-10-02
 

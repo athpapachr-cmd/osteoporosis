@@ -1493,3 +1493,12 @@ Medical Report V1.1 is closed. Reopen only for a material production defect, aut
 - Supplied complete-scope BLOCK (0:2:0) was consumed. D1.1-PRE-01 requires snapshot-only `other` admission with preserved legacy discard/removal; PRE-02 requires phone/link minimization on every effective-`other` mutation, including clearing manual classification.
 - Corrected design blob `261ee0e7f2fc8b9ebc59310bb1c5e0517439fe33` and one delta + affected cumulative closure request are on `design/cockpit-d1-1-global-context-2026-10-02`. Original request is archived unchanged; source/finding provenance and limitations are retained.
 - Governance consistency audit completed; **independent design closure remains PENDING**. No D1.1 runtime/test implementation, release, deployment or Visit Brief implementation occurred. PR-1 root slice/phase/roadmap and other workstreams remain preserved.
+
+
+## 2026-10-03 — D1.1 pre-code closure consumed; bounded implementation candidate tested
+
+Product Owner supplied independent closure PASS / COMPLETE_FOR_DECLARED_SCOPE / PRE-01 CLOSED / PRE-02 CLOSED / 0:0:0 against design blob `261ee0e7f2fc8b9ebc59310bb1c5e0517439fe33` and explicitly authorized implementation. The pre-code chain stopped. Branch `feat/cockpit-d1-1-global-context-2026-10-03` starts from fresh main `d5da6271567a4141b2708d9fa12e673dfce37131`.
+
+The implementation reuses the complete snapshot producer, default-off legacy import helper, one normalized appointment store and protected auth. Effective other rows retain minimal global context with empty phone/null clinical link; manual-clear minimization, weekly filtering and complete same-source/window reconciliation are preserved. A minimal server global projection supplies Home Previous/Current/Next, cross-day Next and the accepted Aclasta exception; other overlaps fail closed. Global Today osteoporosis counters are removed; weekly Calendar link remains.
+
+Focused author evidence: 30 Calendar/snapshot/Home/shared Surgery UI tests PASS, syntax/navigation/diff hygiene PASS. One independent exact-implementation-head post-code review is being prepared; not launched, no verdict yet. Merge/deploy/production smoke and Visit Brief remain unperformed and unauthorized pending their separate gates. Implementation writer is released into review HOLD. Operational identity belongs in the two CURRENT files, rather than being backfilled into this historical entry.
