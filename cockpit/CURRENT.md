@@ -7,7 +7,7 @@
 
 ## Current bounded action
 
-The active Cockpit step is **D1.1 — Global Appointment Context source/window correction** in **R2 DESIGN / PRE-CODE REVIEW**. Product Owner authorized “D1.1 → Visit Brief” on 2026-10-02. No D1.1 runtime implementation is authorized until one independent pre-code review passes. Visit Brief remains the immediately following product slice. Exact review target: branch `design/cockpit-d1-1-global-context-2026-10-02` head `9b11f722c485247754fa7219e9b0f0d9167f8734`, design blob `2b438c949e30d00a1d11d9d1431d766954320f15`. Runtime implementation remains **NO**.
+The active Cockpit step is **D1.1 — Global Appointment Context source/window correction** in **R2 PRE-CODE BLOCK / BOUNDED DESIGN CORRECTION**. Product Owner authorized “D1.1 → Visit Brief” on 2026-10-02. No D1.1 runtime implementation is authorized until one independent pre-code review passes. Visit Brief remains the immediately following product slice. Exact review target: branch `design/cockpit-d1-1-global-context-2026-10-02` head `9b11f722c485247754fa7219e9b0f0d9167f8734`, design blob `2b438c949e30d00a1d11d9d1431d766954320f15`. Runtime implementation remains **NO**. Product Owner's 2026-10-03 handback is BLOCK, complete declared coverage, P0:P1:P2=0:2:0: D1.1-PRE-01 requires snapshot-only `other` admission while preserving legacy discard; D1.1-PRE-02 requires phone/link minimization on every transition to effective `other`, including clearing a manual override. Next: bounded design correction and one independent delta + affected cumulative closure review; no author-certified PASS.
 
 
 ### Product Owner correction — 2026-10-02
