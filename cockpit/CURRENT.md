@@ -19,9 +19,9 @@ INDEPENDENT PRE-CODE: PASS / COMPLETE_FOR_DECLARED_SCOPE / 0:0:0
 PRE-01 / PRE-02:      CLOSED / CLOSED
 IMPLEMENTATION:       COMPLETE / FOCUSED TESTED / NO POST-CODE PASS
 WRITER:               RELEASED / RUNTIME FROZEN FOR REVIEW
-POST-CODE REVIEW:     PENDING
+POST-CODE REVIEW:     REQUEST PREPARED / NOT LAUNCHED
 MERGED / DEPLOYED:    NO / NO
-NEXT:                 prepare one independent exact-implementation-head fidelity review; separate release authority afterward
+NEXT:                 independent read-only fidelity review of dd558e2fa8d59409d21913d2d3f2fbf885fdfece; separate release authority afterward
 ```
 
 Supplied closure evidence is retained in `reviews/D1_1_PRECODE_CLOSURE_PASS_2026-10-03.md`. Q1–Q3 were supported, no material findings/missing evidence, stop reason Q1–Q3 disposed. The pre-code chain is stopped under PROCEDURES P5/P5.1. The corrected design is copied byte-for-byte from design branch head `ba1f7eafb500986ad07b2e6b4320ac982896eb77`; its historical pending-review status is superseded by this checkpoint without changing the reviewed blob. Reuse the existing complete snapshot feed; preserve one store, snapshot reconciliation/manual overrides, legacy discard and weekly osteoporosis filtering. No Reception/config/schema/identity/Visit Brief expansion. Review PASS is not release authority. Visit Brief follows only D1.1 closure/release.
@@ -35,7 +35,7 @@ Supplied closure evidence is retained in `reviews/D1_1_PRECODE_CLOSURE_PASS_2026
 - Home uses the global projection; no fallback list request, phone/link/raw metadata or browser storage. Global card counters removed; weekly link retained; next-day date and freshness/unavailable notices visible. Patient display slot has a future appointment-ID interaction seam; no Visit Brief handler/history yet.
 - **30 tests PASS in 1.16s:** `test_clinical_calendar.py`, `test_clinical_calendar_snapshot.py`, `test_cockpit_home.py`, `test_cockpit_surgery_queue_ui.py`, Python 3.12.2. Python/JS syntax, `test_g4_workspace_ergonomics.js`, diff hygiene PASS.
 - `source_updated_at` is max retained normalized-row update time, not a new persisted snapshot receipt ledger. Empty storage has unknown freshness; UI says so. Cadence/producer unchanged. Global other rows populate through the next existing complete snapshot after release; no live parity or production smoke claimed.
-- Candidate identity is this implementation checkpoint commit; the next docs-only checkpoint records its exact SHA and prepares the sole independent review request. No implementation or release PASS is inferred from author checks.
+- Exact implementation/test head: `dd558e2fa8d59409d21913d2d3f2fbf885fdfece`. Sole prepared independent request: `reviews/D1_1_POSTCODE_REVIEW_REQUEST.md`. Docs-only checkpoint does not alter runtime/test bytes. No implementation or release PASS is inferred from author checks.
 
 ### Product Owner correction — 2026-10-02
 
