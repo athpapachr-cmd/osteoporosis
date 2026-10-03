@@ -1,14 +1,35 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
-> **NOW (2026-10-02):** Home v1, Pending Surgery Queue and the bounded Clinical Calendar reason bridge are released. **D1 Today Context Strip V1 is deployed but has a Product Owner source/window defect:** it reads the Osteoporosis Clinical Calendar/day window rather than the Digital Secretary global appointment schedule, so it can show no Previous/Current/Next even while the Reception dashboard has real appointments. The next bounded Cockpit action is a D1.1 source/window correction checkpoint. **D2 Relevant Communication Context is deferred as a supporting input to Visit Brief, not the next standalone Home priority.**
+> **NOW (2026-10-03):** Home v1, Pending Surgery Queue and the bounded Clinical Calendar reason bridge are released. **D1 Today Context Strip V1 is deployed but has a Product Owner source/window defect:** it reads the Osteoporosis Clinical Calendar/day window rather than the Digital Secretary global appointment schedule, so it can show no Previous/Current/Next even while the Reception dashboard has real appointments. D1.1 pre-code BLOCK has been consumed; corrected design awaits one bounded independent closure. **D2 Relevant Communication Context is deferred as a supporting input to Visit Brief, not the next standalone Home priority.**
 > **Product boundary:** `cockpit/PRODUCT_CONSTITUTION.md`; cross-programme architecture: `CLINICAL_EXCELLENCE_PLAN.md` §§33–34.
 > **Root lock:** `CURRENT_OPERATIONAL.md` remains the sole repo-wide NOW. Its PR-1 release lifecycle is in HOLD with no active runtime writer at the verified PR-1 branch checkpoint; this Cockpit file does not claim that lock.
 > **Visit Intelligence dependency:** `programme/OST-VISIT-INTELLIGENCE/CURRENT.md`; P0-V0 contract/projector branch `b22fd5c610d20baf0f8ef3384ca16472cd2d1f92` is not on `main`. The external cumulative PASS handback has not yet been reconciled into that workstream CURRENT or released.
 
 ## Current bounded action
 
-The active Cockpit step is **D1.1 — Global Appointment Context source/window correction** in **R2 PRE-CODE BLOCK / BOUNDED DESIGN CORRECTION**. Product Owner authorized “D1.1 → Visit Brief” on 2026-10-02. No D1.1 runtime implementation is authorized until one independent pre-code review passes. Visit Brief remains the immediately following product slice. Exact review target: branch `design/cockpit-d1-1-global-context-2026-10-02` head `9b11f722c485247754fa7219e9b0f0d9167f8734`, design blob `2b438c949e30d00a1d11d9d1431d766954320f15`. Runtime implementation remains **NO**. Product Owner's 2026-10-03 handback is BLOCK, complete declared coverage, P0:P1:P2=0:2:0: D1.1-PRE-01 requires snapshot-only `other` admission while preserving legacy discard; D1.1-PRE-02 requires phone/link minimization on every transition to effective `other`, including clearing a manual override. Next: bounded design correction and one independent delta + affected cumulative closure review; no author-certified PASS.
+The active Cockpit step is **D1.1 — Global Appointment Context source/window correction** in **R2 PRE-CODE BLOCK / CORRECTED DESIGN / INDEPENDENT CLOSURE HOLD**. Product Owner authorized “D1.1 → Visit Brief” on 2026-10-02 and requested this bounded review investigation/design reconciliation on 2026-10-03. No D1.1 runtime implementation is authorized until independent pre-code closure passes. Visit Brief remains the immediately following product slice.
 
+### Corrected D1.1 checkpoint — 2026-10-03
+
+```text
+BRANCH:                design/cockpit-d1-1-global-context-2026-10-02
+DESIGN:                cockpit/D1_1_GLOBAL_APPOINTMENT_CONTEXT_DESIGN.md
+DESIGN BLOB:           261ee0e7f2fc8b9ebc59310bb1c5e0517439fe33
+SUPPLIED PRE-CODE:     BLOCK / COMPLETE_FOR_DECLARED_SCOPE / P0:P1:P2=0:2:0
+CORRECTIONS:           PRE-01 snapshot-only other admission; PRE-02 every other mutation minimized
+INDEPENDENT CLOSURE:   PENDING / NOT LAUNCHED
+CORRECTION WRITER:     RELEASED / NO ACTIVE RUNTIME WRITER
+RUNTIME IMPLEMENTED:  NO
+RUNTIME/TEST DIFF:     NONE
+MERGED/DEPLOYED D1.1:  NO
+NEXT ACTION:          one READ-ONLY delta + affected cumulative pre-code closure with Q1–Q3 evidence stop, then STOP
+```
+
+PRE-01/PRE-02 are CURRENT BLOCKER / in-slice design corrections, not new tasks or phase-order changes. The design now requires internal default-off `other` retention enabled only by the validated complete snapshot caller, preserved legacy unrelated discard/removal, and phone empty/link null before every effective-`other` commit, including manual-override clearing. Required regressions are specified for later implementation; none has been implemented/executed here. Independent closure cannot be certified by the correction writer.
+
+Source investigation established that the existing Digital Secretary complete bounded future snapshot can be reused without Reception/auth/schema changes. General review execution limits live in `PROCEDURES.md` P5.1. The revised request, original request archive, supplied BLOCK and exact chat-prompt notes are on the named design branch under `cockpit/reviews/`. Original request archive blob is `7cd035537d53d93c8063e8ceba9439dd1704faa0`.
+
+The Product Owner reports a >7-hour Work-mode review, but that chat exposes no intermediate trace. A separate Codex run of the same prompt completed in roughly four minutes. The actual cause of the long run is unproven; the source-proven prompt defect is the missing definition of sufficient evidence and resulting search stop. No repeat full pre-code review, review-of-review or reviewer delegation is requested. Only complete independent PASS can release D1.1 implementation; PASS does not grant merge/deploy or Visit Brief runtime authority.
 
 ### Product Owner correction — 2026-10-02
 
@@ -21,12 +42,12 @@ Observed behavior:
 
 **D1.1 required correction:**
 - Previous / Current / Next on global Cockpit must come from the existing Digital Secretary / appointment schedule truth, not from the Osteoporosis-only Clinical Calendar projection;
-- reuse the Digital Secretary's existing protected schedule mechanism (currently surfaced by its dashboard via `GET /dashboard/schedule`) rather than creating another Cal.com fetcher/calendar;
+- reuse the Digital Secretary's existing protected schedule mechanism (currently surfaced by its dashboard via `GET /dashboard/schedule`) via the already existing complete snapshot feed rather than a new dashboard consumer or Cal.com fetcher/calendar;
 - the projection must be global across appointment types/clinics;
 - `Next` must resolve the immediate future appointment across the relevant schedule horizon and must not stop at the local-day boundary merely because the Home is labelled “Today”;
 - the weekly Osteoporosis Clinical Calendar remains a separate Module-01 view and must not be broadened merely to make global Cockpit work;
 - Digital Secretary / booking source remains owner; Cockpit remains read-only;
-- cross-service authentication/data minimization must be designed explicitly rather than reusing a browser dashboard cookie implicitly.
+- reuse the existing server-side ingest authentication; apply the corrected server/browser minimization contract without dashboard cookies or new secrets.
 
 The existing D1 Aclasta-overlap/start-order behavior remains a useful scheduling rule where the required appointment classification is available; D1.1 must preserve it or fail closed if the source cannot support that classification safely.
 
@@ -115,9 +136,9 @@ The persistent Clinical Learning L0 red check remains the same non-applicable de
 
 **Final independent closure disposition:** all runtime/product D1 behavior above was accepted. The only remaining BLOCK was two stale canonical statements that still described the superseded `end_at` semantics. Those two statements were corrected in the R0 canonical-only delta at `a965cec7c307c354d7a2ef98d7e2ff2937fe46ee`; no runtime or test semantics changed. Under `PROCEDURES.md` P4/P5/P7 this requires no new product/implementation review, so the D1 review chain is stopped.
 
-**Exact next action:** the Product Owner has now authorized the lawful PR #130 merge/release step provided the current exact-head state and applicable CI remain clean. PR #130 was squash-merged as `db42903e08b11dfe52d427a410f8b15547fb5507`. Render deploy `dep-davbs48473hc73eust00` reached **LIVE** from source `794d96dc4e0676691a4d6333b8f47bdd335cdb6c`. D1 is released and its bounded writer is released. No production smoke beyond successful deploy health is claimed. **Exact next action:** present the D2 Relevant Communication Context plain-language Product Owner checkpoint with concrete UI examples; do not implement D2 until the Product Owner confirms or corrects it. Do not start D2 implementation before D1 is durably released.
+**Historical D1 release checkpoint:** the Product Owner authorized the lawful PR #130 merge/release step provided the current exact-head state and applicable CI remain clean. PR #130 was squash-merged as `db42903e08b11dfe52d427a410f8b15547fb5507`. Render deploy `dep-davbs48473hc73eust00` reached **LIVE** from source `794d96dc4e0676691a4d6333b8f47bdd335cdb6c`. D1 is released and its bounded writer is released. No production smoke beyond successful deploy health is claimed. **Historical follow-up proposal:** D2 Product Owner checkpoint. Superseded by the 2026-10-02 D1.1 → Visit Brief priority above; D2 is supporting context. Do not start D2 implementation before D1 is durably released.
 
-**D2 — Relevant Communication Context** is the next bounded concept after D1, not part of this governance implementation. Its bidirectional read boundary and phone-correlation limit live in `cockpit/PRODUCT_CONSTITUTION.md`. D2 needs its own bounded design/authority before any integration or UI work.
+**D2 — Relevant Communication Context** was the next concept proposed at D1 release; it is now deferred behind D1.1 / Visit Brief. Its bidirectional read boundary and phone-correlation limit live in `cockpit/PRODUCT_CONSTITUTION.md`. D2 needs its own bounded design/authority before any integration or UI work.
 
 **Visit Brief / What Changed** remain product direction, downstream of durable P0-V0 closure/release and the OST-UI coordinator synthesis/Product Owner decision where the Module-01 interaction is affected. The current-problem Osteoporosis workspace also depends on that synthesis. A Next Visit continuity write path remains a separate bounded clinical-authority slice. None of these dependent slices starts from this checkpoint, and OST-UI's R4 completion does not authorize a prototype.
 

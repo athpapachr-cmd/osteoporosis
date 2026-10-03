@@ -1483,3 +1483,13 @@ Medical Report V1.1 is closed. Reopen only for a material production defect, aut
 - Final independent closure accepted the runtime/product behavior; the only residual BLOCK was two stale canonical statements, corrected as an R0 docs-only delta with no runtime/test semantic change. The review chain was then stopped under `PROCEDURES.md`.
 - Render deploy `dep-davbs48473hc73eust00` reached **live** from source `794d96dc4e0676691a4d6333b8f47bdd335cdb6c`. No additional production smoke is claimed in this checkpoint.
 - The next Cockpit step is the D2 Relevant Communication Context Product Owner checkpoint; D2 implementation is not yet authorized.
+
+---
+
+## 2026-10-03 — Bounded review execution and D1.1 pre-code BLOCK reconciliation
+
+- Product Owner reported an independent D1.1 review continued for over seven hours before interruption; no execution trace was supplied, so the specific long-running loop is unproven.
+- Exact original prompt/request were inspected. `PROCEDURES.md` P5.1 now defines when evidence is sufficient: map declared questions to affected sources, expand only for a concrete dependency or contradiction, treat COMPLETE and NO ADDITIONAL MATERIAL FINDING as bounded claims, and stop once the decision is supported. No time limit was adopted as the solution. The Work-mode chat exposes no intermediate execution trace; a separate Codex run of the same prompt completed in about four minutes, so the specific seven-hour cause remains unproven.
+- Supplied complete-scope BLOCK (0:2:0) was consumed. D1.1-PRE-01 requires snapshot-only `other` admission with preserved legacy discard/removal; PRE-02 requires phone/link minimization on every effective-`other` mutation, including clearing manual classification.
+- Corrected design blob `261ee0e7f2fc8b9ebc59310bb1c5e0517439fe33` and one delta + affected cumulative closure request are on `design/cockpit-d1-1-global-context-2026-10-02`. Original request is archived unchanged; source/finding provenance and limitations are retained.
+- Governance consistency audit completed; **independent design closure remains PENDING**. No D1.1 runtime/test implementation, release, deployment or Visit Brief implementation occurred. PR-1 root slice/phase/roadmap and other workstreams remain preserved.
