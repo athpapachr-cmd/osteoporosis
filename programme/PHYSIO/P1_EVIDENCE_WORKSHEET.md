@@ -184,11 +184,11 @@ Overall disposition:
 |---|---|---|---|---|---|---|---|---|
 | P1-F001 | F | International `positions[]` retain source/direction/scope/strength/summary but no claim-level recommendation/section/page locator | evidence-integrity maintenance | yes across material items | useful operational | Knee-OA evidence contract | future bounded contract/docs locator maintenance; no runtime state change | OPEN MAINTENANCE |
 | P1-F002 | F | CY_GESY overlay and companion source audit use different implicit page conventions (printed page vs viewer/index page) while recommendation IDs agree | evidence-integrity maintenance | yes in sampled local recommendations | useful operational | CY_GESY evidence/docs | normalize page semantics in future bounded maintenance; no clinical change | OPEN MAINTENANCE |
-| P1-AC001 | A/C | Hidden second-tap detail plus competing detail routes were repeatedly not discoverable in routine use | structural IA | yes | clinically meaningful | Knee-OA UI/presentation | remove hidden second-tap dependency and competing detail route; one semantic owner per concept | R2 PRE-CODE REVIEW |
-| P1-AC002 | A/C | Generic `Περισσότερα` mixes clinical presentation, examination and rehabilitation/adjunct worlds | structural IA | yes | clinically meaningful | Knee-OA UI/presentation | replace miscellaneous container with coherent owners | R2 PRE-CODE REVIEW |
-| P1-AC003 | A/C | Functionality concepts were searched for in Examination/More because semantic ownership was unclear | structural IA | yes | clinically meaningful | Knee-OA UI/presentation | give function one obvious home; avoid duplicates | R2 PRE-CODE REVIEW |
-| P1-AC004 | A/C | Objective quadriceps weakness / ROM findings were not consistently discoverable | examination discoverability | yes | clinically meaningful | Knee-OA UI/presentation | reconcile subjective weakness vs objective exam and simplify finding access | R2 PRE-CODE REVIEW |
-| P1-AC005 | A/C | Case 5 acute-joint / weight-bearing observations were not readily discoverable even though clinician would not send routine referral | safety-related UX/semantics | yes in safety case | safety/data-integrity | Knee-OA UI + possible CU-1 disposition seam | evidence-bounded review-cue design; no diagnosis inference; R2 to decide Core dependency | R2 PRE-CODE REVIEW |
+| P1-AC001 | A/C | Hidden second-tap detail plus competing detail routes were repeatedly not discoverable in routine use | structural IA | yes | clinically meaningful | Knee-OA UI/presentation | remove hidden second-tap dependency and competing detail route; one semantic owner per concept | R2-A CORRECTION / CLOSURE PENDING |
+| P1-AC002 | A/C | Generic `Περισσότερα` mixes clinical presentation, examination and rehabilitation/adjunct worlds | structural IA | yes | clinically meaningful | Knee-OA UI/presentation | replace miscellaneous container with coherent owners | R2-A CORRECTION / CLOSURE PENDING |
+| P1-AC003 | A/C | Functionality concepts were searched for in Examination/More because semantic ownership was unclear | structural IA | yes | clinically meaningful | Knee-OA UI/presentation | canonical Functionality owner = functional_impairments; finding aliases compatibility-only | R2-A CORRECTION / CLOSURE PENDING |
+| P1-AC004 | A/C | Objective quadriceps weakness / ROM findings were not consistently discoverable | examination discoverability | yes | clinically meaningful | Knee-OA UI/presentation | reconcile subjective weakness vs objective exam and simplify finding access | R2-A CORRECTION / CLOSURE PENDING |
+| P1-AC005 | A/C | Case 5 acute-joint / weight-bearing observations were not readily discoverable even though clinician would not send routine referral | safety-related UX/semantics | yes in safety case | safety/data-integrity | Knee-OA UI | R2-B PASS: product-local review cue, explicit continue/defer disposition, no diagnosis/imaging/CU-1 block | PRE-CODE SEMANTICS PASS |
 | P1-AC006 | A/C | Referral output remained good while 2–4 min completion was materially consumed by navigation/search | workflow efficiency | yes | useful operational | Knee-OA product | preserve deterministic output; correct IA before further timing validation | OPEN CORRECTION |
 | P1-AC007 | A/C | Routine deselection/removal affordance was low-visibility and sometimes required scrolling | interaction discoverability | repeated | useful operational | Knee-OA UI | make removal/deselection immediately discoverable | R2 PRE-CODE REVIEW |
 
@@ -210,8 +210,8 @@ Materiality vocabulary:
 - Lane E:
 - Lane F: COMPLETE — **NEEDS LOCATOR MAINTENANCE**; no sampled clinical-state/default/runtime correction indicated.
 - Lane G:
-- runtime correction required?: **YES — bounded Knee-OA structural IA correction candidate from A/C; R2 pre-code review in progress; implementation not yet authorized.**
-- cross-project dependency?: possible CU-1 review-cue/disposition semantic dependency; R2 must decide REUSE vs separately governed shared-Core change.
+- runtime correction required?: **YES — bounded Knee-OA structural IA correction; R2-A correction designed, closure review pending, implementation not yet authorized.**
+- cross-project dependency?: **none required by R2-B; shared CU-1 remains unchanged.**
 - receiver-validation claim allowed?:
 - commercial-validation claim allowed?:
 - second diagnosis authorized? **NO unless separately decided by Product Owner.**
