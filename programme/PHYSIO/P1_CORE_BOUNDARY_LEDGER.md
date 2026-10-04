@@ -31,7 +31,7 @@ CROSS-PROJECT DEPENDENCY
 | evidence interaction/state semantics | Physio product foundation | KEEP AS CORE mechanism | provenance audit + usability |  | Lane F found no sampled state/wording defect; exact claim locators need maintenance; usability still pending |
 | suggestion vs clinician selection | Physio product foundation | KEEP AS CORE | device/receiver evidence |  |  |
 | manual text reconciliation / stale state | Physio product foundation | KEEP AS CORE | Case 5 |  |  |
-| progressive disclosure / advanced capability | Physio product foundation | KEEP AS CORE pattern | real-device/accessibility evidence | CHANGE | Keep progressive disclosure as a mechanism, but remove hidden-second-tap ownership and generic miscellaneous More; use coherent single-owner disclosure. |
+| progressive disclosure / advanced capability | Physio product foundation | KEEP AS CORE pattern | real-device/accessibility evidence | CHANGE | Product Owner already rejected hidden-second-tap ownership and generic miscellaneous More. Exact R2-A single-owner choices remain pending Product Owner decision. |
 | no patient browser-draft persistence | CU-1/product boundary | KEEP AS CORE current boundary | real-device observation; no new persistence need |  |  |
 | JurisdictionOverlayV1 architecture | Physio product foundation | KEEP AS CORE mechanism | provenance/local-owner audit |  | Lane F confirms clean international/local/admin ownership; local locator page convention needs normalization |
 | exact-head regression/release/smoke discipline | repository governance | KEEP AS CORE | governance only |  |  |
@@ -54,7 +54,7 @@ remain vertical content
 |---|---|---|---|---|---|
 | Knee-OA international evidence corpus | Knee-OA contracts/evidence | KEEP VERTICAL-SPECIFIC | Lane F |  | Lane F supports current sampled states; item-level source locators need maintenance |
 | item-level OA evidence positions | Knee-OA evidence registry | KEEP VERTICAL-SPECIFIC | Lane F |  | Lane F found no sampled reclassification need; add structured claim locator in future maintenance |
-| Knee pain/stiffness/weakness/function concepts | Knee-OA projection/presentation | KEEP VERTICAL-SPECIFIC | Lane A/B | CHANGE | R2-A correction: Functionality writes canonical functional_impairments only; legacy function-like findings remain aliases, not UI owners. Pain location uses one Clinical Picture owner. |
+| Knee pain/stiffness/weakness/function concepts | Knee-OA projection/presentation | KEEP VERTICAL-SPECIFIC | Lane A/B | CHANGE | Structural correction required. Exact ownership for duplicate function and pain-location representations is PENDING PRODUCT OWNER DECISION. |
 | Knee qualifiers and examination mappings | Knee-OA projection/presentation | KEEP VERTICAL-SPECIFIC | Lane A/B |  | Real-use A/C found objective quadriceps weakness/ROM hard to discover; R2 design must preserve subjective weakness != objective weakness != atrophy. |
 | Knee smart starting rehabilitation plan | Knee-OA product content | KEEP VERTICAL-SPECIFIC | Lane B/F |  |  |
 | Knee referral composition / phrases | Knee-OA presentation/formatter content | KEEP VERTICAL-SPECIFIC | Lane B |  |  |

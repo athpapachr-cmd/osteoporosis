@@ -1,9 +1,9 @@
 # PHYSIO P1 R2-A Structural IA — Bounded Correction Design
 
 > **TASK:** `PHYSIO-P1-R2A-STRUCTURAL-IA-CORRECTION-20261004`
-> **STATUS:** DESIGN CORRECTION ONLY / NO RUNTIME IMPLEMENTATION.
+> **STATUS:** COORDINATOR PROPOSALS ONLY / PRODUCT OWNER DECISION PENDING / NO CLOSURE REVIEW / NO RUNTIME IMPLEMENTATION.
 > **BASE:** `2ce4f3a9f2fd6535bf9da2b06c9c37dff1ebbda6`.
-> **PURPOSE:** close only the three material R2-A findings.
+> **PURPOSE:** present bounded candidate resolutions for the three material R2-A findings. These are not approved product decisions until the Product Owner explicitly chooses.
 > **R2-B:** already PASS; safety semantics are preserved and are not redesigned here.
 
 ---
@@ -30,9 +30,9 @@ functional_impairment.sport_gym
 
 The current template already aliases the finding forms into the functional forms and deduplicates after aliasing.
 
-## Correction decision
+## Coordinator proposal — PENDING PRODUCT OWNER DECISION
 
-**Single UI owner = Functionality / `functional_impairments`.**
+**Proposal A:** Single UI owner = Functionality / `functional_impairments`.
 
 Target UI/state writes:
 - `walking_tolerance`;
@@ -62,9 +62,9 @@ Current product contains both:
 - product-local `pain_locations[]`;
 - legacy/specific findings such as `joint_line_pain` and `anterior_peripatellar_pain`.
 
-## Correction decision
+## Coordinator proposal — PENDING PRODUCT OWNER DECISION
 
-**Single UI owner for patient-reported pain location = Clinical Picture → Pain → `pain_locations[]`.**
+**Proposal A:** Single UI owner for patient-reported pain location = Clinical Picture → Pain → `pain_locations[]`.
 
 Rules:
 - do not expose `joint_line_pain` or `anterior_peripatellar_pain` as separate competing UI controls;
@@ -118,9 +118,9 @@ Current state:
 - it is currently hidden from the Knee UI;
 - evidence contract itself records that presentation scope amendment is the missing step.
 
-## Correction decision
+## Coordinator proposal — PENDING PRODUCT OWNER DECISION
 
-**EXPOSE, do not remove.**
+**Proposal A:** EXPOSE, default-off, rather than keep hidden or remove.
 
 Target owner:
 ```text
@@ -147,7 +147,7 @@ Rationale:
 
 ---
 
-# 4. Resulting single-owner IA
+# 4. Candidate single-owner IA — NOT YET PRODUCT-OWNER APPROVED
 
 ```text
 CLINICAL PICTURE
@@ -198,9 +198,9 @@ NO PARALLEL ΛΕΠΤΟΜΕΡΕΙΕΣ ROUTE
 
 ---
 
-# 5. Implementation boundary after closure PASS
+# 5. Candidate implementation boundary — INACTIVE UNTIL PRODUCT OWNER APPROVAL + CLOSURE PASS
 
-If and only if one independent R2-A closure review returns PASS, the subsequent bounded implementation may:
+If and only if the Product Owner first approves the relevant R2-A choices and a later independent R2-A closure review returns PASS, the subsequent bounded implementation may:
 
 - reorganize the existing Knee-OA UI to the single-owner map above;
 - remove hidden second-tap detail dependency;
@@ -223,9 +223,9 @@ It may **not**:
 
 ---
 
-# 6. Required closure review
+# 6. Closure review — NOT YET AUTHORIZED
 
-One independent review only:
+Do not run this review yet. It becomes authorized only after explicit Product Owner decisions are checkpointed. When authorized, use one independent review only:
 
 `R2-A delta + affected cumulative closure`
 
@@ -244,3 +244,14 @@ ALL THREE ORIGINAL R2-A FINDINGS CLOSED
 → PASS
 → STOP REVIEW CHAIN
 ```
+
+
+---
+
+# 7. Governance correction — 2026-10-04
+
+The coordinator originally recorded the candidate resolutions above as decisions before obtaining the Product Owner's approval.
+
+That was incorrect.
+
+This document now records them strictly as proposals. The Product Owner must decide each of the three R2-A items before this design can be frozen or sent to closure review.
