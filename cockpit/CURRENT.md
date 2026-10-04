@@ -1,13 +1,13 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
-> **NOW (2026-10-04):** Home v1, Pending Surgery Queue and the bounded Clinical Calendar reason bridge are released. **D1 Today Context Strip V1 is deployed but has a Product Owner source/window defect.** D1.1 independent pre-code closure PASS and focused implementation checks are preserved. New production evidence shows that the daily Clinical Calendar snapshot is too stale for operational Previous / Current / Next; the prepared post-code review is HOLD, superseded for source fidelity by `D1_1_FRESHNESS_REPLAN_DELTA_2026-10-04.md`. No new runtime/release authority is claimed. **D2 Relevant Communication Context remains deferred behind Visit Brief.**
+> **NOW (2026-10-04):** Home v1, Pending Surgery Queue and the bounded Clinical Calendar reason bridge are released. **D1 Today Context Strip V1 is deployed but has a Product Owner source/window defect.** New production evidence shows that the daily Clinical Calendar snapshot is too stale for operational Previous / Current / Next. The bounded D1.1 source replan has independent R2 pre-code closure **PASS / 0:0:0**; the prepared old post-code review is HOLD, superseded for source fidelity by `D1_1_FRESHNESS_REPLAN_DELTA_2026-10-04.md`. A fresh two-repository writer checkpoint is next; no new runtime/release state is claimed. **D2 Relevant Communication Context remains deferred behind Visit Brief.**
 > **Product boundary:** `cockpit/PRODUCT_CONSTITUTION.md`; cross-programme architecture: `CLINICAL_EXCELLENCE_PLAN.md` §§33–34.
 > **Root lock:** `CURRENT_OPERATIONAL.md` remains the sole repo-wide NOW. Its PR-1 release lifecycle is in HOLD with no active runtime writer at the verified PR-1 branch checkpoint; this Cockpit file does not claim that lock.
 > **Visit Intelligence dependency:** `programme/OST-VISIT-INTELLIGENCE/CURRENT.md`; P0-V0 contract/projector branch `b22fd5c610d20baf0f8ef3384ca16472cd2d1f92` is not on `main`. The external cumulative PASS handback has not yet been reconciled into that workstream CURRENT or released.
 
 ## Current bounded action
 
-The active Cockpit step is **D1.1 — Global Appointment Context freshness replan**, R2 source delta only. The 2026-10-03 candidate remains implemented/focused-tested at its exact runtime head, but its daily-source assumption is superseded. The Product Owner confirmed the bounded source-change step with “Προχώρα” on 2026-10-04. One independent R2 pre-code review returned **BLOCK / 0:3:0**; FRESH-01/02/03 are corrected in the design, with independent closure still PENDING. The old post-code review remains HOLD without verdict. Next: one independent read-only delta + affected cumulative closure review. No runtime mutation, merge/deploy or Visit Brief authority.
+The active Cockpit step is **D1.1 — Global Appointment Context freshness replan**, R2 source delta only. The 2026-10-03 candidate remains implemented/focused-tested at its exact runtime head, but its daily-source assumption is superseded. The Product Owner confirmed the bounded source-change step with “Προχώρα” on 2026-10-04. The one independent delta + affected cumulative R2 pre-code closure is **PASS / 0:0:0** on corrected source blob `00e3b4527a8ccbfc6df1a635494da136ccb9dd33`. The old post-code review remains HOLD without verdict. Next: fresh-check both repositories and claim a bounded runtime writer before implementation. No runtime mutation, merge/deploy or Visit Brief authority is claimed by this replan checkpoint.
 
 ### D1.1 freshness replan checkpoint — 2026-10-04
 
@@ -24,8 +24,9 @@ MERGED / DEPLOYED:     NO / NO
 PRODUCT OWNER STEP:    CONFIRMED / “Προχώρα” / 2026-10-04
 SOURCE PRE-CODE:       BLOCK / COMPLETE_FOR_DECLARED_SCOPE / 0:3:0
 FINDINGS:              FRESH-01 past+upcoming; FRESH-02 total budget; FRESH-03 raw logging
-CORRECTION:            FRESH-01/02/03 in source delta / author only / no closure claim
-NEXT:                  one independent delta + affected cumulative closure review
+CORRECTION:            FRESH-01/02/03 in source delta / independent closure PASS
+SOURCE PRE-CODE CLOSE: PASS / COMPLETE_FOR_DECLARED_SCOPE / 0:0:0
+NEXT:                  fresh two-repository writer checkpoint before implementation
 ```
 
 The existing snapshot feed and Clinical Calendar remain the Module-01 weekly/background path. The operational strip must use a bounded fresh actual-Cal-bookings projection owned by Reception. Actual urgent bookings are appointments; urgent, lab and telephone availability windows are not. Preserve the already accepted Previous/Current/Next, overlap, privacy, weekly-filter and clinical identity boundaries unless the new source directly requires a correction. The prior design/review evidence stays historical; this replan does not issue a post-code fidelity verdict.
