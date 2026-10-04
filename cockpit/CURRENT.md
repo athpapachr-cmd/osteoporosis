@@ -7,7 +7,7 @@
 
 ## Current bounded action
 
-The active Cockpit step is **D1.1 — Global Appointment Context freshness replan**, R2 source delta only. The 2026-10-03 candidate remains implemented/focused-tested at its exact runtime head, but its daily-source assumption is superseded. The old post-code review is HOLD without verdict. Next: Product Owner checkpoint on the bounded source delta, then one independent read-only R2 pre-code delta + affected cumulative review. No runtime mutation, merge/deploy or Visit Brief authority.
+The active Cockpit step is **D1.1 — Global Appointment Context freshness replan**, R2 source delta only. The 2026-10-03 candidate remains implemented/focused-tested at its exact runtime head, but its daily-source assumption is superseded. The Product Owner confirmed the bounded source-change step with “Προχώρα” on 2026-10-04. The old post-code review is HOLD without verdict. Next: one independent read-only R2 pre-code delta + affected cumulative review. No runtime mutation, merge/deploy or Visit Brief authority.
 
 ### D1.1 freshness replan checkpoint — 2026-10-04
 
@@ -21,7 +21,8 @@ OLD POST-CODE REQUEST: HOLD / NO VERDICT
 NEW SOURCE DESIGN:     D1_1_FRESHNESS_REPLAN_DELTA_2026-10-04.md
 RUNTIME WRITER:        NONE / SOURCE DESIGN ONLY
 MERGED / DEPLOYED:     NO / NO
-NEXT:                  Product Owner checkpoint, then one R2 pre-code source-delta review
+PRODUCT OWNER STEP:    CONFIRMED / “Προχώρα” / 2026-10-04
+NEXT:                  one R2 pre-code source-delta review
 ```
 
 The existing snapshot feed and Clinical Calendar remain the Module-01 weekly/background path. The operational strip must use a bounded fresh actual-Cal-bookings projection owned by Reception. Actual urgent bookings are appointments; urgent, lab and telephone availability windows are not. Preserve the already accepted Previous/Current/Next, overlap, privacy, weekly-filter and clinical identity boundaries unless the new source directly requires a correction. The prior design/review evidence stays historical; this replan does not issue a post-code fidelity verdict.

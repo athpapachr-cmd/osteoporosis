@@ -1,6 +1,6 @@
 # D1.1 freshness replan delta — operational appointment context
 
-> **STATUS:** BOUNDED REPLAN CANDIDATE / R2 SOURCE DESIGN REVIEW REQUIRED / NO RUNTIME AUTHORITY.
+> **STATUS:** PRODUCT OWNER STEP CONFIRMED / R2 SOURCE DESIGN REVIEW REQUIRED / NO RUNTIME AUTHORITY.
 > **DATE:** 2026-10-04 Asia/Nicosia.
 > **OSTEOPOROSIS SOURCE:** remote `main` `12be588866aee6543444eee0b435e9064c39bc3f`; D1.1 implementation branch `feat/cockpit-d1-1-global-context-2026-10-03` at `6f56093ffbf33d01078eb8a25af35eb65a1e851a` before this documentation checkpoint. Runtime/test commit `dd558e2fa8d59409d21913d2d3f2fbf885fdfece` is unchanged.
 > **RECEPTION SOURCE:** remote `athpapachr-cmd/ortho-reception-backend-v2/main` `bcfa57e0c1ca7358fb898b393e1dafa7b042c238`, inspected read-only. Product Owner supplied the production schedule, urgent-event and call-agent evidence; no live patient data or production requests were inspected.
@@ -9,6 +9,8 @@
 ## Product Owner step card
 
 **Problem now:** the daily Clinical Calendar copy may be hours old, so a newly booked, cancelled or rescheduled visit can make Previous / Current / Next wrong even when Reception sees the actual Cal booking. **After this step:** the Cockpit strip and Reception use one short-lived, read-only projection of actual Cal bookings; a clinician can refresh the schedule without running Cal ↔ Setmore reconciliation. For example, a booked `limassol-urgent` visit with `eventTypeId=393065` appears in the actual schedule and can become Next; an open urgent slot does not. **Outside this step:** booking/availability policy, call handling, Visit Brief, communication, clinical patient matching and lab callbacks. **Why now:** Visit Brief must open from a dependable appointment context. **Next milestone:** bounded source-design review, then a separately authorized implementation/fidelity gate.
+
+**Product Owner confirmation:** 2026-10-04, “Προχώρα”, following presentation of this exact bounded replan and its next lawful action. This confirms the P1 source-change step for design review; it is not a review verdict, runtime writer claim, merge or deploy authorization.
 
 ## Evidence and replan trigger
 
@@ -59,4 +61,4 @@ Cal ↔ Setmore + daily Clinical Calendar snapshot
 
 **Classification:** `REPLAN / CURRENT BLOCKER` for the D1.1 freshness owner only. The previous R2 pre-code PASS remains valid for unchanged semantics/privacy, but its daily-source assumption is superseded. The prepared post-code request against `dd558e2` is **HOLD / SUPERSEDED FOR SOURCE FIDELITY**, with no PASS/BLOCK verdict. Runtime branch bytes, PR-1, Visit Brief and D2 stay on HOLD.
 
-**Next lawful action:** obtain the Product Owner's plain-language correction/acceptance of this source delta, then commission **one independent read-only R2 pre-code delta + affected cumulative review** of the Reception reader/auth/cache and Cockpit source swap under `PROCEDURES.md` P1/P4/P5.1. Only after that gate and a fresh writer checkpoint may a bounded two-repository implementation start. Do not run the old post-code request, modify runtime, open a release PR, merge or deploy from this checkpoint.
+**Next lawful action:** commission **one independent read-only R2 pre-code delta + affected cumulative review** of the Reception reader/auth/cache and Cockpit source swap under `PROCEDURES.md` P4/P5.1. Only after that gate and a fresh writer checkpoint may a bounded two-repository implementation start. Do not run the old post-code request, modify runtime, open a release PR, merge or deploy from this checkpoint.
