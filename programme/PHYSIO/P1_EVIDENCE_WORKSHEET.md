@@ -9,9 +9,9 @@
 # 1. Validation identity
 
 - Current production/release identity checked: current Knee-OA V5.1/post-use released product authority; P1 repo snapshot `1097b8e64a8fd181f33b3e53bf6911ba2296ab9c`.
-- Date(s) of collection: 2026-10-01 for Lane F; other lanes pending.
-- Collector: PHYSIO coordinator for Lane F; Product Owner / external receiver as specified for remaining lanes.
-- Device/browser when applicable:
+- Date(s) of collection: 2026-10-01 for Lane F; 2026-10-04 Product Owner real-use A/C observations.
+- Collector: PHYSIO coordinator for Lane F; Product Owner for the 2026-10-04 real-use cases.
+- Device/browser when applicable: real mobile device for Product Owner cases; exact browser/VoiceOver state not separately verified in this checkpoint.
 - Notes on any material product change during collection:
 
 If the runtime changes materially during P1, mark the affected observations as belonging to the earlier product state rather than silently combining them.
@@ -28,6 +28,29 @@ If the runtime changes materially during P1, mark the affected observations as b
 | D | landscape |  |  |  |
 | A11Y | VoiceOver focused pass |  |  |  |
 | SAFETY | explicit unresolved safety concern |  |  |  |
+
+## Product Owner real-use structural observations — separate from frozen synthetic set
+
+These observations came from five Product-Owner cases exercised on a real mobile device. They are **not** a rewrite of `P1_SYNTHETIC_CASE_SET.md`.
+
+| Real-use case | Main observation | Referral output | Approximate product time |
+|---|---|---|---|
+| 1 | walking/stairs context split across symptom/function; hidden second-tap detail; walking limitation hard to locate; removal affordance not obvious | good | ~2–3 min |
+| 2 | stiffness refinements required repeated hidden interactions; chair-rise hard to locate; hill walking not found | good | ~2–3 min |
+| 3 | objective quadriceps weakness not found while atrophy was; ROM refinement hard to locate; function searched across wrong sections; added rehab options hidden | good | ~3–4 min |
+| 4 | severe pain / rapid worsening hard to locate; perceived duplicate pain-related concepts; rehabilitation/adjuncts mixed into generic More | good | ~2–3 min |
+| 5 | severe pain, weight-bearing difficulty and acute-joint safety observations were not readily discoverable; clinician would not send routine physiotherapy referral | not accepted as routine referral situation | ~3–4 min |
+
+Cross-case interpretation:
+
+- repeated failure is **structural information architecture**, not mobile-only styling;
+- good deterministic referral output was preserved;
+- search/navigation burden materially reduced the expected speed advantage;
+- generic `Περισσότερα`, hidden second-tap detail and competing access paths are the dominant repeated friction pattern;
+- Case 5 is safety-related because clinically important observations were not discoverable enough to support the clinician's decision not to proceed with routine referral.
+
+Formal VoiceOver, enlarged-text and explicit Safari acceptance remain unproven.
+
 
 Focused accessibility notes:
 
@@ -58,12 +81,12 @@ Focused accessibility notes:
 
 Summary:
 
-- median/typical ordinary time:
-- median/typical product time:
-- repeated friction point:
-- repeated benefit:
-- edit burden:
-- interpretation:
+- median/typical ordinary time: exact matched timing not collected; Product Owner estimated ~2–3 min for Case 1, ~3–4 min for Case 2 and ~5 min for Case 3; Cases 4–5 manual comparators not established.
+- median/typical product time: approximate observed range ~2–4 min across Cases 1–5; not a formal stopwatch median.
+- repeated friction point: searching across hidden second-tap detail, generic `Περισσότερα`, Functionality, Examination and rehabilitation-related controls.
+- repeated benefit: referral output repeatedly judged good; Case 2 and Case 3 suggested potential time advantage despite search burden.
+- edit burden: exact edit counts not consistently captured; structural navigation burden dominated the observations.
+- interpretation: Lane C now has useful qualitative matched evidence, but not a formal exact-seconds completion. A bounded structural correction is justified before further timing claims.
 
 ---
 
@@ -161,6 +184,13 @@ Overall disposition:
 |---|---|---|---|---|---|---|---|---|
 | P1-F001 | F | International `positions[]` retain source/direction/scope/strength/summary but no claim-level recommendation/section/page locator | evidence-integrity maintenance | yes across material items | useful operational | Knee-OA evidence contract | future bounded contract/docs locator maintenance; no runtime state change | OPEN MAINTENANCE |
 | P1-F002 | F | CY_GESY overlay and companion source audit use different implicit page conventions (printed page vs viewer/index page) while recommendation IDs agree | evidence-integrity maintenance | yes in sampled local recommendations | useful operational | CY_GESY evidence/docs | normalize page semantics in future bounded maintenance; no clinical change | OPEN MAINTENANCE |
+| P1-AC001 | A/C | Hidden second-tap detail plus competing detail routes were repeatedly not discoverable in routine use | structural IA | yes | clinically meaningful | Knee-OA UI/presentation | remove hidden second-tap dependency and competing detail route; one semantic owner per concept | R2 PRE-CODE REVIEW |
+| P1-AC002 | A/C | Generic `Περισσότερα` mixes clinical presentation, examination and rehabilitation/adjunct worlds | structural IA | yes | clinically meaningful | Knee-OA UI/presentation | replace miscellaneous container with coherent owners | R2 PRE-CODE REVIEW |
+| P1-AC003 | A/C | Functionality concepts were searched for in Examination/More because semantic ownership was unclear | structural IA | yes | clinically meaningful | Knee-OA UI/presentation | give function one obvious home; avoid duplicates | R2 PRE-CODE REVIEW |
+| P1-AC004 | A/C | Objective quadriceps weakness / ROM findings were not consistently discoverable | examination discoverability | yes | clinically meaningful | Knee-OA UI/presentation | reconcile subjective weakness vs objective exam and simplify finding access | R2 PRE-CODE REVIEW |
+| P1-AC005 | A/C | Case 5 acute-joint / weight-bearing observations were not readily discoverable even though clinician would not send routine referral | safety-related UX/semantics | yes in safety case | safety/data-integrity | Knee-OA UI + possible CU-1 disposition seam | evidence-bounded review-cue design; no diagnosis inference; R2 to decide Core dependency | R2 PRE-CODE REVIEW |
+| P1-AC006 | A/C | Referral output remained good while 2–4 min completion was materially consumed by navigation/search | workflow efficiency | yes | useful operational | Knee-OA product | preserve deterministic output; correct IA before further timing validation | OPEN CORRECTION |
+| P1-AC007 | A/C | Routine deselection/removal affordance was low-visibility and sometimes required scrolling | interaction discoverability | repeated | useful operational | Knee-OA UI | make removal/deselection immediately discoverable | R2 PRE-CODE REVIEW |
 
 Materiality vocabulary:
 
@@ -173,15 +203,15 @@ Materiality vocabulary:
 
 # 9. P1 closeout summary
 
-- Lane A:
+- Lane A: PARTIAL / MATERIAL REAL-USE FINDING — mobile use observed; structural IA defect identified; formal Safari/VoiceOver/enlarged-text acceptance still pending.
 - Lane B:
-- Lane C:
+- Lane C: PARTIAL / QUALITATIVE MATCHED EVIDENCE — ~2–4 min product use with repeated search burden; exact stopwatch dataset not collected.
 - Lane D:
 - Lane E:
 - Lane F: COMPLETE — **NEEDS LOCATOR MAINTENANCE**; no sampled clinical-state/default/runtime correction indicated.
 - Lane G:
-- runtime correction required?: none from Lane F; remaining lanes pending.
-- cross-project dependency?:
+- runtime correction required?: **YES — bounded Knee-OA structural IA correction candidate from A/C; R2 pre-code review in progress; implementation not yet authorized.**
+- cross-project dependency?: possible CU-1 review-cue/disposition semantic dependency; R2 must decide REUSE vs separately governed shared-Core change.
 - receiver-validation claim allowed?:
 - commercial-validation claim allowed?:
 - second diagnosis authorized? **NO unless separately decided by Product Owner.**

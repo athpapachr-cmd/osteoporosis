@@ -1,12 +1,13 @@
 # PHYSIO CURRENT — Knee-OA Reference Implementation / Physio Core Boundary
 
 > **TASK:** `PHYSIO-P1-KNEE-OA-REFERENCE-VALIDATION-CORE-BOUNDARY-20261001`
-> **STATUS:** LOCAL CONTROL PLANE CURRENT / P0 COMPLETE / P1 DESIGN FROZEN / LANE F COMPLETE WITH NON-BLOCKING LOCATOR MAINTENANCE / A-B-C-D-E EVIDENCE PENDING.
-> **Date:** 2026-10-01 Asia/Nicosia.
-> **Fresh bootstrap main for P1 design:** `aedfa3e48e8359a449c2c8d8eb2b9f053a64ce47`.
+> **STATUS:** LOCAL CONTROL PLANE CURRENT / P1 A+C REAL-USE FINDINGS CHECKPOINTED / STRUCTURAL IA CORRECTION REPLANNED / R2 PRE-CODE REVIEW IN PROGRESS / RUNTIME IMPLEMENTATION NOT AUTHORIZED.
+> **Date:** 2026-10-04 Asia/Nicosia.
+> **Fresh reconciliation main:** `d5da6271567a4141b2708d9fa12e673dfce37131`.
+> **Fresh bootstrap main for original P1 design:** `aedfa3e48e8359a449c2c8d8eb2b9f053a64ce47`.
 > **Reference implementation:** Knee Osteoarthritis physiotherapy referral.
-> **Current PHYSIO runtime writer:** none.
-> **Root operational owner:** unchanged — `CURRENT_OPERATIONAL.md` remains the sole repo-wide writer lock and currently records the separate PR-1 transcript lifecycle.
+> **Current PHYSIO runtime writer:** none — the active PHYSIO action is read-only R2 pre-code review.
+> **Root operational owner:** unchanged — `CURRENT_OPERATIONAL.md` remains the sole repo-wide writer lock. At this reconciliation it records Cockpit D1.1 in pre-code closure HOLD with no active Cockpit runtime writer; that does not prevent PHYSIO sidecar checkpoints.
 > **Product authority:** `commercial_products/physio_referral/*`.
 > **Technical authority:** existing CU-1 + Knee-OA owners under `clinic_utilities/*`.
 
@@ -123,6 +124,64 @@ The important current gaps are validation/product gaps, not missing feature coun
 
 ---
 
+
+## 4.1 Product Owner real-use evidence — 2026-10-04
+
+The Product Owner exercised five distinct Knee-OA cases on a real mobile device and reported the findings directly. These cases are **not** silently substituted for the frozen `P1_SYNTHETIC_CASE_SET.md`; they are a separate Product-Owner real-use regression set.
+
+Repeated findings across the five cases:
+
+- the final deterministic referral text was repeatedly judged clinically good;
+- the main failure was structural information architecture, not a mobile-only presentation defect;
+- the first-tap / hidden-second-tap detail model was not discoverable in routine use;
+- clinically related information was split across Clinical Picture, detail bubbles/sheets, Functionality, Examination and generic `Περισσότερα`;
+- the generic `Περισσότερα` mixed different semantic worlds, including clinical presentation, examination and rehabilitation choices;
+- routine removal/deselection was not immediately discoverable;
+- function concepts such as chair rise, stairs and walking limitation were searched for in multiple places because ownership was unclear;
+- objective examination concepts such as quadriceps weakness and ROM were not consistently discoverable;
+- Case 5 exposed the strongest safety-related usability finding: significant weight-bearing difficulty / acute-joint observations were not easily discoverable even though the clinician would not send a routine physiotherapy referral;
+- observed completion time was typically about 2–4 minutes, with a material part of that time spent searching for hidden or duplicated concepts rather than composing the referral.
+
+Interpretation:
+
+```text
+GOOD REFERRAL OUTPUT
++ REPEATED NAVIGATION/OWNERSHIP SEARCH
+= STRUCTURAL IA CORRECTION REQUIRED
+!= MOBILE-ONLY POLISH
+!= CLINICAL ENGINE REDESIGN
+```
+
+The Product Owner corrected the design direction accordingly:
+
+- ordinary detail should not require a hidden second tap;
+- the `Λεπτομέρειες` bubble under Clinical Picture should not remain as a competing navigation route;
+- each clinical concept should have one obvious semantic owner;
+- Functionality, Examination and Rehabilitation/Proposed Plan must remain distinct;
+- the generic miscellaneous `Περισσότερα` target architecture is rejected;
+- safety/alternative-pathology support should use evidence-bounded review cues from meaningful observation patterns, not diagnosis checkboxes or automatic imaging.
+
+---
+
+## 4.2 Structural correction / R2 status
+
+A bounded structural design was completed outside the repository working tree used for this checkpoint and the Product Owner proceeded to **R2 PRE-CODE REVIEW**.
+
+The exact reviewed design bytes and the terminal R2 review result are not yet present on `main` at this checkpoint. Therefore:
+
+```text
+R2 PRE-CODE REVIEW          IN PROGRESS
+RUNTIME IMPLEMENTATION      NOT AUTHORIZED
+CU-1 CONTRACT EXTENSION     NOT AUTHORIZED
+SECOND DIAGNOSIS            NOT AUTHORIZED
+```
+
+Before implementation authority can be claimed, the exact reviewed structural design and terminal R2 result must be durably reconciled into the PHYSIO workstream so that the implementation target is source-stable and reviewable.
+
+The only currently plausible cross-project dependency is whether a pattern-triggered review-cue disposition can be represented by the existing CU-1 safety/disposition contract. R2 must decide `REUSE` versus a separately governed shared-Core change; PHYSIO must not mutate CU-1 speculatively.
+
+---
+
 ## 5. Current bounded next slice — P1
 
 `PHYSIO-P1-KNEE-OA-REFERENCE-VALIDATION-CORE-BOUNDARY-20261001`
@@ -210,31 +269,28 @@ The Product Owner may later authorize one of these, but authorization should fol
 
 ## 8. Exact next action
 
-The P1 design checkpoint is complete. Execute bounded validation without changing runtime:
+The current bounded action is the **single R2 pre-code review already started by the Product Owner**.
 
-1. Product Owner may immediately collect:
-   - Lane A real-device / iPhone Safari / VoiceOver acceptance;
-   - Lane C matched time/friction observations;
-   - Lane D aggregate referral-frequency / diagnosis-mix evidence;
-   - Lane E exploratory clinician product-value / willingness-to-pay evidence.
-2. Lane B requires an actual receiving physiotherapist. If it is deferred, record that explicitly and do not claim receiver validation.
-3. Lane F is complete. Disposition: **NEEDS LOCATOR MAINTENANCE**, with no sampled evidence-state/default-plan/runtime correction indicated. P1-F001/P1-F002 are maintenance findings, not runtime blockers.
-4. Continue recording evidence/findings in `P1_EVIDENCE_WORKSHEET.md`.
-5. Synthesize Lane G in `P1_CORE_BOUNDARY_LEDGER.md` only after enough A–E evidence exists to avoid premature generalization.
-6. A concrete Physio-owned runtime defect may open a separate bounded correction slice only after classification and owner determination.
-7. P2 diagnosis selection may be prepared only after P1 evidence; P2 implementation still requires separate Product Owner authorization.
+1. Let that R2 review reach a terminal `PASS / BLOCK / PARTIAL` for the declared structural IA + safety-review-cue questions.
+2. Do not start runtime implementation while the R2 verdict is pending.
+3. When the result returns, reconcile the exact reviewed design identity + R2 result into PHYSIO durable state.
+4. If `BLOCK`: make only the bounded design correction, then one delta + affected-cumulative closure review under `PROCEDURES.md` P5/P5.1.
+5. If `PASS`: perform the Product Owner implementation checkpoint on the reviewed structural correction and authorize only that bounded Knee-OA slice.
+6. Preserve the same Product-Owner real-use cases as the post-change usability regression set; do not rewrite the frozen original P1 synthetic set.
+7. Lane B/D/E and formal VoiceOver/Safari acceptance remain later P1 evidence; do not use them to delay the already-identified structural correction.
+8. Lane F remains **NEEDS LOCATOR MAINTENANCE**, non-blocking and separate from this IA correction.
 
-Do not start a second diagnosis, generic Physio refactor or foreign-owner mutation as the next action.
+Do not start a second diagnosis, generic Physio refactor, speculative CU-1 change or foreign-owner mutation as the next action.
 
 ---
 
 ## 9. Registry sync
 
 ```text
-PHYSIO LOCAL CONTROL PLANE     CURRENT
+PHYSIO LOCAL CONTROL PLANE     UPDATED — A+C findings + R2 status
 ROOT CANONICALS               NOT REQUIRED
-GLOBAL PROGRAMME REGISTRY     NOT PRESENT / NOT REQUIRED
-COMMERCIAL PRODUCT CURRENT    CURRENT
-KNEE-OA TECHNICAL OWNERS      CURRENT
-CROSS-PROJECT MUTATION        NOT REQUIRED
+GLOBAL PROGRAMME REGISTRY     UPDATE NAVIGATION SUMMARY ONLY
+COMMERCIAL PRODUCT CURRENT    CURRENT / NO RUNTIME CHANGE
+KNEE-OA TECHNICAL OWNERS      CURRENT / NO RUNTIME CHANGE
+CROSS-PROJECT MUTATION        POSSIBLE CU-1 DISPOSITION SEAM — R2 TO DECIDE
 ```
