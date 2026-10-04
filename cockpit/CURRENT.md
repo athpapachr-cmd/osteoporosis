@@ -1,15 +1,37 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
-> **NOW (2026-10-04):** Home v1, Pending Surgery Queue and the bounded Clinical Calendar reason bridge are released. **D1 Today Context Strip V1 is deployed but has a Product Owner source/window defect.** New production evidence shows that the daily Clinical Calendar snapshot is too stale for operational Previous / Current / Next. The bounded D1.1 source replan has independent R2 pre-code closure **PASS / 0:0:0**; the prepared old post-code review is HOLD, superseded for source fidelity by `D1_1_FRESHNESS_REPLAN_DELTA_2026-10-04.md`. A fresh two-repository writer checkpoint is next; no new runtime/release state is claimed. **D2 Relevant Communication Context remains deferred behind Visit Brief.**
+> **NOW (2026-10-04):** D1.1 freshness implementation is complete and focused-tested on two isolated branches. The Reception actual-bookings projection and Cockpit protected consumer are at the exact heads below. One independent R2 post-code fidelity review is pending; the older daily-source review request stays HOLD/no verdict. D1 remains deployed with the known source/window defect until a separately authorized merge/deploy. D2 and Visit Brief remain deferred.
 > **Product boundary:** `cockpit/PRODUCT_CONSTITUTION.md`; cross-programme architecture: `CLINICAL_EXCELLENCE_PLAN.md` §§33–34.
 > **Root lock:** `CURRENT_OPERATIONAL.md` remains the sole repo-wide NOW. Its PR-1 release lifecycle is in HOLD with no active runtime writer at the verified PR-1 branch checkpoint; this Cockpit file does not claim that lock.
 > **Visit Intelligence dependency:** `programme/OST-VISIT-INTELLIGENCE/CURRENT.md`; P0-V0 contract/projector branch `b22fd5c610d20baf0f8ef3384ca16472cd2d1f92` is not on `main`. The external cumulative PASS handback has not yet been reconciled into that workstream CURRENT or released.
 
 ## Current bounded action
 
-The active Cockpit step is **D1.1 — Global Appointment Context freshness replan**, R2 source delta only. The 2026-10-03 candidate remains implemented/focused-tested at its exact runtime head, but its daily-source assumption is superseded. The Product Owner confirmed the bounded source-change step with “Προχώρα” on 2026-10-04. The one independent delta + affected cumulative R2 pre-code closure is **PASS / 0:0:0** on corrected source blob `00e3b4527a8ccbfc6df1a635494da136ccb9dd33`. The old post-code review remains HOLD without verdict. Next: fresh-check both repositories and claim a bounded runtime writer before implementation. No runtime mutation, merge/deploy or Visit Brief authority is claimed by this replan checkpoint.
+The active Cockpit step is **D1.1 — Global Appointment Context freshness implementation**, awaiting one independent exact-head R2 post-code fidelity review. Product Owner implementation authority followed independent pre-code PASS / 0:0:0 on source design blob `00e3b4527a8ccbfc6df1a635494da136ccb9dd33`. Fresh writer/scope checks in both repositories found no overlapping conflict. The two branches are focused-tested and unmerged; the writer has been released for read-only review. No release, production smoke, configuration change or Visit Brief authority is claimed.
 
-### D1.1 freshness replan checkpoint — 2026-10-04
+### D1.1 freshness implementation checkpoint — 2026-10-04
+
+```text
+COCKPIT BRANCH:       feat/cockpit-d1-1-global-context-2026-10-03
+COCKPIT RUNTIME HEAD: 9dc14bbde1005aab60922e88e021518197f0654f
+COCKPIT MAIN:         b9beca7b1e233245f9ea3429a247a1c80a69ac7c (PHYSIO-only drift)
+RECEPTION BRANCH:     feat/d1-1-fresh-schedule-projection-2026-10-04
+RECEPTION HEAD:       b4739678016c1cd10f3afd8381e7c4de222f38ba
+RECEPTION MAIN:       bcfa57e0c1ca7358fb898b393e1dafa7b042c238
+OPS WRITER CLAIM:     1b98f7f023fdd92a55938591c49a49f12af5e916
+SOURCE DESIGN:        00e3b4527a8ccbfc6df1a635494da136ccb9dd33
+PRE-CODE R2:          PASS / 0:0:0
+FOCUSED TESTS:        Cockpit 31 PASS; Reception 54 tests + 33 subtests PASS
+POST-CODE R2:         ONE REQUEST PREPARED / NO VERDICT
+OLD POST-CODE:        HOLD / SUPERSEDED FOR SOURCE FIDELITY / NO VERDICT
+WRITER:               RELEASED FOR INDEPENDENT READ-ONLY REVIEW
+MERGED / DEPLOYED:    NO / NO
+NEXT:                 independent exact-head fidelity review, then coordinator reconciliation
+```
+
+The new request is `reviews/D1_1_FRESHNESS_POSTCODE_FIDELITY_REVIEW_REQUEST_2026-10-04.md`. Release-time `RECEPTION_SCHEDULE_CONTEXT_URL` and shared existing ingest-key equality remain to be checked at the later release gate; neither was configured or tested against production now. The weekly Calendar stays on the background Clinical Calendar path. The existing source design and old post-code request remain immutable historical evidence.
+
+### Historical D1.1 freshness pre-code replan checkpoint — 2026-10-04
 
 ```text
 CURRENT REMOTE MAIN:    12be588866aee6543444eee0b435e9064c39bc3f
