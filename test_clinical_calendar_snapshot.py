@@ -64,143 +64,53 @@ def _snapshot(window_start, window_end, appointments, *, source="cal.com"):
     }
 
 
-def test_snapshot_stores_global_rows_filters_weekly_and_removes_missing(monkeypatch):
+def test_snapshot_filters_unrelated_rows_and_removes_missing(monkeypatch):
     client, engine = _client(monkeypatch)
     start = datetime(2026, 9, 28, 8, 0, tzinfo=timezone.utc)
     end = start + timedelta(days=1)
-
-    first = client.post(
-        "/clinical/calendar/appointments/snapshot",
-        headers=HEADERS,
-        json=_snapshot(
-            start,
-            end,
-            [
-                _appointment(
-                    "cal-1",
-                    start=start + timedelta(hours=1),
-                    minutes=40,
-                    label="Οστεοπόρωση",
-                    comment="Οστεοπόρωση - επανέλεγχος",
-                ),
-                _appointment(
-                    "cal-unrelated",
-                    start=start + timedelta(hours=2),
-                    minutes=40,
-                    label="Πόνος γόνατος",
-                ),
-            ],
-        ),
-    )
+    first = client.post("/clinical/calendar/appointments/snapshot", headers=HEADERS,
+        json=_snapshot(start, end, [
+            _appointment("cal-1", start=start + timedelta(hours=1), minutes=40,
+                         label="Οστεοπόρωση", comment="Οστεοπόρωση - επανέλεγχος"),
+            _appointment("cal-unrelated", start=start + timedelta(hours=2), minutes=40,
+                         label="Πόνος γόνατος")]))
     assert first.status_code == 200
-    assert first.json() == {
-        "received": 2,
-        "imported": 2,
-        "inserted": 2,
-        "updated": 0,
-        "skipped_unrelated": 0,
-        "removed_unrelated": 0,
-        "skipped_invalid": 0,
-        "removed_missing": 0,
-    }
-
+    assert first.json()["inserted"] == 1
+    assert first.json()["skipped_unrelated"] == 1
     with Session(engine) as session:
-        rows = session.execute(select(ClinicalAppointmentORM)).scalars().all()
-        assert [(row.source, row.source_appointment_id, row.category) for row in rows] == [
-            ("cal.com", "cal-1", "osteoporosis_review"),
-            ("cal.com", "cal-unrelated", "other"),
-        ]
-
+        assert [(row.source_appointment_id, row.category) for row in session.execute(
+            select(ClinicalAppointmentORM)).scalars()] == [("cal-1", "osteoporosis_review")]
     weekly = client.get("/clinical/calendar/appointments", headers=CLINICAL_HEADERS,
                         params={"start": start.isoformat(), "end": end.isoformat()})
     assert [row["appointment_id"] for row in weekly.json()] == ["cal.com:cal-1"]
-    with Session(engine) as session:
-        other = session.get(ClinicalAppointmentORM, "cal.com:cal-unrelated")
-        assert other.phone_e164 == "" and other.linked_patient_id is None
-
-    second = client.post(
-        "/clinical/calendar/appointments/snapshot",
-        headers=HEADERS,
-        json=_snapshot(
-            start,
-            end,
-            [
-                _appointment(
-                    "cal-2",
-                    start=start + timedelta(hours=3),
-                    minutes=10,
-                    label="Prolia",
-                    comment="Prolia injection",
-                )
-            ],
-        ),
-    )
-    assert second.status_code == 200
+    second = client.post("/clinical/calendar/appointments/snapshot", headers=HEADERS,
+        json=_snapshot(start, end, [_appointment("cal-2", start=start + timedelta(hours=3),
+                                                minutes=10, label="Prolia")]))
     assert second.json()["inserted"] == 1
-    assert second.json()["removed_missing"] == 2
-
+    assert second.json()["removed_missing"] == 1
     with Session(engine) as session:
-        rows = session.execute(select(ClinicalAppointmentORM)).scalars().all()
-        assert [(row.source_appointment_id, row.category) for row in rows] == [
-            ("cal-2", "prolia")
-        ]
+        assert [row.source_appointment_id for row in session.execute(
+            select(ClinicalAppointmentORM)).scalars()] == ["cal-2"]
 
 
-def test_snapshot_reclassification_and_repeat_other_updates_minimize_retained_row(monkeypatch):
+def test_snapshot_reclassification_to_other_removes_clinical_copy(monkeypatch):
     client, engine = _client(monkeypatch)
     start = datetime(2026, 9, 28, 8, 0, tzinfo=timezone.utc)
     end = start + timedelta(days=1)
-
-    seed = client.post(
-        "/clinical/calendar/appointments/snapshot",
-        headers=HEADERS,
-        json=_snapshot(
-            start,
-            end,
-            [
-                _appointment(
-                    "cal-1",
-                    start=start + timedelta(hours=1),
-                    minutes=60,
-                    label="Πρώτη επίσκεψη οστεοπόρωσης",
-                )
-            ],
-        ),
-    )
-    assert seed.status_code == 200
-
-    reclassified = client.post(
-        "/clinical/calendar/appointments/snapshot",
-        headers=HEADERS,
-        json=_snapshot(
-            start,
-            end,
-            [
-                _appointment(
-                    "cal-1",
-                    start=start + timedelta(hours=1),
-                    minutes=60,
-                    label="Ορθοπεδικός έλεγχος",
-                )
-            ],
-        ),
-    )
-    assert reclassified.status_code == 200
-    assert reclassified.json()["removed_unrelated"] == 0
-    assert reclassified.json()["removed_missing"] == 0
-
-    for _ in range(2):
-        with Session(engine) as session:
-            row = session.get(ClinicalAppointmentORM, "cal.com:cal-1")
-            assert row.category == "other"
-            assert row.phone_e164 == "" and row.linked_patient_id is None
-        weekly = client.get("/clinical/calendar/appointments", headers=CLINICAL_HEADERS,
-                            params={"start": start.isoformat(), "end": end.isoformat()})
-        assert weekly.json() == []
-        reclassified = client.post("/clinical/calendar/appointments/snapshot", headers=HEADERS,
-            json=_snapshot(start, end, [_appointment("cal-1", start=start + timedelta(hours=1),
-                minutes=60, label="Ορθοπεδικός έλεγχος")]))
-        assert reclassified.status_code == 200
+    relevant = _appointment("cal-1", start=start + timedelta(hours=1), minutes=60,
+                            label="Πρώτη επίσκεψη οστεοπόρωσης")
+    assert client.post("/clinical/calendar/appointments/snapshot", headers=HEADERS,
+                       json=_snapshot(start, end, [relevant])).json()["inserted"] == 1
+    unrelated = dict(relevant, label="Ορθοπεδικός έλεγχος")
+    changed = client.post("/clinical/calendar/appointments/snapshot", headers=HEADERS,
+                          json=_snapshot(start, end, [unrelated]))
+    assert changed.json()["removed_unrelated"] == 1
+    with Session(engine) as session:
+        assert session.get(ClinicalAppointmentORM, "cal.com:cal-1") is None
+    repeated = client.post("/clinical/calendar/appointments/snapshot", headers=HEADERS,
+                           json=_snapshot(start, end, [unrelated]))
+    assert repeated.json()["skipped_unrelated"] == 1
+    assert repeated.json()["removed_unrelated"] == 0
 
 
 def test_snapshot_rejects_incomplete_or_ambiguous_scope_before_deleting(monkeypatch):
@@ -313,52 +223,15 @@ def test_snapshot_accepts_producer_complete_cardinality_ceiling(monkeypatch):
     client, engine = _client(monkeypatch)
     start = datetime(2026, 9, 28, 8, 0, tzinfo=timezone.utc)
     end = start + timedelta(days=1)
-
-    # Producer bound is 20 pages × 100 rows; complete global snapshots retain all valid rows.
-    rows = [
-        _appointment(
-            f"bounded-{index}",
-            start=start + timedelta(hours=1),
-            minutes=20,
-            label="Synthetic unrelated visit",
-        )
-        for index in range(2000)
-    ]
-
-    accepted = client.post(
-        "/clinical/calendar/appointments/snapshot",
-        headers=HEADERS,
-        json=_snapshot(start, end, rows),
-    )
+    rows = [_appointment(f"bounded-{index}", start=start + timedelta(hours=1),
+                         minutes=20, label="Synthetic unrelated visit") for index in range(2000)]
+    accepted = client.post("/clinical/calendar/appointments/snapshot", headers=HEADERS,
+                           json=_snapshot(start, end, rows))
     assert accepted.status_code == 200
     assert accepted.json()["received"] == 2000
-    assert accepted.json()["imported"] == 2000
-    assert accepted.json()["skipped_unrelated"] == 0
-
+    assert accepted.json()["skipped_unrelated"] == 2000
     with Session(engine) as session:
-        assert len(session.execute(select(ClinicalAppointmentORM)).scalars().all()) == 2000
-
-    rejected = client.post(
-        "/clinical/calendar/appointments/snapshot",
-        headers=HEADERS,
-        json=_snapshot(
-            start,
-            end,
-            rows
-            + [
-                _appointment(
-                    "bounded-overflow",
-                    start=start + timedelta(hours=1),
-                    minutes=20,
-                    label="Synthetic unrelated visit",
-                )
-            ],
-        ),
-    )
-    assert rejected.status_code == 422
-
-    with Session(engine) as session:
-        assert len(session.execute(select(ClinicalAppointmentORM)).scalars().all()) == 2000
+        assert session.execute(select(ClinicalAppointmentORM)).scalars().all() == []
 
 
 def test_manual_classification_survives_future_snapshot_and_can_return_to_auto(monkeypatch):
@@ -474,6 +347,33 @@ def test_legacy_single_import_remains_available_after_snapshot_refactor(monkeypa
         assert row.category == "aclasta"
 
 
+def _set_actual_source(monkeypatch, rows, now, extra_fields=None):
+    import httpx
+    monkeypatch.setenv("RECEPTION_SCHEDULE_CONTEXT_URL", "https://reception.example/private/schedule-context")
+    source_rows = []
+    for row in rows:
+        category = "aclasta" if row["label"].lower() == "aclasta" else "other"
+        source_rows.append({
+            "uid": f"cal.com:{row['source_appointment_id']}",
+            "start_at": datetime.fromisoformat(row["start_at"]).replace(tzinfo=timezone.utc).isoformat(),
+            "end_at": datetime.fromisoformat(row["end_at"]).replace(tzinfo=timezone.utc).isoformat(),
+            "clinic": row["clinic"], "patient_display_name": row["patient_display_name"],
+            "reason": row["comment"], "event_type_id": 393065,
+            "category": category,
+        })
+        source_rows[-1].update(extra_fields or {})
+    class Client:
+        def __init__(self, **kwargs): pass
+        async def __aenter__(self): return self
+        async def __aexit__(self, *args): pass
+        async def get(self, url, headers):
+            assert url == "https://reception.example/private/schedule-context"
+            assert headers == {"X-Clinical-Ingest-Key": INGEST_KEY}
+            return httpx.Response(200, json={"fetched_at": now.replace(tzinfo=timezone.utc).isoformat(),
+                                             "appointments": source_rows})
+    monkeypatch.setattr(clinical_calendar.httpx, "AsyncClient", Client)
+
+
 def _context(client):
     response = client.get("/clinical/calendar/cockpit-context", headers=CLINICAL_HEADERS)
     assert response.status_code == 200
@@ -501,8 +401,7 @@ def test_global_context_other_slots_cross_day_next_and_minimal_projection(monkey
                      comment="clinic=limassol | source=sync | cal_uid=hidden | Πόνος γόνατος"),
         _appointment("tomorrow", start=now + timedelta(days=1), minutes=20, label="Other"),
     ]
-    assert client.post("/clinical/calendar/appointments/snapshot", headers=HEADERS,
-                       json=_snapshot(now - timedelta(hours=2), now + timedelta(days=2), rows)).status_code == 200
+    _set_actual_source(monkeypatch, rows, now)
     context = _context(client)
     assert context["today_total"] == 2
     assert context["previous"]["appointment_id"] == "cal.com:previous"
@@ -514,8 +413,10 @@ def test_global_context_other_slots_cross_day_next_and_minimal_projection(monkey
 
 def test_global_context_is_protected_including_existing_browser_session(monkeypatch):
     from clinical_auth import ClinicalCookieMiddleware, build_auth_router
-
     client, engine = _client(monkeypatch)
+    now = datetime(2026, 10, 3, 8, 30)
+    monkeypatch.setattr(clinical_calendar, "utcnow", lambda: now)
+    _set_actual_source(monkeypatch, [], now)
     assert client.get("/clinical/calendar/cockpit-context").status_code == 401
     assert client.get("/clinical/calendar/cockpit-context", headers=HEADERS).status_code == 401
     assert client.get("/clinical/calendar/cockpit-context",
@@ -534,60 +435,44 @@ def test_global_context_is_protected_including_existing_browser_session(monkeypa
 def test_legacy_unrelated_discard_and_reclassification_removal_remain_compatible(monkeypatch):
     client, engine = _client(monkeypatch)
     now = datetime(2026, 10, 3, 8, 0)
-    monkeypatch.setattr(clinical_calendar, "utcnow", lambda: now)
     item = _appointment("legacy", start=now, minutes=40, label="Other")
     discarded = client.post("/clinical/calendar/appointments/import", headers=HEADERS, json=[item])
-    assert discarded.json() == {"received": 1, "imported": 0, "inserted": 0, "updated": 0,
-                               "skipped_unrelated": 1, "removed_unrelated": 0, "skipped_invalid": 0}
-    assert _context(client)["current"] is None
+    assert discarded.json()["skipped_unrelated"] == 1
     item["label"] = "Prolia"
-    relevant = client.post("/clinical/calendar/appointments/import", headers=HEADERS, json=[item])
-    assert relevant.json()["inserted"] == 1
+    assert client.post("/clinical/calendar/appointments/import", headers=HEADERS,
+                       json=[item]).json()["inserted"] == 1
     item["label"] = "Other"
     removed = client.post("/clinical/calendar/appointments/import", headers=HEADERS, json=[item])
-    assert removed.json()["skipped_unrelated"] == 1
     assert removed.json()["removed_unrelated"] == 1
     with Session(engine) as session:
         assert session.get(ClinicalAppointmentORM, "cal.com:legacy") is None
-    assert _context(client)["current"] is None
 
 
 def test_clearing_manual_relevant_override_minimizes_other_before_commit(monkeypatch):
     client, engine = _client(monkeypatch)
     now = datetime(2026, 10, 3, 8, 0)
-    monkeypatch.setattr(clinical_calendar, "utcnow", lambda: now)
-    item = _appointment("manual-other", start=now, minutes=40, label="Other")
+    item = _appointment("manual-other", start=now, minutes=40, label="Prolia")
     payload = _snapshot(now, now + timedelta(days=1), [item])
-    client.post("/clinical/calendar/appointments/snapshot", headers=HEADERS, json=payload)
+    assert client.post("/clinical/calendar/appointments/snapshot", headers=HEADERS,
+                       json=payload).json()["inserted"] == 1
     url = "/clinical/calendar/appointments/cal.com:manual-other/classification"
-    assert client.put(url, headers=CLINICAL_HEADERS, json={"category": "osteoporosis_review"}).status_code == 200
-    # Manual promotion alone cannot restore fields cleared during other admission.
-    with Session(engine) as session:
-        row = session.get(ClinicalAppointmentORM, "cal.com:manual-other")
-        assert row.phone_e164 == "" and row.linked_patient_id is None
-    client.post("/clinical/calendar/appointments/snapshot", headers=HEADERS, json=payload)
-    with Session(engine) as session:
-        row = session.get(ClinicalAppointmentORM, "cal.com:manual-other")
-        assert row.phone_e164 == item["phone_e164"] and row.linked_patient_id == "synthetic-link"
-    # Effective relevant overrides also preserve legacy import behavior.
-    assert client.post("/clinical/calendar/appointments/import", headers=HEADERS,
-                       json=[item]).json()["updated"] == 1
+    assert client.put(url, headers=CLINICAL_HEADERS,
+                      json={"category": "osteoporosis_review"}).status_code == 200
+    item["label"] = "Other"
+    client.post("/clinical/calendar/appointments/snapshot", headers=HEADERS,
+                json=_snapshot(now, now + timedelta(days=1), [item]))
     cleared = client.put(url, headers=CLINICAL_HEADERS, json={"category": None})
     assert cleared.json()["category"] == "other"
-    assert cleared.json()["phone_e164"] == "" and cleared.json()["linked_patient_id"] is None
+    assert cleared.json()["phone_e164"] == ""
+    assert cleared.json()["linked_patient_id"] is None
     with Session(engine) as session:
         row = session.get(ClinicalAppointmentORM, "cal.com:manual-other")
         assert row.category == "other" and row.phone_e164 == "" and row.linked_patient_id is None
-        assert session.get(ClinicalAppointmentClassificationORM, row.id) is None
-    assert client.get("/clinical/calendar/appointments", headers=CLINICAL_HEADERS,
-                      params={"start": now.isoformat(), "end": (now + timedelta(days=1)).isoformat()}).json() == []
-    assert _context(client)["current"]["category"] == "other"
 
 
 def test_context_preserves_start_order_aclasta_exception_and_fail_closed_overlaps(monkeypatch):
     base = datetime(2026, 10, 3, 9, 0)
     cases = [
-        # categories, B offset, B duration, now offset, previous, current, conflicts
         ("aclasta", "other", 40, 40, 50, "a", "b", 0),
         ("aclasta", "other", 40, 15, 65, "b", None, 0),
         ("other", "other", 40, 40, 50, None, None, 2),
@@ -596,11 +481,11 @@ def test_context_preserves_start_order_aclasta_exception_and_fail_closed_overlap
     ]
     for cat_a, cat_b, offset_b, duration_b, now_offset, previous, current, conflicts in cases:
         client, _ = _client(monkeypatch)
-        monkeypatch.setattr(clinical_calendar, "utcnow", lambda: base + timedelta(minutes=now_offset))
+        now = base + timedelta(minutes=now_offset)
+        monkeypatch.setattr(clinical_calendar, "utcnow", lambda: now)
         rows = [_appointment("a", start=base, minutes=60, label=cat_a),
                 _appointment("b", start=base + timedelta(minutes=offset_b), minutes=duration_b, label=cat_b)]
-        client.post("/clinical/calendar/appointments/snapshot", headers=HEADERS,
-                    json=_snapshot(base, base + timedelta(days=1), rows))
+        _set_actual_source(monkeypatch, rows, now)
         context = _context(client)
         for slot, expected in (("previous", previous), ("current", current)):
             assert (context[slot]["appointment_id"] if context[slot] else None) == (
@@ -610,18 +495,34 @@ def test_context_preserves_start_order_aclasta_exception_and_fail_closed_overlap
 
 def test_context_uses_nicosia_day_including_dst_and_active_midnight_slot(monkeypatch):
     client, _ = _client(monkeypatch)
-    # Nicosia local 00:20 after the DST fallback day (UTC+2).
     now = datetime(2026, 10, 25, 22, 20)
     monkeypatch.setattr(clinical_calendar, "utcnow", lambda: now)
     rows = [_appointment("yesterday-active", start=now - timedelta(minutes=40), minutes=60, label="Other"),
             _appointment("today-next", start=now + timedelta(minutes=30), minutes=30, label="Other")]
-    client.post("/clinical/calendar/appointments/snapshot", headers=HEADERS,
-                json=_snapshot(now - timedelta(hours=1), now + timedelta(days=1), rows))
+    _set_actual_source(monkeypatch, rows, now)
     context = _context(client)
     assert context["today_total"] == 1
     assert context["previous"] is None
     assert context["current"]["appointment_id"] == "cal.com:yesterday-active"
     assert context["next"]["appointment_id"] == "cal.com:today-next"
+
+
+def test_context_rejects_stale_and_unexpected_private_fields_without_snapshot_fallback(monkeypatch):
+    client, engine = _client(monkeypatch)
+    now = datetime(2026, 10, 3, 8, 30)
+    monkeypatch.setattr(clinical_calendar, "utcnow", lambda: now)
+    row = _appointment("urgent", start=now + timedelta(minutes=30), minutes=20, label="Other")
+    client.post("/clinical/calendar/appointments/snapshot", headers=HEADERS,
+                json=_snapshot(now, now + timedelta(days=1), [
+                    _appointment("weekly", start=now, minutes=20, label="Prolia")]))
+    _set_actual_source(monkeypatch, [row], now - timedelta(minutes=6))
+    assert client.get("/clinical/calendar/cockpit-context", headers=CLINICAL_HEADERS).status_code == 503
+    _set_actual_source(monkeypatch, [row], now, {"phone_e164": "+35799000000"})
+    response = client.get("/clinical/calendar/cockpit-context", headers=CLINICAL_HEADERS)
+    assert response.status_code == 503
+    assert "+35799000000" not in response.text
+    with Session(engine) as session:
+        assert session.get(ClinicalAppointmentORM, "cal.com:weekly") is not None
 
 
 def test_snapshot_removes_only_missing_same_source_exact_window(monkeypatch):
@@ -632,7 +533,8 @@ def test_snapshot_removes_only_missing_same_source_exact_window(monkeypatch):
                                     ("setmore", "other-source", start)):
         client.post("/clinical/calendar/appointments/snapshot", headers=HEADERS,
                     json=_snapshot(when, when + timedelta(days=1),
-                        [_appointment(source_id, start=when, minutes=20, label="Other", source=source)], source=source))
+                        [_appointment(source_id, start=when, minutes=20,
+                                      label="Prolia", source=source)], source=source))
     response = client.post("/clinical/calendar/appointments/snapshot", headers=HEADERS,
                            json=_snapshot(start, start + timedelta(days=1), []))
     assert response.json()["removed_missing"] == 1

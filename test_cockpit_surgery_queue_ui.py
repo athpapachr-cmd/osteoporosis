@@ -58,6 +58,6 @@ def test_surgery_queue_is_wired_into_clinical_core():
     assert "app.include_router(build_surgery_queue_router(engine))" in MAIN
 
 
-def test_calendar_note_reflects_daily_feed_not_future_slice():
-    assert "ενημερώνεται καθημερινά" in JS
+def test_calendar_note_reflects_actual_bookings_not_future_slice():
+    assert "Τελευταία ανάγνωση κρατήσεων" in JS
     assert "θα συνδεθεί στο επόμενο integration slice" not in JS

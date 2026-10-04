@@ -109,7 +109,12 @@
     $("todayHeading").textContent = formatToday(now);
     try {
       const response = await fetch("/clinical/calendar/cockpit-context", { credentials: "same-origin" });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        const failure = new Error(`HTTP ${response.status}`);
+        failure.lastFetchedAt = error.detail?.last_fetched_at || null;
+        throw failure;
+      }
       const context = await response.json();
       const generated = parseClinicalAppointmentDate(context.generated_at);
       if (!generated || !Number.isInteger(context.today_total)
@@ -117,17 +122,19 @@
       renderTodayContext(context, generated);
       const updated = parseClinicalAppointmentDate(context.source_updated_at);
       $("calendarState").textContent = `${context.today_total} σήμερα`;
-      const updatedToday = updated
-        && appointmentDateFormatter.format(updated) === appointmentDateFormatter.format(generated);
-      $("calendarState").classList.toggle("ready", Boolean(updatedToday));
+      const fresh = updated && generated.getTime() - updated.getTime() <= 5 * 60 * 1000;
+      $("calendarState").classList.toggle("ready", Boolean(fresh));
       $("calendarNote").textContent = updated
-        ? `${updatedToday ? "" : "Το πρόγραμμα δεν έχει ενημερωθεί σήμερα. "}Τελευταία ενημέρωση: ${appointmentDateFormatter.format(updated)} · ${appointmentTimeFormatter.format(updated)}. Το πρόγραμμα ενημερώνεται καθημερινά.`
-        : "Δεν υπάρχει διαθέσιμη ημερομηνία ενημέρωσης. Έλεγξε το πρόγραμμα στο Reception. Το πρόγραμμα ενημερώνεται καθημερινά.";
-    } catch (_) {
+        ? `${fresh ? "" : "Το πρόγραμμα μπορεί να έχει παλιώσει. "}Τελευταία ανάγνωση κρατήσεων: ${appointmentDateFormatter.format(updated)} · ${appointmentTimeFormatter.format(updated)}.`
+        : "Δεν υπάρχει διαθέσιμη πρόσφατη ανάγνωση κρατήσεων. Έλεγξε το πρόγραμμα στο Reception.";
+    } catch (error) {
       clearTodayContext("Μη διαθέσιμο");
       $("calendarState").textContent = "Μη διαθέσιμο";
       $("calendarState").classList.remove("ready");
-      $("calendarNote").textContent = "Δεν ήταν δυνατή η φόρτωση του προγράμματος. Έλεγξε τη σύνδεση ή άνοιξε το Reception.";
+      const last = parseClinicalAppointmentDate(error.lastFetchedAt);
+      $("calendarNote").textContent = last
+        ? `Το πρόγραμμα δεν είναι διαθέσιμο. Τελευταία επιτυχής ανάγνωση: ${appointmentDateFormatter.format(last)} · ${appointmentTimeFormatter.format(last)}. Έλεγξε το Reception.`
+        : "Δεν ήταν δυνατή η φόρτωση του προγράμματος. Έλεγξε τη σύνδεση ή άνοιξε το Reception.";
     }
   }
 

@@ -115,7 +115,7 @@ def test_global_home_renders_later_day_and_clears_after_auth_failure_without_fal
     assert "10:00" in loaded["nextAppointmentTime"]["textContent"]
     assert loaded["nextAppointmentType"]["textContent"] == "limassol · Πόνος γόνατος"
     assert loaded["calendarState"]["textContent"] == "1 σήμερα"
-    assert "ενημερώνεται καθημερινά" in loaded["calendarNote"]["textContent"]
+    assert "Τελευταία ανάγνωση κρατήσεων" in loaded["calendarNote"]["textContent"]
     for prefix in ("previous", "current", "next"):
         assert failed[f"{prefix}AppointmentPatient"]["textContent"] == "Μη διαθέσιμο"
         assert failed[f"{prefix}AppointmentPatient"]["dataset"] == {}
@@ -129,6 +129,6 @@ def test_global_home_conflict_stale_and_unknown_freshness_visible():
         {"body": _home_context(source_updated_at=None, next=None)},
     ])["results"]
     assert results[0]["currentAppointmentPatient"]["textContent"] == "2 ταυτόχρονα ραντεβού"
-    assert "δεν έχει ενημερωθεί σήμερα" in results[0]["calendarNote"]["textContent"]
-    assert "Δεν υπάρχει διαθέσιμη ημερομηνία" in results[1]["calendarNote"]["textContent"]
+    assert "μπορεί να έχει παλιώσει" in results[0]["calendarNote"]["textContent"]
+    assert "Δεν υπάρχει διαθέσιμη πρόσφατη ανάγνωση" in results[1]["calendarNote"]["textContent"]
     assert "Δεν υπάρχει επόμενο στο πρόγραμμα" == results[1]["nextAppointmentPatient"]["textContent"]

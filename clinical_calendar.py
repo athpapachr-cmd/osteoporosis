@@ -1,15 +1,18 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
-from typing import List, Optional
+from typing import List, Optional, Literal
 from zoneinfo import ZoneInfo
 import os
 import re
 import secrets
 import unicodedata
+from types import SimpleNamespace
+
+import httpx
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from sqlalchemy import Column, DateTime, Integer, String, func, select
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, Session
@@ -146,6 +149,27 @@ class CockpitContext(BaseModel):
     current: Optional[CockpitAppointment]
     current_conflict_count: int
     next: Optional[CockpitAppointment]
+
+
+class ActualBooking(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    uid: str
+    start_at: datetime
+    end_at: datetime
+    clinic: str
+    patient_display_name: str
+    reason: str
+    event_type_id: Optional[int] = None
+    category: Literal["aclasta", "prolia", "other"]
+
+
+class ActualSchedule(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    fetched_at: datetime
+    appointments: List[ActualBooking]
+
+
+_last_actual_schedule_fetch: Optional[datetime] = None
 
 
 class AppointmentImportResult(BaseModel):
@@ -343,52 +367,79 @@ def build_clinical_calendar_router(engine: Engine) -> APIRouter:
     ingest_protected = [Depends(require_ingest_key)]
 
     @router.get("/cockpit-context", response_model=CockpitContext, dependencies=protected)
-    def cockpit_context() -> CockpitContext:
+    async def cockpit_context() -> CockpitContext:
+        global _last_actual_schedule_fetch
         now = utcnow()
         local_now = now.replace(tzinfo=timezone.utc).astimezone(ZoneInfo("Asia/Nicosia"))
         local_start = local_now.replace(hour=0, minute=0, second=0, microsecond=0)
         day_start = _naive_utc(local_start)
         day_end = _naive_utc(local_start + timedelta(days=1))
-        with Session(engine) as session:
-            # Previous is today-only; Current may span midnight. Next uses the
-            # retained bounded source horizon, rather than a browser day window.
-            rows = session.execute(
-                select(ClinicalAppointmentORM)
-                .where((ClinicalAppointmentORM.start_at >= day_start) | (ClinicalAppointmentORM.end_at > now))
-                .order_by(ClinicalAppointmentORM.start_at.asc(), ClinicalAppointmentORM.id.asc())
-            ).scalars().all()
-            source_updated = session.scalar(select(func.max(ClinicalAppointmentORM.updated_at)))
-            active = [row for row in rows if row.start_at <= now < row.end_at]
-            current = None
-            conflict_count = 0
-            if len(active) == 1:
-                current = active[0]
-            elif len(active) > 1:
-                latest = active[-1]
-                if latest.category != "aclasta" and all(
-                    row.category == "aclasta" and row.start_at < latest.start_at
-                    for row in active[:-1]
-                ):
-                    current = latest
-                else:
-                    conflict_count = len(active)
-            today_started = [row for row in rows if day_start <= row.start_at <= now]
-            previous = None
-            if current is not None:
-                earlier = [row for row in today_started if row.start_at < current.start_at]
-                previous = earlier[-1] if earlier else None
-            elif not conflict_count and today_started:
-                previous = today_started[-1]
-            next_row = next((row for row in rows if row.start_at > now), None)
-            return CockpitContext(
-                generated_at=now.replace(tzinfo=timezone.utc),
-                source_updated_at=source_updated.replace(tzinfo=timezone.utc) if source_updated else None,
-                today_total=sum(day_start <= row.start_at < day_end for row in rows),
-                previous=_cockpit_appointment(previous),
-                current=_cockpit_appointment(current),
-                current_conflict_count=conflict_count,
-                next=_cockpit_appointment(next_row),
-            )
+        source_url = os.environ.get("RECEPTION_SCHEDULE_CONTEXT_URL", "").strip()
+        ingest_key = os.environ.get("CLINICAL_INGEST_KEY", "").strip()
+        if not source_url or not ingest_key:
+            raise HTTPException(status_code=503, detail={"status": "unavailable", "last_fetched_at": _last_actual_schedule_fetch.isoformat() if _last_actual_schedule_fetch else None})
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.get(
+                    source_url, headers={"X-Clinical-Ingest-Key": ingest_key}
+                )
+            if response.status_code != 200:
+                raise ValueError("source unavailable")
+            source = ActualSchedule.model_validate(response.json())
+            if source.fetched_at.tzinfo is None or not timedelta(0) <= (
+                now.replace(tzinfo=timezone.utc) - source.fetched_at.astimezone(timezone.utc)
+            ) <= timedelta(minutes=5):
+                raise ValueError("source stale")
+            rows = []
+            for item in source.appointments:
+                if item.start_at.tzinfo is None or item.end_at.tzinfo is None or item.end_at <= item.start_at:
+                    raise ValueError("invalid interval")
+                rows.append(SimpleNamespace(
+                    id=item.uid,
+                    start_at=_naive_utc(item.start_at),
+                    end_at=_naive_utc(item.end_at),
+                    clinic=item.clinic, category=item.category,
+                    patient_display_name=item.patient_display_name,
+                    comment=item.reason,
+                ))
+            rows.sort(key=lambda row: (row.start_at, row.id))
+        except (httpx.HTTPError, ValueError, TypeError):
+            raise HTTPException(status_code=503, detail={"status": "unavailable", "last_fetched_at": _last_actual_schedule_fetch.isoformat() if _last_actual_schedule_fetch else None}) from None
+        _last_actual_schedule_fetch = source.fetched_at
+        source_updated = source.fetched_at.astimezone(timezone.utc).replace(tzinfo=None)
+        # Previous is today-only; Current may span midnight. Next uses the
+        # Reception-owned bounded actual-bookings horizon.
+        active = [row for row in rows if row.start_at <= now < row.end_at]
+        current = None
+        conflict_count = 0
+        if len(active) == 1:
+            current = active[0]
+        elif len(active) > 1:
+            latest = active[-1]
+            if latest.category != "aclasta" and all(
+                row.category == "aclasta" and row.start_at < latest.start_at
+                for row in active[:-1]
+            ):
+                current = latest
+            else:
+                conflict_count = len(active)
+        today_started = [row for row in rows if day_start <= row.start_at <= now]
+        previous = None
+        if current is not None:
+            earlier = [row for row in today_started if row.start_at < current.start_at]
+            previous = earlier[-1] if earlier else None
+        elif not conflict_count and today_started:
+            previous = today_started[-1]
+        next_row = next((row for row in rows if row.start_at > now), None)
+        return CockpitContext(
+            generated_at=now.replace(tzinfo=timezone.utc),
+            source_updated_at=source_updated.replace(tzinfo=timezone.utc) if source_updated else None,
+            today_total=sum(day_start <= row.start_at < day_end for row in rows),
+            previous=_cockpit_appointment(previous),
+            current=_cockpit_appointment(current),
+            current_conflict_count=conflict_count,
+            next=_cockpit_appointment(next_row),
+        )
 
     @router.get("/appointments", response_model=List[AppointmentRecord], dependencies=protected)
     def list_appointments(
@@ -481,7 +532,6 @@ def build_clinical_calendar_router(engine: Engine) -> APIRouter:
         item: AppointmentImport,
         *,
         now: datetime,
-        retain_other: bool = False,
     ) -> tuple[int, int, int, int, int]:
         """Apply one normalized source appointment.
 
@@ -512,7 +562,7 @@ def build_clinical_calendar_router(engine: Engine) -> APIRouter:
         if manual_override is not None:
             category = manual_override.category
 
-        if category not in RELEVANT_CATEGORIES and not retain_other:
+        if category not in RELEVANT_CATEGORIES:
             removed_unrelated = 0
             if row is not None:
                 # If a previously relevant source appointment is later
@@ -633,7 +683,7 @@ def build_clinical_calendar_router(engine: Engine) -> APIRouter:
 
         with Session(engine) as session:
             for item in snapshot.appointments:
-                delta = _apply_import_item(session, item, now=now, retain_other=True)
+                delta = _apply_import_item(session, item, now=now)
                 counters = [left + right for left, right in zip(counters, delta)]
 
             stale_stmt = (
