@@ -1,12 +1,12 @@
 # PHYSIO CURRENT — Knee-OA Reference Implementation / Physio Core Boundary
 
 > **TASK:** `PHYSIO-P1-KNEE-OA-REFERENCE-VALIDATION-CORE-BOUNDARY-20261001`
-> **STATUS:** P1 R2 PRE-CODE COMPLETE / R2-A BLOCK + R2-B PASS / THREE MATERIAL PRODUCT-OWNER DECISIONS PENDING / R2-A CLOSURE REVIEW NOT AUTHORIZED / RUNTIME IMPLEMENTATION NOT AUTHORIZED.
+> **STATUS:** P1 R2 PRE-CODE COMPLETE / R2-A BLOCK + R2-B PASS / PRODUCT OWNER APPROVED R2-A DECISIONS 1 AND 3 / DECISION 2 UNDER FIELD-UTILITY REVIEW / CLOSURE REVIEW NOT AUTHORIZED / RUNTIME IMPLEMENTATION NOT AUTHORIZED.
 > **Date:** 2026-10-04 Asia/Nicosia.
 > **Fresh coordinator base main:** `2ce4f3a9f2fd6535bf9da2b06c9c37dff1ebbda6`.
 > **Fresh bootstrap main for original P1 design:** `aedfa3e48e8359a449c2c8d8eb2b9f053a64ce47`.
 > **Reference implementation:** Knee Osteoarthritis physiotherapy referral.
-> **Current PHYSIO runtime writer:** none — active PHYSIO action is Product Owner decision checkpoint on the three unresolved R2-A design choices.
+> **Current PHYSIO runtime writer:** none — active PHYSIO action is Product Owner simplification decision for R2-A item 2 after bounded clinical-field utility review.
 > **Root operational owner:** unchanged — `CURRENT_OPERATIONAL.md` remains the sole repo-wide writer lock. At this reconciliation it records Cockpit D1.1 in pre-code closure HOLD with no active Cockpit runtime writer; that does not prevent PHYSIO sidecar checkpoints.
 > **Product authority:** `commercial_products/physio_referral/*`.
 > **Technical authority:** existing CU-1 + Knee-OA owners under `clinic_utilities/*`.
@@ -185,12 +185,12 @@ R2-A left exactly three material decisions:
 
 The coordinator incorrectly advanced those proposals as if approved. That governance error is corrected here.
 
-Product Owner decisions are still required on:
-1. the final single-owner strategy for duplicate Functionality concepts;
-2. the final ownership/representation of pain-location and swelling/effusion/hot-swollen concepts;
-3. whether `walking_aid_assessment_and_training` should be exposed, remain hidden, or be removed from the active Knee-OA UI scope.
+Product Owner decision state:
+1. **APPROVED:** one Functionality owner for duplicate function concepts; legacy aliases may remain compatibility-only.
+2. **OPEN:** simplify pain-location / tenderness / swelling-effusion / related clinical findings based on actual workflow and receiver utility before assigning final UI owners.
+3. **APPROVED:** expose `walking_aid_assessment_and_training` under `Προτεινόμενο πλάνο → Πρόσθετες επιλογές`, default off, no automatic suggestion.
 
-Until the Product Owner decides these three items:
+Until the Product Owner decides the remaining R2-A item 2:
 ```text
 R2-A CORRECTION DESIGN       NOT FROZEN
 R2-A CLOSURE REVIEW          NOT AUTHORIZED
@@ -288,12 +288,12 @@ The Product Owner may later authorize one of these, but authorization should fol
 
 ## 8. Exact next action
 
-Run the **Product Owner decision checkpoint** for the three open R2-A material choices.
+Complete the **Product Owner decision checkpoint for R2-A item 2 only**, using `P1_CLINICAL_FIELD_UTILITY_REVIEW.md`.
 
 The coordinator may explain options, tradeoffs and make a recommendation, but must not convert a recommendation into product authority.
 
-After the Product Owner explicitly decides all three:
-1. update `P1_R2A_STRUCTURAL_CORRECTION.md` from proposal to approved bounded correction;
+After the Product Owner explicitly decides item 2:
+1. update `P1_R2A_STRUCTURAL_CORRECTION.md` so decisions 1–3 are all Product Owner-approved;
 2. checkpoint the exact Product Owner decisions in this `CURRENT.md`;
 3. only then run one independent R2-A delta + affected-cumulative closure review under `PROCEDURES.md` P5/P5.1.
 
