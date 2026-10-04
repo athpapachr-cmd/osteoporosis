@@ -1,5 +1,7 @@
 # D1.1 — one independent post-code exact-head fidelity review
 
+> **HOLD / SUPERSEDED FOR SOURCE FIDELITY (2026-10-04):** Do not run this prepared request. New production evidence invalidates the daily Clinical Calendar snapshot as the freshness source for operational Previous / Current / Next. `../D1_1_FRESHNESS_REPLAN_DELTA_2026-10-04.md` owns the bounded replan. No verdict was issued against this request; implementation head `dd558e2fa8d59409d21913d2d3f2fbf885fdfece` remains historical focused-test evidence. An affected-source R2 pre-code delta review and later revised exact-head post-code review are required before release.
+
 ## Decision and immutable identities
 
 Decide whether the bounded D1.1 implementation faithfully realizes the already accepted corrected design, with the affected preserved behavior safe for a separate release decision. This is the sole R2 post-code review request, not a repeated pre-code review or whole-repository audit. **Read-only; no implementation, merge, deployment or Visit Brief work.** Prepared 2026-10-03; no reviewer launched and no verdict implied.

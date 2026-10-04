@@ -1,15 +1,32 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
-> **NOW (2026-10-03):** Home v1, Pending Surgery Queue and the bounded Clinical Calendar reason bridge are released. **D1 Today Context Strip V1 is deployed but has a Product Owner source/window defect:** it reads the Osteoporosis Clinical Calendar/day window rather than the Digital Secretary global appointment schedule, so it can show no Previous/Current/Next even while the Reception dashboard has real appointments. D1.1 independent pre-code closure PASS has been consumed; bounded implementation and focused checks are complete; independent post-code review is pending. **D2 Relevant Communication Context is deferred as a supporting input to Visit Brief, not the next standalone Home priority.**
+> **NOW (2026-10-04):** Home v1, Pending Surgery Queue and the bounded Clinical Calendar reason bridge are released. **D1 Today Context Strip V1 is deployed but has a Product Owner source/window defect.** D1.1 independent pre-code closure PASS and focused implementation checks are preserved. New production evidence shows that the daily Clinical Calendar snapshot is too stale for operational Previous / Current / Next; the prepared post-code review is HOLD, superseded for source fidelity by `D1_1_FRESHNESS_REPLAN_DELTA_2026-10-04.md`. No new runtime/release authority is claimed. **D2 Relevant Communication Context remains deferred behind Visit Brief.**
 > **Product boundary:** `cockpit/PRODUCT_CONSTITUTION.md`; cross-programme architecture: `CLINICAL_EXCELLENCE_PLAN.md` §§33–34.
 > **Root lock:** `CURRENT_OPERATIONAL.md` remains the sole repo-wide NOW. Its PR-1 release lifecycle is in HOLD with no active runtime writer at the verified PR-1 branch checkpoint; this Cockpit file does not claim that lock.
 > **Visit Intelligence dependency:** `programme/OST-VISIT-INTELLIGENCE/CURRENT.md`; P0-V0 contract/projector branch `b22fd5c610d20baf0f8ef3384ca16472cd2d1f92` is not on `main`. The external cumulative PASS handback has not yet been reconciled into that workstream CURRENT or released.
 
 ## Current bounded action
 
-The active Cockpit step is **D1.1 — Global Appointment Context source/window correction**, R2, implemented and focused-tested under Product Owner authority on 2026-10-03; post-code review / release HOLD. Root writer scope is `CURRENT_OPERATIONAL.md`. No merge/deploy or Visit Brief implementation authority.
+The active Cockpit step is **D1.1 — Global Appointment Context freshness replan**, R2 source delta only. The 2026-10-03 candidate remains implemented/focused-tested at its exact runtime head, but its daily-source assumption is superseded. The old post-code review is HOLD without verdict. Next: Product Owner checkpoint on the bounded source delta, then one independent read-only R2 pre-code delta + affected cumulative review. No runtime mutation, merge/deploy or Visit Brief authority.
 
-### D1.1 implementation-start checkpoint — 2026-10-03
+### D1.1 freshness replan checkpoint — 2026-10-04
+
+```text
+CURRENT REMOTE MAIN:    12be588866aee6543444eee0b435e9064c39bc3f
+IMPLEMENTATION BRANCH: feat/cockpit-d1-1-global-context-2026-10-03
+OLD BRANCH HEAD:       6f56093ffbf33d01078eb8a25af35eb65a1e851a
+RUNTIME/TEST HEAD:     dd558e2fa8d59409d21913d2d3f2fbf885fdfece (unchanged)
+RECEPTION MAIN:        bcfa57e0c1ca7358fb898b393e1dafa7b042c238
+OLD POST-CODE REQUEST: HOLD / NO VERDICT
+NEW SOURCE DESIGN:     D1_1_FRESHNESS_REPLAN_DELTA_2026-10-04.md
+RUNTIME WRITER:        NONE / SOURCE DESIGN ONLY
+MERGED / DEPLOYED:     NO / NO
+NEXT:                  Product Owner checkpoint, then one R2 pre-code source-delta review
+```
+
+The existing snapshot feed and Clinical Calendar remain the Module-01 weekly/background path. The operational strip must use a bounded fresh actual-Cal-bookings projection owned by Reception. Actual urgent bookings are appointments; urgent, lab and telephone availability windows are not. Preserve the already accepted Previous/Current/Next, overlap, privacy, weekly-filter and clinical identity boundaries unless the new source directly requires a correction. The prior design/review evidence stays historical; this replan does not issue a post-code fidelity verdict.
+
+### Historical D1.1 implementation-start checkpoint — 2026-10-03
 
 ```text
 BASE MAIN:            d5da6271567a4141b2708d9fa12e673dfce37131
@@ -21,7 +38,7 @@ IMPLEMENTATION:       COMPLETE / FOCUSED TESTED / NO POST-CODE PASS
 WRITER:               RELEASED / RUNTIME FROZEN FOR REVIEW
 POST-CODE REVIEW:     REQUEST PREPARED / NOT LAUNCHED
 MERGED / DEPLOYED:    NO / NO
-NEXT:                 independent read-only fidelity review of dd558e2fa8d59409d21913d2d3f2fbf885fdfece; separate release authority afterward
+HISTORICAL NEXT:      independent fidelity review of dd558e2fa8d59409d21913d2d3f2fbf885fdfece; now superseded by the 2026-10-04 freshness replan above
 ```
 
 Supplied closure evidence is retained in `reviews/D1_1_PRECODE_CLOSURE_PASS_2026-10-03.md`. Q1–Q3 were supported, no material findings/missing evidence, stop reason Q1–Q3 disposed. The pre-code chain is stopped under PROCEDURES P5/P5.1. The corrected design is copied byte-for-byte from design branch head `ba1f7eafb500986ad07b2e6b4320ac982896eb77`; its historical pending-review status is superseded by this checkpoint without changing the reviewed blob. Reuse the existing complete snapshot feed; preserve one store, snapshot reconciliation/manual overrides, legacy discard and weekly osteoporosis filtering. No Reception/config/schema/identity/Visit Brief expansion. Review PASS is not release authority. Visit Brief follows only D1.1 closure/release.
