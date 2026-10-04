@@ -7,7 +7,7 @@
 
 ## Current bounded action
 
-The active Cockpit step is **D1.1 — Global Appointment Context freshness replan**, R2 source delta only. The 2026-10-03 candidate remains implemented/focused-tested at its exact runtime head, but its daily-source assumption is superseded. The Product Owner confirmed the bounded source-change step with “Προχώρα” on 2026-10-04. One independent R2 pre-code review returned **BLOCK / 0:3:0**; the old post-code review remains HOLD without verdict. Next: correct FRESH-01/02/03 in the design, then one independent read-only closure review. No runtime mutation, merge/deploy or Visit Brief authority.
+The active Cockpit step is **D1.1 — Global Appointment Context freshness replan**, R2 source delta only. The 2026-10-03 candidate remains implemented/focused-tested at its exact runtime head, but its daily-source assumption is superseded. The Product Owner confirmed the bounded source-change step with “Προχώρα” on 2026-10-04. One independent R2 pre-code review returned **BLOCK / 0:3:0**; FRESH-01/02/03 are corrected in the design, with independent closure still PENDING. The old post-code review remains HOLD without verdict. Next: one independent read-only delta + affected cumulative closure review. No runtime mutation, merge/deploy or Visit Brief authority.
 
 ### D1.1 freshness replan checkpoint — 2026-10-04
 
@@ -24,7 +24,8 @@ MERGED / DEPLOYED:     NO / NO
 PRODUCT OWNER STEP:    CONFIRMED / “Προχώρα” / 2026-10-04
 SOURCE PRE-CODE:       BLOCK / COMPLETE_FOR_DECLARED_SCOPE / 0:3:0
 FINDINGS:              FRESH-01 past+upcoming; FRESH-02 total budget; FRESH-03 raw logging
-NEXT:                  bounded design correction, then one independent closure review
+CORRECTION:            FRESH-01/02/03 in source delta / author only / no closure claim
+NEXT:                  one independent delta + affected cumulative closure review
 ```
 
 The existing snapshot feed and Clinical Calendar remain the Module-01 weekly/background path. The operational strip must use a bounded fresh actual-Cal-bookings projection owned by Reception. Actual urgent bookings are appointments; urgent, lab and telephone availability windows are not. Preserve the already accepted Previous/Current/Next, overlap, privacy, weekly-filter and clinical identity boundaries unless the new source directly requires a correction. The prior design/review evidence stays historical; this replan does not issue a post-code fidelity verdict.
