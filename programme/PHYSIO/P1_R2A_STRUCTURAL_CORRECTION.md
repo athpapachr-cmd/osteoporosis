@@ -1,9 +1,9 @@
 # PHYSIO P1 R2-A Structural IA — Bounded Correction Design
 
 > **TASK:** `PHYSIO-P1-R2A-STRUCTURAL-IA-CORRECTION-20261004`
-> **STATUS:** COORDINATOR PROPOSALS ONLY / PRODUCT OWNER DECISION PENDING / NO CLOSURE REVIEW / NO RUNTIME IMPLEMENTATION.
+> **STATUS:** PRODUCT OWNER DECISIONS 1 AND 3 APPROVED / DECISION 2 PENDING FIELD-UTILITY SIMPLIFICATION / NO CLOSURE REVIEW / NO RUNTIME IMPLEMENTATION.
 > **BASE:** `2ce4f3a9f2fd6535bf9da2b06c9c37dff1ebbda6`.
-> **PURPOSE:** present bounded candidate resolutions for the three material R2-A findings. These are not approved product decisions until the Product Owner explicitly chooses.
+> **PURPOSE:** record Product Owner decisions for R2-A findings 1 and 3 and keep finding 2 open until the clinical-field utility review is resolved.
 > **R2-B:** already PASS; safety semantics are preserved and are not redesigned here.
 
 ---
@@ -32,7 +32,7 @@ The current template already aliases the finding forms into the functional forms
 
 ## Coordinator proposal — PENDING PRODUCT OWNER DECISION
 
-**Proposal A:** Single UI owner = Functionality / `functional_impairments`.
+**PRODUCT OWNER DECISION — APPROVED:** Single UI owner = Functionality / `functional_impairments`.
 
 Target UI/state writes:
 - `walking_tolerance`;
@@ -118,9 +118,9 @@ Current state:
 - it is currently hidden from the Knee UI;
 - evidence contract itself records that presentation scope amendment is the missing step.
 
-## Coordinator proposal — PENDING PRODUCT OWNER DECISION
+## Product Owner decision — APPROVED
 
-**Proposal A:** EXPOSE, default-off, rather than keep hidden or remove.
+**APPROVED:** EXPOSE, default-off, rather than keep hidden or remove.
 
 Target owner:
 ```text
