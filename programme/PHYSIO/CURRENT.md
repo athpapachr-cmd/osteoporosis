@@ -1,10 +1,10 @@
 # PHYSIO CURRENT — Knee-OA Reference Implementation / Physio Core Boundary
 
 > **TASK:** `PHYSIO-P1-KNEE-OA-REFERENCE-VALIDATION-CORE-BOUNDARY-20261001`
-> **STATUS:** R2-A APPROVED / PRE-CODE CLOSURE PASS / FINAL POST-CODE DELTA + AFFECTED-CUMULATIVE CLOSURE PASS AT `f5c99fc` / BOUNDED PR AND EXACT CI NEXT / NO MERGE OR DEPLOY.
+> **STATUS:** R2-A APPROVED / PRE-CODE AND FINAL POST-CODE CLOSURE PASS / DRAFT PR #135 OPEN / EXACT PR CI RUNNING / MERGE AND DEPLOY HOLD.
 > **Date:** 2026-10-05 Asia/Nicosia.
 > **Fresh coordinator base main:** `b9beca7b1e233245f9ea3429a247a1c80a69ac7c`.
-> **Branch:** `feat/physio-r2-ia-correction-2026-10-05`, based on that main; no PR, merge or deploy at this candidate checkpoint.
+> **Branch / PR:** `feat/physio-r2-ia-correction-2026-10-05` → draft [PR #135](https://github.com/athpapachr-cmd/osteoporosis/pull/135), based on that main; no merge or deploy.
 > **Fresh bootstrap main for original P1 design:** `aedfa3e48e8359a449c2c8d8eb2b9f053a64ce47`.
 > **Reference implementation:** Knee Osteoarthritis physiotherapy referral.
 > **Current PHYSIO runtime writer:** this PHYSIO coordinator on `feat/physio-r2-ia-correction-2026-10-05`, scoped to Knee-OA product UI/overlay, associated Knee-OA contracts/tests and PHYSIO/product checkpoints; root lock is recorded in `CURRENT_OPERATIONAL.md`.
@@ -281,12 +281,12 @@ The Product Owner may later authorize one of these, but authorization should fol
 
 ## 8. Exact next action
 
-Open the bounded PR with canonical-impact declaration and run exact applicable PR gates. Record PR head and results here. Merge/deploy remain separate authority decisions.
+Draft PR #135 is open with canonical-impact declaration at initial PR head `462ef0deab31d0984e8ee9d732f5f3878fe39899`; the canonical-impact guard has passed. Run exact applicable PR gates on the docs-checkpoint head, triage failures by ownership, and keep merge/deploy in HOLD.
 
 ## 9. Registry sync
 
 ```text
-PHYSIO LOCAL CONTROL PLANE     FINAL POST-CODE CLOSURE PASS / PR AND CI NEXT
+PHYSIO LOCAL CONTROL PLANE     FINAL POST-CODE CLOSURE PASS / DRAFT PR #135 / CI RUNNING
 ROOT CANONICALS               WRITER LOCK checkpoint updated
 GLOBAL PROGRAMME REGISTRY     UPDATE NAVIGATION SUMMARY ONLY
 COMMERCIAL PRODUCT CURRENT    CANDIDATE checkpoint / live release unchanged
