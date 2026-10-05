@@ -42,7 +42,7 @@ const label = id => LABELS[id] || Object.values(meta?.labels || {}).map(group=>g
 const chosen = () => [...state.rehab_directions, ...state.adjunct_options];
 const fresh = () => response && !pending && response.draft_id === draftId && response.revision === revision && response.package_version === meta.package_version;
 const manualStale = () => manual && manual.baseRevision !== revision;
-const canExport = () => !!(fresh() && response.gate.allowed && !response.gate.blocked && !manualStale() && effectiveText().trim());
+const canExport = () => !!(fresh() && response.gate.allowed && !response.gate.blocked && !manualStale() && !window.physioR2RestrictionIncomplete && effectiveText().trim());
 const effectiveText = () => manual ? manual.text : response?.text || '';
 const payload = () => ({draft_id:draftId,revision,package_version:meta.package_version,synthetic_only:true,state,dismissed,review_decision:window.physioR2ReviewDecision||null});
 function announce(text) { $('#status').textContent = text; }
@@ -57,6 +57,7 @@ function restoreKey(key) {
 }
 function newDraft() {
   window.physioR2ReviewDecision=null;
+  window.physioR2RestrictionIncomplete=false;window.physioR2RestrictionDraftId='';
   controller?.abort(); clearTimeout(timer); seq++;
   draftId=crypto.randomUUID(); revision=0; response=null; pending=true; dismissed=[]; manual=null; bubbleItem=null;
   state={laterality:'not_stated',formal_assertion_state:'not_stated',phenotype:{stiffness_symptom:false,weakness_symptom_or_context:false},

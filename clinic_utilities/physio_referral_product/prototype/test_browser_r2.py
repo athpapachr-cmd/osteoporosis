@@ -79,8 +79,12 @@ class R2BrowserTests(unittest.TestCase):
         aid=self.page.locator('#r2PlanAdditional [data-row-item="walking_aid_assessment_and_training"] [data-select]')
         expect(aid).to_have_attribute("aria-pressed","false")
         aid.click()
-        expect(self.page.locator('#plan [data-row-item="walking_aid_assessment_and_training"] [data-select]')).to_have_attribute("aria-pressed","true")
+        expect(aid).to_have_attribute("aria-pressed","true")
+        self.assertEqual(self.page.locator('#plan [data-row-item="walking_aid_assessment_and_training"]').count(),0)
         expect(self.page.locator("#referralText")).to_contain_text("βοηθήματος βάδισης")
+        aid.click()
+        expect(aid).to_have_attribute("aria-pressed","false")
+        expect(self.page.locator("#referralText")).not_to_contain_text("βοηθήματος βάδισης")
 
     def test_case4_rapid_worsening_without_diagnosis_inference(self):
         self.ready();self.choose("finding","pain")
@@ -103,6 +107,24 @@ class R2BrowserTests(unittest.TestCase):
         self.page.locator('[data-r2-decision="continue"]').click()
         expect(self.page.locator("#copy")).to_be_enabled()
         self.choose("safety","infection_or_septic_joint_concern")
+        expect(self.page.locator("#copy")).to_be_disabled()
+
+    def test_additional_adjunct_hierarchy_and_incomplete_restriction(self):
+        self.ready();self.page.locator("#r2PlanAdditional summary").click()
+        adjunct=self.page.locator('#r2PlanAdditional [data-row-item="manual_therapy"] [data-select]')
+        expect(self.page.locator('#r2PlanAdditional [data-row-item="manual_therapy"] [data-cue="guideline_conflict_or_mixed"]')).to_have_count(1)
+        adjunct.click()
+        expect(adjunct).to_have_attribute("aria-pressed","true")
+        self.assertEqual(self.page.locator('#plan [data-row-item="manual_therapy"]').count(),0)
+        expect(self.page.locator("#r2PlanSelectionSummary")).to_contain_text("Συμπληρωματικές επιλογές")
+        self.page.locator("#r2RestrictionId").select_option("weight_bearing_status")
+        expect(self.page.locator("#r2RestrictionHint")).to_be_visible()
+        expect(self.page.locator("#copy")).to_be_disabled()
+        self.assertNotIn("τοπικό prototype",self.page.locator("#reviewStatus").inner_text())
+        self.page.locator("#r2RestrictionText").fill("Αποφυγή πλήρους φόρτισης για μία εβδομάδα.")
+        expect(self.page.locator("#copy")).to_be_enabled()
+        expect(self.page.locator("#referralText")).to_contain_text("Αποφυγή πλήρους φόρτισης")
+        self.page.locator("#r2RestrictionText").fill("")
         expect(self.page.locator("#copy")).to_be_disabled()
 
 

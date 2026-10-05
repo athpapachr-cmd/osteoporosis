@@ -95,6 +95,7 @@ function r2Install(){
   const plan=r2Section('Προτεινόμενο πλάνο','r2ProposedPlan');
   plan.append(make('p',{class:'subtle small',text:'Η ενεργητική αποκατάσταση παραμένει ο προεπιλεγμένος πυρήνας. Εσύ επιλέγεις κάθε πρόσθετη κατεύθυνση.'}));
   plan.append($('#plan'),$('#suggestions'));
+  plan.append(make('div',{id:'r2PlanSelectionSummary',class:'r2-selection-summary','aria-live':'polite'}));
   const additional=make('details',{id:'r2PlanAdditional',class:'r2-details'},[
     make('summary',{text:'Πρόσθετες / Περισσότερες επιλογές πλάνου'}),
     r2Group('Πρόσθετες κατευθύνσεις',Object.keys(meta.labels.rehab_directions)
@@ -109,6 +110,7 @@ function r2Install(){
         ...Object.entries(meta.restrictions).map(([id,name])=>make('option',{value:id,text:name})),
       ])]),
       make('label',{class:'field'},['Οδηγία',make('textarea',{id:'r2RestrictionText',maxlength:'300',rows:'2','aria-label':'Ρητή οδηγία περιορισμού',placeholder:'Μόνο η ρητή κλινική οδηγία'})]),
+      make('p',{id:'r2RestrictionHint',class:'small',hidden:'',text:'Συμπλήρωσε την οδηγία για να είναι διαθέσιμη η αντιγραφή.'}),
     ]),
   ]);
   plan.append(additional);
@@ -136,10 +138,25 @@ function r2Install(){
   duration.addEventListener('change',durationChange);unit.addEventListener('change',()=>{if(duration.value)durationChange();});
   const restrictionId=$('#r2RestrictionId'),restrictionText=$('#r2RestrictionText');
   const restrictionChange=()=>{
-    state.explicit_restrictions=restrictionId.value?[{restriction_id:restrictionId.value,state_or_value:restrictionText.value,source:'clinician_entered'}]:[];
-    changed('r2_restriction');
+    const id=restrictionId.value,value=restrictionText.value.trim();
+    if(id&&!value){
+      const had=state.explicit_restrictions.length>0;
+      state.explicit_restrictions=[];window.physioR2RestrictionDraftId=id;
+      window.physioR2RestrictionIncomplete=true;
+      restrictionText.setCustomValidity('Συμπλήρωσε τη ρητή οδηγία.');
+      $('#r2RestrictionHint').hidden=false;
+      if(had)changed('r2_restriction');else paintStatus();
+      return;
+    }
+    window.physioR2RestrictionIncomplete=false;window.physioR2RestrictionDraftId='';
+    restrictionText.setCustomValidity('');$('#r2RestrictionHint').hidden=true;
+    const next=id?[{restriction_id:id,state_or_value:value,source:'clinician_entered'}]:[];
+    if(JSON.stringify(next)!==JSON.stringify(state.explicit_restrictions)){
+      state.explicit_restrictions=next;changed('r2_restriction');
+    }else paintStatus();
   };
-  restrictionId.addEventListener('change',restrictionChange);restrictionText.addEventListener('change',restrictionChange);
+  restrictionId.addEventListener('change',()=>{restrictionText.value='';restrictionChange();});
+  restrictionText.addEventListener('input',restrictionChange);
   r2Sync();
 }
 
@@ -163,13 +180,31 @@ function r2Sync(){
   }
   $('#r2StiffnessDetail').hidden=!state.phenotype.stiffness_symptom;
   $('#r2MorningDetail').hidden=!qualifierState.stiffness_patterns.includes('morning');
-  for(const extra of $$('[data-r2-extra-id]'))extra.hidden=chosen().includes(extra.dataset.r2ExtraId);
+  const selectedExtras={rehab:[],adjuncts:[]};
+  for(const extra of $$('[data-r2-extra-id]')){
+    const id=extra.dataset.r2ExtraId;
+    const category=Object.prototype.hasOwnProperty.call(meta.labels.adjuncts,id)?'adjunct_options':'rehab_directions';
+    const view=response?.evidence?.[id];
+    if(view&&extra.querySelector('[data-cue]')?.dataset.cue!==view.evidence_state)extra.replaceChildren(row(id,category));
+    const selected=chosen().includes(id);
+    extra.hidden=false;
+    extra.querySelector('[data-select]')?.setAttribute('aria-pressed',String(selected));
+    if(selected)(category==='adjunct_options'?selectedExtras.adjuncts:selectedExtras.rehab).push(label(id));
+  }
+  // Additional choices stay editable only in their owned disclosure; the main plan is the core default.
+  $$('#plan [data-row-item]').filter(row=>!meta.defaults.includes(row.dataset.rowItem)).forEach(row=>row.remove());
+  const summary=$('#r2PlanSelectionSummary');
+  summary.replaceChildren(...[
+    ['Πρόσθετες κατευθύνσεις',selectedExtras.rehab],
+    ['Συμπληρωματικές επιλογές',selectedExtras.adjuncts],
+  ].filter(([,items])=>items.length).map(([title,items])=>make('p',{class:'small'},[make('strong',{text:title+': '}),items.join(' · ')])));
   const note=$('#r2ClinicalNote');if(note&&document.activeElement!==note)note.value=state.clinician_free_text_optional;
   const duration=$('#r2DurationValue');if(duration&&document.activeElement!==duration)duration.value=qualifierState.symptom_duration_value??'';
   const unit=$('#r2DurationUnit');if(unit&&document.activeElement!==unit)unit.value=qualifierState.symptom_duration_unit||'months';
   const restriction=state.explicit_restrictions[0];
-  const restrictionId=$('#r2RestrictionId');if(restrictionId&&document.activeElement!==restrictionId)restrictionId.value=restriction?.restriction_id||'';
+  const restrictionId=$('#r2RestrictionId');if(restrictionId&&document.activeElement!==restrictionId)restrictionId.value=restriction?.restriction_id||window.physioR2RestrictionDraftId||'';
   const restrictionText=$('#r2RestrictionText');if(restrictionText&&document.activeElement!==restrictionText)restrictionText.value=restriction?.state_or_value||'';
+  $('#r2RestrictionHint').hidden=!window.physioR2RestrictionIncomplete;
   r2RenderCues();
 }
 
@@ -196,6 +231,7 @@ const r2BasePaint=paint;
 paint=function(){r2BasePaint();r2Install();r2Sync();};
 const r2BaseStatusText=statusText;
 statusText=function(){
+  if(window.physioR2RestrictionIncomplete)return 'Συμπλήρωσε τη ρητή οδηγία περιορισμού';
   if(fresh()&&response?.gate?.review_required&&!response?.gate?.blocked){
     if(response.gate.review_choice==='defer')return 'Παραπομπή σε αναβολή · πρώτα κλινική επανεκτίμηση';
     if(!response.gate.review_choice)return 'Απαιτείται απόφαση κλινικής επανεκτίμησης';

@@ -80,6 +80,17 @@ class R2CockpitBrowserTests(unittest.TestCase):
         expect(self.page.locator("#sheet")).to_be_visible()
         expect(self.page.locator("#sheet [data-jurisdiction-position]")).to_contain_text("Κύπρος · ΓεΣΥ")
 
+    def test_additional_plan_owner_and_restriction_draft(self):
+        self.ready();self.page.locator("#r2PlanAdditional summary").click()
+        aid=self.page.locator('#r2PlanAdditional [data-row-item="walking_aid_assessment_and_training"] [data-select]')
+        aid.click();expect(aid).to_have_attribute("aria-pressed","true")
+        self.assertEqual(self.page.locator('#plan [data-row-item="walking_aid_assessment_and_training"]').count(),0)
+        self.page.locator("#r2RestrictionId").select_option("weight_bearing_status")
+        expect(self.page.locator("#mobileDock [data-copy]")).to_be_disabled()
+        expect(self.page.locator("#r2RestrictionHint")).to_be_visible()
+        self.page.locator("#r2RestrictionText").fill("Αποφυγή πλήρους φόρτισης για μία εβδομάδα.")
+        expect(self.page.locator("#mobileDock [data-copy]")).to_be_enabled()
+
 
 if __name__=="__main__":
     unittest.main()
