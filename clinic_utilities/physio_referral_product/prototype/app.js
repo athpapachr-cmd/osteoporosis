@@ -44,7 +44,7 @@ const fresh = () => response && !pending && response.draft_id === draftId && res
 const manualStale = () => manual && manual.baseRevision !== revision;
 const canExport = () => !!(fresh() && response.gate.allowed && !response.gate.blocked && !manualStale() && effectiveText().trim());
 const effectiveText = () => manual ? manual.text : response?.text || '';
-const payload = () => ({draft_id:draftId,revision,package_version:meta.package_version,synthetic_only:true,state,dismissed});
+const payload = () => ({draft_id:draftId,revision,package_version:meta.package_version,synthetic_only:true,state,dismissed,review_decision:window.physioR2ReviewDecision||null});
 function announce(text) { $('#status').textContent = text; }
 function notice(text) {
   const n=$('#notice'); n.replaceChildren(document.createTextNode(text),btn('×',{'aria-label':'Κλείσιμο μηνύματος','data-hide-notice':''})); n.hidden=false;
@@ -56,6 +56,7 @@ function restoreKey(key) {
   target?.focus({preventScroll:true});
 }
 function newDraft() {
+  window.physioR2ReviewDecision=null;
   controller?.abort(); clearTimeout(timer); seq++;
   draftId=crypto.randomUUID(); revision=0; response=null; pending=true; dismissed=[]; manual=null; bubbleItem=null;
   state={laterality:'not_stated',formal_assertion_state:'not_stated',phenotype:{stiffness_symptom:false,weakness_symptom_or_context:false},
@@ -65,12 +66,14 @@ function newDraft() {
   closeAll(); paint(); refresh();
 }
 function changed(item=null) {
+  window.physioR2ReviewDecision=null;
   revision++; bubbleItem=item; pending=true; paint(); clearTimeout(timer); timer=setTimeout(()=>refresh(),65);
 }
 function toggle(category,id) {
   const list=state[category]; state[category]=list.includes(id) ? list.filter(v=>v!==id) : [...list,id]; changed(id);
 }
 async function refresh(candidate=null) {
+  if(candidate)window.physioR2ReviewDecision=null;
   controller?.abort(); controller=new AbortController(); const token=++seq, oldId=draftId, oldRevision=revision;
   pending=true; paintStatus(); const data=JSON.parse(JSON.stringify(payload()));
   if(candidate) data.candidate=candidate;

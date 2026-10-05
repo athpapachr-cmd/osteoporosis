@@ -127,6 +127,7 @@ def main() -> None:
     knee_ui = ui_scope["profiles"]["knee"]
     assert "walking_aid_assessment_and_training" not in knee_ui["rehab_directions"]
     assert contract["integration_findings"]["walking_aid"]["current_knee_ui_scope_exposes"] is False
+    assert contract["integration_findings"]["walking_aid"]["product_local_ui_exposes"] is True
     assert contract["integration_findings"]["weight_management"]["dedicated_cu1_machine_id_exists"] is False
     assert contract["integration_findings"]["dry_needling"]["knee_v1_1_excluded"] is True
 

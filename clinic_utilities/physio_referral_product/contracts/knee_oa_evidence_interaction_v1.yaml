@@ -6,9 +6,9 @@ runtime_authorized: false
 patient_data_persistence: false
 clinical_re_review_performed: false
 parents:
-  knee_oa_evidence_contract_v1.yaml: 8f4c657904ee028bba39d7a0557461a6acafadaf
-  knee_oa_template_contract_v1.yaml: e6c6a285ed4d2d64df1dca7b29630ef5053831e8
-  ../UX_CONTRACT_CURRENT.md: f65343c0bc9652c715075853d3fc42c1910ff212
+  knee_oa_evidence_contract_v1.yaml: 66b3697015c5d7b12b9175b33d156804da53bc39
+  knee_oa_template_contract_v1.yaml: f70b24eeb0c6ee166bea06b20867dfa4ee41d9e5
+  ../UX_CONTRACT_CURRENT.md: 7d59a16cf3d707f0f1cf953e7409a31921efd41d
 states:
   recommended_or_supported: {label: Συνιστάται, colour: evidence_green, cue: solid_dot, weight: 600, underline: short_solid}
   conditional_or_context_dependent: {label: Υπό προϋποθέσεις, colour: evidence_blue_grey, cue: outlined_diamond, weight: 400, underline: none}
@@ -125,12 +125,12 @@ suggestions:
     gait_walking_practice: EULAR_CORE_2023_UPDATE
     functional_task_retraining: EULAR_CORE_2023_UPDATE
 power_users:
-  collapsed_label: Περισσότερα
+  collapsed_label: Πρόσθετες επιλογές πλάνου
   active_count: unique_selected_advanced_item_ids
   collapse_mutates_selection: false
   selected_note_remains_discoverable: true
   selected_context_invalid: inherit_step3_fail_closed
-  hidden_items: [walking_aid_assessment_and_training, weight_management, dry_needling]
+  hidden_items: [weight_management, dry_needling]
 readiness:
   owner: frozen_step3_copy_readiness
   applies_to: [copy, print, pdf, share]

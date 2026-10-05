@@ -78,7 +78,7 @@ class AdapterTests(unittest.TestCase):
     def test_unsupported_hidden_and_forged_authority_rejected(self):
         for category, item in [("findings", "true_locking_or_major_mechanical_rom_block"),
             ("findings", "bruising"), ("adjunct_options", "dry_needling"),
-            ("rehab_directions", "walking_aid_assessment_and_training"), ("rehab_directions", "weight_management")]:
+            ("rehab_directions", "weight_management")]:
             with self.subTest(item=item):
                 req=request(); req["state"][category].append(item)
                 with self.assertRaises(ValueError): p.project(req)
@@ -87,6 +87,54 @@ class AdapterTests(unittest.TestCase):
             with self.assertRaises(ValueError): p.project(req)
         req=request();req["state"]["safety"]={"acknowledged_rule_ids":["infection_or_septic_joint_concern"]}
         with self.assertRaises(ValueError):p.project(req)
+
+    def test_walking_aid_is_explicit_only_and_keeps_deterministic_output(self):
+        req=request()
+        baseline=p.project(req)
+        self.assertNotIn("walking_aid_assessment_and_training", req["state"]["rehab_directions"])
+        self.assertNotIn("walking_aid_assessment_and_training", [c["item_id"] for c in baseline["suggestions"]])
+        req["state"]["rehab_directions"].append("walking_aid_assessment_and_training")
+        result=p.project(req)
+        self.assertTrue(result["gate"]["allowed"])
+        self.assertIn("αξιολόγηση και εκπαίδευση στη χρήση βοηθήματος βάδισης", result["text"])
+        self.assertIn("walking_aid_assessment_and_training", result["evidence"])
+
+    def test_swelling_alone_does_not_create_review_cue(self):
+        req=request(); req["state"]["findings"]=["swelling"]
+        result=p.project(req)
+        self.assertTrue(result["gate"]["allowed"])
+        self.assertEqual(result["review_cues"], [])
+        self.assertIn("οίδημα", result["text"])
+
+    def test_acute_joint_pattern_requires_explicit_disposition(self):
+        req=request(); req["state"]["findings"]=["swelling"]
+        req["state"]["qualifiers"]={"hot_swollen_joint":True,"acute_new_severe_pain":True,
+            "major_weight_bearing_or_movement_difficulty":True,"acute_or_rapid_deterioration":True}
+        pending=p.project(req)
+        self.assertEqual(len(pending["review_cues"]),1)
+        self.assertFalse(pending["gate"]["allowed"])
+        self.assertIsNone(pending["text"])
+        cue_ids=[pending["review_cues"][0]["rule_id"]]
+        for choice,allowed in [("defer",False),("continue",True)]:
+            decided=p.project({**req,"review_decision":{"revision":req["revision"],
+                "cue_ids":cue_ids,"choice":choice}})
+            self.assertEqual(decided["gate"]["allowed"],allowed)
+            self.assertEqual(decided["text"] is not None,allowed)
+        stale={**req,"review_decision":{"revision":req["revision"]-1,
+            "cue_ids":cue_ids,"choice":"continue"}}
+        with self.assertRaises(ValueError):p.project(stale)
+        req["state"]["safety_flags"]=["infection_or_septic_joint_concern"]
+        blocked=p.project({**req,"review_decision":{"revision":req["revision"],
+            "cue_ids":cue_ids,"choice":"continue"}})
+        self.assertTrue(blocked["gate"]["blocked"])
+        self.assertFalse(blocked["gate"]["allowed"])
+
+    def test_rapid_worsening_alone_does_not_infer_diagnosis(self):
+        req=request(); req["state"]["qualifiers"]={"rapid_worsening_or_deformity":True}
+        result=p.project(req)
+        self.assertTrue(result["gate"]["allowed"])
+        self.assertEqual(result["review_cues"],[])
+        self.assertNotIn("SIFK",result["text"])
 
     def test_types_and_bounds(self):
         mutations = [lambda r:r.update(synthetic_only=False),lambda r:r.update(revision=True),

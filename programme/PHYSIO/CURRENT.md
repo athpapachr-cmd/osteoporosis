@@ -1,10 +1,10 @@
 # PHYSIO CURRENT — Knee-OA Reference Implementation / Physio Core Boundary
 
 > **TASK:** `PHYSIO-P1-KNEE-OA-REFERENCE-VALIDATION-CORE-BOUNDARY-20261001`
-> **STATUS:** R2-A PRODUCT OWNER DECISIONS 1–3 APPROVED / CORRECTION DESIGN FROZEN / INDEPENDENT PRE-CODE CLOSURE PASS / BOUNDED PHYSIO IMPLEMENTATION WRITER CLAIMED / RUNTIME WORK NEXT.
+> **STATUS:** R2-A PRODUCT OWNER DECISIONS 1–3 APPROVED / PRE-CODE CLOSURE PASS / BOUNDED IMPLEMENTATION CANDIDATE LOCALLY TESTED / POST-CODE EXACT-HEAD REVIEW NEXT / NO PR, MERGE OR DEPLOY YET.
 > **Date:** 2026-10-05 Asia/Nicosia.
 > **Fresh coordinator base main:** `b9beca7b1e233245f9ea3429a247a1c80a69ac7c`.
-> **Branch:** `feat/physio-r2-ia-correction-2026-10-05`, based on that main; no PR, merge or deploy.
+> **Branch:** `feat/physio-r2-ia-correction-2026-10-05`, based on that main; no PR, merge or deploy at this candidate checkpoint.
 > **Fresh bootstrap main for original P1 design:** `aedfa3e48e8359a449c2c8d8eb2b9f053a64ce47`.
 > **Reference implementation:** Knee Osteoarthritis physiotherapy referral.
 > **Current PHYSIO runtime writer:** this PHYSIO coordinator on `feat/physio-r2-ia-correction-2026-10-05`, scoped to Knee-OA product UI/overlay, associated Knee-OA contracts/tests and PHYSIO/product checkpoints; root lock is recorded in `CURRENT_OPERATIONAL.md`.
@@ -166,7 +166,7 @@ The Product Owner corrected the design direction accordingly:
 
 ## 4.2 Structural correction / R2 status
 
-The original R2 pre-code review returned a terminal split verdict; R2-A correction closure is now pending:
+The original R2 pre-code review returned a terminal split verdict; the following is historical and R2-A correction closure has since passed:
 
 ```text
 R2-A INFORMATION ARCHITECTURE    BLOCK
@@ -188,7 +188,7 @@ R2-A left exactly three material decisions:
 2. **APPROVED:** remove routine structured pain map, tenderness, crepitus and separate effusion. Keep standalone **Οίδημα** visibly in Κλινική εικόνα, default unselected and non-mandatory (`missing != negative`). Preserve explicit hot/swollen pattern observations in the already-PASS R2-B review-cue mechanism; simple swelling alone triggers no alert.
 3. **APPROVED:** `walking_aid_assessment_and_training` only in `Προτεινόμενο πλάνο → Πρόσθετες / Περισσότερες επιλογές`, default-off, without auto-suggestion or auto-selection.
 
-The Product Owner also requested bounded implementation after review PASS. One independent R2-A delta + affected-cumulative review returned **PASS / COMPLETE_FOR_DECLARED_SCOPE / no new material finding** at frozen design commit `fdb6bff3b852112e8fdfa35a2db5dc8fd8f82eca`; see `P1_R2A_CLOSURE_REVIEW_RESULT.md`. R2-B semantic PASS is reused, not reopened. Pre-code review chain stops. No PHYSIO runtime mutation, shared CU-1 mutation, second diagnosis or persistence has occurred on this branch.
+The Product Owner also requested bounded implementation after review PASS. One independent R2-A delta + affected-cumulative review returned **PASS / COMPLETE_FOR_DECLARED_SCOPE / no new material finding** at frozen design commit `fdb6bff3b852112e8fdfa35a2db5dc8fd8f82eca`; see `P1_R2A_CLOSURE_REVIEW_RESULT.md`. R2-B semantic PASS is reused, not reopened. Pre-code review chain stops. The bounded Knee-OA product implementation candidate is now present and locally tested; its exact contents, five-case matrix and gate evidence are in `P1_R2_IMPLEMENTATION_CANDIDATE.md`. No shared CU-1 mutation, second diagnosis or persistence was made.
 
 R2-B safety semantics remain PASS and settled. No shared CU-1 mutation is required by R2-B.
 
@@ -202,7 +202,7 @@ Purpose:
 
 > Use the existing live Knee-OA product as the reference implementation to validate usefulness and freeze the practical boundary between reusable Physio mechanics and Knee-specific vertical content before opening another diagnosis.
 
-P1 remains **read-only with respect to runtime** unless a concrete observed finding later receives a separate bounded correction authority.
+P1 evidence work was originally **read-only with respect to runtime**. The Product Owner's later concrete five-case findings and approved R2 correction supply the separate bounded implementation authority recorded above.
 
 P1 design is now frozen in:
 
@@ -281,15 +281,15 @@ The Product Owner may later authorize one of these, but authorization should fol
 
 ## 8. Exact next action
 
-Implement the frozen correction and already-PASS R2-B cue behavior within the claimed bounded scope, using the same Product Owner Cases 1–5 and exact relevant tests/CI. A post-code exact-head R2 fidelity review remains required before PR/release. A PR may be opened after an implementation candidate passes its gates; merge/deploy remain separate authority decisions.
+Commit the locally tested R2 implementation candidate and obtain the required independent post-code fidelity review at its exact head. On PASS, open a bounded PR with canonical-impact declaration and run exact PR gates. Merge/deploy remain separate authority decisions.
 
 ## 9. Registry sync
 
 ```text
-PHYSIO LOCAL CONTROL PLANE     FROZEN correction design / independent closure PASS
-ROOT CANONICALS               NOT REQUIRED
+PHYSIO LOCAL CONTROL PLANE     IMPLEMENTATION candidate / local gates PASS / post-code review pending
+ROOT CANONICALS               WRITER LOCK checkpoint updated
 GLOBAL PROGRAMME REGISTRY     UPDATE NAVIGATION SUMMARY ONLY
-COMMERCIAL PRODUCT CURRENT    CURRENT / NO RUNTIME CHANGE
-KNEE-OA TECHNICAL OWNERS      CURRENT / NO RUNTIME CHANGE
+COMMERCIAL PRODUCT CURRENT    CANDIDATE checkpoint / live release unchanged
+KNEE-OA TECHNICAL OWNERS      BOUNDED candidate / shared CU-1 unchanged
 CROSS-PROJECT MUTATION        NONE REQUIRED BY R2-B; CU-1 REUSED UNCHANGED
 ```

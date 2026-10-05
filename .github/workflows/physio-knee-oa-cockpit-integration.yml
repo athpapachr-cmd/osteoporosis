@@ -50,9 +50,9 @@ jobs:
           base = subprocess.check_output(['git','merge-base','origin/main','HEAD'], text=True).strip()
           paths = subprocess.check_output(['git','diff','--name-only',base,'HEAD'], text=True).splitlines()
           exact = {
-            'CURRENT_OPERATIONAL.md','SLICE_PLAN_CURRENT.md','osteoporosis-change-log.md','main.py',
+            'CURRENT_OPERATIONAL.md','programme/MASTER-PROJECT-REGISTRY.md','SLICE_PLAN_CURRENT.md','osteoporosis-change-log.md','main.py',
             'clinic_utilities/physio_referral_api.py',
-            'test_physio_knee_oa_cockpit_integration.py','test_physio_knee_oa_cockpit_browser.py',
+            'test_physio_knee_oa_cockpit_integration.py','test_physio_knee_oa_cockpit_browser.py','test_physio_knee_oa_cockpit_r2_browser.py',
             'test_physio_knee_oa_jurisdiction_overlay.py',
             '.github/workflows/physio-knee-oa-cockpit-integration.yml',
             '.github/workflows/physio-knee-oa-prototype.yml','.github/workflows/physio-knee-oa-v4.yml','.github/workflows/physio-knee-oa-v5.yml','.github/workflows/cu1-tests.yml',
@@ -64,12 +64,13 @@ jobs:
           prefixes = (
             'clinic_utilities/physio_referral_product/',
             'commercial_products/physio_referral/',
+            'programme/PHYSIO/',
             'static/clinic-utilities/physio-referral/',
           )
           product_exact = {
             'clinic_utilities/physio_referral_api.py',
             'test_physio_knee_oa_cockpit_integration.py',
-            'test_physio_knee_oa_cockpit_browser.py',
+            'test_physio_knee_oa_cockpit_browser.py','test_physio_knee_oa_cockpit_r2_browser.py',
             'test_physio_knee_oa_jurisdiction_overlay.py',
           }
           physio_product_touched = any(
@@ -126,13 +127,10 @@ jobs:
       - name: Install Chromium
         run: python -m playwright install --with-deps chromium
 
-      - name: Inherited product and production browser acceptance
+      - name: R2 product and production browser acceptance
         run: |
-          python clinic_utilities/physio_referral_product/prototype/test_browser.py
-          python clinic_utilities/physio_referral_product/prototype/test_browser_qualifiers.py
-          python clinic_utilities/physio_referral_product/prototype/test_browser_usability_v2.py
-          python clinic_utilities/physio_referral_product/prototype/test_browser_more_v3.py
-          python test_physio_knee_oa_cockpit_browser.py
+          python clinic_utilities/physio_referral_product/prototype/test_browser_r2.py
+          python test_physio_knee_oa_cockpit_r2_browser.py
 
       - name: Adjacent-owner isolation smoke
         run: |

@@ -268,8 +268,8 @@ items:
     cu1_target_ids: [walking_aid_assessment_and_training]
     app_state: conditional_or_context_dependent
     default_selected: false
-    current_knee_ui_exposed: false
-    integration_status: existing_canonical_id_requires_future_presentation_scope_amendment
+    current_knee_ui_exposed: true
+    integration_status: proposed_plan_additional_options_explicit_default_off
     auto_suggestion: false
     purpose_summary_el: Αξιολόγηση/εκπαίδευση βοηθήματος βάδισης σε επιλεγμένους ασθενείς με ουσιαστικό περιορισμό.
     positions:
@@ -412,8 +412,10 @@ integration_findings:
   walking_aid:
     canonical_id_exists: true
     current_knee_ui_scope_exposes: false
-    step2_action: document_only
-    later_possible_action: bounded_ui_relevance_scope_amendment
+    product_local_ui_exposes: true
+    shared_cu1_scope_mutated: false
+    step2_action: product_local_presentation_amendment
+    later_possible_action: shared_scope_only_if_runtime_proves_required
   weight_management:
     clinical_profile_mentions: true
     dedicated_cu1_machine_id_exists: false
