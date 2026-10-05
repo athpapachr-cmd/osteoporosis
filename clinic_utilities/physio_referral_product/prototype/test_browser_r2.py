@@ -105,6 +105,7 @@ class R2BrowserTests(unittest.TestCase):
         expect(self.page.locator("#copy")).to_be_disabled()
         self.page.locator('[data-r2-decision="defer"]').click()
         expect(self.page.locator("#copy")).to_be_disabled()
+        expect(self.page.locator('[data-r2-decision="defer"]')).to_have_attribute("aria-pressed","true")
         self.page.locator('[data-r2-decision="continue"]').click()
         expect(self.page.locator("#copy")).to_be_enabled()
         self.choose("safety","infection_or_septic_joint_concern")

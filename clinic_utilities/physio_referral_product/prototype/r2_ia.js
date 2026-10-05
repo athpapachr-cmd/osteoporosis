@@ -248,6 +248,7 @@ document.addEventListener('click',event=>{
     const cues=response?.review_cues||[];
     if(!fresh()||!cues.length)return;
     window.physioR2ReviewDecision={revision,cue_ids:cues.map(c=>c.rule_id).sort(),choice:b.dataset.r2Decision};
+    $$('[data-r2-decision]').forEach(control=>{control.disabled=true;});
     refresh();return;
   }
   const kind=b.dataset.r2Kind,id=b.dataset.r2Id;

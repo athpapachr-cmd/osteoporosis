@@ -1,7 +1,7 @@
 # PHYSIO CURRENT — Knee-OA Reference Implementation / Physio Core Boundary
 
 > **TASK:** `PHYSIO-P1-KNEE-OA-REFERENCE-VALIDATION-CORE-BOUNDARY-20261001`
-> **STATUS:** R2-A APPROVED / PRE-CODE AND FINAL POST-CODE CLOSURE PASS / DRAFT PR #135 OPEN / EXACT PR CI RUNNING / MERGE AND DEPLOY HOLD.
+> **STATUS:** R2-A APPROVED / PRE-CODE AND FINAL POST-CODE CLOSURE PASS / DRAFT PR #135 OPEN / PHYSIO CI CORRECTION CANDIDATE PENDING REVIEW / MERGE AND DEPLOY HOLD.
 > **Date:** 2026-10-05 Asia/Nicosia.
 > **Fresh coordinator base main:** `b9beca7b1e233245f9ea3429a247a1c80a69ac7c`.
 > **Branch / PR:** `feat/physio-r2-ia-correction-2026-10-05` → draft [PR #135](https://github.com/athpapachr-cmd/osteoporosis/pull/135), based on that main; no merge or deploy.
@@ -281,12 +281,12 @@ The Product Owner may later authorize one of these, but authorization should fol
 
 ## 8. Exact next action
 
-Draft PR #135 is open with canonical-impact declaration at initial PR head `462ef0deab31d0984e8ee9d732f5f3878fe39899`; the canonical-impact guard has passed. Run exact applicable PR gates on the docs-checkpoint head, triage failures by ownership, and keep merge/deploy in HOLD.
+Draft PR #135 is open with canonical-impact declaration. At examined head `7d1ba92f2046d221fb64bee9db7d76ebba2471be`, canonical-impact and seven other relevant gates passed. The prototype, Cockpit and V4 failures produced a bounded PHYSIO CI correction candidate: keep the protected browser test in full-dependency jobs only, and disable review-decision controls while a decision refresh is pending. Local 6/6 prototype and 4/4 protected browser checks pass. `P1_R2_PR_CI_TRIAGE.md` records the exact failures and separate Clinical Learning scope-guard failures. Obtain independent delta/fidelity review on the correction head, then push and run exact new-head CI; merge/deploy remain in HOLD.
 
 ## 9. Registry sync
 
 ```text
-PHYSIO LOCAL CONTROL PLANE     FINAL POST-CODE CLOSURE PASS / DRAFT PR #135 / CI RUNNING
+PHYSIO LOCAL CONTROL PLANE     FINAL POST-CODE CLOSURE PASS / DRAFT PR #135 / CI CORRECTION REVIEW PENDING
 ROOT CANONICALS               WRITER LOCK checkpoint updated
 GLOBAL PROGRAMME REGISTRY     UPDATE NAVIGATION SUMMARY ONLY
 COMMERCIAL PRODUCT CURRENT    CANDIDATE checkpoint / live release unchanged

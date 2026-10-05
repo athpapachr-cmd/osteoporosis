@@ -96,7 +96,6 @@ jobs:
       - name: Real browser with actual loopback server and CU1 engine
         run: |
           python clinic_utilities/physio_referral_product/prototype/test_browser_r2.py
-          python test_physio_knee_oa_cockpit_r2_browser.py
       - name: Package and smoke standalone dependency closure
         run: python clinic_utilities/physio_referral_product/prototype/build_bundle.py
       - name: Publish synthetic prototype and screenshots

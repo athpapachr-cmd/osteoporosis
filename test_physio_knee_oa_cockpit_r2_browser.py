@@ -71,6 +71,7 @@ class R2CockpitBrowserTests(unittest.TestCase):
         expect(self.page.locator("#copy")).to_be_disabled()
         self.page.locator('[data-r2-decision="defer"]').click()
         expect(self.page.locator("#copy")).to_be_disabled()
+        expect(self.page.locator('[data-r2-decision="defer"]')).to_have_attribute("aria-pressed","true")
         self.page.locator('[data-r2-decision="continue"]').click()
         expect(self.page.locator("#copy")).to_be_enabled()
 
