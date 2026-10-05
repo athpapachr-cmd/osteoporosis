@@ -1,7 +1,7 @@
 # PHYSIO CURRENT — Knee-OA Reference Implementation / Physio Core Boundary
 
 > **TASK:** `PHYSIO-P1-KNEE-OA-REFERENCE-VALIDATION-CORE-BOUNDARY-20261001`
-> **STATUS:** R2-A APPROVED / PRE-CODE AND FINAL POST-CODE CLOSURE PASS / DRAFT PR #135 OPEN / PHYSIO CI CORRECTION CANDIDATE PENDING REVIEW / MERGE AND DEPLOY HOLD.
+> **STATUS:** R2-A APPROVED / PRE-CODE AND FINAL POST-CODE CLOSURE PASS / CI CORRECTION INDEPENDENT PASS / APPLICABLE PHYSIO CI PASS / DRAFT PR #135 OPEN / MERGE AND DEPLOY HOLD.
 > **Date:** 2026-10-05 Asia/Nicosia.
 > **Fresh coordinator base main:** `b9beca7b1e233245f9ea3429a247a1c80a69ac7c`.
 > **Branch / PR:** `feat/physio-r2-ia-correction-2026-10-05` → draft [PR #135](https://github.com/athpapachr-cmd/osteoporosis/pull/135), based on that main; no merge or deploy.
@@ -281,12 +281,12 @@ The Product Owner may later authorize one of these, but authorization should fol
 
 ## 8. Exact next action
 
-Draft PR #135 is open with canonical-impact declaration. At examined head `7d1ba92f2046d221fb64bee9db7d76ebba2471be`, canonical-impact and seven other relevant gates passed. The prototype, Cockpit and V4 failures produced a bounded PHYSIO CI correction candidate: keep the protected browser test in full-dependency jobs only, and disable review-decision controls while a decision refresh is pending. Local 6/6 prototype and 4/4 protected browser checks pass. `P1_R2_PR_CI_TRIAGE.md` records the exact failures and separate Clinical Learning scope-guard failures. Obtain independent delta/fidelity review on the correction head, then push and run exact new-head CI; merge/deploy remain in HOLD.
+Draft PR #135 is open with canonical-impact declaration. At examined head `7d1ba92f2046d221fb64bee9db7d76ebba2471be`, prototype, Cockpit and V4 failures produced a bounded PHYSIO correction: keep the protected browser test in full-dependency jobs only, and disable review-decision controls while a decision refresh is pending. Independent bounded delta + affected-cumulative fidelity review returned **PASS / no material finding** at `fa9b1ff4f0f070cde3c78fb30ebd2a7a5a0a2dd3`. All applicable PHYSIO, CU-1 and canonical-impact PR gates **passed at that head**. Clinical Learning L0/L1/L1B/L1C scope guards failed under separate ownership; `P1_R2_PR_CI_TRIAGE.md` records the separation. This docs-only checkpoint requires exact-head CI confirmation. Merge/deploy remain in HOLD.
 
 ## 9. Registry sync
 
 ```text
-PHYSIO LOCAL CONTROL PLANE     FINAL POST-CODE CLOSURE PASS / DRAFT PR #135 / CI CORRECTION REVIEW PENDING
+PHYSIO LOCAL CONTROL PLANE     FINAL POST-CODE + CI CORRECTION REVIEW PASS / DRAFT PR #135 / APPLICABLE CI PASS
 ROOT CANONICALS               WRITER LOCK checkpoint updated
 GLOBAL PROGRAMME REGISTRY     UPDATE NAVIGATION SUMMARY ONLY
 COMMERCIAL PRODUCT CURRENT    CANDIDATE checkpoint / live release unchanged

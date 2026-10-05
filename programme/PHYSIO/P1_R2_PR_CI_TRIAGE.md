@@ -10,3 +10,9 @@ The canonical-impact, evidence, template, interaction, CU-1, jurisdiction and V5
 The four Clinical Learning L0/L1/L1B/L1C jobs also failed their own scope guards because the authorized root `CURRENT_OPERATIONAL.md` checkpoint triggered those workflows. Their test steps passed. Those workflows belong to another writer and are not changed in this PHYSIO slice. Their failures remain an external CI ownership issue; they do not grant merge/release authority.
 
 Local correction checks: JavaScript syntax and `git diff --check` pass; PHYSIO prototype browser **6/6** and protected Cockpit browser **4/4** pass. Independent exact-head delta/fidelity closure and new PR CI are required before calling the correction complete.
+
+## Correction closure at `fa9b1ff4f0f070cde3c78fb30ebd2a7a5a0a2dd3`
+
+Independent read-only bounded delta + affected-cumulative fidelity review: **PASS / no material finding**. The reviewer verified synchronous disablement, pending export block, failed-refresh block, refreshed decision state, preserved Cases 1–5, retained protected coverage in full-dependency jobs, and no change to projection, evidence, default plan, CY_GESY or shared CU-1. No further review cycle is required for this exact correction.
+
+Exact-head PR CI: canonical impact, evidence, template, interaction, CU-1 focused, prototype, Cockpit, V4, V5 and jurisdiction gates all **SUCCESS**. Clinical Learning L0/L1/L1B/L1C remain **FAILURE** on their own scope guards; their ownership is outside this PHYSIO writer lock. Merge/deploy remain HOLD. A subsequent docs-only checkpoint must be assessed at its own head.
