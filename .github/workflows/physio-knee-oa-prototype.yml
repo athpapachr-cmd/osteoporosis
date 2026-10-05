@@ -42,9 +42,9 @@ jobs:
           base = subprocess.check_output(['git','merge-base','origin/main','HEAD'], text=True).strip()
           paths = subprocess.check_output(['git','diff','--name-only',base,'HEAD'], text=True).splitlines()
           exact = {
-            'CURRENT_OPERATIONAL.md','SLICE_PLAN_CURRENT.md','osteoporosis-change-log.md','main.py',
+            'CURRENT_OPERATIONAL.md','programme/MASTER-PROJECT-REGISTRY.md','SLICE_PLAN_CURRENT.md','osteoporosis-change-log.md','main.py',
             'clinic_utilities/physio_referral_api.py',
-            'test_physio_knee_oa_cockpit_integration.py','test_physio_knee_oa_cockpit_browser.py',
+            'test_physio_knee_oa_cockpit_integration.py','test_physio_knee_oa_cockpit_browser.py','test_physio_knee_oa_cockpit_r2_browser.py',
             'test_physio_knee_oa_jurisdiction_overlay.py',
             '.github/workflows/physio-knee-oa-prototype.yml',
             '.github/workflows/physio-knee-oa-cockpit-integration.yml',
@@ -56,13 +56,14 @@ jobs:
           prefixes = (
             'clinic_utilities/physio_referral_product/',
             'commercial_products/physio_referral/',
+            'programme/PHYSIO/',
             'static/clinic-utilities/physio-referral/',
           )
           physio_product_touched = any(
             p.startswith(prefixes) or p in {
               'clinic_utilities/physio_referral_api.py',
               'test_physio_knee_oa_cockpit_integration.py',
-              'test_physio_knee_oa_cockpit_browser.py',
+              'test_physio_knee_oa_cockpit_browser.py','test_physio_knee_oa_cockpit_r2_browser.py',
               'test_physio_knee_oa_jurisdiction_overlay.py',
             }
             for p in paths
@@ -94,10 +95,7 @@ jobs:
         run: python -m playwright install --with-deps chromium
       - name: Real browser with actual loopback server and CU1 engine
         run: |
-          python clinic_utilities/physio_referral_product/prototype/test_browser.py
-          python clinic_utilities/physio_referral_product/prototype/test_browser_qualifiers.py
-          python clinic_utilities/physio_referral_product/prototype/test_browser_usability_v2.py
-          python clinic_utilities/physio_referral_product/prototype/test_browser_more_v3.py
+          python clinic_utilities/physio_referral_product/prototype/test_browser_r2.py
       - name: Package and smoke standalone dependency closure
         run: python clinic_utilities/physio_referral_product/prototype/build_bundle.py
       - name: Publish synthetic prototype and screenshots

@@ -38,10 +38,12 @@ class V51ExamSemanticsTests(unittest.TestCase):
         _,extension=projected(qualifiers={"weakness_detail":"knee_extension_exam"},phenotype={"weakness_symptom_or_context":True})
         self.assertNotIn("ισχιοκνημιαίων",extension["text"])
 
-    def test_directional_weakness_requires_explicit_weakness_context(self):
+    def test_directional_weakness_has_independent_examination_owner(self):
         req=request();req["state"]["qualifiers"]={"weakness_detail":"knee_flexion_exam"}
-        with self.assertRaises(ValueError):
-            p.project(req)
+        result=p.project(req)
+        self.assertTrue(result["gate"]["allowed"])
+        self.assertIn("αδυναμία κάμψης γόνατος",result["text"])
+        self.assertFalse(result["state"]["phenotype"].get("weakness_symptom_or_context"))
 
     def test_quadriceps_atrophy_is_independent_objective_finding(self):
         _,result=projected(qualifiers={"visible_atrophy":True,"atrophy_location":"quadriceps"})
@@ -121,7 +123,7 @@ class V51ExamSemanticsTests(unittest.TestCase):
         self.assertFalse(result["gate"]["blocked"])
         self.assertEqual(
             [c["clue_id"] for c in result["clinical_review_clues"]],
-            ["recent_trauma_atypical","rapid_worsening_or_deformity_atypical","hot_swollen_joint_atypical"],
+            ["recent_trauma_atypical","rapid_worsening_or_deformity_atypical"],
         )
         self.assertEqual(result["text"],baseline["text"])
         self.assertEqual(result["state"]["rehab_directions"],list(p.E["default_plan"]["selected"]))

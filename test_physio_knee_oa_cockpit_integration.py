@@ -57,12 +57,15 @@ class KneeOACockpitIntegrationTests(unittest.TestCase):
             "Οστεοαρθρίτιδα γόνατος",'id="advancedToggle"','id="referralText"',
             "product-more-v3.js","product-clinical-sheet-v4.js","product-clinical-sheet-v4.css",
             "product-jurisdiction-v1.js","product-v5-1-exam.js","product-v5-1-exam.css",
+            "product-r2-ia.js","product-r2-ia.css",
         ]:
             self.assertIn(marker, html)
         self.assertLess(html.index("product-more-v3.js"), html.index("product-clinical-sheet-v4.js"))
         self.assertLess(html.index("product-clinical-sheet-v4.js"), html.index("product-jurisdiction-v1.js"))
         self.assertLess(html.index("product-jurisdiction-v1.js"), html.index("product-v5-1-exam.js"))
         self.assertLess(html.index("product-v5-1-exam.js"), html.index("production-finalize.js"))
+        self.assertLess(html.index("product-v5-1-exam.js"), html.index("product-r2-ia.js"))
+        self.assertLess(html.index("product-r2-ia.js"), html.index("production-finalize.js"))
         self.assertNotIn("Δημιουργία παραπεμπτικού", html); self.assertNotIn("ΔΟΚΙΜΑΣΤΙΚΟ ΚΕΙΜΕΝΟ", html)
 
     def test_product_api_is_protected_and_uses_reviewed_real_cu1_projection(self):
@@ -81,6 +84,29 @@ class KneeOACockpitIntegrationTests(unittest.TestCase):
         self.assertEqual(body["evidence"]["acupuncture"]["jurisdiction"]["local_direction"], "against")
         self.assertEqual(body["evidence"]["manual_therapy"]["evidence_state"], "guideline_conflict_or_mixed")
         self.assertEqual(body["evidence"]["manual_therapy"]["jurisdiction"]["local_direction"], "conditional_for")
+
+    def test_product_api_review_disposition_and_cu1_block_remain_separate(self):
+        url="/clinical/clinic-utilities/physio-referral/api/product/project"
+        meta=self.client.get("/clinical/clinic-utilities/physio-referral/api/product/bootstrap",headers=self.headers).json()
+        payload=_payload(meta["package_version"])
+        payload["state"]["findings"]=["swelling"]
+        swelling=self.client.post(url,headers=self.headers,json=payload).json()
+        self.assertTrue(swelling["gate"]["allowed"])
+        self.assertEqual(swelling["review_cues"],[])
+        payload["state"]["qualifiers"]={"hot_swollen_joint":True,"acute_new_severe_pain":True,
+            "major_weight_bearing_or_movement_difficulty":True,"acute_or_rapid_deterioration":True}
+        pending=self.client.post(url,headers=self.headers,json=payload).json()
+        self.assertFalse(pending["gate"]["allowed"])
+        self.assertFalse(pending["gate"]["blocked"])
+        self.assertIsNone(pending["text"])
+        payload["review_decision"]={"revision":payload["revision"],
+            "cue_ids":[cue["rule_id"] for cue in pending["review_cues"]],"choice":"continue"}
+        continued=self.client.post(url,headers=self.headers,json=payload).json()
+        self.assertTrue(continued["gate"]["allowed"])
+        payload["state"]["safety_flags"]=["infection_or_septic_joint_concern"]
+        blocked=self.client.post(url,headers=self.headers,json=payload).json()
+        self.assertTrue(blocked["gate"]["blocked"])
+        self.assertFalse(blocked["gate"]["allowed"])
 
     def test_v51_product_local_exam_state_is_accepted_without_evidence_or_selection_mutation(self):
         meta=self.client.get("/clinical/clinic-utilities/physio-referral/api/product/bootstrap",headers=self.headers).json()

@@ -1,10 +1,20 @@
 # UX_CONTRACT_CURRENT.md — Physio Referral Product UX v1.1
 
-> **STATUS:** PRODUCT-OWNER APPROVED STEP-1 UX / STEP-2 EVIDENCE-STATE REPLAN INCORPORATED.
-> **Updated:** 2026-09-11 Asia/Nicosia.
+> **STATUS:** R2 STRUCTURAL CORRECTION SUPERSEDES THE V1.1 SECTION/ROUTE DESCRIPTIONS BELOW; EVIDENCE INTERACTION AND DEFAULT-PLAN SEMANTICS RETAINED.
+> **Updated:** 2026-10-05 Asia/Nicosia.
 > **Scope:** Knee Osteoarthritis vertical slice only.
-> **Implementation:** NOT IMPLEMENTED by this document.
+> **Implementation:** R2 bounded implementation on `feat/physio-r2-ia-correction-2026-10-05`; verify against `programme/PHYSIO/P1_R2A_STRUCTURAL_CORRECTION.md` and `programme/PHYSIO/CURRENT.md`.
 > **Design intent:** minimal, modern, mobile-first, direct-manipulation experience with clinical/evidence complexity hidden beneath a calm surface.
+
+---
+
+# Current R2 owner/route amendment
+
+The Product Owner's frozen R2-A correction and independent pre-code closure PASS supersede the V1.1 structure, generic `Περισσότερα`, hidden second-tap detail and parallel `Λεπτομέρειες` descriptions later in this document. Those passages are historical design record only. The current UI has four semantic owners: **Κλινική εικόνα**, **Λειτουργικότητα**, **Εξέταση**, **Προτεινόμενο πλάνο**. First selection exposes any optional qualifier immediately and deselection is visible. The mixed generic drawer/favorites shortcut cannot select across owners.
+
+Functionality alone selects `functional_impairments`; equivalent finding aliases are machine compatibility only. Routine structured pain map, tenderness, crepitus and separate effusion are absent from physician controls. **Οίδημα** remains visible in Clinical Picture, unselected by default and non-mandatory; untouched means unknown, not negative. It never produces an alert alone. Explicit hot/swollen review observations and the already-reviewed combination/Continue-or-Defer cue stay product-local and separate from explicit CU-1 safety flags.
+
+`walking_aid_assessment_and_training` is available only under **Προτεινόμενο πλάνο → Πρόσθετες / Περισσότερες επιλογές**, default-off, without automatic suggestion or selection. Existing deterministic output, evidence states, default active plan and `CY_GESY` overlay remain authoritative. The complete frozen mapping and review provenance are in `programme/PHYSIO/P1_R2A_STRUCTURAL_CORRECTION.md` and `P1_R2A_CLOSURE_REVIEW_RESULT.md`.
 
 ---
 

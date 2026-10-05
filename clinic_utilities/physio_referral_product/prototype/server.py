@@ -82,10 +82,12 @@ class Handler(BaseHTTPRequestHandler):
             data += b"\n" + (HERE / "more_v3.js").read_bytes()
             data += b"\n" + (HERE / "clinical_sheet_v4.js").read_bytes()
             data += b"\n" + (HERE / "v5_1_exam.js").read_bytes()
+            data += b"\n" + (HERE / "r2_ia.js").read_bytes()
         elif name == "qualifiers.css":
             data += b"\n" + (HERE / "more_v3.css").read_bytes()
             data += b"\n" + (HERE / "clinical_sheet_v4.css").read_bytes()
             data += b"\n" + (HERE / "v5_1_exam.css").read_bytes()
+            data += b"\n" + (HERE / "r2_ia.css").read_bytes()
         self.reply(200, data, mime + "; charset=utf-8")
 
     def do_POST(self):

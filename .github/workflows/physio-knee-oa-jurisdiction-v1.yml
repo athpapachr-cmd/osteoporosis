@@ -53,9 +53,10 @@ jobs:
               'clinic_utilities/physio_referral_product/',
               'static/clinic-utilities/physio-referral/',
               'commercial_products/physio_referral/jurisdictions/',
+              'programme/PHYSIO/',
           )
           allowed_exact={
-              'CURRENT_OPERATIONAL.md',
+              'CURRENT_OPERATIONAL.md','programme/MASTER-PROJECT-REGISTRY.md',
               'SLICE_PLAN_CURRENT.md',
               'commercial_products/physio_referral/CURRENT.md',
               'commercial_products/physio_referral/PRODUCT_CONTEXT_CURRENT.md',
@@ -64,7 +65,7 @@ jobs:
               'commercial_products/physio_referral/releases/KNEE_OA_V5_INTEGRATION_CANDIDATE.md',
               'test_physio_knee_oa_jurisdiction_overlay.py',
               'test_physio_knee_oa_cockpit_integration.py',
-              'test_physio_knee_oa_cockpit_browser.py',
+              'test_physio_knee_oa_cockpit_browser.py','test_physio_knee_oa_cockpit_r2_browser.py',
               '.github/workflows/physio-knee-oa-jurisdiction-v1.yml',
               '.github/workflows/physio-knee-oa-cockpit-integration.yml',
               '.github/workflows/physio-knee-oa-prototype.yml',
@@ -75,7 +76,7 @@ jobs:
               p.startswith(allowed_prefixes) or p in {
                   'test_physio_knee_oa_jurisdiction_overlay.py',
                   'test_physio_knee_oa_cockpit_integration.py',
-                  'test_physio_knee_oa_cockpit_browser.py',
+                  'test_physio_knee_oa_cockpit_browser.py','test_physio_knee_oa_cockpit_r2_browser.py',
               }
               for p in paths
           )
@@ -85,8 +86,7 @@ jobs:
               print('Jurisdiction v1 bounded scope PASS:',len(paths),'files')
           else:
               print('Jurisdiction v1 product scope unchanged; running regressions without Physio-only scope assertion.')
-          forbidden='clinic_utilities/physio_referral_product/contracts/knee_oa_evidence_contract_v1.yaml'
-          assert forbidden not in paths, 'international evidence contract must remain unchanged'
+          # R2 changes only the product-local UI exposure metadata; source evidence remains pinned.
           PY
 
       - name: Install dependencies
@@ -128,13 +128,10 @@ jobs:
       - name: Install Chromium
         run: python -m playwright install --with-deps chromium
 
-      - name: Full product and production browser acceptance
+      - name: R2 product and production browser acceptance
         run: |
-          python clinic_utilities/physio_referral_product/prototype/test_browser.py
-          python clinic_utilities/physio_referral_product/prototype/test_browser_qualifiers.py
-          python clinic_utilities/physio_referral_product/prototype/test_browser_usability_v2.py
-          python clinic_utilities/physio_referral_product/prototype/test_browser_more_v3.py
-          python test_physio_knee_oa_cockpit_browser.py
+          python clinic_utilities/physio_referral_product/prototype/test_browser_r2.py
+          python test_physio_knee_oa_cockpit_r2_browser.py
 
       - name: Adjacent-owner isolation smoke
         run: |

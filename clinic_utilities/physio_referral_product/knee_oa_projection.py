@@ -24,6 +24,7 @@ from clinic_utilities.physio_referral_product.prototype.qualifier_overlay import
     apply_referral_overlay,
     clean_qualifiers,
     clinical_review_clues,
+    pattern_review_cues,
     empty_qualifiers,
     enrich_suggestion_facts,
     state_with_mapped_findings,
@@ -32,10 +33,10 @@ from clinic_utilities.physio_referral_product.prototype.qualifier_overlay import
 PRODUCT = Path(__file__).resolve().parent
 PACKAGE = "knee-oa-prototype-1.1+step6a"
 PINS = {
-    "contracts/knee_oa_evidence_contract_v1.yaml": "8f4c657904ee028bba39d7a0557461a6acafadaf",
-    "contracts/knee_oa_template_contract_v1.yaml": "e6c6a285ed4d2d64df1dca7b29630ef5053831e8",
-    "contracts/knee_oa_evidence_interaction_v1.yaml": "08c60b1f244fa475a38ee7bbcc8d8bf1dcf7076f",
-    "UX_CONTRACT_CURRENT.md": "f65343c0bc9652c715075853d3fc42c1910ff212",
+    "contracts/knee_oa_evidence_contract_v1.yaml": "66b3697015c5d7b12b9175b33d156804da53bc39",
+    "contracts/knee_oa_template_contract_v1.yaml": "f70b24eeb0c6ee166bea06b20867dfa4ee41d9e5",
+    "contracts/knee_oa_evidence_interaction_v1.yaml": "207388819c6cb2fb748a2a16881ac98f8af9fb0c",
+    "UX_CONTRACT_CURRENT.md": "7d59a16cf3d707f0f1cf953e7409a31921efd41d",
     "validate_knee_oa_template_contract_v1.py": "aff39c675202c1711467de4566c2593d78a41886",
     "validate_knee_oa_evidence_interaction_v1.py": "3c7c029347a0e3545f6d5c67f11e04e1e24732c0",
 }
@@ -101,7 +102,7 @@ def short_text(value, limit=800) -> str:
 
 def clean_request(payload: dict) -> dict:
     check(isinstance(payload, dict))
-    check(set(payload) <= {"draft_id", "revision", "package_version", "synthetic_only", "state", "dismissed", "availability", "candidate"})
+    check(set(payload) <= {"draft_id", "revision", "package_version", "synthetic_only", "state", "dismissed", "availability", "candidate", "review_decision"})
     check(payload.get("synthetic_only") is True and payload.get("package_version") == PACKAGE)
     check(isinstance(payload.get("draft_id"), str))
     try:
@@ -147,7 +148,14 @@ def clean_request(payload: dict) -> dict:
     availability = payload.get("availability", {})
     check(isinstance(availability, dict) and set(availability) <= set(E["source_registry"]))
     check(all(isinstance(v, str) and v in C["availability"]["states"] for v in availability.values()))
-    return {**payload, "state": clean, "dismissed": dismissed, "availability": availability}
+    decision = payload.get("review_decision")
+    if decision is not None:
+        check(isinstance(decision, dict) and set(decision) == {"revision", "cue_ids", "choice"})
+        check(type(decision["revision"]) is int and decision["revision"] == revision)
+        check(decision["choice"] in {"continue", "defer"})
+        check(isinstance(decision["cue_ids"], list) and len(decision["cue_ids"]) <= 2)
+        check(all(isinstance(v, str) for v in decision["cue_ids"]))
+    return {**payload, "state": clean, "dismissed": dismissed, "availability": availability, "review_decision": decision}
 
 
 def suggestion_draft(req: dict) -> dict:
@@ -169,6 +177,7 @@ def project(payload: dict) -> dict:
         target = "rehab_directions" if item in SCOPE["rehab_directions"] else "adjunct_options"
         s[target] = list(dict.fromkeys(s[target] + [item]))
         req.update(state=s, revision=updated["draft_revision"])
+        req["review_decision"] = None
     s = req["state"]
     cu1 = {
         "contract_version": "cu1_referral_draft_v1", "body_region": "knee",
@@ -190,7 +199,8 @@ def project(payload: dict) -> dict:
     for item, view in views.items():
         for position in view["positions"]:
             position["summary_el"] = MIXED_COPY.get(item, {}).get(position["source_id"])
-    candidates = suggestion_candidates(C, E, T, suggestion_draft(req))
+    candidates = [candidate for candidate in suggestion_candidates(C, E, T, suggestion_draft(req))
+                  if candidate.get("item_id") != "walking_aid_assessment_and_training"]
     notes = [{"item_id": item, "label": view["evidence_label"] if view["all_sources_active"] else "Η τεκμηρίωση χρειάζεται έλεγχο"}
              for item, view in views.items() if item in chosen and
              (not view["all_sources_active"] or view["evidence_state"] in C["bubbles"]["selected_trigger_states"])]
@@ -198,12 +208,27 @@ def project(payload: dict) -> dict:
         if item not in chosen:
             notes.append({"item_id": item, "label": "Βασική επιλογή δεν έχει προστεθεί"})
     review_clues = clinical_review_clues(s.get("qualifiers") or empty_qualifiers())
+    review_cues = pattern_review_cues(s.get("qualifiers") or empty_qualifiers())
     gate = {"allowed": allowed, "blocked": blocked, "draft_revision": req["revision"]}
+    cue_ids = sorted(cue["rule_id"] for cue in review_cues)
+    decision = req["review_decision"]
+    if decision is not None:
+        check(bool(cue_ids) and decision["cue_ids"] == cue_ids)
+    if cue_ids and (decision is None or decision["choice"] != "continue"):
+        gate["allowed"] = False
+    # CU-1 explicit unresolved safety concerns retain independent precedence.
+    if blocked:
+        gate["allowed"] = False
+    gate["review_required"] = bool(cue_ids)
+    gate["review_choice"] = decision["choice"] if decision else None
+    if not gate["allowed"]:
+        text = None
     note_ids = [n["item_id"] for n in notes] + [clue["clue_id"] for clue in review_clues]
     readiness = export_readiness(C, req["revision"], req["revision"], gate, False, note_ids)
     return {"draft_id": req["draft_id"], "revision": req["revision"], "package_version": PACKAGE,
             "state": s, "text": text, "gate": gate, "readiness": readiness, "evidence": views,
             "suggestions": candidates, "notes": notes, "clinical_review_clues": review_clues,
+            "review_cues": review_cues, "review_decision": decision,
             "safety": [{"rule_id": row.rule_id, "severity": row.severity, "blocked": row.formatter_blocked}
                        for row in validation.safety_results],
             "validation_errors": [row.error_id for row in validation.validation_errors]}

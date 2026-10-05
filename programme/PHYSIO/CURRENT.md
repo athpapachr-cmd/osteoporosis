@@ -1,12 +1,13 @@
 # PHYSIO CURRENT — Knee-OA Reference Implementation / Physio Core Boundary
 
 > **TASK:** `PHYSIO-P1-KNEE-OA-REFERENCE-VALIDATION-CORE-BOUNDARY-20261001`
-> **STATUS:** P1 R2 PRE-CODE COMPLETE / R2-A BLOCK + R2-B PASS / PRODUCT OWNER APPROVED R2-A DECISIONS 1 AND 3 / DECISION 2 UNDER FIELD-UTILITY REVIEW / CLOSURE REVIEW NOT AUTHORIZED / RUNTIME IMPLEMENTATION NOT AUTHORIZED.
-> **Date:** 2026-10-04 Asia/Nicosia.
-> **Fresh coordinator base main:** `2ce4f3a9f2fd6535bf9da2b06c9c37dff1ebbda6`.
+> **STATUS:** R2-A APPROVED / PRE-CODE AND FINAL POST-CODE CLOSURE PASS / CI CORRECTION INDEPENDENT PASS / APPLICABLE PHYSIO CI PASS / DRAFT PR #135 OPEN / MERGE AND DEPLOY HOLD.
+> **Date:** 2026-10-05 Asia/Nicosia.
+> **Fresh coordinator base main:** `b9beca7b1e233245f9ea3429a247a1c80a69ac7c`.
+> **Branch / PR:** `feat/physio-r2-ia-correction-2026-10-05` → draft [PR #135](https://github.com/athpapachr-cmd/osteoporosis/pull/135), based on that main; no merge or deploy.
 > **Fresh bootstrap main for original P1 design:** `aedfa3e48e8359a449c2c8d8eb2b9f053a64ce47`.
 > **Reference implementation:** Knee Osteoarthritis physiotherapy referral.
-> **Current PHYSIO runtime writer:** none — active PHYSIO action is Product Owner simplification decision for R2-A item 2 after bounded clinical-field utility review.
+> **Current PHYSIO runtime writer:** this PHYSIO coordinator on `feat/physio-r2-ia-correction-2026-10-05`, scoped to Knee-OA product UI/overlay, associated Knee-OA contracts/tests and PHYSIO/product checkpoints; root lock is recorded in `CURRENT_OPERATIONAL.md`.
 > **Root operational owner:** unchanged — `CURRENT_OPERATIONAL.md` remains the sole repo-wide writer lock. At this reconciliation it records Cockpit D1.1 in pre-code closure HOLD with no active Cockpit runtime writer; that does not prevent PHYSIO sidecar checkpoints.
 > **Product authority:** `commercial_products/physio_referral/*`.
 > **Technical authority:** existing CU-1 + Knee-OA owners under `clinic_utilities/*`.
@@ -165,7 +166,7 @@ The Product Owner corrected the design direction accordingly:
 
 ## 4.2 Structural correction / R2 status
 
-The R2 pre-code review has returned a terminal split verdict:
+The original R2 pre-code review returned a terminal split verdict; the following is historical and R2-A correction closure has since passed:
 
 ```text
 R2-A INFORMATION ARCHITECTURE    BLOCK
@@ -181,21 +182,13 @@ R2-A left exactly three material decisions:
 2. pain-location overlap plus the semantic ownership of swelling vs effusion vs hot/swollen review context;
 3. hidden `walking_aid_assessment_and_training`: expose or remove.
 
-`P1_R2A_STRUCTURAL_CORRECTION.md` currently contains **coordinator proposals**, not approved Product Owner decisions.
+`P1_R2A_STRUCTURAL_CORRECTION.md` is now the **frozen Product Owner-approved correction design**. The prior coordinator-proposal status was historical, not authority; the three decisions were expressly confirmed by the Product Owner across 2026-10-04/05:
 
-The coordinator incorrectly advanced those proposals as if approved. That governance error is corrected here.
+1. **APPROVED:** one Functionality / `functional_impairments` UI owner for duplicate function concepts; legacy finding aliases compatibility-only.
+2. **APPROVED:** remove routine structured pain map, tenderness, crepitus and separate effusion. Keep standalone **Οίδημα** visibly in Κλινική εικόνα, default unselected and non-mandatory (`missing != negative`). Preserve explicit hot/swollen pattern observations in the already-PASS R2-B review-cue mechanism; simple swelling alone triggers no alert.
+3. **APPROVED:** `walking_aid_assessment_and_training` only in `Προτεινόμενο πλάνο → Πρόσθετες / Περισσότερες επιλογές`, default-off, without auto-suggestion or auto-selection.
 
-Product Owner decision state:
-1. **APPROVED:** one Functionality owner for duplicate function concepts; legacy aliases may remain compatibility-only.
-2. **OPEN:** simplify pain-location / tenderness / swelling-effusion / related clinical findings based on actual workflow and receiver utility before assigning final UI owners.
-3. **APPROVED:** expose `walking_aid_assessment_and_training` under `Προτεινόμενο πλάνο → Πρόσθετες επιλογές`, default off, no automatic suggestion.
-
-Until the Product Owner decides the remaining R2-A item 2:
-```text
-R2-A CORRECTION DESIGN       NOT FROZEN
-R2-A CLOSURE REVIEW          NOT AUTHORIZED
-RUNTIME IMPLEMENTATION       NOT AUTHORIZED
-```
+The Product Owner also requested bounded implementation after review PASS. One independent R2-A delta + affected-cumulative review returned **PASS / COMPLETE_FOR_DECLARED_SCOPE / no new material finding** at frozen design commit `fdb6bff3b852112e8fdfa35a2db5dc8fd8f82eca`; see `P1_R2A_CLOSURE_REVIEW_RESULT.md`. R2-B semantic PASS is reused, not reopened. The first post-code review of `c6eb295` returned **BLOCK** for additional-plan hierarchy and an invalid intermediate restriction draft; the first closure of `fbf0701` closed those but returned **BLOCK** for stale evidence availability styling. The final independent delta + affected-cumulative closure at `f5c99fcd34117e8bb1488e7b654db2f2448797d3` returned **PASS / COMPLETE_FOR_DECLARED_SCOPE / no new material finding**; see `P1_R2_POSTCODE_FINAL_CLOSURE_RESULT.md`. The five-case matrix and local gate evidence are in `P1_R2_IMPLEMENTATION_CANDIDATE.md`. No shared CU-1 mutation, second diagnosis or persistence was made.
 
 R2-B safety semantics remain PASS and settled. No shared CU-1 mutation is required by R2-B.
 
@@ -209,7 +202,7 @@ Purpose:
 
 > Use the existing live Knee-OA product as the reference implementation to validate usefulness and freeze the practical boundary between reusable Physio mechanics and Knee-specific vertical content before opening another diagnosis.
 
-P1 remains **read-only with respect to runtime** unless a concrete observed finding later receives a separate bounded correction authority.
+P1 evidence work was originally **read-only with respect to runtime**. The Product Owner's later concrete five-case findings and approved R2 correction supply the separate bounded implementation authority recorded above.
 
 P1 design is now frozen in:
 
@@ -288,30 +281,15 @@ The Product Owner may later authorize one of these, but authorization should fol
 
 ## 8. Exact next action
 
-Complete the **Product Owner decision checkpoint for R2-A item 2 only**, using `P1_CLINICAL_FIELD_UTILITY_REVIEW.md`.
-
-The coordinator may explain options, tradeoffs and make a recommendation, but must not convert a recommendation into product authority.
-
-After the Product Owner explicitly decides item 2:
-1. update `P1_R2A_STRUCTURAL_CORRECTION.md` so decisions 1–3 are all Product Owner-approved;
-2. checkpoint the exact Product Owner decisions in this `CURRENT.md`;
-3. only then run one independent R2-A delta + affected-cumulative closure review under `PROCEDURES.md` P5/P5.1.
-
-Until then:
-```text
-R2-A CLOSURE REVIEW      NO
-RUNTIME IMPLEMENTATION   NO
-CU-1 MUTATION            NO
-SECOND DIAGNOSIS         NO
-```
+Draft PR #135 is open with canonical-impact declaration. At examined head `7d1ba92f2046d221fb64bee9db7d76ebba2471be`, prototype, Cockpit and V4 failures produced a bounded PHYSIO correction: keep the protected browser test in full-dependency jobs only, and disable review-decision controls while a decision refresh is pending. Independent bounded delta + affected-cumulative fidelity review returned **PASS / no material finding** at `fa9b1ff4f0f070cde3c78fb30ebd2a7a5a0a2dd3`. All applicable PHYSIO, CU-1 and canonical-impact PR gates **passed at that head and the docs checkpoint `29524e45d48a988a74a13b3b18163a94fb5cf517`**. Clinical Learning L0/L1/L1B/L1C scope guards failed under separate ownership; `P1_R2_PR_CI_TRIAGE.md` records the separation. Merge/deploy remain in HOLD.
 
 ## 9. Registry sync
 
 ```text
-PHYSIO LOCAL CONTROL PLANE     CORRECTED — Product Owner decisions pending
-ROOT CANONICALS               NOT REQUIRED
+PHYSIO LOCAL CONTROL PLANE     FINAL POST-CODE + CI CORRECTION REVIEW PASS / DRAFT PR #135 / APPLICABLE CI PASS
+ROOT CANONICALS               WRITER LOCK checkpoint updated
 GLOBAL PROGRAMME REGISTRY     UPDATE NAVIGATION SUMMARY ONLY
-COMMERCIAL PRODUCT CURRENT    CURRENT / NO RUNTIME CHANGE
-KNEE-OA TECHNICAL OWNERS      CURRENT / NO RUNTIME CHANGE
+COMMERCIAL PRODUCT CURRENT    CANDIDATE checkpoint / live release unchanged
+KNEE-OA TECHNICAL OWNERS      BOUNDED candidate / shared CU-1 unchanged
 CROSS-PROJECT MUTATION        NONE REQUIRED BY R2-B; CU-1 REUSED UNCHANGED
 ```

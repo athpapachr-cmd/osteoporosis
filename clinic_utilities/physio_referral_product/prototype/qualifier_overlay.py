@@ -54,6 +54,14 @@ ATYPICAL_QUALIFIER_KEYS = {
     "rapid_worsening_or_deformity",
     "hot_swollen_joint",
 }
+REVIEW_OBSERVATION_KEYS = {
+    "acute_new_severe_pain",
+    "major_weight_bearing_or_movement_difficulty",
+    "acute_or_rapid_deterioration",
+    "sudden_new_without_adequate_trauma",
+    "severe_weight_bearing_pain",
+    "major_loading_difficulty",
+}
 SYMPTOM_DURATION_UNITS = {"weeks", "months", "years"}
 CONTEXT_ONLY_QUALIFIER_KEYS = ATYPICAL_QUALIFIER_KEYS | {"symptom_duration_value", "symptom_duration_unit"}
 CY_OA_GUIDELINE_URL = "https://www.gesy.org.cy/el-gr/annualreport/greek-translated-oa-19-12-2025-hio-circ-0.pdf"
@@ -80,6 +88,7 @@ def empty_qualifiers() -> dict[str, Any]:
         "recent_trauma": False,
         "rapid_worsening_or_deformity": False,
         "hot_swollen_joint": False,
+        **{key: False for key in REVIEW_OBSERVATION_KEYS},
     }
 
 
@@ -161,7 +170,7 @@ def clean_qualifiers(raw: Any, state: dict[str, Any]) -> dict[str, Any]:
     q["symptom_duration_value"] = symptom_duration_value
     q["symptom_duration_unit"] = symptom_duration_unit
 
-    for key in ATYPICAL_QUALIFIER_KEYS:
+    for key in ATYPICAL_QUALIFIER_KEYS | REVIEW_OBSERVATION_KEYS:
         value = raw.get(key, False)
         _check(type(value) is bool)
         q[key] = value
@@ -169,9 +178,8 @@ def clean_qualifiers(raw: Any, state: dict[str, Any]) -> dict[str, Any]:
     phenotype = state.get("phenotype") or {}
     _check(not q["pain_locations"] or "pain" in findings)
     _check(not (q["stiffness_patterns"] or duration) or phenotype.get("stiffness_symptom") is True)
-    # Objective atrophy is intentionally independent from the reported/generic
-    # weakness parent. Only directional weakness refinement requires that parent.
-    _check(not weakness or phenotype.get("weakness_symptom_or_context") is True)
+    # Objective examination weakness has its own owner. It must not require a
+    # separate subjective weakness selection in Clinical Picture.
     return q
 
 
@@ -541,10 +549,42 @@ def clinical_review_clues(qualifiers: dict[str, Any]) -> list[dict[str, str]]:
             "Ταχεία επιδείνωση συμπτωμάτων ή παραμόρφωση · άτυπο χαρακτηριστικό",
             "Η ταχεία επιδείνωση ή παραμόρφωση δεν πρέπει να εξισώνεται με μια συνήθη έξαρση OA. Χρειάζεται κλινική επανεκτίμηση για πιθανή πρόσθετη ή εναλλακτική διάγνωση, χωρίς αυτόματη επιλογή απεικόνισης.",
         )
-    if qualifiers.get("hot_swollen_joint") is True:
-        add_local(
-            "hot_swollen_joint_atypical",
-            "Θερμή και διογκωμένη άρθρωση · άτυπο χαρακτηριστικό",
-            "Η κυπριακή οδηγία το κατατάσσει στα άτυπα χαρακτηριστικά. Από μόνο του δεν ισοδυναμεί με σηπτική άρθρωση· ανεπίλυτη ανησυχία για λοίμωξη δηλώνεται ξεχωριστά στον Κλινικό έλεγχο.",
-        )
     return clues
+
+
+def pattern_review_cues(qualifiers: dict[str, Any]) -> list[dict[str, Any]]:
+    """Product-local reassessment cues, never CU-1 safety flags or diagnoses."""
+    q = qualifiers
+    cues: list[dict[str, Any]] = []
+    acute_joint = (
+        q.get("hot_swollen_joint") is True
+        and (q.get("acute_new_severe_pain") is True or q.get("major_weight_bearing_or_movement_difficulty") is True)
+        and (q.get("acute_new_severe_pain") is True or q.get("acute_or_rapid_deterioration") is True)
+    )
+    if acute_joint:
+        observed = [key for key in (
+            "hot_swollen_joint", "acute_new_severe_pain",
+            "major_weight_bearing_or_movement_difficulty", "acute_or_rapid_deterioration",
+        ) if q.get(key) is True]
+        cues.append({
+            "rule_id": "knee_oa_acute_joint_review_v1",
+            "message": "Σήμα κλινικής επανεκτίμησης — όχι διάγνωση: Ο συνδυασμός οξέος έντονου πόνου ή μεγάλης δυσκολίας φόρτισης/κίνησης με θερμό, διογκωμένο γόνατο δεν είναι τυπική εικόνα σταθερής οστεοαρθρίτιδας. Επανεκτίμησε για οξεία φλεγμονώδη ή λοιμώδη αρθρική αιτία, συμπεριλαμβανομένης σηπτικής αρθρίτιδας όπου κλινικά ενδείκνυται, πριν από συνήθη παραπομπή φυσιοθεραπείας. Δεν τεκμηριώνεται εδώ συγκεκριμένη διάγνωση ή αυτόματη απεικόνιση.",
+            "positive_observations": observed,
+            "source_label": "NICE NG226 · NHS septic arthritis guidance · product review rule",
+            "source_url": "https://www.nhs.uk/conditions/septic-arthritis/",
+            "reviewed_on": "2026-10-04",
+        })
+    if (q.get("sudden_new_without_adequate_trauma") is True
+            and (q.get("severe_weight_bearing_pain") is True or q.get("major_loading_difficulty") is True)):
+        observed = [key for key in (
+            "sudden_new_without_adequate_trauma", "severe_weight_bearing_pain", "major_loading_difficulty",
+        ) if q.get(key) is True]
+        cues.append({
+            "rule_id": "knee_oa_alternative_pathology_review_v1",
+            "message": "Σήμα κλινικής επανεκτίμησης — όχι διάγνωση: Η αιφνίδια έναρξη χωρίς επαρκές τραύμα μαζί με έντονο πόνο στη φόρτιση ή μεγάλη δυσκολία φόρτισης δεν είναι τυπική εικόνα σταθερής οστεοαρθρίτιδας. Επανεκτίμησε για πρόσθετη ή εναλλακτική παθολογία, συμπεριλαμβανομένου υποχόνδριου κατάγματος ανεπάρκειας όπου κλινικά ενδείκνυται, πριν από συνήθη παραπομπή. Δεν τεκμηριώνεται εδώ SIFK/SONK και δεν προτείνεται αυτόματα MRI ή άλλη απεικόνιση.",
+            "positive_observations": observed,
+            "source_label": "NICE NG226 · SIFK review · product review rule",
+            "source_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9068663/",
+            "reviewed_on": "2026-10-04",
+        })
+    return cues

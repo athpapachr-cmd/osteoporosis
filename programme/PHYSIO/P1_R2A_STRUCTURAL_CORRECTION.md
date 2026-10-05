@@ -1,257 +1,76 @@
-# PHYSIO P1 R2-A Structural IA — Bounded Correction Design
+# PHYSIO P1 R2-A — frozen structural correction design
 
-> **TASK:** `PHYSIO-P1-R2A-STRUCTURAL-IA-CORRECTION-20261004`
-> **STATUS:** PRODUCT OWNER DECISIONS 1 AND 3 APPROVED / DECISION 2 PENDING FIELD-UTILITY SIMPLIFICATION / NO CLOSURE REVIEW / NO RUNTIME IMPLEMENTATION.
-> **BASE:** `2ce4f3a9f2fd6535bf9da2b06c9c37dff1ebbda6`.
-> **PURPOSE:** record Product Owner decisions for R2-A findings 1 and 3 and keep finding 2 open until the clinical-field utility review is resolved.
-> **R2-B:** already PASS; safety semantics are preserved and are not redesigned here.
+> **Task:** `PHYSIO-P1-R2A-STRUCTURAL-IA-CORRECTION-20261004`.
+> **Status:** Product Owner decisions 1–3 approved; correction design frozen on 2026-10-05; independent R2-A delta + affected-cumulative closure review pending; runtime implementation not yet started.
+> **Base:** fresh `main` `b9beca7b1e233245f9ea3429a247a1c80a69ac7c`.
+> **Authority:** Product Owner's 2026-10-04 approval of items 1 and 3 and 2026-10-05 approval of item 2 and bounded implementation request. The earlier coordinator proposals in this file were not authority before those approvals.
+> **R2-B:** pre-code semantic PASS in `P1_R2_PRECODE_REVIEW_RESULT.md`; preserve its review-cue design and explicit CU-1 safety precedence.
 
----
+## 1. Single owner for functional concepts — approved
 
-# 1. Finding R2-A-1 — duplicated functional concepts
+The routine UI writes `functional_impairments` from **Λειτουργικότητα**. Equivalent pairs:
 
-Current contract accepts four function-like findings:
+| Compatibility-only finding | UI-owned functional impairment |
+|---|---|
+| `walking_limitation` | `walking_tolerance` |
+| `stairs_limitation` | `stairs` |
+| `sit_to_stand_limitation` | `sit_to_stand` |
+| `sport_or_exercise_limitation` | `sport_gym` |
+
+The four finding IDs remain accepted only as legacy machine inputs. They have no selectable control or second owner. Existing deterministic alias/deduplication projects either form to one functional phrase; mixed legacy/new input must never duplicate prose. Other functional impairments also belong in Λειτουργικότητα, not Examination or a generic drawer.
+
+## 2. Routine clinical fields — approved
+
+The Product Owner accepted the simplification after `P1_CLINICAL_FIELD_UTILITY_REVIEW.md`:
+
+| Concept | Routine physician UI disposition | Compatibility / semantic boundary |
+|---|---|---|
+| Structured pain-location map (`pain_locations[]`) and overlapping `joint_line_pain` / `anterior_peripatellar_pain` selectors | Remove | Existing accepted machine inputs and deterministic projection stay compatible; no new routine pain-location selector. Relevant location can be stated in the existing free note. |
+| `tenderness` and `focal_tenderness_locations[]` | Remove | Existing input/output compatibility stays; no routine palpation selector or map. |
+| `crepitus` | Remove | Existing qualifier compatibility stays; no routine selector. |
+| Separate `effusion` | Remove | Existing machine input/output compatibility stays; do not make an unselected field an examined negative. |
+| `swelling` / **Οίδημα** | **Keep visibly in Κλινική εικόνα** as one standalone control | Initially unselected, not required to complete referral. Unselected means not recorded, not proven absent (`missing != negative`). One tap selects or deselects; no grade, effusion subtype, popup or second tap. |
+| `hot_swollen_joint` and other R2-B observations | Keep visibly in Clinical Picture / review context where relevant | Explicit observation is distinct from simple Οίδημα and legacy `effusion`; it feeds only the reviewed product-local pattern cue. |
+
+Simple `swelling` **alone never triggers a red-flag or septic-arthritis alert**. The already-PASS R2-B hot/swollen concern requires its reviewed combination of explicit observations and leads to a clinician review cue and Continue/Defer disposition, not diagnosis, automatic imaging or a CU-1 safety flag. Unknown/unselected values remain unknown. The existing explicit CU-1 unresolved-safety block takes precedence independently. R2-B SIFK/alternative-pathology support may still read legacy bony tenderness/effusion when supplied, but neither becomes a routine selector or required trigger merely to preserve that support.
+
+## 3. Walking aid — approved
+
+`walking_aid_assessment_and_training` remains a supported rehabilitation direction with one UI home:
 
 ```text
-finding.walking_limitation
-finding.stairs_limitation
-finding.sit_to_stand_limitation
-finding.sport_or_exercise_limitation
-```
-
-and also the canonical functional-impairment concepts:
-
-```text
-functional_impairment.walking_tolerance
-functional_impairment.stairs
-functional_impairment.sit_to_stand
-functional_impairment.sport_gym
-```
-
-The current template already aliases the finding forms into the functional forms and deduplicates after aliasing.
-
-## Coordinator proposal — PENDING PRODUCT OWNER DECISION
-
-**PRODUCT OWNER DECISION — APPROVED:** Single UI owner = Functionality / `functional_impairments`.
-
-Target UI/state writes:
-- `walking_tolerance`;
-- `stairs`;
-- `sit_to_stand`;
-- `sport_gym`.
-
-The four `finding.*_limitation` IDs:
-- remain accepted only for backward compatibility / legacy transport;
-- remain server-side aliases for deterministic projection;
-- are **not** separate selectable controls in the corrected UI;
-- must not appear as a second clinical/examination owner.
-
-No CU-1 taxonomy change is required.
-
-Regression requirement:
-- legacy finding input and canonical functional input produce one functional output phrase, never duplicate prose;
-- new UI writes only canonical `functional_impairments`.
-
----
-
-# 2. Finding R2-A-2 — pain-location overlap and swelling semantics
-
-## 2.1 Pain location
-
-Current product contains both:
-- product-local `pain_locations[]`;
-- legacy/specific findings such as `joint_line_pain` and `anterior_peripatellar_pain`.
-
-## Coordinator proposal — PENDING PRODUCT OWNER DECISION
-
-**Proposal A:** Single UI owner for patient-reported pain location = Clinical Picture → Pain → `pain_locations[]`.
-
-Rules:
-- do not expose `joint_line_pain` or `anterior_peripatellar_pain` as separate competing UI controls;
-- retain them only as compatible machine/projection inputs where required;
-- multiple genuinely distinct pain locations may remain selectable;
-- `diffuse` remains mutually exclusive with focal locations;
-- duplicate semantic representations must collapse to one referral phrase.
-
-Objective tenderness remains separate:
-```text
-reported pain location
-!= focal tenderness on examination
-```
-
-## 2.2 Swelling / effusion / hot-swollen-joint context
-
-These are three different semantics and must remain three different owners:
-
-### `swelling`
-Owner: **Clinical Picture**
-Meaning: reported/observed nonspecific swelling.
-It is not automatically an intra-articular effusion and is not itself a septic-joint cue.
-
-### `effusion`
-Owner: **Examination**
-Meaning: clinician-recorded intra-articular effusion / objective examination finding.
-
-### `hot_swollen_joint`
-Owner: **Clinical Review Cue input**
-Meaning: explicit atypical hot/swollen-joint observation used only by the product-local review-cue layer.
-
-It must not be merged with simple swelling or effusion.
-
-Permanent boundary:
-```text
-SWELLING != EFFUSION != HOT/SWOLLEN REVIEW OBSERVATION
-HOT/SWOLLEN OBSERVATION != SEPTIC ARTHRITIS DIAGNOSIS
-```
-
-R2-B trigger/disposition semantics remain authoritative for the review cue and require no CU-1 mutation.
-
----
-
-# 3. Finding R2-A-3 — walking aid assessment/training
-
-Current state:
-- `walking_aid_assessment_and_training` is already a canonical rehab-direction ID;
-- evidence contract classifies it `conditional_or_context_dependent`;
-- reviewed sources directly support walking aids in selected lower-limb OA patients;
-- it is default-off;
-- it is currently hidden from the Knee UI;
-- evidence contract itself records that presentation scope amendment is the missing step.
-
-## Product Owner decision — APPROVED
-
-**APPROVED:** EXPOSE, default-off, rather than keep hidden or remove.
-
-Target owner:
-```text
-Προτεινόμενο πλάνο
-→ Πρόσθετες επιλογές
+Προτεινόμενο πλάνο → Πρόσθετες / Περισσότερες επιλογές
 → Αξιολόγηση / εκπαίδευση στη χρήση βοηθήματος βάδισης
 ```
 
-Rules:
-- default **off**;
-- no automatic selection;
-- no automatic suggestion in this correction;
-- evidence cue available under the existing evidence interaction model;
-- remains subordinate to the active rehabilitation plan;
-- selecting it must render the existing deterministic referral phrase;
-- no duplicate separate goal is auto-selected;
-- it must not return to a generic `Περισσότερα` drawer.
+It is default-off and absent from immediate main plan choices. No automatic suggestion, automatic selection or linked goal selection. Explicit selection uses the existing deterministic referral phrase and evidence interaction. The choice never returns to miscellaneous `Περισσότερα`.
 
-Rationale:
-- existing machine ID and deterministic output already exist;
-- evidence is direct and contextual;
-- there is now a coherent semantic home in the corrected Proposed Plan;
-- deleting it from active scope would discard an evidence-supported, receiver-relevant option without evidence that it lacks utility.
+## 4. Frozen target structure and interaction
 
----
+1. **Κλινική εικόνα:** symptoms, straightforward optional qualifiers, visible Οίδημα, and explicit atypical observations/review context. First tap on a parent exposes optional detail immediately. Selection and deselection remain visible without scrolling to the bottom of a sheet.
+2. **Λειτουργικότητα:** one owner for walking, stairs, chair rise and other `functional_impairments`.
+3. **Εξέταση:** actionable objective weakness, ROM, atrophy/stability and other retained objective findings. Subjective weakness stays in Clinical Picture; objective weakness has one Examination owner. Removed routine tenderness, crepitus and effusion controls cannot reappear through an advanced route.
+4. **Προτεινόμενο πλάνο:** reviewed default active-rehabilitation plan, explicit additional rehabilitation options including walking aid, and clearly subordinate adjuncts. Additional options may use a plan-specific disclosure label; no generic mixed-semantic drawer.
 
-# 4. Candidate single-owner IA — NOT YET PRODUCT-OWNER APPROVED
+Remove hidden same-card second-tap dependency and competing `Λεπτομέρειες` navigation. Retire generic miscellaneous `Περισσότερα` as mixed clinical/exam/function/rehabilitation destination. Evidence links, selected summaries and cue messages remain non-selecting projections; each editable concept has one control owner.
+
+Existing deterministic referral output, evidence classifications, default plan and `CY_GESY` overlay remain unchanged except for deduplicated equivalent function input and visibility of Product Owner-selected controls. No shared CU-1 mutation, second diagnosis, patient/referral persistence, automatic diagnosis or imaging, or new evidence engine is in scope.
+
+## 5. Bounded implementation and regression oracle
+
+After **one independent R2-A delta + affected-cumulative closure PASS**, implement only this owner/control correction and the already-PASS R2-B product-local cue workflow. Preserve legacy transport/projection compatibility while the new UI emits only selected owners. Verify first-tap details, immediate deselection, no second Details route, no generic mixed More, visible Οίδημα with `missing != negative`, walking aid only under Proposed Plan additional options, and unchanged default/evidence/CY_GESY behavior.
+
+Reuse the **same** `P1_PRODUCT_OWNER_REAL_USE_REGRESSION_CASES.md` Cases 1–5; do not replace frozen `P1_SYNTHETIC_CASE_SET.md`. Record completion time, approximate taps, search/backtracking, manual edit, output acceptability and cue/disposition. Case 4 rapid worsening alone must not trigger acute-joint or SIFK cue. Case 5 must allow explicit Defer/reassessment without diagnostic or imaging automation, while a separately selected unresolved CU-1 concern still blocks.
+
+## 6. One closure review, then stop
+
+The independent reviewer decides whether all three original R2-A findings are closed across the changed owner/control graph, legacy projection, swelling versus hot/swollen cue input, walking-aid placement and affected consumers. Check for new material overlap or shared-Core requirement. Reuse existing R2-B PASS; do not restart that review without source-proven new risk.
 
 ```text
-CLINICAL PICTURE
-  Pain
-    reported pain + pain_locations
-  Stiffness
-    symptom pattern/duration
-  Weakness
-    subjective weakness only
-  Swelling
-    nonspecific reported/observed swelling
-
-FUNCTIONALITY
-  walking_tolerance
-  stairs
-  sit_to_stand
-  sport_gym
-  other functional_impairments
-
-EXAMINATION
-  objective weakness
-  quadriceps weakness
-  atrophy
-  ROM findings
-  crepitus
-  focal tenderness
-  effusion
-  stability
-
-CLINICAL REVIEW CUES
-  product-local atypical observations
-  including hot_swollen_joint and the R2-B-approved inputs
-  → clinician continue/defer disposition
-  != diagnosis
-  != automatic imaging
-  != CU-1 safety block
-
-PROPOSED PLAN
-  reviewed default active-rehab plan
-  + additional rehab directions
-  + walking_aid_assessment_and_training
-  + adjuncts as a clearly separate subordinate group
-
-NO GENERIC MISCELLANEOUS MORE
-NO HIDDEN SECOND-TAP DETAIL OWNER
-NO PARALLEL ΛΕΠΤΟΜΕΡΕΙΕΣ ROUTE
+all three R2-A findings closed
++ affected owner/control graph complete
++ no new material risk
+→ PASS → stop review chain → bounded implementation may start
 ```
 
----
-
-# 5. Candidate implementation boundary — INACTIVE UNTIL PRODUCT OWNER APPROVAL + CLOSURE PASS
-
-If and only if the Product Owner first approves the relevant R2-A choices and a later independent R2-A closure review returns PASS, the subsequent bounded implementation may:
-
-- reorganize the existing Knee-OA UI to the single-owner map above;
-- remove hidden second-tap detail dependency;
-- remove the competing `Λεπτομέρειες` route;
-- retire generic `Περισσότερα` as miscellaneous IA;
-- write functional concepts only through canonical `functional_impairments`;
-- keep legacy finding aliases accepted server-side;
-- expose `walking_aid_assessment_and_training` under Proposed Plan / Additional options;
-- implement only the already-reviewed R2-B product-local cue semantics;
-- preserve current deterministic referral output/evidence/default plan except where the reviewed semantic owner requires deterministic de-duplication.
-
-It may **not**:
-- change shared CU-1 taxonomy or safety rules;
-- add a second diagnosis;
-- add autonomous diagnostic inference;
-- auto-order imaging;
-- change evidence states/default plan;
-- add patient persistence;
-- redesign the referral generator.
-
----
-
-# 6. Closure review — NOT YET AUTHORIZED
-
-Do not run this review yet. It becomes authorized only after explicit Product Owner decisions are checkpointed. When authorized, use one independent review only:
-
-`R2-A delta + affected cumulative closure`
-
-Questions:
-1. Are all function duplicates now assigned to one UI owner with safe legacy alias handling?
-2. Does pain location have one UI owner without losing distinct locations or confusing tenderness?
-3. Are swelling, effusion and hot/swollen review context semantically distinct and uniquely owned?
-4. Is walking-aid support given one coherent disposition and owner?
-5. Did the correction create any new material overlap or shared-Core requirement?
-
-Terminal rule:
-```text
-ALL THREE ORIGINAL R2-A FINDINGS CLOSED
-+ NO NEW MATERIAL RISK
-+ AFFECTED OWNER MAP COMPLETE
-→ PASS
-→ STOP REVIEW CHAIN
-```
-
-
----
-
-# 7. Governance correction — 2026-10-04
-
-The coordinator originally recorded the candidate resolutions above as decisions before obtaining the Product Owner's approval.
-
-That was incorrect.
-
-This document now records them strictly as proposals. The Product Owner must decide each of the three R2-A items before this design can be frozen or sent to closure review.
+If BLOCK or unresolved, checkpoint the finding and stop before runtime work.

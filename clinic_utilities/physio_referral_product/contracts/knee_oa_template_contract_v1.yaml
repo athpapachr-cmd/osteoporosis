@@ -294,7 +294,7 @@ active_plan:
       default: πρόγραμμα ασκήσεων στο σπίτι
     walking_aid_assessment_and_training:
       default: αξιολόγηση και εκπαίδευση στη χρήση βοηθήματος βάδισης
-      ui_exposure_in_step3: false
+      ui_exposure_in_step3: true
 
 functional_task_retraining:
   trigger_is_selection_of_intervention_not_function: true
