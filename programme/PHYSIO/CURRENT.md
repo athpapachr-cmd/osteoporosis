@@ -1,13 +1,13 @@
 # PHYSIO CURRENT — Knee-OA Reference Implementation / Physio Core Boundary
 
 > **TASK:** `PHYSIO-P1-KNEE-OA-REFERENCE-VALIDATION-CORE-BOUNDARY-20261001`
-> **STATUS:** R2-A PRODUCT OWNER DECISIONS 1–3 APPROVED / CORRECTION DESIGN FROZEN / ONE INDEPENDENT DELTA + AFFECTED-CUMULATIVE CLOSURE REVIEW NEXT / R2-B SEMANTIC PASS / RUNTIME NOT STARTED.
+> **STATUS:** R2-A PRODUCT OWNER DECISIONS 1–3 APPROVED / CORRECTION DESIGN FROZEN / INDEPENDENT PRE-CODE CLOSURE PASS / R2-B SEMANTIC PASS / RUNTIME NOT STARTED.
 > **Date:** 2026-10-05 Asia/Nicosia.
 > **Fresh coordinator base main:** `b9beca7b1e233245f9ea3429a247a1c80a69ac7c`.
 > **Branch:** `feat/physio-r2-ia-correction-2026-10-05`, based on that main; no PR, merge or deploy.
 > **Fresh bootstrap main for original P1 design:** `aedfa3e48e8359a449c2c8d8eb2b9f053a64ce47`.
 > **Reference implementation:** Knee Osteoarthritis physiotherapy referral.
-> **Current PHYSIO runtime writer:** none — active PHYSIO action is independent pre-code R2-A closure review of the frozen correction design.
+> **Current PHYSIO runtime writer:** none — independent pre-code closure is complete; bounded implementation writer claim is the next action.
 > **Root operational owner:** unchanged — `CURRENT_OPERATIONAL.md` remains the sole repo-wide writer lock. At this reconciliation it records Cockpit D1.1 in pre-code closure HOLD with no active Cockpit runtime writer; that does not prevent PHYSIO sidecar checkpoints.
 > **Product authority:** `commercial_products/physio_referral/*`.
 > **Technical authority:** existing CU-1 + Knee-OA owners under `clinic_utilities/*`.
@@ -188,7 +188,7 @@ R2-A left exactly three material decisions:
 2. **APPROVED:** remove routine structured pain map, tenderness, crepitus and separate effusion. Keep standalone **Οίδημα** visibly in Κλινική εικόνα, default unselected and non-mandatory (`missing != negative`). Preserve explicit hot/swollen pattern observations in the already-PASS R2-B review-cue mechanism; simple swelling alone triggers no alert.
 3. **APPROVED:** `walking_aid_assessment_and_training` only in `Προτεινόμενο πλάνο → Πρόσθετες / Περισσότερες επιλογές`, default-off, without auto-suggestion or auto-selection.
 
-The Product Owner also requested bounded implementation after review PASS. **Implementation remains gated by one independent R2-A delta + affected-cumulative closure review.** R2-B semantic PASS is reused, not reopened. No PHYSIO runtime mutation, shared CU-1 mutation, second diagnosis or persistence has occurred on this branch.
+The Product Owner also requested bounded implementation after review PASS. One independent R2-A delta + affected-cumulative review returned **PASS / COMPLETE_FOR_DECLARED_SCOPE / no new material finding** at frozen design commit `fdb6bff3b852112e8fdfa35a2db5dc8fd8f82eca`; see `P1_R2A_CLOSURE_REVIEW_RESULT.md`. R2-B semantic PASS is reused, not reopened. Pre-code review chain stops. No PHYSIO runtime mutation, shared CU-1 mutation, second diagnosis or persistence has occurred on this branch.
 
 R2-B safety semantics remain PASS and settled. No shared CU-1 mutation is required by R2-B.
 
@@ -281,12 +281,12 @@ The Product Owner may later authorize one of these, but authorization should fol
 
 ## 8. Exact next action
 
-Run **one independent R2-A delta + affected-cumulative closure review** on `P1_R2A_STRUCTURAL_CORRECTION.md` against the original three findings, current contract/UI/legacy projection and affected R2-B cue inputs, under `PROCEDURES.md` P5/P5.1. Checkpoint the terminal verdict here before any runtime action. If PASS, claim bounded PHYSIO implementation writer scope in root `CURRENT_OPERATIONAL.md`, then implement the approved structural correction and already-PASS R2-B cue behavior, with the same Product Owner Cases 1–5 and exact relevant tests/CI. If BLOCK, correct only the material finding and stop runtime work. A PR may be opened after an implementation candidate passes its gates; merge/deploy remain separate authority decisions.
+Claim bounded PHYSIO implementation writer scope in root `CURRENT_OPERATIONAL.md` and checkpoint it before runtime mutation. Then implement the frozen correction and already-PASS R2-B cue behavior, using the same Product Owner Cases 1–5 and exact relevant tests/CI. A post-code exact-head R2 fidelity review remains required before PR/release. A PR may be opened after an implementation candidate passes its gates; merge/deploy remain separate authority decisions.
 
 ## 9. Registry sync
 
 ```text
-PHYSIO LOCAL CONTROL PLANE     FROZEN correction design / independent closure pending
+PHYSIO LOCAL CONTROL PLANE     FROZEN correction design / independent closure PASS
 ROOT CANONICALS               NOT REQUIRED
 GLOBAL PROGRAMME REGISTRY     UPDATE NAVIGATION SUMMARY ONLY
 COMMERCIAL PRODUCT CURRENT    CURRENT / NO RUNTIME CHANGE

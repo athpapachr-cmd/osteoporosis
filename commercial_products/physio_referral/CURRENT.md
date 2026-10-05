@@ -10,7 +10,7 @@
 > **Authenticated post-use live smoke:** `34957778592` — SUCCESS.
 > **Authenticated receiver-refinement live smoke:** `35019200920` — SUCCESS.
 > **Production context:** protected Clinical Excellence Cockpit with explicit `CY_GESY` server-side configuration.
-> **Current runtime writer:** none. PHYSIO R2-A Product Owner-approved correction design is frozen; independent pre-code closure review is pending on `feat/physio-r2-ia-correction-2026-10-05`.
+> **Current runtime writer:** none. PHYSIO R2-A Product Owner-approved correction design is frozen; independent pre-code closure PASS is recorded on `feat/physio-r2-ia-correction-2026-10-05`; bounded writer claim is next.
 > **Root operational authority:** `CURRENT_OPERATIONAL.md` continues to track the parallel Medical Report lifecycle and is intentionally not rewritten by this product closeout.
 
 ## Current production state
@@ -100,7 +100,7 @@ active writer                               none
 
 ## Next product boundary
 
-The current released Knee-OA refinement lifecycle is closed. Product Owner real-use feedback has now authorized a **separate bounded structural correction**, recorded in `programme/PHYSIO/P1_R2A_STRUCTURAL_CORRECTION.md` and coordinated by `programme/PHYSIO/CURRENT.md`. The three R2-A decisions are approved: Functionality owns duplicate functional concepts; routine structured pain map, tenderness, crepitus and separate effusion leave the physician UI while visible standalone Οίδημα remains optional and unselected by default; walking-aid assessment/training sits only in Proposed Plan additional options, default-off. The existing R2-B semantic design remains PASS. One independent R2-A delta + affected-cumulative closure review must PASS before runtime implementation; no new release or production behavior is claimed here. Real pilot/commercial validation and any second diagnosis remain separate boundaries.
+The current released Knee-OA refinement lifecycle is closed. Product Owner real-use feedback has authorized a **separate bounded structural correction**, recorded in `programme/PHYSIO/P1_R2A_STRUCTURAL_CORRECTION.md` and coordinated by `programme/PHYSIO/CURRENT.md`. The three R2-A decisions are approved: Functionality owns duplicate functional concepts; routine structured pain map, tenderness, crepitus and separate effusion leave the physician UI while visible standalone Οίδημα remains optional and unselected by default; walking-aid assessment/training sits only in Proposed Plan additional options, default-off. The independent R2-A delta + affected-cumulative pre-code closure returned PASS at frozen design commit `fdb6bff3b852112e8fdfa35a2db5dc8fd8f82eca`; R2-B semantic PASS is reused. Bounded implementation writer claim is next; no new release or production behavior is claimed here. Real pilot/commercial validation and any second diagnosis remain separate boundaries.
 
 Permanent utility rule:
 
