@@ -1,7 +1,7 @@
 # PHYSIO CURRENT — Knee-OA Reference Implementation / Physio Core Boundary
 
 > **TASK:** `PHYSIO-P1-KNEE-OA-REFERENCE-VALIDATION-CORE-BOUNDARY-20261001`
-> **STATUS:** R2-A APPROVED / PRE-CODE CLOSURE PASS / POST-CODE BLOCK AT `c6eb295` / FIRST CLOSURE BLOCK AT `fbf0701` / SECOND BOUNDED CORRECTION LOCALLY TESTED / FINAL INDEPENDENT DELTA + AFFECTED-CUMULATIVE CLOSURE NEXT / NO PR, MERGE OR DEPLOY.
+> **STATUS:** R2-A APPROVED / PRE-CODE CLOSURE PASS / FINAL POST-CODE DELTA + AFFECTED-CUMULATIVE CLOSURE PASS AT `f5c99fc` / BOUNDED PR AND EXACT CI NEXT / NO MERGE OR DEPLOY.
 > **Date:** 2026-10-05 Asia/Nicosia.
 > **Fresh coordinator base main:** `b9beca7b1e233245f9ea3429a247a1c80a69ac7c`.
 > **Branch:** `feat/physio-r2-ia-correction-2026-10-05`, based on that main; no PR, merge or deploy at this candidate checkpoint.
@@ -188,7 +188,7 @@ R2-A left exactly three material decisions:
 2. **APPROVED:** remove routine structured pain map, tenderness, crepitus and separate effusion. Keep standalone **Οίδημα** visibly in Κλινική εικόνα, default unselected and non-mandatory (`missing != negative`). Preserve explicit hot/swollen pattern observations in the already-PASS R2-B review-cue mechanism; simple swelling alone triggers no alert.
 3. **APPROVED:** `walking_aid_assessment_and_training` only in `Προτεινόμενο πλάνο → Πρόσθετες / Περισσότερες επιλογές`, default-off, without auto-suggestion or auto-selection.
 
-The Product Owner also requested bounded implementation after review PASS. One independent R2-A delta + affected-cumulative review returned **PASS / COMPLETE_FOR_DECLARED_SCOPE / no new material finding** at frozen design commit `fdb6bff3b852112e8fdfa35a2db5dc8fd8f82eca`; see `P1_R2A_CLOSURE_REVIEW_RESULT.md`. R2-B semantic PASS is reused, not reopened. The first independent post-code review of `c6eb295` returned **BLOCK** for selected additional-plan control promotion/hierarchy and an invalid intermediate restriction draft; see `P1_R2_POSTCODE_REVIEW_RESULT.md`. The first closure of `fbf0701` closed those two but returned **BLOCK** for stale availability styling on conditional additional evidence; see `P1_R2_POSTCODE_CLOSURE_RESULT.md`. A second bounded correction is locally browser-tested and must receive one independent delta + affected-cumulative closure at the new committed exact head. The five-case matrix and local gate evidence are in `P1_R2_IMPLEMENTATION_CANDIDATE.md`. No shared CU-1 mutation, second diagnosis or persistence was made.
+The Product Owner also requested bounded implementation after review PASS. One independent R2-A delta + affected-cumulative review returned **PASS / COMPLETE_FOR_DECLARED_SCOPE / no new material finding** at frozen design commit `fdb6bff3b852112e8fdfa35a2db5dc8fd8f82eca`; see `P1_R2A_CLOSURE_REVIEW_RESULT.md`. R2-B semantic PASS is reused, not reopened. The first post-code review of `c6eb295` returned **BLOCK** for additional-plan hierarchy and an invalid intermediate restriction draft; the first closure of `fbf0701` closed those but returned **BLOCK** for stale evidence availability styling. The final independent delta + affected-cumulative closure at `f5c99fcd34117e8bb1488e7b654db2f2448797d3` returned **PASS / COMPLETE_FOR_DECLARED_SCOPE / no new material finding**; see `P1_R2_POSTCODE_FINAL_CLOSURE_RESULT.md`. The five-case matrix and local gate evidence are in `P1_R2_IMPLEMENTATION_CANDIDATE.md`. No shared CU-1 mutation, second diagnosis or persistence was made.
 
 R2-B safety semantics remain PASS and settled. No shared CU-1 mutation is required by R2-B.
 
@@ -281,12 +281,12 @@ The Product Owner may later authorize one of these, but authorization should fol
 
 ## 8. Exact next action
 
-Commit the second bounded correction and obtain one independent delta + affected-cumulative post-code closure review at its exact head. On PASS, open a bounded PR with canonical-impact declaration and run exact PR gates. Merge/deploy remain separate authority decisions.
+Open the bounded PR with canonical-impact declaration and run exact applicable PR gates. Record PR head and results here. Merge/deploy remain separate authority decisions.
 
 ## 9. Registry sync
 
 ```text
-PHYSIO LOCAL CONTROL PLANE     FIRST CLOSURE BLOCK / second correction browser gates PASS / final closure pending
+PHYSIO LOCAL CONTROL PLANE     FINAL POST-CODE CLOSURE PASS / PR AND CI NEXT
 ROOT CANONICALS               WRITER LOCK checkpoint updated
 GLOBAL PROGRAMME REGISTRY     UPDATE NAVIGATION SUMMARY ONLY
 COMMERCIAL PRODUCT CURRENT    CANDIDATE checkpoint / live release unchanged
