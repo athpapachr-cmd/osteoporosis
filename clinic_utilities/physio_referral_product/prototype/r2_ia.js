@@ -185,7 +185,9 @@ function r2Sync(){
     const id=extra.dataset.r2ExtraId;
     const category=Object.prototype.hasOwnProperty.call(meta.labels.adjuncts,id)?'adjunct_options':'rehab_directions';
     const view=response?.evidence?.[id];
-    if(view&&extra.querySelector('[data-cue]')?.dataset.cue!==view.evidence_state)extra.replaceChildren(row(id,category));
+    const title=extra.querySelector('.row-title');
+    if(view&&(extra.querySelector('[data-cue]')?.dataset.cue!==view.evidence_state||
+        title?.classList.contains('unavailable')===view.all_sources_active))extra.replaceChildren(row(id,category));
     const selected=chosen().includes(id);
     extra.hidden=false;
     extra.querySelector('[data-select]')?.setAttribute('aria-pressed',String(selected));

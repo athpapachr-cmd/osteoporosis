@@ -4,7 +4,7 @@
 > **Base:** fresh `main` `b9beca7b1e233245f9ea3429a247a1c80a69ac7c`
 > **Branch:** `feat/physio-r2-ia-correction-2026-10-05`
 > **Authority:** Product Owner-approved `P1_R2A_STRUCTURAL_CORRECTION.md`; independent pre-code PASS in `P1_R2A_CLOSURE_REVIEW_RESULT.md`.
-> **Status:** bounded correction after first post-code exact-head BLOCK; local correction tests pass, independent closure and PR CI remain pending. No release or pilot claim.
+> **Status:** second bounded correction after first closure BLOCK; local browser tests pass, independent final closure and PR CI remain pending. No release or pilot claim.
 
 ## Implemented boundary
 
@@ -43,4 +43,4 @@ The old browser suites specifically asserted the retired second-tap, mixed drawe
 
 ## Scope and next gate
 
-No shared CU-1 runtime file, second diagnosis, patient persistence, release setting or deployment changed. The first post-code exact-head review returned **BLOCK** at `c6eb29548a5446289a17a843c650d362b0db3866`; see `P1_R2_POSTCODE_REVIEW_RESULT.md`. The corrected head requires one independent delta + affected-cumulative closure review. A closure PASS permits a bounded PR for review; merge/deploy require separate authority.
+No shared CU-1 runtime file, second diagnosis, patient persistence, release setting or deployment changed. The first post-code exact-head review returned **BLOCK** at `c6eb29548a5446289a17a843c650d362b0db3866`; see `P1_R2_POSTCODE_REVIEW_RESULT.md`. The first delta closure at `fbf070199bc6934f59c4ac44cf984c32a8b35566` closed the original two issues but returned **BLOCK** for stale evidence availability styling on conditional additional rows; see `P1_R2_POSTCODE_CLOSURE_RESULT.md`. That issue is corrected and locally browser-tested. One independent delta + affected-cumulative closure on the new exact head remains required. A PASS permits a bounded PR for review; merge/deploy require separate authority.

@@ -78,6 +78,7 @@ class R2BrowserTests(unittest.TestCase):
         self.page.locator("#r2PlanAdditional summary").click()
         aid=self.page.locator('#r2PlanAdditional [data-row-item="walking_aid_assessment_and_training"] [data-select]')
         expect(aid).to_have_attribute("aria-pressed","false")
+        self.assertNotIn("unavailable",aid.locator(".row-title").get_attribute("class"))
         aid.click()
         expect(aid).to_have_attribute("aria-pressed","true")
         self.assertEqual(self.page.locator('#plan [data-row-item="walking_aid_assessment_and_training"]').count(),0)
