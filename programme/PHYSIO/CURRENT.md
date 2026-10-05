@@ -281,7 +281,7 @@ The Product Owner may later authorize one of these, but authorization should fol
 
 ## 8. Exact next action
 
-Draft PR #135 is open with canonical-impact declaration. At examined head `7d1ba92f2046d221fb64bee9db7d76ebba2471be`, prototype, Cockpit and V4 failures produced a bounded PHYSIO correction: keep the protected browser test in full-dependency jobs only, and disable review-decision controls while a decision refresh is pending. Independent bounded delta + affected-cumulative fidelity review returned **PASS / no material finding** at `fa9b1ff4f0f070cde3c78fb30ebd2a7a5a0a2dd3`. All applicable PHYSIO, CU-1 and canonical-impact PR gates **passed at that head**. Clinical Learning L0/L1/L1B/L1C scope guards failed under separate ownership; `P1_R2_PR_CI_TRIAGE.md` records the separation. This docs-only checkpoint requires exact-head CI confirmation. Merge/deploy remain in HOLD.
+Draft PR #135 is open with canonical-impact declaration. At examined head `7d1ba92f2046d221fb64bee9db7d76ebba2471be`, prototype, Cockpit and V4 failures produced a bounded PHYSIO correction: keep the protected browser test in full-dependency jobs only, and disable review-decision controls while a decision refresh is pending. Independent bounded delta + affected-cumulative fidelity review returned **PASS / no material finding** at `fa9b1ff4f0f070cde3c78fb30ebd2a7a5a0a2dd3`. All applicable PHYSIO, CU-1 and canonical-impact PR gates **passed at that head and the docs checkpoint `29524e45d48a988a74a13b3b18163a94fb5cf517`**. Clinical Learning L0/L1/L1B/L1C scope guards failed under separate ownership; `P1_R2_PR_CI_TRIAGE.md` records the separation. Merge/deploy remain in HOLD.
 
 ## 9. Registry sync
 
