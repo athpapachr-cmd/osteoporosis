@@ -1,13 +1,13 @@
 # PHYSIO CURRENT — Knee-OA Reference Implementation / Physio Core Boundary
 
 > **TASK:** `PHYSIO-P1-KNEE-OA-REFERENCE-VALIDATION-CORE-BOUNDARY-20261001`
-> **STATUS:** R2-A PRODUCT OWNER DECISIONS 1–3 APPROVED / CORRECTION DESIGN FROZEN / INDEPENDENT PRE-CODE CLOSURE PASS / R2-B SEMANTIC PASS / RUNTIME NOT STARTED.
+> **STATUS:** R2-A PRODUCT OWNER DECISIONS 1–3 APPROVED / CORRECTION DESIGN FROZEN / INDEPENDENT PRE-CODE CLOSURE PASS / BOUNDED PHYSIO IMPLEMENTATION WRITER CLAIMED / RUNTIME WORK NEXT.
 > **Date:** 2026-10-05 Asia/Nicosia.
 > **Fresh coordinator base main:** `b9beca7b1e233245f9ea3429a247a1c80a69ac7c`.
 > **Branch:** `feat/physio-r2-ia-correction-2026-10-05`, based on that main; no PR, merge or deploy.
 > **Fresh bootstrap main for original P1 design:** `aedfa3e48e8359a449c2c8d8eb2b9f053a64ce47`.
 > **Reference implementation:** Knee Osteoarthritis physiotherapy referral.
-> **Current PHYSIO runtime writer:** none — independent pre-code closure is complete; bounded implementation writer claim is the next action.
+> **Current PHYSIO runtime writer:** this PHYSIO coordinator on `feat/physio-r2-ia-correction-2026-10-05`, scoped to Knee-OA product UI/overlay, associated Knee-OA contracts/tests and PHYSIO/product checkpoints; root lock is recorded in `CURRENT_OPERATIONAL.md`.
 > **Root operational owner:** unchanged — `CURRENT_OPERATIONAL.md` remains the sole repo-wide writer lock. At this reconciliation it records Cockpit D1.1 in pre-code closure HOLD with no active Cockpit runtime writer; that does not prevent PHYSIO sidecar checkpoints.
 > **Product authority:** `commercial_products/physio_referral/*`.
 > **Technical authority:** existing CU-1 + Knee-OA owners under `clinic_utilities/*`.
@@ -281,7 +281,7 @@ The Product Owner may later authorize one of these, but authorization should fol
 
 ## 8. Exact next action
 
-Claim bounded PHYSIO implementation writer scope in root `CURRENT_OPERATIONAL.md` and checkpoint it before runtime mutation. Then implement the frozen correction and already-PASS R2-B cue behavior, using the same Product Owner Cases 1–5 and exact relevant tests/CI. A post-code exact-head R2 fidelity review remains required before PR/release. A PR may be opened after an implementation candidate passes its gates; merge/deploy remain separate authority decisions.
+Implement the frozen correction and already-PASS R2-B cue behavior within the claimed bounded scope, using the same Product Owner Cases 1–5 and exact relevant tests/CI. A post-code exact-head R2 fidelity review remains required before PR/release. A PR may be opened after an implementation candidate passes its gates; merge/deploy remain separate authority decisions.
 
 ## 9. Registry sync
 
