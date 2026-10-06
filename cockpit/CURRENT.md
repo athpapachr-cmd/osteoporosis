@@ -1,13 +1,13 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
-> **NOW (2026-10-04):** D1.1 freshness implementation is complete and focused-tested on two isolated branches. The Reception actual-bookings projection and Cockpit protected consumer are at the exact heads below. One independent R2 post-code fidelity review is pending; the older daily-source review request stays HOLD/no verdict. D1 remains deployed with the known source/window defect until a separately authorized merge/deploy. D2 and Visit Brief remain deferred.
+> **NOW (2026-10-06):** D1.1 exact-head R2 fidelity review is PASS / COMPLETE_FOR_DECLARED_SCOPE / P0:P1:P2 = 0:0:0 and the review chain is CLOSED. Product Owner authorized Reception-first merge/deploy, then Cockpit merge/deploy. Production smoke is reserved for Product Owner. The older daily-source review request remains historical HOLD/no verdict. D2 and Visit Brief implementation remain deferred.
 > **Product boundary:** `cockpit/PRODUCT_CONSTITUTION.md`; cross-programme architecture: `CLINICAL_EXCELLENCE_PLAN.md` §§33–34.
 > **Root lock:** `CURRENT_OPERATIONAL.md` remains the sole repo-wide NOW. Its PR-1 release lifecycle is in HOLD with no active runtime writer at the verified PR-1 branch checkpoint; this Cockpit file does not claim that lock.
 > **Visit Intelligence dependency:** `programme/OST-VISIT-INTELLIGENCE/CURRENT.md`; P0-V0 contract/projector branch `b22fd5c610d20baf0f8ef3384ca16472cd2d1f92` is not on `main`. The external cumulative PASS handback has not yet been reconciled into that workstream CURRENT or released.
 
 ## Current bounded action
 
-The active Cockpit step is **D1.1 — Global Appointment Context freshness implementation**, awaiting one independent exact-head R2 post-code fidelity review. Product Owner implementation authority followed independent pre-code PASS / 0:0:0 on source design blob `00e3b4527a8ccbfc6df1a635494da136ccb9dd33`. Fresh writer/scope checks in both repositories found no overlapping conflict. The two branches are focused-tested and unmerged; the writer has been released for read-only review. No release, production smoke, configuration change or Visit Brief authority is claimed.
+The active Cockpit step is **D1.1 release**. The independently reviewed implementation/test bytes remain at Reception `b4739678016c1cd10f3afd8381e7c4de222f38ba` and Cockpit `9dc14bbde1005aab60922e88e021518197f0654f`. Final fidelity PASS / 0:0:0 closes technical review; direct Product Owner release authority covers merge, Render configuration and deploy in Reception-first order. No production smoke or Visit Brief implementation is authorized in this task. Stop for a conflicting writer, failed required gate, missing deploy prerequisite or merge reconciliation that changes reviewed runtime bytes.
 
 ### D1.1 freshness implementation checkpoint — 2026-10-04
 
@@ -22,11 +22,11 @@ OPS WRITER CLAIM:     1b98f7f023fdd92a55938591c49a49f12af5e916
 SOURCE DESIGN:        00e3b4527a8ccbfc6df1a635494da136ccb9dd33
 PRE-CODE R2:          PASS / 0:0:0
 FOCUSED TESTS:        Cockpit 31 PASS; Reception 54 tests + 33 subtests PASS
-POST-CODE R2:         ONE REQUEST PREPARED / NO VERDICT
+POST-CODE R2:         PASS / COMPLETE_FOR_DECLARED_SCOPE / 0:0:0 / CLOSED
 OLD POST-CODE:        HOLD / SUPERSEDED FOR SOURCE FIDELITY / NO VERDICT
-WRITER:               RELEASED FOR INDEPENDENT READ-ONLY REVIEW
+WRITER:               BOUNDED RELEASE SCOPE / NO RUNTIME EDIT
 MERGED / DEPLOYED:    NO / NO
-NEXT:                 independent exact-head fidelity review, then coordinator reconciliation
+NEXT:                 Reception PR gate, merge, deploy; then Cockpit PR gate, merge, deploy
 ```
 
 The new request is `reviews/D1_1_FRESHNESS_POSTCODE_FIDELITY_REVIEW_REQUEST_2026-10-04.md`. Release-time `RECEPTION_SCHEDULE_CONTEXT_URL` and shared existing ingest-key equality remain to be checked at the later release gate; neither was configured or tested against production now. The weekly Calendar stays on the background Clinical Calendar path. The existing source design and old post-code request remain immutable historical evidence.
