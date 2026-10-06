@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -669,3 +670,12 @@ def test_snapshot_removes_only_missing_same_source_exact_window(monkeypatch):
     with Session(engine) as session:
         assert {row.id for row in session.execute(select(ClinicalAppointmentORM)).scalars()} == {
             "cal.com:outside", "setmore:other-source"}
+
+
+def test_weekly_calendar_ui_distinguishes_source_unavailable_from_empty_week():
+    script = Path("static/clinical-calendar/calendar.js").read_text(encoding="utf-8")
+    assert "function renderWeekUnavailable(monday)" in script
+    assert "Το ημερολόγιο δεν είναι διαθέσιμο αυτή τη στιγμή." in script
+    catch_block = script.split("} catch (err) {", 1)[1].split("}", 1)[0]
+    assert "renderWeekUnavailable(monday)" in catch_block
+    assert "renderWeek([], monday)" not in catch_block
