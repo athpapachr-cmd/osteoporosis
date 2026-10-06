@@ -4,7 +4,7 @@
 > **DATE:** 2026-10-06 Asia/Nicosia.
 > **BRANCH:** `docs/cockpit-calendar-unification-visit-brief-2026-10-06`
 > **DESIGN:** `cockpit/VISIT_BRIEF_LAB_RESULTS_WORKFLOW_2026-10-06.md`
-> **DESIGN BLOB:** `1b84183d3bc09f762e299ab31eeaebe5c8b254a5`
+> **DESIGN BLOB:** `08346fb9d9c479e6f39ffb59068eaa9813703ff5`
 > **SEQUENCING:** implementation starts only after Calendar Unification pre-code closure and implementation/release decision.
 
 ## Product goal
@@ -23,6 +23,8 @@ Build the first actionable Visit Brief / Lab Results slice:
 No automatic patient matching, no automatic clinical write and no automatic message send.
 
 ## Known source evidence
+
+- Official provider feasibility already checked on 2026-10-06: Zadarma exposes server-side `POST /v1/sms/send/`; Gmail API supports read-only mailbox access, while `gmail.readonly` is a restricted scope and server-side storage/transmission can trigger Google verification/security-assessment requirements. Review the architecture against that constraint rather than assuming OAuth is trivial.
 
 - Cockpit Product Constitution already assigns:
   - clinical action/presentation to Cockpit/Clinical Excellence;
