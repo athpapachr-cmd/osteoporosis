@@ -552,6 +552,7 @@ def test_context_rejects_stale_and_unexpected_private_fields_without_snapshot_fa
 
 def test_weekly_calendar_requests_displayed_week_and_requires_full_coverage(monkeypatch):
     import httpx
+    clinical_calendar._last_actual_schedule_fetch = None
     client, _ = _client(monkeypatch)
     monkeypatch.setenv("RECEPTION_SCHEDULE_CONTEXT_URL", "https://reception.example/private/schedule-context")
     now = datetime(2026, 10, 6, 8, 0)
@@ -599,6 +600,10 @@ def test_weekly_calendar_requests_displayed_week_and_requires_full_coverage(monk
         params={"start": start.isoformat(), "end": end.isoformat()},
     )
     assert unavailable.status_code == 503
+    assert unavailable.json()["detail"]["status"] == "unavailable"
+    assert unavailable.json()["detail"]["last_fetched_at"] == now.replace(
+        tzinfo=timezone.utc
+    ).isoformat()
 
 
 def test_weekly_live_rows_preserve_classification_and_override_without_snapshot_row(monkeypatch):
@@ -676,6 +681,10 @@ def test_weekly_calendar_ui_distinguishes_source_unavailable_from_empty_week():
     script = Path("static/clinical-calendar/calendar.js").read_text(encoding="utf-8")
     assert "function renderWeekUnavailable(monday)" in script
     assert "Το ημερολόγιο δεν είναι διαθέσιμο αυτή τη στιγμή." in script
-    catch_block = script.split("} catch (err) {", 1)[1].split("}", 1)[0]
-    assert "renderWeekUnavailable(monday)" in catch_block
-    assert "renderWeek([], monday)" not in catch_block
+    load_week = script.split("async function loadWeek()", 1)[1].split(
+        '$("#loginBtn")', 1
+    )[0]
+    assert "renderWeekUnavailable(monday)" in load_week
+    assert "renderWeek([], monday)" not in load_week
+    assert "last_fetched_at" in load_week
+    assert "τελευταία ανάγνωση" in load_week
