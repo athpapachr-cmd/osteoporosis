@@ -1,35 +1,85 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
-> **NOW (2026-10-03):** Home v1, Pending Surgery Queue and the bounded Clinical Calendar reason bridge are released. **D1 Today Context Strip V1 is deployed but has a Product Owner source/window defect:** it reads the Osteoporosis Clinical Calendar/day window rather than the Digital Secretary global appointment schedule, so it can show no Previous/Current/Next even while the Reception dashboard has real appointments. D1.1 pre-code BLOCK has been consumed; corrected design awaits one bounded independent closure. **D2 Relevant Communication Context is deferred as a supporting input to Visit Brief, not the next standalone Home priority.**
+> **NOW (2026-10-06):** D1.1 exact-head R2 fidelity review is PASS / COMPLETE_FOR_DECLARED_SCOPE / P0:P1:P2 = 0:0:0 and the review chain is CLOSED. Product Owner authorized Reception-first merge/deploy, then Cockpit merge/deploy. Production smoke is reserved for Product Owner. The older daily-source review request remains historical HOLD/no verdict. D2 and Visit Brief implementation remain deferred.
 > **Product boundary:** `cockpit/PRODUCT_CONSTITUTION.md`; cross-programme architecture: `CLINICAL_EXCELLENCE_PLAN.md` §§33–34.
 > **Root lock:** `CURRENT_OPERATIONAL.md` remains the sole repo-wide NOW. Its PR-1 release lifecycle is in HOLD with no active runtime writer at the verified PR-1 branch checkpoint; this Cockpit file does not claim that lock.
 > **Visit Intelligence dependency:** `programme/OST-VISIT-INTELLIGENCE/CURRENT.md`; P0-V0 contract/projector branch `b22fd5c610d20baf0f8ef3384ca16472cd2d1f92` is not on `main`. The external cumulative PASS handback has not yet been reconciled into that workstream CURRENT or released.
 
 ## Current bounded action
 
-The active Cockpit step is **D1.1 — Global Appointment Context source/window correction** in **R2 PRE-CODE BLOCK / CORRECTED DESIGN / INDEPENDENT CLOSURE HOLD**. Product Owner authorized “D1.1 → Visit Brief” on 2026-10-02 and requested this bounded review investigation/design reconciliation on 2026-10-03. No D1.1 runtime implementation is authorized until independent pre-code closure passes. Visit Brief remains the immediately following product slice.
+The active Cockpit step is **D1.1 release**. The independently reviewed implementation/test bytes remain at Reception `b4739678016c1cd10f3afd8381e7c4de222f38ba` and Cockpit `9dc14bbde1005aab60922e88e021518197f0654f`. Final fidelity PASS / 0:0:0 closes technical review; direct Product Owner release authority covers merge, Render configuration and deploy in Reception-first order. No production smoke or Visit Brief implementation is authorized in this task. Stop for a conflicting writer, failed required gate, missing deploy prerequisite or merge reconciliation that changes reviewed runtime bytes.
 
-### Corrected D1.1 checkpoint — 2026-10-03
+### D1.1 freshness implementation checkpoint — 2026-10-04
 
 ```text
-BRANCH:                design/cockpit-d1-1-global-context-2026-10-02
-DESIGN:                cockpit/D1_1_GLOBAL_APPOINTMENT_CONTEXT_DESIGN.md
-DESIGN BLOB:           261ee0e7f2fc8b9ebc59310bb1c5e0517439fe33
-SUPPLIED PRE-CODE:     BLOCK / COMPLETE_FOR_DECLARED_SCOPE / P0:P1:P2=0:2:0
-CORRECTIONS:           PRE-01 snapshot-only other admission; PRE-02 every other mutation minimized
-INDEPENDENT CLOSURE:   PENDING / NOT LAUNCHED
-CORRECTION WRITER:     RELEASED / NO ACTIVE RUNTIME WRITER
-RUNTIME IMPLEMENTED:  NO
-RUNTIME/TEST DIFF:     NONE
-MERGED/DEPLOYED D1.1:  NO
-NEXT ACTION:          one READ-ONLY delta + affected cumulative pre-code closure with Q1–Q3 evidence stop, then STOP
+COCKPIT BRANCH:       feat/cockpit-d1-1-global-context-2026-10-03
+COCKPIT RUNTIME HEAD: 9dc14bbde1005aab60922e88e021518197f0654f
+COCKPIT MAIN:         b9beca7b1e233245f9ea3429a247a1c80a69ac7c (PHYSIO-only drift)
+RECEPTION BRANCH:     feat/d1-1-fresh-schedule-projection-2026-10-04
+RECEPTION HEAD:       b4739678016c1cd10f3afd8381e7c4de222f38ba
+RECEPTION MAIN:       bcfa57e0c1ca7358fb898b393e1dafa7b042c238
+OPS WRITER CLAIM:     1b98f7f023fdd92a55938591c49a49f12af5e916
+SOURCE DESIGN:        00e3b4527a8ccbfc6df1a635494da136ccb9dd33
+PRE-CODE R2:          PASS / 0:0:0
+FOCUSED TESTS:        Cockpit 31 PASS; Reception 54 tests + 33 subtests PASS
+POST-CODE R2:         PASS / COMPLETE_FOR_DECLARED_SCOPE / 0:0:0 / CLOSED
+OLD POST-CODE:        HOLD / SUPERSEDED FOR SOURCE FIDELITY / NO VERDICT
+WRITER:               BOUNDED RELEASE SCOPE / NO RUNTIME EDIT
+MERGED / DEPLOYED:    NO / NO
+NEXT:                 Reception PR gate, merge, deploy; then Cockpit PR gate, merge, deploy
 ```
 
-PRE-01/PRE-02 are CURRENT BLOCKER / in-slice design corrections, not new tasks or phase-order changes. The design now requires internal default-off `other` retention enabled only by the validated complete snapshot caller, preserved legacy unrelated discard/removal, and phone empty/link null before every effective-`other` commit, including manual-override clearing. Required regressions are specified for later implementation; none has been implemented/executed here. Independent closure cannot be certified by the correction writer.
+The new request is `reviews/D1_1_FRESHNESS_POSTCODE_FIDELITY_REVIEW_REQUEST_2026-10-04.md`. Release-time `RECEPTION_SCHEDULE_CONTEXT_URL` and shared existing ingest-key equality remain to be checked at the later release gate; neither was configured or tested against production now. The weekly Calendar stays on the background Clinical Calendar path. The existing source design and old post-code request remain immutable historical evidence.
 
-Source investigation established that the existing Digital Secretary complete bounded future snapshot can be reused without Reception/auth/schema changes. General review execution limits live in `PROCEDURES.md` P5.1. The revised request, original request archive, supplied BLOCK and exact chat-prompt notes are on the named design branch under `cockpit/reviews/`. Original request archive blob is `7cd035537d53d93c8063e8ceba9439dd1704faa0`.
+### Historical D1.1 freshness pre-code replan checkpoint — 2026-10-04
 
-The Product Owner reports a >7-hour Work-mode review, but that chat exposes no intermediate trace. A separate Codex run of the same prompt completed in roughly four minutes. The actual cause of the long run is unproven; the source-proven prompt defect is the missing definition of sufficient evidence and resulting search stop. No repeat full pre-code review, review-of-review or reviewer delegation is requested. Only complete independent PASS can release D1.1 implementation; PASS does not grant merge/deploy or Visit Brief runtime authority.
+```text
+CURRENT REMOTE MAIN:    12be588866aee6543444eee0b435e9064c39bc3f
+IMPLEMENTATION BRANCH: feat/cockpit-d1-1-global-context-2026-10-03
+OLD BRANCH HEAD:       6f56093ffbf33d01078eb8a25af35eb65a1e851a
+RUNTIME/TEST HEAD:     dd558e2fa8d59409d21913d2d3f2fbf885fdfece (unchanged)
+RECEPTION MAIN:        bcfa57e0c1ca7358fb898b393e1dafa7b042c238
+OLD POST-CODE REQUEST: HOLD / NO VERDICT
+NEW SOURCE DESIGN:     D1_1_FRESHNESS_REPLAN_DELTA_2026-10-04.md
+RUNTIME WRITER:        NONE / SOURCE DESIGN ONLY
+MERGED / DEPLOYED:     NO / NO
+PRODUCT OWNER STEP:    CONFIRMED / “Προχώρα” / 2026-10-04
+SOURCE PRE-CODE:       BLOCK / COMPLETE_FOR_DECLARED_SCOPE / 0:3:0
+FINDINGS:              FRESH-01 past+upcoming; FRESH-02 total budget; FRESH-03 raw logging
+CORRECTION:            FRESH-01/02/03 in source delta / independent closure PASS
+SOURCE PRE-CODE CLOSE: PASS / COMPLETE_FOR_DECLARED_SCOPE / 0:0:0
+NEXT:                  fresh two-repository writer checkpoint before implementation
+```
+
+The existing snapshot feed and Clinical Calendar remain the Module-01 weekly/background path. The operational strip must use a bounded fresh actual-Cal-bookings projection owned by Reception. Actual urgent bookings are appointments; urgent, lab and telephone availability windows are not. Preserve the already accepted Previous/Current/Next, overlap, privacy, weekly-filter and clinical identity boundaries unless the new source directly requires a correction. The prior design/review evidence stays historical; this replan does not issue a post-code fidelity verdict.
+
+### Historical D1.1 implementation-start checkpoint — 2026-10-03
+
+```text
+BASE MAIN:            d5da6271567a4141b2708d9fa12e673dfce37131
+BRANCH:               feat/cockpit-d1-1-global-context-2026-10-03
+DESIGN BLOB:          261ee0e7f2fc8b9ebc59310bb1c5e0517439fe33
+INDEPENDENT PRE-CODE: PASS / COMPLETE_FOR_DECLARED_SCOPE / 0:0:0
+PRE-01 / PRE-02:      CLOSED / CLOSED
+IMPLEMENTATION:       COMPLETE / FOCUSED TESTED / NO POST-CODE PASS
+WRITER:               RELEASED / RUNTIME FROZEN FOR REVIEW
+POST-CODE REVIEW:     REQUEST PREPARED / NOT LAUNCHED
+MERGED / DEPLOYED:    NO / NO
+HISTORICAL NEXT:      independent fidelity review of dd558e2fa8d59409d21913d2d3f2fbf885fdfece; now superseded by the 2026-10-04 freshness replan above
+```
+
+Supplied closure evidence is retained in `reviews/D1_1_PRECODE_CLOSURE_PASS_2026-10-03.md`. Q1–Q3 were supported, no material findings/missing evidence, stop reason Q1–Q3 disposed. The pre-code chain is stopped under PROCEDURES P5/P5.1. The corrected design is copied byte-for-byte from design branch head `ba1f7eafb500986ad07b2e6b4320ac982896eb77`; its historical pending-review status is superseded by this checkpoint without changing the reviewed blob. Reuse the existing complete snapshot feed; preserve one store, snapshot reconciliation/manual overrides, legacy discard and weekly osteoporosis filtering. No Reception/config/schema/identity/Visit Brief expansion. Review PASS is not release authority. Visit Brief follows only D1.1 closure/release.
+
+### D1.1 implementation/test evidence — 2026-10-03
+
+- Snapshot-only `retain_other=True` after complete scope/interval validation; default-off legacy helper still discards/removes unrelated rows with compatible counters.
+- Shared minimization clears phone/link after effective other upserts and manual override clearing. Manual promotion alone cannot restore discarded fields.
+- Existing weekly filter, overrides, classifier and exact source/window reconciliation preserved; one table, no migration.
+- Protected `/clinical/calendar/cockpit-context` returns an explicit minimal model: today-only Previous, active Current, cross-day Next, strict earlier-Aclasta exception, other/tied-start overlaps fail closed. All timestamps are explicit UTC; day bounds use Asia/Nicosia including DST.
+- Home uses the global projection; no fallback list request, phone/link/raw metadata or browser storage. Global card counters removed; weekly link retained; next-day date and freshness/unavailable notices visible. Patient display slot has a future appointment-ID interaction seam; no Visit Brief handler/history yet.
+- **30 tests PASS in 1.16s:** `test_clinical_calendar.py`, `test_clinical_calendar_snapshot.py`, `test_cockpit_home.py`, `test_cockpit_surgery_queue_ui.py`, Python 3.12.2. Python/JS syntax, `test_g4_workspace_ergonomics.js`, diff hygiene PASS.
+- `source_updated_at` is max retained normalized-row update time, not a new persisted snapshot receipt ledger. Empty storage has unknown freshness; UI says so. Cadence/producer unchanged. Global other rows populate through the next existing complete snapshot after release; no live parity or production smoke claimed.
+- Exact implementation/test head: `dd558e2fa8d59409d21913d2d3f2fbf885fdfece`. Sole prepared independent request: `reviews/D1_1_POSTCODE_REVIEW_REQUEST.md`. Docs-only checkpoint does not alter runtime/test bytes. No implementation or release PASS is inferred from author checks.
 
 ### Product Owner correction — 2026-10-02
 
