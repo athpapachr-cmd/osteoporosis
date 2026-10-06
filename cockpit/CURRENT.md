@@ -1,13 +1,24 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
-> **NOW (2026-10-06):** D1.1 exact-head R2 fidelity review is PASS / COMPLETE_FOR_DECLARED_SCOPE / P0:P1:P2 = 0:0:0 and the review chain is CLOSED. Product Owner authorized Reception-first merge/deploy, then Cockpit merge/deploy. Production smoke is reserved for Product Owner. The older daily-source review request remains historical HOLD/no verdict. D2 and Visit Brief implementation remain deferred.
+> **NOW (2026-10-06):** D1.1 technical review PASS / COMPLETE_FOR_DECLARED_SCOPE / P0:P1:P2 = 0:0:0 and CLOSED; Reception and Cockpit merged and deployed LIVE in the authorized order. PRODUCTION SMOKE PENDING PRODUCT OWNER. The older daily-source request remains historical HOLD/no verdict. D2 and Visit Brief implementation remain deferred.
 > **Product boundary:** `cockpit/PRODUCT_CONSTITUTION.md`; cross-programme architecture: `CLINICAL_EXCELLENCE_PLAN.md` §§33–34.
 > **Root lock:** `CURRENT_OPERATIONAL.md` remains the sole repo-wide NOW. Its PR-1 release lifecycle is in HOLD with no active runtime writer at the verified PR-1 branch checkpoint; this Cockpit file does not claim that lock.
 > **Visit Intelligence dependency:** `programme/OST-VISIT-INTELLIGENCE/CURRENT.md`; P0-V0 contract/projector branch `b22fd5c610d20baf0f8ef3384ca16472cd2d1f92` is not on `main`. The external cumulative PASS handback has not yet been reconciled into that workstream CURRENT or released.
 
 ## Current bounded action
 
-The active Cockpit step is **D1.1 release**. The independently reviewed implementation/test bytes remain at Reception `b4739678016c1cd10f3afd8381e7c4de222f38ba` and Cockpit `9dc14bbde1005aab60922e88e021518197f0654f`. Final fidelity PASS / 0:0:0 closes technical review; direct Product Owner release authority covers merge, Render configuration and deploy in Reception-first order. No production smoke or Visit Brief implementation is authorized in this task. Stop for a conflicting writer, failed required gate, missing deploy prerequisite or merge reconciliation that changes reviewed runtime bytes.
+The D1.1 release is merged and LIVE in both services. Exact reviewed runtime/test bytes were preserved through both merges. The Product Owner will perform and confirm production smoke manually; no smoke was run by this release task. D1.1 remains RELEASED / SMOKE PENDING, not production-verified. No Visit Brief implementation authority follows from this state.
+
+### D1.1 paired release checkpoint — 2026-10-06
+
+- Independent exact-head R2 post-code fidelity: **PASS / COMPLETE_FOR_DECLARED_SCOPE / P0:P1:P2 = 0:0:0**. Review chain **CLOSED**. Historical `reviews/D1_1_POSTCODE_REVIEW_REQUEST.md` remains HOLD/no verdict; it is not the final freshness review.
+- Reception reviewed head `b4739678016c1cd10f3afd8381e7c4de222f38ba` → PR #157 merge/main `8d2827514457a1da54f33c6109b22e6106532301` → Render service `srv-d5rsvj14tr6s738bp67g`, deploy `dep-db25omh7lnhs73dn82o0` **LIVE**. Merge tree equals the reviewed tree.
+- Cockpit reviewed runtime/test head `9dc14bbde1005aab60922e88e021518197f0654f` → PR #136 merge/main `12800be3a51f716b2ccd72715c6e0e637f2e43ab` → Render service `srv-d5qfk31r0fns73di596g`, deploy `dep-db25uae7bikc73dkrku0` **LIVE**. All six affected runtime/test blobs are byte identical to the reviewed head.
+- `RECEPTION_SCHEDULE_CONTEXT_URL` was installed for Cockpit's protected server-to-server read. Config deploy `dep-db25qh7lot8c73duu8vg` reached **LIVE** before Cockpit code merge. The previously configured matching ingest-secret pair was preserved; no secret value was read, printed or rotated.
+- Current Cockpit PR checks: applicable D1.1/Calendar/Cockpit/Canonical gates PASS. PHYSIO V5 browser's isolated first-attempt failure passed on targeted rerun; Clinical Learning L0 design-only scope guard is inapplicable to this mixed runtime PR, while its contract tests passed.
+- **PRODUCTION SMOKE PENDING PRODUCT OWNER.** No live Cal or patient-data smoke, booking/cancellation/reschedule mutation, or heavy sync was run by this release task. Weekly Osteoporosis Calendar remains on its separate snapshot path. Visit Brief remains deferred.
+
+#### Historical implementation checkpoint
 
 ### D1.1 freshness implementation checkpoint — 2026-10-04
 

@@ -1502,3 +1502,11 @@ Product Owner supplied independent closure PASS / COMPLETE_FOR_DECLARED_SCOPE / 
 The implementation reuses the complete snapshot producer, default-off legacy import helper, one normalized appointment store and protected auth. Effective other rows retain minimal global context with empty phone/null clinical link; manual-clear minimization, weekly filtering and complete same-source/window reconciliation are preserved. A minimal server global projection supplies Home Previous/Current/Next, cross-day Next and the accepted Aclasta exception; other overlaps fail closed. Global Today osteoporosis counters are removed; weekly Calendar link remains.
 
 Focused author evidence: 30 Calendar/snapshot/Home/shared Surgery UI tests PASS, syntax/navigation/diff hygiene PASS. One independent exact-implementation-head post-code review is being prepared; not launched, no verdict yet. Merge/deploy/production smoke and Visit Brief remain unperformed and unauthorized pending their separate gates. Implementation writer is released into review HOLD. Operational identity belongs in the two CURRENT files, rather than being backfilled into this historical entry.
+
+## 2026-10-06 — D1.1 freshness paired release deployed; Product Owner smoke pending
+
+- Independent exact-head R2 fidelity handback: PASS / COMPLETE_FOR_DECLARED_SCOPE / P0:P1:P2 = 0:0:0; technical review chain CLOSED. Historical daily-source HOLD request remains historical without a verdict.
+- Reception PR #157 merged as `8d2827514457a1da54f33c6109b22e6106532301`; reviewed tree preserved; Render deploy `dep-db25omh7lnhs73dn82o0` LIVE.
+- Cockpit PR #136 merged as `12800be3a51f716b2ccd72715c6e0e637f2e43ab`; all six reviewed runtime/test blobs preserved; Render deploy `dep-db25uae7bikc73dkrku0` LIVE.
+- Cockpit `RECEPTION_SCHEDULE_CONTEXT_URL` installed for the protected Reception route; existing matching server-to-server ingest-key pair retained without secret rotation. Configuration deploy `dep-db25qh7lot8c73duu8vg` LIVE before Cockpit code merge.
+- Production smoke is PENDING PRODUCT OWNER. No live Cal/patient-data smoke or booking mutation was performed by this release task. Visit Brief implementation remains deferred.
