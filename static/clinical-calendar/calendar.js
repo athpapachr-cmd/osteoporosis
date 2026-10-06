@@ -28,8 +28,13 @@
     let body = null;
     try { body = await res.json(); } catch { body = null; }
     if (!res.ok) {
-      const err = new Error(body?.detail || `HTTP ${res.status}`);
+      const detail = body?.detail;
+      const message = typeof detail === "string"
+        ? detail
+        : (detail?.message || detail?.status || `HTTP ${res.status}`);
+      const err = new Error(message);
       err.status = res.status;
+      err.detail = detail;
       throw err;
     }
     return body;
@@ -197,7 +202,9 @@
       renderWeek(rows, monday);
       setStatus(`${rows.length} σχετικά με οστεοπόρωση`, "ok");
     } catch (err) {
-      setStatus(err.message, "err");
+      const last = parseServerDate(err.detail?.last_fetched_at);
+      const freshness = last ? ` · τελευταία ανάγνωση ${fmtLong.format(last)} ${fmtTime.format(last)}` : "";
+      setStatus(`Μη διαθέσιμο${freshness}`, "err");
       renderWeekUnavailable(monday);
     }
   }
