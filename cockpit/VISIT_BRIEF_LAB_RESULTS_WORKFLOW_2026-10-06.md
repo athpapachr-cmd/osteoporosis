@@ -161,6 +161,18 @@ Before implementation:
 
 The current voice agent being disabled must not prevent clinician-initiated dashboard messaging.
 
+## 10A. Provider feasibility verified on 2026-10-06
+
+Official Zadarma documentation exposes `POST /v1/sms/send/` for server-side SMS sending and documents API-key/signature authorization plus sender/number/message parameters. Therefore a bounded Reception-owned transport adapter is technically feasible; production SenderID/account permissions still require release-time verification.
+
+Official Gmail documentation confirms the Gmail API supports read-only mailbox access and message search/listing. The general `gmail.readonly` scope is classified as a **restricted** scope. If restricted-scope Gmail data is stored on or transmitted through the application server, Google may require additional verification/security assessment. This is a material implementation constraint.
+
+Therefore the first Gmail design should minimize retained Gmail content aggressively:
+- prefer on-demand retrieval;
+- retain source IDs/status rather than full email/PDF where possible;
+- avoid broad mailbox ingestion;
+- assess whether a narrower architecture or user-authorized single-account/internal app posture changes the verification burden before implementation.
+
 ## 11. Message state
 
 At minimum preserve:
