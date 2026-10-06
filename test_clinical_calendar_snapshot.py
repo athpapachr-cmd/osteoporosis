@@ -80,8 +80,17 @@ def test_snapshot_filters_unrelated_rows_and_removes_missing(monkeypatch):
     with Session(engine) as session:
         assert [(row.source_appointment_id, row.category) for row in session.execute(
             select(ClinicalAppointmentORM)).scalars()] == [("cal-1", "osteoporosis_review")]
+    now = start.replace(tzinfo=None)
+    monkeypatch.setattr(clinical_calendar, "utcnow", lambda: now)
+    _set_actual_source(
+        monkeypatch,
+        [_appointment("cal-1", start=start + timedelta(hours=1), minutes=40,
+                      label="Οστεοπόρωση", comment="Οστεοπόρωση - επανέλεγχος")],
+        now,
+    )
     weekly = client.get("/clinical/calendar/appointments", headers=CLINICAL_HEADERS,
                         params={"start": start.isoformat(), "end": end.isoformat()})
+    assert weekly.status_code == 200
     assert [row["appointment_id"] for row in weekly.json()] == ["cal.com:cal-1"]
     second = client.post("/clinical/calendar/appointments/snapshot", headers=HEADERS,
         json=_snapshot(start, end, [_appointment("cal-2", start=start + timedelta(hours=3),
@@ -254,6 +263,9 @@ def test_manual_classification_survives_future_snapshot_and_can_return_to_auto(m
 
     first = client.post("/clinical/calendar/appointments/snapshot", headers=HEADERS, json=payload)
     assert first.status_code == 200
+    now = start.replace(tzinfo=None)
+    monkeypatch.setattr(clinical_calendar, "utcnow", lambda: now)
+    _set_actual_source(monkeypatch, payload["appointments"], now)
 
     listed = client.get(
         "/clinical/calendar/appointments",
@@ -291,8 +303,14 @@ def test_manual_classification_survives_future_snapshot_and_can_return_to_auto(m
         json={"category": None},
     )
     assert cleared.status_code == 200
-    assert cleared.json()["category"] == "osteoporosis_unspecified"
-    assert cleared.json()["manual_category"] is None
+    assert cleared.json() == {"appointment_id": appointment_id, "manual_category": None}
+    returned_to_auto = client.get(
+        "/clinical/calendar/appointments",
+        headers=CLINICAL_HEADERS,
+        params={"start": start.isoformat(), "end": end.isoformat()},
+    ).json()[0]
+    assert returned_to_auto["category"] == "osteoporosis_unspecified"
+    assert returned_to_auto["manual_category"] is None
 
     invalid = client.put(
         f"/clinical/calendar/appointments/{appointment_id}/classification",
@@ -366,11 +384,15 @@ def _set_actual_source(monkeypatch, rows, now, extra_fields=None):
         def __init__(self, **kwargs): pass
         async def __aenter__(self): return self
         async def __aexit__(self, *args): pass
-        async def get(self, url, headers):
+        async def get(self, url, headers, params=None):
             assert url == "https://reception.example/private/schedule-context"
             assert headers == {"X-Clinical-Ingest-Key": INGEST_KEY}
-            return httpx.Response(200, json={"fetched_at": now.replace(tzinfo=timezone.utc).isoformat(),
-                                             "appointments": source_rows})
+            return httpx.Response(200, json={
+                "fetched_at": now.replace(tzinfo=timezone.utc).isoformat(),
+                "coverage_start": (now.date() - timedelta(days=31)).isoformat(),
+                "coverage_end": (now.date() + timedelta(days=62)).isoformat(),
+                "appointments": source_rows,
+            })
     monkeypatch.setattr(clinical_calendar.httpx, "AsyncClient", Client)
 
 
@@ -462,9 +484,7 @@ def test_clearing_manual_relevant_override_minimizes_other_before_commit(monkeyp
     client.post("/clinical/calendar/appointments/snapshot", headers=HEADERS,
                 json=_snapshot(now, now + timedelta(days=1), [item]))
     cleared = client.put(url, headers=CLINICAL_HEADERS, json={"category": None})
-    assert cleared.json()["category"] == "other"
-    assert cleared.json()["phone_e164"] == ""
-    assert cleared.json()["linked_patient_id"] is None
+    assert cleared.json() == {"appointment_id": "cal.com:manual-other", "manual_category": None}
     with Session(engine) as session:
         row = session.get(ClinicalAppointmentORM, "cal.com:manual-other")
         assert row.category == "other" and row.phone_e164 == "" and row.linked_patient_id is None
@@ -525,7 +545,111 @@ def test_context_rejects_stale_and_unexpected_private_fields_without_snapshot_fa
         assert session.get(ClinicalAppointmentORM, "cal.com:weekly") is not None
 
 
-def test_snapshot_removes_only_missing_same_source_exact_window(monkeypatch):
+
+
+def test_weekly_calendar_requests_displayed_week_and_requires_full_coverage(monkeypatch):
+    import httpx
+    client, _ = _client(monkeypatch)
+    monkeypatch.setenv("RECEPTION_SCHEDULE_CONTEXT_URL", "https://reception.example/private/schedule-context")
+    now = datetime(2026, 10, 6, 8, 0)
+    monkeypatch.setattr(clinical_calendar, "utcnow", lambda: now)
+    calls = []
+
+    class Client:
+        def __init__(self, **kwargs): pass
+        async def __aenter__(self): return self
+        async def __aexit__(self, *args): pass
+        async def get(self, url, headers, params=None):
+            calls.append(params)
+            return httpx.Response(200, json={
+                "fetched_at": now.replace(tzinfo=timezone.utc).isoformat(),
+                "coverage_start": "2026-10-11",
+                "coverage_end": "2026-11-12",
+                "appointments": [],
+            })
+
+    monkeypatch.setattr(clinical_calendar.httpx, "AsyncClient", Client)
+    start = datetime(2026, 10, 12, 0, 0, tzinfo=timezone(timedelta(hours=3)))
+    end = start + timedelta(days=7)
+    response = client.get(
+        "/clinical/calendar/appointments",
+        headers=CLINICAL_HEADERS,
+        params={"start": start.isoformat(), "end": end.isoformat()},
+    )
+    assert response.status_code == 200
+    assert response.json() == []
+    assert calls == [{"target_date": "2026-10-12"}]
+
+    class Incomplete(Client):
+        async def get(self, url, headers, params=None):
+            return httpx.Response(200, json={
+                "fetched_at": now.replace(tzinfo=timezone.utc).isoformat(),
+                "coverage_start": "2026-10-12",
+                "coverage_end": "2026-10-18",
+                "appointments": [],
+            })
+
+    monkeypatch.setattr(clinical_calendar.httpx, "AsyncClient", Incomplete)
+    unavailable = client.get(
+        "/clinical/calendar/appointments",
+        headers=CLINICAL_HEADERS,
+        params={"start": start.isoformat(), "end": end.isoformat()},
+    )
+    assert unavailable.status_code == 503
+
+
+def test_weekly_live_rows_preserve_classification_and_override_without_snapshot_row(monkeypatch):
+    client, engine = _client(monkeypatch)
+    now = datetime(2026, 10, 6, 8, 0)
+    monkeypatch.setattr(clinical_calendar, "utcnow", lambda: now)
+    start = datetime(2026, 10, 6, 8, 0)
+    rows = [
+        _appointment("aclasta-live", start=start, minutes=20, label="Other", comment="Aclasta"),
+        _appointment("osteo-live", start=start + timedelta(hours=1), minutes=40,
+                     label="Other", comment="Οστεοπόρωση"),
+        _appointment("other-live", start=start + timedelta(hours=2), minutes=20,
+                     label="Other", comment="Πόνος γόνατος"),
+    ]
+    _set_actual_source(monkeypatch, rows, now)
+
+    listed = client.get(
+        "/clinical/calendar/appointments",
+        headers=CLINICAL_HEADERS,
+        params={
+            "start": datetime(2026, 10, 6, 0, 0, tzinfo=timezone.utc).isoformat(),
+            "end": datetime(2026, 10, 7, 0, 0, tzinfo=timezone.utc).isoformat(),
+        },
+    )
+    assert listed.status_code == 200
+    by_id = {row["appointment_id"]: row for row in listed.json()}
+    assert by_id["cal.com:aclasta-live"]["category"] == "aclasta"
+    assert by_id["cal.com:osteo-live"]["category"] == "osteoporosis_review"
+    assert "cal.com:other-live" not in by_id
+    with Session(engine) as session:
+        assert session.get(ClinicalAppointmentORM, "cal.com:osteo-live") is None
+
+    classified = client.put(
+        "/clinical/calendar/appointments/cal.com:other-live/classification",
+        headers=CLINICAL_HEADERS,
+        json={"category": "osteoporosis_review"},
+    )
+    assert classified.status_code == 200
+    assert classified.json()["manual_category"] == "osteoporosis_review"
+
+    relisted = client.get(
+        "/clinical/calendar/appointments",
+        headers=CLINICAL_HEADERS,
+        params={
+            "start": datetime(2026, 10, 6, 0, 0, tzinfo=timezone.utc).isoformat(),
+            "end": datetime(2026, 10, 7, 0, 0, tzinfo=timezone.utc).isoformat(),
+        },
+    ).json()
+    assert any(
+        row["appointment_id"] == "cal.com:other-live"
+        and row["manual_category"] == "osteoporosis_review"
+        for row in relisted
+    )
+\ndef test_snapshot_removes_only_missing_same_source_exact_window(monkeypatch):
     client, engine = _client(monkeypatch)
     start = datetime(2026, 10, 3, 8, 0)
     for source, source_id, when in (("cal.com", "missing", start),
