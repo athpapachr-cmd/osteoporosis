@@ -283,8 +283,10 @@ def test_manual_classification_survives_future_snapshot_and_can_return_to_auto(m
         json={"category": "osteoporosis_review"},
     )
     assert classified.status_code == 200
-    assert classified.json()["category"] == "osteoporosis_review"
-    assert classified.json()["manual_category"] == "osteoporosis_review"
+    assert classified.json() == {
+        "appointment_id": appointment_id,
+        "manual_category": "osteoporosis_review",
+    }
 
     repeated = client.post("/clinical/calendar/appointments/snapshot", headers=HEADERS, json=payload)
     assert repeated.status_code == 200
@@ -649,7 +651,9 @@ def test_weekly_live_rows_preserve_classification_and_override_without_snapshot_
         and row["manual_category"] == "osteoporosis_review"
         for row in relisted
     )
-\ndef test_snapshot_removes_only_missing_same_source_exact_window(monkeypatch):
+
+
+def test_snapshot_removes_only_missing_same_source_exact_window(monkeypatch):
     client, engine = _client(monkeypatch)
     start = datetime(2026, 10, 3, 8, 0)
     for source, source_id, when in (("cal.com", "missing", start),
