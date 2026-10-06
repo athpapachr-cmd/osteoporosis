@@ -171,6 +171,22 @@
     $("#countUnspecified").textContent = (rows || []).filter(x => x.category === "osteoporosis_unspecified").length;
   }
 
+  function renderWeekUnavailable(monday) {
+    const grid = $("#weekGrid");
+    grid.innerHTML = "";
+    for (let i = 0; i < 7; i += 1) {
+      const day = addDays(monday, i);
+      const col = document.createElement("section");
+      col.className = "day-column";
+      col.innerHTML = `<div class="day-head"><strong>${esc(fmtDay.format(day))}</strong><span>${esc(fmtDate.format(day))}</span></div><div class="day-body"><div class="empty-day">Το ημερολόγιο δεν είναι διαθέσιμο αυτή τη στιγμή.</div></div>`;
+      grid.appendChild(col);
+    }
+    $("#countOsteoporosis").textContent = "—";
+    $("#countProlia").textContent = "—";
+    $("#countAclasta").textContent = "—";
+    $("#countUnspecified").textContent = "—";
+  }
+
   async function loadWeek() {
     const monday = mondayForOffset(weekOffset);
     const end = addDays(monday, 7);
@@ -182,7 +198,7 @@
       setStatus(`${rows.length} σχετικά με οστεοπόρωση`, "ok");
     } catch (err) {
       setStatus(err.message, "err");
-      renderWeek([], monday);
+      renderWeekUnavailable(monday);
     }
   }
 
