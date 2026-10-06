@@ -1,5 +1,7 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / repo-wide writer lock
 
+> **Parallel Cockpit Calendar Unification release candidate (2026-10-06):** independent exact-head post-code R2 is **PASS / COMPLETE_FOR_DECLARED_SCOPE / P0:P1:P2 = 0:0:0**, review chain CLOSED. Exact runtime/test heads: Reception `49a321531fbe8042d2b22cb6ba7b121e901879ae`; Osteoporosis/Cockpit `f2fdb146366850fac659acb74bacd40e9ec88588`. Durable PASS: `cockpit/reviews/CALENDAR_UNIFICATION_POSTCODE_FIDELITY_PASS_2026-10-06.md`. Writers RELEASED. Release sequence authorized by Product Owner direction remains Reception merge/deploy first, then Cockpit merge/deploy, then Product Owner smoke. Visit Brief/Gmail/Zadarma runtime remains out of scope until Calendar Unification release closes.
+
 > **STATUS:** PR-1 transcript extraction release engineering complete; identifiable-transcript privacy/provider gate OPEN; release HOLD.
 > **Reconciled:** 2026-10-06 Asia/Nicosia after D1.1 Reception-first merge and paired live deployments; the separate PR-1 branch checkpoint remains unchanged.
 > **D1 activation/release base `main`:** `87aedad3ad512e4b17a1eb737f0ff8302857aff2`; every fresh session must verify the current remote `main` per `AGENTS.md` before mutation.
