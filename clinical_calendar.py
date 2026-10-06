@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import List, Optional, Literal
 from zoneinfo import ZoneInfo
 import os
@@ -131,6 +131,11 @@ class AppointmentClassificationUpdate(BaseModel):
     category: Optional[str] = None
 
 
+class AppointmentClassificationUpdateResult(BaseModel):
+    appointment_id: str
+    manual_category: Optional[str]
+
+
 class CockpitAppointment(BaseModel):
     appointment_id: str
     start_at: datetime
@@ -166,6 +171,8 @@ class ActualBooking(BaseModel):
 class ActualSchedule(BaseModel):
     model_config = ConfigDict(extra="forbid")
     fetched_at: datetime
+    coverage_start: Optional[date] = None
+    coverage_end: Optional[date] = None
     appointments: List[ActualBooking]
 
 
@@ -442,10 +449,11 @@ def build_clinical_calendar_router(engine: Engine) -> APIRouter:
         )
 
     @router.get("/appointments", response_model=List[AppointmentRecord], dependencies=protected)
-    def list_appointments(
+    async def list_appointments(
         start: datetime = Query(...),
         end: datetime = Query(...),
     ) -> List[AppointmentRecord]:
+        global _last_actual_schedule_fetch
         start_utc = _naive_utc(start)
         end_utc = _naive_utc(end)
         if end_utc <= start_utc:
@@ -453,39 +461,148 @@ def build_clinical_calendar_router(engine: Engine) -> APIRouter:
         if (end_utc - start_utc).days > 31:
             raise HTTPException(status_code=422, detail="calendar range is limited to 31 days")
 
-        with Session(engine) as session:
-            stmt = (
-                select(ClinicalAppointmentORM)
-                .where(ClinicalAppointmentORM.start_at >= start_utc)
-                .where(ClinicalAppointmentORM.start_at < end_utc)
-                .where(ClinicalAppointmentORM.category.in_(RELEVANT_CATEGORIES))
-                .order_by(ClinicalAppointmentORM.start_at.asc())
+        nicosia = ZoneInfo("Asia/Nicosia")
+        requested_start = start_utc.replace(tzinfo=timezone.utc).astimezone(nicosia).date()
+        requested_end = end_utc.replace(tzinfo=timezone.utc).astimezone(nicosia).date()
+
+        source_url = os.environ.get("RECEPTION_SCHEDULE_CONTEXT_URL", "").strip()
+        ingest_key = os.environ.get("CLINICAL_INGEST_KEY", "").strip()
+        if not source_url or not ingest_key:
+            raise HTTPException(
+                status_code=503,
+                detail={
+                    "status": "unavailable",
+                    "last_fetched_at": _last_actual_schedule_fetch.isoformat()
+                    if _last_actual_schedule_fetch else None,
+                },
             )
-            rows = session.execute(stmt).scalars().all()
+
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.get(
+                    source_url,
+                    params={"target_date": requested_start.isoformat()},
+                    headers={"X-Clinical-Ingest-Key": ingest_key},
+                )
+            if response.status_code != 200:
+                raise ValueError("source unavailable")
+            source = ActualSchedule.model_validate(response.json())
+            now = utcnow().replace(tzinfo=timezone.utc)
+            if source.fetched_at.tzinfo is None or not timedelta(0) <= (
+                now - source.fetched_at.astimezone(timezone.utc)
+            ) <= timedelta(minutes=5):
+                raise ValueError("source stale")
+            if (
+                source.coverage_start is None
+                or source.coverage_end is None
+                or source.coverage_start > requested_start
+                or source.coverage_end < requested_end
+            ):
+                raise ValueError("source coverage incomplete")
+        except (httpx.HTTPError, ValueError, TypeError):
+            raise HTTPException(
+                status_code=503,
+                detail={
+                    "status": "unavailable",
+                    "last_fetched_at": _last_actual_schedule_fetch.isoformat()
+                    if _last_actual_schedule_fetch else None,
+                },
+            ) from None
+
+        _last_actual_schedule_fetch = source.fetched_at
+        candidates = []
+        for item in source.appointments:
+            if (
+                item.start_at.tzinfo is None
+                or item.end_at.tzinfo is None
+                or item.end_at <= item.start_at
+            ):
+                raise HTTPException(
+                    status_code=503,
+                    detail={
+                        "status": "unavailable",
+                        "last_fetched_at": _last_actual_schedule_fetch.isoformat()
+                        if _last_actual_schedule_fetch else None,
+                    },
+                )
+            item_start = _naive_utc(item.start_at)
+            item_end = _naive_utc(item.end_at)
+            if item_start < start_utc or item_start >= end_utc:
+                continue
+            duration_minutes = max(int((item_end - item_start).total_seconds() // 60), 0)
+            automatic_category = (
+                item.category
+                if item.category in {"aclasta", "prolia"}
+                else classify_appointment("", item.reason, duration_minutes)
+            )
+            appointment_id = item.uid if item.uid.startswith("cal.com:") else f"cal.com:{item.uid}"
+            source_id = appointment_id.removeprefix("cal.com:")
+            candidates.append(
+                (
+                    appointment_id,
+                    source_id,
+                    item,
+                    item_start,
+                    item_end,
+                    duration_minutes,
+                    automatic_category,
+                )
+            )
+
+        ids = [row[0] for row in candidates]
+        with Session(engine) as session:
             overrides = {
                 item.appointment_id: item.category
                 for item in session.execute(
                     select(ClinicalAppointmentClassificationORM).where(
-                        ClinicalAppointmentClassificationORM.appointment_id.in_(
-                            [row.id for row in rows]
-                        )
+                        ClinicalAppointmentClassificationORM.appointment_id.in_(ids)
                     )
                 ).scalars().all()
-            } if rows else {}
-            return [_record(row, overrides.get(row.id)) for row in rows]
+            } if ids else {}
+
+        rows: List[AppointmentRecord] = []
+        source_updated = source.fetched_at.astimezone(timezone.utc).replace(tzinfo=None)
+        for appointment_id, source_id, item, item_start, item_end, duration_minutes, automatic_category in candidates:
+            manual_category = overrides.get(appointment_id)
+            category = manual_category or automatic_category
+            if category not in RELEVANT_CATEGORIES:
+                continue
+            rows.append(
+                AppointmentRecord(
+                    appointment_id=appointment_id,
+                    source="cal.com",
+                    source_appointment_id=source_id,
+                    start_at=item_start,
+                    end_at=item_end,
+                    duration_minutes=duration_minutes,
+                    clinic=item.clinic or "",
+                    category=category,
+                    manual_category=manual_category,
+                    patient_display_name=item.patient_display_name or "",
+                    phone_e164="",
+                    linked_patient_id=None,
+                    label="",
+                    comment=item.reason or "",
+                    reason=item.reason or "",
+                    status="scheduled",
+                    updated_at=source_updated,
+                )
+            )
+        rows.sort(key=lambda row: (row.start_at, row.appointment_id))
+        return rows
 
     @router.put(
         "/appointments/{appointment_id}/classification",
-        response_model=AppointmentRecord,
+        response_model=AppointmentClassificationUpdateResult,
         dependencies=protected,
     )
     def update_appointment_classification(
         appointment_id: str,
         req: AppointmentClassificationUpdate,
-    ) -> AppointmentRecord:
+    ) -> AppointmentClassificationUpdateResult:
         with Session(engine) as session:
             row = session.get(ClinicalAppointmentORM, appointment_id)
-            if row is None:
+            if row is None and not appointment_id.startswith("cal.com:"):
                 raise HTTPException(status_code=404, detail="Appointment not found")
 
             category = (req.category or "").strip()
@@ -495,17 +612,20 @@ def build_clinical_calendar_router(engine: Engine) -> APIRouter:
             if not category:
                 if existing is not None:
                     session.delete(existing)
-                row.category = classify_appointment(
-                    row.label or "",
-                    row.comment or "",
-                    int(row.duration_minutes or 0),
-                )
-                _minimize_other(row)
-                row.updated_at = now
-                session.add(row)
+                if row is not None:
+                    row.category = classify_appointment(
+                        row.label or "",
+                        row.comment or "",
+                        int(row.duration_minutes or 0),
+                    )
+                    _minimize_other(row)
+                    row.updated_at = now
+                    session.add(row)
                 session.commit()
-                session.refresh(row)
-                return _record(row, None)
+                return AppointmentClassificationUpdateResult(
+                    appointment_id=appointment_id,
+                    manual_category=None,
+                )
 
             if category not in MANUAL_CLASSIFICATION_CATEGORIES:
                 raise HTTPException(status_code=422, detail="Unsupported manual classification")
@@ -520,12 +640,15 @@ def build_clinical_calendar_router(engine: Engine) -> APIRouter:
                 existing.category = category
                 existing.updated_at = now
             session.add(existing)
-            row.category = category
-            row.updated_at = now
-            session.add(row)
+            if row is not None:
+                row.category = category
+                row.updated_at = now
+                session.add(row)
             session.commit()
-            session.refresh(row)
-            return _record(row, category)
+            return AppointmentClassificationUpdateResult(
+                appointment_id=appointment_id,
+                manual_category=category,
+            )
 
     def _apply_import_item(
         session: Session,

@@ -28,8 +28,13 @@
     let body = null;
     try { body = await res.json(); } catch { body = null; }
     if (!res.ok) {
-      const err = new Error(body?.detail || `HTTP ${res.status}`);
+      const detail = body?.detail;
+      const message = typeof detail === "string"
+        ? detail
+        : (detail?.message || detail?.status || `HTTP ${res.status}`);
+      const err = new Error(message);
       err.status = res.status;
+      err.detail = detail;
       throw err;
     }
     return body;
@@ -171,6 +176,22 @@
     $("#countUnspecified").textContent = (rows || []).filter(x => x.category === "osteoporosis_unspecified").length;
   }
 
+  function renderWeekUnavailable(monday) {
+    const grid = $("#weekGrid");
+    grid.innerHTML = "";
+    for (let i = 0; i < 7; i += 1) {
+      const day = addDays(monday, i);
+      const col = document.createElement("section");
+      col.className = "day-column";
+      col.innerHTML = `<div class="day-head"><strong>${esc(fmtDay.format(day))}</strong><span>${esc(fmtDate.format(day))}</span></div><div class="day-body"><div class="empty-day">Το ημερολόγιο δεν είναι διαθέσιμο αυτή τη στιγμή.</div></div>`;
+      grid.appendChild(col);
+    }
+    $("#countOsteoporosis").textContent = "—";
+    $("#countProlia").textContent = "—";
+    $("#countAclasta").textContent = "—";
+    $("#countUnspecified").textContent = "—";
+  }
+
   async function loadWeek() {
     const monday = mondayForOffset(weekOffset);
     const end = addDays(monday, 7);
@@ -181,8 +202,10 @@
       renderWeek(rows, monday);
       setStatus(`${rows.length} σχετικά με οστεοπόρωση`, "ok");
     } catch (err) {
-      setStatus(err.message, "err");
-      renderWeek([], monday);
+      const last = parseServerDate(err.detail?.last_fetched_at);
+      const freshness = last ? ` · τελευταία ανάγνωση ${fmtLong.format(last)} ${fmtTime.format(last)}` : "";
+      setStatus(`Μη διαθέσιμο${freshness}`, "err");
+      renderWeekUnavailable(monday);
     }
   }
 

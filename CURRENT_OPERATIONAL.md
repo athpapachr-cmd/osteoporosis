@@ -1,5 +1,7 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / repo-wide writer lock
 
+> **Parallel Cockpit Calendar Unification release candidate (2026-10-06):** independent exact-head post-code R2 is **PASS / COMPLETE_FOR_DECLARED_SCOPE / P0:P1:P2 = 0:0:0**, review chain CLOSED. Exact runtime/test heads: Reception `49a321531fbe8042d2b22cb6ba7b121e901879ae`; Osteoporosis/Cockpit `f2fdb146366850fac659acb74bacd40e9ec88588`. Durable PASS: `cockpit/reviews/CALENDAR_UNIFICATION_POSTCODE_FIDELITY_PASS_2026-10-06.md`. Writers RELEASED. Release sequence authorized by Product Owner direction remains Reception merge/deploy first, then Cockpit merge/deploy, then Product Owner smoke. Visit Brief/Gmail/Zadarma runtime remains out of scope until Calendar Unification release closes.
+
 > **STATUS:** PR-1 transcript extraction release engineering complete; identifiable-transcript privacy/provider gate OPEN; release HOLD.
 > **Reconciled:** 2026-10-06 Asia/Nicosia after D1.1 Reception-first merge and paired live deployments; the separate PR-1 branch checkpoint remains unchanged.
 > **D1 activation/release base `main`:** `87aedad3ad512e4b17a1eb737f0ff8302857aff2`; every fresh session must verify the current remote `main` per `AGENTS.md` before mutation.
@@ -7,6 +9,9 @@
 > **PR-1 branch:** `feat/pr1-transcript-capture-v1-2026-09-16` at `0b45a4c96a7cb9a96893cfa3f14a1708f25e5345` (fresh remote branch check).
 > **Writer lock:** D1.1 release writer scope released after paired merge/deploy and canonical checkpoint. No active Cockpit or PR-1 runtime writer; PR-1 remains on its independent privacy/provider release HOLD. Reviewed runtime/test heads were Cockpit `9dc14bbde1005aab60922e88e021518197f0654f` and Reception `b4739678016c1cd10f3afd8381e7c4de222f38ba`; exact reviewed bytes survived both merges. Final independent fidelity PASS / COMPLETE_FOR_DECLARED_SCOPE / P0:P1:P2 = 0:0:0; review chain CLOSED. Production smoke PENDING PRODUCT OWNER. No Visit Brief implementation authority.
 > **Release:** no PR-1 release PR observed among open PRs on 2026-10-01; not merged, deployed or enabled for identifiable transcripts.
+
+
+> **Parallel Cockpit Calendar Unification candidate (2026-10-06):** Product Owner confirmed the Calendar Unification replan. Independent R2 pre-code closure is **PASS / COMPLETE_FOR_DECLARED_SCOPE / P0:P1:P2 = 0:0:0; original P1 CLOSED** on corrected design blob `e45e6e07052b71597f230b652d4b236cab433894`. Implementation is complete and frozen for independent exact-head post-code R2 on runtime/test head `f2fdb146366850fac659acb74bacd40e9ec88588`; Reception paired runtime/test head `49a321531fbe8042d2b22cb6ba7b121e901879ae`. Focused Calendar CI `37513937466` PASS / 24 tests / Python+JS syntax+diff hygiene PASS; Canonical impact and all applicable inherited Cockpit/Physio/Learning gates PASS except the known non-applicable L0 design-only changed-file scope assertion (its contract validation PASS). Runtime writer RELEASED / review HOLD. No Visit Brief/Gmail/Zadarma implementation is authorized in this slice. Merge/deploy/smoke remain separate gates.
 
 ## Current source and evidence
 
