@@ -453,6 +453,7 @@ def build_clinical_calendar_router(engine: Engine) -> APIRouter:
         start: datetime = Query(...),
         end: datetime = Query(...),
     ) -> List[AppointmentRecord]:
+        global _last_actual_schedule_fetch
         start_utc = _naive_utc(start)
         end_utc = _naive_utc(end)
         if end_utc <= start_utc:
@@ -467,7 +468,14 @@ def build_clinical_calendar_router(engine: Engine) -> APIRouter:
         source_url = os.environ.get("RECEPTION_SCHEDULE_CONTEXT_URL", "").strip()
         ingest_key = os.environ.get("CLINICAL_INGEST_KEY", "").strip()
         if not source_url or not ingest_key:
-            raise HTTPException(status_code=503, detail="Calendar source unavailable")
+            raise HTTPException(
+                status_code=503,
+                detail={
+                    "status": "unavailable",
+                    "last_fetched_at": _last_actual_schedule_fetch.isoformat()
+                    if _last_actual_schedule_fetch else None,
+                },
+            )
 
         try:
             async with httpx.AsyncClient(timeout=10.0) as client:
@@ -492,8 +500,16 @@ def build_clinical_calendar_router(engine: Engine) -> APIRouter:
             ):
                 raise ValueError("source coverage incomplete")
         except (httpx.HTTPError, ValueError, TypeError):
-            raise HTTPException(status_code=503, detail="Calendar source unavailable") from None
+            raise HTTPException(
+                status_code=503,
+                detail={
+                    "status": "unavailable",
+                    "last_fetched_at": _last_actual_schedule_fetch.isoformat()
+                    if _last_actual_schedule_fetch else None,
+                },
+            ) from None
 
+        _last_actual_schedule_fetch = source.fetched_at
         candidates = []
         for item in source.appointments:
             if (
@@ -501,7 +517,14 @@ def build_clinical_calendar_router(engine: Engine) -> APIRouter:
                 or item.end_at.tzinfo is None
                 or item.end_at <= item.start_at
             ):
-                raise HTTPException(status_code=503, detail="Calendar source unavailable")
+                raise HTTPException(
+                    status_code=503,
+                    detail={
+                        "status": "unavailable",
+                        "last_fetched_at": _last_actual_schedule_fetch.isoformat()
+                        if _last_actual_schedule_fetch else None,
+                    },
+                )
             item_start = _naive_utc(item.start_at)
             item_end = _naive_utc(item.end_at)
             if item_start < start_utc or item_start >= end_utc:
