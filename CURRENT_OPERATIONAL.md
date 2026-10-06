@@ -8,6 +8,9 @@
 > **Writer lock:** D1.1 release writer scope released after paired merge/deploy and canonical checkpoint. No active Cockpit or PR-1 runtime writer; PR-1 remains on its independent privacy/provider release HOLD. Reviewed runtime/test heads were Cockpit `9dc14bbde1005aab60922e88e021518197f0654f` and Reception `b4739678016c1cd10f3afd8381e7c4de222f38ba`; exact reviewed bytes survived both merges. Final independent fidelity PASS / COMPLETE_FOR_DECLARED_SCOPE / P0:P1:P2 = 0:0:0; review chain CLOSED. Production smoke PENDING PRODUCT OWNER. No Visit Brief implementation authority.
 > **Release:** no PR-1 release PR observed among open PRs on 2026-10-01; not merged, deployed or enabled for identifiable transcripts.
 
+
+> **Parallel Cockpit Calendar Unification writer (2026-10-06):** Product Owner confirmed the Calendar Unification replan. Independent R2 pre-code closure is **PASS / COMPLETE_FOR_DECLARED_SCOPE / P0:P1:P2 = 0:0:0; original P1 CLOSED** on corrected design blob `e45e6e07052b71597f230b652d4b236cab433894`. Bounded writer scope is ACTIVE on branch `feat/cockpit-calendar-unification-2026-10-06`: `clinical_calendar.py`, weekly Clinical Calendar JS/tests and Cockpit current-state docs only. Paired Reception writer is separately claimed in Reception Ops and limited to requested-date/coverage changes in the existing schedule projection. No Visit Brief/Gmail/Zadarma implementation is authorized in this slice. Merge/deploy/smoke remain separate gates.
+
 ## Current source and evidence
 
 The previous root NOW was the 2026-09-16 activation checkpoint and incorrectly said the runtime branch had not been created. PR-1's later branch-local `CURRENT_OPERATIONAL.md` at `0b45a4c` is the detailed PR-1 evidence record. This root reconciliation brings its current state onto the verified `main`-based governance branch without copying its long implementation diary. The branch's full history remains evidence, not a competing repo-wide lock.
