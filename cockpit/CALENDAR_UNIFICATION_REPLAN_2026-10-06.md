@@ -67,6 +67,25 @@ Reuse the existing Osteoporosis `classify_appointment` semantics and manual-clas
 
 The weekly Osteoporosis Calendar must no longer require the daily snapshot store to determine whether an appointment currently exists.
 
+### Requested-week source contract — correction after independent R2 BLOCK
+
+The current Reception private route is today-anchored. That is sufficient for Home but not for an arbitrarily navigated weekly calendar. The unified design therefore extends the **existing** protected Reception read rather than creating another reader.
+
+Contract:
+
+- `GET /private/schedule-context` keeps its current no-parameter behavior for Cockpit Home: anchor = today's Asia/Nicosia date.
+- The same protected route accepts an optional ISO local-date anchor, e.g. `target_date=YYYY-MM-DD`.
+- The Osteoporosis weekly Calendar sends the displayed week's Monday as `target_date`.
+- Reception calls the same cached `actual_schedule(target_date)` projection already used for today; no new Cal client, credentials or provider-read owner is introduced.
+- The protected response exposes non-sensitive coverage metadata for the completed provider read, at minimum `coverage_start` and `coverage_end`, together with `fetched_at`.
+- Coverage metadata represents the bounded local-date interval whose provider pagination completed successfully. An empty appointments list is valid **only** when that interval is explicitly complete.
+- Before rendering an empty or partial week as truth, Cockpit validates that the full requested local interval `[week_start, week_start + 7 days)` is contained in the returned coverage interval.
+- Missing/invalid coverage metadata, incomplete coverage, provider/page/deadline failure, or a requested week outside completed coverage => **unavailable**, never “zero appointments”.
+- Existing Reception cache keys remain anchor-date scoped, so Home/today and separately requested historical/future weeks cannot silently reuse the wrong coverage.
+- No UI navigation limit is invented merely to fit today's projection; previous/next week navigation remains supported through the requested-date contract.
+
+The current provider projection already reads a bounded window around its supplied anchor date. Implementation may preserve that bounded window so long as the response proves coverage and the consumer verifies the requested week is fully contained.
+
 For each live actual booking in the requested week:
 
 1. derive stable clinical appointment key from the actual booking UID using the existing Cal source identity convention;
@@ -91,6 +110,10 @@ Clearing an override returns to live automatic classification.
 ## 7. Failure semantics
 
 No stale daily snapshot fallback for the clinician-facing weekly calendar.
+
+“Empty week” and “source could not prove this week” are different states.
+
+For the weekly Calendar, Cockpit must validate both freshness and **full requested-week coverage** from the Reception response before interpreting absence of rows as absence of bookings.
 
 If the Reception actual-schedule source is unavailable:
 
@@ -147,10 +170,12 @@ Therefore unification must be pull-based from Cockpit to the already-running Rec
 4. Existing osteoporosis first/review classification behavior remains unchanged for source-proven reasons and durations.
 5. Existing manual overrides survive provider refresh; clearing override returns to automatic classification.
 6. Cancelled/rescheduled actual bookings disappear/move according to the Reception projection without waiting for the daily snapshot.
-7. Reception source unavailable → weekly calendar shows unavailable/freshness state, not a silent snapshot fallback.
+7. Reception source unavailable, stale, or unable to prove full requested-week coverage → weekly calendar shows unavailable/freshness state, not an empty week and not a silent snapshot fallback.
 8. Home Previous / Current / Next semantics remain byte/behavior compatible except for shared helper reuse if needed.
 9. No Cal credential, phone, raw provider payload or weak patient matching is added to Cockpit.
 10. The heavy sync cadence remains unchanged.
+11. Home continues to use the existing today-default private schedule read with no target-date requirement from the browser.
+12. Weekly previous/next navigation requests the displayed week's local anchor and proves the entire seven-day interval is covered before rendering “no appointments”.
 
 ## 13. Review tier
 
