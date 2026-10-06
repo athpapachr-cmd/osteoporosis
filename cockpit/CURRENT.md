@@ -1,5 +1,8 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
+> **NEW DESIGN CHECKPOINT (2026-10-06):** Product Owner confirmed **Calendar Unification** followed immediately by **Visit Brief / Lab Results**. Design artifacts: `cockpit/CALENDAR_UNIFICATION_REPLAN_2026-10-06.md` and `cockpit/VISIT_BRIEF_LAB_RESULTS_WORKFLOW_2026-10-06.md`. Calendar Unification is DESIGN ONLY / R2 pre-code pending; no runtime writer yet. It rebinds the weekly Osteoporosis Calendar to the existing Reception actual-bookings projection while preserving Cockpit-owned clinical classification/manual overrides. Visit Brief/Lab Results is the next R2 design: bounded Gmail lab-result intake, clinician-confirmed identity, candidate result extraction, and clinician-approved Reception→Zadarma messaging. The free Cockpit remains a consumer; the paid Reception remains the always-on schedule/communication service. No Gmail/Zadarma runtime authority is granted by this checkpoint.
+
+
 > **NOW (2026-10-06):** D1.1 technical review PASS / COMPLETE_FOR_DECLARED_SCOPE / P0:P1:P2 = 0:0:0 and CLOSED; Reception and Cockpit merged and deployed LIVE in the authorized order. PRODUCTION SMOKE PENDING PRODUCT OWNER. The older daily-source request remains historical HOLD/no verdict. D2 and Visit Brief implementation remain deferred.
 > **Product boundary:** `cockpit/PRODUCT_CONSTITUTION.md`; cross-programme architecture: `CLINICAL_EXCELLENCE_PLAN.md` §§33–34.
 > **Root lock:** `CURRENT_OPERATIONAL.md` remains the sole repo-wide NOW. Its PR-1 release lifecycle is in HOLD with no active runtime writer at the verified PR-1 branch checkpoint; this Cockpit file does not claim that lock.
