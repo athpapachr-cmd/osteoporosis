@@ -1,38 +1,35 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
-> **NOW (2026-10-07):** Calendar Unification = RELEASED / PRODUCT OWNER SMOKE VERIFIED. Visit Brief + Clinical Inbox = DESIGN CANDIDATE / R2 PRE-CODE HOLD / REQUEST PREPARED, NOT DISPATCHED / NO VERDICT / RUNTIME NOT STARTED.
-> **Product authority:** direct continuation request confirms two independent entries, same-day review/communication regardless of appointment, and explicitly excludes runtime implementation.
-> **Root lock:** `CURRENT_OPERATIONAL.md` alone records writer authority; the bounded design writer is RELEASED into R2 HOLD; PR-1 remains on its independent release HOLD. No Reception/Ops writer or release authority is claimed.
-> **Product boundary:** `PRODUCT_CONSTITUTION.md`; phase architecture `../CLINICAL_EXCELLENCE_PLAN.md` §§33–34.
+> **CALENDAR UNIFICATION LIVE / PRODUCT OWNER SMOKE NEXT (2026-10-06):** Reception deploy `dep-db2m42mi0phs7393jms0` is LIVE on `e6babb5ab758d282166767c36dd7311024406afb`. Cockpit Calendar Unification is also LIVE: PR #137 merged as `3f4d82280e3a58f25383ccd896ebcf806ec755c2`; docs-only checkpoint source `774e9d7695b77b0f45a93d6f33ea5b55783c3aa0` deployed LIVE as `dep-db2m6hff3r2c73bbscvg`. Runtime/test bytes remain the independently reviewed `f2fdb146366850fac659acb74bacd40e9ec88588`. Review chain CLOSED / P0:P1:P2 = 0:0:0. No production booking mutation was performed. Exact next action is Product Owner smoke; after PASS, move immediately to Visit Brief / Lab Results R2.
+
+> **CALENDAR UNIFICATION MERGED / AUTO-DEPLOY IN PROGRESS (2026-10-06):** Reception is LIVE on `e6babb5ab758d282166767c36dd7311024406afb` via `dep-db2m42mi0phs7393jms0`. Cockpit PR #137 squash-merged as `3f4d82280e3a58f25383ccd896ebcf806ec755c2`; merge tree exactly matches the branch tree. Render auto-deploy `dep-db2m66rbc2fs73fou75g` is BUILD_IN_PROGRESS from that exact merge. No production smoke yet. After LIVE/source verification, only Product Owner visual/functional smoke remains before Calendar Unification closure and immediate transition to Visit Brief / Lab Results R2.
+
+> **CALENDAR UNIFICATION POST-CODE R2 PASS (2026-10-06):** independent exact-head review PASS / COMPLETE_FOR_DECLARED_SCOPE / P0:P1:P2 = 0:0:0 on Reception `49a321531fbe8042d2b22cb6ba7b121e901879ae` + Cockpit runtime/test `f2fdb146366850fac659acb74bacd40e9ec88588`; review chain CLOSED. Durable result: `cockpit/reviews/CALENDAR_UNIFICATION_POSTCODE_FIDELITY_PASS_2026-10-06.md`. Writers remain released. Exact next action is separate release gating in Reception-first order, then Cockpit, followed by Product Owner smoke. Visit Brief / Lab Results remains the immediate next R2 slice after release.
+
+> **CALENDAR UNIFICATION POST-CODE HOLD (2026-10-06):** corrected pre-code R2 closure PASS / COMPLETE_FOR_DECLARED_SCOPE / 0:0:0 / original P1 CLOSED. Implementation/test candidate is frozen for one paired independent exact-head R2. Cockpit runtime/test head `f2fdb146366850fac659acb74bacd40e9ec88588`; Reception runtime/test head `49a321531fbe8042d2b22cb6ba7b121e901879ae`. Cockpit focused Calendar run `37513937466` PASS / 24 tests / syntax+diff hygiene PASS; Reception focused run `37513820627` PASS / 14 tests / compile+diff hygiene PASS, AC-4A `37513820517` PASS. Writers RELEASED. Merge/deploy/smoke HOLD. Visit Brief / Lab Results remains the immediate next R2 slice after Calendar Unification release. Exact review request: `cockpit/reviews/CALENDAR_UNIFICATION_POSTCODE_FIDELITY_REVIEW_REQUEST_2026-10-06.md`.
+
+> **CALENDAR UNIFICATION R2 STATUS (2026-10-06):** independent pre-code R2 returned BLOCK / P0:P1:P2 = 0:1:0 because the current private Reception schedule read is today-anchored while the weekly Clinical Calendar can navigate arbitrary weeks. The design was corrected narrowly: the same protected route gains optional target-date anchoring plus explicit completed-coverage metadata; the weekly consumer must prove full seven-day coverage or show unavailable; Home retains the existing today-default behavior. Corrected design blob `e45e6e07052b71597f230b652d4b236cab433894`. One bounded independent closure review is now required; runtime implementation remains unauthorized until closure PASS.
+
+> **NEW DESIGN CHECKPOINT (2026-10-06):** Product Owner confirmed **Calendar Unification** followed immediately by **Visit Brief / Lab Results**. Design artifacts: `cockpit/CALENDAR_UNIFICATION_REPLAN_2026-10-06.md` and `cockpit/VISIT_BRIEF_LAB_RESULTS_WORKFLOW_2026-10-06.md`. Calendar Unification is DESIGN ONLY / R2 pre-code pending; no runtime writer yet. It rebinds the weekly Osteoporosis Calendar to the existing Reception actual-bookings projection while preserving Cockpit-owned clinical classification/manual overrides. Visit Brief/Lab Results is the next R2 design: bounded Gmail lab-result intake, clinician-confirmed identity, candidate result extraction, and clinician-approved Reception→Zadarma messaging. The free Cockpit remains a consumer; the paid Reception remains the always-on schedule/communication service. No Gmail/Zadarma runtime authority is granted by this checkpoint.
+
+
+> **NOW (2026-10-06):** D1.1 technical review PASS / COMPLETE_FOR_DECLARED_SCOPE / P0:P1:P2 = 0:0:0 and CLOSED; Reception and Cockpit merged and deployed LIVE in the authorized order. PRODUCTION SMOKE PENDING PRODUCT OWNER. The older daily-source request remains historical HOLD/no verdict. D2 and Visit Brief implementation remain deferred.
+> **Product boundary:** `cockpit/PRODUCT_CONSTITUTION.md`; cross-programme architecture: `CLINICAL_EXCELLENCE_PLAN.md` §§33–34.
+> **Root lock:** `CURRENT_OPERATIONAL.md` remains the sole repo-wide NOW. Its PR-1 release lifecycle is in HOLD with no active runtime writer at the verified PR-1 branch checkpoint; this Cockpit file does not claim that lock.
+> **Visit Intelligence dependency:** `programme/OST-VISIT-INTELLIGENCE/CURRENT.md`; P0-V0 contract/projector branch `b22fd5c610d20baf0f8ef3384ca16472cd2d1f92` is not on `main`. The external cumulative PASS handback has not yet been reconciled into that workstream CURRENT or released.
 
 ## Current bounded action
 
-The revised design is `VISIT_BRIEF_CLINICAL_INBOX_DESIGN_2026-10-07.md`, exact blob `8ee79a96350f9ac42059eeb2a3e836cbe9d11245`. The one prepared independent request is `reviews/VISIT_BRIEF_CLINICAL_INBOX_PRECODE_REVIEW_REQUEST_2026-10-07.md`, exact blob `5bb6de5fce76170ca65d0422a4d6ed8272aabc20`.
+The D1.1 release is merged and LIVE in both services. Exact reviewed runtime/test bytes were preserved through both merges. The Product Owner will perform and confirm production smoke manually; no smoke was run by this release task. D1.1 remains RELEASED / SMOKE PENDING, not production-verified. No Visit Brief implementation authority follows from this state.
 
-Next: perform that bounded independent read-only R2 on the declared candidate, dispose Q1–Q6 and stop. The request has not been dispatched; no verdict/implementation eligibility is claimed. Open provider/identity/contact/field-level retention and live-activation gates remain at design §§10–12. PR-1 retains `SLICE_PLAN_CURRENT.md`; this parallel design does not overwrite it. Design writer released; no runtime/schema/test/config/provider changes or release follow from this checkpoint.
+### D1.1 paired release checkpoint — 2026-10-06
 
-## Author evidence (not independent R2)
-
-Documentation-only scope: 16 changed Markdown/manifest files; AGENTS, PROCEDURES, PR-1 `SLICE_PLAN_CURRENT.md`, runtime/schema/tests/config and synced `sources/` unchanged. Append-only changelog, byte-identical predecessor archive/digest manifest, design/request blob pins and links verified. Local Canonical Impact guard PASS and diff hygiene PASS. No runtime test, live/provider request or independent review was run. Design is prepared, not frozen as an implementation contract. Draft-PR persistence is the only remaining publication action in this task.
-
-## Calendar Unification closeout
-
-- Product Owner smoke PASS is supplied in the referenced coordinator conversation and reaffirmed by the direct current request (2026-10-07 checkpoint). It covers Home Previous/Current/Next and the weekly Calendar smoke requested at release; no new agent-run smoke is claimed.
-- Reception reviewed runtime/test head `49a321531fbe8042d2b22cb6ba7b121e901879ae`; merge/main `e6babb5ab758d282166767c36dd7311024406afb`; deploy `dep-db2m42mi0phs7393jms0` LIVE per the prior release record.
-- Cockpit reviewed runtime/test head `f2fdb146366850fac659acb74bacd40e9ec88588`; PR #137 merge `3f4d82280e3a58f25383ccd896ebcf806ec755c2`; final release main `045798dfa28612b268f16a99262c6ecc9ca4829d`; final deploy `dep-db2m7sbl550s73binhig` LIVE per the existing Ops release record and coordinator handback. Subsequent release checkpoint changes were docs only.
-- Independent Calendar post-code R2 PASS / COMPLETE_FOR_DECLARED_SCOPE / P0:P1:P2 = 0:0:0; review chain CLOSED. Durable result: `reviews/CALENDAR_UNIFICATION_POSTCODE_FIDELITY_PASS_2026-10-06.md`.
-- No live Cal booking/cancel/reschedule/provider mutation or heavy sync was performed in this design task. Production deployment was not re-polled or triggered.
-
-## Preserved parallel dependencies
-
-- PR-1 privacy/provider release HOLD remains independent.
-- P0-V0 Visit Intelligence branch `b22fd5c610d20baf0f8ef3384ca16472cd2d1f92` and its `programme/OST-VISIT-INTELLIGENCE/CURRENT.md` are absent from this verified main. The reported cumulative PASS still needs its owning coordinator's reconciliation/release; it is not assumed available runtime.
-- Reuse released G3 summary mechanics and protected clinical records. No P0-V0 merge/release or OST-UI authority is inferred.
-- Reception/Ops remain read-only source references in this task; their separate workstream status/locks stay at their owner.
-
-## Historical checkpoints — superseded as operational next actions
-
-The exact outgoing root/current/design/request bytes are archived at `archive/checkpoints/2026-10-07-pre-clinical-inbox-replan/` from base `045798dfa28612b268f16a99262c6ecc9ca4829d`. The records below remain provenance only.
+- Independent exact-head R2 post-code fidelity: **PASS / COMPLETE_FOR_DECLARED_SCOPE / P0:P1:P2 = 0:0:0**. Review chain **CLOSED**. Historical `reviews/D1_1_POSTCODE_REVIEW_REQUEST.md` remains HOLD/no verdict; it is not the final freshness review.
+- Reception reviewed head `b4739678016c1cd10f3afd8381e7c4de222f38ba` → PR #157 merge/main `8d2827514457a1da54f33c6109b22e6106532301` → Render service `srv-d5rsvj14tr6s738bp67g`, deploy `dep-db25omh7lnhs73dn82o0` **LIVE**. Merge tree equals the reviewed tree.
+- Cockpit reviewed runtime/test head `9dc14bbde1005aab60922e88e021518197f0654f` → PR #136 merge/main `12800be3a51f716b2ccd72715c6e0e637f2e43ab` → Render service `srv-d5qfk31r0fns73di596g`, deploy `dep-db25uae7bikc73dkrku0` **LIVE**. All six affected runtime/test blobs are byte identical to the reviewed head.
+- `RECEPTION_SCHEDULE_CONTEXT_URL` was installed for Cockpit's protected server-to-server read. Config deploy `dep-db25qh7lot8c73duu8vg` reached **LIVE** before Cockpit code merge. The previously configured matching ingest-secret pair was preserved; no secret value was read, printed or rotated.
+- Current Cockpit PR checks: applicable D1.1/Calendar/Cockpit/Canonical gates PASS. PHYSIO V5 browser's isolated first-attempt failure passed on targeted rerun; Clinical Learning L0 design-only scope guard is inapplicable to this mixed runtime PR, while its contract tests passed.
+- **PRODUCTION SMOKE PENDING PRODUCT OWNER.** No live Cal or patient-data smoke, booking/cancellation/reschedule mutation, or heavy sync was run by this release task. Weekly Osteoporosis Calendar remains on its separate snapshot path. Visit Brief remains deferred.
 
 #### Historical implementation checkpoint
 
