@@ -11,9 +11,13 @@ The revised design is `VISIT_BRIEF_CLINICAL_INBOX_DESIGN_2026-10-07.md`, exact b
 
 Next: perform that bounded independent read-only R2 on the declared candidate, dispose Q1–Q6 and stop. The request has not been dispatched; no verdict/implementation eligibility is claimed. Open provider/identity/contact/field-level retention and live-activation gates remain at design §§10–12. PR-1 retains `SLICE_PLAN_CURRENT.md`; this parallel design does not overwrite it. Design writer released; no runtime/schema/test/config/provider changes or release follow from this checkpoint.
 
+## Published design candidate
+
+Draft PR [#138](https://github.com/athpapachr-cmd/osteoporosis/pull/138) is OPEN against main `045798dfa28612b268f16a99262c6ecc9ca4829d`. Design-bearing commit `e305a9678183cab84df7825a4f59c5d4a841e113` contains only the 16 declared documentation/manifest files. This following publication checkpoint changes CURRENT metadata only and leaves the pinned design/request blobs unchanged. R2 request remains PREPARED / NOT DISPATCHED / NO VERDICT. NOT MERGED / NOT DEPLOYED; writers released.
+
 ## Author evidence (not independent R2)
 
-Documentation-only scope: 16 changed Markdown/manifest files; AGENTS, PROCEDURES, PR-1 `SLICE_PLAN_CURRENT.md`, runtime/schema/tests/config and synced `sources/` unchanged. Append-only changelog, byte-identical predecessor archive/digest manifest, design/request blob pins and links verified. Local Canonical Impact guard PASS and diff hygiene PASS. No runtime test, live/provider request or independent review was run. Design is prepared, not frozen as an implementation contract. Draft-PR persistence is the only remaining publication action in this task.
+Documentation-only scope: 16 changed Markdown/manifest files; AGENTS, PROCEDURES, PR-1 `SLICE_PLAN_CURRENT.md`, runtime/schema/tests/config and synced `sources/` unchanged. Append-only changelog, byte-identical predecessor archive/digest manifest, design/request blob pins and links verified. Local Canonical Impact guard PASS and diff hygiene PASS. No runtime test, live/provider request or independent review was run. Design is prepared, not frozen as an implementation contract. Draft-PR publication is complete; no independent review or further product transition was performed.
 
 ## Calendar Unification closeout
 
