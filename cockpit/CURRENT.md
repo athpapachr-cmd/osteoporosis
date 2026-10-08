@@ -1,5 +1,8 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
+> **IMPLEMENTED / FOCUSED TESTED / WRITER RELEASED (2026-10-08):** runtime/test head `4646c923c728fd8613632db42e919687fc945504`; focused run `37811359040` SUCCESS for Python syntax, Visit Capture JS syntax, focused Visit Capture + affected Home tests, and diff hygiene. Later commits are CURRENT-only. No post-code R2 yet; no merge/deploy. Next: one independent exact-head post-code fidelity review, then stop.
+
+
 > **CI harness checkpoint:** focused Visit Capture workflow added at `4646c923…`; result pending. Next: observe exact-head CI only.
 
 
