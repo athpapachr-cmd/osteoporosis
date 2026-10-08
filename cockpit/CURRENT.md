@@ -1,5 +1,8 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
+> **Entry checkpoint:** Cockpit Home now links to the bounded Visit Capture surface (`70a5461…`). No other Home behavior changed. Next: focused synthetic tests/CI only.
+
+
 > **UI checkpoint:** dedicated `/static/cockpit/visit-capture/` surface exists with explicit patient confirmation, transient candidate insertion, automatic 3-level preview and one Save. No live providers and no tests claimed yet. Next: Home entry + focused synthetic tests.
 
 
