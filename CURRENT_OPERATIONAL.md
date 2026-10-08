@@ -1,5 +1,8 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / repo-wide writer lock
 
+> **Visit Capture post-code R2 HOLD (2026-10-08):** independent exact-head request prepared at `cockpit/reviews/VISIT_CAPTURE_DIA_HEIDI_GESY_POSTCODE_FIDELITY_REVIEW_REQUEST_2026-10-08.md`, blob `85d4a7ad219e4c078f5e79252f571328d58570d6`. Current branch checkpoint before this CURRENT write: `e86de38bb971b516b41d039aaf79af0917adca65`; runtime/test head remains `4646c923c728fd8613632db42e919687fc945504` with CI run `37811359040` SUCCESS. Writer RELEASED / review HOLD. Exact next action: one fresh independent read-only post-code R2 over F1–F6. No further code, correction, PR merge or deploy unless that review returns a material finding or PASS is separately acted upon.
+
+
 > **Visit Capture implementation/test candidate (2026-10-08):** runtime/test head `4646c923c728fd8613632db42e919687fc945504`. Focused GitHub Actions run `37811359040` = SUCCESS: Python syntax, Visit Capture JavaScript syntax, focused Visit Capture tests + affected Cockpit Home tests, and diff hygiene all passed. Existing Cockpit Home run `37811039876` on the Home-entry commit also succeeded. Commits after `4646c923…` changed only `CURRENT_OPERATIONAL.md` and `cockpit/CURRENT.md`; runtime/test bytes are unchanged. Bounded implementation writer is now RELEASED. State = IMPLEMENTED / FOCUSED TESTED / NOT POST-CODE REVIEWED / NOT MERGED / NOT DEPLOYED. Exact next action: prepare one independent exact-head R2 post-code fidelity request over runtime/test head `4646c923…` plus current docs checkpoint, then STOP for review. No additional implementation unless that review finds a material defect.
 
 
