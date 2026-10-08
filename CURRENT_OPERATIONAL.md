@@ -1,5 +1,8 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / repo-wide writer lock
 
+> **Visit Capture implementation/test candidate (2026-10-08):** runtime/test head `4646c923c728fd8613632db42e919687fc945504`. Focused GitHub Actions run `37811359040` = SUCCESS: Python syntax, Visit Capture JavaScript syntax, focused Visit Capture tests + affected Cockpit Home tests, and diff hygiene all passed. Existing Cockpit Home run `37811039876` on the Home-entry commit also succeeded. Commits after `4646c923…` changed only `CURRENT_OPERATIONAL.md` and `cockpit/CURRENT.md`; runtime/test bytes are unchanged. Bounded implementation writer is now RELEASED. State = IMPLEMENTED / FOCUSED TESTED / NOT POST-CODE REVIEWED / NOT MERGED / NOT DEPLOYED. Exact next action: prepare one independent exact-head R2 post-code fidelity request over runtime/test head `4646c923…` plus current docs checkpoint, then STOP for review. No additional implementation unless that review finds a material defect.
+
+
 > **Visit Capture CI harness checkpoint (2026-10-08):** focused workflow `.github/workflows/visit-capture-tests.yml` added at `4646c923c728fd8613632db42e919687fc945504`, scoped to Visit Capture backend/UI plus the affected Cockpit Home regression. No CI result is claimed yet. Exact next action: observe this workflow on the exact branch head; if it fails, correct only source-proven Visit Capture defects and rerun the same finite gate.
 
 
