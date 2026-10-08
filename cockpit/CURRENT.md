@@ -1,5 +1,8 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
+> **Implementation checkpoint:** backend Visit Capture boundary committed at `9e780de18383fd244862187cb9be967c0a2c87cd`; UI/tests not yet implemented or verified. No live providers/patient data. Writer remains active. Next: dedicated Cockpit capture UI + focused synthetic evidence only.
+
+
 > **NOW (2026-10-08 IMPLEMENTATION ACTIVE):** Product Owner approved the reviewed synthetic/manual Visit Capture first-code slice (“Εγκρίνω”). Active implementation branch `feat/cockpit-visit-capture-v1-2026-10-08`, base reviewed docs head `5bc2a505758de6b24e82667bb84580d144f96b9c`. Scope is exactly the R2-passed boundary: confirmed-patient capture UI, transient VisitCaptureCandidateV1, stale patient/context guard, one three-level preview, one explicit protected Save to existing encounter owner, minimum bounded pending persistence, and server-enforced no post-signoff overwrite for Visit-Capture-signed encounters. No live external source/provider or patient-data activation. Next: bounded implementation + focused synthetic evidence, then writer release into independent exact-head post-code R2 HOLD.
 
 
