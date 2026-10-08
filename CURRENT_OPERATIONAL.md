@@ -1,5 +1,8 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / repo-wide writer lock
 
+> **Visit Capture Cockpit entry checkpoint (2026-10-08):** Home now exposes a bounded `Καταγραφή επίσκεψης` entry at commit `70a5461e6de119aaab323bce5b8c8ac925f86959`, pointing only to the new synthetic/manual capture surface. No other Home/Calendar/Reception behavior changed. No test evidence claimed yet. Exact next action: add focused synthetic backend/UI tests and CI, then evaluate only those finite acceptance questions.
+
+
 > **Visit Capture UI checkpoint (2026-10-08):** dedicated Cockpit surface added through `b823fe227dcc308d14a8b618c32e3b73774470c5` / `f80efdb9b886dbe8111554456192b072f4c02b3b` / `54cdddef26e9c04ccbf2c409ae2f8e29dc1b0010`. It performs explicit protected-patient confirmation, accepts one transient structured candidate, requests server preview automatically, renders Snapshot / Visit Brief / Encounter Detail as projections, and exposes one explicit Save. No live source/provider access. Runtime/test evidence is still NOT CLAIMED. Writer remains ACTIVE. Exact next action: wire the bounded Cockpit entry point and add focused synthetic backend/UI tests; then run CI/evidence.
 
 
