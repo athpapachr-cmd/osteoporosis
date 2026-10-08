@@ -1,5 +1,14 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
+> **NOW (2026-10-08):** Visit Brief + independent Clinical Inbox parent R2 = PASS / COMPLETE_FOR_DECLARED_SCOPE / 0:0:0 and CLOSED. New Visit Capture Dia/Heidi/GESY → Cockpit delta = DESIGN FROZEN / independent delta R2 PREPARED / NOT DISPATCHED / NO VERDICT / RUNTIME NOT STARTED.
+> **Confirmed daily workflow:** Cockpit is used inside Dia; Heidi today + GESY today + immediately previous GESY are source tabs; Dia inserts one candidate into the confirmed-patient Cockpit Visit Capture surface; clinician reviews and presses one Save.
+> **Mechanism:** EXTEND existing protected `clinical_patients.patient_id` + `clinical_encounters` + G3 projection. Dia/GESY/name/phone/tab text cannot choose destination patient. One structured encounter renders Snapshot / Visit Brief / Encounter Detail.
+> **Safety:** candidate insertion is transient, not a record; stale patient/capture context fails closed; no silent source conflict resolution; later events do not rewrite the signed encounter; post-signoff overwrite is forbidden unless attributable amendment/revision support exists.
+> **Scope:** synthetic/manual first-code only after delta R2 PASS and separate writer authority. No live Dia/Heidi/GESY provider access, Gmail, Zadarma, authoritative lab-result acceptance, booking or deployment.
+> **Delta design:** `VISIT_CAPTURE_DIA_HEIDI_GESY_DELTA_2026-10-08.md` blob `7e19ce29a3c33a0d06e6c0ec485952f41c0ecf72`.
+> **Delta review request:** `reviews/VISIT_CAPTURE_DIA_HEIDI_GESY_DELTA_PRECODE_REVIEW_REQUEST_2026-10-08.md` blob `2e169a870d5ed04823c09d810f305dd3881defac`.
+> **Exact next action:** one independent read-only delta R2; then STOP on PASS or one bounded correction/closure on BLOCK. No implementation follows automatically.
+
 > **NOW (2026-10-07):** Calendar Unification = RELEASED / PRODUCT OWNER SMOKE VERIFIED. Visit Brief + Clinical Inbox = DESIGN CANDIDATE / R2 PRE-CODE HOLD / REQUEST PREPARED, NOT DISPATCHED / NO VERDICT / RUNTIME NOT STARTED.
 > **Product authority:** direct continuation request confirms two independent entries, same-day review/communication regardless of appointment, and explicitly excludes runtime implementation.
 > **Root lock:** `CURRENT_OPERATIONAL.md` alone records writer authority; the bounded design writer is RELEASED into R2 HOLD; PR-1 remains on its independent release HOLD. No Reception/Ops writer or release authority is claimed.
