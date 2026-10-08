@@ -1,5 +1,8 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
+> **Focused-test checkpoint:** eight synthetic acceptance cases + UI contract tests now exist (`322d617…`, `e1b22cc…`), but are NOT yet executed. Next: smallest CI run + syntax only; no broad suite.
+
+
 > **Entry checkpoint:** Cockpit Home now links to the bounded Visit Capture surface (`70a5461…`). No other Home behavior changed. Next: focused synthetic tests/CI only.
 
 
