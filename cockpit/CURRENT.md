@@ -1,5 +1,8 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
+> **NOW (2026-10-08):** Independent Visit Capture delta pre-code R2 PASS / COMPLETE_FOR_DECLARED_SCOPE / 0:0:0 received; chain CLOSED. Receipt `reviews/VISIT_CAPTURE_DIA_HEIDI_GESY_DELTA_R2_PASS_RECEIPT_2026-10-08.md`. Prior R2-pending text below is historical. Next: Product Owner first-code checkpoint + separately scoped implementation writer before code. Narrow synthetic/manual Visit Capture only; no live Dia/Heidi/GESY/Gmail/Zadarma or patient-data activation.
+
+
 > **NOW (2026-10-08):** Visit Brief + independent Clinical Inbox parent R2 = PASS / COMPLETE_FOR_DECLARED_SCOPE / 0:0:0 and CLOSED. New Visit Capture Dia/Heidi/GESY → Cockpit delta = DESIGN FROZEN / independent delta R2 PREPARED / NOT DISPATCHED / NO VERDICT / RUNTIME NOT STARTED.
 > **Confirmed daily workflow:** Cockpit is used inside Dia; Heidi today + GESY today + immediately previous GESY are source tabs; Dia inserts one candidate into the confirmed-patient Cockpit Visit Capture surface; clinician reviews and presses one Save.
 > **Mechanism:** EXTEND existing protected `clinical_patients.patient_id` + `clinical_encounters` + G3 projection. Dia/GESY/name/phone/tab text cannot choose destination patient. One structured encounter renders Snapshot / Visit Brief / Encounter Detail.
