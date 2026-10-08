@@ -1,5 +1,8 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
+> **CI harness checkpoint:** focused Visit Capture workflow added at `4646c923…`; result pending. Next: observe exact-head CI only.
+
+
 > **Focused-test checkpoint:** eight synthetic acceptance cases + UI contract tests now exist (`322d617…`, `e1b22cc…`), but are NOT yet executed. Next: smallest CI run + syntax only; no broad suite.
 
 
