@@ -1,5 +1,8 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
+> **POST-CODE R2 HOLD (2026-10-08):** request `reviews/VISIT_CAPTURE_DIA_HEIDI_GESY_POSTCODE_FIDELITY_REVIEW_REQUEST_2026-10-08.md` blob `85d4a7ad219e4c078f5e79252f571328d58570d6`; runtime/test head `4646c923…`, focused CI `37811359040` SUCCESS. Writer RELEASED. Next: one independent exact-head F1–F6 review; no further implementation/merge/deploy.
+
+
 > **IMPLEMENTED / FOCUSED TESTED / WRITER RELEASED (2026-10-08):** runtime/test head `4646c923c728fd8613632db42e919687fc945504`; focused run `37811359040` SUCCESS for Python syntax, Visit Capture JS syntax, focused Visit Capture + affected Home tests, and diff hygiene. Later commits are CURRENT-only. No post-code R2 yet; no merge/deploy. Next: one independent exact-head post-code fidelity review, then stop.
 
 
