@@ -1,5 +1,8 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / repo-wide writer lock
 
+> **Visit Capture CI harness checkpoint (2026-10-08):** focused workflow `.github/workflows/visit-capture-tests.yml` added at `4646c923c728fd8613632db42e919687fc945504`, scoped to Visit Capture backend/UI plus the affected Cockpit Home regression. No CI result is claimed yet. Exact next action: observe this workflow on the exact branch head; if it fails, correct only source-proven Visit Capture defects and rerun the same finite gate.
+
+
 > **Visit Capture focused-test checkpoint (2026-10-08):** synthetic acceptance tests added at `322d617d03a34249d3be55713fcc72b618e9830a` and UI contract tests at `e1b22ccd63fe87822f5449a2346a2476de74eb8e`. They cover the eight frozen cases plus the one-save/three-projection UI boundary. Tests have NOT yet been executed; no PASS is claimed. Exact next action: add/trigger the smallest CI harness for these tests plus Python/JS syntax, observe results, fix only source-proven failures within the reviewed scope.
 
 
