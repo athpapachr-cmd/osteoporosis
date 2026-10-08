@@ -1,5 +1,8 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / repo-wide writer lock
 
+> **Visit Capture UI checkpoint (2026-10-08):** dedicated Cockpit surface added through `b823fe227dcc308d14a8b618c32e3b73774470c5` / `f80efdb9b886dbe8111554456192b072f4c02b3b` / `54cdddef26e9c04ccbf2c409ae2f8e29dc1b0010`. It performs explicit protected-patient confirmation, accepts one transient structured candidate, requests server preview automatically, renders Snapshot / Visit Brief / Encounter Detail as projections, and exposes one explicit Save. No live source/provider access. Runtime/test evidence is still NOT CLAIMED. Writer remains ACTIVE. Exact next action: wire the bounded Cockpit entry point and add focused synthetic backend/UI tests; then run CI/evidence.
+
+
 > **Visit Capture backend checkpoint (2026-10-08):** first implementation transition committed at `9e780de18383fd244862187cb9be967c0a2c87cd`. `clinical_data.py` now contains the bounded VisitCaptureCandidateV1 contract, transient patient-bound capture contexts, deterministic 3-level preview, one explicit Save into existing `clinical_encounters`, separate `clinical_pending_items`, and server-side immutability for signed Visit Capture encounters. No frontend/runtime evidence yet; no tests claimed; writer remains ACTIVE for the reviewed slice. Exact next action: implement only the dedicated Cockpit Visit Capture UI and focused synthetic tests, then run finite evidence.
 
 
