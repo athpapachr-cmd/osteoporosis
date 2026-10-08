@@ -1,5 +1,13 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / repo-wide writer lock
 
+> **Cockpit Visit Capture delta checkpoint (2026-10-08):** the independent Visit Brief + Clinical Inbox R2 handback has been received as **PASS / COMPLETE_FOR_DECLARED_SCOPE / P0:P1:P2 = 0:0:0** and checkpointed at `cockpit/reviews/VISIT_BRIEF_CLINICAL_INBOX_PRECODE_R2_PASS_RECEIPT_2026-10-08.md`. The prior Q1–Q6 review is CLOSED and must not be reopened without a direct new contradiction.
+> **New material delta:** Product Owner clarified the real post-visit workflow inside Dia: `Heidi today + GESY today + previous GESY → Dia candidate insertion into Cockpit → clinician review → ONE Save`. This introduces a protected clinical encounter write boundary not covered by the prior read-oriented A boundary.
+> **Frozen delta design:** `cockpit/VISIT_CAPTURE_DIA_HEIDI_GESY_DELTA_2026-10-08.md`, blob `7e19ce29a3c33a0d06e6c0ec485952f41c0ecf72`.
+> **Prepared delta R2 request:** `cockpit/reviews/VISIT_CAPTURE_DIA_HEIDI_GESY_DELTA_PRECODE_REVIEW_REQUEST_2026-10-08.md`, blob `2e169a870d5ed04823c09d810f305dd3881defac`.
+> **Writer/authority:** design/checkpoint writer RELEASED after freezing the delta. No runtime/schema/test/provider writer is active for Visit Capture. No Gmail/Zadarma/live Dia/Heidi/GESY/patient-data authority is granted.
+> **Exact next Cockpit action:** ONE fresh independent read-only R2 of the Visit Capture delta request above. If PASS / 0:0:0, stop review and return for separate first-code writer authorization. If BLOCK, one smallest correction + one affected closure review only.
+> **Supersession:** the older 2026-10-07 top checkpoint below is historical for next-action purposes; its original parent R2 request has now been completed and PASS-received.
+
 > **Cockpit checkpoint (2026-10-07):** Calendar Unification = RELEASED / PRODUCT OWNER SMOKE VERIFIED. Evidence is the Product Owner's direct continuation instruction and prior smoke handback, not an agent-run production test. Independent Calendar review chain remains CLOSED. Visit Brief + independent Clinical Inbox design v2 is prepared for one R2 pre-code review; request PREPARED / NOT DISPATCHED / NO VERDICT; runtime is NOT STARTED.
 > **Design branch/base:** `docs/cockpit-visit-brief-clinical-inbox-2026-10-07` / `045798dfa28612b268f16a99262c6ecc9ca4829d`; scope is Cockpit design/checkpoints plus affected roadmap/phase/constitution/history. No runtime/schema/test/config/provider write authority; no overlap with PR-1.
 > **Design/request identities:** design blob `8ee79a96350f9ac42059eeb2a3e836cbe9d11245`; request blob `5bb6de5fce76170ca65d0422a4d6ed8272aabc20`. Author consistency audit is not an independent R2 verdict.
