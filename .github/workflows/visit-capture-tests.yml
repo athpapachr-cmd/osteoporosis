@@ -1,0 +1,43 @@
+name: Visit Capture tests
+
+on:
+  push:
+    paths:
+      - "clinical_data.py"
+      - "static/cockpit/index.html"
+      - "static/cockpit/visit-capture/**"
+      - "test_visit_capture.py"
+      - "test_visit_capture_ui.py"
+      - "test_cockpit_home.py"
+      - ".github/workflows/visit-capture-tests.yml"
+  pull_request:
+    paths:
+      - "clinical_data.py"
+      - "static/cockpit/index.html"
+      - "static/cockpit/visit-capture/**"
+      - "test_visit_capture.py"
+      - "test_visit_capture_ui.py"
+      - "test_cockpit_home.py"
+      - ".github/workflows/visit-capture-tests.yml"
+
+jobs:
+  visit-capture:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+      - name: Install dependencies
+        run: pip install -r requirements.txt pytest
+      - name: Python syntax
+        run: python -m py_compile clinical_data.py test_visit_capture.py test_visit_capture_ui.py test_cockpit_home.py
+      - name: Visit Capture JavaScript syntax
+        run: node --check static/cockpit/visit-capture/app.js
+      - name: Visit Capture focused tests
+        run: pytest -q test_visit_capture.py test_visit_capture_ui.py test_cockpit_home.py
+      - name: Diff hygiene
+        run: git diff --check HEAD^ HEAD
