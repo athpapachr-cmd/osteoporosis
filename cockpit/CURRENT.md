@@ -1,5 +1,8 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
+> **NOW (2026-10-08 IMPLEMENTATION ACTIVE):** Product Owner approved the reviewed synthetic/manual Visit Capture first-code slice (“Εγκρίνω”). Active implementation branch `feat/cockpit-visit-capture-v1-2026-10-08`, base reviewed docs head `5bc2a505758de6b24e82667bb84580d144f96b9c`. Scope is exactly the R2-passed boundary: confirmed-patient capture UI, transient VisitCaptureCandidateV1, stale patient/context guard, one three-level preview, one explicit protected Save to existing encounter owner, minimum bounded pending persistence, and server-enforced no post-signoff overwrite for Visit-Capture-signed encounters. No live external source/provider or patient-data activation. Next: bounded implementation + focused synthetic evidence, then writer release into independent exact-head post-code R2 HOLD.
+
+
 > **NOW (2026-10-08):** Independent Visit Capture delta pre-code R2 PASS / COMPLETE_FOR_DECLARED_SCOPE / 0:0:0 received; chain CLOSED. Receipt `reviews/VISIT_CAPTURE_DIA_HEIDI_GESY_DELTA_R2_PASS_RECEIPT_2026-10-08.md`. Prior R2-pending text below is historical. Next: Product Owner first-code checkpoint + separately scoped implementation writer before code. Narrow synthetic/manual Visit Capture only; no live Dia/Heidi/GESY/Gmail/Zadarma or patient-data activation.
 
 
