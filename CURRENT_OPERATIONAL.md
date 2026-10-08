@@ -1,5 +1,8 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / repo-wide writer lock
 
+> **2026-10-08 Visit Capture implementation START — Product Owner APPROVED:** direct approval “Εγκρίνω” received after independent delta R2 PASS / 0:0:0. Active bounded writer: this coordinator on branch `feat/cockpit-visit-capture-v1-2026-10-08`, based on reviewed docs head `5bc2a505758de6b24e82667bb84580d144f96b9c`. Allowed mutation: Visit Capture synthetic/manual first-code only — existing protected encounter owner, stale patient/context guard, transient VisitCaptureCandidateV1 preview, one explicit Save, server-side post-signoff immutability for Visit-Capture-signed encounters, and the minimum bounded first-class pending persistence required by the reviewed contract; focused tests and implementation checkpoint docs. Forbidden: live Dia/Heidi/GESY/Gmail/Zadarma, patient data, lab acceptance, Calendar/Reception mutation, merge/deploy/release. Exact next action: inspect the existing runtime seams, implement only the reviewed first-code boundary, run finite focused evidence, checkpoint candidate, release writer into post-code R2 HOLD.
+
+
 > **2026-10-08 Visit Capture independent R2 closeout:** Product Owner supplied independent PASS / COMPLETE_FOR_DECLARED_SCOPE / P0:P1:P2 = 0:0:0 for exact frozen delta. Receipt: `cockpit/reviews/VISIT_CAPTURE_DIA_HEIDI_GESY_DELTA_R2_PASS_RECEIPT_2026-10-08.md`. Review chain CLOSED; no correction/re-review. Next: Product Owner first-code checkpoint then separately authorized narrow synthetic/manual implementation writer. NO current runtime write/merge/deploy/live patient authority. This statement supersedes prior pending-delta-R2 next-action checkpoint.
 
 
