@@ -1,5 +1,8 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / repo-wide writer lock
 
+> **2026-10-08 Visit Capture independent R2 closeout:** Product Owner supplied independent PASS / COMPLETE_FOR_DECLARED_SCOPE / P0:P1:P2 = 0:0:0 for exact frozen delta. Receipt: `cockpit/reviews/VISIT_CAPTURE_DIA_HEIDI_GESY_DELTA_R2_PASS_RECEIPT_2026-10-08.md`. Review chain CLOSED; no correction/re-review. Next: Product Owner first-code checkpoint then separately authorized narrow synthetic/manual implementation writer. NO current runtime write/merge/deploy/live patient authority. This statement supersedes prior pending-delta-R2 next-action checkpoint.
+
+
 > **Cockpit Visit Capture delta checkpoint (2026-10-08):** the independent Visit Brief + Clinical Inbox R2 handback has been received as **PASS / COMPLETE_FOR_DECLARED_SCOPE / P0:P1:P2 = 0:0:0** and checkpointed at `cockpit/reviews/VISIT_BRIEF_CLINICAL_INBOX_PRECODE_R2_PASS_RECEIPT_2026-10-08.md`. The prior Q1–Q6 review is CLOSED and must not be reopened without a direct new contradiction.
 > **New material delta:** Product Owner clarified the real post-visit workflow inside Dia: `Heidi today + GESY today + previous GESY → Dia candidate insertion into Cockpit → clinician review → ONE Save`. This introduces a protected clinical encounter write boundary not covered by the prior read-oriented A boundary.
 > **Frozen delta design:** `cockpit/VISIT_CAPTURE_DIA_HEIDI_GESY_DELTA_2026-10-08.md`, blob `7e19ce29a3c33a0d06e6c0ec485952f41c0ecf72`.
