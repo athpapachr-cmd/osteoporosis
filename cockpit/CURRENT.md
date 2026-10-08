@@ -1,5 +1,8 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
+> **UI checkpoint:** dedicated `/static/cockpit/visit-capture/` surface exists with explicit patient confirmation, transient candidate insertion, automatic 3-level preview and one Save. No live providers and no tests claimed yet. Next: Home entry + focused synthetic tests.
+
+
 > **Implementation checkpoint:** backend Visit Capture boundary committed at `9e780de18383fd244862187cb9be967c0a2c87cd`; UI/tests not yet implemented or verified. No live providers/patient data. Writer remains active. Next: dedicated Cockpit capture UI + focused synthetic evidence only.
 
 
