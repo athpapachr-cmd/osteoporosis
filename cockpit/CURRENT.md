@@ -1,5 +1,8 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
+> **2026-10-09 P2-F2-01 corrected candidate / CI PENDING:** strict external dependency model implemented in `clinical_data.py` (blob `ea9e3d39c124136f4818094aec4086e49cbd0919`); focused rejection+roundtrip tests in `test_visit_capture.py` (blob `00adc97ec0c726cc4a063470cf7a77e6f134a711`). Writer ACTIVE only until focused CI result/checkpoint; then one independent F2/affected persistence closure, no broad re-review.
+
+
 > **NOW (2026-10-09): P2-F2-01 correction ACTIVE.** Independent Visit Capture post-code R2 returned BLOCK / 0:0:1 due only to unbounded `external_dependency`; F1/F3/F4/F5/F6 otherwise passed. Product Owner approved one narrow correction. Writer scoped to `clinical_data.py` strict nested dependency + `test_visit_capture.py` rejection/persistence oracles, then one focused CI and ONE F2/affected persistence closure review. Parent reviews stay CLOSED; no merge/deploy/live Dia/Heidi/GESY/Gmail/Zadarma/patient-data use.
 
 
