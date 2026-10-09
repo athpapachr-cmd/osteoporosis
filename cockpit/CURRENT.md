@@ -1,5 +1,8 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
+> **NOW — 2026-10-09 CLOSURE REVIEW HOLD:** P2-F2-01 narrow correction/test head `07f68a2adc4664a4ab050b3fa10a663de591b662` + CI `37963002895` SUCCESS; code/test frozen. Request `reviews/VISIT_CAPTURE_P2_F2_01_FOCUSED_CLOSURE_REVIEW_REQUEST_2026-10-09.md`, blob `e8a479cfbc014e70f72312d866cc1dddb2abf735`, prepared NOT DISPATCHED. Prior post-code R2 BLOCK remains pending closure; other F1/F3/F4/F5/F6 PASS reused. Writer RELEASED. Next: one independent C1–C3 closure and STOP; no implementation, merge, deploy, patient-data or provider effects.
+
+
 > **NOW 2026-10-09 — CORRECTION TESTED / REVIEW HOLD:** P2-F2-01 dependency bounds corrected in `clinical_data.py` and targeted tests in `test_visit_capture.py`; runtime/test head `07f68a2adc4664a4ab050b3fa10a663de591b662`. CI run `37963002895` SUCCESS; post-test files changed only CURRENT/receipt metadata. Independent BLOCK receipt `reviews/VISIT_CAPTURE_POSTCODE_R2_P2_F2_01_BLOCK_RECEIPT_2026-10-09.md` blob `b448d45ff213c282eac8e97db19da0f29007e062`. Writer RELEASED. Only next permitted review: independent F2 + affected persistence closure, no re-review F1/F3/F4/F5/F6 except direct affected assertions; no merge/deploy.
 
 
