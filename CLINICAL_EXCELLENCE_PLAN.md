@@ -4,7 +4,7 @@
 > **PHASE:** dynamic guided consultation + transcript-assisted capture → Practice Review → measurement/improvement loop.
 > **CANONICAL HOME:** `athpapachr-cmd/osteoporosis`.
 > **MODULE 01:** Osteoporosis.
-> **UPDATED:** 2026-09-07 Asia/Nicosia.
+> **UPDATED:** 2026-10-07 Asia/Nicosia (bounded Cockpit two-entry architecture replan).
 
 This document owns the **detailed phase architecture and stage sequence**. Operational branch/PR/deploy state belongs in `CURRENT_OPERATIONAL.md`; exact current-slice design belongs in `SLICE_PLAN_CURRENT.md`.
 
@@ -1196,7 +1196,11 @@ OPERATIONAL CONTEXT → concise Previous / Current / Next and relevant communica
 THEN → learning, audit, improvement and tools
 ```
 
-Visit Brief, What Changed and a future Clinical Inbox are clinician-facing views over provenance-preserving Visit Intelligence. Home should normally surface about **3–4** highest-attention incoming items, with deeper detail one step away. External Signals and Candidates, weak/name matching and unresolved conflicts remain non-authoritative until the intended identity and clinician-confirmation boundaries are met. Capture a fact once at its rightful owner and reuse it across clinical views; do not make the clinician re-enter it to populate Home.
+Visit Brief and Clinical Inbox are two first-class entrances over a shared provenance-preserving clinical-attention lifecycle. **Appointment → floating Visit Brief** prepares the encounter. **New Gmail clinical input → independent Clinical Inbox** supports same-day clinician review and deliberate patient communication even with no appointment. The latter does not wait for Visit Brief or the next visit. What Changed consumes meaningful linked developments, not mere email arrival. Home surfaces about **3–4** highest-attention incoming items with a direct path to the full unresolved queue.
+
+Source types remain distinct: laboratory values are structured candidates; MRI/X-ray/imaging reports are document-summary candidates; GESY notifications are notification/action context and are not completed results. Strong authorized or clinician-confirmed identity gates patient attachment/history/actions. Review, authoritative record acceptance, pending clinical action and communication outcome remain separate. Capture once at the rightful owner and reuse across the two views.
+
+The free Cockpit is a clinical consumer; one always-on Reception-owned intake adapter and durable source-delivery boundary must handle Gmail discovery while Cockpit sleeps. Clinical Excellence owns the protected clinical-attention/review state; Reception owns communication admission/orchestration/idempotency/outcomes; Zadarma owns transport. No duplicate patient, task, calendar, Gmail-reader or messaging authority. The detailed candidate and open integration/retention gates are in `cockpit/VISIT_BRIEF_CLINICAL_INBOX_DESIGN_2026-10-07.md`, with lifecycle authority in the root and Cockpit CURRENT files. The separate PR-1 release HOLD and Module-01 capture/baseline methodology remain unchanged.
 
 Practice Review signals, audit/run charts, strengths/gaps, learning due, evidence freshness, Improvement Projects and longitudinal improvement remain valuable downstream views. Do not place them ahead of today's visit preparation or invent polished summary scores before adequate contracts and baseline evidence. `cockpit/PRODUCT_CONSTITUTION.md` owns the Cockpit-specific product boundaries; this phase plan owns the cross-programme hierarchy.
 
@@ -1309,7 +1313,7 @@ Deliverables:
 
 ## Later stages
 
-Deep Review/Red Team breadth, Patient Voice, the fuller Home/Clinical Inbox beyond released Home v1, benchmarking, further Calendar/Secretary projections beyond the bounded reason bridge, and Module 02 generalization remain later unless evidence elevates them.
+The Product Owner elevated Visit Brief + independent Clinical Inbox to the immediate parallel Cockpit design work after Calendar Unification smoke. This overrides the earlier blanket deferral of Clinical Inbox; its runtime remains unimplemented and unauthorized pending its own gates. Deep Review/Red Team breadth, Patient Voice, broader Home analytics, benchmarking, full D2 communication browsing, further Calendar/Secretary breadth and Module 02 generalization remain later unless evidence elevates them.
 
 ---
 

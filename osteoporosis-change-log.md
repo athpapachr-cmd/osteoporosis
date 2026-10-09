@@ -1510,3 +1510,16 @@ Focused author evidence: 30 Calendar/snapshot/Home/shared Surgery UI tests PASS,
 - Cockpit PR #136 merged as `12800be3a51f716b2ccd72715c6e0e637f2e43ab`; all six reviewed runtime/test blobs preserved; Render deploy `dep-db25uae7bikc73dkrku0` LIVE.
 - Cockpit `RECEPTION_SCHEDULE_CONTEXT_URL` installed for the protected Reception route; existing matching server-to-server ingest-key pair retained without secret rotation. Configuration deploy `dep-db25qh7lot8c73duu8vg` LIVE before Cockpit code merge.
 - Production smoke is PENDING PRODUCT OWNER. No live Cal/patient-data smoke or booking mutation was performed by this release task. Visit Brief implementation remains deferred.
+
+
+---
+
+## 2026-10-07 — Calendar Unification smoke closed; two-entry Cockpit design replan
+
+The Product Owner confirmed Calendar Unification SMOKE VERIFIED and explicitly continued to design-only Visit Brief / Clinical Inbox work. The prior paired release identities remain Reception `e6babb5ab758d282166767c36dd7311024406afb` / `dep-db2m42mi0phs7393jms0` and Cockpit PR #137 merge `3f4d82280e3a58f25383ccd896ebcf806ec755c2`, final main `045798dfa28612b268f16a99262c6ecc9ca4829d` / `dep-db2m7sbl550s73binhig`. Calendar's independent R2 PASS / 0:0:0 remains CLOSED. This is Product Owner smoke evidence, not a new agent-run production test or pilot validation.
+
+The product correction establishes two first-class entrances over one clinical-attention lifecycle: appointment-driven floating Visit Brief and independent Clinical Inbox for daily Gmail clinical inputs. Labs, MRI, X-ray/imaging and GESY notifications retain distinct semantics. Same-day clinician review/communication does not depend on an appointment. Always-on intake/durable delivery replaces on-open Gmail discovery as the correctness path; free Cockpit remains a clinical consumer.
+
+The revised design preserves verified/clinician-confirmed identity, candidate-vs-authoritative results, existing clinical owners/G3 reuse, Reception communication orchestration/Zadarma transport, clinician approval, truthful failure/idempotency and configured non-booked callback windows. Original Current/design/request bytes were archived unchanged from the verified base before replacement. Root PR-1 release HOLD and slice design remain untouched.
+
+The new design candidate is `cockpit/VISIT_BRIEF_CLINICAL_INBOX_DESIGN_2026-10-07.md`. One bounded independent R2 pre-code request is prepared; no review was dispatched or verdict claimed. No runtime/schema/test/config/provider changes, live mailbox access, patient document processing, message send, merge or deploy occurred in this design replan.

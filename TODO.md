@@ -397,7 +397,7 @@ Unless later evidence elevates one to a safety/data-integrity dependency:
 
 - [ ] Patient Voice full program.
 - [ ] External Benchmark Registry.
-- [ ] Full Clinical Excellence Home/analytics polish.
+- [ ] Full Clinical Excellence Home/analytics polish; the bounded Visit Brief + Clinical Inbox priority is owned by §6A and is no longer blanket-deferred.
 - [ ] Further clinically relevant Calendar/Secretary projections and CareTask linkage beyond the released Calendar foundation/reason bridge; keep booking, reminder, communication and messaging ownership external.
 - [x] Native RF Clinic Utility ownership migration released and production-smoke-verified; RF is closed for now under §1.6.
 - [ ] Patient leaflets/posters/materials.
@@ -405,6 +405,21 @@ Unless later evidence elevates one to a safety/data-integrity dependency:
 - [ ] Module 02/generalization.
 
 Permanent: `Appointment != CareTask`.
+
+---
+
+# 6A. PARALLEL COCKPIT — VISIT BRIEF + INDEPENDENT CLINICAL INBOX
+
+- [x] Calendar Unification released; Product Owner Home + weekly Calendar smoke confirmed. Exact lifecycle evidence belongs in `cockpit/CURRENT.md`.
+- [x] Product Owner corrected the next design to two first-class entries: appointment-driven floating Visit Brief and appointment-independent Clinical Inbox.
+- [x] Replace the appointment-dependent lab/on-open Gmail design with a shared clinical-attention lifecycle and always-on intake requirement; labs, MRI, X-ray/imaging and GESY keep source-specific semantics.
+- [ ] Complete one bounded independent R2 pre-code review of the revised design; prepare a closure review only for material findings.
+- [ ] After separate authority, freeze/implement the shared contracts and both entry surfaces, reusing confirmed clinical records/G3 summary and preserving identity/authority boundaries.
+- [ ] Qualify the first live Medicover vertical: authorized always-on Gmail intake, cold-start-safe delivery, independent review and clinician-approved Reception → Zadarma communication without appointment dependency.
+- [ ] Extend source adapters for MRI/X-ray/imaging reports and GESY notification context under the same lifecycle; do not promote notifications into completed results.
+- [ ] Later explicit result acceptance reuses the authoritative clinical persistence owner; no automatic writes, tasks, booking or patient messaging.
+
+The design candidate is `cockpit/VISIT_BRIEF_CLINICAL_INBOX_DESIGN_2026-10-07.md`. Runtime is NOT STARTED. Callback windows remain configured working weekdays 10:00–10:20 / 17:40–18:00, with no per-patient booked callback slot. This is a parallel Cockpit priority; PR-1 release HOLD, the primary Module-01 sequence and baseline method retain their own authority.
 
 ---
 

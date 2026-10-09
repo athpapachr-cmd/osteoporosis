@@ -1,0 +1,31 @@
+{
+  "status": "HISTORICAL_NO_CURRENT_AUTHORITY",
+  "source_repository": "athpapachr-cmd/osteoporosis",
+  "source_commit": "045798dfa28612b268f16a99262c6ecc9ca4829d",
+  "files": [
+    {
+      "original_path": "CURRENT_OPERATIONAL.md",
+      "archive_path": "cockpit/archive/checkpoints/2026-10-07-pre-clinical-inbox-replan/CURRENT_OPERATIONAL.md",
+      "git_blob": "8e3533990767473351b113823298db162362a78e",
+      "sha256": "779839fb121528f7b4500002d616b784caf93c49ceb019dbd3be93286bd7c532"
+    },
+    {
+      "original_path": "cockpit/CURRENT.md",
+      "archive_path": "cockpit/archive/checkpoints/2026-10-07-pre-clinical-inbox-replan/cockpit/CURRENT.md",
+      "git_blob": "9d28347b2ef162e01c18317344fcd53266ce6d4d",
+      "sha256": "b46fe6860a7924351bdb4ad6337097f462a596f33c3661eb83972b56e753b552"
+    },
+    {
+      "original_path": "cockpit/VISIT_BRIEF_LAB_RESULTS_WORKFLOW_2026-10-06.md",
+      "archive_path": "cockpit/archive/checkpoints/2026-10-07-pre-clinical-inbox-replan/cockpit/VISIT_BRIEF_LAB_RESULTS_WORKFLOW_2026-10-06.md",
+      "git_blob": "08346fb9d9c479e6f39ffb59068eaa9813703ff5",
+      "sha256": "c3f86ea0c03e4c80f1c8621b6bd051fc92ababe15f38d07635b8bb1bd3106250"
+    },
+    {
+      "original_path": "cockpit/reviews/VISIT_BRIEF_LAB_RESULTS_PRECODE_REVIEW_REQUEST_2026-10-06.md",
+      "archive_path": "cockpit/archive/checkpoints/2026-10-07-pre-clinical-inbox-replan/cockpit/reviews/VISIT_BRIEF_LAB_RESULTS_PRECODE_REVIEW_REQUEST_2026-10-06.md",
+      "git_blob": "a03e5585da837c53c09f49d8095cd894df23cc36",
+      "sha256": "d0a79e3876ce8efaaf66c3ee7682b246ff8b3a077d412c11f73a9fe59c05d996"
+    }
+  ]
+}
