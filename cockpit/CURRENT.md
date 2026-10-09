@@ -1,5 +1,8 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
+> **2026-10-09 IMPLEMENTATION PR #139 RETARGETED TO MAIN:** parent design merge/deploy LIVE; PR #139 base `main`, head at retarget `d45620bf476f16eec20772716d6a5ed441f7e3fc`, diff contains only implementation/release scope (17 files), no reintroduced design. Mergeable true, still DRAFT. Next verify PR CI and reviewed blobs, then controlled release. No real-patient Dia/Heidi/GESY use authorized.
+
+
 > **2026-10-09 ANCESTRY RECONCILIATION:** implementation branch fast-forwarded to two-parent commit `1c2eb9f5ca5a4ff6ac35aaea218fc11fcce0111c`; tree `1cee65627be8c897abc97cdc0952f73dacced3c1` unchanged, merged design main `9ec24a9a5f756b31ee8e6031b5d587c90ce91ac6` now ancestor. No byte drift. Next: re-target PR #139 to main, check diff/CI, no patient-data activity.
 
 
