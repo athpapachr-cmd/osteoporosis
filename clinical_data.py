@@ -219,6 +219,15 @@ class VisitCaptureMedication(BaseModel):
     certainty: CertaintyState = "certain"
 
 
+class VisitCaptureExternalDependency(BaseModel):
+    """Only the declared external actor and condition may be retained."""
+
+    model_config = {"extra": "forbid"}
+
+    actor: str = Field(min_length=1, max_length=80)
+    condition: str = Field(min_length=1, max_length=240)
+
+
 class VisitCapturePendingCandidate(BaseModel):
     model_config = {"extra": "forbid"}
 
@@ -227,7 +236,7 @@ class VisitCapturePendingCandidate(BaseModel):
     trigger: Optional[str] = Field(default=None, max_length=1000)
     status: PendingStatus
     responsible_role: str = Field(min_length=1, max_length=120)
-    external_dependency: Optional[Dict[str, Any]] = None
+    external_dependency: Optional[VisitCaptureExternalDependency] = None
     review_date: Optional[str] = Field(default=None, pattern=r"^\d{4}-\d{2}-\d{2}$")
     provenance: List[str] = Field(min_length=1, max_length=8)
 
@@ -312,7 +321,7 @@ class ClinicalPendingRecord(BaseModel):
     trigger: Optional[str]
     status: str
     responsible_role: str
-    external_dependency: Optional[Dict[str, Any]]
+    external_dependency: Optional[VisitCaptureExternalDependency]
     review_date: Optional[str]
     provenance: List[str]
     resolution_event_id: Optional[str]
@@ -745,7 +754,7 @@ def build_clinical_router(engine: Engine) -> APIRouter:
                     trigger_text=item.trigger,
                     status=item.status,
                     responsible_role=item.responsible_role,
-                    external_dependency_json=item.external_dependency,
+                    external_dependency_json=(item.external_dependency.model_dump(mode="json") if item.external_dependency else None),
                     review_date=item.review_date,
                     provenance_json=item.provenance,
                     resolution_event_id=None,
