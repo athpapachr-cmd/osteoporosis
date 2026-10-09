@@ -1,5 +1,8 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / repo-wide writer lock
 
+> **2026-10-09 DESIGN RELEASE TERMINAL LIVE:** Render service `srv-d5qfk31r0fns73di596g` auto-deploy `dep-db4jtlrncjis73dn58u0` reached LIVE from exact PR #138 design-only squash merge `9ec24a9a5f756b31ee8e6031b5d587c90ce91ac6`. This does not deploy Visit Capture runtime. Release step 1 COMPLETE and checkpointed. Next bounded release step: reconcile PR #139 with new `main` while preserving exact reviewed runtime/test blobs, then verify applicable PR CI and source identity before the code merge. No patient-data/provider use.
+
+
 > **2026-10-09 PR #138 DESIGN MERGED / AUTO-DEPLOY STARTED:** squash merge `9ec24a9a5f756b31ee8e6031b5d587c90ce91ac6` verified as remote `main`; design PR #138 is merged. Render Cockpit auto-deploy `dep-db4jtlrncjis73dn58u0` from exact design-only merge source is BUILD_IN_PROGRESS. No Visit Capture code is on remote `main` yet. Reviewed code/test head remains `07f68a2adc4664a4ab050b3fa10a663de591b662`. Release writer ACTIVE for approved staged release. Exact next step: observe existing design-only auto-deploy to terminal LIVE or failure and checkpoint it **before** implementation PR #139 re-target/merge. No live provider/patient-data actions.
 
 
