@@ -1,5 +1,8 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
+> **NOW (2026-10-09): P2-F2-01 correction ACTIVE.** Independent Visit Capture post-code R2 returned BLOCK / 0:0:1 due only to unbounded `external_dependency`; F1/F3/F4/F5/F6 otherwise passed. Product Owner approved one narrow correction. Writer scoped to `clinical_data.py` strict nested dependency + `test_visit_capture.py` rejection/persistence oracles, then one focused CI and ONE F2/affected persistence closure review. Parent reviews stay CLOSED; no merge/deploy/live Dia/Heidi/GESY/Gmail/Zadarma/patient-data use.
+
+
 > **POST-CODE R2 HOLD (2026-10-08):** request `reviews/VISIT_CAPTURE_DIA_HEIDI_GESY_POSTCODE_FIDELITY_REVIEW_REQUEST_2026-10-08.md` blob `85d4a7ad219e4c078f5e79252f571328d58570d6`; runtime/test head `4646c923…`, focused CI `37811359040` SUCCESS. Writer RELEASED. Next: one independent exact-head F1–F6 review; no further implementation/merge/deploy.
 
 
