@@ -1,5 +1,8 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / repo-wide writer lock
 
+> **2026-10-09 PR #139 ANCESTRY RECONCILED / TREE UNCHANGED:** Git commit `1c2eb9f5ca5a4ff6ac35aaea218fc11fcce0111c` fast-forwarded the implementation branch with parents previous implementation checkpoint `6720a36dc24f2863f121595d2f3961fb37111fd0` and merged design `main=9ec24a9a5f756b31ee8e6031b5d587c90ce91ac6`; verified its tree `1cee65627be8c897abc97cdc0952f73dacced3c1` **exactly equals** the previous candidate tree. No runtime/test/code/docs bytes were changed by ancestry reconciliation; all previously reviewed blobs and focused CI are reusable. PR #138 design deploy `dep-db4jtlrncjis73dn58u0` is LIVE. Implementation PR #139 remains OPEN/unmerged at old base branch until re-target. Exact next action: change only PR #139 base to current `main`, inspect PR diff/CI, then controlled implementation merge if applicable release gates remain satisfied. No real-patient/provider effects.
+
+
 > **2026-10-09 DESIGN RELEASE TERMINAL LIVE:** Render service `srv-d5qfk31r0fns73di596g` auto-deploy `dep-db4jtlrncjis73dn58u0` reached LIVE from exact PR #138 design-only squash merge `9ec24a9a5f756b31ee8e6031b5d587c90ce91ac6`. This does not deploy Visit Capture runtime. Release step 1 COMPLETE and checkpointed. Next bounded release step: reconcile PR #139 with new `main` while preserving exact reviewed runtime/test blobs, then verify applicable PR CI and source identity before the code merge. No patient-data/provider use.
 
 
