@@ -1,5 +1,8 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
+> **2026-10-09 RELEASE CONTRACT FROZEN:** `releases/VISIT_CAPTURE_SYNTHETIC_RELEASE_CANDIDATE_2026-10-09.md` blob `71dcab7c492d35d2a661f7397f3bd846a11dcacc`. Candidate must be stacked as DRAFT PR on unmerged design PR #138 branch. Current code lacks separate server-side OFF-by-default Visit Capture gate; live write activation remains HOLD. No code change or merge/deploy now. NEXT: stacked draft PR and source/CI verification, then release preparation STOP.
+
+
 > **NOW 2026-10-09 — VISIT CAPTURE RELEASE PREPARATION ONLY:** Product Owner authorized preparation of release candidate and PR, NOT merge/deploy or real-patient activation. Docs/PR writer only; corrected runtime/test head `07f68a2adc4664a4ab050b3fa10a663de591b662` and final independent R2 PASS / 0:0:0 unchanged. Parent design PR #138 remains DRAFT/unmerged. Proposed stacked implementation PR against its design branch. Release-readiness HOLD: no backend OFF-by-default Visit Capture activation gate exists; live processor/retention qualifications also OPEN. Do not confuse synthetic candidate PASS with safe production write access. Next: release notes/checkpoint + draft stacked PR, no merge/deploy.
 
 
