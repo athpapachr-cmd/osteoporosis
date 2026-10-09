@@ -1,5 +1,8 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / repo-wide writer lock
 
+> **2026-10-09 Visit Capture P2-F2-01 CORRECTION WRITER ACTIVE:** Received independent post-code R2 BLOCK / COMPLETE / P0:P1:P2 = 0:0:1 on runtime/test head `4646c923c728fd8613632db42e919687fc945504`, exact docs head `3e5f3ea50a0762fa7d519fe3b2928ea752374caa`. Material finding: `VisitCapturePendingCandidate.external_dependency` is an unbounded nested `Dict[str, Any]`, allowing undeclared/raw content to persist. Product Owner explicitly directed `Προχωράμε` after explanation. Fresh main `045798dfa28612b268f16a99262c6ecc9ca4829d`, branch `3e5f3ea50a0762fa7d519fe3b2928ea752374caa`. Sole bounded writer: this Cockpit coordinator for `clinical_data.py` strict dependency model + `test_visit_capture.py` focused rejection/roundtrip test, this CURRENT checkpoint, one finite CI check, and one F2+affected persistence independent closure request. No other runtime scope; NO merge/deploy/live source/patient data. Next: correction, targeted CI, then RELEASE writer into closure-review HOLD.
+
+
 > **Visit Capture post-code R2 HOLD (2026-10-08):** independent exact-head request prepared at `cockpit/reviews/VISIT_CAPTURE_DIA_HEIDI_GESY_POSTCODE_FIDELITY_REVIEW_REQUEST_2026-10-08.md`, blob `85d4a7ad219e4c078f5e79252f571328d58570d6`. Current branch checkpoint before this CURRENT write: `e86de38bb971b516b41d039aaf79af0917adca65`; runtime/test head remains `4646c923c728fd8613632db42e919687fc945504` with CI run `37811359040` SUCCESS. Writer RELEASED / review HOLD. Exact next action: one fresh independent read-only post-code R2 over F1–F6. No further code, correction, PR merge or deploy unless that review returns a material finding or PASS is separately acted upon.
 
 
