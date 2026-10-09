@@ -1,5 +1,8 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
+> **NOW (2026-10-09) — RELEASE CANDIDATE PREPARED / HOLD:** [PR #139](https://github.com/athpapachr-cmd/osteoporosis/pull/139) stacked DRAFT/unmerged on [parent design PR #138](https://github.com/athpapachr-cmd/osteoporosis/pull/138) DRAFT/unmerged; exact creation head `e667d8e5eb2541dd458e14a562acf2f598d1cb3c`. Release contract `releases/VISIT_CAPTURE_SYNTHETIC_RELEASE_CANDIDATE_2026-10-09.md` blob `71dcab7c492d35d2a661f7397f3bd846a11dcacc`. Corrected runtime/test head `07f68a2adc4664a4ab050b3fa10a663de591b662` unchanged; R2 closure PASS/0:0:0. PR canonical-impact, Visit Capture, Home and baseline-finalization CI PASS at pre-checkpoint head; L0 scope check is red solely because it applies an L0-only diff assertion to this legitimate non-L0 PR, though L0 contracts PASS; other unrelated checks pending. **Production merge/deploy HOLD** until distinct OFF-by-default backend Visit Capture write gate or full live-use qualification and separate explicit Product Owner release authority. No actual deployment or real-patient access. Writer RELEASED. Next: one release-enablement decision; no new broad R2 review or unrelated work.
+
+
 > **2026-10-09 STACKED IMPLEMENTATION PR #139 OPEN / DRAFT / RELEASE HOLD:** [PR #139](https://github.com/athpapachr-cmd/osteoporosis/pull/139) targets `docs/cockpit-visit-brief-clinical-inbox-2026-10-07` because design PR #138 remains unmerged. Head at publication `2ebfe35c8bc2999b4d144d7d6ccdc8accf765e6e`. No code change, merge, deploy or data activation. Await bounded PR diff/canonical CI verification, then writer release; production feature gate unresolved.
 
 
