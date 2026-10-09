@@ -1,5 +1,8 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / repo-wide writer lock
 
+> **2026-10-09 PR #138 DESIGN MERGED / AUTO-DEPLOY STARTED:** squash merge `9ec24a9a5f756b31ee8e6031b5d587c90ce91ac6` verified as remote `main`; design PR #138 is merged. Render Cockpit auto-deploy `dep-db4jtlrncjis73dn58u0` from exact design-only merge source is BUILD_IN_PROGRESS. No Visit Capture code is on remote `main` yet. Reviewed code/test head remains `07f68a2adc4664a4ab050b3fa10a663de591b662`. Release writer ACTIVE for approved staged release. Exact next step: observe existing design-only auto-deploy to terminal LIVE or failure and checkpoint it **before** implementation PR #139 re-target/merge. No live provider/patient-data actions.
+
+
 > **2026-10-09 PR #138 READY FOR MERGE:** independently reviewed design PR #138 transitioned DRAFT → ready for review at unchanged head `5bc2a505758de6b24e82667bb84580d144f96b9c`; still OPEN/unmerged. Exact next authorized transition: squash merge PR #138 to verified remote `main` (unchanged since `045798dfa28612b268f16a99262c6ecc9ca4829d`), record exact merge/auto-deploy state before advancing PR #139. No code or live data action.
 
 
