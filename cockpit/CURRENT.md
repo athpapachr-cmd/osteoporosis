@@ -1,5 +1,8 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
+> **NOW 2026-10-09 — VISIT CAPTURE MERGED / RENDER AUTO-DEPLOY IN PROGRESS:** design PR #138 merged `9ec24a9…`, LIVE deploy `dep-db4jtlrncjis73dn58u0`; implementation PR #139 merged `dd14cd0df1ca84d051ba7bf784b5b33226ed20b0`, merged tree matches tested candidate tree. Render deploy `dep-db4k1l942hec73dll8j0` STARTED, NOT LIVE/SMOKED YET. Review chain PASS/0:0:0 closed. Authenticated Save endpoint will be reachable once deployed; no separate feature flag was added per Product Owner direction. **No real-patient/Dia/Heidi/GESY processing approved or executed.** Next: observe exact auto-deploy to terminal and perform no-PHI health/asset smoke; no code changes/duplicate deploy.
+
+
 > **2026-10-09 PR #139 READY / APPLICABLE RELEASE CI PASSED:** main design `9ec24a9…` LIVE; PR #139 ready for review, base main, head at checkpoint `85b6b657376244605cd5b7a72e04835f4928809f`. Exact eight code/test blobs match independent R2, applicable CI PASS; inherited L0-only design scope check nonapplicable. Controlled PR squash merge authorized by Product Owner direction, then auto-deploy and no-PHI health. No real GESY/Heidi/Dia data processing.
 
 

@@ -414,13 +414,13 @@ Permanent: `Appointment != CareTask`.
 - [x] Product Owner corrected the next design to two first-class entries: appointment-driven floating Visit Brief and appointment-independent Clinical Inbox.
 - [x] Replace the appointment-dependent lab/on-open Gmail design with a shared clinical-attention lifecycle and always-on intake requirement; labs, MRI, X-ray/imaging and GESY keep source-specific semantics.
 - [x] Complete the independent Visit Brief + Clinical Inbox pre-code R2: PASS / COMPLETE_FOR_DECLARED_SCOPE / 0:0:0; no reopening of Q1–Q6.
-- [x] Complete the separately approved synthetic/manual Visit Capture first-code implementation and its independent delta/post-code review chain: final P2-F2-01 closure PASS / 0:0:0; tested but not merged/deployed, no live-data activation.
+- [x] Complete reviewed synthetic/manual Visit Capture implementation and independently close R2: P2-F2-01 CLOSED / 0:0:0; PR #139 merged to main as `dd14cd0df1ca84d051ba7bf784b5b33226ed20b0`; auto-deploy/health smoke still pending. Real-data qualification remains open.
 - [ ] After separate authority, freeze/implement the shared contracts and both entry surfaces, reusing confirmed clinical records/G3 summary and preserving identity/authority boundaries.
 - [ ] Qualify the first live Medicover vertical: authorized always-on Gmail intake, cold-start-safe delivery, independent review and clinician-approved Reception → Zadarma communication without appointment dependency.
 - [ ] Extend source adapters for MRI/X-ray/imaging reports and GESY notification context under the same lifecycle; do not promote notifications into completed results.
 - [ ] Later explicit result acceptance reuses the authoritative clinical persistence owner; no automatic writes, tasks, booking or patient messaging.
 
-The Visit Brief + Clinical Inbox design remains `cockpit/VISIT_BRIEF_CLINICAL_INBOX_DESIGN_2026-10-07.md`. The separate Visit Capture synthetic/manual runtime is IMPLEMENTED / FOCUSED TESTED / R2 CLOSED on its branch, but NOT MERGED OR DEPLOYED; the shared Inbox/Visit Brief first-code core and all live-provider integrations remain unimplemented. Callback windows remain configured working weekdays 10:00–10:20 / 17:40–18:00, with no per-patient booked callback slot. This is a parallel Cockpit priority; PR-1 release HOLD, the primary Module-01 sequence and baseline method retain their own authority.
+The Visit Brief + Clinical Inbox design remains `cockpit/VISIT_BRIEF_CLINICAL_INBOX_DESIGN_2026-10-07.md`. The separate Visit Capture runtime is IMPLEMENTED / FOCUSED TESTED / R2 CLOSED and merged to `main` through PR #139; production auto-deploy/health check is still pending; the shared Inbox/Visit Brief first-code core and all live-provider integrations remain unimplemented. Callback windows remain configured working weekdays 10:00–10:20 / 17:40–18:00, with no per-patient booked callback slot. This is a parallel Cockpit priority; PR-1 release HOLD, the primary Module-01 sequence and baseline method retain their own authority.
 
 ---
 
