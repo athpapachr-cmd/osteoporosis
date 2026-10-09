@@ -1,5 +1,8 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
+> **2026-10-09 PR #139 READY / APPLICABLE RELEASE CI PASSED:** main design `9ec24a9…` LIVE; PR #139 ready for review, base main, head at checkpoint `85b6b657376244605cd5b7a72e04835f4928809f`. Exact eight code/test blobs match independent R2, applicable CI PASS; inherited L0-only design scope check nonapplicable. Controlled PR squash merge authorized by Product Owner direction, then auto-deploy and no-PHI health. No real GESY/Heidi/Dia data processing.
+
+
 > **2026-10-09 IMPLEMENTATION PR #139 RETARGETED TO MAIN:** parent design merge/deploy LIVE; PR #139 base `main`, head at retarget `d45620bf476f16eec20772716d6a5ed441f7e3fc`, diff contains only implementation/release scope (17 files), no reintroduced design. Mergeable true, still DRAFT. Next verify PR CI and reviewed blobs, then controlled release. No real-patient Dia/Heidi/GESY use authorized.
 
 
