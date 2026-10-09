@@ -1,5 +1,8 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
+> **NOW (2026-10-09) — VISIT CAPTURE FINAL R2 PASS / REVIEW CHAIN CLOSED:** independent focused C1–C3 closure PASS / COMPLETE_FOR_DECLARED_SCOPE / P0:P1:P2 = 0:0:0; original P2-F2-01 CLOSED. Received-review receipt `reviews/VISIT_CAPTURE_P2_F2_01_FOCUSED_CLOSURE_PASS_RECEIPT_2026-10-09.md` blob `adfb02e736d0db9ed77e305504a0b4a94ade9cb6`. Runtime/test frozen at `07f68a2adc4664a4ab050b3fa10a663de591b662`, CI `37963002895` SUCCESS, 20 tests. Existing F1/F3/F4/F5/F6 inherited PASS. Writer RELEASED. State IMPLEMENTED / FOCUSED TESTED / REVIEW CLOSED; NOT MERGED / NOT DEPLOYED / NOT REAL-PATIENT ACTIVATED. Draft design PR #138 remains separate/unmerged. Historical REVIEW HOLD statements below are superseded. Next action: separate bounded release-readiness and Product Owner authorization, never another reassurance review; no live Dia/Heidi/GESY/Gmail/Zadarma, patient-data or provider authority.
+
+
 > **NOW — 2026-10-09 CLOSURE REVIEW HOLD:** P2-F2-01 narrow correction/test head `07f68a2adc4664a4ab050b3fa10a663de591b662` + CI `37963002895` SUCCESS; code/test frozen. Request `reviews/VISIT_CAPTURE_P2_F2_01_FOCUSED_CLOSURE_REVIEW_REQUEST_2026-10-09.md`, blob `e8a479cfbc014e70f72312d866cc1dddb2abf735`, prepared NOT DISPATCHED. Prior post-code R2 BLOCK remains pending closure; other F1/F3/F4/F5/F6 PASS reused. Writer RELEASED. Next: one independent C1–C3 closure and STOP; no implementation, merge, deploy, patient-data or provider effects.
 
 
