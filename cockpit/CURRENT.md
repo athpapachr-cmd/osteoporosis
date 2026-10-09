@@ -1,5 +1,8 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
+> **NOW 2026-10-09 — CORRECTION TESTED / REVIEW HOLD:** P2-F2-01 dependency bounds corrected in `clinical_data.py` and targeted tests in `test_visit_capture.py`; runtime/test head `07f68a2adc4664a4ab050b3fa10a663de591b662`. CI run `37963002895` SUCCESS; post-test files changed only CURRENT/receipt metadata. Independent BLOCK receipt `reviews/VISIT_CAPTURE_POSTCODE_R2_P2_F2_01_BLOCK_RECEIPT_2026-10-09.md` blob `b448d45ff213c282eac8e97db19da0f29007e062`. Writer RELEASED. Only next permitted review: independent F2 + affected persistence closure, no re-review F1/F3/F4/F5/F6 except direct affected assertions; no merge/deploy.
+
+
 > **2026-10-09 P2-F2-01 corrected candidate / CI PENDING:** strict external dependency model implemented in `clinical_data.py` (blob `ea9e3d39c124136f4818094aec4086e49cbd0919`); focused rejection+roundtrip tests in `test_visit_capture.py` (blob `00adc97ec0c726cc4a063470cf7a77e6f134a711`). Writer ACTIVE only until focused CI result/checkpoint; then one independent F2/affected persistence closure, no broad re-review.
 
 
