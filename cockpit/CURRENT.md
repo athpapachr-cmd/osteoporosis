@@ -1,5 +1,8 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
+> **2026-10-09 PR #138 READY:** design PR transitioned from draft to ready at unchanged exact head `5bc2a505758de6b24e82667bb84580d144f96b9c`; still unmerged. Next: authorized squash merge design first, then checkpoint before child implementation release.
+
+
 > **NOW 2026-10-09 — CONTROLLED RELEASE AUTHORIZED / WRITER ACTIVE:** Product Owner approved progression into existing production Cockpit without a second Render preview or extra feature toggle. Authenticated Visit Capture Save will become reachable after code deployment; this is distinct from authorizing identifiable Dia/Heidi/GESY use. Only existing clinical auth, clinician Save and synthetic-only UI warning currently apply; no claim of enforceable synthetic-only mode. Release owner may merge PR #138 then #139 sequentially after immutable-source and applicable CI checks and checkpoint each transition. No new runtime edits, live patient/provider usage or new general review. STOP if changed code/test bytes or genuine applicable gate fails.
 
 
