@@ -333,3 +333,76 @@ def test_case_8_pending_is_separate_and_provenance_must_be_bound(monkeypatch):
     response = _preview(client, new_context["context_id"], bad)
     assert response.status_code == 422
     assert "unbound provenance" in response.json()["detail"]
+
+
+def test_p2_f2_01_dependency_declared_fields_roundtrip(monkeypatch):
+    client = _client(monkeypatch)
+    _patient(client, "SYN-DEPENDENCY")
+    context = _context(client, "SYN-DEPENDENCY")
+    candidate = _candidate()
+    candidate["pending"][0]["external_dependency"] = {
+        "actor": "lawyer",
+        "condition": "request_received",
+    }
+
+    preview = _preview(client, context["context_id"], candidate)
+    assert preview.status_code == 200
+    assert preview.json()["can_save"] is True
+    assert preview.json()["normalized_candidate"]["pending"][0]["external_dependency"] == {
+        "actor": "lawyer",
+        "condition": "request_received",
+    }
+
+    saved = _save(client, context["context_id"], candidate)
+    assert saved.status_code == 200
+    encounter = saved.json()["encounter"]
+    assert encounter["payload"]["_visit_capture_v1"]["candidate"]["pending"][0]["external_dependency"] == {
+        "actor": "lawyer",
+        "condition": "request_received",
+    }
+    pending = client.get("/clinical/patient/SYN-DEPENDENCY/pending", headers=HEADERS)
+    assert pending.status_code == 200
+    assert pending.json()[0]["external_dependency"] == {
+        "actor": "lawyer",
+        "condition": "request_received",
+    }
+
+
+def test_p2_f2_01_dependency_rejects_undeclared_nested_fields_without_persistence(monkeypatch):
+    client = _client(monkeypatch)
+    _patient(client, "SYN-DEPENDENCY-REJECT")
+    context = _context(client, "SYN-DEPENDENCY-REJECT")
+    candidate = _candidate()
+    candidate["pending"][0]["external_dependency"] = {
+        "actor": "lawyer",
+        "condition": "request_received",
+        "raw_source_body": {"patient_document": "do not persist"},
+    }
+
+    for endpoint in (_preview, _save):
+        rejected = endpoint(client, context["context_id"], candidate)
+        assert rejected.status_code == 422
+        assert any(
+            "external_dependency" in str(item.get("loc", []))
+            and item.get("type") == "extra_forbidden"
+            for item in rejected.json()["detail"]
+        )
+
+    assert client.get("/clinical/patient/SYN-DEPENDENCY-REJECT/encounters", headers=HEADERS).json() == []
+    assert client.get("/clinical/patient/SYN-DEPENDENCY-REJECT/pending", headers=HEADERS).json() == []
+
+    for field, value in (("actor", "a" * 81), ("condition", "c" * 241)):
+        too_long = _candidate()
+        too_long["pending"][0]["external_dependency"] = {
+            "actor": "lawyer",
+            "condition": "request_received",
+        }
+        too_long["pending"][0]["external_dependency"][field] = value
+        assert _preview(client, context["context_id"], too_long).status_code == 422
+
+    allowed = _candidate()
+    allowed["pending"][0]["external_dependency"] = {
+        "actor": "lawyer",
+        "condition": "request_received",
+    }
+    assert _save(client, context["context_id"], allowed).status_code == 200
