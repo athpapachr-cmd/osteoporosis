@@ -1,5 +1,8 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
+> **2026-10-09 STACKED IMPLEMENTATION PR #139 OPEN / DRAFT / RELEASE HOLD:** [PR #139](https://github.com/athpapachr-cmd/osteoporosis/pull/139) targets `docs/cockpit-visit-brief-clinical-inbox-2026-10-07` because design PR #138 remains unmerged. Head at publication `2ebfe35c8bc2999b4d144d7d6ccdc8accf765e6e`. No code change, merge, deploy or data activation. Await bounded PR diff/canonical CI verification, then writer release; production feature gate unresolved.
+
+
 > **2026-10-09 RELEASE CONTRACT FROZEN:** `releases/VISIT_CAPTURE_SYNTHETIC_RELEASE_CANDIDATE_2026-10-09.md` blob `71dcab7c492d35d2a661f7397f3bd846a11dcacc`. Candidate must be stacked as DRAFT PR on unmerged design PR #138 branch. Current code lacks separate server-side OFF-by-default Visit Capture gate; live write activation remains HOLD. No code change or merge/deploy now. NEXT: stacked draft PR and source/CI verification, then release preparation STOP.
 
 
