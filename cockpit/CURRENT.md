@@ -1,5 +1,77 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
+> **2026-10-09 PR #139 READY / APPLICABLE RELEASE CI PASSED:** main design `9ec24a9…` LIVE; PR #139 ready for review, base main, head at checkpoint `85b6b657376244605cd5b7a72e04835f4928809f`. Exact eight code/test blobs match independent R2, applicable CI PASS; inherited L0-only design scope check nonapplicable. Controlled PR squash merge authorized by Product Owner direction, then auto-deploy and no-PHI health. No real GESY/Heidi/Dia data processing.
+
+
+> **2026-10-09 IMPLEMENTATION PR #139 RETARGETED TO MAIN:** parent design merge/deploy LIVE; PR #139 base `main`, head at retarget `d45620bf476f16eec20772716d6a5ed441f7e3fc`, diff contains only implementation/release scope (17 files), no reintroduced design. Mergeable true, still DRAFT. Next verify PR CI and reviewed blobs, then controlled release. No real-patient Dia/Heidi/GESY use authorized.
+
+
+> **2026-10-09 ANCESTRY RECONCILIATION:** implementation branch fast-forwarded to two-parent commit `1c2eb9f5ca5a4ff6ac35aaea218fc11fcce0111c`; tree `1cee65627be8c897abc97cdc0952f73dacced3c1` unchanged, merged design main `9ec24a9a5f756b31ee8e6031b5d587c90ce91ac6` now ancestor. No byte drift. Next: re-target PR #139 to main, check diff/CI, no patient-data activity.
+
+
+> **2026-10-09 DESIGN DEPLOY LIVE:** `dep-db4jtlrncjis73dn58u0` LIVE on Render Cockpit from design-only main `9ec24a9a5f756b31ee8e6031b5d587c90ce91ac6`. Visit Capture runtime NOT YET MERGED. Next: reconcile implementation PR #139 against merged design main, preserve code/test bytes; no live-data action.
+
+
+> **2026-10-09 DESIGN PR #138 MERGED:** verified `main=9ec24a9a5f756b31ee8e6031b5d587c90ce91ac6`; Render auto-deploy `dep-db4jtlrncjis73dn58u0` BUILD_IN_PROGRESS (design/docs-only runtime). PR #139 remains stacked/unmerged; no Visit Capture code deployed. Next: wait for design deploy terminal state, checkpoint, then PR #139 source reconciliation.
+
+
+> **2026-10-09 PR #138 READY:** design PR transitioned from draft to ready at unchanged exact head `5bc2a505758de6b24e82667bb84580d144f96b9c`; still unmerged. Next: authorized squash merge design first, then checkpoint before child implementation release.
+
+
+> **NOW 2026-10-09 — CONTROLLED RELEASE AUTHORIZED / WRITER ACTIVE:** Product Owner approved progression into existing production Cockpit without a second Render preview or extra feature toggle. Authenticated Visit Capture Save will become reachable after code deployment; this is distinct from authorizing identifiable Dia/Heidi/GESY use. Only existing clinical auth, clinician Save and synthetic-only UI warning currently apply; no claim of enforceable synthetic-only mode. Release owner may merge PR #138 then #139 sequentially after immutable-source and applicable CI checks and checkpoint each transition. No new runtime edits, live patient/provider usage or new general review. STOP if changed code/test bytes or genuine applicable gate fails.
+
+
+> **NOW (2026-10-09) — RELEASE CANDIDATE PREPARED / HOLD:** [PR #139](https://github.com/athpapachr-cmd/osteoporosis/pull/139) stacked DRAFT/unmerged on [parent design PR #138](https://github.com/athpapachr-cmd/osteoporosis/pull/138) DRAFT/unmerged; exact creation head `e667d8e5eb2541dd458e14a562acf2f598d1cb3c`. Release contract `releases/VISIT_CAPTURE_SYNTHETIC_RELEASE_CANDIDATE_2026-10-09.md` blob `71dcab7c492d35d2a661f7397f3bd846a11dcacc`. Corrected runtime/test head `07f68a2adc4664a4ab050b3fa10a663de591b662` unchanged; R2 closure PASS/0:0:0. PR canonical-impact, Visit Capture, Home and baseline-finalization CI PASS at pre-checkpoint head; L0 scope check is red solely because it applies an L0-only diff assertion to this legitimate non-L0 PR, though L0 contracts PASS; other unrelated checks pending. **Production merge/deploy HOLD** until distinct OFF-by-default backend Visit Capture write gate or full live-use qualification and separate explicit Product Owner release authority. No actual deployment or real-patient access. Writer RELEASED. Next: one release-enablement decision; no new broad R2 review or unrelated work.
+
+
+> **2026-10-09 STACKED IMPLEMENTATION PR #139 OPEN / DRAFT / RELEASE HOLD:** [PR #139](https://github.com/athpapachr-cmd/osteoporosis/pull/139) targets `docs/cockpit-visit-brief-clinical-inbox-2026-10-07` because design PR #138 remains unmerged. Head at publication `2ebfe35c8bc2999b4d144d7d6ccdc8accf765e6e`. No code change, merge, deploy or data activation. Await bounded PR diff/canonical CI verification, then writer release; production feature gate unresolved.
+
+
+> **2026-10-09 RELEASE CONTRACT FROZEN:** `releases/VISIT_CAPTURE_SYNTHETIC_RELEASE_CANDIDATE_2026-10-09.md` blob `71dcab7c492d35d2a661f7397f3bd846a11dcacc`. Candidate must be stacked as DRAFT PR on unmerged design PR #138 branch. Current code lacks separate server-side OFF-by-default Visit Capture gate; live write activation remains HOLD. No code change or merge/deploy now. NEXT: stacked draft PR and source/CI verification, then release preparation STOP.
+
+
+> **NOW 2026-10-09 — VISIT CAPTURE RELEASE PREPARATION ONLY:** Product Owner authorized preparation of release candidate and PR, NOT merge/deploy or real-patient activation. Docs/PR writer only; corrected runtime/test head `07f68a2adc4664a4ab050b3fa10a663de591b662` and final independent R2 PASS / 0:0:0 unchanged. Parent design PR #138 remains DRAFT/unmerged. Proposed stacked implementation PR against its design branch. Release-readiness HOLD: no backend OFF-by-default Visit Capture activation gate exists; live processor/retention qualifications also OPEN. Do not confuse synthetic candidate PASS with safe production write access. Next: release notes/checkpoint + draft stacked PR, no merge/deploy.
+
+
+> **NOW (2026-10-09) — VISIT CAPTURE FINAL R2 PASS / REVIEW CHAIN CLOSED:** independent focused C1–C3 closure PASS / COMPLETE_FOR_DECLARED_SCOPE / P0:P1:P2 = 0:0:0; original P2-F2-01 CLOSED. Received-review receipt `reviews/VISIT_CAPTURE_P2_F2_01_FOCUSED_CLOSURE_PASS_RECEIPT_2026-10-09.md` blob `adfb02e736d0db9ed77e305504a0b4a94ade9cb6`. Runtime/test frozen at `07f68a2adc4664a4ab050b3fa10a663de591b662`, CI `37963002895` SUCCESS, 20 tests. Existing F1/F3/F4/F5/F6 inherited PASS. Writer RELEASED. State IMPLEMENTED / FOCUSED TESTED / REVIEW CLOSED; NOT MERGED / NOT DEPLOYED / NOT REAL-PATIENT ACTIVATED. Draft design PR #138 remains separate/unmerged. Historical REVIEW HOLD statements below are superseded. Next action: separate bounded release-readiness and Product Owner authorization, never another reassurance review; no live Dia/Heidi/GESY/Gmail/Zadarma, patient-data or provider authority.
+
+
+> **NOW — 2026-10-09 CLOSURE REVIEW HOLD:** P2-F2-01 narrow correction/test head `07f68a2adc4664a4ab050b3fa10a663de591b662` + CI `37963002895` SUCCESS; code/test frozen. Request `reviews/VISIT_CAPTURE_P2_F2_01_FOCUSED_CLOSURE_REVIEW_REQUEST_2026-10-09.md`, blob `e8a479cfbc014e70f72312d866cc1dddb2abf735`, prepared NOT DISPATCHED. Prior post-code R2 BLOCK remains pending closure; other F1/F3/F4/F5/F6 PASS reused. Writer RELEASED. Next: one independent C1–C3 closure and STOP; no implementation, merge, deploy, patient-data or provider effects.
+
+
+> **NOW 2026-10-09 — CORRECTION TESTED / REVIEW HOLD:** P2-F2-01 dependency bounds corrected in `clinical_data.py` and targeted tests in `test_visit_capture.py`; runtime/test head `07f68a2adc4664a4ab050b3fa10a663de591b662`. CI run `37963002895` SUCCESS; post-test files changed only CURRENT/receipt metadata. Independent BLOCK receipt `reviews/VISIT_CAPTURE_POSTCODE_R2_P2_F2_01_BLOCK_RECEIPT_2026-10-09.md` blob `b448d45ff213c282eac8e97db19da0f29007e062`. Writer RELEASED. Only next permitted review: independent F2 + affected persistence closure, no re-review F1/F3/F4/F5/F6 except direct affected assertions; no merge/deploy.
+
+
+> **2026-10-09 P2-F2-01 corrected candidate / CI PENDING:** strict external dependency model implemented in `clinical_data.py` (blob `ea9e3d39c124136f4818094aec4086e49cbd0919`); focused rejection+roundtrip tests in `test_visit_capture.py` (blob `00adc97ec0c726cc4a063470cf7a77e6f134a711`). Writer ACTIVE only until focused CI result/checkpoint; then one independent F2/affected persistence closure, no broad re-review.
+
+
+> **NOW (2026-10-09): P2-F2-01 correction ACTIVE.** Independent Visit Capture post-code R2 returned BLOCK / 0:0:1 due only to unbounded `external_dependency`; F1/F3/F4/F5/F6 otherwise passed. Product Owner approved one narrow correction. Writer scoped to `clinical_data.py` strict nested dependency + `test_visit_capture.py` rejection/persistence oracles, then one focused CI and ONE F2/affected persistence closure review. Parent reviews stay CLOSED; no merge/deploy/live Dia/Heidi/GESY/Gmail/Zadarma/patient-data use.
+
+
+> **POST-CODE R2 HOLD (2026-10-08):** request `reviews/VISIT_CAPTURE_DIA_HEIDI_GESY_POSTCODE_FIDELITY_REVIEW_REQUEST_2026-10-08.md` blob `85d4a7ad219e4c078f5e79252f571328d58570d6`; runtime/test head `4646c923…`, focused CI `37811359040` SUCCESS. Writer RELEASED. Next: one independent exact-head F1–F6 review; no further implementation/merge/deploy.
+
+
+> **IMPLEMENTED / FOCUSED TESTED / WRITER RELEASED (2026-10-08):** runtime/test head `4646c923c728fd8613632db42e919687fc945504`; focused run `37811359040` SUCCESS for Python syntax, Visit Capture JS syntax, focused Visit Capture + affected Home tests, and diff hygiene. Later commits are CURRENT-only. No post-code R2 yet; no merge/deploy. Next: one independent exact-head post-code fidelity review, then stop.
+
+
+> **CI harness checkpoint:** focused Visit Capture workflow added at `4646c923…`; result pending. Next: observe exact-head CI only.
+
+
+> **Focused-test checkpoint:** eight synthetic acceptance cases + UI contract tests now exist (`322d617…`, `e1b22cc…`), but are NOT yet executed. Next: smallest CI run + syntax only; no broad suite.
+
+
+> **Entry checkpoint:** Cockpit Home now links to the bounded Visit Capture surface (`70a5461…`). No other Home behavior changed. Next: focused synthetic tests/CI only.
+
+
+> **UI checkpoint:** dedicated `/static/cockpit/visit-capture/` surface exists with explicit patient confirmation, transient candidate insertion, automatic 3-level preview and one Save. No live providers and no tests claimed yet. Next: Home entry + focused synthetic tests.
+
+
+> **Implementation checkpoint:** backend Visit Capture boundary committed at `9e780de18383fd244862187cb9be967c0a2c87cd`; UI/tests not yet implemented or verified. No live providers/patient data. Writer remains active. Next: dedicated Cockpit capture UI + focused synthetic evidence only.
+
+
+> **NOW (2026-10-08 IMPLEMENTATION ACTIVE):** Product Owner approved the reviewed synthetic/manual Visit Capture first-code slice (“Εγκρίνω”). Active implementation branch `feat/cockpit-visit-capture-v1-2026-10-08`, base reviewed docs head `5bc2a505758de6b24e82667bb84580d144f96b9c`. Scope is exactly the R2-passed boundary: confirmed-patient capture UI, transient VisitCaptureCandidateV1, stale patient/context guard, one three-level preview, one explicit protected Save to existing encounter owner, minimum bounded pending persistence, and server-enforced no post-signoff overwrite for Visit-Capture-signed encounters. No live external source/provider or patient-data activation. Next: bounded implementation + focused synthetic evidence, then writer release into independent exact-head post-code R2 HOLD.
+
+
 > **NOW (2026-10-08):** Independent Visit Capture delta pre-code R2 PASS / COMPLETE_FOR_DECLARED_SCOPE / 0:0:0 received; chain CLOSED. Receipt `reviews/VISIT_CAPTURE_DIA_HEIDI_GESY_DELTA_R2_PASS_RECEIPT_2026-10-08.md`. Prior R2-pending text below is historical. Next: Product Owner first-code checkpoint + separately scoped implementation writer before code. Narrow synthetic/manual Visit Capture only; no live Dia/Heidi/GESY/Gmail/Zadarma or patient-data activation.
 
 

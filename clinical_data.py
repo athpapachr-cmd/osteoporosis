@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from datetime import datetime, timedelta, timezone
+from typing import Any, Dict, List, Literal, Optional
 from uuid import uuid4
 import os
 import secrets
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from pydantic import BaseModel, Field
-from sqlalchemy import Column, DateTime, JSON, String, select, func
+from sqlalchemy import Column, DateTime, JSON, String, delete, select, func
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, Session
 
@@ -46,6 +46,36 @@ class LabSnapshotORM(ClinicalBase):
     lab_date = Column(String, nullable=False, index=True)
     source_encounter_id = Column(String, nullable=True, index=True)
     values_json = Column(JSON, nullable=False, default=dict)
+    created_at = Column(DateTime, nullable=False, index=True)
+    updated_at = Column(DateTime, nullable=False, index=True)
+
+
+class VisitCaptureContextORM(ClinicalBase):
+    __tablename__ = "clinical_visit_capture_contexts"
+
+    id = Column(String, primary_key=True)
+    client_session_id = Column(String, nullable=False, index=True)
+    patient_id = Column(String, nullable=False, index=True)
+    patient_updated_at = Column(DateTime, nullable=False)
+    issued_at = Column(DateTime, nullable=False, index=True)
+    expires_at = Column(DateTime, nullable=False, index=True)
+
+
+class ClinicalPendingORM(ClinicalBase):
+    __tablename__ = "clinical_pending_items"
+
+    id = Column(String, primary_key=True)
+    patient_id = Column(String, nullable=False, index=True)
+    source_encounter_id = Column(String, nullable=False, index=True)
+    item_type = Column(String, nullable=False, index=True)
+    description = Column(String, nullable=False)
+    trigger_text = Column(String, nullable=True)
+    status = Column(String, nullable=False, index=True)
+    responsible_role = Column(String, nullable=False)
+    external_dependency_json = Column(JSON, nullable=True)
+    review_date = Column(String, nullable=True, index=True)
+    provenance_json = Column(JSON, nullable=False, default=list)
+    resolution_event_id = Column(String, nullable=True, index=True)
     created_at = Column(DateTime, nullable=False, index=True)
     updated_at = Column(DateTime, nullable=False, index=True)
 
@@ -102,6 +132,211 @@ class LabSnapshotRecord(BaseModel):
     updated_at: datetime
 
 
+SourceRole = Literal["heidi_today", "gesy_today", "gesy_previous", "clinician_edit"]
+VerificationState = Literal["source_stated", "clinician_confirmed"]
+CertaintyState = Literal["certain", "uncertain", "conflicting"]
+SourceIdentityState = Literal["consistent", "uncertain", "conflict"]
+ChangeDirection = Literal["improved", "worsened", "new", "resolved", "unchanged"]
+ComparisonType = Literal["previous_structured_encounter", "previous_gesy_visit", "unavailable"]
+DecisionType = Literal["therapy", "referral", "medication", "advice", "sick_leave", "admin"]
+MedicationAction = Literal["prescribed", "continued", "stopped"]
+PendingStatus = Literal[
+    "not_yet_indicated",
+    "open",
+    "awaiting_patient",
+    "awaiting_result",
+    "resolved",
+    "cancelled",
+]
+
+
+class VisitCaptureSourceBinding(BaseModel):
+    model_config = {"extra": "forbid"}
+
+    source_ref: str = Field(min_length=1, max_length=120)
+    role: SourceRole
+    captured_at: Optional[datetime] = None
+    source_date: Optional[str] = Field(default=None, pattern=r"^\d{4}-\d{2}-\d{2}$")
+
+
+class VisitCaptureFact(BaseModel):
+    model_config = {"extra": "forbid"}
+
+    text: str = Field(min_length=1, max_length=4000)
+    provenance: List[str] = Field(min_length=1, max_length=8)
+    verification: VerificationState = "source_stated"
+    certainty: CertaintyState = "certain"
+
+
+class VisitCaptureChange(VisitCaptureFact):
+    direction: ChangeDirection
+
+
+class VisitCaptureFinding(VisitCaptureFact):
+    region: Optional[str] = Field(default=None, max_length=200)
+
+
+class VisitCaptureCodingItem(BaseModel):
+    model_config = {"extra": "forbid"}
+
+    system: str = Field(default="ICD10", min_length=1, max_length=40)
+    code: str = Field(min_length=1, max_length=80)
+    title: str = Field(min_length=1, max_length=400)
+    provenance: List[str] = Field(min_length=1, max_length=8)
+
+
+class VisitCaptureCoding(BaseModel):
+    model_config = {"extra": "forbid"}
+
+    gesy_coded: List[VisitCaptureCodingItem] = Field(default_factory=list, max_length=50)
+    coding_complete: bool = False
+
+
+class VisitCaptureDecision(VisitCaptureFact):
+    type: DecisionType
+    responsible_role: Optional[str] = Field(default=None, max_length=120)
+
+
+class VisitCaptureDuration(BaseModel):
+    model_config = {"extra": "forbid"}
+
+    value: float
+    unit: str = Field(min_length=1, max_length=40)
+    approximate: bool = False
+
+
+class VisitCaptureMedication(BaseModel):
+    model_config = {"extra": "forbid"}
+
+    name: str = Field(min_length=1, max_length=240)
+    action: MedicationAction
+    dose: Optional[str] = Field(default=None, max_length=120)
+    frequency: Optional[str] = Field(default=None, max_length=120)
+    route: Optional[str] = Field(default=None, max_length=120)
+    duration: Optional[VisitCaptureDuration] = None
+    provenance: List[str] = Field(min_length=1, max_length=8)
+    verification: VerificationState = "source_stated"
+    certainty: CertaintyState = "certain"
+
+
+class VisitCaptureExternalDependency(BaseModel):
+    """Only the declared external actor and condition may be retained."""
+
+    model_config = {"extra": "forbid"}
+
+    actor: str = Field(min_length=1, max_length=80)
+    condition: str = Field(min_length=1, max_length=240)
+
+
+class VisitCapturePendingCandidate(BaseModel):
+    model_config = {"extra": "forbid"}
+
+    item_type: str = Field(min_length=1, max_length=120)
+    description: str = Field(min_length=1, max_length=1000)
+    trigger: Optional[str] = Field(default=None, max_length=1000)
+    status: PendingStatus
+    responsible_role: str = Field(min_length=1, max_length=120)
+    external_dependency: Optional[VisitCaptureExternalDependency] = None
+    review_date: Optional[str] = Field(default=None, pattern=r"^\d{4}-\d{2}-\d{2}$")
+    provenance: List[str] = Field(min_length=1, max_length=8)
+
+
+class VisitCaptureNextContact(BaseModel):
+    model_config = {"extra": "forbid"}
+
+    when: Optional[str] = Field(default=None, pattern=r"^\d{4}-\d{2}-\d{2}$")
+    time: Optional[str] = Field(default=None, pattern=r"^\d{2}:\d{2}$")
+    purpose: str = Field(min_length=1, max_length=1000)
+    assess: List[str] = Field(default_factory=list, max_length=20)
+    provenance: List[str] = Field(min_length=1, max_length=8)
+
+
+class VisitCaptureComparisonBasis(BaseModel):
+    model_config = {"extra": "forbid"}
+
+    type: ComparisonType
+    source_ref: Optional[str] = Field(default=None, max_length=120)
+
+
+class VisitCaptureCandidateV1(BaseModel):
+    model_config = {"extra": "forbid"}
+
+    schema_version: Literal["visit_capture_candidate_v1"]
+    source_identity_state: SourceIdentityState
+    encounter_date: str = Field(pattern=r"^\d{4}-\d{2}-\d{2}$")
+    visit_type: Optional[str] = Field(default=None, max_length=240)
+    specialty: Optional[str] = Field(default=None, max_length=240)
+    reason_for_visit: VisitCaptureFact
+    source_bindings: List[VisitCaptureSourceBinding] = Field(min_length=1, max_length=12)
+    comparison_basis: VisitCaptureComparisonBasis
+    what_changed: List[VisitCaptureChange] = Field(default_factory=list, max_length=40)
+    findings: List[VisitCaptureFinding] = Field(default_factory=list, max_length=80)
+    clinical_impression: List[VisitCaptureFact] = Field(default_factory=list, max_length=40)
+    coding: VisitCaptureCoding = Field(default_factory=VisitCaptureCoding)
+    decisions: List[VisitCaptureDecision] = Field(default_factory=list, max_length=60)
+    medications: List[VisitCaptureMedication] = Field(default_factory=list, max_length=60)
+    pending: List[VisitCapturePendingCandidate] = Field(default_factory=list, max_length=60)
+    next_contact: Optional[VisitCaptureNextContact] = None
+    safety_net: List[VisitCaptureFact] = Field(default_factory=list, max_length=20)
+    uncertainties: List[VisitCaptureFact] = Field(default_factory=list, max_length=40)
+
+
+class VisitCaptureContextCreate(BaseModel):
+    model_config = {"extra": "forbid"}
+
+    patient_id: str = Field(min_length=1, max_length=120)
+    client_session_id: str = Field(min_length=16, max_length=120)
+
+
+class VisitCaptureContextRecord(BaseModel):
+    context_id: str
+    patient_id: str
+    expires_at: datetime
+
+
+class VisitCaptureRequest(BaseModel):
+    model_config = {"extra": "forbid"}
+
+    context_id: str = Field(min_length=1, max_length=120)
+    candidate: VisitCaptureCandidateV1
+
+
+class VisitCapturePreview(BaseModel):
+    patient_id: str
+    context_id: str
+    can_save: bool
+    blocking_reason: Optional[str] = None
+    normalized_candidate: Dict[str, Any]
+    snapshot: str
+    brief: str
+    detail: str
+
+
+class ClinicalPendingRecord(BaseModel):
+    pending_id: str
+    patient_id: str
+    source_encounter_id: str
+    item_type: str
+    description: str
+    trigger: Optional[str]
+    status: str
+    responsible_role: str
+    external_dependency: Optional[VisitCaptureExternalDependency]
+    review_date: Optional[str]
+    provenance: List[str]
+    resolution_event_id: Optional[str]
+    created_at: datetime
+    updated_at: datetime
+
+
+class VisitCaptureSaveRecord(BaseModel):
+    encounter: EncounterRecord
+    pending: List[ClinicalPendingRecord]
+    snapshot: str
+    brief: str
+    detail: str
+
+
 class ClinicalStatus(BaseModel):
     database_dialect: str
     protected: bool
@@ -137,6 +372,173 @@ def resolve_encounter_status(
     if content_changed or requested == "amended":
         return "amended"
     return "completed"
+
+
+def _visit_capture_fact_text(items: List[Any]) -> str:
+    return "; ".join(item.text for item in items if getattr(item, "text", "").strip())
+
+
+def _visit_capture_medication_text(items: List[VisitCaptureMedication]) -> str:
+    rendered: List[str] = []
+    for item in items:
+        parts = [item.name]
+        if item.dose:
+            parts.append(item.dose)
+        if item.frequency:
+            parts.append(item.frequency)
+        if item.route:
+            parts.append(item.route)
+        if item.duration:
+            approx = "~" if item.duration.approximate else ""
+            parts.append(f"{approx}{item.duration.value:g} {item.duration.unit}")
+        rendered.append(" · ".join(parts))
+    return "; ".join(rendered)
+
+
+def _visit_capture_pending_text(items: List[VisitCapturePendingCandidate]) -> str:
+    rendered: List[str] = []
+    for item in items:
+        text = item.description
+        if item.trigger:
+            text += f" — {item.trigger}"
+        if item.review_date:
+            text += f" · review {item.review_date}"
+        rendered.append(text)
+    return "; ".join(rendered)
+
+
+def _visit_capture_next_text(item: Optional[VisitCaptureNextContact]) -> str:
+    if item is None:
+        return ""
+    when = " ".join(part for part in [item.when or "", item.time or ""] if part).strip()
+    assess = "; ".join(item.assess)
+    suffix = f" — {assess}" if assess else ""
+    return f"{when + ' · ' if when else ''}{item.purpose}{suffix}"
+
+
+def _render_visit_capture(candidate: VisitCaptureCandidateV1) -> tuple[str, str, str]:
+    changed = _visit_capture_fact_text(candidate.what_changed)
+    decisions = _visit_capture_fact_text(candidate.decisions)
+    medications = _visit_capture_medication_text(candidate.medications)
+    pending = _visit_capture_pending_text(candidate.pending)
+    next_text = _visit_capture_next_text(candidate.next_contact)
+    findings = _visit_capture_fact_text(candidate.findings)
+    impressions = _visit_capture_fact_text(candidate.clinical_impression)
+    safety = _visit_capture_fact_text(candidate.safety_net)
+    uncertainties = _visit_capture_fact_text(candidate.uncertainties)
+
+    snapshot_lines = [f"ΣΗΜΕΡΑ: {candidate.reason_for_visit.text}"]
+    if changed:
+        snapshot_lines.append(f"ΤΙ ΑΛΛΑΞΕ: {changed}")
+    decision_parts = [part for part in [decisions, medications] if part]
+    if decision_parts:
+        snapshot_lines.append(f"ΑΠΟΦΑΣΗ: {'; '.join(decision_parts)}")
+    if pending:
+        snapshot_lines.append(f"ΕΚΚΡΕΜΕΙ: {pending}")
+    if next_text:
+        snapshot_lines.append(f"ΕΠΟΜΕΝΗ: {next_text}")
+    snapshot = "\n".join(snapshot_lines)
+
+    today_parts = [candidate.reason_for_visit.text]
+    if changed:
+        today_parts.append(changed)
+    if findings:
+        today_parts.append(f"Ευρήματα: {findings}")
+    if impressions:
+        today_parts.append(f"Κλινική εκτίμηση: {impressions}")
+    brief_lines = [f"ΣΗΜΕΡΑ: {'; '.join(today_parts)}"]
+    if decision_parts:
+        brief_lines.append(f"ΑΠΟΦΑΣΗ: {'; '.join(decision_parts)}")
+    if pending:
+        brief_lines.append(f"ΕΚΚΡΕΜΕΙ: {pending}")
+    if next_text:
+        brief_lines.append(f"ΕΠΟΜΕΝΗ ΕΠΑΦΗ: {next_text}")
+    if safety:
+        brief_lines.append(f"SAFETY-NET: {safety}")
+    brief = "\n\n".join(brief_lines)
+
+    source_text = "; ".join(f"{item.role}: {item.source_ref}" for item in candidate.source_bindings)
+    detail_lines = [
+        f"ΗΜΕΡΟΜΗΝΙΑ: {candidate.encounter_date}",
+        f"ΛΟΓΟΣ ΕΠΙΣΚΕΨΗΣ: {candidate.reason_for_visit.text}",
+        f"ΠΗΓΕΣ: {source_text}",
+        f"ΒΑΣΗ ΣΥΓΚΡΙΣΗΣ: {candidate.comparison_basis.type}",
+    ]
+    for label, text in [
+        ("ΤΙ ΑΛΛΑΞΕ", changed),
+        ("ΕΥΡΗΜΑΤΑ", findings),
+        ("ΚΛΙΝΙΚΗ ΕΚΤΙΜΗΣΗ", impressions),
+        ("ΑΠΟΦΑΣΕΙΣ", decisions),
+        ("ΦΑΡΜΑΚΑ", medications),
+        ("ΕΚΚΡΕΜΟΤΗΤΕΣ", pending),
+        ("ΕΠΟΜΕΝΗ ΕΠΑΦΗ", next_text),
+        ("SAFETY-NET", safety),
+        ("ΑΒΕΒΑΙΟΤΗΤΕΣ", uncertainties),
+    ]:
+        if text:
+            detail_lines.append(f"{label}: {text}")
+    if candidate.coding.gesy_coded:
+        coded = "; ".join(
+            f"{item.system} {item.code} — {item.title}" for item in candidate.coding.gesy_coded
+        )
+        detail_lines.append(
+            f"ΚΩΔΙΚΟΠΟΙΗΣΗ ΓΕΣΥ ({'πλήρης' if candidate.coding.coding_complete else 'μη πλήρης'}): {coded}"
+        )
+    return snapshot, brief, "\n".join(detail_lines)
+
+
+def _validate_visit_capture_candidate(candidate: VisitCaptureCandidateV1) -> None:
+    source_refs = {item.source_ref for item in candidate.source_bindings}
+    if candidate.comparison_basis.type == "unavailable" and candidate.what_changed:
+        raise HTTPException(
+            status_code=422,
+            detail="what_changed requires a safe comparison basis",
+        )
+    if candidate.comparison_basis.source_ref and candidate.comparison_basis.source_ref not in source_refs:
+        raise HTTPException(status_code=422, detail="comparison source_ref is not bound")
+
+    fact_groups: List[List[Any]] = [
+        [candidate.reason_for_visit],
+        candidate.what_changed,
+        candidate.findings,
+        candidate.clinical_impression,
+        candidate.decisions,
+        candidate.medications,
+        candidate.pending,
+        candidate.safety_net,
+        candidate.uncertainties,
+    ]
+    if candidate.next_contact is not None:
+        fact_groups.append([candidate.next_contact])
+    fact_groups.append(candidate.coding.gesy_coded)
+    for group in fact_groups:
+        for item in group:
+            provenance = getattr(item, "provenance", [])
+            unknown = [ref for ref in provenance if ref not in source_refs]
+            if unknown:
+                raise HTTPException(
+                    status_code=422,
+                    detail=f"unbound provenance reference: {unknown[0]}",
+                )
+
+
+def _pending_record(row: ClinicalPendingORM) -> ClinicalPendingRecord:
+    return ClinicalPendingRecord(
+        pending_id=row.id,
+        patient_id=row.patient_id,
+        source_encounter_id=row.source_encounter_id,
+        item_type=row.item_type,
+        description=row.description,
+        trigger=row.trigger_text,
+        status=row.status,
+        responsible_role=row.responsible_role,
+        external_dependency=row.external_dependency_json,
+        review_date=row.review_date,
+        provenance=list(row.provenance_json or []),
+        resolution_event_id=row.resolution_event_id,
+        created_at=row.created_at,
+        updated_at=row.updated_at,
+    )
 
 
 def build_clinical_router(engine: Engine) -> APIRouter:
@@ -227,6 +629,182 @@ def build_clinical_router(engine: Engine) -> APIRouter:
             patient = ensure_patient(session, patient_id)
             return patient_summary(session, patient)
 
+    def visit_capture_context(
+        session: Session,
+        context_id: str,
+    ) -> VisitCaptureContextORM:
+        context = session.get(VisitCaptureContextORM, context_id)
+        if context is None:
+            raise HTTPException(status_code=409, detail="Visit Capture context is stale or invalid")
+        now = utcnow()
+        if context.expires_at <= now:
+            session.delete(context)
+            session.commit()
+            raise HTTPException(status_code=409, detail="Visit Capture context expired")
+        patient = ensure_patient(session, context.patient_id)
+        if patient.updated_at != context.patient_updated_at:
+            raise HTTPException(status_code=409, detail="Patient context changed; confirm patient again")
+        return context
+
+    @router.post(
+        "/visit-capture/context",
+        response_model=VisitCaptureContextRecord,
+        dependencies=protected,
+    )
+    def create_visit_capture_context(req: VisitCaptureContextCreate) -> VisitCaptureContextRecord:
+        now = utcnow()
+        with Session(engine) as session:
+            patient = ensure_patient(session, req.patient_id.strip())
+            session.execute(
+                delete(VisitCaptureContextORM).where(
+                    VisitCaptureContextORM.client_session_id == req.client_session_id
+                )
+            )
+            context = VisitCaptureContextORM(
+                id=str(uuid4()),
+                client_session_id=req.client_session_id,
+                patient_id=patient.patient_id,
+                patient_updated_at=patient.updated_at,
+                issued_at=now,
+                expires_at=now + timedelta(minutes=30),
+            )
+            session.add(context)
+            session.commit()
+            session.refresh(context)
+            return VisitCaptureContextRecord(
+                context_id=context.id,
+                patient_id=context.patient_id,
+                expires_at=context.expires_at,
+            )
+
+    @router.post(
+        "/visit-capture/preview",
+        response_model=VisitCapturePreview,
+        dependencies=protected,
+    )
+    def preview_visit_capture(req: VisitCaptureRequest) -> VisitCapturePreview:
+        _validate_visit_capture_candidate(req.candidate)
+        with Session(engine) as session:
+            context = visit_capture_context(session, req.context_id)
+            snapshot, brief, detail = _render_visit_capture(req.candidate)
+            blocked = req.candidate.source_identity_state != "consistent"
+            return VisitCapturePreview(
+                patient_id=context.patient_id,
+                context_id=context.id,
+                can_save=not blocked,
+                blocking_reason=(
+                    "Source identity must be resolved before Save" if blocked else None
+                ),
+                normalized_candidate=req.candidate.model_dump(mode="json", exclude_none=False),
+                snapshot=snapshot,
+                brief=brief,
+                detail=detail,
+            )
+
+    @router.post(
+        "/visit-capture/save",
+        response_model=VisitCaptureSaveRecord,
+        dependencies=protected,
+    )
+    def save_visit_capture(req: VisitCaptureRequest) -> VisitCaptureSaveRecord:
+        _validate_visit_capture_candidate(req.candidate)
+        if req.candidate.source_identity_state != "consistent":
+            raise HTTPException(
+                status_code=409,
+                detail="Source identity conflict/uncertainty must be resolved before Save",
+            )
+        now = utcnow()
+        with Session(engine) as session:
+            context = visit_capture_context(session, req.context_id)
+            consumed = session.execute(
+                delete(VisitCaptureContextORM).where(
+                    VisitCaptureContextORM.id == context.id
+                )
+            )
+            if consumed.rowcount != 1:
+                session.rollback()
+                raise HTTPException(status_code=409, detail="Visit Capture context already consumed")
+
+            normalized = req.candidate.model_dump(mode="json", exclude_none=False)
+            row = EncounterORM(
+                id=str(uuid4()),
+                patient_id=context.patient_id,
+                encounter_date=req.candidate.encounter_date,
+                status="completed",
+                payload_json={
+                    "_visit_capture_v1": {
+                        "schema_version": "1",
+                        "signed": True,
+                        "signed_at": now.isoformat(),
+                        "candidate": normalized,
+                    }
+                },
+                created_at=now,
+                updated_at=now,
+            )
+            session.add(row)
+            pending_rows: List[ClinicalPendingORM] = []
+            for item in req.candidate.pending:
+                pending_row = ClinicalPendingORM(
+                    id=str(uuid4()),
+                    patient_id=context.patient_id,
+                    source_encounter_id=row.id,
+                    item_type=item.item_type,
+                    description=item.description,
+                    trigger_text=item.trigger,
+                    status=item.status,
+                    responsible_role=item.responsible_role,
+                    external_dependency_json=(item.external_dependency.model_dump(mode="json") if item.external_dependency else None),
+                    review_date=item.review_date,
+                    provenance_json=item.provenance,
+                    resolution_event_id=None,
+                    created_at=now,
+                    updated_at=now,
+                )
+                session.add(pending_row)
+                pending_rows.append(pending_row)
+
+            patient = ensure_patient(session, context.patient_id)
+            patient.updated_at = now
+            session.add(patient)
+            session.commit()
+            session.refresh(row)
+            for pending_row in pending_rows:
+                session.refresh(pending_row)
+
+            snapshot, brief, detail = _render_visit_capture(req.candidate)
+            encounter = EncounterRecord(
+                encounter_id=row.id,
+                patient_id=row.patient_id,
+                encounter_date=row.encounter_date,
+                status=row.status,
+                payload=row.payload_json or {},
+                created_at=row.created_at,
+                updated_at=row.updated_at,
+            )
+            return VisitCaptureSaveRecord(
+                encounter=encounter,
+                pending=[_pending_record(item) for item in pending_rows],
+                snapshot=snapshot,
+                brief=brief,
+                detail=detail,
+            )
+
+    @router.get(
+        "/patient/{patient_id}/pending",
+        response_model=List[ClinicalPendingRecord],
+        dependencies=protected,
+    )
+    def list_pending(patient_id: str) -> List[ClinicalPendingRecord]:
+        with Session(engine) as session:
+            ensure_patient(session, patient_id)
+            rows = session.execute(
+                select(ClinicalPendingORM)
+                .where(ClinicalPendingORM.patient_id == patient_id)
+                .order_by(ClinicalPendingORM.created_at.desc())
+            ).scalars().all()
+            return [_pending_record(row) for row in rows]
+
     @router.post("/patient/{patient_id}/encounters", response_model=EncounterRecord, dependencies=protected)
     def create_encounter(patient_id: str, req: EncounterCreate) -> EncounterRecord:
         now = utcnow()
@@ -303,6 +881,28 @@ def build_clinical_router(engine: Engine) -> APIRouter:
                 raise HTTPException(status_code=404, detail="Encounter not found")
 
             current_status = row.status or "draft"
+            existing_capture = (row.payload_json or {}).get("_visit_capture_v1")
+            if isinstance(existing_capture, dict) and existing_capture.get("signed") is True:
+                changed = (
+                    (req.encounter_date is not None and req.encounter_date != row.encounter_date)
+                    or (req.status is not None and req.status != current_status)
+                    or (req.payload is not None and req.payload != (row.payload_json or {}))
+                )
+                if changed:
+                    raise HTTPException(
+                        status_code=409,
+                        detail="Signed Visit Capture encounters are immutable; amendment history is not enabled yet",
+                    )
+                return EncounterRecord(
+                    encounter_id=row.id,
+                    patient_id=row.patient_id,
+                    encounter_date=row.encounter_date,
+                    status=row.status,
+                    payload=row.payload_json or {},
+                    created_at=row.created_at,
+                    updated_at=row.updated_at,
+                )
+
             content_changed = False
 
             if req.encounter_date is not None and req.encounter_date != row.encounter_date:

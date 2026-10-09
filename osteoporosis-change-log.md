@@ -1523,3 +1523,16 @@ The product correction establishes two first-class entrances over one clinical-a
 The revised design preserves verified/clinician-confirmed identity, candidate-vs-authoritative results, existing clinical owners/G3 reuse, Reception communication orchestration/Zadarma transport, clinician approval, truthful failure/idempotency and configured non-booked callback windows. Original Current/design/request bytes were archived unchanged from the verified base before replacement. Root PR-1 release HOLD and slice design remain untouched.
 
 The new design candidate is `cockpit/VISIT_BRIEF_CLINICAL_INBOX_DESIGN_2026-10-07.md`. One bounded independent R2 pre-code request is prepared; no review was dispatched or verdict claimed. No runtime/schema/test/config/provider changes, live mailbox access, patient document processing, message send, merge or deploy occurred in this design replan.
+
+
+---
+
+## 2026-10-09 — Visit Capture synthetic implementation independently closed (not released)
+
+The Product Owner approved the bounded first-code Visit Capture workflow after the independent Dia/Heidi/GESY → Cockpit delta pre-code R2 PASS. The implemented candidate extends the existing protected `clinical_encounters` owner and uses an explicit clinician Save, patient-bound capture context, structured three-level projections (Snapshot / Visit Brief / Encounter Detail), minimum first-class pending persistence, and server-side no-silent-edit after signoff. No live Dia, Heidi, GESY, Gmail, Zadarma or real-patient input was accessed during the code/evidence work.
+
+The original exact-head post-code R2 returned BLOCK / P0:P1:P2 = 0:0:1 solely for P2-F2-01: an unbounded nested `external_dependency`. Product Owner authorized a single bounded correction. `clinical_data.py` now accepts only `actor` (1–80 chars) and `condition` (1–240 chars) with `extra=forbid`; `test_visit_capture.py` proves valid persistence and rejects unknown/oversized nested input before encounter/pending write.
+
+Corrected exact runtime/test head: `07f68a2adc4664a4ab050b3fa10a663de591b662`. Focused CI run `37963002895` SUCCESS (20 focused/UI/Home tests, Python and JS syntax, diff hygiene). Product Owner supplied independent focused C1–C3 closure PASS / COMPLETE_FOR_DECLARED_SCOPE / P0:P1:P2 = 0:0:0, **original P2-F2-01 CLOSED**. The older F1/F3/F4/F5/F6 PASS findings were inherited, and the review chain STOPPED. Durable result: `cockpit/reviews/VISIT_CAPTURE_P2_F2_01_FOCUSED_CLOSURE_PASS_RECEIPT_2026-10-09.md`.
+
+No implementation/design review is pending for the declared scope. This is **implemented, focused tested, independently review-closed, not merged, not deployed and not live-patient qualified**. Release sequencing, design PR #138 ancestry, any production feature/data-access fence, and the Product Owner's explicit merge/deploy authorization remain separate gates. Root PR-1 release HOLD and the independent Clinical Inbox/provider activation gates remain unchanged.

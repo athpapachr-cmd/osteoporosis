@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="el">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>Καταγραφή επίσκεψης · Clinical Excellence Cockpit</title>
+  <link rel="stylesheet" href="/static/cockpit/visit-capture/styles.css" />
+</head>
+<body>
+  <main class="capture-shell">
+    <header class="capture-header">
+      <a class="back-link" href="/static/cockpit/">‹ Cockpit</a>
+      <div>
+        <p class="eyebrow">Clinical Excellence</p>
+        <h1>Καταγραφή επίσκεψης</h1>
+        <p>Μία δομημένη καταγραφή · τρεις προβολές · μία τελική αποθήκευση.</p>
+      </div>
+      <span class="mode-pill">Synthetic / manual first-code</span>
+    </header>
+
+    <section class="card" id="authCard">
+      <div class="card-head">
+        <div>
+          <span class="step-dot">1</span>
+          <div>
+            <h2>Επιβεβαίωση ασθενούς</h2>
+            <p>Το Cockpit επιλέγει τον προορισμό της εγγραφής. Το Dia δεν μπορεί να αλλάξει ασθενή.</p>
+          </div>
+        </div>
+        <span id="authState" class="state-chip">Έλεγχος…</span>
+      </div>
+
+      <div id="loginBox" class="login-box" hidden>
+        <label>
+          <span>Clinical access key</span>
+          <input id="clinicalKey" type="password" autocomplete="current-password" />
+        </label>
+        <button id="loginBtn" class="button secondary" type="button">Σύνδεση</button>
+      </div>
+
+      <div id="patientBox" class="patient-box" hidden>
+        <label>
+          <span>Internal patient ID</span>
+          <input id="patientId" type="text" maxlength="120" autocomplete="off" placeholder="π.χ. SYN-001" />
+        </label>
+        <button id="confirmPatientBtn" class="button secondary" type="button">Επιβεβαίωση ασθενούς</button>
+      </div>
+
+      <div id="confirmedPatient" class="confirmed-patient" hidden>
+        <span>Επιβεβαιωμένος ασθενής</span>
+        <strong id="confirmedPatientId">—</strong>
+        <button id="changePatientBtn" class="text-button" type="button">Αλλαγή</button>
+      </div>
+    </section>
+
+    <section class="card capture-card">
+      <div class="card-head">
+        <div>
+          <span class="step-dot">2</span>
+          <div>
+            <h2>Πρόχειρη καταγραφή</h2>
+            <p>Το Dia μπορεί να εισαγάγει εδώ το structured candidate. Δεν αποθηκεύεται πριν πατήσεις «Αποθήκευση».</p>
+          </div>
+        </div>
+        <span id="candidateState" class="state-chip">Αναμονή</span>
+      </div>
+
+      <textarea id="candidateInput" spellcheck="false" autocomplete="off" placeholder='{"schema_version":"visit_capture_candidate_v1", ...}' disabled></textarea>
+      <p id="candidateMessage" class="helper">Επιβεβαίωσε πρώτα τον ασθενή.</p>
+    </section>
+
+    <section class="card preview-card">
+      <div class="card-head">
+        <div>
+          <span class="step-dot">3</span>
+          <div>
+            <h2>Προεπισκόπηση</h2>
+            <p>Οι τρεις προβολές παράγονται από το ίδιο structured encounter.</p>
+          </div>
+        </div>
+        <span id="previewState" class="state-chip">Δεν υπάρχει preview</span>
+      </div>
+
+      <div class="segmented" role="tablist" aria-label="Επίπεδο σύνοψης">
+        <button class="segment active" type="button" data-level="snapshot">Snapshot</button>
+        <button class="segment" type="button" data-level="brief">Visit Brief</button>
+        <button class="segment" type="button" data-level="detail">Encounter Detail</button>
+      </div>
+
+      <article id="previewText" class="preview-text empty">Η προεπισκόπηση θα εμφανιστεί αυτόματα όταν το candidate είναι έγκυρο.</article>
+
+      <div id="blockingNotice" class="blocking-notice" hidden></div>
+
+      <div class="save-row">
+        <div>
+          <strong>Τελική κλινική πράξη</strong>
+          <p>Έλεγξε το περιεχόμενο. Μετά το Save η επίσκεψη κλειδώνει από σιωπηρή τροποποίηση.</p>
+        </div>
+        <button id="saveBtn" class="button primary" type="button" disabled>Αποθήκευση επίσκεψης</button>
+      </div>
+      <p id="saveMessage" class="helper"></p>
+    </section>
+
+    <section class="privacy-note">
+      <strong>Όριο πρώτης υλοποίησης</strong>
+      <p>Δεν γίνεται live ανάγνωση Dia, Heidi ή ΓεΣΥ. Δεν αποθηκεύονται raw source pages. Η λειτουργία αυτή δέχεται μόνο synthetic/manual candidate μέχρι να κλείσουν τα live activation gates.</p>
+    </section>
+  </main>
+
+  <script src="/static/cockpit/visit-capture/app.js"></script>
+</body>
+</html>
