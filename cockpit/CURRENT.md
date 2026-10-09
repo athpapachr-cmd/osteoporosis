@@ -1,5 +1,8 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
+> **2026-10-09 DESIGN DEPLOY LIVE:** `dep-db4jtlrncjis73dn58u0` LIVE on Render Cockpit from design-only main `9ec24a9a5f756b31ee8e6031b5d587c90ce91ac6`. Visit Capture runtime NOT YET MERGED. Next: reconcile implementation PR #139 against merged design main, preserve code/test bytes; no live-data action.
+
+
 > **2026-10-09 DESIGN PR #138 MERGED:** verified `main=9ec24a9a5f756b31ee8e6031b5d587c90ce91ac6`; Render auto-deploy `dep-db4jtlrncjis73dn58u0` BUILD_IN_PROGRESS (design/docs-only runtime). PR #139 remains stacked/unmerged; no Visit Capture code deployed. Next: wait for design deploy terminal state, checkpoint, then PR #139 source reconciliation.
 
 
