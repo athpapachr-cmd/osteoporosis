@@ -107,7 +107,7 @@ def test_visit_capture_does_not_autoload_recent_patients_on_entry():
     assert 'id="patientSelect"' in html
     assert 'id="morePatientsBtn"' in html
     assert '"/clinical/patients?query="' in js
-    assert "if (state.mode === \"record\") loadPatients();" in js
+    assert 'if (mode === "record") loadPatients();' in js
     assert "schedulePatientSearch();" in js
     assert 'state.patientSearchRevision' in js
     assert 'if (!term || !state.authenticated || state.mode !== "record") return;' in js
