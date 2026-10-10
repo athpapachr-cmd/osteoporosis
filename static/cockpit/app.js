@@ -291,6 +291,11 @@
     } catch (error) {
       surgeryRows = [];
       window.CockpitSurgerySummary = null;
+      if (typeof window.dispatchEvent === "function" && typeof window.CustomEvent === "function") {
+        window.dispatchEvent(new window.CustomEvent("cockpit:surgery-counts", {
+          detail: {unavailable: true}
+        }));
+      }
       if (error.status === 401) {
         setSurgeryUnavailable("Σύνδεση απαιτείται");
         $("surgeryQueueNote").textContent = "Άνοιξε το Clinical Calendar ή άλλο protected clinical εργαλείο και συνδέσου με το Clinical Key.";
