@@ -77,29 +77,16 @@
      if(!list.length)return info(target,"Δεν υπάρχουν ολοκληρωμένες επισκέψεις στο μητρώο.");
      list.slice(0,3).forEach(r=>{
        const name=r.patient_display_name||"Ασθενής χωρίς καταχωρισμένο όνομα";
-       const context=[r.encounter_date,r.visit_type||"Κλινική επίσκεψη"].filter(Boolean).join(" · ");
+       // The protected projection has metadata, not a genuine clinical summary.
+       // Render an explicit excerpt only if the server's reviewed read owner
+       // supplies it; never relabel a generic visit type as a clinical summary.
+       const excerpt=typeof r.summary_excerpt==="string"&&r.summary_excerpt.trim()
+         ?r.summary_excerpt.trim():r.visit_type&&r.visit_type!=="Κλινική επίσκεψη"
+           ?r.visit_type:"Η σύντομη κλινική σύνοψη δεν είναι ακόμη διαθέσιμη";
+       const context=[r.encounter_date,excerpt].filter(Boolean).join(" · ");
        addRow(target,name,context,"↶",()=>open({kind:"recent",name,reason:context,patientId:r.patient_id}));
      });
    }catch(e){info(target,e.status===401?"Συνδέσου για να δεις τις κλινικές επισκέψεις.":"Οι πρόσφατες κλινικές επισκέψεις δεν είναι ακόμη διαθέσιμες.");}
- }
- async function upcoming(){
-   const target=$("visitUpcomingRows");
-   try{
-     const c=await get("/clinical/calendar/cockpit-context");
-     const now=dateTime(c.generated_at)||new Date();
-     const rows=Array.isArray(c.upcoming_today)?c.upcoming_today:(c.next?[c.next]:[]);
-     const future=rows.filter(a=>{const d=dateTime(a.start_at);return d&&d>now&&localDay.format(d)===localDay.format(now);})
-       .sort((a,b)=>dateTime(a.start_at)-dateTime(b.start_at)).slice(0,3);
-     target.replaceChildren();
-     if(!future.length)return info(target,"Δεν υπάρχουν άλλες διαθέσιμες σημερινές επισκέψεις.");
-     future.forEach(a=>{
-       const name=a.patient_display_name||"Ραντεβού χωρίς όνομα",reason=a.reason||a.category||"Ραντεβού";
-       const time=localTime.format(dateTime(a.start_at));
-       addRow(target,name,reason,time,()=>open({kind:"appointment",name,reason,time,appointmentId:a.appointment_id,patientId:null}));
-     });
-     if(!Array.isArray(c.upcoming_today))$("visitHomeNote").textContent=
-       "Το ημερολόγιο επιστρέφει προσωρινά μόνο την επόμενη επίσκεψη. Δεν κατασκευάζονται επιπλέον ραντεβού.";
-   }catch(e){info(target,e.status===401?"Συνδέσου για να δεις το πρόγραμμα.":"Το σημερινό πρόγραμμα δεν είναι διαθέσιμο.");}
  }
  async function loadMatches(term,ticket,offset){
    const box=$("visitPatientMatches");
@@ -240,5 +227,19 @@
    if(!state.parts)return;state.parts[state.tab]=$("visitDiaEditText").value.trim();
    $("visitDiaEditPane").hidden=true;render();
  });
- recent();upcoming();
+ // The top-right day control owns the dated schedule. Do not duplicate it
+ // in the main page or perform another calendar request at startup.
+ if(typeof window!=="undefined"){
+   window.CockpitHome={
+     openAppointment(row){
+       if(!row||!row.appointmentId)return;
+       const home=document.getElementById("doctorMainView");
+       const library=document.getElementById("doctorLibraryView");
+       if(home&&library){home.hidden=false;library.hidden=true;}
+       open({kind:"appointment",name:String(row.name||"Ραντεβού"),reason:String(row.reason||"Ραντεβού"),
+         time:String(row.time||""),appointmentId:String(row.appointmentId),patientId:null});
+     }
+   };
+ }
+ recent();
 })();

@@ -8,29 +8,35 @@
   <meta name="description" content="Κεντρική αρχική σελίδα του Clinical Excellence Cockpit." />
   <link rel="stylesheet" href="/static/cockpit/styles.css" />
   <link rel="stylesheet" href="/static/cockpit/clinical-workspace.css" />
+  <link rel="stylesheet" href="/static/cockpit/doctor-shell.css" />
 </head>
 <body>
   <main class="shell">
-    <header class="hero clinical-topbar">
-      <div>
-        <p class="eyebrow">Clinical Excellence</p>
-        <h1>Cockpit</h1>
-        <p class="subtitle">Η κλινική σου εργασία</p>
+    <header class="hero clinical-topbar doctor-topbar">
+      <div class="doctor-brand">
+        <button id="doctorRailToggle" class="doctor-icon" type="button" aria-label="Εμφάνιση ημερήσιας λίστας" aria-expanded="false">☰</button>
+        <div>
+          <p class="eyebrow">Clinical Excellence</p>
+          <h1>Cockpit</h1>
+          <p class="subtitle">Η κλινική σου ημέρα</p>
+        </div>
       </div>
-      <nav class="clinical-quick-nav" aria-label="Άμεσα εργαλεία">
-        <a href="/static/clinical-calendar/">Ημερολόγιο</a>
-        <a href="https://ortho-reception-backend-v2.onrender.com/dashboard" target="_blank" rel="noopener noreferrer">Γραμματεία</a>
-        <a href="#surgerySection" data-expand-secondary="true">Χειρουργεία</a>
-        <a href="/static/baseline-audit/">Οστεοπόρωση</a>
-        <a href="/clinical/clinic-utilities/physio-referral">Παραπεμπτικό Φυσιοθεραπείας</a>
-        <a href="/clinical/clinic-utilities/sick-leave">Αναρρωτική άδεια</a>
-        <a href="/clinical/clinic-utilities/rf">Ραδιοκύματα</a>
-        <a href="/clinical/clinic-utilities/medical-report">Ιατρικές εκθέσεις</a>
-        <a href="/static/clinical-learning/">Εκπαίδευση</a>
-        <a href="/static/cockpit/visit-capture/">Καταγραφή επίσκεψης</a>
+      <nav class="doctor-command-bar" aria-label="Γρήγορη πρόσβαση">
+        <button id="doctorDateButton" class="doctor-date-button" type="button" aria-expanded="false" aria-haspopup="dialog">Πρόγραμμα σήμερα <span aria-hidden="true">▾</span></button>
+        <button id="doctorInboxButton" class="doctor-icon" type="button" aria-expanded="false" aria-label="Κλινικά εισερχόμενα — σύνδεση εκκρεμεί" title="Κλινικά εισερχόμενα"><span aria-hidden="true">✉</span><span id="doctorInboxBadge" hidden></span></button>
+        <button id="doctorTasksButton" class="doctor-icon" type="button" aria-expanded="false" aria-label="Εργασίες ιατρείου" title="Εργασίες"><span aria-hidden="true">☑</span><span id="doctorTasksBadge" hidden></span></button>
+        <button id="doctorActionsButton" class="doctor-command-button" type="button" aria-expanded="false" aria-label="Άνοιγμα ενεργειών"><span aria-hidden="true">⌘</span> Ενέργειες</button>
       </nav>
+      <div id="doctorPopover" class="doctor-popover" role="dialog" aria-modal="false" aria-labelledby="doctorPopoverTitle" hidden>
+        <div class="doctor-popover-heading">
+          <strong id="doctorPopoverTitle">Γρήγορη προβολή</strong>
+          <button id="doctorPopoverClose" type="button" class="doctor-icon" aria-label="Κλείσιμο">×</button>
+        </div>
+        <div id="doctorPopoverContent" class="doctor-popover-content"></div>
+      </div>
     </header>
 
+    <div id="doctorMainView">
     <div class="clinical-home-layout">
       <aside id="visitSidebar" class="clinical-sidebar" aria-label="Γρήγορη ημερήσια εικόνα">
         <div class="clinical-sidebar-heading">
@@ -78,16 +84,16 @@
               <p class="clinical-muted">Φόρτωση κλινικών επισκέψεων…</p>
             </div>
           </section>
-          <section class="clinical-mini-panel">
+          <section class="clinical-mini-panel doctor-attention-panel">
             <div class="clinical-mini-title">
-              <h2>Επόμενες σήμερα</h2><span>έως 3</span>
+              <h2>Χρειάζονται προσοχή</h2><span>Σήμερα</span>
             </div>
-            <div id="visitUpcomingRows" class="clinical-mini-list" aria-live="polite">
-              <p class="clinical-muted">Φόρτωση σημερινού προγράμματος…</p>
+            <div id="doctorAttentionList" class="doctor-attention-list" aria-live="polite">
+              <p class="clinical-muted">Ενημέρωση από τις διαθέσιμες πηγές…</p>
             </div>
           </section>
         </div>
-        <p id="visitHomeNote" class="clinical-muted" role="status">Οι επισκέψεις εμφανίζονται μόνο όταν είναι διαθέσιμες από τα υφιστάμενα προστατευμένα συστήματα.</p>
+        <p id="visitHomeNote" class="clinical-muted" role="status">Οι πρόσφατες επισκέψεις προέρχονται από το προστατευμένο μητρώο. Το πλήρες ημερήσιο πρόγραμμα ανοίγει από την ημερομηνία πάνω δεξιά.</p>
       </div>
 
       <section id="visitWorkspacePatient" class="clinical-active-visit" hidden aria-label="Επιλεγμένη επίσκεψη">
@@ -173,47 +179,20 @@ ENCOUNTER DETAIL
         <button id="visitBriefChoosePatient" type="button" class="clinical-primary">Επιλογή κλινικού φακέλου</button>
       </section>
     </div>
-    <details class="clinical-secondary-functions" id="cockpitOtherFunctions">
-      <summary>Πρόγραμμα, χειρουργεία, modules και εργαλεία</summary>
-    <section class="section">
-      <div class="section-heading">
-        <div>
-          <p class="section-kicker">Σήμερα</p>
-          <h2>Πρόγραμμα και πηγές</h2>
-        </div>
-      </div>
-
-      <div class="top-grid">
-        <article class="panel today-panel">
-          <div class="panel-head">
-            <div>
-              <span class="icon-badge">◷</span>
-              <h3>Πρόγραμμα ραντεβού</h3>
-            </div>
-
-          </div>
-
-
-
-
-          <a class="button secondary" href="/static/clinical-calendar/">Άνοιγμα εβδομαδιαίου ημερολογίου</a>
-        </article>
-
-        <article class="panel reception-panel">
-          <div class="panel-head">
-            <div>
-              <span class="icon-badge">☎</span>
-              <h3>Reception</h3>
-            </div>
-            <span class="status-chip external">Ξεχωριστό σύστημα</span>
-          </div>
-          <p>Κλήσεις, εκκρεμότητες, callbacks, audit και το πλήρες ημερήσιο πρόγραμμα παραμένουν στο Reception dashboard, όπου ανήκει το source of truth.</p>
-          <a class="button secondary" href="https://ortho-reception-backend-v2.onrender.com/dashboard" target="_blank" rel="noopener noreferrer">Άνοιγμα Reception dashboard ↗</a>
-        </article>
-      </div>
-    </section>
-
-    <section class="section visit-capture-entry-section">
+    </div>
+    <section id="doctorLibraryView" class="doctor-library" hidden aria-label="Εργασίες ιατρείου και εργαλεία">
+      <header class="doctor-library-header">
+        <div><p class="eyebrow">Εργασίες και εργαλεία</p><h2>Ό,τι χρειάζεσαι, στη θέση του.</h2></div>
+        <button id="doctorBackHome" class="doctor-command-button" type="button">← Αρχική</button>
+      </header>
+      <nav id="doctorLibraryNav" class="doctor-library-nav" aria-label="Κατηγορίες εργασιών">
+        <button type="button" data-doctor-library-tab="surgery">Χειρουργεία</button>
+        <button type="button" data-doctor-library-tab="documents">Έγγραφα</button>
+        <button type="button" data-doctor-library-tab="modules">Κλινικά modules</button>
+        <button type="button" data-doctor-library-tab="learning">Εκπαίδευση</button>
+      </nav>
+      <div class="clinical-secondary-functions" id="cockpitOtherFunctions">
+    <section class="section visit-capture-entry-section" data-doctor-library-panel="documents">
       <article class="panel">
         <div class="panel-head">
           <div>
@@ -227,7 +206,7 @@ ENCOUNTER DETAIL
       </article>
     </section>
 
-    <section class="section surgery-section" id="surgerySection">
+    <section class="section surgery-section" id="surgerySection" data-doctor-library-panel="surgery">
       <div class="section-heading">
         <div>
           <p class="section-kicker">Χειρουργεία</p>
@@ -315,7 +294,7 @@ ENCOUNTER DETAIL
       </article>
     </section>
 
-    <section class="section">
+    <section class="section" data-doctor-library-panel="modules">
       <div class="section-heading">
         <div>
           <p class="section-kicker">Clinical Modules</p>
@@ -353,7 +332,7 @@ ENCOUNTER DETAIL
       </div>
     </section>
 
-    <section class="section split-section">
+    <section class="section split-section" data-doctor-library-panel="learning">
       <article class="panel learning-panel">
         <div class="panel-head">
           <div>
@@ -374,7 +353,8 @@ ENCOUNTER DETAIL
 
 
 
-    </details>
+      </div>
+    </section>
 
     <footer class="footer">
       <span>Clinical Excellence Cockpit</span>
@@ -384,5 +364,6 @@ ENCOUNTER DETAIL
 
   <script src="/static/cockpit/clinical-workspace.js" defer></script>
   <script src="/static/cockpit/app.js" defer></script>
+  <script src="/static/cockpit/doctor-shell.js" defer></script>
 </body>
 </html>
