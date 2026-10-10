@@ -1,0 +1,114 @@
+
+/* Apple-inspired clinical cockpit: a calm workspace, not a card catalog. */
+:root{--doctor-ink:#172c37;--doctor-accent:#137b76;--doctor-faint:#eef4f3;--doctor-border:#e5e9e8}
+body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,ui-sans-serif,sans-serif;background:#f8f9fa;color:var(--doctor-ink)}
+.shell{width:min(1220px,calc(100% - 38px));padding:22px 0 30px}
+.doctor-topbar{display:flex;justify-content:space-between;align-items:center;gap:24px;margin:0 0 22px;padding:4px 0 17px;border-bottom:1px solid var(--doctor-border);position:relative}
+.doctor-brand{display:flex;align-items:center;gap:11px}
+.doctor-brand h1{font-size:25px;line-height:1.05;color:#183743;letter-spacing:-.03em}
+.doctor-brand .eyebrow{font-size:9px;letter-spacing:.1em;margin:0 0 2px;color:#61818b}
+.doctor-brand .subtitle{font-size:11px;margin:3px 0 0;color:#748791}
+.doctor-command-bar{display:flex;align-items:center;justify-content:flex-end;gap:6px;min-width:0}
+.doctor-command-bar button,.doctor-library-nav button{font:inherit}
+.doctor-icon,.doctor-date-button,.doctor-command-button{border:1px solid transparent;border-radius:12px;background:transparent;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:36px;padding:7px 9px;font-size:13px;color:#26434d;font-weight:700;cursor:pointer;position:relative;white-space:nowrap}
+.doctor-icon{min-width:36px;font-size:18px}
+.doctor-icon:hover,.doctor-date-button:hover,.doctor-command-button:hover{background:#edf3f3}
+.doctor-command-bar button[aria-expanded="true"]{background:#e7f1ef;color:#16766e}
+.doctor-command-button{border:1px solid #dee8e7;background:#fff;padding:8px 12px}
+.doctor-command-bar button:focus-visible,.doctor-library-nav button:focus-visible,.doctor-action-row:focus-visible{outline:2px solid #5fa8a1;outline-offset:2px}
+.doctor-icon [id$="Badge"]{position:absolute;top:-3px;right:-4px;display:grid;place-items:center;min-width:17px;height:17px;border-radius:50%;background:#137b76;color:#fff;font-size:10px;font-weight:800}
+.doctor-popover{position:absolute;right:0;top:calc(100% - 7px);width:min(430px,calc(100vw - 24px));max-height:min(75vh,630px);overflow:auto;border:1px solid #dde8e6;border-radius:17px;background:#fff;box-shadow:0 18px 55px rgba(29,53,66,.16);padding:15px;z-index:90}
+.doctor-popover-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;border-bottom:1px solid #edf1f1;padding-bottom:8px}
+.doctor-popover-heading strong{font-size:15px;color:#1c3a48}
+.doctor-popover-heading .doctor-icon{font-size:20px}
+.doctor-popover-content{padding-top:7px;min-width:0}
+.doctor-help{font-size:12px;line-height:1.55;color:#667e84;margin:10px 2px 13px;overflow-wrap:anywhere}
+.doctor-panel-kicker{font-size:10px;letter-spacing:.09em;color:#8b9c9e;margin:12px 2px 4px;text-transform:uppercase;font-weight:800}
+.doctor-action-row{border:0;border-bottom:1px solid #eef1f2;text-decoration:none;background:transparent;color:#203b47;cursor:pointer;padding:11px 7px;display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;text-align:left;font:inherit;font-size:13px;border-radius:7px;min-width:0}
+.doctor-action-row:hover{background:#f1f7f6}
+.doctor-action-row:last-child{border-bottom:0}
+.doctor-action-row>span:first-child{min-width:0;display:grid;gap:3px}
+.doctor-action-row strong{font-size:12.5px;line-height:1.45;overflow-wrap:anywhere}
+.doctor-action-row small{font-size:11px;color:#748992;line-height:1.4;overflow-wrap:anywhere}
+.doctor-action-row>span:last-child{font-size:19px;color:#a0b0b3}
+.doctor-command-search{font:inherit;font-size:14px;border:1px solid #dce6e6;background:#f9fbfb;border-radius:11px;padding:11px 12px;width:100%;outline-color:#90bdbc;margin:7px 0}
+.doctor-command-results{max-height:350px;overflow-y:auto}
+#doctorMainView{min-height:400px}
+.clinical-home-layout{grid-template-columns:minmax(195px,235px) minmax(0,1fr);gap:18px;align-items:start}
+.clinical-sidebar{background:transparent;border:0;border-right:1px solid #e6eceb;border-radius:0;padding:8px 16px 8px 0}
+.clinical-sidebar-heading h2{font-size:12px;color:#6c8690}
+.clinical-sidebar .today-context-strip{gap:5px}
+.clinical-sidebar .context-slot{min-height:76px;padding:10px 12px;background:transparent;border:1px solid transparent;border-radius:11px;gap:3px}
+.clinical-sidebar .context-slot:hover{background:white;border-color:#e1e9e8}
+.clinical-sidebar .context-slot.current-slot{background:#edf5f3;border-color:#e0eeea}
+.clinical-sidebar .context-label{font-size:9px}
+.clinical-sidebar .context-slot .context-patient{font-size:12px}
+.clinical-sidebar .panel-note{font-size:11px;color:#7e9297}
+.clinical-sidebar-link{font-size:11px}
+.clinical-workspace{border:0;box-shadow:none;background:transparent;padding:4px 0 0;border-radius:0}
+.clinical-search-block{max-width:none;margin-bottom:15px}
+.clinical-search-block label{font-size:11px;color:#697d85;font-weight:750}
+.clinical-search-block input{font:inherit;font-size:14px;padding:12px 15px;border-radius:12px;border-color:#dce7e5}
+.clinical-search-block input::placeholder{color:#92a1a4}
+.clinical-two-panels{gap:14px;grid-template-columns:repeat(2,minmax(0,1fr))}
+.clinical-mini-panel{border-color:#e3e9e8;border-radius:16px;padding:13px 14px;background:#fff;min-height:0;box-shadow:0 4px 20px rgba(29,53,66,.035)}
+.clinical-mini-title{padding-bottom:9px}
+.clinical-mini-title h2{font-size:14px}
+.clinical-mini-title span{font-size:10px;color:#3a837a;background:#edf6f4}
+.clinical-mini-list{min-height:0}
+.clinical-patient-row{padding:11px 5px;align-items:start}
+.clinical-row-copy strong{font-size:12.5px}
+.clinical-row-copy small{font-size:11px}
+.doctor-attention-list .doctor-action-row{padding:11px 4px}
+#visitHomeNote{font-size:11px;color:#8b9da2;margin:12px 0}
+.clinical-visit-identity h2{font-size:25px}
+.clinical-dia-composer,.clinical-dia-preview{box-shadow:none}
+.clinical-brief-overlay{background:rgba(20,40,48,.10);display:flex;align-items:flex-start;justify-content:flex-end;padding:88px max(16px,calc((100vw - 1220px)/2)) 14px 16px}
+.clinical-brief-card{width:min(450px,calc(100vw - 32px));border:1px solid #e4eded;border-radius:18px;padding:20px;box-shadow:0 24px 70px rgba(20,45,56,.2)}
+.doctor-library{min-height:450px}
+.doctor-library-header{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.doctor-library-header h2{margin:0;font-size:22px;font-weight:750;letter-spacing:-.03em}
+.doctor-library-header .eyebrow{font-size:10px;margin-bottom:3px}
+.doctor-library-nav{display:flex;gap:7px;flex-wrap:wrap;margin:18px 0 2px;padding:5px;border-radius:13px;background:#edf2f3;width:fit-content;max-width:100%}
+.doctor-library-nav button{cursor:pointer;border:0;background:transparent;color:#6b8389;border-radius:10px;padding:10px 13px;font-size:12px;font-weight:750}
+.doctor-library-nav button.selected{background:#fff;color:#183e49;box-shadow:0 2px 8px rgba(20,40,50,.06)}
+.doctor-library .clinical-secondary-functions{border:0;margin:0}
+.doctor-library .section{margin-top:20px}
+.doctor-library [data-doctor-library-panel][hidden]{display:none!important}
+.doctor-library .visit-capture-entry-section .panel{padding:13px 17px;box-shadow:none}
+.doctor-library .visit-capture-entry-section .panel h3{font-size:15px}
+.doctor-library .visit-capture-entry-section .panel p{display:none}
+.doctor-library .visit-capture-entry-section .button{margin-top:5px}
+.doctor-library .principle-panel{display:none}
+.footer{margin-top:16px;border-top:0;padding-top:10px;color:#a1afb3;font-size:10px}
+#doctorRailToggle{display:none}
+@media(max-width:990px){
+ .shell{width:calc(100% - 30px);padding-top:16px}
+ .doctor-topbar{gap:10px}
+ .doctor-brand h1{font-size:22px}
+ .doctor-command-bar{gap:3px}
+ .doctor-date-button{font-size:12px}
+ .clinical-home-layout{grid-template-columns:1fr;position:relative}
+ #doctorRailToggle{display:inline-flex}
+ .clinical-sidebar{display:none;position:absolute;z-index:35;top:0;left:0;width:min(275px,90vw);background:#fff;border:1px solid #e1e9e9;border-radius:15px;padding:16px;box-shadow:0 15px 40px rgba(21,48,56,.15)}
+ body.doctor-rail-open .clinical-sidebar{display:block}
+ .clinical-sidebar .today-context-strip{display:flex;flex-direction:column}
+ .clinical-workspace{width:100%}
+ .clinical-two-panels{grid-template-columns:1fr}
+}
+@media(max-width:560px){
+ .shell{width:calc(100% - 20px);padding-top:10px}
+ .doctor-topbar{flex-wrap:wrap;align-items:center;gap:10px}
+ .doctor-command-bar{width:100%;justify-content:space-between}
+ .doctor-date-button{flex:1;justify-content:flex-start}
+ .doctor-brand .subtitle{display:none}
+ .doctor-popover{right:0;top:calc(100% - 4px);max-height:68vh}
+ .clinical-workspace{padding-top:0}
+ .clinical-mini-panel{padding:11px 12px}
+ .clinical-brief-overlay{padding:65px 10px 10px}
+ .doctor-library-header{align-items:flex-start}
+ .doctor-library-header h2{font-size:19px}
+ .doctor-library-nav{display:grid;grid-template-columns:repeat(2,1fr);width:100%}
+ .doctor-library-nav button{font-size:11px;padding:9px 6px}
+}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
