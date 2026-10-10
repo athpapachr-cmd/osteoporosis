@@ -63,7 +63,7 @@
     const timeNode = $(`${prefix}AppointmentTime`);
     const patientNode = $(`${prefix}AppointmentPatient`);
     const typeNode = $(`${prefix}AppointmentType`);
-    const slotButton = patientNode.closest("button.context-slot");
+    const slotButton = $(`visitSidebar${prefix[0].toUpperCase()}${prefix.slice(1)}`);
     if (slotButton) slotButton.disabled = !row;
 
     if (!row) {

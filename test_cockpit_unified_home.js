@@ -119,5 +119,5 @@ const tick=()=>new Promise(ok=>setImmediate(ok));
  $("visitPatientMatches").children[0].fire("click");
  assert.equal($("visitSelectedName").textContent,"Μαρία Δοκιμαστική");
  assert.ok(requests.every(([,opts])=>!opts.method||opts.method==="GET"),"no writes");
- console.log("PASS Cockpit Stage A: hybrid sidebar, 3+3, identity, Dia, edits and reset");
+ console.log("PASS Cockpit V3 Stage A: hybrid sidebar, 3+3, identity, Dia, edits and reset");
 })().catch(e=>{console.error(e);process.exitCode=1;});
