@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Literal, Optional
 from uuid import uuid4
 import os
 import secrets
+import unicodedata
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from pydantic import BaseModel, Field
@@ -78,6 +79,37 @@ class ClinicalPendingORM(ClinicalBase):
     resolution_event_id = Column(String, nullable=True, index=True)
     created_at = Column(DateTime, nullable=False, index=True)
     updated_at = Column(DateTime, nullable=False, index=True)
+
+
+# Search identity fields only, never arbitrary clinical/demographic free text.
+# No search result is an authoritative patient link: Visit Capture still requires
+# an explicit choice of a stored patient_id and the existing protected context.
+_PATIENT_SEARCH_NAME_KEYS = (
+    "full_name", "fullName", "name", "first_name", "firstName",
+    "last_name", "lastName", "given_name", "family_name",
+    "surname", "firstname", "lastname",
+    "ονομα", "όνομα", "επωνυμο", "επώνυμο", "ονοματεπωνυμο", "ονοματεπώνυμο",
+)
+
+
+def _fold_patient_lookup(value: str) -> str:
+    return "".join(
+        char for char in unicodedata.normalize("NFKD", value).casefold()
+        if not unicodedata.combining(char)
+    )
+
+
+def _patient_matches_search(patient: PatientORM, search_terms: List[str]) -> bool:
+    demographics = patient.demographics_json
+    names = []
+    if isinstance(demographics, dict):
+        names = [
+            str(demographics[key])
+            for key in _PATIENT_SEARCH_NAME_KEYS
+            if isinstance(demographics.get(key), str) and demographics[key].strip()
+        ]
+    searchable = _fold_patient_lookup(" ".join([patient.patient_id, *names]))
+    return all(term in searchable for term in search_terms)
 
 
 class PatientUpsert(BaseModel):
@@ -613,14 +645,33 @@ def build_clinical_router(engine: Engine) -> APIRouter:
     def search_patients(
         query: str = Query(default="", max_length=120),
         limit: int = Query(default=20, ge=1, le=100),
+        offset: int = Query(default=0, ge=0),
     ) -> List[PatientSummary]:
         q = query.strip()
         with Session(engine) as session:
-            stmt = select(PatientORM)
-            if q:
-                stmt = stmt.where(PatientORM.patient_id.ilike(f"%{q}%"))
-            stmt = stmt.order_by(PatientORM.updated_at.desc()).limit(limit)
-            patients = session.execute(stmt).scalars().all()
+            stmt = select(PatientORM).order_by(
+                PatientORM.updated_at.desc(), PatientORM.patient_id.asc()
+            )
+            if not q:
+                # Preserve existing bounded legacy listing for other consumers.
+                # Visit Capture does not request a listing until text is entered.
+                patients = session.execute(stmt.offset(offset).limit(limit)).scalars().all()
+            else:
+                # The match runs against the WHOLE registry, not a preloaded slice.
+                # Python Unicode folding makes accented Greek name searches work
+                # consistently on both SQLite and PostgreSQL JSON demographics.
+                # Yield rows in batches; keep only the requested results page.
+                terms = _fold_patient_lookup(q).split()
+                matched = 0
+                patients = []
+                for patient in session.scalars(stmt).yield_per(200):
+                    if not _patient_matches_search(patient, terms):
+                        continue
+                    if matched >= offset:
+                        patients.append(patient)
+                        if len(patients) >= limit:
+                            break
+                    matched += 1
             return [patient_summary(session, patient) for patient in patients]
 
     @router.get("/patient/{patient_id}", response_model=PatientSummary, dependencies=protected)
