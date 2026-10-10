@@ -148,6 +148,14 @@ class EncounterRecord(BaseModel):
     updated_at: datetime
 
 
+class RecentEncounterSummary(BaseModel):
+    """Minimal protected Home projection; no encounter content or demographics."""
+    patient_id: str
+    patient_display_name: str
+    encounter_date: str
+    visit_type: str
+
+
 class LabSnapshotCreate(BaseModel):
     lab_date: str = Field(pattern=r"^\d{4}-\d{2}-\d{2}$")
     source_encounter_id: Optional[str] = None
@@ -673,6 +681,70 @@ def build_clinical_router(engine: Engine) -> APIRouter:
                             break
                     matched += 1
             return [patient_summary(session, patient) for patient in patients]
+
+    @router.get(
+        "/recent-encounters",
+        response_model=List[RecentEncounterSummary],
+        dependencies=protected,
+    )
+    def recent_encounters(limit: int = Query(default=3, ge=1, le=3)) -> List[RecentEncounterSummary]:
+        # Read only three real completed/amended encounters with an existing
+        # registered patient. No unsigned drafts or clinical payload in response.
+        with Session(engine) as session:
+            rows = session.execute(
+                select(EncounterORM, PatientORM)
+                .join(PatientORM, PatientORM.patient_id == EncounterORM.patient_id)
+                .where(EncounterORM.status.in_(("completed", "amended")))
+                .order_by(
+                    EncounterORM.encounter_date.desc(),
+                    EncounterORM.created_at.desc(),
+                    EncounterORM.id.asc(),
+                )
+                .limit(limit)
+            ).all()
+            results = []
+            for encounter, patient in rows:
+                demographics = patient.demographics_json
+                if not isinstance(demographics, dict):
+                    demographics = {}
+                display_name = ""
+                for key in ("full_name", "fullName", "name", "ονοματεπώνυμο", "ονοματεπωνυμο"):
+                    value = demographics.get(key)
+                    if isinstance(value, str) and value.strip():
+                        display_name = value.strip()
+                        break
+                if not display_name:
+                    first = next((
+                        demographics[key].strip()
+                        for key in ("first_name", "firstName", "όνομα", "ονομα")
+                        if isinstance(demographics.get(key), str) and demographics[key].strip()
+                    ), "")
+                    last = next((
+                        demographics[key].strip()
+                        for key in ("last_name", "lastName", "επώνυμο", "επωνυμο")
+                        if isinstance(demographics.get(key), str) and demographics[key].strip()
+                    ), "")
+                    display_name = " ".join(part for part in (first, last) if part)
+                if not display_name:
+                    display_name = "Ασθενής χωρίς καταχωρισμένο όνομα"
+
+                visit_type = "Κλινική επίσκεψη"
+                payload = encounter.payload_json
+                if isinstance(payload, dict):
+                    signed = payload.get("_visit_capture_v1")
+                    if isinstance(signed, dict) and signed.get("signed") is True:
+                        candidate = signed.get("candidate")
+                        if isinstance(candidate, dict):
+                            label = candidate.get("visit_type")
+                            if isinstance(label, str) and label.strip():
+                                visit_type = label.strip()[:240]
+                results.append(RecentEncounterSummary(
+                    patient_id=encounter.patient_id,
+                    patient_display_name=display_name[:200],
+                    encounter_date=encounter.encounter_date,
+                    visit_type=visit_type,
+                ))
+            return results
 
     @router.get("/patient/{patient_id}", response_model=PatientSummary, dependencies=protected)
     def get_patient(patient_id: str) -> PatientSummary:

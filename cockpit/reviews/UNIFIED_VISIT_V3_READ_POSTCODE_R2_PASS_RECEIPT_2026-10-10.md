@@ -1,0 +1,15 @@
+# Cockpit Unified Visit V3 — two protected reads independent post-code R2 PASS
+
+Date: 2026-10-10 Asia/Nicosia. **Received independent READ-ONLY review; receiver reconciliation / R0 documentation checkpoint only.**
+
+**Verdict: IMPLEMENTATION-FIDELITY PASS / COMPLETE_FOR_DECLARED_SCOPE / P0:P1:P2 = 0:0:0.** R1 snapshot coverage/projection PASS; R2 recent-encounters protected read PASS; R3 patient identity/Home 3+3 consumption PASS; R4 finite affected evidence and scope PASS. No material correction requested; this closes **only** the two-protected-read post-code review chain.
+
+- Original review request: `cockpit/reviews/UNIFIED_VISIT_V3_READ_POSTCODE_R2_REQUEST_2026-10-10.md`, immutable blob `cfb7c6f03e348d06ab9ea5def3cfcf19025c0423`.
+- Original frozen design blob `9e107112020e2d98d542867c64fbb08d47e278dd`; coverage P1-01 design delta blob `8a05d13aff22fc54bfa602ffae6ee03db685ce6e`; focused pre-code closure previously PASS.
+- Exact tested implementation+test head: `46b8f3abf6a4a89dd8b0ffd1e7d31b0ac4f44558`. Review-verified branch head before reconciliation: `e3920169893cdc89962206224a0c5d1d615b1c4c` (subsequent changes from tested head were only root/workstream CURRENT plus original R2 request).
+- Independently verified unchanged exact four blobs: `clinical_calendar.py` `8a6a64404a08e9a6cc8c9210cd2d5f028a165386`; `clinical_data.py` `713ce588c2d7061f2f2c35f2a851a2a76b5965a1`; `test_clinical_calendar_snapshot.py` `b715546aef68c91d83a675a25dec7e1c5a2ad134`; `test_visit_capture.py` `b5d1af910946a0387588ff33d6269e5e31b7f2a6`.
+- Exact tested-head Actions: Calendar `38050120250` SUCCESS (26 tests), Visit Capture `38050120266` SUCCESS (28 related tests), Home `38050120253` SUCCESS, Canonical Impact `38050120258` SUCCESS, Baseline `38050120307` SUCCESS, Learning L1/L1B/L1C `38050120257`/`38050120315`/`38050120252` SUCCESS. Inherited Learning L0 design-only changed-file scope assertion remains red; do not claim all workflows green.
+- No new provider fetch, calendar writer, clinical store/write or inferred patient link is introduced by the protected-read additions. A fresh source with missing/incomplete Cyprus today coverage fails with existing 503; covered empty is valid []; recent-encounters exposes only minimal completed/amended metadata with protected existing patient IDs.
+- Independent review was source/CI + synthetic evidence only, not a production smoke or identifiable patient/provider qualification.
+
+**Release HOLD persists:** PR #142 DRAFT, stacked on PR #140, neither merged/deployed. Parent PR #140 **affected A4 full-registry-search independent review remains OPEN** and is not covered by this R2. Existing exact request: `cockpit/reviews/VISIT_CAPTURE_FULL_REGISTRY_SEARCH_R1_REQUEST_2026-10-10.md` on PR #140; request blob `2dfd5bedfc82f1e06a28551284052c2e00e492e4`; tested parent head `b230197297307463e82eba28ee77adbde9c91ebb`. **One next bounded action: separate fresh independent parent A4 review, then coordinator reconciliation/release decision.** No unapproved merge/deploy or identifiable Dia/Heidi/GESY, Gmail, Zadarma processing.

@@ -465,3 +465,50 @@ def test_patient_registry_lookup_reaches_all_patients_not_only_latest_100(monkey
     selected = _context(client, "SYN-000", "synthetic-search-selection")
     assert selected["patient_id"] == "SYN-000"
     assert client.get("/clinical/patient/SYN-000/encounters", headers=HEADERS).json() == []
+
+
+def test_cockpit_recent_encounters_protected_three_minimal(monkeypatch):
+    client = _client(monkeypatch)
+    records = [
+        ("R1", "2026-10-07", "completed", {"_visit_capture_v1": {
+            "signed": True, "candidate": {"visit_type": "Επανέλεγχος"},
+        }}),
+        ("R2", "2026-10-08", "completed", {"private_clinical_note": "DO-NOT-RETURN"}),
+        ("R3", "2026-10-09", "amended", {"_visit_capture_v1": {
+            "signed": True, "candidate": {"visit_type": "Νέα εκτίμηση"},
+        }}),
+        ("R4", "2026-10-10", "draft", {"private_clinical_note": "DRAFT-SECRET"}),
+        ("R5", "2026-10-06", "completed", {"private_clinical_note": "OLDER-SECRET"}),
+    ]
+    for patient_id, day, status, payload in records:
+        name = "Μαρία Δοκιμαστική" if patient_id in {"R1", "R3"} else f"Δοκιμαστικός {patient_id}"
+        patient = client.post("/clinical/patients", headers=HEADERS, json={
+            "patient_id": patient_id, "demographics": {
+                "full_name": name,
+                "date_of_birth": "1970-01-01",
+                "phone": "SECRET-PHONE",
+            }
+        })
+        assert patient.status_code == 200
+        saved = client.post(f"/clinical/patient/{patient_id}/encounters", headers=HEADERS, json={
+            "encounter_date": day, "status": status, "payload": payload
+        })
+        assert saved.status_code == 200
+
+    assert client.get("/clinical/recent-encounters?limit=3").status_code == 401
+    response = client.get("/clinical/recent-encounters?limit=3", headers=HEADERS)
+    assert response.status_code == 200
+    rows = response.json()
+    assert len(rows) == 3
+    assert [row["patient_id"] for row in rows] == ["R3", "R2", "R1"]
+    assert [row["visit_type"] for row in rows] == [
+        "Νέα εκτίμηση", "Κλινική επίσκεψη", "Επανέλεγχος"
+    ]
+    assert rows[0]["patient_display_name"] == rows[2]["patient_display_name"]
+    assert all(set(row) == {"patient_id", "patient_display_name", "encounter_date", "visit_type"}
+               for row in rows)
+    assert "DO-NOT-RETURN" not in response.text
+    assert "SECRET-PHONE" not in response.text
+    assert "date_of_birth" not in response.text
+    assert client.get("/clinical/recent-encounters?limit=1", headers=HEADERS).status_code == 200
+    assert client.get("/clinical/recent-encounters?limit=4", headers=HEADERS).status_code == 422

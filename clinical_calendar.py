@@ -154,6 +154,7 @@ class CockpitContext(BaseModel):
     current: Optional[CockpitAppointment]
     current_conflict_count: int
     next: Optional[CockpitAppointment]
+    upcoming_today: List[CockpitAppointment] = Field(default_factory=list, max_length=3)
 
 
 class ActualBooking(BaseModel):
@@ -378,6 +379,7 @@ def build_clinical_calendar_router(engine: Engine) -> APIRouter:
         global _last_actual_schedule_fetch
         now = utcnow()
         local_now = now.replace(tzinfo=timezone.utc).astimezone(ZoneInfo("Asia/Nicosia"))
+        today_local = local_now.date()
         local_start = local_now.replace(hour=0, minute=0, second=0, microsecond=0)
         day_start = _naive_utc(local_start)
         day_end = _naive_utc(local_start + timedelta(days=1))
@@ -397,6 +399,13 @@ def build_clinical_calendar_router(engine: Engine) -> APIRouter:
                 now.replace(tzinfo=timezone.utc) - source.fetched_at.astimezone(timezone.utc)
             ) <= timedelta(minutes=5):
                 raise ValueError("source stale")
+            if (
+                source.coverage_start is None
+                or source.coverage_end is None
+                or source.coverage_start > today_local
+                or source.coverage_end < today_local
+            ):
+                raise ValueError("source coverage incomplete")
             rows = []
             for item in source.appointments:
                 if item.start_at.tzinfo is None or item.end_at.tzinfo is None or item.end_at <= item.start_at:
@@ -438,6 +447,11 @@ def build_clinical_calendar_router(engine: Engine) -> APIRouter:
         elif not conflict_count and today_started:
             previous = today_started[-1]
         next_row = next((row for row in rows if row.start_at > now), None)
+        upcoming_today = [
+            _cockpit_appointment(row)
+            for row in rows
+            if now < row.start_at < day_end
+        ][:3]
         return CockpitContext(
             generated_at=now.replace(tzinfo=timezone.utc),
             source_updated_at=source_updated.replace(tzinfo=timezone.utc) if source_updated else None,
@@ -446,6 +460,7 @@ def build_clinical_calendar_router(engine: Engine) -> APIRouter:
             current=_cockpit_appointment(current),
             current_conflict_count=conflict_count,
             next=_cockpit_appointment(next_row),
+            upcoming_today=upcoming_today,
         )
 
     @router.get("/appointments", response_model=List[AppointmentRecord], dependencies=protected)
