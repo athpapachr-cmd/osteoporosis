@@ -27,11 +27,13 @@ def test_cockpit_home_has_global_information_architecture():
     assert "Γραμματεία" in shell
     assert "https://ortho-reception-backend-v2.onrender.com/dashboard" in shell
 
-    assert html.count('/clinical/clinic-utilities/physio-referral') == 1
-    assert "Παραπεμπτικό Φυσιοθεραπείας" in html
-    assert "/clinical/clinic-utilities/sick-leave" in html
-    assert "/clinical/clinic-utilities/medical-report" in html
-    assert "/clinical/clinic-utilities/rf" in html
+    # Contextual command launcher owns operational shortcuts, not permanent
+    # rows of links in the Home header.
+    assert shell.count('href:"/clinical/clinic-utilities/physio-referral"') == 1
+    assert "Παραπεμπτικό φυσιοθεραπείας" in shell
+    assert 'href:"/clinical/clinic-utilities/sick-leave"' in shell
+    assert 'href:"/clinical/clinic-utilities/medical-report"' in shell
+    assert 'href:"/clinical/clinic-utilities/rf"' in shell
 
 
 def test_osteoporosis_sidebar_contains_no_global_tools_or_top_level_heidi():
