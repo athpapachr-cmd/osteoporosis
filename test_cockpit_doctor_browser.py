@@ -68,7 +68,11 @@ def browser_suite(width, screenshot_name):
             outbound.append(url)
             return route.abort()
         page.route("**/*", handle)
-        page.set_content(HTML, wait_until="domcontentloaded")
+        # set_content() starts at about:blank, where /clinical/... is invalid.
+        # Supply a synthetic origin so protected same-origin reads can be routed
+        # without any real network or session.
+        synthetic_html = HTML.replace("<head>", '<head><base href="https://cockpit.invalid/">', 1)
+        page.set_content(synthetic_html, wait_until="domcontentloaded")
         page.add_style_tag(content=CSS)
         for source in JS:
             page.add_script_tag(content=source)
