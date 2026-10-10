@@ -59,12 +59,14 @@
      "Το όνομα ενός ραντεβού δεν επιβεβαιώνει τον κλινικό φάκελο. Επίλεξε τον σωστό ασθενή από το μητρώο.";
    $("visitChoosePatient").hidden=Boolean(row.patientId);
    $("visitPatientMatches").hidden=true;
+   $("visitPatientSearch").setAttribute("aria-expanded","false");
  }
  function back(){
    state.revision++;clearTimeout(state.timer);
    resetDraft();state.selected=null;state.appointment=null;
    $("visitWorkspacePatient").hidden=true;$("visitWorkspaceHome").hidden=false;
    $("visitPatientSearch").value="";$("visitPatientMatches").hidden=true;
+   $("visitPatientSearch").setAttribute("aria-expanded","false");
  }
  async function recent(){
    const target=$("visitRecentRows");
@@ -127,6 +129,7 @@
    clearTimeout(state.timer);
    const term=$("visitPatientSearch").value.trim(),ticket=++state.revision,box=$("visitPatientMatches");
    box.hidden=!term;
+   $("visitPatientSearch").setAttribute("aria-expanded",String(Boolean(term)));
    if(!term){box.replaceChildren();return;}
    info(box,"Αναζήτηση σε όλο το υπάρχον μητρώο…");
    state.timer=setTimeout(()=>loadMatches(term,ticket,0),250);

@@ -144,7 +144,7 @@ def test_v3_clinician_workspace_is_existing_home_not_separate_page():
     assert html.count('id="visitPatientSearch"') == 1
     assert '<script src="/static/cockpit/clinical-workspace.js" defer></script>' in html
     assert "Πρόσφατες επισκέψεις" in html and "Επόμενες σήμερα" in html
-    assert html.count('<span>3</span>') >= 2
+    assert html.count('<span>έως 3</span>') == 2
     assert "/clinical/recent-encounters?limit=3" in js
     assert "/clinical/calendar/cockpit-context" in js
     assert 'slice(0,3)' in js
