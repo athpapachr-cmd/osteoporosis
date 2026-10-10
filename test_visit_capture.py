@@ -406,3 +406,62 @@ def test_p2_f2_01_dependency_rejects_undeclared_nested_fields_without_persistenc
         "condition": "request_received",
     }
     assert _save(client, context["context_id"], allowed).status_code == 200
+
+
+def test_patient_registry_lookup_reaches_all_patients_not_only_latest_100(monkeypatch):
+    client = _client(monkeypatch)
+
+    # Oldest patient will fall out of the legacy last-100 response.
+    for number in range(151):
+        patient_id = f"SYN-{number:03d}"
+        name = "Αθανάσιος Παπαχρήστου" if number == 0 else "Κοινός Δοκιμαστικός"
+        stored = client.post(
+            "/clinical/patients",
+            headers=HEADERS,
+            json={
+                "patient_id": patient_id,
+                "demographics": {
+                    "full_name": name,
+                    "phone": f"NOT-SEARCHABLE-{number:03d}",
+                },
+            },
+        )
+        assert stored.status_code == 200
+
+    latest_100 = client.get("/clinical/patients?limit=100", headers=HEADERS)
+    assert latest_100.status_code == 200
+    assert len(latest_100.json()) == 100
+    assert "SYN-000" not in {row["patient_id"] for row in latest_100.json()}
+
+    # The new search examines the entire registry, including the oldest row.
+    by_id = client.get("/clinical/patients?query=SYN-000&limit=20&offset=0", headers=HEADERS)
+    assert by_id.status_code == 200
+    assert [row["patient_id"] for row in by_id.json()] == ["SYN-000"]
+    by_name = client.get("/clinical/patients", params={"query": "ΠΑΠΑΧΡΗΣΤΟΥ αθανασιος"}, headers=HEADERS)
+    assert [row["patient_id"] for row in by_name.json()] == ["SYN-000"]
+
+    # Search matches only the allowed name/id fields, never arbitrary demographics.
+    assert client.get(
+        "/clinical/patients?query=NOT-SEARCHABLE-000", headers=HEADERS
+    ).json() == []
+
+    # All 150 common-name records can be retrieved with explicit pagination.
+    ids = []
+    for offset in range(0, 160, 20):
+        result = client.get(
+            "/clinical/patients",
+            params={"query": "κοινος", "limit": 20, "offset": offset},
+            headers=HEADERS,
+        )
+        assert result.status_code == 200
+        ids.extend(row["patient_id"] for row in result.json())
+    assert len(ids) == 150
+    assert len(set(ids)) == 150
+    assert "SYN-150" in ids and "SYN-001" in ids
+    assert client.get("/clinical/patients?query=SYN-000").status_code == 401
+
+    # Retrieval is still read-only; protected patient-context confirmation is
+    # the existing explicit next step, not an automatic identity association.
+    selected = _context(client, "SYN-000", "synthetic-search-selection")
+    assert selected["patient_id"] == "SYN-000"
+    assert client.get("/clinical/patient/SYN-000/encounters", headers=HEADERS).json() == []
