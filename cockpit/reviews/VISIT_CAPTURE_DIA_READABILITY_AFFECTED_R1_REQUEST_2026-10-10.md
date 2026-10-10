@@ -2,11 +2,11 @@
 
 Date: 2026-10-10 · **Mode: ONE fresh separate independent READ-ONLY exact-head UI-fidelity review, then STOP.**
 
-Repository: `athpapachr-cmd/osteoporosis`  
-Draft implementation PR: [#143](https://github.com/athpapachr-cmd/osteoporosis/pull/143)  
-Branch: `fix/cockpit-visit-capture-clinical-readability-2026-10-10`  
-Fresh production base: `987d5aef0e4191fbae436b3aa9df310db2a54a97`  
-**Exact substantive implementation+test head: `a2c9fc09b0372b058e8f622b02a1cc20b6b87b1b`**  
+Repository: `athpapachr-cmd/osteoporosis`
+Draft implementation PR: [#143](https://github.com/athpapachr-cmd/osteoporosis/pull/143)
+Branch: `fix/cockpit-visit-capture-clinical-readability-2026-10-10`
+Fresh production base: `987d5aef0e4191fbae436b3aa9df310db2a54a97`
+**Exact substantive implementation+test head: `a2c9fc09b0372b058e8f622b02a1cc20b6b87b1b`**
 Unchanged existing protected backend and clinical Save path.
 
 ## Source evidence: five exact reviewed blobs
