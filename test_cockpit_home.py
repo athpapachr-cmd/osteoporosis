@@ -23,8 +23,9 @@ def test_cockpit_home_has_global_information_architecture():
     assert "/static/clinical-calendar/" in html
     assert "/static/clinical-learning/" in html
 
-    assert "Reception" in html
-    assert "https://ortho-reception-backend-v2.onrender.com/dashboard" in html
+    shell = _read("static/cockpit/doctor-shell.js")
+    assert "Γραμματεία" in shell
+    assert "https://ortho-reception-backend-v2.onrender.com/dashboard" in shell
 
     assert html.count('/clinical/clinic-utilities/physio-referral') == 1
     assert "Παραπεμπτικό Φυσιοθεραπείας" in html
@@ -140,16 +141,25 @@ def test_v3_clinician_workspace_is_existing_home_not_separate_page():
     js = _read("static/cockpit/clinical-workspace.js")
     assert html.count('id="clinicalWorkspace"') == 1
     assert html.count('id="visitRecentRows"') == 1
-    assert html.count('id="visitUpcomingRows"') == 1
+    assert html.count('id="doctorAttentionList"') == 1
     assert html.count('id="visitPatientSearch"') == 1
     assert '<script src="/static/cockpit/clinical-workspace.js" defer></script>' in html
-    assert "Πρόσφατες επισκέψεις" in html and "Επόμενες σήμερα" in html
-    assert html.count('<span>έως 3</span>') == 2
+    assert "Πρόσφατες επισκέψεις" in html
+    assert "Χρειάζονται προσοχή" in html
+    assert html.count('<span>έως 3</span>') == 1
     assert "/clinical/recent-encounters?limit=3" in js
-    assert "/clinical/calendar/cockpit-context" in js
-    assert 'slice(0,3)' in js
+    shell = _read("static/cockpit/doctor-shell.js")
+    assert "/clinical/calendar/appointments" in shell
+    assert "Σημερινό πρόγραμμα" in shell
+    assert "/clinical/recent-encounters?limit=3" in js
     assert '"/clinical/patients?query="' in js
     assert "clinical-two-panels" in css
+    assert 'id="doctorLibraryView"' in html
+    assert 'id="doctorPopover"' in html
+    assert 'id="doctorDateButton"' in html
+    assert 'id="doctorInboxButton"' in html
+    assert 'id="doctorActionsButton"' in html
+    assert 'id="doctorTasksButton"' in html
     assert 'id="visitDiaComposer"' in html
     assert 'id="visitDiaPrompt"' in html
     assert 'id="visitDiaText"' in html
@@ -163,3 +173,26 @@ def test_v3_clinician_workspace_is_existing_home_not_separate_page():
 def test_v3_browser_interaction_uses_mocked_protected_gets_without_writes():
     output = subprocess.check_output(["node", "test_cockpit_unified_home.js"], text=True)
     assert "PASS Cockpit V3" in output
+
+
+def test_clinician_home_v4_preserves_existing_tools_without_legacy_blocks_under_home():
+    html = _read("static/cockpit/index.html")
+    shell = _read("static/cockpit/doctor-shell.js")
+    css = _read("static/cockpit/doctor-shell.css")
+    assert html.index('id="doctorMainView"') < html.index('id="doctorLibraryView"')
+    assert 'id="doctorLibraryView" class="doctor-library" hidden' in html
+    assert 'id="surgeryForm"' in html and 'id="surgeryTableBody"' in html
+    assert "Πρόγραμμα και πηγές" not in html
+    assert "Οστεοπόρωση" in html and "Καταγραφή επίσκεψης" in html
+    assert "Πλήρες πρόγραμμα Γραμματείας" in shell
+    assert "Δεν έχει συνδεθεί ακόμη το Clinical Inbox" in shell
+    assert 'doctorInboxBadge").hidden=true' in shell
+    assert "last-minute" not in shell
+    assert ".doctor-popover" in css and "doctor-rail-open" in css
+    assert "max-width:990px" in css or "max-width:990px" in css.replace(" ", "")
+    assert "localStorage" not in shell and "sessionStorage" not in shell
+
+
+def test_clinician_home_v4_synthetic_command_strip_interactions():
+    output = subprocess.check_output(["node", "test_cockpit_doctor_shell.js"], text=True)
+    assert "PASS Cockpit Doctor Shell" in output
