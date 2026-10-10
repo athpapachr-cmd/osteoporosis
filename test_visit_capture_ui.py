@@ -77,7 +77,12 @@ def test_visit_capture_demo_requires_no_patient_id_and_cannot_save():
     assert 'state.preview = parseDiaSummary(text)' in js
     assert 'state.candidate = null' in js
     assert 'state.patients' in js
-    assert '"/clinical/patients?limit=100"' in js
+    assert '"/clinical/patients?query="' in js
+    assert '"&limit=20&offset="' in js
+    assert 'addEventListener("input", schedulePatientSearch)' in js
+    assert 'id="morePatientsBtn"' in html
+    assert "Εμφανίζονται οι 100" not in js
+    assert '"/clinical/patients?limit=100"' not in js
 
 
 def test_dia_copy_prompt_produces_three_explicit_nonidentifying_sections():
@@ -92,3 +97,18 @@ def test_dia_copy_prompt_produces_three_explicit_nonidentifying_sections():
     assert 'navigator.clipboard.writeText(prompt)' in js
     assert 'parseDiaSummary(input)' in js
     assert 'previewText").textContent' in js
+
+
+def test_visit_capture_does_not_autoload_recent_patients_on_entry():
+    html = _read("static/cockpit/visit-capture/index.html")
+    js = _read("static/cockpit/visit-capture/app.js")
+    assert "Αναζήτηση σε ολόκληρο το μητρώο" in html
+    assert 'id="patientSearch"' in html
+    assert 'id="patientSelect"' in html
+    assert 'id="morePatientsBtn"' in html
+    assert '"/clinical/patients?query="' in js
+    assert "if (state.mode === \"record\") loadPatients();" in js
+    assert "schedulePatientSearch();" in js
+    assert 'state.patientSearchRevision' in js
+    assert 'if (!term || !state.authenticated || state.mode !== "record") return;' in js
+    assert 'const offset = append ? state.patients.length : 0;' in js
