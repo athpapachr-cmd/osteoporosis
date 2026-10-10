@@ -245,6 +245,13 @@
     $("doctorRailToggle").setAttribute("aria-expanded",String(next));
   });
   function updateSurgeryCounts(detail) {
+    if(detail?.unavailable){
+      state.surgeries=null;
+      $("doctorTasksBadge").hidden=true;
+      attention();
+      if(state.panel==="tasks")tasks();
+      return;
+    }
     if(!detail||!Number.isInteger(detail.total)||detail.total<0||
        !Number.isInteger(detail.undated)||detail.undated<0)return;
     state.surgeries={total:detail.total,undated:detail.undated};
