@@ -112,3 +112,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,ui-sans-se
  .doctor-library-nav button{font-size:11px;padding:9px 6px}
 }
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+
+/* In the Dia half-width workspace, keep date/actions beside the product title. */
+@media(min-width:561px) and (max-width:990px){
+ .doctor-topbar{flex-direction:row;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:8px}
+ .doctor-brand{gap:7px;flex:none}
+ .doctor-brand .eyebrow,.doctor-brand .subtitle{display:none}
+ .doctor-brand h1{font-size:21px}
+ .doctor-command-bar{width:auto;flex:none;gap:1px}
+ .doctor-date-button{padding:7px 5px;font-size:11.5px}
+ .doctor-command-button{padding:7px 9px;font-size:12px}
+}
