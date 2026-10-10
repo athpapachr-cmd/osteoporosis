@@ -135,6 +135,71 @@ function harness(authenticated) {
   await demo.settle();
   assert.ok(demo.clipboard[0].includes("ENCOUNTER DETAIL"));
 
+  // Fully fabricated case: checks structural display, not medical correctness.
+  // Every note below is user/source text; the app must never auto-diagnose.
+  demo.get("candidateInput").value = [
+    "SNAPSHOT",
+    "Κλινική εικόνα: Συνθετική παρακολούθηση.",
+    "Μεταβολή: Δεν υπάρχουν δεδομένα προηγούμενης επίσκεψης.",
+    "Απόφαση: Παραγγέλθηκαν εργαστηριακές εξετάσεις.",
+    "Εκκρεμότητες: Οι εξετάσεις δεν πραγματοποιήθηκαν και δεν υπάρχουν αποτελέσματα.",
+    "",
+    "VISIT BRIEF",
+    "Λόγος επίσκεψης: Συνθετική επανεξέταση.",
+    "Ευρήματα: FRAX MOF 6,2% και κίνδυνος ισχίου 1,3%, σύμφωνα με τη συνθετική πηγή.",
+    "Αποφάσεις: Εργαστηριακός έλεγχος παραγγέλθηκε, χωρίς αποτέλεσμα.",
+    "",
+    "ENCOUNTER DETAIL",
+    "Πηγές:",
+    "Συνθετικό κείμενο ελέγχου.",
+    "Ιστορικό:",
+    "Δεν παρασχέθηκε προηγούμενη ημερομηνία.",
+    "Εξετάσεις και κατάσταση:",
+    "Παραγγέλθηκαν, δεν έχουν πραγματοποιηθεί, δεν υπάρχουν αποτελέσματα.",
+    "Κλινική εκτίμηση:",
+    "MOF και ισχίο αναφέρονται χωριστά.",
+    "Σημεία προς έλεγχο (διοικητικά, όχι κλινική διάγνωση):",
+    "1. Έλεγξε κωδικό παραπεμπτικού σύμφωνα με την αρχική πηγή.",
+    "2. Διευκρίνισε την ετικέτα της ημερομηνίας <img src=x onerror=alert(1)>.",
+  ].join("\n");
+  demo.get("candidateInput").dispatch("input");
+  assert.equal(demo.get("diaReviewPanel").hidden, false, "two supplied source alerts are surfaced");
+  assert.ok(demo.get("diaReviewCount").textContent.startsWith("2 σημεία"));
+  assert.equal(demo.get("diaReviewList").children.length, 2);
+  assert.ok(demo.get("diaReviewList").children[1].textContent.includes("<img src=x"), "untrusted mark-up stays literal text");
+  assert.equal(demo.get("structuredPreview").hidden, false, "labeled snapshot is structured");
+  assert.equal(demo.get("structuredPreview").children.length, 4, "four supplied snapshot labels");
+
+  demo.get("diaReviewDetails").open = true;
+  demo.segment("brief").dispatch("click");
+  assert.equal(demo.get("structuredPreview").hidden, false);
+  assert.ok(demo.get("structuredPreview").children.some((node) =>
+    node.children.some((child) => child.textContent === "Ευρήματα")), "Brief labels from source are preserved");
+  assert.equal(demo.get("diaReviewDetails").open, true, "review notes stay open when changing tabs");
+
+  demo.segment("detail").dispatch("click");
+  const detailPanels = demo.get("structuredPreview").children;
+  assert.ok(detailPanels.length >= 4, "Encounter Detail becomes separate explicit sections");
+  assert.ok(detailPanels.every((panel) => typeof panel.open === "boolean"), "detail sections are collapsible");
+  assert.equal(detailPanels[0].open, true, "first section is open for instant reading");
+  assert.equal(detailPanels[1].open, false, "other sections start collapsed");
+  assert.ok(demo.get("previewText").textContent.includes("δεν υπάρχουν αποτελέσματα"), "original Dia text not rewritten");
+  assert.equal(demo.get("previewText").hidden, true, "structured detail displayed instead of a wall of text");
+
+  // Old freeform notes must not be given invented clinical section titles or alerts.
+  demo.get("candidateInput").value = "Ελεύθερο κείμενο χωρίς επισήμανση ή έγκυρη ενότητα.";
+  demo.get("candidateInput").dispatch("input");
+  assert.equal(demo.get("diaReviewPanel").hidden, true);
+  assert.equal(demo.get("structuredPreview").hidden, true, "unlabeled text is shown verbatim");
+  assert.equal(demo.get("previewText").hidden, false);
+
+  demo.get("candidateInput").value = "";
+  demo.get("candidateInput").dispatch("input");
+  assert.equal(demo.get("diaReviewPanel").hidden, true, "clearing source clears review notes");
+  assert.equal(demo.get("structuredPreview").hidden, true);
+  assert.equal(demo.get("saveBtn").disabled, true);
+  assert.ok(!demo.calls.some((c) => c.method === "POST"), "readability-only demo never posts clinical content");
+
   const live = harness(true);
   await live.settle();
   assert.equal(live.get("authCard").hidden, true, "authenticated panel automatically hides");
