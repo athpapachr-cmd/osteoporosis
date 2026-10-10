@@ -303,8 +303,10 @@
     String(text || "").replace(/\r\n?/g, "\n").split("\n").forEach((line) => {
       const heading = foldHeading(line);
       if (isReviewHeading(line)) { emit(); collecting = true; return; }
+      // Reuse the same explicit section grammar as the structured renderer:
+      // any subsequent recognized clinical heading ends review-note collection.
       if (/^(snapshot|visit brief|encounter detail)$/.test(heading) ||
-          /^(?:παρακολουθηση|κωδικοποιηση|πηγες|αποφασεις|εκκρεμοτητες)(?:\s|$)/.test(heading)) {
+          Object.keys(sectionNames).some((level) => sourceSectionHeading(line, level))) {
         if (collecting) emit();
         collecting = false;
         return;
