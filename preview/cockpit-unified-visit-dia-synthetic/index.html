@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="el">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Cockpit — Κλινική επίσκεψη — Adaptive Prototype v2</title>
+  <style>
+:root{--bg:#f6f8fa;--panel:#fff;--line:#e2e9ed;--ink:#1b3441;--muted:#697d87;--teal:#187c79;--teal-dark:#126a65;--teal-pale:#e9f5f3;--navy:#18313f;--shadow:0 6px 24px rgba(21,52,62,.035)}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;color:var(--ink);background:var(--bg);-webkit-font-smoothing:antialiased}button,input,textarea{font:inherit}button{cursor:pointer}button:disabled{opacity:.45;cursor:not-allowed}[hidden]{display:none!important}button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid #9ddad3;outline-offset:2px}.topbar{height:75px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 29px;position:sticky;top:0;z-index:12}.brand{display:flex;align-items:center;gap:11px}.brand-mark{background:var(--navy);color:#fff;width:37px;height:37px;border-radius:11px;display:grid;place-items:center;font-size:18px}.brand-title{font-weight:800;letter-spacing:-.02em;font-size:18px;line-height:1.15}.brand-sub{font-size:11px;color:var(--muted);margin-top:4px}.topbar-right{display:flex;align-items:center;gap:17px}.demo-badge{display:flex;align-items:center;gap:7px;color:#567a72;background:#ebf6f2;border-radius:999px;padding:8px 12px;font-size:11px;font-weight:750}.demo-dot{width:7px;height:7px;background:#34a68b;border-radius:50%}.topbar-date{color:var(--muted);font-size:12px}.page{display:grid;grid-template-columns:323px minmax(0,1fr);max-width:1640px;margin:auto;min-height:calc(100vh - 75px)}.sidebar{background:#fff;border-right:1px solid var(--line);padding:28px 17px 20px;min-height:calc(100vh - 75px)}.sidebar-title,.section-label{font-size:10px;letter-spacing:.1em;color:#7f9299;font-weight:850}.sidebar-title{display:flex;justify-content:space-between;align-items:center;padding:0 10px 15px}.small-counter{font-size:10px;letter-spacing:0;font-weight:600;color:#a0adb2}.search-wrap{position:relative;display:flex;align-items:center;background:#f5f8f9;border:1px solid #e1e9ec;border-radius:12px;padding:0 10px;height:45px}.search-wrap:focus-within{border-color:#72b9b4;background:#fff}.search-icon{font-size:24px;margin:0 7px 3px 0;color:#6d8790}.search-wrap input{width:100%;min-width:0;outline:none;border:0;background:transparent;color:var(--ink);font-size:13px}.search-wrap input::placeholder{color:#93a2a8}.search-wrap kbd{font-size:10px;white-space:nowrap;border:1px solid var(--line);border-radius:5px;padding:2px 4px;color:#87989d}.search-hint{padding:0 4px;color:#93a3a9;font-size:10px;margin:9px 0 26px}.sidebar-section{margin-bottom:25px}.section-heading{padding:0 10px 10px;display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:790}.section-meta{font-weight:500;font-size:10px;color:#9baab0}.text-button{border:0;background:transparent;color:var(--teal);font-weight:750;font-size:11px}.patient-list{display:grid;gap:3px}.patient-item{width:100%;display:flex;align-items:center;gap:10px;text-align:left;border:1px solid transparent;background:transparent;padding:11px 9px;border-radius:11px;color:var(--ink)}.patient-item:hover,.patient-item:focus-visible{background:#f3f8f7}.patient-item.selected{background:#eaf5f3;border-color:#d5eae6}.patient-icon{flex:0 0 33px;height:33px;border-radius:10px;display:grid;place-items:center;background:#f1f4f7;color:#536a74;font-size:12px;font-weight:800}.patient-item.selected .patient-icon{background:#d5eae6;color:#226a65}.patient-body{min-width:0;flex:1}.patient-body strong{display:block;font-size:12px;letter-spacing:-.005em;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}.patient-body small{display:block;font-size:10.5px;color:var(--muted);margin-top:5px;line-height:1.3}.patient-chevron{font-size:16px;color:#96aaaf}.sidebar-foot{display:flex;gap:7px;border-top:1px solid #edf1f3;padding:17px 9px 0;font-size:10px;line-height:1.55;color:#91a1a6}.sidebar-foot span:first-child{font-size:15px}.search-results .section-label{padding:0 10px 9px}.search-results{padding-top:0;margin-bottom:20px}.empty-search{font-size:12px;color:var(--muted);padding:12px}.content{padding:31px clamp(22px,4.5vw,69px) 80px;min-width:0}.welcome{max-width:900px;margin:15vh auto 0}.welcome-eyebrow,.context-overline,.panel-eyebrow{letter-spacing:.095em;font-size:10px;font-weight:850;color:var(--teal)}.welcome h1{font-size:clamp(39px,5vw,61px);line-height:1.15;letter-spacing:-.045em;margin:16px 0 18px;color:var(--navy);font-weight:850}.welcome h1 span{color:var(--teal)}.welcome>p{font-size:16px;color:#657985;line-height:1.8;max-width:640px}.welcome-panels{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:34px 0 32px}.welcome-panels>div{background:#fff;border:1px solid var(--line);border-radius:14px;padding:19px 15px;box-shadow:var(--shadow)}.welcome-panels strong,.welcome-panels small{display:block}.welcome-panels strong{font-size:13px;margin:8px 0 6px}.welcome-panels small{color:var(--muted);font-size:11px}.welcome-icon{color:var(--teal);font-size:22px}.primary-button,.secondary-button,.subtle-button,.quiet-button{border-radius:10px;font-weight:750;font-size:12px;padding:11px 15px;min-height:40px}.primary-button{background:var(--teal);border:1px solid var(--teal);color:#fff}.primary-button:not(:disabled):hover{background:var(--teal-dark)}.secondary-button{background:#fff;border:1px solid #c9dbdc;color:var(--teal)}.secondary-button:hover{background:#f3faf9}.subtle-button,.quiet-button{border:1px solid var(--line);background:#f8fafb;color:#5a7680}.subtle-button:hover,.quiet-button:hover{background:#eef4f5}.crumb{font-size:11px;color:#82969c;display:flex;align-items:center;gap:10px;margin-bottom:22px}.crumb-arrow{font-size:17px}.patient-header{display:flex;align-items:center;gap:15px;margin-bottom:13px}.avatar{height:53px;width:53px;border-radius:15px;background:#e8f0f1;color:#386c75;display:grid;place-items:center;font-size:18px;font-weight:850}.patient-info{flex:1;min-width:0}.patient-header h1{font-size:27px;letter-spacing:-.035em;margin:5px 0 5px;color:var(--navy)}.patient-subtitle{font-size:12px;color:var(--muted)}.patient-status{font-size:11px;color:#5b7c7a;background:#edf7f4;border:1px solid #d6ebe4;border-radius:10px;padding:11px 13px;margin:16px 0 24px}.visit-layout{display:grid;grid-template-columns:minmax(0,1fr) 264px;gap:18px;align-items:start}.visit-primary{min-width:0}.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px 23px;box-shadow:var(--shadow);margin-bottom:17px}.panel-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:16px}.panel h2{font-size:17px;line-height:1.36;letter-spacing:-.025em;color:var(--navy);margin:5px 0 0}.panel-heading .muted{font-size:12px;color:var(--muted);margin:7px 0 0}.source-tag{font-size:10px;white-space:nowrap;padding:7px 9px;background:#f3f7f6;border-radius:8px;color:#65807b}.prior-text{font-size:13px;line-height:1.8;color:#58717d;margin:0}.module-bridge{display:flex;gap:11px;align-items:center;background:#f6f9f8;border:1px solid #e2ece9;padding:11px;border-radius:10px;margin-top:16px}.bridge-icon{font-size:20px;color:var(--teal)}.module-bridge strong,.module-bridge small{display:block}.module-bridge strong{font-size:12px}.module-bridge small{color:var(--muted);font-size:10px;margin-top:4px;line-height:1.5}.dia-logo{font-size:23px;font-weight:800;font-style:italic;letter-spacing:-.09em;color:#7787b2}.source-strip{display:flex;gap:7px;flex-wrap:wrap}.source-strip span{font-size:10.5px;background:#eef4f7;border-radius:8px;padding:8px 9px;color:#557083}.source-caption{font-size:10px;color:#99a9ad;margin:9px 0 15px;line-height:1.6}.dia-actions{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:6px}.inline-status{font-size:11px;min-height:17px;color:var(--teal);margin:7px 0}.field-label{display:block;font-size:11px;font-weight:750;color:#3d5864;margin:12px 0 8px}textarea{width:100%;border:1px solid #d8e3e7;border-radius:11px;background:#fcfdfd;padding:13px 14px;font-size:12.5px;color:var(--ink);line-height:1.75;min-height:140px;resize:vertical}textarea:focus{background:#fff;border-color:#76bcb6;outline:none;box-shadow:0 0 0 3px rgba(17,126,119,.08)}textarea::placeholder{color:#a1adb3}.field-helper{font-size:10px;color:#99a9ad;line-height:1.6;margin-bottom:0}.tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;padding:4px;background:#f0f5f5;border-radius:11px;margin:16px 0}.tab{border:0;border-radius:9px;padding:10px 7px;background:transparent;color:#758a92;font-size:11.5px;font-weight:750}.tab.active{background:#fff;color:var(--teal-dark);box-shadow:0 2px 8px rgba(39,78,80,.07)}.review-badge{font-size:10px;background:#f1f5f6;padding:7px 9px;border-radius:8px;color:#819299;white-space:nowrap}.review-badge.ready{background:#e8f5f1;color:#29836c}.review-badge.partial{background:#fff5e8;color:#a77a31}.preview-empty{min-height:164px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;text-align:center;border:1px dashed #d8e5e6;border-radius:11px;padding:20px;color:#7d9499}.preview-empty>span{font-size:23px;color:#8bb7b2}.preview-empty strong{font-size:13px;color:#57767c}.preview-empty small{font-size:11px;max-width:370px;line-height:1.6}.preview-content{padding:16px;border:1px solid #e0e9ea;background:#fcfefe;border-radius:12px;white-space:pre-wrap;font-size:13px;line-height:1.85;min-height:145px;overflow-wrap:anywhere}.preview-content.missing{color:#a47736;background:#fffbf4}.preview-toolbar{display:flex;justify-content:space-between;align-items:center;gap:9px;margin-top:10px;flex-wrap:wrap}.preview-note{font-size:10px;color:#82949a}.secondary-button.small,.primary-button.small{min-height:35px;padding:8px 11px}.edit-wrap{margin-top:14px;padding:12px;background:#f7faf9;border-radius:10px}.edit-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:9px}.decision-panel{position:sticky;top:95px}.decision-panel h2{font-size:16px}.decision-panel>p{font-size:12px;color:#657d86;line-height:1.8}.check-line{display:flex;align-items:flex-start;gap:8px;margin:18px 0 17px;font-size:12px;line-height:1.5;font-weight:650}.check-line input{accent-color:var(--teal);width:17px;height:17px;flex:none;margin-top:0}.wide{width:100%}.save-disclaimer{font-size:10px!important;line-height:1.7!important;color:#97a8ad!important}.complete-notice{margin-top:16px;padding:13px;border:1px solid #c5e8db;background:#edf9f4;border-radius:11px}.complete-notice strong{color:#26785d;font-size:12px}.complete-notice p{font-size:11px;color:#548575;line-height:1.6}.help-panel{border:1px solid #e4ecec;border-radius:13px;padding:17px;background:#f1f5f5}.help-panel span{font-size:10px;letter-spacing:.09em;font-weight:850;color:#658784}.help-panel p{color:#738a91;font-size:11px;line-height:1.9;margin-bottom:0}.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:20;background:#20454a;color:#fff;border-radius:999px;box-shadow:0 8px 24px #112b3240;padding:12px 18px;font-size:12px;max-width:90vw;text-align:center}
+@media(max-width:1200px){.page{grid-template-columns:280px minmax(0,1fr)}.content{padding:28px}.visit-layout{grid-template-columns:minmax(0,1fr) 220px;gap:12px}.panel{padding:18px}.source-strip span{font-size:9.5px}}
+@media(max-width:950px){.visit-layout{grid-template-columns:minmax(0,1fr)}.decision-panel{position:static}.visit-aside{display:grid;grid-template-columns:1fr;gap:10px}.welcome-panels{grid-template-columns:1fr 1fr 1fr}}
+@media(max-width:700px){.topbar{height:64px;padding:0 15px}.topbar-date{display:none}.demo-badge{padding:7px 9px;font-size:10px}.page{display:block}.sidebar{min-height:auto;padding:17px 13px 10px;border-right:0;border-bottom:1px solid var(--line)}.sidebar-title{padding:0 5px 8px}.search-hint{margin:6px 0 12px}.sidebar-section{margin-bottom:8px}.section-heading{padding:7px 5px 8px}.patient-list{display:flex;overflow-x:auto;gap:7px;padding-bottom:8px;scrollbar-width:thin}.patient-item{min-width:185px;max-width:215px;border:1px solid var(--line);flex:none}.patient-icon{display:none}.patient-chevron{display:none}.sidebar-foot{display:none}.content{padding:21px 13px 50px}.welcome{margin:25px auto}.welcome h1{font-size:38px}.welcome>p{font-size:14px}.welcome-panels{grid-template-columns:1fr;margin:25px 0;gap:8px}.welcome-panels>div{padding:13px}.welcome-panels .welcome-icon{display:none}.patient-header{flex-wrap:wrap;gap:10px}.patient-header h1{font-size:22px}.patient-header .quiet-button{margin-left:auto}.avatar{width:44px;height:44px}.patient-status{line-height:1.65}.panel{padding:17px 14px}.dia-actions{gap:7px}.dia-actions button{flex:1}.tabs .tab{font-size:10px;padding:9px 2px}.section-meta{display:none}.review-badge{white-space:normal}.patient-list .patient-body small{white-space:nowrap;text-overflow:ellipsis;overflow:hidden}}
+
+
+/* V2: quiet, context-aware clinician workflow. Keep sidebar and patient identity as the anchor. */
+.content{padding:35px clamp(25px,4vw,57px) 70px}
+.today-workspace{max-width:920px;margin:12px 0 0}
+.workspace-kicker{font-size:10px;font-weight:800;letter-spacing:.09em;color:#647f88;display:flex;align-items:center;gap:8px;margin-bottom:14px}
+.small-signal{width:7px;height:7px;border-radius:100%;background:var(--teal)}
+.compact-count{margin-left:auto;letter-spacing:normal;color:#8da0a7;font-weight:500}
+.today-workspace h1{font-size:27px;letter-spacing:-.035em;color:var(--navy);margin:0 0 16px}
+.next-visit{width:100%;border:1px solid #cedfdf;background:#fff;border-radius:14px;padding:21px 22px;display:flex;align-items:center;gap:19px;text-align:left;color:var(--ink);box-shadow:var(--shadow);transition:background .15s,border-color .15s}
+.next-visit:hover{background:#f3faf8;border-color:#9bcac4}
+.next-time{font-size:23px;font-weight:850;letter-spacing:-.025em;color:var(--teal);min-width:62px}
+.next-description{min-width:0;flex:1}
+.next-description strong{font-size:17px;display:block;letter-spacing:-.01em}
+.next-description small{display:block;margin-top:6px;font-size:12px;color:var(--muted)}
+.next-open{font-size:12px;font-weight:800;color:var(--teal);white-space:nowrap;display:flex;gap:10px;align-items:center}
+.next-open span{font-size:18px}
+.workspace-caption{font-size:12px;line-height:1.65;color:#668189;margin:13px 8px 30px;display:flex;gap:8px;align-items:flex-start}
+.mini-dot{width:5px;height:5px;border-radius:50%;background:#77a59c;flex:none;margin-top:7px}
+.attention-block{max-width:850px}
+.attention-title{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0 4px 10px}
+.attention-title h2{font-size:14px;letter-spacing:-.01em;margin:0}
+.attention-title>span{font-size:11px;color:#98a7ad}
+.attention-row{width:100%;border:0;border-bottom:1px solid #e5ecee;background:transparent;text-align:left;padding:13px 8px;display:flex;align-items:center;gap:13px;color:var(--ink);border-radius:0}
+.attention-row:hover{background:#f0f7f6}
+.attention-marker{width:28px;height:28px;display:grid;place-items:center;background:#fff5e6;color:#a37a35;border-radius:9px;font-size:13px;font-weight:850;flex:none}
+.attention-marker.neutral{background:#eaf3f5;color:#54828a}
+.attention-row strong,.attention-row small{display:block}
+.attention-row strong{font-size:12.5px}
+.attention-row small{font-size:11px;margin-top:5px;color:#728791;line-height:1.45}
+.row-arrow{margin-left:auto;font-size:19px;color:#83a4a5}
+.workspace-footer{font-size:11px;color:#9aa9af;line-height:1.7;margin-top:25px}
+.back-home{font-size:12px;border:0;background:transparent;color:#6c8b93;font-weight:700;padding:5px 0;margin:-3px 0 12px}
+.back-home:hover{color:var(--teal)}
+.patient-header{margin-bottom:9px}
+.patient-status{padding:8px 11px;margin:11px 0;font-size:11px}
+.visit-actions{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin:15px 0 18px}
+.visit-dia-trigger{font-size:12px;display:flex;align-items:center;gap:8px}
+.flow-state{font-size:11.5px;color:#799097}
+.visit-layout{display:block;max-width:940px}
+.visit-primary{width:100%}
+.panel{padding:17px 20px;margin-bottom:13px;border-radius:13px}
+.panel-heading{margin-bottom:9px}
+.panel h2{font-size:15.5px}
+.panel-eyebrow{font-size:9px}
+.compact-heading{align-items:center}
+.prior-text{font-size:12.5px;line-height:1.65;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden}
+.prior-panel.expanded .prior-text{display:block;overflow:visible}
+.context-expand{display:inline-flex;margin-top:7px;padding:0;font-size:11px}
+.context-next{border-top:1px solid #e8eff1;margin-top:15px;padding-top:12px;display:flex;align-items:flex-start;gap:10px;color:#5c797e}
+.context-next>span{font-size:17px;color:var(--teal);margin-top:1px}
+.context-next strong{font-size:11.5px;color:var(--ink)}
+.context-next p{font-size:12px;line-height:1.55;margin:4px 0 0;color:var(--muted)}
+.module-bridge{margin-top:12px;padding:7px 9px;background:#f8faf9;border:0;border-top:1px solid #e8eff1;border-radius:0}
+.module-bridge .bridge-icon{font-size:14px}
+.module-bridge small{font-size:10px}
+.dia-panel{background:#fff}
+.tiny-button{min-height:30px;padding:6px 10px;font-size:11px}
+.dia-panel textarea{min-height:125px;max-height:400px}
+.dia-actions{margin-top:10px}
+.composer-footer{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px}
+.source-details{font-size:11px;color:#7f9299;max-width:480px}
+.source-details summary{cursor:pointer}
+.source-details p{line-height:1.55;margin:6px 0 0}
+.review-panel{margin-top:10px}
+.review-panel .panel-heading{margin-bottom:8px}
+.review-panel .tabs{margin:11px 0}
+.review-panel .preview-content{min-height:95px;font-size:12.5px;padding:13px 15px;line-height:1.75}
+.review-panel .preview-empty{min-height:75px;padding:12px}
+.visit-aside{display:block;margin-top:0}
+.decision-panel{position:static;display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 17px;margin-top:10px;background:#f9fcfb}
+.decision-panel .panel-eyebrow{display:none}
+.decision-panel h2{font-size:13px;margin:0 12px 0 0}
+.decision-panel .check-line{margin:0;align-items:center;min-width:0;white-space:normal}
+.decision-panel .primary-button.wide{width:auto;min-height:38px;margin-left:auto}
+.decision-panel .save-disclaimer{flex-basis:100%;margin:0;font-size:10px!important}
+.decision-panel .complete-notice{flex-basis:100%;margin-top:0}
+.help-panel{display:none}
+@media(max-width:950px){.visit-layout{display:block}.decision-panel{position:static}}
+@media(max-width:700px){
+ .content{padding:20px 13px 42px}
+ .today-workspace{margin:0}
+ .today-workspace h1{font-size:22px;margin:0 0 13px}
+ .next-visit{gap:10px;padding:14px 12px;flex-wrap:wrap}
+ .next-time{font-size:18px;min-width:45px}
+ .next-description strong{font-size:13px}
+ .next-description small{font-size:11px}
+ .next-open{width:100%;justify-content:flex-end;font-size:11px;border-top:1px solid #edf1f2;padding-top:9px}
+ .attention-title{flex-direction:column;gap:3px}
+ .attention-row{padding:11px 4px}
+ .workspace-footer{margin:18px 2px}
+ .visit-actions{margin:13px 0}
+ .flow-state{font-size:10px}
+ .panel{padding:14px 13px}
+ .prior-text{font-size:12px}
+ .context-next p{font-size:11px}
+ .decision-panel{display:grid;grid-template-columns:1fr;gap:10px}
+ .decision-panel .primary-button.wide{margin:0;width:100%}
+ .composer-footer{flex-direction:column;align-items:stretch}
+ .composer-footer .primary-button{width:100%}
+ .dia-actions button{font-size:11px}
+}
+
+  
+/* V2 final polish: compress clinical context when the user works on Dia. */
+.context-tools{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.context-tools .context-expand{margin:0}
+.prior-text{display:block;overflow:visible;-webkit-line-clamp:unset;line-clamp:unset}
+.prior-panel.compact-context{padding-top:12px;padding-bottom:12px}
+.prior-panel.compact-context .panel-heading{margin-bottom:0}
+.prior-panel.compact-context .prior-text,.prior-panel.compact-context .context-next,.prior-panel.compact-context .module-bridge{display:none!important}
+.module-inline{font-size:10.5px;color:#799196;border-top:1px solid #e8eef0!important;margin:11px 0 0;padding:10px 0 0!important;background:transparent!important}
+.decision-copy{flex:1;min-width:155px;display:flex;flex-direction:column;gap:4px}
+.decision-copy strong{font-size:13px}
+.decision-copy small{font-size:10px;color:var(--muted)}
+.decision-panel .primary-button.wide{margin-left:0}
+@media(max-width:700px){.context-tools{gap:7px}.source-tag{font-size:9px}.decision-copy{min-width:0}}
+
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark" aria-hidden="true">✚</span><div><div class="brand-title">Cockpit</div><div class="brand-sub">Κλινική επίσκεψη</div></div></div>
+      <div class="topbar-right"><span class="demo-badge"><span class="demo-dot"></span>Δοκιμαστικό πρωτότυπο</span><span class="topbar-date" id="headerDate"></span></div>
+    </header>
+
+    <div class="page">
+      <aside class="sidebar" aria-label="Εύρεση ασθενούς">
+        <div class="sidebar-title"><span>ΑΣΘΕΝΕΙΣ</span><span class="small-counter" id="sampleCount">Συνθετικά στοιχεία</span></div>
+        <label class="search-wrap" for="patientSearch"><span class="search-icon" aria-hidden="true">⌕</span><input id="patientSearch" type="search" autocomplete="off" placeholder="Αναζήτηση με όνομα…" aria-describedby="searchHint"><kbd>⌘ K</kbd></label>
+        <p class="search-hint" id="searchHint">Αναζήτηση σε όλους τους ασθενείς της δοκιμής</p>
+        <section class="search-results" id="searchResults" hidden aria-label="Αποτελέσματα αναζήτησης"><div class="section-label">ΑΠΟΤΕΛΕΣΜΑΤΑ</div><div id="searchResultsList"></div></section>
+
+        <div id="sidebarSections">
+          <section class="sidebar-section">
+            <div class="section-heading"><span>Σήμερα</span><span class="section-meta" id="todayCount"></span></div>
+            <div class="patient-list" id="todayList"></div>
+          </section>
+          <section class="sidebar-section">
+            <div class="section-heading"><span>Επόμενες ημέρες</span><button type="button" class="text-button" id="showUpcoming">Όλα</button></div>
+            <div class="patient-list" id="upcomingList"></div>
+          </section>
+          <section class="sidebar-section">
+            <div class="section-heading"><span>Πρόσφατοι φάκελοι</span><span class="section-meta">Τελευταίες αλλαγές</span></div>
+            <div class="patient-list" id="recentList"></div>
+          </section>
+        </div>
+        <div class="sidebar-foot"><span aria-hidden="true">ⓘ</span><span>Όλα τα ονόματα και τα ραντεβού εδώ είναι φανταστικά. Δεν υπάρχει σύνδεση με ΓεΣΥ, Heidi, Dia ή πραγματικό μητρώο.</span></div>
+      </aside>
+
+      <main class="content" id="mainContent">
+        <section class="today-workspace" id="welcomeView">
+      <div class="workspace-kicker"><span class="small-signal"></span> ΣΗΜΕΡΙΝΗ ΕΡΓΑΣΙΑ <span class="compact-count">3 προγραμματισμένες επισκέψεις</span></div>
+      <h1>Επόμενη επίσκεψη</h1>
+      <button class="next-visit" id="startSuggested" type="button" aria-label="Άνοιγμα επίσκεψης Μαρίας Παπαδοπούλου">
+        <span class="next-time">09:40</span>
+        <span class="next-description"><strong>Μαρία Παπαδοπούλου</strong><small>Επανεξέταση οστεοπόρωσης</small></span>
+        <span class="next-open">Άνοιγμα επίσκεψης <span aria-hidden="true">→</span></span>
+      </button>
+      <div class="workspace-caption"><span class="mini-dot"></span> Υπάρχει προηγούμενο θεραπευτικό πλαίσιο και εκκρεμεί επιβεβαίωση της συνέχειας αγωγής.</div>
+      <div class="attention-block">
+        <div class="attention-title"><h2>Χρειάζονται προσοχή</h2><span>Από τις συνθετικές επισκέψεις</span></div>
+        <button id="attentionAndreas" class="attention-row" type="button" aria-label="Άνοιγμα επίσκεψης Ανδρέα Γεωργίου">
+          <span class="attention-marker">!</span>
+          <span><strong>Prolia · πριν από χορήγηση</strong><small>Ανδρέας Γεωργίου · Επιβεβαίωση απαραίτητων στοιχείων</small></span>
+          <span class="row-arrow" aria-hidden="true">›</span>
+        </button>
+        <button id="attentionEleni" class="attention-row" type="button" aria-label="Άνοιγμα επίσκεψης Ελένης Χριστοδούλου">
+          <span class="attention-marker neutral">?</span>
+          <span><strong>Χρειάζεται επιβεβαίωση φακέλου</strong><small>Ελένη Χριστοδούλου · Ραντεβού 11:10</small></span>
+          <span class="row-arrow" aria-hidden="true">›</span>
+        </button>
+      </div>
+      <p class="workspace-footer">Άνοιξε έναν ασθενή με ένα κλικ. Η κλινική καταγραφή θα εμφανιστεί μόνο όταν τη ζητήσεις.</p>
+    </section>
+    <section class="visit-view" id="visitView" hidden>
+          <button id="backHome" class="back-home" type="button">‹ Σήμερα</button>
+          <div class="patient-header">
+            <div class="avatar" id="patientAvatar" aria-hidden="true"></div>
+            <div class="patient-info"><span class="context-overline" id="visitContext">ΚΑΤΑΓΡΑΦΗ ΕΠΙΣΚΕΨΗΣ</span><h1 id="patientName"></h1><div class="patient-subtitle" id="patientSub"></div></div>
+            <button type="button" class="quiet-button" id="changePatient">Αλλαγή ασθενούς</button>
+          </div>
+          <div class="patient-status" id="patientStatus"></div>
+      <div class="visit-actions">
+        <button class="primary-button visit-dia-trigger" id="openDiaBtn" type="button"><span aria-hidden="true">＋</span> Σύνοψη από το Dia</button>
+        <span id="visitFlowState" class="flow-state" role="status">Δεν υπάρχει σημερινή καταγραφή.</span>
+      </div>
+
+          <div class="visit-layout">
+            <div class="visit-primary">
+              <section class="panel prior-panel" id="priorPanel">
+          <div class="panel-heading compact-heading">
+            <div><div class="panel-eyebrow">ΚΛΙΝΙΚΟ ΠΛΑΙΣΙΟ</div><h2>Πριν από την επίσκεψη</h2></div>
+            <div class="context-tools"><span class="source-tag">Συνθετικό ιστορικό</span><button id="togglePrior" class="text-button context-expand" type="button">Σύμπτυξη</button></div>
+          </div>
+          <p class="prior-text" id="priorSummary"></p>
+          <div class="context-next"><span aria-hidden="true">◷</span><div><strong>Τι χρειάζεται συνέχεια</strong><p id="contextNext"></p></div></div>
+          <p class="module-bridge module-inline" id="moduleBridge" hidden>Οστεοπόρωση · Η νέα κλινική ενότητα είναι υπό ανανέωση.</p>
+        </section>
+        <section class="panel dia-panel" id="diaPanel" hidden>
+          <div class="panel-heading compact-heading">
+            <div><div class="panel-eyebrow">ΜΟΝΟ ΟΤΑΝ ΧΡΕΙΑΖΕΤΑΙ</div><h2>Εισαγωγή σύνοψης Dia</h2></div>
+            <button id="closeDiaBtn" type="button" class="quiet-button tiny-button">Κλείσιμο ✕</button>
+          </div>
+          <div class="dia-actions">
+            <button class="secondary-button" id="copyPrompt" type="button">⧉ Αντιγραφή οδηγίας Dia</button>
+            <button class="subtle-button" id="fillExample" type="button">Συνθετικό παράδειγμα</button>
+            <button class="subtle-button" id="clearNote" type="button">Καθαρισμός</button>
+          </div>
+          <p class="inline-status" id="copyMessage" role="status" aria-live="polite"></p>
+          <label class="field-label" for="diaInput">Κείμενο από το Dia</label>
+          <textarea id="diaInput" rows="5" spellcheck="false" placeholder="Επικόλλησε τη σύνοψη. Οι τρεις προβολές δημιουργούνται από αυτό το κείμενο, χωρίς JSON."></textarea>
+          <div class="composer-footer"><details class="source-details"><summary>Τις πηγές τις επιλέγεις στο Dia</summary><p>Heidi σήμερα · ΓεΣΥ σήμερα · προηγούμενη επίσκεψη ΓεΣΥ. Στο πρωτότυπο δεν γίνεται ανάγνωση καμίας πηγής.</p></details><button type="button" id="showPreviewBtn" class="primary-button small" disabled>Δες την προεπισκόπηση →</button></div>
+        </section>
+        <section class="panel review-panel" id="reviewPanel" hidden>
+                <div class="panel-heading"><div><div class="panel-eyebrow">ΚΛΙΝΙΚΟΣ ΕΛΕΓΧΟΣ</div><h2>Προεπισκόπηση καταγραφής</h2></div><span class="review-badge" id="previewBadge">Αναμονή σύνοψης</span></div>
+                <div class="tabs" role="tablist" aria-label="Επίπεδο κλινικής προβολής"><button class="tab active" type="button" role="tab" aria-selected="true" data-tab="snapshot">Snapshot</button><button class="tab" type="button" role="tab" aria-selected="false" data-tab="brief">Visit Brief</button><button class="tab" type="button" role="tab" aria-selected="false" data-tab="detail">Encounter Detail</button></div>
+                <div class="preview-empty" id="previewEmpty"><span aria-hidden="true">▤</span><strong>Η σύνοψη θα εμφανιστεί εδώ</strong><small>Χρησιμοποίησε ένα συνθετικό παράδειγμα ή επικόλλησε τη δική σου συνθετική σύνοψη.</small></div>
+                <div class="preview-wrap" id="previewWrap" hidden><div class="preview-content" id="previewContent"></div><div class="preview-toolbar"><span class="preview-note" id="previewNote"></span><button type="button" class="secondary-button small" id="editPreview">Διόρθωση κειμένου</button></div><div class="edit-wrap" id="editWrap" hidden><label class="field-label" for="editInput">Διόρθωσε την τρέχουσα προβολή</label><textarea id="editInput" rows="7"></textarea><div class="edit-actions"><button type="button" class="subtle-button" id="cancelEdit">Ακύρωση</button><button type="button" class="primary-button small" id="applyEdit">Εφαρμογή διόρθωσης</button></div></div></div>
+              </section>
+            </div>
+
+            <aside class="visit-aside" id="decisionArea" aria-label="Ολοκλήρωση" hidden>
+              <section class="panel decision-panel">
+          <div class="decision-copy"><strong>Έλεγχος καταγραφής</strong><small>Μόνο συνθετική δοκιμή · χωρίς αποθήκευση</small></div>
+          <label class="check-line"><input id="reviewCheck" type="checkbox"><span>Έλεγξα το κείμενο</span></label>
+          <button class="primary-button wide" id="confirmTrial" type="button" disabled>Ολοκλήρωση δοκιμής</button>
+          <div class="complete-notice" id="completeNotice" role="status" hidden><strong>Η δοκιμή ολοκληρώθηκε.</strong><p>Επιβεβαίωσες τη ροή. Δεν δημιουργήθηκε κλινική εγγραφή.</p></div>
+        </section>
+      </main>
+    </div>
+  </div>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <script>
+(() => {
+  'use strict';
+  // Synthetic product walkthrough only: intentionally no fetch, XHR, cookies,
+  // localStorage, sessionStorage, or clinical backend/provider integration.
+  const $ = (id) => document.getElementById(id);
+  const startOfDay = (offset) => {
+    const d = new Date();
+    d.setHours(12, 0, 0, 0);
+    d.setDate(d.getDate() + offset);
+    return d;
+  };
+  const formatDay = (offset) => new Intl.DateTimeFormat('el-CY', { weekday: 'short', day: 'numeric', month: 'short' }).format(startOfDay(offset));
+  const patients = [
+    {key:'maria', name:'Μαρία Παπαδοπούλου', care:'Επανεξέταση οστεοπόρωσης', time:'09:40', day:0, group:'today', module:'osteoporosis', verified:true, prior:'Προηγούμενη παρακολούθηση για οστεοπόρωση. Έχει καταγραφεί αγωγή με denosumab και προγραμματισμένος επανέλεγχος. Δεν υπάρχουν νεότερα πραγματικά δεδομένα στο πρωτότυπο.', sample:'Συνθετική επίσκεψη παρακολούθησης οστεοπόρωσης. Η ασθενής αναφέρει ότι συνεχίζει την προβλεπόμενη αγωγή. Συζητήθηκε επανεκτίμηση της λήψης ασβεστίου και της βιταμίνης D.', decisions:'Συμφωνήθηκε έλεγχος συμμόρφωσης, αξιολόγηση πρόσφατων αναλύσεων εφόσον είναι διαθέσιμες και επανεξέταση του θεραπευτικού σχεδίου.', next:'Να επιβεβαιωθεί η ημερομηνία επόμενης χορήγησης και να ελεγχθούν οι εκκρεμείς αναλύσεις.'},
+    {key:'andreas', name:'Ανδρέας Γεωργίου', care:'Prolia', time:'10:20', day:0, group:'today', module:'osteoporosis', verified:true, prior:'Προγραμματισμένη επίσκεψη για Prolia. Στο συνθετικό ιστορικό αναφέρεται προηγούμενη χορήγηση και ανάγκη επιβεβαίωσης συνέχειας της θεραπείας.', sample:'Προσέρχεται για προγραμματισμένη αξιολόγηση πριν τη χορήγηση Prolia. Δεν παρέχονται εργαστηριακές τιμές.', decisions:'Αποφασίστηκε έλεγχος των απαιτούμενων στοιχείων πριν από οποιαδήποτε χορήγηση.', next:'Επιβεβαίωση θεραπευτικού προγράμματος και διαθεσιμότητας των απαιτούμενων εξετάσεων.'},
+    {key:'eleni', name:'Ελένη Χριστοδούλου', care:'Ορθοπαιδική επανεξέταση', time:'11:10', day:0, group:'today', module:'general', verified:false, prior:'Αναφορά προηγούμενης επίσκεψης λόγω μηχανικού πόνου στο γόνατο. Δεν έχει ακόμη επιβεβαιωθεί αντιστοίχιση της κράτησης με κλινικό φάκελο.', sample:'Επανεξέταση για πόνο στο γόνατο. Αναφέρει βελτίωση με περιορισμό δραστηριότητας, χωρίς διαθέσιμα επιπλέον ευρήματα.', decisions:'Προτάθηκε προοδευτική επάνοδος σε δραστηριότητα και επανεκτίμηση εφόσον τα συμπτώματα επιμένουν.', next:'Κλινική επανεκτίμηση αν δεν συνεχιστεί η βελτίωση.'},
+    {key:'nikos', name:'Νίκος Ιωάννου', care:'Αξιολόγηση οστεοπόρωσης', time:'09:00', day:2, group:'upcoming', module:'osteoporosis', verified:true, prior:'Συνθετική αρχική κλινική αξιολόγηση με προηγούμενο ιστορικό χαμηλής οστικής πυκνότητας.', sample:'Πρώτη συστηματική αξιολόγηση παραγόντων κινδύνου οστεοπόρωσης. Δεν έχουν δοθεί αριθμητικές μετρήσεις DXA.', decisions:'Συμφωνήθηκε συγκέντρωση προηγούμενων DXA και εκτίμηση συνολικού καταγματικού κινδύνου.', next:'Ανασκόπηση απεικονιστικών εξετάσεων όταν προσκομιστούν.'},
+    {key:'sofia', name:'Σοφία Νικολάου', care:'Aclasta', time:'12:00', day:2, group:'upcoming', module:'osteoporosis', verified:true, prior:'Συνθετικό θεραπευτικό ιστορικό με σχεδιαζόμενη επίσκεψη πριν από πιθανή ενδοφλέβια θεραπεία.', sample:'Επανεξέταση προγραμματισμένης θεραπείας. Οι πρόσφατες τιμές νεφρικής λειτουργίας δεν είναι διαθέσιμες στο συνθετικό κείμενο.', decisions:'Αποφασίστηκε να εξεταστούν οι απαιτούμενες παράμετροι πριν από τη θεραπεία.', next:'Έλεγχος εργαστηριακών αποτελεσμάτων πριν από οποιαδήποτε χορήγηση.'},
+    {key:'petros', name:'Πέτρος Χαραλάμπους', care:'Επανεξέταση ώμου', time:'15:20', day:3, group:'upcoming', module:'general', verified:true, prior:'Συνθετικός φάκελος για πόνο στον ώμο και πρόγραμμα ασκήσεων.', sample:'Αναφέρει βελτίωση ενεργητικού εύρους κίνησης ώμου από το προηγούμενο ραντεβού.', decisions:'Συμφωνήθηκε συνέχιση προγράμματος προοδευτικής ενδυνάμωσης.', next:'Παρακολούθηση λειτουργικής αποκατάστασης.'},
+    {key:'anna', name:'Άννα Κωνσταντίνου', care:'Οστεοπόρωση · επανέλεγχος', time:'08:40', day:4, group:'upcoming', module:'osteoporosis', verified:true, prior:'Προηγούμενη συνθετική θεραπευτική εκτίμηση. Χρειάζεται ανασκόπηση της συνέχειας θεραπείας.', sample:'Παρακολούθηση θεραπείας οστεοπόρωσης. Αναφέρθηκε πρόσφατη μικρή αλλαγή στα συμπτώματα, χωρίς τεκμηριωμένα νέα κατάγματα.', decisions:'Συμφωνήθηκε ανασκόπηση των διαθέσιμων εργαστηριακών δεδομένων.', next:'Επανεκτίμηση με στοιχεία παρακολούθησης.'},
+    {key:'michalis', name:'Μιχάλης Παπαδόπουλος', care:'Πρώτη κλινική εκτίμηση', time:'11:30', day:5, group:'upcoming', module:'general', verified:true, prior:'Δεν υπάρχει προηγούμενη συνθετική καταγραφή για σύγκριση.', sample:'Πρώτη ορθοπαιδική εκτίμηση για ενοχλήσεις στην οσφυϊκή χώρα.', decisions:'Συζητήθηκε αρχικό συντηρητικό πλάνο με κλινική παρακολούθηση.', next:'Επανεξέταση ανάλογα με την κλινική πορεία.'},
+    {key:'katerina', name:'Κατερίνα Δημητρίου', care:'Ενημέρωση φακέλου', group:'recent', day:-1, module:'osteoporosis', verified:true, prior:'Συνθετικός φάκελος με πρόσφατη ενημέρωση ιστορικού και παρακολούθησης DXA.', sample:'Ανασκόπηση συνθετικού ιστορικού οστεοπόρωσης και πρόσφατης εξέτασης, χωρίς πλήρη αριθμητικά δεδομένα.', decisions:'Συμφωνήθηκε επανεξέταση όταν συγκεντρωθούν οι μετρήσεις.', next:'Αναμονή συγκριτικών μετρήσεων.'},
+    {key:'christos', name:'Χρίστος Κυριάκου', care:'Πρόσφατη καταγραφή', group:'recent', day:-2, module:'general', verified:true, prior:'Συνθετικό ιστορικό με αναφορά σε προηγούμενη κάκωση ποδοκνημικής.', sample:'Επανεξέταση κάκωσης ποδοκνημικής. Αναφέρει καλύτερη ανοχή στη φόρτιση.', decisions:'Συμφωνήθηκε προοδευτική αύξηση φόρτισης.', next:'Παρακολούθηση πόνου και λειτουργικότητας.'},
+    {key:'mar2', name:'Μαρία Παπαδοπούλου', care:'Νέος φάκελος · έλεγχος ταυτοπροσωπίας', group:'search', day:null, module:'general', verified:false, prior:'Δεύτερο συνθετικό πρόσωπο με ίδιο ονοματεπώνυμο· απαιτείται ρητή επιλογή του σωστού φακέλου.', sample:'Συνθετική πρώτη επίσκεψη χωρίς διαθέσιμο προηγούμενο ιστορικό.', decisions:'Δεν καταγράφηκε συγκεκριμένη θεραπευτική απόφαση.', next:'Επιβεβαίωση απαιτούμενων στοιχείων.'},
+    {key:'alex', name:'Αλέξανδρος Παναγιώτου', care:'Κλινική επανεκτίμηση', group:'search', day:null, module:'general', verified:true, prior:'Συνθετικό ιστορικό προηγούμενης ορθοπαιδικής επίσκεψης.', sample:'Παρακολούθηση συμπτωμάτων σε συνθετικό περιστατικό.', decisions:'Συμφωνήθηκε παρακολούθηση.', next:'Επανεξέταση αν προκύψει νέα πληροφορία.'}
+  ];
+  const state = { patient:null, origin:null, verified:false, parts:null, activeTab:'snapshot', edited:false, confirmed:false, upcomingExpanded:false, previewOpen:false };
+  const fold = (s) => (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('el');
+  const initials = (name) => name.split(/\s+/).slice(0,2).map(x=>x.charAt(0)).join('');
+  const patientByKey = (key) => patients.find(p=>p.key===key);
+  const dateTitle = new Intl.DateTimeFormat('el-CY',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  const daysDescription = (patient) => patient.group==='recent' ? `${Math.abs(patient.day)} ημ. πριν · ${patient.care}` : patient.day===0 ? `${patient.time} · ${patient.care}` : `${formatDay(patient.day)} · ${patient.time} · ${patient.care}`;
+  function showToast(message){const node=$('toast');node.textContent=message;node.hidden=false;clearTimeout(showToast.timer);showToast.timer=setTimeout(()=>node.hidden=true,3200);}
+  function patientButton(p,from){const btn=document.createElement('button');btn.type='button';btn.className='patient-item'+(state.patient?.key===p.key?' selected':'');btn.setAttribute('aria-label',`Άνοιγμα επίσκεψης: ${p.name}, ${p.care}`);
+    const avatar=document.createElement('span');avatar.className='patient-icon';avatar.textContent=initials(p.name);
+    const body=document.createElement('span');body.className='patient-body';const strong=document.createElement('strong');strong.textContent=p.name;const small=document.createElement('small');small.textContent=daysDescription(p);body.append(strong,small);
+    const arrow=document.createElement('span');arrow.className='patient-chevron';arrow.textContent='›';btn.append(avatar,body,arrow);btn.addEventListener('click',()=>selectPatient(p.key,from));return btn;}
+  function fillList(id,rows,from){const root=$(id);root.replaceChildren();rows.forEach(p=>root.appendChild(patientButton(p,from)));}
+  function renderSidebar(){const today=patients.filter(x=>x.group==='today');const upcoming=patients.filter(x=>x.group==='upcoming');$('todayCount').textContent=`${today.length} ραντεβού`;
+    fillList('todayList',today,'appointment');fillList('upcomingList',state.upcomingExpanded?upcoming:upcoming.slice(0,2),'appointment');fillList('recentList',patients.filter(x=>x.group==='recent').slice(0,2),'recent');
+    $('showUpcoming').textContent=state.upcomingExpanded?'Λιγότερα':`Όλα (${upcoming.length})`;
+    const search=$('patientSearch').value.trim();$('searchResults').hidden=!search;$('sidebarSections').hidden=Boolean(search);
+    if(search){const matches=patients.filter(p=>fold(p.name).includes(fold(search))||fold(p.care).includes(fold(search))).sort((a,b)=>a.name.localeCompare(b.name,'el'));
+      const list=$('searchResultsList');list.replaceChildren();if(matches.length===0){const no=document.createElement('p');no.className='empty-search';no.textContent='Δεν βρέθηκε αντιστοιχία. Δοκίμασε άλλο όνομα.';list.appendChild(no);}else matches.slice(0,7).forEach(p=>list.appendChild(patientButton(p,'search')));
+      if(matches.length>7){const hint=document.createElement('p');hint.className='empty-search';hint.textContent=`${matches.length} αντιστοιχίες · πληκτρολόγησε πιο συγκεκριμένα.`;list.appendChild(hint);} }
+  }
+  function showVerification(p,origin){const node=$('patientStatus');node.replaceChildren();if(!state.verified){const msg=document.createElement('span');msg.textContent='Η κράτηση δεν έχει ακόμη επιβεβαιωμένη σύνδεση με κλινικό φάκελο. Έλεγξε ότι επέλεξες τον σωστό ασθενή. ';const btn=document.createElement('button');btn.type='button';btn.className='text-button';btn.textContent='Επιβεβαίωση επιλογής';btn.addEventListener('click',()=>{state.verified=true;showVerification(p,origin);updateConfirm();showToast('Η επιλογή επιβεβαιώθηκε στη δοκιμή.');});node.append(msg,btn);node.style.background='#fff7e9';node.style.color='#8a6b35';node.style.borderColor='#f1dfbb';}
+    else {node.textContent=origin==='appointment'?'Άνοιγμα από το ημερολόγιο · Το κλινικό πλαίσιο μεταφέρθηκε χωρίς νέα αναζήτηση.':'Ο ασθενής επιλέχθηκε από το μητρώο της δοκιμής.';node.style.background='#edf7f4';node.style.color='#5b7c7a';node.style.borderColor='#d6ebe4';}}
+  function setCompactContext(compact){$('priorPanel').classList.toggle('compact-context',compact);$('togglePrior').textContent=compact?'Εμφάνιση πλαισίου':'Σύμπτυξη';}
+  function showDiaComposer(){if(!state.patient)return;setCompactContext(true);$('diaPanel').hidden=false;$('openDiaBtn').textContent='Κλείσιμο εισαγωγής Dia';$('openDiaBtn').setAttribute('aria-expanded','true');$('diaInput').focus();}
+  function closeDiaComposer(){ $('diaPanel').hidden=true;$('openDiaBtn').textContent=state.parts?'Αλλαγή σύνοψης Dia':'＋ Σύνοψη από το Dia';$('openDiaBtn').setAttribute('aria-expanded','false');}
+  function showReview(){if(!state.parts || !Object.values(state.parts).some(v=>v.trim()))return;setCompactContext(true);state.previewOpen=true;closeDiaComposer();renderPreview();$('reviewPanel').scrollIntoView({behavior:'smooth',block:'nearest'});}
+  function showToday(){$('visitView').hidden=true;$('welcomeView').hidden=false;state.patient=null;state.parts=null;state.previewOpen=false;state.verified=false;$('patientSearch').value='';renderSidebar();}
+  function selectPatient(key,origin='search'){
+    const patient=patientByKey(key);if(!patient)return;
+    state.patient=patient;state.origin=origin;state.verified=origin==='appointment'?patient.verified:true;state.parts=null;state.previewOpen=false;state.activeTab='snapshot';state.edited=false;state.confirmed=false;
+    $('welcomeView').hidden=true;$('visitView').hidden=false;$('patientName').textContent=patient.name;$('patientAvatar').textContent=initials(patient.name);
+    $('visitContext').textContent=origin==='appointment'?'ΑΠΟ ΤΟ ΗΜΕΡΟΛΟΓΙΟ':origin==='recent'?'ΠΡΟΣΦΑΤΟΣ ΦΑΚΕΛΟΣ':'ΕΠΙΛΟΓΗ ΑΣΘΕΝΟΥΣ';
+    $('patientSub').textContent=patient.day===null?patient.care:patient.day>=0?`${formatDay(patient.day)} · ${patient.time} · ${patient.care}`:patient.care;
+    $('priorSummary').textContent=patient.prior;$('contextNext').textContent=patient.next;$('moduleBridge').hidden=patient.module!=='osteoporosis';$('priorPanel').classList.remove('compact-context');$('togglePrior').textContent='Σύμπτυξη';
+    showVerification(patient,origin);
+    $('diaInput').value='';$('copyMessage').textContent='';$('reviewCheck').checked=false;$('completeNotice').hidden=true;$('editWrap').hidden=true;$('showPreviewBtn').disabled=true;
+    $('visitFlowState').textContent='Δεν υπάρχει σημερινή καταγραφή.';closeDiaComposer();switchTab('snapshot');renderPreview();updateConfirm();$('patientSearch').value='';renderSidebar();
+    if(window.innerWidth<701)$('mainContent').scrollIntoView({behavior:'smooth',block:'start'});
+  }
+  function syntheticExample(p){return [
+    'SNAPSHOT', `${p.sample} ${p.next}`,'',
+    'VISIT BRIEF',`Λόγος επίσκεψης: ${p.care}.\nΣήμερα: ${p.sample}\nΚλινική απόφαση: ${p.decisions}\nΕκκρεμότητες: ${p.next}`,'',
+    'ENCOUNTER DETAIL',`Συνθετική καταγραφή — ${p.care}.\nΠροηγούμενο πλαίσιο: ${p.prior}\nΣημερινά δεδομένα: ${p.sample}\nΑποφάσεις: ${p.decisions}\nΕπόμενη επαφή / εκκρεμότητες: ${p.next}\nΠηγές: συνθετικά δεδομένα για τη δοκιμή. Δεν έγινε ζωντανή ανάγνωση από Dia, Heidi ή ΓεΣΥ.`
+  ].join('\n');}
+  function parseInput(raw){const keys={'SNAPSHOT':'snapshot','VISIT BRIEF':'brief','ENCOUNTER DETAIL':'detail'};const parts={snapshot:'',brief:'',detail:''};let current=null;const preface=[];const lines=raw.replace(/\r\n?/g,'\n').split('\n');const counts={snapshot:0,brief:0,detail:0};
+    for(const line of lines){const heading=line.trim().replace(/^#{1,6}\s*/, '').replace(/^\*+|\*+$/g,'').replace(/:\s*$/,'').toUpperCase();if(Object.prototype.hasOwnProperty.call(keys,heading)){current=keys[heading];counts[current]++;continue;}if(current)parts[current]+=line+'\n';else preface.push(line);}
+    Object.keys(parts).forEach(k=>parts[k]=parts[k].trim());if(!Object.values(counts).some(Boolean)){parts.brief=raw.trim();}else if(preface.join('\n').trim()){parts.brief=(preface.join('\n').trim()+'\n'+parts.brief).trim();}
+    return parts;
+  }
+  function renderPreview(){
+    const has=state.parts&&Object.values(state.parts).some(v=>v.trim());
+    const visible=Boolean(has&&state.previewOpen);
+    $('reviewPanel').hidden=!visible;$('decisionArea').hidden=!visible;
+    $('showPreviewBtn').disabled=!has;
+    $('previewEmpty').hidden=!!has;$('previewWrap').hidden=!has;
+    $('previewBadge').textContent=!has?'Αναμονή σύνοψης':Object.values(state.parts).every(v=>v.trim())?'Τρεις προβολές διαθέσιμες':'Απαιτείται συμπλήρωση';
+    $('previewBadge').className='review-badge'+(has?(Object.values(state.parts).every(v=>v.trim())?' ready':' partial'):'');
+    $('visitFlowState').textContent=!has?'Δεν υπάρχει σημερινή καταγραφή.':state.confirmed?'Η δοκιμή ολοκληρώθηκε.':state.edited?'Έγιναν διορθώσεις · Αναμονή επιβεβαίωσης':'Η σύνοψη είναι έτοιμη για κλινικό έλεγχο.';
+    if(has){const val=state.parts[state.activeTab];$('previewContent').textContent=val||'Δεν δόθηκε περιεχόμενο για αυτή την ενότητα. Μπορείς να το συμπληρώσεις με «Διόρθωση κειμένου».';$('previewContent').classList.toggle('missing',!val);$('previewNote').textContent=val?'Κείμενο από την εισαγωγή / τις δικές σου διορθώσεις':'Δεν δημιουργούμε κλινικό περιεχόμενο όταν λείπει.';}
+    if(!has){$('previewContent').textContent='';}
+    updateConfirm();
+  }
+  function switchTab(tab){state.activeTab=tab;document.querySelectorAll('[data-tab]').forEach(btn=>{const active=btn.dataset.tab===tab;btn.classList.toggle('active',active);btn.setAttribute('aria-selected',String(active));});$('editWrap').hidden=true;renderPreview();}
+  function updateConfirm(){const valid=state.patient&&state.verified&&state.parts&&Object.values(state.parts).some(v=>v.trim());$('confirmTrial').disabled=!(valid&&$('reviewCheck').checked);}
+  function copyDiaPrompt(){const prompt=`Δημιούργησε μία ιατρικά ακριβή σύνοψη της επίσκεψης στα ελληνικά, χρησιμοποιώντας ΑΠΟΚΛΕΙΣΤΙΚΑ το συνθετικό/αποταυτοποιημένο υλικό που σου έχω δώσει για αυτή τη δοκιμή. Οι συμφωνημένες πηγές της μελλοντικής πραγματικής ροής είναι: Heidi σημερινής επίσκεψης, ΓεΣΥ σημερινής επίσκεψης και αμέσως προηγούμενη επίσκεψη ΓεΣΥ. Μη διαβάσεις πραγματικές καρτέλες κατά τη δοκιμή.\n\nΕπιστρέφεις ΑΠΛΟ ΚΕΙΜΕΝΟ, χωρίς JSON ή κώδικα, με αυτές τις επικεφαλίδες σε ξεχωριστές γραμμές:\n\nSNAPSHOT\nΣύντομη σημερινή εικόνα, ουσιαστική μεταβολή μόνο αν τεκμηριώνεται, απόφαση, εκκρεμότητα.\n\nVISIT BRIEF\nΠεριεκτική σύνοψη λόγου επίσκεψης, ιστορικού, τωρινών ευρημάτων, κλινικής εκτίμησης, θεραπευτικών αποφάσεων και παρακολούθησης. Σύγκριση μόνο όπου υπάρχουν ασφαλή προηγούμενα στοιχεία.\n\nENCOUNTER DETAIL\nΠληρέστερη οργανωμένη καταγραφή με ξεκάθαρη προέλευση σημαντικών πληροφοριών, φάρμακα/δοσολογία μόνο εφόσον αναφέρονται, κωδικοποίηση μόνο όπου υπάρχει, διαχωρισμό πραγματοποιημένων πράξεων από μελλοντικά σχέδια και ρητές αβεβαιότητες.\n\nΜην επινοείς κλινικά δεδομένα. Μην συμπεριλάβεις ονόματα, ημερομηνία γέννησης, τηλέφωνα, αριθμούς ασφάλισης, ταυτότητα ή άλλα αναγνωριστικά. Πρόκειται για προσχέδιο που ελέγχει ο γιατρός πριν από οποιαδήποτε αποθήκευση.`;
+    const fallback=()=>{const t=document.createElement('textarea');t.value=prompt;document.body.appendChild(t);t.select();const success=document.execCommand('copy');t.remove();if(!success)throw Error('Αποτυχία αντιγραφής');};
+    Promise.resolve().then(async()=>{if(navigator.clipboard&&navigator.clipboard.writeText)await navigator.clipboard.writeText(prompt);else fallback();$('copyMessage').textContent='Η οδηγία αντιγράφηκε. Επικόλλησέ την στο Dia.';showToast('Αντιγράφηκε η οδηγία για το Dia.');}).catch(()=>$('copyMessage').textContent='Η αντιγραφή δεν επιτράπηκε από τον browser.');}
+  $('headerDate').textContent=dateTitle.format(startOfDay(0));$('sampleCount').textContent='Μόνο δοκιμή';
+  $('patientSearch').addEventListener('input',renderSidebar);
+  $('patientSearch').addEventListener('keydown',(event)=>{if(event.key==='Escape'){$('patientSearch').value='';renderSidebar();}});
+  document.addEventListener('keydown',(event)=>{if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='k'){event.preventDefault();$('patientSearch').focus();}});
+  $('showUpcoming').addEventListener('click',()=>{state.upcomingExpanded=!state.upcomingExpanded;renderSidebar();});
+  $('startSuggested').addEventListener('click',()=>selectPatient('maria','appointment'));
+  $('attentionAndreas').addEventListener('click',()=>selectPatient('andreas','appointment'));
+  $('attentionEleni').addEventListener('click',()=>selectPatient('eleni','appointment'));
+  $('backHome').addEventListener('click',showToday);
+  $('openDiaBtn').addEventListener('click',()=>{$('diaPanel').hidden?showDiaComposer():closeDiaComposer();});
+  $('closeDiaBtn').addEventListener('click',closeDiaComposer);
+  $('showPreviewBtn').addEventListener('click',showReview);
+  $('togglePrior').addEventListener('click',()=>setCompactContext(!$('priorPanel').classList.contains('compact-context')));
+  $('changePatient').addEventListener('click',()=>{$('patientSearch').focus();if(window.innerWidth<701)window.scrollTo({top:0,behavior:'smooth'});showToast('Επίλεξε διαφορετικό ασθενή από τη λίστα ή την αναζήτηση.');});
+  $('fillExample').addEventListener('click',()=>{if(!state.patient)return;$('diaInput').value=syntheticExample(state.patient);state.parts=parseInput($('diaInput').value);state.edited=false;state.confirmed=false;$('reviewCheck').checked=false;$('completeNotice').hidden=true;showReview();showToast('Φορτώθηκε συνθετική σύνοψη.');});
+  $('clearNote').addEventListener('click',()=>{$('diaInput').value='';state.parts=null;state.previewOpen=false;state.edited=false;state.confirmed=false;$('reviewCheck').checked=false;$('completeNotice').hidden=true;$('editWrap').hidden=true;renderPreview();});
+  $('copyPrompt').addEventListener('click',copyDiaPrompt);
+  $('diaInput').addEventListener('input',()=>{state.parts=$('diaInput').value.trim()?parseInput($('diaInput').value):null;state.edited=false;state.confirmed=false;$('completeNotice').hidden=true;$('reviewCheck').checked=false;renderPreview();});
+  $('diaInput').addEventListener('paste',()=>setTimeout(()=>{if(!state.patient || !$('diaInput').value.trim())return;state.parts=parseInput($('diaInput').value);if(Object.values(state.parts).every(v=>v.trim()))showReview();else renderPreview();},0));
+  document.querySelectorAll('[data-tab]').forEach(btn=>btn.addEventListener('click',()=>switchTab(btn.dataset.tab)));
+  $('editPreview').addEventListener('click',()=>{if(!state.parts)return;$('editWrap').hidden=false;$('editInput').value=state.parts[state.activeTab]||'';$('editInput').focus();});
+  $('cancelEdit').addEventListener('click',()=>$('editWrap').hidden=true);
+  $('applyEdit').addEventListener('click',()=>{if(!state.parts)return;state.parts[state.activeTab]=$('editInput').value.trim();state.edited=true;$('editWrap').hidden=true;$('reviewCheck').checked=false;$('completeNotice').hidden=true;renderPreview();showToast('Η διόρθωση εφαρμόστηκε μόνο στην προεπισκόπηση.');});
+  $('reviewCheck').addEventListener('change',updateConfirm);
+  $('confirmTrial').addEventListener('click',()=>{if($('confirmTrial').disabled)return;state.confirmed=true;$('completeNotice').hidden=false;renderPreview();showToast('Η δοκιμή ολοκληρώθηκε χωρίς αποθήκευση ασθενούς.');});
+  renderSidebar();
+})();
+
+</script>
+</body>
+</html>
