@@ -63,6 +63,8 @@
     const timeNode = $(`${prefix}AppointmentTime`);
     const patientNode = $(`${prefix}AppointmentPatient`);
     const typeNode = $(`${prefix}AppointmentType`);
+    const slotButton = patientNode.closest("button.context-slot");
+    if (slotButton) slotButton.disabled = !row;
 
     if (!row) {
       timeNode.textContent = "—";
@@ -438,7 +440,9 @@
   $("surgeryTableBody").addEventListener("click", handleSurgeryAction);
   $("surgeryTableBody").addEventListener("change", handleSurgeryDateChange);
   bindSurgerySorting();
-
+  document.querySelectorAll("[data-expand-secondary]").forEach(link=>{
+    link.addEventListener("click",()=>{const panel=$("cockpitOtherFunctions");if(panel)panel.open=true;});
+  });
   resetSurgeryForm();
   loadCockpitContext();
   window.setInterval(loadCockpitContext, 60000);

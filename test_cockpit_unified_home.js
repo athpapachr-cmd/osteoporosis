@@ -11,6 +11,10 @@ assert.match(html,/id="visitDiaPrompt"/);
 assert.match(html,/id="visitDiaText"/);
 assert.match(html,/href="\/static\/baseline-audit\/"/);
 assert.match(html,/id="surgeryTableBody"/);
+for(const id of ["visitBriefOverlay","visitSidebarPrevious","visitSidebarCurrent","visitSidebarNext","visitBriefChoosePatient"])assert.match(html,new RegExp('id="'+id+'"'));
+for(const route of ["/clinical/clinic-utilities/physio-referral","/clinical/clinic-utilities/sick-leave","/clinical/clinic-utilities/rf","/clinical/clinic-utilities/medical-report"])assert.equal(html.split('href="'+route+'"').length-1,1);
+assert.match(source,/Περισσότερα αποτελέσματα/);
+assert.match(source,/limit=20&offset=/);
 assert.doesNotMatch(source,/fetch\(.+method:\s*"(POST|PUT|PATCH|DELETE)"/);
 const scheduleNow="2026-10-10T07:00:00Z";
 const upcoming=[
@@ -41,6 +45,8 @@ function create(id=""){
 const tabs=["snapshot","brief","detail"].map(key=>{const el=create(key);el.dataset.clinicalTab=key;return el;});
 const doc={
  getElementById(id){if(!nodes.has(id))nodes.set(id,create(id));return nodes.get(id);},
+ addEventListener(){},
+ activeElement:null,
  querySelectorAll(selector){return selector==="[data-clinical-tab]"?tabs:[];},
  createElement(){return create();},
  body:{append(){}}
@@ -70,6 +76,20 @@ const tick=()=>new Promise(ok=>setImmediate(ok));
  await tick();await tick();
  assert.equal($("visitRecentRows").children.length,3,"three recent completed visits");
  assert.equal($("visitUpcomingRows").children.length,3,"three upcoming today");
+ $("previousAppointmentPatient").dataset.appointmentId="AP0";
+ $("previousAppointmentPatient").textContent="Μαρία Δοκιμαστική";
+ $("previousAppointmentTime").textContent="09:00";
+ $("previousAppointmentType").textContent="Αξιολόγηση";
+ $("calendarNote").textContent="Το πρόγραμμα μπορεί να έχει παλιώσει.";
+ $("visitSidebarPrevious").fire("click");
+ assert.equal($("visitBriefOverlay").hidden,false);
+ assert.equal($("visitBriefName").textContent,"Μαρία Δοκιμαστική");
+ assert.match($("visitBriefIdentity").textContent,/δεν αρκεί/i);
+ assert.equal($("visitWorkspacePatient").hidden,true,"sidebar click stays over Home");
+ $("visitBriefClose").fire("click");
+ assert.equal($("visitBriefOverlay").hidden,true);
+ $("visitSidebarCurrent").fire("click");
+ assert.equal($("visitBriefOverlay").hidden,true,"no popup for an empty slot");
  $("visitUpcomingRows").children[0].fire("click");
  assert.equal($("visitWorkspacePatient").hidden,false);
  assert.equal($("visitIdentityStatus").textContent,"Απαιτείται επιλογή φακέλου");
@@ -99,5 +119,5 @@ const tick=()=>new Promise(ok=>setImmediate(ok));
  $("visitPatientMatches").children[0].fire("click");
  assert.equal($("visitSelectedName").textContent,"Μαρία Δοκιμαστική");
  assert.ok(requests.every(([,opts])=>!opts.method||opts.method==="GET"),"no writes");
- console.log("PASS Cockpit V3: 3+3, one click, identity boundary, Dia, edits and reset");
+ console.log("PASS Cockpit Stage A: hybrid sidebar, 3+3, identity, Dia, edits and reset");
 })().catch(e=>{console.error(e);process.exitCode=1;});

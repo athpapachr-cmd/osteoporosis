@@ -17,13 +17,49 @@
         <h1>Cockpit</h1>
         <p class="subtitle">Η κλινική σου εργασία</p>
       </div>
-      <nav class="clinical-quick-nav" aria-label="Άλλα εργαλεία">
+      <nav class="clinical-quick-nav" aria-label="Άμεσα εργαλεία">
         <a href="/static/clinical-calendar/">Ημερολόγιο</a>
+        <a href="https://ortho-reception-backend-v2.onrender.com/dashboard" target="_blank" rel="noopener noreferrer">Γραμματεία</a>
+        <a href="#surgerySection" data-expand-secondary="true">Χειρουργεία</a>
         <a href="/static/baseline-audit/">Οστεοπόρωση</a>
-        <a href="#cockpitOtherFunctions">Άλλα εργαλεία</a>
+        <a href="/clinical/clinic-utilities/physio-referral">Παραπεμπτικό Φυσιοθεραπείας</a>
+        <a href="/clinical/clinic-utilities/sick-leave">Αναρρωτική άδεια</a>
+        <a href="/clinical/clinic-utilities/rf">Ραδιοκύματα</a>
+        <a href="/clinical/clinic-utilities/medical-report">Ιατρικές εκθέσεις</a>
+        <a href="/static/clinical-learning/">Εκπαίδευση</a>
+        <a href="/static/cockpit/visit-capture/">Καταγραφή επίσκεψης</a>
       </nav>
     </header>
 
+    <div class="clinical-home-layout">
+      <aside id="visitSidebar" class="clinical-sidebar" aria-label="Γρήγορη ημερήσια εικόνα">
+        <div class="clinical-sidebar-heading">
+          <h2 id="todayHeading">Η σημερινή εικόνα</h2>
+          <span id="calendarState" class="status-chip">Φόρτωση…</span>
+        </div>
+        <div class="today-context-strip" aria-label="Προηγούμενο, τωρινό και επόμενο ραντεβού">
+            <button id="visitSidebarPrevious" type="button" class="context-slot" aria-label="Σύνοψη: Προηγούμενο" aria-haspopup="dialog">
+              <span class="context-label">Προηγούμενο</span>
+              <strong id="previousAppointmentTime" class="context-time">—</strong>
+              <span id="previousAppointmentPatient" class="context-patient">Φόρτωση…</span>
+              <span id="previousAppointmentType" class="context-type"></span>
+            </button>
+            <button id="visitSidebarCurrent" type="button" class="context-slot current-slot" aria-label="Σύνοψη: Τώρα" aria-haspopup="dialog">
+              <span class="context-label">Τώρα</span>
+              <strong id="currentAppointmentTime" class="context-time">—</strong>
+              <span id="currentAppointmentPatient" class="context-patient">Φόρτωση…</span>
+              <span id="currentAppointmentType" class="context-type"></span>
+            </button>
+            <button id="visitSidebarNext" type="button" class="context-slot" aria-label="Σύνοψη: Επόμενο" aria-haspopup="dialog">
+              <span class="context-label">Επόμενο</span>
+              <strong id="nextAppointmentTime" class="context-time">—</strong>
+              <span id="nextAppointmentPatient" class="context-patient">Φόρτωση…</span>
+              <span id="nextAppointmentType" class="context-type"></span>
+            </button>
+          </div>
+        <p id="calendarNote" class="panel-note">Φορτώνεται το πρόγραμμα ραντεβού. Ενημερώνεται καθημερινά.</p>
+        <a class="clinical-sidebar-link" href="/static/clinical-calendar/">Άνοιγμα εβδομαδιαίου ημερολογίου</a>
+      </aside>
     <section id="clinicalWorkspace" class="clinical-workspace" aria-label="Κλινικές επισκέψεις">
       <div id="visitWorkspaceHome">
         <div class="clinical-search-block">
@@ -121,13 +157,29 @@ ENCOUNTER DETAIL
       </section>
     </section>
 
+    </div>
+    <div id="visitBriefOverlay" class="clinical-brief-overlay" role="dialog" aria-modal="true" aria-labelledby="visitBriefName" hidden>
+      <section class="clinical-brief-card" aria-label="Σύντομη προβολή ραντεβού">
+        <div class="clinical-row-between">
+          <p class="eyebrow">VISIT BRIEF · ΠΡΟΕΠΙΣΚΟΠΗΣΗ</p>
+          <button id="visitBriefClose" type="button" class="clinical-secondary">Κλείσιμο ×</button>
+        </div>
+        <h2 id="visitBriefName"></h2>
+        <p id="visitBriefWhen" class="clinical-brief-when"></p>
+        <p id="visitBriefReason" class="clinical-muted"></p>
+        <p id="visitBriefIdentity" class="clinical-identity-note"></p>
+        <p class="clinical-muted">Πλήρης κλινική σύνοψη και προηγούμενο σχέδιο εμφανίζονται μόνο μετά από επιβεβαιωμένη σύνδεση με τον προστατευμένο φάκελο.</p>
+        <p id="visitBriefFreshness" class="clinical-muted"></p>
+        <button id="visitBriefChoosePatient" type="button" class="clinical-primary">Επιλογή κλινικού φακέλου</button>
+      </section>
+    </div>
     <details class="clinical-secondary-functions" id="cockpitOtherFunctions">
       <summary>Πρόγραμμα, χειρουργεία, modules και εργαλεία</summary>
     <section class="section">
       <div class="section-heading">
         <div>
           <p class="section-kicker">Σήμερα</p>
-          <h2 id="todayHeading">Η σημερινή εικόνα</h2>
+          <h2>Πρόγραμμα και πηγές</h2>
         </div>
       </div>
 
@@ -138,31 +190,12 @@ ENCOUNTER DETAIL
               <span class="icon-badge">◷</span>
               <h3>Πρόγραμμα ραντεβού</h3>
             </div>
-            <span id="calendarState" class="status-chip">Φόρτωση…</span>
+            
           </div>
 
-          <div class="today-context-strip" aria-label="Προηγούμενο, τωρινό και επόμενο ραντεβού">
-            <div class="context-slot">
-              <span class="context-label">Προηγούμενο</span>
-              <strong id="previousAppointmentTime" class="context-time">—</strong>
-              <span id="previousAppointmentPatient" class="context-patient">Φόρτωση…</span>
-              <span id="previousAppointmentType" class="context-type"></span>
-            </div>
-            <div class="context-slot current-slot">
-              <span class="context-label">Τώρα</span>
-              <strong id="currentAppointmentTime" class="context-time">—</strong>
-              <span id="currentAppointmentPatient" class="context-patient">Φόρτωση…</span>
-              <span id="currentAppointmentType" class="context-type"></span>
-            </div>
-            <div class="context-slot">
-              <span class="context-label">Επόμενο</span>
-              <strong id="nextAppointmentTime" class="context-time">—</strong>
-              <span id="nextAppointmentPatient" class="context-patient">Φόρτωση…</span>
-              <span id="nextAppointmentType" class="context-type"></span>
-            </div>
-          </div>
 
-          <p id="calendarNote" class="panel-note">Φορτώνεται το πρόγραμμα ραντεβού. Ενημερώνεται καθημερινά.</p>
+
+
           <a class="button secondary" href="/static/clinical-calendar/">Άνοιγμα εβδομαδιαίου ημερολογίου</a>
         </article>
 
@@ -194,7 +227,7 @@ ENCOUNTER DETAIL
       </article>
     </section>
 
-    <section class="section surgery-section">
+    <section class="section surgery-section" id="surgerySection">
       <div class="section-heading">
         <div>
           <p class="section-kicker">Χειρουργεία</p>
@@ -339,38 +372,7 @@ ENCOUNTER DETAIL
       </article>
     </section>
 
-    <section class="section">
-      <div class="section-heading">
-        <div>
-          <p class="section-kicker">Clinic Utilities</p>
-          <h2>Εργαλεία</h2>
-        </div>
-        <p>Κοινά εργαλεία ιατρείου — όχι navigation της Οστεοπόρωσης.</p>
-      </div>
 
-      <div class="tools-grid">
-        <a class="tool-card" href="/clinical/clinic-utilities/physio-referral">
-          <span class="tool-icon">↗</span>
-          <strong>Παραπεμπτικό Φυσιοθεραπείας</strong>
-          <small>Ένα ενιαίο entry point</small>
-        </a>
-        <a class="tool-card" href="/clinical/clinic-utilities/sick-leave">
-          <span class="tool-icon">✚</span>
-          <strong>Αναρρωτική άδεια</strong>
-          <small>PDF με selectable templates</small>
-        </a>
-        <a class="tool-card" href="/clinical/clinic-utilities/medical-report">
-          <span class="tool-icon">▤</span>
-          <strong>Ιατρικές εκθέσεις</strong>
-          <small>Clinical Documents</small>
-        </a>
-        <a class="tool-card" href="/clinical/clinic-utilities/rf">
-          <span class="tool-icon">⌁</span>
-          <strong>Ραδιοκύματα</strong>
-          <small>RF application / PDF</small>
-        </a>
-      </div>
-    </section>
 
     </details>
 

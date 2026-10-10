@@ -2,7 +2,7 @@
  "use strict";
  // Read-only UI. Existing Calendar/Clinical Data owners retain authority.
  const $=id=>document.getElementById(id);
- const state={selected:null,appointment:null,parts:null,tab:"snapshot",revision:0,timer:null};
+ const state={selected:null,appointment:null,parts:null,tab:"snapshot",revision:0,timer:null,briefReturnFocus:null};
  const localTime=new Intl.DateTimeFormat("el-CY",{hour:"2-digit",minute:"2-digit",hour12:false,timeZone:"Asia/Nicosia"});
  const localDay=new Intl.DateTimeFormat("el-CY",{day:"2-digit",month:"2-digit",year:"numeric",timeZone:"Asia/Nicosia"});
  const dateTime=value=>{if(!value)return null;const s=String(value);const d=new Date(/(?:Z|[+-]\d{2}:?\d{2})$/.test(s)?s:s+"Z");return Number.isFinite(d.getTime())?d:null;};
@@ -44,6 +44,7 @@
    });
  }
  function open(row){
+   state.revision++;clearTimeout(state.timer);
    resetDraft();
    state.selected=row;
    if(row.kind==="appointment")state.appointment=row;
@@ -60,6 +61,7 @@
    $("visitPatientMatches").hidden=true;
  }
  function back(){
+   state.revision++;clearTimeout(state.timer);
    resetDraft();state.selected=null;state.appointment=null;
    $("visitWorkspacePatient").hidden=true;$("visitWorkspaceHome").hidden=false;
    $("visitPatientSearch").value="";$("visitPatientMatches").hidden=true;
@@ -97,31 +99,61 @@
        "Το ημερολόγιο επιστρέφει προσωρινά μόνο την επόμενη επίσκεψη. Δεν κατασκευάζονται επιπλέον ραντεβού.";
    }catch(e){info(target,e.status===401?"Συνδέσου για να δεις το πρόγραμμα.":"Το σημερινό πρόγραμμα δεν είναι διαθέσιμο.");}
  }
+ async function loadMatches(term,ticket,offset){
+   const box=$("visitPatientMatches");
+   try{
+     const rows=await get("/clinical/patients?query="+encodeURIComponent(term)+"&limit=20&offset="+offset);
+     if(ticket!==state.revision)return;
+     if(!Array.isArray(rows))throw Error("invalid results");
+     if(offset===0)box.replaceChildren();
+     if(!rows.length&&offset===0)return info(box,"Δεν βρέθηκε ασθενής.");
+     rows.forEach(p=>{
+       const name=nameOf(p),d=p.demographics||{},birthday=d.date_of_birth||d.birth_date||d.dob||"";
+       const meta=birthday?"Γέννηση: "+birthday:"Καταχωρισμένος φάκελος — επιβεβαίωσε τα στοιχεία πριν την επιλογή";
+       addRow(box,name,meta,"↗",()=>{
+         const prev=state.appointment;
+         open({kind:"registry",name,reason:prev?prev.reason:meta,time:prev?prev.time:"",patientId:p.patient_id});
+       });
+     });
+     if(rows.length===20){
+       const more=document.createElement("button");more.type="button";
+       more.className="clinical-more-results";more.textContent="Περισσότερα αποτελέσματα";
+       more.addEventListener("click",()=>{more.disabled=true;more.remove();loadMatches(term,ticket,offset+rows.length);});
+       box.append(more);
+     }
+   }catch(e){if(ticket===state.revision)info(box,e.status===401?"Απαιτείται σύνδεση.":"Η αναζήτηση δεν είναι διαθέσιμη.");}
+ }
  function search(){
    clearTimeout(state.timer);
    const term=$("visitPatientSearch").value.trim(),ticket=++state.revision,box=$("visitPatientMatches");
    box.hidden=!term;
    if(!term){box.replaceChildren();return;}
    info(box,"Αναζήτηση σε όλο το υπάρχον μητρώο…");
-   state.timer=setTimeout(async()=>{
-     try{
-       const rows=await get("/clinical/patients?query="+encodeURIComponent(term)+"&limit=6&offset=0");
-       if(ticket!==state.revision)return;
-       if(!Array.isArray(rows))throw Error("invalid results");
-       box.replaceChildren();
-       if(!rows.length)return info(box,"Δεν βρέθηκε ασθενής.");
-       const duplicates={};rows.forEach(p=>{const k=fold(nameOf(p));duplicates[k]=(duplicates[k]||0)+1;});
-       rows.forEach(p=>{
-         const name=nameOf(p),d=p.demographics||{},birthday=d.date_of_birth||d.birth_date||d.dob||"";
-         const meta=birthday?"Γέννηση: "+birthday:
-           duplicates[fold(name)]>1?"Ομώνυμος — επιβεβαίωσε προσεκτικά τον φάκελο":"Καταχωρισμένος κλινικός φάκελος";
-         addRow(box,name,meta,"↗",()=>{
-           const prev=state.appointment;
-           open({kind:"registry",name,reason:prev?prev.reason:meta,time:prev?prev.time:"",patientId:p.patient_id});
-         });
-       });
-     }catch(e){if(ticket===state.revision)info(box,e.status===401?"Απαιτείται σύνδεση.":"Η αναζήτηση δεν είναι διαθέσιμη.");}
-   },250);
+   state.timer=setTimeout(()=>loadMatches(term,ticket,0),250);
+ }
+ function closeBrief(){
+   $("visitBriefOverlay").hidden=true;
+   const opener=state.briefReturnFocus;state.briefReturnFocus=null;
+   if(opener)opener.focus();
+ }
+ function showBrief(prefix){
+   const nameNode=$(prefix+"AppointmentPatient");
+   if(!nameNode.dataset.appointmentId)return;
+   const overlay=$("visitBriefOverlay");
+   state.briefReturnFocus=$("visitSidebar"+prefix[0].toUpperCase()+prefix.slice(1));
+   $("visitBriefName").textContent=nameNode.textContent;
+   $("visitBriefWhen").textContent=$(prefix+"AppointmentTime").textContent;
+   $("visitBriefReason").textContent=$(prefix+"AppointmentType").textContent;
+   $("visitBriefFreshness").textContent=$("calendarNote").textContent;
+   $("visitBriefIdentity").textContent="Δεν υπάρχει επιβεβαιωμένη κλινική σύνδεση από το ημερολόγιο. Το όνομα δεν αρκεί για πρόσβαση στον φάκελο.";
+   overlay.hidden=false;
+   $("visitBriefClose").focus();
+ }
+ function selectFromBrief(){
+   const name=$("visitBriefName").textContent,reason=$("visitBriefReason").textContent,time=$("visitBriefWhen").textContent;
+   closeBrief();back();
+   state.appointment={kind:"appointment",name,reason,time,patientId:null};
+   $("visitPatientSearch").value=name;$("visitPatientSearch").focus();search();
  }
  function parse(raw){
    const parts={snapshot:"",brief:"",detail:""},keys={"SNAPSHOT":"snapshot","VISIT BRIEF":"brief","ENCOUNTER DETAIL":"detail"};
@@ -152,6 +184,21 @@
      $("visitDiaCopyStatus").textContent="Αντιγράφηκε. Επικόλλησε την οδηγία στο Dia.";
    }catch(e){$("visitDiaCopyStatus").textContent="Η αντιγραφή δεν επιτράπηκε.";}
  }
+ ["previous","current","next"].forEach(prefix=>{
+   $("visitSidebar"+prefix[0].toUpperCase()+prefix.slice(1)).addEventListener("click",()=>showBrief(prefix));
+ });
+ $("visitBriefClose").addEventListener("click",closeBrief);
+ $("visitBriefChoosePatient").addEventListener("click",selectFromBrief);
+ $("visitBriefOverlay").addEventListener("click",e=>{if(e.target===$("visitBriefOverlay"))closeBrief();});
+ document.addEventListener("keydown",e=>{
+   if($("visitBriefOverlay").hidden)return;
+   if(e.key==="Escape"){e.preventDefault();closeBrief();}
+   if(e.key==="Tab"){
+     const a=$("visitBriefClose"),b=$("visitBriefChoosePatient");
+     if(e.shiftKey&&document.activeElement===a){e.preventDefault();b.focus();}
+     else if(!e.shiftKey&&document.activeElement===b){e.preventDefault();a.focus();}
+   }
+ });
  $("visitBackHome").addEventListener("click",back);
  $("visitChoosePatient").addEventListener("click",()=>{
    $("visitWorkspacePatient").hidden=true;$("visitWorkspaceHome").hidden=false;
