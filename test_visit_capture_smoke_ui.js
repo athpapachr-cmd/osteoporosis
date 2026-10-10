@@ -187,6 +187,31 @@ function harness(authenticated) {
   assert.ok(demo.get("previewText").textContent.includes("δεν υπάρχουν αποτελέσματα"), "original Dia text not rewritten");
   assert.equal(demo.get("previewText").hidden, true, "structured detail displayed instead of a wall of text");
 
+  // Independent R1 A3/P2: notes must STOP at the next recognized section.
+  // This synthetic case previously counted history/findings as extra alerts.
+  demo.get("candidateInput").value = [
+    "Σημεία προς επιβεβαίωση:",
+    "1. Έλεγχος χρονολογίας.",
+    "Ιστορικό:",
+    "- Λήψη συμπληρωμάτων.",
+    "Ευρήματα:",
+    "- Ήπια δυσκαμψία.",
+    "Φαρμακευτική αγωγή:",
+    "- Καμία καταχώριση.",
+  ].join("\n");
+  demo.get("candidateInput").dispatch("input");
+  assert.equal(demo.get("diaReviewList").children.length, 1,
+    "only the item explicitly marked for review may be counted");
+  assert.equal(demo.get("diaReviewCount").textContent, "1 σημείο προς επιβεβαίωση");
+  assert.equal(demo.get("diaReviewList").children[0].textContent, "Έλεγχος χρονολογίας.");
+  demo.segment("brief").dispatch("click");
+  assert.ok(demo.get("previewText").textContent.includes("Λήψη συμπληρωμάτων."),
+    "non-review clinical context remains in the original source text");
+  assert.ok(demo.get("previewText").textContent.includes("Ήπια δυσκαμψία."),
+    "subsequent findings are not discarded or promoted to review notes");
+  assert.ok(!demo.calls.some((c) => c.method === "POST"),
+    "A3 correction remains a strictly local no-write preview");
+
   // Old freeform notes must not be given invented clinical section titles or alerts.
   demo.get("candidateInput").value = "Ελεύθερο κείμενο χωρίς επισήμανση ή έγκυρη ενότητα.";
   demo.get("candidateInput").dispatch("input");
