@@ -14,6 +14,13 @@ function harness(authenticated) {
   const calls = [];
   const byId = new Map();
   const clipboard = [];
+  const registry = Array.from({length: 151}, (_, number) => ({
+    patient_id: "SYN-" + String(number).padStart(3, "0"),
+    demographics: {full_name: number === 0 ? "Αθανάσιος Παπαχρήστου" : "Κοινός Δοκιμαστικός"},
+  })).reverse();
+  function folded(value) {
+    return String(value).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("el");
+  }
   function element(id = "") {
     const callbacks = {};
     const classNames = new Set();
@@ -59,6 +66,7 @@ function harness(authenticated) {
   document.getElementById("saveRow").hidden = true;
   document.getElementById("patientPanel").hidden = true;
   document.getElementById("loginBox").hidden = true;
+  document.getElementById("morePatientsBtn").hidden = true;
   const memory = new Map();
   async function fetch(url, options = {}) {
     calls.push({url, method: options.method || "GET"});
@@ -66,10 +74,19 @@ function harness(authenticated) {
     let status = 200;
     if (url === "/clinical/status") {
       if (!authenticated) status = 401;
-    } else if (url === "/clinical/patients?limit=100") {
-      body = [{patient_id: "SYN-A", demographics: {full_name: "Δοκιμαστικός Ασθενής"}}];
+    } else if (url.startsWith("/clinical/patients?query=")) {
+      const parsed = new URL(url, "https://local.test");
+      const term = folded(parsed.searchParams.get("query") || "");
+      const tokens = term.split(/\s+/).filter(Boolean);
+      const offset = Number(parsed.searchParams.get("offset") || 0);
+      const limit = Number(parsed.searchParams.get("limit") || 20);
+      body = registry.filter((patient) => {
+        const content = folded(patient.patient_id + " " + patient.demographics.full_name);
+        return tokens.every((token) => content.includes(token));
+      }).slice(offset, offset + limit);
     } else if (url === "/clinical/visit-capture/context") {
       const request = JSON.parse(options.body);
+      assert.ok(registry.some((row) => row.patient_id === request.patient_id), "context uses existing patient");
       body = {context_id: "context-123", patient_id: request.patient_id};
     } else if (url === "/clinical/visit-capture/preview") {
       body = {patient_id: "SYN-A", can_save: true, snapshot: "S", brief: "B", detail: "D"};
@@ -130,8 +147,31 @@ function harness(authenticated) {
   live.get("recordModeBtn").dispatch("click");
   assert.equal(live.get("candidateInput").disabled, true, "record editor gated on patient confirmation");
   await live.settle();
-  assert.ok(live.get("patientSelect").children.some((c) => c.textContent.includes("Δοκιμαστικός")));
-  live.get("patientSelect").value = "SYN-A";
+  assert.ok(!live.calls.some((c) => c.url.startsWith("/clinical/patients?")), "no unrequested latest-100 fetch");
+  assert.equal(live.get("patientSelect").children.length, 1, "picker empty until query entered");
+
+  // The oldest patient is outside the latest 100 but remains fully searchable.
+  live.get("patientSearch").value = "ΠΑΠΑΧΡΗΣΤΟΥ";
+  live.get("patientSearch").dispatch("input");
+  await live.settle();
+  assert.ok(live.calls.some((c) => c.url.includes("query=") && c.url.includes("offset=0")));
+  assert.ok(live.get("patientSelect").children.some((c) => c.value === "SYN-000"), "oldest patient returned by backend");
+
+  // Common names are paged, not silently limited to first 20 or latest 100.
+  live.get("patientSearch").value = "κοινος";
+  live.get("patientSearch").dispatch("input");
+  await live.settle();
+  assert.equal(live.get("patientSelect").children.length, 21, "first 20 matches plus placeholder");
+  assert.equal(live.get("morePatientsBtn").hidden, false);
+  live.get("morePatientsBtn").dispatch("click");
+  await live.settle();
+  assert.equal(live.get("patientSelect").children.length, 41, "additional search page appended");
+  assert.ok(live.calls.some((c) => c.url.includes("offset=20")), "next page requested from backend");
+
+  live.get("patientSearch").value = "SYN-000";
+  live.get("patientSearch").dispatch("input");
+  await live.settle();
+  live.get("patientSelect").value = "SYN-000";
   live.get("confirmPatientBtn").dispatch("click");
   await live.settle();
   assert.equal(live.get("candidateInput").disabled, false);
