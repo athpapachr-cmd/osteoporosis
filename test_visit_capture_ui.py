@@ -46,3 +46,49 @@ def test_visit_capture_preview_is_automatic_and_save_remains_explicit():
     assert 'addEventListener("click", save)' in js
     assert 'preview.can_save' in js
     assert 'state.contextId = ""' in js
+
+
+def test_visit_capture_authenticated_access_collapses_and_can_be_reopened():
+    html = _read("static/cockpit/visit-capture/index.html")
+    js = _read("static/cockpit/visit-capture/app.js")
+    css = _read("static/cockpit/visit-capture/styles.css")
+    assert 'id="authToggle"' in html
+    assert 'id="authCard"' in html
+    assert 'aria-expanded="false"' in html
+    assert 'state.authenticated = true' in js
+    assert '$("authCard").hidden = true' in js
+    assert '$("authToggle").hidden = false' in js
+    assert 'addEventListener("click", () => {' in js
+    assert '[hidden]{display:none!important}' in css
+
+
+def test_visit_capture_demo_requires_no_patient_id_and_cannot_save():
+    html = _read("static/cockpit/visit-capture/index.html")
+    js = _read("static/cockpit/visit-capture/app.js")
+    assert 'id="demoModeBtn"' in html
+    assert 'id="recordModeBtn"' in html
+    assert 'id="candidateInput"' in html
+    assert 'id="saveRow" hidden' in html
+    assert 'id="patientId"' not in html
+    assert 'id="patientSelect"' in html
+    assert 'id="patientSearch"' in html
+    assert 'state.mode === "demo"' in js
+    assert 'state.mode !== "record" || !state.preview?.can_save' in js
+    assert 'state.preview = parseDiaSummary(text)' in js
+    assert 'state.candidate = null' in js
+    assert 'state.patients' in js
+    assert '"/clinical/patients?limit=100"' in js
+
+
+def test_dia_copy_prompt_produces_three_explicit_nonidentifying_sections():
+    html = _read("static/cockpit/visit-capture/index.html")
+    js = _read("static/cockpit/visit-capture/app.js")
+    assert 'id="diaPromptTemplate"' in html
+    assert 'id="copyDiaPromptBtn"' in html
+    assert 'id="exampleBtn"' in html
+    for section in ("SNAPSHOT", "VISIT BRIEF", "ENCOUNTER DETAIL"):
+        assert section in html
+    assert "μόνο συνθετικό" in html.lower()
+    assert 'navigator.clipboard.writeText(prompt)' in js
+    assert 'parseDiaSummary(input)' in js
+    assert 'previewText").textContent' in js
