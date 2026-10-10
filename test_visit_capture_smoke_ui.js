@@ -163,6 +163,7 @@ function harness(authenticated) {
     "2. Διευκρίνισε την ετικέτα της ημερομηνίας <img src=x onerror=alert(1)>.",
   ].join("\n");
   demo.get("candidateInput").dispatch("input");
+  demo.segment("snapshot").dispatch("click"); // previous legacy example left Detail selected
   assert.equal(demo.get("diaReviewPanel").hidden, false, "two supplied source alerts are surfaced");
   assert.ok(demo.get("diaReviewCount").textContent.startsWith("2 σημεία"));
   assert.equal(demo.get("diaReviewList").children.length, 2);
