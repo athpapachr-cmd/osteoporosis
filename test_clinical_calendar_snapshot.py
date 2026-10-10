@@ -404,7 +404,7 @@ def _context(client):
     assert response.status_code == 200
     context = response.json()
     assert set(context) == {"generated_at", "source_updated_at", "today_total", "previous",
-                            "current", "current_conflict_count", "next"}
+                            "current", "current_conflict_count", "next", "upcoming_today"}
     for slot in ("previous", "current", "next"):
         if context[slot]:
             assert set(context[slot]) == {"appointment_id", "start_at", "end_at", "clinic",
@@ -413,6 +413,9 @@ def _context(client):
     assert "linked_patient_id" not in response.text
     assert "cal_uid" not in response.text
     assert "synthetic-link" not in response.text
+    for future_row in context["upcoming_today"]:
+        assert set(future_row) == {"appointment_id", "start_at", "end_at", "clinic",
+                                   "category", "patient_display_name", "reason"}
     return context
 
 
@@ -688,3 +691,69 @@ def test_weekly_calendar_ui_distinguishes_source_unavailable_from_empty_week():
     assert "renderWeek([], monday)" not in load_week
     assert "last_fetched_at" in load_week
     assert "τελευταία ανάγνωση" in load_week
+
+
+def test_home_upcoming_three_and_cross_day_next_reuses_one_snapshot(monkeypatch):
+    client, _ = _client(monkeypatch)
+    now = datetime(2026, 10, 10, 8, 30)
+    monkeypatch.setattr(clinical_calendar, "utcnow", lambda: now)
+    rows = [
+        _appointment("done", start=now - timedelta(hours=1), minutes=15, label="Other"),
+        *[
+            _appointment(f"today-{n}", start=now + timedelta(minutes=30 * n),
+                         minutes=20, label="Other")
+            for n in range(1, 5)
+        ],
+        _appointment("next-day", start=now + timedelta(days=1), minutes=30, label="Other"),
+    ]
+    _set_actual_source(monkeypatch, rows[::-1], now)
+    result = _context(client)
+    assert result["today_total"] == 5
+    assert [v["appointment_id"] for v in result["upcoming_today"]] == [
+        "cal.com:today-1", "cal.com:today-2", "cal.com:today-3"
+    ]
+    assert result["next"]["appointment_id"] == "cal.com:today-1"
+
+
+def test_home_covered_empty_vs_missing_local_date_coverage(monkeypatch):
+    import httpx
+    clinical_calendar._last_actual_schedule_fetch = None
+    client, _ = _client(monkeypatch)
+    # Local date is October 11, while UTC is still October 10.
+    now = datetime(2026, 10, 10, 22, 20)
+    monkeypatch.setattr(clinical_calendar, "utcnow", lambda: now)
+    monkeypatch.setenv("RECEPTION_SCHEDULE_CONTEXT_URL", "https://reception.example/private/schedule-context")
+    base = {"fetched_at": now.replace(tzinfo=timezone.utc).isoformat(), "appointments": []}
+    response_payloads = [
+        dict(base, coverage_start="2026-10-11", coverage_end="2026-10-11"),
+        dict(base),  # no coverage proves nothing despite fresh receipt
+        dict(base, coverage_start="2026-10-10", coverage_end="2026-10-10"),
+        dict(base, coverage_start="2026-10-12", coverage_end="2026-10-11"),
+    ]
+    calls = []
+
+    class Client:
+        def __init__(self, **kwargs):
+            pass
+        async def __aenter__(self):
+            return self
+        async def __aexit__(self, *args):
+            pass
+        async def get(self, url, headers, params=None):
+            calls.append((url, headers, params))
+            return httpx.Response(200, json=response_payloads.pop(0))
+
+    monkeypatch.setattr(clinical_calendar.httpx, "AsyncClient", Client)
+    covered = client.get("/clinical/calendar/cockpit-context", headers=CLINICAL_HEADERS)
+    assert covered.status_code == 200
+    assert covered.json()["today_total"] == 0
+    assert covered.json()["upcoming_today"] == []
+    successful = clinical_calendar._last_actual_schedule_fetch
+    assert successful is not None
+    for _ in range(3):
+        rejected = client.get("/clinical/calendar/cockpit-context", headers=CLINICAL_HEADERS)
+        assert rejected.status_code == 503
+        assert rejected.json()["detail"]["status"] == "unavailable"
+        assert clinical_calendar._last_actual_schedule_fetch == successful
+    assert len(calls) == 4
+    assert all(params is None for _, _, params in calls)
