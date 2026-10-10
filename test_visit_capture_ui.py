@@ -19,7 +19,7 @@ def test_visit_capture_surface_has_one_final_save_and_three_projections():
     assert 'data-level="brief"' in html
     assert 'data-level="detail"' in html
     assert 'id="candidateInput"' in html
-    assert "raw source pages" in html
+    assert "ούτε αποθήκευση αρχικών εγγράφων" in html
 
 
 def test_visit_capture_client_uses_only_protected_local_endpoints_and_transient_candidate():
@@ -124,7 +124,7 @@ def test_dia_prompt_distinguishes_ordered_performed_results_and_frax_mof():
     assert "ΜΕΙΖΟΝΟΣ οστεοπορωτικού κατάγματος" in prompt
     assert "MOF" in prompt
     assert "κίνδυνο ισχίου" in prompt
-    assert "μια ενιαία και εσωτερικά συνεπή" in prompt
+    assert "μία ενιαία και εσωτερικά συνεπή" in prompt
     assert "Σημεία προς επιβεβαίωση" in prompt
 
 
