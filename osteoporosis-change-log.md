@@ -1550,3 +1550,11 @@ Product Owner elected to finish release into the existing Cockpit rather than cr
 ## 2026-10-09 — Visit Capture controlled production auto-deploy LIVE (product smoke pending)
 
 Design PR #138 merged `9ec24a9a5f756b31ee8e6031b5d587c90ce91ac6`; implementation PR #139 merged `dd14cd0df1ca84d051ba7bf784b5b33226ed20b0`, merge tree equal to original implementation candidate tree, no new runtime/test bytes. Checkpoint source `8dbc9a78d032d710be4530875d4fa02a15628268` changed only root/Cockpit CURRENT, TODO and changelog. Render auto-deploy `dep-db4k2r3ncjis73dnc6p0` reached LIVE from that exact source; prior code-merge deploy `dep-db4k1l942hec73dll8j0` was LIVE before being replaced. Corrected runtime/test bytes remained independent R2 PASS/0:0:0 with original P2-F2-01 closed. No clinical patient data/provider activity, authenticated browser smoke or actual GESY use was performed; product-owner visual smoke remains pending. Existing clinical authentication makes Visit Capture Save accessible on the deployed system; separate identifiable Dia/Heidi/GESY processing and retention/privacy qualification remains OPEN. Release writer released.
+
+## 2026-10-10 — Hybrid Cockpit PR #142 merged and initially deployed LIVE
+
+- Product Owner explicitly approved the existing-Cockpit Stage A controlled release, not live provider processing.
+- PR #142 squash merged into main at `56bb7fe5d1566fbe3f213cbdf5b6eed2272a502e` after exact-source reconciliation with released #140 and #143.
+- Reviewed Stage A Hybrid UI and two protected 3+3 worklist read projections reused independent R1/R2 PASS; 13 applicable tests successful; inherited L0 design-only diff-scope check unrelated and red.
+- Render auto-deploy `dep-db56637avr4c73eprc5g` for source `87bd157a203a668b605e319b3e79ebf06953bcfa` achieved LIVE at 2026-10-10T16:10:17Z. Final docs-only closeout creates a successor automatic deployment to verify, without manual deploy.
+- No real patient/provider access or clinical write during release. Anonymous asset/browser smoke failed on DNS (not validated). Identifiable Dia/Heidi/ΓεΣΥ qualification, live Clinical Inbox/Gmail/Zadarma, derived ToDos and signed plaintext Save remain separate.
