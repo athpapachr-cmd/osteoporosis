@@ -8,6 +8,8 @@
     authenticated: false,
     patients: [],
     suggestedPatientId: "",
+    patientSearchTimer: null,
+    patientSearchRevision: 0,
     contextId: "",
     patientId: "",
     candidate: null,
@@ -82,45 +84,84 @@
 
   function renderPatients() {
     const selected = $("patientSelect");
-    const previous = selected.value || state.suggestedPatientId;
-    const query = $("patientSearch").value.trim().toLocaleLowerCase("el");
-    const matches = state.patients.filter((patient) =>
-      patientLabel(patient).toLocaleLowerCase("el").includes(query)
-    );
+    const previous = selected.value;
     selected.replaceChildren();
     const empty = document.createElement("option");
     empty.value = "";
-    empty.textContent = matches.length ? "Επίλεξε ασθενή…" : "Δεν βρέθηκε ασθενής";
+    empty.textContent = state.patients.length ? "Επίλεξε ασθενή…" : "Δεν υπάρχουν αποτελέσματα";
     selected.appendChild(empty);
-    matches.forEach((patient) => {
+    state.patients.forEach((patient) => {
       const option = document.createElement("option");
       option.value = patient.patient_id;
       option.textContent = patientLabel(patient);
       selected.appendChild(option);
     });
-    if (matches.some((patient) => patient.patient_id === previous)) selected.value = previous;
-    $("confirmPatientBtn").disabled = !state.authenticated || matches.length === 0;
+    if (state.patients.some((patient) => patient.patient_id === previous)) selected.value = previous;
+    $("confirmPatientBtn").disabled = !state.authenticated || state.patients.length === 0;
   }
 
-  async function loadPatients() {
-    if (!state.authenticated) {
-      $("patientMessage").textContent = "Συνδέσου πρώτα για να εμφανιστεί το μητρώο. Η δοκιμή δεν χρειάζεται σύνδεση.";
-      state.patients = [];
-      renderPatients();
-      return;
+  function clearPatientLookup() {
+    clearTimeout(state.patientSearchTimer);
+    state.patientSearchRevision++;
+    state.patients = [];
+    renderPatients();
+    $("morePatientsBtn").hidden = true;
+    $("morePatientsBtn").disabled = false;
+  }
+
+  function loadPatients() {
+    // No default "latest 100" registry listing. Every search goes to the
+    // protected backend against ALL registered patients and is paginated.
+    if (state.suggestedPatientId && !$("patientSearch").value.trim()) {
+      $("patientSearch").value = state.suggestedPatientId;
+      state.suggestedPatientId = "";
     }
-    $("patientMessage").textContent = "Φόρτωση καταχωρισμένων ασθενών…";
+    schedulePatientSearch();
+  }
+
+  async function searchPatientPage(append = false) {
+    const term = $("patientSearch").value.trim();
+    if (!term || !state.authenticated || state.mode !== "record") return;
+    const revision = ++state.patientSearchRevision;
+    const offset = append ? state.patients.length : 0;
+    $("morePatientsBtn").hidden = true;
+    $("patientMessage").textContent = "Αναζήτηση στο πλήρες μητρώο…";
     try {
-      const patients = await apiJson("/clinical/patients?limit=100", {method: "GET"});
-      state.patients = Array.isArray(patients) ? patients : [];
+      const url = "/clinical/patients?query=" + encodeURIComponent(term)
+        + "&limit=20&offset=" + offset;
+      const patients = await apiJson(url, {method: "GET"});
+      if (revision !== state.patientSearchRevision || state.mode !== "record"
+          || !$("patientSearch").value.trim() || $("patientSearch").value.trim() !== term
+          || !state.authenticated) return;
+      state.patients = append ? state.patients.concat(patients) : patients;
       renderPatients();
-      $("patientMessage").textContent = state.patients.length
-        ? "Εμφανίζονται οι 100 πιο πρόσφατοι ασθενείς το πολύ. Αναζήτηση μέσα στην εμφανιζόμενη λίστα."
-        : "Δεν υπάρχουν καταχωρισμένοι ασθενείς. Μπορείς πάντως να χρησιμοποιήσεις τη δοκιμή χωρίς ασθενή.";
+      $("morePatientsBtn").hidden = patients.length < 20;
+      if (state.patients.length === 0) {
+        $("patientMessage").textContent = "Δεν βρέθηκε ασθενής με αυτά τα στοιχεία. Δοκίμασε άλλο όνομα ή αναγνωριστικό.";
+      } else {
+        $("patientMessage").textContent = "Βρέθηκαν " + state.patients.length
+          + " αποτελέσματα μέχρι τώρα σε ολόκληρο το μητρώο."
+          + (patients.length === 20 ? " Πάτησε «Περισσότερα» ή γράψε πιο συγκεκριμένα." : "");
+      }
     } catch (error) {
-      state.patients = [];
+      if (revision !== state.patientSearchRevision) return;
+      if (!append) state.patients = [];
       renderPatients();
-      $("patientMessage").textContent = "Δεν ήταν δυνατή η φόρτωση του μητρώου: " + error.message;
+      $("morePatientsBtn").hidden = true;
+      $("patientMessage").textContent = "Δεν ήταν δυνατή η αναζήτηση: " + error.message;
+    }
+  }
+
+  function schedulePatientSearch() {
+    clearPatientLookup();
+    const term = $("patientSearch").value.trim();
+    if (!state.authenticated) {
+      $("patientMessage").textContent = "Συνδέσου πρώτα για να αναζητήσεις το μητρώο. Η δοκιμή δεν χρειάζεται σύνδεση.";
+    } else if (state.mode !== "record" || !term) {
+      $("patientMessage").textContent = "Πληκτρολόγησε όνομα ή αναγνωριστικό. Η αναζήτηση καλύπτει όλους τους καταχωρισμένους ασθενείς.";
+    } else {
+      $("patientMessage").textContent = "Αναζήτηση στο πλήρες μητρώο…";
+      state.patientSearchTimer = setTimeout(() => searchPatientPage(false), 250);
     }
   }
 
@@ -130,6 +171,7 @@
     state.mode = mode;
     state.contextId = "";
     state.patientId = "";
+    clearPatientLookup();
     $("demoModeBtn").classList.toggle("active", mode === "demo");
     $("recordModeBtn").classList.toggle("active", mode === "record");
     $("demoModeBtn").setAttribute("aria-pressed", String(mode === "demo"));
@@ -429,7 +471,8 @@
   });
   $("demoModeBtn").addEventListener("click", () => selectMode("demo"));
   $("recordModeBtn").addEventListener("click", () => selectMode("record"));
-  $("patientSearch").addEventListener("input", renderPatients);
+  $("patientSearch").addEventListener("input", schedulePatientSearch);
+  $("morePatientsBtn").addEventListener("click", () => searchPatientPage(true));
   $("confirmPatientBtn").addEventListener("click", confirmPatient);
   $("changePatientBtn").addEventListener("click", () => {
     resetPatientContext();
