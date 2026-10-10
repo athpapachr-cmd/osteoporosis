@@ -61,18 +61,19 @@
       </div>
       <div id="patientBox" class="patient-picker">
         <label>
-          <span>Αναζήτηση στη λίστα</span>
-          <input id="patientSearch" type="search" autocomplete="off" placeholder="Όνομα ή αναγνωριστικό" />
+          <span>Αναζήτηση σε ολόκληρο το μητρώο</span>
+          <input id="patientSearch" type="search" autocomplete="off" placeholder="Πληκτρολόγησε όνομα ή αναγνωριστικό" />
         </label>
         <label>
-          <span>Ασθενείς μητρώου</span>
+          <span>Αποτελέσματα αναζήτησης</span>
           <select id="patientSelect" aria-label="Επιλογή ασθενούς">
-            <option value="">Φόρτωση ασθενών…</option>
+            <option value="">Ξεκίνησε πληκτρολογώντας…</option>
           </select>
         </label>
         <button id="confirmPatientBtn" class="button secondary" type="button">Επιβεβαίωση ασθενούς</button>
       </div>
-      <p id="patientMessage" class="helper" role="status"></p>
+      <p id="patientMessage" class="helper" role="status">Αναζήτησε όποιον ασθενή χρειάζεσαι, χωρίς όριο παλαιότητας.</p>
+      <button id="morePatientsBtn" class="button subtle patient-more" type="button" hidden>Περισσότερα αποτελέσματα</button>
       <div id="confirmedPatient" class="confirmed-patient" hidden>
         <span>Επιβεβαιωμένος ασθενής</span>
         <strong id="confirmedPatientId">—</strong>
