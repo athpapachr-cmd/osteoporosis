@@ -14,23 +14,25 @@
       <div>
         <p class="eyebrow">Clinical Excellence</p>
         <h1>Καταγραφή επίσκεψης</h1>
-        <p>Μία δομημένη καταγραφή · τρεις προβολές · μία τελική αποθήκευση.</p>
+        <p>Δοκίμασε μια σύνοψη ή επέλεξε ασθενή για καταγραφή.</p>
       </div>
-      <span class="mode-pill">Synthetic / manual first-code</span>
+      <span class="mode-pill">Πρώτη έκδοση</span>
     </header>
 
-    <section class="card" id="authCard">
+    <button id="authToggle" class="auth-toggle" type="button" hidden
+      aria-controls="authCard" aria-expanded="false" title="Εμφάνιση πρόσβασης">
+      <span aria-hidden="true">🔒</span><span>Πρόσβαση</span>
+    </button>
+    <section class="card auth-card" id="authCard">
       <div class="card-head">
         <div>
-          <span class="step-dot">1</span>
           <div>
-            <h2>Επιβεβαίωση ασθενούς</h2>
-            <p>Το Cockpit επιλέγει τον προορισμό της εγγραφής. Το Dia δεν μπορεί να αλλάξει ασθενή.</p>
+            <h2>Πρόσβαση στο Cockpit</h2>
+            <p>Η σύνδεση είναι απαραίτητη για πρόσβαση στο κλινικό μητρώο και τελική αποθήκευση.</p>
           </div>
         </div>
-        <span id="authState" class="state-chip">Έλεγχος…</span>
+        <span id="authState" class="state-chip" role="status">Έλεγχος…</span>
       </div>
-
       <div id="loginBox" class="login-box" hidden>
         <label>
           <span>Clinical access key</span>
@@ -38,15 +40,39 @@
         </label>
         <button id="loginBtn" class="button secondary" type="button">Σύνδεση</button>
       </div>
+    </section>
 
-      <div id="patientBox" class="patient-box" hidden>
+    <section class="card mode-card" aria-label="Τρόπος χρήσης">
+      <div class="mode-switch" role="group" aria-label="Επιλογή λειτουργίας">
+        <button id="demoModeBtn" class="mode-option active" type="button" aria-pressed="true">Δοκιμή χωρίς ασθενή</button>
+        <button id="recordModeBtn" class="mode-option" type="button" aria-pressed="false">Καταγραφή σε ασθενή</button>
+      </div>
+      <p id="modeNotice" class="mode-note">Δοκιμάζεις τη σύνοψη εδώ, χωρίς ID, σύνδεση με ασθενή ή αποθήκευση στη βάση.</p>
+    </section>
+
+    <section class="card patient-card" id="patientPanel" hidden>
+      <div class="card-head">
+        <div>
+          <div>
+            <h2>Επιλογή ασθενούς</h2>
+            <p>Επέλεξε υπάρχοντα ασθενή από το προστατευμένο μητρώο. Δεν χρειάζεται να γνωρίζεις το εσωτερικό ID.</p>
+          </div>
+        </div>
+      </div>
+      <div id="patientBox" class="patient-picker">
         <label>
-          <span>Internal patient ID</span>
-          <input id="patientId" type="text" maxlength="120" autocomplete="off" placeholder="π.χ. SYN-001" />
+          <span>Αναζήτηση στη λίστα</span>
+          <input id="patientSearch" type="search" autocomplete="off" placeholder="Όνομα ή αναγνωριστικό" />
+        </label>
+        <label>
+          <span>Ασθενείς μητρώου</span>
+          <select id="patientSelect" aria-label="Επιλογή ασθενούς">
+            <option value="">Φόρτωση ασθενών…</option>
+          </select>
         </label>
         <button id="confirmPatientBtn" class="button secondary" type="button">Επιβεβαίωση ασθενούς</button>
       </div>
-
+      <p id="patientMessage" class="helper" role="status"></p>
       <div id="confirmedPatient" class="confirmed-patient" hidden>
         <span>Επιβεβαιωμένος ασθενής</span>
         <strong id="confirmedPatientId">—</strong>
@@ -57,26 +83,33 @@
     <section class="card capture-card">
       <div class="card-head">
         <div>
-          <span class="step-dot">2</span>
+          <span class="step-dot" aria-hidden="true">✎</span>
           <div>
             <h2>Πρόχειρη καταγραφή</h2>
-            <p>Το Dia μπορεί να εισαγάγει εδώ το structured candidate. Δεν αποθηκεύεται πριν πατήσεις «Αποθήκευση».</p>
+            <p id="candidateHint">Επικόλλησε τη σύνοψη από το Dia. Οι τρεις προβολές εμφανίζονται χωρίς ασθενή.</p>
           </div>
         </div>
         <span id="candidateState" class="state-chip">Αναμονή</span>
       </div>
 
-      <textarea id="candidateInput" spellcheck="false" autocomplete="off" placeholder='{"schema_version":"visit_capture_candidate_v1", ...}' disabled></textarea>
-      <p id="candidateMessage" class="helper">Επιβεβαίωσε πρώτα τον ασθενή.</p>
+      <div class="capture-tools">
+        <button id="copyDiaPromptBtn" class="button secondary" type="button">Αντιγραφή prompt για Dia</button>
+        <button id="exampleBtn" class="button subtle" type="button">Συνθετικό παράδειγμα</button>
+        <span id="copyStatus" class="helper" role="status"></span>
+      </div>
+      <label class="capture-label" for="candidateInput" id="candidateLabel">Σύνοψη Dia (απλό κείμενο)</label>
+      <textarea id="candidateInput" spellcheck="false" autocomplete="off" maxlength="60000"
+        placeholder="Επικόλλησε τη σύνοψη Dia με τις ενότητες SNAPSHOT, VISIT BRIEF και ENCOUNTER DETAIL."></textarea>
+      <p id="candidateMessage" class="helper" role="status">Μπορείς να ξεκινήσεις αμέσως, χωρίς ασθενή.</p>
     </section>
 
     <section class="card preview-card">
       <div class="card-head">
         <div>
-          <span class="step-dot">3</span>
+          <span class="step-dot" aria-hidden="true">☷</span>
           <div>
             <h2>Προεπισκόπηση</h2>
-            <p>Οι τρεις προβολές παράγονται από το ίδιο structured encounter.</p>
+            <p id="previewHint">Οι τρεις προβολές προέρχονται από την επικολλημένη σύνοψη. Πρόκειται μόνο για δοκιμή.</p>
           </div>
         </div>
         <span id="previewState" class="state-chip">Δεν υπάρχει preview</span>
@@ -88,26 +121,41 @@
         <button class="segment" type="button" data-level="detail">Encounter Detail</button>
       </div>
 
-      <article id="previewText" class="preview-text empty">Η προεπισκόπηση θα εμφανιστεί αυτόματα όταν το candidate είναι έγκυρο.</article>
+      <article id="previewText" class="preview-text empty">Η προεπισκόπηση θα εμφανιστεί μόλις επικολλήσεις μία σύνοψη.</article>
 
       <div id="blockingNotice" class="blocking-notice" hidden></div>
 
-      <div class="save-row">
+      <div class="save-row" id="saveRow" hidden>
         <div>
           <strong>Τελική κλινική πράξη</strong>
           <p>Έλεγξε το περιεχόμενο. Μετά το Save η επίσκεψη κλειδώνει από σιωπηρή τροποποίηση.</p>
         </div>
         <button id="saveBtn" class="button primary" type="button" disabled>Αποθήκευση επίσκεψης</button>
       </div>
-      <p id="saveMessage" class="helper"></p>
+      <p id="saveMessage" class="helper" role="status" hidden></p>
     </section>
 
     <section class="privacy-note">
       <strong>Όριο πρώτης υλοποίησης</strong>
-      <p>Δεν γίνεται live ανάγνωση Dia, Heidi ή ΓεΣΥ. Δεν αποθηκεύονται raw source pages. Η λειτουργία αυτή δέχεται μόνο synthetic/manual candidate μέχρι να κλείσουν τα live activation gates.</p>
+      <p>Η δοκιμή δέχεται μόνο συνθετικό ή πλήρως αποταυτοποιημένο κείμενο, δεν καλεί κλινικά endpoints και δεν γράφει στη βάση. Δεν γίνεται live ανάγνωση Dia, Heidi ή ΓεΣΥ ούτε αποθήκευση raw source pages. Η καταγραφή σε ασθενή απαιτεί επιβεβαίωση και έγκυρο δομημένο JSON· η χρήση πραγματικών δεδομένων από Dia/Heidi/ΓεΣΥ δεν έχει εγκριθεί.</p>
     </section>
   </main>
 
+
+  <template id="diaPromptTemplate">Επεξεργάσου ΜΟΝΟ το συνθετικό/αποταυτοποιημένο κείμενο επίσκεψης που σου δίνω για δοκιμή. Μην διαβάζεις άλλες καρτέλες ή πραγματικά στοιχεία ασθενούς σε αυτή τη δοκιμή.
+
+Παρήγαγε στα ελληνικά τρεις διακριτές κλινικές προβολές από τα ίδια διαθέσιμα δεδομένα. Επιστρέφεις ΑΠΛΟ ΚΕΙΜΕΝΟ (όχι JSON, όχι Markdown code block), με τις παρακάτω ακριβείς επικεφαλίδες μόνες τους σε δική τους γραμμή:
+
+SNAPSHOT
+[Εξαιρετικά σύντομη σημερινή εικόνα, ουσιώδης μεταβολή αν τεκμηριώνεται, απόφαση, εκκρεμότητα, επόμενο βήμα.]
+
+VISIT BRIEF
+[Συνοπτική αλλά σαφής κλινική ανασκόπηση: λόγος επίσκεψης, αλλαγές σε σχέση με προηγούμενη επίσκεψη μόνο αν υπάρχει ασφαλής σύγκριση, ευρήματα, κλινική εκτίμηση, φάρμακα και δόσεις μόνο αν αναφέρονται, αποφάσεις, εκκρεμότητες και παρακολούθηση.]
+
+ENCOUNTER DETAIL
+[Πλήρης, οργανωμένη καταγραφή των πληροφοριών που παρασχέθηκαν, με διάκριση πηγών, κωδικοποιήσεις όπου υπάρχουν και αβεβαιότητες.]
+
+Μην επινοείς συμπτώματα, διαγνώσεις, δοσολογίες, χρονοδιαγράμματα ή αποτελέσματα. Μην εμφανίζεις προτεινόμενη πράξη ως ήδη εκτελεσμένη. Αν πηγές διαφωνούν, εμφάνισέ το καθαρά. Μην περιλαμβάνεις όνομα, ταυτότητα, τηλέφωνο, αριθμό ΓεΣΥ ή άλλα αναγνωριστικά. Η σύνοψη είναι προσχέδιο για έλεγχο από τον ιατρό.</template>
   <script src="/static/cockpit/visit-capture/app.js"></script>
 </body>
 </html>
