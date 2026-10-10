@@ -1,6 +1,6 @@
 # Visit Capture — received independent R1 implementation-fidelity PASS
 
-Date: 2026-10-10  
+Date: 2026-10-10
 Source: Independent reviewer handback supplied by Product Owner to Cockpit coordinator. This is a received verdict, **not** a second review performed by the coordinator and not a GitHub-native review submission.
 
 ## Exact reviewed target
