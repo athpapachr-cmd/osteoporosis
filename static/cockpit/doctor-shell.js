@@ -150,6 +150,7 @@
     content.append(newLink("Άνοιγμα Gmail","https://mail.google.com/","Έλεγχος μηνυμάτων απευθείας στο Gmail"));
   }
   function tasks() {
+    content.replaceChildren();
     const s=state.surgeries;
     content.append(sectionTitle("Κλινική εργασία"));
     if(s){
@@ -243,18 +244,19 @@
     document.body.classList.toggle("doctor-rail-open",next);
     $("doctorRailToggle").setAttribute("aria-expanded",String(next));
   });
-  window.addEventListener("cockpit:surgery-counts",e=>{
-    const detail=e.detail||{};
-    if(!Number.isInteger(detail.total)||detail.total<0||
+  function updateSurgeryCounts(detail) {
+    if(!detail||!Number.isInteger(detail.total)||detail.total<0||
        !Number.isInteger(detail.undated)||detail.undated<0)return;
     state.surgeries={total:detail.total,undated:detail.undated};
     $("doctorTasksBadge").hidden=detail.total===0;
     $("doctorTasksBadge").textContent=String(detail.total);
     attention();
     if(state.panel==="tasks")tasks();
-  });
+  }
+  window.addEventListener("cockpit:surgery-counts",e=>updateSurgeryCounts(e.detail));
   // No fake unread-mail badge. It remains hidden until the real Inbox owner exists.
   $("doctorInboxBadge").hidden=true;
   buttons.day.firstChild.textContent=dateLabel.format(new Date())+" ";
   attention();
+  updateSurgeryCounts(window.CockpitSurgerySummary);
 })();
