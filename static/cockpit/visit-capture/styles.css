@@ -76,3 +76,28 @@ button:disabled{cursor:not-allowed}
   .patient-picker{grid-template-columns:1fr}
   .capture-tools{align-items:stretch;flex-direction:column}
 }
+
+/* Clinical readability: explicit-source subsections and a calm advisory signal. */
+.review-attention{margin:0 0 14px;border:1px solid #e8d7b4;background:#fffbf4;border-radius:13px;padding:0 14px}
+.review-attention details>summary{display:flex;align-items:center;gap:9px;flex-wrap:wrap;cursor:pointer;list-style:none;padding:12px 0;color:#765a22;font-size:13px}
+.review-attention details>summary::-webkit-details-marker{display:none}
+.review-attention details>summary::after{content:"▾";margin-left:auto;color:#896f34}
+.review-attention details[open]>summary::after{content:"▴"}
+.review-attention-dot{width:22px;height:22px;display:grid;place-items:center;flex:none;border-radius:7px;background:#fff0c9;color:#8d6b27;font-weight:900}
+.review-attention-hint{font-size:11px;font-weight:500;color:#8b7959}
+.review-attention ol{padding:0 0 4px 29px;margin:0 0 10px}
+.review-attention li{padding:6px 0;font-size:13px;color:#5d502d;line-height:1.6;overflow-wrap:anywhere}
+.structured-preview{display:grid;gap:9px}
+.structured-preview .brief-section,.structured-preview .detail-section{background:#fbfdff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;min-width:0}
+.structured-preview .brief-section h3,.structured-preview .detail-section summary{font-size:13px;font-weight:820;line-height:1.5;color:#1b455f}
+.structured-preview .brief-section h3{margin:0 0 7px}
+.structured-preview .detail-section summary{cursor:pointer;outline-offset:3px}
+.structured-preview .detail-section[open] summary{margin-bottom:9px}
+.structured-preview .clinical-section-body{font-family:inherit;font-size:14px;line-height:1.65;white-space:pre-wrap;overflow-wrap:anywhere;color:#203746}
+.structured-preview .detail-section:not([open]){background:#fff}
+.structured-preview .detail-section:hover{border-color:#bcd5e5}
+.preview-text{overflow-wrap:anywhere}
+@media(max-width:700px){
+ .structured-preview .brief-section,.structured-preview .detail-section{padding:11px}
+ .review-attention-hint{flex-basis:100%;padding-left:31px}
+}
