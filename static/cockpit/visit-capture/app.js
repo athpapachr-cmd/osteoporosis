@@ -77,8 +77,10 @@
 
   function patientLabel(patient) {
     const d = patient.demographics || {};
-    const firstLast = [d.first_name || d.firstName, d.last_name || d.lastName].filter(Boolean).join(" ");
-    const name = String(d.full_name || d.fullName || d.name || firstLast || "").trim();
+    const first = d.first_name || d.firstName || d.given_name || d.firstname || d["όνομα"] || d["ονομα"];
+    const last = d.last_name || d.lastName || d.family_name || d.surname || d.lastname || d["επώνυμο"] || d["επωνυμο"];
+    const firstLast = [first, last].filter(Boolean).join(" ");
+    const name = String(d.full_name || d.fullName || d.name || d["ονοματεπώνυμο"] || d["ονοματεπωνυμο"] || firstLast || "").trim();
     return (name ? name + " · " : "Ασθενής · ") + patient.patient_id;
   }
 
