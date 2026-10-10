@@ -132,3 +132,34 @@ def test_global_home_conflict_stale_and_unknown_freshness_visible():
     assert "μπορεί να έχει παλιώσει" in results[0]["calendarNote"]["textContent"]
     assert "Δεν υπάρχει διαθέσιμη πρόσφατη ανάγνωση" in results[1]["calendarNote"]["textContent"]
     assert "Δεν υπάρχει επόμενο στο πρόγραμμα" == results[1]["nextAppointmentPatient"]["textContent"]
+
+
+def test_v3_clinician_workspace_is_existing_home_not_separate_page():
+    html = _read("static/cockpit/index.html")
+    css = _read("static/cockpit/clinical-workspace.css")
+    js = _read("static/cockpit/clinical-workspace.js")
+    assert html.count('id="clinicalWorkspace"') == 1
+    assert html.count('id="visitRecentRows"') == 1
+    assert html.count('id="visitUpcomingRows"') == 1
+    assert html.count('id="visitPatientSearch"') == 1
+    assert '<script src="/static/cockpit/clinical-workspace.js" defer></script>' in html
+    assert "Πρόσφατες επισκέψεις" in html and "Επόμενες σήμερα" in html
+    assert html.count('<span>3</span>') >= 2
+    assert "/clinical/recent-encounters?limit=3" in js
+    assert "/clinical/calendar/cockpit-context" in js
+    assert 'slice(0,3)' in js
+    assert '"/clinical/patients?query="' in js
+    assert "clinical-two-panels" in css
+    assert 'id="visitDiaComposer"' in html
+    assert 'id="visitDiaPrompt"' in html
+    assert 'id="visitDiaText"' in html
+    assert 'id="visitDiaPreview"' in html
+    assert 'data-clinical-tab="snapshot"' in html
+    assert 'data-clinical-tab="brief"' in html
+    assert 'data-clinical-tab="detail"' in html
+    assert 'id="surgeryTableBody"' in html
+
+
+def test_v3_browser_interaction_uses_mocked_protected_gets_without_writes():
+    output = subprocess.check_output(["node", "test_cockpit_unified_home.js"], text=True)
+    assert "PASS Cockpit V3" in output
