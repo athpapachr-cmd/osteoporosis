@@ -7,8 +7,9 @@ const source=fs.readFileSync("static/cockpit/clinical-workspace.js","utf8");
 assert.match(html,/id="clinicalWorkspace"/);
 assert.match(html,/id="visitRecentRows"/);
 assert.match(html,/<h2>Πρόσφατες επισκέψεις<\/h2><span>έως 3<\/span>/);
-assert.match(html,/<h2>Επόμενες σήμερα<\/h2><span>έως 3<\/span>/);
-assert.match(html,/id="visitUpcomingRows"/);
+assert.match(html,/id="doctorAttentionList"/);
+assert.match(html,/id="doctorDateButton"/);
+assert.match(html,/id="doctorLibraryView"/);
 assert.match(html,/id="visitDiaPrompt"/);
 assert.match(html,/id="visitDiaText"/);
 assert.match(html,/href="\/static\/baseline-audit\/"/);
@@ -63,21 +64,22 @@ const fixture=async(url,options)=>{
  requests.push([url,options]);
  let body;
  if(url==="/clinical/recent-encounters?limit=3")body=recent;
- else if(url==="/clinical/calendar/cockpit-context")
-   body={generated_at:scheduleNow,upcoming_today:upcoming,next:upcoming[0]};
+
  else if(url.startsWith("/clinical/patients?query="))
    body=[{patient_id:"P004",demographics:{full_name:"Μαρία Δοκιμαστική",date_of_birth:"1970-01-01"}}];
  else throw Error("Unexpected GET "+url);
  return {ok:true,status:200,json:async()=>body};
 };
-vm.runInNewContext(source,{document:doc,fetch:fixture,
+const homeWindow={};
+vm.runInNewContext(source,{document:doc,fetch:fixture,window:homeWindow,
  navigator:{clipboard:{writeText:async value=>{clipboard.push(value);}}},
  setTimeout(fn){fn();return 1;},clearTimeout(){},console,URL,encodeURIComponent,Intl,Date});
 const tick=()=>new Promise(ok=>setImmediate(ok));
 (async()=>{
  await tick();await tick();
  assert.equal($("visitRecentRows").children.length,3,"three recent completed visits");
- assert.equal($("visitUpcomingRows").children.length,3,"three upcoming today");
+ assert.ok(!requests.some(([url])=>url==="/clinical/calendar/cockpit-context"),
+   "the main worklist does not duplicate a daily calendar fetch");
  $("previousAppointmentPatient").dataset.appointmentId="AP0";
  $("previousAppointmentPatient").textContent="Μαρία Δοκιμαστική";
  $("previousAppointmentTime").textContent="09:00";
@@ -92,7 +94,11 @@ const tick=()=>new Promise(ok=>setImmediate(ok));
  assert.equal($("visitBriefOverlay").hidden,true);
  $("visitSidebarCurrent").fire("click");
  assert.equal($("visitBriefOverlay").hidden,true,"no popup for an empty slot");
- $("visitUpcomingRows").children[0].fire("click");
+ assert.equal(typeof homeWindow.CockpitHome?.openAppointment,"function");
+ homeWindow.CockpitHome.openAppointment({
+   kind:"appointment",name:"Μαρία Δοκιμαστική",reason:"Οστεοπόρωση",time:"09:40",
+   appointmentId:"AP1",patientId:null
+ });
  assert.equal($("visitWorkspacePatient").hidden,false);
  assert.equal($("visitIdentityStatus").textContent,"Απαιτείται επιλογή φακέλου");
  assert.equal($("visitDiaComposer").hidden,true,"Dia begins hidden");
@@ -132,5 +138,5 @@ const tick=()=>new Promise(ok=>setImmediate(ok));
  assert.equal($("visitPatientSearch").attributes["aria-expanded"],"false","clearing query collapses results");
  assert.equal($("visitPatientMatches").hidden,true);
  assert.ok(requests.every(([,opts])=>!opts.method||opts.method==="GET"),"no writes");
- console.log("PASS Cockpit V3 Stage A: hybrid sidebar, 3+3, identity, Dia, edits and reset");
+ console.log("PASS Cockpit V3: one-click patient, sidebar Peek, identity, Dia, edits and reset");
 })().catch(e=>{console.error(e);process.exitCode=1;});
