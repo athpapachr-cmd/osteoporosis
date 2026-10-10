@@ -112,3 +112,37 @@ def test_visit_capture_does_not_autoload_recent_patients_on_entry():
     assert 'state.patientSearchRevision' in js
     assert 'if (!term || !state.authenticated || state.mode !== "record") return;' in js
     assert 'const offset = append ? state.patients.length : 0;' in js
+
+
+def test_dia_prompt_distinguishes_ordered_performed_results_and_frax_mof():
+    html = _read("static/cockpit/visit-capture/index.html")
+    prompt = html.split('<template id="diaPromptTemplate">', 1)[1].split("</template>", 1)[0]
+    assert "SNAPSHOT" in prompt and "VISIT BRIEF" in prompt and "ENCOUNTER DETAIL" in prompt
+    assert "παραγγέλθηκε" in prompt
+    assert "πραγματοποιήθηκε" in prompt
+    assert "αποτελέσματα" in prompt
+    assert "ΜΕΙΖΟΝΟΣ οστεοπορωτικού κατάγματος" in prompt
+    assert "MOF" in prompt
+    assert "κίνδυνο ισχίου" in prompt
+    assert "μια ενιαία και εσωτερικά συνεπή" in prompt
+    assert "Σημεία προς επιβεβαίωση" in prompt
+
+
+def test_dia_readability_is_demo_only_and_preserves_original_protected_save():
+    html = _read("static/cockpit/visit-capture/index.html")
+    js = _read("static/cockpit/visit-capture/app.js")
+    css = _read("static/cockpit/visit-capture/styles.css")
+    for id_ in ("diaReviewPanel", "diaReviewDetails", "diaReviewCount",
+                "diaReviewList", "structuredPreview", "previewText"):
+        assert f'id="{id_}"' in html
+    assert "Προέρχονται από το Dia — δεν είναι επιβεβαιωμένα λάθη" in html
+    assert 'readExplicitReviewNotes(input)' in js
+    assert 'sourceSectionHeading(line, level)' in js
+    assert 'if (state.mode !== "demo") return;' in js
+    assert "line.textContent = item;" in js
+    assert "body.textContent = part.body" in js
+    assert 'state.mode !== "record" || !state.preview?.can_save' in js
+    assert '"/clinical/visit-capture/save"' in js
+    assert "localStorage" not in js
+    assert ".detail-section" in css
+    assert "[hidden]{display:none!important}" in css
