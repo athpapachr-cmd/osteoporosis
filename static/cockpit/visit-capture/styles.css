@@ -50,3 +50,29 @@ textarea{width:100%;min-height:220px;resize:vertical;font-family:"SFMono-Regular
   .login-box,.patient-box{grid-template-columns:1fr}
   .segmented{grid-template-columns:1fr}
 }
+
+/* Explicit hidden beats grid/flex display rules (also fixes loginBox staying open). */
+[hidden]{display:none!important}
+.auth-toggle{position:fixed;right:14px;top:78px;z-index:20;border:1px solid #cbd9e4;border-radius:100px;background:#fff;color:var(--blue);box-shadow:var(--shadow);font-size:12px;font-weight:800;cursor:pointer;padding:9px 12px;display:flex;align-items:center;gap:6px}
+.auth-toggle:focus-visible,.mode-option:focus-visible,.button:focus-visible{outline:3px solid #86bcdf;outline-offset:2px}
+.auth-card{border-color:#cbd9e4}
+.mode-card{padding:11px 14px}
+.mode-switch{display:grid;grid-template-columns:1fr 1fr;gap:5px;border-radius:14px;padding:4px;background:#ecf2f7}
+.mode-option{border:0;border-radius:11px;padding:12px 10px;font-size:14px;font-weight:800;color:#48667d;background:transparent;cursor:pointer}
+.mode-option.active{background:#fff;color:var(--ink);box-shadow:0 2px 8px rgba(18,38,58,.08)}
+.mode-note{margin:12px 3px 2px;color:var(--muted);font-size:13px;line-height:1.5}
+.patient-picker{display:grid;grid-template-columns:1fr 1.4fr auto;gap:10px;align-items:end}
+select{border:1px solid #cbd9e4;border-radius:13px;background:#fff;color:var(--ink);padding:11px 12px;min-width:0;max-width:100%;font:inherit}
+select:focus{border-color:#7bb5dc;box-shadow:0 0 0 3px rgba(11,111,184,.10)}
+.patient-card .helper{margin:10px 0}
+.capture-tools{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.capture-tools .helper{margin:0}
+.capture-label{display:block;margin-bottom:7px;color:#526c81;font-size:12px;font-weight:800}
+.button.subtle{background:#f0f4f7;color:#365874}
+button:disabled{cursor:not-allowed}
+@media(max-width:700px){
+  .auth-toggle{top:12px;right:12px}
+  .mode-switch{grid-template-columns:1fr}
+  .patient-picker{grid-template-columns:1fr}
+  .capture-tools{align-items:stretch;flex-direction:column}
+}
