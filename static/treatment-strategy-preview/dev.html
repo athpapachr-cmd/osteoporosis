@@ -1,0 +1,9 @@
+<!doctype html><html lang="el"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Θεραπευτική Στρατηγική — συνθετικές δοκιμές</title><link rel="stylesheet" href="./strategy.css"></head><body class="devpage"><main class="devwrap"><div class="tag">DEV / SYNTHETIC ONLY</div><h1>Συνθετικά σενάρια Treatment Strategy</h1><p>Οι έλεγχοι είναι ξεχωριστοί από την κλινική επιφάνεια. Οι καταγραφές παραμένουν προσωρινές στον browser.</p><div id="cases"></div></main><script src="./fixtures.js"></script><script>
+  const box=document.querySelector('#cases');
+  for(const [id,patient] of Object.entries(StrategyFixtures)){
+    const a=document.createElement('a');a.className='devitem';a.href='./?case='+encodeURIComponent(id);
+    const name=document.createElement('strong');name.textContent=id+' — '+patient.title;
+    const brief=document.createElement('span');brief.textContent=patient.description||'';
+    a.append(name,brief);box.append(a);
+  }
+</script></body></html>
