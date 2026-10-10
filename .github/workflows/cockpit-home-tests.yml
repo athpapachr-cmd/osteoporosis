@@ -9,6 +9,7 @@ on:
       - "static/baseline-audit/g4-workspace-ergonomics.js"
       - "test_cockpit_home.py"
       - "test_cockpit_doctor_shell.js"
+      - "test_cockpit_doctor_browser.py"
       - "test_cockpit_unified_home.js"
       - "test_g4_workspace_ergonomics.js"
       - ".github/workflows/cockpit-home-tests.yml"
@@ -20,6 +21,7 @@ on:
       - "static/baseline-audit/g4-workspace-ergonomics.js"
       - "test_cockpit_home.py"
       - "test_cockpit_doctor_shell.js"
+      - "test_cockpit_doctor_browser.py"
       - "test_cockpit_unified_home.js"
       - "test_g4_workspace_ergonomics.js"
       - ".github/workflows/cockpit-home-tests.yml"
@@ -49,6 +51,22 @@ jobs:
         run: pytest -q test_cockpit_home.py
       - name: Cockpit Doctor Shell synthetic workflow
         run: node test_cockpit_doctor_shell.js
+      - name: Install browser smoke dependency
+        run: |
+          pip install playwright
+          if ! command -v google-chrome && ! command -v chromium; then
+            python -m playwright install --with-deps chromium
+          fi
+      - name: Chromium desktop and half-width user-experience smoke
+        run: python test_cockpit_doctor_browser.py
+      - name: Publish synthetic visual smoke screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cockpit-v4-visual-smoke
+          path: cockpit-v4-browser-evidence/
+          if-no-files-found: ignore
+
       - name: Osteoporosis workspace navigation regressions
         run: node test_g4_workspace_ergonomics.js
       - name: Diff hygiene
