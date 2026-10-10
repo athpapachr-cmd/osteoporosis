@@ -60,6 +60,7 @@
     );
     $("previewText").textContent = "Η προεπισκόπηση θα εμφανιστεί μόλις επικολλήσεις μία καταγραφή.";
     $("previewText").className = "preview-text empty";
+    clearFormattedPreview();
     $("blockingNotice").hidden = true;
     $("saveBtn").disabled = true;
     $("saveMessage").textContent = "";
@@ -274,6 +275,168 @@
     }
   }
 
+  // Formatting is entirely presentational: source text is preserved and
+  // nothing here infers a clinical fact, validates a diagnosis, or calls Save.
+  function foldHeading(value) {
+    return String(value || "").trim()
+      .replace(/^#{1,6}\s*/, "")
+      .replace(/^\*+|\*+$/g, "")
+      .replace(/:$/, "").trim()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .toLocaleLowerCase("el");
+  }
+
+  function isReviewHeading(value) {
+    return /^σημεια προς (?:ελεγχο|επιβεβαιωση)(?:$|\s|\()/.test(foldHeading(value));
+  }
+
+  function readExplicitReviewNotes(text) {
+    const notes = [];
+    const seen = new Set();
+    let collecting = false;
+    let pending = "";
+    function emit() {
+      const note = pending.trim();
+      if (note && !seen.has(note)) { seen.add(note); notes.push(note); }
+      pending = "";
+    }
+    String(text || "").replace(/\r\n?/g, "\n").split("\n").forEach((line) => {
+      const heading = foldHeading(line);
+      if (isReviewHeading(line)) { emit(); collecting = true; return; }
+      if (/^(snapshot|visit brief|encounter detail)$/.test(heading) ||
+          /^(?:παρακολουθηση|κωδικοποιηση|πηγες|αποφασεις|εκκρεμοτητες)(?:\s|$)/.test(heading)) {
+        if (collecting) emit();
+        collecting = false;
+        return;
+      }
+      if (!collecting) return;
+      const item = line.trim().match(/^(?:\d{1,3}[.)]|[-•])\s+(.+)/);
+      if (item) {
+        emit();
+        pending = item[1];
+      } else if (!line.trim()) {
+        emit();
+      } else if (pending) {
+        pending += " " + line.trim();
+      }
+    });
+    emit();
+    return notes;
+  }
+
+  // Split only on explicit, source-supplied section headings. Other text stays
+  // intact; unrecognized content is never silently converted into a diagnosis.
+  const sectionNames = {
+    snapshot: ["κλινικη εικονα", "μεταβολη", "αποφαση", "εκκρεμοτητες"],
+    brief: ["λογος επισκεψης", "ιστορικο και μεταβολες", "ιστορικο",
+      "μεταβολες", "ευρηματα", "κλινικη εκτιμηση", "αποφασεις",
+      "φαρμακα", "εκκρεμοτητες", "εκκρεμοτητες και παρακολουθηση",
+      "παρακολουθηση", "πλανο"],
+    detail: ["πηγες", "πηγη", "ιστορικο", "ευρηματα", "κλινικη εκτιμηση",
+      "εξετασεις και κατασταση", "εξετασεις", "φαρμακευτικη αγωγη",
+      "φαρμακα", "αποφασεις και παρακολουθηση", "αποφασεις",
+      "παρακολουθηση", "κωδικοποιηση / διοικητικα", "κωδικοποιηση",
+      "διοικητικα", "εκκρεμοτητες", "διαγνωσεις", "σημεια προς επιβεβαιωση",
+      "σημεια προς ελεγχο"]
+  };
+
+  function sourceSectionHeading(line, level) {
+    const value = line.trim().replace(/^#{1,6}\s*/, "").replace(/^\*+|\*+$/g, "");
+    const match = value.match(/^([^:：]{2,100})\s*[:：]\s*(.*)$/);
+    if (match) {
+      const name = foldHeading(match[1]);
+      if (sectionNames[level].includes(name) || (level === "detail" && isReviewHeading(name))) {
+        return {title: match[1].trim(), after: match[2].trim()};
+      }
+    }
+    if (sectionNames[level].includes(foldHeading(value)) ||
+        (level === "detail" && isReviewHeading(value))) {
+      return {title: value.replace(/:$/, "").trim(), after: ""};
+    }
+    if (level === "detail") {
+      const source = value.match(/^(Πηγή\s+[Α-ΩA-Za-z0-9]+)\s*[—–-]\s*(.*)$/i);
+      if (source) return {title: source[1].trim(), after: source[2].trim()};
+    }
+    return null;
+  }
+
+  function divideExplicitSections(text, level) {
+    const sections = [];
+    let current = {title: "", lines: []};
+    String(text || "").replace(/\r\n?/g, "\n").split("\n").forEach((line) => {
+      const heading = sourceSectionHeading(line, level);
+      if (heading) {
+        if (current.lines.join("\n").trim() || current.title) sections.push(current);
+        current = {title: heading.title, lines: heading.after ? [heading.after] : []};
+      } else {
+        current.lines.push(line);
+      }
+    });
+    if (current.lines.join("\n").trim() || current.title) sections.push(current);
+    return sections.map((part) => ({
+      title: part.title,
+      body: part.lines.join("\n").trim(),
+    }));
+  }
+
+  function clearFormattedPreview() {
+    $("structuredPreview").replaceChildren();
+    $("structuredPreview").hidden = true;
+    $("previewText").hidden = false;
+    $("diaReviewList").replaceChildren();
+    $("diaReviewPanel").hidden = true;
+    $("diaReviewDetails").open = false;
+  }
+
+  function renderExplicitReviewNotes(preview) {
+    const items = state.mode === "demo" && Array.isArray(preview.reviewItems) ? preview.reviewItems : [];
+    $("diaReviewPanel").hidden = items.length === 0;
+    const list = $("diaReviewList");
+    const wasOpen = $("diaReviewDetails").open;
+    list.replaceChildren();
+    if (!items.length) { $("diaReviewDetails").open = false; return; }
+    $("diaReviewCount").textContent = items.length + (items.length === 1 ?
+      " σημείο προς επιβεβαίωση" : " σημεία προς επιβεβαίωση");
+    items.forEach((item) => {
+      const line = document.createElement("li");
+      line.textContent = item;
+      list.appendChild(line);
+    });
+    $("diaReviewDetails").open = wasOpen;
+  }
+
+  function renderStructuredPreview(preview) {
+    const host = $("structuredPreview");
+    host.replaceChildren();
+    host.hidden = true;
+    $("previewText").hidden = false;
+    if (state.mode !== "demo") return;
+    const sections = divideExplicitSections(preview[state.level] || "", state.level);
+    const headers = sections.filter((section) => Boolean(section.title));
+    if (headers.length < 2) return;  // Old freeform notes stay readable verbatim.
+    sections.forEach((part, index) => {
+      const article = document.createElement(state.level === "detail" ? "details" : "section");
+      article.className = state.level === "detail" ? "detail-section" : "brief-section";
+      if (state.level === "detail") {
+        const heading = document.createElement("summary");
+        heading.textContent = part.title || "Εισαγωγή";
+        article.open = index === 0;
+        article.appendChild(heading);
+      } else {
+        const heading = document.createElement("h3");
+        heading.textContent = part.title || "Εισαγωγή";
+        article.appendChild(heading);
+      }
+      const body = document.createElement("div");
+      body.className = "clinical-section-body";
+      body.textContent = part.body || "Δεν έχει δοθεί περιεχόμενο για αυτή την ενότητα.";
+      article.appendChild(body);
+      host.appendChild(article);
+    });
+    host.hidden = false;
+    $("previewText").hidden = true;
+  }
+
   function parseDiaSummary(input) {
     const parts = {snapshot: [], brief: [], detail: []};
     const keys = {SNAPSHOT: "snapshot", "VISIT BRIEF": "brief", "ENCOUNTER DETAIL": "detail"};
@@ -300,6 +463,7 @@
         snapshot: "Δεν δόθηκε ξεχωριστό Snapshot από το Dia.",
         brief: input.trim(),
         detail: "Δεν δόθηκε ξεχωριστό Encounter Detail από το Dia.",
+        reviewItems: readExplicitReviewNotes(input),
         complete: false,
       };
     }
@@ -309,6 +473,7 @@
       snapshot: parts.snapshot.join("\n").trim() || missing,
       brief: parts.brief.join("\n").trim() || missing,
       detail: parts.detail.join("\n").trim() || missing,
+      reviewItems: readExplicitReviewNotes(input),
       complete: ["snapshot", "brief", "detail"].every((key) => parts[key].join("\n").trim()),
     };
   }
@@ -365,6 +530,7 @@
     } catch (_) {
       state.candidate = null;
       state.preview = null;
+      clearFormattedPreview();
       $("saveBtn").disabled = true;
       setChip("candidateState", "Μη έγκυρο JSON", "err");
       $("candidateMessage").textContent = "Το Dia πρέπει να εισαγάγει ένα έγκυρο VisitCaptureCandidateV1 JSON.";
@@ -377,6 +543,8 @@
     if (!preview) return;
     $("previewText").textContent = preview[state.level] || "";
     $("previewText").className = "preview-text";
+    renderExplicitReviewNotes(preview);
+    renderStructuredPreview(preview);
     document.querySelectorAll(".segment").forEach((button) => {
       button.classList.toggle("active", button.dataset.level === state.level);
     });
@@ -391,6 +559,7 @@
         state.preview = null;
         $("previewText").textContent = "Επικόλλησε μια σύνοψη ή πάτησε «Συνθετικό παράδειγμα».";
         $("previewText").className = "preview-text empty";
+        clearFormattedPreview();
         setChip("candidateState", "Αναμονή");
         setChip("previewState", "Δεν υπάρχει preview");
         return;
@@ -422,6 +591,7 @@
       renderPreview();
     } catch (error) {
       state.preview = null;
+      clearFormattedPreview();
       $("saveBtn").disabled = true;
       $("blockingNotice").hidden = false;
       $("blockingNotice").textContent = error.message;
