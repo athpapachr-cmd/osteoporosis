@@ -84,7 +84,7 @@ def browser_suite(width, screenshot_name):
         expect(page.locator("#doctorPopover")).to_be_visible()
         expect(page.locator("#doctorPopoverContent")).to_contain_text("Ασθενής Δοκιμής Α")
         assert "Δεν περιλαμβάνει κατ’ ανάγκη όλο το πρόγραμμα" in page.locator("#doctorPopoverContent").inner_text()
-        page.get_by_role("button", name="09:30 · Ασθενής Δοκιμής Α").click()
+        page.locator("#doctorPopoverContent button.doctor-action-row").first.click()
         expect(page.locator("#visitWorkspacePatient")).to_be_visible()
         expect(page.locator("#visitIdentityStatus")).to_have_text("Απαιτείται επιλογή φακέλου")
         page.locator("#visitBackHome").click()
@@ -111,8 +111,8 @@ def browser_suite(width, screenshot_name):
             page.locator("#doctorRailToggle").click()
             expect(page.locator("#visitSidebar")).to_be_visible()
         else:
-            page.locator("#visitSidebarPrevious").click(force=True)
-            expect(page.locator("#visitBriefOverlay")).to_be_hidden()  # no appointment in previous slot
+            expect(page.locator("#visitSidebarPrevious")).to_be_disabled()
+            expect(page.locator("#visitBriefOverlay")).to_be_hidden()
         assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1"), "horizontal overflow"
         assert not errors, errors
         assert not any("/clinical/visit-capture/save" in url for url in outbound)
