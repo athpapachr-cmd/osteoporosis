@@ -88,6 +88,8 @@ def browser_suite(width, screenshot_name):
         expect(page.locator("#doctorPopover")).to_be_visible()
         expect(page.locator("#doctorPopoverContent")).to_contain_text("Ασθενής Δοκιμής Α")
         assert "Δεν περιλαμβάνει κατ’ ανάγκη όλο το πρόγραμμα" in page.locator("#doctorPopoverContent").inner_text()
+        if width <= 990:
+            page.screenshot(path=str(OUT / "cockpit-day-popover-halfwidth.png"), full_page=True)
         page.locator("#doctorPopoverContent button.doctor-action-row").first.click()
         expect(page.locator("#visitWorkspacePatient")).to_be_visible()
         expect(page.locator("#visitIdentityStatus")).to_have_text("Απαιτείται επιλογή φακέλου")
