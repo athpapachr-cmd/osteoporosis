@@ -1,5 +1,8 @@
 # RF CURRENT — Native RF v2 bounded doctor/Horos-JPEG extension
 
+> **2026-10-11 RF A2 #149 POST-CODE R2 BLOCK — ONE AFFECTED CORRECTION WRITER ACTIVE:** Independent report P0:P1:P2=0:2:1: P1-01 require same exact indication for historical product prefill; P1-02 name/identity conflict between current RF and selected existing source must have explicit clinician resolution and server issuance guard; P2-01 move source selector/upload ahead of patient/indication in A2. Three synthetic scenario regressions; reuse rest of RF CI and previous R2 R2/R3 PASS; one independent delta+affected closure, then STOP. No new workflow/registry, PDF/JPEG persistence, merged source, production data, deploy. Implementation PR #149 DRAFT/UNMERGED.
+
+
 > **2026-10-11 RF A2 + SAVED DRAFTS FINAL HANDOFF — Correction of cross-diagnosis prior RF linking (same shoulder/side but different indication) closed and synthetic 422/no-write tested. Exact tested source+test `ac1dd54ce2f17575e160a025367557fcf8afe598`; RF CI `38170026377` SUCCESS (33 native tests). Existing protected RF reuse, old PDF import and structured drafts only; no binary attachments. Original RF doctor/JPEG/A1/PDF authority preserved. PR #149 DRAFT / UNMERGED / UNDEPLOYED. **Implementation writer RELEASED, one post-code independent R2 next and STOP.****
 
 
