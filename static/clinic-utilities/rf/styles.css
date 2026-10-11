@@ -38,3 +38,10 @@
 .doctor-form{margin-top:14px;padding-top:12px;border-top:1px dashed #dbe3ed}
 .doctor-form .action-row{justify-content:flex-start;flex-wrap:wrap}
 @media(max-width:760px){.doctor-directory-row{align-items:stretch;flex-direction:column}.unknown-medication{grid-template-columns:1fr}.dictionary-row{align-items:stretch;flex-direction:column}}
+
+/* Horos JPEG: keep the real accessible input, but do not display its stale native filename. */
+.horos-upload{position:relative;cursor:pointer;justify-items:start}
+.horos-picker-action{display:inline-flex;align-items:center;justify-content:center;width:max-content;max-width:100%;padding:10px 14px;border-radius:10px;background:#edf2f7;color:#30465f;font-size:13px;font-weight:800;cursor:pointer}
+.horos-upload:hover .horos-picker-action{background:#e0eaf5}
+.horos-upload:focus-within .horos-picker-action{outline:2px solid #527dab;outline-offset:2px}
+.horos-upload input.horos-file-input{position:absolute;width:1px;height:1px;margin:0;padding:0;border:0;overflow:hidden;opacity:0;clip-path:inset(50%);white-space:nowrap}

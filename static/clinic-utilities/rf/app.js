@@ -735,8 +735,10 @@
     });
     const status = $("horosImageStatus");
     status.className = message ? "validation-panel error" : "muted";
-    status.textContent = message || (state.horosImages.length ?
-      state.horosImages.length + " εικόνα/ες με σειρά επισύναψης.": "Δεν έχουν προστεθεί εικόνες.");
+    const count = state.horosImages.length;
+    status.textContent = message || (count
+      ? `${count} ${count === 1 ? "εικόνα έτοιμη" : "εικόνες έτοιμες"} για επισύναψη.`
+      : "Δεν έχουν προστεθεί εικόνες.");
   }
 
   function addHorosImages() {
