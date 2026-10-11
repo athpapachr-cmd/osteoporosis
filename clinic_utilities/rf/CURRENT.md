@@ -1,5 +1,8 @@
 # RF CURRENT — Native RF v2 bounded doctor/Horos-JPEG extension
 
+> **2026-10-11 RF #146 PRODUCTION EXACT-SOURCE LIVE / NO-PHI SMOKE PENDING:** PO-approved and independently R2-closed PR #146 squash MERGED `c2f9fafd3fc0873acfb8877dd9761942e63bb75a`. Reviewed RF source/test blobs unchanged. Existing Render service `srv-d5qfk31r0fns73di596g` auto-deployed latest main `4d66b80fcaf64198227662a0364a79304dac6d8d` via `dep-db5ks93rjlhs73as4ha0`: **LIVE** at `2026-10-11T08:53:30.470641Z`; prior deploys canceled by new commits. Synthetic/public no-PHI/no-write smoke pending; no authenticated clinical processing or real records tested. This R0 checkpoint itself advances main and triggers normal auto-deploy; verify next exact source to LIVE. Scoped release writer reserved only for smoke and final closeout.
+
+
 > **2026-10-11 RF #146 SQUASH MERGED / DEPLOY IDENTITY PENDING:** After independent P1-01 closure PASS/0:0:0 and Product Owner's explicit release, PR #146 was READY and latest Canonical Impact gate `38126204659` PASS. GitHub squash merge `c2f9fafd3fc0873acfb8877dd9761942e63bb75a` confirmed on `main`; validated RF UI/test/backend/PDF blobs match reviewed source. Native managed physician directory and Horos JPEG are **MERGED, NOT YET VERIFIED LIVE**, no real-data smoke; observe the existing automatic Render deploy without a second manual trigger, then safely verify no-PHI runtime identity/health and update release state. This merge checkpoint is R0 documentation only.
 
 
