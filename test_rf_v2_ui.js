@@ -111,6 +111,12 @@ assert(html.includes('id="doctorSelect"'), 'doctor dropdown is required');
 for (const token of ['doctorManagement','doctorDirectoryList','doctorForm','doctorSave','doctorCancel']) {
   assert(html.includes('id="' + token + '"'), 'managed doctor UI missing '+token);
 }
+assert(html.includes('id="rfSourceSearch"') && html.includes('id="rfPreviousPdf"'), 'A2 must offer one-field search and old RF PDF upload');
+assert(html.includes('id="rfDraftSaveBtn"') && html.includes('id="rfDraftList"'), 'A1/A2 saved drafts need Save and Resume controls');
+assert(app.includes("'/api/reuse/search?query='") && app.includes("'/api/reuse/pdf'"), 'A2 history must reuse the protected RF API');
+assert(app.includes("'/api/drafts'") && app.includes('saveRfDraft') && app.includes('restoreRfDraft'), 'saved drafts must be server-resumable');
+assert(app.includes("state.draftId") && app.includes("draft_revision"), 'final RF create must link revisioned draft');
+assert(!html.includes('Συμπλήρωσε ταυτότητα, ένδειξη και μία πλευρά (δεξιά ή αριστερά) πριν την αναζήτηση.'), 'no three-field gate before old RF search');
 assert(app.includes('/api/doctors'), 'doctor directory must use the protected native RF API');
 assert(!app.includes('RF_DOCTOR_MAXOUTLOU_PROFILE_JSON'), 'doctor CRUD must not depend on Render variables');
 assert(!app.includes('localStorage') && !app.includes('sessionStorage'), 'RF doctors must not use browser storage');

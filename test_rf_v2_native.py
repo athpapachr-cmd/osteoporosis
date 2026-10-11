@@ -778,6 +778,194 @@ class RFDoctorHorosExtensionTests(unittest.TestCase):
 
 
 
+
+class RFReuseSavedDraftTests(unittest.TestCase):
+    def setUp(self):
+        self.engine = memory_engine()
+        self.env = patch.dict(os.environ, {
+            "CLINICAL_DATA_KEY": CLINICAL_KEY,
+            "RF_DOCTOR_PROFILE_JSON": DOCTOR_JSON,
+            "RF_PRODUCT_CATALOG_JSON": PRODUCT_JSON,
+        }, clear=False)
+        self.env.start()
+        app = FastAPI()
+        app.include_router(build_rf_router(self.engine))
+        self.client = TestClient(app)
+        self.headers = {"X-Clinical-Key": CLINICAL_KEY}
+        self.base = "/clinical/clinic-utilities/rf/api"
+
+    def tearDown(self):
+        self.client.close()
+        self.env.stop()
+
+    def test_incomplete_a1_a2_drafts_saved_reopened_revisioned_and_no_binary(self):
+        from sqlalchemy.orm import Session
+        from clinic_utilities.rf.persistence import RFApplicationORM, RFProcedureHistoryORM
+        self.assertEqual(self.client.get(self.base + "/drafts").status_code, 401)
+        self.assertEqual(self.client.post(self.base + "/drafts", json={"fields":{}}).status_code, 401)
+        first = self.client.post(self.base + "/drafts", headers=self.headers, json={
+            "fields":{"pathway":"A1","patient_name":"Μαρία Παπαδοπούλου",
+                      "identity_number":"","nsaid_trials":[],
+                      "additional_notes":"Ελλιπές πρόχειρο"}
+        })
+        self.assertEqual(first.status_code, 201, first.text)
+        obj = first.json()
+        self.assertEqual(obj["revision"], 1)
+        self.assertTrue(obj["id"])
+        recent = self.client.get(self.base + "/drafts", headers=self.headers)
+        self.assertEqual(recent.status_code, 200, recent.text)
+        self.assertEqual(len(recent.json()["drafts"]), 1)
+        self.assertEqual(self.client.get(self.base + "/drafts", headers=self.headers,
+                          params={"query":"παπαδοπουλου"}).json()["drafts"][0]["id"], obj["id"])
+        reopened = self.client.get(self.base + "/drafts/" + obj["id"], headers=self.headers)
+        self.assertEqual(reopened.status_code, 200)
+        self.assertEqual(reopened.json()["fields"]["additional_notes"], "Ελλιπές πρόχειρο")
+        self.assertFalse(reopened.json()["attachments_saved"])
+        newer = {"pathway":"A2", "identity_number":"",
+                 "legacy_history":{"actual_procedure_date":"","vas_before":None,
+                                   "vas_after":None,"last_followup_date":"","last_followup_vas":None},
+                 "doctor_key":""}
+        put = self.client.put(self.base + "/drafts/" + obj["id"], headers=self.headers,
+                              json={"revision":1,"fields":newer})
+        self.assertEqual(put.status_code, 200, put.text)
+        self.assertEqual(put.json()["revision"], 2)
+        self.assertEqual(self.client.put(self.base + "/drafts/" + obj["id"],
+            headers=self.headers, json={"revision":1,"fields":{"pathway":"A1"}}).status_code, 409)
+        self.assertEqual(self.client.get(self.base + "/drafts/" + obj["id"],
+            headers=self.headers).json()["fields"]["pathway"], "A2")
+        self.assertEqual(self.client.post(self.base + "/drafts", headers=self.headers,
+            json={"fields":{"pathway":"A1","imaging_report":"%PDF-fake-data"}}).status_code, 422)
+        self.assertEqual(self.client.post(self.base + "/drafts", headers=self.headers,
+            json={"fields":{"pathway":"A1","additional_notes":"X"*50000}}).status_code, 422)
+        restarted = FastAPI()
+        restarted.include_router(build_rf_router(self.engine))
+        with TestClient(restarted) as new_client:
+            revived = new_client.get(self.base + "/drafts/" + obj["id"], headers=self.headers)
+            self.assertEqual(revived.status_code, 200)
+            self.assertEqual(revived.json()["fields"]["pathway"], "A2")
+        with Session(self.engine) as session:
+            self.assertEqual(session.query(RFApplicationORM).count(), 0)
+            self.assertEqual(session.query(RFProcedureHistoryORM).count(), 0)
+        self.assertEqual(self.client.request("DELETE", self.base + "/drafts/" + obj["id"],
+            headers=self.headers, json={"revision":1}).status_code, 409)
+        deleted = self.client.request("DELETE", self.base + "/drafts/" + obj["id"],
+            headers=self.headers, json={"revision":2})
+        self.assertEqual(deleted.status_code, 200)
+        self.assertEqual(self.client.get(self.base + "/drafts/" + obj["id"],
+            headers=self.headers).status_code, 404)
+
+    def test_single_field_greek_name_identity_gesy_and_explicit_source(self):
+        from clinic_utilities.rf.persistence import record_application, record_legacy_procedure
+        orig = make_a1_draft(patient_name="Μαρία Παπαδοπούλου",
+                             identity_number="SYN-001", gesy_number="CY-GESY-01").model_dump()
+        original = record_application(self.engine, {**orig, "site_key":"knee",
+            "application_date":"2026-08-01"})
+        other = make_a1_draft(patient_name="Μαρία Παπαδοπούλου",
+                             identity_number="SYN-002", gesy_number="CY-GESY-02").model_dump()
+        record_application(self.engine, {**other, "site_key":"knee",
+            "application_date":"2026-08-01"})
+        historic = record_legacy_procedure(self.engine, {
+            "identity_number":"SYN-001", "indication_code":"KNEE_OA_KL34",
+            "site_key":"knee", "laterality":"left", "exact_location":"Αριστερό γόνατο",
+            "actual_procedure_date":"2026-08-05", "vas_before":8, "vas_after":3,
+            "last_followup_date":"2026-08-10", "last_followup_vas":4
+        })
+        for search in ("μαρια παπαδοπουλου", "SYN001", "CY GESY 01"):
+            response = self.client.get(self.base + "/reuse/search",
+                headers=self.headers, params={"query":search})
+            self.assertEqual(response.status_code, 200, (search, response.text))
+            self.assertTrue(any(r["id"] == original for r in response.json()["results"]))
+        all_named = self.client.get(self.base + "/reuse/search",
+             headers=self.headers, params={"query":"ΜΑΡΊΑ"}).json()["results"]
+        self.assertEqual(sum(r["kind"] == "application" for r in all_named), 2)
+        self.assertTrue(any(r["kind"] == "procedure" and r["id"] == historic for r in all_named))
+        selected = self.client.get(self.base + "/reuse/application/" + original,
+                                   headers=self.headers)
+        self.assertEqual(selected.status_code, 200)
+        self.assertEqual(selected.json()["fields"]["identity_number"], "SYN-001")
+        self.assertNotIn("doctor_snapshot", selected.json()["fields"])
+        self.assertFalse(selected.json()["source"]["actual_procedure"])
+        procedure = self.client.get(self.base + "/reuse/procedure/" + historic, headers=self.headers)
+        self.assertEqual(procedure.status_code, 200)
+        self.assertTrue(procedure.json()["source"]["actual_procedure"])
+        self.assertEqual(procedure.json()["actual_procedure"]["vas_after"], 3)
+        self.assertEqual(self.client.get(self.base + "/reuse/search",
+             params={"query":"Μαρία"}).status_code, 401)
+
+    def test_reuse_cross_patient_rejection_and_a2_actual_procedure_and_draft_completion(self):
+        from clinic_utilities.rf.persistence import record_application, record_legacy_procedure
+        from sqlalchemy.orm import Session
+        from clinic_utilities.rf.persistence import RFApplicationORM, RFSavedDraftORM
+        base_draft = make_a1_draft(patient_name="Synthetic A", identity_number="PAT-A").model_dump()
+        previous = record_application(self.engine, {**base_draft, "site_key":"knee"})
+        real = record_legacy_procedure(self.engine, {
+            "identity_number":"PAT-A","indication_code":"KNEE_OA_KL34",
+            "site_key":"knee","laterality":"left","exact_location":"Αριστερό γόνατο",
+            "actual_procedure_date":"2026-06-01","vas_before":9,"vas_after":3,
+            "last_followup_date":"2026-06-10","last_followup_vas":5
+        })
+        draft = {"pathway":"A2","patient_name":"Synthetic A","identity_number":"PAT-A",
+                 "gesy_number":"GESY-SYN", "age":67, "doctor_key":"papachristou",
+                 "product_key":"medikey","indication_code":"KNEE_OA_KL34",
+                 "laterality":"left","exact_location":"Αριστερό γόνατο",
+                 "imaging_review_confirmed":True,"procedure_history_id":real,
+                 "source_kind":"application","source_id":previous,
+                 "a2_current_followup_date":"2026-08-09","a2_current_followup_vas":7}
+        partial = self.client.post(self.base + "/drafts",headers=self.headers,
+            json={"fields":{"pathway":"A2","identity_number":"PAT-A",
+                           "procedure_history_id":real,"source_kind":"application","source_id":previous}})
+        self.assertEqual(partial.status_code, 201, partial.text)
+        item = partial.json()
+        draft.update(draft_id=item["id"],draft_revision=item["revision"])
+        def create(payload):
+            with patch("clinic_utilities.rf.api.build_official_rf_pdf", return_value=b"%PDF-synthetic") as build:
+                response = self.client.post(self.base + "/create",
+                    headers=self.headers, data={"draft_json":json.dumps(payload)},
+                    files={"imaging_report":("imaging.pdf",make_pdf(1),"application/pdf")})
+                return response, build
+        wrong, _ = create({**draft, "identity_number":"WRONG-PATIENT"})
+        self.assertEqual(wrong.status_code, 422, wrong.text)
+        with Session(self.engine) as session:
+            self.assertEqual(session.query(RFSavedDraftORM).count(), 1)
+            self.assertEqual(session.query(RFApplicationORM).count(), 1)
+        success, build = create(draft)
+        self.assertEqual(success.status_code, 200, success.text)
+        self.assertEqual(build.call_args.kwargs["prior_history"]["last_followup_vas"], 7)
+        with Session(self.engine) as session:
+            self.assertEqual(session.query(RFSavedDraftORM).count(), 0)
+            self.assertEqual(session.query(RFApplicationORM).count(), 2)
+        repeat, _ = create(draft)
+        self.assertEqual(repeat.status_code, 409, repeat.text)
+        with Session(self.engine) as session:
+            self.assertEqual(session.query(RFApplicationORM).count(), 2)
+
+    def test_pdf_old_form_read_is_provisional_and_unrelated_pdf_not_accepted(self):
+        from clinic_utilities.rf.catalog import DoctorProfile, ProductProfile
+        from clinic_utilities.rf.pdf import build_official_rf_pdf
+        doctor = DoctorProfile(name="Synthetic Doctor", gesy_code="SYN",
+                 specialty="Synthetic",medical_center="Synthetic Centre",
+                 phone="000",email="synthetic@example.invalid")
+        product = ProductProfile(key="medikey",label="Medikey",code="SYN-M",
+                 description="Synthetic",quantity="1")
+        values = {**make_a1_draft().model_dump(), "application_date":"2026-09-11",
+                  "site_key":"knee","rf_reason_text":"Synthetic indication"}
+        pdf = build_official_rf_pdf(values,doctor=doctor,product=product,
+                                     radiology_pdf_bytes=make_pdf(1))
+        ok = self.client.post(self.base + "/reuse/pdf",headers=self.headers,
+             files={"previous_rf_pdf":("old-rf.pdf",pdf,"application/pdf")})
+        self.assertEqual(ok.status_code, 200, ok.text[:500])
+        self.assertIn(ok.json()["status"],("recognized","partial"))
+        self.assertEqual(ok.json()["fields"]["identity_number"], "SYN123")
+        self.assertFalse(ok.json()["actual_procedure_verified"])
+        self.assertFalse(ok.json()["attachments_saved"])
+        wrong = self.client.post(self.base + "/reuse/pdf",headers=self.headers,
+             files={"previous_rf_pdf":("not-rf.pdf",make_pdf(5),"application/pdf")})
+        self.assertEqual(wrong.status_code, 200)
+        self.assertEqual(wrong.json()["status"],"unrecognized")
+        self.assertEqual(self.client.post(self.base + "/reuse/pdf",
+             files={"previous_rf_pdf":("old-rf.pdf",pdf,"application/pdf")}).status_code,401)
+
+
 class RFIntegrationSourceTests(unittest.TestCase):
     def test_main_mounts_native_router_not_gateway(self):
         source = Path("main.py").read_text(encoding="utf-8")
