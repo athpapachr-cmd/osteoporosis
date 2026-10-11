@@ -92,16 +92,8 @@ RF_REASON_LABELS = {
 # GeSY RF applications are unilateral: exactly one left or right target per application.
 LATERALITY_LABELS = {"left": "Αριστερά", "right": "Δεξιά"}
 
-# Public selection keys/labels; personal details are resolved only from private server config.
+# Stable legacy default; any other doctor is added via the protected RF directory.
 DEFAULT_DOCTOR_KEY = "papachristou"
-DOCTOR_LABELS = {
-    "papachristou": "Αθανάσιος Παπαχρήστου",
-    "maxoutlou": "ΑΣΑΝ ΜΑΞΟΥΤΛΟΥ — D3239",
-}
-DOCTOR_PROFILE_ENV = {
-    "papachristou": "RF_DOCTOR_PROFILE_JSON",  # existing deployment setting
-    "maxoutlou": "RF_DOCTOR_MAXOUTLOU_PROFILE_JSON",
-}
 
 
 
@@ -131,14 +123,6 @@ class DoctorProfile:
         if any(not value for value in values.values()):
             raise ValueError(f"{variable_name} is incomplete")
         return cls(**values)
-
-
-def doctor_profile_for_key(doctor_key: str) -> DoctorProfile:
-    """Only the configured server-side profile can supply official PDF doctor fields."""
-    variable_name = DOCTOR_PROFILE_ENV.get(doctor_key)
-    if variable_name is None:
-        raise ValueError("Unknown RF doctor key")
-    return DoctorProfile.from_environment(variable_name)
 
 
 @dataclass(frozen=True)

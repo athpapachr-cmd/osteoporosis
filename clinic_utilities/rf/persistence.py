@@ -10,9 +10,11 @@ from .parsers import (
     is_medication_identity_alias,
     normalize_medication_alias,
 )
-from sqlalchemy import Column, DateTime, Integer, JSON, String, select
+from sqlalchemy import Boolean, Column, DateTime, Integer, JSON, String, select
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, Session
+
+from .catalog import DEFAULT_DOCTOR_KEY, DoctorProfile
 
 class RFBase(DeclarativeBase):
     pass
@@ -32,6 +34,77 @@ class RFApplicationORM(RFBase):
     product_key = Column(String, nullable=False)
     payload_json = Column(JSON, nullable=False, default=dict)
     created_at = Column(DateTime, nullable=False, index=True)
+
+# Managed physician directory within the existing protected RF database.
+# No irreversible deletion: previously issued documents retain their own snapshot.
+class RFDoctorProfileORM(RFBase):
+    __tablename__ = "clinic_rf_doctor_profiles"
+    key = Column(String(40), primary_key=True)
+    name = Column(String(200), nullable=False)
+    gesy_code = Column(String(80), nullable=False, unique=True)
+    specialty = Column(String(160), nullable=False)
+    medical_center = Column(String(240), nullable=False)
+    phone = Column(String(80), nullable=False)
+    email = Column(String(240), nullable=False)
+    active = Column(Boolean, nullable=False, default=True)
+    revision = Column(Integer, nullable=False, default=1)
+    created_at = Column(DateTime, nullable=False)
+    updated_at = Column(DateTime, nullable=False)
+
+
+DOCTOR_FIELDS = ("name", "gesy_code", "specialty", "medical_center", "phone", "email")
+
+
+def rf_doctor_snapshot(row: RFDoctorProfileORM) -> dict[str, str]:
+    return {field: getattr(row, field) for field in DOCTOR_FIELDS}
+
+
+def rf_doctor_data(row: RFDoctorProfileORM) -> dict[str, Any]:
+    return {
+        "key": row.key, **rf_doctor_snapshot(row),
+        "active": bool(row.active), "revision": int(row.revision),
+    }
+
+
+def list_rf_doctors(engine: Engine) -> list[dict[str, Any]]:
+    with Session(engine) as session:
+        rows = session.scalars(
+            select(RFDoctorProfileORM).order_by(RFDoctorProfileORM.created_at, RFDoctorProfileORM.key)
+        ).all()
+        return [rf_doctor_data(row) for row in rows]
+
+
+def create_rf_doctor(engine: Engine, data: dict[str, str]) -> dict[str, Any]:
+    now = utcnow()
+    with Session(engine) as session:
+        # Never recycle an identifier from a removed physician.
+        row = RFDoctorProfileORM(key=uuid4().hex, **data, active=True, revision=1,
+                                 created_at=now, updated_at=now)
+        session.add(row)
+        session.commit()
+        return rf_doctor_data(row)
+
+
+def revise_rf_doctor(engine: Engine, key: str, revision: int, *,
+                     data: dict[str, str] | None = None,
+                     active: bool | None = None) -> dict[str, Any]:
+    with Session(engine) as session:
+        row = session.scalar(select(RFDoctorProfileORM).where(
+            RFDoctorProfileORM.key == key).with_for_update())
+        if row is None:
+            raise LookupError("doctor_not_found")
+        if row.revision != revision:
+            raise ValueError("doctor_revision_conflict")
+        if data is not None:
+            for field in DOCTOR_FIELDS:
+                setattr(row, field, data[field])
+        if active is not None:
+            row.active = active
+        row.revision += 1
+        row.updated_at = utcnow()
+        session.commit()
+        return rf_doctor_data(row)
+
 
 class RFMedicationAliasORM(RFBase):
     __tablename__ = "clinic_rf_medication_aliases"
@@ -73,6 +146,20 @@ def normalize_identity(value: str) -> str:
 
 def initialize_rf_tables(engine: Engine) -> None:
     RFBase.metadata.create_all(bind=engine)
+    # Seed only once from the existing deployment setting; afterwards the managed
+    # value wins, including edits and deliberate deactivation across restarts.
+    with Session(engine) as session:
+        if session.get(RFDoctorProfileORM, DEFAULT_DOCTOR_KEY) is None:
+            try:
+                default = DoctorProfile.from_environment()
+            except ValueError:
+                return  # No configured default: explicit later registration/edit required.
+            now = utcnow()
+            session.add(RFDoctorProfileORM(
+                key=DEFAULT_DOCTOR_KEY,
+                **{field: getattr(default, field) for field in DOCTOR_FIELDS},
+                active=True, revision=1, created_at=now, updated_at=now))
+            session.commit()
 
 _ALIAS_DOSE_RE = re.compile(r"(?i)(?<!\w)\d+(?:[.,]\d+)?\s*(?:mg|g|gr|mcg|µg|χάπια?|χαπια?|δισκία|δισκια|tabs?|tablets?)(?!\w)")
 
@@ -189,11 +276,15 @@ def _minimal_application_payload(data: dict[str, Any]) -> dict[str, Any]:
             ]
     return persisted
 
-def record_application(engine: Engine, data: dict[str, Any]) -> str:
+def record_application(engine: Engine, data: dict[str, Any], *, session: Session | None = None) -> str:
     application_id=str(uuid4())
     row=RFApplicationORM(id=application_id,patient_identity_key=normalize_identity(data["identity_number"]),patient_name=str(data["patient_name"]).strip(),gesy_number=str(data["gesy_number"]).strip(),patient_age=int(data["age"]),pathway=str(data["pathway"]),indication_code=str(data["indication_code"]),site_key=str(data["site_key"]),laterality=str(data.get("laterality") or "none"),exact_location=str(data["exact_location"]).strip(),product_key=str(data["product_key"]),payload_json=_minimal_application_payload(data),created_at=utcnow())
-    with Session(engine) as session:
-        session.add(row); session.commit()
+    if session is not None:
+        session.add(row)
+    else:
+        with Session(engine) as own_session:
+            own_session.add(row)
+            own_session.commit()
     return application_id
 
 def list_procedure_history(engine: Engine, identity_number: str, *, site_key: str="", laterality: str="") -> list[dict[str, Any]]:
@@ -212,10 +303,17 @@ def get_procedure_history(engine: Engine, history_id: str, identity_number: str)
         if row is None or row.patient_identity_key!=identity_key: return None
         return {"procedure_history_id":row.id,"indication_code":row.indication_code,"site_key":row.site_key,"laterality":row.laterality,"exact_location":row.exact_location,"actual_procedure_date":row.actual_procedure_date,"vas_before":row.vas_before,"vas_after":row.vas_after,"last_followup_date":row.last_followup_date,"last_followup_vas":row.last_followup_vas,"provenance":row.provenance}
 
-def record_legacy_procedure(engine: Engine, data: dict[str, Any]) -> str:
+def record_legacy_procedure(engine: Engine, data: dict[str, Any], *, session: Session | None = None) -> str:
     normalized={**data,"patient_identity_key":normalize_identity(data["identity_number"]),"provenance":"clinician_manual"}; dedupe_key=_history_dedupe_key(normalized)
-    with Session(engine) as session:
-        existing=session.scalar(select(RFProcedureHistoryORM).where(RFProcedureHistoryORM.dedupe_key==dedupe_key))
+    def save(target: Session) -> str:
+        existing=target.scalar(select(RFProcedureHistoryORM).where(RFProcedureHistoryORM.dedupe_key==dedupe_key))
         if existing is not None: return existing.id
         now=utcnow(); row=RFProcedureHistoryORM(id=str(uuid4()),patient_identity_key=normalized["patient_identity_key"],indication_code=str(data["indication_code"]),site_key=str(data["site_key"]),laterality=str(data.get("laterality") or "none"),exact_location=str(data["exact_location"]).strip(),actual_procedure_date=str(data["actual_procedure_date"]),vas_before=int(data["vas_before"]),vas_after=int(data["vas_after"]),last_followup_date=str(data["last_followup_date"]),last_followup_vas=int(data["last_followup_vas"]),provenance="clinician_manual",dedupe_key=dedupe_key,created_at=now,updated_at=now)
-        session.add(row); session.commit(); return row.id
+        target.add(row)
+        return row.id
+    if session is not None:
+        return save(session)
+    with Session(engine) as own_session:
+        result = save(own_session)
+        own_session.commit()
+        return result
