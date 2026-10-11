@@ -49,3 +49,59 @@ assert(main.includes('app.include_router(build_rf_router(engine))'), 'main.py mu
 assert(!main.includes('app.include_router(build_rf_gateway_router())'), 'legacy RF gateway must not be mounted');
 
 console.log('RF v2 UI integrity regression: PASS');
+
+
+// Exercise the actual browser handlers with a small deterministic DOM shim.
+const vm = require('vm');
+const nodes = {};
+const revoked = [];
+let blobId = 0;
+function fakeElement(tag) {
+  return {
+    tag, children: [], listeners: {}, className: '', textContent: '', value: '',
+    append(...items) { this.children.push(...items); },
+    replaceChildren(...items) { this.children = items; },
+    addEventListener(type, fn) { this.listeners[type] = fn; },
+    setAttribute() {},
+  };
+}
+const doc = {
+  getElementById(id) { return nodes[id] ||= fakeElement(id); },
+  createElement: fakeElement,
+  addEventListener() {}, // install but do not run unrelated page bootstrap
+};
+const instrumented = app.replace(/\}\)\(\);\s*$/, '\n  globalThis.__rfTest = {addHorosImages, releaseHorosPreviews};\n})();');
+assert.notStrictEqual(instrumented, app, 'RF handler instrumentation point must be present');
+const browser = {
+  document: doc,
+  URL: {
+    createObjectURL() { return 'blob:rf-test-' + (++blobId); },
+    revokeObjectURL(value) { revoked.push(value); },
+  },
+  window: {},
+};
+vm.runInNewContext(instrumented, browser, {filename: 'rf-app.js'});
+const jpg = name => ({name, size: 1024, type: 'image/jpeg'});
+const picker = doc.getElementById('horosJpegs');
+picker.files = [jpg('first.jpg'), jpg('second.jpeg')];
+browser.__rfTest.addHorosImages();
+let grid = doc.getElementById('horosImageGrid');
+assert.deepStrictEqual(grid.children.map(x => x.children[1].textContent), ['first.jpg', 'second.jpeg']);
+assert(grid.children.every(x => x.children[0].src.startsWith('blob:rf-test-')), 'thumbnails need blob URLs');
+const removed = grid.children[0].children[0].src;
+grid.children[0].children[2].listeners.click();
+assert.deepStrictEqual(grid.children.map(x => x.children[1].textContent), ['second.jpeg']);
+assert(revoked.includes(removed), 'removal must revoke its blob URL');
+picker.files = [jpg('third.jpg')];
+browser.__rfTest.addHorosImages();
+assert.deepStrictEqual(grid.children.map(x => x.children[1].textContent), ['second.jpeg', 'third.jpg']);
+picker.files = [{name:'not-an-image.png', size:100, type:'image/png'}];
+browser.__rfTest.addHorosImages();
+assert.strictEqual(grid.children.length, 2);
+assert(doc.getElementById('horosImageStatus').textContent.includes('JPEG'), 'error should be displayed');
+browser.__rfTest.releaseHorosPreviews();
+assert.strictEqual(revoked.length, 3, 'all preview URLs must be released');
+assert(html.includes('id="horosJpegs"') && html.includes('multiple'), 'multiple file selection is required');
+assert(html.includes('id="doctorSelect"'), 'doctor dropdown is required');
+assert(app.includes("form.append('horos_jpegs'") || app.includes("form.append('horos_jpegs',"), 'image files must reach multipart upload');
+console.log('RF v2 Horos browser selection/preview/removal: PASS');
