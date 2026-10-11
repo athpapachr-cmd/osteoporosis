@@ -1,5 +1,8 @@
 # RF CURRENT — Native RF v2 bounded doctor/Horos-JPEG extension
 
+> **2026-10-11 RF A2/DRAFTS PR #149 READY / RELEASE GATE:** Product Owner authorized production release following independent corrected R2 PASS/0:0:0. PR #149 READY, unmerged and not deployed. Existing RF regression `38173581853` SUCCESS, canonical impact `38173603309` SUCCESS; reviewed eight RF code/test blobs unchanged. Main at release activation `7186a26105e6edd37ed02b089781ce3909c2eaf3`. Next finish canonical READY checkpoint, reconfirm exact GitHub head/base + green gate, squash merge, then verify existing Render main auto-deploy. No binary RF draft attachments, real patient data or provider mutations; release writer scoped to release only.
+
+
 > **2026-10-11 RF A2 / STRUCTURED DRAFTS #149 RELEASE APPROVED / WRITER ACTIVE:** Product Owner explicitly authorized controlled merge and production deployment following one independent post-code correction-closure R2 PASS/0:0:0, frozen code+tests unchanged. Implementation PR #149 DRAFT/UNMERGED; canonical impact declaration and READY/merge gates next. Render `srv-d5qfk31r0fns73di596g` auto-deploys `main`, no manual second deploy. Only no-PHI/no-write smoke; actual clinical-patient processing not approved. A2 source-first, name/identity resolution, indication-linked product, A1/A2 saved drafts **without attached PDFs/JPEGs** remain frozen; design PR #148 separate. Writer restricted to release metadata/canonicals, no source changes.
 
 
