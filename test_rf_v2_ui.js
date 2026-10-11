@@ -112,7 +112,7 @@ assert(!app.includes('localStorage') && !app.includes('sessionStorage'), 'RF doc
 assert(app.includes("form.append('horos_jpegs'") || app.includes("form.append('horos_jpegs',"), 'image files must reach multipart upload');
 console.log('RF v2 Horos browser selection/preview/removal: PASS');
 
-\n// P1-01: the actual edit/add/status handlers must preserve the issuer of the
+// P1-01: the actual edit/add/status handlers must preserve the issuer of the
 // in-progress RF and all unrelated draft fields. No text-token-only oracle.
 async function testIssuerSelectionAfterDirectoryChanges() {
   const sample = (key, name, gesy_code) => ({
