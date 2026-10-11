@@ -71,7 +71,7 @@ const doc = {
   createElement: fakeElement,
   addEventListener() {}, // install but do not run unrelated page bootstrap
 };
-const instrumented = app.replace(/\}\)\(\);\s*$/, '\n  globalThis.__rfTest = {addHorosImages, releaseHorosPreviews, loadContract, saveDoctor, editDoctor, createPdf};\n})();');
+const instrumented = app.replace(/\}\)\(\);\s*$/, '\n  globalThis.__rfTest = {addHorosImages, releaseHorosPreviews, loadContract, saveDoctor, editDoctor, createPdf, populateRfFields, savedDraftFields, restoreRfDraft};\n})();');
 assert.notStrictEqual(instrumented, app, 'RF handler instrumentation point must be present');
 const browser = {
   document: doc,
@@ -255,6 +255,59 @@ async function testIssuerSelectionAfterDirectoryChanges() {
   assert(get("validationPanel").textContent.includes("Επίλεξε ρητά"));
   assert(!received.some(x => x.path === "/api/create"), "cannot submit without issuer");
 }
-testIssuerSelectionAfterDirectoryChanges().then(() => {
+testIssuerSelectionAfterDirectoryChanges().then(async () => {
   console.log("RF v2 managed-doctor issuer-selection/retained-draft regression: PASS");
+  await testReusableRFFieldsAndDraftRestore();
+  console.log("RF v2 A2 prefill and saved-draft browser handlers: PASS");
 }).catch(error => { console.error(error); process.exitCode = 1; });
+
+
+async function testReusableRFFieldsAndDraftRestore() {
+  doc.querySelectorAll = () => [];
+  const get = id => doc.getElementById(id);
+  get('adverseRows').querySelectorAll = () => [];
+  get('doctorSelect').value = 'papachristou';
+  get('patientName').value = 'Typed patient name';
+  get('identityNumber').value = 'PAT-ONE';
+  get('age').value = '';
+  get('indicationSelect').value = '';
+  get('lateralitySelect').value = '';
+  const conflicts = browser.__rfTest.populateRfFields({
+    patient_name:'Older stored name', identity_number:'PAT-ONE',
+    gesy_number:'SYN-GESY', age:67, indication_code:'KNEE_OA_KL34',
+    laterality:'left', exact_location:'Historical knee'
+  });
+  assert(conflicts.includes('patient_name'), 'typed name must not be silently overwritten');
+  assert.strictEqual(get('doctorSelect').value, 'papachristou', 'prefill cannot switch issuer');
+  assert.strictEqual(get('identityNumber').value, 'PAT-ONE');
+  assert.strictEqual(get('indicationSelect').value, 'KNEE_OA_KL34');
+  assert.strictEqual(get('lateralitySelect').value, 'left');
+  assert.throws(() => browser.__rfTest.populateRfFields({
+    identity_number:'OTHER-IDENTITY', patient_name:'Other person'
+  }), /άλλη ταυτότητα/);
+  assert.strictEqual(get('identityNumber').value, 'PAT-ONE');
+  const saved = browser.__rfTest.savedDraftFields();
+  assert(!Object.hasOwn(saved, 'imaging_review_confirmed'), 'imaging confirmation is not saved');
+  assert(!Object.hasOwn(saved, 'imaging_report') && !Object.hasOwn(saved, 'horos_jpegs'),
+    'draft cannot include binary attachment fields');
+  get('imagingReport').value = 'old.pdf';
+  get('imagingStatus').hidden = false;
+  await browser.__rfTest.restoreRfDraft({
+    pathway:'A2', doctor_key:'physicianB', patient_name:'Saved patient',
+    identity_number:'DRAFT-001', age:68, gesy_number:'SYN-GESY',
+    indication_code:'KNEE_OA_KL34', laterality:'left',
+    exact_location:'Saved site', additional_notes:'Saved note',
+    a2_current_followup_date:'2026-09-05', a2_current_followup_vas:5,
+    legacy_history:{actual_procedure_date:'2026-06-01', vas_before:8, vas_after:3,
+                    last_followup_date:'2026-07-01',last_followup_vas:4},
+    legacy_confirmed:true, source_origin:'pdf'
+  });
+  assert.strictEqual(get('doctorSelect').value, '', 'inactive issuer requires explicit selection');
+  assert.strictEqual(get('patientName').value, 'Saved patient');
+  assert.strictEqual(get('age').value, '68');
+  assert.strictEqual(get('imagingReport').value, '', 'attached files must be reattached');
+  assert.strictEqual(get('imagingStatus').hidden, true);
+  assert.strictEqual(get('rfCurrentFollowupVas').value, '5');
+  assert.strictEqual(get('rfActualConfirm').checked, true);
+  assert.strictEqual(get('additionalNotes').value, 'Saved note');
+}
