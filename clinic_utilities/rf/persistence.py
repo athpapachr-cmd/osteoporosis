@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import re
+import unicodedata
 from datetime import datetime, timezone
 from typing import Any
 from uuid import uuid4
@@ -37,6 +39,20 @@ class RFApplicationORM(RFBase):
 
 # Managed physician directory within the existing protected RF database.
 # No irreversible deletion: previously issued documents retain their own snapshot.
+class RFSavedDraftORM(RFBase):
+    """Incomplete RF fields only: no files, generated PDFs, or encounter ownership."""
+    __tablename__ = "clinic_rf_saved_drafts"
+    id = Column(String(80), primary_key=True)
+    revision = Column(Integer, nullable=False, default=1)
+    pathway = Column(String(2), nullable=False)
+    patient_name = Column(String(200), nullable=False, default="")
+    identity_key = Column(String(128), nullable=False, default="", index=True)
+    gesy_number = Column(String(128), nullable=False, default="")
+    form_state = Column(JSON, nullable=False, default=dict)
+    created_at = Column(DateTime, nullable=False)
+    updated_at = Column(DateTime, nullable=False, index=True)
+
+
 class RFDoctorProfileORM(RFBase):
     __tablename__ = "clinic_rf_doctor_profiles"
     key = Column(String(40), primary_key=True)
@@ -317,3 +333,273 @@ def record_legacy_procedure(engine: Engine, data: dict[str, Any], *, session: Se
         result = save(own_session)
         own_session.commit()
         return result
+
+
+# No new identity authority. These procedures and applications share the existing RF DB.
+# Search values are normalized in Python so Greek accents/ς and identifier separators work
+# consistently on the SQLite test engine and production PostgreSQL.
+def _rf_search_text(value: str) -> str:
+    value = unicodedata.normalize("NFKD", str(value or "").casefold().replace("ς", "σ"))
+    value = "".join(ch for ch in value if not unicodedata.combining(ch))
+    return " ".join(value.split())
+
+
+def _rf_id_text(value: str) -> str:
+    return "".join(ch for ch in str(value or "").casefold() if ch.isalnum())
+
+
+# A named, bounded scan avoids a fragile DB-specific case/accent collation.
+# The RF application table is clinic-local; truncation is reported, never silently denied.
+_RF_SEARCH_SCAN_LIMIT = 10000
+_RF_PAGE_SIZE = 20
+
+
+def _rf_application_card(row: RFApplicationORM) -> dict[str, Any]:
+    data = row.payload_json if isinstance(row.payload_json, dict) else {}
+    return {
+        "kind": "application", "id": row.id, "date": row.created_at.date().isoformat(),
+        "patient_name": row.patient_name,
+        "identity_number": str(data.get("identity_number") or row.patient_identity_key),
+        "gesy_number": row.gesy_number, "indication_code": row.indication_code,
+        "site_key": row.site_key, "laterality": row.laterality,
+        "exact_location": row.exact_location, "product_key": row.product_key,
+        "actual_procedure": False, "pathway": row.pathway,
+    }
+
+
+def _rf_procedure_card(row: RFProcedureHistoryORM, patient: dict[str, str] | None) -> dict[str, Any]:
+    patient = patient or {}
+    return {
+        "kind": "procedure", "id": row.id, "date": row.actual_procedure_date,
+        "patient_name": patient.get("patient_name", ""),
+        "identity_number": patient.get("identity_number", row.patient_identity_key),
+        "gesy_number": patient.get("gesy_number", ""),
+        "indication_code": row.indication_code, "site_key": row.site_key,
+        "laterality": row.laterality, "exact_location": row.exact_location,
+        "product_key": "", "actual_procedure": True, "pathway": "",
+    }
+
+
+def search_rf_sources(engine: Engine, query: str, page: int = 1) -> dict[str, Any]:
+    q = _rf_search_text(query)
+    q_id = _rf_id_text(query)
+    if len(q) < 2 or page < 1 or page > 100:
+        raise ValueError("Συμπλήρωσε τουλάχιστον δύο χαρακτήρες αναζήτησης")
+    with Session(engine) as session:
+        applications = session.execute(select(RFApplicationORM).order_by(
+            RFApplicationORM.created_at.desc(), RFApplicationORM.id.desc()
+        ).limit(_RF_SEARCH_SCAN_LIMIT + 1)).scalars().all()
+        truncated = len(applications) > _RF_SEARCH_SCAN_LIMIT
+        applications = applications[:_RF_SEARCH_SCAN_LIMIT]
+        matched = []
+        identities: dict[str, dict[str, str]] = {}
+        # A procedure with no application has identity only, never an invented name/ΓεΣΥ.
+        for a in applications:
+            ident = str((a.payload_json or {}).get("identity_number") or a.patient_identity_key)
+            norm_id = _rf_id_text(ident)
+            if (
+                q in _rf_search_text(a.patient_name)
+                or q_id in norm_id
+                or q_id in _rf_id_text(a.gesy_number)
+            ):
+                matched.append(_rf_application_card(a))
+                identities[a.patient_identity_key] = {
+                    "patient_name": a.patient_name, "identity_number": ident,
+                    "gesy_number": a.gesy_number,
+                }
+        # Normalized identity allows a procedure-only match, but cannot prove a
+        # person's name or GESY when no application has ever been issued.
+        norm_identity = _rf_id_text(query)
+        id_rows = session.execute(select(RFProcedureHistoryORM).order_by(
+            RFProcedureHistoryORM.actual_procedure_date.desc(),
+            RFProcedureHistoryORM.created_at.desc()
+        ).limit(_RF_SEARCH_SCAN_LIMIT + 1)).scalars().all()
+        truncated = truncated or len(id_rows) > _RF_SEARCH_SCAN_LIMIT
+        for h in id_rows[:_RF_SEARCH_SCAN_LIMIT]:
+            if h.patient_identity_key in identities or (
+                len(norm_identity) >= 3 and norm_identity in _rf_id_text(h.patient_identity_key)
+            ):
+                matched.append(_rf_procedure_card(h, identities.get(h.patient_identity_key)))
+    matched.sort(key=lambda item: (item["date"], item["kind"], item["id"]), reverse=True)
+    start = (page - 1) * _RF_PAGE_SIZE
+    return {"results": matched[start:start + _RF_PAGE_SIZE], "page": page,
+            "has_more": len(matched) > start + _RF_PAGE_SIZE, "truncated": truncated}
+
+
+def get_rf_source(engine: Engine, kind: str, source_id: str) -> dict[str, Any] | None:
+    with Session(engine) as session:
+        if kind == "application":
+            row = session.get(RFApplicationORM, source_id)
+            if row is None:
+                return None
+            data = row.payload_json if isinstance(row.payload_json, dict) else {}
+            allowed = {
+                "patient_name", "identity_number", "gesy_number", "age",
+                "product_key", "indication_code", "laterality", "exact_location",
+                "other_area", "other_diagnosis", "additional_notes",
+                "rf_reason_codes", "rf_reason_other", "pain_onset_date",
+                "pain_onset_vas", "last_assessment_date", "last_assessment_vas",
+                "nsaid_trials", "other_analgesic_trials", "adverse_effects",
+                "intervention", "physio",
+            }
+            fields = {k: v for k, v in data.items() if k in allowed}
+            fields.update({"patient_name": row.patient_name,
+                           "identity_number": str(data.get("identity_number") or row.patient_identity_key),
+                           "gesy_number": row.gesy_number,
+                           "age": row.patient_age, "product_key": row.product_key,
+                           "indication_code": row.indication_code, "laterality": row.laterality,
+                           "exact_location": row.exact_location})
+            return {"source": _rf_application_card(row), "fields": fields}
+        if kind == "procedure":
+            row = session.get(RFProcedureHistoryORM, source_id)
+            if row is None:
+                return None
+            applications = session.execute(select(RFApplicationORM).where(
+                RFApplicationORM.patient_identity_key == row.patient_identity_key
+            ).order_by(RFApplicationORM.created_at.desc()).limit(1)).scalars().all()
+            parent = applications[0] if applications else None
+            parent_data = parent.payload_json if parent and isinstance(parent.payload_json, dict) else {}
+            person = {"patient_name": parent.patient_name, "gesy_number": parent.gesy_number,
+                      "identity_number": str(parent_data.get("identity_number") or row.patient_identity_key)} if parent else None
+            card = _rf_procedure_card(row, person)
+            return {"source": card,
+                    "fields": {"patient_name": card["patient_name"],
+                               "identity_number": card["identity_number"],
+                               "gesy_number": card["gesy_number"],
+                               "indication_code": row.indication_code,
+                               "laterality": row.laterality,
+                               "exact_location": row.exact_location,
+                               "product_key": parent.product_key if parent else ""},
+                    "actual_procedure": get_procedure_history(engine, row.id, row.patient_identity_key)}
+    return None
+
+
+_RF_DRAFT_FIELDS = frozenset({
+    "pathway", "doctor_key", "patient_name", "identity_number", "gesy_number",
+    "age", "product_key", "indication_code", "laterality", "exact_location",
+    "other_area", "other_diagnosis", "additional_notes",
+    "rf_reason_codes", "rf_reason_other", "pain_onset_date", "pain_onset_vas",
+    "last_assessment_date", "last_assessment_vas", "full_medication_text",
+    "nsaid_trials", "other_analgesic_trials", "adverse_effects",
+    "intervention", "physio_dates_text", "legacy_history",
+    "procedure_history_id", "source_kind", "source_id", "source_origin",
+})
+_RF_DRAFT_ARRAY_FIELDS = {
+    "rf_reason_codes": 8, "nsaid_trials": 20, "other_analgesic_trials": 20,
+    "adverse_effects": 10,
+}
+_RF_DRAFT_NESTED_FIELDS = {
+    "nsaid_trials": {"drug_name", "dose", "duration", "auto_selected", "source_text", "manual", "learned", "warning", "canonical_key"},
+    "other_analgesic_trials": {"drug_name", "dose", "duration", "auto_selected", "source_text", "manual", "learned", "warning", "canonical_key"},
+    "adverse_effects": {"treatment", "effect"},
+    "intervention": {"site", "date", "vas_before", "vas_after"},
+    "legacy_history": {"actual_procedure_date", "vas_before", "vas_after", "last_followup_date", "last_followup_vas"},
+}
+_RF_DRAFT_MAX_BYTES = 85000
+
+
+def validate_rf_draft_fields(state: dict[str, Any]) -> dict[str, Any]:
+    if not isinstance(state, dict) or set(state) - _RF_DRAFT_FIELDS:
+        raise ValueError("Μη αναγνωρισμένα πεδία πρόχειρης RF αίτησης")
+    if state.get("pathway", "A1") not in {"A1", "A2"}:
+        raise ValueError("Μη έγκυρος τύπος πρόχειρης αίτησης")
+    # No arbitrary nested content or binary attachments: only RF form fields.
+    for key, value in state.items():
+        if key in _RF_DRAFT_ARRAY_FIELDS:
+            if not isinstance(value, list) or len(value) > _RF_DRAFT_ARRAY_FIELDS[key]:
+                raise ValueError("Υπέρβαση πεδίων πρόχειρης αίτησης")
+            if key == "rf_reason_codes":
+                if any(not isinstance(item, str) or len(item) > 100 for item in value):
+                    raise ValueError("Μη έγκυροι λόγοι RF")
+            else:
+                if any(not isinstance(item, dict) or set(item) - _RF_DRAFT_NESTED_FIELDS[key]
+                       for item in value):
+                    raise ValueError("Μη έγκυρες γραμμές πρόχειρης αίτησης")
+        elif key in {"intervention", "legacy_history"}:
+            if value is not None and (
+                not isinstance(value, dict) or set(value) - _RF_DRAFT_NESTED_FIELDS[key]
+            ):
+                raise ValueError("Μη έγκυρα στοιχεία προηγούμενης θεραπείας")
+        elif not isinstance(value, (str, int, float, bool, type(None))):
+            raise ValueError("Μη έγκυρη μορφή πρόχειρης αίτησης")
+        if isinstance(value, str) and len(value) > (30000 if key == "full_medication_text" else 12000 if key == "physio_dates_text" else 4000):
+            raise ValueError("Υπερβολικά μεγάλο πεδίο πρόχειρης αίτησης")
+    encoded = json.dumps(state, ensure_ascii=False, allow_nan=False)
+    if len(encoded.encode("utf-8")) > _RF_DRAFT_MAX_BYTES:
+        raise ValueError("Το πρόχειρο RF υπερβαίνει το επιτρεπόμενο μέγεθος")
+    return json.loads(encoded)
+
+
+def _rf_draft_card(row: RFSavedDraftORM) -> dict[str, Any]:
+    return {"id": row.id, "revision": row.revision, "pathway": row.pathway,
+            "patient_name": row.patient_name,
+            "identity_number": row.form_state.get("identity_number", ""),
+            "gesy_number": row.gesy_number,
+            "updated_at": row.updated_at.isoformat() + "Z"}
+
+
+def save_rf_draft(engine: Engine, form_state: dict[str, Any],
+                  draft_id: str = "", revision: int | None = None) -> dict[str, Any]:
+    state = validate_rf_draft_fields(form_state)
+    now = utcnow()
+    with Session(engine) as session:
+        if draft_id:
+            row = session.scalar(select(RFSavedDraftORM).where(
+                RFSavedDraftORM.id == draft_id).with_for_update())
+            if row is None:
+                raise LookupError("Το πρόχειρο δεν βρέθηκε")
+            if revision is None or row.revision != revision:
+                raise RuntimeError("Το πρόχειρο άλλαξε σε άλλη καρτέλα. Φόρτωσέ το ξανά")
+            row.revision += 1
+        else:
+            row = RFSavedDraftORM(id=str(uuid4()), revision=1, created_at=now)
+            session.add(row)
+        row.form_state = state
+        row.pathway = state.get("pathway", "A1")
+        row.patient_name = str(state.get("patient_name") or "").strip()[:200]
+        row.identity_key = _rf_id_text(state.get("identity_number") or "")[:128]
+        row.gesy_number = str(state.get("gesy_number") or "").strip()[:128]
+        row.updated_at = now
+        session.commit()
+        return _rf_draft_card(row)
+
+
+def list_rf_drafts(engine: Engine, query: str = "", page: int = 1) -> dict[str, Any]:
+    if page < 1 or page > 100:
+        raise ValueError("Μη έγκυρη σελίδα πρόχειρων")
+    q = _rf_search_text(query)
+    q_id = _rf_id_text(query)
+    with Session(engine) as session:
+        rows = session.execute(select(RFSavedDraftORM).order_by(
+            RFSavedDraftORM.updated_at.desc(), RFSavedDraftORM.id.desc()
+        ).limit(_RF_SEARCH_SCAN_LIMIT + 1)).scalars().all()
+        truncated = len(rows) > _RF_SEARCH_SCAN_LIMIT
+        rows = rows[:_RF_SEARCH_SCAN_LIMIT]
+        if q:
+            rows = [row for row in rows if q in _rf_search_text(row.patient_name)
+                    or q_id in row.identity_key or q_id in _rf_id_text(row.gesy_number)]
+        start = (page - 1) * _RF_PAGE_SIZE
+        return {"drafts": [_rf_draft_card(row) for row in rows[start:start + _RF_PAGE_SIZE]],
+                "page": page, "has_more": len(rows) > start + _RF_PAGE_SIZE,
+                "truncated": truncated}
+
+
+def get_rf_draft(engine: Engine, draft_id: str) -> dict[str, Any] | None:
+    with Session(engine) as session:
+        row = session.get(RFSavedDraftORM, draft_id)
+        if row is None:
+            return None
+        return {**_rf_draft_card(row), "fields": dict(row.form_state),
+                "attachments_saved": False}
+
+
+def delete_rf_draft(engine: Engine, draft_id: str, revision: int) -> None:
+    with Session(engine) as session:
+        row = session.scalar(select(RFSavedDraftORM).where(
+            RFSavedDraftORM.id == draft_id).with_for_update())
+        if row is None:
+            raise LookupError("Το πρόχειρο δεν βρέθηκε")
+        if row.revision != revision:
+            raise RuntimeError("Το πρόχειρο άλλαξε. Φόρτωσέ το ξανά")
+        session.delete(row)
+        session.commit()
