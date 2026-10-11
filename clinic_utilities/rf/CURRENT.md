@@ -1,5 +1,8 @@
 # RF CURRENT — Native RF v2 bounded doctor/Horos-JPEG extension
 
+> **2026-10-11 RF #146 SQUASH MERGED / DEPLOY IDENTITY PENDING:** After independent P1-01 closure PASS/0:0:0 and Product Owner's explicit release, PR #146 was READY and latest Canonical Impact gate `38126204659` PASS. GitHub squash merge `c2f9fafd3fc0873acfb8877dd9761942e63bb75a` confirmed on `main`; validated RF UI/test/backend/PDF blobs match reviewed source. Native managed physician directory and Horos JPEG are **MERGED, NOT YET VERIFIED LIVE**, no real-data smoke; observe the existing automatic Render deploy without a second manual trigger, then safely verify no-PHI runtime identity/health and update release state. This merge checkpoint is R0 documentation only.
+
+
 > **2026-10-11 RF #146 READY / RELEASE SOURCE CHECKPOINT:** Product Owner authorized release, independent issuer P1-01 CLOSED. PR #146 changed DRAFT → READY at HEAD `25b2651eb9d9523fb8d8c12cb82668c8d987751d`. Required Canonical Impact declaration fixed and [CI 38126121682](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/38126121682) SUCCESS; RF hotfix `38126105391` SUCCESS. Subsequent change is only R0 state checkpoint Markdown in `CURRENT_OPERATIONAL.md` and RF `CURRENT.md`, preserving validated runtime. **Unmerged, undeployed; next exact-head squash merge, then verify automatic existing Render deployment and no-PHI/no-write smoke.**
 
 
