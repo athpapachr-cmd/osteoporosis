@@ -92,13 +92,79 @@ def _write_a2(document: fitz.Document, data: dict[str,Any], history: dict[str,An
     for key,rect in _A2_HISTORY.items(): _write(page5,rect,history.get(key),size=7,align=1)
     _check(page5,_A2_IMAGING_CHECK); _write(page6,_A2_NOTES,data.get("additional_notes"),size=7)
 
-def build_official_rf_pdf(data: dict[str,Any], *, doctor: DoctorProfile, product: ProductProfile, radiology_pdf_bytes: bytes, template_path: Path=OFFICIAL_TEMPLATE_PATH, prior_history: dict[str,Any]|None=None) -> bytes:
+# Each uploaded image is processed in-memory only; no file/thumbnails are stored.
+MAX_HOROS_JPEG_COUNT = 10
+MAX_HOROS_JPEG_BYTES = 8 * 1024 * 1024
+MAX_HOROS_JPEG_TOTAL_BYTES = 40 * 1024 * 1024
+MAX_HOROS_JPEG_EDGE = 6000
+MAX_HOROS_JPEG_PIXELS = 16_000_000
+
+
+def _horos_jpeg_a4_page(content: bytes) -> bytes:
+    """Validate compressed JPEG metadata before bounded decode; preserve all EXIF flips/rotations.
+
+    PyMuPDF's image->PDF conversion applies orientations 1..8, including mirrors.
+    show_pdf_page then fits that oriented page on portrait/landscape A4.
+    """
+    if (len(content) > MAX_HOROS_JPEG_BYTES or
+            not content.startswith(b"\xff\xd8\xff") or
+            not content.endswith(b"\xff\xd9")):
+        raise ValueError("Η εικόνα Horos δεν είναι έγκυρο JPEG ή υπερβαίνει τα 8 MB")
+    jpeg = oriented = page_doc = None
+    try:
+        jpeg = fitz.open(stream=content, filetype="jpeg")
+        if jpeg.page_count != 1:
+            raise ValueError("Η εικόνα Horos δεν είναι μονοσέλιδο JPEG")
+        info = jpeg[0].get_image_info()
+        if len(info) != 1:
+            raise ValueError("Δεν αναγνωρίστηκαν διαστάσεις JPEG")
+        width, height = int(info[0]["width"]), int(info[0]["height"])
+        if (width < 1 or height < 1 or width > MAX_HOROS_JPEG_EDGE or
+                height > MAX_HOROS_JPEG_EDGE or width * height > MAX_HOROS_JPEG_PIXELS):
+            raise ValueError("Η εικόνα Horos υπερβαίνει το όριο διαστάσεων (6000px / 16MP)")
+        # Force an actual decode only AFTER count/bytes/pixel ceilings. Detect broken streams.
+        pixmap = fitz.Pixmap(content)
+        try:
+            if pixmap.width != width or pixmap.height != height:
+                raise ValueError("Ασυμφωνία διαστάσεων JPEG")
+        finally:
+            pixmap = None
+        oriented = fitz.open(stream=jpeg.convert_to_pdf(), filetype="pdf")
+        rect = oriented[0].rect  # already transformed for mirrored/rotated EXIF
+        landscape = rect.width > rect.height
+        page_width, page_height = (842, 595) if landscape else (595, 842)
+        page_doc = fitz.open()
+        page = page_doc.new_page(width=page_width, height=page_height)
+        page.show_pdf_page(
+            fitz.Rect(18, 18, page_width - 18, page_height - 18),
+            oriented, 0, keep_proportion=True
+        )
+        return page_doc.tobytes(garbage=4, deflate=True)
+    except ValueError:
+        raise
+    except Exception as exc:
+        raise ValueError("Κατεστραμμένο ή μη αναγνώσιμο JPEG Horos") from exc
+    finally:
+        if page_doc is not None:
+            page_doc.close()
+        if oriented is not None:
+            oriented.close()
+        if jpeg is not None:
+            jpeg.close()
+
+
+def build_official_rf_pdf(data: dict[str,Any], *, doctor: DoctorProfile, product: ProductProfile, radiology_pdf_bytes: bytes, template_path: Path=OFFICIAL_TEMPLATE_PATH, prior_history: dict[str,Any]|None=None, horos_jpeg_bytes: list[bytes]|None=None) -> bytes:
     if not template_path.is_file(): raise FileNotFoundError(f"Missing official RF template: {template_path}")
     if not radiology_pdf_bytes.startswith(b"%PDF"): raise ValueError("Imaging report is not a PDF")
     try:
         radiology_reader=PdfReader(io.BytesIO(radiology_pdf_bytes))
         if not radiology_reader.pages: raise ValueError("Imaging report PDF is empty")
     except Exception as exc: raise ValueError("Imaging report PDF is unreadable") from exc
+    images = horos_jpeg_bytes or []
+    if len(images) > MAX_HOROS_JPEG_COUNT or sum(len(x) for x in images) > MAX_HOROS_JPEG_TOTAL_BYTES:
+        raise ValueError("Υπέρβαση ορίου εικόνων Horos")
+    # Complete every conversion before any persistence caller is allowed to write.
+    horos_pages = [_horos_jpeg_a4_page(image) for image in images]
     source=fitz.open(template_path)
     try:
         if source.page_count<6: raise RuntimeError("Official RF template does not contain A.1/A.2 pages")
@@ -115,4 +181,6 @@ def build_official_rf_pdf(data: dict[str,Any], *, doctor: DoctorProfile, product
     writer=PdfWriter()
     for page in PdfReader(io.BytesIO(stamped_bytes)).pages: writer.add_page(page)
     for page in radiology_reader.pages: writer.add_page(page)
+    for image_page_pdf in horos_pages:
+        for page in PdfReader(io.BytesIO(image_page_pdf)).pages: writer.add_page(page)
     output=io.BytesIO(); writer.write(output); return output.getvalue()

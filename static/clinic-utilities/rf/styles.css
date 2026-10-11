@@ -21,4 +21,10 @@
 .dictionary-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 9px;border:1px solid #e1e7ef;border-radius:10px;background:#fbfcfe}
 .learned-badge,.trial-actions{margin:-3px 0 7px 38px;font-size:11px}
 .learned-badge{color:#286341;font-weight:700}
+.horos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:10px;margin:12px 0}
+.horos-item{margin:0;min-width:0;display:grid;gap:7px;padding:9px;border:1px solid #dbe4ef;border-radius:12px;background:#fbfcfe}
+.horos-thumb{width:100%;aspect-ratio:4/3;object-fit:contain;border-radius:8px;background:#eef2f6}
+.horos-item figcaption{font-size:12px;color:#425268;overflow-wrap:anywhere}
+.horos-item button{justify-self:start}
+
 @media(max-width:760px){.unknown-medication{grid-template-columns:1fr}.dictionary-row{align-items:stretch;flex-direction:column}}

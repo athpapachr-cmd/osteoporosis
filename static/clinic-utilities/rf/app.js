@@ -1,6 +1,6 @@
 (() => {
   const $ = id => document.getElementById(id);
-  const state = { contract: null, pathway: 'A1', selectedHistoryId: '', nsaids: [], others: [], unknowns: [], learnedMedications: [], physio: null, imagingValidation: '' };
+  const state = { contract: null, pathway: 'A1', selectedHistoryId: '', nsaids: [], others: [], unknowns: [], learnedMedications: [], physio: null, imagingValidation: '', horosImages: [], horosNextId: 0 };
 
   async function api(path, options = {}) {
     const response = await fetch(`/clinical/clinic-utilities/rf${path}`, { credentials: 'same-origin', ...options });
@@ -17,7 +17,7 @@
       const response = await api('/api/contract');
       state.contract = await response.json();
       populateContract();
-      const allConfigured = state.contract.doctor_configured && Object.values(state.contract.products).every(v => v.configured);
+      const allConfigured = Boolean(state.contract.doctors?.[$("doctorSelect").value]?.configured) && Object.values(state.contract.products).every(v => v.configured);
       $('configStatus').textContent = allConfigured ? 'RF v2 έτοιμο' : 'Απαιτείται server config';
       $('configStatus').className = `status-pill ${allConfigured ? 'ok' : 'warn'}`;
     } catch (error) {
@@ -29,6 +29,14 @@
 
   function populateContract() {
     const c = state.contract;
+    const doctorSelect = $("doctorSelect");
+    doctorSelect.replaceChildren();
+    Object.entries(c.doctors || {}).forEach(([key, item]) => {
+      const option = new Option(item.label + (item.configured ? "" : " — μη ρυθμισμένο"), key);
+      option.disabled = !item.configured;
+      doctorSelect.add(option);
+    });
+    doctorSelect.value = "papachristou";
     Object.entries(c.products).forEach(([key, item]) => {
       const option = new Option(item.label + (item.configured ? '' : ' — μη ρυθμισμένο'), key);
       option.disabled = !item.configured;
@@ -490,6 +498,7 @@
     const indication = state.contract?.indications?.[code];
     const draft = {
       pathway: state.pathway,
+      doctor_key: $('doctorSelect').value,
       patient_name: $('patientName').value.trim(),
       identity_number: $('identityNumber').value.trim(),
       gesy_number: $('gesyNumber').value.trim(),
@@ -572,6 +581,65 @@
     }
   }
 
+  const MAX_HOROS_IMAGES = 10;
+  const MAX_HOROS_IMAGE_BYTES = 8 * 1024 * 1024;
+  const MAX_HOROS_TOTAL_BYTES = 40 * 1024 * 1024;
+
+  function renderHorosImages(message = "") {
+    const grid = $("horosImageGrid");
+    grid.replaceChildren();
+    state.horosImages.forEach(item => {
+      const figure = document.createElement("figure");
+      figure.className = "horos-item";
+      const image = document.createElement("img");
+      image.className = "horos-thumb";
+      image.src = item.url;
+      image.alt = "Προεπισκόπηση " + item.file.name;
+      const caption = document.createElement("figcaption");
+      caption.textContent = item.file.name;
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "btn ghost small";
+      remove.textContent = "Αφαίρεση";
+      remove.setAttribute("aria-label", "Αφαίρεση " + item.file.name);
+      remove.addEventListener("click", () => {
+        URL.revokeObjectURL(item.url);
+        state.horosImages = state.horosImages.filter(x => x.id !== item.id);
+        renderHorosImages();
+      });
+      figure.append(image, caption, remove);
+      grid.append(figure);
+    });
+    const status = $("horosImageStatus");
+    status.className = message ? "validation-panel error" : "muted";
+    status.textContent = message || (state.horosImages.length ?
+      state.horosImages.length + " εικόνα/ες με σειρά επισύναψης.": "Δεν έχουν προστεθεί εικόνες.");
+  }
+
+  function addHorosImages() {
+    const picker = $("horosJpegs");
+    const selected = Array.from(picker.files || []);
+    picker.value = "";  // allow reselection of the same file
+    let message = "";
+    for (const file of selected) {
+      const total = state.horosImages.reduce((sum, item) => sum + item.file.size, 0);
+      if (state.horosImages.length >= MAX_HOROS_IMAGES) { message = "Επιτρέπονται έως 10 εικόνες Horos."; break; }
+      if (!/\.jpe?g$/i.test(file.name) || (file.type && !["image/jpeg", "image/pjpeg"].includes(file.type))) {
+        message = "Επιτρέπονται μόνο αρχεία JPEG (.jpg/.jpeg)."; continue;
+      }
+      if (file.size > MAX_HOROS_IMAGE_BYTES || total + file.size > MAX_HOROS_TOTAL_BYTES) {
+        message = "Υπέρβαση ορίου 8 MB ανά εικόνα / 40 MB συνολικά."; continue;
+      }
+      state.horosImages.push({file, url: URL.createObjectURL(file), id: ++state.horosNextId});
+    }
+    renderHorosImages(message);
+  }
+
+  function releaseHorosPreviews() {
+    state.horosImages.forEach(item => URL.revokeObjectURL(item.url));
+    state.horosImages = [];
+  }
+
   async function createPdf() {
     if (!['left','right'].includes($('lateralitySelect').value)) {
       showError('Επίλεξε μία πλευρά: δεξιά ή αριστερά.');
@@ -600,6 +668,7 @@
       const form = new FormData();
       form.append('draft_json', JSON.stringify(buildDraft()));
       form.append('imaging_report', file, file.name);
+      state.horosImages.forEach(item => form.append('horos_jpegs', item.file, item.file.name));
       const response = await api('/api/create', {method:'POST', body:form});
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
@@ -633,6 +702,7 @@
     const items = [
       `Ασθενής: ${$('patientName')?.value || '—'}`,
       `Προϊόν: ${state.contract?.products?.[$('productSelect')?.value]?.label || '—'}`,
+      `Ιατρός: ${state.contract?.doctors?.[$('doctorSelect').value]?.label || '—'}`,
       `Εντόπιση: ${$('exactLocation')?.value || '—'}`
     ];
     $('reviewSummary').innerHTML = items.map(x => `<div class="summary-item">${escapeHtml(x)}</div>`).join('');
@@ -667,6 +737,14 @@
     $('addAdverseBtn').addEventListener('click', addAdverse);
     $('historyLookupBtn').addEventListener('click', lookupHistory);
     $('imagingReport').addEventListener('change', validateImaging);
+    $('horosJpegs').addEventListener('change', addHorosImages);
+    window.addEventListener('pagehide', releaseHorosPreviews);
+    $('doctorSelect').addEventListener('change', () => {
+      const configured = Boolean(state.contract?.doctors?.[$('doctorSelect').value]?.configured);
+      $('configStatus').textContent = configured ? 'RF v2 έτοιμο' : 'Απαιτείται server config';
+      $('configStatus').className = 'status-pill ' + (configured ? 'ok' : 'warn');
+      updateSummary();
+    });
     $('createPdfBtn').addEventListener('click', createPdf);
     $('clearBtn').addEventListener('click', () => location.reload());
     ['patientName','productSelect','exactLocation'].forEach(id => $(id).addEventListener('input', updateSummary));
