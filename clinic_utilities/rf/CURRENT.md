@@ -1,5 +1,8 @@
 # RF CURRENT — Native RF v2 bounded doctor/Horos-JPEG extension
 
+> **2026-10-11 RF #146 READY / RELEASE SOURCE CHECKPOINT:** Product Owner authorized release, independent issuer P1-01 CLOSED. PR #146 changed DRAFT → READY at HEAD `25b2651eb9d9523fb8d8c12cb82668c8d987751d`. Required Canonical Impact declaration fixed and [CI 38126121682](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/38126121682) SUCCESS; RF hotfix `38126105391` SUCCESS. Subsequent change is only R0 state checkpoint Markdown in `CURRENT_OPERATIONAL.md` and RF `CURRENT.md`, preserving validated runtime. **Unmerged, undeployed; next exact-head squash merge, then verify automatic existing Render deployment and no-PHI/no-write smoke.**
+
+
 > **2026-10-11 RF #146 PRODUCT OWNER RELEASE APPROVAL / INDEPENDENT R2 CLOSED / RELEASE GATE ACTIVE:** Sole issuer-selection P1-01 independently CLOSED at actual HEAD `5716221369ff1f32da6cbdeba16455d01ce4ec1b`: IMPLEMENTATION-FIDELITY PASS / COMPLETE_FOR_DECLARED_SCOPE / P0:P1:P2=0:0:0; C1–C3 PASS. Preserved code/test blobs `app.js=dc86985ca1e24e1e04376219aeaab048533a1fc0`, `test_rf_v2_ui.js=a130ba0634cf67aab5c69ff0c7c8c1c2ba800532`, RF CI `38124963792` SUCCESS. The clinician expressly authorized release; no new runtime implementation is needed. PR #146 still DRAFT/OPEN/UNMERGED; `main=8469e12e8803ab1f9a882437527ed69a59a5e9b6` at activation. **Release next:** fix missing mandatory PR canonical-impact declaration, verify green guard; READY, controlled squash merge, observe existing Render auto-deploy, checkpoint exact identities and no-PHI smoke. Do not claim production/live until provider confirms; no real clinical data, new doctor environment config or duplicate manual deploy.
 
 
