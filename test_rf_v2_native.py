@@ -970,6 +970,7 @@ class RFReuseSavedDraftTests(unittest.TestCase):
         self.assertEqual(parsed_a2.status_code, 200, parsed_a2.text[:300])
         self.assertIn(parsed_a2.json()["status"], ("partial", "recognized"))
         self.assertEqual(parsed_a2.json()["fields"]["identity_number"], "SYN123")
+        self.assertIn("vas_before", parsed_a2.json()["fields"].get("previous_procedure_candidate", {}), str(parsed_a2.json()))
         self.assertEqual(parsed_a2.json()["fields"]["previous_procedure_candidate"]["vas_before"], 8)
         self.assertFalse(parsed_a2.json()["actual_procedure_verified"])
         wrong = self.client.post(self.base + "/reuse/pdf",headers=self.headers,
