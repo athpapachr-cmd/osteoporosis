@@ -201,7 +201,19 @@
     return button;
   }
 
+  function publishSurgeryCounts() {
+    // Only aggregate counts; do not pass identities or surgery details to
+    // the Home attention preview, and do not create a second surgery reader.
+    const detail = {total: surgeryRows.length,
+      undated: surgeryRows.filter(row => !row.surgery_date).length};
+    window.CockpitSurgerySummary = detail;
+    if (typeof window.dispatchEvent === "function" && typeof window.CustomEvent === "function") {
+      window.dispatchEvent(new window.CustomEvent("cockpit:surgery-counts", {detail}));
+    }
+  }
+
   function renderSurgeryRows() {
+    publishSurgeryCounts();
     const tbody = $("surgeryTableBody");
     tbody.replaceChildren();
 
@@ -278,6 +290,12 @@
       renderSurgeryRows();
     } catch (error) {
       surgeryRows = [];
+      window.CockpitSurgerySummary = null;
+      if (typeof window.dispatchEvent === "function" && typeof window.CustomEvent === "function") {
+        window.dispatchEvent(new window.CustomEvent("cockpit:surgery-counts", {
+          detail: {unavailable: true}
+        }));
+      }
       if (error.status === 401) {
         setSurgeryUnavailable("Σύνδεση απαιτείται");
         $("surgeryQueueNote").textContent = "Άνοιξε το Clinical Calendar ή άλλο protected clinical εργαλείο και συνδέσου με το Clinical Key.";
