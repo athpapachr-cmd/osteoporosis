@@ -1,5 +1,8 @@
 # RF CURRENT — Native RF v2 bounded doctor/Horos-JPEG extension
 
+> **2026-10-11 RF A2 REUSE + STRUCTURED DRAFTS — IMPLEMENTATION TESTED / WRITER RELEASED / INDEPENDENT POST-CODE R2 NEXT:** Frozen implementation+tests `c3721ec0ef56e017f2562c5cd891b2338a85f0cc`, RF focused CI `38169658278` SUCCESS incl native 32 and actual browser handler regressions. Reuses existing protected RF applications/procedures, template/PyMuPDF, and adds RF-local drafts with optimistic revisions and transactional close on finalization. Search one name/identity/ΓεΣΥ field; previous official A1/A2 PDF imported provisionally with no OCR; actual RF procedure separately confirmed. Current issuer and old JPEG/PDF bytes unchanged. Drafts contain **only form fields, NO attachments**; reattach before final. No merge/deploy or patient data. **Implementation writer RELEASED, next one independent post-code R2 on frozen head; previous design PR #148 separate.**
+
+
 > **2026-10-11 RF A2 CONTINUATION + SAVED DRAFTS — IMPLEMENTATION WRITER ACTIVE:** Product Owner said «Εγκρίνω» for implementation of independently pre-code-R2-PASS frozen design; `feat/rf-v2-a2-continuation-saved-drafts-20261011` at base `7186a26105e6edd37ed02b089781ce3909c2eaf3`. Scope: prior RF PDF extraction and protected one-field previous application/procedure lookup, A2 source-and-update UI, and server-stored resumable A1/A2 form drafts with revision/transaction and NO binary attachments; synthetic regression tests. Existing doctor/PDF/Horos and A1 semantics unchanged. Draft design PR #148 separate/UNMERGED. No deploy/merge/real patient records. Next bounded code and focused CI, then independent post-code R2 and author STOP.
 
 
