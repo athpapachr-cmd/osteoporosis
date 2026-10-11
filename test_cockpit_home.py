@@ -185,6 +185,9 @@ def test_clinician_home_v4_preserves_existing_tools_without_legacy_blocks_under_
     assert 'id="doctorLibraryView" class="doctor-library" hidden' in html
     assert 'id="surgeryForm"' in html and 'id="surgeryTableBody"' in html
     assert "Πρόγραμμα και πηγές" not in html
+    assert "Η ημερομηνία πάνω δεξιά δείχνει μέρος του προγράμματος" in html
+    assert "για όλες τις κρατήσεις άνοιξε από εκεί τη Γραμματεία" in html
+    assert "Το πλήρες ημερήσιο πρόγραμμα ανοίγει από την ημερομηνία" not in html
     assert "Οστεοπόρωση" in html and "Καταγραφή επίσκεψης" in html
     assert "Πλήρες πρόγραμμα Γραμματείας" in shell
     assert "Δεν έχει συνδεθεί ακόμη το Clinical Inbox" in shell
