@@ -1,5 +1,8 @@
 # RF CURRENT — Native RF v2 bounded doctor/Horos-JPEG extension
 
+> **2026-10-11 RF A2 + DRAFTS — INDEPENDENT PRE-CODE R2 PASS / READY FOR BOUNDED IMPLEMENTATION DECISION:** Product Owner supplied completed fresh read-only review of exact design PR #148 HEAD `b96ae392b978e1f89953213327b41521bc230de7`: PASS / COMPLETE_FOR_DECLARED_SCOPE / P0:P1:P2=0:0:0; R1–R5 PASS, corrections NONE. Frozen design and review request Git blobs `4d9ff0a50f06cd0f4499fe077245422edb017abb` / `bea18a4df9518119f342a7116a668a9e51afd53c` unchanged. Existing RF persistence/official PDF/JPEG/doctor invariants retained. Drafts persist structured data **without PDF/JPEG files**, per explicit Product Owner decision. No repeated design review; new bounded implementation may begin only with separate Product Owner authorization, then focused synthetic CI + one post-code R2. **PR remains DRAFT/UNMERGED; no runtime writer; no deploy/real-data authority.**
+
+
 > **2026-10-11 RF A2 DRAFTS — NO BINARY ATTACHMENTS CONFIRMED BY PRODUCT OWNER:** Saved A1/A2 RF drafts must store only incomplete structured fields in the existing protected RF database, without any attached previous RF PDF, imaging report PDF, Horos JPEG, final PDF or binary blobs. On reopen, the form clearly asks for the necessary files again before creating an official PDF. No file persistence, no localStorage/sessionStorage, no new attachment store. This is the already-frozen design, now explicitly confirmed; the design and exact independent R2 request blobs are UNCHANGED (`4d9ff0a50f06cd0f4499fe077245422edb017abb` / `bea18a4df9518119f342a7116a668a9e51afd53c`). Design-only PR #148 remains DRAFT/UNMERGED; next single independent R2 before implementation. **No active RF writer.**
 
 
