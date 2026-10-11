@@ -63,6 +63,7 @@ function fakeElement(tag) {
     append(...items) { this.children.push(...items); },
     replaceChildren(...items) { this.children = items; },
     addEventListener(type, fn) { this.listeners[type] = fn; },
+    querySelector() { return {value: '', onclick: null}; }, // synthetic adverse-row button
     setAttribute() {},
   };
 }
