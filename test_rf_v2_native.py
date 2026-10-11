@@ -475,7 +475,6 @@ class RFDoctorHorosExtensionTests(unittest.TestCase):
         self.env = patch.dict(os.environ, {
             "CLINICAL_DATA_KEY": CLINICAL_KEY,
             "RF_DOCTOR_PROFILE_JSON": DOCTOR_JSON,
-            "RF_DOCTOR_MAXOUTLOU_PROFILE_JSON": json.dumps(self.secondary),
             "RF_PRODUCT_CATALOG_JSON": PRODUCT_JSON,
         })
         self.env.start()
@@ -483,6 +482,12 @@ class RFDoctorHorosExtensionTests(unittest.TestCase):
         app.include_router(build_rf_router(self.engine))
         self.client = TestClient(app)
         self.headers = {"X-Clinical-Key": CLINICAL_KEY}
+        created = self.client.post(
+            "/clinical/clinic-utilities/rf/api/doctors",
+            headers=self.headers, json=self.secondary,
+        )
+        self.assertEqual(created.status_code, 201, created.text)
+        self.secondary_key = created.json()["key"]
 
     def tearDown(self):
         self.client.close()
@@ -524,11 +529,11 @@ class RFDoctorHorosExtensionTests(unittest.TestCase):
     def test_doctor_contract_and_server_side_six_pdf_fields_a1_a2(self):
         contract = self.client.get("/clinical/clinic-utilities/rf/api/contract", headers=self.headers).json()
         self.assertTrue(contract["doctors"]["papachristou"]["configured"])
-        self.assertTrue(contract["doctors"]["maxoutlou"]["configured"])
+        self.assertTrue(contract["doctors"][self.secondary_key]["configured"])
         self.assertNotIn("doctor2@example.invalid", json.dumps(contract))
         for pathway in ("A1", "A2"):
             for key, expected in (("papachristou", json.loads(DOCTOR_JSON)),
-                                  ("maxoutlou", self.secondary)):
+                                  (self.secondary_key, self.secondary)):
                 with self.subTest(pathway=pathway, doctor=key):
                     response = self._create(self._draft(pathway, doctor_key=key))
                     self.assertEqual(response.status_code, 200, response.text[:300])
@@ -544,7 +549,7 @@ class RFDoctorHorosExtensionTests(unittest.TestCase):
                         doc.close()
         applications, previous = self._rows()
         self.assertCountEqual([row.payload_json["doctor_key"] for row in applications],
-                         ["papachristou", "maxoutlou", "papachristou", "maxoutlou"])
+                         ["papachristou", self.secondary_key, "papachristou", self.secondary_key])
         self.assertEqual(len(previous), 1)  # same A.2 procedure deduplicated across request doctors
         self.assertEqual({row.actual_procedure_date for row in previous}, {"2026-07-02"})
 
@@ -563,15 +568,119 @@ class RFDoctorHorosExtensionTests(unittest.TestCase):
         self.assertEqual(sum("doctor_key" not in x.payload_json for x in applications), 1)
 
     def test_invalid_blank_null_unknown_and_unconfigured_doctor_fail_before_write(self):
-        for key in ("", None, "unknown", " maxoutlou"):
+        for key in ("", None, "unknown", " " + self.secondary_key):
             with self.subTest(key=key):
                 res = self._create(self._draft(doctor_key=key))
                 self.assertEqual(res.status_code, 422, res.text[:300])
         self.assertEqual(len(self._rows()[0]), 0)
-        with patch.dict(os.environ, {"RF_DOCTOR_MAXOUTLOU_PROFILE_JSON": ""}):
-            res = self._create(self._draft(doctor_key="maxoutlou"))
-            self.assertEqual(res.status_code, 503, res.text[:300])
+        doctor = self.client.get(
+            "/clinical/clinic-utilities/rf/api/doctors", headers=self.headers
+        ).json()["doctors"]
+        second = next(row for row in doctor if row["key"] == self.secondary_key)
+        status = self.client.post(
+            f"/clinical/clinic-utilities/rf/api/doctors/{self.secondary_key}/status",
+            headers=self.headers, json={"revision": second["revision"], "active": False},
+        )
+        self.assertEqual(status.status_code, 200, status.text)
+        res = self._create(self._draft(doctor_key=self.secondary_key))
+        self.assertEqual(res.status_code, 422, res.text[:300])
         self.assertEqual(len(self._rows()[0]), 0)
+
+
+    def test_managed_profiles_crud_snapshot_history_and_restart(self):
+        base = "/clinical/clinic-utilities/rf/api"
+        self.assertEqual(self.client.get(f"{base}/doctors").status_code, 401)
+        self.assertEqual(self.client.post(f"{base}/doctors", json=self.secondary).status_code, 401)
+        self.assertEqual(self.client.get(f"{base}/doctors", headers=self.headers).status_code, 200)
+        before = self._create(self._draft(doctor_key=self.secondary_key))
+        self.assertEqual(before.status_code, 200, before.text[:250])
+        first = self._rows()[0][0].payload_json
+        self.assertEqual(first["doctor_snapshot"], self.secondary)
+        self.assertEqual(first["doctor_key"], self.secondary_key)
+        self.assertNotIn("approval_status", first)
+        self.assertNotIn("followup_assignee", first)
+
+        doctors = self.client.get(f"{base}/doctors", headers=self.headers).json()["doctors"]
+        original = next(row for row in doctors if row["key"] == self.secondary_key)
+        updated = {**self.secondary, "name": "Synthetic Doctor Two Updated",
+                   "medical_center": "Synthetic Updated Clinic"}
+        revision = original["revision"]
+        changed = self.client.put(
+            f"{base}/doctors/{self.secondary_key}", headers=self.headers,
+            json={**updated, "revision": revision},
+        )
+        self.assertEqual(changed.status_code, 200, changed.text)
+        self.assertEqual(changed.json()["revision"], revision + 1)
+        self.assertEqual(self.client.put(
+            f"{base}/doctors/{self.secondary_key}", headers=self.headers,
+            json={**self.secondary, "revision": revision},
+        ).status_code, 409)
+        self.assertEqual(self.client.post(
+            f"{base}/doctors", headers=self.headers, json=updated,
+        ).status_code, 409 if updated["gesy_code"] == self.secondary["gesy_code"] else 201)
+        self.assertEqual(self._rows()[0][0].payload_json["doctor_snapshot"], self.secondary)
+
+        after = self._create(self._draft(doctor_key=self.secondary_key))
+        self.assertEqual(after.status_code, 200, after.text[:250])
+        document = fitz.open(stream=after.content, filetype="pdf")
+        try:
+            self.assertIn(updated["name"], document[0].get_text())
+            self.assertIn(updated["medical_center"], document[0].get_text())
+        finally:
+            document.close()
+        snapshots = [row.payload_json["doctor_snapshot"] for row in self._rows()[0]]
+        self.assertIn(self.secondary, snapshots)
+        self.assertIn(updated, snapshots)
+
+        disabled = self.client.post(
+            f"{base}/doctors/{self.secondary_key}/status", headers=self.headers,
+            json={"revision": changed.json()["revision"], "active": False},
+        )
+        self.assertEqual(disabled.status_code, 200)
+        self.assertEqual(self._create(self._draft(doctor_key=self.secondary_key)).status_code, 422)
+        self.assertEqual(len(self._rows()[0]), 2)
+        self.assertFalse(self.client.get(f"{base}/contract", headers=self.headers).json()
+                         ["doctors"][self.secondary_key]["configured"])
+        self.assertEqual(self.client.post(
+            f"{base}/doctors/{self.secondary_key}/status", headers=self.headers,
+            json={"revision": changed.json()["revision"], "active": True},
+        ).status_code, 409)
+        enabled = self.client.post(
+            f"{base}/doctors/{self.secondary_key}/status", headers=self.headers,
+            json={"revision": disabled.json()["revision"], "active": True},
+        )
+        self.assertEqual(enabled.status_code, 200)
+        self.assertTrue(enabled.json()["active"])
+
+        # Initial default is imported from legacy config once; managed edits win on restart.
+        default = next(row for row in doctors if row["key"] == "papachristou")
+        revised_default = {**{k: default[k] for k in (
+            "name", "gesy_code", "specialty", "medical_center", "phone", "email")},
+            "medical_center": "Managed Default Clinic", "revision": default["revision"]}
+        self.assertEqual(self.client.put(
+            f"{base}/doctors/papachristou", headers=self.headers, json=revised_default
+        ).status_code, 200)
+        restarted = FastAPI()
+        restarted.include_router(build_rf_router(self.engine))
+        with TestClient(restarted) as client:
+            directory = client.get(f"{base}/doctors", headers=self.headers).json()["doctors"]
+            self.assertEqual(next(r for r in directory if r["key"] == "papachristou")
+                             ["medical_center"], "Managed Default Clinic")
+            self.assertTrue(next(r for r in directory if r["key"] == self.secondary_key)["active"])
+
+    def test_more_doctors_without_environment_or_code_change(self):
+        base = "/clinical/clinic-utilities/rf/api"
+        extra = {**self.secondary, "name": "Third Synthetic Physician", "gesy_code": "SYN-D3",
+                 "email": "third@example.invalid"}
+        created = self.client.post(f"{base}/doctors", headers=self.headers, json=extra)
+        self.assertEqual(created.status_code, 201)
+        key = created.json()["key"]
+        self.assertNotIn(key, ("papachristou", self.secondary_key))
+        output = self._create(self._draft(doctor_key=key))
+        self.assertEqual(output.status_code, 200, output.text[:250])
+        self.assertEqual(self._rows()[0][0].payload_json["doctor_key"], key)
+        self.assertEqual(self._rows()[0][0].payload_json["doctor_snapshot"], extra)
+
 
     def test_zero_one_three_images_page_order_and_readable_imaging(self):
         variants = [[], [make_horos_jpeg(1)],

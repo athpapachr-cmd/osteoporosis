@@ -103,5 +103,11 @@ browser.__rfTest.releaseHorosPreviews();
 assert.strictEqual(revoked.length, 3, 'all preview URLs must be released');
 assert(html.includes('id="horosJpegs"') && html.includes('multiple'), 'multiple file selection is required');
 assert(html.includes('id="doctorSelect"'), 'doctor dropdown is required');
+for (const token of ['doctorManagement','doctorDirectoryList','doctorForm','doctorSave','doctorCancel']) {
+  assert(html.includes('id="' + token + '"'), 'managed doctor UI missing '+token);
+}
+assert(app.includes('/api/doctors'), 'doctor directory must use the protected native RF API');
+assert(!app.includes('RF_DOCTOR_MAXOUTLOU_PROFILE_JSON'), 'doctor CRUD must not depend on Render variables');
+assert(!app.includes('localStorage') && !app.includes('sessionStorage'), 'RF doctors must not use browser storage');
 assert(app.includes("form.append('horos_jpegs'") || app.includes("form.append('horos_jpegs',"), 'image files must reach multipart upload');
 console.log('RF v2 Horos browser selection/preview/removal: PASS');
