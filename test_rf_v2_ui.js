@@ -5,6 +5,7 @@ const assert = require('assert');
 
 const app = fs.readFileSync('static/clinic-utilities/rf/app.js', 'utf8');
 const html = fs.readFileSync('static/clinic-utilities/rf/index.html', 'utf8');
+const css = fs.readFileSync('static/clinic-utilities/rf/styles.css', 'utf8');
 const main = fs.readFileSync('main.py', 'utf8');
 
 assert(app.includes("function numberOrNull(id)"), 'RF UI must preserve blank numeric fields as null');
@@ -87,10 +88,12 @@ picker.files = [jpg('first.jpg'), jpg('second.jpeg')];
 browser.__rfTest.addHorosImages();
 let grid = doc.getElementById('horosImageGrid');
 assert.deepStrictEqual(grid.children.map(x => x.children[1].textContent), ['first.jpg', 'second.jpeg']);
+assert.strictEqual(doc.getElementById('horosImageStatus').textContent, '2 εικόνες έτοιμες για επισύναψη.');
 assert(grid.children.every(x => x.children[0].src.startsWith('blob:rf-test-')), 'thumbnails need blob URLs');
 const removed = grid.children[0].children[0].src;
 grid.children[0].children[2].listeners.click();
 assert.deepStrictEqual(grid.children.map(x => x.children[1].textContent), ['second.jpeg']);
+assert.strictEqual(doc.getElementById('horosImageStatus').textContent, '1 εικόνα έτοιμη για επισύναψη.');
 assert(revoked.includes(removed), 'removal must revoke its blob URL');
 picker.files = [jpg('third.jpg')];
 browser.__rfTest.addHorosImages();
@@ -102,6 +105,8 @@ assert(doc.getElementById('horosImageStatus').textContent.includes('JPEG'), 'err
 browser.__rfTest.releaseHorosPreviews();
 assert.strictEqual(revoked.length, 3, 'all preview URLs must be released');
 assert(html.includes('id="horosJpegs"') && html.includes('multiple'), 'multiple file selection is required');
+assert(html.includes('class="upload full-width horos-upload"') && html.includes('class="horos-picker-action"') && html.includes('Προσθήκη εικόνων'), 'Horos picker must have a visible Greek upload action');
+assert(html.includes('id="horosJpegs" class="horos-file-input" type="file"') && css.includes('.horos-upload input.horos-file-input') && css.includes('clip-path:inset(50%)'), 'native Horos file input must remain available but visually hidden');
 assert(html.includes('id="doctorSelect"'), 'doctor dropdown is required');
 for (const token of ['doctorManagement','doctorDirectoryList','doctorForm','doctorSave','doctorCancel']) {
   assert(html.includes('id="' + token + '"'), 'managed doctor UI missing '+token);
