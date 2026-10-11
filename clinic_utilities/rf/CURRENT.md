@@ -1,5 +1,8 @@
 # RF CURRENT — Native RF v2 bounded doctor/Horos-JPEG extension
 
+> **2026-10-11 RF A2 + SAVED DRAFTS FINAL HANDOFF — Correction of cross-diagnosis prior RF linking (same shoulder/side but different indication) closed and synthetic 422/no-write tested. Exact tested source+test `ac1dd54ce2f17575e160a025367557fcf8afe598`; RF CI `38170026377` SUCCESS (33 native tests). Existing protected RF reuse, old PDF import and structured drafts only; no binary attachments. Original RF doctor/JPEG/A1/PDF authority preserved. PR #149 DRAFT / UNMERGED / UNDEPLOYED. **Implementation writer RELEASED, one post-code independent R2 next and STOP.****
+
+
 > **2026-10-11 RF A2 INDICATION MATCH — SINGLE CODE/TEST WRITER ACTIVE:** PR #149 is DRAFT/unmerged. Author self-audit before independent R2 found a same-site/side but different diagnosis linkage missing in current existing A2 validations. Bounded fix only `api.py` and native synthetic test: current A2 indication must match referenced previous application and referenced actual procedure. Then targeted CI and updated frozen implementation R2 request, release writer. No new workflow, no data, no merge/deploy.
 
 
