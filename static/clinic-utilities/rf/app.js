@@ -896,7 +896,10 @@
       const result = await (await api('/api/reuse/' + encodeURIComponent(source.kind) +
         '/' + encodeURIComponent(source.id))).json();
       if (state.pathway !== 'A2') setPathway('A2');
-      const conflicts = populateRfFields(result.fields || {});
+      // Historical age is not the patient's current age.
+      const previousFields = {...(result.fields || {})};
+      delete previousFields.age;
+      const conflicts = populateRfFields(previousFields);
       state.sourceKind = source.kind;
       state.sourceId = source.id;
       state.sourceOrigin = 'database';
@@ -928,7 +931,10 @@
       const result = await (await api('/api/reuse/pdf', {method:'POST', body:form})).json();
       if (result.status === 'unrecognized') { sourceNotice(result.message); return; }
       if (state.pathway !== 'A2') setPathway('A2');
-      const conflicts = populateRfFields(result.fields || {});
+      // Historical age in a prior RF PDF is not automatically current.
+      const previousFields = {...(result.fields || {})};
+      delete previousFields.age;
+      const conflicts = populateRfFields(previousFields);
       state.sourceKind = ''; state.sourceId = ''; state.sourceOrigin = 'pdf';
       state.selectedHistoryId = '';
       $('historyChoices').replaceChildren();

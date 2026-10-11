@@ -455,7 +455,9 @@ def get_rf_source(engine: Engine, kind: str, source_id: str) -> dict[str, Any] |
             if row is None:
                 return None
             applications = session.execute(select(RFApplicationORM).where(
-                RFApplicationORM.patient_identity_key == row.patient_identity_key
+                RFApplicationORM.patient_identity_key == row.patient_identity_key,
+                RFApplicationORM.site_key == row.site_key,
+                RFApplicationORM.laterality == row.laterality
             ).order_by(RFApplicationORM.created_at.desc()).limit(1)).scalars().all()
             parent = applications[0] if applications else None
             parent_data = parent.payload_json if parent and isinstance(parent.payload_json, dict) else {}

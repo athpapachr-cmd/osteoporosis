@@ -956,8 +956,22 @@ class RFReuseSavedDraftTests(unittest.TestCase):
         self.assertEqual(ok.status_code, 200, ok.text[:500])
         self.assertIn(ok.json()["status"],("recognized","partial"))
         self.assertEqual(ok.json()["fields"]["identity_number"], "SYN123")
+        self.assertEqual(ok.json()["fields"]["indication_code"], "KNEE_OA_KL34")
+        self.assertEqual(ok.json()["fields"]["laterality"], "left")
         self.assertFalse(ok.json()["actual_procedure_verified"])
         self.assertFalse(ok.json()["attachments_saved"])
+        prior = {"actual_procedure_date":"2026-07-01","vas_before":8,
+                 "vas_after":3,"last_followup_date":"2026-08-02","last_followup_vas":4}
+        a2 = build_official_rf_pdf({**values, "pathway":"A2"},
+                 doctor=doctor, product=product, radiology_pdf_bytes=make_pdf(1),
+                 prior_history=prior)
+        parsed_a2 = self.client.post(self.base + "/reuse/pdf",headers=self.headers,
+            files={"previous_rf_pdf":("a2-rf.pdf",a2,"application/pdf")})
+        self.assertEqual(parsed_a2.status_code, 200, parsed_a2.text[:300])
+        self.assertIn(parsed_a2.json()["status"], ("partial", "recognized"))
+        self.assertEqual(parsed_a2.json()["fields"]["identity_number"], "SYN123")
+        self.assertEqual(parsed_a2.json()["fields"]["previous_procedure_candidate"]["vas_before"], 8)
+        self.assertFalse(parsed_a2.json()["actual_procedure_verified"])
         wrong = self.client.post(self.base + "/reuse/pdf",headers=self.headers,
              files={"previous_rf_pdf":("not-rf.pdf",make_pdf(5),"application/pdf")})
         self.assertEqual(wrong.status_code, 200)
