@@ -1,5 +1,8 @@
 # RF CURRENT — Native RF v2 bounded doctor/Horos-JPEG extension
 
+> **2026-10-11 RF A2 #149 P1-01/P1-02/P2-01 BOUNDED CORRECTION TESTED — AUTHOR STOP:** Fixed product provenance by exact indication; fixed selected old-RF patient-name/identity mismatch by explicit clinician choice plus server-issued-name check; moved A2 source search/upload ahead of patient and indication, with hidden-visibility CSS. Targeted Python and actual browser-handler regressions PASS, RF workflow `38172386948` SUCCESS (35 native). Corrected frozen code+tests `390296d421f3d1f0c47e6475ec327c91f02b8367` (tree `13c4ad1fe7754c789d39710febf7ad3bd0183c55); reviewers MUST fresh-verify source identity. Previous R2 R2-old-PDF / R3-drafts PASS reused. PR #149 still DRAFT UNMERGED, no deploy, no patient data; author writer released, one independent delta+affected-cumulative R2 closure next.
+
+
 > **2026-10-11 RF A2 #149 POST-CODE R2 BLOCK — ONE AFFECTED CORRECTION WRITER ACTIVE:** Independent report P0:P1:P2=0:2:1: P1-01 require same exact indication for historical product prefill; P1-02 name/identity conflict between current RF and selected existing source must have explicit clinician resolution and server issuance guard; P2-01 move source selector/upload ahead of patient/indication in A2. Three synthetic scenario regressions; reuse rest of RF CI and previous R2 R2/R3 PASS; one independent delta+affected closure, then STOP. No new workflow/registry, PDF/JPEG persistence, merged source, production data, deploy. Implementation PR #149 DRAFT/UNMERGED.
 
 
