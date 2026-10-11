@@ -1,6 +1,14 @@
-# RF CURRENT — learned medication dictionary
+# RF CURRENT — Native RF v2 bounded doctor/Horos-JPEG extension
 
-> **STATUS:** RF RELEASE PR #116 OPEN / HOLD BEFORE MERGE / NOT DEPLOYED.
+> **CURRENT 2026-10-11 — IMPLEMENTATION WRITER ACTIVE, DRAFT CANDIDATE ONLY:** Product Owner authorization covers two pre-code R2-approved bounded features: `doctor_key` choice with server-side doctor profiles (legacy `RF_DOCTOR_PROFILE_JSON` preserved; secondary private environment config); optional multi-JPEG Horos upload following the existing mandatory validated imaging report PDF. Pre-code R2 PASS/COMPLETE_FOR_DECLARED_SCOPE/P0:P1=0:0. Branch `feat/rf-v2-doctor-horos-jpeg-2026-10-11` from verified `main=8469e12e8803ab1f9a882437527ed69a59a5e9b6`. No overlapping RF writer. Old PR #116 **MERGED** 2026-09-26; the former HOLD below is historical, not operative. Bounded code scope only, synthetic tests, DRAFT PR, independent exact-head post-code R2; no merge/deploy/real patient data. Next implement two approved features; writer to be released at handback.
+
+---
+
+## Historical learned-medication release record (superseded status; preserved evidence)
+
+# RF CURRENT — learned medication dictionary (historical)
+
+> **HISTORICAL STATUS AT 2026-09-26:** RF RELEASE PR #116 OPEN / HOLD BEFORE MERGE / NOT DEPLOYED. Superseded by verified merge.
 > **Workstream:** native RF v2 Clinic Utility.
 > **Branch:** `feat/rf-learned-medication-dictionary-2026-09-26`.
 > **Base main:** `0ab5f9770d220c20e8d94544cb64e93a4aa30d00`.
