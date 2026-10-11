@@ -1,5 +1,8 @@
 # RF CURRENT — Native RF v2 bounded doctor/Horos-JPEG extension
 
+> **2026-10-11 RF HOROS FILE PICKER VISUAL HOTFIX — PR #147 MERGED, RENDER LIVE / WRITER RELEASED:** Source/test `5950b27a2db210dd7133e34115efe6f6b9f17e7f` RF CI PASS and canonical-impact PASS; squash merge `5e0515ad9adbfda8cc11777cd4da88f5b42dcc35`. Retained accepted-JPEG input now uses visible «Προσθήκη εικόνων» rather than native misleading `No file chosen`; count displays grammatical «1 εικόνα έτοιμη» / «2 εικόνες έτοιμες» while preview/removal/PDF bytes are unchanged. Render auto-deploy `dep-db5llfn40ujc73cj8no0`, source `f75cb28c97b08bf7aebca3e27d940b677f3c8af5`, reached LIVE 2026-10-11T09:47:27.283386Z; first automatic merge deploy failed update after successful build but the successor succeeded. No independent R1 per Product Owner request, no real patient data, no authenticated browser verification. This final documentation-only closeout triggers another native main auto-deploy; watch exact source before claiming final source LIVE. **RF writer RELEASED.** A2 auto-population/history import is NOT implemented and remains a separate future scoped design.
+
+
 > **2026-10-11 SMALL HOROS UI HOTFIX MERGED / LIVE PENDING:** PR #147 squash merged as `5e0515ad9adbfda8cc11777cd4da88f5b42dcc35`; exact tested HTML/CSS/JS/test preserved on merged main. Focused RF CI `38129264416` PASS, canonical-impact `38129380222` PASS; independent review waived per Product Owner small visual-only request. «Προσθήκη εικόνων» replaces misleading native filename; retained-image count, thumbnails/add/remove and PDF untouched. **Render LIVE pending verification**, no new auth/data/schema/provider behavior. One final release status and writer release after deploy; A2 separate.
 
 
