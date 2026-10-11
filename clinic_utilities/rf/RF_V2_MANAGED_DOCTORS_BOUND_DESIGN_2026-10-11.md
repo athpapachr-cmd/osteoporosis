@@ -8,10 +8,10 @@ The existing native RF v2 works and PR #146 has independently closed its sole JP
 **Exactly one replacement of the doctor-selection mechanism remains before PR #146 release.** Leave the reviewed Horos JPEG implementation, PDF layout, imaging validation, A.1/A.2 and existing RF clinical logic unchanged.
 
 ## Existing mechanisms to extend (verified at PR #146 HEAD cf69e189)
-- \`clinic_utilities/rf/catalog.py\`: existing \`DoctorProfile\` fields and \`doctor_profile_for_key\` currently hard-code \`papachristou\` / \`maxoutlou\` to Render variables.
-- \`clinic_utilities/rf/api.py\`: existing protected RF router, contract, \`doctor_key\` in \`RFApplicationDraft\`, server-generated PDF and \`record_application\` **after** complete PDF build.
-- \`clinic_utilities/rf/persistence.py\`: existing RFBase, protected PostgreSQL-backed RF application table and \`payload_json\`; \`initialize_rf_tables\` uses metadata \`create_all\`.
-- \`static/clinic-utilities/rf/{index.html,app.js,styles.css}\`: doctor dropdown and existing RF form. No second app, engine or external integration.
+- `clinic_utilities/rf/catalog.py`: existing `DoctorProfile` fields and `doctor_profile_for_key` currently hard-code `papachristou` / `maxoutlou` to Render variables.
+- `clinic_utilities/rf/api.py`: existing protected RF router, contract, `doctor_key` in `RFApplicationDraft`, server-generated PDF and `record_application` **after** complete PDF build.
+- `clinic_utilities/rf/persistence.py`: existing RFBase, protected PostgreSQL-backed RF application table and `payload_json`; `initialize_rf_tables` uses metadata `create_all`.
+- `static/clinic-utilities/rf/{index.html,app.js,styles.css}`: doctor dropdown and existing RF form. No second app, engine or external integration.
 
 ## Minimal intended UX
 Keep the current compact doctor dropdown in “Ασθενής & προϊόν”, plus one unobtrusive **Διαχείριση ιατρών** control. Within the same RF screen, support:
@@ -23,15 +23,15 @@ Keep the current compact doctor dropdown in “Ασθενής & προϊόν”,
 6. On deployment the existing user can add ASAN MAXOUTLOU through this protected UI using the supplied information; **do not embed colleague's contact data in repository code, fixtures, docs or env secrets**. No separate prerequisite Render setting for this doctor.
 
 ## Data and authority contract
-- Extend the *existing* RF persistence owner with a small \`clinic_rf_doctor_profiles\` table or equivalent existing RF-managed record. No new service or database. Auto-create the minimal table through current RFBase init or narrowly justify a migration.
-- Stable server-generated \`doctor_key\` (up to draft contract limit 40), unique and never reused. Reserve existing default key \`papachristou\`; preserve missing-key -> legacy default solely for **new legacy-client requests**. Explicit null/blank/unknown/inactive keys fail closed.
-- Maintain the existing \`RF_DOCTOR_PROFILE_JSON\` as the **backwards-compatible default source** on first use / until managed default data exists; do not require ongoing configuration edits. Allow editing that default from protected RF UI thereafter. Handle loss/malformed default config explicitly; do not silently assign a different doctor.
-- At \`/api/create\`, resolve the chosen active doctor **server-side**. Before generating/storing the RF, capture its exact six fields as an immutable server-produced doctor snapshot in the **new** application's existing \`payload_json\` together with \`doctor_key\`, preserving issued-document identity when directory rows are later edited/deactivated.
-- Previous application rows without \`doctor_key\` or snapshot remain **historically unattributed**, not retrospectively assigned. A.2's actual prior RF procedure/history is never attributed to the currently selected doctor.
-- Read/write doctor profiles only through the existing \`/clinical/clinic-utilities/rf\` protected router; return the fields needed to edit via authenticated read, not via public/no-auth routes. Do not trust doctor details sent with an RF draft or permit client-side identity substitution. Use narrow field, length, empty-value validation, stable IDs, and explicit status. Include safe failure behavior on concurrent edit/deactivation vs submit.
+- Extend the *existing* RF persistence owner with a small `clinic_rf_doctor_profiles` table or equivalent existing RF-managed record. No new service or database. Auto-create the minimal table through current RFBase init or narrowly justify a migration.
+- Stable server-generated `doctor_key` (up to draft contract limit 40), unique and never reused. Reserve existing default key `papachristou`; preserve missing-key -> legacy default solely for **new legacy-client requests**. Explicit null/blank/unknown/inactive keys fail closed.
+- Maintain the existing `RF_DOCTOR_PROFILE_JSON` as the **backwards-compatible default source** on first use / until managed default data exists; do not require ongoing configuration edits. Allow editing that default from protected RF UI thereafter. Handle loss/malformed default config explicitly; do not silently assign a different doctor.
+- At `/api/create`, resolve the chosen active doctor **server-side**. Before generating/storing the RF, capture its exact six fields as an immutable server-produced doctor snapshot in the **new** application's existing `payload_json` together with `doctor_key`, preserving issued-document identity when directory rows are later edited/deactivated.
+- Previous application rows without `doctor_key` or snapshot remain **historically unattributed**, not retrospectively assigned. A.2's actual prior RF procedure/history is never attributed to the currently selected doctor.
+- Read/write doctor profiles only through the existing `/clinical/clinic-utilities/rf` protected router; return the fields needed to edit via authenticated read, not via public/no-auth routes. Do not trust doctor details sent with an RF draft or permit client-side identity substitution. Use narrow field, length, empty-value validation, stable IDs, and explicit status. Include safe failure behavior on concurrent edit/deactivation vs submit.
 - Editing/deactivation must not rewrite previously issued application payloads or PDFs. Historic snapshots remain immutable.
 - No patient identifiers or attachments added to the doctor directory. No browser localStorage or duplicate owner.
-- Prefer compatibility with existing tests/clients and \`doctor_key\` semantics; the hard-coded second Render variable \`RF_DOCTOR_MAXOUTLOU_PROFILE_JSON\` is **not** a release prerequisite and must cease being required for the new doctor's UI workflow. Any compatibility alias must not create two competing active sources of truth.
+- Prefer compatibility with existing tests/clients and `doctor_key` semantics; the hard-coded second Render variable `RF_DOCTOR_MAXOUTLOU_PROFILE_JSON` is **not** a release prerequisite and must cease being required for the new doctor's UI workflow. Any compatibility alias must not create two competing active sources of truth.
 
 ## Responsibility is separate from issuer
 - A doctor chosen for an RF is the **issuer**, not automatically the person responsible for monitoring the outcome.
@@ -40,7 +40,7 @@ Keep the current compact doctor dropdown in “Ασθενής & προϊόν”,
 - A later **rejection reason → new linked corrected application on request** remains a future feature. Do not erase or overwrite the rejected original; no automatic resubmission or outcome obligations in this slice.
 
 ## Affected implementation seams only
-\`clinic_utilities/rf/catalog.py\`, \`clinic_utilities/rf/persistence.py\`, \`clinic_utilities/rf/api.py\`, and existing RF \`index.html\`, \`app.js\`, \`styles.css\`, plus focused RF tests/checkpoints. Existing \`pdf.py\` and JPEG behavior should be reused unchanged; only adjust if source-proven unavoidable.
+`clinic_utilities/rf/catalog.py`, `clinic_utilities/rf/persistence.py`, `clinic_utilities/rf/api.py`, and existing RF `index.html`, `app.js`, `styles.css`, plus focused RF tests/checkpoints. Existing `pdf.py` and JPEG behavior should be reused unchanged; only adjust if source-proven unavoidable.
 
 ## Minimal acceptance evidence for future implementation
 1. Protected create/list/edit/deactivate/reactivate; doctor defaults and server-side resolution, with real DB roundtrip using **synthetic** physicians.
