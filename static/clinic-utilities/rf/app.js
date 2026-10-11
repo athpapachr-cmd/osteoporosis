@@ -1,6 +1,6 @@
 (() => {
   const $ = id => document.getElementById(id);
-  const state = { contract: null, pathway: 'A1', selectedHistoryId: '', nsaids: [], others: [], unknowns: [], learnedMedications: [], physio: null, imagingValidation: '', horosImages: [], horosNextId: 0, doctors: [], editingDoctor: null };
+  const state = { contract: null, pathway: 'A1', selectedHistoryId: '', nsaids: [], others: [], unknowns: [], learnedMedications: [], physio: null, imagingValidation: '', horosImages: [], horosNextId: 0, doctors: [], editingDoctor: null, draftId: '', draftRevision: null, sourceKind: '', sourceId: '', sourceOrigin: '', sourcePatientName: '', sourceNameConfirmed: false, sourcePage: 1, draftPage: 1, requestToken: 0 };
 
   async function api(path, options = {}) {
     const response = await fetch(`/clinical/clinic-utilities/rf${path}`, { credentials: 'same-origin', ...options });
@@ -185,10 +185,22 @@
   }
 
   function setPathway(pathway) {
+    if (state.pathway !== pathway) {
+      state.sourceKind = '';
+      state.sourceId = '';
+      state.sourceOrigin = '';
+      state.sourcePatientName = '';
+      state.sourceNameConfirmed = false;
+      $('rfSourceLoaded').hidden = true;
+      $('rfNameConflict').hidden = true;
+    }
     state.pathway = pathway;
     document.querySelectorAll('.segment').forEach(btn => btn.classList.toggle('active', btn.dataset.pathway === pathway));
     $('a1Flow').hidden = pathway !== 'A1';
+    $('a2SourceFlow').hidden = pathway !== 'A2';
     $('a2Flow').hidden = pathway !== 'A2';
+    $('rfPatientStep').textContent = pathway === 'A2' ? '3' : '2';
+    $('rfIndicationStep').textContent = pathway === 'A2' ? '4' : '3';
     indicationChanged();
     updateSummary();
   }
@@ -537,10 +549,10 @@
     }
   }
 
-  async function lookupHistory() {
+  async function lookupHistory(preferId = '') {
     const item = state.contract?.indications?.[$('indicationSelect').value];
-    if (!$('identityNumber').value.trim() || !item || !['left','right'].includes($('lateralitySelect').value)) {
-      showError('Συμπλήρωσε ταυτότητα, ένδειξη και μία πλευρά (δεξιά ή αριστερά) πριν την αναζήτηση.');
+    if (!$('identityNumber').value.trim()) {
+      showError('Συμπλήρωσε μόνο την ταυτότητα ή αναζήτησε πρώτα παλιά RF αίτηση.');
       return;
     }
     try {
@@ -550,19 +562,19 @@
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify({
           identity_number: $('identityNumber').value.trim(),
-          site_key: item.site_key,
-          laterality: $('lateralitySelect').value
+          site_key: item?.site_key || '',
+          laterality: ['left','right'].includes($('lateralitySelect').value) ? $('lateralitySelect').value : null
         })
       });
       const result = await response.json();
-      renderHistory(result.procedures || []);
+      renderHistory(result.procedures || [], preferId);
       $('historyStatus').textContent = result.found ? `${result.procedures.length} εφαρμογή/ές` : 'Δεν βρέθηκε ιστορικό — χρησιμοποίησε legacy καταχώρηση.';
     } catch (error) {
       showError(error.message);
     }
   }
 
-  function renderHistory(rows) {
+  function renderHistory(rows, preferId = '') {
     const container = $('historyChoices');
     container.replaceChildren();
     state.selectedHistoryId = '';
@@ -573,6 +585,10 @@
       radio.type = 'radio';
       radio.name = 'history';
       radio.value = row.procedure_history_id;
+      if (preferId && row.procedure_history_id === preferId) {
+        radio.checked = true;
+        state.selectedHistoryId = preferId;
+      }
       radio.addEventListener('change', () => {
         state.selectedHistoryId = row.procedure_history_id;
         $('legacyDetails').open = false;
@@ -668,6 +684,15 @@
         last_followup_date: $('legacyFollowupDate').value,
         last_followup_vas: numberOrNull('legacyFollowupVas')
       };
+    }
+    if (state.pathway === 'A2') {
+      draft.a2_current_followup_date = $('rfCurrentFollowupDate').value;
+      draft.a2_current_followup_vas = numberOrNull('rfCurrentFollowupVas');
+      draft.legacy_confirmed = $('rfActualConfirm').checked;
+      draft.source_origin = state.sourceOrigin;
+      draft.source_kind = state.sourceKind;
+      draft.source_id = state.sourceId;
+      draft.source_name_confirmed = state.sourceNameConfirmed;
     }
     return draft;
   }
@@ -765,7 +790,393 @@
     state.horosImages = [];
   }
 
+
+  // The same RF protected endpoint owns all retrieval. Never cache PHI in
+  // browser storage, and never treat a previous application as a performed RF.
+  const rfFields = {
+    patient_name: 'patientName', identity_number: 'identityNumber',
+    gesy_number: 'gesyNumber', age: 'age', product_key: 'productSelect',
+    indication_code: 'indicationSelect', laterality: 'lateralitySelect',
+    exact_location: 'exactLocation', other_area: 'otherArea',
+    other_diagnosis: 'otherDiagnosis', additional_notes: 'additionalNotes',
+    rf_reason_other: 'reasonOther', pain_onset_date: 'painOnsetDate',
+    pain_onset_vas: 'painOnsetVas', last_assessment_date: 'lastAssessmentDate',
+    last_assessment_vas: 'lastAssessmentVas',
+    full_medication_text: 'medicationText', physio_dates_text: 'physioDates',
+    a2_current_followup_date: 'rfCurrentFollowupDate',
+    a2_current_followup_vas: 'rfCurrentFollowupVas'
+  };
+
+
+  function sameRFPersonName(a, b) {
+    const norm = value => String(value || '').normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('el')
+      .replace(/ς/g, 'σ').trim().replace(/\s+/g, ' ');
+    return norm(a) === norm(b);
+  }
+
+  function sourceNameMismatch() {
+    return Boolean((state.sourceKind || state.sourceOrigin === 'pdf') &&
+      state.sourcePatientName && $('patientName').value.trim() &&
+      !sameRFPersonName(state.sourcePatientName, $('patientName').value));
+  }
+
+  function unresolvedSourceNameConflict() {
+    return sourceNameMismatch() && !state.sourceNameConfirmed;
+  }
+
+  function renderSourceNameConflict() {
+    const mismatch = sourceNameMismatch();
+    $('rfNameConflict').hidden = !mismatch;
+    if (!mismatch) return;
+    $('rfNameConflictText').textContent = state.sourceNameConfirmed
+      ? 'Η διαφορά ονόματος επιβεβαιώθηκε ρητά για την επιλεγμένη ταυτότητα.'
+      : 'Η προηγούμενη RF αναφέρει «' + state.sourcePatientName +
+        '», ενώ η τρέχουσα «' + $('patientName').value.trim() +
+        '». Επίλεξε ποιο όνομα είναι σωστό πριν την έκδοση.';
+    $('rfConfirmCurrentNameBtn').disabled = state.sourceNameConfirmed;
+  }
+
+  function resolveSourceName(choice) {
+    if (!sourceNameMismatch()) return;
+    if (choice === 'previous') {
+      $('patientName').value = state.sourcePatientName;
+      state.sourceNameConfirmed = false;
+    } else if (choice === 'current') {
+      state.sourceNameConfirmed = true;
+    }
+    renderSourceNameConflict();
+    updateSummary();
+  }
+
+  function invalidateSourceNameConfirmation() {
+    state.sourceNameConfirmed = false;
+    renderSourceNameConflict();
+  }
+
+  function populateRfFields(fields, overwrite = false) {
+    const conflicts = [];
+    if (!fields || !state.contract) return conflicts;
+    const desiredIdentity = String(fields.identity_number || '').trim();
+    const existingIdentity = $('identityNumber').value.trim();
+    if (!overwrite && existingIdentity && desiredIdentity &&
+        existingIdentity.replace(/[\W_]/g,'').toUpperCase() !== desiredIdentity.replace(/[\W_]/g,'').toUpperCase()) {
+      throw new Error('Η παλιά αίτηση αφορά άλλη ταυτότητα. Καθάρισε ή ολοκλήρωσε την τρέχουσα αίτηση πρώτα.');
+    }
+    // Order matters: the indication and side update the native derived-location
+    // controls; only then can the historical exact location be used.
+    if (fields.indication_code && state.contract.indications[fields.indication_code]) {
+      const el = $('indicationSelect');
+      if (overwrite || !el.value) { el.value = fields.indication_code; indicationChanged(); }
+      else if (el.value !== fields.indication_code) conflicts.push('ένδειξη');
+    }
+    if (fields.laterality && ['left','right'].includes(fields.laterality)) {
+      const el = $('lateralitySelect');
+      if (overwrite || !el.value) { el.value = fields.laterality; applySuggestedLocation(); }
+      else if (el.value !== fields.laterality) conflicts.push('πλευρά');
+    }
+    for (const [field, id] of Object.entries(rfFields)) {
+      if (!(field in fields) || ['indication_code','laterality'].includes(field)) continue;
+      const val = fields[field];
+      if (val === null || val === undefined || val === '') continue;
+      if ((field === 'product_key' && !state.contract.products?.[val]) ||
+          (field === 'age' && (Number(val) < 1 || Number(val) > 130))) continue;
+      const el = $(id);
+      if (!el) continue;
+      const value = String(val);
+      if (overwrite || !el.value.trim() || (field === 'exact_location' && !el.value.trim())) {
+        el.value = value;
+      } else if (el.value.trim() !== value) conflicts.push(field);
+    }
+    if (fields.rf_reason_codes && Array.isArray(fields.rf_reason_codes)) {
+      document.querySelectorAll('.rf-reason').forEach(c => {
+        if (overwrite || !c.checked) c.checked = fields.rf_reason_codes.includes(c.value);
+      });
+    }
+    updateSummary();
+    return conflicts;
+  }
+
+  function sourceNotice(text) {
+    $('rfSourceStatus').textContent = text;
+  }
+
+  function renderReuseCard(container, card, onSelect, action) {
+    const item = document.createElement('div');
+    item.className = 'rf-source-item';
+    const head = document.createElement('strong');
+    head.textContent = card.patient_name || 'Χωρίς καταχωρισμένο όνομα';
+    const sub = document.createElement('div');
+    sub.className = 'muted';
+    sub.textContent = [card.date || card.updated_at || '',
+      card.identity_number || '', card.gesy_number || '',
+      card.indication_code || '', card.exact_location || '',
+      card.kind === 'procedure' ? 'Πραγματική εφαρμογή' :
+      card.kind === 'application' ? 'Προηγούμενη αίτηση — όχι εφαρμογή' :
+      card.pathway || 'Πρόχειρο'].filter(Boolean).join(' · ');
+    const btn = document.createElement('button');
+    btn.type = 'button'; btn.className = 'btn secondary small';
+    btn.textContent = action;
+    btn.addEventListener('click', () => onSelect(card));
+    item.append(head, sub, btn); container.append(item);
+    return item;
+  }
+
+  async function searchRfSources(page = 1) {
+    const query = $('rfSourceSearch').value.trim();
+    if (query.length < 2) { sourceNotice('Γράψε μόνο ένα όνομα, ταυτότητα ή ΓεΣΥ (2+ χαρακτήρες).'); return; }
+    const token = ++state.requestToken;
+    sourceNotice('Αναζήτηση…');
+    try {
+      const response = await api('/api/reuse/search?query=' +
+        encodeURIComponent(query) + '&page=' + page);
+      const result = await response.json();
+      if (token !== state.requestToken || query !== $('rfSourceSearch').value.trim()) return;
+      const list = $('rfSourceList');
+      if (page === 1) list.replaceChildren();
+      for (const source of result.results || []) {
+        renderReuseCard(list, source, loadRfSource, 'Φόρτωση στοιχείων');
+      }
+      state.sourcePage = page;
+      $('rfSourceNextBtn').hidden = !result.has_more;
+      sourceNotice(result.results?.length
+        ? 'Επίλεξε ρητά την κατάλληλη παλιά αίτηση ή πραγματική εφαρμογή.'
+        : 'Δεν βρέθηκαν διαθέσιμα στοιχεία. Μπορείς να ανεβάσεις παλιό RF PDF.');
+    } catch (error) { showError(error.message); }
+  }
+
+  async function loadRfSource(source) {
+    try {
+      const result = await (await api('/api/reuse/' + encodeURIComponent(source.kind) +
+        '/' + encodeURIComponent(source.id))).json();
+      if (state.pathway !== 'A2') setPathway('A2');
+      // Historical age is not the patient's current age.
+      const previousFields = {...(result.fields || {})};
+      delete previousFields.age;
+      const conflicts = populateRfFields(previousFields);
+      state.sourceKind = source.kind;
+      state.sourceId = source.id;
+      state.sourceOrigin = 'database';
+      state.sourcePatientName = String(result.fields?.patient_name || '').trim();
+      state.sourceNameConfirmed = false;
+      renderSourceNameConflict();
+      if (result.actual_procedure) {
+        renderHistory([result.actual_procedure], result.actual_procedure.procedure_history_id);
+        $('legacyDetails').open = false;
+      } else if ($('identityNumber').value && $('indicationSelect').value &&
+                 $('lateralitySelect').value) {
+        await lookupHistory();
+      }
+      const text = (source.kind === 'application'
+        ? 'Προηγούμενη αίτηση (δεν επιβεβαιώνει πραγματική εφαρμογή).'
+        : 'Καταγεγραμμένη πραγματική εφαρμογή.') +
+        (conflicts.length ? ' Δεν αντικαταστάθηκαν ήδη συμπληρωμένα πεδία: ' + conflicts.join(', ') + '.' : '');
+      $('rfSourceLoaded').textContent = text;
+      $('rfSourceLoaded').hidden = false;
+      sourceNotice('Τα διαθέσιμα στοιχεία μεταφέρθηκαν. Έλεγξε όσα λείπουν ή έχουν αλλάξει.');
+      showOk('Φορτώθηκαν τα διαθέσιμα RF στοιχεία· χωρίς αλλαγή ιατρού εκδότη.');
+    } catch (error) { showError(error.message); }
+  }
+
+  async function importRfPdf() {
+    const file = $('rfPreviousPdf').files[0];
+    if (!file) return;
+    const form = new FormData();
+    form.append('previous_rf_pdf', file, file.name);
+    sourceNotice('Ανάγνωση παλιού RF PDF…');
+    try {
+      const result = await (await api('/api/reuse/pdf', {method:'POST', body:form})).json();
+      if (result.status === 'unrecognized') { sourceNotice(result.message); return; }
+      if (state.pathway !== 'A2') setPathway('A2');
+      // Historical age in a prior RF PDF is not automatically current.
+      const previousFields = {...(result.fields || {})};
+      delete previousFields.age;
+      const conflicts = populateRfFields(previousFields);
+      state.sourceKind = ''; state.sourceId = ''; state.sourceOrigin = 'pdf';
+      state.sourcePatientName = String(result.fields?.patient_name || '').trim();
+      state.sourceNameConfirmed = false;
+      renderSourceNameConflict();
+      state.selectedHistoryId = '';
+      $('historyChoices').replaceChildren();
+      $('rfActualConfirm').checked = false;
+      const previous = result.fields?.previous_procedure_candidate;
+      if (previous) {
+        for (const [key, id] of Object.entries({
+          actual_procedure_date: 'legacyProcedureDate', vas_before: 'legacyVasBefore',
+          vas_after: 'legacyVasAfter', last_followup_date: 'legacyFollowupDate',
+          last_followup_vas: 'legacyFollowupVas'
+        })) {
+          if (previous[key] !== undefined && !$(''+id).value) $(id).value = previous[key];
+        }
+        $('legacyDetails').open = true;
+      }
+      $('rfSourceLoaded').textContent = 'Πηγή: παλιό PDF (προσωρινά στοιχεία, όχι τεκμήριο εφαρμογής).' +
+        (conflicts.length ? ' Έλεγξε τις διαφορές στα πεδία: ' + conflicts.join(', ') : '');
+      $('rfSourceLoaded').hidden = false;
+      sourceNotice(result.message + ' Επιβεβαίωσε την πραγματική εφαρμογή αν την καταχωρήσεις.');
+    } catch (error) { showError(error.message); }
+    finally { $('rfPreviousPdf').value = ''; }
+  }
+
+  function cleanTrial(item) {
+    const allowed = ['drug_name','dose','duration','auto_selected','source_text',
+      'manual','learned','warning','canonical_key'];
+    return Object.fromEntries(allowed.filter(key => item[key] !== undefined)
+      .map(key => [key, item[key]]));
+  }
+
+  function savedDraftFields() {
+    const draft = buildDraft();
+    delete draft.imaging_review_confirmed; // old confirmation never carries over
+    delete draft.source_name_confirmed; // a name discrepancy must be reconfirmed on resume
+    draft.source_patient_name = state.sourcePatientName;
+    draft.draft_nsaids = state.nsaids.map(cleanTrial);
+    draft.draft_others = state.others.map(cleanTrial);
+    return draft;
+  }
+
+  async function saveRfDraft() {
+    try {
+      const stateFields = savedDraftFields();
+      const active = !!state.draftId;
+      const url = active ? '/api/drafts/' + encodeURIComponent(state.draftId) : '/api/drafts';
+      const response = await api(url, {
+        method: active ? 'PUT' : 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({fields: stateFields, ...(active ? {revision: state.draftRevision} : {})})
+      });
+      const result = await response.json();
+      state.draftId = result.id;
+      state.draftRevision = result.revision;
+      $('rfActiveDraftLabel').textContent = 'Πρόχειρο αποθηκευμένο · έκδοση ' + result.revision;
+      showOk('Το πρόχειρο αποθηκεύτηκε χωρίς επισυναπτόμενα.');
+      await listRfDrafts();
+    } catch (error) { showError(error.message); }
+  }
+
+  async function listRfDrafts(page = 1) {
+    try {
+      const query = $('rfDraftSearch').value.trim();
+      const result = await (await api('/api/drafts?query=' + encodeURIComponent(query) +
+        '&page=' + page)).json();
+      const list = $('rfDraftList');
+      if (page === 1) list.replaceChildren();
+      for (const item of result.drafts || []) {
+        const row = renderReuseCard(list, item, openRfDraft, 'Συνέχεια');
+        const discard = document.createElement('button');
+        discard.type = 'button'; discard.className = 'btn ghost small';
+        discard.textContent = 'Διαγραφή πρόχειρου';
+        discard.addEventListener('click', () => discardRfDraft(item));
+        row.append(discard);
+      }
+      state.draftPage = page;
+      $('rfDraftNextBtn').hidden = !result.has_more;
+    } catch (error) { showError(error.message); }
+  }
+
+  async function discardRfDraft(item) {
+    if (!window.confirm('Να διαγραφεί οριστικά αυτό το πρόχειρο;')) return;
+    try {
+      await api('/api/drafts/' + encodeURIComponent(item.id), {
+        method:'DELETE', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({revision:item.revision})
+      });
+      if (state.draftId === item.id) {
+        state.draftId = ''; state.draftRevision = null;
+        $('rfActiveDraftLabel').textContent = '';
+      }
+      await listRfDrafts();
+    } catch (error) { showError(error.message); }
+  }
+
+  async function restoreRfDraft(fields) {
+    setPathway(fields.pathway === 'A2' ? 'A2' : 'A1');
+    state.sourceKind = fields.source_kind || '';
+    state.sourceId = fields.source_id || '';
+    state.sourceOrigin = fields.source_origin || '';
+    state.sourcePatientName = fields.source_patient_name || '';
+    state.sourceNameConfirmed = false;
+    for (const id of Object.values(rfFields)) $(id).value = '';
+    // Never let a suspended/deactivated physician revert silently to default.
+    const doctor = fields.doctor_key || '';
+    $('doctorSelect').value = state.contract?.doctors?.[doctor]?.configured ? doctor : '';
+    refreshDoctorReadiness();
+    $('indicationSelect').value = fields.indication_code || '';
+    indicationChanged();
+    $('lateralitySelect').value = fields.laterality || '';
+    applySuggestedLocation();
+    populateRfFields(fields, true);
+    document.querySelectorAll('.rf-reason').forEach(c =>
+      c.checked = (fields.rf_reason_codes || []).includes(c.value));
+    $('imagingReport').value = '';
+    $('imagingStatus').hidden = true;
+    state.imagingValidation = '';
+    $('imagingConfirm').checked = false;
+    $('imagingConfirmWrap').hidden = true;
+    releaseHorosPreviews();
+    renderHorosImages();
+    state.nsaids = fields.draft_nsaids || [];
+    state.others = fields.draft_others || [];
+    state.unknowns = [];
+    renderTrials();
+    $('adverseRows').replaceChildren();
+    for (const item of fields.adverse_effects || []) {
+      addAdverse();
+      const rows = $('adverseRows').querySelectorAll('.adverse');
+      const last = rows[rows.length - 1];
+      last.querySelector('[data-kind=treatment]').value = item.treatment || '';
+      last.querySelector('[data-kind=effect]').value = item.effect || '';
+    }
+    if (!(fields.adverse_effects || []).length) addAdverse();
+    const intervention = fields.intervention || {};
+    for (const [key,id] of Object.entries({
+      site:'interventionSite',date:'interventionDate',
+      vas_before:'interventionVasBefore',vas_after:'interventionVasAfter'
+    })) $(id).value = intervention[key] ?? '';
+    const old = fields.legacy_history || {};
+    for (const [key,id] of Object.entries({
+      actual_procedure_date:'legacyProcedureDate',vas_before:'legacyVasBefore',
+      vas_after:'legacyVasAfter',last_followup_date:'legacyFollowupDate',
+      last_followup_vas:'legacyFollowupVas'
+    })) $(id).value = old[key] ?? '';
+    $('rfActualConfirm').checked = !!fields.legacy_confirmed;
+    const prior = fields.procedure_history_id || '';
+    state.selectedHistoryId = '';
+    $('historyChoices').replaceChildren();
+    if (prior && fields.identity_number) await lookupHistory(prior);
+    if (fields.physio_dates_text) await parsePhysio();
+    $('rfSourceLoaded').hidden = !state.sourceOrigin;
+    $('rfSourceLoaded').textContent = state.sourceOrigin
+      ? 'Προηγούμενη RF πηγή: ' + (state.sourceOrigin === 'pdf'
+        ? 'αρχείο PDF (δεν αποθηκεύτηκε)' : 'RF ιστορικό') : '';
+    if (state.sourceKind && state.sourceId) {
+      // Reconcile saved form text with the current protected source, not an
+      // untrusted source-name snapshot preserved in the draft.
+      const previous = await (await api('/api/reuse/' +
+        encodeURIComponent(state.sourceKind) + '/' +
+        encodeURIComponent(state.sourceId))).json();
+      state.sourcePatientName = String(previous.fields?.patient_name || '').trim();
+    }
+    renderSourceNameConflict();
+    updateSummary();
+  }
+
+  async function openRfDraft(card) {
+    try {
+      const item = await (await api('/api/drafts/' + encodeURIComponent(card.id))).json();
+      await restoreRfDraft(item.fields || {});
+      state.draftId = item.id;
+      state.draftRevision = item.revision;
+      $('rfActiveDraftLabel').textContent = 'Πρόχειρο ανοιχτό · έκδοση ' + item.revision;
+      showOk('Το πρόχειρο επανήλθε. Επισύναψε ξανά PDF/εικόνες πριν την έκδοση.');
+    } catch (error) { showError(error.message); }
+  }
+
   async function createPdf() {
+    if (unresolvedSourceNameConflict()) {
+      showError('Επίλυσε ρητά τη διαφορά ονόματος και ταυτότητας με την παλιά αίτηση πριν την έκδοση.');
+      return;
+    }
     if (!state.contract?.doctors?.[$('doctorSelect').value]?.configured) {
       showError('Επίλεξε ρητά τον ιατρό της αίτησης.');
       return;
@@ -791,11 +1202,21 @@
       showError('Επιβεβαίωσε ότι το PDF είναι η απαιτούμενη απεικονιστική έκθεση.');
       return;
     }
+    if (state.pathway === 'A2' && state.sourceOrigin === 'pdf' &&
+        !state.selectedHistoryId && !$('rfActualConfirm').checked) {
+      showError('Επιβεβαίωσε πρώτα ότι έγινε η πραγματική προηγούμενη εφαρμογή RF.');
+      return;
+    }
     try {
       $('createPdfBtn').disabled = true;
       $('createPdfBtn').textContent = 'Δημιουργία…';
       const form = new FormData();
-      form.append('draft_json', JSON.stringify(buildDraft()));
+      const requestDraft = buildDraft();
+      if (state.draftId) {
+        requestDraft.draft_id = state.draftId;
+        requestDraft.draft_revision = state.draftRevision;
+      }
+      form.append('draft_json', JSON.stringify(requestDraft));
       form.append('imaging_report', file, file.name);
       state.horosImages.forEach(item => form.append('horos_jpegs', item.file, item.file.name));
       const response = await api('/api/create', {method:'POST', body:form});
@@ -803,6 +1224,9 @@
       const url = URL.createObjectURL(blob);
       window.open(url, '_blank', 'noopener');
       setTimeout(() => URL.revokeObjectURL(url), 120000);
+      state.draftId = ''; state.draftRevision = null;
+      $('rfActiveDraftLabel').textContent = '';
+      await listRfDrafts();
       showOk('Το επίσημο PDF δημιουργήθηκε.');
     } catch (error) {
       showError(error.message);
@@ -838,7 +1262,6 @@
   }
 
   document.addEventListener('DOMContentLoaded', () => {
-    loadContract();
     document.querySelectorAll('.segment').forEach(btn => btn.addEventListener('click', () => setPathway(btn.dataset.pathway)));
     $('indicationSelect').addEventListener('change', indicationChanged);
     $('lateralitySelect').addEventListener('change', applySuggestedLocation);
@@ -864,7 +1287,21 @@
     });
     $('usualReasonBtn').addEventListener('click', () => document.querySelectorAll('.rf-reason').forEach(x => x.checked = ['FAILED_PHARMACOLOGIC','FAILED_CONSERVATIVE'].includes(x.value)));
     $('addAdverseBtn').addEventListener('click', addAdverse);
-    $('historyLookupBtn').addEventListener('click', lookupHistory);
+    $('historyLookupBtn').addEventListener('click', () => lookupHistory());
+    $('rfSourceSearchBtn').addEventListener('click', () => searchRfSources());
+    $('rfSourceNextBtn').addEventListener('click', () => searchRfSources(state.sourcePage + 1));
+    $('rfSourceSearch').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); searchRfSources(); }});
+    $('rfPreviousPdf').addEventListener('change', importRfPdf);
+    $('rfUsePreviousNameBtn').addEventListener('click', () => resolveSourceName('previous'));
+    $('rfConfirmCurrentNameBtn').addEventListener('click', () => resolveSourceName('current'));
+    ['patientName', 'identityNumber'].forEach(id =>
+      $(id).addEventListener('input', invalidateSourceNameConfirmation));
+    $('rfDraftSaveBtn').addEventListener('click', saveRfDraft);
+    $('rfDraftReloadBtn').addEventListener('click', () => listRfDrafts());
+    $('rfDraftSearchBtn').addEventListener('click', () => listRfDrafts());
+    $('rfDraftNextBtn').addEventListener('click', () => listRfDrafts(state.draftPage + 1));
+    $('rfDraftSearch').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); listRfDrafts(); }});
+    loadContract().then(() => listRfDrafts());
     $('imagingReport').addEventListener('change', validateImaging);
     $('horosJpegs').addEventListener('change', addHorosImages);
     $('doctorManagement').addEventListener('toggle', e => {

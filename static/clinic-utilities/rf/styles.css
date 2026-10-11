@@ -45,3 +45,21 @@
 .horos-upload:hover .horos-picker-action{background:#e0eaf5}
 .horos-upload:focus-within .horos-picker-action{outline:2px solid #527dab;outline-offset:2px}
 .horos-upload input.horos-file-input{position:absolute;width:1px;height:1px;margin:0;padding:0;border:0;overflow:hidden;opacity:0;clip-path:inset(50%);white-space:nowrap}
+
+/* Native RF A2 reuse and incomplete-draft controls (one clinical tool). */
+.rf-draft-workspace,.rf-source-card,.rf-a2-current{min-width:0}
+.rf-search-line{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:9px;align-items:end;margin:9px 0}
+.rf-search-line .btn{min-height:40px}
+.rf-search-line label{min-width:0}
+.rf-button-row{justify-content:flex-start;flex-wrap:wrap}
+.rf-source-item{border:1px solid #dfe6ef;border-radius:11px;background:#fbfcff;padding:11px;display:grid;gap:6px}
+.rf-source-item strong{font-size:13px}
+.rf-source-item .muted{overflow-wrap:anywhere}
+.rf-source-item button{justify-self:start}
+.rf-source-loaded{margin:12px 0;padding:12px;border:1px solid #bfe0cb;background:#effaf3;border-radius:11px;font-size:13px;white-space:pre-wrap}
+.rf-pdf-upload{padding:12px;border:1px dashed #b9c7d7;border-radius:11px;margin:10px 0;background:#f9fbfd}
+.rf-pdf-upload input{margin-top:5px}
+@media(max-width:760px){.rf-search-line{grid-template-columns:1fr}.rf-search-line .btn{width:100%}}
+
+/* Preserve pathway-specific visibility despite the grid display rule. */
+.builder>section[hidden]{display:none}

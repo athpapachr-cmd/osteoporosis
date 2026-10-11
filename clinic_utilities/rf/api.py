@@ -3,11 +3,11 @@ from __future__ import annotations
 from calendar import monthrange
 from datetime import date
 import re
-from typing import Literal
+from typing import Any, Literal
 import unicodedata
 
 import fitz
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, Query
 from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import select
@@ -26,6 +26,7 @@ from .catalog import (
     product_catalog_from_environment,
 )
 from .parsers import parse_medications, parse_physio_dates
+from .prior_pdf import extract_prior_rf_pdf, MAX_PRIOR_RF_PDF_BYTES
 from .pdf import (
     MAX_HOROS_JPEG_BYTES,
     MAX_HOROS_JPEG_COUNT,
@@ -47,6 +48,10 @@ from .persistence import (
     record_legacy_procedure,
     upsert_medication_alias,
     delete_medication_alias,
+    RFSavedDraftORM,
+    search_rf_sources, get_rf_source,
+    save_rf_draft, get_rf_draft, list_rf_drafts, delete_rf_draft,
+    normalize_identity,
 )
 
 MAX_IMAGING_BYTES = 20 * 1024 * 1024
@@ -147,12 +152,34 @@ class RFApplicationDraft(BaseModel):
     imaging_review_confirmed: bool = False
     procedure_history_id: str = Field(default="", max_length=80)
     legacy_history: RFLegacyHistory | None = None
+    a2_current_followup_date: str = Field(default="", max_length=20)
+    a2_current_followup_vas: int | None = Field(default=None, ge=0, le=10)
+    source_origin: str = Field(default="", max_length=20)
+    legacy_confirmed: bool = False
+    source_kind: str = Field(default="", max_length=20)
+    source_id: str = Field(default="", max_length=80)
+    source_name_confirmed: bool = False
+    draft_id: str = Field(default="", max_length=80)
+    draft_revision: int | None = Field(default=None, ge=1)
 
 
 class RFHistoryLookup(BaseModel):
     identity_number: str = Field(min_length=1, max_length=128)
     site_key: str = Field(default="", max_length=80)
-    laterality: Literal["left", "right"]
+    laterality: Literal["left", "right"] | None = None
+
+
+
+class RFPartialDraftBody(BaseModel):
+    fields: dict[str, Any]
+
+
+class RFPartialDraftUpdate(RFPartialDraftBody):
+    revision: int = Field(ge=1)
+
+
+class RFPartialDraftRevision(BaseModel):
+    revision: int = Field(ge=1)
 
 
 class RFTextRequest(BaseModel):
@@ -497,6 +524,79 @@ def build_rf_router(engine: Engine) -> APIRouter:
         except ValueError as exc:
             raise HTTPException(status_code=409, detail="Τα στοιχεία ιατρού άλλαξαν — ανανέωσε τη λίστα") from exc
 
+
+    # Previous RF sources are NOT prior procedures unless explicitly identified
+    # as a real clinician-recorded RF application event.
+    @router.get("/api/reuse/search")
+    def rf_reuse_search(query: str = Query(min_length=2, max_length=150),
+                        page: int = Query(default=1, ge=1, le=100)):
+        try:
+            return search_rf_sources(engine, query, page)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    @router.get("/api/reuse/{kind}/{source_id}")
+    def rf_reuse_source(kind: Literal["application", "procedure"], source_id: str):
+        result = get_rf_source(engine, kind, source_id)
+        if result is None:
+            raise HTTPException(status_code=404, detail="Δεν βρέθηκε η παλιά RF εγγραφή")
+        return result
+
+    @router.post("/api/reuse/pdf")
+    async def rf_reuse_pdf(previous_rf_pdf: UploadFile = File(...)):
+        if not str(previous_rf_pdf.filename or "").lower().endswith(".pdf"):
+            raise HTTPException(status_code=415, detail="Χρειάζεται παλιό RF PDF")
+        content = await previous_rf_pdf.read(MAX_PRIOR_RF_PDF_BYTES + 1)
+        if len(content) > MAX_PRIOR_RF_PDF_BYTES:
+            raise HTTPException(status_code=413, detail="Η παλιά RF αίτηση είναι μεγαλύτερη από 20 MB")
+        try:
+            return extract_prior_rf_pdf(content)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    @router.get("/api/drafts")
+    def rf_list_drafts(query: str = Query(default="", max_length=150),
+                       page: int = Query(default=1, ge=1, le=100)):
+        try:
+            return list_rf_drafts(engine, query, page)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    @router.post("/api/drafts", status_code=201)
+    def rf_save_draft(req: RFPartialDraftBody):
+        try:
+            return save_rf_draft(engine, req.fields)
+        except (ValueError, TypeError) as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    @router.get("/api/drafts/{draft_id}")
+    def rf_open_draft(draft_id: str):
+        row = get_rf_draft(engine, draft_id)
+        if row is None:
+            raise HTTPException(status_code=404, detail="Το πρόχειρο δεν βρέθηκε")
+        return row
+
+    @router.put("/api/drafts/{draft_id}")
+    def rf_update_draft(draft_id: str, req: RFPartialDraftUpdate):
+        try:
+            return save_rf_draft(engine, req.fields, draft_id, req.revision)
+        except LookupError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        except RuntimeError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        except (ValueError, TypeError) as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    @router.delete("/api/drafts/{draft_id}")
+    def rf_delete_draft(draft_id: str, req: RFPartialDraftRevision):
+        try:
+            delete_rf_draft(engine, draft_id, req.revision)
+        except LookupError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        except RuntimeError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        return {"deleted": True}
+
     @router.post("/api/history")
     def rf_history(req: RFHistoryLookup):
         if req.site_key and req.site_key not in {x["site_key"] for x in INDICATIONS.values()}:
@@ -507,7 +607,7 @@ def build_rf_router(engine: Engine) -> APIRouter:
             engine,
             req.identity_number,
             site_key=req.site_key,
-            laterality=req.laterality,
+            laterality=req.laterality or "",
         )
         return {"found": bool(rows), "procedures": rows}
 
@@ -587,7 +687,7 @@ def build_rf_router(engine: Engine) -> APIRouter:
             else "clinician_confirmed"
         )
         payload = {
-            **draft.model_dump(exclude={"legacy_history", "imaging_review_confirmed"}),
+            **draft.model_dump(exclude={"legacy_history", "imaging_review_confirmed", "draft_id", "draft_revision"}),
             "site_key": indication["site_key"],
             "imaging_attachment_review": imaging_review,
             "other_area": other_area,
@@ -595,6 +695,35 @@ def build_rf_router(engine: Engine) -> APIRouter:
             "exact_location": exact_location,
             "application_date": date.today().isoformat(),
         }
+
+        # A selected application is a source of reusable fields, NEVER proof of
+        # treatment. Explicitly reject forged cross-patient/source links.
+        if bool(draft.source_kind) != bool(draft.source_id):
+            raise HTTPException(status_code=422, detail="Ατελής αναφορά παλιάς RF αίτησης")
+        if draft.source_kind:
+            if draft.source_kind not in {"application", "procedure"}:
+                raise HTTPException(status_code=422, detail="Μη έγκυρη πηγή παλιάς RF")
+            source = get_rf_source(engine, draft.source_kind, draft.source_id)
+            if source is None:
+                raise HTTPException(status_code=404, detail="Δεν βρέθηκε η προηγούμενη RF πηγή")
+            identity = source["fields"].get("identity_number") or ""
+            if not identity or normalize_identity(identity) != normalize_identity(draft.identity_number):
+                raise HTTPException(status_code=422, detail="Η παλιά RF πηγή αφορά άλλον ασθενή")
+            previous_site = source["source"]["site_key"]
+            previous_side = source["source"]["laterality"]
+            if previous_site != indication["site_key"] or previous_side != draft.laterality:
+                raise HTTPException(status_code=422, detail="Η προηγούμενη RF πηγή αφορά άλλη περιοχή/πλευρά")
+            if source["source"]["indication_code"] != draft.indication_code:
+                raise HTTPException(status_code=422, detail="Η προηγούμενη RF πηγή αφορά διαφορετική ένδειξη")
+            previous_name = str(source["fields"].get("patient_name") or "").strip()
+            if (previous_name
+                    and _normalize_document_text(previous_name) != _normalize_document_text(draft.patient_name)
+                    and not draft.source_name_confirmed):
+                raise HTTPException(
+                    status_code=422,
+                    detail="Το όνομα διαφέρει από την προηγούμενη RF. Απαιτείται ρητή επίλυση της ασυμφωνίας ονόματος/ταυτότητας.",
+                )
+
         prior = None
         legacy = None
 
@@ -614,7 +743,12 @@ def build_rf_router(engine: Engine) -> APIRouter:
                     raise HTTPException(status_code=422, detail="Η προηγούμενη εφαρμογή αφορά διαφορετική περιοχή")
                 if draft.laterality != prior.get("laterality"):
                     raise HTTPException(status_code=422, detail="Η προηγούμενη εφαρμογή αφορά διαφορετική πλευρά")
+                if draft.indication_code != prior.get("indication_code"):
+                    raise HTTPException(status_code=422, detail="Η προηγούμενη εφαρμογή αφορά διαφορετική ένδειξη")
             elif draft.legacy_history is not None:
+                if draft.source_origin == "pdf" and not draft.legacy_confirmed:
+                    raise HTTPException(status_code=422,
+                        detail="Επιβεβαίωσε ρητά ότι έγινε η πραγματική προηγούμενη εφαρμογή")
                 prior = _validate_legacy(draft.legacy_history)
                 legacy = {
                     **prior,
@@ -626,6 +760,16 @@ def build_rf_router(engine: Engine) -> APIRouter:
                 }
             else:
                 raise HTTPException(status_code=422, detail="Το A.2 απαιτεί προηγούμενη πραγματική εφαρμογή RF")
+            if bool(draft.a2_current_followup_date) != (draft.a2_current_followup_vas is not None):
+                raise HTTPException(status_code=422,
+                    detail="Συμπλήρωσε μαζί ημερομηνία και VAS της νέας αξιολόγησης")
+            if draft.a2_current_followup_date:
+                current_date = _parse_iso_date(draft.a2_current_followup_date, "τρέχουσα αξιολόγηση")
+                if current_date < _parse_iso_date(prior["actual_procedure_date"], "πραγματική εφαρμογή"):
+                    raise HTTPException(status_code=422,
+                        detail="Η νέα αξιολόγηση προηγείται της πραγματικής εφαρμογής")
+                prior = {**prior, "last_followup_date": current_date.isoformat(),
+                         "last_followup_vas": draft.a2_current_followup_vas}
 
         try:
             product = product_catalog_from_environment()[draft.product_key]
@@ -636,6 +780,17 @@ def build_rf_router(engine: Engine) -> APIRouter:
         # snapshot consistent with concurrent protected edit/deactivation.
         # Commit both application and optional A.2 legacy row atomically.
         with Session(engine) as session:
+            linked_draft = None
+            if draft.draft_id:
+                linked_draft = session.scalar(select(RFSavedDraftORM).where(
+                    RFSavedDraftORM.id == draft.draft_id).with_for_update())
+                if linked_draft is None or linked_draft.revision != draft.draft_revision:
+                    raise HTTPException(status_code=409, detail="Το πρόχειρο άλλαξε ή έχει ήδη ολοκληρωθεί")
+                saved_identity = str(linked_draft.form_state.get("identity_number") or "")
+                if saved_identity and normalize_identity(saved_identity) != normalize_identity(draft.identity_number):
+                    raise HTTPException(status_code=422, detail="Το πρόχειρο ανήκει σε άλλη ταυτότητα")
+                if linked_draft.pathway != draft.pathway:
+                    raise HTTPException(status_code=409, detail="Αποθήκευσε ξανά το πρόχειρο μετά την αλλαγή τύπου")
             row = session.scalar(select(RFDoctorProfileORM).where(
                 RFDoctorProfileORM.key == draft.doctor_key).with_for_update())
             if row is None or not row.active:
@@ -659,6 +814,8 @@ def build_rf_router(engine: Engine) -> APIRouter:
             if legacy is not None:
                 record_legacy_procedure(engine, legacy, session=session)
             application_id = record_application(engine, payload, session=session)
+            if linked_draft is not None:
+                session.delete(linked_draft)
             session.commit()
         return Response(
             content=pdf_bytes,
