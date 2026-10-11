@@ -12,32 +12,52 @@
     return response;
   }
 
-  async function loadContract(preferredDoctor = '') {
+  async function loadContract() {
+    // A directory change must not rebuild the patient's RF draft or choose
+    // the physician that happened to be edited/added.
+    const initialLoad = !state.contract;
+    const previousIssuer = initialLoad ? "papachristou" : $("doctorSelect").value;
     try {
       const response = await api('/api/contract');
       state.contract = await response.json();
-      populateContract(preferredDoctor);
-      const allConfigured = Boolean(state.contract.doctors?.[$("doctorSelect").value]?.configured) && Object.values(state.contract.products).every(v => v.configured);
-      $('configStatus').textContent = allConfigured ? 'RF v2 έτοιμο' : 'Απαιτείται server config';
-      $('configStatus').className = `status-pill ${allConfigured ? 'ok' : 'warn'}`;
+      if (initialLoad) populateContract();
+      else populateDoctorOptions(previousIssuer);
+      refreshDoctorReadiness();
+      updateSummary();
+      // Losing an active issuer requires an explicit user selection, not fallback.
+      return !initialLoad && !!previousIssuer && $("doctorSelect").value !== previousIssuer;
     } catch (error) {
       $('configStatus').textContent = 'σφάλμα φόρτωσης';
       $('configStatus').className = 'status-pill error';
       showError(error.message);
+      return null;
     }
   }
 
-  function populateContract(preferredDoctor = '') {
-    const c = state.contract;
+  function refreshDoctorReadiness() {
+    const configured = Boolean(state.contract?.doctors?.[$("doctorSelect").value]?.configured);
+    const productsReady = Object.values(state.contract?.products || {}).every(item => item.configured);
+    const ready = configured && productsReady;
+    $('configStatus').textContent = ready ? 'RF v2 έτοιμο' :
+      ($("doctorSelect").value ? 'Απαιτείται server config' : 'Επίλεξε ιατρό αίτησης');
+    $('configStatus').className = 'status-pill ' + (ready ? 'ok' : 'warn');
+  }
+
+  function populateDoctorOptions(chosen) {
     const doctorSelect = $("doctorSelect");
     doctorSelect.replaceChildren();
-    Object.entries(c.doctors || {}).forEach(([key, item]) => {
+    doctorSelect.add(new Option("Επίλεξε ιατρό…", ""));
+    Object.entries(state.contract?.doctors || {}).forEach(([key, item]) => {
       if (item.configured) doctorSelect.add(new Option(item.label, key));
     });
-    const chosen = preferredDoctor || doctorSelect.dataset.currentDoctor || "papachristou";
-    doctorSelect.value = c.doctors?.[chosen]?.configured ? chosen :
-      (c.doctors?.papachristou?.configured ? "papachristou" : "");
+    // Never substitute the default when the previously chosen issuer was removed.
+    doctorSelect.value = chosen && state.contract?.doctors?.[chosen]?.configured ? chosen : "";
     doctorSelect.dataset.currentDoctor = doctorSelect.value;
+  }
+
+  function populateContract() {
+    const c = state.contract;
+    populateDoctorOptions(c.doctors?.papachristou?.configured ? "papachristou" : "");
     Object.entries(c.products).forEach(([key, item]) => {
       const option = new Option(item.label + (item.configured ? '' : ' — μη ρυθμισμένο'), key);
       option.disabled = !item.configured;
@@ -102,8 +122,10 @@
           });
           resetDoctorForm();
           await loadDoctorDirectory();
-          await loadContract();
-          doctorStatus(row.active ? "Ο ιατρός αφαιρέθηκε από τις διαθέσιμες επιλογές." : "Ο ιατρός επανενεργοποιήθηκε.");
+          const lostIssuer = await loadContract();
+          doctorStatus(lostIssuer
+            ? "Ο επιλεγμένος ιατρός αφαιρέθηκε. Επίλεξε ρητά άλλον ιατρό για αυτή την αίτηση."
+            : (row.active ? "Ο ιατρός αφαιρέθηκε από τις διαθέσιμες επιλογές." : "Ο ιατρός επανενεργοποιήθηκε."));
         } catch (error) {
           doctorStatus(error.message, true);
           await loadDoctorDirectory();
@@ -138,11 +160,13 @@
         method: previous ? "PUT" : "POST", headers: {"Content-Type": "application/json"},
         body: JSON.stringify(data),
       });
-      const saved = await response.json();
+      await response.json();
       resetDoctorForm();
       await loadDoctorDirectory();
-      await loadContract(saved.key);
-      doctorStatus(previous ? "Τα στοιχεία του ιατρού ενημερώθηκαν." : "Ο ιατρός προστέθηκε.");
+      const lostIssuer = await loadContract();
+      doctorStatus(lostIssuer
+        ? "Ο προηγούμενος εκδότης δεν είναι διαθέσιμος. Επίλεξε ρητά άλλον ιατρό."
+        : (previous ? "Τα στοιχεία του ιατρού ενημερώθηκαν." : "Ο ιατρός προστέθηκε. Επίλεξε τον αν θέλεις να εκδώσει αυτή την αίτηση."));
     } catch (error) {
       doctorStatus(error.message, true);
       await loadDoctorDirectory();
@@ -740,6 +764,10 @@
   }
 
   async function createPdf() {
+    if (!state.contract?.doctors?.[$('doctorSelect').value]?.configured) {
+      showError('Επίλεξε ρητά τον ιατρό της αίτησης.');
+      return;
+    }
     if (!['left','right'].includes($('lateralitySelect').value)) {
       showError('Επίλεξε μία πλευρά: δεξιά ή αριστερά.');
       return;
@@ -845,9 +873,7 @@
     window.addEventListener('pagehide', releaseHorosPreviews);
     $('doctorSelect').addEventListener('change', () => {
       $('doctorSelect').dataset.currentDoctor = $('doctorSelect').value;
-      const configured = Boolean(state.contract?.doctors?.[$('doctorSelect').value]?.configured);
-      $('configStatus').textContent = configured ? 'RF v2 έτοιμο' : 'Απαιτείται server config';
-      $('configStatus').className = 'status-pill ' + (configured ? 'ok' : 'warn');
+      refreshDoctorReadiness();
       updateSummary();
     });
     $('createPdfBtn').addEventListener('click', createPdf);
