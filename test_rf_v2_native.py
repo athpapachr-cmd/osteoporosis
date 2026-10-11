@@ -637,6 +637,19 @@ class RFDoctorHorosExtensionTests(unittest.TestCase):
                 self.assertEqual(self._create(self._draft("A2"), images).status_code, expected_status)
                 self.assertEqual([len(x) for x in self._rows()], [0, 0])
 
+    def test_repaired_eoi_cannot_hide_truncated_jpeg_or_write_database(self):
+        # P1-01 reproduction: tolerant decoders fill missing scan area with grey.
+        original = make_horos_jpeg(6)
+        self.assertGreater(len(original), 900)
+        damaged = original[:-900] + b"\xff\xd9"
+        self.assertTrue(damaged.startswith(b"\xff\xd8\xff"))
+        self.assertTrue(damaged.endswith(b"\xff\xd9"))
+        for pathway, uploads in (("A1", [damaged]), ("A2", [make_horos_jpeg(), damaged])):
+            with self.subTest(pathway=pathway):
+                result = self._create(self._draft(pathway), images=uploads)
+                self.assertEqual(result.status_code, 422, result.text[:300])
+                self.assertEqual([len(rows) for rows in self._rows()], [0, 0])
+
     def test_horos_does_not_bypass_mandatory_imaging_pdf_semantics(self):
         image = make_horos_jpeg()
         draft = self._draft()
