@@ -59,7 +59,9 @@ const revoked = [];
 let blobId = 0;
 function fakeElement(tag) {
   return {
-    tag, children: [], listeners: {}, className: '', textContent: '', value: '',
+    tag, children: [], listeners: {}, className: '', textContent: '',
+    get value() { return this._value ?? ''; },
+    set value(next) { this._value = String(next ?? ''); }, // native input.value is always text
     append(...items) { this.children.push(...items); },
     replaceChildren(...items) { this.children = items; },
     addEventListener(type, fn) { this.listeners[type] = fn; },
