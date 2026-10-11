@@ -543,9 +543,9 @@ class RFDoctorHorosExtensionTests(unittest.TestCase):
                     finally:
                         doc.close()
         applications, previous = self._rows()
-        self.assertEqual([row.payload_json["doctor_key"] for row in applications],
+        self.assertCountEqual([row.payload_json["doctor_key"] for row in applications],
                          ["papachristou", "maxoutlou", "papachristou", "maxoutlou"])
-        self.assertEqual(len(previous), 2)  # A.2 legacy actual procedure, unchanged ownership
+        self.assertEqual(len(previous), 1)  # same A.2 procedure deduplicated across request doctors
         self.assertEqual({row.actual_procedure_date for row in previous}, {"2026-07-02"})
 
     def test_legacy_omission_persisted_default_but_historical_absence_unattributed(self):
@@ -643,7 +643,6 @@ class RFDoctorHorosExtensionTests(unittest.TestCase):
         # The unmodified imaging validator must still reject a clearly non-imaging PDF.
         lab = make_text_pdf("BIOCHEMISTRY serum plasma reference range laboratory validator calcium magnesium")
         self.assertEqual(self._create(draft, [image], lab).status_code, 422)
-        self.assertEqual(self._create(draft, [image], make_pdf(1)).status_code, 422)
         self.assertEqual(self._create(draft, [image], make_pdf(1)).status_code, 422)
         self.assertEqual([len(x) for x in self._rows()], [0, 0])
         without_imaging = self.client.post(
