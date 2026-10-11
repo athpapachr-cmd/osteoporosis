@@ -1,6 +1,6 @@
 (() => {
   const $ = id => document.getElementById(id);
-  const state = { contract: null, pathway: 'A1', selectedHistoryId: '', nsaids: [], others: [], unknowns: [], learnedMedications: [], physio: null, imagingValidation: '', horosImages: [], horosNextId: 0 };
+  const state = { contract: null, pathway: 'A1', selectedHistoryId: '', nsaids: [], others: [], unknowns: [], learnedMedications: [], physio: null, imagingValidation: '', horosImages: [], horosNextId: 0, doctors: [], editingDoctor: null };
 
   async function api(path, options = {}) {
     const response = await fetch(`/clinical/clinic-utilities/rf${path}`, { credentials: 'same-origin', ...options });
@@ -12,11 +12,11 @@
     return response;
   }
 
-  async function loadContract() {
+  async function loadContract(preferredDoctor = '') {
     try {
       const response = await api('/api/contract');
       state.contract = await response.json();
-      populateContract();
+      populateContract(preferredDoctor);
       const allConfigured = Boolean(state.contract.doctors?.[$("doctorSelect").value]?.configured) && Object.values(state.contract.products).every(v => v.configured);
       $('configStatus').textContent = allConfigured ? 'RF v2 έτοιμο' : 'Απαιτείται server config';
       $('configStatus').className = `status-pill ${allConfigured ? 'ok' : 'warn'}`;
@@ -27,16 +27,17 @@
     }
   }
 
-  function populateContract() {
+  function populateContract(preferredDoctor = '') {
     const c = state.contract;
     const doctorSelect = $("doctorSelect");
     doctorSelect.replaceChildren();
     Object.entries(c.doctors || {}).forEach(([key, item]) => {
-      const option = new Option(item.label + (item.configured ? "" : " — μη ρυθμισμένο"), key);
-      option.disabled = !item.configured;
-      doctorSelect.add(option);
+      if (item.configured) doctorSelect.add(new Option(item.label, key));
     });
-    doctorSelect.value = "papachristou";
+    const chosen = preferredDoctor || doctorSelect.dataset.currentDoctor || "papachristou";
+    doctorSelect.value = c.doctors?.[chosen]?.configured ? chosen :
+      (c.doctors?.papachristou?.configured ? "papachristou" : "");
+    doctorSelect.dataset.currentDoctor = doctorSelect.value;
     Object.entries(c.products).forEach(([key, item]) => {
       const option = new Option(item.label + (item.configured ? '' : ' — μη ρυθμισμένο'), key);
       option.disabled = !item.configured;
@@ -48,6 +49,104 @@
     Object.entries(c.laterality).forEach(([key, label]) => sideSelect.add(new Option(label, key)));
     sideSelect.value = '';
     $('reasonOptions').replaceChildren(...Object.entries(c.rf_reasons).map(([key, label]) => checkboxItem(key, label)));
+  }
+
+
+  function doctorStatus(message, error = false) {
+    $("doctorDirectoryStatus").textContent = message;
+    $("doctorDirectoryStatus").className = error ? "validation-panel error" : "muted";
+  }
+
+  function resetDoctorForm() {
+    $("doctorForm").reset();
+    $("doctorEditingKey").value = "";
+    state.editingDoctor = null;
+    $("doctorSave").textContent = "Προσθήκη ιατρού";
+  }
+
+  function editDoctor(row) {
+    state.editingDoctor = row;
+    $("doctorEditingKey").value = row.key;
+    for (const field of ["name", "gesy_code", "specialty", "medical_center", "phone", "email"]) {
+      $("doctorForm").elements.namedItem(field).value = row[field];
+    }
+    $("doctorSave").textContent = "Αποθήκευση αλλαγών";
+  }
+
+  function renderDoctorDirectory() {
+    const list = $("doctorDirectoryList");
+    list.replaceChildren();
+    for (const row of state.doctors) {
+      const item = document.createElement("div");
+      item.className = "doctor-directory-row" + (row.active ? "" : " is-inactive");
+      const desc = document.createElement("div");
+      const title = document.createElement("strong");
+      title.textContent = row.name;
+      const details = document.createElement("div");
+      details.className = "muted";
+      details.textContent = row.gesy_code + (row.active ? "" : " · Εκτός επιλογών");
+      desc.append(title, details);
+      const actions = document.createElement("div");
+      actions.className = "doctor-directory-actions";
+      const edit = document.createElement("button");
+      edit.type = "button"; edit.className = "btn secondary small"; edit.textContent = "Επεξεργασία";
+      edit.addEventListener("click", () => editDoctor(row));
+      const toggle = document.createElement("button");
+      toggle.type = "button"; toggle.className = "btn ghost small";
+      toggle.textContent = row.active ? "Αφαίρεση" : "Επαναφορά";
+      toggle.addEventListener("click", async () => {
+        try {
+          await api("/api/doctors/" + encodeURIComponent(row.key) + "/status", {
+            method: "POST", headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({revision: row.revision, active: !row.active}),
+          });
+          resetDoctorForm();
+          await loadDoctorDirectory();
+          await loadContract();
+          doctorStatus(row.active ? "Ο ιατρός αφαιρέθηκε από τις διαθέσιμες επιλογές." : "Ο ιατρός επανενεργοποιήθηκε.");
+        } catch (error) {
+          doctorStatus(error.message, true);
+          await loadDoctorDirectory();
+        }
+      });
+      actions.append(edit, toggle);
+      item.append(desc, actions);
+      list.append(item);
+    }
+  }
+
+  async function loadDoctorDirectory() {
+    try {
+      const response = await api("/api/doctors");
+      state.doctors = (await response.json()).doctors;
+      renderDoctorDirectory();
+    } catch (error) { doctorStatus(error.message, true); }
+  }
+
+  async function saveDoctor(event) {
+    event.preventDefault();
+    const fields = ["name", "gesy_code", "specialty", "medical_center", "phone", "email"];
+    const form = $("doctorForm");
+    const data = {};
+    for (const field of fields) data[field] = form.elements.namedItem(field).value.trim();
+    const previous = state.editingDoctor;
+    if (previous) data.revision = previous.revision;
+    const path = previous ? "/api/doctors/" + encodeURIComponent(previous.key) : "/api/doctors";
+    try {
+      $("doctorSave").disabled = true;
+      const response = await api(path, {
+        method: previous ? "PUT" : "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(data),
+      });
+      const saved = await response.json();
+      resetDoctorForm();
+      await loadDoctorDirectory();
+      await loadContract(saved.key);
+      doctorStatus(previous ? "Τα στοιχεία του ιατρού ενημερώθηκαν." : "Ο ιατρός προστέθηκε.");
+    } catch (error) {
+      doctorStatus(error.message, true);
+      await loadDoctorDirectory();
+    } finally { $("doctorSave").disabled = false; }
   }
 
   function checkboxItem(value, label) {
@@ -738,8 +837,14 @@
     $('historyLookupBtn').addEventListener('click', lookupHistory);
     $('imagingReport').addEventListener('change', validateImaging);
     $('horosJpegs').addEventListener('change', addHorosImages);
+    $('doctorManagement').addEventListener('toggle', e => {
+      if (e.currentTarget.open) loadDoctorDirectory();
+    });
+    $('doctorForm').addEventListener('submit', saveDoctor);
+    $('doctorCancel').addEventListener('click', resetDoctorForm);
     window.addEventListener('pagehide', releaseHorosPreviews);
     $('doctorSelect').addEventListener('change', () => {
+      $('doctorSelect').dataset.currentDoctor = $('doctorSelect').value;
       const configured = Boolean(state.contract?.doctors?.[$('doctorSelect').value]?.configured);
       $('configStatus').textContent = configured ? 'RF v2 έτοιμο' : 'Απαιτείται server config';
       $('configStatus').className = 'status-pill ' + (configured ? 'ok' : 'warn');
