@@ -431,6 +431,353 @@ class RFImagingSemanticGuardTests(unittest.TestCase):
         self.assertEqual(response.status_code, 422)
 
 
+
+# Test-only synthetic JPEG generation; requires no Pillow dependency.
+def make_horos_jpeg(orientation: int = 1, width: int = 160, height: int = 100) -> bytes:
+    pix = fitz.Pixmap(fitz.csRGB, fitz.IRect(0, 0, width, height), False)
+    quadrants = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0)]
+    for y in range(height):
+        for x in range(width):
+            pix.set_pixel(x, y, quadrants[2 * int(y >= height // 2) + int(x >= width // 2)])
+    jpeg = pix.tobytes("jpg")
+    # Little-endian TIFF, one EXIF orientation SHORT tag (0x0112).
+    tiff = (
+        b"II*\x00\x08\x00\x00\x00" + b"\x01\x00"
+        + b"\x12\x01\x03\x00\x01\x00\x00\x00"
+        + bytes([orientation, 0, 0, 0]) + b"\x00\x00\x00\x00"
+    )
+    exif = b"Exif\x00\x00" + tiff
+    return jpeg[:2] + b"\xff\xe1" + (len(exif) + 2).to_bytes(2, "big") + exif + jpeg[2:]
+
+
+def make_two_page_imaging() -> bytes:
+    doc = fitz.open()
+    try:
+        doc.new_page().insert_text((72, 72), "MRI radiology synthetic REPORT-FIRST")
+        doc.new_page().insert_text((72, 72), "REPORT-SECOND")
+        return doc.tobytes()
+    finally:
+        doc.close()
+
+
+class RFDoctorHorosExtensionTests(unittest.TestCase):
+    """Protected synthetic API + official template, no production records/provider."""
+    def setUp(self):
+        self.engine = memory_engine()
+        self.secondary = {
+            "name": "Synthetic Doctor Two",
+            "gesy_code": "SYN-D2",
+            "specialty": "Synthetic Orthopaedics",
+            "medical_center": "Synthetic Clinic Two",
+            "phone": "55500222",
+            "email": "doctor2@example.invalid",
+        }
+        self.env = patch.dict(os.environ, {
+            "CLINICAL_DATA_KEY": CLINICAL_KEY,
+            "RF_DOCTOR_PROFILE_JSON": DOCTOR_JSON,
+            "RF_PRODUCT_CATALOG_JSON": PRODUCT_JSON,
+        })
+        self.env.start()
+        app = FastAPI()
+        app.include_router(build_rf_router(self.engine))
+        self.client = TestClient(app)
+        self.headers = {"X-Clinical-Key": CLINICAL_KEY}
+        created = self.client.post(
+            "/clinical/clinic-utilities/rf/api/doctors",
+            headers=self.headers, json=self.secondary,
+        )
+        self.assertEqual(created.status_code, 201, created.text)
+        self.secondary_key = created.json()["key"]
+
+    def tearDown(self):
+        self.client.close()
+        self.env.stop()
+
+    def _draft(self, pathway="A1", **changes):
+        data = make_a1_draft().model_dump()
+        data["pathway"] = pathway
+        if pathway == "A2":
+            data["legacy_history"] = {
+                "actual_procedure_date": "2026-07-02",
+                "vas_before": 8, "vas_after": 3,
+                "last_followup_date": "2026-09-01",
+                "last_followup_vas": 5,
+            }
+        data.update(changes)
+        return data
+
+    def _create(self, draft=None, images=(), imaging=None):
+        files = [("imaging_report", ("report.pdf", imaging if imaging is not None else make_two_page_imaging(), "application/pdf"))]
+        files += [("horos_jpegs", (f"horos-{i}.jpg", content, "image/jpeg")) for i, content in enumerate(images)]
+        return self.client.post(
+            "/clinical/clinic-utilities/rf/api/create",
+            headers=self.headers,
+            data={"draft_json": json.dumps(draft if draft is not None else self._draft())},
+            files=files,
+        )
+
+    def _rows(self):
+        from sqlalchemy import select
+        from sqlalchemy.orm import Session
+        from clinic_utilities.rf.persistence import RFApplicationORM, RFProcedureHistoryORM
+        with Session(self.engine) as session:
+            return (
+                session.scalars(select(RFApplicationORM)).all(),
+                session.scalars(select(RFProcedureHistoryORM)).all(),
+            )
+
+    def test_doctor_contract_and_server_side_six_pdf_fields_a1_a2(self):
+        contract = self.client.get("/clinical/clinic-utilities/rf/api/contract", headers=self.headers).json()
+        self.assertTrue(contract["doctors"]["papachristou"]["configured"])
+        self.assertTrue(contract["doctors"][self.secondary_key]["configured"])
+        self.assertNotIn("doctor2@example.invalid", json.dumps(contract))
+        for pathway in ("A1", "A2"):
+            for key, expected in (("papachristou", json.loads(DOCTOR_JSON)),
+                                  (self.secondary_key, self.secondary)):
+                with self.subTest(pathway=pathway, doctor=key):
+                    response = self._create(self._draft(pathway, doctor_key=key))
+                    self.assertEqual(response.status_code, 200, response.text[:300])
+                    doc = fitz.open(stream=response.content, filetype="pdf")
+                    try:
+                        self.assertEqual(doc.page_count, (4 if pathway == "A1" else 3) + 2)
+                        page_text = doc[0].get_text()
+                        for field in ("name", "gesy_code", "specialty", "medical_center", "phone", "email"):
+                            self.assertIn(expected[field], page_text)
+                        self.assertIn("REPORT-FIRST", doc[-2].get_text())
+                        self.assertIn("REPORT-SECOND", doc[-1].get_text())
+                    finally:
+                        doc.close()
+        applications, previous = self._rows()
+        self.assertCountEqual([row.payload_json["doctor_key"] for row in applications],
+                         ["papachristou", self.secondary_key, "papachristou", self.secondary_key])
+        self.assertEqual(len(previous), 1)  # same A.2 procedure deduplicated across request doctors
+        self.assertEqual({row.actual_procedure_date for row in previous}, {"2026-07-02"})
+
+    def test_legacy_omission_persisted_default_but_historical_absence_unattributed(self):
+        from clinic_utilities.rf.persistence import record_application
+        raw = self._draft()
+        raw.pop("doctor_key")
+        response = self._create(raw)
+        self.assertEqual(response.status_code, 200)
+        applications, _ = self._rows()
+        self.assertEqual(applications[0].payload_json["doctor_key"], "papachristou")
+        old = dict(applications[0].payload_json)
+        old.pop("doctor_key")
+        record_application(self.engine, old)
+        applications, _ = self._rows()
+        self.assertEqual(sum("doctor_key" not in x.payload_json for x in applications), 1)
+
+    def test_invalid_blank_null_unknown_and_unconfigured_doctor_fail_before_write(self):
+        for key in ("", None, "unknown", " " + self.secondary_key):
+            with self.subTest(key=key):
+                res = self._create(self._draft(doctor_key=key))
+                self.assertEqual(res.status_code, 422, res.text[:300])
+        self.assertEqual(len(self._rows()[0]), 0)
+        doctor = self.client.get(
+            "/clinical/clinic-utilities/rf/api/doctors", headers=self.headers
+        ).json()["doctors"]
+        second = next(row for row in doctor if row["key"] == self.secondary_key)
+        status = self.client.post(
+            f"/clinical/clinic-utilities/rf/api/doctors/{self.secondary_key}/status",
+            headers=self.headers, json={"revision": second["revision"], "active": False},
+        )
+        self.assertEqual(status.status_code, 200, status.text)
+        res = self._create(self._draft(doctor_key=self.secondary_key))
+        self.assertEqual(res.status_code, 422, res.text[:300])
+        self.assertEqual(len(self._rows()[0]), 0)
+
+
+    def test_managed_profiles_crud_snapshot_history_and_restart(self):
+        base = "/clinical/clinic-utilities/rf/api"
+        self.assertEqual(self.client.get(f"{base}/doctors").status_code, 401)
+        self.assertEqual(self.client.post(f"{base}/doctors", json=self.secondary).status_code, 401)
+        self.assertEqual(self.client.get(f"{base}/doctors", headers=self.headers).status_code, 200)
+        before = self._create(self._draft(doctor_key=self.secondary_key))
+        self.assertEqual(before.status_code, 200, before.text[:250])
+        first = self._rows()[0][0].payload_json
+        self.assertEqual(first["doctor_snapshot"], self.secondary)
+        self.assertEqual(first["doctor_key"], self.secondary_key)
+        self.assertNotIn("approval_status", first)
+        self.assertNotIn("followup_assignee", first)
+
+        doctors = self.client.get(f"{base}/doctors", headers=self.headers).json()["doctors"]
+        original = next(row for row in doctors if row["key"] == self.secondary_key)
+        updated = {**self.secondary, "name": "Synthetic Doctor Two Updated",
+                   "medical_center": "Synthetic Updated Clinic"}
+        revision = original["revision"]
+        changed = self.client.put(
+            f"{base}/doctors/{self.secondary_key}", headers=self.headers,
+            json={**updated, "revision": revision},
+        )
+        self.assertEqual(changed.status_code, 200, changed.text)
+        self.assertEqual(changed.json()["revision"], revision + 1)
+        self.assertEqual(self.client.put(
+            f"{base}/doctors/{self.secondary_key}", headers=self.headers,
+            json={**self.secondary, "revision": revision},
+        ).status_code, 409)
+        self.assertEqual(self.client.post(
+            f"{base}/doctors", headers=self.headers, json=updated,
+        ).status_code, 409 if updated["gesy_code"] == self.secondary["gesy_code"] else 201)
+        self.assertEqual(self._rows()[0][0].payload_json["doctor_snapshot"], self.secondary)
+
+        after = self._create(self._draft(doctor_key=self.secondary_key))
+        self.assertEqual(after.status_code, 200, after.text[:250])
+        document = fitz.open(stream=after.content, filetype="pdf")
+        try:
+            self.assertIn(updated["name"], document[0].get_text())
+            self.assertIn(updated["medical_center"], document[0].get_text())
+        finally:
+            document.close()
+        snapshots = [row.payload_json["doctor_snapshot"] for row in self._rows()[0]]
+        self.assertIn(self.secondary, snapshots)
+        self.assertIn(updated, snapshots)
+
+        disabled = self.client.post(
+            f"{base}/doctors/{self.secondary_key}/status", headers=self.headers,
+            json={"revision": changed.json()["revision"], "active": False},
+        )
+        self.assertEqual(disabled.status_code, 200)
+        self.assertEqual(self._create(self._draft(doctor_key=self.secondary_key)).status_code, 422)
+        self.assertEqual(len(self._rows()[0]), 2)
+        self.assertFalse(self.client.get(f"{base}/contract", headers=self.headers).json()
+                         ["doctors"][self.secondary_key]["configured"])
+        self.assertEqual(self.client.post(
+            f"{base}/doctors/{self.secondary_key}/status", headers=self.headers,
+            json={"revision": changed.json()["revision"], "active": True},
+        ).status_code, 409)
+        enabled = self.client.post(
+            f"{base}/doctors/{self.secondary_key}/status", headers=self.headers,
+            json={"revision": disabled.json()["revision"], "active": True},
+        )
+        self.assertEqual(enabled.status_code, 200)
+        self.assertTrue(enabled.json()["active"])
+
+        # Initial default is imported from legacy config once; managed edits win on restart.
+        default = next(row for row in doctors if row["key"] == "papachristou")
+        revised_default = {**{k: default[k] for k in (
+            "name", "gesy_code", "specialty", "medical_center", "phone", "email")},
+            "medical_center": "Managed Default Clinic", "revision": default["revision"]}
+        self.assertEqual(self.client.put(
+            f"{base}/doctors/papachristou", headers=self.headers, json=revised_default
+        ).status_code, 200)
+        restarted = FastAPI()
+        restarted.include_router(build_rf_router(self.engine))
+        with TestClient(restarted) as client:
+            directory = client.get(f"{base}/doctors", headers=self.headers).json()["doctors"]
+            self.assertEqual(next(r for r in directory if r["key"] == "papachristou")
+                             ["medical_center"], "Managed Default Clinic")
+            self.assertTrue(next(r for r in directory if r["key"] == self.secondary_key)["active"])
+
+    def test_more_doctors_without_environment_or_code_change(self):
+        base = "/clinical/clinic-utilities/rf/api"
+        extra = {**self.secondary, "name": "Third Synthetic Physician", "gesy_code": "SYN-D3",
+                 "email": "third@example.invalid"}
+        created = self.client.post(f"{base}/doctors", headers=self.headers, json=extra)
+        self.assertEqual(created.status_code, 201)
+        key = created.json()["key"]
+        self.assertNotIn(key, ("papachristou", self.secondary_key))
+        output = self._create(self._draft(doctor_key=key))
+        self.assertEqual(output.status_code, 200, output.text[:250])
+        self.assertEqual(self._rows()[0][0].payload_json["doctor_key"], key)
+        self.assertEqual(self._rows()[0][0].payload_json["doctor_snapshot"], extra)
+
+
+    def test_zero_one_three_images_page_order_and_readable_imaging(self):
+        variants = [[], [make_horos_jpeg(1)],
+                    [make_horos_jpeg(1), make_horos_jpeg(2), make_horos_jpeg(6)]]
+        expected_colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255)]
+        for images in variants:
+            with self.subTest(count=len(images)):
+                response = self._create(images=images)
+                self.assertEqual(response.status_code, 200, response.text[:250])
+                doc = fitz.open(stream=response.content, filetype="pdf")
+                try:
+                    self.assertEqual(doc.page_count, 4 + 2 + len(images))
+                    self.assertIn("REPORT-FIRST", doc[4].get_text())
+                    self.assertIn("REPORT-SECOND", doc[5].get_text())
+                    for image_page, color in zip(list(doc)[6:], expected_colors):
+                        info = image_page.get_image_info()
+                        self.assertEqual(len(info), 1)
+                        bbox = fitz.Rect(info[0]["bbox"])
+                        pixel = image_page.get_pixmap(
+                            clip=fitz.Rect(bbox.x0 + 4, bbox.y0 + 4, bbox.x0 + 6, bbox.y0 + 6)
+                        ).samples[:3]
+                        self.assertTrue(all(abs(x - y) < 45 for x, y in zip(pixel, color)),
+                                        (tuple(pixel), color))
+                finally:
+                    doc.close()
+
+    def test_all_eight_exif_orientations_including_mirrors(self):
+        # Expected upper-left color after EXIF rotation/flip, with quadrant color source R,G,B,Y.
+        corners = {
+            1: (255, 0, 0), 2: (0, 255, 0),
+            3: (255, 255, 0), 4: (0, 0, 255),
+            5: (255, 0, 0), 6: (0, 0, 255),
+            7: (255, 255, 0), 8: (0, 255, 0),
+        }
+        for orientation, expected_color in corners.items():
+            with self.subTest(orientation=orientation):
+                result = self._create(images=[make_horos_jpeg(orientation)])
+                self.assertEqual(result.status_code, 200, result.text[:250])
+                doc = fitz.open(stream=result.content, filetype="pdf")
+                try:
+                    image = doc[-1]
+                    self.assertEqual(image.rect.width > image.rect.height, orientation <= 4)
+                    bbox = fitz.Rect(image.get_image_info()[0]["bbox"])
+                    pixel = image.get_pixmap(
+                        clip=fitz.Rect(bbox.x0 + 4, bbox.y0 + 4, bbox.x0 + 6, bbox.y0 + 6)
+                    ).samples[:3]
+                    self.assertTrue(all(abs(x - y) < 45 for x, y in zip(pixel, expected_color)),
+                                    (orientation, tuple(pixel), expected_color))
+                finally:
+                    doc.close()
+
+    def test_corrupt_oversized_dimensional_and_too_many_jpegs_have_zero_writes(self):
+        corrupt = b"\xff\xd8\xffBROKEN\xff\xd9"
+        oversized = b"\xff\xd8\xff" + (b"\x00" * (8 * 1024 * 1024)) + b"\xff\xd9"
+        cases = [
+            ([corrupt], 422),
+            ([oversized], 413),
+            ([make_horos_jpeg(width=7001, height=2)], 422),
+            ([make_horos_jpeg()] * 11, 413),
+        ]
+        for images, expected_status in cases:
+            with self.subTest(expected=expected_status, count=len(images)):
+                self.assertEqual(self._create(self._draft("A2"), images).status_code, expected_status)
+                self.assertEqual([len(x) for x in self._rows()], [0, 0])
+
+    def test_repaired_eoi_cannot_hide_truncated_jpeg_or_write_database(self):
+        # P1-01 reproduction: tolerant decoders fill missing scan area with grey.
+        original = make_horos_jpeg(6)
+        self.assertGreater(len(original), 900)
+        damaged = original[:-900] + b"\xff\xd9"
+        self.assertTrue(damaged.startswith(b"\xff\xd8\xff"))
+        self.assertTrue(damaged.endswith(b"\xff\xd9"))
+        for pathway, uploads in (("A1", [damaged]), ("A2", [make_horos_jpeg(), damaged])):
+            with self.subTest(pathway=pathway):
+                result = self._create(self._draft(pathway), images=uploads)
+                self.assertEqual(result.status_code, 422, result.text[:300])
+                self.assertEqual([len(rows) for rows in self._rows()], [0, 0])
+
+    def test_horos_does_not_bypass_mandatory_imaging_pdf_semantics(self):
+        image = make_horos_jpeg()
+        draft = self._draft()
+        # The unmodified imaging validator must still reject a clearly non-imaging PDF.
+        lab = make_text_pdf("BIOCHEMISTRY serum plasma reference range laboratory validator calcium magnesium")
+        self.assertEqual(self._create(draft, [image], lab).status_code, 422)
+        self.assertEqual(self._create(draft, [image], make_pdf(1)).status_code, 422)
+        self.assertEqual([len(x) for x in self._rows()], [0, 0])
+        without_imaging = self.client.post(
+            "/clinical/clinic-utilities/rf/api/create",
+            headers=self.headers,
+            data={"draft_json": json.dumps(draft)},
+            files={"horos_jpegs": ("only.jpg", image, "image/jpeg")},
+        )
+        self.assertEqual(without_imaging.status_code, 422)
+        self.assertEqual([len(x) for x in self._rows()], [0, 0])
+
+
+
 class RFIntegrationSourceTests(unittest.TestCase):
     def test_main_mounts_native_router_not_gateway(self):
         source = Path("main.py").read_text(encoding="utf-8")

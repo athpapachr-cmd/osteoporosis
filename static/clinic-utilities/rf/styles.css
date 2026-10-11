@@ -21,4 +21,20 @@
 .dictionary-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 9px;border:1px solid #e1e7ef;border-radius:10px;background:#fbfcfe}
 .learned-badge,.trial-actions{margin:-3px 0 7px 38px;font-size:11px}
 .learned-badge{color:#286341;font-weight:700}
-@media(max-width:760px){.unknown-medication{grid-template-columns:1fr}.dictionary-row{align-items:stretch;flex-direction:column}}
+.horos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:10px;margin:12px 0}
+.horos-item{margin:0;min-width:0;display:grid;gap:7px;padding:9px;border:1px solid #dbe4ef;border-radius:12px;background:#fbfcfe}
+.horos-thumb{width:100%;aspect-ratio:4/3;object-fit:contain;border-radius:8px;background:#eef2f6}
+.horos-item figcaption{font-size:12px;color:#425268;overflow-wrap:anywhere}
+.horos-item button{justify-self:start}
+
+.doctor-management{margin:2px 0 4px;padding:12px;border:1px solid #dbe4ef;border-radius:12px;background:#fafcff}
+.doctor-management summary{cursor:pointer;font-size:13px;color:#294362}
+.doctor-management summary .muted{font-weight:400;margin-left:8px}
+.doctor-directory-list{display:grid;gap:7px;margin:12px 0}
+.doctor-directory-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px;border:1px solid #e1e7ef;border-radius:10px;background:#fff}
+.doctor-directory-row .muted{overflow-wrap:anywhere}
+.doctor-directory-row.is-inactive{opacity:.7}
+.doctor-directory-actions{display:flex;gap:6px;flex-wrap:wrap}
+.doctor-form{margin-top:14px;padding-top:12px;border-top:1px dashed #dbe3ed}
+.doctor-form .action-row{justify-content:flex-start;flex-wrap:wrap}
+@media(max-width:760px){.doctor-directory-row{align-items:stretch;flex-direction:column}.unknown-medication{grid-template-columns:1fr}.dictionary-row{align-items:stretch;flex-direction:column}}

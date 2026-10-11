@@ -92,6 +92,10 @@ RF_REASON_LABELS = {
 # GeSY RF applications are unilateral: exactly one left or right target per application.
 LATERALITY_LABELS = {"left": "Αριστερά", "right": "Δεξιά"}
 
+# Stable legacy default; any other doctor is added via the protected RF directory.
+DEFAULT_DOCTOR_KEY = "papachristou"
+
+
 
 @dataclass(frozen=True)
 class DoctorProfile:
@@ -103,18 +107,21 @@ class DoctorProfile:
     email: str
 
     @classmethod
-    def from_environment(cls) -> "DoctorProfile":
-        raw = os.getenv("RF_DOCTOR_PROFILE_JSON", "").strip()
+    def from_environment(cls, variable_name: str = "RF_DOCTOR_PROFILE_JSON") -> "DoctorProfile":
+        """Default argument preserves every existing RF_DOCTOR_PROFILE_JSON caller."""
+        raw = os.getenv(variable_name, "").strip()
         if not raw:
-            raise ValueError("RF_DOCTOR_PROFILE_JSON is not configured")
+            raise ValueError(f"{variable_name} is not configured")
         try:
             data = json.loads(raw)
         except json.JSONDecodeError as exc:
-            raise ValueError("RF_DOCTOR_PROFILE_JSON is not valid JSON") from exc
+            raise ValueError(f"{variable_name} is not valid JSON") from exc
+        if not isinstance(data, dict):
+            raise ValueError(f"{variable_name} must be an object")
         required = ("name", "gesy_code", "specialty", "medical_center", "phone", "email")
         values = {key: str(data.get(key) or "").strip() for key in required}
         if any(not value for value in values.values()):
-            raise ValueError("RF_DOCTOR_PROFILE_JSON is incomplete")
+            raise ValueError(f"{variable_name} is incomplete")
         return cls(**values)
 
 

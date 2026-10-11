@@ -1,6 +1,6 @@
 (() => {
   const $ = id => document.getElementById(id);
-  const state = { contract: null, pathway: 'A1', selectedHistoryId: '', nsaids: [], others: [], unknowns: [], learnedMedications: [], physio: null, imagingValidation: '' };
+  const state = { contract: null, pathway: 'A1', selectedHistoryId: '', nsaids: [], others: [], unknowns: [], learnedMedications: [], physio: null, imagingValidation: '', horosImages: [], horosNextId: 0, doctors: [], editingDoctor: null };
 
   async function api(path, options = {}) {
     const response = await fetch(`/clinical/clinic-utilities/rf${path}`, { credentials: 'same-origin', ...options });
@@ -13,22 +13,51 @@
   }
 
   async function loadContract() {
+    // A directory change must not rebuild the patient's RF draft or choose
+    // the physician that happened to be edited/added.
+    const initialLoad = !state.contract;
+    const previousIssuer = initialLoad ? "papachristou" : $("doctorSelect").value;
     try {
       const response = await api('/api/contract');
       state.contract = await response.json();
-      populateContract();
-      const allConfigured = state.contract.doctor_configured && Object.values(state.contract.products).every(v => v.configured);
-      $('configStatus').textContent = allConfigured ? 'RF v2 έτοιμο' : 'Απαιτείται server config';
-      $('configStatus').className = `status-pill ${allConfigured ? 'ok' : 'warn'}`;
+      if (initialLoad) populateContract();
+      else populateDoctorOptions(previousIssuer);
+      refreshDoctorReadiness();
+      updateSummary();
+      // Losing an active issuer requires an explicit user selection, not fallback.
+      return !initialLoad && !!previousIssuer && $("doctorSelect").value !== previousIssuer;
     } catch (error) {
       $('configStatus').textContent = 'σφάλμα φόρτωσης';
       $('configStatus').className = 'status-pill error';
       showError(error.message);
+      return null;
     }
+  }
+
+  function refreshDoctorReadiness() {
+    const configured = Boolean(state.contract?.doctors?.[$("doctorSelect").value]?.configured);
+    const productsReady = Object.values(state.contract?.products || {}).every(item => item.configured);
+    const ready = configured && productsReady;
+    $('configStatus').textContent = ready ? 'RF v2 έτοιμο' :
+      ($("doctorSelect").value ? 'Απαιτείται server config' : 'Επίλεξε ιατρό αίτησης');
+    $('configStatus').className = 'status-pill ' + (ready ? 'ok' : 'warn');
+  }
+
+  function populateDoctorOptions(chosen) {
+    const doctorSelect = $("doctorSelect");
+    doctorSelect.replaceChildren();
+    doctorSelect.add(new Option("Επίλεξε ιατρό…", ""));
+    Object.entries(state.contract?.doctors || {}).forEach(([key, item]) => {
+      if (item.configured) doctorSelect.add(new Option(item.label, key));
+    });
+    // Never substitute the default when the previously chosen issuer was removed.
+    doctorSelect.value = chosen && state.contract?.doctors?.[chosen]?.configured ? chosen : "";
+    doctorSelect.dataset.currentDoctor = doctorSelect.value;
   }
 
   function populateContract() {
     const c = state.contract;
+    populateDoctorOptions(c.doctors?.papachristou?.configured ? "papachristou" : "");
     Object.entries(c.products).forEach(([key, item]) => {
       const option = new Option(item.label + (item.configured ? '' : ' — μη ρυθμισμένο'), key);
       option.disabled = !item.configured;
@@ -40,6 +69,108 @@
     Object.entries(c.laterality).forEach(([key, label]) => sideSelect.add(new Option(label, key)));
     sideSelect.value = '';
     $('reasonOptions').replaceChildren(...Object.entries(c.rf_reasons).map(([key, label]) => checkboxItem(key, label)));
+  }
+
+
+  function doctorStatus(message, error = false) {
+    $("doctorDirectoryStatus").textContent = message;
+    $("doctorDirectoryStatus").className = error ? "validation-panel error" : "muted";
+  }
+
+  function resetDoctorForm() {
+    $("doctorForm").reset();
+    $("doctorEditingKey").value = "";
+    state.editingDoctor = null;
+    $("doctorSave").textContent = "Προσθήκη ιατρού";
+  }
+
+  function editDoctor(row) {
+    state.editingDoctor = row;
+    $("doctorEditingKey").value = row.key;
+    for (const field of ["name", "gesy_code", "specialty", "medical_center", "phone", "email"]) {
+      $("doctorForm").elements.namedItem(field).value = row[field];
+    }
+    $("doctorSave").textContent = "Αποθήκευση αλλαγών";
+  }
+
+  function renderDoctorDirectory() {
+    const list = $("doctorDirectoryList");
+    list.replaceChildren();
+    for (const row of state.doctors) {
+      const item = document.createElement("div");
+      item.className = "doctor-directory-row" + (row.active ? "" : " is-inactive");
+      const desc = document.createElement("div");
+      const title = document.createElement("strong");
+      title.textContent = row.name;
+      const details = document.createElement("div");
+      details.className = "muted";
+      details.textContent = row.gesy_code + (row.active ? "" : " · Εκτός επιλογών");
+      desc.append(title, details);
+      const actions = document.createElement("div");
+      actions.className = "doctor-directory-actions";
+      const edit = document.createElement("button");
+      edit.type = "button"; edit.className = "btn secondary small"; edit.textContent = "Επεξεργασία";
+      edit.addEventListener("click", () => editDoctor(row));
+      const toggle = document.createElement("button");
+      toggle.type = "button"; toggle.className = "btn ghost small";
+      toggle.textContent = row.active ? "Αφαίρεση" : "Επαναφορά";
+      toggle.addEventListener("click", async () => {
+        try {
+          await api("/api/doctors/" + encodeURIComponent(row.key) + "/status", {
+            method: "POST", headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({revision: row.revision, active: !row.active}),
+          });
+          resetDoctorForm();
+          await loadDoctorDirectory();
+          const lostIssuer = await loadContract();
+          doctorStatus(lostIssuer
+            ? "Ο επιλεγμένος ιατρός αφαιρέθηκε. Επίλεξε ρητά άλλον ιατρό για αυτή την αίτηση."
+            : (row.active ? "Ο ιατρός αφαιρέθηκε από τις διαθέσιμες επιλογές." : "Ο ιατρός επανενεργοποιήθηκε."));
+        } catch (error) {
+          doctorStatus(error.message, true);
+          await loadDoctorDirectory();
+        }
+      });
+      actions.append(edit, toggle);
+      item.append(desc, actions);
+      list.append(item);
+    }
+  }
+
+  async function loadDoctorDirectory() {
+    try {
+      const response = await api("/api/doctors");
+      state.doctors = (await response.json()).doctors;
+      renderDoctorDirectory();
+    } catch (error) { doctorStatus(error.message, true); }
+  }
+
+  async function saveDoctor(event) {
+    event.preventDefault();
+    const fields = ["name", "gesy_code", "specialty", "medical_center", "phone", "email"];
+    const form = $("doctorForm");
+    const data = {};
+    for (const field of fields) data[field] = form.elements.namedItem(field).value.trim();
+    const previous = state.editingDoctor;
+    if (previous) data.revision = previous.revision;
+    const path = previous ? "/api/doctors/" + encodeURIComponent(previous.key) : "/api/doctors";
+    try {
+      $("doctorSave").disabled = true;
+      const response = await api(path, {
+        method: previous ? "PUT" : "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(data),
+      });
+      await response.json();
+      resetDoctorForm();
+      await loadDoctorDirectory();
+      const lostIssuer = await loadContract();
+      doctorStatus(lostIssuer
+        ? "Ο προηγούμενος εκδότης δεν είναι διαθέσιμος. Επίλεξε ρητά άλλον ιατρό."
+        : (previous ? "Τα στοιχεία του ιατρού ενημερώθηκαν." : "Ο ιατρός προστέθηκε. Επίλεξε τον αν θέλεις να εκδώσει αυτή την αίτηση."));
+    } catch (error) {
+      doctorStatus(error.message, true);
+      await loadDoctorDirectory();
+    } finally { $("doctorSave").disabled = false; }
   }
 
   function checkboxItem(value, label) {
@@ -490,6 +621,7 @@
     const indication = state.contract?.indications?.[code];
     const draft = {
       pathway: state.pathway,
+      doctor_key: $('doctorSelect').value,
       patient_name: $('patientName').value.trim(),
       identity_number: $('identityNumber').value.trim(),
       gesy_number: $('gesyNumber').value.trim(),
@@ -572,7 +704,70 @@
     }
   }
 
+  const MAX_HOROS_IMAGES = 10;
+  const MAX_HOROS_IMAGE_BYTES = 8 * 1024 * 1024;
+  const MAX_HOROS_TOTAL_BYTES = 40 * 1024 * 1024;
+
+  function renderHorosImages(message = "") {
+    const grid = $("horosImageGrid");
+    grid.replaceChildren();
+    state.horosImages.forEach(item => {
+      const figure = document.createElement("figure");
+      figure.className = "horos-item";
+      const image = document.createElement("img");
+      image.className = "horos-thumb";
+      image.src = item.url;
+      image.alt = "Προεπισκόπηση " + item.file.name;
+      const caption = document.createElement("figcaption");
+      caption.textContent = item.file.name;
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "btn ghost small";
+      remove.textContent = "Αφαίρεση";
+      remove.setAttribute("aria-label", "Αφαίρεση " + item.file.name);
+      remove.addEventListener("click", () => {
+        URL.revokeObjectURL(item.url);
+        state.horosImages = state.horosImages.filter(x => x.id !== item.id);
+        renderHorosImages();
+      });
+      figure.append(image, caption, remove);
+      grid.append(figure);
+    });
+    const status = $("horosImageStatus");
+    status.className = message ? "validation-panel error" : "muted";
+    status.textContent = message || (state.horosImages.length ?
+      state.horosImages.length + " εικόνα/ες με σειρά επισύναψης.": "Δεν έχουν προστεθεί εικόνες.");
+  }
+
+  function addHorosImages() {
+    const picker = $("horosJpegs");
+    const selected = Array.from(picker.files || []);
+    picker.value = "";  // allow reselection of the same file
+    let message = "";
+    for (const file of selected) {
+      const total = state.horosImages.reduce((sum, item) => sum + item.file.size, 0);
+      if (state.horosImages.length >= MAX_HOROS_IMAGES) { message = "Επιτρέπονται έως 10 εικόνες Horos."; break; }
+      if (!/\.jpe?g$/i.test(file.name) || (file.type && !["image/jpeg", "image/pjpeg"].includes(file.type))) {
+        message = "Επιτρέπονται μόνο αρχεία JPEG (.jpg/.jpeg)."; continue;
+      }
+      if (file.size > MAX_HOROS_IMAGE_BYTES || total + file.size > MAX_HOROS_TOTAL_BYTES) {
+        message = "Υπέρβαση ορίου 8 MB ανά εικόνα / 40 MB συνολικά."; continue;
+      }
+      state.horosImages.push({file, url: URL.createObjectURL(file), id: ++state.horosNextId});
+    }
+    renderHorosImages(message);
+  }
+
+  function releaseHorosPreviews() {
+    state.horosImages.forEach(item => URL.revokeObjectURL(item.url));
+    state.horosImages = [];
+  }
+
   async function createPdf() {
+    if (!state.contract?.doctors?.[$('doctorSelect').value]?.configured) {
+      showError('Επίλεξε ρητά τον ιατρό της αίτησης.');
+      return;
+    }
     if (!['left','right'].includes($('lateralitySelect').value)) {
       showError('Επίλεξε μία πλευρά: δεξιά ή αριστερά.');
       return;
@@ -600,6 +795,7 @@
       const form = new FormData();
       form.append('draft_json', JSON.stringify(buildDraft()));
       form.append('imaging_report', file, file.name);
+      state.horosImages.forEach(item => form.append('horos_jpegs', item.file, item.file.name));
       const response = await api('/api/create', {method:'POST', body:form});
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
@@ -633,6 +829,7 @@
     const items = [
       `Ασθενής: ${$('patientName')?.value || '—'}`,
       `Προϊόν: ${state.contract?.products?.[$('productSelect')?.value]?.label || '—'}`,
+      `Ιατρός: ${state.contract?.doctors?.[$('doctorSelect').value]?.label || '—'}`,
       `Εντόπιση: ${$('exactLocation')?.value || '—'}`
     ];
     $('reviewSummary').innerHTML = items.map(x => `<div class="summary-item">${escapeHtml(x)}</div>`).join('');
@@ -667,6 +864,18 @@
     $('addAdverseBtn').addEventListener('click', addAdverse);
     $('historyLookupBtn').addEventListener('click', lookupHistory);
     $('imagingReport').addEventListener('change', validateImaging);
+    $('horosJpegs').addEventListener('change', addHorosImages);
+    $('doctorManagement').addEventListener('toggle', e => {
+      if (e.currentTarget.open) loadDoctorDirectory();
+    });
+    $('doctorForm').addEventListener('submit', saveDoctor);
+    $('doctorCancel').addEventListener('click', resetDoctorForm);
+    window.addEventListener('pagehide', releaseHorosPreviews);
+    $('doctorSelect').addEventListener('change', () => {
+      $('doctorSelect').dataset.currentDoctor = $('doctorSelect').value;
+      refreshDoctorReadiness();
+      updateSummary();
+    });
     $('createPdfBtn').addEventListener('click', createPdf);
     $('clearBtn').addEventListener('click', () => location.reload());
     ['patientName','productSelect','exactLocation'].forEach(id => $(id).addEventListener('input', updateSummary));

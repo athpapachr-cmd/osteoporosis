@@ -9,12 +9,16 @@ import unicodedata
 import fitz
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse, Response
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+from sqlalchemy import select
 from sqlalchemy.engine import Engine
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
 
 from clinic_utilities.physio_referral_runtime import _repo_root, _require_clinical_key
 from .catalog import (
     INDICATIONS,
+    DEFAULT_DOCTOR_KEY,
     LATERALITY_LABELS,
     PRODUCT_LABELS,
     RF_REASON_LABELS,
@@ -22,10 +26,21 @@ from .catalog import (
     product_catalog_from_environment,
 )
 from .parsers import parse_medications, parse_physio_dates
-from .pdf import build_official_rf_pdf
+from .pdf import (
+    MAX_HOROS_JPEG_BYTES,
+    MAX_HOROS_JPEG_COUNT,
+    MAX_HOROS_JPEG_TOTAL_BYTES,
+    build_official_rf_pdf,
+)
 from .persistence import (
     get_procedure_history,
     initialize_rf_tables,
+    RFDoctorProfileORM,
+    DOCTOR_FIELDS,
+    create_rf_doctor,
+    list_rf_doctors,
+    revise_rf_doctor,
+    rf_doctor_snapshot,
     list_procedure_history,
     list_medication_aliases,
     record_application,
@@ -35,6 +50,42 @@ from .persistence import (
 )
 
 MAX_IMAGING_BYTES = 20 * 1024 * 1024
+
+
+class RFDoctorInput(BaseModel):
+    name: str = Field(min_length=1, max_length=200)
+    gesy_code: str = Field(min_length=1, max_length=80)
+    specialty: str = Field(min_length=1, max_length=160)
+    medical_center: str = Field(min_length=1, max_length=240)
+    phone: str = Field(min_length=1, max_length=80)
+    email: str = Field(min_length=3, max_length=240)
+
+    @field_validator(*DOCTOR_FIELDS)
+    @classmethod
+    def nonblank(cls, value: str) -> str:
+        if not value.strip() or any(ord(ch) < 32 for ch in value):
+            raise ValueError("Απαιτούνται μη κενά στοιχεία ιατρού")
+        return value.strip()
+
+    @field_validator("email")
+    @classmethod
+    def email_format(cls, value: str) -> str:
+        if "@" not in value or "." not in value.rsplit("@", 1)[-1]:
+            raise ValueError("Μη έγκυρο email ιατρού")
+        return value
+
+
+class RFDoctorRevision(BaseModel):
+    revision: int = Field(ge=1)
+
+
+class RFDoctorEdit(RFDoctorInput):
+    revision: int = Field(ge=1)
+
+
+class RFDoctorStatus(RFDoctorRevision):
+    active: bool
+
 
 
 class RFMedicationTrial(BaseModel):
@@ -66,6 +117,8 @@ class RFLegacyHistory(BaseModel):
 
 class RFApplicationDraft(BaseModel):
     pathway: Literal["A1", "A2"]
+    # Missing in older clients => legacy default; explicit null/blank is NOT defaulted.
+    doctor_key: str = Field(default=DEFAULT_DOCTOR_KEY, min_length=1, max_length=40)
     patient_name: str = Field(min_length=1, max_length=200)
     identity_number: str = Field(min_length=1, max_length=128)
     gesy_number: str = Field(min_length=1, max_length=128)
@@ -334,6 +387,33 @@ async def _read_imaging_pdf(upload: UploadFile) -> bytes:
     return content
 
 
+async def _read_horos_jpegs(uploads: list[UploadFile] | None) -> list[bytes]:
+    """Strict byte/count ceilings before JPEG metadata inspection or decoding."""
+    if not uploads:
+        return []
+    if len(uploads) > MAX_HOROS_JPEG_COUNT:
+        raise HTTPException(status_code=413, detail="Υπερβολικά πολλές εικόνες Horos (μέγιστο 10)")
+    contents: list[bytes] = []
+    total = 0
+    for number, upload in enumerate(uploads, start=1):
+        filename = str(upload.filename or "").lower()
+        content_type = str(upload.content_type or "").lower()
+        if not filename.endswith((".jpg", ".jpeg")) or content_type not in {
+            "image/jpeg", "image/pjpeg", "application/octet-stream"
+        }:
+            raise HTTPException(status_code=415, detail=f"Η εικόνα {number} πρέπει να είναι JPEG")
+        content = await upload.read(MAX_HOROS_JPEG_BYTES + 1)
+        if len(content) > MAX_HOROS_JPEG_BYTES:
+            raise HTTPException(status_code=413, detail=f"Η εικόνα {number} υπερβαίνει τα 8 MB")
+        total += len(content)
+        if total > MAX_HOROS_JPEG_TOTAL_BYTES:
+            raise HTTPException(status_code=413, detail="Οι εικόνες Horos υπερβαίνουν συνολικά τα 40 MB")
+        if not content.startswith(b"\xff\xd8\xff") or not content.endswith(b"\xff\xd9"):
+            raise HTTPException(status_code=422, detail=f"Η εικόνα {number} δεν είναι πλήρες JPEG")
+        contents.append(content)
+    return contents
+
+
 def build_rf_router(engine: Engine) -> APIRouter:
     initialize_rf_tables(engine)
     router = APIRouter(
@@ -351,11 +431,11 @@ def build_rf_router(engine: Engine) -> APIRouter:
 
     @router.get("/api/contract")
     def rf_contract():
-        try:
-            DoctorProfile.from_environment()
-            doctor_ok = True
-        except ValueError:
-            doctor_ok = False
+        doctors = {
+            row["key"]: {"label": row["name"], "configured": row["active"]}
+            for row in list_rf_doctors(engine)
+        }
+        doctor_ok = doctors.get(DEFAULT_DOCTOR_KEY, {}).get("configured", False)
         try:
             configured = set(product_catalog_from_environment())
         except ValueError:
@@ -381,8 +461,41 @@ def build_rf_router(engine: Engine) -> APIRouter:
                 key: {"label": label, "configured": key in configured}
                 for key, label in PRODUCT_LABELS.items()
             },
-            "doctor_configured": doctor_ok,
+            "doctor_configured": doctor_ok,  # retained for older RF clients
+            "doctors": doctors,  # labels/configuration only; no private profile fields
         }
+
+    # RF directory is part of the existing protected clinical utility.
+    @router.get("/api/doctors")
+    def rf_doctors():
+        return {"doctors": list_rf_doctors(engine)}
+
+    @router.post("/api/doctors", status_code=201)
+    def rf_add_doctor(req: RFDoctorInput):
+        try:
+            return create_rf_doctor(engine, req.model_dump())
+        except IntegrityError as exc:
+            raise HTTPException(status_code=409, detail="Υπάρχει ήδη ιατρός με αυτόν τον κωδικό ΓεΣΥ") from exc
+
+    @router.put("/api/doctors/{doctor_key}")
+    def rf_edit_doctor(doctor_key: str, req: RFDoctorEdit):
+        try:
+            return revise_rf_doctor(engine, doctor_key, req.revision, data=req.model_dump(exclude={"revision"}))
+        except LookupError as exc:
+            raise HTTPException(status_code=404, detail="Ο ιατρός δεν βρέθηκε") from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=409, detail="Τα στοιχεία ιατρού άλλαξαν — ανανέωσε τη λίστα") from exc
+        except IntegrityError as exc:
+            raise HTTPException(status_code=409, detail="Υπάρχει ήδη ιατρός με αυτόν τον κωδικό ΓεΣΥ") from exc
+
+    @router.post("/api/doctors/{doctor_key}/status")
+    def rf_set_doctor_status(doctor_key: str, req: RFDoctorStatus):
+        try:
+            return revise_rf_doctor(engine, doctor_key, req.revision, active=req.active)
+        except LookupError as exc:
+            raise HTTPException(status_code=404, detail="Ο ιατρός δεν βρέθηκε") from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=409, detail="Τα στοιχεία ιατρού άλλαξαν — ανανέωσε τη λίστα") from exc
 
     @router.post("/api/history")
     def rf_history(req: RFHistoryLookup):
@@ -441,7 +554,11 @@ def build_rf_router(engine: Engine) -> APIRouter:
         }
 
     @router.post("/api/create")
-    async def rf_create(draft_json: str = Form(...), imaging_report: UploadFile = File(...)):
+    async def rf_create(
+        draft_json: str = Form(...),
+        imaging_report: UploadFile = File(...),
+        horos_jpegs: list[UploadFile] | None = File(None),
+    ):
         try:
             draft = RFApplicationDraft.model_validate_json(draft_json)
         except Exception as exc:
@@ -463,6 +580,7 @@ def build_rf_router(engine: Engine) -> APIRouter:
             raise HTTPException(status_code=422, detail=imaging_assessment["message"])
         if imaging_assessment["requires_confirmation"] and not draft.imaging_review_confirmed:
             raise HTTPException(status_code=422, detail=imaging_assessment["message"])
+        jpeg_bytes = await _read_horos_jpegs(horos_jpegs)
         imaging_review = (
             "auto_supported"
             if imaging_assessment["status"] == "imaging_supported"
@@ -510,27 +628,38 @@ def build_rf_router(engine: Engine) -> APIRouter:
                 raise HTTPException(status_code=422, detail="Το A.2 απαιτεί προηγούμενη πραγματική εφαρμογή RF")
 
         try:
-            doctor = DoctorProfile.from_environment()
             product = product_catalog_from_environment()[draft.product_key]
         except ValueError as exc:
             raise HTTPException(status_code=503, detail="Η σταθερή ρύθμιση RF δεν είναι πλήρης") from exc
 
-        try:
-            pdf_bytes = build_official_rf_pdf(
-                payload,
-                doctor=doctor,
-                product=product,
-                radiology_pdf_bytes=imaging_bytes,
-                prior_history=prior,
-            )
-        except FileNotFoundError as exc:
-            raise HTTPException(status_code=503, detail="Λείπει το επίσημο RF PDF template") from exc
-        except (RuntimeError, ValueError) as exc:
-            raise HTTPException(status_code=422, detail=str(exc)) from exc
-
-        if legacy is not None:
-            record_legacy_procedure(engine, legacy)
-        application_id = record_application(engine, payload)
+        # A row lock on PostgreSQL keeps the selected six-field issuer
+        # snapshot consistent with concurrent protected edit/deactivation.
+        # Commit both application and optional A.2 legacy row atomically.
+        with Session(engine) as session:
+            row = session.scalar(select(RFDoctorProfileORM).where(
+                RFDoctorProfileORM.key == draft.doctor_key).with_for_update())
+            if row is None or not row.active:
+                raise HTTPException(status_code=422, detail="Ο ιατρός δεν είναι ενεργός ή δεν υπάρχει")
+            snapshot = rf_doctor_snapshot(row)
+            doctor = DoctorProfile(**snapshot)
+            payload["doctor_snapshot"] = snapshot
+            try:
+                pdf_bytes = build_official_rf_pdf(
+                    payload,
+                    doctor=doctor,
+                    product=product,
+                    radiology_pdf_bytes=imaging_bytes,
+                    prior_history=prior,
+                    horos_jpeg_bytes=jpeg_bytes,
+                )
+            except FileNotFoundError as exc:
+                raise HTTPException(status_code=503, detail="Λείπει το επίσημο RF PDF template") from exc
+            except (RuntimeError, ValueError) as exc:
+                raise HTTPException(status_code=422, detail=str(exc)) from exc
+            if legacy is not None:
+                record_legacy_procedure(engine, legacy, session=session)
+            application_id = record_application(engine, payload, session=session)
+            session.commit()
         return Response(
             content=pdf_bytes,
             media_type="application/pdf",

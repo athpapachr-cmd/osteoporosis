@@ -92,13 +92,412 @@ def _write_a2(document: fitz.Document, data: dict[str,Any], history: dict[str,An
     for key,rect in _A2_HISTORY.items(): _write(page5,rect,history.get(key),size=7,align=1)
     _check(page5,_A2_IMAGING_CHECK); _write(page6,_A2_NOTES,data.get("additional_notes"),size=7)
 
-def build_official_rf_pdf(data: dict[str,Any], *, doctor: DoctorProfile, product: ProductProfile, radiology_pdf_bytes: bytes, template_path: Path=OFFICIAL_TEMPLATE_PATH, prior_history: dict[str,Any]|None=None) -> bytes:
+# Each uploaded image is processed in-memory only; no file/thumbnails are stored.
+MAX_HOROS_JPEG_COUNT = 10
+MAX_HOROS_JPEG_BYTES = 8 * 1024 * 1024
+MAX_HOROS_JPEG_TOTAL_BYTES = 40 * 1024 * 1024
+MAX_HOROS_JPEG_EDGE = 6000
+MAX_HOROS_JPEG_PIXELS = 16_000_000
+
+
+
+def _validate_horos_jpeg_entropy(content: bytes) -> tuple[int, int]:
+    """Verify all Huffman JPEG entropy-coded MCUs and progressive refinements.
+
+    A valid FF D9 trailer does not prove compressed image completeness: tolerant
+    decoders can fill missing scans with grey pixels. Inspect actual scan entropy
+    before the rendering decoder, under existing JPEG byte/pixel limits.
+    """
+    if not content.startswith(b"\xff\xd8\xff") or not content.endswith(b"\xff\xd9"):
+        raise ValueError("Incomplete JPEG markers")
+    pos = 2
+    width = height = None
+    components = {}
+    tables = {}
+    seen = set()
+    progressive = False
+    dc_initialized = set()
+    approximation_levels = {}
+    nonzero = {}
+    mcu_width = mcu_height = 0
+    restart_interval = 0
+
+    def marker_at(position):
+        if position >= len(content) or content[position] != 0xFF:
+            raise ValueError("Unexpected JPEG scan bytes")
+        while position < len(content) and content[position] == 0xFF:
+            position += 1
+        if position >= len(content) or content[position] == 0:
+            raise ValueError("Invalid JPEG marker")
+        return content[position], position + 1
+
+    def huffman_tables(segment):
+        parsed = {}
+        offset = 0
+        while offset < len(segment):
+            if len(segment) - offset < 17:
+                raise ValueError("Truncated JPEG Huffman table")
+            spec = segment[offset]
+            offset += 1
+            klass, table_id = spec >> 4, spec & 15
+            if klass not in (0, 1) or table_id > 3:
+                raise ValueError("Unsupported JPEG Huffman table")
+            counts = segment[offset:offset + 16]
+            offset += 16
+            total = sum(counts)
+            if not 1 <= total <= 256 or offset + total > len(segment):
+                raise ValueError("Truncated JPEG Huffman symbols")
+            symbols = segment[offset:offset + total]
+            offset += total
+            codes = {}
+            code = symbol_offset = 0
+            for bits, count in enumerate(counts, start=1):
+                if code + count > (1 << bits):
+                    raise ValueError("Invalid JPEG Huffman code length")
+                if count:
+                    codes[bits] = {code + i: symbols[symbol_offset + i] for i in range(count)}
+                    symbol_offset += count
+                code = (code + count) << 1
+            parsed[(klass, table_id)] = codes
+        return parsed
+
+    class Bits:
+        def __init__(self, start):
+            self.pos = start
+            self.remaining = 0
+            self.byte = 0
+
+        def bit(self):
+            if self.remaining == 0:
+                if self.pos >= len(content):
+                    raise ValueError("Truncated JPEG entropy")
+                value = content[self.pos]
+                self.pos += 1
+                if value == 0xFF:
+                    if self.pos >= len(content) or content[self.pos] != 0:
+                        raise ValueError("Early JPEG marker inside entropy-coded image")
+                    self.pos += 1  # stuffed FF 00
+                self.byte = value
+                self.remaining = 8
+            self.remaining -= 1
+            return (self.byte >> self.remaining) & 1
+
+        def read(self, count):
+            value = 0
+            for _ in range(count):
+                value = (value << 1) | self.bit()
+            return value
+
+        def symbol(self, table):
+            code = 0
+            for bits in range(1, 17):
+                code = (code << 1) | self.bit()
+                row = table.get(bits)
+                if row is not None and code in row:
+                    return row[code]
+            raise ValueError("Invalid JPEG entropy code")
+
+        def sequential(self, dc, ac):
+            size = self.symbol(dc)
+            if size > 15:
+                raise ValueError("Invalid JPEG DC coefficient")
+            self.read(size)
+            k = 1
+            while k < 64:
+                value = self.symbol(ac)
+                if value == 0:
+                    return
+                if value == 0xF0:
+                    k += 16
+                    continue
+                run, size = value >> 4, value & 15
+                if size == 0 or k + run >= 64:
+                    raise ValueError("Invalid JPEG AC coefficient")
+                self.read(size)
+                k += run + 1
+            if k > 64:
+                raise ValueError("Invalid JPEG coefficient span")
+
+        def progressive_block(self, component, offset, dc, ac, start, end, high, eobrun):
+            if start == 0:
+                if high == 0:
+                    size = self.symbol(dc)
+                    if size > 15:
+                        raise ValueError("Invalid progressive JPEG DC")
+                    self.read(size)
+                else:
+                    self.bit()
+                return eobrun
+
+            mask = nonzero[component][offset]
+            if high == 0:
+                if eobrun:
+                    return eobrun - 1
+                k = start
+                while k <= end:
+                    symbol = self.symbol(ac)
+                    run, size = symbol >> 4, symbol & 15
+                    if size == 0:
+                        if run == 15:
+                            k += 16
+                            if k > end + 1:
+                                raise ValueError("Invalid JPEG zero-run")
+                            continue
+                        eobrun = (1 << run) + self.read(run)
+                        break
+                    if size > 10:
+                        raise ValueError("Invalid JPEG AC size")
+                    k += run
+                    if k > end:
+                        raise ValueError("Invalid progressive JPEG coefficient")
+                    self.read(size)
+                    mask |= 1 << k
+                    k += 1
+                nonzero[component][offset] = mask
+                return eobrun - 1 if eobrun else 0
+
+            k = start
+            if not eobrun:
+                while k <= end:
+                    symbol = self.symbol(ac)
+                    run, size = symbol >> 4, symbol & 15
+                    if size > 1:
+                        raise ValueError("Invalid JPEG successive approximation")
+                    if size:
+                        self.bit()  # sign of newly nonzero coefficient
+                    elif run != 15:
+                        eobrun = (1 << run) + self.read(run)
+                        break
+                    while k <= end:
+                        if mask & (1 << k):
+                            self.bit()  # refinement of existing coefficient
+                        else:
+                            if run == 0:
+                                break
+                            run -= 1
+                        k += 1
+                    if size:
+                        if k > end or mask & (1 << k):
+                            raise ValueError("Invalid progressive JPEG position")
+                        mask |= 1 << k
+                        k += 1
+                    elif k > end and run:
+                        raise ValueError("Invalid JPEG zero-run")
+            if eobrun:
+                while k <= end:
+                    if mask & (1 << k):
+                        self.bit()
+                    k += 1
+                eobrun -= 1
+            nonzero[component][offset] = mask
+            return eobrun
+
+        def restart(self, index):
+            self.remaining = 0
+            marker, self.pos = marker_at(self.pos)
+            if marker != 0xD0 + index % 8:
+                raise ValueError("Invalid JPEG restart marker")
+
+    while True:
+        marker, pos = marker_at(pos)
+        if marker == 0xD9:
+            if pos != len(content) or width is None:
+                raise ValueError("Incomplete JPEG content")
+            if progressive:
+                if (dc_initialized != set(components) or
+                        any(any(level != 0 for level in approximation_levels[cid]) for cid in components)):
+                    raise ValueError("Missing JPEG spectral/refinement scans")
+            elif seen != set(components):
+                raise ValueError("Missing JPEG components")
+            return width, height
+        if marker in (0xD8, *range(0xD0, 0xD8)) or marker == 0x01:
+            raise ValueError("Unexpected JPEG marker")
+        if pos + 2 > len(content):
+            raise ValueError("Truncated JPEG header")
+        length = int.from_bytes(content[pos:pos + 2], "big")
+        if length < 2 or pos + length > len(content):
+            raise ValueError("Truncated JPEG segment")
+        segment = content[pos + 2:pos + length]
+        pos += length
+        if marker in (0xC0, 0xC1, 0xC2):
+            progressive = marker == 0xC2
+            if width is not None or len(segment) < 6 or segment[0] not in ((8,) if progressive else (8, 12)):
+                raise ValueError("Invalid JPEG frame")
+            height = int.from_bytes(segment[1:3], "big")
+            width = int.from_bytes(segment[3:5], "big")
+            count = segment[5]
+            if (height < 1 or width < 1 or height > MAX_HOROS_JPEG_EDGE or
+                    width > MAX_HOROS_JPEG_EDGE or height * width > MAX_HOROS_JPEG_PIXELS or
+                    count not in (1, 3, 4) or len(segment) != 6 + count * 3):
+                raise ValueError("Invalid JPEG image bounds/components")
+            for i in range(count):
+                cid, sampling, _quant = segment[6 + 3 * i:9 + 3 * i]
+                h, v = sampling >> 4, sampling & 15
+                if cid in components or not 1 <= h <= 4 or not 1 <= v <= 4:
+                    raise ValueError("Invalid JPEG sampling")
+                components[cid] = (h, v)
+            if sum(h * v for h, v in components.values()) > 10:
+                raise ValueError("Excessive JPEG MCU sampling")
+            mh = max(h for h, _ in components.values())
+            mv = max(v for _, v in components.values())
+            mcu_width = (width + 8 * mh - 1) // (8 * mh)
+            mcu_height = (height + 8 * mv - 1) // (8 * mv)
+            if progressive:
+                from array import array
+                for cid, (h, v) in components.items():
+                    nonzero[cid] = array("Q", [0]) * (mcu_width * h * mcu_height * v)
+                    approximation_levels[cid] = [None] * 64
+        elif marker == 0xC4:
+            tables.update(huffman_tables(segment))
+        elif marker == 0xDD:
+            if len(segment) != 2:
+                raise ValueError("Invalid JPEG restart interval")
+            restart_interval = int.from_bytes(segment, "big")
+        elif marker == 0xDA:
+            if width is None or len(segment) < 4:
+                raise ValueError("JPEG scan before frame")
+            ncomps = segment[0]
+            if not 1 <= ncomps <= len(components) or len(segment) != 1 + ncomps * 2 + 3:
+                raise ValueError("Invalid JPEG scan header")
+            start, end, approximation = segment[-3:]
+            high, low = approximation >> 4, approximation & 15
+            if progressive:
+                if (start > end or end > 63 or (start == 0 and end != 0) or
+                        (start != 0 and ncomps != 1) or high > 13 or low > 13 or
+                        (high and high != low + 1)):
+                    raise ValueError("Invalid progressive JPEG scan")
+            elif (start, end, approximation) != (0, 63, 0):
+                raise ValueError("Invalid sequential JPEG scan")
+            chosen = []
+            for i in range(ncomps):
+                cid, selectors = segment[1 + 2 * i:3 + 2 * i]
+                if cid not in components or cid in chosen or (not progressive and cid in seen):
+                    raise ValueError("Invalid JPEG scan components")
+                dc, ac = (0, selectors >> 4), (1, selectors & 15)
+                if (start == 0 and dc not in tables) or (end > 0 and ac not in tables):
+                    raise ValueError("Unknown JPEG Huffman table")
+                chosen.append(cid)
+                if progressive:
+                    for k in range(start, end + 1):
+                        prior = approximation_levels[cid][k]
+                        if (high == 0 and prior is not None) or (high != 0 and prior != high):
+                            raise ValueError("Invalid JPEG refinement order")
+                        approximation_levels[cid][k] = low
+                    if start == 0 and high == 0:
+                        dc_initialized.add(cid)
+            mh = max(h for h, _ in components.values())
+            mv = max(v for _, v in components.values())
+            if ncomps == 1:
+                h, v = components[chosen[0]]
+                nx = (width * h + 8 * mh - 1) // (8 * mh)
+                ny = (height * v + 8 * mv - 1) // (8 * mv)
+            else:
+                nx, ny = mcu_width, mcu_height
+            bits = Bits(pos)
+            mcu_index = eobrun = 0
+            for my in range(ny):
+                for mx in range(nx):
+                    if restart_interval and mcu_index and mcu_index % restart_interval == 0:
+                        bits.restart(mcu_index // restart_interval - 1)
+                        eobrun = 0
+                    for i, cid in enumerate(chosen):
+                        dc, ac = segment[2 + 2 * i] >> 4, segment[2 + 2 * i] & 15
+                        h, v = components[cid]
+                        blocks = h * v if ncomps > 1 else 1
+                        for k in range(blocks):
+                            if progressive:
+                                if ncomps == 1:
+                                    at = my * (mcu_width * h) + mx
+                                else:
+                                    at = (my * v + k // h) * (mcu_width * h) + mx * h + k % h
+                                eobrun = bits.progressive_block(
+                                    cid, at, tables.get((0, dc)), tables.get((1, ac)),
+                                    start, end, high, eobrun,
+                                )
+                            else:
+                                bits.sequential(tables[(0, dc)], tables[(1, ac)])
+                    mcu_index += 1
+            if eobrun:
+                raise ValueError("JPEG EOB run longer than image")
+            pos = bits.pos
+            seen.update(chosen)
+        elif marker in (0xC3, 0xC5, 0xC6, 0xC7, 0xC9, 0xCA, 0xCB, 0xCD, 0xCE, 0xCF, 0xCC):
+            raise ValueError("Unsupported JPEG entropy coding")
+        # EXIF/APP, DQT and comments remain length-delimited.
+
+
+def _horos_jpeg_a4_page(content: bytes) -> bytes:
+    """Validate compressed JPEG metadata before bounded decode; preserve all EXIF flips/rotations.
+
+    PyMuPDF's image->PDF conversion applies orientations 1..8, including mirrors.
+    show_pdf_page then fits that oriented page on portrait/landscape A4.
+    """
+    if (len(content) > MAX_HOROS_JPEG_BYTES or
+            not content.startswith(b"\xff\xd8\xff") or
+            not content.endswith(b"\xff\xd9")):
+        raise ValueError("Η εικόνα Horos δεν είναι έγκυρο JPEG ή υπερβαίνει τα 8 MB")
+    jpeg = oriented = page_doc = None
+    try:
+        jpeg = fitz.open(stream=content, filetype="jpeg")
+        if jpeg.page_count != 1:
+            raise ValueError("Η εικόνα Horos δεν είναι μονοσέλιδο JPEG")
+        info = jpeg[0].get_image_info()
+        if len(info) != 1:
+            raise ValueError("Δεν αναγνωρίστηκαν διαστάσεις JPEG")
+        width, height = int(info[0]["width"]), int(info[0]["height"])
+        if (width < 1 or height < 1 or width > MAX_HOROS_JPEG_EDGE or
+                height > MAX_HOROS_JPEG_EDGE or width * height > MAX_HOROS_JPEG_PIXELS):
+            raise ValueError("Η εικόνα Horos υπερβαίνει το όριο διαστάσεων (6000px / 16MP)")
+        # Strict entropy verification prevents repaired JPEG trailers from hiding
+        # missing scan pixels. It must finish before any image decode/PDF/DB write.
+        try:
+            decoded_width, decoded_height = _validate_horos_jpeg_entropy(content)
+        except ValueError as exc:
+            raise ValueError("Αλλοιωμένο ή ελλιπές JPEG Horos (μη έγκυρη συμπιεσμένη ροή)") from exc
+        if (decoded_width, decoded_height) != (width, height):
+            raise ValueError("Ασυμφωνία διαστάσεων JPEG")
+        pixmap = fitz.Pixmap(content)
+        try:
+            if pixmap.width != width or pixmap.height != height:
+                raise ValueError("Ασυμφωνία διαστάσεων JPEG")
+        finally:
+            pixmap = None
+        oriented = fitz.open(stream=jpeg.convert_to_pdf(), filetype="pdf")
+        rect = oriented[0].rect  # already transformed for mirrored/rotated EXIF
+        landscape = rect.width > rect.height
+        page_width, page_height = (842, 595) if landscape else (595, 842)
+        page_doc = fitz.open()
+        page = page_doc.new_page(width=page_width, height=page_height)
+        page.show_pdf_page(
+            fitz.Rect(18, 18, page_width - 18, page_height - 18),
+            oriented, 0, keep_proportion=True
+        )
+        return page_doc.tobytes(garbage=4, deflate=True)
+    except ValueError:
+        raise
+    except Exception as exc:
+        raise ValueError("Κατεστραμμένο ή μη αναγνώσιμο JPEG Horos") from exc
+    finally:
+        if page_doc is not None:
+            page_doc.close()
+        if oriented is not None:
+            oriented.close()
+        if jpeg is not None:
+            jpeg.close()
+
+
+def build_official_rf_pdf(data: dict[str,Any], *, doctor: DoctorProfile, product: ProductProfile, radiology_pdf_bytes: bytes, template_path: Path=OFFICIAL_TEMPLATE_PATH, prior_history: dict[str,Any]|None=None, horos_jpeg_bytes: list[bytes]|None=None) -> bytes:
     if not template_path.is_file(): raise FileNotFoundError(f"Missing official RF template: {template_path}")
     if not radiology_pdf_bytes.startswith(b"%PDF"): raise ValueError("Imaging report is not a PDF")
     try:
         radiology_reader=PdfReader(io.BytesIO(radiology_pdf_bytes))
         if not radiology_reader.pages: raise ValueError("Imaging report PDF is empty")
     except Exception as exc: raise ValueError("Imaging report PDF is unreadable") from exc
+    images = horos_jpeg_bytes or []
+    if len(images) > MAX_HOROS_JPEG_COUNT or sum(len(x) for x in images) > MAX_HOROS_JPEG_TOTAL_BYTES:
+        raise ValueError("Υπέρβαση ορίου εικόνων Horos")
+    # Complete every conversion before any persistence caller is allowed to write.
+    horos_pages = [_horos_jpeg_a4_page(image) for image in images]
     source=fitz.open(template_path)
     try:
         if source.page_count<6: raise RuntimeError("Official RF template does not contain A.1/A.2 pages")
@@ -115,4 +514,6 @@ def build_official_rf_pdf(data: dict[str,Any], *, doctor: DoctorProfile, product
     writer=PdfWriter()
     for page in PdfReader(io.BytesIO(stamped_bytes)).pages: writer.add_page(page)
     for page in radiology_reader.pages: writer.add_page(page)
+    for image_page_pdf in horos_pages:
+        for page in PdfReader(io.BytesIO(image_page_pdf)).pages: writer.add_page(page)
     output=io.BytesIO(); writer.write(output); return output.getvalue()
