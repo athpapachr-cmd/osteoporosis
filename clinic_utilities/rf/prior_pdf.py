@@ -6,6 +6,7 @@ linkage or inference that a previously requested RF was actually performed.
 from __future__ import annotations
 
 from collections import Counter
+import re
 from typing import Any
 
 import fitz
@@ -44,7 +45,12 @@ def _template_match(page: fitz.Page, template_page: fitz.Page) -> float:
 def _inside(page: fitz.Page, rect: fitz.Rect) -> str:
     # Native RF inserts the value into the given rectangles in the first place.
     words = page.get_text("words", clip=rect) or []
-    return " ".join(str(word[4]) for word in sorted(words, key=lambda w: (round(w[1] / 3), w[0]))).strip()[:300]
+    # The official form prints underscore placeholders within some A2 data boxes.
+    # Retain only extracted value words, not the preprinted blank guide lines.
+    ordered = [str(word[4]) for word in sorted(
+        words, key=lambda w: (round(w[1] / 3), w[0]))]
+    value_words = [word for word in ordered if not re.fullmatch(r"[_—–.]{2,}", word)]
+    return " ".join(value_words).strip()[:300]
 
 
 def _marked(page: fitz.Page, template_page: fitz.Page, rect: fitz.Rect) -> bool:
