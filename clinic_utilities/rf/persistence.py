@@ -483,15 +483,19 @@ _RF_DRAFT_FIELDS = frozenset({
     "nsaid_trials", "other_analgesic_trials", "adverse_effects",
     "intervention", "physio_dates_text", "legacy_history",
     "procedure_history_id", "source_kind", "source_id", "source_origin",
+    "a2_current_followup_date", "a2_current_followup_vas", "legacy_confirmed",
+    "draft_nsaids", "draft_others",
 })
 _RF_DRAFT_ARRAY_FIELDS = {
     "rf_reason_codes": 8, "nsaid_trials": 20, "other_analgesic_trials": 20,
-    "adverse_effects": 10,
+    "adverse_effects": 10, "draft_nsaids": 20, "draft_others": 20,
 }
 _RF_DRAFT_NESTED_FIELDS = {
     "nsaid_trials": {"drug_name", "dose", "duration", "auto_selected", "source_text", "manual", "learned", "warning", "canonical_key"},
     "other_analgesic_trials": {"drug_name", "dose", "duration", "auto_selected", "source_text", "manual", "learned", "warning", "canonical_key"},
     "adverse_effects": {"treatment", "effect"},
+    "draft_nsaids": {"drug_name", "dose", "duration", "auto_selected", "source_text", "manual", "learned", "warning", "canonical_key"},
+    "draft_others": {"drug_name", "dose", "duration", "auto_selected", "source_text", "manual", "learned", "warning", "canonical_key"},
     "intervention": {"site", "date", "vas_before", "vas_after"},
     "legacy_history": {"actual_procedure_date", "vas_before", "vas_after", "last_followup_date", "last_followup_vas"},
 }

@@ -152,6 +152,10 @@ class RFApplicationDraft(BaseModel):
     imaging_review_confirmed: bool = False
     procedure_history_id: str = Field(default="", max_length=80)
     legacy_history: RFLegacyHistory | None = None
+    a2_current_followup_date: str = Field(default="", max_length=20)
+    a2_current_followup_vas: int | None = Field(default=None, ge=0, le=10)
+    source_origin: str = Field(default="", max_length=20)
+    legacy_confirmed: bool = False
     source_kind: str = Field(default="", max_length=20)
     source_id: str = Field(default="", max_length=80)
     draft_id: str = Field(default="", max_length=80)
@@ -161,7 +165,7 @@ class RFApplicationDraft(BaseModel):
 class RFHistoryLookup(BaseModel):
     identity_number: str = Field(min_length=1, max_length=128)
     site_key: str = Field(default="", max_length=80)
-    laterality: Literal["left", "right"]
+    laterality: Literal["left", "right"] | None = None
 
 
 
@@ -602,7 +606,7 @@ def build_rf_router(engine: Engine) -> APIRouter:
             engine,
             req.identity_number,
             site_key=req.site_key,
-            laterality=req.laterality,
+            laterality=req.laterality or "",
         )
         return {"found": bool(rows), "procedures": rows}
 
@@ -729,6 +733,9 @@ def build_rf_router(engine: Engine) -> APIRouter:
                 if draft.laterality != prior.get("laterality"):
                     raise HTTPException(status_code=422, detail="Η προηγούμενη εφαρμογή αφορά διαφορετική πλευρά")
             elif draft.legacy_history is not None:
+                if draft.source_origin == "pdf" and not draft.legacy_confirmed:
+                    raise HTTPException(status_code=422,
+                        detail="Επιβεβαίωσε ρητά ότι έγινε η πραγματική προηγούμενη εφαρμογή")
                 prior = _validate_legacy(draft.legacy_history)
                 legacy = {
                     **prior,
@@ -740,6 +747,16 @@ def build_rf_router(engine: Engine) -> APIRouter:
                 }
             else:
                 raise HTTPException(status_code=422, detail="Το A.2 απαιτεί προηγούμενη πραγματική εφαρμογή RF")
+            if bool(draft.a2_current_followup_date) != (draft.a2_current_followup_vas is not None):
+                raise HTTPException(status_code=422,
+                    detail="Συμπλήρωσε μαζί ημερομηνία και VAS της νέας αξιολόγησης")
+            if draft.a2_current_followup_date:
+                current_date = _parse_iso_date(draft.a2_current_followup_date, "τρέχουσα αξιολόγηση")
+                if current_date < _parse_iso_date(prior["actual_procedure_date"], "πραγματική εφαρμογή"):
+                    raise HTTPException(status_code=422,
+                        detail="Η νέα αξιολόγηση προηγείται της πραγματικής εφαρμογής")
+                prior = {**prior, "last_followup_date": current_date.isoformat(),
+                         "last_followup_vas": draft.a2_current_followup_vas}
 
         try:
             product = product_catalog_from_environment()[draft.product_key]
