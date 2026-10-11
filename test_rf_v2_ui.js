@@ -124,6 +124,8 @@ assert(typeAt >= 0 && sourceAt > typeAt &&
 assert(html.includes('id="rfNameConflict"') &&
        html.includes('id="rfConfirmCurrentNameBtn"') &&
        html.includes('id="rfUsePreviousNameBtn"'), 'name/identity mismatch requires explicit choices');
+assert(css.includes('.builder>section[hidden]{display:none}'),
+  'hidden A1/A2 sections must not be forced visible by their display:grid rule');
 assert(html.includes('id="rfDraftSaveBtn"') && html.includes('id="rfDraftList"'), 'A1/A2 saved drafts need Save and Resume controls');
 assert(app.includes("'/api/reuse/search?query='") && app.includes("'/api/reuse/pdf'"), 'A2 history must reuse the protected RF API');
 assert(app.includes("'/api/drafts'") && app.includes('saveRfDraft') && app.includes('restoreRfDraft'), 'saved drafts must be server-resumable');

@@ -60,3 +60,6 @@
 .rf-pdf-upload{padding:12px;border:1px dashed #b9c7d7;border-radius:11px;margin:10px 0;background:#f9fbfd}
 .rf-pdf-upload input{margin-top:5px}
 @media(max-width:760px){.rf-search-line{grid-template-columns:1fr}.rf-search-line .btn{width:100%}}
+
+/* Preserve pathway-specific visibility despite the grid display rule. */
+.builder>section[hidden]{display:none}

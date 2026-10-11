@@ -993,7 +993,7 @@ class RFReuseSavedDraftTests(unittest.TestCase):
                 return response, builder
         denied, builder = submit(draft)
         self.assertEqual(denied.status_code, 422, denied.text)
-        self.assertIn("ασυμφωνία ονόματος", denied.text)
+        self.assertIn("ρητή επίλυση", denied.text)
         builder.assert_not_called()
         with Session(self.engine) as session:
             self.assertEqual(session.query(RFApplicationORM).count(),1)
