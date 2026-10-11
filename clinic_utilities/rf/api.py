@@ -712,6 +712,8 @@ def build_rf_router(engine: Engine) -> APIRouter:
             previous_side = source["source"]["laterality"]
             if previous_site != indication["site_key"] or previous_side != draft.laterality:
                 raise HTTPException(status_code=422, detail="Η προηγούμενη RF πηγή αφορά άλλη περιοχή/πλευρά")
+            if source["source"]["indication_code"] != draft.indication_code:
+                raise HTTPException(status_code=422, detail="Η προηγούμενη RF πηγή αφορά διαφορετική ένδειξη")
 
         prior = None
         legacy = None
@@ -732,6 +734,8 @@ def build_rf_router(engine: Engine) -> APIRouter:
                     raise HTTPException(status_code=422, detail="Η προηγούμενη εφαρμογή αφορά διαφορετική περιοχή")
                 if draft.laterality != prior.get("laterality"):
                     raise HTTPException(status_code=422, detail="Η προηγούμενη εφαρμογή αφορά διαφορετική πλευρά")
+                if draft.indication_code != prior.get("indication_code"):
+                    raise HTTPException(status_code=422, detail="Η προηγούμενη εφαρμογή αφορά διαφορετική ένδειξη")
             elif draft.legacy_history is not None:
                 if draft.source_origin == "pdf" and not draft.legacy_confirmed:
                     raise HTTPException(status_code=422,

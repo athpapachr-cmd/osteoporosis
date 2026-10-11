@@ -939,6 +939,47 @@ class RFReuseSavedDraftTests(unittest.TestCase):
         with Session(self.engine) as session:
             self.assertEqual(session.query(RFApplicationORM).count(), 2)
 
+    def test_same_site_side_but_different_indication_is_not_an_a2_continuation(self):
+        from clinic_utilities.rf.persistence import record_application, record_legacy_procedure
+        from sqlalchemy.orm import Session
+        from clinic_utilities.rf.persistence import RFApplicationORM
+        previous = {**make_a1_draft(identity_number="PAT-DIAG").model_dump(),
+                    "indication_code":"SHOULDER_OA_KL34", "site_key":"shoulder",
+                    "laterality":"left", "exact_location":"Αριστερός ώμος"}
+        old_request = record_application(self.engine, previous)
+        old_actual = record_legacy_procedure(self.engine, {
+            "identity_number":"PAT-DIAG","indication_code":"SHOULDER_OA_KL34",
+            "site_key":"shoulder","laterality":"left","exact_location":"Αριστερός ώμος",
+            "actual_procedure_date":"2026-05-01","vas_before":8,"vas_after":3,
+            "last_followup_date":"2026-06-01","last_followup_vas":4
+        })
+        request = {**previous, "pathway":"A2",
+                   "indication_code":"SHOULDER_IRREPARABLE_CUFF",
+                   "procedure_history_id":old_actual, "source_kind":"",
+                   "source_id":"", "imaging_review_confirmed":True}
+        def make(payload):
+            with patch("clinic_utilities.rf.api.build_official_rf_pdf",
+                       return_value=b"%PDF-synthetic"):
+                return self.client.post(self.base + "/create", headers=self.headers,
+                    data={"draft_json":json.dumps(payload)},
+                    files={"imaging_report":("imaging.pdf",make_pdf(1),"application/pdf")})
+        rejected = make(request)
+        self.assertEqual(rejected.status_code, 422, rejected.text)
+        self.assertIn("διαφορετική ένδειξη", rejected.text)
+        # An application source also cannot be linked to a different diagnosis.
+        actual_new = record_legacy_procedure(self.engine, {
+            "identity_number":"PAT-DIAG", "indication_code":"SHOULDER_IRREPARABLE_CUFF",
+            "site_key":"shoulder", "laterality":"left", "exact_location":"Αριστερός ώμος",
+            "actual_procedure_date":"2026-08-01","vas_before":9,"vas_after":2,
+            "last_followup_date":"2026-08-10","last_followup_vas":5
+        })
+        mismatched_source = make({**request, "procedure_history_id":actual_new,
+                                  "source_kind":"application", "source_id":old_request})
+        self.assertEqual(mismatched_source.status_code, 422, mismatched_source.text)
+        self.assertIn("διαφορετική ένδειξη", mismatched_source.text)
+        with Session(self.engine) as session:
+            self.assertEqual(session.query(RFApplicationORM).count(), 1)
+
     def test_pdf_old_form_read_is_provisional_and_unrelated_pdf_not_accepted(self):
         from clinic_utilities.rf.catalog import DoctorProfile, ProductProfile
         from clinic_utilities.rf.pdf import build_official_rf_pdf
