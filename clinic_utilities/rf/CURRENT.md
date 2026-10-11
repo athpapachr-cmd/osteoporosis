@@ -1,5 +1,8 @@
 # RF CURRENT — Native RF v2 bounded doctor/Horos-JPEG extension
 
+> **2026-10-11 SMALL HOROS UI HOTFIX MERGED / LIVE PENDING:** PR #147 squash merged as `5e0515ad9adbfda8cc11777cd4da88f5b42dcc35`; exact tested HTML/CSS/JS/test preserved on merged main. Focused RF CI `38129264416` PASS, canonical-impact `38129380222` PASS; independent review waived per Product Owner small visual-only request. «Προσθήκη εικόνων» replaces misleading native filename; retained-image count, thumbnails/add/remove and PDF untouched. **Render LIVE pending verification**, no new auth/data/schema/provider behavior. One final release status and writer release after deploy; A2 separate.
+
+
 > **2026-10-11 HOROS JPEG PICKER VISUAL HOTFIX TESTED — PR #147 READY:** Exact code/test HEAD `5950b27a2db210dd7133e34115efe6f6b9f17e7f`; RF CI `38129264416` SUCCESS, Canonical Impact `38129319818` SUCCESS. Modified only existing RF HTML/CSS, `app.js` count text and existing UI regression. User-facing action «Προσθήκη εικόνων» replaces native misleading file chooser presentation; live thumbnails, accepted-image count and PDF pipeline preserved. No independent review per explicit Product Owner request for this tiny visual-only correction. **Still UNMERGED / UNDEPLOYED; next controlled squash merge then Render auto-deploy LIVE verification.** No RF doctor/backend/schema/PDF changes; new A2 continuation design separately deferred.
 
 
