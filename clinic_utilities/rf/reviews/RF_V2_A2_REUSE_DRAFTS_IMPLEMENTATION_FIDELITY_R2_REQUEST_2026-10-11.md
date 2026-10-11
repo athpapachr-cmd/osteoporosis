@@ -8,18 +8,18 @@
 Repository: `athpapachr-cmd/osteoporosis`.
 Baseline main at implementation activation: `7186a26105e6edd37ed02b089781ce3909c2eaf3` (fresh verify remote main).
 Implementation branch: `feat/rf-v2-a2-continuation-saved-drafts-20261011`.
-**Frozen source+test commit:** `c3721ec0ef56e017f2562c5cd891b2338a85f0cc`.
+**Frozen source+test commit:** `ac1dd54ce2f17575e160a025367557fcf8afe598`.
 **Frozen source+test blobs:**
-- `clinic_utilities/rf/api.py` — `f3cd8ec0bb00af91456690b67e8e8f10df9b08a6`
+- `clinic_utilities/rf/api.py` — `5090438c0e2f7370af51cb0f796514305b77f1b0`
 - `clinic_utilities/rf/persistence.py` — `ad40c314bae1008bea6ee5bf5c68d39ae1f693f6`
 - `clinic_utilities/rf/prior_pdf.py` — `07ca2ebd8874f8b1aebd803f2f7a95a0539bdc2a`
 - `static/clinic-utilities/rf/app.js` — `2199f750c18b89d64f866445679cf76109aeba5a`
 - `static/clinic-utilities/rf/index.html` — `f7c6ce09e5409ee4a3311c3eeb0e034dfa187528`
 - `static/clinic-utilities/rf/styles.css` — `8796cee034ef3bfc4099db2b3742f42a2674d647`
-- `test_rf_v2_native.py` — `661428149edbc3bbd46806532c0ca9bf230b0b07`
+- `test_rf_v2_native.py` — `d5d0699b58d2ebaf6b5c97c35bbdc0cbfc4494e2`
 - `test_rf_v2_ui.js` — `0a409f5551731ba1bf1bd490034eb70369571ae2`
-**Existing RF CI:** [workflow 38169658278](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/38169658278) SUCCESS on frozen `c3721ec0ef56e017f2562c5cd891b2338a85f0cc`.
-RF hotfix workflow reports native 32 tests, browser handlers (Horos, managed doctors and A2/draft), official template A1/A2, adjacent CU-1, legacy gateway and G4–C1 tests PASS.
+**Existing RF CI:** [workflow 38170026377](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/38170026377) SUCCESS on frozen `ac1dd54ce2f17575e160a025367557fcf8afe598`.
+RF hotfix workflow reports native 33 tests, browser handlers (Horos, managed doctors and A2/draft), official template A1/A2, adjacent CU-1, legacy gateway and G4–C1 tests PASS.
 Original independent PRE-CODE R2 of frozen design `4d9ff0a50f06cd0f4499fe077245422edb017abb` returned PASS/COMPLETE/0:0:0; reuse. Design PR #148 is separate, DRAFT and unmerged. User confirmed saved drafts **do not contain any binary attachments**.
 
 ## Scope and finite evidence map
@@ -35,3 +35,5 @@ Original independent PRE-CODE R2 of frozen design `4d9ff0a50f06cd0f4499fe0772454
 **R5 — UI fidelity/CI/adjacency:** Confirm one query input and one old-PDF upload before any mandatory fields, no original three-field search gate, source choice and conflicts visible, draft Save/Resume/Discard and upload reattach notice, no silent overwrite of typed fields. Inspect affected actual handlers and test oracles (not only static token checks) and observed exact frozen RF workflow. Reuse preceding #146 doctor/JPEG and #147 small UI evidence. Do not expand into other services or require a new implementation framework.
 
 **Reviewer stop rule:** Each R1–R5 gets PASS/BLOCK/UNKNOWN, one concise source-grounded reason and exact correction if material. If no blockers and full declared coverage, RETURN PASS/0:0:0 and STOP. A fresh reviewer does not gain implementation/merge/deploy authority.
+
+Additional bounded pre-review source correction: exact indication_code must match the referenced previous RF application AND actual procedure even when identity/site/laterality match. Synthetic same-site/side/different-indication 422/no-new-application regression passed under RF CI 38170026377. No unrelated runtime changes.
