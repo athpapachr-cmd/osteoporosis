@@ -1,5 +1,8 @@
 # RF CURRENT — Native RF v2 bounded doctor/Horos-JPEG extension
 
+> **2026-10-11 RF A2 INDICATION MATCH — SINGLE CODE/TEST WRITER ACTIVE:** PR #149 is DRAFT/unmerged. Author self-audit before independent R2 found a same-site/side but different diagnosis linkage missing in current existing A2 validations. Bounded fix only `api.py` and native synthetic test: current A2 indication must match referenced previous application and referenced actual procedure. Then targeted CI and updated frozen implementation R2 request, release writer. No new workflow, no data, no merge/deploy.
+
+
 > **2026-10-11 RF A2 REUSE + STRUCTURED DRAFTS — IMPLEMENTATION TESTED / WRITER RELEASED / INDEPENDENT POST-CODE R2 NEXT:** Frozen implementation+tests `c3721ec0ef56e017f2562c5cd891b2338a85f0cc`, RF focused CI `38169658278` SUCCESS incl native 32 and actual browser handler regressions. Reuses existing protected RF applications/procedures, template/PyMuPDF, and adds RF-local drafts with optimistic revisions and transactional close on finalization. Search one name/identity/ΓεΣΥ field; previous official A1/A2 PDF imported provisionally with no OCR; actual RF procedure separately confirmed. Current issuer and old JPEG/PDF bytes unchanged. Drafts contain **only form fields, NO attachments**; reattach before final. No merge/deploy or patient data. **Implementation writer RELEASED, next one independent post-code R2 on frozen head; previous design PR #148 separate.**
 
 
