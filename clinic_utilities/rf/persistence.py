@@ -454,15 +454,20 @@ def get_rf_source(engine: Engine, kind: str, source_id: str) -> dict[str, Any] |
             row = session.get(RFProcedureHistoryORM, source_id)
             if row is None:
                 return None
-            applications = session.execute(select(RFApplicationORM).where(
+            # Name/ΓεΣΥ can be resolved from an identity-linked application,
+            # but product requires the *exact* RF indication as well as site/side.
+            patient_app = session.scalar(select(RFApplicationORM).where(
+                RFApplicationORM.patient_identity_key == row.patient_identity_key
+            ).order_by(RFApplicationORM.created_at.desc(), RFApplicationORM.id.desc()).limit(1))
+            product_app = session.scalar(select(RFApplicationORM).where(
                 RFApplicationORM.patient_identity_key == row.patient_identity_key,
                 RFApplicationORM.site_key == row.site_key,
-                RFApplicationORM.laterality == row.laterality
-            ).order_by(RFApplicationORM.created_at.desc()).limit(1)).scalars().all()
-            parent = applications[0] if applications else None
-            parent_data = parent.payload_json if parent and isinstance(parent.payload_json, dict) else {}
-            person = {"patient_name": parent.patient_name, "gesy_number": parent.gesy_number,
-                      "identity_number": str(parent_data.get("identity_number") or row.patient_identity_key)} if parent else None
+                RFApplicationORM.laterality == row.laterality,
+                RFApplicationORM.indication_code == row.indication_code,
+            ).order_by(RFApplicationORM.created_at.desc(), RFApplicationORM.id.desc()).limit(1))
+            parent_data = patient_app.payload_json if patient_app and isinstance(patient_app.payload_json, dict) else {}
+            person = {"patient_name": patient_app.patient_name, "gesy_number": patient_app.gesy_number,
+                      "identity_number": str(parent_data.get("identity_number") or row.patient_identity_key)} if patient_app else None
             card = _rf_procedure_card(row, person)
             return {"source": card,
                     "fields": {"patient_name": card["patient_name"],
@@ -471,7 +476,7 @@ def get_rf_source(engine: Engine, kind: str, source_id: str) -> dict[str, Any] |
                                "indication_code": row.indication_code,
                                "laterality": row.laterality,
                                "exact_location": row.exact_location,
-                               "product_key": parent.product_key if parent else ""},
+                               "product_key": product_app.product_key if product_app else ""},
                     "actual_procedure": get_procedure_history(engine, row.id, row.patient_identity_key)}
     return None
 
@@ -486,7 +491,7 @@ _RF_DRAFT_FIELDS = frozenset({
     "intervention", "physio_dates_text", "legacy_history",
     "procedure_history_id", "source_kind", "source_id", "source_origin",
     "a2_current_followup_date", "a2_current_followup_vas", "legacy_confirmed",
-    "draft_nsaids", "draft_others",
+    "draft_nsaids", "draft_others", "source_patient_name",
 })
 _RF_DRAFT_ARRAY_FIELDS = {
     "rf_reason_codes": 8, "nsaid_trials": 20, "other_analgesic_trials": 20,

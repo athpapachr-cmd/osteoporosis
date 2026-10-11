@@ -1,6 +1,6 @@
 (() => {
   const $ = id => document.getElementById(id);
-  const state = { contract: null, pathway: 'A1', selectedHistoryId: '', nsaids: [], others: [], unknowns: [], learnedMedications: [], physio: null, imagingValidation: '', horosImages: [], horosNextId: 0, doctors: [], editingDoctor: null, draftId: '', draftRevision: null, sourceKind: '', sourceId: '', sourceOrigin: '', sourcePage: 1, draftPage: 1, requestToken: 0 };
+  const state = { contract: null, pathway: 'A1', selectedHistoryId: '', nsaids: [], others: [], unknowns: [], learnedMedications: [], physio: null, imagingValidation: '', horosImages: [], horosNextId: 0, doctors: [], editingDoctor: null, draftId: '', draftRevision: null, sourceKind: '', sourceId: '', sourceOrigin: '', sourcePatientName: '', sourceNameConfirmed: false, sourcePage: 1, draftPage: 1, requestToken: 0 };
 
   async function api(path, options = {}) {
     const response = await fetch(`/clinical/clinic-utilities/rf${path}`, { credentials: 'same-origin', ...options });
@@ -189,12 +189,18 @@
       state.sourceKind = '';
       state.sourceId = '';
       state.sourceOrigin = '';
+      state.sourcePatientName = '';
+      state.sourceNameConfirmed = false;
       $('rfSourceLoaded').hidden = true;
+      $('rfNameConflict').hidden = true;
     }
     state.pathway = pathway;
     document.querySelectorAll('.segment').forEach(btn => btn.classList.toggle('active', btn.dataset.pathway === pathway));
     $('a1Flow').hidden = pathway !== 'A1';
+    $('a2SourceFlow').hidden = pathway !== 'A2';
     $('a2Flow').hidden = pathway !== 'A2';
+    $('rfPatientStep').textContent = pathway === 'A2' ? '3' : '2';
+    $('rfIndicationStep').textContent = pathway === 'A2' ? '4' : '3';
     indicationChanged();
     updateSummary();
   }
@@ -686,6 +692,7 @@
       draft.source_origin = state.sourceOrigin;
       draft.source_kind = state.sourceKind;
       draft.source_id = state.sourceId;
+      draft.source_name_confirmed = state.sourceNameConfirmed;
     }
     return draft;
   }
@@ -800,6 +807,53 @@
     a2_current_followup_vas: 'rfCurrentFollowupVas'
   };
 
+
+  function sameRFPersonName(a, b) {
+    const norm = value => String(value || '').normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('el')
+      .replace(/ς/g, 'σ').trim().replace(/\s+/g, ' ');
+    return norm(a) === norm(b);
+  }
+
+  function sourceNameMismatch() {
+    return Boolean((state.sourceKind || state.sourceOrigin === 'pdf') &&
+      state.sourcePatientName && $('patientName').value.trim() &&
+      !sameRFPersonName(state.sourcePatientName, $('patientName').value));
+  }
+
+  function unresolvedSourceNameConflict() {
+    return sourceNameMismatch() && !state.sourceNameConfirmed;
+  }
+
+  function renderSourceNameConflict() {
+    const mismatch = sourceNameMismatch();
+    $('rfNameConflict').hidden = !mismatch;
+    if (!mismatch) return;
+    $('rfNameConflictText').textContent = state.sourceNameConfirmed
+      ? 'Η διαφορά ονόματος επιβεβαιώθηκε ρητά για την επιλεγμένη ταυτότητα.'
+      : 'Η προηγούμενη RF αναφέρει «' + state.sourcePatientName +
+        '», ενώ η τρέχουσα «' + $('patientName').value.trim() +
+        '». Επίλεξε ποιο όνομα είναι σωστό πριν την έκδοση.';
+    $('rfConfirmCurrentNameBtn').disabled = state.sourceNameConfirmed;
+  }
+
+  function resolveSourceName(choice) {
+    if (!sourceNameMismatch()) return;
+    if (choice === 'previous') {
+      $('patientName').value = state.sourcePatientName;
+      state.sourceNameConfirmed = false;
+    } else if (choice === 'current') {
+      state.sourceNameConfirmed = true;
+    }
+    renderSourceNameConflict();
+    updateSummary();
+  }
+
+  function invalidateSourceNameConfirmation() {
+    state.sourceNameConfirmed = false;
+    renderSourceNameConflict();
+  }
+
   function populateRfFields(fields, overwrite = false) {
     const conflicts = [];
     if (!fields || !state.contract) return conflicts;
@@ -903,6 +957,9 @@
       state.sourceKind = source.kind;
       state.sourceId = source.id;
       state.sourceOrigin = 'database';
+      state.sourcePatientName = String(result.fields?.patient_name || '').trim();
+      state.sourceNameConfirmed = false;
+      renderSourceNameConflict();
       if (result.actual_procedure) {
         renderHistory([result.actual_procedure], result.actual_procedure.procedure_history_id);
         $('legacyDetails').open = false;
@@ -936,6 +993,9 @@
       delete previousFields.age;
       const conflicts = populateRfFields(previousFields);
       state.sourceKind = ''; state.sourceId = ''; state.sourceOrigin = 'pdf';
+      state.sourcePatientName = String(result.fields?.patient_name || '').trim();
+      state.sourceNameConfirmed = false;
+      renderSourceNameConflict();
       state.selectedHistoryId = '';
       $('historyChoices').replaceChildren();
       $('rfActualConfirm').checked = false;
@@ -968,6 +1028,8 @@
   function savedDraftFields() {
     const draft = buildDraft();
     delete draft.imaging_review_confirmed; // old confirmation never carries over
+    delete draft.source_name_confirmed; // a name discrepancy must be reconfirmed on resume
+    draft.source_patient_name = state.sourcePatientName;
     draft.draft_nsaids = state.nsaids.map(cleanTrial);
     draft.draft_others = state.others.map(cleanTrial);
     return draft;
@@ -1032,6 +1094,8 @@
     state.sourceKind = fields.source_kind || '';
     state.sourceId = fields.source_id || '';
     state.sourceOrigin = fields.source_origin || '';
+    state.sourcePatientName = fields.source_patient_name || '';
+    state.sourceNameConfirmed = false;
     for (const id of Object.values(rfFields)) $(id).value = '';
     // Never let a suspended/deactivated physician revert silently to default.
     const doctor = fields.doctor_key || '';
@@ -1085,6 +1149,15 @@
     $('rfSourceLoaded').textContent = state.sourceOrigin
       ? 'Προηγούμενη RF πηγή: ' + (state.sourceOrigin === 'pdf'
         ? 'αρχείο PDF (δεν αποθηκεύτηκε)' : 'RF ιστορικό') : '';
+    if (state.sourceKind && state.sourceId) {
+      // Reconcile saved form text with the current protected source, not an
+      // untrusted source-name snapshot preserved in the draft.
+      const previous = await (await api('/api/reuse/' +
+        encodeURIComponent(state.sourceKind) + '/' +
+        encodeURIComponent(state.sourceId))).json();
+      state.sourcePatientName = String(previous.fields?.patient_name || '').trim();
+    }
+    renderSourceNameConflict();
     updateSummary();
   }
 
@@ -1100,6 +1173,10 @@
   }
 
   async function createPdf() {
+    if (unresolvedSourceNameConflict()) {
+      showError('Επίλυσε ρητά τη διαφορά ονόματος και ταυτότητας με την παλιά αίτηση πριν την έκδοση.');
+      return;
+    }
     if (!state.contract?.doctors?.[$('doctorSelect').value]?.configured) {
       showError('Επίλεξε ρητά τον ιατρό της αίτησης.');
       return;
@@ -1215,6 +1292,10 @@
     $('rfSourceNextBtn').addEventListener('click', () => searchRfSources(state.sourcePage + 1));
     $('rfSourceSearch').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); searchRfSources(); }});
     $('rfPreviousPdf').addEventListener('change', importRfPdf);
+    $('rfUsePreviousNameBtn').addEventListener('click', () => resolveSourceName('previous'));
+    $('rfConfirmCurrentNameBtn').addEventListener('click', () => resolveSourceName('current'));
+    ['patientName', 'identityNumber'].forEach(id =>
+      $(id).addEventListener('input', invalidateSourceNameConfirmation));
     $('rfDraftSaveBtn').addEventListener('click', saveRfDraft);
     $('rfDraftReloadBtn').addEventListener('click', () => listRfDrafts());
     $('rfDraftSearchBtn').addEventListener('click', () => listRfDrafts());

@@ -158,6 +158,7 @@ class RFApplicationDraft(BaseModel):
     legacy_confirmed: bool = False
     source_kind: str = Field(default="", max_length=20)
     source_id: str = Field(default="", max_length=80)
+    source_name_confirmed: bool = False
     draft_id: str = Field(default="", max_length=80)
     draft_revision: int | None = Field(default=None, ge=1)
 
@@ -714,6 +715,14 @@ def build_rf_router(engine: Engine) -> APIRouter:
                 raise HTTPException(status_code=422, detail="Η προηγούμενη RF πηγή αφορά άλλη περιοχή/πλευρά")
             if source["source"]["indication_code"] != draft.indication_code:
                 raise HTTPException(status_code=422, detail="Η προηγούμενη RF πηγή αφορά διαφορετική ένδειξη")
+            previous_name = str(source["fields"].get("patient_name") or "").strip()
+            if (previous_name
+                    and _normalize_document_text(previous_name) != _normalize_document_text(draft.patient_name)
+                    and not draft.source_name_confirmed):
+                raise HTTPException(
+                    status_code=422,
+                    detail="Το όνομα διαφέρει από την προηγούμενη RF. Απαιτείται ρητή επίλυση της ασυμφωνίας ονόματος/ταυτότητας.",
+                )
 
         prior = None
         legacy = None
