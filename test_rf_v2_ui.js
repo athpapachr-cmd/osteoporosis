@@ -72,7 +72,7 @@ const doc = {
   createElement: fakeElement,
   addEventListener() {}, // install but do not run unrelated page bootstrap
 };
-const instrumented = app.replace(/\}\)\(\);\s*$/, '\n  globalThis.__rfTest = {addHorosImages, releaseHorosPreviews, loadContract, saveDoctor, editDoctor, createPdf, populateRfFields, savedDraftFields, restoreRfDraft};\n})();');
+const instrumented = app.replace(/\}\)\(\);\s*$/, '\n  globalThis.__rfTest = {addHorosImages, releaseHorosPreviews, loadContract, saveDoctor, editDoctor, createPdf, populateRfFields, savedDraftFields, restoreRfDraft, loadRfSource, setPathway, resolveSourceName, invalidateSourceNameConfirmation, unresolvedSourceNameConflict, buildDraft};\n})();');
 assert.notStrictEqual(instrumented, app, 'RF handler instrumentation point must be present');
 const browser = {
   document: doc,
@@ -113,6 +113,17 @@ for (const token of ['doctorManagement','doctorDirectoryList','doctorForm','doct
   assert(html.includes('id="' + token + '"'), 'managed doctor UI missing '+token);
 }
 assert(html.includes('id="rfSourceSearch"') && html.includes('id="rfPreviousPdf"'), 'A2 must offer one-field search and old RF PDF upload');
+const typeAt = html.indexOf('data-pathway="A2"');
+const sourceAt = html.indexOf('id="a2SourceFlow"');
+assert(typeAt >= 0 && sourceAt > typeAt &&
+       sourceAt < html.indexOf('id="rfDraftWorkspace"') &&
+       sourceAt < html.indexOf('id="patientName"') &&
+       sourceAt < html.indexOf('id="indicationSelect"') &&
+       sourceAt < html.indexOf('id="a2Flow"'),
+       'A2 prior-RF source search must render directly after pathway, before patient/diagnosis');
+assert(html.includes('id="rfNameConflict"') &&
+       html.includes('id="rfConfirmCurrentNameBtn"') &&
+       html.includes('id="rfUsePreviousNameBtn"'), 'name/identity mismatch requires explicit choices');
 assert(html.includes('id="rfDraftSaveBtn"') && html.includes('id="rfDraftList"'), 'A1/A2 saved drafts need Save and Resume controls');
 assert(app.includes("'/api/reuse/search?query='") && app.includes("'/api/reuse/pdf'"), 'A2 history must reuse the protected RF API');
 assert(app.includes("'/api/drafts'") && app.includes('saveRfDraft') && app.includes('restoreRfDraft'), 'saved drafts must be server-resumable');
@@ -260,6 +271,8 @@ testIssuerSelectionAfterDirectoryChanges().then(async () => {
   console.log("RF v2 managed-doctor issuer-selection/retained-draft regression: PASS");
   await testReusableRFFieldsAndDraftRestore();
   console.log("RF v2 A2 prefill and saved-draft browser handlers: PASS");
+  await testOldRFNameMismatchResolution();
+  console.log("RF v2 A2 explicit patient-name conflict resolution: PASS");
 }).catch(error => { console.error(error); process.exitCode = 1; });
 
 
@@ -311,4 +324,56 @@ async function testReusableRFFieldsAndDraftRestore() {
   assert.strictEqual(get('rfCurrentFollowupVas').value, '5');
   assert.strictEqual(get('rfActualConfirm').checked, true);
   assert.strictEqual(get('additionalNotes').value, 'Saved note');
+}
+
+
+async function testOldRFNameMismatchResolution() {
+  const get = id => doc.getElementById(id);
+  get('patientName').value = 'Patient B';
+  get('identityNumber').value = '';
+  get('indicationSelect').value = '';
+  get('lateralitySelect').value = '';
+  get('exactLocation').value = '';
+  const issued = [];
+  browser.fetch = async (url, init = {}) => {
+    const path = url.replace('/clinical/clinic-utilities/rf', '');
+    issued.push(path);
+    const result = path === '/api/reuse/application/old-A'
+      ? {fields:{patient_name:'Patient A',identity_number:'PAT-A',
+                 gesy_number:'GESY-A', indication_code:'KNEE_OA_KL34',
+                 laterality:'left',exact_location:'Αριστερό γόνατο'},
+         source:{kind:'application',id:'old-A'}} :
+      path === '/api/history' ? {found:false,procedures:[]} :
+      null;
+    if (!result) throw Error('Unexpected protected RF request '+path);
+    return {ok:true,status:200,json:async()=>result};
+  };
+  await browser.__rfTest.loadRfSource({kind:'application',id:'old-A'});
+  assert.strictEqual(get('patientName').value,'Patient B',
+    'typed current name should not be overwritten by old source');
+  assert.strictEqual(get('identityNumber').value,'PAT-A',
+    'selected prior patient identity is filled');
+  assert.strictEqual(get('rfNameConflict').hidden,false,
+    'name mismatch requires an explicit, visible resolution');
+  assert(browser.__rfTest.unresolvedSourceNameConflict());
+  await browser.__rfTest.createPdf();
+  assert(get('validationPanel').textContent.includes('Επίλυσε ρητά'),
+    'no RF PDF can be issued while selected source name disagrees');
+  assert(!issued.some(s=>s==='/api/create'), 'blocked mismatch cannot reach create');
+  browser.__rfTest.resolveSourceName('current');
+  assert.strictEqual(browser.__rfTest.unresolvedSourceNameConflict(),false);
+  assert.strictEqual(browser.__rfTest.buildDraft().source_name_confirmed,true,
+    'keeping the new name must be an explicit clinician confirmation');
+  browser.__rfTest.invalidateSourceNameConfirmation();
+  assert.strictEqual(browser.__rfTest.unresolvedSourceNameConflict(),true,
+    'editing identity/name invalidates the prior confirmation');
+  browser.__rfTest.resolveSourceName('previous');
+  assert.strictEqual(get('patientName').value,'Patient A');
+  assert.strictEqual(get('rfNameConflict').hidden,true);
+  assert.strictEqual(browser.__rfTest.buildDraft().source_name_confirmed,false);
+  assert.strictEqual(get('a2SourceFlow').hidden,false,
+    'A2 source selector must be visible in A2 mode');
+  browser.__rfTest.setPathway('A1');
+  assert.strictEqual(get('a2SourceFlow').hidden,true,
+    'source selector hidden for A1; original workflow remains');
 }

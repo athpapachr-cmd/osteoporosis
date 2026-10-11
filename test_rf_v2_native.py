@@ -939,6 +939,79 @@ class RFReuseSavedDraftTests(unittest.TestCase):
         with Session(self.engine) as session:
             self.assertEqual(session.query(RFApplicationORM).count(), 2)
 
+
+    def test_previous_procedure_never_prefills_product_from_other_shoulder_indication(self):
+        from clinic_utilities.rf.persistence import record_application, record_legacy_procedure
+        old_application = {**make_a1_draft(
+            patient_name="Synthetic Patient A", identity_number="PAT-PRODUCT").model_dump(),
+            "site_key":"shoulder","laterality":"left",
+            "indication_code":"SHOULDER_OA_KL34", "product_key":"medikey",
+            "exact_location":"Αριστερός ώμος"}
+        record_application(self.engine, old_application)
+        real = record_legacy_procedure(self.engine, {
+            "identity_number":"PAT-PRODUCT","indication_code":"SHOULDER_IRREPARABLE_CUFF",
+            "site_key":"shoulder","laterality":"left","exact_location":"Αριστερός ώμος",
+            "actual_procedure_date":"2026-07-01","vas_before":8,"vas_after":3,
+            "last_followup_date":"2026-08-01","last_followup_vas":5,
+        })
+        path = self.base + "/reuse/procedure/" + real
+        no_match = self.client.get(path,headers=self.headers)
+        self.assertEqual(no_match.status_code, 200, no_match.text)
+        self.assertEqual(no_match.json()["fields"]["patient_name"], "Synthetic Patient A")
+        self.assertEqual(no_match.json()["fields"]["product_key"], "",
+                         "same body area and side do not imply the same RF product")
+        compatible = {**old_application, "indication_code":"SHOULDER_IRREPARABLE_CUFF",
+                      "product_key":"diros"}
+        record_application(self.engine, compatible)
+        valid = self.client.get(path, headers=self.headers)
+        self.assertEqual(valid.status_code, 200, valid.text)
+        self.assertEqual(valid.json()["fields"]["product_key"], "diros")
+
+    def test_previous_rf_name_conflict_blocks_issue_until_explicit_name_resolution(self):
+        from clinic_utilities.rf.persistence import record_application, record_legacy_procedure, RFApplicationORM
+        from sqlalchemy.orm import Session
+        original = {**make_a1_draft(
+            patient_name="Patient A",identity_number="PAT-NAME").model_dump(),
+            "site_key":"knee"}
+        source_id = record_application(self.engine, original)
+        procedure_id = record_legacy_procedure(self.engine, {
+            "identity_number":"PAT-NAME","indication_code":"KNEE_OA_KL34",
+            "site_key":"knee","laterality":"left","exact_location":"Αριστερό γόνατο",
+            "actual_procedure_date":"2026-05-01","vas_before":8,"vas_after":2,
+            "last_followup_date":"2026-06-01","last_followup_vas":4,
+        })
+        draft = {**original,"pathway":"A2","patient_name":"Patient B",
+                 "procedure_history_id":procedure_id,
+                 "source_kind":"application","source_id":source_id,
+                 "imaging_review_confirmed":True}
+        def submit(payload):
+            with patch("clinic_utilities.rf.api.build_official_rf_pdf",
+                       return_value=b"%PDF-synthetic") as builder:
+                response = self.client.post(self.base + "/create",headers=self.headers,
+                    data={"draft_json":json.dumps(payload)},
+                    files={"imaging_report":("imaging.pdf",make_pdf(1),"application/pdf")})
+                return response, builder
+        denied, builder = submit(draft)
+        self.assertEqual(denied.status_code, 422, denied.text)
+        self.assertIn("ασυμφωνία ονόματος", denied.text)
+        builder.assert_not_called()
+        with Session(self.engine) as session:
+            self.assertEqual(session.query(RFApplicationORM).count(),1)
+        confirmed, builder = submit({**draft,"source_name_confirmed":True})
+        self.assertEqual(confirmed.status_code,200,confirmed.text)
+        builder.assert_called_once()
+        with Session(self.engine) as session:
+            rows=session.query(RFApplicationORM).all()
+            self.assertEqual(len(rows),2)
+            self.assertEqual(next(x for x in rows if x.patient_name=="Patient B").patient_identity_key,
+                             "PATNAME")
+        # An accent/case-only name variation is not a clinical identity conflict.
+        accented = {**original,"pathway":"A2","patient_name":"PATIENT A",
+                    "procedure_history_id":procedure_id,"source_kind":"application",
+                    "source_id":source_id,"imaging_review_confirmed":True}
+        case_only, _ = submit(accented)
+        self.assertEqual(case_only.status_code,200,case_only.text)
+
     def test_same_site_side_but_different_indication_is_not_an_a2_continuation(self):
         from clinic_utilities.rf.persistence import record_application, record_legacy_procedure
         from sqlalchemy.orm import Session
