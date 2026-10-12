@@ -180,6 +180,7 @@ class RFOutcomeEvent(BaseModel):
     rejection_reason: str = Field(default="", max_length=2400)
     reported_source: Literal["clinician", "colleague", "gesy_notice", "other"] = "clinician"
     confirmed_performed: bool = False
+    corrected_decision: Literal["", "approved", "rejected"] = ""
 
 
 class RFHistoryLookup(BaseModel):
@@ -714,6 +715,7 @@ def build_rf_router(engine: Engine) -> APIRouter:
                 event_date=req.event_date, rejection_reason=req.rejection_reason,
                 reported_source=req.reported_source,
                 confirmed_performed=req.confirmed_performed,
+                corrected_decision=req.corrected_decision,
             )
         except LookupError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc

@@ -1078,8 +1078,12 @@
     const action = $('rfOutcomeAction').value;
     const noDate = action === 'claim' || action === 'release';
     $('rfOutcomeDate').closest('label').hidden = noDate;
-    $('rfOutcomeReasonWrap').hidden = !['reject', 'correct_decision'].includes(action)
-      || (action === 'correct_decision' && state.selectedOutcome?.decision !== 'rejected');
+    $('rfOutcomeCorrectDecisionWrap').hidden = action !== 'correct_decision';
+    if (action === 'correct_decision') {
+      $('rfOutcomeCorrectDecision').value = state.selectedOutcome?.decision || 'approved';
+    }
+    $('rfOutcomeReasonWrap').hidden = action !== 'reject' &&
+      !(action === 'correct_decision' && $('rfOutcomeCorrectDecision').value === 'rejected');
     $('rfOutcomePerformWrap').hidden = action !== 'perform';
     $('rfOutcomePerformConfirm').checked = false;
     if (!noDate) {
@@ -1119,6 +1123,13 @@
         encodeURIComponent(card.id))).json();
       renderSelectedOutcome(item);
     } catch (error) { showError(error.message); }
+  }
+
+  function outcomeCorrectionKindChanged() {
+    const correction = $('rfOutcomeAction').value === 'correct_decision';
+    $('rfOutcomeReasonWrap').hidden = !correction ||
+      $('rfOutcomeCorrectDecision').value !== 'rejected';
+    if ($('rfOutcomeReasonWrap').hidden) $('rfOutcomeReason').value = '';
   }
 
   async function loadRfOutcomes(page = 1) {
@@ -1181,6 +1192,8 @@
             rejection_reason: $('rfOutcomeReasonWrap').hidden ? '' : $('rfOutcomeReason').value.trim(),
             reported_source: $('rfOutcomeSource').value,
             confirmed_performed: $('rfOutcomePerformConfirm').checked,
+            corrected_decision: action === 'correct_decision' ?
+              $('rfOutcomeCorrectDecision').value : '',
           }),
         });
       const updated = await response.json();
@@ -1511,6 +1524,7 @@
     $('rfOutcomeScope').addEventListener('change', () => { $('rfOutcomeSelected').hidden = true; state.selectedOutcome = null; loadRfOutcomes(); });
     $('rfOutcomeSearch').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); loadRfOutcomes(); }});
     $('rfOutcomeAction').addEventListener('change', outcomeActionChanged);
+    $('rfOutcomeCorrectDecision').addEventListener('change', outcomeCorrectionKindChanged);
     $('rfOutcomeApply').addEventListener('click', applyRfOutcome);
     $('rfOutcomeCorrection').addEventListener('click', beginRfCorrection);
     $('rfDraftSearch').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); listRfDrafts(); }});

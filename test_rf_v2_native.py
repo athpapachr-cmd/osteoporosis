@@ -1313,6 +1313,14 @@ class RFOutcomeFollowupTests(unittest.TestCase):
                                     rejection_reason="corrected synthetic reason").status_code, 200)
         self.assertEqual(self.card(app_id)["rejection_reason"], "corrected synthetic reason")
         self.assertEqual(self.event(app_id, "approve", 2).status_code, 422)
+        corrected = self.event(app_id, "correct_decision", 2,
+                               corrected_decision="approved")
+        self.assertEqual(corrected.status_code, 200, corrected.text)
+        self.assertEqual(corrected.json()["decision"], "approved")
+        self.assertEqual(corrected.json()["stage"], "approved")
+        self.assertEqual(corrected.json()["rejection_reason"], "")
+        self.assertEqual(self.search().json()["counts"]["rejected"], 0)
+        self.assertEqual(self.search().json()["counts"]["approved"], 1)
 
 
 class RFIntegrationSourceTests(unittest.TestCase):

@@ -769,9 +769,12 @@ def _rf_event_date(value: str, label: str, *, may_be_future: bool = False) -> st
 def change_rf_application_progress(engine: Engine, application_id: str, *,
                                    action: str, revision: int, event_date: str = "",
                                    rejection_reason: str = "", reported_source: str = "clinician",
-                                   confirmed_performed: bool = False) -> dict[str, Any]:
+                                   confirmed_performed: bool = False,
+                                   corrected_decision: str = "") -> dict[str, Any]:
     if action not in _RF_PROGRESS_ACTIONS or reported_source not in _RF_PROGRESS_SOURCE:
         raise ValueError("Μη έγκυρη ενέργεια ή προέλευση RF")
+    if corrected_decision and (action != "correct_decision" or corrected_decision not in {"approved", "rejected"}):
+        raise ValueError("Μη έγκυρη διόρθωση απόφασης")
     if revision < 0 or len(rejection_reason) > 2400:
         raise ValueError("Μη έγκυρη έκδοση ή αιτιολογία RF")
     if action in {"claim", "release"}:
@@ -822,10 +825,13 @@ def change_rf_application_progress(engine: Engine, application_id: str, *,
                 raise ValueError("Δεν υπάρχει απόφαση προς διόρθωση")
             if previous["submitted_date"] and event_date < previous["submitted_date"]:
                 raise ValueError("Η απόφαση προηγείται της υποβολής")
-            if previous["decision"] == "approved" and rejection_reason:
+            corrected = corrected_decision or previous["decision"]
+            if corrected == "approved" and rejection_reason:
                 raise ValueError("Δεν αποθηκεύεται αιτιολογία απόρριψης σε έγκριση")
+            progress.decision = corrected
+            progress.stage = corrected
             progress.decision_date = event_date
-            progress.rejection_reason = rejection_reason.strip() if stage == "rejected" else ""
+            progress.rejection_reason = rejection_reason.strip() if corrected == "rejected" else ""
         elif action == "schedule":
             if stage not in {"approved", "scheduled"}:
                 raise ValueError("Προγραμματισμός μόνο μετά από καταχωρισμένη έγκριση")
