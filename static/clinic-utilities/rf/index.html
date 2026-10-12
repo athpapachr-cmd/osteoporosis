@@ -40,6 +40,37 @@
 <div class="action-row"><button type="button" class="btn ghost small" id="rfDraftNextBtn" hidden>Περισσότερα πρόχειρα</button></div>
 <small class="muted">Τα πρόχειρα δεν περιλαμβάνουν αρχεία. Τα επισυνάπτεις όταν εκδίδεις το επίσημο PDF.</small>
 </article>
+<article class="card rf-outcomes-workspace" id="rfOutcomesWorkspace">
+  <div class="card-title"><span class="step">✓</span><div><h2>Αιτήσεις & εκβάσεις</h2><p>Η έκδοση PDF δεν σημαίνει υποβολή στο ΓεΣΥ. Εσύ καταχωρίζεις μόνο όσα έχουν πράγματι γίνει.</p></div></div>
+  <div class="rf-outcome-toolbar">
+    <label>Αναζήτηση αίτησης<input id="rfOutcomeSearch" placeholder="Όνομα, ταυτότητα ή ΓεΣΥ"></label>
+    <label>Προβολή<select id="rfOutcomeScope"><option value="mine">Δικές μου προς παρακολούθηση</option><option value="all">Όλες οι αιτήσεις</option></select></label>
+    <button type="button" class="btn secondary" id="rfOutcomeRefresh">Αναζήτηση / ανανέωση</button>
+  </div>
+  <div id="rfOutcomeCounts" class="muted" aria-live="polite"></div>
+  <div id="rfOutcomeResults" class="history-list" aria-live="polite"></div>
+  <button type="button" class="btn ghost small" id="rfOutcomeNext" hidden>Περισσότερες αιτήσεις</button>
+  <div id="rfOutcomeSelected" class="rf-outcome-selected" hidden>
+    <h3 id="rfOutcomeTitle">Επιλεγμένη αίτηση</h3>
+    <p id="rfOutcomeFacts" class="muted"></p>
+    <div class="grid two">
+      <label>Ενέργεια<select id="rfOutcomeAction"></select></label>
+      <label>Ημερομηνία πραγματικού γεγονότος<input id="rfOutcomeDate" type="date"></label>
+      <label>Προέλευση πληροφορίας<select id="rfOutcomeSource">
+        <option value="clinician">Δική μου καταχώριση</option><option value="colleague">Ενημέρωση συναδέλφου</option>
+        <option value="gesy_notice">Έγγραφο / ενημέρωση ΓεΣΥ</option><option value="other">Άλλη επιβεβαιωμένη πηγή</option>
+      </select></label>
+      <label id="rfOutcomePerformWrap" class="rf-outcome-attest" hidden><input id="rfOutcomePerformConfirm" type="checkbox"> Επιβεβαιώνω ότι η θεραπεία πραγματοποιήθηκε</label>
+      <label class="full" id="rfOutcomeReasonWrap" hidden>Αιτιολογία απόρριψης (όπως αναφέρθηκε)<textarea id="rfOutcomeReason" rows="3" maxlength="2400"></textarea></label>
+    </div>
+    <div class="action-row rf-button-row">
+      <button type="button" class="btn primary" id="rfOutcomeApply">Καταχώριση</button>
+      <button type="button" class="btn secondary" id="rfOutcomeCorrection" hidden>Νέα διορθωμένη αίτηση</button>
+    </div>
+    <p class="muted">Η έγκριση δεν σημαίνει προγραμματισμένη ή πραγματοποιημένη θεραπεία. Η προσωπική παρακολούθηση είναι ανεξάρτητη από την έκβαση.</p>
+  </div>
+  <p class="muted" id="rfCorrectionContext" hidden>Νέα διορθωμένη αίτηση από καταχωρισμένη απόρριψη. Θα χρειαστούν ξανά τα επισυναπτόμενα.</p>
+</article>
 <article class="card"><div class="card-title"><span class="step" id="rfPatientStep">2</span><div><h2>Ασθενής & προϊόν</h2><p>Τα στοιχεία ιατρού και προϊόντος συμπληρώνονται server-side.</p></div></div><div class="grid two"><label>Ονοματεπώνυμο<input id="patientName" autocomplete="name"></label><label>Ηλικία<input id="age" type="number" min="1" max="130"></label><label>Αρ. ταυτότητας<input id="identityNumber"></label><label>Αρ. μητρώου ΓεΣΥ<input id="gesyNumber"></label><label class="full">Ιατρός αίτησης<select id="doctorSelect"><option value="papachristou">Φόρτωση ιατρών…</option></select></label>
 <details class="doctor-management full" id="doctorManagement">
 <summary><strong>Διαχείριση ιατρών</strong> <span class="muted">Προσθήκη · επεξεργασία · αφαίρεση</span></summary>
