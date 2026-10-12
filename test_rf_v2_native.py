@@ -1296,6 +1296,26 @@ class RFOutcomeFollowupTests(unittest.TestCase):
             self.assertEqual(session.query(RFApplicationORM).count(), 2)
             self.assertEqual(session.query(RFApplicationProgressAuditORM).count(), 2)
 
+    def test_explicit_followup_override_before_submitted_is_not_overwritten(self):
+        owned = self.issue(identity_number="SYN-OVERRIDE")
+        self.assertEqual(owned.status_code, 200, owned.text)
+        app_id = owned.headers["x-rf-application-id"]
+        self.assertEqual(self.event(app_id, "claim", 0).status_code, 200)
+        self.assertTrue(self.card(app_id)["mine_to_follow"])
+        self.assertEqual(self.event(app_id, "release", 1).status_code, 200)
+        self.assertFalse(self.card(app_id)["mine_to_follow"])
+        submitted = self.event(app_id, "submit", 2)
+        self.assertEqual(submitted.status_code, 200, submitted.text)
+        self.assertFalse(submitted.json()["mine_to_follow"],
+                         "an explicit release must override self-issuer auto-claim")
+        self.assertEqual(self.event(app_id, "claim", 3).status_code, 200)
+        self.assertTrue(self.card(app_id)["mine_to_follow"])
+        # An unauthorized actor cannot claim or change a clinical outcome.
+        self.assertEqual(self.client.post(
+            f"{self.base}/outcomes/{app_id}/events",
+            json={"action": "release", "revision": 4},
+        ).status_code, 401)
+
     def test_protected_search_unknown_and_date_status_guards(self):
         self.assertEqual(self.client.post(self.base + "/outcomes/search", json={}).status_code, 401)
         a = self.issue(identity_number="SYN-GUARDS")
