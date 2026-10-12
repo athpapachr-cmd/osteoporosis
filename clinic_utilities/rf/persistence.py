@@ -166,6 +166,7 @@ class RFApplicationProgressORM(RFBase):
     scheduled_date = Column(String(10), nullable=True)
     performed_date = Column(String(10), nullable=True)
     mine_to_follow = Column(Boolean, nullable=False, default=False)
+    followup_choice = Column(String(16), nullable=False, default="")
     updated_at = Column(DateTime, nullable=False)
 
 
@@ -522,6 +523,7 @@ _RF_DRAFT_FIELDS = frozenset({
     "procedure_history_id", "source_kind", "source_id", "source_origin",
     "a2_current_followup_date", "a2_current_followup_vas", "legacy_confirmed",
     "draft_nsaids", "draft_others", "source_patient_name",
+    "correction_of_application_id",
 })
 _RF_DRAFT_ARRAY_FIELDS = {
     "rf_reason_codes": 8, "nsaid_trials": 20, "other_analgesic_trials": 20,
@@ -661,6 +663,7 @@ def _rf_progress_values(row: RFApplicationProgressORM | None) -> dict[str, Any]:
             "revision": 0, "stage": "issued", "submitted_date": None,
             "decision": None, "decision_date": None, "rejection_reason": "",
             "scheduled_date": None, "performed_date": None, "mine_to_follow": False,
+            "followup_choice": "",
         }
     return {
         "revision": row.revision, "stage": row.stage,
@@ -668,6 +671,7 @@ def _rf_progress_values(row: RFApplicationProgressORM | None) -> dict[str, Any]:
         "decision_date": row.decision_date, "rejection_reason": row.rejection_reason,
         "scheduled_date": row.scheduled_date, "performed_date": row.performed_date,
         "mine_to_follow": bool(row.mine_to_follow),
+        "followup_choice": row.followup_choice or "",
     }
 
 
@@ -794,9 +798,14 @@ def change_rf_application_progress(engine: Engine, application_id: str, *,
             progress.submitted_date = event_date
             progress.stage = "submitted"
             payload = app.payload_json if isinstance(app.payload_json, dict) else {}
+            # Explicit opt-in/out made before submission must never be overwritten
+            # by the automatic owner rule when Submitted is finally recorded.
             progress.mine_to_follow = (
-                payload.get("issuer_selection_origin") == "explicit"
-                and payload.get("issuer_self_verified_at_issue") is True
+                previous["mine_to_follow"] if previous["followup_choice"]
+                else (
+                    payload.get("issuer_selection_origin") == "explicit"
+                    and payload.get("issuer_self_verified_at_issue") is True
+                )
             )
         elif action in {"approve", "reject"}:
             if stage not in {"issued", "submitted"}:
@@ -840,6 +849,7 @@ def change_rf_application_progress(engine: Engine, application_id: str, *,
                 raise ValueError("Δεν υπάρχει προσωπική παρακολούθηση")
             progress = progress or RFApplicationProgressORM(application_id=application_id)
             progress.mine_to_follow = action == "claim"
+            progress.followup_choice = action
         else:
             raise ValueError("Μη έγκυρη ενέργεια RF")
         # A single transaction commits the versioned projection and audit.
@@ -863,7 +873,8 @@ def validate_rf_correction_source(session: Session, *, rejected_id: str,
     prior = session.get(RFApplicationORM, rejected_id)
     if prior is None:
         raise ValueError("Η απορριφθείσα αίτηση RF δεν βρέθηκε")
-    progress = session.get(RFApplicationProgressORM, rejected_id)
+    progress = session.scalar(select(RFApplicationProgressORM).where(
+        RFApplicationProgressORM.application_id == rejected_id).with_for_update())
     if progress is None or progress.decision != "rejected":
         raise ValueError("Απαιτείται καταχωρισμένη απόρριψη για διορθωτική αίτηση")
     if (prior.patient_identity_key != normalize_identity(identity_number)
