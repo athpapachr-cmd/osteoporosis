@@ -1,7 +1,7 @@
 # Native RF v2 — Approval, rejection, on-request correction & follow-up ownership
 
-**Date:** 2026-10-12 · **MODE:** DESIGN ONLY / bounded pre-code R2 · **NO implementation, merge, deploy or patient data**  
-**Repository:** `athpapachr-cmd/osteoporosis` · **Fresh verified source baseline:** `6ee184f9c76bf45a6c43e1f9fae90d43c1dfde00`  
+**Date:** 2026-10-12 · **MODE:** DESIGN ONLY / bounded pre-code R2 · **NO implementation, merge, deploy or patient data**
+**Repository:** `athpapachr-cmd/osteoporosis` · **Fresh verified source baseline:** `6ee184f9c76bf45a6c43e1f9fae90d43c1dfde00`
 **Product Owner checkpoint:** Approved in the conversation: “My applications enter tracking when I explicitly mark them Submitted; a colleague’s application creates no personal tracking obligation unless I explicitly take it on.” Also confirmed: if a colleague later reports rejection and requests correction, new linked application should be possible without ever having tracked that application.
 
 ## 1. Product intent — reuse the working RF v2
