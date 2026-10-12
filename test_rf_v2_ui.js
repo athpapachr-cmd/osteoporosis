@@ -67,6 +67,7 @@ function fakeElement(tag) {
     addEventListener(type, fn) { this.listeners[type] = fn; },
     querySelector() { return {value: '', onclick: null}; }, // synthetic adverse-row button
     setAttribute() {},
+    closest() { return {hidden: false}; },
   };
 }
 const doc = {
@@ -74,7 +75,7 @@ const doc = {
   createElement: fakeElement,
   addEventListener() {}, // install but do not run unrelated page bootstrap
 };
-const instrumented = app.replace(/\}\)\(\);\s*$/, '\n  globalThis.__rfTest = {addHorosImages, releaseHorosPreviews, loadContract, saveDoctor, editDoctor, createPdf, populateRfFields, savedDraftFields, restoreRfDraft, loadRfSource, setPathway, resolveSourceName, invalidateSourceNameConfirmation, unresolvedSourceNameConflict, buildDraft};\n})();');
+const instrumented = app.replace(/\}\)\(\);\s*$/, '\n  globalThis.__rfTest = {addHorosImages, releaseHorosPreviews, loadContract, saveDoctor, editDoctor, createPdf, populateRfFields, savedDraftFields, restoreRfDraft, loadRfSource, setPathway, resolveSourceName, invalidateSourceNameConfirmation, unresolvedSourceNameConflict, buildDraft, loadRfOutcomes, renderSelectedOutcome, applyRfOutcome, beginRfCorrection, outcomeAvailableActions, renderCorrectionContext};\n})();');
 assert.notStrictEqual(instrumented, app, 'RF handler instrumentation point must be present');
 const browser = {
   document: doc,
@@ -277,6 +278,8 @@ testIssuerSelectionAfterDirectoryChanges().then(async () => {
   console.log("RF v2 A2 prefill and saved-draft browser handlers: PASS");
   await testOldRFNameMismatchResolution();
   console.log("RF v2 A2 explicit patient-name conflict resolution: PASS");
+  await testRfOutcomeActionsAndCorrection();
+  console.log("RF v2 real outcome handlers and linked correction: PASS");
 }).catch(error => { console.error(error); process.exitCode = 1; });
 
 
@@ -380,4 +383,95 @@ async function testOldRFNameMismatchResolution() {
   browser.__rfTest.setPathway('A1');
   assert.strictEqual(get('a2SourceFlow').hidden,true,
     'source selector hidden for A1; original workflow remains');
+}
+
+
+async function testRfOutcomeActionsAndCorrection() {
+  for (const id of ['rfOutcomeAction', 'rfOutcomeScope']) {
+    const node = doc.getElementById(id);
+    node.add = value => {node.children.push(value); node.value = value.value;};
+  }
+  const el = id => doc.getElementById(id);
+  const original = {
+    id: 'synthetic-application-rejected', issued_date: '2026-10-01',
+    patient_name: 'Synthetic RF Patient', identity_number: 'RF-CORR',
+    indication_code: 'KNEE_OA_KL34', laterality: 'left', doctor_key: 'physicianB',
+    issuer_name: 'Synthetic Doctor B', stage: 'rejected', revision: 1,
+    submitted_date: null, decision_date: '2026-10-10',
+    rejection_reason: 'Synthetic rejection source', decision: 'rejected',
+    mine_to_follow: false, correction_of_application_id: '',
+  };
+  let card = {...original};
+  const requests = [];
+  browser.fetch = async (url, options = {}) => {
+    const path = url.replace('/clinical/clinic-utilities/rf', '');
+    const request = options.body ? JSON.parse(options.body) : {};
+    requests.push({path, request, method: options.method});
+    let data;
+    if (path === '/api/outcomes/search') {
+      data = {applications:[card],counts:{pending:0,approved:0,rejected:1,
+        mine_actionable:0},denominator:1,truncated:false,has_more:false};
+    } else if (path.endsWith('/events')) {
+      assert.strictEqual(request.revision, card.revision);
+      assert.strictEqual(request.action, 'correct_decision');
+      assert.strictEqual(request.reported_source, 'colleague');
+      assert.strictEqual(request.rejection_reason, 'Synthetic corrected reason');
+      card = {...card,revision:card.revision+1,
+        decision_date:request.event_date,rejection_reason:request.rejection_reason};
+      data = card;
+    } else if (path === '/api/reuse/application/' + original.id) {
+      data = {source:{kind:'application',pathway:'A1'},fields:{
+        pathway:'A1',patient_name:'Synthetic RF Patient',identity_number:'RF-CORR',
+        gesy_number:'SYN-GESY',age:67,indication_code:'KNEE_OA_KL34',
+        laterality:'left',exact_location:'Αριστερό γόνατο',product_key:'medikey',
+      }};
+    } else throw Error('Unexpected protected RF request: '+path);
+    return {ok:true,status:200,json:async()=>data};
+  };
+  el('rfOutcomeScope').value = 'all';
+  el('rfOutcomeSearch').value = '';
+  el('rfOutcomeAction').add = option => {
+    el('rfOutcomeAction').children.push(option);
+    if (el('rfOutcomeAction').children.length===1)
+      el('rfOutcomeAction').value = option.value;
+  };
+  await browser.__rfTest.loadRfOutcomes();
+  assert.strictEqual(el('rfOutcomeResults').children.length,1);
+  assert(el('rfOutcomeCounts').textContent.includes('Απορρίψεις 1'));
+  browser.__rfTest.renderSelectedOutcome(card);
+  assert(el('rfOutcomeCorrection').hidden === false);
+  assert.strictEqual(el('rfOutcomeAction').children[0].value,'correct_decision');
+  el('rfOutcomeSource').value = 'colleague';
+  el('rfOutcomeAction').value = 'correct_decision';
+  el('rfOutcomeReason').value = 'Synthetic corrected reason';
+  el('rfOutcomeDate').value = '2026-10-11';
+  await browser.__rfTest.applyRfOutcome();
+  assert.strictEqual(card.rejection_reason,'Synthetic corrected reason');
+  assert.strictEqual(card.mine_to_follow,false);
+  assert.strictEqual(el('rfOutcomeTitle').textContent.includes('Απορρίφθηκε'),true);
+  assert(requests.some(x=>x.path.endsWith('/events')));
+  assert(!requests.some(x=>x.path.includes('/api/create')),
+         'editing outcome cannot create official RF or assign a colleague obligation');
+
+  // A deliberately requested correction stays A1 and links only the rejected ID;
+  // it may not silently select B or declare any prior procedure as performed.
+  for (const id of ['identityNumber','patientName','indicationSelect','lateralitySelect',
+                    'exactLocation','gesyNumber','productSelect','additionalNotes'])
+    el(id).value = '';
+  await browser.__rfTest.beginRfCorrection();
+  assert.strictEqual(el('patientName').value,'Synthetic RF Patient');
+  assert.strictEqual(el('identityNumber').value,'RF-CORR');
+  assert.strictEqual(el('rfCorrectionContext').hidden,false);
+  assert.strictEqual(browser.__rfTest.buildDraft().correction_of_application_id,
+                     original.id, 'new issued attempt must link original rejection');
+  assert.strictEqual(browser.__rfTest.buildDraft().pathway,'A1',
+                     'rejected application does not imply real A2 treatment');
+  assert.strictEqual(el('imagingReport').value,'',
+                     'new official RF requires new imaging attachment');
+  assert.notStrictEqual(el('doctorSelect').value,'physicianB',
+                        'correction must not silently select colleague issuer');
+
+  // Existing saved-draft mechanism carries only the correction ID, no binaries.
+  assert.strictEqual(browser.__rfTest.savedDraftFields().correction_of_application_id,
+                     original.id);
 }
