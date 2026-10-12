@@ -721,6 +721,10 @@ def build_rf_router(engine: Engine) -> APIRouter:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
         except RuntimeError as exc:
             raise HTTPException(status_code=409, detail=str(exc)) from exc
+        except IntegrityError as exc:
+            # Concurrent first writes can race on the unique application ID
+            # before PostgreSQL has an existing progress row to lock.
+            raise HTTPException(status_code=409, detail="Η έκβαση ενημερώθηκε ταυτόχρονα. Ανανέωσε την αίτηση") from exc
         except ValueError as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
 
