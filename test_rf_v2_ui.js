@@ -75,7 +75,7 @@ const doc = {
   createElement: fakeElement,
   addEventListener() {}, // install but do not run unrelated page bootstrap
 };
-const instrumented = app.replace(/\}\)\(\);\s*$/, '\n  globalThis.__rfTest = {addHorosImages, releaseHorosPreviews, loadContract, saveDoctor, editDoctor, createPdf, populateRfFields, savedDraftFields, restoreRfDraft, loadRfSource, setPathway, resolveSourceName, invalidateSourceNameConfirmation, unresolvedSourceNameConflict, buildDraft, loadRfOutcomes, renderSelectedOutcome, applyRfOutcome, beginRfCorrection, outcomeAvailableActions, renderCorrectionContext};\n})();');
+const instrumented = app.replace(/\}\)\(\);\s*$/, '\n  globalThis.__rfTest = {addHorosImages, releaseHorosPreviews, loadContract, saveDoctor, editDoctor, createPdf, populateRfFields, savedDraftFields, restoreRfDraft, loadRfSource, setPathway, resolveSourceName, invalidateSourceNameConfirmation, unresolvedSourceNameConflict, buildDraft, loadRfOutcomes, selectRfOutcome, invalidateRfOutcomeSelection, renderSelectedOutcome, applyRfOutcome, beginRfCorrection, outcomeAvailableActions, renderCorrectionContext};\n})();');
 assert.notStrictEqual(instrumented, app, 'RF handler instrumentation point must be present');
 const browser = {
   document: doc,
@@ -280,6 +280,8 @@ testIssuerSelectionAfterDirectoryChanges().then(async () => {
   console.log("RF v2 A2 explicit patient-name conflict resolution: PASS");
   await testRfOutcomeActionsAndCorrection();
   console.log("RF v2 real outcome handlers and linked correction: PASS");
+  await testRfStaleSelectionAndProvenance();
+  console.log("RF v2 stale A/B selection, protected write and audit provenance: PASS");
 }).catch(error => { console.error(error); process.exitCode = 1; });
 
 
@@ -474,4 +476,90 @@ async function testRfOutcomeActionsAndCorrection() {
   // Existing saved-draft mechanism carries only the correction ID, no binaries.
   assert.strictEqual(browser.__rfTest.savedDraftFields().correction_of_application_id,
                      original.id);
+}
+
+
+async function testRfStaleSelectionAndProvenance() {
+  const el = id => doc.getElementById(id);
+  el('rfOutcomeSearch').value = '';
+  el('rfOutcomeScope').value = 'all';
+  let resolveA, resolveB;
+  const detailA = new Promise(resolve => {resolveA = resolve;});
+  const detailB = new Promise(resolve => {resolveB = resolve;});
+  const a = {
+    id:'synthetic-A', patient_name:'Patient A', stage:'rejected',
+    issued_date:'2026-10-01', decision:'rejected', decision_date:'2026-10-09',
+    mine_to_follow:false, revision:1, rejection_reason:'Old rejected A',
+  };
+  const b = {
+    id:'synthetic-B', patient_name:'Patient B', stage:'rejected',
+    issued_date:'2026-10-01', decision:'rejected', decision_date:'2026-10-10',
+    mine_to_follow:false, revision:1,
+    rejection_reason:'<img src=x onerror="window.evil=true">',
+    last_decision_report: {
+      reported_source:'colleague', event_date:'2026-10-10',
+      recorded_at:'2026-10-11T12:30:00Z',
+    },
+  };
+  const eventPaths = [];
+  browser.fetch = async (url, options = {}) => {
+    const path = url.replace('/clinical/clinic-utilities/rf', '');
+    if (path === '/api/outcomes/' + a.id) return detailA;
+    if (path === '/api/outcomes/' + b.id) return detailB;
+    if (path.endsWith('/events')) {
+      eventPaths.push(path);
+      const body = JSON.parse(options.body);
+      assert.strictEqual(body.action,'claim');
+      assert.strictEqual(body.revision,b.revision);
+      assert.strictEqual(path, '/api/outcomes/' + b.id + '/events',
+        'protected event must address the actually selected application');
+      return {ok:true,status:200,json:async()=>({...b,revision:2,mine_to_follow:true})};
+    }
+    if (path === '/api/outcomes/search')
+      return {ok:true,status:200,json:async()=>({
+        applications:[b],counts:{},denominator:1,truncated:false,has_more:false
+      })};
+    throw Error('Unexpected stale selection request '+path);
+  };
+
+  const first = browser.__rfTest.selectRfOutcome(a);
+  const second = browser.__rfTest.selectRfOutcome(b);
+  // The previously selected item is not actionable while B is loading.
+  el('rfOutcomeAction').value = 'claim';
+  await browser.__rfTest.applyRfOutcome();
+  assert.strictEqual(eventPaths.length,0,'no event while a different selection is pending');
+  resolveB({ok:true,status:200,json:async()=>b});
+  await second;
+  assert(el('rfOutcomeTitle').textContent.includes('Patient B'));
+  resolveA({ok:true,status:200,json:async()=>a});
+  await first;
+  assert(el('rfOutcomeTitle').textContent.includes('Patient B'),
+    'late A response must not replace newer B');
+  assert(el('rfOutcomeFacts').textContent.includes('ενημέρωση συναδέλφου'),
+    'selected RF must show its real last-decision audit provenance');
+  assert(el('rfOutcomeFacts').textContent.includes('Καταχώριση στο Cockpit:'),
+    'the audit recorded time must be visibly distinct from decision date');
+  assert(el('rfOutcomeFacts').textContent.includes('<img src=x onerror='),
+    'free text shown literally, not parsed as HTML');
+  assert.strictEqual(el('rfOutcomeFacts').innerHTML,undefined,
+    'selected facts must use textContent instead of innerHTML');
+  el('rfOutcomeAction').value = 'claim';
+  await browser.__rfTest.applyRfOutcome();
+  assert.deepStrictEqual(eventPaths,['/api/outcomes/synthetic-B/events']);
+  assert(el('rfOutcomeFacts').textContent.includes('έχω αναλάβει'));
+
+  // A change of search context makes even a previously loaded B unactionable.
+  el('rfOutcomeSearch').value = 'different patient';
+  await browser.__rfTest.applyRfOutcome();
+  assert.strictEqual(eventPaths.length,1,
+    'changed search must block an event against previously selected B');
+  browser.__rfTest.invalidateRfOutcomeSelection();
+  assert.strictEqual(el('rfOutcomeSelected').hidden,true);
+  await browser.__rfTest.applyRfOutcome();
+  assert.strictEqual(eventPaths.length,1,'invalidated selection cannot post');
+  const historical = {...b,last_decision_report:null};
+  browser.__rfTest.renderSelectedOutcome(historical);
+  assert(el('rfOutcomeFacts').textContent.includes('Προέλευση απόφασης: άγνωστη'));
+  assert(el('rfOutcomeFacts').textContent.includes('Καταχώριση στο Cockpit: άγνωστος'),
+    'unknown historical audit provenance must never be invented');
 }

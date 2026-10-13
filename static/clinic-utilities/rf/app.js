@@ -1,6 +1,6 @@
 (() => {
   const $ = id => document.getElementById(id);
-  const state = { contract: null, pathway: 'A1', selectedHistoryId: '', nsaids: [], others: [], unknowns: [], learnedMedications: [], physio: null, imagingValidation: '', horosImages: [], horosNextId: 0, doctors: [], editingDoctor: null, draftId: '', draftRevision: null, sourceKind: '', sourceId: '', sourceOrigin: '', sourcePatientName: '', sourceNameConfirmed: false, sourcePage: 1, draftPage: 1, requestToken: 0, correctionOfId: '', selectedOutcome: null, outcomePage: 1, outcomeToken: 0 };
+  const state = { contract: null, pathway: 'A1', selectedHistoryId: '', nsaids: [], others: [], unknowns: [], learnedMedications: [], physio: null, imagingValidation: '', horosImages: [], horosNextId: 0, doctors: [], editingDoctor: null, draftId: '', draftRevision: null, sourceKind: '', sourceId: '', sourceOrigin: '', sourcePatientName: '', sourceNameConfirmed: false, sourcePage: 1, draftPage: 1, requestToken: 0, correctionOfId: '', selectedOutcome: null, selectedOutcomeId: '', outcomePage: 1, outcomeToken: 0, outcomeSelectionToken: 0, outcomeContext: '' };
 
   async function api(path, options = {}) {
     const response = await fetch(`/clinical/clinic-utilities/rf${path}`, { credentials: 'same-origin', ...options });
@@ -1036,6 +1036,7 @@
     schedule: "Προγραμματίστηκε",
     perform: "Πραγματοποιήθηκε",
     correct_decision: "Διόρθωση ημερομηνίας / λόγου απόφασης",
+    correct_submission: "Διόρθωση ημερομηνίας υποβολής",
     claim: "Αναλαμβάνω παρακολούθηση",
     release: "Σταματώ την προσωπική παρακολούθηση",
   };
@@ -1068,10 +1069,23 @@
     if (item.stage === 'issued') actions.push('submit', 'approve', 'reject');
     if (item.stage === 'submitted') actions.push('approve', 'reject');
     if (item.stage === 'approved') actions.push('schedule', 'perform', 'correct_decision');
-    if (item.stage === 'scheduled') actions.push('schedule', 'perform');
+    if (item.stage === 'scheduled') actions.push('schedule', 'perform', 'correct_decision');
+    if (item.stage === 'performed') actions.push('correct_decision');
     if (item.stage === 'rejected') actions.push('correct_decision');
+    if (item.submitted_date) actions.push('correct_submission');
     actions.push(item.mine_to_follow ? 'release' : 'claim');
     return actions;
+  }
+
+  function rfOutcomeContext() {
+    return JSON.stringify([$('rfOutcomeSearch').value.trim(), $('rfOutcomeScope').value]);
+  }
+
+  function invalidateRfOutcomeSelection() {
+    ++state.outcomeSelectionToken;
+    state.selectedOutcome = null;
+    state.selectedOutcomeId = '';
+    $('rfOutcomeSelected').hidden = true;
   }
 
   function outcomeActionChanged() {
@@ -1089,6 +1103,7 @@
     if (!noDate) {
       $('rfOutcomeDate').value = action === 'schedule' ? ''
         : action === 'correct_decision' ? (state.selectedOutcome?.decision_date || todayLocalRf())
+        : action === 'correct_submission' ? (state.selectedOutcome?.submitted_date || todayLocalRf())
         : todayLocalRf();
     } else $('rfOutcomeDate').value = '';
     $('rfOutcomeReason').value = action === 'correct_decision'
@@ -1097,14 +1112,28 @@
 
   function renderSelectedOutcome(item) {
     state.selectedOutcome = item;
+    state.selectedOutcomeId = item.id;
     $('rfOutcomeSelected').hidden = false;
     $('rfOutcomeTitle').textContent = (item.patient_name || 'Αίτηση RF') + ' · ' +
       (outcomeStages[item.stage] || item.stage);
+    const reported = item.last_decision_report;
+    const sourceLabels = {
+      clinician: 'καταχώριση ιατρού', colleague: 'ενημέρωση συναδέλφου',
+      gesy_notice: 'έγγραφο ΓεΣΥ', other: 'άλλη δηλωμένη πηγή',
+    };
+    const source = reported && sourceLabels[reported.reported_source] || 'άγνωστη';
+    const recorded = reported?.recorded_at && !Number.isNaN(Date.parse(reported.recorded_at))
+      ? new Date(reported.recorded_at).toLocaleString('el-GR') : 'άγνωστος';
+    // Only existing audit data is shown; missing historical source/time remains unknown.
+    // textContent prevents rejection reasons and any reported values becoming HTML.
     $('rfOutcomeFacts').textContent = [
       'Έκδοση: ' + item.issued_date,
       'Ιατρός: ' + (item.issuer_name || 'Μη τεκμηριωμένος'),
       'Υποβολή: ' + (item.submitted_date || 'μη καταχωρισμένη'),
       'Απόφαση: ' + (item.decision_date || 'άγνωστη'),
+      item.decision ? 'Προέλευση απόφασης: ' + source : '',
+      item.decision ? 'Ημερομηνία γεγονότος: ' + (reported?.event_date || item.decision_date || 'άγνωστη') : '',
+      item.decision ? 'Καταχώριση στο Cockpit: ' + recorded : '',
       item.rejection_reason ? 'Απόρριψη: ' + item.rejection_reason : '',
       'Παρακολούθηση: ' + (item.mine_to_follow ? 'έχω αναλάβει' : 'χωρίς προσωπική ανάληψη'),
     ].filter(Boolean).join(' · ');
@@ -1118,11 +1147,23 @@
   }
 
   async function selectRfOutcome(card) {
+    const token = ++state.outcomeSelectionToken;
+    const context = rfOutcomeContext();
+    const selectedId = card.id;
+    // A is no longer actionable while B's detail request is pending.
+    state.selectedOutcome = null;
+    state.selectedOutcomeId = selectedId;
+    $('rfOutcomeSelected').hidden = true;
     try {
       const item = await (await api('/api/outcomes/' +
-        encodeURIComponent(card.id))).json();
+        encodeURIComponent(selectedId))).json();
+      if (token !== state.outcomeSelectionToken ||
+          state.selectedOutcomeId !== selectedId ||
+          context !== rfOutcomeContext() || item.id !== selectedId) return;
       renderSelectedOutcome(item);
-    } catch (error) { showError(error.message); }
+    } catch (error) {
+      if (token === state.outcomeSelectionToken) showError(error.message);
+    }
   }
 
   function outcomeCorrectionKindChanged() {
@@ -1135,6 +1176,11 @@
   async function loadRfOutcomes(page = 1) {
     const query = $('rfOutcomeSearch').value.trim();
     const scope = $('rfOutcomeScope').value;
+    const context = rfOutcomeContext();
+    if (context !== state.outcomeContext) {
+      state.outcomeContext = context;
+      invalidateRfOutcomeSelection();
+    }
     const token = ++state.outcomeToken;
     try {
       const response = await api('/api/outcomes/search', {
@@ -1163,7 +1209,11 @@
         const open = document.createElement('button');
         open.type = 'button'; open.className = 'btn secondary small';
         open.textContent = 'Άνοιγμα έκβασης';
-        open.addEventListener('click', () => selectRfOutcome(item));
+        open.addEventListener('click', () => {
+          // Cards from a prior search/scope must never open an unintended RF.
+          if (rfOutcomeContext() === context && state.outcomeContext === context)
+            selectRfOutcome(item);
+        });
         row.append(info, open);
         list.append(row);
       }
@@ -1180,7 +1230,10 @@
 
   async function applyRfOutcome() {
     const item = state.selectedOutcome;
-    if (!item) return;
+    const token = state.outcomeSelectionToken;
+    const context = rfOutcomeContext();
+    if (!item || item.id !== state.selectedOutcomeId ||
+        $('rfOutcomeSelected').hidden || context !== state.outcomeContext) return;
     const action = $('rfOutcomeAction').value;
     try {
       const response = await api('/api/outcomes/' + encodeURIComponent(item.id) +
@@ -1197,6 +1250,11 @@
           }),
         });
       const updated = await response.json();
+      // The posted ID was explicitly selected when the request began.
+      // Never overwrite a newer selection with its late response.
+      if (token !== state.outcomeSelectionToken ||
+          state.selectedOutcomeId !== item.id ||
+          context !== rfOutcomeContext() || updated.id !== item.id) return;
       renderSelectedOutcome(updated);
       await loadRfOutcomes();
       showOk('Η έκβαση αποθηκεύτηκε. Η έκδοση του PDF παραμένει αμετάβλητη.');
@@ -1205,10 +1263,15 @@
 
   async function beginRfCorrection() {
     const item = state.selectedOutcome;
-    if (!item || item.stage !== 'rejected') return;
+    const token = state.outcomeSelectionToken;
+    const context = rfOutcomeContext();
+    if (!item || item.stage !== 'rejected' ||
+        item.id !== state.selectedOutcomeId || context !== state.outcomeContext) return;
     try {
       const result = await (await api('/api/reuse/application/' +
         encodeURIComponent(item.id))).json();
+      if (token !== state.outcomeSelectionToken ||
+          state.selectedOutcomeId !== item.id || context !== rfOutcomeContext()) return;
       const fields = result.fields || {};
       const oldID = $('identityNumber').value.trim().replace(/[\W_]/g, '').toUpperCase();
       const newID = String(fields.identity_number || '').replace(/[\W_]/g, '').toUpperCase();
@@ -1521,7 +1584,17 @@
     $('rfDraftNextBtn').addEventListener('click', () => listRfDrafts(state.draftPage + 1));
     $('rfOutcomeRefresh').addEventListener('click', () => loadRfOutcomes());
     $('rfOutcomeNext').addEventListener('click', () => loadRfOutcomes(state.outcomePage + 1));
-    $('rfOutcomeScope').addEventListener('change', () => { $('rfOutcomeSelected').hidden = true; state.selectedOutcome = null; loadRfOutcomes(); });
+    $('rfOutcomeScope').addEventListener('change', () => {
+      invalidateRfOutcomeSelection();
+      loadRfOutcomes();
+    });
+    $('rfOutcomeSearch').addEventListener('input', () => {
+      ++state.outcomeToken;
+      invalidateRfOutcomeSelection();
+      $('rfOutcomeResults').replaceChildren();
+      $('rfOutcomeCounts').textContent = '';
+      $('rfOutcomeNext').hidden = true;
+    });
     $('rfOutcomeSearch').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); loadRfOutcomes(); }});
     $('rfOutcomeAction').addEventListener('change', outcomeActionChanged);
     $('rfOutcomeCorrectDecision').addEventListener('change', outcomeCorrectionKindChanged);

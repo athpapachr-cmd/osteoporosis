@@ -174,7 +174,7 @@ class RFOutcomeSearch(BaseModel):
 
 class RFOutcomeEvent(BaseModel):
     action: Literal["submit", "approve", "reject", "schedule", "perform",
-                    "claim", "release", "correct_decision"]
+                    "claim", "release", "correct_decision", "correct_submission"]
     revision: int = Field(ge=0)
     event_date: str = Field(default="", max_length=10)
     rejection_reason: str = Field(default="", max_length=2400)

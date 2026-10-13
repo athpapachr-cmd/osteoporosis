@@ -653,7 +653,7 @@ def delete_rf_draft(engine: Engine, draft_id: str, revision: int) -> None:
 _RF_PROGRESS_SOURCE = frozenset({"clinician", "colleague", "gesy_notice", "other"})
 _RF_PROGRESS_ACTIONS = frozenset({
     "submit", "approve", "reject", "schedule", "perform",
-    "claim", "release", "correct_decision",
+    "claim", "release", "correct_decision", "correct_submission",
 })
 
 
@@ -697,12 +697,37 @@ def _rf_progress_card(app: RFApplicationORM, progress: RFApplicationProgressORM 
     }
 
 
+def _rf_last_decision_report(session: Session, application_id: str) -> dict[str, Any] | None:
+    """Read the last manual decision entry; missing historical audit stays unknown."""
+    audit = session.scalar(
+        select(RFApplicationProgressAuditORM)
+        .where(RFApplicationProgressAuditORM.application_id == application_id,
+               RFApplicationProgressAuditORM.action.in_(
+                   ("approve", "reject", "correct_decision")))
+        .order_by(RFApplicationProgressAuditORM.revision.desc())
+        .limit(1)
+    )
+    if audit is None:
+        return None
+    after = audit.after_json if isinstance(audit.after_json, dict) else {}
+    return {
+        "reported_source": audit.reported_source or None,
+        "event_date": after.get("decision_date") or None,
+        "recorded_at": audit.created_at.replace(
+            tzinfo=timezone.utc).isoformat().replace("+00:00", "Z")
+            if audit.created_at else None,
+    }
+
+
 def get_rf_application_progress(engine: Engine, application_id: str) -> dict[str, Any] | None:
     with Session(engine) as session:
         app = session.get(RFApplicationORM, application_id)
         if app is None:
             return None
-        return _rf_progress_card(app, session.get(RFApplicationProgressORM, application_id))
+        return {
+            **_rf_progress_card(app, session.get(RFApplicationProgressORM, application_id)),
+            "last_decision_report": _rf_last_decision_report(session, application_id),
+        }
 
 
 def list_rf_application_progress(engine: Engine, query: str = "", scope: str = "all",
@@ -794,6 +819,9 @@ def change_rf_application_progress(engine: Engine, application_id: str, *,
         if previous["revision"] != revision:
             raise RuntimeError("Η έκβαση άλλαξε σε άλλη καρτέλα. Ανανέωσε την αίτηση")
         stage = previous["stage"]
+        issued_date = app.created_at.date().isoformat()
+        if event_date and event_date < issued_date:
+            raise ValueError("Η ημερομηνία γεγονότος προηγείται της έκδοσης RF")
         if action == "submit":
             if stage != "issued":
                 raise ValueError("Η αίτηση έχει ήδη καταχωρισμένη πορεία")
@@ -810,6 +838,19 @@ def change_rf_application_progress(engine: Engine, application_id: str, *,
                     and payload.get("issuer_self_verified_at_issue") is True
                 )
             )
+        elif action == "correct_submission":
+            if not previous["submitted_date"]:
+                raise ValueError("Δεν υπάρχει ημερομηνία υποβολής προς διόρθωση")
+            for label, later in (
+                ("απόφαση", previous["decision_date"]),
+                ("προγραμματισμό", previous["scheduled_date"]),
+                ("εφαρμογή", previous["performed_date"]),
+            ):
+                if later and event_date > later:
+                    raise ValueError(f"Η υποβολή δεν μπορεί να έπεται από {label}")
+            # A date correction is not a new submission and must not change
+            # the stage or explicit follow-up claim/release state.
+            progress.submitted_date = event_date
         elif action in {"approve", "reject"}:
             if stage not in {"issued", "submitted"}:
                 raise ValueError("Δεν επιτρέπεται νέα απόφαση σε ολοκληρωμένη έκβαση")
@@ -821,15 +862,33 @@ def change_rf_application_progress(engine: Engine, application_id: str, *,
             progress.rejection_reason = rejection_reason.strip() if action == "reject" else ""
             progress.stage = progress.decision
         elif action == "correct_decision":
-            if stage not in {"approved", "rejected"} or not previous["decision"]:
+            if stage not in {"approved", "rejected", "scheduled", "performed"} or not previous["decision"]:
                 raise ValueError("Δεν υπάρχει απόφαση προς διόρθωση")
             if previous["submitted_date"] and event_date < previous["submitted_date"]:
                 raise ValueError("Η απόφαση προηγείται της υποβολής")
             corrected = corrected_decision or previous["decision"]
             if corrected == "approved" and rejection_reason:
                 raise ValueError("Δεν αποθηκεύεται αιτιολογία απόρριψης σε έγκριση")
+            if previous["scheduled_date"] or previous["performed_date"]:
+                if corrected != "approved":
+                    raise ValueError("Δεν αναιρείται έγκριση με καταχωρισμένο προγραμματισμό ή εφαρμογή")
+                if (previous["scheduled_date"] and event_date > previous["scheduled_date"]
+                        or previous["performed_date"] and event_date > previous["performed_date"]):
+                    raise ValueError("Η διορθωμένη απόφαση έπεται προγραμματισμού ή εφαρμογής")
+            # A distinct correction RF has already been issued on the basis of
+            # this rejection: never silently remove that causal history.
+            linked = session.scalars(select(RFApplicationORM).where(
+                RFApplicationORM.payload_json["correction_of_application_id"].as_string()
+                == application_id
+            )).all() if previous["decision"] == "rejected" else []
+            if linked and corrected != "rejected":
+                raise ValueError("Υπάρχει ήδη εκδοθείσα διορθωτική RF για αυτή την απόρριψη")
+            if linked and any(event_date > row.created_at.date().isoformat() for row in linked):
+                raise ValueError("Η ημερομηνία απόρριψης έπεται της συνδεδεμένης διορθωτικής RF")
             progress.decision = corrected
-            progress.stage = corrected
+            # Downstream scheduling/performance remains the authoritative stage.
+            if stage in {"approved", "rejected"}:
+                progress.stage = corrected
             progress.decision_date = event_date
             progress.rejection_reason = rejection_reason.strip() if corrected == "rejected" else ""
         elif action == "schedule":
@@ -870,7 +929,10 @@ def change_rf_application_progress(engine: Engine, application_id: str, *,
             before_json=previous, after_json=after, created_at=now,
         ))
         session.commit()
-        return _rf_progress_card(app, progress)
+        return {
+            **_rf_progress_card(app, progress),
+            "last_decision_report": _rf_last_decision_report(session, application_id),
+        }
 
 
 def validate_rf_correction_source(session: Session, *, rejected_id: str,
