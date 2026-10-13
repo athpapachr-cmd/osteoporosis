@@ -470,7 +470,7 @@
   });
   const calendarRetry = $("cockpitCalendarRetry");
   if (calendarRetry) calendarRetry.addEventListener("click", loadCockpitContext);
-  window.addEventListener("clinical:authenticated", () => {
+  if (typeof window.addEventListener === "function") window.addEventListener("clinical:authenticated", () => {
     loadCockpitContext();
     loadSurgeryQueue();
   });

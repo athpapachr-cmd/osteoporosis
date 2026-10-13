@@ -225,7 +225,7 @@
   buttons.tasks.addEventListener("click",()=>openPanel("tasks",buttons.tasks));
   buttons.actions.addEventListener("click",()=>openPanel("actions",buttons.actions));
   $("doctorPopoverClose").addEventListener("click",close);
-  window.addEventListener("clinical:authenticated", () => {
+  if (typeof window.addEventListener === "function") window.addEventListener("clinical:authenticated", () => {
     if(state.panel === "day") loadDay();
   });
   $("doctorBackHome").addEventListener("click",showHome);

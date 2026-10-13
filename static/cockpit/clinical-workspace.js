@@ -241,6 +241,6 @@
      }
    };
  }
- window.addEventListener("clinical:authenticated", recent);
+ if (typeof window.addEventListener === "function") window.addEventListener("clinical:authenticated", recent);
  recent();
 })();
