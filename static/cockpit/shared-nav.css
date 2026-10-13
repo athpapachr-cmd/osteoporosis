@@ -1,0 +1,25 @@
+/* Shared Cockpit navigation: identical authenticated entry on every surface.
+   No credential storage, no content overlay, and sticky access on scroll. */
+.ce-global-nav{position:sticky;top:0;z-index:3000;display:flex;justify-content:flex-end;align-items:center;min-height:43px;padding:4px clamp(10px,2.2vw,30px);box-sizing:border-box;background:rgba(249,251,252,.96);border-bottom:1px solid rgba(129,155,160,.18);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);font-family:-apple-system,BlinkMacSystemFont,Inter,system-ui,sans-serif;color:#243d48}
+.ce-global-nav *{box-sizing:border-box}
+.ce-global-actions{display:flex;align-items:center;gap:5px;position:relative}
+.ce-global-button{display:inline-flex;align-items:center;gap:7px;min-height:32px;margin:0;padding:5px 10px;border:1px solid transparent;border-radius:9px;background:transparent;color:#2c4954;font-family:inherit;font-size:12px;font-weight:650;line-height:1.3;text-decoration:none;cursor:pointer;white-space:nowrap}
+.ce-global-button:hover,.ce-global-button[aria-expanded="true"]{background:#eaf2f1;border-color:#d9e5e3}
+.ce-global-button:focus-visible,.ce-global-popover button:focus-visible,.ce-global-popover input:focus-visible{outline:2px solid #368c84;outline-offset:2px}
+.ce-global-glyph{font-size:17px;line-height:1}
+.ce-global-popover{position:absolute;top:calc(100% + 8px);right:0;width:min(344px,calc(100vw - 20px));max-height:calc(100vh - 80px);overflow-y:auto;padding:14px;border:1px solid #dce7e6;border-radius:14px;background:#fff;color:#1e3540;box-shadow:0 15px 48px rgba(16,47,64,.15);z-index:3001;font-family:inherit;font-size:13px}
+.ce-global-popover[hidden]{display:none!important}
+.ce-global-popover h2{font-size:14px;font-weight:750;margin:0 0 10px;color:#213e4a}
+.ce-global-popover p{font-size:12px;line-height:1.5;color:#667a83;margin:5px 0 12px}
+.ce-global-popover label{display:grid;gap:5px;font-size:12px;font-weight:650;color:#334b56}
+.ce-global-popover input{min-width:0;width:100%;height:38px;border:1px solid #cbdad9;border-radius:9px;padding:8px 11px;color:#172c37;background:#fff;font-size:14px}
+.ce-global-submit{width:100%;margin-top:10px;border:0;border-radius:10px;background:#1a6e66;color:white;padding:10px 13px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer}
+.ce-global-submit:disabled{opacity:.5;cursor:progress}
+.ce-global-shortcut{display:flex;align-items:center;justify-content:space-between;gap:12px;border-radius:8px;padding:10px 8px;color:#244554;text-decoration:none;font-size:13px;border-bottom:1px solid #eef2f2}
+.ce-global-shortcut:hover{background:#f1f7f6}
+.ce-global-shortcut:last-child{border-bottom:0}
+.ce-global-status{margin:10px 0 0!important;min-height:16px}
+.ce-global-status[data-kind="error"]{color:#ab3f38}
+.ce-global-status[data-kind="success"]{color:#15725a}
+@media(max-width:620px){.ce-global-nav{min-height:40px;padding:3px 8px}.ce-global-actions{gap:1px}.ce-global-button{font-size:11px;padding:5px 7px}.ce-global-glyph{font-size:15px}}
+@media print{.ce-global-nav{display:none!important}}

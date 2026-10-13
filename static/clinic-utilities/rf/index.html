@@ -6,6 +6,7 @@
   <title>Ραδιοσυχνότητες — Clinical Excellence</title>
   <meta name="description" content="Clinical Excellence RF Category A v2" />
   <link rel="stylesheet" href="/static/clinic-utilities/rf/styles.css" />
+  <link rel="stylesheet" href="/static/cockpit/shared-nav.css" />
 </head>
 <body>
 <div class="shell">
@@ -107,4 +108,5 @@
 <div class="grid two"><label>Ημερομηνία νέας αξιολόγησης<input id="rfCurrentFollowupDate" type="date"></label><label>Τωρινός πόνος (VAS 0–10)<input id="rfCurrentFollowupVas" type="number" min="0" max="10"></label></div></article></section>
 <article class="card"><div class="card-title"><span class="step">9</span><div><h2>Απεικόνιση & πρόσθετες πληροφορίες</h2><p>Το PDF ελέγχεται ως προς τον τύπο εγγράφου πριν ενεργοποιηθεί η δήλωση του σημείου 3.</p></div></div><label class="upload">Απεικονιστική έκθεση PDF<input id="imagingReport" type="file" accept="application/pdf,.pdf"></label><div id="imagingStatus" class="validation-panel" hidden></div><label class="upload full-width horos-upload">Πρόσθετες εικόνες Horos (JPEG, προαιρετικά — έως 10)<span class="horos-picker-action">Προσθήκη εικόνων</span><input id="horosJpegs" class="horos-file-input" type="file" accept=".jpg,.jpeg,image/jpeg" multiple></label><div id="horosImageStatus" class="muted" role="status" aria-live="polite">Δεν έχουν προστεθεί εικόνες.</div><div id="horosImageGrid" class="horos-grid" aria-label="Επιλεγμένες εικόνες Horos"></div><label id="imagingConfirmWrap" class="check-item full-width" hidden><input id="imagingConfirm" type="checkbox">Επιβεβαιώνω ότι το επιλεγμένο PDF είναι η απεικονιστική έκθεση που απαιτεί το σημείο 3.</label><label class="full-width">Πρόσθετες πληροφορίες<textarea id="additionalNotes" rows="4"></textarea></label></article>
 </section><aside class="output-panel"><div class="output-sticky"><div class="output-head"><h2>Έλεγχος & PDF</h2><p id="summaryText">Συμπλήρωσε τα βασικά στοιχεία.</p></div><div id="validationPanel" class="validation-panel" hidden></div><div id="reviewSummary" class="summary-list"></div><div class="action-row"><button type="button" class="btn primary" id="createPdfBtn">Δημιουργία επίσημου PDF</button><button type="button" class="btn ghost" id="clearBtn">Καθαρισμός</button></div><small class="muted">Το PDF δεν αποθηκεύεται ως osteoporosis encounter.</small></div></aside></main>
-</div><script src="/static/clinic-utilities/rf/app.js" defer></script></body></html>
+</div><script src="/static/clinic-utilities/rf/app.js" defer></script>  <script src="/static/cockpit/shared-nav.js" defer></script>
+</body></html>
