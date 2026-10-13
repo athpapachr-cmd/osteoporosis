@@ -234,5 +234,6 @@
     }
   });
 
+  window.addEventListener("clinical:authenticated", checkAuth);
   checkAuth();
 })();

@@ -114,6 +114,7 @@
       if (!response.ok) {
         const error = await response.json().catch(() => ({}));
         const failure = new Error(`HTTP ${response.status}`);
+        failure.status = response.status;
         failure.lastFetchedAt = error.detail?.last_fetched_at || null;
         throw failure;
       }
@@ -124,6 +125,8 @@
       renderTodayContext(context, generated);
       const updated = parseClinicalAppointmentDate(context.source_updated_at);
       $("calendarState").textContent = `${context.today_total} σήμερα`;
+      const retry = $("cockpitCalendarRetry");
+      if (retry) retry.hidden = true;
       const fresh = updated && generated.getTime() - updated.getTime() <= 5 * 60 * 1000;
       $("calendarState").classList.toggle("ready", Boolean(fresh));
       $("calendarNote").textContent = updated
@@ -134,9 +137,13 @@
       $("calendarState").textContent = "Μη διαθέσιμο";
       $("calendarState").classList.remove("ready");
       const last = parseClinicalAppointmentDate(error.lastFetchedAt);
-      $("calendarNote").textContent = last
-        ? `Το πρόγραμμα δεν είναι διαθέσιμο. Τελευταία επιτυχής ανάγνωση: ${appointmentDateFormatter.format(last)} · ${appointmentTimeFormatter.format(last)}. Έλεγξε το Reception.`
-        : "Δεν ήταν δυνατή η φόρτωση του προγράμματος. Έλεγξε τη σύνδεση ή άνοιξε το Reception.";
+      $("calendarNote").textContent = error.status === 401 || error.status === 403
+        ? "Απαιτείται Clinical Key. Πάτησε «Πρόσβαση» πάνω δεξιά για σύνδεση."
+        : last
+          ? `Το πρόγραμμα της Γραμματείας δεν είναι διαθέσιμο ή δεν καλύπτει σήμερα. Τελευταία επιτυχής ανάγνωση: ${appointmentDateFormatter.format(last)} · ${appointmentTimeFormatter.format(last)}.`
+          : "Δεν υπάρχει πρόσφατο πλήρες πρόγραμμα από τη Γραμματεία. Δεν σημαίνει ότι το Clinical Key είναι λάθος.";
+      const retry = $("cockpitCalendarRetry");
+      if (retry) retry.hidden = false;
     }
   }
 
@@ -460,6 +467,12 @@
   bindSurgerySorting();
   document.querySelectorAll("[data-expand-secondary]").forEach(link=>{
     link.addEventListener("click",()=>{const panel=$("cockpitOtherFunctions");if(panel)panel.open=true;});
+  });
+  const calendarRetry = $("cockpitCalendarRetry");
+  if (calendarRetry) calendarRetry.addEventListener("click", loadCockpitContext);
+  window.addEventListener("clinical:authenticated", () => {
+    loadCockpitContext();
+    loadSurgeryQueue();
   });
   resetSurgeryForm();
   loadCockpitContext();

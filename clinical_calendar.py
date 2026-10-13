@@ -390,7 +390,9 @@ def build_clinical_calendar_router(engine: Engine) -> APIRouter:
         try:
             async with httpx.AsyncClient(timeout=10.0) as client:
                 response = await client.get(
-                    source_url, headers={"X-Clinical-Ingest-Key": ingest_key}
+                    source_url,
+                    params={"target_date": today_local.isoformat()},
+                    headers={"X-Clinical-Ingest-Key": ingest_key},
                 )
             if response.status_code != 200:
                 raise ValueError("source unavailable")

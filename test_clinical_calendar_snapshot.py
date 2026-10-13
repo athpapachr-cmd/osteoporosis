@@ -1,3 +1,4 @@
+from zoneinfo import ZoneInfo
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -390,6 +391,8 @@ def _set_actual_source(monkeypatch, rows, now, extra_fields=None):
         async def get(self, url, headers, params=None):
             assert url == "https://reception.example/private/schedule-context"
             assert headers == {"X-Clinical-Ingest-Key": INGEST_KEY}
+            assert params == {"target_date": now.replace(tzinfo=timezone.utc).astimezone(
+                ZoneInfo("Asia/Nicosia")).date().isoformat()}
             return httpx.Response(200, json={
                 "fetched_at": now.replace(tzinfo=timezone.utc).isoformat(),
                 "coverage_start": (now.date() - timedelta(days=31)).isoformat(),
@@ -756,4 +759,4 @@ def test_home_covered_empty_vs_missing_local_date_coverage(monkeypatch):
         assert rejected.json()["detail"]["status"] == "unavailable"
         assert clinical_calendar._last_actual_schedule_fetch == successful
     assert len(calls) == 4
-    assert all(params is None for _, _, params in calls)
+    assert all(params == {"target_date": "2026-10-11"} for _, _, params in calls)
