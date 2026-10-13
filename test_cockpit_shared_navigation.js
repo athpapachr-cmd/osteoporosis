@@ -88,7 +88,7 @@ const nav = get('ceGlobalNav');
 const panel = get('ceGlobalShortcutsPanel'), access = get('ceGlobalAccessPanel');
 const home=nav.children[0].children[0];
 assert.strictEqual(home.href,'/static/cockpit/');
-await (async()=>{
+(async()=>{
   await get('ceGlobalShortcuts').fire('click');
   assert.strictEqual(panel.hidden,false);
   const anchors = panel.children.filter(el=>el.tag==='a');

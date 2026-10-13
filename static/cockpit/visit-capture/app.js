@@ -663,7 +663,7 @@
     });
   });
 
-  if (typeof window.addEventListener === "function") window.addEventListener("clinical:authenticated", checkAuth);
+  if (typeof window !== "undefined" && typeof window.addEventListener === "function") window.addEventListener("clinical:authenticated", checkAuth);
   selectMode("demo");
   checkAuth();
 })();
