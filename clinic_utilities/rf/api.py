@@ -52,6 +52,8 @@ from .persistence import (
     search_rf_sources, get_rf_source,
     save_rf_draft, get_rf_draft, list_rf_drafts, delete_rf_draft,
     normalize_identity,
+    list_rf_application_progress, get_rf_application_progress,
+    change_rf_application_progress, validate_rf_correction_source,
 )
 
 MAX_IMAGING_BYTES = 20 * 1024 * 1024
@@ -161,6 +163,24 @@ class RFApplicationDraft(BaseModel):
     source_name_confirmed: bool = False
     draft_id: str = Field(default="", max_length=80)
     draft_revision: int | None = Field(default=None, ge=1)
+    correction_of_application_id: str = Field(default="", max_length=80)
+
+
+class RFOutcomeSearch(BaseModel):
+    query: str = Field(default="", max_length=150)
+    scope: Literal["all", "mine"] = "all"
+    page: int = Field(default=1, ge=1, le=100)
+
+
+class RFOutcomeEvent(BaseModel):
+    action: Literal["submit", "approve", "reject", "schedule", "perform",
+                    "claim", "release", "correct_decision", "correct_submission"]
+    revision: int = Field(ge=0)
+    event_date: str = Field(default="", max_length=10)
+    rejection_reason: str = Field(default="", max_length=2400)
+    reported_source: Literal["clinician", "colleague", "gesy_notice", "other"] = "clinician"
+    confirmed_performed: bool = False
+    corrected_decision: Literal["", "approved", "rejected"] = ""
 
 
 class RFHistoryLookup(BaseModel):
@@ -198,6 +218,26 @@ def _parse_iso_date(value: str, label: str) -> date:
         return date.fromisoformat(str(value or "").strip())
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=f"Μη έγκυρη ημερομηνία: {label}") from exc
+
+
+def _rf_issuer_self_attestation(*, key: str, selection_origin: str,
+                                snapshot: dict[str, str]) -> bool:
+    # The managed profile is editable; it is not a trustworthy identity anchor.
+    # Missing/malformed deployment owner configuration fails closed.
+    if selection_origin != "explicit" or key != DEFAULT_DOCTOR_KEY:
+        return False
+    try:
+        owner = DoctorProfile.from_environment()
+    except ValueError:
+        return False
+    def normalize_name(value: str) -> str:
+        value = unicodedata.normalize("NFKD", str(value or "").casefold().replace("ς", "σ"))
+        return " ".join("".join(ch for ch in value if not unicodedata.combining(ch)).split())
+    return (
+        bool(owner.name and owner.gesy_code)
+        and normalize_name(snapshot.get("name", "")) == normalize_name(owner.name)
+        and str(snapshot.get("gesy_code") or "").strip() == owner.gesy_code.strip()
+    )
 
 
 def _add_calendar_months(value: date, months: int) -> date:
@@ -653,6 +693,41 @@ def build_rf_router(engine: Engine) -> APIRouter:
             "message": assessment["message"],
         }
 
+    @router.post("/api/outcomes/search")
+    def rf_outcomes_search(req: RFOutcomeSearch):
+        try:
+            return list_rf_application_progress(engine, req.query, req.scope, req.page)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    @router.get("/api/outcomes/{application_id}")
+    def rf_outcomes_detail(application_id: str):
+        found = get_rf_application_progress(engine, application_id)
+        if found is None:
+            raise HTTPException(status_code=404, detail="Η αίτηση RF δεν βρέθηκε")
+        return found
+
+    @router.post("/api/outcomes/{application_id}/events")
+    def rf_outcomes_event(application_id: str, req: RFOutcomeEvent):
+        try:
+            return change_rf_application_progress(
+                engine, application_id, action=req.action, revision=req.revision,
+                event_date=req.event_date, rejection_reason=req.rejection_reason,
+                reported_source=req.reported_source,
+                confirmed_performed=req.confirmed_performed,
+                corrected_decision=req.corrected_decision,
+            )
+        except LookupError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        except RuntimeError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        except IntegrityError as exc:
+            # Concurrent first writes can race on the unique application ID
+            # before PostgreSQL has an existing progress row to lock.
+            raise HTTPException(status_code=409, detail="Η έκβαση ενημερώθηκε ταυτόχρονα. Ανανέωσε την αίτηση") from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+
     @router.post("/api/create")
     async def rf_create(
         draft_json: str = Form(...),
@@ -663,6 +738,9 @@ def build_rf_router(engine: Engine) -> APIRouter:
             draft = RFApplicationDraft.model_validate_json(draft_json)
         except Exception as exc:
             raise HTTPException(status_code=422, detail="Μη έγκυρο RF draft") from exc
+        issuer_selection_origin = (
+            "explicit" if "doctor_key" in draft.model_fields_set else "legacy_default"
+        )
 
         indication = INDICATIONS.get(draft.indication_code)
         if not indication:
@@ -798,6 +876,22 @@ def build_rf_router(engine: Engine) -> APIRouter:
             snapshot = rf_doctor_snapshot(row)
             doctor = DoctorProfile(**snapshot)
             payload["doctor_snapshot"] = snapshot
+            payload["issuer_selection_origin"] = issuer_selection_origin
+            payload["issuer_self_verified_at_issue"] = _rf_issuer_self_attestation(
+                key=draft.doctor_key, selection_origin=issuer_selection_origin,
+                snapshot=snapshot,
+            )
+            if draft.correction_of_application_id:
+                try:
+                    validate_rf_correction_source(
+                        session, rejected_id=draft.correction_of_application_id,
+                        identity_number=draft.identity_number,
+                        indication_code=draft.indication_code,
+                        laterality=draft.laterality, site_key=indication["site_key"],
+                    )
+                except ValueError as exc:
+                    raise HTTPException(status_code=422, detail=str(exc)) from exc
+                payload["correction_of_application_id"] = draft.correction_of_application_id
             try:
                 pdf_bytes = build_official_rf_pdf(
                     payload,

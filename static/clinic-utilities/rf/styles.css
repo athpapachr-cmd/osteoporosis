@@ -63,3 +63,16 @@
 
 /* Preserve pathway-specific visibility despite the grid display rule. */
 .builder>section[hidden]{display:none}
+
+/* Bounded RF outcomes surface, part of the existing RF form. */
+.rf-outcomes-workspace{display:grid;gap:10px}
+.rf-outcome-toolbar{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(160px,1fr) auto;align-items:end;gap:10px}
+.rf-outcome-selected{padding:14px;margin-top:8px;border:1px solid #dbe3ee;border-radius:12px;background:#fbfcfe}
+.rf-outcome-selected h3{font-size:15px;margin:0 0 7px}
+.rf-outcome-selected .action-row{justify-content:flex-start}
+.rf-outcome-attest{display:flex;gap:8px;align-items:center;padding:10px}
+.rf-outcome-attest input{width:auto}
+.rf-outcome-card{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:11px;border:1px solid #e1e7ef;border-radius:10px;background:#fff}
+.rf-outcome-card strong{font-size:13px}
+.rf-outcome-card .muted{overflow-wrap:anywhere}
+@media(max-width:760px){.rf-outcome-toolbar{grid-template-columns:1fr}.rf-outcome-card{align-items:stretch;flex-direction:column}}

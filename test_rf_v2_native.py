@@ -1095,6 +1095,414 @@ class RFReuseSavedDraftTests(unittest.TestCase):
              files={"previous_rf_pdf":("old-rf.pdf",pdf,"application/pdf")}).status_code,401)
 
 
+class RFOutcomeFollowupTests(unittest.TestCase):
+    """Only synthetic clinical and doctor records. No external GeSY/provider calls."""
+
+    def setUp(self):
+        from datetime import date
+        self.today = date.today().isoformat()
+        self.engine = memory_engine()
+        self.env = patch.dict(os.environ, {
+            "CLINICAL_DATA_KEY": CLINICAL_KEY,
+            "RF_DOCTOR_PROFILE_JSON": DOCTOR_JSON,
+            "RF_PRODUCT_CATALOG_JSON": PRODUCT_JSON,
+        })
+        self.env.start()
+        app = FastAPI()
+        app.include_router(build_rf_router(self.engine))
+        self.client = TestClient(app)
+        self.base = "/clinical/clinic-utilities/rf/api"
+        self.headers = {"X-Clinical-Key": CLINICAL_KEY}
+
+    def tearDown(self):
+        self.client.close()
+        self.env.stop()
+
+    def issue(self, **changes):
+        draft = make_a1_draft().model_dump()
+        draft.update(changes)
+        with patch("clinic_utilities.rf.api.build_official_rf_pdf",
+                   return_value=b"%PDF-SYNTHETIC"):
+            response = self.client.post(
+                self.base + "/create", headers=self.headers,
+                data={"draft_json": json.dumps(draft)},
+                files={"imaging_report": ("imaging.pdf", make_text_pdf("MRI synthetic"), "application/pdf")},
+            )
+        return response
+
+    def event(self, app_id, action, revision=0, **changes):
+        return self.client.post(
+            f"{self.base}/outcomes/{app_id}/events", headers=self.headers,
+            json={"action": action, "revision": revision,
+                  "event_date": self.today if action not in {"claim", "release"} else "",
+                  **changes},
+        )
+
+    def card(self, app_id):
+        return self.client.get(f"{self.base}/outcomes/{app_id}", headers=self.headers).json()
+
+    def search(self, **kwargs):
+        return self.client.post(self.base + "/outcomes/search",
+                                headers=self.headers,
+                                json={"scope": "all", **kwargs})
+
+    def test_issue_is_not_submitted_and_self_verified_submitted_is_mine(self):
+        from clinic_utilities.rf.persistence import (
+            RFApplicationORM, RFApplicationProgressAuditORM, RFProcedureHistoryORM)
+        from sqlalchemy.orm import Session
+        issued = self.issue(identity_number="SYN-OWN-1")
+        self.assertEqual(issued.status_code, 200, issued.text)
+        app_id = issued.headers["x-rf-application-id"]
+        initial = self.card(app_id)
+        self.assertEqual(initial["stage"], "issued")
+        self.assertFalse(initial["mine_to_follow"])
+        self.assertEqual(initial["revision"], 0)
+        self.assertTrue(initial["issuer_self_verified_at_issue"])
+        self.assertEqual(self.search().json()["counts"]["pending"], 0)
+        with Session(self.engine) as session:
+            payload = session.get(RFApplicationORM, app_id).payload_json
+            self.assertEqual(payload["issuer_selection_origin"], "explicit")
+            self.assertTrue(payload["issuer_self_verified_at_issue"])
+            self.assertEqual(payload["doctor_snapshot"]["gesy_code"], "SYN-DOCTOR")
+        self.assertEqual(self.event(app_id, "submit").status_code, 200)
+        submitted = self.card(app_id)
+        self.assertEqual(submitted["stage"], "submitted")
+        self.assertTrue(submitted["mine_to_follow"])
+        self.assertEqual(self.search().json()["counts"]["pending"], 1)
+        self.assertEqual(self.search(scope="mine").json()["counts"]["mine_actionable"], 1)
+        self.assertEqual(self.event(app_id, "submit", 1).status_code, 422)
+        self.assertEqual(self.event(app_id, "reject", 0, rejection_reason="wrong revision").status_code, 409)
+        approved = self.event(app_id, "approve", 1)
+        self.assertEqual(approved.status_code, 200, approved.text)
+        self.assertEqual(approved.json()["decision"], "approved")
+        self.assertEqual(self.search().json()["counts"]["approved"], 1)
+        scheduled = self.event(app_id, "schedule", 2)
+        self.assertEqual(scheduled.status_code, 200, scheduled.text)
+        self.assertEqual(scheduled.json()["stage"], "scheduled")
+        self.assertEqual(self.event(app_id, "perform", 3).status_code, 422)
+        performed = self.event(app_id, "perform", 3, confirmed_performed=True)
+        self.assertEqual(performed.status_code, 200, performed.text)
+        self.assertEqual(performed.json()["stage"], "performed")
+        self.assertEqual(self.search().json()["counts"]["mine_actionable"], 0)
+        with Session(self.engine) as session:
+            self.assertEqual(session.query(RFApplicationProgressAuditORM).count(), 4)
+            self.assertEqual(session.query(RFProcedureHistoryORM).count(), 0)
+            # State reporting never changes the immutable issued document.
+            self.assertIsNone(session.get(RFApplicationORM, app_id).payload_json.get("approval_status"))
+
+    def test_colleague_reported_rejection_without_submission_and_linked_correction(self):
+        from clinic_utilities.rf.persistence import RFApplicationORM, RFProcedureHistoryORM
+        from sqlalchemy.orm import Session
+        colleague = {
+            "name": "Synthetic Other Clinician", "gesy_code": "SYN-OTHER",
+            "specialty": "Synthetic", "medical_center": "Synthetic Facility",
+            "phone": "00000002", "email": "colleague@example.invalid",
+        }
+        created = self.client.post(self.base + "/doctors", headers=self.headers, json=colleague)
+        self.assertEqual(created.status_code, 201, created.text)
+        key = created.json()["key"]
+        original = self.issue(identity_number="SYN-COL-1", doctor_key=key)
+        self.assertEqual(original.status_code, 200, original.text)
+        app_id = original.headers["x-rf-application-id"]
+        self.assertFalse(self.card(app_id)["issuer_self_verified_at_issue"])
+        rejected = self.event(app_id, "reject", rejection_reason="Συνθετικός λόγος απόρριψης",
+                              reported_source="colleague")
+        self.assertEqual(rejected.status_code, 200, rejected.text)
+        self.assertIsNone(rejected.json()["submitted_date"])
+        self.assertFalse(rejected.json()["mine_to_follow"])
+        self.assertEqual(rejected.json()["decision"], "rejected")
+        self.assertEqual(self.search().json()["counts"]["pending"], 0)
+        self.assertEqual(self.event(app_id, "submit", 1).status_code, 422)
+        # Correction is a distinct A1 attempt, never an automatic A2/actual treatment.
+        new = self.issue(identity_number="SYN-COL-1", doctor_key=key,
+                         correction_of_application_id=app_id)
+        self.assertEqual(new.status_code, 200, new.text)
+        new_id = new.headers["x-rf-application-id"]
+        self.assertNotEqual(app_id, new_id)
+        self.assertEqual(self.card(new_id)["stage"], "issued")
+        self.assertFalse(self.card(new_id)["mine_to_follow"])
+        self.assertEqual(self.card(new_id)["correction_of_application_id"], app_id)
+        self.assertEqual(self.card(app_id)["rejection_reason"], "Συνθετικός λόγος απόρριψης")
+        self.assertEqual(self.event(new_id, "submit").status_code, 200)
+        self.assertFalse(self.card(new_id)["mine_to_follow"])
+        self.assertEqual(self.event(new_id, "claim", 1).status_code, 200)
+        self.assertTrue(self.card(new_id)["mine_to_follow"])
+        self.assertEqual(self.event(new_id, "release", 2).status_code, 200)
+        self.assertFalse(self.card(new_id)["mine_to_follow"])
+        with Session(self.engine) as session:
+            self.assertEqual(session.get(RFApplicationORM, new_id).pathway, "A1")
+            self.assertEqual(session.query(RFProcedureHistoryORM).count(), 0)
+
+    def test_legacy_omitted_default_and_repurposed_managed_default_fail_closed(self):
+        from clinic_utilities.rf.persistence import RFApplicationORM
+        from sqlalchemy.orm import Session
+        raw = make_a1_draft(identity_number="LEGACY-OWN").model_dump()
+        raw.pop("doctor_key")
+        with patch("clinic_utilities.rf.api.build_official_rf_pdf", return_value=b"%PDF-SYN"):
+            old = self.client.post(self.base + "/create", headers=self.headers,
+                data={"draft_json": json.dumps(raw)},
+                files={"imaging_report": ("img.pdf", make_text_pdf("MRI synthetic"), "application/pdf")})
+        self.assertEqual(old.status_code, 200, old.text)
+        oid = old.headers["x-rf-application-id"]
+        with Session(self.engine) as session:
+            payload = session.get(RFApplicationORM, oid).payload_json
+            self.assertEqual(payload["doctor_key"], "papachristou")
+            self.assertEqual(payload["issuer_selection_origin"], "legacy_default")
+            self.assertFalse(payload["issuer_self_verified_at_issue"])
+        self.assertEqual(self.event(oid, "submit").status_code, 200)
+        self.assertFalse(self.card(oid)["mine_to_follow"])
+        directory = self.client.get(self.base + "/doctors", headers=self.headers).json()["doctors"]
+        default = next(x for x in directory if x["key"] == "papachristou")
+        changed = {k: default[k] for k in ("name", "gesy_code", "specialty",
+                                           "medical_center", "phone", "email")}
+        changed.update({"name": "Synthetic Repurposed Doctor", "gesy_code": "OTHER-GESY"})
+        response = self.client.put(self.base + "/doctors/papachristou",
+            headers=self.headers, json={**changed, "revision": default["revision"]})
+        self.assertEqual(response.status_code, 200, response.text)
+        another = self.issue(identity_number="DEFAULT-REASSIGNED", doctor_key="papachristou")
+        self.assertEqual(another.status_code, 200, another.text)
+        other_id = another.headers["x-rf-application-id"]
+        self.assertFalse(self.card(other_id)["issuer_self_verified_at_issue"])
+        self.assertEqual(self.event(other_id, "submit").status_code, 200)
+        self.assertFalse(self.card(other_id)["mine_to_follow"])
+
+    def test_historical_application_without_attestation_and_invalid_correction_do_not_write(self):
+        from clinic_utilities.rf.persistence import RFApplicationORM, RFApplicationProgressAuditORM
+        from sqlalchemy.orm import Session
+        old = self.issue(identity_number="SYN-HISTORY")
+        self.assertEqual(old.status_code, 200, old.text)
+        old_id = old.headers["x-rf-application-id"]
+        with Session(self.engine) as session:
+            row = session.get(RFApplicationORM, old_id)
+            payload = dict(row.payload_json)
+            payload.pop("issuer_selection_origin")
+            payload.pop("issuer_self_verified_at_issue")
+            row.payload_json = payload
+            session.commit()
+        self.assertEqual(self.event(old_id, "submit").status_code, 200)
+        self.assertFalse(self.card(old_id)["mine_to_follow"])
+        rejected_not_yet = self.issue(identity_number="SYN-HISTORY",
+                                      correction_of_application_id=old_id)
+        self.assertEqual(rejected_not_yet.status_code, 422)
+        self.assertEqual(self.event(old_id, "reject", 1,
+                                    rejection_reason="Synthetic rejection").status_code, 200)
+        wrong_patient = self.issue(identity_number="SYN-WRONG",
+                                   correction_of_application_id=old_id)
+        self.assertEqual(wrong_patient.status_code, 422)
+        valid = self.issue(identity_number="SYN-HISTORY",
+                           correction_of_application_id=old_id)
+        self.assertEqual(valid.status_code, 200, valid.text)
+        with Session(self.engine) as session:
+            self.assertEqual(session.query(RFApplicationORM).count(), 2)
+            self.assertEqual(session.query(RFApplicationProgressAuditORM).count(), 2)
+
+    def test_explicit_followup_override_before_submitted_is_not_overwritten(self):
+        owned = self.issue(identity_number="SYN-OVERRIDE")
+        self.assertEqual(owned.status_code, 200, owned.text)
+        app_id = owned.headers["x-rf-application-id"]
+        self.assertEqual(self.event(app_id, "claim", 0).status_code, 200)
+        self.assertTrue(self.card(app_id)["mine_to_follow"])
+        self.assertEqual(self.event(app_id, "release", 1).status_code, 200)
+        self.assertFalse(self.card(app_id)["mine_to_follow"])
+        submitted = self.event(app_id, "submit", 2)
+        self.assertEqual(submitted.status_code, 200, submitted.text)
+        self.assertFalse(submitted.json()["mine_to_follow"],
+                         "an explicit release must override self-issuer auto-claim")
+        self.assertEqual(self.event(app_id, "claim", 3).status_code, 200)
+        self.assertTrue(self.card(app_id)["mine_to_follow"])
+        # An unauthorized actor cannot claim or change a clinical outcome.
+        self.assertEqual(self.client.post(
+            f"{self.base}/outcomes/{app_id}/events",
+            json={"action": "release", "revision": 4},
+        ).status_code, 401)
+
+    def test_protected_search_unknown_and_date_status_guards(self):
+        self.assertEqual(self.client.post(self.base + "/outcomes/search", json={}).status_code, 401)
+        a = self.issue(identity_number="SYN-GUARDS")
+        self.assertEqual(a.status_code, 200, a.text)
+        app_id = a.headers["x-rf-application-id"]
+        self.assertEqual(self.search(query="SYN-GUARDS").json()["denominator"], 1)
+        self.assertEqual(self.search(scope="mine").json()["denominator"], 0)
+        self.assertEqual(self.event(app_id, "schedule").status_code, 422)
+        self.assertEqual(self.event(app_id, "perform", confirmed_performed=True).status_code, 422)
+        self.assertEqual(self.event(app_id, "reject", event_date="9999-01-01",
+                                    rejection_reason="future").status_code, 422)
+        self.assertEqual(self.event(app_id, "reject",
+                                    rejection_reason="synthetic").status_code, 200)
+        self.assertEqual(self.event(app_id, "correct_decision", 1,
+                                    rejection_reason="corrected synthetic reason").status_code, 200)
+        self.assertEqual(self.card(app_id)["rejection_reason"], "corrected synthetic reason")
+        self.assertEqual(self.event(app_id, "approve", 2).status_code, 422)
+        corrected = self.event(app_id, "correct_decision", 2,
+                               corrected_decision="approved")
+        self.assertEqual(corrected.status_code, 200, corrected.text)
+        self.assertEqual(corrected.json()["decision"], "approved")
+        self.assertEqual(corrected.json()["stage"], "approved")
+        self.assertEqual(corrected.json()["rejection_reason"], "")
+        self.assertEqual(self.search().json()["counts"]["rejected"], 0)
+        self.assertEqual(self.search().json()["counts"]["approved"], 1)
+
+
+    def test_submitted_date_correction_keeps_manual_release_and_atomic_revision_audit(self):
+        from datetime import datetime, timedelta
+        from clinic_utilities.rf.persistence import (
+            RFApplicationORM, RFApplicationProgressAuditORM)
+        from sqlalchemy.orm import Session
+        created = self.issue(identity_number="SYN-SUBMITTED-CORRECT")
+        self.assertEqual(created.status_code, 200, created.text)
+        app_id = created.headers["x-rf-application-id"]
+        before = (datetime.utcnow() - timedelta(days=10))
+        submitted_date = (before + timedelta(days=2)).date().isoformat()
+        correct_date = (before + timedelta(days=3)).date().isoformat()
+        with Session(self.engine) as session:
+            session.get(RFApplicationORM, app_id).created_at = before
+            session.commit()
+        submitted = self.event(app_id, "submit", event_date=submitted_date)
+        self.assertEqual(submitted.status_code, 200, submitted.text)
+        self.assertTrue(submitted.json()["mine_to_follow"])
+        self.assertEqual(self.event(app_id, "release", 1).status_code, 200)
+        correction = self.event(app_id, "correct_submission", 2, event_date=correct_date,
+                                reported_source="colleague")
+        self.assertEqual(correction.status_code, 200, correction.text)
+        self.assertEqual(correction.json()["revision"], 3)
+        self.assertEqual(correction.json()["stage"], "submitted")
+        self.assertEqual(correction.json()["submitted_date"], correct_date)
+        self.assertFalse(correction.json()["mine_to_follow"],
+                         "explicit personal release survives the correction")
+        self.assertEqual(self.event(app_id, "correct_submission", 2,
+                                    event_date=submitted_date).status_code, 409)
+        with Session(self.engine) as session:
+            audits = session.query(RFApplicationProgressAuditORM).filter_by(
+                application_id=app_id).order_by(RFApplicationProgressAuditORM.revision).all()
+            self.assertEqual(len(audits), 3)
+            last = audits[-1]
+            self.assertEqual(last.action, "correct_submission")
+            self.assertEqual(last.reported_source, "colleague")
+            self.assertEqual(last.revision, 3)
+            self.assertEqual(last.before_json["submitted_date"], submitted_date)
+            self.assertEqual(last.after_json["submitted_date"], correct_date)
+            self.assertEqual(last.before_json["followup_choice"], "release")
+            self.assertEqual(last.after_json["followup_choice"], "release")
+
+    def test_issue_chronology_and_downstream_decision_correction(self):
+        from datetime import datetime, timedelta, date
+        from clinic_utilities.rf.persistence import (
+            RFApplicationORM, RFApplicationProgressAuditORM)
+        from sqlalchemy.orm import Session
+        created = self.issue(identity_number="SYN-CHRONOLOGY")
+        self.assertEqual(created.status_code, 200, created.text)
+        app_id = created.headers["x-rf-application-id"]
+        yesterday = (date.today() - timedelta(days=1)).isoformat()
+        for action in ("submit", "approve", "reject"):
+            response = self.event(app_id, action, event_date=yesterday)
+            self.assertEqual(response.status_code, 422, (action, response.text))
+        self.assertEqual(self.card(app_id)["revision"], 0,
+                         "events preceding PDF issuance must not write")
+        issued_at = datetime.utcnow() - timedelta(days=12)
+        day = lambda offset: (issued_at + timedelta(days=offset)).date().isoformat()
+        with Session(self.engine) as session:
+            session.get(RFApplicationORM, app_id).created_at = issued_at
+            session.commit()
+        self.assertEqual(self.event(app_id, "submit", event_date=day(2)).status_code, 200)
+        self.assertEqual(self.event(app_id, "approve", 1, event_date=day(4)).status_code, 200)
+        self.assertEqual(self.event(app_id, "schedule", 2, event_date=day(7)).status_code, 200)
+        while_scheduled = self.event(app_id, "correct_decision", 3,
+                                     event_date=day(6), reported_source="colleague")
+        self.assertEqual(while_scheduled.status_code, 200, while_scheduled.text)
+        self.assertEqual(while_scheduled.json()["stage"], "scheduled")
+        self.assertEqual(self.event(app_id, "correct_decision", 4,
+                                    event_date=day(6),
+                                    corrected_decision="rejected").status_code, 422)
+        self.assertEqual(self.event(app_id, "perform", 4, event_date=day(6),
+                                    confirmed_performed=True).status_code, 422)
+        self.assertEqual(self.event(app_id, "perform", 4, event_date=day(9),
+                                    confirmed_performed=True).status_code, 200)
+        self.assertEqual(self.event(app_id, "correct_submission", 5,
+                                    event_date=day(7)).status_code, 422)
+        self.assertEqual(self.event(app_id, "correct_decision", 5,
+                                    event_date=day(8)).status_code, 422)
+        self.assertEqual(self.event(app_id, "correct_decision", 5,
+                                    event_date=day(3),
+                                    corrected_decision="rejected").status_code, 422)
+        corrected = self.event(app_id, "correct_decision", 5,
+                               event_date=day(5), reported_source="gesy_notice")
+        self.assertEqual(corrected.status_code, 200, corrected.text)
+        self.assertEqual(corrected.json()["stage"], "performed",
+                         "decision date correction cannot downgrade performed")
+        self.assertEqual(corrected.json()["decision"], "approved")
+        self.assertEqual(corrected.json()["performed_date"], day(9))
+        self.assertEqual(corrected.json()["scheduled_date"], day(7))
+        self.assertEqual(corrected.json()["decision_date"], day(5))
+        self.assertEqual(corrected.json()["last_decision_report"]["reported_source"], "gesy_notice")
+        with Session(self.engine) as session:
+            self.assertEqual(session.query(RFApplicationProgressAuditORM).filter_by(
+                application_id=app_id).count(), 6,
+                "rejected contradictory corrections must have no audit writes")
+
+    def test_linked_correction_blocks_reversal_and_post_link_rejection_date(self):
+        from datetime import datetime, timedelta
+        from clinic_utilities.rf.persistence import RFApplicationORM
+        from sqlalchemy.orm import Session
+        created = self.issue(identity_number="SYN-LINK-SAFETY")
+        self.assertEqual(created.status_code, 200, created.text)
+        app_id = created.headers["x-rf-application-id"]
+        issued_at = datetime.utcnow() - timedelta(days=10)
+        day = lambda offset: (issued_at + timedelta(days=offset)).date().isoformat()
+        with Session(self.engine) as session:
+            session.get(RFApplicationORM, app_id).created_at = issued_at
+            session.commit()
+        self.assertEqual(self.event(app_id, "reject", event_date=day(3)).status_code, 200)
+        followup = self.issue(identity_number="SYN-LINK-SAFETY",
+                              correction_of_application_id=app_id)
+        self.assertEqual(followup.status_code, 200, followup.text)
+        linked_id = followup.headers["x-rf-application-id"]
+        with Session(self.engine) as session:
+            session.get(RFApplicationORM, linked_id).created_at = issued_at + timedelta(days=6)
+            session.commit()
+        self.assertEqual(self.event(app_id, "correct_decision", 1,
+                                    corrected_decision="approved",
+                                    event_date=day(4)).status_code, 422)
+        self.assertEqual(self.event(app_id, "correct_decision", 1,
+                                    corrected_decision="rejected", rejection_reason="late",
+                                    event_date=day(7)).status_code, 422)
+        safe = self.event(app_id, "correct_decision", 1,
+                          corrected_decision="rejected", rejection_reason="corrected",
+                          event_date=day(4))
+        self.assertEqual(safe.status_code, 200, safe.text)
+        self.assertEqual(safe.json()["decision"], "rejected")
+        self.assertEqual(safe.json()["rejection_reason"], "corrected")
+        self.assertEqual(self.card(linked_id)["correction_of_application_id"], app_id)
+
+    def test_decision_provenance_read_from_existing_audit_or_unknown(self):
+        from clinic_utilities.rf.persistence import RFApplicationProgressAuditORM
+        from sqlalchemy.orm import Session
+        created = self.issue(identity_number="SYN-SOURCE-VIEW")
+        self.assertEqual(created.status_code, 200, created.text)
+        app_id = created.headers["x-rf-application-id"]
+        self.assertIsNone(self.card(app_id)["last_decision_report"])
+        reported = self.event(app_id, "reject", reported_source="colleague",
+                              rejection_reason="<img src=x onerror=alert(1)>")
+        self.assertEqual(reported.status_code, 200, reported.text)
+        provenance = reported.json()["last_decision_report"]
+        self.assertEqual(provenance["reported_source"], "colleague")
+        self.assertEqual(provenance["event_date"], self.today)
+        self.assertTrue(provenance["recorded_at"].endswith("Z"))
+        self.assertEqual(self.card(app_id)["last_decision_report"], provenance)
+        corrected = self.event(app_id, "correct_decision", 1,
+                               reported_source="gesy_notice",
+                               rejection_reason="διορθωμένη αιτία")
+        self.assertEqual(corrected.status_code, 200, corrected.text)
+        self.assertEqual(corrected.json()["last_decision_report"]["reported_source"], "gesy_notice")
+        with Session(self.engine) as session:
+            session.query(RFApplicationProgressAuditORM).filter_by(
+                application_id=app_id).delete()
+            session.commit()
+        historical = self.card(app_id)
+        self.assertEqual(historical["decision"], "rejected")
+        self.assertIsNone(historical["last_decision_report"],
+                          "a missing historical audit must not infer provenance")
+
+
 class RFIntegrationSourceTests(unittest.TestCase):
     def test_main_mounts_native_router_not_gateway(self):
         source = Path("main.py").read_text(encoding="utf-8")

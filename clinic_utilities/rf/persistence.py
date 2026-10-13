@@ -152,6 +152,37 @@ class RFProcedureHistoryORM(RFBase):
     created_at = Column(DateTime, nullable=False, index=True)
     updated_at = Column(DateTime, nullable=False, index=True)
 
+
+class RFApplicationProgressORM(RFBase):
+    """One mutable lifecycle projection per immutable issued RF application."""
+    __tablename__ = "clinic_rf_application_progress"
+    application_id = Column(String, primary_key=True)
+    revision = Column(Integer, nullable=False, default=1)
+    stage = Column(String(16), nullable=False, default="issued")
+    submitted_date = Column(String(10), nullable=True)
+    decision = Column(String(16), nullable=True)
+    decision_date = Column(String(10), nullable=True)
+    rejection_reason = Column(String(2400), nullable=False, default="")
+    scheduled_date = Column(String(10), nullable=True)
+    performed_date = Column(String(10), nullable=True)
+    mine_to_follow = Column(Boolean, nullable=False, default=False)
+    followup_choice = Column(String(16), nullable=False, default="")
+    updated_at = Column(DateTime, nullable=False)
+
+
+class RFApplicationProgressAuditORM(RFBase):
+    """Clinician-entered revisions, separate from the issued medical document."""
+    __tablename__ = "clinic_rf_application_progress_audit"
+    id = Column(String, primary_key=True)
+    application_id = Column(String, nullable=False, index=True)
+    revision = Column(Integer, nullable=False)
+    action = Column(String(24), nullable=False)
+    reported_source = Column(String(24), nullable=False)
+    before_json = Column(JSON, nullable=False, default=dict)
+    after_json = Column(JSON, nullable=False, default=dict)
+    created_at = Column(DateTime, nullable=False)
+
+
 def utcnow() -> datetime:
     return datetime.now(timezone.utc).replace(tzinfo=None)
 
@@ -492,6 +523,7 @@ _RF_DRAFT_FIELDS = frozenset({
     "procedure_history_id", "source_kind", "source_id", "source_origin",
     "a2_current_followup_date", "a2_current_followup_vas", "legacy_confirmed",
     "draft_nsaids", "draft_others", "source_patient_name",
+    "correction_of_application_id",
 })
 _RF_DRAFT_ARRAY_FIELDS = {
     "rf_reason_codes": 8, "nsaid_trials": 20, "other_analgesic_trials": 20,
@@ -614,3 +646,306 @@ def delete_rf_draft(engine: Engine, draft_id: str, revision: int) -> None:
             raise RuntimeError("Το πρόχειρο άλλαξε. Φόρτωσέ το ξανά")
         session.delete(row)
         session.commit()
+
+
+# Protected RF outcomes: issued document content remains immutable. A missing
+# progress row is NOT "submitted" or "pending": historical state is unknown.
+_RF_PROGRESS_SOURCE = frozenset({"clinician", "colleague", "gesy_notice", "other"})
+_RF_PROGRESS_ACTIONS = frozenset({
+    "submit", "approve", "reject", "schedule", "perform",
+    "claim", "release", "correct_decision", "correct_submission",
+})
+
+
+def _rf_progress_values(row: RFApplicationProgressORM | None) -> dict[str, Any]:
+    if row is None:
+        return {
+            "revision": 0, "stage": "issued", "submitted_date": None,
+            "decision": None, "decision_date": None, "rejection_reason": "",
+            "scheduled_date": None, "performed_date": None, "mine_to_follow": False,
+            "followup_choice": "",
+        }
+    return {
+        "revision": row.revision, "stage": row.stage,
+        "submitted_date": row.submitted_date, "decision": row.decision,
+        "decision_date": row.decision_date, "rejection_reason": row.rejection_reason,
+        "scheduled_date": row.scheduled_date, "performed_date": row.performed_date,
+        "mine_to_follow": bool(row.mine_to_follow),
+        "followup_choice": row.followup_choice or "",
+    }
+
+
+def _rf_progress_card(app: RFApplicationORM, progress: RFApplicationProgressORM | None) -> dict[str, Any]:
+    payload = app.payload_json if isinstance(app.payload_json, dict) else {}
+    snapshot = payload.get("doctor_snapshot")
+    return {
+        "id": app.id,
+        "issued_date": app.created_at.date().isoformat(),
+        "pathway": app.pathway,
+        "patient_name": app.patient_name,
+        "identity_number": str(payload.get("identity_number") or app.patient_identity_key),
+        "gesy_number": app.gesy_number,
+        "indication_code": app.indication_code,
+        "laterality": app.laterality,
+        "site_key": app.site_key,
+        "doctor_key": str(payload.get("doctor_key") or ""),
+        "issuer_name": str(snapshot.get("name") or "") if isinstance(snapshot, dict) else "",
+        "issuer_self_verified_at_issue": payload.get("issuer_self_verified_at_issue") is True
+            and payload.get("issuer_selection_origin") == "explicit",
+        "correction_of_application_id": str(payload.get("correction_of_application_id") or ""),
+        **_rf_progress_values(progress),
+    }
+
+
+def _rf_last_decision_report(session: Session, application_id: str) -> dict[str, Any] | None:
+    """Read the last manual decision entry; missing historical audit stays unknown."""
+    audit = session.scalar(
+        select(RFApplicationProgressAuditORM)
+        .where(RFApplicationProgressAuditORM.application_id == application_id,
+               RFApplicationProgressAuditORM.action.in_(
+                   ("approve", "reject", "correct_decision")))
+        .order_by(RFApplicationProgressAuditORM.revision.desc())
+        .limit(1)
+    )
+    if audit is None:
+        return None
+    after = audit.after_json if isinstance(audit.after_json, dict) else {}
+    return {
+        "reported_source": audit.reported_source or None,
+        "event_date": after.get("decision_date") or None,
+        "recorded_at": audit.created_at.replace(
+            tzinfo=timezone.utc).isoformat().replace("+00:00", "Z")
+            if audit.created_at else None,
+    }
+
+
+def get_rf_application_progress(engine: Engine, application_id: str) -> dict[str, Any] | None:
+    with Session(engine) as session:
+        app = session.get(RFApplicationORM, application_id)
+        if app is None:
+            return None
+        return {
+            **_rf_progress_card(app, session.get(RFApplicationProgressORM, application_id)),
+            "last_decision_report": _rf_last_decision_report(session, application_id),
+        }
+
+
+def list_rf_application_progress(engine: Engine, query: str = "", scope: str = "all",
+                                 page: int = 1) -> dict[str, Any]:
+    if scope not in {"all", "mine"} or page < 1 or page > 100:
+        raise ValueError("Μη έγκυρο φίλτρο RF")
+    text = _rf_search_text(query)
+    id_text = _rf_id_text(query)
+    with Session(engine) as session:
+        apps = session.scalars(select(RFApplicationORM).order_by(
+            RFApplicationORM.created_at.desc(), RFApplicationORM.id.desc()
+        ).limit(_RF_SEARCH_SCAN_LIMIT + 1)).all()
+        truncated = len(apps) > _RF_SEARCH_SCAN_LIMIT
+        apps = apps[:_RF_SEARCH_SCAN_LIMIT]
+        ids = [app.id for app in apps]
+        rows = (session.scalars(select(RFApplicationProgressORM).where(
+            RFApplicationProgressORM.application_id.in_(ids))).all() if ids else [])
+        by_id = {row.application_id: row for row in rows}
+        matched = []
+        for app in apps:
+            if text and not (
+                text in _rf_search_text(app.patient_name)
+                or id_text in _rf_id_text(app.patient_identity_key)
+                or id_text in _rf_id_text(app.gesy_number)
+            ):
+                continue
+            card = _rf_progress_card(app, by_id.get(app.id))
+            if scope == "mine" and not card["mine_to_follow"]:
+                continue
+            matched.append(card)
+    # Counts describe the filtered *attempts*, not all patient histories.
+    counts = {
+        "issued_unknown": sum(c["stage"] == "issued" for c in matched),
+        "pending": sum(c["stage"] == "submitted" for c in matched),
+        "approved": sum(c["decision"] == "approved" for c in matched),
+        "rejected": sum(c["decision"] == "rejected" for c in matched),
+        "scheduled": sum(c["stage"] == "scheduled" for c in matched),
+        "performed": sum(c["stage"] == "performed" for c in matched),
+        "mine_actionable": sum(c["mine_to_follow"] and c["stage"] in {"submitted", "approved", "scheduled"}
+                               for c in matched),
+    }
+    start = (page - 1) * _RF_PAGE_SIZE
+    return {
+        "applications": matched[start:start + _RF_PAGE_SIZE],
+        "counts": counts, "denominator": len(matched),
+        "scope": scope, "page": page, "has_more": len(matched) > start + _RF_PAGE_SIZE,
+        "truncated": truncated,
+    }
+
+
+def _rf_event_date(value: str, label: str, *, may_be_future: bool = False) -> str:
+    from datetime import date
+    if not value or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", value):
+        raise ValueError(f"Απαιτείται ακριβής ημερομηνία {label}")
+    try:
+        when = date.fromisoformat(value)
+    except ValueError as exc:
+        raise ValueError(f"Μη έγκυρη ημερομηνία {label}") from exc
+    if not may_be_future and when > date.today():
+        raise ValueError(f"Η ημερομηνία {label} δεν μπορεί να είναι μελλοντική")
+    return value
+
+
+def change_rf_application_progress(engine: Engine, application_id: str, *,
+                                   action: str, revision: int, event_date: str = "",
+                                   rejection_reason: str = "", reported_source: str = "clinician",
+                                   confirmed_performed: bool = False,
+                                   corrected_decision: str = "") -> dict[str, Any]:
+    if action not in _RF_PROGRESS_ACTIONS or reported_source not in _RF_PROGRESS_SOURCE:
+        raise ValueError("Μη έγκυρη ενέργεια ή προέλευση RF")
+    if corrected_decision and (action != "correct_decision" or corrected_decision not in {"approved", "rejected"}):
+        raise ValueError("Μη έγκυρη διόρθωση απόφασης")
+    if revision < 0 or len(rejection_reason) > 2400:
+        raise ValueError("Μη έγκυρη έκδοση ή αιτιολογία RF")
+    if action in {"claim", "release"}:
+        if event_date or rejection_reason:
+            raise ValueError("Η ανάληψη παρακολούθησης δεν αλλάζει έκβαση")
+    else:
+        _rf_event_date(event_date, "RF", may_be_future=action == "schedule")
+        if action != "reject" and action != "correct_decision" and rejection_reason:
+            raise ValueError("Η αιτιολογία απόρριψης δεν αφορά αυτή την ενέργεια")
+    with Session(engine) as session:
+        app = session.get(RFApplicationORM, application_id)
+        if app is None:
+            raise LookupError("Η αίτηση RF δεν βρέθηκε")
+        progress = session.scalar(select(RFApplicationProgressORM).where(
+            RFApplicationProgressORM.application_id == application_id).with_for_update())
+        previous = _rf_progress_values(progress)
+        if previous["revision"] != revision:
+            raise RuntimeError("Η έκβαση άλλαξε σε άλλη καρτέλα. Ανανέωσε την αίτηση")
+        stage = previous["stage"]
+        issued_date = app.created_at.date().isoformat()
+        if event_date and event_date < issued_date:
+            raise ValueError("Η ημερομηνία γεγονότος προηγείται της έκδοσης RF")
+        if action == "submit":
+            if stage != "issued":
+                raise ValueError("Η αίτηση έχει ήδη καταχωρισμένη πορεία")
+            progress = progress or RFApplicationProgressORM(application_id=application_id)
+            progress.submitted_date = event_date
+            progress.stage = "submitted"
+            payload = app.payload_json if isinstance(app.payload_json, dict) else {}
+            # Explicit opt-in/out made before submission must never be overwritten
+            # by the automatic owner rule when Submitted is finally recorded.
+            progress.mine_to_follow = (
+                previous["mine_to_follow"] if previous["followup_choice"]
+                else (
+                    payload.get("issuer_selection_origin") == "explicit"
+                    and payload.get("issuer_self_verified_at_issue") is True
+                )
+            )
+        elif action == "correct_submission":
+            if not previous["submitted_date"]:
+                raise ValueError("Δεν υπάρχει ημερομηνία υποβολής προς διόρθωση")
+            for label, later in (
+                ("απόφαση", previous["decision_date"]),
+                ("προγραμματισμό", previous["scheduled_date"]),
+                ("εφαρμογή", previous["performed_date"]),
+            ):
+                if later and event_date > later:
+                    raise ValueError(f"Η υποβολή δεν μπορεί να έπεται από {label}")
+            # A date correction is not a new submission and must not change
+            # the stage or explicit follow-up claim/release state.
+            progress.submitted_date = event_date
+        elif action in {"approve", "reject"}:
+            if stage not in {"issued", "submitted"}:
+                raise ValueError("Δεν επιτρέπεται νέα απόφαση σε ολοκληρωμένη έκβαση")
+            if previous["submitted_date"] and event_date < previous["submitted_date"]:
+                raise ValueError("Η απόφαση προηγείται της υποβολής")
+            progress = progress or RFApplicationProgressORM(application_id=application_id)
+            progress.decision = "approved" if action == "approve" else "rejected"
+            progress.decision_date = event_date
+            progress.rejection_reason = rejection_reason.strip() if action == "reject" else ""
+            progress.stage = progress.decision
+        elif action == "correct_decision":
+            if stage not in {"approved", "rejected", "scheduled", "performed"} or not previous["decision"]:
+                raise ValueError("Δεν υπάρχει απόφαση προς διόρθωση")
+            if previous["submitted_date"] and event_date < previous["submitted_date"]:
+                raise ValueError("Η απόφαση προηγείται της υποβολής")
+            corrected = corrected_decision or previous["decision"]
+            if corrected == "approved" and rejection_reason:
+                raise ValueError("Δεν αποθηκεύεται αιτιολογία απόρριψης σε έγκριση")
+            if previous["scheduled_date"] or previous["performed_date"]:
+                if corrected != "approved":
+                    raise ValueError("Δεν αναιρείται έγκριση με καταχωρισμένο προγραμματισμό ή εφαρμογή")
+                if (previous["scheduled_date"] and event_date > previous["scheduled_date"]
+                        or previous["performed_date"] and event_date > previous["performed_date"]):
+                    raise ValueError("Η διορθωμένη απόφαση έπεται προγραμματισμού ή εφαρμογής")
+            # A distinct correction RF has already been issued on the basis of
+            # this rejection: never silently remove that causal history.
+            linked = session.scalars(select(RFApplicationORM).where(
+                RFApplicationORM.payload_json["correction_of_application_id"].as_string()
+                == application_id
+            )).all() if previous["decision"] == "rejected" else []
+            if linked and corrected != "rejected":
+                raise ValueError("Υπάρχει ήδη εκδοθείσα διορθωτική RF για αυτή την απόρριψη")
+            if linked and any(event_date > row.created_at.date().isoformat() for row in linked):
+                raise ValueError("Η ημερομηνία απόρριψης έπεται της συνδεδεμένης διορθωτικής RF")
+            progress.decision = corrected
+            # Downstream scheduling/performance remains the authoritative stage.
+            if stage in {"approved", "rejected"}:
+                progress.stage = corrected
+            progress.decision_date = event_date
+            progress.rejection_reason = rejection_reason.strip() if corrected == "rejected" else ""
+        elif action == "schedule":
+            if stage not in {"approved", "scheduled"}:
+                raise ValueError("Προγραμματισμός μόνο μετά από καταχωρισμένη έγκριση")
+            if event_date < previous["decision_date"]:
+                raise ValueError("Ο προγραμματισμός προηγείται της απόφασης")
+            progress.scheduled_date = event_date
+            progress.stage = "scheduled"
+        elif action == "perform":
+            if stage not in {"approved", "scheduled"} or not confirmed_performed:
+                raise ValueError("Απαιτείται ρητή επιβεβαίωση πραγματικής εφαρμογής μετά από έγκριση")
+            if event_date < previous["decision_date"]:
+                raise ValueError("Η πραγματική εφαρμογή προηγείται της έγκρισης")
+            if previous["scheduled_date"] and event_date < previous["scheduled_date"]:
+                raise ValueError("Η πραγματική εφαρμογή προηγείται της προγραμματισμένης ημερομηνίας")
+            progress.performed_date = event_date
+            progress.stage = "performed"
+        elif action in {"claim", "release"}:
+            if action == "claim" and previous["mine_to_follow"]:
+                raise ValueError("Η παρακολούθηση έχει ήδη αναληφθεί")
+            if action == "release" and not previous["mine_to_follow"]:
+                raise ValueError("Δεν υπάρχει προσωπική παρακολούθηση")
+            progress = progress or RFApplicationProgressORM(application_id=application_id)
+            progress.mine_to_follow = action == "claim"
+            progress.followup_choice = action
+        else:
+            raise ValueError("Μη έγκυρη ενέργεια RF")
+        # A single transaction commits the versioned projection and audit.
+        now = utcnow()
+        progress.revision = revision + 1
+        progress.updated_at = now
+        session.add(progress)
+        after = _rf_progress_values(progress)
+        session.add(RFApplicationProgressAuditORM(
+            id=str(uuid4()), application_id=application_id, revision=revision + 1,
+            action=action, reported_source=reported_source,
+            before_json=previous, after_json=after, created_at=now,
+        ))
+        session.commit()
+        return {
+            **_rf_progress_card(app, progress),
+            "last_decision_report": _rf_last_decision_report(session, application_id),
+        }
+
+
+def validate_rf_correction_source(session: Session, *, rejected_id: str,
+                                  identity_number: str, indication_code: str,
+                                  laterality: str, site_key: str) -> None:
+    prior = session.get(RFApplicationORM, rejected_id)
+    if prior is None:
+        raise ValueError("Η απορριφθείσα αίτηση RF δεν βρέθηκε")
+    progress = session.scalar(select(RFApplicationProgressORM).where(
+        RFApplicationProgressORM.application_id == rejected_id).with_for_update())
+    if progress is None or progress.decision != "rejected":
+        raise ValueError("Απαιτείται καταχωρισμένη απόρριψη για διορθωτική αίτηση")
+    if (prior.patient_identity_key != normalize_identity(identity_number)
+        or prior.indication_code != indication_code or prior.laterality != laterality
+        or prior.site_key != site_key):
+        raise ValueError("Η διορθωτική RF αφορά διαφορετικό ασθενή, ένδειξη ή πλευρά")
