@@ -663,6 +663,7 @@
     });
   });
 
+  window.addEventListener("clinical:authenticated", checkAuth);
   selectMode("demo");
   checkAuth();
 })();

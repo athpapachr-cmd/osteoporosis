@@ -241,5 +241,6 @@
      }
    };
  }
+ window.addEventListener("clinical:authenticated", recent);
  recent();
 })();
