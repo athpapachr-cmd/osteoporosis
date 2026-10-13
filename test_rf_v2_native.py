@@ -1418,7 +1418,7 @@ class RFOutcomeFollowupTests(unittest.TestCase):
         self.assertEqual(self.event(app_id, "perform", 4, event_date=day(9),
                                     confirmed_performed=True).status_code, 200)
         self.assertEqual(self.event(app_id, "correct_submission", 5,
-                                    event_date=day(5)).status_code, 422)
+                                    event_date=day(7)).status_code, 422)
         self.assertEqual(self.event(app_id, "correct_decision", 5,
                                     event_date=day(8)).status_code, 422)
         self.assertEqual(self.event(app_id, "correct_decision", 5,
