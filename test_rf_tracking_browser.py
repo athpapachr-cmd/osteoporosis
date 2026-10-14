@@ -1,0 +1,171 @@
+"""Synthetic RF Tracking v1 smoke in real Chromium at three widths; zero network/data writes."""
+import json
+import shutil
+from pathlib import Path
+from urllib.parse import urlsplit
+from playwright.sync_api import expect, sync_playwright
+
+ROOT = Path(__file__).parent
+OUT = ROOT / "rf-tracking-browser-evidence"
+OUT.mkdir(exist_ok=True)
+BASE = "https://rf-synthetic.invalid"
+CONTRACT = {
+    "doctors": {"papachristou": {"label": "Synthetic Doctor", "configured": True}},
+    "products": {"medikey": {"label": "Synthetic Product", "configured": True}},
+    "indications": {
+        "KNEE_OA_KL34": {"label": "Synthetic Knee", "site_key": "knee",
+                         "location_labels": {}, "location_mode": "free",
+                         "requires_intervention": False}},
+    "laterality": {"left": "Αριστερά", "right": "Δεξιά"},
+    "rf_reasons": {},
+}
+def card(n):
+    return {
+        "id": "synthetic-rf-%02d" % n, "patient_name": "Συνθετικός RF %02d" % n,
+        "identity_number": "SYN-ID-%02d" % n, "issued_date": "2026-10-01",
+        "pathway": "A1", "site_key": "knee", "laterality": "left",
+        "indication_code": "KNEE_OA_KL34", "issuer_name": "Synthetic Issuer",
+        "stage": "rejected", "decision": "rejected", "revision": 2,
+        "rejection_reason": "Synthetic reason", "decision_date": "2026-10-02",
+        "submitted_date": None, "scheduled_date": None, "performed_date": None,
+        "mine_to_follow": False,
+    }
+
+def suite(width):
+    errors, outbound = [], []
+    with sync_playwright() as pw:
+        executable = shutil.which("google-chrome") or shutil.which("chromium")
+        browser = pw.chromium.launch(headless=True, executable_path=executable,
+                                      args=["--no-sandbox"])
+        page = browser.new_page(viewport={"width": width, "height": 850})
+        page.on("pageerror", lambda exc: errors.append(str(exc)))
+        page.on("dialog", lambda dialog: dialog.accept())
+        def handle(route):
+            url = urlsplit(route.request.url)
+            path = url.path
+            if path in ("/clinical/clinic-utilities/rf",
+                        "/clinical/clinic-utilities/rf/tracking"):
+                return route.fulfill(status=200, content_type="text/html",
+                    body=(ROOT / "static/clinic-utilities/rf/index.html").read_text(encoding="utf-8"))
+            if path.startswith("/static/"):
+                source = ROOT / path.lstrip("/")
+                if source.is_file():
+                    kind = ("text/javascript" if source.suffix == ".js"
+                            else "text/css" if source.suffix == ".css" else "text/plain")
+                    return route.fulfill(status=200, content_type=kind, body=source.read_bytes())
+            if path == "/clinical/status":
+                return route.fulfill(json={"authenticated": True})
+            if path == "/clinical/login":
+                return route.fulfill(json={"authenticated": True})
+            if path.startswith("/clinical/clinic-utilities/rf/api/"):
+                endpoint = path.split("/rf/api/", 1)[-1]
+                request = route.request.post_data_json if route.request.method == "POST" else {}
+                if endpoint == "contract":
+                    return route.fulfill(json=CONTRACT)
+                if endpoint == "drafts" or endpoint.startswith("drafts?"):
+                    return route.fulfill(json={"drafts": [], "has_more": False})
+                if endpoint == "outcomes/search":
+                    if request.get("mode") == "tracking":
+                        if request.get("stage") == "approved":
+                            result = {"applications": [], "next_cursor": None,
+                                      "has_more": False, "scan_complete": True,
+                                      "truncated": False, "counts": None}
+                        elif request.get("cursor"):
+                            result = {"applications": [card(n) for n in range(20, 23)],
+                                      "next_cursor": None, "has_more": False,
+                                      "scan_complete": True, "truncated": False, "counts": None}
+                        else:
+                            result = {"applications": [card(n) for n in range(20)],
+                                      "next_cursor": "signed-synthetic-next",
+                                      "has_more": True, "scan_complete": False,
+                                      "truncated": True, "counts": None}
+                    else:
+                        result = {"applications": [], "counts": {
+                            "pending": 0, "approved": 0, "rejected": 0,
+                            "mine_actionable": 0}, "denominator": 0,
+                            "truncated": False, "has_more": False}
+                    return route.fulfill(json=result)
+                if endpoint == "outcomes/calendar":
+                    monday = request["week_start"]
+                    return route.fulfill(json={
+                        "facts": [{"application_id": "synthetic-rf-00",
+                                   "patient_name": "Συνθετικός RF 00", "kind": "scheduled",
+                                   "date": monday, "site_key": "knee", "laterality": "left",
+                                   "revision": 2}],
+                        "complete": True, "truncated": False, "time_verified": False,
+                        "source_as_of": "2026-10-14T12:00:00Z"})
+                if endpoint.startswith("outcomes/") and endpoint.endswith("/events"):
+                    return route.fulfill(status=409, json={"detail": "Synthetic changed revision"})
+                if endpoint.startswith("outcomes/"):
+                    item_id = endpoint.split("/")[-1]
+                    try:
+                        n = int(item_id.rsplit("-", 1)[1])
+                    except (IndexError, ValueError):
+                        return route.fulfill(status=404, json={"detail": "missing"})
+                    return route.fulfill(json=card(n))
+                if endpoint == "reuse/rejected-correction":
+                    n = int(request["application_id"].rsplit("-", 1)[1])
+                    return route.fulfill(json={
+                        "application_id": request["application_id"],
+                        "revision": request["expected_revision"],
+                        "source": {"pathway": "A1", "kind": "application"},
+                        "fields": {"identity_number": "SYN-ID-%02d" % n,
+                                   "patient_name": "Συνθετικός RF %02d" % n,
+                                   "age": 60, "gesy_number": "SYN-GESY",
+                                   "indication_code": "KNEE_OA_KL34",
+                                   "laterality": "left", "product_key": "medikey",
+                                   "exact_location": "Synthetic knee"},
+                    }, headers={"cache-control": "no-store"})
+            outbound.append(route.request.url)
+            return route.abort()
+        page.route("**/*", handle)
+        page.goto(BASE + "/clinical/clinic-utilities/rf/tracking")
+        expect(page.locator("#rfTrackingView")).to_be_visible()
+        expect(page.locator("#rfTrackResults .rf-outcome-card")).to_have_count(20)
+        assert page.locator("#rfTrackScope").input_value() == "all"
+        assert page.locator("#rfTrackStatus").inner_text().startswith("Μερική")
+        page.locator("#rfTrackMore").click()
+        expect(page.locator("#rfTrackResults .rf-outcome-card")).to_have_count(23)
+        # The original implementation invalidated older row handlers after "More".
+        first = page.locator("#rfTrackResults .rf-outcome-card").first
+        first.get_by_role("button", name="Άνοιγμα").focus()
+        page.keyboard.press("Enter")
+        expect(page.locator("#rfOutcomeTitle")).to_contain_text("Συνθετικός RF 00")
+        # A real failed write must show in the visible Tracking view, not hidden builder.
+        page.locator("#rfOutcomeApply").click()
+        expect(page.locator("#rfTrackStatus")).to_contain_text("Synthetic changed revision")
+        first.get_by_role("button", name="Άνοιγμα").click()
+        expect(page.locator("#rfOutcomeCorrection")).to_be_visible()
+        page.locator("#rfOutcomeCorrection").click()
+        expect(page.locator("#rfBuilderView")).to_be_visible()
+        expect(page.locator("#rfCorrectionContext")).to_be_visible()
+        assert page.locator("#doctorSelect").input_value() == "", "issuer must be reselected"
+        assert page.locator("#identityNumber").input_value() == "SYN-ID-00"
+        assert page.locator("#imagingReport").input_value() == "", "attachments must not carry over"
+        assert page.evaluate("location.pathname") == "/clinical/clinic-utilities/rf"
+        assert "synthetic-rf-" not in page.url
+        page.locator("#rfNavTracking").click()
+        expect(page.locator("#rfTrackingView")).to_be_visible()
+        expect(page.locator("#rfCorrectionContext")).to_be_hidden()
+        page.locator("#rfTrackWeekTab").click()
+        expect(page.locator("#rfTrackWeekView")).to_be_visible()
+        expect(page.locator("#rfWeekGrid .rf-week-day")).to_have_count(7)
+        expect(page.locator("#rfWeekStatus")).to_contain_text("όχι ραντεβού")
+        assert page.locator("#rfWeekGrid").inner_text().find("00") >= 0
+        assert "12:00" not in page.locator("#rfWeekGrid").inner_text()
+        page.locator("#rfWeekNoDate").click()
+        expect(page.locator("#rfTrackListView")).to_be_visible()
+        assert page.locator("#rfTrackStage").input_value() == "approved"
+        assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1"), "horizontal overflow"
+        page.screenshot(path=str(OUT / ("rf-tracking-%s.png" % width)), full_page=True)
+        page.reload()
+        expect(page.locator("#rfTrackingView")).to_be_visible()
+        expect(page.locator("#rfCorrectionContext")).to_be_hidden()
+        assert "synthetic-rf-" not in page.url
+        assert not errors, errors
+        assert not any("render.com" in x or "cal.com" in x for x in outbound), outbound
+        browser.close()
+
+for width in (390, 680, 1280):
+    suite(width)
+print("PASS RF Tracking Chromium: 390/680/1280, cursor, keyboard, correction, issuer, errors, calendar, reload")
