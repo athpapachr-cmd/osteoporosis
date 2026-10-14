@@ -1168,6 +1168,8 @@
     // A is no longer actionable while B's detail request is pending.
     state.selectedOutcome = null;
     state.selectedOutcomeId = selectedId;
+    $('rfTrackingActionFeedback').hidden = true;
+    $('rfTrackingActionFeedback').textContent = '';
     $('rfOutcomeSelected').hidden = true;
     if (state.rfView === 'tracking') $('rfTrackingDetail').hidden = false;
     try {
@@ -1622,12 +1624,22 @@
   }
 
   function showError(message) {
+    if (state.rfView === 'tracking') {
+      $('rfTrackingActionFeedback').hidden = false;
+      $('rfTrackingActionFeedback').className = 'validation-panel error';
+      $('rfTrackingActionFeedback').textContent = message;
+    }
     $('validationPanel').hidden = false;
     $('validationPanel').className = 'validation-panel error';
     $('validationPanel').textContent = message;
   }
 
   function showOk(message) {
+    if (state.rfView === 'tracking') {
+      $('rfTrackingActionFeedback').hidden = false;
+      $('rfTrackingActionFeedback').className = 'validation-panel ok';
+      $('rfTrackingActionFeedback').textContent = message;
+    }
     $('validationPanel').hidden = false;
     $('validationPanel').className = 'validation-panel ok';
     $('validationPanel').textContent = message;
