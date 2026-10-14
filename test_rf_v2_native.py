@@ -1190,6 +1190,43 @@ class RFOutcomeFollowupTests(unittest.TestCase):
             # State reporting never changes the immutable issued document.
             self.assertIsNone(session.get(RFApplicationORM, app_id).payload_json.get("approval_status"))
 
+    def test_atomic_rejected_correction_rejects_stale_revision_and_missing_proof(self):
+        from clinic_utilities.rf.persistence import RFApplicationORM
+        from sqlalchemy.orm import Session
+        original = self.issue(identity_number="SYN-ATOMIC-TEST")
+        self.assertEqual(original.status_code, 200)
+        app_id = original.headers["x-rf-application-id"]
+        endpoint = self.base + "/reuse/rejected-correction"
+        body = {"application_id": app_id, "expected_revision": 1}
+        self.assertEqual(self.client.post(endpoint, json=body).status_code, 401)
+        self.assertEqual(self.client.post(endpoint, headers=self.headers, json=body).status_code, 409)
+        self.assertEqual(self.client.post(endpoint, headers=self.headers, json={
+            "application_id": "no-such-id", "expected_revision": 1}).status_code, 404)
+        self.assertEqual(self.client.post(endpoint, headers=self.headers, json={
+            "application_id": app_id}).status_code, 422)
+        rejection = self.event(app_id, "reject", rejection_reason="synthetic").json()
+        rev = rejection["revision"]
+        guarded = self.client.post(endpoint, headers=self.headers, json={
+            "application_id": app_id, "expected_revision": rev})
+        self.assertEqual(guarded.status_code, 200, guarded.text)
+        self.assertEqual(guarded.json()["application_id"], app_id)
+        self.assertEqual(guarded.json()["revision"], rev)
+        self.assertEqual(guarded.json()["fields"]["identity_number"], "SYN-ATOMIC-TEST")
+        self.assertEqual(guarded.headers["cache-control"], "no-store")
+        self.assertEqual(self.client.post(endpoint, headers=self.headers, json={
+            "application_id": app_id, "expected_revision": rev + 1}).status_code, 409)
+        self.assertEqual(self.event(app_id, "correct_decision", rev,
+            corrected_decision="rejected", rejection_reason="updated").status_code, 200)
+        self.assertEqual(self.client.post(endpoint, headers=self.headers, json={
+            "application_id": app_id, "expected_revision": rev}).status_code, 409)
+        self.assertEqual(self.issue(identity_number="SYN-ATOMIC-TEST",
+            correction_of_application_id=app_id,
+            correction_source_expected_revision=rev).status_code, 422)
+        self.assertEqual(self.issue(identity_number="SYN-ATOMIC-TEST",
+            correction_of_application_id=app_id).status_code, 422)
+        with Session(self.engine) as session:
+            self.assertEqual(session.query(RFApplicationORM).count(), 1)
+
     def test_colleague_reported_rejection_without_submission_and_linked_correction(self):
         from clinic_utilities.rf.persistence import RFApplicationORM, RFProcedureHistoryORM
         from sqlalchemy.orm import Session
@@ -1215,7 +1252,8 @@ class RFOutcomeFollowupTests(unittest.TestCase):
         self.assertEqual(self.event(app_id, "submit", 1).status_code, 422)
         # Correction is a distinct A1 attempt, never an automatic A2/actual treatment.
         new = self.issue(identity_number="SYN-COL-1", doctor_key=key,
-                         correction_of_application_id=app_id)
+                         correction_of_application_id=app_id,
+                          correction_source_expected_revision=rejected.json()['revision'])
         self.assertEqual(new.status_code, 200, new.text)
         new_id = new.headers["x-rf-application-id"]
         self.assertNotEqual(app_id, new_id)
@@ -1290,7 +1328,8 @@ class RFOutcomeFollowupTests(unittest.TestCase):
                                    correction_of_application_id=old_id)
         self.assertEqual(wrong_patient.status_code, 422)
         valid = self.issue(identity_number="SYN-HISTORY",
-                           correction_of_application_id=old_id)
+                           correction_of_application_id=old_id,
+                            correction_source_expected_revision=self.card(old_id)["revision"])
         self.assertEqual(valid.status_code, 200, valid.text)
         with Session(self.engine) as session:
             self.assertEqual(session.query(RFApplicationORM).count(), 2)
@@ -1453,7 +1492,8 @@ class RFOutcomeFollowupTests(unittest.TestCase):
             session.commit()
         self.assertEqual(self.event(app_id, "reject", event_date=day(3)).status_code, 200)
         followup = self.issue(identity_number="SYN-LINK-SAFETY",
-                              correction_of_application_id=app_id)
+                              correction_of_application_id=app_id,
+                               correction_source_expected_revision=self.card(app_id)["revision"])
         self.assertEqual(followup.status_code, 200, followup.text)
         linked_id = followup.headers["x-rf-application-id"]
         with Session(self.engine) as session:
