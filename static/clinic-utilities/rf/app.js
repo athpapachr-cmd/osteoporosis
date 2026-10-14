@@ -1585,7 +1585,7 @@
   }
 
   function rfFeedbackTarget() {
-    return $('rfTrackingView').hidden ? $('validationPanel') :
+    return $('rfTrackingView').hidden !== false ? $('validationPanel') :
       tracking.tab === 'week' ? $('rfWeekStatus') : $('rfTrackStatus');
   }
   function showError(message) {
