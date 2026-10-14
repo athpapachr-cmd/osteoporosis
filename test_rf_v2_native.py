@@ -1322,7 +1322,7 @@ class RFOutcomeFollowupTests(unittest.TestCase):
             "application_id": app_id, "expected_revision": rev}).status_code, 409)
         self.assertEqual(self.issue(identity_number="SYN-ATOMIC-TEST",
             correction_of_application_id=app_id,
-            correction_source_expected_revision=rev).status_code, 422)
+            correction_source_expected_revision=rev).status_code, 409)
         self.assertEqual(self.issue(identity_number="SYN-ATOMIC-TEST",
             correction_of_application_id=app_id).status_code, 422)
         with Session(self.engine) as session:

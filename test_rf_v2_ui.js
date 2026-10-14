@@ -75,7 +75,7 @@ const doc = {
   createElement: fakeElement,
   addEventListener() {}, // install but do not run unrelated page bootstrap
 };
-const instrumented = app.replace(/\}\)\(\);\s*$/, '\n  globalThis.__rfTest = {addHorosImages, releaseHorosPreviews, loadContract, saveDoctor, editDoctor, createPdf, populateRfFields, savedDraftFields, restoreRfDraft, loadRfSource, setPathway, resolveSourceName, invalidateSourceNameConfirmation, unresolvedSourceNameConflict, buildDraft, loadRfOutcomes, selectRfOutcome, invalidateRfOutcomeSelection, renderSelectedOutcome, applyRfOutcome, beginRfCorrection, outcomeAvailableActions, renderCorrectionContext};\n})();');
+const instrumented = app.replace(/\}\)\(\);\s*$/, '\n  globalThis.__rfTest = {normalizeRfIdentity, addHorosImages, releaseHorosPreviews, loadContract, saveDoctor, editDoctor, createPdf, populateRfFields, savedDraftFields, restoreRfDraft, loadRfSource, setPathway, resolveSourceName, invalidateSourceNameConfirmation, unresolvedSourceNameConflict, buildDraft, loadRfOutcomes, selectRfOutcome, invalidateRfOutcomeSelection, renderSelectedOutcome, applyRfOutcome, beginRfCorrection, outcomeAvailableActions, renderCorrectionContext};\n})();');
 assert.notStrictEqual(instrumented, app, 'RF handler instrumentation point must be present');
 const browser = {
   document: doc,
@@ -87,6 +87,11 @@ const browser = {
   history: {pushState(){}},
 };
 vm.runInNewContext(instrumented, browser, {filename: 'rf-app.js'});
+assert.strictEqual(browser.__rfTest.normalizeRfIdentity('AB-W123'), 'ABW123');
+assert.notStrictEqual(browser.__rfTest.normalizeRfIdentity('ABW123'),
+                      browser.__rfTest.normalizeRfIdentity('AB123'));
+assert.strictEqual(browser.__rfTest.normalizeRfIdentity('RF-CORR'),
+                   browser.__rfTest.normalizeRfIdentity('RFCORR'));
 const jpg = name => ({name, size: 1024, type: 'image/jpeg'});
 const picker = doc.getElementById('horosJpegs');
 picker.files = [jpg('first.jpg'), jpg('second.jpeg')];
@@ -480,8 +485,8 @@ async function testRfOutcomeActionsAndCorrection() {
                      'rejected application does not imply real A2 treatment');
   assert.strictEqual(el('imagingReport').value,'',
                      'new official RF requires new imaging attachment');
-  assert.notStrictEqual(el('doctorSelect').value,'physicianB',
-                        'correction must not silently select colleague issuer');
+  assert.strictEqual(el('doctorSelect').value,'',
+                     'correction requires an explicit fresh issuer selection');
 
   // A saved draft must never re-arm correction after reload.
   assert.strictEqual(browser.__rfTest.savedDraftFields().correction_of_application_id,

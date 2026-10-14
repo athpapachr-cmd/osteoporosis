@@ -939,6 +939,8 @@ def build_rf_router(engine: Engine) -> APIRouter:
                         indication_code=draft.indication_code,
                         laterality=draft.laterality, site_key=indication["site_key"],
                     )
+                except RuntimeError as exc:
+                    raise HTTPException(status_code=409, detail=str(exc)) from exc
                 except ValueError as exc:
                     raise HTTPException(status_code=422, detail=str(exc)) from exc
                 payload["correction_of_application_id"] = draft.correction_of_application_id

@@ -1131,10 +1131,11 @@ def validate_rf_correction_source(session: Session, *, rejected_id: str,
         raise ValueError("Η απορριφθείσα αίτηση RF δεν βρέθηκε")
     progress = session.scalar(select(RFApplicationProgressORM).where(
         RFApplicationProgressORM.application_id == rejected_id).with_for_update())
-    if (progress is None or progress.stage != "rejected" or
-            progress.decision != "rejected" or
-            progress.revision != expected_revision):
+    if progress is None:
         raise ValueError("Απαιτείται καταχωρισμένη απόρριψη για διορθωτική αίτηση")
+    if (progress.revision != expected_revision or progress.stage != "rejected"
+            or progress.decision != "rejected"):
+        raise RuntimeError("Η απόρριψη RF ή η έκδοσή της άλλαξε. Ανανέωσε την αίτηση")
     if (prior.patient_identity_key != normalize_identity(identity_number)
         or prior.indication_code != indication_code or prior.laterality != laterality
         or prior.site_key != site_key):
