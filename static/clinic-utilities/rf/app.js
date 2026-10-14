@@ -1184,6 +1184,7 @@
 
   async function selectRfOutcome(card) {
     const token = ++state.outcomeSelectionToken;
+    const authAtStart = tracking.authEpoch;
     const context = rfOutcomeContext();
     const selectedId = card.id;
     // A is no longer actionable while B's detail request is pending.
@@ -1198,10 +1199,10 @@
           context !== rfOutcomeContext() || item.id !== selectedId) return;
       renderSelectedOutcome(item);
     } catch (error) {
+      if (token !== state.outcomeSelectionToken || authAtStart !== tracking.authEpoch ||
+          state.selectedOutcomeId !== selectedId || context !== rfOutcomeContext()) return;
       if ([401,403].includes(error.status)) protectedTrackingFailure(error,true);
-      else if (token === state.outcomeSelectionToken &&
-          state.selectedOutcomeId === selectedId && context === rfOutcomeContext())
-        showError(error.message);
+      else showError(error.message);
     }
   }
 
@@ -1270,6 +1271,7 @@
   async function applyRfOutcome() {
     const item = state.selectedOutcome;
     const token = state.outcomeSelectionToken;
+    const authAtStart = tracking.authEpoch;
     const context = rfOutcomeContext();
     if (!item || item.id !== state.selectedOutcomeId ||
         $('rfOutcomeSelected').hidden || context !== state.outcomeContext) return;
@@ -1299,9 +1301,10 @@
       if ($('rfTrackingView').hidden === false) loadRfTracking(true);
       showOk('Η έκβαση αποθηκεύτηκε. Η έκδοση του PDF παραμένει αμετάβλητη.');
     } catch (error) {
+      if (token !== state.outcomeSelectionToken || authAtStart !== tracking.authEpoch ||
+          state.selectedOutcomeId !== item.id || context !== rfOutcomeContext()) return;
       if ([401,403].includes(error.status)) protectedTrackingFailure(error,true);
-      else if (token === state.outcomeSelectionToken &&
-          state.selectedOutcomeId === item.id && context === rfOutcomeContext()) {
+      else {
         if (error.status === 409) invalidateRfOutcomeSelection();
         showError(error.message);
       }
@@ -1314,6 +1317,8 @@
     const context = rfOutcomeContext();
     const authAtStart = tracking.authEpoch;
     const dirtyAtStart = tracking.dirtyGeneration;
+    const creatorAtStart = state.contract ? JSON.stringify(buildDraft()) : '';
+    const imagingAtStart = $('imagingReport').files?.[0];
     if (!item || item.stage !== 'rejected' || item.decision !== 'rejected' ||
         item.id !== state.selectedOutcomeId || context !== state.outcomeContext ||
         !state.contract || !Number.isInteger(item.revision) || item.revision < 1) return;
@@ -1328,6 +1333,8 @@
       if (token !== state.outcomeSelectionToken ||
           state.selectedOutcomeId !== item.id || context !== rfOutcomeContext() ||
           authAtStart !== tracking.authEpoch || dirtyAtStart !== tracking.dirtyGeneration ||
+          creatorAtStart !== JSON.stringify(buildDraft()) ||
+          imagingAtStart !== $('imagingReport').files?.[0] ||
           state.selectedOutcome?.revision !== item.revision ||
           result.application_id !== item.id || result.revision !== item.revision ||
           !result.fields || typeof result.fields !== 'object') return;
@@ -1349,6 +1356,16 @@
       state.others = Array.isArray(fields.other_analgesic_trials) ?
         fields.other_analgesic_trials.map(cleanTrial) : [];
       renderTrials();
+      if (Array.isArray(fields.adverse_effects) && fields.adverse_effects.length) {
+        $('adverseRows').replaceChildren();
+        for (const adverse of fields.adverse_effects) {
+          addAdverse();
+          const rows = $('adverseRows').querySelectorAll('.adverse');
+          const last = rows[rows.length - 1];
+          last.querySelector('[data-kind=treatment]').value = adverse.treatment || '';
+          last.querySelector('[data-kind=effect]').value = adverse.effect || '';
+        }
+      }
       state.correctionOfId = item.id;
       state.correctionExpectedRevision = item.revision;
       showRfView('builder');
@@ -1356,9 +1373,10 @@
       showOk('Άνοιξε διορθωτική RF. Επίλεξε ξανά τον ιατρό και επισύναψε νέα απεικόνιση.');
       updateSummary();
     } catch (error) {
+      if (token !== state.outcomeSelectionToken || authAtStart !== tracking.authEpoch ||
+          state.selectedOutcomeId !== item.id || context !== rfOutcomeContext()) return;
       if ([401,403].includes(error.status)) protectedTrackingFailure(error,true);
-      else if (token === state.outcomeSelectionToken && authAtStart === tracking.authEpoch)
-        showError(error.message);
+      else showError(error.message);
     }
   }
 
