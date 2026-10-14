@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 from calendar import monthrange
 from datetime import date
 import re
@@ -49,7 +51,7 @@ from .persistence import (
     upsert_medication_alias,
     delete_medication_alias,
     RFSavedDraftORM,
-    search_rf_sources, get_rf_source,
+    search_rf_sources, get_rf_source, read_rf_rejected_correction,
     save_rf_draft, get_rf_draft, list_rf_drafts, delete_rf_draft,
     normalize_identity,
     list_rf_application_progress, get_rf_application_progress,
@@ -164,6 +166,12 @@ class RFApplicationDraft(BaseModel):
     draft_id: str = Field(default="", max_length=80)
     draft_revision: int | None = Field(default=None, ge=1)
     correction_of_application_id: str = Field(default="", max_length=80)
+    correction_source_expected_revision: int | None = Field(default=None, ge=1)
+
+
+class RFRejectedCorrectionRead(BaseModel):
+    application_id: str = Field(min_length=1, max_length=80)
+    expected_revision: int = Field(ge=1)
 
 
 class RFOutcomeSearch(BaseModel):
@@ -582,6 +590,19 @@ def build_rf_router(engine: Engine) -> APIRouter:
             raise HTTPException(status_code=404, detail="Δεν βρέθηκε η παλιά RF εγγραφή")
         return result
 
+    @router.post("/api/reuse/rejected-correction")
+    def rf_reuse_rejected_correction(req: RFRejectedCorrectionRead):
+        try:
+            result = read_rf_rejected_correction(engine, req.application_id,
+                                                  req.expected_revision)
+            return Response(content=json.dumps(result, ensure_ascii=False),
+                            media_type="application/json",
+                            headers={"Cache-Control": "no-store"})
+        except LookupError as exc:
+            raise HTTPException(status_code=404, detail="Η αίτηση RF δεν βρέθηκε") from exc
+        except RuntimeError as exc:
+            raise HTTPException(status_code=409, detail="Η απόρριψη RF άλλαξε. Ανανέωσε την αίτηση") from exc
+
     @router.post("/api/reuse/pdf")
     async def rf_reuse_pdf(previous_rf_pdf: UploadFile = File(...)):
         if not str(previous_rf_pdf.filename or "").lower().endswith(".pdf"):
@@ -882,9 +903,12 @@ def build_rf_router(engine: Engine) -> APIRouter:
                 snapshot=snapshot,
             )
             if draft.correction_of_application_id:
+                if draft.correction_source_expected_revision is None:
+                    raise HTTPException(status_code=422, detail="Λείπει η έκδοση της απορριφθείσας RF")
                 try:
                     validate_rf_correction_source(
                         session, rejected_id=draft.correction_of_application_id,
+                        expected_revision=draft.correction_source_expected_revision,
                         identity_number=draft.identity_number,
                         indication_code=draft.indication_code,
                         laterality=draft.laterality, site_key=indication["site_key"],
