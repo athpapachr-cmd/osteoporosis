@@ -465,7 +465,12 @@ async function testRfOutcomeActionsAndCorrection() {
                     'exactLocation','gesyNumber','productSelect','additionalNotes'])
     el(id).value = '';
   await browser.__rfTest.beginRfCorrection();
-  assert.strictEqual(el('patientName').value,'Synthetic RF Patient');
+  assert.strictEqual(el('patientName').value,'Synthetic RF Patient',
+    'guarded correction prefill failed: ' + JSON.stringify({
+      error: el('validationPanel').textContent, requests: requests.slice(-3),
+      title: el('rfOutcomeTitle').textContent,
+      correctionContext: el('rfCorrectionContext').textContent
+    }));
   assert.strictEqual(el('identityNumber').value,'RF-CORR');
   assert.strictEqual(el('rfCorrectionContext').hidden,false);
   assert.strictEqual(browser.__rfTest.buildDraft().correction_of_application_id,
