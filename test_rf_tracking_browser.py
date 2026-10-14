@@ -156,6 +156,11 @@ def suite(width: int):
         page.locator("#rfOutcomeCorrection").click()
         expect(page.locator("#patientName")).to_have_value("Συνθετική Β")
         assert posted[-1] == {"application_id":"synthetic-rejected-B","expected_revision":2}
+        # Reload/new document never auto-arms transient rejected-correction context.
+        page.reload(wait_until="domcontentloaded")
+        expect(page.locator("#rfCreatorView")).to_be_visible()
+        expect(page.locator("#rfCorrectionContext")).to_be_hidden()
+        expect(page.locator("#patientName")).to_have_value("")
         assert not errors, errors
         assert not outbound, outbound
         browser.close()
