@@ -5,6 +5,13 @@ on:
     branches:
       - feat/clinic-utilities-rf-v2-native-2026-09-05
   workflow_dispatch:
+  pull_request:
+    paths:
+      - 'clinic_utilities/rf/**'
+      - 'static/clinic-utilities/rf/**'
+      - 'test_rf_v2_native.py'
+      - 'test_rf_v2_ui.js'
+      - '.github/workflows/rf-v2-native-tests.yml'
 
 jobs:
   rf-v2-native:
