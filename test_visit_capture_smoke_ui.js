@@ -9,7 +9,7 @@ const html = fs.readFileSync("static/cockpit/visit-capture/index.html", "utf8");
 const promptMatch = html.match(/<template id="diaPromptTemplate">([\s\S]*?)<\/template>/);
 assert.ok(promptMatch, "Dia template is present");
 
-function harness(authenticated) {
+function harness(authenticated, query = "") {
   const events = new Map();
   const calls = [];
   const byId = new Map();
@@ -104,7 +104,8 @@ function harness(authenticated) {
       setItem(key, value) {memory.set(key, value);},
     },
     crypto: {randomUUID() {return "synthetic-session-uuid";}},
-    location: {search: ""},
+    location: {search: query},
+    window: {addEventListener(name, handler) { events.set(name, handler); }},
     URLSearchParams,
     setTimeout(fn) {fn(); return 1;},
     clearTimeout() {},
@@ -115,6 +116,12 @@ function harness(authenticated) {
     get: (id) => document.getElementById(id),
     segment: (level) => segments.find((el) => el.dataset.level === level),
     calls, clipboard,
+    setAuthenticated(value) { authenticated = value; },
+    async refreshAuth() {
+      const handler = events.get("clinical:authenticated");
+      assert.ok(handler, "the Visit Capture shared Clinical Key listener exists");
+      await handler();
+    },
     async settle() { await new Promise((resolve) => setImmediate(resolve)); },
   };
 }
@@ -225,6 +232,53 @@ function harness(authenticated) {
   assert.equal(demo.get("structuredPreview").hidden, true);
   assert.equal(demo.get("saveBtn").disabled, true);
   assert.ok(!demo.calls.some((c) => c.method === "POST"), "readability-only demo never posts clinical content");
+
+
+  // P1-01: after an expired Clinical Key, re-authentication must not
+  // silently change mode or erase an unsaved synthetic Dia draft/preview.
+  const reconnect = harness(false, "?patient_id=SYN-000");
+  await reconnect.settle();
+  const draft = "SNAPSHOT\nΣυνθετική ανοικτή σύνοψη Dia.\nVISIT BRIEF\nΠρόχειρη κλινική ανασκόπηση.";
+  reconnect.get("candidateInput").value = draft;
+  reconnect.get("candidateInput").dispatch("input");
+  reconnect.segment("brief").dispatch("click");
+  const previewBefore = reconnect.get("previewText").textContent;
+  reconnect.setAuthenticated(true);
+  await reconnect.refreshAuth();
+  assert.equal(reconnect.get("authCard").hidden, true, "auth UI refreshes after reconnect");
+  assert.equal(reconnect.get("candidateInput").value, draft, "reconnect preserves unsaved Dia draft");
+  assert.equal(reconnect.get("previewText").textContent, previewBefore, "reconnect preserves preview");
+  assert.equal(reconnect.get("patientPanel").hidden, true, "reconnect stays in demo mode");
+  assert.equal(reconnect.get("saveRow").hidden, true, "reconnect never enables Save");
+  assert.ok(!reconnect.calls.some(c => c.url === "/clinical/visit-capture/save"), "no clinical Save on reconnect");
+  reconnect.get("recordModeBtn").dispatch("click");
+  await reconnect.settle();
+  assert.equal(reconnect.get("patientSearch").value, "SYN-000", "explicit choice retains deep-link patient");
+
+  // Existing local login (rather than common top-right key) must also preserve draft.
+  const inlineLogin = harness(false, "?patient_id=SYN-000");
+  await inlineLogin.settle();
+  inlineLogin.get("candidateInput").value = draft;
+  inlineLogin.get("candidateInput").dispatch("input");
+  inlineLogin.get("clinicalKey").value = "synthetic-key";
+  inlineLogin.setAuthenticated(true);
+  await inlineLogin.get("loginBtn").dispatch("click");
+  assert.equal(inlineLogin.get("candidateInput").value, draft, "inline login preserves draft");
+  assert.equal(inlineLogin.get("patientPanel").hidden, true, "inline login stays in demo");
+
+  // Existing clean initial deep-link route must continue to work.
+  const clean = harness(true, "?patient_id=SYN-000");
+  await clean.settle();
+  assert.equal(clean.get("patientPanel").hidden, false, "clean initial deep link opens record");
+  assert.equal(clean.get("patientSearch").value, "SYN-000");
+
+  // A status request still pending when the user starts typing must not wipe input.
+  const pending = harness(true, "?patient_id=SYN-000");
+  pending.get("candidateInput").value = draft;
+  pending.get("candidateInput").dispatch("input");
+  await pending.settle();
+  assert.equal(pending.get("candidateInput").value, draft, "pending initial auth preserves typed text");
+  assert.equal(pending.get("patientPanel").hidden, true, "pending initial auth never resets dirty demo");
 
   const live = harness(true);
   await live.settle();

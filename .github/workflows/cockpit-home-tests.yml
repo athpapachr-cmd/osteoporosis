@@ -9,6 +9,7 @@ on:
       - "static/baseline-audit/g4-workspace-ergonomics.js"
       - "test_cockpit_home.py"
       - "test_cockpit_doctor_shell.js"
+      - "test_cockpit_shared_navigation.js"
       - "test_cockpit_doctor_browser.py"
       - "test_cockpit_unified_home.js"
       - "test_g4_workspace_ergonomics.js"
@@ -21,6 +22,7 @@ on:
       - "static/baseline-audit/g4-workspace-ergonomics.js"
       - "test_cockpit_home.py"
       - "test_cockpit_doctor_shell.js"
+      - "test_cockpit_shared_navigation.js"
       - "test_cockpit_doctor_browser.py"
       - "test_cockpit_unified_home.js"
       - "test_g4_workspace_ergonomics.js"
@@ -46,11 +48,14 @@ jobs:
           node --check static/cockpit/app.js
           node --check static/cockpit/clinical-workspace.js
           node --check static/cockpit/doctor-shell.js
+          node --check static/cockpit/shared-nav.js
           node --check static/baseline-audit/g4-workspace-ergonomics.js
       - name: Cockpit Home deterministic tests
         run: pytest -q test_cockpit_home.py
       - name: Cockpit Doctor Shell synthetic workflow
         run: node test_cockpit_doctor_shell.js
+      - name: Shared navigation and key login synthetic flow
+        run: node test_cockpit_shared_navigation.js
       - name: Install browser smoke dependency
         run: |
           pip install playwright

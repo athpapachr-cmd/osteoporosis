@@ -204,7 +204,7 @@
     if (mode === "record") loadPatients();
   }
 
-  async function checkAuth() {
+  async function checkAuth(initialLoad = false) {
     try {
       await apiJson("/clinical/status", {method: "GET"});
       state.authenticated = true;
@@ -216,7 +216,10 @@
       const fromQuery = new URLSearchParams(location.search).get("patient_id") || "";
       if (fromQuery && state.mode === "demo") {
         state.suggestedPatientId = fromQuery;
-        selectMode("record");
+        // Keep unsaved Dia text untouched on Clinical Key refresh.
+        if (initialLoad && !$("candidateInput").value && !state.preview && !state.candidate) {
+          selectMode("record");
+        }
       } else if (state.mode === "record") {
         loadPatients();
       }
@@ -663,6 +666,7 @@
     });
   });
 
+  if (typeof window !== "undefined" && typeof window.addEventListener === "function") window.addEventListener("clinical:authenticated", () => checkAuth());
   selectMode("demo");
-  checkAuth();
+  checkAuth(true);
 })();

@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="/static/cockpit/styles.css" />
   <link rel="stylesheet" href="/static/cockpit/clinical-workspace.css" />
   <link rel="stylesheet" href="/static/cockpit/doctor-shell.css" />
+  <link rel="stylesheet" href="/static/cockpit/shared-nav.css" />
 </head>
 <body>
   <main class="shell">
@@ -64,7 +65,10 @@
             </button>
           </div>
         <p id="calendarNote" class="panel-note">Φορτώνεται το πρόγραμμα ραντεβού. Ενημερώνεται καθημερινά.</p>
-        <a class="clinical-sidebar-link" href="/static/clinical-calendar/">Άνοιγμα εβδομαδιαίου ημερολογίου</a>
+        <div class="clinical-calendar-actions">
+          <button type="button" id="cockpitCalendarRetry" class="clinical-calendar-retry" hidden>↻ Ανανέωση</button>
+          <a class="clinical-sidebar-link" href="/static/clinical-calendar/">Άνοιγμα εβδομαδιαίου ημερολογίου</a>
+        </div>
       </aside>
     <section id="clinicalWorkspace" class="clinical-workspace" aria-label="Κλινικές επισκέψεις">
       <div id="visitWorkspaceHome">
@@ -365,5 +369,6 @@ ENCOUNTER DETAIL
   <script src="/static/cockpit/clinical-workspace.js" defer></script>
   <script src="/static/cockpit/app.js" defer></script>
   <script src="/static/cockpit/doctor-shell.js" defer></script>
+  <script src="/static/cockpit/shared-nav.js" defer></script>
 </body>
 </html>

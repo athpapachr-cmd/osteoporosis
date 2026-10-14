@@ -225,6 +225,9 @@
   buttons.tasks.addEventListener("click",()=>openPanel("tasks",buttons.tasks));
   buttons.actions.addEventListener("click",()=>openPanel("actions",buttons.actions));
   $("doctorPopoverClose").addEventListener("click",close);
+  if (typeof window !== "undefined" && typeof window.addEventListener === "function") window.addEventListener("clinical:authenticated", () => {
+    if(state.panel === "day") loadDay();
+  });
   $("doctorBackHome").addEventListener("click",showHome);
   document.querySelectorAll("[data-doctor-library-tab]").forEach(b=>{
     b.addEventListener("click",()=>showLibrary(b.dataset.doctorLibraryTab));

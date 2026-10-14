@@ -1,0 +1,18 @@
+# Cockpit shared shortcuts/Clinical Key/calendar — independent affected post-code R1 request
+
+**MODE: fresh separate READ-ONLY, ONE bounded affected implementation-fidelity R1**. No implementation, merge, deploy, real patient/provider operations or new architecture review.
+
+Repository: `athpapachr-cmd/osteoporosis`; [DRAFT PR #151](https://github.com/athpapachr-cmd/osteoporosis/pull/151) OPEN, unmerged/undeployed.
+Base verified main at author activation: `151312fc95b2f128bb9fb13190ac8041991df192` (fresh verify); frozen tested code/test HEAD `51b874bfa1a6d8d754747a4d26f43f89cd786ea7`, tree `c6fc00837f23894f4aff96565870b136d6faeb2c`. Actual PR HEAD: fresh-resolve; compare affected blobs to frozen code/test and verify subsequent author commits are docs-only.
+Owner: Cockpit Home V4 remains unchanged in semantics/layout/identity/clinical Save. Project rules `AGENTS.md`, six canonicals, `PROCEDURES.md` P4–P5 and Cockpit CURRENT.
+Read implementation author handback: `cockpit/reviews/COCKPIT_GLOBAL_NAV_KEY_CALENDAR_AUTHOR_HANDBACK_2026-10-13.md`. Reuse prior independent Home V4 release and protected calendar read evidence; do not rerun generalized reviews.
+
+## Finite gates
+
+- **R1 — identity/diff:** main, actual DRAFT PR SHA, tested tree/blob oracle and changed-file scope. Home V4 visual/content authority, RF, clinical Save, Reception operations, provider writes and other modules preserved.
+- **R2 — shared toolbar:** same single shared script/style and nine mounted core entrypoints; sticky Home + always-available Shortcuts + Key, links to existing same-origin functions, accessible keyboard/Escape, no duplicate navbar/overlays that block clinical controls; usable at mobile/narrow width. Use actual Chromium Home synthetic evidence.
+- **R3 — authentication security:** Existing `POST /clinical/login` with credentials same-origin/secure HttpOnly `clinical_session` cookie, no new auth backend, no key in URL, storage, logs or echoed UI; no claimed success on 401/503; new auth-state event refreshes existing protected consumers without discarding unsaved forms. The toolbar must not treat a Reception source 503 as failed Clinical Key.
+- **R4 — schedule read:** `/clinical/calendar/cockpit-context` sends `target_date` for Cyprus local today like existing calendar; retains freshness/coverage fail-closed, truthful next/previous/current and no simulated entries, no hidden fallback to osteoporosis-only items. Preserve provider ownership and cross-day next when source actually covers it. Source failure/unauthorized distinguishable; retry reuses same API; no masking original 503 with misleading auth.
+- **R5 — tests/adjacency:** Reuse Cockpit Home/Chromium SUCCESS [38468051478](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/38468051478), Calendar SUCCESS [38468051401](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/38468051401), Visit Capture SUCCESS [38468051427](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/38468051427), Surgery SUCCESS [38468051203](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/38468051203), Canonical Impact SUCCESS [38468059492](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/38468059492), actual auth/shortcuts browser-handler mock PASS. Treat PHYSIO/Learning different-workstream scope-only checks as unrelated; medical-report's pre-existing direct Home HTML-link assertion predates this change and is not itself a regression.
+
+**Return** `IMPLEMENTATION-FIDELITY PASS | BLOCK | UNKNOWN`, `COMPLETE_FOR_DECLARED_SCOPE | PARTIAL`, `P0:P1:P2`, R1–R5 evidence and smallest affected defects if any, exact reviewed PR HEAD, and **STOP**. No code edits or release authority; do not reopen settled Home architecture.
