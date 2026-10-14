@@ -6,6 +6,7 @@ Mutable progress is not a cross-request historical snapshot.
 from __future__ import annotations
 
 import base64
+import binascii
 from datetime import date, datetime, timedelta, timezone
 import hashlib
 import hmac
@@ -56,7 +57,7 @@ def _unseal(cursor: str, purpose: str, fingerprint: str) -> dict[str, Any]:
                 or data["until"] < datetime.now(timezone.utc).timestamp()):
             raise ValueError("context/expired")
         return data
-    except (ValueError, TypeError, KeyError, json.JSONDecodeError) as exc:
+    except (ValueError, TypeError, KeyError, binascii.Error, UnicodeDecodeError) as exc:
         raise ValueError("Η συνέχεια RF δεν ισχύει. Ξεκίνησε νέα αναζήτηση.") from exc
 
 
