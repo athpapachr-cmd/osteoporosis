@@ -56,6 +56,7 @@ from .persistence import (
     normalize_identity,
     list_rf_application_progress, get_rf_application_progress,
     change_rf_application_progress, validate_rf_correction_source,
+    track_rf_applications, rf_week_dates,
 )
 
 MAX_IMAGING_BYTES = 20 * 1024 * 1024
@@ -178,6 +179,13 @@ class RFOutcomeSearch(BaseModel):
     query: str = Field(default="", max_length=150)
     scope: Literal["all", "mine"] = "all"
     page: int = Field(default=1, ge=1, le=100)
+    mode: Literal["legacy", "tracking"] = "legacy"
+    stage: str = Field(default="", max_length=16)
+    cursor: str = Field(default="", max_length=2400)
+
+
+class RFWeekRead(BaseModel):
+    week_start: str = Field(min_length=10, max_length=10)
 
 
 class RFOutcomeEvent(BaseModel):
@@ -717,7 +725,19 @@ def build_rf_router(engine: Engine) -> APIRouter:
     @router.post("/api/outcomes/search")
     def rf_outcomes_search(req: RFOutcomeSearch):
         try:
+            if req.mode == "tracking":
+                return track_rf_applications(engine, query=req.query,
+                    scope=req.scope, stage=req.stage, cursor=req.cursor)
+            if req.stage or req.cursor:
+                raise ValueError("Μη έγκυρα legacy RF φίλτρα")
             return list_rf_application_progress(engine, req.query, req.scope, req.page)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    @router.post("/api/outcomes/calendar")
+    def rf_outcomes_calendar(req: RFWeekRead):
+        try:
+            return rf_week_dates(engine, req.week_start)
         except ValueError as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
 
