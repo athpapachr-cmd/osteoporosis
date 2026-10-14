@@ -33,6 +33,7 @@ def card(n):
 
 def suite(width):
     errors, outbound = [], []
+    mock = {"tracking_status": 200, "write_status": 409}
     with sync_playwright() as pw:
         executable = shutil.which("google-chrome") or shutil.which("chromium")
         browser = pw.chromium.launch(headless=True, executable_path=executable,
@@ -65,6 +66,9 @@ def suite(width):
                 if endpoint == "drafts" or endpoint.startswith("drafts?"):
                     return route.fulfill(json={"drafts": [], "has_more": False})
                 if endpoint == "outcomes/search":
+                    if request.get("mode") == "tracking" and mock["tracking_status"] != 200:
+                        return route.fulfill(status=mock["tracking_status"],
+                            json={"detail": "Synthetic tracking source unavailable"})
                     if request.get("mode") == "tracking":
                         if request.get("stage") == "approved":
                             result = {"applications": [], "next_cursor": None,
@@ -95,7 +99,9 @@ def suite(width):
                         "complete": True, "truncated": False, "time_verified": False,
                         "source_as_of": "2026-10-14T12:00:00Z"})
                 if endpoint.startswith("outcomes/") and endpoint.endswith("/events"):
-                    return route.fulfill(status=409, json={"detail": "Synthetic changed revision"})
+                    return route.fulfill(status=mock["write_status"],
+                        json={"detail": "Synthetic changed revision"
+                              if mock["write_status"] == 409 else "Synthetic authorization lost"})
                 if endpoint.startswith("outcomes/"):
                     item_id = endpoint.split("/")[-1]
                     try:
@@ -126,6 +132,7 @@ def suite(width):
         assert page.locator("#rfTrackStatus").inner_text().startswith("Μερική")
         page.locator("#rfTrackMore").click()
         expect(page.locator("#rfTrackResults .rf-outcome-card")).to_have_count(23)
+        page.screenshot(path=str(OUT / ("rf-list-%s.png" % width)), full_page=True)
         # The original implementation invalidated older row handlers after "More".
         first = page.locator("#rfTrackResults .rf-outcome-card").first
         first.get_by_role("button", name="Άνοιγμα").focus()
@@ -147,15 +154,41 @@ def suite(width):
         page.locator("#rfNavTracking").click()
         expect(page.locator("#rfTrackingView")).to_be_visible()
         expect(page.locator("#rfCorrectionContext")).to_be_hidden()
+        # Existing creator belongs to RF 00. Guard may not mutate it using RF 01.
+        second = page.locator("#rfTrackResults .rf-outcome-card").nth(1)
+        second.get_by_role("button", name="Άνοιγμα").click()
+        expect(page.locator("#rfOutcomeTitle")).to_contain_text("Συνθετικός RF 01")
+        page.locator("#rfOutcomeCorrection").click()
+        expect(page.locator("#rfTrackStatus")).to_contain_text("άλλη ταυτότητα")
+        assert page.locator("#identityNumber").input_value() == "SYN-ID-00"
         page.locator("#rfTrackWeekTab").click()
         expect(page.locator("#rfTrackWeekView")).to_be_visible()
         expect(page.locator("#rfWeekGrid .rf-week-day")).to_have_count(7)
         expect(page.locator("#rfWeekStatus")).to_contain_text("όχι ραντεβού")
+        page.screenshot(path=str(OUT / ("rf-week-%s.png" % width)), full_page=True)
         assert page.locator("#rfWeekGrid").inner_text().find("00") >= 0
         assert "12:00" not in page.locator("#rfWeekGrid").inner_text()
         page.locator("#rfWeekNoDate").click()
         expect(page.locator("#rfTrackListView")).to_be_visible()
         assert page.locator("#rfTrackStage").input_value() == "approved"
+        mock["tracking_status"] = 503
+        page.locator("#rfTrackStage").select_option("")
+        expect(page.locator("#rfTrackStatus")).to_contain_text("δεν είναι διαθέσιμα")
+        expect(page.locator("#rfTrackResults .rf-outcome-card")).to_have_count(0)
+        mock["tracking_status"] = 200
+        page.locator("#rfTrackRefresh").click()
+        expect(page.locator("#rfTrackResults .rf-outcome-card")).to_have_count(20)
+        page.locator("#rfTrackResults .rf-outcome-card").first.get_by_role(
+            "button", name="Άνοιγμα").click()
+        expect(page.locator("#rfOutcomeTitle")).to_contain_text("Συνθετικός RF 00")
+        mock["write_status"] = 401
+        page.locator("#rfOutcomeApply").click()
+        expect(page.locator("#rfTrackStatus")).to_contain_text("Απαιτείται νέα εξουσιοδότηση")
+        expect(page.locator("#rfTrackResults .rf-outcome-card")).to_have_count(0)
+        expect(page.locator("#rfOutcomeSelected")).to_be_hidden()
+        mock["write_status"] = 409
+        page.evaluate("window.dispatchEvent(new Event('clinical:authenticated'))")
+        expect(page.locator("#rfTrackResults .rf-outcome-card")).to_have_count(20)
         assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1"), "horizontal overflow"
         page.screenshot(path=str(OUT / ("rf-tracking-%s.png" % width)), full_page=True)
         page.reload()
