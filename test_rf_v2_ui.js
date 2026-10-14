@@ -434,6 +434,7 @@ async function testRfOutcomeActionsAndCorrection() {
     } else throw Error('Unexpected protected RF request: '+path);
     return {ok:true,status:200,json:async()=>data};
   };
+  el('rfTrackingView').hidden = true; // Match the real initial HTML hidden state.
   el('rfOutcomeScope').value = 'all';
   el('rfOutcomeSearch').value = '';
   el('rfOutcomeAction').add = option => {
