@@ -11,6 +11,7 @@ on:
       - 'static/clinic-utilities/rf/**'
       - 'test_rf_v2_native.py'
       - 'test_rf_v2_ui.js'
+      - 'test_rf_tracking_browser.py'
       - '.github/workflows/rf-v2-native-tests.yml'
 
 jobs:
@@ -123,6 +124,24 @@ jobs:
 
       - name: Run native RF v2 UI integrity regression
         run: node test_rf_v2_ui.js
+
+      - name: Install real Chromium smoke dependency
+        run: |
+          pip install playwright
+          if ! command -v google-chrome && ! command -v chromium; then
+            python -m playwright install --with-deps chromium
+          fi
+
+      - name: Real Chromium synthetic RF Tracking three-width smoke
+        run: python test_rf_tracking_browser.py
+
+      - name: Publish RF synthetic browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rf-tracking-three-width-chromium
+          path: rf-tracking-browser-evidence/
+          if-no-files-found: ignore
 
       - name: Verify native route ownership and dependency declarations
         run: |
