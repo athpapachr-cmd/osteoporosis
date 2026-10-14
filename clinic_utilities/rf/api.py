@@ -512,6 +512,12 @@ def build_rf_router(engine: Engine) -> APIRouter:
             raise HTTPException(status_code=500, detail="RF utility page is unavailable")
         return FileResponse(page_path, headers={"Cache-Control": "no-store"})
 
+    @router.get("/tracking", include_in_schema=False)
+    def rf_tracking_page():
+        if not page_path.is_file():
+            raise HTTPException(status_code=500, detail="RF tracking page is unavailable")
+        return FileResponse(page_path, headers={"Cache-Control": "no-store"})
+
     @router.get("/api/contract")
     def rf_contract():
         doctors = {
