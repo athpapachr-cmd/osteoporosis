@@ -1190,6 +1190,43 @@ class RFOutcomeFollowupTests(unittest.TestCase):
             # State reporting never changes the immutable issued document.
             self.assertIsNone(session.get(RFApplicationORM, app_id).payload_json.get("approval_status"))
 
+    def test_tracking_cursor_and_rf_date_only_week(self):
+        ids = []
+        for index in range(26):
+            created = self.issue(identity_number=f"SYN-CURSOR-{index:03d}",
+                                 patient_name=f"Synthetic cursor {index}")
+            self.assertEqual(created.status_code, 200, created.text)
+            ids.append(created.headers["x-rf-application-id"])
+        first = self.search(mode="tracking").json()
+        self.assertEqual(len(first["applications"]), 20)
+        self.assertTrue(first["has_more"])
+        self.assertFalse(first["scan_complete"])
+        self.assertIsNone(first["counts"])
+        self.assertNotIn("SYN-CURSOR-000", {c["identity_number"] for c in first["applications"]})
+        following = self.search(mode="tracking", cursor=first["next_cursor"]).json()
+        self.assertEqual(len(following["applications"]), 6)
+        self.assertTrue(following["scan_complete"])
+        self.assertFalse(following["has_more"])
+        combined = [a["id"] for a in first["applications"] + following["applications"]]
+        self.assertEqual(len(set(combined)), 26)
+        self.assertEqual(self.search(mode="tracking", cursor=first["next_cursor"],
+                                     query="different filter").status_code, 422)
+        self.assertEqual(self.search(mode="tracking", cursor=first["next_cursor"] + "X").status_code, 422)
+        self.assertEqual(self.search(mode="tracking", query="NO-MATCH").json()["applications"], [])
+        self.assertEqual(self.event(ids[0], "approve").status_code, 200)
+        self.assertEqual(self.event(ids[0], "schedule", 1,
+                                    event_date="2026-10-12").status_code, 200)
+        week = self.client.post(self.base + "/outcomes/calendar", headers=self.headers,
+                                json={"week_start": "2026-10-12"})
+        self.assertEqual(week.status_code, 200, week.text)
+        self.assertTrue(week.json()["complete"])
+        self.assertFalse(week.json()["time_verified"])
+        self.assertTrue(any(f["application_id"] == ids[0] and f["kind"] == "scheduled"
+                            and f["date"] == "2026-10-12" for f in week.json()["facts"]))
+        invalid_week = self.client.post(self.base + "/outcomes/calendar",
+            headers=self.headers, json={"week_start": "2026-10-13"})
+        self.assertEqual(invalid_week.status_code, 422)
+
     def test_atomic_rejected_correction_rejects_stale_revision_and_missing_proof(self):
         from clinic_utilities.rf.persistence import RFApplicationORM
         from sqlalchemy.orm import Session
