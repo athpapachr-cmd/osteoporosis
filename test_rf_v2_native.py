@@ -1190,6 +1190,66 @@ class RFOutcomeFollowupTests(unittest.TestCase):
             # State reporting never changes the immutable issued document.
             self.assertIsNone(session.get(RFApplicationORM, app_id).payload_json.get("approval_status"))
 
+    def test_tracking_exceeds_legacy_2000_and_10000_limits(self):
+        from datetime import datetime, timedelta
+        from sqlalchemy.orm import Session
+        from clinic_utilities.rf.persistence import RFApplicationORM, RFApplicationProgressORM
+        base_date = datetime(2026, 1, 1)
+        with Session(self.engine) as session:
+            session.bulk_save_objects([
+                RFApplicationORM(
+                    id=f"synthetic-bulk-{i:05d}",
+                    patient_identity_key=f"SYNBULK{i:05d}",
+                    patient_name="Rare Oldest" if i == 0 else "Synthetic Bulk",
+                    gesy_number=f"SYNGESY{i:05d}", patient_age=60,
+                    pathway="A1", indication_code="KNEE_OA_KL34",
+                    site_key="knee", laterality="left",
+                    exact_location="Synthetic", product_key="medikey",
+                    payload_json={"identity_number": f"SYNBULK{i:05d}"},
+                    created_at=base_date + timedelta(seconds=i),
+                ) for i in range(10050)
+            ])
+            session.bulk_save_objects([
+                RFApplicationProgressORM(
+                    application_id=f"synthetic-bulk-{i:05d}",
+                    revision=1, stage="submitted", submitted_date="2026-01-02",
+                    updated_at=base_date,
+                ) for i in range(8000,10050)
+            ])
+            session.commit()
+        found = 0
+        token = ""
+        for _ in range(160):
+            r = self.search(mode="tracking", stage="submitted", cursor=token)
+            self.assertEqual(r.status_code, 200, r.text)
+            data = r.json()
+            found += len(data["applications"])
+            if data["scan_complete"]:
+                break
+            self.assertTrue(data["has_more"])
+            self.assertTrue(data["next_cursor"])
+            token = data["next_cursor"]
+        else:
+            self.fail("Tracked >2000 matching RF did not exhaust bounded cursor")
+        self.assertEqual(found, 2050)
+        token = ""
+        seen_oldest = []
+        empty_batches = 0
+        for _ in range(40):
+            r = self.search(mode="tracking", query="Rare Oldest", cursor=token)
+            self.assertEqual(r.status_code, 200, r.text)
+            data = r.json()
+            seen_oldest.extend(data["applications"])
+            if not data["applications"] and data["has_more"]:
+                empty_batches += 1
+            if data["scan_complete"]:
+                break
+            token = data["next_cursor"]
+        else:
+            self.fail("Tracking cannot scan >10000 older RF attempts")
+        self.assertGreater(empty_batches, 0)
+        self.assertEqual([x["id"] for x in seen_oldest], ["synthetic-bulk-00000"])
+
     def test_tracking_cursor_and_rf_date_only_week(self):
         ids = []
         for index in range(26):
