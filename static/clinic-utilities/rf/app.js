@@ -1059,6 +1059,39 @@
     return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
   }
 
+  function normalizeRfIdentity(value) {
+    return String(value || '').replace(/[^0-9A-Za-z]/g, '').toUpperCase();
+  }
+  function resetRfBuilderForCorrection() {
+    // Call only after protected rejection + revision read, selection/auth checks,
+    // patient identity check and explicit consent to discard unrelated draft data.
+    for (const id of Object.values(rfFields)) $(id).value = '';
+    for (const id of ['legacyProcedureDate','legacyVasBefore','legacyVasAfter',
+      'legacyFollowupDate','legacyFollowupVas','rfCurrentFollowupDate',
+      'rfCurrentFollowupVas','interventionSite','interventionDate',
+      'interventionVasBefore','interventionVasAfter','medicationText','physioDates']) {
+      const field = $(id); if (field) field.value = '';
+    }
+    document.querySelectorAll('.rf-reason').forEach(c => { c.checked = false; });
+    state.nsaids = []; state.others = []; state.unknowns = []; state.physio = null;
+    renderTrials();
+    $('adverseRows').replaceChildren(); addAdverse();
+    state.selectedHistoryId = '';
+    $('historyChoices').replaceChildren();
+    state.sourceKind = ''; state.sourceId = ''; state.sourceOrigin = '';
+    state.sourcePatientName = ''; state.sourceNameConfirmed = false;
+    $('rfSourceLoaded').hidden = true; $('rfNameConflict').hidden = true;
+    state.draftId = ''; state.draftRevision = null;
+    $('rfActiveDraftLabel').textContent = '';
+    $('doctorSelect').value = '';
+    refreshDoctorReadiness();
+    $('rfActualConfirm').checked = false;
+    $('imagingReport').value = ''; state.imagingValidation = '';
+    $('imagingStatus').hidden = true; $('imagingConfirmWrap').hidden = true;
+    $('imagingConfirm').checked = false;
+    releaseHorosPreviews(); renderHorosImages();
+  }
+
   function renderCorrectionContext() {
     const el = $('rfCorrectionContext');
     el.hidden = !state.correctionOfId;
@@ -1273,8 +1306,7 @@
     const dirtyAtStart = tracking.dirtyGeneration;
     if (!item || item.stage !== 'rejected' || item.decision !== 'rejected' ||
         item.id !== state.selectedOutcomeId || context !== state.outcomeContext ||
-        !Number.isInteger(item.revision) || item.revision < 1) return;
-    // The existing builder may hold unrelated A1/A2 work or an existing saved draft.
+        !state.contract || !Number.isInteger(item.revision) || item.revision < 1) return;
     if (!window.confirm('Η διορθωτική RF θα αντικαταστήσει τα πεδία της τρέχουσας φόρμας. ' +
         'Αποθήκευσε πρώτα τυχόν εργασία που θέλεις να διατηρήσεις. Συνέχεια;')) return;
     try {
@@ -1290,34 +1322,33 @@
           result.application_id !== item.id || result.revision !== item.revision ||
           !result.fields || typeof result.fields !== 'object') return;
       const fields = result.fields;
-      const oldID = $('identityNumber').value.trim().replace(/[\\W_]/g, '').toUpperCase();
-      const newID = String(fields.identity_number || '').replace(/[\\W_]/g, '').toUpperCase();
-      if (!newID || (oldID && oldID !== newID)) {
-        throw new Error('Υπάρχει άλλη ταυτότητα στην τρέχουσα αίτηση. Καθάρισέ την πρώτα.');
-      }
-      setPathway(result.source?.pathway === 'A2' ? 'A2' : 'A1');
-      const conflicts = populateRfFields(fields);
+      const oldID = normalizeRfIdentity($('identityNumber').value);
+      const newID = normalizeRfIdentity(fields.identity_number);
+      if (!newID || (oldID && oldID !== newID))
+        throw new Error('Υπάρχει άλλη ταυτότητα στην τρέχουσα αίτηση. Αποθήκευσέ την και καθάρισέ την πρώτα.');
+      if (!state.contract.indications?.[fields.indication_code] ||
+          !['left','right'].includes(fields.laterality) ||
+          !state.contract.products?.[fields.product_key] ||
+          !['A1','A2'].includes(result.source?.pathway))
+        throw new Error('Τα πεδία της απορριφθείσας RF δεν είναι έγκυρα για επαναχρησιμοποίηση.');
+      // Deliberate single client commit after every async guard has passed.
+      resetRfBuilderForCorrection();
+      setPathway(result.source.pathway);
+      populateRfFields(fields, true);
+      state.nsaids = Array.isArray(fields.nsaid_trials) ? fields.nsaid_trials.map(cleanTrial) : [];
+      state.others = Array.isArray(fields.other_analgesic_trials) ?
+        fields.other_analgesic_trials.map(cleanTrial) : [];
+      renderTrials();
       state.correctionOfId = item.id;
       state.correctionExpectedRevision = item.revision;
-      renderCorrectionContext();
       showRfView('builder');
-      $('imagingReport').value = '';
-      state.imagingValidation = '';
-      $('imagingStatus').hidden = true;
-      releaseHorosPreviews();
-      renderHorosImages();
-      $('imagingConfirm').checked = false;
-      if (state.pathway === 'A2') {
-        state.selectedHistoryId = '';
-        $('historyChoices').replaceChildren();
-        $('rfActualConfirm').checked = false;
-      }
-      showOk('Άνοιξε διορθωτική RF. Έλεγξε ξανά ιατρό, στοιχεία και απεικόνιση. ' +
-        (conflicts.length ? 'Έλεγξε τις διαφορές: ' + conflicts.join(', ') : ''));
+      renderCorrectionContext();
+      showOk('Άνοιξε διορθωτική RF. Επίλεξε ξανά τον ιατρό και επισύναψε νέα απεικόνιση.');
       updateSummary();
     } catch (error) {
       if ([401,403].includes(error.status)) protectedTrackingFailure(error,true);
-      showError(error.message);
+      else if (token === state.outcomeSelectionToken && authAtStart === tracking.authEpoch)
+        showError(error.message);
     }
   }
 
@@ -1543,16 +1574,19 @@
     }
   }
 
-  function showError(message) {
-    $('validationPanel').hidden = false;
-    $('validationPanel').className = 'validation-panel error';
-    $('validationPanel').textContent = message;
+  function rfFeedbackTarget() {
+    return $('rfTrackingView').hidden ? $('validationPanel') :
+      tracking.tab === 'week' ? $('rfWeekStatus') : $('rfTrackStatus');
   }
-
+  function showError(message) {
+    const target = rfFeedbackTarget();
+    target.hidden = false; target.className = 'validation-panel error';
+    target.textContent = message;
+  }
   function showOk(message) {
-    $('validationPanel').hidden = false;
-    $('validationPanel').className = 'validation-panel ok';
-    $('validationPanel').textContent = message;
+    const target = rfFeedbackTarget();
+    target.hidden = false; target.className = 'validation-panel ok';
+    target.textContent = message;
   }
 
   function updateSummary() {
