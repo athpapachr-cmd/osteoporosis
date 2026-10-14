@@ -34,6 +34,60 @@
   let surgeryRows = [];
   let surgerySortKey = "queue_position";
   let surgerySortDirection = "asc";
+  // The existing protected surgery loader owns the ONLY source of Home detail.
+  let surgeryGeneration = 0;
+  let surgeryReady = false;
+  const surgeryDateParts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Nicosia", year: "numeric", month: "2-digit", day: "2-digit"
+  });
+
+  function surgeryToday() {
+    const parts = Object.fromEntries(surgeryDateParts.formatToParts(new Date())
+      .filter(part => part.type !== "literal").map(part => [part.type, part.value]));
+    return [parts.year, parts.month, parts.day].join("-");
+  }
+
+  function validSurgeryDate(value) {
+    if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+    const [year, month, day] = value.split("-").map(Number);
+    if (year < 100 || month < 1 || month > 12 || day < 1 || day > 31) return false;
+    const parsed = new Date(Date.UTC(year, month - 1, day));
+    return parsed.getUTCFullYear() === year && parsed.getUTCMonth() + 1 === month
+      && parsed.getUTCDate() === day;
+  }
+
+  function validSurgeryRows(rows) {
+    return Array.isArray(rows) && rows.every(row =>
+      row && typeof row === "object" && !Array.isArray(row)
+      && typeof row.surgery_id === "string" && row.surgery_id.trim()
+      && typeof row.full_name === "string" && row.full_name.trim()
+      && typeof row.procedure_type === "string" && row.procedure_type.trim()
+      && Number.isInteger(row.queue_position) && row.queue_position > 0);
+  }
+
+  function surgicalAttentionSummary(rows) {
+    const today = surgeryToday();
+    const dates = new Map();
+    let undated = 0, invalid = 0, overdue = 0;
+    for (const row of rows) {
+      const date = row.surgery_date;
+      if (date === null || date === undefined || date === "") { undated++; continue; }
+      if (!validSurgeryDate(date)) { invalid++; continue; }
+      if (date < today) { overdue++; continue; } // Pending remains pending, never "performed".
+      if (!dates.has(date)) dates.set(date, []);
+      dates.get(date).push(row);
+    }
+    const upcoming = [...dates.keys()].sort().slice(0, 3).map(date => {
+      const sameDay = dates.get(date);
+      const group = { date, count: sameDay.length };
+      if (sameDay.length === 1) {
+        group.name = sameDay[0].full_name;
+        group.procedure = sameDay[0].procedure_type;
+      }
+      return group; // 2+ rows disclose a count, never identities.
+    });
+    return { total: rows.length, undated, invalid, overdue, upcoming };
+  }
 
   function formatToday(now) {
     return new Intl.DateTimeFormat("el-GR", {
@@ -209,17 +263,18 @@
   }
 
   function publishSurgeryCounts() {
-    // Only aggregate counts; do not pass identities or surgery details to
-    // the Home attention preview, and do not create a second surgery reader.
-    const detail = {total: surgeryRows.length,
-      undated: surgeryRows.filter(row => !row.surgery_date).length};
+    if (!surgeryReady) return;
+    // Only the existing successfully loaded protected queue may publish Home
+    // date groups; single-day detail is in memory only, never stored/logged.
+    const detail = surgicalAttentionSummary(surgeryRows);
     window.CockpitSurgerySummary = detail;
     if (typeof window.dispatchEvent === "function" && typeof window.CustomEvent === "function") {
       window.dispatchEvent(new window.CustomEvent("cockpit:surgery-counts", {detail}));
     }
   }
 
-  function renderSurgeryRows() {
+    function renderSurgeryRows() {
+    if (!surgeryReady) return; // Sort/UI events cannot republish revoked data.
     publishSurgeryCounts();
     const tbody = $("surgeryTableBody");
     tbody.replaceChildren();
@@ -286,34 +341,48 @@
     tbody.appendChild(tr);
   }
 
+  function clearSurgeryProjection(message, needsKey = false) {
+    surgeryReady = false;
+    surgeryRows = [];
+    window.CockpitSurgerySummary = null;
+    if (typeof window.dispatchEvent === "function" && typeof window.CustomEvent === "function") {
+      window.dispatchEvent(new window.CustomEvent("cockpit:surgery-counts", {
+        detail: { unavailable: true }
+      }));
+    }
+    setSurgeryUnavailable(message);
+    $("surgeryQueueNote").textContent = needsKey
+      ? "Πάτησε «Πρόσβαση» πάνω δεξιά για σύνδεση με το Clinical Key."
+      : "Η προστατευμένη λίστα χειρουργείων δεν είναι διαθέσιμη αυτή τη στιγμή.";
+    resetSurgeryForm();
+    $("surgeryEditorDetails").open = false;
+  }
+
   async function loadSurgeryQueue() {
+    const generation = ++surgeryGeneration;
+    // Invalidate immediately, including Clinical Key re-auth and post-write
+    // reloads. An older success or failure can never restore/clear a newer view.
+    clearSurgeryProjection("Φόρτωση…");
     try {
-      surgeryRows = await apiJson("/clinical/surgeries");
-      $("surgeryQueueState").textContent = `${surgeryRows.length} pending`;
+      const rows = await apiJson("/clinical/surgeries");
+      if (generation !== surgeryGeneration) return;
+      if (!validSurgeryRows(rows)) throw new Error("Invalid protected surgery source");
+      surgeryRows = rows;
+      surgeryReady = true;
+      $("surgeryQueueState").textContent = String(rows.length) + " pending";
       $("surgeryQueueState").classList.add("ready");
-      $("surgeryQueueNote").textContent = surgeryRows.length
+      $("surgeryQueueNote").textContent = rows.length
         ? "Η σειρά # είναι η αποθηκευμένη manual σειρά. Τα sortable headers αλλάζουν μόνο την προβολή."
         : "Δεν υπάρχουν pending χειρουργεία. Πρόσθεσε το πρώτο όταν χρειαστεί.";
       renderSurgeryRows();
     } catch (error) {
-      surgeryRows = [];
-      window.CockpitSurgerySummary = null;
-      if (typeof window.dispatchEvent === "function" && typeof window.CustomEvent === "function") {
-        window.dispatchEvent(new window.CustomEvent("cockpit:surgery-counts", {
-          detail: {unavailable: true}
-        }));
-      }
-      if (error.status === 401) {
-        setSurgeryUnavailable("Σύνδεση απαιτείται");
-        $("surgeryQueueNote").textContent = "Άνοιξε το Clinical Calendar ή άλλο protected clinical εργαλείο και συνδέσου με το Clinical Key.";
-      } else {
-        setSurgeryUnavailable("Μη διαθέσιμο");
-        $("surgeryQueueNote").textContent = "Η protected λίστα χειρουργείων δεν είναι διαθέσιμη αυτή τη στιγμή.";
-      }
+      if (generation !== surgeryGeneration) return;
+      const needsKey = error.status === 401 || error.status === 403;
+      clearSurgeryProjection(needsKey ? "Σύνδεση απαιτείται" : "Μη διαθέσιμο", needsKey);
     }
   }
 
-  function resetSurgeryForm() {
+    function resetSurgeryForm() {
     $("surgeryForm").reset();
     $("surgeryId").value = "";
     $("surgeryLaterality").value = "unspecified";
@@ -412,37 +481,36 @@
 
     if (action === "up" || action === "down") {
       try {
-        surgeryRows = await apiJson(`/clinical/surgeries/${encodeURIComponent(row.surgery_id)}/move`, {
+        await apiJson("/clinical/surgeries/" + encodeURIComponent(row.surgery_id) + "/move", {
           method: "POST",
           body: JSON.stringify({ direction: action })
         });
         surgerySortKey = "queue_position";
         surgerySortDirection = "asc";
-        renderSurgeryRows();
+        await loadSurgeryQueue(); // Never publish unguarded mutation responses.
       } catch (error) {
         $("surgeryQueueNote").textContent = error.detail || "Δεν άλλαξε η σειρά.";
+        if ([401, 403, 503].includes(error.status)) await loadSurgeryQueue();
       }
     }
   }
 
-  async function handleSurgeryDateChange(event) {
+    async function handleSurgeryDateChange(event) {
     const input = event.target.closest("input.surgery-date-input");
     if (!input) return;
     try {
-      const updated = await apiJson(`/clinical/surgeries/${encodeURIComponent(input.dataset.surgeryId)}`, {
+      await apiJson("/clinical/surgeries/" + encodeURIComponent(input.dataset.surgeryId), {
         method: "PUT",
         body: JSON.stringify({ surgery_date: input.value || null })
       });
-      const index = surgeryRows.findIndex((row) => row.surgery_id === updated.surgery_id);
-      if (index >= 0) surgeryRows[index] = updated;
-      renderSurgeryRows();
+      await loadSurgeryQueue(); // Protected read is always generation-guarded.
     } catch (error) {
       $("surgeryQueueNote").textContent = error.detail || "Δεν αποθηκεύτηκε η ημερομηνία.";
       await loadSurgeryQueue();
     }
   }
 
-  function bindSurgerySorting() {
+    function bindSurgerySorting() {
     document.querySelectorAll(".surgery-sort").forEach((button) => {
       button.addEventListener("click", () => {
         const key = button.dataset.sort;
