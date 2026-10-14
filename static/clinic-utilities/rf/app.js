@@ -201,7 +201,7 @@
       $('rfNameConflict').hidden = true;
     }
     state.pathway = pathway;
-    document.querySelectorAll('.segment').forEach(btn => btn.classList.toggle('active', btn.dataset.pathway === pathway));
+    document.querySelectorAll('.segment[data-pathway]').forEach(btn => btn.classList.toggle('active', btn.dataset.pathway === pathway));
     $('a1Flow').hidden = pathway !== 'A1';
     $('a2SourceFlow').hidden = pathway !== 'A2';
     $('a2Flow').hidden = pathway !== 'A2';
@@ -1357,8 +1357,8 @@
       const fields = result.fields;
       if (!fields || typeof fields !== 'object'
           || !String(fields.identity_number || '').trim()
-          || (item.identity_number && String(item.identity_number).replace(/[\\W_]/g,'').toUpperCase()
-             !== String(fields.identity_number).replace(/[\\W_]/g,'').toUpperCase())) {
+          || (item.identity_number && String(item.identity_number).replace(/[\W_]/g,'').toUpperCase()
+             !== String(fields.identity_number).replace(/[\W_]/g,'').toUpperCase())) {
         throw new Error('Η διορθωτική RF δεν ταυτοποιήθηκε. Επίλεξε ξανά την αίτηση.');
       }
       // Only after every ID/revision/view/auth/dirty guard may patient fields change.
@@ -1627,8 +1627,319 @@
     $('reviewSummary').innerHTML = items.map(x => `<div class="summary-item">${escapeHtml(x)}</div>`).join('');
   }
 
+
+  // RF tracking uses the *same document/controller* as the existing A1/A2 creator.
+  // No application ID, selected patient or correction intent enters document history.
+  function invalidateRfAuthorization() {
+    ++state.authEpoch;
+    ++state.listGeneration; ++state.weekGeneration; ++state.clockGeneration;
+    ++state.outcomeToken; ++state.outcomeSelectionToken; ++state.requestToken;
+    state.selectedOutcome = null; state.selectedOutcomeId = '';
+    state.correctionOfId = ''; state.correctionRevision = null;
+    state.trackingItems = []; state.weekItems = [];
+    state.trackingCursor = ''; state.weekCursor = '';
+    $('rfOutcomeSelected').hidden = true;
+    $('rfTrackingDetail').hidden = true;
+    ['rfTrackingRows','rfWeekDays','rfOutcomeResults','rfDraftList','rfSourceList'].forEach(id =>
+      $(id).replaceChildren());
+    ['rfTrackingSource','rfWeekSource','rfOutcomeCounts'].forEach(id =>
+      { $(id).textContent = 'Προστατευμένη πηγή μη διαθέσιμη — επανασυνδέσου.'; });
+    for (const id of Object.values(rfFields)) $(id).value = '';
+    $('doctorSelect').value = '';
+    state.draftId = ''; state.draftRevision = null;
+    state.sourceKind = ''; state.sourceId = '';
+    state.nsaids = []; state.others = []; state.unknowns = [];
+    $('reviewSummary').replaceChildren();
+    renderCorrectionContext();
+  }
+
+  function switchRfView(view, options = {}) {
+    const next = view === 'tracking' ? 'tracking' : 'creator';
+    const changed = next !== state.rfView;
+    if (changed || options.fromHistory) {
+      ++state.listGeneration; ++state.weekGeneration; ++state.clockGeneration;
+      invalidateRfOutcomeSelection();
+    }
+    if ((next === 'creator' && !options.correction) || options.fromHistory) {
+      state.correctionOfId = '';
+      state.correctionRevision = null;
+      renderCorrectionContext();
+    }
+    state.rfView = next;
+    $('rfTrackingView').hidden = next !== 'tracking';
+    $('rfCreatorView').hidden = next !== 'creator';
+    $('rfGoTracking').setAttribute('aria-current', next === 'tracking' ? 'page' : 'false');
+    $('rfGoCreator').setAttribute('aria-current', next === 'creator' ? 'page' : 'false');
+    // Move one existing guarded detail/action DOM into the active view: no clone or writer.
+    if (next === 'tracking') {
+      $('rfTrackingSelectedSlot').append($('rfOutcomeSelected'));
+    } else $('rfOutcomeDetailHome').append($('rfOutcomeSelected'));
+    if (!options.initial && !options.fromHistory && window.history?.pushState) {
+      const url = '/clinical/clinic-utilities/rf' + (next === 'tracking' ? '/tracking' : '');
+      if (window.location?.pathname !== url) window.history.pushState(null, '', url);
+    }
+    if (next === 'tracking' && (changed || options.initial)) {
+      if (!state.trackingWeek) state.trackingWeek = currentRfMonday();
+      if (!options.initial) {
+        loadTrackingList();
+        if (state.trackingView === 'week') loadTrackingWeek();
+      }
+    }
+  }
+
+  function isoShiftDay(iso, n) {
+    const stamp = Date.parse(iso + 'T12:00:00Z');
+    if (!Number.isFinite(stamp)) return '';
+    return new Date(stamp + n * 86400000).toISOString().slice(0,10);
+  }
+
+  function currentRfMonday() {
+    const pieces = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Asia/Nicosia', year: 'numeric', month: '2-digit', day: '2-digit',
+    }).formatToParts(new Date());
+    const vals = Object.fromEntries(pieces.map(p => [p.type, p.value]));
+    const iso = vals.year + '-' + vals.month + '-' + vals.day;
+    const weekday = new Date(iso + 'T12:00:00Z').getUTCDay();
+    return isoShiftDay(iso, -((weekday + 6) % 7));
+  }
+
+  function trackingFilterBody() {
+    return {
+      mode: 'tracking',
+      query: $('rfTrackingQuery').value.trim(),
+      scope: $('rfTrackingScope').value,
+      stage: $('rfTrackingStage').value,
+      issued_from: $('rfTrackingFrom').value,
+      issued_to: $('rfTrackingTo').value,
+    };
+  }
+
+  function trackingFilterKey() {
+    return JSON.stringify(trackingFilterBody());
+  }
+
+  function rfListButton(item, weekFact = '') {
+    const row = document.createElement('button');
+    row.type = 'button'; row.className = weekFact ? 'rf-week-event' : 'rf-quick-row';
+    const name = document.createElement('strong');
+    name.textContent = item.patient_name || 'Αίτηση RF';
+    const facts = document.createElement('span');
+    facts.textContent = (weekFact ? weekFact + ' · ' : '')
+      + [item.issued_date, item.indication_code,
+         item.laterality === 'left' ? 'Αριστερά' : item.laterality === 'right' ? 'Δεξιά' : '',
+         outcomeStages[item.stage] || item.stage, item.issuer_name || 'Εκδότης άγνωστος']
+         .filter(Boolean).join(' · ');
+    row.append(name, facts);
+    const id = item.id, context = rfOutcomeContext();
+    row.addEventListener('click', () => {
+      if (state.rfView === 'tracking' && context === rfOutcomeContext() && item.id === id)
+        selectRfOutcome(item);
+    });
+    return row;
+  }
+
+  function renderTrackingRows() {
+    const list = $('rfTrackingRows');
+    list.replaceChildren();
+    for (const item of state.trackingItems) list.append(rfListButton(item));
+  }
+
+  async function loadTrackingList(options = {}) {
+    const more = !!options.more, keepSelection = !!options.keepSelection;
+    const fingerprint = trackingFilterKey();
+    const token = ++state.listGeneration, epoch = state.authEpoch;
+    const cursor = more ? state.trackingCursor : '';
+    if (!more) {
+      state.trackingCursor = '';
+      state.trackingItems = [];
+      $('rfTrackingRows').replaceChildren();
+      if (!keepSelection) invalidateRfOutcomeSelection();
+    }
+    $('rfTrackingMore').hidden = true;
+    $('rfTrackingSource').textContent = 'Ανάγνωση RF…';
+    try {
+      const response = await api('/api/outcomes/search', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({...trackingFilterBody(), cursor}),
+      });
+      const data = await response.json();
+      if (token !== state.listGeneration || epoch !== state.authEpoch
+          || state.rfView !== 'tracking' || fingerprint !== trackingFilterKey()) return;
+      if (!Array.isArray(data.applications) || typeof data.has_more !== 'boolean'
+          || typeof data.scan_complete !== 'boolean' || typeof data.truncated !== 'boolean'
+          || data.has_more === data.scan_complete
+          || !!data.next_cursor !== data.has_more
+          || data.counts_exact !== false) throw new Error('Μη έγκυρη/μερική πηγή RF');
+      const ids = new Set(state.trackingItems.map(i => i.id));
+      for (const item of data.applications) {
+        if (!item || typeof item.id !== 'string' || !item.id || ids.has(item.id)) continue;
+        state.trackingItems.push(item); ids.add(item.id);
+      }
+      state.trackingCursor = data.next_cursor || '';
+      renderTrackingRows();
+      $('rfTrackingMore').hidden = !data.has_more;
+      $('rfTrackingSource').textContent = data.has_more
+        ? 'Μερική αναζήτηση · εμφανίζονται ' + state.trackingItems.length + ' αιτήσεις. Συνέχισε για παλαιότερες.'
+        : state.trackingItems.length
+          ? 'Πλήρης διέλευση για τα τρέχοντα φίλτρα · ' + state.trackingItems.length
+            + ' αιτήσεις (οι εκβάσεις μπορεί να αλλάζουν).'
+          : 'Δεν βρέθηκαν αιτήσεις μετά από πλήρη αναζήτηση.';
+    } catch (error) {
+      if (token !== state.listGeneration || epoch !== state.authEpoch) return;
+      $('rfTrackingSource').textContent = 'Η αναζήτηση RF δεν ολοκληρώθηκε. Δοκίμασε ανανέωση.';
+      $('rfTrackingMore').hidden = true;
+      // A failed read is never interpreted as zero; discard any incomplete accumulation.
+      state.trackingCursor = '';
+      state.trackingItems = [];
+      $('rfTrackingRows').replaceChildren();
+    }
+  }
+
+  function setTrackingTab(tab) {
+    state.trackingView = tab === 'week' ? 'week' : 'list';
+    $('rfTrackingListPanel').hidden = state.trackingView !== 'list';
+    $('rfTrackingWeekPanel').hidden = state.trackingView !== 'week';
+    $('rfTrackingShowList').classList.toggle('active', state.trackingView === 'list');
+    $('rfTrackingShowWeek').classList.toggle('active', state.trackingView === 'week');
+    $('rfTrackingShowList').setAttribute('aria-pressed', String(state.trackingView === 'list'));
+    $('rfTrackingShowWeek').setAttribute('aria-pressed', String(state.trackingView === 'week'));
+    invalidateRfOutcomeSelection();
+    if (state.trackingView === 'week') loadTrackingWeek();
+  }
+
+  function renderTrackingWeek() {
+    const grid = $('rfWeekDays');
+    grid.replaceChildren();
+    const start = state.trackingWeek;
+    const finish = isoShiftDay(start,6);
+    $('rfWeekLabel').textContent = 'Εβδομάδα ' + start.split('-').reverse().join('/')
+      + ' – ' + finish.split('-').reverse().join('/');
+    const dayNames = ['Κυριακή','Δευτέρα','Τρίτη','Τετάρτη','Πέμπτη','Παρασκευή','Σάββατο'];
+    for (let offset=0; offset<7; offset++) {
+      const date = isoShiftDay(start,offset);
+      const day = document.createElement('section');
+      day.className='rf-week-day';
+      const heading = document.createElement('h4');
+      const weekday = new Date(date + 'T12:00:00Z').getUTCDay();
+      heading.textContent = dayNames[weekday] + ' ' + date.slice(8) + '/' + date.slice(5,7);
+      day.append(heading);
+      for (const item of state.weekItems) {
+        if (item.scheduled_date === date)
+          day.append(rfListButton(item, 'Προγραμματισμένη · Χωρίς επιβεβαιωμένη ώρα'));
+        if (item.performed_date === date)
+          day.append(rfListButton(item, 'Πραγματοποιήθηκε (καταχώριση RF)'));
+      }
+      grid.append(day);
+    }
+  }
+
+  async function loadTrackingWeek(options = {}) {
+    const more = !!options.more, keepSelection = !!options.keepSelection;
+    const start = state.trackingWeek || currentRfMonday();
+    state.trackingWeek = start;
+    const cursor = more ? state.weekCursor : '';
+    const token = ++state.weekGeneration, epoch = state.authEpoch;
+    if (!more) {
+      state.weekItems = []; state.weekCursor = '';
+      $('rfWeekDays').replaceChildren();
+      if (!keepSelection) invalidateRfOutcomeSelection();
+    }
+    $('rfWeekSource').textContent = 'Ανάγνωση εβδομάδας RF…';
+    $('rfWeekMore').hidden = true;
+    try {
+      const data = await (await api('/api/outcomes/calendar', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({week_start:start, cursor}),
+      })).json();
+      if (token !== state.weekGeneration || epoch !== state.authEpoch
+          || state.rfView !== 'tracking' || start !== state.trackingWeek) return;
+      if (!Array.isArray(data.applications) || typeof data.complete !== 'boolean'
+          || typeof data.truncated !== 'boolean' || typeof data.has_more !== 'boolean'
+          || data.complete === data.has_more || !!data.next_cursor !== data.has_more
+          || data.week_start !== start) throw new Error('Μη έγκυρη εβδομάδα RF');
+      const ids = new Set(state.weekItems.map(i => i.id));
+      for (const item of data.applications) {
+        if (item && typeof item.id === 'string' && !ids.has(item.id)) {
+          state.weekItems.push(item); ids.add(item.id);
+        }
+      }
+      state.weekCursor = data.next_cursor || '';
+      renderTrackingWeek();
+      $('rfWeekMore').hidden = !data.has_more;
+      $('rfWeekSource').textContent = data.has_more
+        ? 'Η εβδομάδα είναι μερική · φόρτωσε και τα υπόλοιπα γεγονότα.'
+        : 'Πλήρης ανάγνωση εβδομάδας RF · ημερομηνίες χωρίς τεκμηριωμένη ώρα Γραμματείας.';
+    } catch (error) {
+      if (token !== state.weekGeneration || epoch !== state.authEpoch) return;
+      state.weekItems = []; state.weekCursor = '';
+      $('rfWeekDays').replaceChildren();
+      $('rfWeekSource').textContent = 'Οι ημερομηνίες RF δεν είναι διαθέσιμες — όχι μηδενικές.';
+      $('rfWeekMore').hidden = true;
+    }
+  }
+
+  function stepTrackingWeek(days) {
+    state.trackingWeek = isoShiftDay(state.trackingWeek || currentRfMonday(), days);
+    invalidateRfOutcomeSelection();
+    loadTrackingWeek();
+  }
+
+  function wireTrackingControls() {
+    document.querySelectorAll('[data-rf-view]').forEach(link =>
+      link.addEventListener('click', e => {
+        e.preventDefault();
+        switchRfView(link.dataset.rfView);
+      }));
+    $('rfTrackingNew').addEventListener('click', () => switchRfView('creator'));
+    $('rfTrackingShowList').addEventListener('click', () => setTrackingTab('list'));
+    $('rfTrackingShowWeek').addEventListener('click', () => setTrackingTab('week'));
+    $('rfTrackingRefresh').addEventListener('click', () => loadTrackingList());
+    $('rfTrackingMore').addEventListener('click', () => loadTrackingList({more:true}));
+    $('rfWeekMore').addEventListener('click', () => loadTrackingWeek({more:true}));
+    $('rfWeekPrev').addEventListener('click', () => stepTrackingWeek(-7));
+    $('rfWeekNext').addEventListener('click', () => stepTrackingWeek(7));
+    $('rfWeekToday').addEventListener('click', () => {
+      state.trackingWeek = currentRfMonday(); loadTrackingWeek();
+    });
+    let queryTimer;
+    $('rfTrackingQuery').addEventListener('input', () => {
+      clearTimeout(queryTimer);
+      ++state.listGeneration;
+      invalidateRfOutcomeSelection();
+      state.trackingItems = []; state.trackingCursor = '';
+      $('rfTrackingRows').replaceChildren();
+      $('rfTrackingMore').hidden = true;
+      $('rfTrackingSource').textContent = 'Τα φίλτρα άλλαξαν — νέα αναζήτηση…';
+      queryTimer = setTimeout(() => loadTrackingList(), 300);
+    });
+    $('rfTrackingQuery').addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); clearTimeout(queryTimer); loadTrackingList(); }
+    });
+    ['rfTrackingScope','rfTrackingStage','rfTrackingFrom','rfTrackingTo'].forEach(id =>
+      $(id).addEventListener('change', () => loadTrackingList()));
+    window.addEventListener?.('popstate', () => {
+      state.correctionOfId=''; state.correctionRevision=null;
+      switchRfView(window.location?.pathname?.endsWith('/tracking') ? 'tracking' : 'creator',
+        {fromHistory:true});
+    });
+    window.addEventListener?.('pageshow', event => {
+      if (event.persisted) {
+        invalidateRfAuthorization();
+        switchRfView(window.location?.pathname?.endsWith('/tracking') ? 'tracking' : 'creator',
+          {fromHistory:true});
+      }
+    });
+    // Shared Clinical Key same-document re-login: invalidate before the auth transition.
+    document.addEventListener('submit', event => {
+      if (event.target?.id === 'ceGlobalLoginForm') {
+        invalidateRfAuthorization();
+        switchRfView('creator', {fromHistory:true});
+      }
+    }, true);
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('.segment').forEach(btn => btn.addEventListener('click', () => setPathway(btn.dataset.pathway)));
+    document.querySelectorAll('.segment[data-pathway]').forEach(btn => btn.addEventListener('click', () => setPathway(btn.dataset.pathway)));
     $('indicationSelect').addEventListener('change', indicationChanged);
     $('lateralitySelect').addEventListener('change', applySuggestedLocation);
     $('otherArea').addEventListener('input', () => {
@@ -1685,7 +1996,10 @@
     $('rfOutcomeApply').addEventListener('click', applyRfOutcome);
     $('rfOutcomeCorrection').addEventListener('click', beginRfCorrection);
     $('rfDraftSearch').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); listRfDrafts(); }});
-    loadContract().then(() => { listRfDrafts(); loadRfOutcomes(); });
+    loadContract().then(() => {
+      listRfDrafts(); loadRfOutcomes();
+      if (state.rfView === 'tracking') loadTrackingList();
+    });
     $('imagingReport').addEventListener('change', validateImaging);
     $('horosJpegs').addEventListener('change', addHorosImages);
     $('doctorManagement').addEventListener('toggle', e => {
@@ -1704,5 +2018,8 @@
     ['patientName','productSelect','exactLocation'].forEach(id => $(id).addEventListener('input', updateSummary));
     setPathway('A1');
     addAdverse();
+    wireTrackingControls();
+    switchRfView(window.location?.pathname?.endsWith('/tracking') ? 'tracking' : 'creator',
+      {initial:true});
   });
 })();
