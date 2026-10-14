@@ -8,6 +8,7 @@ on:
       - 'static/cockpit/doctor-shell.js'
       - 'test_rf_tracking_weekly.py'
       - 'test_rf_v2_ui.js'
+      - 'test_rf_tracking_browser.py'
       - 'test_cockpit_attention_summary.js'
       - '.github/workflows/rf-tracking-weekly-v1-tests.yml'
   workflow_dispatch:
@@ -38,5 +39,13 @@ jobs:
           node test_rf_v2_ui.js
       - name: Home RF destination and source-backed semantics
         run: node test_cockpit_attention_summary.js
+      - name: Install isolated synthetic browser dependency
+        run: |
+          pip install playwright
+          if ! command -v google-chrome && ! command -v chromium; then
+            python -m playwright install --with-deps chromium
+          fi
+      - name: Chromium protected RF UX at 390, 680 and 1280 pixels
+        run: python test_rf_tracking_browser.py
       - name: Verify scoped diff hygiene
         run: git diff --check
