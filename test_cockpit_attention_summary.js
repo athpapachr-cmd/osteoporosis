@@ -162,7 +162,7 @@ async function refresh(surgeryResponse, rfResponse) {
   assert.match(attention(1), /Αναμένουν απόφαση 1/);
   assert.match(attention(1), /Δικά μου προς παρακολούθηση 1/);
   assert.doesNotMatch(attention(1), /Υποβλήθηκαν|Συνθετικός/);
-  assert.equal($("doctorAttentionList").children[1].href, "/clinical/clinic-utilities/rf");
+  assert.equal($("doctorAttentionList").children[1].href, "/clinical/clinic-utilities/rf/tracking");
   assert.equal($("doctorAttentionList").children[2].href, "/clinical/clinic-utilities/medical-report");
   assert.match(attention(2), /Δεν υπάρχει ακόμη αξιόπιστη καταμέτρηση/);
   assert.equal($("doctorInboxBadge").hidden, true);
