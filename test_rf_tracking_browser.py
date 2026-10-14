@@ -133,8 +133,11 @@ def suite(width: int):
         expect(page.locator("#rfWeekSource")).to_contain_text("Χωρίς") if False else None
         assert "Γραμματείας" in page.locator("#rfWeekSource").inner_text()
         assert "ραντεβού" in page.locator("#rfTrackingWeekPanel").inner_text()
+        # Undated RF are kept in the ledger; the week never assigns an invented day.
+        expect(page.locator(".rf-week-undated")).to_contain_text("Χωρίς ημερομηνία")
+        page.locator("#rfTrackingUndatedOpen").click()
+        expect(page.locator("#rfTrackingListPanel")).to_be_visible()
         # A fresh selection after returning to list; explicit correction performs guarded POST.
-        page.locator("#rfTrackingShowList").click()
         page.locator("#rfTrackingRows .rf-quick-row").first.click()
         expect(page.locator("#rfOutcomeTitle")).to_contain_text("Συνθετική Α")
         page.locator("#rfOutcomeCorrection").click()
