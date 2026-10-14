@@ -437,6 +437,7 @@
       await loadSurgeryQueue();
     } catch (error) {
       $("surgeryQueueNote").textContent = error.detail || "Δεν ήταν δυνατή η αποθήκευση της εγγραφής.";
+      if ([401, 403, 503].includes(error.status)) await loadSurgeryQueue();
     }
   }
 
@@ -462,6 +463,7 @@
         await loadSurgeryQueue();
       } catch (error) {
         $("surgeryQueueNote").textContent = error.detail || "Δεν ολοκληρώθηκε η ενημέρωση.";
+        if ([401, 403, 503].includes(error.status)) await loadSurgeryQueue();
       }
       return;
     }
@@ -475,6 +477,7 @@
         await loadSurgeryQueue();
       } catch (error) {
         $("surgeryQueueNote").textContent = error.detail || "Δεν ήταν δυνατή η διαγραφή.";
+        if ([401, 403, 503].includes(error.status)) await loadSurgeryQueue();
       }
       return;
     }
