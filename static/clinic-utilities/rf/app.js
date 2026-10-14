@@ -1,13 +1,19 @@
 (() => {
   const $ = id => document.getElementById(id);
-  const state = { contract: null, pathway: 'A1', selectedHistoryId: '', nsaids: [], others: [], unknowns: [], learnedMedications: [], physio: null, imagingValidation: '', horosImages: [], horosNextId: 0, doctors: [], editingDoctor: null, draftId: '', draftRevision: null, sourceKind: '', sourceId: '', sourceOrigin: '', sourcePatientName: '', sourceNameConfirmed: false, sourcePage: 1, draftPage: 1, requestToken: 0, correctionOfId: '', selectedOutcome: null, selectedOutcomeId: '', outcomePage: 1, outcomeToken: 0, outcomeSelectionToken: 0, outcomeContext: '' };
+  const state = { contract: null, pathway: 'A1', selectedHistoryId: '', nsaids: [], others: [], unknowns: [], learnedMedications: [], physio: null, imagingValidation: '', horosImages: [], horosNextId: 0, doctors: [], editingDoctor: null, draftId: '', draftRevision: null, sourceKind: '', sourceId: '', sourceOrigin: '', sourcePatientName: '', sourceNameConfirmed: false, sourcePage: 1, draftPage: 1, requestToken: 0, correctionOfId: '', selectedOutcome: null, selectedOutcomeId: '', outcomePage: 1, outcomeToken: 0, outcomeSelectionToken: 0, outcomeContext: '',
+    rfView: 'creator', authEpoch: 0, listGeneration: 0, weekGeneration: 0,
+    clockGeneration: 0, correctionRevision: null, trackingCursor: '', weekCursor: '',
+    trackingWeek: '', trackingItems: [], weekItems: [], trackingView: 'list' };
 
   async function api(path, options = {}) {
     const response = await fetch(`/clinical/clinic-utilities/rf${path}`, { credentials: 'same-origin', ...options });
     if (!response.ok) {
+      if (response.status === 401 || response.status === 403) invalidateRfAuthorization();
       let detail = `HTTP ${response.status}`;
       try { const body = await response.json(); detail = body.detail || detail; } catch (_) {}
-      throw new Error(detail);
+      const error = new Error(detail);
+      error.status = response.status;
+      throw error;
     }
     return response;
   }
@@ -650,7 +656,8 @@
       other_diagnosis: $('otherDiagnosis').value.trim(),
       additional_notes: $('additionalNotes').value.trim(),
       imaging_review_confirmed: $('imagingConfirm').checked,
-      correction_of_application_id: state.correctionOfId
+      correction_of_application_id: state.correctionOfId,
+      correction_source_expected_revision: state.correctionOfId ? state.correctionRevision : null
     };
 
     if (state.pathway === 'A1') {
@@ -1078,6 +1085,11 @@
   }
 
   function rfOutcomeContext() {
+    if (state.rfView === 'tracking') {
+      return JSON.stringify(['tracking', state.trackingView, $('rfTrackingQuery').value.trim(),
+        $('rfTrackingScope').value, $('rfTrackingStage').value,
+        $('rfTrackingFrom').value, $('rfTrackingTo').value, state.trackingWeek]);
+    }
     return JSON.stringify([$('rfOutcomeSearch').value.trim(), $('rfOutcomeScope').value]);
   }
 
@@ -1086,6 +1098,7 @@
     state.selectedOutcome = null;
     state.selectedOutcomeId = '';
     $('rfOutcomeSelected').hidden = true;
+    if (state.rfView === 'tracking') $('rfTrackingDetail').hidden = true;
   }
 
   function outcomeActionChanged() {
@@ -1114,6 +1127,7 @@
     state.selectedOutcome = item;
     state.selectedOutcomeId = item.id;
     $('rfOutcomeSelected').hidden = false;
+    if (state.rfView === 'tracking') $('rfTrackingDetail').hidden = false;
     $('rfOutcomeTitle').textContent = (item.patient_name || 'Αίτηση RF') + ' · ' +
       (outcomeStages[item.stage] || item.stage);
     const reported = item.last_decision_report;
@@ -1149,11 +1163,13 @@
   async function selectRfOutcome(card) {
     const token = ++state.outcomeSelectionToken;
     const context = rfOutcomeContext();
+    state.outcomeContext = context;
     const selectedId = card.id;
     // A is no longer actionable while B's detail request is pending.
     state.selectedOutcome = null;
     state.selectedOutcomeId = selectedId;
     $('rfOutcomeSelected').hidden = true;
+    if (state.rfView === 'tracking') $('rfTrackingDetail').hidden = false;
     try {
       const item = await (await api('/api/outcomes/' +
         encodeURIComponent(selectedId))).json();
@@ -1256,9 +1272,15 @@
           state.selectedOutcomeId !== item.id ||
           context !== rfOutcomeContext() || updated.id !== item.id) return;
       renderSelectedOutcome(updated);
-      await loadRfOutcomes();
+      if (state.rfView === 'tracking') {
+        await loadTrackingList({keepSelection: true});
+        await loadTrackingWeek({keepSelection: true});
+      } else await loadRfOutcomes();
       showOk('Η έκβαση αποθηκεύτηκε. Η έκδοση του PDF παραμένει αμετάβλητη.');
-    } catch (error) { showError(error.message); }
+    } catch (error) {
+      if (token === state.outcomeSelectionToken && context === rfOutcomeContext())
+        showError(error.message);
+    }
   }
 
   async function beginRfCorrection() {
@@ -1304,6 +1326,8 @@
   function savedDraftFields() {
     const draft = buildDraft();
     delete draft.imaging_review_confirmed; // old confirmation never carries over
+    delete draft.correction_of_application_id; // drafts must never re-arm a correction
+    delete draft.correction_source_expected_revision;
     delete draft.source_name_confirmed; // a name discrepancy must be reconfirmed on resume
     draft.source_patient_name = state.sourcePatientName;
     draft.draft_nsaids = state.nsaids.map(cleanTrial);
@@ -1367,7 +1391,9 @@
 
   async function restoreRfDraft(fields) {
     setPathway(fields.pathway === 'A2' ? 'A2' : 'A1');
-    state.correctionOfId = fields.correction_of_application_id || '';
+    // Older persisted drafts may contain a rejected ID: never restore it as authorization.
+    state.correctionOfId = '';
+    state.correctionRevision = null;
     renderCorrectionContext();
     state.sourceKind = fields.source_kind || '';
     state.sourceId = fields.source_id || '';
@@ -1504,6 +1530,7 @@
       setTimeout(() => URL.revokeObjectURL(url), 120000);
       state.draftId = ''; state.draftRevision = null;
       state.correctionOfId = '';
+      state.correctionRevision = null;
       renderCorrectionContext();
       $('rfActiveDraftLabel').textContent = '';
       await listRfDrafts();
