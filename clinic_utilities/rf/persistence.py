@@ -479,7 +479,7 @@ def _rf_application_reuse_fields(row: RFApplicationORM) -> dict[str, Any]:
                    "age": row.patient_age, "product_key": row.product_key,
                    "indication_code": row.indication_code, "laterality": row.laterality,
                    "exact_location": row.exact_location})
-        return fields
+    return fields
 
 
 def read_rf_rejected_correction(engine: Engine, application_id: str,
