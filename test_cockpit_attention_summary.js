@@ -28,6 +28,7 @@ function node(id = "", tag = "div") {
     fire(k, event = {}) { assert.ok(handlers.has(k), "event " + id + "/" + k);
       return handlers.get(k)(event); },
     append(...items) { el.children.push(...items); },
+    appendChild(item) { el.children.push(item); return item; },
     replaceChildren(...items) { el.children = items; },
     reset() { el.value = ""; },
     focus() {}, contains(other) { return other === el; }
