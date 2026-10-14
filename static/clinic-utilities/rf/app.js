@@ -1,6 +1,6 @@
 (() => {
   const $ = id => document.getElementById(id);
-  const state = { contract: null, pathway: 'A1', selectedHistoryId: '', nsaids: [], others: [], unknowns: [], learnedMedications: [], physio: null, imagingValidation: '', horosImages: [], horosNextId: 0, doctors: [], editingDoctor: null, draftId: '', draftRevision: null, sourceKind: '', sourceId: '', sourceOrigin: '', sourcePatientName: '', sourceNameConfirmed: false, sourcePage: 1, draftPage: 1, requestToken: 0, correctionOfId: '', selectedOutcome: null, selectedOutcomeId: '', outcomePage: 1, outcomeToken: 0, outcomeSelectionToken: 0, outcomeContext: '' };
+  const state = { contract: null, pathway: 'A1', selectedHistoryId: '', nsaids: [], others: [], unknowns: [], learnedMedications: [], physio: null, imagingValidation: '', horosImages: [], horosNextId: 0, doctors: [], editingDoctor: null, draftId: '', draftRevision: null, sourceKind: '', sourceId: '', sourceOrigin: '', sourcePatientName: '', sourceNameConfirmed: false, sourcePage: 1, draftPage: 1, requestToken: 0, correctionOfId: '', correctionExpectedRevision: null, selectedOutcome: null, selectedOutcomeId: '', outcomePage: 1, outcomeToken: 0, outcomeSelectionToken: 0, outcomeContext: '' };
 
   async function api(path, options = {}) {
     const response = await fetch(`/clinical/clinic-utilities/rf${path}`, { credentials: 'same-origin', ...options });
@@ -650,7 +650,8 @@
       other_diagnosis: $('otherDiagnosis').value.trim(),
       additional_notes: $('additionalNotes').value.trim(),
       imaging_review_confirmed: $('imagingConfirm').checked,
-      correction_of_application_id: state.correctionOfId
+      correction_of_application_id: state.correctionOfId,
+      correction_source_expected_revision: state.correctionOfId ? state.correctionExpectedRevision : null
     };
 
     if (state.pathway === 'A1') {
@@ -1265,24 +1266,33 @@
     const item = state.selectedOutcome;
     const token = state.outcomeSelectionToken;
     const context = rfOutcomeContext();
-    if (!item || item.stage !== 'rejected' ||
-        item.id !== state.selectedOutcomeId || context !== state.outcomeContext) return;
+    if (!item || item.stage !== 'rejected' || item.decision !== 'rejected' ||
+        item.id !== state.selectedOutcomeId || context !== state.outcomeContext ||
+        !Number.isInteger(item.revision) || item.revision < 1) return;
+    // The existing builder may hold unrelated A1/A2 work or an existing saved draft.
+    if (!window.confirm('Η διορθωτική RF θα αντικαταστήσει τα πεδία της τρέχουσας φόρμας. ' +
+        'Αποθήκευσε πρώτα τυχόν εργασία που θέλεις να διατηρήσεις. Συνέχεια;')) return;
     try {
-      const result = await (await api('/api/reuse/application/' +
-        encodeURIComponent(item.id))).json();
+      const response = await api('/api/reuse/rejected-correction', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({application_id: item.id, expected_revision: item.revision}),
+      });
+      const result = await response.json();
       if (token !== state.outcomeSelectionToken ||
-          state.selectedOutcomeId !== item.id || context !== rfOutcomeContext()) return;
-      const fields = result.fields || {};
-      const oldID = $('identityNumber').value.trim().replace(/[\W_]/g, '').toUpperCase();
-      const newID = String(fields.identity_number || '').replace(/[\W_]/g, '').toUpperCase();
+          state.selectedOutcomeId !== item.id || context !== rfOutcomeContext() ||
+          state.selectedOutcome?.revision !== item.revision ||
+          result.application_id !== item.id || result.revision !== item.revision ||
+          !result.fields || typeof result.fields !== 'object') return;
+      const fields = result.fields;
+      const oldID = $('identityNumber').value.trim().replace(/[\\W_]/g, '').toUpperCase();
+      const newID = String(fields.identity_number || '').replace(/[\\W_]/g, '').toUpperCase();
       if (!newID || (oldID && oldID !== newID)) {
         throw new Error('Υπάρχει άλλη ταυτότητα στην τρέχουσα αίτηση. Καθάρισέ την πρώτα.');
       }
-      // This is a correction of a rejected attempt, NOT proof of prior
-      // performed treatment and never a silent A1 -> A2 continuation.
       setPathway(result.source?.pathway === 'A2' ? 'A2' : 'A1');
       const conflicts = populateRfFields(fields);
       state.correctionOfId = item.id;
+      state.correctionExpectedRevision = item.revision;
       renderCorrectionContext();
       $('imagingReport').value = '';
       state.imagingValidation = '';
@@ -1295,14 +1305,16 @@
         $('historyChoices').replaceChildren();
         $('rfActualConfirm').checked = false;
       }
-      showOk('Άνοιξε διορθωτική RF. Έλεγξε τα στοιχεία και επίλεξε ρητά ιατρό, πραγματικό προηγούμενο ιστορικό A2 (εφόσον χρειάζεται), νέα PDF/JPEG και έκδοση. ' +
-        (conflicts.length ? 'Έλεγξε επιπλέον τις διαφορές: ' + conflicts.join(', ') : ''));
+      showOk('Άνοιξε διορθωτική RF. Έλεγξε ξανά ιατρό, στοιχεία και απεικόνιση. ' +
+        (conflicts.length ? 'Έλεγξε τις διαφορές: ' + conflicts.join(', ') : ''));
       updateSummary();
     } catch (error) { showError(error.message); }
   }
 
   function savedDraftFields() {
     const draft = buildDraft();
+    delete draft.correction_of_application_id;
+    delete draft.correction_source_expected_revision;
     delete draft.imaging_review_confirmed; // old confirmation never carries over
     delete draft.source_name_confirmed; // a name discrepancy must be reconfirmed on resume
     draft.source_patient_name = state.sourcePatientName;
@@ -1367,7 +1379,9 @@
 
   async function restoreRfDraft(fields) {
     setPathway(fields.pathway === 'A2' ? 'A2' : 'A1');
-    state.correctionOfId = fields.correction_of_application_id || '';
+    // A durable draft is never durable permission to reissue a rejected attempt.
+    state.correctionOfId = '';
+    state.correctionExpectedRevision = null;
     renderCorrectionContext();
     state.sourceKind = fields.source_kind || '';
     state.sourceId = fields.source_id || '';
@@ -1504,6 +1518,7 @@
       setTimeout(() => URL.revokeObjectURL(url), 120000);
       state.draftId = ''; state.draftRevision = null;
       state.correctionOfId = '';
+      state.correctionExpectedRevision = null;
       renderCorrectionContext();
       $('rfActiveDraftLabel').textContent = '';
       await listRfDrafts();
