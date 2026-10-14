@@ -1123,6 +1123,7 @@ def change_rf_application_progress(engine: Engine, application_id: str, *,
 
 
 def validate_rf_correction_source(session: Session, *, rejected_id: str,
+                                  expected_revision: int,
                                   identity_number: str, indication_code: str,
                                   laterality: str, site_key: str) -> None:
     prior = session.get(RFApplicationORM, rejected_id)
