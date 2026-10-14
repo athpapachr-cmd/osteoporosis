@@ -1604,7 +1604,7 @@
 
 
   // Both protected routes are views of the same document and RF controller.
-  const tracking = {listGeneration: 0, weekGeneration: 0, authEpoch: 0, dirtyGeneration: 0,
+  const tracking = {listGeneration: 0, listContextGeneration: 0, weekGeneration: 0, authEpoch: 0, dirtyGeneration: 0,
     cursor: '', searchContext: '', weekStart: '', tab: 'list', initialized: false};
   const nicosiaDay = () => {
     const f = new Intl.DateTimeFormat('en-CA', {timeZone:'Asia/Nicosia',
@@ -1624,6 +1624,7 @@
   function showRfView(view, push = true) {
     const isTracking = view === 'tracking';
     ++tracking.listGeneration;
+    ++tracking.listContextGeneration;
     ++tracking.weekGeneration;
     invalidateRfOutcomeSelection();
     $('rfTrackingView').hidden = !isTracking;
@@ -1654,7 +1655,10 @@
     if ([401,403].includes(error?.status) || /401|403/.test(message)) {
       ++tracking.authEpoch;
       ++tracking.listGeneration;
+      ++tracking.listContextGeneration;
       ++tracking.weekGeneration;
+      state.correctionOfId = ''; state.correctionExpectedRevision = null;
+      renderCorrectionContext();
       invalidateRfOutcomeSelection();
       $('rfTrackResults').replaceChildren();
       $('rfWeekGrid').replaceChildren();
@@ -1663,6 +1667,7 @@
       $('rfWeekStatus').textContent = 'Απαιτείται νέα εξουσιοδότηση.';
     } else if (list) {
       ++tracking.listGeneration;
+      ++tracking.listContextGeneration;
       tracking.cursor = '';
       invalidateRfOutcomeSelection();
       $('rfTrackResults').replaceChildren();
@@ -1677,11 +1682,14 @@
     if (reset || context !== tracking.searchContext) {
       tracking.cursor = '';
       tracking.searchContext = context;
+      ++tracking.listContextGeneration;
       $('rfTrackResults').replaceChildren();
       $('rfTrackMore').hidden = true;
       invalidateRfOutcomeSelection();
     }
     const cursor = tracking.cursor, generation = ++tracking.listGeneration;
+    const contextGeneration = tracking.listContextGeneration;
+    $('rfTrackMore').disabled = true;
     try {
       const response = await api('/api/outcomes/search', {method:'POST',
         headers:{'Content-Type':'application/json'},
@@ -1698,13 +1706,18 @@
         row.className = 'rf-outcome-card';
         const label = document.createElement('div');
         label.textContent = [item.patient_name || 'Αίτηση RF', item.issued_date || '',
+          item.pathway || 'A1',
+          [item.site_key || '', item.laterality === 'left' ? 'αριστερά' :
+            item.laterality === 'right' ? 'δεξιά' : ''].filter(Boolean).join(' / '),
+          item.issuer_name || 'Μη τεκμηριωμένος εκδότης',
           outcomeStages[item.stage] || item.stage].filter(Boolean).join(' · ');
         const open = document.createElement('button');
         open.type = 'button'; open.className = 'btn secondary small';
         open.textContent = 'Άνοιγμα';
         open.addEventListener('click', () => {
-          if (generation === tracking.listGeneration && epoch === tracking.authEpoch &&
-              context === trackingContext()) selectRfOutcome(item);
+          if (contextGeneration === tracking.listContextGeneration &&
+              epoch === tracking.authEpoch && context === trackingContext() &&
+              tracking.tab === 'list' && !$('rfTrackingView').hidden) selectRfOutcome(item);
         });
         row.append(label,open);
         $('rfTrackResults').append(row);
@@ -1717,10 +1730,14 @@
           ? 'Ολοκληρώθηκε η ανάγνωση του διαθέσιμου μητρώου. Οι καταστάσεις ενδέχεται να έχουν αλλάξει.'
           : 'Δεν βρέθηκαν αιτήσεις στο πλήρως ελεγμένο εύρος.';
     } catch (error) {
-      if (generation === tracking.listGeneration && epoch === tracking.authEpoch) {
+      if (generation === tracking.listGeneration && epoch === tracking.authEpoch &&
+          context === trackingContext() && tracking.tab === 'list' &&
+          !$('rfTrackingView').hidden) {
         $('rfTrackMore').hidden = true;
         protectedTrackingFailure(error,true);
       }
+    } finally {
+      if (generation === tracking.listGeneration) $('rfTrackMore').disabled = false;
     }
   }
   async function loadRfWeek() {
@@ -1759,11 +1776,16 @@
         ? 'Εμφανίζονται μόνο καταχωρισμένες ημερομηνίες RF, όχι ραντεβού Γραμματείας.'
         : 'Μερική προβολή εβδομάδας · δεν επιβεβαιώνεται η πληρότητα.';
     } catch(error) {
-      if (generation === tracking.weekGeneration && epoch === tracking.authEpoch)
-        protectedTrackingFailure(error,false);
+      if (generation === tracking.weekGeneration && epoch === tracking.authEpoch &&
+          week === tracking.weekStart && tracking.tab === 'week' &&
+          !$('rfTrackingView').hidden) protectedTrackingFailure(error,false);
     }
   }
   function setTrackingTab(tab) {
+    ++tracking.listGeneration;
+    ++tracking.listContextGeneration;
+    ++tracking.weekGeneration;
+    invalidateRfOutcomeSelection();
     tracking.tab = tab;
     $('rfTrackListView').hidden = tab !== 'list';
     $('rfTrackWeekView').hidden = tab !== 'week';
@@ -1778,6 +1800,7 @@
     window.addEventListener('clinical:authenticated', () => {
       ++tracking.authEpoch;
       ++tracking.listGeneration;
+      ++tracking.listContextGeneration;
       ++tracking.weekGeneration;
       state.correctionOfId = '';
       state.correctionExpectedRevision = null;
@@ -1799,6 +1822,11 @@
     });
     window.addEventListener('popstate', () => {
       showRfView(location.pathname.endsWith('/tracking') ? 'tracking' : 'builder', false);
+    });
+    $('rfWeekNoDate').addEventListener('click', () => {
+      $('rfTrackScope').value = 'all';
+      $('rfTrackStage').value = 'approved';
+      setTrackingTab('list');
     });
     $('rfTrackRefresh').addEventListener('click', () => tracking.tab === 'week'
       ? loadRfWeek() : loadRfTracking(true));
