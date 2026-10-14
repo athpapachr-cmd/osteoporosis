@@ -1213,18 +1213,22 @@ class RFOutcomeFollowupTests(unittest.TestCase):
                                      query="different filter").status_code, 422)
         self.assertEqual(self.search(mode="tracking", cursor=first["next_cursor"] + "X").status_code, 422)
         self.assertEqual(self.search(mode="tracking", query="NO-MATCH").json()["applications"], [])
+        from datetime import date, timedelta
+        scheduled = date.today() + timedelta(days=1)
+        monday = (scheduled - timedelta(days=scheduled.weekday())).isoformat()
+        scheduled_text = scheduled.isoformat()
         self.assertEqual(self.event(ids[0], "approve").status_code, 200)
-        self.assertEqual(self.event(ids[0], "schedule", 1,
-                                    event_date="2026-10-12").status_code, 200)
+        planning = self.event(ids[0], "schedule", 1, event_date=scheduled_text)
+        self.assertEqual(planning.status_code, 200, planning.text)
         week = self.client.post(self.base + "/outcomes/calendar", headers=self.headers,
-                                json={"week_start": "2026-10-12"})
+                                json={"week_start": monday})
         self.assertEqual(week.status_code, 200, week.text)
         self.assertTrue(week.json()["complete"])
         self.assertFalse(week.json()["time_verified"])
         self.assertTrue(any(f["application_id"] == ids[0] and f["kind"] == "scheduled"
-                            and f["date"] == "2026-10-12" for f in week.json()["facts"]))
+                            and f["date"] == scheduled_text for f in week.json()["facts"]))
         invalid_week = self.client.post(self.base + "/outcomes/calendar",
-            headers=self.headers, json={"week_start": "2026-10-13"})
+            headers=self.headers, json={"week_start": (date.fromisoformat(monday) + timedelta(days=1)).isoformat()})
         self.assertEqual(invalid_week.status_code, 422)
 
     def test_atomic_rejected_correction_rejects_stale_revision_and_missing_proof(self):
