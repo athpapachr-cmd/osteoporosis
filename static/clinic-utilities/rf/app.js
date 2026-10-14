@@ -7,7 +7,9 @@
     if (!response.ok) {
       let detail = `HTTP ${response.status}`;
       try { const body = await response.json(); detail = body.detail || detail; } catch (_) {}
-      throw new Error(detail);
+      const error = new Error(detail);
+      error.status = response.status;
+      throw error;
     }
     return response;
   }
@@ -1258,6 +1260,7 @@
           context !== rfOutcomeContext() || updated.id !== item.id) return;
       renderSelectedOutcome(updated);
       await loadRfOutcomes();
+      if (!$('rfTrackingView').hidden) loadRfTracking(true);
       showOk('Η έκβαση αποθηκεύτηκε. Η έκδοση του PDF παραμένει αμετάβλητη.');
     } catch (error) { showError(error.message); }
   }
@@ -1266,6 +1269,8 @@
     const item = state.selectedOutcome;
     const token = state.outcomeSelectionToken;
     const context = rfOutcomeContext();
+    const authAtStart = tracking.authEpoch;
+    const dirtyAtStart = tracking.dirtyGeneration;
     if (!item || item.stage !== 'rejected' || item.decision !== 'rejected' ||
         item.id !== state.selectedOutcomeId || context !== state.outcomeContext ||
         !Number.isInteger(item.revision) || item.revision < 1) return;
@@ -1280,6 +1285,7 @@
       const result = await response.json();
       if (token !== state.outcomeSelectionToken ||
           state.selectedOutcomeId !== item.id || context !== rfOutcomeContext() ||
+          authAtStart !== tracking.authEpoch || dirtyAtStart !== tracking.dirtyGeneration ||
           state.selectedOutcome?.revision !== item.revision ||
           result.application_id !== item.id || result.revision !== item.revision ||
           !result.fields || typeof result.fields !== 'object') return;
@@ -1309,7 +1315,10 @@
       showOk('Άνοιξε διορθωτική RF. Έλεγξε ξανά ιατρό, στοιχεία και απεικόνιση. ' +
         (conflicts.length ? 'Έλεγξε τις διαφορές: ' + conflicts.join(', ') : ''));
       updateSummary();
-    } catch (error) { showError(error.message); }
+    } catch (error) {
+      if ([401,403].includes(error.status)) protectedTrackingFailure(error,true);
+      showError(error.message);
+    }
   }
 
   function savedDraftFields() {
@@ -1561,7 +1570,7 @@
 
 
   // Both protected routes are views of the same document and RF controller.
-  const tracking = {listGeneration: 0, weekGeneration: 0, authEpoch: 0,
+  const tracking = {listGeneration: 0, weekGeneration: 0, authEpoch: 0, dirtyGeneration: 0,
     cursor: '', searchContext: '', weekStart: '', tab: 'list', initialized: false};
   const nicosiaDay = () => {
     const f = new Intl.DateTimeFormat('en-CA', {timeZone:'Asia/Nicosia',
@@ -1605,7 +1614,7 @@
   }
   function protectedTrackingFailure(error, list) {
     const message = String(error?.message || '');
-    if (/401|403/.test(message)) {
+    if ([401,403].includes(error?.status) || /401|403/.test(message)) {
       ++tracking.authEpoch;
       ++tracking.listGeneration;
       ++tracking.weekGeneration;
@@ -1722,6 +1731,8 @@
 
   document.addEventListener('DOMContentLoaded', () => {
     tracking.weekStart = mondayFor(nicosiaDay());
+    $('rfBuilderView').addEventListener('input', () => ++tracking.dirtyGeneration, true);
+    $('rfBuilderView').addEventListener('change', () => ++tracking.dirtyGeneration, true);
     $('rfNavTracking').addEventListener('click', e => {
       e.preventDefault(); showRfView('tracking');
     });
