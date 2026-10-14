@@ -1198,7 +1198,10 @@
           context !== rfOutcomeContext() || item.id !== selectedId) return;
       renderSelectedOutcome(item);
     } catch (error) {
-      if (token === state.outcomeSelectionToken) showError(error.message);
+      if ([401,403].includes(error.status)) protectedTrackingFailure(error,true);
+      else if (token === state.outcomeSelectionToken &&
+          state.selectedOutcomeId === selectedId && context === rfOutcomeContext())
+        showError(error.message);
     }
   }
 
@@ -1295,7 +1298,14 @@
       await loadRfOutcomes();
       if ($('rfTrackingView').hidden === false) loadRfTracking(true);
       showOk('Η έκβαση αποθηκεύτηκε. Η έκδοση του PDF παραμένει αμετάβλητη.');
-    } catch (error) { showError(error.message); }
+    } catch (error) {
+      if ([401,403].includes(error.status)) protectedTrackingFailure(error,true);
+      else if (token === state.outcomeSelectionToken &&
+          state.selectedOutcomeId === item.id && context === rfOutcomeContext()) {
+        if (error.status === 409) invalidateRfOutcomeSelection();
+        showError(error.message);
+      }
+    }
   }
 
   async function beginRfCorrection() {
@@ -1674,6 +1684,8 @@
       $('rfTrackMore').hidden = true;
       $('rfTrackStatus').textContent = 'Τα αποτελέσματα δεν είναι διαθέσιμα. Δοκίμασε ανανέωση.';
     } else {
+      invalidateRfOutcomeSelection();
+      $('rfWeekGrid').replaceChildren();
       $('rfWeekStatus').textContent = 'Το εβδομαδιαίο ημερολόγιο δεν είναι διαθέσιμο.';
     }
   }
