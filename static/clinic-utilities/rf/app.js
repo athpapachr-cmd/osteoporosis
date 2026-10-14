@@ -1285,24 +1285,38 @@
   }
 
   function creatorHasUnrelatedWork() {
-    const ids = ['patientName','identityNumber','gesyNumber','additionalNotes',
-      'medicationText','physioDates','painOnsetDate','lastAssessmentDate',
-      'rfCurrentFollowupDate','exactLocation','reasonOther'];
+    const inputs = [...Object.values(rfFields),
+      'interventionSite','interventionDate','interventionVasBefore','interventionVasAfter',
+      'legacyProcedureDate','legacyVasBefore','legacyVasAfter',
+      'legacyFollowupDate','legacyFollowupVas', 'rfCurrentFollowupDate',
+      'rfCurrentFollowupVas','reasonOther'];
     return !!(state.draftId || state.sourceId || state.correctionOfId
+      || state.pathway === 'A2' || state.selectedHistoryId
       || state.nsaids.length || state.others.length || state.horosImages.length
-      || ids.some(id => String($(id)?.value || '').trim())
+      || inputs.some(id => String($(id)?.value || '').trim())
       || $('imagingReport')?.files?.length
-      || [...document.querySelectorAll('.rf-reason')].some(el => el.checked));
+      || [...document.querySelectorAll('.rf-reason')].some(el => el.checked)
+      || [...document.querySelectorAll('.adverse')].some(row =>
+          String(row.querySelector('[data-kind=treatment]')?.value || '').trim()
+          || String(row.querySelector('[data-kind=effect]')?.value || '').trim()));
   }
 
   function creatorFingerprint() {
+    // Cover ALL A1/A2 form data, including currently selected history and adverse
+    // effects; a late fetch must never overwrite fields edited during the request.
     return JSON.stringify({
-      fields: Object.values(rfFields).map(id => [id, $(id)?.value, $(id)?.checked]),
-      doctor: $('doctorSelect')?.value, draft: state.draftId,
-      path: state.pathway, source: state.sourceId, correction: state.correctionOfId,
-      jpeg: state.horosImages.length, pdf: $('imagingReport')?.files?.[0]?.name || '',
-      reason: [...document.querySelectorAll('.rf-reason')].map(el => !!el.checked),
+      draft: buildDraft(), draftId: state.draftId, draftRevision: state.draftRevision,
+      correction: state.correctionOfId, correctionRevision: state.correctionRevision,
+      selectedHistory: state.selectedHistoryId,
+      legacyInputs: ['interventionSite','interventionDate','interventionVasBefore',
+        'interventionVasAfter','legacyProcedureDate','legacyVasBefore',
+        'legacyVasAfter','legacyFollowupDate','legacyFollowupVas']
+        .map(id => [id,$(id)?.value]),
+      jpeg: state.horosImages.map(x => [x.id,x.file?.name,x.file?.size,x.file?.lastModified]),
+      pdf: $('imagingReport')?.files?.[0]?.name || '',
+      pdfSize: $('imagingReport')?.files?.[0]?.size ?? null,
       nsaids: state.nsaids, others: state.others,
+      source: [state.sourceKind,state.sourceId,state.sourceOrigin],
     });
   }
 
@@ -1314,6 +1328,10 @@
     document.querySelectorAll('.rf-reason').forEach(el => { el.checked = false; });
     state.nsaids = []; state.others = []; state.unknowns = [];
     state.draftId = ''; state.draftRevision = null;
+    state.selectedHistoryId = '';
+    $('rfActualConfirm').checked = false;
+    $('historyChoices').replaceChildren();
+    $('legacyDetails').open = false;
     state.sourceKind = ''; state.sourceId = ''; state.sourceOrigin = '';
     state.sourcePatientName = ''; state.sourceNameConfirmed = false;
     $('rfActiveDraftLabel').textContent = '';
