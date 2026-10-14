@@ -1283,44 +1283,101 @@
     }
   }
 
+  function creatorHasUnrelatedWork() {
+    const ids = ['patientName','identityNumber','gesyNumber','additionalNotes',
+      'medicationText','physioDates','painOnsetDate','lastAssessmentDate',
+      'rfCurrentFollowupDate','exactLocation','reasonOther'];
+    return !!(state.draftId || state.sourceId || state.correctionOfId
+      || state.nsaids.length || state.others.length || state.horosImages.length
+      || ids.some(id => String($(id)?.value || '').trim())
+      || $('imagingReport')?.files?.length
+      || [...document.querySelectorAll('.rf-reason')].some(el => el.checked));
+  }
+
+  function creatorFingerprint() {
+    return JSON.stringify({
+      fields: Object.values(rfFields).map(id => [id, $(id)?.value, $(id)?.checked]),
+      doctor: $('doctorSelect')?.value, draft: state.draftId,
+      path: state.pathway, source: state.sourceId, correction: state.correctionOfId,
+      jpeg: state.horosImages.length, pdf: $('imagingReport')?.files?.[0]?.name || '',
+      reason: [...document.querySelectorAll('.rf-reason')].map(el => !!el.checked),
+      nsaids: state.nsaids, others: state.others,
+    });
+  }
+
+  function clearCreatorForCorrection() {
+    for (const id of Object.values(rfFields)) $(id).value = '';
+    for (const id of ['interventionSite','interventionDate','interventionVasBefore','interventionVasAfter',
+      'legacyProcedureDate','legacyVasBefore','legacyVasAfter','legacyFollowupDate','legacyFollowupVas'])
+      $(id).value = '';
+    document.querySelectorAll('.rf-reason').forEach(el => { el.checked = false; });
+    state.nsaids = []; state.others = []; state.unknowns = [];
+    state.draftId = ''; state.draftRevision = null;
+    state.sourceKind = ''; state.sourceId = ''; state.sourceOrigin = '';
+    state.sourcePatientName = ''; state.sourceNameConfirmed = false;
+    $('rfActiveDraftLabel').textContent = '';
+    $('rfSourceLoaded').hidden = true;
+    $('rfNameConflict').hidden = true;
+    $('adverseRows').replaceChildren();
+    addAdverse(); renderTrials();
+    $('imagingReport').value = ''; state.imagingValidation = '';
+    $('imagingStatus').hidden = true; $('imagingConfirm').checked = false;
+    releaseHorosPreviews(); renderHorosImages();
+    $('doctorSelect').value = ''; refreshDoctorReadiness();
+  }
+
   async function beginRfCorrection() {
     const item = state.selectedOutcome;
     const token = state.outcomeSelectionToken;
     const context = rfOutcomeContext();
-    if (!item || item.stage !== 'rejected' ||
-        item.id !== state.selectedOutcomeId || context !== state.outcomeContext) return;
+    const view = state.rfView;
+    const epoch = state.authEpoch;
+    if (!item || item.stage !== 'rejected' || item.decision !== 'rejected'
+        || !Number.isInteger(item.revision) || item.revision < 1
+        || item.id !== state.selectedOutcomeId || context !== state.outcomeContext) return;
+    if (creatorHasUnrelatedWork() && !window.confirm?.(
+      'Υπάρχει εργασία στην τρέχουσα αίτηση. Θα παραμείνει αποθηκευμένο τυχόν πρόχειρο, αλλά τα ανοιχτά πεδία θα αντικατασταθούν. Συνέχεια;')) return;
+    // A new correction request invalidates any previous intent before the network call.
+    state.correctionOfId = '';
+    state.correctionRevision = null;
+    renderCorrectionContext();
+    const untouchedCreator = creatorFingerprint();
     try {
-      const result = await (await api('/api/reuse/application/' +
-        encodeURIComponent(item.id))).json();
-      if (token !== state.outcomeSelectionToken ||
-          state.selectedOutcomeId !== item.id || context !== rfOutcomeContext()) return;
-      const fields = result.fields || {};
-      const oldID = $('identityNumber').value.trim().replace(/[\W_]/g, '').toUpperCase();
-      const newID = String(fields.identity_number || '').replace(/[\W_]/g, '').toUpperCase();
-      if (!newID || (oldID && oldID !== newID)) {
-        throw new Error('Υπάρχει άλλη ταυτότητα στην τρέχουσα αίτηση. Καθάρισέ την πρώτα.');
+      const response = await api('/api/reuse/rejected-correction', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({application_id:item.id, expected_revision:item.revision}),
+      });
+      const result = await response.json();
+      if (token !== state.outcomeSelectionToken || context !== rfOutcomeContext()
+          || state.selectedOutcomeId !== item.id || state.authEpoch !== epoch
+          || state.rfView !== view || creatorFingerprint() !== untouchedCreator
+          || result.application_id !== item.id || result.revision !== item.revision
+          || state.selectedOutcome?.stage !== 'rejected'
+          || state.selectedOutcome?.revision !== item.revision) return;
+      const fields = result.fields;
+      if (!fields || typeof fields !== 'object'
+          || !String(fields.identity_number || '').trim()
+          || (item.identity_number && String(item.identity_number).replace(/[\\W_]/g,'').toUpperCase()
+             !== String(fields.identity_number).replace(/[\\W_]/g,'').toUpperCase())) {
+        throw new Error('Η διορθωτική RF δεν ταυτοποιήθηκε. Επίλεξε ξανά την αίτηση.');
       }
-      // This is a correction of a rejected attempt, NOT proof of prior
-      // performed treatment and never a silent A1 -> A2 continuation.
+      // Only after every ID/revision/view/auth/dirty guard may patient fields change.
+      clearCreatorForCorrection();
       setPathway(result.source?.pathway === 'A2' ? 'A2' : 'A1');
-      const conflicts = populateRfFields(fields);
+      populateRfFields(fields, true);
       state.correctionOfId = item.id;
+      state.correctionRevision = item.revision;
       renderCorrectionContext();
-      $('imagingReport').value = '';
-      state.imagingValidation = '';
-      $('imagingStatus').hidden = true;
-      releaseHorosPreviews();
-      renderHorosImages();
-      $('imagingConfirm').checked = false;
-      if (state.pathway === 'A2') {
-        state.selectedHistoryId = '';
-        $('historyChoices').replaceChildren();
-        $('rfActualConfirm').checked = false;
-      }
-      showOk('Άνοιξε διορθωτική RF. Έλεγξε τα στοιχεία και επίλεξε ρητά ιατρό, πραγματικό προηγούμενο ιστορικό A2 (εφόσον χρειάζεται), νέα PDF/JPEG και έκδοση. ' +
-        (conflicts.length ? 'Έλεγξε επιπλέον τις διαφορές: ' + conflicts.join(', ') : ''));
-      updateSummary();
-    } catch (error) { showError(error.message); }
+      switchRfView('creator', {correction:true});
+      showOk('Η απορριφθείσα RF φορτώθηκε με έλεγχο έκδοσης. Επιβεβαίωσε ιατρό, στοιχεία και νέα PDF/JPEG πριν εκδώσεις.');
+    } catch (error) {
+      if (token !== state.outcomeSelectionToken || epoch !== state.authEpoch
+          || context !== rfOutcomeContext() || state.rfView !== view) return;
+      state.correctionOfId = '';
+      state.correctionRevision = null;
+      renderCorrectionContext();
+      showError(error.message);
+    }
   }
 
   function savedDraftFields() {
