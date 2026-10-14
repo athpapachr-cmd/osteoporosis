@@ -83,7 +83,8 @@ const browser = {
     createObjectURL() { return 'blob:rf-test-' + (++blobId); },
     revokeObjectURL(value) { revoked.push(value); },
   },
-  window: {},
+  window: {confirm:()=>true},
+  history: {pushState(){}},
 };
 vm.runInNewContext(instrumented, browser, {filename: 'rf-app.js'});
 const jpg = name => ({name, size: 1024, type: 'image/jpeg'});
@@ -421,8 +422,11 @@ async function testRfOutcomeActionsAndCorrection() {
       card = {...card,revision:card.revision+1,
         decision_date:request.event_date,rejection_reason:request.rejection_reason};
       data = card;
-    } else if (path === '/api/reuse/application/' + original.id) {
-      data = {source:{kind:'application',pathway:'A1'},fields:{
+     } else if (path === '/api/reuse/rejected-correction') {
+      assert.strictEqual(options.method, 'POST');
+      assert.strictEqual(request.application_id, original.id);
+      assert.strictEqual(request.expected_revision, card.revision);
+      data = {application_id: original.id, revision: card.revision, source:{kind:'application',pathway:'A1'},fields:{
         pathway:'A1',patient_name:'Synthetic RF Patient',identity_number:'RF-CORR',
         gesy_number:'SYN-GESY',age:67,indication_code:'KNEE_OA_KL34',
         laterality:'left',exact_location:'Αριστερό γόνατο',product_key:'medikey',
@@ -473,9 +477,11 @@ async function testRfOutcomeActionsAndCorrection() {
   assert.notStrictEqual(el('doctorSelect').value,'physicianB',
                         'correction must not silently select colleague issuer');
 
-  // Existing saved-draft mechanism carries only the correction ID, no binaries.
+  // A saved draft must never re-arm correction after reload.
   assert.strictEqual(browser.__rfTest.savedDraftFields().correction_of_application_id,
-                     original.id);
+                      undefined);
+  assert.strictEqual(browser.__rfTest.buildDraft().correction_source_expected_revision,
+                      card.revision);
 }
 
 
