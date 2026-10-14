@@ -1,0 +1,114 @@
+# Cockpit — Medical Reports resumable tracking v1 (unified design)
+
+**Date:** 2026-10-14. **Stage:** PRODUCT-OWNER DIRECTION APPROVED; **DESIGN CANDIDATE / INDEPENDENT PRE-CODE R2 HOLD**. This is **not** an implementation or a release authorization.
+**Repository:** athpapachr-cmd/osteoporosis. Frozen activation main: `244a3264f119252b1bbfc3562a00648cfdf113bd`, following independently reviewed PR #152 Render LIVE. Isolated design-only branch: `design/cockpit-medical-report-resumable-tracking-20261014`.
+
+## A. Product contract — what the clinician will see
+
+One coherent feature spanning the existing **Ιατρικές εκθέσεις** screen and Cockpit Home; do **not** redesign the whole Cockpit.
+
+* In Medical Reports, compact counters, search/filter, recent report rows, **Νέα έκθεση** and one-tap **Συνέχιση**. The existing six-stage source → analysis → edit → clinician confirmation → PDF workflow remains.
+* A saved report reopens at the last **successfully persisted** edit, with all editable report text, accepted AI refinements, evidence/timeline/diagnoses context and current non-stale research. A failed or pending save is **never** described as saved.
+* Lifecycle: **Σε εξέλιξη**, **Αναμονή στοιχείων**, **Ολοκληρωμένη**, **Ακυρωμένη / αρχειοθετημένη**. Explicit clinician actions, not inferred from elapsed time, AI generation, preview, or PDF download.
+* Cockpit Home **Ιατρικές εκθέσεις · N εκκρεμούν** (draft + waiting), details **Σε εξέλιξη D · Αναμονή στοιχείων W · Ολοκληρωμένες C**, with one-tap route to the existing reports page. Show **«Καταγραφή από [activation date]»** where relevant: no invented historical backfill, no false zeros during errors.
+* Preserve the proven #152 surgery/RF attention, #151 shared Clinical Key/navigation and Home V4 recent visits/calendar/Visit Capture Save. No new tab labyrinth, separate dashboard, or repeated confirmation on ordinary edits.
+
+**Synthetic-only example:** 4 σε εξέλιξη, 2 αναμονή στοιχείων, 12 ολοκληρωμένες. These are illustrative, never assertions about production.
+
+## B. Verified current sources and ownership
+
+1. `clinic_utilities/clinical_documents/report_api.py` (blob `9d86eb71f399abd759d7a408a266a0ecc6f4931d`): protected `/clinical/clinic-utilities/medical-report` endpoints `/api/contract`, `/api/analyze`, `/api/refine`, `/api/research`, `/api/preview`, `/api/pdf`. Current contract explicitly says no case database, browser storage or autosave. `build_medical_report_router()` currently receives no engine.
+2. `clinic_utilities/clinical_documents/report_models.py` (blob `4a3476609eaf20d29484004e6e4d701291386a7b`): strict `MedicalReportCaseV1`, `MedicalReportAnalysisV1`, `ReportSectionDraftV1`, `FinalMedicalReportV1`. Case includes sensitive clinician narrative, patient identity, instruction/reference. Analysis may contain derived PHI.
+3. `static/clinic-utilities/medical-report/index.html` (blob `db6d5112fbb276687efea3845aa383f0f5cc583d`), `app.js` (blob `d8631dd0ffbf49c89899b5c50add727d89c66b29`) and `v1-1-refine.js` (blob `10680bb4a5238b2edf069f15715bea5bdac8e695`): transient `state.draft`, edited textareas and in-memory research; refine maintains **separate** state and intercepts fetch. Initial sources and signature are session-only. Existing UI says "Χωρίς αποθήκευση υπόθεσης"; this must change only when the new capability is genuinely enabled.
+4. `static/cockpit/doctor-shell.js` (blob `acd9340c4d2d67d30ede12426ff8784eaeb3a8d0`): Home presently truthfully displays **Δεν υπάρχει ακόμη αξιόπιστη καταμέτρηση**. Its RF and surgery security/summary behavior is frozen, not a new target.
+5. `main.py` already passes the existing SQLAlchemy engine to other clinical routers and uses `ClinicalCookieMiddleware` / existing Clinical Key. **There is no verified per-clinician authenticated principal** behind the shared Clinical Key. It must not be falsely labelled doctor-specific identity or permission.
+
+The new authoritative owner is one **additive protected medical-report workspace + status ledger in the existing application database**, implemented later under the Medical Report router. Home is a **read-only projection**, never a second writer.
+
+## C. Durable data contract — bounded, genuinely resumable
+
+### C1. Workspace, not a patient registry
+
+One server-generated random opaque `workspace_id` per **explicitly saved** report attempt, not patient ID and not linked to patient/encounter/RF/surgery. Multiple reports for the same person remain separate. Persist `schema_version`, `revision` (strict increasing integer), `status`, UTC `created_at`, `updated_at`, `completed_at`/`voided_at` where applicable, a truthful `tracking_started_at`/coverage boundary, and a short append-only status audit (event, prior/next state, revision, UTC time, session-level provenance). **Clinical Key does not authenticate an individual clinician**; do not auto-fill issuer or audit actor with a verified doctor identity. Any optional self-declared issuer is explicitly *unverified*, not an authorization principal.
+
+The row's deliberately minimal list projection may return `workspace_id`, patient display name, report type, report/incident date, status, revision and last saved time. Only the protected reports list may show names; **Home returns counts only**. No raw national ID, phone, narrative, report paragraphs or source names in Home, links, console, logs, badges or browser persistent storage.
+
+### C2. Explicit, bounded persisted draft snapshot
+
+Save only what is necessary to resume a *reviewable* report, after an intentional initial save:
+* Validated `MedicalReportCaseV1` fields (including typed clinician context and case identity), `MedicalReportAnalysisV1` source summaries/evidence/timeline/diagnoses/clinician-confirmed resolutions, current **DOM-edited** `report_sections` keyed by stable `section_id`, research text/citations when valid, `research_stale`, edited declaration and UI tab/section position if useful.
+* Prior analyzed-source **metadata only** for rendering provenance (stable source_id, type, bounded filename/label, count, extraction/review flags), clearly tagged as **historical metadata, not attached files**. Original filenames may themselves be PHI and remain protected inside the workspace, not in previews/logs. Validate strict shape and payload/field/total size ceilings; derive indices from validated fields, never arbitrary client JSON.
+* Accepted `v1-1-refine` analysis/resolutions **only after clinician presses Εφαρμογή αλλαγών**; never silently save a proposed AI revision. The two existing client states must use a single explicit hydrate/save contract, not competing unsynchronized draft copies. Server restore must reproduce the visible accepted sections and evidence context, not an old pre-edit snapshot.
+
+**Intentionally never persist**: raw uploaded PDF/TXT/DOCX/Heidi transcripts, extracted `sources[].pages`/page text or `structured_notes`, signatures or signature image, PDF bytes, object URLs, full AI prompt/response chat, rejected/pending AI proposals, unaccepted generated changes, provider credentials, token-level usage, or arbitrary patient registry data. The saved **analysis and narrative themselves contain sensitive clinical information**; do not disguise them as harmless metadata.
+
+On reopen: show prior source **manifest only** with an honest "Αρχικά αρχεία δεν διατηρούνται — επαναεπισύναψε για νέα ανάλυση" message. Never pretend files are still attached, and do not implicitly re-call the AI/provider or regenerate sources. Previously accepted analysis and edited sections remain readable/editable. For adding/re-analyzing sources, require a new explicit upload and analysis action with a clear warning before replacing accepted content. `clinicianConfirmed` always resets to **unchecked** after reload or materially changed content. The signature is **never restored**; user must re-add it per session. Invalid/stale research cannot re-enter a final PDF.
+
+### C3. Save semantics, data integrity and conflicts
+
+* First record only after deliberate `Αποθήκευση προσχεδίου` with existing minimum input (patient name and report date; type selected). Merely viewing the screen or pressing `Νέα έκθεση` creates **no counted record**. No silent migration/backfill of older reports.
+* Once a workspace is created, debounced autosave (~1–2 sec) plus obvious `Αποθήκευση` and "Αποθηκεύτηκε [time] / Εκκρεμεί / Αποτυχία" states. An unsent/in-flight save remains **unconfirmed**. Do not rely on unload to guarantee persistence; warn on navigation/refresh with unsaved changes and allow retry. Preserve unsaved browser text on any save failure.
+* Atomic server save with client `expected_revision` and optimistic concurrency; each accepted content/status write increments revision. On 409 or newer remote version, **stop autosave** and show a non-destructive conflict workflow ("Φόρτωσε την αποθηκευμένη έκδοση" or preserve/export this local unsaved text), **never last-write-wins**. Late save responses, refreshes and auth failures must not overwrite the open, newer workspace or publish "saved" for the wrong revision.
+* Save is independent of AI provider availability: a clinician may preserve manually edited content while AI is disabled. If encrypted-at-rest capability/clinical DB/auth is not available, tracking must fail closed rather than falling back to localStorage, cookies, files, in-process RAM or fabricated totals.
+
+### C4. Status transitions — explicit clinical attestation
+
+Status values: `draft` (Σε εξέλιξη), `awaiting_information` (Αναμονή στοιχείων), `completed` (Ολοκληρωμένη), `void` (Ακυρωμένη/αρχειοθετημένη).
+
+* `draft ↔ awaiting_information` by explicit clinician action. Waiting never inferred from inactivity or AI prompts.
+* `draft/awaiting_information → completed` **only** from a dedicated confirmation ("Έλεγξα και ολοκλήρωσα την έκθεση") tied to the currently saved revision, with at least one nonempty valid section and validated case; require fresh clinician acknowledgement. **Preview, successful PDF generation/download, generated AI draft, and export by themselves NEVER mark complete.** Report status means manually recorded completion, **not** confirmed email delivery, signature retention, or legally verified issue.
+* Completed workspace is read-only until an explicit `Επανέναρξη για διόρθωση`: create the next draft revision with an audit event, clear completion as the current state, re-require review/confirmation and update counts accordingly. Historical completion event remains in metadata audit, not a separate immutable signed PDF.
+* `draft/awaiting_information → void` requires confirmation; void is excluded from active/completed Home counts but retained in protected audit for governed disposal. No one-click hard deletion in this slice. Undo/recovery, if needed, must be explicit and auditable, never silently change the count.
+* Every status action is an atomic server transition with allowed edge, `expected_revision` and deterministic 409/422. No source-side AI or PDF action secretly writes status.
+
+## D. Finite API boundary (new, protected, no provider calls)
+
+Under the **existing** Medical Report router / Clinical Key, the only new endpoints proposed are:
+1. `GET /api/tracking/summary` — read-only authoritative database aggregate, counts `draft,awaiting_information,completed,void`, `total`, `coverage_started_at`, fixed `scope: "tracked"`, `complete: true` only for an exhaustive query and UTC `as_of`. All counters present, finite nonnegative integers, internal sum = total. **Only registered records since activation**. No report names, IDs or patient-identifying values.
+2. `POST /api/tracking/search` — **read-intent POST** with bounded `{query, status, page}`; protected indexed search over all tracked rows (no hidden "last 100" window), deterministic ordering/pagination and explicit `has_more`/total; do not put patient query in URL or logs. Return list-projection only.
+3. `POST /api/tracking/open` — **read-intent POST** with opaque ID in body; return validated resumable snapshot, current revision/status and historical source manifest. 404/401/403/503 must not retain data from the prior opened record.
+4. `POST /api/tracking/create` — explicit creation; validated minimal metadata/snapshot; random server ID, revision 1; no "empty new report" counts.
+5. `POST /api/tracking/save` — protected version-checked replacement of bounded allowed snapshot on existing ID, never arbitrary patient/data upsert.
+6. `POST /api/tracking/transition` — protected version-checked state action with explicit completion/void/reopen acknowledgement and audit.
+
+Existing `/api/analyze`, `/api/refine`, `/api/research`, `/api/preview` and `/api/pdf` keep their current clinician authority and no-side-effect completion semantics. `build_medical_report_router(engine)` is the expected narrow composition change; additive and idempotent schema/migration is strictly limited to the new workspace/audit tables. Neither report-status reads nor Home performs new AI, Gmail, PDF, Reception, RF, patient-registry or other provider calls/writes.
+
+No patient identifiers in query strings or deep links. Home navigates to the generic report module; only the protected module POST body carries opaque workspace IDs. Search/open POSTs are **read operations**; create/save/transition are the **only** new application writers.
+
+## E. Cockpit Home projection (existing #152 component)
+
+Add exactly one new protected count-only reader for `/clinical/clinic-utilities/medical-report/api/tracking/summary` in `static/cockpit/doctor-shell.js`. Keep surgery/RF sources and other routes unchanged. On boot and `clinical:authenticated`, invalidate prior report counts immediately, then use monotonic generation to suppress stale success/failure; same-origin credentials and `cache: "no-store"`. Require literal `scope: "tracked"`, literal `complete === true`, finite integer counters and consistency. Missing/malformed/truncated/401/403/503/network → **"Μη διαθέσιμα"**, not zero. Zero only from a confirmed complete source with total zero.
+
+Headline: `Ιατρικές εκθέσεις · N εκκρεμούν` where N = draft + awaiting_information. Detail: `Σε εξέλιξη D · Αναμονή στοιχείων W · Ολοκληρωμένες C`, with `Καταγραφή από [ημερομηνία]` / no historical completeness claim. `void` deliberately not added to "completed". One click opens report list. No patient-level report data in Home state, DOM, URLs, debug logs or screenshots. No changes to the current surgery, RF, Inbox, day/calendar or Visit Capture projections.
+
+## F. Reports UX — focused amendments, not a second app
+
+Top of existing `static/clinic-utilities/medical-report/index.html`: small 3-counter strip, search, filters (Όλες/Σε εξέλιξη/Αναμονή/Ολοκληρωμένες/Ακυρωμένες), compact recent list with one-tap reopen, one `Νέα έκθεση`. Existing clinical creation/editor beneath (or in its current view), no forced linear stepper. Small current status and Save/last-save indicator, `Αναμονή στοιχείων`, `Ολοκλήρωση` and explicit `Επανέναρξη` where applicable. Keep keyboard/mobile 390/680/1280, existing global Home/shortcuts/Key and source/error warnings.
+
+Change misleading `Χωρίς αποθήκευση υπόθεσης` / `Session-only V1.1` labels **conditionally** after protected tracking succeeds: say "Προσχέδια αποθηκεύονται προστατευμένα· αρχικά αρχεία και υπογραφή δεν αποθηκεύονται". Before enablement, preserve honest legacy session-only copy. Never display a saved-state indicator before server acknowledgement. Loading old saved analysis must not falsely imply original uploaded files exist.
+
+## G. Privacy, operational activation and explicit HOLD
+
+This is a **material change** from ephemeral processing to durable named medical information and must be independently reviewed as R2. Reuse `ClinicalCookieMiddleware` / `_require_clinical_key`; mutations must receive same-origin/CSRF protections appropriate to the existing cookie flow. Require strict schemas, size ceilings, server-side authorization, no public static snapshots, no browser localStorage/sessionStorage/IndexedDB, no PHI in application/error/access/request logs, analytics, monitoring, browser URL, CI output or screenshots. Sensitive cache: `Cache-Control: no-store` for all tracking responses; add safe headers, server exception redaction and least-access database credentials. Confirm encryption at rest, backups, access/restore and authorized destruction of persisted PHI in the actual deployment environment; **do not claim verified encryption merely because Render is used**.
+
+**Shared-key limitation:** a holder of the existing common Clinical Key can potentially access all tracked reports. Do not claim individual practitioner access control, a verified issuer or a personal `mine` filter. If individual-level segregation is required, that is a separate identity-owner decision **before enabling real patient data**.
+
+**Retention / deletion release gate (not silently guessed):** no approved retention term was supplied for draft versus completed medico-legal documents. The feature must be **OFF by default** for durable PHI until the Product Owner documents and approves the applicable retention/deletion/backup policy and verifies deployment access protections. Pre-code can review architecture without inventing a legal retention period. Implement an explicit controlled archival/secure-disposal policy before production activation; no indefinite-by-accident retention, destructive scheduler, or unapproved automatic purge in this slice. Do not expose a live patient-save toggle until these operational requirements are satisfied. No migration/import of old patient data.
+
+## H. Smallest affected future implementation seams / synthetic oracles
+
+**Expected bounded code files (future, not now):** `clinic_utilities/clinical_documents/report_api.py` + one small new report tracking persistence/models module, `main.py` composition, `static/clinic-utilities/medical-report/{index.html,app.js,v1-1-refine.js,styles.css}`, `static/cockpit/doctor-shell.js` + CSS only if necessary; narrow tests and canonical checkpoints. Do not alter external services, RF tables/provider, surgery queue, Visit Capture patient Save, or historical reports.
+
+**Future synthetic tests, no identified patients:**
+1. Initial empty/new visit creates zero records; explicit save creates one, stable opaque ID, revision, session change + restart reopens exact DOM-edited Greek content, accepted resolution, evidence/timeline, non-stale research/declaration. No raw file pages, signature, PDF, chat or unsent proposal saved.
+2. Autosave acknowledged/unacknowledged, 409 two tabs, stale A after newer B, denied/503 and network failures, auth re-login; preserve dirty text; no false "saved", no overwriting a newer patient/workspace.
+3. Strict schema/limits, invalid or truncated snapshots, backend crash, nonexistent ID, search pagination across >100 rows, Greek name folds, protected read/write, CSRF/origin, no PHI URLs/logs, no authorization bypass; per-clinician ownership not fabricated.
+4. Manual draft/wait/completed/void/reopen transitions, source-attested completion with clinician confirmation, successful preview/download **not** completion, PDF from resumed content again requires checkbox/signature; accurate current counters, exclusion of void, no backfill.
+5. Home 0/valid/error/partial/malformed/stale/re-auth cases, exact tracked coverage and count consistency, no names/IDs on Home; unchanged #152 surgery/RF/Inbox, #151 shared navigation, calendar partial coverage and Visit Capture Save.
+6. Real Chromium with synthetic data only at 390/680/1280 px, one-tap reopen/routes, visible save/conflict/failure feedback, no overflow; unchanged original report AI/research/preview/PDF smoke without provider calls.
+
+CI should include affected **Medical Reports/Clinical Documents**, **Cockpit Home + Chromium**, **Visit Capture**, **Canonical impact** and narrow regression for #152 as appropriate. Prior green reviews are reused; pre-existing unrelated failing CI is not a new blocker by itself.
+
+## I. Authority and STOP
+
+This document authorizes **design review only**. No new runtime/schema migrations, database rows, provider writes, production feature flags, protected records, merge or Render deploy now. A **separate fresh independent READ-ONLY PRE-CODE R2** must decide PASS/BLOCK/UNKNOWN for this specific new storage/privacy authority and Home/UI effects. Even an independent PASS makes implementation only eligible for **later explicit Product Owner approval**, followed by synthetic post-code R2 and another distinct release/PHI-activation decision. Do not self-certify this design.
