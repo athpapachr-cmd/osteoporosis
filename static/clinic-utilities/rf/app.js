@@ -1177,6 +1177,7 @@
           state.selectedOutcomeId !== selectedId ||
           context !== rfOutcomeContext() || item.id !== selectedId) return;
       renderSelectedOutcome(item);
+      if (state.rfView === 'tracking') $('rfTrackingDetail').scrollIntoView?.({block:'nearest',behavior:'smooth'});
     } catch (error) {
       if (token === state.outcomeSelectionToken) showError(error.message);
     }
@@ -1893,6 +1894,7 @@
     $('rfTrackingNew').addEventListener('click', () => switchRfView('creator'));
     $('rfTrackingShowList').addEventListener('click', () => setTrackingTab('list'));
     $('rfTrackingShowWeek').addEventListener('click', () => setTrackingTab('week'));
+    $('rfTrackingUndatedOpen').addEventListener('click', () => setTrackingTab('list'));
     $('rfTrackingRefresh').addEventListener('click', () => loadTrackingList());
     $('rfTrackingMore').addEventListener('click', () => loadTrackingList({more:true}));
     $('rfWeekMore').addEventListener('click', () => loadTrackingWeek({more:true}));
