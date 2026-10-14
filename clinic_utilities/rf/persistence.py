@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import hashlib
+import hmac
+import base64
+import os
 import json
 import re
 import unicodedata
@@ -12,7 +15,7 @@ from .parsers import (
     is_medication_identity_alias,
     normalize_medication_alias,
 )
-from sqlalchemy import Boolean, Column, DateTime, Integer, JSON, String, select
+from sqlalchemy import Boolean, Column, DateTime, Integer, JSON, String, select, and_, or_
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, Session
 
@@ -752,6 +755,166 @@ def get_rf_application_progress(engine: Engine, application_id: str) -> dict[str
             **_rf_progress_card(app, session.get(RFApplicationProgressORM, application_id)),
             "last_decision_report": _rf_last_decision_report(session, application_id),
         }
+
+
+
+_RF_TRACKING_SCAN_BATCH = 400
+_RF_TRACKING_PAGE_SIZE = 20
+
+
+def _rf_tracking_token(data: dict[str, Any]) -> str:
+    secret = os.environ.get("CLINICAL_DATA_KEY", "")
+    if not secret:
+        raise RuntimeError("RF tracking protection is unavailable")
+    payload = json.dumps(data, sort_keys=True, separators=(",", ":")).encode()
+    signature = hmac.new(secret.encode(), payload, hashlib.sha256).digest()
+    return base64.urlsafe_b64encode(payload + signature).decode().rstrip("=")
+
+
+def _rf_tracking_read_token(token: str, fingerprint: str) -> dict[str, Any]:
+    from datetime import timedelta
+    try:
+        if len(token) > 2400:
+            raise ValueError()
+        raw = base64.urlsafe_b64decode(token + "=" * (-len(token) % 4))
+        payload, signature = raw[:-32], raw[-32:]
+        secret = os.environ.get("CLINICAL_DATA_KEY", "")
+        if not secret or not hmac.compare_digest(
+            signature, hmac.new(secret.encode(), payload, hashlib.sha256).digest()
+        ):
+            raise ValueError()
+        data = json.loads(payload)
+        deadline = datetime.fromisoformat(data["expiry"])
+        if data["fingerprint"] != fingerprint or deadline < utcnow():
+            raise ValueError()
+        return data
+    except (ValueError, TypeError, KeyError, UnicodeDecodeError) as exc:
+        raise ValueError("Μη έγκυρη ή ληγμένη συνέχεια αναζήτησης RF") from exc
+
+
+def track_rf_applications(engine: Engine, *, query: str = "", scope: str = "all",
+                          stage: str = "", cursor: str = "") -> dict[str, Any]:
+    """Finite keyset scan; exact-list completeness is never inferred from one page."""
+    from datetime import timedelta
+    if scope not in {"all", "mine"} or stage not in {
+        "", "issued", "submitted", "approved", "rejected", "scheduled", "performed"
+    }:
+        raise ValueError("Μη έγκυρα φίλτρα RF")
+    normalized_text = _rf_search_text(query)
+    normalized_id = _rf_id_text(query)
+    fingerprint = hashlib.sha256(json.dumps(
+        [normalized_text, normalized_id, scope, stage], ensure_ascii=False
+    ).encode()).hexdigest()
+    token_data = _rf_tracking_read_token(cursor, fingerprint) if cursor else None
+    with Session(engine) as session:
+        if token_data:
+            ceiling_date = datetime.fromisoformat(token_data["high_date"])
+            ceiling_id = token_data["high_id"]
+            last_date = datetime.fromisoformat(token_data["last_date"])
+            last_id = token_data["last_id"]
+        else:
+            newest = session.scalar(select(RFApplicationORM).order_by(
+                RFApplicationORM.created_at.desc(), RFApplicationORM.id.desc()).limit(1))
+            if newest is None:
+                return {"applications": [], "next_cursor": None, "has_more": False,
+                        "scan_complete": True, "truncated": False,
+                        "source_as_of": utcnow().isoformat() + "Z", "counts": None}
+            ceiling_date, ceiling_id = newest.created_at, newest.id
+            last_date = last_id = None
+        ceiling = or_(RFApplicationORM.created_at < ceiling_date,
+                      and_(RFApplicationORM.created_at == ceiling_date,
+                           RFApplicationORM.id <= ceiling_id))
+        stmt = select(RFApplicationORM).where(ceiling)
+        if last_date is not None:
+            stmt = stmt.where(or_(RFApplicationORM.created_at < last_date,
+                                 and_(RFApplicationORM.created_at == last_date,
+                                      RFApplicationORM.id < last_id)))
+        rows = session.scalars(stmt.order_by(
+            RFApplicationORM.created_at.desc(), RFApplicationORM.id.desc()
+        ).limit(_RF_TRACKING_SCAN_BATCH + 1)).all()
+        batch = rows[:_RF_TRACKING_SCAN_BATCH]
+        ids = [x.id for x in batch]
+        progress_rows = session.scalars(select(RFApplicationProgressORM).where(
+            RFApplicationProgressORM.application_id.in_(ids))).all() if ids else []
+        progress = {x.application_id: x for x in progress_rows}
+        results = []
+        last_scanned = None
+        for app in batch:
+            last_scanned = app
+            if normalized_text and not (
+                normalized_text in _rf_search_text(app.patient_name)
+                or normalized_id in _rf_id_text(app.patient_identity_key)
+                or normalized_id in _rf_id_text(app.gesy_number)
+            ):
+                continue
+            card = _rf_progress_card(app, progress.get(app.id))
+            if scope == "mine" and not card["mine_to_follow"]:
+                continue
+            if stage and card["stage"] != stage:
+                continue
+            results.append(card)
+            if len(results) == _RF_TRACKING_PAGE_SIZE:
+                break
+        # Reached last available source row only if the keyset batch was exhausted.
+        scanned_full_batch = last_scanned is not None and last_scanned.id == batch[-1].id
+        complete = (not rows or (len(rows) <= _RF_TRACKING_SCAN_BATCH and scanned_full_batch))
+        next_cursor = None
+        if not complete and last_scanned is not None:
+            expiration = (utcnow() + timedelta(minutes=30)).isoformat()
+            next_cursor = _rf_tracking_token({
+                "fingerprint": fingerprint, "high_date": ceiling_date.isoformat(),
+                "high_id": ceiling_id, "last_date": last_scanned.created_at.isoformat(),
+                "last_id": last_scanned.id, "expiry": expiration,
+            })
+        return {
+            "applications": results, "next_cursor": next_cursor,
+            "has_more": not complete, "scan_complete": complete,
+            "truncated": not complete, "source_as_of": utcnow().isoformat() + "Z",
+            "counts": None, "snapshot_consistent": False,
+        }
+
+
+def rf_week_dates(engine: Engine, week_start: str) -> dict[str, Any]:
+    """Calendar facts only: RF dates never imply Cal.com booking time."""
+    from datetime import date, timedelta
+    try:
+        monday = date.fromisoformat(week_start)
+        if monday.weekday() != 0 or monday.isoformat() != week_start:
+            raise ValueError()
+    except (ValueError, TypeError) as exc:
+        raise ValueError("Απαιτείται έγκυρη Δευτέρα RF") from exc
+    finish = (monday + timedelta(days=7)).isoformat()
+    with Session(engine) as session:
+        stmt = (select(RFApplicationProgressORM)
+                .where(or_(and_(RFApplicationProgressORM.scheduled_date >= week_start,
+                                RFApplicationProgressORM.scheduled_date < finish),
+                           and_(RFApplicationProgressORM.performed_date >= week_start,
+                                RFApplicationProgressORM.performed_date < finish)))
+                .order_by(RFApplicationProgressORM.application_id)
+                .limit(501))
+        rows = session.scalars(stmt).all()
+        truncated = len(rows) > 500
+        rows = rows[:500]
+        ids = [r.application_id for r in rows]
+        apps = session.scalars(select(RFApplicationORM).where(
+            RFApplicationORM.id.in_(ids))).all() if ids else []
+        by_id = {a.id: a for a in apps}
+        facts = []
+        for r in rows:
+            app = by_id.get(r.application_id)
+            if app is None:
+                continue
+            for kind, day in (("scheduled", r.scheduled_date), ("performed", r.performed_date)):
+                if day and week_start <= day < finish:
+                    facts.append({"application_id": r.application_id,
+                                  "kind": kind, "date": day,
+                                  "patient_name": app.patient_name,
+                                  "site_key": app.site_key,
+                                  "laterality": app.laterality,
+                                  "revision": r.revision})
+        return {"facts": facts, "complete": not truncated, "truncated": truncated,
+                "source_as_of": utcnow().isoformat() + "Z",
+                "time_verified": False}
 
 
 def list_rf_application_progress(engine: Engine, query: str = "", scope: str = "all",
