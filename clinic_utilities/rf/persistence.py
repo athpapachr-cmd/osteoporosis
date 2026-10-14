@@ -457,30 +457,54 @@ def search_rf_sources(engine: Engine, query: str, page: int = 1) -> dict[str, An
             "has_more": len(matched) > start + _RF_PAGE_SIZE, "truncated": truncated}
 
 
+def _rf_application_reuse_fields(row: RFApplicationORM) -> dict[str, Any]:
+    """Single immutable issued-attempt serializer for ordinary reuse and corrections."""
+    data = row.payload_json if isinstance(row.payload_json, dict) else {}
+    allowed = {
+        "patient_name", "identity_number", "gesy_number", "age",
+        "product_key", "indication_code", "laterality", "exact_location",
+        "other_area", "other_diagnosis", "additional_notes",
+        "rf_reason_codes", "rf_reason_other", "pain_onset_date",
+        "pain_onset_vas", "last_assessment_date", "last_assessment_vas",
+        "nsaid_trials", "other_analgesic_trials", "adverse_effects",
+        "intervention", "physio",
+    }
+    fields = {k: v for k, v in data.items() if k in allowed}
+    fields.update({"patient_name": row.patient_name,
+                   "identity_number": str(data.get("identity_number") or row.patient_identity_key),
+                   "gesy_number": row.gesy_number,
+                   "age": row.patient_age, "product_key": row.product_key,
+                   "indication_code": row.indication_code, "laterality": row.laterality,
+                   "exact_location": row.exact_location})
+        return fields
+
+
+def read_rf_rejected_correction(engine: Engine, application_id: str,
+                                expected_revision: int) -> dict[str, Any]:
+    """Atomically bind reusable immutable fields to a rejected progress revision."""
+    with Session(engine) as session:
+        app = session.get(RFApplicationORM, application_id)
+        if app is None:
+            raise LookupError("RF application not found")
+        progress = session.scalar(select(RFApplicationProgressORM).where(
+            RFApplicationProgressORM.application_id == application_id).with_for_update())
+        if (progress is None or progress.stage != "rejected"
+                or progress.decision != "rejected"
+                or progress.revision != expected_revision):
+            raise RuntimeError("RF rejection or revision changed")
+        return {"application_id": app.id, "revision": progress.revision,
+                "source": _rf_application_card(app),
+                "fields": _rf_application_reuse_fields(app)}
+
+
 def get_rf_source(engine: Engine, kind: str, source_id: str) -> dict[str, Any] | None:
     with Session(engine) as session:
         if kind == "application":
             row = session.get(RFApplicationORM, source_id)
             if row is None:
                 return None
-            data = row.payload_json if isinstance(row.payload_json, dict) else {}
-            allowed = {
-                "patient_name", "identity_number", "gesy_number", "age",
-                "product_key", "indication_code", "laterality", "exact_location",
-                "other_area", "other_diagnosis", "additional_notes",
-                "rf_reason_codes", "rf_reason_other", "pain_onset_date",
-                "pain_onset_vas", "last_assessment_date", "last_assessment_vas",
-                "nsaid_trials", "other_analgesic_trials", "adverse_effects",
-                "intervention", "physio",
-            }
-            fields = {k: v for k, v in data.items() if k in allowed}
-            fields.update({"patient_name": row.patient_name,
-                           "identity_number": str(data.get("identity_number") or row.patient_identity_key),
-                           "gesy_number": row.gesy_number,
-                           "age": row.patient_age, "product_key": row.product_key,
-                           "indication_code": row.indication_code, "laterality": row.laterality,
-                           "exact_location": row.exact_location})
-            return {"source": _rf_application_card(row), "fields": fields}
+            return {"source": _rf_application_card(row),
+                    "fields": _rf_application_reuse_fields(row)}
         if kind == "procedure":
             row = session.get(RFProcedureHistoryORM, source_id)
             if row is None:
@@ -943,7 +967,9 @@ def validate_rf_correction_source(session: Session, *, rejected_id: str,
         raise ValueError("Η απορριφθείσα αίτηση RF δεν βρέθηκε")
     progress = session.scalar(select(RFApplicationProgressORM).where(
         RFApplicationProgressORM.application_id == rejected_id).with_for_update())
-    if progress is None or progress.decision != "rejected":
+    if (progress is None or progress.stage != "rejected" or
+            progress.decision != "rejected" or
+            progress.revision != expected_revision):
         raise ValueError("Απαιτείται καταχωρισμένη απόρριψη για διορθωτική αίτηση")
     if (prior.patient_identity_key != normalize_identity(identity_number)
         or prior.indication_code != indication_code or prior.laterality != laterality
