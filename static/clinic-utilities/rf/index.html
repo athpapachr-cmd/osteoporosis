@@ -38,11 +38,13 @@
       <div class="action-row rf-button-row"><button type="button" class="btn secondary" id="rfWeekPrev">‹</button><button type="button" class="btn secondary" id="rfWeekToday">Σήμερα</button><button type="button" class="btn secondary" id="rfWeekNext">›</button><strong id="rfWeekTitle"></strong></div>
       <p class="muted" id="rfWeekStatus" role="status"></p>
       <div id="rfWeekGrid" class="rf-week-grid"></div>
+      <button type="button" class="btn secondary small" id="rfWeekNoDate">Χωρίς ημερομηνία προγραμματισμού · Εγκεκριμένες στη λίστα</button>
       <p class="muted">Προγραμματισμένες και πραγματοποιημένες RF από το μητρώο. Δεν αποτελεί ημερολόγιο επιβεβαιωμένων ραντεβού Γραμματείας· δεν εμφανίζονται ώρες χωρίς επαληθευμένη σύνδεση.</p>
     </div>
     <div id="rfTrackingDetailHost"></div>
   </article>
 </section>
+<p class="muted" id="rfCorrectionContext" hidden>Νέα διορθωμένη αίτηση από καταχωρισμένη απόρριψη. Απαιτείται ρητή επιλογή ιατρού και νέα απεικόνιση.</p>
 <main class="workspace" id="rfBuilderView"><section class="builder">
 <article class="card"><div class="card-title"><span class="step">1</span><div><h2>Τύπος αίτησης</h2><p>Κατηγορία Α μόνο.</p></div></div><div class="segmented"><button type="button" class="segment active" data-pathway="A1">Νέα θεραπεία</button><button type="button" class="segment" data-pathway="A2">Συνέχιση θεραπείας</button></div></article>
 <section id="a2SourceFlow" hidden>
@@ -102,7 +104,6 @@
     </div>
     <p class="muted">Η έγκριση δεν σημαίνει προγραμματισμένη ή πραγματοποιημένη θεραπεία. Η προσωπική παρακολούθηση είναι ανεξάρτητη από την έκβαση.</p>
   </div>
-  <p class="muted" id="rfCorrectionContext" hidden>Νέα διορθωμένη αίτηση από καταχωρισμένη απόρριψη. Θα χρειαστούν ξανά τα επισυναπτόμενα.</p>
 </article>
 <article class="card"><div class="card-title"><span class="step" id="rfPatientStep">2</span><div><h2>Ασθενής & προϊόν</h2><p>Τα στοιχεία ιατρού και προϊόντος συμπληρώνονται server-side.</p></div></div><div class="grid two"><label>Ονοματεπώνυμο<input id="patientName" autocomplete="name"></label><label>Ηλικία<input id="age" type="number" min="1" max="130"></label><label>Αρ. ταυτότητας<input id="identityNumber"></label><label>Αρ. μητρώου ΓεΣΥ<input id="gesyNumber"></label><label class="full">Ιατρός αίτησης<select id="doctorSelect"><option value="papachristou">Φόρτωση ιατρών…</option></select></label>
 <details class="doctor-management full" id="doctorManagement">
