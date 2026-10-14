@@ -201,3 +201,8 @@ def test_clinician_home_v4_preserves_existing_tools_without_legacy_blocks_under_
 def test_clinician_home_v4_synthetic_command_strip_interactions():
     output = subprocess.check_output(["node", "test_cockpit_doctor_shell.js"], text=True)
     assert "PASS Cockpit Doctor Shell" in output
+
+
+def test_real_attention_summary_guarded_synthetic_sources_and_races():
+    output = subprocess.check_output(["node", "test_cockpit_attention_summary.js"], text=True)
+    assert "PASS Cockpit Attention" in output

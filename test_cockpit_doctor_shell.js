@@ -61,6 +61,14 @@ const mockAppointments=[
 ];
 async function fakeFetch(url,opts){
  calls.push({url,method:opts.method||"GET",options:opts});
+ if(url==="/clinical/clinic-utilities/rf/api/outcomes/search"){
+   assert.equal(opts.method,"POST","RF endpoint is read-intent POST only");
+   assert.deepEqual(JSON.parse(opts.body),{query:"",scope:"all",page:1});
+   return {ok:true,status:200,json:async()=>({
+     denominator:5,scope:"all",page:1,truncated:false,applications:[],
+     counts:{issued_unknown:1,pending:2,approved:1,rejected:0,scheduled:1,performed:1,mine_actionable:1}
+   })};
+ }
  if(!url.startsWith("/clinical/calendar/appointments?"))throw Error("unexpected URL "+url);
  if(deferred)return deferred.promise;
  return {ok:authenticated,status:authenticated?200:401,json:async()=>mockAppointments};
@@ -76,14 +84,15 @@ function findButtonContent(title) {
 (async()=>{
  assert.equal($("doctorLibraryView").hidden,true);
  assert.equal($("doctorInboxBadge").hidden,true,"no invented unread email count");
- assert.equal($("doctorAttentionList").children.length,3);
+ assert.equal($("doctorAttentionList").children.length,4);
  $("doctorDateButton").fire("click");
  await tick();await tick();
  assert.equal($("doctorPopover").hidden,false);
  assert.equal($("doctorDateButton").attributes["aria-expanded"],"true");
- assert.equal(calls.length,1);
- assert.match(calls[0].url,/\/clinical\/calendar\/appointments\?start=/);
- assert.match(calls[0].url,/&end=/);
+ const calendarCalls=calls.filter(x=>x.url.startsWith("/clinical/calendar/appointments?"));
+ assert.equal(calendarCalls.length,1);
+ assert.match(calendarCalls[0].url,/\/clinical\/calendar\/appointments\?start=/);
+ assert.match(calendarCalls[0].url,/&end=/);
  const first=findButtonContent("Συνθετικός Ασθενής Α");
  assert.ok(first,"actual protected appointment is actionable");
  first.fire("click");
@@ -97,7 +106,8 @@ function findButtonContent(title) {
  $("doctorInboxButton").fire("click");
  assert.equal($("doctorPopover").hidden,true);
 
- windowHandlers.get("cockpit:surgery-counts")({detail:{total:2,undated:1}});
+ windowHandlers.get("cockpit:surgery-counts")({detail:{total:2,undated:1,invalid:0,overdue:0,
+  upcoming:[{date:"2099-11-01",count:1,name:"Συνθετικός Ασθενής Μ",procedure:"Αρθροσκόπηση"}]}});
  assert.equal($("doctorTasksBadge").hidden,false);
  assert.equal($("doctorTasksBadge").textContent,"2");
  $("doctorTasksButton").fire("click");
@@ -139,7 +149,9 @@ function findButtonContent(title) {
  await tick();await tick();
  assert.equal($("doctorPopover").dataset.kind,"inbox","late day response cannot replace Inbox");
  assert.equal($("doctorPopoverContent").children.length,inboxState);
- assert.ok(calls.every(x=>x.method==="GET"),"no new clinical writes");
+ assert.ok(calls.every(x=>x.method==="GET" || (x.method==="POST"
+   && x.url==="/clinical/clinic-utilities/rf/api/outcomes/search")),
+   "the RF search is the only new read-intent POST");
  assert.ok(calls.every(x=>!x.url.includes("patient_id")),"no patient identifiers in URLs");
  console.log("PASS Cockpit Doctor Shell: contextual day, Peek route, Inbox truth, tasks, actions, library, stale isolation");
 })().catch(e=>{console.error(e);process.exitCode=1;});

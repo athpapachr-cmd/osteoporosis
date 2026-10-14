@@ -1,6 +1,8 @@
 """Real Chromium smoke with invented records; no production, Gmail or patient access."""
 from pathlib import Path
 import shutil
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 from playwright.sync_api import sync_playwright, expect
 
 ROOT = Path(__file__).parent
@@ -25,6 +27,13 @@ RECENT = [
     {"patient_id": "SYN-2", "patient_display_name": "Ασθενής Δοκιμαστικός",
      "encounter_date": "2026-10-08", "visit_type": "Κλινική επίσκεψη"},
 ]
+FUTURE_SURGERY_DATE = (datetime.now(ZoneInfo("Asia/Nicosia")).date() + timedelta(days=2)).isoformat()
+RF_COUNTS = {
+    "scope": "all", "page": 1, "truncated": False, "denominator": 3,
+    "applications": [], "counts": {"issued_unknown": 1, "pending": 1,
+        "approved": 1, "rejected": 0, "scheduled": 1, "performed": 1,
+        "mine_actionable": 1},
+}
 SURGERIES = [
     {"surgery_id": "synthetic-surgery-1", "full_name": "Συνθετικός Ασθενής Α",
      "identity_number": "SYNTHETIC", "date_of_birth": "1970-01-01",
@@ -33,7 +42,7 @@ SURGERIES = [
     {"surgery_id": "synthetic-surgery-2", "full_name": "Συνθετικός Ασθενής Β",
      "identity_number": "SYNTHETIC", "date_of_birth": "1970-01-01",
      "procedure_type": "Δοκιμή", "laterality": "right", "phone": "000000",
-     "surgery_date": "2026-11-01", "queue_position": 2},
+     "surgery_date": FUTURE_SURGERY_DATE, "queue_position": 2},
 ]
 DAY = [
     {"appointment_id": "cal.com:synthetic-1", "patient_display_name": "Ασθενής Δοκιμής Α",
@@ -77,7 +86,13 @@ def browser_suite(width, screenshot_name):
             if "/clinical/calendar/appointments?" in url:
                 return route.fulfill(json=DAY)
             if url.endswith("/clinical/surgeries"):
-                return route.fulfill(json=SURGERIES)
+                return route.fulfill(status=200 if auth["authenticated"] else 401,
+                                     json=SURGERIES if auth["authenticated"] else {"detail": "Unauthorized"})
+            if url.endswith("/clinical/clinic-utilities/rf/api/outcomes/search"):
+                assert route.request.method == "POST"
+                assert route.request.post_data_json == {"query": "", "scope": "all", "page": 1}
+                return route.fulfill(status=200 if auth["authenticated"] else 401,
+                                     json=RF_COUNTS if auth["authenticated"] else {"detail": "Unauthorized"})
             outbound.append(url)
             return route.abort()
         page.route("**/*", handle)
@@ -124,13 +139,19 @@ def browser_suite(width, screenshot_name):
             page.locator("#ceGlobalLoginForm button[type=submit]").click()
             expect(page.locator("#ceGlobalAuthStatus")).to_contain_text("Λανθασμένο Clinical Key")
             expect(key).to_have_value("")
-            key.fill("synthetic-key")
-            page.locator("#ceGlobalLoginForm button[type=submit]").click()
-            expect(page.locator("#ceGlobalAuthStatus")).to_contain_text("Συνδέθηκες")
-            expect(key).to_have_value("")
+        key = page.locator("#ceGlobalKeyInput")
+        key.fill("synthetic-key")
+        page.locator("#ceGlobalLoginForm button[type=submit]").click()
+        expect(page.locator("#ceGlobalAuthStatus")).to_contain_text("Συνδέθηκες")
+        expect(key).to_have_value("")
         page.keyboard.press("Escape")
         expect(page.locator("#ceGlobalAccessPanel")).to_be_hidden()
         if width <= 620:
+            expect(page.locator("#doctorAttentionList .doctor-action-row")).to_have_count(4)
+            expect(page.locator("#doctorAttentionList")).to_contain_text("Συνθετικός Ασθενής Β")
+            expect(page.locator("#doctorAttentionList")).to_contain_text("Εκδοθείσες αιτήσεις")
+            expect(page.locator("#doctorAttentionList")).to_contain_text("Δεν υπάρχει ακόμη αξιόπιστη καταμέτρηση")
+            assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1")
             assert not errors, errors
             assert not any("/clinical/visit-capture/save" in url for url in outbound)
             browser.close()
@@ -139,7 +160,10 @@ def browser_suite(width, screenshot_name):
         expect(page.locator("#doctorMainView")).to_be_visible()
         expect(page.locator("#doctorLibraryView")).to_be_hidden()
         expect(page.locator("#visitRecentRows .clinical-patient-row")).to_have_count(2)
-        expect(page.locator("#doctorAttentionList .doctor-action-row")).to_have_count(3)
+        expect(page.locator("#doctorAttentionList .doctor-action-row")).to_have_count(4)
+        expect(page.locator("#doctorAttentionList")).to_contain_text("Συνθετικός Ασθενής Β")
+        expect(page.locator("#doctorAttentionList")).to_contain_text("Αναμένουν απόφαση")
+        expect(page.locator("#doctorAttentionList")).not_to_contain_text("Υποβλήθηκαν")
         expect(page.locator("#doctorTasksBadge")).to_have_text("2")
         page.screenshot(path=str(OUT / screenshot_name), full_page=True)
 

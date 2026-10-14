@@ -6,7 +6,8 @@
   const buttons = {day: $("doctorDateButton"), inbox: $("doctorInboxButton"),
     tasks: $("doctorTasksButton"), actions: $("doctorActionsButton")};
   const popover = $("doctorPopover"), content = $("doctorPopoverContent");
-  const state = {panel: null, opener: null, request: 0, surgeries: null};
+  const state = {panel: null, opener: null, request: 0, surgeries: null, rf: null};
+  let rfGeneration = 0;
   const zone = "Asia/Nicosia";
   const dateLabel = new Intl.DateTimeFormat("el-CY", {
     timeZone: zone, weekday: "short", day: "numeric", month: "short"
@@ -161,7 +162,7 @@
     }
     content.append(newLink("Ιατρική έκθεση","/clinical/clinic-utilities/medical-report"));
     content.append(newLink("Ραδιοκύματα / RF","/clinical/clinic-utilities/rf"));
-    content.append(text("Συγκεντρωμένη παρακολούθηση RF, emails και εργασιών Dia/Heidi δεν έχει ενεργοποιηθεί. Δεν παρουσιάζονται εικονικές εκκρεμότητες."));
+    content.append(text("Το Clinical Inbox και οι εργασίες Dia/Heidi δεν έχουν συνδεθεί με την παρακολούθηση."));
   }
   const links=[
     {name:"Καταγραφή επίσκεψης",hint:"Visit Capture",href:"/static/cockpit/visit-capture/"},
@@ -207,26 +208,97 @@
     close();$("doctorLibraryView").hidden=true;$("doctorMainView").hidden=false;
     $("doctorActionsButton").focus();
   }
+  const rfCounterNames = [
+    "issued_unknown", "pending", "approved", "rejected",
+    "scheduled", "performed", "mine_actionable"
+  ];
+  function validatedRF(value) {
+    if (!value || typeof value !== "object" || Array.isArray(value)
+        || typeof value.truncated !== "boolean" || value.scope !== "all"
+        || value.page !== 1 || !Number.isInteger(value.denominator)
+        || value.denominator < 0 || !value.counts || typeof value.counts !== "object"
+        || Array.isArray(value.counts)) return null;
+    const numbers = {};
+    for (const key of rfCounterNames) {
+      const count = value.counts[key];
+      if (!Number.isInteger(count) || count < 0 || count > value.denominator) return null;
+      numbers[key] = count;
+    }
+    if (value.truncated) return { partial: true }; // Never suggest an exhaustive total.
+    return { denominator: value.denominator, ...numbers };
+  }
+
+  async function loadRfAttention() {
+    const generation = ++rfGeneration;
+    state.rf = null; // Auth refresh invalidates prior RF counts synchronously.
+    attention();
+    try {
+      const response = await fetch("/clinical/clinic-utilities/rf/api/outcomes/search", {
+        method: "POST", credentials: "same-origin", cache: "no-store",
+        headers: { "Content-Type": "application/json", "Accept": "application/json" },
+        body: JSON.stringify({ query: "", scope: "all", page: 1 })
+      });
+      if (!response.ok) throw new Error("Protected RF source unavailable");
+      const parsed = validatedRF(await response.json());
+      if (generation !== rfGeneration) return;
+      if (!parsed) throw new Error("Invalid RF count source");
+      state.rf = parsed; // No individual RF applications, names or IDs in Home state.
+    } catch (_) {
+      if (generation !== rfGeneration) return;
+      state.rf = null;
+    }
+    if (generation === rfGeneration) attention();
+  }
+
+  function surgeryAttentionLines(summary) {
+    const lines = [];
+    const remainder = [];
+    if (summary.undated) remainder.push(summary.undated + " χωρίς ημερομηνία");
+    if (summary.invalid) remainder.push(summary.invalid + " μη έγκυρες ημερομηνίες");
+    if (summary.overdue) remainder.push(summary.overdue + " παλαιότερα εκκρεμή");
+    if (remainder.length) lines.push(remainder.join(" · "));
+    for (const group of summary.upcoming) {
+      const day = dateLabel.format(new Date(group.date + "T12:00:00Z"));
+      lines.push(group.count === 1
+        ? day + " · " + group.name + " · " + group.procedure
+        : day + " · " + group.count + " χειρουργεία");
+    }
+    if (!lines.length) lines.push(summary.total === 0
+      ? "Δεν υπάρχουν εκκρεμή χειρουργεία" : "Δεν υπάρχουν επόμενες ημερομηνίες");
+    return lines.join("\n");
+  }
+
   function attention() {
-    const target=$("doctorAttentionList");target.replaceChildren();
-    const s=state.surgeries;
+    const target = $("doctorAttentionList"); target.replaceChildren();
+    const s = state.surgeries, rf = state.rf;
     target.append(action(
-      s?"Χειρουργεία · "+s.total+" εκκρεμή":"Εκκρεμή χειρουργεία",
-      s?s.undated+" χωρίς ημερομηνία":"Άνοιγμα λίστας και προγραμματισμού",
-      ()=>showLibrary("surgery")));
-    target.append(action("Έγγραφα · RF και εκθέσεις",
-      "Άμεση πρόσβαση στη σύνταξη",()=>showLibrary("documents")));
+      s ? "Χειρουργεία · " + s.total + " εκκρεμή" : "Χειρουργεία · Μη διαθέσιμα",
+      s ? surgeryAttentionLines(s) : "Άνοιγμα προστατευμένης λίστας",
+      () => showLibrary("surgery")));
+    const rfTitle = rf?.partial ? "RF · Μερική κάλυψη"
+      : rf ? "RF · Εκδοθείσες αιτήσεις " + rf.denominator
+        + " · Αναμένουν απόφαση " + rf.pending : "RF · Μη διαθέσιμα";
+    const rfInfo = rf?.partial ? "Μερική κάλυψη — άνοιξε RF"
+      : rf ? "Εγκρίθηκαν " + rf.approved + " · Απορρίφθηκαν " + rf.rejected
+        + "\nΠρογραμματίστηκαν " + rf.scheduled + " · Πραγματοποιήθηκαν " + rf.performed
+        + " · Δικά μου προς παρακολούθηση " + rf.mine_actionable
+      : "Άνοιξε RF για αναζήτηση";
+    target.append(newLink(rfTitle, "/clinical/clinic-utilities/rf", rfInfo));
+    target.append(newLink("Ιατρικές εκθέσεις", "/clinical/clinic-utilities/medical-report",
+      "Δεν υπάρχει ακόμη αξιόπιστη καταμέτρηση."));
     target.append(action("Κλινικές ενημερώσεις",
       "Η σύνδεση με το Clinical Inbox εκκρεμεί",
-      ()=>openPanel("inbox",buttons.inbox)));
+      () => openPanel("inbox", buttons.inbox)));
   }
-  buttons.day.addEventListener("click",()=>openPanel("day",buttons.day));
+
+    buttons.day.addEventListener("click",()=>openPanel("day",buttons.day));
   buttons.inbox.addEventListener("click",()=>openPanel("inbox",buttons.inbox));
   buttons.tasks.addEventListener("click",()=>openPanel("tasks",buttons.tasks));
   buttons.actions.addEventListener("click",()=>openPanel("actions",buttons.actions));
   $("doctorPopoverClose").addEventListener("click",close);
   if (typeof window !== "undefined" && typeof window.addEventListener === "function") window.addEventListener("clinical:authenticated", () => {
     if(state.panel === "day") loadDay();
+    loadRfAttention();
   });
   $("doctorBackHome").addEventListener("click",showHome);
   document.querySelectorAll("[data-doctor-library-tab]").forEach(b=>{
@@ -248,25 +320,41 @@
     $("doctorRailToggle").setAttribute("aria-expanded",String(next));
   });
   function updateSurgeryCounts(detail) {
-    if(detail?.unavailable){
-      state.surgeries=null;
-      $("doctorTasksBadge").hidden=true;
+    const counts = ["total", "undated", "invalid", "overdue"];
+    const validGroups = detail && Array.isArray(detail.upcoming)
+      && detail.upcoming.length <= 3 && detail.upcoming.every(group =>
+        group && /^\d{4}-\d{2}-\d{2}$/.test(group.date)
+        && Number.isInteger(group.count) && group.count >= 1
+        && (group.count !== 1 || (typeof group.name === "string"
+          && !!group.name.trim() && typeof group.procedure === "string"
+          && !!group.procedure.trim())));
+    const validCounts = detail && counts.every(k => Number.isInteger(detail[k]) && detail[k] >= 0);
+    if (detail?.unavailable || !validCounts || !validGroups
+        || detail.undated + detail.invalid + detail.overdue
+          + (detail.upcoming || []).reduce((sum, group) => sum + group.count, 0) > detail.total) {
+      state.surgeries = null;
+      $("doctorTasksBadge").hidden = true;
       attention();
-      if(state.panel==="tasks")tasks();
+      if (state.panel === "tasks") tasks();
       return;
     }
-    if(!detail||!Number.isInteger(detail.total)||detail.total<0||
-       !Number.isInteger(detail.undated)||detail.undated<0)return;
-    state.surgeries={total:detail.total,undated:detail.undated};
-    $("doctorTasksBadge").hidden=detail.total===0;
-    $("doctorTasksBadge").textContent=String(detail.total);
+    state.surgeries = {
+      total: detail.total, undated: detail.undated, invalid: detail.invalid,
+      overdue: detail.overdue,
+      upcoming: detail.upcoming.map(group => group.count === 1
+        ? { date: group.date, count: 1, name: group.name, procedure: group.procedure }
+        : { date: group.date, count: group.count })
+    };
+    $("doctorTasksBadge").hidden = detail.total === 0;
+    $("doctorTasksBadge").textContent = String(detail.total);
     attention();
-    if(state.panel==="tasks")tasks();
+    if (state.panel === "tasks") tasks();
   }
-  window.addEventListener("cockpit:surgery-counts",e=>updateSurgeryCounts(e.detail));
+    window.addEventListener("cockpit:surgery-counts",e=>updateSurgeryCounts(e.detail));
   // No fake unread-mail badge. It remains hidden until the real Inbox owner exists.
   $("doctorInboxBadge").hidden=true;
   buttons.day.firstChild.textContent=dateLabel.format(new Date())+" ";
   attention();
   updateSurgeryCounts(window.CockpitSurgerySummary);
+  loadRfAttention();
 })();
