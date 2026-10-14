@@ -161,14 +161,14 @@
       content.append(action("Χειρουργεία","Άνοιγμα της προστατευμένης λίστας",()=>showLibrary("surgery")));
     }
     content.append(newLink("Ιατρική έκθεση","/clinical/clinic-utilities/medical-report"));
-    content.append(newLink("Ραδιοκύματα / RF","/clinical/clinic-utilities/rf/tracking"));
+    content.append(newLink("Ραδιοκύματα / RF","/clinical/clinic-utilities/rf"));
     content.append(text("Το Clinical Inbox και οι εργασίες Dia/Heidi δεν έχουν συνδεθεί με την παρακολούθηση."));
   }
   const links=[
     {name:"Καταγραφή επίσκεψης",hint:"Visit Capture",href:"/static/cockpit/visit-capture/"},
     {name:"Παραπεμπτικό φυσιοθεραπείας",hint:"Κείμενο για ΓεΣΥ",href:"/clinical/clinic-utilities/physio-referral"},
     {name:"Αναρρωτική άδεια",hint:"Κλινικό έγγραφο",href:"/clinical/clinic-utilities/sick-leave"},
-    {name:"RF · Ραδιοκύματα",hint:"Αίτηση",href:"/clinical/clinic-utilities/rf/tracking"},
+    {name:"RF · Ραδιοκύματα",hint:"Αίτηση",href:"/clinical/clinic-utilities/rf"},
     {name:"Ιατρική έκθεση",hint:"Σύνταξη έκθεσης",href:"/clinical/clinic-utilities/medical-report"},
     {name:"Οστεοπόρωση",hint:"Module 01",href:"/static/baseline-audit/"},
     {name:"Εβδομαδιαίο ημερολόγιο",hint:"Οστεοπόρωση και κλινικό πρόγραμμα",href:"/static/clinical-calendar/"},
@@ -283,7 +283,7 @@
         + "\nΠρογραμματίστηκαν " + rf.scheduled + " · Πραγματοποιήθηκαν " + rf.performed
         + " · Δικά μου προς παρακολούθηση " + rf.mine_actionable
       : "Άνοιξε RF για αναζήτηση";
-    target.append(newLink(rfTitle, "/clinical/clinic-utilities/rf", rfInfo));
+    target.append(newLink(rfTitle, "/clinical/clinic-utilities/rf/tracking", rfInfo));
     target.append(newLink("Ιατρικές εκθέσεις", "/clinical/clinic-utilities/medical-report",
       "Δεν υπάρχει ακόμη αξιόπιστη καταμέτρηση."));
     target.append(action("Κλινικές ενημερώσεις",
