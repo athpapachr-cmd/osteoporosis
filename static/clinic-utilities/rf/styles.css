@@ -76,3 +76,42 @@
 .rf-outcome-card strong{font-size:13px}
 .rf-outcome-card .muted{overflow-wrap:anywhere}
 @media(max-width:760px){.rf-outcome-toolbar{grid-template-columns:1fr}.rf-outcome-card{align-items:stretch;flex-direction:column}}
+
+/* One protected RF application: visible, distinct tracking and creator views. */
+.rf-view-nav{display:flex;gap:9px;flex-wrap:wrap;padding:14px 32px 0}
+.rf-view-nav a{display:inline-flex;align-items:center;border:1px solid #d4e0ec;background:#fff;border-radius:999px;padding:9px 15px;color:#36536e;text-decoration:none;font-weight:750;font-size:13px}
+.rf-view-nav a[aria-current="page"]{background:#213b58;border-color:#213b58;color:#fff}
+.rf-view-nav a:focus-visible,.rf-tracking-page button:focus-visible{outline:3px solid #93b6db;outline-offset:2px}
+.rf-tracking-page{padding:20px 32px 45px;display:grid;gap:16px;max-width:1600px;margin:0 auto}
+.rf-tracking-page[hidden],#rfCreatorView[hidden],#rfTrackingListPanel[hidden],#rfTrackingWeekPanel[hidden],#rfTrackingDetail[hidden]{display:none}
+.rf-tracking-head{display:flex;justify-content:space-between;gap:16px;align-items:center}
+.rf-tracking-head h2{font-size:24px;margin:0}
+.rf-tracking-head p{color:#64748b;font-size:13px;margin:6px 0 0}
+.rf-tracking-tabs{display:flex;align-items:center;gap:6px;border-radius:12px;background:#eaf0f6;padding:5px;width:max-content;max-width:100%}
+.rf-tracking-tabs .segment{padding:10px 17px}
+.rf-tracking-filters{display:grid;grid-template-columns:minmax(170px,2fr) repeat(2,minmax(120px,1fr)) repeat(2,minmax(115px,1fr)) auto;align-items:end;gap:9px;margin-bottom:13px}
+.rf-tracking-filters button{height:40px}
+.rf-tracking-page .card{min-width:0}
+.rf-quick-row{display:flex;justify-content:space-between;gap:15px;align-items:center;width:100%;text-align:left;background:#fff;border:1px solid #dce5ef;border-radius:12px;padding:13px;color:#243a55;cursor:pointer;font:inherit}
+.rf-quick-row strong{display:block;font-size:14px;margin-bottom:3px}
+.rf-quick-row span{display:block;font-size:12px;color:#627388;line-height:1.5}
+.rf-quick-row:hover{border-color:#9db8d5;background:#f6faff}
+.rf-quick-row[aria-current="true"]{background:#eaf3ff;border-color:#87aacc}
+.rf-quick-row .rf-arrow{flex:0 0 auto;font-size:18px}
+.rf-week-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.rf-week-toolbar h3{margin:0;font-size:16px}
+.rf-week-actions{display:flex;gap:6px}
+.rf-week-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;margin:16px 0}
+.rf-week-day{border:1px solid #dce6f0;border-radius:13px;background:#fbfdff;padding:10px;min-height:145px;min-width:0}
+.rf-week-day h4{font-size:12px;margin:0 0 11px;color:#40546b}
+.rf-week-event{width:100%;text-align:left;margin-bottom:7px;padding:10px 8px;border:1px solid #d6e2f0;border-radius:9px;background:#fff;cursor:pointer;overflow-wrap:anywhere;font:inherit}
+.rf-week-event strong{display:block;font-size:12px;color:#1e3a57}
+.rf-week-event span{display:block;font-size:11px;line-height:1.4;color:#526779;margin-top:4px}
+.rf-week-event.is-performed{border-color:#bcdacf}
+.rf-week-event:focus-visible{outline:3px solid #93b6db}
+#rfTrackingDetail h3{font-size:16px;margin:0}
+#rfTrackingDetail .rf-outcome-selected{border:0;padding:6px 0 0;margin:0;background:transparent}
+#rfTrackingMore,#rfWeekMore{margin-top:12px}
+@media(max-width:1200px){.rf-tracking-filters{grid-template-columns:repeat(3,minmax(0,1fr))}.rf-week-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:760px){.rf-view-nav{padding:12px 18px 0}.rf-tracking-page{padding:16px 18px 32px}.rf-tracking-head{align-items:stretch;flex-direction:column}.rf-tracking-head .btn{width:max-content}.rf-tracking-filters{grid-template-columns:repeat(2,minmax(0,1fr))}.rf-tracking-filters label:first-child{grid-column:1/-1}.rf-week-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:440px){.rf-tracking-filters{grid-template-columns:1fr}.rf-tracking-filters label:first-child{grid-column:auto}.rf-tracking-tabs{width:100%}.rf-tracking-tabs button{flex:1}.rf-week-grid{grid-template-columns:1fr}.rf-week-day{min-height:0}}
