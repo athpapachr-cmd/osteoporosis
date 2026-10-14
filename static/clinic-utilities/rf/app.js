@@ -1596,12 +1596,15 @@
     $('rfBuilderView').hidden = isTracking;
     $('rfOutcomesWorkspace').hidden = true; // Old embedded ledger is superseded.
     if (isTracking) {
+      // Returning to Tracking cannot silently preserve a previous correction authorization.
+      state.correctionOfId = '';
+      state.correctionExpectedRevision = null;
+      renderCorrectionContext();
       $('rfTrackingDetailHost').append($('rfOutcomeSelected'));
       $('rfOutcomeSelected').hidden = true;
-      if (!tracking.initialized) {
-        tracking.initialized = true;
-        loadRfTracking(true);
-      }
+      tracking.initialized = true;
+      if (tracking.tab === 'week') loadRfWeek();
+      else loadRfTracking(true);
     } else {
       $('rfOutcomesWorkspace').append($('rfOutcomeSelected'));
     }
@@ -1625,6 +1628,11 @@
       $('rfTrackStatus').textContent = 'Απαιτείται νέα εξουσιοδότηση.';
       $('rfWeekStatus').textContent = 'Απαιτείται νέα εξουσιοδότηση.';
     } else if (list) {
+      ++tracking.listGeneration;
+      tracking.cursor = '';
+      invalidateRfOutcomeSelection();
+      $('rfTrackResults').replaceChildren();
+      $('rfTrackMore').hidden = true;
       $('rfTrackStatus').textContent = 'Τα αποτελέσματα δεν είναι διαθέσιμα. Δοκίμασε ανανέωση.';
     } else {
       $('rfWeekStatus').textContent = 'Το εβδομαδιαίο ημερολόγιο δεν είναι διαθέσιμο.';
@@ -1733,6 +1741,22 @@
     tracking.weekStart = mondayFor(nicosiaDay());
     $('rfBuilderView').addEventListener('input', () => ++tracking.dirtyGeneration, true);
     $('rfBuilderView').addEventListener('change', () => ++tracking.dirtyGeneration, true);
+    window.addEventListener('clinical:authenticated', () => {
+      ++tracking.authEpoch;
+      ++tracking.listGeneration;
+      ++tracking.weekGeneration;
+      state.correctionOfId = '';
+      state.correctionExpectedRevision = null;
+      renderCorrectionContext();
+      invalidateRfOutcomeSelection();
+      $('rfTrackResults').replaceChildren();
+      $('rfWeekGrid').replaceChildren();
+      $('rfTrackMore').hidden = true;
+      if (!$('rfTrackingView').hidden) {
+        if (tracking.tab === 'week') loadRfWeek();
+        else loadRfTracking(true);
+      }
+    });
     $('rfNavTracking').addEventListener('click', e => {
       e.preventDefault(); showRfView('tracking');
     });
