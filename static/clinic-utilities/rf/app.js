@@ -1260,7 +1260,7 @@
           context !== rfOutcomeContext() || updated.id !== item.id) return;
       renderSelectedOutcome(updated);
       await loadRfOutcomes();
-      if (!$('rfTrackingView').hidden) loadRfTracking(true);
+      if ($('rfTrackingView').hidden === false) loadRfTracking(true);
       showOk('Η έκβαση αποθηκεύτηκε. Η έκδοση του PDF παραμένει αμετάβλητη.');
     } catch (error) { showError(error.message); }
   }
