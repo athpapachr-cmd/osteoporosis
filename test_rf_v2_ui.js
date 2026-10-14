@@ -421,8 +421,12 @@ async function testRfOutcomeActionsAndCorrection() {
       card = {...card,revision:card.revision+1,
         decision_date:request.event_date,rejection_reason:request.rejection_reason};
       data = card;
-    } else if (path === '/api/reuse/application/' + original.id) {
-      data = {source:{kind:'application',pathway:'A1'},fields:{
+    } else if (path === '/api/reuse/rejected-correction') {
+      assert.strictEqual(options.method, 'POST', 'correction must use protected atomic read');
+      assert.strictEqual(request.application_id, original.id);
+      assert.strictEqual(request.expected_revision, card.revision);
+      data = {application_id:original.id, revision:card.revision,
+        source:{kind:'application',pathway:'A1'},fields:{
         pathway:'A1',patient_name:'Synthetic RF Patient',identity_number:'RF-CORR',
         gesy_number:'SYN-GESY',age:67,indication_code:'KNEE_OA_KL34',
         laterality:'left',exact_location:'Αριστερό γόνατο',product_key:'medikey',
@@ -460,12 +464,17 @@ async function testRfOutcomeActionsAndCorrection() {
   for (const id of ['identityNumber','patientName','indicationSelect','lateralitySelect',
                     'exactLocation','gesyNumber','productSelect','additionalNotes'])
     el(id).value = '';
+  browser.window.confirm = () => true;
   await browser.__rfTest.beginRfCorrection();
+  assert(requests.some(x => x.path === '/api/reuse/rejected-correction'));
+  assert(!requests.some(x => x.path === '/api/reuse/application/' + original.id));
   assert.strictEqual(el('patientName').value,'Synthetic RF Patient');
   assert.strictEqual(el('identityNumber').value,'RF-CORR');
   assert.strictEqual(el('rfCorrectionContext').hidden,false);
   assert.strictEqual(browser.__rfTest.buildDraft().correction_of_application_id,
                      original.id, 'new issued attempt must link original rejection');
+  assert.strictEqual(browser.__rfTest.buildDraft().correction_source_expected_revision,card.revision,
+    'protected issuance must carry the matched revision');
   assert.strictEqual(browser.__rfTest.buildDraft().pathway,'A1',
                      'rejected application does not imply real A2 treatment');
   assert.strictEqual(el('imagingReport').value,'',
@@ -473,9 +482,9 @@ async function testRfOutcomeActionsAndCorrection() {
   assert.notStrictEqual(el('doctorSelect').value,'physicianB',
                         'correction must not silently select colleague issuer');
 
-  // Existing saved-draft mechanism carries only the correction ID, no binaries.
-  assert.strictEqual(browser.__rfTest.savedDraftFields().correction_of_application_id,
-                     original.id);
+  // Saved drafts must never persist rejected-correction authority.
+  assert(!('correction_of_application_id' in browser.__rfTest.savedDraftFields()));
+  assert(!('correction_source_expected_revision' in browser.__rfTest.savedDraftFields()));
 }
 
 

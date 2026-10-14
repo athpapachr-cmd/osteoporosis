@@ -8,7 +8,7 @@ import unicodedata
 
 import fitz
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, Query
-from fastapi.responses import FileResponse, Response
+from fastapi.responses import FileResponse, JSONResponse, Response
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import select
 from sqlalchemy.engine import Engine
@@ -55,6 +55,7 @@ from .persistence import (
     list_rf_application_progress, get_rf_application_progress,
     change_rf_application_progress, validate_rf_correction_source,
 )
+from .tracking import guarded_rejected_correction, tracking_search, tracking_week
 
 MAX_IMAGING_BYTES = 20 * 1024 * 1024
 
@@ -164,12 +165,28 @@ class RFApplicationDraft(BaseModel):
     draft_id: str = Field(default="", max_length=80)
     draft_revision: int | None = Field(default=None, ge=1)
     correction_of_application_id: str = Field(default="", max_length=80)
+    correction_source_expected_revision: int | None = Field(default=None, ge=1)
 
 
 class RFOutcomeSearch(BaseModel):
     query: str = Field(default="", max_length=150)
     scope: Literal["all", "mine"] = "all"
     page: int = Field(default=1, ge=1, le=100)
+    mode: Literal["tracking"] | None = None
+    stage: Literal["", "issued", "submitted", "approved", "rejected", "scheduled", "performed"] = ""
+    issued_from: str = Field(default="", max_length=10)
+    issued_to: str = Field(default="", max_length=10)
+    cursor: str = Field(default="", max_length=4096)
+
+
+class RFTrackingWeekRead(BaseModel):
+    week_start: str = Field(min_length=10, max_length=10)
+    cursor: str = Field(default="", max_length=4096)
+
+
+class RFRejectedCorrectionRead(BaseModel):
+    application_id: str = Field(min_length=1, max_length=80)
+    expected_revision: int = Field(ge=1)
 
 
 class RFOutcomeEvent(BaseModel):
@@ -496,6 +513,13 @@ def build_rf_router(engine: Engine) -> APIRouter:
             raise HTTPException(status_code=500, detail="RF utility page is unavailable")
         return FileResponse(page_path, headers={"Cache-Control": "no-store"})
 
+    @router.get("/tracking", include_in_schema=False)
+    def rf_tracking_page():
+        # Same HTML document, shared native RF controller and protection.
+        if not page_path.is_file():
+            raise HTTPException(status_code=500, detail="RF utility page is unavailable")
+        return FileResponse(page_path, headers={"Cache-Control": "no-store"})
+
     @router.get("/api/contract")
     def rf_contract():
         doctors = {
@@ -574,6 +598,19 @@ def build_rf_router(engine: Engine) -> APIRouter:
             return search_rf_sources(engine, query, page)
         except ValueError as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    @router.post("/api/reuse/rejected-correction")
+    def rf_rejected_correction_read(req: RFRejectedCorrectionRead):
+        try:
+            found = guarded_rejected_correction(
+                engine, application_id=req.application_id,
+                expected_revision=req.expected_revision,
+            )
+        except LookupError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        except RuntimeError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        return JSONResponse(content=found, headers={"Cache-Control": "no-store"})
 
     @router.get("/api/reuse/{kind}/{source_id}")
     def rf_reuse_source(kind: Literal["application", "procedure"], source_id: str):
@@ -696,9 +733,25 @@ def build_rf_router(engine: Engine) -> APIRouter:
     @router.post("/api/outcomes/search")
     def rf_outcomes_search(req: RFOutcomeSearch):
         try:
+            if req.mode == "tracking":
+                return JSONResponse(
+                    content=tracking_search(engine, query=req.query, scope=req.scope,
+                                            stage=req.stage, issued_from=req.issued_from,
+                                            issued_to=req.issued_to, cursor=req.cursor),
+                    headers={"Cache-Control": "no-store"})
+            # Legacy #152 Home and the original RF viewer are byte/meaning-compatible.
             return list_rf_application_progress(engine, req.query, req.scope, req.page)
         except ValueError as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    @router.post("/api/outcomes/calendar")
+    def rf_tracking_calendar(req: RFTrackingWeekRead):
+        try:
+            return JSONResponse(
+                content=tracking_week(engine, week_start=req.week_start, cursor=req.cursor),
+                headers={"Cache-Control": "no-store"})
+        except (ValueError, OverflowError) as exc:
+            raise HTTPException(status_code=422, detail="Μη έγκυρη εβδομάδα ή συνέχεια RF") from exc
 
     @router.get("/api/outcomes/{application_id}")
     def rf_outcomes_detail(application_id: str):
@@ -741,6 +794,11 @@ def build_rf_router(engine: Engine) -> APIRouter:
         issuer_selection_origin = (
             "explicit" if "doctor_key" in draft.model_fields_set else "legacy_default"
         )
+        # Correction intent is never inferred from a saved draft or ordinary reuse.
+        if draft.correction_of_application_id and draft.correction_source_expected_revision is None:
+            raise HTTPException(status_code=422, detail="Επίλεξε ξανά την απορριφθείσα αίτηση RF")
+        if not draft.correction_of_application_id and draft.correction_source_expected_revision is not None:
+            raise HTTPException(status_code=422, detail="Μη έγκυρη διορθωτική αναφορά RF")
 
         indication = INDICATIONS.get(draft.indication_code)
         if not indication:
@@ -765,7 +823,7 @@ def build_rf_router(engine: Engine) -> APIRouter:
             else "clinician_confirmed"
         )
         payload = {
-            **draft.model_dump(exclude={"legacy_history", "imaging_review_confirmed", "draft_id", "draft_revision"}),
+            **draft.model_dump(exclude={"legacy_history", "imaging_review_confirmed", "draft_id", "draft_revision", "correction_source_expected_revision"}),
             "site_key": indication["site_key"],
             "imaging_attachment_review": imaging_review,
             "other_area": other_area,
@@ -888,7 +946,10 @@ def build_rf_router(engine: Engine) -> APIRouter:
                         identity_number=draft.identity_number,
                         indication_code=draft.indication_code,
                         laterality=draft.laterality, site_key=indication["site_key"],
+                        expected_revision=draft.correction_source_expected_revision,
                     )
+                except RuntimeError as exc:
+                    raise HTTPException(status_code=409, detail=str(exc)) from exc
                 except ValueError as exc:
                     raise HTTPException(status_code=422, detail=str(exc)) from exc
                 payload["correction_of_application_id"] = draft.correction_of_application_id

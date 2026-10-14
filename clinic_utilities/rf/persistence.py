@@ -12,7 +12,7 @@ from .parsers import (
     is_medication_identity_alias,
     normalize_medication_alias,
 )
-from sqlalchemy import Boolean, Column, DateTime, Integer, JSON, String, select
+from sqlalchemy import Boolean, Column, DateTime, Index, Integer, JSON, String, select
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, Session
 
@@ -170,6 +170,11 @@ class RFApplicationProgressORM(RFBase):
     updated_at = Column(DateTime, nullable=False)
 
 
+# Date-only RF week lookups; install on existing databases as well as new ones.
+_RF_SCHEDULED_INDEX = Index("ix_rf_progress_scheduled_date", RFApplicationProgressORM.scheduled_date)
+_RF_PERFORMED_INDEX = Index("ix_rf_progress_performed_date", RFApplicationProgressORM.performed_date)
+
+
 class RFApplicationProgressAuditORM(RFBase):
     """Clinician-entered revisions, separate from the issued medical document."""
     __tablename__ = "clinic_rf_application_progress_audit"
@@ -193,6 +198,9 @@ def normalize_identity(value: str) -> str:
 
 def initialize_rf_tables(engine: Engine) -> None:
     RFBase.metadata.create_all(bind=engine)
+    # create_all never migrates an existing table: these indexes are idempotent.
+    _RF_SCHEDULED_INDEX.create(bind=engine, checkfirst=True)
+    _RF_PERFORMED_INDEX.create(bind=engine, checkfirst=True)
     # Seed only once from the existing deployment setting; afterwards the managed
     # value wins, including edits and deliberate deactivation across restarts.
     with Session(engine) as session:
@@ -457,30 +465,35 @@ def search_rf_sources(engine: Engine, query: str, page: int = 1) -> dict[str, An
             "has_more": len(matched) > start + _RF_PAGE_SIZE, "truncated": truncated}
 
 
+def _rf_application_source(row: RFApplicationORM) -> dict[str, Any]:
+    """The existing selected application source serializer, reused in guarded correction."""
+    data = row.payload_json if isinstance(row.payload_json, dict) else {}
+    allowed = {
+        "patient_name", "identity_number", "gesy_number", "age",
+        "product_key", "indication_code", "laterality", "exact_location",
+        "other_area", "other_diagnosis", "additional_notes",
+        "rf_reason_codes", "rf_reason_other", "pain_onset_date",
+        "pain_onset_vas", "last_assessment_date", "last_assessment_vas",
+        "nsaid_trials", "other_analgesic_trials", "adverse_effects",
+        "intervention", "physio",
+    }
+    fields = {k: v for k, v in data.items() if k in allowed}
+    fields.update({"patient_name": row.patient_name,
+                   "identity_number": str(data.get("identity_number") or row.patient_identity_key),
+                   "gesy_number": row.gesy_number,
+                   "age": row.patient_age, "product_key": row.product_key,
+                   "indication_code": row.indication_code, "laterality": row.laterality,
+                   "exact_location": row.exact_location})
+    return {"source": _rf_application_card(row), "fields": fields}
+
+
 def get_rf_source(engine: Engine, kind: str, source_id: str) -> dict[str, Any] | None:
     with Session(engine) as session:
         if kind == "application":
             row = session.get(RFApplicationORM, source_id)
             if row is None:
                 return None
-            data = row.payload_json if isinstance(row.payload_json, dict) else {}
-            allowed = {
-                "patient_name", "identity_number", "gesy_number", "age",
-                "product_key", "indication_code", "laterality", "exact_location",
-                "other_area", "other_diagnosis", "additional_notes",
-                "rf_reason_codes", "rf_reason_other", "pain_onset_date",
-                "pain_onset_vas", "last_assessment_date", "last_assessment_vas",
-                "nsaid_trials", "other_analgesic_trials", "adverse_effects",
-                "intervention", "physio",
-            }
-            fields = {k: v for k, v in data.items() if k in allowed}
-            fields.update({"patient_name": row.patient_name,
-                           "identity_number": str(data.get("identity_number") or row.patient_identity_key),
-                           "gesy_number": row.gesy_number,
-                           "age": row.patient_age, "product_key": row.product_key,
-                           "indication_code": row.indication_code, "laterality": row.laterality,
-                           "exact_location": row.exact_location})
-            return {"source": _rf_application_card(row), "fields": fields}
+            return _rf_application_source(row)
         if kind == "procedure":
             row = session.get(RFProcedureHistoryORM, source_id)
             if row is None:
@@ -584,6 +597,8 @@ def _rf_draft_card(row: RFSavedDraftORM) -> dict[str, Any]:
 def save_rf_draft(engine: Engine, form_state: dict[str, Any],
                   draft_id: str = "", revision: int | None = None) -> dict[str, Any]:
     state = validate_rf_draft_fields(form_state)
+    # Saved drafts never preserve an already-authorized rejected correction.
+    state.pop("correction_of_application_id", None)
     now = utcnow()
     with Session(engine) as session:
         if draft_id:
@@ -937,14 +952,20 @@ def change_rf_application_progress(engine: Engine, application_id: str, *,
 
 def validate_rf_correction_source(session: Session, *, rejected_id: str,
                                   identity_number: str, indication_code: str,
-                                  laterality: str, site_key: str) -> None:
+                                  laterality: str, site_key: str,
+                                  expected_revision: int | None = None) -> None:
+    """Second check under progress-row lock before a new PDF/issued attempt exists."""
+    if expected_revision is None or expected_revision < 1:
+        raise ValueError("Απαιτείται επιβεβαιωμένη έκδοση απορριφθείσας αίτησης")
     prior = session.get(RFApplicationORM, rejected_id)
     if prior is None:
         raise ValueError("Η απορριφθείσα αίτηση RF δεν βρέθηκε")
     progress = session.scalar(select(RFApplicationProgressORM).where(
         RFApplicationProgressORM.application_id == rejected_id).with_for_update())
-    if progress is None or progress.decision != "rejected":
-        raise ValueError("Απαιτείται καταχωρισμένη απόρριψη για διορθωτική αίτηση")
+    if (progress is None or progress.stage != "rejected"
+            or progress.decision != "rejected"
+            or progress.revision != expected_revision):
+        raise RuntimeError("Η απόρριψη ή έκδοση RF άλλαξε. Επίλεξε ξανά την αίτηση")
     if (prior.patient_identity_key != normalize_identity(identity_number)
         or prior.indication_code != indication_code or prior.laterality != laterality
         or prior.site_key != site_key):

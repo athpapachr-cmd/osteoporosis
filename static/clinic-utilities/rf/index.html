@@ -11,8 +11,61 @@
 <body>
 <div class="shell">
 <header class="topbar"><div><a class="back-link" href="/">← Clinical Excellence</a><h1>Ραδιοσυχνότητες</h1><p>Επίσημο έντυπο Κατηγορίας Α · δυναμικό A.1 / A.2</p></div><div class="status-pill" id="configStatus">φόρτωση…</div></header>
+<nav class="rf-view-nav" aria-label="Οθόνες RF">
+  <a id="rfGoTracking" data-rf-view="tracking" href="/clinical/clinic-utilities/rf/tracking">Παρακολούθηση RF</a>
+  <a id="rfGoCreator" data-rf-view="creator" href="/clinical/clinic-utilities/rf">Νέα αίτηση RF</a>
+</nav>
 <section class="privacy-note"><strong>Προστατευμένη Clinic Utility.</strong> Τα στοιχεία RF παραμένουν χωριστά από το osteoporosis encounter. Η απεικονιστική έκθεση χρησιμοποιείται για τη δημιουργία του PDF.</section>
-<main class="workspace"><section class="builder">
+<main id="rfTrackingView" class="rf-tracking-page" hidden>
+  <header class="rf-tracking-head">
+    <div><h2>Παρακολούθηση RF</h2><p>Όλες οι εκδοθείσες αιτήσεις, η πραγματική τους έκβαση και οι καταχωρισμένες ημερομηνίες.</p></div>
+    <button type="button" id="rfTrackingNew" class="btn primary">+ Νέα αίτηση RF</button>
+  </header>
+  <div class="rf-tracking-tabs" role="group" aria-label="Προβολή RF">
+    <button id="rfTrackingShowList" type="button" class="segment active" aria-pressed="true">Λίστα</button>
+    <button id="rfTrackingShowWeek" type="button" class="segment" aria-pressed="false">Εβδομαδιαίο ημερολόγιο</button>
+  </div>
+  <section id="rfTrackingListPanel" class="card">
+    <div class="rf-tracking-filters">
+      <label>Αναζήτηση<input id="rfTrackingQuery" placeholder="Όνομα, ταυτότητα ή ΓεΣΥ" autocomplete="off"></label>
+      <label>Αιτήσεις<select id="rfTrackingScope"><option value="all" selected>Όλες</option><option value="mine">Δικές μου προς παρακολούθηση</option></select></label>
+      <label>Κατάσταση<select id="rfTrackingStage">
+        <option value="">Όλες οι καταστάσεις</option><option value="issued">Εκδόθηκε</option>
+        <option value="submitted">Αναμένει απάντηση</option><option value="approved">Εγκρίθηκε</option>
+        <option value="rejected">Απορρίφθηκε</option><option value="scheduled">Προγραμματίστηκε</option>
+        <option value="performed">Πραγματοποιήθηκε</option>
+      </select></label>
+      <label>Έκδοση από<input type="date" id="rfTrackingFrom"></label>
+      <label>έως<input type="date" id="rfTrackingTo"></label>
+      <button class="btn secondary" type="button" id="rfTrackingRefresh">Αναζήτηση</button>
+    </div>
+    <p id="rfTrackingSource" class="muted" role="status" aria-live="polite">Ανάγνωση προστατευμένου RF…</p>
+    <div id="rfTrackingRows" class="history-list"></div>
+    <button id="rfTrackingMore" type="button" class="btn ghost" hidden>Περισσότερες αιτήσεις</button>
+  </section>
+  <section id="rfTrackingWeekPanel" class="card" hidden>
+    <div class="rf-week-toolbar">
+      <h3 id="rfWeekLabel">Εβδομάδα RF</h3>
+      <div class="rf-week-actions"><button id="rfWeekPrev" type="button" class="btn ghost" aria-label="Προηγούμενη εβδομάδα">‹</button>
+      <button id="rfWeekToday" type="button" class="btn secondary">Σήμερα</button>
+      <button id="rfWeekNext" type="button" class="btn ghost" aria-label="Επόμενη εβδομάδα">›</button></div>
+    </div>
+    <p id="rfWeekSource" class="muted" role="status" aria-live="polite"></p>
+    <div id="rfWeekDays" class="rf-week-grid" aria-label="Εβδομάδα RF"></div>
+    <button id="rfWeekMore" class="btn ghost" type="button" hidden>Περισσότερα γεγονότα εβδομάδας</button>
+    <section class="rf-week-undated" aria-label="Αιτήσεις RF χωρίς ημερομηνία προγραμματισμού">
+      <div><strong>Χωρίς ημερομηνία προγραμματισμού</strong><p class="muted">Οι εκδοθείσες και οι εκκρεμείς RF χωρίς καταχωρισμένη ημερομηνία παραμένουν διαθέσιμες στη λίστα.</p></div>
+      <button id="rfTrackingUndatedOpen" class="btn secondary" type="button">Άνοιγμα λίστας</button>
+    </section>
+    <p class="muted">Οι ημερομηνίες είναι καταχωρίσεις RF, όχι επιβεβαιωμένα ραντεβού. Ώρα Γραμματείας δεν εμφανίζεται χωρίς ξεχωριστή αποδεδειγμένη σύνδεση.</p>
+  </section>
+  <section id="rfTrackingDetail" class="card" hidden aria-label="Στοιχεία επιλεγμένης RF">
+    <h3>Στοιχεία & ενέργειες</h3>
+    <div id="rfTrackingSelectedSlot"></div>
+    <p id="rfTrackingActionFeedback" role="status" aria-live="polite" hidden></p>
+  </section>
+</main>
+<main id="rfCreatorView" class="workspace"><section class="builder">
 <article class="card"><div class="card-title"><span class="step">1</span><div><h2>Τύπος αίτησης</h2><p>Κατηγορία Α μόνο.</p></div></div><div class="segmented"><button type="button" class="segment active" data-pathway="A1">Νέα θεραπεία</button><button type="button" class="segment" data-pathway="A2">Συνέχιση θεραπείας</button></div></article>
 <section id="a2SourceFlow" hidden>
 <article class="card rf-source-card">
@@ -51,6 +104,7 @@
   <div id="rfOutcomeCounts" class="muted" aria-live="polite"></div>
   <div id="rfOutcomeResults" class="history-list" aria-live="polite"></div>
   <button type="button" class="btn ghost small" id="rfOutcomeNext" hidden>Περισσότερες αιτήσεις</button>
+  <div id="rfOutcomeDetailHome"></div>
   <div id="rfOutcomeSelected" class="rf-outcome-selected" hidden>
     <h3 id="rfOutcomeTitle">Επιλεγμένη αίτηση</h3>
     <p id="rfOutcomeFacts" class="muted"></p>

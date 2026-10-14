@@ -283,7 +283,7 @@
         + "\nΠρογραμματίστηκαν " + rf.scheduled + " · Πραγματοποιήθηκαν " + rf.performed
         + " · Δικά μου προς παρακολούθηση " + rf.mine_actionable
       : "Άνοιξε RF για αναζήτηση";
-    target.append(newLink(rfTitle, "/clinical/clinic-utilities/rf", rfInfo));
+    target.append(newLink(rfTitle, "/clinical/clinic-utilities/rf/tracking", rfInfo));
     target.append(newLink("Ιατρικές εκθέσεις", "/clinical/clinic-utilities/medical-report",
       "Δεν υπάρχει ακόμη αξιόπιστη καταμέτρηση."));
     target.append(action("Κλινικές ενημερώσεις",

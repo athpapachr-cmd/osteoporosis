@@ -1,13 +1,19 @@
 (() => {
   const $ = id => document.getElementById(id);
-  const state = { contract: null, pathway: 'A1', selectedHistoryId: '', nsaids: [], others: [], unknowns: [], learnedMedications: [], physio: null, imagingValidation: '', horosImages: [], horosNextId: 0, doctors: [], editingDoctor: null, draftId: '', draftRevision: null, sourceKind: '', sourceId: '', sourceOrigin: '', sourcePatientName: '', sourceNameConfirmed: false, sourcePage: 1, draftPage: 1, requestToken: 0, correctionOfId: '', selectedOutcome: null, selectedOutcomeId: '', outcomePage: 1, outcomeToken: 0, outcomeSelectionToken: 0, outcomeContext: '' };
+  const state = { contract: null, pathway: 'A1', selectedHistoryId: '', nsaids: [], others: [], unknowns: [], learnedMedications: [], physio: null, imagingValidation: '', horosImages: [], horosNextId: 0, doctors: [], editingDoctor: null, draftId: '', draftRevision: null, sourceKind: '', sourceId: '', sourceOrigin: '', sourcePatientName: '', sourceNameConfirmed: false, sourcePage: 1, draftPage: 1, requestToken: 0, correctionOfId: '', selectedOutcome: null, selectedOutcomeId: '', outcomePage: 1, outcomeToken: 0, outcomeSelectionToken: 0, outcomeContext: '',
+    rfView: 'creator', authEpoch: 0, listGeneration: 0, weekGeneration: 0,
+    clockGeneration: 0, correctionRevision: null, trackingCursor: '', weekCursor: '',
+    trackingWeek: '', trackingItems: [], weekItems: [], trackingView: 'list' };
 
   async function api(path, options = {}) {
     const response = await fetch(`/clinical/clinic-utilities/rf${path}`, { credentials: 'same-origin', ...options });
     if (!response.ok) {
+      if (response.status === 401 || response.status === 403) invalidateRfAuthorization();
       let detail = `HTTP ${response.status}`;
       try { const body = await response.json(); detail = body.detail || detail; } catch (_) {}
-      throw new Error(detail);
+      const error = new Error(detail);
+      error.status = response.status;
+      throw error;
     }
     return response;
   }
@@ -195,7 +201,7 @@
       $('rfNameConflict').hidden = true;
     }
     state.pathway = pathway;
-    document.querySelectorAll('.segment').forEach(btn => btn.classList.toggle('active', btn.dataset.pathway === pathway));
+    document.querySelectorAll('.segment[data-pathway]').forEach(btn => btn.classList.toggle('active', btn.dataset.pathway === pathway));
     $('a1Flow').hidden = pathway !== 'A1';
     $('a2SourceFlow').hidden = pathway !== 'A2';
     $('a2Flow').hidden = pathway !== 'A2';
@@ -650,7 +656,8 @@
       other_diagnosis: $('otherDiagnosis').value.trim(),
       additional_notes: $('additionalNotes').value.trim(),
       imaging_review_confirmed: $('imagingConfirm').checked,
-      correction_of_application_id: state.correctionOfId
+      correction_of_application_id: state.correctionOfId,
+      correction_source_expected_revision: state.correctionOfId ? state.correctionRevision : null
     };
 
     if (state.pathway === 'A1') {
@@ -1078,6 +1085,11 @@
   }
 
   function rfOutcomeContext() {
+    if (state.rfView === 'tracking') {
+      return JSON.stringify(['tracking', state.trackingView, $('rfTrackingQuery').value.trim(),
+        $('rfTrackingScope').value, $('rfTrackingStage').value,
+        $('rfTrackingFrom').value, $('rfTrackingTo').value, state.trackingWeek]);
+    }
     return JSON.stringify([$('rfOutcomeSearch').value.trim(), $('rfOutcomeScope').value]);
   }
 
@@ -1086,6 +1098,7 @@
     state.selectedOutcome = null;
     state.selectedOutcomeId = '';
     $('rfOutcomeSelected').hidden = true;
+    if (state.rfView === 'tracking') $('rfTrackingDetail').hidden = true;
   }
 
   function outcomeActionChanged() {
@@ -1114,6 +1127,7 @@
     state.selectedOutcome = item;
     state.selectedOutcomeId = item.id;
     $('rfOutcomeSelected').hidden = false;
+    if (state.rfView === 'tracking') $('rfTrackingDetail').hidden = false;
     $('rfOutcomeTitle').textContent = (item.patient_name || 'Αίτηση RF') + ' · ' +
       (outcomeStages[item.stage] || item.stage);
     const reported = item.last_decision_report;
@@ -1149,11 +1163,15 @@
   async function selectRfOutcome(card) {
     const token = ++state.outcomeSelectionToken;
     const context = rfOutcomeContext();
+    state.outcomeContext = context;
     const selectedId = card.id;
     // A is no longer actionable while B's detail request is pending.
     state.selectedOutcome = null;
     state.selectedOutcomeId = selectedId;
+    $('rfTrackingActionFeedback').hidden = true;
+    $('rfTrackingActionFeedback').textContent = '';
     $('rfOutcomeSelected').hidden = true;
+    if (state.rfView === 'tracking') $('rfTrackingDetail').hidden = false;
     try {
       const item = await (await api('/api/outcomes/' +
         encodeURIComponent(selectedId))).json();
@@ -1161,6 +1179,7 @@
           state.selectedOutcomeId !== selectedId ||
           context !== rfOutcomeContext() || item.id !== selectedId) return;
       renderSelectedOutcome(item);
+      if (state.rfView === 'tracking') $('rfTrackingDetail').scrollIntoView?.({block:'nearest',behavior:'smooth'});
     } catch (error) {
       if (token === state.outcomeSelectionToken) showError(error.message);
     }
@@ -1256,54 +1275,137 @@
           state.selectedOutcomeId !== item.id ||
           context !== rfOutcomeContext() || updated.id !== item.id) return;
       renderSelectedOutcome(updated);
-      await loadRfOutcomes();
+      if (state.rfView === 'tracking') {
+        await loadTrackingList({keepSelection: true});
+        await loadTrackingWeek({keepSelection: true});
+      } else await loadRfOutcomes();
       showOk('Η έκβαση αποθηκεύτηκε. Η έκδοση του PDF παραμένει αμετάβλητη.');
-    } catch (error) { showError(error.message); }
+    } catch (error) {
+      if (token === state.outcomeSelectionToken && context === rfOutcomeContext())
+        showError(error.message);
+    }
+  }
+
+  function creatorHasUnrelatedWork() {
+    const inputs = [...Object.values(rfFields),
+      'interventionSite','interventionDate','interventionVasBefore','interventionVasAfter',
+      'legacyProcedureDate','legacyVasBefore','legacyVasAfter',
+      'legacyFollowupDate','legacyFollowupVas', 'rfCurrentFollowupDate',
+      'rfCurrentFollowupVas','reasonOther'];
+    return !!(state.draftId || state.sourceId || state.correctionOfId
+      || state.pathway === 'A2' || state.selectedHistoryId
+      || state.nsaids.length || state.others.length || state.horosImages.length
+      || inputs.some(id => String($(id)?.value || '').trim())
+      || $('imagingReport')?.files?.length
+      || [...document.querySelectorAll('.rf-reason')].some(el => el.checked)
+      || [...document.querySelectorAll('.adverse')].some(row =>
+          String(row.querySelector('[data-kind=treatment]')?.value || '').trim()
+          || String(row.querySelector('[data-kind=effect]')?.value || '').trim()));
+  }
+
+  function creatorFingerprint() {
+    // Cover ALL A1/A2 form data, including currently selected history and adverse
+    // effects; a late fetch must never overwrite fields edited during the request.
+    return JSON.stringify({
+      draft: buildDraft(), draftId: state.draftId, draftRevision: state.draftRevision,
+      correction: state.correctionOfId, correctionRevision: state.correctionRevision,
+      selectedHistory: state.selectedHistoryId,
+      legacyInputs: ['interventionSite','interventionDate','interventionVasBefore',
+        'interventionVasAfter','legacyProcedureDate','legacyVasBefore',
+        'legacyVasAfter','legacyFollowupDate','legacyFollowupVas']
+        .map(id => [id,$(id)?.value]),
+      jpeg: state.horosImages.map(x => [x.id,x.file?.name,x.file?.size,x.file?.lastModified]),
+      pdf: $('imagingReport')?.files?.[0]?.name || '',
+      pdfSize: $('imagingReport')?.files?.[0]?.size ?? null,
+      nsaids: state.nsaids, others: state.others,
+      source: [state.sourceKind,state.sourceId,state.sourceOrigin],
+    });
+  }
+
+  function clearCreatorForCorrection() {
+    for (const id of Object.values(rfFields)) $(id).value = '';
+    for (const id of ['interventionSite','interventionDate','interventionVasBefore','interventionVasAfter',
+      'legacyProcedureDate','legacyVasBefore','legacyVasAfter','legacyFollowupDate','legacyFollowupVas'])
+      $(id).value = '';
+    document.querySelectorAll('.rf-reason').forEach(el => { el.checked = false; });
+    state.nsaids = []; state.others = []; state.unknowns = [];
+    state.draftId = ''; state.draftRevision = null;
+    state.selectedHistoryId = '';
+    $('rfActualConfirm').checked = false;
+    $('historyChoices').replaceChildren();
+    $('legacyDetails').open = false;
+    state.sourceKind = ''; state.sourceId = ''; state.sourceOrigin = '';
+    state.sourcePatientName = ''; state.sourceNameConfirmed = false;
+    $('rfActiveDraftLabel').textContent = '';
+    $('rfSourceLoaded').hidden = true;
+    $('rfNameConflict').hidden = true;
+    $('adverseRows').replaceChildren();
+    addAdverse(); renderTrials();
+    $('imagingReport').value = ''; state.imagingValidation = '';
+    $('imagingStatus').hidden = true; $('imagingConfirm').checked = false;
+    releaseHorosPreviews(); renderHorosImages();
+    $('doctorSelect').value = ''; refreshDoctorReadiness();
   }
 
   async function beginRfCorrection() {
     const item = state.selectedOutcome;
     const token = state.outcomeSelectionToken;
     const context = rfOutcomeContext();
-    if (!item || item.stage !== 'rejected' ||
-        item.id !== state.selectedOutcomeId || context !== state.outcomeContext) return;
+    const view = state.rfView;
+    const epoch = state.authEpoch;
+    if (!item || item.stage !== 'rejected' || item.decision !== 'rejected'
+        || !Number.isInteger(item.revision) || item.revision < 1
+        || item.id !== state.selectedOutcomeId || context !== state.outcomeContext) return;
+    if (creatorHasUnrelatedWork() && !window.confirm?.(
+      'Υπάρχει εργασία στην τρέχουσα αίτηση. Θα παραμείνει αποθηκευμένο τυχόν πρόχειρο, αλλά τα ανοιχτά πεδία θα αντικατασταθούν. Συνέχεια;')) return;
+    // A new correction request invalidates any previous intent before the network call.
+    state.correctionOfId = '';
+    state.correctionRevision = null;
+    renderCorrectionContext();
+    const untouchedCreator = creatorFingerprint();
     try {
-      const result = await (await api('/api/reuse/application/' +
-        encodeURIComponent(item.id))).json();
-      if (token !== state.outcomeSelectionToken ||
-          state.selectedOutcomeId !== item.id || context !== rfOutcomeContext()) return;
-      const fields = result.fields || {};
-      const oldID = $('identityNumber').value.trim().replace(/[\W_]/g, '').toUpperCase();
-      const newID = String(fields.identity_number || '').replace(/[\W_]/g, '').toUpperCase();
-      if (!newID || (oldID && oldID !== newID)) {
-        throw new Error('Υπάρχει άλλη ταυτότητα στην τρέχουσα αίτηση. Καθάρισέ την πρώτα.');
+      const response = await api('/api/reuse/rejected-correction', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({application_id:item.id, expected_revision:item.revision}),
+      });
+      const result = await response.json();
+      if (token !== state.outcomeSelectionToken || context !== rfOutcomeContext()
+          || state.selectedOutcomeId !== item.id || state.authEpoch !== epoch
+          || state.rfView !== view || creatorFingerprint() !== untouchedCreator
+          || result.application_id !== item.id || result.revision !== item.revision
+          || state.selectedOutcome?.stage !== 'rejected'
+          || state.selectedOutcome?.revision !== item.revision) return;
+      const fields = result.fields;
+      if (!fields || typeof fields !== 'object'
+          || !String(fields.identity_number || '').trim()
+          || (item.identity_number && String(item.identity_number).replace(/[\W_]/g,'').toUpperCase()
+             !== String(fields.identity_number).replace(/[\W_]/g,'').toUpperCase())) {
+        throw new Error('Η διορθωτική RF δεν ταυτοποιήθηκε. Επίλεξε ξανά την αίτηση.');
       }
-      // This is a correction of a rejected attempt, NOT proof of prior
-      // performed treatment and never a silent A1 -> A2 continuation.
+      // Only after every ID/revision/view/auth/dirty guard may patient fields change.
+      clearCreatorForCorrection();
       setPathway(result.source?.pathway === 'A2' ? 'A2' : 'A1');
-      const conflicts = populateRfFields(fields);
+      populateRfFields(fields, true);
       state.correctionOfId = item.id;
+      state.correctionRevision = item.revision;
       renderCorrectionContext();
-      $('imagingReport').value = '';
-      state.imagingValidation = '';
-      $('imagingStatus').hidden = true;
-      releaseHorosPreviews();
-      renderHorosImages();
-      $('imagingConfirm').checked = false;
-      if (state.pathway === 'A2') {
-        state.selectedHistoryId = '';
-        $('historyChoices').replaceChildren();
-        $('rfActualConfirm').checked = false;
-      }
-      showOk('Άνοιξε διορθωτική RF. Έλεγξε τα στοιχεία και επίλεξε ρητά ιατρό, πραγματικό προηγούμενο ιστορικό A2 (εφόσον χρειάζεται), νέα PDF/JPEG και έκδοση. ' +
-        (conflicts.length ? 'Έλεγξε επιπλέον τις διαφορές: ' + conflicts.join(', ') : ''));
-      updateSummary();
-    } catch (error) { showError(error.message); }
+      switchRfView('creator', {correction:true});
+      showOk('Η απορριφθείσα RF φορτώθηκε με έλεγχο έκδοσης. Επιβεβαίωσε ιατρό, στοιχεία και νέα PDF/JPEG πριν εκδώσεις.');
+    } catch (error) {
+      if (token !== state.outcomeSelectionToken || epoch !== state.authEpoch
+          || context !== rfOutcomeContext() || state.rfView !== view) return;
+      state.correctionOfId = '';
+      state.correctionRevision = null;
+      renderCorrectionContext();
+      showError(error.message);
+    }
   }
 
   function savedDraftFields() {
     const draft = buildDraft();
     delete draft.imaging_review_confirmed; // old confirmation never carries over
+    delete draft.correction_of_application_id; // drafts must never re-arm a correction
+    delete draft.correction_source_expected_revision;
     delete draft.source_name_confirmed; // a name discrepancy must be reconfirmed on resume
     draft.source_patient_name = state.sourcePatientName;
     draft.draft_nsaids = state.nsaids.map(cleanTrial);
@@ -1367,7 +1469,9 @@
 
   async function restoreRfDraft(fields) {
     setPathway(fields.pathway === 'A2' ? 'A2' : 'A1');
-    state.correctionOfId = fields.correction_of_application_id || '';
+    // Older persisted drafts may contain a rejected ID: never restore it as authorization.
+    state.correctionOfId = '';
+    state.correctionRevision = null;
     renderCorrectionContext();
     state.sourceKind = fields.source_kind || '';
     state.sourceId = fields.source_id || '';
@@ -1504,6 +1608,7 @@
       setTimeout(() => URL.revokeObjectURL(url), 120000);
       state.draftId = ''; state.draftRevision = null;
       state.correctionOfId = '';
+      state.correctionRevision = null;
       renderCorrectionContext();
       $('rfActiveDraftLabel').textContent = '';
       await listRfDrafts();
@@ -1519,12 +1624,22 @@
   }
 
   function showError(message) {
+    if (state.rfView === 'tracking') {
+      $('rfTrackingActionFeedback').hidden = false;
+      $('rfTrackingActionFeedback').className = 'validation-panel error';
+      $('rfTrackingActionFeedback').textContent = message;
+    }
     $('validationPanel').hidden = false;
     $('validationPanel').className = 'validation-panel error';
     $('validationPanel').textContent = message;
   }
 
   function showOk(message) {
+    if (state.rfView === 'tracking') {
+      $('rfTrackingActionFeedback').hidden = false;
+      $('rfTrackingActionFeedback').className = 'validation-panel ok';
+      $('rfTrackingActionFeedback').textContent = message;
+    }
     $('validationPanel').hidden = false;
     $('validationPanel').className = 'validation-panel ok';
     $('validationPanel').textContent = message;
@@ -1543,8 +1658,320 @@
     $('reviewSummary').innerHTML = items.map(x => `<div class="summary-item">${escapeHtml(x)}</div>`).join('');
   }
 
+
+  // RF tracking uses the *same document/controller* as the existing A1/A2 creator.
+  // No application ID, selected patient or correction intent enters document history.
+  function invalidateRfAuthorization() {
+    ++state.authEpoch;
+    ++state.listGeneration; ++state.weekGeneration; ++state.clockGeneration;
+    ++state.outcomeToken; ++state.outcomeSelectionToken; ++state.requestToken;
+    state.selectedOutcome = null; state.selectedOutcomeId = '';
+    state.correctionOfId = ''; state.correctionRevision = null;
+    state.trackingItems = []; state.weekItems = [];
+    state.trackingCursor = ''; state.weekCursor = '';
+    $('rfOutcomeSelected').hidden = true;
+    $('rfTrackingDetail').hidden = true;
+    ['rfTrackingRows','rfWeekDays','rfOutcomeResults','rfDraftList','rfSourceList'].forEach(id =>
+      $(id).replaceChildren());
+    ['rfTrackingSource','rfWeekSource','rfOutcomeCounts'].forEach(id =>
+      { $(id).textContent = 'Προστατευμένη πηγή μη διαθέσιμη — επανασυνδέσου.'; });
+    for (const id of Object.values(rfFields)) $(id).value = '';
+    $('doctorSelect').value = '';
+    state.draftId = ''; state.draftRevision = null;
+    state.sourceKind = ''; state.sourceId = '';
+    state.nsaids = []; state.others = []; state.unknowns = [];
+    $('reviewSummary').replaceChildren();
+    renderCorrectionContext();
+  }
+
+  function switchRfView(view, options = {}) {
+    const next = view === 'tracking' ? 'tracking' : 'creator';
+    const changed = next !== state.rfView;
+    if (changed || options.fromHistory) {
+      ++state.listGeneration; ++state.weekGeneration; ++state.clockGeneration;
+      invalidateRfOutcomeSelection();
+    }
+    if ((next === 'creator' && !options.correction) || options.fromHistory) {
+      state.correctionOfId = '';
+      state.correctionRevision = null;
+      renderCorrectionContext();
+    }
+    state.rfView = next;
+    $('rfTrackingView').hidden = next !== 'tracking';
+    $('rfCreatorView').hidden = next !== 'creator';
+    $('rfGoTracking').setAttribute('aria-current', next === 'tracking' ? 'page' : 'false');
+    $('rfGoCreator').setAttribute('aria-current', next === 'creator' ? 'page' : 'false');
+    // Move one existing guarded detail/action DOM into the active view: no clone or writer.
+    if (next === 'tracking') {
+      $('rfTrackingSelectedSlot').append($('rfOutcomeSelected'));
+    } else $('rfOutcomeDetailHome').append($('rfOutcomeSelected'));
+    if (!options.initial && !options.fromHistory && window.history?.pushState) {
+      const url = '/clinical/clinic-utilities/rf' + (next === 'tracking' ? '/tracking' : '');
+      if (window.location?.pathname !== url) window.history.pushState(null, '', url);
+    }
+    if (next === 'tracking' && (changed || options.initial)) {
+      if (!state.trackingWeek) state.trackingWeek = currentRfMonday();
+      if (!options.initial) {
+        loadTrackingList();
+        if (state.trackingView === 'week') loadTrackingWeek();
+      }
+    }
+  }
+
+  function isoShiftDay(iso, n) {
+    const stamp = Date.parse(iso + 'T12:00:00Z');
+    if (!Number.isFinite(stamp)) return '';
+    return new Date(stamp + n * 86400000).toISOString().slice(0,10);
+  }
+
+  function currentRfMonday() {
+    const pieces = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Asia/Nicosia', year: 'numeric', month: '2-digit', day: '2-digit',
+    }).formatToParts(new Date());
+    const vals = Object.fromEntries(pieces.map(p => [p.type, p.value]));
+    const iso = vals.year + '-' + vals.month + '-' + vals.day;
+    const weekday = new Date(iso + 'T12:00:00Z').getUTCDay();
+    return isoShiftDay(iso, -((weekday + 6) % 7));
+  }
+
+  function trackingFilterBody() {
+    return {
+      mode: 'tracking',
+      query: $('rfTrackingQuery').value.trim(),
+      scope: $('rfTrackingScope').value,
+      stage: $('rfTrackingStage').value,
+      issued_from: $('rfTrackingFrom').value,
+      issued_to: $('rfTrackingTo').value,
+    };
+  }
+
+  function trackingFilterKey() {
+    return JSON.stringify(trackingFilterBody());
+  }
+
+  function rfListButton(item, weekFact = '') {
+    const row = document.createElement('button');
+    row.type = 'button'; row.className = weekFact ? 'rf-week-event' : 'rf-quick-row';
+    const name = document.createElement('strong');
+    name.textContent = item.patient_name || 'Αίτηση RF';
+    const facts = document.createElement('span');
+    facts.textContent = (weekFact ? weekFact + ' · ' : '')
+      + [item.issued_date, item.indication_code,
+         item.laterality === 'left' ? 'Αριστερά' : item.laterality === 'right' ? 'Δεξιά' : '',
+         outcomeStages[item.stage] || item.stage, item.issuer_name || 'Εκδότης άγνωστος']
+         .filter(Boolean).join(' · ');
+    row.append(name, facts);
+    const id = item.id, context = rfOutcomeContext();
+    row.addEventListener('click', () => {
+      if (state.rfView === 'tracking' && context === rfOutcomeContext() && item.id === id)
+        selectRfOutcome(item);
+    });
+    return row;
+  }
+
+  function renderTrackingRows() {
+    const list = $('rfTrackingRows');
+    list.replaceChildren();
+    for (const item of state.trackingItems) list.append(rfListButton(item));
+  }
+
+  async function loadTrackingList(options = {}) {
+    const more = !!options.more, keepSelection = !!options.keepSelection;
+    const fingerprint = trackingFilterKey();
+    const token = ++state.listGeneration, epoch = state.authEpoch;
+    const cursor = more ? state.trackingCursor : '';
+    if (!more) {
+      state.trackingCursor = '';
+      state.trackingItems = [];
+      $('rfTrackingRows').replaceChildren();
+      if (!keepSelection) invalidateRfOutcomeSelection();
+    }
+    $('rfTrackingMore').hidden = true;
+    $('rfTrackingSource').textContent = 'Ανάγνωση RF…';
+    try {
+      const response = await api('/api/outcomes/search', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({...trackingFilterBody(), cursor}),
+      });
+      const data = await response.json();
+      if (token !== state.listGeneration || epoch !== state.authEpoch
+          || state.rfView !== 'tracking' || fingerprint !== trackingFilterKey()) return;
+      if (!Array.isArray(data.applications) || typeof data.has_more !== 'boolean'
+          || typeof data.scan_complete !== 'boolean' || typeof data.truncated !== 'boolean'
+          || data.has_more === data.scan_complete
+          || !!data.next_cursor !== data.has_more
+          || data.counts_exact !== false) throw new Error('Μη έγκυρη/μερική πηγή RF');
+      const ids = new Set(state.trackingItems.map(i => i.id));
+      for (const item of data.applications) {
+        if (!item || typeof item.id !== 'string' || !item.id || ids.has(item.id)) continue;
+        state.trackingItems.push(item); ids.add(item.id);
+      }
+      state.trackingCursor = data.next_cursor || '';
+      renderTrackingRows();
+      $('rfTrackingMore').hidden = !data.has_more;
+      $('rfTrackingSource').textContent = data.has_more
+        ? 'Μερική αναζήτηση · εμφανίζονται ' + state.trackingItems.length + ' αιτήσεις. Συνέχισε για παλαιότερες.'
+        : state.trackingItems.length
+          ? 'Πλήρης διέλευση για τα τρέχοντα φίλτρα · ' + state.trackingItems.length
+            + ' αιτήσεις (οι εκβάσεις μπορεί να αλλάζουν).'
+          : 'Δεν βρέθηκαν αιτήσεις μετά από πλήρη αναζήτηση.';
+    } catch (error) {
+      if (token !== state.listGeneration || epoch !== state.authEpoch) return;
+      $('rfTrackingSource').textContent = 'Η αναζήτηση RF δεν ολοκληρώθηκε. Δοκίμασε ανανέωση.';
+      $('rfTrackingMore').hidden = true;
+      // A failed read is never interpreted as zero; discard any incomplete accumulation.
+      state.trackingCursor = '';
+      state.trackingItems = [];
+      $('rfTrackingRows').replaceChildren();
+    }
+  }
+
+  function setTrackingTab(tab) {
+    state.trackingView = tab === 'week' ? 'week' : 'list';
+    $('rfTrackingListPanel').hidden = state.trackingView !== 'list';
+    $('rfTrackingWeekPanel').hidden = state.trackingView !== 'week';
+    $('rfTrackingShowList').classList.toggle('active', state.trackingView === 'list');
+    $('rfTrackingShowWeek').classList.toggle('active', state.trackingView === 'week');
+    $('rfTrackingShowList').setAttribute('aria-pressed', String(state.trackingView === 'list'));
+    $('rfTrackingShowWeek').setAttribute('aria-pressed', String(state.trackingView === 'week'));
+    invalidateRfOutcomeSelection();
+    if (state.trackingView === 'week') loadTrackingWeek();
+  }
+
+  function renderTrackingWeek() {
+    const grid = $('rfWeekDays');
+    grid.replaceChildren();
+    const start = state.trackingWeek;
+    const finish = isoShiftDay(start,6);
+    $('rfWeekLabel').textContent = 'Εβδομάδα ' + start.split('-').reverse().join('/')
+      + ' – ' + finish.split('-').reverse().join('/');
+    const dayNames = ['Κυριακή','Δευτέρα','Τρίτη','Τετάρτη','Πέμπτη','Παρασκευή','Σάββατο'];
+    for (let offset=0; offset<7; offset++) {
+      const date = isoShiftDay(start,offset);
+      const day = document.createElement('section');
+      day.className='rf-week-day';
+      const heading = document.createElement('h4');
+      const weekday = new Date(date + 'T12:00:00Z').getUTCDay();
+      heading.textContent = dayNames[weekday] + ' ' + date.slice(8) + '/' + date.slice(5,7);
+      day.append(heading);
+      for (const item of state.weekItems) {
+        if (item.scheduled_date === date)
+          day.append(rfListButton(item, 'Προγραμματισμένη · Χωρίς επιβεβαιωμένη ώρα'));
+        if (item.performed_date === date)
+          day.append(rfListButton(item, 'Πραγματοποιήθηκε (καταχώριση RF)'));
+      }
+      grid.append(day);
+    }
+  }
+
+  async function loadTrackingWeek(options = {}) {
+    const more = !!options.more, keepSelection = !!options.keepSelection;
+    const start = state.trackingWeek || currentRfMonday();
+    state.trackingWeek = start;
+    const cursor = more ? state.weekCursor : '';
+    const token = ++state.weekGeneration, epoch = state.authEpoch;
+    if (!more) {
+      state.weekItems = []; state.weekCursor = '';
+      $('rfWeekDays').replaceChildren();
+      if (!keepSelection) invalidateRfOutcomeSelection();
+    }
+    $('rfWeekSource').textContent = 'Ανάγνωση εβδομάδας RF…';
+    $('rfWeekMore').hidden = true;
+    try {
+      const data = await (await api('/api/outcomes/calendar', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({week_start:start, cursor}),
+      })).json();
+      if (token !== state.weekGeneration || epoch !== state.authEpoch
+          || state.rfView !== 'tracking' || start !== state.trackingWeek) return;
+      if (!Array.isArray(data.applications) || typeof data.complete !== 'boolean'
+          || typeof data.truncated !== 'boolean' || typeof data.has_more !== 'boolean'
+          || data.complete === data.has_more || !!data.next_cursor !== data.has_more
+          || data.week_start !== start) throw new Error('Μη έγκυρη εβδομάδα RF');
+      const ids = new Set(state.weekItems.map(i => i.id));
+      for (const item of data.applications) {
+        if (item && typeof item.id === 'string' && !ids.has(item.id)) {
+          state.weekItems.push(item); ids.add(item.id);
+        }
+      }
+      state.weekCursor = data.next_cursor || '';
+      renderTrackingWeek();
+      $('rfWeekMore').hidden = !data.has_more;
+      $('rfWeekSource').textContent = data.has_more
+        ? 'Η εβδομάδα είναι μερική · φόρτωσε και τα υπόλοιπα γεγονότα.'
+        : 'Πλήρης ανάγνωση εβδομάδας RF · ημερομηνίες χωρίς τεκμηριωμένη ώρα Γραμματείας.';
+    } catch (error) {
+      if (token !== state.weekGeneration || epoch !== state.authEpoch) return;
+      state.weekItems = []; state.weekCursor = '';
+      $('rfWeekDays').replaceChildren();
+      $('rfWeekSource').textContent = 'Οι ημερομηνίες RF δεν είναι διαθέσιμες — όχι μηδενικές.';
+      $('rfWeekMore').hidden = true;
+    }
+  }
+
+  function stepTrackingWeek(days) {
+    state.trackingWeek = isoShiftDay(state.trackingWeek || currentRfMonday(), days);
+    invalidateRfOutcomeSelection();
+    loadTrackingWeek();
+  }
+
+  function wireTrackingControls() {
+    document.querySelectorAll('[data-rf-view]').forEach(link =>
+      link.addEventListener('click', e => {
+        e.preventDefault();
+        switchRfView(link.dataset.rfView);
+      }));
+    $('rfTrackingNew').addEventListener('click', () => switchRfView('creator'));
+    $('rfTrackingShowList').addEventListener('click', () => setTrackingTab('list'));
+    $('rfTrackingShowWeek').addEventListener('click', () => setTrackingTab('week'));
+    $('rfTrackingUndatedOpen').addEventListener('click', () => setTrackingTab('list'));
+    $('rfTrackingRefresh').addEventListener('click', () => loadTrackingList());
+    $('rfTrackingMore').addEventListener('click', () => loadTrackingList({more:true}));
+    $('rfWeekMore').addEventListener('click', () => loadTrackingWeek({more:true}));
+    $('rfWeekPrev').addEventListener('click', () => stepTrackingWeek(-7));
+    $('rfWeekNext').addEventListener('click', () => stepTrackingWeek(7));
+    $('rfWeekToday').addEventListener('click', () => {
+      state.trackingWeek = currentRfMonday(); loadTrackingWeek();
+    });
+    let queryTimer;
+    $('rfTrackingQuery').addEventListener('input', () => {
+      clearTimeout(queryTimer);
+      ++state.listGeneration;
+      invalidateRfOutcomeSelection();
+      state.trackingItems = []; state.trackingCursor = '';
+      $('rfTrackingRows').replaceChildren();
+      $('rfTrackingMore').hidden = true;
+      $('rfTrackingSource').textContent = 'Τα φίλτρα άλλαξαν — νέα αναζήτηση…';
+      queryTimer = setTimeout(() => loadTrackingList(), 300);
+    });
+    $('rfTrackingQuery').addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); clearTimeout(queryTimer); loadTrackingList(); }
+    });
+    ['rfTrackingScope','rfTrackingStage','rfTrackingFrom','rfTrackingTo'].forEach(id =>
+      $(id).addEventListener('change', () => loadTrackingList()));
+    window.addEventListener?.('popstate', () => {
+      state.correctionOfId=''; state.correctionRevision=null;
+      switchRfView(window.location?.pathname?.endsWith('/tracking') ? 'tracking' : 'creator',
+        {fromHistory:true});
+    });
+    window.addEventListener?.('pageshow', event => {
+      if (event.persisted) {
+        invalidateRfAuthorization();
+        switchRfView(window.location?.pathname?.endsWith('/tracking') ? 'tracking' : 'creator',
+          {fromHistory:true});
+      }
+    });
+    // Shared Clinical Key same-document re-login: invalidate before the auth transition.
+    document.addEventListener('submit', event => {
+      if (event.target?.id === 'ceGlobalLoginForm') {
+        invalidateRfAuthorization();
+        switchRfView('creator', {fromHistory:true});
+      }
+    }, true);
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('.segment').forEach(btn => btn.addEventListener('click', () => setPathway(btn.dataset.pathway)));
+    document.querySelectorAll('.segment[data-pathway]').forEach(btn => btn.addEventListener('click', () => setPathway(btn.dataset.pathway)));
     $('indicationSelect').addEventListener('change', indicationChanged);
     $('lateralitySelect').addEventListener('change', applySuggestedLocation);
     $('otherArea').addEventListener('input', () => {
@@ -1601,7 +2028,10 @@
     $('rfOutcomeApply').addEventListener('click', applyRfOutcome);
     $('rfOutcomeCorrection').addEventListener('click', beginRfCorrection);
     $('rfDraftSearch').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); listRfDrafts(); }});
-    loadContract().then(() => { listRfDrafts(); loadRfOutcomes(); });
+    loadContract().then(() => {
+      listRfDrafts(); loadRfOutcomes();
+      if (state.rfView === 'tracking') loadTrackingList();
+    });
     $('imagingReport').addEventListener('change', validateImaging);
     $('horosJpegs').addEventListener('change', addHorosImages);
     $('doctorManagement').addEventListener('toggle', e => {
@@ -1620,5 +2050,8 @@
     ['patientName','productSelect','exactLocation'].forEach(id => $(id).addEventListener('input', updateSummary));
     setPathway('A1');
     addAdverse();
+    wireTrackingControls();
+    switchRfView(window.location?.pathname?.endsWith('/tracking') ? 'tracking' : 'creator',
+      {initial:true});
   });
 })();

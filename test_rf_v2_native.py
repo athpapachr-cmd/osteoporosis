@@ -1215,7 +1215,8 @@ class RFOutcomeFollowupTests(unittest.TestCase):
         self.assertEqual(self.event(app_id, "submit", 1).status_code, 422)
         # Correction is a distinct A1 attempt, never an automatic A2/actual treatment.
         new = self.issue(identity_number="SYN-COL-1", doctor_key=key,
-                         correction_of_application_id=app_id)
+                         correction_of_application_id=app_id,
+                         correction_source_expected_revision=rejected.json()["revision"])
         self.assertEqual(new.status_code, 200, new.text)
         new_id = new.headers["x-rf-application-id"]
         self.assertNotEqual(app_id, new_id)
@@ -1282,15 +1283,18 @@ class RFOutcomeFollowupTests(unittest.TestCase):
         self.assertEqual(self.event(old_id, "submit").status_code, 200)
         self.assertFalse(self.card(old_id)["mine_to_follow"])
         rejected_not_yet = self.issue(identity_number="SYN-HISTORY",
-                                      correction_of_application_id=old_id)
-        self.assertEqual(rejected_not_yet.status_code, 422)
+                                      correction_of_application_id=old_id,
+                                      correction_source_expected_revision=1)
+        self.assertEqual(rejected_not_yet.status_code, 409)
         self.assertEqual(self.event(old_id, "reject", 1,
                                     rejection_reason="Synthetic rejection").status_code, 200)
         wrong_patient = self.issue(identity_number="SYN-WRONG",
-                                   correction_of_application_id=old_id)
+                                   correction_of_application_id=old_id,
+                                   correction_source_expected_revision=2)
         self.assertEqual(wrong_patient.status_code, 422)
         valid = self.issue(identity_number="SYN-HISTORY",
-                           correction_of_application_id=old_id)
+                           correction_of_application_id=old_id,
+                           correction_source_expected_revision=2)
         self.assertEqual(valid.status_code, 200, valid.text)
         with Session(self.engine) as session:
             self.assertEqual(session.query(RFApplicationORM).count(), 2)
@@ -1453,7 +1457,8 @@ class RFOutcomeFollowupTests(unittest.TestCase):
             session.commit()
         self.assertEqual(self.event(app_id, "reject", event_date=day(3)).status_code, 200)
         followup = self.issue(identity_number="SYN-LINK-SAFETY",
-                              correction_of_application_id=app_id)
+                              correction_of_application_id=app_id,
+                              correction_source_expected_revision=1)
         self.assertEqual(followup.status_code, 200, followup.text)
         linked_id = followup.headers["x-rf-application-id"]
         with Session(self.engine) as session:
