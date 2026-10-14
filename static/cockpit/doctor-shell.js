@@ -161,14 +161,14 @@
       content.append(action("Χειρουργεία","Άνοιγμα της προστατευμένης λίστας",()=>showLibrary("surgery")));
     }
     content.append(newLink("Ιατρική έκθεση","/clinical/clinic-utilities/medical-report"));
-    content.append(newLink("Ραδιοκύματα / RF","/clinical/clinic-utilities/rf"));
+    content.append(newLink("Ραδιοκύματα / RF","/clinical/clinic-utilities/rf/tracking"));
     content.append(text("Το Clinical Inbox και οι εργασίες Dia/Heidi δεν έχουν συνδεθεί με την παρακολούθηση."));
   }
   const links=[
     {name:"Καταγραφή επίσκεψης",hint:"Visit Capture",href:"/static/cockpit/visit-capture/"},
     {name:"Παραπεμπτικό φυσιοθεραπείας",hint:"Κείμενο για ΓεΣΥ",href:"/clinical/clinic-utilities/physio-referral"},
     {name:"Αναρρωτική άδεια",hint:"Κλινικό έγγραφο",href:"/clinical/clinic-utilities/sick-leave"},
-    {name:"RF · Ραδιοκύματα",hint:"Αίτηση",href:"/clinical/clinic-utilities/rf"},
+    {name:"RF · Ραδιοκύματα",hint:"Αίτηση",href:"/clinical/clinic-utilities/rf/tracking"},
     {name:"Ιατρική έκθεση",hint:"Σύνταξη έκθεσης",href:"/clinical/clinic-utilities/medical-report"},
     {name:"Οστεοπόρωση",hint:"Module 01",href:"/static/baseline-audit/"},
     {name:"Εβδομαδιαίο ημερολόγιο",hint:"Οστεοπόρωση και κλινικό πρόγραμμα",href:"/static/clinical-calendar/"},
