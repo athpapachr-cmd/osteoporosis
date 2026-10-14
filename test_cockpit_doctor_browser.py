@@ -11,11 +11,13 @@ CSS = "\n".join((ROOT / part).read_text(encoding="utf-8") for part in (
     "static/cockpit/styles.css",
     "static/cockpit/clinical-workspace.css",
     "static/cockpit/doctor-shell.css",
+    "static/cockpit/shared-nav.css",
 ))
 JS = [(ROOT / part).read_text(encoding="utf-8") for part in (
     "static/cockpit/clinical-workspace.js",
     "static/cockpit/app.js",
     "static/cockpit/doctor-shell.js",
+    "static/cockpit/shared-nav.js",
 )]
 RECENT = [
     {"patient_id": "SYN-1", "patient_display_name": "Ασθενής Συνθετική",
@@ -50,6 +52,7 @@ CONTEXT = {
 def browser_suite(width, screenshot_name):
     errors = []
     outbound = []
+    auth = {"authenticated": False}
     with sync_playwright() as pw:
         executable = shutil.which("google-chrome") or shutil.which("chromium")
         browser = pw.chromium.launch(headless=True, executable_path=executable, args=["--no-sandbox"])
@@ -57,6 +60,16 @@ def browser_suite(width, screenshot_name):
         page.on("pageerror", lambda err: errors.append(str(err)))
         def handle(route):
             url = route.request.url
+            if url.endswith("/clinical/status"):
+                return route.fulfill(status=200 if auth["authenticated"] else 401,
+                                     json={"authenticated": auth["authenticated"]})
+            if url.endswith("/clinical/login"):
+                assert route.request.method == "POST"
+                assert route.request.post_data_json is not None
+                if route.request.post_data_json.get("key") == "synthetic-key":
+                    auth["authenticated"] = True
+                    return route.fulfill(status=200, json={"authenticated": True})
+                return route.fulfill(status=401, json={"detail": "Unauthorized"})
             if "/clinical/calendar/cockpit-context" in url:
                 return route.fulfill(json=CONTEXT)
             if "/clinical/recent-encounters" in url:
@@ -76,6 +89,52 @@ def browser_suite(width, screenshot_name):
         page.add_style_tag(content=CSS)
         for source in JS:
             page.add_script_tag(content=source)
+
+        # Exercise the ACTUAL shared JS/CSS inside Chromium, not just the
+        # synthetic DOM test. The original Home smoke omitted these assets.
+        nav = page.locator("#ceGlobalNav")
+        expect(nav).to_be_visible()
+        expect(nav.locator("a.ce-global-button").first).to_have_attribute("href", "/static/cockpit/")
+        expect(page.locator("#ceGlobalShortcuts")).to_be_visible()
+        expect(page.locator("#ceGlobalKey")).to_be_visible()
+        assert page.evaluate("""() => {
+            const bar = document.getElementById('ceGlobalNav');
+            const box = bar.getBoundingClientRect();
+            return getComputedStyle(bar).position === 'sticky'
+                && box.left >= -1 && box.right <= innerWidth + 1
+                && bar.scrollWidth <= bar.clientWidth + 1;
+        }"""), "shared toolbar overflows the viewport or is not sticky"
+        page.locator("#ceGlobalShortcuts").click()
+        expect(page.locator("#ceGlobalShortcutsPanel")).to_be_visible()
+        assert page.locator("#ceGlobalShortcutsPanel a.ce-global-shortcut").count() == 8
+        panel = page.locator("#ceGlobalShortcutsPanel").bounding_box()
+        assert panel and panel["x"] >= -1 and panel["x"] + panel["width"] <= width + 1, "shortcuts popover off-screen"
+        page.keyboard.press("Escape")
+        expect(page.locator("#ceGlobalShortcutsPanel")).to_be_hidden()
+        page.locator("#ceGlobalKey").click()
+        expect(page.locator("#ceGlobalAccessPanel")).to_be_visible()
+        expect(page.locator("#ceGlobalAuthStatus")).to_contain_text("Απαιτείται σύνδεση")
+        panel = page.locator("#ceGlobalAccessPanel").bounding_box()
+        assert panel and panel["x"] >= -1 and panel["x"] + panel["width"] <= width + 1, "key popover off-screen"
+        if width <= 620:
+            page.screenshot(path=str(OUT / "cockpit-shared-nav-mobile.png"), full_page=True)
+        if width == 1280:
+            key = page.locator("#ceGlobalKeyInput")
+            key.fill("wrong-synthetic-key")
+            page.locator("#ceGlobalLoginForm button[type=submit]").click()
+            expect(page.locator("#ceGlobalAuthStatus")).to_contain_text("Λανθασμένο Clinical Key")
+            expect(key).to_have_value("")
+            key.fill("synthetic-key")
+            page.locator("#ceGlobalLoginForm button[type=submit]").click()
+            expect(page.locator("#ceGlobalAuthStatus")).to_contain_text("Συνδέθηκες")
+            expect(key).to_have_value("")
+        page.keyboard.press("Escape")
+        expect(page.locator("#ceGlobalAccessPanel")).to_be_hidden()
+        if width <= 620:
+            assert not errors, errors
+            assert not any("/clinical/visit-capture/save" in url for url in outbound)
+            browser.close()
+            return
 
         expect(page.locator("#doctorMainView")).to_be_visible()
         expect(page.locator("#doctorLibraryView")).to_be_hidden()
@@ -126,4 +185,5 @@ def browser_suite(width, screenshot_name):
 
 browser_suite(1280, "cockpit-desktop.png")
 browser_suite(680, "cockpit-dia-halfwidth.png")
-print("PASS Cockpit V4 Chromium: compact Home, day popover, identity boundary, honest Inbox, tasks and half-width")
+browser_suite(390, "cockpit-shared-nav-mobile.png")
+print("PASS Cockpit V4 Chromium + actual shared toolbar: desktop, half-width, mobile, key and popovers")
