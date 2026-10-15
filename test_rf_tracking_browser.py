@@ -127,6 +127,7 @@ def suite(width):
         page.route("**/*", handle)
         page.goto(BASE + "/clinical/clinic-utilities/rf/tracking")
         expect(page.locator("#rfTrackingView")).to_be_visible()
+        expect(page.locator("#rfBuilderView")).to_be_hidden()
         expect(page.locator("#rfTrackResults .rf-outcome-card")).to_have_count(20)
         assert page.locator("#rfTrackScope").input_value() == "all"
         assert page.locator("#rfTrackStatus").inner_text().startswith("Μερική")
@@ -145,6 +146,7 @@ def suite(width):
         expect(page.locator("#rfOutcomeCorrection")).to_be_visible()
         page.locator("#rfOutcomeCorrection").click()
         expect(page.locator("#rfBuilderView")).to_be_visible()
+        expect(page.locator("#rfTrackingView")).to_be_hidden()
         expect(page.locator("#rfCorrectionContext")).to_be_visible()
         assert page.locator("#doctorSelect").input_value() == "", "issuer must be reselected"
         assert page.locator("#identityNumber").input_value() == "SYN-ID-00"
