@@ -217,6 +217,9 @@ def suite(width):
         expect(page.locator("#rfTrackResults .rf-outcome-card")).to_have_count(20)
         assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1"), "horizontal overflow"
         page.screenshot(path=str(OUT / ("rf-tracking-%s.png" % width)), full_page=True)
+        page.locator("#rfTrackResults .rf-outcome-card").first.get_by_role(
+            "button", name="Άνοιγμα").click()
+        expect(page.locator("#rfOutcomeTitle")).to_contain_text("Συνθετικός RF 00")
         expect(page.locator("#rfOutcomeDelete")).to_be_visible()
         expect(page.locator("#rfOutcomeCopy")).to_be_visible()
         page.locator("#rfTrackResults .rf-outcome-card").first.get_by_role(
