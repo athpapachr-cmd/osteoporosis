@@ -1,6 +1,6 @@
 (() => {
   const $ = id => document.getElementById(id);
-  const state = { draftPreviewToken: 0, contract: null, pathway: 'A1', selectedHistoryId: '', nsaids: [], others: [], unknowns: [], learnedMedications: [], physio: null, imagingValidation: '', horosImages: [], horosNextId: 0, doctors: [], editingDoctor: null, draftId: '', draftRevision: null, sourceKind: '', sourceId: '', sourceOrigin: '', sourcePatientName: '', sourceNameConfirmed: false, sourcePage: 1, draftPage: 1, requestToken: 0, correctionOfId: '', correctionExpectedRevision: null, selectedOutcome: null, selectedOutcomeId: '', outcomePage: 1, outcomeToken: 0, outcomeSelectionToken: 0, outcomeContext: '' };
+  const state = { draftPreviewToken: 0, draftListToken: 0, contract: null, pathway: 'A1', selectedHistoryId: '', nsaids: [], others: [], unknowns: [], learnedMedications: [], physio: null, imagingValidation: '', horosImages: [], horosNextId: 0, doctors: [], editingDoctor: null, draftId: '', draftRevision: null, sourceKind: '', sourceId: '', sourceOrigin: '', sourcePatientName: '', sourceNameConfirmed: false, sourcePage: 1, draftPage: 1, requestToken: 0, correctionOfId: '', correctionExpectedRevision: null, selectedOutcome: null, selectedOutcomeId: '', outcomePage: 1, outcomeToken: 0, outcomeSelectionToken: 0, outcomeContext: '' };
 
   async function api(path, options = {}) {
     const response = await fetch(`/clinical/clinic-utilities/rf${path}`, { credentials: 'same-origin', ...options });
@@ -1537,10 +1537,13 @@
   }
 
   async function listRfDrafts(page = 1) {
+    const token = ++state.draftListToken;
+    if (page === 1) closeRfDraftPreview();
     try {
       const query = $('rfDraftSearch').value.trim();
       const result = await (await api('/api/drafts?query=' + encodeURIComponent(query) +
         '&page=' + page)).json();
+      if (token !== state.draftListToken) return;
       const list = $('rfDraftList');
       if (page === 1) list.replaceChildren();
       for (const item of result.drafts || []) {
@@ -1558,7 +1561,15 @@
       }
       state.draftPage = page;
       $('rfDraftNextBtn').hidden = !result.has_more;
-    } catch (error) { showError(error.message); }
+    } catch (error) {
+      if (token !== state.draftListToken) return;
+      if ([401,403].includes(error.status)) {
+        closeRfDraftPreview();
+        $('rfDraftList').replaceChildren();
+        $('rfDraftNextBtn').hidden = true;
+      }
+      showError(error.message);
+    }
   }
 
   async function discardRfDraft(item) {
@@ -2127,6 +2138,11 @@
     $('rfBuilderView').addEventListener('input', () => ++tracking.dirtyGeneration, true);
     $('rfBuilderView').addEventListener('change', () => ++tracking.dirtyGeneration, true);
     window.addEventListener('clinical:authenticated', () => {
+      closeRfDraftPreview();
+      ++state.draftListToken;
+      $('rfDraftList').replaceChildren();
+      $('rfDraftNextBtn').hidden = true;
+      if (!$('rfBuilderView').hidden) listRfDrafts();
       ++tracking.copyGeneration;
       ++tracking.authEpoch;
       ++tracking.listGeneration;

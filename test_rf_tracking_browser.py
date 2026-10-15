@@ -335,6 +335,13 @@ def suite(width):
         expect(page.locator("#rfDraftPreview")).to_be_hidden()
         expect(page.locator("#rfDraftList .rf-outcome-card")).to_have_count(0)
         expect(page.locator("#patientName")).to_have_value("Συνθετική τρέχουσα αίτηση")
+        mock["draft_preview_status"] = 200
+        page.locator("#rfDraftReloadBtn").click()
+        page.locator("#rfDraftList").get_by_role("button", name="Προεπισκόπηση").click()
+        expect(page.locator("#rfDraftPreview")).to_be_visible()
+        page.evaluate("window.dispatchEvent(new Event('clinical:authenticated'))")
+        expect(page.locator("#rfDraftPreview")).to_be_hidden()
+        expect(page.locator("#patientName")).to_have_value("Συνθετική τρέχουσα αίτηση")
         assert "synthetic-draft" not in page.url
         assert not errors, errors
         assert not any("render.com" in x or "cal.com" in x for x in outbound), outbound
