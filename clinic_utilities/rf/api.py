@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 from calendar import monthrange
 from datetime import date
 import re
@@ -49,11 +51,12 @@ from .persistence import (
     upsert_medication_alias,
     delete_medication_alias,
     RFSavedDraftORM,
-    search_rf_sources, get_rf_source,
+    search_rf_sources, get_rf_source, read_rf_rejected_correction,
     save_rf_draft, get_rf_draft, list_rf_drafts, delete_rf_draft,
     normalize_identity,
     list_rf_application_progress, get_rf_application_progress,
     change_rf_application_progress, validate_rf_correction_source,
+    track_rf_applications, rf_week_dates,
 )
 
 MAX_IMAGING_BYTES = 20 * 1024 * 1024
@@ -164,12 +167,25 @@ class RFApplicationDraft(BaseModel):
     draft_id: str = Field(default="", max_length=80)
     draft_revision: int | None = Field(default=None, ge=1)
     correction_of_application_id: str = Field(default="", max_length=80)
+    correction_source_expected_revision: int | None = Field(default=None, ge=1)
+
+
+class RFRejectedCorrectionRead(BaseModel):
+    application_id: str = Field(min_length=1, max_length=80)
+    expected_revision: int = Field(ge=1)
 
 
 class RFOutcomeSearch(BaseModel):
     query: str = Field(default="", max_length=150)
     scope: Literal["all", "mine"] = "all"
     page: int = Field(default=1, ge=1, le=100)
+    mode: Literal["legacy", "tracking"] = "legacy"
+    stage: str = Field(default="", max_length=16)
+    cursor: str = Field(default="", max_length=2400)
+
+
+class RFWeekRead(BaseModel):
+    week_start: str = Field(min_length=10, max_length=10)
 
 
 class RFOutcomeEvent(BaseModel):
@@ -496,6 +512,12 @@ def build_rf_router(engine: Engine) -> APIRouter:
             raise HTTPException(status_code=500, detail="RF utility page is unavailable")
         return FileResponse(page_path, headers={"Cache-Control": "no-store"})
 
+    @router.get("/tracking", include_in_schema=False)
+    def rf_tracking_page():
+        if not page_path.is_file():
+            raise HTTPException(status_code=500, detail="RF tracking page is unavailable")
+        return FileResponse(page_path, headers={"Cache-Control": "no-store"})
+
     @router.get("/api/contract")
     def rf_contract():
         doctors = {
@@ -581,6 +603,19 @@ def build_rf_router(engine: Engine) -> APIRouter:
         if result is None:
             raise HTTPException(status_code=404, detail="Δεν βρέθηκε η παλιά RF εγγραφή")
         return result
+
+    @router.post("/api/reuse/rejected-correction")
+    def rf_reuse_rejected_correction(req: RFRejectedCorrectionRead):
+        try:
+            result = read_rf_rejected_correction(engine, req.application_id,
+                                                  req.expected_revision)
+            return Response(content=json.dumps(result, ensure_ascii=False),
+                            media_type="application/json",
+                            headers={"Cache-Control": "no-store"})
+        except LookupError as exc:
+            raise HTTPException(status_code=404, detail="Η αίτηση RF δεν βρέθηκε") from exc
+        except RuntimeError as exc:
+            raise HTTPException(status_code=409, detail="Η απόρριψη RF άλλαξε. Ανανέωσε την αίτηση") from exc
 
     @router.post("/api/reuse/pdf")
     async def rf_reuse_pdf(previous_rf_pdf: UploadFile = File(...)):
@@ -696,7 +731,19 @@ def build_rf_router(engine: Engine) -> APIRouter:
     @router.post("/api/outcomes/search")
     def rf_outcomes_search(req: RFOutcomeSearch):
         try:
+            if req.mode == "tracking":
+                return track_rf_applications(engine, query=req.query,
+                    scope=req.scope, stage=req.stage, cursor=req.cursor)
+            if req.stage or req.cursor:
+                raise ValueError("Μη έγκυρα legacy RF φίλτρα")
             return list_rf_application_progress(engine, req.query, req.scope, req.page)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    @router.post("/api/outcomes/calendar")
+    def rf_outcomes_calendar(req: RFWeekRead):
+        try:
+            return rf_week_dates(engine, req.week_start)
         except ValueError as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
 
@@ -882,13 +929,18 @@ def build_rf_router(engine: Engine) -> APIRouter:
                 snapshot=snapshot,
             )
             if draft.correction_of_application_id:
+                if draft.correction_source_expected_revision is None:
+                    raise HTTPException(status_code=422, detail="Λείπει η έκδοση της απορριφθείσας RF")
                 try:
                     validate_rf_correction_source(
                         session, rejected_id=draft.correction_of_application_id,
+                        expected_revision=draft.correction_source_expected_revision,
                         identity_number=draft.identity_number,
                         indication_code=draft.indication_code,
                         laterality=draft.laterality, site_key=indication["site_key"],
                     )
+                except RuntimeError as exc:
+                    raise HTTPException(status_code=409, detail=str(exc)) from exc
                 except ValueError as exc:
                     raise HTTPException(status_code=422, detail=str(exc)) from exc
                 payload["correction_of_application_id"] = draft.correction_of_application_id

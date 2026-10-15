@@ -1190,6 +1190,144 @@ class RFOutcomeFollowupTests(unittest.TestCase):
             # State reporting never changes the immutable issued document.
             self.assertIsNone(session.get(RFApplicationORM, app_id).payload_json.get("approval_status"))
 
+    def test_tracking_exceeds_legacy_2000_and_10000_limits(self):
+        from datetime import datetime, timedelta
+        from sqlalchemy.orm import Session
+        from clinic_utilities.rf.persistence import RFApplicationORM, RFApplicationProgressORM
+        base_date = datetime(2026, 1, 1)
+        with Session(self.engine) as session:
+            session.bulk_save_objects([
+                RFApplicationORM(
+                    id=f"synthetic-bulk-{i:05d}",
+                    patient_identity_key=f"SYNBULK{i:05d}",
+                    patient_name="Rare Oldest" if i == 0 else "Synthetic Bulk",
+                    gesy_number=f"SYNGESY{i:05d}", patient_age=60,
+                    pathway="A1", indication_code="KNEE_OA_KL34",
+                    site_key="knee", laterality="left",
+                    exact_location="Synthetic", product_key="medikey",
+                    payload_json={"identity_number": f"SYNBULK{i:05d}"},
+                    created_at=base_date + timedelta(seconds=i),
+                ) for i in range(10050)
+            ])
+            session.bulk_save_objects([
+                RFApplicationProgressORM(
+                    application_id=f"synthetic-bulk-{i:05d}",
+                    revision=1, stage="submitted", submitted_date="2026-01-02",
+                    updated_at=base_date,
+                ) for i in range(8000,10050)
+            ])
+            session.commit()
+        found = 0
+        token = ""
+        for _ in range(160):
+            r = self.search(mode="tracking", stage="submitted", cursor=token)
+            self.assertEqual(r.status_code, 200, r.text)
+            data = r.json()
+            found += len(data["applications"])
+            if data["scan_complete"]:
+                break
+            self.assertTrue(data["has_more"])
+            self.assertTrue(data["next_cursor"])
+            token = data["next_cursor"]
+        else:
+            self.fail("Tracked >2000 matching RF did not exhaust bounded cursor")
+        self.assertEqual(found, 2050)
+        token = ""
+        seen_oldest = []
+        empty_batches = 0
+        for _ in range(40):
+            r = self.search(mode="tracking", query="Rare Oldest", cursor=token)
+            self.assertEqual(r.status_code, 200, r.text)
+            data = r.json()
+            seen_oldest.extend(data["applications"])
+            if not data["applications"] and data["has_more"]:
+                empty_batches += 1
+            if data["scan_complete"]:
+                break
+            token = data["next_cursor"]
+        else:
+            self.fail("Tracking cannot scan >10000 older RF attempts")
+        self.assertGreater(empty_batches, 0)
+        self.assertEqual([x["id"] for x in seen_oldest], ["synthetic-bulk-00000"])
+
+    def test_tracking_cursor_and_rf_date_only_week(self):
+        ids = []
+        for index in range(26):
+            created = self.issue(identity_number=f"SYN-CURSOR-{index:03d}",
+                                 patient_name=f"Synthetic cursor {index}")
+            self.assertEqual(created.status_code, 200, created.text)
+            ids.append(created.headers["x-rf-application-id"])
+        first = self.search(mode="tracking").json()
+        self.assertEqual(len(first["applications"]), 20)
+        self.assertTrue(first["has_more"])
+        self.assertFalse(first["scan_complete"])
+        self.assertIsNone(first["counts"])
+        self.assertNotIn("SYN-CURSOR-000", {c["identity_number"] for c in first["applications"]})
+        following = self.search(mode="tracking", cursor=first["next_cursor"]).json()
+        self.assertEqual(len(following["applications"]), 6)
+        self.assertTrue(following["scan_complete"])
+        self.assertFalse(following["has_more"])
+        combined = [a["id"] for a in first["applications"] + following["applications"]]
+        self.assertEqual(len(set(combined)), 26)
+        self.assertEqual(self.search(mode="tracking", cursor=first["next_cursor"],
+                                     query="different filter").status_code, 422)
+        self.assertEqual(self.search(mode="tracking", cursor=first["next_cursor"] + "X").status_code, 422)
+        self.assertEqual(self.search(mode="tracking", query="NO-MATCH").json()["applications"], [])
+        from datetime import date, timedelta
+        scheduled = date.today() + timedelta(days=1)
+        monday = (scheduled - timedelta(days=scheduled.weekday())).isoformat()
+        scheduled_text = scheduled.isoformat()
+        self.assertEqual(self.event(ids[0], "approve").status_code, 200)
+        planning = self.event(ids[0], "schedule", 1, event_date=scheduled_text)
+        self.assertEqual(planning.status_code, 200, planning.text)
+        week = self.client.post(self.base + "/outcomes/calendar", headers=self.headers,
+                                json={"week_start": monday})
+        self.assertEqual(week.status_code, 200, week.text)
+        self.assertTrue(week.json()["complete"])
+        self.assertFalse(week.json()["time_verified"])
+        self.assertTrue(any(f["application_id"] == ids[0] and f["kind"] == "scheduled"
+                            and f["date"] == scheduled_text for f in week.json()["facts"]))
+        invalid_week = self.client.post(self.base + "/outcomes/calendar",
+            headers=self.headers, json={"week_start": (date.fromisoformat(monday) + timedelta(days=1)).isoformat()})
+        self.assertEqual(invalid_week.status_code, 422)
+
+    def test_atomic_rejected_correction_rejects_stale_revision_and_missing_proof(self):
+        from clinic_utilities.rf.persistence import RFApplicationORM
+        from sqlalchemy.orm import Session
+        original = self.issue(identity_number="SYN-ATOMIC-TEST")
+        self.assertEqual(original.status_code, 200)
+        app_id = original.headers["x-rf-application-id"]
+        endpoint = self.base + "/reuse/rejected-correction"
+        body = {"application_id": app_id, "expected_revision": 1}
+        self.assertEqual(self.client.post(endpoint, json=body).status_code, 401)
+        self.assertEqual(self.client.post(endpoint, headers=self.headers, json=body).status_code, 409)
+        self.assertEqual(self.client.post(endpoint, headers=self.headers, json={
+            "application_id": "no-such-id", "expected_revision": 1}).status_code, 404)
+        self.assertEqual(self.client.post(endpoint, headers=self.headers, json={
+            "application_id": app_id}).status_code, 422)
+        rejection = self.event(app_id, "reject", rejection_reason="synthetic").json()
+        rev = rejection["revision"]
+        guarded = self.client.post(endpoint, headers=self.headers, json={
+            "application_id": app_id, "expected_revision": rev})
+        self.assertEqual(guarded.status_code, 200, guarded.text)
+        self.assertEqual(guarded.json()["application_id"], app_id)
+        self.assertEqual(guarded.json()["revision"], rev)
+        self.assertEqual(guarded.json()["fields"]["identity_number"], "SYN-ATOMIC-TEST")
+        self.assertEqual(guarded.headers["cache-control"], "no-store")
+        self.assertEqual(self.client.post(endpoint, headers=self.headers, json={
+            "application_id": app_id, "expected_revision": rev + 1}).status_code, 409)
+        self.assertEqual(self.event(app_id, "correct_decision", rev,
+            corrected_decision="rejected", rejection_reason="updated").status_code, 200)
+        self.assertEqual(self.client.post(endpoint, headers=self.headers, json={
+            "application_id": app_id, "expected_revision": rev}).status_code, 409)
+        self.assertEqual(self.issue(identity_number="SYN-ATOMIC-TEST",
+            correction_of_application_id=app_id,
+            correction_source_expected_revision=rev).status_code, 409)
+        self.assertEqual(self.issue(identity_number="SYN-ATOMIC-TEST",
+            correction_of_application_id=app_id).status_code, 422)
+        with Session(self.engine) as session:
+            self.assertEqual(session.query(RFApplicationORM).count(), 1)
+
     def test_colleague_reported_rejection_without_submission_and_linked_correction(self):
         from clinic_utilities.rf.persistence import RFApplicationORM, RFProcedureHistoryORM
         from sqlalchemy.orm import Session
@@ -1215,7 +1353,8 @@ class RFOutcomeFollowupTests(unittest.TestCase):
         self.assertEqual(self.event(app_id, "submit", 1).status_code, 422)
         # Correction is a distinct A1 attempt, never an automatic A2/actual treatment.
         new = self.issue(identity_number="SYN-COL-1", doctor_key=key,
-                         correction_of_application_id=app_id)
+                         correction_of_application_id=app_id,
+                          correction_source_expected_revision=rejected.json()['revision'])
         self.assertEqual(new.status_code, 200, new.text)
         new_id = new.headers["x-rf-application-id"]
         self.assertNotEqual(app_id, new_id)
@@ -1290,7 +1429,8 @@ class RFOutcomeFollowupTests(unittest.TestCase):
                                    correction_of_application_id=old_id)
         self.assertEqual(wrong_patient.status_code, 422)
         valid = self.issue(identity_number="SYN-HISTORY",
-                           correction_of_application_id=old_id)
+                           correction_of_application_id=old_id,
+                            correction_source_expected_revision=self.card(old_id)["revision"])
         self.assertEqual(valid.status_code, 200, valid.text)
         with Session(self.engine) as session:
             self.assertEqual(session.query(RFApplicationORM).count(), 2)
@@ -1453,7 +1593,8 @@ class RFOutcomeFollowupTests(unittest.TestCase):
             session.commit()
         self.assertEqual(self.event(app_id, "reject", event_date=day(3)).status_code, 200)
         followup = self.issue(identity_number="SYN-LINK-SAFETY",
-                              correction_of_application_id=app_id)
+                              correction_of_application_id=app_id,
+                               correction_source_expected_revision=self.card(app_id)["revision"])
         self.assertEqual(followup.status_code, 200, followup.text)
         linked_id = followup.headers["x-rf-application-id"]
         with Session(self.engine) as session:

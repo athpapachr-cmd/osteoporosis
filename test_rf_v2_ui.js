@@ -75,7 +75,7 @@ const doc = {
   createElement: fakeElement,
   addEventListener() {}, // install but do not run unrelated page bootstrap
 };
-const instrumented = app.replace(/\}\)\(\);\s*$/, '\n  globalThis.__rfTest = {addHorosImages, releaseHorosPreviews, loadContract, saveDoctor, editDoctor, createPdf, populateRfFields, savedDraftFields, restoreRfDraft, loadRfSource, setPathway, resolveSourceName, invalidateSourceNameConfirmation, unresolvedSourceNameConflict, buildDraft, loadRfOutcomes, selectRfOutcome, invalidateRfOutcomeSelection, renderSelectedOutcome, applyRfOutcome, beginRfCorrection, outcomeAvailableActions, renderCorrectionContext};\n})();');
+const instrumented = app.replace(/\}\)\(\);\s*$/, '\n  globalThis.__rfTest = {normalizeRfIdentity, addHorosImages, releaseHorosPreviews, loadContract, saveDoctor, editDoctor, createPdf, populateRfFields, savedDraftFields, restoreRfDraft, loadRfSource, setPathway, resolveSourceName, invalidateSourceNameConfirmation, unresolvedSourceNameConflict, buildDraft, loadRfOutcomes, selectRfOutcome, invalidateRfOutcomeSelection, renderSelectedOutcome, applyRfOutcome, beginRfCorrection, outcomeAvailableActions, renderCorrectionContext};\n})();');
 assert.notStrictEqual(instrumented, app, 'RF handler instrumentation point must be present');
 const browser = {
   document: doc,
@@ -83,9 +83,15 @@ const browser = {
     createObjectURL() { return 'blob:rf-test-' + (++blobId); },
     revokeObjectURL(value) { revoked.push(value); },
   },
-  window: {},
+  window: {confirm:()=>true},
+  history: {pushState(){}},
 };
 vm.runInNewContext(instrumented, browser, {filename: 'rf-app.js'});
+assert.strictEqual(browser.__rfTest.normalizeRfIdentity('AB-W123'), 'ABW123');
+assert.notStrictEqual(browser.__rfTest.normalizeRfIdentity('ABW123'),
+                      browser.__rfTest.normalizeRfIdentity('AB123'));
+assert.strictEqual(browser.__rfTest.normalizeRfIdentity('RF-CORR'),
+                   browser.__rfTest.normalizeRfIdentity('RFCORR'));
 const jpg = name => ({name, size: 1024, type: 'image/jpeg'});
 const picker = doc.getElementById('horosJpegs');
 picker.files = [jpg('first.jpg'), jpg('second.jpeg')];
@@ -421,8 +427,11 @@ async function testRfOutcomeActionsAndCorrection() {
       card = {...card,revision:card.revision+1,
         decision_date:request.event_date,rejection_reason:request.rejection_reason};
       data = card;
-    } else if (path === '/api/reuse/application/' + original.id) {
-      data = {source:{kind:'application',pathway:'A1'},fields:{
+     } else if (path === '/api/reuse/rejected-correction') {
+      assert.strictEqual(options.method, 'POST');
+      assert.strictEqual(request.application_id, original.id);
+      assert.strictEqual(request.expected_revision, card.revision);
+      data = {application_id: original.id, revision: card.revision, source:{kind:'application',pathway:'A1'},fields:{
         pathway:'A1',patient_name:'Synthetic RF Patient',identity_number:'RF-CORR',
         gesy_number:'SYN-GESY',age:67,indication_code:'KNEE_OA_KL34',
         laterality:'left',exact_location:'Αριστερό γόνατο',product_key:'medikey',
@@ -430,6 +439,7 @@ async function testRfOutcomeActionsAndCorrection() {
     } else throw Error('Unexpected protected RF request: '+path);
     return {ok:true,status:200,json:async()=>data};
   };
+  el('rfTrackingView').hidden = true; // Match the real initial HTML hidden state.
   el('rfOutcomeScope').value = 'all';
   el('rfOutcomeSearch').value = '';
   el('rfOutcomeAction').add = option => {
@@ -461,7 +471,12 @@ async function testRfOutcomeActionsAndCorrection() {
                     'exactLocation','gesyNumber','productSelect','additionalNotes'])
     el(id).value = '';
   await browser.__rfTest.beginRfCorrection();
-  assert.strictEqual(el('patientName').value,'Synthetic RF Patient');
+  assert.strictEqual(el('patientName').value,'Synthetic RF Patient',
+    'guarded correction prefill failed: ' + JSON.stringify({
+      error: el('validationPanel').textContent, requests: requests.slice(-3),
+      title: el('rfOutcomeTitle').textContent,
+      correctionContext: el('rfCorrectionContext').textContent
+    }));
   assert.strictEqual(el('identityNumber').value,'RF-CORR');
   assert.strictEqual(el('rfCorrectionContext').hidden,false);
   assert.strictEqual(browser.__rfTest.buildDraft().correction_of_application_id,
@@ -470,12 +485,14 @@ async function testRfOutcomeActionsAndCorrection() {
                      'rejected application does not imply real A2 treatment');
   assert.strictEqual(el('imagingReport').value,'',
                      'new official RF requires new imaging attachment');
-  assert.notStrictEqual(el('doctorSelect').value,'physicianB',
-                        'correction must not silently select colleague issuer');
+  assert.strictEqual(el('doctorSelect').value,'',
+                     'correction requires an explicit fresh issuer selection');
 
-  // Existing saved-draft mechanism carries only the correction ID, no binaries.
+  // A saved draft must never re-arm correction after reload.
   assert.strictEqual(browser.__rfTest.savedDraftFields().correction_of_application_id,
-                     original.id);
+                      undefined);
+  assert.strictEqual(browser.__rfTest.buildDraft().correction_source_expected_revision,
+                      card.revision);
 }
 
 

@@ -76,3 +76,15 @@
 .rf-outcome-card strong{font-size:13px}
 .rf-outcome-card .muted{overflow-wrap:anywhere}
 @media(max-width:760px){.rf-outcome-toolbar{grid-template-columns:1fr}.rf-outcome-card{align-items:stretch;flex-direction:column}}
+
+/* Dedicated RF tracking, reusing the protected RF application shell. */
+.rf-tracking-nav {display:flex;gap:0.65rem;flex-wrap:wrap;margin:1rem 0}
+.rf-tracking-view {max-width:1200px;margin:0 auto}
+.rf-tracking-view .rf-outcome-card {display:flex;align-items:center;justify-content:space-between;gap:1rem}
+.rf-week-grid {display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:0.65rem}
+.rf-week-day {min-width:0;padding:0.65rem}
+.rf-week-day h3 {font-size:0.9rem;margin:0 0 0.65rem}
+.rf-week-day button {display:block;white-space:normal;width:100%;margin:0.45rem 0;text-align:left;overflow-wrap:anywhere}
+.rf-tracking-view .rf-outcome-selected {margin-top:1rem}
+@media(max-width:900px) {.rf-week-grid {grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:450px) {.rf-week-grid {grid-template-columns:1fr}.rf-tracking-view .rf-outcome-card {align-items:flex-start;flex-direction:column}}
