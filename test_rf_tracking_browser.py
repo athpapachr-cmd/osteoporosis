@@ -131,6 +131,9 @@ def suite(width):
                                    "physio_dates_text": "2026-02-01\n2026-02-08"},
                     }, headers={"cache-control": "no-store"})
                 if endpoint.startswith("outcomes/") and endpoint.endswith("/delete"):
+                    assert endpoint == "outcomes/synthetic-rf-00/delete"
+                    assert request["expected_revision"] == 2
+                    assert request["confirmation_code"] == "IC-RF-00"
                     return route.fulfill(status=409,
                         json={"detail": "Synthetic linked RF prevents deletion"})
                 if endpoint == "reuse/rejected-correction":
@@ -222,6 +225,10 @@ def suite(width):
         expect(page.locator("#rfOutcomeTitle")).to_contain_text("Συνθετικός RF 00")
         expect(page.locator("#rfOutcomeDelete")).to_be_visible()
         expect(page.locator("#rfOutcomeCopy")).to_be_visible()
+        page.evaluate("window.prompt = () => 'IC-RF-00'")
+        page.locator("#rfOutcomeDelete").click()
+        expect(page.locator("#rfTrackStatus")).to_contain_text("Synthetic linked RF prevents deletion")
+        expect(page.locator("#rfTrackResults .rf-outcome-card")).to_have_count(20)
         page.locator("#rfTrackResults .rf-outcome-card").first.locator(
             "button").filter(has_text="Φόρτωση").click()
         expect(page.locator("#rfBuilderView")).to_be_visible()
