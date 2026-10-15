@@ -33,7 +33,8 @@ def card(n):
 
 def suite(width):
     errors, outbound = [], []
-    mock = {"tracking_status": 200, "write_status": 409}
+    mock = {"tracking_status": 200, "write_status": 409,
+            "drafts_visible": False, "draft_preview_status": 200}
     with sync_playwright() as pw:
         executable = shutil.which("google-chrome") or shutil.which("chromium")
         browser = pw.chromium.launch(headless=True, executable_path=executable,
@@ -64,7 +65,36 @@ def suite(width):
                 if endpoint == "contract":
                     return route.fulfill(json=CONTRACT)
                 if endpoint == "drafts" or endpoint.startswith("drafts?"):
-                    return route.fulfill(json={"drafts": [], "has_more": False})
+                    drafts = [{"id": "synthetic-draft-01", "revision": 3,
+                               "pathway": "A1", "patient_name": "Συνθετικό πρόχειρο",
+                               "identity_number": "SYN-DRAFT-01",
+                               "gesy_number": "", "updated_at": "2026-10-15T12:00:00Z"}] if mock["drafts_visible"] else []
+                    return route.fulfill(json={"drafts": drafts, "has_more": False})
+                if endpoint == "drafts/synthetic-draft-01":
+                    if mock["draft_preview_status"] != 200:
+                        return route.fulfill(status=mock["draft_preview_status"],
+                            json={"detail": "Synthetic draft access denied"})
+                    return route.fulfill(json={
+                        "id": "synthetic-draft-01", "revision": 3,
+                        "pathway": "A1", "attachments_saved": False,
+                        "fields": {"pathway": "A1", "doctor_key": "papachristou",
+                                   "patient_name": "Συνθετικό πρόχειρο",
+                                   "identity_number": "SYN-DRAFT-01",
+                                   "gesy_number": "", "age": None,
+                                   "product_key": "medikey",
+                                   "indication_code": "KNEE_OA_KL34",
+                                   "laterality": "left",
+                                   "exact_location": "Synthetic knee",
+                                   "rf_reason_codes": ["FAILED_CONSERVATIVE"],
+                                   "pain_onset_date": "2026-01-01",
+                                   "pain_onset_vas": 8,
+                                   "last_assessment_date": "",
+                                   "last_assessment_vas": None,
+                                   "draft_nsaids": [{"drug_name": "Synthetic drug",
+                                                     "dose": "100 mg",
+                                                     "manual": True}],
+                                   "physio_dates_text": "2026-02-01\n2026-02-08"}
+                    }, headers={"cache-control": "no-store"})
                 if endpoint == "outcomes/search":
                     if request.get("mode") == "tracking" and mock["tracking_status"] != 200:
                         return route.fulfill(status=mock["tracking_status"],
@@ -277,6 +307,98 @@ def suite(width):
         expect(page.locator("#rfTrackingView")).to_be_visible()
         expect(page.locator("#rfCorrectionContext")).to_be_hidden()
         assert "synthetic-rf-" not in page.url
+
+        # Real Chromium creator progress responds immediately to field changes.
+        page.locator("#rfNavCreate").click()
+        expect(page.locator("#rfPreviewStatus")).to_be_visible()
+        expect(page.locator("#rfPreviewMissing")).to_contain_text("Ασθενής:")
+        page.locator("#patientName").fill("Συνθετική τρέχουσα αίτηση")
+        expect(page.locator("#rfPreviewMissing")).to_contain_text("ταυτότητα")
+        expect(page.locator("#rfPreviewDone")).to_contain_text("Ιατρός:")
+        # The protected saved draft preview does not overwrite the dirty creator.
+        mock["drafts_visible"] = True
+        page.locator("#rfDraftReloadBtn").click()
+        expect(page.locator("#rfDraftList").get_by_role(
+            "button", name="Προεπισκόπηση")).to_be_visible()
+        page.locator("#rfDraftList").get_by_role(
+            "button", name="Προεπισκόπηση").click()
+        expect(page.locator("#rfDraftPreview")).to_be_visible()
+        expect(page.locator("#rfDraftPreviewTitle")).to_contain_text("Συνθετικό πρόχειρο")
+        expect(page.locator("#rfSavedPreviewDone")).to_contain_text("Αγωγή:")
+        expect(page.locator("#rfSavedPreviewMissing")).to_contain_text("ΓεΣΥ")
+        expect(page.locator("#rfSavedPreviewMissing")).to_contain_text("επισύναψέ την ξανά")
+        expect(page.locator("#patientName")).to_have_value("Συνθετική τρέχουσα αίτηση")
+        # A failed Clinical Key read clears the protected preview, not the creator.
+        mock["draft_preview_status"] = 401
+        page.locator("#rfDraftList").get_by_role(
+            "button", name="Προεπισκόπηση").click()
+        expect(page.locator("#rfDraftPreview")).to_be_hidden()
+        expect(page.locator("#rfDraftList").get_by_role(
+            "button", name="Προεπισκόπηση")).to_have_count(0)
+        expect(page.locator("#rfDraftNextBtn")).to_be_hidden()
+        expect(page.locator("#patientName")).to_have_value("Συνθετική τρέχουσα αίτηση")
+        mock["draft_preview_status"] = 200
+        page.locator("#rfDraftReloadBtn").click()
+        page.locator("#rfDraftList").get_by_role("button", name="Προεπισκόπηση").click()
+        expect(page.locator("#rfDraftPreview")).to_be_visible()
+
+        # P1-01: hold an older successful draft-list response, receive a
+        # denied preview in the meantime, then deliver the old list. Neither
+        # a draft row nor the "More" button may resurrect protected data.
+        page.evaluate("""() => {
+          const originalFetch = window.fetch.bind(window);
+          let held = false;
+          window.__rfDelayedDraftList = {};
+          window.fetch = (url, options) => {
+            if (!held && String(url).includes('/rf/api/drafts?')) {
+              held = true;
+              return new Promise(resolve => {
+                window.__rfDelayedDraftList.release = () => new Promise(done => {
+                  resolve({
+                    ok: true, status: 200,
+                    json: async () => ({
+                      drafts: [{
+                        id: 'synthetic-draft-01', revision: 3, pathway: 'A1',
+                        patient_name: 'Συνθετικό πρόχειρο',
+                        identity_number: 'SYN-DRAFT-01', gesy_number: '',
+                        updated_at: '2026-10-15T12:00:00Z'
+                      }],
+                      has_more: true
+                    })
+                  });
+                  // The app's fetch/json continuations run before this next
+                  // event-loop turn, so assertions cover the settled race.
+                  setTimeout(done, 0);
+                });
+              });
+            }
+            return originalFetch(url, options);
+          };
+        }""")
+        page.locator("#rfDraftReloadBtn").click()
+        page.wait_for_function("typeof window.__rfDelayedDraftList.release === 'function'")
+        mock["draft_preview_status"] = 403 if width == 680 else 401
+        page.locator("#rfDraftList").get_by_role(
+            "button", name="Προεπισκόπηση").click()
+        expect(page.locator("#rfDraftPreview")).to_be_hidden()
+        expect(page.locator("#rfDraftList").get_by_role(
+            "button", name="Προεπισκόπηση")).to_have_count(0)
+        expect(page.locator("#rfDraftNextBtn")).to_be_hidden()
+        page.evaluate("() => window.__rfDelayedDraftList.release()")
+        expect(page.locator("#rfDraftList").get_by_role(
+            "button", name="Προεπισκόπηση")).to_have_count(0)
+        expect(page.locator("#rfDraftNextBtn")).to_be_hidden()
+        expect(page.locator("#patientName")).to_have_value("Συνθετική τρέχουσα αίτηση")
+
+        # A later explicit, freshly authorized reload still works.
+        mock["draft_preview_status"] = 200
+        page.locator("#rfDraftReloadBtn").click()
+        page.locator("#rfDraftList").get_by_role("button", name="Προεπισκόπηση").click()
+        expect(page.locator("#rfDraftPreview")).to_be_visible()
+        page.evaluate("window.dispatchEvent(new Event('clinical:authenticated'))")
+        expect(page.locator("#rfDraftPreview")).to_be_hidden()
+        expect(page.locator("#patientName")).to_have_value("Συνθετική τρέχουσα αίτηση")
+        assert "synthetic-draft" not in page.url
         assert not errors, errors
         assert not any("render.com" in x or "cal.com" in x for x in outbound), outbound
         browser.close()

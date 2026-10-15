@@ -74,6 +74,7 @@ function fakeElement(tag) {
     replaceChildren(...items) { this.children = items; },
     addEventListener(type, fn) { this.listeners[type] = fn; },
     querySelector() { return {value: '', onclick: null}; }, // synthetic adverse-row button
+    querySelectorAll() { return []; }, // real DOM collection method for progress preview
     setAttribute() {},
     closest() { return {hidden: false}; },
   };
@@ -81,6 +82,7 @@ function fakeElement(tag) {
 const doc = {
   getElementById(id) { return nodes[id] ||= fakeElement(id); },
   createElement: fakeElement,
+  querySelectorAll() { return []; },
   addEventListener() {}, // install but do not run unrelated page bootstrap
 };
 const instrumented = app.replace(/\}\)\(\);\s*$/, '\n  globalThis.__rfTest = {normalizeRfIdentity, addHorosImages, releaseHorosPreviews, loadContract, saveDoctor, editDoctor, createPdf, populateRfFields, savedDraftFields, restoreRfDraft, loadRfSource, setPathway, resolveSourceName, invalidateSourceNameConfirmation, unresolvedSourceNameConflict, buildDraft, loadRfOutcomes, selectRfOutcome, invalidateRfOutcomeSelection, renderSelectedOutcome, applyRfOutcome, beginRfCorrection, outcomeAvailableActions, renderCorrectionContext};\n})();');
