@@ -1644,6 +1644,94 @@ class RFOutcomeFollowupTests(unittest.TestCase):
                           "a missing historical audit must not infer provenance")
 
 
+    def test_issued_copy_restores_saved_fields_without_attachments_or_mutation(self):
+        from clinic_utilities.rf.persistence import RFApplicationORM
+        from sqlalchemy.orm import Session
+        original = self.issue(identity_number="SYN-COPY-001", patient_name="Synthetic Copy",
+            nsaid_trials=[{"drug_name":"Synthetic Nsaid","dose":"90 mg",
+                           "duration":"3 months","source_text":"unretained raw text"}],
+            physio_dates_text="01/02/2026\n08/02/2026")
+        self.assertEqual(original.status_code, 200, original.text)
+        app_id = original.headers["x-rf-application-id"]
+        payload = {"application_id":app_id,"expected_revision":0}
+        route = self.base + "/reuse/issued-copy"
+        self.assertEqual(self.client.post(route,json=payload).status_code, 401)
+        response = self.client.post(route,headers=self.headers,json=payload)
+        self.assertEqual(response.status_code, 200, response.text)
+        body = response.json()
+        self.assertEqual(body["application_id"],app_id)
+        self.assertFalse(body["files_saved"])
+        self.assertEqual(response.headers["cache-control"],"no-store")
+        self.assertEqual(body["fields"]["identity_number"],"SYN-COPY-001")
+        self.assertEqual(body["fields"]["pathway"],"A1")
+        self.assertEqual(body["fields"]["physio_dates_text"],"2026-02-01\n2026-02-08")
+        self.assertEqual(body["fields"]["nsaid_trials"][0]["drug_name"],"Synthetic Nsaid")
+        self.assertNotIn("source_text",body["fields"]["nsaid_trials"][0])
+        self.assertNotIn("full_medication_text",body["fields"])
+        self.assertNotIn("correction_source_expected_revision",body["fields"])
+        with Session(self.engine) as session:
+            self.assertEqual(session.query(RFApplicationORM).count(),1)
+        self.assertEqual(self.event(app_id,"reject",rejection_reason="synthetic").status_code,200)
+        self.assertEqual(self.client.post(route,headers=self.headers,json=payload).status_code,409)
+        self.assertEqual(self.client.post(route,headers=self.headers,json={
+            "application_id":"missing","expected_revision":0}).status_code,404)
+
+    def test_exact_application_delete_requires_code_revision_and_clinical_key(self):
+        from clinic_utilities.rf.persistence import (
+            RFApplicationORM, RFApplicationProgressORM,
+            RFApplicationProgressAuditORM, RFApplicationDeletionAuditORM)
+        from sqlalchemy.orm import Session
+        first = self.issue(identity_number="SYN-DELETE",patient_name="Synthetic Repeat")
+        second = self.issue(identity_number="SYN-DELETE",patient_name="Synthetic Repeat")
+        self.assertEqual(first.status_code, 200)
+        self.assertEqual(second.status_code, 200)
+        first_id,second_id = (first.headers["x-rf-application-id"],
+                              second.headers["x-rf-application-id"])
+        route = self.base + "/outcomes/" + first_id + "/delete"
+        body = {"expected_revision":0,"confirmation_code":first_id[-8:].upper()}
+        self.assertEqual(self.client.post(route,json=body).status_code,401)
+        self.assertEqual(self.client.post(route,headers=self.headers,json={
+            **body,"confirmation_code":"WRONGID!"}).status_code,422)
+        self.assertEqual(self.event(first_id,"submit").status_code,200)
+        self.assertEqual(self.client.post(route,headers=self.headers,json=body).status_code,409)
+        body["expected_revision"]=1
+        deleted=self.client.post(route,headers=self.headers,json=body)
+        self.assertEqual(deleted.status_code,200,deleted.text)
+        self.assertEqual(deleted.json(),{"deleted":True})
+        self.assertEqual(deleted.headers["cache-control"],"no-store")
+        self.assertEqual(self.client.get(self.base + "/outcomes/" + first_id,
+                                         headers=self.headers).status_code,404)
+        self.assertEqual(self.card(second_id)["identity_number"],"SYN-DELETE")
+        self.assertEqual(self.search(mode="tracking").json()["applications"][0]["id"],second_id)
+        with Session(self.engine) as session:
+            self.assertEqual(session.query(RFApplicationORM).count(),1)
+            self.assertIsNone(session.get(RFApplicationProgressORM,first_id))
+            self.assertEqual(session.query(RFApplicationProgressAuditORM).count(),0)
+            receipt=session.query(RFApplicationDeletionAuditORM).one()
+            self.assertEqual(receipt.application_id,first_id)
+            self.assertEqual(receipt.prior_revision,1)
+        self.assertEqual(self.client.post(route,headers=self.headers,json=body).status_code,404)
+
+    def test_delete_rejected_parent_with_linked_correction_is_blocked(self):
+        parent = self.issue(identity_number="SYN-LINK-DELETE")
+        self.assertEqual(parent.status_code,200)
+        parent_id = parent.headers["x-rf-application-id"]
+        rejection=self.event(parent_id,"reject",rejection_reason="synthetic")
+        self.assertEqual(rejection.status_code,200)
+        child = self.issue(identity_number="SYN-LINK-DELETE",
+                           correction_of_application_id=parent_id,
+                           correction_source_expected_revision=rejection.json()["revision"])
+        self.assertEqual(child.status_code,200,child.text)
+        child_id=child.headers["x-rf-application-id"]
+        blocked=self.client.post(
+            self.base + "/outcomes/" + parent_id + "/delete",headers=self.headers,
+            json={"expected_revision":1,"confirmation_code":parent_id[-8:].upper()})
+        self.assertEqual(blocked.status_code,409)
+        self.assertIn("νεότερη",blocked.text)
+        self.assertEqual(self.card(parent_id)["stage"],"rejected")
+        self.assertEqual(self.card(child_id)["correction_of_application_id"],parent_id)
+
+
 class RFIntegrationSourceTests(unittest.TestCase):
     def test_main_mounts_native_router_not_gateway(self):
         source = Path("main.py").read_text(encoding="utf-8")
