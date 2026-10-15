@@ -1,5 +1,8 @@
 # RF CURRENT — Native RF v2: Tracking usability and controlled issued-attempt actions
 
+> **2026-10-15 RF LIVE + SAVED DRAFT PREVIEW #158 — IMPLEMENTED, TESTED, INDEPENDENT AFFECTED R1 HOLD:** [DRAFT PR #158](https://github.com/athpapachr-cmd/osteoporosis/pull/158) source/test `61b64ea80bc4b7778136e661fdc603067cd8ab70`: live A1/A2 progress list in existing PDF summary, one-tap persisted draft preview via exact protected ID/revision without overwriting unsaved creator, explicit missing re-attachment, readonly state, no new store/schema/provider. Native/UI/Chromium (390/680/1280) and CU1/canonical relevant checks SUCCESS; request `reviews/RF_DRAFT_PROGRESS_PREVIEW_AFFECTED_POSTCODE_R1_REQUEST_2026-10-15.md`. **Writer RELEASED, no author self-PASS, no merge/deploy.** Appointment association proposal to be handled separately as R2 design-only after this writer release; external booking/PDF unchanged.
+
+
 > **2026-10-15 RF LIVE+SAVED DRAFT COMPLETION PREVIEW R1 — APPROVED / BOUNDED IMPLEMENTATION WRITER ACTIVE:** On `feat/rf-inline-draft-preview-20261015` from `686a8f68e3330e467a6422056296faa52a8cacfd`, reuse existing protected form and draft read; add compact always-visible completed/missing preview with optional supporting fields and per-draft one-tap preview that never overwrites current creator, uploads or issuer. No API/schema change, no PDF regeneration or clinical issuance, no PHI in URL/storage/logging. Real browser synthetic tests at 390/680/1280 plus UI integrity and RF native regression; release HOLD for independent affected post-code R1 and separate Product Owner authority. Requested RF↔Secretary appointment association remains gated independent R2 design, no automatic patient/date match or provider write.
 
 
