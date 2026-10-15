@@ -520,7 +520,8 @@ def read_rf_rejected_correction(engine: Engine, application_id: str,
                                 expected_revision: int) -> dict[str, Any]:
     """Atomically bind reusable immutable fields to a rejected progress revision."""
     with Session(engine) as session:
-        app = session.get(RFApplicationORM, application_id)
+        app = session.scalar(select(RFApplicationORM).where(
+            RFApplicationORM.id == application_id).with_for_update())
         if app is None:
             raise LookupError("RF application not found")
         progress = session.scalar(select(RFApplicationProgressORM).where(
@@ -1070,7 +1071,8 @@ def change_rf_application_progress(engine: Engine, application_id: str, *,
         if action != "reject" and action != "correct_decision" and rejection_reason:
             raise ValueError("Η αιτιολογία απόρριψης δεν αφορά αυτή την ενέργεια")
     with Session(engine) as session:
-        app = session.get(RFApplicationORM, application_id)
+        app = session.scalar(select(RFApplicationORM).where(
+            RFApplicationORM.id == application_id).with_for_update())
         if app is None:
             raise LookupError("Η αίτηση RF δεν βρέθηκε")
         progress = session.scalar(select(RFApplicationProgressORM).where(
@@ -1199,7 +1201,8 @@ def validate_rf_correction_source(session: Session, *, rejected_id: str,
                                   expected_revision: int,
                                   identity_number: str, indication_code: str,
                                   laterality: str, site_key: str) -> None:
-    prior = session.get(RFApplicationORM, rejected_id)
+    prior = session.scalar(select(RFApplicationORM).where(
+        RFApplicationORM.id == rejected_id).with_for_update())
     if prior is None:
         raise ValueError("Η απορριφθείσα αίτηση RF δεν βρέθηκε")
     progress = session.scalar(select(RFApplicationProgressORM).where(
