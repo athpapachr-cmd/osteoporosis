@@ -102,6 +102,12 @@ def suite(width):
                     return route.fulfill(status=mock["write_status"],
                         json={"detail": "Synthetic changed revision"
                               if mock["write_status"] == 409 else "Synthetic authorization lost"})
+                if endpoint.startswith("outcomes/") and endpoint.endswith("/delete"):
+                    assert endpoint == "outcomes/synthetic-rf-00/delete"
+                    assert request["expected_revision"] == 2
+                    assert request["confirmation_code"] == "IC-RF-00"
+                    return route.fulfill(status=409,
+                        json={"detail": "Synthetic linked RF prevents deletion"})
                 if endpoint.startswith("outcomes/"):
                     item_id = endpoint.split("/")[-1]
                     try:
@@ -130,12 +136,6 @@ def suite(width):
                                                      "dose": "90 mg", "duration": "3 months"}],
                                    "physio_dates_text": "2026-02-01\n2026-02-08"},
                     }, headers={"cache-control": "no-store"})
-                if endpoint.startswith("outcomes/") and endpoint.endswith("/delete"):
-                    assert endpoint == "outcomes/synthetic-rf-00/delete"
-                    assert request["expected_revision"] == 2
-                    assert request["confirmation_code"] == "IC-RF-00"
-                    return route.fulfill(status=409,
-                        json={"detail": "Synthetic linked RF prevents deletion"})
                 if endpoint == "reuse/rejected-correction":
                     n = int(request["application_id"].rsplit("-", 1)[1])
                     return route.fulfill(json={
