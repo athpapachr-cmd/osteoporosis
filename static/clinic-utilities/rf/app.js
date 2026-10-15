@@ -1905,7 +1905,13 @@
     } catch (error) {
       if (token !== state.draftPreviewToken) return;
       closeRfDraftPreview();
-      if ([401,403].includes(error.status)) $('rfDraftList').replaceChildren();
+      if ([401,403].includes(error.status)) {
+        // An older list GET may succeed after this denied preview. Invalidate
+        // its generation before clearing protected rows and pagination.
+        ++state.draftListToken;
+        $('rfDraftList').replaceChildren();
+        $('rfDraftNextBtn').hidden = true;
+      }
       showError(error.message);
     }
   }

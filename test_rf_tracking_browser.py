@@ -333,8 +333,64 @@ def suite(width):
         page.locator("#rfDraftList").get_by_role(
             "button", name="Προεπισκόπηση").click()
         expect(page.locator("#rfDraftPreview")).to_be_hidden()
-        expect(page.locator("#rfDraftList .rf-outcome-card")).to_have_count(0)
+        expect(page.locator("#rfDraftList").get_by_role(
+            "button", name="Προεπισκόπηση")).to_have_count(0)
+        expect(page.locator("#rfDraftNextBtn")).to_be_hidden()
         expect(page.locator("#patientName")).to_have_value("Συνθετική τρέχουσα αίτηση")
+        mock["draft_preview_status"] = 200
+        page.locator("#rfDraftReloadBtn").click()
+        page.locator("#rfDraftList").get_by_role("button", name="Προεπισκόπηση").click()
+        expect(page.locator("#rfDraftPreview")).to_be_visible()
+
+        # P1-01: hold an older successful draft-list response, receive a
+        # denied preview in the meantime, then deliver the old list. Neither
+        # a draft row nor the "More" button may resurrect protected data.
+        page.evaluate("""() => {
+          const originalFetch = window.fetch.bind(window);
+          let held = false;
+          window.__rfDelayedDraftList = {};
+          window.fetch = (url, options) => {
+            if (!held && String(url).includes('/rf/api/drafts?')) {
+              held = true;
+              return new Promise(resolve => {
+                window.__rfDelayedDraftList.release = () => new Promise(done => {
+                  resolve({
+                    ok: true, status: 200,
+                    json: async () => ({
+                      drafts: [{
+                        id: 'synthetic-draft-01', revision: 3, pathway: 'A1',
+                        patient_name: 'Συνθετικό πρόχειρο',
+                        identity_number: 'SYN-DRAFT-01', gesy_number: '',
+                        updated_at: '2026-10-15T12:00:00Z'
+                      }],
+                      has_more: true
+                    })
+                  });
+                  // The app's fetch/json continuations run before this next
+                  // event-loop turn, so assertions cover the settled race.
+                  setTimeout(done, 0);
+                });
+              });
+            }
+            return originalFetch(url, options);
+          };
+        }""")
+        page.locator("#rfDraftReloadBtn").click()
+        page.wait_for_function("typeof window.__rfDelayedDraftList.release === 'function'")
+        mock["draft_preview_status"] = 403 if width == 680 else 401
+        page.locator("#rfDraftList").get_by_role(
+            "button", name="Προεπισκόπηση").click()
+        expect(page.locator("#rfDraftPreview")).to_be_hidden()
+        expect(page.locator("#rfDraftList").get_by_role(
+            "button", name="Προεπισκόπηση")).to_have_count(0)
+        expect(page.locator("#rfDraftNextBtn")).to_be_hidden()
+        page.evaluate("() => window.__rfDelayedDraftList.release()")
+        expect(page.locator("#rfDraftList").get_by_role(
+            "button", name="Προεπισκόπηση")).to_have_count(0)
+        expect(page.locator("#rfDraftNextBtn")).to_be_hidden()
+        expect(page.locator("#patientName")).to_have_value("Συνθετική τρέχουσα αίτηση")
+
+        # A later explicit, freshly authorized reload still works.
         mock["draft_preview_status"] = 200
         page.locator("#rfDraftReloadBtn").click()
         page.locator("#rfDraftList").get_by_role("button", name="Προεπισκόπηση").click()
