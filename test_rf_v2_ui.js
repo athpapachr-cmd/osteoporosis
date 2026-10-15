@@ -9,6 +9,8 @@ const css = fs.readFileSync('static/clinic-utilities/rf/styles.css', 'utf8');
 const main = fs.readFileSync('main.py', 'utf8');
 
 assert(app.includes("function numberOrNull(id)"), 'RF UI must preserve blank numeric fields as null');
+assert(app.includes("download.download = 'RF_'"), 'PDF creation must trigger browser download');
+assert(!app.includes("window.open(url, '_blank', 'noopener')"), 'PDF creation must not depend on popup window');
 for (const field of [
   'age',
   'painOnsetVas',
