@@ -1383,6 +1383,111 @@
     }
   }
 
+  async function loadRfIssuedForPdf(card) {
+    if (!card || !card.id || !Number.isInteger(card.revision) ||
+        !state.contract || $('rfTrackingView').hidden) return;
+    const hasCreatorData = Boolean(state.draftId ||
+      Object.values(rfFields).some(id => String($(id)?.value || '').trim()) ||
+      $('imagingReport').files?.length || state.horosImages.length);
+    if (hasCreatorData && !window.confirm(
+        'Θα αντικατασταθεί η τρέχουσα φόρμα. Αποθήκευσε πρώτα όσα χρειάζεσαι. Συνέχεια;')) return;
+    const token = ++tracking.copyGeneration;
+    const epoch = tracking.authEpoch, context = trackingContext();
+    const dirty = tracking.dirtyGeneration, initial = JSON.stringify(buildDraft());
+    const imaging = $('imagingReport').files?.[0];
+    try {
+      const result = await (await api('/api/reuse/issued-copy', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({application_id: card.id, expected_revision: card.revision})
+      })).json();
+      if (token !== tracking.copyGeneration || epoch !== tracking.authEpoch ||
+          context !== trackingContext() || $('rfTrackingView').hidden ||
+          dirty !== tracking.dirtyGeneration || initial !== JSON.stringify(buildDraft()) ||
+          imaging !== $('imagingReport').files?.[0]) return;
+      const fields = result.fields;
+      if (result.application_id !== card.id || result.revision !== card.revision ||
+          !fields || normalizeRfIdentity(fields.identity_number) !==
+            normalizeRfIdentity(card.identity_number) ||
+          !['A1','A2'].includes(result.source?.pathway) ||
+          !state.contract.indications?.[fields.indication_code] ||
+          !state.contract.products?.[fields.product_key] ||
+          !['left','right'].includes(fields.laterality))
+        throw new Error('Τα αποθηκευμένα στοιχεία της επιλεγμένης RF δεν είναι έγκυρα.');
+      resetRfBuilderForCorrection();
+      state.correctionOfId = '';
+      state.correctionExpectedRevision = null;
+      setPathway(result.source.pathway);
+      populateRfFields(fields, true);
+      state.nsaids = Array.isArray(fields.nsaid_trials) ?
+        fields.nsaid_trials.map(x => ({...cleanTrial(x),auto_selected:true})) : [];
+      state.others = Array.isArray(fields.other_analgesic_trials) ?
+        fields.other_analgesic_trials.map(x => ({...cleanTrial(x),auto_selected:true})) : [];
+      renderTrials();
+      $('adverseRows').replaceChildren();
+      for (const item of fields.adverse_effects || []) {
+        addAdverse();
+        const rows = $('adverseRows').querySelectorAll('.adverse');
+        const last = rows[rows.length - 1];
+        last.querySelector('[data-kind=treatment]').value = item.treatment || '';
+        last.querySelector('[data-kind=effect]').value = item.effect || '';
+      }
+      if (!(fields.adverse_effects || []).length) addAdverse();
+      const intervention = fields.intervention || {};
+      for (const [key,id] of Object.entries({
+        site:'interventionSite',date:'interventionDate',
+        vas_before:'interventionVasBefore',vas_after:'interventionVasAfter'
+      })) $(id).value = intervention[key] ?? '';
+      showRfView('builder');
+      renderCorrectionContext();
+      if ($('physioDates').value.trim()) parsePhysio();
+      showOk('Φορτώθηκαν τα αποθηκευμένα στοιχεία. Επίλεξε ξανά ιατρό και πρόσθεσε γνωμάτευση/εικόνες. ' +
+        (state.pathway === 'A2' ? 'Επιβεβαίωσε και την προηγούμενη πραγματική εφαρμογή. ' : '') +
+        'Η νέα έκδοση δεν αλλάζει την προηγούμενη RF και δεν συνδέεται αυτομάτως ως διόρθωση απόρριψης.');
+      updateSummary();
+    } catch(error) {
+      if (token !== tracking.copyGeneration || epoch !== tracking.authEpoch ||
+          context !== trackingContext()) return;
+      if ([401,403].includes(error.status)) protectedTrackingFailure(error,true);
+      else showError(error.message);
+    }
+  }
+
+  async function deleteSelectedRf() {
+    const item = state.selectedOutcome;
+    const token = state.outcomeSelectionToken, epoch = tracking.authEpoch;
+    if (!item || item.id !== state.selectedOutcomeId || $('rfOutcomeSelected').hidden ||
+        $('rfTrackingView').hidden || !Number.isInteger(item.revision)) return;
+    const code = String(item.id).slice(-8).toUpperCase();
+    const typed = window.prompt(
+      'ΟΡΙΣΤΙΚΗ διαγραφή μόνο της RF ' + item.id + ' (' + item.patient_name + '). ' +
+      'Αυτό δεν αναιρεί τυχόν υποβολή στο ΓεΣΥ. Πληκτρολόγησε τον κωδικό ' + code + ' για επιβεβαίωση:', '');
+    if (typed === null) return;
+    if (typed.trim().toUpperCase() !== code) {
+      showError('Η διαγραφή ακυρώθηκε: ο κωδικός RF δεν ταίριαζε.');
+      return;
+    }
+    try {
+      const response = await api('/api/outcomes/' + encodeURIComponent(item.id) + '/delete', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({expected_revision:item.revision, confirmation_code:code}),
+      });
+      if (!(await response.json()).deleted) throw new Error('Η διαγραφή δεν επιβεβαιώθηκε.');
+      if (token !== state.outcomeSelectionToken || epoch !== tracking.authEpoch ||
+          item.id !== state.selectedOutcomeId) return;
+      invalidateRfOutcomeSelection();
+      await loadRfTracking(true);
+      showOk('Διαγράφηκε η συγκεκριμένη RF. Οι υπόλοιπες αιτήσεις έμειναν αμετάβλητες.');
+    } catch(error) {
+      if (token !== state.outcomeSelectionToken || epoch !== tracking.authEpoch ||
+          item.id !== state.selectedOutcomeId) return;
+      if ([401,403].includes(error.status)) protectedTrackingFailure(error,true);
+      else {
+        if (error.status === 409) invalidateRfOutcomeSelection();
+        showError(error.message);
+      }
+    }
+  }
+
   function savedDraftFields() {
     const draft = buildDraft();
     delete draft.correction_of_application_id;
