@@ -1163,6 +1163,7 @@
     // Only existing audit data is shown; missing historical source/time remains unknown.
     // textContent prevents rejection reasons and any reported values becoming HTML.
     $('rfOutcomeFacts').textContent = [
+      'RF ID: ' + item.id,
       'Έκδοση: ' + item.issued_date,
       'Ιατρός: ' + (item.issuer_name || 'Μη τεκμηριωμένος'),
       'Υποβολή: ' + (item.submitted_date || 'μη καταχωρισμένη'),
@@ -1183,6 +1184,7 @@
   }
 
   async function selectRfOutcome(card) {
+    ++tracking.copyGeneration;
     const token = ++state.outcomeSelectionToken;
     const authAtStart = tracking.authEpoch;
     const context = rfOutcomeContext();
@@ -1312,6 +1314,7 @@
   }
 
   async function beginRfCorrection() {
+    ++tracking.copyGeneration;
     const item = state.selectedOutcome;
     const token = state.outcomeSelectionToken;
     const context = rfOutcomeContext();
@@ -1641,7 +1644,7 @@
 
 
   // Both protected routes are views of the same document and RF controller.
-  const tracking = {listGeneration: 0, listContextGeneration: 0, weekGeneration: 0, authEpoch: 0, dirtyGeneration: 0,
+  const tracking = {listGeneration: 0, listContextGeneration: 0, weekGeneration: 0, copyGeneration: 0, authEpoch: 0, dirtyGeneration: 0,
     cursor: '', searchContext: '', weekStart: '', tab: 'list', initialized: false};
   const nicosiaDay = () => {
     const f = new Intl.DateTimeFormat('en-CA', {timeZone:'Asia/Nicosia',
@@ -1659,6 +1662,7 @@
     return addDate(day, -(weekday + 6) % 7);
   };
   function showRfView(view, push = true) {
+    ++tracking.copyGeneration;
     const isTracking = view === 'tracking';
     ++tracking.listGeneration;
     ++tracking.listContextGeneration;
@@ -1688,6 +1692,7 @@
       $('rfTrackStage').value]);
   }
   function protectedTrackingFailure(error, list) {
+    ++tracking.copyGeneration;
     const message = String(error?.message || '');
     if ([401,403].includes(error?.status) || /401|403/.test(message)) {
       ++tracking.authEpoch;
@@ -1717,6 +1722,7 @@
     }
   }
   async function loadRfTracking(reset = true) {
+    if (reset) ++tracking.copyGeneration;
     const context = trackingContext(), epoch = tracking.authEpoch;
     if (reset || context !== tracking.searchContext) {
       tracking.cursor = '';
@@ -1749,7 +1755,8 @@
           [item.site_key || '', item.laterality === 'left' ? 'αριστερά' :
             item.laterality === 'right' ? 'δεξιά' : ''].filter(Boolean).join(' / '),
           item.issuer_name || 'Μη τεκμηριωμένος εκδότης',
-          outcomeStages[item.stage] || item.stage].filter(Boolean).join(' · ');
+          outcomeStages[item.stage] || item.stage,
+          'RF ' + String(item.id || '').slice(0, 8)].filter(Boolean).join(' · ');
         const open = document.createElement('button');
         open.type = 'button'; open.className = 'btn secondary small';
         open.textContent = 'Άνοιγμα';
@@ -1758,7 +1765,16 @@
               epoch === tracking.authEpoch && context === trackingContext() &&
               tracking.tab === 'list' && !$('rfTrackingView').hidden) selectRfOutcome(item);
         });
-        row.append(label,open);
+        const copy = document.createElement('button');
+        copy.type = 'button'; copy.className = 'btn secondary small';
+        copy.textContent = 'Φόρτωση';
+        copy.setAttribute('aria-label', 'Φόρτωση της RF ' + item.id + ' σε νέα αίτηση');
+        copy.addEventListener('click', () => {
+          if (contextGeneration === tracking.listContextGeneration &&
+              epoch === tracking.authEpoch && context === trackingContext() &&
+              tracking.tab === 'list' && !$('rfTrackingView').hidden) loadRfIssuedForPdf(item);
+        });
+        row.append(label,open,copy);
         $('rfTrackResults').append(row);
       }
       tracking.cursor = result.next_cursor || '';
@@ -1821,6 +1837,7 @@
     }
   }
   function setTrackingTab(tab) {
+    ++tracking.copyGeneration;
     ++tracking.listGeneration;
     ++tracking.listContextGeneration;
     ++tracking.weekGeneration;
@@ -1837,6 +1854,7 @@
     $('rfBuilderView').addEventListener('input', () => ++tracking.dirtyGeneration, true);
     $('rfBuilderView').addEventListener('change', () => ++tracking.dirtyGeneration, true);
     window.addEventListener('clinical:authenticated', () => {
+      ++tracking.copyGeneration;
       ++tracking.authEpoch;
       ++tracking.listGeneration;
       ++tracking.listContextGeneration;
@@ -1943,6 +1961,8 @@
     $('rfOutcomeCorrectDecision').addEventListener('change', outcomeCorrectionKindChanged);
     $('rfOutcomeApply').addEventListener('click', applyRfOutcome);
     $('rfOutcomeCorrection').addEventListener('click', beginRfCorrection);
+    $('rfOutcomeCopy').addEventListener('click', () => loadRfIssuedForPdf(state.selectedOutcome));
+    $('rfOutcomeDelete').addEventListener('click', deleteSelectedRf);
     $('rfDraftSearch').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); listRfDrafts(); }});
     loadContract().then(() => { listRfDrafts(); loadRfOutcomes(); });
     $('imagingReport').addEventListener('change', validateImaging);
