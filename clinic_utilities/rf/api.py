@@ -1006,7 +1006,11 @@ def build_rf_router(engine: Engine) -> APIRouter:
             except (RuntimeError, ValueError) as exc:
                 raise HTTPException(status_code=422, detail=str(exc)) from exc
             if legacy is not None:
-                record_legacy_procedure(engine, legacy, session=session)
+                # Bind this issued A2 to the exact recorded (or deduplicated)
+                # real procedure in the same transaction. Older unlinked A2
+                # records are never matched to a guessed procedure on read.
+                payload["procedure_history_id"] = record_legacy_procedure(
+                    engine, legacy, session=session)
             application_id = record_application(engine, payload, session=session)
             if linked_draft is not None:
                 session.delete(linked_draft)

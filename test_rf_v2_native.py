@@ -1763,6 +1763,62 @@ class RFOutcomeFollowupTests(unittest.TestCase):
         self.assertEqual(history["actual_procedure_date"],"2026-05-01")
 
 
+    def test_a2_legacy_issued_copy_links_exact_procedure_and_old_unlinked_stays_unmatched(self):
+        from clinic_utilities.rf.persistence import RFApplicationORM, RFProcedureHistoryORM
+        from sqlalchemy.orm import Session
+
+        legacy = {
+            "actual_procedure_date": "2026-05-01",
+            "vas_before": 8, "vas_after": 3,
+            "last_followup_date": "2026-06-01", "last_followup_vas": 5,
+        }
+        issued = self.issue(identity_number="SYN-A2-LEGACY-COPY", pathway="A2",
+                            legacy_history=legacy, a2_current_followup_date="2026-09-01",
+                            a2_current_followup_vas=6)
+        self.assertEqual(issued.status_code, 200, issued.text)
+        application_id = issued.headers["x-rf-application-id"]
+        with Session(self.engine) as session:
+            application = session.get(RFApplicationORM, application_id)
+            payload = dict(application.payload_json)
+            history_id = payload.get("procedure_history_id")
+            self.assertTrue(history_id, "issued A2 must retain its own exact procedure ID")
+            self.assertNotIn("legacy_history", payload)
+            self.assertEqual(session.query(RFProcedureHistoryORM).count(), 1)
+            history = session.get(RFProcedureHistoryORM, history_id)
+            self.assertIsNotNone(history)
+            self.assertEqual(history.patient_identity_key, "SYNA2LEGACYCOPY")
+            self.assertEqual(history.indication_code, "KNEE_OA_KL34")
+            self.assertEqual(history.site_key, "knee")
+            self.assertEqual(history.laterality, "left")
+            self.assertEqual(history.actual_procedure_date, "2026-05-01")
+
+        route = self.base + "/reuse/issued-copy"
+        req = {"application_id": application_id, "expected_revision": 0}
+        copied = self.client.post(route, headers=self.headers, json=req)
+        self.assertEqual(copied.status_code, 200, copied.text)
+        data = copied.json()
+        self.assertEqual(data["fields"]["procedure_history_id"], history_id)
+        self.assertEqual(data["previous_procedure"]["procedure_history_id"], history_id)
+        self.assertEqual(data["previous_procedure"]["vas_before"], 8)
+        self.assertEqual(data["previous_procedure"]["last_followup_date"], "2026-06-01")
+        self.assertEqual(data["fields"]["a2_current_followup_date"], "2026-09-01")
+        self.assertEqual(data["fields"]["a2_current_followup_vas"], 6)
+        self.assertFalse(data["files_saved"])
+
+        # Model a pre-fix issued A2; even with matching procedure history in
+        # the database, read-only copy must not guess a historical relation.
+        with Session(self.engine) as session:
+            application = session.get(RFApplicationORM, application_id)
+            old_payload = dict(application.payload_json)
+            old_payload.pop("procedure_history_id")
+            application.payload_json = old_payload
+            session.commit()
+        unlinked = self.client.post(route, headers=self.headers, json=req)
+        self.assertEqual(unlinked.status_code, 200, unlinked.text)
+        self.assertIsNone(unlinked.json()["previous_procedure"])
+        self.assertNotIn("procedure_history_id", unlinked.json()["fields"])
+
+
 class RFIntegrationSourceTests(unittest.TestCase):
     def test_main_mounts_native_router_not_gateway(self):
         source = Path("main.py").read_text(encoding="utf-8")

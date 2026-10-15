@@ -120,7 +120,8 @@ def suite(width):
                     return route.fulfill(json={
                         "application_id": request["application_id"],
                         "revision": request["expected_revision"],
-                        "source": {"kind": "application", "pathway": "A1"},
+                        "source": {"kind": "application",
+                                   "pathway": "A2" if n == 1 else "A1"},
                         "files_saved": False,
                         "fields": {"identity_number": "SYN-ID-%02d" % n,
                                    "patient_name": "Συνθετικός RF %02d" % n,
@@ -240,6 +241,15 @@ def suite(width):
         expect(page.locator("#imagingReport")).to_have_value("")
         expect(page.locator("#rfCorrectionContext")).to_be_hidden()
         assert page.evaluate("location.pathname") == "/clinical/clinic-utilities/rf"
+        page.locator("#rfNavTracking").click()
+        # An older A2 with no persisted procedure link must request an explicit
+        # history selection; no guess from same-name or similar date records.
+        page.locator("#rfTrackResults .rf-outcome-card").nth(1).locator(
+            "button").filter(has_text="Φόρτωση").click()
+        expect(page.locator("#a2Flow")).to_be_visible()
+        expect(page.locator("#historyStatus")).to_contain_text("Αναζήτηση ιστορικού")
+        expect(page.locator("#historyChoices input[name=history]")).to_have_count(0)
+        expect(page.locator("#doctorSelect")).to_have_value("")
         page.locator("#rfNavTracking").click()
         page.reload()
         expect(page.locator("#rfTrackingView")).to_be_visible()

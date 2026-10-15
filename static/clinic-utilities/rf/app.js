@@ -1438,15 +1438,24 @@
         vas_before:'interventionVasBefore',vas_after:'interventionVasAfter'
       })) $(id).value = intervention[key] ?? '';
       const previous = result.previous_procedure;
-      if (state.pathway === 'A2' && previous &&
-          previous.procedure_history_id === fields.procedure_history_id) {
+      const linkedPrevious = state.pathway === 'A2' && previous &&
+          previous.procedure_history_id === fields.procedure_history_id;
+      if (linkedPrevious) {
         renderHistory([previous], previous.procedure_history_id);
+        $('historyStatus').textContent = 'Φορτώθηκε η συνδεδεμένη προηγούμενη πραγματική εφαρμογή.';
+      } else if (state.pathway === 'A2') {
+        // Pre-fix legacy A2 had no persisted relation: never guess by name/date.
+        $('historyStatus').textContent =
+          'Η παλαιότερη A2 δεν έχει τεκμηριωμένη σύνδεση προηγούμενης εφαρμογής. ' +
+          'Πάτησε «Αναζήτηση ιστορικού» και επίλεξε ρητά τη σωστή εφαρμογή πριν από νέο PDF.';
       }
       showRfView('builder');
       renderCorrectionContext();
       if ($('physioDates').value.trim()) parsePhysio();
       showOk('Φορτώθηκαν τα αποθηκευμένα στοιχεία. Επίλεξε ξανά ιατρό και πρόσθεσε γνωμάτευση/εικόνες. ' +
-        (state.pathway === 'A2' ? 'Επιβεβαίωσε και την προηγούμενη πραγματική εφαρμογή. ' : '') +
+        (state.pathway === 'A2' ? (linkedPrevious
+          ? 'Επιβεβαίωσε και την προηγούμενη πραγματική εφαρμογή. '
+          : 'Δεν επανήλθε προηγούμενη εφαρμογή — επίλεξέ την από το ιστορικό. ') : '') +
         'Η νέα έκδοση δεν αλλάζει την προηγούμενη RF και δεν συνδέεται αυτομάτως ως διόρθωση απόρριψης.');
       updateSummary();
     } catch(error) {
