@@ -912,6 +912,9 @@ def build_rf_router(engine: Engine) -> APIRouter:
                     raise HTTPException(status_code=422, detail="Η προηγούμενη εφαρμογή αφορά διαφορετική πλευρά")
                 if draft.indication_code != prior.get("indication_code"):
                     raise HTTPException(status_code=422, detail="Η προηγούμενη εφαρμογή αφορά διαφορετική ένδειξη")
+                if exact_location != prior.get("exact_location"):
+                    raise HTTPException(status_code=422,
+                        detail="Η προηγούμενη εφαρμογή αφορά διαφορετική ακριβή εντόπιση")
             elif draft.legacy_history is not None:
                 if draft.source_origin == "pdf" and not draft.legacy_confirmed:
                     raise HTTPException(status_code=422,

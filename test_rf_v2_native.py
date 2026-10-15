@@ -1819,6 +1819,100 @@ class RFOutcomeFollowupTests(unittest.TestCase):
         self.assertNotIn("procedure_history_id", unlinked.json()["fields"])
 
 
+    def test_a2_legacy_same_day_dedupe_distinguishes_indication_and_exact_location(self):
+        from clinic_utilities.rf.persistence import (
+            RFApplicationORM, RFProcedureHistoryORM, _history_dedupe_key)
+        from sqlalchemy.orm import Session
+
+        legacy = {"actual_procedure_date": "2026-05-01", "vas_before": 8,
+                  "vas_after": 3, "last_followup_date": "2026-06-01",
+                  "last_followup_vas": 5}
+
+        def issued(identity, indication, location, **extra):
+            response = self.issue(
+                identity_number=identity, pathway="A2", indication_code=indication,
+                laterality="left", exact_location=location, legacy_history=legacy,
+                a2_current_followup_date="2026-09-01",
+                a2_current_followup_vas=6, **extra)
+            self.assertEqual(response.status_code, 200, response.text)
+            app_id = response.headers["x-rf-application-id"]
+            with Session(self.engine) as session:
+                app = session.get(RFApplicationORM, app_id)
+                history_id = app.payload_json["procedure_history_id"]
+            copy = self.client.post(self.base + "/reuse/issued-copy",
+                headers=self.headers,
+                json={"application_id": app_id, "expected_revision": 0})
+            self.assertEqual(copy.status_code, 200, copy.text)
+            self.assertEqual(copy.json()["previous_procedure"]["procedure_history_id"],
+                             history_id)
+            self.assertEqual(copy.json()["previous_procedure"]["exact_location"], location)
+            return app_id, history_id
+
+        shoulder_location = "Αριστερός ώμος"
+        original_app, original_id = issued(
+            "SYN-SHOULDER-DEDUPE", "SHOULDER_OA_KL34", shoulder_location)
+        # Simulate an already deployed, five-part dedupe key. Exact repeats
+        # must continue referencing that historic ID after the correction.
+        with Session(self.engine) as session:
+            row = session.get(RFProcedureHistoryORM, original_id)
+            row.dedupe_key = _history_dedupe_key({
+                "patient_identity_key": row.patient_identity_key,
+                "site_key": row.site_key, "laterality": row.laterality,
+                "actual_procedure_date": row.actual_procedure_date,
+                "provenance": row.provenance,
+            }, legacy_format=True)
+            session.commit()
+        _, repeated_id = issued(
+            "SYN-SHOULDER-DEDUPE", "SHOULDER_OA_KL34", shoulder_location)
+        self.assertEqual(repeated_id, original_id)
+        _, different_diagnosis_id = issued(
+            "SYN-SHOULDER-DEDUPE", "SHOULDER_IRREPARABLE_CUFF", shoulder_location)
+        self.assertNotEqual(different_diagnosis_id, original_id)
+
+        custom = {"other_area": "Συνθετική περιοχή", "other_diagnosis": "Συνθετική διάγνωση"}
+        first_location = "Αριστερή υποπεριοχή Α"
+        second_location = "Αριστερή υποπεριοχή Β"
+        _, first_location_id = issued(
+            "SYN-OTHER-LOCATION", "OTHER_CUSTOM", first_location, **custom)
+        second_app, second_location_id = issued(
+            "SYN-OTHER-LOCATION", "OTHER_CUSTOM", second_location, **custom)
+        self.assertNotEqual(first_location_id, second_location_id)
+        with Session(self.engine) as session:
+            self.assertEqual(session.query(RFProcedureHistoryORM).count(), 4)
+            self.assertEqual(session.query(RFApplicationORM).count(), 5)
+
+        # Explicitly selecting a different anatomical location also fails
+        # before issuance, without adding or changing a clinical record.
+        wrong = self.issue(
+            identity_number="SYN-OTHER-LOCATION", pathway="A2",
+            indication_code="OTHER_CUSTOM", laterality="left",
+            exact_location=second_location, procedure_history_id=first_location_id,
+            a2_current_followup_date="2026-09-01",
+            a2_current_followup_vas=6, **custom)
+        self.assertEqual(wrong.status_code, 422, wrong.text)
+        self.assertIn("ακριβή εντόπιση", wrong.text)
+        with Session(self.engine) as session:
+            self.assertEqual(session.query(RFApplicationORM).count(), 5)
+            self.assertEqual(session.query(RFProcedureHistoryORM).count(), 4)
+            # Model a malformed historical link: it must never be returned as
+            # a verified previous application or as an auto-selected ID.
+            app = session.get(RFApplicationORM, second_app)
+            app.payload_json = {**app.payload_json,
+                                "procedure_history_id": first_location_id}
+            session.commit()
+        copied = self.client.post(self.base + "/reuse/issued-copy",
+            headers=self.headers,
+            json={"application_id": second_app, "expected_revision": 0})
+        self.assertEqual(copied.status_code, 200, copied.text)
+        self.assertIsNone(copied.json()["previous_procedure"])
+        self.assertNotIn("procedure_history_id", copied.json()["fields"])
+        unchanged = self.client.post(self.base + "/reuse/issued-copy",
+            headers=self.headers,
+            json={"application_id": original_app, "expected_revision": 0})
+        self.assertEqual(unchanged.json()["previous_procedure"]["procedure_history_id"],
+                         original_id)
+
+
 class RFIntegrationSourceTests(unittest.TestCase):
     def test_main_mounts_native_router_not_gateway(self):
         source = Path("main.py").read_text(encoding="utf-8")

@@ -115,6 +115,21 @@ def suite(width):
                     except (IndexError, ValueError):
                         return route.fulfill(status=404, json={"detail": "missing"})
                     return route.fulfill(json=card(n))
+                if endpoint == "history":
+                    assert request == {"identity_number": "SYN-ID-01",
+                                       "site_key": "knee", "laterality": "left"}
+                    return route.fulfill(json={
+                        "found": True,
+                        "procedures": [{
+                            "procedure_history_id": "synthetic-history-01",
+                            "indication_code": "KNEE_OA_KL34", "site_key": "knee",
+                            "laterality": "left", "exact_location": "Synthetic knee",
+                            "actual_procedure_date": "2026-05-01",
+                            "vas_before": 8, "vas_after": 3,
+                            "last_followup_date": "2026-06-01",
+                            "last_followup_vas": 5, "provenance": "clinician_manual",
+                        }],
+                    })
                 if endpoint == "reuse/issued-copy":
                     n = int(request["application_id"].rsplit("-", 1)[1])
                     return route.fulfill(json={
@@ -249,6 +264,13 @@ def suite(width):
         expect(page.locator("#a2Flow")).to_be_visible()
         expect(page.locator("#historyStatus")).to_contain_text("Αναζήτηση ιστορικού")
         expect(page.locator("#historyChoices input[name=history]")).to_have_count(0)
+        page.locator("#historyLookupBtn").click()
+        choices = page.locator("#historyChoices input[name=history]")
+        expect(choices).to_have_count(1)
+        assert choices.first.input_value() == "synthetic-history-01"
+        assert not choices.first.is_checked(), "history may not be silently selected"
+        choices.first.check()
+        expect(choices.first).to_be_checked()
         expect(page.locator("#doctorSelect")).to_have_value("")
         page.locator("#rfNavTracking").click()
         page.reload()

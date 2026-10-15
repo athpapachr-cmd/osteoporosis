@@ -317,8 +317,15 @@ def delete_medication_alias(engine: Engine, alias_id: str) -> bool:
         return True
 
 
-def _history_dedupe_key(data: dict[str, Any]) -> str:
-    material="|".join(str(data.get(key) or "").strip().casefold() for key in ("patient_identity_key","site_key","laterality","actual_procedure_date","provenance"))
+def _history_dedupe_key(data: dict[str, Any], *, legacy_format: bool = False) -> str:
+    # New keys distinguish two actual procedures at the same site/date when
+    # indication or exact anatomical location differs. Existing keys must
+    # remain readable without a destructive history-table migration.
+    keys = ("patient_identity_key", "site_key", "laterality",
+            "actual_procedure_date", "provenance")
+    if not legacy_format:
+        keys += ("indication_code", "exact_location")
+    material = "|".join(str(data.get(key) or "").strip().casefold() for key in keys)
     return hashlib.sha256(material.encode("utf-8")).hexdigest()
 
 def _minimal_application_payload(data: dict[str, Any]) -> dict[str, Any]:
@@ -363,10 +370,24 @@ def get_procedure_history(engine: Engine, history_id: str, identity_number: str)
         return {"procedure_history_id":row.id,"indication_code":row.indication_code,"site_key":row.site_key,"laterality":row.laterality,"exact_location":row.exact_location,"actual_procedure_date":row.actual_procedure_date,"vas_before":row.vas_before,"vas_after":row.vas_after,"last_followup_date":row.last_followup_date,"last_followup_vas":row.last_followup_vas,"provenance":row.provenance}
 
 def record_legacy_procedure(engine: Engine, data: dict[str, Any], *, session: Session | None = None) -> str:
-    normalized={**data,"patient_identity_key":normalize_identity(data["identity_number"]),"provenance":"clinician_manual"}; dedupe_key=_history_dedupe_key(normalized)
+    normalized = {**data, "patient_identity_key": normalize_identity(data["identity_number"]),
+                  "provenance": "clinician_manual"}
+    dedupe_key = _history_dedupe_key(normalized)
+    old_dedupe_key = _history_dedupe_key(normalized, legacy_format=True)
     def save(target: Session) -> str:
-        existing=target.scalar(select(RFProcedureHistoryORM).where(RFProcedureHistoryORM.dedupe_key==dedupe_key))
-        if existing is not None: return existing.id
+        existing = target.scalar(select(RFProcedureHistoryORM).where(
+            RFProcedureHistoryORM.dedupe_key == dedupe_key))
+        if existing is not None:
+            return existing.id
+        # Pre-correction history rows have five-part keys. Reuse an old ID
+        # only when its indication and exact location really match; otherwise
+        # create a separate, correctly keyed clinical procedure record.
+        old = target.scalar(select(RFProcedureHistoryORM).where(
+            RFProcedureHistoryORM.dedupe_key == old_dedupe_key))
+        if (old is not None and old.indication_code == data["indication_code"]
+                and old.exact_location.strip().casefold()
+                    == str(data["exact_location"]).strip().casefold()):
+            return old.id
         now=utcnow(); row=RFProcedureHistoryORM(id=str(uuid4()),patient_identity_key=normalized["patient_identity_key"],indication_code=str(data["indication_code"]),site_key=str(data["site_key"]),laterality=str(data.get("laterality") or "none"),exact_location=str(data["exact_location"]).strip(),actual_procedure_date=str(data["actual_procedure_date"]),vas_before=int(data["vas_before"]),vas_after=int(data["vas_after"]),last_followup_date=str(data["last_followup_date"]),last_followup_vas=int(data["last_followup_vas"]),provenance="clinician_manual",dedupe_key=dedupe_key,created_at=now,updated_at=now)
         target.add(row)
         return row.id
@@ -517,7 +538,8 @@ def read_rf_issued_copy(engine: Engine, application_id: str,
             if (hist is not None and hist.patient_identity_key == app.patient_identity_key
                     and hist.site_key == app.site_key
                     and hist.laterality == app.laterality
-                    and hist.indication_code == app.indication_code):
+                    and hist.indication_code == app.indication_code
+                    and hist.exact_location == app.exact_location):
                 previous = {
                     "procedure_history_id": hist.id, "exact_location": hist.exact_location,
                     "actual_procedure_date": hist.actual_procedure_date,
@@ -526,9 +548,13 @@ def read_rf_issued_copy(engine: Engine, application_id: str,
                     "last_followup_vas": hist.last_followup_vas,
                     "provenance": hist.provenance,
                 }
+        fields = _rf_application_reuse_fields(app)
+        if app.pathway == "A2" and previous is None:
+            # Never expose an old unverified procedure ID as a selectable copy.
+            fields.pop("procedure_history_id", None)
         return {"application_id": app.id, "revision": current_revision,
                 "source": _rf_application_card(app),
-                "fields": _rf_application_reuse_fields(app),
+                "fields": fields,
                 "previous_procedure": previous,
                 "files_saved": False}
 
