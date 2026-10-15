@@ -1644,6 +1644,275 @@ class RFOutcomeFollowupTests(unittest.TestCase):
                           "a missing historical audit must not infer provenance")
 
 
+    def test_issued_copy_restores_saved_fields_without_attachments_or_mutation(self):
+        from clinic_utilities.rf.persistence import RFApplicationORM
+        from sqlalchemy.orm import Session
+        original = self.issue(identity_number="SYN-COPY-001", patient_name="Synthetic Copy",
+            nsaid_trials=[{"drug_name":"Synthetic Nsaid","dose":"90 mg",
+                           "duration":"3 months","source_text":"unretained raw text"}],
+            physio_dates_text="01/02/2026\n08/02/2026")
+        self.assertEqual(original.status_code, 200, original.text)
+        app_id = original.headers["x-rf-application-id"]
+        payload = {"application_id":app_id,"expected_revision":0}
+        route = self.base + "/reuse/issued-copy"
+        self.assertEqual(self.client.post(route,json=payload).status_code, 401)
+        response = self.client.post(route,headers=self.headers,json=payload)
+        self.assertEqual(response.status_code, 200, response.text)
+        body = response.json()
+        self.assertEqual(body["application_id"],app_id)
+        self.assertFalse(body["files_saved"])
+        self.assertEqual(response.headers["cache-control"],"no-store")
+        self.assertEqual(body["fields"]["identity_number"],"SYN-COPY-001")
+        self.assertEqual(body["fields"]["pathway"],"A1")
+        self.assertEqual(body["fields"]["physio_dates_text"],"2026-02-01\n2026-02-08")
+        self.assertEqual(body["fields"]["nsaid_trials"][0]["drug_name"],"Synthetic Nsaid")
+        self.assertNotIn("source_text",body["fields"]["nsaid_trials"][0])
+        self.assertNotIn("full_medication_text",body["fields"])
+        self.assertNotIn("correction_source_expected_revision",body["fields"])
+        with Session(self.engine) as session:
+            self.assertEqual(session.query(RFApplicationORM).count(),1)
+        self.assertEqual(self.event(app_id,"reject",rejection_reason="synthetic").status_code,200)
+        self.assertEqual(self.client.post(route,headers=self.headers,json=payload).status_code,409)
+        self.assertEqual(self.client.post(route,headers=self.headers,json={
+            "application_id":"missing","expected_revision":0}).status_code,404)
+
+    def test_exact_application_delete_requires_code_revision_and_clinical_key(self):
+        from clinic_utilities.rf.persistence import (
+            RFApplicationORM, RFApplicationProgressORM,
+            RFApplicationProgressAuditORM, RFApplicationDeletionAuditORM)
+        from sqlalchemy.orm import Session
+        first = self.issue(identity_number="SYN-DELETE",patient_name="Synthetic Repeat")
+        second = self.issue(identity_number="SYN-DELETE",patient_name="Synthetic Repeat")
+        self.assertEqual(first.status_code, 200)
+        self.assertEqual(second.status_code, 200)
+        first_id,second_id = (first.headers["x-rf-application-id"],
+                              second.headers["x-rf-application-id"])
+        route = self.base + "/outcomes/" + first_id + "/delete"
+        body = {"expected_revision":0,"confirmation_code":first_id[-8:].upper()}
+        self.assertEqual(self.client.post(route,json=body).status_code,401)
+        self.assertEqual(self.client.post(route,headers=self.headers,json={
+            **body,"confirmation_code":"WRONGID!"}).status_code,422)
+        self.assertEqual(self.event(first_id,"submit").status_code,200)
+        self.assertEqual(self.client.post(route,headers=self.headers,json=body).status_code,409)
+        body["expected_revision"]=1
+        deleted=self.client.post(route,headers=self.headers,json=body)
+        self.assertEqual(deleted.status_code,200,deleted.text)
+        self.assertEqual(deleted.json(),{"deleted":True})
+        self.assertEqual(deleted.headers["cache-control"],"no-store")
+        self.assertEqual(self.client.get(self.base + "/outcomes/" + first_id,
+                                         headers=self.headers).status_code,404)
+        self.assertEqual(self.card(second_id)["identity_number"],"SYN-DELETE")
+        self.assertEqual(self.search(mode="tracking").json()["applications"][0]["id"],second_id)
+        with Session(self.engine) as session:
+            self.assertEqual(session.query(RFApplicationORM).count(),1)
+            self.assertIsNone(session.get(RFApplicationProgressORM,first_id))
+            self.assertEqual(session.query(RFApplicationProgressAuditORM).count(),0)
+            receipt=session.query(RFApplicationDeletionAuditORM).one()
+            self.assertEqual(receipt.application_id,first_id)
+            self.assertEqual(receipt.prior_revision,1)
+        self.assertEqual(self.client.post(route,headers=self.headers,json=body).status_code,404)
+
+    def test_delete_rejected_parent_with_linked_correction_is_blocked(self):
+        parent = self.issue(identity_number="SYN-LINK-DELETE")
+        self.assertEqual(parent.status_code,200)
+        parent_id = parent.headers["x-rf-application-id"]
+        rejection=self.event(parent_id,"reject",rejection_reason="synthetic")
+        self.assertEqual(rejection.status_code,200)
+        child = self.issue(identity_number="SYN-LINK-DELETE",
+                           correction_of_application_id=parent_id,
+                           correction_source_expected_revision=rejection.json()["revision"])
+        self.assertEqual(child.status_code,200,child.text)
+        child_id=child.headers["x-rf-application-id"]
+        blocked=self.client.post(
+            self.base + "/outcomes/" + parent_id + "/delete",headers=self.headers,
+            json={"expected_revision":1,"confirmation_code":parent_id[-8:].upper()})
+        self.assertEqual(blocked.status_code,409)
+        self.assertIn("νεότερη",blocked.text)
+        self.assertEqual(self.card(parent_id)["stage"],"rejected")
+        self.assertEqual(self.card(child_id)["correction_of_application_id"],parent_id)
+
+
+    def test_a2_copy_preserves_verifiable_actual_procedure(self):
+        from clinic_utilities.rf.persistence import record_legacy_procedure
+        previous_id = record_legacy_procedure(self.engine, {
+            "identity_number":"SYN-A2-REUSE",
+            "indication_code":"KNEE_OA_KL34", "site_key":"knee",
+            "laterality":"left", "exact_location":"Αριστερό γόνατο",
+            "actual_procedure_date":"2026-05-01",
+            "vas_before":8, "vas_after":3,
+            "last_followup_date":"2026-06-01", "last_followup_vas":5
+        })
+        issued = self.issue(identity_number="SYN-A2-REUSE",pathway="A2",
+            procedure_history_id=previous_id,
+            a2_current_followup_date="2026-09-01",
+            a2_current_followup_vas=6)
+        self.assertEqual(issued.status_code, 200, issued.text)
+        app_id=issued.headers["x-rf-application-id"]
+        response=self.client.post(self.base + "/reuse/issued-copy",
+            headers=self.headers,
+            json={"application_id":app_id,"expected_revision":0})
+        self.assertEqual(response.status_code,200,response.text)
+        fields=response.json()["fields"]
+        self.assertEqual(fields["pathway"],"A2")
+        self.assertEqual(fields["a2_current_followup_date"],"2026-09-01")
+        self.assertEqual(fields["a2_current_followup_vas"],6)
+        self.assertEqual(fields["procedure_history_id"],previous_id)
+        history=response.json()["previous_procedure"]
+        self.assertIsNotNone(history)
+        self.assertEqual(history["procedure_history_id"],previous_id)
+        self.assertEqual(history["actual_procedure_date"],"2026-05-01")
+
+
+    def test_a2_legacy_issued_copy_links_exact_procedure_and_old_unlinked_stays_unmatched(self):
+        from clinic_utilities.rf.persistence import RFApplicationORM, RFProcedureHistoryORM
+        from sqlalchemy.orm import Session
+
+        legacy = {
+            "actual_procedure_date": "2026-05-01",
+            "vas_before": 8, "vas_after": 3,
+            "last_followup_date": "2026-06-01", "last_followup_vas": 5,
+        }
+        issued = self.issue(identity_number="SYN-A2-LEGACY-COPY", pathway="A2",
+                            legacy_history=legacy, a2_current_followup_date="2026-09-01",
+                            a2_current_followup_vas=6)
+        self.assertEqual(issued.status_code, 200, issued.text)
+        application_id = issued.headers["x-rf-application-id"]
+        with Session(self.engine) as session:
+            application = session.get(RFApplicationORM, application_id)
+            payload = dict(application.payload_json)
+            history_id = payload.get("procedure_history_id")
+            self.assertTrue(history_id, "issued A2 must retain its own exact procedure ID")
+            self.assertNotIn("legacy_history", payload)
+            self.assertEqual(session.query(RFProcedureHistoryORM).count(), 1)
+            history = session.get(RFProcedureHistoryORM, history_id)
+            self.assertIsNotNone(history)
+            self.assertEqual(history.patient_identity_key, "SYNA2LEGACYCOPY")
+            self.assertEqual(history.indication_code, "KNEE_OA_KL34")
+            self.assertEqual(history.site_key, "knee")
+            self.assertEqual(history.laterality, "left")
+            self.assertEqual(history.actual_procedure_date, "2026-05-01")
+
+        route = self.base + "/reuse/issued-copy"
+        req = {"application_id": application_id, "expected_revision": 0}
+        copied = self.client.post(route, headers=self.headers, json=req)
+        self.assertEqual(copied.status_code, 200, copied.text)
+        data = copied.json()
+        self.assertEqual(data["fields"]["procedure_history_id"], history_id)
+        self.assertEqual(data["previous_procedure"]["procedure_history_id"], history_id)
+        self.assertEqual(data["previous_procedure"]["vas_before"], 8)
+        self.assertEqual(data["previous_procedure"]["last_followup_date"], "2026-06-01")
+        self.assertEqual(data["fields"]["a2_current_followup_date"], "2026-09-01")
+        self.assertEqual(data["fields"]["a2_current_followup_vas"], 6)
+        self.assertFalse(data["files_saved"])
+
+        # Model a pre-fix issued A2; even with matching procedure history in
+        # the database, read-only copy must not guess a historical relation.
+        with Session(self.engine) as session:
+            application = session.get(RFApplicationORM, application_id)
+            old_payload = dict(application.payload_json)
+            old_payload.pop("procedure_history_id")
+            application.payload_json = old_payload
+            session.commit()
+        unlinked = self.client.post(route, headers=self.headers, json=req)
+        self.assertEqual(unlinked.status_code, 200, unlinked.text)
+        self.assertIsNone(unlinked.json()["previous_procedure"])
+        self.assertNotIn("procedure_history_id", unlinked.json()["fields"])
+
+
+    def test_a2_legacy_same_day_dedupe_distinguishes_indication_and_exact_location(self):
+        from clinic_utilities.rf.persistence import (
+            RFApplicationORM, RFProcedureHistoryORM, _history_dedupe_key)
+        from sqlalchemy.orm import Session
+
+        legacy = {"actual_procedure_date": "2026-05-01", "vas_before": 8,
+                  "vas_after": 3, "last_followup_date": "2026-06-01",
+                  "last_followup_vas": 5}
+
+        def issued(identity, indication, location, **extra):
+            response = self.issue(
+                identity_number=identity, pathway="A2", indication_code=indication,
+                laterality="left", exact_location=location, legacy_history=legacy,
+                a2_current_followup_date="2026-09-01",
+                a2_current_followup_vas=6, **extra)
+            self.assertEqual(response.status_code, 200, response.text)
+            app_id = response.headers["x-rf-application-id"]
+            with Session(self.engine) as session:
+                app = session.get(RFApplicationORM, app_id)
+                history_id = app.payload_json["procedure_history_id"]
+            copy = self.client.post(self.base + "/reuse/issued-copy",
+                headers=self.headers,
+                json={"application_id": app_id, "expected_revision": 0})
+            self.assertEqual(copy.status_code, 200, copy.text)
+            self.assertEqual(copy.json()["previous_procedure"]["procedure_history_id"],
+                             history_id)
+            self.assertEqual(copy.json()["previous_procedure"]["exact_location"], location)
+            return app_id, history_id
+
+        shoulder_location = "Αριστερός ώμος"
+        original_app, original_id = issued(
+            "SYN-SHOULDER-DEDUPE", "SHOULDER_OA_KL34", shoulder_location)
+        # Simulate an already deployed, five-part dedupe key. Exact repeats
+        # must continue referencing that historic ID after the correction.
+        with Session(self.engine) as session:
+            row = session.get(RFProcedureHistoryORM, original_id)
+            row.dedupe_key = _history_dedupe_key({
+                "patient_identity_key": row.patient_identity_key,
+                "site_key": row.site_key, "laterality": row.laterality,
+                "actual_procedure_date": row.actual_procedure_date,
+                "provenance": row.provenance,
+            }, legacy_format=True)
+            session.commit()
+        _, repeated_id = issued(
+            "SYN-SHOULDER-DEDUPE", "SHOULDER_OA_KL34", shoulder_location)
+        self.assertEqual(repeated_id, original_id)
+        _, different_diagnosis_id = issued(
+            "SYN-SHOULDER-DEDUPE", "SHOULDER_IRREPARABLE_CUFF", shoulder_location)
+        self.assertNotEqual(different_diagnosis_id, original_id)
+
+        custom = {"other_area": "Συνθετική περιοχή", "other_diagnosis": "Συνθετική διάγνωση"}
+        first_location = "Αριστερή υποπεριοχή Α"
+        second_location = "Αριστερή υποπεριοχή Β"
+        _, first_location_id = issued(
+            "SYN-OTHER-LOCATION", "OTHER_CUSTOM", first_location, **custom)
+        second_app, second_location_id = issued(
+            "SYN-OTHER-LOCATION", "OTHER_CUSTOM", second_location, **custom)
+        self.assertNotEqual(first_location_id, second_location_id)
+        with Session(self.engine) as session:
+            self.assertEqual(session.query(RFProcedureHistoryORM).count(), 4)
+            self.assertEqual(session.query(RFApplicationORM).count(), 5)
+
+        # Explicitly selecting a different anatomical location also fails
+        # before issuance, without adding or changing a clinical record.
+        wrong = self.issue(
+            identity_number="SYN-OTHER-LOCATION", pathway="A2",
+            indication_code="OTHER_CUSTOM", laterality="left",
+            exact_location=second_location, procedure_history_id=first_location_id,
+            a2_current_followup_date="2026-09-01",
+            a2_current_followup_vas=6, **custom)
+        self.assertEqual(wrong.status_code, 422, wrong.text)
+        self.assertIn("ακριβή εντόπιση", wrong.text)
+        with Session(self.engine) as session:
+            self.assertEqual(session.query(RFApplicationORM).count(), 5)
+            self.assertEqual(session.query(RFProcedureHistoryORM).count(), 4)
+            # Model a malformed historical link: it must never be returned as
+            # a verified previous application or as an auto-selected ID.
+            app = session.get(RFApplicationORM, second_app)
+            app.payload_json = {**app.payload_json,
+                                "procedure_history_id": first_location_id}
+            session.commit()
+        copied = self.client.post(self.base + "/reuse/issued-copy",
+            headers=self.headers,
+            json={"application_id": second_app, "expected_revision": 0})
+        self.assertEqual(copied.status_code, 200, copied.text)
+        self.assertIsNone(copied.json()["previous_procedure"])
+        self.assertNotIn("procedure_history_id", copied.json()["fields"])
+        unchanged = self.client.post(self.base + "/reuse/issued-copy",
+            headers=self.headers,
+            json={"application_id": original_app, "expected_revision": 0})
+        self.assertEqual(unchanged.json()["previous_procedure"]["procedure_history_id"],
+                         original_id)
+
+
 class RFIntegrationSourceTests(unittest.TestCase):
     def test_main_mounts_native_router_not_gateway(self):
         source = Path("main.py").read_text(encoding="utf-8")

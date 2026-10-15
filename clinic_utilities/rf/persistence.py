@@ -15,7 +15,7 @@ from .parsers import (
     is_medication_identity_alias,
     normalize_medication_alias,
 )
-from sqlalchemy import Boolean, Column, DateTime, Integer, JSON, String, select, and_, or_
+from sqlalchemy import Boolean, Column, DateTime, Integer, JSON, String, select, and_, or_, delete
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, Session
 
@@ -173,6 +173,15 @@ class RFApplicationProgressORM(RFBase):
     updated_at = Column(DateTime, nullable=False)
 
 
+class RFApplicationDeletionAuditORM(RFBase):
+    """Minimal deletion receipt; no patient name, clinical fields, or PDF."""
+    __tablename__ = "clinic_rf_application_deletion_audit"
+    id = Column(String, primary_key=True)
+    application_id = Column(String, nullable=False, unique=True, index=True)
+    prior_revision = Column(Integer, nullable=False)
+    deleted_at = Column(DateTime, nullable=False)
+
+
 class RFApplicationProgressAuditORM(RFBase):
     """Clinician-entered revisions, separate from the issued medical document."""
     __tablename__ = "clinic_rf_application_progress_audit"
@@ -308,8 +317,15 @@ def delete_medication_alias(engine: Engine, alias_id: str) -> bool:
         return True
 
 
-def _history_dedupe_key(data: dict[str, Any]) -> str:
-    material="|".join(str(data.get(key) or "").strip().casefold() for key in ("patient_identity_key","site_key","laterality","actual_procedure_date","provenance"))
+def _history_dedupe_key(data: dict[str, Any], *, legacy_format: bool = False) -> str:
+    # New keys distinguish two actual procedures at the same site/date when
+    # indication or exact anatomical location differs. Existing keys must
+    # remain readable without a destructive history-table migration.
+    keys = ("patient_identity_key", "site_key", "laterality",
+            "actual_procedure_date", "provenance")
+    if not legacy_format:
+        keys += ("indication_code", "exact_location")
+    material = "|".join(str(data.get(key) or "").strip().casefold() for key in keys)
     return hashlib.sha256(material.encode("utf-8")).hexdigest()
 
 def _minimal_application_payload(data: dict[str, Any]) -> dict[str, Any]:
@@ -354,10 +370,24 @@ def get_procedure_history(engine: Engine, history_id: str, identity_number: str)
         return {"procedure_history_id":row.id,"indication_code":row.indication_code,"site_key":row.site_key,"laterality":row.laterality,"exact_location":row.exact_location,"actual_procedure_date":row.actual_procedure_date,"vas_before":row.vas_before,"vas_after":row.vas_after,"last_followup_date":row.last_followup_date,"last_followup_vas":row.last_followup_vas,"provenance":row.provenance}
 
 def record_legacy_procedure(engine: Engine, data: dict[str, Any], *, session: Session | None = None) -> str:
-    normalized={**data,"patient_identity_key":normalize_identity(data["identity_number"]),"provenance":"clinician_manual"}; dedupe_key=_history_dedupe_key(normalized)
+    normalized = {**data, "patient_identity_key": normalize_identity(data["identity_number"]),
+                  "provenance": "clinician_manual"}
+    dedupe_key = _history_dedupe_key(normalized)
+    old_dedupe_key = _history_dedupe_key(normalized, legacy_format=True)
     def save(target: Session) -> str:
-        existing=target.scalar(select(RFProcedureHistoryORM).where(RFProcedureHistoryORM.dedupe_key==dedupe_key))
-        if existing is not None: return existing.id
+        existing = target.scalar(select(RFProcedureHistoryORM).where(
+            RFProcedureHistoryORM.dedupe_key == dedupe_key))
+        if existing is not None:
+            return existing.id
+        # Pre-correction history rows have five-part keys. Reuse an old ID
+        # only when its indication and exact location really match; otherwise
+        # create a separate, correctly keyed clinical procedure record.
+        old = target.scalar(select(RFProcedureHistoryORM).where(
+            RFProcedureHistoryORM.dedupe_key == old_dedupe_key))
+        if (old is not None and old.indication_code == data["indication_code"]
+                and old.exact_location.strip().casefold()
+                    == str(data["exact_location"]).strip().casefold()):
+            return old.id
         now=utcnow(); row=RFProcedureHistoryORM(id=str(uuid4()),patient_identity_key=normalized["patient_identity_key"],indication_code=str(data["indication_code"]),site_key=str(data["site_key"]),laterality=str(data.get("laterality") or "none"),exact_location=str(data["exact_location"]).strip(),actual_procedure_date=str(data["actual_procedure_date"]),vas_before=int(data["vas_before"]),vas_after=int(data["vas_after"]),last_followup_date=str(data["last_followup_date"]),last_followup_vas=int(data["last_followup_vas"]),provenance="clinician_manual",dedupe_key=dedupe_key,created_at=now,updated_at=now)
         target.add(row)
         return row.id
@@ -470,10 +500,16 @@ def _rf_application_reuse_fields(row: RFApplicationORM) -> dict[str, Any]:
         "rf_reason_codes", "rf_reason_other", "pain_onset_date",
         "pain_onset_vas", "last_assessment_date", "last_assessment_vas",
         "nsaid_trials", "other_analgesic_trials", "adverse_effects",
-        "intervention", "physio",
+        "intervention", "physio", "pathway", "a2_current_followup_date",
+        "a2_current_followup_vas", "procedure_history_id",
     }
     fields = {k: v for k, v in data.items() if k in allowed}
-    fields.update({"patient_name": row.patient_name,
+    physio = data.get("physio")
+    if isinstance(physio, dict) and isinstance(physio.get("dates"), list):
+        dates = physio["dates"]
+        if all(isinstance(value, str) and re.fullmatch(r"\d{4}-\d{2}-\d{2}", value) for value in dates):
+            fields["physio_dates_text"] = "\n".join(dates)
+    fields.update({"patient_name": row.patient_name, "pathway": row.pathway,
                    "identity_number": str(data.get("identity_number") or row.patient_identity_key),
                    "gesy_number": row.gesy_number,
                    "age": row.patient_age, "product_key": row.product_key,
@@ -482,11 +518,53 @@ def _rf_application_reuse_fields(row: RFApplicationORM) -> dict[str, Any]:
     return fields
 
 
+def read_rf_issued_copy(engine: Engine, application_id: str,
+                        expected_revision: int) -> dict[str, Any]:
+    """Copy persisted immutable fields at the selected progress revision."""
+    with Session(engine) as session:
+        app = session.scalar(select(RFApplicationORM).where(
+            RFApplicationORM.id == application_id).with_for_update())
+        if app is None:
+            raise LookupError("RF application not found")
+        progress = session.scalar(select(RFApplicationProgressORM).where(
+            RFApplicationProgressORM.application_id == application_id).with_for_update())
+        current_revision = progress.revision if progress else 0
+        if current_revision != expected_revision:
+            raise RuntimeError("RF changed; refresh the selected application")
+        data = app.payload_json if isinstance(app.payload_json, dict) else {}
+        previous = None
+        if app.pathway == "A2" and data.get("procedure_history_id"):
+            hist = session.get(RFProcedureHistoryORM, str(data["procedure_history_id"]))
+            if (hist is not None and hist.patient_identity_key == app.patient_identity_key
+                    and hist.site_key == app.site_key
+                    and hist.laterality == app.laterality
+                    and hist.indication_code == app.indication_code
+                    and hist.exact_location == app.exact_location):
+                previous = {
+                    "procedure_history_id": hist.id, "exact_location": hist.exact_location,
+                    "actual_procedure_date": hist.actual_procedure_date,
+                    "vas_before": hist.vas_before, "vas_after": hist.vas_after,
+                    "last_followup_date": hist.last_followup_date,
+                    "last_followup_vas": hist.last_followup_vas,
+                    "provenance": hist.provenance,
+                }
+        fields = _rf_application_reuse_fields(app)
+        if app.pathway == "A2" and previous is None:
+            # Never expose an old unverified procedure ID as a selectable copy.
+            fields.pop("procedure_history_id", None)
+        return {"application_id": app.id, "revision": current_revision,
+                "source": _rf_application_card(app),
+                "fields": fields,
+                "previous_procedure": previous,
+                "files_saved": False}
+
+
 def read_rf_rejected_correction(engine: Engine, application_id: str,
                                 expected_revision: int) -> dict[str, Any]:
     """Atomically bind reusable immutable fields to a rejected progress revision."""
     with Session(engine) as session:
-        app = session.get(RFApplicationORM, application_id)
+        app = session.scalar(select(RFApplicationORM).where(
+            RFApplicationORM.id == application_id).with_for_update())
         if app is None:
             raise LookupError("RF application not found")
         progress = session.scalar(select(RFApplicationProgressORM).where(
@@ -498,6 +576,45 @@ def read_rf_rejected_correction(engine: Engine, application_id: str,
         return {"application_id": app.id, "revision": progress.revision,
                 "source": _rf_application_card(app),
                 "fields": _rf_application_reuse_fields(app)}
+
+
+def delete_rf_issued_application(engine: Engine, application_id: str, *,
+                                 expected_revision: int, confirmation_code: str) -> None:
+    """Delete one selected issued attempt; reject stale revisions and linked descendants."""
+    if len(application_id) < 8 or not hmac.compare_digest(
+        str(confirmation_code or "").upper(), application_id[-8:].upper()
+    ):
+        raise ValueError("Το αναγνωριστικό επιβεβαίωσης δεν ταιριάζει")
+    with Session(engine) as session:
+        app = session.scalar(select(RFApplicationORM).where(
+            RFApplicationORM.id == application_id).with_for_update())
+        if app is None:
+            raise LookupError("Η συγκεκριμένη RF δεν βρέθηκε")
+        progress = session.scalar(select(RFApplicationProgressORM).where(
+            RFApplicationProgressORM.application_id == application_id).with_for_update())
+        revision = progress.revision if progress else 0
+        if revision != expected_revision:
+            raise RuntimeError("Η RF άλλαξε. Ανανέωσε πριν τη διαγραφή")
+        dependent = session.scalar(select(RFApplicationORM.id).where(
+            or_(
+                RFApplicationORM.payload_json["correction_of_application_id"].as_string() == application_id,
+                and_(
+                    RFApplicationORM.payload_json["source_kind"].as_string() == "application",
+                    RFApplicationORM.payload_json["source_id"].as_string() == application_id
+                )
+            )
+        ).limit(1))
+        if dependent:
+            raise RuntimeError("Η RF συνδέεται με νεότερη αίτηση και δεν μπορεί να διαγραφεί ανεξάρτητα")
+        session.execute(delete(RFApplicationProgressAuditORM).where(
+            RFApplicationProgressAuditORM.application_id == application_id))
+        if progress is not None:
+            session.delete(progress)
+        session.delete(app)
+        session.add(RFApplicationDeletionAuditORM(
+            id=str(uuid4()), application_id=application_id,
+            prior_revision=revision, deleted_at=utcnow()))
+        session.commit()
 
 
 def get_rf_source(engine: Engine, kind: str, source_id: str) -> dict[str, Any] | None:
@@ -997,7 +1114,8 @@ def change_rf_application_progress(engine: Engine, application_id: str, *,
         if action != "reject" and action != "correct_decision" and rejection_reason:
             raise ValueError("Η αιτιολογία απόρριψης δεν αφορά αυτή την ενέργεια")
     with Session(engine) as session:
-        app = session.get(RFApplicationORM, application_id)
+        app = session.scalar(select(RFApplicationORM).where(
+            RFApplicationORM.id == application_id).with_for_update())
         if app is None:
             raise LookupError("Η αίτηση RF δεν βρέθηκε")
         progress = session.scalar(select(RFApplicationProgressORM).where(
@@ -1126,7 +1244,8 @@ def validate_rf_correction_source(session: Session, *, rejected_id: str,
                                   expected_revision: int,
                                   identity_number: str, indication_code: str,
                                   laterality: str, site_key: str) -> None:
-    prior = session.get(RFApplicationORM, rejected_id)
+    prior = session.scalar(select(RFApplicationORM).where(
+        RFApplicationORM.id == rejected_id).with_for_update())
     if prior is None:
         raise ValueError("Η απορριφθείσα αίτηση RF δεν βρέθηκε")
     progress = session.scalar(select(RFApplicationProgressORM).where(

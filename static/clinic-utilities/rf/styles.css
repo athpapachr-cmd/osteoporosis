@@ -88,3 +88,6 @@
 .rf-tracking-view .rf-outcome-selected {margin-top:1rem}
 @media(max-width:900px) {.rf-week-grid {grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:450px) {.rf-week-grid {grid-template-columns:1fr}.rf-tracking-view .rf-outcome-card {align-items:flex-start;flex-direction:column}}
+
+/* RF view visibility must override layout display rules. */
+#rfBuilderView[hidden], #rfTrackingView[hidden], #rfTrackListView[hidden], #rfTrackWeekView[hidden], #rfOutcomeSelected[hidden] { display: none !important; }

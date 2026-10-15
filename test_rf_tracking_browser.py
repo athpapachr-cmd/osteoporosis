@@ -102,6 +102,12 @@ def suite(width):
                     return route.fulfill(status=mock["write_status"],
                         json={"detail": "Synthetic changed revision"
                               if mock["write_status"] == 409 else "Synthetic authorization lost"})
+                if endpoint.startswith("outcomes/") and endpoint.endswith("/delete"):
+                    assert endpoint == "outcomes/synthetic-rf-00/delete"
+                    assert request["expected_revision"] == 2
+                    assert request["confirmation_code"] == "IC-RF-00"
+                    return route.fulfill(status=409,
+                        json={"detail": "Synthetic linked RF prevents deletion"})
                 if endpoint.startswith("outcomes/"):
                     item_id = endpoint.split("/")[-1]
                     try:
@@ -109,6 +115,43 @@ def suite(width):
                     except (IndexError, ValueError):
                         return route.fulfill(status=404, json={"detail": "missing"})
                     return route.fulfill(json=card(n))
+                if endpoint == "history":
+                    assert request == {"identity_number": "SYN-ID-01",
+                                       "site_key": "knee", "laterality": "left"}
+                    return route.fulfill(json={
+                        "found": True,
+                        "procedures": [{
+                            "procedure_history_id": "synthetic-history-01",
+                            "indication_code": "KNEE_OA_KL34", "site_key": "knee",
+                            "laterality": "left", "exact_location": "Synthetic knee",
+                            "actual_procedure_date": "2026-05-01",
+                            "vas_before": 8, "vas_after": 3,
+                            "last_followup_date": "2026-06-01",
+                            "last_followup_vas": 5, "provenance": "clinician_manual",
+                        }],
+                    })
+                if endpoint == "reuse/issued-copy":
+                    n = int(request["application_id"].rsplit("-", 1)[1])
+                    return route.fulfill(json={
+                        "application_id": request["application_id"],
+                        "revision": request["expected_revision"],
+                        "source": {"kind": "application",
+                                   "pathway": "A2" if n == 1 else "A1"},
+                        "files_saved": False,
+                        "fields": {"identity_number": "SYN-ID-%02d" % n,
+                                   "patient_name": "Συνθετικός RF %02d" % n,
+                                   "age": 60, "gesy_number": "SYN-GESY",
+                                   "indication_code": "KNEE_OA_KL34",
+                                   "laterality": "left", "product_key": "medikey",
+                                   "exact_location": "Synthetic knee",
+                                   "pain_onset_date": "2026-01-01",
+                                   "pain_onset_vas": 8,
+                                   "last_assessment_date": "2026-04-01",
+                                   "last_assessment_vas": 7,
+                                   "nsaid_trials": [{"drug_name": "Synthetic Nsaid",
+                                                     "dose": "90 mg", "duration": "3 months"}],
+                                   "physio_dates_text": "2026-02-01\n2026-02-08"},
+                    }, headers={"cache-control": "no-store"})
                 if endpoint == "reuse/rejected-correction":
                     n = int(request["application_id"].rsplit("-", 1)[1])
                     return route.fulfill(json={
@@ -127,6 +170,7 @@ def suite(width):
         page.route("**/*", handle)
         page.goto(BASE + "/clinical/clinic-utilities/rf/tracking")
         expect(page.locator("#rfTrackingView")).to_be_visible()
+        expect(page.locator("#rfBuilderView")).to_be_hidden()
         expect(page.locator("#rfTrackResults .rf-outcome-card")).to_have_count(20)
         assert page.locator("#rfTrackScope").input_value() == "all"
         assert page.locator("#rfTrackStatus").inner_text().startswith("Μερική")
@@ -145,6 +189,7 @@ def suite(width):
         expect(page.locator("#rfOutcomeCorrection")).to_be_visible()
         page.locator("#rfOutcomeCorrection").click()
         expect(page.locator("#rfBuilderView")).to_be_visible()
+        expect(page.locator("#rfTrackingView")).to_be_hidden()
         expect(page.locator("#rfCorrectionContext")).to_be_visible()
         assert page.locator("#doctorSelect").input_value() == "", "issuer must be reselected"
         assert page.locator("#identityNumber").input_value() == "SYN-ID-00"
@@ -191,6 +236,43 @@ def suite(width):
         expect(page.locator("#rfTrackResults .rf-outcome-card")).to_have_count(20)
         assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1"), "horizontal overflow"
         page.screenshot(path=str(OUT / ("rf-tracking-%s.png" % width)), full_page=True)
+        page.locator("#rfTrackResults .rf-outcome-card").first.get_by_role(
+            "button", name="Άνοιγμα").click()
+        expect(page.locator("#rfOutcomeTitle")).to_contain_text("Συνθετικός RF 00")
+        expect(page.locator("#rfOutcomeDelete")).to_be_visible()
+        expect(page.locator("#rfOutcomeCopy")).to_be_visible()
+        page.evaluate("window.prompt = () => 'IC-RF-00'")
+        page.locator("#rfOutcomeDelete").click()
+        expect(page.locator("#rfTrackStatus")).to_contain_text("Synthetic linked RF prevents deletion")
+        expect(page.locator("#rfTrackResults .rf-outcome-card")).to_have_count(20)
+        page.locator("#rfTrackResults .rf-outcome-card").first.locator(
+            "button").filter(has_text="Φόρτωση").click()
+        expect(page.locator("#rfBuilderView")).to_be_visible()
+        expect(page.locator("#rfTrackingView")).to_be_hidden()
+        expect(page.locator("#identityNumber")).to_have_value("SYN-ID-00")
+        expect(page.locator("#patientName")).to_have_value("Συνθετικός RF 00")
+        expect(page.locator("#doctorSelect")).to_have_value("")
+        expect(page.locator("#physioDates")).to_have_value("2026-02-01\n2026-02-08")
+        expect(page.locator("#imagingReport")).to_have_value("")
+        expect(page.locator("#rfCorrectionContext")).to_be_hidden()
+        assert page.evaluate("location.pathname") == "/clinical/clinic-utilities/rf"
+        page.locator("#rfNavTracking").click()
+        # An older A2 with no persisted procedure link must request an explicit
+        # history selection; no guess from same-name or similar date records.
+        page.locator("#rfTrackResults .rf-outcome-card").nth(1).locator(
+            "button").filter(has_text="Φόρτωση").click()
+        expect(page.locator("#a2Flow")).to_be_visible()
+        expect(page.locator("#historyStatus")).to_contain_text("Αναζήτηση ιστορικού")
+        expect(page.locator("#historyChoices input[name=history]")).to_have_count(0)
+        page.locator("#historyLookupBtn").click()
+        choices = page.locator("#historyChoices input[name=history]")
+        expect(choices).to_have_count(1)
+        assert choices.first.input_value() == "synthetic-history-01"
+        assert not choices.first.is_checked(), "history may not be silently selected"
+        choices.first.check()
+        expect(choices.first).to_be_checked()
+        expect(page.locator("#doctorSelect")).to_have_value("")
+        page.locator("#rfNavTracking").click()
         page.reload()
         expect(page.locator("#rfTrackingView")).to_be_visible()
         expect(page.locator("#rfCorrectionContext")).to_be_hidden()

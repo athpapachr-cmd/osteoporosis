@@ -51,7 +51,9 @@ from .persistence import (
     upsert_medication_alias,
     delete_medication_alias,
     RFSavedDraftORM,
-    search_rf_sources, get_rf_source, read_rf_rejected_correction,
+    RFApplicationORM,
+    search_rf_sources, get_rf_source, read_rf_rejected_correction, read_rf_issued_copy,
+    delete_rf_issued_application,
     save_rf_draft, get_rf_draft, list_rf_drafts, delete_rf_draft,
     normalize_identity,
     list_rf_application_progress, get_rf_application_progress,
@@ -168,6 +170,16 @@ class RFApplicationDraft(BaseModel):
     draft_revision: int | None = Field(default=None, ge=1)
     correction_of_application_id: str = Field(default="", max_length=80)
     correction_source_expected_revision: int | None = Field(default=None, ge=1)
+
+
+class RFIssuedCopyRead(BaseModel):
+    application_id: str = Field(min_length=1, max_length=80)
+    expected_revision: int = Field(ge=0)
+
+
+class RFIssuedDeleteRequest(BaseModel):
+    expected_revision: int = Field(ge=0)
+    confirmation_code: str = Field(min_length=8, max_length=8)
 
 
 class RFRejectedCorrectionRead(BaseModel):
@@ -604,6 +616,18 @@ def build_rf_router(engine: Engine) -> APIRouter:
             raise HTTPException(status_code=404, detail="Δεν βρέθηκε η παλιά RF εγγραφή")
         return result
 
+    @router.post("/api/reuse/issued-copy")
+    def rf_reuse_issued_copy(req: RFIssuedCopyRead):
+        try:
+            result = read_rf_issued_copy(engine, req.application_id, req.expected_revision)
+            return Response(content=json.dumps(result, ensure_ascii=False),
+                            media_type="application/json",
+                            headers={"Cache-Control": "no-store"})
+        except LookupError as exc:
+            raise HTTPException(status_code=404, detail="Η RF δεν βρέθηκε") from exc
+        except RuntimeError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+
     @router.post("/api/reuse/rejected-correction")
     def rf_reuse_rejected_correction(req: RFRejectedCorrectionRead):
         try:
@@ -747,6 +771,24 @@ def build_rf_router(engine: Engine) -> APIRouter:
         except ValueError as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
 
+    @router.post("/api/outcomes/{application_id}/delete")
+    def rf_outcomes_delete(application_id: str, req: RFIssuedDeleteRequest):
+        try:
+            delete_rf_issued_application(engine, application_id,
+                expected_revision=req.expected_revision,
+                confirmation_code=req.confirmation_code)
+            return Response(content=json.dumps({"deleted": True}),
+                            media_type="application/json",
+                            headers={"Cache-Control": "no-store"})
+        except LookupError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        except RuntimeError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        except IntegrityError as exc:
+            raise HTTPException(status_code=409, detail="Η RF χρησιμοποιείται από άλλη εγγραφή") from exc
+
     @router.get("/api/outcomes/{application_id}")
     def rf_outcomes_detail(application_id: str):
         found = get_rf_application_progress(engine, application_id)
@@ -870,6 +912,9 @@ def build_rf_router(engine: Engine) -> APIRouter:
                     raise HTTPException(status_code=422, detail="Η προηγούμενη εφαρμογή αφορά διαφορετική πλευρά")
                 if draft.indication_code != prior.get("indication_code"):
                     raise HTTPException(status_code=422, detail="Η προηγούμενη εφαρμογή αφορά διαφορετική ένδειξη")
+                if exact_location != prior.get("exact_location"):
+                    raise HTTPException(status_code=422,
+                        detail="Η προηγούμενη εφαρμογή αφορά διαφορετική ακριβή εντόπιση")
             elif draft.legacy_history is not None:
                 if draft.source_origin == "pdf" and not draft.legacy_confirmed:
                     raise HTTPException(status_code=422,
@@ -916,6 +961,12 @@ def build_rf_router(engine: Engine) -> APIRouter:
                     raise HTTPException(status_code=422, detail="Το πρόχειρο ανήκει σε άλλη ταυτότητα")
                 if linked_draft.pathway != draft.pathway:
                     raise HTTPException(status_code=409, detail="Αποθήκευσε ξανά το πρόχειρο μετά την αλλαγή τύπου")
+            # A reused application cannot disappear while this new attempt is issued.
+            if draft.source_kind == "application":
+                source_app = session.scalar(select(RFApplicationORM).where(
+                    RFApplicationORM.id == draft.source_id).with_for_update())
+                if source_app is None:
+                    raise HTTPException(status_code=409, detail="Η προηγούμενη RF διαγράφηκε. Ανανέωσε την αίτηση")
             row = session.scalar(select(RFDoctorProfileORM).where(
                 RFDoctorProfileORM.key == draft.doctor_key).with_for_update())
             if row is None or not row.active:
@@ -958,7 +1009,11 @@ def build_rf_router(engine: Engine) -> APIRouter:
             except (RuntimeError, ValueError) as exc:
                 raise HTTPException(status_code=422, detail=str(exc)) from exc
             if legacy is not None:
-                record_legacy_procedure(engine, legacy, session=session)
+                # Bind this issued A2 to the exact recorded (or deduplicated)
+                # real procedure in the same transaction. Older unlinked A2
+                # records are never matched to a guessed procedure on read.
+                payload["procedure_history_id"] = record_legacy_procedure(
+                    engine, legacy, session=session)
             application_id = record_application(engine, payload, session=session)
             if linked_draft is not None:
                 session.delete(linked_draft)
