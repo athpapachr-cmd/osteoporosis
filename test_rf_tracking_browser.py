@@ -109,6 +109,30 @@ def suite(width):
                     except (IndexError, ValueError):
                         return route.fulfill(status=404, json={"detail": "missing"})
                     return route.fulfill(json=card(n))
+                if endpoint == "reuse/issued-copy":
+                    n = int(request["application_id"].rsplit("-", 1)[1])
+                    return route.fulfill(json={
+                        "application_id": request["application_id"],
+                        "revision": request["expected_revision"],
+                        "source": {"kind": "application", "pathway": "A1"},
+                        "files_saved": False,
+                        "fields": {"identity_number": "SYN-ID-%02d" % n,
+                                   "patient_name": "Συνθετικός RF %02d" % n,
+                                   "age": 60, "gesy_number": "SYN-GESY",
+                                   "indication_code": "KNEE_OA_KL34",
+                                   "laterality": "left", "product_key": "medikey",
+                                   "exact_location": "Synthetic knee",
+                                   "pain_onset_date": "2026-01-01",
+                                   "pain_onset_vas": 8,
+                                   "last_assessment_date": "2026-04-01",
+                                   "last_assessment_vas": 7,
+                                   "nsaid_trials": [{"drug_name": "Synthetic Nsaid",
+                                                     "dose": "90 mg", "duration": "3 months"}],
+                                   "physio_dates_text": "2026-02-01\n2026-02-08"},
+                    }, headers={"cache-control": "no-store"})
+                if endpoint.startswith("outcomes/") and endpoint.endswith("/delete"):
+                    return route.fulfill(status=409,
+                        json={"detail": "Synthetic linked RF prevents deletion"})
                 if endpoint == "reuse/rejected-correction":
                     n = int(request["application_id"].rsplit("-", 1)[1])
                     return route.fulfill(json={
@@ -193,6 +217,20 @@ def suite(width):
         expect(page.locator("#rfTrackResults .rf-outcome-card")).to_have_count(20)
         assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1"), "horizontal overflow"
         page.screenshot(path=str(OUT / ("rf-tracking-%s.png" % width)), full_page=True)
+        expect(page.locator("#rfOutcomeDelete")).to_be_visible()
+        expect(page.locator("#rfOutcomeCopy")).to_be_visible()
+        page.locator("#rfTrackResults .rf-outcome-card").first.get_by_role(
+            "button", name="Φόρτωση", exact=True).click()
+        expect(page.locator("#rfBuilderView")).to_be_visible()
+        expect(page.locator("#rfTrackingView")).to_be_hidden()
+        expect(page.locator("#identityNumber")).to_have_value("SYN-ID-00")
+        expect(page.locator("#patientName")).to_have_value("Συνθετικός RF 00")
+        expect(page.locator("#doctorSelect")).to_have_value("")
+        expect(page.locator("#physioDates")).to_have_value("2026-02-01\n2026-02-08")
+        expect(page.locator("#imagingReport")).to_have_value("")
+        expect(page.locator("#rfCorrectionContext")).to_be_hidden()
+        assert page.evaluate("location.pathname") == "/clinical/clinic-utilities/rf"
+        page.locator("#rfNavTracking").click()
         page.reload()
         expect(page.locator("#rfTrackingView")).to_be_visible()
         expect(page.locator("#rfCorrectionContext")).to_be_hidden()
