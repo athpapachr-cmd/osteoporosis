@@ -222,8 +222,8 @@ def suite(width):
         expect(page.locator("#rfOutcomeTitle")).to_contain_text("Συνθετικός RF 00")
         expect(page.locator("#rfOutcomeDelete")).to_be_visible()
         expect(page.locator("#rfOutcomeCopy")).to_be_visible()
-        page.locator("#rfTrackResults .rf-outcome-card").first.get_by_role(
-            "button", name="Φόρτωση", exact=True).click()
+        page.locator("#rfTrackResults .rf-outcome-card").first.locator(
+            "button").filter(has_text="Φόρτωση").click()
         expect(page.locator("#rfBuilderView")).to_be_visible()
         expect(page.locator("#rfTrackingView")).to_be_hidden()
         expect(page.locator("#identityNumber")).to_have_value("SYN-ID-00")
