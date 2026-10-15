@@ -91,3 +91,15 @@
 
 /* RF view visibility must override layout display rules. */
 #rfBuilderView[hidden], #rfTrackingView[hidden], #rfTrackListView[hidden], #rfTrackWeekView[hidden], #rfOutcomeSelected[hidden] { display: none !important; }
+
+/* Preview reuses the existing protected RF creator/draft fields, without writes. */
+.rf-live-preview,.rf-draft-preview{border-top:1px solid #e2e8f0;padding-top:12px;margin-top:12px}
+.rf-live-preview h3,.rf-draft-preview h3{font-size:15px;margin:0 0 6px;color:#263c51}
+.rf-preview-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.rf-preview-columns{display:grid;grid-template-columns:1fr;gap:12px}
+.rf-preview-columns strong,.rf-draft-preview strong{display:block;margin:10px 0 6px;font-size:13px}
+.rf-preview-items{display:grid;gap:5px;margin:6px 0 12px}
+.rf-preview-row{font-size:12px;line-height:1.45;background:#f5f8fc;border:1px solid #e7edf4;border-radius:9px;padding:7px 9px;overflow-wrap:anywhere}
+.rf-preview-caveat{font-size:11px;line-height:1.4}
+.rf-draft-preview{background:#f7faff;border:1px solid #dce6f4;border-radius:12px;padding:14px}
+.rf-draft-preview[hidden],.rf-live-preview[hidden]{display:none!important}

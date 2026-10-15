@@ -1,6 +1,6 @@
 (() => {
   const $ = id => document.getElementById(id);
-  const state = { contract: null, pathway: 'A1', selectedHistoryId: '', nsaids: [], others: [], unknowns: [], learnedMedications: [], physio: null, imagingValidation: '', horosImages: [], horosNextId: 0, doctors: [], editingDoctor: null, draftId: '', draftRevision: null, sourceKind: '', sourceId: '', sourceOrigin: '', sourcePatientName: '', sourceNameConfirmed: false, sourcePage: 1, draftPage: 1, requestToken: 0, correctionOfId: '', correctionExpectedRevision: null, selectedOutcome: null, selectedOutcomeId: '', outcomePage: 1, outcomeToken: 0, outcomeSelectionToken: 0, outcomeContext: '' };
+  const state = { draftPreviewToken: 0, contract: null, pathway: 'A1', selectedHistoryId: '', nsaids: [], others: [], unknowns: [], learnedMedications: [], physio: null, imagingValidation: '', horosImages: [], horosNextId: 0, doctors: [], editingDoctor: null, draftId: '', draftRevision: null, sourceKind: '', sourceId: '', sourceOrigin: '', sourcePatientName: '', sourceNameConfirmed: false, sourcePage: 1, draftPage: 1, requestToken: 0, correctionOfId: '', correctionExpectedRevision: null, selectedOutcome: null, selectedOutcomeId: '', outcomePage: 1, outcomeToken: 0, outcomeSelectionToken: 0, outcomeContext: '' };
 
   async function api(path, options = {}) {
     const response = await fetch(`/clinical/clinic-utilities/rf${path}`, { credentials: 'same-origin', ...options });
@@ -730,6 +730,8 @@
       state.imagingValidation = 'validation_error';
       status.className = 'validation-panel error';
       status.textContent = error.message;
+    } finally {
+      updateSummary();
     }
   }
 
@@ -1515,6 +1517,7 @@
   }
 
   async function saveRfDraft() {
+    closeRfDraftPreview();
     try {
       const stateFields = savedDraftFields();
       const active = !!state.draftId;
@@ -1542,6 +1545,11 @@
       if (page === 1) list.replaceChildren();
       for (const item of result.drafts || []) {
         const row = renderReuseCard(list, item, openRfDraft, 'Συνέχεια');
+        const preview = document.createElement('button');
+        preview.type = 'button'; preview.className = 'btn secondary small';
+        preview.textContent = 'Προεπισκόπηση';
+        preview.addEventListener('click', () => previewRfDraft(item));
+        row.append(preview);
         const discard = document.createElement('button');
         discard.type = 'button'; discard.className = 'btn ghost small';
         discard.textContent = 'Διαγραφή πρόχειρου';
@@ -1555,6 +1563,7 @@
 
   async function discardRfDraft(item) {
     if (!window.confirm('Να διαγραφεί οριστικά αυτό το πρόχειρο;')) return;
+    closeRfDraftPreview();
     try {
       await api('/api/drafts/' + encodeURIComponent(item.id), {
         method:'DELETE', headers:{'Content-Type':'application/json'},
@@ -1645,6 +1654,7 @@
   }
 
   async function openRfDraft(card) {
+    closeRfDraftPreview();
     try {
       const item = await (await api('/api/drafts/' + encodeURIComponent(card.id))).json();
       await restoreRfDraft(item.fields || {});
@@ -1748,6 +1758,147 @@
     target.textContent = message;
   }
 
+
+  // A read-only progress preview, not an official PDF or clinical approval.
+  // The very same projection works for in-progress creator fields and the
+  // protected, persisted fields fetched for one specifically selected draft.
+  function rfCompletionPreview(fields, saved = false) {
+    const done = [], missing = [];
+    const text = value => String(value ?? '').trim();
+    const num = value => value !== null && value !== undefined &&
+      text(value) !== '' && Number.isFinite(Number(value));
+    const present = value => text(value) !== '';
+    const mark = (complete, yes, no) => (complete ? done : missing).push(complete ? yes : no);
+    const patientMissing = [];
+    if (!present(fields.patient_name)) patientMissing.push('όνομα');
+    if (!present(fields.identity_number)) patientMissing.push('ταυτότητα');
+    if (!present(fields.gesy_number)) patientMissing.push('ΓεΣΥ');
+    if (!num(fields.age) || Number(fields.age) <= 0) patientMissing.push('ηλικία');
+    mark(!patientMissing.length,
+      'Ασθενής: ' + text(fields.patient_name) + ', ' + fields.age + ' ετών',
+      'Ασθενής: ' + patientMissing.join(', '));
+    const doctor = state.contract?.doctors?.[fields.doctor_key];
+    mark(Boolean(doctor?.configured), 'Ιατρός: ' + doctor?.label,
+      'Επίλεξε ενεργό ιατρό');
+    const product = state.contract?.products?.[fields.product_key];
+    mark(Boolean(product?.configured), 'Προϊόν: ' + product?.label,
+      'Επίλεξε προϊόν');
+    const indication = state.contract?.indications?.[fields.indication_code];
+    const locationValid = indication && present(fields.exact_location) &&
+      ['left','right'].includes(fields.laterality) &&
+      (fields.indication_code !== 'OTHER_CUSTOM' ||
+        (present(fields.other_area) && present(fields.other_diagnosis)));
+    mark(Boolean(locationValid),
+      'Ένδειξη: ' + indication?.label + ' · ' + text(fields.exact_location),
+      'Ένδειξη, πλευρά και ακριβής εντόπιση' +
+        (fields.indication_code === 'OTHER_CUSTOM' ? ' (και περιοχή/διάγνωση)' : ''));
+    if (fields.pathway === 'A2') {
+      const prior = fields.legacy_history || {};
+      const manual = present(prior.actual_procedure_date) && num(prior.vas_before) &&
+        num(prior.vas_after) && present(prior.last_followup_date) &&
+        num(prior.last_followup_vas);
+      const selected = present(fields.procedure_history_id);
+      mark(selected || manual,
+        selected ? 'Προηγούμενη εφαρμογή: επιλεγμένο ιστορικό (επανέλεγχος κατά την έκδοση)'
+          : 'Προηγούμενη εφαρμογή: χειροκίνητη καταχώριση (επανέλεγχος κατά την έκδοση)',
+        'Προηγούμενη πραγματική εφαρμογή: επίλεξε ιστορικό ή συμπλήρωσε ημερομηνίες/VAS');
+      if (manual && fields.source_origin === 'pdf' && !fields.legacy_confirmed)
+        missing.push('Επιβεβαίωσε ότι η προηγούμενη θεραπεία πραγματοποιήθηκε');
+      if (present(fields.a2_current_followup_date) || num(fields.a2_current_followup_vas))
+        mark(present(fields.a2_current_followup_date) && num(fields.a2_current_followup_vas),
+          'Νέα αξιολόγηση: ' + text(fields.a2_current_followup_date) +
+            ', VAS ' + fields.a2_current_followup_vas,
+          'Νέα αξιολόγηση: χρειάζονται μαζί ημερομηνία και VAS');
+    } else {
+      const reasons = Array.isArray(fields.rf_reason_codes) ? fields.rf_reason_codes : [];
+      mark(Boolean(reasons.length || present(fields.rf_reason_other)),
+        'Αιτιολόγηση RF: ' + (reasons.length ? reasons.length + ' επιλογή/ές' : 'ελεύθερο κείμενο'),
+        'Αιτιολόγηση RF');
+      mark(present(fields.pain_onset_date) && num(fields.pain_onset_vas) &&
+           present(fields.last_assessment_date) && num(fields.last_assessment_vas),
+        'Πόνος: ' + text(fields.pain_onset_date) + ' VAS ' + fields.pain_onset_vas +
+          ' → ' + text(fields.last_assessment_date) + ' VAS ' + fields.last_assessment_vas,
+        'Πόνος: ημερομηνίες έναρξης/αξιολόγησης και δύο VAS');
+      if (indication?.requires_intervention) {
+        const it = fields.intervention || {};
+        mark(present(it.site) && present(it.date) && num(it.vas_before) && num(it.vas_after),
+          'Προηγούμενη παρέμβαση: ' + text(it.date) + ' · ' + text(it.site),
+          'Προηγούμενη παρέμβαση: σημείο, ημερομηνία και δύο VAS');
+      }
+      const trials = [
+        ...(fields.draft_nsaids || fields.nsaid_trials || []),
+        ...(fields.draft_others || fields.other_analgesic_trials || [])
+      ].filter(item => item && (item.auto_selected || item.manual || item.drug_name));
+      if (trials.length) done.push('Αγωγή: ' + trials.length + ' καταχωρισμένες επιλογές');
+      if (present(fields.full_medication_text))
+        done.push('Υπάρχει επικολλημένο κείμενο αγωγής (δεν αποθηκεύεται αυτούσιο στην εκδοθείσα RF)');
+      if (present(fields.physio_dates_text) ||
+          Array.isArray(fields.physio?.dates) && fields.physio.dates.length)
+        done.push('Φυσιοθεραπεία: έχουν συμπληρωθεί ημερομηνίες (απαιτείται έλεγχος)');
+    }
+    if (present(fields.additional_notes))
+      done.push('Πρόσθετες πληροφορίες: συμπληρωμένες');
+    const file = !saved && $('imagingReport')?.files?.[0];
+    const allowedImaging = Boolean(file &&
+      (state.imagingValidation === 'imaging_supported' ||
+       (state.imagingValidation === 'ambiguous_or_unreadable' && $('imagingConfirm').checked)));
+    mark(allowedImaging,
+      'Απεικονιστική έκθεση PDF: επιλέχθηκε και ελέγχθηκε',
+      saved ? 'Απεικονιστική έκθεση PDF: επισύναψέ την ξανά στην έκδοση'
+        : 'Απεικονιστική έκθεση PDF: επισύναψε/ολοκλήρωσε τον έλεγχο');
+    if (!saved && state.horosImages.length)
+      done.push('Horos JPEG: ' + state.horosImages.length + ' εικόνα/ες (προαιρετικά)');
+    return {done, missing};
+  }
+
+  function drawRfPreview(result, statusId, doneId, missingId) {
+    const status = $(statusId), done = $(doneId), missing = $(missingId);
+    status.textContent = result.done.length + ' συμπληρωμένες ενότητες · ' +
+      result.missing.length + ' σημεία για συμπλήρωση';
+    const fill = (target, items, empty) => {
+      target.replaceChildren();
+      for (const value of (items.length ? items : [empty])) {
+        const element = document.createElement('div');
+        element.className = 'rf-preview-row';
+        element.textContent = value;
+        target.append(element);
+      }
+    };
+    fill(done, result.done, 'Δεν έχουν συμπληρωθεί ακόμη βασικά στοιχεία.');
+    fill(missing, result.missing, 'Δεν υπάρχουν προφανή κενά. Έλεγξε τα κλινικά δεδομένα πριν την έκδοση.');
+  }
+
+  function closeRfDraftPreview() {
+    ++state.draftPreviewToken;
+    $('rfDraftPreview').hidden = true;
+    $('rfSavedPreviewDone').replaceChildren();
+    $('rfSavedPreviewMissing').replaceChildren();
+    $('rfSavedPreviewStatus').textContent = '';
+    $('rfDraftPreviewTitle').textContent = '';
+  }
+
+  async function previewRfDraft(card) {
+    const token = ++state.draftPreviewToken;
+    $('rfDraftPreview').hidden = true;
+    try {
+      const result = await (await api('/api/drafts/' + encodeURIComponent(card.id))).json();
+      if (token !== state.draftPreviewToken || $('rfBuilderView').hidden ||
+          result.id !== card.id || result.revision !== card.revision ||
+          !result.fields || !['A1','A2'].includes(result.fields.pathway))
+        return;
+      $('rfDraftPreviewTitle').textContent =
+        'Προεπισκόπηση πρόχειρου · ' + (result.fields.patient_name || 'χωρίς όνομα');
+      drawRfPreview(rfCompletionPreview(result.fields, true),
+        'rfSavedPreviewStatus', 'rfSavedPreviewDone', 'rfSavedPreviewMissing');
+      $('rfDraftPreview').hidden = false;
+    } catch (error) {
+      if (token !== state.draftPreviewToken) return;
+      closeRfDraftPreview();
+      if ([401,403].includes(error.status)) $('rfDraftList').replaceChildren();
+      showError(error.message);
+    }
+  }
+
   function updateSummary() {
     const code = $('indicationSelect')?.value || '';
     const label = state.contract?.indications?.[code]?.label || '—';
@@ -1759,6 +1910,8 @@
       `Εντόπιση: ${$('exactLocation')?.value || '—'}`
     ];
     $('reviewSummary').innerHTML = items.map(x => `<div class="summary-item">${escapeHtml(x)}</div>`).join('');
+    drawRfPreview(rfCompletionPreview(buildDraft(), false),
+      'rfPreviewStatus', 'rfPreviewDone', 'rfPreviewMissing');
   }
 
 
@@ -1791,6 +1944,7 @@
     $('rfBuilderView').hidden = isTracking;
     $('rfOutcomesWorkspace').hidden = true; // Old embedded ledger is superseded.
     if (isTracking) {
+      closeRfDraftPreview();
       // Returning to Tracking cannot silently preserve a previous correction authorization.
       state.correctionOfId = '';
       state.correctionExpectedRevision = null;
@@ -2062,6 +2216,9 @@
     $('rfDraftReloadBtn').addEventListener('click', () => listRfDrafts());
     $('rfDraftSearchBtn').addEventListener('click', () => listRfDrafts());
     $('rfDraftNextBtn').addEventListener('click', () => listRfDrafts(state.draftPage + 1));
+    $('rfDraftPreviewClose').addEventListener('click', closeRfDraftPreview);
+    $('rfBuilderView').addEventListener('input', updateSummary);
+    $('rfBuilderView').addEventListener('change', updateSummary);
     $('rfOutcomeRefresh').addEventListener('click', () => loadRfOutcomes());
     $('rfOutcomeNext').addEventListener('click', () => loadRfOutcomes(state.outcomePage + 1));
     $('rfOutcomeScope').addEventListener('change', () => {
