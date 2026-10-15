@@ -1582,9 +1582,18 @@
       state.horosImages.forEach(item => form.append('horos_jpegs', item.file, item.file.name));
       const response = await api('/api/create', {method:'POST', body:form});
       const blob = await response.blob();
+      if (blob.type && !blob.type.includes('pdf')) throw new Error('Η απόκριση δεν είναι PDF.');
       const url = URL.createObjectURL(blob);
-      window.open(url, '_blank', 'noopener');
-      setTimeout(() => URL.revokeObjectURL(url), 120000);
+      const download = document.createElement('a');
+      download.href = url;
+      download.download = 'RF_' + (response.headers.get('X-RF-Application-Id') || 'application') + '.pdf';
+      download.style.display = 'none';
+      document.body.append(download);
+      try { download.click(); }
+      finally {
+        download.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 120000);
+      }
       state.draftId = ''; state.draftRevision = null;
       state.correctionOfId = '';
       state.correctionExpectedRevision = null;
