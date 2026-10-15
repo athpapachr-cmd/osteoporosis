@@ -1437,6 +1437,11 @@
         site:'interventionSite',date:'interventionDate',
         vas_before:'interventionVasBefore',vas_after:'interventionVasAfter'
       })) $(id).value = intervention[key] ?? '';
+      const previous = result.previous_procedure;
+      if (state.pathway === 'A2' && previous &&
+          previous.procedure_history_id === fields.procedure_history_id) {
+        renderHistory([previous], previous.procedure_history_id);
+      }
       showRfView('builder');
       renderCorrectionContext();
       if ($('physioDates').value.trim()) parsePhysio();
