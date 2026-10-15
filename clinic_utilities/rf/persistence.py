@@ -497,6 +497,25 @@ def _rf_application_reuse_fields(row: RFApplicationORM) -> dict[str, Any]:
     return fields
 
 
+def read_rf_issued_copy(engine: Engine, application_id: str,
+                        expected_revision: int) -> dict[str, Any]:
+    """Copy persisted immutable fields at the selected progress revision."""
+    with Session(engine) as session:
+        app = session.scalar(select(RFApplicationORM).where(
+            RFApplicationORM.id == application_id).with_for_update())
+        if app is None:
+            raise LookupError("RF application not found")
+        progress = session.scalar(select(RFApplicationProgressORM).where(
+            RFApplicationProgressORM.application_id == application_id).with_for_update())
+        current_revision = progress.revision if progress else 0
+        if current_revision != expected_revision:
+            raise RuntimeError("RF changed; refresh the selected application")
+        return {"application_id": app.id, "revision": current_revision,
+                "source": _rf_application_card(app),
+                "fields": _rf_application_reuse_fields(app),
+                "files_saved": False}
+
+
 def read_rf_rejected_correction(engine: Engine, application_id: str,
                                 expected_revision: int) -> dict[str, Any]:
     """Atomically bind reusable immutable fields to a rejected progress revision."""
@@ -513,6 +532,45 @@ def read_rf_rejected_correction(engine: Engine, application_id: str,
         return {"application_id": app.id, "revision": progress.revision,
                 "source": _rf_application_card(app),
                 "fields": _rf_application_reuse_fields(app)}
+
+
+def delete_rf_issued_application(engine: Engine, application_id: str, *,
+                                 expected_revision: int, confirmation_code: str) -> None:
+    """Delete one selected issued attempt; reject stale revisions and linked descendants."""
+    if len(application_id) < 8 or not hmac.compare_digest(
+        str(confirmation_code or "").upper(), application_id[-8:].upper()
+    ):
+        raise ValueError("Το αναγνωριστικό επιβεβαίωσης δεν ταιριάζει")
+    with Session(engine) as session:
+        app = session.scalar(select(RFApplicationORM).where(
+            RFApplicationORM.id == application_id).with_for_update())
+        if app is None:
+            raise LookupError("Η συγκεκριμένη RF δεν βρέθηκε")
+        progress = session.scalar(select(RFApplicationProgressORM).where(
+            RFApplicationProgressORM.application_id == application_id).with_for_update())
+        revision = progress.revision if progress else 0
+        if revision != expected_revision:
+            raise RuntimeError("Η RF άλλαξε. Ανανέωσε πριν τη διαγραφή")
+        dependent = session.scalar(select(RFApplicationORM.id).where(
+            or_(
+                RFApplicationORM.payload_json["correction_of_application_id"].as_string() == application_id,
+                and_(
+                    RFApplicationORM.payload_json["source_kind"].as_string() == "application",
+                    RFApplicationORM.payload_json["source_id"].as_string() == application_id
+                )
+            )
+        ).limit(1))
+        if dependent:
+            raise RuntimeError("Η RF συνδέεται με νεότερη αίτηση και δεν μπορεί να διαγραφεί ανεξάρτητα")
+        session.execute(delete(RFApplicationProgressAuditORM).where(
+            RFApplicationProgressAuditORM.application_id == application_id))
+        if progress is not None:
+            session.delete(progress)
+        session.delete(app)
+        session.add(RFApplicationDeletionAuditORM(
+            id=str(uuid4()), application_id=application_id,
+            prior_revision=revision, deleted_at=utcnow()))
+        session.commit()
 
 
 def get_rf_source(engine: Engine, kind: str, source_id: str) -> dict[str, Any] | None:
