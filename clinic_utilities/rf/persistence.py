@@ -15,7 +15,7 @@ from .parsers import (
     is_medication_identity_alias,
     normalize_medication_alias,
 )
-from sqlalchemy import Boolean, Column, DateTime, Integer, JSON, String, select, and_, or_
+from sqlalchemy import Boolean, Column, DateTime, Integer, JSON, String, select, and_, or_, delete
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, Session
 
@@ -171,6 +171,15 @@ class RFApplicationProgressORM(RFBase):
     mine_to_follow = Column(Boolean, nullable=False, default=False)
     followup_choice = Column(String(16), nullable=False, default="")
     updated_at = Column(DateTime, nullable=False)
+
+
+class RFApplicationDeletionAuditORM(RFBase):
+    """Minimal deletion receipt; no patient name, clinical fields, or PDF."""
+    __tablename__ = "clinic_rf_application_deletion_audit"
+    id = Column(String, primary_key=True)
+    application_id = Column(String, nullable=False, unique=True, index=True)
+    prior_revision = Column(Integer, nullable=False)
+    deleted_at = Column(DateTime, nullable=False)
 
 
 class RFApplicationProgressAuditORM(RFBase):
@@ -470,10 +479,16 @@ def _rf_application_reuse_fields(row: RFApplicationORM) -> dict[str, Any]:
         "rf_reason_codes", "rf_reason_other", "pain_onset_date",
         "pain_onset_vas", "last_assessment_date", "last_assessment_vas",
         "nsaid_trials", "other_analgesic_trials", "adverse_effects",
-        "intervention", "physio",
+        "intervention", "physio", "pathway", "a2_current_followup_date",
+        "a2_current_followup_vas", "procedure_history_id",
     }
     fields = {k: v for k, v in data.items() if k in allowed}
-    fields.update({"patient_name": row.patient_name,
+    physio = data.get("physio")
+    if isinstance(physio, dict) and isinstance(physio.get("dates"), list):
+        dates = physio["dates"]
+        if all(isinstance(value, str) and re.fullmatch(r"\d{4}-\d{2}-\d{2}", value) for value in dates):
+            fields["physio_dates_text"] = "\n".join(dates)
+    fields.update({"patient_name": row.patient_name, "pathway": row.pathway,
                    "identity_number": str(data.get("identity_number") or row.patient_identity_key),
                    "gesy_number": row.gesy_number,
                    "age": row.patient_age, "product_key": row.product_key,
