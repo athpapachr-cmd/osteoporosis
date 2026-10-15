@@ -1,5 +1,8 @@
 # RF CURRENT — Native RF v2: Tracking usability and controlled issued-attempt actions
 
+> **2026-10-15 PR #158 P1-01 FOCUSED R1 CORRECTION ACTIVE:** Product Owner approved minimal fix after independent `BLOCK / COMPLETE / P0:P1:P2=0:1:0` on preview `f82d6ff380469859bd455a2bf764e076dc49863e`: prevent draft list resurrection after preview 401/403 by synchronously invalidating draft-list generation, clearing rows/More and proving late-success-after-failure in real Chromium. Writer ACTIVE only for affected JS, browser regression and checkpoint; **DRAFT/UNMERGED/UNDEPLOYED**. Other RF/Reception #159 unaffected; one independent focused delta R1 next, not a full review restart.
+
+
 > **2026-10-15 RF PREVIEW #158 CORRECTED FINAL CANDIDATE — SYNTHETIC CI PASS / R1 HOLD:** Frozen source+test HEAD `f82d6ff380469859bd455a2bf764e076dc49863e` supersedes prior `61b64ea80bc4b7778136e661fdc603067cd8ab70` with bounded Clinical Key re-auth clearing saved-draft preview and guarded async list generation. Existing selected RF creator and draft saving remain unchanged. RF Native/Chromium [38789411596](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/38789411596), Hotfix [38789403573](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/38789403573), CU1 [38789411531](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/38789411531), Canonical [38789411594](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/38789411594) all SUCCESS on source+tests. Writer RELEASED / DRAFT UNMERGED / no deploy, awaiting ONE independent affected post-code R1; R2 Reception link #159 separate design.
 
 
