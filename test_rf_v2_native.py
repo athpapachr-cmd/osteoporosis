@@ -1732,6 +1732,37 @@ class RFOutcomeFollowupTests(unittest.TestCase):
         self.assertEqual(self.card(child_id)["correction_of_application_id"],parent_id)
 
 
+    def test_a2_copy_preserves_verifiable_actual_procedure(self):
+        from clinic_utilities.rf.persistence import record_legacy_procedure
+        previous_id = record_legacy_procedure(self.engine, {
+            "identity_number":"SYN-A2-REUSE",
+            "indication_code":"KNEE_OA_KL34", "site_key":"knee",
+            "laterality":"left", "exact_location":"Αριστερό γόνατο",
+            "actual_procedure_date":"2026-05-01",
+            "vas_before":8, "vas_after":3,
+            "last_followup_date":"2026-06-01", "last_followup_vas":5
+        })
+        issued = self.issue(identity_number="SYN-A2-REUSE",pathway="A2",
+            procedure_history_id=previous_id,
+            a2_current_followup_date="2026-09-01",
+            a2_current_followup_vas=6)
+        self.assertEqual(issued.status_code, 200, issued.text)
+        app_id=issued.headers["x-rf-application-id"]
+        response=self.client.post(self.base + "/reuse/issued-copy",
+            headers=self.headers,
+            json={"application_id":app_id,"expected_revision":0})
+        self.assertEqual(response.status_code,200,response.text)
+        fields=response.json()["fields"]
+        self.assertEqual(fields["pathway"],"A2")
+        self.assertEqual(fields["a2_current_followup_date"],"2026-09-01")
+        self.assertEqual(fields["a2_current_followup_vas"],6)
+        self.assertEqual(fields["procedure_history_id"],previous_id)
+        history=response.json()["previous_procedure"]
+        self.assertIsNotNone(history)
+        self.assertEqual(history["procedure_history_id"],previous_id)
+        self.assertEqual(history["actual_procedure_date"],"2026-05-01")
+
+
 class RFIntegrationSourceTests(unittest.TestCase):
     def test_main_mounts_native_router_not_gateway(self):
         source = Path("main.py").read_text(encoding="utf-8")
