@@ -510,9 +510,26 @@ def read_rf_issued_copy(engine: Engine, application_id: str,
         current_revision = progress.revision if progress else 0
         if current_revision != expected_revision:
             raise RuntimeError("RF changed; refresh the selected application")
+        data = app.payload_json if isinstance(app.payload_json, dict) else {}
+        previous = None
+        if app.pathway == "A2" and data.get("procedure_history_id"):
+            hist = session.get(RFProcedureHistoryORM, str(data["procedure_history_id"]))
+            if (hist is not None and hist.patient_identity_key == app.patient_identity_key
+                    and hist.site_key == app.site_key
+                    and hist.laterality == app.laterality
+                    and hist.indication_code == app.indication_code):
+                previous = {
+                    "procedure_history_id": hist.id, "exact_location": hist.exact_location,
+                    "actual_procedure_date": hist.actual_procedure_date,
+                    "vas_before": hist.vas_before, "vas_after": hist.vas_after,
+                    "last_followup_date": hist.last_followup_date,
+                    "last_followup_vas": hist.last_followup_vas,
+                    "provenance": hist.provenance,
+                }
         return {"application_id": app.id, "revision": current_revision,
                 "source": _rf_application_card(app),
                 "fields": _rf_application_reuse_fields(app),
+                "previous_procedure": previous,
                 "files_saved": False}
 
 
