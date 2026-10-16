@@ -87,6 +87,15 @@
       $("visitBriefReason").textContent=data.booking.reason||"";
       state.view.name=data.booking.patient_display_name||view.name;
       state.view.reason=data.booking.reason||view.reason;
+      state.view.observation=data.booking.observation||null;
+      // Fresh Reception owns any reschedule; never reuse stale Home slot time.
+      const started=new Date(data.booking.start_at);
+      if(Number.isFinite(started.getTime())){
+        const local=new Intl.DateTimeFormat("el-CY",{timeZone:"Asia/Nicosia",
+          day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit",hour12:false}).format(started);
+        state.view.time=local;
+        $("visitBriefWhen").textContent=local;
+      }
       $("visitBriefIdentity").textContent=data.reason==="disabled"?
         "Η επιβεβαίωση σύνδεσης ραντεβού με κλινικό φάκελο δεν έχει ενεργοποιηθεί.":
         data.reason==="needs_reconfirmation"?
@@ -109,7 +118,8 @@
     // The caller uses this immutable per-opening scope, not a reusable session grant.
     return {uid:state.view.uid, name:state.view.name,
       time:state.view.time,reason:state.view.reason,
-      revision:state.revision, linked:state.linked};
+      revision:state.revision, linked:state.linked,
+      observation:state.view.observation};
   }
   function activateSelection(context){
     invalidate();
@@ -176,6 +186,10 @@
   async function confirmSelection(){
     const p=state.pending,chosen=state.chosen;
     if(!p||!chosen||state.inFlight)return;
+    if(!/^[0-9a-f]{64}$/.test(p.observation||"")){
+      $("visitBookingConfirmStatus").textContent="Το ραντεβού δεν έχει έγκυρη νέα επαλήθευση. Άνοιξέ το ξανά.";
+      return;
+    }
     if(!$("visitBookingIndependentCheck").checked){
       $("visitBookingConfirmStatus").textContent=
         "Χρειάζεται ανεξάρτητη επαλήθευση του συγκεκριμένου προσώπου.";
@@ -188,13 +202,15 @@
       const data=await request("confirm",{
         booking_uid:p.uid,patient_id:chosen.id,expected_revision:p.revision,
         independently_verified:true,evidence_type:"protected_chart_identifiers",
+        observed_booking:p.observation,
         replace_existing:$("visitBookingCorrection").checked
       });
       if(ticket!==state.ticket||state.pending!==p||state.chosen!==chosen)return;
       if(data.mode!=="confirmed_once"||data.brief?.patient_id!==chosen.id||
          data.booking?.booking_uid!==p.uid)throw Error("Invalid confirmation result");
       state.pending=null;
-      state.view={uid:p.uid,name:p.name,reason:p.reason,time:p.time};
+      state.view={uid:p.uid,name:p.name,reason:p.reason,time:p.time,
+        observation:p.observation};
       $("visitBookingConfirmation").hidden=true;
       $("visitBriefWhen").textContent=p.time;
       $("visitBriefFreshness").textContent=
