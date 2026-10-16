@@ -105,7 +105,7 @@
     }
   }
   function selectionContext(){
-    if(!state.view||!state.ready||!$("visitBriefOverlay").hidden===false)return null;
+    if(!state.view||!state.ready||$("visitBriefOverlay").hidden)return null;
     // The caller uses this immutable per-opening scope, not a reusable session grant.
     return {uid:state.view.uid, name:state.view.name,
       time:state.view.time,reason:state.view.reason,
