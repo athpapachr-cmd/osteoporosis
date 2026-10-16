@@ -60,10 +60,13 @@
    $("visitChoosePatient").hidden=Boolean(row.patientId);
    $("visitPatientMatches").hidden=true;
    $("visitPatientSearch").setAttribute("aria-expanded","false");
+   if(row.kind==="recent")window.CockpitVisitBrief?.invalidate();
+   if(row.kind==="registry")window.CockpitVisitBrief?.selectPatient(row);
  }
  function back(){
    state.revision++;clearTimeout(state.timer);
    resetDraft();state.selected=null;state.appointment=null;
+   window.CockpitVisitBrief?.invalidate();
    $("visitWorkspacePatient").hidden=true;$("visitWorkspaceHome").hidden=false;
    $("visitPatientSearch").value="";$("visitPatientMatches").hidden=true;
    $("visitPatientSearch").setAttribute("aria-expanded","false");
@@ -130,25 +133,36 @@
  }
  function closeBrief(){
    $("visitBriefOverlay").hidden=true;
+   window.CockpitVisitBrief?.closed();
    const opener=state.briefReturnFocus;state.briefReturnFocus=null;
    if(opener)opener.focus();
  }
  function showBrief(prefix){
    const nameNode=$(prefix+"AppointmentPatient");
    if(!nameNode.dataset.appointmentId)return;
-   const overlay=$("visitBriefOverlay");
    state.briefReturnFocus=$("visitSidebar"+prefix[0].toUpperCase()+prefix.slice(1));
-   $("visitBriefName").textContent=nameNode.textContent;
-   $("visitBriefWhen").textContent=$(prefix+"AppointmentTime").textContent;
-   $("visitBriefReason").textContent=$(prefix+"AppointmentType").textContent;
-   $("visitBriefFreshness").textContent=$("calendarNote").textContent;
+   const view={
+     uid:nameNode.dataset.appointmentId,name:nameNode.textContent,
+     time:$(prefix+"AppointmentTime").textContent,
+     reason:$(prefix+"AppointmentType").textContent,
+     freshness:$("calendarNote").textContent
+   };
+   if(window.CockpitVisitBrief){window.CockpitVisitBrief.open(view);return;}
+   // Safe booking-only compatibility preview when optional script is not loaded.
+   $("visitBriefName").textContent=view.name;
+   $("visitBriefWhen").textContent=view.time;
+   $("visitBriefReason").textContent=view.reason;
+   $("visitBriefFreshness").textContent=view.freshness;
    $("visitBriefIdentity").textContent="Δεν υπάρχει επιβεβαιωμένη κλινική σύνδεση από το ημερολόγιο. Το όνομα δεν αρκεί για πρόσβαση στον φάκελο.";
-   overlay.hidden=false;
+   $("visitBriefOverlay").hidden=false;
    $("visitBriefClose").focus();
  }
  function selectFromBrief(){
+   const context=window.CockpitVisitBrief?.selectionContext();
+   if(window.CockpitVisitBrief&&!context)return;
    const name=$("visitBriefName").textContent,reason=$("visitBriefReason").textContent,time=$("visitBriefWhen").textContent;
    closeBrief();back();
+   if(context)window.CockpitVisitBrief.activateSelection(context);
    state.appointment={kind:"appointment",name,reason,time,patientId:null};
    $("visitPatientSearch").value=name;$("visitPatientSearch").focus();search();
  }
