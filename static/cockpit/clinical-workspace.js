@@ -210,9 +210,15 @@
    if($("visitBriefOverlay").hidden)return;
    if(e.key==="Escape"){e.preventDefault();closeBrief();}
    if(e.key==="Tab"){
-     const a=$("visitBriefClose"),b=$("visitBriefChoosePatient");
-     if(e.shiftKey&&document.activeElement===a){e.preventDefault();b.focus();}
-     else if(!e.shiftKey&&document.activeElement===b){e.preventDefault();a.focus();}
+     // The modal gains two buttons after independent confirmation. Hidden
+     // controls must never receive keyboard focus.
+     const visible=["visitBriefClose","visitBriefChoosePatient",
+       "visitBriefOpenChart","visitBriefUnlink"]
+       .map($).filter(el=>el&&!el.hidden&&!el.disabled);
+     if(!visible.length)return;
+     const first=visible[0],last=visible[visible.length-1];
+     if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}
+     else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
    }
  });
  $("visitBackHome").addEventListener("click",back);
