@@ -21,6 +21,7 @@ from pydantic import BaseModel, Field, ConfigDict
 from sqlalchemy import Column, DateTime, Integer, String, select, update
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, Session
+from sqlalchemy.exc import IntegrityError
 
 from clinical_data import (
     ClinicalPendingORM, EncounterORM, PatientORM, VisitCaptureCandidateV1,
@@ -114,11 +115,25 @@ def _text(value: object, max_len: int = 240) -> str:
     return value.strip()[:max_len] if isinstance(value, str) else ""
 
 
-def _facts(items: object, count: int = 4) -> list[str]:
+def _facts(items: object, count: int = 4, roles: Optional[dict] = None) -> list[dict]:
+    """Preserve clinical verification and uncertainty; expose source *roles*, not raw refs."""
     if not isinstance(items, list):
         return []
-    return [_text(getattr(item, "text", ""), 300)
-            for item in items[:count] if _text(getattr(item, "text", ""), 300)]
+    result = []
+    for item in items[:count]:
+        value = _text(getattr(item, "text", ""), 300)
+        if not value:
+            continue
+        provenance = getattr(item, "provenance", [])
+        role_names = sorted({(roles or {}).get(p, "unknown")
+                             for p in provenance[:4]}) if isinstance(provenance, list) else []
+        result.append({
+            "text": value,
+            "verification": getattr(item, "verification", "source_stated"),
+            "certainty": getattr(item, "certainty", "uncertain"),
+            "source_roles": role_names,
+        })
+    return result
 
 
 def _booking_observation(booking) -> str:
@@ -243,20 +258,25 @@ def _minimal_brief(session: Session, patient_id: str, booking) -> dict:
     checks = []
     if eligible:
         encounter_day, signed_at, encounter_id, candidate = eligible[0]
-        findings = (_facts(candidate.what_changed, 3)
-                    + _facts(candidate.findings, 3)
-                    + _facts(candidate.clinical_impression, 3))[:6]
+        roles = {s.source_ref: s.role for s in candidate.source_bindings}
+        findings = (_facts(candidate.what_changed, 3, roles)
+                    + _facts(candidate.findings, 3, roles)
+                    + _facts(candidate.clinical_impression, 3, roles))[:6]
         previous = {
             "date": encounter_day.isoformat(),
             "signed_at": signed_at.isoformat(),
             "source_encounter_id": encounter_id,
             "reason": _text(candidate.reason_for_visit.text, 240),
+            "reason_evidence": _facts([candidate.reason_for_visit], 1, roles),
             "findings": findings,
         }
-        decisions = _facts(candidate.decisions, 5)
+        decisions = _facts(candidate.decisions, 5, roles)
         medications = [
             {"name": _text(item.name, 120), "action": item.action,
-             "dose": _text(item.dose, 80)}
+             "dose": _text(item.dose, 80),
+             "verification": item.verification, "certainty": item.certainty,
+             "source_roles": sorted({roles.get(p, "unknown")
+                                     for p in item.provenance[:4]})}
             for item in candidate.medications[:5]
         ]
         contact = candidate.next_contact
@@ -266,12 +286,16 @@ def _minimal_brief(session: Session, patient_id: str, booking) -> dict:
             "next_contact": {
                 "when": contact.when,
                 "purpose": _text(contact.purpose, 240),
+                "source_roles": sorted({roles.get(p, "unknown")
+                                        for p in contact.provenance[:4]}),
             } if contact else None,
         }
         if contact:
             if _day(contact.when) == local_day:
                 checks.extend({"text": v, "kind": "previous_next_contact",
-                               "source_encounter_id": encounter_id}
+                               "source_encounter_id": encounter_id,
+                               "source_roles": sorted({roles.get(p, "unknown")
+                                                       for p in contact.provenance[:4]})}
                               for v in [_text(contact.purpose, 240)]
                               + [_text(v, 240) for v in contact.assess[:6]] if v)
             else:
@@ -280,6 +304,8 @@ def _minimal_brief(session: Session, patient_id: str, booking) -> dict:
                     "purpose": _text(contact.purpose, 240),
                     "assess": [_text(v, 240) for v in contact.assess[:6]],
                     "date_relevance": "unverified",
+                    "source_roles": sorted({roles.get(p, "unknown")
+                                            for p in contact.provenance[:4]}),
                 }
 
     pending = []
@@ -358,55 +384,59 @@ def attach_visit_brief_routes(
             raise HTTPException(409, "Booking changed since clinician preview")
         stamp = _utcnow().replace(tzinfo=None)
         with Session(engine) as session:
-            if session.get(PatientORM, req.patient_id) is None:
-                raise HTTPException(404, "Protected patient not found")
-            link = session.get(BookingPatientLinkORM, (NAMESPACE, req.booking_uid))
-            if link is None:
-                if req.expected_revision != 0:
-                    raise HTTPException(409, "Link revision changed")
-                link = BookingPatientLinkORM(
-                    namespace=NAMESPACE, booking_uid=req.booking_uid,
-                    patient_id=req.patient_id, state="needs_reconfirmation",
-                    revision=1, evidence_type=req.evidence_type,
-                    confirmed_at=stamp, updated_at=stamp,
-                )
-                session.add(link)
-                event = "confirmed"
-                revision = 1
-            else:
-                if link.revision != req.expected_revision:
-                    raise HTTPException(409, "Link revision changed")
-                if link.patient_id != req.patient_id and not req.replace_existing:
-                    raise HTTPException(409, "Explicit patient correction required")
-                event = ("corrected" if link.patient_id != req.patient_id else
-                         "reconfirmed")
-                revision = link.revision + 1
-                # Atomic CAS; no blind overwrite across concurrent confirmations.
-                changed = session.execute(
-                    update(BookingPatientLinkORM)
-                    .where(
-                        BookingPatientLinkORM.namespace == NAMESPACE,
-                        BookingPatientLinkORM.booking_uid == req.booking_uid,
-                        BookingPatientLinkORM.revision == req.expected_revision,
-                    )
-                    .values(
-                        patient_id=req.patient_id,
-                        revision=revision, state="needs_reconfirmation",
-                        evidence_type=req.evidence_type,
+            try:
+                if session.get(PatientORM, req.patient_id) is None:
+                    raise HTTPException(404, "Protected patient not found")
+                link = session.get(BookingPatientLinkORM, (NAMESPACE, req.booking_uid))
+                if link is None:
+                    if req.expected_revision != 0:
+                        raise HTTPException(409, "Link revision changed")
+                    link = BookingPatientLinkORM(
+                        namespace=NAMESPACE, booking_uid=req.booking_uid,
+                        patient_id=req.patient_id, state="needs_reconfirmation",
+                        revision=1, evidence_type=req.evidence_type,
                         confirmed_at=stamp, updated_at=stamp,
                     )
-                )
-                if changed.rowcount != 1:
-                    raise HTTPException(409, "Link revision changed")
-            session.add(BookingPatientLinkAuditORM(
-                id=str(uuid4()), namespace=NAMESPACE, booking_uid=req.booking_uid,
-                patient_id=req.patient_id, event=event, revision=revision,
-                evidence_type=req.evidence_type,
-                operator_type="shared_clinical_key", occurred_at=stamp,
-            ))
-            # Build projection in the exact successful confirmation request only.
-            brief = _minimal_brief(session, req.patient_id, booking)
-            session.commit()
+                    session.add(link)
+                    event = "confirmed"
+                    revision = 1
+                else:
+                    if link.revision != req.expected_revision:
+                        raise HTTPException(409, "Link revision changed")
+                    if link.patient_id != req.patient_id and not req.replace_existing:
+                        raise HTTPException(409, "Explicit patient correction required")
+                    event = ("corrected" if link.patient_id != req.patient_id else
+                             "reconfirmed")
+                    revision = link.revision + 1
+                    # Atomic CAS; no blind overwrite across concurrent confirmations.
+                    changed = session.execute(
+                        update(BookingPatientLinkORM)
+                        .where(
+                            BookingPatientLinkORM.namespace == NAMESPACE,
+                            BookingPatientLinkORM.booking_uid == req.booking_uid,
+                            BookingPatientLinkORM.revision == req.expected_revision,
+                        )
+                        .values(
+                            patient_id=req.patient_id,
+                            revision=revision, state="needs_reconfirmation",
+                            evidence_type=req.evidence_type,
+                            confirmed_at=stamp, updated_at=stamp,
+                        )
+                    )
+                    if changed.rowcount != 1:
+                        raise HTTPException(409, "Link revision changed")
+                session.add(BookingPatientLinkAuditORM(
+                    id=str(uuid4()), namespace=NAMESPACE, booking_uid=req.booking_uid,
+                    patient_id=req.patient_id, event=event, revision=revision,
+                    evidence_type=req.evidence_type,
+                    operator_type="shared_clinical_key", occurred_at=stamp,
+                ))
+                # Build projection in the exact successful confirmation request only.
+                brief = _minimal_brief(session, req.patient_id, booking)
+                session.commit()
+            except IntegrityError as exc:
+                session.rollback()
+                raise HTTPException(409, "Concurrent link insertion/revision conflict") from exc
         return {"mode": "confirmed_once", "booking": _booking_card(booking),
                 "revision": revision, "brief": brief}
 
