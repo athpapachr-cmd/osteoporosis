@@ -175,7 +175,6 @@ def test_per_open_reconfirmation_no_reusable_read_authority(monkeypatch):
     second = confirm(c, revision=1)
     assert second.status_code == 200 and second.json()["revision"] == 2
     assert read(c).json()["mode"] == "booking_only"
-    assert read(c)["status"] if False else True  # no token or reusable GET
     with Session(engine) as db:
         assert db.scalar(select(BookingPatientLinkORM)).state == "needs_reconfirmation"
         assert [event.event for event in db.scalars(select(BookingPatientLinkAuditORM)
@@ -278,7 +277,7 @@ def test_revoke_requires_revision_and_stops_pending_history(monkeypatch):
     url = "/clinical/calendar/visit-brief/unlink"
     assert c.post(url, headers=HEAD, json={
         "booking_uid": BOOKING["uid"], "expected_revision": 0,
-        "explicit_unlink": True}).status_code == 409
+        "explicit_unlink": True}).status_code == 422  # schema rejects a non-positive expected revision
     assert c.post(url, headers=HEAD, json={
         "booking_uid": BOOKING["uid"], "expected_revision": 1,
         "explicit_unlink": True}).status_code == 200
