@@ -133,7 +133,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,ui-sans-se
 /* Home appointment visibility: central Previous / Now / Next remains visible
    when the recent-encounter side rail collapses at split-window widths. */
 .cockpit-recent-sidebar .clinical-sidebar-heading{align-items:baseline}
-.cockpit-recent-count{color:#47877f;background:#edf5f3;border-radius:999px;padding:3px 7px;font-size:10px;font-weight:800;white-space:nowrap}
+.cockpit-recent-sidebar .clinical-sidebar-heading>span{color:#47877f;background:#edf5f3;border-radius:999px;padding:3px 7px;font-size:10px;font-weight:800;white-space:nowrap}
 .cockpit-recent-sidebar .clinical-patient-row{gap:6px;padding:10px 3px;align-items:flex-start}
 .cockpit-recent-sidebar .clinical-patient-row .clinical-row-time{min-width:24px}
 .cockpit-recent-sidebar .clinical-row-copy strong{font-size:12px}
