@@ -159,7 +159,8 @@
     $("visitBriefName").textContent=booking.patient_display_name||"Ραντεβού";
     $("visitBriefReason").textContent=booking.reason||"";
     $("visitBriefIdentity").textContent=
-      "Ανεξάρτητα επιβεβαιωμένος φάκελος για αυτό το άνοιγμα — χωρίς μόνιμο δικαίωμα αυτόματης προβολής.";
+      "Προστατευμένος φάκελος: "+(state.chosen?.name||"επιβεβαιωμένος ασθενής")+
+      ". Ανεξάρτητα επιβεβαιωμένος μόνο για αυτό το άνοιγμα — χωρίς μόνιμο δικαίωμα αυτόματης προβολής.";
     const visit=b.previous_visit;
     evidence("visitBriefPrevious",visit?
       [visit.date+" · "+(visit.reason||"Υπογεγραμμένη επίσκεψη")]
