@@ -17,6 +17,7 @@ CSS = "\n".join((ROOT / part).read_text(encoding="utf-8") for part in (
 ))
 JS = [(ROOT / part).read_text(encoding="utf-8") for part in (
     "static/cockpit/clinical-workspace.js",
+    "static/cockpit/visit-brief.js",
     "static/cockpit/app.js",
     "static/cockpit/doctor-shell.js",
     "static/cockpit/shared-nav.js",
