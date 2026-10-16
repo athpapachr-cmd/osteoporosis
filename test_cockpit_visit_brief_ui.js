@@ -72,7 +72,10 @@ const fetch=async(url,options)=>{
   assert.equal(options.cache,"no-store");
   const action=url.split("/").at(-1),body=JSON.parse(options.body);
   requests.push({action,body});
-  if(action==="read")return resp(await (readHandler?readHandler(body):bookingOnly(body.booking_uid,linked,linked?1:0)));
+  if(action==="read"){
+    const value=await (readHandler?readHandler(body):bookingOnly(body.booking_uid,linked,linked?1:0));
+    return value&&typeof value.ok==="boolean"?value:resp(value);
+  }
   if(action==="confirm")return resp(await (confirmHandler?confirmHandler(body):confirmed(body.booking_uid)));
   if(action==="unlink")return resp(await (unlinkHandler?unlinkHandler(body):{
     mode:"booking_only",reason:"unlinked",revision:2
