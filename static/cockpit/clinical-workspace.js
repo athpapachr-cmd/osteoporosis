@@ -84,7 +84,14 @@
          ?r.summary_excerpt.trim():r.visit_type&&r.visit_type!=="Κλινική επίσκεψη"
            ?r.visit_type:"Η σύντομη κλινική σύνοψη δεν είναι ακόμη διαθέσιμη";
        const context=[r.encounter_date,excerpt].filter(Boolean).join(" · ");
-       addRow(target,name,context,"↶",()=>open({kind:"recent",name,reason:context,patientId:r.patient_id}));
+       addRow(target,name,context,"↶",()=>{
+         // Selecting a recent encounter from the collapsed split-width rail
+         // should reveal the patient workspace instead of covering it.
+         document.body?.classList?.toggle("doctor-rail-open",false);
+         const railToggle=$("doctorRailToggle");
+         if(railToggle)railToggle.setAttribute("aria-expanded","false");
+         open({kind:"recent",name,reason:context,patientId:r.patient_id});
+       });
      });
    }catch(e){info(target,e.status===401?"Συνδέσου για να δεις τις κλινικές επισκέψεις.":"Οι πρόσφατες κλινικές επισκέψεις δεν είναι ακόμη διαθέσιμες.");}
  }

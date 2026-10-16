@@ -210,6 +210,11 @@ def browser_suite(width, screenshot_name):
             expect(page.locator("#visitSidebar")).to_be_hidden()
             page.locator("#doctorRailToggle").click()
             expect(page.locator("#visitSidebar")).to_be_visible()
+            page.locator("#visitRecentRows .clinical-patient-row").first.click()
+            expect(page.locator("#visitSidebar")).to_be_hidden()
+            expect(page.locator("#visitWorkspacePatient")).to_be_visible()
+            page.locator("#visitBackHome").click()
+            expect(page.locator("#visitSidebarNext")).to_be_visible()
         else:
             expect(page.locator("#visitSidebarPrevious")).to_be_disabled()
             expect(page.locator("#visitBriefOverlay")).to_be_hidden()
