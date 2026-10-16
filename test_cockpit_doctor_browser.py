@@ -82,6 +82,16 @@ def browser_suite(width, screenshot_name):
                 return route.fulfill(status=401, json={"detail": "Unauthorized"})
             if "/clinical/calendar/cockpit-context" in url:
                 return route.fulfill(json=CONTEXT)
+            if url.endswith("/clinical/calendar/visit-brief/read"):
+                assert route.request.method == "POST"
+                uid = route.request.post_data_json["booking_uid"]
+                return route.fulfill(status=200 if auth["authenticated"] else 401, json={
+                    "mode": "booking_only", "reason": "unlinked", "revision": 0,
+                    "linked": False, "booking": {"booking_uid": uid,
+                      "patient_display_name": "Ασθενής Δοκιμής Α",
+                      "reason": "Επανεξέταση", "clinic": "Limassol",
+                      "start_at": "2026-10-11T07:30:00Z"},
+                } if auth["authenticated"] else {"detail": "Unauthorized"})
             if "/clinical/recent-encounters" in url:
                 return route.fulfill(json=RECENT)
             if "/clinical/calendar/appointments?" in url:
