@@ -206,7 +206,8 @@ def browser_suite(width, screenshot_name):
         expect(page.locator("#visitBriefOverlay")).to_be_hidden()
         expect(page.locator("#visitPatientMatches .clinical-patient-row")).to_have_count(1)
         if width <= 990:
-            expect(page.locator("#visitSidebar")).to_be_visible()
+            expect(page.locator("#visitSidebar")).to_be_hidden()
+        # The full-registry search belongs to central Home, not the collapsed rail.
         page.locator("#visitPatientMatches .clinical-patient-row").first.click()
         expect(page.locator("#visitBookingConfirmation")).to_be_visible()
         if width <= 990:
