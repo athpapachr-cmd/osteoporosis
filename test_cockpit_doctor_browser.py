@@ -160,6 +160,17 @@ def browser_suite(width, screenshot_name):
         expect(page.locator("#doctorMainView")).to_be_visible()
         expect(page.locator("#doctorLibraryView")).to_be_hidden()
         expect(page.locator("#visitRecentRows .clinical-patient-row")).to_have_count(2)
+        # Split width must show appointments in primary Home, not hide them in ☰.
+        assert page.locator("#visitRecentRows").evaluate("(el) => el.closest('#visitSidebar') !== null")
+        assert page.locator("#visitSidebarNext").evaluate("(el) => el.closest('#visitWorkspaceHome') !== null")
+        for slot in ("Previous","Current","Next"):
+            expect(page.locator("#visitSidebar"+slot)).to_be_visible()
+        expect(page.locator("#nextAppointmentPatient")).to_contain_text("Ασθενής Δοκιμής Α")
+        if width <= 990:
+            expect(page.locator("#visitSidebar")).to_be_hidden()
+            expect(page.locator("#visitRecentRows")).to_be_hidden()
+        assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1"), "calendar swap horizontal overflow"
+
         expect(page.locator("#doctorAttentionList .doctor-action-row")).to_have_count(4)
         expect(page.locator("#doctorAttentionList")).to_contain_text("Συνθετικός Ασθενής Β")
         expect(page.locator("#doctorAttentionList")).to_contain_text("Αναμένουν απόφαση")
@@ -199,6 +210,11 @@ def browser_suite(width, screenshot_name):
             expect(page.locator("#visitSidebar")).to_be_hidden()
             page.locator("#doctorRailToggle").click()
             expect(page.locator("#visitSidebar")).to_be_visible()
+            page.locator("#visitRecentRows .clinical-patient-row").first.click()
+            expect(page.locator("#visitSidebar")).to_be_hidden()
+            expect(page.locator("#visitWorkspacePatient")).to_be_visible()
+            page.locator("#visitBackHome").click()
+            expect(page.locator("#visitSidebarNext")).to_be_visible()
         else:
             expect(page.locator("#visitSidebarPrevious")).to_be_disabled()
             expect(page.locator("#visitBriefOverlay")).to_be_hidden()

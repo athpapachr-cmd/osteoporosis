@@ -15,7 +15,7 @@
   <main class="shell">
     <header class="hero clinical-topbar doctor-topbar">
       <div class="doctor-brand">
-        <button id="doctorRailToggle" class="doctor-icon" type="button" aria-label="Εμφάνιση ημερήσιας λίστας" aria-expanded="false">☰</button>
+        <button id="doctorRailToggle" class="doctor-icon" type="button" aria-label="Εμφάνιση πρόσφατων επισκέψεων" aria-expanded="false">☰</button>
         <div>
           <p class="eyebrow">Clinical Excellence</p>
           <h1>Cockpit</h1>
@@ -39,35 +39,12 @@
 
     <div id="doctorMainView">
     <div class="clinical-home-layout">
-      <aside id="visitSidebar" class="clinical-sidebar" aria-label="Γρήγορη ημερήσια εικόνα">
+      <aside id="visitSidebar" class="clinical-sidebar cockpit-recent-sidebar" aria-label="Πρόσφατες επισκέψεις">
         <div class="clinical-sidebar-heading">
-          <h2 id="todayHeading">Η σημερινή εικόνα</h2>
-          <span id="calendarState" class="status-chip">Φόρτωση…</span>
+          <h2>Πρόσφατες επισκέψεις</h2><span>έως 3</span>
         </div>
-        <div class="today-context-strip" aria-label="Προηγούμενο, τωρινό και επόμενο ραντεβού">
-            <button id="visitSidebarPrevious" type="button" class="context-slot" aria-label="Σύνοψη: Προηγούμενο" aria-haspopup="dialog">
-              <span class="context-label">Προηγούμενο</span>
-              <strong id="previousAppointmentTime" class="context-time">—</strong>
-              <span id="previousAppointmentPatient" class="context-patient">Φόρτωση…</span>
-              <span id="previousAppointmentType" class="context-type"></span>
-            </button>
-            <button id="visitSidebarCurrent" type="button" class="context-slot current-slot" aria-label="Σύνοψη: Τώρα" aria-haspopup="dialog">
-              <span class="context-label">Τώρα</span>
-              <strong id="currentAppointmentTime" class="context-time">—</strong>
-              <span id="currentAppointmentPatient" class="context-patient">Φόρτωση…</span>
-              <span id="currentAppointmentType" class="context-type"></span>
-            </button>
-            <button id="visitSidebarNext" type="button" class="context-slot" aria-label="Σύνοψη: Επόμενο" aria-haspopup="dialog">
-              <span class="context-label">Επόμενο</span>
-              <strong id="nextAppointmentTime" class="context-time">—</strong>
-              <span id="nextAppointmentPatient" class="context-patient">Φόρτωση…</span>
-              <span id="nextAppointmentType" class="context-type"></span>
-            </button>
-          </div>
-        <p id="calendarNote" class="panel-note">Φορτώνεται το πρόγραμμα ραντεβού. Ενημερώνεται καθημερινά.</p>
-        <div class="clinical-calendar-actions">
-          <button type="button" id="cockpitCalendarRetry" class="clinical-calendar-retry" hidden>↻ Ανανέωση</button>
-          <a class="clinical-sidebar-link" href="/static/clinical-calendar/">Άνοιγμα εβδομαδιαίου ημερολογίου</a>
+        <div id="visitRecentRows" class="clinical-mini-list" aria-live="polite">
+          <p class="clinical-muted">Φόρτωση κλινικών επισκέψεων…</p>
         </div>
       </aside>
     <section id="clinicalWorkspace" class="clinical-workspace" aria-label="Κλινικές επισκέψεις">
@@ -80,12 +57,35 @@
           <div id="visitPatientMatches" class="clinical-search-results" hidden></div>
         </div>
         <div class="clinical-two-panels">
-          <section class="clinical-mini-panel">
+          <section class="clinical-mini-panel cockpit-appointment-panel" aria-label="Προηγούμενο, τωρινό και επόμενο ραντεβού">
             <div class="clinical-mini-title">
-              <h2>Πρόσφατες επισκέψεις</h2><span>έως 3</span>
+              <h2>Ραντεβού <small id="todayHeading">Σήμερα</small></h2>
+              <span id="calendarState" class="status-chip">Φόρτωση…</span>
             </div>
-            <div id="visitRecentRows" class="clinical-mini-list" aria-live="polite">
-              <p class="clinical-muted">Φόρτωση κλινικών επισκέψεων…</p>
+            <div class="today-context-strip">
+              <button id="visitSidebarPrevious" type="button" class="context-slot" aria-label="Σύνοψη: Προηγούμενο" aria-haspopup="dialog">
+                <span class="context-label">Προηγούμενο</span>
+                <strong id="previousAppointmentTime" class="context-time">—</strong>
+                <span id="previousAppointmentPatient" class="context-patient">Φόρτωση…</span>
+                <span id="previousAppointmentType" class="context-type"></span>
+              </button>
+              <button id="visitSidebarCurrent" type="button" class="context-slot current-slot" aria-label="Σύνοψη: Τώρα" aria-haspopup="dialog">
+                <span class="context-label">Τώρα</span>
+                <strong id="currentAppointmentTime" class="context-time">—</strong>
+                <span id="currentAppointmentPatient" class="context-patient">Φόρτωση…</span>
+                <span id="currentAppointmentType" class="context-type"></span>
+              </button>
+              <button id="visitSidebarNext" type="button" class="context-slot" aria-label="Σύνοψη: Επόμενο" aria-haspopup="dialog">
+                <span class="context-label">Επόμενο</span>
+                <strong id="nextAppointmentTime" class="context-time">—</strong>
+                <span id="nextAppointmentPatient" class="context-patient">Φόρτωση…</span>
+                <span id="nextAppointmentType" class="context-type"></span>
+              </button>
+            </div>
+            <p id="calendarNote" class="panel-note">Φορτώνεται το πρόγραμμα ραντεβού. Ενημερώνεται καθημερινά.</p>
+            <div class="clinical-calendar-actions">
+              <button type="button" id="cockpitCalendarRetry" class="clinical-calendar-retry" hidden>↻ Ανανέωση</button>
+              <a class="clinical-sidebar-link" href="/static/clinical-calendar/">Άνοιγμα εβδομαδιαίου ημερολογίου</a>
             </div>
           </section>
           <section class="clinical-mini-panel doctor-attention-panel">
@@ -97,7 +97,7 @@
             </div>
           </section>
         </div>
-        <p id="visitHomeNote" class="clinical-muted" role="status">Οι πρόσφατες επισκέψεις προέρχονται από το προστατευμένο μητρώο. Η ημερομηνία πάνω δεξιά δείχνει μέρος του προγράμματος· για όλες τις κρατήσεις άνοιξε από εκεί τη Γραμματεία.</p>
+        <p id="visitHomeNote" class="clinical-muted" role="status">Τα ραντεβού προέρχονται από τη διαθέσιμη προβολή της Γραμματείας, η οποία μπορεί να μην καλύπτει ολόκληρη την ημέρα. Η ημερομηνία πάνω δεξιά δείχνει μέρος του προγράμματος· για όλες τις κρατήσεις άνοιξε από εκεί τη Γραμματεία.</p>
       </div>
 
       <section id="visitWorkspacePatient" class="clinical-active-visit" hidden aria-label="Επιλεγμένη επίσκεψη">
