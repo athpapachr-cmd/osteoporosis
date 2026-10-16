@@ -1,5 +1,8 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
+> **2026-10-16 CORRECTED DESIGN FROZEN — ONE INDEPENDENT P1 CLOSURE REQUEST NEXT:** Design-bearing commit `199e37c28024391387546fb662350dbabc2b5c1b`, exact design blob `2015dd1db0e2fd7c12a26664be456da10c77f6d7`; P1-01 qualified same-attendee continuity or manual non-disclosing reconfirmation fallback, P1-02 strict pre-booking temporal provenance and date-gated selected-appointment checks, with UTC-naive `signed_at`. Original R2 BLOCK/P0:P1:P2=0:2:0 remains OPEN for independent closure. **Writer ACTIVE only for one request + final checkpoints**, no code/merge/deploy/provider/real data. Existing Home #160 & prior PASS untouched.
+
+
 > **2026-10-16 TWO-P1 DESIGN-ONLY CORRECTION / WRITER ACTIVE:** Product Owner authorized closure preparation for independent R2 **BLOCK 0:2:0** on Verified Appointment↔Patient + Visit Brief v1: P1-01 booking UID↔attendee continuity proof/fail-closed, P1-02 strict previous-encounter and `next_contact` chronology relative to selected booking. Design branch `design/cockpit-verified-appointment-visit-brief-v1-20261016`, original reviewed head `dbb55fa1bd5f85b312117da9b360e79a11a51e0b` / blob `7cfcdeb58b730ecd7da8441187ac3f2762a522a4`, remote main unchanged `4cf219e8f3f254caeb88134577af397afc229410`. Writer limited to design, targeted closure request, checkpoints. Prior reviews/Home #160 reused; no code/provider/PHI, merge/deploy, or self-certification. Next: correct design, freeze SHA, request one independent affected R2 closure.
 
 
