@@ -86,10 +86,15 @@ def read(client, uid=BOOKING["uid"]):
 
 
 def confirm(client, patient="P1", revision=0, uid=BOOKING["uid"], **extra):
+    # Observe the *actual* fresh booking snapshot before claiming verification.
+    response = read(client, uid)
+    seen = response.json().get("booking", {}) if response.status_code == 200 else {}
+    observation = extra.pop("observed_booking", seen.get("observation", "0" * 64))
     return client.post("/clinical/calendar/visit-brief/confirm", headers=HEAD,
                        json={"booking_uid": uid, "patient_id": patient,
                              "expected_revision": revision,
                              "independently_verified": True,
+                             "observed_booking": observation,
                              "evidence_type": "protected_chart_identifiers", **extra})
 
 
@@ -289,3 +294,19 @@ def test_revoke_requires_revision_and_stops_pending_history(monkeypatch):
             select(BookingPatientLinkAuditORM).order_by(
                 BookingPatientLinkAuditORM.revision)).all()]
         assert events == ["confirmed", "revoked", "reconfirmed"]
+
+
+
+def test_changed_booking_since_preview_requires_fresh_reconfirmation(monkeypatch):
+    c, engine = client(monkeypatch)
+    old = read(c).json()["booking"]["observation"]
+    changed = dict(BOOKING, patient_display_name="Different Synthetic Person")
+    set_source(monkeypatch, bookings=[changed])
+    response = confirm(c, observed_booking=old)
+    assert response.status_code == 409
+    assert "Booking changed since clinician preview" in response.text
+    with Session(engine) as db:
+        assert db.scalar(select(BookingPatientLinkORM)) is None
+    fresh = confirm(c)
+    assert fresh.status_code == 200
+    assert read(c).json()["reason"] == "needs_reconfirmation"
