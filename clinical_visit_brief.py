@@ -192,6 +192,7 @@ def _minimal_brief(session: Session, patient_id: str, booking) -> dict:
             EncounterORM.patient_id == patient_id,
             EncounterORM.status.in_(("completed", "amended")),
         ).order_by(EncounterORM.encounter_date.desc(), EncounterORM.id.asc())
+        .limit(100)
     ).all()
     for row in rows:
         clinical_day = _day(row.encounter_date)
