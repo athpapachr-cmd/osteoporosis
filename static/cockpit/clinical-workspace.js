@@ -166,10 +166,9 @@
    closeBrief();back();
    if(context)window.CockpitVisitBrief.activateSelection(context);
    state.appointment={kind:"appointment",name,reason,time,patientId:null};
-   // Search lives in the existing side rail; reveal it before focusing at 680/390.
-   const small=Boolean(window.matchMedia?.("(max-width: 990px)")?.matches);
-   document.body?.classList?.toggle("doctor-rail-open",small);
-   $("doctorRailToggle")?.setAttribute("aria-expanded",String(small));
+   // Home's full-registry search is central at every width; keep the rail closed.
+   document.body?.classList?.toggle("doctor-rail-open",false);
+   $("doctorRailToggle")?.setAttribute("aria-expanded","false");
    $("visitPatientSearch").value=name;$("visitPatientSearch").focus();search();
  }
  function parse(raw){
