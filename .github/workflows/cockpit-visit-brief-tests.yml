@@ -1,0 +1,57 @@
+name: Cockpit verified appointment Visit Brief
+
+on:
+  push:
+    paths:
+      - "clinical_visit_brief.py"
+      - "clinical_calendar.py"
+      - "static/cockpit/**"
+      - "test_clinical_visit_brief.py"
+      - "test_cockpit_visit_brief_ui.js"
+      - "test_cockpit_doctor_browser.py"
+      - ".github/workflows/cockpit-visit-brief-tests.yml"
+  pull_request:
+    paths:
+      - "clinical_visit_brief.py"
+      - "clinical_calendar.py"
+      - "static/cockpit/**"
+      - "test_clinical_visit_brief.py"
+      - "test_cockpit_visit_brief_ui.js"
+      - "test_cockpit_doctor_browser.py"
+      - ".github/workflows/cockpit-visit-brief-tests.yml"
+
+jobs:
+  visit-brief:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt pytest
+      - name: Syntax
+        run: |
+          python -m py_compile clinical_calendar.py clinical_visit_brief.py test_clinical_visit_brief.py
+          node --check static/cockpit/clinical-workspace.js
+          node --check static/cockpit/visit-brief.js
+          node --check test_cockpit_visit_brief_ui.js
+      - name: Exact-booking linkage and temporal evidence
+        run: pytest -q test_clinical_visit_brief.py test_clinical_calendar_snapshot.py test_visit_capture.py
+      - name: Actual controller synthetic UI and inherited Cockpit UX
+        run: |
+          node test_cockpit_visit_brief_ui.js
+          node test_cockpit_unified_home.js
+      - name: Chromium dependencies
+        run: |
+          pip install playwright
+          if ! command -v google-chrome && ! command -v chromium; then
+            python -m playwright install --with-deps chromium
+          fi
+      - name: Real Chromium booking-only/privacy and layout
+        run: python test_cockpit_doctor_browser.py
+      - name: Diff hygiene
+        run: git diff --check HEAD^ HEAD
