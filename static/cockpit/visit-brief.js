@@ -27,8 +27,20 @@
     }
     const list=document.createElement("ul");
     values.forEach(value=>{
-      if(!String(value||"").trim())return;
-      const li=document.createElement("li");li.textContent=String(value);list.append(li);
+      const sourceLabel={heidi_today:"Heidi",gesy_today:"ΓεΣΥ σήμερα",
+        gesy_previous:"ΓεΣΥ προηγούμενο",clinician_edit:"Ιατρική καταγραφή"};
+      let printed="";
+      if(value&&typeof value==="object"){
+        const p=(value.source_roles||[]).slice(0,3).map(x=>sourceLabel[x]||"Μη προσδιορισμένη πηγή");
+        const provenance=p.length?" · Πηγή: "+p.join(", "):"";
+        const uncertain=value.certainty&&value.certainty!=="certain"?
+          " · Βεβαιότητα: "+value.certainty:"";
+        const unverified=value.verification&&value.verification!=="clinician_confirmed"?
+          " · Καταγραφή από πηγή":"";
+        printed=String(value.text||"")+provenance+uncertain+unverified;
+      }else printed=String(value||"");
+      if(!printed.trim())return;
+      const li=document.createElement("li");li.textContent=printed;list.append(li);
     });
     el.append(list);
   }
@@ -155,8 +167,11 @@
       "Δεν επιβεβαιώνεται προηγούμενη κλινική καταγραφή πριν από αυτό το ραντεβού.");
     const plan=b.prior_plan;
     const acts={prescribed:"Συνταγογραφήθηκε",continued:"Συνεχίζεται",stopped:"Διακόπηκε"};
-    const medications=plan?(plan.medications||[]).map(m=>
-      (acts[m.action]||m.action)+": "+m.name+(m.dose?" · "+m.dose:"")):[];
+    const medications=plan?(plan.medications||[]).map(m=>({
+      text:(acts[m.action]||m.action)+": "+m.name+(m.dose?" · "+m.dose:""),
+      source_roles:m.source_roles||[],certainty:m.certainty,
+      verification:m.verification
+    })):[];
     evidence("visitBriefPlan",plan?(plan.decisions||[]).concat(medications):[],
       "Δεν υπάρχει τεκμηριωμένη προηγούμενη απόφαση ή αγωγή.");
     if(plan?.next_contact){
