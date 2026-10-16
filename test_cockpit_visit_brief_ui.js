@@ -117,12 +117,66 @@ const view=uid=>({uid,name:"Συνθετικός Ασθενής",time:"14:00",
   assert.equal(get("visitBriefPrevious").children[0].children[0].textContent.includes("Αξιολόγηση"),true);
   assert.equal(get("visitBriefChecks").children[0].children[0].textContent,"Έλεγχος κίνησης");
 
+  // P1: closing a confirmed brief must purge protected identity and clinical
+  // text even from hidden DOM nodes, not merely hide the overlay.
+  controller.closed();
+  for(const id of ["visitBriefName","visitBriefWhen","visitBriefReason",
+    "visitBriefFreshness","visitBriefIdentity","visitBookingContext",
+    "visitBookingConfirmStatus"])
+    assert.equal(get(id).textContent,"",id+" retained hidden patient data");
+  for(const id of ["visitBriefPrevious","visitBriefPlan","visitBriefPending","visitBriefChecks"])
+    assert.equal(get(id).children.length,0,id+" retained hidden clinical data");
+  assert.equal(get("visitBookingIndependentCheck").checked,false);
+  assert.equal(get("visitBookingCorrection").checked,false);
+  assert.equal(get("visitBookingConfirmation").hidden,true);
+  assert.equal(get("visitBriefOpenChart").hidden,true);
+
   // A subsequent same-UID read MUST NOT obtain a reusable patient grant.
   linked=true;
   await controller.open(view("UID-1"));
   assert.equal(get("visitBriefClinical").hidden,true);
   assert.match(get("visitBriefIdentity").textContent,/νέα ανεξάρτητη/);
   assert.equal(requests.filter(x=>x.action==="confirm").length,1);
+
+  // Logout clears the active context and all sensitive overlay DOM fields.
+  listeners["clinical:unauthenticated"]();
+  assert.equal(get("visitBriefOverlay").hidden,true);
+  assert.equal(get("visitBriefName").textContent,"");
+  assert.equal(get("visitBriefIdentity").textContent,"");
+  assert.equal(controller.selectionContext(),null);
+
+  // P2: previously revoked UID is unlinked but revisioned. Explicitly
+  // re-confirm a different protected chart, retaining correction flag + CAS.
+  readHandler=body=>bookingOnly(body.booking_uid,false,2);
+  await controller.open(view("UID-REVOKED"));
+  const revoked=controller.selectionContext();
+  assert.equal(revoked.revision,2);
+  assert.equal(revoked.linked,false);
+  controller.closed();controller.activateSelection(revoked);
+  controller.selectPatient({patientId:"P2",name:"Πρόσωπο P2"});
+  assert.equal(get("visitBookingCorrectionWrap").hidden,false);
+  get("visitBookingIndependentCheck").checked=true;
+  const beforeRevoked=requests.filter(x=>x.action==="confirm").length;
+  await get("visitConfirmBooking").fire("click");
+  assert.equal(requests.filter(x=>x.action==="confirm").length,beforeRevoked,
+    "revoked link must require explicit correction checkbox");
+  assert.match(get("visitBookingConfirmStatus").textContent,/ρητή επιβεβαίωση/);
+  get("visitBookingCorrection").checked=true;
+  confirmHandler=body=>{
+    assert.equal(body.booking_uid,"UID-REVOKED");
+    assert.equal(body.patient_id,"P2");
+    assert.equal(body.expected_revision,2);
+    assert.equal(body.independently_verified,true);
+    assert.equal(body.replace_existing,true);
+    const response=confirmed(body.booking_uid);
+    response.revision=3;response.brief.patient_id="P2";
+    return response;
+  };
+  await get("visitConfirmBooking").fire("click");
+  assert.equal(get("visitBriefClinical").hidden,false);
+  assert.match(get("visitBriefIdentity").textContent,/Πρόσωπο P2/);
+  controller.closed();
+  readHandler=null;confirmHandler=null;
 
   // UID A slow response cannot revive protected content after switching to B.
   let finishA;

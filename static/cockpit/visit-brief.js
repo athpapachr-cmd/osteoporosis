@@ -59,13 +59,23 @@
     state.ready=false;state.view=null;state.pending=null;state.chosen=null;
     state.revision=0;state.linked=false;state.inFlight=false;
     clearProtected();
+    // Hiding the overlay alone must not leave patient names or confirmation
+    // identifiers in the DOM after close, logout, re-login or context switch.
+    for(const id of ["visitBriefName","visitBriefWhen","visitBriefReason",
+      "visitBriefFreshness","visitBriefIdentity","visitBookingContext",
+      "visitBookingConfirmStatus"])$(id).textContent="";
+    $("visitBriefChecksTitle").textContent="Για το ραντεβού";
+    $("visitBookingIndependentCheck").checked=false;
+    $("visitBookingCorrection").checked=false;
+    $("visitBookingCorrectionWrap").hidden=true;
+    $("visitConfirmBooking").disabled=false;
+    $("visitBriefChoosePatient").hidden=true;
+    $("visitBriefChoosePatient").disabled=true;
     $("visitBookingConfirmation").hidden=true;
   }
   function closed(){
-    // The existing overlay owner handles hiding/focus; sensitive content dies here.
-    state.ticket++;
-    state.ready=false;state.view=null;state.patientId=null;
-    clearProtected();
+    // The overlay owner hides it/restores focus; purge pending/chosen identities.
+    invalidate();
   }
   function identityDenied(){
     invalidate();
@@ -145,7 +155,9 @@
     $("visitBookingConfirmation").hidden=false;
     $("visitBookingIndependentCheck").checked=false;
     $("visitBookingCorrection").checked=false;
-    $("visitBookingCorrectionWrap").hidden=!p.linked;
+    // Revoked links remain versioned: revision>0 is not a fresh/never-linked UID.
+    // The explicit correction checkbox must also be available after unlink.
+    $("visitBookingCorrectionWrap").hidden=!(p.linked||p.revision>0);
     $("visitBookingContext").textContent=
       "Ραντεβού "+p.time+" · "+p.name+" — επιλεγμένος φάκελος: "+row.name+
       ". Επιβεβαίωσε μόνο αφού ελέγξεις ανεξάρτητα τα στοιχεία ταυτότητας.";
@@ -211,6 +223,11 @@
         "Χρειάζεται ανεξάρτητη επαλήθευση του συγκεκριμένου προσώπου.";
       return;
     }
+    if(!p.linked&&p.revision>0&&!$("visitBookingCorrection").checked){
+      $("visitBookingConfirmStatus").textContent=
+        "Μετά την αποσύνδεση απαιτείται ρητή επιβεβαίωση νέας σύνδεσης.";
+      return;
+    }
     const ticket=++state.ticket;
     state.inFlight=true;$("visitConfirmBooking").disabled=true;
     $("visitBookingConfirmStatus").textContent="Επιβεβαίωση σύνδεσης…";
@@ -257,6 +274,13 @@
     if(!uid)return;
     const revision=state.revision,ticket=++state.ticket;
     clearProtected();
+    // After revocation, the previously selected protected patient must not
+    // remain as a usable pending confirmation or hidden context.
+    state.pending=null;state.chosen=null;
+    $("visitBookingContext").textContent="";
+    $("visitBookingIndependentCheck").checked=false;
+    $("visitBookingCorrection").checked=false;
+    $("visitBookingConfirmation").hidden=true;
     $("visitBriefChoosePatient").hidden=true;
     $("visitBriefIdentity").textContent="Αποσύνδεση…";
     try{

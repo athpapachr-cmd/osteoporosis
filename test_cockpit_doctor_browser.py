@@ -224,6 +224,14 @@ def browser_suite(width, screenshot_name):
         assert auth["confirmations"] == 1
         page.locator("#visitBriefClose").click()
         expect(page.locator("#visitBriefClinical")).to_be_hidden()
+        # P1: hidden DOM is not a privacy boundary, including at 390/680/1280.
+        for node in ("visitBriefName", "visitBriefWhen", "visitBriefReason",
+                     "visitBriefFreshness", "visitBriefIdentity", "visitBookingContext"):
+            assert page.locator("#" + node).text_content() == "", f"stale DOM {node}"
+        assert page.locator("#visitBriefPrevious").locator("*").count() == 0
+        assert page.locator("#visitBriefPlan").locator("*").count() == 0
+        assert not page.locator("#visitBookingIndependentCheck").is_checked()
+        expect(page.locator("#visitBookingConfirmation")).to_be_hidden()
         page.locator("#visitBackHome").click()
         page.locator("#visitSidebarNext").click()
         expect(page.locator("#visitBriefIdentity")).to_contain_text("νέα ανεξάρτητη επιβεβαίωση")

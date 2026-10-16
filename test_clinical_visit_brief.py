@@ -301,6 +301,44 @@ def test_revoke_requires_revision_and_stops_pending_history(monkeypatch):
 
 
 
+def test_revoked_link_explicit_patient_correction_uses_cas_and_audit(monkeypatch):
+    c, engine = client(monkeypatch)
+    assert confirm(c, patient="P1").status_code == 200
+    url = "/clinical/calendar/visit-brief/unlink"
+    revoked = c.post(url, headers=HEAD, json={
+        "booking_uid": BOOKING["uid"], "expected_revision": 1,
+        "explicit_unlink": True})
+    assert revoked.status_code == 200
+    assert revoked.json()["revision"] == 2
+
+    # A revoked row must remain booking-only, with a usable correction revision.
+    unlinked = read(c).json()
+    assert unlinked["mode"] == "booking_only"
+    assert unlinked["reason"] == "unlinked"
+    assert unlinked["revision"] == 2 and unlinked["linked"] is False
+    assert "patient_id" not in str(unlinked)
+
+    # No silent reassignment, and no stale CAS when changing P1 to P2.
+    assert confirm(c, patient="P2", revision=2).status_code == 409
+    assert confirm(c, patient="P2", revision=1, replace_existing=True).status_code == 409
+    changed = confirm(c, patient="P2", revision=2, replace_existing=True)
+    assert changed.status_code == 200
+    assert changed.json()["revision"] == 3
+    assert changed.json()["mode"] == "confirmed_once"
+    assert changed.json()["brief"]["patient_id"] == "P2"
+    assert read(c).json()["reason"] == "needs_reconfirmation"
+    with Session(engine) as db:
+        link = db.scalar(select(BookingPatientLinkORM))
+        assert link.patient_id == "P2"
+        assert link.revision == 3
+        assert link.state == "needs_reconfirmation"
+        events = db.scalars(
+            select(BookingPatientLinkAuditORM).order_by(
+                BookingPatientLinkAuditORM.revision)).all()
+        assert [(e.event, e.revision, e.patient_id) for e in events] == [
+            ("confirmed", 1, "P1"), ("revoked", 2, "P1"), ("corrected", 3, "P2")]
+
+
 def test_changed_booking_since_preview_requires_fresh_reconfirmation(monkeypatch):
     c, engine = client(monkeypatch)
     old = read(c).json()["booking"]["observation"]
