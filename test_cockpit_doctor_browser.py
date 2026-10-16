@@ -157,6 +157,14 @@ def browser_suite(width, screenshot_name):
         expect(key).to_have_value("")
         page.keyboard.press("Escape")
         expect(page.locator("#ceGlobalAccessPanel")).to_be_hidden()
+        # Actual v1 Visit Brief must open one click, booking-only until explicit
+        # independent chart verification. Chromium 1280/680/390; no patient prefetch.
+        page.locator("#visitSidebarNext").click()
+        expect(page.locator("#visitBriefOverlay")).to_be_visible()
+        expect(page.locator("#visitBriefIdentity")).to_contain_text("Δεν υπάρχει επιβεβαιωμένη σύνδεση")
+        expect(page.locator("#visitBriefClinical")).to_be_hidden()
+        page.locator("#visitBriefClose").click()
+        expect(page.locator("#visitBriefOverlay")).to_be_hidden()
         if width <= 620:
             expect(page.locator("#doctorAttentionList .doctor-action-row")).to_have_count(4)
             expect(page.locator("#doctorAttentionList")).to_contain_text("Συνθετικός Ασθενής Β")
