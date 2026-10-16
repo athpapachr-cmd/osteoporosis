@@ -111,6 +111,8 @@
        const meta=birthday?"Γέννηση: "+birthday:"Καταχωρισμένος φάκελος — επιβεβαίωσε τα στοιχεία πριν την επιλογή";
        addRow(box,name,meta,"↗",()=>{
          const prev=state.appointment;
+         document.body?.classList?.toggle("doctor-rail-open",false);
+         $("doctorRailToggle")?.setAttribute("aria-expanded","false");
          open({kind:"registry",name,reason:prev?prev.reason:meta,time:prev?prev.time:"",patientId:p.patient_id});
        });
      });
@@ -164,6 +166,10 @@
    closeBrief();back();
    if(context)window.CockpitVisitBrief.activateSelection(context);
    state.appointment={kind:"appointment",name,reason,time,patientId:null};
+   // Search lives in the existing side rail; reveal it before focusing at 680/390.
+   const small=Boolean(window.matchMedia?.("(max-width: 990px)")?.matches);
+   document.body?.classList?.toggle("doctor-rail-open",small);
+   $("doctorRailToggle")?.setAttribute("aria-expanded",String(small));
    $("visitPatientSearch").value=name;$("visitPatientSearch").focus();search();
  }
  function parse(raw){
