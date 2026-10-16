@@ -112,6 +112,7 @@ const view=uid=>({uid,name:"Συνθετικός Ασθενής",time:"14:00",
   assert.equal(requests.filter(x=>x.action==="confirm").length,1);
   assert.equal(requests.find(x=>x.action==="confirm").body.observed_booking,"a".repeat(64));
   assert.equal(get("visitBriefClinical").hidden,false);
+  assert.match(get("visitBriefIdentity").textContent,/Πρόσωπο P1/,"confirmed chart identity must remain visible");
   assert.equal(get("visitBriefOpenChart").hidden,false);
   assert.equal(get("visitBriefPrevious").children[0].children[0].textContent.includes("Αξιολόγηση"),true);
   assert.equal(get("visitBriefChecks").children[0].children[0].textContent,"Έλεγχος κίνησης");
