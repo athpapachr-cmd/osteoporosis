@@ -6,6 +6,8 @@ clinical read requires an independent explicit confirmation in that response onl
 """
 from __future__ import annotations
 
+import hashlib
+import hmac
 import os
 import re
 from datetime import date, datetime, timedelta, timezone
@@ -74,6 +76,7 @@ class ConfirmBooking(BookingIntent):
     independently_verified: Literal[True]
     evidence_type: Literal["protected_chart_identifiers"]
     replace_existing: bool = False
+    observed_booking: str = Field(min_length=64, max_length=64, pattern=r"^[0-9a-f]{64}$")
 
 
 class UnlinkBooking(BookingIntent):
@@ -118,8 +121,19 @@ def _facts(items: object, count: int = 4) -> list[str]:
             for item in items[:count] if _text(getattr(item, "text", ""), 300)]
 
 
+def _booking_observation(booking) -> str:
+    """Only detects visible source drift; NEVER proves attendee/person continuity."""
+    secret = os.environ.get("CLINICAL_DATA_KEY", "")
+    details = "\x1f".join([
+        booking.uid, booking.start_at.isoformat(), booking.end_at.isoformat(),
+        booking.clinic, booking.patient_display_name, booking.reason,
+    ])
+    return hmac.new(secret.encode(), details.encode(), hashlib.sha256).hexdigest()
+
+
 def _booking_card(booking) -> dict:
     return {
+        "observation": _booking_observation(booking),
         "booking_uid": booking.uid,
         "start_at": booking.start_at.isoformat(),
         "clinic": _text(booking.clinic, 80),
@@ -340,6 +354,8 @@ def attach_visit_brief_routes(
         if not _enabled():
             raise HTTPException(503, "Booking-patient linkage not enabled")
         booking = await _fresh_booking(req.booking_uid)
+        if not hmac.compare_digest(_booking_observation(booking), req.observed_booking):
+            raise HTTPException(409, "Booking changed since clinician preview")
         stamp = _utcnow().replace(tzinfo=None)
         with Session(engine) as session:
             if session.get(PatientORM, req.patient_id) is None:
