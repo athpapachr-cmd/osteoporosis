@@ -62,7 +62,7 @@ CONTEXT = {
 def browser_suite(width, screenshot_name):
     errors = []
     outbound = []
-    auth = {"authenticated": False}
+    auth = {"authenticated": False, "linked": False, "confirmations": 0}
     with sync_playwright() as pw:
         executable = shutil.which("google-chrome") or shutil.which("chromium")
         browser = pw.chromium.launch(headless=True, executable_path=executable, args=["--no-sandbox"])
@@ -86,12 +86,51 @@ def browser_suite(width, screenshot_name):
                 assert route.request.method == "POST"
                 uid = route.request.post_data_json["booking_uid"]
                 return route.fulfill(status=200 if auth["authenticated"] else 401, json={
-                    "mode": "booking_only", "reason": "unlinked", "revision": 0,
-                    "linked": False, "booking": {"booking_uid": uid,
+                    "mode": "booking_only",
+                    "reason": "needs_reconfirmation" if auth["linked"] else "unlinked",
+                    "revision": 1 if auth["linked"] else 0,
+                    "linked": auth["linked"], "booking": {"booking_uid": uid,
+                      "observation": "a" * 64,
                       "patient_display_name": "Ασθενής Δοκιμής Α",
                       "reason": "Επανεξέταση", "clinic": "Limassol",
                       "start_at": "2026-10-11T07:30:00Z"},
                 } if auth["authenticated"] else {"detail": "Unauthorized"})
+            if "/clinical/patients?query=" in url:
+                return route.fulfill(status=200 if auth["authenticated"] else 401,
+                    json=[{"patient_id": "SYN-BRIEF",
+                      "demographics": {"full_name": "Ασθενής Δοκιμής Α",
+                                       "date_of_birth": "1980-01-01"}}]
+                    if auth["authenticated"] else {"detail": "Unauthorized"})
+            if url.endswith("/clinical/calendar/visit-brief/confirm"):
+                assert route.request.method == "POST"
+                data = route.request.post_data_json
+                assert data["patient_id"] == "SYN-BRIEF"
+                assert data["independently_verified"] is True
+                assert data["observed_booking"] == "a" * 64
+                assert data["expected_revision"] == (1 if auth["linked"] else 0)
+                auth["linked"] = True
+                auth["confirmations"] += 1
+                return route.fulfill(status=200, json={
+                    "mode": "confirmed_once", "revision": auth["confirmations"],
+                    "booking": {
+                      "booking_uid": data["booking_uid"],
+                      "patient_display_name": "Ασθενής Δοκιμής Α",
+                      "reason": "Επανεξέταση", "clinic": "Limassol",
+                      "start_at": "2026-10-11T07:30:00Z"},
+                    "brief": {"patient_id": "SYN-BRIEF", "check_heading": "Για το ραντεβού 2026-10-11",
+                      "previous_visit": {"date": "2026-10-10",
+                        "reason": "Προηγούμενη υπογεγραμμένη επίσκεψη",
+                        "findings": ["Προηγούμενο εύρημα"]},
+                      "prior_plan": {"decisions": ["Κλινικός επανέλεγχος"],
+                         "medications": [], "next_contact": {
+                           "when": "2026-10-11", "purpose": "Επανεξέταση"}},
+                      "historical_plan": None,
+                      "pending": [{"description": "Εργαστηριακά",
+                          "status": "awaiting_result", "review_date": "2026-10-11"}],
+                      "appointment_checks": [{"text": "Επανεξέταση",
+                          "kind": "previous_next_contact"}],
+                      "partial": False}
+                })
             if "/clinical/recent-encounters" in url:
                 return route.fulfill(json=RECENT)
             if "/clinical/calendar/appointments?" in url:
@@ -157,12 +196,38 @@ def browser_suite(width, screenshot_name):
         expect(key).to_have_value("")
         page.keyboard.press("Escape")
         expect(page.locator("#ceGlobalAccessPanel")).to_be_hidden()
-        # Actual v1 Visit Brief must open one click, booking-only until explicit
-        # independent chart verification. Chromium 1280/680/390; no patient prefetch.
+        # End-to-end source-only → protected registry → independently checked
+        # explicit confirmation → brief → reopen booking-only, at all 3 widths.
         page.locator("#visitSidebarNext").click()
         expect(page.locator("#visitBriefOverlay")).to_be_visible()
         expect(page.locator("#visitBriefIdentity")).to_contain_text("Δεν υπάρχει επιβεβαιωμένη σύνδεση")
         expect(page.locator("#visitBriefClinical")).to_be_hidden()
+        page.locator("#visitBriefChoosePatient").click()
+        expect(page.locator("#visitBriefOverlay")).to_be_hidden()
+        expect(page.locator("#visitPatientMatches .clinical-patient-row")).to_have_count(1)
+        if width <= 990:
+            expect(page.locator("#visitSidebar")).to_be_visible()
+        page.locator("#visitPatientMatches .clinical-patient-row").first.click()
+        expect(page.locator("#visitBookingConfirmation")).to_be_visible()
+        if width <= 990:
+            expect(page.locator("#visitSidebar")).to_be_hidden()
+        page.locator("#visitConfirmBooking").click()
+        expect(page.locator("#visitBookingConfirmStatus")).to_contain_text("Χρειάζεται ανεξάρτητη")
+        assert auth["confirmations"] == 0
+        page.locator("#visitBookingIndependentCheck").check()
+        page.locator("#visitConfirmBooking").click()
+        expect(page.locator("#visitBriefOverlay")).to_be_visible()
+        expect(page.locator("#visitBriefClinical")).to_be_visible()
+        expect(page.locator("#visitBriefPrevious")).to_contain_text("Προηγούμενη υπογεγραμμένη")
+        expect(page.locator("#visitBriefChecks")).to_contain_text("Επανεξέταση")
+        assert auth["confirmations"] == 1
+        page.locator("#visitBriefClose").click()
+        expect(page.locator("#visitBriefClinical")).to_be_hidden()
+        page.locator("#visitBackHome").click()
+        page.locator("#visitSidebarNext").click()
+        expect(page.locator("#visitBriefIdentity")).to_contain_text("νέα ανεξάρτητη επιβεβαίωση")
+        expect(page.locator("#visitBriefClinical")).to_be_hidden()
+        assert auth["confirmations"] == 1
         page.locator("#visitBriefClose").click()
         expect(page.locator("#visitBriefOverlay")).to_be_hidden()
         if width <= 620:
