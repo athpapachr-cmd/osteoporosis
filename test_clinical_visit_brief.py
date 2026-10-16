@@ -251,7 +251,11 @@ def test_selected_booking_start_same_day_future_backfill_amendment_dst(monkeypat
     response = confirm(c).json()["brief"]
     assert response["previous_visit"]["source_encounter_id"] == "same-day"
     assert response["previous_visit"]["signed_at"] == "2026-10-16T10:00:00+00:00"
-    assert response["prior_plan"]["decisions"] == ["Επανέλεγχος συμπτωμάτων"]
+    decision = response["prior_plan"]["decisions"][0]
+    assert decision["text"] == "Επανέλεγχος συμπτωμάτων"
+    assert decision["verification"] == "source_stated"
+    assert decision["certainty"] == "certain"
+    assert decision["source_roles"] == ["clinician_edit"]
     assert response["check_heading"] == "Σήμερα"
     assert len(response["pending"]) == 3
     assert sum(x["kind"] == "pending_status_check" for x in response["appointment_checks"]) == 1
