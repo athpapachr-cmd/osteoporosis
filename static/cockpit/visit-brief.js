@@ -194,6 +194,7 @@
       if(data.mode!=="confirmed_once"||data.brief?.patient_id!==chosen.id||
          data.booking?.booking_uid!==p.uid)throw Error("Invalid confirmation result");
       state.pending=null;
+      state.view={uid:p.uid,name:p.name,reason:p.reason,time:p.time};
       $("visitBookingConfirmation").hidden=true;
       $("visitBriefWhen").textContent=p.time;
       $("visitBriefFreshness").textContent=
