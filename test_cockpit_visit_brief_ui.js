@@ -43,7 +43,7 @@ const win={
 const resp=data=>({ok:true,status:200,json:async()=>data});
 const reject=status=>({ok:false,status});
 const booking=uid=>({
-  booking_uid:uid,patient_display_name:"Συνθετικός Ασθενής",
+  booking_uid:uid,observation:"a".repeat(64),patient_display_name:"Συνθετικός Ασθενής",
   start_at:"2026-10-16T14:00:00+03:00",clinic:"Limassol",reason:"Επανεξέταση"
 });
 const bookingOnly=(uid,linked=false,revision=0)=>({
@@ -110,6 +110,7 @@ const view=uid=>({uid,name:"Συνθετικός Ασθενής",time:"14:00",
   get("visitBookingIndependentCheck").checked=true;
   await get("visitConfirmBooking").fire("click");
   assert.equal(requests.filter(x=>x.action==="confirm").length,1);
+  assert.equal(requests.find(x=>x.action==="confirm").body.observed_booking,"a".repeat(64));
   assert.equal(get("visitBriefClinical").hidden,false);
   assert.equal(get("visitBriefOpenChart").hidden,false);
   assert.equal(get("visitBriefPrevious").children[0].children[0].textContent.includes("Αξιολόγηση"),true);
