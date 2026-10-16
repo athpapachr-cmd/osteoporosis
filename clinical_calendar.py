@@ -851,4 +851,8 @@ def build_clinical_calendar_router(engine: Engine) -> APIRouter:
             removed_missing=removed_missing,
         )
 
+    # Extend this existing protected Calendar owner; no second schedule engine.
+    from clinical_visit_brief import attach_visit_brief_routes
+    attach_visit_brief_routes(router, engine, protected)
+
     return router
