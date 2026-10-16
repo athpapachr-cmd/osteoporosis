@@ -6,6 +6,20 @@ const html=fs.readFileSync("static/cockpit/index.html","utf8");
 const source=fs.readFileSync("static/cockpit/clinical-workspace.js","utf8");
 assert.match(html,/id="clinicalWorkspace"/);
 assert.match(html,/id="visitRecentRows"/);
+const sidebarStart=html.indexOf('<aside id="visitSidebar"');
+const sidebarEnd=html.indexOf('</aside>',sidebarStart);
+const centralStart=html.indexOf('<div id="visitWorkspaceHome">');
+const centralEnd=html.indexOf('</div>',html.indexOf('id="doctorAttentionList"'));
+assert.ok(sidebarStart>=0 && sidebarEnd>sidebarStart && centralStart>sidebarEnd);
+assert.ok(html.indexOf('id="visitRecentRows"')>sidebarStart && html.indexOf('id="visitRecentRows"')<sidebarEnd,
+  "three recent encounters belong in the side rail");
+for(const id of ["visitSidebarPrevious","visitSidebarCurrent","visitSidebarNext","calendarNote","calendarState"]){
+  assert.ok(html.indexOf('id="'+id+'"')>centralStart && html.indexOf('id="'+id+'"')<centralEnd,
+    id+" must stay in the central primary view even at split width");
+}
+assert.ok(html.indexOf('id="visitSidebarNext"')<html.indexOf('id="doctorAttentionList"'),
+  "appointment cards lead the main content");
+
 assert.match(html,/<h2>Πρόσφατες επισκέψεις<\/h2><span>έως 3<\/span>/);
 assert.match(html,/id="doctorAttentionList"/);
 assert.match(html,/id="doctorDateButton"/);
