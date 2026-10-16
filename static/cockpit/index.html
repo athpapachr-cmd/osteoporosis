@@ -112,6 +112,18 @@
         </div>
         <div id="visitIdentityNote" class="clinical-identity-note" role="status"></div>
         <button id="visitChoosePatient" type="button" class="clinical-link-button" hidden>Επιλογή κλινικού φακέλου</button>
+        <section id="visitBookingConfirmation" class="clinical-booking-confirm" hidden aria-label="Επιβεβαίωση σύνδεσης ραντεβού">
+          <p id="visitBookingContext" class="clinical-muted"></p>
+          <label class="clinical-booking-check"><input id="visitBookingIndependentCheck" type="checkbox" />
+            Έλεγξα ανεξάρτητα τα στοιχεία αυτού του προσώπου στον προστατευμένο φάκελο. Το όνομα ή το UID του ραντεβού δεν αρκούν.
+          </label>
+          <label id="visitBookingCorrectionWrap" class="clinical-booking-check" hidden>
+            <input id="visitBookingCorrection" type="checkbox" />
+            Επιβεβαιώνω ρητά την αντικατάσταση τυχόν προηγούμενης σύνδεσης του ίδιου ραντεβού.
+          </label>
+          <button id="visitConfirmBooking" type="button" class="clinical-primary">Επιβεβαίωση σύνδεσης</button>
+          <p id="visitBookingConfirmStatus" role="status" class="clinical-muted"></p>
+        </section>
         <div class="clinical-visit-actions">
           <button id="visitDiaOpen" type="button" class="clinical-primary">Σύνοψη από το Dia</button>
           <span class="clinical-muted">Η οριστική αποθήκευση της σύνοψης θα συνδεθεί με την υπάρχουσα προστατευμένη καταγραφή σε επόμενο, ελεγμένο βήμα.</span>
@@ -177,10 +189,22 @@ ENCOUNTER DETAIL
         <h2 id="visitBriefName"></h2>
         <p id="visitBriefWhen" class="clinical-brief-when"></p>
         <p id="visitBriefReason" class="clinical-muted"></p>
-        <p id="visitBriefIdentity" class="clinical-identity-note"></p>
+        <p id="visitBriefIdentity" class="clinical-identity-note" role="status"></p>
+        <section id="visitBriefClinical" class="clinical-brief-sections" hidden>
+          <h3>Προηγούμενη επιβεβαιωμένη επίσκεψη</h3>
+          <div id="visitBriefPrevious"></div>
+          <h3>Προηγούμενη απόφαση και σχέδιο</h3>
+          <div id="visitBriefPlan"></div>
+          <h3>Καταγεγραμμένες εκκρεμότητες</h3>
+          <div id="visitBriefPending"></div>
+          <h3 id="visitBriefChecksTitle">Για το ραντεβού</h3>
+          <div id="visitBriefChecks"></div>
+        </section>
         <p class="clinical-muted">Πλήρης κλινική σύνοψη και προηγούμενο σχέδιο εμφανίζονται μόνο μετά από επιβεβαιωμένη σύνδεση με τον προστατευμένο φάκελο.</p>
         <p id="visitBriefFreshness" class="clinical-muted"></p>
         <button id="visitBriefChoosePatient" type="button" class="clinical-primary">Επιλογή κλινικού φακέλου</button>
+        <button id="visitBriefOpenChart" type="button" class="clinical-primary" hidden>Κλινικός φάκελος</button>
+        <button id="visitBriefUnlink" type="button" class="clinical-secondary" hidden>Αποσύνδεση ραντεβού</button>
       </section>
     </div>
     </div>
