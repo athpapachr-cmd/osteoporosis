@@ -306,10 +306,12 @@
      }
    };
  }
- if (typeof window !== "undefined" && typeof window.addEventListener === "function") window.addEventListener("clinical:unauthenticated",purgeProtectedWorkspace);
- window.addEventListener("clinical:authenticated",()=>{
-   purgeProtectedWorkspace();
-   recent();
- });
+ if (typeof window !== "undefined" && typeof window.addEventListener === "function") if(typeof window!=="undefined"&&typeof window.addEventListener==="function"){
+   window.addEventListener("clinical:unauthenticated",purgeProtectedWorkspace);
+   window.addEventListener("clinical:authenticated",()=>{
+     purgeProtectedWorkspace();
+     recent();
+   });
+ }
  recent();
 })();
