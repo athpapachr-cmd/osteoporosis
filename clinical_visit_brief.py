@@ -194,7 +194,13 @@ def _booking_card(booking) -> dict:
 
 def _enabled() -> bool:
     # OFF by default until clinical retention, identifiable-data and release gates.
-    return os.environ.get("CLINICAL_VISIT_BRIEF_LINKS_ENABLED", "").strip() == "1"
+    return all(os.environ.get(setting, "").strip() == "1" for setting in (
+        "CLINICAL_VISIT_BRIEF_LINKS_ENABLED",
+        "COCKPIT_STAFF_AUTH_ENABLED",
+        "COCKPIT_VISIT_BRIEF_PRIVATE_STORAGE_QUALIFIED",
+        "COCKPIT_VISIT_BRIEF_LINK_RETENTION_APPROVED",
+        "COCKPIT_VISIT_BRIEF_AUDIT_RETENTION_APPROVED",
+    ))
 
 
 async def _fresh_booking(uid: str):
