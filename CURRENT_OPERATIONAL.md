@@ -1,5 +1,8 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / repo-wide writer lock
 
+> **2026-10-18 CP1 #172 MERGED / DEPLOY NEXT:** Squash `e5910a485cb0aeb61bf6dcff7408b9a5d35397e5` merged 22:10 UTC / 01:10 Cyprus. Final head `f49959e` canonical guard `39073887605` SUCCESS; runtime evidence unchanged from `6ca35bd`. Local durable checkpoint before observing native auto-deploy; publish with final live result to avoid duplicate deploys. Next existing Render LIVE identity then one finite real-provider/two-browser synthetic proof. Not yet deployed or PO accepted.
+
+
 > **2026-10-18 CP1 AFFECTED CI PASS / RELEASE NEXT:** Final runtime `6ca35bd53296c151b917b1b810aaaae00d657c69` adds only stale-preview edit guard, independently PASS; 4 CP1 regressions PASS. GitHub Visit Capture `39073780816`, Home `39073780832`, Visit Brief `39073780810` and canonical guard `39073780808` SUCCESS. Unrelated Clinical Learning L0 design-only allowlist fails on non-L0 files (same known scope mismatch); no L0 mutation. Next authorized #172 squash merge/native Render deployment, then finite existing-key live proof from verification-only `e676c5e` (never merge). CP1 not deployed/accepted yet.
 
 
