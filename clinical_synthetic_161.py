@@ -24,7 +24,7 @@ from clinical_data import (
 )
 from clinical_staff_auth import StaffActor
 from clinical_visit_brief import (attach_visit_brief_routes, BookingIntent,
-                                  _minimal_brief, _booking_card, _record_access)
+                                  _minimal_brief, _booking_card, _record_access, VisitBriefStaffAuditORM)
 
 PREFIX = "/clinical/synthetic-161"
 SCENARIO = "cockpit-161-v1"
@@ -147,9 +147,26 @@ class PendingChange(BaseModel):
     expected_updated_at: datetime
 
 
-def _pending_view(p):
+def _pending_view(p, db):
+    source = db.get(EncounterORM, p.source_encounter_id)
+    if (p.id != p.patient_id + "-pending" or not source or source.patient_id != p.patient_id
+            or source.payload_json.get("_visit_capture_v1", {}).get("synthetic_scenario") != SCENARIO):
+        raise HTTPException(409, "Unexpected pending source")
+    # The fixture has exactly one pending row per patient. Existing synthetic
+    # status audit therefore identifies this obligation without another store.
+    events = [{"id": p.id + "-created", "kind": "created", "at": p.created_at.isoformat()}]
+    for event in db.scalars(select(VisitBriefStaffAuditORM).where(
+        VisitBriefStaffAuditORM.patient_id == p.patient_id,
+        VisitBriefStaffAuditORM.principal_id == "synthetic-key-test",
+        VisitBriefStaffAuditORM.event.in_(("synthetic_pending_resolved", "synthetic_pending_awaiting_patient")),
+        VisitBriefStaffAuditORM.outcome == "allowed",
+    ).order_by(VisitBriefStaffAuditORM.occurred_at, VisitBriefStaffAuditORM.id)):
+        events.append({"id": event.id, "kind": "received" if event.event.endswith("_resolved") else "reopened",
+                       "at": event.occurred_at.isoformat()})
     return {"pending_id": p.id, "description": p.description, "status": p.status,
-            "updated_at": p.updated_at.isoformat(), "source_encounter_id": p.source_encounter_id}
+            "created_at": p.created_at.isoformat(), "updated_at": p.updated_at.isoformat(),
+            "source_encounter_id": p.source_encounter_id, "source_date": source.encounter_date,
+            "history": events}
 
 
 def build_synthetic_161_router(engine):
@@ -209,7 +226,7 @@ def build_synthetic_161_router(engine):
             patient_id = SYNTHETIC_161_PATIENT_IDS[BOOKINGS.index(req.booking_uid)]
             patient = _test_patient(db, patient_id)
             brief = _minimal_brief(db, patient_id, actual)
-            brief["pending"] = [_pending_view(p) for p in db.scalars(
+            brief["pending"] = [_pending_view(p, db) for p in db.scalars(
                 select(ClinicalPendingORM).where(ClinicalPendingORM.patient_id == patient_id))]
             _record_access(db, actor, req.booking_uid, "synthetic_brief_read", "allowed", patient_id)
             db.commit()
@@ -238,7 +255,7 @@ def build_synthetic_161_router(engine):
                            "synthetic_pending_" + req.status, "allowed", patient_id)
             db.commit()
             db.refresh(row)
-            return _pending_view(row)
+            return _pending_view(row, db)
 
     @router.get("/staff-session", dependencies=protected)
     def test_session():
@@ -276,6 +293,20 @@ def build_synthetic_161_router(engine):
                                     "encounter_date": visit.encounter_date, "visit_type": "Συνθετική προηγούμενη επίσκεψη"})
             return results
 
+    @router.get("/clinical-updates", dependencies=protected)
+    def clinical_updates():
+        with Session(engine) as db:
+            items = []
+            for patient_id in SYNTHETIC_161_PATIENT_IDS:
+                patient = _test_patient(db, patient_id)
+                for pending in db.scalars(select(ClinicalPendingORM).where(
+                        ClinicalPendingORM.patient_id == patient_id)):
+                    items.append({**_pending_view(pending, db), "patient_id": patient_id,
+                                  "patient_name": patient.demographics_json["full_name"]})
+            items.sort(key=lambda p: (p["updated_at"], p["pending_id"]), reverse=True)
+            return {"items": items, "open_count": sum(p["status"] in
+                    ("open", "awaiting_patient", "awaiting_result") for p in items)}
+
     @router.get("/patient/{patient_id}/chart", dependencies=protected)
     def chart(patient_id: str):
         with Session(engine) as db:
@@ -291,10 +322,11 @@ def build_synthetic_161_router(engine):
                 candidate = VisitCaptureCandidateV1.model_validate(signed["candidate"])
                 snapshot, brief, detail = _render_visit_capture(candidate)
                 history.append({"encounter_id": row.id, "date": row.encounter_date,
-                                "snapshot": snapshot, "brief": brief, "detail": detail})
+                                "snapshot": snapshot, "brief": brief, "detail": detail,
+                                "clinical": candidate.model_dump(mode="json")})
             return {"patient_id": patient_id, "demographics": patient.demographics_json,
                     "visits": history, "pending": [
-                        _pending_view(p) for p in pending]}
+                        _pending_view(p, db) for p in pending]}
 
     scoped = APIRouter(prefix="/calendar")
     attach_visit_brief_routes(

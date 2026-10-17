@@ -172,3 +172,30 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,ui-sans-se
 #synthetic161Chart details {padding:8px 0;}
 #synthetic161Chart summary {cursor:pointer; font-weight:600; color:#334155;}
 #synthetic161Chart details p {line-height:1.7; font-family:inherit; color:#475569;}
+
+/* Patient continuity: one overview, one obligation owner, chronological events. */
+.patient-chart-heading {margin:20px 0;}
+.patient-chart-heading h2 {font-size:1.5rem;margin:0 0 6px;}
+.patient-chart-heading p {color:#64748b;margin:0;}
+.patient-chart-grid {display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:20px;}
+.patient-chart-card {padding:22px;background:white;border:1px solid #e2e8f0;border-radius:16px;min-width:0;}
+.patient-chart-card h3,.patient-timeline h3 {margin:0 0 16px;font-size:1.15rem;}
+.patient-chart-card h4,.patient-visit-body h4 {margin:18px 0 6px;font-size:.9rem;color:#526879;}
+.patient-chart-card ul,.patient-visit-body ul {padding-left:20px;margin:6px 0;line-height:1.6;}
+.patient-chart-card > p {font-size:.85rem;color:#64748b;}
+.synthetic-pending-row .clinical-source-link {display:block;border:0;background:none;padding:4px 0;text-align:left;font-size:.8rem;color:#0f766e;line-height:1.5;}
+.patient-timeline {margin-top:28px;}
+#synthetic161Chart .patient-visit {background:white;border:1px solid #e2e8f0;border-radius:14px;padding:0;margin:14px 0;scroll-margin-top:80px;}
+.patient-visit > summary {padding:20px;display:grid;gap:7px;list-style:none;}
+.patient-visit > summary::after {content:"Προβολή επίσκεψης ›";font-size:.8rem;color:#0f766e;}
+.patient-visit[open] > summary::after {content:"Σύμπτυξη επίσκεψης";}
+.patient-visit > summary > span {font-size:.85rem;color:#64748b;}
+.patient-visit > summary > small {font-weight:400;color:#0f766e;line-height:1.5;}
+.patient-visit-body {padding:0 20px 20px;border-top:1px solid #f1f5f9;}
+.patient-obligation-origin {margin-top:20px;padding:16px;border-left:3px solid #0f766e;background:#f0fdfa;border-radius:8px;}
+.patient-obligation-origin p {font-size:.85rem;line-height:1.6;}
+#synthetic161Chart .patient-timeline-event {margin:12px 0 12px 12px;border:0;border-left:2px solid #cbd5e1;border-radius:0;padding:8px 20px;background:transparent;}
+.patient-timeline-event h4 {margin:6px 0;}
+.patient-timeline-event p {margin:0;line-height:1.5;}
+.patient-timeline-event small {color:#64748b;}
+@media(max-width:780px){.patient-chart-grid{grid-template-columns:1fr;}.patient-chart-card{padding:18px;}}

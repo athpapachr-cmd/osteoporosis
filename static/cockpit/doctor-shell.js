@@ -148,10 +148,22 @@
     }
   }
   function inbox() {
+    if(window.CockpitSynthetic && window.CockpitStoredChart){
+      const ticket=state.request;
+      $("doctorPopoverTitle").textContent="Κλινικές ενημερώσεις";
+      window.CockpitStoredChart.renderUpdates(content,()=>state.panel==="inbox"&&ticket===state.request,close);
+      return;
+    }
     content.append(text("Δεν έχει συνδεθεί ακόμη το Clinical Inbox με το Cockpit. Δεν υπάρχει αξιόπιστη μέτρηση νέων κλινικών μηνυμάτων, συνεπώς δεν εμφανίζεται αριθμός."));
     content.append(newLink("Άνοιγμα Gmail","https://mail.google.com/","Έλεγχος μηνυμάτων απευθείας στο Gmail"));
   }
   function tasks() {
+    if(window.CockpitSynthetic && window.CockpitStoredChart){
+      const ticket=state.request;
+      $("doctorPopoverTitle").textContent="Υποχρεώσεις ασθενών";
+      window.CockpitStoredChart.renderUpdates(content,()=>state.panel==="tasks"&&ticket===state.request,close);
+      return;
+    }
     content.replaceChildren();
     const s=state.surgeries;
     content.append(sectionTitle("Κλινική εργασία"));
@@ -288,12 +300,14 @@
     target.append(newLink("Ιατρικές εκθέσεις", "/clinical/clinic-utilities/medical-report",
       "Δεν υπάρχει ακόμη αξιόπιστη καταμέτρηση."));
     target.append(action("Κλινικές ενημερώσεις",
-      "Η σύνδεση με το Clinical Inbox εκκρεμεί",
+      window.CockpitSynthetic?"Υποχρεώσεις και εξέλιξη ασθενών":"Η σύνδεση με το Clinical Inbox εκκρεμεί",
       () => openPanel("inbox", buttons.inbox)));
   }
 
     buttons.day.addEventListener("click",()=>openPanel("day",buttons.day));
   buttons.inbox.addEventListener("click",()=>openPanel("inbox",buttons.inbox));
+  window.addEventListener("cockpit:clinical-updates-changed",()=>{if(state.panel==="inbox")inbox();else if(state.panel==="tasks")tasks();});
+  window.addEventListener("clinical:unauthenticated",()=>{if(window.CockpitSynthetic)close();});
   buttons.tasks.addEventListener("click",()=>openPanel("tasks",buttons.tasks));
   buttons.actions.addEventListener("click",()=>openPanel("actions",buttons.actions));
   $("doctorPopoverClose").addEventListener("click",close);
