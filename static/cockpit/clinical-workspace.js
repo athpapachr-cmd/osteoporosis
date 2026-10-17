@@ -15,7 +15,10 @@
  }
  async function get(url){
    const r=await fetch(url,{credentials:"same-origin",headers:{"Accept":"application/json"}});
-   if(!r.ok){const e=new Error("HTTP "+r.status);e.status=r.status;throw e;}
+   if(!r.ok){
+     if(r.status===401||r.status===403)window.dispatchEvent?.(new Event("clinical:unauthenticated"));
+     const e=new Error("HTTP "+r.status);e.status=r.status;throw e;
+   }
    return r.json();
  }
  function info(target,text){
@@ -35,6 +38,7 @@
    state.parts=null;state.tab="snapshot";
    $("visitDiaText").value="";$("visitDiaEditText").value="";
    $("visitDiaComposer").hidden=true;$("visitDiaPreview").hidden=true;
+   $("visitDiaPreviewText").textContent="";
    $("visitDiaEditPane").hidden=true;$("visitDiaCopyStatus").textContent="";
    $("visitDiaOpen").textContent="Σύνοψη από το Dia";
    $("visitDiaOpen").setAttribute("aria-expanded","false");
@@ -62,6 +66,19 @@
    $("visitPatientSearch").setAttribute("aria-expanded","false");
    if(row.kind==="recent")window.CockpitVisitBrief?.invalidate();
    if(row.kind==="registry")window.CockpitVisitBrief?.selectPatient(row);
+ }
+ function purgeProtectedWorkspace(){
+   // Authentication loss or account switch must clear hidden DOM, too.
+   state.revision++;clearTimeout(state.timer);
+   resetDraft();state.selected=null;state.appointment=null;state.briefReturnFocus=null;
+   $("visitWorkspacePatient").hidden=true;$("visitWorkspaceHome").hidden=false;
+   for(const id of ["visitSelectedName","visitSelectedReason","visitSelectedSource",
+                    "visitIdentityStatus","visitIdentityNote"])$(id).textContent="";
+   $("visitPatientSearch").value="";
+   $("visitPatientSearch").setAttribute("aria-expanded","false");
+   $("visitPatientMatches").replaceChildren();$("visitPatientMatches").hidden=true;
+   $("visitRecentRows").replaceChildren();
+   window.CockpitVisitBrief?.invalidate();
  }
  function back(){
    state.revision++;clearTimeout(state.timer);
@@ -109,7 +126,11 @@
           headers:{"Accept":"application/json","Content-Type":"application/json"},
           body:JSON.stringify({...scope,query:term,limit:20,offset})
         });
-        if(!response.ok){const error=new Error("HTTP "+response.status);error.status=response.status;throw error;}
+        if(!response.ok){
+          if(response.status===401||response.status===403)
+            window.dispatchEvent?.(new Event("clinical:unauthenticated"));
+          const error=new Error("HTTP "+response.status);error.status=response.status;throw error;
+        }
         rows=await response.json();
       }else{
         rows=await get("/clinical/patients?query="+encodeURIComponent(term)+"&limit=20&offset="+offset);
@@ -285,6 +306,10 @@
      }
    };
  }
- if (typeof window !== "undefined" && typeof window.addEventListener === "function") window.addEventListener("clinical:authenticated", recent);
+ if (typeof window !== "undefined" && typeof window.addEventListener === "function") window.addEventListener("clinical:unauthenticated",purgeProtectedWorkspace);
+ window.addEventListener("clinical:authenticated",()=>{
+   purgeProtectedWorkspace();
+   recent();
+ });
  recent();
 })();
