@@ -41,7 +41,7 @@
         r.status===502||r.status===503?'Η μετατροπή δεν είναι διαθέσιμη αυτή τη στιγμή. Το κείμενο διατηρήθηκε.':'Η ενέργεια δεν ολοκληρώθηκε. Δοκίμασε ξανά.');
     }return r.json();
   }
-  function pendingControls(disabled){for(const b of chart.querySelectorAll('.pending-checkpoint-actions button,.pending-stage button'))b.disabled=disabled;}
+  function pendingControls(disabled){for(const b of chart.querySelectorAll('.pending-checkpoint-actions button,.pending-checkpoint-actions select,.pending-stage button'))b.disabled=disabled;}
   function resetDraft(){pendingControls(false);draftGeneration++;contextId=null;candidate=null;source='';busy=false;input.value='';review.replaceChildren();previews.replaceChildren();feedback.textContent='';saveButton.hidden=true;extractButton.disabled=false;input.disabled=false;visitDate.disabled=false;}
   function reset(){generation++;patientId=null;chart.replaceChildren();resetDraft();composer.hidden=true;}
   function facts(parent,title,items){if(!items?.length)return;el(parent,'h4',title);const list=el(parent,'ul');for(const i of items)el(list,'li',typeof i==='string'?i:i.text);}
@@ -53,11 +53,14 @@
       const progress=item.checkpoints;
       const actions=el(copy,'div','','pending-checkpoint-actions');
       async function mutate(path,body){
+        if(!composer.hidden)return;
+        const captureOpen=$('captureOpen');if(captureOpen)captureOpen.disabled=true;
         const ticket=generation;for(const b of copy.querySelectorAll('button'))b.disabled=true;
         const status=el(copy,'p','Αποθήκευση…');status.setAttribute('role','status');
         try{await request('/patient/'+encodeURIComponent(id)+'/pending/'+encodeURIComponent(item.pending_id)+path,{...body,idempotency_key:crypto.randomUUID()});
           if(ticket!==generation)return;await open(id);window.dispatchEvent(new Event('cockpit:clinical-updates-changed'));
         }catch(e){if(ticket!==generation)return;status.textContent=e.message+' Έλεγξε την αποθηκευμένη κατάσταση.';button(copy,'Ανανέωση κατάστασης',()=>open(id));}
+        finally{if(ticket===generation&&captureOpen)captureOpen.disabled=false;}
       }
       function stage(parent,step){
         parent=el(parent,'div','','pending-stage');
