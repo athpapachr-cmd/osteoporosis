@@ -396,7 +396,6 @@ def attach_visit_brief_routes(
     router: APIRouter, engine: Engine, protected: list,
 ) -> None:
     """Attach staff-only routes. DDL is applied by a reviewed migration, never by a read/boot."""
-    
     @router.post("/visit-brief/read")
     async def read_visit_brief(
         req: BookingIntent, actor: StaffActor = Depends(require_staff_actor),
