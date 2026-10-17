@@ -1,5 +1,8 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / repo-wide writer lock
 
+> **2026-10-18 CP1 LIVE SMOKE NOT YET PASS:** Run `39074098194` failed at `real-provider-extraction` before Save. Runtime remains LIVE; no complete-flow claim. Verification script currently expects exactly two proposals although source also explicitly requests follow-up; next inspect sanitized response status/counts and correct the oracle if needed, or fix actual provider boundary. No raw source/secret logging.
+
+
 > **2026-10-18 CP1 DEPLOYED / LIVE PROOF NEXT:** Existing Render `dep-db9v4ejrjlhs73c4eee0` LIVE at exact merge `e5910a485cb0aeb61bf6dcff7408b9a5d35397e5`, finished 22:11:49 UTC / 01:11 Cyprus. No manual trigger/env change. Local checkpoint before smoke. Next dispatch finite verification-only existing-key run: real provider natural summary -> edit/reject -> atomic Save -> refresh/second session/source/updates/no duplicate. PO acceptance pending.
 
 
