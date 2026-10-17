@@ -30,29 +30,33 @@ try:
             page.screenshot(path=str(out / f"home-browser-{i+1}.png"), full_page=True)
             stage = f"browser-{i+1}-backend-confirmation"
             page.locator("#visitSidebarCurrent").click()
-            if i:
-                expect(page.locator("#visitBriefIdentity")).to_contain_text("προηγούμενη σύνδεση")
-            page.locator("#visitBriefChoosePatient").click()
-            page.locator("#visitPatientMatches .clinical-patient-row").click()
-            page.locator("#visitBookingIndependentCheck").check()
-            page.locator("#visitConfirmBooking").click()
+            expect(page.locator("#visitBookingConfirmation")).to_be_hidden()
+            expect(page.locator("#visitBriefChoosePatient")).to_be_hidden()
             expect(page.locator("#visitBriefPrevious")).to_contain_text("2026-10-07")
             expect(page.locator("#visitBriefPlan")).to_contain_text("Συμφωνήθηκε επανέλεγχος")
-            expect(page.locator("#visitBriefPending")).to_contain_text("awaiting_patient")
+            action=page.locator("#visitBriefPending .synthetic-pending-row button")
+            expect(action).to_have_text("Παραλήφθηκε" if i==0 else "Αναίρεση")
+            if i==0:
+                action.click()
+                expect(action).to_have_text("Αναίρεση")
             page.screenshot(path=str(out / f"brief-browser-{i+1}.png"), full_page=True)
             stage = f"browser-{i+1}-full-chart-refresh"
             page.locator("#visitBriefOpenChart").click()
             expect(page.locator("#synthetic161Chart")).to_contain_text("2 αποθηκευμένες επισκέψεις")
             page.reload()
             expect(page.locator("#synthetic161Chart")).to_contain_text("2 αποθηκευμένες επισκέψεις")
-            expect(page.locator("#synthetic161Chart")).to_contain_text("SAFETY-NET")
+            expect(page.locator("#synthetic161Chart .synthetic-pending-row button")).to_have_text("Αναίρεση")
+            if i==1:
+                page.locator("#synthetic161Chart .synthetic-pending-row button").click()
+                expect(page.locator("#synthetic161Chart .synthetic-pending-row button")).to_have_text("Παραλήφθηκε")
             page.screenshot(path=str(out / f"chart-browser-{i+1}.png"), full_page=True)
             stage = f"browser-{i+1}-patient-switch-isolation"
             page.locator("#visitRecentRows .clinical-patient-row").first.click()
-            expect(page.locator("#synthetic161Chart")).to_be_empty()
-            assert "chart=" not in page.url
+            expect(page.locator("#visitSelectedName")).to_have_text("Δοκιμαστικός Ασθενής 161 1")
+            expect(page.locator("#synthetic161Chart")).to_contain_text("2 αποθηκευμένες επισκέψεις")
+            assert "chart=cockpit-synthetic-161-1" in page.url
             ctx.close()
-            print(f"PASS live browser {i+1}: stored appointments, confirmation, Brief, complete chart, refresh, patient switch")
+            print(f"PASS live browser {i+1}: one-click Brief, persisted received/undo, complete chart, refresh, patient switch")
         browser.close()
     print("PASS LIVE #161: two independent browser sessions against existing PostgreSQL backend")
 except Exception:
