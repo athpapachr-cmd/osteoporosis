@@ -1,0 +1,49 @@
+name: Cockpit Clinical Pending Synthetic Demo (UI only)
+
+on:
+  push:
+    paths:
+      - "static/cockpit/index.html"
+      - "static/cockpit/pending-one-tap-synthetic.html"
+      - "static/cockpit/pending-one-tap-synthetic.js"
+      - "test_clinical_pending_one_tap_ui.js"
+      - ".github/workflows/cockpit-pending-synthetic-demo-ui.yml"
+  pull_request:
+    paths:
+      - "static/cockpit/index.html"
+      - "static/cockpit/pending-one-tap-synthetic.html"
+      - "static/cockpit/pending-one-tap-synthetic.js"
+      - "test_clinical_pending_one_tap_ui.js"
+      - ".github/workflows/cockpit-pending-synthetic-demo-ui.yml"
+
+jobs:
+  demo-ui:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Syntax and one-tap synthetic UI
+        run: |
+          node --check static/cockpit/pending-one-tap-synthetic.js
+          node --check test_clinical_pending_one_tap_ui.js
+          node test_clinical_pending_one_tap_ui.js
+      - name: Strict browser-memory-only demo boundary
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          script = Path("static/cockpit/pending-one-tap-synthetic.js").read_text()
+          executable = re.sub(r'^\s*//.*$', '', script, flags=re.MULTILINE)
+          for forbidden in (r'\bfetch\s*\(', r'XMLHttpRequest', r'\blocalStorage\b', r'\bsessionStorage\b', r'\bdocument\.cookie\b'):
+              assert not re.search(forbidden, executable), forbidden
+          page = Path("static/cockpit/pending-one-tap-synthetic.html").read_text()
+          assert 'Synthetic · Demo' in page
+          assert 'type="password"' not in page
+          assert 'patientId' not in page
+          assert 'pending-one-tap-synthetic.js' in page
+          home = Path("static/cockpit/index.html").read_text()
+          assert 'href="/static/cockpit/pending-one-tap-synthetic.html"' in home
+          PY
+      - name: Diff hygiene
+        run: git diff --check HEAD^ HEAD
