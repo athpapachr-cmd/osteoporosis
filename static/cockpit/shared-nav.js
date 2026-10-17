@@ -105,16 +105,23 @@
         status.textContent = "Έλεγχος σύνδεσης…";
         status.dataset.kind = "";
         // Auth probe is read-only; no provider, patient or schedule API.
-        fetch("/clinical/staff-session", {credentials:"same-origin", cache:"no-store"})
-          .then(async r => {
-            if(r.ok){const session=await r.json();window.CockpitStaffRole=session.staff_role;return r;}
-            return fetch("/clinical/status", {credentials:"same-origin", cache:"no-store"});
-          })
+        fetch("/clinical/status", {credentials:"same-origin", cache:"no-store"})
           .then(r => {
             if (panel.hidden) return;
             status.textContent = r.ok ? "Συνδεδεμένο. Μπορείς να αλλάξεις κλειδί." :
               r.status === 401 || r.status === 403 ? "Απαιτείται σύνδεση." :
               "Δεν ήταν δυνατός ο έλεγχος. Μπορείς να δοκιμάσεις σύνδεση.";
+            if (!r.ok && (r.status === 401 || r.status === 403)) {
+              fetch("/clinical/staff-session", {credentials:"same-origin", cache:"no-store"})
+                .then(async staff => {
+                  if (staff.ok && !panel.hidden) {
+                    const identity=await staff.json();
+                    window.CockpitStaffRole=identity.staff_role;
+                    status.textContent="Συνδεδεμένο προσωπικό: "+
+                      (identity.staff_role==="secretary"?"γραμματεία":"γιατρός")+".";
+                  }
+                }).catch(()=>{});
+            }
           })
           .catch(() => {
             if (!panel.hidden) status.textContent = "Δεν ήταν δυνατός ο έλεγχος σύνδεσης.";
