@@ -1,5 +1,8 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / repo-wide writer lock
 
+> **2026-10-18 #171 TEST DEPLOYED / LIVE PROOF NEXT:** Render `dep-db9ujlbm8hqs73atet0g` LIVE on exact `cbad563ccb4468c608f56ad519b98249a3fd4ecd`, finished 00:36:17 Cyprus. Durable local checkpoint before smoke; publish with final result. Verification-only branch `33d7182` uses existing key/one-off runner; preserve pre-test Pending state. Next source-link, lifecycle, structured chart and Clinical Updates navigation proof in two real browser sessions. No acceptance or CP1.
+
+
 > **2026-10-18 #171 MERGED / NATIVE DEPLOY PENDING:** Squash `b93d47c74f63120db8f5311412534db4fae126bc` at 00:33:58 Cyprus. Final head `34acbce` canonical guard `39071427954` PASS; runtime unchanged from affected passing source `865562e`. Next existing Render native auto-deploy and one live two-browser origin/history/updates-to-chart proof. No manual deploy or new service. PO acceptance NO; CP1 STOP.
 
 
