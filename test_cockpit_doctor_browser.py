@@ -78,7 +78,7 @@ def browser_suite(width, screenshot_name):
                 assert route.request.post_data_json is not None
                 if route.request.post_data_json.get("key") == "synthetic-key":
                     auth["authenticated"] = True
-                    return route.fulfill(status=200, json={"authenticated": True})
+                    return route.fulfill(status=200, json={"authenticated": True, "staff_role": "clinician"})
                 return route.fulfill(status=401, json={"detail": "Unauthorized"})
             if "/clinical/calendar/cockpit-context" in url:
                 return route.fulfill(json=CONTEXT)
@@ -236,6 +236,8 @@ def browser_suite(width, screenshot_name):
         expect(page.locator("#visitBriefClinical")).to_be_visible()
         expect(page.locator("#visitBriefPrevious")).to_contain_text("Προηγούμενη υπογεγραμμένη")
         expect(page.locator("#visitBriefChecks")).to_contain_text("Επανεξέταση")
+        expect(page.locator("#visitBriefOpenChart")).to_be_visible()
+        expect(page.locator("#visitBriefUnlink")).to_be_visible()
         assert auth["confirmations"] == 1
         page.locator("#visitBriefClose").click()
         expect(page.locator("#visitBriefClinical")).to_be_hidden()
@@ -251,6 +253,11 @@ def browser_suite(width, screenshot_name):
         page.locator("#visitSidebarNext").click()
         expect(page.locator("#visitBriefIdentity")).to_contain_text("νέα ανεξάρτητη επιβεβαίωση")
         expect(page.locator("#visitBriefClinical")).to_be_hidden()
+        page.evaluate("window.CockpitStaffRole='secretary'")
+        page.locator("#visitBriefClose").click()
+        page.locator("#visitSidebarNext").click()
+        expect(page.locator("#visitBriefUnlink")).to_be_hidden()
+        page.evaluate("window.CockpitStaffRole='clinician'")
         assert auth["confirmations"] == 1
         page.locator("#visitBriefClose").click()
         expect(page.locator("#visitBriefOverlay")).to_be_hidden()
@@ -260,6 +267,15 @@ def browser_suite(width, screenshot_name):
             expect(page.locator("#doctorAttentionList")).to_contain_text("Εκδοθείσες αιτήσεις")
             expect(page.locator("#doctorAttentionList")).to_contain_text("Δεν υπάρχει ακόμη αξιόπιστη καταμέτρηση")
             assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1")
+            # Actual Chromium: hidden registry and Dia details are removed on auth loss.
+            page.evaluate("""() => {
+                document.getElementById('visitDiaPreviewText').textContent='SYN-PHI';
+                document.getElementById('visitSelectedName').textContent='SYN-PHI';
+                window.dispatchEvent(new Event('clinical:unauthenticated'));
+            }""")
+            assert page.locator("#visitPatientMatches").locator("*").count() == 0
+            assert page.locator("#visitDiaPreviewText").text_content() == ""
+            assert page.locator("#visitSelectedName").text_content() == ""
             assert not errors, errors
             assert not any("/clinical/visit-capture/save" in url for url in outbound)
             browser.close()
@@ -327,6 +343,14 @@ def browser_suite(width, screenshot_name):
             expect(page.locator("#visitSidebarPrevious")).to_be_disabled()
             expect(page.locator("#visitBriefOverlay")).to_be_hidden()
         assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1"), "horizontal overflow"
+        page.evaluate("""() => {
+            document.getElementById('visitDiaPreviewText').textContent='SYN-PHI';
+            document.getElementById('visitSelectedName').textContent='SYN-PHI';
+            window.dispatchEvent(new Event('clinical:unauthenticated'));
+        }""")
+        assert page.locator("#visitPatientMatches").locator("*").count() == 0
+        assert page.locator("#visitDiaPreviewText").text_content() == ""
+        assert page.locator("#visitSelectedName").text_content() == ""
         assert not errors, errors
         assert not any("/clinical/visit-capture/save" in url for url in outbound)
         browser.close()
