@@ -68,6 +68,7 @@ const window = {
 async function fetch(url,options = {}) {
   requests.push({url, method:options.method||'GET', options});
   if (url==='/clinical/status') return {ok:mode==='authenticated',status:mode==='authenticated'?200:401};
+  if (url==='/clinical/staff-session') return {ok:false,status:401};
   if(url==='/clinical/login') {
     assert.strictEqual(options.credentials,'same-origin');
     assert.strictEqual(options.method,'POST');
@@ -75,7 +76,7 @@ async function fetch(url,options = {}) {
     assert.strictEqual(options.headers['Content-Type'],'application/json');
     assert.strictEqual(JSON.parse(options.body).key,'synthetic-key');
     if(mode==='invalid')return {ok:false,status:401};
-    mode='authenticated';return {ok:true,status:200};
+    mode='authenticated';return {ok:true,status:200,json:async()=>({authenticated:true,session:"browser"})};
   }
   throw Error('Unexpected shared-nav network request: '+url);
 }
