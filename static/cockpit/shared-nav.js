@@ -59,6 +59,8 @@
       shortcutPanel.append(a);
     });
 
+    // Stale bootstrap/probe results cannot overwrite a new staff principal.
+    let authRevision = 0;
     const accessPanel = element("section", "ce-global-popover");
     accessPanel.id = "ceGlobalAccessPanel";
     accessPanel.hidden = true;
@@ -105,17 +107,19 @@
         status.textContent = "Έλεγχος σύνδεσης…";
         status.dataset.kind = "";
         // Auth probe is read-only; no provider, patient or schedule API.
+        const probeRevision=authRevision;
         fetch("/clinical/status", {credentials:"same-origin", cache:"no-store"})
           .then(r => {
-            if (panel.hidden) return;
+            if (panel.hidden||probeRevision!==authRevision) return;
             status.textContent = r.ok ? "Συνδεδεμένο. Μπορείς να αλλάξεις κλειδί." :
               r.status === 401 || r.status === 403 ? "Απαιτείται σύνδεση." :
               "Δεν ήταν δυνατός ο έλεγχος. Μπορείς να δοκιμάσεις σύνδεση.";
             if (!r.ok && (r.status === 401 || r.status === 403)) {
               fetch("/clinical/staff-session", {credentials:"same-origin", cache:"no-store"})
                 .then(async staff => {
-                  if (staff.ok && !panel.hidden) {
+                  if (staff.ok&&!panel.hidden&&probeRevision===authRevision) {
                     const identity=await staff.json();
+                    if(panel.hidden||probeRevision!==authRevision)return;
                     window.CockpitStaffRole=identity.staff_role;
                     status.textContent="Συνδεδεμένο προσωπικό: "+
                       (identity.staff_role==="secretary"?"γραμματεία":"γιατρός")+".";
@@ -124,7 +128,8 @@
             }
           })
           .catch(() => {
-            if (!panel.hidden) status.textContent = "Δεν ήταν δυνατός ο έλεγχος σύνδεσης.";
+            if (!panel.hidden&&probeRevision===authRevision)
+              status.textContent = "Δεν ήταν δυνατός ο έλεγχος σύνδεσης.";
           });
         input.focus();
       }
@@ -143,6 +148,7 @@
       const key = input.value;
       input.value = "";
       if (!key || submit.disabled) return;
+      const loginRevision=++authRevision;
       submit.disabled = true;
       status.dataset.kind = "";
       status.textContent = "Σύνδεση…";
@@ -154,6 +160,7 @@
           headers: {"Content-Type":"application/json"},
           body: JSON.stringify({key}),
         });
+        if(loginRevision!==authRevision)return;
         if (!response.ok) {
           status.dataset.kind = "error";
           status.textContent = response.status === 401 ? "Λανθασμένο Clinical Key." :
@@ -162,6 +169,7 @@
           return;
         }
         const result=await response.json();
+        if(loginRevision!==authRevision)return;
         window.CockpitStaffRole=result.staff_role||null;
         status.dataset.kind = "success";
         status.textContent = result.staff_role==="secretary"?
@@ -169,6 +177,7 @@
           "Συνδέθηκες. Οι κλινικές προβολές ανανεώνονται.";
         window.dispatchEvent(new Event("clinical:authenticated"));
       } catch (_) {
+        if(loginRevision!==authRevision)return;
         status.dataset.kind = "error";
         status.textContent = "Αποτυχία σύνδεσης. Έλεγξε το δίκτυο και δοκίμασε ξανά.";
       } finally {
@@ -178,11 +187,20 @@
     // A protected consumer can request the common key panel, without embedding
     // a second password form or keeping any secret in local/session storage.
     window.addEventListener("clinical:request-login", () => openPanel(accessPanel));
-    window.addEventListener("clinical:unauthenticated",()=>{window.CockpitStaffRole=null;});
+    window.addEventListener("clinical:unauthenticated",()=>{
+      authRevision++;
+      window.CockpitStaffRole=null;
+    });
     // Role is only a presentation hint. Server validates every protected request.
+    const bootstrapRevision=authRevision;
     fetch("/clinical/staff-session",{credentials:"same-origin",cache:"no-store"})
-      .then(r=>r.ok?r.json():null).then(v=>{window.CockpitStaffRole=v?.staff_role||null;})
-      .catch(()=>{window.CockpitStaffRole=null;});
+      .then(r=>r.ok?r.json():null)
+      .then(v=>{
+        if(bootstrapRevision===authRevision)window.CockpitStaffRole=v?.staff_role||null;
+      })
+      .catch(()=>{
+        if(bootstrapRevision===authRevision)window.CockpitStaffRole=null;
+      });
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);

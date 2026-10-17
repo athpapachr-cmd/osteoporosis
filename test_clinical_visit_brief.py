@@ -163,12 +163,15 @@ def add_pending(engine, ident, status, when):
 
 
 def test_unlinked_and_feature_disabled_never_reveal_patient(monkeypatch):
-    c, _ = client(monkeypatch, enabled=False)
+    c, engine = client(monkeypatch, enabled=False)
+    # Even without migrated Visit Brief tables, disabled reads fail closed.
+    # Runtime must not create an audit sink before an approved migration.
+    VisitBriefBase.metadata.drop_all(bind=engine)
     r = read(c)
-    assert r.status_code == 200
-    assert r.json()["reason"] == "disabled"
-    assert "patient_id" not in r.text
+    assert r.status_code == 503
+    assert "patient_id" not in r.text and "booking" not in r.text.lower()
     assert confirm(c).status_code == 503
+    VisitBriefBase.metadata.create_all(bind=engine)  # synthetic fixture only
     monkeypatch.setenv("CLINICAL_VISIT_BRIEF_LINKS_ENABLED", "1")
     r = read(c)
     assert r.json()["reason"] == "unlinked"
@@ -429,7 +432,8 @@ def test_staff_session_version_rotation_and_policy_gate(monkeypatch):
         StaffActor("clinic-clinician", "clinician")), path="/clinical")
     assert read(c).status_code == 200
     monkeypatch.setenv("COCKPIT_VISIT_BRIEF_AUDIT_RETENTION_APPROVED", "0")
-    assert read(c).json()["reason"] == "disabled"
+    denied = read(c)
+    assert denied.status_code == 503 and "booking" not in denied.text.lower()
     assert confirm(c).status_code == 503
 
 

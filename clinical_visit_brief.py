@@ -259,8 +259,7 @@ async def _fresh_staff_booking(uid: str, engine: Engine,
     try:
         return await _fresh_booking(uid)
     except HTTPException as exc:
-        if _enabled():
-            _record_denial(engine, actor, uid, event, exc.status_code)
+        _record_denial(engine, actor, uid, event, exc.status_code)
         raise
 
 
@@ -418,11 +417,13 @@ def attach_visit_brief_routes(
     async def read_visit_brief(
         req: BookingIntent, actor: StaffActor = Depends(require_staff_actor),
     ) -> dict:
+        # A qualified, durable audit sink is mandatory before any booking read.
+        # Never expose an unaudited booking-only projection while the reviewed
+        # migration and retention gates are OFF (and tables may not exist).
+        if not _enabled():
+            raise HTTPException(503, "Visit Brief not enabled")
         booking = await _fresh_staff_booking(req.booking_uid, engine, actor, "booking_read")
         card = _booking_card(booking)
-        if not _enabled():
-            return {"mode": "booking_only", "reason": "disabled",
-                    "booking": card, "revision": 0, "linked": False}
         with Session(engine) as session:
             row = session.get(BookingPatientLinkORM, (NAMESPACE, req.booking_uid))
             if row is None or row.state == "revoked":

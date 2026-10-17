@@ -96,8 +96,11 @@
    if(window.CockpitStaffRole==="secretary"){
      return info(target,"Οι πρόσφατες κλινικές επισκέψεις εμφανίζονται μόνο στον γιατρό.");
    }
+   // A late clinician response must not survive logout or account switch.
+   const ticket=state.revision;
    try{
      const list=await get("/clinical/recent-encounters?limit=3");
+     if(ticket!==state.revision||window.CockpitStaffRole==="secretary")return;
      if(!Array.isArray(list))throw Error("invalid response");
      target.replaceChildren();
      if(!list.length)return info(target,"Δεν υπάρχουν ολοκληρωμένες επισκέψεις στο μητρώο.");
@@ -119,7 +122,10 @@
          open({kind:"recent",name,reason:context,patientId:r.patient_id});
        });
      });
-   }catch(e){info(target,e.status===401?"Συνδέσου για να δεις τις κλινικές επισκέψεις.":"Οι πρόσφατες κλινικές επισκέψεις δεν είναι ακόμη διαθέσιμες.");}
+   }catch(e){
+     if(ticket===state.revision&&window.CockpitStaffRole!=="secretary")
+       info(target,e.status===401?"Συνδέσου για να δεις τις κλινικές επισκέψεις.":"Οι πρόσφατες κλινικές επισκέψεις δεν είναι ακόμη διαθέσιμες.");
+   }
  }
  async function loadMatches(term,ticket,offset){
    const box=$("visitPatientMatches");

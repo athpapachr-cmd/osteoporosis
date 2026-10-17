@@ -59,6 +59,39 @@ CONTEXT = {
     "next": DAY[0], "upcoming_today": DAY,
 }
 
+def assert_delayed_recent_purged_after_logout(page):
+    # A successful old clinician response arriving AFTER logout cannot restore PHI.
+    assert page.evaluate("""() => {
+        const originalFetch = window.fetch.bind(window);
+        window.fetch = (url, options) => {
+            if (String(url) === "/clinical/recent-encounters?limit=3") {
+                return new Promise(resolve => {
+                    window.__releaseOldRecent = () => resolve({
+                        ok: true,
+                        json: async () => [{
+                            patient_id: "SYN-OLD",
+                            patient_display_name: "SYN-STALE-PHI",
+                            encounter_date: "2026-10-10",
+                            visit_type: "Synthetic visit"
+                        }]
+                    });
+                });
+            }
+            return originalFetch(url, options);
+        };
+        window.CockpitStaffRole = "clinician";
+        window.dispatchEvent(new Event("clinical:authenticated"));
+        return typeof window.__releaseOldRecent === "function";
+    }""")
+    assert page.evaluate("""async () => {
+        window.dispatchEvent(new Event("clinical:unauthenticated"));
+        window.__releaseOldRecent();
+        await new Promise(resolve => setTimeout(resolve, 0));
+        return !document.getElementById("visitRecentRows").textContent.includes("SYN-STALE-PHI");
+    }"""), "old clinician result repopulated protected patient names"
+    assert page.locator("#visitRecentRows .clinical-patient-row").count() == 0
+
+
 def browser_suite(width, screenshot_name):
     errors = []
     outbound = []
@@ -268,6 +301,7 @@ def browser_suite(width, screenshot_name):
             expect(page.locator("#doctorAttentionList")).to_contain_text("Δεν υπάρχει ακόμη αξιόπιστη καταμέτρηση")
             assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1")
             # Actual Chromium: hidden registry and Dia details are removed on auth loss.
+            assert_delayed_recent_purged_after_logout(page)
             page.evaluate("""() => {
                 document.getElementById('visitDiaPreviewText').textContent='SYN-PHI';
                 document.getElementById('visitSelectedName').textContent='SYN-PHI';
@@ -343,6 +377,7 @@ def browser_suite(width, screenshot_name):
             expect(page.locator("#visitSidebarPrevious")).to_be_disabled()
             expect(page.locator("#visitBriefOverlay")).to_be_hidden()
         assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1"), "horizontal overflow"
+        assert_delayed_recent_purged_after_logout(page)
         page.evaluate("""() => {
             document.getElementById('visitDiaPreviewText').textContent='SYN-PHI';
             document.getElementById('visitSelectedName').textContent='SYN-PHI';
