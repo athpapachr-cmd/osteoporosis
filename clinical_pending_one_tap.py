@@ -75,6 +75,7 @@ PLANS = {
 class AdoptPlan(BaseModel):
     model_config = {"extra": "forbid"}
     template: Literal["material_images", "document", "completion"]
+    first_checkpoint_key: str | None = Field(default=None,max_length=64)
     first_observation: Literal["yes_confirmed", "not_yet_observed"] | None = None
     idempotency_key: str = Field(min_length=16, max_length=100, pattern=r"^[a-zA-Z0-9_-]+$")
 
@@ -165,6 +166,10 @@ def attach_pending_one_tap_routes(router,engine,protected):
             row,actor=load(db,patient_id,pending_id,request)
             plan=VisitCaptureCheckpointPlan(steps=[VisitCaptureCheckpointStep(key=k,question=q,meaning=m) for k,q,m in PLANS[action.template]]).model_dump(mode="json")
             # The initial explicit observation is part of the replay identity.
+            initial_key=action.first_checkpoint_key or plan["steps"][0]["key"]
+            if initial_key not in {step["key"] for step in plan["steps"]} or (action.first_checkpoint_key and not action.first_observation):
+                raise HTTPException(422,"Invalid initial checkpoint")
+            plan["initial_checkpoint_key"] = initial_key
             plan["initial_observation"] = action.first_observation
             prior=replay(db,row,actor,action.idempotency_key,"plan_approved","__approved_plan__",plan=plan)
             if prior:return prior
@@ -175,7 +180,7 @@ def attach_pending_one_tap_routes(router,engine,protected):
             db.add(event)
             if action.first_observation:
                 observed=PendingCheckpointEventORM(id=str(uuid4()),idempotency_key="first-"+event.id,pending_id=row.id,
-                    patient_id=patient_id,checkpoint_key=plan["steps"][0]["key"],plan_version=1,kind=action.first_observation,revision=1,
+                    patient_id=patient_id,checkpoint_key=initial_key,plan_version=1,kind=action.first_observation,revision=1,
                     recorded_at=utcnow(),actor_principal_id=actor.principal_id,actor_role=actor.role,plan_json=None)
                 db.add(observed)
                 complete=action.first_observation=="yes_confirmed" and len(plan["steps"])==1

@@ -88,7 +88,16 @@ def test_browser_receipt_review_timeline_refresh_second_session(setup,tmp_path):
                 row=page.locator('#patientChart .patient-chart-grid .synthetic-pending-row').first
                 if width==1280:
                     expect(row).to_contain_text('Παραλήφθηκε το CD;')
-                    row.get_by_role('button',name='Ναι',exact=True).click()
+                    row.locator('summary').filter(has_text='Έγινε ήδη επόμενο βήμα;').click()
+                    row.locator('details').get_by_role('button',name='Ναι',exact=True).click()
+                    expect(row).to_contain_text('✓ Εξετάστηκαν οι εικόνες')
+                    expect(row).to_contain_text('Παραλήφθηκε το CD;')
+                    state=page.request.get(f'http://localhost:{port}/clinical/patient/{TEST_ID}/chart').json()['pending'][0]['checkpoints']
+                    assert state['confirmed_keys']==['images_reviewed']
+                    assert not any(e['checkpoint_key']=='received' for e in state['history'])
+                    row.get_by_role('button',name='Αναίρεση',exact=True).click()
+                    expect(row).not_to_contain_text('✓ Εξετάστηκαν οι εικόνες')
+                    row.get_by_role('button',name='Ναι',exact=True).first.click()
                     expect(row).to_contain_text('Εξετάστηκαν οι εικόνες;')
                     expect(row).not_to_contain_text('Ολοκληρώθηκε')
                     page.reload();expect(row).to_contain_text('Εξετάστηκαν οι εικόνες;')

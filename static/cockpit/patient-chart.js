@@ -59,6 +59,7 @@
         }catch(e){if(ticket!==generation)return;status.textContent=e.message+' Έλεγξε την αποθηκευμένη κατάσταση.';button(copy,'Ανανέωση κατάστασης',()=>open(id));}
       }
       function stage(parent,step){
+        parent=el(parent,'div','','pending-stage');
         el(parent,'p',step.state==='confirmed'?'✓ '+step.meaning:step.question);
         if(step.state==='not_yet')el(parent,'small','Όχι ακόμη · καταγράφηκε '+date(step.observed_not_yet_at));
         if(!item.checkpoint_write_allowed)return;
@@ -80,6 +81,15 @@
         const question=el(actions,'p',choices[select.value][1]);select.onchange=()=>question.textContent=choices[select.value][1];
         button(actions,'Ναι',()=>mutate('/checkpoint-plan',{template:select.value,first_observation:'yes_confirmed'}));
         button(actions,'Όχι ακόμη',()=>mutate('/checkpoint-plan',{template:select.value,first_observation:'not_yet_observed'}));
+        const prior=el(actions,'details');el(prior,'summary','Έγινε ήδη επόμενο βήμα;');
+        const priorChoices=el(prior,'div');
+        function showPrior(){priorChoices.replaceChildren();prior.hidden=select.value==='completion';
+          const key=select.value==='material_images'?'images_reviewed':'report_read';
+          el(priorChoices,'p',key==='images_reviewed'?'Εξετάστηκαν οι εικόνες;':'Διαβάστηκε το πόρισμα;');
+          for(const [label,observation]of [['Ναι','yes_confirmed'],['Όχι ακόμη','not_yet_observed']])button(priorChoices,label,()=>mutate('/checkpoint-plan',{template:select.value,first_checkpoint_key:key,first_observation:observation}));
+        }
+        select.onchange=()=>{question.textContent=choices[select.value][1];showPrior();};showPrior();
+
       }else if(!item.checkpoint_storage_ready)el(copy,'small','Η ενημέρωση των βημάτων δεν έχει ενεργοποιηθεί ακόμη.');
       else if(!item.checkpoint_write_allowed)el(copy,'small','Για ενημέρωση χρειάζεται η πρόσβαση γιατρού.');
 
@@ -119,9 +129,9 @@
       }
       for(const visit of data.visits)points.push({date:visit.date,title:visit.clinical?.reason_for_visit?.text||'Καταγεγραμμένη επίσκεψη',source:visit.encounter_id,summary:(visit.clinical?.decisions||[]).map(f=>f.text)});
       for(const item of data.pending)for(const event of item.checkpoints?.history||[])points.push({date:event.recorded_at,title:event.label,source:item.source_encounter_id,summary:[item.description,'Καταγράφηκε: '+new Intl.DateTimeFormat('el-CY',{dateStyle:'medium',timeStyle:'short'}).format(new Date(event.recorded_at))]});
-      const day=v=>v.includes('T')?new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Nicosia',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(v)):v;
-      points.sort((a,b)=>day(a.date).localeCompare(day(b.date))||a.date.localeCompare(b.date));
-      for(const point of points){const b=button(rail,'',()=>selectPoint(point,b));b.className='patient-journey-point';b.setAttribute('aria-pressed','false');el(b,'span','','patient-journey-dot');el(b,'small',date(point.date));el(b,'span',point.title);}
+      const day=v=>{if(!v.includes('T'))return v;const p=Object.fromEntries(new Intl.DateTimeFormat('en',{timeZone:'Asia/Nicosia',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date(v)).map(p=>[p.type,p.value]));return p.year+'-'+p.month+'-'+p.day;};
+      points.sort((a,b)=>day(a.date).localeCompare(day(b.date))||Number(a.date.includes('T'))-Number(b.date.includes('T'))||a.date.localeCompare(b.date));
+      for(const point of points){const b=button(rail,'',()=>selectPoint(point,b));b.className='clinical-secondary patient-journey-point';b.setAttribute('aria-pressed','false');el(b,'span','','patient-journey-dot');el(b,'small',date(point.date));el(b,'span',point.title);}
       if(points.length)selectPoint(points[points.length-1],rail.lastElementChild);else el(selected,'p','Δεν έχουν καταγραφεί επισκέψεις.');
       for(const visit of data.visits){const block=el(timeline,'details','','patient-visit');block.id='visit-'+visit.encounter_id;block.hidden=true;
         const summary=el(block,'summary');el(summary,'span',date(visit.date));el(summary,'strong',visit.clinical?.reason_for_visit?.text||'Καταγεγραμμένη επίσκεψη');

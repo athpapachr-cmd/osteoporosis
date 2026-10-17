@@ -229,3 +229,5 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,ui-sans-se
 .pending-checkpoint-actions select{display:block;max-width:100%;width:100%;margin-top:6px;font:inherit}
 .synthetic-pending-row>div{min-width:0;overflow-wrap:anywhere}
 .clinical-workspace{min-width:0}
+
+.pending-stage{width:100%}.pending-stage>p{margin:8px 0}
