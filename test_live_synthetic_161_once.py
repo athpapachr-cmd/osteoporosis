@@ -44,7 +44,7 @@ try:
       if 'CD' not in rows.nth(index).locator('textarea').first.input_value():
        rows.nth(index).get_by_role('button',name='Αφαίρεση').last.click();removed=True;break
      assert removed and rows.count()==1
-     page.screenshot(path=str(out/'cp1-review.png'),full_page=True)
+     page.locator('#captureComposer').screenshot(path=str(out/'cp1-review.png'))
      stage='atomic-save'
      with page.expect_request('**/visit-capture/save') as sent:
       page.locator('#captureSave').click()
@@ -62,11 +62,11 @@ try:
    assert len(items)==1 and 'CD' in items[0]['description'] and items[0]['source_excerpt'] in TEXT
    assert len(visit['clinical']['pending'])==1
    page.locator('#visit-'+visit['encounter_id']+' summary').click()
-   page.screenshot(path=str(out/f'cp1-chart-browser-{i+1}.png'),full_page=True)
+   page.locator('#visitWorkspacePatient').screenshot(path=str(out/f'cp1-chart-browser-{i+1}.png'))
    stage=f'browser-{i+1}-clinical-updates'
    page.locator('#doctorInboxButton').click();expect(page.locator('#doctorPopoverTitle')).to_have_text('Κλινικές ενημερώσεις')
    row=page.locator('#doctorPopoverContent .doctor-action-row').filter(has_text='CD').first
-   expect(row).to_be_visible();page.screenshot(path=str(out/f'cp1-updates-browser-{i+1}.png'),full_page=True)
+   expect(row).to_be_visible();page.locator('#doctorPopoverContent').screenshot(path=str(out/f'cp1-updates-browser-{i+1}.png'))
    row.click();expect(page.locator('#patientChart')).to_contain_text(REASON)
    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
    context.close()
