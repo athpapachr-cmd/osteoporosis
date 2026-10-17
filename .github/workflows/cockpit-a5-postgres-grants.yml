@@ -1,0 +1,53 @@
+name: Cockpit A5 PostgreSQL runtime grants (synthetic)
+
+on:
+  pull_request:
+    paths:
+      - "cockpit/migrations/20261017_visit_brief_staff_access.sql"
+      - "cockpit/migrations/20261017_visit_brief_cockpit_app_grants.sql"
+      - "cockpit/migrations/20261017_visit_brief_atomic_clinic_install.sql"
+      - "test_visit_brief_a5_postgres.py"
+      - ".github/workflows/cockpit-a5-postgres-grants.yml"
+  push:
+    paths:
+      - "cockpit/migrations/20261017_visit_brief_staff_access.sql"
+      - "cockpit/migrations/20261017_visit_brief_cockpit_app_grants.sql"
+      - "cockpit/migrations/20261017_visit_brief_atomic_clinic_install.sql"
+      - "test_visit_brief_a5_postgres.py"
+      - ".github/workflows/cockpit-a5-postgres-grants.yml"
+
+jobs:
+  a5-postgres:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_DB: postgres
+          POSTGRES_PASSWORD: synthetic-ci-only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      A5_SYNTHETIC_ONLY: "yes"
+      A5_SYNTHETIC_PASSWORD: synthetic-ci-only
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install synthetic PostgreSQL client only
+        run: pip install "psycopg[binary]>=3.1"
+      - name: Python syntax
+        run: python -m py_compile test_visit_brief_a5_postgres.py
+      - name: Synthetic PostgreSQL 17 migration, privileges and DML
+        run: python test_visit_brief_a5_postgres.py
+      - name: Diff hygiene
+        run: git diff --check HEAD^ HEAD
