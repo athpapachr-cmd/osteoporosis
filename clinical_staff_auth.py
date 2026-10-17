@@ -60,7 +60,12 @@ def _version(role: str) -> str:
     value = os.environ.get("COCKPIT_STAFF_" + role.upper() + "_VERSION", "1")
     if not value.isascii() or not value.isalnum() or len(value) > 32:
         raise HTTPException(503, "Invalid staff credential version")
-    return value
+    # Credential rotation invalidates an existing cookie without relying
+    # on a human remembering to bump the optional version variable.
+    clinician, secretary, _ = _staff_settings()
+    credential = clinician if role == "clinician" else secretary
+    digest = hashlib.sha256(credential.encode("utf-8")).hexdigest()[:16]
+    return value + "-" + digest
 
 
 def issue_staff_cookie(actor: StaffActor) -> str:
