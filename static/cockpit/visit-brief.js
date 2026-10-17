@@ -100,6 +100,19 @@
     $("visitBriefOverlay").hidden=false;
     $("visitBriefClose").focus();
     try{
+      if(window.CockpitSynthetic){
+        const response=await fetch(window.CockpitClinicalBase+"/open-booking", {
+          method:"POST",credentials:"same-origin",cache:"no-store",
+          headers:{"Content-Type":"application/json"},body:JSON.stringify({booking_uid:view.uid})
+        });
+        if(!response.ok){const e=new Error("Read failed");e.status=response.status;throw e;}
+        const data=await response.json();
+        if(ticket!==state.ticket||$("visitBriefOverlay").hidden)return;
+        state.chosen={name:data.patient_name};
+        $("visitBriefFreshness").textContent="";
+        renderConfirmed(data);
+        return;
+      }
       const data=await request("read",{booking_uid:view.uid});
       if(ticket!==state.ticket||$("visitBriefOverlay").hidden)return;
       if(data.mode!=="booking_only"||data.booking?.booking_uid!==view.uid)
@@ -181,8 +194,7 @@
       "Προστατευμένος φάκελος: "+(state.chosen?.name||"επιβεβαιωμένος ασθενής")+
       ". Ανεξάρτητα επιβεβαιωμένος μόνο για αυτό το άνοιγμα — χωρίς μόνιμο δικαίωμα αυτόματης προβολής.";
     if(window.CockpitSynthetic) $("visitBriefIdentity").textContent=
-      "Δοκιμαστική σύνδεση με "+(state.chosen?.name||"συνθετικό ασθενή")+
-      ". Αποθηκεύτηκε στο backend· δεν αποτελεί προσωπική ιατρική πιστοποίηση.";
+      "";
     const visit=b.previous_visit;
     evidence("visitBriefPrevious",visit?
       [visit.date+" · "+(visit.reason||"Υπογεγραμμένη επίσκεψη")]
@@ -209,17 +221,25 @@
         (b.historical_plan.when||"χωρίς ημερομηνία")+" · "+b.historical_plan.purpose;
       $("visitBriefPlan").append(note);
     }
-    evidence("visitBriefPending",(b.pending||[]).map(p=>
-      p.description+" · "+p.status+" · "+(p.review_date||"χωρίς ημερομηνία")+
-      " (τελευταία καταγεγραμμένη κατάσταση, επιβεβαίωσε αν ισχύει)"),
-      "Δεν υπάρχουν καταγεγραμμένες ανοικτές εκκρεμότητες.");
+    if(window.CockpitSynthetic){
+      window.CockpitStoredChart.renderPending($("visitBriefPending"), b.patient_id, b.pending||[]);
+    }else{
+      const labels={open:"Σε εκκρεμότητα",awaiting_patient:"Αναμένεται από τον ασθενή",awaiting_result:"Αναμένεται αποτέλεσμα"};
+      evidence("visitBriefPending",(b.pending||[]).map(p=>
+        p.description+" · "+(labels[p.status]||"Σε εκκρεμότητα")+(p.review_date?" · "+p.review_date:"")),
+        "Δεν υπάρχουν ανοικτές εκκρεμότητες.");
+    }
     $("visitBriefChecksTitle").textContent=b.check_heading||"Για το ραντεβού";
     evidence("visitBriefChecks",(b.appointment_checks||[]).map(c=>c.text),
       "Δεν έχει τεκμηριωθεί συγκεκριμένος έλεγχος για αυτό το ραντεβού.");
+    if(window.CockpitSynthetic){
+      $("visitBriefChecksTitle").hidden=!(b.appointment_checks||[]).length;
+      $("visitBriefChecks").hidden=!(b.appointment_checks||[]).length;
+    }
     $("visitBriefClinical").hidden=false;
     $("visitBriefChoosePatient").hidden=true;
     $("visitBriefOpenChart").hidden=window.CockpitStaffRole!=="clinician"&&!window.CockpitSynthetic;
-    $("visitBriefUnlink").hidden=window.CockpitStaffRole!=="clinician"&&!window.CockpitSynthetic;
+    $("visitBriefUnlink").hidden=window.CockpitSynthetic||window.CockpitStaffRole!=="clinician";
   }
   async function confirmSelection(){
     const p=state.pending,chosen=state.chosen;

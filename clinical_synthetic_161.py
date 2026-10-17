@@ -7,10 +7,12 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import os
 import secrets
+from typing import Literal
+from pydantic import BaseModel, ConfigDict
 
 from fastapi import APIRouter, Depends, Header, HTTPException
 from fastapi.responses import HTMLResponse
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -21,7 +23,8 @@ from clinical_data import (
     _fold_patient_lookup,
 )
 from clinical_staff_auth import StaffActor
-from clinical_visit_brief import attach_visit_brief_routes
+from clinical_visit_brief import (attach_visit_brief_routes, BookingIntent,
+                                  _minimal_brief, _booking_card, _record_access)
 
 PREFIX = "/clinical/synthetic-161"
 SCENARIO = "cockpit-161-v1"
@@ -138,6 +141,17 @@ def _prepare(engine):
                 _test_patient(db, patient_id)
 
 
+class PendingChange(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    status: Literal["awaiting_patient", "resolved"]
+    expected_updated_at: datetime
+
+
+def _pending_view(p):
+    return {"pending_id": p.id, "description": p.description, "status": p.status,
+            "updated_at": p.updated_at.isoformat(), "source_encounter_id": p.source_encounter_id}
+
+
 def build_synthetic_161_router(engine):
     router = APIRouter(prefix=PREFIX, tags=["cockpit-synthetic-161"])
     protected = [Depends(require_test_access)]
@@ -170,14 +184,14 @@ def build_synthetic_161_router(engine):
         text = text.replace('<div id="doctorMainView">', '''
         <section class="clinical-identity-note" aria-label="Δοκιμή #161">
           <strong>Δοκιμή #161 · Μόνο συνθετικοί ασθενείς</strong>
-          <p>Αποθηκευμένο σενάριο 17/10/2026. Η δοκιμαστική επιβεβαίωση δεν αποτελεί
-          προσωπική ιατρική πιστοποίηση. Χρησιμοποίησε την υπάρχουσα «Πρόσβαση».</p>
+          <p>Σενάριο 17/10/2026 · Επίλεξε ραντεβού για την προετοιμασία της επίσκεψης.</p>
           <button id="synthetic161Prepare" type="button">Προετοιμασία δοκιμής #161</button>
           <span id="synthetic161Status" role="status"></span>
           <a href="/static/cockpit/">Επιστροφή στο Cockpit</a>
         </section><div id="doctorMainView">''')
         text = text.replace("Έλεγξα ανεξάρτητα τα στοιχεία αυτού του προσώπου στον προστατευμένο φάκελο. Το όνομα ή το UID του ραντεβού δεν αρκούν.",
                             "Έλεγξα το όνομα και την ημερομηνία γέννησης του επιλεγμένου δοκιμαστικού ασθενούς. Αυτή είναι μόνο δοκιμαστική επιβεβαίωση.")
+        text = text.replace('<p class="clinical-muted">Πλήρης κλινική σύνοψη και προηγούμενο σχέδιο εμφανίζονται μόνο μετά από επιβεβαιωμένη σύνδεση με τον προστατευμένο φάκελο.</p>', "")
         text = text.replace("</body>", '<script src="/static/cockpit/synthetic-161.js"></script></body>')
         return HTMLResponse(text, headers={"Cache-Control": "no-store"})
 
@@ -185,6 +199,46 @@ def build_synthetic_161_router(engine):
     def prepare():
         _prepare(engine)
         return {"ready": True, "storage": engine.dialect.name, "scenario": SCENARIO}
+
+    @router.post("/open-booking")
+    def open_booking(req: BookingIntent, actor=Depends(require_test_access)):
+        with Session(engine) as db:
+            actual = booking(db, req.booking_uid)
+            # Fixture identity is declared by exact scenario keys, never by name
+            # matching or unqualified external-calendar UID continuity.
+            patient_id = SYNTHETIC_161_PATIENT_IDS[BOOKINGS.index(req.booking_uid)]
+            patient = _test_patient(db, patient_id)
+            brief = _minimal_brief(db, patient_id, actual)
+            brief["pending"] = [_pending_view(p) for p in db.scalars(
+                select(ClinicalPendingORM).where(ClinicalPendingORM.patient_id == patient_id))]
+            _record_access(db, actor, req.booking_uid, "synthetic_brief_read", "allowed", patient_id)
+            db.commit()
+            return {"mode": "synthetic_fixture", "booking": _booking_card(actual),
+                    "patient_name": patient.demographics_json["full_name"], "brief": brief}
+
+    @router.post("/patient/{patient_id}/pending/{pending_id}")
+    def update_pending(patient_id: str, pending_id: str, req: PendingChange,
+                       actor=Depends(require_test_access)):
+        with Session(engine) as db:
+            _test_patient(db, patient_id)
+            row = db.get(ClinicalPendingORM, pending_id)
+            if (pending_id != patient_id + "-pending" or not row or row.patient_id != patient_id
+                    or row.source_encounter_id != patient_id + "-visit-10"):
+                raise HTTPException(404, "Pending outside test scenario")
+            expected = req.expected_updated_at
+            if expected.tzinfo is not None:
+                expected = expected.astimezone(timezone.utc).replace(tzinfo=None)
+            stamp = datetime.now(timezone.utc).replace(tzinfo=None)
+            changed = db.execute(update(ClinicalPendingORM).where(
+                ClinicalPendingORM.id == pending_id, ClinicalPendingORM.updated_at == expected
+            ).values(status=req.status, updated_at=stamp))
+            if changed.rowcount != 1:
+                raise HTTPException(409, "Pending changed; reload its current state")
+            _record_access(db, actor, BOOKINGS[SYNTHETIC_161_PATIENT_IDS.index(patient_id)],
+                           "synthetic_pending_" + req.status, "allowed", patient_id)
+            db.commit()
+            db.refresh(row)
+            return _pending_view(row)
 
     @router.get("/staff-session", dependencies=protected)
     def test_session():
@@ -240,8 +294,7 @@ def build_synthetic_161_router(engine):
                                 "snapshot": snapshot, "brief": brief, "detail": detail})
             return {"patient_id": patient_id, "demographics": patient.demographics_json,
                     "visits": history, "pending": [
-                        {"pending_id": p.id, "description": p.description, "status": p.status,
-                         "source_encounter_id": p.source_encounter_id} for p in pending]}
+                        _pending_view(p) for p in pending]}
 
     scoped = APIRouter(prefix="/calendar")
     attach_visit_brief_routes(

@@ -1,5 +1,8 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / repo-wide writer lock
 
+> **2026-10-18 #161 CORRECTION IMPLEMENTED / TESTED, NOT DEPLOYED:** Exact fixture-key appointment lookup reuses the stored Brief projection without name inference or pretend clinician attestation; registry/recent selection opens the stored chart directly. Inline Pending received/undo updates the existing marked synthetic row with updated_at CAS and same-transaction synthetic access audit; source encounter unchanged. 35 affected Python tests PASS including Chromium 1280/680/390, one-click/no-checkbox flow, persisted action/undo/refresh, scoped access and conflict tests; four existing Node suites PASS. No migrations or live-clinical route authority changes. PO-requested bounded correction, reuse existing review evidence, no new general R1/R2 programme. Next PR and existing-service deployment then live proof; ACCEPTED=NO, CP1 STOP.
+
+
 > **2026-10-18 #161 PO TEST FAILED / BOUNDED UX CORRECTION ACTIVE:** PO rejected repeated identity confirmations and inert technical pending text. Writer `codex/cockpit-161-friction-correction`, base `1ec98697f5f336ca9d2f900894583b16221ecdc1`. Authorized correction: fixed synthetic appointment opens its fixture patient Brief directly; registry opens stored chart; existing persisted synthetic Pending gains inline received/undo with concurrency protection. Reuse existing storage and Brief projection. No real-patient authority, provider, schema, M8 or CP1 changes. Prior technical PASS does not establish product acceptance. ACCEPTED=NO. Next implement and verify the bounded correction, deploy for PO testing. Earlier READY checkpoints below are historical and superseded.
 
 

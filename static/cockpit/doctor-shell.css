@@ -161,3 +161,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,ui-sans-se
 @media(max-width:560px){
  .cockpit-appointment-panel .today-context-strip{grid-template-columns:1fr}
 }
+
+/* One inline action beside the recorded obligation. */
+.synthetic-pending-row {display:flex; align-items:center; gap:12px; padding:12px 0; flex-wrap:wrap; border-bottom:1px solid #e5e7eb;}
+.synthetic-pending-row > div {flex:1; min-width:180px;}
+.synthetic-pending-row p {margin:4px 0; color:#64748b;}
+.synthetic-pending-row button {padding:9px 14px; border-radius:10px; border:1px solid #cbd5e1; background:#fff; cursor:pointer;}
