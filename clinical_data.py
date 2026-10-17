@@ -175,7 +175,7 @@ class LabSnapshotRecord(BaseModel):
     updated_at: datetime
 
 
-SourceRole = Literal["heidi_today", "gesy_today", "gesy_previous", "clinician_edit"]
+SourceRole = Literal["heidi_today", "gesy_today", "gesy_previous", "clinician_edit", "dia_summary"]
 VerificationState = Literal["source_stated", "clinician_confirmed"]
 CertaintyState = Literal["certain", "uncertain", "conflicting"]
 SourceIdentityState = Literal["consistent", "uncertain", "conflict"]
@@ -274,6 +274,7 @@ class VisitCaptureExternalDependency(BaseModel):
 class VisitCapturePendingCandidate(BaseModel):
     model_config = {"extra": "forbid"}
 
+    source_excerpt: Optional[str] = Field(default=None, max_length=2000)
     item_type: str = Field(min_length=1, max_length=120)
     description: str = Field(min_length=1, max_length=1000)
     trigger: Optional[str] = Field(default=None, max_length=1000)
@@ -661,7 +662,7 @@ def build_clinical_router(engine: Engine) -> APIRouter:
         q = query.strip()
         with Session(engine) as session:
             stmt = select(PatientORM).where(
-                PatientORM.patient_id.not_in(SYNTHETIC_161_PATIENT_IDS)
+                PatientORM.patient_id.not_in((*SYNTHETIC_161_PATIENT_IDS, "cockpit-cp1-test"))
             ).order_by(
                 PatientORM.updated_at.desc(), PatientORM.patient_id.asc()
             )
@@ -700,7 +701,7 @@ def build_clinical_router(engine: Engine) -> APIRouter:
                 select(EncounterORM, PatientORM)
                 .join(PatientORM, PatientORM.patient_id == EncounterORM.patient_id)
                 .where(EncounterORM.status.in_(("completed", "amended")),
-                       PatientORM.patient_id.not_in(SYNTHETIC_161_PATIENT_IDS))
+                       PatientORM.patient_id.not_in((*SYNTHETIC_161_PATIENT_IDS, "cockpit-cp1-test")))
                 .order_by(
                     EncounterORM.encounter_date.desc(),
                     EncounterORM.created_at.desc(),
@@ -893,6 +894,8 @@ def build_clinical_router(engine: Engine) -> APIRouter:
                 session.add(pending_row)
                 pending_rows.append(pending_row)
 
+            row.payload_json = {"_visit_capture_v1": {**row.payload_json["_visit_capture_v1"],
+                "pending_ids": [p.id for p in pending_rows]}}
             patient = ensure_patient(session, context.patient_id)
             patient.updated_at = now
             session.add(patient)
@@ -1119,4 +1122,6 @@ def build_clinical_router(engine: Engine) -> APIRouter:
                 for row in rows
             ]
 
+    from clinical_capture_cp1 import attach_cp1
+    attach_cp1(router, engine, protected, visit_capture_context, ensure_patient)
     return router

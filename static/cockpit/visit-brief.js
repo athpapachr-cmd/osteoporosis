@@ -329,7 +329,7 @@
   $("visitBriefUnlink").addEventListener("click",revoke);
   $("visitBriefOpenChart").addEventListener("click",()=>{
     if(!state.patientId)return;
-    if(window.CockpitSynthetic){
+    if(window.CockpitStoredChart){
       const patientId=state.patientId;
       $("visitBriefClose").click();
       window.CockpitStoredChart?.open(patientId);
