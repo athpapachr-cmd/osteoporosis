@@ -59,6 +59,7 @@ const document = {
   addEventListener(name,cb) {events.push({name,cb});},
 };
 let mode = 'unauthenticated';
+const pendingStaff = [];
 const requests = [];
 const winEvents = [];
 const window = {
@@ -68,6 +69,8 @@ const window = {
 async function fetch(url,options = {}) {
   requests.push({url, method:options.method||'GET', options});
   if (url==='/clinical/status') return {ok:mode==='authenticated',status:mode==='authenticated'?200:401};
+  if (url==='/clinical/staff-session')
+    return new Promise(resolve=>pendingStaff.push(resolve));
   if(url==='/clinical/login') {
     assert.strictEqual(options.credentials,'same-origin');
     assert.strictEqual(options.method,'POST');
@@ -75,7 +78,7 @@ async function fetch(url,options = {}) {
     assert.strictEqual(options.headers['Content-Type'],'application/json');
     assert.strictEqual(JSON.parse(options.body).key,'synthetic-key');
     if(mode==='invalid')return {ok:false,status:401};
-    mode='authenticated';return {ok:true,status:200};
+    mode='authenticated';return {ok:true,status:200,json:async()=>({authenticated:true,session:"browser",staff_role:"secretary"})};
   }
   throw Error('Unexpected shared-nav network request: '+url);
 }
@@ -113,6 +116,13 @@ assert.strictEqual(home.href,'/static/cockpit/');
   input.value='synthetic-key';
   await form.fire('submit');
   assert(get('ceGlobalAuthStatus').textContent.includes('Συνδέθηκες'));
+  assert.strictEqual(window.CockpitStaffRole,'secretary');
+  // A delayed clinician bootstrap/probe must not override the new secretary login.
+  assert(pendingStaff.length>=1,'expected unresolved staff probe');
+  for(const resolve of pendingStaff)
+    resolve({ok:true,status:200,json:async()=>({staff_role:'clinician',principal_id:'clinic-clinician'})});
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.strictEqual(window.CockpitStaffRole,'secretary','old staff probe replaced current role');
   assert.deepStrictEqual(winEvents,['clinical:authenticated']);
   assert(!JSON.stringify(elements.map(x=>x.value)).includes('synthetic-key'));
   assert.strictEqual(requests.filter(r=>r.url==='/clinical/login').length,2);

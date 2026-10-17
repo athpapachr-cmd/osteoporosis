@@ -17,6 +17,7 @@ CSS = "\n".join((ROOT / part).read_text(encoding="utf-8") for part in (
 ))
 JS = [(ROOT / part).read_text(encoding="utf-8") for part in (
     "static/cockpit/clinical-workspace.js",
+    "static/cockpit/visit-brief.js",
     "static/cockpit/app.js",
     "static/cockpit/doctor-shell.js",
     "static/cockpit/shared-nav.js",
@@ -58,10 +59,43 @@ CONTEXT = {
     "next": DAY[0], "upcoming_today": DAY,
 }
 
+def assert_delayed_recent_purged_after_logout(page):
+    # A successful old clinician response arriving AFTER logout cannot restore PHI.
+    assert page.evaluate("""() => {
+        const originalFetch = window.fetch.bind(window);
+        window.fetch = (url, options) => {
+            if (String(url) === "/clinical/recent-encounters?limit=3") {
+                return new Promise(resolve => {
+                    window.__releaseOldRecent = () => resolve({
+                        ok: true,
+                        json: async () => [{
+                            patient_id: "SYN-OLD",
+                            patient_display_name: "SYN-STALE-PHI",
+                            encounter_date: "2026-10-10",
+                            visit_type: "Synthetic visit"
+                        }]
+                    });
+                });
+            }
+            return originalFetch(url, options);
+        };
+        window.CockpitStaffRole = "clinician";
+        window.dispatchEvent(new Event("clinical:authenticated"));
+        return typeof window.__releaseOldRecent === "function";
+    }""")
+    assert page.evaluate("""async () => {
+        window.dispatchEvent(new Event("clinical:unauthenticated"));
+        window.__releaseOldRecent();
+        await new Promise(resolve => setTimeout(resolve, 0));
+        return !document.getElementById("visitRecentRows").textContent.includes("SYN-STALE-PHI");
+    }"""), "old clinician result repopulated protected patient names"
+    assert page.locator("#visitRecentRows .clinical-patient-row").count() == 0
+
+
 def browser_suite(width, screenshot_name):
     errors = []
     outbound = []
-    auth = {"authenticated": False}
+    auth = {"authenticated": False, "linked": False, "confirmations": 0}
     with sync_playwright() as pw:
         executable = shutil.which("google-chrome") or shutil.which("chromium")
         browser = pw.chromium.launch(headless=True, executable_path=executable, args=["--no-sandbox"])
@@ -77,10 +111,74 @@ def browser_suite(width, screenshot_name):
                 assert route.request.post_data_json is not None
                 if route.request.post_data_json.get("key") == "synthetic-key":
                     auth["authenticated"] = True
-                    return route.fulfill(status=200, json={"authenticated": True})
+                    return route.fulfill(status=200, json={"authenticated": True, "staff_role": "clinician"})
                 return route.fulfill(status=401, json={"detail": "Unauthorized"})
             if "/clinical/calendar/cockpit-context" in url:
                 return route.fulfill(json=CONTEXT)
+            if url.endswith("/clinical/calendar/visit-brief/read"):
+                assert route.request.method == "POST"
+                uid = route.request.post_data_json["booking_uid"]
+                return route.fulfill(status=200 if auth["authenticated"] else 401, json={
+                    "mode": "booking_only",
+                    "reason": "needs_reconfirmation" if auth["linked"] else "unlinked",
+                    "revision": 1 if auth["linked"] else 0,
+                    "linked": auth["linked"], "booking": {"booking_uid": uid,
+                      "observation": "a" * 64,
+                      "patient_display_name": "Ασθενής Δοκιμής Α",
+                      "reason": "Επανεξέταση", "clinic": "Limassol",
+                      "start_at": "2026-10-11T07:30:00Z"},
+                } if auth["authenticated"] else {"detail": "Unauthorized"})
+            if url.endswith("/clinical/staff-session"):
+                return route.fulfill(status=200 if auth["authenticated"] else 401,
+                    json=({"staff_role": "clinician", "principal_id": "clinic-clinician"}
+                          if auth["authenticated"] else {"detail": "Unauthorized"}))
+            if url.endswith("/clinical/calendar/visit-brief/patient-search"):
+                assert route.request.method == "POST"
+                payload = route.request.post_data_json
+                assert payload["booking_uid"] == DAY[0]["appointment_id"]
+                assert payload["observed_booking"] == "a" * 64
+                assert payload["query"].strip()
+                return route.fulfill(status=200 if auth["authenticated"] else 401,
+                    json=[{"patient_id": "SYN-BRIEF",
+                           "demographics": {"full_name": "Ασθενής Δοκιμής Α",
+                                            "date_of_birth": "1980-01-01"}}]
+                    if auth["authenticated"] else {"detail": "Unauthorized"})
+            if "/clinical/patients?query=" in url:
+                return route.fulfill(status=200 if auth["authenticated"] else 401,
+                    json=[{"patient_id": "SYN-BRIEF",
+                      "demographics": {"full_name": "Ασθενής Δοκιμής Α",
+                                       "date_of_birth": "1980-01-01"}}]
+                    if auth["authenticated"] else {"detail": "Unauthorized"})
+            if url.endswith("/clinical/calendar/visit-brief/confirm"):
+                assert route.request.method == "POST"
+                data = route.request.post_data_json
+                assert data["patient_id"] == "SYN-BRIEF"
+                assert data["independently_verified"] is True
+                assert data["observed_booking"] == "a" * 64
+                assert data["expected_revision"] == (1 if auth["linked"] else 0)
+                auth["linked"] = True
+                auth["confirmations"] += 1
+                return route.fulfill(status=200, json={
+                    "mode": "confirmed_once", "revision": auth["confirmations"],
+                    "booking": {
+                      "booking_uid": data["booking_uid"],
+                      "patient_display_name": "Ασθενής Δοκιμής Α",
+                      "reason": "Επανεξέταση", "clinic": "Limassol",
+                      "start_at": "2026-10-11T07:30:00Z"},
+                    "brief": {"patient_id": "SYN-BRIEF", "check_heading": "Για το ραντεβού 2026-10-11",
+                      "previous_visit": {"date": "2026-10-10",
+                        "reason": "Προηγούμενη υπογεγραμμένη επίσκεψη",
+                        "findings": ["Προηγούμενο εύρημα"]},
+                      "prior_plan": {"decisions": ["Κλινικός επανέλεγχος"],
+                         "medications": [], "next_contact": {
+                           "when": "2026-10-11", "purpose": "Επανεξέταση"}},
+                      "historical_plan": None,
+                      "pending": [{"description": "Εργαστηριακά",
+                          "status": "awaiting_result", "review_date": "2026-10-11"}],
+                      "appointment_checks": [{"text": "Επανεξέταση",
+                          "kind": "previous_next_contact"}],
+                      "partial": False}
+                })
             if "/clinical/recent-encounters" in url:
                 return route.fulfill(json=RECENT)
             if "/clinical/calendar/appointments?" in url:
@@ -146,12 +244,72 @@ def browser_suite(width, screenshot_name):
         expect(key).to_have_value("")
         page.keyboard.press("Escape")
         expect(page.locator("#ceGlobalAccessPanel")).to_be_hidden()
+        # End-to-end source-only → protected registry → independently checked
+        # explicit confirmation → brief → reopen booking-only, at all 3 widths.
+        page.locator("#visitSidebarNext").click()
+        expect(page.locator("#visitBriefOverlay")).to_be_visible()
+        expect(page.locator("#visitBriefIdentity")).to_contain_text("Δεν υπάρχει επιβεβαιωμένη σύνδεση")
+        expect(page.locator("#visitBriefClinical")).to_be_hidden()
+        page.locator("#visitBriefChoosePatient").click()
+        expect(page.locator("#visitBriefOverlay")).to_be_hidden()
+        expect(page.locator("#visitPatientMatches .clinical-patient-row")).to_have_count(1)
+        if width <= 990:
+            expect(page.locator("#visitSidebar")).to_be_hidden()
+        # The full-registry search belongs to central Home, not the collapsed rail.
+        page.locator("#visitPatientMatches .clinical-patient-row").first.click()
+        expect(page.locator("#visitBookingConfirmation")).to_be_visible()
+        if width <= 990:
+            expect(page.locator("#visitSidebar")).to_be_hidden()
+        page.locator("#visitConfirmBooking").click()
+        expect(page.locator("#visitBookingConfirmStatus")).to_contain_text("Χρειάζεται ανεξάρτητη")
+        assert auth["confirmations"] == 0
+        page.locator("#visitBookingIndependentCheck").check()
+        page.locator("#visitConfirmBooking").click()
+        expect(page.locator("#visitBriefOverlay")).to_be_visible()
+        expect(page.locator("#visitBriefClinical")).to_be_visible()
+        expect(page.locator("#visitBriefPrevious")).to_contain_text("Προηγούμενη υπογεγραμμένη")
+        expect(page.locator("#visitBriefChecks")).to_contain_text("Επανεξέταση")
+        expect(page.locator("#visitBriefOpenChart")).to_be_visible()
+        expect(page.locator("#visitBriefUnlink")).to_be_visible()
+        assert auth["confirmations"] == 1
+        page.locator("#visitBriefClose").click()
+        expect(page.locator("#visitBriefClinical")).to_be_hidden()
+        # P1: hidden DOM is not a privacy boundary, including at 390/680/1280.
+        for node in ("visitBriefName", "visitBriefWhen", "visitBriefReason",
+                     "visitBriefFreshness", "visitBriefIdentity", "visitBookingContext"):
+            assert page.locator("#" + node).text_content() == "", f"stale DOM {node}"
+        assert page.locator("#visitBriefPrevious").locator("*").count() == 0
+        assert page.locator("#visitBriefPlan").locator("*").count() == 0
+        assert not page.locator("#visitBookingIndependentCheck").is_checked()
+        expect(page.locator("#visitBookingConfirmation")).to_be_hidden()
+        page.locator("#visitBackHome").click()
+        page.locator("#visitSidebarNext").click()
+        expect(page.locator("#visitBriefIdentity")).to_contain_text("νέα ανεξάρτητη επιβεβαίωση")
+        expect(page.locator("#visitBriefClinical")).to_be_hidden()
+        page.evaluate("window.CockpitStaffRole='secretary'")
+        page.locator("#visitBriefClose").click()
+        page.locator("#visitSidebarNext").click()
+        expect(page.locator("#visitBriefUnlink")).to_be_hidden()
+        page.evaluate("window.CockpitStaffRole='clinician'")
+        assert auth["confirmations"] == 1
+        page.locator("#visitBriefClose").click()
+        expect(page.locator("#visitBriefOverlay")).to_be_hidden()
         if width <= 620:
             expect(page.locator("#doctorAttentionList .doctor-action-row")).to_have_count(4)
             expect(page.locator("#doctorAttentionList")).to_contain_text("Συνθετικός Ασθενής Β")
             expect(page.locator("#doctorAttentionList")).to_contain_text("Εκδοθείσες αιτήσεις")
             expect(page.locator("#doctorAttentionList")).to_contain_text("Δεν υπάρχει ακόμη αξιόπιστη καταμέτρηση")
             assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1")
+            # Actual Chromium: hidden registry and Dia details are removed on auth loss.
+            assert_delayed_recent_purged_after_logout(page)
+            page.evaluate("""() => {
+                document.getElementById('visitDiaPreviewText').textContent='SYN-PHI';
+                document.getElementById('visitSelectedName').textContent='SYN-PHI';
+                window.dispatchEvent(new Event('clinical:unauthenticated'));
+            }""")
+            assert page.locator("#visitPatientMatches").locator("*").count() == 0
+            assert page.locator("#visitDiaPreviewText").text_content() == ""
+            assert page.locator("#visitSelectedName").text_content() == ""
             assert not errors, errors
             assert not any("/clinical/visit-capture/save" in url for url in outbound)
             browser.close()
@@ -219,6 +377,15 @@ def browser_suite(width, screenshot_name):
             expect(page.locator("#visitSidebarPrevious")).to_be_disabled()
             expect(page.locator("#visitBriefOverlay")).to_be_hidden()
         assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1"), "horizontal overflow"
+        assert_delayed_recent_purged_after_logout(page)
+        page.evaluate("""() => {
+            document.getElementById('visitDiaPreviewText').textContent='SYN-PHI';
+            document.getElementById('visitSelectedName').textContent='SYN-PHI';
+            window.dispatchEvent(new Event('clinical:unauthenticated'));
+        }""")
+        assert page.locator("#visitPatientMatches").locator("*").count() == 0
+        assert page.locator("#visitDiaPreviewText").text_content() == ""
+        assert page.locator("#visitSelectedName").text_content() == ""
         assert not errors, errors
         assert not any("/clinical/visit-capture/save" in url for url in outbound)
         browser.close()

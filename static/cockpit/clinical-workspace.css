@@ -97,3 +97,17 @@
 .clinical-more-results{width:100%;border:0;background:#eff8f6;color:#136a67;border-radius:9px;padding:10px;cursor:pointer;font-weight:750;text-align:center}
 @media(max-width:1020px){.clinical-home-layout{grid-template-columns:1fr}.clinical-sidebar .today-context-strip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}.clinical-quick-nav{justify-content:flex-start}}
 @media(max-width:620px){.clinical-sidebar .today-context-strip{grid-template-columns:1fr}.clinical-brief-card{padding:16px}.clinical-quick-nav a{font-size:11px}}
+
+
+/* Verified appointment/clinical evidence lives only in the existing protected view. */
+.clinical-booking-confirm{border:1px solid #d4e1e4;border-radius:12px;padding:14px;margin:12px 0;background:#f8fbfb}
+.clinical-booking-check{display:flex;gap:10px;align-items:flex-start;font-size:13px;line-height:1.45;margin:10px 0}
+.clinical-booking-check input{margin-top:3px;flex:0 0 auto}
+.clinical-booking-confirm .clinical-primary{margin-top:6px}
+.clinical-brief-sections{margin:14px 0;display:grid;gap:6px}
+.clinical-brief-sections h3{font-size:13px;color:#244e59;margin:12px 0 2px}
+.clinical-brief-sections p,.clinical-brief-sections li{font-size:13px;line-height:1.45;overflow-wrap:anywhere}
+.clinical-brief-sections ul{margin:4px 0;padding-inline-start:20px}
+.clinical-brief-sections .clinical-muted{color:#65787d}
+.clinical-brief-card button[hidden],.clinical-booking-confirm[hidden],.clinical-brief-sections[hidden],.clinical-booking-check[hidden]{display:none}
+@media(max-width:390px){.clinical-booking-confirm{padding:10px}.clinical-brief-card{max-height:calc(100dvh - 24px);padding:12px}}

@@ -15,7 +15,13 @@
  }
  async function get(url){
    const r=await fetch(url,{credentials:"same-origin",headers:{"Accept":"application/json"}});
-   if(!r.ok){const e=new Error("HTTP "+r.status);e.status=r.status;throw e;}
+   if(!r.ok){
+     // A secretary's permitted session must not be treated as logged out
+     // merely because an unrelated clinician-only legacy endpoint returns 401.
+     if(r.status===401&&window.CockpitStaffRole==="clinician")
+       window.dispatchEvent?.(new Event("clinical:unauthenticated"));
+     const e=new Error("HTTP "+r.status);e.status=r.status;throw e;
+   }
    return r.json();
  }
  function info(target,text){
@@ -35,6 +41,7 @@
    state.parts=null;state.tab="snapshot";
    $("visitDiaText").value="";$("visitDiaEditText").value="";
    $("visitDiaComposer").hidden=true;$("visitDiaPreview").hidden=true;
+   $("visitDiaPreviewText").textContent="";
    $("visitDiaEditPane").hidden=true;$("visitDiaCopyStatus").textContent="";
    $("visitDiaOpen").textContent="Σύνοψη από το Dia";
    $("visitDiaOpen").setAttribute("aria-expanded","false");
@@ -60,18 +67,40 @@
    $("visitChoosePatient").hidden=Boolean(row.patientId);
    $("visitPatientMatches").hidden=true;
    $("visitPatientSearch").setAttribute("aria-expanded","false");
+   if(row.kind==="recent")window.CockpitVisitBrief?.invalidate();
+   if(row.kind==="registry")window.CockpitVisitBrief?.selectPatient(row);
+ }
+ function purgeProtectedWorkspace(){
+   // Authentication loss or account switch must clear hidden DOM, too.
+   state.revision++;clearTimeout(state.timer);
+   resetDraft();state.selected=null;state.appointment=null;state.briefReturnFocus=null;
+   $("visitWorkspacePatient").hidden=true;$("visitWorkspaceHome").hidden=false;
+   for(const id of ["visitSelectedName","visitSelectedReason","visitSelectedSource",
+                    "visitIdentityStatus","visitIdentityNote"])$(id).textContent="";
+   $("visitPatientSearch").value="";
+   $("visitPatientSearch").setAttribute("aria-expanded","false");
+   $("visitPatientMatches").replaceChildren();$("visitPatientMatches").hidden=true;
+   $("visitRecentRows").replaceChildren();
+   window.CockpitVisitBrief?.invalidate();
  }
  function back(){
    state.revision++;clearTimeout(state.timer);
    resetDraft();state.selected=null;state.appointment=null;
+   window.CockpitVisitBrief?.invalidate();
    $("visitWorkspacePatient").hidden=true;$("visitWorkspaceHome").hidden=false;
    $("visitPatientSearch").value="";$("visitPatientMatches").hidden=true;
    $("visitPatientSearch").setAttribute("aria-expanded","false");
  }
  async function recent(){
    const target=$("visitRecentRows");
+   if(window.CockpitStaffRole==="secretary"){
+     return info(target,"Οι πρόσφατες κλινικές επισκέψεις εμφανίζονται μόνο στον γιατρό.");
+   }
+   // A late clinician response must not survive logout or account switch.
+   const ticket=state.revision;
    try{
      const list=await get("/clinical/recent-encounters?limit=3");
+     if(ticket!==state.revision||window.CockpitStaffRole==="secretary")return;
      if(!Array.isArray(list))throw Error("invalid response");
      target.replaceChildren();
      if(!list.length)return info(target,"Δεν υπάρχουν ολοκληρωμένες επισκέψεις στο μητρώο.");
@@ -93,12 +122,31 @@
          open({kind:"recent",name,reason:context,patientId:r.patient_id});
        });
      });
-   }catch(e){info(target,e.status===401?"Συνδέσου για να δεις τις κλινικές επισκέψεις.":"Οι πρόσφατες κλινικές επισκέψεις δεν είναι ακόμη διαθέσιμες.");}
+   }catch(e){
+     if(ticket===state.revision&&window.CockpitStaffRole!=="secretary")
+       info(target,e.status===401?"Συνδέσου για να δεις τις κλινικές επισκέψεις.":"Οι πρόσφατες κλινικές επισκέψεις δεν είναι ακόμη διαθέσιμες.");
+   }
  }
  async function loadMatches(term,ticket,offset){
    const box=$("visitPatientMatches");
    try{
-     const rows=await get("/clinical/patients?query="+encodeURIComponent(term)+"&limit=20&offset="+offset);
+      const scope=window.CockpitVisitBrief?.bookingVerification();
+      let rows;
+      if(scope){
+        const response=await fetch("/clinical/calendar/visit-brief/patient-search",{
+          method:"POST",credentials:"same-origin",cache:"no-store",
+          headers:{"Accept":"application/json","Content-Type":"application/json"},
+          body:JSON.stringify({...scope,query:term,limit:20,offset})
+        });
+        if(!response.ok){
+          if(response.status===401)
+            window.dispatchEvent?.(new Event("clinical:unauthenticated"));
+          const error=new Error("HTTP "+response.status);error.status=response.status;throw error;
+        }
+        rows=await response.json();
+      }else{
+        rows=await get("/clinical/patients?query="+encodeURIComponent(term)+"&limit=20&offset="+offset);
+      }
      if(ticket!==state.revision)return;
      if(!Array.isArray(rows))throw Error("invalid results");
      if(offset===0)box.replaceChildren();
@@ -108,6 +156,8 @@
        const meta=birthday?"Γέννηση: "+birthday:"Καταχωρισμένος φάκελος — επιβεβαίωσε τα στοιχεία πριν την επιλογή";
        addRow(box,name,meta,"↗",()=>{
          const prev=state.appointment;
+         document.body?.classList?.toggle("doctor-rail-open",false);
+         $("doctorRailToggle")?.setAttribute("aria-expanded","false");
          open({kind:"registry",name,reason:prev?prev.reason:meta,time:prev?prev.time:"",patientId:p.patient_id});
        });
      });
@@ -130,26 +180,40 @@
  }
  function closeBrief(){
    $("visitBriefOverlay").hidden=true;
+   window.CockpitVisitBrief?.closed();
    const opener=state.briefReturnFocus;state.briefReturnFocus=null;
    if(opener)opener.focus();
  }
  function showBrief(prefix){
    const nameNode=$(prefix+"AppointmentPatient");
    if(!nameNode.dataset.appointmentId)return;
-   const overlay=$("visitBriefOverlay");
    state.briefReturnFocus=$("visitSidebar"+prefix[0].toUpperCase()+prefix.slice(1));
-   $("visitBriefName").textContent=nameNode.textContent;
-   $("visitBriefWhen").textContent=$(prefix+"AppointmentTime").textContent;
-   $("visitBriefReason").textContent=$(prefix+"AppointmentType").textContent;
-   $("visitBriefFreshness").textContent=$("calendarNote").textContent;
+   const view={
+     uid:nameNode.dataset.appointmentId,name:nameNode.textContent,
+     time:$(prefix+"AppointmentTime").textContent,
+     reason:$(prefix+"AppointmentType").textContent,
+     freshness:$("calendarNote").textContent
+   };
+   if(window.CockpitVisitBrief){window.CockpitVisitBrief.open(view);return;}
+   // Safe booking-only compatibility preview when optional script is not loaded.
+   $("visitBriefName").textContent=view.name;
+   $("visitBriefWhen").textContent=view.time;
+   $("visitBriefReason").textContent=view.reason;
+   $("visitBriefFreshness").textContent=view.freshness;
    $("visitBriefIdentity").textContent="Δεν υπάρχει επιβεβαιωμένη κλινική σύνδεση από το ημερολόγιο. Το όνομα δεν αρκεί για πρόσβαση στον φάκελο.";
-   overlay.hidden=false;
+   $("visitBriefOverlay").hidden=false;
    $("visitBriefClose").focus();
  }
  function selectFromBrief(){
+   const context=window.CockpitVisitBrief?.selectionContext();
+   if(window.CockpitVisitBrief&&!context)return;
    const name=$("visitBriefName").textContent,reason=$("visitBriefReason").textContent,time=$("visitBriefWhen").textContent;
    closeBrief();back();
+   if(context)window.CockpitVisitBrief.activateSelection(context);
    state.appointment={kind:"appointment",name,reason,time,patientId:null};
+   // Home's full-registry search is central at every width; keep the rail closed.
+   document.body?.classList?.toggle("doctor-rail-open",false);
+   $("doctorRailToggle")?.setAttribute("aria-expanded","false");
    $("visitPatientSearch").value=name;$("visitPatientSearch").focus();search();
  }
  function parse(raw){
@@ -191,9 +255,15 @@
    if($("visitBriefOverlay").hidden)return;
    if(e.key==="Escape"){e.preventDefault();closeBrief();}
    if(e.key==="Tab"){
-     const a=$("visitBriefClose"),b=$("visitBriefChoosePatient");
-     if(e.shiftKey&&document.activeElement===a){e.preventDefault();b.focus();}
-     else if(!e.shiftKey&&document.activeElement===b){e.preventDefault();a.focus();}
+     // The modal gains two buttons after independent confirmation. Hidden
+     // controls must never receive keyboard focus.
+     const visible=["visitBriefClose","visitBriefChoosePatient",
+       "visitBriefOpenChart","visitBriefUnlink"]
+       .map($).filter(el=>el&&!el.hidden&&!el.disabled);
+     if(!visible.length)return;
+     const first=visible[0],last=visible[visible.length-1];
+     if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}
+     else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
    }
  });
  $("visitBackHome").addEventListener("click",back);
@@ -248,6 +318,12 @@
      }
    };
  }
- if (typeof window !== "undefined" && typeof window.addEventListener === "function") window.addEventListener("clinical:authenticated", recent);
+ if (typeof window !== "undefined" && typeof window.addEventListener === "function") if(typeof window!=="undefined"&&typeof window.addEventListener==="function"){
+   window.addEventListener("clinical:unauthenticated",purgeProtectedWorkspace);
+   window.addEventListener("clinical:authenticated",()=>{
+     purgeProtectedWorkspace();
+     recent();
+   });
+ }
  recent();
 })();
