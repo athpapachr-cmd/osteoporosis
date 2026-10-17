@@ -581,6 +581,7 @@ def attach_visit_brief_routes(
         with Session(engine) as session:
             row = session.get(BookingPatientLinkORM, (NAMESPACE, req.booking_uid))
             if row is None or row.revision != req.expected_revision:
+                session.rollback()
                 _record_denial(engine, actor, req.booking_uid, "link_revoke", 409)
                 raise HTTPException(409, "Link revision changed")
             revision = row.revision + 1
