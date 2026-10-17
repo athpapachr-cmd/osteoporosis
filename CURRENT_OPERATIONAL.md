@@ -1,5 +1,20 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / repo-wide writer lock
 
+> **2026-10-18 CP1 UI POLISH PR #174 OPEN:** https://github.com/athpapachr-cmd/osteoporosis/pull/174, runtime `326797a`. R1 PASS/4 CP1 tests PASS; live functional evidence unchanged. Next affected CI/native release, no new extraction qualification cycle; read existing proof visit in final UI.
+
+
+> **2026-10-18 CP1 READABILITY POLISH TESTED:** Writer `codex/cockpit-cp1-review-readability`; only two-row editable textareas, scoped spacing and same-text Clinical Updates row wrapping. 4 CP1 regressions PASS; bounded R1 fidelity PASS. Existing actual-provider/PostgreSQL proof `39074882064` remains valid; no capture/write semantics changed. Next small UI PR/native deploy; preserve real-flow evidence and hand back for PO acceptance.
+
+
+> **2026-10-18 CP1 LIVE END-TO-END PASS:** Run `39074882064` SUCCESS after PO restored provider budget: actual Render extraction200, 3 source-backed proposals/zero invented medication; clinician correction and rejection leave only accepted CD obligation. Atomic Save persisted on existing PostgreSQL, retry409 prevents duplicate, refresh and independent1280/390 sessions show identical signed visit/source-linked obligation and Clinical Updates navigation. Screenshots downloaded to `cockpit-v4-browser-evidence/live-cp1-proof/` and inspected (synthetic only). Current LIVE `b046185` / `dep-db9v9igae00c7399admg`. No real-patient data used. Next small presentation polish found in screenshot (oversized single-line review fields and cramped updates row), no logic/schema/provider changes, then handback for PO acceptance.
+
+
+> **2026-10-18 #173 LIVE / FULL CP1 RETRY NEXT:** Render `dep-db9v9igae00c7399admg` LIVE at exact `b0461857a85f3969454ad087c4aca4f8fce4fccf`, 22:22:37 UTC / 01:22 Cyprus. Durable local checkpoint. Next full real-provider proof after PO budget restoration using verification-only `b75e2d6`; no additional config/key changes.
+
+
+> **2026-10-18 #173 MERGED / NATIVE DEPLOY NEXT:** Squash `b0461857a85f3969454ad087c4aca4f8fce4fccf` at 22:20:56 UTC; final canonical guard `39074657417` PASS. Prior four local merge/deploy/failure checkpoints are included in the squash and preserved on correction branch; local main reconciled to remote main. Next observe native deployment then retry full live CP1 after PO budget restoration. Local durable checkpoint before deploy observation.
+
+
 > **2026-10-18 #173 CI PASS / PO RESTORED PROVIDER BUDGET:** PO explicitly replied «Το έκανα. Ανανέωσα το υπόλοιπο». Retry live extraction after correction deploy; do not infer provider success from balance update. Visit Capture `39074552269`, Home `39074552260`, Visit Brief `39074552375`, canonical `39074552381` SUCCESS on `ea300ba`; reviewed runtime `cacf1d6` unchanged. Next #173 merge/native deploy then full finite CP1 live flow.
 
 

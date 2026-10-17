@@ -112,6 +112,7 @@
       if(enums[key]){control=el(label,'select');for(const [v,title]of Object.entries({...enums[key],...(value&&!enums[key][value]?{[value]:value}:{})})){const option=el(control,'option',title);option.value=v;}}
       else{control=el(label,['text','description','purpose'].includes(key)?'textarea':'input');if(typeof value==='boolean')control.type='checkbox';else if(typeof value==='number')control.type='number';else if(['review_date','when'].includes(key))control.type='date';}
       if(typeof value==='boolean')control.checked=value;else control.value=value??'';
+      if(control.tagName==='TEXTAREA')control.rows=2;
       control.oninput=()=>{obj[key]=typeof value==='boolean'?control.checked:typeof value==='number'?Number(control.value):control.value||null;edited(obj);};
     }
   }
@@ -146,7 +147,7 @@
     try{const data=await request('/clinical-updates?scope='+scope);if(ticket!==generation||!active())return;target.replaceChildren();
       button(target,scope==='test'?'Πραγματικοί φάκελοι':'Δοκιμαστικός ασθενής',()=>renderUpdates(target,active,close,scope==='test'?'real':'test'));
       el(target,'p',data.items.length?'Υποχρεώσεις από αποθηκευμένες επισκέψεις · έως 100 πρόσφατες':'Δεν έχουν καταγραφεί υποχρεώσεις.');
-      for(const item of data.items){const b=button(target,item.patient_name+' · '+item.description,()=>{close();open(item.patient_id);});b.className='doctor-action-row';el(b,'small',(statuses[item.status]||item.status)+' · '+date(item.source_date));}
+      for(const item of data.items){const b=button(target,'',()=>{close();open(item.patient_id);});b.className='doctor-action-row';const copy=el(b,'span');el(copy,'strong',item.patient_name);el(copy,'small',item.description);el(copy,'small',(statuses[item.status]||item.status)+' · '+date(item.source_date));el(b,'span','›');}
     }catch(e){if(ticket===generation&&active()){target.replaceChildren();el(target,'p',e.message);}}
   }
   $('visitBackHome').addEventListener('click',()=>{reset();const u=new URL(location.href);u.searchParams.delete('chart');history.replaceState(null,'',u);});

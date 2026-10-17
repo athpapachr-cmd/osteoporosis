@@ -207,3 +207,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,ui-sans-se
 #captureComposer blockquote,.patient-chart blockquote {margin:12px 0;padding:8px 12px;border-left:3px solid #74a5a4;color:#54717c}
 #captureComposer button {margin:8px 8px 8px 0} #captureSave {background:#217a75;color:white}
 #captureTestPatient {margin-top:10px} .patient-chart-heading button {white-space:normal}
+
+#captureReview textarea {min-height:3.4em;resize:vertical}
+#captureReview label {margin:8px 0}
+#captureReview .capture-field-group {padding:12px;margin:10px 0}
