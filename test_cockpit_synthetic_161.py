@@ -210,3 +210,14 @@ def test_two_browsers_prepare_concurrently_without_duplicate_or_reset(setup):
         assert list(pool.map(prepare, (first, second))) == [200, 200]
     with Session(engine) as db:
         assert db.scalar(select(func.count()).select_from(EncounterORM)) == 6
+
+
+def test_live_booking_confirmation_cannot_link_to_synthetic_patient(monkeypatch):
+    from test_clinical_visit_brief import client, confirm as live_confirm, NOW
+    live, engine = client(monkeypatch)
+    with Session(engine) as db:
+        db.add(PatientORM(patient_id=SYNTHETIC_161_PATIENT_IDS[0],
+                          demographics_json={"synthetic_scenario":"cockpit-161-v1"},
+                          created_at=NOW, updated_at=NOW))
+        db.commit()
+    assert live_confirm(live, patient=SYNTHETIC_161_PATIENT_IDS[0]).status_code == 404

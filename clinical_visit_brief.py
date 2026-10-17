@@ -425,8 +425,9 @@ def attach_visit_brief_routes(
             raise
 
     def allowed_patient(session, patient_id):
-        if patient_ids is not None and patient_id not in patient_ids:
-            raise HTTPException(404, "Patient outside test scenario")
+        if ((patient_ids is not None and patient_id not in patient_ids)
+                or (patient_ids is None and patient_id in SYNTHETIC_161_PATIENT_IDS)):
+            raise HTTPException(404, "Patient outside booking scope")
         return session.get(PatientORM, patient_id)
     @router.post("/visit-brief/read")
     async def read_visit_brief(
