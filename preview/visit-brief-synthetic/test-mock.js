@@ -1,9 +1,9 @@
 "use strict";
 const fs=require("fs"),vm=require("vm"),assert=require("node:assert/strict");
 const calls=[], events=[],win={CockpitStaffRole:null};
+win.fetch=async u=>{calls.push(String(u));throw Error("REAL FETCH ATTEMPT")};
 const context={window:win,document:{addEventListener:()=>{}},location:{href:"https://preview.invalid/"},
-  fetch:async u=>{calls.push(String(u));throw Error("REAL FETCH ATTEMPT")},
-  URL,Response,Event,console};
+  fetch:win.fetch,URL,Response,Event,console};
 vm.runInNewContext(fs.readFileSync("preview/visit-brief-synthetic/mock-api.js","utf8"),context);
 assert.equal(win.CockpitStaffRole,"clinician");
 (async()=>{
