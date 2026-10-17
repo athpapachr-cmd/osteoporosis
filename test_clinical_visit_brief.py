@@ -16,7 +16,11 @@ from clinical_calendar import build_clinical_calendar_router
 from clinical_data import (
     ClinicalBase, PatientORM, EncounterORM, ClinicalPendingORM,
 )
-from clinical_visit_brief import BookingPatientLinkORM, BookingPatientLinkAuditORM
+from clinical_visit_brief import (
+    BookingPatientLinkORM, BookingPatientLinkAuditORM,
+    VisitBriefBase, VisitBriefStaffAuditORM,
+)
+from clinical_staff_auth import StaffActor, STAFF_COOKIE, issue_staff_cookie
 
 
 KEY = "synthetic-clinic-key"
@@ -39,14 +43,22 @@ def client(monkeypatch, *, enabled=True):
     monkeypatch.setenv("CLINICAL_INGEST_KEY", "synthetic-ingest")
     monkeypatch.setenv("RECEPTION_SCHEDULE_CONTEXT_URL", "https://example.invalid/reception")
     monkeypatch.setenv("CLINICAL_VISIT_BRIEF_LINKS_ENABLED", "1" if enabled else "0")
+    monkeypatch.setenv("COCKPIT_STAFF_AUTH_ENABLED", "1")
+    monkeypatch.setenv("COCKPIT_STAFF_CLINICIAN_KEY", "clinician-test-" + "c" * 36)
+    monkeypatch.setenv("COCKPIT_STAFF_SECRETARY_KEY", "secretary-test-" + "s" * 36)
+    monkeypatch.setenv("COCKPIT_STAFF_SESSION_SECRET", "signing-test-" + "x" * 40)
     monkeypatch.setattr(brief, "_utcnow", lambda: NOW)
     engine = create_engine("sqlite+pysqlite:///:memory:",
                            connect_args={"check_same_thread": False},
                            poolclass=StaticPool)
     ClinicalBase.metadata.create_all(bind=engine)
+    # Synthetic isolated schema fixture; runtime never does Visit Brief DDL on boot.
+    VisitBriefBase.metadata.create_all(bind=engine)
     app = FastAPI()
     app.include_router(build_clinical_calendar_router(engine))
     session = TestClient(app)
+    session.cookies.set(STAFF_COOKIE, issue_staff_cookie(
+        StaffActor("clinic-clinician", "clinician")), path="/clinical")
     with Session(engine) as db:
         for patient_id in ("P1", "P2"):
             db.add(PatientORM(patient_id=patient_id, demographics_json={},
@@ -212,8 +224,11 @@ def test_same_name_reassignment_collision_second_uid_and_revision(monkeypatch):
 
 def test_source_freshness_coverage_missing_cancel_and_auth(monkeypatch):
     c, _ = client(monkeypatch)
-    assert c.post("/clinical/calendar/visit-brief/read",
-                  json={"booking_uid": BOOKING["uid"]}).status_code == 401
+    # Shared Clinical Key alone cannot create an attributable staff read.
+    anonymous = TestClient(c.app)
+    assert anonymous.post("/clinical/calendar/visit-brief/read",
+                          headers=HEAD,
+                          json={"booking_uid": BOOKING["uid"]}).status_code == 401
     for opts in (
         {"fetched_at": NOW - timedelta(minutes=6)},
         {"coverage": False},
