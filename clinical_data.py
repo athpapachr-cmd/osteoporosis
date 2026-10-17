@@ -7,9 +7,9 @@ import os
 import secrets
 import unicodedata
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Query
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
 from pydantic import BaseModel, Field
-from sqlalchemy import Column, DateTime, JSON, String, delete, select, func
+from sqlalchemy import Column, DateTime, Integer, JSON, String, delete, select, func
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, Session
 
@@ -77,6 +77,8 @@ class ClinicalPendingORM(ClinicalBase):
     review_date = Column(String, nullable=True, index=True)
     provenance_json = Column(JSON, nullable=False, default=list)
     resolution_event_id = Column(String, nullable=True, index=True)
+    confirmation_revision = Column(Integer, nullable=False, default=0)
+    checkpoint_plan_json = Column(JSON, nullable=True)
     created_at = Column(DateTime, nullable=False, index=True)
     updated_at = Column(DateTime, nullable=False, index=True)
 
@@ -268,6 +270,21 @@ class VisitCaptureExternalDependency(BaseModel):
     condition: str = Field(min_length=1, max_length=240)
 
 
+class VisitCaptureCheckpointStep(BaseModel):
+    model_config = {"extra": "forbid"}
+    key: str = Field(min_length=1, max_length=64, pattern=r"^[a-z][a-z0-9_]*$")
+    question: str = Field(min_length=1, max_length=240)
+    meaning: str = Field(min_length=1, max_length=240)
+    required: Literal[True] = True
+    attesting_role: Literal["clinician"] = "clinician"
+
+
+class VisitCaptureCheckpointPlan(BaseModel):
+    model_config = {"extra": "forbid"}
+    version: Literal[1] = 1
+    steps: List[VisitCaptureCheckpointStep] = Field(min_length=1, max_length=6)
+
+
 class VisitCapturePendingCandidate(BaseModel):
     model_config = {"extra": "forbid"}
 
@@ -279,6 +296,7 @@ class VisitCapturePendingCandidate(BaseModel):
     external_dependency: Optional[VisitCaptureExternalDependency] = None
     review_date: Optional[str] = Field(default=None, pattern=r"^\d{4}-\d{2}-\d{2}$")
     provenance: List[str] = Field(min_length=1, max_length=8)
+    checkpoint_plan: Optional[VisitCaptureCheckpointPlan] = None
 
 
 class VisitCaptureNextContact(BaseModel):
@@ -365,6 +383,8 @@ class ClinicalPendingRecord(BaseModel):
     review_date: Optional[str]
     provenance: List[str]
     resolution_event_id: Optional[str]
+    confirmation_revision: int = 0
+    checkpoint: Optional[Dict[str, Any]] = None
     created_at: datetime
     updated_at: datetime
 
@@ -551,6 +571,15 @@ def _validate_visit_capture_candidate(candidate: VisitCaptureCandidateV1) -> Non
     if candidate.next_contact is not None:
         fact_groups.append([candidate.next_contact])
     fact_groups.append(candidate.coding.gesy_coded)
+    for item in candidate.pending:
+        plan = item.checkpoint_plan
+        if plan is None:
+            continue
+        if item.status not in ("open", "awaiting_patient", "awaiting_result"):
+            raise HTTPException(422, "Checkpoint plan requires an unresolved clinical pending")
+        keys = [step.key for step in plan.steps]
+        if len(keys) != len(set(keys)):
+            raise HTTPException(422, "Duplicate approved checkpoint key")
     for group in fact_groups:
         for item in group:
             provenance = getattr(item, "provenance", [])
@@ -562,7 +591,11 @@ def _validate_visit_capture_candidate(candidate: VisitCaptureCandidateV1) -> Non
                 )
 
 
-def _pending_record(row: ClinicalPendingORM) -> ClinicalPendingRecord:
+def _pending_record(row: ClinicalPendingORM, session: Optional[Session] = None) -> ClinicalPendingRecord:
+    checkpoint = None
+    if session is not None and row.checkpoint_plan_json:
+        from clinical_pending_one_tap import project_checkpoint
+        checkpoint = project_checkpoint(session, row)
     return ClinicalPendingRecord(
         pending_id=row.id,
         patient_id=row.patient_id,
@@ -576,6 +609,8 @@ def _pending_record(row: ClinicalPendingORM) -> ClinicalPendingRecord:
         review_date=row.review_date,
         provenance=list(row.provenance_json or []),
         resolution_event_id=row.resolution_event_id,
+        confirmation_revision=row.confirmation_revision or 0,
+        checkpoint=checkpoint,
         created_at=row.created_at,
         updated_at=row.updated_at,
     )
@@ -829,8 +864,11 @@ def build_clinical_router(engine: Engine) -> APIRouter:
         response_model=VisitCaptureSaveRecord,
         dependencies=protected,
     )
-    def save_visit_capture(req: VisitCaptureRequest) -> VisitCaptureSaveRecord:
+    def save_visit_capture(req: VisitCaptureRequest, request: Request) -> VisitCaptureSaveRecord:
         _validate_visit_capture_candidate(req.candidate)
+        if any(item.checkpoint_plan is not None for item in req.candidate.pending):
+            from clinical_pending_one_tap import require_synthetic_clinician
+            require_synthetic_clinician(request, engine)
         if req.candidate.source_identity_state != "consistent":
             raise HTTPException(
                 status_code=409,
@@ -881,6 +919,9 @@ def build_clinical_router(engine: Engine) -> APIRouter:
                     review_date=item.review_date,
                     provenance_json=item.provenance,
                     resolution_event_id=None,
+                    confirmation_revision=0,
+                    checkpoint_plan_json=(item.checkpoint_plan.model_dump(mode="json")
+                                          if item.checkpoint_plan else None),
                     created_at=now,
                     updated_at=now,
                 )
@@ -907,7 +948,7 @@ def build_clinical_router(engine: Engine) -> APIRouter:
             )
             return VisitCaptureSaveRecord(
                 encounter=encounter,
-                pending=[_pending_record(item) for item in pending_rows],
+                pending=[_pending_record(item, session) for item in pending_rows],
                 snapshot=snapshot,
                 brief=brief,
                 detail=detail,
@@ -926,7 +967,7 @@ def build_clinical_router(engine: Engine) -> APIRouter:
                 .where(ClinicalPendingORM.patient_id == patient_id)
                 .order_by(ClinicalPendingORM.created_at.desc())
             ).scalars().all()
-            return [_pending_record(row) for row in rows]
+            return [_pending_record(row, session) for row in rows]
 
     @router.post("/patient/{patient_id}/encounters", response_model=EncounterRecord, dependencies=protected)
     def create_encounter(patient_id: str, req: EncounterCreate) -> EncounterRecord:
@@ -1113,4 +1154,7 @@ def build_clinical_router(engine: Engine) -> APIRouter:
                 for row in rows
             ]
 
+    # A bounded, synthetic-only clinical pending writer; never installs DDL.
+    from clinical_pending_one_tap import attach_pending_one_tap_routes
+    attach_pending_one_tap_routes(router, engine, protected)
     return router
