@@ -15,6 +15,7 @@ import clinical_visit_brief as brief
 from clinical_calendar import build_clinical_calendar_router
 from clinical_data import (
     ClinicalBase, PatientORM, EncounterORM, ClinicalPendingORM,
+    build_clinical_router,
 )
 from clinical_visit_brief import (
     BookingPatientLinkORM, BookingPatientLinkAuditORM,
@@ -59,6 +60,7 @@ def client(monkeypatch, *, enabled=True):
     VisitBriefBase.metadata.create_all(bind=engine)
     app = FastAPI()
     app.include_router(build_clinical_calendar_router(engine))
+    app.include_router(build_clinical_router(engine))
     session = TestClient(app)
     session.cookies.set(STAFF_COOKIE, issue_staff_cookie(
         StaffActor("clinic-clinician", "clinician")), path="/clinical")
