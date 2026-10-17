@@ -80,8 +80,10 @@
   function identityDenied(){
     invalidate();
     $("visitBriefIdentity").textContent="Απαιτείται νέα προστατευμένη σύνδεση προσωπικού.";
-    if(typeof Event==="function"&&typeof window.dispatchEvent==="function")
+    if(typeof Event==="function"&&typeof window.dispatchEvent==="function"){
+      window.dispatchEvent(new Event("clinical:unauthenticated"));
       window.dispatchEvent(new Event("clinical:request-login"));
+    }
   }
   async function open(view){
     if(!view||!view.uid)return;
@@ -125,7 +127,7 @@
         "Δεν υπάρχει επιβεβαιωμένη σύνδεση με φάκελο. Το όνομα του ραντεβού δεν αρκεί.";
       $("visitBriefChoosePatient").hidden=!state.ready;
       $("visitBriefChoosePatient").disabled=!state.ready;
-      $("visitBriefUnlink").hidden=!state.linked;
+      $("visitBriefUnlink").hidden=!state.linked||window.CockpitStaffRole!=="clinician";
     }catch(err){
       if(ticket!==state.ticket||$("visitBriefOverlay").hidden)return;
       clearProtected();
@@ -213,8 +215,8 @@
       "Δεν έχει τεκμηριωθεί συγκεκριμένος έλεγχος για αυτό το ραντεβού.");
     $("visitBriefClinical").hidden=false;
     $("visitBriefChoosePatient").hidden=true;
-    $("visitBriefOpenChart").hidden=window.CockpitStaffRole==="secretary";
-    $("visitBriefUnlink").hidden=window.CockpitStaffRole==="secretary";
+    $("visitBriefOpenChart").hidden=window.CockpitStaffRole!=="clinician";
+    $("visitBriefUnlink").hidden=window.CockpitStaffRole!=="clinician";
   }
   async function confirmSelection(){
     const p=state.pending,chosen=state.chosen;
