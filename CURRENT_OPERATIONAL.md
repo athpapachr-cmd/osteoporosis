@@ -1,5 +1,8 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / repo-wide writer lock
 
+> **2026-10-18 CP1 PROVIDER-STATUS #173 OPEN / REVIEW PASS:** https://github.com/athpapachr-cmd/osteoporosis/pull/173, runtime `cacf1d6`; 4 CP1 tests PASS, independent narrow review PASS (allowlisted fixed code only; source/credentials never returned). Await affected CI/canonical guard then existing-service deploy and real Render error-classification check. User budget response pending; no new extraction can be claimed successful.
+
+
 > **2026-10-18 CP1 PROVIDER BUDGET BLOCK / BOUNDED UX FIX:** Existing secret-only synthetic schema probe `39074354153` returned OpenAI RateLimitError HTTP429 code `credit_balance_exhausted`; no new provider/key/config used. Actual Render extraction previously502, no Save occurred. User asked asynchronously to restore provider budget; never request secret in chat. Writer `codex/cockpit-cp1-provider-status` adds only allowlisted quota-error classification and actionable retained-text message; next test/publish bounded fix and prove actual Render classification. CP1 deployed but live end-to-end NOT verified, NOT ready for acceptance. Earlier live implementation state unchanged; no CP2–CP5.
 
 
