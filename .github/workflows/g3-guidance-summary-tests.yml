@@ -74,6 +74,7 @@ on:
 
 jobs:
   g3-runtime:
+    if: github.ref_name != 'codex/cockpit-161-live-verification'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -144,3 +145,26 @@ jobs:
         run: node test_baseline_finish_browser.js
       - name: Preserve server finalization lifecycle regression
         run: python -m unittest -v test_baseline_finalization_api.py
+
+  live-synthetic-161-once:
+    if: github.event_name == 'workflow_dispatch' && github.ref_name == 'codex/cockpit-161-live-verification'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install playwright
+      - run: python -m playwright install --with-deps chromium
+      - name: Existing-key live synthetic browser proof only
+        env:
+          CLINICAL_DATA_KEY: ${{ secrets.CLINICAL_DATA_KEY }}
+        run: python test_live_synthetic_161_once.py
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: live-synthetic-161-proof
+          path: live-161-proof/
