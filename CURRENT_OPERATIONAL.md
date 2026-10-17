@@ -1,5 +1,8 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / repo-wide writer lock
 
+> **2026-10-18 #170 RELEASE CANDIDATE / AFFECTED CI PASS:** Runtime/test `6ff54f3` has successful Visit Brief `39069993133` and Home `39069993120`; canonical guard `39070029507` SUCCESS on docs successor `a5814af`. No runtime change since these tests. Next authorized squash merge, native auto-deploy and live one-click/persisted-action proof. PO acceptance remains NO; CP1 stopped.
+
+
 > **2026-10-18 #161 CORRECTION PR #170 OPEN:** https://github.com/athpapachr-cmd/osteoporosis/pull/170; final runtime/test head `6ff54f3`. Eight focused synthetic tests PASS after chart presentation refinement; prior 35 affected Python and four Node PASS reused. Canonical guard on runtime head PASS. Await affected Visit Brief/Home CI then authorized same-service release and one live browser proof. PO rejection remains active; no acceptance or CP1.
 
 
