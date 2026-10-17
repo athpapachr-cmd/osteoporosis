@@ -6,6 +6,7 @@ URL='https://ortho-reception-backend.onrender.com/static/cockpit/index.html'
 TEXT='Συνθετική επίσκεψη επανελέγχου γόνατος. Ο ασθενής αναφέρει πόνο στην κάμψη. Κατά την εξέταση παρατηρήθηκε περιορισμός της κάμψης. Κλινική εκτίμηση: επίμονος πόνος γόνατος. Συμφωνήθηκε επανέλεγχος μετά την παραλαβή των προηγούμενων εξετάσεων. Ο ασθενής θα προσκομίσει το CD της μαγνητικής. Ο ασθενής θα στείλει το γραπτό πόρισμα. Δεν έχει ακόμη παραληφθεί κανένα από τα δύο. Δεν δόθηκε νέα αγωγή.'
 REASON='Επανέλεγχος γόνατος — έλεγχος CP1'
 stage='start'
+created_this_run=False
 try:
  with sync_playwright() as pw:
   browser=pw.chromium.launch();out=Path('live-161-proof');out.mkdir(exist_ok=True)
@@ -22,6 +23,7 @@ try:
     before=context.request.get('https://ortho-reception-backend.onrender.com/clinical/patient/cockpit-cp1-test/chart').json()
     prior=[v for v in before['visits'] if (v.get('clinical') or {}).get('reason_for_visit',{}).get('text')==REASON]
     if not prior:
+     created_this_run=True
      page.locator('#captureOpen').click();page.locator('#captureText').fill(TEXT)
      stage='real-provider-extraction'
      with page.expect_response('**/visit-capture/extract',timeout=120000) as reply:
@@ -80,6 +82,6 @@ try:
    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
    context.close()
   browser.close()
- print('PASS CP1: real provider, editable proposal, rejected obligation absent, atomic Save, duplicate refused, persistent chart/source and updates in two independent browsers')
+ print('PASS CP1: real provider, editable proposal, rejected obligation absent, atomic Save, duplicate refused, persistent chart/source and updates in two independent browsers' if created_this_run else 'PASS CP1 READBACK: existing proven synthetic visit/source/updates in two independent browsers; provider and Save not repeated')
 except Exception:
  print('FAIL CP1 stage: '+stage);sys.exit(1)
