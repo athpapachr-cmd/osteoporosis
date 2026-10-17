@@ -593,8 +593,12 @@ def _pending_record(row: ClinicalPendingORM, session: Optional[Session] = None) 
     checkpoint = None
     if (session is not None and session.bind.dialect.name == "sqlite"
             and os.environ.get("CLINICAL_PENDING_ONE_TAP_SYNTHETIC_ENABLED") == "1"):
-        from clinical_pending_one_tap import project_checkpoint
-        checkpoint = project_checkpoint(session, row)
+        # Existing SQLite/Visit Capture fixtures intentionally lack this
+        # synthetic table; never query uninstalled checkpoint storage.
+        from sqlalchemy import inspect
+        if inspect(session.bind).has_table("clinical_pending_checkpoint_events"):
+            from clinical_pending_one_tap import project_checkpoint
+            checkpoint = project_checkpoint(session, row)
     return ClinicalPendingRecord(
         pending_id=row.id,
         patient_id=row.patient_id,

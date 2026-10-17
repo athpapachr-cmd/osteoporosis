@@ -27,8 +27,6 @@ on:
 jobs:
   synthetic-pending:
     runs-on: ubuntu-latest
-    env:
-      CLINICAL_PENDING_ONE_TAP_SYNTHETIC_ENABLED: "1"
     steps:
       - uses: actions/checkout@v4
         with:
