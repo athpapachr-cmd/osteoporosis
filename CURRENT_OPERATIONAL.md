@@ -1,5 +1,8 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / repo-wide writer lock
 
+> **2026-10-18 CP1 LIVE EXTRACTION 502 CONFIRMED:** Diagnostic run `39074201404` returned HTTP 502 before Save. No completed CP1 claim. GitHub already holds OPENAI_API_KEY secret (name only inspected); use it in verification-only synthetic schema probe to diagnose provider compatibility without fetching/exposing secret or changing Render settings. Preserve prior live state and local checkpoints.
+
+
 > **2026-10-18 CP1 LIVE SMOKE NOT YET PASS:** Run `39074098194` failed at `real-provider-extraction` before Save. Runtime remains LIVE; no complete-flow claim. Verification script currently expects exactly two proposals although source also explicitly requests follow-up; next inspect sanitized response status/counts and correct the oracle if needed, or fix actual provider boundary. No raw source/secret logging.
 
 
