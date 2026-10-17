@@ -52,6 +52,7 @@
    });
  }
  function open(row){
+   window.CockpitStoredChart?.reset();
    state.revision++;clearTimeout(state.timer);
    resetDraft();
    state.selected=row;
