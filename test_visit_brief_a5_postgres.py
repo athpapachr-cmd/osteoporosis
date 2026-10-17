@@ -13,6 +13,7 @@ from psycopg import errors
 BASE = Path(__file__).resolve().parent
 FIRST = BASE / "cockpit/migrations/20261017_visit_brief_staff_access.sql"
 GRANTS = BASE / "cockpit/migrations/20261017_visit_brief_cockpit_app_grants.sql"
+ATOMIC = BASE / "cockpit/migrations/20261017_visit_brief_atomic_clinic_install.sql"
 PASSWORD = os.getenv("A5_SYNTHETIC_PASSWORD", "")
 
 
@@ -39,7 +40,7 @@ def denied(conn, sql):
 def test():
     if os.getenv("A5_SYNTHETIC_ONLY") != "yes" or not PASSWORD:
         raise RuntimeError("STOP: synthetic isolated Postgres gate not set")
-    if not FIRST.is_file() or not GRANTS.is_file():
+    if not FIRST.is_file() or not GRANTS.is_file() or not ATOMIC.is_file():
         raise RuntimeError("STOP: missing reviewed SQL fixture")
     with connect("postgres") as admin:
         # Never operate against a pre-existing db or role, even with test opt-in.
@@ -53,9 +54,8 @@ def test():
         )
         admin.execute("CREATE DATABASE osteoporosis")
     with connect() as admin:
-        apply(admin, FIRST)
-        apply(admin, GRANTS)
-        apply(admin, GRANTS)  # idempotent exact-schema re-run
+        apply(admin, ATOMIC)   # schema and grants commit together
+        apply(admin, GRANTS)   # exact-schema re-run: idempotent
         assert admin.execute(
             "SELECT count(*) FROM pg_tables WHERE schemaname='public'"
         ).fetchone()[0] == 3
