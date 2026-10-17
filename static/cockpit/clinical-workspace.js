@@ -53,7 +53,7 @@
  }
  function open(row){
    window.CockpitStoredChart?.reset();
-   if(window.CockpitSynthetic && row.patientId){
+   if(window.CockpitStoredChart && row.patientId && !window.CockpitVisitBrief?.bookingVerification()){
      window.CockpitVisitBrief?.invalidate();
      window.CockpitStoredChart?.open(row.patientId);
      return;

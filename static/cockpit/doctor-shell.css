@@ -199,3 +199,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,ui-sans-se
 .patient-timeline-event p {margin:0;line-height:1.5;}
 .patient-timeline-event small {color:#64748b;}
 @media(max-width:780px){.patient-chart-grid{grid-template-columns:1fr;}.patient-chart-card{padding:18px;}}
+
+/* Normal chart capture: readable, responsive review fields. */
+#captureComposer {margin-top:24px} #captureComposer label {display:block;margin:12px 0;color:var(--text,#203c48)}
+#captureComposer input:not([type=checkbox]),#captureComposer textarea,#captureComposer select {display:block;width:100%;box-sizing:border-box;padding:10px;border:1px solid #cadadd;border-radius:9px;font:inherit;background:white;color:#203c48}
+#captureComposer fieldset,.capture-field-group {min-width:0;border:1px solid #dbe5e7;border-radius:12px;padding:14px;margin:14px 0}
+#captureComposer blockquote,.patient-chart blockquote {margin:12px 0;padding:8px 12px;border-left:3px solid #74a5a4;color:#54717c}
+#captureComposer button {margin:8px 8px 8px 0} #captureSave {background:#217a75;color:white}
+#captureTestPatient {margin-top:10px} .patient-chart-heading button {white-space:normal}
