@@ -11,7 +11,8 @@ from types import SimpleNamespace
 
 import httpx
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Query
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
+from clinical_staff_auth import require_staff_actor, staff_enabled
 from pydantic import BaseModel, Field, ConfigDict
 from sqlalchemy import Column, DateTime, Integer, String, func, select
 from sqlalchemy.engine import Engine
@@ -374,7 +375,23 @@ def build_clinical_calendar_router(engine: Engine) -> APIRouter:
     protected = [Depends(require_clinical_key)]
     ingest_protected = [Depends(require_ingest_key)]
 
-    @router.get("/cockpit-context", response_model=CockpitContext, dependencies=protected)
+    def require_cockpit_reader(
+        request: Request,
+        x_clinical_key: Optional[str] = Header(default=None, alias="X-Clinical-Key"),
+    ) -> None:
+        # Scoped staff calendar context does not grant /appointments, import,
+        # chart, surgery or other existing legacy Clinical Key authority.
+        if staff_enabled():
+            try:
+                require_staff_actor(request)
+                return
+            except HTTPException:
+                pass
+        require_clinical_key(x_clinical_key)
+
+    cockpit_reader = [Depends(require_cockpit_reader)]
+
+    @router.get("/cockpit-context", response_model=CockpitContext, dependencies=cockpit_reader)
     async def cockpit_context() -> CockpitContext:
         global _last_actual_schedule_fetch
         now = utcnow()
