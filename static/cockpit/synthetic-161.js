@@ -62,7 +62,9 @@
       $("visitSelectedSource").textContent = "ΚΑΡΤΕΛΑ ΑΣΘΕΝΟΥΣ";
       $("visitSelectedReason").textContent = "Γέννηση: " + data.demographics.dob;
       $("visitIdentityStatus").textContent = "";
+      $("visitIdentityStatus").hidden = true;
       $("visitIdentityNote").textContent = "";
+      $("visitIdentityNote").hidden = true;
       $("visitBookingConfirmation").hidden = true;
       $("visitDiaComposer").hidden = true;
       $("visitDiaOpen").hidden = true;
@@ -73,9 +75,9 @@
       for (const visit of data.visits) {
         const block = text(chart, "article", "");
         text(block, "h3", "Επίσκεψη " + visit.date);
-        for (const [title, field] of [["Snapshot","snapshot"],["Visit Brief","brief"],["Encounter Detail","detail"]]) {
+        for (const [title, field] of [["Συνοπτική εικόνα","snapshot"],["Σύνοψη επίσκεψης","brief"],["Πλήρης καταγραφή","detail"]]) {
           const details = text(block, "details", "");
-          details.open = field === "detail";
+          details.open = field === "brief" && visit === data.visits[0];
           text(details, "summary", title);
           const pre = text(details, "p", visit[field]); pre.style.whiteSpace = "pre-wrap";
         }
