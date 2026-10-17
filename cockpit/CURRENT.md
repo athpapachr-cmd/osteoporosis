@@ -1,5 +1,8 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
+> **2026-10-18 #171 AFFECTED CI PASS / RELEASE NEXT:** Visit Brief `39071308672` and Home `39071308632` SUCCESS on exact runtime/test `865562e`; canonical guard `39071308614` SUCCESS. Current checkpoint changes only docs; prior runtime evidence reused. Next squash merge and native auto-deploy followed by existing-key live source/history/updates browser proof. CP1 STOP; PO acceptance NO.
+
+
 > **2026-10-18 #171 OPEN / CI IN PROGRESS:** https://github.com/athpapachr-cmd/osteoporosis/pull/171, runtime/test head `865562e455d25fd61b192d4cdf3ae066386a0f7f`. Canonical guard `39071308614` PASS; affected Visit Brief/Home pending. Local source is tested and chart visually inspected. Next reuse affected CI then same-service authorized release and two-browser source/history/Clinical Updates proof. NOT DEPLOYED / NOT ACCEPTED.
 
 
