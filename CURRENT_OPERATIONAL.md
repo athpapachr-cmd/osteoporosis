@@ -1,5 +1,8 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / repo-wide writer lock
 
+> **2026-10-18 CP1 LIVE END-TO-END PASS:** Run `39074882064` SUCCESS after PO restored provider budget: actual Render extraction200, 3 source-backed proposals/zero invented medication; clinician correction and rejection leave only accepted CD obligation. Atomic Save persisted on existing PostgreSQL, retry409 prevents duplicate, refresh and independent1280/390 sessions show identical signed visit/source-linked obligation and Clinical Updates navigation. Screenshots downloaded to `cockpit-v4-browser-evidence/live-cp1-proof/` and inspected (synthetic only). Current LIVE `b046185` / `dep-db9v9igae00c7399admg`. No real-patient data used. Next small presentation polish found in screenshot (oversized single-line review fields and cramped updates row), no logic/schema/provider changes, then handback for PO acceptance.
+
+
 > **2026-10-18 #173 LIVE / FULL CP1 RETRY NEXT:** Render `dep-db9v9igae00c7399admg` LIVE at exact `b0461857a85f3969454ad087c4aca4f8fce4fccf`, 22:22:37 UTC / 01:22 Cyprus. Durable local checkpoint. Next full real-provider proof after PO budget restoration using verification-only `b75e2d6`; no additional config/key changes.
 
 
