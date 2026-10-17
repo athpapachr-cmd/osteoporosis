@@ -94,6 +94,14 @@ def _record_access(session: Session, actor: StaffActor, uid: str, event: str,
     ))
 
 
+def _record_denial(engine: Engine, actor: StaffActor, uid: str,
+                   event: str, status_code: int) -> None:
+    """Persist an attributable refusal outside the rolled-back clinical transaction."""
+    with Session(engine) as audit:
+        _record_access(audit, actor, uid, event, f"denied_{status_code}")
+        audit.commit()
+
+
 class BookingIntent(BaseModel):
     model_config = ConfigDict(extra="forbid")
     booking_uid: str = Field(min_length=1, max_length=160)
@@ -244,6 +252,16 @@ async def _fresh_booking(uid: str):
         raise
     except (httpx.HTTPError, ValueError, TypeError) as exc:
         raise HTTPException(503, "Reception schedule unavailable or unqualified") from exc
+
+
+async def _fresh_staff_booking(uid: str, engine: Engine,
+                               actor: StaffActor, event: str):
+    try:
+        return await _fresh_booking(uid)
+    except HTTPException as exc:
+        if _enabled():
+            _record_denial(engine, actor, uid, event, exc.status_code)
+        raise
 
 
 def _minimal_brief(session: Session, patient_id: str, booking) -> dict:
@@ -400,7 +418,7 @@ def attach_visit_brief_routes(
     async def read_visit_brief(
         req: BookingIntent, actor: StaffActor = Depends(require_staff_actor),
     ) -> dict:
-        booking = await _fresh_booking(req.booking_uid)
+        booking = await _fresh_staff_booking(req.booking_uid, engine, actor, "booking_read")
         card = _booking_card(booking)
         if not _enabled():
             return {"mode": "booking_only", "reason": "disabled",
@@ -408,11 +426,15 @@ def attach_visit_brief_routes(
         with Session(engine) as session:
             row = session.get(BookingPatientLinkORM, (NAMESPACE, req.booking_uid))
             if row is None or row.state == "revoked":
+                _record_access(session, actor, req.booking_uid, "booking_read", "allowed")
+                session.commit()
                 return {"mode": "booking_only", "reason": "unlinked",
                         "booking": card, "revision": row.revision if row else 0,
                         "linked": False}
             # Reception has no qualified attendee continuity signal.
             # NEVER promote equal UID/name/fingerprint into patient GET authority.
+            _record_access(session, actor, req.booking_uid, "booking_read", "allowed")
+            session.commit()
             return {"mode": "booking_only", "reason": "needs_reconfirmation",
                     "booking": card, "revision": row.revision, "linked": True}
 
@@ -422,11 +444,13 @@ def attach_visit_brief_routes(
     ) -> list[dict]:
         if not _enabled():
             raise HTTPException(503, "Booking-patient linkage not enabled")
-        booking = await _fresh_booking(req.booking_uid)
+        booking = await _fresh_staff_booking(req.booking_uid, engine, actor, "registry_search")
         if not hmac.compare_digest(_booking_observation(booking), req.observed_booking):
+            _record_denial(engine, actor, req.booking_uid, "registry_search", 409)
             raise HTTPException(409, "Booking changed since preview")
         terms = _fold_patient_lookup(req.query.strip()).split()
         if not terms:
+            _record_denial(engine, actor, req.booking_uid, "registry_search", 422)
             raise HTTPException(422, "Patient query must not be blank")
         rows = []
         matched = 0
@@ -460,8 +484,9 @@ def attach_visit_brief_routes(
     ) -> dict:
         if not _enabled():
             raise HTTPException(503, "Booking-patient linkage not enabled")
-        booking = await _fresh_booking(req.booking_uid)
+        booking = await _fresh_staff_booking(req.booking_uid, engine, actor, "brief_read_confirm")
         if not hmac.compare_digest(_booking_observation(booking), req.observed_booking):
+            _record_denial(engine, actor, req.booking_uid, "brief_read_confirm", 409)
             raise HTTPException(409, "Booking changed since clinician preview")
         stamp = _utcnow().replace(tzinfo=None)
         with Session(engine) as session:
@@ -487,11 +512,6 @@ def attach_visit_brief_routes(
                     if link.patient_id != req.patient_id and not req.replace_existing:
                         raise HTTPException(409, "Explicit patient correction required")
                     if link.patient_id != req.patient_id and actor.role != "clinician":
-                        session.rollback()
-                        with Session(engine) as denial:
-                            _record_access(denial, actor, req.booking_uid,
-                                           "link_correct", "denied")
-                            denial.commit()
                         raise HTTPException(403, "Only clinician may correct a link")
                     event = ("corrected" if link.patient_id != req.patient_id else
                              "reconfirmed")
@@ -519,13 +539,27 @@ def attach_visit_brief_routes(
                     evidence_type=req.evidence_type,
                     operator_type=actor.role, occurred_at=stamp,
                 ))
+                # Link changes and the one-time clinical read are attributable.
+                access_event = {"confirmed": "link_confirm",
+                                "reconfirmed": "link_reconfirm",
+                                "corrected": "link_correct"}[event]
+                _record_access(session, actor, req.booking_uid, access_event,
+                               "allowed", req.patient_id, revision)
                 # Build projection in this response only; audit commits atomically.
                 brief = _minimal_brief(session, req.patient_id, booking)
                 _record_access(session, actor, req.booking_uid, "brief_read_confirm",
                                "allowed", req.patient_id, revision)
                 session.commit()
+            except HTTPException as exc:
+                session.rollback()
+                event = ("link_correct" if exc.status_code == 403 else
+                         "brief_read_confirm")
+                _record_denial(engine, actor, req.booking_uid, event, exc.status_code)
+                raise
             except IntegrityError as exc:
                 session.rollback()
+                _record_denial(engine, actor, req.booking_uid,
+                               "brief_read_confirm", 409)
                 raise HTTPException(409, "Concurrent link insertion/revision conflict") from exc
         return {"mode": "confirmed_once", "booking": _booking_card(booking),
                 "revision": revision, "brief": brief}
@@ -547,6 +581,7 @@ def attach_visit_brief_routes(
         with Session(engine) as session:
             row = session.get(BookingPatientLinkORM, (NAMESPACE, req.booking_uid))
             if row is None or row.revision != req.expected_revision:
+                _record_denial(engine, actor, req.booking_uid, "link_revoke", 409)
                 raise HTTPException(409, "Link revision changed")
             revision = row.revision + 1
             changed = session.execute(
@@ -559,6 +594,8 @@ def attach_visit_brief_routes(
                 .values(state="revoked", revision=revision, updated_at=stamp)
             )
             if changed.rowcount != 1:
+                session.rollback()
+                _record_denial(engine, actor, req.booking_uid, "link_revoke", 409)
                 raise HTTPException(409, "Link revision changed")
             session.add(BookingPatientLinkAuditORM(
                 id=str(uuid4()), namespace=NAMESPACE, booking_uid=req.booking_uid,
