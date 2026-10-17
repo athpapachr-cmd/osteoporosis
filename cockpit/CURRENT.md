@@ -1,5 +1,8 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
+> **2026-10-18 #171 OPEN / CI IN PROGRESS:** https://github.com/athpapachr-cmd/osteoporosis/pull/171, runtime/test head `865562e455d25fd61b192d4cdf3ae066386a0f7f`. Canonical guard `39071308614` PASS; affected Visit Brief/Home pending. Local source is tested and chart visually inspected. Next reuse affected CI then same-service authorized release and two-browser source/history/Clinical Updates proof. NOT DEPLOYED / NOT ACCEPTED.
+
+
 > **2026-10-18 #161 PATIENT CONTINUITY IMPLEMENTED / TESTED:** Structured overview and chronological visits replace raw triplicate projections. Each obligation names and opens its originating encounter; current state and timestamped received/reopen history reuse existing synthetic audit. Existing Home Clinical Updates and obligations panels now read the same protected fixed-scenario rows and open their patient chart; no unread-mail count or Gmail claim. Latest event shown first, prior changes expandable. 36 affected Python/Chromium tests PASS, four Node suites PASS; nine focused tests cover exact source encounter, unchanged signed record, cross-session history, Home entry, direct source navigation, widths 1280/680/390, conflict/auth isolation. Next bounded PR and same-service release/live proof. ACCEPTED=NO; CP1 STOP.
 
 
