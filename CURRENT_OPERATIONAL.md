@@ -1,5 +1,8 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / repo-wide writer lock
 
+> **2026-10-18 #173 CI PASS / PO RESTORED PROVIDER BUDGET:** PO explicitly replied «Το έκανα. Ανανέωσα το υπόλοιπο». Retry live extraction after correction deploy; do not infer provider success from balance update. Visit Capture `39074552269`, Home `39074552260`, Visit Brief `39074552375`, canonical `39074552381` SUCCESS on `ea300ba`; reviewed runtime `cacf1d6` unchanged. Next #173 merge/native deploy then full finite CP1 live flow.
+
+
 > **2026-10-18 CP1 PROVIDER-STATUS #173 OPEN / REVIEW PASS:** https://github.com/athpapachr-cmd/osteoporosis/pull/173, runtime `cacf1d6`; 4 CP1 tests PASS, independent narrow review PASS (allowlisted fixed code only; source/credentials never returned). Await affected CI/canonical guard then existing-service deploy and real Render error-classification check. User budget response pending; no new extraction can be claimed successful.
 
 
