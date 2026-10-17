@@ -444,3 +444,55 @@ def test_booking_registry_search_fails_closed_when_source_changes(monkeypatch):
     })
     assert response.status_code == 409
     assert "P1" not in response.text
+
+
+def test_real_staff_login_cookies_secretary_separation_and_logout(monkeypatch):
+    """Exercise actual auth routes, middleware, roles and old Clinical Key."""
+    from clinical_auth import build_auth_router, ClinicalCookieMiddleware
+
+    _, engine = client(monkeypatch)
+    app = FastAPI()
+    app.add_middleware(ClinicalCookieMiddleware)
+    app.include_router(build_auth_router())
+    app.include_router(build_clinical_router(engine))
+    app.include_router(build_clinical_calendar_router(engine))
+    with TestClient(app) as c:
+        # Legacy clinician key is valid for existing protected Clinical Data,
+        # but NEVER for staff-labelled Visit Brief.
+        old = c.post("/clinical/login", json={"key": KEY})
+        assert old.status_code == 200
+        assert c.get("/clinical/status").status_code == 200
+        assert read(c).status_code == 401
+        assert c.post("/clinical/logout").status_code == 200
+        assert c.get("/clinical/status").status_code == 401
+
+        # Secretary uses the same access form but receives no broad Clinical Key.
+        secretary = c.post("/clinical/login", json={
+            "key": "secretary-test-" + "s" * 36,
+        })
+        assert secretary.status_code == 200
+        assert secretary.json()["staff_role"] == "secretary"
+        staff = c.get("/clinical/staff-session")
+        assert staff.status_code == 200
+        assert staff.json()["staff_role"] == "secretary"
+        assert c.get("/clinical/status").status_code == 401
+        assert read(c).status_code == 200
+        assert c.get("/clinical/patients?query=P1").status_code == 401
+
+        # Re-login as clinician upgrades by server-approved credential only.
+        clinician = c.post("/clinical/login", json={
+            "key": "clinician-test-" + "c" * 36,
+        })
+        assert clinician.status_code == 200
+        assert clinician.json()["staff_role"] == "clinician"
+        assert c.get("/clinical/status").status_code == 200
+        assert read(c).status_code == 200
+
+        # Rotating the credential invalidates the old staff cookie immediately.
+        monkeypatch.setenv("COCKPIT_STAFF_CLINICIAN_KEY",
+                           "rotated-clinician-" + "r" * 40)
+        assert read(c).status_code == 401
+        assert c.get("/clinical/status").status_code == 200
+        assert c.post("/clinical/logout").status_code == 200
+        assert c.get("/clinical/status").status_code == 401
+        assert read(c).status_code == 401
