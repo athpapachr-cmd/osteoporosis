@@ -123,8 +123,8 @@
     }catch(e){if(ticket===generation&&draftTicket===draftGeneration)feedback.textContent=e.message;}
     finally{if(ticket===generation&&draftTicket===draftGeneration){busy=false;extractButton.disabled=false;input.disabled=false;visitDate.disabled=false;}}
   }
-  async function preview(){const ticket=generation,draftTicket=draftGeneration;if(!candidate)return;try{
-    const p=await request('/visit-capture/preview',{context_id:contextId,candidate});if(ticket!==generation||draftTicket!==draftGeneration)return;
+  async function preview(){const ticket=generation,draftTicket=draftGeneration;if(!candidate)return;const submitted=JSON.stringify(candidate);try{
+    const p=await request('/visit-capture/preview',{context_id:contextId,candidate});if(ticket!==generation||draftTicket!==draftGeneration||JSON.stringify(candidate)!==submitted)return;
     previews.replaceChildren();for(const [key,label]of [['snapshot','Συνοπτική εικόνα'],['brief','Προετοιμασία επίσκεψης'],['detail','Πλήρης καταγραφή']]){const d=el(previews,'details');el(d,'summary',label);el(d,'p',p[key],'clinical-preview-text');}
   }catch(e){if(ticket===generation&&draftTicket===draftGeneration)feedback.textContent=e.message;}}
   input.oninput=()=>{draftGeneration++;candidate=null;saveButton.hidden=true;review.replaceChildren();previews.replaceChildren();};visitDate.oninput=input.oninput;
