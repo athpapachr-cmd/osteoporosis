@@ -1,5 +1,8 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / repo-wide writer lock
 
+> **2026-10-18 CP1 DEPLOYED / LIVE PROOF NEXT:** Existing Render `dep-db9v4ejrjlhs73c4eee0` LIVE at exact merge `e5910a485cb0aeb61bf6dcff7408b9a5d35397e5`, finished 22:11:49 UTC / 01:11 Cyprus. No manual trigger/env change. Local checkpoint before smoke. Next dispatch finite verification-only existing-key run: real provider natural summary -> edit/reject -> atomic Save -> refresh/second session/source/updates/no duplicate. PO acceptance pending.
+
+
 > **2026-10-18 CP1 #172 MERGED / DEPLOY NEXT:** Squash `e5910a485cb0aeb61bf6dcff7408b9a5d35397e5` merged 22:10 UTC / 01:10 Cyprus. Final head `f49959e` canonical guard `39073887605` SUCCESS; runtime evidence unchanged from `6ca35bd`. Local durable checkpoint before observing native auto-deploy; publish with final live result to avoid duplicate deploys. Next existing Render LIVE identity then one finite real-provider/two-browser synthetic proof. Not yet deployed or PO accepted.
 
 
