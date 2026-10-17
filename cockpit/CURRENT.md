@@ -1,5 +1,8 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
+> **2026-10-18 CP1 PROVIDER BUDGET BLOCK / BOUNDED UX FIX:** Existing secret-only synthetic schema probe `39074354153` returned OpenAI RateLimitError HTTP429 code `credit_balance_exhausted`; no new provider/key/config used. Actual Render extraction previously502, no Save occurred. User asked asynchronously to restore provider budget; never request secret in chat. Writer `codex/cockpit-cp1-provider-status` adds only allowlisted quota-error classification and actionable retained-text message; next test/publish bounded fix and prove actual Render classification. CP1 deployed but live end-to-end NOT verified, NOT ready for acceptance. Earlier live implementation state unchanged; no CP2–CP5.
+
+
 > **2026-10-18 CP1 LIVE EXTRACTION 502 CONFIRMED:** Diagnostic run `39074201404` returned HTTP 502 before Save. No completed CP1 claim. GitHub already holds OPENAI_API_KEY secret (name only inspected); use it in verification-only synthetic schema probe to diagnose provider compatibility without fetching/exposing secret or changing Render settings. Preserve prior live state and local checkpoints.
 
 

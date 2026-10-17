@@ -84,6 +84,13 @@ def test_provider_boundary_rejects_fabricated_excerpt_completion_and_failure(mon
     assert error.value.status_code==502 and 'invented' not in str(error.value.detail)
     current=draft();current.pending[0].status='resolved'
     with pytest.raises(HTTPException):extract_candidate(TEXT,'2026-10-18',{})
+    class Exhausted(Exception):
+        code='credit_balance_exhausted'
+    def exhausted(**kw):raise Exhausted('DO_NOT_ECHO_SOURCE_OR_PROVIDER_ERROR')
+    monkeypatch.setattr(openai,'OpenAI',lambda **kw:SimpleNamespace(responses=SimpleNamespace(parse=exhausted)))
+    with pytest.raises(HTTPException) as error:extract_candidate(TEXT,'2026-10-18',{})
+    assert error.value.status_code==503 and error.value.detail['code']=='provider_budget_exhausted'
+    assert 'DO_NOT_ECHO' not in str(error.value.detail)
     monkeypatch.setenv('CLINICAL_DOCUMENTS_PHI_PROVIDER_APPROVED','false')
     with pytest.raises(HTTPException) as error:extract_candidate(TEXT,'2026-10-18',{})
     assert error.value.status_code==503
