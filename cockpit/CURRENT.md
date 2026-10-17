@@ -1,5 +1,8 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
+> **2026-10-18 CP1 PR #172 OPEN:** https://github.com/athpapachr-cmd/osteoporosis/pull/172 on `bec1fdc`, runtime `d21ed3b` unchanged after closure. PR attached to task. 26 capture/CP1 tests PASS. Await affected Visit Capture/Home/Visit Brief and canonical guard; next authorized merge/native deploy/live provider proof. Not deployed or PO accepted.
+
+
 > **2026-10-18 CP1 IMPLEMENTED / LOCAL TESTED:** Runtime/test `d21ed3b3ff47823996b1766cdd8615e53f8f2fd2`; bounded fidelity review found 3 defects (validation echo, late draft response, edited-array removal), all corrected and independent closure PASS. 4 new CP1 tests include natural adapter, sanitized failure/PHI gate, stale context after provider, exact pending source mapping, reject/edit/save, duplicate prevention, delayed-response reset, refresh and independent desktop/mobile sessions. 22 inherited capture tests, 36 adjacent tests and 4 Node suites PASS. Actual chart screenshot inspected. Existing Visit Capture CI extended for CP1. No schema migration, env change, new provider or #161 fixture mutation. Next PR/affected CI then same-service release and live provider + persistence proof. Acceptance remains pending; CP2–CP5 not started.
 
 
