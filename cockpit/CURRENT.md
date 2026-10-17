@@ -1,5 +1,8 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
+> **2026-10-18 CP1 AFFECTED CI PASS / RELEASE NEXT:** Final runtime `6ca35bd53296c151b917b1b810aaaae00d657c69` adds only stale-preview edit guard, independently PASS; 4 CP1 regressions PASS. GitHub Visit Capture `39073780816`, Home `39073780832`, Visit Brief `39073780810` and canonical guard `39073780808` SUCCESS. Unrelated Clinical Learning L0 design-only allowlist fails on non-L0 files (same known scope mismatch); no L0 mutation. Next authorized #172 squash merge/native Render deployment, then finite existing-key live proof from verification-only `e676c5e` (never merge). CP1 not deployed/accepted yet.
+
+
 > **2026-10-18 CP1 PR #172 OPEN:** https://github.com/athpapachr-cmd/osteoporosis/pull/172 on `bec1fdc`, runtime `d21ed3b` unchanged after closure. PR attached to task. 26 capture/CP1 tests PASS. Await affected Visit Capture/Home/Visit Brief and canonical guard; next authorized merge/native deploy/live provider proof. Not deployed or PO accepted.
 
 
