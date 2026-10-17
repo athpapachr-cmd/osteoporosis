@@ -1,0 +1,29 @@
+name: Cockpit Visit Brief synthetic preview (no PHI)
+on:
+  push:
+    paths:
+      - "preview/visit-brief-synthetic/**"
+      - ".github/workflows/cockpit-visit-brief-synthetic-preview.yml"
+jobs:
+  synthetic-visit-brief:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Syntax
+        run: |
+          python -m py_compile preview/visit-brief-synthetic/build.py
+          node --check preview/visit-brief-synthetic/mock-api.js
+          node --check preview/visit-brief-synthetic/test-mock.js
+      - name: Build exact Cockpit frontend preview
+        run: python preview/visit-brief-synthetic/build.py
+      - name: Isolated synthetic API contract
+        run: node preview/visit-brief-synthetic/test-mock.js
+      - name: Verify preview assets and no external endpoints
+        run: |
+          test -s visit-brief-demo-dist/index.html
+          test -s visit-brief-demo-dist/demo/mock-api.js
+          test -s visit-brief-demo-dist/static/cockpit/visit-brief.js
+          grep -q 'ΣΥΝΘΕΤΙΚΑ ΔΕΔΟΜΕΝΑ' visit-brief-demo-dist/index.html
