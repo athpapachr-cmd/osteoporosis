@@ -42,7 +42,7 @@
     const keyButton = element("button", "ce-global-button");
     keyButton.id = "ceGlobalKey";
     keyButton.type = "button";
-    keyButton.title = "Clinical Key — σύνδεση ή επανασύνδεση";
+    keyButton.title = "Προστατευμένη πρόσβαση — σύνδεση ή επανασύνδεση";
     keyButton.setAttribute("aria-expanded", "false");
     keyButton.append(element("span", "ce-global-glyph", "🔑"),
       document.createTextNode("Πρόσβαση"));
@@ -69,7 +69,7 @@
     accessPanel.append(explanation);
     const form = element("form");
     form.id = "ceGlobalLoginForm";
-    const label = element("label", "", "Clinical access key");
+    const label = element("label", "", "Κλειδί πρόσβασης");
     const input = element("input");
     input.id = "ceGlobalKeyInput";
     input.type = "password";
@@ -105,7 +105,11 @@
         status.textContent = "Έλεγχος σύνδεσης…";
         status.dataset.kind = "";
         // Auth probe is read-only; no provider, patient or schedule API.
-        fetch("/clinical/status", {credentials:"same-origin", cache:"no-store"})
+        fetch("/clinical/staff-session", {credentials:"same-origin", cache:"no-store"})
+          .then(async r => {
+            if(r.ok){const session=await r.json();window.CockpitStaffRole=session.staff_role;return r;}
+            return fetch("/clinical/status", {credentials:"same-origin", cache:"no-store"});
+          })
           .then(r => {
             if (panel.hidden) return;
             status.textContent = r.ok ? "Συνδεδεμένο. Μπορείς να αλλάξεις κλειδί." :
@@ -150,8 +154,12 @@
             "Δεν ολοκληρώθηκε η σύνδεση. Δοκίμασε ξανά.";
           return;
         }
+        const result=await response.json();
+        window.CockpitStaffRole=result.staff_role||null;
         status.dataset.kind = "success";
-        status.textContent = "Συνδέθηκες. Οι κλινικές προβολές ανανεώνονται.";
+        status.textContent = result.staff_role==="secretary"?
+          "Συνδέθηκες ως γραμματεία. Πρόσβαση μόνο σε επιτρεπόμενες προβολές.":
+          "Συνδέθηκες. Οι κλινικές προβολές ανανεώνονται.";
         window.dispatchEvent(new Event("clinical:authenticated"));
       } catch (_) {
         status.dataset.kind = "error";
@@ -163,6 +171,11 @@
     // A protected consumer can request the common key panel, without embedding
     // a second password form or keeping any secret in local/session storage.
     window.addEventListener("clinical:request-login", () => openPanel(accessPanel));
+    window.addEventListener("clinical:unauthenticated",()=>{window.CockpitStaffRole=null;});
+    // Role is only a presentation hint. Server validates every protected request.
+    fetch("/clinical/staff-session",{credentials:"same-origin",cache:"no-store"})
+      .then(r=>r.ok?r.json():null).then(v=>{window.CockpitStaffRole=v?.staff_role||null;})
+      .catch(()=>{window.CockpitStaffRole=null;});
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
