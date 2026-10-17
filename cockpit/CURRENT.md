@@ -1,5 +1,8 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
+> **2026-10-18 FINAL CP1 UI LIVE / READBACK NEXT:** Render `dep-db9vdfe1egvs73d7dn7g` LIVE exact `f84e501bc1fbb0b52a34392ea8bf92a698b16da3`, finished22:30:58UTC /01:30Cyprus. Visit Brief final rerun `39075179584` also SUCCESS. Next read existing proof visit in two browsers via verification-only `0ccaa24`; no provider or Save repeat. Local durable checkpoint before final readback.
+
+
 > **2026-10-18 #174 MERGED / FINAL UI DEPLOY NEXT:** Squash `f84e501bc1fbb0b52a34392ea8bf92a698b16da3` at 22:29:15 UTC. Runtime behavior unchanged from actual successful CP1 proof; small presentation delta reviewed/tested. Next native deploy and read-only two-browser readback of existing proof visit, then handback for PO acceptance.
 
 > **2026-10-18 #174 AFFECTED CI PASS / RELEASE NEXT:** Visit Capture `39075179587`, Home `39075179598`, canonical guard `39075179609` SUCCESS on final published `f5ad641`; earlier unchanged Visit Brief evidence retained (current rerun still completing). R1 presentation PASS. Only field height/row wrapping changes; real-provider/Save proof unchanged. Local durable checkpoint before #174 merge.
