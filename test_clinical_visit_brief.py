@@ -370,3 +370,75 @@ def test_changed_booking_since_preview_requires_fresh_reconfirmation(monkeypatch
     fresh = confirm(c)
     assert fresh.status_code == 200
     assert read(c).json()["reason"] == "needs_reconfirmation"
+
+
+def test_secretary_bounded_registry_and_brief_without_clinical_save(monkeypatch):
+    c, engine = client(monkeypatch)
+    c.cookies.set(STAFF_COOKIE, issue_staff_cookie(
+        StaffActor("clinic-secretary", "secretary")), path="/clinical")
+    seen = read(c)
+    assert seen.status_code == 200
+    assert seen.json()["mode"] == "booking_only"
+    observation = seen.json()["booking"]["observation"]
+    search = c.post("/clinical/calendar/visit-brief/patient-search", json={
+        "booking_uid": BOOKING["uid"], "observed_booking": observation,
+        "query": "P1", "limit": 20, "offset": 0,
+    })
+    assert search.status_code == 200
+    assert search.json() == [{"patient_id": "P1", "demographics": {}}]
+    assert c.get("/clinical/patients?query=P1").status_code == 401
+    first = confirm(c)
+    assert first.status_code == 200
+    assert first.json()["mode"] == "confirmed_once"
+    assert c.post("/clinical/calendar/visit-brief/unlink", json={
+        "booking_uid": BOOKING["uid"],
+        "expected_revision": 1, "explicit_unlink": True,
+    }).status_code == 403
+    assert confirm(c, patient="P2", revision=1,
+                   replace_existing=True).status_code == 403
+    assert c.get("/clinical/calendar/visit-brief/staff-audit").status_code == 403
+    with Session(engine) as db:
+        link = db.get(BookingPatientLinkORM, (brief.NAMESPACE, BOOKING["uid"]))
+        assert link.patient_id == "P1" and link.revision == 1
+        audit = db.scalars(select(VisitBriefStaffAuditORM)).all()
+        assert any(row.event == "brief_read_confirm"
+                   and row.principal_id == "clinic-secretary" for row in audit)
+        assert any(row.event == "link_revoke"
+                   and row.outcome == "denied" for row in audit)
+
+
+def test_clinician_can_read_bounded_access_audit(monkeypatch):
+    c, _ = client(monkeypatch)
+    assert confirm(c).status_code == 200
+    history = c.get("/clinical/calendar/visit-brief/staff-audit")
+    assert history.status_code == 200
+    events = history.json()
+    assert any(event["event"] == "brief_read_confirm"
+               and event["role"] == "clinician" for event in events)
+    assert all("patient_id" not in item for item in events)
+
+
+def test_staff_session_version_rotation_and_policy_gate(monkeypatch):
+    c, _ = client(monkeypatch)
+    assert read(c).status_code == 200
+    monkeypatch.setenv("COCKPIT_STAFF_CLINICIAN_VERSION", "2")
+    assert read(c).status_code == 401
+    c.cookies.set(STAFF_COOKIE, issue_staff_cookie(
+        StaffActor("clinic-clinician", "clinician")), path="/clinical")
+    assert read(c).status_code == 200
+    monkeypatch.setenv("COCKPIT_VISIT_BRIEF_AUDIT_RETENTION_APPROVED", "0")
+    assert read(c).json()["reason"] == "disabled"
+    assert confirm(c).status_code == 503
+
+
+def test_booking_registry_search_fails_closed_when_source_changes(monkeypatch):
+    c, _ = client(monkeypatch)
+    old = read(c).json()["booking"]["observation"]
+    changed = dict(BOOKING, reason="Updated synthetic reason")
+    set_source(monkeypatch, bookings=[changed])
+    response = c.post("/clinical/calendar/visit-brief/patient-search", json={
+        "booking_uid": BOOKING["uid"], "observed_booking": old,
+        "query": "P1",
+    })
+    assert response.status_code == 409
+    assert "P1" not in response.text
