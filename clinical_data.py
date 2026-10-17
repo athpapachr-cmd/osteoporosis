@@ -9,7 +9,7 @@ import unicodedata
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
 from pydantic import BaseModel, Field
-from sqlalchemy import Column, DateTime, Integer, JSON, String, delete, select, func
+from sqlalchemy import Column, DateTime, JSON, String, delete, select, func
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, Session
 
@@ -77,8 +77,6 @@ class ClinicalPendingORM(ClinicalBase):
     review_date = Column(String, nullable=True, index=True)
     provenance_json = Column(JSON, nullable=False, default=list)
     resolution_event_id = Column(String, nullable=True, index=True)
-    confirmation_revision = Column(Integer, nullable=False, default=0)
-    checkpoint_plan_json = Column(JSON, nullable=True)
     created_at = Column(DateTime, nullable=False, index=True)
     updated_at = Column(DateTime, nullable=False, index=True)
 
@@ -593,7 +591,8 @@ def _validate_visit_capture_candidate(candidate: VisitCaptureCandidateV1) -> Non
 
 def _pending_record(row: ClinicalPendingORM, session: Optional[Session] = None) -> ClinicalPendingRecord:
     checkpoint = None
-    if session is not None and row.checkpoint_plan_json:
+    if (session is not None and session.bind.dialect.name == "sqlite"
+            and os.environ.get("CLINICAL_PENDING_ONE_TAP_SYNTHETIC_ENABLED") == "1"):
         from clinical_pending_one_tap import project_checkpoint
         checkpoint = project_checkpoint(session, row)
     return ClinicalPendingRecord(
@@ -609,7 +608,7 @@ def _pending_record(row: ClinicalPendingORM, session: Optional[Session] = None) 
         review_date=row.review_date,
         provenance=list(row.provenance_json or []),
         resolution_event_id=row.resolution_event_id,
-        confirmation_revision=row.confirmation_revision or 0,
+        confirmation_revision=checkpoint["revision"] if checkpoint else 0,
         checkpoint=checkpoint,
         created_at=row.created_at,
         updated_at=row.updated_at,
@@ -866,9 +865,10 @@ def build_clinical_router(engine: Engine) -> APIRouter:
     )
     def save_visit_capture(req: VisitCaptureRequest, request: Request) -> VisitCaptureSaveRecord:
         _validate_visit_capture_candidate(req.candidate)
+        actor = None
         if any(item.checkpoint_plan is not None for item in req.candidate.pending):
             from clinical_pending_one_tap import require_synthetic_clinician
-            require_synthetic_clinician(request, engine)
+            actor = require_synthetic_clinician(request, engine)
         if req.candidate.source_identity_state != "consistent":
             raise HTTPException(
                 status_code=409,
@@ -919,14 +919,21 @@ def build_clinical_router(engine: Engine) -> APIRouter:
                     review_date=item.review_date,
                     provenance_json=item.provenance,
                     resolution_event_id=None,
-                    confirmation_revision=0,
-                    checkpoint_plan_json=(item.checkpoint_plan.model_dump(mode="json")
-                                          if item.checkpoint_plan else None),
                     created_at=now,
                     updated_at=now,
                 )
                 session.add(pending_row)
                 pending_rows.append(pending_row)
+
+            if actor is not None:
+                # Single transaction: clinician-accepted plan anchored to the
+                # exact synthetic pending ID, without altering production ORM.
+                from clinical_pending_one_tap import approve_synthetic_checkpoint_plan
+                session.flush()
+                for pending_row, candidate_item in zip(pending_rows, req.candidate.pending):
+                    if candidate_item.checkpoint_plan is not None:
+                        approve_synthetic_checkpoint_plan(
+                            session, pending_row, candidate_item.checkpoint_plan, actor)
 
             patient = ensure_patient(session, context.patient_id)
             patient.updated_at = now

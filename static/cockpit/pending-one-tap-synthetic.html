@@ -1,52 +1,71 @@
 <!doctype html>
 <html lang="el">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="robots" content="noindex,nofollow">
-<title>Clinical Pending — Synthetic One-Tap</title>
-<style>
-  body{font-family:system-ui,-apple-system,sans-serif;background:#f7f8fa;color:#202936;margin:0;padding:24px}
-  main{max-width:720px;margin:auto} h1{font-size:1.45rem;margin-bottom:.3rem}
-  p{line-height:1.5} .muted{color:#697587;font-size:.92rem}
-  section{background:white;border:1px solid #dce2ea;border-radius:16px;padding:20px;margin:18px 0}
-  label{display:block;font-weight:650;margin-top:10px}
-  input{padding:12px;border-radius:10px;border:1px solid #bac5d3;width:100%;box-sizing:border-box;margin-top:7px}
-  button{padding:11px 16px;border-radius:11px;border:1px solid #acb8c8;background:#fff;cursor:pointer;margin:8px 6px 0 0;font:inherit}
-  button.primary{background:#243e66;color:white;border-color:#243e66}
-  button:disabled{opacity:.5;cursor:not-allowed}
-  #message{min-height:1.6em} .question{font-size:1.15rem;font-weight:650}
-  .row{display:flex;gap:10px;flex-wrap:wrap}.hidden{display:none}
-  pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:.85rem}
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Δοκιμή εκκρεμότητας · Cockpit</title>
+  <style>
+    :root{color-scheme:light;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    *{box-sizing:border-box}
+    body{margin:0;background:#f6f7fa;color:#1a2536}
+    main{max-width:710px;margin:0 auto;padding:24px 18px 50px}
+    a{color:#234875;text-decoration:none}
+    header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+    .eyebrow{font-size:.75rem;letter-spacing:.07em;text-transform:uppercase;color:#687b90;font-weight:700}
+    h1{font-size:1.6rem;line-height:1.2;margin:.5rem 0 1rem}
+    .pill{font-size:.82rem;padding:5px 11px;border-radius:50px;background:#eaf0f7;color:#30485e}
+    .card{border:1px solid #dce3ed;border-radius:18px;background:white;padding:22px;margin-top:16px}
+    .muted{color:#5e7184;font-size:.9rem;line-height:1.5}
+    .question{font-size:1.35rem;font-weight:680;line-height:1.35;margin:18px 0}
+    .row{display:flex;gap:10px;flex-wrap:wrap}
+    button{font:inherit;font-weight:600;min-height:44px;border-radius:12px;padding:11px 20px;border:1px solid #bcc8d8;background:white;color:#25435e;cursor:pointer}
+    button.primary{background:#234878;color:white;border-color:#234878}
+    button:disabled{opacity:.45;cursor:default}
+    button:focus-visible,a:focus-visible{outline:3px solid #6aa7df;outline-offset:3px}
+    #observation{min-height:1.4em}
+    .view-title{font-size:1rem;font-weight:700}
+    .view{padding:12px 0;border-bottom:1px solid #eef1f5}
+    .view:last-child{border:0}
+    .state{font-weight:600;margin:8px 0}
+    .finished{color:#196449}
+    @media(max-width:420px){main{padding:18px 12px}.card{padding:18px}button{flex:1}}
+  </style>
 </head>
 <body>
 <main>
-  <h1>Clinical Pending · One-Tap</h1>
-  <p class="muted">Μόνο synthetic demo (#162). Δεν συνδέεται με πραγματικές κλινικές επιβεβαιώσεις. Η λειτουργία είναι κλειστή στην παραγωγή.</p>
-  <section>
-    <label for="staffKey">Κωδικός synthetic clinician</label>
-    <input id="staffKey" type="password" autocomplete="off">
-    <button id="signIn" type="button">Σύνδεση</button>
-    <button id="signOut" type="button">Αποσύνδεση</button>
-    <label for="patientId">Synthetic patient ID</label>
-    <input id="patientId" autocomplete="off" placeholder="SYN-CD">
-    <button id="load" class="primary" type="button">Άνοιγμα εκκρεμότητας</button>
-    <p id="message" role="status" aria-live="polite"></p>
-  </section>
-  <section id="checkpoint" class="hidden" aria-label="Επιβεβαίωση εκκρεμότητας">
-    <p class="muted" id="itemStatus"></p>
-    <p class="question" id="question"></p>
+  <header>
+    <a href="/static/cockpit/" aria-label="Επιστροφή στο Cockpit">← Cockpit</a>
+    <span class="pill">Synthetic · Demo</span>
+  </header>
+  <p class="eyebrow">Εκκρεμότητα επίσκεψης</p>
+  <h1>Δοκιμή επιβεβαίωσης με ένα άγγιγμα</h1>
+  <p class="muted">Δοκιμαστικό περιστατικό χωρίς στοιχεία ασθενούς. Όλες οι αλλαγές γίνονται μόνο στη μνήμη αυτής της σελίδας — καμία αποθήκευση ή επικοινωνία με server.</p>
+  <section class="card" aria-label="Επιβεβαίωση κλινικής εκκρεμότητας">
+    <p class="muted">Δοκιμαστικός ασθενής · Προηγούμενη επίσκεψη</p>
+    <strong>Εκκρεμεί: προσκόμιση CD μαγνητικής και εξέταση εικόνων.</strong>
+    <p class="question" id="question" aria-live="polite"></p>
     <div class="row">
-      <button id="yes" class="primary" type="button">Ναι</button>
+      <button class="primary" id="yes" type="button">Ναι</button>
       <button id="notYet" type="button">Όχι ακόμη</button>
     </div>
-    <p class="muted" id="verified"></p>
+    <p id="observation" class="muted" role="status" aria-live="polite"></p>
+    <div class="row">
+      <button id="undo" type="button">Αναίρεση τελευταίας επιβεβαίωσης</button>
+      <button id="reset" type="button">Ξανά από την αρχή</button>
+    </div>
   </section>
-  <section>
-    <strong>Κοινή κατάσταση · Patient & Daily Brief</strong>
-    <p class="muted">Οι δύο προβολές διαβάζουν το ίδιο pending ID/revision.</p>
-    <pre id="comparison">Δεν έχουν φορτωθεί δεδομένα.</pre>
+  <section class="card" aria-label="Κοινή κατάσταση δύο προβολών">
+    <p class="eyebrow">Ίδια πληροφορία · Δύο προβολές</p>
+    <div class="view">
+      <div class="view-title">Καρτέλα ασθενούς</div>
+      <p id="patientStatus" class="state"></p>
+    </div>
+    <div class="view">
+      <div class="view-title">Daily Brief</div>
+      <p id="briefStatus" class="state"></p>
+    </div>
+    <p id="audit" class="muted" aria-live="polite"></p>
   </section>
 </main>
 <script src="/static/cockpit/pending-one-tap-synthetic.js" defer></script>

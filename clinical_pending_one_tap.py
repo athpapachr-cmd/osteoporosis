@@ -12,7 +12,7 @@ from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
-from sqlalchemy import Column, DateTime, Integer, String, UniqueConstraint, select, update
+from sqlalchemy import Column, DateTime, Integer, JSON, String, UniqueConstraint, select
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import DeclarativeBase, Session
@@ -43,6 +43,7 @@ class PendingCheckpointEventORM(PendingEventBase):
     recorded_at = Column(DateTime, nullable=False)
     actor_principal_id = Column(String(64), nullable=False)
     actor_role = Column(String(32), nullable=False)
+    plan_json = Column(JSON, nullable=True)
 
 
 class CheckpointAction(BaseModel):
@@ -72,11 +73,34 @@ def _signed_source(session: Session, row: ClinicalPendingORM) -> None:
         raise HTTPException(409, "Pending source is not signed")
 
 
-def _plan(row: ClinicalPendingORM) -> VisitCaptureCheckpointPlan:
-    if not isinstance(row.checkpoint_plan_json, dict):
-        raise HTTPException(409, "Pending has no approved checkpoint plan")
+def approve_synthetic_checkpoint_plan(session: Session, row: ClinicalPendingORM,
+                                      plan: VisitCaptureCheckpointPlan, actor: StaffActor) -> None:
+    """Plan comes only from deliberate signed Visit Capture Save in this transaction."""
+    session.add(PendingCheckpointEventORM(
+        id=str(uuid4()), idempotency_key="synthetic-plan-" + uuid4().hex,
+        pending_id=row.id, patient_id=row.patient_id, checkpoint_key="__approved_plan__",
+        plan_version=plan.version, kind="plan_approved", retracts_event_id=None,
+        revision=0, recorded_at=utcnow(), actor_principal_id=actor.principal_id,
+        actor_role=actor.role, plan_json=plan.model_dump(mode="json"),
+    ))
+
+
+def _events(session: Session, row: ClinicalPendingORM) -> list[PendingCheckpointEventORM]:
+    return session.scalars(select(PendingCheckpointEventORM)
+                           .where(PendingCheckpointEventORM.pending_id == row.id,
+                                  PendingCheckpointEventORM.patient_id == row.patient_id)
+                           .order_by(PendingCheckpointEventORM.revision.asc())).all()
+
+
+def _approved_plan(events: list[PendingCheckpointEventORM]
+                   ) -> VisitCaptureCheckpointPlan | None:
+    approvals = [ev for ev in events if ev.kind == "plan_approved" and ev.revision == 0]
+    if not approvals:
+        return None
+    if len(approvals) != 1 or not isinstance(approvals[0].plan_json, dict):
+        raise HTTPException(409, "Ambiguous approved checkpoint plan")
     try:
-        plan = VisitCaptureCheckpointPlan.model_validate(row.checkpoint_plan_json)
+        plan = VisitCaptureCheckpointPlan.model_validate(approvals[0].plan_json)
     except ValueError:
         raise HTTPException(409, "Invalid approved checkpoint plan") from None
     if len({step.key for step in plan.steps}) != len(plan.steps):
@@ -84,10 +108,8 @@ def _plan(row: ClinicalPendingORM) -> VisitCaptureCheckpointPlan:
     return plan
 
 
-def _events(session: Session, row: ClinicalPendingORM) -> list[PendingCheckpointEventORM]:
-    return session.scalars(select(PendingCheckpointEventORM)
-                           .where(PendingCheckpointEventORM.pending_id == row.id)
-                           .order_by(PendingCheckpointEventORM.revision.asc())).all()
+def _revision(events: list[PendingCheckpointEventORM]) -> int:
+    return max((ev.revision for ev in events), default=0)
 
 
 def _effective(events: list[PendingCheckpointEventORM]):
@@ -100,15 +122,17 @@ def _effective(events: list[PendingCheckpointEventORM]):
 
 
 def project_checkpoint(session: Session, row: ClinicalPendingORM) -> dict:
-    plan = _plan(row)
     events = _events(session, row)
+    plan = _approved_plan(events)
+    if plan is None:
+        return None
     confirmed, not_yet = _effective(events)
     next_step = next((step for step in plan.steps if step.key not in confirmed), None)
     return {
         "pending_id": row.id,
         "patient_id": row.patient_id,
         "source_encounter_id": row.source_encounter_id,
-        "revision": row.confirmation_revision or 0,
+        "revision": _revision(events),
         "plan_version": plan.version,
         "status": row.status,
         "next_checkpoint": (
@@ -139,7 +163,10 @@ def attach_pending_one_tap_routes(router: APIRouter, engine: Engine, protected: 
             if session.get(PatientORM, patient_id) is None:
                 raise HTTPException(404, "Patient not found")
             _signed_source(session, row)
-            plan = _plan(row)
+            events = _events(session, row)
+            plan = _approved_plan(events)
+            if plan is None:
+                raise HTTPException(409, "Pending has no approved checkpoint plan")
             existing = session.scalar(select(PendingCheckpointEventORM).where(
                 PendingCheckpointEventORM.idempotency_key == action.idempotency_key))
             if existing is not None:
@@ -152,9 +179,8 @@ def attach_pending_one_tap_routes(router: APIRouter, engine: Engine, protected: 
                     raise HTTPException(409, "Idempotency key conflict")
                 return {"event_id": existing.id, "event_revision": existing.revision,
                         "replayed": True, "current": project_checkpoint(session, row)}
-            if (row.confirmation_revision or 0) != action.expected_revision:
+            if _revision(events) != action.expected_revision:
                 raise HTTPException(409, "Checkpoint revision changed")
-            events = _events(session, row)
             confirmed, _ = _effective(events)
             next_step = next((step for step in plan.steps if step.key not in confirmed), None)
 
@@ -192,24 +218,20 @@ def attach_pending_one_tap_routes(router: APIRouter, engine: Engine, protected: 
             new_resolution = (event_id if complete_after else
                               None if action.observation == "retracted" else
                               row.resolution_event_id)
-            changed = session.execute(
-                update(ClinicalPendingORM)
-                .where(ClinicalPendingORM.id == pending_id,
-                       ClinicalPendingORM.patient_id == patient_id,
-                       ClinicalPendingORM.confirmation_revision == action.expected_revision)
-                .values(confirmation_revision=revision, status=new_status,
-                        resolution_event_id=new_resolution, updated_at=now)
-            )
-            if changed.rowcount != 1:
-                session.rollback()
-                raise HTTPException(409, "Checkpoint revision changed")
+            # Synthetic SQLite only: revision uniqueness is the CAS oracle.
+            # The new event and parent status commit atomically; production
+            # ClinicalPendingORM remains binary/schema compatible and unchanged.
             session.add(PendingCheckpointEventORM(
                 id=event_id, idempotency_key=action.idempotency_key,
                 patient_id=patient_id, pending_id=pending_id,
                 checkpoint_key=action.checkpoint_key, plan_version=plan.version,
                 kind=action.observation, retracts_event_id=action.retracts_event_id,
                 revision=revision, recorded_at=now,
-                actor_principal_id=actor.principal_id, actor_role=actor.role))
+                actor_principal_id=actor.principal_id, actor_role=actor.role,
+                plan_json=None))
+            row.status = new_status
+            row.resolution_event_id = new_resolution
+            row.updated_at = now
             try:
                 session.commit()
             except IntegrityError:
@@ -225,14 +247,17 @@ def attach_pending_one_tap_routes(router: APIRouter, engine: Engine, protected: 
         with Session(engine) as session:
             rows = session.scalars(
                 select(ClinicalPendingORM)
-                .where(ClinicalPendingORM.checkpoint_plan_json.is_not(None),
-                       ClinicalPendingORM.status.in_(("open", "awaiting_patient", "awaiting_result")))
+                .where(ClinicalPendingORM.status.in_(("open", "awaiting_patient", "awaiting_result")))
                 .order_by(ClinicalPendingORM.updated_at.desc(), ClinicalPendingORM.id.asc())
-                .limit(4)
+                .limit(100)
             ).all()
             result = []
             for row in rows:
-                _signed_source(session, row)
                 item = project_checkpoint(session, row)
+                if item is None:
+                    continue
+                _signed_source(session, row)
                 result.append(item)
+                if len(result) >= 4:
+                    break
             return {"items": result, "synthetic_only": True}

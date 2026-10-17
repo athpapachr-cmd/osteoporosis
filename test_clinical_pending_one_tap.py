@@ -100,7 +100,9 @@ def test_cd_lifecycle_common_projection_and_midnight(monkeypatch):
     assert before["next_checkpoint"]["key"] == "cd_received"
     assert client.get("/clinical/daily-brief/pending").json()["items"][0] == before
     with Session(engine) as session:
-        assert session.scalar(select(PendingCheckpointEventORM)) is None
+        approved = session.scalars(select(PendingCheckpointEventORM)).all()
+        assert len(approved) == 1 and approved[0].kind == "plan_approved"
+        assert approved[0].plan_json["steps"][0]["key"] == "cd_received"
 
     import clinical_pending_one_tap as steps
     monkeypatch.setattr(steps, "utcnow", lambda: datetime(2026, 10, 17, 23, 59))
@@ -124,7 +126,7 @@ def test_cd_lifecycle_common_projection_and_midnight(monkeypatch):
         encounter = session.get(EncounterORM, signed_id)
         assert encounter.payload_json["_visit_capture_v1"]["signed"] is True
         assert encounter.status == "completed"
-        assert len(session.scalars(select(PendingCheckpointEventORM)).all()) == 2
+        assert len(session.scalars(select(PendingCheckpointEventORM)).all()) == 3
 
     # A report read is not image inspection; only the approved image stage qualifies.
     wrong_stage = tap(client, patient, pending, "written_report_read",
@@ -150,7 +152,7 @@ def test_cd_lifecycle_common_projection_and_midnight(monkeypatch):
     assert view(client, patient, pending) == client.get(
         "/clinical/daily-brief/pending").json()["items"][0]
     with Session(engine) as session:
-        assert len(session.scalars(select(PendingCheckpointEventORM)).all()) == 4
+        assert len(session.scalars(select(PendingCheckpointEventORM)).all()) == 5
 
 
 def test_replay_revision_patient_role_and_legacy_safety(monkeypatch):
@@ -174,7 +176,7 @@ def test_replay_revision_patient_role_and_legacy_safety(monkeypatch):
     assert tap(client, patient, pending, "cd_received", "retracted", 1,
                "synthetic-wrong-retract-01", "missing-event-id").status_code == 409
     with Session(engine) as session:
-        assert len(session.scalars(select(PendingCheckpointEventORM)).all()) == 1
+        assert len(session.scalars(select(PendingCheckpointEventORM)).all()) == 2
 
     # A shared clinical key is NOT proof of a named doctor.
     client.post("/clinical/logout")
