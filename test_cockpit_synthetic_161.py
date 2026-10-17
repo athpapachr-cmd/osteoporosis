@@ -139,6 +139,7 @@ def test_seed_collision_never_overwrites_existing_patient(setup):
 
 def test_real_browser_two_sessions_refresh_and_complete_chart(setup, tmp_path):
     import socket
+    import shutil
     import threading
     import uvicorn
     from playwright.sync_api import sync_playwright, expect
@@ -153,7 +154,7 @@ def test_real_browser_two_sessions_refresh_and_complete_chart(setup, tmp_path):
     url = f"http://localhost:{port}" + PREFIX + "/"
     try:
         with sync_playwright() as pw:
-            browser = pw.chromium.launch()
+            browser = pw.chromium.launch(executable_path=shutil.which("google-chrome") or shutil.which("chromium"))
             for index, width in enumerate((1280, 680, 390)):
                 # Independent browser contexts have no shared cookie or storage.
                 context = browser.new_context(viewport={"width":width,"height":900})
