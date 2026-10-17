@@ -1,5 +1,7 @@
 # TODO.md — Clinical Excellence long-range compass
 
+> **2026-10-18 Cockpit roadmap checkpoint:** #161 experience accepted by the Product Owner. CP1 natural Dia capture is implemented, deployed in normal Cockpit and live-verified with a synthetic patient; awaiting personal Product Owner test/acceptance before milestone closure. CP2–CP5 remain subsequent milestones. Exact operational evidence and next action: `CURRENT_OPERATIONAL.md` / `cockpit/CURRENT.md`.
+
 > **ROLE:** permanent broad roadmap/checklist across phases.
 > **CANONICAL HOME:** `athpapachr-cmd/osteoporosis`.
 > **ACTIVE DETAILED PHASE:** `CLINICAL_EXCELLENCE_PLAN.md`.
