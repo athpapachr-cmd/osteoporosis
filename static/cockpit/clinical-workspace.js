@@ -16,7 +16,10 @@
  async function get(url){
    const r=await fetch(url,{credentials:"same-origin",headers:{"Accept":"application/json"}});
    if(!r.ok){
-     if(r.status===401||r.status===403)window.dispatchEvent?.(new Event("clinical:unauthenticated"));
+     // A secretary's permitted session must not be treated as logged out
+     // merely because an unrelated clinician-only legacy endpoint returns 401.
+     if(r.status===401&&window.CockpitStaffRole==="clinician")
+       window.dispatchEvent?.(new Event("clinical:unauthenticated"));
      const e=new Error("HTTP "+r.status);e.status=r.status;throw e;
    }
    return r.json();
@@ -90,6 +93,9 @@
  }
  async function recent(){
    const target=$("visitRecentRows");
+   if(window.CockpitStaffRole==="secretary"){
+     return info(target,"Οι πρόσφατες κλινικές επισκέψεις εμφανίζονται μόνο στον γιατρό.");
+   }
    try{
      const list=await get("/clinical/recent-encounters?limit=3");
      if(!Array.isArray(list))throw Error("invalid response");
@@ -127,7 +133,7 @@
           body:JSON.stringify({...scope,query:term,limit:20,offset})
         });
         if(!response.ok){
-          if(response.status===401||response.status===403)
+          if(response.status===401)
             window.dispatchEvent?.(new Event("clinical:unauthenticated"));
           const error=new Error("HTTP "+response.status);error.status=response.status;throw error;
         }
