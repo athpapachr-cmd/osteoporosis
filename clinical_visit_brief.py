@@ -487,6 +487,11 @@ def attach_visit_brief_routes(
                     if link.patient_id != req.patient_id and not req.replace_existing:
                         raise HTTPException(409, "Explicit patient correction required")
                     if link.patient_id != req.patient_id and actor.role != "clinician":
+                        session.rollback()
+                        with Session(engine) as denial:
+                            _record_access(denial, actor, req.booking_uid,
+                                           "link_correct", "denied")
+                            denial.commit()
                         raise HTTPException(403, "Only clinician may correct a link")
                     event = ("corrected" if link.patient_id != req.patient_id else
                              "reconfirmed")
@@ -529,14 +534,14 @@ def attach_visit_brief_routes(
     async def unlink_visit_brief(
         req: UnlinkBooking, actor: StaffActor = Depends(require_staff_actor),
     ) -> dict:
+        if not _enabled():
+            raise HTTPException(503, "Booking-patient linkage not enabled")
         if actor.role != "clinician":
             # Denied action is attributable; no patient identity is disclosed.
             with Session(engine) as audit:
                 _record_access(audit, actor, req.booking_uid, "link_revoke", "denied")
                 audit.commit()
             raise HTTPException(403, "Clinician role required")
-        if not _enabled():
-            raise HTTPException(503, "Booking-patient linkage not enabled")
         # Revocation works even if Reception has since cancelled the booking.
         stamp = _utcnow().replace(tzinfo=None)
         with Session(engine) as session:
