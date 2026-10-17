@@ -101,7 +101,19 @@
  async function loadMatches(term,ticket,offset){
    const box=$("visitPatientMatches");
    try{
-     const rows=await get("/clinical/patients?query="+encodeURIComponent(term)+"&limit=20&offset="+offset);
+      const scope=window.CockpitVisitBrief?.bookingVerification();
+      let rows;
+      if(scope){
+        const response=await fetch("/clinical/calendar/visit-brief/patient-search",{
+          method:"POST",credentials:"same-origin",cache:"no-store",
+          headers:{"Accept":"application/json","Content-Type":"application/json"},
+          body:JSON.stringify({...scope,query:term,limit:20,offset})
+        });
+        if(!response.ok){const error=new Error("HTTP "+response.status);error.status=response.status;throw error;}
+        rows=await response.json();
+      }else{
+        rows=await get("/clinical/patients?query="+encodeURIComponent(term)+"&limit=20&offset="+offset);
+      }
      if(ticket!==state.revision)return;
      if(!Array.isArray(rows))throw Error("invalid results");
      if(offset===0)box.replaceChildren();
