@@ -6,7 +6,7 @@
     ticket:0, view:null, ready:false, revision:0, linked:false,
     pending:null, chosen:null, patientId:null, inFlight:false
   };
-  const endpoint="/clinical/calendar/visit-brief/";
+  const endpoint=(window.CockpitClinicalBase||"/clinical")+"/calendar/visit-brief/";
 
   async function request(action,body){
     const response=await fetch(endpoint+action,{
@@ -180,6 +180,9 @@
     $("visitBriefIdentity").textContent=
       "Προστατευμένος φάκελος: "+(state.chosen?.name||"επιβεβαιωμένος ασθενής")+
       ". Ανεξάρτητα επιβεβαιωμένος μόνο για αυτό το άνοιγμα — χωρίς μόνιμο δικαίωμα αυτόματης προβολής.";
+    if(window.CockpitSynthetic) $("visitBriefIdentity").textContent=
+      "Δοκιμαστική σύνδεση με "+(state.chosen?.name||"συνθετικό ασθενή")+
+      ". Αποθηκεύτηκε στο backend· δεν αποτελεί προσωπική ιατρική πιστοποίηση.";
     const visit=b.previous_visit;
     evidence("visitBriefPrevious",visit?
       [visit.date+" · "+(visit.reason||"Υπογεγραμμένη επίσκεψη")]
@@ -215,8 +218,8 @@
       "Δεν έχει τεκμηριωθεί συγκεκριμένος έλεγχος για αυτό το ραντεβού.");
     $("visitBriefClinical").hidden=false;
     $("visitBriefChoosePatient").hidden=true;
-    $("visitBriefOpenChart").hidden=window.CockpitStaffRole!=="clinician";
-    $("visitBriefUnlink").hidden=window.CockpitStaffRole!=="clinician";
+    $("visitBriefOpenChart").hidden=window.CockpitStaffRole!=="clinician"&&!window.CockpitSynthetic;
+    $("visitBriefUnlink").hidden=window.CockpitStaffRole!=="clinician"&&!window.CockpitSynthetic;
   }
   async function confirmSelection(){
     const p=state.pending,chosen=state.chosen;
@@ -306,6 +309,12 @@
   $("visitBriefUnlink").addEventListener("click",revoke);
   $("visitBriefOpenChart").addEventListener("click",()=>{
     if(!state.patientId)return;
+    if(window.CockpitSynthetic){
+      const patientId=state.patientId;
+      $("visitBriefClose").click();
+      window.CockpitStoredChart?.open(patientId);
+      return;
+    }
     $("visitBriefClose").click();
     $("visitWorkspaceHome").hidden=true;
     $("visitWorkspacePatient").hidden=false;

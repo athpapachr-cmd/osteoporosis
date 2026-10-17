@@ -12,6 +12,7 @@ from legacy_main import app, engine
 from clinical_auth import ClinicalCookieMiddleware, build_auth_router
 from clinical_calendar import build_clinical_calendar_router
 from clinical_data import build_clinical_router
+from clinical_synthetic_161 import build_synthetic_161_router
 from clinical_data_ext import build_clinical_ext_router
 from clinical_status import build_clinical_status_router
 from clinical_surgery_queue import build_surgery_queue_router
@@ -64,6 +65,7 @@ app.include_router(build_clinical_status_router(engine))
 app.include_router(build_clinical_router(engine))
 app.include_router(build_clinical_ext_router(engine))
 app.include_router(build_clinical_calendar_router(engine))
+app.include_router(build_synthetic_161_router(engine))
 app.include_router(build_surgery_queue_router(engine))
 app.include_router(build_learning_router(engine))
 app.include_router(build_cu1_physio_referral_router())

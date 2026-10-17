@@ -1,5 +1,6 @@
 (() => {
  "use strict";
+ const clinicalURL=path=>(window.CockpitClinicalBase||"/clinical")+path.slice(9);
  // Read-only UI. Existing Calendar/Clinical Data owners retain authority.
  const $=id=>document.getElementById(id);
  const state={selected:null,appointment:null,parts:null,tab:"snapshot",revision:0,timer:null,briefReturnFocus:null};
@@ -14,7 +15,7 @@
      "Ασθενής χωρίς καταχωρισμένο όνομα").trim();
  }
  async function get(url){
-   const r=await fetch(url,{credentials:"same-origin",headers:{"Accept":"application/json"}});
+   const r=await fetch(clinicalURL(url),{credentials:"same-origin",headers:{"Accept":"application/json"}});
    if(!r.ok){
      // A secretary's permitted session must not be treated as logged out
      // merely because an unrelated clinician-only legacy endpoint returns 401.
@@ -133,7 +134,7 @@
       const scope=window.CockpitVisitBrief?.bookingVerification();
       let rows;
       if(scope){
-        const response=await fetch("/clinical/calendar/visit-brief/patient-search",{
+        const response=await fetch(clinicalURL("/clinical/calendar/visit-brief/patient-search"),{
           method:"POST",credentials:"same-origin",cache:"no-store",
           headers:{"Accept":"application/json","Content-Type":"application/json"},
           body:JSON.stringify({...scope,query:term,limit:20,offset})

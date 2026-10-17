@@ -2,6 +2,7 @@
   "use strict";
 
   const $ = (id) => document.getElementById(id);
+  const clinicalURL=path=>((typeof window!=="undefined"&&window.CockpitClinicalBase)||"/clinical")+path.slice(9);
 
   const lateralityLabels = {
     left: "Αριστερά",
@@ -164,7 +165,7 @@
     const now = new Date();
     $("todayHeading").textContent = formatToday(now);
     try {
-      const response = await fetch("/clinical/calendar/cockpit-context", { credentials: "same-origin" });
+      const response = await fetch(clinicalURL("/clinical/calendar/cockpit-context"), { credentials: "same-origin" });
       if (!response.ok) {
         const error = await response.json().catch(() => ({}));
         const failure = new Error(`HTTP ${response.status}`);
@@ -177,6 +178,7 @@
       if (!generated || !Number.isInteger(context.today_total)
           || !Number.isInteger(context.current_conflict_count)) throw new Error("Invalid context");
       renderTodayContext(context, generated);
+      if(context.synthetic_scenario) $("todayHeading").textContent="Σενάριο 17/10/2026";
       const updated = parseClinicalAppointmentDate(context.source_updated_at);
       $("calendarState").textContent = `${context.today_total} σήμερα`;
       const retry = $("cockpitCalendarRetry");
@@ -186,6 +188,7 @@
       $("calendarNote").textContent = updated
         ? `${fresh ? "" : "Το πρόγραμμα μπορεί να έχει παλιώσει. "}Τελευταία ανάγνωση κρατήσεων: ${appointmentDateFormatter.format(updated)} · ${appointmentTimeFormatter.format(updated)}.`
         : "Δεν υπάρχει διαθέσιμη πρόσφατη ανάγνωση κρατήσεων. Έλεγξε το πρόγραμμα στο Reception.";
+      if(context.synthetic_scenario) $("calendarNote").textContent="Αποθηκευμένα δοκιμαστικά ραντεβού της 17/10/2026 · χωρίς εξωτερικό πάροχο.";
     } catch (error) {
       clearTodayContext("Μη διαθέσιμο");
       $("calendarState").textContent = "Μη διαθέσιμο";
@@ -202,7 +205,7 @@
   }
 
   async function apiJson(url, options = {}) {
-    const response = await fetch(url, {
+    const response = await fetch(clinicalURL(url), {
       credentials: "same-origin",
       headers: {
         "Content-Type": "application/json",

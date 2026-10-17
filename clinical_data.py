@@ -14,6 +14,9 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, Session
 
 
+SYNTHETIC_161_PATIENT_IDS = tuple(f"cockpit-synthetic-161-{i}" for i in range(1, 4))
+
+
 class ClinicalBase(DeclarativeBase):
     pass
 
@@ -657,7 +660,9 @@ def build_clinical_router(engine: Engine) -> APIRouter:
     ) -> List[PatientSummary]:
         q = query.strip()
         with Session(engine) as session:
-            stmt = select(PatientORM).order_by(
+            stmt = select(PatientORM).where(
+                PatientORM.patient_id.not_in(SYNTHETIC_161_PATIENT_IDS)
+            ).order_by(
                 PatientORM.updated_at.desc(), PatientORM.patient_id.asc()
             )
             if not q:
@@ -694,7 +699,8 @@ def build_clinical_router(engine: Engine) -> APIRouter:
             rows = session.execute(
                 select(EncounterORM, PatientORM)
                 .join(PatientORM, PatientORM.patient_id == EncounterORM.patient_id)
-                .where(EncounterORM.status.in_(("completed", "amended")))
+                .where(EncounterORM.status.in_(("completed", "amended")),
+                       PatientORM.patient_id.not_in(SYNTHETIC_161_PATIENT_IDS))
                 .order_by(
                     EncounterORM.encounter_date.desc(),
                     EncounterORM.created_at.desc(),
