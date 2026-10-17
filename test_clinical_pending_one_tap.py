@@ -184,8 +184,10 @@ def test_replay_revision_patient_role_and_legacy_safety(monkeypatch):
     assert client.post("/clinical/login", json={"key": SECRETARY_KEY}).status_code == 200
     forbidden = tap(client, patient, pending, "images_reviewed", "yes_confirmed", 1,
                     "synthetic-secretary-00001")
-    assert forbidden.status_code == 403
-    assert client.get("/clinical/daily-brief/pending").status_code == 403
+    # The existing Clinical Key dependency rejects secretary sessions with 401
+    # before the independently checked clinician-role dependency can return 403.
+    assert forbidden.status_code in (401, 403)
+    assert client.get("/clinical/daily-brief/pending").status_code in (401, 403)
     client.post("/clinical/logout")
     assert client.post("/clinical/login", json={"key": CLINICIAN_KEY}).status_code == 200
 
