@@ -88,6 +88,11 @@ def test_browser_receipt_review_timeline_refresh_second_session(setup,tmp_path):
                 row=page.locator('#patientChart .patient-chart-grid .synthetic-pending-row').first
                 if width==1280:
                     expect(row).to_contain_text('Παραλήφθηκε το CD;')
+                    page.locator('#captureOpen').click();page.locator('#captureText').fill('Πρόχειρη επίσκεψη')
+                    expect(row.get_by_role('button',name='Ναι',exact=True).first).to_be_disabled()
+                    expect(page.locator('#captureText')).to_have_value('Πρόχειρη επίσκεψη')
+                    page.locator('#captureComposer').get_by_role('button',name='Κλείσιμο',exact=True).click()
+                    expect(row.get_by_role('button',name='Ναι',exact=True).first).to_be_enabled()
                     row.locator('summary').filter(has_text='Έγινε ήδη επόμενο βήμα;').click()
                     row.locator('details').get_by_role('button',name='Ναι',exact=True).click()
                     expect(row).to_contain_text('✓ Εξετάστηκαν οι εικόνες')
@@ -109,7 +114,10 @@ def test_browser_receipt_review_timeline_refresh_second_session(setup,tmp_path):
                     expect(row).to_contain_text('Ολοκληρώθηκε')
                 points=page.locator('.patient-journey-point');assert points.count()>=2
                 points.filter(has_text='Επανέλεγχος γόνατος').click();expect(page.locator('.patient-journey-preview')).to_contain_text('Επανέλεγχος γόνατος')
-                page.get_by_role('button',name='Άνοιγμα επίσκεψης',exact=True).click()
+                expect(page.get_by_role('dialog')).to_be_visible()
+                page.screenshot(path=str(tmp_path/f'cp2-popup-{width}.png'),full_page=False)
+                page.get_by_role('button',name='Άνοιγμα',exact=True).click()
+                expect(page.get_by_role('dialog')).not_to_be_visible()
                 expect(page.locator('.patient-visit')).to_be_visible()
                 assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), page.evaluate("Array.from(document.querySelectorAll('body *')).filter(e=>e.getBoundingClientRect().right>innerWidth && e.getBoundingClientRect().width>0).slice(0,15).map(e=>[e.tagName,e.id,e.className,e.getBoundingClientRect().width])")
                 page.locator('#patientChart').screenshot(path=str(tmp_path/f'cp2-{width}.png'))

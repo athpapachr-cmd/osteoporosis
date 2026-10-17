@@ -220,7 +220,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,ui-sans-se
 .patient-journey-dot{position:relative;display:block;width:18px;height:18px;border-radius:50%;border:3px solid #7c9e9f;background:white;box-sizing:border-box}
 .patient-journey-point[aria-pressed=true] .patient-journey-dot{border-color:#267875;background:#267875;box-shadow:0 0 0 5px #e0efed}
 .patient-journey-point[aria-pressed=true]{color:#186b68;font-weight:700}
-.patient-journey-preview{border:1px solid #dce6e7;border-radius:16px;padding:20px;background:white;margin-bottom:16px}
+.patient-journey-preview{color:inherit;width:min(520px,calc(100vw - 40px));max-height:80vh;overflow-y:auto;box-sizing:border-box;margin:auto;border:1px solid #dce6e7;border-radius:16px;padding:20px;background:white}
 .patient-journey-preview h4{margin:8px 0}.patient-journey-preview p{margin:8px 0}
 .patient-visit[hidden]{display:none}
 .pending-checkpoint-actions{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}.pending-checkpoint-actions button{white-space:normal}
@@ -231,3 +231,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,ui-sans-se
 .clinical-workspace{min-width:0}
 
 .pending-stage{width:100%}.pending-stage>p{margin:8px 0}
+
+.patient-journey-preview::backdrop{background:rgba(25,45,54,.32);backdrop-filter:blur(3px)}
+.patient-journey-close{float:right;margin-left:12px}.patient-journey-preview h4{font-size:1.2rem;padding-top:6px}
+.patient-journey-preview>button:last-child{display:block;margin-top:20px;background:#e6f3f0}
