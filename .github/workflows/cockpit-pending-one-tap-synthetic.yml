@@ -1,0 +1,63 @@
+name: Cockpit Clinical Pending One-Tap (synthetic only)
+
+on:
+  push:
+    paths:
+      - "clinical_data.py"
+      - "clinical_pending_one_tap.py"
+      - "test_clinical_pending_one_tap.py"
+      - "test_clinical_pending_one_tap_ui.js"
+      - "static/cockpit/index.html"
+      - "test_visit_capture.py"
+      - "static/cockpit/pending-one-tap-synthetic.*"
+      - "cockpit/migrations/20261017_clinical_pending_one_tap_future.sql"
+      - ".github/workflows/cockpit-pending-one-tap-synthetic.yml"
+  pull_request:
+    paths:
+      - "clinical_data.py"
+      - "clinical_pending_one_tap.py"
+      - "test_clinical_pending_one_tap.py"
+      - "test_clinical_pending_one_tap_ui.js"
+      - "static/cockpit/index.html"
+      - "test_visit_capture.py"
+      - "static/cockpit/pending-one-tap-synthetic.*"
+      - "cockpit/migrations/20261017_clinical_pending_one_tap_future.sql"
+      - ".github/workflows/cockpit-pending-one-tap-synthetic.yml"
+
+jobs:
+  synthetic-pending:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install isolated test dependencies
+        run: pip install -r requirements.txt pytest
+      - name: Python and demo JS syntax
+        run: |
+          python -m py_compile clinical_data.py clinical_pending_one_tap.py test_clinical_pending_one_tap.py
+          node --check static/cockpit/pending-one-tap-synthetic.js
+          node --check test_clinical_pending_one_tap_ui.js
+      - name: Synthetic MRI-CD and legacy Visit Capture regressions
+        run: pytest -q test_clinical_pending_one_tap.py test_visit_capture.py
+      - name: One-tap browser-controller synthetic UX smoke
+        run: node test_clinical_pending_one_tap_ui.js
+      - name: No accidental DDL autorun or production release
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          code = Path("clinical_pending_one_tap.py").read_text()
+          assert 'engine.dialect.name != "sqlite"' in code
+          assert 'PendingEventBase.metadata.create_all' not in code
+          assert 'require_staff_clinician' in code
+          from clinical_data import ClinicalPendingORM
+          assert 'confirmation_revision' not in ClinicalPendingORM.__table__.columns
+          assert 'checkpoint_plan_json' not in ClinicalPendingORM.__table__.columns
+          assert 'CLINICAL_PENDING_ONE_TAP_SYNTHETIC_ENABLED' in code
+          PY
+      - name: Diff hygiene
+        run: git diff --check HEAD^ HEAD
