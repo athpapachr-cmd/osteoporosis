@@ -59,7 +59,7 @@
         const status=el(copy,'p','Αποθήκευση…');status.setAttribute('role','status');
         try{await request('/patient/'+encodeURIComponent(id)+'/pending/'+encodeURIComponent(item.pending_id)+path,{...body,idempotency_key:crypto.randomUUID()});
           if(ticket!==generation)return;await open(id);window.dispatchEvent(new Event('cockpit:clinical-updates-changed'));
-        }catch(e){if(ticket!==generation)return;status.textContent=e.message+' Έλεγξε την αποθηκευμένη κατάσταση.';button(copy,'Ανανέωση κατάστασης',()=>open(id));}
+        }catch(e){if(ticket!==generation)return;status.textContent=e.message+' Έλεγξε την αποθηκευμένη κατάσταση.';button(copy,'Ανανέωση κατάστασης',()=>{if(composer.hidden)open(id);});}
         finally{if(ticket===generation&&captureOpen)captureOpen.disabled=false;}
       }
       function stage(parent,step){
