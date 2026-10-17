@@ -1,5 +1,8 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
+> **2026-10-18 CP1 READABILITY POLISH TESTED:** Writer `codex/cockpit-cp1-review-readability`; only two-row editable textareas, scoped spacing and same-text Clinical Updates row wrapping. 4 CP1 regressions PASS; bounded R1 fidelity PASS. Existing actual-provider/PostgreSQL proof `39074882064` remains valid; no capture/write semantics changed. Next small UI PR/native deploy; preserve real-flow evidence and hand back for PO acceptance.
+
+
 > **2026-10-18 CP1 LIVE END-TO-END PASS:** Run `39074882064` SUCCESS after PO restored provider budget: actual Render extraction200, 3 source-backed proposals/zero invented medication; clinician correction and rejection leave only accepted CD obligation. Atomic Save persisted on existing PostgreSQL, retry409 prevents duplicate, refresh and independent1280/390 sessions show identical signed visit/source-linked obligation and Clinical Updates navigation. Screenshots downloaded to `cockpit-v4-browser-evidence/live-cp1-proof/` and inspected (synthetic only). Current LIVE `b046185` / `dep-db9v9igae00c7399admg`. No real-patient data used. Next small presentation polish found in screenshot (oversized single-line review fields and cramped updates row), no logic/schema/provider changes, then handback for PO acceptance.
 
 
