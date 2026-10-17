@@ -1,5 +1,8 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / repo-wide writer lock
 
+> **2026-10-18 #171 MERGED / NATIVE DEPLOY PENDING:** Squash `b93d47c74f63120db8f5311412534db4fae126bc` at 00:33:58 Cyprus. Final head `34acbce` canonical guard `39071427954` PASS; runtime unchanged from affected passing source `865562e`. Next existing Render native auto-deploy and one live two-browser origin/history/updates-to-chart proof. No manual deploy or new service. PO acceptance NO; CP1 STOP.
+
+
 > **2026-10-18 #171 AFFECTED CI PASS / RELEASE NEXT:** Visit Brief `39071308672` and Home `39071308632` SUCCESS on exact runtime/test `865562e`; canonical guard `39071308614` SUCCESS. Current checkpoint changes only docs; prior runtime evidence reused. Next squash merge and native auto-deploy followed by existing-key live source/history/updates browser proof. CP1 STOP; PO acceptance NO.
 
 
