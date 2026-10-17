@@ -1,5 +1,8 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
+> **2026-10-18 #161 CORRECTION PR #170 OPEN:** https://github.com/athpapachr-cmd/osteoporosis/pull/170; final runtime/test head `6ff54f3`. Eight focused synthetic tests PASS after chart presentation refinement; prior 35 affected Python and four Node PASS reused. Canonical guard on runtime head PASS. Await affected Visit Brief/Home CI then authorized same-service release and one live browser proof. PO rejection remains active; no acceptance or CP1.
+
+
 > **2026-10-18 #161 CORRECTION IMPLEMENTED / TESTED, NOT DEPLOYED:** Exact fixture-key appointment lookup reuses the stored Brief projection without name inference or pretend clinician attestation; registry/recent selection opens the stored chart directly. Inline Pending received/undo updates the existing marked synthetic row with updated_at CAS and same-transaction synthetic access audit; source encounter unchanged. 35 affected Python tests PASS including Chromium 1280/680/390, one-click/no-checkbox flow, persisted action/undo/refresh, scoped access and conflict tests; four existing Node suites PASS. No migrations or live-clinical route authority changes. PO-requested bounded correction, reuse existing review evidence, no new general R1/R2 programme. Next PR and existing-service deployment then live proof; ACCEPTED=NO, CP1 STOP.
 
 
