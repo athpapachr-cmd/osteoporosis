@@ -1,5 +1,8 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
+> **2026-10-18 #173 LIVE / FULL CP1 RETRY NEXT:** Render `dep-db9v9igae00c7399admg` LIVE at exact `b0461857a85f3969454ad087c4aca4f8fce4fccf`, 22:22:37 UTC / 01:22 Cyprus. Durable local checkpoint. Next full real-provider proof after PO budget restoration using verification-only `b75e2d6`; no additional config/key changes.
+
+
 > **2026-10-18 #173 MERGED / NATIVE DEPLOY NEXT:** Squash `b0461857a85f3969454ad087c4aca4f8fce4fccf` at 22:20:56 UTC; final canonical guard `39074657417` PASS. Prior four local merge/deploy/failure checkpoints are included in the squash and preserved on correction branch; local main reconciled to remote main. Next observe native deployment then retry full live CP1 after PO budget restoration. Local durable checkpoint before deploy observation.
 
 
