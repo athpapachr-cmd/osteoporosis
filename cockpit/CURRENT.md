@@ -1,5 +1,8 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
+> **2026-10-18 CP1 IMPLEMENTED / LOCAL TESTED:** Runtime/test `d21ed3b3ff47823996b1766cdd8615e53f8f2fd2`; bounded fidelity review found 3 defects (validation echo, late draft response, edited-array removal), all corrected and independent closure PASS. 4 new CP1 tests include natural adapter, sanitized failure/PHI gate, stale context after provider, exact pending source mapping, reject/edit/save, duplicate prevention, delayed-response reset, refresh and independent desktop/mobile sessions. 22 inherited capture tests, 36 adjacent tests and 4 Node suites PASS. Actual chart screenshot inspected. Existing Visit Capture CI extended for CP1. No schema migration, env change, new provider or #161 fixture mutation. Next PR/affected CI then same-service release and live provider + persistence proof. Acceptance remains pending; CP2–CP5 not started.
+
+
 > **2026-10-18 CP1 IMPLEMENTATION IN PROGRESS:** Existing provider metadata confirmed by one-off run `39072752156`: enabled/key configured/PHI approval true, existing model gpt-5.6; no setting or secret changed. Bounded independent pre-code review PASS (fresh context recheck, exact excerpt mapping, all saved fields reviewable, synthetic isolation). Normal chart + natural-text extraction adapter + editable approval now implemented locally; exact fidelity review and focused browser evidence in progress. Existing 22 VisitCapture and 36 affected tests plus four Node suites PASS. Not yet release candidate/PR/merged/deployed. Next complete CP1 browser proof and address bounded findings before publication.
 
 

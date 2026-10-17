@@ -4,6 +4,9 @@ on:
   push:
     paths:
       - "clinical_data.py"
+      - "clinical_capture_cp1.py"
+      - "static/cockpit/patient-chart.js"
+      - "test_cockpit_cp1.py"
       - "static/cockpit/index.html"
       - "static/cockpit/visit-capture/**"
       - "test_visit_capture.py"
@@ -14,6 +17,9 @@ on:
   pull_request:
     paths:
       - "clinical_data.py"
+      - "clinical_capture_cp1.py"
+      - "static/cockpit/patient-chart.js"
+      - "test_cockpit_cp1.py"
       - "static/cockpit/index.html"
       - "static/cockpit/visit-capture/**"
       - "test_visit_capture.py"
@@ -43,5 +49,13 @@ jobs:
         run: node test_visit_capture_smoke_ui.js
       - name: Visit Capture focused tests
         run: pytest -q test_visit_capture.py test_visit_capture_ui.py test_cockpit_home.py
+      - name: CP1 browser dependency
+        run: |
+          pip install playwright
+          if ! command -v google-chrome && ! command -v chromium; then
+            python -m playwright install --with-deps chromium
+          fi
+      - name: CP1 natural summary and persistent chart
+        run: pytest -q test_cockpit_cp1.py
       - name: Diff hygiene
         run: git diff --check HEAD^ HEAD
