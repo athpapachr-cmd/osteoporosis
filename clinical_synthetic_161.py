@@ -44,7 +44,8 @@ def _test_patient(db, patient_id):
     if patient_id not in SYNTHETIC_161_PATIENT_IDS:
         raise HTTPException(404, "Patient outside test scenario")
     row = db.get(PatientORM, patient_id)
-    if not row or row.demographics_json.get("synthetic_scenario") != SCENARIO:
+    if (not row or not isinstance(row.demographics_json, dict)
+            or row.demographics_json.get("synthetic_scenario") != SCENARIO):
         raise HTTPException(409, "Prepare the synthetic scenario first")
     return row
 
@@ -77,7 +78,7 @@ def _candidate(day, first=False):
 def _prepare(engine):
     # Fixed keys + a single transaction: repeat/restart/concurrent requests cannot
     # duplicate or reset records, confirmations, dates or audit history.
-    with Session(engine) as db:
+    with Session(engine, autoflush=False) as db:
         for i, patient_id in enumerate(SYNTHETIC_161_PATIENT_IDS, 1):
             existing = db.get(PatientORM, patient_id)
             if existing:

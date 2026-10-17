@@ -195,3 +195,18 @@ def test_real_browser_two_sessions_refresh_and_complete_chart(setup, tmp_path):
     finally:
         server.should_exit = True
         thread.join(timeout=5)
+
+
+def test_two_browsers_prepare_concurrently_without_duplicate_or_reset(setup):
+    from concurrent.futures import ThreadPoolExecutor
+    from threading import Barrier
+    app, engine = setup
+    first, second = login(app), login(app)
+    barrier = Barrier(2)
+    def prepare(client):
+        barrier.wait(timeout=5)
+        return client.post(PREFIX + "/prepare").status_code
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        assert list(pool.map(prepare, (first, second))) == [200, 200]
+    with Session(engine) as db:
+        assert db.scalar(select(func.count()).select_from(EncounterORM)) == 6
