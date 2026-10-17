@@ -37,6 +37,7 @@ get("visitBriefOpenChart").hidden=true;
 get("visitBriefUnlink").hidden=true;
 const listeners={};
 const win={
+  CockpitStaffRole:"clinician",
   addEventListener(kind,cb){listeners[kind]=cb;},
   dispatchEvent(event){emitted.push(event.type);}
 };
@@ -114,6 +115,7 @@ const view=uid=>({uid,name:"Συνθετικός Ασθενής",time:"14:00",
   assert.equal(get("visitBriefClinical").hidden,false);
   assert.match(get("visitBriefIdentity").textContent,/Πρόσωπο P1/,"confirmed chart identity must remain visible");
   assert.equal(get("visitBriefOpenChart").hidden,false);
+  assert.equal(get("visitBriefUnlink").hidden,false);
   assert.equal(get("visitBriefPrevious").children[0].children[0].textContent.includes("Αξιολόγηση"),true);
   assert.equal(get("visitBriefChecks").children[0].children[0].textContent,"Έλεγχος κίνησης");
 
@@ -136,6 +138,12 @@ const view=uid=>({uid,name:"Συνθετικός Ασθενής",time:"14:00",
   await controller.open(view("UID-1"));
   assert.equal(get("visitBriefClinical").hidden,true);
   assert.match(get("visitBriefIdentity").textContent,/νέα ανεξάρτητη/);
+  assert.equal(get("visitBriefUnlink").hidden,false);
+  win.CockpitStaffRole="secretary";
+  controller.closed();
+  await controller.open(view("UID-1"));
+  assert.equal(get("visitBriefUnlink").hidden,true);
+  win.CockpitStaffRole="clinician";
   assert.equal(requests.filter(x=>x.action==="confirm").length,1);
 
   // Logout clears the active context and all sensitive overlay DOM fields.
