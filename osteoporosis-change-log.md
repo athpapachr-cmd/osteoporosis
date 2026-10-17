@@ -1614,3 +1614,8 @@ Design PR #138 merged `9ec24a9a5f756b31ee8e6031b5d587c90ce91ac6`; implementation
 - Existing Render `osteoporosis` service `srv-d5qfk31r0fns73di596g` auto-deployed code-identical post-merge source `823fc4a94717a4cd3b2f20b7d99ddd118afe1154` through [deploy dep-db8g8tp42hec73ecctng](https://dashboard.render.com/web/srv-d5qfk31r0fns73di596g/deploys/dep-db8g8tp42hec73ecctng), **LIVE at 2026-10-15T16:52:49.397717Z**. Initial merge-SHA deploys were canceled by newer standard docs checkpoint, no duplicate manual deploy.
 - Production HTTP no-PHI smoke from this executor **UNVERIFIED** due to DNS resolution failure before an HTTP response, not a confirmed application failure; authenticated browser/Clinical Key and real-patient workflow smoke **NOT CLAIMED VERIFIED**. No real RF deleted, no clinical patient records accessed, no external GeSY/provider action or manual database mutation by the release operator. Release writer released. This final docs-only record advances main and triggers another ordinary Render auto-deploy whose exact status requires read-only confirmation.
 
+
+
+## 2026-10-17 — #161 persistent synthetic browser access release
+
+PR #168 squash-merged as `21011b666d554ccc13aa1011078e6d65c928d2f7`. Existing Cockpit shell and Clinical Key now expose a fixed synthetic-only path through the same booking-link/Brief transaction and existing persisted clinical owners; complete stored chart and idempotent scenario preparation added. Seven new backend/browser tests and affected inherited CI passed. Production staff gates, M8 and CP1 unchanged. Merge is proven; Render availability and Product Owner acceptance are separate, still pending at this checkpoint.
