@@ -168,6 +168,36 @@ def test():
             "ON public.clinical_booking_patient_link_audit (namespace)"
         )
 
+        # Non-default index storage options must fail in both SQL entrypoints.
+        # Test each audit index independently; no revoked GRANT may leak.
+        for index_name in (
+            "ix_clinical_booking_patient_link_audit_namespace",
+            "ix_clinical_booking_patient_link_audit_booking_uid",
+        ):
+            admin.execute(
+                "ALTER INDEX public." + index_name + " SET (fillfactor = 70)"
+            )
+            for sql_file in (GRANTS, ATOMIC):
+                try:
+                    apply(admin, sql_file)
+                except psycopg.Error as exc:
+                    admin.execute("ROLLBACK")
+                    assert "A5 STOP: Visit Brief audit index drift" in str(exc), str(exc)
+                else:
+                    raise AssertionError(
+                        "Index options drift silently accepted: " + index_name
+                        + " in " + sql_file.name
+                    )
+                assert not admin.execute(
+                    "SELECT has_table_privilege('cockpit_app',"
+                    "'public.clinical_booking_patient_links','SELECT')"
+                ).fetchone()[0], "Partial grant survived index-options rollback"
+            admin.execute("ALTER INDEX public." + index_name + " RESET (fillfactor)")
+            assert admin.execute(
+                "SELECT reloptions IS NULL FROM pg_class WHERE oid = %s::regclass",
+                ("public." + index_name,),
+            ).fetchone()[0], "Index storage options were not restored"
+
         # A changed table must fail before any grant commits.
         admin.execute("ALTER TABLE clinical_booking_patient_links ADD COLUMN extra_synthetic text")
         try:

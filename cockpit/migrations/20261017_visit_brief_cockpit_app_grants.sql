@@ -126,6 +126,7 @@ BEGIN
        OR ix.indnkeyatts IS DISTINCT FROM 1
        OR ix.indpred IS NOT NULL
        OR ix.indexprs IS NOT NULL
+       OR idx.reloptions IS NOT NULL
        OR pg_get_indexdef(idx.oid, 1, true) IS DISTINCT FROM expected_index.key_column
   ) THEN
     RAISE EXCEPTION 'A5 STOP: Visit Brief audit index drift';
