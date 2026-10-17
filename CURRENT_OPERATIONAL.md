@@ -1,5 +1,8 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / repo-wide writer lock
 
+> **2026-10-18 CP1 UI POLISH PR #174 OPEN:** https://github.com/athpapachr-cmd/osteoporosis/pull/174, runtime `326797a`. R1 PASS/4 CP1 tests PASS; live functional evidence unchanged. Next affected CI/native release, no new extraction qualification cycle; read existing proof visit in final UI.
+
+
 > **2026-10-18 CP1 READABILITY POLISH TESTED:** Writer `codex/cockpit-cp1-review-readability`; only two-row editable textareas, scoped spacing and same-text Clinical Updates row wrapping. 4 CP1 regressions PASS; bounded R1 fidelity PASS. Existing actual-provider/PostgreSQL proof `39074882064` remains valid; no capture/write semantics changed. Next small UI PR/native deploy; preserve real-flow evidence and hand back for PO acceptance.
 
 
