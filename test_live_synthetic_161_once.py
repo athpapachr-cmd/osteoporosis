@@ -34,21 +34,37 @@ try:
             expect(page.locator("#visitBriefChoosePatient")).to_be_hidden()
             expect(page.locator("#visitBriefPrevious")).to_contain_text("2026-10-07")
             expect(page.locator("#visitBriefPlan")).to_contain_text("Συμφωνήθηκε επανέλεγχος")
-            action=page.locator("#visitBriefPending .synthetic-pending-row button")
-            expect(action).to_have_text("Παραλήφθηκε" if i==0 else "Αναίρεση")
+            action=page.locator("#visitBriefPending .pending-action")
             if i==0:
+                initial_action=action.inner_text()
+                assert initial_action in ("Παραλήφθηκε","Αναίρεση")
+                changed_action="Αναίρεση" if initial_action=="Παραλήφθηκε" else "Παραλήφθηκε"
                 action.click()
-                expect(action).to_have_text("Αναίρεση")
+            expect(action).to_have_text(changed_action)
             page.screenshot(path=str(out / f"brief-browser-{i+1}.png"), full_page=True)
             stage = f"browser-{i+1}-full-chart-refresh"
             page.locator("#visitBriefOpenChart").click()
             expect(page.locator("#synthetic161Chart")).to_contain_text("2 αποθηκευμένες επισκέψεις")
             page.reload()
             expect(page.locator("#synthetic161Chart")).to_contain_text("2 αποθηκευμένες επισκέψεις")
-            expect(page.locator("#synthetic161Chart .synthetic-pending-row button")).to_have_text("Αναίρεση")
+            expect(page.locator("#synthetic161Chart .pending-action")).to_have_text(changed_action)
+            page.locator("#synthetic161Chart .clinical-source-link").click()
+            expect(page.locator(".patient-visit[open] .patient-obligation-origin")).to_contain_text("Υποχρεώσεις που δημιουργήθηκαν στην επίσκεψη")
+            expect(page.locator(".patient-visit[open] .patient-obligation-origin")).to_contain_text("7 Οκτωβρίου 2026")
+            expect(page.locator(".patient-timeline-event")).not_to_have_count(0)
+            page.screenshot(path=str(out / f"origin-browser-{i+1}.png"), full_page=True)
+            stage=f"browser-{i+1}-clinical-updates-source-navigation"
+            page.locator("#doctorInboxButton").click()
+            expect(page.locator("#doctorPopoverTitle")).to_have_text("Κλινικές ενημερώσεις")
+            row=page.locator("#doctorPopoverContent .doctor-action-row").filter(has_text="Δοκιμαστικός Ασθενής 161 2")
+            expect(row).to_contain_text("Από την επίσκεψη 7 Οκτωβρίου 2026")
+            page.screenshot(path=str(out / f"updates-browser-{i+1}.png"), full_page=True)
+            row.click()
+            expect(page.locator("#synthetic161Chart .patient-chart-grid")).to_be_visible()
+            expect(page.locator("#synthetic161Chart .pending-action")).to_have_text(changed_action)
             if i==1:
-                page.locator("#synthetic161Chart .synthetic-pending-row button").click()
-                expect(page.locator("#synthetic161Chart .synthetic-pending-row button")).to_have_text("Παραλήφθηκε")
+                page.locator("#synthetic161Chart .pending-action").click()
+                expect(page.locator("#synthetic161Chart .pending-action")).to_have_text(initial_action)
             page.screenshot(path=str(out / f"chart-browser-{i+1}.png"), full_page=True)
             stage = f"browser-{i+1}-patient-switch-isolation"
             page.locator("#visitRecentRows .clinical-patient-row").first.click()
@@ -56,7 +72,7 @@ try:
             expect(page.locator("#synthetic161Chart")).to_contain_text("2 αποθηκευμένες επισκέψεις")
             assert "chart=cockpit-synthetic-161-1" in page.url
             ctx.close()
-            print(f"PASS live browser {i+1}: one-click Brief, persisted received/undo, complete chart, refresh, patient switch")
+            print(f"PASS live browser {i+1}: one-click Brief, persisted lifecycle, source encounter, structured chart, clinical updates navigation, refresh, patient switch")
         browser.close()
     print("PASS LIVE #161: two independent browser sessions against existing PostgreSQL backend")
 except Exception:
