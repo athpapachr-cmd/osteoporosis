@@ -171,33 +171,34 @@ def test_real_browser_two_sessions_refresh_and_complete_chart(setup, tmp_path):
                     page.locator("#synthetic161Prepare").click()
                 expect(page.locator("#currentAppointmentPatient")).to_have_text("Δοκιμαστικός Ασθενής 161 2")
                 page.locator("#visitSidebarCurrent").click()
-                if index:
-                    expect(page.locator("#visitBriefIdentity")).to_contain_text("προηγούμενη σύνδεση")
-                page.locator("#visitBriefChoosePatient").click()
-                page.locator("#visitPatientMatches .clinical-patient-row").click()
-                page.locator("#visitBookingIndependentCheck").check()
-                page.locator("#visitConfirmBooking").click()
+                expect(page.locator("#visitBookingConfirmation")).to_be_hidden()
+                expect(page.locator("#visitBriefChoosePatient")).to_be_hidden()
                 expect(page.locator("#visitBriefPrevious")).to_contain_text("2026-10-07")
                 expect(page.locator("#visitBriefPlan")).to_contain_text("Συμφωνήθηκε επανέλεγχος")
-                expect(page.locator("#visitBriefPending")).to_contain_text("awaiting_patient")
+                expect(page.locator("#visitBriefPending")).to_contain_text("Αναμένεται από τον ασθενή")
+                page.locator("#visitBriefPending button",has_text="Παραλήφθηκε").click()
+                expect(page.locator("#visitBriefPending button")).to_have_text("Αναίρεση")
                 page.locator("#visitBriefOpenChart").click()
                 expect(page.locator("#synthetic161Chart")).to_contain_text("2 αποθηκευμένες επισκέψεις")
                 expect(page.locator("#synthetic161Chart")).to_contain_text("SAFETY-NET")
                 page.reload()
                 expect(page.locator("#synthetic161Chart")).to_contain_text("2 αποθηκευμένες επισκέψεις")
+                expect(page.locator("#synthetic161Chart .synthetic-pending-row button")).to_have_text("Αναίρεση")
+                page.locator("#synthetic161Chart .synthetic-pending-row button").click()
+                expect(page.locator("#synthetic161Chart .synthetic-pending-row button")).to_have_text("Παραλήφθηκε")
                 assert not errors, errors
                 clinical = [u.split(f"localhost:{port}")[1] for u in requests if "/clinical/" in u]
                 assert all(p.startswith(PREFIX + "/") or p in ("/clinical/status","/clinical/login") for p in clinical), clinical
                 page.screenshot(path=str(tmp_path / f"synthetic-161-{width}.png"), full_page=True)
                 if index == 0:
                     page.locator("#visitRecentRows .clinical-patient-row").first.click()
-                    expect(page.locator("#synthetic161Chart")).to_be_empty()
+                    expect(page.locator("#synthetic161Chart")).to_contain_text("2 αποθηκευμένες επισκέψεις")
                     expect(page.locator("#visitSelectedName")).to_have_text("Δοκιμαστικός Ασθενής 161 1")
-                    assert "chart=" not in page.url
+                    assert "chart=cockpit-synthetic-161-1" in page.url
                 context.close()
             browser.close()
         with Session(engine) as db:
-            assert db.get(BookingPatientLinkORM, ("cockpit-161-v1", BOOKINGS[1])).revision == 3
+            assert db.get(BookingPatientLinkORM, ("cockpit-161-v1", BOOKINGS[1])) is None
     finally:
         server.should_exit = True
         thread.join(timeout=5)
@@ -227,3 +228,37 @@ def test_live_booking_confirmation_cannot_link_to_synthetic_patient(monkeypatch)
                           created_at=NOW, updated_at=NOW))
         db.commit()
     assert live_confirm(live, patient=SYNTHETIC_161_PATIENT_IDS[0]).status_code == 404
+
+
+def test_one_click_fixture_and_pending_action_persist_with_conflict_protection(setup):
+    from clinical_data import ClinicalPendingORM
+    app, engine = setup
+    c = login(app)
+    c.post(PREFIX + "/prepare")
+    body = {"booking_uid": BOOKINGS[1]}
+    route = PREFIX + "/open-booking"
+    assert TestClient(app).post(route, json=body).status_code == 401
+    assert c.post(route, json={"booking_uid":"external-booking"}).status_code == 404
+    data = c.post(route, json=body).json()
+    assert data["mode"] == "synthetic_fixture"
+    assert data["brief"]["patient_id"] == SYNTHETIC_161_PATIENT_IDS[1]
+    pending = data["brief"]["pending"][0]
+    path = PREFIX + "/patient/" + data["brief"]["patient_id"] + "/pending/" + pending["pending_id"]
+    payload = {"status":"resolved", "expected_updated_at":pending["updated_at"]}
+    assert TestClient(app).post(path, json=payload).status_code == 401
+    assert c.post(path.replace(SYNTHETIC_161_PATIENT_IDS[1], "outside-synthetic-scope"),json=payload).status_code == 404
+    saved = c.post(path, json=payload)
+    assert saved.status_code == 200
+    assert c.post(path, json=payload).status_code == 409
+    engine.dispose()
+    second = login(application(engine))
+    assert second.post(route,json=body).json()["brief"]["pending"][0]["status"] == "resolved"
+    assert second.post(PREFIX+"/prepare").status_code == 200
+    assert second.post(route,json=body).json()["brief"]["pending"][0]["status"] == "resolved"
+    undo = {"status":"awaiting_patient", "expected_updated_at":saved.json()["updated_at"]}
+    assert second.post(path,json=undo).json()["status"] == "awaiting_patient"
+    with Session(engine) as db:
+        audit = db.scalars(select(VisitBriefStaffAuditORM).where(VisitBriefStaffAuditORM.event.like("synthetic_pending_%"))).all()
+        assert len(audit) == 2 and all(a.role == "synthetic_tester" for a in audit)
+        row = db.get(ClinicalPendingORM, pending["pending_id"])
+        assert row.source_encounter_id.endswith("-visit-10")
