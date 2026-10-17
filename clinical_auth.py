@@ -76,8 +76,10 @@ def build_auth_router() -> APIRouter:
             samesite="strict",
             path="/",
         )
-        return {"authenticated": True, "session": "browser",
-                "staff_role": actor.role if actor else None}
+        result = {"authenticated": True, "session": "browser"}
+        if actor:
+            result["staff_role"] = actor.role
+        return result
 
     @router.get("/staff-session")
     def staff_session(request: Request):
