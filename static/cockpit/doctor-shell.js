@@ -1,5 +1,6 @@
 (() => {
   "use strict";
+ const clinicalURL=path=>(window.CockpitClinicalBase||"/clinical")+path.slice(9);
   // Read-only Cockpit shell. Appointment content comes from the EXISTING
   // protected clinical calendar; summaries or unread counts are never invented.
   const $ = id => document.getElementById(id);
@@ -106,7 +107,7 @@
     try {
       const range=todayRange();
       const q=new URLSearchParams({start:range.start,end:range.end});
-      const response=await fetch("/clinical/calendar/appointments?"+q, {
+      const response=await fetch(clinicalURL("/clinical/calendar/appointments?"+q), {
         credentials:"same-origin",headers:{"Accept":"application/json"}
       });
       if(!response.ok) {const error=new Error("Unavailable");error.status=response.status;throw error;}
@@ -233,7 +234,7 @@
     state.rf = null; // Auth refresh invalidates prior RF counts synchronously.
     attention();
     try {
-      const response = await fetch("/clinical/clinic-utilities/rf/api/outcomes/search", {
+      const response = await fetch(clinicalURL("/clinical/clinic-utilities/rf/api/outcomes/search"), {
         method: "POST", credentials: "same-origin", cache: "no-store",
         headers: { "Content-Type": "application/json", "Accept": "application/json" },
         body: JSON.stringify({ query: "", scope: "all", page: 1 })

@@ -25,6 +25,7 @@ from sqlalchemy.exc import IntegrityError
 
 from clinical_data import (
     ClinicalPendingORM, EncounterORM, PatientORM, VisitCaptureCandidateV1,
+    SYNTHETIC_161_PATIENT_IDS,
     _fold_patient_lookup, _patient_matches_search,
 )
 from clinical_staff_auth import (
@@ -411,21 +412,36 @@ def _minimal_brief(session: Session, patient_id: str, booking) -> dict:
 
 def attach_visit_brief_routes(
     router: APIRouter, engine: Engine, protected: list,
+    *, enabled=_enabled, actor_dependency=require_staff_actor,
+    clinician_dependency=require_staff_clinician, booking_loader=_fresh_booking,
+    namespace=NAMESPACE, patient_ids=None, clinician_role="clinician",
 ) -> None:
     """Attach staff-only routes. DDL is applied by a reviewed migration, never by a read/boot."""
+    async def fresh_booking(uid, actor, event):
+        try:
+            return await booking_loader(uid)
+        except HTTPException as exc:
+            _record_denial(engine, actor, uid, event, exc.status_code)
+            raise
+
+    def allowed_patient(session, patient_id):
+        if ((patient_ids is not None and patient_id not in patient_ids)
+                or (patient_ids is None and patient_id in SYNTHETIC_161_PATIENT_IDS)):
+            raise HTTPException(404, "Patient outside booking scope")
+        return session.get(PatientORM, patient_id)
     @router.post("/visit-brief/read")
     async def read_visit_brief(
-        req: BookingIntent, actor: StaffActor = Depends(require_staff_actor),
+        req: BookingIntent, actor: StaffActor = Depends(actor_dependency),
     ) -> dict:
         # A qualified, durable audit sink is mandatory before any booking read.
         # Never expose an unaudited booking-only projection while the reviewed
         # migration and retention gates are OFF (and tables may not exist).
-        if not _enabled():
+        if not enabled():
             raise HTTPException(503, "Visit Brief not enabled")
-        booking = await _fresh_staff_booking(req.booking_uid, engine, actor, "booking_read")
+        booking = await fresh_booking(req.booking_uid, actor, "booking_read")
         card = _booking_card(booking)
         with Session(engine) as session:
-            row = session.get(BookingPatientLinkORM, (NAMESPACE, req.booking_uid))
+            row = session.get(BookingPatientLinkORM, (namespace, req.booking_uid))
             if row is None or row.state == "revoked":
                 _record_access(session, actor, req.booking_uid, "booking_read", "allowed")
                 session.commit()
@@ -441,11 +457,11 @@ def attach_visit_brief_routes(
 
     @router.post("/visit-brief/patient-search")
     async def booking_patient_search(
-        req: BookingPatientSearch, actor: StaffActor = Depends(require_staff_actor),
+        req: BookingPatientSearch, actor: StaffActor = Depends(actor_dependency),
     ) -> list[dict]:
-        if not _enabled():
+        if not enabled():
             raise HTTPException(503, "Booking-patient linkage not enabled")
-        booking = await _fresh_staff_booking(req.booking_uid, engine, actor, "registry_search")
+        booking = await fresh_booking(req.booking_uid, actor, "registry_search")
         if not hmac.compare_digest(_booking_observation(booking), req.observed_booking):
             _record_denial(engine, actor, req.booking_uid, "registry_search", 409)
             raise HTTPException(409, "Booking changed since preview")
@@ -456,7 +472,10 @@ def attach_visit_brief_routes(
         rows = []
         matched = 0
         with Session(engine) as session:
-            stmt = select(PatientORM).order_by(
+            stmt = select(PatientORM).where(
+                PatientORM.patient_id.in_(patient_ids) if patient_ids is not None
+                else PatientORM.patient_id.not_in(SYNTHETIC_161_PATIENT_IDS)
+            ).order_by(
                 PatientORM.updated_at.desc(), PatientORM.patient_id.asc())
             for patient in session.scalars(stmt).yield_per(200):
                 if not _patient_matches_search(patient, terms):
@@ -481,25 +500,25 @@ def attach_visit_brief_routes(
 
     @router.post("/visit-brief/confirm")
     async def confirm_visit_brief(
-        req: ConfirmBooking, actor: StaffActor = Depends(require_staff_actor),
+        req: ConfirmBooking, actor: StaffActor = Depends(actor_dependency),
     ) -> dict:
-        if not _enabled():
+        if not enabled():
             raise HTTPException(503, "Booking-patient linkage not enabled")
-        booking = await _fresh_staff_booking(req.booking_uid, engine, actor, "brief_read_confirm")
+        booking = await fresh_booking(req.booking_uid, actor, "brief_read_confirm")
         if not hmac.compare_digest(_booking_observation(booking), req.observed_booking):
             _record_denial(engine, actor, req.booking_uid, "brief_read_confirm", 409)
             raise HTTPException(409, "Booking changed since clinician preview")
         stamp = _utcnow().replace(tzinfo=None)
         with Session(engine) as session:
             try:
-                if session.get(PatientORM, req.patient_id) is None:
+                if allowed_patient(session, req.patient_id) is None:
                     raise HTTPException(404, "Protected patient not found")
-                link = session.get(BookingPatientLinkORM, (NAMESPACE, req.booking_uid))
+                link = session.get(BookingPatientLinkORM, (namespace, req.booking_uid))
                 if link is None:
                     if req.expected_revision != 0:
                         raise HTTPException(409, "Link revision changed")
                     link = BookingPatientLinkORM(
-                        namespace=NAMESPACE, booking_uid=req.booking_uid,
+                        namespace=namespace, booking_uid=req.booking_uid,
                         patient_id=req.patient_id, state="needs_reconfirmation",
                         revision=1, evidence_type=req.evidence_type,
                         confirmed_at=stamp, updated_at=stamp,
@@ -512,7 +531,7 @@ def attach_visit_brief_routes(
                         raise HTTPException(409, "Link revision changed")
                     if link.patient_id != req.patient_id and not req.replace_existing:
                         raise HTTPException(409, "Explicit patient correction required")
-                    if link.patient_id != req.patient_id and actor.role != "clinician":
+                    if link.patient_id != req.patient_id and actor.role != clinician_role:
                         raise HTTPException(403, "Only clinician may correct a link")
                     event = ("corrected" if link.patient_id != req.patient_id else
                              "reconfirmed")
@@ -521,7 +540,7 @@ def attach_visit_brief_routes(
                     changed = session.execute(
                         update(BookingPatientLinkORM)
                         .where(
-                            BookingPatientLinkORM.namespace == NAMESPACE,
+                            BookingPatientLinkORM.namespace == namespace,
                             BookingPatientLinkORM.booking_uid == req.booking_uid,
                             BookingPatientLinkORM.revision == req.expected_revision,
                         )
@@ -535,7 +554,7 @@ def attach_visit_brief_routes(
                     if changed.rowcount != 1:
                         raise HTTPException(409, "Link revision changed")
                 session.add(BookingPatientLinkAuditORM(
-                    id=str(uuid4()), namespace=NAMESPACE, booking_uid=req.booking_uid,
+                    id=str(uuid4()), namespace=namespace, booking_uid=req.booking_uid,
                     patient_id=req.patient_id, event=event, revision=revision,
                     evidence_type=req.evidence_type,
                     operator_type=actor.role, occurred_at=stamp,
@@ -567,11 +586,11 @@ def attach_visit_brief_routes(
 
     @router.post("/visit-brief/unlink")
     async def unlink_visit_brief(
-        req: UnlinkBooking, actor: StaffActor = Depends(require_staff_actor),
+        req: UnlinkBooking, actor: StaffActor = Depends(actor_dependency),
     ) -> dict:
-        if not _enabled():
+        if not enabled():
             raise HTTPException(503, "Booking-patient linkage not enabled")
-        if actor.role != "clinician":
+        if actor.role != clinician_role:
             # Denied action is attributable; no patient identity is disclosed.
             with Session(engine) as audit:
                 _record_access(audit, actor, req.booking_uid, "link_revoke", "denied")
@@ -580,7 +599,7 @@ def attach_visit_brief_routes(
         # Revocation works even if Reception has since cancelled the booking.
         stamp = _utcnow().replace(tzinfo=None)
         with Session(engine) as session:
-            row = session.get(BookingPatientLinkORM, (NAMESPACE, req.booking_uid))
+            row = session.get(BookingPatientLinkORM, (namespace, req.booking_uid))
             if row is None or row.revision != req.expected_revision:
                 session.rollback()
                 _record_denial(engine, actor, req.booking_uid, "link_revoke", 409)
@@ -589,7 +608,7 @@ def attach_visit_brief_routes(
             changed = session.execute(
                 update(BookingPatientLinkORM)
                 .where(
-                    BookingPatientLinkORM.namespace == NAMESPACE,
+                    BookingPatientLinkORM.namespace == namespace,
                     BookingPatientLinkORM.booking_uid == req.booking_uid,
                     BookingPatientLinkORM.revision == req.expected_revision,
                 )
@@ -600,7 +619,7 @@ def attach_visit_brief_routes(
                 _record_denial(engine, actor, req.booking_uid, "link_revoke", 409)
                 raise HTTPException(409, "Link revision changed")
             session.add(BookingPatientLinkAuditORM(
-                id=str(uuid4()), namespace=NAMESPACE, booking_uid=req.booking_uid,
+                id=str(uuid4()), namespace=namespace, booking_uid=req.booking_uid,
                 patient_id=row.patient_id, event="revoked", revision=revision,
                 evidence_type=None, operator_type=actor.role,
                 occurred_at=stamp,
@@ -613,13 +632,16 @@ def attach_visit_brief_routes(
 
     @router.get("/visit-brief/staff-audit")
     def visit_brief_staff_audit(
-        actor: StaffActor = Depends(require_staff_clinician),
+        actor: StaffActor = Depends(clinician_dependency),
     ) -> list[dict]:
-        if not _enabled():
+        if not enabled():
             raise HTTPException(503, "Visit Brief not enabled")
         with Session(engine) as session:
             rows = session.scalars(
                 select(VisitBriefStaffAuditORM)
+                .where(VisitBriefStaffAuditORM.principal_id == "synthetic-key-test"
+                       if patient_ids is not None else
+                       VisitBriefStaffAuditORM.principal_id != "synthetic-key-test")
                 .order_by(VisitBriefStaffAuditORM.occurred_at.desc(),
                           VisitBriefStaffAuditORM.id.desc()).limit(100)
             ).all()

@@ -115,7 +115,7 @@
               r.status === 401 || r.status === 403 ? "Απαιτείται σύνδεση." :
               "Δεν ήταν δυνατός ο έλεγχος. Μπορείς να δοκιμάσεις σύνδεση.";
             if (!r.ok && (r.status === 401 || r.status === 403)) {
-              fetch("/clinical/staff-session", {credentials:"same-origin", cache:"no-store"})
+              fetch((window.CockpitClinicalBase||"/clinical")+"/staff-session", {credentials:"same-origin", cache:"no-store"})
                 .then(async staff => {
                   if (staff.ok&&!panel.hidden&&probeRevision===authRevision) {
                     const identity=await staff.json();
@@ -193,7 +193,7 @@
     });
     // Role is only a presentation hint. Server validates every protected request.
     const bootstrapRevision=authRevision;
-    fetch("/clinical/staff-session",{credentials:"same-origin",cache:"no-store"})
+    fetch((window.CockpitClinicalBase||"/clinical")+"/staff-session",{credentials:"same-origin",cache:"no-store"})
       .then(r=>r.ok?r.json():null)
       .then(v=>{
         if(bootstrapRevision===authRevision)window.CockpitStaffRole=v?.staff_role||null;
