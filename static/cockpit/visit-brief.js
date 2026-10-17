@@ -79,7 +79,7 @@
   }
   function identityDenied(){
     invalidate();
-    $("visitBriefIdentity").textContent="Απαιτείται νέα σύνδεση με Clinical Key.";
+    $("visitBriefIdentity").textContent="Απαιτείται νέα προστατευμένη σύνδεση προσωπικού.";
     if(typeof Event==="function"&&typeof window.dispatchEvent==="function")
       window.dispatchEvent(new Event("clinical:request-login"));
   }
@@ -148,6 +148,11 @@
     if(!context||!context.uid)return;
     state.pending={...context};
   }
+  function bookingVerification(){
+    if(!state.pending)return null;
+    return {booking_uid:state.pending.uid,
+            observed_booking:state.pending.observation};
+  }
   function selectPatient(row){
     const p=state.pending;
     if(!p||!row?.patientId)return;
@@ -208,8 +213,8 @@
       "Δεν έχει τεκμηριωθεί συγκεκριμένος έλεγχος για αυτό το ραντεβού.");
     $("visitBriefClinical").hidden=false;
     $("visitBriefChoosePatient").hidden=true;
-    $("visitBriefOpenChart").hidden=false;
-    $("visitBriefUnlink").hidden=false;
+    $("visitBriefOpenChart").hidden=window.CockpitStaffRole==="secretary";
+    $("visitBriefUnlink").hidden=window.CockpitStaffRole==="secretary";
   }
   async function confirmSelection(){
     const p=state.pending,chosen=state.chosen;
@@ -308,6 +313,7 @@
     invalidate();$("visitBriefOverlay").hidden=true;
   });
   window.CockpitVisitBrief={
-    open, selectionContext, activateSelection, selectPatient, invalidate, closed,
+    open, selectionContext, bookingVerification,
+    activateSelection, selectPatient, invalidate, closed,
   };
 })();
