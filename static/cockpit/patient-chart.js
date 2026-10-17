@@ -32,6 +32,10 @@
     const r=await fetch('/clinical'+path,{method:body===undefined?'GET':'POST',credentials:'same-origin',cache:'no-store',
       headers:{'Content-Type':'application/json'},...(body===undefined?{}:{body:JSON.stringify(body)})});
     if(!r.ok){
+      if(r.status===503){
+        const error=await r.json().catch(()=>null);
+        if(error?.detail?.code==='provider_budget_exhausted')throw Error('Το διαθέσιμο υπόλοιπο επεξεργασίας έχει εξαντληθεί. Το κείμενό σου διατηρήθηκε· χρειάζεται ανανέωση του υπολοίπου του παρόχου.');
+      }
       if(r.status===401)window.dispatchEvent(new Event('clinical:request-login'));
       throw Error(r.status===401?'Συνδέσου από την Πρόσβαση.':r.status===409?'Ο φάκελος άλλαξε. Άνοιξέ τον ξανά πριν συνεχίσεις.':
         r.status===502||r.status===503?'Η μετατροπή δεν είναι διαθέσιμη αυτή τη στιγμή. Το κείμενο διατηρήθηκε.':'Η ενέργεια δεν ολοκληρώθηκε. Δοκίμασε ξανά.');

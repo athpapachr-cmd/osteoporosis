@@ -64,7 +64,10 @@ If no clinical visit can be extracted, use reason 'Δεν περιγράφετα
             if not item.source_excerpt or item.source_excerpt not in source or item.status not in ("open","awaiting_patient","awaiting_result"):
                 raise ValueError("invalid evidence")
         return candidate
-    except Exception:
+    except Exception as error:
+        if getattr(error,"code",None) in ("credit_balance_exhausted","insufficient_quota"):
+            raise HTTPException(503, {"code":"provider_budget_exhausted",
+                "message":"Το διαθέσιμο υπόλοιπο επεξεργασίας έχει εξαντληθεί. Η σύνοψη δεν αποθηκεύτηκε."}) from None
         # Never return/log SDK errors or Pydantic inputs containing clinical text.
         raise HTTPException(502, "Η σύνοψη δεν μετατράπηκε αξιόπιστα. Το κείμενο παραμένει διαθέσιμο για διόρθωση και νέα προσπάθεια.") from None
 

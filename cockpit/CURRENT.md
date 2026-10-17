@@ -1,5 +1,26 @@
 # Cockpit CURRENT — global Home and bounded clinical projections
 
+> **2026-10-18 #173 CI PASS / PO RESTORED PROVIDER BUDGET:** PO explicitly replied «Το έκανα. Ανανέωσα το υπόλοιπο». Retry live extraction after correction deploy; do not infer provider success from balance update. Visit Capture `39074552269`, Home `39074552260`, Visit Brief `39074552375`, canonical `39074552381` SUCCESS on `ea300ba`; reviewed runtime `cacf1d6` unchanged. Next #173 merge/native deploy then full finite CP1 live flow.
+
+
+> **2026-10-18 CP1 PROVIDER-STATUS #173 OPEN / REVIEW PASS:** https://github.com/athpapachr-cmd/osteoporosis/pull/173, runtime `cacf1d6`; 4 CP1 tests PASS, independent narrow review PASS (allowlisted fixed code only; source/credentials never returned). Await affected CI/canonical guard then existing-service deploy and real Render error-classification check. User budget response pending; no new extraction can be claimed successful.
+
+
+> **2026-10-18 CP1 PROVIDER BUDGET BLOCK / BOUNDED UX FIX:** Existing secret-only synthetic schema probe `39074354153` returned OpenAI RateLimitError HTTP429 code `credit_balance_exhausted`; no new provider/key/config used. Actual Render extraction previously502, no Save occurred. User asked asynchronously to restore provider budget; never request secret in chat. Writer `codex/cockpit-cp1-provider-status` adds only allowlisted quota-error classification and actionable retained-text message; next test/publish bounded fix and prove actual Render classification. CP1 deployed but live end-to-end NOT verified, NOT ready for acceptance. Earlier live implementation state unchanged; no CP2–CP5.
+
+
+> **2026-10-18 CP1 LIVE EXTRACTION 502 CONFIRMED:** Diagnostic run `39074201404` returned HTTP 502 before Save. No completed CP1 claim. GitHub already holds OPENAI_API_KEY secret (name only inspected); use it in verification-only synthetic schema probe to diagnose provider compatibility without fetching/exposing secret or changing Render settings. Preserve prior live state and local checkpoints.
+
+
+> **2026-10-18 CP1 LIVE SMOKE NOT YET PASS:** Run `39074098194` failed at `real-provider-extraction` before Save. Runtime remains LIVE; no complete-flow claim. Verification script currently expects exactly two proposals although source also explicitly requests follow-up; next inspect sanitized response status/counts and correct the oracle if needed, or fix actual provider boundary. No raw source/secret logging.
+
+
+> **2026-10-18 CP1 DEPLOYED / LIVE PROOF NEXT:** Existing Render `dep-db9v4ejrjlhs73c4eee0` LIVE at exact merge `e5910a485cb0aeb61bf6dcff7408b9a5d35397e5`, finished 22:11:49 UTC / 01:11 Cyprus. No manual trigger/env change. Local checkpoint before smoke. Next dispatch finite verification-only existing-key run: real provider natural summary -> edit/reject -> atomic Save -> refresh/second session/source/updates/no duplicate. PO acceptance pending.
+
+
+> **2026-10-18 CP1 #172 MERGED / DEPLOY NEXT:** Squash `e5910a485cb0aeb61bf6dcff7408b9a5d35397e5` merged 22:10 UTC / 01:10 Cyprus. Final head `f49959e` canonical guard `39073887605` SUCCESS; runtime evidence unchanged from `6ca35bd`. Local durable checkpoint before observing native auto-deploy; publish with final live result to avoid duplicate deploys. Next existing Render LIVE identity then one finite real-provider/two-browser synthetic proof. Not yet deployed or PO accepted.
+
+
 > **2026-10-18 CP1 AFFECTED CI PASS / RELEASE NEXT:** Final runtime `6ca35bd53296c151b917b1b810aaaae00d657c69` adds only stale-preview edit guard, independently PASS; 4 CP1 regressions PASS. GitHub Visit Capture `39073780816`, Home `39073780832`, Visit Brief `39073780810` and canonical guard `39073780808` SUCCESS. Unrelated Clinical Learning L0 design-only allowlist fails on non-L0 files (same known scope mismatch); no L0 mutation. Next authorized #172 squash merge/native Render deployment, then finite existing-key live proof from verification-only `e676c5e` (never merge). CP1 not deployed/accepted yet.
 
 
