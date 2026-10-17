@@ -8,7 +8,9 @@ const home = fs.readFileSync("static/cockpit/index.html", "utf8");
 assert.match(home, /pending-one-tap-synthetic\.html/);
 assert.match(html, /Δοκιμαστικός ασθενής/);
 assert.doesNotMatch(html, /staffKey|patientId|type="password"/);
-// Strip source comments before checking executable code for network/storage access.\nconst executable = js.replace(/^\\s*\\/\\/.*$/gm, "");\nassert.doesNotMatch(executable, /fetch\\s*\\(|localStorage|sessionStorage|XMLHttpRequest/);
+// Strip source comments before checking executable code for network/storage access.
+const executable = js.replace(/^\s*\/\/.*$/gm, "");
+assert.doesNotMatch(executable, /fetch\s*\(|localStorage|sessionStorage|XMLHttpRequest/);
 const els = new Map();
 for (const name of ["question","yes","notYet","undo","reset","observation","patientStatus","briefStatus","audit"]) {
   const handlers = {};
