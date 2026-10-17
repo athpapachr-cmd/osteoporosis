@@ -1619,3 +1619,8 @@ Design PR #138 merged `9ec24a9a5f756b31ee8e6031b5d587c90ce91ac6`; implementation
 ## 2026-10-17 — #161 persistent synthetic browser access release
 
 PR #168 squash-merged as `21011b666d554ccc13aa1011078e6d65c928d2f7`. Existing Cockpit shell and Clinical Key now expose a fixed synthetic-only path through the same booking-link/Brief transaction and existing persisted clinical owners; complete stored chart and idempotent scenario preparation added. Seven new backend/browser tests and affected inherited CI passed. Production staff gates, M8 and CP1 unchanged. Merge is proven; Render availability and Product Owner acceptance are separate, still pending at this checkpoint.
+
+
+## 2026-10-17 — #161 live persistent synthetic browser proof / PO acceptance pending
+
+Bounded chart-selection correction #169 merged `7b10f063551710ed98b2a9ed8373515eb7167f82` after #168 `21011b6…`. Existing Render final code LIVE as `dep-db9tprm7bikc73e46png` / source `af509c2…`. Live one-off Actions run [39068175789](https://github.com/athpapachr-cmd/osteoporosis/actions/runs/39068175789) SUCCESS: two independent real Chromium sessions against the existing PostgreSQL-backed service, repeatable seed, persistent booking confirmation, previous plan/Pending, full two-visit chart, refresh and patient-switch isolation. Existing secret reused without disclosure; no new configuration, credentials, services, migrations, provider bookings, M8 or CP1 work. URL `/clinical/synthetic-161/`; fixed synthetic subset excluded from ordinary Home search/recent encounters and rejected by live booking confirmation. IMPLEMENTED / TEST DEPLOYED / READY FOR PRODUCT OWNER TEST; ACCEPTED remains pending. Writer released and CP1 explicitly stopped until PO acceptance.
