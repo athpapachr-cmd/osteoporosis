@@ -1,5 +1,8 @@
 # CURRENT_OPERATIONAL.md — Clinical Excellence operational NOW / repo-wide writer lock
 
+> **2026-10-18 #173 MERGED / NATIVE DEPLOY NEXT:** Squash `b0461857a85f3969454ad087c4aca4f8fce4fccf` at 22:20:56 UTC; final canonical guard `39074657417` PASS. Prior four local merge/deploy/failure checkpoints are included in the squash and preserved on correction branch; local main reconciled to remote main. Next observe native deployment then retry full live CP1 after PO budget restoration. Local durable checkpoint before deploy observation.
+
+
 > **2026-10-18 #173 CI PASS / PO RESTORED PROVIDER BUDGET:** PO explicitly replied «Το έκανα. Ανανέωσα το υπόλοιπο». Retry live extraction after correction deploy; do not infer provider success from balance update. Visit Capture `39074552269`, Home `39074552260`, Visit Brief `39074552375`, canonical `39074552381` SUCCESS on `ea300ba`; reviewed runtime `cacf1d6` unchanged. Next #173 merge/native deploy then full finite CP1 live flow.
 
 
