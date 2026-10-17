@@ -5,12 +5,14 @@ on:
     paths:
       - "cockpit/migrations/20261017_visit_brief_staff_access.sql"
       - "cockpit/migrations/20261017_visit_brief_cockpit_app_grants.sql"
+      - "cockpit/migrations/20261017_visit_brief_atomic_clinic_install.sql"
       - "test_visit_brief_a5_postgres.py"
       - ".github/workflows/cockpit-a5-postgres-grants.yml"
   push:
     paths:
       - "cockpit/migrations/20261017_visit_brief_staff_access.sql"
       - "cockpit/migrations/20261017_visit_brief_cockpit_app_grants.sql"
+      - "cockpit/migrations/20261017_visit_brief_atomic_clinic_install.sql"
       - "test_visit_brief_a5_postgres.py"
       - ".github/workflows/cockpit-a5-postgres-grants.yml"
 

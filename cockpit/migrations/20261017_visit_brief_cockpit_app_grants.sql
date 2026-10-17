@@ -98,6 +98,38 @@ BEGIN
   ) THEN
     RAISE EXCEPTION 'A5 STOP: Visit Brief primary key drift';
   END IF;
+  -- IF NOT EXISTS alone accepts a same-name but wrong index definition.
+  -- Require both append-only audit indexes to match the ORM's btree keys.
+  IF EXISTS (
+    SELECT 1
+    FROM (VALUES
+      ('ix_clinical_booking_patient_link_audit_namespace', 'namespace'),
+      ('ix_clinical_booking_patient_link_audit_booking_uid', 'booking_uid')
+    ) AS expected_index(index_name, key_column)
+    LEFT JOIN pg_namespace ns ON ns.nspname = 'public'
+    LEFT JOIN pg_class tbl ON tbl.relnamespace = ns.oid
+      AND tbl.relname = 'clinical_booking_patient_link_audit'
+    LEFT JOIN pg_class idx ON idx.relnamespace = ns.oid
+      AND idx.relname = expected_index.index_name
+    LEFT JOIN pg_index ix ON ix.indexrelid = idx.oid
+    LEFT JOIN pg_am am ON am.oid = idx.relam
+    WHERE idx.oid IS NULL
+       OR idx.relkind IS DISTINCT FROM 'i'
+       OR ix.indrelid IS DISTINCT FROM tbl.oid
+       OR am.amname IS DISTINCT FROM 'btree'
+       OR ix.indisunique IS DISTINCT FROM false
+       OR ix.indisprimary IS DISTINCT FROM false
+       OR ix.indisvalid IS DISTINCT FROM true
+       OR ix.indisready IS DISTINCT FROM true
+       OR ix.indislive IS DISTINCT FROM true
+       OR ix.indnatts IS DISTINCT FROM 1
+       OR ix.indnkeyatts IS DISTINCT FROM 1
+       OR ix.indpred IS NOT NULL
+       OR ix.indexprs IS NOT NULL
+       OR pg_get_indexdef(idx.oid, 1, true) IS DISTINCT FROM expected_index.key_column
+  ) THEN
+    RAISE EXCEPTION 'A5 STOP: Visit Brief audit index drift';
+  END IF;
 END;
 $a5_preflight$;
 

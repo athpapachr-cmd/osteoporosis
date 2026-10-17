@@ -54,6 +54,29 @@ def test():
         )
         admin.execute("CREATE DATABASE osteoporosis")
     with connect() as admin:
+        # A failed statement late in the installer must undo *all* new DDL.
+        atomic_sql = ATOMIC.read_text(encoding="utf-8")
+        grant = ("GRANT SELECT, INSERT, UPDATE ON TABLE "
+                 "public.clinical_booking_patient_links TO cockpit_app;")
+        assert atomic_sql.count(grant) == 1
+        bad_atomic = atomic_sql.replace(
+            grant, "GRANT SELECT ON TABLE public.a5_missing_table TO cockpit_app;", 1
+        )
+        try:
+            admin.execute(bad_atomic, prepare=False)
+        except psycopg.Error:
+            admin.execute("ROLLBACK")
+        else:
+            raise AssertionError("Malformed atomic migration committed")
+        for name in (
+            "clinical_booking_patient_links",
+            "clinical_booking_patient_link_audit",
+            "clinical_visit_brief_staff_access_audit",
+        ):
+            assert admin.execute(
+                "SELECT to_regclass(%s)", ("public." + name,)
+            ).fetchone()[0] is None, "Atomic failure left a table behind: " + name
+
         apply(admin, ATOMIC)   # schema and grants commit together
         apply(admin, GRANTS)   # exact-schema re-run: idempotent
         assert admin.execute(
@@ -111,8 +134,41 @@ def test():
         denied(app, "CREATE TABLE unauthorized_a5 (id int)")
 
     with connect() as admin:
-        # A changed table must fail before any grant commits.
+        # Same-name wrong-key index must fail closed in *both* SQL entrypoints.
         admin.execute("REVOKE SELECT, INSERT, UPDATE ON clinical_booking_patient_links FROM cockpit_app")
+        admin.execute("DROP INDEX public.ix_clinical_booking_patient_link_audit_namespace")
+        admin.execute(
+            "CREATE INDEX ix_clinical_booking_patient_link_audit_namespace "
+            "ON public.clinical_booking_patient_link_audit (booking_uid)"
+        )
+        for sql_file in (GRANTS, ATOMIC):
+            try:
+                apply(admin, sql_file)
+            except psycopg.Error as exc:
+                admin.execute("ROLLBACK")
+                assert "A5 STOP: Visit Brief audit index drift" in str(exc), str(exc)
+            else:
+                raise AssertionError("Wrong audit index silently accepted: " + sql_file.name)
+            assert not admin.execute(
+                "SELECT has_table_privilege('cockpit_app',"
+                "'public.clinical_booking_patient_links','SELECT')"
+            ).fetchone()[0], "Partial grant survived index-drift rollback"
+
+        # Missing index must also fail, not just a same-name wrong definition.
+        admin.execute("DROP INDEX public.ix_clinical_booking_patient_link_audit_namespace")
+        try:
+            apply(admin, GRANTS)
+        except psycopg.Error as exc:
+            admin.execute("ROLLBACK")
+            assert "A5 STOP: Visit Brief audit index drift" in str(exc), str(exc)
+        else:
+            raise AssertionError("Missing audit index was silently accepted")
+        admin.execute(
+            "CREATE INDEX ix_clinical_booking_patient_link_audit_namespace "
+            "ON public.clinical_booking_patient_link_audit (namespace)"
+        )
+
+        # A changed table must fail before any grant commits.
         admin.execute("ALTER TABLE clinical_booking_patient_links ADD COLUMN extra_synthetic text")
         try:
             apply(admin, GRANTS)
@@ -127,7 +183,7 @@ def test():
             "SELECT has_table_privilege('cockpit_app',"
             "'public.clinical_booking_patient_links','SELECT')"
         ).fetchone()[0]
-    print("PASS A5: isolated PostgreSQL 17, least privilege, DML, idempotence, schema drift")
+    print("PASS A5: isolated PostgreSQL 17, least privilege, atomic rollback, index/column drift")
 
 
 if __name__ == "__main__":
