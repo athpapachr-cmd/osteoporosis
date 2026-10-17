@@ -1,0 +1,36 @@
+name: Cockpit Visit Brief synthetic preview
+
+on:
+  pull_request:
+    paths:
+      - "static/cockpit/visit-brief-demo/index.html"
+      - "test_cockpit_visit_brief_demo_browser.py"
+      - ".github/workflows/cockpit-visit-brief-demo.yml"
+  push:
+    paths:
+      - "static/cockpit/visit-brief-demo/index.html"
+      - "test_cockpit_visit_brief_demo_browser.py"
+      - ".github/workflows/cockpit-visit-brief-demo.yml"
+
+jobs:
+  synthetic-browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install browser test dependency
+        run: |
+          pip install playwright
+          if ! command -v google-chrome && ! command -v chromium; then
+            python -m playwright install --with-deps chromium
+          fi
+      - name: Syntax
+        run: python -m py_compile test_cockpit_visit_brief_demo_browser.py
+      - name: Real Chromium, no-PHI preview and DOM purge
+        run: python test_cockpit_visit_brief_demo_browser.py
+      - name: Diff hygiene
+        run: git diff --check HEAD^ HEAD
