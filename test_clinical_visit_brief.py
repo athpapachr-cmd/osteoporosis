@@ -456,7 +456,7 @@ def test_real_staff_login_cookies_secretary_separation_and_logout(monkeypatch):
     app.include_router(build_auth_router())
     app.include_router(build_clinical_router(engine))
     app.include_router(build_clinical_calendar_router(engine))
-    with TestClient(app) as c:
+    with TestClient(app, base_url="https://testserver") as c:
         # Legacy clinician key is valid for existing protected Clinical Data,
         # but NEVER for staff-labelled Visit Brief.
         old = c.post("/clinical/login", json={"key": KEY})
